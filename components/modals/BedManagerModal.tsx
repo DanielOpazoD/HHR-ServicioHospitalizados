@@ -3,7 +3,7 @@ import { Lock, BedDouble, CheckCircle } from 'lucide-react';
 import clsx from 'clsx';
 import { BEDS } from '../../constants';
 import { useDailyRecordContext } from '../../context/DailyRecordContext';
-import { BaseModal } from '../shared/BaseModal';
+import { BaseModal, ModalSection } from '../shared/BaseModal';
 import { BedBlockSchema } from '../../schemas/inputSchemas';
 import { useScrollLock } from '../../hooks/useScrollLock';
 
@@ -165,11 +165,14 @@ export const BedManagerModal: React.FC<BedManagerModalProps> = ({
         variant="white"
         headerIconColor="text-amber-600"
       >
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Section 1: Block Beds */}
-          <div>
-            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-2 tracking-wider">Bloquear Camas</label>
-            <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
+          <ModalSection
+            title="Bloquear Camas"
+            variant="warning"
+            description="Seleccione una cama para bloquearla o editar su motivo de bloqueo."
+          >
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
               {BEDS.filter(b => !b.isExtra).map(bed => {
                 const isBlocked = record.beds[bed.id]?.isBlocked;
                 return (
@@ -177,25 +180,28 @@ export const BedManagerModal: React.FC<BedManagerModalProps> = ({
                     key={bed.id}
                     onClick={() => handleBedClick(bed.id, isBlocked)}
                     className={clsx(
-                      "p-1.5 rounded-lg border text-[11px] font-bold transition-all flex flex-col items-center gap-0.5 shadow-sm active:scale-95",
+                      "p-2 rounded-lg border text-[11px] font-bold transition-all flex flex-col items-center gap-1 shadow-sm active:scale-95 h-14 justify-center",
                       isBlocked
-                        ? "border-amber-400 bg-amber-50 text-amber-700"
-                        : "border-slate-100 bg-white text-slate-500 hover:border-medical-300 hover:bg-slate-50"
+                        ? "border-amber-400 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                        : "border-slate-100 bg-white text-slate-500 hover:border-medical-300 hover:bg-slate-50 focus:ring-2 focus:ring-medical-500/20 focus:outline-none"
                     )}
                     disabled={blockingBedId !== null || editingBedId !== null}
                   >
-                    <span>{bed.name}</span>
-                    {isBlocked ? <Lock size={10} className="text-amber-500" /> : <div className="h-2.5" />}
+                    <span className="leading-none">{bed.name}</span>
+                    {isBlocked ? <Lock size={12} className="text-amber-500" /> : <div className="h-2" />}
                   </button>
                 )
               })}
             </div>
-          </div>
+          </ModalSection>
 
           {/* Section 2: Extra Beds */}
-          <div>
-            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-2 tracking-wider">Habilitar Camas Extras</label>
-            <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
+          <ModalSection
+            title="Camas Extras"
+            variant="info"
+            description="Habilite camas adicionales temporalmente."
+          >
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
               {BEDS.filter(b => b.isExtra).map(bed => {
                 const isEnabled = (record.activeExtraBeds || []).includes(bed.id);
                 return (
@@ -203,20 +209,20 @@ export const BedManagerModal: React.FC<BedManagerModalProps> = ({
                     key={bed.id}
                     onClick={() => toggleExtraBed(bed.id)}
                     className={clsx(
-                      "p-1.5 rounded-lg border text-[11px] font-bold transition-all flex flex-col items-center gap-0.5 shadow-sm active:scale-95",
+                      "p-2 rounded-lg border text-[11px] font-bold transition-all flex flex-col items-center gap-1 shadow-sm active:scale-95 h-14 justify-center",
                       isEnabled
-                        ? "border-medical-500 bg-medical-50 text-medical-700"
-                        : "border-slate-100 bg-white text-slate-500 hover:border-medical-300 hover:bg-slate-50"
+                        ? "border-medical-500 bg-medical-50 text-medical-700 hover:bg-medical-100"
+                        : "border-slate-100 bg-white text-slate-500 hover:border-medical-300 hover:bg-slate-50 focus:ring-2 focus:ring-medical-500/20 focus:outline-none"
                     )}
                     disabled={blockingBedId !== null}
                   >
-                    <span>{bed.name}</span>
-                    {isEnabled ? <CheckCircle size={10} className="text-medical-600" /> : <div className="h-2.5" />}
+                    <span className="leading-none">{bed.name}</span>
+                    {isEnabled ? <CheckCircle size={12} className="text-medical-600" /> : <div className="h-2" />}
                   </button>
                 )
               })}
             </div>
-          </div>
+          </ModalSection>
         </div>
       </BaseModal>
 

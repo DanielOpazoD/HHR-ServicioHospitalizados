@@ -18,30 +18,23 @@ test.describe('Complete Hospital Day E2E', () => {
 
         // 3. ADD PATIENT DATA
         const nameInput = page.locator('table input[type="text"]').first();
+        await expect(nameInput).toBeVisible();
         await nameInput.fill('PACIENTE WORKFLOW');
-
-        await page.waitForTimeout(500);
 
         // 4. NAVIGATE TO NURSING HANDOFF
         const nursingTab = page.locator('nav button').filter({ hasText: 'Entrega Turno Enfermería' });
-        if (await nursingTab.isVisible({ timeout: 3000 }).catch(() => false)) {
-            await nursingTab.click();
-            await expect(page.locator('h2').first()).toBeVisible({ timeout: 10000 });
-        }
+        await nursingTab.click();
+        await expect(page.locator('h2').first()).toBeVisible({ timeout: 10000 });
 
         // 5. NAVIGATE TO MEDICAL HANDOFF
         const medicalTab = page.locator('nav button').filter({ hasText: 'Entrega Turno Médicos' });
-        if (await medicalTab.isVisible({ timeout: 3000 }).catch(() => false)) {
-            await medicalTab.click();
-            await expect(page.locator('h2').first()).toBeVisible({ timeout: 10000 });
-        }
+        await medicalTab.click();
+        await expect(page.locator('h2').first()).toBeVisible({ timeout: 10000 });
 
         // 6. NAVIGATE BACK TO CENSUS
         const censusTab = page.locator('nav button').filter({ hasText: 'Censo Diario' });
-        if (await censusTab.isVisible({ timeout: 3000 }).catch(() => false)) {
-            await censusTab.click();
-            await expect(page.locator('table')).toBeVisible({ timeout: 10000 });
-        }
+        await censusTab.click();
+        await expect(page.locator('table')).toBeVisible({ timeout: 10000 });
     });
 
     test('should prevent unauthorized access (viewer role)', async ({ page }) => {
