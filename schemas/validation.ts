@@ -14,13 +14,12 @@ const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/; // YYYY-MM-DD format
 export const BedTypeSchema = z.enum(['UTI', 'MEDIA']);
 
 export const SpecialtySchema = z.enum([
-  'Medicina Interna',
+  'Med Interna',
   'Cirugía',
   'Traumatología',
-  'Ginecología',
+  'Ginecobstetricia',
   'Psiquiatría',
   'Pediatría',
-  'Obstetricia',
   'Otro',
   ''
 ]);

@@ -13,7 +13,7 @@ describe('useClinicalCrib', () => {
         rut: '12.345.678-9',
         age: '30',
         pathology: 'Post-parto',
-        specialty: Specialty.GINECOLOGIA,
+        specialty: Specialty.GINECOBSTETRICIA,
         status: PatientStatus.ESTABLE,
         admissionDate: '2025-01-01',
         hasWristband: true,

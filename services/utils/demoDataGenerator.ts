@@ -29,7 +29,7 @@ const CLINICAL_PROFILES: Record<Specialty, Array<{ dx: string, status: PatientSt
         { dx: 'Fractura de Cadera Operada', status: PatientStatus.ESTABLE, upc: false, avgStay: 8 },
         { dx: 'Politraumatismo', status: PatientStatus.GRAVE, upc: true, avgStay: 14 },
     ],
-    [Specialty.OBSTETRICIA]: [
+    [Specialty.GINECOBSTETRICIA]: [
         { dx: 'Post Parto Vaginal', status: PatientStatus.ESTABLE, upc: false, avgStay: 2 },
         { dx: 'Post Cesárea', status: PatientStatus.ESTABLE, upc: false, avgStay: 3 },
         { dx: 'Preeclampsia Severa', status: PatientStatus.GRAVE, upc: true, avgStay: 7 },
@@ -46,7 +46,6 @@ const CLINICAL_PROFILES: Record<Specialty, Array<{ dx: string, status: PatientSt
         { dx: 'Fractura de Tibia Operada', status: PatientStatus.ESTABLE, upc: false, avgStay: 4 },
         { dx: 'Trauma Craneoencefálico Severo', status: PatientStatus.GRAVE, upc: true, avgStay: 15 },
     ],
-    [Specialty.GINECOLOGIA]: [],
     [Specialty.PSIQUIATRIA]: [],
     [Specialty.OTRO]: [],
     [Specialty.EMPTY]: [],
@@ -172,8 +171,8 @@ const generateNewPatient = (bedId: string, admissionDate: string): PatientData =
     }
     // Obstetric patients
     else if (patient.biologicalSex === 'Femenino' && Math.random() > 0.7) {
-        patient.specialty = Specialty.OBSTETRICIA;
-        const obsProfiles = CLINICAL_PROFILES[Specialty.OBSTETRICIA];
+        patient.specialty = Specialty.GINECOBSTETRICIA;
+        const obsProfiles = CLINICAL_PROFILES[Specialty.GINECOBSTETRICIA];
         const profile = randomItem(obsProfiles);
         patient.pathology = profile.dx;
         patient.status = profile.status;
@@ -301,13 +300,13 @@ const evolveDayRecord = (previousRecord: DailyRecord, newDate: string): DailyRec
                     id: crypto.randomUUID(),
                     bedName: bedDef?.name || bedId,
                     bedId: bedId,
-                bedType: bedDef?.type || '',
-                patientName: patient.patientName,
-                rut: patient.rut,
-                diagnosis: patient.pathology,
-                time: getTimeRoundedToStep(),
-                status: Math.random() > 0.02 ? 'Vivo' : 'Fallecido',
-                age: patient.age,
+                    bedType: bedDef?.type || '',
+                    patientName: patient.patientName,
+                    rut: patient.rut,
+                    diagnosis: patient.pathology,
+                    time: getTimeRoundedToStep(),
+                    status: Math.random() > 0.02 ? 'Vivo' : 'Fallecido',
+                    age: patient.age,
                     insurance: patient.insurance,
                     origin: patient.origin,
                     isRapanui: patient.isRapanui,
@@ -346,13 +345,13 @@ const evolveDayRecord = (previousRecord: DailyRecord, newDate: string): DailyRec
                     id: crypto.randomUUID(),
                     bedName: bedDef?.name || bedId,
                     bedId: bedId,
-                bedType: bedDef?.type || '',
-                patientName: patient.patientName,
-                rut: patient.rut,
-                diagnosis: patient.pathology,
-                time: getTimeRoundedToStep(),
-                evacuationMethod: randomItem(EVACUATION_METHODS),
-                receivingCenter: randomItem(RECEIVING_CENTERS),
+                    bedType: bedDef?.type || '',
+                    patientName: patient.patientName,
+                    rut: patient.rut,
+                    diagnosis: patient.pathology,
+                    time: getTimeRoundedToStep(),
+                    evacuationMethod: randomItem(EVACUATION_METHODS),
+                    receivingCenter: randomItem(RECEIVING_CENTERS),
                     receivingCenterOther: '',
                     age: patient.age,
                     insurance: patient.insurance,

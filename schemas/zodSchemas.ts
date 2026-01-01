@@ -13,8 +13,8 @@ import { z } from 'zod';
 
 export const BedTypeSchema = z.enum(['UTI', 'MEDIA']);
 export const SpecialtySchema = z.enum([
-    'Medicina Interna', 'Cirugía', 'Traumatología', 'Ginecología',
-    'Psiquiatría', 'Pediatría', 'Obstetricia', 'Otro', ''
+    'Med Interna', 'Cirugía', 'Traumatología', 'Ginecobstetricia',
+    'Psiquiatría', 'Pediatría', 'Otro', ''
 ]);
 export const PatientStatusSchema = z.enum(['Grave', 'De cuidado', 'Estable', '']);
 

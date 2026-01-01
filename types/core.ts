@@ -12,10 +12,9 @@ export enum Specialty {
     MEDICINA = 'Med Interna',
     CIRUGIA = 'Cirugía',
     TRAUMATOLOGIA = 'Traumatología',
-    GINECOLOGIA = 'Ginecología',
+    GINECOBSTETRICIA = 'Ginecobstetricia',
     PSIQUIATRIA = 'Psiquiatría',
     PEDIATRIA = 'Pediatría',
-    OBSTETRICIA = 'Obstetricia',
     OTRO = 'Otro',
     EMPTY = ''
 }
