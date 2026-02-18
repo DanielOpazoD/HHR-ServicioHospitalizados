@@ -31,6 +31,7 @@
     "ci": "npm run lint && npm run test && npm run build",
     "typecheck": "tsc --noEmit --skipLibCheck -p tsconfig.json",
     "test:rules": "RUN_FIRESTORE_RULES_TESTS=1 vitest run src/tests/security/firestore-rules.test.ts",
+    "test:rules:ci": "npx -y firebase-tools@13.35.1 emulators:exec --only firestore \"npm run test:rules\"",
     "emulator": "firebase emulators:start --only firestore"
   },
   "dependencies": {

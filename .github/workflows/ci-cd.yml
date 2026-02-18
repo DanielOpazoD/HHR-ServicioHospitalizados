@@ -11,7 +11,7 @@ jobs:
   # JOB 1: LINT
   # ============================================
   lint:
-    name: Lint Code
+    name: Quality Gates
     runs-on: ubuntu-latest
     
     steps:
@@ -27,16 +27,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
+      - name: Run ESLint
+        run: npm run lint
+
       - name: Run TypeScript type checking
-        run: npx tsc --noEmit
-        continue-on-error: true
-      
-      - name: Check code formatting (Prettier - optional)
-        run: |
-          if [ -f ".prettierrc" ]; then
-            npm run format:check || echo "No format:check script"
-          fi
-        continue-on-error: true
+        run: npm run typecheck
+
+      - name: Run architecture and security quality checks
+        run: npm run check:quality
 
   # ============================================
   # JOB 2: TEST
@@ -44,6 +42,7 @@ jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
+    needs: [lint]
     
     steps:
       - name: Checkout code
@@ -73,12 +72,44 @@ jobs:
         continue-on-error: true
 
   # ============================================
-  # JOB 3: BUILD
+  # JOB 3: FIRESTORE RULES
+  # ============================================
+  firestore-rules:
+    name: Firestore Rules Tests
+    runs-on: ubuntu-latest
+    needs: [lint]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Java (Firestore emulator)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Firestore rules tests with emulator
+        run: npm run test:rules:ci
+        env:
+          CI: true
+
+  # ============================================
+  # JOB 4: BUILD
   # ============================================
   build:
     name: Build Application
     runs-on: ubuntu-latest
-    needs: [lint, test]
+    needs: [lint, test, firestore-rules]
     
     steps:
       - name: Checkout code
@@ -106,12 +137,12 @@ jobs:
           retention-days: 7
 
   # ============================================
-  # JOB 4: DOCUMENTATION
+  # JOB 5: DOCUMENTATION
   # ============================================
   docs:
     name: API Documentation
     runs-on: ubuntu-latest
-    needs: [lint, test]
+    needs: [lint, test, firestore-rules]
     
     permissions:
       contents: read

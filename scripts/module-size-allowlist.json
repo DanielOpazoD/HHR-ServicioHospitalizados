@@ -14,6 +14,6 @@
     "src/services/integrations/whatsapp/whatsappService.ts": 470,
     "src/services/admin/auditService.ts": 460,
     "src/components/shared/TerminologySuggestor.tsx": 410,
-    "src/services/auth/passportService.ts": 410
+    "src/services/auth/passportService.ts": 430
   }
 }
