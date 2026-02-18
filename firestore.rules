@@ -15,6 +15,11 @@ service cloud.firestore {
     function getUserEmail() {
       return request.auth.token.email;
     }
+
+    // Check if authenticated user has an email claim
+    function hasEmail() {
+      return isAuthenticated() && request.auth.token.email != null;
+    }
     
     // Check if user is admin via Custom Claims OR Whitelist (Dual Stack)
     function isAdmin() {
@@ -40,10 +45,98 @@ service cloud.firestore {
         ]
       );
     }
+
+    // Check if user is doctor via Custom Claims OR dynamic role map
+    function isDoctor() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'doctor_urgency' ||
+        request.auth.token.role == 'admin' ||
+        (
+          hasEmail() &&
+          exists(/databases/$(database)/documents/config/roles) &&
+          get(/databases/$(database)/documents/config/roles).data[getUserEmail()] == 'doctor_urgency'
+        )
+      );
+    }
     
     // Check if user can edit (admin or nurse)
     function canEdit() {
       return isAdmin() || isNurse();
+    }
+
+    // Legacy/custom-claim role gate (prevents any random authenticated user access)
+    function hasRoleClaim() {
+      return isAuthenticated() && request.auth.token.role in [
+        'admin',
+        'nurse_hospital',
+        'doctor_urgency',
+        'viewer',
+        'viewer_census',
+        'editor'
+      ];
+    }
+
+    // Dynamic role map (config/roles)
+    function hasConfiguredRole() {
+      return hasEmail() &&
+             exists(/databases/$(database)/documents/config/roles) &&
+             get(/databases/$(database)/documents/config/roles).data[getUserEmail()] != null;
+    }
+
+    // Shared census allowlist by email (doc id = normalized email)
+    function hasCensusAuthorizedEmail() {
+      return hasEmail() &&
+             exists(/databases/$(database)/documents/census-authorized-emails/$(getUserEmail()));
+    }
+
+    // Shared census static allowlist fallback (for migrations without Firestore docs yet)
+    function hasCensusStaticAllowlistEmail() {
+      return hasEmail() &&
+             getUserEmail() in [
+               'arenka.palma@hospitalhangaroa.cl',
+               'natalia.arzola@hospitalhangaroa.cl',
+               'vaitiare.hereveri@hospitalhangaroa.cl',
+               'kaany.pakomio@hospitalhangaroa.cl',
+               'claudia.salgado@hospitalhangaroa.cl',
+               'bianca.atam@hospitalhangaroa.cl',
+               'ana.pont@hospitalhangaroa.cl',
+               'katherin.pont@hospitalhangaroa.cl',
+               'eyleen.cisternas@hospitalhangaroa.cl',
+               'marco.ramirez@hospitalhangaroa.cl',
+               'josemiguel.villavicencio@hospitalhangaroa.cl',
+               'carla.curinao@hospitalhangaroa.cl',
+               'epidemiologia@hospitalhangaroa.cl',
+               'archivosome@hospitalhangaroa.cl',
+               'antonio.espinoza@hospitalhangaroa.cl',
+               'juan.pakomio@hospitalhangaroa.cl',
+               'ivan.pulgar@hospitalhangaroa.cl',
+               'daniel.opazo@hospitalhangaroa.cl',
+               'andrea.saldana@saludoriente.cl',
+               'patricio.medina@saludoriente.cl',
+               'gestion.camas@saludoriente.cl',
+               'd.opazo.damiani@gmail.com',
+               'd.opazo.damiani@hospitalhangaroa.cl'
+             ];
+    }
+
+    // Consolidated read access for clinical data
+    function canReadClinicalData() {
+      return isAdmin() ||
+             isNurse() ||
+             hasRoleClaim() ||
+             hasConfiguredRole() ||
+             hasCensusAuthorizedEmail() ||
+             hasCensusStaticAllowlistEmail();
+    }
+
+    // Shared census access logs must represent current caller only.
+    function isValidCensusAccessLogCreate() {
+      return isAuthenticated() &&
+             hasEmail() &&
+             request.resource.data.keys().hasOnly(['userId', 'email', 'action', 'filePath', 'fileName', 'timestamp', 'userAgent']) &&
+             request.resource.data.userId == request.auth.uid &&
+             request.resource.data.email == getUserEmail() &&
+             request.resource.data.action in ['list_files', 'download_file', 'view_file'];
     }
     
     // Check if a date (ms timestamp) is within the editing window (+/- 1 day)
@@ -80,27 +173,27 @@ service cloud.firestore {
     // ============================================
     match /hospitals/{hospitalId} {
       // Hospital document itself
-      allow read: if isAuthenticated();
+      allow read: if canReadClinicalData();
       allow write: if isAdmin();
       
       // ----------------------------------------
       // DAILY RECORDS (Census Data)
       // ----------------------------------------
       match /dailyRecords/{date} {
-        allow read: if isAuthenticated();
+        allow read: if canReadClinicalData();
         // Create: Admin or Nurse
         allow create: if canEdit();
         // Update: Admin siempre, Enfermero en ventana, o Médico solo campos de firma
         allow update: if isAdmin() || 
                         (isNurse() && isWithinEditingWindow(resource.data.dateTimestamp)) ||
-                        (isAuthenticated() && isMedicalUpdate());
+                        (isDoctor() && isMedicalUpdate());
         // Delete: Admin always, Nurse only if it's the current day
         allow delete: if isAdmin() || (isNurse() && isCurrentDay(resource.data.dateTimestamp));
         
         // History subcollection
         match /history/{historyId} {
-          allow read: if isAuthenticated();
-          allow create: if isAuthenticated();
+          allow read: if canReadClinicalData();
+          allow create: if canEdit();
           allow update, delete: if isAdmin();
         }
       }
@@ -114,7 +207,7 @@ service cloud.firestore {
       // SETTINGS (Nurses, TENS, TableConfig)
       // ----------------------------------------
       match /settings/{settingId} {
-        allow read: if isAuthenticated();
+        allow read: if canReadClinicalData();
         // Allow both Admins and Nurses to update catalogs and settings
         allow write: if canEdit();
       }
@@ -123,7 +216,7 @@ service cloud.firestore {
       // EXPORT PASSWORDS
       // ----------------------------------------
       match /exportPasswords/{passwordId} {
-        allow read: if isAuthenticated();
+        allow read: if canReadClinicalData();
         allow write: if isAdmin();
       }
       
@@ -132,7 +225,7 @@ service cloud.firestore {
       // ----------------------------------------
       match /auditLogs/{logId} {
         allow read: if isAdmin();
-        allow create: if isAuthenticated();
+        allow create: if canReadClinicalData();
         // Allow admins to update or delete during consolidation/maintenance
         allow update, delete: if isAdmin();
       }
@@ -141,7 +234,7 @@ service cloud.firestore {
       // TRANSFER REQUESTS (Patient transfers)
       // ----------------------------------------
       match /transferRequests/{transferId} {
-        allow read: if isAuthenticated();
+        allow read: if canReadClinicalData();
         allow create: if canEdit();
         allow update: if canEdit();
         allow delete: if isAdmin();
@@ -151,23 +244,23 @@ service cloud.firestore {
       // TRANSFER HISTORY (Completed transfers)
       // ----------------------------------------
       match /transferHistory/{transferId} {
-        allow read: if isAuthenticated();
+        allow read: if canReadClinicalData();
         allow create: if canEdit();
         allow update, delete: if isAdmin();
       }
       
       // ----------------------------------------
       match /bookmarks/{bookmarkId} {
-        allow read: if true;
-        allow write: if request.auth != null;
+        allow read: if canReadClinicalData();
+        allow write: if canReadClinicalData();
       }
 
       // ----------------------------------------
       // BACKUP FILES (Cloud backup archives)
       // ----------------------------------------
       match /backupFiles/{fileId} {
-        allow read: if isAuthenticated();
-        allow create: if isAuthenticated();  // Temporarily allow all authenticated users for testing
+        allow read: if canReadClinicalData();
+        allow create: if canEdit();
         allow update: if isAdmin();
         allow delete: if isAdmin();
       }
@@ -176,7 +269,7 @@ service cloud.firestore {
       // PATIENT MASTER INDEX
       // ----------------------------------------
       match /patients/{rut} {
-        allow read: if isAuthenticated();
+        allow read: if canReadClinicalData();
         allow write: if canEdit();
       }
     }
@@ -186,7 +279,7 @@ service cloud.firestore {
     // ============================================
     match /auditLogs/{logId} {
       allow read: if isAdmin();
-      allow create: if isAuthenticated();
+      allow create: if canReadClinicalData();
       // Allow admins to update or delete during consolidation/maintenance
       allow update, delete: if isAdmin();
     }
@@ -209,7 +302,7 @@ service cloud.firestore {
     // STAFF CATALOGS (Legacy - if still used)
     // ============================================
     match /staffCatalogs/{catalogType} {
-      allow read: if isAuthenticated();
+      allow read: if canReadClinicalData();
       allow write: if isAdmin();
     }
     
@@ -225,13 +318,13 @@ service cloud.firestore {
     // WHATSAPP INTEGRATION
     // ============================================
     match /whatsapp/{docId} {
-      allow read: if isAuthenticated();
+      allow read: if canReadClinicalData();
       allow write: if isAdmin();
     }
     
     match /whatsappLogs/{logId} {
       allow read: if isAdmin();
-      allow create: if isAuthenticated();
+      allow create: if canReadClinicalData();
       allow update, delete: if false;
     }
     
@@ -240,7 +333,7 @@ service cloud.firestore {
     }
     
     match /shifts/{path=**} {
-      allow read: if isAuthenticated();
+      allow read: if canReadClinicalData();
       allow write: if isAdmin();
     }
     
@@ -248,24 +341,42 @@ service cloud.firestore {
     // CENSUS ACCESS (Shared census links)
     // ============================================
     match /census-access-invitations/{invitationId} {
-      allow read: if true; 
-      allow write: if isAuthenticated(); // Simplified for debugging
+      allow read: if canEdit() || (
+        isAuthenticated() &&
+        (
+          resource.data.email == null ||
+          (hasEmail() && resource.data.email == getUserEmail())
+        )
+      );
+      allow create: if canEdit();
+      allow update: if canEdit() || (
+        isAuthenticated() &&
+        resource.data.status == 'pending' &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'usedBy', 'usedAt']) &&
+        request.resource.data.status == 'used' &&
+        request.resource.data.usedBy == request.auth.uid &&
+        (
+          resource.data.email == null ||
+          (hasEmail() && resource.data.email == getUserEmail())
+        )
+      );
+      allow delete: if isAdmin();
     }
     
     match /census-access-users/{userId} {
-      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
-      allow create: if isAuthenticated() && request.auth.uid == userId;
-      allow update, delete: if canEdit();
+      allow read: if isAuthenticated() && (request.auth.uid == userId || canEdit());
+      allow create, update: if canEdit();
+      allow delete: if isAdmin();
     }
     
     match /census-access-logs/{logId} {
       allow read: if canEdit();
-      allow create: if isAuthenticated();
+      allow create: if isValidCensusAccessLogCreate();
     }
     
     match /census-authorized-emails/{email} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated(); // Simplified for debugging
+      allow read: if canEdit();
+      allow write: if canEdit();
     }
 
     // ============================================
@@ -291,4 +402,3 @@ service cloud.firestore {
     }
   }
 }
-

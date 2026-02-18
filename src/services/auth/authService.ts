@@ -19,17 +19,6 @@ export type { AuthUser, UserRole } from '@/types';
 import { AuthUser, UserRole } from '@/types';
 import { INSTITUTIONAL_ACCOUNTS } from '@/constants/identities';
 
-// AuthUser is now imported from @/types
-
-// ============================================================================
-// FIRESTORE WHITELIST CHECK
-// Reads allowed emails from Firestore collection 'allowedUsers'
-// ============================================================================
-
-/**
- * Check if an email is in the Firestore allowedUsers collection.
- * Returns the user document if found, null otherwise.
- */
 // ============================================================================
 // CONFIGURACIÓN DE ACCESOS ESTÁTICOS (Hardcoded)
 // Agregar aquí correos que requieren acceso garantizado
@@ -48,6 +37,38 @@ const isSharedCensusPath = (pathname: string): boolean =>
 
 const isSharedCensusMode = (): boolean =>
   typeof window !== 'undefined' && isSharedCensusPath(window.location.pathname);
+
+type SharedCensusAccessResult = {
+  authorized: boolean;
+  role: 'viewer' | 'downloader';
+};
+
+const checkSharedCensusAccess = async (
+  email: string | null | undefined = auth.currentUser?.email
+): Promise<SharedCensusAccessResult> => {
+  const currentEmail = normalizeEmail(email || auth.currentUser?.email || '');
+  if (!currentEmail) {
+    return { authorized: false, role: 'viewer' };
+  }
+  try {
+    const checkSharedAccess = httpsCallable<Record<string, never>, SharedCensusAccessResult>(
+      functions,
+      'checkSharedCensusAccess'
+    );
+    const response = await checkSharedAccess({});
+
+    if (!response.data?.authorized) {
+      return { authorized: false, role: 'viewer' };
+    }
+    return {
+      authorized: true,
+      role: response.data.role === 'downloader' ? 'downloader' : 'viewer',
+    };
+  } catch (error) {
+    console.error('[authService] Shared census authorization check failed', error);
+    return { authorized: false, role: 'viewer' };
+  }
+};
 
 const clearLegacyRoleCache = (key: string): void => {
   if (typeof window !== 'undefined' && window.localStorage) {
@@ -146,7 +167,7 @@ const checkEmailInFirestore = async (
 
     // 0. VERIFICACIÓN ESTÁTICA (Prioridad Máxima - Bypasses Cache)
     for (const [staticEmail, staticRole] of Object.entries(STATIC_ROLES)) {
-      if (cleanEmail.includes(staticEmail)) {
+      if (cleanEmail === normalizeEmail(staticEmail)) {
         // console.info(`[authService] ✅ Access granted via static rule: ${cleanEmail} -> ${staticRole}`);
         const role = staticRole as UserRole;
         saveRoleToCache(cleanEmail, role); // Non-blocking cache update
@@ -284,12 +305,13 @@ export const signInWithGoogle = async (): Promise<AuthUser> => {
     const result = await signInWithPopup(auth, googleProvider);
     const user = result.user;
 
-    // Check if we're in shared census mode - if so, skip strict whitelist check
-    // The shared census mode has its own local authorization via censusAuthorizedEmails.ts
+    // Shared census mode: authorization is validated server-side.
     if (isSharedCensusMode()) {
-      // In shared census mode, we allow the login to proceed
-      // Authorization is handled by useSharedCensusMode hook using local list
-      // console.info('[authService] 🌐 Shared census mode - skipping strict whitelist check');
+      const sharedAccess = await checkSharedCensusAccess(user.email);
+      if (!sharedAccess.authorized) {
+        await firebaseSignOut(auth);
+        throw new Error('Acceso no autorizado. Tu correo no tiene permisos para censo compartido.');
+      }
       return toAuthUser(user, 'viewer_census'); // Limited role for census viewers
     }
 
@@ -418,11 +440,14 @@ export const onAuthChange = (callback: (user: AuthUser | null) => void): (() => 
         return;
       }
 
-      // Check if we're in shared census mode - skip strict whitelist verification
+      // Shared census mode: authorization is validated server-side.
       if (isSharedCensusMode()) {
-        // In shared census mode, allow user through without Firestore check
-        // Authorization is handled locally by useSharedCensusMode
-        // console.info('[authService] 🌐 Shared census mode - allowing user without Firestore whitelist check');
+        const sharedAccess = await checkSharedCensusAccess(firebaseUser.email);
+        if (!sharedAccess.authorized) {
+          await firebaseSignOut(auth);
+          callback(null);
+          return;
+        }
         callback(toAuthUser(firebaseUser, 'viewer_census'));
         return;
       }
@@ -552,8 +577,13 @@ export const handleSignInRedirectResult = async (): Promise<AuthUser | null> => 
 
     const user = result.user;
 
-    // Skip whitelist in shared census mode
+    // Shared census mode: authorization is validated server-side.
     if (isSharedCensusMode()) {
+      const sharedAccess = await checkSharedCensusAccess(user.email);
+      if (!sharedAccess.authorized) {
+        await firebaseSignOut(auth);
+        throw new Error('Acceso no autorizado. Tu correo no tiene permisos para censo compartido.');
+      }
       return toAuthUser(user, 'viewer_census');
     }
 

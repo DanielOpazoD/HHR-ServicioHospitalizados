@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { isEmailAuthorizedForCensus } from '@/constants/censusAuthorizedEmails';
 import { CensusAccessUser } from '@/types/censusAccess';
 import {
   buildAuthorizedSharedAccessUser,
@@ -16,17 +15,26 @@ export interface SharedCensusModeResult {
   needsLogin: boolean;
 }
 
+const SHARED_CENSUS_ALLOWED_AUTH_ROLES = new Set([
+  'viewer_census',
+  'admin',
+  'nurse_hospital',
+  'doctor_urgency',
+  'viewer',
+  'editor',
+]);
+
 /**
  * Hook to manage shared census access.
  *
  * This is a SEPARATE authentication layer from the main app login.
  * Users access via /censo-compartido, login with Google,
- * and their email is checked against a local authorized list.
+ * and their email is validated against the shared-census allowlist.
  *
- * NO Firestore permissions required - validation is done locally.
+ * Security is enforced by Firebase Auth + Firestore rules.
  */
 export function useSharedCensusMode(): SharedCensusModeResult {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, role, isLoading: authLoading } = useAuth();
   const pathname = typeof window !== 'undefined' ? window.location.pathname : '/';
   const { isSharedCensusMode, invitationId } = resolveSharedCensusPathInfo(pathname);
 
@@ -64,7 +72,7 @@ export function useSharedCensusMode(): SharedCensusModeResult {
       };
     }
 
-    // User is logged in - check if their email is authorized
+    // User is logged in - validate session role for shared census access.
     const email = user.email;
 
     if (!email) {
@@ -78,7 +86,7 @@ export function useSharedCensusMode(): SharedCensusModeResult {
       };
     }
 
-    const isAuthorized = isEmailAuthorizedForCensus(email);
+    const isAuthorized = SHARED_CENSUS_ALLOWED_AUTH_ROLES.has(role);
 
     if (!isAuthorized) {
       return {
@@ -86,7 +94,7 @@ export function useSharedCensusMode(): SharedCensusModeResult {
         invitationId,
         accessUser: null,
         isLoading: false,
-        error: `El correo ${email} no está autorizado para ver el censo. Contacta al administrador.`,
+        error: `El correo ${email} no está autorizado para ver el censo compartido.`,
         needsLogin: false,
       };
     }
@@ -105,5 +113,5 @@ export function useSharedCensusMode(): SharedCensusModeResult {
       error: null,
       needsLogin: false,
     };
-  }, [isSharedCensusMode, invitationId, authLoading, user]);
+  }, [isSharedCensusMode, invitationId, authLoading, role, user]);
 }

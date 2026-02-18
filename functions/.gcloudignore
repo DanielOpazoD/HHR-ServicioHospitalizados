@@ -11,5 +11,6 @@ node_modules/
 test/
 tests/
 
-# Do NOT ignore llave-beta.json - it's needed for authentication
-# !llave-beta.json
+# Never deploy local service account key files
+llave-beta.json
+*.service-account.json

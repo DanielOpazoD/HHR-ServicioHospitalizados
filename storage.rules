@@ -1,29 +1,91 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Allow authenticated users to read all backup files
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function hasEmail() {
+      return isAuthenticated() && request.auth.token.email != null;
+    }
+
+    function userEmail() {
+      return request.auth.token.email;
+    }
+
+    function hasClinicalReadRole() {
+      return isAuthenticated() && request.auth.token.role in [
+        'admin',
+        'nurse_hospital',
+        'doctor_urgency',
+        'viewer',
+        'viewer_census',
+        'editor'
+      ];
+    }
+
+    function hasClinicalWriteRole() {
+      return isAuthenticated() && request.auth.token.role in [
+        'admin',
+        'nurse_hospital',
+        'editor'
+      ];
+    }
+
+    function hasSharedCensusStaticAllowlistEmail() {
+      return hasEmail() && userEmail() in [
+        'arenka.palma@hospitalhangaroa.cl',
+        'natalia.arzola@hospitalhangaroa.cl',
+        'vaitiare.hereveri@hospitalhangaroa.cl',
+        'kaany.pakomio@hospitalhangaroa.cl',
+        'claudia.salgado@hospitalhangaroa.cl',
+        'bianca.atam@hospitalhangaroa.cl',
+        'ana.pont@hospitalhangaroa.cl',
+        'katherin.pont@hospitalhangaroa.cl',
+        'eyleen.cisternas@hospitalhangaroa.cl',
+        'marco.ramirez@hospitalhangaroa.cl',
+        'josemiguel.villavicencio@hospitalhangaroa.cl',
+        'carla.curinao@hospitalhangaroa.cl',
+        'epidemiologia@hospitalhangaroa.cl',
+        'archivosome@hospitalhangaroa.cl',
+        'antonio.espinoza@hospitalhangaroa.cl',
+        'juan.pakomio@hospitalhangaroa.cl',
+        'ivan.pulgar@hospitalhangaroa.cl',
+        'daniel.opazo@hospitalhangaroa.cl',
+        'andrea.saldana@saludoriente.cl',
+        'patricio.medina@saludoriente.cl',
+        'gestion.camas@saludoriente.cl',
+        'd.opazo.damiani@gmail.com',
+        'd.opazo.damiani@hospitalhangaroa.cl'
+      ];
+    }
+
+    function canReadClinicalStorage() {
+      return hasClinicalReadRole() || hasSharedCensusStaticAllowlistEmail();
+    }
+
+    // Entrega de enfermería backups: editable only by clinical editors.
     match /entregas-enfermeria/{allPaths=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      allow read: if canReadClinicalStorage();
+      allow write: if hasClinicalWriteRole();
     }
     
-    // Allow PUBLIC read access to census files (for shared census mode)
-    // Write still requires authentication
+    // Shared census files: read allowed for authorized clinical/shared users only.
     match /censo-diario/{allPaths=**} {
-      allow read: if true;  // Public read for shared census links
-      allow write: if request.auth != null;
+      allow read: if canReadClinicalStorage();
+      allow write: if hasClinicalWriteRole();
     }
     
-    // Allow authenticated users to read document templates
+    // Templates can be read by authorized clinical/shared users.
     match /templates/{allPaths=**} {
-      allow read: if request.auth != null;
+      allow read: if canReadClinicalStorage();
       allow write: if false;  // Only upload via Firebase Console
     }
     
-    // CUDYR monthly backups (auto-saved on night shift archive)
+    // CUDYR monthly backups: editable only by clinical editors.
     match /cudyr-backup/{allPaths=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      allow read: if canReadClinicalStorage();
+      allow write: if hasClinicalWriteRole();
     }
     
     // Default: deny all other access
@@ -32,4 +94,3 @@ service firebase.storage {
     }
   }
 }
-
