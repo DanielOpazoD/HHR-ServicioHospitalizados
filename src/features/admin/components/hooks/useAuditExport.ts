@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { saveAs } from 'file-saver';
 import { AuditLogEntry } from '@/types/audit';
 import { generateAuditWorkbook } from '@/services/exporters/auditWorkbook';
 import { generateAuditPdfHtml } from '@/features/admin/components/components/audit/utils/auditPdfUtils';
@@ -31,6 +30,7 @@ export const useAuditExport = ({
       const blob = new Blob([new Uint8Array(buffer)], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
+      const { saveAs } = await import('file-saver');
       saveAs(blob, `auditoria_hospital_${new Date().toISOString().split('T')[0]}.xlsx`);
     } catch (error) {
       console.error('Excel Export failed:', error);

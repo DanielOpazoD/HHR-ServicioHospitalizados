@@ -2,12 +2,10 @@ import { useCallback, type Dispatch, type SetStateAction } from 'react';
 import type { ConfirmOptions } from '@/context/uiContracts';
 import type { CensusAccessRole } from '@/types/censusAccess';
 import type { DailyRecord } from '@/types';
-import {
-  formatDate,
-  getMonthRecordsFromFirestore,
-  initializeDay,
-  triggerCensusEmail,
-} from '@/services';
+import { formatDateDDMMYYYY as formatDate } from '@/utils/dateUtils';
+import { getMonthRecordsFromFirestore } from '@/services/storage/firestoreService';
+import { initializeDay } from '@/services/repositories/DailyRecordRepository';
+import { triggerCensusEmail } from '@/services/integrations/censusEmailService';
 import { uploadCensus } from '@/services/backup/censusStorageService';
 import type { CensusEmailBrowserRuntime } from '@/hooks/controllers/censusEmailBrowserRuntimeController';
 import { buildSharedCensusLink } from '@/hooks/controllers/censusEmailBrowserRuntimeController';

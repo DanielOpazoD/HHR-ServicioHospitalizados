@@ -4,21 +4,21 @@
  */
 
 import { useSyncExternalStore } from 'react';
-import { featureFlags, FeatureFlag } from '@/services';
+import { featureFlags, type FeatureFlag } from '@/services/utils/featureFlags';
 
 /**
  * Hook to check if a feature flag is enabled.
  * Automatically re-renders when the flag state changes.
- * 
+ *
  * @example
  * const showDebug = useFeatureFlag('SHOW_DEBUG_PANEL');
  * if (showDebug) { ... }
  */
 export const useFeatureFlag = (flag: FeatureFlag): boolean => {
-    return useSyncExternalStore(
-        (callback) => featureFlags.subscribe(flag, callback),
-        () => featureFlags.isEnabled(flag)
-    );
+  return useSyncExternalStore(
+    callback => featureFlags.subscribe(flag, callback),
+    () => featureFlags.isEnabled(flag)
+  );
 };
 
 /**
@@ -27,8 +27,8 @@ export const useFeatureFlag = (flag: FeatureFlag): boolean => {
  * Automatically re-renders when any flag state changes.
  */
 export const useAllFeatureFlags = (): Record<FeatureFlag, boolean> => {
-    return useSyncExternalStore(
-        (callback) => featureFlags.subscribeAll(callback),
-        () => featureFlags.getAll()
-    );
+  return useSyncExternalStore(
+    callback => featureFlags.subscribeAll(callback),
+    () => featureFlags.getAll()
+  );
 };

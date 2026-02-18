@@ -1,18 +1,15 @@
 import React from 'react';
-import {
-  Navbar,
-  DateStrip,
-  SettingsModal,
-  TestAgent,
-  SyncWatcher,
-  DemoModePanel,
-  BookmarkBar,
-  StorageStatusBadge,
-} from '@/components';
+import { Navbar } from '@/components/layout/Navbar';
+import { DateStrip } from '@/components/layout/DateStrip';
+import { SettingsModal } from '@/components/modals/SettingsModal';
+import { TestAgent } from '@/components/debug/TestAgent';
+import { SyncWatcher } from '@/components/shared/SyncWatcher';
+import { DemoModePanel } from '@/components/debug/DemoModePanel';
+import { BookmarkBar } from '@/components/bookmarks/BookmarkBar';
+import StorageStatusBadge from '@/components/layout/StorageStatusBadge';
 import { PinLockScreen } from '@/components/security/PinLockScreen';
 import { AppRouter } from '@/components/AppRouter';
 import { AppProviders } from '@/components/AppProviders';
-import { CensusEmailConfigModal } from '@/features/census/components/CensusEmailConfigModal';
 
 import { useAuth } from '@/context/AuthContext';
 import { UseUIStateReturn } from '@/hooks/useUIState';
@@ -32,6 +29,12 @@ const loadCensusMasterExcelExporter = async () =>
   import('@/services/exporters/censusMasterExport').then(
     module => module.generateCensusMasterExcel
   );
+
+const LazyCensusEmailConfigModal = React.lazy(() =>
+  import('@/features/census/components/CensusEmailConfigModal').then(module => ({
+    default: module.CensusEmailConfigModal,
+  }))
+);
 
 export const AppContent: React.FC<AppContentProps> = ({ ui }) => {
   // 1. Consume Domain Context
@@ -186,22 +189,26 @@ export const AppContent: React.FC<AppContentProps> = ({ ui }) => {
           isOfflineMode={auth.isOfflineMode}
         />
 
-        <CensusEmailConfigModal
-          isOpen={censusEmail.showEmailConfig}
-          onClose={() => censusEmail.setShowEmailConfig(false)}
-          recipients={censusEmail.recipients}
-          onRecipientsChange={censusEmail.setRecipients}
-          message={censusEmail.message}
-          onMessageChange={censusEmail.onMessageChange}
-          onResetMessage={censusEmail.onResetMessage}
-          date={currentDateString}
-          nursesSignature={nurseSignature}
-          isAdminUser={censusEmail.isAdminUser}
-          testModeEnabled={censusEmail.testModeEnabled}
-          onTestModeChange={censusEmail.setTestModeEnabled}
-          testRecipient={censusEmail.testRecipient}
-          onTestRecipientChange={censusEmail.setTestRecipient}
-        />
+        {censusEmail.showEmailConfig && (
+          <React.Suspense fallback={null}>
+            <LazyCensusEmailConfigModal
+              isOpen={true}
+              onClose={() => censusEmail.setShowEmailConfig(false)}
+              recipients={censusEmail.recipients}
+              onRecipientsChange={censusEmail.setRecipients}
+              message={censusEmail.message}
+              onMessageChange={censusEmail.onMessageChange}
+              onResetMessage={censusEmail.onResetMessage}
+              date={currentDateString}
+              nursesSignature={nurseSignature}
+              isAdminUser={censusEmail.isAdminUser}
+              testModeEnabled={censusEmail.testModeEnabled}
+              onTestModeChange={censusEmail.setTestModeEnabled}
+              testRecipient={censusEmail.testRecipient}
+              onTestRecipientChange={censusEmail.setTestRecipient}
+            />
+          </React.Suspense>
+        )}
 
         {!sharedCensus.isSharedCensusMode && (
           <TestAgent

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { DailyRecord } from '@/types';
 import { checkCensusExists, uploadCensus } from '@/services/backup/censusStorageService';
-import { getMonthRecordsFromFirestore } from '@/services';
+import { getMonthRecordsFromFirestore } from '@/services/storage/firestoreService';
 import { useConfirmDialog, useNotification } from '@/context/UIContext';
 
 interface UseExportManagerProps {

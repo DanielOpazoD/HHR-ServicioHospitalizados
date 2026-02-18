@@ -5,7 +5,8 @@
  */
 
 import React, { Suspense } from 'react';
-import { GlobalErrorBoundary, SectionErrorBoundary } from '@/components';
+import { GlobalErrorBoundary } from '@/components/shared/GlobalErrorBoundary';
+import { SectionErrorBoundary } from '@/components/shared/SectionErrorBoundary';
 import { ViewLoader } from '@/components/ui/ViewLoader';
 import { canEditModule } from '@/utils/permissions';
 import { UserRole } from '@/context';

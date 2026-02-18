@@ -6,7 +6,7 @@ import {
   storePassportLocally,
 } from '@/services/auth/passportService';
 import { AlertCircle, Loader2, Palette } from 'lucide-react';
-import { saveAppSetting } from '@/services';
+import { saveAppSetting } from '@/services/settingsService';
 import { performClientHardReset } from '@/services/storage/indexedDBService';
 
 interface LoginPageProps {

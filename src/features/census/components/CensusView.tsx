@@ -1,9 +1,10 @@
 import React from 'react';
 import { SectionErrorBoundary } from '@/components/shared/SectionErrorBoundary';
-import { AnalyticsView } from '@/features/analytics/components/AnalyticsView';
+import { AnalyticsView } from '@/features/analytics/public';
 import { useCensusMigrationBootstrap } from '@/features/census/hooks/useCensusMigrationBootstrap';
 import { useCensusViewModel } from '@/features/census/hooks/useCensusViewModel';
-import { CensusRegisterContent, EmptyDayPrompt } from './index';
+import { CensusRegisterContent } from './CensusRegisterContent';
+import { EmptyDayPrompt } from './EmptyDayPrompt';
 
 type ViewMode = 'REGISTER' | 'ANALYTICS';
 

@@ -70,122 +70,10 @@ export default defineConfig(({ mode }) => {
         return 'vendor-firebase-core';
       }
 
-      // 3D stack for floor map (split to avoid a single giant vendor chunk)
-      if (normalizedId.includes('/node_modules/three/examples/')) {
-        return 'vendor-three-examples';
-      }
-      if (normalizedId.includes('/node_modules/three/')) {
-        return 'vendor-three-core';
-      }
-      if (normalizedId.includes('/node_modules/@react-three/fiber/')) {
-        return 'vendor-r3f';
-      }
-      if (normalizedId.includes('/node_modules/@react-three/drei/')) {
-        return 'vendor-drei';
-      }
-
-      // Charts separate (lazy loaded)
-      if (normalizedId.includes('/node_modules/recharts/')) {
-        return 'vendor-charts';
-      }
-
-      // Excel/Reports (lazy loaded)
-      if (
-        normalizedId.includes('/node_modules/exceljs/') ||
-        normalizedId.includes('/node_modules/file-saver/')
-      ) {
-        return 'vendor-excel';
-      }
-
-      // PDF generation (lazy loaded)
-      if (
-        normalizedId.includes('/node_modules/jspdf/') ||
-        normalizedId.includes('/node_modules/jspdf-autotable/')
-      ) {
-        return 'vendor-pdf';
-      }
-
-      // DOCX/XLSX helpers for transfer bundles
-      if (normalizedId.includes('/node_modules/docxtemplater/')) {
-        return 'vendor-docxtemplater';
-      }
-      if (normalizedId.includes('/node_modules/docx/')) {
-        return 'vendor-docx';
-      }
-      if (normalizedId.includes('/node_modules/pizzip/')) {
-        return 'vendor-pizzip';
-      }
-      if (normalizedId.includes('/node_modules/xlsx-populate/')) {
-        return 'vendor-xlsx-populate';
-      }
-
       // HTML to Canvas (lazy loaded for screenshots)
       if (normalizedId.includes('/node_modules/html2canvas/')) {
         return 'vendor-canvas';
       }
-    }
-
-    // Split heavy internal features for better cacheability and lower entry chunk pressure
-    if (normalizedId.includes('/src/features/census/components/3d/')) {
-      return 'feature-census-3d';
-    }
-    if (normalizedId.includes('/src/features/cudyr/')) {
-      return 'feature-cudyr';
-    }
-    if (normalizedId.includes('/src/features/handoff/')) {
-      return 'feature-handoff';
-    }
-    if (normalizedId.includes('/src/features/transfers/')) {
-      return 'feature-transfers';
-    }
-    if (
-      normalizedId.includes('/src/features/admin/components/components/audit/') ||
-      normalizedId.includes('/src/features/admin/components/Audit') ||
-      normalizedId.includes('/src/features/admin/components/auditConstants')
-    ) {
-      return 'feature-admin-audit';
-    }
-    if (
-      normalizedId.includes('/src/features/admin/components/PatientMasterView') ||
-      normalizedId.includes('/src/features/admin/components/components/Patient')
-    ) {
-      return 'feature-admin-patient';
-    }
-    if (
-      normalizedId.includes('/src/features/admin/components/DataMaintenanceView') ||
-      normalizedId.includes('/src/features/admin/components/components/DataMaintenance') ||
-      normalizedId.includes('/src/features/admin/components/components/DataImportModal') ||
-      normalizedId.includes('/src/features/admin/components/components/SyncPanel') ||
-      normalizedId.includes('/src/features/admin/components/components/ConflictPanel')
-    ) {
-      return 'feature-admin-maintenance';
-    }
-    if (
-      normalizedId.includes('/src/features/admin/components/RoleManagementView') ||
-      normalizedId.includes('/src/features/admin/components/components/Role') ||
-      normalizedId.includes('/src/features/admin/components/components/DeleteRoleModal')
-    ) {
-      return 'feature-admin-roles';
-    }
-    if (
-      normalizedId.includes('/src/features/admin/components/SystemDiagnosticsView') ||
-      normalizedId.includes('/src/features/admin/components/SystemHealthDashboard') ||
-      normalizedId.includes('/src/features/admin/components/DevDashboard') ||
-      normalizedId.includes('/src/features/admin/components/AITelemetryPanel')
-    ) {
-      return 'feature-admin-diagnostics';
-    }
-    if (normalizedId.includes('/src/features/admin/components/ErrorDashboard')) {
-      return 'feature-admin-errors';
-    }
-    if (normalizedId.includes('/src/features/admin/components/MedicalSignatureView')) {
-      return 'feature-admin-signature';
-    }
-    if (normalizedId.includes('/src/features/admin/components/CensusAccessManager')) {
-      return 'feature-admin-census-access';
-    }
-    if (normalizedId.includes('/src/features/admin/')) {
-      return 'feature-admin-core';
     }
 
     return undefined;
@@ -263,18 +151,9 @@ export default defineConfig(({ mode }) => {
       'import.meta.env.VITE_E2E_MODE': JSON.stringify(process.env.VITE_E2E_MODE || 'false'),
     },
     build: {
-      modulePreload: {
-        // Do not eagerly preload very large optional libraries.
-        // They are still fetched when their lazy route/action is actually executed.
-        resolveDependencies: (_filename, deps) =>
-          deps.filter(
-            dep =>
-              !dep.includes('vendor-excel') &&
-              !dep.includes('vendor-three-core') &&
-              !dep.includes('vendor-drei') &&
-              !dep.includes('vendor-r3f')
-          ),
-      },
+      // Keep lazy routes truly on-demand; avoid eager dependency preloading
+      // that can pull large optional chunks on first load.
+      modulePreload: false,
       rollupOptions: {
         output: {
           manualChunks: chunkForModule,

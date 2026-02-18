@@ -1,0 +1,19 @@
+{
+  "features": {
+    "admin": ["handoff"],
+    "analytics": [],
+    "auth": [],
+    "backup": [],
+    "census": ["analytics"],
+    "cudyr": [],
+    "handoff": ["cudyr"],
+    "reports": [],
+    "transfers": [],
+    "whatsapp": []
+  },
+  "publicImportPatterns": [
+    "@/features/{feature}",
+    "@/features/{feature}/index",
+    "@/features/{feature}/public"
+  ]
+}
