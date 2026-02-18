@@ -1,13 +1,29 @@
 /**
  * UI Context
  * Unified context for global UI interactions: notifications and dialogs.
- * Consolidates NotificationContext and ConfirmDialogContext for simpler usage.
+ * Consolidates legacy notification/confirm flows for simpler usage.
  */
 
-import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
-import { Toast } from '@/components/ui/Toast';
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useMemo,
+  useEffect,
+  useRef,
+  ReactNode,
+} from 'react';
 import type { ConfirmOptions, DialogState, Notification } from '@/context/uiContracts';
+import { ToastRenderer } from '@/context/ui/ToastRenderer';
+import { ConfirmDialogRenderer } from '@/context/ui/ConfirmDialogRenderer';
+
+const buildNotificationId = (): string => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `notification-${crypto.randomUUID()}`;
+  }
+  return `notification-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+};
 
 // ============================================================================
 // Types
@@ -55,7 +71,7 @@ export const useUI = (): UIContextType => {
 export const useNotification = useUI;
 export const useConfirmDialog = useUI;
 
-// Toast and Dialog components moved to components/ui/
+// Toast and dialog renderers are kept inside context module boundaries.
 
 // ============================================================================
 // Provider Component
@@ -64,6 +80,8 @@ export const useConfirmDialog = useUI;
 export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Notifications state
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const notificationTimersRef = useRef<Map<string, number>>(new Map());
+  const dialogResolveRef = useRef<DialogState['resolve']>(null);
 
   // Dialog state
   const [dialog, setDialog] = useState<DialogState>({
@@ -81,23 +99,42 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Notification Actions
   // ========================================================================
 
-  const dismiss = useCallback((id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
+  const clearNotificationTimer = useCallback((id: string) => {
+    const timeoutId = notificationTimersRef.current.get(id);
+    if (timeoutId !== undefined) {
+      window.clearTimeout(timeoutId);
+      notificationTimersRef.current.delete(id);
+    }
   }, []);
 
-  const dismissAll = useCallback(() => {
-    setNotifications([]);
+  const clearAllNotificationTimers = useCallback(() => {
+    notificationTimersRef.current.forEach(timeoutId => window.clearTimeout(timeoutId));
+    notificationTimersRef.current.clear();
   }, []);
+
+  const dismiss = useCallback(
+    (id: string) => {
+      clearNotificationTimer(id);
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    },
+    [clearNotificationTimer]
+  );
+
+  const dismissAll = useCallback(() => {
+    clearAllNotificationTimers();
+    setNotifications([]);
+  }, [clearAllNotificationTimers]);
 
   const notify = useCallback(
     (notification: Omit<Notification, 'id'>) => {
-      const id = `notification-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const id = buildNotificationId();
       const duration = notification.duration ?? 5000;
 
       setNotifications(prev => [...prev, { ...notification, id }]);
 
       if (duration > 0) {
-        setTimeout(() => dismiss(id), duration);
+        const timeoutId = window.setTimeout(() => dismiss(id), duration);
+        notificationTimersRef.current.set(id, timeoutId);
       }
     },
     [dismiss]
@@ -169,6 +206,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     if (dialog.resolve) {
       dialog.resolve(true);
     }
+    dialogResolveRef.current = null;
     setDialog(prev => ({ ...prev, isOpen: false, resolve: null }));
   };
 
@@ -176,8 +214,23 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     if (dialog.resolve) {
       dialog.resolve(false);
     }
+    dialogResolveRef.current = null;
     setDialog(prev => ({ ...prev, isOpen: false, resolve: null }));
   };
+
+  useEffect(() => {
+    dialogResolveRef.current = dialog.resolve;
+  }, [dialog.resolve]);
+
+  useEffect(() => {
+    return () => {
+      clearAllNotificationTimers();
+      if (dialogResolveRef.current) {
+        dialogResolveRef.current(false);
+        dialogResolveRef.current = null;
+      }
+    };
+  }, [clearAllNotificationTimers]);
 
   // ========================================================================
   // Render
@@ -208,7 +261,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       {/* Toast Container */}
       <div className="fixed bottom-4 right-4 z-[9999] flex flex-col gap-1">
         {notifications.map(notification => (
-          <Toast
+          <ToastRenderer
             key={notification.id}
             notification={notification}
             onDismiss={() => dismiss(notification.id)}
@@ -217,7 +270,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       </div>
 
       {/* Dialog */}
-      <ConfirmDialog
+      <ConfirmDialogRenderer
         dialog={dialog}
         onConfirm={handleDialogConfirm}
         onCancel={handleDialogCancel}

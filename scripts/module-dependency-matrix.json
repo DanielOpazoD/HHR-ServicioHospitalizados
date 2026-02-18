@@ -1,0 +1,8 @@
+{
+  "modules": {
+    "components": ["context", "hooks", "services"],
+    "context": ["hooks", "services"],
+    "hooks": ["context", "services"],
+    "services": []
+  }
+}

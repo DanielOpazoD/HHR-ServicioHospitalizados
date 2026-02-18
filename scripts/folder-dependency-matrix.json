@@ -1,0 +1,66 @@
+{
+  "zones": {
+    "features": {
+      "responsibility": "Feature modules and flow orchestration.",
+      "allowedDependencies": [
+        "components",
+        "hooks",
+        "context",
+        "services",
+        "domain",
+        "types",
+        "constants",
+        "utils",
+        "shared",
+        "schemas",
+        "config",
+        "core",
+        "adapters",
+        "infrastructure"
+      ]
+    },
+    "components": {
+      "responsibility": "Reusable UI composition and presentation.",
+      "allowedDependencies": [
+        "hooks",
+        "context",
+        "services",
+        "types",
+        "constants",
+        "utils",
+        "shared",
+        "schemas",
+        "core"
+      ]
+    },
+    "hooks": {
+      "responsibility": "Reusable behavior and UI orchestration hooks.",
+      "allowedDependencies": [
+        "services",
+        "context",
+        "types",
+        "constants",
+        "utils",
+        "shared",
+        "schemas",
+        "config"
+      ]
+    },
+    "context": {
+      "responsibility": "Global state providers and contracts.",
+      "allowedDependencies": ["hooks", "services", "types", "constants", "utils", "shared"]
+    },
+    "services": {
+      "responsibility": "Business operations, I/O and integrations.",
+      "allowedDependencies": ["types", "constants", "utils", "schemas", "shared", "config"]
+    },
+    "domain": {
+      "responsibility": "Pure domain rules and value logic.",
+      "allowedDependencies": ["types", "constants", "utils"]
+    },
+    "core": {
+      "responsibility": "Cross-cutting primitives used across app layers.",
+      "allowedDependencies": ["types", "constants", "utils", "shared", "services"]
+    }
+  }
+}

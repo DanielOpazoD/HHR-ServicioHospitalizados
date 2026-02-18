@@ -3,12 +3,12 @@ import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from 'lucide-react';
 import clsx from 'clsx';
 import type { Notification } from '@/context/uiContracts';
 
-interface ToastProps {
+interface ToastRendererProps {
   notification: Notification;
   onDismiss: () => void;
 }
 
-export const Toast: React.FC<ToastProps> = ({ notification, onDismiss }) => {
+export const ToastRenderer: React.FC<ToastRendererProps> = ({ notification, onDismiss }) => {
   const icons = {
     success: <CheckCircle className="text-green-500" size={12} />,
     error: <AlertCircle className="text-red-500" size={12} />,
@@ -40,7 +40,7 @@ export const Toast: React.FC<ToastProps> = ({ notification, onDismiss }) => {
       <button
         onClick={onDismiss}
         className="flex-shrink-0 text-slate-400 hover:text-slate-600 transition-colors"
-        aria-label="Cerrar notificación"
+        aria-label="Cerrar notificacion"
       >
         <X size={10} />
       </button>

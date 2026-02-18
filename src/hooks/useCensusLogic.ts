@@ -9,7 +9,7 @@ import {
 } from '@/context/DailyRecordContext';
 import { useStaffContext } from '@/context/StaffContext';
 import { calculateStats } from '@/services/calculations/statsCalculator';
-import { useCensusPromptState } from '@/features/census/hooks/useCensusPromptState';
+import { useCensusPromptState } from '@/hooks/useCensusPromptState';
 
 /**
  * Custom hook to manage the logic for the Census View.

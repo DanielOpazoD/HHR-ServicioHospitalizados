@@ -1,7 +1,7 @@
 /**
  * Sync Watcher
  * Observes sync status changes and shows notifications accordingly.
- * This component must be placed inside NotificationProvider.
+ * This component must be placed inside UIProvider.
  */
 
 import React, { useEffect, useRef } from 'react';

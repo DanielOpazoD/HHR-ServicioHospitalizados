@@ -3,7 +3,7 @@ import { useNotification, useConfirmDialog } from '@/context/UIContext';
 import { useBackupFilesQuery, BackupFolder } from '@/hooks/useBackupFilesQuery';
 import { deletePdf } from '@/services/backup/pdfStorageService';
 import { deleteCensusFile } from '@/services/backup/censusStorageService';
-import { deleteCudyrFile } from '@/features/cudyr/services/cudyrStorageService';
+import { deleteCudyrFile } from '@/services/backup/cudyrStorageService';
 import { BaseStoredFile } from '@/services/backup/baseStorageService';
 import { StoredPdfFile } from '@/services/backup/pdfStorageService';
 import { useAuth } from '@/context/AuthContext';

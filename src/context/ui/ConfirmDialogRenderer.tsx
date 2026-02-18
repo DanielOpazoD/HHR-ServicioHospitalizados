@@ -3,13 +3,17 @@ import { X, AlertTriangle } from 'lucide-react';
 import { useScrollLock } from '@/hooks/useScrollLock';
 import type { DialogState } from '@/context/uiContracts';
 
-interface ConfirmDialogProps {
+interface ConfirmDialogRendererProps {
   dialog: DialogState;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({ dialog, onConfirm, onCancel }) => {
+export const ConfirmDialogRenderer: React.FC<ConfirmDialogRendererProps> = ({
+  dialog,
+  onConfirm,
+  onCancel,
+}) => {
   const variantStyles = {
     danger: {
       icon: 'text-red-600',
@@ -33,7 +37,6 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({ dialog, onConfirm,
 
   const styles = variantStyles[dialog.variant];
 
-  // Manage body scroll lock
   useScrollLock(dialog.isOpen);
 
   if (!dialog.isOpen) return null;

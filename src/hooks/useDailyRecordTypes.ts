@@ -12,7 +12,7 @@ import {
   CMAData,
   DailyRecordPatch,
 } from '@/types';
-import type { PatientMovementActions } from '@/features/census/domain/movements/contracts';
+import type { PatientMovementActions } from '@/types/movements';
 export type { DailyRecordPatch };
 
 // ============================================================================

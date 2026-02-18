@@ -4,7 +4,7 @@ import { CensusAccessUser } from '@/types/censusAccess';
 import {
   buildAuthorizedSharedAccessUser,
   resolveSharedCensusPathInfo,
-} from '@/features/census/controllers/sharedCensusModeController';
+} from '@/hooks/controllers/sharedCensusModeController';
 
 export interface SharedCensusModeResult {
   isSharedCensusMode: boolean;

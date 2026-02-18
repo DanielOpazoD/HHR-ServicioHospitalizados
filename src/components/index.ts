@@ -1,7 +1,7 @@
 /**
  * Components Index
  * Centralized exports for all UI components
- * 
+ *
  * Usage: import { Navbar, DateStrip, PatientRow } from './components';
  */
 
@@ -23,20 +23,6 @@ export { SummaryCard } from './layout/SummaryCard';
 export { default as StorageStatusBadge } from './layout/StorageStatusBadge';
 export { BookmarkBar } from './bookmarks/BookmarkBar';
 export type { ModuleType } from '@/constants/navigationConfig';
-
-// ============================================================
-// AUTH COMPONENTS (auth/)
-// ============================================================
-export { LoginPage } from '@/features/auth/components/LoginPage';
-
-// ============================================================
-// CENSUS COMPONENTS (census/)
-// ============================================================
-export { PatientRow } from '@/features/census/components/PatientRow';
-export { CensusEmailConfigModal } from '@/features/census/components/CensusEmailConfigModal';
-export { PatientActionMenu } from '@/features/census/components/patient-row/PatientActionMenu';
-export { PatientBedConfig } from '@/features/census/components/patient-row/PatientBedConfig';
-export { PatientInputCells } from '@/features/census/components/patient-row/PatientInputCells';
 
 // ============================================================
 // DEBUG COMPONENTS (debug/)

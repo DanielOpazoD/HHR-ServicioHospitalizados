@@ -6,11 +6,11 @@ import {
   executeLoadSharedCensusFilesController,
   filterSharedCensusFilesByTerm,
   resolveSharedCensusDownloadPermission,
-} from '@/features/census/controllers/sharedCensusFilesController';
+} from '@/hooks/controllers/sharedCensusFilesController';
 import {
   defaultSharedCensusBrowserRuntime,
   SharedCensusBrowserRuntime,
-} from '@/features/census/controllers/sharedCensusBrowserRuntimeController';
+} from '@/hooks/controllers/sharedCensusBrowserRuntimeController';
 
 export const useSharedCensusFiles = (
   accessUser: CensusAccessUser | null,

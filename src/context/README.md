@@ -13,7 +13,6 @@ Providers de estado global y contratos para features transversales.
 | `UIContext.tsx`                     | Toasts, confirm dialogs y UX runtime global                              |
 | `UISettingsContext.tsx`             | Preferencias visuales persistibles                                       |
 | `ConfirmDialogContext.tsx`          | Canal de confirmación desacoplado                                        |
-| `NotificationContext.tsx`           | Notificaciones de alto nivel                                             |
 | `VersionContext.tsx`                | Estado/versionado de despliegue                                          |
 | `SecurityContext.tsx`               | Configuración de bloqueo/PIN y reglas UX de seguridad                    |
 | `StaffContext.tsx`                  | Estado de staff transversal                                              |
