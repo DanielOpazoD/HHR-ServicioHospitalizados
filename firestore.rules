@@ -152,16 +152,6 @@ service cloud.firestore {
       );
     }
 
-    // Check if the record is for the current calendar day
-    // This allows a 24-hour window from the record's start timestamp
-    function isCurrentDay(recordTS) {
-      let now = request.time.toMillis();
-      return recordTS != null && (
-             now >= recordTS && 
-             now < (recordTS + 86400000)
-      );
-    }
-
     // Check if the update is only for medical signature fields
     function isMedicalUpdate() {
       let affectedKeys = request.resource.data.diff(resource.data).affectedKeys();

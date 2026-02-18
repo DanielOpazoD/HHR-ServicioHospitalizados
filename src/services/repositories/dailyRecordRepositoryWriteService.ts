@@ -23,6 +23,7 @@ import {
 } from '@/utils/integrityGuard';
 import { mapPatientToFhir } from '@/services/utils/fhirMappers';
 import { logError } from '@/services/utils/errorService';
+import { PatientMasterRepository } from '@/services/repositories/PatientMasterRepository';
 
 export const save = async (record: DailyRecord, expectedLastUpdated?: string): Promise<void> => {
   if (isDemoModeActive()) {
@@ -102,8 +103,6 @@ export const save = async (record: DailyRecord, expectedLastUpdated?: string): P
 
   setTimeout(async () => {
     try {
-      const { PatientMasterRepository } =
-        await import('@/services/repositories/PatientMasterRepository');
       const patientsToSync: PatientData[] = [];
 
       Object.values(validatedRecord.beds).forEach(patient => {

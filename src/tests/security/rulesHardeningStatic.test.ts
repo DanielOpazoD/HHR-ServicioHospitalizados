@@ -31,4 +31,13 @@ describe('Security hardening static guards', () => {
     expect(functionsIndex).not.toContain('!context.auth.token.role ===');
     expect(functionsIndex).toContain("const hasAdminClaim = context.auth?.token?.role === 'admin'");
   });
+
+  it('restricts dailyRecords delete operation to admins only', () => {
+    const rules = readProjectFile('firestore.rules');
+
+    expect(rules).toMatch(/match \/dailyRecords\/\{date\}[\s\S]*allow delete:\s*if isAdmin\(\);/m);
+    expect(rules).not.toMatch(
+      /match \/dailyRecords\/\{date\}[\s\S]*allow delete:\s*if [^;]*isNurse\(/m
+    );
+  });
 });

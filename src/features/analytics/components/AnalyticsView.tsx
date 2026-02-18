@@ -10,7 +10,6 @@ import { DateRangeSelector } from './components/DateRangeSelector';
 import { MinsalKPICards } from './components/MinsalKPICards';
 import { SpecialtyBreakdownTable } from './components/SpecialtyBreakdownTable';
 import { OccupancyTrendChart } from './components/OccupancyTrendChart';
-import { exportMinsalToExcel } from '@/services/exporters/minsalExcelExporter';
 import { formatDateDDMMYYYY } from '@/utils/dateUtils';
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
 
@@ -30,6 +29,7 @@ export const AnalyticsView: React.FC = () => {
   const handleExportExcel = async () => {
     if (!stats) return;
     try {
+      const { exportMinsalToExcel } = await import('@/services/exporters/minsalExcelExporter');
       await exportMinsalToExcel(stats, trendData);
     } catch (err) {
       console.error('Error exporting to Excel:', err);

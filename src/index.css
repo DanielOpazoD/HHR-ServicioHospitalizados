@@ -1,9 +1,10 @@
-@import 'tailwindcss';
+@import 'tailwindcss' source(none);
 
-@source "./index.html";
+@source "../index.html";
 @source "./App.tsx";
 @source "./index.tsx";
 @source "./components/**/*.{js,ts,jsx,tsx}";
+@source "./features/**/*.{js,ts,jsx,tsx}";
 @source "./views/**/*.{js,ts,jsx,tsx}";
 @source "./context/**/*.{js,ts,jsx,tsx}";
 @source "./hooks/**/*.{js,ts,jsx,tsx}";

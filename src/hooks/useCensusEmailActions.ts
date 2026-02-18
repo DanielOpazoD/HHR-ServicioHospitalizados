@@ -8,7 +8,6 @@ import {
   initializeDay,
   triggerCensusEmail,
 } from '@/services';
-import { buildCensusMasterWorkbook } from '@/services/exporters/censusMasterWorkbook';
 import { uploadCensus } from '@/services/backup/censusStorageService';
 import type { CensusEmailBrowserRuntime } from '@/hooks/controllers/censusEmailBrowserRuntimeController';
 import { buildSharedCensusLink } from '@/hooks/controllers/censusEmailBrowserRuntimeController';
@@ -172,6 +171,8 @@ export const useCensusEmailActions = ({
       });
 
       try {
+        const { buildCensusMasterWorkbook } =
+          await import('@/services/exporters/censusMasterWorkbook');
         const workbook = await buildCensusMasterWorkbook(filteredRecords);
         const buffer = await workbook.xlsx.writeBuffer();
         const excelBlob = new Blob([buffer], {

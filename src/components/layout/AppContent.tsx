@@ -12,7 +12,6 @@ import {
 import { PinLockScreen } from '@/components/security/PinLockScreen';
 import { AppRouter } from '@/components/AppRouter';
 import { AppProviders } from '@/components/AppProviders';
-import { generateCensusMasterExcel } from '@/services';
 import { CensusEmailConfigModal } from '@/features/census/components/CensusEmailConfigModal';
 
 import { useAuth } from '@/context/AuthContext';
@@ -28,6 +27,11 @@ import { useAppContentEventBridge } from '@/components/layout/app-content/useApp
 interface AppContentProps {
   ui: UseUIStateReturn;
 }
+
+const loadCensusMasterExcelExporter = async () =>
+  import('@/services/exporters/censusMasterExport').then(
+    module => module.generateCensusMasterExcel
+  );
 
 export const AppContent: React.FC<AppContentProps> = ({ ui }) => {
   // 1. Consume Domain Context
@@ -59,6 +63,15 @@ export const AppContent: React.FC<AppContentProps> = ({ ui }) => {
     setCurrentModule: ui.setCurrentModule,
     setSelectedShift: ui.setSelectedShift,
   });
+
+  const handleExportExcel = React.useCallback(async () => {
+    const generateCensusMasterExcel = await loadCensusMasterExcelExporter();
+    await generateCensusMasterExcel(
+      dateNav.selectedYear,
+      dateNav.selectedMonth,
+      dateNav.selectedDay
+    );
+  }, [dateNav.selectedDay, dateNav.selectedMonth, dateNav.selectedYear]);
 
   return (
     <AppProviders dailyRecordHook={dailyRecordHook}>
@@ -100,16 +113,7 @@ export const AppContent: React.FC<AppContentProps> = ({ ui }) => {
             existingDaysInMonth={dateNav.existingDaysInMonth}
             onExportPDF={ui.showPrintButton ? exportManager.handleExportPDF : undefined}
             onOpenBedManager={ui.currentModule === 'CENSUS' ? ui.bedManagerModal.open : undefined}
-            onExportExcel={
-              ui.currentModule === 'CENSUS'
-                ? () =>
-                    generateCensusMasterExcel(
-                      dateNav.selectedYear,
-                      dateNav.selectedMonth,
-                      dateNav.selectedDay
-                    )
-                : undefined
-            }
+            onExportExcel={ui.currentModule === 'CENSUS' ? handleExportExcel : undefined}
             onConfigureEmail={
               ui.currentModule === 'CENSUS' ? () => censusEmail.setShowEmailConfig(true) : undefined
             }

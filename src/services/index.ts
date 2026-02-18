@@ -95,19 +95,6 @@ export {
   importDataJSON,
   importDataCSV,
 } from './exporters/exportService';
-export { generateCensusMasterExcel } from './exporters/censusMasterExport';
-
-// ============================================================
-// REPORTS
-// ============================================================
-export {
-  generateCensusDailyRaw,
-  generateCensusRangeRaw,
-  generateCensusMonthRaw,
-  generateCensusDailyFormatted,
-  generateCensusRangeFormatted,
-  generateCudyrDailyRaw,
-} from './exporters/reportService';
 
 // ============================================================
 // AI (GEMINI)
