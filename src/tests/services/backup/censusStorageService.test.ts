@@ -67,7 +67,25 @@ describe('censusStorageService', () => {
       expect(exists).toBe(false);
     });
 
-    it('should return false for other errors', async () => {
+    it('should return false when Storage returns not-found errors', async () => {
+      vi.mocked(listAll).mockRejectedValue({ code: 'storage/object-not-found' });
+
+      const exists = await checkCensusExists(mockDate);
+
+      expect(exists).toBe(false);
+    });
+
+    it('should return false when Storage returns unauthorized/unauthenticated', async () => {
+      vi.mocked(listAll).mockRejectedValue({ code: 'storage/unauthorized' });
+      const unauthorizedExists = await checkCensusExists(mockDate);
+      expect(unauthorizedExists).toBe(false);
+
+      vi.mocked(listAll).mockRejectedValue({ code: 'storage/unauthenticated' });
+      const unauthenticatedExists = await checkCensusExists(mockDate);
+      expect(unauthenticatedExists).toBe(false);
+    });
+
+    it('should return false for unexpected errors', async () => {
       vi.mocked(listAll).mockRejectedValue(new Error('Other Error'));
 
       const exists = await checkCensusExists(mockDate);

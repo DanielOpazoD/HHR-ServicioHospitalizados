@@ -46,6 +46,20 @@ const parseFilePath = (path: string): { date: string } | null => {
   return null;
 };
 
+type StorageErrorLike = {
+  code?: string;
+};
+
+const isExpectedStorageLookupMiss = (error: unknown): boolean => {
+  const storageError = error as StorageErrorLike;
+  return (
+    storageError.code === 'storage/object-not-found' ||
+    storageError.code === 'storage/invalid-root-operation' ||
+    storageError.code === 'storage/unauthorized' ||
+    storageError.code === 'storage/unauthenticated'
+  );
+};
+
 // ============= Core Functions =============
 
 /**
@@ -87,12 +101,8 @@ export const checkCensusExists = async (date: string): Promise<boolean> => {
     const monthListing = await listAll(monthFolderRef);
     return monthListing.items.some(item => item.name === expectedFileName);
   } catch (error: unknown) {
-    // Treat non-existing month/folder as "not archived yet".
-    const storageError = error as { code?: string };
-    if (
-      storageError.code === 'storage/object-not-found' ||
-      storageError.code === 'storage/invalid-root-operation'
-    ) {
+    // Expected lookup misses (missing folder/file or blocked access in current auth context).
+    if (isExpectedStorageLookupMiss(error)) {
       return false;
     }
     console.warn('[CensusStorage] Error checking file existence:', error);
