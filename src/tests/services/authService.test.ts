@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { signIn, signInWithGoogle, onAuthChange } from '@/services/auth/authService';
 import * as firebaseAuth from 'firebase/auth';
 import { getDocs } from 'firebase/firestore';
+import { QuerySnapshot } from 'firebase/firestore';
 
 vi.unmock('../../services/auth/authService');
 vi.unmock('@/services/auth/authService');
@@ -46,14 +47,20 @@ vi.mock('firebase/firestore', () => ({
 
 describe('authService', () => {
   const originalLocation = window.location;
+  const setPathname = (pathname: string) => {
+    Reflect.deleteProperty(window, 'location');
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { ...originalLocation, pathname },
+    });
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockCheckSharedCensusAccessCallable.mockResolvedValue({
       data: { authorized: true, role: 'viewer' },
     });
-    delete (window as any).location;
-    (window as any).location = { ...originalLocation, pathname: '/' };
+    setPathname('/');
   });
 
   describe('signIn', () => {
@@ -90,7 +97,7 @@ describe('authService', () => {
       vi.mocked(firebaseAuth.signInWithEmailAndPassword).mockResolvedValue(
         mockFirebaseUser as unknown as firebaseAuth.UserCredential
       );
-      vi.mocked(getDocs).mockResolvedValue({ empty: true } as unknown as any); // Using unknown to satisfy TS without a full QuerySnapshot mock
+      vi.mocked(getDocs).mockResolvedValue({ empty: true } as unknown as QuerySnapshot);
 
       await expect(signIn('unknown@gmail.com', 'password')).rejects.toThrow('Acceso no autorizado');
       expect(firebaseAuth.signOut).toHaveBeenCalled();
@@ -126,7 +133,7 @@ describe('authService', () => {
       vi.mocked(firebaseAuth.signInWithEmailAndPassword).mockResolvedValue(
         mockFirebaseUser as unknown as firebaseAuth.UserCredential
       );
-      vi.mocked(getDocs).mockResolvedValue({ empty: true } as unknown as any);
+      vi.mocked(getDocs).mockResolvedValue({ empty: true } as unknown as QuerySnapshot);
 
       await expect(
         signIn('daniel.opazo@hospitalhangaroa.cl.attacker@evil.com', 'password')
@@ -156,7 +163,7 @@ describe('authService', () => {
     });
 
     it('should reject shared-census login when callable denies access', async () => {
-      (window as any).location = { ...originalLocation, pathname: '/censo-compartido' };
+      setPathname('/censo-compartido');
       mockCheckSharedCensusAccessCallable.mockResolvedValue({
         data: { authorized: false, role: 'viewer' },
       });
@@ -209,7 +216,9 @@ describe('authService', () => {
           displayName: 'New User',
         },
       };
-      vi.mocked(firebaseAuth.createUserWithEmailAndPassword).mockResolvedValue(mockUser as any);
+      vi.mocked(firebaseAuth.createUserWithEmailAndPassword).mockResolvedValue(
+        mockUser as unknown as firebaseAuth.UserCredential
+      );
 
       const result = await (
         await import('@/services/auth/authService')
@@ -254,7 +263,7 @@ describe('authService', () => {
       Object.defineProperty(auth, 'currentUser', { value: null, configurable: true });
       vi.mocked(firebaseAuth.signInAnonymously).mockResolvedValue({
         user: { uid: 'anon-456' },
-      } as any);
+      } as unknown as firebaseAuth.UserCredential);
 
       const result = await (
         await import('@/services/auth/authService')
@@ -274,15 +283,14 @@ describe('authService', () => {
 
     it('should return user for shared census mode', async () => {
       // Mock window.location.pathname
-      delete (window as any).location;
-      (window as any).location = { ...originalLocation, pathname: '/censo-compartido/test' };
+      setPathname('/censo-compartido/test');
       mockCheckSharedCensusAccessCallable.mockResolvedValue({
         data: { authorized: true, role: 'viewer' },
       });
 
       vi.mocked(firebaseAuth.getRedirectResult).mockResolvedValue({
         user: { uid: 'shared-123', email: 'guest@test.com', displayName: 'Guest' },
-      } as any);
+      } as unknown as firebaseAuth.UserCredential);
 
       const result = await (
         await import('@/services/auth/authService')
@@ -290,7 +298,7 @@ describe('authService', () => {
       expect(result?.role).toBe('viewer_census');
 
       // Restore location
-      (window as any).location = originalLocation;
+      Object.defineProperty(window, 'location', { configurable: true, value: originalLocation });
     });
   });
 });
