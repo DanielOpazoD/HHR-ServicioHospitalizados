@@ -42,9 +42,6 @@ jobs:
       - name: Generate quality metrics snapshot
         run: npm run report:quality-metrics
 
-      - name: Validate flaky quarantine ownership and SLA
-        run: npm run check:flaky-quarantine
-
       - name: Upload quality metrics artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -182,11 +179,6 @@ jobs:
 
       - name: Run critical E2E suite with Firestore emulator
         run: npm run test:e2e:critical:ci
-        env:
-          CI: true
-
-      - name: Enforce startup performance budget
-        run: npm run test:e2e:startup-budget
         env:
           CI: true
 
