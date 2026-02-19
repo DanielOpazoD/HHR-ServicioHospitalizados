@@ -95,6 +95,9 @@ export const SystemHealthDashboard = () => {
             const health = getHealthBadge(u);
             const isOffline = !u.isOnline;
             const syncIssueCount = u.failedSyncTasks + (u.conflictSyncTasks || 0);
+            const retryingSyncTasks = u.retryingSyncTasks || 0;
+            const oldestPendingAgeMs = u.oldestPendingAgeMs || 0;
+            const oldestPendingAgeMinutes = Math.floor(oldestPendingAgeMs / 60000);
 
             return (
               <div
@@ -207,6 +210,11 @@ export const SystemHealthDashboard = () => {
                         </span>
                       </div>
                     </div>
+                  </div>
+
+                  <div className="text-[10px] text-slate-500 flex items-center justify-between">
+                    <span>Reintentos: {retryingSyncTasks}</span>
+                    <span>Cola más antigua: {oldestPendingAgeMinutes} min</span>
                   </div>
 
                   {/* Metadata */}

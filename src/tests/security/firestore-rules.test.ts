@@ -275,12 +275,57 @@ describeRules('Firestore Security Rules', () => {
   });
 
   describe('System Health', () => {
+    const validSystemHealthPayload = {
+      uid: 'user_basic',
+      email: 'user@example.com',
+      displayName: 'User Basic',
+      lastSeen: new Date().toISOString(),
+      isOnline: true,
+      isOutdated: false,
+      pendingMutations: 0,
+      pendingSyncTasks: 0,
+      failedSyncTasks: 0,
+      conflictSyncTasks: 0,
+      retryingSyncTasks: 0,
+      oldestPendingAgeMs: 0,
+      localErrorCount: 0,
+      appVersion: 'v1',
+      platform: 'MacIntel',
+      userAgent: 'Vitest',
+    };
+
     it('Users can write their own system health record', async () => {
-      await assertSucceeds(authed().doc('stats/system_health/users/user_basic').set({ ok: true }));
+      await assertSucceeds(
+        authed().doc('stats/system_health/users/user_basic').set(validSystemHealthPayload)
+      );
     });
 
     it('Users cannot write system health for other users', async () => {
-      await assertFails(authed().doc('stats/system_health/users/user_other').set({ ok: true }));
+      await assertFails(
+        authed().doc('stats/system_health/users/user_other').set(validSystemHealthPayload)
+      );
+    });
+
+    it('Users cannot forge uid field in own system health record', async () => {
+      await assertFails(
+        authed()
+          .doc('stats/system_health/users/user_basic')
+          .set({
+            ...validSystemHealthPayload,
+            uid: 'someone_else',
+          })
+      );
+    });
+
+    it('Users cannot write non-whitelisted fields in system health payload', async () => {
+      await assertFails(
+        authed()
+          .doc('stats/system_health/users/user_basic')
+          .set({
+            ...validSystemHealthPayload,
+            injected: true,
+          })
+      );
     });
   });
 

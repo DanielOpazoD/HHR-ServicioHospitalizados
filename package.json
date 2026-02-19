@@ -39,6 +39,7 @@
     "check:quality": "npm run check:architecture && npm run check:feature-dependencies && npm run check:shared-layer-boundary && npm run check:legacy-localstorage-imports && npm run check:schema-governance && npm run check:folder-dependencies && npm run check:module-dependencies && npm run check:module-size && npm run check:census-runtime-boundary && npm run check:runtime-adapter-boundary && npm run check:test-governance && npm run check:security",
     "clean": "bash scripts/cleanup.sh",
     "ci": "npm run check:quality && npm run lint && npm run test && npm run build",
+    "ci:strict": "npm run check:quality && npm run lint -- --max-warnings 0 && npm run typecheck && npm run test:ci:unit && npm run test:rules:ci && npm run build",
     "typecheck": "tsc --noEmit --skipLibCheck -p tsconfig.json",
     "test:rules": "RUN_FIRESTORE_RULES_TESTS=1 vitest run src/tests/security/firestore-rules.test.ts",
     "test:rules:ci": "bash scripts/run-firestore-rules-ci.sh",

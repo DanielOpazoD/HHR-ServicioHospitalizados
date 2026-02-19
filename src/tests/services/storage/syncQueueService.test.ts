@@ -13,6 +13,7 @@ import {
   queueSyncTask,
   processSyncQueue,
   getSyncQueueStats,
+  getSyncQueueTelemetry,
 } from '@/services/storage/syncQueueService';
 import { DailyRecord } from '@/types';
 
@@ -63,6 +64,17 @@ describe('syncQueueService', () => {
     expect(stats.pending).toBe(1);
     expect(stats.failed).toBe(0);
     expect(stats.conflict).toBe(0);
+  });
+
+  it('reports telemetry including retrying and oldest pending age', async () => {
+    vi.mocked(db.setDoc).mockRejectedValueOnce(new Error('Network down'));
+    await queueSyncTask('UPDATE_DAILY_RECORD', makeRecord('2025-01-06', 'v1'));
+    await processSyncQueue();
+
+    const telemetry = await getSyncQueueTelemetry();
+    expect(telemetry.pending).toBe(1);
+    expect(telemetry.retrying).toBe(1);
+    expect(telemetry.oldestPendingAgeMs).toBeGreaterThanOrEqual(0);
   });
 
   it('marks task as failed without retry for non-retryable errors', async () => {

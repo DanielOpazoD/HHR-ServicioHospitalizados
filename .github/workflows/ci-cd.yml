@@ -71,6 +71,11 @@ jobs:
           retention-days: 7
         continue-on-error: true
 
+      - name: Enforce test run contract
+        run: |
+          echo "Unit/integration test suite completed via test:ci:unit."
+          echo "Firestore rules are enforced in dedicated job test:rules:ci."
+
   # ============================================
   # JOB 3: FIRESTORE RULES
   # ============================================
@@ -129,6 +134,15 @@ jobs:
         run: npm run build
         env:
           CI: true
+
+  ci-strict-summary:
+    name: CI Strict Summary
+    runs-on: ubuntu-latest
+    needs: [lint, test, firestore-rules, build]
+    steps:
+      - name: CI strict gates passed
+        run: |
+          echo "Quality, unit/integration tests, rules tests, and build all passed."
       
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4

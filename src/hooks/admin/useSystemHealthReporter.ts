@@ -4,7 +4,7 @@ import { useVersion } from '@/context/VersionContext';
 import { useIsMutating } from '@tanstack/react-query';
 import { fetchErrorLogs } from '@/services/errorLogService';
 import { reportUserHealth, UserHealthStatus } from '@/services/admin/healthService';
-import { getSyncQueueStats } from '@/services/storage/syncQueueService';
+import { getSyncQueueTelemetry } from '@/services/storage/syncQueueService';
 import { CURRENT_SCHEMA_VERSION } from '@/constants/version';
 
 const REPORT_INTERVAL_MS = 2 * 60 * 1000; // Report every 2 minutes
@@ -27,11 +27,12 @@ export const useSystemHealthReporter = () => {
         // Get error count from IndexedDB
         const logs = await fetchErrorLogs(100);
         const localErrorCount = logs.length;
-        const {
-          pending: pendingSyncTasks,
-          failed: failedSyncTasks,
-          conflict: conflictSyncTasks,
-        } = await getSyncQueueStats();
+        const syncTelemetry = await getSyncQueueTelemetry();
+        const pendingSyncTasks = syncTelemetry.pending;
+        const failedSyncTasks = syncTelemetry.failed;
+        const conflictSyncTasks = syncTelemetry.conflict;
+        const retryingSyncTasks = syncTelemetry.retrying;
+        const oldestPendingAgeMs = syncTelemetry.oldestPendingAgeMs;
 
         const status: UserHealthStatus = {
           uid: user.uid,
@@ -44,6 +45,8 @@ export const useSystemHealthReporter = () => {
           pendingSyncTasks,
           failedSyncTasks,
           conflictSyncTasks,
+          retryingSyncTasks,
+          oldestPendingAgeMs,
           localErrorCount,
           appVersion: `v${CURRENT_SCHEMA_VERSION}`,
           platform: navigator.platform,

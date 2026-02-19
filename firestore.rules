@@ -138,6 +138,50 @@ service cloud.firestore {
              request.resource.data.email == getUserEmail() &&
              request.resource.data.action in ['list_files', 'download_file', 'view_file'];
     }
+
+    // System health payload guard:
+    // - caller can only write own doc
+    // - schema is constrained
+    // - numeric counters are bounded to non-negative values
+    function isValidSystemHealthWrite(userId) {
+      let payload = request.resource.data;
+      return isAuthenticated() &&
+             request.auth.uid == userId &&
+             payload.keys().hasOnly([
+               'uid',
+               'email',
+               'displayName',
+               'lastSeen',
+               'isOnline',
+               'isOutdated',
+               'pendingMutations',
+               'pendingSyncTasks',
+               'failedSyncTasks',
+               'conflictSyncTasks',
+               'retryingSyncTasks',
+               'oldestPendingAgeMs',
+               'localErrorCount',
+               'appVersion',
+               'platform',
+               'userAgent'
+             ]) &&
+             payload.uid == request.auth.uid &&
+             (payload.email == null || payload.email is string) &&
+             (payload.displayName == null || payload.displayName is string) &&
+             (payload.lastSeen == null || payload.lastSeen is string) &&
+             (payload.isOnline == null || payload.isOnline is bool) &&
+             (payload.isOutdated == null || payload.isOutdated is bool) &&
+             (payload.pendingMutations == null || (payload.pendingMutations is int && payload.pendingMutations >= 0 && payload.pendingMutations <= 10000)) &&
+             (payload.pendingSyncTasks == null || (payload.pendingSyncTasks is int && payload.pendingSyncTasks >= 0 && payload.pendingSyncTasks <= 10000)) &&
+             (payload.failedSyncTasks == null || (payload.failedSyncTasks is int && payload.failedSyncTasks >= 0 && payload.failedSyncTasks <= 10000)) &&
+             (payload.conflictSyncTasks == null || (payload.conflictSyncTasks is int && payload.conflictSyncTasks >= 0 && payload.conflictSyncTasks <= 10000)) &&
+             (payload.retryingSyncTasks == null || (payload.retryingSyncTasks is int && payload.retryingSyncTasks >= 0 && payload.retryingSyncTasks <= 10000)) &&
+             (payload.oldestPendingAgeMs == null || (payload.oldestPendingAgeMs is int && payload.oldestPendingAgeMs >= 0 && payload.oldestPendingAgeMs <= 864000000)) &&
+             (payload.localErrorCount == null || (payload.localErrorCount is int && payload.localErrorCount >= 0 && payload.localErrorCount <= 10000)) &&
+             (payload.appVersion == null || payload.appVersion is string) &&
+             (payload.platform == null || payload.platform is string) &&
+             (payload.userAgent == null || payload.userAgent is string);
+    }
     
     // Check if a date (ms timestamp) is within the editing window (+/- 1 day)
     // Nurse window: Can edit yesterday, today and tomorrow.
@@ -374,7 +418,8 @@ service cloud.firestore {
     // ============================================
     match /stats/system_health/users/{userId} {
       allow read: if isAdmin();
-      allow write: if isAuthenticated() && request.auth.uid == userId;
+      allow create, update: if isValidSystemHealthWrite(userId);
+      allow delete: if false;
     }
 
     // ============================================

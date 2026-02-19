@@ -85,14 +85,50 @@ export const getSyncQueueStats = async (): Promise<{
   conflict: number;
 }> => {
   try {
-    await ensureDbReady();
-    const pending = await indexedDB.syncQueue.where('status').equals('PENDING').count();
-    const failed = await indexedDB.syncQueue.where('status').equals('FAILED').count();
-    const conflict = await indexedDB.syncQueue.where('status').equals('CONFLICT').count();
-    return { pending, failed, conflict };
+    const telemetry = await getSyncQueueTelemetry();
+    return {
+      pending: telemetry.pending,
+      failed: telemetry.failed,
+      conflict: telemetry.conflict,
+    };
   } catch (error) {
     console.warn('[SyncQueue] Failed to read queue stats:', error);
     return { pending: 0, failed: 0, conflict: 0 };
+  }
+};
+
+export interface SyncQueueTelemetry {
+  pending: number;
+  failed: number;
+  conflict: number;
+  retrying: number;
+  oldestPendingAgeMs: number;
+}
+
+export const getSyncQueueTelemetry = async (): Promise<SyncQueueTelemetry> => {
+  try {
+    await ensureDbReady();
+    const now = Date.now();
+    const rows = await indexedDB.syncQueue.toArray();
+    const pendingRows = rows.filter(row => row.status === 'PENDING');
+
+    const pending = pendingRows.length;
+    const failed = rows.filter(row => row.status === 'FAILED').length;
+    const conflict = rows.filter(row => row.status === 'CONFLICT').length;
+    const retrying = pendingRows.filter(row => row.retryCount > 0).length;
+    const oldestTimestamp = pendingRows.reduce<number>(
+      (acc, row) => (row.timestamp < acc ? row.timestamp : acc),
+      Number.POSITIVE_INFINITY
+    );
+    const oldestPendingAgeMs =
+      Number.isFinite(oldestTimestamp) && oldestTimestamp > 0
+        ? Math.max(0, now - oldestTimestamp)
+        : 0;
+
+    return { pending, failed, conflict, retrying, oldestPendingAgeMs };
+  } catch (error) {
+    console.warn('[SyncQueue] Failed to read queue telemetry:', error);
+    return { pending: 0, failed: 0, conflict: 0, retrying: 0, oldestPendingAgeMs: 0 };
   }
 };
 

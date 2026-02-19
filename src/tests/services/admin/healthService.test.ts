@@ -33,6 +33,8 @@ describe('healthService', () => {
     pendingSyncTasks: 0,
     failedSyncTasks: 0,
     conflictSyncTasks: 0,
+    retryingSyncTasks: 0,
+    oldestPendingAgeMs: 0,
     localErrorCount: 0,
     appVersion: '1.0.0',
     platform: 'MacIntel',

@@ -15,6 +15,8 @@ export interface UserHealthStatus {
   pendingSyncTasks: number;
   failedSyncTasks: number;
   conflictSyncTasks: number;
+  retryingSyncTasks: number;
+  oldestPendingAgeMs: number;
   localErrorCount: number;
   appVersion: string;
   platform: string;
