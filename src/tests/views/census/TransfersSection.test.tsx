@@ -27,6 +27,13 @@ vi.mock('@/context/UIContext', () => ({
 }));
 
 describe('TransfersSection', () => {
+  type CensusActionCommandsValue = ReturnType<typeof useCensusActionCommands>;
+  type DataValue = ReturnType<typeof useDailyRecordData>;
+  type MovementActionsValue = ReturnType<typeof useDailyRecordMovementActions>;
+  type MovementsValue = ReturnType<typeof useDailyRecordMovements>;
+  type ConfirmDialogValue = ReturnType<typeof useConfirmDialog>;
+  type NotificationValue = ReturnType<typeof useNotification>;
+
   const mockOnUndo = vi.fn();
   const mockOnDelete = vi.fn();
   const mockHandleEdit = vi.fn();
@@ -47,35 +54,39 @@ describe('TransfersSection', () => {
     vi.clearAllMocks();
     vi.mocked(useCensusActionCommands).mockReturnValue({
       handleEditTransfer: mockHandleEdit,
-    } as any);
-    vi.mocked(useConfirmDialog).mockReturnValue({ confirm: mockConfirm } as any);
-    vi.mocked(useNotification).mockReturnValue({ error: mockNotifyError } as any);
+    } as unknown as CensusActionCommandsValue);
+    vi.mocked(useConfirmDialog).mockReturnValue({
+      confirm: mockConfirm,
+    } as unknown as ConfirmDialogValue);
+    vi.mocked(useNotification).mockReturnValue({
+      error: mockNotifyError,
+    } as unknown as NotificationValue);
     mockConfirm.mockResolvedValue(true);
-    (useDailyRecordData as any).mockReturnValue({
+    vi.mocked(useDailyRecordData).mockReturnValue({
       record: { date: '2024-12-11' },
-    });
-    (useDailyRecordMovementActions as any).mockReturnValue({
+    } as unknown as DataValue);
+    vi.mocked(useDailyRecordMovementActions).mockReturnValue({
       undoTransfer: mockOnUndo,
       deleteTransfer: mockOnDelete,
-    });
-    (useDailyRecordMovements as any).mockReturnValue({
+    } as unknown as MovementActionsValue);
+    vi.mocked(useDailyRecordMovements).mockReturnValue({
       transfers: [],
-    });
+    } as unknown as MovementsValue);
   });
 
   it('renders empty message when no transfers', () => {
-    (useDailyRecordData as any).mockReturnValue({
+    vi.mocked(useDailyRecordData).mockReturnValue({
       record: { transfers: [] },
-    });
+    } as unknown as DataValue);
 
     render(<TransfersSection />);
     expect(screen.getByText(/No hay traslados registrados/)).toBeInTheDocument();
   });
 
   it('renders transfer list and triggers actions', async () => {
-    (useDailyRecordMovements as any).mockReturnValue({
+    vi.mocked(useDailyRecordMovements).mockReturnValue({
       transfers: mockTransfers,
-    });
+    } as unknown as MovementsValue);
 
     render(<TransfersSection />);
 
@@ -132,10 +143,10 @@ describe('TransfersSection', () => {
 
   it('returns null if transfers is null', () => {
     vi.mocked(useDailyRecordMovements).mockReturnValue({
-      transfers: null as any,
+      transfers: null,
       discharges: [],
       cma: [],
-    });
+    } as unknown as MovementsValue);
     const { container } = render(<TransfersSection />);
     expect(container.firstChild).toBeNull();
   });
