@@ -107,6 +107,7 @@ describeRules('Firestore Security Rules', () => {
 
   describe('Daily Records Collection', () => {
     const recordPath = 'hospitals/H1/dailyRecords/2025-01-01';
+    const historyPath = 'hospitals/H1/dailyRecords/2025-01-01/history/h-1';
 
     it('Authenticated users can read daily records', async () => {
       await setupDoc(admin(), recordPath, { date: '2025-01-01' });
@@ -172,6 +173,44 @@ describeRules('Firestore Security Rules', () => {
       const now = Date.now();
       await setupDoc(admin(), recordPath, { date: '2025-01-01', dateTimestamp: now });
       await assertFails(nurse().doc(recordPath).delete());
+    });
+
+    it('Nurses can create history snapshots under daily records', async () => {
+      const now = Date.now();
+      await setupDoc(admin(), recordPath, { date: '2025-01-01', dateTimestamp: now });
+
+      await assertSucceeds(
+        nurse().doc(historyPath).set({
+          snapshotTimestamp: now,
+          source: 'auto-save',
+        })
+      );
+    });
+
+    it('Doctors cannot create history snapshots under daily records', async () => {
+      const now = Date.now();
+      await setupDoc(admin(), recordPath, { date: '2025-01-01', dateTimestamp: now });
+
+      await assertFails(
+        doctor().doc(historyPath).set({
+          snapshotTimestamp: now,
+          source: 'manual',
+        })
+      );
+    });
+
+    it('Only admins can update or delete history snapshots', async () => {
+      const now = Date.now();
+      await setupDoc(admin(), recordPath, { date: '2025-01-01', dateTimestamp: now });
+      await setupDoc(admin(), historyPath, {
+        snapshotTimestamp: now,
+        source: 'seed',
+      });
+
+      await assertFails(nurse().doc(historyPath).update({ source: 'nurse-edit' }));
+      await assertFails(nurse().doc(historyPath).delete());
+      await assertSucceeds(admin().doc(historyPath).update({ source: 'admin-edit' }));
+      await assertSucceeds(admin().doc(historyPath).delete());
     });
   });
 
