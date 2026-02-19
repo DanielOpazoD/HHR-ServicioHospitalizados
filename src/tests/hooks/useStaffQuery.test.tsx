@@ -1,16 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import {
-    useNursesQuery,
-    useTensQuery,
-    useProfessionalsQuery,
-    useSaveNursesMutation,
-    useSaveTensMutation,
-    useSaveProfessionalsMutation
+  useNursesQuery,
+  useTensQuery,
+  useProfessionalsQuery,
+  useSaveNursesMutation,
+  useSaveTensMutation,
+  useSaveProfessionalsMutation,
 } from '@/hooks/useStaffQuery';
 import { CatalogRepository } from '@/services/repositories/CatalogRepository';
 import { useAuthState } from '@/hooks/useAuthState';
-import { createQueryClientTestWrapper, createTestQueryClient } from '@/tests/utils/queryClientTestUtils';
+import {
+  createQueryClientTestWrapper,
+  createTestQueryClient,
+} from '@/tests/utils/queryClientTestUtils';
 
 // Mock dependencies
 vi.mock('@/services/repositories/CatalogRepository');
@@ -19,111 +22,132 @@ vi.mock('@/hooks/useAuthState');
 const createWrapper = () => createQueryClientTestWrapper().wrapper;
 
 describe('useStaffQuery Hooks', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-        vi.mocked(useAuthState).mockReturnValue({ isFirebaseConnected: true } as any);
+  type AuthStateValue = ReturnType<typeof useAuthState>;
+  type SubscribeNursesFn = typeof CatalogRepository.subscribeNurses;
+  type SubscribeTensFn = typeof CatalogRepository.subscribeTens;
+  type SubscribeProfessionalsFn = typeof CatalogRepository.subscribeProfessionals;
+  type ProfessionalList = Awaited<ReturnType<typeof CatalogRepository.getProfessionals>>;
+  type SaveProfessionalsInput = Parameters<typeof CatalogRepository.saveProfessionals>[0];
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(useAuthState).mockReturnValue({ isFirebaseConnected: true } as AuthStateValue);
+  });
+
+  describe('Queries', () => {
+    it('useNursesQuery should fetch nurses and subscribe', async () => {
+      const mockNurses = ['Nurse 1', 'Nurse 2'];
+      const subscribeMock = vi.fn(() => vi.fn());
+      vi.mocked(CatalogRepository.getNurses).mockResolvedValue(mockNurses);
+      vi.mocked(CatalogRepository.subscribeNurses).mockImplementation(
+        subscribeMock as unknown as SubscribeNursesFn
+      );
+
+      const { result } = renderHook(() => useNursesQuery(), { wrapper: createWrapper() });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(result.current.data).toEqual(mockNurses);
+      expect(subscribeMock).toHaveBeenCalled();
     });
 
-    describe('Queries', () => {
-        it('useNursesQuery should fetch nurses and subscribe', async () => {
-            const mockNurses = ['Nurse 1', 'Nurse 2'];
-            const subscribeMock = vi.fn(() => vi.fn());
-            vi.mocked(CatalogRepository.getNurses).mockResolvedValue(mockNurses);
-            vi.mocked(CatalogRepository.subscribeNurses).mockImplementation(subscribeMock as any);
+    it('useTensQuery should fetch tens and subscribe', async () => {
+      const mockTens = ['TENS 1', 'TENS 2'];
+      const subscribeMock = vi.fn(() => vi.fn());
+      vi.mocked(CatalogRepository.getTens).mockResolvedValue(mockTens);
+      vi.mocked(CatalogRepository.subscribeTens).mockImplementation(
+        subscribeMock as unknown as SubscribeTensFn
+      );
 
-            const { result } = renderHook(() => useNursesQuery(), { wrapper: createWrapper() });
+      const { result } = renderHook(() => useTensQuery(), { wrapper: createWrapper() });
 
-            await waitFor(() => expect(result.current.isSuccess).toBe(true));
-            expect(result.current.data).toEqual(mockNurses);
-            expect(subscribeMock).toHaveBeenCalled();
-        });
-
-        it('useTensQuery should fetch tens and subscribe', async () => {
-            const mockTens = ['TENS 1', 'TENS 2'];
-            const subscribeMock = vi.fn(() => vi.fn());
-            vi.mocked(CatalogRepository.getTens).mockResolvedValue(mockTens);
-            vi.mocked(CatalogRepository.subscribeTens).mockImplementation(subscribeMock as any);
-
-            const { result } = renderHook(() => useTensQuery(), { wrapper: createWrapper() });
-
-            await waitFor(() => expect(result.current.isSuccess).toBe(true));
-            expect(result.current.data).toEqual(mockTens);
-            expect(subscribeMock).toHaveBeenCalled();
-        });
-
-        it('useProfessionalsQuery should fetch professionals and subscribe', async () => {
-            const mockProfs = [{ name: 'Dr. Smith', phone: '123', specialty: 'Medicina Interna' }];
-            const subscribeMock = vi.fn(() => vi.fn());
-            vi.mocked(CatalogRepository.getProfessionals).mockResolvedValue(mockProfs as any);
-            vi.mocked(CatalogRepository.subscribeProfessionals).mockImplementation(subscribeMock as any);
-
-            const { result } = renderHook(() => useProfessionalsQuery(), { wrapper: createWrapper() });
-
-            await waitFor(() => expect(result.current.isSuccess).toBe(true));
-            expect(result.current.data).toEqual(mockProfs);
-            expect(subscribeMock).toHaveBeenCalled();
-        });
-
-        it('should not subscribe if firebase is not connected', async () => {
-            vi.mocked(useAuthState).mockReturnValue({ isFirebaseConnected: false } as any);
-            const subscribeMock = vi.fn();
-            vi.mocked(CatalogRepository.subscribeNurses).mockImplementation(subscribeMock as any);
-
-            renderHook(() => useNursesQuery(), { wrapper: createWrapper() });
-
-            expect(subscribeMock).not.toHaveBeenCalled();
-        });
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(result.current.data).toEqual(mockTens);
+      expect(subscribeMock).toHaveBeenCalled();
     });
 
-    describe('Mutations', () => {
-        it('useSaveNursesMutation should call repository and invalidate queries', async () => {
-            const saveMock = vi.mocked(CatalogRepository.saveNurses).mockResolvedValue(undefined);
-            const { result } = renderHook(() => useSaveNursesMutation(), { wrapper: createWrapper() });
+    it('useProfessionalsQuery should fetch professionals and subscribe', async () => {
+      const mockProfs = [{ name: 'Dr. Smith', phone: '123', specialty: 'Medicina Interna' }];
+      const subscribeMock = vi.fn(() => vi.fn());
+      vi.mocked(CatalogRepository.getProfessionals).mockResolvedValue(
+        mockProfs as unknown as ProfessionalList
+      );
+      vi.mocked(CatalogRepository.subscribeProfessionals).mockImplementation(
+        subscribeMock as unknown as SubscribeProfessionalsFn
+      );
 
-            await result.current.mutateAsync(['New Nurse']);
+      const { result } = renderHook(() => useProfessionalsQuery(), { wrapper: createWrapper() });
 
-            expect(saveMock).toHaveBeenCalledWith(['New Nurse']);
-        });
-
-        it('useSaveTensMutation should call repository', async () => {
-            const saveMock = vi.mocked(CatalogRepository.saveTens).mockResolvedValue(undefined);
-            const { result } = renderHook(() => useSaveTensMutation(), { wrapper: createWrapper() });
-
-            await result.current.mutateAsync(['New TENS']);
-
-            expect(saveMock).toHaveBeenCalledWith(['New TENS']);
-        });
-
-        it('useSaveProfessionalsMutation should call repository', async () => {
-            const mockProfs = [{ name: 'New Prof', phone: '456', specialty: 'Cirugía' }];
-            const saveMock = vi.mocked(CatalogRepository.saveProfessionals).mockResolvedValue(undefined);
-            const { result } = renderHook(() => useSaveProfessionalsMutation(), { wrapper: createWrapper() });
-
-            await result.current.mutateAsync(mockProfs as any);
-
-            expect(saveMock).toHaveBeenCalledWith(mockProfs);
-        });
-
-        it('useSaveNursesMutation should perform optimistic update and rollback on error', async () => {
-            const queryClient = createTestQueryClient();
-            const { wrapper: localWrapper } = createQueryClientTestWrapper({ queryClient });
-
-            const initialNurses = ['Old Nurse'];
-            const newNurses = ['New Nurse'];
-            queryClient.setQueryData([...['staff'], 'nurses'], initialNurses);
-
-            vi.mocked(CatalogRepository.saveNurses).mockRejectedValue(new Error('Save failed'));
-
-            const { result } = renderHook(() => useSaveNursesMutation(), { wrapper: localWrapper });
-
-            try {
-                await result.current.mutateAsync(newNurses);
-            } catch (_e) {
-                // Expected error
-            }
-
-            // Should be back to initial after error
-            expect(queryClient.getQueryData([...['staff'], 'nurses'])).toEqual(initialNurses);
-        });
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(result.current.data).toEqual(mockProfs);
+      expect(subscribeMock).toHaveBeenCalled();
     });
+
+    it('should not subscribe if firebase is not connected', async () => {
+      vi.mocked(useAuthState).mockReturnValue({
+        isFirebaseConnected: false,
+      } as AuthStateValue);
+      const subscribeMock = vi.fn();
+      vi.mocked(CatalogRepository.subscribeNurses).mockImplementation(
+        subscribeMock as unknown as SubscribeNursesFn
+      );
+
+      renderHook(() => useNursesQuery(), { wrapper: createWrapper() });
+
+      expect(subscribeMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Mutations', () => {
+    it('useSaveNursesMutation should call repository and invalidate queries', async () => {
+      const saveMock = vi.mocked(CatalogRepository.saveNurses).mockResolvedValue(undefined);
+      const { result } = renderHook(() => useSaveNursesMutation(), { wrapper: createWrapper() });
+
+      await result.current.mutateAsync(['New Nurse']);
+
+      expect(saveMock).toHaveBeenCalledWith(['New Nurse']);
+    });
+
+    it('useSaveTensMutation should call repository', async () => {
+      const saveMock = vi.mocked(CatalogRepository.saveTens).mockResolvedValue(undefined);
+      const { result } = renderHook(() => useSaveTensMutation(), { wrapper: createWrapper() });
+
+      await result.current.mutateAsync(['New TENS']);
+
+      expect(saveMock).toHaveBeenCalledWith(['New TENS']);
+    });
+
+    it('useSaveProfessionalsMutation should call repository', async () => {
+      const mockProfs = [{ name: 'New Prof', phone: '456', specialty: 'Cirugía' }];
+      const saveMock = vi.mocked(CatalogRepository.saveProfessionals).mockResolvedValue(undefined);
+      const { result } = renderHook(() => useSaveProfessionalsMutation(), {
+        wrapper: createWrapper(),
+      });
+
+      await result.current.mutateAsync(mockProfs as unknown as SaveProfessionalsInput);
+
+      expect(saveMock).toHaveBeenCalledWith(mockProfs);
+    });
+
+    it('useSaveNursesMutation should perform optimistic update and rollback on error', async () => {
+      const queryClient = createTestQueryClient();
+      const { wrapper: localWrapper } = createQueryClientTestWrapper({ queryClient });
+
+      const initialNurses = ['Old Nurse'];
+      const newNurses = ['New Nurse'];
+      queryClient.setQueryData([...['staff'], 'nurses'], initialNurses);
+
+      vi.mocked(CatalogRepository.saveNurses).mockRejectedValue(new Error('Save failed'));
+
+      const { result } = renderHook(() => useSaveNursesMutation(), { wrapper: localWrapper });
+
+      try {
+        await result.current.mutateAsync(newNurses);
+      } catch (_e) {
+        // Expected error
+      }
+
+      // Should be back to initial after error
+      expect(queryClient.getQueryData([...['staff'], 'nurses'])).toEqual(initialNurses);
+    });
+  });
 });

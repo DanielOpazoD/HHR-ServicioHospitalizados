@@ -5,9 +5,11 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
+import { DailyRecord } from '@/types';
 
 const readSource = (relativePath: string): string =>
   fs.readFileSync(path.resolve(process.cwd(), relativePath), 'utf8');
+const toDailyRecord = (partial: Partial<DailyRecord>) => partial as unknown as DailyRecord;
 
 // Mock file-saver
 vi.mock('file-saver', () => ({
@@ -81,7 +83,7 @@ describe('censusMasterWorkbook', () => {
         beds: {},
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-      } as any;
+      } as unknown as DailyRecord;
 
       // If ExcelJS is properly loaded, this should not throw
       // (it may still throw for invalid record structure, but not for ExcelJS loading)
@@ -89,9 +91,9 @@ describe('censusMasterWorkbook', () => {
         const workbook = await buildCensusMasterWorkbook([mockRecord]);
         expect(workbook).toBeDefined();
         expect(typeof workbook.xlsx).toBe('object');
-      } catch (error: any) {
+      } catch (error: unknown) {
         // If it throws, it should NOT be about ExcelJS loading
-        expect(error.message).not.toContain('ExcelJS module could not be loaded');
+        expect((error as Error).message).not.toContain('ExcelJS module could not be loaded');
       }
     });
   });
@@ -108,7 +110,7 @@ describe('censusRawWorkbook', () => {
         beds: {},
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-      } as any;
+      } as unknown as DailyRecord;
 
       const workbook = await buildCensusDailyRawWorkbook(mockRecord);
 
@@ -127,7 +129,7 @@ describe('censusRawWorkbook', () => {
         beds: {},
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-      } as any;
+      } as unknown as DailyRecord;
 
       const workbook = await buildCensusDailyRawWorkbook(mockRecord);
       const worksheet = workbook.getWorksheet('Censo Diario');
@@ -156,7 +158,7 @@ describe('censusRawWorkbook', () => {
         },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-      } as any;
+      } as unknown as DailyRecord;
 
       const rows = extractRowsFromRecord(mockRecord);
 
@@ -186,7 +188,7 @@ describe('reportService', () => {
         transfers: [],
         cma: [],
         lastUpdated: new Date().toISOString(),
-      } as any);
+      } as unknown as DailyRecord);
 
       await generateCensusDailyRaw('2025-12-25');
 
@@ -209,7 +211,7 @@ describe('reportService', () => {
         transfers: [],
         cma: [],
         lastUpdated: new Date().toISOString(),
-      } as any);
+      } as unknown as DailyRecord);
 
       await generateCensusDailyFormatted('2025-12-25');
       expect(saveAs).toHaveBeenCalled();
@@ -221,7 +223,7 @@ describe('reportService', () => {
       const indexedDbService = await import('@/services/storage/indexedDBService');
 
       vi.mocked(indexedDbService.getAllRecords).mockResolvedValue({
-        '2025-12-24': {
+        '2025-12-24': toDailyRecord({
           date: '2025-12-24',
           beds: {},
           discharges: [],
@@ -230,7 +232,7 @@ describe('reportService', () => {
           nurses: [],
           activeExtraBeds: [],
           lastUpdated: new Date().toISOString(),
-        } as any,
+        }),
       });
 
       await generateCensusRangeFormatted('2025-12-24', '2025-12-25');

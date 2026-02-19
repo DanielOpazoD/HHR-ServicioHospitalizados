@@ -24,6 +24,9 @@ vi.mock('@/services/cudyr/CudyrScoreUtils', () => ({
 }));
 
 describe('cudyrSummary', () => {
+  type CudyrType = NonNullable<DailyRecord['beds'][string]['cudyr']>;
+  type BedValue = DailyRecord['beds'][string];
+
   const mockRecord: DailyRecord = {
     date: '2025-01-01',
     beds: {
@@ -32,30 +35,30 @@ describe('cudyrSummary', () => {
         patientName: 'Patient 1',
         rut: '12345678-9',
         isBlocked: false,
-        cudyr: { changeClothes: 1 } as any,
+        cudyr: { changeClothes: 1 } as unknown as CudyrType,
       },
       M1: {
         bedId: 'M1',
         patientName: 'Patient 2',
         rut: '98765432-1',
         isBlocked: false,
-        cudyr: { changeClothes: 2 } as any,
+        cudyr: { changeClothes: 2 } as unknown as CudyrType,
         clinicalCrib: {
           bedId: 'M1-crib',
           patientName: 'Baby 1',
           rut: 'RN',
           isBlocked: false,
-          cudyr: { changeClothes: 0 } as any,
-        } as any,
+          cudyr: { changeClothes: 0 } as unknown as CudyrType,
+        } as unknown as BedValue,
       },
-    } as any,
+    } as unknown as DailyRecord['beds'],
     discharges: [],
     transfers: [],
     lastUpdated: 'now',
     nurses: [],
     activeExtraBeds: [],
     cma: [],
-  } as any;
+  } as DailyRecord;
 
   describe('collectDailyCudyrPatients', () => {
     it('should collect patients with CUDYR scores', () => {
@@ -74,7 +77,7 @@ describe('cudyrSummary', () => {
         ...mockRecord,
         beds: {
           R1: { bedId: 'R1', patientName: 'Blocked', isBlocked: true },
-        } as any,
+        } as unknown as DailyRecord['beds'],
       };
       const patients = collectDailyCudyrPatients(blockedRecord);
       expect(patients.length).toBe(0);
@@ -86,7 +89,12 @@ describe('cudyrSummary', () => {
         activeExtraBeds: ['EX1'],
         beds: {
           ...mockRecord.beds,
-          EX1: { bedId: 'EX1', patientName: 'Extra', isBlocked: false, cudyr: {} } as any,
+          EX1: {
+            bedId: 'EX1',
+            patientName: 'Extra',
+            isBlocked: false,
+            cudyr: {} as CudyrType,
+          } as unknown as BedValue,
         },
       };
       const patients = collectDailyCudyrPatients(recordWithExtra);
