@@ -1,0 +1,91 @@
+{
+  "records": [
+    {
+      "date": "2024-01-10",
+      "legacyPayload": {
+        "date": "2024-01-10",
+        "beds": {
+          "H2C1": {
+            "bedId": "H2C1",
+            "patientName": "Paciente Legacy Uno",
+            "specialty": "Ginecología",
+            "status": "Estable",
+            "pathology": "Caso legacy A"
+          }
+        },
+        "discharges": [],
+        "transfers": [],
+        "cma": [],
+        "lastUpdated": "2024-01-10T08:30:00.000Z",
+        "nurses": ["Enf Legacy A", "Enf Legacy B"],
+        "nurseName": "Enf Principal A",
+        "tens": ["TENS A1", "TENS A2"],
+        "activeExtraBeds": []
+      },
+      "expected": {
+        "schemaVersion": 1,
+        "bedId": "H2C1",
+        "bedSpecialty": "Ginecobstetricia",
+        "nursesDayShift": ["Enf Legacy A", "Enf Legacy B"],
+        "tensDayShift": ["TENS A1", "TENS A2", ""]
+      }
+    },
+    {
+      "date": "2024-01-11",
+      "legacyPayload": {
+        "date": "2024-01-11",
+        "beds": {
+          "H3C2": {
+            "bedId": "H3C2",
+            "patientName": "Paciente Legacy Dos",
+            "specialty": "Obstetricia",
+            "status": "De cuidado",
+            "pathology": "Caso legacy B"
+          }
+        },
+        "discharges": [],
+        "transfers": [],
+        "cma": [],
+        "lastUpdated": "2024-01-11T10:15:00.000Z",
+        "nurseName": "Enf Principal B",
+        "activeExtraBeds": []
+      },
+      "expected": {
+        "schemaVersion": 1,
+        "bedId": "H3C2",
+        "bedSpecialty": "Ginecobstetricia",
+        "nursesDayShift": ["Enf Principal B", ""],
+        "tensDayShift": ["", "", ""]
+      }
+    },
+    {
+      "date": "2024-01-12",
+      "legacyPayload": {
+        "date": "2024-01-12",
+        "beds": {
+          "H1C1": {
+            "bedId": "H1C1",
+            "patientName": "Paciente Legacy Tres",
+            "specialty": "Med Interna",
+            "status": "Estable",
+            "pathology": "Caso legacy C"
+          }
+        },
+        "discharges": [],
+        "transfers": [],
+        "cma": [],
+        "lastUpdated": "2024-01-12T11:45:00.000Z",
+        "nurses": ["Enf Legacy C", ""],
+        "tens": ["TENS C1"],
+        "activeExtraBeds": []
+      },
+      "expected": {
+        "schemaVersion": 1,
+        "bedId": "H1C1",
+        "bedSpecialty": "Med Interna",
+        "nursesDayShift": ["Enf Legacy C", ""],
+        "tensDayShift": ["TENS C1", "", ""]
+      }
+    }
+  ]
+}

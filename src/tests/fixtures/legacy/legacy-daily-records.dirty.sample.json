@@ -1,0 +1,87 @@
+{
+  "records": [
+    {
+      "date": "2024-02-01",
+      "legacyPayload": {
+        "date": "2024-02-01",
+        "beds": {
+          "H4C1": {
+            "bedId": "H4C1",
+            "patientName": "Paciente Dirty 1",
+            "specialty": "Obstetricia",
+            "status": "Estable",
+            "pathology": "Caso sucio 1"
+          }
+        },
+        "discharges": [
+          {
+            "id": "d1",
+            "bedName": "H4C1",
+            "status": "Vivo"
+          },
+          null,
+          "bad"
+        ],
+        "transfers": "invalid-array",
+        "cma": [],
+        "lastUpdated": null,
+        "nurses": "invalid",
+        "nurseName": "Enf Dirty 1",
+        "tens": ["TENS D1"],
+        "activeExtraBeds": null
+      },
+      "expected": {
+        "schemaVersion": 1,
+        "bedId": "H4C1",
+        "bedSpecialty": "Ginecobstetricia",
+        "nursesDayShiftFirst": "Enf Dirty 1",
+        "tensDayShift": ["TENS D1", "", ""],
+        "activeExtraBedsLength": 0,
+        "dischargesMinLength": 1
+      }
+    },
+    {
+      "date": "2024-02-02",
+      "legacyPayload": {
+        "date": "2024-02-02",
+        "beds": {
+          "H5C2": {
+            "bedId": "H5C2",
+            "patientName": "Paciente Dirty 2",
+            "specialty": "Ginecología",
+            "status": "De cuidado",
+            "pathology": "Caso sucio 2"
+          }
+        },
+        "discharges": [],
+        "transfers": [],
+        "cma": [
+          {
+            "id": "cma1",
+            "patientName": "Paciente CMA",
+            "rut": 12345,
+            "specialty": "Cirugía",
+            "interventionType": "Cirugía Mayor Ambulatoria"
+          },
+          {
+            "id": null,
+            "patientName": "bad"
+          }
+        ],
+        "lastUpdated": "2024-02-02T09:00:00.000Z",
+        "nurses": ["Enf Dirty 2", ""],
+        "tens": "bad-tens",
+        "activeExtraBeds": ["Extra-1", 99, null]
+      },
+      "expected": {
+        "schemaVersion": 1,
+        "bedId": "H5C2",
+        "bedSpecialty": "Ginecobstetricia",
+        "nursesDayShiftFirst": "Enf Dirty 2",
+        "tensDayShift": ["", "", ""],
+        "activeExtraBedsLength": 0,
+        "dischargesMinLength": 0
+      }
+    }
+  ]
+}
