@@ -124,6 +124,12 @@ npm run test:rules:ci
 npm run test:emulator:sync:ci
 ```
 
+Parámetros opcionales para carga de cola:
+
+```bash
+SYNC_QUEUE_LOAD_VOLUME=120 SYNC_QUEUE_RETRY_VOLUME=40 SYNC_QUEUE_LOAD_MAX_MS=8000 npm run test:sync-load
+```
+
 ## SLA Operacional Recomendado
 
 - `SEV-1`: respuesta < 15 min, mitigación inicial < 60 min.

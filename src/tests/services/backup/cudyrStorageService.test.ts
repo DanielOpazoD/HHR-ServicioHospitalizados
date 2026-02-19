@@ -2,11 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   uploadCudyrExcel,
   cudyrExists,
+  deleteCudyrFile,
   listCudyrYears,
   listCudyrMonths,
   listCudyrFilesInMonth,
 } from '@/services/backup/cudyrStorageService';
-import { uploadBytes, getDownloadURL, getMetadata } from 'firebase/storage';
+import { uploadBytes, getDownloadURL, getMetadata, deleteObject } from 'firebase/storage';
 
 // Mock firebaseConfig to resolve firebaseReady
 vi.mock('@/firebaseConfig', () => ({
@@ -75,6 +76,18 @@ describe('cudyrStorageService', () => {
 
       vi.mocked(getMetadata).mockRejectedValue({ code: 'storage/unauthenticated' });
       expect(await cudyrExists(mockDate)).toBe(false);
+    });
+  });
+
+  describe('deleteCudyrFile', () => {
+    it('swallows expected storage misses', async () => {
+      vi.mocked(deleteObject).mockRejectedValue({ code: 'storage/object-not-found' });
+      await expect(deleteCudyrFile(mockDate)).resolves.toBeUndefined();
+    });
+
+    it('rethrows unexpected errors', async () => {
+      vi.mocked(deleteObject).mockRejectedValue(new Error('delete failed'));
+      await expect(deleteCudyrFile(mockDate)).rejects.toThrow('delete failed');
     });
   });
 

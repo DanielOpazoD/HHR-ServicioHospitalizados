@@ -103,8 +103,15 @@ export const checkCensusExists = async (date: string): Promise<boolean> => {
 export const deleteCensusFile = async (date: string): Promise<void> => {
   const filePath = generateCensusPath(date);
   const storageRef = ref(storage, filePath);
-  await deleteObject(storageRef);
-  // console.info(`🗑️ Census deleted: ${filePath}`);
+  try {
+    await deleteObject(storageRef);
+    // console.info(`🗑️ Census deleted: ${filePath}`);
+  } catch (error: unknown) {
+    if (isExpectedStorageLookupMiss(error)) {
+      return;
+    }
+    throw error;
+  }
 };
 
 /**

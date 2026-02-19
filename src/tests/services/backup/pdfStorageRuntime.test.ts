@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getMetadata, getDownloadURL } from 'firebase/storage';
-import { getPdfUrl, pdfExists } from '@/services/backup/pdfStorageService';
+import { getMetadata, getDownloadURL, deleteObject } from 'firebase/storage';
+import { deletePdf, getPdfUrl, pdfExists } from '@/services/backup/pdfStorageService';
 
 vi.mock('@/firebaseConfig', () => ({
   storage: {},
@@ -33,5 +33,13 @@ describe('pdfStorageService runtime resilience', () => {
 
     vi.mocked(getMetadata).mockRejectedValue({ code: 'storage/unauthenticated' });
     await expect(pdfExists('2026-02-19', 'night')).resolves.toBe(false);
+  });
+
+  it('delete swallows expected miss errors and rethrows unexpected ones', async () => {
+    vi.mocked(deleteObject).mockRejectedValueOnce({ code: 'storage/object-not-found' });
+    await expect(deletePdf('2026-02-19', 'day')).resolves.toBeUndefined();
+
+    vi.mocked(deleteObject).mockRejectedValueOnce(new Error('delete failed'));
+    await expect(deletePdf('2026-02-19', 'night')).rejects.toThrow('delete failed');
   });
 });

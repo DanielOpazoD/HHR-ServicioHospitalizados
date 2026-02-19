@@ -16,6 +16,15 @@ vi.mock('@/services/infrastructure/db', () => ({
 
 import { db } from '@/services/infrastructure/db';
 
+const toInt = (raw: string | undefined, fallback: number): number => {
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
+};
+
+const LOAD_VOLUME = toInt(process.env.SYNC_QUEUE_LOAD_VOLUME, 120);
+const RETRY_VOLUME = toInt(process.env.SYNC_QUEUE_RETRY_VOLUME, 40);
+const MAX_FLUSH_MS = toInt(process.env.SYNC_QUEUE_LOAD_MAX_MS, 8000);
+
 const makeRecord = (date: string, marker: string): DailyRecord =>
   ({
     date,
@@ -36,7 +45,7 @@ describe('syncQueueService load baseline', () => {
   });
 
   it('handles volume of 120 queued records and flushes all', async () => {
-    const total = 120;
+    const total = LOAD_VOLUME;
     for (let i = 0; i < total; i++) {
       const date = `2026-03-${String((i % 28) + 1).padStart(2, '0')}-${i}`;
       await queueSyncTask('UPDATE_DAILY_RECORD', makeRecord(date, `v${i}`));
@@ -51,11 +60,11 @@ describe('syncQueueService load baseline', () => {
     expect(telemetry.failed).toBe(0);
     expect(telemetry.conflict).toBe(0);
     expect(vi.mocked(db.setDoc)).toHaveBeenCalledTimes(total);
-    expect(elapsedMs).toBeLessThan(8000);
+    expect(elapsedMs).toBeLessThan(MAX_FLUSH_MS);
   });
 
   it('supports retry burst and eventual drain after nextAttemptAt is reached', async () => {
-    const total = 40;
+    const total = RETRY_VOLUME;
     let callCount = 0;
     vi.mocked(db.setDoc).mockImplementation(async () => {
       callCount += 1;

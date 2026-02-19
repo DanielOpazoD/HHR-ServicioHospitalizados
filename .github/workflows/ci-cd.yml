@@ -77,6 +77,14 @@ jobs:
         run: npm run test:resilience
         env:
           CI: true
+
+      - name: Run sync queue load baseline
+        run: npm run test:sync-load
+        env:
+          CI: true
+          SYNC_QUEUE_LOAD_VOLUME: 120
+          SYNC_QUEUE_RETRY_VOLUME: 40
+          SYNC_QUEUE_LOAD_MAX_MS: 8000
       
       - name: Upload test coverage (optional)
         if: always()

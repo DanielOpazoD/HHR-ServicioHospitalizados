@@ -162,8 +162,15 @@ export const deleteCudyrFile = async (date: string): Promise<void> => {
   const { deleteObject } = await import('firebase/storage');
   const filePath = generateCudyrPath(date);
   const storageRef = ref(storage, filePath);
-  await deleteObject(storageRef);
-  // console.info(`🗑️ CUDYR deleted: ${filePath}`);
+  try {
+    await deleteObject(storageRef);
+    // console.info(`🗑️ CUDYR deleted: ${filePath}`);
+  } catch (error: unknown) {
+    if (isExpectedStorageLookupMiss(error)) {
+      return;
+    }
+    throw error;
+  }
 };
 
 /**

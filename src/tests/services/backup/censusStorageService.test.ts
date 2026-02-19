@@ -100,6 +100,19 @@ describe('censusStorageService', () => {
       await deleteCensusFile(mockDate);
       expect(deleteObject).toHaveBeenCalled();
     });
+
+    it('should swallow expected miss errors during delete', async () => {
+      vi.mocked(deleteObject).mockRejectedValue({ code: 'storage/object-not-found' });
+      await expect(deleteCensusFile(mockDate)).resolves.toBeUndefined();
+
+      vi.mocked(deleteObject).mockRejectedValue({ code: 'storage/unauthorized' });
+      await expect(deleteCensusFile(mockDate)).resolves.toBeUndefined();
+    });
+
+    it('should rethrow unexpected delete errors', async () => {
+      vi.mocked(deleteObject).mockRejectedValue(new Error('delete failed'));
+      await expect(deleteCensusFile(mockDate)).rejects.toThrow('delete failed');
+    });
   });
 
   describe('Factory-provided functions', () => {

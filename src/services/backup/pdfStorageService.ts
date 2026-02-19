@@ -117,8 +117,15 @@ export const uploadPdf = async (
 export const deletePdf = async (date: string, shiftType: 'day' | 'night'): Promise<void> => {
   const filePath = generatePdfPath(date, shiftType);
   const storageRef = ref(storage, filePath);
-  await deleteObject(storageRef);
-  // console.info(`🗑️ PDF deleted: ${filePath}`);
+  try {
+    await deleteObject(storageRef);
+    // console.info(`🗑️ PDF deleted: ${filePath}`);
+  } catch (error: unknown) {
+    if (isExpectedStorageLookupMiss(error)) {
+      return;
+    }
+    throw error;
+  }
 };
 
 /**
