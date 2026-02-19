@@ -7,8 +7,6 @@ import {
 } from '@/services/repositories/conflictResolutionPolicy';
 import {
   getValueAtPath,
-  isPlainObject,
-  isPrimitive,
   normalizeChangedPaths,
   toIso,
   toMillis,
@@ -19,6 +17,17 @@ import {
   createConflictResolutionTraceContext,
   traceFromScalarDecision,
 } from '@/services/repositories/conflictResolutionTrace';
+import {
+  ID_BASED_ARRAY_FIELDS,
+  UNIQUE_ARRAY_FIELDS,
+  PATIENT_ID_ARRAY_FIELDS,
+  PATIENT_UNIQUE_ARRAY_FIELDS,
+  mergeBeds,
+  mergeArrayById,
+  mergeUniquePrimitiveArray,
+  mergeObject,
+  mergePatientData,
+} from '@/services/repositories/conflictResolutionMergeUtils';
 
 interface ConflictResolutionOptions {
   changedPaths?: string[];
@@ -28,18 +37,6 @@ export interface ConflictResolutionResult {
   record: DailyRecord;
   trace: ConflictResolutionTrace;
 }
-
-const ID_BASED_ARRAY_FIELDS = new Set(['discharges', 'transfers', 'cma']);
-const UNIQUE_ARRAY_FIELDS = new Set([
-  'nurses',
-  'nursesDayShift',
-  'nursesNightShift',
-  'tensDayShift',
-  'tensNightShift',
-  'activeExtraBeds',
-]);
-const PATIENT_ID_ARRAY_FIELDS = new Set(['clinicalEvents', 'deviceInstanceHistory']);
-const PATIENT_UNIQUE_ARRAY_FIELDS = new Set(['devices']);
 
 export const resolveDailyRecordConflict = (
   remote: DailyRecord,
@@ -305,240 +302,4 @@ const resolvePathValueWithMatrix = (
   );
   traceContext.add(traceFromScalarDecision(path, decision));
   return decision.value;
-};
-
-const mergeBeds = (
-  remoteBeds: Record<string, PatientData>,
-  localBeds: Record<string, PatientData>,
-  preferLocal: boolean,
-  traceContext?: ConflictResolutionTraceContext,
-  pathPrefix = 'beds'
-): Record<string, PatientData> => {
-  const merged: Record<string, PatientData> = {};
-  const bedIds = new Set([...Object.keys(remoteBeds || {}), ...Object.keys(localBeds || {})]);
-  traceContext?.add({
-    path: pathPrefix,
-    strategy: 'merge_beds',
-    winner: 'merged',
-    reason: 'merge_union_by_bed_id',
-  });
-
-  bedIds.forEach(bedId => {
-    merged[bedId] = mergePatientData(
-      remoteBeds?.[bedId],
-      localBeds?.[bedId],
-      preferLocal,
-      traceContext,
-      `beds.${bedId}`
-    );
-  });
-
-  return merged;
-};
-
-const mergePatientData = (
-  remotePatient: PatientData | undefined,
-  localPatient: PatientData | undefined,
-  preferLocal: boolean,
-  traceContext?: ConflictResolutionTraceContext,
-  pathPrefix = 'beds'
-): PatientData => {
-  if (!remotePatient && localPatient) {
-    traceContext?.add({
-      path: pathPrefix,
-      strategy: 'copy_local_value',
-      winner: 'local',
-      reason: 'remote_patient_missing',
-    });
-    return localPatient;
-  }
-  if (!localPatient && remotePatient) {
-    traceContext?.add({
-      path: pathPrefix,
-      strategy: 'copy_local_value',
-      winner: 'remote',
-      reason: 'local_patient_missing',
-    });
-    return remotePatient;
-  }
-  if (!remotePatient && !localPatient) {
-    return {} as PatientData;
-  }
-
-  const remoteRecord = remotePatient as unknown as Record<string, unknown>;
-  const localRecord = localPatient as unknown as Record<string, unknown>;
-  const merged: Record<string, unknown> = {};
-  const keys = new Set([...Object.keys(remoteRecord), ...Object.keys(localRecord)]);
-  traceContext?.add({
-    path: pathPrefix,
-    strategy: 'merge_patient',
-    winner: 'merged',
-    reason: 'merge_patient_fields',
-  });
-
-  keys.forEach(key => {
-    const remoteValue = remoteRecord[key];
-    const localValue = localRecord[key];
-
-    if (PATIENT_ID_ARRAY_FIELDS.has(key)) {
-      merged[key] = mergeArrayById(
-        (remoteValue as unknown[]) || [],
-        (localValue as unknown[]) || [],
-        traceContext,
-        `${pathPrefix}.${key}`
-      );
-      return;
-    }
-
-    if (PATIENT_UNIQUE_ARRAY_FIELDS.has(key)) {
-      merged[key] = mergeUniquePrimitiveArray(
-        (remoteValue as string[]) || [],
-        (localValue as string[]) || [],
-        preferLocal,
-        traceContext,
-        `${pathPrefix}.${key}`
-      );
-      return;
-    }
-
-    if (key === 'clinicalCrib') {
-      merged[key] = mergePatientData(
-        remoteValue as PatientData | undefined,
-        localValue as PatientData | undefined,
-        preferLocal,
-        traceContext,
-        `${pathPrefix}.${key}`
-      );
-      return;
-    }
-
-    merged[key] = mergeUnknown(
-      remoteValue,
-      localValue,
-      preferLocal,
-      `${pathPrefix}.${key}`,
-      traceContext
-    );
-  });
-
-  return merged as unknown as PatientData;
-};
-
-const mergeUnknown = (
-  remote: unknown,
-  local: unknown,
-  preferLocal: boolean,
-  path = '',
-  traceContext?: ConflictResolutionTraceContext
-): unknown => {
-  if (Array.isArray(remote) || Array.isArray(local)) {
-    const remoteArray = Array.isArray(remote) ? remote : [];
-    const localArray = Array.isArray(local) ? local : [];
-    if (remoteArray.length > 0 && typeof remoteArray[0] === 'object') {
-      return mergeArrayById(remoteArray, localArray, traceContext, path);
-    }
-    return mergeUniquePrimitiveArray(
-      remoteArray.filter(isPrimitive).map(String),
-      localArray.filter(isPrimitive).map(String),
-      preferLocal,
-      traceContext,
-      path
-    );
-  }
-
-  if (isPlainObject(remote) || isPlainObject(local)) {
-    return mergeObject(
-      (isPlainObject(remote) ? remote : {}) as Record<string, unknown>,
-      (isPlainObject(local) ? local : {}) as Record<string, unknown>,
-      preferLocal,
-      traceContext,
-      path
-    );
-  }
-  const decision = decideScalarByPolicy(path, remote, local, preferLocal);
-  traceContext?.add(traceFromScalarDecision(path, decision));
-  return decision.value;
-};
-
-const mergeObject = (
-  remote: Record<string, unknown> | undefined,
-  local: Record<string, unknown> | undefined,
-  preferLocal: boolean,
-  traceContext?: ConflictResolutionTraceContext,
-  pathPrefix = ''
-): Record<string, unknown> | undefined => {
-  if (!remote && !local) return undefined;
-  if (!remote) return local;
-  if (!local) return remote;
-
-  const result: Record<string, unknown> = {};
-  const keys = new Set([...Object.keys(remote), ...Object.keys(local)]);
-  traceContext?.add({
-    path: pathPrefix || '*',
-    strategy: 'merge_object',
-    winner: 'merged',
-    reason: 'merge_object_fields',
-  });
-
-  keys.forEach(key => {
-    const childPath = pathPrefix ? `${pathPrefix}.${key}` : key;
-    result[key] = mergeUnknown(remote[key], local[key], preferLocal, childPath, traceContext);
-  });
-
-  return result;
-};
-
-const mergeArrayById = <T>(
-  remote: T[] = [],
-  local: T[] = [],
-  traceContext?: ConflictResolutionTraceContext,
-  path = ''
-): T[] => {
-  const output = new Map<string, T>();
-  const sequence: string[] = [];
-
-  const append = (item: T) => {
-    const id = resolveItemId(item);
-    if (!output.has(id)) {
-      sequence.push(id);
-    }
-    output.set(id, item);
-  };
-
-  remote.forEach(append);
-  local.forEach(append);
-
-  traceContext?.add({
-    path,
-    strategy: 'merge_array_by_id',
-    winner: 'merged',
-    reason: 'union_preserve_local_override',
-  });
-
-  return sequence.map(id => output.get(id) as T);
-};
-
-const mergeUniquePrimitiveArray = (
-  remote: string[] = [],
-  local: string[] = [],
-  preferLocal: boolean,
-  traceContext?: ConflictResolutionTraceContext,
-  path = ''
-): string[] => {
-  const preferred = preferLocal ? local : remote;
-  const secondary = preferLocal ? remote : local;
-  traceContext?.add({
-    path,
-    strategy: 'merge_unique_primitive_array',
-    winner: 'merged',
-    reason: preferLocal ? 'union_prefer_local_order' : 'union_prefer_remote_order',
-  });
-  return Array.from(new Set([...(preferred || []), ...(secondary || [])]));
-};
-
-const resolveItemId = (item: unknown): string => {
-  if (item && typeof item === 'object' && 'id' in item) {
-    return String((item as { id?: string | number }).id ?? JSON.stringify(item));
-  }
-  return JSON.stringify(item);
 };
