@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:ci:unit": "vitest run --exclude src/tests/security/firestore-rules.test.ts",
     "test:resilience": "vitest run src/tests/integration/sync-resilience.test.ts src/tests/integration/sync-ui-resilience.test.tsx src/tests/integration/offline-persistence.test.ts",
+    "test:risk:admin-health": "vitest run src/tests/services/admin/healthService.test.ts src/tests/features/admin/systemHealthStatusPolicy.test.ts",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:sync-load": "vitest run src/tests/services/storage/syncQueueLoad.test.ts",

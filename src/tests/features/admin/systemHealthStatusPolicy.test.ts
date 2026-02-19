@@ -29,6 +29,7 @@ describe('systemHealthStatusPolicy', () => {
     const result = evaluateSystemHealthState(baseStatus());
     expect(result.level).toBe('healthy');
     expect(result.badgeLabel).toBe('SALUDABLE');
+    expect(result.recommendedActions[0]).toContain('Sin accion');
   });
 
   it('returns warning for pending queue growth', () => {
@@ -47,6 +48,8 @@ describe('systemHealthStatusPolicy', () => {
     const result = evaluateSystemHealthState(status);
     expect(result.level).toBe('critical');
     expect(result.badgeLabel).toBe('CRITICO');
+    expect(result.reasons).toContain('hay sincronizaciones fallidas');
+    expect(result.recommendedActions.length).toBeGreaterThan(1);
   });
 
   it('returns critical when oldest pending age breaches threshold', () => {

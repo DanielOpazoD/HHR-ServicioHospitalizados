@@ -78,6 +78,11 @@ jobs:
         env:
           CI: true
 
+      - name: Run admin health risk tests
+        run: npm run test:risk:admin-health
+        env:
+          CI: true
+
       - name: Run sync queue load baseline
         run: npm run test:sync-load
         env:

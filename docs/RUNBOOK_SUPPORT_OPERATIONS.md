@@ -119,6 +119,7 @@ Criterio de cierre:
 npm run typecheck
 npm run check:quality
 npm run test:resilience
+npm run test:risk:admin-health
 npm run test:sync-load
 npm run test:rules:ci
 npm run test:emulator:sync:ci

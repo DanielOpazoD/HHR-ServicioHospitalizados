@@ -3,6 +3,7 @@ import {
   reportUserHealth,
   subscribeToSystemHealth,
   getSystemHealthSnapshot,
+  normalizeUserHealthStatus,
   UserHealthStatus,
 } from '@/services/admin/healthService';
 
@@ -88,6 +89,18 @@ describe('healthService', () => {
       expect(consoleSpy).toHaveBeenCalled();
       consoleSpy.mockRestore();
     });
+
+    it('normalizes partial docs when fetching snapshot', async () => {
+      vi.mocked(db.getDocs).mockResolvedValueOnce([
+        { uid: 'u1', email: '', pendingMutations: '3' as unknown as number },
+      ]);
+
+      const results = await getSystemHealthSnapshot();
+      expect(results[0].uid).toBe('u1');
+      expect(results[0].email).toBe('unknown@local');
+      expect(results[0].pendingMutations).toBe(3);
+      expect(results[0].displayName).toBe('Usuario sin nombre');
+    });
   });
 
   describe('subscribeToSystemHealth', () => {
@@ -103,20 +116,40 @@ describe('healthService', () => {
 
     it('should trigger onUpdate when db provides data', () => {
       const onUpdate = vi.fn();
-      let capturedCallback: (data: UserHealthStatus[]) => void;
+      let capturedCallback: ((data: unknown[]) => void) | undefined;
 
       vi.mocked(db.subscribeQuery).mockImplementation((path, options, callback) => {
-        capturedCallback = callback as (data: UserHealthStatus[]) => void;
+        capturedCallback = callback as unknown as (data: unknown[]) => void;
         return vi.fn();
       });
 
       subscribeToSystemHealth(onUpdate);
 
       // Simulate data update
-      const mockData: UserHealthStatus[] = [{ ...mockStatus, uid: 'u1' }];
-      capturedCallback!(mockData);
+      const mockData: Partial<UserHealthStatus>[] = [{ uid: 'u1' }];
+      capturedCallback?.(mockData);
 
-      expect(onUpdate).toHaveBeenCalledWith(mockData);
+      expect(onUpdate).toHaveBeenCalledWith([
+        expect.objectContaining({
+          uid: 'u1',
+          email: 'unknown@local',
+        }),
+      ]);
+    });
+  });
+
+  describe('normalizeUserHealthStatus', () => {
+    it('fills defaults for empty/invalid payloads', () => {
+      const normalized = normalizeUserHealthStatus({
+        uid: '',
+        email: '',
+        pendingMutations: Number.NaN,
+      });
+
+      expect(normalized.uid).toBe('unknown');
+      expect(normalized.email).toBe('unknown@local');
+      expect(normalized.pendingMutations).toBe(0);
+      expect(normalized.isOnline).toBe(false);
     });
   });
 });

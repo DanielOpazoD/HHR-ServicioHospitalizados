@@ -206,6 +206,37 @@ export const SystemHealthDashboard = () => {
                     {health.actionHint}
                   </div>
 
+                  {health.level !== 'healthy' && (
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                        Diagnostico
+                      </p>
+                      <ul className="space-y-1">
+                        {health.reasons.slice(0, 2).map(reason => (
+                          <li
+                            key={reason}
+                            className="text-[10px] bg-white/70 border border-slate-200 rounded px-2 py-1 text-slate-700"
+                          >
+                            {reason}
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 pt-1">
+                        Siguiente accion
+                      </p>
+                      <ul className="space-y-1">
+                        {health.recommendedActions.slice(0, 2).map(action => (
+                          <li
+                            key={action}
+                            className="text-[10px] bg-white border border-slate-200 rounded px-2 py-1 text-slate-700"
+                          >
+                            {action}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
                   {/* Metadata */}
                   <div className="pt-2 flex items-center justify-between text-[10px] font-medium text-slate-400 italic">
                     <div className="flex items-center gap-1">
