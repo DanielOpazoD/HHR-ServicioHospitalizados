@@ -45,6 +45,7 @@
     "test:rules": "RUN_FIRESTORE_RULES_TESTS=1 vitest run src/tests/security/firestore-rules.test.ts",
     "test:rules:ci": "bash scripts/run-firestore-rules-ci.sh",
     "test:emulator:sync": "RUN_FIRESTORE_EMULATOR_TESTS=1 vitest run -c vitest.emulator.config.ts",
+    "test:emulator:ui": "RUN_FIRESTORE_EMULATOR_TESTS=1 vitest run -c vitest.emulator-ui.config.ts",
     "test:emulator:sync:ci": "bash scripts/run-firestore-sync-emulator-ci.sh",
     "emulator": "firebase emulators:start --only firestore"
   },

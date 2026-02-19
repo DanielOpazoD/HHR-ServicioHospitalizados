@@ -17,6 +17,7 @@ import {
   createListFilesInMonth,
   BaseStoredFile,
 } from '@/services/backup/baseStorageService';
+import { isExpectedStorageLookupMiss } from '@/services/backup/storageErrorPolicy';
 
 // ============= Types =============
 
@@ -142,10 +143,10 @@ export const cudyrExists = async (date: string): Promise<boolean> => {
       await getMetadata(storageRef);
       return true;
     } catch (error: unknown) {
-      const storageError = error as { code?: string; message?: string };
-      if (storageError?.code === 'storage/object-not-found') {
+      if (isExpectedStorageLookupMiss(error)) {
         return false;
       }
+      const storageError = error as { message?: string };
       console.warn(`[CudyrStorage] Error checking:`, storageError.message || error);
       return false;
     }

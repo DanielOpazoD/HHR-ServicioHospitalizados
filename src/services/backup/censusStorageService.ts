@@ -11,6 +11,7 @@ import {
   createListFilesInMonth,
   BaseStoredFile,
 } from './baseStorageService';
+import { isExpectedStorageLookupMiss } from './storageErrorPolicy';
 
 // ============= Types =============
 
@@ -44,20 +45,6 @@ const parseFilePath = (path: string): { date: string } | null => {
     };
   }
   return null;
-};
-
-type StorageErrorLike = {
-  code?: string;
-};
-
-const isExpectedStorageLookupMiss = (error: unknown): boolean => {
-  const storageError = error as StorageErrorLike;
-  return (
-    storageError.code === 'storage/object-not-found' ||
-    storageError.code === 'storage/invalid-root-operation' ||
-    storageError.code === 'storage/unauthorized' ||
-    storageError.code === 'storage/unauthenticated'
-  );
 };
 
 // ============= Core Functions =============

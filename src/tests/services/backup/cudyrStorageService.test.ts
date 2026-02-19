@@ -68,6 +68,14 @@ describe('cudyrStorageService', () => {
       const exists = await cudyrExists(mockDate);
       expect(exists).toBe(false);
     });
+
+    it('should return false for unauthorized/unauthenticated lookups', async () => {
+      vi.mocked(getMetadata).mockRejectedValue({ code: 'storage/unauthorized' });
+      expect(await cudyrExists(mockDate)).toBe(false);
+
+      vi.mocked(getMetadata).mockRejectedValue({ code: 'storage/unauthenticated' });
+      expect(await cudyrExists(mockDate)).toBe(false);
+    });
   });
 
   describe('Factory-provided functions', () => {

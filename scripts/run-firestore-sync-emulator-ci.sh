@@ -30,4 +30,4 @@ ensure_java_available() {
 
 ensure_java_available
 
-npx -y firebase-tools@13.35.1 emulators:exec --only firestore "npm run test:emulator:sync"
+npx -y firebase-tools@13.35.1 emulators:exec --only firestore "npm run test:emulator:sync && npm run test:emulator:ui"
