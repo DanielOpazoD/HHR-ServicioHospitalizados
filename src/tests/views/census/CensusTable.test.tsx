@@ -3,14 +3,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { REGULAR_BEDS } from '@/constants/beds';
 import {
-  useDailyRecordBedActions,
   useDailyRecordBeds,
   useDailyRecordData,
-  useDailyRecordDayActions,
   useDailyRecordMovements,
   useDailyRecordOverrides,
   useDailyRecordStaff,
 } from '@/context/DailyRecordContext';
+import {
+  useDailyRecordBedActions,
+  useDailyRecordDayActions,
+} from '@/context/useDailyRecordScopedActions';
 import { useTableConfig } from '@/context/TableConfigContext';
 import { useConfirmDialog, useNotification } from '@/context/UIContext';
 import { useCensusActionCommands } from '@/features/census/context/censusActionContexts';
@@ -46,12 +48,15 @@ vi.mock('@/context/TableConfigContext', () => ({
 
 vi.mock('@/context/DailyRecordContext', () => ({
   useDailyRecordData: vi.fn(),
-  useDailyRecordBedActions: vi.fn(),
   useDailyRecordMovements: vi.fn(),
   useDailyRecordBeds: vi.fn(),
-  useDailyRecordDayActions: vi.fn(),
   useDailyRecordStaff: vi.fn(),
   useDailyRecordOverrides: vi.fn(),
+}));
+
+vi.mock('@/context/useDailyRecordScopedActions', () => ({
+  useDailyRecordBedActions: vi.fn(),
+  useDailyRecordDayActions: vi.fn(),
 }));
 
 vi.mock('@/features/census/components/PatientRow', () => ({

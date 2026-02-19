@@ -10,9 +10,12 @@ const mockedUseDailyRecordMovements = vi.fn();
 const mockedUseStaffContext = vi.fn();
 
 vi.mock('@/context/DailyRecordContext', () => ({
-  useDailyRecordStaffActions: () => mockedUseDailyRecordStaffActions(),
   useDailyRecordStaff: () => mockedUseDailyRecordStaff(),
   useDailyRecordMovements: () => mockedUseDailyRecordMovements(),
+}));
+
+vi.mock('@/context/useDailyRecordScopedActions', () => ({
+  useDailyRecordStaffActions: () => mockedUseDailyRecordStaffActions(),
 }));
 
 vi.mock('@/context/StaffContext', () => ({

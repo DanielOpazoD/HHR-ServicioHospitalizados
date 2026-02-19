@@ -3,12 +3,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useCensusTableDependencies } from '@/features/census/hooks/useCensusTableDependencies';
 import {
-  useDailyRecordBedActions,
   useDailyRecordBeds,
-  useDailyRecordDayActions,
   useDailyRecordOverrides,
   useDailyRecordStaff,
 } from '@/context/DailyRecordContext';
+import {
+  useDailyRecordBedActions,
+  useDailyRecordDayActions,
+} from '@/context/useDailyRecordScopedActions';
 import { useCensusActionCommands } from '@/features/census/context/censusActionContexts';
 import { useConfirmDialog, useNotification } from '@/context/UIContext';
 import { useAuth } from '@/context/AuthContext';
@@ -16,11 +18,14 @@ import { useTableConfig } from '@/context/TableConfigContext';
 import { useDiagnosisMode } from '@/features/census/hooks/useDiagnosisMode';
 
 vi.mock('@/context/DailyRecordContext', () => ({
-  useDailyRecordBedActions: vi.fn(),
   useDailyRecordBeds: vi.fn(),
-  useDailyRecordDayActions: vi.fn(),
   useDailyRecordOverrides: vi.fn(),
   useDailyRecordStaff: vi.fn(),
+}));
+
+vi.mock('@/context/useDailyRecordScopedActions', () => ({
+  useDailyRecordBedActions: vi.fn(),
+  useDailyRecordDayActions: vi.fn(),
 }));
 
 vi.mock('@/features/census/context/censusActionContexts', () => ({

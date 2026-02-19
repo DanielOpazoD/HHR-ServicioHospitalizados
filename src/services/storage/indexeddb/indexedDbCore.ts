@@ -2,7 +2,7 @@ import Dexie, { Table } from 'dexie';
 
 import { DailyRecord } from '@/types';
 import { AuditLogEntry } from '@/types/audit';
-import { ErrorLog } from '@/services/utils/errorService';
+import { ErrorLog } from '@/services/logging/errorLogTypes';
 
 import { SyncTask } from '../syncQueueTypes';
 import { CatalogRecord } from './indexedDbCatalogContracts';

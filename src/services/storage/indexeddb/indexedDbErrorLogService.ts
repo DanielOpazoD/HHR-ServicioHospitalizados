@@ -1,4 +1,4 @@
-import { ErrorLog } from '@/services/utils/errorService';
+import { ErrorLog } from '@/services/logging/errorLogTypes';
 
 import { ensureDbReady, hospitalDB as db } from './indexedDbCore';
 

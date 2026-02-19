@@ -2,10 +2,10 @@ import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { usePatientRowDependencies } from '@/features/census/components/patient-row/usePatientRowDependencies';
-import { useDailyRecordBedActions } from '@/context/DailyRecordContext';
+import { useDailyRecordBedActions } from '@/context/useDailyRecordScopedActions';
 import { useConfirmDialog } from '@/context/UIContext';
 
-vi.mock('@/context/DailyRecordContext', () => ({
+vi.mock('@/context/useDailyRecordScopedActions', () => ({
   useDailyRecordBedActions: vi.fn(),
 }));
 

@@ -15,6 +15,9 @@ const mockedUseNotification = vi.fn();
 
 vi.mock('@/context/DailyRecordContext', () => ({
   useDailyRecordData: () => mockedUseDailyRecordData(),
+}));
+
+vi.mock('@/context/useDailyRecordScopedActions', () => ({
   useDailyRecordBedActions: () => mockedUseDailyRecordBedActions(),
   useDailyRecordMovementActions: () => mockedUseDailyRecordMovementActions(),
 }));

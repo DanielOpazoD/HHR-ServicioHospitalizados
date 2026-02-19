@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { DailyRecordActionsContextType } from '@/hooks/useDailyRecordTypes';
-import { useRequiredDailyRecordActionsContext } from '@/context/DailyRecordContext';
+import { useRequiredDailyRecordActionsContext } from '@/context/dailyRecordActionsContext';
 
 type DailyRecordDayActions = Pick<
   DailyRecordActionsContextType,
@@ -58,8 +58,12 @@ type DailyRecordHandoffActions = Pick<
   | 'sendMedicalHandoff'
 >;
 
+const useResolvedActionsContext = (hookName: string): DailyRecordActionsContextType => {
+  return useRequiredDailyRecordActionsContext(hookName);
+};
+
 export const useDailyRecordDayActions = (): DailyRecordDayActions => {
-  const actions = useRequiredDailyRecordActionsContext('useDailyRecordDayActions');
+  const actions = useResolvedActionsContext('useDailyRecordDayActions');
   return useMemo(
     () => ({
       createDay: actions.createDay,
@@ -72,7 +76,7 @@ export const useDailyRecordDayActions = (): DailyRecordDayActions => {
 };
 
 export const useDailyRecordBedActions = (): DailyRecordBedActions => {
-  const actions = useRequiredDailyRecordActionsContext('useDailyRecordBedActions');
+  const actions = useResolvedActionsContext('useDailyRecordBedActions');
   return useMemo(
     () => ({
       updatePatient: actions.updatePatient,
@@ -114,7 +118,7 @@ export const useDailyRecordBedActions = (): DailyRecordBedActions => {
 };
 
 export const useDailyRecordMovementActions = (): DailyRecordMovementActions => {
-  const actions = useRequiredDailyRecordActionsContext('useDailyRecordMovementActions');
+  const actions = useResolvedActionsContext('useDailyRecordMovementActions');
   return useMemo(
     () => ({
       addDischarge: actions.addDischarge,
@@ -146,7 +150,7 @@ export const useDailyRecordMovementActions = (): DailyRecordMovementActions => {
 };
 
 export const useDailyRecordStaffActions = (): DailyRecordStaffActions => {
-  const actions = useRequiredDailyRecordActionsContext('useDailyRecordStaffActions');
+  const actions = useResolvedActionsContext('useDailyRecordStaffActions');
   return useMemo(
     () => ({
       updateNurse: actions.updateNurse,
@@ -157,7 +161,7 @@ export const useDailyRecordStaffActions = (): DailyRecordStaffActions => {
 };
 
 export const useDailyRecordCudyrActions = (): DailyRecordCudyrActions => {
-  const actions = useRequiredDailyRecordActionsContext('useDailyRecordCudyrActions');
+  const actions = useResolvedActionsContext('useDailyRecordCudyrActions');
   return useMemo(
     () => ({
       updateCudyr: actions.updateCudyr,
@@ -175,7 +179,7 @@ export const useDailyRecordCudyrActions = (): DailyRecordCudyrActions => {
 };
 
 export const useDailyRecordHandoffActions = (): DailyRecordHandoffActions => {
-  const actions = useRequiredDailyRecordActionsContext('useDailyRecordHandoffActions');
+  const actions = useResolvedActionsContext('useDailyRecordHandoffActions');
   return useMemo(
     () => ({
       updateHandoffChecklist: actions.updateHandoffChecklist,

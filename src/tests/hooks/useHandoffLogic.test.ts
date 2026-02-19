@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useHandoffLogic } from '@/hooks/useHandoffLogic';
+import { useDailyRecordData } from '@/context/DailyRecordContext';
 import {
-  useDailyRecordData,
   useDailyRecordBedActions,
   useDailyRecordHandoffActions,
-} from '@/context/DailyRecordContext';
+} from '@/context/useDailyRecordScopedActions';
 import { Specialty, PatientStatus } from '@/types';
 import * as dateUtils from '@/utils/dateUtils';
 
@@ -21,6 +21,9 @@ vi.mock('@/context/AuditContext', () => ({
 
 vi.mock('@/context/DailyRecordContext', () => ({
   useDailyRecordData: vi.fn(),
+}));
+
+vi.mock('@/context/useDailyRecordScopedActions', () => ({
   useDailyRecordBedActions: vi.fn(),
   useDailyRecordHandoffActions: vi.fn(),
 }));

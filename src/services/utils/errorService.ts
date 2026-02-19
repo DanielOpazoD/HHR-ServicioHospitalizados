@@ -3,28 +3,14 @@
  * Handles error tracking, logging, reporting, and retry logic for Firestore operations
  */
 import { logSystemError } from '../admin/auditService';
-import { saveErrorLog } from '../storage/indexedDBService';
+import { saveErrorLog } from '../storage/indexeddb/indexedDbErrorLogService';
+import { ErrorLog, ErrorSeverity, LogLevel } from '@/services/logging/errorLogTypes';
 
 // ============================================================================
 // Types and Enums
 // ============================================================================
 
-export type ErrorSeverity = 'low' | 'medium' | 'high' | 'critical';
-
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
-
-export interface ErrorLog {
-  id: string;
-  timestamp: string;
-  message: string;
-  severity: ErrorSeverity;
-  stack?: string;
-  userId?: string;
-  userEmail?: string;
-  context?: Record<string, unknown>;
-  userAgent?: string;
-  url?: string;
-}
+export type { ErrorLog, ErrorSeverity, LogLevel };
 
 export interface RetryConfig {
   maxRetries: number;

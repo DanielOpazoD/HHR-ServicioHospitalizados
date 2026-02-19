@@ -3,11 +3,8 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import { DischargesSection } from '@/features/census/components/DischargesSection';
 import { useCensusActionCommands } from '@/features/census/components/CensusActionsContext';
-import {
-  useDailyRecordData,
-  useDailyRecordMovementActions,
-  useDailyRecordMovements,
-} from '@/context/DailyRecordContext';
+import { useDailyRecordData, useDailyRecordMovements } from '@/context/DailyRecordContext';
+import { useDailyRecordMovementActions } from '@/context/useDailyRecordScopedActions';
 import { useConfirmDialog, useNotification } from '@/context/UIContext';
 import { DataFactory } from '../../factories/DataFactory';
 
@@ -17,8 +14,11 @@ vi.mock('@/features/census/components/CensusActionsContext', () => ({
 
 vi.mock('@/context/DailyRecordContext', () => ({
   useDailyRecordData: vi.fn(),
-  useDailyRecordMovementActions: vi.fn(),
   useDailyRecordMovements: vi.fn(),
+}));
+
+vi.mock('@/context/useDailyRecordScopedActions', () => ({
+  useDailyRecordMovementActions: vi.fn(),
 }));
 
 vi.mock('@/context/UIContext', () => ({

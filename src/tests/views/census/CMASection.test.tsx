@@ -2,20 +2,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { CMASection } from '@/features/census/components/CMASection';
+import { useDailyRecordData, useDailyRecordMovements } from '@/context/DailyRecordContext';
 import {
   useDailyRecordBedActions,
-  useDailyRecordData,
   useDailyRecordMovementActions,
-  useDailyRecordMovements,
-} from '@/context/DailyRecordContext';
+} from '@/context/useDailyRecordScopedActions';
 import { useConfirmDialog, useNotification } from '@/context/UIContext';
 import { DataFactory } from '@/tests/factories/DataFactory';
 
 vi.mock('@/context/DailyRecordContext', () => ({
-  useDailyRecordBedActions: vi.fn(),
   useDailyRecordData: vi.fn(),
-  useDailyRecordMovementActions: vi.fn(),
   useDailyRecordMovements: vi.fn(),
+}));
+
+vi.mock('@/context/useDailyRecordScopedActions', () => ({
+  useDailyRecordBedActions: vi.fn(),
+  useDailyRecordMovementActions: vi.fn(),
 }));
 
 vi.mock('@/context/UIContext', () => ({

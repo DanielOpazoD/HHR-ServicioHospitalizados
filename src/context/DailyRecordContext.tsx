@@ -10,19 +10,19 @@ import React, { createContext, useContext } from 'react';
 import {
   DailyRecordContextType,
   DailyRecordDataContextType,
-  DailyRecordActionsContextType,
   SyncStatus,
   InventoryStats,
 } from '@/hooks/useDailyRecordTypes';
 import { PatientData, DischargeData, TransferData, CMAData } from '@/types';
 import { StabilityRules } from '@/hooks/useStabilityRules';
 import { useDailyRecordFragmentedValues } from '@/context/useDailyRecordFragmentedValues';
+import {
+  DailyRecordActionsContext,
+  useRequiredDailyRecordActionsContext,
+} from './dailyRecordActionsContext';
 
 // 1. Specialized Contexts
 const DailyRecordDataContext = createContext<DailyRecordDataContextType | undefined>(undefined);
-const DailyRecordActionsContext = createContext<DailyRecordActionsContextType | undefined>(
-  undefined
-);
 
 // Fragmented Data Contexts
 const DailyRecordBedsContext = createContext<Record<string, PatientData> | null | undefined>(
@@ -58,16 +58,6 @@ const DailyRecordStaffContext = createContext<
   | undefined
 >(undefined);
 const DailyRecordOverridesContext = createContext<Record<string, string> | undefined>(undefined);
-
-export const useRequiredDailyRecordActionsContext = (
-  hookName: string
-): DailyRecordActionsContextType => {
-  const context = useContext(DailyRecordActionsContext);
-  if (context === undefined) {
-    throw new Error(`${hookName} must be used within a DailyRecordProvider`);
-  }
-  return context;
-};
 
 /**
  * Fragmented Provider

@@ -21,6 +21,16 @@ vi.mock('@/context/DailyRecordContext', () => ({
       },
     },
   }),
+  useDailyRecordMovements: () => ({
+    discharges: [],
+    transfers: [],
+    cma: [],
+  }),
+  useDailyRecordBeds: () => ({}),
+  useDailyRecordStaff: () => ({ activeExtraBeds: [] }),
+}));
+
+vi.mock('@/context/useDailyRecordScopedActions', () => ({
   useDailyRecordDayActions: () => ({
     createDay: vi.fn(),
     resetDay: vi.fn(),
@@ -35,13 +45,6 @@ vi.mock('@/context/DailyRecordContext', () => ({
     undoTransfer: vi.fn(),
     deleteTransfer: vi.fn(),
   }),
-  useDailyRecordMovements: () => ({
-    discharges: [],
-    transfers: [],
-    cma: [],
-  }),
-  useDailyRecordBeds: () => ({}),
-  useDailyRecordStaff: () => ({ activeExtraBeds: [] }),
 }));
 
 vi.mock('@/context/StaffContext', () => ({

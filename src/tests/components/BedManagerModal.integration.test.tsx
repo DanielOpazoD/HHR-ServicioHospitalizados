@@ -8,6 +8,9 @@ const mockedUseDailyRecordBedActions = vi.fn();
 
 vi.mock('@/context/DailyRecordContext', () => ({
   useDailyRecordData: () => mockedUseDailyRecordData(),
+}));
+
+vi.mock('@/context/useDailyRecordScopedActions', () => ({
   useDailyRecordBedActions: () => mockedUseDailyRecordBedActions(),
 }));
 
