@@ -1,27 +1,38 @@
+import {
+  classifyStorageError,
+  isExpectedStorageLookupMiss,
+  shouldLogStorageError,
+} from '@/services/backup/storageErrorPolicy';
 import { describe, expect, it } from 'vitest';
-import { isExpectedStorageLookupMiss } from '@/services/backup/storageErrorPolicy';
 
 describe('storageErrorPolicy', () => {
-  it('returns true for known storage miss codes', () => {
-    expect(isExpectedStorageLookupMiss({ code: 'storage/object-not-found' })).toBe(true);
-    expect(isExpectedStorageLookupMiss({ code: 'storage/unauthorized' })).toBe(true);
-    expect(isExpectedStorageLookupMiss({ code: 'storage/unauthenticated' })).toBe(true);
+  it('classifies 404 not found errors', () => {
+    const error = { code: 'storage/object-not-found', status: 404 };
+
+    expect(classifyStorageError(error)).toBe('not_found');
+    expect(isExpectedStorageLookupMiss(error)).toBe(true);
+    expect(shouldLogStorageError(error)).toBe(false);
   });
 
-  it('returns true when error includes HTTP 403/404 signals', () => {
-    expect(
-      isExpectedStorageLookupMiss({ code: 'storage/unknown', message: 'HTTP 404 Not Found' })
-    ).toBe(true);
-    expect(
-      isExpectedStorageLookupMiss({
-        code: 'storage/unknown',
-        customData: { serverResponse: 'status: 403 Forbidden' },
-      })
-    ).toBe(true);
+  it('classifies permission denied errors by message', () => {
+    const error = { message: 'FirebaseError: Missing or insufficient permissions.' };
+
+    expect(classifyStorageError(error)).toBe('permission_denied');
+    expect(isExpectedStorageLookupMiss(error)).toBe(true);
   });
 
-  it('returns false for unrelated errors', () => {
-    expect(isExpectedStorageLookupMiss(new Error('network timeout'))).toBe(false);
-    expect(isExpectedStorageLookupMiss({ code: 'storage/retry-limit-exceeded' })).toBe(false);
+  it('classifies timeout errors', () => {
+    const error = { message: 'Request timed out while contacting storage backend' };
+
+    expect(classifyStorageError(error)).toBe('timeout');
+    expect(shouldLogStorageError(error)).toBe(false);
+  });
+
+  it('keeps unknown errors actionable', () => {
+    const error = { message: 'Unexpected failure in storage pipeline' };
+
+    expect(classifyStorageError(error)).toBe('unknown');
+    expect(isExpectedStorageLookupMiss(error)).toBe(false);
+    expect(shouldLogStorageError(error)).toBe(true);
   });
 });

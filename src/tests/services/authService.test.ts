@@ -53,6 +53,7 @@ vi.mock('firebase/firestore', () => ({
 
 describe('authService', () => {
   const AUTH_BOOTSTRAP_PENDING_KEY = 'hhr_auth_bootstrap_pending_v1';
+  const GOOGLE_LOGIN_LOCK_KEY = 'hhr_google_login_lock_v1';
   const originalLocation = window.location;
   const setPathname = (pathname: string) => {
     Reflect.deleteProperty(window, 'location');
@@ -65,6 +66,7 @@ describe('authService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.removeItem(AUTH_BOOTSTRAP_PENDING_KEY);
+    localStorage.removeItem(GOOGLE_LOGIN_LOCK_KEY);
     mockCheckSharedCensusAccessCallable.mockResolvedValue({
       data: { authorized: true, role: 'viewer' },
     });
@@ -186,6 +188,26 @@ describe('authService', () => {
 
       await expect(signInWithGoogle()).rejects.toThrow('Acceso no autorizado');
       expect(firebaseAuth.signOut).toHaveBeenCalled();
+    });
+
+    it('should fail with multi-tab guidance when another tab lock is active', async () => {
+      localStorage.setItem(
+        GOOGLE_LOGIN_LOCK_KEY,
+        JSON.stringify({ owner: 'external-tab', timestamp: Date.now() })
+      );
+
+      await expect(signInWithGoogle()).rejects.toThrow(/otra pestaña.*\d+s/i);
+      expect(firebaseAuth.signInWithPopup).not.toHaveBeenCalled();
+    });
+
+    it('should map INTERNAL ASSERTION popup failures to fallback auth error code', async () => {
+      vi.mocked(firebaseAuth.signInWithPopup).mockRejectedValue(
+        new Error('INTERNAL ASSERTION FAILED: Cross-Origin-Opener-Policy')
+      );
+
+      await expect(signInWithGoogle()).rejects.toMatchObject({
+        code: 'auth/popup-coop-blocked',
+      });
     });
   });
 

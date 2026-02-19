@@ -17,7 +17,16 @@ import {
   createListFilesInMonth,
   BaseStoredFile,
 } from '@/services/backup/baseStorageService';
-import { isExpectedStorageLookupMiss } from '@/services/backup/storageErrorPolicy';
+import {
+  isExpectedStorageLookupMiss,
+  shouldLogStorageError,
+} from '@/services/backup/storageErrorPolicy';
+import {
+  isBackupDateValidationError,
+  parseBackupDateParts,
+} from '@/services/backup/storageContracts';
+import { measureStorageOperation } from '@/services/backup/storageObservability';
+import { assertStorageAvailable } from '@/services/backup/storageAvailability';
 
 // ============= Types =============
 
@@ -37,7 +46,7 @@ const STORAGE_ROOT = 'cudyr-backup';
  * New format: DD-MM-YYYY - CUDYR.xlsx
  */
 const generateCudyrPath = (date: string): string => {
-  const [year, month, day] = date.split('-');
+  const { year, month, day } = parseBackupDateParts(date, 'CudyrStorage');
   const formattedDate = `${day}-${month}-${year}`;
   const filename = `${formattedDate} - CUDYR.xlsx`;
   return `${STORAGE_ROOT}/${year}/${month}/${filename}`;
@@ -78,18 +87,15 @@ const parseFilePath = (path: string): { date: string; year: string; month: strin
 export const uploadCudyrExcel = async (excelBlob: Blob, date: string): Promise<string> => {
   // console.info(`[CudyrStorage] Starting upload for ${date}...`);
   await firebaseReady;
-
-  if (!storage) {
-    throw new Error('Firebase Storage not initialized');
-  }
+  assertStorageAvailable(storage, 'CudyrStorage', 'uploadCudyrExcel');
 
   const filePath = generateCudyrPath(date);
 
   // Check for and delete legacy file to prevent duplicates (CUDYR_DD-MM-YYYY.xlsx)
   try {
-    const [d, m, y] = date.split('-');
-    const legacyFilename = `CUDYR_${d}-${m}-${y}.xlsx`;
-    const legacyPath = `${STORAGE_ROOT}/${y}/${m}/${legacyFilename}`;
+    const { year, month, day } = parseBackupDateParts(date, 'CudyrStorage');
+    const legacyFilename = `CUDYR_${day}-${month}-${year}.xlsx`;
+    const legacyPath = `${STORAGE_ROOT}/${year}/${month}/${legacyFilename}`;
     const legacyRef = ref(storage, legacyPath);
 
     // Check if legacy file exists
@@ -132,25 +138,31 @@ export const cudyrExists = async (date: string): Promise<boolean> => {
     setTimeout(() => resolve(false), TIMEOUT_MS)
   );
 
-  const checkPromise = (async (): Promise<boolean> => {
-    try {
-      await firebaseReady;
-      if (!storage) return false;
+  const checkPromise = measureStorageOperation(
+    'cudyrExists',
+    async (): Promise<boolean> => {
+      try {
+        await firebaseReady;
+        if (!storage) return false;
 
-      const filePath = generateCudyrPath(date);
-      const storageRef = ref(storage, filePath);
+        const filePath = generateCudyrPath(date);
+        const storageRef = ref(storage, filePath);
 
-      await getMetadata(storageRef);
-      return true;
-    } catch (error: unknown) {
-      if (isExpectedStorageLookupMiss(error)) {
+        await getMetadata(storageRef);
+        return true;
+      } catch (error: unknown) {
+        if (isExpectedStorageLookupMiss(error) || isBackupDateValidationError(error)) {
+          return false;
+        }
+        if (shouldLogStorageError(error)) {
+          const storageError = error as { message?: string };
+          console.warn(`[CudyrStorage] Error checking:`, storageError.message || error);
+        }
         return false;
       }
-      const storageError = error as { message?: string };
-      console.warn(`[CudyrStorage] Error checking:`, storageError.message || error);
-      return false;
-    }
-  })();
+    },
+    { context: date }
+  );
 
   return await Promise.race([checkPromise, timeoutPromise]);
 };
@@ -159,8 +171,15 @@ export const cudyrExists = async (date: string): Promise<boolean> => {
  * Delete a CUDYR file from Storage
  */
 export const deleteCudyrFile = async (date: string): Promise<void> => {
+  if (!storage) return;
   const { deleteObject } = await import('firebase/storage');
-  const filePath = generateCudyrPath(date);
+  let filePath: string;
+  try {
+    filePath = generateCudyrPath(date);
+  } catch (error) {
+    if (isBackupDateValidationError(error)) return;
+    throw error;
+  }
   const storageRef = ref(storage, filePath);
   try {
     await deleteObject(storageRef);
@@ -188,7 +207,10 @@ export const listCudyrMonths = createListMonths(STORAGE_ROOT);
  * Note: Display name is normalized to new format (DD-MM-YYYY - CUDYR.xlsx)
  * even for older files stored with the old naming convention.
  */
-export const listCudyrFilesInMonth = createListFilesInMonth<StoredCudyrFile>({
+export const listCudyrFilesInMonth = createListFilesInMonth<
+  StoredCudyrFile,
+  { date: string; year: string; month: string }
+>({
   storageRoot: STORAGE_ROOT,
   parseFilePath,
   mapToFile: (item, metadata, downloadUrl, parsed) => {

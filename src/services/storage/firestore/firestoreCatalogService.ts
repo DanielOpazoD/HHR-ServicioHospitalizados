@@ -9,6 +9,10 @@ import {
   SETTINGS_DOCS,
 } from '@/constants/firestorePaths';
 import { readStringCatalogFromSnapshot } from '@/services/storage/firestore/firestoreShared';
+import {
+  normalizeProfessionalCatalog,
+  normalizeStringCatalog,
+} from '@/services/repositories/contracts/catalogContracts';
 
 const getSettingsDocRef = (docId: string) =>
   doc(db, COLLECTIONS.HOSPITALS, getActiveHospitalId(), HOSPITAL_COLLECTIONS.SETTINGS, docId);
@@ -22,10 +26,11 @@ const saveStringCatalog = async (
   key: 'nurses' | 'tens',
   values: string[]
 ): Promise<void> => {
+  const normalizedValues = normalizeStringCatalog(values);
   await withRetry(() =>
     setDoc(docRef, {
-      list: values,
-      [key]: values,
+      list: normalizedValues,
+      [key]: normalizedValues,
       lastUpdated: new Date().toISOString(),
     })
   );
@@ -75,7 +80,7 @@ export const getNurseCatalogFromFirestore = async (): Promise<string[]> => {
 
 export const saveNurseCatalogToFirestore = async (nurses: string[]): Promise<void> => {
   try {
-    await saveStringCatalog(getNurseCatalogDocRef(), 'nurses', nurses);
+    await saveStringCatalog(getNurseCatalogDocRef(), 'nurses', normalizeStringCatalog(nurses));
   } catch (error) {
     console.error('Error saving nurse catalog to Firestore:', error);
     throw error;
@@ -103,7 +108,7 @@ export const getTensCatalogFromFirestore = async (): Promise<string[]> => {
 
 export const saveTensCatalogToFirestore = async (tens: string[]): Promise<void> => {
   try {
-    await saveStringCatalog(getTensCatalogDocRef(), 'tens', tens);
+    await saveStringCatalog(getTensCatalogDocRef(), 'tens', normalizeStringCatalog(tens));
   } catch (error) {
     console.error('Error saving TENS catalog to Firestore:', error);
     throw error;
@@ -120,7 +125,7 @@ export const getProfessionalsCatalogFromFirestore = async (): Promise<
     const docSnap = await getDoc(getProfessionalsCatalogDocRef());
     if (docSnap.exists()) {
       const data = docSnap.data();
-      return (data.list as ProfessionalCatalogItem[]) || [];
+      return normalizeProfessionalCatalog(data.list);
     }
     return [];
   } catch (error) {
@@ -133,9 +138,10 @@ export const saveProfessionalsCatalogToFirestore = async (
   professionals: ProfessionalCatalogItem[]
 ): Promise<void> => {
   try {
+    const normalized = normalizeProfessionalCatalog(professionals);
     await withRetry(() =>
       setDoc(getProfessionalsCatalogDocRef(), {
-        list: professionals,
+        list: normalized,
         lastUpdated: new Date().toISOString(),
       })
     );
@@ -153,7 +159,7 @@ export const subscribeToProfessionalsCatalog = (
     docSnap => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        const professionals = (data.list as ProfessionalCatalogItem[]) || [];
+        const professionals = normalizeProfessionalCatalog(data.list);
         callback(professionals);
       }
     },

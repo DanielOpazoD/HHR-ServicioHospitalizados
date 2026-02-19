@@ -18,6 +18,7 @@ import { isDemoModeActive, isFirestoreEnabled } from '@/services/repositories/re
 import { migrateLegacyData } from '@/services/repositories/dataMigration';
 import {
   createDailyRecordReadResult,
+  DailyRecordReadResult,
   createGetDailyRecordQuery,
   createGetPreviousDayQuery,
 } from '@/services/repositories/contracts/dailyRecordQueries';
@@ -30,6 +31,14 @@ export const getForDate = async (
   date: string,
   syncFromRemote: boolean = true
 ): Promise<DailyRecord | null> => {
+  const result = await getForDateWithMeta(date, syncFromRemote);
+  return result.record;
+};
+
+export const getForDateWithMeta = async (
+  date: string,
+  syncFromRemote: boolean = true
+): Promise<DailyRecordReadResult> => {
   const query = createGetDailyRecordQuery(date, syncFromRemote);
 
   if (typeof window !== 'undefined' && window.__HHR_E2E_OVERRIDE__) {
@@ -37,19 +46,19 @@ export const getForDate = async (
     if (override[query.date]) {
       console.warn(`[E2E] Using override record for ${query.date}`);
       const migrated = migrateLegacyData(override[query.date], query.date);
-      return createDailyRecordReadResult(query.date, migrated, 'e2e').record;
+      return createDailyRecordReadResult(query.date, migrated, 'e2e');
     }
   }
 
   if (isDemoModeActive()) {
     const demoRecord = await getDemoRecordForDate(query.date);
-    return createDailyRecordReadResult(query.date, demoRecord, 'demo').record;
+    return createDailyRecordReadResult(query.date, demoRecord, 'demo');
   }
 
   const localRecord = await getRecordFromIndexedDB(query.date);
   if (localRecord) {
     const migrated = migrateLegacyData(localRecord, query.date);
-    return createDailyRecordReadResult(query.date, migrated, 'indexeddb').record;
+    return createDailyRecordReadResult(query.date, migrated, 'indexeddb');
   }
 
   if (query.syncFromRemote && isFirestoreEnabled()) {
@@ -61,7 +70,7 @@ export const getForDate = async (
       if (remoteRecord) {
         const migrated = migrateLegacyData(remoteRecord, query.date);
         await saveToIndexedDB(migrated);
-        return createDailyRecordReadResult(query.date, migrated, 'firestore').record;
+        return createDailyRecordReadResult(query.date, migrated, 'firestore');
       }
 
       if (isRepositoryDebugEnabled()) {
@@ -74,14 +83,14 @@ export const getForDate = async (
         }
         const migrated = migrateLegacyData(legacyRecord, query.date);
         await saveToIndexedDB(migrated);
-        return createDailyRecordReadResult(query.date, migrated, 'legacy').record;
+        return createDailyRecordReadResult(query.date, migrated, 'legacy');
       }
     } catch (err) {
       console.warn(`[Repository] getForDate: Remote fetch failed for ${query.date}:`, err);
     }
   }
 
-  return createDailyRecordReadResult(query.date, null, 'not_found').record;
+  return createDailyRecordReadResult(query.date, null, 'not_found');
 };
 
 export const getAvailableDates = async (): Promise<string[]> => {

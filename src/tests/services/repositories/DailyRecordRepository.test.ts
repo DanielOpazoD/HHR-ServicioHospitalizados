@@ -171,6 +171,15 @@ describe('DailyRecordRepository', () => {
       });
       expect(idbService.getDemoRecordForDate).toHaveBeenCalledWith(mockDate);
     });
+
+    it('should return source metadata via getForDateWithMeta', async () => {
+      vi.mocked(idbService.getRecordForDate).mockResolvedValue(mockRecord);
+
+      const result = await Repository.getForDateWithMeta(mockDate);
+
+      expect(result.source).toBe('indexeddb');
+      expect(result.record?.date).toBe(mockDate);
+    });
   });
 
   describe('save', () => {

@@ -3,7 +3,7 @@
  * Handles uploading and managing Census Excel files in Firebase Storage
  */
 
-import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject, getMetadata } from 'firebase/storage';
 import { storage, auth, firebaseReady } from '@/firebaseConfig';
 import {
   createListYears,
@@ -11,7 +11,10 @@ import {
   createListFilesInMonth,
   BaseStoredFile,
 } from './baseStorageService';
-import { isExpectedStorageLookupMiss } from './storageErrorPolicy';
+import { isExpectedStorageLookupMiss, shouldLogStorageError } from './storageErrorPolicy';
+import { isBackupDateValidationError, parseBackupDateParts } from './storageContracts';
+import { measureStorageOperation } from './storageObservability';
+import { assertStorageAvailable } from './storageAvailability';
 
 // ============= Types =============
 
@@ -27,7 +30,7 @@ const STORAGE_ROOT = 'censo-diario';
  * Generate file path for a Census Excel
  */
 const generateCensusPath = (date: string): string => {
-  const [year, month, day] = date.split('-'); // input date is YYYY-MM-DD
+  const { year, month, day } = parseBackupDateParts(date, 'CensusStorage');
   const formattedDate = `${day}-${month}-${year}`;
   const filename = `${formattedDate} - Censo Diario.xlsx`;
   return `${STORAGE_ROOT}/${year}/${month}/${filename}`;
@@ -55,6 +58,7 @@ const parseFilePath = (path: string): { date: string } | null => {
 export const uploadCensus = async (excelBlob: Blob, date: string): Promise<string> => {
   // console.info(`[CensusStorage] Starting upload for ${date}...`);
   await firebaseReady;
+  assertStorageAvailable(storage, 'CensusStorage', 'uploadCensus');
 
   const filePath = generateCensusPath(date);
   const storageRef = ref(storage, filePath);
@@ -80,28 +84,50 @@ export const uploadCensus = async (excelBlob: Blob, date: string): Promise<strin
  * Check if a Census file exists for a given date
  */
 export const checkCensusExists = async (date: string): Promise<boolean> => {
-  try {
-    await firebaseReady;
-    const [year, month, day] = date.split('-');
-    const expectedFileName = `${day}-${month}-${year} - Censo Diario.xlsx`;
-    const monthFolderRef = ref(storage, `${STORAGE_ROOT}/${year}/${month}`);
-    const monthListing = await listAll(monthFolderRef);
-    return monthListing.items.some(item => item.name === expectedFileName);
-  } catch (error: unknown) {
-    // Expected lookup misses (missing folder/file or blocked access in current auth context).
-    if (isExpectedStorageLookupMiss(error)) {
-      return false;
-    }
-    console.warn('[CensusStorage] Error checking file existence:', error);
-    return false;
-  }
+  const TIMEOUT_MS = 4000;
+  const timeoutPromise = new Promise<boolean>(resolve =>
+    setTimeout(() => resolve(false), TIMEOUT_MS)
+  );
+
+  const checkPromise = measureStorageOperation(
+    'censusExists',
+    async (): Promise<boolean> => {
+      try {
+        await firebaseReady;
+        if (!storage) return false;
+
+        const storageRef = ref(storage, generateCensusPath(date));
+        await getMetadata(storageRef);
+        return true;
+      } catch (error: unknown) {
+        // Expected lookup misses (missing file or blocked access in current auth context).
+        if (isExpectedStorageLookupMiss(error) || isBackupDateValidationError(error)) {
+          return false;
+        }
+        if (shouldLogStorageError(error)) {
+          console.warn('[CensusStorage] Error checking file existence:', error);
+        }
+        return false;
+      }
+    },
+    { context: date }
+  );
+
+  return await Promise.race([checkPromise, timeoutPromise]);
 };
 
 /**
  * Delete a Census file from Storage
  */
 export const deleteCensusFile = async (date: string): Promise<void> => {
-  const filePath = generateCensusPath(date);
+  if (!storage) return;
+  let filePath: string;
+  try {
+    filePath = generateCensusPath(date);
+  } catch (error) {
+    if (isBackupDateValidationError(error)) return;
+    throw error;
+  }
   const storageRef = ref(storage, filePath);
   try {
     await deleteObject(storageRef);
@@ -128,7 +154,7 @@ export const listCensusMonths = createListMonths(STORAGE_ROOT);
  * List all Census files in a month (using base service)
  * Note: Display name is normalized to format (DD-MM-YYYY - Censo Diario.xlsx)
  */
-export const listCensusFilesInMonth = createListFilesInMonth<StoredCensusFile>({
+export const listCensusFilesInMonth = createListFilesInMonth<StoredCensusFile, { date: string }>({
   storageRoot: STORAGE_ROOT,
   parseFilePath,
   mapToFile: (item, metadata, downloadUrl, parsed) => {

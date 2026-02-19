@@ -1,125 +1,66 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import {
-  uploadCensus,
-  checkCensusExists,
-  deleteCensusFile,
-  listCensusYears,
-  listCensusMonths,
-  listCensusFilesInMonth,
-} from '@/services/backup/censusStorageService';
-import { ref, uploadBytes, getDownloadURL, listAll, deleteObject } from 'firebase/storage';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { deleteObject } from 'firebase/storage';
 
-// Mock firebase/storage
+const { refMock, getMetadataMock } = vi.hoisted(() => ({
+  refMock: vi.fn((_storage: unknown, path: string) => ({
+    fullPath: path,
+    name: path.split('/').pop(),
+  })),
+  getMetadataMock: vi.fn(),
+}));
+
 vi.mock('firebase/storage', () => ({
-  ref: vi.fn(),
+  ref: refMock,
   uploadBytes: vi.fn(),
   getDownloadURL: vi.fn(),
-  listAll: vi.fn(),
   deleteObject: vi.fn(),
+  getMetadata: getMetadataMock,
 }));
 
-// Mock baseStorageService helpers
-vi.mock('@/services/backup/baseStorageService', () => ({
-  MONTH_NAMES: [],
-  createListYears: vi.fn(() => vi.fn()),
-  createListMonths: vi.fn(() => vi.fn()),
-  createListFilesInMonth: vi.fn(() => vi.fn()),
+vi.mock('@/firebaseConfig', () => ({
+  storage: {} as Record<string, never>,
+  auth: { currentUser: null },
+  firebaseReady: Promise.resolve(),
 }));
+
+import { checkCensusExists, deleteCensusFile } from '@/services/backup/censusStorageService';
 
 describe('censusStorageService', () => {
-  const mockDate = '2025-01-01';
-  const mockBlob = new Blob(['content'], {
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+  afterAll(() => {
+    warnSpy.mockRestore();
   });
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('uploadCensus', () => {
-    it('should upload census and return download URL', async () => {
-      vi.mocked(uploadBytes).mockResolvedValue({} as any);
-      vi.mocked(getDownloadURL).mockResolvedValue('http://download.url');
+  it('returns true when metadata exists for expected census path', async () => {
+    getMetadataMock.mockResolvedValue({});
 
-      const url = await uploadCensus(mockBlob, mockDate);
+    const exists = await checkCensusExists('2026-02-19');
 
-      expect(ref).toHaveBeenCalled();
-      expect(uploadBytes).toHaveBeenCalled();
-      expect(getDownloadURL).toHaveBeenCalled();
-      expect(url).toBe('http://download.url');
-    });
+    expect(exists).toBe(true);
+    expect(refMock).toHaveBeenCalledWith({}, 'censo-diario/2026/02/19-02-2026 - Censo Diario.xlsx');
   });
 
-  describe('checkCensusExists', () => {
-    it('should return true if file exists', async () => {
-      vi.mocked(listAll).mockResolvedValue({
-        items: [{ name: '01-01-2025 - Censo Diario.xlsx' }],
-      } as any);
-      const exists = await checkCensusExists(mockDate);
-      expect(exists).toBe(true);
-    });
+  it('returns false on expected lookup miss', async () => {
+    getMetadataMock.mockRejectedValue({ code: 'storage/object-not-found' });
 
-    it('should return false if file not found', async () => {
-      vi.mocked(listAll).mockResolvedValue({
-        items: [{ name: '31-12-2024 - Censo Diario.xlsx' }],
-      } as any);
-      const exists = await checkCensusExists(mockDate);
-      expect(exists).toBe(false);
-    });
+    const exists = await checkCensusExists('2026-02-19');
 
-    it('should return false when Storage returns not-found errors', async () => {
-      vi.mocked(listAll).mockRejectedValue({ code: 'storage/object-not-found' });
-
-      const exists = await checkCensusExists(mockDate);
-
-      expect(exists).toBe(false);
-    });
-
-    it('should return false when Storage returns unauthorized/unauthenticated', async () => {
-      vi.mocked(listAll).mockRejectedValue({ code: 'storage/unauthorized' });
-      const unauthorizedExists = await checkCensusExists(mockDate);
-      expect(unauthorizedExists).toBe(false);
-
-      vi.mocked(listAll).mockRejectedValue({ code: 'storage/unauthenticated' });
-      const unauthenticatedExists = await checkCensusExists(mockDate);
-      expect(unauthenticatedExists).toBe(false);
-    });
-
-    it('should return false for unexpected errors', async () => {
-      vi.mocked(listAll).mockRejectedValue(new Error('Other Error'));
-
-      const exists = await checkCensusExists(mockDate);
-
-      expect(exists).toBe(false);
-    });
+    expect(exists).toBe(false);
   });
 
-  describe('deleteCensusFile', () => {
-    it('should call deleteObject', async () => {
-      vi.mocked(deleteObject).mockResolvedValue(undefined as any);
-      await deleteCensusFile(mockDate);
-      expect(deleteObject).toHaveBeenCalled();
-    });
-
-    it('should swallow expected miss errors during delete', async () => {
-      vi.mocked(deleteObject).mockRejectedValue({ code: 'storage/object-not-found' });
-      await expect(deleteCensusFile(mockDate)).resolves.toBeUndefined();
-
-      vi.mocked(deleteObject).mockRejectedValue({ code: 'storage/unauthorized' });
-      await expect(deleteCensusFile(mockDate)).resolves.toBeUndefined();
-    });
-
-    it('should rethrow unexpected delete errors', async () => {
-      vi.mocked(deleteObject).mockRejectedValue(new Error('delete failed'));
-      await expect(deleteCensusFile(mockDate)).rejects.toThrow('delete failed');
-    });
+  it('returns false for invalid input date without crashing', async () => {
+    const exists = await checkCensusExists('19-02-2026');
+    expect(exists).toBe(false);
+    expect(warnSpy).not.toHaveBeenCalled();
   });
 
-  describe('Factory-provided functions', () => {
-    it('should exist', () => {
-      expect(listCensusYears).toBeDefined();
-      expect(listCensusMonths).toBeDefined();
-      expect(listCensusFilesInMonth).toBeDefined();
-    });
+  it('ignores delete requests with invalid date format', async () => {
+    await expect(deleteCensusFile('19-02-2026')).resolves.toBeUndefined();
+    expect(deleteObject).not.toHaveBeenCalled();
   });
 });

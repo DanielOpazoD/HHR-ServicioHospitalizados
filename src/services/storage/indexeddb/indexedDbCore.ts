@@ -5,11 +5,12 @@ import { AuditLogEntry } from '@/types/audit';
 import { ErrorLog } from '@/services/utils/errorService';
 
 import { SyncTask } from '../syncQueueTypes';
+import { CatalogRecord } from './indexedDbCatalogContracts';
 
 export class HangaRoaDatabase extends Dexie {
   dailyRecords!: Table<DailyRecord>;
   demoRecords!: Table<DailyRecord>;
-  catalogs!: Table<{ id: string; list: string[]; lastUpdated: string }>;
+  catalogs!: Table<CatalogRecord>;
   errorLogs!: Table<ErrorLog>;
   auditLogs!: Table<AuditLogEntry>;
   settings!: Table<{ id: string; value: unknown }>;

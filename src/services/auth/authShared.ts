@@ -66,6 +66,16 @@ export const consumeE2EPopupMockUser = (): AuthUser | null => {
   }
 };
 
+export const consumeE2EPopupDelayMs = (): number => {
+  const raw = readE2EStorageValue('hhr_e2e_popup_delay_ms');
+  if (!raw) return 0;
+  removeE2EStorageValue('hhr_e2e_popup_delay_ms');
+
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return 0;
+  return Math.min(parsed, 10_000);
+};
+
 export const readE2ERedirectMode = (): 'success' | 'error' | 'timeout' | null => {
   const mode = readE2EStorageValue('hhr_e2e_redirect_mode');
   if (mode === 'success' || mode === 'error' || mode === 'timeout') return mode;

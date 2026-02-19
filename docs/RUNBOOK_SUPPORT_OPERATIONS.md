@@ -29,10 +29,20 @@ Este runbook complementa `docs/RUNBOOK_SYNC_RESILIENCE.md` con una pauta más op
 - Login redirect protegido:
   - Se usa marca temporal `hhr_auth_bootstrap_pending_v1` para evitar rebote prematuro a Login durante retorno de Google redirect.
   - Timeout extendido de bootstrap auth a 45s cuando la marca está activa.
+  - Heartbeat de lock multi-pestaña durante popup (`hhr_google_login_lock_v1`) para evitar colisiones en inicios largos.
+  - Política unificada de errores de auth popup/COOP (`authErrorPolicy`) para decidir cuándo mostrar acceso alternativo por redirect.
 - Legacy fallback con menor ruido:
   - Bloqueo persistente por sesión cuando hay `permission-denied` en legacy.
   - Cache temporal de fechas no encontradas (evita reintentos repetidos sobre rutas legacy inválidas).
   - Logs de repositorio legacy sólo en modo debug explícito (`VITE_DEBUG_REPOSITORY=true`).
+- Backups Storage (contrato de fecha):
+  - Servicios de respaldo (`censo`, `CUDYR`, `PDF`) validan fecha de entrada con formato `YYYY-MM-DD` y calendario válido.
+  - Entradas inválidas se degradan de forma segura (sin romper UI ni cola).
+  - En operaciones de consulta/borrado, una fecha inválida responde `false/null/no-op` (sin excepción operativa).
+  - En operaciones de subida, si Storage no está inicializado se emite error explícito de inicialización.
+  - Clasificación unificada de errores Storage:
+    - `not_found` / `permission_denied` / `unauthenticated` se tratan como no fatales en checks de existencia.
+    - `unknown` se mantiene visible en logs para investigación.
 
 ## Matriz de Severidad
 
@@ -126,6 +136,12 @@ Criterio de cierre:
 - `VITE_DEBUG_LEGACY_FIREBASE=true`:
   - Habilita logs detallados de rutas legacy.
   - Usar sólo para diagnóstico acotado y luego desactivar.
+- Trazas `[StoragePerf]`:
+  - Se emiten automáticamente como advertencia cuando una operación Storage supera el umbral de latencia.
+  - No requieren activar flags adicionales en operación normal.
+- `E2E_BUDGET_LOGIN_VISIBLE_MS`, `E2E_BUDGET_AUTH_FEEDBACK_MS`, `E2E_BUDGET_CENSO_VISIBLE_MS`:
+  - Umbrales del test de performance de arranque en CI.
+  - Ajustar sólo con evidencia de hardware/red del entorno objetivo.
 
 ## Evidencia Mínima para Escalar a Ingeniería
 
@@ -142,10 +158,14 @@ npm run typecheck
 npm run check:quality
 npm run test:resilience
 npm run test:risk:admin-health
+npm run test:risk:auth
+npm run test:risk:platform
 npm run test:sync-load
 npm run test:rules:ci
 npm run test:emulator:sync:ci
 npm run test:e2e:critical:ci
+npm run test:e2e -- e2e/auth-multi-tab-lock.spec.ts
+npm run test -- src/tests/security/netlifyHeadersStatic.test.ts
 ```
 
 Parámetros opcionales para carga de cola:

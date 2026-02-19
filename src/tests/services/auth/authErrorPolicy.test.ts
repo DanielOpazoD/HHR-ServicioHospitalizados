@@ -1,0 +1,32 @@
+import { describe, expect, it } from 'vitest';
+import {
+  isPopupRecoverableAuthError,
+  resolveAuthErrorCode,
+  toGoogleAuthError,
+} from '@/services/auth/authErrorPolicy';
+
+describe('authErrorPolicy', () => {
+  it('resolves explicit auth codes', () => {
+    expect(resolveAuthErrorCode({ code: 'auth/popup-blocked' })).toBe('auth/popup-blocked');
+  });
+
+  it('infers COOP popup blocked code from message', () => {
+    const code = resolveAuthErrorCode({
+      message: 'INTERNAL ASSERTION FAILED: Cross-Origin-Opener-Policy',
+    });
+    expect(code).toBe('auth/popup-coop-blocked');
+    expect(isPopupRecoverableAuthError({ message: 'INTERNAL ASSERTION FAILED' })).toBe(true);
+  });
+
+  it('maps unknown auth error to fallback error code', () => {
+    const err = toGoogleAuthError({ message: 'unexpected crash' }) as Error & { code: string };
+    expect(err.code).toBe('auth/google-signin-failed');
+    expect(err.message).toContain('Error al iniciar sesión con Google');
+  });
+
+  it('returns user-facing message for popup blocked', () => {
+    const err = toGoogleAuthError({ code: 'auth/popup-blocked' }) as Error & { code: string };
+    expect(err.code).toBe('auth/popup-blocked');
+    expect(err.message).toContain('ventana emergente');
+  });
+});

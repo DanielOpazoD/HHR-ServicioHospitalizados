@@ -33,7 +33,13 @@ export {
   getAuditLogsForDate,
 } from './indexeddb/indexedDbAuditLogService';
 
-export { getCatalog, saveCatalog, clearCatalog } from './indexeddb/indexedDbCatalogService';
+export {
+  getCatalog,
+  saveCatalog,
+  clearCatalog,
+  getCatalogValues,
+  saveCatalogValues,
+} from './indexeddb/indexedDbCatalogService';
 
 export { migrateFromLocalStorage } from './indexeddb/indexedDbMigrationService';
 

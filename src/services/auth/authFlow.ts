@@ -6,16 +6,23 @@ import {
 } from 'firebase/auth';
 import { auth } from '@/firebaseConfig';
 import { AuthUser, UserRole } from '@/types';
-import { acquireGoogleLoginLock, releaseGoogleLoginLock } from '@/services/auth/googleLoginLock';
+import {
+  acquireGoogleLoginLock,
+  getGoogleLoginLockStatus,
+  releaseGoogleLoginLock,
+  startGoogleLoginLockHeartbeat,
+} from '@/services/auth/googleLoginLock';
 import { checkSharedCensusAccess, isSharedCensusMode } from '@/services/auth/sharedCensusAuth';
 import { checkEmailInFirestore } from '@/services/auth/authPolicy';
 import {
+  consumeE2EPopupDelayMs,
   consumeE2EPopupErrorCode,
   consumeE2EPopupMockUser,
   createAuthError,
   googleProvider,
   toAuthUser,
 } from '@/services/auth/authShared';
+import { isPopupRecoverableAuthError, toGoogleAuthError } from '@/services/auth/authErrorPolicy';
 
 export const signIn = async (email: string, password: string): Promise<AuthUser> => {
   try {
@@ -52,13 +59,22 @@ export const signIn = async (email: string, password: string): Promise<AuthUser>
 
 export const signInWithGoogle = async (): Promise<AuthUser> => {
   if (!acquireGoogleLoginLock()) {
+    const status = getGoogleLoginLockStatus();
+    const remainingSeconds = Math.max(1, Math.ceil(status.remainingMs / 1000));
     throw createAuthError(
       'auth/multi-tab-login-in-progress',
-      'Ya hay un inicio de sesión en progreso en otra pestaña.'
+      `Ya hay un inicio de sesión en progreso en otra pestaña. Intenta nuevamente en ${remainingSeconds}s.`
     );
   }
 
+  const stopLockHeartbeat = startGoogleLoginLockHeartbeat();
+
   try {
+    const e2ePopupDelayMs = consumeE2EPopupDelayMs();
+    if (e2ePopupDelayMs > 0) {
+      await new Promise(resolve => setTimeout(resolve, e2ePopupDelayMs));
+    }
+
     const existingUser = auth.currentUser;
     if (existingUser && !existingUser.isAnonymous) {
       if (isSharedCensusMode()) {
@@ -115,33 +131,12 @@ export const signInWithGoogle = async (): Promise<AuthUser> => {
 
     console.error('[authService] Google sign-in failed', error);
 
-    const isAssertionFailure = err.message?.includes('INTERNAL ASSERTION');
-    const isNetworkFailure = err.code === 'auth/network-request-failed';
-    if (isAssertionFailure || isNetworkFailure) {
+    if (isPopupRecoverableAuthError(error)) {
       console.warn('[authService] 💡 Suggesting signInWithRedirect due to popup failure');
     }
-
-    const errorMessages: Record<string, string> = {
-      'auth/multi-tab-login-in-progress':
-        'Hay otra pestaña iniciando sesión. Espera unos segundos o usa el acceso alternativo.',
-      'auth/popup-closed-by-user': 'Inicio de sesión cancelado',
-      'auth/popup-blocked':
-        'El navegador bloqueó la ventana emergente. Permita pop-ups para este sitio.',
-      'auth/cancelled-popup-request': 'Operación cancelada',
-      'auth/network-request-failed':
-        'Error de conexión o bloqueo de seguridad (COOP/Cookies). Verifique su conexión o la configuración del navegador.',
-      'auth/unauthorized-domain':
-        'Dominio no autorizado en Firebase Auth. Agrega el dominio actual en Firebase > Authentication > Settings > Authorized domains.',
-      'auth/invalid-api-key':
-        'Clave de API inválida. Revisa las variables de entorno de Firebase configuradas en Netlify.',
-    };
-
-    throw new Error(
-      err.code
-        ? errorMessages[err.code] || 'Error al iniciar sesión con Google'
-        : 'Error al iniciar sesión con Google'
-    );
+    throw toGoogleAuthError(error);
   } finally {
+    stopLockHeartbeat();
     releaseGoogleLoginLock();
   }
 };

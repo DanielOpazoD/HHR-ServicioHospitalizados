@@ -28,7 +28,38 @@ let legacyReadBlockedForSession = false;
 const LEGACY_READ_BLOCK_KEY = 'hhr_legacy_read_block_v1';
 const LEGACY_READ_BLOCK_TTL_MS = 6 * 60 * 60 * 1000;
 const LEGACY_MISSING_DATE_TTL_MS = 30 * 60 * 1000;
+const LEGACY_MISSING_DATE_CACHE_KEY = 'hhr_legacy_missing_dates_v1';
+const LEGACY_MISSING_DATE_CACHE_MAX = 120;
 const legacyMissingDateCache = new Map<string, number>();
+let legacyMissingDateCacheHydrated = false;
+
+const hydrateLegacyMissingDateCache = (): void => {
+  if (legacyMissingDateCacheHydrated) return;
+  legacyMissingDateCacheHydrated = true;
+
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  const raw = window.localStorage.getItem(LEGACY_MISSING_DATE_CACHE_KEY);
+  if (!raw) return;
+
+  try {
+    const parsed = JSON.parse(raw) as Array<[string, number]>;
+    if (!Array.isArray(parsed)) return;
+    for (const entry of parsed) {
+      if (!Array.isArray(entry) || entry.length !== 2) continue;
+      const [date, ts] = entry;
+      if (typeof date !== 'string' || typeof ts !== 'number' || !Number.isFinite(ts)) continue;
+      legacyMissingDateCache.set(date, ts);
+    }
+  } catch {
+    // Ignore malformed persisted cache.
+  }
+};
+
+const persistLegacyMissingDateCache = (): void => {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  const entries = Array.from(legacyMissingDateCache.entries());
+  window.localStorage.setItem(LEGACY_MISSING_DATE_CACHE_KEY, JSON.stringify(entries));
+};
 
 const readLegacyReadBlockTimestamp = (): number | null => {
   if (typeof window === 'undefined' || !window.localStorage) return null;
@@ -55,15 +86,42 @@ export const clearLegacyReadBlock = (): void => {
 };
 
 export const clearLegacyMissingDateCache = (): void => {
+  hydrateLegacyMissingDateCache();
   legacyMissingDateCache.clear();
+  if (typeof window !== 'undefined' && window.localStorage) {
+    window.localStorage.removeItem(LEGACY_MISSING_DATE_CACHE_KEY);
+  }
 };
 
 const isLegacyDateCachedMissing = (date: string): boolean => {
+  hydrateLegacyMissingDateCache();
   const cachedAt = legacyMissingDateCache.get(date);
   if (!cachedAt) return false;
   if (Date.now() - cachedAt <= LEGACY_MISSING_DATE_TTL_MS) return true;
   legacyMissingDateCache.delete(date);
+  persistLegacyMissingDateCache();
   return false;
+};
+
+const cacheLegacyMissingDate = (date: string): void => {
+  hydrateLegacyMissingDateCache();
+  legacyMissingDateCache.set(date, Date.now());
+
+  if (legacyMissingDateCache.size > LEGACY_MISSING_DATE_CACHE_MAX) {
+    let oldestDate: string | null = null;
+    let oldestTimestamp = Number.POSITIVE_INFINITY;
+    for (const [cachedDate, ts] of legacyMissingDateCache.entries()) {
+      if (ts < oldestTimestamp) {
+        oldestTimestamp = ts;
+        oldestDate = cachedDate;
+      }
+    }
+    if (oldestDate) {
+      legacyMissingDateCache.delete(oldestDate);
+    }
+  }
+
+  persistLegacyMissingDateCache();
 };
 
 export const registerLegacyPermissionDeniedBlock = (): void => {
@@ -105,6 +163,7 @@ export const getLegacyRecord = async (date: string): Promise<DailyRecord | null>
         if (docSnap.exists()) {
           logLegacyInfo(`[LegacyFirebase] Found record at: ${path}`);
           legacyMissingDateCache.delete(date);
+          persistLegacyMissingDateCache();
           return parseDailyRecordWithDefaults(docSnap.data(), date);
         }
       } catch (error) {
@@ -117,7 +176,7 @@ export const getLegacyRecord = async (date: string): Promise<DailyRecord | null>
     }
 
     logLegacyInfo(`[LegacyFirebase] No legacy record found for ${date}`);
-    legacyMissingDateCache.set(date, Date.now());
+    cacheLegacyMissingDate(date);
     return null;
   } catch (error) {
     logLegacyError('[LegacyFirebase] Error reading legacy record:', error);

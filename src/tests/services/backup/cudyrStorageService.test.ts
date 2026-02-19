@@ -44,9 +44,9 @@ describe('cudyrStorageService', () => {
 
   describe('uploadCudyrExcel', () => {
     it('should upload CUDYR and attempt to delete legacy files', async () => {
-      vi.mocked(uploadBytes).mockResolvedValue({} as any);
+      vi.mocked(uploadBytes).mockResolvedValue({} as Awaited<ReturnType<typeof uploadBytes>>);
       vi.mocked(getDownloadURL).mockResolvedValue('http://download.url');
-      vi.mocked(getMetadata).mockResolvedValue({} as any);
+      vi.mocked(getMetadata).mockResolvedValue({} as Awaited<ReturnType<typeof getMetadata>>);
 
       const url = await uploadCudyrExcel(mockBlob, mockDate);
 
@@ -57,7 +57,7 @@ describe('cudyrStorageService', () => {
 
   describe('cudyrExists', () => {
     it('should return true if metadata is found', async () => {
-      vi.mocked(getMetadata).mockResolvedValue({} as any);
+      vi.mocked(getMetadata).mockResolvedValue({} as Awaited<ReturnType<typeof getMetadata>>);
 
       const exists = await cudyrExists(mockDate);
       expect(exists).toBe(true);
@@ -85,6 +85,10 @@ describe('cudyrStorageService', () => {
       });
       expect(await cudyrExists(mockDate)).toBe(false);
     });
+
+    it('returns false for invalid date format without throwing', async () => {
+      await expect(cudyrExists('01-01-2025')).resolves.toBe(false);
+    });
   });
 
   describe('deleteCudyrFile', () => {
@@ -96,6 +100,11 @@ describe('cudyrStorageService', () => {
     it('rethrows unexpected errors', async () => {
       vi.mocked(deleteObject).mockRejectedValue(new Error('delete failed'));
       await expect(deleteCudyrFile(mockDate)).rejects.toThrow('delete failed');
+    });
+
+    it('ignores invalid dates during delete', async () => {
+      await expect(deleteCudyrFile('01-01-2025')).resolves.toBeUndefined();
+      expect(deleteObject).not.toHaveBeenCalled();
     });
   });
 

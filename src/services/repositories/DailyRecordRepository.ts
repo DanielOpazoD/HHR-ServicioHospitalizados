@@ -35,6 +35,7 @@ export { migrateLegacyData } from './dataMigration';
 import {
   getAvailableDates as getAvailableDatesFromReadService,
   getForDate as getForDateFromReadService,
+  getForDateWithMeta as getForDateWithMetaFromReadService,
   getPreviousDay as getPreviousDayFromReadService,
 } from './dailyRecordRepositoryReadService';
 import {
@@ -79,6 +80,7 @@ export interface IDailyRecordRepository {
 // ============================================================================
 
 export const getForDate = getForDateFromReadService;
+export const getForDateWithMeta = getForDateWithMetaFromReadService;
 export const getPreviousDay = getPreviousDayFromReadService;
 export const getAvailableDates = getAvailableDatesFromReadService;
 

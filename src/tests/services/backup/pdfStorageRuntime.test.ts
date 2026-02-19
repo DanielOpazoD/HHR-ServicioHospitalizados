@@ -35,6 +35,11 @@ describe('pdfStorageService runtime resilience', () => {
     await expect(getPdfUrl('2026-02-19', 'day')).resolves.toBeNull();
   });
 
+  it('returns null/false for invalid date formats without throwing', async () => {
+    await expect(getPdfUrl('19-02-2026', 'day')).resolves.toBeNull();
+    await expect(pdfExists('19-02-2026', 'night')).resolves.toBe(false);
+  });
+
   it('returns false for unauthorized/unauthenticated in exists check', async () => {
     vi.mocked(getMetadata).mockRejectedValue({ code: 'storage/unauthorized' });
     await expect(pdfExists('2026-02-19', 'day')).resolves.toBe(false);
@@ -49,5 +54,10 @@ describe('pdfStorageService runtime resilience', () => {
 
     vi.mocked(deleteObject).mockRejectedValueOnce(new Error('delete failed'));
     await expect(deletePdf('2026-02-19', 'night')).rejects.toThrow('delete failed');
+  });
+
+  it('delete ignores invalid date inputs', async () => {
+    await expect(deletePdf('19-02-2026', 'day')).resolves.toBeUndefined();
+    expect(deleteObject).not.toHaveBeenCalled();
   });
 });

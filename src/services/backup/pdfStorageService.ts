@@ -18,7 +18,10 @@ import {
   createListFilesInMonth,
   BaseStoredFile,
 } from './baseStorageService';
-import { isExpectedStorageLookupMiss } from './storageErrorPolicy';
+import { isExpectedStorageLookupMiss, shouldLogStorageError } from './storageErrorPolicy';
+import { isBackupDateValidationError, parseBackupDateParts } from './storageContracts';
+import { measureStorageOperation } from './storageObservability';
+import { assertStorageAvailable } from './storageAvailability';
 
 // ============= Types =============
 
@@ -44,7 +47,7 @@ const STORAGE_ROOT = 'entregas-enfermeria';
  * Generate file path for a PDF
  */
 const generatePdfPath = (date: string, shiftType: 'day' | 'night'): string => {
-  const [year, month, day] = date.split('-'); // input date is YYYY-MM-DD
+  const { year, month, day } = parseBackupDateParts(date, 'PdfStorage');
   const shiftLabel = shiftType === 'day' ? 'Largo' : 'Noche';
   const formattedDate = `${day}-${month}-${year}`;
   const filename = `${formattedDate} - Turno ${shiftLabel}.pdf`;
@@ -89,6 +92,7 @@ export const uploadPdf = async (
 ): Promise<string> => {
   // console.info(`[PdfStorage] Starting upload for ${date}...`);
   await firebaseReady;
+  assertStorageAvailable(storage, 'PdfStorage', 'uploadPdf');
 
   const filePath = generatePdfPath(date, shiftType);
   const storageRef = ref(storage, filePath);
@@ -115,7 +119,14 @@ export const uploadPdf = async (
  * Delete a PDF from Storage
  */
 export const deletePdf = async (date: string, shiftType: 'day' | 'night'): Promise<void> => {
-  const filePath = generatePdfPath(date, shiftType);
+  if (!storage) return;
+  let filePath: string;
+  try {
+    filePath = generatePdfPath(date, shiftType);
+  } catch (error) {
+    if (isBackupDateValidationError(error)) return;
+    throw error;
+  }
   const storageRef = ref(storage, filePath);
   try {
     await deleteObject(storageRef);
@@ -135,12 +146,13 @@ export const getPdfUrl = async (
   date: string,
   shiftType: 'day' | 'night'
 ): Promise<string | null> => {
+  if (!storage) return null;
   try {
     const filePath = generatePdfPath(date, shiftType);
     const storageRef = ref(storage, filePath);
     return await getDownloadURL(storageRef);
   } catch (error: unknown) {
-    if (isExpectedStorageLookupMiss(error)) {
+    if (isExpectedStorageLookupMiss(error) || isBackupDateValidationError(error)) {
       return null;
     }
     throw error;
@@ -162,27 +174,33 @@ export const pdfExists = async (date: string, shiftType: 'day' | 'night'): Promi
     }, TIMEOUT_MS)
   );
 
-  const checkPromise = (async (): Promise<boolean> => {
-    try {
-      await firebaseReady;
-      if (!storage) return false;
+  const checkPromise = measureStorageOperation(
+    'pdfExists',
+    async (): Promise<boolean> => {
+      try {
+        await firebaseReady;
+        if (!storage) return false;
 
-      const filePath = generatePdfPath(date, shiftType);
-      const storageRef = ref(storage, filePath);
+        const filePath = generatePdfPath(date, shiftType);
+        const storageRef = ref(storage, filePath);
 
-      await getMetadata(storageRef);
-      // console.debug(`[PdfStorage] ✅ Found: ${filePath}`);
-      return true;
-    } catch (error: unknown) {
-      if (isExpectedStorageLookupMiss(error)) {
-        // console.debug(`[PdfStorage] ℹ️ Not found: ${date} ${shiftType}`);
+        await getMetadata(storageRef);
+        // console.debug(`[PdfStorage] ✅ Found: ${filePath}`);
+        return true;
+      } catch (error: unknown) {
+        if (isExpectedStorageLookupMiss(error) || isBackupDateValidationError(error)) {
+          // console.debug(`[PdfStorage] ℹ️ Not found: ${date} ${shiftType}`);
+          return false;
+        }
+        if (shouldLogStorageError(error)) {
+          const storageError = error as { message?: string };
+          console.warn(`[PdfStorage] ❌ Error (possibly CORS):`, storageError.message || error);
+        }
         return false;
       }
-      const storageError = error as { message?: string };
-      console.warn(`[PdfStorage] ❌ Error (possibly CORS):`, storageError.message || error);
-      return false;
-    }
-  })();
+    },
+    { context: `${date}:${shiftType}` }
+  );
 
   return await Promise.race([checkPromise, timeoutPromise]);
 };
@@ -200,17 +218,19 @@ export const listMonths = createListMonths(STORAGE_ROOT);
 /**
  * List all files in a month (using base service)
  */
-export const listFilesInMonth = createListFilesInMonth<StoredPdfFile>({
+export const listFilesInMonth = createListFilesInMonth<
+  StoredPdfFile,
+  { date: string; shiftType: 'day' | 'night' }
+>({
   storageRoot: STORAGE_ROOT,
   parseFilePath,
   mapToFile: (item, metadata, downloadUrl, parsed) => {
-    const parsedPdf = parsed as NonNullable<ReturnType<typeof parseFilePath>>;
     return {
       name: item.name,
       fullPath: item.fullPath,
       downloadUrl,
-      date: parsedPdf.date,
-      shiftType: parsedPdf.shiftType,
+      date: parsed.date,
+      shiftType: parsed.shiftType,
       createdAt: metadata.customMetadata?.uploadedAt || metadata.timeCreated,
       size: metadata.size,
     };

@@ -11,6 +11,8 @@
     "test:ci:unit": "vitest run --exclude src/tests/security/firestore-rules.test.ts",
     "test:resilience": "vitest run src/tests/integration/sync-resilience.test.ts src/tests/integration/sync-ui-resilience.test.tsx src/tests/integration/offline-persistence.test.ts",
     "test:risk:admin-health": "vitest run src/tests/services/admin/healthService.test.ts src/tests/features/admin/systemHealthStatusPolicy.test.ts",
+    "test:risk:auth": "vitest run src/tests/services/auth/authErrorPolicy.test.ts src/tests/services/auth/googleLoginLock.test.ts src/tests/services/authService.test.ts",
+    "test:risk:platform": "vitest run src/tests/security/netlifyHeadersStatic.test.ts src/tests/services/auth/googleLoginLock.test.ts src/tests/services/backup/storageContracts.test.ts src/tests/services/backup/storageAvailability.test.ts src/tests/services/backup/censusStorageService.test.ts src/tests/services/backup/cudyrStorageService.test.ts src/tests/services/backup/pdfStorageRuntime.test.ts",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:sync-load": "vitest run src/tests/services/storage/syncQueueLoad.test.ts",

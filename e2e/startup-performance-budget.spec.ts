@@ -1,9 +1,16 @@
 import { test, expect } from '@playwright/test';
 
+const parseBudgetFromEnv = (key: string, fallback: number): number => {
+  const raw = process.env[key];
+  if (!raw) return fallback;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
 const BUDGETS = {
-  loginVisibleMs: 4000,
-  authFeedbackMs: 2500,
-  censoVisibleMs: 7000,
+  loginVisibleMs: parseBudgetFromEnv('E2E_BUDGET_LOGIN_VISIBLE_MS', 4000),
+  authFeedbackMs: parseBudgetFromEnv('E2E_BUDGET_AUTH_FEEDBACK_MS', 2500),
+  censoVisibleMs: parseBudgetFromEnv('E2E_BUDGET_CENSO_VISIBLE_MS', 7000),
 } as const;
 
 const CURRENT_DATE = new Date().toISOString().slice(0, 10);

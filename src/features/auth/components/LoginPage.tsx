@@ -4,6 +4,7 @@ import {
   signInAnonymouslyForPassport,
   signInWithGoogleRedirect,
 } from '@/services/auth/authService';
+import { isPopupRecoverableAuthError } from '@/services/auth/authErrorPolicy';
 import {
   parsePassportFile,
   validatePassport,
@@ -82,18 +83,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
       // Safer error handling without 'any'
       const errorMessage = err instanceof Error ? err.message : String(err);
-      const errorCode = (err as { code?: string })?.code;
-
-      // If it's a COOP or network error, we'll show a more helpful message
-      const isPopupIssue =
-        errorCode === 'auth/network-request-failed' ||
-        errorMessage.includes('INTERNAL ASSERTION') ||
-        errorCode === 'auth/popup-blocked' ||
-        errorCode === 'auth/cancelled-popup-request' ||
-        errorCode === 'auth/multi-tab-login-in-progress' ||
-        /ventana emergente|otra pestaña iniciando sesión|bloqueó la ventana|COOP\/Cookies|bloqueo de seguridad/i.test(
-          errorMessage
-        );
+      const isPopupIssue = isPopupRecoverableAuthError(err);
 
       if (isPopupIssue) {
         setShowAlternateAccess(true);
