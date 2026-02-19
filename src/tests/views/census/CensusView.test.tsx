@@ -2,19 +2,29 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 import { CensusView } from '@/features/census/components/CensusView';
-import { useCensusLogic } from '@/hooks/useCensusLogic';
-import { useTableConfig } from '@/context/TableConfigContext';
-// Mock dependencies
-vi.mock('@/hooks/useCensusLogic');
-vi.mock('@/context/TableConfigContext');
+import { useCensusViewModel } from '@/features/census/hooks/useCensusViewModel';
+
+vi.mock('@/features/census/hooks/useCensusViewModel', () => ({
+  useCensusViewModel: vi.fn(),
+}));
+
+vi.mock('@/features/census/hooks/useCensusMigrationBootstrap', () => ({
+  useCensusMigrationBootstrap: vi.fn(),
+}));
+
 vi.mock('@/components/shared/SectionErrorBoundary', () => ({
   SectionErrorBoundary: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
-// Mock sub-components to simplify the view test
-vi.mock('@/features/census/components/index', () => ({
-  CensusActionsProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+vi.mock('@/features/analytics/public', () => ({
+  AnalyticsView: () => <div data-testid="analytics-view">Analytics View</div>,
+}));
+
+vi.mock('@/features/census/components/EmptyDayPrompt', () => ({
   EmptyDayPrompt: () => <div data-testid="empty-day-prompt">Empty Day Prompt</div>,
+}));
+
+vi.mock('@/features/census/components/CensusRegisterContent', () => ({
   CensusRegisterContent: ({
     readOnly,
     localViewMode,
@@ -37,25 +47,7 @@ vi.mock('@/features/census/components/index', () => ({
       {!readOnly && <div data-testid="census-modals">Census Modals</div>}
     </div>
   ),
-  CensusTable: () => <div data-testid="census-table">Census Table</div>,
-  DischargesSection: () => <div data-testid="discharges-section">Discharges Section</div>,
-  TransfersSection: () => <div data-testid="transfers-section">Transfers Section</div>,
-  CMASection: () => <div data-testid="cma-section">CMA Section</div>,
-  CensusModals: () => <div data-testid="census-modals">Census Modals</div>,
-  CensusStaffHeader: () => <div data-testid="census-staff-header">Census Staff Header</div>,
 }));
-
-vi.mock('@/features/analytics/components/AnalyticsView', () => ({
-  AnalyticsView: () => <div data-testid="analytics-view">Analytics View</div>,
-}));
-
-vi.mock('@/features/census/components/3d/HospitalFloorMap', () => ({
-  default: ({ beds }: { beds: Array<{ id: string }> }) => (
-    <div data-testid="hospital-floor-map">{beds.map(bed => bed.id).join(',')}</div>
-  ),
-}));
-
-// Sub-components are mocked in the index mock below
 
 describe('CensusView', () => {
   const defaultProps = {
@@ -67,28 +59,20 @@ describe('CensusView', () => {
     onCloseBedManagerModal: vi.fn(),
   };
 
-  const mockCensusLogic = {
+  const mockViewModel = {
     beds: null,
-    staff: { activeExtraBeds: [] },
-    movements: { discharges: [], transfers: [], cma: [] },
-    stats: {},
     previousRecordAvailable: false,
+    previousRecordDate: undefined,
     availableDates: [],
     createDay: vi.fn(),
-    resetDay: vi.fn(),
-    updateNurse: vi.fn(),
-    updateTens: vi.fn(),
-    undoDischarge: vi.fn(),
-    deleteDischarge: vi.fn(),
-    undoTransfer: vi.fn(),
-    deleteTransfer: vi.fn(),
-    nursesList: [],
-    tensList: [],
+    stats: null,
+    marginStyle: {},
+    visibleBeds: [],
   };
 
   beforeEach(() => {
-    vi.mocked(useCensusLogic).mockReturnValue(mockCensusLogic as any);
-    vi.mocked(useTableConfig).mockReturnValue({ config: { pageMargin: 20 } } as any);
+    vi.clearAllMocks();
+    vi.mocked(useCensusViewModel).mockReturnValue(mockViewModel as any);
   });
 
   it('renders AnalyticsView when viewMode is ANALYTICS', () => {
@@ -97,16 +81,18 @@ describe('CensusView', () => {
   });
 
   it('renders EmptyDayPrompt when record is missing', () => {
-    vi.mocked(useCensusLogic).mockReturnValue({ ...mockCensusLogic, beds: null } as any);
+    vi.mocked(useCensusViewModel).mockReturnValue({ ...mockViewModel, beds: null } as any);
+
     render(<CensusView {...defaultProps} />);
+
     expect(screen.getByTestId('empty-day-prompt')).toBeInTheDocument();
   });
 
   it('renders main census sections when record is present', () => {
-    vi.mocked(useCensusLogic).mockReturnValue({
-      ...mockCensusLogic,
+    vi.mocked(useCensusViewModel).mockReturnValue({
+      ...mockViewModel,
       beds: {},
-      staff: { activeExtraBeds: [] },
+      visibleBeds: [{ id: 'H1C1' }],
     } as any);
 
     render(<CensusView {...defaultProps} />);
@@ -119,37 +105,37 @@ describe('CensusView', () => {
   });
 
   it('renders CensusModals when not in readOnly mode', () => {
-    vi.mocked(useCensusLogic).mockReturnValue({
-      ...mockCensusLogic,
+    vi.mocked(useCensusViewModel).mockReturnValue({
+      ...mockViewModel,
       beds: {},
-      staff: { activeExtraBeds: [] },
     } as any);
 
     render(<CensusView {...defaultProps} readOnly={false} />);
+
     expect(screen.getByTestId('census-modals')).toBeInTheDocument();
   });
 
   it('hides CensusModals in readOnly mode', () => {
-    vi.mocked(useCensusLogic).mockReturnValue({
-      ...mockCensusLogic,
+    vi.mocked(useCensusViewModel).mockReturnValue({
+      ...mockViewModel,
       beds: {},
-      staff: { activeExtraBeds: [] },
     } as any);
 
     render(<CensusView {...defaultProps} readOnly={true} />);
+
     expect(screen.queryByTestId('census-modals')).not.toBeInTheDocument();
   });
 
-  it('renders 3D map when localViewMode is 3D', async () => {
-    vi.mocked(useCensusLogic).mockReturnValue({
-      ...mockCensusLogic,
+  it('renders 3D map when localViewMode is 3D', () => {
+    vi.mocked(useCensusViewModel).mockReturnValue({
+      ...mockViewModel,
       beds: {},
-      staff: { activeExtraBeds: ['E1'] },
+      visibleBeds: [{ id: 'E1' }],
     } as any);
 
     render(<CensusView {...defaultProps} localViewMode="3D" />);
-    const floorMap = await screen.findByTestId('hospital-floor-map');
 
+    const floorMap = screen.getByTestId('hospital-floor-map');
     expect(floorMap).toBeInTheDocument();
     expect(floorMap.textContent).toContain('E1');
   });

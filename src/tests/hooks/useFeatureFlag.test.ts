@@ -1,124 +1,96 @@
-/**
- * useFeatureFlag Hook Tests
- * Tests for feature flag state management
- */
-
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useFeatureFlag, useAllFeatureFlags } from '@/hooks/useFeatureFlag';
-import { featureFlags } from '@/services';
+import { featureFlags } from '@/services/utils/featureFlags';
 
-// Mock the featureFlags service
-vi.mock('@/services', () => ({
-    featureFlags: {
-        isEnabled: vi.fn(),
-        subscribe: vi.fn(() => vi.fn()), // returns unsubscribe function
-        subscribeAll: vi.fn(() => vi.fn()),
-        getAll: vi.fn(() => ({}))
-    }
+vi.mock('@/services/utils/featureFlags', () => ({
+  featureFlags: {
+    isEnabled: vi.fn(),
+    subscribe: vi.fn(() => vi.fn()),
+    subscribeAll: vi.fn(() => vi.fn()),
+    getAll: vi.fn(() => ({})),
+  },
 }));
 
 describe('useFeatureFlag', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should return false when flag is disabled', () => {
+    vi.mocked(featureFlags.isEnabled).mockReturnValue(false);
+
+    const { result } = renderHook(() => useFeatureFlag('SHOW_DEBUG_PANEL'));
+
+    expect(result.current).toBe(false);
+  });
+
+  it('should return true when flag is enabled', () => {
+    vi.mocked(featureFlags.isEnabled).mockReturnValue(true);
+
+    const { result } = renderHook(() => useFeatureFlag('SHOW_DEBUG_PANEL'));
+
+    expect(result.current).toBe(true);
+  });
+
+  it('should subscribe to flag changes on mount', () => {
+    vi.mocked(featureFlags.isEnabled).mockReturnValue(false);
+
+    renderHook(() => useFeatureFlag('SHOW_DEBUG_PANEL'));
+
+    expect(featureFlags.subscribe).toHaveBeenCalledWith('SHOW_DEBUG_PANEL', expect.any(Function));
+  });
+
+  it('should unsubscribe on unmount', () => {
+    const unsubscribeMock = vi.fn();
+    vi.mocked(featureFlags.subscribe).mockReturnValue(unsubscribeMock);
+    vi.mocked(featureFlags.isEnabled).mockReturnValue(false);
+
+    const { unmount } = renderHook(() => useFeatureFlag('SHOW_DEBUG_PANEL'));
+
+    unmount();
+
+    expect(unsubscribeMock).toHaveBeenCalled();
+  });
+
+  it('should update when flag state changes via subscription', () => {
+    vi.mocked(featureFlags.isEnabled).mockReturnValue(false);
+    let subscribeCallback: (() => void) | undefined;
+
+    vi.mocked(featureFlags.subscribe).mockImplementation((_flag, cb) => {
+      subscribeCallback = cb as () => void;
+      return vi.fn();
     });
 
-    describe('Initial State', () => {
-        it('should return false when flag is disabled', () => {
-            vi.mocked(featureFlags.isEnabled).mockReturnValue(false);
+    const { result } = renderHook(() => useFeatureFlag('SHOW_DEBUG_PANEL'));
 
-            const { result } = renderHook(() =>
-                useFeatureFlag('SHOW_DEBUG_PANEL')
-            );
+    expect(result.current).toBe(false);
 
-            expect(result.current).toBe(false);
-        });
-
-        it('should return true when flag is enabled', () => {
-            vi.mocked(featureFlags.isEnabled).mockReturnValue(true);
-
-            const { result } = renderHook(() =>
-                useFeatureFlag('SHOW_DEBUG_PANEL')
-            );
-
-            expect(result.current).toBe(true);
-        });
+    act(() => {
+      vi.mocked(featureFlags.isEnabled).mockReturnValue(true);
+      subscribeCallback?.();
     });
 
-    describe('Subscription', () => {
-        it('should subscribe to flag changes on mount', () => {
-            vi.mocked(featureFlags.isEnabled).mockReturnValue(false);
-
-            renderHook(() => useFeatureFlag('SHOW_DEBUG_PANEL'));
-
-            expect(featureFlags.subscribe).toHaveBeenCalledWith(
-                'SHOW_DEBUG_PANEL',
-                expect.any(Function)
-            );
-        });
-
-        it('should unsubscribe on unmount', () => {
-            const unsubscribeMock = vi.fn();
-            vi.mocked(featureFlags.subscribe).mockReturnValue(unsubscribeMock);
-            vi.mocked(featureFlags.isEnabled).mockReturnValue(false);
-
-            const { unmount } = renderHook(() =>
-                useFeatureFlag('SHOW_DEBUG_PANEL')
-            );
-
-            unmount();
-
-            expect(unsubscribeMock).toHaveBeenCalled();
-        });
-    });
-
-    describe('Re-render on flag change', () => {
-        it('should update when flag state changes via subscription', () => {
-            vi.mocked(featureFlags.isEnabled).mockReturnValue(false);
-            let subscribeCallback: (value: boolean) => void = () => { };
-            vi.mocked(featureFlags.subscribe).mockImplementation((flag, cb) => {
-                subscribeCallback = cb;
-                return vi.fn();
-            });
-
-            const { result } = renderHook(() =>
-                useFeatureFlag('SHOW_DEBUG_PANEL')
-            );
-
-            expect(result.current).toBe(false);
-
-            // Simulate flag change
-            act(() => {
-                vi.mocked(featureFlags.isEnabled).mockReturnValue(true);
-                subscribeCallback(true);
-            });
-
-            expect(result.current).toBe(true);
-        });
-    });
+    expect(result.current).toBe(true);
+  });
 });
 
 describe('useAllFeatureFlags', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-        vi.useFakeTimers();
-    });
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-    afterEach(() => {
-        vi.useRealTimers();
-    });
+  it('should return all flags', () => {
+    const flagsSnapshot = {
+      SHOW_DEBUG_PANEL: true,
+      ENABLE_WHATSAPP_INTEGRATION: false,
+    } as any;
 
-    it('should return all flags', () => {
-        vi.mocked(featureFlags.getAll).mockReturnValue({
-            'SHOW_DEBUG_PANEL': true,
-            'ENABLE_WHATSAPP_INTEGRATION': false
-        } as any);
+    vi.mocked(featureFlags.getAll).mockReturnValue(flagsSnapshot);
 
-        const { result } = renderHook(() => useAllFeatureFlags());
+    const { result } = renderHook(() => useAllFeatureFlags());
 
-        expect(result.current).toEqual({
-            'SHOW_DEBUG_PANEL': true,
-            'ENABLE_WHATSAPP_INTEGRATION': false
-        });
-    });
+    expect(result.current).toEqual(flagsSnapshot);
+    expect(featureFlags.subscribeAll).toHaveBeenCalledWith(expect.any(Function));
+  });
 });

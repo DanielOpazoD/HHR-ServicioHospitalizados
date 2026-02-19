@@ -7,7 +7,6 @@
     "census": ["analytics"],
     "cudyr": [],
     "handoff": ["cudyr"],
-    "reports": [],
     "transfers": [],
     "whatsapp": []
   },
