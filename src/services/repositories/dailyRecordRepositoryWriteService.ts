@@ -27,7 +27,7 @@ import { logError } from '@/services/utils/errorService';
 import { PatientMasterRepository } from '@/services/repositories/PatientMasterRepository';
 import { logConflictAutoMerged } from '@/services/admin/auditService';
 import { resolveDailyRecordConflictWithTrace } from '@/services/repositories/conflictResolutionMatrix';
-import { ConflictResolutionTraceEntry } from '@/services/repositories/conflictResolutionTrace';
+import { buildConflictAuditSummary } from '@/services/repositories/conflictResolutionAuditSummary';
 import {
   createPartialUpdateDailyRecordCommand,
   createSaveDailyRecordCommand,
@@ -35,32 +35,6 @@ import {
 
 const isConcurrencyError = (error: unknown): boolean =>
   error instanceof Error && error.name === 'ConcurrencyError';
-
-const countBy = (items: string[]): Record<string, number> =>
-  items.reduce<Record<string, number>>((acc, item) => {
-    acc[item] = (acc[item] || 0) + 1;
-    return acc;
-  }, {});
-
-const buildConflictAuditDetails = (
-  changedPaths: string[],
-  policyVersion: string,
-  traceEntries: ConflictResolutionTraceEntry[]
-): {
-  changedPaths: string[];
-  policyVersion: string;
-  entryCount: number;
-  strategyBreakdown: Record<string, number>;
-  winnerBreakdown: Record<string, number>;
-  samplePaths: string[];
-} => ({
-  changedPaths,
-  policyVersion,
-  entryCount: traceEntries.length,
-  strategyBreakdown: countBy(traceEntries.map(entry => entry.strategy)),
-  winnerBreakdown: countBy(traceEntries.map(entry => entry.winner)),
-  samplePaths: Array.from(new Set(traceEntries.map(entry => entry.path))).slice(0, 20),
-});
 
 const autoMergeAndQueueConflict = async (
   date: string,
@@ -81,7 +55,7 @@ const autoMergeAndQueueConflict = async (
       }
     );
 
-    const auditDetails = buildConflictAuditDetails(
+    const auditDetails = buildConflictAuditSummary(
       changedPaths.length > 0 ? changedPaths : ['*'],
       trace.policyVersion,
       trace.entries

@@ -90,6 +90,8 @@ describe('syncQueueService', () => {
     expect(tasks).toHaveLength(1);
     expect(tasks[0].status).toBe('FAILED');
     expect(tasks[0].retryCount).toBe(0);
+    expect(tasks[0].lastErrorCode).toBe('permission-denied');
+    expect(tasks[0].lastErrorCategory).toBe('authorization');
   });
 
   it('marks task as conflict when remote concurrency conflict occurs', async () => {
@@ -103,5 +105,6 @@ describe('syncQueueService', () => {
     const tasks = await hospitalDB.syncQueue.toArray();
     expect(tasks).toHaveLength(1);
     expect(tasks[0].status).toBe('CONFLICT');
+    expect(tasks[0].lastErrorCategory).toBe('conflict');
   });
 });

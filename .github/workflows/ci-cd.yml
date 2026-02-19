@@ -36,6 +36,9 @@ jobs:
       - name: Run architecture and security quality checks
         run: npm run check:quality
 
+      - name: Enforce explicit-any policy on critical modules
+        run: npm run check:critical-any
+
       - name: Generate quality metrics snapshot
         run: npm run report:quality-metrics
 

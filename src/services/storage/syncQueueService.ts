@@ -12,19 +12,13 @@ import { ensureDbReady } from './indexeddb/indexedDbCore';
 import { SyncTask } from './syncQueueTypes';
 import { DailyRecord } from '@/types';
 import { getDailyRecordsPath } from '@/constants/firestorePaths';
-import { isRetryableError, logError } from '@/services/utils/errorService';
+import { logError } from '@/services/utils/errorService';
+import { buildSyncErrorSummary, classifySyncError } from '@/services/storage/syncErrorCatalog';
 
 const MAX_RETRIES = 5;
 const BASE_RETRY_DELAY_MS = 1000;
 const MAX_RETRY_DELAY_MS = 30000;
 let isProcessing = false;
-
-const NON_RETRYABLE_FIRESTORE_CODES = [
-  'permission-denied',
-  'unauthenticated',
-  'invalid-argument',
-  'failed-precondition',
-] as const;
 
 const computeBackoffMs = (attempt: number): number => {
   const jitter = Math.random() * 500;
@@ -40,43 +34,12 @@ const getTaskKey = (type: SyncTask['type'], payload: unknown): string | undefine
   return undefined;
 };
 
-const getErrorCode = (error: unknown): string => {
-  const value = (error as { code?: string })?.code || '';
-  return String(value).toLowerCase();
-};
-
-const getErrorMessage = (error: unknown): string => {
-  if (error instanceof Error) return error.message.toLowerCase();
-  return String(error).toLowerCase();
-};
-
 export const isConflictSyncError = (error: unknown): boolean => {
-  const name = (error as { name?: string })?.name;
-  if (name === 'ConcurrencyError') return true;
-
-  const message = getErrorMessage(error);
-  return (
-    message.includes('concurrency conflict') || message.includes('modificado por otro usuario')
-  );
+  return classifySyncError(error).category === 'conflict';
 };
 
 export const isRetryableSyncError = (error: unknown): boolean => {
-  const code = getErrorCode(error);
-  if (NON_RETRYABLE_FIRESTORE_CODES.some(nonRetryableCode => code.includes(nonRetryableCode))) {
-    return false;
-  }
-
-  if (isRetryableError(error)) {
-    return true;
-  }
-
-  const message = getErrorMessage(error);
-  return (
-    message.includes('network') ||
-    message.includes('timeout') ||
-    message.includes('failed to fetch') ||
-    message.includes('offline')
-  );
+  return classifySyncError(error).retryable;
 };
 
 export const getSyncQueueStats = async (): Promise<{
@@ -153,6 +116,11 @@ export const queueSyncTask = async (type: SyncTask['type'], payload: unknown): P
           status: 'PENDING',
           nextAttemptAt: 0,
           error: undefined,
+          lastErrorCode: undefined,
+          lastErrorCategory: undefined,
+          lastErrorSeverity: undefined,
+          lastErrorAction: undefined,
+          lastErrorAt: undefined,
         });
         if (typeof navigator !== 'undefined' && navigator.onLine) {
           void processSyncQueue();
@@ -220,21 +188,30 @@ export const processSyncQueue = async (): Promise<void> => {
         await indexedDB.syncQueue.delete(task.id);
         console.warn(`[SyncQueue] Task ${task.id} completed successfully.`);
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const classification = classifySyncError(error);
+        const errorMessage = buildSyncErrorSummary(classification);
+        const errorMeta = {
+          error: errorMessage,
+          lastErrorCode: classification.code,
+          lastErrorCategory: classification.category,
+          lastErrorSeverity: classification.severity,
+          lastErrorAction: classification.recommendedAction,
+          lastErrorAt: Date.now(),
+        } as const;
         console.error(`[SyncQueue] Task ${task.id} failed:`, error);
 
-        if (isConflictSyncError(error)) {
+        if (classification.category === 'conflict') {
           await indexedDB.syncQueue.update(task.id, {
             status: 'CONFLICT',
-            error: errorMessage,
+            ...errorMeta,
           });
           continue;
         }
 
-        if (!isRetryableSyncError(error)) {
+        if (!classification.retryable) {
           await indexedDB.syncQueue.update(task.id, {
             status: 'FAILED',
-            error: errorMessage,
+            ...errorMeta,
           });
           continue;
         }
@@ -245,7 +222,7 @@ export const processSyncQueue = async (): Promise<void> => {
           // Max retries reached - mark as failed (dead letter)
           await indexedDB.syncQueue.update(task.id, {
             status: 'FAILED',
-            error: errorMessage,
+            ...errorMeta,
             retryCount: newRetryCount,
           });
           logError('Sync task permanently failed', error instanceof Error ? error : undefined, {
@@ -259,7 +236,7 @@ export const processSyncQueue = async (): Promise<void> => {
           await indexedDB.syncQueue.update(task.id, {
             status: 'PENDING',
             retryCount: newRetryCount,
-            error: errorMessage,
+            ...errorMeta,
             nextAttemptAt: Date.now() + delay,
           });
         }

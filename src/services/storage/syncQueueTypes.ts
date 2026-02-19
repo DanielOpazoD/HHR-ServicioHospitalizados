@@ -11,5 +11,10 @@ export interface SyncTask {
   nextAttemptAt?: number;
   status: 'PENDING' | 'PROCESSING' | 'FAILED' | 'CONFLICT';
   error?: string;
+  lastErrorCode?: string;
+  lastErrorCategory?: 'conflict' | 'authorization' | 'validation' | 'network' | 'unknown';
+  lastErrorSeverity?: 'low' | 'medium' | 'high' | 'critical';
+  lastErrorAction?: string;
+  lastErrorAt?: number;
   key?: string;
 }
