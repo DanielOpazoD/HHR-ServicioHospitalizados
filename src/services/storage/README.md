@@ -6,17 +6,19 @@ Capa de persistencia concreta: IndexedDB, localStorage, Firestore bridge y sincr
 
 ## Mapa
 
-| Path/Archivo                                  | Propósito                                |
-| --------------------------------------------- | ---------------------------------------- |
-| `indexedDBService.ts`                         | API de alto nivel para IndexedDB         |
-| `localStorageService.ts`                      | Facade localStorage                      |
-| `firestoreService.ts`                         | Operaciones Firestore de registro diario |
-| `syncQueueService.ts`                         | Cola de sincronización offline/online    |
-| `syncQueueTypes.ts`                           | Tipos de cola de sincronización          |
-| `tableConfigService.ts`                       | Persistencia de configuración de tablas  |
-| `uiSettingsService.ts`                        | Persistencia de preferencias UI          |
-| `index.ts`                                    | Exports de storage                       |
-| `indexeddb/` / `localstorage/` / `firestore/` | Implementaciones más finas por backend   |
+| Path/Archivo                                  | Propósito                                                   |
+| --------------------------------------------- | ----------------------------------------------------------- |
+| `indexedDBService.ts`                         | API de alto nivel para IndexedDB                            |
+| `localStorageService.ts`                      | Facade localStorage (legacy/deprecado)                      |
+| `unifiedLocalService.ts`                      | Facade de compatibilidad sobre persistencia local unificada |
+| `firestoreService.ts`                         | Operaciones Firestore de registro diario                    |
+| `syncQueueService.ts`                         | Cola de sincronización offline/online                       |
+| `syncQueueTypes.ts`                           | Tipos de cola de sincronización                             |
+| `tableConfigService.ts`                       | Persistencia de configuración de tablas                     |
+| `uiSettingsService.ts`                        | Persistencia de preferencias UI                             |
+| `localpersistence/localPersistenceService.ts` | Fallback local unificado (records/settings/demo)            |
+| `index.ts`                                    | Exports de storage                                          |
+| `indexeddb/` / `localstorage/` / `firestore/` | Implementaciones más finas por backend                      |
 
 ## Estrategia
 

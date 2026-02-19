@@ -8,7 +8,7 @@ import { useDatabaseFallbackStatus } from '@/hooks/useDatabaseFallbackStatus';
  * StorageStatusBadge
  *
  * Persistent warning shown only when IndexedDB fails and the system
- * is operating in memory-only mode (data loss risk on reload).
+ * is operating in degraded fallback mode.
  */
 const StorageStatusBadge: React.FC = () => {
   const isFallback = useDatabaseFallbackStatus();
@@ -30,9 +30,9 @@ const StorageStatusBadge: React.FC = () => {
             </span>
           </h4>
           <p className="text-amber-800 text-xs mt-1 leading-relaxed">
-            El navegador bloqueó la base de datos local.{' '}
-            <strong>Los cambios se perderán al cerrar la pestaña</strong> si no hay conexión a
-            internet.
+            El navegador bloqueó IndexedDB. La app quedó en modo degradado con almacenamiento local
+            reducido.{' '}
+            <strong>Si trabajas sin internet, parte de los cambios podría no persistir.</strong>
           </p>
           <div className="mt-2 flex gap-2">
             <button

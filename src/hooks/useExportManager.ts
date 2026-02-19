@@ -196,7 +196,7 @@ export const useExportManager = ({
         if (selectedShift === 'night') {
           try {
             const { generateCudyrMonthlyExcelBlob } =
-              await import('@/features/cudyr/services/cudyrExportService');
+              await import('@/services/cudyr/cudyrExportService');
             const { uploadCudyrExcel } = await import('@/services/backup/cudyrStorageService');
             const [year, month] = record.date.split('-').map(Number);
             const cudyrBlob = await generateCudyrMonthlyExcelBlob(year, month, record.date, record);

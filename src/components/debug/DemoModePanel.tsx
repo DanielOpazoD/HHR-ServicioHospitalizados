@@ -3,14 +3,14 @@
  * UI component for managing demo/test mode with period selection.
  */
 
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { FlaskConical, Play, Trash2, X, Calendar, Loader2 } from 'lucide-react';
 import { useDemoMode, DemoPeriod } from '@/context/DemoModeContext';
 import {
-  saveDemoRecords,
-  clearAllDemoData,
-  getAllDemoDates,
-} from '@/services/storage/localStorageService';
+  clearAllDemoRecords,
+  getAllDemoRecords,
+  saveDemoRecord,
+} from '@/services/storage/indexedDBService';
 import {
   generateDemoForDay,
   generateDemoForWeek,
@@ -33,8 +33,18 @@ export const DemoModePanel: React.FC<DemoModePanelProps> = ({ isOpen, onClose })
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
   const [generationStatus, setGenerationStatus] = useState<string>('');
+  const [demoDates, setDemoDates] = useState<string[]>([]);
 
-  const demoDates = getAllDemoDates();
+  const refreshDemoDates = useCallback(async () => {
+    const records = await getAllDemoRecords();
+    setDemoDates(Object.keys(records).sort().reverse());
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    void refreshDemoDates();
+  }, [isOpen, refreshDemoDates]);
+
   const hasExistingDemoData = demoDates.length > 0;
 
   const handleGenerate = async () => {
@@ -61,7 +71,8 @@ export const DemoModePanel: React.FC<DemoModePanelProps> = ({ isOpen, onClose })
         records = generateDemoForMonth(year, month - 1);
       }
 
-      saveDemoRecords(records);
+      await Promise.all(records.map(record => saveDemoRecord(record)));
+      await refreshDemoDates();
       activateDemo(selectedPeriod, records[0].date);
       setGenerationStatus(`✓ ${records.length} día(s) generado(s)`);
 
@@ -77,13 +88,14 @@ export const DemoModePanel: React.FC<DemoModePanelProps> = ({ isOpen, onClose })
     }
   };
 
-  const handleClearData = () => {
+  const handleClearData = async () => {
     if (
       defaultBrowserWindowRuntime.confirm(
         '¿Eliminar todos los datos demo? Esta acción no afecta los datos reales.'
       )
     ) {
-      clearAllDemoData();
+      await clearAllDemoRecords();
+      await refreshDemoDates();
       deactivateDemo();
       setGenerationStatus('Datos demo eliminados');
     }

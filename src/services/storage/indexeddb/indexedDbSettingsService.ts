@@ -1,10 +1,14 @@
-import { safeJsonParse } from '@/utils/jsonUtils';
+import { localPersistence } from '@/services/storage/localpersistence/localPersistenceService';
 
 import { ensureDbReady, hospitalDB as db, isDatabaseInFallbackMode } from './indexedDbCore';
 
 export const saveSetting = async (id: string, value: unknown): Promise<void> => {
   try {
     await ensureDbReady();
+    if (isDatabaseInFallbackMode()) {
+      localPersistence.settings.save(id, value);
+      return;
+    }
     await db.settings.put({ id, value });
   } catch (error) {
     console.error(`[IndexedDB] Failed to save setting ${id}:`, error);
@@ -16,12 +20,7 @@ export const getSetting = async <T>(id: string, defaultValue: T): Promise<T> => 
     await ensureDbReady();
 
     if (isDatabaseInFallbackMode()) {
-      if (typeof window === 'undefined' || !window.localStorage) return defaultValue;
-      const val = localStorage.getItem(id);
-      if (val) {
-        return safeJsonParse<T>(val, val as T);
-      }
-      return defaultValue;
+      return localPersistence.settings.get(id, defaultValue);
     }
 
     const item = await db.settings.get(id);
@@ -41,6 +40,10 @@ export const getSetting = async <T>(id: string, defaultValue: T): Promise<T> => 
 export const clearAllSettings = async (): Promise<void> => {
   try {
     await ensureDbReady();
+    if (isDatabaseInFallbackMode()) {
+      localPersistence.settings.clearAll();
+      return;
+    }
     await db.settings.clear();
   } catch (error) {
     console.error('[IndexedDB] Failed to clear all settings:', error);

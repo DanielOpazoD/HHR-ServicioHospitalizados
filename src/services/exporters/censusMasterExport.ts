@@ -10,7 +10,7 @@
 import { DailyRecord } from '@/types';
 import { MONTH_NAMES } from '@/constants';
 import { getMonthRecordsFromFirestore } from '../storage/firestoreService';
-import { getStoredRecords } from '../storage/localStorageService';
+import { getRecordsForMonth } from '../storage/indexedDBService';
 import { isFirestoreEnabled } from '../repositories/DailyRecordRepository';
 import { buildCensusMasterWorkbook, getCensusMasterFilename } from './censusMasterWorkbook';
 import { validateExcelExport, XLSX_MIME_TYPE } from './excelValidation';
@@ -33,20 +33,26 @@ export const generateCensusMasterExcel = async (
   selectedDay: number
 ): Promise<void> => {
   const limitDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
-  const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
 
   let allMonthRecords: DailyRecord[] = [];
 
   try {
     if (isFirestoreEnabled()) {
-      console.warn(`📊 Cargando datos del mes ${MONTH_NAMES[month]} ${year} desde Firestore...`);
-      allMonthRecords = await getMonthRecordsFromFirestore(year, month);
+      try {
+        console.warn(`📊 Cargando datos del mes ${MONTH_NAMES[month]} ${year} desde Firestore...`);
+        allMonthRecords = await getMonthRecordsFromFirestore(year, month);
+      } catch (remoteError) {
+        console.warn(
+          `⚠️ Firestore no disponible para exportación mensual. Usando almacenamiento local.`,
+          remoteError
+        );
+        allMonthRecords = await getRecordsForMonth(year, month + 1);
+      }
     } else {
       console.warn(
         `📊 Cargando datos del mes ${MONTH_NAMES[month]} ${year} desde almacenamiento local...`
       );
-      const localRecords = getStoredRecords();
-      allMonthRecords = Object.values(localRecords).filter(r => r.date.startsWith(monthPrefix));
+      allMonthRecords = await getRecordsForMonth(year, month + 1);
     }
 
     const monthRecords = allMonthRecords

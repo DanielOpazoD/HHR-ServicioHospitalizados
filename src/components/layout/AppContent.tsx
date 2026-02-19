@@ -20,6 +20,7 @@ import {
   shouldRenderDateStrip,
 } from '@/components/layout/app-content/appContentVisibilityController';
 import { useAppContentEventBridge } from '@/components/layout/app-content/useAppContentEventBridge';
+import { CensusEmailConfigModal } from '@/views/LazyViews';
 
 interface AppContentProps {
   ui: UseUIStateReturn;
@@ -29,12 +30,6 @@ const loadCensusMasterExcelExporter = async () =>
   import('@/services/exporters/censusMasterExport').then(
     module => module.generateCensusMasterExcel
   );
-
-const LazyCensusEmailConfigModal = React.lazy(() =>
-  import('@/features/census/components/CensusEmailConfigModal').then(module => ({
-    default: module.CensusEmailConfigModal,
-  }))
-);
 
 export const AppContent: React.FC<AppContentProps> = ({ ui }) => {
   // 1. Consume Domain Context
@@ -191,7 +186,7 @@ export const AppContent: React.FC<AppContentProps> = ({ ui }) => {
 
         {censusEmail.showEmailConfig && (
           <React.Suspense fallback={null}>
-            <LazyCensusEmailConfigModal
+            <CensusEmailConfigModal
               isOpen={true}
               onClose={() => censusEmail.setShowEmailConfig(false)}
               recipients={censusEmail.recipients}

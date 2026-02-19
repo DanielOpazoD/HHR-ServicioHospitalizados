@@ -15,8 +15,8 @@ export const DatabaseStatusBanner: React.FC = () => {
         <div>
           <span className="font-bold">MODO DE EMERGENCIA:</span>
           <span className="ml-2 text-sm opacity-90">
-            La base de datos local falló. Los cambios se perderán al cerrar o refrescar el
-            navegador.
+            IndexedDB no está disponible. La app opera con persistencia local reducida y puede
+            degradarse en modo offline.
           </span>
         </div>
       </div>

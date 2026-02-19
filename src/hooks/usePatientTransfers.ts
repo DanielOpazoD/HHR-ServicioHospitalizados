@@ -3,34 +3,34 @@ import { DailyRecord } from '@/types';
 import { createEmptyPatient } from '@/services/factories/patientFactory';
 import { BEDS } from '@/constants';
 import { useLatestRef } from '@/hooks/useLatestRef';
-import { resolveAddTransferMovement } from '@/features/census/controllers/patientMovementCreationController';
+import { resolveAddTransferMovement } from '@/hooks/controllers/patientMovementCreationController';
 import {
   buildAddTransferInput,
   buildTransferCommandPayload,
-} from '@/features/census/controllers/patientMovementCreationInputController';
+} from '@/hooks/controllers/patientMovementCreationInputController';
 import {
   resolveDeleteTransferMovement,
   resolveUpdateTransferMovement,
-} from '@/features/census/controllers/patientMovementMutationController';
-import { resolveApplyUndoTransferRecord } from '@/features/census/controllers/patientMovementUndoMutationController';
+} from '@/hooks/controllers/patientMovementMutationController';
+import { resolveApplyUndoTransferRecord } from '@/hooks/controllers/patientMovementUndoMutationController';
 import {
   PatientMovementRuntime,
   patientMovementBrowserRuntime,
-} from '@/features/census/controllers/patientMovementRuntimeController';
-import { selectTransferUndoMovement } from '@/features/census/controllers/patientMovementSelectionController';
-import { usePatientMovementFeedback } from '@/features/census/hooks/usePatientMovementFeedback';
-import { usePatientMovementAudit } from '@/features/census/hooks/usePatientMovementAudit';
-import { usePatientMovementCreationExecutor } from '@/features/census/hooks/usePatientMovementCreationExecutor';
-import { usePatientMovementUndoExecutor } from '@/features/census/hooks/usePatientMovementUndoExecutor';
-import { usePatientMovementCurrentRecord } from '@/features/census/hooks/usePatientMovementCurrentRecord';
-import { usePatientMovementMutationExecutor } from '@/features/census/hooks/usePatientMovementMutationExecutor';
+} from '@/hooks/controllers/patientMovementRuntimeController';
+import { selectTransferUndoMovement } from '@/hooks/controllers/patientMovementSelectionController';
+import { usePatientMovementFeedback } from '@/hooks/usePatientMovementFeedback';
+import { usePatientMovementAudit } from '@/hooks/usePatientMovementAudit';
+import { usePatientMovementCreationExecutor } from '@/hooks/usePatientMovementCreationExecutor';
+import { usePatientMovementUndoExecutor } from '@/hooks/usePatientMovementUndoExecutor';
+import { usePatientMovementCurrentRecord } from '@/hooks/usePatientMovementCurrentRecord';
+import { usePatientMovementMutationExecutor } from '@/hooks/usePatientMovementMutationExecutor';
 import type {
   AddTransferAction,
   DeleteTransferAction,
   TransferMovementActions,
   UndoTransferAction,
   UpdateTransferAction,
-} from '@/features/census/domain/movements/contracts';
+} from '@/types/movements';
 
 export const usePatientTransfers = (
   record: DailyRecord | null,

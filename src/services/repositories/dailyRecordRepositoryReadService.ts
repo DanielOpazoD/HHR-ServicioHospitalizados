@@ -40,7 +40,9 @@ export const getForDate = async (
 
   if (syncFromRemote && isFirestoreEnabled()) {
     try {
-      console.warn(`[Repository DEBUG] Attempting Firestore fetch for ${date}`);
+      if (import.meta.env.DEV) {
+        logLegacyInfo(`[Repository DEBUG] Attempting Firestore fetch for ${date}`);
+      }
       const remoteRecord = await getRecordFromFirestore(date);
       if (remoteRecord) {
         const migrated = migrateLegacyData(remoteRecord, date);

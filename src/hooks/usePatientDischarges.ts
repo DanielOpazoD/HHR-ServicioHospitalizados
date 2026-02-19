@@ -3,35 +3,35 @@ import { DailyRecord } from '@/types';
 import { createEmptyPatient } from '@/services/factories/patientFactory';
 import { BEDS } from '@/constants';
 import { useLatestRef } from '@/hooks/useLatestRef';
-import type { DischargeTarget } from '@/features/census/domain/movements/contracts';
-import { resolveAddDischargeMovement } from '@/features/census/controllers/patientMovementCreationController';
+import type { DischargeTarget } from '@/types/movements';
+import { resolveAddDischargeMovement } from '@/hooks/controllers/patientMovementCreationController';
 import {
   buildAddDischargeInput,
   buildDischargeAddCommandPayload,
-} from '@/features/census/controllers/patientMovementCreationInputController';
+} from '@/hooks/controllers/patientMovementCreationInputController';
 import {
   resolveDeleteDischargeMovement,
   resolveUpdateDischargeMovement,
-} from '@/features/census/controllers/patientMovementMutationController';
-import { resolveApplyUndoDischargeRecord } from '@/features/census/controllers/patientMovementUndoMutationController';
+} from '@/hooks/controllers/patientMovementMutationController';
+import { resolveApplyUndoDischargeRecord } from '@/hooks/controllers/patientMovementUndoMutationController';
 import {
   PatientMovementRuntime,
   patientMovementBrowserRuntime,
-} from '@/features/census/controllers/patientMovementRuntimeController';
-import { selectDischargeUndoMovement } from '@/features/census/controllers/patientMovementSelectionController';
-import { usePatientMovementFeedback } from '@/features/census/hooks/usePatientMovementFeedback';
-import { usePatientMovementAudit } from '@/features/census/hooks/usePatientMovementAudit';
-import { usePatientMovementCreationExecutor } from '@/features/census/hooks/usePatientMovementCreationExecutor';
-import { usePatientMovementUndoExecutor } from '@/features/census/hooks/usePatientMovementUndoExecutor';
-import { usePatientMovementCurrentRecord } from '@/features/census/hooks/usePatientMovementCurrentRecord';
-import { usePatientMovementMutationExecutor } from '@/features/census/hooks/usePatientMovementMutationExecutor';
+} from '@/hooks/controllers/patientMovementRuntimeController';
+import { selectDischargeUndoMovement } from '@/hooks/controllers/patientMovementSelectionController';
+import { usePatientMovementFeedback } from '@/hooks/usePatientMovementFeedback';
+import { usePatientMovementAudit } from '@/hooks/usePatientMovementAudit';
+import { usePatientMovementCreationExecutor } from '@/hooks/usePatientMovementCreationExecutor';
+import { usePatientMovementUndoExecutor } from '@/hooks/usePatientMovementUndoExecutor';
+import { usePatientMovementCurrentRecord } from '@/hooks/usePatientMovementCurrentRecord';
+import { usePatientMovementMutationExecutor } from '@/hooks/usePatientMovementMutationExecutor';
 import type {
   AddDischargeAction,
   DeleteDischargeAction,
   DischargeMovementActions,
   UndoDischargeAction,
   UpdateDischargeAction,
-} from '@/features/census/domain/movements/contracts';
+} from '@/types/movements';
 
 export const usePatientDischarges = (
   record: DailyRecord | null,

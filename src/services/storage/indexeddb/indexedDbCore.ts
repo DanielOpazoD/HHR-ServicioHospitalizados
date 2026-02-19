@@ -162,6 +162,8 @@ let db: HangaRoaDatabase;
 let isUsingMock = false;
 let isOpening = false;
 let onDatabaseRecreated: (() => void) | null = null;
+const INDEXED_DB_OPEN_TIMEOUT_MS = 7000;
+const INDEXED_DB_DELETE_TIMEOUT_MS = 5000;
 
 const attachDatabaseEvents = (database: HangaRoaDatabase) => {
   database.on('blocked', () => {
@@ -245,7 +247,7 @@ export const ensureDbReady = async (): Promise<void> => {
   try {
     const openPromise = db.open();
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('IndexedDB open timeout')), 2500)
+      setTimeout(() => reject(new Error('IndexedDB open timeout')), INDEXED_DB_OPEN_TIMEOUT_MS)
     );
     await Promise.race([openPromise, timeoutPromise]);
   } catch (error: unknown) {
@@ -267,7 +269,7 @@ export const ensureDbReady = async (): Promise<void> => {
 
         const deletePromise = Dexie.delete('HangaRoaDB');
         const deleteTimeout = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Deletion timeout')), 3000)
+          setTimeout(() => reject(new Error('Deletion timeout')), INDEXED_DB_DELETE_TIMEOUT_MS)
         );
 
         await Promise.race([deletePromise, deleteTimeout]);
@@ -283,7 +285,7 @@ export const ensureDbReady = async (): Promise<void> => {
       }
     }
 
-    console.error('[IndexedDB] 💨 Falling back to Memory Storage (Mock)');
+    console.error('[IndexedDB] 💨 Falling back to degraded local storage mode');
     isUsingMock = true;
     assignMockTables(createMockDatabase());
   } finally {

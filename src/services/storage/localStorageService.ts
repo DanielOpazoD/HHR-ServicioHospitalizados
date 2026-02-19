@@ -3,6 +3,9 @@
  *
  * Keeps existing imports stable while delegating implementation
  * to focused localstorage modules.
+ *
+ * @deprecated Prefer `@/services/storage/unifiedLocalService` for app-level access.
+ * This module remains only for backwards compatibility and focused legacy tests.
  */
 
 export { STORAGE_KEY, NURSES_STORAGE_KEY } from './localstorage/localStorageCore';

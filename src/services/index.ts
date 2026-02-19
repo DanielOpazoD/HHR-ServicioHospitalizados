@@ -20,7 +20,7 @@ export { signIn, createUser, signOut, onAuthChange, getCurrentUser } from './aut
 export type { AuthUser } from './auth/authService';
 
 // ============================================================
-// DATA PERSISTENCE - Local Storage
+// DATA PERSISTENCE - Unified Local
 // ============================================================
 export {
   STORAGE_KEY,
@@ -42,7 +42,7 @@ export {
   getAllDemoDates,
   clearAllDemoData,
   getPreviousDemoDayRecord,
-} from './storage/localStorageService';
+} from './storage/unifiedLocalService';
 
 // Local Settings (IndexedDB)
 export { getAppSetting, saveAppSetting } from './settingsService';

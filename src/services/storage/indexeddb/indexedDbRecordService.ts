@@ -1,4 +1,5 @@
 import { DailyRecord } from '@/types';
+import { localPersistence } from '@/services/storage/localpersistence/localPersistenceService';
 
 import { ensureDbReady, hospitalDB as db, isDatabaseInFallbackMode } from './indexedDbCore';
 
@@ -13,6 +14,9 @@ const toRecordMap = (records: DailyRecord[]): Record<string, DailyRecord> => {
 export const getAllRecords = async (): Promise<Record<string, DailyRecord>> => {
   try {
     await ensureDbReady();
+    if (isDatabaseInFallbackMode()) {
+      return localPersistence.records.getAll();
+    }
     const records = await db.dailyRecords.toArray();
     return toRecordMap(records);
   } catch (error) {
@@ -24,6 +28,9 @@ export const getAllRecords = async (): Promise<Record<string, DailyRecord>> => {
 export const getRecordsForMonth = async (year: number, month: number): Promise<DailyRecord[]> => {
   try {
     await ensureDbReady();
+    if (isDatabaseInFallbackMode()) {
+      return localPersistence.records.getRecordsForMonth(year, month);
+    }
     const prefix = `${year}-${String(month).padStart(2, '0')}`;
     return await db.dailyRecords.where('date').startsWith(prefix).toArray();
   } catch (error) {
@@ -45,6 +52,10 @@ export const getRecordForDate = async (date: string): Promise<DailyRecord | null
       if (override[date]) return override[date];
     }
 
+    if (isDatabaseInFallbackMode()) {
+      return localPersistence.records.getForDate(date);
+    }
+
     const record = await db.dailyRecords.get(date);
     return record || null;
   } catch (error) {
@@ -56,6 +67,10 @@ export const getRecordForDate = async (date: string): Promise<DailyRecord | null
 export const saveRecord = async (record: DailyRecord): Promise<void> => {
   try {
     await ensureDbReady();
+    if (isDatabaseInFallbackMode()) {
+      localPersistence.records.save(record);
+      return;
+    }
     await db.dailyRecords.put(record);
   } catch (error) {
     console.error('Failed to save record to IndexedDB:', error);
@@ -65,6 +80,10 @@ export const saveRecord = async (record: DailyRecord): Promise<void> => {
 export const deleteRecord = async (date: string): Promise<void> => {
   try {
     await ensureDbReady();
+    if (isDatabaseInFallbackMode()) {
+      localPersistence.records.deleteForDate(date);
+      return;
+    }
     await db.dailyRecords.delete(date);
   } catch (error) {
     console.error('Failed to delete record from IndexedDB:', error);
@@ -74,6 +93,9 @@ export const deleteRecord = async (date: string): Promise<void> => {
 export const getAllDates = async (): Promise<string[]> => {
   try {
     await ensureDbReady();
+    if (isDatabaseInFallbackMode()) {
+      return localPersistence.records.getAllDates();
+    }
     const records = await db.dailyRecords.orderBy('date').reverse().keys();
     return records as string[];
   } catch (error) {
@@ -85,6 +107,9 @@ export const getAllDates = async (): Promise<string[]> => {
 export const getPreviousDayRecord = async (currentDate: string): Promise<DailyRecord | null> => {
   try {
     await ensureDbReady();
+    if (isDatabaseInFallbackMode()) {
+      return localPersistence.records.getPreviousDayRecord(currentDate);
+    }
     const record = await db.dailyRecords.where('date').below(currentDate).reverse().first();
     return record || null;
   } catch (error) {
@@ -96,6 +121,10 @@ export const getPreviousDayRecord = async (currentDate: string): Promise<DailyRe
 export const clearAllRecords = async (): Promise<void> => {
   try {
     await ensureDbReady();
+    if (isDatabaseInFallbackMode()) {
+      localPersistence.records.clear();
+      return;
+    }
     await db.dailyRecords.clear();
   } catch (error) {
     console.error('Failed to clear all records from IndexedDB:', error);
@@ -105,6 +134,10 @@ export const clearAllRecords = async (): Promise<void> => {
 export const saveDemoRecord = async (record: DailyRecord): Promise<void> => {
   try {
     await ensureDbReady();
+    if (isDatabaseInFallbackMode()) {
+      localPersistence.demoRecords.save(record);
+      return;
+    }
     await db.demoRecords.put(record);
   } catch (error) {
     console.error('[IndexedDB] Failed to save demo record:', error);
@@ -114,6 +147,9 @@ export const saveDemoRecord = async (record: DailyRecord): Promise<void> => {
 export const getDemoRecordForDate = async (date: string): Promise<DailyRecord | null> => {
   try {
     await ensureDbReady();
+    if (isDatabaseInFallbackMode()) {
+      return localPersistence.demoRecords.getForDate(date);
+    }
     const record = await db.demoRecords.get(date);
     return record || null;
   } catch (error) {
@@ -125,6 +161,9 @@ export const getDemoRecordForDate = async (date: string): Promise<DailyRecord | 
 export const getAllDemoRecords = async (): Promise<Record<string, DailyRecord>> => {
   try {
     await ensureDbReady();
+    if (isDatabaseInFallbackMode()) {
+      return localPersistence.demoRecords.getAll();
+    }
     const records = await db.demoRecords.toArray();
     return toRecordMap(records);
   } catch (error) {
@@ -136,6 +175,10 @@ export const getAllDemoRecords = async (): Promise<Record<string, DailyRecord>> 
 export const deleteDemoRecord = async (date: string): Promise<void> => {
   try {
     await ensureDbReady();
+    if (isDatabaseInFallbackMode()) {
+      localPersistence.demoRecords.deleteForDate(date);
+      return;
+    }
     await db.demoRecords.delete(date);
   } catch (error) {
     console.error('[IndexedDB] Failed to delete demo record:', error);
@@ -145,6 +188,10 @@ export const deleteDemoRecord = async (date: string): Promise<void> => {
 export const clearAllDemoRecords = async (): Promise<void> => {
   try {
     await ensureDbReady();
+    if (isDatabaseInFallbackMode()) {
+      localPersistence.demoRecords.clear();
+      return;
+    }
     await db.demoRecords.clear();
   } catch (error) {
     console.error('[IndexedDB] Failed to clear all demo records:', error);
@@ -156,6 +203,9 @@ export const getPreviousDemoDayRecord = async (
 ): Promise<DailyRecord | null> => {
   try {
     await ensureDbReady();
+    if (isDatabaseInFallbackMode()) {
+      return localPersistence.demoRecords.getPreviousDayRecord(currentDate);
+    }
     const record = await db.demoRecords.where('date').below(currentDate).reverse().first();
     return record || null;
   } catch (error) {

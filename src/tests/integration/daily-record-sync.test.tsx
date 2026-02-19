@@ -23,56 +23,57 @@ const mockUpdatePartial = vi.fn();
 const mockGetForDate = vi.fn();
 
 vi.mock('../../services/repositories/DailyRecordRepository', () => {
-    const mockImpl = {
-        getForDate: (date: string) => mockGetForDate(date),
-        save: (record: DailyRecord) => mockSave(record),
-        updatePartial: (date: string, partial: any) => mockUpdatePartial(date, partial),
-        subscribe: (date: string, cb: any) => {
-            mockSubscribe(date, cb);
-            return () => { }; // Unsubscribe
-        },
-        syncWithFirestore: (date: string) => mockSyncWithFirestore(date),
-    };
-    return {
-        ...mockImpl,
-        DailyRecordRepository: mockImpl
-    };
+  const mockImpl = {
+    getForDate: (date: string) => mockGetForDate(date),
+    save: (record: DailyRecord) => mockSave(record),
+    updatePartial: (date: string, partial: any) => mockUpdatePartial(date, partial),
+    subscribe: (date: string, cb: any) => {
+      mockSubscribe(date, cb);
+      return () => {}; // Unsubscribe
+    },
+    syncWithFirestore: (date: string) => mockSyncWithFirestore(date),
+  };
+  return {
+    ...mockImpl,
+    DailyRecordRepository: mockImpl,
+  };
 });
 
 // Mock Firebase Auth
 vi.mock('../../firebaseConfig', () => ({
-    auth: {
-        onAuthStateChanged: vi.fn((cb) => {
-            cb({ uid: 'test-user-123' }); // Simulate logged in user
-            return () => { }; // Unsubscribe
-        }),
-    },
+  auth: {
+    onAuthStateChanged: vi.fn(cb => {
+      cb({ uid: 'test-user-123' }); // Simulate logged in user
+      return () => {}; // Unsubscribe
+    }),
+  },
 }));
 
 // Mock UI Context
 vi.mock('../../context/UIContext', () => ({
-    useNotification: () => ({
-        success: vi.fn(),
-        error: vi.fn(),
-    }),
-    UIProvider: ({ children }: any) => <>{children}</>,
+  useNotification: () => ({
+    success: vi.fn(),
+    error: vi.fn(),
+  }),
+  UIProvider: ({ children }: any) => <>{children}</>,
 }));
 
 // Mock Utils
 vi.mock('../../services/utils/errorService', () => ({
-    logFirebaseError: vi.fn(),
-    getUserFriendlyErrorMessage: vi.fn((_err) => 'Friendly Error'),
+  logFirebaseError: vi.fn(),
+  getUserFriendlyErrorMessage: vi.fn(_err => 'Friendly Error'),
 }));
 
-vi.mock('../../services/storage/localStorageService', () => ({
-    saveRecordLocal: vi.fn(),
+vi.mock('../../services/storage/unifiedLocalService', () => ({
+  saveRecordLocal: vi.fn(),
 }));
 
 // ============================================================================
 // Helper Data
 // ============================================================================
 
-const createMockRecord = (date: string): DailyRecord => ({
+const createMockRecord = (date: string): DailyRecord =>
+  ({
     date,
     beds: {},
     discharges: [],
@@ -80,135 +81,145 @@ const createMockRecord = (date: string): DailyRecord => ({
     cma: [],
     lastUpdated: '2024-12-28T12:00:00Z',
     nurses: [],
-} as any);
+  }) as any;
 
 // ============================================================================
 // Tests
 // ============================================================================
 
 const createWrapper = () => {
-    const { wrapper } = createQueryClientTestWrapper({
-        wrapChildren: (children) => (
-            <UIProvider>
-                {children}
-            </UIProvider>
-        ),
-    });
-    return wrapper;
+  const { wrapper } = createQueryClientTestWrapper({
+    wrapChildren: children => <UIProvider>{children}</UIProvider>,
+  });
+  return wrapper;
 };
 
-
 describe('DailyRecord Sync Integration', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-        mockGetForDate.mockReturnValue(null);
-        mockSyncWithFirestore.mockResolvedValue(null);
-        mockSave.mockResolvedValue(undefined);
-        mockUpdatePartial.mockResolvedValue(undefined);
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetForDate.mockReturnValue(null);
+    mockSyncWithFirestore.mockResolvedValue(null);
+    mockSave.mockResolvedValue(undefined);
+    mockUpdatePartial.mockResolvedValue(undefined);
+  });
+
+  it('should load local record on mount', async () => {
+    const localRecord = createMockRecord('2024-12-28');
+    mockGetForDate.mockResolvedValue(localRecord);
+
+    const { result } = renderHook(() => useDailyRecordSyncQuery('2024-12-28', false, true), {
+      wrapper: createWrapper(),
     });
 
-    it('should load local record on mount', async () => {
-        const localRecord = createMockRecord('2024-12-28');
-        mockGetForDate.mockResolvedValue(localRecord);
+    await waitFor(() => {
+      expect(result.current.record).toEqual(localRecord);
+    });
+    expect(mockGetForDate).toHaveBeenCalledWith('2024-12-28');
+  });
 
-        const { result } = renderHook(() => useDailyRecordSyncQuery('2024-12-28', false, true), { wrapper: createWrapper() });
-
-        await waitFor(() => {
-            expect(result.current.record).toEqual(localRecord);
-        });
-        expect(mockGetForDate).toHaveBeenCalledWith('2024-12-28');
+  it('should subscribe to remote changes on mount', async () => {
+    renderHook(() => useDailyRecordSyncQuery('2024-12-28', false, true), {
+      wrapper: createWrapper(),
     });
 
-    it('should subscribe to remote changes on mount', async () => {
-        renderHook(() => useDailyRecordSyncQuery('2024-12-28', false, true), { wrapper: createWrapper() });
+    expect(mockSubscribe).toHaveBeenCalledWith('2024-12-28', expect.any(Function));
+  });
 
-        expect(mockSubscribe).toHaveBeenCalledWith('2024-12-28', expect.any(Function));
+  it('should update record when remote change is received (no local pending)', async () => {
+    const { result } = renderHook(() => useDailyRecordSyncQuery('2024-12-28', false, true), {
+      wrapper: createWrapper(),
     });
 
-    it('should update record when remote change is received (no local pending)', async () => {
-        const { result } = renderHook(() => useDailyRecordSyncQuery('2024-12-28', false, true), { wrapper: createWrapper() });
+    const remoteRecord = createMockRecord('2024-12-28');
+    remoteRecord.lastUpdated = '2024-12-28T13:00:00Z';
 
-        const remoteRecord = createMockRecord('2024-12-28');
-        remoteRecord.lastUpdated = '2024-12-28T13:00:00Z';
+    // WAITING FOR INITIAL FETCH TO COMPLETE (avoids race condition with setQueryData)
+    await waitFor(() => expect(result.current.syncStatus).toBe('idle'));
 
-        // WAITING FOR INITIAL FETCH TO COMPLETE (avoids race condition with setQueryData)
-        await waitFor(() => expect(result.current.syncStatus).toBe('idle'));
+    // Trigger the callback passed to mockSubscribe
+    const subscribeCallback = mockSubscribe.mock.calls[0][1];
 
-        // Trigger the callback passed to mockSubscribe
-        const subscribeCallback = mockSubscribe.mock.calls[0][1];
+    // Update mock to return the remote record on next fetch (if invalidation happens)
+    mockGetForDate.mockResolvedValue(remoteRecord);
 
-        // Update mock to return the remote record on next fetch (if invalidation happens)
-        mockGetForDate.mockResolvedValue(remoteRecord);
-
-        await act(async () => {
-            subscribeCallback(remoteRecord, false); // hasPendingWrites = false
-        });
-
-        await waitFor(() => {
-            expect(result.current.record).toEqual(remoteRecord);
-        });
+    await act(async () => {
+      subscribeCallback(remoteRecord, false); // hasPendingWrites = false
     });
 
-    it('should save and update state on saveAndUpdate call', async () => {
-        const { result } = renderHook(() => useDailyRecordSyncQuery('2024-12-28', false, true), { wrapper: createWrapper() });
-        const newRecord = createMockRecord('2024-12-28');
-        newRecord.nurses = ['Nurse A'];
+    await waitFor(() => {
+      expect(result.current.record).toEqual(remoteRecord);
+    });
+  });
 
-        // WAIT for initial state
-        await waitFor(() => expect(result.current.syncStatus).toBe('idle'));
+  it('should save and update state on saveAndUpdate call', async () => {
+    const { result } = renderHook(() => useDailyRecordSyncQuery('2024-12-28', false, true), {
+      wrapper: createWrapper(),
+    });
+    const newRecord = createMockRecord('2024-12-28');
+    newRecord.nurses = ['Nurse A'];
 
-        await act(async () => {
-            mockGetForDate.mockResolvedValue(newRecord);
-            await result.current.saveAndUpdate(newRecord);
-        });
+    // WAIT for initial state
+    await waitFor(() => expect(result.current.syncStatus).toBe('idle'));
 
-        expect(mockSave).toHaveBeenCalledTimes(1);
-        expect(mockSave.mock.calls[0][0]).toEqual(newRecord);
-        await waitFor(() => {
-            expect(result.current.record).toEqual(newRecord);
-            expect(result.current.syncStatus).toBe('saved');
-        });
+    await act(async () => {
+      mockGetForDate.mockResolvedValue(newRecord);
+      await result.current.saveAndUpdate(newRecord);
     });
 
-    it('should perform patch update and keep state in sync', async () => {
-        const initialRecord = createMockRecord('2024-12-28');
-        mockGetForDate.mockReturnValue(initialRecord);
+    expect(mockSave).toHaveBeenCalledTimes(1);
+    expect(mockSave.mock.calls[0][0]).toEqual(newRecord);
+    await waitFor(() => {
+      expect(result.current.record).toEqual(newRecord);
+      expect(result.current.syncStatus).toBe('saved');
+    });
+  });
 
-        const { result } = renderHook(() => useDailyRecordSyncQuery('2024-12-28', false, true), { wrapper: createWrapper() });
+  it('should perform patch update and keep state in sync', async () => {
+    const initialRecord = createMockRecord('2024-12-28');
+    mockGetForDate.mockReturnValue(initialRecord);
 
-        // Wait for load
-        await waitFor(() => {
-            expect(result.current.record).toEqual(initialRecord);
-        });
-
-        const partial = { 'beds.R1.patientName': 'Nuevo Paciente' };
-
-        await act(async () => {
-            // Mock return for next fetch
-            mockGetForDate.mockResolvedValue({ ...initialRecord, beds: { R1: { patientName: 'Nuevo Paciente' } } } as any);
-            await result.current.patchRecord(partial);
-        });
-
-        expect(mockUpdatePartial).toHaveBeenCalledWith('2024-12-28', partial);
-        // Wait for optimistic update or refetch
-        await waitFor(() => {
-            expect(result.current.record?.beds.R1.patientName).toBe('Nuevo Paciente');
-            expect(result.current.syncStatus).toBe('saved');
-        });
+    const { result } = renderHook(() => useDailyRecordSyncQuery('2024-12-28', false, true), {
+      wrapper: createWrapper(),
     });
 
-    it('should handle save errors and update syncStatus', async () => {
-        mockSave.mockRejectedValue(new Error('Firebase error'));
-        const { result } = renderHook(() => useDailyRecordSyncQuery('2024-12-28', false, true), { wrapper: createWrapper() });
-
-        await waitFor(() => expect(result.current.syncStatus).toBe('idle'));
-
-        await act(async () => {
-            await result.current.saveAndUpdate(createMockRecord('2024-12-28')).catch(() => undefined);
-        });
-
-        await waitFor(() => {
-            expect(result.current.syncStatus).toBe('error');
-        });
+    // Wait for load
+    await waitFor(() => {
+      expect(result.current.record).toEqual(initialRecord);
     });
+
+    const partial = { 'beds.R1.patientName': 'Nuevo Paciente' };
+
+    await act(async () => {
+      // Mock return for next fetch
+      mockGetForDate.mockResolvedValue({
+        ...initialRecord,
+        beds: { R1: { patientName: 'Nuevo Paciente' } },
+      } as any);
+      await result.current.patchRecord(partial);
+    });
+
+    expect(mockUpdatePartial).toHaveBeenCalledWith('2024-12-28', partial);
+    // Wait for optimistic update or refetch
+    await waitFor(() => {
+      expect(result.current.record?.beds.R1.patientName).toBe('Nuevo Paciente');
+      expect(result.current.syncStatus).toBe('saved');
+    });
+  });
+
+  it('should handle save errors and update syncStatus', async () => {
+    mockSave.mockRejectedValue(new Error('Firebase error'));
+    const { result } = renderHook(() => useDailyRecordSyncQuery('2024-12-28', false, true), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.syncStatus).toBe('idle'));
+
+    await act(async () => {
+      await result.current.saveAndUpdate(createMockRecord('2024-12-28')).catch(() => undefined);
+    });
+
+    await waitFor(() => {
+      expect(result.current.syncStatus).toBe('error');
+    });
+  });
 });

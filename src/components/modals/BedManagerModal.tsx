@@ -9,8 +9,8 @@ import { ExtraBedsGrid } from '@/components/modals/ExtraBedsGrid';
 import {
   resolveBlockedBedsGridItems,
   resolveExtraBedsGridItems,
-} from '@/features/census/controllers/bedManagerGridItemsController';
-import { useBedManagerModalModel } from '@/features/census/hooks/useBedManagerModalModel';
+} from '@/hooks/controllers/bedManagerGridItemsController';
+import { useBedManagerModalModel } from '@/hooks/useBedManagerModalModel';
 
 interface BedManagerModalProps {
   isOpen: boolean;

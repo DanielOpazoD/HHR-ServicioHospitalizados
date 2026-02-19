@@ -56,3 +56,39 @@ export interface TransferMovementActions {
 }
 
 export type PatientMovementActions = DischargeMovementActions & TransferMovementActions;
+
+export interface DischargeUpdateCommandPayload {
+  status: MovementStatus;
+  type?: string;
+  typeOther?: string;
+  time: string;
+  movementDate?: string;
+}
+
+export interface DischargeAddCommandPayload extends DischargeUpdateCommandPayload {
+  cribStatus?: MovementStatus;
+  dischargeTarget?: DischargeTarget;
+}
+
+export interface TransferCommandPayload {
+  evacuationMethod: string;
+  receivingCenter: string;
+  receivingCenterOther: string;
+  transferEscort: string;
+  time: string;
+  movementDate?: string;
+}
+
+export interface MovementDateTimeCommandPayload {
+  time: string;
+  movementDate?: string;
+}
+
+export interface DischargeModalConfirmPayload extends MovementDateTimeCommandPayload {
+  status: MovementStatus;
+  type?: string;
+  typeOther?: string;
+  dischargeTarget?: DischargeTarget;
+}
+
+export type TransferModalConfirmPayload = MovementDateTimeCommandPayload;

@@ -10,13 +10,13 @@ import {
   DischargeTimeField,
   DischargeTypeSelector,
 } from '@/components/modals/actions/discharge';
-import type { DischargeTarget } from '@/features/census/domain/movements/contracts';
+import type { DischargeTarget } from '@/types/movements';
 import {
   shouldShowBabyStatus,
   shouldShowMotherStatus,
-} from '@/features/census/controllers/dischargeModalController';
-import { useDischargeModalForm } from '@/features/census/hooks/useDischargeModalForm';
-import type { DischargeModalProps } from '@/features/census/types/censusActionModalContracts';
+} from '@/hooks/controllers/dischargeModalController';
+import { useDischargeModalForm } from '@/hooks/useDischargeModalForm';
+import type { DischargeModalProps } from '@/hooks/types/censusActionModalContracts';
 
 export type DischargeTypeUnion = DischargeType;
 

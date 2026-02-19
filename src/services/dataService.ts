@@ -1,12 +1,12 @@
 /**
  * Data Service - Barrel Export
- * 
+ *
  * This file provides backwards compatibility for existing imports.
  * All functionality has been refactored into focused modules.
- * 
+ *
  * New code should import directly from the specific modules:
- * - storage/localStorageService
- * - factories/patientFactory  
+ * - storage/unifiedLocalService
+ * - factories/patientFactory
  * - calculations/statsCalculator
  * - repositories/DailyRecordRepository
  * - utils/dateUtils
@@ -17,48 +17,33 @@
 // Storage
 // ============================================================================
 export {
-  getRecordForDate as getStoredRecords,
-  saveRecord as saveRecordLocal,
-  getCatalog as getStoredNurses,
-  saveCatalog as saveStoredNurses,
-} from './storage/indexedDBService';
+  getStoredRecords,
+  saveRecordLocal,
+  getStoredNurses,
+  saveStoredNurses,
+} from './storage/unifiedLocalService';
 
-export {
-  STORAGE_KEY,
-  NURSES_STORAGE_KEY,
-} from './storage/localStorageService';
+export { STORAGE_KEY, NURSES_STORAGE_KEY } from './storage/unifiedLocalService';
 
 // ============================================================================
 // Factories
 // ============================================================================
-export {
-  createEmptyPatient,
-  clonePatient
-} from './factories/patientFactory';
+export { createEmptyPatient, clonePatient } from './factories/patientFactory';
 
 // ============================================================================
 // Calculations
 // ============================================================================
-export {
-  calculateStats,
-  type CensusStatistics
-} from './calculations/statsCalculator';
+export { calculateStats, type CensusStatistics } from './calculations/statsCalculator';
 
 // ============================================================================
 // Date Formatting
 // ============================================================================
-export {
-  formatDateDDMMYYYY,
-  getTodayISO,
-  formatDateForDisplay
-} from '@/utils/dateUtils';
+export { formatDateDDMMYYYY, getTodayISO, formatDateForDisplay } from '@/utils/dateUtils';
 
 // ============================================================================
 // Demo Data
 // ============================================================================
-export {
-  generateDemoRecord
-} from './utils/demoDataGenerator';
+export { generateDemoRecord } from './utils/demoDataGenerator';
 
 // ============================================================================
 // Repository (for backwards compatibility)
@@ -70,5 +55,5 @@ export {
   initializeDay,
   setFirestoreEnabled,
   isFirestoreEnabled,
-  DailyRecordRepository
+  DailyRecordRepository,
 } from './repositories/DailyRecordRepository';

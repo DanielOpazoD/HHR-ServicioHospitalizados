@@ -8,10 +8,10 @@ import {
   TransferReceivingSection,
   TransferTimeField,
 } from '@/components/modals/actions/transfer';
-import { useTransferModalForm } from '@/features/census/hooks/useTransferModalForm';
-import type { TransferModalProps } from '@/features/census/types/censusActionModalContracts';
+import { useTransferModalForm } from '@/hooks/useTransferModalForm';
+import type { TransferModalProps } from '@/hooks/types/censusActionModalContracts';
 
-export type { TransferUpdateField } from '@/features/census/types/censusActionModalContracts';
+export type { TransferUpdateField } from '@/hooks/types/censusActionModalContracts';
 
 export const TransferModal: React.FC<TransferModalProps> = ({
   isOpen,
