@@ -53,19 +53,22 @@ npm run preview
 
 ## Comandos Principales
 
-| Comando                 | Objetivo                                                      |
-| ----------------------- | ------------------------------------------------------------- |
-| `npm run dev`           | Levantar app en modo desarrollo                               |
-| `npm run build`         | Build de producción                                           |
-| `npm run preview`       | Preview local del build                                       |
-| `npm run typecheck`     | Verificación TypeScript                                       |
-| `npm run test`          | Suite Vitest completa                                         |
-| `npm run test:watch`    | Vitest en watch mode                                          |
-| `npm run test:coverage` | Cobertura de tests                                            |
-| `npm run test:e2e`      | End-to-end (Playwright)                                       |
-| `npm run lint`          | Lint global                                                   |
-| `npm run check:quality` | Checks de arquitectura, tamaño de módulo y boundaries runtime |
-| `npm run test:rules`    | Tests de reglas Firestore                                     |
+| Comando                          | Objetivo                                                      |
+| -------------------------------- | ------------------------------------------------------------- |
+| `npm run dev`                    | Levantar app en modo desarrollo                               |
+| `npm run build`                  | Build de producción                                           |
+| `npm run preview`                | Preview local del build                                       |
+| `npm run typecheck`              | Verificación TypeScript                                       |
+| `npm run test`                   | Suite Vitest completa                                         |
+| `npm run test:watch`             | Vitest en watch mode                                          |
+| `npm run test:coverage`          | Cobertura de tests                                            |
+| `npm run test:e2e`               | End-to-end (Playwright)                                       |
+| `npm run test:e2e:critical`      | E2E crítico en Chromium (config emulador)                     |
+| `npm run lint`                   | Lint global                                                   |
+| `npm run check:quality`          | Checks de arquitectura, tamaño de módulo y boundaries runtime |
+| `npm run test:rules`             | Tests de reglas Firestore                                     |
+| `npm run test:risk:admin-health` | Riesgo operativo de health dashboard y contratos              |
+| `npm run report:quality-metrics` | Snapshot de métricas de calidad para artefactos CI            |
 
 ## Estructura del Proyecto
 
@@ -119,6 +122,7 @@ import { useDailyRecord } from '@/hooks/useDailyRecord';
 
 - [Arquitectura global](docs/ARCHITECTURE.md)
 - [Runbook de sync y resiliencia](docs/RUNBOOK_SYNC_RESILIENCE.md)
+- [Runbook técnico de soporte](docs/RUNBOOK_SUPPORT_OPERATIONS.md)
 - [Mapa de código fuente](src/README.md)
 
 ### Documentación existente relevante
@@ -166,7 +170,8 @@ import { useDailyRecord } from '@/hooks/useDailyRecord';
 ```bash
 npm run typecheck
 npm run check:quality
-npx vitest run src/tests/views/census
+npm run test:risk:admin-health
+npm run test:sync-load
 ```
 
 ### Suite completa
@@ -185,7 +190,21 @@ npm run test:coverage
 
 ```bash
 npm run test:e2e
+npm run test:e2e:critical
 ```
+
+## Gates de CI (actual)
+
+La pipeline en `.github/workflows/ci-cd.yml` bloquea merge si falla alguno:
+
+- Quality gates (`lint`, `typecheck`, `check:quality`)
+- Unit/integration (`test:ci:unit`)
+- Resiliencia crítica (`test:resilience`)
+- Riesgo operativo admin health (`test:risk:admin-health`)
+- Carga base de sync queue (`test:sync-load`)
+- Firestore rules + sync emulator (`test:rules:ci`, `test:emulator:sync:ci`)
+- E2E críticos con emulador (`test:e2e:critical:ci`)
+- Build de producción (`build`)
 
 ## Convenciones de Calidad (resumen)
 

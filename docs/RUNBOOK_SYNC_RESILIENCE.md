@@ -19,6 +19,7 @@ Revisar `Admin > System Health` por usuario:
 - `conflictSyncTasks`
 - `retryingSyncTasks`
 - `oldestPendingAgeMs`
+- Diagnóstico (causas) y `Siguiente acción` sugerida por tarjeta
 
 Umbrales operativos:
 

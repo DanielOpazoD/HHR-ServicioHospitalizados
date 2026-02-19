@@ -4,7 +4,7 @@
 
 Estandarizar respuesta de soporte ante incidentes de datos, sincronización y permisos.
 
-Este runbook complementa `/Users/danielopazodamiani/Desktop/FEB 10 2144/docs/RUNBOOK_SYNC_RESILIENCE.md` con una pauta más operativa (triage + decisión + cierre).
+Este runbook complementa `docs/RUNBOOK_SYNC_RESILIENCE.md` con una pauta más operativa (triage + decisión + cierre).
 
 ## Alcance
 
@@ -123,6 +123,7 @@ npm run test:risk:admin-health
 npm run test:sync-load
 npm run test:rules:ci
 npm run test:emulator:sync:ci
+npm run test:e2e:critical:ci
 ```
 
 Parámetros opcionales para carga de cola:
