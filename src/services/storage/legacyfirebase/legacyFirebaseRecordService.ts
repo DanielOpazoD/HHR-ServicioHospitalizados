@@ -25,9 +25,52 @@ import {
 } from './legacyFirebaseLogger';
 
 let legacyReadBlockedForSession = false;
+const LEGACY_READ_BLOCK_KEY = 'hhr_legacy_read_block_v1';
+const LEGACY_READ_BLOCK_TTL_MS = 6 * 60 * 60 * 1000;
+
+const readLegacyReadBlockTimestamp = (): number | null => {
+  if (typeof window === 'undefined' || !window.localStorage) return null;
+  const raw = window.localStorage.getItem(LEGACY_READ_BLOCK_KEY);
+  if (!raw) return null;
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value <= 0) return null;
+  return value;
+};
+
+const writeLegacyReadBlockTimestamp = (timestamp: number): void => {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  window.localStorage.setItem(LEGACY_READ_BLOCK_KEY, String(timestamp));
+};
+
+const removeLegacyReadBlockTimestamp = (): void => {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  window.localStorage.removeItem(LEGACY_READ_BLOCK_KEY);
+};
+
+export const clearLegacyReadBlock = (): void => {
+  legacyReadBlockedForSession = false;
+  removeLegacyReadBlockTimestamp();
+};
+
+export const registerLegacyPermissionDeniedBlock = (): void => {
+  legacyReadBlockedForSession = true;
+  writeLegacyReadBlockTimestamp(Date.now());
+};
+
+export const isLegacyReadBlocked = (): boolean => {
+  if (legacyReadBlockedForSession) return true;
+  const timestamp = readLegacyReadBlockTimestamp();
+  if (!timestamp) return false;
+  if (Date.now() - timestamp <= LEGACY_READ_BLOCK_TTL_MS) {
+    legacyReadBlockedForSession = true;
+    return true;
+  }
+  removeLegacyReadBlockTimestamp();
+  return false;
+};
 
 export const getLegacyRecord = async (date: string): Promise<DailyRecord | null> => {
-  if (legacyReadBlockedForSession) {
+  if (isLegacyReadBlocked()) {
     return null;
   }
 
@@ -51,7 +94,7 @@ export const getLegacyRecord = async (date: string): Promise<DailyRecord | null>
         }
       } catch (error) {
         if (isLegacyPermissionDeniedError(error)) {
-          legacyReadBlockedForSession = true;
+          registerLegacyPermissionDeniedBlock();
           return null;
         }
         logLegacyError(`[LegacyFirebase] Error testing path ${path}:`, error);
@@ -70,6 +113,8 @@ export const getLegacyRecordsRange = async (
   startDate: string,
   endDate: string
 ): Promise<DailyRecord[]> => {
+  if (isLegacyReadBlocked()) return [];
+
   const db = getLegacyDb();
   if (!db) return [];
 
@@ -104,6 +149,11 @@ export const subscribeLegacyRecord = (
   date: string,
   callback: (record: DailyRecord | null) => void
 ): (() => void) => {
+  if (isLegacyReadBlocked()) {
+    callback(null);
+    return () => {};
+  }
+
   const db = getLegacyDb();
   if (!db) {
     callback(null);
@@ -129,6 +179,8 @@ export const subscribeLegacyRecord = (
 };
 
 export const discoverLegacyDataPath = async (): Promise<string | null> => {
+  if (isLegacyReadBlocked()) return null;
+
   const db = getLegacyDb();
   if (!db) return null;
 
