@@ -37,6 +37,7 @@ GitHUBHHR
 coverage/
 playwright-report/
 test-results/
+reports/
 
 # Temporary coverage/test output files
 coverage_*.txt

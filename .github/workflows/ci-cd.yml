@@ -36,6 +36,17 @@ jobs:
       - name: Run architecture and security quality checks
         run: npm run check:quality
 
+      - name: Generate quality metrics snapshot
+        run: npm run report:quality-metrics
+
+      - name: Upload quality metrics artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-metrics
+          path: reports/quality-metrics.*
+          retention-days: 30
+
   # ============================================
   # JOB 2: TEST
   # ============================================

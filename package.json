@@ -38,6 +38,7 @@
     "check:secret-leaks": "node scripts/check-secret-leaks.mjs",
     "check:security": "npm run check:secret-leaks && node scripts/check-security-hardening.mjs",
     "report:dependency-debt": "node scripts/report-folder-dependency-debt.mjs",
+    "report:quality-metrics": "node scripts/report-quality-metrics.mjs",
     "check:quality": "npm run check:architecture && npm run check:feature-dependencies && npm run check:shared-layer-boundary && npm run check:legacy-localstorage-imports && npm run check:schema-governance && npm run check:folder-dependencies && npm run check:module-dependencies && npm run check:module-size && npm run check:census-runtime-boundary && npm run check:runtime-adapter-boundary && npm run check:test-governance && npm run check:security",
     "clean": "bash scripts/cleanup.sh",
     "ci": "npm run check:quality && npm run lint && npm run test && npm run build",
