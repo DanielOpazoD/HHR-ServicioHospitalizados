@@ -4,6 +4,22 @@ const ROOT_LOCAL_PRIORITY_FIELDS = new Set([
   'medicalHandoffGlobalNote',
 ]);
 
+export const CONFLICT_RESOLUTION_POLICY_VERSION = '2026-02-v2';
+
+export interface ScalarPolicyDecision {
+  value: unknown;
+  winner: 'local' | 'remote';
+  reason:
+    | 'local_undefined_fallback'
+    | 'remote_undefined_fallback'
+    | 'root_local_priority'
+    | 'root_remote_priority'
+    | 'clinical_local_priority'
+    | 'admin_remote_priority'
+    | 'default_local_priority'
+    | 'default_remote_priority';
+}
+
 const ROOT_REMOTE_PRIORITY_FIELDS = new Set(['dateTimestamp', 'schemaVersion']);
 
 const CLINICAL_PATIENT_FIELDS = new Set([
@@ -70,18 +86,42 @@ export const selectScalarByPolicy = (
   local: unknown,
   preferLocalDefault: boolean
 ): unknown => {
-  if (local === undefined) return remote;
-  if (remote === undefined) return local;
+  return decideScalarByPolicy(path, remote, local, preferLocalDefault).value;
+};
 
-  if (ROOT_LOCAL_PRIORITY_FIELDS.has(path)) return local;
-  if (ROOT_REMOTE_PRIORITY_FIELDS.has(path)) return remote;
+export const decideScalarByPolicy = (
+  path: string,
+  remote: unknown,
+  local: unknown,
+  preferLocalDefault: boolean
+): ScalarPolicyDecision => {
+  if (local === undefined) {
+    return { value: remote, winner: 'remote', reason: 'local_undefined_fallback' };
+  }
+  if (remote === undefined) {
+    return { value: local, winner: 'local', reason: 'remote_undefined_fallback' };
+  }
+
+  if (ROOT_LOCAL_PRIORITY_FIELDS.has(path)) {
+    return { value: local, winner: 'local', reason: 'root_local_priority' };
+  }
+  if (ROOT_REMOTE_PRIORITY_FIELDS.has(path)) {
+    return { value: remote, winner: 'remote', reason: 'root_remote_priority' };
+  }
 
   const parts = path.split('.');
   if (parts[0] === 'beds' && parts.length >= 3) {
     const patientField = parts[2];
-    if (CLINICAL_PATIENT_FIELDS.has(patientField)) return local;
-    if (ADMIN_PATIENT_FIELDS.has(patientField)) return remote;
+    if (CLINICAL_PATIENT_FIELDS.has(patientField)) {
+      return { value: local, winner: 'local', reason: 'clinical_local_priority' };
+    }
+    if (ADMIN_PATIENT_FIELDS.has(patientField)) {
+      return { value: remote, winner: 'remote', reason: 'admin_remote_priority' };
+    }
   }
 
-  return preferLocalDefault ? local : remote;
+  if (preferLocalDefault) {
+    return { value: local, winner: 'local', reason: 'default_local_priority' };
+  }
+  return { value: remote, winner: 'remote', reason: 'default_remote_priority' };
 };

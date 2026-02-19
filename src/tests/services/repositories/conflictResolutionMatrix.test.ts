@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { resolveDailyRecordConflict } from '@/services/repositories/conflictResolutionMatrix';
+import {
+  resolveDailyRecordConflict,
+  resolveDailyRecordConflictWithTrace,
+} from '@/services/repositories/conflictResolutionMatrix';
 import { DailyRecord } from '@/types';
 
 const makeRecord = (date: string, lastUpdated: string): DailyRecord => ({
@@ -139,5 +142,44 @@ describe('conflictResolutionMatrix', () => {
     const resolved = resolveDailyRecordConflict(remote, local, { changedPaths: ['*'] });
     expect(resolved.beds.R1.bedMode).toBe('Cama');
     expect(resolved.beds.R1.location).toBe('Habitacion A');
+  });
+
+  it('returns trace with policy version and per-field decisions', () => {
+    const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
+    remote.beds = {
+      R1: {
+        bedId: 'R1',
+        pathology: 'Diag remoto',
+        location: 'Habitacion A',
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const local = makeRecord('2026-02-18', '2026-02-18T10:05:00.000Z');
+    local.beds = {
+      R1: {
+        bedId: 'R1',
+        pathology: 'Diag local',
+        location: 'Pasillo',
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const result = resolveDailyRecordConflictWithTrace(remote, local, { changedPaths: ['*'] });
+
+    expect(result.trace.policyVersion).toBe('2026-02-v2');
+    expect(result.trace.entries.length).toBeGreaterThan(0);
+    expect(result.trace.entries).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: 'beds.R1.pathology',
+          strategy: 'scalar_policy',
+          winner: 'local',
+        }),
+        expect.objectContaining({
+          path: 'beds.R1.location',
+          strategy: 'scalar_policy',
+          winner: 'remote',
+        }),
+      ])
+    );
   });
 });

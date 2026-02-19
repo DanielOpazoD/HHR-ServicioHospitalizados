@@ -42,6 +42,10 @@ vi.mock('@/services/repositories/PatientMasterRepository', () => ({
   },
 }));
 
+vi.mock('@/services/admin/auditService', () => ({
+  logConflictAutoMerged: vi.fn().mockResolvedValue(undefined),
+}));
+
 import { save, updatePartial } from '@/services/repositories/dailyRecordRepositoryWriteService';
 import {
   getRecordForDate as getRecordFromIndexedDB,
@@ -53,6 +57,7 @@ import {
   updateRecordPartial as updateRecordPartialToFirestore,
 } from '@/services/storage/firestoreService';
 import { isRetryableSyncError, queueSyncTask } from '@/services/storage/syncQueueService';
+import { logConflictAutoMerged } from '@/services/admin/auditService';
 
 const buildRecord = (date: string): DailyRecord => ({
   date,
@@ -166,6 +171,13 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
         }),
       })
     );
+    expect(logConflictAutoMerged).toHaveBeenCalledWith(
+      '2026-02-16',
+      expect.objectContaining({
+        policyVersion: '2026-02-v2',
+        changedPaths: ['*'],
+      })
+    );
   });
 
   it('auto-merges on concurrency conflict during partial update and queues merged result', async () => {
@@ -197,6 +209,13 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
         beds: expect.objectContaining({
           R1: expect.objectContaining({ pathology: 'Diagnostico local' }),
         }),
+      })
+    );
+    expect(logConflictAutoMerged).toHaveBeenCalledWith(
+      '2026-02-15',
+      expect.objectContaining({
+        policyVersion: '2026-02-v2',
+        changedPaths: expect.arrayContaining(['beds.R1.pathology']),
       })
     );
   });

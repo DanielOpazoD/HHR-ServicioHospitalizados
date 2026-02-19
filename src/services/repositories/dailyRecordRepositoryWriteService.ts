@@ -25,10 +25,38 @@ import {
 import { mapPatientToFhir } from '@/services/utils/fhirMappers';
 import { logError } from '@/services/utils/errorService';
 import { PatientMasterRepository } from '@/services/repositories/PatientMasterRepository';
-import { resolveDailyRecordConflict } from '@/services/repositories/conflictResolutionMatrix';
+import { logConflictAutoMerged } from '@/services/admin/auditService';
+import { resolveDailyRecordConflictWithTrace } from '@/services/repositories/conflictResolutionMatrix';
+import { ConflictResolutionTraceEntry } from '@/services/repositories/conflictResolutionTrace';
 
 const isConcurrencyError = (error: unknown): boolean =>
   error instanceof Error && error.name === 'ConcurrencyError';
+
+const countBy = (items: string[]): Record<string, number> =>
+  items.reduce<Record<string, number>>((acc, item) => {
+    acc[item] = (acc[item] || 0) + 1;
+    return acc;
+  }, {});
+
+const buildConflictAuditDetails = (
+  changedPaths: string[],
+  policyVersion: string,
+  traceEntries: ConflictResolutionTraceEntry[]
+): {
+  changedPaths: string[];
+  policyVersion: string;
+  entryCount: number;
+  strategyBreakdown: Record<string, number>;
+  winnerBreakdown: Record<string, number>;
+  samplePaths: string[];
+} => ({
+  changedPaths,
+  policyVersion,
+  entryCount: traceEntries.length,
+  strategyBreakdown: countBy(traceEntries.map(entry => entry.strategy)),
+  winnerBreakdown: countBy(traceEntries.map(entry => entry.winner)),
+  samplePaths: Array.from(new Set(traceEntries.map(entry => entry.path))).slice(0, 20),
+});
 
 const autoMergeAndQueueConflict = async (
   date: string,
@@ -41,11 +69,23 @@ const autoMergeAndQueueConflict = async (
       return false;
     }
 
-    const merged = resolveDailyRecordConflict(remoteRecord, localRecord, {
-      changedPaths: changedPaths.length > 0 ? changedPaths : ['*'],
-    });
+    const { record: merged, trace } = resolveDailyRecordConflictWithTrace(
+      remoteRecord,
+      localRecord,
+      {
+        changedPaths: changedPaths.length > 0 ? changedPaths : ['*'],
+      }
+    );
+
+    const auditDetails = buildConflictAuditDetails(
+      changedPaths.length > 0 ? changedPaths : ['*'],
+      trace.policyVersion,
+      trace.entries
+    );
+
     await saveToIndexedDB(merged);
     await queueSyncTask('UPDATE_DAILY_RECORD', merged);
+    await logConflictAutoMerged(date, auditDetails);
     return true;
   } catch (mergeError) {
     console.warn('[Repository] Auto-merge conflict fallback failed:', mergeError);
