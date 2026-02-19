@@ -118,6 +118,7 @@ import { useDailyRecord } from '@/hooks/useDailyRecord';
 ### Documentos troncales
 
 - [Arquitectura global](docs/ARCHITECTURE.md)
+- [Runbook de sync y resiliencia](docs/RUNBOOK_SYNC_RESILIENCE.md)
 - [Mapa de código fuente](src/README.md)
 
 ### Documentación existente relevante

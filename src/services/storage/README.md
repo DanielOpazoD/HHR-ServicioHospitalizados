@@ -33,3 +33,7 @@ Cambios en esta capa requieren:
 1. tests de servicios,
 2. verificación de degradación/fallback,
 3. revisión de impacto en `DailyRecordRepository`.
+
+## Operación
+
+- Runbook soporte sync/resiliencia: `docs/RUNBOOK_SYNC_RESILIENCE.md`
