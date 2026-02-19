@@ -11,21 +11,21 @@ export const mockNavbar = vi.fn();
 export const mockSettingsModal = vi.fn();
 
 vi.mock('@/components/layout/Navbar', () => ({
-  Navbar: (props: any) => {
+  Navbar: (props: unknown) => {
     mockNavbar(props);
     return <div data-testid="navbar">Navbar</div>;
   },
 }));
 
 vi.mock('@/components/layout/DateStrip', () => ({
-  DateStrip: (props: any) => {
+  DateStrip: (props: unknown) => {
     mockDateStrip(props);
     return <div data-testid="datestrip">DateStrip</div>;
   },
 }));
 
 vi.mock('@/components/modals/SettingsModal', () => ({
-  SettingsModal: (props: any) => {
+  SettingsModal: (props: unknown) => {
     mockSettingsModal(props);
     return <div data-testid="settings-modal">SettingsModal</div>;
   },
@@ -82,6 +82,11 @@ vi.mock('@/hooks/useExportManager', () => ({
 }));
 
 describe('AppContent', () => {
+  type AppContentUi = React.ComponentProps<typeof AppContent>['ui'];
+  type CensusContextValue = ReturnType<typeof useCensusContext>;
+  type AuthValue = ReturnType<typeof useAuth>;
+  type ExportManagerValue = ReturnType<typeof useExportManager>;
+
   const mockUI = {
     currentModule: 'CENSUS' as const,
     setCurrentModule: vi.fn(),
@@ -99,7 +104,7 @@ describe('AppContent', () => {
     setSelectedShift: vi.fn(),
     censusLocalViewMode: 'CARDS' as const,
     setCensusLocalViewMode: vi.fn(),
-  } as any;
+  } as unknown as AppContentUi;
 
   const mockCensusContext = {
     dailyRecord: { record: {}, syncStatus: 'idle', lastSyncTime: null },
@@ -151,15 +156,15 @@ describe('AppContent', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useCensusContext).mockReturnValue(mockCensusContext as any);
-    vi.mocked(useAuth).mockReturnValue(mockAuth as any);
+    vi.mocked(useCensusContext).mockReturnValue(mockCensusContext as unknown as CensusContextValue);
+    vi.mocked(useAuth).mockReturnValue(mockAuth as unknown as AuthValue);
     vi.mocked(useExportManager).mockReturnValue({
       handleExportPDF: vi.fn(),
       handleBackupExcel: vi.fn(),
       handleBackupHandoff: vi.fn(),
       isArchived: false,
       isBackingUp: false,
-    } as any);
+    } as unknown as ExportManagerValue);
   });
 
   it('renders basic layout in normal mode', () => {
@@ -177,7 +182,7 @@ describe('AppContent', () => {
       ...mockCensusContext,
       dateNav: { ...mockCensusContext.dateNav, isSignatureMode: true },
     };
-    vi.mocked(useCensusContext).mockReturnValue(signatureContext as any);
+    vi.mocked(useCensusContext).mockReturnValue(signatureContext as unknown as CensusContextValue);
 
     render(<AppContent ui={mockUI} />);
 
@@ -191,7 +196,7 @@ describe('AppContent', () => {
       ...mockCensusContext,
       sharedCensus: { isSharedCensusMode: true },
     };
-    vi.mocked(useCensusContext).mockReturnValue(sharedContext as any);
+    vi.mocked(useCensusContext).mockReturnValue(sharedContext as unknown as CensusContextValue);
 
     render(<AppContent ui={mockUI} />);
 
@@ -206,7 +211,10 @@ describe('AppContent', () => {
   });
 
   it('hides BookmarkBar for non-privileged roles', () => {
-    vi.mocked(useAuth).mockReturnValue({ ...mockAuth, role: 'doctor_urgency' } as any);
+    vi.mocked(useAuth).mockReturnValue({
+      ...mockAuth,
+      role: 'doctor_urgency',
+    } as unknown as AuthValue);
     render(<AppContent ui={mockUI} />);
     expect(screen.queryByTestId('bookmark-bar')).not.toBeInTheDocument();
   });
@@ -217,7 +225,9 @@ describe('AppContent', () => {
   });
 
   it('hides DateStrip for non-clinical modules', () => {
-    render(<AppContent ui={{ ...mockUI, currentModule: 'TRANSFERS' }} />);
+    render(
+      <AppContent ui={{ ...mockUI, currentModule: 'TRANSFERS' } as unknown as AppContentUi} />
+    );
     expect(screen.queryByTestId('datestrip')).not.toBeInTheDocument();
   });
 
@@ -251,7 +261,7 @@ describe('AppContent', () => {
       isArchived: false,
       isBackingUp: false,
     };
-    vi.mocked(useExportManager).mockReturnValue(mockExportManager as any);
+    vi.mocked(useExportManager).mockReturnValue(mockExportManager as unknown as ExportManagerValue);
 
     const { unmount } = render(<AppContent ui={{ ...mockUI, currentModule: 'CENSUS' }} />);
     expect(mockDateStrip).toHaveBeenLastCalledWith(
@@ -281,7 +291,7 @@ describe('AppContent', () => {
       isTestAgentRunning: true,
     };
 
-    render(<AppContent ui={uiWithModals} />);
+    render(<AppContent ui={uiWithModals as unknown as AppContentUi} />);
 
     expect(screen.getByTestId('settings-modal')).toBeInTheDocument();
     expect(screen.getByTestId('test-agent')).toBeInTheDocument();
@@ -293,7 +303,7 @@ describe('AppContent', () => {
       ...mockCensusContext,
       sharedCensus: { isSharedCensusMode: true },
     };
-    vi.mocked(useCensusContext).mockReturnValue(sharedContext as any);
+    vi.mocked(useCensusContext).mockReturnValue(sharedContext as unknown as CensusContextValue);
 
     render(<AppContent ui={mockUI} />);
 

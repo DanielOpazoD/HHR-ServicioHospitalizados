@@ -24,6 +24,13 @@ vi.mock('@/context/UIContext', () => ({
 }));
 
 describe('CMASection', () => {
+  type MovementActionsValue = ReturnType<typeof useDailyRecordMovementActions>;
+  type BedActionsValue = ReturnType<typeof useDailyRecordBedActions>;
+  type MovementsValue = ReturnType<typeof useDailyRecordMovements>;
+  type DataValue = ReturnType<typeof useDailyRecordData>;
+  type ConfirmDialogValue = ReturnType<typeof useConfirmDialog>;
+  type NotificationValue = ReturnType<typeof useNotification>;
+
   const deleteCMA = vi.fn();
   const updateCMA = vi.fn();
   const updatePatientMultiple = vi.fn();
@@ -45,22 +52,22 @@ describe('CMASection', () => {
     vi.mocked(useDailyRecordMovementActions).mockReturnValue({
       deleteCMA,
       updateCMA,
-    } as any);
+    } as unknown as MovementActionsValue);
 
     vi.mocked(useDailyRecordBedActions).mockReturnValue({
       updatePatientMultiple,
-    } as any);
+    } as unknown as BedActionsValue);
 
     vi.mocked(useDailyRecordMovements).mockReturnValue({
       discharges: [],
       transfers: [],
       cma: [],
-    } as any);
+    } as unknown as MovementsValue);
     vi.mocked(useDailyRecordData).mockReturnValue({
       record: { date: '2024-12-11' },
-    } as any);
+    } as unknown as DataValue);
 
-    vi.mocked(useConfirmDialog).mockReturnValue({ confirm } as any);
+    vi.mocked(useConfirmDialog).mockReturnValue({ confirm } as unknown as ConfirmDialogValue);
     vi.mocked(useNotification).mockReturnValue({
       error: notifyError,
       warning: vi.fn(),
@@ -72,7 +79,7 @@ describe('CMASection', () => {
       notify: vi.fn(),
       alert: vi.fn(),
       confirm: vi.fn(),
-    } as any);
+    } as unknown as NotificationValue);
   });
 
   it('renders empty state when there are no CMA records', () => {
@@ -87,7 +94,7 @@ describe('CMASection', () => {
       discharges: [],
       transfers: [],
       cma: [cmaItem],
-    } as any);
+    } as unknown as MovementsValue);
 
     render(<CMASection />);
 
@@ -112,7 +119,7 @@ describe('CMASection', () => {
       discharges: [],
       transfers: [],
       cma: [cmaItem],
-    } as any);
+    } as unknown as MovementsValue);
 
     render(<CMASection />);
     fireEvent.click(screen.getByTitle('Deshacer: Restaurar paciente a la cama'));
@@ -140,7 +147,7 @@ describe('CMASection', () => {
           originalData: undefined,
         },
       ],
-    } as any);
+    } as unknown as MovementsValue);
 
     render(<CMASection />);
     fireEvent.click(screen.getByTitle('Deshacer (sin datos originales)'));
@@ -160,7 +167,7 @@ describe('CMASection', () => {
       discharges: [],
       transfers: [],
       cma: [cmaItem],
-    } as any);
+    } as unknown as MovementsValue);
 
     render(<CMASection />);
     fireEvent.click(screen.getByTitle('Deshacer: Restaurar paciente a la cama'));
@@ -181,7 +188,7 @@ describe('CMASection', () => {
       discharges: [],
       transfers: [],
       cma: null,
-    } as any);
+    } as unknown as MovementsValue);
 
     const { container } = render(<CMASection />);
     expect(container.firstChild).toBeNull();

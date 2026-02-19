@@ -28,6 +28,10 @@ vi.mock('@/context/DailyRecordContext', () => ({
 vi.mock('@/utils/dateUtils');
 
 describe('useHandoffLogic', () => {
+  type DailyRecordDataMock = ReturnType<typeof useDailyRecordData>;
+  type BedActionsMock = ReturnType<typeof useDailyRecordBedActions>;
+  type HandoffActionsMock = ReturnType<typeof useDailyRecordHandoffActions>;
+
   const mockRecord = {
     date: '2025-01-01',
     beds: {
@@ -73,16 +77,16 @@ describe('useHandoffLogic', () => {
     vi.mocked(dateUtils.isAdmittedDuringShift).mockReturnValue(true);
 
     vi.mocked(useDailyRecordData).mockReturnValue({
-      record: mockRecord as any,
-      syncStatus: 'synced' as any,
+      record: mockRecord as DailyRecordDataMock['record'],
+      syncStatus: 'synced' as DailyRecordDataMock['syncStatus'],
       lastSyncTime: null,
-      inventory: {} as any,
-      stabilityRules: {} as any,
-    });
-    vi.mocked(useDailyRecordBedActions).mockReturnValue({} as any);
+      inventory: {} as DailyRecordDataMock['inventory'],
+      stabilityRules: {} as DailyRecordDataMock['stabilityRules'],
+    } as DailyRecordDataMock);
+    vi.mocked(useDailyRecordBedActions).mockReturnValue({} as BedActionsMock);
     vi.mocked(useDailyRecordHandoffActions).mockReturnValue({
       sendMedicalHandoff: vi.fn(),
-    } as any);
+    } as unknown as HandoffActionsMock);
   });
 
   afterEach(() => {
@@ -96,7 +100,7 @@ describe('useHandoffLogic', () => {
       updatePatient: vi.fn(),
       updateClinicalCrib: vi.fn(),
       updateClinicalCribMultiple: vi.fn(),
-    } as any);
+    } as unknown as BedActionsMock);
 
     const params = {
       type: 'nursing' as const,
@@ -138,7 +142,7 @@ describe('useHandoffLogic', () => {
       updatePatientMultiple: vi.fn(),
       updateClinicalCrib: vi.fn(),
       updateClinicalCribMultiple: vi.fn(),
-    } as any);
+    } as unknown as BedActionsMock);
 
     const params = {
       type: 'nursing' as const,
@@ -186,13 +190,15 @@ describe('useHandoffLogic', () => {
     const mockUpdate2 = vi.fn();
 
     vi.mocked(useDailyRecordData).mockReturnValue({
-      record: recordWithEvent as any,
-      syncStatus: 'synced' as any,
+      record: recordWithEvent as DailyRecordDataMock['record'],
+      syncStatus: 'synced' as DailyRecordDataMock['syncStatus'],
       lastSyncTime: null,
-      inventory: {} as any,
-      stabilityRules: {} as any,
-    });
-    vi.mocked(useDailyRecordBedActions).mockReturnValue({ updatePatient: mockUpdate2 } as any);
+      inventory: {} as DailyRecordDataMock['inventory'],
+      stabilityRules: {} as DailyRecordDataMock['stabilityRules'],
+    } as DailyRecordDataMock);
+    vi.mocked(useDailyRecordBedActions).mockReturnValue({
+      updatePatient: mockUpdate2,
+    } as unknown as BedActionsMock);
 
     const { result: res2 } = renderHook(() => useHandoffLogic(params));
 
