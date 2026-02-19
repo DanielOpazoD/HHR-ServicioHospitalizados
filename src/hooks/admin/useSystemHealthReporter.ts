@@ -14,56 +14,61 @@ const REPORT_INTERVAL_MS = 2 * 60 * 1000; // Report every 2 minutes
  * Runs in the background and only reports if a user is logged in.
  */
 export const useSystemHealthReporter = () => {
-    const { user, isFirebaseConnected } = useAuth();
-    const { isOutdated } = useVersion();
-    const mutatingCount = useIsMutating();
-    const lastReportTime = useRef<number>(0);
+  const { user, isFirebaseConnected } = useAuth();
+  const { isOutdated } = useVersion();
+  const mutatingCount = useIsMutating();
+  const lastReportTime = useRef<number>(0);
 
-    useEffect(() => {
-        if (!user) return;
+  useEffect(() => {
+    if (!user) return;
 
-        const reportHealth = async () => {
-            try {
-                // Get error count from IndexedDB
-                const logs = await fetchErrorLogs(100);
-                const localErrorCount = logs.length;
-                const { pending: pendingSyncTasks, failed: failedSyncTasks } = await getSyncQueueStats();
+    const reportHealth = async () => {
+      try {
+        // Get error count from IndexedDB
+        const logs = await fetchErrorLogs(100);
+        const localErrorCount = logs.length;
+        const {
+          pending: pendingSyncTasks,
+          failed: failedSyncTasks,
+          conflict: conflictSyncTasks,
+        } = await getSyncQueueStats();
 
-                const status: UserHealthStatus = {
-                    uid: user.uid,
-                    email: user.email || 'unknown',
-                    displayName: user.displayName || 'Usuario',
-                    lastSeen: new Date().toISOString(),
-                    isOnline: isFirebaseConnected && navigator.onLine,
-                    isOutdated: !!isOutdated,
-                    pendingMutations: mutatingCount + pendingSyncTasks,
-                    pendingSyncTasks,
-                    failedSyncTasks,
-                    localErrorCount,
-                    appVersion: `v${CURRENT_SCHEMA_VERSION}`,
-                    platform: navigator.platform,
-                    userAgent: navigator.userAgent
-                };
-
-                await reportUserHealth(status);
-                lastReportTime.current = Date.now();
-                // console.log('[HealthReporter] Status reported successfully');
-            } catch (error) {
-                console.error('[HealthReporter] Failed to report status:', error);
-            }
+        const status: UserHealthStatus = {
+          uid: user.uid,
+          email: user.email || 'unknown',
+          displayName: user.displayName || 'Usuario',
+          lastSeen: new Date().toISOString(),
+          isOnline: isFirebaseConnected && navigator.onLine,
+          isOutdated: !!isOutdated,
+          pendingMutations: mutatingCount + pendingSyncTasks,
+          pendingSyncTasks,
+          failedSyncTasks,
+          conflictSyncTasks,
+          localErrorCount,
+          appVersion: `v${CURRENT_SCHEMA_VERSION}`,
+          platform: navigator.platform,
+          userAgent: navigator.userAgent,
         };
 
-        // Immediate report on mount or when critical stats change
+        await reportUserHealth(status);
+        lastReportTime.current = Date.now();
+        // console.log('[HealthReporter] Status reported successfully');
+      } catch (error) {
+        console.error('[HealthReporter] Failed to report status:', error);
+      }
+    };
+
+    // Immediate report on mount or when critical stats change
+    reportHealth();
+
+    // Setup interval for periodic reporting
+    const interval = setInterval(() => {
+      // Only report if enough time has passed (throttle)
+      if (Date.now() - lastReportTime.current >= REPORT_INTERVAL_MS - 5000) {
         reportHealth();
+      }
+    }, REPORT_INTERVAL_MS);
 
-        // Setup interval for periodic reporting
-        const interval = setInterval(() => {
-            // Only report if enough time has passed (throttle)
-            if (Date.now() - lastReportTime.current >= REPORT_INTERVAL_MS - 5000) {
-                reportHealth();
-            }
-        }, REPORT_INTERVAL_MS);
-
-        return () => clearInterval(interval);
-    }, [user, isFirebaseConnected, isOutdated, mutatingCount]);
+    return () => clearInterval(interval);
+  }, [user, isFirebaseConnected, isOutdated, mutatingCount]);
 };

@@ -6,6 +6,7 @@ import {
   saveDemoRecord,
   saveRecord as saveToIndexedDB,
 } from '@/services/storage/indexedDBService';
+import { isRetryableSyncError, queueSyncTask } from '@/services/storage/syncQueueService';
 import {
   getRecordFromFirestore,
   saveRecordToFirestore,
@@ -98,6 +99,10 @@ export const save = async (record: DailyRecord, expectedLastUpdated?: string): P
       ) {
         throw err;
       }
+
+      if (isRetryableSyncError(err)) {
+        await queueSyncTask('UPDATE_DAILY_RECORD', validatedRecord);
+      }
     }
   }
 
@@ -182,6 +187,9 @@ export const updatePartial = async (date: string, partialData: DailyRecordPatch)
       await updateRecordPartialToFirestore(date, mergedPatches);
     } catch (err) {
       console.warn('[Repository] Firestore partial update failed:', err);
+      if (isRetryableSyncError(err)) {
+        await queueSyncTask('UPDATE_DAILY_RECORD', validatedRecord);
+      }
     }
   }
 };

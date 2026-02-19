@@ -85,7 +85,7 @@ export const useSyncQueueMonitor = (
         failed: nextStats.failed,
         retrying,
         acked: 0,
-        conflict: 0,
+        conflict: nextStats.conflict || 0,
       });
       setOperations(nextOps);
     } catch (error) {

@@ -164,6 +164,8 @@ let isOpening = false;
 let onDatabaseRecreated: (() => void) | null = null;
 const INDEXED_DB_OPEN_TIMEOUT_MS = 7000;
 const INDEXED_DB_DELETE_TIMEOUT_MS = 5000;
+const INDEXED_DB_RECOVERY_RETRY_DELAYS_MS = [300, 1000, 3000] as const;
+let recoveryRetryTimer: ReturnType<typeof setTimeout> | null = null;
 
 const attachDatabaseEvents = (database: HangaRoaDatabase) => {
   database.on('blocked', () => {
@@ -197,19 +199,54 @@ const assignMockTables = (mock: HangaRoaDatabase) => {
   db.syncQueue = mock.syncQueue;
 };
 
+const scheduleBackgroundRecoveryRetry = () => {
+  if (recoveryRetryTimer || typeof window === 'undefined') return;
+
+  recoveryRetryTimer = setTimeout(() => {
+    recoveryRetryTimer = null;
+    void ensureDbReady({ allowRecoveryWhenMock: true });
+  }, 5000);
+};
+
+const tryOpenWithTimeout = async (): Promise<void> => {
+  const openPromise = db.open();
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('IndexedDB open timeout')), INDEXED_DB_OPEN_TIMEOUT_MS)
+  );
+  await Promise.race([openPromise, timeoutPromise]);
+};
+
 initializeDatabase();
 
 export const registerDatabaseRecreatedHandler = (handler: () => void): void => {
   onDatabaseRecreated = handler;
 };
 
-export const ensureDbReady = async (): Promise<void> => {
+interface EnsureDbReadyOptions {
+  allowRecoveryWhenMock?: boolean;
+}
+
+export const ensureDbReady = async (options: EnsureDbReadyOptions = {}): Promise<void> => {
+  const { allowRecoveryWhenMock = false } = options;
+
   if (typeof window !== 'undefined' && window.__HHR_E2E_OVERRIDE__) {
     isUsingMock = true;
     return;
   }
 
-  if (isUsingMock) return;
+  if (isUsingMock && !allowRecoveryWhenMock) return;
+  if (isUsingMock && allowRecoveryWhenMock) {
+    try {
+      db = new HangaRoaDatabase();
+      attachDatabaseEvents(db);
+      isUsingMock = false;
+    } catch (error) {
+      console.error('[IndexedDB] ❌ Failed to reconstruct database during recovery:', error);
+      isUsingMock = true;
+      assignMockTables(createMockDatabase());
+      return;
+    }
+  }
 
   if (db.isOpen()) {
     try {
@@ -245,11 +282,22 @@ export const ensureDbReady = async (): Promise<void> => {
 
   isOpening = true;
   try {
-    const openPromise = db.open();
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('IndexedDB open timeout')), INDEXED_DB_OPEN_TIMEOUT_MS)
-    );
-    await Promise.race([openPromise, timeoutPromise]);
+    let opened = false;
+    let openError: unknown = undefined;
+    for (const retryDelay of INDEXED_DB_RECOVERY_RETRY_DELAYS_MS) {
+      try {
+        await tryOpenWithTimeout();
+        opened = true;
+        break;
+      } catch (attemptError) {
+        openError = attemptError;
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+      }
+    }
+
+    if (!opened) {
+      throw openError || new Error('IndexedDB open failed');
+    }
   } catch (error: unknown) {
     const errorName =
       error && typeof error === 'object' && 'name' in error ? String(error.name) : 'Unknown';
@@ -276,8 +324,9 @@ export const ensureDbReady = async (): Promise<void> => {
 
         db = new HangaRoaDatabase();
         attachDatabaseEvents(db);
-        await db.open();
+        await tryOpenWithTimeout();
 
+        isUsingMock = false;
         onDatabaseRecreated?.();
         return;
       } catch (recoveryError) {
@@ -288,6 +337,7 @@ export const ensureDbReady = async (): Promise<void> => {
     console.error('[IndexedDB] 💨 Falling back to degraded local storage mode');
     isUsingMock = true;
     assignMockTables(createMockDatabase());
+    scheduleBackgroundRecoveryRetry();
   } finally {
     isOpening = false;
   }

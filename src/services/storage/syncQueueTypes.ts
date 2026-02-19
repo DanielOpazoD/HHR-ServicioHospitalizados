@@ -3,12 +3,13 @@
  */
 export interface SyncTask {
   id?: number;
+  opId: string;
   type: 'UPDATE_DAILY_RECORD' | 'UPDATE_PATIENT';
   payload: unknown;
   timestamp: number;
   retryCount: number;
   nextAttemptAt?: number;
-  status: 'PENDING' | 'PROCESSING' | 'FAILED';
+  status: 'PENDING' | 'PROCESSING' | 'FAILED' | 'CONFLICT';
   error?: string;
   key?: string;
 }
