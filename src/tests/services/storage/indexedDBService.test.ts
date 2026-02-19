@@ -2,8 +2,21 @@ import 'fake-indexeddb/auto';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as idbService from '@/services/storage/indexedDBService';
 import { DailyRecord } from '@/types';
+import { AuditLogEntry } from '@/types/audit';
+import { ErrorLog } from '@/services/utils/errorService';
 
 describe('indexedDBService', () => {
+  const setMockLocationWithReload = () => {
+    const originalLocation = window.location;
+    // @ts-expect-error - test override
+    delete window.location;
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { ...originalLocation, reload: vi.fn() },
+    });
+    return originalLocation;
+  };
+
   const mockRecord: DailyRecord = {
     date: '2025-01-01',
     beds: {},
@@ -77,8 +90,8 @@ describe('indexedDBService', () => {
         id: '1',
         timestamp: new Date().toISOString(),
         message: 'Test error',
-        severity: 'error',
-      } as any;
+        severity: 'high',
+      } as ErrorLog;
       await idbService.saveErrorLog(log);
       const logs = await idbService.getErrorLogs();
       expect(logs).toHaveLength(1);
@@ -90,8 +103,8 @@ describe('indexedDBService', () => {
         id: '2',
         timestamp: new Date().toISOString(),
         message: 'err',
-        severity: 'error',
-      } as any);
+        severity: 'high',
+      } as ErrorLog);
       await idbService.clearErrorLogs();
       const logs = await idbService.getErrorLogs();
       expect(logs).toHaveLength(0);
@@ -144,9 +157,13 @@ describe('indexedDBService', () => {
       const log = {
         id: 'a1',
         timestamp: new Date().toISOString(),
-        action: 'LOGIN',
+        action: 'USER_LOGIN',
+        userId: 'test@local',
+        entityType: 'system',
+        entityId: 'auth',
+        details: {},
         recordDate: '2025-01-01',
-      } as any;
+      } as AuditLogEntry;
       await idbService.saveAuditLog(log);
       await idbService.saveAuditLog({ ...log, id: 'a2', recordDate: '2025-01-02' });
 
@@ -157,7 +174,15 @@ describe('indexedDBService', () => {
 
     it('should respect limit in getAuditLogs', async () => {
       for (let i = 0; i < 5; i++) {
-        await idbService.saveAuditLog({ id: `l${i}`, timestamp: new Date().toISOString() } as any);
+        await idbService.saveAuditLog({
+          id: `l${i}`,
+          timestamp: new Date().toISOString(),
+          action: 'SYSTEM_ERROR',
+          userId: 'test@local',
+          entityType: 'system',
+          entityId: `log-${i}`,
+          details: {},
+        } as AuditLogEntry);
       }
       const logs = await idbService.getAuditLogs(3);
       expect(logs).toHaveLength(3);
@@ -232,8 +257,18 @@ describe('indexedDBService', () => {
     });
 
     it('should handle getErrorLogs with limit', async () => {
-      await idbService.saveErrorLog({ id: 'e1', timestamp: '2025-01-01' } as any);
-      await idbService.saveErrorLog({ id: 'e2', timestamp: '2025-01-02' } as any);
+      await idbService.saveErrorLog({
+        id: 'e1',
+        timestamp: '2025-01-01',
+        message: 'e1',
+        severity: 'medium',
+      } as ErrorLog);
+      await idbService.saveErrorLog({
+        id: 'e2',
+        timestamp: '2025-01-02',
+        message: 'e2',
+        severity: 'medium',
+      } as ErrorLog);
       const logs = await idbService.getErrorLogs(1);
       expect(logs).toHaveLength(1);
     });
@@ -242,10 +277,7 @@ describe('indexedDBService', () => {
   describe('Hard Reset', () => {
     it('should clear all and reload (mocked reload)', async () => {
       // Mock location.reload
-      const originalLocation = window.location;
-      // @ts-expect-error - Testing invalid state
-      delete window.location;
-      (window as any).location = { ...originalLocation, reload: vi.fn() };
+      const originalLocation = setMockLocationWithReload();
 
       // Mock indexedDB.databases since it might not be in JSDOM / fake-indexeddb
       const originalDatabases = window.indexedDB.databases;
@@ -259,16 +291,13 @@ describe('indexedDBService', () => {
       expect(window.location.reload).toHaveBeenCalled();
 
       // Restore
-      (window as any).location = originalLocation;
+      Object.defineProperty(window, 'location', { configurable: true, value: originalLocation });
       window.indexedDB.databases = originalDatabases;
       window.indexedDB.deleteDatabase = originalDelete;
     });
 
     it('should unregister service workers in performClientHardReset', async () => {
-      const originalLocation = window.location;
-      // @ts-expect-error - Testing invalid state
-      delete window.location;
-      (window as any).location = { ...originalLocation, reload: vi.fn() };
+      const originalLocation = setMockLocationWithReload();
 
       const originalDatabases = window.indexedDB.databases;
       window.indexedDB.databases = vi.fn().mockResolvedValue([{ name: 'HangaRoaDB' }]);
@@ -291,7 +320,7 @@ describe('indexedDBService', () => {
       expect(window.indexedDB.deleteDatabase).toHaveBeenCalledWith('HangaRoaDB');
       expect(window.location.reload).toHaveBeenCalled();
 
-      (window as any).location = originalLocation;
+      Object.defineProperty(window, 'location', { configurable: true, value: originalLocation });
       window.indexedDB.databases = originalDatabases;
       window.indexedDB.deleteDatabase = originalDelete;
       if (originalServiceWorker) {

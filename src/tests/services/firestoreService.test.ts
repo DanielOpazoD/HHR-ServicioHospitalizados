@@ -50,6 +50,8 @@ vi.mock('firebase/firestore', async () => {
 });
 
 describe('firestoreService', () => {
+  type PartialUpdatePatch = Parameters<typeof updateRecordPartial>[1];
+
   const mockDate = '2024-12-24';
   const mockRecord = {
     date: mockDate,
@@ -102,7 +104,9 @@ describe('firestoreService', () => {
       data: () => ({}),
     } as unknown as DocumentSnapshot<DocumentData>);
 
-    await updateRecordPartial(mockDate, { 'beds.BED_01.patientName': 'Jane Doe' } as any);
+    await updateRecordPartial(mockDate, {
+      'beds.BED_01.patientName': 'Jane Doe',
+    } as unknown as PartialUpdatePatch);
 
     expect(updateDocMock).toHaveBeenCalled();
   });
@@ -132,8 +136,15 @@ describe('firestoreService', () => {
     const onSnapshotMock = vi.mocked(firestore.onSnapshot);
     const callback = vi.fn();
 
-    onSnapshotMock.mockImplementationOnce((_docRef: any, _options: any, onNext?: any) => {
-      const actualOnNext = typeof _options === 'function' ? _options : onNext;
+    onSnapshotMock.mockImplementationOnce((...args: unknown[]) => {
+      const maybeOptions = args[1];
+      const maybeOnNext = args[2];
+      const actualOnNext =
+        typeof maybeOptions === 'function'
+          ? (maybeOptions as (snapshot: unknown) => void)
+          : typeof maybeOnNext === 'function'
+            ? (maybeOnNext as (snapshot: unknown) => void)
+            : undefined;
       if (typeof actualOnNext === 'function') {
         actualOnNext({
           exists: () => true,
@@ -193,9 +204,10 @@ describe('firestoreService', () => {
     const onSnapshotMock = vi.mocked(firestore.onSnapshot);
     const callback = vi.fn();
 
-    onSnapshotMock.mockImplementationOnce((_docRef: any, onNext?: any) => {
+    onSnapshotMock.mockImplementationOnce((...args: unknown[]) => {
+      const onNext = args[1];
       if (typeof onNext === 'function') {
-        onNext({
+        (onNext as (snapshot: unknown) => void)({
           exists: () => true,
           id: 'mock-id',
           data: () => ({ list: ['Staff 1'] }),
@@ -214,9 +226,10 @@ describe('firestoreService', () => {
     const onSnapshotMock = vi.mocked(firestore.onSnapshot);
     const callback = vi.fn();
 
-    onSnapshotMock.mockImplementationOnce((_docRef: any, onNext?: any) => {
+    onSnapshotMock.mockImplementationOnce((...args: unknown[]) => {
+      const onNext = args[1];
       if (typeof onNext === 'function') {
-        onNext({
+        (onNext as (snapshot: unknown) => void)({
           exists: () => true,
           id: 'mock-id',
           data: () => ({ nurses: ['Legacy Nurse'] }),
@@ -320,9 +333,10 @@ describe('firestoreService', () => {
     const onSnapshotMock = vi.mocked(firestore.onSnapshot);
     const callback = vi.fn();
 
-    onSnapshotMock.mockImplementationOnce((_docRef: any, onNext?: any) => {
+    onSnapshotMock.mockImplementationOnce((...args: unknown[]) => {
+      const onNext = args[1];
       if (typeof onNext === 'function') {
-        onNext({
+        (onNext as (snapshot: unknown) => void)({
           exists: () => true,
           id: 'mock-id',
           data: () => ({ list: ['TENS A'] }),
