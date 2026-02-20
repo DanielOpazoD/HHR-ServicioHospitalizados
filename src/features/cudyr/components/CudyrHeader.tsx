@@ -9,7 +9,6 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import clsx from 'clsx';
-import { generateCudyrMonthlyExcel } from '@/services/cudyr/cudyrExportService';
 
 interface CudyrHeaderProps {
   occupiedCount: number;
@@ -43,6 +42,7 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
     setIsExporting(true);
     try {
       const [year, month] = currentDate.split('-').map(Number);
+      const { generateCudyrMonthlyExcel } = await import('@/services/cudyr/cudyrExportService');
       await generateCudyrMonthlyExcel(year, month, currentDate);
     } catch (error) {
       console.error('Error exporting CUDYR Excel:', error);

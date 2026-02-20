@@ -41,47 +41,83 @@ export default defineConfig(({ mode }) => {
   const isProduction = mode === 'production';
   const chunkForModule = (moduleId: string): string | undefined => {
     const normalizedId = moduleId.replace(/\\/g, '/');
+    const inNodeModules = normalizedId.includes('/node_modules/');
+    const has = (fragment: string): boolean => normalizedId.includes(fragment);
 
-    if (normalizedId.includes('/node_modules/')) {
+    if (inNodeModules) {
       // Keep React together with UI libs that depend on it
       if (
-        normalizedId.includes('/node_modules/react/') ||
-        normalizedId.includes('/node_modules/react-dom/') ||
-        normalizedId.includes('/node_modules/lucide-react/')
+        has('/node_modules/react/') ||
+        has('/node_modules/react-dom/') ||
+        has('/node_modules/lucide-react/')
       ) {
         return 'vendor-react';
       }
 
       // Keep Firebase in a single vendor chunk to avoid cross-chunk init cycles
       // between firebase-core/firestore that can break runtime execution order.
-      if (
-        normalizedId.includes('/node_modules/firebase/') ||
-        normalizedId.includes('/node_modules/@firebase/')
-      ) {
+      if (has('/node_modules/firebase/') || has('/node_modules/@firebase/')) {
         return 'vendor-firebase';
       }
 
       // HTML to Canvas (lazy loaded for screenshots)
-      if (normalizedId.includes('/node_modules/html2canvas/')) {
+      if (has('/node_modules/html2canvas/')) {
         return 'vendor-canvas';
       }
 
-      // 3D map stack is heavy and should stay isolated from the main app bundle.
+      // 3D map stack: split into focused chunks to avoid one near-limit artifact.
+      if (has('/node_modules/three/')) {
+        return 'vendor-three-core';
+      }
+      if (has('/node_modules/@react-three/')) {
+        return 'vendor-three-react';
+      }
       if (
-        normalizedId.includes('/node_modules/three/') ||
-        normalizedId.includes('/node_modules/@react-three/')
+        has('/node_modules/three-stdlib/') ||
+        has('/node_modules/meshline/') ||
+        has('/node_modules/troika-') ||
+        has('/node_modules/camera-controls/')
       ) {
-        return 'vendor-three';
+        return 'vendor-three-stdlib';
       }
 
-      if (normalizedId.includes('/node_modules/exceljs/')) {
-        return 'vendor-excel';
+      // Excel stack: break by concern to keep chunk growth controlled.
+      if (has('/node_modules/exceljs/lib/xlsx/')) {
+        return 'vendor-excel-xlsx';
+      }
+      if (has('/node_modules/exceljs/lib/stream/')) {
+        return 'vendor-excel-stream';
+      }
+      if (has('/node_modules/exceljs/lib/csv/')) {
+        return 'vendor-excel-csv';
+      }
+      if (has('/node_modules/exceljs/')) {
+        return 'vendor-excel-core';
+      }
+      if (
+        has('/node_modules/jszip/') ||
+        has('/node_modules/pako/') ||
+        has('/node_modules/crc32-stream/') ||
+        has('/node_modules/compress-commons/')
+      ) {
+        return 'vendor-excel-zip';
+      }
+      if (
+        has('/node_modules/readable-stream/') ||
+        has('/node_modules/sax/') ||
+        has('/node_modules/saxes/')
+      ) {
+        return 'vendor-excel-stream';
+      }
+      if (
+        has('/node_modules/archiver/') ||
+        has('/node_modules/fast-csv/') ||
+        has('/node_modules/dayjs/')
+      ) {
+        return 'vendor-excel-xml';
       }
 
-      if (
-        normalizedId.includes('/node_modules/jspdf/') ||
-        normalizedId.includes('/node_modules/jspdf-autotable/')
-      ) {
+      if (has('/node_modules/jspdf/') || has('/node_modules/jspdf-autotable/')) {
         return 'vendor-pdf';
       }
     }
