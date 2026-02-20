@@ -34,7 +34,8 @@ Este runbook complementa `docs/RUNBOOK_SYNC_RESILIENCE.md` con una pauta más op
 - Legacy fallback con menor ruido:
   - Bloqueo persistente por sesión cuando hay `permission-denied` en legacy.
   - Cache temporal de fechas no encontradas (evita reintentos repetidos sobre rutas legacy inválidas).
-  - Logs de repositorio legacy sólo en modo debug explícito (`VITE_DEBUG_REPOSITORY=true`).
+  - Cache temporal por grupo de ruta denegada (evita reprobar la misma familia de rutas en la sesión).
+  - Logs de repositorio legacy sólo en modo debug explícito (`VITE_DEBUG_LEGACY_FIREBASE=true`).
 - Backups Storage (contrato de fecha):
   - Servicios de respaldo (`censo`, `CUDYR`, `PDF`) validan fecha de entrada con formato `YYYY-MM-DD` y calendario válido.
   - Entradas inválidas se degradan de forma segura (sin romper UI ni cola).

@@ -32,6 +32,10 @@ const LEGACY_MISSING_DATE_CACHE_KEY = 'hhr_legacy_missing_dates_v1';
 const LEGACY_MISSING_DATE_CACHE_MAX = 120;
 const legacyMissingDateCache = new Map<string, number>();
 let legacyMissingDateCacheHydrated = false;
+const LEGACY_DENIED_PATH_CACHE_KEY = 'hhr_legacy_denied_paths_v1';
+const LEGACY_DENIED_PATH_TTL_MS = 6 * 60 * 60 * 1000;
+const legacyDeniedPathCache = new Map<string, number>();
+let legacyDeniedPathCacheHydrated = false;
 
 const hydrateLegacyMissingDateCache = (): void => {
   if (legacyMissingDateCacheHydrated) return;
@@ -61,6 +65,34 @@ const persistLegacyMissingDateCache = (): void => {
   window.localStorage.setItem(LEGACY_MISSING_DATE_CACHE_KEY, JSON.stringify(entries));
 };
 
+const hydrateLegacyDeniedPathCache = (): void => {
+  if (legacyDeniedPathCacheHydrated) return;
+  legacyDeniedPathCacheHydrated = true;
+
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  const raw = window.localStorage.getItem(LEGACY_DENIED_PATH_CACHE_KEY);
+  if (!raw) return;
+
+  try {
+    const parsed = JSON.parse(raw) as Array<[string, number]>;
+    if (!Array.isArray(parsed)) return;
+    for (const entry of parsed) {
+      if (!Array.isArray(entry) || entry.length !== 2) continue;
+      const [pathKey, ts] = entry;
+      if (typeof pathKey !== 'string' || typeof ts !== 'number' || !Number.isFinite(ts)) continue;
+      legacyDeniedPathCache.set(pathKey, ts);
+    }
+  } catch {
+    // Ignore malformed persisted cache.
+  }
+};
+
+const persistLegacyDeniedPathCache = (): void => {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  const entries = Array.from(legacyDeniedPathCache.entries());
+  window.localStorage.setItem(LEGACY_DENIED_PATH_CACHE_KEY, JSON.stringify(entries));
+};
+
 const readLegacyReadBlockTimestamp = (): number | null => {
   if (typeof window === 'undefined' || !window.localStorage) return null;
   const raw = window.localStorage.getItem(LEGACY_READ_BLOCK_KEY);
@@ -82,6 +114,8 @@ const removeLegacyReadBlockTimestamp = (): void => {
 
 export const clearLegacyReadBlock = (): void => {
   legacyReadBlockedForSession = false;
+  legacyDeniedPathCache.clear();
+  persistLegacyDeniedPathCache();
   removeLegacyReadBlockTimestamp();
 };
 
@@ -91,6 +125,29 @@ export const clearLegacyMissingDateCache = (): void => {
   if (typeof window !== 'undefined' && window.localStorage) {
     window.localStorage.removeItem(LEGACY_MISSING_DATE_CACHE_KEY);
   }
+};
+
+const normalizeLegacyPathKey = (path: string): string => {
+  const parts = path.split('/');
+  if (parts.length <= 1) return path;
+  return parts.slice(0, -1).join('/');
+};
+
+const isLegacyPathDenied = (path: string): boolean => {
+  hydrateLegacyDeniedPathCache();
+  const pathKey = normalizeLegacyPathKey(path);
+  const cachedAt = legacyDeniedPathCache.get(pathKey);
+  if (!cachedAt) return false;
+  if (Date.now() - cachedAt <= LEGACY_DENIED_PATH_TTL_MS) return true;
+  legacyDeniedPathCache.delete(pathKey);
+  persistLegacyDeniedPathCache();
+  return false;
+};
+
+const cacheLegacyDeniedPath = (path: string): void => {
+  hydrateLegacyDeniedPathCache();
+  legacyDeniedPathCache.set(normalizeLegacyPathKey(path), Date.now());
+  persistLegacyDeniedPathCache();
 };
 
 const isLegacyDateCachedMissing = (date: string): boolean => {
@@ -155,6 +212,10 @@ export const getLegacyRecord = async (date: string): Promise<DailyRecord | null>
   try {
     const possiblePaths = LEGACY_RECORD_DOC_PATHS(date);
     for (const path of possiblePaths) {
+      if (isLegacyPathDenied(path)) {
+        continue;
+      }
+
       try {
         logLegacyInfo(`[LegacyFirebase] Testing path: ${path}`);
         const docRef = doc(db, path);
@@ -168,6 +229,7 @@ export const getLegacyRecord = async (date: string): Promise<DailyRecord | null>
         }
       } catch (error) {
         if (isLegacyPermissionDeniedError(error)) {
+          cacheLegacyDeniedPath(path);
           registerLegacyPermissionDeniedBlock();
           return null;
         }

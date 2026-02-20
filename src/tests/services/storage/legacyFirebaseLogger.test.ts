@@ -13,6 +13,18 @@ describe('legacyFirebaseLogger permission detection', () => {
         message: 'FirebaseError: Missing or insufficient permissions.',
       })
     ).toBe(true);
+    expect(
+      isLegacyPermissionDeniedError({
+        message: 'The caller does not have permission denied rights for this path.',
+      })
+    ).toBe(true);
+    expect(
+      isLegacyPermissionDeniedError({
+        details: {
+          reason: 'insufficient permissions',
+        },
+      })
+    ).toBe(true);
   });
 
   it('does not classify unrelated errors as permission denied', () => {

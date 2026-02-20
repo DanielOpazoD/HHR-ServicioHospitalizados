@@ -41,4 +41,17 @@ describe('legacyFirebaseRecordService missing-date cache', () => {
     // First call explores known fallback paths, second call should be served by cache.
     expect(getDocMock).toHaveBeenCalledTimes(5);
   });
+
+  it('blocks subsequent legacy reads after permission denied on first probe', async () => {
+    getDocMock.mockRejectedValueOnce({
+      message: 'FirebaseError: Missing or insufficient permissions.',
+    });
+
+    await getLegacyRecord('2026-02-20');
+    await getLegacyRecord('2026-02-19');
+
+    // First call fails on first path and enables session block. Second call must skip probes.
+    expect(getDocMock).toHaveBeenCalledTimes(1);
+    expect(docMock).toHaveBeenCalledTimes(1);
+  });
 });
