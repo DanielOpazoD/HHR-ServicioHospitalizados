@@ -43,8 +43,8 @@ describe('usePatientRowHandlersModel', () => {
     });
 
     const composedHandlers: BuildPatientRowChangeHandlersResult = {
-      mainInputChangeHandlers: {},
-      cribInputChangeHandlers: {},
+      mainInputChangeHandlers: {} as BuildPatientRowChangeHandlersResult['mainInputChangeHandlers'],
+      cribInputChangeHandlers: {} as BuildPatientRowChangeHandlersResult['cribInputChangeHandlers'],
     };
     vi.mocked(usePatientRowChangeHandlers).mockReturnValue(composedHandlers);
 

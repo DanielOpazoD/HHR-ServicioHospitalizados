@@ -5,6 +5,7 @@ import { CensusTableBody } from '@/features/census/components/CensusTableBody';
 import { DataFactory } from '@/tests/factories/DataFactory';
 import type { OccupiedBedRow } from '@/features/census/types/censusTableTypes';
 import type { BedDefinition } from '@/types';
+import { BedType } from '@/types';
 
 const patientRowSpy = vi.fn();
 const emptyBedRowSpy = vi.fn();
@@ -32,7 +33,7 @@ describe('CensusTableBody', () => {
     patientRowSpy.mockClear();
     const occupiedRows: OccupiedBedRow[] = Array.from({ length: 6 }, (_, i) => ({
       id: `row-${i}`,
-      bed: { id: `R${i + 1}`, name: `R${i + 1}` },
+      bed: { id: `R${i + 1}`, name: `R${i + 1}`, type: BedType.MEDIA, isCuna: false },
       data: DataFactory.createMockPatient(`R${i + 1}`),
       isSubRow: false,
     }));
@@ -62,8 +63,8 @@ describe('CensusTableBody', () => {
     emptyBedRowSpy.mockClear();
     const onActivateEmptyBed = vi.fn();
     const emptyBeds: BedDefinition[] = [
-      { id: 'R9', name: 'R9' },
-      { id: 'R10', name: 'R10' },
+      { id: 'R9', name: 'R9', type: BedType.MEDIA, isCuna: false },
+      { id: 'R10', name: 'R10', type: BedType.MEDIA, isCuna: false },
     ];
 
     render(

@@ -66,7 +66,9 @@ describe('cudyrExportService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(createWorkbook).mockResolvedValue(mockWorkbook as Awaited<ReturnType<typeof createWorkbook>>);
+    vi.mocked(createWorkbook).mockResolvedValue(
+      mockWorkbook as unknown as Awaited<ReturnType<typeof createWorkbook>>
+    );
     // Provide a default return for getCudyrMonthlyTotals
     const emptySummary: CudyrMonthlySummary = {
       dailySummaries: [],

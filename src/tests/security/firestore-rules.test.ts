@@ -8,15 +8,7 @@ import {
 import * as fs from 'fs';
 import * as path from 'path';
 
-type FirestoreLike = {
-  collection: (path: string) => { get: () => Promise<unknown>; add: (data: unknown) => Promise<unknown> };
-  doc: (path: string) => {
-    set: (data: unknown) => Promise<unknown>;
-    update: (data: unknown) => Promise<unknown>;
-    delete: () => Promise<unknown>;
-    get: () => Promise<unknown>;
-  };
-};
+type FirestoreLike = any;
 
 const runRulesTests =
   process.env.RUN_FIRESTORE_RULES_TESTS === '1' ||
@@ -404,11 +396,13 @@ describeRules('Firestore Security Rules', () => {
       });
 
       await assertSucceeds(
-        invitedUser().doc(invitationPath).update({
-          status: 'used',
-          usedBy: 'user_invited',
-          usedAt: NOW_MS + 1000,
-        })
+        invitedUser()
+          .doc(invitationPath)
+          .update({
+            status: 'used',
+            usedBy: 'user_invited',
+            usedAt: NOW_MS + 1000,
+          })
       );
     });
   });

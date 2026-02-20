@@ -8,70 +8,69 @@ import { DataFactory } from '@/tests/factories/DataFactory';
 
 // Mock Repository
 vi.mock('@/services/repositories/DailyRecordRepository', () => {
-    const mockImpl = {
-        getForDate: vi.fn(),
-        save: vi.fn().mockResolvedValue(undefined),
-        subscribe: vi.fn(() => vi.fn()),
-        updatePartial: vi.fn().mockResolvedValue(undefined),
-    };
-    return {
-        ...mockImpl,
-        DailyRecordRepository: mockImpl
-    };
+  const mockImpl = {
+    getForDate: vi.fn(),
+    save: vi.fn().mockResolvedValue(undefined),
+    subscribe: vi.fn(() => vi.fn()),
+    updatePartial: vi.fn().mockResolvedValue(undefined),
+  };
+  return {
+    ...mockImpl,
+    DailyRecordRepository: mockImpl,
+  };
 });
 
 import { UIProvider } from '@/context/UIContext';
 
 const createWrapper = () => {
-    const { wrapper } = createQueryClientTestWrapper({
-        wrapChildren: (children) => <UIProvider>{children}</UIProvider>,
-    });
-    return wrapper;
+  const { wrapper } = createQueryClientTestWrapper({
+    wrapChildren: children => <UIProvider>{children}</UIProvider>,
+  });
+  return wrapper;
 };
 
 describe('useDailyRecordSyncQuery', () => {
-    const mockDate = '2025-12-27';
-    const mockRecord: DailyRecord = DataFactory.createMockDailyRecord(mockDate, {
-        id: 'rec-1',
-        beds: {},
-        lastUpdated: '2026-01-01T00:00:00.000Z',
-        discharges: [],
-        transfers: [],
-        cma: [],
-        nurses: [],
-        activeExtraBeds: []
+  const mockDate = '2025-12-27';
+  const mockRecord: DailyRecord = DataFactory.createMockDailyRecord(mockDate, {
+    beds: {},
+    lastUpdated: '2026-01-01T00:00:00.000Z',
+    discharges: [],
+    transfers: [],
+    cma: [],
+    nurses: [],
+    activeExtraBeds: [],
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should fetch the record on mount', async () => {
+    vi.mocked(DailyRecordRepository.getForDate).mockResolvedValue(mockRecord);
+
+    const { result } = renderHook(() => useDailyRecordSyncQuery(mockDate), {
+      wrapper: createWrapper(),
     });
 
-    beforeEach(() => {
-        vi.clearAllMocks();
+    await waitFor(() => {
+      expect(result.current.record).toEqual(mockRecord);
     });
 
-    it('should fetch the record on mount', async () => {
-        vi.mocked(DailyRecordRepository.getForDate).mockResolvedValue(mockRecord);
+    expect(DailyRecordRepository.getForDate).toHaveBeenCalledWith(mockDate);
+  });
 
-        const { result } = renderHook(() => useDailyRecordSyncQuery(mockDate), {
-            wrapper: createWrapper()
-        });
+  it('should handle updates via saveAndUpdate', async () => {
+    vi.mocked(DailyRecordRepository.getForDate).mockResolvedValue(mockRecord);
 
-        await waitFor(() => {
-            expect(result.current.record).toEqual(mockRecord);
-        });
-
-        expect(DailyRecordRepository.getForDate).toHaveBeenCalledWith(mockDate);
+    const { result } = renderHook(() => useDailyRecordSyncQuery(mockDate), {
+      wrapper: createWrapper(),
     });
 
-    it('should handle updates via saveAndUpdate', async () => {
-        vi.mocked(DailyRecordRepository.getForDate).mockResolvedValue(mockRecord);
+    await waitFor(() => expect(result.current.record).not.toBeNull());
 
-        const { result } = renderHook(() => useDailyRecordSyncQuery(mockDate), {
-            wrapper: createWrapper()
-        });
+    const updatedRecord = { ...mockRecord, lastUpdated: 'new-date' };
+    await result.current.saveAndUpdate(updatedRecord);
 
-        await waitFor(() => expect(result.current.record).not.toBeNull());
-
-        const updatedRecord = { ...mockRecord, lastUpdated: 'new-date' };
-        await result.current.saveAndUpdate(updatedRecord);
-
-        expect(DailyRecordRepository.save).toHaveBeenCalledWith(updatedRecord);
-    });
+    expect(DailyRecordRepository.save).toHaveBeenCalledWith(updatedRecord);
+  });
 });

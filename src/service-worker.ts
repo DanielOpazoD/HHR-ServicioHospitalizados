@@ -12,55 +12,56 @@ import { BackgroundSyncPlugin } from 'workbox-background-sync';
 
 // Define proper types for Service Worker variables and events
 interface WBManifestEntry {
-    url: string;
-    revision: string | null;
+  url: string;
+  revision: string | null;
 }
 
 interface ExtendableEvent extends Event {
-    waitUntil(fn: Promise<unknown>): void;
+  waitUntil(fn: Promise<unknown>): void;
 }
 
 interface FetchEvent extends ExtendableEvent {
-    request: Request;
-    respondWith(response: Promise<Response> | Response): void;
-    preloadResponse: Promise<Response | undefined>;
+  request: Request;
+  respondWith(response: Promise<Response> | Response): void;
+  preloadResponse: Promise<Response | undefined>;
 }
 
 interface ExtendableMessageEvent extends ExtendableEvent {
-    data: unknown;
-    source: Client | ServiceWorker | MessagePort | null;
-    ports: readonly MessagePort[];
+  data: unknown;
+  source: Client | ServiceWorker | MessagePort | null;
+  ports: readonly MessagePort[];
 }
 
 interface Client {
-    url: string;
-    type: ClientType;
-    id: string;
-    postMessage(message: unknown, transfer?: Transferable[]): void;
+  url: string;
+  type: ClientType;
+  id: string;
+  postMessage(message: unknown, transfer?: Transferable[]): void;
 }
 
-type ClientType = "window" | "worker" | "sharedworker" | "all";
+type ClientType = 'window' | 'worker' | 'sharedworker' | 'all';
 
 interface Clients {
-    get(id: string): Promise<Client | undefined>;
-    matchAll(options?: ClientMatchAllOptions): Promise<Client[]>;
-    openWindow(url: string): Promise<Client | null>;
-    claim(): Promise<void>;
+  get(id: string): Promise<Client | undefined>;
+  matchAll(options?: ClientMatchAllOptions): Promise<Client[]>;
+  openWindow(url: string): Promise<Client | null>;
+  claim(): Promise<void>;
 }
 
 interface ClientMatchAllOptions {
-    includeUncontrolled?: boolean;
-    type?: ClientType;
+  includeUncontrolled?: boolean;
+  type?: ClientType;
 }
 
 interface ServiceWorkerGlobalScope extends EventTarget {
-    readonly clients: Clients;
-    skipWaiting(): void;
+  readonly clients: Clients;
+  readonly location: { origin: string };
+  skipWaiting(): void;
 }
 
 // Declare self for injection point
 declare let self: ServiceWorkerGlobalScope & {
-    __WB_MANIFEST: Array<WBManifestEntry>;
+  __WB_MANIFEST: Array<WBManifestEntry>;
 };
 
 // VitePWA will inject the manifest here - MUST use self.__WB_MANIFEST literal
@@ -76,94 +77,108 @@ const OFFLINE_PAGE = '/offline.html';
 
 // Static assets (JS, CSS) - Stale While Revalidate
 registerRoute(
-    ({ request }) => request.destination === 'script' || request.destination === 'style',
-    new StaleWhileRevalidate({
-        cacheName: `static-${CACHE_VERSION}`,
-        plugins: [
-            new CacheableResponsePlugin({ statuses: [0, 200] }),
-            new ExpirationPlugin({ maxEntries: 60, maxAgeSeconds: 24 * 60 * 60 }),
-        ],
-    })
+  ({ request, url }) =>
+    url.origin === self.location.origin &&
+    (request.destination === 'script' || request.destination === 'style'),
+  new StaleWhileRevalidate({
+    cacheName: `static-${CACHE_VERSION}`,
+    plugins: [
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      new ExpirationPlugin({ maxEntries: 60, maxAgeSeconds: 24 * 60 * 60 }),
+    ],
+  })
 );
 
 // Google Fonts - Cache First
 registerRoute(
-    ({ url }) => url.origin === 'https://fonts.googleapis.com' || url.origin === 'https://fonts.gstatic.com',
-    new CacheFirst({
-        cacheName: `fonts-${CACHE_VERSION}`,
-        plugins: [
-            new CacheableResponsePlugin({ statuses: [0, 200] }),
-            new ExpirationPlugin({ maxEntries: 30, maxAgeSeconds: 365 * 24 * 60 * 60 }),
-        ],
-    })
+  ({ url }) =>
+    url.origin === 'https://fonts.googleapis.com' || url.origin === 'https://fonts.gstatic.com',
+  new CacheFirst({
+    cacheName: `fonts-${CACHE_VERSION}`,
+    plugins: [
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      new ExpirationPlugin({ maxEntries: 30, maxAgeSeconds: 365 * 24 * 60 * 60 }),
+    ],
+  })
 );
 
 // Images - Cache First
 registerRoute(
-    ({ request }) => request.destination === 'image',
-    new CacheFirst({
-        cacheName: `images-${CACHE_VERSION}`,
-        plugins: [
-            new CacheableResponsePlugin({ statuses: [0, 200] }),
-            new ExpirationPlugin({ maxEntries: 100, maxAgeSeconds: 30 * 24 * 60 * 60 }),
-        ],
-    })
+  ({ request }) => request.destination === 'image',
+  new CacheFirst({
+    cacheName: `images-${CACHE_VERSION}`,
+    plugins: [
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      new ExpirationPlugin({ maxEntries: 100, maxAgeSeconds: 30 * 24 * 60 * 60 }),
+    ],
+  })
 );
 
 // Firebase/Firestore - Network First with cache fallback
-// Exclude identitytoolkit (Auth) to prevent "Pending promise" errors in SW
+// Restrict to Firebase data endpoints and exclude Auth endpoints to avoid login flow interference.
 registerRoute(
-    ({ url }) => (url.origin.includes('firebaseio.com') || url.origin.includes('googleapis.com')) &&
-        !url.pathname.includes('/identitytoolkit/'),
-    new NetworkFirst({
-        cacheName: `firebase-${CACHE_VERSION}`,
-        networkTimeoutSeconds: 10,
-        plugins: [
-            new CacheableResponsePlugin({ statuses: [0, 200] }),
-            new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 60 * 60 }),
-        ],
-    })
+  ({ url }) => {
+    const isFirebaseDataOrigin =
+      url.origin.includes('firebaseio.com') ||
+      url.origin.includes('firebasestorage.googleapis.com') ||
+      url.origin.includes('firebasestorage.app');
+    const isAuthOrigin =
+      url.hostname.includes('identitytoolkit.googleapis.com') ||
+      url.hostname.includes('securetoken.googleapis.com') ||
+      url.hostname.includes('apis.google.com') ||
+      url.hostname.includes('accounts.google.com');
+
+    return isFirebaseDataOrigin && !isAuthOrigin;
+  },
+  new NetworkFirst({
+    cacheName: `firebase-${CACHE_VERSION}`,
+    networkTimeoutSeconds: 10,
+    plugins: [
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 60 * 60 }),
+    ],
+  })
 );
 
 // API calls with background sync for POST
 let bgSyncPlugin: BackgroundSyncPlugin | undefined;
 try {
-    bgSyncPlugin = new BackgroundSyncPlugin('patientSyncQueue', {
-        maxRetentionTime: 24 * 60, // Retry for up to 24 hours
-    });
+  bgSyncPlugin = new BackgroundSyncPlugin('patientSyncQueue', {
+    maxRetentionTime: 24 * 60, // Retry for up to 24 hours
+  });
 } catch (error) {
-    console.error('[SW] Failed to initialize BackgroundSyncPlugin:', error);
+  console.error('[SW] Failed to initialize BackgroundSyncPlugin:', error);
 }
 
 registerRoute(
-    ({ url, request }) => url.pathname.startsWith('/api/') && request.method === 'POST',
-    new NetworkOnly({
-        plugins: bgSyncPlugin ? [bgSyncPlugin] : [],
-    }),
-    'POST'
+  ({ url, request }) => url.pathname.startsWith('/api/') && request.method === 'POST',
+  new NetworkOnly({
+    plugins: bgSyncPlugin ? [bgSyncPlugin] : [],
+  }),
+  'POST'
 );
 
 // Pages/Navigation - Network First
 registerRoute(
-    ({ request }) => request.mode === 'navigate',
-    new NetworkFirst({
-        cacheName: `pages-${CACHE_VERSION}`,
-        networkTimeoutSeconds: 5,
-        plugins: [
-            new CacheableResponsePlugin({ statuses: [0, 200] }),
-            new ExpirationPlugin({ maxEntries: 50 }),
-        ],
-    })
+  ({ request }) => request.mode === 'navigate',
+  new NetworkFirst({
+    cacheName: `pages-${CACHE_VERSION}`,
+    networkTimeoutSeconds: 5,
+    plugins: [
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      new ExpirationPlugin({ maxEntries: 50 }),
+    ],
+  })
 );
 
 // Fallback for navigation failures
 setCatchHandler(async ({ event }) => {
-    const fetchEvent = event as FetchEvent;
-    if (fetchEvent.request.mode === 'navigate') {
-        const cache = await caches.open(`offline-${CACHE_VERSION}`);
-        return (await cache.match(OFFLINE_PAGE)) || Response.error();
-    }
-    return Response.error();
+  const fetchEvent = event as FetchEvent;
+  if (fetchEvent.request.mode === 'navigate') {
+    const cache = await caches.open(`offline-${CACHE_VERSION}`);
+    return (await cache.match(OFFLINE_PAGE)) || Response.error();
+  }
+  return Response.error();
 });
 
 // ============================================
@@ -171,21 +186,26 @@ setCatchHandler(async ({ event }) => {
 // ============================================
 
 self.addEventListener('install', (event: Event) => {
-    const extendableEvent = event as ExtendableEvent;
-    extendableEvent.waitUntil(
-        caches.open(`offline-${CACHE_VERSION}`).then((cache) => cache.add(OFFLINE_PAGE))
-    );
-    self.skipWaiting();
+  const extendableEvent = event as ExtendableEvent;
+  extendableEvent.waitUntil(
+    caches.open(`offline-${CACHE_VERSION}`).then(cache => cache.add(OFFLINE_PAGE))
+  );
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event: Event) => {
-    const extendableEvent = event as ExtendableEvent;
-    extendableEvent.waitUntil(self.clients.claim());
+  const extendableEvent = event as ExtendableEvent;
+  extendableEvent.waitUntil(self.clients.claim());
 });
 
 self.addEventListener('message', (event: Event) => {
-    const messageEvent = event as ExtendableMessageEvent;
-    if (messageEvent.data && typeof messageEvent.data === 'object' && 'type' in messageEvent.data && messageEvent.data.type === 'SKIP_WAITING') {
-        self.skipWaiting();
-    }
+  const messageEvent = event as ExtendableMessageEvent;
+  if (
+    messageEvent.data &&
+    typeof messageEvent.data === 'object' &&
+    'type' in messageEvent.data &&
+    messageEvent.data.type === 'SKIP_WAITING'
+  ) {
+    self.skipWaiting();
+  }
 });

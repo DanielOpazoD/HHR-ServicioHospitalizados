@@ -46,12 +46,7 @@ describe('useHandoffCommunication', () => {
     mockWriteClipboardText.mockResolvedValue(undefined);
 
     const { result } = renderHook(() =>
-      useHandoffCommunication(
-        createRecord(),
-        [],
-        vi.fn(),
-        onSuccess
-      )
+      useHandoffCommunication(createRecord(), [], vi.fn(), onSuccess)
     );
 
     act(() => {
@@ -73,12 +68,7 @@ describe('useHandoffCommunication', () => {
     mockWriteClipboardText.mockRejectedValue(new Error('Clipboard blocked'));
 
     const { result } = renderHook(() =>
-      useHandoffCommunication(
-        createRecord(),
-        [],
-        vi.fn(),
-        onSuccess
-      )
+      useHandoffCommunication(createRecord(), [], vi.fn(), onSuccess)
     );
 
     act(() => {
@@ -92,7 +82,7 @@ describe('useHandoffCommunication', () => {
 
   it('opens manual WhatsApp URL through runtime adapter', async () => {
     const templates: MessageTemplate[] = [
-      { type: 'handoff', content: 'handoff-template' },
+      { name: 'handoff', type: 'handoff', content: 'handoff-template' },
     ];
     vi.mocked(getMessageTemplates).mockResolvedValue(templates);
 

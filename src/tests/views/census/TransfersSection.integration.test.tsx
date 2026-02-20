@@ -40,7 +40,7 @@ describe('TransfersSection integration', () => {
     vi.clearAllMocks();
     vi.mocked(useDailyRecordData).mockReturnValue(
       asHookValue<ReturnType<typeof useDailyRecordData>>({
-        record: { date: '2026-02-14' },
+        record: DataFactory.createMockDailyRecord('2026-02-14'),
       })
     );
     vi.mocked(useDailyRecordMovementActions).mockReturnValue(
