@@ -6,7 +6,6 @@ import {
   GeneratedDocument,
 } from '@/types/transferDocuments';
 import { getHospitalConfigById } from '@/constants/hospitalConfigs';
-import { generateTransferDocuments } from '@/services/transfers/documentGeneratorService';
 import { DailyRecord } from '@/types';
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
 
@@ -147,6 +146,8 @@ export const useTransferViewStates = (
           originHospital: 'Hospital Hanga Roa',
         };
 
+        const { generateTransferDocuments } =
+          await import('@/services/transfers/documentGeneratorService');
         const documents = await generateTransferDocuments(patientData, responses, hospital);
         setGeneratedDocs(documents);
         setPatientDataForDocs(patientData);

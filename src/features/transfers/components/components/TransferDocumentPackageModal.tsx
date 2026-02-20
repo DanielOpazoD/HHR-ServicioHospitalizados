@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { FileText, Download, Edit3, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import { HospitalConfig, GeneratedDocument, TransferPatientData } from '@/types/transferDocuments';
-import { downloadDocument } from '@/services/transfers/documentGeneratorService';
 import {
   uploadToTransferFolder,
   makeFilePubliclyEditable,
@@ -114,7 +113,11 @@ export const TransferDocumentPackageModal: React.FC<TransferDocumentPackageModal
                   {isUploading === doc.templateId ? 'SUBIENDO...' : 'EDITAR CLOUD'}
                 </button>
                 <button
-                  onClick={() => downloadDocument(doc)}
+                  onClick={async () => {
+                    const { downloadDocument } =
+                      await import('@/services/transfers/documentGeneratorService');
+                    downloadDocument(doc);
+                  }}
                   disabled={!!isUploading}
                   className={clsx(
                     'flex items-center gap-2 px-5 py-2 text-[10px] font-black uppercase tracking-widest bg-slate-900 text-white rounded-xl transition-all shadow-lg shadow-slate-200',
