@@ -115,8 +115,8 @@ jobs:
 
       - name: Enforce test run contract
         run: |
-          echo "Unit/integration test suite completed via test:ci:unit."
-          echo "Firestore rules are enforced in dedicated job test:rules:ci."
+          echo "Unit/integration test suite completed via test:ci:unit (without emulator-only suites)."
+          echo "Firestore rules + emulator sync/UI suites are enforced in dedicated firestore-rules job."
 
   # ============================================
   # JOB 3: FIRESTORE RULES
@@ -151,14 +151,8 @@ jobs:
           CI: true
           RUN_FIRESTORE_RULES_TESTS: 1
 
-      - name: Run Firestore sync concurrency tests with emulator
+      - name: Run Firestore emulator test suites (sync + UI)
         run: npm run test:emulator:sync:ci
-        env:
-          CI: true
-          RUN_FIRESTORE_EMULATOR_TESTS: 1
-
-      - name: Run Firestore UI sync tests with emulator
-        run: npm run test:emulator:ui
         env:
           CI: true
           RUN_FIRESTORE_EMULATOR_TESTS: 1

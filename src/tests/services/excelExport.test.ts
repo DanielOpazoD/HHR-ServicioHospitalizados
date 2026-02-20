@@ -45,8 +45,8 @@ describe('Excel Export Configuration', () => {
   describe('Excel Export Integration', () => {
     it('should route Firebase modules into vendor-firebase manual chunk', () => {
       const viteConfigSource = readSource('vite.config.ts');
-      expect(viteConfigSource).toContain("normalizedId.includes('/node_modules/firebase/')");
-      expect(viteConfigSource).toContain("normalizedId.includes('/node_modules/@firebase/')");
+      expect(viteConfigSource).toContain("has('/node_modules/firebase/')");
+      expect(viteConfigSource).toContain("has('/node_modules/@firebase/')");
       expect(viteConfigSource).toContain("return 'vendor-firebase';");
     });
   });
