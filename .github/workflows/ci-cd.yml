@@ -157,6 +157,12 @@ jobs:
           CI: true
           RUN_FIRESTORE_EMULATOR_TESTS: 1
 
+      - name: Run Firestore UI sync tests with emulator
+        run: npm run test:emulator:ui
+        env:
+          CI: true
+          RUN_FIRESTORE_EMULATOR_TESTS: 1
+
   # ============================================
   # JOB 4: E2E CRITICAL (EMULATOR)
   # ============================================
@@ -220,6 +226,9 @@ jobs:
         run: npm run build
         env:
           CI: true
+
+      - name: Enforce bundle budget
+        run: npm run check:bundle-budget
 
   ci-strict-summary:
     name: CI Strict Summary

@@ -1,6 +1,6 @@
 {
   "entryMaxBytes": 700000,
-  "chunkMaxBytes": 1250000,
+  "chunkMaxBytes": 1150000,
   "chunkPatternBudgets": [
     {
       "pattern": "^vendor-firebase-.*\\.js$",

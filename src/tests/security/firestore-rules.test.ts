@@ -8,7 +8,9 @@ import {
 import * as fs from 'fs';
 import * as path from 'path';
 
-type FirestoreLike = any;
+type FirestoreLike = ReturnType<
+  ReturnType<RulesTestEnvironment['authenticatedContext']>['firestore']
+>;
 
 const runRulesTests =
   process.env.RUN_FIRESTORE_RULES_TESTS === '1' ||
@@ -474,7 +476,7 @@ describeRules('Firestore Security Rules', () => {
 });
 
 // Helper to setup a document as admin
-async function setupDoc(db: FirestoreLike, path: string, data: unknown) {
+async function setupDoc(db: FirestoreLike, path: string, data: Record<string, unknown>) {
   const docRef = db.doc(path);
   await docRef.set(data);
   return docRef;

@@ -42,6 +42,13 @@ const noisyConsolePatterns = [
   '❌ Error saving to Firestore:',
   '[Firestore] Concurrency conflict.',
   '[SyncQueue]',
+  '[useAuthState] ⚠️ Auth initialization timed out',
+  '[useAuthState] Logout due to inactivity',
+  '[useExcelParser] Error parsing excel:',
+  'Failed to fetch audit logs from Firestore:',
+  'Error generating documents:',
+  'Error in forceAISearch:',
+  '❌ Error subscribing to transfers:',
 ];
 
 const shouldFilterConsoleMessage = (args: unknown[]) => {
