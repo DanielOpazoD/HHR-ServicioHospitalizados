@@ -105,12 +105,10 @@ function countOccupiedBeds(beds: Record<string, PatientData>): number {
   let count = 0;
   BEDS.forEach(bed => {
     const data = beds[bed.id];
+    // Occupancy rate uses only main enabled bed slots.
+    // Nested clinical cribs are additional patients, not additional beds.
     if (data && !data.isBlocked && data.patientName?.trim()) {
       count++;
-      // Also count nested clinical crib patients
-      if (data.clinicalCrib?.patientName?.trim()) {
-        count++;
-      }
     }
   });
   return count;

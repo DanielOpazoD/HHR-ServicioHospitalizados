@@ -247,6 +247,69 @@ describe('minsalStatsCalculator', () => {
       const snapshot = calculateDailySnapshot(record);
       expect(snapshot.ocupadas).toBeGreaterThanOrEqual(0);
     });
+
+    it('should calculate 17/18 as 94.4% when there are no blocked beds', () => {
+      const record = createMockRecord('2026-01-01', 17, 0);
+      const snapshot = calculateDailySnapshot(record);
+      expect(snapshot.ocupadas).toBe(17);
+      expect(snapshot.disponibles).toBe(18);
+      expect(snapshot.bloqueadas).toBe(0);
+      expect(snapshot.tasaOcupacion).toBe(94.4);
+    });
+
+    it('should calculate 17/17 as 100% when one bed is blocked', () => {
+      const record = createMockRecord('2026-01-01', 17, 1);
+      const snapshot = calculateDailySnapshot(record);
+      expect(snapshot.ocupadas).toBe(17);
+      expect(snapshot.disponibles).toBe(17);
+      expect(snapshot.bloqueadas).toBe(1);
+      expect(snapshot.tasaOcupacion).toBe(100);
+    });
+
+    it('should not count nested clinical crib as an occupied bed for occupancy rate', () => {
+      const record = createMockRecord('2026-01-01', 17, 0);
+      const bedId = BEDS[0].id;
+      const mainBed = record.beds[bedId];
+
+      mainBed.clinicalCrib = {
+        bedId,
+        isBlocked: false,
+        patientName: 'RN Clínico',
+        rut: '-',
+        pathology: 'Prematuridad',
+        specialty: Specialty.PEDIATRIA,
+        status: PatientStatus.ESTABLE,
+        admissionDate: '2026-01-01',
+        admissionTime: '11:00',
+        age: '0',
+        bedMode: 'Cuna',
+        hasCompanionCrib: false,
+        hasWristband: true,
+        devices: [],
+        surgicalComplication: false,
+        isUPC: false,
+      };
+
+      const snapshot = calculateDailySnapshot(record);
+      expect(snapshot.ocupadas).toBe(17);
+      expect(snapshot.disponibles).toBe(18);
+      expect(snapshot.bloqueadas).toBe(0);
+      expect(snapshot.tasaOcupacion).toBe(94.4);
+    });
+
+    it('should not count companion crib (RN sano) in occupancy rate', () => {
+      const record = createMockRecord('2026-01-01', 17, 0);
+      const bedId = BEDS[1].id;
+      const mainBed = record.beds[bedId];
+
+      mainBed.hasCompanionCrib = true;
+
+      const snapshot = calculateDailySnapshot(record);
+      expect(snapshot.ocupadas).toBe(17);
+      expect(snapshot.disponibles).toBe(18);
+      expect(snapshot.bloqueadas).toBe(0);
+      expect(snapshot.tasaOcupacion).toBe(94.4);
+    });
   });
 
   describe('calculateMinsalStats', () => {
