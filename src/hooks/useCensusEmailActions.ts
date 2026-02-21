@@ -12,6 +12,10 @@ import { buildSharedCensusLink } from '@/hooks/controllers/censusEmailBrowserRun
 import { CENSUS_DEFAULT_RECIPIENTS } from '@/constants/email';
 import { resolveSendingRecipients } from '@/hooks/controllers/censusEmailRecipientsController';
 import {
+  buildCensusWorkbookPlan,
+  type CensusEmailExcelSheetConfig,
+} from '@/hooks/controllers/censusExcelSheetController';
+import {
   buildCensusEmailConfirmationText,
   buildMonthIntegrityDates,
   resolveFinalCensusEmailMessage,
@@ -35,6 +39,7 @@ interface UseCensusEmailActionsParams {
   testModeEnabled: boolean;
   testRecipient: string;
   isAdminUser: boolean;
+  excelSheetConfig: CensusEmailExcelSheetConfig;
   setStatus: Dispatch<SetStateAction<CensusEmailSendStatus>>;
   setError: Dispatch<SetStateAction<string | null>>;
   confirm: (options: ConfirmOptions) => Promise<boolean>;
@@ -64,6 +69,7 @@ export const useCensusEmailActions = ({
   testModeEnabled,
   testRecipient,
   isAdminUser,
+  excelSheetConfig,
   setStatus,
   setError,
   confirm,
@@ -158,9 +164,15 @@ export const useCensusEmailActions = ({
         selectedMonth,
         selectedDay,
       });
+      const workbookPlan = buildCensusWorkbookPlan({
+        monthRecords: filteredRecords,
+        currentDateString,
+        config: excelSheetConfig,
+      });
       await triggerCensusEmail({
         date: currentDateString,
-        records: filteredRecords,
+        records: workbookPlan.records,
+        sheetDescriptors: workbookPlan.sheetDescriptors,
         recipients: resolvedRecipients,
         nursesSignature: nurseSignature || undefined,
         body: finalMessage,
@@ -171,7 +183,9 @@ export const useCensusEmailActions = ({
       try {
         const { buildCensusMasterWorkbook } =
           await import('@/services/exporters/censusMasterWorkbook');
-        const workbook = await buildCensusMasterWorkbook(filteredRecords);
+        const workbook = await buildCensusMasterWorkbook(workbookPlan.records, {
+          sheetDescriptors: workbookPlan.sheetDescriptors,
+        });
         const buffer = await workbook.xlsx.writeBuffer();
         const excelBlob = new Blob([buffer], {
           type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -204,6 +218,7 @@ export const useCensusEmailActions = ({
     selectedDay,
     selectedMonth,
     selectedYear,
+    excelSheetConfig,
     setError,
     setStatus,
     status,

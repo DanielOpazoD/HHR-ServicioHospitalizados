@@ -30,6 +30,8 @@ ensure_java_available() {
 
 ensure_java_available
 
+unset NO_COLOR || true
+
 export PLAYWRIGHT_JSON_OUTPUT="${PLAYWRIGHT_JSON_OUTPUT:-reports/e2e/playwright-report.json}"
 mkdir -p "$(dirname "$PLAYWRIGHT_JSON_OUTPUT")"
 

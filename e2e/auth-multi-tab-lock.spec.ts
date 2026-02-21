@@ -50,7 +50,13 @@ test.describe('Auth multi-tab lock', () => {
 
     // Start login in tab A and, while lock heartbeat is active, attempt login in tab B.
     await loginButtonA.click();
-    await tabB.waitForTimeout(500);
+    await expect
+      .poll(async () => {
+        return tabB.evaluate(() =>
+          Boolean(window.localStorage.getItem('hhr_google_login_lock_v1'))
+        );
+      })
+      .toBe(true);
     await loginButtonB.click();
 
     await expect(

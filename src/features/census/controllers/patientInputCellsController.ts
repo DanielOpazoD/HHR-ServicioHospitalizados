@@ -30,6 +30,10 @@ export const resolvePatientRutValidationError = ({
   documentType,
   rut,
 }: ResolvePatientRutErrorParams): boolean => {
+  if (rut === '-') {
+    return false;
+  }
+
   if (documentType !== 'RUT' || !rut) {
     return false;
   }

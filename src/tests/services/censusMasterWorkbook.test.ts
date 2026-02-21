@@ -108,4 +108,33 @@ describe('census master workbook builder', () => {
 
     expect(workbook.worksheets[0]?.name).toBe('03-05-2024');
   });
+
+  it('supports duplicated day sheets via recordLookupIndex descriptors', async () => {
+    const records = [
+      buildRecord('2024-05-03', 'Paciente Corte'),
+      buildRecord('2024-05-03', 'Paciente Actual'),
+    ];
+
+    const workbook = await buildCensusMasterWorkbook(records, {
+      sheetDescriptors: [
+        {
+          recordDate: '2024-05-03',
+          recordLookupIndex: 0,
+          sheetName: '03-05-2024 23-59',
+          snapshotLabel: '23:59',
+        },
+        {
+          recordDate: '2024-05-03',
+          recordLookupIndex: 1,
+          sheetName: '03-05-2024 01-10',
+          snapshotLabel: 'Hora actual 01:10',
+        },
+      ],
+    });
+
+    expect(workbook.worksheets.map(sheet => sheet.name)).toEqual([
+      '03-05-2024 23-59',
+      '03-05-2024 01-10',
+    ]);
+  });
 });

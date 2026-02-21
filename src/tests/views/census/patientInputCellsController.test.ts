@@ -58,5 +58,12 @@ describe('patientInputCellsController', () => {
         rut: 'invalid-rut',
       })
     ).toBe(false);
+
+    expect(
+      resolvePatientRutValidationError({
+        documentType: 'RUT',
+        rut: '-',
+      })
+    ).toBe(false);
   });
 });

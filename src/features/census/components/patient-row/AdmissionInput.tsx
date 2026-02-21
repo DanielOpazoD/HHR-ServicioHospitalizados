@@ -2,9 +2,9 @@
  * AdmissionInput - Admission date/time input (critical field)
  */
 
-import React, { useState } from 'react';
+import React, { useId, useState } from 'react';
 import clsx from 'clsx';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Pencil } from 'lucide-react';
 import { DebouncedInput } from '@/components/ui/DebouncedInput';
 import { PatientData } from '@/types';
 import { BaseCellProps, DebouncedTextHandler } from './inputCellTypes';
@@ -30,10 +30,11 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
 }) => {
   const [showTime, setShowTime] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const admissionDateInputId = useId();
   const isCriticalEmpty = resolveIsCriticalAdmissionEmpty(data.patientName, data.admissionDate);
 
   if (isEmpty && !isSubRow) {
-    return <PatientEmptyCell tdClassName="py-0.5 px-1 border-r border-slate-200 w-28" />;
+    return <PatientEmptyCell tdClassName="py-0.5 px-1 border-r border-slate-200 w-32" />;
   }
 
   const handleDateChange = (val: string) => {
@@ -53,9 +54,25 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
     onChange('admissionDate')(resolution.admissionDate);
   };
 
+  const handleOpenDateEditor = () => {
+    if (readOnly) {
+      return;
+    }
+
+    const dateInput = document.getElementById(admissionDateInputId) as HTMLInputElement | null;
+    if (!dateInput) {
+      return;
+    }
+
+    dateInput.focus();
+    if (typeof dateInput.showPicker === 'function') {
+      dateInput.showPicker();
+    }
+  };
+
   return (
     <td
-      className="py-0.5 px-1 border-r border-slate-200 w-28"
+      className="py-0.5 px-1 border-r border-slate-200 w-32"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -69,10 +86,12 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
         }}
       >
         <DebouncedInput
+          id={admissionDateInputId}
+          data-admission-date-input="true"
           type="date"
           max={resolveAdmissionDateMax()}
           className={clsx(
-            'w-full p-0.5 h-7 border rounded focus:ring-2 focus:outline-none text-xs',
+            'w-full p-0.5 h-7 border rounded focus:ring-2 focus:outline-none text-xs pr-4',
             isHovered || showTime ? 'show-calendar-icon' : 'hide-calendar-icon',
             isCriticalEmpty
               ? 'border-red-400 border-2 bg-red-50 focus:ring-red-200 focus:border-red-500'
@@ -85,6 +104,16 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
           disabled={readOnly}
           title={isCriticalEmpty ? 'Campo crítico requerido para entrega' : undefined}
         />
+        <button
+          type="button"
+          onClick={handleOpenDateEditor}
+          className="absolute right-1 top-1/2 -translate-y-1/2 text-slate-400 hover:text-medical-600 transition-colors disabled:opacity-40"
+          title="Editar fecha de ingreso"
+          aria-label="Editar fecha de ingreso"
+          disabled={readOnly}
+        >
+          <Pencil size={11} />
+        </button>
         {/* Critical field warning icon */}
         {isCriticalEmpty && (
           <div

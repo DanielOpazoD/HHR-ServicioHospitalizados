@@ -2,6 +2,7 @@ import { DailyRecord } from '@/types';
 import { CENSUS_DEFAULT_RECIPIENTS } from '@/constants/email';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import { getExportPasswordsPath } from '@/constants/firestorePaths';
+import type { CensusWorkbookSheetDescriptor } from '@/services/exporters/censusMasterWorkbook';
 import {
   getDevelopmentSendDisabledMessage,
   resolveCensusEmailRuntimePolicy,
@@ -17,6 +18,7 @@ interface TriggerEmailParams {
   shareLink?: string;
   userEmail?: string | null;
   userRole?: string | null;
+  sheetDescriptors?: CensusWorkbookSheetDescriptor[];
 }
 
 interface EmailResponse {
@@ -66,8 +68,17 @@ const saveExportPassword = async (
 };
 
 export const triggerCensusEmail = async (params: TriggerEmailParams): Promise<EmailResponse> => {
-  const { date, records, recipients, nursesSignature, body, shareLink, userEmail, userRole } =
-    params;
+  const {
+    date,
+    records,
+    recipients,
+    nursesSignature,
+    body,
+    shareLink,
+    userEmail,
+    userRole,
+    sheetDescriptors,
+  } = params;
 
   // By default, avoid sending real emails from local dev to prevent accidental dispatches.
   // Teams can opt in explicitly using VITE_ALLOW_DEV_EMAIL_SEND=true.
@@ -107,6 +118,7 @@ export const triggerCensusEmail = async (params: TriggerEmailParams): Promise<Em
       nursesSignature,
       body,
       shareLink,
+      sheetDescriptors,
     }),
   });
 

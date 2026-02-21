@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { RulesTestEnvironment, initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import * as fs from 'node:fs';
@@ -19,6 +19,7 @@ const mockNotifyError = vi.fn();
 const mockNotifySuccess = vi.fn();
 const mockNotifyWarning = vi.fn();
 const mockNotifyInfo = vi.fn();
+const TODAY_ISO = new Date().toISOString().slice(0, 10);
 
 vi.mock('@/context/UIContext', () => ({
   useNotification: () => ({
@@ -113,6 +114,7 @@ const buildRecord = (date: string, patientName: string, pathology: string): Dail
 
 describeUiEmulator('UI sync flow with Firestore emulator', () => {
   let testEnv: RulesTestEnvironment;
+  const unmounts: Array<() => void> = [];
 
   beforeAll(async () => {
     const rulesPath = path.resolve(__dirname, '../../../firestore.rules');
@@ -147,8 +149,18 @@ describeUiEmulator('UI sync flow with Firestore emulator', () => {
     await testEnv.cleanup();
   });
 
+  afterEach(async () => {
+    while (unmounts.length > 0) {
+      const unmount = unmounts.pop();
+      unmount?.();
+    }
+    await act(async () => {
+      await Promise.resolve();
+    });
+  });
+
   it('loads record from emulator and reflects remote updates via subscription', async () => {
-    const date = '2026-02-22';
+    const date = TODAY_ISO;
     const seed = buildRecord(date, 'Paciente Inicial', 'Diag Inicial');
 
     await testEnv.withSecurityRulesDisabled(async context => {
@@ -156,37 +168,50 @@ describeUiEmulator('UI sync flow with Firestore emulator', () => {
     });
 
     const { wrapper } = createQueryClientTestWrapper();
-    const { result } = renderHook(() => useDailyRecordSyncQuery(date, false, true), { wrapper });
+    let safeResult: { current: unknown } | null = null;
+    let safeUnmount: (() => void) | null = null;
+    await act(async () => {
+      const hook = renderHook(() => useDailyRecordSyncQuery(date, false, true), { wrapper });
+      safeResult = hook.result;
+      safeUnmount = hook.unmount;
+    });
+    if (!safeResult || !safeUnmount) {
+      throw new Error('Failed to initialize realtime hook test harness');
+    }
+    const resultRef = safeResult as { current: { record: DailyRecord | null } };
+    unmounts.push(safeUnmount);
 
     await waitFor(() => {
-      expect(result.current.record?.beds?.R1?.patientName).toBe('Paciente Inicial');
+      expect(resultRef.current.record?.beds?.R1?.patientName).toBe('Paciente Inicial');
     });
 
-    await testEnv.withSecurityRulesDisabled(async context => {
-      await context
-        .firestore()
-        .doc(`hospitals/hanga_roa/dailyRecords/${date}`)
-        .set(
-          {
-            ...seed,
-            beds: {
-              ...seed.beds,
-              R1: { ...seed.beds.R1, patientName: 'Paciente Remoto', pathology: 'Diag Remoto' },
+    await act(async () => {
+      await testEnv.withSecurityRulesDisabled(async context => {
+        await context
+          .firestore()
+          .doc(`hospitals/hanga_roa/dailyRecords/${date}`)
+          .set(
+            {
+              ...seed,
+              beds: {
+                ...seed.beds,
+                R1: { ...seed.beds.R1, patientName: 'Paciente Remoto', pathology: 'Diag Remoto' },
+              },
+              lastUpdated: `${date}T10:10:00.000Z`,
             },
-            lastUpdated: `${date}T10:10:00.000Z`,
-          },
-          { merge: true }
-        );
+            { merge: true }
+          );
+      });
     });
 
     await waitFor(() => {
-      expect(result.current.record?.beds?.R1?.patientName).toBe('Paciente Remoto');
-      expect(result.current.record?.beds?.R1?.pathology).toBe('Diag Remoto');
+      expect(resultRef.current.record?.beds?.R1?.patientName).toBe('Paciente Remoto');
+      expect(resultRef.current.record?.beds?.R1?.pathology).toBe('Diag Remoto');
     });
   });
 
   it('patches from UI hook and persists changes to Firestore + IndexedDB', async () => {
-    const date = '2026-02-23';
+    const date = TODAY_ISO;
     const seed = buildRecord(date, 'Paciente Local', 'Diag Base');
 
     await testEnv.withSecurityRulesDisabled(async context => {
@@ -194,20 +219,36 @@ describeUiEmulator('UI sync flow with Firestore emulator', () => {
     });
 
     const { wrapper } = createQueryClientTestWrapper();
-    const { result } = renderHook(() => useDailyRecordSyncQuery(date, false, true), { wrapper });
+    let safeResult: { current: unknown } | null = null;
+    let safeUnmount: (() => void) | null = null;
+    await act(async () => {
+      const hook = renderHook(() => useDailyRecordSyncQuery(date, false, false), { wrapper });
+      safeResult = hook.result;
+      safeUnmount = hook.unmount;
+    });
+    if (!safeResult || !safeUnmount) {
+      throw new Error('Failed to initialize patch hook test harness');
+    }
+    const resultRef = safeResult as {
+      current: {
+        record: DailyRecord | null;
+        patchRecord: (patch: Record<string, unknown>) => Promise<void>;
+      };
+    };
+    unmounts.push(safeUnmount);
 
     await waitFor(() => {
-      expect(result.current.record?.beds?.R1?.pathology).toBe('Diag Base');
+      expect(resultRef.current.record?.beds?.R1?.pathology).toBe('Diag Base');
     });
 
     await act(async () => {
-      await result.current.patchRecord({
+      await resultRef.current.patchRecord({
         'beds.R1.pathology': 'Diag UI Patch',
       });
     });
 
     await waitFor(() => {
-      expect(result.current.record?.beds?.R1?.pathology).toBe('Diag UI Patch');
+      expect(resultRef.current.record?.beds?.R1?.pathology).toBe('Diag UI Patch');
     });
 
     let remoteSnap: { data: () => Record<string, unknown> | undefined } | undefined;

@@ -4,10 +4,12 @@ import { buildCensusEmailBody } from '@/constants/email';
 import { BaseModal } from '@/components/shared/BaseModal';
 import { useCensusEmailRecipientsEditor } from '@/features/census/hooks/useCensusEmailRecipientsEditor';
 import {
+  CensusEmailExcelSheetSection,
   CensusEmailMessageSection,
   CensusEmailRecipientsSection,
   CensusEmailTestModeSection,
 } from '@/features/census/components/email-config';
+import type { CensusEmailExcelSheetConfig } from '@/hooks/controllers/censusExcelSheetController';
 
 interface Props {
   isOpen: boolean;
@@ -24,6 +26,8 @@ interface Props {
   onTestModeChange: (enabled: boolean) => void;
   testRecipient: string;
   onTestRecipientChange: (value: string) => void;
+  excelSheetConfig: CensusEmailExcelSheetConfig;
+  onExcelSheetConfigChange: (value: CensusEmailExcelSheetConfig) => void;
 }
 
 export const CensusEmailConfigModal: React.FC<Props> = ({
@@ -41,6 +45,8 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
   onTestModeChange,
   testRecipient,
   onTestRecipientChange,
+  excelSheetConfig,
+  onExcelSheetConfigChange,
 }) => {
   const {
     safeRecipients,
@@ -137,6 +143,11 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
               onTestModeChange={onTestModeChange}
               testRecipient={testRecipient}
               onTestRecipientChange={onTestRecipientChange}
+            />
+
+            <CensusEmailExcelSheetSection
+              config={excelSheetConfig}
+              onConfigChange={onExcelSheetConfigChange}
             />
           </div>
 

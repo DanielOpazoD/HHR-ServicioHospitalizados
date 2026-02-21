@@ -211,6 +211,36 @@ describe('useCensusEmail', () => {
       expect(result.current.status).toBe('success');
     });
 
+    it('should include excel sheet descriptors in email payload', async () => {
+      mockConfirm.mockResolvedValue(true);
+      vi.mocked(getMonthRecordsFromFirestore).mockResolvedValue([
+        defaultParams.record as DailyRecord,
+      ]);
+
+      const mockWorkbook = {
+        xlsx: { writeBuffer: vi.fn().mockResolvedValue(Buffer.from([])) },
+      };
+      vi.mocked(buildCensusMasterWorkbook).mockResolvedValue(mockWorkbook as unknown as Workbook);
+
+      const { result } = renderHook(() => useCensusEmail(defaultParams));
+
+      await act(async () => {
+        await result.current.sendEmail();
+      });
+
+      expect(triggerCensusEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sheetDescriptors: expect.arrayContaining([
+            expect.objectContaining({
+              recordDate: '2025-01-08',
+              sheetName: '08-01-2025 23-59',
+              snapshotLabel: '23:59',
+            }),
+          ]),
+        })
+      );
+    });
+
     it('should handle silent backup failure', async () => {
       mockConfirm.mockResolvedValue(true);
       vi.mocked(getMonthRecordsFromFirestore).mockResolvedValue([defaultParams.record]);

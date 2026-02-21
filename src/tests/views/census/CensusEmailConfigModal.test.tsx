@@ -2,6 +2,7 @@ import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { CensusEmailConfigModal } from '@/features/census/components/CensusEmailConfigModal';
+import { DEFAULT_CENSUS_EMAIL_EXCEL_SHEET_CONFIG } from '@/hooks/controllers/censusExcelSheetController';
 
 const buildProps = () => ({
   isOpen: true,
@@ -18,6 +19,8 @@ const buildProps = () => ({
   onTestModeChange: vi.fn(),
   testRecipient: '',
   onTestRecipientChange: vi.fn(),
+  excelSheetConfig: DEFAULT_CENSUS_EMAIL_EXCEL_SHEET_CONFIG,
+  onExcelSheetConfigChange: vi.fn(),
 });
 
 describe('CensusEmailConfigModal', () => {
@@ -63,5 +66,17 @@ describe('CensusEmailConfigModal', () => {
 
     fireEvent.click(screen.getByText(/restablecer/i));
     expect(props.onMessageChange).toHaveBeenCalled();
+  });
+
+  it('updates excel sheet configuration checkboxes', () => {
+    const props = buildProps();
+    render(<CensusEmailConfigModal {...props} />);
+
+    fireEvent.click(screen.getByLabelText(/hora actual/i));
+
+    expect(props.onExcelSheetConfigChange).toHaveBeenCalledWith({
+      ...DEFAULT_CENSUS_EMAIL_EXCEL_SHEET_CONFIG,
+      includeCurrentTimeSheet: true,
+    });
   });
 });

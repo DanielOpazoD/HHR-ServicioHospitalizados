@@ -5,6 +5,7 @@ import {
   initializeTestEnvironment,
   RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
+import { setLogLevel } from 'firebase/firestore';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -17,8 +18,9 @@ const runRulesTests =
   process.env.FIRESTORE_EMULATOR_HOST !== undefined;
 
 const describeRules = runRulesTests ? describe : describe.skip;
-const NOW_MS = 1760000000000;
+const NOW_MS = Date.now();
 const THREE_DAYS_MS = 3 * 86400000;
+const CURRENT_RECORD_DATE = new Date(NOW_MS).toISOString().slice(0, 10);
 
 // Run 'npx firebase emulators:start --only firestore' and set RUN_FIRESTORE_RULES_TESTS=1
 describeRules('Firestore Security Rules', () => {
@@ -52,6 +54,8 @@ describeRules('Firestore Security Rules', () => {
     testEnv.authenticatedContext('user_outsider', { email: 'outsider@example.com' }).firestore();
 
   beforeAll(async () => {
+    setLogLevel('silent');
+
     // Read rules from project root
     const rulesPath = path.resolve(__dirname, '../../../firestore.rules');
     const rules = fs.readFileSync(rulesPath, 'utf8');
@@ -112,16 +116,16 @@ describeRules('Firestore Security Rules', () => {
   });
 
   describe('Daily Records Collection', () => {
-    const recordPath = 'hospitals/H1/dailyRecords/2025-01-01';
-    const historyPath = 'hospitals/H1/dailyRecords/2025-01-01/history/h-1';
+    const recordPath = `hospitals/H1/dailyRecords/${CURRENT_RECORD_DATE}`;
+    const historyPath = `hospitals/H1/dailyRecords/${CURRENT_RECORD_DATE}/history/h-1`;
 
     it('Authenticated users can read daily records', async () => {
-      await setupDoc(admin(), recordPath, { date: '2025-01-01' });
+      await setupDoc(admin(), recordPath, { date: CURRENT_RECORD_DATE });
       await assertSucceeds(authed().doc(recordPath).get());
     });
 
     it('Authenticated users without role cannot read daily records', async () => {
-      await setupDoc(admin(), recordPath, { date: '2025-01-01' });
+      await setupDoc(admin(), recordPath, { date: CURRENT_RECORD_DATE });
       await assertFails(unauthorizedAuthed().doc(recordPath).get());
     });
 
@@ -132,7 +136,7 @@ describeRules('Firestore Security Rules', () => {
     it('Nurses can update records within the editing window', async () => {
       const db = nurse();
       const now = NOW_MS;
-      await setupDoc(admin(), recordPath, { date: '2025-01-01', dateTimestamp: now });
+      await setupDoc(admin(), recordPath, { date: CURRENT_RECORD_DATE, dateTimestamp: now });
 
       await assertSucceeds(db.doc(recordPath).update({ nursesDayShift: ['Nurse1'] }));
     });
@@ -140,13 +144,13 @@ describeRules('Firestore Security Rules', () => {
     it('Nurses cannot update records outside the editing window', async () => {
       const db = nurse();
       const old = NOW_MS - THREE_DAYS_MS;
-      await setupDoc(admin(), recordPath, { date: '2025-01-01', dateTimestamp: old });
+      await setupDoc(admin(), recordPath, { date: CURRENT_RECORD_DATE, dateTimestamp: old });
 
       await assertFails(db.doc(recordPath).update({ nursesDayShift: ['Nurse1'] }));
     });
 
     it('Doctors can update only medical signature fields', async () => {
-      await setupDoc(admin(), recordPath, { date: '2025-01-01', dateTimestamp: NOW_MS });
+      await setupDoc(admin(), recordPath, { date: CURRENT_RECORD_DATE, dateTimestamp: NOW_MS });
 
       await assertSucceeds(
         doctor().doc(recordPath).update({
@@ -159,7 +163,7 @@ describeRules('Firestore Security Rules', () => {
     });
 
     it('Doctors cannot update non-medical fields', async () => {
-      await setupDoc(admin(), recordPath, { date: '2025-01-01', dateTimestamp: NOW_MS });
+      await setupDoc(admin(), recordPath, { date: CURRENT_RECORD_DATE, dateTimestamp: NOW_MS });
 
       await assertFails(
         doctor()
@@ -171,19 +175,19 @@ describeRules('Firestore Security Rules', () => {
     });
 
     it('Admins can delete daily records', async () => {
-      await setupDoc(admin(), recordPath, { date: '2025-01-01' });
+      await setupDoc(admin(), recordPath, { date: CURRENT_RECORD_DATE });
       await assertSucceeds(admin().doc(recordPath).delete());
     });
 
     it('Nurses CANNOT delete daily records', async () => {
       const now = NOW_MS;
-      await setupDoc(admin(), recordPath, { date: '2025-01-01', dateTimestamp: now });
+      await setupDoc(admin(), recordPath, { date: CURRENT_RECORD_DATE, dateTimestamp: now });
       await assertFails(nurse().doc(recordPath).delete());
     });
 
     it('Nurses can create history snapshots under daily records', async () => {
       const now = NOW_MS;
-      await setupDoc(admin(), recordPath, { date: '2025-01-01', dateTimestamp: now });
+      await setupDoc(admin(), recordPath, { date: CURRENT_RECORD_DATE, dateTimestamp: now });
 
       await assertSucceeds(
         nurse().doc(historyPath).set({
@@ -195,7 +199,7 @@ describeRules('Firestore Security Rules', () => {
 
     it('Doctors cannot create history snapshots under daily records', async () => {
       const now = NOW_MS;
-      await setupDoc(admin(), recordPath, { date: '2025-01-01', dateTimestamp: now });
+      await setupDoc(admin(), recordPath, { date: CURRENT_RECORD_DATE, dateTimestamp: now });
 
       await assertFails(
         doctor().doc(historyPath).set({
@@ -207,7 +211,7 @@ describeRules('Firestore Security Rules', () => {
 
     it('Only admins can update or delete history snapshots', async () => {
       const now = NOW_MS;
-      await setupDoc(admin(), recordPath, { date: '2025-01-01', dateTimestamp: now });
+      await setupDoc(admin(), recordPath, { date: CURRENT_RECORD_DATE, dateTimestamp: now });
       await setupDoc(admin(), historyPath, {
         snapshotTimestamp: now,
         source: 'seed',

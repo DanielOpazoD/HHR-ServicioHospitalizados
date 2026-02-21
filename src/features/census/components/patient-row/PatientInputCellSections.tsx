@@ -34,6 +34,7 @@ export const PatientInputIdentitySection: React.FC<PatientInputIdentitySectionBi
       value={shared.data.rut || ''}
       documentType={shared.data.documentType || 'RUT'}
       isSubRow={shared.isSubRow}
+      isClinicalCribPatient={shared.isSubRow || shared.data.bedMode === 'Cuna'}
       isEmpty={shared.isEmpty}
       hasName={!!shared.data.patientName && !shared.isEmpty}
       patientName={shared.data.patientName || ''}
