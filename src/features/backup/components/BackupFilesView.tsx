@@ -12,6 +12,8 @@ import {
   LayoutGrid,
   List,
   RefreshCw,
+  Loader2,
+  Wand2,
   MessageSquare,
   LayoutList,
   BarChart3,
@@ -61,9 +63,19 @@ export const BackupFilesView: React.FC<BackupFilesViewProps> = ({
     isLoading,
     isRefetching,
     canDelete,
+    canRunMagicBackfill,
+    isMagicBackfilling,
+    magicBackfillProgress,
     refetch,
     handlers,
   } = useBackupFileBrowser(initialBackupType);
+
+  const magicLabel =
+    selectedBackupType === 'handoff'
+      ? 'Respaldar faltantes (día+noche)'
+      : selectedBackupType === 'census'
+        ? 'Respaldar censos faltantes'
+        : 'Respaldar CUDYR faltantes';
 
   const renderContent = () => {
     if (isLoading && !isRefetching) {
@@ -191,6 +203,26 @@ export const BackupFilesView: React.FC<BackupFilesViewProps> = ({
         <Breadcrumbs path={path} onNavigate={handlers.handleBreadcrumbNavigate} />
 
         <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => handlers.handleMagicMonthBackfill()}
+            disabled={!canRunMagicBackfill || isMagicBackfilling}
+            className={clsx(
+              'inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold transition-all',
+              canRunMagicBackfill && !isMagicBackfilling
+                ? 'text-violet-700 border-violet-200 bg-violet-50 hover:bg-violet-100'
+                : 'text-slate-400 border-slate-200 bg-slate-50 cursor-not-allowed'
+            )}
+            title="Respaldo masivo de fechas faltantes del mes"
+          >
+            {isMagicBackfilling ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Wand2 size={14} />
+            )}
+            <span className="hidden lg:inline">{magicLabel}</span>
+            <span className="lg:hidden">Mágico</span>
+          </button>
+
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
@@ -244,6 +276,18 @@ export const BackupFilesView: React.FC<BackupFilesViewProps> = ({
       </div>
 
       {/* List/Grid Content */}
+      {isMagicBackfilling && (
+        <div className="flex items-center gap-2 text-xs text-violet-700 bg-violet-50 border border-violet-200 rounded-xl px-3 py-2 w-fit">
+          <Loader2 size={14} className="animate-spin" />
+          <span>
+            Respaldo masivo en curso
+            {magicBackfillProgress
+              ? ` (${magicBackfillProgress.completed}/${magicBackfillProgress.total})`
+              : ''}
+            {magicBackfillProgress?.currentLabel ? ` · ${magicBackfillProgress.currentLabel}` : ''}
+          </span>
+        </div>
+      )}
       <div className="min-h-[400px]">{renderContent()}</div>
 
       {/* Previews Orchestration */}

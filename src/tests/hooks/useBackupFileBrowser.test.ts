@@ -5,6 +5,8 @@ import { renderHook, act } from '@testing-library/react';
 vi.mock('@/context/UIContext', () => ({
   useNotification: () => ({
     success: vi.fn(),
+    warning: vi.fn(),
+    info: vi.fn(),
     error: vi.fn(),
   }),
   useConfirmDialog: () => ({
@@ -82,7 +84,7 @@ describe('useBackupFileBrowser', () => {
     expect(result.current.searchQuery).toBe('test');
   });
 
-  it('should change backup type and reset path', () => {
+  it('should change backup type and keep current path', () => {
     const { result } = renderHook(() => useBackupFileBrowser());
 
     act(() => {
@@ -91,6 +93,27 @@ describe('useBackupFileBrowser', () => {
 
     expect(result.current.selectedBackupType).toBe('cudyr');
     expect(result.current.path.length).toBe(2);
+  });
+
+  it('should preserve selected month when changing backup type', () => {
+    const { result } = renderHook(() => useBackupFileBrowser());
+
+    act(() => {
+      result.current.handlers.handleFolderClick({ name: '2023', type: 'year' });
+    });
+
+    act(() => {
+      result.current.handlers.handleFolderClick({ name: 'Enero', type: 'month' });
+    });
+
+    expect(result.current.path).toEqual(['2023', 'Enero']);
+
+    act(() => {
+      result.current.handlers.changeBackupType('census');
+    });
+
+    expect(result.current.selectedBackupType).toBe('census');
+    expect(result.current.path).toEqual(['2023', 'Enero']);
   });
 
   it('should handle breadcrumb navigation', () => {

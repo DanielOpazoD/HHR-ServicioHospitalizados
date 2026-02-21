@@ -4,39 +4,35 @@ import { useBackupFilesQuery, BackupFolder } from '@/hooks/useBackupFilesQuery';
 import { deletePdf } from '@/services/backup/pdfStorageService';
 import { deleteCensusFile } from '@/services/backup/censusStorageService';
 import { deleteCudyrFile } from '@/services/backup/cudyrStorageService';
-import { BaseStoredFile } from '@/services/backup/baseStorageService';
+import { BaseStoredFile, MONTH_NAMES } from '@/services/backup/baseStorageService';
 import { StoredPdfFile } from '@/services/backup/pdfStorageService';
 import { useAuth } from '@/context/AuthContext';
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { runMonthlyBackfill } from '@/services/backup/monthlyBackfillService';
 
 export type BackupType = 'handoff' | 'census' | 'cudyr';
+
+interface MagicBackfillProgressState {
+  completed: number;
+  total: number;
+  currentLabel?: string;
+}
 
 export const useBackupFileBrowser = (initialBackupType: BackupType = 'handoff') => {
   const [selectedBackupType, setSelectedBackupType] = useState<BackupType>(initialBackupType);
   const [path, setPath] = useState<string[]>(() => {
     const now = new Date();
     const currentYear = now.getFullYear().toString();
-    const monthNames = [
-      'Enero',
-      'Febrero',
-      'Marzo',
-      'Abril',
-      'Mayo',
-      'Junio',
-      'Julio',
-      'Agosto',
-      'Septiembre',
-      'Octubre',
-      'Noviembre',
-      'Diciembre',
-    ];
-    return [currentYear, monthNames[now.getMonth()]];
+    return [currentYear, MONTH_NAMES[now.getMonth()]];
   });
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [previewFile, setPreviewFile] = useState<BaseStoredFile | StoredPdfFile | null>(null);
+  const [isMagicBackfilling, setIsMagicBackfilling] = useState(false);
+  const [magicBackfillProgress, setMagicBackfillProgress] =
+    useState<MagicBackfillProgressState | null>(null);
 
-  const { success, error: notifyError } = useNotification();
+  const { success, warning, info, error: notifyError } = useNotification();
   const { confirm } = useConfirmDialog();
   const { role } = useAuth();
   const canDelete = role === 'admin';
@@ -47,6 +43,7 @@ export const useBackupFileBrowser = (initialBackupType: BackupType = 'handoff') 
     isRefetching,
     refetch,
   } = useBackupFilesQuery(selectedBackupType, path);
+  const canRunMagicBackfill = role !== 'viewer' && path.length === 2 && !isLoading;
 
   const filteredItems = useMemo(() => {
     if (!searchQuery) return items;
@@ -116,24 +113,107 @@ export const useBackupFileBrowser = (initialBackupType: BackupType = 'handoff') 
 
   const changeBackupType = useCallback((type: BackupType) => {
     setSelectedBackupType(type);
-    const now = new Date();
-    const currentYear = now.getFullYear().toString();
-    const monthNames = [
-      'Enero',
-      'Febrero',
-      'Marzo',
-      'Abril',
-      'Mayo',
-      'Junio',
-      'Julio',
-      'Agosto',
-      'Septiembre',
-      'Octubre',
-      'Noviembre',
-      'Diciembre',
-    ];
-    setPath([currentYear, monthNames[now.getMonth()]]);
   }, []);
+
+  const handleMagicMonthBackfill = useCallback(async () => {
+    if (role === 'viewer') {
+      warning('No tienes permisos para ejecutar respaldo masivo');
+      return;
+    }
+
+    if (path.length !== 2) {
+      warning('Selecciona un mes para ejecutar respaldo masivo');
+      return;
+    }
+
+    const year = Number(path[0]);
+    const monthName = path[1];
+    const monthNumber = MONTH_NAMES.indexOf(monthName) + 1;
+
+    if (!Number.isInteger(year) || monthNumber < 1) {
+      notifyError('No se pudo interpretar el mes seleccionado');
+      return;
+    }
+
+    const moduleLabel =
+      selectedBackupType === 'handoff'
+        ? 'Entregas'
+        : selectedBackupType === 'census'
+          ? 'Censo'
+          : 'CUDYR';
+
+    const confirmed = await confirm({
+      title: `Respaldo masivo ${moduleLabel}`,
+      message: `Se respaldarán todas las fechas faltantes de ${monthName} ${year} para ${moduleLabel}.\n\nEste proceso puede tardar algunos minutos.`,
+      confirmText: 'Ejecutar',
+      cancelText: 'Cancelar',
+      variant: 'info',
+    });
+
+    if (!confirmed) return;
+
+    setIsMagicBackfilling(true);
+    setMagicBackfillProgress({ completed: 0, total: 0, currentLabel: undefined });
+
+    try {
+      const monthFiles = items
+        .filter(item => item.type === 'file')
+        .map(item => item.data as BaseStoredFile | StoredPdfFile);
+
+      const result = await runMonthlyBackfill({
+        backupType: selectedBackupType,
+        year,
+        monthNumber,
+        existingFiles: monthFiles,
+        onProgress: progress => setMagicBackfillProgress(progress),
+      });
+
+      await refetch();
+
+      if (result.totalPlanned === 0) {
+        const message =
+          result.skippedNoRecord > 0
+            ? `No hay registros clínicos para ${result.skippedNoRecord} fecha(s) del mes.`
+            : 'No hay pendientes; todas las fechas con registros ya tienen respaldo.';
+        info('Respaldo masivo sin pendientes', message);
+        return;
+      }
+
+      const summary = [
+        `Generados: ${result.created}`,
+        `Fallidos: ${result.failed}`,
+        `Sin registro diario: ${result.skippedNoRecord}`,
+      ].join(' · ');
+
+      if (result.failed > 0) {
+        warning('Respaldo masivo completado con observaciones', summary);
+      } else {
+        success('Respaldo masivo completado', summary);
+      }
+
+      if (result.errors.length > 0) {
+        const previewErrors = result.errors.slice(0, 3).join('\n');
+        notifyError('Errores detectados durante el respaldo masivo', previewErrors);
+      }
+    } catch (error) {
+      console.error('Magic backup error:', error);
+      notifyError('Error al ejecutar respaldo masivo del mes');
+    } finally {
+      setIsMagicBackfilling(false);
+      setMagicBackfillProgress(null);
+    }
+  }, [
+    confirm,
+    info,
+    items,
+    notifyError,
+    path,
+    refetch,
+    role,
+    selectedBackupType,
+    success,
+    warning,
+  ]);
 
   return {
     selectedBackupType,
@@ -149,6 +229,9 @@ export const useBackupFileBrowser = (initialBackupType: BackupType = 'handoff') 
     isLoading,
     isRefetching,
     canDelete,
+    canRunMagicBackfill,
+    isMagicBackfilling,
+    magicBackfillProgress,
     refetch,
     handlers: {
       handleFolderClick,
@@ -156,6 +239,7 @@ export const useBackupFileBrowser = (initialBackupType: BackupType = 'handoff') 
       handleDelete,
       handleDownload,
       changeBackupType,
+      handleMagicMonthBackfill,
     },
   };
 };
