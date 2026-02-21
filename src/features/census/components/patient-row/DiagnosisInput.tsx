@@ -82,6 +82,38 @@ export const DiagnosisInput: React.FC<DiagnosisInputProps> = ({
             }}
             disabled={readOnly}
           />
+
+          {data.cie10Code && (
+            <span
+              className="absolute right-1 top-1 inline-flex items-center gap-1 text-[9px] font-mono text-slate-600 bg-slate-50 px-1 py-0.5 rounded border border-slate-200"
+              title={`Código CIE-10: ${data.cie10Code}`}
+            >
+              <span>{data.cie10Code}</span>
+              {!readOnly && (
+                <button
+                  type="button"
+                  aria-label="Eliminar código CIE-10"
+                  title="Eliminar código CIE-10"
+                  className="text-slate-500 hover:text-red-600 leading-none"
+                  onClick={event => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (onMultipleUpdate) {
+                      onMultipleUpdate({
+                        cie10Code: '',
+                        cie10Description: '',
+                      });
+                    } else {
+                      onChange('cie10Code')('');
+                      onChange('cie10Description')('');
+                    }
+                  }}
+                >
+                  x
+                </button>
+              )}
+            </span>
+          )}
         </div>
       </td>
     );
@@ -99,7 +131,6 @@ export const DiagnosisInput: React.FC<DiagnosisInputProps> = ({
               ? 'border-red-400 focus:ring-red-200 focus:border-red-500'
               : 'border-slate-200 focus:ring-medical-500/20 focus:border-medical-500',
             isSubRow && 'text-xs h-6',
-            data.cie10Code && 'pr-16',
             isGinecobstetricia && 'pr-8' // Always leave space for birth icon in Gyn
           )}
           placeholder="Diagnóstico (texto libre)"
@@ -117,16 +148,6 @@ export const DiagnosisInput: React.FC<DiagnosisInputProps> = ({
               onSave={onDeliveryRouteChange}
               disabled={readOnly}
             />
-          )}
-
-          {/* CIE-10 badge */}
-          {data.cie10Code && (
-            <span
-              className="text-[9px] font-mono text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200"
-              title={`Código CIE-10: ${data.cie10Code}`}
-            >
-              {data.cie10Code}
-            </span>
           )}
         </div>
       </div>
