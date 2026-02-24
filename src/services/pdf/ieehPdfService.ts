@@ -15,7 +15,7 @@
  *  #6  Sexo registral
  *  #7  Fecha de nacimiento (Día, Mes, Año)
  *  #8  Edad + Unidad
- *  #9  Pueblo indígena (Rapanui)
+ *  #10 Pueblo indígena (Rapanui) — Sección PUEBLOS INDÍGENAS
  *  #18 Previsión
  *  #22 Procedencia del paciente
  *  #24 Ingreso (hora, fecha)
@@ -23,6 +23,9 @@
  *  #30 Días de estada — calculado
  *  #33 Diagnóstico principal + Código CIE-10
  *  Especialidad del médico tratante
+ *
+ * ÚLTIMA CALIBRACIÓN: 2026-02-23 (v5, 5 iteraciones visuales con verifyPdfCoords.cjs)
+ * TEST DE GOBERNANZA: src/tests/services/pdf/ieehPdfCoordinates.test.ts
  */
 
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
@@ -72,8 +75,8 @@ const FIELD_COORDS = {
   tipoIdentificacion: { x: 170, y: 785, maxWidth: 15 },
   runDigits: { x: 85, y: 766, maxWidth: 200 },
 
-  // ── #6: SEXO REGISTRAL ──  (✅ verified)
-  sexoRegistral: { x: 355, y: 785, maxWidth: 15 },
+  // ── #6: SEXO REGISTRAL ──  (✅ calibrated v5: X=385, Y=773)
+  sexoRegistral: { x: 385, y: 773, maxWidth: 15 },
 
   // ── #7: FECHA DE NACIMIENTO ──  (corrected from dot cal: Y=800)
   nacDia: { x: 460, y: 800, maxWidth: 25 },
@@ -84,8 +87,8 @@ const FIELD_COORDS = {
   edad: { x: 105, y: 725, maxWidth: 50 },
   edadUnidad: { x: 185, y: 725, maxWidth: 15 },
 
-  // ── #53: PUEBLO INDÍGENA ──
-  puebloIndigena: { x: 380, y: 750, maxWidth: 15 },
+  // ── #53→#10: PUEBLO INDÍGENA ──  (✅ calibrated v3: moved to correct section)
+  puebloIndigena: { x: 525, y: 750, maxWidth: 15 },
 
   // ── #18: PREVISIÓN ──  (corrected from dot cal: X=60)
   prevision: { x: 60, y: 503, maxWidth: 15 },
@@ -101,13 +104,12 @@ const FIELD_COORDS = {
   ingresoMes: { x: 210, y: 428, maxWidth: 18 },
   ingresoAnio: { x: 230, y: 428, maxWidth: 30 },
 
-  // ── #29: EGRESO (hora, fecha) ──
-  // EGRESO row is ABOVE DÍAS ESTADA, at Y≈360
-  egresoHora: { x: 110, y: 348, maxWidth: 20 },
-  egresoMin: { x: 140, y: 348, maxWidth: 20 },
-  egresoDia: { x: 190, y: 348, maxWidth: 18 },
-  egresoMes: { x: 210, y: 348, maxWidth: 18 },
-  egresoAnio: { x: 230, y: 348, maxWidth: 30 },
+  // ── #29: EGRESO (hora, fecha) ──  (✅ calibrated v3: Y 348→336)
+  egresoHora: { x: 110, y: 336, maxWidth: 20 },
+  egresoMin: { x: 140, y: 336, maxWidth: 20 },
+  egresoDia: { x: 190, y: 336, maxWidth: 18 },
+  egresoMes: { x: 210, y: 336, maxWidth: 18 },
+  egresoAnio: { x: 230, y: 336, maxWidth: 30 },
 
   // ── #30: DÍAS DE ESTADA ──  (Y=328, previously had EGRESO here)
   diasEstada: { x: 110, y: 320, maxWidth: 55 },

@@ -26,8 +26,8 @@ async function verify() {
     // #5 TIPO ID + RUN
     draw('1', 170, 785);
     draw('12.345.678-9', 85, 766);
-    // #6 SEXO
-    draw('M', 355, 785, FZ, true);
+    // #6 SEXO REGISTRAL (checkbox square)
+    draw('M', 385, 773, FZ, true);
     // #7 FECHA NAC 
     draw('15', 460, 800);
     draw('03', 490, 800);
@@ -35,8 +35,11 @@ async function verify() {
     // #8 EDAD
     draw('35', 105, 725);
     draw('1', 185, 725);
-    // #53 PUEBLO
-    draw('2', 380, 750);
+    // #10 PUEBLO INDÍGENA — "¿Pertenece?" checkbox (1=Sí)
+    // The Sí/No checkbox is around X=1050 (screen) ≈ X=520 (PDF), same Y row as #53
+    draw('1', 1050 / 2, 750);  // Sí=1
+    // and the specific pueblo: 3=Rapa Nui, positioned in the list to the right
+    draw('3', 1140 / 2, 735);  // Rapa Nui = 3 in the PUEBLOS INDÍGENAS numbered list
     // #18 PREVISIÓN 
     draw('1', 60, 503);
     // #22 PROCEDENCIA
@@ -49,12 +52,12 @@ async function verify() {
     draw('02', 210, 428);
     draw('2025', 230, 428);
 
-    // #29 EGRESO (Y corrected: 360→348 based on subagent report)
-    draw('14', 110, 348);
-    draw('00', 140, 348);
-    draw('25', 190, 348);
-    draw('02', 210, 348);
-    draw('2025', 230, 348);
+    // #29 EGRESO (Y lowered to 336 for perfect vertical centering in boxes)
+    draw('14', 110, 336);
+    draw('00', 140, 336);
+    draw('25', 190, 336);
+    draw('02', 210, 336);
+    draw('2025', 230, 336);
 
     // #30 DÍAS ESTADA (Y corrected: 328→320 based on subagent report)
     draw('3', 110, 320);
