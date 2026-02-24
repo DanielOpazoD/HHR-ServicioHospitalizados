@@ -7,49 +7,47 @@
  *  3. Cover all expected form fields (no accidental deletions)
  *  4. Are internally consistent (no duplicate positions for different fields)
  *
- * COORDINATES SOURCE: Extracted via PDF field mapping tool (2026-02-23).
+ * COORDINATES SOURCE: PDF field mapping tool, refined v2 (2026-02-23).
  */
 import { describe, it, expect } from 'vitest';
 
-// ── Mirror of the production FIELD_COORDS (synced 2026-02-23 — tool-extracted) ──
+// ── Mirror of production FIELD_COORDS (synced 2026-02-23 — refined v2, normalized Y) ──
 const FIELD_COORDS = {
-  primerApellido: { x: 57.49, y: 825.64, maxWidth: 137.83 },
-  segundoApellido: { x: 249.13, y: 824.9, maxWidth: 118.67 },
-  nombres: { x: 456.99, y: 824.9, maxWidth: 110.56 },
+  primerApellido: { x: 57.49, y: 825.15, maxWidth: 137.83 },
+  segundoApellido: { x: 249.13, y: 825.15, maxWidth: 118.67 },
+  nombres: { x: 456.99, y: 825.15, maxWidth: 110.56 },
   nombreSocial: { x: 114.25, y: 805, maxWidth: 93.61 },
-  tipoIdentificacion: { x: 111.3, y: 782.16, maxWidth: 11.06 },
+  tipoIdentificacion: { x: 111.3, y: 781.06, maxWidth: 11.06 },
   runDigits: { x: 59.7, y: 757.84, maxWidth: 87.71 },
-  sexoRegistral: { x: 305.15, y: 779.95, maxWidth: 11.79 },
-  nacDia: { x: 450.36, y: 799.84, maxWidth: 22.85 },
-  nacMes: { x: 489.42, y: 799.11, maxWidth: 21.38 },
-  nacAnio: { x: 524.07, y: 799.11, maxWidth: 50.86 },
-  edad: { x: 79.7, y: 721.41, maxWidth: 35.35 },
-  edadUnidad: { x: 181.07, y: 720.07, maxWidth: 10.67 },
+  sexoRegistral: { x: 305.15, y: 781.06, maxWidth: 11.79 },
+  nacDia: { x: 450.36, y: 799.35, maxWidth: 22.85 },
+  nacMes: { x: 489.42, y: 799.35, maxWidth: 21.38 },
+  nacAnio: { x: 524.07, y: 799.35, maxWidth: 50.86 },
+  edad: { x: 79.7, y: 720.74, maxWidth: 35.35 },
+  edadUnidad: { x: 181.07, y: 720.74, maxWidth: 10.67 },
   puebloIndigena: { x: 523.87, y: 750.08, maxWidth: 22.68 },
   prevision: { x: 54.35, y: 516.72, maxWidth: 10.67 },
   procedencia: { x: 225.75, y: 471.38, maxWidth: 10.67 },
-  ingresoHora: { x: 102.37, y: 426.71, maxWidth: 22.68 },
-  ingresoMin: { x: 136.39, y: 426.04, maxWidth: 21.34 },
-  ingresoDia: { x: 181.07, y: 426.04, maxWidth: 22.68 },
-  ingresoMes: { x: 215.08, y: 427.38, maxWidth: 23.34 },
-  ingresoAnio: { x: 249.76, y: 426.71, maxWidth: 22.01 },
-  egresoHora: { x: 92.37, y: 340.04, maxWidth: 21.34 },
-  egresoMin: { x: 125.05, y: 340.7, maxWidth: 23.34 },
-  egresoDia: { x: 170.4, y: 339.37, maxWidth: 22.68 },
-  egresoMes: { x: 205.08, y: 339.37, maxWidth: 23.34 },
-  egresoAnio: { x: 238.43, y: 338.7, maxWidth: 24.01 },
-  diasEstada: { x: 104.37, y: 326.03, maxWidth: 45.35 },
-  condicionEgreso: { x: 250.43, y: 327.37, maxWidth: 11.34 },
-  diagnosticoPrincipal: { x: 167.06, y: 280.7, maxWidth: 341.47 },
-  codigoCIE10: { x: 529.2, y: 281.36, maxWidth: 46.68 },
+  ingresoHora: { x: 102.37, y: 426.58, maxWidth: 22.68 },
+  ingresoMin: { x: 136.39, y: 426.58, maxWidth: 21.34 },
+  ingresoDia: { x: 181.07, y: 426.58, maxWidth: 22.68 },
+  ingresoMes: { x: 215.08, y: 426.58, maxWidth: 23.34 },
+  ingresoAnio: { x: 249.76, y: 426.58, maxWidth: 22.01 },
+  egresoHora: { x: 92.37, y: 339.64, maxWidth: 21.34 },
+  egresoMin: { x: 125.05, y: 339.64, maxWidth: 23.34 },
+  egresoDia: { x: 170.4, y: 339.64, maxWidth: 22.68 },
+  egresoMes: { x: 205.08, y: 339.64, maxWidth: 23.34 },
+  egresoAnio: { x: 238.43, y: 339.64, maxWidth: 24.01 },
+  diasEstada: { x: 104.37, y: 326.7, maxWidth: 45.35 },
+  condicionEgreso: { x: 250.43, y: 326.7, maxWidth: 11.34 },
+  diagnosticoPrincipal: { x: 167.06, y: 281.03, maxWidth: 341.47 },
+  codigoCIE10: { x: 529.2, y: 281.03, maxWidth: 46.68 },
   especialidadMedico: { x: 327.79, y: 76.01, maxWidth: 151.39 },
 } as const;
 
-// Page dimensions (oficio chileno: 215 × 330mm)
 const PAGE_WIDTH = 609.57;
 const PAGE_HEIGHT = 935.43;
 
-// All fields that MUST exist (canonical list from MINSAL IEEH form)
 const REQUIRED_FIELDS = [
   'primerApellido',
   'segundoApellido',
@@ -102,7 +100,7 @@ describe('IEEH PDF Field Coordinates Governance', () => {
       expect(
         coords.x + coords.maxWidth,
         `${name} overflows right edge: x(${coords.x}) + maxWidth(${coords.maxWidth})`
-      ).toBeLessThanOrEqual(PAGE_WIDTH + 1); // +1 for tiny rounding
+      ).toBeLessThanOrEqual(PAGE_WIDTH + 1);
     }
   });
 
@@ -126,6 +124,22 @@ describe('IEEH PDF Field Coordinates Governance', () => {
       );
       seen.set(key, name);
     }
+  });
+
+  it('Ingreso row fields share same Y value', () => {
+    const y = FIELD_COORDS.ingresoHora.y;
+    expect(FIELD_COORDS.ingresoMin.y).toBe(y);
+    expect(FIELD_COORDS.ingresoDia.y).toBe(y);
+    expect(FIELD_COORDS.ingresoMes.y).toBe(y);
+    expect(FIELD_COORDS.ingresoAnio.y).toBe(y);
+  });
+
+  it('Egreso row fields share same Y value', () => {
+    const y = FIELD_COORDS.egresoHora.y;
+    expect(FIELD_COORDS.egresoMin.y).toBe(y);
+    expect(FIELD_COORDS.egresoDia.y).toBe(y);
+    expect(FIELD_COORDS.egresoMes.y).toBe(y);
+    expect(FIELD_COORDS.egresoAnio.y).toBe(y);
   });
 
   it('Egreso fields are below Ingreso fields (lower Y value)', () => {

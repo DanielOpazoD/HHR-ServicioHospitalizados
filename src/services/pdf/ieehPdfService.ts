@@ -35,9 +35,9 @@ import { PatientData } from '@/types';
 const TEMPLATE_PATH = '/docs/estadistico-egreso.pdf';
 
 // --- Constants ---
-const FONT_SIZE = 9;
-const FONT_SIZE_SMALL = 6;
-const FONT_SIZE_CODE = 8;
+const FONT_SIZE = 10;
+const FONT_SIZE_SMALL = 7;
+const FONT_SIZE_CODE = 9;
 
 // ── Color for filled text (dark black) ──
 const TEXT_COLOR = rgb(0, 0, 0);
@@ -63,29 +63,29 @@ export interface DischargeFormData {
  * These replace the manually calibrated values from visual inspection.
  */
 const FIELD_COORDS = {
-  // ── #4: NOMBRE LEGAL DEL PACIENTE ──
-  primerApellido: { x: 57.49, y: 825.64, maxWidth: 137.83 },
-  segundoApellido: { x: 249.13, y: 824.9, maxWidth: 118.67 },
-  nombres: { x: 456.99, y: 824.9, maxWidth: 110.56 },
+  // ── #4: NOMBRE LEGAL DEL PACIENTE ── (Y normalizado: 825.15)
+  primerApellido: { x: 57.49, y: 825.15, maxWidth: 137.83 },
+  segundoApellido: { x: 249.13, y: 825.15, maxWidth: 118.67 },
+  nombres: { x: 456.99, y: 825.15, maxWidth: 110.56 },
 
   // ── #52: NOMBRE SOCIAL ──
   nombreSocial: { x: 114.25, y: 805, maxWidth: 93.61 },
 
-  // ── #5: TIPO DE IDENTIFICACIÓN + RUN ──
-  tipoIdentificacion: { x: 111.3, y: 782.16, maxWidth: 11.06 },
+  // ── #5: TIPO DE IDENTIFICACIÓN + RUN ── (Y normalizado: 781.06)
+  tipoIdentificacion: { x: 111.3, y: 781.06, maxWidth: 11.06 },
   runDigits: { x: 59.7, y: 757.84, maxWidth: 87.71 },
 
-  // ── #6: SEXO REGISTRAL ──
-  sexoRegistral: { x: 305.15, y: 779.95, maxWidth: 11.79 },
+  // ── #6: SEXO REGISTRAL ── (Y normalizado: 781.06)
+  sexoRegistral: { x: 305.15, y: 781.06, maxWidth: 11.79 },
 
-  // ── #7: FECHA DE NACIMIENTO ──
-  nacDia: { x: 450.36, y: 799.84, maxWidth: 22.85 },
-  nacMes: { x: 489.42, y: 799.11, maxWidth: 21.38 },
-  nacAnio: { x: 524.07, y: 799.11, maxWidth: 50.86 },
+  // ── #7: FECHA DE NACIMIENTO ── (Y normalizado: 799.35)
+  nacDia: { x: 450.36, y: 799.35, maxWidth: 22.85 },
+  nacMes: { x: 489.42, y: 799.35, maxWidth: 21.38 },
+  nacAnio: { x: 524.07, y: 799.35, maxWidth: 50.86 },
 
-  // ── #8: EDAD ──
-  edad: { x: 79.7, y: 721.41, maxWidth: 35.35 },
-  edadUnidad: { x: 181.07, y: 720.07, maxWidth: 10.67 },
+  // ── #8: EDAD ── (Y normalizado: 720.74)
+  edad: { x: 79.7, y: 720.74, maxWidth: 35.35 },
+  edadUnidad: { x: 181.07, y: 720.74, maxWidth: 10.67 },
 
   // ── #10: PUEBLO INDÍGENA ──
   puebloIndigena: { x: 523.87, y: 750.08, maxWidth: 22.68 },
@@ -96,29 +96,29 @@ const FIELD_COORDS = {
   // ── #22: PROCEDENCIA ──
   procedencia: { x: 225.75, y: 471.38, maxWidth: 10.67 },
 
-  // ── #24: INGRESO (hora, fecha) ──
-  ingresoHora: { x: 102.37, y: 426.71, maxWidth: 22.68 },
-  ingresoMin: { x: 136.39, y: 426.04, maxWidth: 21.34 },
-  ingresoDia: { x: 181.07, y: 426.04, maxWidth: 22.68 },
-  ingresoMes: { x: 215.08, y: 427.38, maxWidth: 23.34 },
-  ingresoAnio: { x: 249.76, y: 426.71, maxWidth: 22.01 },
+  // ── #24: INGRESO (hora, fecha) ── (Y normalizado: 426.58)
+  ingresoHora: { x: 102.37, y: 426.58, maxWidth: 22.68 },
+  ingresoMin: { x: 136.39, y: 426.58, maxWidth: 21.34 },
+  ingresoDia: { x: 181.07, y: 426.58, maxWidth: 22.68 },
+  ingresoMes: { x: 215.08, y: 426.58, maxWidth: 23.34 },
+  ingresoAnio: { x: 249.76, y: 426.58, maxWidth: 22.01 },
 
-  // ── #29: EGRESO (hora, fecha) ──
-  egresoHora: { x: 92.37, y: 340.04, maxWidth: 21.34 },
-  egresoMin: { x: 125.05, y: 340.7, maxWidth: 23.34 },
-  egresoDia: { x: 170.4, y: 339.37, maxWidth: 22.68 },
-  egresoMes: { x: 205.08, y: 339.37, maxWidth: 23.34 },
-  egresoAnio: { x: 238.43, y: 338.7, maxWidth: 24.01 },
+  // ── #29: EGRESO (hora, fecha) ── (Y normalizado: 339.64)
+  egresoHora: { x: 92.37, y: 339.64, maxWidth: 21.34 },
+  egresoMin: { x: 125.05, y: 339.64, maxWidth: 23.34 },
+  egresoDia: { x: 170.4, y: 339.64, maxWidth: 22.68 },
+  egresoMes: { x: 205.08, y: 339.64, maxWidth: 23.34 },
+  egresoAnio: { x: 238.43, y: 339.64, maxWidth: 24.01 },
 
-  // ── #30: DÍAS DE ESTADA ──
-  diasEstada: { x: 104.37, y: 326.03, maxWidth: 45.35 },
+  // ── #30: DÍAS DE ESTADA ── (Y normalizado: 326.7)
+  diasEstada: { x: 104.37, y: 326.7, maxWidth: 45.35 },
 
-  // ── #31: CONDICIÓN AL EGRESO ──
-  condicionEgreso: { x: 250.43, y: 327.37, maxWidth: 11.34 },
+  // ── #31: CONDICIÓN AL EGRESO ── (Y normalizado: 326.7)
+  condicionEgreso: { x: 250.43, y: 326.7, maxWidth: 11.34 },
 
-  // ── #33: DIAGNÓSTICO PRINCIPAL ──
-  diagnosticoPrincipal: { x: 167.06, y: 280.7, maxWidth: 341.47 },
-  codigoCIE10: { x: 529.2, y: 281.36, maxWidth: 46.68 },
+  // ── #33: DIAGNÓSTICO PRINCIPAL ── (Y normalizado: 281.03)
+  diagnosticoPrincipal: { x: 167.06, y: 281.03, maxWidth: 341.47 },
+  codigoCIE10: { x: 529.2, y: 281.03, maxWidth: 46.68 },
 
   // ── #50: ESPECIALIDAD MÉDICO ──
   especialidadMedico: { x: 327.79, y: 76.01, maxWidth: 151.39 },
@@ -260,8 +260,10 @@ export const fillIEEHForm = async (
     const fontSize = options.fontSize ?? FONT_SIZE;
     const f = options.bold ? fontBold : font;
 
+    // Force uppercase for all form text
+    let displayText = text.toUpperCase();
+
     // Truncate if too wide
-    let displayText = text;
     while (f.widthOfTextAtSize(displayText, fontSize) > coords.maxWidth && displayText.length > 1) {
       displayText = displayText.slice(0, -1);
     }
