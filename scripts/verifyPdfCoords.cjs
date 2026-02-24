@@ -10,73 +10,70 @@ async function verify() {
     const page = pdfDoc.getPage(0);
     const RED = rgb(1, 0, 0);
 
-    // Font sizes increased +1pt (matching ieehPdfService.ts)
-    const FZ = 10;
-    const FZ_SMALL = 7;
-    const FZ_CODE = 9;
+    // Uniform font size: 12pt (20% larger than original 10pt)
+    const FZ = 12;
 
-    const draw = (text, x, y, size = FZ, bold = false) => {
-        // Force uppercase (matching ieehPdfService.ts)
-        page.drawText(text.toUpperCase(), { x, y, size, font: bold ? fontBold : font, color: RED });
+    const draw = (text, x, y, bold = false) => {
+        page.drawText(text.toUpperCase(), { x, y, size: FZ, font: bold ? fontBold : font, color: RED });
     };
 
-    // Refined coordinates with normalized Y values per row (2026-02-23 v2)
+    // Coordinates v3 (2026-02-23)
 
-    // #4 NOMBRE (Y=825.15)
-    draw('Opazo', 57.49, 825.15);
-    draw('Damiani', 249.13, 825.15);
-    draw('Daniel', 456.99, 825.15);
+    // #4 NOMBRE
+    draw('Opazo', 51.48, 827.86);
+    draw('Damiani', 238.46, 824.86);
+    draw('Daniel', 442.32, 827.11);
     // #52 NOMBRE SOCIAL
-    draw('Danny', 114.25, 805);
-    // #5 TIPO ID + RUN (Y=781.06)
-    draw('1', 111.3, 781.06, FZ_CODE);
-    draw('12.345.678-9', 59.7, 757.84);
-    // #6 SEXO REGISTRAL (Y=781.06)
-    draw('M', 305.15, 781.06, FZ_CODE, true);
-    // #7 FECHA NAC (Y=799.35)
-    draw('15', 450.36, 799.35, FZ_CODE);
-    draw('03', 489.42, 799.35, FZ_CODE);
-    draw('1990', 524.07, 799.35, FZ_CODE);
-    // #8 EDAD (Y=720.74)
-    draw('35', 79.7, 720.74, FZ_CODE);
-    draw('1', 181.07, 720.74, FZ_CODE);
+    draw('Danny', 114.9, 804.28);
+    // #5 TIPO ID + RUN
+    draw('1', 111.31, 782.21);
+    draw('12.345.678-9', 57.01, 759.22);
+    // #6 SEXO REGISTRAL
+    draw('M', 305.82, 781.46, true);
+    // #7 FECHA NAC
+    draw('15', 450.35, 800.54);
+    draw('03', 489.42, 799.04);
+    draw('1990', 524.05, 799.79);
+    // #8 EDAD
+    draw('35', 79, 722.06);
+    draw('1', 181.04, 720.09);
     // #10 PUEBLO INDÍGENA
-    draw('3', 523.87, 750.08, FZ_CODE);
+    draw('3', 523.86, 750.12);
     // #18 PREVISIÓN
-    draw('1', 54.35, 516.72, FZ_CODE);
+    draw('1', 54.37, 516.73);
     // #22 PROCEDENCIA
-    draw('1', 225.75, 471.38, FZ_CODE);
+    draw('1', 225.78, 471.36);
 
-    // #24 INGRESO (Y=426.58)
-    draw('08', 102.37, 426.58, FZ_CODE);
-    draw('30', 136.39, 426.58, FZ_CODE);
-    draw('22', 181.07, 426.58, FZ_CODE);
-    draw('02', 215.08, 426.58, FZ_CODE);
-    draw('2025', 249.76, 426.58, FZ_CODE);
+    // #24 INGRESO
+    draw('08', 102.35, 426.74);
+    draw('30', 136.36, 426.74);
+    draw('22', 181.71, 426.09);
+    draw('02', 215.72, 427.4);
+    draw('2025', 249.74, 426.09);
 
-    // #29 EGRESO (Y=339.64)
-    draw('14', 92.37, 339.64, FZ_CODE);
-    draw('00', 125.05, 339.64, FZ_CODE);
-    draw('25', 170.4, 339.64, FZ_CODE);
-    draw('02', 205.08, 339.64, FZ_CODE);
-    draw('2025', 238.43, 339.64, FZ_CODE);
+    // #29 EGRESO
+    draw('14', 91.68, 341.43);
+    draw('00', 124.36, 341.34);
+    draw('25', 169.04, 339.37);
+    draw('02', 204.39, 341.43);
+    draw('2025', 238.4, 340.03);
 
-    // #30 DÍAS ESTADA (Y=326.7)
-    draw('3', 104.37, 326.7, FZ_CODE);
+    // #30 DÍAS ESTADA
+    draw('3', 103.69, 326.75);
 
-    // #31 CONDICIÓN (Y=326.7)
-    draw('1', 250.43, 326.7, FZ_CODE);
+    // #31 CONDICIÓN
+    draw('1', 250.41, 327.4);
 
-    // #33 DIAGNÓSTICO + CIE-10 (Y=281.03)
-    draw('Diabetes Mellitus Tipo 2, No Insulinodependiente', 167.06, 281.03, FZ_SMALL);
-    draw('E11.9', 529.2, 281.03, FZ_CODE, true);
+    // #33 DIAGNÓSTICO + CIE-10
+    draw('Diabetes Mellitus Tipo 2, No Insulinodependiente', 167.08, 280.72);
+    draw('E11.9', 529.23, 281.38, true);
 
     // #50 ESPECIALIDAD
-    draw('Medicina Interna', 327.79, 76.01);
+    draw('Medicina Interna', 327.77, 76.62);
 
     const result = await pdfDoc.save();
     fs.writeFileSync(path.join(__dirname, '..', 'docs', 'ieeh-test.pdf'), result);
-    console.log('✅ Test PDF generated — font size 10, UPPERCASE, refined coords v2');
+    console.log('✅ Test PDF — uniform 12pt, UPPERCASE, coords v3');
 }
 
 verify().catch(console.error);
