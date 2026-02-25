@@ -36,6 +36,7 @@ const TEMPLATE_PATH = '/docs/estadistico-egreso.pdf';
 
 // --- Constants ---
 const FONT_SIZE = 12; // Uniform size for all fields (20% larger than original 10pt)
+const CHAR_SPACING = 1; // Extra spacing between characters for form legibility
 
 // ── Color for filled text (dark black) ──
 const TEXT_COLOR = rgb(0, 0, 0);
@@ -262,14 +263,18 @@ export const fillIEEHForm = async (
     // Force uppercase for all form text
     const displayText = text.toUpperCase();
 
-    // Draw without truncation — fields are sized to fit at 12pt
-    page.drawText(displayText, {
-      x: coords.x,
-      y: coords.y,
-      size: fontSize,
-      font: f,
-      color: TEXT_COLOR,
-    });
+    // Draw each character individually with extra spacing for legibility
+    let xOffset = coords.x;
+    for (const char of displayText) {
+      page.drawText(char, {
+        x: xOffset,
+        y: coords.y,
+        size: fontSize,
+        font: f,
+        color: TEXT_COLOR,
+      });
+      xOffset += f.widthOfTextAtSize(char, fontSize) + CHAR_SPACING;
+    }
   };
 
   // ── Fill fields ──
@@ -388,19 +393,46 @@ export const downloadIEEHForm = async (
 ): Promise<void> => {
   const pdfBytes = await fillIEEHForm(patient, discharge);
 
-  // Create download link
-  const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-
   const patientName = patient.patientName || 'paciente';
   const safeName = patientName
     .replace(/[^a-zA-ZáéíóúñÁÉÍÓÚÑ\s]/g, '')
     .trim()
     .replace(/\s+/g, '_');
-  link.href = url;
-  link.download = `IEEH_${safeName}_${new Date().toISOString().slice(0, 10)}.pdf`;
+  const suggestedName = `IEEH_${safeName}_${new Date().toISOString().slice(0, 10)}.pdf`;
 
+  // Try native Save As dialog (File System Access API)
+  if ('showSaveFilePicker' in window) {
+    try {
+      const handle = await (
+        window as unknown as {
+          showSaveFilePicker: (opts: unknown) => Promise<FileSystemFileHandle>;
+        }
+      ).showSaveFilePicker({
+        suggestedName,
+        types: [
+          {
+            description: 'PDF Document',
+            accept: { 'application/pdf': ['.pdf'] },
+          },
+        ],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(new Uint8Array(pdfBytes));
+      await writable.close();
+      return;
+    } catch (err) {
+      // User cancelled the dialog — do nothing
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      // Fallback to classic download on other errors
+    }
+  }
+
+  // Fallback: classic download link
+  const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = suggestedName;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
