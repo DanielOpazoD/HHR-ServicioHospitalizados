@@ -32,6 +32,9 @@ export const IEEHFormDialog: React.FC<IEEHFormDialogProps> = ({
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortController = useRef<AbortController | null>(null);
 
+  // ── Condición de Egreso ──
+  const [condicionEgreso, setCondicionEgreso] = useState('1');
+
   // ── Surgery ──
   const [tieneIntervencion, setTieneIntervencion] = useState<boolean | null>(null);
   const [intervencionDescrip, setIntervencionDescrip] = useState('');
@@ -122,6 +125,7 @@ export const IEEHFormDialog: React.FC<IEEHFormDialogProps> = ({
         ...baseDischargeData,
         diagnosticoPrincipal: diagnostico || undefined,
         cie10Code: cie10Code || undefined,
+        condicionEgreso,
         intervencionQuirurgica:
           tieneIntervencion != null ? (tieneIntervencion ? '1' : '2') : undefined,
         intervencionQuirurgDescrip: tieneIntervencion
@@ -233,6 +237,29 @@ export const IEEHFormDialog: React.FC<IEEHFormDialogProps> = ({
                 <span className="text-xs text-slate-400 truncate">{cie10Display}</span>
               )}
             </div>
+          </fieldset>
+
+          {/* ── SECTION: Condición de Egreso ── */}
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-semibold text-slate-700 flex items-center gap-1">
+              <span className="bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px] font-bold">
+                #31
+              </span>
+              Condición al Egreso
+            </legend>
+            <select
+              value={condicionEgreso}
+              onChange={e => setCondicionEgreso(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-500 bg-white"
+            >
+              <option value="1">1. Domicilio</option>
+              <option value="2">2. Derivación a otro establecimiento de la red pública</option>
+              <option value="3">3. Derivación a institución privada</option>
+              <option value="4">4. Derivación a otros centros u otra institución</option>
+              <option value="5">5. Alta voluntaria</option>
+              <option value="6">6. Fuga del paciente</option>
+              <option value="7">7. Hospitalización domiciliaria</option>
+            </select>
           </fieldset>
 
           {/* ── SECTION 2: Intervención Quirúrgica ── */}

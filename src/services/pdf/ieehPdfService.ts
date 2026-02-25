@@ -54,6 +54,7 @@ export interface DischargeFormData {
   // ── Dialog-provided overrides ──
   diagnosticoPrincipal?: string; // Free-text diagnosis (overrides patient data)
   cie10Code?: string; // CIE-10 code (overrides patient data)
+  condicionEgreso?: string; // 1-7 condition code
   intervencionQuirurgica?: string; // Surgery code number
   intervencionQuirurgDescrip?: string; // Surgery description
   procedimiento?: string; // Procedure code number
@@ -387,8 +388,8 @@ export const fillIEEHForm = async (
     drawText(String(days), FIELD_COORDS.diasEstada);
   }
 
-  // #31: CONDICIÓN AL EGRESO (1=Vivo by default)
-  drawText('1', FIELD_COORDS.condicionEgreso);
+  // #31: CONDICIÓN AL EGRESO (1-7, dialog override or default 1=Domicilio)
+  drawText(discharge.condicionEgreso || '1', FIELD_COORDS.condicionEgreso);
 
   // #33: DIAGNÓSTICO PRINCIPAL + CIE-10
   // Dialog overrides take priority over patient data
