@@ -1,11 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import {
-  formatDate,
-  calculateAge,
-  splitPatientName,
   SOLICITUD_FIELD_COORDS,
   ENCUESTA_FIELD_COORDS,
 } from '@/services/pdf/imagingRequestPdfService';
+import {
+  formatDateToCL as formatDate,
+  calculateAge,
+  splitPatientName,
+} from '@/utils/clinicalUtils';
 
 // We mock standard functions to just test data transforms and constants
 describe('imagingRequestPdfService', () => {

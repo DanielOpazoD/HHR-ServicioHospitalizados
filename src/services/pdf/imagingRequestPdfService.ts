@@ -8,8 +8,14 @@
  * Template: public/docs/solicitud-imagen.pdf
  */
 
-import { PDFDocument, StandardFonts, rgb, PDFName } from 'pdf-lib';
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { PatientData } from '@/types';
+import {
+  splitPatientName,
+  calculateAge,
+  formatDateToCL as formatDate,
+} from '@/utils/clinicalUtils';
+import { injectPrintScript, saveAndDownloadPdf } from './pdfBase';
 
 export interface CustomMark {
   x: number; // Percentage 0-100 from left
@@ -20,6 +26,7 @@ export interface CustomMark {
 // ── Template PDF paths ──
 export const SOLICITUD_TEMPLATE_PATH = '/docs/solicitud-imagen.pdf';
 export const ENCUESTA_TEMPLATE_PATH = '/docs/encuesta-contraste.pdf';
+export const CONSENTIMIENTO_TEMPLATE_PATH = '/docs/consentimiento.pdf';
 
 // --- Constants ---
 const FONT_SIZE = 10;
@@ -70,58 +77,17 @@ export const ENCUESTA_FIELD_COORDS = {
 };
 
 /**
- * Split a full name into components: [nombres, primerApellido, segundoApellido]
+ * PDF coordinate mapping for "Consentimiento Informado General".
  */
-export const splitPatientName = (fullName: string | undefined): [string, string, string] => {
-  if (!fullName) return ['', '', ''];
-  const parts = fullName.trim().split(/\s+/);
-  if (parts.length === 1) return [parts[0], '', ''];
-  if (parts.length === 2) return [parts[0], parts[1], ''];
-  if (parts.length === 3) return [parts[0], parts[1], parts[2]];
-  // out of 4+ parts, we assume the last two are the surnames and everything else are names.
-  const secApe = parts.pop() || '';
-  const primApe = parts.pop() || '';
-  return [parts.join(' '), primApe, secApe];
-};
-
-/**
- * Format a date string to DD-MM-YYYY
- */
-export const formatDate = (dateStr: string | undefined): string => {
-  if (!dateStr) return '';
-  // Already DD-MM-YYYY
-  if (/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) return dateStr;
-  // YYYY-MM-DD
-  if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
-    const [y, m, d] = dateStr.slice(0, 10).split('-');
-    return `${d}-${m}-${y}`;
-  }
-  return dateStr;
-};
-
-/**
- * Calculate age from birthDate
- */
-export const calculateAge = (birthDate: string | undefined): string => {
-  if (!birthDate) return '';
-  try {
-    const parts = birthDate.includes('-') ? birthDate.split('-') : [];
-    let birth: Date;
-    if (parts.length === 3 && parts[0].length === 4) {
-      birth = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`);
-    } else if (parts.length === 3 && parts[2].length === 4) {
-      birth = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-    } else {
-      return '';
-    }
-    const today = new Date();
-    let age = today.getFullYear() - birth.getFullYear();
-    const m = today.getMonth() - birth.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
-    return `${age} años`;
-  } catch {
-    return '';
-  }
+export const CONSENTIMIENTO_FIELD_COORDS = {
+  nombres: { x: 188.4, y: 649.0, maxWidth: 76.43 },
+  primerApellido: { x: 289.71, y: 649.0, maxWidth: 67.26 },
+  segundoApellido: { x: 373.35, y: 649.0, maxWidth: 86.25 },
+  rut: { x: 130.87, y: 624.51, maxWidth: 131.31 },
+  edad: { x: 314.21, y: 624.51, maxWidth: 50.95 },
+  diagnostico: { x: 142.75, y: 595.5, maxWidth: 200.6 },
+  fecha: { x: 415.53, y: 690.05, maxWidth: 58.16 }, // getTodayISO in JSON
+  medicoTratante: { x: 145.52, y: 155.19, maxWidth: 152.03 }, // NombreyapellidoMed in JSON
 };
 
 /**
@@ -239,6 +205,87 @@ export const fillImagingRequestForm = async (
 };
 
 /**
+ * Fill the general informed consent form with patient data
+ */
+export const fillConsentimientoForm = async (
+  patient: PatientData,
+  requestingPhysician: string = '',
+  marks: CustomMark[] = []
+): Promise<Uint8Array> => {
+  const response = await fetch(CONSENTIMIENTO_TEMPLATE_PATH);
+  const templateBytes = await response.arrayBuffer();
+  const pdfDoc = await PDFDocument.load(templateBytes);
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const page = pdfDoc.getPage(0);
+
+  const drawText = (text: string, coords: { x: number; y: number; maxWidth: number }) => {
+    if (!text) return;
+    const displayText = text.toUpperCase();
+    let finalText = displayText;
+    const textWidth = font.widthOfTextAtSize(displayText, FONT_SIZE);
+    if (textWidth > coords.maxWidth) {
+      let truncated = displayText;
+      while (
+        font.widthOfTextAtSize(truncated + '…', FONT_SIZE) > coords.maxWidth &&
+        truncated.length > 0
+      ) {
+        truncated = truncated.slice(0, -1);
+      }
+      finalText = truncated + '…';
+    }
+    page.drawText(finalText, {
+      x: coords.x,
+      y: coords.y,
+      size: FONT_SIZE,
+      font,
+      color: TEXT_COLOR,
+    });
+  };
+
+  const [nombres, primerApellido, segundoApellido] = splitPatientName(patient.patientName);
+
+  drawText(nombres, CONSENTIMIENTO_FIELD_COORDS.nombres);
+  drawText(primerApellido, CONSENTIMIENTO_FIELD_COORDS.primerApellido);
+  drawText(segundoApellido, CONSENTIMIENTO_FIELD_COORDS.segundoApellido);
+  drawText(patient.rut || '', CONSENTIMIENTO_FIELD_COORDS.rut);
+  drawText(calculateAge(patient.birthDate), CONSENTIMIENTO_FIELD_COORDS.edad);
+
+  const diagValue = patient.pathology || patient.cie10Description || '';
+  drawText(diagValue, CONSENTIMIENTO_FIELD_COORDS.diagnostico);
+  drawText(getTodayFormatted(), CONSENTIMIENTO_FIELD_COORDS.fecha);
+
+  if (requestingPhysician) {
+    drawText(requestingPhysician, CONSENTIMIENTO_FIELD_COORDS.medicoTratante);
+  }
+
+  marks.forEach(mark => {
+    const xPos = page.getWidth() * (mark.x / 100);
+    const yPos = page.getHeight() * (1 - mark.y / 100);
+
+    if (mark.text) {
+      page.drawText(mark.text.toUpperCase(), {
+        x: xPos,
+        y: yPos - 3,
+        size: FONT_SIZE,
+        font,
+        color: TEXT_COLOR,
+      });
+    } else {
+      page.drawText('X', {
+        x: xPos - 4,
+        y: yPos - 4,
+        size: 14,
+        font,
+        color: TEXT_COLOR,
+      });
+    }
+  });
+
+  const pdfBytes = await pdfDoc.save();
+  return pdfBytes as unknown as Uint8Array;
+};
+
+/**
  * Download the filled imaging request form
  */
 export const downloadImagingRequestForm = async (
@@ -246,8 +293,7 @@ export const downloadImagingRequestForm = async (
   requestingPhysician: string = '',
   marks: CustomMark[] = []
 ): Promise<void> => {
-  const pdfBytes = await fillImagingRequestForm(patient, requestingPhysician, marks);
-
+  const bytes = await fillImagingRequestForm(patient, requestingPhysician, marks);
   const patientName = patient.patientName || 'paciente';
   const safeName = patientName
     .replace(/[^a-zA-ZáéíóúñÁÉÍÓÚÑ\s]/g, '')
@@ -255,41 +301,7 @@ export const downloadImagingRequestForm = async (
     .replace(/\s+/g, '_');
   const suggestedName = `SolicitudImagen_${safeName}_${new Date().toISOString().slice(0, 10)}.pdf`;
 
-  // Try native Save As dialog (File System Access API)
-  if ('showSaveFilePicker' in window) {
-    try {
-      const handle = await (
-        window as unknown as {
-          showSaveFilePicker: (opts: unknown) => Promise<FileSystemFileHandle>;
-        }
-      ).showSaveFilePicker({
-        suggestedName,
-        types: [
-          {
-            description: 'PDF Document',
-            accept: { 'application/pdf': ['.pdf'] },
-          },
-        ],
-      });
-      const writable = await handle.createWritable();
-      await writable.write(pdfBytes as unknown as FileSystemWriteChunkType);
-      await writable.close();
-      return;
-    } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') return;
-    }
-  }
-
-  // Fallback: classic download link
-  const blob = new Blob([pdfBytes as BlobPart], { type: 'application/pdf' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = suggestedName;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  await saveAndDownloadPdf(bytes, suggestedName);
 };
 
 /**
@@ -320,14 +332,7 @@ export const printImagingRequestForm = async (
 
   // 2. Reload to inject the print script securely
   const printDoc = await PDFDocument.load(filledBytes);
-  printDoc.catalog.set(
-    PDFName.of('OpenAction'),
-    printDoc.context.obj({
-      Type: 'Action',
-      S: 'JavaScript',
-      JS: 'this.print({bUI: true, bSilent: false, bShrinkToFit: true});',
-    })
-  );
+  injectPrintScript(printDoc);
 
   const finalBytes = await printDoc.save();
   const blob = new Blob([finalBytes as BlobPart], { type: 'application/pdf' });
@@ -341,6 +346,31 @@ export const printImagingRequestForm = async (
     const link = document.createElement('a');
     link.href = url;
     link.download = `IMPRIMIR_Solicitud_${patient.patientName}.pdf`;
+    link.click();
+  }
+};
+
+/**
+ * Print the official Consentimiento Informado by injecting an auto-print script
+ */
+export const printConsentimientoForm = async (
+  patient: PatientData,
+  requestingPhysician: string = '',
+  marks: CustomMark[] = []
+): Promise<void> => {
+  const filledBytes = await fillConsentimientoForm(patient, requestingPhysician, marks);
+  const printDoc = await PDFDocument.load(filledBytes);
+  injectPrintScript(printDoc);
+
+  const finalBytes = await printDoc.save();
+  const blob = new Blob([finalBytes as BlobPart], { type: 'application/pdf' });
+  const url = URL.createObjectURL(blob);
+  const newWindow = window.open(url, '_blank');
+
+  if (!newWindow) {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `IMPRIMIR_Consentimiento_${patient.patientName}.pdf`;
     link.click();
   }
 };
@@ -437,15 +467,9 @@ export const printImagingEncuestaForm = async (
 ): Promise<void> => {
   const filledBytes = await fillImagingEncuestaForm(patient, requestingPhysician, marks);
 
+  // 2. Reload to inject the print script securely
   const printDoc = await PDFDocument.load(filledBytes);
-  printDoc.catalog.set(
-    PDFName.of('OpenAction'),
-    printDoc.context.obj({
-      Type: 'Action',
-      S: 'JavaScript',
-      JS: 'this.print({bUI: true, bSilent: false, bShrinkToFit: true});',
-    })
-  );
+  injectPrintScript(printDoc);
 
   const finalBytes = await printDoc.save();
   const blob = new Blob([finalBytes as BlobPart], { type: 'application/pdf' });

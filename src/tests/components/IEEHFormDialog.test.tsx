@@ -46,7 +46,6 @@ describe('IEEHFormDialog Component', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.useFakeTimers();
   });
 
   it('renders with initial data from patient', () => {
@@ -111,11 +110,11 @@ describe('IEEHFormDialog Component', () => {
     const diagInput = screen.getByPlaceholderText(/Escriba el diagnóstico/i);
     fireEvent.change(diagInput, { target: { value: 'A0' } });
 
-    // Advance time to trigger debounce
-    vi.advanceTimersByTime(600);
-
-    await waitFor(() => {
-      expect(searchDiagnoses).toHaveBeenCalledWith('A0');
-    });
+    await waitFor(
+      () => {
+        expect(searchDiagnoses).toHaveBeenCalledWith('A0');
+      },
+      { timeout: 3000 }
+    );
   });
 });

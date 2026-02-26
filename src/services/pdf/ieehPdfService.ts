@@ -30,6 +30,8 @@
 
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { PatientData } from '@/types';
+import { splitPatientName, calculateAge, formatDateToCL } from '@/utils/clinicalUtils';
+import { saveAndDownloadPdf } from './pdfBase';
 
 // ── Template PDF path (loaded as asset via fetch) ──
 const TEMPLATE_PATH = '/docs/estadistico-egreso.pdf';
@@ -151,21 +153,15 @@ const FIELD_COORDS = {
 } as const;
 
 /**
- * Parse a date string in DD-MM-YYYY format
+ * Parse a date string in DD-MM-YYYY or YYYY-MM-DD format
  */
 const parseDate = (
   dateStr: string | undefined
 ): { dia: string; mes: string; anio: string } | null => {
   if (!dateStr) return null;
-  const parts = dateStr.split('-');
+  const normalized = formatDateToCL(dateStr);
+  const parts = normalized.split('-');
   if (parts.length !== 3) return null;
-
-  // YYYY-MM-DD format (year first)
-  if (parts[0].length === 4) {
-    return { dia: parts[2], mes: parts[1], anio: parts[0] };
-  }
-
-  // DD-MM-YYYY format (day first)
   return { dia: parts[0], mes: parts[1], anio: parts[2] };
 };
 
@@ -308,14 +304,10 @@ export const fillIEEHForm = async (
   // ── Fill fields ──
 
   // #4: NOMBRE LEGAL
-  drawText(patient.lastName || '', FIELD_COORDS.primerApellido);
-  drawText(patient.secondLastName || '', FIELD_COORDS.segundoApellido);
-  drawText(patient.firstName || '', FIELD_COORDS.nombres);
-
-  // If we don't have split name, use full patientName in primerApellido
-  if (!patient.lastName && patient.patientName) {
-    drawText(patient.patientName, FIELD_COORDS.primerApellido);
-  }
+  const [nombres, primerApellido, segundoApellido] = splitPatientName(patient.patientName);
+  drawText(primerApellido, FIELD_COORDS.primerApellido);
+  drawText(segundoApellido, FIELD_COORDS.segundoApellido);
+  drawText(nombres, FIELD_COORDS.nombres);
 
   // #5: TIPO DE IDENTIFICACIÓN + RUN
   const tipoId = patient.documentType === 'RUT' ? '1' : '4'; // 1=RUN, 4=Pasaporte
@@ -337,8 +329,9 @@ export const fillIEEHForm = async (
   }
 
   // #8: EDAD
-  if (patient.age) {
-    const ageNum = patient.age.replace(/\D/g, '');
+  const ageStr = calculateAge(patient.birthDate);
+  if (ageStr) {
+    const ageNum = ageStr.replace(/\D/g, '');
     drawText(ageNum, FIELD_COORDS.edad);
     // Unit: default to Años (1)
     drawText('1', FIELD_COORDS.edadUnidad);
@@ -464,43 +457,7 @@ export const downloadIEEHForm = async (
     .replace(/\s+/g, '_');
   const suggestedName = `IEEH_${safeName}_${new Date().toISOString().slice(0, 10)}.pdf`;
 
-  // Try native Save As dialog (File System Access API)
-  if ('showSaveFilePicker' in window) {
-    try {
-      const handle = await (
-        window as unknown as {
-          showSaveFilePicker: (opts: unknown) => Promise<FileSystemFileHandle>;
-        }
-      ).showSaveFilePicker({
-        suggestedName,
-        types: [
-          {
-            description: 'PDF Document',
-            accept: { 'application/pdf': ['.pdf'] },
-          },
-        ],
-      });
-      const writable = await handle.createWritable();
-      await writable.write(new Uint8Array(pdfBytes));
-      await writable.close();
-      return;
-    } catch (err) {
-      // User cancelled the dialog — do nothing
-      if (err instanceof DOMException && err.name === 'AbortError') return;
-      // Fallback to classic download on other errors
-    }
-  }
-
-  // Fallback: classic download link
-  const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = suggestedName;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  await saveAndDownloadPdf(pdfBytes, suggestedName);
 };
 
 /**
