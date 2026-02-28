@@ -27,65 +27,65 @@ export const HandoffView = lazy(() =>
 
 // Admin modules
 export const AuditView = lazy(() =>
-  import(/* webpackChunkName: "audit" */ '@/features/admin/components/AuditView').then(m => ({
+  import(/* webpackChunkName: "audit" */ '@/features/admin').then(m => ({
     default: m.AuditView,
   }))
 );
 
 export const MedicalSignatureView = lazy(() =>
-  import(
-    /* webpackChunkName: "signature" */ '@/features/admin/components/MedicalSignatureView'
-  ).then(m => ({ default: m.MedicalSignatureView }))
+  import(/* webpackChunkName: "signature" */ '@/features/admin').then(m => ({
+    default: m.MedicalSignatureView,
+  }))
 );
 
 export const ErrorDashboard = lazy(() =>
-  import(/* webpackChunkName: "error-db" */ '@/features/admin/components/ErrorDashboard').then(
-    m => ({ default: m.ErrorDashboard })
-  )
+  import(/* webpackChunkName: "error-db" */ '@/features/admin').then(m => ({
+    default: m.ErrorDashboard,
+  }))
 );
 
 export const BackupFilesView = lazy(() =>
-  import(/* webpackChunkName: "backup" */ '@/features/backup/components/BackupFilesView').then(
-    m => ({ default: m.BackupFilesView })
-  )
+  import(/* webpackChunkName: "backup" */ '@/features/backup').then(m => ({
+    default: m.BackupFilesView,
+  }))
 );
 
 // Health & Monitoring
 export const SystemDiagnosticsView = lazy(() =>
-  import('@/features/admin/components/SystemDiagnosticsView').then(module => ({
+  import('@/features/admin').then(module => ({
     default: module.SystemDiagnosticsView,
   }))
 );
 export const PatientMasterView = lazy(() =>
-  import('@/features/admin/components/PatientMasterView').then(module => ({
+  import('@/features/admin').then(module => ({
     default: module.PatientMasterView,
   }))
 );
 export const DataMaintenanceView = lazy(() =>
-  import('@/features/admin/components/DataMaintenanceView').then(module => ({
+  import('@/features/admin').then(module => ({
     default: module.DataMaintenanceView,
   }))
 );
 export const RoleManagementView = lazy(() =>
-  import('@/features/admin/components/RoleManagementView').then(module => ({
-    default: module.default,
+  import('@/features/admin').then(module => ({
+    default: module.RoleManagementView,
   }))
 );
 
 // WhatsApp module
 export const WhatsAppIntegrationView = lazy(() =>
-  import(
-    /* webpackChunkName: "whatsapp" */ '@/features/whatsapp/components/WhatsAppIntegrationView'
-  ).then(m => ({ default: m.WhatsAppIntegrationView }))
+  import(/* webpackChunkName: "whatsapp" */ '@/features/whatsapp').then(m => ({
+    default: m.WhatsAppIntegrationView,
+  }))
 );
 
 // Transfer Management module
-export const TransferManagementView = lazy(
-  () => import('@/features/transfers/components/TransferManagementView')
+export const TransferManagementView = lazy(() =>
+  import('@/features/transfers').then(module => ({ default: module.TransferManagementView }))
 );
 
 export const CensusEmailConfigModal = lazy(() =>
-  import('@/features/census/components/CensusEmailConfigModal').then(module => ({
+  import('@/features/census').then(module => ({
     default: module.CensusEmailConfigModal,
   }))
 );

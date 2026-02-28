@@ -51,3 +51,4 @@ await DailyRecordRepository.save(record);
 
 - No importar componentes ni hooks de UI desde `services`.
 - Mantener contratos de entrada/salida tipados (preferir `types`/`schemas`).
+- En integraciones externas complejas, usar una fachada pública pequeña y mover auth, payload builders y folder/file helpers a módulos internos específicos.

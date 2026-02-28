@@ -17,5 +17,5 @@ Composición y lazy loading de vistas de alto nivel (módulos de navegación).
 ## Ejemplo
 
 ```ts
-const CensusView = lazy(() => import('@/features/census/components/CensusView'));
+const CensusView = lazy(() => import('@/features/census').then(m => ({ default: m.CensusView })));
 ```

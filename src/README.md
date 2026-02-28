@@ -123,3 +123,4 @@ find src/features -maxdepth 3 -type d | sort
 - Si agregas un archivo en un directorio principal, actualiza su `README.md`.
 - Si mueves responsabilidades entre capas, actualiza también `docs/ARCHITECTURE.md`.
 - Si cambias contratos (`types`, `schemas`, `domain/contracts`), documenta el impacto en el README del módulo.
+- Las imports desde `src/App.tsx`, `src/views/*` y cualquier consumidor externo a una feature deben pasar por el `index.ts` o `public.ts` del módulo correspondiente.

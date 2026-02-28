@@ -57,6 +57,8 @@ feature/
 
 - `controllers/hooks/domain/types` de una feature no deben importar capas restringidas de otra feature (controlado por script de arquitectura).
 - Priorizar contratos locales (`types`, `domain/contracts`) antes de usar tipos ad-hoc en componentes.
+- Todo consumo externo a la feature debe entrar por `index.ts` o `public.ts`. Evitar imports profundos desde `src/App.tsx`, `src/views/*` o desde otras features.
+- Si una vista/componente debe ser lazy-loaded por el router, exponerla primero desde el entrypoint público de la feature.
 
 ## Ejemplo de flujo dentro de una feature
 
@@ -76,3 +78,15 @@ components/Modal
 3. `hooks` para flujo.
 4. `controllers` para reglas de negocio.
 5. `domain/types` para contratos.
+
+## Entry points públicos actuales
+
+- `auth/index.ts`: autenticación de alto nivel.
+- `admin/index.ts`: vistas operativas del panel admin.
+- `backup/index.ts`: explorador de respaldos.
+- `census/index.ts`: vistas y modales públicos del módulo.
+- `cudyr/index.ts` y `cudyr/public.ts`: vistas y utilidades permitidas.
+- `games/index.ts`: menú y accesos del feature lúdico.
+- `handoff/index.ts`: vista principal de entrega de turno.
+- `transfers/index.ts`: vista de gestión de traslados.
+- `whatsapp/index.ts`: integración principal de WhatsApp.

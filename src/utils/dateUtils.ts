@@ -1,3 +1,12 @@
+import { CHILEAN_HOLIDAYS } from './chileanHolidays';
+export {
+  DAY_SHIFT_END,
+  DAY_SHIFT_START,
+  NIGHT_SHIFT_END,
+  NIGHT_SHIFT_START,
+  isWithinDayShift,
+} from './shiftTimeUtils';
+
 /**
  * Date Formatting Utilities
  * Pure functions for date manipulation and formatting.
@@ -108,115 +117,6 @@ export const parseISODate = (isoDate?: string): Date | null => {
   return isNaN(date.getTime()) ? null : date;
 };
 
-// ==========================================
-// CONFIGURACIÓN DE FERIADOS (CHILE)
-// ==========================================
-// Lista de feriados para cálculo de horarios de turno.
-// Formato: YYYY-MM-DD
-// IMPORTANTE: Mantener actualizado este listado cada año.
-export const CHILEAN_HOLIDAYS = [
-  // 2024
-  '2024-01-01', // Año Nuevo
-  '2024-03-29', // Viernes Santo
-  '2024-03-30', // Sábado Santo
-  '2024-05-01', // Día del Trabajo
-  '2024-05-21', // Glorias Navales
-  '2024-06-09', // Elecciones Primarias (Irrenunciable)
-  '2024-06-20', // Pueblos Indígenas
-  '2024-06-29', // San Pedro y San Pablo
-  '2024-07-16', // Virgen del Carmen
-  '2024-08-15', // Asunción de la Virgen
-  '2024-09-18', // Independencia Nacional
-  '2024-09-19', // Día de las Glorias del Ejército
-  '2024-09-20', // Feriado Adicional
-  '2024-10-12', // Encuentro de Dos Mundos
-  '2024-10-27', // Elecciones Municipales
-  '2024-10-31', // Iglesias Evangélicas
-  '2024-11-01', // Todos los Santos
-  '2024-12-08', // Inmaculada Concepción
-  '2024-12-25', // Navidad
-
-  // 2025
-  '2025-01-01', // Año Nuevo
-  '2025-04-18', // Viernes Santo
-  '2025-04-19', // Sábado Santo
-  '2025-05-01', // Día del Trabajo
-  '2025-05-21', // Glorias Navales
-  '2025-06-20', // Pueblos Indígenas
-  '2025-06-29', // San Pedro y San Pablo (se mueve al lunes 30)
-  '2025-06-30', // San Pedro y San Pablo (movido)
-  '2025-07-16', // Virgen del Carmen
-  '2025-08-15', // Asunción de la Virgen
-  '2025-09-18', // Independencia Nacional
-  '2025-09-19', // Día de las Glorias del Ejército
-  '2025-10-12', // Encuentro de Dos Mundos (se mueve al lunes 13)
-  '2025-10-13', // Encuentro de Dos Mundos (movido)
-  '2025-10-31', // Iglesias Evangélicas
-  '2025-11-01', // Todos los Santos
-  '2025-12-08', // Inmaculada Concepción
-  '2025-12-25', // Navidad
-
-  // 2026
-  '2026-01-01', // Año Nuevo
-  '2026-04-03', // Viernes Santo
-  '2026-04-04', // Sábado Santo
-  '2026-05-01', // Día del Trabajo
-  '2026-05-21', // Glorias Navales
-  '2026-06-20', // Pueblos Indígenas (sábado)
-  '2026-06-29', // San Pedro y San Pablo
-  '2026-07-16', // Virgen del Carmen
-  '2026-08-15', // Asunción de la Virgen
-  '2026-09-18', // Independencia Nacional
-  '2026-09-19', // Día de las Glorias del Ejército
-  '2026-10-12', // Encuentro de Dos Mundos
-  '2026-10-31', // Iglesias Evangélicas
-  '2026-11-01', // Todos los Santos (domingo)
-  '2026-11-02', // Todos los Santos (movido al lunes)
-  '2026-12-08', // Inmaculada Concepción
-  '2026-12-25', // Navidad
-
-  // 2027
-  '2027-01-01', // Año Nuevo
-  '2027-03-26', // Viernes Santo
-  '2027-03-27', // Sábado Santo
-  '2027-05-01', // Día del Trabajo (sábado)
-  '2027-05-21', // Glorias Navales
-  '2027-06-20', // Pueblos Indígenas (domingo)
-  '2027-06-21', // Pueblos Indígenas (movido al lunes)
-  '2027-06-28', // San Pedro y San Pablo (movido al lunes)
-  '2027-07-16', // Virgen del Carmen
-  '2027-08-15', // Asunción de la Virgen (domingo)
-  '2027-08-16', // Asunción de la Virgen (movido al lunes)
-  '2027-09-18', // Independencia Nacional (sábado)
-  '2027-09-19', // Día de las Glorias del Ejército (domingo)
-  '2027-09-20', // Feriado adicional (lunes)
-  '2027-10-11', // Encuentro de Dos Mundos (movido al lunes)
-  '2027-10-31', // Iglesias Evangélicas (domingo)
-  '2027-11-01', // Todos los Santos
-  '2027-12-08', // Inmaculada Concepción
-  '2027-12-25', // Navidad (sábado)
-
-  // 2028
-  '2028-01-01', // Año Nuevo (sábado)
-  '2028-04-14', // Viernes Santo
-  '2028-04-15', // Sábado Santo
-  '2028-05-01', // Día del Trabajo
-  '2028-05-21', // Glorias Navales (domingo)
-  '2028-05-22', // Glorias Navales (movido al lunes)
-  '2028-06-20', // Pueblos Indígenas
-  '2028-06-29', // San Pedro y San Pablo
-  '2028-07-16', // Virgen del Carmen (domingo)
-  '2028-07-17', // Virgen del Carmen (movido al lunes)
-  '2028-08-15', // Asunción de la Virgen
-  '2028-09-18', // Independencia Nacional
-  '2028-09-19', // Día de las Glorias del Ejército
-  '2028-10-12', // Encuentro de Dos Mundos
-  '2028-10-31', // Iglesias Evangélicas
-  '2028-11-01', // Todos los Santos
-  '2028-12-08', // Inmaculada Concepción
-  '2028-12-25', // Navidad
-];
-
 /**
  * Validates if a date is a standard Chilean Business Day.
  * Takes into account both weekends (Saturday/Sunday) and the CHILEAN_HOLIDAYS list.
@@ -309,42 +209,6 @@ export const getShiftSchedule = (dateString: string): ShiftSchedule => {
   };
 };
 
-// ==========================================
-// SHIFT FILTERING UTILITIES
-// ==========================================
-
-/**
- * Shift boundaries in 24h format
- */
-export const DAY_SHIFT_START = '08:00';
-export const DAY_SHIFT_END = '20:00';
-export const NIGHT_SHIFT_START = '20:00';
-export const NIGHT_SHIFT_END = '08:00';
-
-/**
- * Check if a time string (HH:MM) falls within the day shift (08:00 - 20:00).
- *
- * @param time - Time in HH:MM format
- * @returns true if time is between 08:00 (inclusive) and 20:00 (exclusive)
- *
- * @example
- * isWithinDayShift('10:00') // true
- * isWithinDayShift('22:00') // false
- * isWithinDayShift('08:00') // true
- * isWithinDayShift('20:00') // false (start of night shift)
- * isWithinDayShift('03:00') // false (night/madrugada)
- */
-export const isWithinDayShift = (time?: string): boolean => {
-  if (!time || time.length < 5) return true; // Default to day if no time
-
-  const timeMinutes = parseTimeMinutes(time);
-  if (timeMinutes === null) return true;
-  const dayStartMinutes = 8 * 60; // 08:00
-  const dayEndMinutes = 20 * 60; // 20:00
-
-  return timeMinutes >= dayStartMinutes && timeMinutes < dayEndMinutes;
-};
-
 /**
  * Normalizes YYYY-MM-DD-like values that may arrive as full ISO strings.
  * Examples:
@@ -417,9 +281,7 @@ export const isAdmittedDuringShift = (
   // If admission time is missing/invalid, keep null and apply shift-specific fallback.
   const admissionTimeMinutes = parseTimeMinutes(admissionTime);
 
-  // Day shift cutoff: 20:00 (1200 minutes)
   const dayEndMinutes = 20 * 60;
-  // Night shift end depends on schedule (08:00 or 09:00 according to calendar/holidays).
   const schedule = getShiftSchedule(normalizedRecordDate);
   const nightEndMinutes = parseTimeMinutes(schedule.nightEnd) ?? 8 * 60;
 

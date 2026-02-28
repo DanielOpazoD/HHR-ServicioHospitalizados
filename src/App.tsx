@@ -19,7 +19,7 @@ import {
 } from '@/hooks';
 import { UseDateNavigationReturn } from '@/hooks/useDateNavigation';
 import { useStorageMigration } from '@/hooks/useStorageMigration';
-import { LoginPage } from '@/features/auth/components/LoginPage';
+import { LoginPage } from '@/features/auth';
 import { GlobalErrorBoundary } from '@/components/shared/GlobalErrorBoundary';
 import { AppContent } from '@/components/layout/AppContent';
 import { CensusProvider, CensusContextType } from '@/context/CensusContext';
