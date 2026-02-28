@@ -1,14 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  searchDiagnoses,
-  forceAISearch,
-  TerminologyConcept,
-} from '@/services/terminology/terminologyService';
-import { checkAIAvailability } from '@/services/terminology/cie10AISearch';
-import { getCachedAIResults, cacheAIResults } from '@/services/terminology/aiResultsCache';
+import React from 'react';
+import { TerminologyConcept } from '@/services/terminology/terminologyService';
 import { Search, Loader2, X, Sparkles, RefreshCw } from 'lucide-react';
 import clsx from 'clsx';
 import { BaseModal } from './BaseModal';
+import { useTerminologySuggestor } from './hooks/useTerminologySuggestor';
 
 interface TerminologySuggestorProps {
   value: string;
@@ -29,171 +24,24 @@ export const TerminologySuggestor: React.FC<TerminologySuggestorProps> = ({
   cie10Code,
   freeTextValue,
 }) => {
-  const [query, setQuery] = useState(value);
-  const [suggestions, setSuggestions] = useState<TerminologyConcept[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
-  const [aiEnabled, setAiEnabled] = useState<boolean | null>(null); // null = checking
-
-  const containerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const modalJustClosedRef = useRef(false);
-
-  // Check AI availability when modal opens
-  useEffect(() => {
-    if (isModalOpen && aiEnabled === null) {
-      checkAIAvailability().then(setAiEnabled);
-    }
-  }, [isModalOpen, aiEnabled]);
-
-  // Auto-load cached AI results when modal opens
-  useEffect(() => {
-    if (isModalOpen) {
-      const searchTerm = cie10Code || query || freeTextValue;
-      if (searchTerm && searchTerm.length >= 2) {
-        // Check for cached AI results
-        const cachedResults = getCachedAIResults(searchTerm);
-        if (cachedResults && cachedResults.length > 0) {
-          // Convert to TerminologyConcept format
-          const cachedConcepts: TerminologyConcept[] = cachedResults.map(entry => ({
-            code: entry.code,
-            display: entry.description,
-            system: 'http://hl7.org/fhir/sid/icd-10',
-            category: (entry.category || '') + ' (IA ⚡)',
-            fromAI: true,
-          }));
-          setSuggestions(cachedConcepts);
-        }
-      }
-    }
-  }, [isModalOpen, cie10Code, freeTextValue, query]);
-
-  const onChangeTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastPushedValueRef = useRef<string>(value);
-  const currentQueryRef = useRef<string>(value);
-
-  // Keep currentQueryRef in sync with query state
-  useEffect(() => {
-    currentQueryRef.current = query;
-  }, [query]);
-
-  // Debounced onChange for text updates
-  const debouncedOnChange = (val: string) => {
-    if (onChangeTimerRef.current) {
-      clearTimeout(onChangeTimerRef.current);
-    }
-    onChangeTimerRef.current = setTimeout(() => {
-      lastPushedValueRef.current = val;
-      onChangeRef.current(val);
-      onChangeTimerRef.current = null;
-    }, 500);
-  };
-
-  // Immediate flush for blur and unmount behavior
-  const flushChanges = (val: string) => {
-    if (onChangeTimerRef.current) {
-      clearTimeout(onChangeTimerRef.current);
-      onChangeTimerRef.current = null;
-    }
-    if (val !== lastPushedValueRef.current) {
-      lastPushedValueRef.current = val;
-      onChangeRef.current(val);
-    }
-  };
-
-  // Track modal open state transitions to auto-fill ONLY once when opening
-  const prevModalOpenRef = useRef(false);
-
-  // Update internal state if value changes from outside
-  useEffect(() => {
-    // 1. Sync value from props when NOT interacting
-    if (!isFocused && !isModalOpen && value !== query && value !== lastPushedValueRef.current) {
-      setQuery(value);
-      lastPushedValueRef.current = value;
-      currentQueryRef.current = value;
-    }
-
-    // 2. Auto-fill logic: Run ONLY when the modal transitions from closed to open
-    if (isModalOpen && !prevModalOpenRef.current) {
-      // Priority: freeTextValue > query > value
-      const fillValue = freeTextValue || query || value;
-      if (fillValue && fillValue.length >= 2) {
-        setQuery(fillValue);
-      }
-    }
-
-    prevModalOpenRef.current = isModalOpen;
-  }, [value, isFocused, isModalOpen, query, freeTextValue]);
-
-  const onChangeRef = useRef(onChange);
-  useEffect(() => {
-    onChangeRef.current = onChange;
-  }, [onChange]);
-
-  // Cleanup timers and FLUSH on unmount
-  useEffect(() => {
-    return () => {
-      if (onChangeTimerRef.current) {
-        clearTimeout(onChangeTimerRef.current);
-        // Flush the latest known query value using the ref
-        if (currentQueryRef.current !== lastPushedValueRef.current) {
-          onChangeRef.current(currentQueryRef.current);
-        }
-      }
-    };
-  }, []); // Run only on mount/unmount to avoid flushing on prop updates
-
-  // Debounced search - waits for user to stop typing
-  useEffect(() => {
-    const controller = new AbortController();
-
-    const timer = setTimeout(async () => {
-      // Only search if modal is open and we have minimal query length
-      if (query.length >= 2 && isModalOpen) {
-        setIsLoading(true);
-
-        try {
-          const results = await searchDiagnoses(query, controller.signal);
-          setSuggestions(results);
-        } catch (err: unknown) {
-          if (err instanceof Error && err.name !== 'AbortError') {
-            console.error('Search error:', err);
-          }
-        } finally {
-          if (!controller.signal.aborted) {
-            setIsLoading(false);
-          }
-        }
-      } else if (query.length < 2) {
-        setSuggestions([]);
-      }
-    }, 250);
-
-    return () => {
-      clearTimeout(timer);
-      controller.abort();
-    };
-  }, [query, isModalOpen]);
-
-  const handleSelect = (concept: TerminologyConcept) => {
-    // Clear any pending debounced change to avoid overwriting selected concept
-    if (onChangeTimerRef.current) {
-      clearTimeout(onChangeTimerRef.current);
-      onChangeTimerRef.current = null;
-    }
-
-    // Use the FULL display text for the pathology field to ensure data integrity
-    // as requested by the user ("que el texto quede guardado")
-    const fullText = `${concept.display}${concept.code ? ` [${concept.code}]` : ''}`;
-    setQuery(fullText);
-    currentQueryRef.current = fullText;
-    lastPushedValueRef.current = fullText;
-
-    setSuggestions([]);
-    onChangeRef.current(fullText, concept);
-    setIsModalOpen(false);
-  };
+  const {
+    state: { query, suggestions, isLoading, isModalOpen, aiEnabled },
+    refs: { containerRef, inputRef, modalJustClosedRef },
+    actions: {
+      setQuery,
+      setIsModalOpen,
+      setIsFocused,
+      handleSelect,
+      handleForceAI,
+      debouncedOnChange,
+      flushChanges,
+    },
+  } = useTerminologySuggestor({
+    value,
+    onChange,
+    cie10Code,
+    freeTextValue,
+  });
 
   return (
     <div ref={containerRef} className="relative w-full">
@@ -304,38 +152,7 @@ export const TerminologySuggestor: React.FC<TerminologySuggestorProps> = ({
 
             <button
               type="button"
-              onClick={async () => {
-                const searchTerm = cie10Code || query || freeTextValue;
-                if (!searchTerm) return;
-                const controller = new AbortController();
-                setIsLoading(true);
-                try {
-                  const results = await forceAISearch(searchTerm, controller.signal);
-
-                  // For persistence: if we searched by code, ALSO cache results for the current text query
-                  if (query && query.length >= 3 && query !== searchTerm) {
-                    const aiEntries = results
-                      .filter(r => r.fromAI)
-                      .map(r => ({
-                        code: r.code,
-                        description: r.display,
-                        category: r.category?.replace(' (IA 🔄)', ''),
-                      }));
-
-                    if (aiEntries.length > 0) {
-                      cacheAIResults(query, aiEntries);
-                    }
-                  }
-
-                  setSuggestions(results);
-                } catch (err: unknown) {
-                  if (err instanceof Error && err.name !== 'AbortError') {
-                    console.error('Force AI search error:', err);
-                  }
-                } finally {
-                  setIsLoading(false);
-                }
-              }}
+              onClick={handleForceAI}
               disabled={isLoading || !query}
               className={clsx(
                 'absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm',

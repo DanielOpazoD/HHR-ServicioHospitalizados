@@ -188,6 +188,17 @@ export interface DailyStatsSnapshot {
 }
 
 /**
+ * Type of indicator for specialty traceability
+ */
+export type SpecialtyTraceabilityType =
+  | 'dias-cama'
+  | 'egresos'
+  | 'fallecidos'
+  | 'traslados'
+  | 'aerocardal'
+  | 'fach';
+
+/**
  * Configuration for date range selection
  */
 export interface DateRangeConfig {
