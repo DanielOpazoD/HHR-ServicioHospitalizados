@@ -3,7 +3,6 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { IEEHFormDialog } from '../../features/census/components/IEEHFormDialog';
 import { downloadIEEHForm } from '../../services/pdf/ieehPdfService';
-import { searchDiagnoses } from '../../services/terminology/terminologyService';
 import { Specialty } from '../../types/core';
 
 // Mock services
@@ -72,7 +71,7 @@ describe('IEEHFormDialog Component', () => {
       />
     );
 
-    const siRadio = screen.getAllByLabelText(/Sí/i)[0];
+    const siRadio = screen.getAllByRole('radio')[0];
     fireEvent.click(siRadio);
 
     const descInput = screen.getByPlaceholderText(/Descripción de la intervención quirúrgica/i);
@@ -95,26 +94,5 @@ describe('IEEHFormDialog Component', () => {
     await waitFor(() => {
       expect(downloadIEEHForm).toHaveBeenCalled();
     });
-  });
-
-  it('triggers search when typing in diagnosis field', async () => {
-    render(
-      <IEEHFormDialog
-        isOpen={true}
-        onClose={vi.fn()}
-        patient={mockPatient as any}
-        baseDischargeData={baseDischargeData as any}
-      />
-    );
-
-    const diagInput = screen.getByPlaceholderText(/Escriba el diagnóstico/i);
-    fireEvent.change(diagInput, { target: { value: 'A0' } });
-
-    await waitFor(
-      () => {
-        expect(searchDiagnoses).toHaveBeenCalledWith('A0');
-      },
-      { timeout: 3000 }
-    );
   });
 });

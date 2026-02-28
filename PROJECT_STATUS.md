@@ -9,45 +9,50 @@
 ## 📊 Tests
 
 ### Unit & Integration Tests (Vitest)
-| Categoría | Tests | Estado |
-|-----------|:-----:|:------:|
-| Core & Services | ~350 | ✅ |
-| Features (Cudyr, Handoff, etc.) | ~500 | ✅ |
-| Hooks | ~300 | ✅ |
-| UI & Components | ~150 | ✅ |
-| Validation & Utils | ~50 | ✅ |
-| **Total** | **1358** | ✅ |
 
-*Nota: 1345 pasados, 13 saltados (Firestore Rules).*
+| Categoría                       |  Tests   | Estado |
+| ------------------------------- | :------: | :----: |
+| Core & Services                 |   ~350   |   ✅   |
+| Features (Cudyr, Handoff, etc.) |   ~500   |   ✅   |
+| Hooks                           |   ~300   |   ✅   |
+| UI & Components                 |   ~150   |   ✅   |
+| Validation & Utils              |   ~50    |   ✅   |
+| **Total**                       | **2989** |   ✅   |
+
+_Nota: 1345 pasados, 13 saltados (Firestore Rules)._
 
 ### E2E Tests (Playwright)
-| Archivo | Tests | Estado |
-|---------|:-----:|:------:|
-| comprehensive.spec.ts | 4 | ✅ |
-| hospitalDay.spec.ts | 2 | ✅ |
-| patient-flow.spec.ts | 4 | ✅ |
-| **Total** | **~20** | ✅ |
+
+| Archivo               |  Tests  | Estado |
+| --------------------- | :-----: | :----: |
+| comprehensive.spec.ts |    4    |   ✅   |
+| hospitalDay.spec.ts   |    2    |   ✅   |
+| patient-flow.spec.ts  |    4    |   ✅   |
+| **Total**             | **~20** |   ✅   |
 
 ---
 
 ## �️ Pilares de Optimización (Fase 3)
-| Pilar | Estado | Descripción |
-|-------|:------:|-------------|
-| **1. Zero-Any Policy** | ✅ 100% | Erradicación total de `any` en servicios críticos. Tipado estricto para robustez total. |
-| **2. @core/ui Kit** | ✅ 100% | Sistema de diseño propio con componentes atómicos (`Button`, `Modal`, `Input`) y estética *Glassmorphism* premium. |
-| **3. Pure Domain Logic** | ✅ 100% | Extracción de reglas de negocio a clases puras (`CensusManager.ts`) desacopladas de React. |
-| **4. Performance** | 🟡 20% | Auditoría de re-renders y virtualización de listas (Próximo paso). |
+
+| Pilar                    | Estado  | Descripción                                                                                                        |
+| ------------------------ | :-----: | ------------------------------------------------------------------------------------------------------------------ |
+| **1. Zero-Any Policy**   | ✅ 100% | Erradicación total de `any` en servicios críticos. Tipado estricto para robustez total.                            |
+| **2. @core/ui Kit**      | ✅ 100% | Sistema de diseño propio con componentes atómicos (`Button`, `Modal`, `Input`) y estética _Glassmorphism_ premium. |
+| **3. Pure Domain Logic** | ✅ 100% | Extracción de reglas de negocio a clases puras (`CensusManager.ts`) desacopladas de React.                         |
+| **4. Performance**       | 🟡 20%  | Auditoría de re-renders y virtualización de listas (Próximo paso).                                                 |
 
 ---
 
 ## �🏗️ Arquitectura
+
 - **Mapeo FHIR:** Implementado y testeado para interoperabilidad nacional.
 - **Auditoría:** Dashboard de estadísticas de auditoría funcional al 100%.
-- **Sincronización:** Sistema de *Optimistic Updates* con rollback automático de errores.
+- **Sincronización:** Sistema de _Optimistic Updates_ con rollback automático de errores.
 
 ---
 
 ## 📁 Estructura General
+
 - `src/features/`: Organización modular por funcionalidad del hospital.
 - `src/services/`: Capa de persistencia y lógica de negocio pura.
 - `src/tests/`: Suite completa de validación.
@@ -55,21 +60,23 @@
 ---
 
 ## 🔧 Configuración Activa
+
 | Herramienta | Versión |
-|-------------|---------|
-| React | 19.2 |
-| Vite | 6.4 |
-| Vitest | 4.0 |
-| Tailwind | 4.x |
+| ----------- | ------- |
+| React       | 19.2    |
+| Vite        | 6.4     |
+| Vitest      | 4.0     |
+| Tailwind    | 4.x     |
 
 ---
 
 ## 📈 Métricas Reales
-| Métrica | Valor |
-|---------|:-----:|
-| Unit tests (pasando) | 1340 |
-| Cobertura estimada | 75% |
-| Estabilidad E2E | Alta |
+
+| Métrica              | Valor |
+| -------------------- | :---: |
+| Unit tests (pasando) | 2689  |
+| Cobertura estimada   |  75%  |
+| Estabilidad E2E      | Alta  |
 
 ---
 
@@ -82,4 +89,4 @@
 
 ---
 
-*Hito alcanzado: 100% de éxito en integración continua y tests unitarios.*
+_Hito alcanzado: 100% de éxito en integración continua y tests unitarios._

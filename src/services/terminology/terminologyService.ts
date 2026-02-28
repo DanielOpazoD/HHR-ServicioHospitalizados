@@ -28,7 +28,7 @@
  *  - getCIE10Description(code) → string | null
  */
 
-import { searchCIE10Spanish, CIE10Entry, CIE10_SPANISH_DATABASE } from './cie10SpanishDatabase';
+import { searchCIE10, CIE10Entry, getCIE10DatabaseSync } from './cie10SpanishDatabase';
 import { searchCIE10WithAI } from './cie10AISearch';
 import { getCachedAIResults, cacheAIResults } from './aiResultsCache';
 
@@ -52,8 +52,8 @@ export async function searchDiagnoses(
   if (!query || query.length < 2 || signal?.aborted) return [];
 
   try {
-    // 1. First, search local database (instant)
-    const localResults = searchCIE10Spanish(query);
+    // 1. First, search local database (now async from JSON cache)
+    const localResults = await searchCIE10(query);
 
     const localConcepts = localResults.map((entry: CIE10Entry) => ({
       code: entry.code,
@@ -118,7 +118,9 @@ export async function searchDiagnosesAI(
  */
 export function getCIE10Description(code: string): string | null {
   if (!code) return null;
-  const entry = CIE10_SPANISH_DATABASE.find(e => e.code === code);
+  // Use synchronous escape-hatch since getCIE10Description is used synchronously in many places.
+  // We assume the DB has been loaded at app start by TerminologyProvider or similar.
+  const entry = getCIE10DatabaseSync().find(e => e.code === code);
   return entry ? entry.description : null;
 }
 
@@ -136,8 +138,8 @@ export async function forceAISearch(
   try {
     // console.debug(`🔄 Forcing AI search for "${query}" (updating cache)`);
 
-    // Get local results first
-    const localResults = searchCIE10Spanish(query);
+    // Get local results first (async)
+    const localResults = await searchCIE10(query);
     const localConcepts = localResults.map((entry: CIE10Entry) => ({
       code: entry.code,
       display: entry.description,

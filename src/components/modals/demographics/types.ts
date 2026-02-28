@@ -1,0 +1,53 @@
+import { PatientData, PatientIdentityStatus } from '@/types';
+
+export type BiologicalSex = 'Masculino' | 'Femenino' | 'Indeterminado';
+export type Insurance = 'Fonasa' | 'Isapre' | 'Particular';
+export type AdmissionOrigin = 'CAE' | 'APS' | 'Urgencias' | 'Pabellón' | 'Otro';
+export type Origin = 'Residente' | 'Turista Nacional' | 'Turista Extranjero';
+export type DocumentType = 'RUT' | 'Pasaporte';
+
+export type DemographicSubset = Pick<
+  PatientData,
+  | 'patientName'
+  | 'firstName'
+  | 'lastName'
+  | 'secondLastName'
+  | 'identityStatus'
+  | 'rut'
+  | 'documentType'
+  | 'age'
+  | 'birthDate'
+  | 'insurance'
+  | 'admissionOrigin'
+  | 'admissionOriginDetails'
+  | 'origin'
+  | 'isRapanui'
+  | 'biologicalSex'
+>;
+
+export interface DemographicsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  data: DemographicSubset;
+  onSave: (updatedFields: Partial<PatientData>) => void;
+  bedId: string;
+  recordDate: string;
+  isClinicalCribPatient?: boolean;
+}
+
+export interface LocalDemographicsState {
+  firstName: string;
+  lastName: string;
+  secondLastName: string;
+  provisionalName: string;
+  identityStatus: PatientIdentityStatus;
+  rut: string;
+  documentType: DocumentType;
+  birthDate: string;
+  insurance: Insurance;
+  admissionOrigin: AdmissionOrigin | '';
+  admissionOriginDetails: string;
+  origin: Origin;
+  isRapanui: boolean;
+  biologicalSex: BiologicalSex;
+}

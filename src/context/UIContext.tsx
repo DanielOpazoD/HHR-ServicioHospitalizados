@@ -92,6 +92,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     cancelText: 'Cancelar',
     variant: 'warning',
     isAlert: false,
+    requireInputConfirm: undefined,
     resolve: null,
   });
 
@@ -182,6 +183,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         cancelText: options.cancelText || 'Cancelar',
         variant: options.variant || 'warning',
         isAlert: false,
+        requireInputConfirm: options.requireInputConfirm,
         resolve,
       });
     });
@@ -197,6 +199,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         cancelText: '',
         variant: 'info',
         isAlert: true,
+        requireInputConfirm: undefined,
         resolve: () => resolve(),
       });
     });

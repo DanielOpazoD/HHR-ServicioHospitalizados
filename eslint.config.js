@@ -3,74 +3,105 @@ import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';
 import react from 'eslint-plugin-react';
 import tseslint from 'typescript-eslint';
+import boundaries from 'eslint-plugin-boundaries';
 
 export default tseslint.config(
-    { ignores: ['dist', 'node_modules', '*.config.ts', 'dev-dist', 'coverage'] },
-    {
-        extends: [js.configs.recommended, ...tseslint.configs.recommended],
-        files: ['**/*.{ts,tsx}'],
-        languageOptions: {
-            ecmaVersion: 2020,
-            globals: {
-                ...globals.browser,
-                ...globals.node,
-                ...globals.es2021,
-            },
-            parserOptions: {
-                ecmaFeatures: { jsx: true },
-                sourceType: 'module',
-            },
-        },
-        plugins: {
-            'react-hooks': reactHooks,
-            react,
-        },
-        settings: {
-            react: { version: 'detect' }
-        },
-        rules: {
-            ...reactHooks.configs.recommended.rules,
-            ...react.configs.recommended.rules,
-            'react/react-in-jsx-scope': 'off',
-            'react/prop-types': 'off',
-            'react/no-unescaped-entities': 'warn',
-            'react/display-name': 'warn',
-            '@typescript-eslint/no-explicit-any': 'warn',
-            '@typescript-eslint/no-unused-vars': [
-                'warn',
-                {
-                    argsIgnorePattern: '^_',
-                    varsIgnorePattern: '^_',
-                    caughtErrorsIgnorePattern: '^_'
-                }
-            ],
-            'react-hooks/rules-of-hooks': 'warn',
-            'react-hooks/exhaustive-deps': 'warn',
-            'react-hooks/set-state-in-effect': 'warn',
-            'react-hooks/set-state-in-render': 'warn',
-            'react-hooks/incompatible-library': 'warn',
-            'no-console': ['warn', { allow: ['warn', 'error'] }],
-            'no-useless-escape': 'warn',
-            'no-useless-catch': 'warn',
-            'no-control-regex': 'off',
-            'no-empty': 'warn',
-            '@typescript-eslint/no-require-imports': 'warn',
-            '@typescript-eslint/no-empty-object-type': 'warn',
-            '@typescript-eslint/ban-ts-comment': 'warn'
-        },
+  { ignores: ['dist', 'node_modules', '*.config.ts', 'dev-dist', 'coverage'] },
+  {
+    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    files: ['**/*.{ts,tsx}'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        ...globals.es2021,
+      },
+      parserOptions: {
+        ecmaFeatures: { jsx: true },
+        sourceType: 'module',
+      },
     },
-    {
-        files: ['scripts/**/*.ts', 'scripts/**/*.js', '*.cjs'],
-        rules: {
-            'no-console': 'off',
-            '@typescript-eslint/no-var-requires': 'off'
-        }
+    plugins: {
+      'react-hooks': reactHooks,
+      react,
+      boundaries,
     },
-    {
-        files: ['**/*.stories.{ts,tsx}', '**/*.test.{ts,tsx}'],
-        rules: {
-            'no-console': 'off',
-            '@typescript-eslint/no-explicit-any': 'off'
-        }
-    }
+    settings: {
+      react: { version: 'detect' },
+      'boundaries/elements': [
+        { type: 'app', pattern: 'src/app/*' },
+        { type: 'features', pattern: 'src/features/*' },
+        { type: 'services', pattern: 'src/services/*' }, // Considering domain/services equivalent logic layer for now based on current structure
+        {
+          type: 'shared',
+          pattern: [
+            'src/components/*',
+            'src/hooks/*',
+            'src/utils/*',
+            'src/types/*',
+            'src/config/*',
+          ],
+        },
+      ],
+    },
+    rules: {
+      ...reactHooks.configs.recommended.rules,
+      ...react.configs.recommended.rules,
+      'react/react-in-jsx-scope': 'off',
+      'react/prop-types': 'off',
+      'react/no-unescaped-entities': 'warn',
+      'react/display-name': 'warn',
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
+      'react-hooks/rules-of-hooks': 'warn',
+      'react-hooks/exhaustive-deps': 'warn',
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-hooks/set-state-in-render': 'warn',
+      'react-hooks/incompatible-library': 'warn',
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'no-useless-escape': 'warn',
+      'no-useless-catch': 'warn',
+      'no-control-regex': 'off',
+      'no-empty': 'warn',
+      '@typescript-eslint/no-require-imports': 'warn',
+      '@typescript-eslint/no-empty-object-type': 'warn',
+      '@typescript-eslint/ban-ts-comment': 'warn',
+
+      // Architecture boundaries rules
+      'boundaries/element-types': [
+        'error',
+        {
+          default: 'disallow',
+          rules: [
+            { from: 'app', allow: ['features', 'services', 'shared'] },
+            { from: 'features', allow: ['services', 'shared'] },
+            { from: 'services', allow: ['shared'] },
+            { from: 'shared', allow: ['shared'] },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['scripts/**/*.ts', 'scripts/**/*.js', '*.cjs'],
+    rules: {
+      'no-console': 'off',
+      '@typescript-eslint/no-var-requires': 'off',
+    },
+  },
+  {
+    files: ['**/*.stories.{ts,tsx}', '**/*.test.{ts,tsx}'],
+    rules: {
+      'no-console': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  }
 );

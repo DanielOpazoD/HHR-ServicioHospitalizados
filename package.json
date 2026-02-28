@@ -117,6 +117,7 @@
     "@vitest/coverage-v8": "^4.0.15",
     "autoprefixer": "^10.4.23",
     "eslint": "^9.39.2",
+    "eslint-plugin-boundaries": "^5.4.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-storybook": "^10.2.9",

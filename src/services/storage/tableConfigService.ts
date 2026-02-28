@@ -50,19 +50,19 @@ export const setFirestoreEnabled = (enabled: boolean): void => {
 // ============================================================================
 
 export const DEFAULT_COLUMN_WIDTHS: TableColumnConfig = {
-  actions: 32,
-  bed: 48,
-  type: 56,
-  name: 180,
-  rut: 96,
-  age: 48,
+  actions: 24,
+  bed: 38,
+  type: 48,
+  name: 125,
+  rut: 66,
+  age: 27,
   diagnosis: 140,
-  specialty: 64,
-  status: 64,
-  admission: 96,
-  dmi: 64,
-  cqx: 32,
-  upc: 32,
+  specialty: 51,
+  status: 57,
+  admission: 58,
+  dmi: 76,
+  cqx: 24,
+  upc: 24,
 };
 
 export const DEFAULT_PAGE_MARGIN = 16; // px (corresponds to p-4)

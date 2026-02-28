@@ -1,0 +1,158 @@
+import { useState, useEffect, useMemo } from 'react';
+import { logPatientView } from '@/services/admin/auditService';
+import { PatientInputSchema } from '@/schemas/inputSchemas';
+import {
+  DemographicSubset,
+  LocalDemographicsState,
+  Insurance,
+  AdmissionOrigin,
+  Origin,
+  BiologicalSex,
+} from './types';
+import { buildLocalData, normalizeNamePart, composeFullName, calculateFormattedAge } from './utils';
+import { PatientData } from '@/types';
+
+interface UseDemographicsLogicProps {
+  data: DemographicSubset;
+  isClinicalCribPatient: boolean;
+  isOpen: boolean;
+  bedId: string;
+  recordDate: string;
+  onSave: (updatedFields: Partial<PatientData>) => void;
+  onClose: () => void;
+}
+
+export const useDemographicsLogic = ({
+  data,
+  isClinicalCribPatient,
+  isOpen,
+  bedId,
+  recordDate,
+  onSave,
+  onClose,
+}: UseDemographicsLogicProps) => {
+  const [localData, setLocalData] = useState<LocalDemographicsState>(() =>
+    buildLocalData(data, isClinicalCribPatient)
+  );
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen && data.patientName) {
+      logPatientView(bedId, data.patientName, data.rut, recordDate);
+    }
+  }, [isOpen, data.patientName, data.rut, bedId, recordDate]);
+
+  const isProvisionalRnMode = isClinicalCribPatient && localData.identityStatus === 'provisional';
+
+  const displayName = useMemo(() => {
+    if (isProvisionalRnMode) {
+      return normalizeNamePart(localData.provisionalName) || 'RN provisional';
+    }
+    return (
+      composeFullName(localData.firstName, localData.lastName, localData.secondLastName) ||
+      normalizeNamePart(data.patientName || '') ||
+      'Paciente Nuevo'
+    );
+  }, [
+    data.patientName,
+    isProvisionalRnMode,
+    localData.firstName,
+    localData.lastName,
+    localData.provisionalName,
+    localData.secondLastName,
+  ]);
+
+  const displayRut = isProvisionalRnMode
+    ? 'Sin RUT (RN provisional)'
+    : localData.rut || 'RUT No especificado';
+
+  const handleSave = () => {
+    if (localData.birthDate) {
+      const birthDateValidation = PatientInputSchema.pick({ birthDate: true }).safeParse({
+        birthDate: localData.birthDate,
+      });
+      if (!birthDateValidation.success) {
+        setError(birthDateValidation.error.issues[0].message);
+        return;
+      }
+    }
+
+    const age = localData.birthDate ? calculateFormattedAge(localData.birthDate) : data.age;
+
+    if (isProvisionalRnMode) {
+      const provisionalName = normalizeNamePart(localData.provisionalName);
+      const nameValidation = PatientInputSchema.pick({ patientName: true }).safeParse({
+        patientName: provisionalName,
+      });
+      if (!nameValidation.success) {
+        setError(nameValidation.error.issues[0].message);
+        return;
+      }
+
+      onSave({
+        identityStatus: 'provisional',
+        patientName: provisionalName,
+        firstName: '',
+        lastName: '',
+        secondLastName: '',
+        rut: '',
+        documentType: 'RUT',
+        birthDate: localData.birthDate,
+        insurance: localData.insurance as Insurance,
+        admissionOrigin: localData.admissionOrigin as AdmissionOrigin,
+        admissionOriginDetails: localData.admissionOriginDetails,
+        origin: localData.origin as Origin,
+        isRapanui: localData.isRapanui,
+        biologicalSex: localData.biologicalSex as BiologicalSex,
+        age,
+      });
+      onClose();
+      return;
+    }
+
+    const fullName = composeFullName(
+      localData.firstName,
+      localData.lastName,
+      localData.secondLastName
+    );
+    if (fullName) {
+      const nameValidation = PatientInputSchema.pick({ patientName: true }).safeParse({
+        patientName: fullName,
+      });
+      if (!nameValidation.success) {
+        setError(nameValidation.error.issues[0].message);
+        return;
+      }
+    }
+
+    onSave({
+      identityStatus: 'official',
+      firstName: normalizeNamePart(localData.firstName),
+      lastName: normalizeNamePart(localData.lastName),
+      secondLastName: normalizeNamePart(localData.secondLastName),
+      patientName: fullName,
+      rut: localData.rut.trim(),
+      documentType: localData.documentType,
+      birthDate: localData.birthDate,
+      insurance: localData.insurance as Insurance,
+      admissionOrigin: localData.admissionOrigin as AdmissionOrigin,
+      admissionOriginDetails: localData.admissionOriginDetails,
+      origin: localData.origin as Origin,
+      isRapanui: localData.isRapanui,
+      biologicalSex: localData.biologicalSex as BiologicalSex,
+      age,
+    });
+    onClose();
+  };
+
+  return {
+    localData,
+    setLocalData,
+    error,
+    setError,
+    isProvisionalRnMode,
+    displayName,
+    displayRut,
+    handleSave,
+  };
+};

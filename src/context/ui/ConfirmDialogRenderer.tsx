@@ -14,6 +14,14 @@ export const ConfirmDialogRenderer: React.FC<ConfirmDialogRendererProps> = ({
   onConfirm,
   onCancel,
 }) => {
+  const [inputValue, setInputValue] = React.useState('');
+
+  // Reset input when dialog opens/closes
+  React.useEffect(() => {
+    if (dialog.isOpen) {
+      setInputValue('');
+    }
+  }, [dialog.isOpen]);
   const variantStyles = {
     danger: {
       icon: 'text-red-600',
@@ -41,6 +49,9 @@ export const ConfirmDialogRenderer: React.FC<ConfirmDialogRendererProps> = ({
 
   if (!dialog.isOpen) return null;
 
+  const requiresInput = !!dialog.requireInputConfirm;
+  const isInputValid = !requiresInput || inputValue === dialog.requireInputConfirm;
+
   return (
     <div
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] animate-fade-in"
@@ -67,7 +78,22 @@ export const ConfirmDialogRenderer: React.FC<ConfirmDialogRendererProps> = ({
           )}
         </div>
         <div className="px-4 py-3">
-          <p className="text-xs text-slate-600 whitespace-pre-line">{dialog.message}</p>
+          <p className="text-xs text-slate-600 whitespace-pre-line mb-3">{dialog.message}</p>
+          {requiresInput && (
+            <div className="mt-2">
+              <p className="text-xs text-slate-700 font-medium mb-1">
+                Escriba <strong>{dialog.requireInputConfirm}</strong> para confirmar:
+              </p>
+              <input
+                type="text"
+                value={inputValue}
+                onChange={e => setInputValue(e.target.value)}
+                className="input w-full text-xs font-mono"
+                placeholder={dialog.requireInputConfirm}
+                autoFocus
+              />
+            </div>
+          )}
         </div>
         <div className="px-4 py-2 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
           {!dialog.isAlert && (
@@ -80,8 +106,9 @@ export const ConfirmDialogRenderer: React.FC<ConfirmDialogRendererProps> = ({
           )}
           <button
             onClick={onConfirm}
-            className={`px-3 py-1.5 text-xs rounded font-medium transition-colors ${styles.button}`}
-            autoFocus
+            disabled={!isInputValid}
+            className={`px-3 py-1.5 text-xs rounded font-medium transition-colors ${styles.button} ${!isInputValid ? 'opacity-50 cursor-not-allowed' : ''}`}
+            autoFocus={!requiresInput}
           >
             {dialog.confirmText}
           </button>

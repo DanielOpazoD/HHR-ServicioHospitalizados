@@ -27,7 +27,8 @@ export const saveAndDownloadPdf = async (
   pdfSource: PDFDocument | Uint8Array,
   suggestedName: string
 ): Promise<void> => {
-  const pdfBytes = pdfSource instanceof PDFDocument ? await pdfSource.save() : pdfSource;
+  const pdfBytes: Uint8Array =
+    pdfSource instanceof PDFDocument ? await pdfSource.save() : pdfSource;
 
   // Try native Save As dialog
   if ('showSaveFilePicker' in window) {
@@ -46,7 +47,7 @@ export const saveAndDownloadPdf = async (
         ],
       });
       const writable = await handle.createWritable();
-      await writable.write(pdfBytes as any);
+      await writable.write(pdfBytes as unknown as BufferSource);
       await writable.close();
       return;
     } catch (err) {
@@ -55,7 +56,7 @@ export const saveAndDownloadPdf = async (
   }
 
   // Fallback: classic download link
-  const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
+  const blob = new Blob([pdfBytes as unknown as BlobPart], { type: 'application/pdf' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;

@@ -41,12 +41,12 @@ import * as ai from '@/services/terminology/cie10AISearch';
 import * as cache from '@/services/terminology/aiResultsCache';
 
 vi.mock('@/services/terminology/cie10SpanishDatabase', () => ({
-  searchCIE10Spanish: vi.fn(),
-  CIE10_SPANISH_DATABASE: [
+  searchCIE10: vi.fn(),
+  getCIE10DatabaseSync: vi.fn(() => [
     { code: 'E11', description: 'Diabetes', category: 'Endocrino' },
     { code: 'J44', description: 'EPOC', category: 'Resp' },
     { code: 'I10', description: 'Hipertensión esencial', category: 'Cardiovascular' },
-  ],
+  ]),
 }));
 
 vi.mock('@/services/terminology/cie10AISearch', () => ({
@@ -68,17 +68,17 @@ describe('Servicio de Terminología CIE-10 (terminologyService)', () => {
     it('retorna [] si la consulta tiene menos de 2 caracteres', async () => {
       const results = await searchDiagnoses('a');
       expect(results).toEqual([]);
-      expect(db.searchCIE10Spanish).not.toHaveBeenCalled();
+      expect(db.searchCIE10).not.toHaveBeenCalled();
     });
 
     it('retorna resultados locales cuando no hay caché IA', async () => {
       const mockEntry = { code: 'E11', description: 'Diabetes', category: 'Endocrino' };
-      vi.mocked(db.searchCIE10Spanish).mockReturnValue([mockEntry]);
+      vi.mocked(db.searchCIE10).mockResolvedValue([mockEntry]);
       vi.mocked(cache.getCachedAIResults).mockReturnValue(null);
 
       const results = await searchDiagnoses('diabetes');
 
-      expect(db.searchCIE10Spanish).toHaveBeenCalledWith('diabetes');
+      expect(db.searchCIE10).toHaveBeenCalledWith('diabetes');
       expect(results).toHaveLength(1);
       expect(results[0]).toMatchObject({
         code: 'E11',
@@ -96,7 +96,7 @@ describe('Servicio de Terminología CIE-10 (terminologyService)', () => {
         category: 'Endocrino',
       };
 
-      vi.mocked(db.searchCIE10Spanish).mockReturnValue([localEntry]);
+      vi.mocked(db.searchCIE10).mockResolvedValue([localEntry]);
       vi.mocked(cache.getCachedAIResults).mockReturnValue([aiEntry]);
 
       const results = await searchDiagnoses('diabetes');
@@ -118,7 +118,7 @@ describe('Servicio de Terminología CIE-10 (terminologyService)', () => {
         category: 'Cardiovascular',
       };
 
-      vi.mocked(db.searchCIE10Spanish).mockReturnValue([localEntry]);
+      vi.mocked(db.searchCIE10).mockResolvedValue([localEntry]);
       vi.mocked(cache.getCachedAIResults).mockReturnValue([aiEntry]);
 
       const results = await searchDiagnoses('hipertension');
@@ -148,7 +148,7 @@ describe('Servicio de Terminología CIE-10 (terminologyService)', () => {
   describe('forceAISearch() — Búsqueda IA bajo demanda (botón "IA")', () => {
     it('llama a Gemini, guarda en caché y retorna resultados fusionados', async () => {
       const aiEntry = { code: 'I10', description: 'HTA', category: 'Cardio' };
-      vi.mocked(db.searchCIE10Spanish).mockReturnValue([]);
+      vi.mocked(db.searchCIE10).mockResolvedValue([]);
       vi.mocked(ai.searchCIE10WithAI).mockResolvedValue([aiEntry]);
 
       const results = await forceAISearch('hta');
@@ -171,7 +171,7 @@ describe('Servicio de Terminología CIE-10 (terminologyService)', () => {
         category: 'Endocrino',
       };
 
-      vi.mocked(db.searchCIE10Spanish).mockReturnValue([localEntry]);
+      vi.mocked(db.searchCIE10).mockResolvedValue([localEntry]);
       vi.mocked(ai.searchCIE10WithAI).mockResolvedValue([aiEntry]);
 
       const results = await forceAISearch('diabetes');
@@ -182,7 +182,7 @@ describe('Servicio de Terminología CIE-10 (terminologyService)', () => {
     });
 
     it('maneja errores de IA graciosamente retornando []', async () => {
-      vi.mocked(db.searchCIE10Spanish).mockReturnValue([]);
+      vi.mocked(db.searchCIE10).mockResolvedValue([]);
       vi.mocked(ai.searchCIE10WithAI).mockRejectedValue(new Error('429 Too Many Requests'));
 
       const results = await forceAISearch('hta');
@@ -191,7 +191,7 @@ describe('Servicio de Terminología CIE-10 (terminologyService)', () => {
 
     it('retorna solo local si IA retorna 0 resultados', async () => {
       const localEntry = { code: 'I10', description: 'Hipertensión', category: 'Cardio' };
-      vi.mocked(db.searchCIE10Spanish).mockReturnValue([localEntry]);
+      vi.mocked(db.searchCIE10).mockResolvedValue([localEntry]);
       vi.mocked(ai.searchCIE10WithAI).mockResolvedValue([]);
 
       const results = await forceAISearch('hipertension');

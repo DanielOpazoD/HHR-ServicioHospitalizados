@@ -120,27 +120,9 @@ export const fillImagingRequestForm = async (
   // 3. Get page 1
   const page = pdfDoc.getPage(0);
 
-  // Helper: draw text at coordinates
   const drawText = (text: string, coords: { x: number; y: number; maxWidth: number }) => {
     if (!text) return;
-    const displayText = text.toUpperCase();
-
-    // Truncate if too long
-    let finalText = displayText;
-    const textWidth = font.widthOfTextAtSize(displayText, FONT_SIZE);
-    if (textWidth > coords.maxWidth) {
-      // Truncate to fit
-      let truncated = displayText;
-      while (
-        font.widthOfTextAtSize(truncated + '…', FONT_SIZE) > coords.maxWidth &&
-        truncated.length > 0
-      ) {
-        truncated = truncated.slice(0, -1);
-      }
-      finalText = truncated + '…';
-    }
-
-    page.drawText(finalText, {
+    page.drawText(text.toUpperCase(), {
       x: coords.x,
       y: coords.y,
       size: FONT_SIZE,
@@ -220,20 +202,7 @@ export const fillConsentimientoForm = async (
 
   const drawText = (text: string, coords: { x: number; y: number; maxWidth: number }) => {
     if (!text) return;
-    const displayText = text.toUpperCase();
-    let finalText = displayText;
-    const textWidth = font.widthOfTextAtSize(displayText, FONT_SIZE);
-    if (textWidth > coords.maxWidth) {
-      let truncated = displayText;
-      while (
-        font.widthOfTextAtSize(truncated + '…', FONT_SIZE) > coords.maxWidth &&
-        truncated.length > 0
-      ) {
-        truncated = truncated.slice(0, -1);
-      }
-      finalText = truncated + '…';
-    }
-    page.drawText(finalText, {
+    page.drawText(text.toUpperCase(), {
       x: coords.x,
       y: coords.y,
       size: FONT_SIZE,
@@ -392,20 +361,7 @@ export const fillImagingEncuestaForm = async (
 
   const drawText = (text: string, coords: { x: number; y: number; maxWidth: number }) => {
     if (!text) return;
-    const displayText = text.toUpperCase();
-    let finalText = displayText;
-    const textWidth = font.widthOfTextAtSize(displayText, FONT_SIZE);
-    if (textWidth > coords.maxWidth) {
-      let truncated = displayText;
-      while (
-        font.widthOfTextAtSize(truncated + '…', FONT_SIZE) > coords.maxWidth &&
-        truncated.length > 0
-      ) {
-        truncated = truncated.slice(0, -1);
-      }
-      finalText = truncated + '…';
-    }
-    page.drawText(finalText, {
+    page.drawText(text.toUpperCase(), {
       x: coords.x,
       y: coords.y,
       size: FONT_SIZE,
