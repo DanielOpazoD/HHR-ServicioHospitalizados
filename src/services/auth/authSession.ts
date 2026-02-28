@@ -1,9 +1,35 @@
 import { onAuthStateChanged, signOut as firebaseSignOut, User } from 'firebase/auth';
 import { auth } from '@/firebaseConfig';
-import { AuthUser, UserRole } from '@/types';
+import { AuthUser } from '@/types';
 import { checkSharedCensusAccess, isSharedCensusMode } from '@/services/auth/sharedCensusAuth';
-import { checkEmailInFirestore, clearRoleCacheForEmail } from '@/services/auth/authPolicy';
+import { clearRoleCacheForEmail } from '@/services/auth/authPolicy';
 import { toAuthUser } from '@/services/auth/authShared';
+import { resolveFirebaseUserRole } from '@/services/auth/authAccessResolution';
+
+const toAnonymousAuthUser = (firebaseUser: User): AuthUser => ({
+  uid: firebaseUser.uid,
+  email: null,
+  displayName: 'Anonymous Doctor',
+  role: 'viewer',
+});
+
+const resolveAuthenticatedUser = async (firebaseUser: User): Promise<AuthUser | null> => {
+  if (firebaseUser.isAnonymous) {
+    return toAnonymousAuthUser(firebaseUser);
+  }
+
+  if (isSharedCensusMode()) {
+    const sharedAccess = await checkSharedCensusAccess(firebaseUser.email);
+    if (!sharedAccess.authorized) {
+      await firebaseSignOut(auth);
+      return null;
+    }
+    return toAuthUser(firebaseUser, 'viewer_census');
+  }
+
+  const role = await resolveFirebaseUserRole(firebaseUser);
+  return toAuthUser(firebaseUser, role);
+};
 
 export const signOut = async (): Promise<void> => {
   const userEmail = auth.currentUser?.email;
@@ -20,48 +46,12 @@ export const signOut = async (): Promise<void> => {
 
 export const onAuthChange = (callback: (user: AuthUser | null) => void): (() => void) => {
   return onAuthStateChanged(auth, async (firebaseUser: User | null) => {
-    if (firebaseUser) {
-      if (firebaseUser.isAnonymous) {
-        callback({
-          uid: firebaseUser.uid,
-          email: null,
-          displayName: 'Anonymous Doctor',
-          role: 'viewer',
-        });
-        return;
-      }
-
-      if (isSharedCensusMode()) {
-        const sharedAccess = await checkSharedCensusAccess(firebaseUser.email);
-        if (!sharedAccess.authorized) {
-          await firebaseSignOut(auth);
-          callback(null);
-          return;
-        }
-        callback(toAuthUser(firebaseUser, 'viewer_census'));
-        return;
-      }
-
-      try {
-        const tokenResult = await firebaseUser.getIdTokenResult();
-        let role = tokenResult.claims.role as UserRole;
-
-        if (!role || role === 'viewer' || role === 'editor') {
-          const whitelistResult = await checkEmailInFirestore(firebaseUser.email || '');
-          if (whitelistResult.allowed && whitelistResult.role) {
-            role = whitelistResult.role;
-          }
-        }
-
-        callback(toAuthUser(firebaseUser, role || 'viewer'));
-      } catch (error) {
-        console.error('[useAuthState] Error getting ID token result:', error);
-        const { role } = await checkEmailInFirestore(firebaseUser.email || '');
-        callback(toAuthUser(firebaseUser, role || 'viewer'));
-      }
-    } else {
+    if (!firebaseUser) {
       callback(null);
+      return;
     }
+
+    callback(await resolveAuthenticatedUser(firebaseUser));
   });
 };
 

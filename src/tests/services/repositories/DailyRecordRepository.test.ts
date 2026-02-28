@@ -307,6 +307,20 @@ describe('DailyRecordRepository', () => {
       });
       expect(idbService.saveRecord).toHaveBeenCalled();
     });
+
+    it('should fallback to legacy Firebase when remote Firestore record is missing', async () => {
+      vi.mocked(firestoreService.getRecordFromFirestore).mockResolvedValueOnce(null);
+      vi.mocked(legacyFirebaseService.getLegacyRecord).mockResolvedValueOnce(mockRecord);
+
+      const result = await Repository.syncWithFirestore(mockDate);
+
+      expect(result).toMatchObject({
+        ...mockRecord,
+        beds: expect.any(Object),
+      });
+      expect(legacyFirebaseService.getLegacyRecord).toHaveBeenCalledWith(mockDate);
+      expect(idbService.saveRecord).toHaveBeenCalled();
+    });
   });
 
   describe('getAvailableDates', () => {

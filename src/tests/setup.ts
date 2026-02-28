@@ -17,8 +17,6 @@ const noisyConsolePatterns = [
   '[BaseStorage]',
   '[OptimisticUpdate]',
   '[useCensusEmail]',
-  '[authService]',
-  'Firestore sync failed, data saved in IndexedDB:',
   '[Autocomplete]',
   'DEBUG: copyPatientToDate called',
   'DEBUG: sourcePatient',
@@ -41,13 +39,10 @@ const noisyConsolePatterns = [
   '❌ Error saving to Firestore:',
   '[Firestore] Concurrency conflict.',
   '[SyncQueue]',
-  '[useAuthState] ⚠️ Auth initialization timed out',
-  '[useAuthState] Logout due to inactivity',
   '[useExcelParser] Error parsing excel:',
   'Failed to fetch audit logs from Firestore:',
   'Error generating documents:',
   'Error in forceAISearch:',
-  '❌ Error subscribing to transfers:',
 ];
 
 const shouldFilterConsoleMessage = (args: unknown[]) => {
@@ -81,7 +76,9 @@ afterEach(() => {
 const storageMock = () => {
   let store: Record<string, string> = {};
   return {
-    getItem: vi.fn((key: string) => store[key] || null),
+    getItem: vi.fn((key: string) =>
+      Object.prototype.hasOwnProperty.call(store, key) ? store[key] : null
+    ),
     setItem: vi.fn((key: string, value: string) => {
       store[key] = value.toString();
     }),
@@ -91,7 +88,9 @@ const storageMock = () => {
     clear: vi.fn(() => {
       store = {};
     }),
-    length: 0,
+    get length() {
+      return Object.keys(store).length;
+    },
     key: vi.fn((index: number) => Object.keys(store)[index] || null),
   };
 };
@@ -143,9 +142,9 @@ const mockUser = {
 
 // Mock Firebase Auth
 const mockAuth = {
-  currentUser: mockUser,
+  currentUser: null as typeof mockUser | null,
   onAuthStateChanged: vi.fn((callback: (user: typeof mockUser | null) => void) => {
-    callback(mockUser);
+    callback(null);
     return vi.fn();
   }),
   signInWithEmailAndPassword: vi.fn().mockResolvedValue({ user: mockUser }),
@@ -203,7 +202,7 @@ vi.mock('../firebaseConfig', () => firebaseMock);
 vi.mock('firebase/auth', () => ({
   getAuth: vi.fn(() => mockAuth),
   onAuthStateChanged: vi.fn((auth, callback) => {
-    callback(mockUser);
+    callback(null);
     return vi.fn();
   }),
   signInWithEmailAndPassword: vi.fn().mockResolvedValue({ user: mockUser }),
@@ -423,13 +422,13 @@ const mockAuthService = {
   signInWithGoogle: vi.fn(),
   signOut: vi.fn(),
   onAuthChange: vi.fn(cb => {
-    cb(mockUser);
+    cb(null);
     return () => {};
   }),
-  getCurrentUser: vi.fn(() => mockUser),
+  getCurrentUser: vi.fn(() => null),
   isCurrentUserAllowed: vi.fn().mockResolvedValue(true),
   createUser: vi.fn(),
-  hasActiveFirebaseSession: vi.fn().mockReturnValue(true),
+  hasActiveFirebaseSession: vi.fn().mockReturnValue(false),
 };
 
 const mockAuthFactory = () => mockAuthService;

@@ -1,28 +1,16 @@
-import { DailyRecord, DailyRecordPatch, PatientData } from '@/types';
-import { CURRENT_SCHEMA_VERSION } from '@/constants/version';
+import { DailyRecord, DailyRecordPatch } from '@/types';
 import {
   getRecordForDate as getRecordFromIndexedDB,
   saveRecord as saveToIndexedDB,
 } from '@/services/storage/indexedDBService';
-import { isRetryableSyncError, queueSyncTask } from '@/services/storage/syncQueueService';
+import { queueSyncTask } from '@/services/storage/syncQueueService';
 import {
   getRecordFromFirestore,
   saveRecordToFirestore,
   updateRecordPartial as updateRecordPartialToFirestore,
 } from '@/services/storage/firestoreService';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
-import { normalizeDailyRecordInvariants } from '@/utils/recordInvariants';
-import { validateAndSalvageRecord } from '@/services/repositories/helpers/validationHelper';
-import { applyPatches } from '@/utils/patchUtils';
-import {
-  calculateDensity,
-  checkRegression,
-  DataRegressionError,
-  VersionMismatchError,
-} from '@/utils/integrityGuard';
-import { mapPatientToFhir } from '@/services/utils/fhirMappers';
-import { logError } from '@/services/utils/errorService';
-import { PatientMasterRepository } from '@/services/repositories/PatientMasterRepository';
+import { DataRegressionError, VersionMismatchError } from '@/utils/integrityGuard';
 import { resolveDailyRecordConflictWithTrace } from '@/services/repositories/conflictResolutionMatrix';
 import { buildConflictAuditSummary } from '@/services/repositories/conflictResolutionAuditSummary';
 import { logRepositoryConflictAutoMerged } from '@/services/repositories/ports/repositoryAuditPort';
@@ -34,6 +22,14 @@ import {
   createSaveDailyRecordResult,
   createUpdatePartialDailyRecordResult,
 } from '@/services/repositories/contracts/dailyRecordResults';
+import {
+  assertRemoteSaveCompatibility,
+  prepareDailyRecordForPersistence,
+  preparePatchedRecordForPersistence,
+  queueRetryForRecord,
+  shouldQueueRetryableError,
+  syncPatientsToMasterInBackground,
+} from '@/services/repositories/dailyRecordWriteSupport';
 
 const isConcurrencyError = (error: unknown): boolean =>
   error instanceof Error && error.name === 'ConcurrencyError';
@@ -79,59 +75,16 @@ export const save = async (record: DailyRecord, expectedLastUpdated?: string): P
   let queuedForRetry = false;
   let autoMerged = false;
 
-  const recordWithSchemaDefaults = validateAndSalvageRecord(command.record, command.date);
-
-  if (!recordWithSchemaDefaults.dateTimestamp && recordWithSchemaDefaults.date) {
-    const dateObj = new Date(`${recordWithSchemaDefaults.date}T00:00:00`);
-    recordWithSchemaDefaults.dateTimestamp = dateObj.getTime();
-  }
-
-  const normalized = normalizeDailyRecordInvariants(recordWithSchemaDefaults);
-  const validatedRecord = normalized.record;
-  if (Object.keys(normalized.patches).length > 0) {
-    logError('Invariant repair applied on save', undefined, {
-      date: validatedRecord.date,
-      patches: Object.keys(normalized.patches),
-    });
-  }
-
-  Object.keys(validatedRecord.beds).forEach(bedId => {
-    const patient = validatedRecord.beds[bedId];
-    if (patient && patient.patientName && patient.patientName.trim()) {
-      patient.fhir_resource = mapPatientToFhir(patient);
-      if (patient.clinicalCrib && patient.clinicalCrib.patientName) {
-        patient.clinicalCrib.fhir_resource = mapPatientToFhir(patient.clinicalCrib);
-      }
-    }
-  });
+  const validatedRecord = prepareDailyRecordForPersistence(command.record, command.date);
 
   if (isFirestoreEnabled()) {
     try {
-      const remoteRecord = await getRecordFromFirestore(command.date);
-      if (remoteRecord) {
-        const remoteVersion = remoteRecord.schemaVersion || 0;
-        if (remoteVersion > CURRENT_SCHEMA_VERSION) {
-          throw new VersionMismatchError(
-            `Tu aplicación está desactualizada (v${CURRENT_SCHEMA_VERSION}) y el registro en la nube usa el nuevo formato v${remoteVersion}.`
-          );
-        }
-
-        const { isSuspicious, dropPercentage } = checkRegression(remoteRecord, validatedRecord);
-        if (isSuspicious) {
-          throw new DataRegressionError(
-            `Se detectó una pérdida masiva de datos (${dropPercentage.toFixed(1)}%). El guardado fue bloqueado.`,
-            calculateDensity(validatedRecord),
-            calculateDensity(remoteRecord)
-          );
-        }
-      }
+      await assertRemoteSaveCompatibility(command.date, validatedRecord);
     } catch (err) {
       if (err instanceof DataRegressionError || err instanceof VersionMismatchError) throw err;
       console.warn('[Repository] Could not perform integrity check, proceeding:', err);
     }
   }
-
-  validatedRecord.schemaVersion = CURRENT_SCHEMA_VERSION;
 
   await saveToIndexedDB(validatedRecord);
 
@@ -158,9 +111,8 @@ export const save = async (record: DailyRecord, expectedLastUpdated?: string): P
         throw err;
       }
 
-      if (isRetryableSyncError(err)) {
-        await queueSyncTask('UPDATE_DAILY_RECORD', validatedRecord);
-        queuedForRetry = true;
+      if (shouldQueueRetryableError(err)) {
+        queuedForRetry = await queueRetryForRecord(validatedRecord);
       }
     }
     if (!queuedForRetry && !autoMerged) {
@@ -168,36 +120,7 @@ export const save = async (record: DailyRecord, expectedLastUpdated?: string): P
     }
   }
 
-  setTimeout(async () => {
-    try {
-      const patientsToSync: PatientData[] = [];
-
-      Object.values(validatedRecord.beds).forEach(patient => {
-        if (patient.patientName?.trim() && patient.rut?.trim()) {
-          patientsToSync.push(patient);
-        }
-        if (patient.clinicalCrib?.patientName?.trim() && patient.clinicalCrib?.rut?.trim()) {
-          patientsToSync.push(patient.clinicalCrib);
-        }
-      });
-
-      if (patientsToSync.length > 0) {
-        await Promise.all(
-          patientsToSync.map(p =>
-            PatientMasterRepository.upsertPatient({
-              rut: p.rut!,
-              fullName: p.patientName!,
-              birthDate: p.birthDate,
-              forecast: p.insurance,
-              gender: p.biologicalSex,
-            })
-          )
-        );
-      }
-    } catch (_err) {
-      // intentionally ignored (non-critical background sync)
-    }
-  }, 1000);
+  syncPatientsToMasterInBackground(validatedRecord);
 
   createSaveDailyRecordResult({
     date: command.date,
@@ -223,38 +146,16 @@ export const updatePartial = async (date: string, partialData: DailyRecordPatch)
     return;
   }
 
-  const updatedForInvariants = applyPatches(current, command.patch);
-  const normalized = normalizeDailyRecordInvariants(updatedForInvariants);
-  const mergedPatches: DailyRecordPatch = { ...command.patch, ...normalized.patches };
-
-  if (Object.keys(normalized.patches).length > 0) {
-    logError('Invariant repair applied on updatePartial', undefined, {
-      date: command.date,
-      patches: Object.keys(normalized.patches),
-    });
-  }
-
-  const updated = applyPatches(current, mergedPatches);
-  updated.lastUpdated = new Date().toISOString();
-
-  const validatedRecord = validateAndSalvageRecord(updated, command.date);
+  const { record: validatedRecord, mergedPatches } = preparePatchedRecordForPersistence(
+    current,
+    command.date,
+    command.patch
+  );
 
   await saveToIndexedDB(validatedRecord);
 
   if (isFirestoreEnabled()) {
     try {
-      Object.keys(mergedPatches).forEach(key => {
-        if (key.startsWith('beds.')) {
-          const bedId = key.split('.')[1];
-          const patient = validatedRecord.beds[bedId];
-          if (patient && patient.patientName) {
-            const fhirPath = `beds.${bedId}.fhir_resource` as keyof DailyRecordPatch;
-            const fhirResource = mapPatientToFhir(patient);
-            mergedPatches[fhirPath] = fhirResource;
-          }
-        }
-      });
-
       await updateRecordPartialToFirestore(command.date, mergedPatches);
       updatedRemotely = true;
     } catch (err) {
@@ -272,9 +173,8 @@ export const updatePartial = async (date: string, partialData: DailyRecordPatch)
         });
         return;
       }
-      if (isRetryableSyncError(err)) {
-        await queueSyncTask('UPDATE_DAILY_RECORD', validatedRecord);
-        queuedForRetry = true;
+      if (shouldQueueRetryableError(err)) {
+        queuedForRetry = await queueRetryForRecord(validatedRecord);
       }
     }
   }

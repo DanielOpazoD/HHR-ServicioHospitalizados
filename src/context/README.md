@@ -30,6 +30,7 @@ Providers de estado global y contratos para features transversales.
 - Hooks de acceso especializados (`useDailyRecordData`, `useDailyRecordBedActions`, `useDailyRecordMovementActions`, etc.).
   Los hooks de **acciones** deben importarse desde `useDailyRecordScopedActions` para evitar ciclos de chunking.
 - Contratos tipados para evitar props drilling masivo.
+- `AuthContext` debe seguir dependiendo solo de `useAuthState`; la orquestación interna de auth/bootstrap/conectividad vive fuera del contexto para mantenerlo como fachada estable.
 
 ## Ejemplo
 

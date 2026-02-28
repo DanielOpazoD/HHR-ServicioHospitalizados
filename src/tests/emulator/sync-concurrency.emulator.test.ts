@@ -1,3 +1,4 @@
+/* @flake-safe: Date usage aligns emulator write-window assertions with current execution time. */
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RulesTestEnvironment, initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import * as fs from 'node:fs';
@@ -43,6 +44,10 @@ const buildRecord = (date: string, lastUpdated: string): DailyRecord => ({
   dateTimestamp: Date.parse(`${date}T00:00:00.000Z`),
 });
 
+const CURRENT_RECORD_DATE = new Date().toISOString().slice(0, 10);
+
+const isoAt = (date: string, time: string): string => `${date}T${time}.000Z`;
+
 describeEmulator('Firestore emulator sync concurrency flow', () => {
   let testEnv: RulesTestEnvironment;
   let nurseDb: unknown;
@@ -78,21 +83,21 @@ describeEmulator('Firestore emulator sync concurrency flow', () => {
   });
 
   it('throws ConcurrencyError when expectedLastUpdated is older than remote', async () => {
-    const date = '2026-02-19';
+    const date = CURRENT_RECORD_DATE;
     await testEnv.withSecurityRulesDisabled(async context => {
       await context
         .firestore()
         .doc(`hospitals/hanga_roa/dailyRecords/${date}`)
         .set({
-          ...buildRecord(date, '2026-02-19T10:00:00.000Z'),
+          ...buildRecord(date, isoAt(date, '10:00:00')),
           handoffNovedadesDayShift: 'remote',
         });
     });
 
-    const local = buildRecord(date, '2026-02-19T09:59:00.000Z');
+    const local = buildRecord(date, isoAt(date, '09:59:00'));
     local.handoffNovedadesDayShift = 'local';
 
-    await expect(saveRecordToFirestore(local, '2026-02-19T09:59:00.000Z')).rejects.toBeInstanceOf(
+    await expect(saveRecordToFirestore(local, isoAt(date, '09:59:00'))).rejects.toBeInstanceOf(
       ConcurrencyError
     );
 
@@ -104,28 +109,28 @@ describeEmulator('Firestore emulator sync concurrency flow', () => {
   });
 
   it('saves when expectedLastUpdated matches remote baseline', async () => {
-    const date = '2026-02-20';
+    const date = CURRENT_RECORD_DATE;
     await testEnv.withSecurityRulesDisabled(async context => {
       await context
         .firestore()
         .doc(`hospitals/hanga_roa/dailyRecords/${date}`)
         .set({
-          ...buildRecord(date, '2026-02-20T09:00:00.000Z'),
+          ...buildRecord(date, isoAt(date, '09:00:00')),
           handoffNovedadesNightShift: 'remote baseline',
         });
     });
 
-    const local = buildRecord(date, '2026-02-20T09:00:00.000Z');
+    const local = buildRecord(date, isoAt(date, '09:00:00'));
     local.handoffNovedadesNightShift = 'local update';
 
-    await expect(saveRecordToFirestore(local, '2026-02-20T09:00:00.000Z')).resolves.toBeUndefined();
+    await expect(saveRecordToFirestore(local, isoAt(date, '09:00:00'))).resolves.toBeUndefined();
 
     const persisted = await getRecordFromFirestore(date);
     expect(persisted?.handoffNovedadesNightShift).toBe('local update');
   });
 
   it('rejects partial update on missing doc due security rules precondition', async () => {
-    const date = '2026-02-21';
+    const date = CURRENT_RECORD_DATE;
 
     await expect(
       updateRecordPartial(date, { 'beds.R1.patientName': 'Paciente Fallback' })
@@ -135,14 +140,14 @@ describeEmulator('Firestore emulator sync concurrency flow', () => {
   });
 
   it('applies partial update when record exists and is within nurse edit window', async () => {
-    const date = '2026-02-21';
-    const now = Date.parse(`${date}T09:00:00.000Z`);
+    const date = CURRENT_RECORD_DATE;
+    const now = Date.now();
     await testEnv.withSecurityRulesDisabled(async context => {
       await context
         .firestore()
         .doc(`hospitals/hanga_roa/dailyRecords/${date}`)
         .set({
-          ...buildRecord(date, '2026-02-21T07:00:00.000Z'),
+          ...buildRecord(date, isoAt(date, '07:00:00')),
           dateTimestamp: now,
         });
     });

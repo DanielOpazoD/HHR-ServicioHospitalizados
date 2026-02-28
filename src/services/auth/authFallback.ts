@@ -1,18 +1,42 @@
-import { getRedirectResult, signInWithRedirect, signOut as firebaseSignOut } from 'firebase/auth';
+import { getRedirectResult, signInWithRedirect } from 'firebase/auth';
 import { auth } from '@/firebaseConfig';
 import { AuthUser } from '@/types';
-import { checkSharedCensusAccess, isSharedCensusMode } from '@/services/auth/sharedCensusAuth';
-import { checkEmailInFirestore } from '@/services/auth/authPolicy';
 import {
   consumeE2ERedirectPendingUser,
   googleProvider,
   readE2ERedirectMode,
-  toAuthUser,
 } from '@/services/auth/authShared';
 import {
   clearAuthBootstrapPending,
   markAuthBootstrapPending,
 } from '@/services/auth/authBootstrapState';
+import { authorizeFirebaseUser } from '@/services/auth/authAccessResolution';
+
+const runE2ERedirectMode = async (mode: 'success' | 'error' | 'timeout'): Promise<void> => {
+  if (mode === 'error') {
+    throw new Error('E2E redirect failed');
+  }
+
+  if (mode === 'timeout') {
+    await new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('E2E redirect timeout')), 1200);
+    });
+    return;
+  }
+
+  markAuthBootstrapPending('redirect');
+  if (typeof window !== 'undefined' && window.localStorage) {
+    window.localStorage.setItem(
+      'hhr_e2e_redirect_pending_user',
+      JSON.stringify({
+        uid: 'e2e-redirect-user',
+        email: 'e2e.redirect@hospital.cl',
+        displayName: 'E2E Redirect User',
+        role: 'admin',
+      })
+    );
+  }
+};
 
 export const hasActiveFirebaseSession = (): boolean => auth.currentUser !== null;
 
@@ -20,29 +44,7 @@ export const signInWithGoogleRedirect = async (): Promise<void> => {
   try {
     const e2eRedirectMode = readE2ERedirectMode();
     if (e2eRedirectMode) {
-      if (e2eRedirectMode === 'error') {
-        throw new Error('E2E redirect failed');
-      }
-
-      if (e2eRedirectMode === 'timeout') {
-        await new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('E2E redirect timeout')), 1200);
-        });
-        return;
-      }
-
-      markAuthBootstrapPending('redirect');
-      if (typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.setItem(
-          'hhr_e2e_redirect_pending_user',
-          JSON.stringify({
-            uid: 'e2e-redirect-user',
-            email: 'e2e.redirect@hospital.cl',
-            displayName: 'E2E Redirect User',
-            role: 'admin',
-          })
-        );
-      }
+      await runE2ERedirectMode(e2eRedirectMode);
       return;
     }
 
@@ -64,25 +66,7 @@ export const handleSignInRedirectResult = async (): Promise<AuthUser | null> => 
 
     const result = await getRedirectResult(auth);
     if (!result) return null;
-
-    const user = result.user;
-
-    if (isSharedCensusMode()) {
-      const sharedAccess = await checkSharedCensusAccess(user.email);
-      if (!sharedAccess.authorized) {
-        await firebaseSignOut(auth);
-        throw new Error('Acceso no autorizado. Tu correo no tiene permisos para censo compartido.');
-      }
-      return toAuthUser(user, 'viewer_census');
-    }
-
-    const { allowed, role } = await checkEmailInFirestore(user.email || '');
-    if (!allowed) {
-      await firebaseSignOut(auth);
-      throw new Error('Acceso no autorizado.');
-    }
-
-    return toAuthUser(user, role);
+    return await authorizeFirebaseUser(result.user);
   } catch (error) {
     console.error('[authService] Error handling redirect result', error);
     return null;

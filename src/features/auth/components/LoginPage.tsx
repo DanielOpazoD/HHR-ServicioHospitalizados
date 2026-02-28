@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
-import { signInWithGoogle, signInWithGoogleRedirect } from '@/services/auth/authService';
-import { isPopupRecoverableAuthError } from '@/services/auth/authErrorPolicy';
+import React from 'react';
 import { AlertCircle, Loader2, Palette } from 'lucide-react';
 import { performClientHardReset } from '@/services/storage/indexedDBService';
 import { GamesMenu } from '@/features/games';
+import { useLoginPageController } from '@/features/auth/components/useLoginPageController';
 
 interface LoginPageProps {
   onLoginSuccess: () => void;
@@ -37,90 +36,20 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   onLoginSuccess,
   isSharedCensusMode = false,
 }) => {
-  const [error, setError] = useState<string | null>(null);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [isRedirectLoading, setIsRedirectLoading] = useState(false);
-  const [backgroundMode, setBackgroundMode] = useState<'auto' | 'day' | 'night'>('auto');
-  const [showAlternateAccess, setShowAlternateAccess] = useState(false);
-  const preferRedirectOnLocalhost =
-    String(import.meta.env.VITE_AUTH_PREFER_REDIRECT_ON_LOCALHOST || '').toLowerCase() === 'true';
-  const isLocalhostRuntime =
-    typeof window !== 'undefined' &&
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-  const forcePopupForE2E =
-    import.meta.env.VITE_E2E_MODE === 'true' &&
-    typeof window !== 'undefined' &&
-    window.localStorage?.getItem('hhr_e2e_force_popup') === 'true';
-  const autoRedirectFallbackEnabled =
-    String(import.meta.env.VITE_AUTH_AUTO_REDIRECT_FALLBACK || 'true').toLowerCase() !== 'false';
-  const shouldAutoFallbackToRedirect =
-    autoRedirectFallbackEnabled && !isLocalhostRuntime && !forcePopupForE2E;
-
-  const handleGoogleSignIn = async () => {
-    setError(null);
-    setIsGoogleLoading(true);
-    setShowAlternateAccess(false);
-
-    try {
-      if (isLocalhostRuntime && preferRedirectOnLocalhost && !forcePopupForE2E) {
-        await signInWithGoogleRedirect();
-        return;
-      }
-
-      await signInWithGoogle();
-      onLoginSuccess();
-    } catch (err: unknown) {
-      // Safer error handling without 'any'
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      const isPopupIssue = isPopupRecoverableAuthError(err);
-
-      if (isPopupIssue) {
-        setShowAlternateAccess(true);
-        if (shouldAutoFallbackToRedirect) {
-          setIsRedirectLoading(true);
-          setError('El navegador bloqueó el popup. Intentando acceso alternativo...');
-          try {
-            await signInWithGoogleRedirect();
-            return;
-          } catch (redirectError) {
-            const redirectMessage =
-              redirectError instanceof Error
-                ? redirectError.message
-                : 'No fue posible iniciar por redirección.';
-            setError(redirectMessage);
-          } finally {
-            setIsRedirectLoading(false);
-          }
-        } else {
-          setError(
-            'No se pudo abrir el login emergente (popup), posiblemente por bloqueo del navegador o por otra pestaña iniciando sesión.'
-          );
-        }
-      } else {
-        console.error('[LoginPage] Google sign-in failed', err);
-        setError(errorMessage || 'Error al iniciar sesión con Google');
-      }
-    } finally {
-      setIsGoogleLoading(false);
-    }
-  };
-
-  const isAnyLoading = isGoogleLoading || isRedirectLoading;
-  const currentHour = new Date().getHours();
-  const isAutoDayWindow = currentHour >= 8 && currentHour < 20;
-
-  const isDayGradient = backgroundMode === 'auto' ? isAutoDayWindow : backgroundMode === 'day';
+  const {
+    error,
+    isGoogleLoading,
+    isRedirectLoading,
+    showAlternateAccess,
+    isAnyLoading,
+    isDayGradient,
+    handleGoogleSignIn,
+    handleAlternateAccess,
+    toggleBackgroundMode,
+  } = useLoginPageController(onLoginSuccess);
   const loginBackgroundClass = isDayGradient
     ? 'bg-gradient-to-br from-slate-50 via-blue-50/50 to-slate-100'
     : 'bg-gradient-to-br from-slate-600 via-slate-700 to-slate-900';
-
-  const toggleBackgroundMode = () => {
-    setBackgroundMode(prev => {
-      if (prev === 'auto') return 'day';
-      if (prev === 'day') return 'night';
-      return 'auto';
-    });
-  };
 
   return (
     <div
@@ -192,21 +121,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           {showAlternateAccess && (
             <button
               type="button"
-              onClick={async () => {
-                setError(null);
-                setIsRedirectLoading(true);
-                try {
-                  await signInWithGoogleRedirect();
-                } catch (redirectError) {
-                  const redirectMessage =
-                    redirectError instanceof Error
-                      ? redirectError.message
-                      : 'No fue posible iniciar por redirección.';
-                  setError(redirectMessage);
-                } finally {
-                  setIsRedirectLoading(false);
-                }
-              }}
+              onClick={handleAlternateAccess}
               disabled={isAnyLoading || isRedirectLoading}
               className="mt-3 w-full bg-slate-100 hover:bg-slate-200 disabled:bg-slate-100 border border-slate-200 text-slate-700 font-semibold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2"
             >

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import {
   SOLICITUD_FIELD_COORDS,
   ENCUESTA_FIELD_COORDS,
@@ -11,6 +11,15 @@ import {
 
 // We mock standard functions to just test data transforms and constants
 describe('imagingRequestPdfService', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-02-28T12:00:00.000Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   describe('Name Splitter Logic', () => {
     it('should split standard names correctly (Nombre ApPaterno ApMaterno)', () => {
       const [nombres, apPaterno, apMaterno] = splitPatientName('Marcelo Valdes Avila');
@@ -49,14 +58,7 @@ describe('imagingRequestPdfService', () => {
     });
 
     it('should calculate age correctly', () => {
-      // Assuming today's year is at least 2026 (current execution context)
-      const currentYear = new Date().getFullYear();
-      const birthYear = currentYear - 30;
-      const thirtyYearsAgo = `${birthYear}-01-01`;
-      const ageStr = calculateAge(thirtyYearsAgo);
-      // Wait, calculation depends on today's execution date explicitly,
-      // let's do a basic regex check or just rely on the implementation not throwing.
-      expect(ageStr).toMatch(/\d+ años/);
+      expect(calculateAge('1996-01-01')).toBe('30 años');
     });
   });
 

@@ -3,16 +3,12 @@ import {
   getRecordForDate as getRecordFromIndexedDB,
   getPreviousDayRecord as getPreviousDayFromIndexedDB,
   getAllDates as getAllDatesFromIndexedDB,
-  saveRecord as saveToIndexedDB,
 } from '@/services/storage/indexedDBService';
-import {
-  getAvailableDatesFromFirestore,
-  getRecordFromFirestore,
-} from '@/services/storage/firestoreService';
-import { getLegacyRecord } from '@/services/storage/legacyFirebaseService';
+import { getAvailableDatesFromFirestore } from '@/services/storage/firestoreService';
 import { logLegacyInfo } from '@/services/storage/legacyfirebase/legacyFirebaseLogger';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import { migrateLegacyData } from '@/services/repositories/dataMigration';
+import { loadRemoteRecordWithFallback } from '@/services/repositories/dailyRecordRemoteLoader';
 import {
   createDailyRecordReadResult,
   DailyRecordReadResult,
@@ -58,24 +54,16 @@ export const getForDateWithMeta = async (
       if (isRepositoryDebugEnabled()) {
         logLegacyInfo(`[Repository DEBUG] Attempting Firestore fetch for ${query.date}`);
       }
-      const remoteRecord = await getRecordFromFirestore(query.date);
-      if (remoteRecord) {
-        const migrated = migrateLegacyData(remoteRecord, query.date);
-        await saveToIndexedDB(migrated);
-        return createDailyRecordReadResult(query.date, migrated, 'firestore');
+      if (isRepositoryDebugEnabled()) {
+        logLegacyInfo(`[Repository] Checking remote + legacy fallback for ${query.date}...`);
       }
 
-      if (isRepositoryDebugEnabled()) {
-        logLegacyInfo(`[Repository] Checking legacy fallback for ${query.date}...`);
-      }
-      const legacyRecord = await getLegacyRecord(query.date);
-      if (legacyRecord) {
-        if (isRepositoryDebugEnabled()) {
+      const remoteResult = await loadRemoteRecordWithFallback(query.date);
+      if (remoteResult.record) {
+        if (isRepositoryDebugEnabled() && remoteResult.source === 'legacy') {
           logLegacyInfo(`[Repository] Found legacy record for ${query.date}. Migrating to Beta.`);
         }
-        const migrated = migrateLegacyData(legacyRecord, query.date);
-        await saveToIndexedDB(migrated);
-        return createDailyRecordReadResult(query.date, migrated, 'legacy');
+        return createDailyRecordReadResult(query.date, remoteResult.record, remoteResult.source);
       }
     } catch (err) {
       console.warn(`[Repository] getForDate: Remote fetch failed for ${query.date}:`, err);

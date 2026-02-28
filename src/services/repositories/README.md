@@ -43,6 +43,8 @@ de entrada (fecha, límites, RUT, IDs) antes de delegar en storage.
   - registros ya presentes en IndexedDB
   - lectura remota actual desde Firestore
   - fallback de lectura legacy vía `legacyFirebaseService.ts`
+- `dailyRecordRemoteLoader.ts` centraliza la resolución `Firestore -> legacy -> cache local`
+  para evitar que la compatibilidad histórica quede duplicada entre lectura y sync.
 - `dataMigration.ts` sigue siendo el punto único para adaptar shapes legacy al schema vigente.
 - Si se cambia cualquier regla de compatibilidad, deben actualizarse:
   - tests de `dataMigration`

@@ -1,9 +1,9 @@
 import { DailyRecord } from '@/types';
 import { saveRecord as saveToIndexedDB } from '@/services/storage/indexedDBService';
-import { getRecordFromFirestore, subscribeToRecord } from '@/services/storage/firestoreService';
-import { getLegacyRecord } from '@/services/storage/legacyFirebaseService';
+import { subscribeToRecord } from '@/services/storage/firestoreService';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import { migrateLegacyData } from '@/services/repositories/dataMigration';
+import { loadRemoteRecordWithFallback } from '@/services/repositories/dailyRecordRemoteLoader';
 
 export const subscribe = (
   date: string,
@@ -22,19 +22,8 @@ export const syncWithFirestore = async (date: string): Promise<DailyRecord | nul
   if (!isFirestoreEnabled()) return null;
 
   try {
-    const record = await getRecordFromFirestore(date);
-    if (record) {
-      const migrated = migrateLegacyData(record, date);
-      await saveToIndexedDB(migrated);
-      return migrated;
-    }
-
-    const legacyRecord = await getLegacyRecord(date);
-    if (legacyRecord) {
-      const migrated = migrateLegacyData(legacyRecord, date);
-      await saveToIndexedDB(migrated);
-      return migrated;
-    }
+    const remoteResult = await loadRemoteRecordWithFallback(date);
+    return remoteResult.record;
   } catch (err) {
     console.warn(`[Repository] Sync failed for ${date}:`, err);
   }

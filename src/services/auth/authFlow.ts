@@ -12,21 +12,55 @@ import {
   releaseGoogleLoginLock,
   startGoogleLoginLockHeartbeat,
 } from '@/services/auth/googleLoginLock';
-import { checkSharedCensusAccess, isSharedCensusMode } from '@/services/auth/sharedCensusAuth';
 import { checkEmailInFirestore } from '@/services/auth/authPolicy';
-import {
-  consumeE2EPopupDelayMs,
-  consumeE2EPopupErrorCode,
-  consumeE2EPopupMockUser,
-  createAuthError,
-  googleProvider,
-  toAuthUser,
-} from '@/services/auth/authShared';
+import { createAuthError, googleProvider, toAuthUser } from '@/services/auth/authShared';
 import {
   isPopupRecoverableAuthError,
   shouldDowngradeGoogleAuthLogLevel,
   toGoogleAuthError,
 } from '@/services/auth/authErrorPolicy';
+import {
+  authorizeCurrentFirebaseUser,
+  authorizeFirebaseUser,
+} from '@/services/auth/authAccessResolution';
+
+const waitForE2EPopupDelay = async (): Promise<void> => {
+  const { consumeE2EPopupDelayMs } = await import('@/services/auth/authShared');
+  const e2ePopupDelayMs = consumeE2EPopupDelayMs();
+  if (e2ePopupDelayMs > 0) {
+    await new Promise(resolve => setTimeout(resolve, e2ePopupDelayMs));
+  }
+};
+
+const resolveE2EPopupUser = async (): Promise<AuthUser | null> => {
+  const { consumeE2EPopupErrorCode, consumeE2EPopupMockUser } =
+    await import('@/services/auth/authShared');
+  const e2ePopupErrorCode = consumeE2EPopupErrorCode();
+  if (e2ePopupErrorCode) {
+    throw createAuthError(e2ePopupErrorCode, `E2E popup error: ${e2ePopupErrorCode}`);
+  }
+
+  return consumeE2EPopupMockUser();
+};
+
+const withGoogleLoginLock = async <T>(runner: () => Promise<T>): Promise<T> => {
+  if (!acquireGoogleLoginLock()) {
+    const status = getGoogleLoginLockStatus();
+    const remainingSeconds = Math.max(1, Math.ceil(status.remainingMs / 1000));
+    throw createAuthError(
+      'auth/multi-tab-login-in-progress',
+      `Ya hay un inicio de sesión en progreso en otra pestaña. Intenta nuevamente en ${remainingSeconds}s.`
+    );
+  }
+
+  const stopLockHeartbeat = startGoogleLoginLockHeartbeat();
+  try {
+    return await runner();
+  } finally {
+    stopLockHeartbeat();
+    releaseGoogleLoginLock();
+  }
+};
 
 export const signIn = async (email: string, password: string): Promise<AuthUser> => {
   try {
@@ -61,94 +95,42 @@ export const signIn = async (email: string, password: string): Promise<AuthUser>
   }
 };
 
-export const signInWithGoogle = async (): Promise<AuthUser> => {
-  if (!acquireGoogleLoginLock()) {
-    const status = getGoogleLoginLockStatus();
-    const remainingSeconds = Math.max(1, Math.ceil(status.remainingMs / 1000));
-    throw createAuthError(
-      'auth/multi-tab-login-in-progress',
-      `Ya hay un inicio de sesión en progreso en otra pestaña. Intenta nuevamente en ${remainingSeconds}s.`
-    );
-  }
+export const signInWithGoogle = async (): Promise<AuthUser> =>
+  withGoogleLoginLock(async () => {
+    try {
+      await waitForE2EPopupDelay();
 
-  const stopLockHeartbeat = startGoogleLoginLockHeartbeat();
+      const existingUser = await authorizeCurrentFirebaseUser();
+      if (existingUser) {
+        return existingUser;
+      }
 
-  try {
-    const e2ePopupDelayMs = consumeE2EPopupDelayMs();
-    if (e2ePopupDelayMs > 0) {
-      await new Promise(resolve => setTimeout(resolve, e2ePopupDelayMs));
-    }
+      const e2ePopupUser = await resolveE2EPopupUser();
+      if (e2ePopupUser) {
+        return e2ePopupUser;
+      }
 
-    const existingUser = auth.currentUser;
-    if (existingUser && !existingUser.isAnonymous) {
-      if (isSharedCensusMode()) {
-        const sharedAccess = await checkSharedCensusAccess(existingUser.email);
-        if (sharedAccess.authorized) {
-          return toAuthUser(existingUser, 'viewer_census');
-        }
-        await firebaseSignOut(auth);
+      const result = await signInWithPopup(auth, googleProvider);
+      return authorizeFirebaseUser(result.user);
+    } catch (error: unknown) {
+      const err = error as { code?: string; message?: string };
+      if (err.message?.includes('no autorizado')) {
+        throw error;
+      }
+
+      const mappedError = toGoogleAuthError(error);
+      if (shouldDowngradeGoogleAuthLogLevel(error)) {
+        console.warn(`[authService] Google sign-in recoverable issue: ${mappedError.code}`);
       } else {
-        const { allowed, role } = await checkEmailInFirestore(existingUser.email || '');
-        if (allowed) {
-          return toAuthUser(existingUser, role);
-        }
-        await firebaseSignOut(auth);
+        console.error('[authService] Google sign-in failed', error);
       }
-    }
 
-    const e2ePopupErrorCode = consumeE2EPopupErrorCode();
-    if (e2ePopupErrorCode) {
-      throw createAuthError(e2ePopupErrorCode, `E2E popup error: ${e2ePopupErrorCode}`);
-    }
-
-    const e2ePopupMockUser = consumeE2EPopupMockUser();
-    if (e2ePopupMockUser) {
-      return e2ePopupMockUser;
-    }
-
-    const result = await signInWithPopup(auth, googleProvider);
-    const user = result.user;
-
-    if (isSharedCensusMode()) {
-      const sharedAccess = await checkSharedCensusAccess(user.email);
-      if (!sharedAccess.authorized) {
-        await firebaseSignOut(auth);
-        throw new Error('Acceso no autorizado. Tu correo no tiene permisos para censo compartido.');
+      if (isPopupRecoverableAuthError(error)) {
+        console.warn('[authService] 💡 Suggesting signInWithRedirect due to popup failure');
       }
-      return toAuthUser(user, 'viewer_census');
+      throw mappedError;
     }
-
-    const { allowed, role } = await checkEmailInFirestore(user.email || '');
-    if (!allowed) {
-      await firebaseSignOut(auth);
-      throw new Error(
-        'Acceso no autorizado. Su correo no está en la lista de usuarios permitidos.'
-      );
-    }
-
-    return toAuthUser(user, role);
-  } catch (error: unknown) {
-    const err = error as { code?: string; message?: string };
-    if (err.message?.includes('no autorizado')) {
-      throw error;
-    }
-
-    const mappedError = toGoogleAuthError(error);
-    if (shouldDowngradeGoogleAuthLogLevel(error)) {
-      console.warn(`[authService] Google sign-in recoverable issue: ${mappedError.code}`);
-    } else {
-      console.error('[authService] Google sign-in failed', error);
-    }
-
-    if (isPopupRecoverableAuthError(error)) {
-      console.warn('[authService] 💡 Suggesting signInWithRedirect due to popup failure');
-    }
-    throw mappedError;
-  } finally {
-    stopLockHeartbeat();
-    releaseGoogleLoginLock();
-  }
-};
+  });
 
 export const createUser = async (email: string, password: string): Promise<AuthUser> => {
   try {
