@@ -8,6 +8,7 @@ import * as Repository from '@/services/repositories/DailyRecordRepository';
 import { CatalogRepository } from '@/services/repositories/CatalogRepository';
 import * as idbService from '@/services/storage/indexedDBService';
 import * as firestoreService from '@/services/storage/firestoreService';
+import * as legacyFirebaseService from '@/services/storage/legacyFirebaseService';
 import {
   DailyRecord,
   DailyRecordPatch,
@@ -248,6 +249,21 @@ describe('DailyRecordRepository', () => {
         beds: expect.any(Object),
       });
       expect(idbService.saveRecord).toHaveBeenCalled(); // Since initializeDay calls save
+    });
+
+    it('should fallback to legacy Firebase paths during initialization when Firestore has no record', async () => {
+      vi.mocked(idbService.getRecordForDate).mockResolvedValueOnce(null);
+      vi.mocked(firestoreService.getRecordFromFirestore).mockResolvedValueOnce(null);
+      vi.mocked(legacyFirebaseService.getLegacyRecord).mockResolvedValueOnce(mockRecord);
+
+      const result = await Repository.initializeDay(mockDate);
+
+      expect(result).toMatchObject({
+        ...mockRecord,
+        beds: expect.any(Object),
+      });
+      expect(legacyFirebaseService.getLegacyRecord).toHaveBeenCalledWith(mockDate);
+      expect(idbService.saveRecord).toHaveBeenCalled();
     });
 
     it('should create fresh record if no previous day exists', async () => {

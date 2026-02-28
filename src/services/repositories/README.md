@@ -36,3 +36,15 @@ Todo acceso a `DailyRecord` debe pasar por este paquete (evitar acceso directo d
 
 Los métodos públicos de `DailyRecordRepository` y `PatientMasterRepository` validan/sanean contratos
 de entrada (fecha, límites, RUT, IDs) antes de delegar en storage.
+
+## Compatibilidad Histórica de Sync
+
+- `dailyRecordRepositoryInitializationService.ts` conserva bootstrap compatible con:
+  - registros ya presentes en IndexedDB
+  - lectura remota actual desde Firestore
+  - fallback de lectura legacy vía `legacyFirebaseService.ts`
+- `dataMigration.ts` sigue siendo el punto único para adaptar shapes legacy al schema vigente.
+- Si se cambia cualquier regla de compatibilidad, deben actualizarse:
+  - tests de `dataMigration`
+  - tests de `DailyRecordRepository`
+  - al menos una prueba de integración de sync

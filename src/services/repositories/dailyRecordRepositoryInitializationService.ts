@@ -1,71 +1,56 @@
-import { BedType, DailyRecord, PatientData } from '@/types';
-import { BEDS } from '@/constants';
+import { DailyRecord } from '@/types';
 import { getRecordFromFirestore } from '@/services/storage/firestoreService';
 import { getLegacyRecord } from '@/services/storage/legacyFirebaseService';
 import { saveRecord as saveToIndexedDB } from '@/services/storage/indexedDBService';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
-import { clonePatient, createEmptyPatient } from '@/services/factories/patientFactory';
+import { clonePatient } from '@/services/factories/patientFactory';
 import { getForDate } from '@/services/repositories/dailyRecordRepositoryReadService';
 import { save } from '@/services/repositories/dailyRecordRepositoryWriteService';
 import { migrateLegacyData } from '@/services/repositories/dataMigration';
+import {
+  buildInitializedDayRecord,
+  preserveCIE10FromPreviousDay,
+} from '@/services/repositories/dailyRecordInitializationSupport';
 
-/**
- * Preserve CIE-10 fields from the previous local day into a new remote record.
- *
- * The official Firebase (source of truth for patient demographics) does NOT support
- * CIE-10 codes. When a new day is initialized from the remote record, the CIE-10
- * fields arrive as undefined. This function carries over cie10Code and cie10Description
- * from the previous local day for patients that occupy the same bed with the same name.
- *
- * Match criteria: same bedId + same patientName (ensures the patient hasn't been
- * discharged and replaced by someone else).
- */
-const preserveCIE10FromPreviousDay = (
-  newBeds: Record<string, PatientData>,
-  prevBeds: Record<string, PatientData>
-): void => {
-  for (const bedId of Object.keys(newBeds)) {
-    const newPatient = newBeds[bedId];
-    const prevPatient = prevBeds[bedId];
+const loadCopySourceRecord = async (copyFromDate?: string): Promise<DailyRecord | null> => {
+  if (!copyFromDate) return null;
+  return getForDate(copyFromDate);
+};
 
-    if (!newPatient || !prevPatient) continue;
+const cacheMigratedInitializationRecord = async (
+  rawRecord: DailyRecord,
+  date: string,
+  copySourceRecord: DailyRecord | null
+): Promise<DailyRecord> => {
+  const migrated = migrateLegacyData(rawRecord, date);
 
-    // Only carry over if it's the same patient (match by name)
-    const isSamePatient =
-      prevPatient.patientName &&
-      newPatient.patientName &&
-      prevPatient.patientName.trim().toLowerCase() === newPatient.patientName.trim().toLowerCase();
+  if (copySourceRecord) {
+    preserveCIE10FromPreviousDay(migrated.beds, copySourceRecord.beds);
+  }
 
-    if (!isSamePatient) continue;
+  await saveToIndexedDB(migrated);
+  return migrated;
+};
 
-    // Carry over CIE-10 fields if the new record doesn't already have them
-    if (!newPatient.cie10Code && prevPatient.cie10Code) {
-      newPatient.cie10Code = prevPatient.cie10Code;
-    }
-    if (!newPatient.cie10Description && prevPatient.cie10Description) {
-      newPatient.cie10Description = prevPatient.cie10Description;
+const loadRemoteInitializationRecord = async (
+  date: string,
+  copySourceRecord: DailyRecord | null
+): Promise<DailyRecord | null> => {
+  try {
+    const remoteRecord = await getRecordFromFirestore(date);
+    if (remoteRecord) {
+      return cacheMigratedInitializationRecord(remoteRecord, date, copySourceRecord);
     }
 
-    // Also preserve CIE-10 on clinical cribs (sub-patients)
-    if (newPatient.clinicalCrib && prevPatient.clinicalCrib) {
-      const isSameCribPatient =
-        prevPatient.clinicalCrib.patientName &&
-        newPatient.clinicalCrib.patientName &&
-        prevPatient.clinicalCrib.patientName.trim().toLowerCase() ===
-          newPatient.clinicalCrib.patientName.trim().toLowerCase();
-
-      if (isSameCribPatient) {
-        if (!newPatient.clinicalCrib.cie10Code && prevPatient.clinicalCrib.cie10Code) {
-          newPatient.clinicalCrib.cie10Code = prevPatient.clinicalCrib.cie10Code;
-        }
-        if (
-          !newPatient.clinicalCrib.cie10Description &&
-          prevPatient.clinicalCrib.cie10Description
-        ) {
-          newPatient.clinicalCrib.cie10Description = prevPatient.clinicalCrib.cie10Description;
-        }
-      }
+    const legacyRecord = await getLegacyRecord(date);
+    if (legacyRecord) {
+      return cacheMigratedInitializationRecord(legacyRecord, date, copySourceRecord);
     }
+
+    return null;
+  } catch (err) {
+    console.warn(`[Repository] Failed to check remote sources for ${date} during init:`, err);
+    return null;
   }
 };
 
@@ -73,149 +58,16 @@ export const initializeDay = async (date: string, copyFromDate?: string): Promis
   const existing = await getForDate(date);
   if (existing) return existing;
 
+  const copySourceRecord = await loadCopySourceRecord(copyFromDate);
+
   if (isFirestoreEnabled()) {
-    try {
-      const remoteRecord = await getRecordFromFirestore(date);
-      if (remoteRecord) {
-        const migrated = migrateLegacyData(remoteRecord, date);
-
-        // Preserve local CIE-10 fields from previous day:
-        // The official Firebase doesn't support CIE-10 codes, so they arrive as undefined.
-        // Carry over cie10Code/cie10Description from the previous local day
-        // for patients in the same bed with the same name.
-        if (copyFromDate) {
-          const prevLocal = await getForDate(copyFromDate);
-          if (prevLocal) {
-            preserveCIE10FromPreviousDay(migrated.beds, prevLocal.beds);
-          }
-        }
-
-        await saveToIndexedDB(migrated);
-        return migrated;
-      }
-
-      const legacyRecord = await getLegacyRecord(date);
-      if (legacyRecord) {
-        const migrated = migrateLegacyData(legacyRecord, date);
-
-        if (copyFromDate) {
-          const prevLocal = await getForDate(copyFromDate);
-          if (prevLocal) {
-            preserveCIE10FromPreviousDay(migrated.beds, prevLocal.beds);
-          }
-        }
-
-        await saveToIndexedDB(migrated);
-        return migrated;
-      }
-    } catch (err) {
-      console.warn(`[Repository] Failed to check remote sources for ${date} during init:`, err);
+    const remoteInitializationRecord = await loadRemoteInitializationRecord(date, copySourceRecord);
+    if (remoteInitializationRecord) {
+      return remoteInitializationRecord;
     }
   }
 
-  const initialBeds: Record<string, PatientData> = {};
-  let activeExtras: string[] = [];
-  let initialOverrides: Record<string, BedType> = {};
-
-  BEDS.forEach(bed => {
-    initialBeds[bed.id] = createEmptyPatient(bed.id);
-  });
-
-  let nursesDay: string[] = ['', ''];
-  const nursesNight: string[] = ['', ''];
-  let tensDay: string[] = ['', '', ''];
-  const tensNight: string[] = ['', '', ''];
-
-  const prevRecord = copyFromDate ? await getForDate(copyFromDate) : null;
-
-  if (prevRecord) {
-    const prevBeds = prevRecord.beds;
-
-    const isNightShiftEmpty =
-      !prevRecord.nursesNightShift || prevRecord.nursesNightShift.every(n => !n);
-    const prevNurses = !isNightShiftEmpty
-      ? prevRecord.nursesNightShift
-      : prevRecord.nurses || ['', ''];
-
-    nursesDay = [...(prevNurses || ['', ''])];
-    while (nursesDay.length < 2) nursesDay.push('');
-    nursesDay = nursesDay.slice(0, 2);
-
-    const isNightTensEmpty = !prevRecord.tensNightShift || prevRecord.tensNightShift.every(t => !t);
-    const rawTens = !isNightTensEmpty
-      ? prevRecord.tensNightShift!
-      : prevRecord.tensDayShift || ['', '', ''];
-
-    tensDay = [...rawTens];
-    while (tensDay.length < 3) tensDay.push('');
-    tensDay = tensDay.slice(0, 3);
-
-    activeExtras = [...(prevRecord.activeExtraBeds || [])];
-    initialOverrides = { ...(prevRecord.bedTypeOverrides || {}) };
-
-    BEDS.forEach(bed => {
-      const prevPatient = prevBeds[bed.id];
-      if (prevPatient) {
-        if (
-          prevPatient.patientName ||
-          prevPatient.isBlocked ||
-          prevPatient.cie10Code ||
-          prevPatient.cie10Description ||
-          prevPatient.pathology ||
-          prevPatient.diagnosisComments
-        ) {
-          initialBeds[bed.id] = clonePatient(prevPatient);
-
-          initialBeds[bed.id].cudyr = undefined;
-
-          const clonedCrib = initialBeds[bed.id].clinicalCrib;
-          if (clonedCrib) {
-            clonedCrib.cudyr = undefined;
-          }
-
-          const prevNightNote = prevPatient.handoffNoteNightShift || prevPatient.handoffNote || '';
-          initialBeds[bed.id].handoffNoteDayShift = prevNightNote;
-          initialBeds[bed.id].handoffNoteNightShift = prevNightNote;
-
-          if (clonedCrib && prevPatient.clinicalCrib) {
-            const cribPrevNight =
-              prevPatient.clinicalCrib.handoffNoteNightShift ||
-              prevPatient.clinicalCrib.handoffNote ||
-              '';
-            clonedCrib.handoffNoteDayShift = cribPrevNight;
-            clonedCrib.handoffNoteNightShift = cribPrevNight;
-          }
-        } else {
-          initialBeds[bed.id].bedMode = prevPatient.bedMode || initialBeds[bed.id].bedMode;
-          initialBeds[bed.id].hasCompanionCrib = prevPatient.hasCompanionCrib || false;
-        }
-        if (prevPatient.location && bed.isExtra) {
-          initialBeds[bed.id].location = prevPatient.location;
-        }
-      }
-    });
-  }
-
-  const dateObj = new Date(`${date}T00:00:00`);
-  const newRecord: DailyRecord = {
-    date,
-    beds: initialBeds,
-    discharges: [],
-    transfers: [],
-    cma: [],
-    bedTypeOverrides: initialOverrides,
-    lastUpdated: new Date().toISOString(),
-    dateTimestamp: dateObj.getTime(),
-    nurses: ['', ''],
-    nursesDayShift: nursesDay,
-    nursesNightShift: nursesNight,
-    tensDayShift: tensDay,
-    tensNightShift: tensNight,
-    activeExtraBeds: activeExtras,
-    handoffNovedadesDayShift: prevRecord
-      ? prevRecord.handoffNovedadesNightShift || prevRecord.handoffNovedadesDayShift || ''
-      : '',
-  };
+  const newRecord = buildInitializedDayRecord(date, copySourceRecord);
 
   await save(newRecord);
   return newRecord;
