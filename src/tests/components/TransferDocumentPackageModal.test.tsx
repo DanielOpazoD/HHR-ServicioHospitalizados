@@ -15,15 +15,21 @@ vi.mock('@/shared/runtime/browserWindowRuntime', () => ({
 
 const uploadToTransferFolder = vi.fn();
 const makeFilePubliclyEditable = vi.fn();
+const isGoogleDriveEditingConfigured = vi.fn();
 
 vi.mock('@/services/google/googleDriveService', () => ({
   uploadToTransferFolder: (...args: unknown[]) => uploadToTransferFolder(...args),
   makeFilePubliclyEditable: (...args: unknown[]) => makeFilePubliclyEditable(...args),
 }));
 
+vi.mock('@/services/google/googleDriveAuth', () => ({
+  isGoogleDriveEditingConfigured: () => isGoogleDriveEditingConfigured(),
+}));
+
 describe('TransferDocumentPackageModal', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    isGoogleDriveEditingConfigured.mockReturnValue(true);
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
@@ -90,5 +96,14 @@ describe('TransferDocumentPackageModal', () => {
         'La edición online no está configurada aún (falta Client ID). Por favor, descarga el archivo para editarlo localmente.'
       );
     });
+  });
+
+  it('disables cloud editing when Google Drive is not configured', () => {
+    isGoogleDriveEditingConfigured.mockReturnValue(false);
+
+    render(<TransferDocumentPackageModal {...baseProps} />);
+
+    expect(screen.getByRole('button', { name: /cloud no disp\./i })).toBeDisabled();
+    expect(screen.getByText(/falta configurar vite_google_client_id/i)).toBeInTheDocument();
   });
 });

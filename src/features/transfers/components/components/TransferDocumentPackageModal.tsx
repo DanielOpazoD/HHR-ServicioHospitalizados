@@ -5,6 +5,7 @@ import {
   uploadToTransferFolder,
   makeFilePubliclyEditable,
 } from '@/services/google/googleDriveService';
+import { isGoogleDriveEditingConfigured } from '@/services/google/googleDriveAuth';
 import clsx from 'clsx';
 import { BaseModal, ModalSection } from '@/components/shared/BaseModal';
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
@@ -26,8 +27,16 @@ export const TransferDocumentPackageModal: React.FC<TransferDocumentPackageModal
   documents,
 }) => {
   const [isUploading, setIsUploading] = useState<string | null>(null);
+  const isCloudEditingConfigured = isGoogleDriveEditingConfigured();
 
   const handleEdit = async (doc: GeneratedDocument) => {
+    if (!isCloudEditingConfigured) {
+      defaultBrowserWindowRuntime.alert(
+        'La edición en nube aún no está disponible en este entorno. Descarga el archivo para editarlo localmente.'
+      );
+      return;
+    }
+
     setIsUploading(doc.templateId);
     try {
       const result = await uploadToTransferFolder(doc.blob, doc.fileName, {
@@ -97,20 +106,31 @@ export const TransferDocumentPackageModal: React.FC<TransferDocumentPackageModal
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={() => handleEdit(doc)}
-                  disabled={!!isUploading}
+                  disabled={!!isUploading || !isCloudEditingConfigured}
                   className={clsx(
                     'flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border min-w-[120px] justify-center',
                     isUploading === doc.templateId
                       ? 'bg-blue-50 text-blue-400 border-blue-50'
-                      : 'text-blue-600 border-blue-100 hover:bg-blue-600 hover:text-white hover:border-blue-600 shadow-sm shadow-blue-500/5'
+                      : !isCloudEditingConfigured
+                        ? 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed'
+                        : 'text-blue-600 border-blue-100 hover:bg-blue-600 hover:text-white hover:border-blue-600 shadow-sm shadow-blue-500/5'
                   )}
+                  title={
+                    isCloudEditingConfigured
+                      ? 'Subir a Google Drive para edición online'
+                      : 'La edición en nube aún no está configurada en este entorno'
+                  }
                 >
                   {isUploading === doc.templateId ? (
                     <Loader2 size={14} className="animate-spin" />
                   ) : (
                     <Edit3 size={14} />
                   )}
-                  {isUploading === doc.templateId ? 'SUBIENDO...' : 'EDITAR CLOUD'}
+                  {isUploading === doc.templateId
+                    ? 'SUBIENDO...'
+                    : isCloudEditingConfigured
+                      ? 'EDITAR CLOUD'
+                      : 'CLOUD NO DISP.'}
                 </button>
                 <button
                   onClick={async () => {
@@ -135,13 +155,24 @@ export const TransferDocumentPackageModal: React.FC<TransferDocumentPackageModal
         <ModalSection
           title="Información de Edición"
           icon={<AlertCircle size={16} />}
-          variant="info"
-          description="El botón 'Editar Cloud' sube el documento a Google Drive para edición colaborativa en tiempo real. Los cambios se guardan automáticamente en la nube."
+          variant={isCloudEditingConfigured ? 'info' : 'warning'}
+          description={
+            isCloudEditingConfigured
+              ? "El botón 'Editar Cloud' sube el documento a Google Drive para edición colaborativa en tiempo real. Los cambios se guardan automáticamente en la nube."
+              : 'La edición en nube todavía no está configurada en este entorno. Por ahora, descarga el archivo para editarlo localmente.'
+          }
         >
-          <div className="flex items-center gap-2 text-[10px] font-bold text-blue-600/70 uppercase tracking-widest bg-blue-50/50 p-2 rounded-lg border border-blue-100/50">
-            <CheckCircle2 size={12} />
-            Sincronización segura con Google Workspace
-          </div>
+          {isCloudEditingConfigured ? (
+            <div className="flex items-center gap-2 text-[10px] font-bold text-blue-600/70 uppercase tracking-widest bg-blue-50/50 p-2 rounded-lg border border-blue-100/50">
+              <CheckCircle2 size={12} />
+              Sincronización segura con Google Workspace
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-[10px] font-bold text-amber-700 uppercase tracking-widest bg-amber-50/80 p-2 rounded-lg border border-amber-200/80">
+              <AlertCircle size={12} />
+              Falta configurar VITE_GOOGLE_CLIENT_ID
+            </div>
+          )}
         </ModalSection>
 
         <div className="flex justify-end pt-2">

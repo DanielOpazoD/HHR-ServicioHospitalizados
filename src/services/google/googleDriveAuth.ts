@@ -32,6 +32,8 @@ let tokenExpiry = 0;
 
 const isTokenValid = (): boolean => Boolean(accessToken && Date.now() < tokenExpiry);
 
+export const isGoogleDriveEditingConfigured = (): boolean => Boolean(GOOGLE_CLIENT_ID);
+
 export const requestAccessToken = (): Promise<string> =>
   new Promise((resolve, reject) => {
     if (isTokenValid()) {
