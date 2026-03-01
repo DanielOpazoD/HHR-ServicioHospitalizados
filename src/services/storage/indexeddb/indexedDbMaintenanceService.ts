@@ -47,3 +47,7 @@ export const performClientHardReset = async (): Promise<void> => {
   clearBrowserStorage();
   defaultBrowserWindowRuntime.reload();
 };
+
+export const resetLocalAppStorage = async (): Promise<void> => {
+  await performClientHardReset();
+};

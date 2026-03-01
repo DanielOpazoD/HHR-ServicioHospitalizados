@@ -5,6 +5,7 @@ import App from '@/App';
 import { firebaseReady, mountConfigWarning } from '@/firebaseConfig';
 import { queryClient } from '@/config/queryClient';
 import { GlobalErrorBoundary } from '@/components/shared/GlobalErrorBoundary';
+import { getFirebaseStartupFailureMessage } from '@/services/auth/firebaseStartupUiPolicy';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -52,7 +53,5 @@ clearLocalServiceWorkers()
   .finally(() => firebaseReady.then(renderApp))
   .catch(error => {
     console.error('Firebase initialization failed', error);
-    mountConfigWarning(
-      'No se pudo inicializar Firebase. Revisa las variables de entorno en Netlify.'
-    );
+    mountConfigWarning(getFirebaseStartupFailureMessage());
   });

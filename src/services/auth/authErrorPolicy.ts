@@ -60,21 +60,21 @@ export const shouldDowngradeGoogleAuthLogLevel = (error: unknown): boolean =>
 
 const GOOGLE_AUTH_ERROR_MESSAGES: Record<string, string> = {
   'auth/multi-tab-login-in-progress':
-    'Hay otra pestaña iniciando sesión. Espera unos segundos o usa el acceso alternativo.',
+    'Ya hay otra pestaña intentando entrar. Espera unos segundos o prueba la otra forma de ingreso.',
   'auth/popup-closed-by-user': 'Inicio de sesión cancelado',
   'auth/popup-blocked':
-    'El navegador bloqueó la ventana emergente. Permita pop-ups para este sitio.',
+    'El navegador no permitió abrir la ventana de Google. Revisa si bloqueó ventanas emergentes para este sitio.',
   'auth/popup-timeout':
-    'El login con Google quedó esperando demasiado tiempo. Usa el acceso alternativo sin popup.',
+    'La ventana de Google tardó demasiado en responder. Prueba la otra forma de ingreso.',
   'auth/cancelled-popup-request': 'Operación cancelada',
   'auth/network-request-failed':
-    'Error de conexión o bloqueo de seguridad (COOP/Cookies). Verifique su conexión o la configuración del navegador.',
+    'No se pudo completar el ingreso por un problema de conexión o por una restricción del navegador.',
   'auth/popup-coop-blocked':
-    'Bloqueo de seguridad del navegador al cerrar popup (COOP). Usa acceso alternativo sin popup.',
+    'El navegador bloqueó el cierre seguro de la ventana de Google. Prueba la otra forma de ingreso.',
   'auth/unauthorized-domain':
-    'Dominio no autorizado en Firebase Auth. Agrega el dominio actual en Firebase > Authentication > Settings > Authorized domains.',
+    'Este sitio todavía no está autorizado para usar el ingreso con Google. Pide que revisen la configuración de Firebase Auth.',
   'auth/invalid-api-key':
-    'Clave de API inválida. Revisa las variables de entorno de Firebase configuradas en Netlify.',
+    'La configuración de acceso no es válida. Revisa las variables de Firebase del entorno.',
 };
 
 export const toGoogleAuthError = (error: unknown): Error & { code: string } => {

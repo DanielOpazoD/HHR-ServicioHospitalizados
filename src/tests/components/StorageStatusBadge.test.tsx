@@ -17,6 +17,7 @@ vi.mock('@/shared/runtime/browserWindowRuntime', () => ({
 
 import { isDatabaseInFallbackMode, resetLocalDatabase } from '@/services/storage/indexedDBService';
 import StorageStatusBadge from '@/components/layout/StorageStatusBadge';
+import { getStorageAutoRecoveryKey } from '@/services/storage/storageFallbackUiPolicy';
 
 describe('StorageStatusBadge', () => {
   beforeEach(() => {
@@ -27,11 +28,11 @@ describe('StorageStatusBadge', () => {
   it('does not render when fallback mode is disabled', () => {
     vi.mocked(isDatabaseInFallbackMode).mockReturnValue(false);
     render(<StorageStatusBadge />);
-    expect(screen.queryByText('Almacenamiento Local Limitado')).not.toBeInTheDocument();
+    expect(screen.queryByText('Guardado local limitado')).not.toBeInTheDocument();
   });
 
   it('uses runtime reload on retry and reset on hard cleanup', () => {
-    window.sessionStorage.setItem('hhr_storage_auto_recovery_attempted_v1', 'true');
+    window.sessionStorage.setItem(getStorageAutoRecoveryKey(), 'true');
     vi.mocked(isDatabaseInFallbackMode).mockReturnValue(true);
     render(<StorageStatusBadge />);
 
@@ -49,7 +50,7 @@ describe('StorageStatusBadge', () => {
     render(<StorageStatusBadge />);
 
     expect(mockReload).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText('Almacenamiento Local Limitado')).not.toBeInTheDocument();
-    expect(window.sessionStorage.getItem('hhr_storage_auto_recovery_attempted_v1')).toBe('true');
+    expect(screen.queryByText('Guardado local limitado')).not.toBeInTheDocument();
+    expect(window.sessionStorage.getItem(getStorageAutoRecoveryKey())).toBe('true');
   });
 });

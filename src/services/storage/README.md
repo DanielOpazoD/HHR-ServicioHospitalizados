@@ -26,6 +26,8 @@ Capa de persistencia concreta: IndexedDB, localStorage, Firestore bridge y sincr
 - Fallback controlado en caso de fallo de DB local.
 - Sincronización diferida con Firestore.
 - No existe almacenamiento demo soportado en esta capa.
+- La UI de fallback intenta primero una recuperación automática de sesión antes de mostrar avisos al usuario.
+- Los hooks de estado de fallback pausan el polling cuando la pestaña está oculta para evitar trabajo innecesario.
 
 ## Compatibilidad
 
@@ -52,3 +54,4 @@ Cambios en esta capa requieren:
 ## Operación
 
 - Runbook soporte sync/resiliencia: `docs/RUNBOOK_SYNC_RESILIENCE.md`
+- Si IndexedDB cae en modo degradado persistente, el sistema reduce ruido de reintentos y mantiene el fallback activo durante la sesión.

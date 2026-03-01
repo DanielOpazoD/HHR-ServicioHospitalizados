@@ -28,7 +28,7 @@ describe('authErrorPolicy', () => {
   it('returns user-facing message for popup blocked', () => {
     const err = toGoogleAuthError({ code: 'auth/popup-blocked' }) as Error & { code: string };
     expect(err.code).toBe('auth/popup-blocked');
-    expect(err.message).toContain('ventana emergente');
+    expect(err.message).toContain('ventana de Google');
   });
 
   it('treats popup timeout as recoverable and user-facing', () => {
@@ -36,7 +36,7 @@ describe('authErrorPolicy', () => {
       message: 'El login con Google no respondió a tiempo.',
     }) as Error & { code: string };
     expect(err.code).toBe('auth/popup-timeout');
-    expect(err.message).toContain('esperando demasiado tiempo');
+    expect(err.message).toContain('otra forma de ingreso');
     expect(isPopupRecoverableAuthError(err)).toBe(true);
   });
 

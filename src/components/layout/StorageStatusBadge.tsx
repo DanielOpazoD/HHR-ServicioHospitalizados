@@ -1,6 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { AlertTriangle, ChevronDown, ChevronUp, Database, RefreshCw } from 'lucide-react';
 import { resetLocalDatabase } from '@/services/storage/indexedDBService';
+import {
+  getStorageFallbackUiCopy,
+  markStorageAutoRecoveryAttempted,
+  shouldAttemptStorageAutoRecovery,
+  shouldShowStorageFallbackUi,
+} from '@/services/storage/storageFallbackUiPolicy';
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
 import { useDatabaseFallbackStatus } from '@/hooks/useDatabaseFallbackStatus';
 
@@ -10,35 +16,24 @@ import { useDatabaseFallbackStatus } from '@/hooks/useDatabaseFallbackStatus';
  * Persistent warning shown only when IndexedDB fails and the system
  * is operating in degraded fallback mode.
  */
-const STORAGE_AUTO_RECOVERY_KEY = 'hhr_storage_auto_recovery_attempted_v1';
-
 const StorageStatusBadge: React.FC = () => {
   const isFallback = useDatabaseFallbackStatus();
   const [isVisible, setIsVisible] = useState(true);
   const [showDetails, setShowDetails] = useState(false);
-  const [shouldShowBanner, setShouldShowBanner] = useState(false);
+  const shouldShowBanner = shouldShowStorageFallbackUi(isFallback);
+  const copy = getStorageFallbackUiCopy();
 
   useEffect(() => {
-    if (!isFallback) {
-      setShouldShowBanner(false);
+    if (!isFallback) return;
+
+    if (typeof window === 'undefined') {
       return;
     }
 
-    if (typeof window === 'undefined' || !window.sessionStorage) {
-      setShouldShowBanner(true);
-      return;
-    }
-
-    const alreadyTriedAutoRecovery =
-      window.sessionStorage.getItem(STORAGE_AUTO_RECOVERY_KEY) === 'true';
-
-    if (!alreadyTriedAutoRecovery) {
-      window.sessionStorage.setItem(STORAGE_AUTO_RECOVERY_KEY, 'true');
+    if (shouldAttemptStorageAutoRecovery(isFallback)) {
+      markStorageAutoRecoveryAttempted();
       defaultBrowserWindowRuntime.reload();
-      return;
     }
-
-    setShouldShowBanner(true);
   }, [isFallback]);
 
   if (!isFallback || !isVisible || !shouldShowBanner) return null;
@@ -50,18 +45,11 @@ const StorageStatusBadge: React.FC = () => {
           <AlertTriangle className="text-amber-600 w-5 h-5" />
         </div>
         <div className="flex-1">
-          <h4 className="text-amber-900 font-bold text-sm flex items-center gap-2">
-            Almacenamiento Local Limitado
-          </h4>
-          <p className="text-amber-800 text-xs mt-1 leading-relaxed">
-            La app sigue funcionando. Después de este cambio del navegador, conviene
-            <strong> recargar una vez</strong> para recuperar el guardado normal.
-          </p>
+          <h4 className="text-amber-900 font-bold text-sm flex items-center gap-2">{copy.title}</h4>
+          <p className="text-amber-800 text-xs mt-1 leading-relaxed">{copy.summary}</p>
           {showDetails ? (
             <div className="mt-2 rounded-lg bg-amber-100/70 px-3 py-2 text-[11px] text-amber-900 leading-relaxed">
-              Esto suele pasar después de borrar los datos del sitio en el navegador. Normalmente se
-              soluciona recargando la página. Si el aviso sigue apareciendo varias veces seguidas,
-              puedes usar la opción avanzada para reiniciar el almacenamiento local de esta app.
+              {copy.detail}
             </div>
           ) : null}
           <div className="mt-2 flex flex-wrap gap-2">
@@ -69,7 +57,7 @@ const StorageStatusBadge: React.FC = () => {
               onClick={defaultBrowserWindowRuntime.reload}
               className="text-[11px] bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-md flex items-center gap-1 transition-colors"
             >
-              <RefreshCw className="w-3 h-3" /> Recargar
+              <RefreshCw className="w-3 h-3" /> {copy.primaryActionLabel}
             </button>
             <button
               onClick={() => setShowDetails(current => !current)}
@@ -87,7 +75,7 @@ const StorageStatusBadge: React.FC = () => {
                 onClick={resetLocalDatabase}
                 className="text-[11px] bg-white border border-amber-300 text-amber-700 hover:bg-amber-50 px-3 py-1.5 rounded-md flex items-center gap-1 transition-colors"
               >
-                <Database className="w-3 h-3" /> Reiniciar guardado local
+                <Database className="w-3 h-3" /> {copy.advancedActionLabel}
               </button>
             ) : null}
             <button

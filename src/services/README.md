@@ -42,6 +42,9 @@ Capa de datos e integración: repositorios, persistencia, exportadores, integrac
   - `authCredentialFlow.ts` para email/password y creación de usuario
   - `authGoogleFlow.ts` para popup, lock multi-tab y ramas E2E
   - `authFallback.ts` para redirect/bootstrap
+  - `firebaseAuthConfigPolicy.ts` y `authRedirectRuntime.ts` para validar si el acceso alternativo está realmente disponible según entorno y configuración
+  - `firebaseStartupUiPolicy.ts` para mensajes de arranque cuando la configuración de Firebase es inválida o incompleta
+  - `authUiCopy.ts` para centralizar textos visibles de login y fallback sin mezclar copy en varios módulos
   - `authSession.ts` para suscripción de sesión activa
   - `authAccessResolution.ts` para autorización y resolución de rol
   - `authPolicy.ts` como fachada de whitelist/roles apoyada en helpers internos de caché y lookup

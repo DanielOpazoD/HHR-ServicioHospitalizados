@@ -25,10 +25,39 @@ export const useDatabaseFallbackStatus = (
       setIsFallback(isDatabaseInFallbackMode());
     };
 
-    syncStatus();
-    const intervalId = setInterval(syncStatus, pollIntervalMs);
+    const isDocumentHidden = () =>
+      typeof document !== 'undefined' && document.visibilityState === 'hidden';
 
-    return () => clearInterval(intervalId);
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+    const startPolling = () => {
+      if (intervalId || isDocumentHidden()) return;
+      intervalId = setInterval(syncStatus, pollIntervalMs);
+    };
+
+    const stopPolling = () => {
+      if (!intervalId) return;
+      clearInterval(intervalId);
+      intervalId = null;
+    };
+
+    const handleVisibilityChange = () => {
+      syncStatus();
+      if (isDocumentHidden()) {
+        stopPolling();
+        return;
+      }
+
+      startPolling();
+    };
+
+    syncStatus();
+    startPolling();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      stopPolling();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [enabled, pollIntervalMs]);
 
   return isFallback;

@@ -59,7 +59,7 @@ const signInWithPopupOrTimeout = async (): Promise<AuthUser> =>
         reject(
           createAuthError(
             'auth/popup-timeout',
-            'El login con Google no respondió a tiempo. Usa acceso alternativo sin popup.'
+            'La ventana de Google tardó demasiado en responder. Prueba la otra forma de ingreso.'
           )
         )
       );
@@ -124,7 +124,9 @@ export const signInWithGoogle = async (): Promise<AuthUser> =>
       }
 
       if (isPopupRecoverableAuthError(error)) {
-        console.warn('[authService] 💡 Suggesting signInWithRedirect due to popup failure');
+        console.warn(
+          '[authService] Trying alternate Google sign-in flow after browser popup issue'
+        );
       }
 
       throw mappedError;

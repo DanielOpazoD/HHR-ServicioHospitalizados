@@ -347,7 +347,9 @@ describe('authService', () => {
     });
 
     it('should reject redirect flow on localhost when runtime policy disables it', async () => {
-      await expect(signInWithGoogleRedirect()).rejects.toThrow(/deshabilitado en localhost/i);
+      await expect(signInWithGoogleRedirect()).rejects.toThrow(
+        /acceso alternativo está desactivado/i
+      );
       expect(firebaseAuth.signInWithRedirect).not.toHaveBeenCalled();
     });
   });

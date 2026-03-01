@@ -12,6 +12,7 @@ import {
 } from '@/services/auth/authBootstrapState';
 import { authorizeFirebaseUser } from '@/services/auth/authAccessResolution';
 import { getAuthRedirectRuntimeSupport } from '@/services/auth/authRedirectRuntime';
+import { AUTH_UI_COPY } from '@/services/auth/authUiCopy';
 
 const runE2ERedirectMode = async (mode: 'success' | 'error' | 'timeout'): Promise<void> => {
   if (mode === 'error') {
@@ -46,8 +47,7 @@ export const signInWithGoogleRedirect = async (): Promise<void> => {
     const redirectRuntimeSupport = getAuthRedirectRuntimeSupport();
     if (!redirectRuntimeSupport.canUseRedirectAuth) {
       throw new Error(
-        redirectRuntimeSupport.redirectDisabledReason ||
-          'El acceso alternativo por redirección no está disponible en este entorno.'
+        redirectRuntimeSupport.redirectDisabledReason || AUTH_UI_COPY.redirectUnavailable
       );
     }
 

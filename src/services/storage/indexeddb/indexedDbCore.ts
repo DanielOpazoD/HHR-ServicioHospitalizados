@@ -10,6 +10,7 @@ import {
   shouldScheduleBackgroundIndexedDbRecovery,
   shouldUseStickyIndexedDbFallback,
 } from './indexedDbRecoveryPolicy';
+import { attachIndexedDbWarningBindings } from './indexedDbWarningBindings';
 
 export class HangaRoaDatabase extends Dexie {
   dailyRecords!: Table<DailyRecord>;
@@ -171,18 +172,14 @@ let recoveryRetryTimer: ReturnType<typeof setTimeout> | null = null;
 let backgroundRecoveryAttempts = 0;
 let stickyFallbackMode = false;
 let stickyFallbackWarningShown = false;
+const emittedIndexedDbWarnings = new Set<string>();
 
-const attachDatabaseEvents = (database: HangaRoaDatabase) => {
-  database.on('blocked', () => {
-    console.warn('[IndexedDB] ⏳ Database is blocked by another tab');
-  });
-
-  database.on('close', () => {
-    if (!isUsingMock) {
-      console.warn('[IndexedDB] 🚪 Database connection closed unexpectedly.');
-    }
-  });
-};
+const attachDatabaseEvents = (database: HangaRoaDatabase) =>
+  attachIndexedDbWarningBindings(
+    database,
+    () => ({ isUsingMock, stickyFallbackMode }),
+    emittedIndexedDbWarnings
+  );
 
 const initializeDatabase = () => {
   try {
@@ -334,6 +331,7 @@ export const ensureDbReady = async (options: EnsureDbReadyOptions = {}): Promise
     stickyFallbackMode = false;
     stickyFallbackWarningShown = false;
     backgroundRecoveryAttempts = 0;
+    emittedIndexedDbWarnings.clear();
   } catch (error: unknown) {
     const errorName =
       error && typeof error === 'object' && 'name' in error ? String(error.name) : 'Unknown';
@@ -366,6 +364,7 @@ export const ensureDbReady = async (options: EnsureDbReadyOptions = {}): Promise
         stickyFallbackMode = false;
         stickyFallbackWarningShown = false;
         backgroundRecoveryAttempts = 0;
+        emittedIndexedDbWarnings.clear();
         onDatabaseRecreated?.();
         return;
       } catch (recoveryError) {

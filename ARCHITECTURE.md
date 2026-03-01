@@ -49,6 +49,7 @@ flowchart TB
 - **Integridad clínica:** validación estricta con Zod + guardas de regresión.
 - **Concurrencia segura:** control optimista y updates parciales por celda (LWW).
 - **Recuperación:** auto-repair de IndexedDB y fallback controlado.
+- **Auth por entorno:** popup como flujo principal y acceso alternativo habilitado solo cuando la configuración Firebase lo soporta.
 - **Observabilidad local:** métricas y logs guardados localmente para diagnóstico offline.
 - **Cola de sync:** cambios encolados con deduplicación y backoff.
 
@@ -238,6 +239,11 @@ Snapshot regenerado el `2026-02-28`:
 - Módulos sobredimensionados: `0`
 - Violaciones de deuda entre carpetas: `0`
 - Explicit `any` en source: `0`
+
+## Notas de Operación
+
+- El acceso alternativo de Google no se ofrece automáticamente en `localhost` salvo habilitación explícita.
+- Cuando IndexedDB falla por bloqueo o backing store, la app intenta una auto-recuperación inicial y solo luego expone UI de aviso.
 - Archivos de test: `474`
 - Flake-risk test files: `0`
 

@@ -16,6 +16,8 @@ import {
 import type { FirebaseStorage } from 'firebase/storage';
 import type { Functions } from 'firebase/functions';
 import { safeJsonParse } from '@/utils/jsonUtils';
+import { getFirebaseAuthConfigStatus } from '@/services/auth/firebaseAuthConfigPolicy';
+import { getFirebaseStartupWarningCopy } from '@/services/auth/firebaseStartupUiPolicy';
 
 const CACHED_CONFIG_KEY = 'hhr_firebase_config';
 
@@ -48,16 +50,17 @@ const mountConfigWarning = (message: string) => {
   const root = document.getElementById('root');
   if (!root) return;
 
+  const warningCopy = getFirebaseStartupWarningCopy();
+
   root.innerHTML = `
         <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f8fafc;color:#0f172a;">
             <div style="max-width:520px;padding:24px;border-radius:12px;background:white;box-shadow:0 10px 40px rgba(15,23,42,0.12);font-family:Inter,sans-serif;">
-                <h1 style="font-size:20px;font-weight:700;margin:0 0 12px 0;">Configuración de Firebase incompleta</h1>
-                <p style="margin:0 0 8px 0;line-height:1.5;">La aplicación no puede iniciarse porque falta la clave API de Firebase.</p>
+                <h1 style="font-size:20px;font-weight:700;margin:0 0 12px 0;">${warningCopy.title}</h1>
+                <p style="margin:0 0 8px 0;line-height:1.5;">${warningCopy.summary}</p>
                 <ol style="margin:0 0 12px 20px;line-height:1.5;">
-                    <li>En Netlify, crea la variable <code>VITE_FIREBASE_API_KEY</code> (o <code>VITE_FIREBASE_API_KEY_B64</code> si prefieres base64) con tu API key de Firebase.</li>
-                    <li>Vuelve a desplegar el sitio para que la configuración se aplique.</li>
+                    ${warningCopy.steps.map(step => `<li>${step.replaceAll('VITE_FIREBASE_API_KEY', '<code>VITE_FIREBASE_API_KEY</code>').replaceAll('VITE_FIREBASE_API_KEY_B64', '<code>VITE_FIREBASE_API_KEY_B64</code>').replaceAll('VITE_FIREBASE_AUTH_DOMAIN', '<code>VITE_FIREBASE_AUTH_DOMAIN</code>')}</li>`).join('')}
                 </ol>
-                <p style="margin:0;color:#475569;font-size:14px;">Las claves se cargan en tiempo de ejecución desde una función serverless, por lo que no se incluyen en el bundle público.</p>
+                <p style="margin:0;color:#475569;font-size:14px;">${warningCopy.footnote}</p>
             </div>
         </div>
     `;
@@ -143,9 +146,26 @@ const loadFirebaseConfig = async () => {
 
     console.error('Failed to load Firebase config from Netlify function', error);
     mountConfigWarning(
-      'No se pudo cargar la configuración de Firebase desde Netlify. Verifica las variables en el panel de Netlify.'
+      'No se pudo cargar la configuración principal del sistema. Revisa la función de configuración y las variables de Firebase del entorno.'
     );
     throw error;
+  }
+};
+
+const warnOnFirebaseAuthConfig = (config: FirebaseOptions) => {
+  const authConfigStatus = getFirebaseAuthConfigStatus(config.authDomain);
+
+  if (!authConfigStatus.hasAuthDomain) {
+    console.warn(
+      `[FirebaseConfig] ⚠️ ${authConfigStatus.supportSummary} ${authConfigStatus.supportAction}`
+    );
+    return;
+  }
+
+  if (!authConfigStatus.usesFirebaseHostedAuthDomain) {
+    console.warn(
+      `[FirebaseConfig] ⚠️ ${authConfigStatus.supportSummary} ${authConfigStatus.supportAction}`
+    );
   }
 };
 
@@ -203,9 +223,13 @@ export const firebaseReady = (async () => {
       console.log('[FirebaseConfig] 🪣 Storage Bucket:', config.storageBucket || 'not set');
 
       if (!config.apiKey) {
-        mountConfigWarning('Firebase API key is missing. Please configure it in Netlify.');
+        mountConfigWarning(
+          'Falta una parte esencial de la configuración de Firebase. Revisa las variables del entorno antes de continuar.'
+        );
         throw new Error('Missing Firebase API key');
       }
+
+      warnOnFirebaseAuthConfig(config);
 
       // eslint-disable-next-line no-console
       console.log('[FirebaseConfig] 🔌 Initializing services...');

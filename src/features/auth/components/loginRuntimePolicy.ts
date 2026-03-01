@@ -1,4 +1,5 @@
 import { getAuthRedirectRuntimeSupport } from '@/services/auth/authRedirectRuntime';
+import { AUTH_UI_COPY } from '@/services/auth/authUiCopy';
 
 type LoginRuntimePolicy = {
   preferRedirectOnLocalhost: boolean;
@@ -30,4 +31,4 @@ export const getLoginRuntimePolicy = (): LoginRuntimePolicy => {
 };
 
 export const getRedirectErrorMessage = (error: unknown): string =>
-  error instanceof Error ? error.message : 'No fue posible iniciar por redirección.';
+  error instanceof Error ? error.message : AUTH_UI_COPY.redirectGenericError;

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   shouldScheduleBackgroundIndexedDbRecovery,
+  shouldLogIndexedDbRuntimeWarning,
   shouldUseStickyIndexedDbFallback,
 } from '@/services/storage/indexeddb/indexedDbRecoveryPolicy';
 
@@ -30,5 +31,18 @@ describe('indexedDbRecoveryPolicy', () => {
 
   it('stops background recovery when the retry budget is exhausted', () => {
     expect(shouldScheduleBackgroundIndexedDbRecovery(3, 3, false)).toBe(false);
+  });
+
+  it('deduplicates runtime warnings after the first emission', () => {
+    const emittedWarnings = new Set<string>();
+
+    expect(shouldLogIndexedDbRuntimeWarning('blocked', false, emittedWarnings)).toBe(true);
+    expect(shouldLogIndexedDbRuntimeWarning('blocked', false, emittedWarnings)).toBe(false);
+  });
+
+  it('suppresses unexpected-close warnings while sticky fallback is active', () => {
+    const emittedWarnings = new Set<string>();
+
+    expect(shouldLogIndexedDbRuntimeWarning('unexpected-close', true, emittedWarnings)).toBe(false);
   });
 });

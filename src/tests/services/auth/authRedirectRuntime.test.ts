@@ -38,4 +38,13 @@ describe('authRedirectRuntime', () => {
     expect(support.canUseRedirectAuth).toBe(true);
     expect(support.redirectDisabledReason).toBeNull();
   });
+
+  it('exposes whether the authDomain is Firebase-hosted', () => {
+    setHostname('app.hhr.test');
+
+    const support = getAuthRedirectRuntimeSupport();
+
+    expect(typeof support.authDomain).toBe('string');
+    expect(typeof support.usesFirebaseHostedAuthDomain).toBe('boolean');
+  });
 });

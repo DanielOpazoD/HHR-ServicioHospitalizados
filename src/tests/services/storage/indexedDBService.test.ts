@@ -237,7 +237,7 @@ describe('indexedDBService', () => {
     });
   });
 
-  describe('Hard Reset', () => {
+  describe('Local App Reset', () => {
     it('should clear all and reload (mocked reload)', async () => {
       // Mock location.reload
       const originalLocation = setMockLocationWithReload();
@@ -277,6 +277,41 @@ describe('indexedDBService', () => {
       });
 
       await idbService.performClientHardReset();
+
+      expect(getRegistrations).toHaveBeenCalled();
+      expect(unregister).toHaveBeenCalled();
+      expect(window.indexedDB.deleteDatabase).toHaveBeenCalledWith('HangaRoaDB');
+      expect(window.location.reload).toHaveBeenCalled();
+
+      Object.defineProperty(window, 'location', { configurable: true, value: originalLocation });
+      window.indexedDB.databases = originalDatabases;
+      window.indexedDB.deleteDatabase = originalDelete;
+      if (originalServiceWorker) {
+        Object.defineProperty(navigator, 'serviceWorker', originalServiceWorker);
+      } else {
+        // @ts-expect-error - cleanup test-only property
+        delete navigator.serviceWorker;
+      }
+    });
+
+    it('should expose resetLocalAppStorage as the same full reset behavior', async () => {
+      const originalLocation = setMockLocationWithReload();
+
+      const originalDatabases = window.indexedDB.databases;
+      window.indexedDB.databases = vi.fn().mockResolvedValue([{ name: 'HangaRoaDB' }]);
+      const originalDelete = window.indexedDB.deleteDatabase;
+      window.indexedDB.deleteDatabase = vi.fn();
+
+      const unregister = vi.fn().mockResolvedValue(undefined);
+      const registrations = [{ unregister }] as unknown as ServiceWorkerRegistration[];
+      const getRegistrations = vi.fn().mockResolvedValue(registrations);
+      const originalServiceWorker = Object.getOwnPropertyDescriptor(navigator, 'serviceWorker');
+      Object.defineProperty(navigator, 'serviceWorker', {
+        configurable: true,
+        value: { getRegistrations },
+      });
+
+      await idbService.resetLocalAppStorage();
 
       expect(getRegistrations).toHaveBeenCalled();
       expect(unregister).toHaveBeenCalled();

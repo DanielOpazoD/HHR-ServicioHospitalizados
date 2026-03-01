@@ -40,4 +40,40 @@ describe('useDatabaseFallbackStatus', () => {
 
     expect(result.current).toBe(true);
   });
+
+  it('pauses polling while the document is hidden and resumes on visibility change', () => {
+    let fallback = false;
+    vi.mocked(isDatabaseInFallbackMode).mockImplementation(() => fallback);
+
+    const visibilityStateDescriptor = Object.getOwnPropertyDescriptor(document, 'visibilityState');
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+
+    const { result } = renderHook(() => useDatabaseFallbackStatus({ pollIntervalMs: 1000 }));
+    expect(result.current).toBe(false);
+
+    act(() => {
+      fallback = true;
+      vi.advanceTimersByTime(1000);
+    });
+
+    expect(result.current).toBe(false);
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    expect(result.current).toBe(true);
+
+    if (visibilityStateDescriptor) {
+      Object.defineProperty(document, 'visibilityState', visibilityStateDescriptor);
+    }
+  });
 });

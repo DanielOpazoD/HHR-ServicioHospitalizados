@@ -18,3 +18,20 @@ export const shouldScheduleBackgroundIndexedDbRecovery = (
   maxAttempts: number,
   stickyFallbackMode: boolean
 ): boolean => !stickyFallbackMode && attempts < maxAttempts;
+
+export const shouldLogIndexedDbRuntimeWarning = (
+  warningKey: string,
+  stickyFallbackMode: boolean,
+  emittedWarnings: Set<string>
+): boolean => {
+  if (stickyFallbackMode && warningKey === 'unexpected-close') {
+    return false;
+  }
+
+  if (emittedWarnings.has(warningKey)) {
+    return false;
+  }
+
+  emittedWarnings.add(warningKey);
+  return true;
+};

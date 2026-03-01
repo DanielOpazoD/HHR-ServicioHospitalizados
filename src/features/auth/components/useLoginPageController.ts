@@ -5,6 +5,7 @@ import {
   getLoginRuntimePolicy,
   getRedirectErrorMessage,
 } from '@/features/auth/components/loginRuntimePolicy';
+import { AUTH_UI_COPY } from '@/services/auth/authUiCopy';
 
 type BackgroundMode = 'auto' | 'day' | 'night';
 
@@ -30,10 +31,7 @@ export const useLoginPageController = (onLoginSuccess: () => void): LoginPageCon
 
   const runRedirectFlow = async () => {
     if (!loginRuntimePolicy.canUseRedirectAuth) {
-      setError(
-        loginRuntimePolicy.redirectDisabledReason ||
-          'El acceso alternativo por redirección no está disponible en este entorno.'
-      );
+      setError(loginRuntimePolicy.redirectDisabledReason || AUTH_UI_COPY.redirectUnavailable);
       return;
     }
 
@@ -71,14 +69,12 @@ export const useLoginPageController = (onLoginSuccess: () => void): LoginPageCon
       if (isPopupIssue) {
         setShowAlternateAccess(true);
         if (loginRuntimePolicy.shouldAutoFallbackToRedirect) {
-          setError('El navegador bloqueó el popup. Intentando acceso alternativo...');
+          setError(AUTH_UI_COPY.blockedPopupRetrying);
           await runRedirectFlow();
           return;
         }
 
-        setError(
-          'No se pudo abrir el login emergente (popup), posiblemente por bloqueo del navegador o por otra pestaña iniciando sesión.'
-        );
+        setError(AUTH_UI_COPY.blockedPopupManual);
       } else {
         console.error('[LoginPage] Google sign-in failed', err);
         setError(errorMessage || 'Error al iniciar sesión con Google');

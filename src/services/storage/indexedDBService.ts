@@ -45,4 +45,5 @@ export { isIndexedDBAvailable, isDatabaseInFallbackMode } from './indexeddb/inde
 export {
   resetLocalDatabase,
   performClientHardReset,
+  resetLocalAppStorage,
 } from './indexeddb/indexedDbMaintenanceService';

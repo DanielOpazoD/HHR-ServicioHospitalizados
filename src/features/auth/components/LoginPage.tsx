@@ -1,8 +1,9 @@
 import React from 'react';
 import { AlertCircle, Loader2, Palette } from 'lucide-react';
-import { performClientHardReset } from '@/services/storage/indexedDBService';
+import { resetLocalAppStorage } from '@/services/storage/indexedDBService';
 import { GamesMenu } from '@/features/games';
 import { useLoginPageController } from '@/features/auth/components/useLoginPageController';
+import { AUTH_UI_COPY } from '@/services/auth/authUiCopy';
 
 interface LoginPageProps {
   onLoginSuccess: () => void;
@@ -131,7 +132,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   Redirigiendo...
                 </>
               ) : (
-                'Acceso alternativo (sin popup)'
+                AUTH_UI_COPY.alternateAccessButton
               )}
             </button>
           )}
@@ -146,17 +147,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               <div className="mt-2 text-center">
                 <button
                   onClick={async () => {
-                    if (
-                      confirm(
-                        'Esto cerrará sesión y borrará la caché local para solucionar problemas de carga. ¿Continuar?'
-                      )
-                    ) {
-                      await performClientHardReset();
+                    if (confirm(AUTH_UI_COPY.resetStorageConfirm)) {
+                      await resetLocalAppStorage();
                     }
                   }}
                   className="text-[10px] text-slate-400 hover:text-medical-600 underline font-medium uppercase tracking-wider"
                 >
-                  ¿Problemas de conexión? Realizar Hard Reset
+                  {AUTH_UI_COPY.resetStorageAction}
                 </button>
               </div>
             </div>
