@@ -233,8 +233,8 @@ sequenceDiagram
 
 Snapshot regenerado el `2026-02-28`:
 
-- Archivos fuente: `974`
-- Líneas fuente: `95351`
+- Archivos fuente: `979`
+- Líneas fuente: `95398`
 - Módulos sobredimensionados: `0`
 - Violaciones de deuda entre carpetas: `0`
 - Explicit `any` en source: `0`

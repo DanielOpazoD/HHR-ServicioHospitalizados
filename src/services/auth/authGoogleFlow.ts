@@ -19,6 +19,8 @@ import {
   authorizeFirebaseUser,
 } from '@/services/auth/authAccessResolution';
 
+const GOOGLE_POPUP_TIMEOUT_MS = 12000;
+
 const waitForE2EPopupDelay = async (): Promise<void> => {
   const { consumeE2EPopupDelayMs } = await import('@/services/auth/authShared');
   const e2ePopupDelayMs = consumeE2EPopupDelayMs();
@@ -37,6 +39,41 @@ const resolveE2EPopupUser = async (): Promise<AuthUser | null> => {
 
   return consumeE2EPopupMockUser();
 };
+
+const signInWithPopupOrTimeout = async (): Promise<AuthUser> =>
+  new Promise<AuthUser>((resolve, reject) => {
+    let settled = false;
+
+    const finish = (resolver: () => void) => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      clearTimeout(timeoutId);
+      resolver();
+    };
+
+    const timeoutId = setTimeout(() => {
+      finish(() =>
+        reject(
+          createAuthError(
+            'auth/popup-timeout',
+            'El login con Google no respondió a tiempo. Usa acceso alternativo sin popup.'
+          )
+        )
+      );
+    }, GOOGLE_POPUP_TIMEOUT_MS);
+
+    signInWithPopup(auth, googleProvider)
+      .then(result => authorizeFirebaseUser(result.user))
+      .then(user => {
+        finish(() => resolve(user));
+      })
+      .catch(error => {
+        finish(() => reject(error));
+      });
+  });
 
 const withGoogleLoginLock = async <T>(runner: () => Promise<T>): Promise<T> => {
   if (!acquireGoogleLoginLock()) {
@@ -72,8 +109,7 @@ export const signInWithGoogle = async (): Promise<AuthUser> =>
         return e2ePopupUser;
       }
 
-      const result = await signInWithPopup(auth, googleProvider);
-      return authorizeFirebaseUser(result.user);
+      return await signInWithPopupOrTimeout();
     } catch (error: unknown) {
       const authError = error as { message?: string };
       if (authError.message?.includes('no autorizado')) {

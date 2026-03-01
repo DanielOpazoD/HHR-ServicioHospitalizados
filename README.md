@@ -212,8 +212,8 @@ La pipeline en `.github/workflows/ci-cd.yml` bloquea merge si falla alguno:
 
 Snapshot vigente al `2026-03-01` en [reports/quality-metrics.md](reports/quality-metrics.md):
 
-- `974` archivos fuente
-- `95351` líneas fuente
+- `979` archivos fuente
+- `95398` líneas fuente
 - `0` módulos sobredimensionados
 - `0` violaciones de deuda entre carpetas
 - `0` explicit `any` en código fuente

@@ -7,7 +7,8 @@ type LoginRuntimePolicy = {
 
 export const getLoginRuntimePolicy = (): LoginRuntimePolicy => {
   const preferRedirectOnLocalhost =
-    String(import.meta.env.VITE_AUTH_PREFER_REDIRECT_ON_LOCALHOST || '').toLowerCase() === 'true';
+    String(import.meta.env.VITE_AUTH_PREFER_REDIRECT_ON_LOCALHOST || 'false').toLowerCase() ===
+    'true';
   const isLocalhostRuntime =
     typeof window !== 'undefined' &&
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
@@ -23,7 +24,7 @@ export const getLoginRuntimePolicy = (): LoginRuntimePolicy => {
     isLocalhostRuntime,
     forcePopupForE2E,
     shouldAutoFallbackToRedirect:
-      autoRedirectFallbackEnabled && !isLocalhostRuntime && !forcePopupForE2E,
+      autoRedirectFallbackEnabled && !forcePopupForE2E && !isLocalhostRuntime,
   };
 };
 

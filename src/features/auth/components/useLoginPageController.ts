@@ -50,7 +50,7 @@ export const useLoginPageController = (onLoginSuccess: () => void): LoginPageCon
         loginRuntimePolicy.preferRedirectOnLocalhost &&
         !loginRuntimePolicy.forcePopupForE2E
       ) {
-        await signInWithGoogleRedirect();
+        await runRedirectFlow();
         return;
       }
 

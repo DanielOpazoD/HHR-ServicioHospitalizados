@@ -31,6 +31,15 @@ describe('authErrorPolicy', () => {
     expect(err.message).toContain('ventana emergente');
   });
 
+  it('treats popup timeout as recoverable and user-facing', () => {
+    const err = toGoogleAuthError({
+      message: 'El login con Google no respondió a tiempo.',
+    }) as Error & { code: string };
+    expect(err.code).toBe('auth/popup-timeout');
+    expect(err.message).toContain('esperando demasiado tiempo');
+    expect(isPopupRecoverableAuthError(err)).toBe(true);
+  });
+
   it('downgrades recoverable popup errors to warning log level', () => {
     expect(
       shouldDowngradeGoogleAuthLogLevel({

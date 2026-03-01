@@ -18,6 +18,10 @@ const inferCodeFromMessage = (message: string): string | null => {
     return 'auth/popup-blocked';
   }
 
+  if (message.includes('popup timeout') || message.includes('no respondió a tiempo')) {
+    return 'auth/popup-timeout';
+  }
+
   if (message.includes('cancelled-popup-request')) {
     return 'auth/cancelled-popup-request';
   }
@@ -43,6 +47,7 @@ export const isPopupRecoverableAuthError = (error: unknown): boolean => {
 
   return (
     code === 'auth/popup-coop-blocked' ||
+    code === 'auth/popup-timeout' ||
     code === 'auth/network-request-failed' ||
     code === 'auth/popup-blocked' ||
     code === 'auth/cancelled-popup-request' ||
@@ -59,6 +64,8 @@ const GOOGLE_AUTH_ERROR_MESSAGES: Record<string, string> = {
   'auth/popup-closed-by-user': 'Inicio de sesión cancelado',
   'auth/popup-blocked':
     'El navegador bloqueó la ventana emergente. Permita pop-ups para este sitio.',
+  'auth/popup-timeout':
+    'El login con Google quedó esperando demasiado tiempo. Usa el acceso alternativo sin popup.',
   'auth/cancelled-popup-request': 'Operación cancelada',
   'auth/network-request-failed':
     'Error de conexión o bloqueo de seguridad (COOP/Cookies). Verifique su conexión o la configuración del navegador.',

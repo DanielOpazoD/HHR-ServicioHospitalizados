@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   signIn,
   signInWithGoogle,
@@ -71,6 +71,10 @@ describe('authService', () => {
       data: { authorized: true, role: 'viewer' },
     });
     setPathname('/');
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   describe('signIn', () => {
@@ -208,6 +212,21 @@ describe('authService', () => {
       await expect(signInWithGoogle()).rejects.toMatchObject({
         code: 'auth/popup-coop-blocked',
       });
+    });
+
+    it('should fail with popup timeout when Google popup hangs indefinitely', async () => {
+      vi.useFakeTimers();
+      vi.mocked(firebaseAuth.signInWithPopup).mockImplementation(
+        () => new Promise(() => {}) as Promise<firebaseAuth.UserCredential>
+      );
+
+      const promise = signInWithGoogle();
+      const expectation = expect(promise).rejects.toMatchObject({
+        code: 'auth/popup-timeout',
+      });
+
+      await vi.advanceTimersByTimeAsync(12000);
+      await expectation;
     });
   });
 
