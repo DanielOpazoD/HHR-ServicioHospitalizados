@@ -210,15 +210,15 @@ La pipeline en `.github/workflows/ci-cd.yml` bloquea merge si falla alguno:
 
 ## Baseline de Calidad
 
-Snapshot vigente al `2026-02-28` en [reports/quality-metrics.md](reports/quality-metrics.md):
+Snapshot vigente al `2026-03-01` en [reports/quality-metrics.md](reports/quality-metrics.md):
 
-- `943` archivos fuente
-- `94818` líneas fuente
+- `966` archivos fuente
+- `95176` líneas fuente
 - `0` módulos sobredimensionados
 - `0` violaciones de deuda entre carpetas
 - `0` explicit `any` en código fuente
 - `474` archivos de test
-- `1` archivo marcado con flake-risk
+- `0` archivos marcados con flake-risk
 
 Validación usada para esta línea base:
 
