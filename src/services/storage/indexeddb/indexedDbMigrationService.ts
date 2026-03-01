@@ -10,8 +10,15 @@ const NURSES_KEY = 'hanga_roa_nurses_list';
 const TENS_KEY = 'hanga_roa_tens_list';
 const AUDIT_KEY = 'hanga_roa_audit_logs';
 const MIGRATION_FLAG = 'indexeddb_migration_complete';
+const LEGACY_STORAGE_KEYS = [STORAGE_KEY, NURSES_KEY, TENS_KEY, AUDIT_KEY] as const;
 
 const canUseLocalStorage = () => typeof window !== 'undefined' && !!window.localStorage;
+
+const hasLegacyLocalStoragePayload = (): boolean =>
+  LEGACY_STORAGE_KEYS.some(key => {
+    const value = localStorage.getItem(key);
+    return typeof value === 'string' && value.trim().length > 0;
+  });
 
 export const migrateFromLocalStorage = async (): Promise<boolean> => {
   if (!canUseLocalStorage()) {
@@ -19,6 +26,11 @@ export const migrateFromLocalStorage = async (): Promise<boolean> => {
   }
 
   if (localStorage.getItem(MIGRATION_FLAG) === 'true') {
+    return false;
+  }
+
+  if (!hasLegacyLocalStoragePayload()) {
+    localStorage.setItem(MIGRATION_FLAG, 'true');
     return false;
   }
 

@@ -69,14 +69,14 @@ const useNurseSignature = (record: ReturnType<typeof useDailyRecord>['record']) 
 // Main App Component
 // ============================================================================
 function App() {
-  // Storage migration (runs once on startup)
-  useStorageMigration();
+  // Auth state
+  const auth = useAuth();
+  // Storage migration only matters once a real session is active.
+  useStorageMigration({ enabled: !auth.isLoading && !!auth.user });
 
   // Version check (auto-refresh on new deployments)
   useVersionCheck();
 
-  // Auth state
-  const auth = useAuth();
   useSyncFirestoreStatus(auth.isFirebaseConnected);
 
   // Date navigation

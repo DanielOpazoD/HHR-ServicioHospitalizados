@@ -7,6 +7,11 @@ import {
   clearAuthBootstrapPending,
   isAuthBootstrapPending,
 } from '@/services/auth/authBootstrapState';
+import {
+  clearRecentManualLogout,
+  hasRecentManualLogout,
+  markRecentManualLogout,
+} from '@/services/auth/authLogoutState';
 
 export const getE2EBootstrapUser = (): AuthUser | null => {
   if (typeof window === 'undefined' || !window.__HHR_E2E_OVERRIDE__) {
@@ -79,6 +84,9 @@ export const createHandleLogout =
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem('hhr_e2e_bootstrap_user');
     }
+    if (reason === 'manual') {
+      markRecentManualLogout();
+    }
 
     try {
       await signOut();
@@ -121,6 +129,7 @@ export const useInactivityLogout = (
 };
 
 export const getAuthBootstrapTimeoutMs = (): number => {
+  if (hasRecentManualLogout()) return 1500;
   if (!window.navigator.onLine) return 5000;
   return isAuthBootstrapPending() ? 45000 : 15000;
 };
@@ -139,6 +148,7 @@ export const subscribeToResolvedAuthState = async ({
   try {
     const redirectUser = await handleSignInRedirectResult();
     if (redirectUser) {
+      clearRecentManualLogout();
       setUser(redirectUser);
       setAuthLoading(false);
       clearAuthBootstrapPending();
@@ -149,6 +159,7 @@ export const subscribeToResolvedAuthState = async ({
 
   return onAuthChange(async authUser => {
     if (authUser) {
+      clearRecentManualLogout();
       if (
         authUser.email &&
         typeof sessionStorage !== 'undefined' &&
@@ -159,6 +170,13 @@ export const subscribeToResolvedAuthState = async ({
       }
       setUser(authUser);
     } else {
+      if (hasRecentManualLogout()) {
+        clearRecentManualLogout();
+        clearAuthBootstrapPending();
+        setUser(null);
+        setAuthLoading(false);
+        return;
+      }
       if (isAuthBootstrapPending()) {
         return;
       }

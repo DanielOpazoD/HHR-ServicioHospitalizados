@@ -29,12 +29,14 @@ const setOnlineStatus = (online: boolean) => {
 
 describe('useAuthState baseline', () => {
   const AUTH_BOOTSTRAP_PENDING_KEY = 'hhr_auth_bootstrap_pending_v1';
+  const RECENT_MANUAL_LOGOUT_KEY = 'hhr_recent_manual_logout_v1';
   let authChangeCallback: ((user: AuthUser | null) => void | Promise<void>) | null = null;
 
   beforeEach(() => {
     vi.resetAllMocks();
     authChangeCallback = null;
     localStorage.removeItem(AUTH_BOOTSTRAP_PENDING_KEY);
+    sessionStorage.removeItem(RECENT_MANUAL_LOGOUT_KEY);
 
     vi.mocked(authService.onAuthChange).mockImplementation(
       (cb: (user: AuthUser | null) => void | Promise<void>) => {
@@ -92,6 +94,20 @@ describe('useAuthState baseline', () => {
 
     expect(result.current.user).toBe(null);
     expect(authService.signOut).toHaveBeenCalled();
+    expect(sessionStorage.getItem(RECENT_MANUAL_LOGOUT_KEY)).toBeTruthy();
+  });
+
+  it('should skip auth loading after a recent manual logout when no firebase session remains', async () => {
+    sessionStorage.setItem(
+      RECENT_MANUAL_LOGOUT_KEY,
+      JSON.stringify({ reason: 'manual', at: Date.now() })
+    );
+    vi.mocked(authService.hasActiveFirebaseSession).mockReturnValue(false);
+    vi.mocked(authService.onAuthChange).mockImplementation(() => () => {});
+
+    const { result } = renderHook(() => useAuthState());
+
+    expect(result.current.authLoading).toBe(false);
   });
 
   it('should handle inactivity timeout', async () => {

@@ -15,6 +15,7 @@ import {
   useOnlineStatus,
   useResolvedAuthBootstrap,
 } from '@/hooks/useAuthStateSupport';
+import { hasRecentManualLogout } from '@/services/auth/authLogoutState';
 
 // UserRole and AuthUser are now imported from @/types
 
@@ -55,7 +56,9 @@ export interface UseAuthStateReturn {
 export const useAuthState = (): UseAuthStateReturn => {
   const [e2eBootstrapUser] = useState<AuthUser | null>(() => getE2EBootstrapUser());
   const [user, setUser] = useState<AuthUser | null>(e2eBootstrapUser);
-  const [authLoading, setAuthLoading] = useState(!e2eBootstrapUser);
+  const [authLoading, setAuthLoading] = useState(
+    !e2eBootstrapUser && !(hasRecentManualLogout() && !hasActiveFirebaseSession())
+  );
   const isOnline = useOnlineStatus();
   const handleLogout = useMemo(() => createHandleLogout(user, signOut, setUser), [user]);
   const isFirebaseConnected = useFirebaseConnectionStatus(user, isOnline, hasActiveFirebaseSession);

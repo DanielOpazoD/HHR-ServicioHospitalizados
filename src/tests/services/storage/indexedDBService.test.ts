@@ -148,6 +148,12 @@ describe('indexedDBService', () => {
       const migrated = await idbService.migrateFromLocalStorage();
       expect(migrated).toBe(false);
     });
+
+    it('should skip migration and mark complete when no legacy payload exists', async () => {
+      const migrated = await idbService.migrateFromLocalStorage();
+      expect(migrated).toBe(false);
+      expect(localStorage.getItem('indexeddb_migration_complete')).toBe('true');
+    });
   });
 
   describe('Audit Logs Extended', () => {
