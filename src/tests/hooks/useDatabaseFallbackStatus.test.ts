@@ -41,6 +41,25 @@ describe('useDatabaseFallbackStatus', () => {
     expect(result.current).toBe(true);
   });
 
+  it('does not start polling when disabled', () => {
+    let fallback = false;
+    vi.mocked(isDatabaseInFallbackMode).mockImplementation(() => fallback);
+
+    const { result } = renderHook(() =>
+      useDatabaseFallbackStatus({ enabled: false, pollIntervalMs: 1000 })
+    );
+
+    expect(result.current).toBe(false);
+
+    act(() => {
+      fallback = true;
+      vi.advanceTimersByTime(5000);
+    });
+
+    expect(result.current).toBe(false);
+    expect(isDatabaseInFallbackMode).toHaveBeenCalledTimes(1);
+  });
+
   it('pauses polling while the document is hidden and resumes on visibility change', () => {
     let fallback = false;
     vi.mocked(isDatabaseInFallbackMode).mockImplementation(() => fallback);

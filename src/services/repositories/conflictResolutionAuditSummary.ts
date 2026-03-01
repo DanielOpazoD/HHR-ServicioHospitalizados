@@ -1,4 +1,8 @@
 import { ConflictResolutionTraceEntry } from '@/services/repositories/conflictResolutionTrace';
+import {
+  assessConflictResolutionTrace,
+  ConflictResolutionAssessment,
+} from '@/services/repositories/conflictResolutionAssessment';
 
 export interface ConflictAuditSummary {
   changedPaths: string[];
@@ -8,6 +12,7 @@ export interface ConflictAuditSummary {
   winnerBreakdown: Record<string, number>;
   reasonBreakdown: Record<string, number>;
   samplePaths: string[];
+  assessment: ConflictResolutionAssessment;
 }
 
 const countBy = (items: string[]): Record<string, number> =>
@@ -28,4 +33,5 @@ export const buildConflictAuditSummary = (
   winnerBreakdown: countBy(traceEntries.map(entry => entry.winner)),
   reasonBreakdown: countBy(traceEntries.map(entry => entry.reason)),
   samplePaths: Array.from(new Set(traceEntries.map(entry => entry.path))).slice(0, 20),
+  assessment: assessConflictResolutionTrace(changedPaths, traceEntries),
 });

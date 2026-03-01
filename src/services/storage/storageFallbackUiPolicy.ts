@@ -42,9 +42,10 @@ export const shouldShowStorageFallbackUi = (isFallback: boolean): boolean =>
 
 export const getStorageFallbackUiCopy = (): StorageFallbackUiCopy => ({
   title: 'Guardado local limitado',
-  summary: 'La app sigue funcionando. Conviene recargar una vez para recuperar el guardado normal.',
+  summary:
+    'La app sigue funcionando. Si acabas de borrar datos del sitio, recargar una vez suele resolverlo.',
   detail:
-    'Esto suele pasar después de borrar los datos del sitio en el navegador. Normalmente se resuelve recargando la página una sola vez. Si el aviso reaparece varias veces seguidas, puedes reiniciar el guardado local de esta app.',
+    'Esto suele pasar cuando el navegador acaba de limpiar o bloquear temporalmente el guardado local. Normalmente basta con recargar una vez. Solo si el aviso aparece varias veces seguidas conviene reiniciar el guardado local de esta app.',
   primaryActionLabel: 'Recargar',
   advancedActionLabel: 'Reiniciar guardado local',
 });

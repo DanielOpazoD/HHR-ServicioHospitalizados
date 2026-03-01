@@ -49,7 +49,7 @@ flowchart TB
 - **Integridad clínica:** validación estricta con Zod + guardas de regresión.
 - **Concurrencia segura:** control optimista y updates parciales por celda (LWW).
 - **Recuperación:** auto-repair de IndexedDB y fallback controlado.
-- **Auth por entorno:** popup como flujo principal y acceso alternativo habilitado solo cuando la configuración Firebase lo soporta.
+- **Auth por entorno:** popup como flujo principal, acceso directo solo cuando la configuración Firebase lo soporta y advertencias de arranque cuando faltan variables críticas.
 - **Observabilidad local:** métricas y logs guardados localmente para diagnóstico offline.
 - **Cola de sync:** cambios encolados con deduplicación y backoff.
 

@@ -21,6 +21,13 @@ describe('repositoryAuditPort', () => {
       winnerBreakdown: { local: 1 },
       reasonBreakdown: { default_local_priority: 1 },
       samplePaths: ['beds.R1.pathology'],
+      assessment: {
+        riskLevel: 'low',
+        reviewRecommended: false,
+        reviewReasons: [],
+        localDominantPaths: ['beds.R1.pathology'],
+        remoteProtectedPaths: [],
+      },
     });
 
     expect(logger).toHaveBeenCalledTimes(1);

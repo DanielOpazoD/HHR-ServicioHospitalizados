@@ -55,3 +55,4 @@ Cambios en esta capa requieren:
 
 - Runbook soporte sync/resiliencia: `docs/RUNBOOK_SYNC_RESILIENCE.md`
 - Si IndexedDB cae en modo degradado persistente, el sistema reduce ruido de reintentos y mantiene el fallback activo durante la sesión.
+- Los avisos visibles priorizan lenguaje no técnico y reservan acciones avanzadas solo para casos persistentes.

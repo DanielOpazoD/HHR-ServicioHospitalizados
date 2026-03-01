@@ -44,6 +44,7 @@ Capa de datos e integración: repositorios, persistencia, exportadores, integrac
   - `authFallback.ts` para redirect/bootstrap
   - `firebaseAuthConfigPolicy.ts` y `authRedirectRuntime.ts` para validar si el acceso alternativo está realmente disponible según entorno y configuración
   - `firebaseStartupUiPolicy.ts` para mensajes de arranque cuando la configuración de Firebase es inválida o incompleta
+  - `firebaseAuthConfigPolicy.ts` también expone diagnósticos de configuración para distinguir bloqueos reales de advertencias operativas
   - `authUiCopy.ts` para centralizar textos visibles de login y fallback sin mezclar copy en varios módulos
   - `authSession.ts` para suscripción de sesión activa
   - `authAccessResolution.ts` para autorización y resolución de rol

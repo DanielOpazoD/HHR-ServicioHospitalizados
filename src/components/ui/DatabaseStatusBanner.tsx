@@ -28,7 +28,7 @@ export const DatabaseStatusBanner: React.FC = () => {
         className="flex items-center gap-2 bg-white/30 hover:bg-white/40 px-3 py-1 rounded text-sm transition-colors border border-amber-950/20"
       >
         <RefreshCw className="h-4 w-4" />
-        {copy.primaryActionLabel}
+        Volver a intentar
       </button>
     </div>
   );

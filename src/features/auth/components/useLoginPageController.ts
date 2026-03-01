@@ -14,6 +14,7 @@ export interface LoginPageControllerState {
   isGoogleLoading: boolean;
   isRedirectLoading: boolean;
   showAlternateAccess: boolean;
+  alternateAccessHint: string | null;
   isAnyLoading: boolean;
   isDayGradient: boolean;
   handleGoogleSignIn: () => Promise<void>;
@@ -106,6 +107,7 @@ export const useLoginPageController = (onLoginSuccess: () => void): LoginPageCon
     isGoogleLoading,
     isRedirectLoading,
     showAlternateAccess,
+    alternateAccessHint: showAlternateAccess ? loginRuntimePolicy.alternateAccessHint : null,
     isAnyLoading: isGoogleLoading || isRedirectLoading,
     isDayGradient,
     handleGoogleSignIn,

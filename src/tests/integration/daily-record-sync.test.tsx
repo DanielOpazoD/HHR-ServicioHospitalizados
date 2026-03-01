@@ -8,7 +8,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import React from 'react';
 import { useDailyRecordSyncQuery } from '@/hooks/useDailyRecordSyncQuery';
 import { UIProvider } from '@/context/UIContext';
-import { DailyRecord } from '@/types';
+import { DailyRecord, PatientStatus, Specialty } from '@/types';
 import type { DailyRecordPatch } from '@/hooks/useDailyRecordTypes';
 import { createQueryClientTestWrapper } from '@/tests/utils/queryClientTestUtils';
 import { DataFactory } from '@/tests/factories/DataFactory';
@@ -153,6 +153,68 @@ describe('DailyRecord Sync Integration', () => {
     });
   });
 
+  it('should ignore remote echo while local pending writes are flagged', async () => {
+    const localRecord = createMockRecord('2024-12-28');
+    localRecord.beds = {
+      R1: {
+        bedId: 'R1',
+        isBlocked: false,
+        bedMode: 'Cama',
+        hasCompanionCrib: false,
+        patientName: 'Cambio local',
+        rut: '',
+        age: '',
+        pathology: '',
+        specialty: Specialty.MEDICINA,
+        status: PatientStatus.ESTABLE,
+        admissionDate: '',
+        hasWristband: false,
+        devices: [],
+        surgicalComplication: false,
+        isUPC: false,
+      },
+    };
+    mockGetForDate.mockResolvedValue(localRecord);
+
+    const { result } = renderHook(() => useDailyRecordSyncQuery('2024-12-28', false, true), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.record).toEqual(localRecord));
+
+    const subscribeCallback = mockSubscribe.mock.calls[0][1];
+
+    await act(async () => {
+      subscribeCallback(
+        {
+          ...createMockRecord('2024-12-28'),
+          beds: {
+            R1: {
+              bedId: 'R1',
+              isBlocked: false,
+              bedMode: 'Cama',
+              hasCompanionCrib: false,
+              patientName: 'Eco remoto',
+              rut: '',
+              age: '',
+              pathology: '',
+              specialty: Specialty.MEDICINA,
+              status: PatientStatus.ESTABLE,
+              admissionDate: '',
+              hasWristband: false,
+              devices: [],
+              surgicalComplication: false,
+              isUPC: false,
+            },
+          },
+        },
+        true
+      );
+    });
+
+    expect(result.current.record?.beds.R1.patientName).toBe('Cambio local');
+  });
+
   it('should save and update state on saveAndUpdate call', async () => {
     const { result } = renderHook(() => useDailyRecordSyncQuery('2024-12-28', false, true), {
       wrapper: createWrapper(),
@@ -228,6 +290,39 @@ describe('DailyRecord Sync Integration', () => {
 
     await waitFor(() => {
       expect(result.current.syncStatus).toBe('error');
+    });
+  });
+
+  it('should refetch after save conflict error path settles', async () => {
+    const currentRecord = createMockRecord('2024-12-28');
+    const refreshedRecord = {
+      ...currentRecord,
+      beds: {
+        R1: {
+          ...(currentRecord.beds.R1 || {}),
+          bedId: 'R1',
+          patientName: 'Desde refetch',
+        },
+      },
+    };
+
+    mockGetForDate.mockResolvedValueOnce(currentRecord);
+    mockSave.mockRejectedValueOnce(new Error('El registro ha sido modificado por otro usuario.'));
+
+    const { result } = renderHook(() => useDailyRecordSyncQuery('2024-12-28', false, true), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.syncStatus).toBe('idle'));
+
+    mockGetForDate.mockResolvedValue(refreshedRecord);
+
+    await act(async () => {
+      await result.current.saveAndUpdate(currentRecord).catch(() => undefined);
+    });
+
+    await waitFor(() => {
+      expect(mockGetForDate).toHaveBeenCalledWith('2024-12-28');
     });
   });
 });

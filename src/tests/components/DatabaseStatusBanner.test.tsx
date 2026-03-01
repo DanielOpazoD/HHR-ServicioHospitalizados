@@ -34,7 +34,7 @@ describe('DatabaseStatusBanner', () => {
     window.sessionStorage.setItem(getStorageAutoRecoveryKey(), 'true');
     vi.mocked(isDatabaseInFallbackMode).mockReturnValue(true);
     render(<DatabaseStatusBanner />);
-    fireEvent.click(screen.getByRole('button', { name: /Recargar/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Volver a intentar/i }));
     expect(mockReload).toHaveBeenCalled();
   });
 

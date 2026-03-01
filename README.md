@@ -221,7 +221,7 @@ Snapshot vigente al `2026-03-01` en [reports/quality-metrics.md](reports/quality
 
 ## Notas Operativas Recientes
 
-- **Auth por entorno:** el acceso alternativo de Google se valida contra la configuración real de Firebase antes de intentarse. En `localhost` queda desactivado por defecto para evitar bucles.
+- **Auth por entorno:** el acceso alternativo de Google se valida contra la configuración real de Firebase antes de intentarse. En `localhost` queda desactivado por defecto para evitar bucles y la app muestra advertencias tempranas si faltan variables críticas de Firebase.
 - **Fallback local:** si IndexedDB falla tras borrar datos del sitio o por un problema del navegador, la app intenta una recuperación automática antes de mostrar avisos al usuario.
 - `0` archivos marcados con flake-risk
 

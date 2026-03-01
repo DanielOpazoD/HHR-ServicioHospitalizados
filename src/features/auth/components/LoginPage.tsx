@@ -42,6 +42,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     isGoogleLoading,
     isRedirectLoading,
     showAlternateAccess,
+    alternateAccessHint,
     isAnyLoading,
     isDayGradient,
     handleGoogleSignIn,
@@ -120,21 +121,28 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           </button>
 
           {showAlternateAccess && (
-            <button
-              type="button"
-              onClick={handleAlternateAccess}
-              disabled={isAnyLoading || isRedirectLoading}
-              className="mt-3 w-full bg-slate-100 hover:bg-slate-200 disabled:bg-slate-100 border border-slate-200 text-slate-700 font-semibold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2"
-            >
-              {isRedirectLoading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin text-slate-600" />
-                  Redirigiendo...
-                </>
-              ) : (
-                AUTH_UI_COPY.alternateAccessButton
-              )}
-            </button>
+            <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50/90 p-3">
+              <button
+                type="button"
+                onClick={handleAlternateAccess}
+                disabled={isAnyLoading || isRedirectLoading}
+                className="w-full bg-slate-100 hover:bg-slate-200 disabled:bg-slate-100 border border-slate-200 text-slate-700 font-semibold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2"
+              >
+                {isRedirectLoading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin text-slate-600" />
+                    Abriendo acceso directo...
+                  </>
+                ) : (
+                  AUTH_UI_COPY.alternateAccessButton
+                )}
+              </button>
+              {alternateAccessHint ? (
+                <p className="mt-2 text-xs leading-relaxed text-slate-500 text-balance">
+                  {alternateAccessHint}
+                </p>
+              ) : null}
+            </div>
           )}
 
           {/* Error Message */}

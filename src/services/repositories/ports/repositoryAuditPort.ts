@@ -8,6 +8,13 @@ export interface ConflictAuditDetails {
   winnerBreakdown: Record<string, number>;
   reasonBreakdown: Record<string, number>;
   samplePaths: string[];
+  assessment: {
+    riskLevel: 'low' | 'medium' | 'high';
+    reviewRecommended: boolean;
+    reviewReasons: string[];
+    localDominantPaths: string[];
+    remoteProtectedPaths: string[];
+  };
 }
 
 type ConflictLoggerFn = (date: string, details: ConflictAuditDetails) => Promise<void>;

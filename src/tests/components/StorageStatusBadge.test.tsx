@@ -42,6 +42,9 @@ describe('StorageStatusBadge', () => {
     fireEvent.click(screen.getByRole('button', { name: /Más información/i }));
     fireEvent.click(screen.getByRole('button', { name: /Reiniciar guardado local/i }));
     expect(resetLocalDatabase).toHaveBeenCalled();
+    expect(
+      screen.getByText(/si acabas de borrar datos del sitio, recargar una vez suele resolverlo/i)
+    ).toBeInTheDocument();
   });
 
   it('auto-recovers once before showing the banner', () => {

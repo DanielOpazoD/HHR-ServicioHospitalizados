@@ -7,7 +7,9 @@ type LoginRuntimePolicy = {
   forcePopupForE2E: boolean;
   shouldAutoFallbackToRedirect: boolean;
   canUseRedirectAuth: boolean;
+  redirectSupportLevel: 'disabled' | 'warning' | 'ready';
   redirectDisabledReason: string | null;
+  alternateAccessHint: string | null;
 };
 
 export const getLoginRuntimePolicy = (): LoginRuntimePolicy => {
@@ -26,7 +28,11 @@ export const getLoginRuntimePolicy = (): LoginRuntimePolicy => {
     shouldAutoFallbackToRedirect:
       autoRedirectFallbackEnabled && !forcePopupForE2E && redirectRuntimeSupport.canUseRedirectAuth,
     canUseRedirectAuth: redirectRuntimeSupport.canUseRedirectAuth,
+    redirectSupportLevel: redirectRuntimeSupport.supportLevel,
     redirectDisabledReason: redirectRuntimeSupport.redirectDisabledReason,
+    alternateAccessHint: redirectRuntimeSupport.canUseRedirectAuth
+      ? AUTH_UI_COPY.alternateAccessHint
+      : redirectRuntimeSupport.supportSummary,
   };
 };
 

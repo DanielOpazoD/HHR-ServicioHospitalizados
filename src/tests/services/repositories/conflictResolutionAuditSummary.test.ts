@@ -25,5 +25,32 @@ describe('conflictResolutionAuditSummary', () => {
     expect(summary.winnerBreakdown.remote).toBe(1);
     expect(summary.reasonBreakdown.clinical_local_priority).toBe(1);
     expect(summary.reasonBreakdown.admin_remote_priority).toBe(1);
+    expect(summary.assessment.riskLevel).toBe('low');
+    expect(summary.assessment.reviewRecommended).toBe(false);
+  });
+
+  it('flags wildcard merges that preserve remote-protected paths for review', () => {
+    const summary = buildConflictAuditSummary(['*'], '2026-02-v2', [
+      {
+        path: 'beds.R1.pathology',
+        strategy: 'scalar_policy',
+        winner: 'local',
+        reason: 'clinical_local_priority',
+      },
+      {
+        path: 'beds.R1.location',
+        strategy: 'scalar_policy',
+        winner: 'remote',
+        reason: 'admin_remote_priority',
+      },
+    ]);
+
+    expect(summary.assessment.riskLevel).toBe('high');
+    expect(summary.assessment.reviewRecommended).toBe(true);
+    expect(summary.assessment.reviewReasons).toContain('remote_protected_fields_preserved');
+    expect(summary.assessment.reviewReasons).toContain(
+      'wildcard_merge_with_remote_protected_fields'
+    );
+    expect(summary.assessment.remoteProtectedPaths).toContain('beds.R1.location');
   });
 });

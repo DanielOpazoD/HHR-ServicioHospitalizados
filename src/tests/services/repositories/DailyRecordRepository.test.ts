@@ -389,6 +389,25 @@ describe('DailyRecordRepository', () => {
 
       expect(result?.lastUpdated).toBe(`${mockDate}T12:00:00.000Z`);
     });
+
+    it('should keep the newer local record when legacy fallback returns older data', async () => {
+      const newerLocalRecord = {
+        ...mockRecord,
+        lastUpdated: `${mockDate}T12:00:00.000Z`,
+      };
+      const olderLegacyRecord = {
+        ...mockRecord,
+        lastUpdated: `${mockDate}T08:00:00.000Z`,
+      };
+
+      vi.mocked(idbService.getRecordForDate).mockResolvedValueOnce(newerLocalRecord);
+      vi.mocked(firestoreService.getRecordFromFirestore).mockResolvedValueOnce(null);
+      vi.mocked(legacyFirebaseService.getLegacyRecord).mockResolvedValueOnce(olderLegacyRecord);
+
+      const result = await Repository.syncWithFirestore(mockDate);
+
+      expect(result?.lastUpdated).toBe(`${mockDate}T12:00:00.000Z`);
+    });
   });
 
   describe('getAvailableDates', () => {

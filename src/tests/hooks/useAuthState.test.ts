@@ -176,6 +176,25 @@ describe('useAuthState baseline', () => {
     expect(localStorage.getItem(AUTH_BOOTSTRAP_PENDING_KEY)).toBeNull();
   });
 
+  it('hydrates user from redirect result before auth subscription resolves', async () => {
+    const redirectUser: AuthUser = {
+      uid: 'redirect-1',
+      email: 'redirect@hhr.cl',
+      role: 'viewer' as UserRole,
+      displayName: 'Redirect User',
+    };
+
+    vi.mocked(authService.handleSignInRedirectResult).mockResolvedValueOnce(redirectUser);
+    vi.mocked(authService.onAuthChange).mockImplementation(() => () => {});
+
+    const { result } = renderHook(() => useAuthState());
+
+    await waitFor(() => expect(result.current.authLoading).toBe(false));
+
+    expect(result.current.user?.uid).toBe('redirect-1');
+    expect(result.current.role).toBe('viewer');
+  });
+
   it('should keep anonymous signature-mode users when Firebase returns one', async () => {
     const { result } = renderHook(() => useAuthState());
 

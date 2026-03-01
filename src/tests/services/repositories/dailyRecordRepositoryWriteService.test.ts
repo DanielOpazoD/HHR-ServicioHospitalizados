@@ -173,6 +173,10 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
       expect.objectContaining({
         policyVersion: '2026-02-v2',
         changedPaths: ['*'],
+        assessment: expect.objectContaining({
+          riskLevel: 'high',
+          reviewRecommended: true,
+        }),
       })
     );
   });
@@ -213,6 +217,10 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
       expect.objectContaining({
         policyVersion: '2026-02-v2',
         changedPaths: expect.arrayContaining(['beds.R1.pathology']),
+        assessment: expect.objectContaining({
+          riskLevel: 'low',
+          reviewRecommended: false,
+        }),
       })
     );
   });
