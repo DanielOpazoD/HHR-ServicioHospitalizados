@@ -1,9 +1,9 @@
 import { DailyRecord, PatientData } from '@/types';
 import {
-  getAllRecords,
+  getAllRecordsSorted,
   getRecordsForMonth,
   getRecordsRange,
-  saveRecord as saveToIndexedDB,
+  saveRecords as saveManyToIndexedDB,
 } from '@/services/storage/indexedDBService';
 import { getRecordsRangeFromFirestore } from '@/services/storage/firestoreService';
 
@@ -28,8 +28,7 @@ export const fetchExistingDaysInMonth = async (year: number, month: number): Pro
 };
 
 export const fetchAllRecordsSorted = async (): Promise<DailyRecord[]> => {
-  const recordsMap = await getAllRecords();
-  return Object.values(recordsMap).sort((a, b) => b.date.localeCompare(a.date));
+  return getAllRecordsSorted();
 };
 
 export const fetchRecordsRangeSorted = async (
@@ -44,8 +43,6 @@ export const syncRecordsRange = async (start: string, end: string): Promise<Dail
   const remoteRecords = await getRecordsRangeFromFirestore(start, end);
   if (remoteRecords.length === 0) return [];
 
-  for (const record of remoteRecords) {
-    await saveToIndexedDB(record);
-  }
+  await saveManyToIndexedDB(remoteRecords);
   return remoteRecords;
 };

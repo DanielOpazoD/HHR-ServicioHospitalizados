@@ -16,6 +16,7 @@ import {
   DailyRecordInitializationSeed,
   shouldReturnSeedRecord,
 } from '@/services/repositories/dailyRecordInitializationSeed';
+import { measureRepositoryOperation } from '@/services/repositories/repositoryPerformance';
 
 const loadCopySourceRecord = async (copyFromDate?: string): Promise<DailyRecord | null> => {
   if (!copyFromDate) return null;
@@ -80,13 +81,10 @@ const loadExistingDailyRecord = async (date: string): Promise<DailyRecord | null
 
 const resolveTargetRecordForCopy = async (targetDate: string): Promise<DailyRecord> => {
   const targetRecord = await getForDate(targetDate);
-  return targetRecord ?? initializeDay(targetDate);
+  return targetRecord ?? initializeMissingDay(targetDate);
 };
 
-export const initializeDay = async (date: string, copyFromDate?: string): Promise<DailyRecord> => {
-  const existing = await loadExistingDailyRecord(date);
-  if (existing) return existing;
-
+const initializeMissingDay = async (date: string, copyFromDate?: string): Promise<DailyRecord> => {
   const copySourceRecord = await loadCopySourceRecord(copyFromDate);
   const initializationSeed = await resolveInitializationSeed(date, copySourceRecord);
 
@@ -99,6 +97,20 @@ export const initializeDay = async (date: string, copyFromDate?: string): Promis
   await save(newRecord);
   return newRecord;
 };
+
+export const initializeDay = async (date: string, copyFromDate?: string): Promise<DailyRecord> =>
+  measureRepositoryOperation(
+    'dailyRecord.initializeDay',
+    async () => {
+      const existing = await loadExistingDailyRecord(date);
+      if (existing) {
+        return existing;
+      }
+
+      return initializeMissingDay(date, copyFromDate);
+    },
+    { thresholdMs: 180, context: `${date}${copyFromDate ? `<-${copyFromDate}` : ''}` }
+  );
 
 export const copyPatientToDate = async (
   sourceDate: string,

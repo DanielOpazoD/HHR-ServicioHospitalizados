@@ -8,6 +8,7 @@ import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import { migrateLegacyData } from '@/services/repositories/dataMigration';
 import { loadRemoteRecordWithFallback } from '@/services/repositories/dailyRecordRemoteLoader';
 import { resolvePreferredDailyRecord } from '@/services/repositories/dailyRecordSyncCompatibility';
+import { measureRepositoryOperation } from '@/services/repositories/repositoryPerformance';
 
 const resolveIncomingRemoteRecord = async (
   date: string,
@@ -44,11 +45,17 @@ export const subscribe = (
 export const syncWithFirestore = async (date: string): Promise<DailyRecord | null> => {
   if (!isFirestoreEnabled()) return null;
 
-  try {
-    const remoteResult = await loadRemoteRecordWithFallback(date);
-    return resolveIncomingRemoteRecord(date, remoteResult.record);
-  } catch (err) {
-    console.warn(`[Repository] Sync failed for ${date}:`, err);
-  }
-  return null;
+  return measureRepositoryOperation(
+    'dailyRecord.syncWithFirestore',
+    async () => {
+      try {
+        const remoteResult = await loadRemoteRecordWithFallback(date);
+        return resolveIncomingRemoteRecord(date, remoteResult.record);
+      } catch (err) {
+        console.warn(`[Repository] Sync failed for ${date}:`, err);
+      }
+      return null;
+    },
+    { thresholdMs: 200, context: date }
+  );
 };

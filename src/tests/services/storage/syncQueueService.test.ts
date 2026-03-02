@@ -86,6 +86,7 @@ describe('syncQueueService', () => {
     expect(telemetry.pending).toBe(1);
     expect(telemetry.retrying).toBe(1);
     expect(telemetry.oldestPendingAgeMs).toBeGreaterThanOrEqual(0);
+    expect(telemetry.batchSize).toBeGreaterThan(0);
   });
 
   it('marks task as failed without retry for non-retryable errors', async () => {

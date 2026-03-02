@@ -19,10 +19,13 @@ import {
   createGetPreviousDayQuery,
 } from '@/services/repositories/contracts/dailyRecordQueries';
 import { mergeAvailableDates } from '@/services/repositories/dailyRecordSyncCompatibility';
+import { measureRepositoryOperation } from '@/services/repositories/repositoryPerformance';
 
 const isRepositoryDebugEnabled = () =>
   import.meta.env.DEV &&
   String(import.meta.env.VITE_DEBUG_REPOSITORY || '').toLowerCase() === 'true';
+
+const remoteReadResultInFlight = new Map<string, Promise<DailyRecordReadResult | null>>();
 
 const createLocalRuntimeReadResult = (
   date: string,
@@ -52,27 +55,43 @@ const logRemoteFetchAttempt = (date: string): void => {
 };
 
 const loadRemoteReadResult = async (date: string): Promise<DailyRecordReadResult | null> => {
-  try {
-    logRemoteFetchAttempt(date);
-
-    const remoteResult = await loadRemoteRecordWithFallback(date);
-    if (!remoteResult.record) {
-      return null;
-    }
-
-    if (isRepositoryDebugEnabled() && remoteResult.source === 'legacy') {
-      logLegacyInfo(`[Repository] Found legacy record for ${date}. Migrating to Beta.`);
-    }
-
-    return createDailyRecordReadResult(date, remoteResult.record, remoteResult.source, {
-      compatibilityTier: remoteResult.compatibilityTier,
-      compatibilityIntensity: remoteResult.compatibilityIntensity,
-      migrationRulesApplied: remoteResult.migrationRulesApplied,
-    });
-  } catch (err) {
-    console.warn(`[Repository] getForDate: Remote fetch failed for ${date}:`, err);
-    return null;
+  const existingRequest = remoteReadResultInFlight.get(date);
+  if (existingRequest) {
+    return existingRequest;
   }
+
+  const request = measureRepositoryOperation(
+    'dailyRecord.getForDate.remote',
+    async () => {
+      try {
+        logRemoteFetchAttempt(date);
+
+        const remoteResult = await loadRemoteRecordWithFallback(date);
+        if (!remoteResult.record) {
+          return null;
+        }
+
+        if (isRepositoryDebugEnabled() && remoteResult.source === 'legacy') {
+          logLegacyInfo(`[Repository] Found legacy record for ${date}. Migrating to Beta.`);
+        }
+
+        return createDailyRecordReadResult(date, remoteResult.record, remoteResult.source, {
+          compatibilityTier: remoteResult.compatibilityTier,
+          compatibilityIntensity: remoteResult.compatibilityIntensity,
+          migrationRulesApplied: remoteResult.migrationRulesApplied,
+        });
+      } catch (err) {
+        console.warn(`[Repository] getForDate: Remote fetch failed for ${date}:`, err);
+        return null;
+      }
+    },
+    { thresholdMs: 250, context: date }
+  ).finally(() => {
+    remoteReadResultInFlight.delete(date);
+  });
+
+  remoteReadResultInFlight.set(date, request);
+  return request;
 };
 
 export const getForDate = async (
@@ -87,26 +106,32 @@ export const getForDateWithMeta = async (
   date: string,
   syncFromRemote: boolean = true
 ): Promise<DailyRecordReadResult> => {
-  const query = createGetDailyRecordQuery(date, syncFromRemote);
-  const e2eOverride = getE2EOverrideRecord(query.date);
-  if (e2eOverride) {
-    console.warn(`[E2E] Using override record for ${query.date}`);
-    return createLocalRuntimeReadResult(query.date, e2eOverride, 'e2e');
-  }
+  return measureRepositoryOperation(
+    'dailyRecord.getForDate',
+    async () => {
+      const query = createGetDailyRecordQuery(date, syncFromRemote);
+      const e2eOverride = getE2EOverrideRecord(query.date);
+      if (e2eOverride) {
+        console.warn(`[E2E] Using override record for ${query.date}`);
+        return createLocalRuntimeReadResult(query.date, e2eOverride, 'e2e');
+      }
 
-  const localRecord = await getRecordFromIndexedDB(query.date);
-  if (localRecord) {
-    return createLocalRuntimeReadResult(query.date, localRecord, 'indexeddb');
-  }
+      const localRecord = await getRecordFromIndexedDB(query.date);
+      if (localRecord) {
+        return createLocalRuntimeReadResult(query.date, localRecord, 'indexeddb');
+      }
 
-  if (query.syncFromRemote && isFirestoreEnabled()) {
-    const remoteReadResult = await loadRemoteReadResult(query.date);
-    if (remoteReadResult) {
-      return remoteReadResult;
-    }
-  }
+      if (query.syncFromRemote && isFirestoreEnabled()) {
+        const remoteReadResult = await loadRemoteReadResult(query.date);
+        if (remoteReadResult) {
+          return remoteReadResult;
+        }
+      }
 
-  return createDailyRecordReadResult(query.date, null, 'not_found');
+      return createDailyRecordReadResult(query.date, null, 'not_found');
+    },
+    { thresholdMs: 120, context: date }
+  );
 };
 
 export const getAvailableDates = async (): Promise<string[]> => {

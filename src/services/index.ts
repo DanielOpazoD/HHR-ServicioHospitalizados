@@ -1,16 +1,8 @@
 /**
  * Services Index
- * Centralized exports for all application services
  *
- * Services are organized by domain:
- * - Auth: Authentication services
- * - Data: Data persistence (local + cloud)
- * - Export: Import/export functionality
- * - Reports: Report generation
- * - AI: Gemini AI services
- * - Utils: Utility functions
- *
- * Usage: import { signIn, saveRecordLocal } from './services';
+ * Keep this surface intentionally curated. Prefer domain-local imports for
+ * new code instead of expanding this barrel with internal-only helpers.
  */
 
 // ============================================================

@@ -68,6 +68,7 @@ describe('indexedDBService', () => {
 
       const janRecords = await idbService.getRecordsForMonth(2025, 1);
       expect(janRecords).toHaveLength(2);
+      expect(janRecords.map(record => record.date)).toEqual(['2025-01-05', '2025-01-01']);
     });
 
     it('should get the previous day record', async () => {
@@ -83,6 +84,17 @@ describe('indexedDBService', () => {
       await idbService.deleteRecord('2025-01-01');
       const retrieved = await idbService.getRecordForDate('2025-01-01');
       expect(retrieved).toBeNull();
+    });
+
+    it('should bulk save and return all records sorted descending', async () => {
+      await idbService.saveRecords([
+        { ...mockRecord, date: '2025-01-02' },
+        { ...mockRecord, date: '2025-01-03' },
+        { ...mockRecord, date: '2025-01-01' },
+      ]);
+
+      const sorted = await idbService.getAllRecordsSorted();
+      expect(sorted.map(record => record.date)).toEqual(['2025-01-03', '2025-01-02', '2025-01-01']);
     });
   });
 

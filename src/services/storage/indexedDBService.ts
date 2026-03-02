@@ -11,14 +11,17 @@ export { saveErrorLog, getErrorLogs, clearErrorLogs } from './indexeddb/indexedD
 
 export {
   getAllRecords,
+  getAllRecordsSorted,
   getRecordsForMonth,
   getRecordsRange,
   getRecordForDate,
   saveRecord,
+  saveRecords,
   deleteRecord,
   getAllDates,
   getPreviousDayRecord,
   clearAllRecords,
+  buildMonthRecordPrefix,
 } from './indexeddb/indexedDbRecordService';
 
 export {

@@ -3,6 +3,9 @@ import { localPersistence } from '@/services/storage/localpersistence/localPersi
 
 import { ensureDbReady, hospitalDB as db, isDatabaseInFallbackMode } from './indexedDbCore';
 
+export const buildMonthRecordPrefix = (year: number, month: number): string =>
+  `${year}-${String(month).padStart(2, '0')}`;
+
 const toRecordMap = (records: DailyRecord[]): Record<string, DailyRecord> => {
   const result: Record<string, DailyRecord> = {};
   for (const record of records) {
@@ -10,6 +13,9 @@ const toRecordMap = (records: DailyRecord[]): Record<string, DailyRecord> => {
   }
   return result;
 };
+
+const sortRecordsDescending = (records: DailyRecord[]): DailyRecord[] =>
+  [...records].sort((a, b) => b.date.localeCompare(a.date));
 
 export const getAllRecords = async (): Promise<Record<string, DailyRecord>> => {
   try {
@@ -29,10 +35,11 @@ export const getRecordsForMonth = async (year: number, month: number): Promise<D
   try {
     await ensureDbReady();
     if (isDatabaseInFallbackMode()) {
-      return localPersistence.records.getRecordsForMonth(year, month);
+      return sortRecordsDescending(await localPersistence.records.getRecordsForMonth(year, month));
     }
-    const prefix = `${year}-${String(month).padStart(2, '0')}`;
-    return await db.dailyRecords.where('date').startsWith(prefix).toArray();
+    return sortRecordsDescending(
+      await db.dailyRecords.where('date').startsWith(buildMonthRecordPrefix(year, month)).toArray()
+    );
   } catch (error) {
     console.error(`Failed to get records for month ${year}-${month}:`, error);
     return [];
@@ -94,6 +101,26 @@ export const saveRecord = async (record: DailyRecord): Promise<void> => {
   }
 };
 
+export const saveRecords = async (records: DailyRecord[]): Promise<void> => {
+  try {
+    await ensureDbReady();
+    if (records.length === 0) {
+      return;
+    }
+
+    if (isDatabaseInFallbackMode()) {
+      records.forEach(record => {
+        localPersistence.records.save(record);
+      });
+      return;
+    }
+
+    await db.dailyRecords.bulkPut(records);
+  } catch (error) {
+    console.error('Failed to save records to IndexedDB:', error);
+  }
+};
+
 export const deleteRecord = async (date: string): Promise<void> => {
   try {
     await ensureDbReady();
@@ -117,6 +144,20 @@ export const getAllDates = async (): Promise<string[]> => {
     return records as string[];
   } catch (error) {
     console.error('Failed to get all dates from IndexedDB:', error);
+    return [];
+  }
+};
+
+export const getAllRecordsSorted = async (): Promise<DailyRecord[]> => {
+  try {
+    await ensureDbReady();
+    if (isDatabaseInFallbackMode()) {
+      return sortRecordsDescending(Object.values(await localPersistence.records.getAll()));
+    }
+
+    return await db.dailyRecords.orderBy('date').reverse().toArray();
+  } catch (error) {
+    console.error('Failed to get sorted records from IndexedDB:', error);
     return [];
   }
 };

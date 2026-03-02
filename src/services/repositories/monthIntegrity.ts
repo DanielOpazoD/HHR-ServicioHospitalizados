@@ -6,13 +6,15 @@
  * statistical calculations and audit trails.
  */
 
-import { getForDate, initializeDay } from './DailyRecordRepository';
+import { initializeDay } from './DailyRecordRepository';
+import { getRecordsForMonth } from '@/services/storage/indexedDBService';
 import {
   buildMonthIntegrityDateRange,
   createMonthIntegrityResult,
   getPreviousMonthIntegrityDate,
   type MonthIntegrityResult,
 } from './monthIntegritySupport';
+import { measureRepositoryOperation } from './repositoryPerformance';
 
 /**
  * Ensures all days of a month up to a specified day are initialized.
@@ -27,26 +29,38 @@ export const ensureMonthIntegrity = async (
   year: number,
   month: number,
   upToDay: number
-): Promise<MonthIntegrityResult> => {
-  const initializedDays: string[] = [];
-  const errors: string[] = [];
-  const dates = buildMonthIntegrityDateRange(year, month, upToDay);
+): Promise<MonthIntegrityResult> =>
+  measureRepositoryOperation(
+    'dailyRecord.ensureMonthIntegrity',
+    async () => {
+      const initializedDays: string[] = [];
+      const errors: string[] = [];
+      const dates = buildMonthIntegrityDateRange(year, month, upToDay);
+      const localMonthRecords = await getRecordsForMonth(year, month);
+      const localDateSet = new Set(localMonthRecords.map(record => record.date));
 
-  for (const [index, date] of dates.entries()) {
-    const existing = await getForDate(date);
-    if (existing) {
-      continue;
-    }
+      for (const [index, date] of dates.entries()) {
+        if (localDateSet.has(date)) {
+          continue;
+        }
 
-    try {
-      await initializeDay(date, getPreviousMonthIntegrityDate(year, month, index + 1));
-      initializedDays.push(date);
-    } catch (_error) {
-      errors.push(date);
-    }
-  }
+        try {
+          const initialized = await initializeDay(
+            date,
+            getPreviousMonthIntegrityDate(year, month, index + 1)
+          );
+          if (initialized.date === date) {
+            initializedDays.push(date);
+            localDateSet.add(date);
+          }
+        } catch (_error) {
+          errors.push(date);
+        }
+      }
 
-  return createMonthIntegrityResult(initializedDays, errors, upToDay);
-};
+      return createMonthIntegrityResult(initializedDays, errors, upToDay);
+    },
+    { thresholdMs: 250, context: `${year}-${String(month).padStart(2, '0')}` }
+  );
 
 export type { MonthIntegrityResult } from './monthIntegritySupport';

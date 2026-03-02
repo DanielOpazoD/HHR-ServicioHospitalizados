@@ -14,8 +14,10 @@ import { DailyRecord } from '@/types';
 import { getDailyRecordsPath } from '@/constants/firestorePaths';
 import { logError } from '@/services/utils/errorService';
 import { buildSyncErrorSummary, classifySyncError } from '@/services/storage/syncErrorCatalog';
+import { measureRepositoryOperation } from '@/services/repositories/repositoryPerformance';
 
 const MAX_RETRIES = 5;
+const SYNC_QUEUE_BATCH_SIZE = 25;
 const BASE_RETRY_DELAY_MS = 1000;
 const MAX_RETRY_DELAY_MS = 30000;
 let isProcessing = false;
@@ -151,7 +153,10 @@ const getTaskKey = (type: SyncTask['type'], payload: unknown): string | undefine
   return undefined;
 };
 
-const buildTelemetryFromRows = (rows: SyncTask[], now: number): SyncQueueTelemetry => {
+const buildTelemetryFromRows = (
+  rows: SyncTask[],
+  now: number
+): Omit<SyncQueueTelemetry, 'batchSize'> => {
   const pendingRows = rows.filter(row => row.status === 'PENDING');
   const oldestTimestamp = pendingRows.reduce<number>(
     (acc, row) => (row.timestamp < acc ? row.timestamp : acc),
@@ -172,7 +177,7 @@ const buildTelemetryFromRows = (rows: SyncTask[], now: number): SyncQueueTelemet
 
 const getReadyPendingTasks = async (now: number): Promise<SyncTask[]> => {
   const tasks = await indexedDB.syncQueue.where('status').equals('PENDING').sortBy('timestamp');
-  return tasks.filter(task => (task.nextAttemptAt || 0) <= now);
+  return tasks.filter(task => (task.nextAttemptAt || 0) <= now).slice(0, SYNC_QUEUE_BATCH_SIZE);
 };
 
 const handleTaskFailure = async (task: SyncTask, error: unknown): Promise<void> => {
@@ -240,16 +245,27 @@ export interface SyncQueueTelemetry {
   conflict: number;
   retrying: number;
   oldestPendingAgeMs: number;
+  batchSize: number;
 }
 
 export const getSyncQueueTelemetry = async (): Promise<SyncQueueTelemetry> => {
   try {
     await ensureDbReady();
     const rows = await indexedDB.syncQueue.toArray();
-    return buildTelemetryFromRows(rows, Date.now());
+    return {
+      ...buildTelemetryFromRows(rows, Date.now()),
+      batchSize: SYNC_QUEUE_BATCH_SIZE,
+    };
   } catch (error) {
     console.warn('[SyncQueue] Failed to read queue telemetry:', error);
-    return { pending: 0, failed: 0, conflict: 0, retrying: 0, oldestPendingAgeMs: 0 };
+    return {
+      pending: 0,
+      failed: 0,
+      conflict: 0,
+      retrying: 0,
+      oldestPendingAgeMs: 0,
+      batchSize: SYNC_QUEUE_BATCH_SIZE,
+    };
   }
 };
 
@@ -288,27 +304,38 @@ export const processSyncQueue = async (): Promise<void> => {
 
   try {
     await ensureDbReady();
+    await measureRepositoryOperation(
+      'syncQueue.process',
+      async () => {
+        while (true) {
+          const readyTasks = await getReadyPendingTasks(Date.now());
+          if (readyTasks.length === 0) {
+            return;
+          }
 
-    const readyTasks = await getReadyPendingTasks(Date.now());
-    if (readyTasks.length === 0) {
-      return;
-    }
+          console.warn(`[SyncQueue] Processing ${readyTasks.length} pending tasks...`);
 
-    console.warn(`[SyncQueue] Processing ${readyTasks.length} pending tasks...`);
+          for (const task of readyTasks) {
+            if (!task.id) continue;
 
-    for (const task of readyTasks) {
-      if (!task.id) continue;
+            try {
+              await updateTaskState(task.id, { status: 'PROCESSING' });
+              await runTask(task);
 
-      try {
-        await updateTaskState(task.id, { status: 'PROCESSING' });
-        await runTask(task);
+              await indexedDB.syncQueue.delete(task.id);
+              console.warn(`[SyncQueue] Task ${task.id} completed successfully.`);
+            } catch (error) {
+              await handleTaskFailure(task, error);
+            }
+          }
 
-        await indexedDB.syncQueue.delete(task.id);
-        console.warn(`[SyncQueue] Task ${task.id} completed successfully.`);
-      } catch (error) {
-        await handleTaskFailure(task, error);
-      }
-    }
+          if (readyTasks.length < SYNC_QUEUE_BATCH_SIZE) {
+            return;
+          }
+        }
+      },
+      { thresholdMs: 250, context: `batch=${SYNC_QUEUE_BATCH_SIZE}` }
+    );
   } finally {
     isProcessing = false;
   }
@@ -318,8 +345,14 @@ export const processSyncQueue = async (): Promise<void> => {
  * Executes the Firestore write for a DailyRecord.
  */
 async function syncDailyRecord(record: DailyRecord): Promise<void> {
-  const path = getDailyRecordsPath();
-  await db.setDoc(path, record.date, record, { merge: true });
+  await measureRepositoryOperation(
+    'syncQueue.writeDailyRecord',
+    async () => {
+      const path = getDailyRecordsPath();
+      await db.setDoc(path, record.date, record, { merge: true });
+    },
+    { thresholdMs: 180, context: record.date }
+  );
 }
 
 export const ensureSyncQueueOnlineListener = (): void => {
