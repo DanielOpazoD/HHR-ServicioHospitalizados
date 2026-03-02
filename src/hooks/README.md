@@ -35,6 +35,9 @@ Lógica de aplicación reusable y composición de casos de uso. Es el puente ent
 - **Orchestrator Hook**: hooks agregadores que exponen API estable.
 - **Command Hooks**: ejecutan comandos tipados y notifican errores.
 - **Controller-backed hooks**: validación/transformación extraída a `controllers`.
+- `useDailyRecordQuery.ts` ahora delega construcción de query/subscription/prefetch a [controllers/dailyRecordQueryController.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/hooks/controllers/dailyRecordQueryController.ts) para concentrar decisiones de cache en un único punto.
+- `useDailyRecordSyncQuery.ts` delega resolución de estado y bootstrap de creación de día a [controllers/dailyRecordSyncController.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/hooks/controllers/dailyRecordSyncController.ts).
+- `useCensusEmail.ts` y [useCensusEmailActions.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/hooks/useCensusEmailActions.ts) usan [controllers/censusEmailStateController.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/hooks/controllers/censusEmailStateController.ts) y [controllers/censusEmailDeliveryController.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/hooks/controllers/censusEmailDeliveryController.ts) para separar estado date-bound y orquestación de envío.
 - **LatestRef pattern**: evita stale closures en callbacks largos.
 - `useTransferViewStates.ts` ahora delega preparación/caché documental a [controllers/transferDocumentPackageController.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/hooks/controllers/transferDocumentPackageController.ts) para mantener el hook enfocado en estado de modales y selección.
 

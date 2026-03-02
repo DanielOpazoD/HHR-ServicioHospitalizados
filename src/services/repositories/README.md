@@ -46,6 +46,8 @@ de entrada (fecha, límites, RUT, IDs) antes de delegar en storage.
 - `dailyRecordRemoteLoader.ts` centraliza la resolución `Firestore -> legacy -> cache local`
   y ahora también entrega metadata explícita de origen/compatibilidad para que lectura, sync e init
   compartan una misma decisión remota.
+- `repositoryPerformance.ts` concentra la telemetría ligera de operaciones críticas (`getForDate`,
+  `initializeDay`, `syncWithFirestore`, `ensureMonthIntegrity`) para evitar mediciones dispersas.
 - `dailyRecordRepositoryInitializationService.ts` resuelve una semilla de arranque explícita
   (`remote_firestore`, `remote_legacy`, `copy_source`, `fresh`) antes de construir o reutilizar
   el día, evitando mezclar en un mismo bloque la carga remota, la herencia local y la creación

@@ -20,6 +20,9 @@ Capa de persistencia concreta: IndexedDB, localStorage, Firestore bridge y sincr
 | `index.ts`                                    | Exports de storage                                    |
 | `indexeddb/` / `localstorage/` / `firestore/` | Implementaciones más finas por backend                |
 
+`firestoreService.ts` se mantiene como fachada pública curada; la construcción de rangos mensuales y helpers de escritura vive en `firestore/firestoreQuerySupport.ts` y `firestore/firestoreWriteSupport.ts`.
+`syncQueueService.ts` es la única fuente soportada para telemetría (`getSyncQueueTelemetry()`), stats (`getSyncQueueStats()`) y operaciones recientes (`listRecentSyncQueueOperations()`).
+
 ## Estrategia
 
 - Offline-first con IndexedDB.
