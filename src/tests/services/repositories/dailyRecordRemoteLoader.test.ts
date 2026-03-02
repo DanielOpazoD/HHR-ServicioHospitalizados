@@ -65,4 +65,31 @@ describe('dailyRecordRemoteLoader', () => {
     expect(result.cachedLocally).toBe(false);
     expect(result.migrationRulesApplied).toEqual([]);
   });
+
+  it('deduplicates concurrent remote loads for the same date', async () => {
+    let resolveRemote:
+      | ((value: ReturnType<typeof DataFactory.createMockDailyRecord>) => void)
+      | undefined;
+
+    vi.mocked(getRecordFromFirestore).mockImplementationOnce(
+      () =>
+        new Promise(resolve => {
+          resolveRemote = resolve;
+        })
+    );
+
+    const firstCall = loadRemoteRecordWithFallback(date);
+    const secondCall = loadRemoteRecordWithFallback(date);
+
+    if (!resolveRemote) {
+      throw new Error('Remote resolver was not captured');
+    }
+
+    resolveRemote(DataFactory.createMockDailyRecord(date));
+    const [firstResult, secondResult] = await Promise.all([firstCall, secondCall]);
+
+    expect(getRecordFromFirestore).toHaveBeenCalledTimes(1);
+    expect(firstResult.record?.date).toBe(date);
+    expect(secondResult.record?.date).toBe(date);
+  });
 });

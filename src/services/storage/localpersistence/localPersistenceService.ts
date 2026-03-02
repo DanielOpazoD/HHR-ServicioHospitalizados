@@ -7,6 +7,7 @@ import {
   readLocalStorageJson,
   writeLocalStorageJson,
 } from '@/services/storage/localstorage/localStorageCore';
+import { buildMonthRecordPrefix } from '@/services/storage/storageDateSupport';
 
 const SETTINGS_INDEX_KEY = 'hhr_fallback_settings_index';
 
@@ -37,6 +38,9 @@ const saveRecords = (key: string, records: Record<string, DailyRecord>): void =>
   writeLocalStorageJson(key, records);
 };
 
+const getSortedRecordValues = (records: Record<string, DailyRecord>): DailyRecord[] =>
+  Object.values(records).sort((a, b) => b.date.localeCompare(a.date));
+
 const createRecordStore = (key: string) => ({
   getAll: (): Record<string, DailyRecord> => getRecords(key),
   getForDate: (date: string): DailyRecord | null => getRecords(key)[date] || null,
@@ -56,11 +60,11 @@ const createRecordStore = (key: string) => ({
   },
   getAllDates: (): string[] => Object.keys(getRecords(key)).sort().reverse(),
   getRecordsForMonth: (year: number, month: number): DailyRecord[] => {
-    const prefix = `${year}-${String(month).padStart(2, '0')}`;
-    return Object.values(getRecords(key)).filter(record => record.date.startsWith(prefix));
+    const prefix = buildMonthRecordPrefix(year, month);
+    return getSortedRecordValues(getRecords(key)).filter(record => record.date.startsWith(prefix));
   },
   getRecordsRange: (startDate: string, endDate: string): DailyRecord[] =>
-    Object.values(getRecords(key)).filter(
+    getSortedRecordValues(getRecords(key)).filter(
       record => record.date >= startDate && record.date <= endDate
     ),
   getPreviousDayRecord: (currentDate: string): DailyRecord | null =>

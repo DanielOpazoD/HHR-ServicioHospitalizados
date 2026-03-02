@@ -7,6 +7,11 @@ import {
   getRecordDocRef,
   getRecordsCollection,
 } from '@/services/storage/firestore/firestoreShared';
+import {
+  buildFirestoreMonthDateRange,
+  mapFirestoreRecords,
+  toFirestoreRecordMap,
+} from '@/services/storage/firestore/firestoreQuerySupport';
 
 export const getAvailableDatesFromFirestore = async (): Promise<string[]> => {
   try {
@@ -41,13 +46,7 @@ export const getAllRecordsFromFirestore = async (): Promise<Record<string, Daily
   try {
     const q = query(getRecordsCollection(), orderBy('date', 'desc'));
     const querySnapshot = await getDocs(q);
-
-    const records: Record<string, DailyRecord> = {};
-    querySnapshot.forEach(docItem => {
-      records[docItem.id] = docToRecord(docItem.data(), docItem.id);
-    });
-
-    return records;
+    return toFirestoreRecordMap(mapFirestoreRecords(querySnapshot.docs, docToRecord));
   } catch (error) {
     console.error('❌ Error getting all records from Firestore:', error);
     return {};
@@ -67,7 +66,7 @@ export const getRecordsRangeFromFirestore = async (
     );
 
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(docItem => docToRecord(docItem.data(), docItem.id));
+    return mapFirestoreRecords(querySnapshot.docs, docToRecord);
   } catch (error) {
     console.error(`❌ Error getting records for range ${startDate} to ${endDate}:`, error);
     return [];
@@ -79,9 +78,7 @@ export const getMonthRecordsFromFirestore = async (
   month: number
 ): Promise<DailyRecord[]> => {
   try {
-    const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
-    const endDate = `${year}-${String(month + 1).padStart(2, '0')}-31`;
-
+    const { startDate, endDate } = buildFirestoreMonthDateRange(year, month);
     return getRecordsRangeFromFirestore(startDate, endDate);
   } catch (error) {
     console.error('❌ Error getting month records:', error);

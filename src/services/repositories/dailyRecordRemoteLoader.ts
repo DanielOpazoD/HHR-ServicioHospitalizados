@@ -7,6 +7,7 @@ import {
   LegacyMigrationRule,
   MigrationCompatibilityIntensity,
 } from '@/services/repositories/dataMigrationContracts';
+import { measureRepositoryOperation } from '@/services/repositories/repositoryPerformance';
 
 export type DailyRecordRemoteSource = 'firestore' | 'legacy' | 'not_found';
 export type DailyRecordRemoteCompatibilityTier = 'current_firestore' | 'legacy_firestore' | 'none';
@@ -19,6 +20,8 @@ export interface DailyRecordRemoteLoadResult {
   migrationRulesApplied: LegacyMigrationRule[];
   cachedLocally: boolean;
 }
+
+const remoteLoadInFlight = new Map<string, Promise<DailyRecordRemoteLoadResult>>();
 
 const cacheRemoteRecord = async (
   record: DailyRecord,
@@ -59,31 +62,43 @@ const createRemoteLoadResult = (
 export const loadRemoteRecordWithFallback = async (
   date: string
 ): Promise<DailyRecordRemoteLoadResult> => {
-  const remoteRecord = await getRecordFromFirestore(date);
-  if (remoteRecord) {
-    const cachedRemoteRecord = await cacheRemoteRecord(remoteRecord, date);
-    return {
-      ...createRemoteLoadResult(
-        'firestore',
-        cachedRemoteRecord.record,
-        cachedRemoteRecord.migrationRulesApplied,
-        cachedRemoteRecord.compatibilityIntensity
-      ),
-    };
+  const existingRequest = remoteLoadInFlight.get(date);
+  if (existingRequest) {
+    return existingRequest;
   }
 
-  const legacyRecord = await getLegacyRecord(date);
-  if (legacyRecord) {
-    const cachedLegacyRecord = await cacheRemoteRecord(legacyRecord, date);
-    return {
-      ...createRemoteLoadResult(
-        'legacy',
-        cachedLegacyRecord.record,
-        cachedLegacyRecord.migrationRulesApplied,
-        cachedLegacyRecord.compatibilityIntensity
-      ),
-    };
-  }
+  const request = measureRepositoryOperation(
+    'dailyRecord.loadRemoteWithFallback',
+    async () => {
+      const remoteRecord = await getRecordFromFirestore(date);
+      if (remoteRecord) {
+        const cachedRemoteRecord = await cacheRemoteRecord(remoteRecord, date);
+        return createRemoteLoadResult(
+          'firestore',
+          cachedRemoteRecord.record,
+          cachedRemoteRecord.migrationRulesApplied,
+          cachedRemoteRecord.compatibilityIntensity
+        );
+      }
 
-  return createRemoteLoadResult('not_found', null);
+      const legacyRecord = await getLegacyRecord(date);
+      if (legacyRecord) {
+        const cachedLegacyRecord = await cacheRemoteRecord(legacyRecord, date);
+        return createRemoteLoadResult(
+          'legacy',
+          cachedLegacyRecord.record,
+          cachedLegacyRecord.migrationRulesApplied,
+          cachedLegacyRecord.compatibilityIntensity
+        );
+      }
+
+      return createRemoteLoadResult('not_found', null);
+    },
+    { thresholdMs: 220, context: date }
+  ).finally(() => {
+    remoteLoadInFlight.delete(date);
+  });
+
+  remoteLoadInFlight.set(date, request);
+  return request;
 };

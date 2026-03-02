@@ -36,6 +36,25 @@ const createRemoteWriteState = (): RemoteWriteState => ({
   autoMerged: false,
 });
 
+const buildSaveResult = (date: string, state: RemoteWriteState) =>
+  createSaveDailyRecordResult({
+    date,
+    savedLocally: true,
+    savedRemotely: state.savedRemotely,
+    queuedForRetry: state.queuedForRetry,
+    autoMerged: state.autoMerged,
+  });
+
+const buildPartialUpdateResult = (date: string, state: RemoteWriteState, patchedFields: number) =>
+  createUpdatePartialDailyRecordResult({
+    date,
+    savedLocally: true,
+    updatedRemotely: state.savedRemotely,
+    queuedForRetry: state.queuedForRetry,
+    autoMerged: state.autoMerged,
+    patchedFields,
+  });
+
 const runRemoteSaveIntegrityCheck = async (date: string, record: DailyRecord): Promise<void> => {
   if (!isFirestoreEnabled()) return;
 
@@ -92,13 +111,7 @@ export const save = async (record: DailyRecord, expectedLastUpdated?: string): P
         remoteState
       );
       if (nextAction === 'return') {
-        createSaveDailyRecordResult({
-          date: command.date,
-          savedLocally: true,
-          savedRemotely: false,
-          queuedForRetry: remoteState.queuedForRetry,
-          autoMerged: remoteState.autoMerged,
-        });
+        buildSaveResult(command.date, remoteState);
         return;
       }
     }
@@ -106,13 +119,7 @@ export const save = async (record: DailyRecord, expectedLastUpdated?: string): P
 
   syncPatientsToMasterInBackground(validatedRecord);
 
-  createSaveDailyRecordResult({
-    date: command.date,
-    savedLocally: true,
-    savedRemotely: remoteState.savedRemotely,
-    queuedForRetry: remoteState.queuedForRetry,
-    autoMerged: remoteState.autoMerged,
-  });
+  buildSaveResult(command.date, remoteState);
 };
 
 export const updatePartial = async (date: string, partialData: DailyRecordPatch): Promise<void> => {
@@ -132,6 +139,7 @@ export const updatePartial = async (date: string, partialData: DailyRecordPatch)
     command.date,
     command.patch
   );
+  const patchedFields = Object.keys(mergedPatches).length;
 
   await saveToIndexedDB(validatedRecord);
 
@@ -149,25 +157,11 @@ export const updatePartial = async (date: string, partialData: DailyRecordPatch)
         remoteState
       );
       if (nextAction === 'return') {
-        createUpdatePartialDailyRecordResult({
-          date: command.date,
-          savedLocally: true,
-          updatedRemotely: false,
-          queuedForRetry: remoteState.queuedForRetry,
-          autoMerged: remoteState.autoMerged,
-          patchedFields: Object.keys(mergedPatches).length,
-        });
+        buildPartialUpdateResult(command.date, remoteState, patchedFields);
         return;
       }
     }
   }
 
-  createUpdatePartialDailyRecordResult({
-    date: command.date,
-    savedLocally: true,
-    updatedRemotely: remoteState.savedRemotely,
-    queuedForRetry: remoteState.queuedForRetry,
-    autoMerged: remoteState.autoMerged,
-    patchedFields: Object.keys(mergedPatches).length,
-  });
+  buildPartialUpdateResult(command.date, remoteState, patchedFields);
 };

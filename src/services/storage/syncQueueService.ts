@@ -248,6 +248,17 @@ export interface SyncQueueTelemetry {
   batchSize: number;
 }
 
+export interface SyncQueueOperationSnapshot {
+  id?: number;
+  type: SyncTask['type'];
+  status: SyncTask['status'];
+  retryCount: number;
+  timestamp: number;
+  nextAttemptAt?: number;
+  error?: string;
+  key?: string;
+}
+
 export const getSyncQueueTelemetry = async (): Promise<SyncQueueTelemetry> => {
   try {
     await ensureDbReady();
@@ -266,6 +277,28 @@ export const getSyncQueueTelemetry = async (): Promise<SyncQueueTelemetry> => {
       oldestPendingAgeMs: 0,
       batchSize: SYNC_QUEUE_BATCH_SIZE,
     };
+  }
+};
+
+export const listRecentSyncQueueOperations = async (
+  limit: number
+): Promise<SyncQueueOperationSnapshot[]> => {
+  try {
+    await ensureDbReady();
+    const rows = await indexedDB.syncQueue.orderBy('timestamp').reverse().limit(limit).toArray();
+    return rows.map(row => ({
+      id: row.id,
+      type: row.type,
+      status: row.status,
+      retryCount: row.retryCount,
+      timestamp: row.timestamp,
+      nextAttemptAt: row.nextAttemptAt,
+      error: row.error,
+      key: row.key,
+    }));
+  } catch (error) {
+    console.warn('[SyncQueue] Failed to list recent operations:', error);
+    return [];
   }
 };
 

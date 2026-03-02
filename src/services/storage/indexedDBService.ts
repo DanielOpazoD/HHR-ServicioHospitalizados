@@ -21,8 +21,9 @@ export {
   getAllDates,
   getPreviousDayRecord,
   clearAllRecords,
-  buildMonthRecordPrefix,
 } from './indexeddb/indexedDbRecordService';
+
+export { buildMonthRecordPrefix } from './storageDateSupport';
 
 export {
   saveAuditLog,

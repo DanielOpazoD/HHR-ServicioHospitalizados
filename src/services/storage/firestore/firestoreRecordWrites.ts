@@ -1,50 +1,27 @@
 import {
-  collection,
   deleteDoc,
-  doc,
-  getDoc,
   setDoc,
   Timestamp,
   updateDoc,
   type DocumentData,
-  type DocumentReference,
   type UpdateData,
 } from 'firebase/firestore';
-import { db } from '@/firebaseConfig';
 import { DailyRecord, DailyRecordPatch } from '@/types';
 import { withRetry } from '@/utils/networkUtils';
-import { COLLECTIONS, getActiveHospitalId, HOSPITAL_COLLECTIONS } from '@/constants/firestorePaths';
 import {
   flattenObject,
   getRecordDocRef,
   sanitizeForFirestore,
 } from '@/services/storage/firestore/firestoreShared';
+import {
+  asFirestoreUpdatePayload,
+  assertFirestoreConcurrency,
+  ConcurrencyError,
+  createDeletedRecordRef,
+  saveHistorySnapshot,
+} from '@/services/storage/firestore/firestoreWriteSupport';
 
-const saveHistorySnapshot = async (date: string): Promise<void> => {
-  try {
-    const docRef = getRecordDocRef(date);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      const historyRef = doc(collection(docRef, 'history'), new Date().toISOString());
-
-      await setDoc(historyRef, {
-        ...data,
-        snapshotTimestamp: Timestamp.now(),
-      });
-    }
-  } catch (error) {
-    console.error('❌ Failed to create history snapshot:', error);
-  }
-};
-
-export class ConcurrencyError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'ConcurrencyError';
-  }
-}
+export { ConcurrencyError } from '@/services/storage/firestore/firestoreWriteSupport';
 
 export const saveRecordToFirestore = async (
   record: DailyRecord,
@@ -52,33 +29,12 @@ export const saveRecordToFirestore = async (
 ): Promise<void> => {
   try {
     const docRef = getRecordDocRef(record.date);
-
-    if (expectedLastUpdated) {
-      try {
-        const remoteDoc = await getDoc(docRef);
-        if (remoteDoc.exists()) {
-          const remoteData = remoteDoc.data();
-          const remoteLastUpdated =
-            remoteData.lastUpdated instanceof Timestamp
-              ? remoteData.lastUpdated.toDate().toISOString()
-              : (remoteData.lastUpdated as string);
-
-          if (remoteLastUpdated && new Date(remoteLastUpdated) > new Date(expectedLastUpdated)) {
-            console.warn(
-              `[Firestore] Concurrency conflict. Remote: ${remoteLastUpdated}, Local base: ${expectedLastUpdated}`
-            );
-            throw new ConcurrencyError(
-              'El registro ha sido modificado por otro usuario. Por favor recarga la página.'
-            );
-          }
-        }
-      } catch (err) {
-        if (err instanceof ConcurrencyError) throw err;
-        console.warn(
-          '[Firestore] Could not verify concurrency (likely offline), proceeding with save.'
-        );
-      }
-    }
+    await assertFirestoreConcurrency(
+      docRef,
+      expectedLastUpdated,
+      'El registro ha sido modificado por otro usuario. Por favor recarga la página.',
+      'save'
+    );
 
     await saveHistorySnapshot(record.date);
 
@@ -104,33 +60,12 @@ export const updateRecordPartial = async (
 ): Promise<void> => {
   try {
     const docRef = getRecordDocRef(date);
-
-    if (expectedLastUpdated) {
-      try {
-        const remoteDoc = await getDoc(docRef);
-        if (remoteDoc.exists()) {
-          const remoteData = remoteDoc.data();
-          const remoteLastUpdated =
-            remoteData.lastUpdated instanceof Timestamp
-              ? remoteData.lastUpdated.toDate().toISOString()
-              : (remoteData.lastUpdated as string);
-
-          if (remoteLastUpdated && new Date(remoteLastUpdated) > new Date(expectedLastUpdated)) {
-            console.warn(
-              `[Firestore] Partial update concurrency conflict. Remote: ${remoteLastUpdated}, Local base: ${expectedLastUpdated}`
-            );
-            throw new ConcurrencyError(
-              'El registro ha sido modificado por otro usuario. Por favor recarga la página.'
-            );
-          }
-        }
-      } catch (err) {
-        if (err instanceof ConcurrencyError) throw err;
-        console.warn(
-          '[Firestore] Could not verify partial update concurrency (likely offline), proceeding.'
-        );
-      }
-    }
+    await assertFirestoreConcurrency(
+      docRef,
+      expectedLastUpdated,
+      'El registro ha sido modificado por otro usuario. Por favor recarga la página.',
+      'partial update'
+    );
 
     await saveHistorySnapshot(date);
 
@@ -141,12 +76,14 @@ export const updateRecordPartial = async (
     }) as Record<string, unknown>;
 
     try {
-      const updatePayload = sanitizedData as UpdateData<DocumentData>;
-      const recordDocRef = docRef as DocumentReference<DocumentData>;
-      await withRetry(() => updateDoc(recordDocRef, updatePayload), {
-        onRetry: (err: unknown, attempt: number) =>
-          console.warn(`[Firestore] Retry ${attempt} updating record ${date}:`, err),
-      });
+      await withRetry(
+        () =>
+          updateDoc(docRef, asFirestoreUpdatePayload(sanitizedData) as UpdateData<DocumentData>),
+        {
+          onRetry: (err: unknown, attempt: number) =>
+            console.warn(`[Firestore] Retry ${attempt} updating record ${date}:`, err),
+        }
+      );
     } catch (error: unknown) {
       const storageError = error as { code?: string };
       if (storageError?.code === 'not-found') {
@@ -179,13 +116,7 @@ export const deleteRecordFromFirestore = async (date: string): Promise<void> => 
 
 export const moveRecordToTrash = async (record: DailyRecord): Promise<void> => {
   try {
-    const trashRef = doc(
-      db,
-      COLLECTIONS.HOSPITALS,
-      getActiveHospitalId(),
-      HOSPITAL_COLLECTIONS.DELETED_RECORDS,
-      `${record.date}_trash_${new Date().getTime()}`
-    );
+    const trashRef = createDeletedRecordRef(record.date);
 
     await withRetry(() =>
       setDoc(trashRef, {

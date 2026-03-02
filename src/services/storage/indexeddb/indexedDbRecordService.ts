@@ -1,10 +1,8 @@
 import { DailyRecord } from '@/types';
 import { localPersistence } from '@/services/storage/localpersistence/localPersistenceService';
+import { buildMonthRecordPrefix } from '@/services/storage/storageDateSupport';
 
 import { ensureDbReady, hospitalDB as db, isDatabaseInFallbackMode } from './indexedDbCore';
-
-export const buildMonthRecordPrefix = (year: number, month: number): string =>
-  `${year}-${String(month).padStart(2, '0')}`;
 
 const toRecordMap = (records: DailyRecord[]): Record<string, DailyRecord> => {
   const result: Record<string, DailyRecord> = {};

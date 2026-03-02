@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { getSyncQueueStats } from '@/services/storage/syncQueueService';
-import { hospitalDB } from '@/services/storage/indexedDBService';
-import { SyncTask } from '@/services/storage/syncQueueTypes';
+import {
+  getSyncQueueTelemetry,
+  listRecentSyncQueueOperations,
+  type SyncQueueOperationSnapshot,
+} from '@/services/storage/syncQueueService';
 
 export const SYNC_QUEUE_POLL_INTERVAL_MS = 4000;
 
@@ -25,37 +27,19 @@ export interface SyncQueueStats {
   retrying: number;
   acked: number;
   conflict: number;
+  batchSize?: number;
 }
 
 export interface SyncQueueOperation {
-  id?: number;
-  type: SyncTask['type'];
-  status: SyncTask['status'];
+  id?: SyncQueueOperationSnapshot['id'];
+  type: SyncQueueOperationSnapshot['type'];
+  status: SyncQueueOperationSnapshot['status'];
   retryCount: number;
   timestamp: number;
   nextAttemptAt?: number;
   error?: string;
   key?: string;
 }
-
-const listRecentSyncQueueOperations = async (limit: number): Promise<SyncQueueOperation[]> => {
-  try {
-    const rows = await hospitalDB.syncQueue.orderBy('timestamp').reverse().limit(limit).toArray();
-    return rows.map(row => ({
-      id: row.id,
-      type: row.type,
-      status: row.status,
-      retryCount: row.retryCount,
-      timestamp: row.timestamp,
-      nextAttemptAt: row.nextAttemptAt,
-      error: row.error,
-      key: row.key,
-    }));
-  } catch (error) {
-    console.warn('[SyncQueueMonitor] Failed to list queue operations:', error);
-    return [];
-  }
-};
 
 export const useSyncQueueMonitor = (
   options: UseSyncQueueMonitorOptions = {}
@@ -76,16 +60,16 @@ export const useSyncQueueMonitor = (
   const refresh = useCallback(async () => {
     try {
       const [nextStats, nextOps] = await Promise.all([
-        getSyncQueueStats(),
+        getSyncQueueTelemetry(),
         listRecentSyncQueueOperations(operationLimit),
       ]);
-      const retrying = nextOps.filter(op => op.status === 'PENDING' && op.retryCount > 0).length;
       setStats({
         pending: nextStats.pending,
         failed: nextStats.failed,
-        retrying,
+        retrying: nextStats.retrying,
         acked: 0,
         conflict: nextStats.conflict || 0,
+        batchSize: nextStats.batchSize,
       });
       setOperations(nextOps);
     } catch (error) {

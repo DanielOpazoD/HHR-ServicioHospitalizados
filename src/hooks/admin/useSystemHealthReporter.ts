@@ -33,6 +33,7 @@ export const useSystemHealthReporter = () => {
         const conflictSyncTasks = syncTelemetry.conflict;
         const retryingSyncTasks = syncTelemetry.retrying;
         const oldestPendingAgeMs = syncTelemetry.oldestPendingAgeMs;
+        const syncBatchSize = syncTelemetry.batchSize;
 
         const status: UserHealthStatus = {
           uid: user.uid,
@@ -48,7 +49,7 @@ export const useSystemHealthReporter = () => {
           retryingSyncTasks,
           oldestPendingAgeMs,
           localErrorCount,
-          appVersion: `v${CURRENT_SCHEMA_VERSION}`,
+          appVersion: `v${CURRENT_SCHEMA_VERSION} (sync-batch:${syncBatchSize})`,
           platform: navigator.platform,
           userAgent: navigator.userAgent,
         };
