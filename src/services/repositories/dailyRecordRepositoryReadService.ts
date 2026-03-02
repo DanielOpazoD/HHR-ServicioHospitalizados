@@ -12,6 +12,7 @@ import {
   migrateLegacyDataWithReport,
 } from '@/services/repositories/dataMigration';
 import { loadRemoteRecordWithFallback } from '@/services/repositories/dailyRecordRemoteLoader';
+import { bridgeLegacyRecord } from '@/services/repositories/legacyRecordBridgeService';
 import {
   createDailyRecordReadResult,
   DailyRecordReadResult,
@@ -71,10 +72,6 @@ const loadRemoteReadResult = async (date: string): Promise<DailyRecordReadResult
           return null;
         }
 
-        if (isRepositoryDebugEnabled() && remoteResult.source === 'legacy') {
-          logLegacyInfo(`[Repository] Found legacy record for ${date}. Migrating to Beta.`);
-        }
-
         return createDailyRecordReadResult(date, remoteResult.record, remoteResult.source, {
           compatibilityTier: remoteResult.compatibilityTier,
           compatibilityIntensity: remoteResult.compatibilityIntensity,
@@ -132,6 +129,15 @@ export const getForDateWithMeta = async (
     },
     { thresholdMs: 120, context: date }
   );
+};
+
+export const bridgeLegacyRecordForDate = async (date: string): Promise<DailyRecordReadResult> => {
+  const bridged = await bridgeLegacyRecord(date);
+  return createDailyRecordReadResult(date, bridged.record, bridged.source, {
+    compatibilityTier: bridged.compatibilityTier,
+    compatibilityIntensity: bridged.compatibilityIntensity,
+    migrationRulesApplied: bridged.migrationRulesApplied,
+  });
 };
 
 export const getAvailableDates = async (): Promise<string[]> => {

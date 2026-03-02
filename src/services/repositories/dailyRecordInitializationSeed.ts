@@ -22,7 +22,7 @@ export const createRemoteInitializationSeed = (
   remoteResult: DailyRecordRemoteLoadResult
 ): DailyRecordInitializationSeed => ({
   record: remoteResult.record,
-  source: remoteResult.source === 'legacy' ? 'remote_legacy' : 'remote_firestore',
+  source: 'remote_firestore',
   compatibilityTier: remoteResult.compatibilityTier,
   compatibilityIntensity: remoteResult.compatibilityIntensity,
 });

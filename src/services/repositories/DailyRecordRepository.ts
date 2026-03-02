@@ -28,11 +28,13 @@ import { isFirestoreEnabled } from './repositoryConfig';
 export { CatalogRepository } from './CatalogRepository';
 export { migrateLegacyData } from './dataMigration';
 import {
+  bridgeLegacyRecordForDate as bridgeLegacyRecordForDateFromReadService,
   getAvailableDates as getAvailableDatesFromReadService,
   getForDate as getForDateFromReadService,
   getForDateWithMeta as getForDateWithMetaFromReadService,
   getPreviousDay as getPreviousDayFromReadService,
 } from './dailyRecordRepositoryReadService';
+export { bridgeLegacyRecordsRange } from './legacyRecordBridgeService';
 import {
   save as saveFromWriteService,
   updatePartial as updatePartialFromWriteService,
@@ -105,6 +107,7 @@ export const getPreviousDay = async (date: string) => {
   return getPreviousDayFromReadService(query.date);
 };
 export const getAvailableDates = getAvailableDatesFromReadService;
+export const bridgeLegacyRecord = bridgeLegacyRecordForDateFromReadService;
 
 export const save = async (record: DailyRecord, expectedLastUpdated?: string) => {
   const command = createSaveDailyRecordCommand(record, expectedLastUpdated);
@@ -164,6 +167,7 @@ export const copyPatientToDate = async (
 
 export const DailyRecordRepository: IDailyRecordRepository & {
   syncWithFirestore: typeof syncWithFirestore;
+  bridgeLegacyRecord: typeof bridgeLegacyRecord;
 } = {
   getForDate,
   getPreviousDay,
@@ -175,4 +179,5 @@ export const DailyRecordRepository: IDailyRecordRepository & {
   copyPatientToDate,
   syncWithFirestore,
   getAllDates: getAvailableDates,
+  bridgeLegacyRecord,
 };

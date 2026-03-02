@@ -15,6 +15,8 @@ import {
   LegacyMigrationRule,
   MigrationCompatibilityIntensity,
 } from '@/services/repositories/dataMigrationContracts';
+import { migrateRecordSchemaToCurrent } from '@/services/repositories/schemaGovernance';
+import { assessSchemaCompatibility } from '@/services/repositories/schemaEvolutionPolicy';
 
 type LegacyDailyRecordShape = DailyRecord & {
   nurseName?: string;
@@ -69,18 +71,24 @@ const migrateLegacyTens = (
 
 const enforceSchemaVersionFloor = (
   migrated: DailyRecord,
-  appliedRules: LegacyMigrationRule[]
+  appliedRules: LegacyMigrationRule[],
+  sourceVersion: number
 ): void => {
   const previousVersion = migrated.schemaVersion || 0;
   migrated.schemaVersion = Math.max(previousVersion, 1);
-  if (migrated.schemaVersion !== previousVersion) {
+  if (migrated.schemaVersion !== previousVersion || sourceVersion <= 0) {
     pushRule(appliedRules, 'schema_version_floor_enforced');
   }
 };
 
 const classifyCompatibilityIntensity = (
-  appliedRules: LegacyMigrationRule[]
+  appliedRules: LegacyMigrationRule[],
+  compatibilityDisposition: ReturnType<typeof assessSchemaCompatibility>['disposition']
 ): MigrationCompatibilityIntensity => {
+  if (compatibilityDisposition === 'legacy_bridge') {
+    return 'legacy_schema_bridge';
+  }
+
   const hasLegacyStaffPromotion = appliedRules.some(
     rule =>
       rule === 'legacy_nurses_promoted_to_day_shift' ||
@@ -119,9 +127,14 @@ export const migrateLegacyDataWithReport = (
 ): DailyRecordMigrationResult => {
   const normalizedRecord = record as LegacyDailyRecordShape;
   const appliedRules: LegacyMigrationRule[] = [];
+  const schemaMigration = migrateRecordSchemaToCurrent(record, date);
+  const compatibilityAssessment = assessSchemaCompatibility(record);
 
   // 1. Initial pass through Zod to apply defaults and recover basic structure
-  let migrated = parseDailyRecordWithDefaults(normalizedRecord, date);
+  let migrated = parseDailyRecordWithDefaults(
+    schemaMigration.record as LegacyDailyRecordShape,
+    date
+  );
   pushRule(appliedRules, 'schema_defaults_applied');
 
   // 2. Apply invariants so the current runtime never sees sparse bed maps.
@@ -131,12 +144,17 @@ export const migrateLegacyDataWithReport = (
   // 3. Apply explicit legacy compatibility rules that are still supported.
   migrateLegacyNurses(normalizedRecord, migrated, appliedRules);
   migrateLegacyTens(normalizedRecord, migrated, appliedRules);
-  enforceSchemaVersionFloor(migrated, appliedRules);
+  enforceSchemaVersionFloor(migrated, appliedRules, schemaMigration.plan.sourceVersion);
 
   return {
     record: migrated,
     appliedRules,
-    compatibilityIntensity: classifyCompatibilityIntensity(appliedRules),
+    compatibilityIntensity: classifyCompatibilityIntensity(
+      appliedRules,
+      compatibilityAssessment.disposition
+    ),
+    schemaPlan: schemaMigration.plan,
+    compatibilityDisposition: compatibilityAssessment.disposition,
   };
 };
 

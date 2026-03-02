@@ -117,6 +117,8 @@ describe('Data Migration Service - Staff Fields', () => {
     expect(migrated.appliedRules).toContain('legacy_tens_promoted_to_day_shift');
     expect(migrated.appliedRules).toContain('schema_version_floor_enforced');
     expect(migrated.compatibilityIntensity).toBe('legacy_schema_bridge');
+    expect(migrated.compatibilityDisposition).toBe('legacy_bridge');
+    expect(migrated.schemaPlan.appliedSteps).toContain('v0->v1');
   });
 
   it('classifies normalized current records as normalized_only compatibility', () => {
@@ -128,5 +130,6 @@ describe('Data Migration Service - Staff Fields', () => {
     const migrated = migrateLegacyDataWithReport(record, mockDate);
 
     expect(migrated.compatibilityIntensity).toBe('normalized_only');
+    expect(migrated.compatibilityDisposition).toBe('current');
   });
 });

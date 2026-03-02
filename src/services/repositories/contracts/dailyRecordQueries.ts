@@ -20,14 +20,14 @@ export type DailyRecordReadSource =
   | 'demo'
   | 'indexeddb'
   | 'firestore'
-  | 'legacy'
+  | 'legacy_bridge'
   | 'not_found';
 
 export interface DailyRecordReadResult {
   date: string;
   record: DailyRecord | null;
   source: DailyRecordReadSource;
-  compatibilityTier: 'local_runtime' | 'current_firestore' | 'legacy_firestore' | 'none';
+  compatibilityTier: 'local_runtime' | 'current_firestore' | 'legacy_bridge' | 'none';
   compatibilityIntensity: MigrationCompatibilityIntensity;
   migrationRulesApplied: LegacyMigrationRule[];
 }

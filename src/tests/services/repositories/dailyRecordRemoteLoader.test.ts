@@ -7,16 +7,11 @@ vi.mock('@/services/storage/firestoreService', () => ({
   getRecordFromFirestore: vi.fn(),
 }));
 
-vi.mock('@/services/storage/legacyFirebaseService', () => ({
-  getLegacyRecord: vi.fn(),
-}));
-
 vi.mock('@/services/storage/indexedDBService', () => ({
   saveRecord: vi.fn(),
 }));
 
 import { getRecordFromFirestore } from '@/services/storage/firestoreService';
-import { getLegacyRecord } from '@/services/storage/legacyFirebaseService';
 import { saveRecord } from '@/services/storage/indexedDBService';
 
 describe('dailyRecordRemoteLoader', () => {
@@ -27,7 +22,9 @@ describe('dailyRecordRemoteLoader', () => {
   });
 
   it('returns firestore metadata when the primary remote record exists', async () => {
-    vi.mocked(getRecordFromFirestore).mockResolvedValue(DataFactory.createMockDailyRecord(date));
+    vi.mocked(getRecordFromFirestore).mockResolvedValue(
+      DataFactory.createMockDailyRecord(date, { schemaVersion: 1 })
+    );
 
     const result = await loadRemoteRecordWithFallback(date);
 
@@ -39,22 +36,8 @@ describe('dailyRecordRemoteLoader', () => {
     expect(saveRecord).toHaveBeenCalled();
   });
 
-  it('returns legacy metadata when only the historical remote source exists', async () => {
-    vi.mocked(getRecordFromFirestore).mockResolvedValue(null);
-    vi.mocked(getLegacyRecord).mockResolvedValue(DataFactory.createMockDailyRecord(date));
-
-    const result = await loadRemoteRecordWithFallback(date);
-
-    expect(result.source).toBe('legacy');
-    expect(result.compatibilityTier).toBe('legacy_firestore');
-    expect(result.compatibilityIntensity).toBe('normalized_only');
-    expect(result.cachedLocally).toBe(true);
-    expect(saveRecord).toHaveBeenCalled();
-  });
-
   it('returns not_found metadata when neither remote source has data', async () => {
     vi.mocked(getRecordFromFirestore).mockResolvedValue(null);
-    vi.mocked(getLegacyRecord).mockResolvedValue(null);
 
     const result = await loadRemoteRecordWithFallback(date);
 
@@ -91,5 +74,14 @@ describe('dailyRecordRemoteLoader', () => {
     expect(getRecordFromFirestore).toHaveBeenCalledTimes(1);
     expect(firstResult.record?.date).toBe(date);
     expect(secondResult.record?.date).toBe(date);
+  });
+
+  it('does not consult legacy storage in the hot path anymore', async () => {
+    vi.mocked(getRecordFromFirestore).mockResolvedValue(null);
+
+    const result = await loadRemoteRecordWithFallback(date);
+
+    expect(result.source).toBe('not_found');
+    expect(saveRecord).not.toHaveBeenCalled();
   });
 });

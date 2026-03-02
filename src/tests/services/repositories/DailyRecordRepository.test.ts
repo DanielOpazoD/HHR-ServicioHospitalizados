@@ -300,19 +300,16 @@ describe('DailyRecordRepository', () => {
       );
     });
 
-    it('should fallback to legacy Firebase paths during initialization when Firestore has no record', async () => {
+    it('should create a fresh record when Firestore has no record and legacy is isolated from initialization hot path', async () => {
       vi.mocked(idbService.getRecordForDate).mockResolvedValueOnce(null);
       vi.mocked(firestoreService.getRecordFromFirestore).mockResolvedValueOnce(null);
       vi.mocked(legacyFirebaseService.getLegacyRecord).mockResolvedValueOnce(mockRecord);
 
       const result = await Repository.initializeDay(mockDate);
 
-      expect(result).toMatchObject({
-        ...mockRecord,
-        beds: expect.any(Object),
-      });
-      expect(legacyFirebaseService.getLegacyRecord).toHaveBeenCalledWith(mockDate);
-      expect(idbService.saveRecord).toHaveBeenCalled();
+      expect(result.date).toBe(mockDate);
+      expect(result.beds).toBeDefined();
+      expect(legacyFirebaseService.getLegacyRecord).not.toHaveBeenCalled();
     });
 
     it('should create fresh record if no previous day exists', async () => {
@@ -358,18 +355,14 @@ describe('DailyRecordRepository', () => {
       expect(idbService.saveRecord).toHaveBeenCalled();
     });
 
-    it('should fallback to legacy Firebase when remote Firestore record is missing', async () => {
+    it('should return null when remote Firestore record is missing and legacy is isolated from sync hot path', async () => {
       vi.mocked(firestoreService.getRecordFromFirestore).mockResolvedValueOnce(null);
       vi.mocked(legacyFirebaseService.getLegacyRecord).mockResolvedValueOnce(mockRecord);
 
       const result = await Repository.syncWithFirestore(mockDate);
 
-      expect(result).toMatchObject({
-        ...mockRecord,
-        beds: expect.any(Object),
-      });
-      expect(legacyFirebaseService.getLegacyRecord).toHaveBeenCalledWith(mockDate);
-      expect(idbService.saveRecord).toHaveBeenCalled();
+      expect(result).toBeNull();
+      expect(legacyFirebaseService.getLegacyRecord).not.toHaveBeenCalled();
     });
 
     it('should keep the newer local record when remote sync returns older data', async () => {
@@ -390,23 +383,18 @@ describe('DailyRecordRepository', () => {
       expect(result?.lastUpdated).toBe(`${mockDate}T12:00:00.000Z`);
     });
 
-    it('should keep the newer local record when legacy fallback returns older data', async () => {
-      const newerLocalRecord = {
+    it('bridges legacy data only through the explicit bridge API', async () => {
+      vi.mocked(legacyFirebaseService.getLegacyRecord).mockResolvedValueOnce(mockRecord);
+
+      const result = await Repository.bridgeLegacyRecord(mockDate);
+
+      expect(result.source).toBe('legacy_bridge');
+      expect(result.record).toMatchObject({
         ...mockRecord,
-        lastUpdated: `${mockDate}T12:00:00.000Z`,
-      };
-      const olderLegacyRecord = {
-        ...mockRecord,
-        lastUpdated: `${mockDate}T08:00:00.000Z`,
-      };
-
-      vi.mocked(idbService.getRecordForDate).mockResolvedValueOnce(newerLocalRecord);
-      vi.mocked(firestoreService.getRecordFromFirestore).mockResolvedValueOnce(null);
-      vi.mocked(legacyFirebaseService.getLegacyRecord).mockResolvedValueOnce(olderLegacyRecord);
-
-      const result = await Repository.syncWithFirestore(mockDate);
-
-      expect(result?.lastUpdated).toBe(`${mockDate}T12:00:00.000Z`);
+        beds: expect.any(Object),
+      });
+      expect(legacyFirebaseService.getLegacyRecord).toHaveBeenCalledWith(mockDate);
+      expect(idbService.saveRecord).toHaveBeenCalled();
     });
   });
 

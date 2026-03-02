@@ -18,6 +18,7 @@ import { PatientMasterRepository } from '@/services/repositories/PatientMasterRe
 import { resolveDailyRecordConflictWithTrace } from '@/services/repositories/conflictResolutionMatrix';
 import { buildConflictAuditSummary } from '@/services/repositories/conflictResolutionAuditSummary';
 import { logRepositoryConflictAutoMerged } from '@/services/repositories/ports/repositoryAuditPort';
+import { createDailyRecordAggregate } from '@/services/repositories/dailyRecordAggregate';
 
 export interface ConflictAutoMergeRecoveryResult {
   status: 'auto_merged' | 'not_possible';
@@ -51,7 +52,7 @@ const syncPatientFhirResource = (patient: PatientData | undefined): void => {
 };
 
 const syncBedFhirResources = (record: DailyRecord): void => {
-  Object.values(record.beds).forEach(patient => {
+  createDailyRecordAggregate(record).clinical.forEachPatient(patient => {
     syncPatientFhirResource(patient);
     syncPatientFhirResource(patient.clinicalCrib);
   });
@@ -93,7 +94,7 @@ const addFhirPatchForTouchedBeds = (
 const collectPatientsForMasterSync = (record: DailyRecord): PatientData[] => {
   const patientsToSync: PatientData[] = [];
 
-  Object.values(record.beds).forEach(patient => {
+  createDailyRecordAggregate(record).clinical.forEachPatient(patient => {
     if (patient.patientName?.trim() && patient.rut?.trim()) {
       patientsToSync.push(patient);
     }

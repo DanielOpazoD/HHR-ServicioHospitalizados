@@ -1,4 +1,6 @@
 import { DailyRecord } from '@/types';
+import type { SchemaMigrationPlan } from '@/services/repositories/schemaGovernance';
+import type { SchemaCompatibilityDisposition } from '@/services/repositories/schemaEvolutionPolicy';
 
 export type LegacyMigrationRule =
   | 'schema_defaults_applied'
@@ -18,4 +20,6 @@ export interface DailyRecordMigrationResult {
   record: DailyRecord;
   appliedRules: LegacyMigrationRule[];
   compatibilityIntensity: MigrationCompatibilityIntensity;
+  schemaPlan: SchemaMigrationPlan;
+  compatibilityDisposition: SchemaCompatibilityDisposition;
 }

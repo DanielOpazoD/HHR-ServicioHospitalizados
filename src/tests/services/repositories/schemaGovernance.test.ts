@@ -37,6 +37,7 @@ describe('schemaGovernance', () => {
     expect(result.plan.targetVersion).toBe(CURRENT_SCHEMA_VERSION);
     expect(result.plan.appliedSteps).toContain('v0->v1');
     expect(result.plan.skipped).toBe(false);
+    expect(result.plan.disposition).toBe('legacy_bridge');
   });
 
   it('keeps future versions untouched and flags migration skip', () => {
@@ -47,6 +48,7 @@ describe('schemaGovernance', () => {
     expect(result.plan.skipped).toBe(true);
     expect(result.plan.appliedSteps).toEqual([]);
     expect(isSchemaVersionAhead(result.record)).toBe(true);
+    expect(result.plan.disposition).toBe('forward_incompatible');
   });
 
   it('normalizes invalid negative versions to legacy baseline', () => {

@@ -1,11 +1,14 @@
 import { CURRENT_SCHEMA_VERSION, LEGACY_SCHEMA_VERSION } from '@/constants/version';
 import { DailyRecord } from '@/types';
+import { getSchemaEvolutionLedger } from '@/services/repositories/migrationLedger';
+import { assessSchemaCompatibility } from '@/services/repositories/schemaEvolutionPolicy';
 
 export interface SchemaMigrationPlan {
   sourceVersion: number;
   targetVersion: number;
   appliedSteps: string[];
   skipped: boolean;
+  disposition: 'current' | 'migrate' | 'forward_incompatible' | 'legacy_bridge';
 }
 
 export interface SchemaMigrationResult {
@@ -89,7 +92,8 @@ export const migrateRecordSchemaToCurrent = (
   record: DailyRecord,
   date: string
 ): SchemaMigrationResult => {
-  const sourceVersion = resolveSchemaVersion(record);
+  const compatibility = assessSchemaCompatibility(record);
+  const sourceVersion = compatibility.sourceVersion;
 
   if (sourceVersion >= CURRENT_SCHEMA_VERSION) {
     return {
@@ -102,6 +106,7 @@ export const migrateRecordSchemaToCurrent = (
         targetVersion: CURRENT_SCHEMA_VERSION,
         appliedSteps: [],
         skipped: sourceVersion > CURRENT_SCHEMA_VERSION,
+        disposition: compatibility.disposition,
       },
     };
   }
@@ -119,7 +124,10 @@ export const migrateRecordSchemaToCurrent = (
     }
 
     migrated = migrator(migrated, date);
-    appliedSteps.push(`v${cursor}->v${cursor + 1}`);
+    const ledgerStep = getSchemaEvolutionLedger().find(
+      step => step.fromVersion === cursor && step.toVersion === cursor + 1
+    );
+    appliedSteps.push(ledgerStep?.label || `v${cursor}->v${cursor + 1}`);
     cursor += 1;
   }
 
@@ -133,6 +141,7 @@ export const migrateRecordSchemaToCurrent = (
       targetVersion: CURRENT_SCHEMA_VERSION,
       appliedSteps,
       skipped: false,
+      disposition: compatibility.disposition,
     },
   };
 };

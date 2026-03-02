@@ -1,6 +1,7 @@
 import { BEDS } from '@/constants';
 import { BedType, DailyRecord, PatientData } from '@/types';
 import { clonePatient, createEmptyPatient } from '@/services/factories/patientFactory';
+import { createDailyRecordAggregate } from '@/services/repositories/dailyRecordAggregate';
 
 const normalizeComparablePatientName = (patientName: string | undefined): string =>
   String(patientName || '')
@@ -125,18 +126,18 @@ const resolveInheritedStaff = (prevRecord: DailyRecord | null) => {
     };
   }
 
-  const isNightShiftEmpty =
-    !prevRecord.nursesNightShift || prevRecord.nursesNightShift.every(n => !n);
+  const aggregate = createDailyRecordAggregate(prevRecord);
+  const isNightShiftEmpty = aggregate.staffing.nursesNight.every(n => !n);
   const prevNurses = !isNightShiftEmpty
-    ? prevRecord.nursesNightShift
-    : prevRecord.nurses || ['', ''];
+    ? aggregate.staffing.nursesNight
+    : aggregate.staffing.nursesLegacy.length > 0
+      ? aggregate.staffing.nursesLegacy
+      : ['', ''];
   const nursesDay = [...(prevNurses || ['', ''])];
   while (nursesDay.length < 2) nursesDay.push('');
 
-  const isNightTensEmpty = !prevRecord.tensNightShift || prevRecord.tensNightShift.every(t => !t);
-  const rawTens = !isNightTensEmpty
-    ? prevRecord.tensNightShift || ['', '', '']
-    : prevRecord.tensDayShift || ['', '', ''];
+  const isNightTensEmpty = aggregate.staffing.tensNight.every(t => !t);
+  const rawTens = !isNightTensEmpty ? aggregate.staffing.tensNight : aggregate.staffing.tensDay;
   const tensDay = [...rawTens];
   while (tensDay.length < 3) tensDay.push('');
 
@@ -163,9 +164,10 @@ const buildBedsFromPreviousRecord = (
   prevRecord: DailyRecord
 ): Record<string, PatientData> => {
   const nextBeds = { ...initialBeds };
+  const aggregate = createDailyRecordAggregate(prevRecord);
 
   BEDS.forEach(bed => {
-    const prevPatient = prevRecord.beds[bed.id];
+    const prevPatient = aggregate.clinical.getPatient(bed.id);
     if (!prevPatient) return;
 
     if (shouldClonePreviousPatient(prevPatient)) {
@@ -187,6 +189,7 @@ export const buildInitializedDayRecord = (
   date: string,
   prevRecord: DailyRecord | null
 ): DailyRecord => {
+  const previousAggregate = prevRecord ? createDailyRecordAggregate(prevRecord) : null;
   const initialBeds = buildEmptyBeds();
   const inheritedStaff = resolveInheritedStaff(prevRecord);
   const beds = prevRecord ? buildBedsFromPreviousRecord(initialBeds, prevRecord) : initialBeds;
@@ -208,8 +211,8 @@ export const buildInitializedDayRecord = (
     tensDayShift: inheritedStaff.tensDay,
     tensNightShift: inheritedStaff.tensNight,
     activeExtraBeds: prevRecord ? [...(prevRecord.activeExtraBeds || [])] : [],
-    handoffNovedadesDayShift: prevRecord
-      ? prevRecord.handoffNovedadesNightShift || prevRecord.handoffNovedadesDayShift || ''
+    handoffNovedadesDayShift: previousAggregate
+      ? previousAggregate.handoff.nightNovedades || previousAggregate.handoff.dayNovedades
       : '',
   };
 };

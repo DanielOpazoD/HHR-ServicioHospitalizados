@@ -19,6 +19,7 @@ interface ImportMetaEnv {
   readonly VITE_AUTH_PREFER_REDIRECT_ON_LOCALHOST?: string;
   readonly VITE_AUTH_AUTO_REDIRECT_FALLBACK?: string;
   readonly VITE_DEBUG_LEGACY_FIREBASE?: string;
+  readonly VITE_LEGACY_COMPATIBILITY_MODE?: string;
   readonly VITE_DEBUG_REPOSITORY?: string;
   readonly VITE_WHATSAPP_BOT_URL?: string;
 }

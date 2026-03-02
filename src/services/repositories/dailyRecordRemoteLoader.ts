@@ -1,7 +1,6 @@
 import { DailyRecord } from '@/types';
 import { saveRecord as saveToIndexedDB } from '@/services/storage/indexedDBService';
 import { getRecordFromFirestore } from '@/services/storage/firestoreService';
-import { getLegacyRecord } from '@/services/storage/legacyFirebaseService';
 import { migrateLegacyDataWithReport } from '@/services/repositories/dataMigration';
 import {
   LegacyMigrationRule,
@@ -9,8 +8,8 @@ import {
 } from '@/services/repositories/dataMigrationContracts';
 import { measureRepositoryOperation } from '@/services/repositories/repositoryPerformance';
 
-export type DailyRecordRemoteSource = 'firestore' | 'legacy' | 'not_found';
-export type DailyRecordRemoteCompatibilityTier = 'current_firestore' | 'legacy_firestore' | 'none';
+export type DailyRecordRemoteSource = 'firestore' | 'not_found';
+export type DailyRecordRemoteCompatibilityTier = 'current_firestore' | 'none';
 
 export interface DailyRecordRemoteLoadResult {
   record: DailyRecord | null;
@@ -48,12 +47,7 @@ const createRemoteLoadResult = (
 ): DailyRecordRemoteLoadResult => ({
   record,
   source,
-  compatibilityTier:
-    source === 'firestore'
-      ? 'current_firestore'
-      : source === 'legacy'
-        ? 'legacy_firestore'
-        : 'none',
+  compatibilityTier: source === 'firestore' ? 'current_firestore' : 'none',
   compatibilityIntensity,
   migrationRulesApplied,
   cachedLocally: Boolean(record),
@@ -78,17 +72,6 @@ export const loadRemoteRecordWithFallback = async (
           cachedRemoteRecord.record,
           cachedRemoteRecord.migrationRulesApplied,
           cachedRemoteRecord.compatibilityIntensity
-        );
-      }
-
-      const legacyRecord = await getLegacyRecord(date);
-      if (legacyRecord) {
-        const cachedLegacyRecord = await cacheRemoteRecord(legacyRecord, date);
-        return createRemoteLoadResult(
-          'legacy',
-          cachedLegacyRecord.record,
-          cachedLegacyRecord.migrationRulesApplied,
-          cachedLegacyRecord.compatibilityIntensity
         );
       }
 
