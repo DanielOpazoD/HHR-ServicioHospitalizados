@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useConfirmDialog } from '@/context/UIContext';
 import { DailyRecord } from '@/types';
-import { buildCensusEmailBody, CENSUS_DEFAULT_RECIPIENTS } from '@/constants/email';
+import { CENSUS_DEFAULT_RECIPIENTS } from '@/constants/email';
 import { getAppSetting, saveAppSetting } from '@/services/settingsService';
 import { isAdmin } from '@/utils/permissions';
 import { CensusAccessRole } from '@/types/censusAccess';
@@ -17,6 +17,14 @@ import {
   resolveStoredRecipients,
 } from '@/hooks/controllers/censusEmailRecipientsController';
 import { useCensusEmailActions, type CensusEmailSendStatus } from '@/hooks/useCensusEmailActions';
+import {
+  createInitialCensusMessageState,
+  createInitialCensusSendState,
+  resolveCensusEmailMessage,
+  resolveDateBoundSendState,
+  updateDateBoundErrorState,
+  updateDateBoundStatusState,
+} from '@/hooks/controllers/censusEmailStateController';
 
 interface UseCensusEmailParams {
   record: DailyRecord | null;
@@ -114,20 +122,11 @@ export const useCensusEmail = ({
     key: string;
     value: string;
     edited: boolean;
-  }>(() => ({
-    key: currentDateString,
-    value: buildCensusEmailBody(currentDateString, nurseSignature),
-    edited: false,
-  }));
-  const message = useMemo(() => {
-    if (messageState.key !== currentDateString) {
-      return buildCensusEmailBody(currentDateString, nurseSignature);
-    }
-    if (!messageState.edited) {
-      return buildCensusEmailBody(currentDateString, nurseSignature);
-    }
-    return messageState.value;
-  }, [currentDateString, nurseSignature, messageState]);
+  }>(() => createInitialCensusMessageState(currentDateString, nurseSignature));
+  const message = useMemo(
+    () => resolveCensusEmailMessage(messageState, currentDateString, nurseSignature),
+    [currentDateString, nurseSignature, messageState]
+  );
 
   // ========== TEST MODE (ADMIN) ==========
   const [testModeEnabledState, setTestModeEnabledState] = useState(false);
@@ -164,14 +163,11 @@ export const useCensusEmail = ({
     key: string;
     status: CensusEmailSendStatus;
     error: string | null;
-  }>(() => ({
-    key: currentDateString,
-    status: 'idle',
-    error: null,
-  }));
-  const status =
-    sendState.key === currentDateString ? sendState.status : ('idle' as CensusEmailSendStatus);
-  const error = sendState.key === currentDateString ? sendState.error : null;
+  }>(() => createInitialCensusSendState(currentDateString));
+  const { status, error } = useMemo(
+    () => resolveDateBoundSendState(sendState, currentDateString),
+    [currentDateString, sendState]
+  );
   const setStatus = useCallback(
     (next: React.SetStateAction<CensusEmailSendStatus>) => {
       setSendState(previous => {
@@ -180,11 +176,7 @@ export const useCensusEmail = ({
           typeof next === 'function'
             ? (next as (prev: CensusEmailSendStatus) => CensusEmailSendStatus)(previousStatus)
             : next;
-        return {
-          key: currentDateString,
-          status: nextStatus,
-          error: previous.key === currentDateString ? previous.error : null,
-        };
+        return updateDateBoundStatusState(previous, currentDateString, nextStatus);
       });
     },
     [currentDateString]
@@ -197,11 +189,7 @@ export const useCensusEmail = ({
           typeof next === 'function'
             ? (next as (prev: string | null) => string | null)(previousError)
             : next;
-        return {
-          key: currentDateString,
-          status: previous.key === currentDateString ? previous.status : 'idle',
-          error: nextError,
-        };
+        return updateDateBoundErrorState(previous, currentDateString, nextError);
       });
     },
     [currentDateString]
@@ -240,11 +228,7 @@ export const useCensusEmail = ({
   );
 
   const onResetMessage = useCallback(() => {
-    setMessageState({
-      key: currentDateString,
-      value: buildCensusEmailBody(currentDateString, nurseSignature),
-      edited: false,
-    });
+    setMessageState(createInitialCensusMessageState(currentDateString, nurseSignature));
   }, [currentDateString, nurseSignature]);
 
   const resetStatus = useCallback(() => {

@@ -20,7 +20,11 @@ import { useRepositories } from '@/services/RepositoryContext';
 import { useNotification } from '@/context/UIContext';
 import { useVersion } from '@/context/VersionContext';
 import { resolveSaveErrorFeedback } from '@/hooks/controllers/dailyRecordSyncNotificationController';
-import { resolveDailyRecordSyncStatus } from '@/hooks/controllers/dailyRecordSyncStatusController';
+import {
+  buildCreateDaySuccessMessage,
+  resolveCreateDaySourceDate,
+  resolveMutationSyncStatus,
+} from '@/hooks/controllers/dailyRecordSyncController';
 
 export const useDailyRecordSyncQuery = (
   currentDateString: string,
@@ -64,7 +68,7 @@ export const useDailyRecordSyncQuery = (
   // 3. Status Mapping
   const syncStatus = useMemo(
     (): SyncStatus =>
-      resolveDailyRecordSyncStatus([
+      resolveMutationSyncStatus([
         {
           isPending: saveMutation.isPending,
           isError: saveMutation.isError,
@@ -164,25 +168,19 @@ export const useDailyRecordSyncQuery = (
 
   const createDay = useCallback(
     async (copyFromPrevious: boolean, specificDate?: string) => {
-      let prevDate: string | undefined = undefined;
-
-      if (copyFromPrevious) {
-        if (specificDate) {
-          prevDate = specificDate;
-        } else {
-          const prevRecord = await dailyRecord.getPreviousDay(currentDateString);
-          if (prevRecord) {
-            prevDate = prevRecord.date;
-          } else {
-            warning('No se encontró registro anterior', 'No hay datos del día previo para copiar.');
-            return;
-          }
-        }
+      const prevDate = await resolveCreateDaySourceDate(
+        dailyRecord,
+        currentDateString,
+        copyFromPrevious,
+        specificDate,
+        warning
+      );
+      if (prevDate === null) {
+        return;
       }
 
       await initMutation.mutateAsync({ date: currentDateString, copyFromDate: prevDate });
-      const sourceMsg = prevDate ? `Copiado desde ${prevDate}` : 'Registro en blanco';
-      success('Día creado', sourceMsg);
+      success('Día creado', buildCreateDaySuccessMessage(prevDate || undefined));
     },
     [currentDateString, initMutation, success, warning, dailyRecord]
   );

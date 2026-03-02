@@ -9,8 +9,16 @@ import { DailyRecord } from '@/types';
 import { useRepositories } from '@/services/RepositoryContext';
 import { useEffect } from 'react';
 import { DailyRecordPatch } from './useDailyRecordTypes';
-import { applyPatches } from '@/utils/patchUtils';
-import { createGetDailyRecordQuery } from '@/services/repositories/contracts/dailyRecordQueries';
+import {
+  applyOptimisticDailyRecordPatch,
+  createDailyRecordQueryFn,
+  createDailyRecordSubscription,
+  getDailyRecordQueryKey,
+  invalidateDailyRecordQuery,
+  prefetchPreviousDailyRecord,
+  setDailyRecordQueryData,
+  shouldUseDailyRecordRealtimeSync,
+} from '@/hooks/controllers/dailyRecordQueryController';
 
 /**
  * Hook for fetching a daily record by date with React Query.
@@ -29,50 +37,29 @@ export const useDailyRecordQuery = (
   const queryClient = useQueryClient();
   const { dailyRecord } = useRepositories();
 
-  const queryKey = queryKeys.dailyRecord.byDate(date);
+  const queryKey = getDailyRecordQueryKey(date);
   const query = useQuery({
     queryKey,
-    queryFn: async () => {
-      const query = createGetDailyRecordQuery(date);
-      const record = await dailyRecord.getForDate(query.date);
-      return record;
-    },
+    queryFn: createDailyRecordQueryFn(dailyRecord, date),
     enabled: !!date,
   });
 
   // Subscribe to real-time updates
   useEffect(() => {
-    if (!date || isOfflineMode || !isFirebaseConnected) return;
+    if (!shouldUseDailyRecordRealtimeSync(date, isOfflineMode, isFirebaseConnected)) return;
 
-    const unsubscribe = dailyRecord.subscribe(date, (record, hasPendingWrites) => {
-      // Only update the query cache if it's not a local echo
-      if (!hasPendingWrites) {
-        queryClient.setQueryData(queryKeys.dailyRecord.byDate(date), record);
-      }
-    });
+    const unsubscribe = createDailyRecordSubscription(dailyRecord, date, queryClient);
+    if (!unsubscribe) return;
 
     return () => unsubscribe();
   }, [date, queryClient, isOfflineMode, isFirebaseConnected, dailyRecord]);
 
   // Prefetch previous day for faster "copy from previous" functionality
   useEffect(() => {
-    if (!date || isOfflineMode || !isFirebaseConnected) return;
+    if (!shouldUseDailyRecordRealtimeSync(date, isOfflineMode, isFirebaseConnected)) return;
     if (import.meta.env.DEV) return;
 
-    // Calculate previous day
-    const currentDate = new Date(date + 'T12:00:00'); // Noon to avoid timezone issues
-    currentDate.setDate(currentDate.getDate() - 1);
-    const prevDate = currentDate.toISOString().split('T')[0];
-
-    // Prefetch in background (low priority)
-    queryClient.prefetchQuery({
-      queryKey: queryKeys.dailyRecord.byDate(prevDate),
-      queryFn: () => {
-        const query = createGetDailyRecordQuery(prevDate);
-        return dailyRecord.getForDate(query.date);
-      },
-      staleTime: 5 * 60 * 1000, // Consider fresh for 5 minutes
-    });
+    prefetchPreviousDailyRecord(queryClient, dailyRecord, date);
   }, [date, queryClient, dailyRecord, isOfflineMode, isFirebaseConnected]);
 
   return query;
@@ -99,11 +86,11 @@ export const useSaveDailyRecordMutation = () => {
 
       // Snapshot the previous value
       const previousRecord = queryClient.getQueryData<DailyRecord>(
-        queryKeys.dailyRecord.byDate(newRecord.date)
+        getDailyRecordQueryKey(newRecord.date)
       );
 
       // Optimistically update
-      queryClient.setQueryData(queryKeys.dailyRecord.byDate(newRecord.date), newRecord);
+      setDailyRecordQueryData(queryClient, newRecord.date, newRecord);
 
       // Return context with the previous value
       return { previousRecord };
@@ -111,18 +98,13 @@ export const useSaveDailyRecordMutation = () => {
     onError: (err, newRecord, context) => {
       // Rollback on error
       if (context?.previousRecord) {
-        queryClient.setQueryData(
-          queryKeys.dailyRecord.byDate(newRecord.date),
-          context.previousRecord
-        );
+        setDailyRecordQueryData(queryClient, newRecord.date, context.previousRecord);
       }
     },
     onSettled: record => {
       // Refetch to ensure we're in sync
       if (record) {
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.dailyRecord.byDate(record.date),
-        });
+        invalidateDailyRecordQuery(queryClient, record.date);
       }
     },
   });
@@ -156,22 +138,21 @@ export const usePatchDailyRecordMutation = (date: string) => {
         queryKey: queryKeys.dailyRecord.byDate(date),
       });
 
-      const previousRecord = queryClient.getQueryData<DailyRecord>(
-        queryKeys.dailyRecord.byDate(date)
-      );
+      const previousRecord = queryClient.getQueryData<DailyRecord>(getDailyRecordQueryKey(date));
 
       if (previousRecord) {
-        const updatedRecord = applyPatches(previousRecord, partial);
-        updatedRecord.lastUpdated = new Date().toISOString();
-
-        queryClient.setQueryData(queryKeys.dailyRecord.byDate(date), updatedRecord);
+        setDailyRecordQueryData(
+          queryClient,
+          date,
+          applyOptimisticDailyRecordPatch(previousRecord, partial)
+        );
       }
 
       return { previousRecord };
     },
     onError: (err, partial, context) => {
       if (context?.previousRecord) {
-        queryClient.setQueryData(queryKeys.dailyRecord.byDate(date), context.previousRecord);
+        setDailyRecordQueryData(queryClient, date, context.previousRecord);
       }
     },
     // Note: We don't invalidate queries here because the Firestore subscription
@@ -194,11 +175,8 @@ export const usePrefetchDailyRecord = () => {
 
   return async (date: string) => {
     await queryClient.prefetchQuery({
-      queryKey: queryKeys.dailyRecord.byDate(date),
-      queryFn: () => {
-        const query = createGetDailyRecordQuery(date);
-        return dailyRecord.getForDate(query.date);
-      },
+      queryKey: getDailyRecordQueryKey(date),
+      queryFn: createDailyRecordQueryFn(dailyRecord, date),
     });
   };
 };
@@ -211,15 +189,7 @@ export const useInvalidateDailyRecord = () => {
   const queryClient = useQueryClient();
 
   return (date?: string) => {
-    if (date) {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.dailyRecord.byDate(date),
-      });
-    } else {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.dailyRecord.all,
-      });
-    }
+    invalidateDailyRecordQuery(queryClient, date);
   };
 };
 
@@ -235,10 +205,8 @@ export const useInitializeDailyRecordMutation = () => {
       return await dailyRecord.initializeDay(date, copyFromDate);
     },
     onSuccess: newRecord => {
-      queryClient.setQueryData(queryKeys.dailyRecord.byDate(newRecord.date), newRecord);
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.dailyRecord.byDate(newRecord.date),
-      });
+      setDailyRecordQueryData(queryClient, newRecord.date, newRecord);
+      invalidateDailyRecordQuery(queryClient, newRecord.date);
     },
   });
 };
@@ -256,10 +224,8 @@ export const useDeleteDailyRecordMutation = () => {
       return date;
     },
     onSuccess: date => {
-      queryClient.setQueryData(queryKeys.dailyRecord.byDate(date), null);
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.dailyRecord.byDate(date),
-      });
+      setDailyRecordQueryData(queryClient, date, null);
+      invalidateDailyRecordQuery(queryClient, date);
     },
   });
 };
