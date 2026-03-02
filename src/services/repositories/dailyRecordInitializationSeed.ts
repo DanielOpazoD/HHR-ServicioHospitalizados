@@ -42,3 +42,8 @@ export const createFreshInitializationSeed = (): DailyRecordInitializationSeed =
   compatibilityTier: 'none',
   compatibilityIntensity: 'none',
 });
+
+export const shouldReturnSeedRecord = (
+  seed: DailyRecordInitializationSeed
+): seed is DailyRecordInitializationSeed & { record: DailyRecord } =>
+  Boolean(seed.record && seed.source !== 'copy_source');

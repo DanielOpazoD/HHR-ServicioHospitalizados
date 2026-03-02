@@ -12,6 +12,7 @@ import {
   getRecordFromFirestore,
   moveRecordToTrash,
 } from '../storage/firestoreService';
+import { softDeleteDailyRecordRemote } from './dailyRecordRepositoryLifecycleSupport';
 // import {
 //     getActiveHospitalId
 // } from '@/constants/firestorePaths';
@@ -60,20 +61,6 @@ import {
 
 const buildDailyRecordQuery = (date: string, syncFromRemote = true) =>
   createGetDailyRecordQuery(date, syncFromRemote);
-
-const softDeleteRemoteRecord = async (date: string): Promise<void> => {
-  if (!isFirestoreEnabled()) return;
-
-  try {
-    const record = await getRecordFromFirestore(date);
-    if (record) {
-      await moveRecordToTrash(record);
-    }
-    await deleteRecordFromFirestore(date);
-  } catch (error) {
-    console.error('Failed to soft-delete from Firestore:', error);
-  }
-};
 
 // ============================================================================
 // Repository Interface
@@ -148,7 +135,12 @@ export const initializeDay = async (date: string, copyFromDate?: string) => {
 export const deleteDay = async (date: string): Promise<void> => {
   const command = createDeleteDayCommand(date);
   await deleteFromIndexedDB(command.date);
-  await softDeleteRemoteRecord(command.date);
+  await softDeleteDailyRecordRemote(command.date, {
+    isRemoteEnabled: isFirestoreEnabled(),
+    loadRecord: getRecordFromFirestore,
+    moveToTrash: moveRecordToTrash,
+    deleteRemote: deleteRecordFromFirestore,
+  });
 };
 
 export const copyPatientToDate = async (

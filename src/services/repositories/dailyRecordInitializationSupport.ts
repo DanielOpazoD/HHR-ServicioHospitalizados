@@ -2,6 +2,57 @@ import { BEDS } from '@/constants';
 import { BedType, DailyRecord, PatientData } from '@/types';
 import { clonePatient, createEmptyPatient } from '@/services/factories/patientFactory';
 
+const normalizeComparablePatientName = (patientName: string | undefined): string =>
+  String(patientName || '')
+    .trim()
+    .toLowerCase();
+
+const areSameNamedPatients = (
+  currentPatient: PatientData | undefined,
+  previousPatient: PatientData | undefined
+): boolean =>
+  Boolean(
+    currentPatient &&
+    previousPatient &&
+    normalizeComparablePatientName(currentPatient.patientName) &&
+    normalizeComparablePatientName(currentPatient.patientName) ===
+      normalizeComparablePatientName(previousPatient.patientName)
+  );
+
+const inheritPatientHandoffNotes = (
+  targetPatient: PatientData,
+  sourcePatient: PatientData | undefined
+): void => {
+  if (!sourcePatient) {
+    return;
+  }
+
+  const prevNightNote = sourcePatient.handoffNoteNightShift || sourcePatient.handoffNote || '';
+  targetPatient.handoffNoteDayShift = prevNightNote;
+  targetPatient.handoffNoteNightShift = prevNightNote;
+};
+
+const resetCarryoverCudyr = (patient: PatientData): void => {
+  patient.cudyr = undefined;
+  if (patient.clinicalCrib) {
+    patient.clinicalCrib.cudyr = undefined;
+  }
+};
+
+export const preparePatientForCarryover = (sourcePatient: PatientData): PatientData => {
+  const clonedPatient = clonePatient(sourcePatient);
+  resetCarryoverCudyr(clonedPatient);
+  inheritPatientHandoffNotes(clonedPatient, sourcePatient);
+
+  if (clonedPatient.clinicalCrib && sourcePatient.clinicalCrib) {
+    inheritPatientHandoffNotes(clonedPatient.clinicalCrib, sourcePatient.clinicalCrib);
+  }
+
+  return clonedPatient;
+};
+
+const createRecordDateTimestamp = (date: string): number => new Date(`${date}T00:00:00`).getTime();
+
 export const preserveCIE10FromPreviousDay = (
   newBeds: Record<string, PatientData>,
   prevBeds: Record<string, PatientData>
@@ -12,12 +63,7 @@ export const preserveCIE10FromPreviousDay = (
 
     if (!newPatient || !prevPatient) continue;
 
-    const isSamePatient =
-      prevPatient.patientName &&
-      newPatient.patientName &&
-      prevPatient.patientName.trim().toLowerCase() === newPatient.patientName.trim().toLowerCase();
-
-    if (!isSamePatient) continue;
+    if (!areSameNamedPatients(newPatient, prevPatient)) continue;
 
     if (!newPatient.cie10Code && prevPatient.cie10Code) {
       newPatient.cie10Code = prevPatient.cie10Code;
@@ -27,13 +73,7 @@ export const preserveCIE10FromPreviousDay = (
     }
 
     if (newPatient.clinicalCrib && prevPatient.clinicalCrib) {
-      const isSameCribPatient =
-        prevPatient.clinicalCrib.patientName &&
-        newPatient.clinicalCrib.patientName &&
-        prevPatient.clinicalCrib.patientName.trim().toLowerCase() ===
-          newPatient.clinicalCrib.patientName.trim().toLowerCase();
-
-      if (!isSameCribPatient) continue;
+      if (!areSameNamedPatients(newPatient.clinicalCrib, prevPatient.clinicalCrib)) continue;
 
       if (!newPatient.clinicalCrib.cie10Code && prevPatient.clinicalCrib.cie10Code) {
         newPatient.clinicalCrib.cie10Code = prevPatient.clinicalCrib.cie10Code;
@@ -55,28 +95,6 @@ export const enrichInitializationRecordFromCopySource = (
 
   preserveCIE10FromPreviousDay(remoteRecord.beds, copySourceRecord.beds);
   return remoteRecord;
-};
-
-const clonePatientForNewDay = (prevPatient: PatientData): PatientData => {
-  const clonedPatient = clonePatient(prevPatient);
-  clonedPatient.cudyr = undefined;
-
-  if (clonedPatient.clinicalCrib) {
-    clonedPatient.clinicalCrib.cudyr = undefined;
-  }
-
-  const prevNightNote = prevPatient.handoffNoteNightShift || prevPatient.handoffNote || '';
-  clonedPatient.handoffNoteDayShift = prevNightNote;
-  clonedPatient.handoffNoteNightShift = prevNightNote;
-
-  if (clonedPatient.clinicalCrib && prevPatient.clinicalCrib) {
-    const cribPrevNight =
-      prevPatient.clinicalCrib.handoffNoteNightShift || prevPatient.clinicalCrib.handoffNote || '';
-    clonedPatient.clinicalCrib.handoffNoteDayShift = cribPrevNight;
-    clonedPatient.clinicalCrib.handoffNoteNightShift = cribPrevNight;
-  }
-
-  return clonedPatient;
 };
 
 const buildEmptyBeds = (): Record<string, PatientData> => {
@@ -141,7 +159,7 @@ const buildBedsFromPreviousRecord = (
     if (!prevPatient) return;
 
     if (shouldClonePreviousPatient(prevPatient)) {
-      nextBeds[bed.id] = clonePatientForNewDay(prevPatient);
+      nextBeds[bed.id] = preparePatientForCarryover(prevPatient);
     } else {
       nextBeds[bed.id].bedMode = prevPatient.bedMode || nextBeds[bed.id].bedMode;
       nextBeds[bed.id].hasCompanionCrib = prevPatient.hasCompanionCrib || false;
@@ -159,7 +177,6 @@ export const buildInitializedDayRecord = (
   date: string,
   prevRecord: DailyRecord | null
 ): DailyRecord => {
-  const dateObj = new Date(`${date}T00:00:00`);
   const initialBeds = buildEmptyBeds();
   const inheritedStaff = resolveInheritedStaff(prevRecord);
   const beds = prevRecord ? buildBedsFromPreviousRecord(initialBeds, prevRecord) : initialBeds;
@@ -174,7 +191,7 @@ export const buildInitializedDayRecord = (
       ? { ...(prevRecord.bedTypeOverrides || {}) }
       : ({} as Record<string, BedType>),
     lastUpdated: new Date().toISOString(),
-    dateTimestamp: dateObj.getTime(),
+    dateTimestamp: createRecordDateTimestamp(date),
     nurses: ['', ''],
     nursesDayShift: inheritedStaff.nursesDay,
     nursesNightShift: inheritedStaff.nursesNight,

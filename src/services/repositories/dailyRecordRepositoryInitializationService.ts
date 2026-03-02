@@ -1,24 +1,36 @@
 import { DailyRecord } from '@/types';
 import { saveRecord as saveToIndexedDB } from '@/services/storage/indexedDBService';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
-import { clonePatient } from '@/services/factories/patientFactory';
 import { getForDate } from '@/services/repositories/dailyRecordRepositoryReadService';
 import { save } from '@/services/repositories/dailyRecordRepositoryWriteService';
 import { loadRemoteRecordWithFallback } from '@/services/repositories/dailyRecordRemoteLoader';
 import {
   buildInitializedDayRecord,
   enrichInitializationRecordFromCopySource,
+  preparePatientForCarryover,
 } from '@/services/repositories/dailyRecordInitializationSupport';
 import {
   createCopySourceInitializationSeed,
   createFreshInitializationSeed,
   createRemoteInitializationSeed,
   DailyRecordInitializationSeed,
+  shouldReturnSeedRecord,
 } from '@/services/repositories/dailyRecordInitializationSeed';
 
 const loadCopySourceRecord = async (copyFromDate?: string): Promise<DailyRecord | null> => {
   if (!copyFromDate) return null;
   return getForDate(copyFromDate);
+};
+
+const cacheInitializationRecordIfNeeded = async (
+  record: DailyRecord,
+  copySourceRecord: DailyRecord | null
+): Promise<void> => {
+  if (!copySourceRecord) {
+    return;
+  }
+
+  await saveToIndexedDB(record);
 };
 
 const loadRemoteInitializationSeed = async (
@@ -33,9 +45,7 @@ const loadRemoteInitializationSeed = async (
       remoteResult.record,
       copySourceRecord
     );
-    if (copySourceRecord) {
-      await saveToIndexedDB(enrichedRecord);
-    }
+    await cacheInitializationRecordIfNeeded(enrichedRecord, copySourceRecord);
 
     return createRemoteInitializationSeed({
       ...remoteResult,
@@ -65,14 +75,22 @@ const resolveInitializationSeed = async (
   return createFreshInitializationSeed();
 };
 
+const loadExistingDailyRecord = async (date: string): Promise<DailyRecord | null> =>
+  getForDate(date);
+
+const resolveTargetRecordForCopy = async (targetDate: string): Promise<DailyRecord> => {
+  const targetRecord = await getForDate(targetDate);
+  return targetRecord ?? initializeDay(targetDate);
+};
+
 export const initializeDay = async (date: string, copyFromDate?: string): Promise<DailyRecord> => {
-  const existing = await getForDate(date);
+  const existing = await loadExistingDailyRecord(date);
   if (existing) return existing;
 
   const copySourceRecord = await loadCopySourceRecord(copyFromDate);
   const initializationSeed = await resolveInitializationSeed(date, copySourceRecord);
 
-  if (initializationSeed.record && initializationSeed.source !== 'copy_source') {
+  if (shouldReturnSeedRecord(initializationSeed)) {
     return initializationSeed.record;
   }
 
@@ -96,20 +114,8 @@ export const copyPatientToDate = async (
     throw new Error(`No patient found in bed ${sourceBedId} on ${sourceDate}`);
   }
 
-  let targetRecord = await getForDate(targetDate);
-  if (!targetRecord) {
-    targetRecord = await initializeDay(targetDate);
-  }
-
-  const clonedPatient = clonePatient(sourcePatient);
-  clonedPatient.cudyr = undefined;
-  if (clonedPatient.clinicalCrib) {
-    clonedPatient.clinicalCrib.cudyr = undefined;
-  }
-
-  const nightNote = sourcePatient.handoffNoteNightShift || sourcePatient.handoffNote || '';
-  clonedPatient.handoffNoteDayShift = nightNote;
-  clonedPatient.handoffNoteNightShift = nightNote;
+  const targetRecord = await resolveTargetRecordForCopy(targetDate);
+  const clonedPatient = preparePatientForCarryover(sourcePatient);
 
   targetRecord.beds[targetBedId] = clonedPatient;
   targetRecord.lastUpdated = new Date().toISOString();
