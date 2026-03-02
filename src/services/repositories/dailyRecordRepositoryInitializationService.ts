@@ -5,9 +5,9 @@ import { getForDate } from '@/services/repositories/dailyRecordRepositoryReadSer
 import { save } from '@/services/repositories/dailyRecordRepositoryWriteService';
 import { loadRemoteRecordWithFallback } from '@/services/repositories/dailyRecordRemoteLoader';
 import {
+  assignCarriedPatientToRecord,
   buildInitializedDayRecord,
   enrichInitializationRecordFromCopySource,
-  preparePatientForCarryover,
 } from '@/services/repositories/dailyRecordInitializationSupport';
 import {
   createCopySourceInitializationSeed,
@@ -115,10 +115,5 @@ export const copyPatientToDate = async (
   }
 
   const targetRecord = await resolveTargetRecordForCopy(targetDate);
-  const clonedPatient = preparePatientForCarryover(sourcePatient);
-
-  targetRecord.beds[targetBedId] = clonedPatient;
-  targetRecord.lastUpdated = new Date().toISOString();
-
-  await save(targetRecord);
+  await save(assignCarriedPatientToRecord(targetRecord, targetBedId, sourcePatient));
 };

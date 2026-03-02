@@ -51,6 +51,16 @@ export const preparePatientForCarryover = (sourcePatient: PatientData): PatientD
   return clonedPatient;
 };
 
+export const assignCarriedPatientToRecord = (
+  targetRecord: DailyRecord,
+  targetBedId: string,
+  sourcePatient: PatientData
+): DailyRecord => {
+  targetRecord.beds[targetBedId] = preparePatientForCarryover(sourcePatient);
+  targetRecord.lastUpdated = new Date().toISOString();
+  return targetRecord;
+};
+
 const createRecordDateTimestamp = (date: string): number => new Date(`${date}T00:00:00`).getTime();
 
 export const preserveCIE10FromPreviousDay = (
