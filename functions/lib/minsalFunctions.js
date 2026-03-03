@@ -1,54 +1,18 @@
 const functions = require('firebase-functions/v1');
 const { calculateMinsalStatistics } = require('./minsal/minsalStatsCalculator');
-const { assertSupportedHospitalId } = require('./runtime/hospitalPolicy');
+const {
+  assertAuthenticatedClinicalRequest,
+  loadMinsalRecords,
+  parseMinsalRangeRequest,
+} = require('./minsal/minsalRequestPolicy');
 
 const createMinsalFunctions = ({ admin, hospitalCapacity, hasCallableClinicalAccess }) => ({
   calculateMinsalStats: functions.https.onCall(async (data, context) => {
-    if (!context.auth) {
-      throw new functions.https.HttpsError(
-        'unauthenticated',
-        'The function must be called while authenticated.'
-      );
-    }
-
-    const hasAccess = await hasCallableClinicalAccess(context);
-    if (!hasAccess) {
-      throw new functions.https.HttpsError(
-        'permission-denied',
-        'You do not have access to this operation.'
-      );
-    }
-
-    const { hospitalId, startDate, endDate } = data;
-    if (!hospitalId || !startDate || !endDate) {
-      throw new functions.https.HttpsError(
-        'invalid-argument',
-        'Missing required parameters: hospitalId, startDate, endDate.'
-      );
-    }
+    await assertAuthenticatedClinicalRequest(context, hasCallableClinicalAccess);
+    const { hospitalId, startDate, endDate } = parseMinsalRangeRequest(data);
 
     try {
-      assertSupportedHospitalId(hospitalId);
-    } catch (error) {
-      throw new functions.https.HttpsError('permission-denied', error.message);
-    }
-
-    const recordsRef = admin
-      .firestore()
-      .collection('hospitals')
-      .doc(hospitalId)
-      .collection('dailyRecords');
-
-    try {
-      const snapshot = await recordsRef
-        .where('date', '>=', startDate)
-        .where('date', '<=', endDate)
-        .get();
-
-      const filteredRecords = [];
-      snapshot.forEach(doc => {
-        filteredRecords.push(doc.data());
-      });
+      const filteredRecords = await loadMinsalRecords(admin, hospitalId, startDate, endDate);
       return calculateMinsalStatistics({
         records: filteredRecords,
         hospitalCapacity,

@@ -9,3 +9,4 @@
 
 - No mezclar lógica de mirror o MINSAL aquí.
 - Nuevos checks de permisos deben exponerse como helper reusable antes de entrar al wrapper público.
+- Validaciones de callables administrativas deben centralizarse en `authCallablePolicy.js`.
