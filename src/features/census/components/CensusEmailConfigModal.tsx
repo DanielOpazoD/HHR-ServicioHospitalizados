@@ -10,12 +10,22 @@ import {
   CensusEmailTestModeSection,
 } from '@/features/census/components/email-config';
 import type { CensusEmailExcelSheetConfig } from '@/hooks/controllers/censusExcelSheetController';
+import type { GlobalEmailRecipientList } from '@/services/email/emailRecipientListService';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   recipients: string[];
   onRecipientsChange: (recipients: string[]) => void;
+  recipientLists: GlobalEmailRecipientList[];
+  activeRecipientListId: string;
+  onActiveRecipientListChange: (listId: string) => void;
+  onCreateRecipientList: (name: string) => Promise<void>;
+  onRenameRecipientList: (name: string) => Promise<void>;
+  onDeleteRecipientList: (listId: string) => Promise<void>;
+  recipientsSource: 'firebase' | 'local' | 'default';
+  isRecipientsSyncing: boolean;
+  recipientsSyncError: string | null;
   message: string;
   onMessageChange: (message: string) => void;
   onResetMessage?: () => void;
@@ -35,6 +45,15 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
   onClose,
   recipients,
   onRecipientsChange,
+  recipientLists,
+  activeRecipientListId,
+  onActiveRecipientListChange,
+  onCreateRecipientList,
+  onRenameRecipientList,
+  onDeleteRecipientList,
+  recipientsSource,
+  isRecipientsSyncing,
+  recipientsSyncError,
   message,
   onMessageChange,
   onResetMessage,
@@ -118,6 +137,15 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
               maxVisibleRecipients={maxVisibleRecipients}
               showAllRecipients={showAllRecipients}
               showBulkEditor={showBulkEditor}
+              recipientLists={recipientLists}
+              activeRecipientListId={activeRecipientListId}
+              onActiveRecipientListChange={onActiveRecipientListChange}
+              onCreateRecipientList={onCreateRecipientList}
+              onRenameRecipientList={onRenameRecipientList}
+              onDeleteRecipientList={onDeleteRecipientList}
+              recipientsSource={recipientsSource}
+              isRecipientsSyncing={isRecipientsSyncing}
+              recipientsSyncError={recipientsSyncError}
               bulkRecipients={bulkRecipients}
               newRecipient={newRecipient}
               editingIndex={editingIndex}

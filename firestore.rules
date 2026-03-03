@@ -425,6 +425,10 @@ service cloud.firestore {
     // ============================================
     // SYSTEM CONFIGURATION
     // ============================================
+    match /emailRecipientLists/{listId} {
+      allow read, write: if canEdit();
+    }
+
     match /config/roles {
       allow read, write: if isAdmin();
     }

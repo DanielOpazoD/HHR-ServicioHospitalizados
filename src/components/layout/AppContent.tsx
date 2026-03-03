@@ -186,6 +186,15 @@ export const AppContent: React.FC<AppContentProps> = ({ ui }) => {
               onClose={() => censusEmail.setShowEmailConfig(false)}
               recipients={censusEmail.recipients}
               onRecipientsChange={censusEmail.setRecipients}
+              recipientLists={censusEmail.recipientLists}
+              activeRecipientListId={censusEmail.activeRecipientListId}
+              onActiveRecipientListChange={censusEmail.setActiveRecipientListId}
+              onCreateRecipientList={censusEmail.createRecipientList}
+              onRenameRecipientList={censusEmail.renameActiveRecipientList}
+              onDeleteRecipientList={censusEmail.deleteRecipientList}
+              recipientsSource={censusEmail.recipientsSource}
+              isRecipientsSyncing={censusEmail.isRecipientsSyncing}
+              recipientsSyncError={censusEmail.recipientsSyncError}
               message={censusEmail.message}
               onMessageChange={censusEmail.onMessageChange}
               onResetMessage={censusEmail.onResetMessage}

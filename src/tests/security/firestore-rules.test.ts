@@ -266,6 +266,52 @@ describeRules('Firestore Security Rules', () => {
     });
   });
 
+  describe('Global Email Recipient Lists', () => {
+    const emailListPath = 'emailRecipientLists/census-default';
+
+    it('Admins can read and write global email recipient lists', async () => {
+      await assertSucceeds(
+        admin()
+          .doc(emailListPath)
+          .set({
+            name: 'Lista global',
+            recipients: ['uno@hospital.cl'],
+            scope: 'global',
+          })
+      );
+      await assertSucceeds(admin().doc(emailListPath).get());
+    });
+
+    it('Nurses can read and write global email recipient lists', async () => {
+      await assertSucceeds(
+        nurse()
+          .doc(emailListPath)
+          .set({
+            name: 'Lista global',
+            recipients: ['uno@hospital.cl'],
+            scope: 'global',
+          })
+      );
+      await assertSucceeds(nurse().doc(emailListPath).get());
+    });
+
+    it('Regular users cannot write global email recipient lists', async () => {
+      await assertFails(
+        authed()
+          .doc(emailListPath)
+          .set({
+            name: 'Lista global',
+            recipients: ['uno@hospital.cl'],
+            scope: 'global',
+          })
+      );
+    });
+
+    it('Unauthenticated users cannot read global email recipient lists', async () => {
+      await assertFails(unauth().doc(emailListPath).get());
+    });
+  });
+
   describe('Transfer Requests', () => {
     const transferPath = 'hospitals/H1/transferRequests/TR-1';
 

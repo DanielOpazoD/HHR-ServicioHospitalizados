@@ -8,6 +8,12 @@ import { getAppSetting, saveAppSetting } from '@/services/settingsService';
 import { buildCensusMasterWorkbook } from '@/services/exporters/censusMasterWorkbook';
 import { uploadCensus } from '@/services/backup/censusStorageService';
 import { useConfirmDialog } from '@/context/UIContext';
+import {
+  ensureGlobalEmailRecipientList,
+  getGlobalEmailRecipientLists,
+  saveGlobalEmailRecipientList,
+  subscribeToGlobalEmailRecipientLists,
+} from '@/services/email/emailRecipientListService';
 import { DailyRecord } from '@/types';
 import { Workbook } from 'exceljs';
 
@@ -38,6 +44,24 @@ vi.mock('@/services/backup/censusStorageService', () => ({
 
 vi.mock('@/context/UIContext', () => ({
   useConfirmDialog: vi.fn(),
+}));
+
+vi.mock('@/services/email/emailRecipientListService', () => ({
+  CENSUS_GLOBAL_EMAIL_RECIPIENT_LIST: {
+    id: 'census-default',
+    name: 'Destinatarios predeterminados de censo diario',
+    description: 'Lista global reutilizable para envios predeterminados de censo diario.',
+  },
+  areGlobalEmailRecipientsEqual: (
+    left: string[] | null | undefined,
+    right: string[] | null | undefined
+  ) => JSON.stringify(left ?? []) === JSON.stringify(right ?? []),
+  buildGlobalEmailRecipientListId: vi.fn((name: string) => name.toLowerCase().replace(/\s+/g, '-')),
+  deleteGlobalEmailRecipientList: vi.fn().mockResolvedValue(undefined),
+  ensureGlobalEmailRecipientList: vi.fn().mockResolvedValue(undefined),
+  getGlobalEmailRecipientLists: vi.fn().mockResolvedValue([]),
+  saveGlobalEmailRecipientList: vi.fn().mockResolvedValue(undefined),
+  subscribeToGlobalEmailRecipientLists: vi.fn().mockImplementation(_callback => vi.fn()),
 }));
 
 describe('useCensusEmail', () => {
@@ -73,6 +97,19 @@ describe('useCensusEmail', () => {
     } as unknown as ReturnType<typeof useConfirmDialog>);
 
     vi.mocked(getAppSetting).mockResolvedValue(['test@test.com']);
+    vi.mocked(getGlobalEmailRecipientLists).mockResolvedValue([]);
+    vi.mocked(ensureGlobalEmailRecipientList).mockResolvedValue({
+      id: 'census-default',
+      name: 'Destinatarios predeterminados de censo diario',
+      description: null,
+      recipients: ['test@test.com'],
+      scope: 'global',
+      updatedAt: '2026-03-02T10:00:00.000Z',
+      updatedByUid: null,
+      updatedByEmail: null,
+    });
+    vi.mocked(saveGlobalEmailRecipientList).mockResolvedValue(undefined);
+    vi.mocked(subscribeToGlobalEmailRecipientLists).mockImplementation(_callback => vi.fn());
     vi.mocked(getMonthRecordsFromFirestore).mockResolvedValue([]);
     vi.mocked(initializeDay).mockResolvedValue({} as DailyRecord);
     vi.mocked(triggerCensusEmail).mockResolvedValue({
@@ -107,8 +144,71 @@ describe('useCensusEmail', () => {
     });
   });
 
+  it('should prioritize the global firebase recipient list when available', async () => {
+    vi.mocked(getGlobalEmailRecipientLists).mockResolvedValueOnce([
+      {
+        id: 'census-default',
+        name: 'Lista global',
+        description: null,
+        recipients: ['global@test.com'],
+        scope: 'global',
+        updatedAt: '2026-03-02T10:00:00.000Z',
+        updatedByUid: null,
+        updatedByEmail: null,
+      },
+    ]);
+
+    const { result } = renderHook(() => useCensusEmail(defaultParams));
+
+    await waitFor(() => {
+      expect(result.current.recipients).toEqual(['global@test.com']);
+      expect(result.current.recipientsSource).toBe('firebase');
+    });
+  });
+
+  it('should create the default firebase list when none exists yet', async () => {
+    vi.mocked(getGlobalEmailRecipientLists)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          id: 'census-default',
+          name: 'Lista global',
+          description: null,
+          recipients: ['test@test.com'],
+          scope: 'global',
+          updatedAt: '2026-03-02T10:00:00.000Z',
+          updatedByUid: null,
+          updatedByEmail: null,
+        },
+      ]);
+
+    renderHook(() => useCensusEmail(defaultParams));
+
+    await waitFor(() => {
+      expect(ensureGlobalEmailRecipientList).toHaveBeenCalledWith(
+        expect.objectContaining({
+          listId: 'census-default',
+        })
+      );
+    });
+  });
+
   it('should migrate legacy recipients from localStorage', async () => {
     vi.mocked(getAppSetting).mockResolvedValue(null);
+    vi.mocked(getGlobalEmailRecipientLists)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          id: 'census-default',
+          name: 'Lista global',
+          description: null,
+          recipients: ['legacy@test.com'],
+          scope: 'global',
+          updatedAt: '2026-03-02T10:00:00.000Z',
+          updatedByUid: null,
+          updatedByEmail: null,
+        },
+      ]);
     vi.mocked(localStorage.getItem).mockReturnValue(JSON.stringify(['legacy@test.com']));
 
     const { result } = renderHook(() => useCensusEmail(defaultParams));
@@ -119,6 +219,44 @@ describe('useCensusEmail', () => {
 
     expect(result.current.recipients).toEqual(['legacy@test.com']);
     expect(saveAppSetting).toHaveBeenCalledWith('censusEmailRecipients', ['legacy@test.com']);
+  });
+
+  it('should sync recipient changes to the global firebase list', async () => {
+    vi.mocked(getGlobalEmailRecipientLists).mockResolvedValueOnce([
+      {
+        id: 'census-default',
+        name: 'Lista global',
+        description: null,
+        recipients: ['test@test.com'],
+        scope: 'global',
+        updatedAt: '2026-03-02T10:00:00.000Z',
+        updatedByUid: null,
+        updatedByEmail: null,
+      },
+    ]);
+
+    const { result } = renderHook(() => useCensusEmail(defaultParams));
+
+    await waitFor(() => {
+      expect(result.current.recipients).toEqual(['test@test.com']);
+    });
+
+    act(() => {
+      result.current.setRecipients(['nuevo@test.com']);
+    });
+
+    await waitFor(
+      () => {
+        expect(saveGlobalEmailRecipientList).toHaveBeenCalledWith(
+          expect.objectContaining({
+            listId: 'census-default',
+            recipients: ['nuevo@test.com'],
+            updatedByEmail: 'admin@test.com',
+          })
+        );
+      },
+      { timeout: 1500 }
+    );
   });
 
   it('should update message when nurseSignature changes', async () => {
