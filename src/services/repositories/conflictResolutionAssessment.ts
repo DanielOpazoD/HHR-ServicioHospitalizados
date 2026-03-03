@@ -1,7 +1,16 @@
 import { ConflictResolutionTraceEntry } from '@/services/repositories/conflictResolutionTrace';
 
-const REMOTE_PROTECTED_REASONS = new Set(['root_remote_priority', 'admin_remote_priority']);
-const LOCAL_DOMINANT_REASONS = new Set(['root_local_priority', 'clinical_local_priority']);
+const REMOTE_PROTECTED_REASONS = new Set([
+  'root_remote_priority',
+  'admin_remote_priority',
+  'metadata_remote_priority',
+]);
+const LOCAL_DOMINANT_REASONS = new Set([
+  'root_local_priority',
+  'clinical_local_priority',
+  'handoff_local_priority',
+  'staffing_local_priority',
+]);
 
 export interface ConflictResolutionAssessment {
   riskLevel: 'low' | 'medium' | 'high';

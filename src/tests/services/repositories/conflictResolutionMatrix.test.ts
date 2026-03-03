@@ -96,6 +96,34 @@ describe('conflictResolutionMatrix', () => {
     expect(resolved.handoffNovedadesDayShift).toBe('');
   });
 
+  it('prioritizes staffing fields from local during automatic merge', () => {
+    const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
+    remote.nursesDayShift = ['Ana'];
+
+    const local = makeRecord('2026-02-18', '2026-02-18T10:05:00.000Z');
+    local.nursesDayShift = ['Berta'];
+
+    const resolved = resolveDailyRecordConflict(remote, local, {
+      changedPaths: ['nursesDayShift'],
+    });
+
+    expect(resolved.nursesDayShift).toEqual(['Berta', 'Ana']);
+  });
+
+  it('protects metadata fields from local overwrite during automatic merge', () => {
+    const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
+    remote.schemaVersion = 5;
+
+    const local = makeRecord('2026-02-18', '2026-02-18T10:05:00.000Z');
+    local.schemaVersion = 1;
+
+    const resolved = resolveDailyRecordConflict(remote, local, {
+      changedPaths: ['schemaVersion'],
+    });
+
+    expect(resolved.schemaVersion).toBe(5);
+  });
+
   it('prioritizes clinical fields from local during automatic merge', () => {
     const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
     remote.beds = {
@@ -165,7 +193,7 @@ describe('conflictResolutionMatrix', () => {
 
     const result = resolveDailyRecordConflictWithTrace(remote, local, { changedPaths: ['*'] });
 
-    expect(result.trace.policyVersion).toBe('2026-02-v2');
+    expect(result.trace.policyVersion).toBe('2026-03-v3');
     expect(result.trace.entries.length).toBeGreaterThan(0);
     expect(result.trace.entries).toEqual(
       expect.arrayContaining([
@@ -173,11 +201,13 @@ describe('conflictResolutionMatrix', () => {
           path: 'beds.R1.pathology',
           strategy: 'scalar_policy',
           winner: 'local',
+          reason: 'clinical_local_priority',
         }),
         expect.objectContaining({
           path: 'beds.R1.location',
           strategy: 'scalar_policy',
           winner: 'remote',
+          reason: 'admin_remote_priority',
         }),
       ])
     );

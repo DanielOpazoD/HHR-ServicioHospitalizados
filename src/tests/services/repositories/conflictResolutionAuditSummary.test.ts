@@ -3,7 +3,7 @@ import { buildConflictAuditSummary } from '@/services/repositories/conflictResol
 
 describe('conflictResolutionAuditSummary', () => {
   it('builds strategy/winner/reason breakdown for trace entries', () => {
-    const summary = buildConflictAuditSummary(['beds.R1.pathology'], '2026-02-v2', [
+    const summary = buildConflictAuditSummary(['beds.R1.pathology'], '2026-03-v3', [
       {
         path: 'beds.R1.pathology',
         strategy: 'scalar_policy',
@@ -18,7 +18,7 @@ describe('conflictResolutionAuditSummary', () => {
       },
     ]);
 
-    expect(summary.policyVersion).toBe('2026-02-v2');
+    expect(summary.policyVersion).toBe('2026-03-v3');
     expect(summary.impactedContexts).toEqual(['clinical']);
     expect(summary.entryCount).toBe(2);
     expect(summary.strategyBreakdown.scalar_policy).toBe(2);
@@ -31,7 +31,7 @@ describe('conflictResolutionAuditSummary', () => {
   });
 
   it('flags wildcard merges that preserve remote-protected paths for review', () => {
-    const summary = buildConflictAuditSummary(['*'], '2026-02-v2', [
+    const summary = buildConflictAuditSummary(['*'], '2026-03-v3', [
       {
         path: 'beds.R1.pathology',
         strategy: 'scalar_policy',
@@ -60,5 +60,25 @@ describe('conflictResolutionAuditSummary', () => {
       'wildcard_merge_with_remote_protected_fields'
     );
     expect(summary.assessment.remoteProtectedPaths).toContain('beds.R1.location');
+  });
+
+  it('tracks staffing and metadata contexts explicitly in audit summaries', () => {
+    const summary = buildConflictAuditSummary(['nursesDayShift', 'schemaVersion'], '2026-03-v3', [
+      {
+        path: 'nursesDayShift',
+        strategy: 'merge_unique_primitive_array',
+        winner: 'merged',
+        reason: 'staffing_union_prefer_local_order',
+      },
+      {
+        path: 'schemaVersion',
+        strategy: 'scalar_policy',
+        winner: 'remote',
+        reason: 'metadata_remote_priority',
+      },
+    ]);
+
+    expect(summary.impactedContexts).toEqual(['staffing', 'metadata']);
+    expect(summary.assessment.remoteProtectedPaths).toContain('schemaVersion');
   });
 });

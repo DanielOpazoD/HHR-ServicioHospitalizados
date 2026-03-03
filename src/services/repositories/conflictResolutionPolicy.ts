@@ -4,7 +4,7 @@ const ROOT_LOCAL_PRIORITY_FIELDS = new Set([
   'medicalHandoffGlobalNote',
 ]);
 
-export const CONFLICT_RESOLUTION_POLICY_VERSION = '2026-02-v2';
+export const CONFLICT_RESOLUTION_POLICY_VERSION = '2026-03-v3';
 
 export interface ScalarPolicyDecision {
   value: unknown;
@@ -16,6 +16,9 @@ export interface ScalarPolicyDecision {
     | 'root_remote_priority'
     | 'clinical_local_priority'
     | 'admin_remote_priority'
+    | 'staffing_local_priority'
+    | 'handoff_local_priority'
+    | 'metadata_remote_priority'
     | 'default_local_priority'
     | 'default_remote_priority';
 }
@@ -109,6 +112,17 @@ export const decideScalarByPolicy = (
     return { value: remote, winner: 'remote', reason: 'root_remote_priority' };
   }
 
+  const context = resolveConflictDomainContextForPath(path);
+  if (context === 'handoff') {
+    return { value: local, winner: 'local', reason: 'handoff_local_priority' };
+  }
+  if (context === 'staffing') {
+    return { value: local, winner: 'local', reason: 'staffing_local_priority' };
+  }
+  if (context === 'metadata') {
+    return { value: remote, winner: 'remote', reason: 'metadata_remote_priority' };
+  }
+
   const parts = path.split('.');
   if (parts[0] === 'beds' && parts.length >= 3) {
     const patientField = parts[2];
@@ -125,3 +139,4 @@ export const decideScalarByPolicy = (
   }
   return { value: remote, winner: 'remote', reason: 'default_remote_priority' };
 };
+import { resolveConflictDomainContextForPath } from '@/services/repositories/conflictResolutionDomainPolicy';

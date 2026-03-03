@@ -1,4 +1,5 @@
 import { PatientData } from '@/types';
+import { resolveConflictDomainContextForPath } from '@/services/repositories/conflictResolutionDomainPolicy';
 import { decideScalarByPolicy } from '@/services/repositories/conflictResolutionPolicy';
 import { isPlainObject, isPrimitive } from '@/services/repositories/conflictResolutionUtils';
 import {
@@ -25,6 +26,30 @@ const resolveItemId = (item: unknown): string => {
   return JSON.stringify(item);
 };
 
+const resolveArrayMergeReason = (path: string): string => {
+  const context = resolveConflictDomainContextForPath(path);
+  if (context === 'movements') {
+    return 'movements_union_preserve_local_override';
+  }
+  return 'union_preserve_local_override';
+};
+
+const resolveUniqueArrayMergeReason = (path: string, preferLocal: boolean): string => {
+  const context = resolveConflictDomainContextForPath(path);
+  if (context === 'staffing') {
+    return preferLocal ? 'staffing_union_prefer_local_order' : 'staffing_union_prefer_remote_order';
+  }
+  return preferLocal ? 'union_prefer_local_order' : 'union_prefer_remote_order';
+};
+
+const resolveObjectMergeReason = (path: string): string => {
+  const context = resolveConflictDomainContextForPath(path);
+  if (context === 'handoff') {
+    return 'handoff_merge_object_fields';
+  }
+  return 'merge_object_fields';
+};
+
 export const mergeArrayById = <T>(
   remote: T[] = [],
   local: T[] = [],
@@ -49,7 +74,7 @@ export const mergeArrayById = <T>(
     path,
     strategy: 'merge_array_by_id',
     winner: 'merged',
-    reason: 'union_preserve_local_override',
+    reason: resolveArrayMergeReason(path),
   });
 
   return sequence.map(id => output.get(id) as T);
@@ -68,7 +93,7 @@ export const mergeUniquePrimitiveArray = (
     path,
     strategy: 'merge_unique_primitive_array',
     winner: 'merged',
-    reason: preferLocal ? 'union_prefer_local_order' : 'union_prefer_remote_order',
+    reason: resolveUniqueArrayMergeReason(path, preferLocal),
   });
   return Array.from(new Set([...(preferred || []), ...(secondary || [])]));
 };
@@ -126,7 +151,7 @@ export const mergeObject = (
     path: pathPrefix || '*',
     strategy: 'merge_object',
     winner: 'merged',
-    reason: 'merge_object_fields',
+    reason: resolveObjectMergeReason(pathPrefix || '*'),
   });
 
   keys.forEach(key => {
@@ -174,7 +199,7 @@ export const mergePatientData = (
     path: pathPrefix,
     strategy: 'merge_patient',
     winner: 'merged',
-    reason: 'merge_patient_fields',
+    reason: 'clinical_merge_patient_fields',
   });
 
   keys.forEach(key => {
@@ -238,7 +263,7 @@ export const mergeBeds = (
     path: pathPrefix,
     strategy: 'merge_beds',
     winner: 'merged',
-    reason: 'merge_union_by_bed_id',
+    reason: 'clinical_merge_union_by_bed_id',
   });
 
   bedIds.forEach(bedId => {

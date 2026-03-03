@@ -6,7 +6,7 @@ export type ConflictDomainContext =
   | 'metadata'
   | 'unknown';
 
-const resolveContextForPath = (path: string): ConflictDomainContext => {
+export const resolveConflictDomainContextForPath = (path: string): ConflictDomainContext => {
   if (path.startsWith('beds.')) return 'clinical';
   if (
     path.startsWith('nurses') ||
@@ -38,5 +38,5 @@ export const classifyConflictChangedContexts = (
     return ['clinical', 'staffing', 'movements', 'handoff', 'metadata'];
   }
 
-  return Array.from(new Set(changedPaths.map(resolveContextForPath)));
+  return Array.from(new Set(changedPaths.map(resolveConflictDomainContextForPath)));
 };
