@@ -20,13 +20,13 @@ export const CensusEmailTestModeSection: React.FC<CensusEmailTestModeSectionProp
   }
 
   return (
-    <div className="border border-blue-100 bg-blue-50/30 rounded-xl p-3 space-y-2">
+    <div className="border border-blue-100 bg-blue-50/30 rounded-lg p-2.5 space-y-1.5">
       <div className="flex items-center justify-between">
         <div>
-          <h4 className="text-[10px] font-bold text-blue-800 uppercase tracking-wider">
+          <h4 className="text-[9px] font-bold text-blue-800 uppercase tracking-wider">
             Modo Prueba
           </h4>
-          <p className="text-[9px] text-blue-600/80 font-medium">Solo a cuenta de validación.</p>
+          <p className="text-[8px] text-blue-600/80 font-medium">Solo a cuenta de validación.</p>
         </div>
         <label className="relative inline-flex items-center cursor-pointer">
           <input
@@ -45,7 +45,7 @@ export const CensusEmailTestModeSection: React.FC<CensusEmailTestModeSectionProp
             placeholder="correo.prueba@hospital.cl"
             value={testRecipient}
             onChange={event => onTestRecipientChange(event.target.value)}
-            className="w-full border border-blue-200 rounded-lg px-2.5 py-1.5 text-[11px] focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-inner"
+            className="w-full border border-blue-200 rounded-lg px-2.5 py-1.5 text-[10px] focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-inner"
           />
         </div>
       )}

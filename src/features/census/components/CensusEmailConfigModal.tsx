@@ -124,12 +124,15 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
         </div>
       }
       icon={<Mail size={20} />}
-      size="full"
+      size="5xl"
       headerIconColor="text-blue-600"
+      scrollableBody={false}
+      bodyClassName="p-4 space-y-3"
+      className="max-w-[88vw]"
     >
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="space-y-4">
+      <div className="space-y-3">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] gap-3">
+          <div className="space-y-3">
             <CensusEmailRecipientsSection
               safeRecipients={safeRecipients}
               visibleRecipients={visibleRecipients}
@@ -188,10 +191,10 @@ export const CensusEmailConfigModal: React.FC<Props> = ({
           </div>
         </div>
 
-        <div className="flex justify-end border-t border-slate-100 pt-3">
+        <div className="flex justify-end border-t border-slate-100 pt-2">
           <button
             onClick={onClose}
-            className="px-6 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-black transition-all active:scale-95 shadow-md shadow-slate-200"
+            className="px-5 py-1.5 rounded-xl bg-slate-900 text-white text-[11px] font-bold hover:bg-black transition-all active:scale-95 shadow-md shadow-slate-200"
           >
             Confirmar y Cerrar
           </button>

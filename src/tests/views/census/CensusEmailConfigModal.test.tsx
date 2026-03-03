@@ -111,11 +111,12 @@ describe('CensusEmailConfigModal', () => {
     const props = buildProps();
     render(<CensusEmailConfigModal {...props} />);
 
+    fireEvent.click(screen.getByRole('button', { name: /^crear lista$/i }));
     fireEvent.change(screen.getByPlaceholderText(/nueva lista de correos/i), {
       target: { value: 'Jefatura' },
     });
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /crear lista/i }));
+      fireEvent.click(screen.getAllByRole('button', { name: /crear/i })[1]);
     });
 
     expect(props.onCreateRecipientList).toHaveBeenCalledWith('Jefatura');

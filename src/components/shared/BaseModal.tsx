@@ -204,7 +204,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
         {/* Header */}
         <div
           className={clsx(
-            'px-4 py-3 border-b flex justify-between items-center sticky top-0 z-10',
+            'px-4 py-2 border-b flex justify-between items-center sticky top-0 z-10',
             variant === 'white' ? 'bg-white border-slate-100' : 'bg-white/30 border-white/20'
           )}
         >
@@ -221,7 +221,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
               <button
                 onClick={onClose}
                 className={clsx(
-                  'transition-colors p-1.5 rounded-full',
+                  'transition-colors p-1 rounded-full',
                   variant === 'white'
                     ? 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
                     : 'text-slate-400 hover:text-slate-600 bg-white/50'

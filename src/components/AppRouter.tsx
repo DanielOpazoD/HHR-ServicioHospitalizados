@@ -9,6 +9,7 @@ import { GlobalErrorBoundary } from '@/components/shared/GlobalErrorBoundary';
 import { SectionErrorBoundary } from '@/components/shared/SectionErrorBoundary';
 import { ViewLoader } from '@/components/ui/ViewLoader';
 import { canEditModule } from '@/utils/permissions';
+import { canAccessAuditView } from '@/services/admin/auditAccessPolicy';
 import { UserRole } from '@/context';
 import { UseUIStateReturn } from '@/hooks/useUIState';
 
@@ -139,7 +140,7 @@ export const AppRouter: React.FC<AppRouterProps> = ({
                 />
               </SectionErrorBoundary>
             )}
-            {currentModule === 'AUDIT' && (
+            {currentModule === 'AUDIT' && canAccessAuditView(role) && (
               <SectionErrorBoundary sectionName="Auditoría">
                 <AuditView />
               </SectionErrorBoundary>

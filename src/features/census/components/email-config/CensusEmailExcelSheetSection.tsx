@@ -27,35 +27,36 @@ export const CensusEmailExcelSheetSection: React.FC<CensusEmailExcelSheetSection
       title="Configuración de Excel"
       icon={<FileSpreadsheet size={16} className="text-emerald-600" />}
       variant="success"
+      className="p-3"
     >
-      <div className="space-y-3">
-        <label className="flex items-start gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 cursor-pointer hover:border-emerald-300 transition-colors">
+      <div className="space-y-2">
+        <label className="flex items-start gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-2 cursor-pointer hover:border-emerald-300 transition-colors">
           <input
             type="checkbox"
             checked={config.includeEndOfDay2359Sheet}
             onChange={event => updateConfig('includeEndOfDay2359Sheet', event.target.checked)}
-            className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+            className="mt-0.5 h-3.5 w-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
           />
-          <span className="text-xs text-slate-700">
+          <span className="text-[11px] text-slate-700 leading-snug">
             Incluir hoja del día actual con corte a las <span className="font-semibold">23:59</span>
             .
           </span>
         </label>
 
-        <label className="flex items-start gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 cursor-pointer hover:border-blue-300 transition-colors">
+        <label className="flex items-start gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-2 cursor-pointer hover:border-blue-300 transition-colors">
           <input
             type="checkbox"
             checked={config.includeCurrentTimeSheet}
             onChange={event => updateConfig('includeCurrentTimeSheet', event.target.checked)}
-            className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+            className="mt-0.5 h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
           />
-          <span className="text-xs text-slate-700">
+          <span className="text-[11px] text-slate-700 leading-snug">
             Incluir hoja adicional del día actual con la{' '}
             <span className="font-semibold">hora actual</span>.
           </span>
         </label>
 
-        <p className="text-[11px] text-slate-500">
+        <p className="text-[10px] text-slate-500 leading-snug">
           Si activas ambas opciones, se enviarán dos hojas del mismo día con cortes horarios
           distintos.
         </p>

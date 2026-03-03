@@ -5,7 +5,7 @@ const EMAIL_RECIPIENT_LISTS_COLLECTION = 'emailRecipientLists';
 
 export const CENSUS_GLOBAL_EMAIL_RECIPIENT_LIST = {
   id: 'census-default',
-  name: 'Destinatarios predeterminados de censo diario',
+  name: 'Censo diario (predeterminado)',
   description: 'Lista global reutilizable para envios predeterminados de censo diario.',
 } as const;
 
@@ -92,7 +92,10 @@ const normalizeGlobalEmailRecipientList = (
 
   return {
     id: listId,
-    name: normalizeString(raw.name) ?? 'Lista global de correos',
+    name:
+      listId === CENSUS_GLOBAL_EMAIL_RECIPIENT_LIST.id
+        ? CENSUS_GLOBAL_EMAIL_RECIPIENT_LIST.name
+        : (normalizeString(raw.name) ?? 'Lista global de correos'),
     description: normalizeString(raw.description),
     recipients: normalizeGlobalEmailRecipients(raw.recipients),
     scope: 'global',

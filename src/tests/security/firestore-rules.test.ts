@@ -51,6 +51,10 @@ describeRules('Firestore Security Rules', () => {
     testEnv
       .authenticatedContext('user_doctor', { email: 'doctor@example.com', role: 'doctor_urgency' })
       .firestore();
+  const editor = () =>
+    testEnv
+      .authenticatedContext('user_editor', { email: 'editor@example.com', role: 'editor' })
+      .firestore();
   const unauthorizedAuthed = () =>
     testEnv.authenticatedContext('user_outsider', { email: 'outsider@example.com' }).firestore();
 
@@ -293,6 +297,18 @@ describeRules('Firestore Security Rules', () => {
           })
       );
       await assertSucceeds(nurse().doc(emailListPath).get());
+    });
+
+    it('Editors can write global email recipient lists', async () => {
+      await assertSucceeds(
+        editor()
+          .doc(emailListPath)
+          .set({
+            name: 'Lista global',
+            recipients: ['uno@hospital.cl'],
+            scope: 'global',
+          })
+      );
     });
 
     it('Regular users cannot write global email recipient lists', async () => {

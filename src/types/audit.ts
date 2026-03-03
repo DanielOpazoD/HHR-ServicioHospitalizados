@@ -145,7 +145,6 @@ export type AuditSection =
   | 'HANDOFF_NURSE'
   | 'HANDOFF_MEDICAL'
   | 'EXPORT_KEYS'
-  | 'TRACEABILITY'
   | 'MAINTENANCE'
   | 'ACCESS_CONTROL';
 
@@ -165,12 +164,12 @@ export interface AuditStats {
 
 export interface WorkerFilterParams {
   searchTerm: string;
-  searchRut: string;
   filterAction: AuditAction | 'ALL';
   startDate: string;
   endDate: string;
   activeSection: AuditSection;
   sectionActions: Record<string, string[] | undefined>;
+  groupedView: boolean;
 }
 
 /**

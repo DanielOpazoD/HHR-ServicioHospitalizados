@@ -64,6 +64,17 @@ service cloud.firestore {
       return isAdmin() || isNurse();
     }
 
+    function isEditorRole() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'editor' ||
+        (
+          hasEmail() &&
+          exists(/databases/$(database)/documents/config/roles) &&
+          get(/databases/$(database)/documents/config/roles).data[getUserEmail()] == 'editor'
+        )
+      );
+    }
+
     // Legacy/custom-claim role gate (prevents any random authenticated user access)
     function hasRoleClaim() {
       return isAuthenticated() && request.auth.token.role in [
@@ -426,7 +437,8 @@ service cloud.firestore {
     // SYSTEM CONFIGURATION
     // ============================================
     match /emailRecipientLists/{listId} {
-      allow read, write: if canEdit();
+      allow read: if canReadClinicalData();
+      allow write: if canEdit() || isEditorRole();
     }
 
     match /config/roles {

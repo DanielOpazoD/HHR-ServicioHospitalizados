@@ -40,12 +40,12 @@ describe('useAuditWorker', () => {
     ];
     const mockParams: WorkerFilterParams = {
       searchTerm: '',
-      searchRut: '',
       filterAction: 'ALL',
       startDate: '',
       endDate: '',
       activeSection: 'ALL',
       sectionActions: {},
+      groupedView: false,
     };
     const mockActionLabels = { TEST: 'Test Action' };
     const mockCriticalActions = ['CRITICAL'];
