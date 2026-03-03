@@ -31,6 +31,7 @@ describe('legacyRecordBridgeService', () => {
     expect(result.source).toBe('legacy_bridge');
     expect(result.compatibilityTier).toBe('legacy_bridge');
     expect(result.cachedLocally).toBe(true);
+    expect(result.candidatePaths?.[0]).toContain('hospitals/hanga_roa/dailyRecords/2025-01-01');
     expect(saveRecord).toHaveBeenCalled();
   });
 

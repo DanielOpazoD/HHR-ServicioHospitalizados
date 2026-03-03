@@ -4,6 +4,7 @@ import { migrateLegacyDataWithReport } from '@/services/repositories/dataMigrati
 import { isLegacyBridgeEnabled } from '@/services/repositories/legacyCompatibilityPolicy';
 import type { LegacyBridgeLoadResult } from '@/services/repositories/ports/repositoryLegacyBridgePort';
 import { measureRepositoryOperation } from '@/services/repositories/repositoryPerformance';
+import { getLegacyFirebasePathSnapshot } from '@/services/storage/legacyfirebase/legacyFirebasePathPolicy';
 import type { DailyRecord } from '@/types';
 
 const createLegacyBridgeResult = (
@@ -15,6 +16,7 @@ const createLegacyBridgeResult = (
   compatibilityIntensity: result.compatibilityIntensity || 'none',
   migrationRulesApplied: result.migrationRulesApplied || [],
   cachedLocally: result.cachedLocally || false,
+  candidatePaths: result.candidatePaths || [],
 });
 
 const cacheMigratedLegacyRecord = async (record: DailyRecord, date: string) => {
@@ -37,12 +39,14 @@ export const bridgeLegacyRecord = async (date: string): Promise<LegacyBridgeLoad
       }
 
       const migrated = await cacheMigratedLegacyRecord(legacyRecord, date);
+      const legacyPaths = getLegacyFirebasePathSnapshot(date);
       return createLegacyBridgeResult({
         source: 'legacy_bridge',
         record: migrated.record,
         compatibilityIntensity: migrated.compatibilityIntensity,
         migrationRulesApplied: migrated.appliedRules,
         cachedLocally: true,
+        candidatePaths: legacyPaths.recordDocPaths,
       });
     },
     { thresholdMs: 220, context: date }
@@ -64,12 +68,14 @@ export const bridgeLegacyRecordsRange = async (
       const results = await Promise.all(
         legacyRecords.map(async record => {
           const migrated = await cacheMigratedLegacyRecord(record, record.date);
+          const legacyPaths = getLegacyFirebasePathSnapshot(record.date);
           return createLegacyBridgeResult({
             source: 'legacy_bridge',
             record: migrated.record,
             compatibilityIntensity: migrated.compatibilityIntensity,
             migrationRulesApplied: migrated.appliedRules,
             cachedLocally: true,
+            candidatePaths: legacyPaths.recordDocPaths,
           });
         })
       );

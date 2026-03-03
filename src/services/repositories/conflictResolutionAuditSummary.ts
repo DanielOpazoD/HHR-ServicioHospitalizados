@@ -3,9 +3,14 @@ import {
   assessConflictResolutionTrace,
   ConflictResolutionAssessment,
 } from '@/services/repositories/conflictResolutionAssessment';
+import {
+  classifyConflictChangedContexts,
+  type ConflictDomainContext,
+} from '@/services/repositories/conflictResolutionDomainPolicy';
 
 export interface ConflictAuditSummary {
   changedPaths: string[];
+  impactedContexts: ConflictDomainContext[];
   policyVersion: string;
   entryCount: number;
   strategyBreakdown: Record<string, number>;
@@ -27,6 +32,7 @@ export const buildConflictAuditSummary = (
   traceEntries: ConflictResolutionTraceEntry[]
 ): ConflictAuditSummary => ({
   changedPaths,
+  impactedContexts: classifyConflictChangedContexts(changedPaths),
   policyVersion,
   entryCount: traceEntries.length,
   strategyBreakdown: countBy(traceEntries.map(entry => entry.strategy)),

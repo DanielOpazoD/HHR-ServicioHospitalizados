@@ -11,4 +11,5 @@ export interface LegacyBridgeLoadResult {
   compatibilityIntensity: MigrationCompatibilityIntensity;
   migrationRulesApplied: LegacyMigrationRule[];
   cachedLocally: boolean;
+  candidatePaths?: string[];
 }
