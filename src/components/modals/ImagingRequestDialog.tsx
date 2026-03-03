@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, ClipboardList, ShieldCheck } from 'lucide-react';
+import { FileText, ClipboardList, Printer, ShieldCheck } from 'lucide-react';
 import { BaseModal } from '@/components/shared/BaseModal';
 import { ImagingRequestDialogProps, DocumentTypeOption } from './imaging/types';
 import { useImagingLogic } from './imaging/useImagingLogic';
@@ -71,9 +71,22 @@ export const ImagingRequestDialog: React.FC<ImagingRequestDialogProps> = ({
           </span>
         </div>
       }
+      headerActions={
+        <button
+          onClick={handlePrint}
+          disabled={isPrinting}
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-1.5 rounded-lg text-sm font-bold transition-all shadow-sm active:scale-95 group"
+        >
+          <Printer
+            size={16}
+            className={isPrinting ? 'animate-bounce' : 'group-hover:rotate-12 transition-transform'}
+          />
+          <span>{isPrinting ? 'Preparando...' : 'Imprimir'}</span>
+        </button>
+      }
       size="full"
     >
-      <div className="flex h-[calc(100vh-140px)] w-full gap-4 pb-4">
+      <div className="flex h-[calc(100vh-140px)] w-full gap-3 pb-4">
         <ImagingSidebar
           documents={documents}
           selectedDoc={selectedDoc}
@@ -90,8 +103,6 @@ export const ImagingRequestDialog: React.FC<ImagingRequestDialogProps> = ({
           selectedDoc={selectedDoc}
           patient={patient}
           debouncedPhysician={debouncedPhysician}
-          isPrinting={isPrinting}
-          handlePrint={handlePrint}
           handleCanvasClick={handleCanvasClick}
           marks={marks}
           setMarks={setMarks}

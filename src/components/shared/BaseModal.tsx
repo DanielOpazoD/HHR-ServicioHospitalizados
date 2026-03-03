@@ -204,7 +204,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
         {/* Header */}
         <div
           className={clsx(
-            'p-4 border-b flex justify-between items-center sticky top-0 z-10',
+            'px-4 py-3 border-b flex justify-between items-center sticky top-0 z-10',
             variant === 'white' ? 'bg-white border-slate-100' : 'bg-white/30 border-white/20'
           )}
         >

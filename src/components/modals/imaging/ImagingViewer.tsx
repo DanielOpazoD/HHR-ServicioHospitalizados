@@ -1,5 +1,4 @@
 import React from 'react';
-import { Printer } from 'lucide-react';
 import { DocumentOption, DocumentTypeOption, ActiveTextMark } from './types';
 import { CustomMark } from '@/services/pdf/imagingRequestPdfService';
 import type { PatientData } from '@/types';
@@ -14,8 +13,6 @@ interface ImagingViewerProps {
   selectedDoc: DocumentOption;
   patient: PatientData;
   debouncedPhysician: string;
-  isPrinting: boolean;
-  handlePrint: () => void;
   handleCanvasClick: (e: React.MouseEvent<HTMLDivElement>) => void;
   marks: CustomMark[];
   setMarks: React.Dispatch<React.SetStateAction<CustomMark[]>>;
@@ -24,12 +21,9 @@ interface ImagingViewerProps {
 }
 
 export const ImagingViewer: React.FC<ImagingViewerProps> = ({
-  currentDocObj,
   selectedDoc,
   patient,
   debouncedPhysician,
-  isPrinting,
-  handlePrint,
   handleCanvasClick,
   marks,
   setMarks,
@@ -53,30 +47,10 @@ export const ImagingViewer: React.FC<ImagingViewerProps> = ({
 
   return (
     <div className="flex-1 bg-slate-100 rounded-xl border border-slate-200 overflow-hidden flex flex-col">
-      {/* Viewer Header Toolbar */}
-      <div className="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm z-10">
-        <div className="flex items-center gap-3">
-          <h3 className="font-bold text-slate-800">{currentDocObj?.title}</h3>
-        </div>
-
-        <button
-          onClick={handlePrint}
-          disabled={isPrinting}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-5 py-2 rounded-lg text-sm font-bold transition-all shadow-sm active:scale-95 group"
-        >
-          <Printer
-            size={16}
-            className={isPrinting ? 'animate-bounce' : 'group-hover:rotate-12 transition-transform'}
-          />
-          <span>{isPrinting ? 'Preparando...' : 'Imprimir Directo'}</span>
-        </button>
-      </div>
-
-      {/* Interactive Canvas Viewer */}
       <div className="flex-1 relative bg-slate-200/50 overflow-y-auto">
-        <div className="min-h-full flex items-center justify-center p-4 py-8">
+        <div className="min-h-full flex items-center justify-center p-4 py-6">
           <div
-            className="relative w-full max-w-[800px] mx-auto bg-white shadow-xl rounded-sm overflow-hidden cursor-crosshair select-none"
+            className="relative w-full max-w-[720px] mx-auto bg-white shadow-xl rounded-sm overflow-hidden cursor-crosshair select-none"
             onClick={handleCanvasClick}
             style={{
               aspectRatio:
