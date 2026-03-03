@@ -6,23 +6,24 @@ Implementar Repository Pattern para ocultar detalles de almacenamiento/sincroniz
 
 ## Mapa
 
-| Archivo                                            | Rol                                      |
-| -------------------------------------------------- | ---------------------------------------- |
-| `DailyRecordRepository.ts`                         | API unificada del registro diario        |
-| `dailyRecordRepositoryReadService.ts`              | Lecturas                                 |
-| `dailyRecordRepositoryWriteService.ts`             | Escrituras                               |
-| `dailyRecordRepositorySyncService.ts`              | Suscripción/sync con Firestore           |
-| `dailyRecordRepositoryInitializationService.ts`    | Inicialización de días/copia de paciente |
-| `repositoryConfig.ts`                              | Flags de repo (`firestoreEnabled`)       |
-| `CatalogRepository.ts`                             | Catálogos                                |
-| `PatientMasterRepository.ts`                       | Base maestra de pacientes                |
-| `PrintTemplateRepository.ts`                       | Plantillas de impresión                  |
-| `dataMigration.ts` / `patientMasterMigration.ts`   | Migraciones                              |
-| `schemaGovernance.ts` / `schemaEvolutionPolicy.ts` | Política de versionado y compatibilidad  |
-| `legacyRecordBridgeService.ts`                     | Importación explícita desde rutas legacy |
-| `monthIntegrity.ts`                                | Integridad mensual                       |
-| `contracts/*.ts`                                   | Contratos estrictos de entrada/salida    |
-| `index.ts`                                         | Barrel export                            |
+| Archivo                                              | Rol                                      |
+| ---------------------------------------------------- | ---------------------------------------- |
+| `DailyRecordRepository.ts`                           | API unificada del registro diario        |
+| `dailyRecordRepositoryReadService.ts`                | Lecturas                                 |
+| `dailyRecordRepositoryWriteService.ts`               | Escrituras                               |
+| `dailyRecordRepositorySyncService.ts`                | Suscripción/sync con Firestore           |
+| `dailyRecordRepositoryInitializationService.ts`      | Inicialización de días/copia de paciente |
+| `repositoryConfig.ts`                                | Flags de repo (`firestoreEnabled`)       |
+| `CatalogRepository.ts`                               | Catálogos                                |
+| `PatientMasterRepository.ts`                         | Base maestra de pacientes                |
+| `PrintTemplateRepository.ts`                         | Plantillas de impresión                  |
+| `dataMigration.ts` / `patientMasterMigration.ts`     | Migraciones                              |
+| `schemaGovernance.ts` / `schemaEvolutionPolicy.ts`   | Política de versionado y compatibilidad  |
+| `legacyRecordBridgeService.ts`                       | Importación explícita desde rutas legacy |
+| `legacyBridgeGovernance.ts` / `legacyBridgeAudit.ts` | Gobernanza y auditoría del bridge legacy |
+| `monthIntegrity.ts`                                  | Integridad mensual                       |
+| `contracts/*.ts`                                     | Contratos estrictos de entrada/salida    |
+| `index.ts`                                           | Barrel export                            |
 
 ## Patrón de uso
 
@@ -49,6 +50,10 @@ de entrada (fecha, límites, RUT, IDs) antes de delegar en storage.
   La compatibilidad histórica dejó de formar parte del camino caliente.
 - `legacyRecordBridgeService.ts` es la única vía soportada para importar datos legacy; la
   app puede invocarlo explícitamente sin reintroducir fallback histórico en lectura o sync normal.
+- `legacyBridgeAudit.ts` mantiene un ledger liviano de uso del bridge (`single`/`range`,
+  `legacy_bridge`/`not_found`/`disabled`) para que el uso restante sea observable.
+- `legacyBridgeGovernance.ts` define las reglas de retiro progresivo del bridge y las
+  entrypoints permitidas; `reports/legacy-bridge-governance.md` resume esa política.
 - `repositoryPerformance.ts` concentra la telemetría ligera de operaciones críticas (`getForDate`,
   `initializeDay`, `syncWithFirestore`, `ensureMonthIntegrity`) para evitar mediciones dispersas.
 - `dailyRecordRepositoryInitializationService.ts` resuelve una semilla de arranque explícita
@@ -93,6 +98,11 @@ de entrada (fecha, límites, RUT, IDs) antes de delegar en storage.
   nuevos consumidores deben preferir la fachada del repositorio o los soportes existentes,
   no importarlos desde UI o features.
 - Los bridges legacy se invocan solo de forma explícita desde `legacyRecordBridgeService.ts`.
+- Si cambia la política de retiro o el modo de compatibilidad, deben actualizarse en conjunto:
+  - `legacyCompatibilityPolicy.ts`
+  - `legacyBridgeGovernance.ts`
+  - `legacyRecordBridgeService.ts`
+  - `reports/legacy-bridge-governance.md`
 - Cambios en schema/versionado deben tocar en conjunto:
   - `schemaEvolutionPolicy.ts`
   - `migrationLedger.ts`

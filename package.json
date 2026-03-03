@@ -53,6 +53,7 @@
     "report:dependency-debt": "node scripts/report-folder-dependency-debt.mjs",
     "report:quality-metrics": "node scripts/report-quality-metrics.mjs",
     "report:operational-health": "node scripts/report-operational-health.mjs",
+    "report:legacy-bridge": "node scripts/report-legacy-bridge.mjs",
     "report:schema-evolution": "node scripts/report-schema-evolution.mjs",
     "check:quality": "npm run check:architecture && npm run check:feature-dependencies && npm run check:shared-layer-boundary && npm run check:legacy-localstorage-imports && npm run check:schema-governance && npm run check:runtime-contracts && npm run check:docs-drift && npm run check:folder-dependencies && npm run check:module-dependencies && npm run check:module-size && npm run check:census-runtime-boundary && npm run check:runtime-adapter-boundary && npm run check:test-governance && npm run check:flaky-quarantine && npm run check:critical-any && npm run check:source-any && npm run check:repo-hygiene && npm run check:security",
     "clean": "bash scripts/cleanup.sh",
