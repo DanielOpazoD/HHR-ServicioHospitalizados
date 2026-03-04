@@ -2,36 +2,20 @@ import React, { useState } from 'react';
 import { BedDefinition, DailyRecord, PatientData, ClinicalEvent } from '@/types';
 import { HandoffRow } from './HandoffRow';
 import { Maximize2, Minimize2 } from 'lucide-react';
+import type { HandoffClinicalEventActions, HandoffMedicalActions } from './handoffRowContracts';
 
 interface HandoffPatientTableProps {
   visibleBeds: BedDefinition[];
   record: DailyRecord;
   noteField: 'handoffNoteDayShift' | 'handoffNoteNightShift' | 'medicalHandoffNote';
   onNoteChange: (bedId: string, value: string, isNested: boolean) => void;
-  onMedicalEntryNoteChange?: (
-    bedId: string,
-    entryId: string,
-    value: string,
-    isNested: boolean
-  ) => void;
-  onMedicalEntrySpecialtyChange?: (
-    bedId: string,
-    entryId: string,
-    specialty: string,
-    isNested: boolean
-  ) => void;
-  onMedicalEntryAdd?: (bedId: string, isNested: boolean) => void;
-  onMedicalEntryDelete?: (bedId: string, entryId: string, isNested: boolean) => void;
+  medicalActions?: HandoffMedicalActions;
   tableHeaderClass: string;
   readOnly: boolean;
   isMedical: boolean;
   hasAnyPatients: boolean;
   shouldShowPatient: (bedId: string) => boolean;
-  onMedicalContinuityConfirm?: (bedId: string, entryId: string, isNested: boolean) => void;
-  // Clinical Events callbacks
-  onClinicalEventAdd?: (bedId: string, event: Omit<ClinicalEvent, 'id' | 'createdAt'>) => void;
-  onClinicalEventUpdate?: (bedId: string, eventId: string, data: Partial<ClinicalEvent>) => void;
-  onClinicalEventDelete?: (bedId: string, eventId: string) => void;
+  clinicalEventActions?: HandoffClinicalEventActions;
 }
 
 export const HandoffPatientTable: React.FC<HandoffPatientTableProps> = ({
@@ -39,21 +23,71 @@ export const HandoffPatientTable: React.FC<HandoffPatientTableProps> = ({
   record,
   noteField,
   onNoteChange,
-  onMedicalEntryNoteChange,
-  onMedicalEntrySpecialtyChange,
-  onMedicalEntryAdd,
-  onMedicalEntryDelete,
+  medicalActions,
   tableHeaderClass,
   readOnly,
   isMedical,
   hasAnyPatients,
   shouldShowPatient,
-  onMedicalContinuityConfirm,
-  onClinicalEventAdd,
-  onClinicalEventUpdate,
-  onClinicalEventDelete,
+  clinicalEventActions,
 }) => {
   const [allEventsExpanded, setAllEventsExpanded] = useState(false);
+
+  const resolveRowMedicalActions = (bedId: string, isNested: boolean) => ({
+    onEntryNoteChange: medicalActions?.onEntryNoteChange
+      ? (entryId: string, value: string) =>
+          medicalActions.onEntryNoteChange?.(bedId, entryId, value, isNested)
+      : undefined,
+    onEntrySpecialtyChange: medicalActions?.onEntrySpecialtyChange
+      ? (entryId: string, specialty: string) =>
+          medicalActions.onEntrySpecialtyChange?.(bedId, entryId, specialty, isNested)
+      : undefined,
+    onEntryAdd: medicalActions?.onEntryAdd
+      ? () => medicalActions.onEntryAdd?.(bedId, isNested)
+      : undefined,
+    onEntryDelete: medicalActions?.onEntryDelete
+      ? (entryId: string) => medicalActions.onEntryDelete?.(bedId, entryId, isNested)
+      : undefined,
+    onContinuityConfirm: medicalActions?.onContinuityConfirm
+      ? (entryId: string) => medicalActions.onContinuityConfirm?.(bedId, entryId, isNested)
+      : undefined,
+  });
+
+  const resolveRowClinicalEventActions = (bedId: string) => ({
+    onAdd: clinicalEventActions?.onAdd
+      ? (event: Omit<ClinicalEvent, 'id' | 'createdAt'>) =>
+          clinicalEventActions.onAdd?.(bedId, event)
+      : undefined,
+    onUpdate: clinicalEventActions?.onUpdate
+      ? (eventId: string, data: Partial<ClinicalEvent>) =>
+          clinicalEventActions.onUpdate?.(bedId, eventId, data)
+      : undefined,
+    onDelete: clinicalEventActions?.onDelete
+      ? (eventId: string) => clinicalEventActions.onDelete?.(bedId, eventId)
+      : undefined,
+  });
+
+  const renderRow = (
+    bed: BedDefinition,
+    patient: PatientData,
+    options: { isNested: boolean; forcedExpand?: boolean }
+  ) => (
+    <HandoffRow
+      key={`${bed.id}-${options.isNested ? 'crib' : 'main'}`}
+      bedName={bed.name}
+      bedType={options.isNested ? 'Cuna' : bed.type}
+      patient={patient}
+      reportDate={record.date}
+      isSubRow={options.isNested}
+      noteField={noteField}
+      onNoteChange={value => onNoteChange(bed.id, value, options.isNested)}
+      medicalActions={resolveRowMedicalActions(bed.id, options.isNested)}
+      readOnly={readOnly}
+      isMedical={isMedical}
+      forcedExpand={options.forcedExpand}
+      clinicalEventActions={resolveRowClinicalEventActions(bed.id)}
+    />
+  );
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden print:shadow-none print:border-none print:rounded-none print:overflow-visible">
@@ -119,181 +153,30 @@ export const HandoffPatientTable: React.FC<HandoffPatientTableProps> = ({
             {visibleBeds.map(bed => {
               const patient = record.beds[bed.id];
 
-              // Safety check: if bed data is missing in record, show as empty
               if (!patient) {
-                return (
-                  <HandoffRow
-                    key={bed.id}
-                    bedName={bed.name}
-                    bedType={bed.type}
-                    patient={{ isBlocked: false } as PatientData}
-                    reportDate={record.date}
-                    noteField={noteField}
-                    onNoteChange={val => onNoteChange(bed.id, val, false)}
-                    onMedicalEntryNoteChange={
-                      onMedicalEntryNoteChange
-                        ? (entryId, value) =>
-                            onMedicalEntryNoteChange(bed.id, entryId, value, false)
-                        : undefined
-                    }
-                    onMedicalEntrySpecialtyChange={
-                      onMedicalEntrySpecialtyChange
-                        ? (entryId, specialty) =>
-                            onMedicalEntrySpecialtyChange(bed.id, entryId, specialty, false)
-                        : undefined
-                    }
-                    onMedicalEntryAdd={
-                      onMedicalEntryAdd ? () => onMedicalEntryAdd(bed.id, false) : undefined
-                    }
-                    onMedicalEntryDelete={
-                      onMedicalEntryDelete
-                        ? entryId => onMedicalEntryDelete(bed.id, entryId, false)
-                        : undefined
-                    }
-                    readOnly={readOnly}
-                    isMedical={isMedical}
-                  />
-                );
+                return renderRow(bed, { isBlocked: false } as PatientData, { isNested: false });
               }
 
-              // Check if patient should be shown in current shift
               const showPatient =
                 patient.isBlocked || !patient.patientName || shouldShowPatient(bed.id);
 
-              // If patient should be hidden, render empty bed row
               if (!showPatient) {
-                return (
-                  <HandoffRow
-                    key={bed.id}
-                    bedName={bed.name}
-                    bedType={bed.type}
-                    patient={{ isBlocked: false } as PatientData}
-                    reportDate={record.date}
-                    noteField={noteField}
-                    onNoteChange={val => onNoteChange(bed.id, val, false)}
-                    onMedicalEntryNoteChange={
-                      onMedicalEntryNoteChange
-                        ? (entryId, value) =>
-                            onMedicalEntryNoteChange(bed.id, entryId, value, false)
-                        : undefined
-                    }
-                    onMedicalEntrySpecialtyChange={
-                      onMedicalEntrySpecialtyChange
-                        ? (entryId, specialty) =>
-                            onMedicalEntrySpecialtyChange(bed.id, entryId, specialty, false)
-                        : undefined
-                    }
-                    onMedicalEntryAdd={
-                      onMedicalEntryAdd ? () => onMedicalEntryAdd(bed.id, false) : undefined
-                    }
-                    onMedicalEntryDelete={
-                      onMedicalEntryDelete
-                        ? entryId => onMedicalEntryDelete(bed.id, entryId, false)
-                        : undefined
-                    }
-                    readOnly={readOnly}
-                    isMedical={isMedical}
-                  />
-                );
+                return renderRow(bed, { isBlocked: false } as PatientData, { isNested: false });
               }
 
               return (
                 <React.Fragment key={bed.id}>
-                  <HandoffRow
-                    bedName={bed.name}
-                    bedType={bed.type}
-                    patient={patient}
-                    reportDate={record.date}
-                    noteField={noteField}
-                    onNoteChange={val => onNoteChange(bed.id, val, false)}
-                    onMedicalEntryNoteChange={
-                      onMedicalEntryNoteChange
-                        ? (entryId, value) =>
-                            onMedicalEntryNoteChange(bed.id, entryId, value, false)
-                        : undefined
-                    }
-                    onMedicalEntrySpecialtyChange={
-                      onMedicalEntrySpecialtyChange
-                        ? (entryId, specialty) =>
-                            onMedicalEntrySpecialtyChange(bed.id, entryId, specialty, false)
-                        : undefined
-                    }
-                    onMedicalEntryAdd={
-                      onMedicalEntryAdd ? () => onMedicalEntryAdd(bed.id, false) : undefined
-                    }
-                    onMedicalEntryDelete={
-                      onMedicalEntryDelete
-                        ? entryId => onMedicalEntryDelete(bed.id, entryId, false)
-                        : undefined
-                    }
-                    onMedicalContinuityConfirm={
-                      onMedicalContinuityConfirm
-                        ? entryId => onMedicalContinuityConfirm(bed.id, entryId, false)
-                        : undefined
-                    }
-                    readOnly={readOnly}
-                    isMedical={isMedical}
-                    forcedExpand={allEventsExpanded}
-                    // Clinical Events handlers - only for nursing handoff
-                    onClinicalEventAdd={
-                      onClinicalEventAdd ? event => onClinicalEventAdd(bed.id, event) : undefined
-                    }
-                    onClinicalEventUpdate={
-                      onClinicalEventUpdate
-                        ? (eventId, data) => onClinicalEventUpdate(bed.id, eventId, data)
-                        : undefined
-                    }
-                    onClinicalEventDelete={
-                      onClinicalEventDelete
-                        ? eventId => onClinicalEventDelete(bed.id, eventId)
-                        : undefined
-                    }
-                  />
-
-                  {patient.clinicalCrib && patient.clinicalCrib.patientName && (
-                    <HandoffRow
-                      bedName={bed.name}
-                      bedType="Cuna"
-                      patient={patient.clinicalCrib}
-                      reportDate={record.date}
-                      isSubRow={true}
-                      noteField={noteField}
-                      onNoteChange={val => onNoteChange(bed.id, val, true)}
-                      onMedicalEntryNoteChange={
-                        onMedicalEntryNoteChange
-                          ? (entryId, value) =>
-                              onMedicalEntryNoteChange(bed.id, entryId, value, true)
-                          : undefined
-                      }
-                      onMedicalEntrySpecialtyChange={
-                        onMedicalEntrySpecialtyChange
-                          ? (entryId, specialty) =>
-                              onMedicalEntrySpecialtyChange(bed.id, entryId, specialty, true)
-                          : undefined
-                      }
-                      onMedicalEntryAdd={
-                        onMedicalEntryAdd ? () => onMedicalEntryAdd(bed.id, true) : undefined
-                      }
-                      onMedicalEntryDelete={
-                        onMedicalEntryDelete
-                          ? entryId => onMedicalEntryDelete(bed.id, entryId, true)
-                          : undefined
-                      }
-                      onMedicalContinuityConfirm={
-                        onMedicalContinuityConfirm
-                          ? entryId => onMedicalContinuityConfirm(bed.id, entryId, true)
-                          : undefined
-                      }
-                      readOnly={readOnly}
-                      isMedical={isMedical}
-                      forcedExpand={allEventsExpanded}
-                    />
-                  )}
+                  {renderRow(bed, patient, { isNested: false, forcedExpand: allEventsExpanded })}
+                  {patient.clinicalCrib && patient.clinicalCrib.patientName
+                    ? renderRow(bed, patient.clinicalCrib, {
+                        isNested: true,
+                        forcedExpand: allEventsExpanded,
+                      })
+                    : null}
                 </React.Fragment>
               );
             })}
 
-            {/* If no occupied beds found */}
             {!hasAnyPatients && (
               <tr>
                 <td

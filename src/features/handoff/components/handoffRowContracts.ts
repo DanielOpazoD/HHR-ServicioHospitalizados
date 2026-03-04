@@ -1,0 +1,20 @@
+import type { ClinicalEvent } from '@/types';
+
+export interface HandoffMedicalActions {
+  onEntryNoteChange?: (bedId: string, entryId: string, value: string, isNested: boolean) => void;
+  onEntrySpecialtyChange?: (
+    bedId: string,
+    entryId: string,
+    specialty: string,
+    isNested: boolean
+  ) => void;
+  onEntryAdd?: (bedId: string, isNested: boolean) => void;
+  onEntryDelete?: (bedId: string, entryId: string, isNested: boolean) => void;
+  onContinuityConfirm?: (bedId: string, entryId: string, isNested: boolean) => void;
+}
+
+export interface HandoffClinicalEventActions {
+  onAdd?: (bedId: string, event: Omit<ClinicalEvent, 'id' | 'createdAt'>) => void;
+  onUpdate?: (bedId: string, eventId: string, data: Partial<ClinicalEvent>) => void;
+  onDelete?: (bedId: string, eventId: string) => void;
+}

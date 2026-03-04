@@ -49,6 +49,10 @@ export {
   resolveInitialMedicalSpecialtyFromSearch,
 } from './medicalPatientHandoffViewController';
 export {
+  resolveMedicalEntryInlineMeta,
+  resolveMedicalHandoffValidityViewModel,
+} from './medicalPatientHandoffRenderController';
+export {
   buildMedicalHandoffSignatureLink,
   resolveMedicalHandoffScope,
   resolveScopedMedicalHandoffSentAt,

@@ -103,9 +103,11 @@ describe('HandoffRow', () => {
             {...defaultProps}
             patient={patientWithEvents}
             forcedExpand={false}
-            onClinicalEventAdd={vi.fn()}
-            onClinicalEventUpdate={vi.fn()}
-            onClinicalEventDelete={vi.fn()}
+            clinicalEventActions={{
+              onAdd: vi.fn(),
+              onUpdate: vi.fn(),
+              onDelete: vi.fn(),
+            }}
           />
         </tbody>
       </table>
@@ -119,9 +121,11 @@ describe('HandoffRow', () => {
             {...defaultProps}
             patient={patientWithEvents}
             forcedExpand={true}
-            onClinicalEventAdd={vi.fn()}
-            onClinicalEventUpdate={vi.fn()}
-            onClinicalEventDelete={vi.fn()}
+            clinicalEventActions={{
+              onAdd: vi.fn(),
+              onUpdate: vi.fn(),
+              onDelete: vi.fn(),
+            }}
           />
         </tbody>
       </table>
@@ -138,7 +142,7 @@ describe('HandoffRow', () => {
             {...defaultProps}
             noteField="medicalHandoffNote"
             onNoteChange={vi.fn()}
-            onMedicalContinuityConfirm={onMedicalContinuityConfirm}
+            medicalActions={{ onContinuityConfirm: onMedicalContinuityConfirm }}
             patient={{ ...mockPatient, medicalHandoffNote: 'Última evolución' }}
             isMedical={true}
           />
@@ -159,7 +163,7 @@ describe('HandoffRow', () => {
             {...defaultProps}
             noteField="medicalHandoffNote"
             onNoteChange={vi.fn()}
-            onMedicalEntryDelete={onMedicalEntryDelete}
+            medicalActions={{ onEntryDelete: onMedicalEntryDelete }}
             patient={{
               ...mockPatient,
               medicalHandoffEntries: [

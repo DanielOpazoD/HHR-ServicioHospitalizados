@@ -18,6 +18,20 @@ import {
 // HandoffRow Component
 // ============================================================================
 
+interface HandoffRowMedicalActions {
+  onEntryNoteChange?: (entryId: string, value: string) => void;
+  onEntrySpecialtyChange?: (entryId: string, specialty: string) => void;
+  onEntryAdd?: () => void;
+  onEntryDelete?: (entryId: string) => void;
+  onContinuityConfirm?: (entryId: string) => void;
+}
+
+interface HandoffRowClinicalEventActions {
+  onAdd?: (event: Omit<ClinicalEvent, 'id' | 'createdAt'>) => void;
+  onUpdate?: (eventId: string, data: Partial<ClinicalEvent>) => void;
+  onDelete?: (eventId: string) => void;
+}
+
 interface HandoffRowProps {
   bedName: string;
   bedType?: string; // Kept for compatibility if needed elsewhere
@@ -26,18 +40,11 @@ interface HandoffRowProps {
   isSubRow?: boolean;
   noteField: keyof PatientData; // Dynamic field
   onNoteChange: (val: string) => void;
-  onMedicalEntryNoteChange?: (entryId: string, value: string) => void;
-  onMedicalEntrySpecialtyChange?: (entryId: string, specialty: string) => void;
-  onMedicalEntryAdd?: () => void;
-  onMedicalEntryDelete?: (entryId: string) => void;
-  onMedicalContinuityConfirm?: (entryId: string) => void;
+  medicalActions?: HandoffRowMedicalActions;
   readOnly?: boolean;
   isMedical?: boolean;
   forcedExpand?: boolean;
-  // Clinical Events handlers
-  onClinicalEventAdd?: (event: Omit<ClinicalEvent, 'id' | 'createdAt'>) => void;
-  onClinicalEventUpdate?: (eventId: string, data: Partial<ClinicalEvent>) => void;
-  onClinicalEventDelete?: (eventId: string) => void;
+  clinicalEventActions?: HandoffRowClinicalEventActions;
 }
 
 export const HandoffRow: React.FC<HandoffRowProps> = ({
@@ -47,17 +54,11 @@ export const HandoffRow: React.FC<HandoffRowProps> = ({
   isSubRow = false,
   noteField,
   onNoteChange,
-  onMedicalEntryNoteChange,
-  onMedicalEntrySpecialtyChange,
-  onMedicalEntryAdd,
-  onMedicalEntryDelete,
-  onMedicalContinuityConfirm,
+  medicalActions,
   readOnly = false,
   isMedical = false,
   forcedExpand = false,
-  onClinicalEventAdd,
-  onClinicalEventUpdate,
-  onClinicalEventDelete,
+  clinicalEventActions,
 }) => {
   const { stabilityRules } = useDailyRecordData();
   const [showEvents, setShowEvents] = useState(false);
@@ -115,9 +116,9 @@ export const HandoffRow: React.FC<HandoffRowProps> = ({
         setShowEvents={setShowEvents}
         hasEvents={hasEvents}
         isFieldReadOnly={isFieldReadOnly}
-        onClinicalEventAdd={onClinicalEventAdd}
-        onClinicalEventUpdate={onClinicalEventUpdate}
-        onClinicalEventDelete={onClinicalEventDelete}
+        onClinicalEventAdd={clinicalEventActions?.onAdd}
+        onClinicalEventUpdate={clinicalEventActions?.onUpdate}
+        onClinicalEventDelete={clinicalEventActions?.onDelete}
       />
 
       {/* DMI column only shown in nursing handoff */}
@@ -127,12 +128,14 @@ export const HandoffRow: React.FC<HandoffRowProps> = ({
         <HandoffMedicalObservationsCell
           patient={patient}
           isFieldReadOnly={isFieldReadOnly}
-          onEntryNoteChange={(entryId, value) => onMedicalEntryNoteChange?.(entryId, value)}
-          onEntrySpecialtyChange={(entryId, specialty) =>
-            onMedicalEntrySpecialtyChange?.(entryId, specialty)
+          onEntryNoteChange={(entryId, value) =>
+            medicalActions?.onEntryNoteChange?.(entryId, value)
           }
-          onAddEntry={onMedicalEntryAdd}
-          onDeleteEntry={onMedicalEntryDelete}
+          onEntrySpecialtyChange={(entryId, specialty) =>
+            medicalActions?.onEntrySpecialtyChange?.(entryId, specialty)
+          }
+          onAddEntry={medicalActions?.onEntryAdd}
+          onDeleteEntry={medicalActions?.onEntryDelete}
         />
       ) : (
         <HandoffObservationsCell
@@ -146,7 +149,7 @@ export const HandoffRow: React.FC<HandoffRowProps> = ({
         <HandoffMedicalValidityCell
           patient={patient}
           reportDate={reportDate}
-          onQuickAction={onMedicalContinuityConfirm}
+          onQuickAction={medicalActions?.onContinuityConfirm}
           readOnly={isFieldReadOnly}
         />
       )}

@@ -11,11 +11,19 @@ import { useAuditContext } from '@/context/AuditContext';
 import { getAttributedAuthors } from '@/services/admin/attributionService';
 import type { MedicalHandoffScope } from '@/features/handoff/controllers';
 import {
-  buildMedicalHandoffSummary,
   buildMedicalHandoffSignatureLink,
-  DEFAULT_NO_CHANGES_COMMENT,
   resolveScopedMedicalSignatureToken,
 } from '@/features/handoff/controllers';
+import {
+  buildChecklistUpdateRecord,
+  buildMedicalNoChangesRecord,
+  buildMedicalSentPatch,
+  buildMedicalSignatureRecord,
+  buildMedicalSpecialtyNoteRecord,
+  buildNovedadesUpdateRecord,
+  buildResetMedicalHandoffRecord,
+  normalizeMedicalHandoffActor,
+} from '@/features/handoff/controllers/handoffManagementController';
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
 
 interface ConfirmMedicalSpecialtyNoChangesInput {
@@ -55,17 +63,6 @@ const generateMedicalSignatureLinkToken = (): string => {
   return `sig_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`;
 };
 
-const normalizeMedicalHandoffActor = (
-  actor: Partial<MedicalHandoffActor>,
-  specialty?: MedicalSpecialty
-): MedicalHandoffActor => ({
-  uid: actor.uid || 'unknown-user',
-  displayName: actor.displayName || actor.email || 'Usuario sin nombre',
-  email: actor.email || 'unknown@hospitalhangaroa.cl',
-  role: actor.role,
-  specialty: specialty || actor.specialty,
-});
-
 export const useHandoffManagement = (
   record: DailyRecord | null,
   saveAndUpdate: (updatedRecord: DailyRecord) => Promise<void>,
@@ -82,23 +79,7 @@ export const useHandoffManagement = (
     (shift: 'day' | 'night', field: string, value: boolean | string) => {
       const currentRecord = recordRef.current;
       if (!currentRecord) return;
-
-      const updatedRecord = { ...currentRecord };
-
-      if (shift === 'day') {
-        updatedRecord.handoffDayChecklist = {
-          ...updatedRecord.handoffDayChecklist,
-          [field]: value,
-        };
-      } else {
-        updatedRecord.handoffNightChecklist = {
-          ...updatedRecord.handoffNightChecklist,
-          [field]: value,
-        };
-      }
-
-      updatedRecord.lastUpdated = new Date().toISOString();
-      saveAndUpdate(updatedRecord);
+      saveAndUpdate(buildChecklistUpdateRecord(currentRecord, shift, field, value));
     },
     [saveAndUpdate]
   );
@@ -107,19 +88,7 @@ export const useHandoffManagement = (
     (shift: 'day' | 'night' | 'medical', value: string) => {
       const currentRecord = recordRef.current;
       if (!currentRecord) return;
-
-      const updatedRecord = { ...currentRecord };
-
-      if (shift === 'day') {
-        updatedRecord.handoffNovedadesDayShift = value;
-      } else if (shift === 'night') {
-        updatedRecord.handoffNovedadesNightShift = value;
-      } else if (shift === 'medical') {
-        updatedRecord.medicalHandoffNovedades = value;
-      }
-
-      updatedRecord.lastUpdated = new Date().toISOString();
-      saveAndUpdate(updatedRecord);
+      saveAndUpdate(buildNovedadesUpdateRecord(currentRecord, shift, value));
 
       // Audit Log (Smart/Debounced)
       const authors = getAttributedAuthors(
@@ -158,33 +127,8 @@ export const useHandoffManagement = (
     async (specialty: MedicalSpecialty, value: string, actor: Partial<MedicalHandoffActor>) => {
       const currentRecord = recordRef.current;
       if (!currentRecord) return;
-
-      const now = new Date().toISOString();
-      const normalizedActor = normalizeMedicalHandoffActor(actor, specialty);
       const currentNote = currentRecord.medicalHandoffBySpecialty?.[specialty];
-      const updatedRecord: DailyRecord = {
-        ...currentRecord,
-        medicalHandoffBySpecialty: {
-          ...(currentRecord.medicalHandoffBySpecialty || {}),
-          [specialty]: {
-            note: value,
-            createdAt: currentNote?.createdAt || now,
-            updatedAt: now,
-            author: currentNote?.author || normalizedActor,
-            lastEditor: normalizedActor,
-            version: (currentNote?.version || 0) + 1,
-            dailyContinuity: {
-              ...(currentNote?.dailyContinuity || {}),
-              [currentRecord.date]: {
-                status: 'updated_by_specialist',
-              },
-            },
-          },
-        },
-        lastUpdated: now,
-      };
-
-      updatedRecord.medicalHandoffNovedades = buildMedicalHandoffSummary(updatedRecord);
+      const updatedRecord = buildMedicalSpecialtyNoteRecord(currentRecord, specialty, value, actor);
       await saveAndUpdate(updatedRecord);
 
       logDebouncedEvent(
@@ -232,28 +176,13 @@ export const useHandoffManagement = (
 
       const now = new Date().toISOString();
       const normalizedActor = normalizeMedicalHandoffActor(actor, specialty);
-      const nextComment = comment?.trim() || DEFAULT_NO_CHANGES_COMMENT;
-      const updatedRecord: DailyRecord = {
-        ...currentRecord,
-        medicalHandoffBySpecialty: {
-          ...(currentRecord.medicalHandoffBySpecialty || {}),
-          [specialty]: {
-            ...currentNote,
-            dailyContinuity: {
-              ...(currentNote.dailyContinuity || {}),
-              [effectiveDateKey]: {
-                status: 'confirmed_no_changes',
-                confirmedAt: now,
-                confirmedBy: normalizedActor,
-                comment: nextComment,
-              },
-            },
-          },
-        },
-        lastUpdated: now,
-      };
-
-      updatedRecord.medicalHandoffNovedades = buildMedicalHandoffSummary(updatedRecord);
+      const updatedRecord = buildMedicalNoChangesRecord(
+        currentRecord,
+        specialty,
+        actor,
+        comment,
+        effectiveDateKey
+      );
       await saveAndUpdate(updatedRecord);
 
       logEvent(
@@ -264,7 +193,10 @@ export const useHandoffManagement = (
           shift: 'medical',
           specialty,
           operation: 'confirm_no_changes',
-          comment: nextComment,
+          comment:
+            updatedRecord.medicalHandoffBySpecialty?.[specialty]?.dailyContinuity?.[
+              effectiveDateKey
+            ]?.comment,
           confirmedAt: now,
           confirmedBy: normalizedActor.displayName,
         },
@@ -310,23 +242,7 @@ export const useHandoffManagement = (
     async (doctorName: string, scope: MedicalHandoffScope = 'all') => {
       const currentRecord = recordRef.current;
       if (!currentRecord) return;
-
-      const updatedRecord = { ...currentRecord };
-      const signedAt = new Date().toISOString();
-      const signature = {
-        doctorName,
-        signedAt,
-      };
-
-      updatedRecord.medicalSignatureByScope = {
-        ...(updatedRecord.medicalSignatureByScope || {}),
-        [scope]: signature,
-      };
-      if (scope === 'all') {
-        updatedRecord.medicalSignature = signature;
-      }
-
-      updatedRecord.lastUpdated = new Date().toISOString();
+      const updatedRecord = buildMedicalSignatureRecord(currentRecord, doctorName, scope);
       await saveAndUpdate(updatedRecord);
 
       // Audit Log
@@ -336,7 +252,7 @@ export const useHandoffManagement = (
         currentRecord.date,
         {
           doctorName,
-          signedAt,
+          signedAt: updatedRecord.medicalSignatureByScope?.[scope]?.signedAt,
           scope,
         },
         undefined,
@@ -363,21 +279,7 @@ export const useHandoffManagement = (
     (doctorName?: string, scope: MedicalHandoffScope = 'all') => {
       const currentRecord = recordRef.current;
       if (!currentRecord) return Promise.resolve();
-
-      const sentAt = new Date().toISOString();
-      const updates: Partial<DailyRecord> = {
-        medicalHandoffSentAtByScope: {
-          ...(currentRecord.medicalHandoffSentAtByScope || {}),
-          [scope]: sentAt,
-        },
-      };
-      if (scope === 'all') {
-        updates.medicalHandoffSentAt = sentAt;
-      }
-      if (doctorName) {
-        updates.medicalHandoffDoctor = doctorName;
-      }
-      return patchRecord(updates);
+      return patchRecord(buildMedicalSentPatch(currentRecord, doctorName, scope));
     },
     [patchRecord]
   );
@@ -429,29 +331,16 @@ export const useHandoffManagement = (
   const resetMedicalHandoffState = useCallback(async () => {
     const currentRecord = recordRef.current;
     if (!currentRecord) return;
-
-    const updatedRecord = { ...currentRecord };
     const clearedFields: string[] = [];
 
-    if (updatedRecord.medicalHandoffSentAt) {
-      updatedRecord.medicalHandoffSentAt = undefined;
+    if (currentRecord.medicalHandoffSentAt) {
       clearedFields.push('entrega');
     }
 
-    if (updatedRecord.medicalSignature) {
-      updatedRecord.medicalSignature = undefined;
+    if (currentRecord.medicalSignature) {
       clearedFields.push('firma');
     }
-
-    if (updatedRecord.medicalHandoffSentAtByScope) {
-      updatedRecord.medicalHandoffSentAtByScope = {};
-    }
-
-    if (updatedRecord.medicalSignatureByScope) {
-      updatedRecord.medicalSignatureByScope = {};
-    }
-
-    updatedRecord.lastUpdated = new Date().toISOString();
+    const updatedRecord = buildResetMedicalHandoffRecord(currentRecord);
     await saveAndUpdate(updatedRecord);
 
     logEvent(

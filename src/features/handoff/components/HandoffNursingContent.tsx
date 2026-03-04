@@ -1,0 +1,63 @@
+import React from 'react';
+import type { BedDefinition, DailyRecord } from '@/types';
+import { HandoffPatientTable } from './HandoffPatientTable';
+import { MovementsSummary } from './MovementsSummary';
+import { HandoffNovedades } from './HandoffNovedades';
+import type { HandoffClinicalEventActions, HandoffMedicalActions } from './handoffRowContracts';
+import { resolveHandoffNovedadesValue } from '@/features/handoff/controllers';
+
+interface HandoffNursingContentProps {
+  visibleBeds: BedDefinition[];
+  record: DailyRecord;
+  noteField: 'handoffNoteDayShift' | 'handoffNoteNightShift' | 'medicalHandoffNote';
+  onNoteChange: (bedId: string, value: string, isNested: boolean) => void;
+  medicalActions: HandoffMedicalActions;
+  tableHeaderClass: string;
+  readOnly: boolean;
+  hasAnyPatients: boolean;
+  shouldShowPatient: (bedId: string) => boolean;
+  clinicalEventActions: HandoffClinicalEventActions;
+  selectedShift: 'day' | 'night';
+  updateHandoffNovedades: (shift: 'day' | 'night' | 'medical', value: string) => void;
+}
+
+export const HandoffNursingContent: React.FC<HandoffNursingContentProps> = ({
+  visibleBeds,
+  record,
+  noteField,
+  onNoteChange,
+  medicalActions,
+  tableHeaderClass,
+  readOnly,
+  hasAnyPatients,
+  shouldShowPatient,
+  clinicalEventActions,
+  selectedShift,
+  updateHandoffNovedades,
+}) => (
+  <>
+    <HandoffPatientTable
+      visibleBeds={visibleBeds}
+      record={record}
+      noteField={noteField}
+      onNoteChange={onNoteChange}
+      medicalActions={medicalActions}
+      tableHeaderClass={tableHeaderClass}
+      readOnly={readOnly}
+      isMedical={false}
+      hasAnyPatients={hasAnyPatients}
+      shouldShowPatient={shouldShowPatient}
+      clinicalEventActions={clinicalEventActions}
+    />
+
+    <div className="hidden print:block print:h-4" aria-hidden="true" />
+
+    <MovementsSummary record={record} selectedShift={selectedShift} />
+
+    <HandoffNovedades
+      value={resolveHandoffNovedadesValue({ isMedical: false, selectedShift, record })}
+      onChange={val => updateHandoffNovedades(selectedShift, val)}
+      readOnly={readOnly}
+    />
+  </>
+);
