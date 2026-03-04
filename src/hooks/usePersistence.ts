@@ -2,11 +2,30 @@ import { useCallback } from 'react';
 import { useNotification } from '@/context/UIContext';
 import { logDailyRecordCreated, logDailyRecordDeleted } from '@/services/admin/auditService';
 import {
-  getPreviousDay,
+  getForDateWithMeta,
+  getPreviousDayWithMeta,
   initializeDay,
   deleteDay,
 } from '@/services/repositories/DailyRecordRepository';
 import { DailyRecord } from '@/types';
+import { getUserFriendlyErrorMessage } from '@/services/utils/errorService';
+
+const shouldWarnLegacyRepair = (
+  meta: {
+    compatibilityIntensity: string;
+    migrationRulesApplied: string[];
+  } | null
+): boolean =>
+  Boolean(
+    meta &&
+    meta.compatibilityIntensity !== 'none' &&
+    meta.migrationRulesApplied.some(
+      rule =>
+        rule === 'legacy_nulls_normalized' ||
+        rule === 'salvage_patient_fallback_applied' ||
+        rule === 'schema_defaults_applied'
+    )
+  );
 
 interface UsePersistenceProps {
   currentDateString: string;
@@ -23,7 +42,7 @@ export const usePersistence = ({
   markLocalChange,
   setRecord,
 }: UsePersistenceProps) => {
-  const { success, warning } = useNotification();
+  const { success, warning, error: notifyError } = useNotification();
 
   /**
    * Creates a new daily record for the current date.
@@ -31,34 +50,61 @@ export const usePersistence = ({
   const createDay = useCallback(
     async (copyFromPrevious: boolean, specificDate?: string) => {
       let prevDate: string | undefined = undefined;
+      let copySourceMeta: {
+        compatibilityIntensity: string;
+        migrationRulesApplied: string[];
+      } | null = null;
 
-      if (copyFromPrevious) {
-        if (specificDate) {
-          prevDate = specificDate;
-        } else {
-          const prevRecord = await getPreviousDay(currentDateString);
-          if (prevRecord) {
-            prevDate = prevRecord.date;
+      try {
+        if (copyFromPrevious) {
+          if (specificDate) {
+            const source = await getForDateWithMeta(specificDate, true);
+            if (!source.record) {
+              warning(
+                'No se encontró registro anterior',
+                'No hay datos del día seleccionado para copiar.'
+              );
+              return;
+            }
+            prevDate = source.record.date;
+            copySourceMeta = source;
           } else {
-            warning('No se encontró registro anterior', 'No hay datos del día previo para copiar.');
-            return;
+            const prevRecord = await getPreviousDayWithMeta(currentDateString);
+            if (prevRecord.record) {
+              prevDate = prevRecord.record.date;
+              copySourceMeta = prevRecord;
+            } else {
+              warning(
+                'No se encontró registro anterior',
+                'No hay datos del día previo para copiar.'
+              );
+              return;
+            }
           }
         }
+
+        const newRecord = await initializeDay(currentDateString, prevDate);
+        markLocalChange();
+        setRecord(newRecord);
+
+        const sourceMsg = prevDate ? `Copiado desde ${prevDate}` : 'Registro en blanco';
+        success('Día creado', sourceMsg);
+        if (shouldWarnLegacyRepair(copySourceMeta)) {
+          warning(
+            'Se corrigieron datos heredados',
+            'La copia se realizó correctamente, pero se repararon datos antiguos incompatibles.'
+          );
+        }
+
+        logDailyRecordCreated(
+          currentDateString,
+          copyFromPrevious ? specificDate || 'previous_day' : 'blank'
+        );
+      } catch (error) {
+        notifyError('No se pudo crear el día', getUserFriendlyErrorMessage(error));
       }
-
-      const newRecord = await initializeDay(currentDateString, prevDate);
-      markLocalChange();
-      setRecord(newRecord);
-
-      const sourceMsg = prevDate ? `Copiado desde ${prevDate}` : 'Registro en blanco';
-      success('Día creado', sourceMsg);
-
-      logDailyRecordCreated(
-        currentDateString,
-        copyFromPrevious ? specificDate || 'previous_day' : 'blank'
-      );
     },
-    [currentDateString, warning, success, markLocalChange, setRecord]
+    [currentDateString, warning, success, notifyError, markLocalChange, setRecord]
   );
 
   /**

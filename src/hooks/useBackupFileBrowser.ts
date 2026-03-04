@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useNotification, useConfirmDialog } from '@/context/UIContext';
 import { useBackupFilesQuery, BackupFolder } from '@/hooks/useBackupFilesQuery';
 import { deletePdf } from '@/services/backup/pdfStorageService';
@@ -39,11 +39,49 @@ export const useBackupFileBrowser = (initialBackupType: BackupType = 'handoff') 
 
   const {
     data: items = [],
+    storageReport,
     isLoading,
     isRefetching,
     refetch,
   } = useBackupFilesQuery(selectedBackupType, path);
+  const lastReportSignatureRef = useRef('');
   const canRunMagicBackfill = role !== 'viewer' && path.length === 2 && !isLoading;
+
+  useEffect(() => {
+    const signature = JSON.stringify(storageReport);
+    if (lastReportSignatureRef.current === signature) {
+      return;
+    }
+    lastReportSignatureRef.current = signature;
+
+    const degradedCount =
+      storageReport.skippedRestricted +
+      storageReport.skippedUnknown +
+      storageReport.skippedUnparsed;
+
+    if (storageReport.timedOut) {
+      warning(
+        'Carga parcial de respaldos',
+        'La consulta a Storage tardó demasiado. La lista puede estar incompleta.'
+      );
+      return;
+    }
+
+    if (storageReport.skippedRestricted > 0) {
+      warning(
+        'Archivos no visibles por permisos',
+        `${storageReport.skippedRestricted} archivo(s) no pudieron leerse por restricciones de acceso.`
+      );
+      return;
+    }
+
+    if (degradedCount > 0) {
+      info(
+        'Carga parcial de respaldos',
+        `${degradedCount} archivo(s) fueron omitidos por datos o metadata incompatibles.`
+      );
+    }
+  }, [info, storageReport, warning]);
 
   const filteredItems = useMemo(() => {
     if (!searchQuery) return items;

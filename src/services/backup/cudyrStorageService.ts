@@ -15,11 +15,14 @@ import {
   createListYears,
   createListMonths,
   createListFilesInMonth,
+  createListFilesInMonthWithReport,
   BaseStoredFile,
 } from '@/services/backup/baseStorageService';
 import {
   isExpectedStorageLookupMiss,
   shouldLogStorageError,
+  resolveStorageLookupStatus,
+  type StorageLookupStatus,
 } from '@/services/backup/storageErrorPolicy';
 import {
   isBackupDateValidationError,
@@ -33,6 +36,10 @@ import { assertStorageAvailable } from '@/services/backup/storageAvailability';
 export interface StoredCudyrFile extends BaseStoredFile {
   month: string;
   year: string;
+}
+export interface StorageLookupResult {
+  exists: boolean;
+  status: StorageLookupStatus;
 }
 
 // ============= Constants =============
@@ -134,14 +141,19 @@ export const uploadCudyrExcel = async (excelBlob: Blob, date: string): Promise<s
  * Check if a CUDYR backup exists for a date
  */
 export const cudyrExists = async (date: string): Promise<boolean> => {
+  const result = await cudyrExistsDetailed(date);
+  return result.exists;
+};
+
+export const cudyrExistsDetailed = async (date: string): Promise<StorageLookupResult> => {
   const TIMEOUT_MS = 4000;
-  const timeoutPromise = new Promise<boolean>(resolve =>
-    setTimeout(() => resolve(false), TIMEOUT_MS)
+  const timeoutPromise = new Promise<StorageLookupResult>(resolve =>
+    setTimeout(() => resolve({ exists: false, status: 'timeout' }), TIMEOUT_MS)
   );
 
   const checkPromise = measureStorageOperation(
     'cudyrExists',
-    async (): Promise<boolean> => {
+    async (): Promise<StorageLookupResult> => {
       try {
         await firebaseReady;
         const storage = await getStorageInstance();
@@ -150,16 +162,21 @@ export const cudyrExists = async (date: string): Promise<boolean> => {
         const storageRef = ref(storage, filePath);
 
         await getMetadata(storageRef);
-        return true;
+        return { exists: true, status: 'available' };
       } catch (error: unknown) {
         if (isExpectedStorageLookupMiss(error) || isBackupDateValidationError(error)) {
-          return false;
+          return {
+            exists: false,
+            status: resolveStorageLookupStatus(error, {
+              invalidDate: isBackupDateValidationError(error),
+            }),
+          };
         }
         if (shouldLogStorageError(error)) {
           const storageError = error as { message?: string };
           console.warn(`[CudyrStorage] Error checking:`, storageError.message || error);
         }
-        return false;
+        return { exists: false, status: resolveStorageLookupStatus(error) };
       }
     },
     { context: date }
@@ -222,6 +239,29 @@ export const listCudyrFilesInMonth = createListFilesInMonth<
 
     return {
       name: displayName, // Always use normalized format for display
+      fullPath: item.fullPath,
+      downloadUrl,
+      date: parsed.date,
+      year: parsed.year as string,
+      month: parsed.month as string,
+      createdAt: metadata.customMetadata?.uploadedAt || metadata.timeCreated,
+      size: metadata.size,
+    };
+  },
+});
+
+export const listCudyrFilesInMonthWithReport = createListFilesInMonthWithReport<
+  StoredCudyrFile,
+  { date: string; year: string; month: string }
+>({
+  storageRoot: STORAGE_ROOT,
+  parseFilePath,
+  mapToFile: (item, metadata, downloadUrl, parsed) => {
+    const [year, month, day] = parsed.date.split('-');
+    const displayName = `${day}-${month}-${year} - CUDYR.xlsx`;
+
+    return {
+      name: displayName,
       fullPath: item.fullPath,
       downloadUrl,
       date: parsed.date,

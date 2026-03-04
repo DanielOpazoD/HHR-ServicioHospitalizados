@@ -18,6 +18,7 @@ vi.mock('@/context/UIContext', () => ({
 // Mock services
 vi.mock('@/services/backup/censusStorageService', () => ({
   checkCensusExists: vi.fn().mockResolvedValue(false),
+  checkCensusExistsDetailed: vi.fn().mockResolvedValue({ exists: false, status: 'missing' }),
   uploadCensus: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -33,6 +34,7 @@ vi.mock('@/services/exporters/censusMasterWorkbook', () => ({
 
 vi.mock('@/services/backup/pdfStorageService', () => ({
   pdfExists: vi.fn().mockResolvedValue(false),
+  pdfExistsDetailed: vi.fn().mockResolvedValue({ exists: false, status: 'missing' }),
 }));
 
 describe('useExportManager', () => {

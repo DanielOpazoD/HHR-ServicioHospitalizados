@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { DailyRecord } from '@/types';
-import { checkCensusExists, uploadCensus } from '@/services/backup/censusStorageService';
+import { checkCensusExistsDetailed, uploadCensus } from '@/services/backup/censusStorageService';
 import { getMonthRecordsFromFirestore } from '@/services/storage/firestoreService';
 import { useConfirmDialog, useNotification } from '@/context/UIContext';
 import { getShiftSchedule } from '@/utils/dateUtils';
@@ -43,18 +43,34 @@ export const useExportManager = ({
   useEffect(() => {
     if (currentDateString) {
       if (currentModule === 'CENSUS') {
-        checkCensusExists(currentDateString)
-          .then(exists => setIsArchived(exists))
+        checkCensusExistsDetailed(currentDateString)
+          .then(result => {
+            setIsArchived(result.exists);
+            if (result.status === 'restricted') {
+              warning(
+                'Respaldo no verificable',
+                'No se pudo confirmar el respaldo del censo por permisos de Storage.'
+              );
+            }
+          })
           .catch(() => setIsArchived(false));
       } else if (currentModule === 'NURSING_HANDOFF') {
-        import('@/services/backup/pdfStorageService').then(({ pdfExists }) => {
-          pdfExists(currentDateString, selectedShift)
-            .then(exists => setIsArchived(exists))
+        import('@/services/backup/pdfStorageService').then(({ pdfExistsDetailed }) => {
+          pdfExistsDetailed(currentDateString, selectedShift)
+            .then(result => {
+              setIsArchived(result.exists);
+              if (result.status === 'restricted') {
+                warning(
+                  'Respaldo no verificable',
+                  'No se pudo confirmar el respaldo PDF por permisos de Storage.'
+                );
+              }
+            })
             .catch(() => setIsArchived(false));
         });
       }
     }
-  }, [currentDateString, currentModule, selectedShift]);
+  }, [currentDateString, currentModule, selectedShift, warning]);
 
   const handleExportPDF = useCallback(async () => {
     try {

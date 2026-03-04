@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getMetadata, getDownloadURL, deleteObject } from 'firebase/storage';
-import { deletePdf, getPdfUrl, pdfExists } from '@/services/backup/pdfStorageService';
+import {
+  deletePdf,
+  getPdfUrl,
+  pdfExists,
+  pdfExistsDetailed,
+} from '@/services/backup/pdfStorageService';
 
 vi.mock('@/firebaseConfig', () => ({
   storage: {},
@@ -47,6 +52,14 @@ describe('pdfStorageService runtime resilience', () => {
 
     vi.mocked(getMetadata).mockRejectedValue({ code: 'storage/unauthenticated' });
     await expect(pdfExists('2026-02-19', 'night')).resolves.toBe(false);
+  });
+
+  it('returns detailed restricted status for unauthorized checks', async () => {
+    vi.mocked(getMetadata).mockRejectedValue({ code: 'storage/unauthorized' });
+    await expect(pdfExistsDetailed('2026-02-19', 'day')).resolves.toEqual({
+      exists: false,
+      status: 'restricted',
+    });
   });
 
   it('delete swallows expected miss errors and rethrows unexpected ones', async () => {

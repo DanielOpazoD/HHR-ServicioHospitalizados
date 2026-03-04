@@ -11,6 +11,7 @@
     "test:smoke:compat": "npm run test:resilience && npm run test:rules:ci && npm run test:emulator:sync:ci",
     "test:ci:unit": "vitest run --exclude \"src/tests/security/firestore-rules.test.ts\" --exclude \"src/tests/emulator/**\" --exclude \"src/tests/emulator-ui/**\"",
     "test:resilience": "vitest run src/tests/integration/sync-resilience.test.ts src/tests/integration/sync-ui-resilience.test.tsx src/tests/integration/offline-persistence.test.ts",
+    "test:repository-compat": "vitest run src/tests/schemas/zodSchemas.test.ts src/tests/validation/schema-fuzzing.test.ts src/tests/services/repositories/dataMigration.test.ts src/tests/services/dailyRecordRepository.test.ts",
     "test:risk:admin-health": "vitest run src/tests/services/admin/healthService.test.ts src/tests/features/admin/systemHealthStatusPolicy.test.ts",
     "test:risk:auth": "vitest run src/tests/services/auth/authErrorPolicy.test.ts src/tests/services/auth/googleLoginLock.test.ts src/tests/services/authService.test.ts",
     "test:risk:platform": "vitest run src/tests/security/netlifyHeadersStatic.test.ts src/tests/services/auth/googleLoginLock.test.ts src/tests/services/backup/storageContracts.test.ts src/tests/services/backup/storageAvailability.test.ts src/tests/services/backup/censusStorageService.test.ts src/tests/services/backup/cudyrStorageService.test.ts src/tests/services/backup/pdfStorageRuntime.test.ts",

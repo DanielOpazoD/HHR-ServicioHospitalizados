@@ -8,7 +8,7 @@
  */
 
 import { DailyRecord } from '@/types';
-import { parseDailyRecordWithDefaults } from '@/schemas/zodSchemas';
+import { parseDailyRecordWithDefaultsReport } from '@/schemas/zodSchemas';
 import { normalizeDailyRecordInvariants } from '@/utils/recordInvariants';
 import {
   DailyRecordMigrationResult,
@@ -106,6 +106,8 @@ const classifyCompatibilityIntensity = (
 
   if (
     appliedRules.includes('schema_defaults_applied') ||
+    appliedRules.includes('legacy_nulls_normalized') ||
+    appliedRules.includes('salvage_patient_fallback_applied') ||
     appliedRules.includes('record_invariants_normalized')
   ) {
     return 'normalized_only';
@@ -131,11 +133,18 @@ export const migrateLegacyDataWithReport = (
   const compatibilityAssessment = assessSchemaCompatibility(record);
 
   // 1. Initial pass through Zod to apply defaults and recover basic structure
-  let migrated = parseDailyRecordWithDefaults(
+  const schemaParse = parseDailyRecordWithDefaultsReport(
     schemaMigration.record as LegacyDailyRecordShape,
     date
   );
+  let migrated = schemaParse.record;
   pushRule(appliedRules, 'schema_defaults_applied');
+  if (schemaParse.report.nullNormalization.replacedNullCount > 0) {
+    pushRule(appliedRules, 'legacy_nulls_normalized');
+  }
+  if (schemaParse.report.salvagedBeds.length > 0) {
+    pushRule(appliedRules, 'salvage_patient_fallback_applied');
+  }
 
   // 2. Apply invariants so the current runtime never sees sparse bed maps.
   migrated = normalizeDailyRecordInvariants(migrated).record;

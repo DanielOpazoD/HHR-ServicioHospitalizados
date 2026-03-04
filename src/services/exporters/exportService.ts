@@ -2,7 +2,11 @@ import { DailyRecord } from '@/types';
 import { getAllRecords } from '../storage/indexedDBService';
 import { downloadBlob } from '@/services/exporters/exportDownload';
 import { buildDailyRecordCsv } from '@/services/exporters/exportCsvSerialization';
-import { importDataJSON as importDataJSONFile } from '@/services/exporters/exportImportJson';
+import {
+  importDataJSON as importDataJSONFile,
+  importDataJSONDetailed as importDataJSONDetailedFile,
+  JsonImportResult,
+} from '@/services/exporters/exportImportJson';
 
 export const exportDataJSON = async () => {
   const data = await getAllRecords();
@@ -20,6 +24,10 @@ export const exportDataCSV = (record: DailyRecord | null) => {
 
 export const importDataJSON = async (file: File): Promise<boolean> => {
   return importDataJSONFile(file);
+};
+
+export const importDataJSONDetailed = async (file: File): Promise<JsonImportResult> => {
+  return importDataJSONDetailedFile(file);
 };
 
 export const importDataCSV = async (_file: File): Promise<boolean> => {

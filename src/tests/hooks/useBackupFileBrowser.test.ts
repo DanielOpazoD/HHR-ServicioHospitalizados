@@ -23,6 +23,13 @@ vi.mock('@/context/AuthContext', () => ({
 vi.mock('@/hooks/useBackupFilesQuery', () => ({
   useBackupFilesQuery: vi.fn().mockReturnValue({
     data: [],
+    storageReport: {
+      skippedNotFound: 0,
+      skippedRestricted: 0,
+      skippedUnknown: 0,
+      skippedUnparsed: 0,
+      timedOut: false,
+    },
     isLoading: false,
     isRefetching: false,
     refetch: vi.fn(),

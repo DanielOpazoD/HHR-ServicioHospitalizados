@@ -24,7 +24,11 @@ vi.mock('@/firebaseConfig', () => ({
   firebaseReady: Promise.resolve(),
 }));
 
-import { checkCensusExists, deleteCensusFile } from '@/services/backup/censusStorageService';
+import {
+  checkCensusExists,
+  checkCensusExistsDetailed,
+  deleteCensusFile,
+} from '@/services/backup/censusStorageService';
 
 describe('censusStorageService', () => {
   const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
@@ -52,6 +56,14 @@ describe('censusStorageService', () => {
     const exists = await checkCensusExists('2026-02-19');
 
     expect(exists).toBe(false);
+  });
+
+  it('returns detailed restricted status on unauthorized lookup', async () => {
+    getMetadataMock.mockRejectedValue({ code: 'storage/unauthorized' });
+
+    const exists = await checkCensusExistsDetailed('2026-02-19');
+
+    expect(exists).toEqual({ exists: false, status: 'restricted' });
   });
 
   it('returns false for invalid input date without crashing', async () => {

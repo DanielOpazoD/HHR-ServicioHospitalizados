@@ -17,6 +17,7 @@ import {
   IeehDataSchema,
   safeParseDailyRecord,
   parseDailyRecordWithDefaults,
+  parseDailyRecordWithDefaultsReport,
 } from '@/schemas/zodSchemas';
 
 describe('zodSchemas', () => {
@@ -387,6 +388,21 @@ describe('zodSchemas', () => {
       expect(result?.date).toBe('2026-01-15');
     });
 
+    it('should normalize legacy null metadata before parsing', () => {
+      const result = safeParseDailyRecord({
+        date: '2026-03-04',
+        beds: {},
+        discharges: null,
+        nurses: null,
+        handoffNovedadesDayShift: null,
+      });
+
+      expect(result).not.toBeNull();
+      expect(result?.discharges).toEqual([]);
+      expect(result?.nurses).toEqual(['', '']);
+      expect(result?.handoffNovedadesDayShift).toBeUndefined();
+    });
+
     it('should return null for invalid input', () => {
       const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       const result = safeParseDailyRecord({
@@ -477,6 +493,52 @@ describe('zodSchemas', () => {
       expect(result.beds.R1.clinicalEvents).toHaveLength(1);
       expect(result.beds.R1.clinicalEvents?.[0]?.note).toBeUndefined();
       consoleSpy.mockRestore();
+    });
+
+    it('should fallback invalid beds to a safe patient shape instead of preserving raw corruption', () => {
+      const result = parseDailyRecordWithDefaults(
+        {
+          date: '2026-03-04',
+          beds: {
+            R1: {
+              patientName: 'Paciente Irregular',
+              status: 'ESTADO_INVALIDO',
+              specialty: 'ESPECIALIDAD_INVALIDA',
+              devices: [null, 'CVC'],
+            },
+          },
+        },
+        '2026-03-04'
+      );
+
+      expect(result.beds.R1.patientName).toBe('Paciente Irregular');
+      expect(result.beds.R1.bedId).toBe('R1');
+      expect(result.beds.R1.devices).toEqual([]);
+      expect(result.beds.R1.status).toBeDefined();
+    });
+  });
+
+  describe('parseDailyRecordWithDefaultsReport', () => {
+    it('should report null normalization and salvaged beds', () => {
+      const result = parseDailyRecordWithDefaultsReport(
+        {
+          date: '2026-03-04',
+          beds: {
+            R1: {
+              patientName: 'Paciente Irregular',
+              status: 'ESTADO_INVALIDO',
+              clinicalEvents: [null],
+            },
+          },
+          discharges: [null],
+        },
+        '2026-03-04'
+      );
+
+      expect(result.report.nullNormalization.replacedNullCount).toBeGreaterThan(0);
+      expect(result.report.salvagedBeds).toContain('R1');
+      expect(result.report.droppedDischargeItems).toBe(0);
+      expect(result.report.nullNormalization.droppedArrayEntriesCount).toBeGreaterThan(0);
     });
   });
 

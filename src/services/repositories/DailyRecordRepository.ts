@@ -6,6 +6,7 @@
 
 import { DailyRecord } from '@/types';
 import { DailyRecordPatch } from '@/types';
+import type { DailyRecordReadResult } from './contracts/dailyRecordQueries';
 // import {
 //     getActiveHospitalId
 // } from '@/constants/firestorePaths';
@@ -26,6 +27,7 @@ import {
   getForDate as getForDateFromReadService,
   getForDateWithMeta as getForDateWithMetaFromReadService,
   getPreviousDay as getPreviousDayFromReadService,
+  getPreviousDayWithMeta as getPreviousDayWithMetaFromReadService,
 } from './dailyRecordRepositoryReadService';
 export { bridgeLegacyRecordsRange } from './legacyRecordBridgeService';
 import {
@@ -57,6 +59,7 @@ import {
 export interface IDailyRecordRepository {
   getForDate(date: string): Promise<DailyRecord | null>;
   getPreviousDay(date: string): Promise<DailyRecord | null>;
+  getPreviousDayWithMeta(date: string): Promise<DailyRecordReadResult>;
   save(record: DailyRecord, expectedLastUpdated?: string): Promise<void>;
   subscribe(
     date: string,
@@ -91,6 +94,10 @@ export const getForDateWithMeta = async (date: string, syncFromRemote: boolean =
 export const getPreviousDay = async (date: string) => {
   const query = buildPreviousDayQuery(date);
   return getPreviousDayFromReadService(query.date);
+};
+export const getPreviousDayWithMeta = async (date: string) => {
+  const query = buildPreviousDayQuery(date);
+  return getPreviousDayWithMetaFromReadService(query.date);
 };
 export const getAvailableDates = getAvailableDatesFromReadService;
 export const bridgeLegacyRecord = bridgeLegacyRecordForDateFromReadService;
@@ -150,6 +157,7 @@ export const DailyRecordRepository: IDailyRecordRepository & {
 } = Object.freeze({
   getForDate,
   getPreviousDay,
+  getPreviousDayWithMeta,
   save,
   subscribe,
   initializeDay,

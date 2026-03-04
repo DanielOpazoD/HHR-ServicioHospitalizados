@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   uploadCudyrExcel,
   cudyrExists,
+  cudyrExistsDetailed,
   deleteCudyrFile,
   listCudyrYears,
   listCudyrMonths,
@@ -33,6 +34,7 @@ vi.mock('@/services/backup/baseStorageService', () => ({
   createListYears: vi.fn(() => vi.fn()),
   createListMonths: vi.fn(() => vi.fn()),
   createListFilesInMonth: vi.fn(() => vi.fn()),
+  createListFilesInMonthWithReport: vi.fn(() => vi.fn()),
 }));
 
 describe('cudyrStorageService', () => {
@@ -77,6 +79,14 @@ describe('cudyrStorageService', () => {
 
       vi.mocked(getMetadata).mockRejectedValue({ code: 'storage/unauthenticated' });
       expect(await cudyrExists(mockDate)).toBe(false);
+    });
+
+    it('returns detailed restricted status for unauthorized lookups', async () => {
+      vi.mocked(getMetadata).mockRejectedValue({ code: 'storage/unauthorized' });
+      await expect(cudyrExistsDetailed(mockDate)).resolves.toEqual({
+        exists: false,
+        status: 'restricted',
+      });
     });
 
     it('should return false when storage reports 403/404 through unknown error payload', async () => {

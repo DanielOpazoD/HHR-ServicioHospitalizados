@@ -1,6 +1,13 @@
-import { validateBackupData } from '@/schemas';
 import { DailyRecord } from '@/types';
 import { saveRecord } from '@/services/storage/indexedDBService';
+import { parseDailyRecordWithDefaultsReport } from '@/schemas/zodSchemas';
+
+export interface JsonImportResult {
+  success: boolean;
+  importedCount: number;
+  repairedCount: number;
+  skippedEntries: string[];
+}
 
 const readFileAsText = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -10,34 +17,78 @@ const readFileAsText = (file: File): Promise<string> =>
     reader.readAsText(file);
   });
 
-const validateImportData = (text: string) => {
-  const parsed = JSON.parse(text);
-  return validateBackupData(parsed);
-};
-
 const persistImportedRecords = async (records: DailyRecord[]): Promise<void> => {
   await Promise.all(records.map(record => saveRecord(record)));
 };
 
-export const importDataJSON = async (file: File): Promise<boolean> => {
+const parseImportPayload = (text: string): Record<string, unknown> => {
+  const parsed = JSON.parse(text);
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('El archivo JSON debe contener un objeto de registros por fecha.');
+  }
+  return parsed as Record<string, unknown>;
+};
+
+export const importDataJSONDetailed = async (file: File): Promise<JsonImportResult> => {
   try {
     const text = await readFileAsText(file);
-    const validation = validateImportData(text);
+    const payload = parseImportPayload(text);
 
-    if (!validation.success) {
-      console.error('Validation Errors:', validation.errors);
-      alert(
-        `El archivo JSON no cumple con el formato requerido:\n${validation.errors?.slice(0, 5).join('\n')}`
-      );
-      return false;
+    const importedRecords: DailyRecord[] = [];
+    const skippedEntries: string[] = [];
+    let repairedCount = 0;
+
+    Object.entries(payload).forEach(([key, value]) => {
+      try {
+        const parsed = parseDailyRecordWithDefaultsReport(value, key);
+        importedRecords.push(parsed.record);
+
+        const hasRepairs =
+          parsed.report.nullNormalization.replacedNullCount > 0 ||
+          parsed.report.nullNormalization.droppedArrayEntriesCount > 0 ||
+          parsed.report.salvagedBeds.length > 0 ||
+          parsed.report.droppedDischargeItems > 0 ||
+          parsed.report.droppedTransferItems > 0 ||
+          parsed.report.droppedCmaItems > 0;
+
+        if (hasRepairs) {
+          repairedCount += 1;
+        }
+      } catch (_error) {
+        skippedEntries.push(key);
+      }
+    });
+
+    if (importedRecords.length === 0) {
+      alert('El archivo JSON no contiene registros importables.');
+      return {
+        success: false,
+        importedCount: 0,
+        repairedCount: 0,
+        skippedEntries,
+      };
     }
 
-    const records = Object.values(validation.data as Record<string, DailyRecord>);
-    await persistImportedRecords(records);
-    return true;
+    await persistImportedRecords(importedRecords);
+    return {
+      success: true,
+      importedCount: importedRecords.length,
+      repairedCount,
+      skippedEntries,
+    };
   } catch (error) {
     console.error('Import failed', error);
     alert('Error al procesar el archivo JSON.');
-    return false;
+    return {
+      success: false,
+      importedCount: 0,
+      repairedCount: 0,
+      skippedEntries: [],
+    };
   }
+};
+
+export const importDataJSON = async (file: File): Promise<boolean> => {
+  const result = await importDataJSONDetailed(file);
+  return result.success;
 };

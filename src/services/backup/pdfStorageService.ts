@@ -16,9 +16,15 @@ import {
   createListYears,
   createListMonths,
   createListFilesInMonth,
+  createListFilesInMonthWithReport,
   BaseStoredFile,
 } from './baseStorageService';
-import { isExpectedStorageLookupMiss, shouldLogStorageError } from './storageErrorPolicy';
+import {
+  isExpectedStorageLookupMiss,
+  shouldLogStorageError,
+  resolveStorageLookupStatus,
+  type StorageLookupStatus,
+} from './storageErrorPolicy';
 import { isBackupDateValidationError, parseBackupDateParts } from './storageContracts';
 import { measureStorageOperation } from './storageObservability';
 import { assertStorageAvailable } from './storageAvailability';
@@ -35,6 +41,11 @@ export interface PdfFolder {
   type: 'year' | 'month';
   children?: PdfFolder[];
   fileCount?: number;
+}
+
+export interface StorageLookupResult {
+  exists: boolean;
+  status: StorageLookupStatus;
 }
 
 // ============= Constants =============
@@ -166,20 +177,28 @@ export const getPdfUrl = async (
  * Check if a PDF exists
  */
 export const pdfExists = async (date: string, shiftType: 'day' | 'night'): Promise<boolean> => {
+  const result = await pdfExistsDetailed(date, shiftType);
+  return result.exists;
+};
+
+export const pdfExistsDetailed = async (
+  date: string,
+  shiftType: 'day' | 'night'
+): Promise<StorageLookupResult> => {
   // console.debug(`[PdfStorage] 🔍 Checking existence: ${date} ${shiftType}`);
 
   // Create a timeout promise
   const TIMEOUT_MS = 4000;
-  const timeoutPromise = new Promise<boolean>(resolve =>
+  const timeoutPromise = new Promise<StorageLookupResult>(resolve =>
     setTimeout(() => {
       console.warn(`[PdfStorage] ⏱️ Timeout check for ${date}`);
-      resolve(false);
+      resolve({ exists: false, status: 'timeout' });
     }, TIMEOUT_MS)
   );
 
   const checkPromise = measureStorageOperation(
     'pdfExists',
-    async (): Promise<boolean> => {
+    async (): Promise<StorageLookupResult> => {
       try {
         await firebaseReady;
         const storage = await getStorageInstance();
@@ -189,17 +208,21 @@ export const pdfExists = async (date: string, shiftType: 'day' | 'night'): Promi
 
         await getMetadata(storageRef);
         // console.debug(`[PdfStorage] ✅ Found: ${filePath}`);
-        return true;
+        return { exists: true, status: 'available' };
       } catch (error: unknown) {
         if (isExpectedStorageLookupMiss(error) || isBackupDateValidationError(error)) {
-          // console.debug(`[PdfStorage] ℹ️ Not found: ${date} ${shiftType}`);
-          return false;
+          return {
+            exists: false,
+            status: resolveStorageLookupStatus(error, {
+              invalidDate: isBackupDateValidationError(error),
+            }),
+          };
         }
         if (shouldLogStorageError(error)) {
           const storageError = error as { message?: string };
           console.warn(`[PdfStorage] ❌ Error (possibly CORS):`, storageError.message || error);
         }
-        return false;
+        return { exists: false, status: resolveStorageLookupStatus(error) };
       }
     },
     { context: `${date}:${shiftType}` }
@@ -238,6 +261,23 @@ export const listFilesInMonth = createListFilesInMonth<
       size: metadata.size,
     };
   },
+});
+
+export const listFilesInMonthWithReport = createListFilesInMonthWithReport<
+  StoredPdfFile,
+  { date: string; shiftType: 'day' | 'night' }
+>({
+  storageRoot: STORAGE_ROOT,
+  parseFilePath,
+  mapToFile: (item, metadata, downloadUrl, parsed) => ({
+    name: item.name,
+    fullPath: item.fullPath,
+    downloadUrl,
+    date: parsed.date,
+    shiftType: parsed.shiftType,
+    createdAt: metadata.customMetadata?.uploadedAt || metadata.timeCreated,
+    size: metadata.size,
+  }),
 });
 
 /**

@@ -3,10 +3,10 @@ import {
   exportDataJSON,
   exportDataCSV,
   importDataJSON,
+  importDataJSONDetailed,
   importDataCSV,
 } from '@/services/exporters/exportService';
 import * as indexedDBService from '@/services/storage/indexedDBService';
-import * as validation from '@/schemas';
 import { DailyRecord, PatientData, DischargeData, TransferData } from '@/types';
 
 // Mock dependencies
@@ -19,16 +19,7 @@ vi.mock('@/services/storage/indexedDBService', async importOriginal => {
   };
 });
 
-vi.mock('@/schemas', () => ({
-  validateBackupData: vi.fn(),
-}));
-
 describe('exportService', () => {
-  type BackupData = Record<string, DailyRecord>;
-  type ValidateBackupResult = ReturnType<typeof validation.validateBackupData>;
-  const toBackupData = (value: BackupData): ValidateBackupResult =>
-    ({ success: true, data: value }) as unknown as ValidateBackupResult;
-
   const mockRecord: DailyRecord = {
     date: '2025-01-01',
     beds: {
@@ -119,10 +110,6 @@ describe('exportService', () => {
   describe('importDataJSON', () => {
     it('imports valid JSON data', async () => {
       const validData = { '2025-01-01': mockRecord };
-
-      vi.mocked(validation.validateBackupData).mockReturnValue({
-        ...toBackupData(validData),
-      } as ValidateBackupResult);
       vi.mocked(indexedDBService.saveRecord).mockResolvedValue();
 
       const file = new File([JSON.stringify(validData)], 'backup.json', {
@@ -135,18 +122,38 @@ describe('exportService', () => {
     });
 
     it('rejects invalid JSON', async () => {
-      vi.mocked(validation.validateBackupData).mockReturnValue({
-        success: false,
-        errors: ['Invalid field'],
-      });
-
       const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
 
-      const file = new File(['{"invalid": true}'], 'backup.json');
+      const file = new File(['[{"invalid": true}]'], 'backup.json');
       const result = await importDataJSON(file);
 
       expect(result).toBe(false);
       expect(alertSpy).toHaveBeenCalled();
+    });
+
+    it('reports repaired imports without failing', async () => {
+      vi.mocked(indexedDBService.saveRecord).mockResolvedValue();
+      const repairedData = {
+        '2025-01-01': {
+          ...mockRecord,
+          beds: {
+            'UTI-1': {
+              patientName: 'Paciente Legacy',
+              status: 'ESTADO_INVALIDO',
+              clinicalEvents: [null],
+            },
+          },
+        },
+      };
+
+      const file = new File([JSON.stringify(repairedData)], 'backup.json', {
+        type: 'application/json',
+      });
+      const result = await importDataJSONDetailed(file);
+
+      expect(result.success).toBe(true);
+      expect(result.repairedCount).toBe(1);
+      expect(result.importedCount).toBe(1);
     });
   });
 

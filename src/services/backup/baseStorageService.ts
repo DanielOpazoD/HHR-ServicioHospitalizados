@@ -20,6 +20,7 @@ import { firebaseReady, getStorageInstance } from '@/firebaseConfig';
 import {
   isExpectedStorageLookupMiss,
   shouldLogStorageError,
+  classifyStorageError,
 } from '@/services/backup/storageErrorPolicy';
 import { measureStorageOperation } from '@/services/backup/storageObservability';
 
@@ -48,6 +49,19 @@ export interface ListFilesConfig<T, TParsed extends { date: string } = { date: s
     downloadUrl: string,
     parsed: TParsed
   ) => T;
+}
+
+export interface StorageListReport {
+  skippedNotFound: number;
+  skippedRestricted: number;
+  skippedUnknown: number;
+  skippedUnparsed: number;
+  timedOut: boolean;
+}
+
+export interface StorageListResult<T> {
+  files: T[];
+  report: StorageListReport;
 }
 
 // ============= Constants =============
@@ -184,16 +198,38 @@ export const createListFilesInMonth = <
 >(
   config: ListFilesConfig<T, TParsed>
 ) => {
+  const detailed = createListFilesInMonthWithReport(config);
   return async (year: string, month: string): Promise<T[]> => {
+    const result = await detailed(year, month);
+    return result.files;
+  };
+};
+
+export const createListFilesInMonthWithReport = <
+  T extends BaseStoredFile,
+  TParsed extends { date: string } = { date: string },
+>(
+  config: ListFilesConfig<T, TParsed>
+) => {
+  return async (year: string, month: string): Promise<StorageListResult<T>> => {
     const fullStoragePath = `${config.storageRoot}/${year}/${month}`;
+    const report: StorageListReport = {
+      skippedNotFound: 0,
+      skippedRestricted: 0,
+      skippedUnknown: 0,
+      skippedUnparsed: 0,
+      timedOut: false,
+    };
+
     try {
       await firebaseReady;
       const storage = await getStorageInstance();
 
-      const timeoutPromise = new Promise<T[]>(resolve =>
+      const timeoutPromise = new Promise<StorageListResult<T>>(resolve =>
         setTimeout(() => {
+          report.timedOut = true;
           console.warn(`[BaseStorage] ⏱️ Timeout reached for ${fullStoragePath}`);
-          resolve([]);
+          resolve({ files: [], report: { ...report } });
         }, DEFAULT_FILES_TIMEOUT_MS)
       );
 
@@ -204,10 +240,8 @@ export const createListFilesInMonth = <
           const result = await listAll(monthRef);
 
           if (result.items.length === 0) {
-            return [];
+            return { files: [], report };
           }
-
-          // console.debug(`[BaseStorage] 🔍 Found ${result.items.length} items in ${fullStoragePath}, fetching metadata in parallel...`);
 
           const filesWithNulls = await mapWithConcurrency(
             result.items,
@@ -223,14 +257,22 @@ export const createListFilesInMonth = <
 
                 if (parsed) {
                   return config.mapToFile(item, metadata, downloadUrl, parsed);
-                } else {
-                  console.warn(`[BaseStorage] ⚠️ File skipped (failed parsing): ${item.fullPath}`);
-                  return null;
                 }
+
+                report.skippedUnparsed += 1;
+                console.warn(`[BaseStorage] ⚠️ File skipped (failed parsing): ${item.fullPath}`);
+                return null;
               } catch (error: unknown) {
-                if (isExpectedStorageLookupMiss(error)) {
+                const category = classifyStorageError(error);
+                if (category === 'not_found') {
+                  report.skippedNotFound += 1;
                   return null;
                 }
+                if (category === 'permission_denied' || category === 'unauthenticated') {
+                  report.skippedRestricted += 1;
+                  return null;
+                }
+                report.skippedUnknown += 1;
                 if (shouldLogStorageError(error)) {
                   console.error(`[BaseStorage] ‼️ Error getting file info: ${item.name}`, error);
                 }
@@ -239,7 +281,10 @@ export const createListFilesInMonth = <
             }
           );
           const files = filesWithNulls.filter(f => f !== null) as T[];
-          return files.sort((a, b) => b.date.localeCompare(a.date));
+          return {
+            files: files.sort((a, b) => b.date.localeCompare(a.date)),
+            report: { ...report },
+          };
         },
         { context: fullStoragePath }
       );
@@ -247,12 +292,14 @@ export const createListFilesInMonth = <
       return await Promise.race([listPromise, timeoutPromise]);
     } catch (error: unknown) {
       if (isExpectedStorageLookupMiss(error)) {
-        return [];
+        report.skippedRestricted += 1;
+        return { files: [], report };
       }
       if (shouldLogStorageError(error)) {
         console.warn(`[BaseStorage] Error listing files for ${fullStoragePath}:`, error);
       }
-      return [];
+      report.skippedUnknown += 1;
+      return { files: [], report };
     }
   };
 };

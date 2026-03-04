@@ -4,6 +4,8 @@ import type { SchemaCompatibilityDisposition } from '@/services/repositories/sch
 
 export type LegacyMigrationRule =
   | 'schema_defaults_applied'
+  | 'legacy_nulls_normalized'
+  | 'salvage_patient_fallback_applied'
   | 'record_invariants_normalized'
   | 'legacy_nurses_promoted_to_day_shift'
   | 'legacy_single_nurse_promoted'

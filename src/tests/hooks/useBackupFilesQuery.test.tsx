@@ -9,18 +9,48 @@ vi.mock('@/services/backup/pdfStorageService', () => ({
   listYears: vi.fn().mockResolvedValue(['2024', '2023']),
   listMonths: vi.fn().mockResolvedValue([{ name: 'Enero', number: '01' }]),
   listFilesInMonth: vi.fn().mockResolvedValue([]),
+  listFilesInMonthWithReport: vi.fn().mockResolvedValue({
+    files: [],
+    report: {
+      skippedNotFound: 0,
+      skippedRestricted: 0,
+      skippedUnknown: 0,
+      skippedUnparsed: 0,
+      timedOut: false,
+    },
+  }),
 }));
 
 vi.mock('@/services/backup/censusStorageService', () => ({
   listCensusYears: vi.fn().mockResolvedValue(['2024']),
   listCensusMonths: vi.fn().mockResolvedValue([]),
   listCensusFilesInMonth: vi.fn().mockResolvedValue([]),
+  listCensusFilesInMonthWithReport: vi.fn().mockResolvedValue({
+    files: [],
+    report: {
+      skippedNotFound: 0,
+      skippedRestricted: 0,
+      skippedUnknown: 0,
+      skippedUnparsed: 0,
+      timedOut: false,
+    },
+  }),
 }));
 
 vi.mock('@/services/backup/cudyrStorageService', () => ({
   listCudyrYears: vi.fn().mockResolvedValue(['2024']),
   listCudyrMonths: vi.fn().mockResolvedValue([]),
   listCudyrFilesInMonth: vi.fn().mockResolvedValue([]),
+  listCudyrFilesInMonthWithReport: vi.fn().mockResolvedValue({
+    files: [],
+    report: {
+      skippedNotFound: 0,
+      skippedRestricted: 0,
+      skippedUnknown: 0,
+      skippedUnparsed: 0,
+      timedOut: false,
+    },
+  }),
 }));
 
 describe('useBackupFilesQuery', () => {

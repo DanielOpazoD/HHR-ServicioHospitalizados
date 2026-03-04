@@ -165,6 +165,19 @@ describe('DailyRecordRepository', () => {
       expect(result.compatibilityIntensity).toBe('normalized_only');
       expect(result.record?.date).toBe(mockDate);
     });
+
+    it('should return previous day metadata via getPreviousDayWithMeta', async () => {
+      vi.mocked(idbService.getPreviousDayRecord).mockResolvedValue({
+        ...mockRecord,
+        date: '2024-12-31',
+      });
+
+      const result = await Repository.getPreviousDayWithMeta(mockDate);
+
+      expect(result.source).toBe('indexeddb');
+      expect(result.compatibilityTier).toBe('local_runtime');
+      expect(result.record?.date).toBe('2024-12-31');
+    });
   });
 
   describe('save', () => {

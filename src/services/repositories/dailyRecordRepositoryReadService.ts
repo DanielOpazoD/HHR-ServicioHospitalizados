@@ -156,11 +156,16 @@ export const getAvailableDates = async (): Promise<string[]> => {
 };
 
 export const getPreviousDay = async (date: string): Promise<DailyRecord | null> => {
+  const result = await getPreviousDayWithMeta(date);
+  return result.record;
+};
+
+export const getPreviousDayWithMeta = async (date: string): Promise<DailyRecordReadResult> => {
   const query = createGetPreviousDayQuery(date);
 
   const localRecord = await getPreviousDayFromIndexedDB(query.date);
   if (localRecord) {
-    return migrateLegacyData(localRecord, localRecord.date);
+    return createLocalRuntimeReadResult(localRecord.date, localRecord, 'indexeddb');
   }
 
   if (isFirestoreEnabled()) {
@@ -169,12 +174,12 @@ export const getPreviousDay = async (date: string): Promise<DailyRecord | null> 
       const prevDate = allDates.find(d => d < query.date);
 
       if (prevDate) {
-        return await getForDate(prevDate);
+        return await getForDateWithMeta(prevDate);
       }
     } catch (err) {
       console.warn('[Repository] getPreviousDay remote check failed:', err);
     }
   }
 
-  return null;
+  return createDailyRecordReadResult(query.date, null, 'not_found');
 };

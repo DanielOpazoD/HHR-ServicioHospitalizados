@@ -14,6 +14,14 @@ export type StorageErrorCategory =
   | 'timeout'
   | 'unknown';
 
+export type StorageLookupStatus =
+  | 'available'
+  | 'missing'
+  | 'restricted'
+  | 'invalid_date'
+  | 'timeout'
+  | 'error';
+
 const NOT_FOUND_CODES = new Set(['storage/object-not-found', 'storage/invalid-root-operation']);
 const PERMISSION_CODES = new Set(['storage/unauthorized', 'storage/permission-denied']);
 const UNAUTHENTICATED_CODES = new Set(['storage/unauthenticated']);
@@ -80,4 +88,28 @@ export const isExpectedStorageLookupMiss = (error: unknown): boolean => {
 
 export const shouldLogStorageError = (error: unknown): boolean => {
   return classifyStorageError(error) === 'unknown';
+};
+
+export const resolveStorageLookupStatus = (
+  error: unknown,
+  options: { invalidDate?: boolean; timedOut?: boolean } = {}
+): StorageLookupStatus => {
+  if (options.invalidDate) {
+    return 'invalid_date';
+  }
+  if (options.timedOut) {
+    return 'timeout';
+  }
+
+  const category = classifyStorageError(error);
+  if (category === 'not_found') {
+    return 'missing';
+  }
+  if (category === 'permission_denied' || category === 'unauthenticated') {
+    return 'restricted';
+  }
+  if (category === 'timeout') {
+    return 'timeout';
+  }
+  return 'error';
 };

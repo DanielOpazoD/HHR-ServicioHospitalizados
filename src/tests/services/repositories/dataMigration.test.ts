@@ -132,4 +132,25 @@ describe('Data Migration Service - Staff Fields', () => {
     expect(migrated.compatibilityIntensity).toBe('normalized_only');
     expect(migrated.compatibilityDisposition).toBe('current');
   });
+
+  it('reports null normalization and patient fallback when legacy records are malformed', () => {
+    const record = createBaseRecord({
+      beds: {
+        R1: {
+          patientName: 'Paciente Legacy',
+          status: 'ESTADO_INVALIDO',
+          clinicalEvents: [null],
+        } as unknown as DailyRecord['beds'][string],
+      },
+      discharges: [null] as unknown as DailyRecord['discharges'],
+      schemaVersion: 1,
+    });
+
+    const migrated = migrateLegacyDataWithReport(record, mockDate);
+
+    expect(migrated.appliedRules).toContain('legacy_nulls_normalized');
+    expect(migrated.appliedRules).toContain('salvage_patient_fallback_applied');
+    expect(migrated.record.beds.R1.patientName).toBe('Paciente Legacy');
+    expect(migrated.compatibilityIntensity).toBe('normalized_only');
+  });
 });
