@@ -34,6 +34,42 @@ export const CLINICAL_DOCUMENT_EPICRISIS_SECTIONS: ClinicalDocumentSectionTempla
   { id: 'plan', title: 'Plan', order: 4, required: true, visible: true },
 ] as const;
 
+export const CLINICAL_DOCUMENT_EVOLUTION_SECTIONS: ClinicalDocumentSectionTemplate[] = [
+  { id: 'antecedentes', title: 'Antecedentes', order: 0, required: false, visible: true },
+  {
+    id: 'historia-evolucion',
+    title: 'Historia y evolución clínica',
+    order: 1,
+    required: true,
+    visible: true,
+  },
+  { id: 'plan', title: 'Plan', order: 2, required: true, visible: true },
+] as const;
+
+export const CLINICAL_DOCUMENT_MEDICAL_REPORT_SECTIONS: ClinicalDocumentSectionTemplate[] = [
+  { id: 'antecedentes', title: 'Antecedentes', order: 0, required: false, visible: true },
+  {
+    id: 'historia-evolucion',
+    title: 'Historia y evolución clínica',
+    order: 1,
+    required: true,
+    visible: true,
+  },
+  {
+    id: 'examenes-complementarios',
+    title: 'Exámenes complementarios',
+    order: 2,
+    required: false,
+    visible: true,
+  },
+  { id: 'diagnosticos', title: 'Diagnósticos', order: 3, required: false, visible: true },
+  { id: 'plan', title: 'Plan', order: 4, required: true, visible: true },
+] as const;
+
+export const CLINICAL_DOCUMENT_CUSTOM_SECTIONS: ClinicalDocumentSectionTemplate[] = [
+  { id: 'contenido', title: 'Contenido', order: 0, required: true, visible: true },
+] as const;
+
 export const CLINICAL_DOCUMENT_TEMPLATES: Record<string, ClinicalDocumentTemplate> = {
   epicrisis: {
     id: 'epicrisis',
@@ -44,6 +80,58 @@ export const CLINICAL_DOCUMENT_TEMPLATES: Record<string, ClinicalDocumentTemplat
     patientFields: [...CLINICAL_DOCUMENT_PATIENT_FIELDS],
     sections: [...CLINICAL_DOCUMENT_EPICRISIS_SECTIONS],
     allowCustomTitle: false,
+    allowAddSection: false,
+    allowClinicalUpdateSections: false,
+    status: 'active',
+  },
+  evolucion: {
+    id: 'evolucion',
+    documentType: 'evolucion',
+    name: 'Evolución médica',
+    title: 'Evolución médica',
+    version: 1,
+    patientFields: [...CLINICAL_DOCUMENT_PATIENT_FIELDS],
+    sections: [...CLINICAL_DOCUMENT_EVOLUTION_SECTIONS],
+    allowCustomTitle: false,
+    allowAddSection: false,
+    allowClinicalUpdateSections: false,
+    status: 'active',
+  },
+  informe_medico: {
+    id: 'informe_medico',
+    documentType: 'informe_medico',
+    name: 'Informe médico',
+    title: 'Informe médico',
+    version: 1,
+    patientFields: [...CLINICAL_DOCUMENT_PATIENT_FIELDS],
+    sections: [...CLINICAL_DOCUMENT_MEDICAL_REPORT_SECTIONS],
+    allowCustomTitle: false,
+    allowAddSection: false,
+    allowClinicalUpdateSections: false,
+    status: 'active',
+  },
+  epicrisis_traslado: {
+    id: 'epicrisis_traslado',
+    documentType: 'epicrisis_traslado',
+    name: 'Epicrisis médica de traslado',
+    title: 'Epicrisis médica de traslado',
+    version: 1,
+    patientFields: [...CLINICAL_DOCUMENT_PATIENT_FIELDS],
+    sections: [...CLINICAL_DOCUMENT_MEDICAL_REPORT_SECTIONS],
+    allowCustomTitle: false,
+    allowAddSection: false,
+    allowClinicalUpdateSections: false,
+    status: 'active',
+  },
+  otro: {
+    id: 'otro',
+    documentType: 'otro',
+    name: 'Otro documento',
+    title: 'Documento clínico',
+    version: 1,
+    patientFields: [...CLINICAL_DOCUMENT_PATIENT_FIELDS],
+    sections: [...CLINICAL_DOCUMENT_CUSTOM_SECTIONS],
+    allowCustomTitle: true,
     allowAddSection: false,
     allowClinicalUpdateSections: false,
     status: 'active',

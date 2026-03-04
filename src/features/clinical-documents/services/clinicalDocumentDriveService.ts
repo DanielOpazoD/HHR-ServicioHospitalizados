@@ -3,7 +3,7 @@ import { uploadToDriveFolder } from '@/services/google/googleDriveFolders';
 
 const ROOT_FOLDER = 'Hospitalizados';
 const CLINICAL_FOLDER = 'Documentos Clinicos';
-const EPICRISIS_FOLDER = 'Epicrisis';
+const DOCUMENT_ROOT_FOLDER = 'Documentos Clinicos';
 const FOLDER_MIME_TYPE = 'application/vnd.google-apps.folder';
 
 const findFolderByName = async (
@@ -71,6 +71,7 @@ const getOrCreateFolder = async (
 export const uploadClinicalDocumentPdfToDrive = async (
   blob: Blob,
   fileName: string,
+  documentType: string,
   patientName: string,
   patientRut: string,
   episodeKey: string,
@@ -80,17 +81,20 @@ export const uploadClinicalDocumentPdfToDrive = async (
   const year = now.getFullYear().toString();
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const patientFolder = `${patientName.trim().replace(/\s+/g, '_')}_${patientRut.replace(/[.\-]/g, '')}_${episodeKey}`;
+  const documentFolder = documentType
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, letter => letter.toUpperCase());
 
   const rootId = await getOrCreateFolder(token, ROOT_FOLDER);
-  const clinicalId = await getOrCreateFolder(token, CLINICAL_FOLDER, rootId);
-  const epicrisisId = await getOrCreateFolder(token, EPICRISIS_FOLDER, clinicalId);
-  const yearId = await getOrCreateFolder(token, year, epicrisisId);
+  const clinicalId = await getOrCreateFolder(token, DOCUMENT_ROOT_FOLDER, rootId);
+  const typeId = await getOrCreateFolder(token, documentFolder, clinicalId);
+  const yearId = await getOrCreateFolder(token, year, typeId);
   const monthId = await getOrCreateFolder(token, month, yearId);
   const patientId = await getOrCreateFolder(token, patientFolder, monthId);
 
   const upload = await uploadToDriveFolder(token, blob, fileName, patientId);
   return {
     ...upload,
-    folderPath: `${ROOT_FOLDER}/${CLINICAL_FOLDER}/${EPICRISIS_FOLDER}/${year}/${month}/${patientFolder}`,
+    folderPath: `${ROOT_FOLDER}/${DOCUMENT_ROOT_FOLDER}/${documentFolder}/${year}/${month}/${patientFolder}`,
   };
 };
