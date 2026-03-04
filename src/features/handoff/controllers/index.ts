@@ -40,6 +40,7 @@ export {
   buildMedicalEntrySpecialtyFields,
   buildMedicalPrimaryNoteFields,
 } from './medicalPatientHandoffMutationController';
+export { resolveHandoffScreenState } from './handoffScreenController';
 export {
   buildMedicalSpecialtyLink,
   collectMedicalSpecialties,

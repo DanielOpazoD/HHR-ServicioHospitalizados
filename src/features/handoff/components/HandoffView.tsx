@@ -18,14 +18,8 @@ import { getAttributedAuthors } from '@/services/admin/attributionService';
 import { useUIState, UseUIStateReturn } from '@/hooks/useUIState';
 import { useAuth } from '@/context';
 import {
-  collectMedicalSpecialties,
-  filterBedsByMedicalScope,
-  filterBedsBySelectedMedicalSpecialty,
-  hasVisibleMedicalPatients,
   resolveInitialMedicalSpecialtyFromSearch,
-  resolveMedicalHandoffScope,
-  resolveScopedMedicalHandoffSentAt,
-  resolveScopedMedicalSignature,
+  resolveHandoffScreenState,
   type MedicalHandoffScope,
   resolveHandoffDocumentTitle,
   resolveHandoffTableHeaderClass,
@@ -115,14 +109,27 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
     onSuccess: success,
   });
 
-  const scopedMedicalScope = resolveMedicalHandoffScope(medicalScope);
-  const filteredMedicalBeds = React.useMemo(() => {
-    return filterBedsByMedicalScope(visibleBeds, record, isMedical, scopedMedicalScope);
-  }, [isMedical, scopedMedicalScope, visibleBeds, record]);
-  const effectiveVisibleBeds = isMedical ? filteredMedicalBeds : visibleBeds;
-  const medicalSpecialties = React.useMemo(() => {
-    return collectMedicalSpecialties(effectiveVisibleBeds, record, isMedical);
-  }, [effectiveVisibleBeds, isMedical, record]);
+  const {
+    scopedMedicalScope,
+    effectiveVisibleBeds,
+    medicalSpecialties,
+    specialtyFilteredBeds,
+    scopedMedicalSignature,
+    scopedMedicalHandoffSentAt,
+    hasAnyVisiblePatients,
+  } = React.useMemo(
+    () =>
+      resolveHandoffScreenState({
+        visibleBeds,
+        record,
+        isMedical,
+        medicalScope,
+        selectedMedicalSpecialty,
+        shouldShowPatient,
+      }),
+    [visibleBeds, record, isMedical, medicalScope, selectedMedicalSpecialty, shouldShowPatient]
+  );
+
   useEffect(() => {
     if (
       selectedMedicalSpecialty !== 'all' &&
@@ -131,25 +138,6 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
       setSelectedMedicalSpecialty('all');
     }
   }, [medicalSpecialties, selectedMedicalSpecialty]);
-  const specialtyFilteredBeds = React.useMemo(() => {
-    return filterBedsBySelectedMedicalSpecialty(
-      effectiveVisibleBeds,
-      record,
-      isMedical,
-      selectedMedicalSpecialty
-    );
-  }, [effectiveVisibleBeds, isMedical, record, selectedMedicalSpecialty]);
-  const scopedMedicalSignature = isMedical
-    ? resolveScopedMedicalSignature(record, scopedMedicalScope)
-    : null;
-  const scopedMedicalHandoffSentAt = isMedical
-    ? resolveScopedMedicalHandoffSentAt(record, scopedMedicalScope)
-    : null;
-  const hasAnyVisiblePatients = hasVisibleMedicalPatients(
-    specialtyFilteredBeds,
-    record,
-    shouldShowPatient
-  );
 
   // MINSAL Traceability: Log when clinical data is viewed
   const { userId } = useAuditContext();

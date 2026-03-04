@@ -1,0 +1,8 @@
+{
+  "files": {
+    "src/features/transfers/components/TransferManagementView.tsx": 420,
+    "src/features/transfers/components/components/TransferFormModal.tsx": 360,
+    "src/features/transfers/components/components/QuestionInput.tsx": 340,
+    "src/features/transfers/components/components/TransferQuestionnaireModal.tsx": 320
+  }
+}
