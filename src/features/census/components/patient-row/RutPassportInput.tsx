@@ -48,6 +48,9 @@ export const RutPassportInput: React.FC<RutPassportInputProps> = ({
 
   // Validation logic for visual feedback
   const isRutValid = documentType === 'RUT' && !!value && value !== '-' && isValidRut(value);
+  const hasRutValue =
+    documentType === 'RUT' && !!value && value.trim() !== '' && value.trim() !== '-';
+  const isRutInvalid = hasRutValue && !isRutValid;
 
   // Show empty state for main row when no patient
   if (isEmpty && !isSubRow) {
@@ -62,7 +65,7 @@ export const RutPassportInput: React.FC<RutPassportInputProps> = ({
         <DebouncedInput
           type="text"
           className={clsx(
-            'w-full p-0.5 h-7 border rounded focus:ring-2 focus:outline-none text-xs pr-2 transition-all',
+            'w-full p-0.5 h-7 border rounded focus:ring-2 focus:outline-none text-xs pr-5 transition-all',
             isSubRow && 'h-6',
             isAutoLockedByRnPlaceholder && 'bg-slate-100 text-slate-500 cursor-not-allowed',
             documentType === 'Pasaporte'
@@ -71,13 +74,13 @@ export const RutPassportInput: React.FC<RutPassportInputProps> = ({
                 : 'border-slate-300 bg-white'
               : hasError && value !== '0' && value !== ''
                 ? 'border-red-400 bg-red-50/50'
-                : isRutValid
-                  ? 'border-emerald-500 bg-emerald-50/30 font-bold text-emerald-700'
+                : isRutInvalid
+                  ? 'border-red-300 bg-red-50/30'
                   : 'border-slate-300 bg-white',
             hasError && value !== '0' && value !== ''
               ? 'focus:ring-red-200 focus:border-red-500'
-              : isRutValid
-                ? 'focus:ring-emerald-200 focus:border-emerald-500'
+              : isRutInvalid
+                ? 'focus:ring-red-100 focus:border-red-400'
                 : 'focus:ring-medical-500 focus:border-medical-500'
           )}
           placeholder={
@@ -159,6 +162,19 @@ export const RutPassportInput: React.FC<RutPassportInputProps> = ({
               </svg>
             </button>
           )}
+
+        {documentType === 'RUT' && hasRutValue && !isAutoLockedByRnPlaceholder && (
+          <span
+            className={clsx(
+              'absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none select-none inline-flex items-center justify-center w-3 h-3 text-[10px] font-semibold leading-none',
+              isRutValid ? 'text-slate-500' : 'text-red-500'
+            )}
+            aria-hidden="true"
+            title={isRutValid ? 'RUT válido' : 'RUT inválido'}
+          >
+            {isRutValid ? '✓' : '✕'}
+          </span>
+        )}
       </div>
     </td>
   );

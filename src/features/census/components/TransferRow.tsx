@@ -20,7 +20,7 @@ export const TransferRow: React.FC<TransferRowProps> = React.memo(
       deleteTransfer: onDelete,
     });
 
-    return <TransferRowView viewModel={viewModel} recordDate={recordDate} />;
+    return <TransferRowView viewModel={viewModel} recordDate={recordDate} transferItem={item} />;
   }
 );
 

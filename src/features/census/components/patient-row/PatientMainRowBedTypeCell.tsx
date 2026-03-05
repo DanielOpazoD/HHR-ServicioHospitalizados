@@ -2,7 +2,6 @@ import React from 'react';
 import { Plane, RefreshCcw } from 'lucide-react';
 import { MedicalBadge } from '@/components/ui/base/MedicalBadge';
 import { BedType } from '@/types';
-import { isIntensiveBedType } from '@/utils/bedTypeUtils';
 import { useBedActiveTransferQuery } from '@/features/census/components/patient-row/useBedActiveTransferQuery';
 
 interface PatientMainRowBedTypeCellProps {
@@ -42,7 +41,7 @@ export const PatientMainRowBedTypeCell: React.FC<PatientMainRowBedTypeCellProps>
       )}
       <div className="flex flex-col items-center gap-1 py-1">
         <MedicalBadge
-          variant={isIntensiveBedType(bedType) ? 'pink' : 'blue'}
+          variant={bedType === BedType.UCI ? 'red' : bedType === BedType.UTI ? 'purple' : 'blue'}
           className="w-10 justify-center mx-auto"
         >
           {bedType}

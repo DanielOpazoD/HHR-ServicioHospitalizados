@@ -26,14 +26,6 @@ export const DeviceBadge: React.FC<DeviceBadgeProps> = React.memo(
       ? calculateDeviceDays(details.installationDate, currentDate)
       : null;
 
-    // Alert colors based on days
-    const isAlert =
-      days !== null &&
-      ((device === 'CUP' && days >= 5) ||
-        (device === 'CVC' && days >= 7) ||
-        (device === 'TET' && days >= 5) ||
-        (device.startsWith('VVP') && days >= 4));
-
     // Format tooltip text
     const tooltipText = details?.installationDate
       ? `FI: ${formatDateDDMMYYYY(details.installationDate)}`
@@ -42,8 +34,8 @@ export const DeviceBadge: React.FC<DeviceBadgeProps> = React.memo(
     return (
       <span className="relative group/badge inline-flex">
         <MedicalBadge
-          variant={isAlert ? 'orange' : 'blue'}
-          className="whitespace-nowrap flex items-center gap-0.5 px-0.5"
+          variant="blue"
+          className="whitespace-nowrap flex items-center gap-0.5 px-0.5 bg-sky-100 border-sky-200 text-black print:bg-transparent print:text-black"
           pill={false}
         >
           {badgeText}
