@@ -1,13 +1,16 @@
 import React from 'react';
 import { PatientActionMenu } from './PatientActionMenu';
-import type { PatientActionMenuCallbacks, RowMenuAlign } from './patientRowContracts';
+import type {
+  PatientActionMenuCallbacks,
+  PatientActionMenuIndicators,
+  RowMenuAlign,
+} from './patientRowContracts';
 
-interface PatientMainRowActionCellProps extends PatientActionMenuCallbacks {
+interface PatientMainRowActionCellProps
+  extends PatientActionMenuCallbacks, Required<PatientActionMenuIndicators> {
   isBlocked: boolean;
   readOnly: boolean;
   align: RowMenuAlign;
-  hasClinicalDocument: boolean;
-  isNewAdmission: boolean;
 }
 
 export const PatientMainRowActionCell: React.FC<PatientMainRowActionCellProps> = ({

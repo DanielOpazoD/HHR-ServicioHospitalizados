@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import type { PatientRowCapabilities } from '@/features/census/controllers/patientRowCapabilitiesController';
 
 interface ResolveBedTypeToggleVisibilityParams {
   bedId: string;
@@ -30,15 +31,19 @@ export const resolvePatientMainRowClassName = ({
   );
 
 export const resolvePatientMainRowActionsAvailability = (
-  data: { patientName?: string; rut?: string } | null | undefined
+  capabilities: PatientRowCapabilities
 ): {
   canOpenClinicalDocuments: boolean;
   canOpenExamRequest: boolean;
+  canOpenImagingRequest: boolean;
   canOpenHistory: boolean;
+  canShowClinicalDocumentIndicator: boolean;
 } => ({
-  canOpenClinicalDocuments: Boolean(data?.patientName),
-  canOpenExamRequest: Boolean(data?.patientName),
-  canOpenHistory: Boolean(data?.rut),
+  canOpenClinicalDocuments: capabilities.canOpenClinicalDocuments,
+  canOpenExamRequest: capabilities.canOpenExamRequest,
+  canOpenImagingRequest: capabilities.canOpenImagingRequest,
+  canOpenHistory: capabilities.canOpenHistory,
+  canShowClinicalDocumentIndicator: capabilities.canShowClinicalDocumentIndicator,
 });
 
 interface BuildPatientMainRowViewStateParams {
@@ -46,8 +51,8 @@ interface BuildPatientMainRowViewStateParams {
   readOnly: boolean;
   isEmpty: boolean;
   isBlocked: boolean;
+  capabilities: PatientRowCapabilities;
   patientName?: string;
-  rut?: string;
 }
 
 export interface PatientMainRowViewState {
@@ -56,7 +61,9 @@ export interface PatientMainRowViewState {
   rowActionsAvailability: {
     canOpenClinicalDocuments: boolean;
     canOpenExamRequest: boolean;
+    canOpenImagingRequest: boolean;
     canOpenHistory: boolean;
+    canShowClinicalDocumentIndicator: boolean;
   };
   showBlockedContent: boolean;
 }
@@ -66,11 +73,11 @@ export const buildPatientMainRowViewState = ({
   readOnly,
   isEmpty,
   isBlocked,
+  capabilities,
   patientName,
-  rut,
 }: BuildPatientMainRowViewStateParams): PatientMainRowViewState => ({
   canToggleBedType: shouldShowBedTypeToggle({ bedId, readOnly, isEmpty }),
   rowClassName: resolvePatientMainRowClassName({ isBlocked, patientName }),
-  rowActionsAvailability: resolvePatientMainRowActionsAvailability({ patientName, rut }),
+  rowActionsAvailability: resolvePatientMainRowActionsAvailability(capabilities),
   showBlockedContent: isBlocked,
 });

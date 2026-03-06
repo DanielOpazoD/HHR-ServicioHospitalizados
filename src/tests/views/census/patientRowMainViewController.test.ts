@@ -5,6 +5,7 @@ import {
   resolvePatientMainRowClassName,
   shouldShowBedTypeToggle,
 } from '@/features/census/controllers/patientRowMainViewController';
+import { resolvePatientRowCapabilities } from '@/features/census/controllers/patientRowCapabilitiesController';
 
 describe('patientRowMainViewController', () => {
   it('shows bed type toggle only for editable occupied R beds', () => {
@@ -55,21 +56,34 @@ describe('patientRowMainViewController', () => {
 
     expect(
       resolvePatientMainRowActionsAvailability({
-        patientName: 'Paciente',
-        rut: '1-9',
+        canOpenClinicalDocuments: true,
+        canOpenExamRequest: true,
+        canOpenImagingRequest: true,
+        canOpenHistory: true,
+        canShowClinicalDocumentIndicator: true,
       })
     ).toEqual({
+      canOpenClinicalDocuments: true,
       canOpenExamRequest: true,
+      canOpenImagingRequest: true,
       canOpenHistory: true,
+      canShowClinicalDocumentIndicator: true,
     });
     expect(
-      resolvePatientMainRowActionsAvailability({
-        patientName: '',
-        rut: '',
-      })
+      resolvePatientMainRowActionsAvailability(
+        resolvePatientRowCapabilities({
+          role: 'viewer',
+          patient: { patientName: '', rut: '' },
+          isBlocked: false,
+          isEmpty: true,
+        })
+      )
     ).toEqual({
+      canOpenClinicalDocuments: false,
       canOpenExamRequest: false,
+      canOpenImagingRequest: false,
       canOpenHistory: false,
+      canShowClinicalDocumentIndicator: false,
     });
   });
 
@@ -79,12 +93,18 @@ describe('patientRowMainViewController', () => {
       readOnly: false,
       isEmpty: false,
       isBlocked: true,
+      capabilities: resolvePatientRowCapabilities({
+        role: 'doctor_urgency',
+        patient: { patientName: 'Paciente', rut: '' },
+        isBlocked: true,
+        isEmpty: false,
+      }),
       patientName: 'Paciente',
-      rut: '',
     });
 
     expect(viewState.canToggleBedType).toBe(true);
     expect(viewState.rowActionsAvailability.canOpenExamRequest).toBe(true);
+    expect(viewState.rowActionsAvailability.canOpenImagingRequest).toBe(true);
     expect(viewState.rowActionsAvailability.canOpenHistory).toBe(false);
     expect(viewState.showBlockedContent).toBe(true);
   });

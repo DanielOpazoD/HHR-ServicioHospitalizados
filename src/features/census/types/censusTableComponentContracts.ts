@@ -5,7 +5,7 @@ import type {
   OccupiedBedRow,
 } from '@/features/census/types/censusTableTypes';
 import type { PatientRowAction } from '@/features/census/types/patientRowActionTypes';
-import type { BedDefinition, PatientData } from '@/types';
+import type { BedDefinition, PatientData, UserRole } from '@/types';
 
 export interface CensusTableHeaderProps {
   readOnly: boolean;
@@ -26,6 +26,7 @@ export interface CensusTableBodyProps {
   readOnly: boolean;
   diagnosisMode: DiagnosisMode;
   bedTypes: BedTypesById;
+  role?: UserRole;
   clinicalDocumentPresenceByBedId: Record<string, boolean>;
   onAction: (action: PatientRowAction, bedId: string, patient: PatientData) => void;
   onActivateEmptyBed: (bedId: string) => void;

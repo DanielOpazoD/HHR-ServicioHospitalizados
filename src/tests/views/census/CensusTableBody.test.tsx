@@ -47,6 +47,7 @@ describe('CensusTableBody', () => {
           readOnly={false}
           diagnosisMode="free"
           bedTypes={{}}
+          role="viewer_census"
           clinicalDocumentPresenceByBedId={{}}
           onAction={vi.fn()}
           onActivateEmptyBed={vi.fn()}
@@ -58,6 +59,7 @@ describe('CensusTableBody', () => {
     expect(patientRowSpy.mock.calls[0][0].actionMenuAlign).toBe('top');
     expect(patientRowSpy.mock.calls[2][0].actionMenuAlign).toBe('bottom');
     expect(patientRowSpy.mock.calls[5][0].actionMenuAlign).toBe('bottom');
+    expect(patientRowSpy.mock.calls[0][0].role).toBe('viewer_census');
   });
 
   it('renders empty bed divider and forwards empty bed activation', () => {
@@ -77,6 +79,7 @@ describe('CensusTableBody', () => {
           readOnly={false}
           diagnosisMode="free"
           bedTypes={{}}
+          role="viewer_census"
           clinicalDocumentPresenceByBedId={{}}
           onAction={vi.fn()}
           onActivateEmptyBed={onActivateEmptyBed}

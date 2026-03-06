@@ -1,0 +1,148 @@
+import type { DiagnosisMode } from '@/features/census/types/censusTableTypes';
+import type { BedDefinition, BedType, PatientData } from '@/types';
+import type { RowMenuAlign } from '@/features/census/components/patient-row/patientRowContracts';
+import type {
+  PatientMainRowBindings,
+  PatientRowModalsBindings,
+  PatientSubRowBindings,
+  PatientRowRuntime,
+} from '@/features/census/components/patient-row/patientRowRuntimeContracts';
+import type { PatientRowCapabilities } from '@/features/census/controllers/patientRowCapabilitiesController';
+import { buildPatientMainRowViewState } from '@/features/census/controllers/patientRowMainViewController';
+
+export interface PatientRowResolvedIndicators {
+  hasClinicalDocument: boolean;
+  isNewAdmission: boolean;
+}
+
+export interface PatientRowViewContext {
+  capabilities: PatientRowCapabilities;
+  indicators: PatientRowResolvedIndicators;
+}
+
+interface BuildMainSectionBindingsParams {
+  bed: BedDefinition;
+  bedType: BedType;
+  data: PatientData;
+  currentDateString: string;
+  readOnly: boolean;
+  actionMenuAlign: RowMenuAlign;
+  diagnosisMode: DiagnosisMode;
+  style?: React.CSSProperties;
+  runtime: PatientRowRuntime;
+  viewContext: PatientRowViewContext;
+}
+
+export const buildPatientMainSectionBindings = ({
+  bed,
+  bedType,
+  data,
+  currentDateString,
+  readOnly,
+  actionMenuAlign,
+  diagnosisMode,
+  style,
+  runtime,
+  viewContext,
+}: BuildMainSectionBindingsParams): PatientMainRowBindings => {
+  const mainRowViewState = buildPatientMainRowViewState({
+    bedId: bed.id,
+    readOnly,
+    isEmpty: runtime.rowState.isEmpty,
+    isBlocked: runtime.rowState.isBlocked,
+    capabilities: viewContext.capabilities,
+    patientName: data.patientName,
+  });
+
+  return {
+    bed,
+    bedType,
+    data,
+    currentDateString,
+    style,
+    readOnly,
+    actionMenuAlign,
+    diagnosisMode,
+    isBlocked: runtime.rowState.isBlocked,
+    isEmpty: runtime.rowState.isEmpty,
+    hasCompanion: runtime.rowState.hasCompanion,
+    hasClinicalCrib: runtime.rowState.hasClinicalCrib,
+    isCunaMode: runtime.rowState.isCunaMode,
+    indicators: viewContext.indicators,
+    mainRowViewState,
+    onAction: runtime.handleAction,
+    onOpenDemographics: runtime.uiState.openDemographics,
+    onOpenClinicalDocuments: runtime.uiState.openClinicalDocuments,
+    onOpenExamRequest: runtime.uiState.openExamRequest,
+    onOpenImagingRequest: runtime.uiState.openImagingRequest,
+    onOpenHistory: runtime.uiState.openHistory,
+    onToggleMode: runtime.bedConfigActions.toggleBedMode,
+    onToggleCompanion: runtime.bedConfigActions.toggleCompanionCrib,
+    onToggleClinicalCrib: runtime.bedConfigActions.toggleClinicalCrib,
+    onToggleBedType: runtime.bedTypeToggles.onToggleBedType,
+    onUpdateClinicalCrib: runtime.bedTypeToggles.onUpdateClinicalCrib,
+    onChange: runtime.handlers.mainInputChangeHandlers,
+  };
+};
+
+interface BuildSubSectionBindingsParams {
+  data: PatientData;
+  currentDateString: string;
+  readOnly: boolean;
+  diagnosisMode: DiagnosisMode;
+  style?: React.CSSProperties;
+  runtime: PatientRowRuntime;
+}
+
+export const buildPatientSubSectionBindings = ({
+  data,
+  currentDateString,
+  readOnly,
+  diagnosisMode,
+  style,
+  runtime,
+}: BuildSubSectionBindingsParams): PatientSubRowBindings => ({
+  data,
+  currentDateString,
+  readOnly,
+  diagnosisMode,
+  style,
+  onOpenDemographics: runtime.uiState.openDemographics,
+  onChange: runtime.handlers.cribInputChangeHandlers,
+});
+
+interface BuildModalSectionBindingsParams {
+  bedId: string;
+  data: PatientData;
+  currentDateString: string;
+  isSubRow: boolean;
+  runtime: PatientRowRuntime;
+  viewContext: PatientRowViewContext;
+}
+
+export const buildPatientModalSectionBindings = ({
+  bedId,
+  data,
+  currentDateString,
+  isSubRow,
+  runtime,
+  viewContext,
+}: BuildModalSectionBindingsParams): PatientRowModalsBindings => ({
+  bedId,
+  data,
+  currentDateString,
+  isSubRow,
+  showDemographics: runtime.uiState.showDemographics,
+  showClinicalDocuments: runtime.uiState.showClinicalDocuments,
+  canOpenClinicalDocuments: viewContext.capabilities.canOpenClinicalDocuments,
+  showExamRequest: runtime.uiState.showExamRequest,
+  showImagingRequest: runtime.uiState.showImagingRequest,
+  showHistory: runtime.uiState.showHistory,
+  onCloseDemographics: runtime.uiState.closeDemographics,
+  onCloseClinicalDocuments: runtime.uiState.closeClinicalDocuments,
+  onCloseExamRequest: runtime.uiState.closeExamRequest,
+  onCloseImagingRequest: runtime.uiState.closeImagingRequest,
+  onCloseHistory: runtime.uiState.closeHistory,
+  onSaveDemographics: runtime.modalSavers.onSaveDemographics,
+  onSaveCribDemographics: runtime.modalSavers.onSaveCribDemographics,
+});

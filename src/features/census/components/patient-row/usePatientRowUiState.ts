@@ -1,5 +1,13 @@
 import { useCallback, useState } from 'react';
 
+type PatientRowModalKind =
+  | 'demographics'
+  | 'clinicalDocuments'
+  | 'examRequest'
+  | 'imagingRequest'
+  | 'history'
+  | null;
+
 interface UsePatientRowUiStateResult {
   showDemographics: boolean;
   showClinicalDocuments: boolean;
@@ -19,29 +27,40 @@ interface UsePatientRowUiStateResult {
 }
 
 export const usePatientRowUiState = (): UsePatientRowUiStateResult => {
-  const [showDemographics, setShowDemographics] = useState(false);
-  const [showClinicalDocuments, setShowClinicalDocuments] = useState(false);
-  const [showExamRequest, setShowExamRequest] = useState(false);
-  const [showImagingRequest, setShowImagingRequest] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
+  const [activeModal, setActiveModal] = useState<PatientRowModalKind>(null);
 
-  const openDemographics = useCallback(() => setShowDemographics(true), []);
-  const closeDemographics = useCallback(() => setShowDemographics(false), []);
-  const openClinicalDocuments = useCallback(() => setShowClinicalDocuments(true), []);
-  const closeClinicalDocuments = useCallback(() => setShowClinicalDocuments(false), []);
-  const openExamRequest = useCallback(() => setShowExamRequest(true), []);
-  const closeExamRequest = useCallback(() => setShowExamRequest(false), []);
-  const openImagingRequest = useCallback(() => setShowImagingRequest(true), []);
-  const closeImagingRequest = useCallback(() => setShowImagingRequest(false), []);
-  const openHistory = useCallback(() => setShowHistory(true), []);
-  const closeHistory = useCallback(() => setShowHistory(false), []);
+  const openDemographics = useCallback(() => setActiveModal('demographics'), []);
+  const closeDemographics = useCallback(
+    () => setActiveModal(current => (current === 'demographics' ? null : current)),
+    []
+  );
+  const openClinicalDocuments = useCallback(() => setActiveModal('clinicalDocuments'), []);
+  const closeClinicalDocuments = useCallback(
+    () => setActiveModal(current => (current === 'clinicalDocuments' ? null : current)),
+    []
+  );
+  const openExamRequest = useCallback(() => setActiveModal('examRequest'), []);
+  const closeExamRequest = useCallback(
+    () => setActiveModal(current => (current === 'examRequest' ? null : current)),
+    []
+  );
+  const openImagingRequest = useCallback(() => setActiveModal('imagingRequest'), []);
+  const closeImagingRequest = useCallback(
+    () => setActiveModal(current => (current === 'imagingRequest' ? null : current)),
+    []
+  );
+  const openHistory = useCallback(() => setActiveModal('history'), []);
+  const closeHistory = useCallback(
+    () => setActiveModal(current => (current === 'history' ? null : current)),
+    []
+  );
 
   return {
-    showDemographics,
-    showClinicalDocuments,
-    showExamRequest,
-    showImagingRequest,
-    showHistory,
+    showDemographics: activeModal === 'demographics',
+    showClinicalDocuments: activeModal === 'clinicalDocuments',
+    showExamRequest: activeModal === 'examRequest',
+    showImagingRequest: activeModal === 'imagingRequest',
+    showHistory: activeModal === 'history',
     openDemographics,
     closeDemographics,
     openClinicalDocuments,

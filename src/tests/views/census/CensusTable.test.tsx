@@ -15,8 +15,10 @@ import {
 } from '@/context/useDailyRecordScopedActions';
 import { useTableConfig } from '@/context/TableConfigContext';
 import { useConfirmDialog, useNotification } from '@/context/UIContext';
+import { useAuth } from '@/context/AuthContext';
 import { useCensusActionCommands } from '@/features/census/context/censusActionContexts';
 import { CensusTable } from '@/features/census/components/CensusTable';
+import { useClinicalDocumentPresenceByBed } from '@/features/census/hooks/useClinicalDocumentPresenceByBed';
 import { DataFactory } from '../../factories/DataFactory';
 
 vi.mock('@tanstack/react-virtual', () => ({
@@ -57,6 +59,16 @@ vi.mock('@/context/DailyRecordContext', () => ({
 vi.mock('@/context/useDailyRecordScopedActions', () => ({
   useDailyRecordBedActions: vi.fn(),
   useDailyRecordDayActions: vi.fn(),
+}));
+
+vi.mock('@/features/census/hooks/useClinicalDocumentPresenceByBed', () => ({
+  useClinicalDocumentPresenceByBed: vi.fn(() => ({})),
+}));
+
+vi.mock('@/context/AuthContext', () => ({
+  useAuth: vi.fn(() => ({
+    role: 'viewer_census',
+  })),
 }));
 
 vi.mock('@/features/census/components/PatientRow', () => ({
@@ -153,6 +165,19 @@ describe('CensusTable', () => {
     });
 
   const applyDefaultMocks = () => {
+    vi.mocked(useAuth).mockReturnValue(
+      asContextReturn<ReturnType<typeof useAuth>>({
+        user: null,
+        role: 'viewer_census',
+        isLoading: false,
+        isAuthenticated: false,
+        isEditor: false,
+        isViewer: true,
+        isFirebaseConnected: true,
+        signOut: vi.fn(),
+      })
+    );
+
     vi.mocked(useDailyRecordData).mockReturnValue(
       asContextReturn<ReturnType<typeof useDailyRecordData>>({
         record: mockRecord,
@@ -219,6 +244,18 @@ describe('CensusTable', () => {
 
   it('should handle "Clear All" with confirmation', async () => {
     mockConfirm.mockResolvedValue(true);
+    vi.mocked(useAuth).mockReturnValue(
+      asContextReturn<ReturnType<typeof useAuth>>({
+        user: null,
+        role: 'admin',
+        isLoading: false,
+        isAuthenticated: false,
+        isEditor: true,
+        isViewer: false,
+        isFirebaseConnected: true,
+        signOut: vi.fn(),
+      })
+    );
     render(<CensusTable currentDateString="2025-01-08" />);
 
     await act(async () => {
@@ -277,5 +314,40 @@ describe('CensusTable', () => {
     render(<CensusTable currentDateString="2025-01-08" />);
     fireEvent.click(screen.getByText('R2'));
     expect(updatePatientMock).toHaveBeenCalledWith('R2', 'patientName', ' ');
+  });
+
+  it('should disable clinical document presence lookup for non-clinical roles', () => {
+    render(<CensusTable currentDateString="2025-01-08" />);
+
+    expect(useClinicalDocumentPresenceByBed).toHaveBeenCalledWith(
+      expect.objectContaining({
+        currentDateString: '2025-01-08',
+        enabled: false,
+      })
+    );
+  });
+
+  it('should enable clinical document presence lookup for clinical roles', async () => {
+    vi.mocked(useAuth).mockReturnValue(
+      asContextReturn<ReturnType<typeof useAuth>>({
+        user: null,
+        role: 'nurse_hospital',
+        isLoading: false,
+        isAuthenticated: false,
+        isEditor: true,
+        isViewer: false,
+        isFirebaseConnected: true,
+        signOut: vi.fn(),
+      })
+    );
+
+    render(<CensusTable currentDateString="2025-01-08" />);
+
+    expect(useClinicalDocumentPresenceByBed).toHaveBeenCalledWith(
+      expect.objectContaining({
+        currentDateString: '2025-01-08',
+        enabled: true,
+      })
+    );
   });
 });

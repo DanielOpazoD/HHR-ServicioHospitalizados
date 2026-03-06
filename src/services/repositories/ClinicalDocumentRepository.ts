@@ -24,6 +24,13 @@ const chunkArray = <T>(values: T[], size: number): T[][] => {
   return chunks;
 };
 
+const normalizeEpisodeKeys = (episodeKeys: string[]): string[] =>
+  Array.from(
+    new Set(
+      episodeKeys.map(episodeKey => episodeKey.trim()).filter(episodeKey => episodeKey.length > 0)
+    )
+  );
+
 const hydrateLegacyRecordDefaults = (record: ClinicalDocumentRecord): ClinicalDocumentRecord => ({
   ...record,
   patientInfoTitle: record.patientInfoTitle || 'Información del Paciente',
@@ -82,7 +89,7 @@ export const ClinicalDocumentRepository = {
     episodeKeys: string[],
     hospitalId: string = getActiveHospitalId()
   ): Promise<ClinicalDocumentRecord[]> {
-    const sanitizedEpisodeKeys = Array.from(new Set(episodeKeys.filter(Boolean)));
+    const sanitizedEpisodeKeys = normalizeEpisodeKeys(episodeKeys);
     if (sanitizedEpisodeKeys.length === 0) {
       return [];
     }

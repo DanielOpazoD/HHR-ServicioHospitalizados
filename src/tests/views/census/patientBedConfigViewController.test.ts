@@ -26,4 +26,13 @@ describe('patientBedConfigViewController', () => {
       })
     ).toBe(0);
   });
+
+  it('normalizes ISO datetime values before calculating elapsed days', () => {
+    expect(
+      calculateHospitalizedDays({
+        admissionDate: '2026-02-10T23:59:00.000Z',
+        currentDate: '2026-02-15T01:00:00.000Z',
+      })
+    ).toBe(5);
+  });
 });

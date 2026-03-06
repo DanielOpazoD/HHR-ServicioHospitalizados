@@ -73,21 +73,25 @@ describe('patientRowBindingsController', () => {
       actionMenuAlign: 'top',
       diagnosisMode: 'free',
       isSubRow: false,
-      hasClinicalDocument: true,
-      isNewAdmissionIndicator: true,
+      role: 'doctor_urgency',
+      indicators: {
+        hasClinicalDocument: true,
+        isNewAdmission: true,
+      },
       runtime,
     });
 
     expect(result.mainRowProps.bed).toBe(bed);
     expect(result.mainRowProps.data).toBe(data);
     expect(result.mainRowProps.onAction).toBe(runtime.handleAction);
-    expect(result.mainRowProps.hasClinicalDocument).toBe(true);
-    expect(result.mainRowProps.isNewAdmissionIndicator).toBe(true);
+    expect(result.mainRowProps.indicators.hasClinicalDocument).toBe(true);
+    expect(result.mainRowProps.indicators.isNewAdmission).toBe(true);
     expect(result.mainRowProps.onOpenClinicalDocuments).toBe(runtime.uiState.openClinicalDocuments);
     expect(result.subRowProps.onOpenDemographics).toBe(runtime.uiState.openDemographics);
     expect(result.modalsProps.bedId).toBe('R1');
     expect(result.modalsProps.onSaveDemographics).toBe(runtime.modalSavers.onSaveDemographics);
     expect(result.modalsProps.showClinicalDocuments).toBe(false);
+    expect(result.modalsProps.canOpenClinicalDocuments).toBe(true);
   });
 
   it('builds split bindings with consistent runtime wiring', () => {
@@ -148,8 +152,11 @@ describe('patientRowBindingsController', () => {
       readOnly: false,
       actionMenuAlign: 'top',
       diagnosisMode: 'free',
-      hasClinicalDocument: false,
-      isNewAdmissionIndicator: false,
+      role: 'viewer_census',
+      indicators: {
+        hasClinicalDocument: false,
+        isNewAdmission: false,
+      },
       runtime,
     });
     const sub = buildPatientSubRowBindings({
@@ -164,6 +171,7 @@ describe('patientRowBindingsController', () => {
       data,
       currentDateString: '2026-02-15',
       isSubRow: false,
+      role: 'viewer_census',
       runtime,
     });
 
@@ -172,6 +180,7 @@ describe('patientRowBindingsController', () => {
     expect(sub.diagnosisMode).toBe('cie10');
     expect(sub.onOpenDemographics).toBe(runtime.uiState.openDemographics);
     expect(modals.showClinicalDocuments).toBe(true);
+    expect(modals.canOpenClinicalDocuments).toBe(false);
     expect(modals.showHistory).toBe(true);
   });
 });

@@ -1,4 +1,4 @@
-import { getShiftSchedule } from '@/utils/dateUtils';
+import { parseTimeMinutes, resolveClinicalDayBounds } from '@/utils/dateUtils';
 
 export const MOVEMENT_DATE_TIME_OUT_OF_RANGE_ERROR = 'Fecha/hora fuera de rango para el turno.';
 
@@ -9,24 +9,6 @@ export interface MovementDateTimeBounds {
   nightEnd: string;
   nextDayMaxTime: string;
 }
-
-const parseTimeMinutes = (time?: string): number | null => {
-  if (!time) return null;
-  const [hourPart = '', minutePart = ''] = time.trim().split(':');
-  const hour = parseInt(hourPart, 10);
-  const minute = parseInt(minutePart, 10);
-
-  if (isNaN(hour) || isNaN(minute)) return null;
-  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
-
-  return hour * 60 + minute;
-};
-
-const getNextDay = (recordDate: string): string => {
-  const date = new Date(`${recordDate}T12:00:00`);
-  date.setDate(date.getDate() + 1);
-  return date.toISOString().split('T')[0];
-};
 
 const formatMinutesAsTime = (minutes: number): string => {
   const safeMinutes = Math.max(0, Math.min(23 * 60 + 59, minutes));
@@ -46,8 +28,8 @@ export const resolveMovementDateForRecordShift = (
   const timeMinutes = parseTimeMinutes(movementTime);
   if (timeMinutes === null) return recordDate;
 
-  const nightEndMinutes = parseTimeMinutes(getShiftSchedule(recordDate).nightEnd) ?? 8 * 60;
-  return timeMinutes < nightEndMinutes ? getNextDay(recordDate) : recordDate;
+  const { nextDay, nightEndMinutes } = resolveClinicalDayBounds(recordDate);
+  return timeMinutes < nightEndMinutes ? nextDay : recordDate;
 };
 
 export const resolveMovementDateTimeBounds = (recordDate: string): MovementDateTimeBounds => {
@@ -61,15 +43,14 @@ export const resolveMovementDateTimeBounds = (recordDate: string): MovementDateT
     };
   }
 
-  const nextDay = getNextDay(recordDate);
-  const nightEndMinutes = parseTimeMinutes(getShiftSchedule(recordDate).nightEnd) ?? 8 * 60;
+  const { nextDay, nightEnd, nightEndMinutes } = resolveClinicalDayBounds(recordDate);
   const nextDayMaxTime = formatMinutesAsTime(Math.max(0, nightEndMinutes - 1));
 
   return {
     minDate: recordDate,
     maxDate: nextDay,
     nextDay,
-    nightEnd: formatMinutesAsTime(nightEndMinutes),
+    nightEnd,
     nextDayMaxTime,
   };
 };

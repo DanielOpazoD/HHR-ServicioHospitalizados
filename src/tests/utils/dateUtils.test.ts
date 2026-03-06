@@ -9,6 +9,7 @@ import {
   parseISODate,
   isBusinessDay,
   getShiftSchedule,
+  resolveClinicalDayBounds,
   isWithinDayShift,
   isAdmittedDuringShift,
   calculateHospitalizedDays,
@@ -155,6 +156,15 @@ describe('dateUtils', () => {
       const schedule = getShiftSchedule('2024-12-29');
       expect(schedule.nightEnd).toBe('08:00');
       expect(schedule.description).toContain('→ Día Hábil');
+    });
+  });
+
+  describe('resolveClinicalDayBounds', () => {
+    it('should resolve next day and configured night cutoff for a record date', () => {
+      const bounds = resolveClinicalDayBounds('2024-12-27');
+      expect(bounds.nextDay).toBe('2024-12-28');
+      expect(bounds.nightEnd).toBe('09:00');
+      expect(bounds.nightEndMinutes).toBe(9 * 60);
     });
   });
 

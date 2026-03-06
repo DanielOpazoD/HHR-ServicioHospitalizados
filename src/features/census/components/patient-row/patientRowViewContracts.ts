@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 import type { DiagnosisMode } from '@/features/census/types/censusTableTypes';
 import type { PatientRowAction } from '@/features/census/types/patientRowActionTypes';
-import type { BedDefinition, BedType, PatientData } from '@/types';
+import type { BedDefinition, BedType, PatientData, UserRole } from '@/types';
 import type {
   ClinicalCribInputChangeHandlers,
   MainPatientInputChangeHandlers,
@@ -9,6 +9,7 @@ import type {
 } from '@/features/census/components/patient-row/inputCellTypes';
 import type {
   PatientActionMenuCallbacks,
+  PatientActionMenuIndicators,
   PatientBedConfigCallbacks,
   RowMenuAlign,
 } from '@/features/census/components/patient-row/patientRowContracts';
@@ -45,8 +46,7 @@ export interface PatientMainRowViewProps
   hasCompanion: boolean;
   hasClinicalCrib: boolean;
   isCunaMode: boolean;
-  hasClinicalDocument: boolean;
-  isNewAdmissionIndicator: boolean;
+  indicators: Required<PatientActionMenuIndicators>;
   mainRowViewState: PatientMainRowViewState;
   onOpenDemographics: () => void;
   onOpenClinicalDocuments: () => void;
@@ -74,6 +74,7 @@ export interface PatientRowModalsProps {
   isSubRow: boolean;
   showDemographics: boolean;
   showClinicalDocuments: boolean;
+  canOpenClinicalDocuments: boolean;
   showExamRequest: boolean;
   showImagingRequest: boolean;
   showHistory: boolean;
@@ -96,7 +97,7 @@ export interface PatientRowProps {
   diagnosisMode?: DiagnosisMode;
   isSubRow?: boolean;
   bedType: BedType;
-  hasClinicalDocument?: boolean;
-  isNewAdmissionIndicator?: boolean;
+  role?: UserRole;
+  indicators?: PatientActionMenuIndicators;
   style?: CSSProperties;
 }

@@ -34,6 +34,13 @@ describe('clinicalShiftCalendarController', () => {
     expect(isMovementDateTimeAllowed('2026-02-14', '2026-02-15', '09:00')).toBe(false);
   });
 
+  it('normalizes invalid or missing movement time conservatively when inferring date', () => {
+    expect(resolveMovementDateForRecordShift('2026-02-14', undefined, 'XX:YY')).toBe('2026-02-14');
+    expect(resolveMovementDateForRecordShift('2026-02-14', undefined, undefined)).toBe(
+      '2026-02-14'
+    );
+  });
+
   it('exposes canonical validation error for out-of-range date time', () => {
     expect(
       resolveMovementDateTimeValidationError({

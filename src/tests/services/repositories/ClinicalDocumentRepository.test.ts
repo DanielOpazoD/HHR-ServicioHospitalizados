@@ -78,6 +78,31 @@ describe('ClinicalDocumentRepository.listByEpisodeKeys', () => {
     expect(db.getDocs).not.toHaveBeenCalled();
   });
 
+  it('trims, deduplicates and ignores blank episode keys before querying', async () => {
+    vi.mocked(db.getDocs).mockResolvedValueOnce([
+      buildDoc('d-1', 'rut-1__2026-03-01', '2026-03-05T10:00:00.000Z'),
+    ]);
+
+    await ClinicalDocumentRepository.listByEpisodeKeys(
+      ['  ', 'rut-1__2026-03-01', ' rut-1__2026-03-01 ', '\n'],
+      'hhr'
+    );
+
+    expect(db.getDocs).toHaveBeenCalledTimes(1);
+    expect(db.getDocs).toHaveBeenCalledWith(
+      'hospitals/hhr/clinicalDocuments',
+      expect.objectContaining({
+        where: [
+          expect.objectContaining({
+            field: 'episodeKey',
+            operator: 'in',
+            value: ['rut-1__2026-03-01'],
+          }),
+        ],
+      })
+    );
+  });
+
   it('chunks by 10, queries each chunk, and deduplicates by document id', async () => {
     vi.mocked(db.getDocs)
       .mockResolvedValueOnce([

@@ -1,5 +1,5 @@
 import type { DischargeData, PatientData, TransferData } from '@/types';
-import { resolveIsNewAdmissionForRecord } from '@/features/census/controllers/patientRowNewAdmissionIndicatorController';
+import { isNewAdmissionForClinicalDay } from '@/utils/dateUtils';
 
 export interface StaffSelectorsState {
   nursesDayShift: string[];
@@ -70,16 +70,14 @@ const collectHospitalizedPatients = (beds?: Record<string, PatientData> | null):
   return patients;
 };
 
+export const collectHospitalizedPatientsForRecord = collectHospitalizedPatients;
+
 export const resolveAdmissionsCountForRecord = ({ beds, recordDate }: AdmissionsInput): number => {
   if (!recordDate) return 0;
 
   const patients = collectHospitalizedPatients(beds);
   return patients.filter(patient =>
-    resolveIsNewAdmissionForRecord({
-      recordDate,
-      admissionDate: patient.admissionDate,
-      admissionTime: patient.admissionTime,
-    })
+    isNewAdmissionForClinicalDay(recordDate, patient.admissionDate, patient.admissionTime)
   ).length;
 };
 

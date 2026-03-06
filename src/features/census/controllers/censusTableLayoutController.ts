@@ -5,7 +5,7 @@ import type {
   OccupiedBedRow,
   BedTypesById,
 } from '@/features/census/types/censusTableTypes';
-import type { BedDefinition, PatientData } from '@/types';
+import type { BedDefinition, PatientData, UserRole } from '@/types';
 import type { PatientRowAction } from '@/features/census/types/patientRowActionTypes';
 import type {
   CensusTableBodyProps,
@@ -26,6 +26,7 @@ export interface CensusTableLayoutParams {
   occupiedRows: OccupiedBedRow[];
   emptyBeds: BedDefinition[];
   bedTypes: BedTypesById;
+  role?: UserRole;
   clinicalDocumentPresenceByBedId: Record<string, boolean>;
   onAction: (action: PatientRowAction, bedId: string, patient: PatientData) => void;
   onActivateEmptyBed: (bedId: string) => void;
@@ -64,6 +65,7 @@ export const buildCensusTableLayoutBindings = (
     readOnly: params.readOnly,
     diagnosisMode: params.diagnosisMode,
     bedTypes: params.bedTypes,
+    role: params.role,
     clinicalDocumentPresenceByBedId: params.clinicalDocumentPresenceByBedId,
     onAction: params.onAction,
     onActivateEmptyBed: params.onActivateEmptyBed,

@@ -4,6 +4,7 @@ import { CensusTableHeader } from '@/features/census/components/CensusTableHeade
 import { CensusTableBody } from '@/features/census/components/CensusTableBody';
 import { buildCensusTableLayoutBindings } from '@/features/census/controllers/censusTableLayoutController';
 import { useClinicalDocumentPresenceByBed } from '@/features/census/hooks/useClinicalDocumentPresenceByBed';
+import { canReadClinicalDocuments } from '@/features/clinical-documents/controllers/clinicalDocumentPermissionController';
 export type { DiagnosisMode } from '@/features/census/types/censusTableTypes';
 
 interface CensusTableProps {
@@ -31,11 +32,14 @@ export const CensusTable: React.FC<CensusTableProps> = ({
     toggleDiagnosisMode,
     handleRowAction,
     activateEmptyBed,
+    role,
   } = useCensusTableViewModel({ currentDateString });
 
+  const canReadClinical = canReadClinicalDocuments(role);
   const clinicalDocumentPresenceByBedId = useClinicalDocumentPresenceByBed({
     occupiedRows,
     currentDateString,
+    enabled: canReadClinical,
   });
 
   if (!beds) return null;
@@ -54,6 +58,7 @@ export const CensusTable: React.FC<CensusTableProps> = ({
     occupiedRows,
     emptyBeds,
     bedTypes,
+    role,
     clinicalDocumentPresenceByBedId,
     onAction: handleRowAction,
     onActivateEmptyBed: activateEmptyBed,

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  collectHospitalizedPatientsForRecord,
   resolveAdmissionsCountForRecord,
   resolveMovementSummaryState,
   resolveStaffSelectorsClassName,
@@ -65,6 +66,64 @@ describe('censusStaffHeaderController', () => {
         patientName: 'P3',
         admissionDate: '2026-03-06',
         admissionTime: '08:30',
+      }),
+    };
+
+    expect(
+      resolveAdmissionsCountForRecord({
+        beds,
+        recordDate: '2026-03-05',
+      })
+    ).toBe(2);
+  });
+
+  it('collects hospitalized patients including valid clinical crib and excluding blocked entries', () => {
+    const beds = {
+      R1: DataFactory.createMockPatient('R1', {
+        patientName: 'Main',
+        isBlocked: false,
+        clinicalCrib: DataFactory.createMockPatient('R1-crib', {
+          patientName: 'Baby',
+          isBlocked: false,
+        }),
+      }),
+      R2: DataFactory.createMockPatient('R2', {
+        patientName: 'Blocked main',
+        isBlocked: true,
+      }),
+      R3: DataFactory.createMockPatient('R3', {
+        patientName: 'Main only',
+        isBlocked: false,
+        clinicalCrib: DataFactory.createMockPatient('R3-crib', {
+          patientName: 'Blocked crib',
+          isBlocked: true,
+        }),
+      }),
+    };
+
+    expect(collectHospitalizedPatientsForRecord(beds).map(patient => patient.patientName)).toEqual([
+      'Main',
+      'Baby',
+      'Main only',
+    ]);
+  });
+
+  it('counts admissions consistently for main beds and clinical crib patients', () => {
+    const beds = {
+      R1: DataFactory.createMockPatient('R1', {
+        patientName: 'Main',
+        admissionDate: '2026-03-05',
+        admissionTime: '10:00',
+        clinicalCrib: DataFactory.createMockPatient('R1-crib', {
+          patientName: 'Baby',
+          admissionDate: '2026-03-06',
+          admissionTime: '07:45',
+        }),
+      }),
+      R2: DataFactory.createMockPatient('R2', {
+        patientName: 'Late entry',
+        admissionDate: '2026-03-06',
+        admissionTime: '08:15',
       }),
     };
 

@@ -49,15 +49,19 @@ describe('PatientMainRowView', () => {
     hasCompanion: false,
     hasClinicalCrib: false,
     isCunaMode: false,
-    hasClinicalDocument: false,
-    isNewAdmissionIndicator: false,
+    indicators: {
+      hasClinicalDocument: false,
+      isNewAdmission: false,
+    },
     mainRowViewState: {
       canToggleBedType: true,
       rowClassName: 'row',
       rowActionsAvailability: {
         canOpenClinicalDocuments: true,
         canOpenExamRequest: true,
+        canOpenImagingRequest: true,
         canOpenHistory: true,
+        canShowClinicalDocumentIndicator: true,
       },
       showBlockedContent: false,
     },

@@ -149,7 +149,7 @@ export const isBusinessDay = (dateString: string): boolean => {
 /**
  * Get the next calendar day from a given date string
  */
-const getNextDay = (dateString: string): string => {
+export const getNextDay = (dateString: string): string => {
   const date = new Date(`${dateString}T12:00:00`);
   date.setDate(date.getDate() + 1);
   return date.toISOString().split('T')[0];
@@ -161,6 +161,12 @@ export interface ShiftSchedule {
   nightStart: string;
   nightEnd: string;
   description: string;
+}
+
+export interface ClinicalDayBounds {
+  nextDay: string;
+  nightEnd: string;
+  nightEndMinutes: number;
 }
 
 /**
@@ -209,13 +215,24 @@ export const getShiftSchedule = (dateString: string): ShiftSchedule => {
   };
 };
 
+export const resolveClinicalDayBounds = (recordDate: string): ClinicalDayBounds => {
+  const schedule = getShiftSchedule(recordDate);
+  const nightEndMinutes = parseTimeMinutes(schedule.nightEnd) ?? 8 * 60;
+
+  return {
+    nextDay: getNextDay(recordDate),
+    nightEnd: schedule.nightEnd,
+    nightEndMinutes,
+  };
+};
+
 /**
  * Normalizes YYYY-MM-DD-like values that may arrive as full ISO strings.
  * Examples:
  * - "2026-02-15" -> "2026-02-15"
  * - "2026-02-15T00:00:00.000Z" -> "2026-02-15"
  */
-const normalizeDateOnly = (value?: string): string | undefined => {
+export const normalizeDateOnly = (value?: string): string | undefined => {
   if (!value) return undefined;
   return value.split('T')[0];
 };
@@ -223,7 +240,7 @@ const normalizeDateOnly = (value?: string): string | undefined => {
 /**
  * Parses HH:MM-like values into minutes. Returns null if missing/invalid.
  */
-const parseTimeMinutes = (value?: string): number | null => {
+export const parseTimeMinutes = (value?: string): number | null => {
   if (!value) return null;
 
   const [hourPart = '', minutePart = ''] = value.trim().split(':');
@@ -234,6 +251,34 @@ const parseTimeMinutes = (value?: string): number | null => {
   if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
 
   return hour * 60 + minute;
+};
+
+export const isNewAdmissionForClinicalDay = (
+  recordDate: string,
+  admissionDate?: string,
+  admissionTime?: string
+): boolean => {
+  const normalizedRecordDate = normalizeDateOnly(recordDate);
+  const normalizedAdmissionDate = normalizeDateOnly(admissionDate);
+  if (!normalizedRecordDate || !normalizedAdmissionDate) {
+    return false;
+  }
+
+  if (normalizedAdmissionDate === normalizedRecordDate) {
+    return true;
+  }
+
+  const { nextDay, nightEndMinutes } = resolveClinicalDayBounds(normalizedRecordDate);
+  if (normalizedAdmissionDate !== nextDay) {
+    return false;
+  }
+
+  const admissionTimeMinutes = parseTimeMinutes(admissionTime);
+  if (admissionTimeMinutes === null) {
+    return true;
+  }
+
+  return admissionTimeMinutes < nightEndMinutes;
 };
 
 /**
@@ -282,11 +327,7 @@ export const isAdmittedDuringShift = (
   const admissionTimeMinutes = parseTimeMinutes(admissionTime);
 
   const dayEndMinutes = 20 * 60;
-  const schedule = getShiftSchedule(normalizedRecordDate);
-  const nightEndMinutes = parseTimeMinutes(schedule.nightEnd) ?? 8 * 60;
-
-  // Calculate next day from record date
-  const nextDay = getNextDay(normalizedRecordDate);
+  const { nextDay, nightEndMinutes } = resolveClinicalDayBounds(normalizedRecordDate);
 
   if (shift === 'day') {
     // Day shift shows patients admitted on record date BEFORE 20:00

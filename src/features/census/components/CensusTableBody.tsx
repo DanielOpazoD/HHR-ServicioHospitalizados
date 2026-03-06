@@ -16,6 +16,7 @@ export const CensusTableBody: React.FC<CensusTableBodyProps> = ({
   readOnly,
   diagnosisMode,
   bedTypes,
+  role,
   clinicalDocumentPresenceByBedId,
   onAction,
   onActivateEmptyBed,
@@ -36,17 +37,18 @@ export const CensusTableBody: React.FC<CensusTableBodyProps> = ({
           diagnosisMode={diagnosisMode}
           isSubRow={row.isSubRow}
           bedType={bedTypes[row.bed.id]}
-          hasClinicalDocument={
-            !row.isSubRow && Boolean(clinicalDocumentPresenceByBedId[row.bed.id])
-          }
-          isNewAdmissionIndicator={
-            !row.isSubRow &&
-            resolveIsNewAdmissionForRecord({
-              recordDate: currentDateString,
-              admissionDate: row.data.admissionDate,
-              admissionTime: row.data.admissionTime,
-            })
-          }
+          role={role}
+          indicators={{
+            hasClinicalDocument:
+              !row.isSubRow && Boolean(clinicalDocumentPresenceByBedId[row.bed.id]),
+            isNewAdmission:
+              !row.isSubRow &&
+              resolveIsNewAdmissionForRecord({
+                recordDate: currentDateString,
+                admissionDate: row.data.admissionDate,
+                admissionTime: row.data.admissionTime,
+              }),
+          }}
         />
       ))}
 

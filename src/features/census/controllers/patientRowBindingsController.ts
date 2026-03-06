@@ -1,6 +1,9 @@
 import type { DiagnosisMode } from '@/features/census/types/censusTableTypes';
-import type { BedDefinition, BedType, PatientData } from '@/types';
-import type { RowMenuAlign } from '@/features/census/components/patient-row/patientRowContracts';
+import type { BedDefinition, BedType, PatientData, UserRole } from '@/types';
+import type {
+  PatientActionMenuIndicators,
+  RowMenuAlign,
+} from '@/features/census/components/patient-row/patientRowContracts';
 import type {
   PatientMainRowBindings,
   PatientSubRowBindings,
@@ -8,7 +11,14 @@ import type {
   PatientRowBindings,
   PatientRowRuntime,
 } from '@/features/census/components/patient-row/patientRowRuntimeContracts';
-import { buildPatientMainRowViewState } from '@/features/census/controllers/patientRowMainViewController';
+import {
+  buildPatientMainSectionBindings,
+  buildPatientModalSectionBindings,
+  buildPatientSubSectionBindings,
+  type PatientRowResolvedIndicators,
+  type PatientRowViewContext,
+} from '@/features/census/controllers/patientRowBindingSectionsController';
+import { resolvePatientRowCapabilities } from '@/features/census/controllers/patientRowCapabilitiesController';
 
 export interface BuildPatientRowBindingsParams {
   bed: BedDefinition;
@@ -19,13 +29,46 @@ export interface BuildPatientRowBindingsParams {
   actionMenuAlign: RowMenuAlign;
   diagnosisMode: DiagnosisMode;
   isSubRow: boolean;
-  hasClinicalDocument: boolean;
-  isNewAdmissionIndicator: boolean;
+  role?: UserRole;
+  indicators?: PatientActionMenuIndicators;
   style?: React.CSSProperties;
   runtime: PatientRowRuntime;
 }
 
 export type PatientRowBindingsInput = Omit<BuildPatientRowBindingsParams, 'runtime'>;
+
+const resolvePatientRowIndicators = (
+  indicators: PatientActionMenuIndicators | undefined,
+  canShowClinicalDocumentIndicator: boolean
+): PatientRowResolvedIndicators => ({
+  hasClinicalDocument: Boolean(indicators?.hasClinicalDocument) && canShowClinicalDocumentIndicator,
+  isNewAdmission: Boolean(indicators?.isNewAdmission),
+});
+
+const resolvePatientRowViewContext = ({
+  role,
+  data,
+  runtime,
+  indicators,
+}: Pick<
+  BuildPatientRowBindingsParams,
+  'role' | 'data' | 'runtime' | 'indicators'
+>): PatientRowViewContext => {
+  const capabilities = resolvePatientRowCapabilities({
+    role,
+    patient: data,
+    isBlocked: runtime.rowState.isBlocked,
+    isEmpty: runtime.rowState.isEmpty,
+  });
+
+  return {
+    capabilities,
+    indicators: resolvePatientRowIndicators(
+      indicators,
+      capabilities.canShowClinicalDocumentIndicator
+    ),
+  };
+};
 
 export const buildPatientMainRowBindings = ({
   bed,
@@ -35,9 +78,11 @@ export const buildPatientMainRowBindings = ({
   readOnly,
   actionMenuAlign,
   diagnosisMode,
-  hasClinicalDocument,
-  isNewAdmissionIndicator,
+  role,
+  indicators,
   style,
+  capabilitiesOverride,
+  resolvedIndicatorsOverride,
   runtime,
 }: Pick<
   BuildPatientRowBindingsParams,
@@ -48,50 +93,33 @@ export const buildPatientMainRowBindings = ({
   | 'readOnly'
   | 'actionMenuAlign'
   | 'diagnosisMode'
-  | 'hasClinicalDocument'
-  | 'isNewAdmissionIndicator'
+  | 'role'
+  | 'indicators'
   | 'style'
   | 'runtime'
->): PatientMainRowBindings => {
-  const mainRowViewState = buildPatientMainRowViewState({
-    bedId: bed.id,
-    readOnly,
-    isEmpty: runtime.rowState.isEmpty,
-    isBlocked: runtime.rowState.isBlocked,
-    patientName: data.patientName,
-    rut: data.rut,
-  });
-
-  return {
+> & {
+  capabilitiesOverride?: PatientRowViewContext['capabilities'];
+  resolvedIndicatorsOverride?: PatientRowResolvedIndicators;
+}): PatientMainRowBindings => {
+  const viewContext =
+    capabilitiesOverride && resolvedIndicatorsOverride
+      ? {
+          capabilities: capabilitiesOverride,
+          indicators: resolvedIndicatorsOverride,
+        }
+      : resolvePatientRowViewContext({ role, data, runtime, indicators });
+  return buildPatientMainSectionBindings({
     bed,
     bedType,
     data,
     currentDateString,
-    style,
     readOnly,
     actionMenuAlign,
     diagnosisMode,
-    isBlocked: runtime.rowState.isBlocked,
-    isEmpty: runtime.rowState.isEmpty,
-    hasCompanion: runtime.rowState.hasCompanion,
-    hasClinicalCrib: runtime.rowState.hasClinicalCrib,
-    isCunaMode: runtime.rowState.isCunaMode,
-    hasClinicalDocument,
-    isNewAdmissionIndicator,
-    mainRowViewState,
-    onAction: runtime.handleAction,
-    onOpenDemographics: runtime.uiState.openDemographics,
-    onOpenClinicalDocuments: runtime.uiState.openClinicalDocuments,
-    onOpenExamRequest: runtime.uiState.openExamRequest,
-    onOpenImagingRequest: runtime.uiState.openImagingRequest,
-    onOpenHistory: runtime.uiState.openHistory,
-    onToggleMode: runtime.bedConfigActions.toggleBedMode,
-    onToggleCompanion: runtime.bedConfigActions.toggleCompanionCrib,
-    onToggleClinicalCrib: runtime.bedConfigActions.toggleClinicalCrib,
-    onToggleBedType: runtime.bedTypeToggles.onToggleBedType,
-    onUpdateClinicalCrib: runtime.bedTypeToggles.onUpdateClinicalCrib,
-    onChange: runtime.handlers.mainInputChangeHandlers,
-  };
+    style,
+    runtime,
+    viewContext,
+  });
 };
 
 export const buildPatientSubRowBindings = ({
@@ -104,43 +132,51 @@ export const buildPatientSubRowBindings = ({
 }: Pick<
   BuildPatientRowBindingsParams,
   'data' | 'currentDateString' | 'readOnly' | 'diagnosisMode' | 'style' | 'runtime'
->): PatientSubRowBindings => ({
-  data,
-  currentDateString,
-  readOnly,
-  diagnosisMode,
-  style,
-  onOpenDemographics: runtime.uiState.openDemographics,
-  onChange: runtime.handlers.cribInputChangeHandlers,
-});
+>): PatientSubRowBindings =>
+  buildPatientSubSectionBindings({
+    data,
+    currentDateString,
+    readOnly,
+    diagnosisMode,
+    style,
+    runtime,
+  });
 
 export const buildPatientRowModalsBindings = ({
   bed,
   data,
   currentDateString,
   isSubRow,
+  role,
+  capabilitiesOverride,
   runtime,
 }: Pick<
   BuildPatientRowBindingsParams,
-  'bed' | 'data' | 'currentDateString' | 'isSubRow' | 'runtime'
->): PatientRowModalsBindings => ({
-  bedId: bed.id,
-  data,
-  currentDateString,
-  isSubRow,
-  showDemographics: runtime.uiState.showDemographics,
-  showClinicalDocuments: runtime.uiState.showClinicalDocuments,
-  showExamRequest: runtime.uiState.showExamRequest,
-  showImagingRequest: runtime.uiState.showImagingRequest,
-  showHistory: runtime.uiState.showHistory,
-  onCloseDemographics: runtime.uiState.closeDemographics,
-  onCloseClinicalDocuments: runtime.uiState.closeClinicalDocuments,
-  onCloseExamRequest: runtime.uiState.closeExamRequest,
-  onCloseImagingRequest: runtime.uiState.closeImagingRequest,
-  onCloseHistory: runtime.uiState.closeHistory,
-  onSaveDemographics: runtime.modalSavers.onSaveDemographics,
-  onSaveCribDemographics: runtime.modalSavers.onSaveCribDemographics,
-});
+  'bed' | 'data' | 'currentDateString' | 'isSubRow' | 'role' | 'runtime'
+> & {
+  capabilitiesOverride?: PatientRowViewContext['capabilities'];
+}): PatientRowModalsBindings =>
+  buildPatientModalSectionBindings({
+    bedId: bed.id,
+    data,
+    currentDateString,
+    isSubRow,
+    runtime,
+    viewContext: {
+      capabilities:
+        capabilitiesOverride ??
+        resolvePatientRowViewContext({
+          role,
+          data,
+          runtime,
+          indicators: undefined,
+        }).capabilities,
+      indicators: {
+        hasClinicalDocument: false,
+        isNewAdmission: false,
+      },
+    },
+  });
 
 export const buildPatientRowBindings = ({
   bed,
@@ -151,11 +187,13 @@ export const buildPatientRowBindings = ({
   actionMenuAlign,
   diagnosisMode,
   isSubRow,
-  hasClinicalDocument,
-  isNewAdmissionIndicator,
+  role,
+  indicators,
   style,
   runtime,
 }: BuildPatientRowBindingsParams): PatientRowBindings => {
+  const viewContext = resolvePatientRowViewContext({ role, data, runtime, indicators });
+
   return {
     mainRowProps: buildPatientMainRowBindings({
       bed,
@@ -165,9 +203,11 @@ export const buildPatientRowBindings = ({
       readOnly,
       actionMenuAlign,
       diagnosisMode,
-      hasClinicalDocument,
-      isNewAdmissionIndicator,
+      role,
+      indicators,
       style,
+      capabilitiesOverride: viewContext.capabilities,
+      resolvedIndicatorsOverride: viewContext.indicators,
       runtime,
     }),
     subRowProps: buildPatientSubRowBindings({
@@ -183,6 +223,8 @@ export const buildPatientRowBindings = ({
       data,
       currentDateString,
       isSubRow,
+      role,
+      capabilitiesOverride: viewContext.capabilities,
       runtime,
     }),
   };

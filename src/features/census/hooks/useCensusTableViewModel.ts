@@ -46,6 +46,7 @@ export const useCensusTableViewModel = ({ currentDateString }: UseCensusTableVie
     handleRowAction,
     diagnosisMode,
     toggleDiagnosisMode,
+    role,
     activateEmptyBed,
     columns,
     isEditMode,
