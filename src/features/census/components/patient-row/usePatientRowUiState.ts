@@ -8,7 +8,7 @@ type PatientRowModalKind =
   | 'history'
   | null;
 
-interface UsePatientRowUiStateResult {
+export interface PatientRowUiState {
   showDemographics: boolean;
   showClinicalDocuments: boolean;
   showExamRequest: boolean;
@@ -26,7 +26,7 @@ interface UsePatientRowUiStateResult {
   closeHistory: () => void;
 }
 
-export const usePatientRowUiState = (): UsePatientRowUiStateResult => {
+export const usePatientRowUiState = (): PatientRowUiState => {
   const [activeModal, setActiveModal] = useState<PatientRowModalKind>(null);
 
   const openDemographics = useCallback(() => setActiveModal('demographics'), []);

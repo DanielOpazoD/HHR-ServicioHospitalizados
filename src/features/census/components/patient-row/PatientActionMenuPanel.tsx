@@ -1,9 +1,8 @@
 import React from 'react';
 import clsx from 'clsx';
 
-import type { RowMenuAlign } from '@/features/census/components/patient-row/patientRowContracts';
+import type { PatientActionMenuBinding } from '@/features/census/components/patient-row/patientRowContracts';
 import type { UtilityActionConfig } from '@/features/census/components/patient-row/patientActionMenuConfig';
-import type { PatientActionMenuViewState } from '@/features/census/controllers/patientActionMenuViewController';
 import { resolvePatientActionMenuPanelClassName } from '@/features/census/controllers/patientActionMenuViewController';
 import type { PatientRowAction } from '@/features/census/types/patientRowActionTypes';
 import { resolvePatientActionMenuPanelModel } from '@/features/census/controllers/patientActionMenuPanelController';
@@ -13,8 +12,7 @@ import { PatientActionMenuHistoryAction } from '@/features/census/components/pat
 
 interface PatientActionMenuPanelProps {
   isOpen: boolean;
-  align: RowMenuAlign;
-  viewState: PatientActionMenuViewState;
+  binding: PatientActionMenuBinding;
   utilityActions: UtilityActionConfig[];
   onClose: () => void;
   onAction: (action: PatientRowAction) => void;
@@ -26,8 +24,7 @@ interface PatientActionMenuPanelProps {
 
 export const PatientActionMenuPanel: React.FC<PatientActionMenuPanelProps> = ({
   isOpen,
-  align,
-  viewState,
+  binding,
   utilityActions,
   onClose,
   onAction,
@@ -41,7 +38,7 @@ export const PatientActionMenuPanel: React.FC<PatientActionMenuPanelProps> = ({
   }
 
   const model = resolvePatientActionMenuPanelModel({
-    viewState,
+    viewState: binding.availability,
     utilityActions,
   });
 
@@ -51,7 +48,7 @@ export const PatientActionMenuPanel: React.FC<PatientActionMenuPanelProps> = ({
       <div
         className={clsx(
           'absolute left-10 z-50 bg-white shadow-xl rounded-xl border border-slate-200 w-64 text-left overflow-hidden animate-fade-in print:hidden',
-          resolvePatientActionMenuPanelClassName(align)
+          resolvePatientActionMenuPanelClassName(binding.align)
         )}
       >
         {model.showHistoryAction && (

@@ -4,7 +4,7 @@ import { MedicalBadge } from '@/components/ui/base/MedicalBadge';
 import { BedType } from '@/types';
 import { useBedActiveTransferQuery } from '@/features/census/components/patient-row/useBedActiveTransferQuery';
 
-interface PatientMainRowBedTypeCellProps {
+export interface PatientMainRowBedTypeCellProps {
   bedId: string;
   bedType: BedType;
   hasPatient: boolean;

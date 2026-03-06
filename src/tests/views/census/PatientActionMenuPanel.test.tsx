@@ -10,16 +10,24 @@ describe('PatientActionMenuPanel', () => {
     const { container } = render(
       <PatientActionMenuPanel
         isOpen={false}
-        align="top"
-        viewState={{
-          showDemographicsAction: true,
-          showMenuTrigger: true,
-          showHistoryAction: true,
-          showUtilityActions: true,
-          showClinicalSection: true,
-          showClinicalDocumentsAction: true,
-          showExamRequestAction: true,
-          showImagingRequestAction: true,
+        binding={{
+          align: 'top',
+          isBlocked: false,
+          readOnly: false,
+          indicators: {
+            hasClinicalDocument: false,
+            isNewAdmission: false,
+          },
+          availability: {
+            showDemographicsAction: true,
+            showMenuTrigger: true,
+            showHistoryAction: true,
+            showUtilityActions: true,
+            showClinicalSection: true,
+            showClinicalDocumentsAction: true,
+            showExamRequestAction: true,
+            showImagingRequestAction: true,
+          },
         }}
         utilityActions={[]}
         onClose={vi.fn()}
@@ -44,16 +52,24 @@ describe('PatientActionMenuPanel', () => {
     render(
       <PatientActionMenuPanel
         isOpen={true}
-        align="bottom"
-        viewState={{
-          showDemographicsAction: true,
-          showMenuTrigger: true,
-          showHistoryAction: true,
-          showUtilityActions: true,
-          showClinicalSection: true,
-          showClinicalDocumentsAction: true,
-          showExamRequestAction: true,
-          showImagingRequestAction: true,
+        binding={{
+          align: 'bottom',
+          isBlocked: false,
+          readOnly: false,
+          indicators: {
+            hasClinicalDocument: true,
+            isNewAdmission: true,
+          },
+          availability: {
+            showDemographicsAction: true,
+            showMenuTrigger: true,
+            showHistoryAction: true,
+            showUtilityActions: true,
+            showClinicalSection: true,
+            showClinicalDocumentsAction: true,
+            showExamRequestAction: true,
+            showImagingRequestAction: true,
+          },
         }}
         utilityActions={[
           {

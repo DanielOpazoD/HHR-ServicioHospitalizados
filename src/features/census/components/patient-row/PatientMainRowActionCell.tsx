@@ -6,7 +6,7 @@ import type {
   RowMenuAlign,
 } from './patientRowContracts';
 
-interface PatientMainRowActionCellProps
+export interface PatientMainRowActionCellProps
   extends PatientActionMenuCallbacks, Required<PatientActionMenuIndicators> {
   isBlocked: boolean;
   readOnly: boolean;

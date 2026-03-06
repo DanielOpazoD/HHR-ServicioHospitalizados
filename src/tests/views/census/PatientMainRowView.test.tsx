@@ -119,4 +119,29 @@ describe('PatientMainRowView', () => {
     expect(screen.getByTestId('blocked-cell')).toBeInTheDocument();
     expect(screen.queryByTestId('input-cells')).not.toBeInTheDocument();
   });
+
+  it('wires clinical action availability into action cell affordances', () => {
+    render(
+      <table>
+        <tbody>
+          <PatientMainRowView
+            {...baseProps}
+            mainRowViewState={{
+              ...baseProps.mainRowViewState,
+              rowActionsAvailability: {
+                ...baseProps.mainRowViewState.rowActionsAvailability,
+                canOpenClinicalDocuments: false,
+                canOpenExamRequest: false,
+                canOpenHistory: true,
+              },
+            }}
+          />
+        </tbody>
+      </table>
+    );
+
+    expect(screen.getByTestId('action-cell')).toHaveAttribute('data-clinical-documents', 'false');
+    expect(screen.getByTestId('action-cell')).toHaveAttribute('data-exam', 'false');
+    expect(screen.getByTestId('action-cell')).toHaveAttribute('data-history', 'true');
+  });
 });

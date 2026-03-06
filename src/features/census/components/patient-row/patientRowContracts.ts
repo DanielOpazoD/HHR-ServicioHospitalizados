@@ -19,6 +19,25 @@ export interface PatientActionMenuIndicators {
   isNewAdmission?: boolean;
 }
 
+export interface PatientActionMenuAvailability {
+  showDemographicsAction: boolean;
+  showMenuTrigger: boolean;
+  showHistoryAction: boolean;
+  showUtilityActions: boolean;
+  showClinicalSection: boolean;
+  showClinicalDocumentsAction: boolean;
+  showExamRequestAction: boolean;
+  showImagingRequestAction: boolean;
+}
+
+export interface PatientActionMenuBinding {
+  align: RowMenuAlign;
+  isBlocked: boolean;
+  readOnly: boolean;
+  indicators: Required<PatientActionMenuIndicators>;
+  availability: PatientActionMenuAvailability;
+}
+
 export interface PatientBedConfigCallbacks {
   onToggleMode: () => MaybePromiseVoid;
   onToggleCompanion: () => MaybePromiseVoid;

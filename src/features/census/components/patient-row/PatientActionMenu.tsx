@@ -15,12 +15,11 @@ interface PatientActionMenuProps extends PatientActionMenuCallbacks, PatientActi
   align?: RowMenuAlign;
 }
 
-const PatientActionPrimaryIcon: React.FC<PatientActionMenuIndicators> = ({
-  hasClinicalDocument = false,
-  isNewAdmission = false,
-}) => (
+const PatientActionPrimaryIcon: React.FC<{
+  indicators: Required<PatientActionMenuIndicators>;
+}> = ({ indicators }) => (
   <span className="relative inline-flex items-center justify-center h-5 w-5">
-    {hasClinicalDocument && (
+    {indicators.hasClinicalDocument && (
       <FileText
         size={11}
         className="absolute -left-1 bottom-0 text-slate-400"
@@ -29,7 +28,7 @@ const PatientActionPrimaryIcon: React.FC<PatientActionMenuIndicators> = ({
       />
     )}
     <User size={16} className="relative z-10" />
-    {isNewAdmission && (
+    {indicators.isNewAdmission && (
       <span
         className="absolute -top-0.5 -left-0.5 h-2 w-2 rounded-full bg-amber-400 border border-white shadow-sm"
         aria-hidden="true"
@@ -54,7 +53,7 @@ export const PatientActionMenu: React.FC<PatientActionMenuProps> = ({
   const {
     isOpen,
     menuRef,
-    viewState,
+    binding,
     utilityActions,
     toggle,
     close,
@@ -66,6 +65,11 @@ export const PatientActionMenu: React.FC<PatientActionMenuProps> = ({
   } = usePatientActionMenu({
     isBlocked,
     readOnly,
+    align,
+    indicators: {
+      hasClinicalDocument,
+      isNewAdmission,
+    },
     onAction,
     onViewHistory,
     onViewClinicalDocuments,
@@ -75,7 +79,7 @@ export const PatientActionMenu: React.FC<PatientActionMenuProps> = ({
 
   return (
     <div className="flex flex-col items-center gap-0.5 relative py-0.5" ref={menuRef}>
-      {viewState.showDemographicsAction && (
+      {binding.availability.showDemographicsAction && (
         <div className="flex items-center gap-0.5">
           <MedicalButton
             onClick={onViewDemographics}
@@ -83,16 +87,11 @@ export const PatientActionMenu: React.FC<PatientActionMenuProps> = ({
             size="xs"
             className="!px-1.5 !py-0.5 rounded-md text-medical-500 hover:text-medical-700"
             title="Datos del Paciente"
-            icon={
-              <PatientActionPrimaryIcon
-                hasClinicalDocument={hasClinicalDocument}
-                isNewAdmission={isNewAdmission}
-              />
-            }
+            icon={<PatientActionPrimaryIcon indicators={binding.indicators} />}
           />
         </div>
       )}
-      {viewState.showMenuTrigger && (
+      {binding.availability.showMenuTrigger && (
         <MedicalButton
           onClick={toggle}
           variant="secondary"
@@ -105,8 +104,7 @@ export const PatientActionMenu: React.FC<PatientActionMenuProps> = ({
 
       <PatientActionMenuPanel
         isOpen={isOpen}
-        align={align}
-        viewState={viewState}
+        binding={binding}
         utilityActions={utilityActions}
         onClose={close}
         onAction={handleAction}

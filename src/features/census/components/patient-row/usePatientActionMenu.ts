@@ -4,12 +4,19 @@ import {
   getVisibleUtilityActions,
   type UtilityActionConfig,
 } from '@/features/census/components/patient-row/patientActionMenuConfig';
-import { resolvePatientActionMenuViewState } from '@/features/census/controllers/patientActionMenuViewController';
+import { resolvePatientActionMenuBinding } from '@/features/census/controllers/patientActionMenuBindingController';
 import type { PatientRowAction } from '@/features/census/types/patientRowActionTypes';
+import type {
+  PatientActionMenuBinding,
+  PatientActionMenuIndicators,
+  RowMenuAlign,
+} from './patientRowContracts';
 
 interface UsePatientActionMenuParams {
   isBlocked: boolean;
   readOnly: boolean;
+  align?: RowMenuAlign;
+  indicators?: Required<PatientActionMenuIndicators>;
   onAction: (action: PatientRowAction) => void;
   onViewHistory?: () => void;
   onViewClinicalDocuments?: () => void;
@@ -20,7 +27,7 @@ interface UsePatientActionMenuParams {
 interface UsePatientActionMenuResult {
   isOpen: boolean;
   menuRef: ReturnType<typeof useDropdownMenu>['menuRef'];
-  viewState: ReturnType<typeof resolvePatientActionMenuViewState>;
+  binding: PatientActionMenuBinding;
   utilityActions: UtilityActionConfig[];
   toggle: () => void;
   close: () => void;
@@ -34,6 +41,8 @@ interface UsePatientActionMenuResult {
 export const usePatientActionMenu = ({
   isBlocked,
   readOnly,
+  align,
+  indicators,
   onAction,
   onViewHistory,
   onViewClinicalDocuments,
@@ -43,17 +52,21 @@ export const usePatientActionMenu = ({
   const { isOpen, menuRef, toggle, close } = useDropdownMenu();
 
   const utilityActions = useMemo(() => getVisibleUtilityActions(isBlocked), [isBlocked]);
-  const viewState = useMemo(
+  const binding = useMemo(
     () =>
-      resolvePatientActionMenuViewState({
+      resolvePatientActionMenuBinding({
+        align,
         isBlocked,
         readOnly,
         hasHistoryAction: typeof onViewHistory === 'function',
         hasClinicalDocumentsAction: typeof onViewClinicalDocuments === 'function',
         hasExamRequestAction: typeof onViewExamRequest === 'function',
         hasImagingRequestAction: typeof onViewImagingRequest === 'function',
+        indicators,
       }),
     [
+      align,
+      indicators,
       isBlocked,
       onViewClinicalDocuments,
       onViewExamRequest,
@@ -94,7 +107,7 @@ export const usePatientActionMenu = ({
   return {
     isOpen,
     menuRef,
-    viewState,
+    binding,
     utilityActions,
     toggle,
     close,

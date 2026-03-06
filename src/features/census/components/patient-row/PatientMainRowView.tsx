@@ -5,6 +5,8 @@ import { PatientMainRowActionCell } from '@/features/census/components/patient-r
 import { PatientMainRowBedTypeCell } from '@/features/census/components/patient-row/PatientMainRowBedTypeCell';
 import { PatientMainRowBlockedCell } from '@/features/census/components/patient-row/PatientMainRowBlockedCell';
 import type { PatientMainRowViewProps } from '@/features/census/components/patient-row/patientRowViewContracts';
+import { buildPatientActionSectionBinding } from '@/features/census/controllers/patientRowActionSectionBindingsController';
+import { buildPatientMainRowSections } from '@/features/census/controllers/patientMainRowSectionsController';
 
 export const PatientMainRowView: React.FC<PatientMainRowViewProps> = ({
   bed,
@@ -35,6 +37,52 @@ export const PatientMainRowView: React.FC<PatientMainRowViewProps> = ({
   onUpdateClinicalCrib,
   onChange,
 }) => {
+  const actionSectionBinding = buildPatientActionSectionBinding({
+    isBlocked,
+    readOnly,
+    actionMenuAlign,
+    indicators,
+    mainRowViewState,
+    onAction,
+    onOpenDemographics,
+    onOpenClinicalDocuments,
+    onOpenExamRequest,
+    onOpenImagingRequest,
+    onOpenHistory,
+  });
+  const sections = buildPatientMainRowSections(
+    {
+      bed,
+      bedType,
+      data,
+      currentDateString,
+      style,
+      readOnly,
+      actionMenuAlign,
+      diagnosisMode,
+      isBlocked,
+      isEmpty,
+      hasCompanion,
+      hasClinicalCrib,
+      isCunaMode,
+      indicators,
+      mainRowViewState,
+      onAction,
+      onOpenDemographics,
+      onOpenClinicalDocuments,
+      onOpenExamRequest,
+      onOpenImagingRequest,
+      onOpenHistory,
+      onToggleMode,
+      onToggleCompanion,
+      onToggleClinicalCrib,
+      onToggleBedType,
+      onUpdateClinicalCrib,
+      onChange,
+    },
+    actionSectionBinding
+  );
+
   return (
     <tr
       className={mainRowViewState.rowClassName}
@@ -42,69 +90,16 @@ export const PatientMainRowView: React.FC<PatientMainRowViewProps> = ({
       data-testid="patient-row"
       data-bed-id={bed.id}
     >
-      <PatientMainRowActionCell
-        isBlocked={isBlocked}
-        readOnly={readOnly}
-        align={actionMenuAlign}
-        hasClinicalDocument={indicators.hasClinicalDocument}
-        isNewAdmission={indicators.isNewAdmission}
-        onAction={onAction}
-        onViewDemographics={onOpenDemographics}
-        onViewClinicalDocuments={
-          mainRowViewState.rowActionsAvailability.canOpenClinicalDocuments
-            ? onOpenClinicalDocuments
-            : undefined
-        }
-        onViewExamRequest={
-          mainRowViewState.rowActionsAvailability.canOpenExamRequest ? onOpenExamRequest : undefined
-        }
-        onViewImagingRequest={
-          mainRowViewState.rowActionsAvailability.canOpenImagingRequest
-            ? onOpenImagingRequest
-            : undefined
-        }
-        onViewHistory={
-          mainRowViewState.rowActionsAvailability.canOpenHistory ? onOpenHistory : undefined
-        }
-      />
+      <PatientMainRowActionCell {...sections.action} />
 
-      <PatientBedConfig
-        bed={bed}
-        data={data}
-        currentDateString={currentDateString}
-        isBlocked={isBlocked}
-        hasCompanion={hasCompanion}
-        hasClinicalCrib={hasClinicalCrib}
-        isCunaMode={isCunaMode}
-        onToggleMode={onToggleMode}
-        onToggleCompanion={onToggleCompanion}
-        onToggleClinicalCrib={onToggleClinicalCrib}
-        onTextChange={onChange.text}
-        onUpdateClinicalCrib={onUpdateClinicalCrib}
-        readOnly={readOnly}
-        align={actionMenuAlign}
-      />
+      <PatientBedConfig {...sections.bedConfig} />
 
-      <PatientMainRowBedTypeCell
-        bedId={bed.id}
-        bedType={bedType}
-        hasPatient={Boolean(data.patientName)}
-        canToggleBedType={mainRowViewState.canToggleBedType}
-        onToggleBedType={onToggleBedType}
-      />
+      <PatientMainRowBedTypeCell {...sections.bedType} />
 
       {mainRowViewState.showBlockedContent ? (
-        <PatientMainRowBlockedCell blockedReason={data.blockedReason} />
+        <PatientMainRowBlockedCell {...sections.blocked} />
       ) : (
-        <PatientInputCells
-          data={data}
-          currentDateString={currentDateString}
-          isEmpty={isEmpty}
-          onChange={onChange}
-          onDemo={onOpenDemographics}
-          readOnly={readOnly}
-          diagnosisMode={diagnosisMode}
-        />
+        <PatientInputCells {...sections.inputCells} />
       )}
     </tr>
   );

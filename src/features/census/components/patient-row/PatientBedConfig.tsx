@@ -6,8 +6,9 @@ import type { EventTextHandler } from './inputCellTypes';
 import type { PatientBedConfigCallbacks, RowMenuAlign } from './patientRowContracts';
 import { usePatientBedConfigController } from '@/features/census/components/patient-row/usePatientBedConfigController';
 import { PatientBedConfigMenuPanel } from '@/features/census/components/patient-row/PatientBedConfigMenuPanel';
+import { buildPatientBedConfigSections } from '@/features/census/controllers/patientBedConfigSectionsController';
 
-interface PatientBedConfigProps extends PatientBedConfigCallbacks {
+export interface PatientBedConfigProps extends PatientBedConfigCallbacks {
   bed: BedDefinition;
   data: PatientData;
   currentDateString: string;
@@ -59,31 +60,58 @@ export const PatientBedConfig: React.FC<PatientBedConfigProps> = ({
     onToggleClinicalCrib,
     onUpdateClinicalCrib,
   });
+  const sections = buildPatientBedConfigSections({
+    props: {
+      bed,
+      data,
+      currentDateString,
+      isBlocked,
+      hasCompanion,
+      hasClinicalCrib,
+      isCunaMode,
+      onToggleMode,
+      onToggleCompanion,
+      onToggleClinicalCrib,
+      onTextChange,
+      onUpdateClinicalCrib,
+      readOnly,
+      align,
+    },
+    viewState,
+    handlers: {
+      handleToggleMode,
+      handleToggleCompanion,
+      handleToggleClinicalCrib,
+      handleRemoveClinicalCrib,
+    },
+  });
 
   return (
     <td className="p-[2px] border-r border-slate-200 text-center w-24 relative">
       <div className="flex flex-col items-center gap-0.5">
         {/* BED NAME */}
         <div className="font-display font-bold text-lg text-slate-800 flex items-center gap-1.5 leading-none tracking-tight">
-          {bed.name}
-          {isCunaMode && <Baby size={16} className="text-pink-500 drop-shadow-sm" />}
+          {sections.display.bedName}
+          {sections.display.showCunaIcon && (
+            <Baby size={16} className="text-pink-500 drop-shadow-sm" />
+          )}
         </div>
 
         {/* Days Hospitalized Counter */}
-        {viewState.showDaysCounter && (
+        {sections.display.showDaysCounter && (
           <div
             className="flex items-center gap-0.5 text-slate-500"
-            title={`${viewState.daysHospitalized} días hospitalizado`}
+            title={`${sections.display.daysHospitalized} días hospitalizado`}
           >
             <Clock size={10} className="text-slate-400" />
-            <span className="text-[10px] font-semibold">{viewState.daysHospitalized}d</span>
+            <span className="text-[10px] font-semibold">{sections.display.daysHospitalized}d</span>
           </div>
         )}
 
         {/* Static Indicators (Persistent information) */}
-        {viewState.showIndicators && (
+        {sections.display.showIndicators && (
           <div className="flex gap-1 mt-1">
-            {viewState.indicators.map(indicator => (
+            {sections.display.indicators.map(indicator => (
               <span key={indicator.key} className={indicator.className} title={indicator.title}>
                 {indicator.label}
               </span>
@@ -109,32 +137,19 @@ export const PatientBedConfig: React.FC<PatientBedConfigProps> = ({
           </button>
 
           {/* Dropdown content */}
-          {isMenuOpen && (
-            <PatientBedConfigMenuPanel
-              align={align}
-              bedModeModel={viewState.bedModeModel}
-              companionModel={viewState.companionModel}
-              clinicalCribModel={viewState.clinicalCribModel}
-              showClinicalCribToggle={viewState.showClinicalCribToggle}
-              showClinicalCribActions={viewState.showClinicalCribActions}
-              onToggleMode={handleToggleMode}
-              onToggleCompanion={handleToggleCompanion}
-              onToggleClinicalCrib={handleToggleClinicalCrib}
-              onRemoveClinicalCrib={handleRemoveClinicalCrib}
-            />
-          )}
+          {isMenuOpen && <PatientBedConfigMenuPanel {...sections.menu} />}
         </div>
       )}
 
       {/* Extra beds allow editing location */}
-      {bed.isExtra && (
+      {sections.extraLocation.shouldRender && (
         <input
           type="text"
           placeholder="Ubicación"
           className="w-full text-[10px] p-1 mt-1.5 border border-amber-200 rounded text-center bg-amber-50/50 text-amber-900 placeholder:text-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400 focus:outline-none transition-all duration-200"
-          value={data.location || ''}
-          onChange={onTextChange('location')}
-          disabled={readOnly}
+          value={sections.extraLocation.value}
+          onChange={sections.extraLocation.onChange}
+          disabled={sections.extraLocation.readOnly}
         />
       )}
     </td>
