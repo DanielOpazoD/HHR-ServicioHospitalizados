@@ -12,6 +12,8 @@ import {
   isJsonImportFile,
   shouldRefreshAfterJsonImport,
 } from '@/hooks/controllers/fileOperationsController';
+import { executeImportJsonBackup } from '@/application/backup-export/backupExportUseCases';
+import { presentBackupExportOutcome } from '@/hooks/controllers/backupExportOutcomeController';
 
 export interface UseFileOperationsReturn {
   handleExportJSON: () => void;
@@ -64,16 +66,26 @@ export const useFileOperations = (
   const handleImportFile = async (file: File) => {
     if (isJsonImportFile(file)) {
       try {
-        const result = await ExportService.importDataJSONDetailed(file);
-        if (result.success) {
-          for (const notification of buildJsonImportNotifications(result)) {
+        const outcome = await executeImportJsonBackup(file);
+        if (outcome.status === 'success' || outcome.status === 'partial') {
+          for (const notification of buildJsonImportNotifications(outcome.data)) {
             dispatchNotification(notification);
           }
-          if (shouldRefreshAfterJsonImport(result)) {
+          if (shouldRefreshAfterJsonImport(outcome.data)) {
             onRefresh();
           }
         } else {
-          dispatchNotification(buildImportFileErrorNotification('import_failed'));
+          const notice = presentBackupExportOutcome(outcome, {
+            successTitle: 'Importación completada',
+            partialTitle: 'Importación completada con observaciones',
+            failedTitle: 'Error al importar',
+            fallbackErrorMessage: 'No se pudo importar el archivo JSON.',
+          });
+          dispatchNotification({
+            channel: notice.channel === 'info' ? 'warning' : notice.channel,
+            title: notice.title,
+            message: notice.message,
+          });
         }
       } catch (_err) {
         dispatchNotification(buildImportFileErrorNotification('processing_failed'));

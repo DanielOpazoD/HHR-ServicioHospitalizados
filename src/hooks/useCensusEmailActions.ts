@@ -15,6 +15,7 @@ import {
   canRunCensusEmailAction,
   resolveShareLinkRole,
 } from '@/hooks/controllers/censusEmailActionController';
+import { resolveCensusEmailSendOutcomePresentation } from '@/hooks/controllers/censusEmailOutcomeController';
 
 export type CensusEmailSendStatus = 'idle' | 'loading' | 'success' | 'error';
 
@@ -121,26 +122,19 @@ export const useCensusEmailActions = ({
       excelSheetConfig,
     });
 
-    if (result.status === 'success' || result.status === 'partial') {
-      setStatus('success');
-      if (result.status === 'partial') {
-        await alert(
-          result.issues.map(issue => issue.message).join('\n'),
-          'Envío completado con advertencias'
-        );
-      }
-      return;
-    }
+    const presentation = resolveCensusEmailSendOutcomePresentation(result, {
+      fallbackErrorMessage: 'No se pudo enviar el correo.',
+      partialTitle: 'Envío completado con advertencias',
+      errorTitle: 'Error al enviar',
+      validationTitle: 'Modo prueba',
+      shouldUseValidationTitle: isAdminUser && testModeEnabled,
+    });
 
-    const errorMessage = result.issues[0]?.message || 'No se pudo enviar el correo.';
-    setError(errorMessage);
-    setStatus('error');
-    await alert(
-      errorMessage,
-      result.issues[0]?.kind === 'validation' && isAdminUser && testModeEnabled
-        ? 'Modo prueba'
-        : 'Error al enviar'
-    );
+    setError(presentation.error);
+    setStatus(presentation.nextStatus);
+    if (presentation.alertMessage) {
+      await alert(presentation.alertMessage, presentation.alertTitle);
+    }
   }, [
     alert,
     confirm,
@@ -193,15 +187,16 @@ export const useCensusEmailActions = ({
         accessRole: resolveShareLinkRole(accessRole),
         browserRuntime,
       });
-      if (result.status === 'success') {
-        setStatus('success');
-        return;
+      const presentation = resolveCensusEmailSendOutcomePresentation(result, {
+        fallbackErrorMessage: 'Error al enviar link.',
+        partialTitle: 'Link enviado con advertencias',
+        errorTitle: 'Error al enviar link',
+      });
+      setError(presentation.error);
+      setStatus(presentation.nextStatus);
+      if (presentation.alertMessage) {
+        await alert(presentation.alertMessage, presentation.alertTitle);
       }
-
-      const errorMessage = result.issues[0]?.message || 'Error al enviar link.';
-      setError(errorMessage);
-      setStatus('error');
-      await alert(errorMessage || 'No se pudo enviar el link de acceso.');
     },
     [
       alert,

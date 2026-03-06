@@ -3,14 +3,13 @@ import { useState, useCallback } from 'react';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useAuditData, AUDIT_SECTIONS } from '@/hooks/useAuditData';
 import { useAuditWorker } from '@/hooks/useAuditWorker';
-import * as auditService from '@/services/admin/auditService';
+import * as fetchAuditLogsUseCase from '@/application/audit/fetchAuditLogsUseCase';
 import { AUDIT_ACTION_LABELS } from '@/services/admin/auditConstants';
 import { AuditLogEntry, WorkerFilterParams } from '@/types/audit';
 import * as auditWorkerLogic from '@/services/admin/auditWorkerLogic';
 
-// Mock auditService
-vi.mock('@/services/admin/auditService', () => ({
-  getAuditLogs: vi.fn(),
+vi.mock('@/application/audit/fetchAuditLogsUseCase', () => ({
+  executeFetchAuditLogs: vi.fn(),
 }));
 
 vi.mock('@/services/admin/auditConstants', () => ({
@@ -89,7 +88,11 @@ describe('useAuditData', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(auditService.getAuditLogs).mockResolvedValue(mockLogs);
+    vi.mocked(fetchAuditLogsUseCase.executeFetchAuditLogs).mockResolvedValue({
+      status: 'success',
+      data: mockLogs,
+      issues: [],
+    });
 
     // Setup useAuditWorker mock to return processed data based on logs
     vi.mocked(useAuditWorker).mockImplementation(() => {
@@ -224,7 +227,11 @@ describe('useAuditData', () => {
         timestamp: '2025-01-01T11:05:00Z',
       },
     ];
-    vi.mocked(auditService.getAuditLogs).mockResolvedValue(duplicateLogs);
+    vi.mocked(fetchAuditLogsUseCase.executeFetchAuditLogs).mockResolvedValue({
+      status: 'success',
+      data: duplicateLogs,
+      issues: [],
+    });
 
     const { result } = renderHook(() => useAuditData());
 

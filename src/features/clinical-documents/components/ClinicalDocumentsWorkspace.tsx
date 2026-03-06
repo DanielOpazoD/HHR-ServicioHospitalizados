@@ -14,8 +14,10 @@ import {
 import { buildClinicalDocumentWorkspaceNotifyPort } from '@/features/clinical-documents/controllers/clinicalDocumentWorkspaceController';
 import { ClinicalDocumentsSidebar } from '@/features/clinical-documents/components/ClinicalDocumentsSidebar';
 import { ClinicalDocumentSheet } from '@/features/clinical-documents/components/ClinicalDocumentSheet';
-import { useClinicalDocumentWorkspaceState } from '@/features/clinical-documents/hooks/useClinicalDocumentWorkspaceState';
-import { useClinicalDocumentWorkspaceActions } from '@/features/clinical-documents/hooks/useClinicalDocumentWorkspaceActions';
+import { useClinicalDocumentWorkspaceBootstrap } from '@/features/clinical-documents/hooks/useClinicalDocumentWorkspaceBootstrap';
+import { useClinicalDocumentWorkspaceDraft } from '@/features/clinical-documents/hooks/useClinicalDocumentWorkspaceDraft';
+import { useClinicalDocumentWorkspaceDocumentActions } from '@/features/clinical-documents/hooks/useClinicalDocumentWorkspaceDocumentActions';
+import { useClinicalDocumentWorkspaceExportActions } from '@/features/clinical-documents/hooks/useClinicalDocumentWorkspaceExportActions';
 
 interface ClinicalDocumentsWorkspaceProps {
   patient: PatientData;
@@ -44,11 +46,22 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
     documents,
     selectedDocumentId,
     setSelectedDocumentId,
+    episode,
+  } = useClinicalDocumentWorkspaceBootstrap({
+    patient,
+    currentDateString,
+    bedId,
+    isActive,
+    canRead,
+    hospitalId,
+    role,
+  });
+
+  const {
     draft,
     setDraft,
     isSaving,
     setIsSaving,
-    episode,
     validationIssues,
     lastPersistedSnapshotRef,
     patchPatientField,
@@ -58,13 +71,11 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
     patchPatientInfoTitle,
     patchFooterLabel,
     patchDocumentMeta,
-  } = useClinicalDocumentWorkspaceState({
-    patient,
-    currentDateString,
-    bedId,
-    isActive,
-    canRead,
+  } = useClinicalDocumentWorkspaceDraft({
+    documents,
+    selectedDocumentId,
     canEdit,
+    isActive,
     hospitalId,
     role,
     user,
@@ -74,34 +85,46 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
   const canUnsignSelectedDocument =
     selectedDocument && user ? canUnsignClinicalDocument(role, selectedDocument) : false;
 
-  const {
-    createDocument,
-    handleDeleteDocument,
-    handleSaveNow,
-    handlePrint,
-    handleSign,
-    handleUnsign,
-    handleUploadPdf,
-    isUploadingPdf,
-  } = useClinicalDocumentWorkspaceActions({
-    patient,
-    role,
-    user,
-    hospitalId,
-    episode,
-    selectedTemplateId,
-    templates,
-    selectedDocument,
-    selectedDocumentId,
-    canEdit,
-    canDelete,
-    validationIssues,
-    notify: buildClinicalDocumentWorkspaceNotifyPort(success, warning, notifyError, info, confirm),
-    setSelectedDocumentId,
-    setDraft,
-    setIsSaving,
-    lastPersistedSnapshotRef,
-  });
+  const { createDocument, handleDeleteDocument, handleSaveNow, handleSign, handleUnsign } =
+    useClinicalDocumentWorkspaceDocumentActions({
+      patient,
+      role,
+      user,
+      hospitalId,
+      episode,
+      selectedTemplateId,
+      templates,
+      selectedDocument,
+      selectedDocumentId,
+      canEdit,
+      canDelete,
+      validationIssues,
+      notify: buildClinicalDocumentWorkspaceNotifyPort(
+        success,
+        warning,
+        notifyError,
+        info,
+        confirm
+      ),
+      setSelectedDocumentId,
+      setDraft,
+      setIsSaving,
+      lastPersistedSnapshotRef,
+    });
+
+  const { handlePrint, handleUploadPdf, isUploadingPdf } =
+    useClinicalDocumentWorkspaceExportActions({
+      selectedDocument,
+      hospitalId,
+      notify: buildClinicalDocumentWorkspaceNotifyPort(
+        success,
+        warning,
+        notifyError,
+        info,
+        confirm
+      ),
+      setDraft,
+    });
 
   if (!canRead) {
     return (

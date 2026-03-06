@@ -310,13 +310,17 @@ describe('useCensusEmail', () => {
 
   describe('sendEmail', () => {
     it('should show alert and return if no record provided', async () => {
+      mockConfirm.mockResolvedValue(true);
       const { result } = renderHook(() => useCensusEmail({ ...defaultParams, record: null }));
 
       await act(async () => {
         await result.current.sendEmail();
       });
 
-      expect(mockAlert).toHaveBeenCalledWith('No hay datos del censo para enviar.');
+      expect(mockAlert).toHaveBeenCalledWith(
+        'No hay datos del censo para enviar.',
+        'Error al enviar'
+      );
       expect(triggerCensusEmail).not.toHaveBeenCalled();
     });
 

@@ -30,6 +30,7 @@ import {
   resolveMutationSyncStatus,
 } from '@/hooks/controllers/dailyRecordSyncController';
 import { executeSyncDailyRecord } from '@/application/daily-record/syncDailyRecordUseCase';
+import { presentDailyRecordRefreshOutcome } from '@/hooks/controllers/dailyRecordRefreshOutcomeController';
 
 export const useDailyRecordSyncQuery = (
   currentDateString: string,
@@ -180,15 +181,15 @@ export const useDailyRecordSyncQuery = (
       date: currentDateString,
       repository: dailyRecord,
     }).then(outcome => {
-      if (outcome.status === 'degraded') {
-        warning('Sincronización degradada', outcome.issues[0]?.message);
-      }
-      if (outcome.status === 'partial') {
-        warning('Sincronización parcial', outcome.issues[0]?.message);
+      const notice = presentDailyRecordRefreshOutcome(outcome);
+      if (notice.channel === 'warning') {
+        warning(notice.title || 'Sincronización', notice.message);
+      } else if (notice.channel === 'error') {
+        notifyError(notice.title || 'Sincronización', notice.message);
       }
       refetch();
     });
-  }, [currentDateString, dailyRecord, refetch, warning]);
+  }, [currentDateString, dailyRecord, refetch, warning, notifyError]);
 
   const createDay = useCallback(
     async (copyFromPrevious: boolean, specificDate?: string) => {

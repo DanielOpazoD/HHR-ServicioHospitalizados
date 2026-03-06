@@ -1,14 +1,15 @@
 import { useCallback, useState } from 'react';
-import { deletePdf } from '@/services/backup/pdfStorageService';
-import { deleteCensusFile } from '@/services/backup/censusStorageService';
-import { deleteCudyrFile } from '@/services/backup/cudyrStorageService';
-import { runMonthlyBackfill } from '@/services/backup/monthlyBackfillService';
 import { MONTH_NAMES, type BaseStoredFile } from '@/services/backup/baseStorageService';
 import type { StoredPdfFile } from '@/services/backup/pdfStorageService';
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
 import type { BackupType } from '@/hooks/useBackupFileBrowser';
 import { resolveBackupModuleLabel } from '@/hooks/backupFileBrowserController';
 import type { ConfirmOptions } from '@/context/uiContracts';
+import {
+  executeDeleteBackupFile,
+  executeRunMonthlyBackfill,
+} from '@/application/backup-export/backupExportUseCases';
+import { presentBackupExportOutcome } from '@/hooks/controllers/backupExportOutcomeController';
 
 interface MagicBackfillProgressState {
   completed: number;
@@ -72,15 +73,24 @@ export const useBackupFileBrowserActions = ({
       if (!confirmed) return;
 
       try {
-        if (selectedBackupType === 'handoff') {
-          const pdfFile = file as StoredPdfFile;
-          await deletePdf(pdfFile.date, pdfFile.shiftType);
-        } else if (selectedBackupType === 'census') {
-          await deleteCensusFile(file.date);
+        const outcome = await executeDeleteBackupFile({
+          backupType: selectedBackupType,
+          file,
+        });
+        const notice = presentBackupExportOutcome(outcome, {
+          successTitle: 'Archivo eliminado',
+          partialTitle: 'Archivo eliminado con observaciones',
+          failedTitle: 'Error al eliminar archivo',
+          fallbackErrorMessage: 'Error al eliminar archivo',
+        });
+        if (notice.channel === 'success') {
+          notifications.success(notice.title, notice.message);
+        } else if (notice.channel === 'warning') {
+          notifications.warning(notice.title, notice.message);
         } else {
-          await deleteCudyrFile(file.date);
+          notifications.error(notice.title, notice.message);
+          return;
         }
-        notifications.success('Archivo eliminado');
         await refetch();
       } catch (error) {
         console.error('Delete error:', error);
@@ -134,15 +144,27 @@ export const useBackupFileBrowserActions = ({
         .filter(item => item.type === 'file')
         .map(item => item.data as BaseStoredFile | StoredPdfFile);
 
-      const result = await runMonthlyBackfill({
+      const outcome = await executeRunMonthlyBackfill({
         backupType: selectedBackupType,
         year,
         monthNumber,
         existingFiles: monthFiles,
         onProgress: progress => setMagicBackfillProgress(progress),
       });
+      const result = outcome.data;
 
       await refetch();
+
+      if (outcome.status === 'failed' || !result) {
+        const notice = presentBackupExportOutcome(outcome, {
+          successTitle: 'Respaldo masivo completado',
+          partialTitle: 'Respaldo masivo completado con observaciones',
+          failedTitle: 'Error al ejecutar respaldo masivo del mes',
+          fallbackErrorMessage: 'Error al ejecutar respaldo masivo del mes',
+        });
+        notifications.error(notice.title, notice.message);
+        return;
+      }
 
       if (result.totalPlanned === 0) {
         const message =
@@ -159,7 +181,7 @@ export const useBackupFileBrowserActions = ({
         `Sin registro diario: ${result.skippedNoRecord}`,
       ].join(' · ');
 
-      if (result.failed > 0) {
+      if (outcome.status === 'partial' || result.failed > 0) {
         notifications.warning('Respaldo masivo completado con observaciones', summary);
       } else {
         notifications.success('Respaldo masivo completado', summary);
@@ -171,9 +193,6 @@ export const useBackupFileBrowserActions = ({
           result.errors.slice(0, 3).join('\n')
         );
       }
-    } catch (error) {
-      console.error('Magic backup error:', error);
-      notifications.error('Error al ejecutar respaldo masivo del mes');
     } finally {
       setIsMagicBackfilling(false);
       setMagicBackfillProgress(null);

@@ -18,6 +18,10 @@ import { useAuditWorker } from './useAuditWorker';
 import { AUDIT_ACTION_LABELS, CRITICAL_ACTIONS } from '@/services/admin/auditConstants';
 import { executeFetchAuditLogs } from '@/application/audit/fetchAuditLogsUseCase';
 import {
+  buildDefaultAuditStats,
+  resolveAuditLogsFallback,
+} from '@/hooks/controllers/auditDataPolicyController';
+import {
   AUDIT_ITEMS_PER_PAGE,
   AUDIT_SECTIONS,
   type AuditSectionConfig,
@@ -109,7 +113,7 @@ export function useAuditData(): UseAuditDataReturn {
     setLoading(true);
     try {
       const result = await executeFetchAuditLogs({ limit: 1000 });
-      setLogs(result.data);
+      setLogs(resolveAuditLogsFallback(result.data));
       if (result.status === 'failed') {
         console.error('Failed to fetch audit logs:', result.issues[0]?.message);
       }
@@ -181,19 +185,7 @@ export function useAuditData(): UseAuditDataReturn {
   }, [searchTerm, filterAction, activeSection, startDate, endDate, groupedView]);
 
   // Use stats from worker
-  const stats = (workerStats || {
-    todayCount: 0,
-    thisWeekCount: 0,
-    criticalCount: 0,
-    activeUsersToday: [],
-    activeUserCount: 0,
-    avgSessionMinutes: 0,
-    totalSessionsToday: 0,
-    actionBreakdown: {},
-    hourlyActivity: new Array(24).fill(0),
-    topUsers: [],
-    criticalActions: [],
-  }) as AuditStats;
+  const stats = (workerStats || buildDefaultAuditStats()) as AuditStats;
 
   // Compose filters state object
   const filters: AuditFiltersState = {

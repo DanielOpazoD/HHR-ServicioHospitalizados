@@ -13,15 +13,10 @@ import {
   type CensusEmailExcelSheetConfig,
 } from '@/hooks/controllers/censusExcelSheetController';
 import { useCensusEmailActions, type CensusEmailSendStatus } from '@/hooks/useCensusEmailActions';
-import {
-  createInitialCensusMessageState,
-  createInitialCensusSendState,
-  resolveCensusEmailMessage,
-  resolveDateBoundSendState,
-  updateDateBoundErrorState,
-  updateDateBoundStatusState,
-} from '@/hooks/controllers/censusEmailStateController';
+import {} from '@/hooks/controllers/censusEmailStateController';
 import { useCensusEmailRecipientLists } from '@/hooks/useCensusEmailRecipientLists';
+import { useCensusEmailMessageState } from '@/hooks/useCensusEmailMessageState';
+import { useCensusEmailSendState } from '@/hooks/useCensusEmailSendState';
 
 interface UseCensusEmailParams {
   record: DailyRecord | null;
@@ -122,14 +117,9 @@ export const useCensusEmail = ({
   // ========== MESSAGE STATE ==========
   // Message is always generated dynamically based on date and nurses
   // No localStorage persistence to ensure it always reflects current data
-  const [messageState, setMessageState] = useState<{
-    key: string;
-    value: string;
-    edited: boolean;
-  }>(() => createInitialCensusMessageState(currentDateString, nurseSignature));
-  const message = useMemo(
-    () => resolveCensusEmailMessage(messageState, currentDateString, nurseSignature),
-    [currentDateString, nurseSignature, messageState]
+  const { message, onMessageChange, onResetMessage } = useCensusEmailMessageState(
+    currentDateString,
+    nurseSignature
   );
 
   // ========== TEST MODE (ADMIN) ==========
@@ -163,41 +153,8 @@ export const useCensusEmail = ({
 
   // ========== UI STATE ==========
   const [showEmailConfig, setShowEmailConfig] = useState(false);
-  const [sendState, setSendState] = useState<{
-    key: string;
-    status: CensusEmailSendStatus;
-    error: string | null;
-  }>(() => createInitialCensusSendState(currentDateString));
-  const { status, error } = useMemo(
-    () => resolveDateBoundSendState(sendState, currentDateString),
-    [currentDateString, sendState]
-  );
-  const setStatus = useCallback(
-    (next: React.SetStateAction<CensusEmailSendStatus>) => {
-      setSendState(previous => {
-        const previousStatus = previous.key === currentDateString ? previous.status : 'idle';
-        const nextStatus =
-          typeof next === 'function'
-            ? (next as (prev: CensusEmailSendStatus) => CensusEmailSendStatus)(previousStatus)
-            : next;
-        return updateDateBoundStatusState(previous, currentDateString, nextStatus);
-      });
-    },
-    [currentDateString]
-  );
-  const setError = useCallback(
-    (next: React.SetStateAction<string | null>) => {
-      setSendState(previous => {
-        const previousError = previous.key === currentDateString ? previous.error : null;
-        const nextError =
-          typeof next === 'function'
-            ? (next as (prev: string | null) => string | null)(previousError)
-            : next;
-        return updateDateBoundErrorState(previous, currentDateString, nextError);
-      });
-    },
-    [currentDateString]
-  );
+  const { status, error, setStatus, setError, resetStatus } =
+    useCensusEmailSendState(currentDateString);
 
   useEffect(() => {
     const loadExcelSheetConfig = async () => {
@@ -215,26 +172,6 @@ export const useCensusEmail = ({
   }, [excelSheetConfig]);
 
   // ========== HANDLERS ==========
-  const onMessageChange = useCallback(
-    (value: string) => {
-      setMessageState({
-        key: currentDateString,
-        value,
-        edited: true,
-      });
-    },
-    [currentDateString]
-  );
-
-  const onResetMessage = useCallback(() => {
-    setMessageState(createInitialCensusMessageState(currentDateString, nurseSignature));
-  }, [currentDateString, nurseSignature]);
-
-  const resetStatus = useCallback(() => {
-    setStatus('idle');
-    setError(null);
-  }, [setError, setStatus]);
-
   const { sendEmail, sendEmailWithLink, generateShareLink, copyShareLink } = useCensusEmailActions({
     record,
     currentDateString,

@@ -1,16 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
 import { DailyRecord } from '@/types';
-import { checkCensusExistsDetailed, uploadCensus } from '@/services/backup/censusStorageService';
-import { getMonthRecordsFromFirestore } from '@/services/storage/firestoreService';
+import { checkCensusExistsDetailed } from '@/services/backup/censusStorageService';
 import { useConfirmDialog, useNotification } from '@/context/UIContext';
 import {
   buildArchiveStatusState,
-  mergeMonthlyRecordsForBackup,
   resolveHandoffBackupStaff,
   shouldCheckArchiveStatus,
 } from '@/hooks/controllers/exportManagerController';
 import { getStorageLookupNotice } from '@/services/backup/storageUiPolicy';
-import { getShiftSchedule } from '@/utils/dateUtils';
+import {
+  executeBackupCensusExcel,
+  executeBackupHandoffPdf,
+  executeExportHandoffPdf,
+} from '@/application/backup-export/backupExportUseCases';
+import { presentBackupExportOutcome } from '@/hooks/controllers/backupExportOutcomeController';
 
 interface UseExportManagerProps {
   currentDateString: string;
@@ -79,56 +82,49 @@ export const useExportManager = ({
   }, [currentDateString, currentModule, selectedShift, warning]);
 
   const handleExportPDF = useCallback(async () => {
-    try {
-      // Import dynamically to avoid loading jsPDF on main bundle if possible
-      const { generateHandoffPdf } = await import('@/services/pdf/handoffPdfGenerator');
-      if (record) {
-        await generateHandoffPdf(record, false, selectedShift, {
-          dayStart: '08:00',
-          dayEnd: '20:00',
-          nightStart: '20:00',
-          nightEnd: '08:00',
-        });
-      }
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      notifyError('Error al generar el PDF. Por favor intente nuevamente.');
+    const outcome = await executeExportHandoffPdf({ record, selectedShift });
+    const notice = presentBackupExportOutcome(outcome, {
+      successTitle: 'PDF generado',
+      partialTitle: 'PDF generado con observaciones',
+      failedTitle: 'Error al generar PDF',
+      fallbackErrorMessage: 'Error al generar el PDF. Por favor intente nuevamente.',
+    });
+    if (notice.channel === 'success') {
+      success(notice.title, notice.message);
+    } else if (notice.channel === 'warning') {
+      warning(notice.title, notice.message);
+    } else {
+      notifyError(notice.title, notice.message);
     }
-  }, [record, selectedShift, notifyError]);
+  }, [notifyError, record, selectedShift, success, warning]);
 
   const handleBackupExcel = useCallback(async () => {
     setIsBackingUp(true);
     try {
-      // Build Excel and upload to Firebase Storage
-      const monthRecords = await getMonthRecordsFromFirestore(selectedYear, selectedMonth);
-      const limitDate = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
-
-      const filteredRecords = mergeMonthlyRecordsForBackup(
-        monthRecords,
-        record,
+      const outcome = await executeBackupCensusExcel({
+        selectedYear,
+        selectedMonth,
+        selectedDay,
         currentDateString,
-        limitDate
-      );
-
-      if (filteredRecords.length === 0) {
-        warning('No hay registros para archivar.');
-        return;
-      }
-
-      const { buildCensusMasterWorkbook } =
-        await import('@/services/exporters/censusMasterWorkbook');
-      const workbook = await buildCensusMasterWorkbook(filteredRecords);
-      const buffer = await workbook.xlsx.writeBuffer();
-      const blob = new Blob([buffer], {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        record,
       });
-
-      await uploadCensus(blob, currentDateString);
-      setIsArchived(true);
-      success('Excel archivado', `Guardado para ${currentDateString}`);
-    } catch (err) {
-      console.error('Error in backup:', err);
-      notifyError('Error al realizar el respaldo en la nube');
+      const notice = presentBackupExportOutcome(outcome, {
+        successTitle: 'Excel archivado',
+        successMessage: `Guardado para ${currentDateString}`,
+        partialTitle: 'Excel archivado con observaciones',
+        failedTitle: 'Error al realizar el respaldo en la nube',
+        fallbackErrorMessage: 'Error al realizar el respaldo en la nube',
+      });
+      if (outcome.status === 'success' || outcome.status === 'partial') {
+        setIsArchived(true);
+      }
+      if (notice.channel === 'success') {
+        success(notice.title, notice.message);
+      } else if (notice.channel === 'warning') {
+        warning(notice.title, notice.message);
+      } else {
+        notifyError(notice.title, notice.message);
+      }
     } finally {
       setIsBackingUp(false);
     }
@@ -147,27 +143,7 @@ export const useExportManager = ({
     async (skipConfirmation = false) => {
       if (!record) return;
 
-      // Staff derive logic
       const { delivers, receives } = resolveHandoffBackupStaff(record, selectedShift);
-
-      if (delivers.length === 0 || receives.length === 0) {
-        warning('Selecciona enfermera que entrega y recibe antes de guardar');
-        return;
-      }
-
-      // Validate critical fields
-      const { validateCriticalFields, getMissingFieldsLabel } =
-        await import('@/services/validation/criticalFieldsValidator');
-      const validation = validateCriticalFields(record);
-      if (!validation.isValid) {
-        const firstIssue = validation.issues[0];
-        const fieldsMessage = getMissingFieldsLabel(firstIssue.missingFields);
-        warning(
-          `Campos críticos incompletos`,
-          `${validation.issueCount} paciente(s) sin ${fieldsMessage}. Complete los datos antes de guardar.`
-        );
-        return;
-      }
 
       const [year, month, day] = record.date.split('-');
       const formattedDate = `${day}-${month}-${year}`;
@@ -190,45 +166,24 @@ export const useExportManager = ({
 
       setIsBackingUp(true);
       try {
-        const [
-          { default: jsPDF },
-          { default: autoTable },
-          { buildHandoffPdfContent },
-          { uploadPdf },
-        ] = await Promise.all([
-          import('jspdf'),
-          import('jspdf-autotable'),
-          import('@/services/backup/pdfContentBuilder'),
-          import('@/services/backup/pdfStorageService'),
-        ]);
-
-        const schedule = getShiftSchedule(record.date);
-
-        const doc = new jsPDF();
-        await buildHandoffPdfContent(doc, record, selectedShift, schedule, autoTable);
-        const pdfBlob = doc.output('blob');
-        await uploadPdf(pdfBlob, record.date, selectedShift);
-
-        if (selectedShift === 'night') {
-          try {
-            const { generateCudyrMonthlyExcelBlob } =
-              await import('@/services/cudyr/cudyrExportService');
-            const { uploadCudyrExcel } = await import('@/services/backup/cudyrStorageService');
-            const [year, month] = record.date.split('-').map(Number);
-            const cudyrBlob = await generateCudyrMonthlyExcelBlob(year, month, record.date, record);
-            await uploadCudyrExcel(cudyrBlob, record.date);
-            success('Respaldos guardados', 'PDF + CUDYR mensual');
-          } catch (cudyrErr) {
-            console.error('CUDYR backup failed:', cudyrErr);
-            warning('PDF guardado, CUDYR falló');
-          }
-        } else {
-          success('Respaldo PDF guardado');
+        const outcome = await executeBackupHandoffPdf({ record, selectedShift });
+        const notice = presentBackupExportOutcome(outcome, {
+          successTitle: selectedShift === 'night' ? 'Respaldos guardados' : 'Respaldo PDF guardado',
+          successMessage: selectedShift === 'night' ? 'PDF + CUDYR mensual' : undefined,
+          partialTitle: 'Respaldo PDF guardado con observaciones',
+          failedTitle: 'Error al guardar el respaldo PDF',
+          fallbackErrorMessage: 'Error al guardar el respaldo PDF',
+        });
+        if (outcome.status === 'success' || outcome.status === 'partial') {
+          setIsArchived(true);
         }
-        setIsArchived(true);
-      } catch (err) {
-        console.error('Error saving handoff PDF:', err);
-        notifyError('Error al guardar el respaldo PDF');
+        if (notice.channel === 'success') {
+          success(notice.title, notice.message);
+        } else if (notice.channel === 'warning') {
+          warning(notice.title, notice.message);
+        } else {
+          notifyError(notice.title, notice.message);
+        }
       } finally {
         setIsBackingUp(false);
       }
