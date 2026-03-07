@@ -24,6 +24,7 @@ const baseStatus = (): UserHealthStatus => ({
   slowestRepositoryOperationMs: 0,
   operationalObservedCount: 0,
   operationalFailureCount: 0,
+  operationalLastHourObservedCount: 0,
   operationalSyncObservedCount: 0,
   operationalIndexedDbObservedCount: 0,
   operationalClinicalDocumentObservedCount: 0,

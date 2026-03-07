@@ -17,6 +17,7 @@ import {
 } from '@/services/repositories/dataMigrationContracts';
 import { migrateRecordSchemaToCurrent } from '@/services/repositories/schemaGovernance';
 import { assessSchemaCompatibility } from '@/services/repositories/schemaEvolutionPolicy';
+import { applyDailyRecordStaffingCompatibility } from '@/services/staff/dailyRecordStaffing';
 
 type LegacyDailyRecordShape = DailyRecord & {
   nurseName?: string;
@@ -34,21 +35,32 @@ const migrateLegacyNurses = (
   migrated: DailyRecord,
   appliedRules: LegacyMigrationRule[]
 ): void => {
-  if (migrated.nurses && migrated.nurses.length > 0) {
-    const hasNurses = migrated.nurses.some(n => !!n);
-    const isDayShiftEmpty = !migrated.nursesDayShift || migrated.nursesDayShift.every(n => !n);
+  const normalized = applyDailyRecordStaffingCompatibility({
+    nurses: migrated.nurses,
+    nurseName: migrated.nurseName,
+    nursesDayShift: migrated.nursesDayShift,
+    nursesNightShift: migrated.nursesNightShift,
+  });
 
-    if (hasNurses && isDayShiftEmpty) {
-      migrated.nursesDayShift = [...migrated.nurses];
-      pushRule(appliedRules, 'legacy_nurses_promoted_to_day_shift');
-    }
+  if (
+    Array.isArray(record.nurses) &&
+    record.nurses.some(n => !!n) &&
+    (!migrated.nursesDayShift || migrated.nursesDayShift.every(n => !n))
+  ) {
+    pushRule(appliedRules, 'legacy_nurses_promoted_to_day_shift');
   }
 
-  if (migrated.nurseName && (!migrated.nursesDayShift || !migrated.nursesDayShift[0])) {
-    if (!migrated.nursesDayShift) migrated.nursesDayShift = ['', ''];
-    migrated.nursesDayShift[0] = migrated.nurseName;
+  if (
+    typeof record.nurseName === 'string' &&
+    record.nurseName &&
+    (!migrated.nursesDayShift || !migrated.nursesDayShift[0])
+  ) {
     pushRule(appliedRules, 'legacy_single_nurse_promoted');
   }
+
+  migrated.nurses = normalized.nurses;
+  migrated.nursesDayShift = normalized.nursesDayShift;
+  migrated.nursesNightShift = normalized.nursesNightShift;
 };
 
 const migrateLegacyTens = (

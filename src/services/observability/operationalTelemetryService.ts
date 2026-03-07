@@ -22,6 +22,7 @@ export interface OperationalTelemetrySummary {
   recentEventCount: number;
   recentFailedCount: number;
   recentObservedCount: number;
+  lastHourObservedCount: number;
   syncFailureCount: number;
   syncObservedCount: number;
   degradedLocalCount: number;
@@ -156,6 +157,9 @@ export const buildOperationalTelemetrySummary = (
 ): OperationalTelemetrySummary => {
   const now = Date.now();
   const recentEvents = events.filter(event => now - Date.parse(event.timestamp) <= windowMs);
+  const lastHourEvents = events.filter(
+    event => now - Date.parse(event.timestamp) <= 60 * 60 * 1000
+  );
   const observedEvents = recentEvents.filter(
     event => event.status === 'partial' || event.status === 'degraded' || event.status === 'failed'
   );
@@ -167,6 +171,7 @@ export const buildOperationalTelemetrySummary = (
     recentEventCount: recentEvents.length,
     recentFailedCount: failedEvents.length,
     recentObservedCount: observedEvents.length,
+    lastHourObservedCount: lastHourEvents.filter(event => event.status !== 'success').length,
     syncFailureCount: recentEvents.filter(
       event => event.category === 'sync' && event.status === 'failed'
     ).length,

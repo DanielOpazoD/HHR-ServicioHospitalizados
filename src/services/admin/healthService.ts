@@ -23,6 +23,7 @@ export interface UserHealthStatus {
   slowestRepositoryOperationMs: number;
   operationalObservedCount: number;
   operationalFailureCount: number;
+  operationalLastHourObservedCount: number;
   operationalSyncObservedCount: number;
   operationalIndexedDbObservedCount: number;
   operationalClinicalDocumentObservedCount: number;
@@ -51,6 +52,7 @@ export interface SystemHealthSummary {
   oldestObservedPendingAgeMs: number;
   totalOperationalObservedCount: number;
   totalOperationalFailureCount: number;
+  totalOperationalLastHourObservedCount: number;
   totalOperationalSyncObservedCount: number;
   totalOperationalIndexedDbObservedCount: number;
   totalOperationalClinicalDocumentObservedCount: number;
@@ -97,6 +99,7 @@ export const normalizeUserHealthStatus = (raw: Partial<UserHealthStatus>): UserH
   slowestRepositoryOperationMs: toNumber(raw.slowestRepositoryOperationMs),
   operationalObservedCount: toNumber(raw.operationalObservedCount),
   operationalFailureCount: toNumber(raw.operationalFailureCount),
+  operationalLastHourObservedCount: toNumber(raw.operationalLastHourObservedCount),
   operationalSyncObservedCount: toNumber(raw.operationalSyncObservedCount),
   operationalIndexedDbObservedCount: toNumber(raw.operationalIndexedDbObservedCount),
   operationalClinicalDocumentObservedCount: toNumber(raw.operationalClinicalDocumentObservedCount),
@@ -150,6 +153,10 @@ export const buildSystemHealthSummary = (statuses: UserHealthStatus[]): SystemHe
     ),
     totalOperationalFailureCount: statuses.reduce(
       (sum, status) => sum + status.operationalFailureCount,
+      0
+    ),
+    totalOperationalLastHourObservedCount: statuses.reduce(
+      (sum, status) => sum + status.operationalLastHourObservedCount,
       0
     ),
     totalOperationalSyncObservedCount: statuses.reduce(

@@ -46,6 +46,7 @@ describe('systemHealthReporterController', () => {
         recentEventCount: 5,
         recentFailedCount: 2,
         recentObservedCount: 3,
+        lastHourObservedCount: 2,
         syncFailureCount: 1,
         syncObservedCount: 2,
         degradedLocalCount: 1,
@@ -67,6 +68,7 @@ describe('systemHealthReporterController', () => {
     expect(status.slowestRepositoryOperationMs).toBe(480);
     expect(status.operationalObservedCount).toBe(3);
     expect(status.operationalFailureCount).toBe(2);
+    expect(status.operationalLastHourObservedCount).toBe(2);
     expect(status.operationalSyncObservedCount).toBe(2);
     expect(status.operationalIndexedDbObservedCount).toBe(1);
     expect(status.operationalClinicalDocumentObservedCount).toBe(1);

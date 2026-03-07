@@ -47,6 +47,7 @@ export const buildUserHealthStatus = (options: BuildUserHealthStatusOptions): Us
   slowestRepositoryOperationMs: options.repositoryPerformance.slowestOperationMs,
   operationalObservedCount: options.operationalTelemetry.recentObservedCount,
   operationalFailureCount: options.operationalTelemetry.recentFailedCount,
+  operationalLastHourObservedCount: options.operationalTelemetry.lastHourObservedCount,
   operationalSyncObservedCount: options.operationalTelemetry.syncObservedCount,
   operationalIndexedDbObservedCount: options.operationalTelemetry.indexedDbObservedCount,
   operationalClinicalDocumentObservedCount:

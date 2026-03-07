@@ -43,6 +43,7 @@ describe('healthService', () => {
     slowestRepositoryOperationMs: 0,
     operationalObservedCount: 0,
     operationalFailureCount: 0,
+    operationalLastHourObservedCount: 0,
     operationalSyncObservedCount: 0,
     operationalIndexedDbObservedCount: 0,
     operationalClinicalDocumentObservedCount: 0,
@@ -197,6 +198,7 @@ describe('healthService', () => {
           slowestRepositoryOperationMs: 280,
           operationalObservedCount: 5,
           operationalFailureCount: 2,
+          operationalLastHourObservedCount: 3,
           operationalSyncObservedCount: 2,
           operationalIndexedDbObservedCount: 1,
           operationalClinicalDocumentObservedCount: 1,
@@ -217,6 +219,7 @@ describe('healthService', () => {
       expect(summary.oldestObservedPendingAgeMs).toBe(0);
       expect(summary.totalOperationalObservedCount).toBe(5);
       expect(summary.totalOperationalFailureCount).toBe(2);
+      expect(summary.totalOperationalLastHourObservedCount).toBe(3);
       expect(summary.totalOperationalSyncObservedCount).toBe(2);
       expect(summary.totalOperationalIndexedDbObservedCount).toBe(1);
       expect(summary.totalOperationalClinicalDocumentObservedCount).toBe(1);

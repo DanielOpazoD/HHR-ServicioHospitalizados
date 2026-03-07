@@ -3,6 +3,7 @@ import { db } from '@/firebaseConfig';
 import { DailyRecord } from '@/types';
 import { COLLECTIONS, getActiveHospitalId, HOSPITAL_COLLECTIONS } from '@/constants/firestorePaths';
 import { migrateLegacyData } from '@/services/repositories/dataMigration';
+import { applyDailyRecordStaffingCompatibility } from '@/services/staff/dailyRecordStaffing';
 
 export const getRecordsCollection = () =>
   collection(db, COLLECTIONS.HOSPITALS, getActiveHospitalId(), HOSPITAL_COLLECTIONS.DAILY_RECORDS);
@@ -93,17 +94,17 @@ export const docToRecord = (docData: Record<string, unknown>, docId: string): Da
   rawData.tensDayShift = ensureArray(rawData.tensDayShift, 3);
   rawData.tensNightShift = ensureArray(rawData.tensNightShift, 3);
 
-  const nursesArr = rawData.nurses as string[];
-  const dayShiftArr = rawData.nursesDayShift as string[];
-
-  if (nursesArr.length > 0 && dayShiftArr.every(n => !n)) {
-    rawData.nursesDayShift = [...nursesArr];
-  }
-  if (typeof rawData.nurseName === 'string' && rawData.nurseName && !dayShiftArr[0]) {
-    (rawData.nursesDayShift as string[])[0] = rawData.nurseName;
-  }
-
   rawData.activeExtraBeds = Array.isArray(rawData.activeExtraBeds) ? rawData.activeExtraBeds : [];
+
+  const normalizedStaffing = applyDailyRecordStaffingCompatibility(
+    rawData as unknown as Pick<
+      DailyRecord,
+      'nurses' | 'nurseName' | 'nursesDayShift' | 'nursesNightShift'
+    >
+  );
+  rawData.nurses = normalizedStaffing.nurses;
+  rawData.nursesDayShift = normalizedStaffing.nursesDayShift;
+  rawData.nursesNightShift = normalizedStaffing.nursesNightShift;
 
   return migrateLegacyData(rawData as unknown as DailyRecord, docId);
 };

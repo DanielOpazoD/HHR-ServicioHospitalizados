@@ -110,6 +110,7 @@ export const SystemHealthDashboard = () => {
             {summary.usersWithRecentOperationalIssues} usuarios recientes
           </p>
           <p className="text-[10px] text-slate-400">
+            Última hora {summary.totalOperationalLastHourObservedCount} ·{' '}
             {summary.latestOperationalIssueAt
               ? `Última observación ${new Date(summary.latestOperationalIssueAt).toLocaleTimeString(
                   [],
@@ -282,6 +283,7 @@ export const SystemHealthDashboard = () => {
                       <span>Local {u.operationalIndexedDbObservedCount}</span>
                       <span>Docs {u.operationalClinicalDocumentObservedCount}</span>
                       <span>Día {u.operationalCreateDayObservedCount}</span>
+                      <span>1h {u.operationalLastHourObservedCount}</span>
                       {u.latestOperationalIssueAt && (
                         <span className="text-slate-400">
                           Última obs.{' '}
