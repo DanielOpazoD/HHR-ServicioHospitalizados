@@ -7,10 +7,7 @@ import {
 import { getAvailableDatesFromFirestore } from '@/services/storage/firestoreService';
 import { logLegacyInfo } from '@/services/storage/legacyfirebase/legacyFirebaseLogger';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
-import {
-  migrateLegacyData,
-  migrateLegacyDataWithReport,
-} from '@/services/repositories/dataMigration';
+import { migrateLegacyDataWithReport } from '@/services/repositories/dataMigration';
 import { loadRemoteRecordWithFallback } from '@/services/repositories/dailyRecordRemoteLoader';
 import { bridgeLegacyRecord } from '@/services/repositories/legacyRecordBridgeService';
 import {

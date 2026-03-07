@@ -83,6 +83,19 @@ describe('conflictResolutionMatrix', () => {
     expect(resolved.activeExtraBeds).toEqual(['Extra-2', 'Extra-1']);
   });
 
+  it('keeps legacy nurses as a compatibility mirror of nursesDayShift during full merge', () => {
+    const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
+    remote.nurses = ['Ana'];
+
+    const local = makeRecord('2026-02-18', '2026-02-18T10:05:00.000Z');
+    local.nursesDayShift = ['Berta'];
+
+    const resolved = resolveDailyRecordConflict(remote, local, { changedPaths: ['*'] });
+
+    expect(resolved.nursesDayShift).toEqual(['Berta', 'Ana']);
+    expect(resolved.nurses).toEqual(resolved.nursesDayShift);
+  });
+
   it('preserves explicit empty-string clears from local', () => {
     const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
     remote.handoffNovedadesDayShift = 'Texto remoto';

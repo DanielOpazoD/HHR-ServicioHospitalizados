@@ -23,10 +23,6 @@ import { useAuth } from '@/context/AuthContext';
 export const AuditView: React.FC = () => {
   const { role } = useAuth();
 
-  if (!canAccessAuditView(role)) {
-    return <AccessRestricted />;
-  }
-
   // Use extracted hook for all audit data management
   const {
     logs,
@@ -75,6 +71,10 @@ export const AuditView: React.FC = () => {
   const { isConsolidating: consolidating, handleConsolidate } = useAuditConsolidation({
     onConsolidated: fetchLogs,
   });
+
+  if (!canAccessAuditView(role)) {
+    return <AccessRestricted />;
+  }
 
   return (
     <div className="space-y-6 animate-fade-in pb-24 font-sans max-w-[1400px] mx-auto">

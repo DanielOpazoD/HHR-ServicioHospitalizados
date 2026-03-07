@@ -10,13 +10,13 @@ describe('minsalAnalyticsPresentationController', () => {
     expect(DEFAULT_ANALYTICS_PRESENTATION_COPY.periodOccupancyTitle).toBe('Ocupación del período');
     expect(DEFAULT_ANALYTICS_PRESENTATION_COPY.periodDischargesTitle).toBe('Egresos del período');
     expect(DEFAULT_ANALYTICS_PRESENTATION_COPY.periodDischargesSubtitle).toBe(
-      'Altas, fallecidos y traslados del rango'
+      'Total acumulado del rango seleccionado'
     );
     expect(DEFAULT_ANALYTICS_PRESENTATION_COPY.periodMortalitySubtitle).toBe(
-      'Fallecidos sobre egresos del rango'
+      'Fallecidos sobre egresos acumulados del rango'
     );
     expect(DEFAULT_ANALYTICS_PRESENTATION_COPY.periodRotationSubtitle).toBe(
-      'Egresos por cama dentro del rango'
+      'Índice estimado sobre el acumulado del rango'
     );
     expect(DEFAULT_ANALYTICS_PRESENTATION_COPY.trendTitle).toBe('Tendencia diaria de ocupación');
     expect(DEFAULT_ANALYTICS_PRESENTATION_COPY.trendOccupancyLabel).toBe('Ocupación del día');

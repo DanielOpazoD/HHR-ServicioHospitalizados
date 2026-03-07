@@ -16,7 +16,6 @@ import type { DailyRecordReadResult } from './contracts/dailyRecordQueries';
 // ============================================================================
 
 export { setFirestoreEnabled, isFirestoreEnabled } from './repositoryConfig';
-import { isFirestoreEnabled } from './repositoryConfig';
 
 // Re-export from dedicated modules
 export { CatalogRepository } from './CatalogRepository';

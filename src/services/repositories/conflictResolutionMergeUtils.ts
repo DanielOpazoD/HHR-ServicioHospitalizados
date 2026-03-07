@@ -9,7 +9,6 @@ import {
 
 export const ID_BASED_ARRAY_FIELDS = new Set(['discharges', 'transfers', 'cma']);
 export const UNIQUE_ARRAY_FIELDS = new Set([
-  'nurses',
   'nursesDayShift',
   'nursesNightShift',
   'tensDayShift',

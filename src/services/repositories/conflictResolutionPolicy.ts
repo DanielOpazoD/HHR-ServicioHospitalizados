@@ -1,3 +1,5 @@
+import { resolveConflictDomainContextForPath } from '@/services/repositories/conflictResolutionDomainPolicy';
+
 const ROOT_LOCAL_PRIORITY_FIELDS = new Set([
   'handoffNovedadesDayShift',
   'handoffNovedadesNightShift',
@@ -145,4 +147,3 @@ export const decideScalarByPolicy = (
   }
   return { value: remote, winner: 'remote', reason: 'default_remote_priority' };
 };
-import { resolveConflictDomainContextForPath } from '@/services/repositories/conflictResolutionDomainPolicy';

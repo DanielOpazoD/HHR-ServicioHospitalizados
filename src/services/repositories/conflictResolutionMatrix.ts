@@ -263,14 +263,14 @@ const resolveByChangedPaths = (
       continue;
     }
 
-    if (UNIQUE_ARRAY_FIELDS.has(root)) {
-      if (root === 'nurses' || root === 'nursesDayShift') {
-        const mergedDayShift = resolveCanonicalDayShiftNurses(remote, local, true, traceContext);
-        (patches as Record<string, unknown>).nursesDayShift = mergedDayShift;
-        (patches as Record<string, unknown>).nurses = [...mergedDayShift];
-        continue;
-      }
+    if (root === 'nurses' || root === 'nursesDayShift') {
+      const mergedDayShift = resolveCanonicalDayShiftNurses(remote, local, true, traceContext);
+      (patches as Record<string, unknown>).nursesDayShift = mergedDayShift;
+      (patches as Record<string, unknown>).nurses = [...mergedDayShift];
+      continue;
+    }
 
+    if (UNIQUE_ARRAY_FIELDS.has(root)) {
       const remoteMap = remote as unknown as Record<string, unknown>;
       const localMap = local as unknown as Record<string, unknown>;
       (patches as Record<string, unknown>)[root] = mergeUniquePrimitiveArray(
