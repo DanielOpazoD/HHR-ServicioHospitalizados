@@ -8,15 +8,14 @@ import { useCallback } from 'react';
 import { DailyRecord } from '@/types';
 import { useAuditContext } from '@/context/AuditContext';
 import type { DailyRecordPatch } from './useDailyRecordTypes';
+import { buildClearAllBedsPatch, buildClearedPatient } from './useBedOperationsController';
 import {
-  buildActiveExtraBeds,
-  buildBlockedReasonPatch,
-  buildClearAllBedsPatch,
-  buildClearedPatient,
-  buildMoveOrCopyPatch,
-  buildToggleBedTypePatch,
-  buildToggleBlockedPatch,
-} from './useBedOperationsController';
+  resolveBlockedReasonUpdate,
+  resolveMoveOrCopyOperation,
+  resolveToggleBedTypeOperation,
+  resolveToggleBlockedOperation,
+  resolveToggleExtraBedOperation,
+} from '@/hooks/controllers/bedOperationsAuditController';
 
 // ============================================================================
 // Types
@@ -101,63 +100,20 @@ export const useBedOperations = (
   const moveOrCopyPatient = useCallback(
     (type: 'move' | 'copy', sourceBedId: string, targetBedId: string) => {
       if (!record) return;
-      const sourceData = record.beds[sourceBedId];
-
-      // Validation: Cannot move/copy empty patient
-      if (!sourceData.patientName) {
-        console.warn(`Cannot ${type} empty patient from ${sourceBedId}`);
+      const resolvedOperation = resolveMoveOrCopyOperation(record, type, sourceBedId, targetBedId);
+      if (resolvedOperation.kind === 'noop') {
+        console.warn(resolvedOperation.warning);
         return;
       }
-
-      const patch = buildMoveOrCopyPatch(record, type, sourceBedId, targetBedId);
-      if (!patch) {
-        return;
-      }
-
-      if (type === 'move') {
-        patchRecord(patch);
-
-        // Audit
-        logEvent(
-          'PATIENT_MODIFIED',
-          'patient',
-          targetBedId,
-          {
-            action: 'move',
-            sourceBed: sourceBedId,
-            targetBed: targetBedId,
-            patientName: sourceData.patientName,
-            changes: {
-              location: {
-                old: record.beds[sourceBedId].location,
-                new: record.beds[targetBedId].location,
-              },
-            },
-          },
-          sourceData.rut,
-          record.date
-        );
-      } else {
-        patchRecord(patch);
-
-        // Audit
-        logEvent(
-          'PATIENT_MODIFIED',
-          'patient',
-          targetBedId,
-          {
-            action: 'copy',
-            sourceBed: sourceBedId,
-            targetBed: targetBedId,
-            patientName: sourceData.patientName,
-            changes: {
-              location: { old: 'N/A', new: record.beds[targetBedId].location },
-            },
-          },
-          sourceData.rut,
-          record.date
-        );
-      }
+      patchRecord(resolvedOperation.patch);
+      logEvent(
+        resolvedOperation.audit.action,
+        resolvedOperation.audit.entityType,
+        resolvedOperation.audit.entityId,
+        resolvedOperation.audit.details,
+        resolvedOperation.audit.patientRut,
+        resolvedOperation.audit.recordDate
+      );
     },
     [record, patchRecord, logEvent]
   );
@@ -169,17 +125,15 @@ export const useBedOperations = (
   const toggleBlockBed = useCallback(
     (bedId: string, reason?: string) => {
       if (!record) return;
-      const { patch, newIsBlocked } = buildToggleBlockedPatch(record, bedId, reason);
-      patchRecord(patch);
-
-      // Audit Log
+      const resolvedOperation = resolveToggleBlockedOperation(record, bedId, reason);
+      patchRecord(resolvedOperation.patch);
       logEvent(
-        newIsBlocked ? 'BED_BLOCKED' : 'BED_UNBLOCKED',
-        'patient',
-        bedId,
-        { bedId, reason: newIsBlocked ? reason || '' : '' },
+        resolvedOperation.audit.action,
+        resolvedOperation.audit.entityType,
+        resolvedOperation.audit.entityId,
+        resolvedOperation.audit.details,
         undefined,
-        record.date
+        resolvedOperation.audit.recordDate
       );
     },
     [record, patchRecord, logEvent]
@@ -191,19 +145,18 @@ export const useBedOperations = (
   const updateBlockedReason = useCallback(
     (bedId: string, reason: string) => {
       if (!record) return;
-      const currentBed = record.beds[bedId];
-      if (!currentBed.isBlocked) return; // Only update if already blocked
-
-      patchRecord(buildBlockedReasonPatch(bedId, reason));
-
-      // Audit Log
+      const resolvedOperation = resolveBlockedReasonUpdate(record, bedId, reason);
+      if (resolvedOperation.kind === 'noop') {
+        return;
+      }
+      patchRecord(resolvedOperation.patch);
       logEvent(
-        'BED_BLOCKED',
-        'patient',
-        bedId,
-        { bedId, reason: reason || '', updateOnly: true },
+        resolvedOperation.audit.action,
+        resolvedOperation.audit.entityType,
+        resolvedOperation.audit.entityId,
+        resolvedOperation.audit.details,
         undefined,
-        record.date
+        resolvedOperation.audit.recordDate
       );
     },
     [record, patchRecord, logEvent]
@@ -212,20 +165,15 @@ export const useBedOperations = (
   const toggleExtraBed = useCallback(
     (bedId: string) => {
       if (!record) return;
-      const currentExtras = record.activeExtraBeds || [];
-      const newExtras = buildActiveExtraBeds(currentExtras, bedId);
-      const isActive = newExtras.includes(bedId);
-
-      patchRecord({ activeExtraBeds: newExtras });
-
-      // Audit Log
+      const resolvedOperation = resolveToggleExtraBedOperation(record, bedId);
+      patchRecord(resolvedOperation.patch);
       logEvent(
-        'EXTRA_BED_TOGGLED',
-        'dailyRecord',
-        record.date,
-        { bedId, active: isActive },
+        resolvedOperation.audit.action,
+        resolvedOperation.audit.entityType,
+        resolvedOperation.audit.entityId,
+        resolvedOperation.audit.details,
         undefined,
-        record.date
+        resolvedOperation.audit.recordDate
       );
     },
     [record, patchRecord, logEvent]
@@ -234,19 +182,18 @@ export const useBedOperations = (
   const toggleBedType = useCallback(
     (bedId: string) => {
       if (!record) return;
-      const togglePatch = buildToggleBedTypePatch(record, bedId);
-      if (!togglePatch) return;
-
-      patchRecord(togglePatch.patch);
-
-      // Audit Log
+      const resolvedOperation = resolveToggleBedTypeOperation(record, bedId);
+      if (resolvedOperation.kind === 'noop') {
+        return;
+      }
+      patchRecord(resolvedOperation.patch);
       logEvent(
-        'PATIENT_MODIFIED',
-        'patient',
-        bedId,
-        { action: 'toggle_bed_type', from: togglePatch.currentType, to: togglePatch.nextType },
-        record.beds[bedId]?.rut,
-        record.date
+        resolvedOperation.audit.action,
+        resolvedOperation.audit.entityType,
+        resolvedOperation.audit.entityId,
+        resolvedOperation.audit.details,
+        resolvedOperation.audit.patientRut,
+        resolvedOperation.audit.recordDate
       );
     },
     [record, patchRecord, logEvent]

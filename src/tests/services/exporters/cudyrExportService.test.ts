@@ -111,9 +111,13 @@ describe('cudyrExportService', () => {
     await generateCudyrMonthlyExcel(2025, 1);
 
     expect(createWorkbook).toHaveBeenCalled();
-    expect(mockWorkbook.addWorksheet).toHaveBeenCalledWith('Resumen Mensual', expect.any(Object));
+    expect(mockWorkbook.addWorksheet).toHaveBeenCalledWith(
+      'Resumen CUDYR Mensual',
+      expect.any(Object)
+    );
     expect(mockWorkbook.addWorksheet).toHaveBeenCalledWith('01-01-2025');
     expect(saveAs).toHaveBeenCalled();
+    expect(vi.mocked(saveAs).mock.calls[0]?.[1]).toContain('CUDYR_Mensual_Enero_2025');
   });
 
   it('should generate monthly excel blob', async () => {

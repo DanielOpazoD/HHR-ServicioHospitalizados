@@ -74,7 +74,7 @@ export const BackupFilesView: React.FC<BackupFilesViewProps> = ({
       ? 'Respaldar faltantes (día+noche)'
       : selectedBackupType === 'census'
         ? 'Respaldar censos faltantes'
-        : 'Respaldar CUDYR faltantes';
+        : 'Respaldar cierres CUDYR faltantes';
 
   const renderContent = () => {
     if (isLoading && !isRefetching) {
@@ -302,8 +302,8 @@ export const BackupFilesView: React.FC<BackupFilesViewProps> = ({
                 canDownload={true}
                 subtitle={
                   selectedBackupType === 'census'
-                    ? 'Censo Hospital Hanga Roa'
-                    : 'CUDYR Hospital Hanga Roa'
+                    ? 'Censo diario Hospital Hanga Roa'
+                    : 'Cierre CUDYR mensual Hospital Hanga Roa'
                 }
               />
             </React.Suspense>

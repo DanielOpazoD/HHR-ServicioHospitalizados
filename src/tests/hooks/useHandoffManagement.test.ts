@@ -2,11 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import * as whatsappService from '@/services/integrations/whatsapp/whatsappService';
 
+const mockNotifySuccess = vi.fn();
+const mockNotifyError = vi.fn();
+
 // Mock dependencies before importing the hook
 vi.mock('@/context/UIContext', () => ({
   useNotification: () => ({
-    success: vi.fn(),
-    error: vi.fn(),
+    success: mockNotifySuccess,
+    error: mockNotifyError,
   }),
 }));
 
@@ -286,6 +289,22 @@ describe('useHandoffManagement', () => {
       expect.objectContaining({
         medicalHandoffSentAt: expect.any(String),
       })
+    );
+    expect(mockNotifyError).toHaveBeenCalledWith('Error al enviar', 'Falla remota');
+  });
+
+  it('reports an error when attempting to send without an active record', async () => {
+    const { result } = renderHook(() =>
+      useHandoffManagement(null, mockSaveAndUpdate, mockPatchRecord)
+    );
+
+    await act(async () => {
+      await result.current.sendMedicalHandoff('Template content', 'group-xyz');
+    });
+
+    expect(mockNotifyError).toHaveBeenCalledWith(
+      'Error al enviar',
+      'No hay entrega médica disponible para enviar.'
     );
   });
 });

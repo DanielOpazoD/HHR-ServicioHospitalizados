@@ -45,8 +45,8 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
       const { generateCudyrMonthlyExcel } = await import('@/services/cudyr/cudyrExportService');
       await generateCudyrMonthlyExcel(year, month, currentDate);
     } catch (error) {
-      console.error('Error exporting CUDYR Excel:', error);
-      alert('Error al exportar Excel. Por favor intente nuevamente.');
+      console.error('Error exporting CUDYR Excel mensual:', error);
+      alert('Error al exportar el resumen mensual CUDYR. Por favor intente nuevamente.');
     } finally {
       setIsExporting(false);
     }
@@ -158,7 +158,11 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
                 ? 'bg-slate-100 text-slate-400 cursor-wait'
                 : 'bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95'
             )}
-            title="Exportar resumen mensual a Excel"
+            title={
+              currentDate
+                ? `Exportar resumen mensual CUDYR hasta el último registro disponible del ${currentDate}`
+                : 'Exportar resumen mensual CUDYR'
+            }
           >
             {isExporting ? (
               <>
@@ -168,7 +172,7 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
             ) : (
               <>
                 <FileSpreadsheet size={12} />
-                Excel
+                Excel mensual
               </>
             )}
           </button>

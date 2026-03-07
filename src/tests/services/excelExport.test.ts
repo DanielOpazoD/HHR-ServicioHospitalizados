@@ -284,6 +284,51 @@ describe('reportService', () => {
         'Censo_HangaRoa_Bruto_Rango_2025-12-24_2025-12-25.xlsx'
       );
     });
+
+    it('should export the daily CUDYR workbook with an explicit daily filename', async () => {
+      const { saveAs } = await import('file-saver');
+      const reportService = await import('@/services/exporters/reportService');
+      const dailyRecordRepository = await import('@/services/repositories/DailyRecordRepository');
+
+      vi.mocked(dailyRecordRepository.getForDate).mockResolvedValue(
+        toDailyRecord({
+          date: '2025-12-25',
+          beds: {
+            R1: {
+              bedId: 'R1',
+              patientName: 'Paciente CUDYR',
+              rut: '1-9',
+              location: 'Sala',
+              isBlocked: false,
+              bedMode: 'Cama',
+              hasCompanionCrib: false,
+              cudyr: {
+                changeClothes: 1,
+                mobilization: 1,
+                feeding: 1,
+                elimination: 1,
+                psychosocial: 1,
+                surveillance: 1,
+                vitalSigns: 1,
+                fluidBalance: 1,
+                oxygenTherapy: 1,
+                airway: 1,
+                proInterventions: 1,
+                skinCare: 1,
+                pharmacology: 1,
+                invasiveElements: 1,
+              },
+            } as never,
+          },
+        })
+      );
+
+      await reportService.generateCudyrDailyRaw('2025-12-25');
+
+      expect(saveAs).toHaveBeenCalled();
+      const saveAsCall = vi.mocked(saveAs).mock.calls.at(-1);
+      expect(saveAsCall?.[1]).toBe('CUDYR_Diario_2025-12-25.xlsx');
+    });
   });
 });
 

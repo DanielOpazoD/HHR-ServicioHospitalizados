@@ -1,6 +1,6 @@
 /**
  * Daily Backup Calendar View Component
- * Displays daily files (Census, CUDYR) in a compact table showing all days of the month.
+ * Displays daily backup artifacts (Census, CUDYR) in a compact table showing all days of the month.
  */
 
 import React from 'react';
@@ -67,7 +67,7 @@ export const DailyBackupCalendarView: React.FC<DailyBackupCalendarViewProps> = (
             <th className="px-2 py-1.5 text-center font-semibold text-slate-600 uppercase tracking-wider">
               <div className="flex items-center justify-center gap-1">
                 <FileText size={11} className="text-medical-500" />
-                Archivo
+                Respaldo
               </div>
             </th>
           </tr>

@@ -93,7 +93,7 @@ export const HandoffCudyrPrint: React.FC = () => {
         <div className="flex justify-between items-center mb-1">
           <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
             <ClipboardList size={18} className="text-medical-700 print:hidden" />
-            Instrumento CUDYR
+            Instrumento CUDYR del último registro disponible
           </h2>
           {/* Metrics Badge */}
           <div className="flex gap-3 text-[10px] font-bold bg-slate-50 px-2 py-1 rounded-md border border-slate-200 print:bg-white print:border-slate-300">
@@ -121,13 +121,13 @@ export const HandoffCudyrPrint: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 text-sm text-slate-700 mt-2">
-          <span className="font-semibold">Fecha: {formatPrintDate()}</span>
+          <span className="font-semibold">Último registro disponible: {formatPrintDate()}</span>
 
           {record.cudyrLockedAt && (
             <>
               <span className="text-slate-400">|</span>
               <span>
-                <span className="font-semibold">Cierre CUDYR: </span>
+                <span className="font-semibold">Cierre CUDYR del registro: </span>
                 {formatTime(record.cudyrLockedAt)}
               </span>
             </>

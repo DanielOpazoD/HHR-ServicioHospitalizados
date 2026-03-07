@@ -120,7 +120,7 @@ export const buildCudyrDailyWorkbookOrNull = async (date: string) => {
   if (!record) return null;
 
   const workbook = await createWorkbook();
-  const sheet = workbook.addWorksheet('CUDYR Diario');
+  const sheet = workbook.addWorksheet('CUDYR Diario del Registro');
 
   sheet.addRow([
     'FECHA',

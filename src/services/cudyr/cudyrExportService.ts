@@ -81,7 +81,7 @@ export const generateCudyrMonthlyExcel = async (
   const blob = new Blob([buffer], { type: XLSX_MIME_TYPE });
   const { saveAs } = await import('file-saver');
   saveAs(blob, fileName);
-  console.warn(`📥 CUDYR Excel descargado: ${fileName} (${buffer.byteLength} bytes)`);
+  console.warn(`📥 Resumen mensual CUDYR descargado: ${fileName} (${buffer.byteLength} bytes)`);
 };
 
 export const generateCudyrMonthlyExcelBlob = async (

@@ -1,23 +1,46 @@
-import type { DailyRecord, DailyRecordPatch, PatientData, PatientFieldValue } from '@/types';
+import type {
+  DailyRecord,
+  DailyRecordPatch,
+  PatientData,
+  PatientFieldValue,
+  CudyrScore,
+} from '@/types';
 import { BEDS } from '@/constants';
 import { getBedTypeForRecord } from '@/utils/bedTypeUtils';
 import { BedType } from '@/types';
 import { type BedAction, bedManagementReducer } from '@/hooks/useBedManagementReducer';
-import type { usePatientValidation } from '@/hooks/usePatientValidation';
-import type { useBedAudit } from '@/hooks/useBedAudit';
+export interface BedManagementValidationPort {
+  processFieldValue: (
+    field: keyof PatientData,
+    value: PatientFieldValue
+  ) => { valid: boolean; value: PatientFieldValue; error?: string };
+}
 
-type ValidationPort = ReturnType<typeof usePatientValidation>;
-type BedAuditPort = ReturnType<typeof useBedAudit>;
+export interface BedManagementAuditPort {
+  auditPatientChange: (
+    bedId: string,
+    field: keyof PatientData,
+    oldPatient: PatientData,
+    newValue: PatientFieldValue
+  ) => void;
+  auditCudyrChange: (bedId: string, field: keyof CudyrScore, value: number) => void;
+  auditCribCudyrChange: (bedId: string, field: keyof CudyrScore, value: number) => void;
+  auditPatientCleared: (bedId: string, patientName: string, rut?: string) => void;
+  auditPatientModified: (bedId: string, details: Record<string, unknown>) => void;
+}
 
 interface ExecuteBedManagementActionInput {
   currentRecord: DailyRecord | null;
   action: BedAction;
-  validation: ValidationPort;
-  bedAudit: BedAuditPort;
+  validation: BedManagementValidationPort;
+  bedAudit: BedManagementAuditPort;
   patchRecord: (partial: DailyRecordPatch) => Promise<void>;
 }
 
-const validateAction = (action: BedAction, validation: ValidationPort): BedAction | null => {
+const validateAction = (
+  action: BedAction,
+  validation: BedManagementValidationPort
+): BedAction | null => {
   if (action.type === 'UPDATE_PATIENT') {
     const result = validation.processFieldValue(action.field, action.value);
     if (!result.valid) {
@@ -55,7 +78,7 @@ const validateAction = (action: BedAction, validation: ValidationPort): BedActio
 const auditActionIntent = (
   action: BedAction,
   currentRecord: DailyRecord,
-  bedAudit: BedAuditPort
+  bedAudit: BedManagementAuditPort
 ) => {
   switch (action.type) {
     case 'UPDATE_PATIENT':

@@ -46,6 +46,13 @@ const formatDateDMY = (dateStr: string): string => {
   return `${day}-${month}-${year}`;
 };
 
+const buildMonthlyCutoffLabel = (year: number, month: number, endDate?: string): string => {
+  const endDateFormatted = endDate
+    ? formatDateDMY(endDate)
+    : `${new Date(year, month, 0).getDate()}-${String(month).padStart(2, '0')}-${year}`;
+  return `hasta el último registro disponible del ${endDateFormatted}`;
+};
+
 const escapeSheetName = (name: string): string => {
   if (/[^\w]/.test(name)) {
     return `'${name}'`;
@@ -283,7 +290,7 @@ const addDailySheets = (workbook: Workbook, dailySummaries: CudyrDailySummary[])
 
     const daySheet = workbook.addWorksheet(sheetName);
     daySheet.columns = [{ width: 22 }, { width: 10 }, { width: 10 }, { width: 10 }];
-    daySheet.getCell('A1').value = `CUDYR - ${sheetName}`;
+    daySheet.getCell('A1').value = `CUDYR Diario - ${sheetName}`;
     daySheet.getCell('A1').font = { bold: true, size: 12 };
     daySheet.mergeCells('A1:D1');
 
@@ -308,16 +315,13 @@ const addMonthlySummarySheet = (
   monthlySummary: CudyrMonthlySummary,
   dailySheetNames: string[]
 ): void => {
-  const summarySheet = workbook.addWorksheet('Resumen Mensual', {
+  const summarySheet = workbook.addWorksheet('Resumen CUDYR Mensual', {
     properties: { tabColor: { argb: 'FF4CAF50' } },
   });
   summarySheet.columns = [{ width: 22 }, { width: 10 }, { width: 10 }, { width: 10 }];
 
-  const endDateFormatted = endDate
-    ? formatDateDMY(endDate)
-    : `${new Date(year, month, 0).getDate()}-${String(month).padStart(2, '0')}-${year}`;
   summarySheet.getCell('A1').value =
-    `Resumen CUDYR - ${MONTHS_ES[month - 1]} ${year} (hasta ${endDateFormatted})`;
+    `Resumen CUDYR mensual - ${MONTHS_ES[month - 1]} ${year} (${buildMonthlyCutoffLabel(year, month, endDate)})`;
   summarySheet.getCell('A1').font = { bold: true, size: 14 };
   summarySheet.mergeCells('A1:D1');
 
@@ -368,6 +372,6 @@ export const buildCudyrWorkbook = async ({
 
   return {
     workbook,
-    fileName: `CUDYR_${MONTHS_ES[month - 1]}_${year}.xlsx`,
+    fileName: `CUDYR_Mensual_${MONTHS_ES[month - 1]}_${year}_${buildMonthlyCutoffLabel(year, month, endDate).replaceAll(' ', '_')}.xlsx`,
   };
 };
