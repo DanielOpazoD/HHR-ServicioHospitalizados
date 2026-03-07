@@ -64,6 +64,10 @@ export const EmptyDayPrompt: React.FC<EmptyDayPromptProps> = ({
     onCreateDay(true, date);
   };
 
+  const unlockDescription = copyAvailability.isTargetToday
+    ? `Disponible hoy desde las ${COPY_PREVIOUS_DAY_UNLOCK_HOUR}:00 hrs.`
+    : `Disponible desde el ${formatDate(currentDateString)}a las ${COPY_PREVIOUS_DAY_UNLOCK_HOUR}:00 hrs.`;
+
   return (
     <div className="card flex flex-col items-center justify-center py-16 mt-8 print:hidden animate-fade-in overflow-visible">
       <div className="bg-slate-50 p-6 rounded-full mb-6">
@@ -100,7 +104,7 @@ export const EmptyDayPrompt: React.FC<EmptyDayPromptProps> = ({
                 </div>
                 {copyAvailability.isCopyLocked ? (
                   <span className="text-xs text-center font-semibold text-amber-700 leading-snug">
-                    Disponible hoy desde las {COPY_PREVIOUS_DAY_UNLOCK_HOUR}:00 hrs.
+                    {unlockDescription}
                     <span className="block text-[11px] font-normal text-amber-600">
                       Se habilita en {copyAvailability.countdownLabel}
                     </span>

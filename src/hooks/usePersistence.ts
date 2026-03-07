@@ -7,6 +7,7 @@ import { hasCriticalLegacyRepairSignal } from '@/hooks/controllers/legacyRepairW
 import { buildCreateDayNotifications } from '@/hooks/controllers/persistenceFeedbackController';
 import { executeInitializeDailyRecord } from '@/application/daily-record/initializeDailyRecordUseCase';
 import { useAuditContext } from '@/context/AuditContext';
+import { resolveCreateDayCopyAvailability } from '@/features/census/controllers/censusCreateDayAvailabilityController';
 import {
   defaultDailyRecordReadPort,
   defaultDailyRecordWritePort,
@@ -43,6 +44,17 @@ export const usePersistence = ({
       } | null = null;
 
       try {
+        if (copyFromPrevious) {
+          const copyAvailability = resolveCreateDayCopyAvailability(currentDateString, new Date());
+          if (copyAvailability.isCopyLocked) {
+            warning(
+              'Copia aún no disponible',
+              'La copia del día previo solo se habilita desde las 08:00 del día que deseas crear.'
+            );
+            return;
+          }
+        }
+
         if (copyFromPrevious) {
           if (specificDate) {
             const source = await defaultDailyRecordReadPort.getForDateWithMeta(specificDate, true);

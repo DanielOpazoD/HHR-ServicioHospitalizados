@@ -37,6 +37,20 @@ describe('censusCreateDayAvailabilityController', () => {
 
     expect(availability.isCopyLocked).toBe(false);
     expect(availability.countdownLabel).toBeNull();
+    expect(availability.isTargetToday).toBe(false);
+
+    vi.useRealTimers();
+  });
+
+  it('locks copy-from-previous for tomorrow until 08:00 of the selected day', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 2, 3, 8, 0, 0));
+
+    const availability = resolveCreateDayCopyAvailability('2026-03-04', new Date());
+
+    expect(availability.isCopyLocked).toBe(true);
+    expect(availability.countdownLabel).toBe('24:00:00');
+    expect(availability.isTargetToday).toBe(false);
 
     vi.useRealTimers();
   });

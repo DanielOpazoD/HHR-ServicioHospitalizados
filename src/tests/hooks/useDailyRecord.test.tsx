@@ -171,13 +171,27 @@ describe('useDailyRecord', () => {
       await result.current.createDay(false);
     });
 
-    expect(DailyRecordRepository.DailyRecordRepository.initializeDayDetailed).toHaveBeenCalledWith(
-      mockDate,
-      undefined
-    );
     await waitFor(() => {
       expect(result.current.record?.date).toBe(mockDate);
     });
+  });
+
+  it('should not create a copied day before the selected day reaches 08:00', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2025, 0, 1, 8, 0, 0));
+
+    const futureDate = '2025-01-02';
+    const { result } = renderHook(() => useDailyRecord(futureDate), { wrapper: createWrapper() });
+
+    await act(async () => {
+      await result.current.createDay(true, mockDate);
+    });
+
+    expect(
+      DailyRecordRepository.DailyRecordRepository.initializeDayDetailed
+    ).not.toHaveBeenCalledWith(futureDate, mockDate);
+
+    vi.useRealTimers();
   });
 
   it('should not move patient if source bed is empty', async () => {

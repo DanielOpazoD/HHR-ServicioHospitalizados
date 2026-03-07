@@ -5,6 +5,7 @@ export interface CreateDayCopyAvailability {
   unlockAt: Date | null;
   remainingMs: number;
   countdownLabel: string | null;
+  isTargetToday: boolean;
 }
 
 const buildLocalIsoDate = (date: Date): string => {
@@ -27,17 +28,20 @@ export const resolveCreateDayCopyAvailability = (
   currentDateString: string,
   now: Date = new Date()
 ): CreateDayCopyAvailability => {
-  if (currentDateString !== buildLocalIsoDate(now)) {
+  const todayString = buildLocalIsoDate(now);
+
+  if (currentDateString < todayString) {
     return {
       isCopyLocked: false,
       unlockAt: null,
       remainingMs: 0,
       countdownLabel: null,
+      isTargetToday: false,
     };
   }
 
-  const unlockAt = new Date(now);
-  unlockAt.setHours(COPY_PREVIOUS_DAY_UNLOCK_HOUR, 0, 0, 0);
+  const [year, month, day] = currentDateString.split('-').map(Number);
+  const unlockAt = new Date(year, month - 1, day, COPY_PREVIOUS_DAY_UNLOCK_HOUR, 0, 0, 0);
   const remainingMs = Math.max(0, unlockAt.getTime() - now.getTime());
   const isCopyLocked = remainingMs > 0;
 
@@ -46,5 +50,6 @@ export const resolveCreateDayCopyAvailability = (
     unlockAt,
     remainingMs,
     countdownLabel: isCopyLocked ? formatCopyUnlockCountdown(remainingMs) : null,
+    isTargetToday: currentDateString === todayString,
   };
 };
