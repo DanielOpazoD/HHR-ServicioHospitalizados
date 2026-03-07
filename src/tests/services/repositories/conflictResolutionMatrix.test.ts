@@ -79,6 +79,7 @@ describe('conflictResolutionMatrix', () => {
 
     expect(resolved.lastUpdated).toBe('2026-02-18T10:05:00.000Z');
     expect(resolved.nurses).toEqual(['Berta', 'Ana']);
+    expect(resolved.nursesDayShift).toEqual(['Berta', 'Ana']);
     expect(resolved.activeExtraBeds).toEqual(['Extra-2', 'Extra-1']);
   });
 

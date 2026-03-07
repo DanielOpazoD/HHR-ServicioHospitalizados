@@ -47,7 +47,13 @@ describe('systemHealthReporterController', () => {
         recentFailedCount: 2,
         recentObservedCount: 3,
         syncFailureCount: 1,
+        syncObservedCount: 2,
         degradedLocalCount: 1,
+        indexedDbObservedCount: 1,
+        clinicalDocumentObservedCount: 1,
+        createDayObservedCount: 1,
+        exportObservedCount: 1,
+        backupObservedCount: 1,
         exportOrBackupObservedCount: 2,
         latestIssueAt: '2026-03-02T00:00:00.000Z',
       },
@@ -61,6 +67,10 @@ describe('systemHealthReporterController', () => {
     expect(status.slowestRepositoryOperationMs).toBe(480);
     expect(status.operationalObservedCount).toBe(3);
     expect(status.operationalFailureCount).toBe(2);
+    expect(status.operationalSyncObservedCount).toBe(2);
+    expect(status.operationalIndexedDbObservedCount).toBe(1);
+    expect(status.operationalClinicalDocumentObservedCount).toBe(1);
+    expect(status.operationalCreateDayObservedCount).toBe(1);
     expect(status.operationalExportBackupObservedCount).toBe(2);
     expect(status.appVersion).toContain('sync-batch:25');
   });

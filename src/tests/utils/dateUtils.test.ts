@@ -10,6 +10,7 @@ import {
   isBusinessDay,
   getShiftSchedule,
   resolveClinicalDayBounds,
+  isNewAdmissionForClinicalDay,
   isWithinDayShift,
   isAdmittedDuringShift,
   calculateHospitalizedDays,
@@ -165,6 +166,32 @@ describe('dateUtils', () => {
       expect(bounds.nextDay).toBe('2024-12-28');
       expect(bounds.nightEnd).toBe('09:00');
       expect(bounds.nightEndMinutes).toBe(9 * 60);
+    });
+  });
+
+  describe('isNewAdmissionForClinicalDay', () => {
+    it('treats admissions on the same record date as new admissions', () => {
+      expect(isNewAdmissionForClinicalDay('2026-03-05', '2026-03-05', '14:30')).toBe(true);
+      expect(isNewAdmissionForClinicalDay('2026-03-05', '2026-03-05')).toBe(true);
+    });
+
+    it('treats madrugada admissions before the weekday cutoff as new admissions for the previous clinical day', () => {
+      expect(isNewAdmissionForClinicalDay('2026-03-05', '2026-03-06', '07:59')).toBe(true);
+      expect(isNewAdmissionForClinicalDay('2026-03-05', '2026-03-06', '08:00')).toBe(false);
+    });
+
+    it('uses the configured 09:00 cutoff when the next day is not business day', () => {
+      expect(isNewAdmissionForClinicalDay('2024-12-27', '2024-12-28', '08:59')).toBe(true);
+      expect(isNewAdmissionForClinicalDay('2024-12-27', '2024-12-28', '09:00')).toBe(false);
+    });
+
+    it('keeps next-day admissions with missing time visible to avoid false negatives', () => {
+      expect(isNewAdmissionForClinicalDay('2026-03-05', '2026-03-06')).toBe(true);
+    });
+
+    it('rejects previous or distant future dates as new admissions for the record day', () => {
+      expect(isNewAdmissionForClinicalDay('2026-03-05', '2026-03-04', '23:30')).toBe(false);
+      expect(isNewAdmissionForClinicalDay('2026-03-05', '2026-03-07', '02:00')).toBe(false);
     });
   });
 

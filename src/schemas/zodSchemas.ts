@@ -16,6 +16,7 @@ import {
   BedType,
 } from '@/types';
 import { createEmptyPatient } from '@/services/factories/patientFactory';
+import { applyDailyRecordStaffingCompatibility } from '@/services/staff/dailyRecordStaffing';
 
 // Re-exports from domain files
 export * from './zod/helpers';
@@ -273,7 +274,7 @@ export const parseDailyRecordWithDefaultsReport = (
   }
 
   return {
-    record: {
+    record: applyDailyRecordStaffingCompatibility({
       date: typeof raw.date === 'string' ? raw.date : docId,
       beds: salvagedBeds,
       discharges: salvagedDischarges,
@@ -283,6 +284,7 @@ export const parseDailyRecordWithDefaultsReport = (
       nurses: Array.isArray(raw.nurses) ? raw.nurses : ['', ''],
       nursesDayShift: Array.isArray(raw.nursesDayShift) ? raw.nursesDayShift : ['', ''],
       nursesNightShift: Array.isArray(raw.nursesNightShift) ? raw.nursesNightShift : ['', ''],
+      nurseName: typeof raw.nurseName === 'string' ? raw.nurseName : undefined,
       tensDayShift: Array.isArray(raw.tensDayShift) ? raw.tensDayShift : ['', '', ''],
       tensNightShift: Array.isArray(raw.tensNightShift) ? raw.tensNightShift : ['', '', ''],
       activeExtraBeds: Array.isArray(raw.activeExtraBeds) ? raw.activeExtraBeds : [],
@@ -304,7 +306,7 @@ export const parseDailyRecordWithDefaultsReport = (
       handoffNightReceives: Array.isArray(raw.handoffNightReceives) ? raw.handoffNightReceives : [],
       bedTypeOverrides: (raw.bedTypeOverrides as Record<string, BedType>) || {},
       schemaVersion: typeof raw.schemaVersion === 'number' ? raw.schemaVersion : 1,
-    } as DailyRecord,
+    } as DailyRecord),
     report: {
       nullNormalization,
       salvagedBeds: salvagedBedIds,

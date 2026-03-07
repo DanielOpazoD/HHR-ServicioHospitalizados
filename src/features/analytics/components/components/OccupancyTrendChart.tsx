@@ -16,6 +16,7 @@ import {
 } from 'recharts';
 import { DailyStatsSnapshot } from '@/types/minsalTypes';
 import { formatDateDDMMYYYY } from '@/utils/dateUtils';
+import { resolveAnalyticsPresentationCopy } from '@/features/analytics/controllers/minsalAnalyticsPresentationController';
 
 interface OccupancyTrendChartProps {
   data: DailyStatsSnapshot[];
@@ -55,7 +56,9 @@ const OccupancyTooltip: React.FC<OccupancyTooltipProps> = ({ active, payload, la
       }}
     >
       <p className="text-slate-700 font-medium mb-2">Fecha: {label}</p>
-      <p className="text-sky-500 text-lg mb-1">Tasa Ocupación: {occupancy}%</p>
+      <p className="text-sky-500 text-lg mb-1">
+        {resolveAnalyticsPresentationCopy().trendOccupancyLabel}: {occupancy}%
+      </p>
       <p className="text-slate-600 text-sm">
         Fórmula usada: {occupied} / {available} camas habilitadas
       </p>
@@ -65,6 +68,7 @@ const OccupancyTooltip: React.FC<OccupancyTooltipProps> = ({ active, payload, la
 };
 
 export const OccupancyTrendChart: React.FC<OccupancyTrendChartProps> = ({ data }) => {
+  const copy = resolveAnalyticsPresentationCopy();
   if (data.length === 0) {
     return (
       <div className="h-64 flex items-center justify-center text-slate-400">
@@ -108,7 +112,7 @@ export const OccupancyTrendChart: React.FC<OccupancyTrendChartProps> = ({ data }
             stroke="#94a3b8"
             strokeDasharray="5 5"
             label={{
-              value: `Promedio: ${avgOccupancy.toFixed(1)}%`,
+              value: `${copy.trendAverageLabel}: ${avgOccupancy.toFixed(1)}%`,
               position: 'right',
               fill: '#64748b',
               fontSize: 10,

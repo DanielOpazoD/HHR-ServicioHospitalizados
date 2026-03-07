@@ -47,6 +47,11 @@ export const buildUserHealthStatus = (options: BuildUserHealthStatusOptions): Us
   slowestRepositoryOperationMs: options.repositoryPerformance.slowestOperationMs,
   operationalObservedCount: options.operationalTelemetry.recentObservedCount,
   operationalFailureCount: options.operationalTelemetry.recentFailedCount,
+  operationalSyncObservedCount: options.operationalTelemetry.syncObservedCount,
+  operationalIndexedDbObservedCount: options.operationalTelemetry.indexedDbObservedCount,
+  operationalClinicalDocumentObservedCount:
+    options.operationalTelemetry.clinicalDocumentObservedCount,
+  operationalCreateDayObservedCount: options.operationalTelemetry.createDayObservedCount,
   operationalExportBackupObservedCount: options.operationalTelemetry.exportOrBackupObservedCount,
   latestOperationalIssueAt: options.operationalTelemetry.latestIssueAt,
   appVersion: `v${CURRENT_SCHEMA_VERSION} (sync-batch:${options.syncTelemetry.batchSize}, backend-contract:${BACKEND_RUNTIME_CONTRACT_VERSION})`,

@@ -88,17 +88,29 @@ export const SpecialtyBreakdownTable: React.FC<SpecialtyBreakdownTableProps> = (
               Especialidad
             </th>
             <th className="text-center px-4 py-3 font-semibold text-slate-700">
-              Pacientes (Días-Cama)
+              Pacientes (Días-Cama del período)
             </th>
-            <th className="text-center px-4 py-3 font-semibold text-slate-700">Egresos</th>
-            <th className="text-center px-4 py-3 font-semibold text-slate-700">Fallecidos</th>
-            <th className="text-center px-4 py-3 font-semibold text-slate-700">Traslados</th>
-            <th className="text-center px-4 py-3 font-semibold text-slate-700">Aerocardal</th>
-            <th className="text-center px-4 py-3 font-semibold text-slate-700">FACH</th>
-            <th className="text-center px-4 py-3 font-semibold text-slate-700">Contribución</th>
-            <th className="text-center px-4 py-3 font-semibold text-slate-700">Mortalidad</th>
+            <th className="text-center px-4 py-3 font-semibold text-slate-700">
+              Egresos del período
+            </th>
+            <th className="text-center px-4 py-3 font-semibold text-slate-700">
+              Fallecidos del período
+            </th>
+            <th className="text-center px-4 py-3 font-semibold text-slate-700">
+              Traslados del período
+            </th>
+            <th className="text-center px-4 py-3 font-semibold text-slate-700">
+              Aerocardal del período
+            </th>
+            <th className="text-center px-4 py-3 font-semibold text-slate-700">FACH del período</th>
+            <th className="text-center px-4 py-3 font-semibold text-slate-700">
+              Contribución del período
+            </th>
+            <th className="text-center px-4 py-3 font-semibold text-slate-700">
+              Mortalidad del período
+            </th>
             <th className="text-center px-4 py-3 font-semibold text-slate-700 rounded-tr-lg">
-              Estada Media
+              Estada media del período
             </th>
           </tr>
         </thead>

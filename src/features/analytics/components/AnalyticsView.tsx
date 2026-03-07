@@ -143,13 +143,19 @@ export const AnalyticsView: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Occupancy Trend */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-          <h3 className="font-bold text-slate-700 mb-4">Tendencia de Ocupación</h3>
+          <div className="mb-4">
+            <h3 className="font-bold text-slate-700">{copy.trendTitle}</h3>
+            <p className="text-xs text-slate-500 mt-1">{copy.trendSubtitle}</p>
+          </div>
           <OccupancyTrendChart data={trendData} />
         </div>
 
         {/* Current Snapshot */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-          <h3 className="font-bold text-slate-700 mb-4">{copy.currentSnapshotTitle}</h3>
+          <div className="mb-4">
+            <h3 className="font-bold text-slate-700">{copy.currentSnapshotTitle}</h3>
+            <p className="text-xs text-slate-500 mt-1">{copy.currentSnapshotSubtitle}</p>
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-sky-50 rounded-lg p-4 text-center">
               <div className="text-4xl font-bold text-sky-600">{stats.pacientesActuales ?? 0}</div>

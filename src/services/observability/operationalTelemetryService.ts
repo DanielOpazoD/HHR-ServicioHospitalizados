@@ -23,7 +23,13 @@ export interface OperationalTelemetrySummary {
   recentFailedCount: number;
   recentObservedCount: number;
   syncFailureCount: number;
+  syncObservedCount: number;
   degradedLocalCount: number;
+  indexedDbObservedCount: number;
+  clinicalDocumentObservedCount: number;
+  createDayObservedCount: number;
+  exportObservedCount: number;
+  backupObservedCount: number;
   exportOrBackupObservedCount: number;
   latestIssueAt?: string;
 }
@@ -154,6 +160,8 @@ export const buildOperationalTelemetrySummary = (
     event => event.status === 'partial' || event.status === 'degraded' || event.status === 'failed'
   );
   const failedEvents = recentEvents.filter(event => event.status === 'failed');
+  const observedCategoryCount = (category: OperationalTelemetryCategory): number =>
+    recentEvents.filter(event => event.category === category && event.status !== 'success').length;
 
   return {
     recentEventCount: recentEvents.length,
@@ -162,10 +170,16 @@ export const buildOperationalTelemetrySummary = (
     syncFailureCount: recentEvents.filter(
       event => event.category === 'sync' && event.status === 'failed'
     ).length,
+    syncObservedCount: observedCategoryCount('sync'),
     degradedLocalCount: recentEvents.filter(
       event =>
         event.category === 'indexeddb' && (event.status === 'degraded' || event.status === 'failed')
     ).length,
+    indexedDbObservedCount: observedCategoryCount('indexeddb'),
+    clinicalDocumentObservedCount: observedCategoryCount('clinical_document'),
+    createDayObservedCount: observedCategoryCount('create_day'),
+    exportObservedCount: observedCategoryCount('export'),
+    backupObservedCount: observedCategoryCount('backup'),
     exportOrBackupObservedCount: recentEvents.filter(
       event =>
         (event.category === 'export' || event.category === 'backup') && event.status !== 'success'

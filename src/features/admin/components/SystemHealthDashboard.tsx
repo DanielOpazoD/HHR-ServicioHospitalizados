@@ -93,6 +93,34 @@ export const SystemHealthDashboard = () => {
             {summary.totalOperationalExportBackupObservedCount}
           </p>
         </div>
+        <div className="card p-3">
+          <p className="text-[10px] uppercase font-bold text-slate-400">Observaciones por tipo</p>
+          <p className="text-sm font-black text-slate-900">
+            Sync {summary.totalOperationalSyncObservedCount} · Local{' '}
+            {summary.totalOperationalIndexedDbObservedCount}
+          </p>
+          <p className="text-[10px] text-slate-400">
+            Docs {summary.totalOperationalClinicalDocumentObservedCount} · Día{' '}
+            {summary.totalOperationalCreateDayObservedCount}
+          </p>
+        </div>
+        <div className="card p-3">
+          <p className="text-[10px] uppercase font-bold text-slate-400">Recencia operativa</p>
+          <p className="text-sm font-black text-slate-900">
+            {summary.usersWithRecentOperationalIssues} usuarios recientes
+          </p>
+          <p className="text-[10px] text-slate-400">
+            {summary.latestOperationalIssueAt
+              ? `Última observación ${new Date(summary.latestOperationalIssueAt).toLocaleTimeString(
+                  [],
+                  {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  }
+                )}`
+              : 'Sin observaciones recientes'}
+          </p>
+        </div>
       </div>
 
       <div className="flex justify-end">
@@ -247,6 +275,24 @@ export const SystemHealthDashboard = () => {
                     <span>Reintentos: {retryingSyncTasks}</span>
                     <span>Cola más antigua: {oldestPendingAgeMinutes} min</span>
                   </div>
+
+                  {u.operationalObservedCount > 0 && (
+                    <div className="text-[10px] text-slate-500 flex flex-wrap gap-x-3 gap-y-1">
+                      <span>Sync {u.operationalSyncObservedCount}</span>
+                      <span>Local {u.operationalIndexedDbObservedCount}</span>
+                      <span>Docs {u.operationalClinicalDocumentObservedCount}</span>
+                      <span>Día {u.operationalCreateDayObservedCount}</span>
+                      {u.latestOperationalIssueAt && (
+                        <span className="text-slate-400">
+                          Última obs.{' '}
+                          {new Date(u.latestOperationalIssueAt).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                      )}
+                    </div>
+                  )}
 
                   <div
                     className={clsx(

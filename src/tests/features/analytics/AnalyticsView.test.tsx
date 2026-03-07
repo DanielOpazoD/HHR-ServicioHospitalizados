@@ -57,7 +57,12 @@ describe('AnalyticsView', () => {
 
     expect(screen.getByText('Ocupación del período')).toBeInTheDocument();
     expect(screen.getByText('69.9%')).toBeInTheDocument();
+    expect(screen.getByText('Tendencia diaria de ocupación')).toBeInTheDocument();
+    expect(screen.getByText('Serie diaria del rango seleccionado')).toBeInTheDocument();
     expect(screen.getByText('Situación actual')).toBeInTheDocument();
+    expect(
+      screen.getByText('Último registro disponible del rango seleccionado')
+    ).toBeInTheDocument();
     expect(screen.getByText('Ocupación Actual')).toBeInTheDocument();
     expect(screen.getByText('72.2%')).toBeInTheDocument();
   });

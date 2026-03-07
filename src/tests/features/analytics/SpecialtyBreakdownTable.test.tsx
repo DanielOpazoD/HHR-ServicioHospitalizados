@@ -18,6 +18,36 @@ describe('SpecialtyBreakdownTable', () => {
     vi.clearAllMocks();
   });
 
+  it('uses explicit period labels in the specialty breakdown header', () => {
+    render(
+      <SpecialtyBreakdownTable
+        data={[
+          {
+            specialty: 'Med Interna',
+            pacientesActuales: 5,
+            egresos: 2,
+            fallecidos: 0,
+            traslados: 1,
+            aerocardal: 0,
+            fach: 0,
+            diasOcupados: 20,
+            contribucionRelativa: 50,
+            tasaMortalidad: 0,
+            promedioDiasEstada: 4,
+          },
+        ]}
+      />
+    );
+
+    expect(screen.getByText('Pacientes (Días-Cama del período)')).toBeInTheDocument();
+    expect(screen.getByText('Egresos del período')).toBeInTheDocument();
+    expect(screen.getByText('Fallecidos del período')).toBeInTheDocument();
+    expect(screen.getByText('Traslados del período')).toBeInTheDocument();
+    expect(screen.getByText('Contribución del período')).toBeInTheDocument();
+    expect(screen.getByText('Mortalidad del período')).toBeInTheDocument();
+    expect(screen.getByText('Estada media del período')).toBeInTheDocument();
+  });
+
   it('opens traceability modal with aerocardal list when clicking Aerocardal value', () => {
     const row = {
       specialty: 'Med Interna',

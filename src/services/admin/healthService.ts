@@ -23,6 +23,10 @@ export interface UserHealthStatus {
   slowestRepositoryOperationMs: number;
   operationalObservedCount: number;
   operationalFailureCount: number;
+  operationalSyncObservedCount: number;
+  operationalIndexedDbObservedCount: number;
+  operationalClinicalDocumentObservedCount: number;
+  operationalCreateDayObservedCount: number;
   operationalExportBackupObservedCount: number;
   latestOperationalIssueAt?: string;
   appVersion: string;
@@ -47,7 +51,13 @@ export interface SystemHealthSummary {
   oldestObservedPendingAgeMs: number;
   totalOperationalObservedCount: number;
   totalOperationalFailureCount: number;
+  totalOperationalSyncObservedCount: number;
+  totalOperationalIndexedDbObservedCount: number;
+  totalOperationalClinicalDocumentObservedCount: number;
+  totalOperationalCreateDayObservedCount: number;
   totalOperationalExportBackupObservedCount: number;
+  usersWithRecentOperationalIssues: number;
+  latestOperationalIssueAt?: string;
 }
 
 const toNumber = (value: unknown, fallback = 0): number => {
@@ -87,6 +97,10 @@ export const normalizeUserHealthStatus = (raw: Partial<UserHealthStatus>): UserH
   slowestRepositoryOperationMs: toNumber(raw.slowestRepositoryOperationMs),
   operationalObservedCount: toNumber(raw.operationalObservedCount),
   operationalFailureCount: toNumber(raw.operationalFailureCount),
+  operationalSyncObservedCount: toNumber(raw.operationalSyncObservedCount),
+  operationalIndexedDbObservedCount: toNumber(raw.operationalIndexedDbObservedCount),
+  operationalClinicalDocumentObservedCount: toNumber(raw.operationalClinicalDocumentObservedCount),
+  operationalCreateDayObservedCount: toNumber(raw.operationalCreateDayObservedCount),
   operationalExportBackupObservedCount: toNumber(raw.operationalExportBackupObservedCount),
   latestOperationalIssueAt:
     typeof raw.latestOperationalIssueAt === 'string' ? raw.latestOperationalIssueAt : undefined,
@@ -95,42 +109,74 @@ export const normalizeUserHealthStatus = (raw: Partial<UserHealthStatus>): UserH
   userAgent: toStringValue(raw.userAgent, 'unknown'),
 });
 
-export const buildSystemHealthSummary = (statuses: UserHealthStatus[]): SystemHealthSummary => ({
-  totalUsers: statuses.length,
-  onlineUsers: statuses.filter(status => status.isOnline).length,
-  offlineUsers: statuses.filter(status => !status.isOnline).length,
-  outdatedUsers: statuses.filter(status => status.isOutdated).length,
-  degradedLocalPersistenceUsers: statuses.filter(status => status.degradedLocalPersistence).length,
-  usersWithRepositoryWarnings: statuses.filter(status => status.repositoryWarningCount > 0).length,
-  usersWithSyncFailures: statuses.filter(
-    status => status.failedSyncTasks > 0 || status.conflictSyncTasks > 0
-  ).length,
-  totalPendingSyncTasks: statuses.reduce((sum, status) => sum + status.pendingSyncTasks, 0),
-  totalFailedSyncTasks: statuses.reduce((sum, status) => sum + status.failedSyncTasks, 0),
-  totalConflictSyncTasks: statuses.reduce((sum, status) => sum + status.conflictSyncTasks, 0),
-  totalLocalErrorCount: statuses.reduce((sum, status) => sum + status.localErrorCount, 0),
-  totalRepositoryWarnings: statuses.reduce((sum, status) => sum + status.repositoryWarningCount, 0),
-  maxSlowRepositoryOperationMs: statuses.reduce(
-    (max, status) => Math.max(max, status.slowestRepositoryOperationMs),
-    0
-  ),
-  oldestObservedPendingAgeMs: statuses.reduce(
-    (max, status) => Math.max(max, status.oldestPendingAgeMs),
-    0
-  ),
-  totalOperationalObservedCount: statuses.reduce(
-    (sum, status) => sum + status.operationalObservedCount,
-    0
-  ),
-  totalOperationalFailureCount: statuses.reduce(
-    (sum, status) => sum + status.operationalFailureCount,
-    0
-  ),
-  totalOperationalExportBackupObservedCount: statuses.reduce(
-    (sum, status) => sum + status.operationalExportBackupObservedCount,
-    0
-  ),
-});
+export const buildSystemHealthSummary = (statuses: UserHealthStatus[]): SystemHealthSummary => {
+  const latestOperationalIssueAt = statuses
+    .map(status => status.latestOperationalIssueAt)
+    .filter((value): value is string => typeof value === 'string' && value.length > 0)
+    .sort()
+    .at(-1);
+
+  return {
+    totalUsers: statuses.length,
+    onlineUsers: statuses.filter(status => status.isOnline).length,
+    offlineUsers: statuses.filter(status => !status.isOnline).length,
+    outdatedUsers: statuses.filter(status => status.isOutdated).length,
+    degradedLocalPersistenceUsers: statuses.filter(status => status.degradedLocalPersistence)
+      .length,
+    usersWithRepositoryWarnings: statuses.filter(status => status.repositoryWarningCount > 0)
+      .length,
+    usersWithSyncFailures: statuses.filter(
+      status => status.failedSyncTasks > 0 || status.conflictSyncTasks > 0
+    ).length,
+    totalPendingSyncTasks: statuses.reduce((sum, status) => sum + status.pendingSyncTasks, 0),
+    totalFailedSyncTasks: statuses.reduce((sum, status) => sum + status.failedSyncTasks, 0),
+    totalConflictSyncTasks: statuses.reduce((sum, status) => sum + status.conflictSyncTasks, 0),
+    totalLocalErrorCount: statuses.reduce((sum, status) => sum + status.localErrorCount, 0),
+    totalRepositoryWarnings: statuses.reduce(
+      (sum, status) => sum + status.repositoryWarningCount,
+      0
+    ),
+    maxSlowRepositoryOperationMs: statuses.reduce(
+      (max, status) => Math.max(max, status.slowestRepositoryOperationMs),
+      0
+    ),
+    oldestObservedPendingAgeMs: statuses.reduce(
+      (max, status) => Math.max(max, status.oldestPendingAgeMs),
+      0
+    ),
+    totalOperationalObservedCount: statuses.reduce(
+      (sum, status) => sum + status.operationalObservedCount,
+      0
+    ),
+    totalOperationalFailureCount: statuses.reduce(
+      (sum, status) => sum + status.operationalFailureCount,
+      0
+    ),
+    totalOperationalSyncObservedCount: statuses.reduce(
+      (sum, status) => sum + status.operationalSyncObservedCount,
+      0
+    ),
+    totalOperationalIndexedDbObservedCount: statuses.reduce(
+      (sum, status) => sum + status.operationalIndexedDbObservedCount,
+      0
+    ),
+    totalOperationalClinicalDocumentObservedCount: statuses.reduce(
+      (sum, status) => sum + status.operationalClinicalDocumentObservedCount,
+      0
+    ),
+    totalOperationalCreateDayObservedCount: statuses.reduce(
+      (sum, status) => sum + status.operationalCreateDayObservedCount,
+      0
+    ),
+    totalOperationalExportBackupObservedCount: statuses.reduce(
+      (sum, status) => sum + status.operationalExportBackupObservedCount,
+      0
+    ),
+    usersWithRecentOperationalIssues: statuses.filter(status => !!status.latestOperationalIssueAt)
+      .length,
+    latestOperationalIssueAt,
+  };
+};
 
 export const reportUserHealth = async (status: UserHealthStatus): Promise<void> => {
   try {

@@ -159,7 +159,7 @@ export interface MinsalStatistics {
   camasDisponibles: number;
   /** Current free beds (available - occupied) */
   camasLibres: number;
-  /** Today's occupancy rate */
+  /** Occupancy rate from the latest available snapshot inside the selected range */
   tasaOcupacionActual: number;
 
   // ===== Breakdown by Specialty =====

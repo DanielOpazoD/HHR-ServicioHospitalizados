@@ -43,6 +43,10 @@ describe('healthService', () => {
     slowestRepositoryOperationMs: 0,
     operationalObservedCount: 0,
     operationalFailureCount: 0,
+    operationalSyncObservedCount: 0,
+    operationalIndexedDbObservedCount: 0,
+    operationalClinicalDocumentObservedCount: 0,
+    operationalCreateDayObservedCount: 0,
     operationalExportBackupObservedCount: 0,
     appVersion: '1.0.0',
     platform: 'MacIntel',
@@ -173,6 +177,7 @@ describe('healthService', () => {
       expect(normalized.pendingMutations).toBe(0);
       expect(normalized.isOnline).toBe(false);
       expect(normalized.operationalObservedCount).toBe(0);
+      expect(normalized.operationalSyncObservedCount).toBe(0);
     });
   });
 
@@ -192,6 +197,10 @@ describe('healthService', () => {
           slowestRepositoryOperationMs: 280,
           operationalObservedCount: 5,
           operationalFailureCount: 2,
+          operationalSyncObservedCount: 2,
+          operationalIndexedDbObservedCount: 1,
+          operationalClinicalDocumentObservedCount: 1,
+          operationalCreateDayObservedCount: 1,
           operationalExportBackupObservedCount: 3,
         },
       ]);
@@ -208,7 +217,30 @@ describe('healthService', () => {
       expect(summary.oldestObservedPendingAgeMs).toBe(0);
       expect(summary.totalOperationalObservedCount).toBe(5);
       expect(summary.totalOperationalFailureCount).toBe(2);
+      expect(summary.totalOperationalSyncObservedCount).toBe(2);
+      expect(summary.totalOperationalIndexedDbObservedCount).toBe(1);
+      expect(summary.totalOperationalClinicalDocumentObservedCount).toBe(1);
+      expect(summary.totalOperationalCreateDayObservedCount).toBe(1);
       expect(summary.totalOperationalExportBackupObservedCount).toBe(3);
+      expect(summary.usersWithRecentOperationalIssues).toBe(0);
+      expect(summary.latestOperationalIssueAt).toBeUndefined();
+    });
+
+    it('tracks recent operational issue metadata', () => {
+      const summary = buildSystemHealthSummary([
+        {
+          ...mockStatus,
+          latestOperationalIssueAt: '2026-02-19T08:00:00.000Z',
+        },
+        {
+          ...mockStatus,
+          uid: 'u2',
+          latestOperationalIssueAt: '2026-02-19T10:15:00.000Z',
+        },
+      ]);
+
+      expect(summary.usersWithRecentOperationalIssues).toBe(2);
+      expect(summary.latestOperationalIssueAt).toBe('2026-02-19T10:15:00.000Z');
     });
   });
 });

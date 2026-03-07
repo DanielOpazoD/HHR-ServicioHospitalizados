@@ -8,7 +8,6 @@ export interface DailyRecordClinicalFacet {
 }
 
 export interface DailyRecordStaffingFacet {
-  nursesLegacy: string[];
   nursesDay: string[];
   nursesNight: string[];
   tensDay: string[];
@@ -56,7 +55,6 @@ export const createDailyRecordAggregate = (record: DailyRecord): DailyRecordAggr
     },
   },
   staffing: {
-    nursesLegacy: record.nurses || [],
     nursesDay: record.nursesDayShift || [],
     nursesNight: record.nursesNightShift || [],
     tensDay: record.tensDayShift || [],

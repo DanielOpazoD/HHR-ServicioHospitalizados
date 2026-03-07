@@ -38,6 +38,20 @@ export interface ConflictResolutionResult {
   trace: ConflictResolutionTrace;
 }
 
+const resolveCanonicalDayShiftNurses = (
+  remote: DailyRecord,
+  local: DailyRecord,
+  preferLocal: boolean,
+  traceContext?: ConflictResolutionTraceContext
+): string[] =>
+  mergeUniquePrimitiveArray(
+    remote.nursesDayShift || remote.nurses || [],
+    local.nursesDayShift || local.nurses || [],
+    preferLocal,
+    traceContext,
+    'nursesDayShift'
+  );
+
 export const resolveDailyRecordConflict = (
   remote: DailyRecord,
   local: DailyRecord,
@@ -81,6 +95,12 @@ const resolveWholeRecord = (
   const preferLocal = localTs >= remoteTs;
   const preferred = preferLocal ? local : remote;
   const secondary = preferLocal ? remote : local;
+  const resolvedNursesDayShift = resolveCanonicalDayShiftNurses(
+    remote,
+    local,
+    preferLocal,
+    traceContext
+  );
 
   const resolved: DailyRecord = {
     ...secondary,
@@ -90,20 +110,9 @@ const resolveWholeRecord = (
     discharges: mergeArrayById(remote.discharges, local.discharges, traceContext, 'discharges'),
     transfers: mergeArrayById(remote.transfers, local.transfers, traceContext, 'transfers'),
     cma: mergeArrayById(remote.cma, local.cma, traceContext, 'cma'),
-    nurses: mergeUniquePrimitiveArray(
-      remote.nurses,
-      local.nurses,
-      preferLocal,
-      traceContext,
-      'nurses'
-    ),
-    nursesDayShift: mergeUniquePrimitiveArray(
-      remote.nursesDayShift || [],
-      local.nursesDayShift || [],
-      preferLocal,
-      traceContext,
-      'nursesDayShift'
-    ),
+    // Keep legacy `nurses` only as a compatibility mirror of the canonical day shift array.
+    nurses: [...resolvedNursesDayShift],
+    nursesDayShift: resolvedNursesDayShift,
     nursesNightShift: mergeUniquePrimitiveArray(
       remote.nursesNightShift || [],
       local.nursesNightShift || [],
@@ -255,6 +264,13 @@ const resolveByChangedPaths = (
     }
 
     if (UNIQUE_ARRAY_FIELDS.has(root)) {
+      if (root === 'nurses' || root === 'nursesDayShift') {
+        const mergedDayShift = resolveCanonicalDayShiftNurses(remote, local, true, traceContext);
+        (patches as Record<string, unknown>).nursesDayShift = mergedDayShift;
+        (patches as Record<string, unknown>).nurses = [...mergedDayShift];
+        continue;
+      }
+
       const remoteMap = remote as unknown as Record<string, unknown>;
       const localMap = local as unknown as Record<string, unknown>;
       (patches as Record<string, unknown>)[root] = mergeUniquePrimitiveArray(

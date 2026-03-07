@@ -85,45 +85,45 @@ export const MinsalKPICards: React.FC<MinsalKPICardsProps> = ({ stats }) => {
 
       {/* Promedio Días Estada */}
       <KPICard
-        title="Estada Media"
+        title={copy.periodStayTitle}
         value={`${stats.promedioDiasEstada}d`}
-        subtitle="Promedio días hospitalización"
+        subtitle={copy.periodStaySubtitle}
         icon={<Calendar className="w-5 h-5" />}
         color="green"
       />
 
       {/* Egresos Total */}
       <KPICard
-        title="Egresos"
+        title={copy.periodDischargesTitle}
         value={stats.egresosTotal}
-        subtitle={`${stats.egresosVivos} vivos, ${stats.egresosTraslados} trasl.`}
+        subtitle={`${copy.periodDischargesSubtitle} · ${stats.egresosVivos} vivos, ${stats.egresosTraslados} trasl.`}
         icon={<Users className="w-5 h-5" />}
         color="purple"
       />
 
       {/* Mortalidad */}
       <KPICard
-        title="Mortalidad"
+        title={copy.periodMortalityTitle}
         value={`${stats.mortalidadHospitalaria}%`}
-        subtitle={`${stats.egresosFallecidos} fallecidos`}
+        subtitle={`${copy.periodMortalitySubtitle} · ${stats.egresosFallecidos} fallecidos`}
         icon={<Activity className="w-5 h-5" />}
         color={stats.mortalidadHospitalaria > 5 ? 'red' : 'orange'}
       />
 
       {/* Índice Rotación */}
       <KPICard
-        title="Rotación"
+        title={copy.periodRotationTitle}
         value={stats.indiceRotacion ?? 0}
-        subtitle="Egresos/cama/mes"
+        subtitle={copy.periodRotationSubtitle}
         icon={<RefreshCw className="w-5 h-5" />}
         color="slate"
       />
 
       {/* Días Cama */}
       <KPICard
-        title="Días Cama"
+        title={copy.periodBedDaysTitle}
         value={stats.diasCamaOcupados}
-        subtitle={`de ${stats.diasCamaDisponibles} disponibles`}
+        subtitle={`${copy.periodBedDaysSubtitle} · ${stats.diasCamaDisponibles} disponibles`}
         icon={<TrendingUp className="w-5 h-5" />}
         color="blue"
       />

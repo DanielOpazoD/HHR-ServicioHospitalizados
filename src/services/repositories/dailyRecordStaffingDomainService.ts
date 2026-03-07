@@ -1,5 +1,6 @@
 import type { DailyRecord } from '@/types';
 import { createDailyRecordAggregate } from '@/services/repositories/dailyRecordAggregate';
+import { resolveDayShiftNurses } from '@/services/staff/dailyRecordStaffing';
 
 export interface InheritedDailyRecordStaffing {
   nursesDay: string[];
@@ -21,11 +22,12 @@ export const resolveInheritedDailyRecordStaffing = (
   }
 
   const aggregate = createDailyRecordAggregate(prevRecord);
+  const compatibleDayShiftNurses = resolveDayShiftNurses(prevRecord);
   const isNightShiftEmpty = aggregate.staffing.nursesNight.every(n => !n);
   const prevNurses = !isNightShiftEmpty
     ? aggregate.staffing.nursesNight
-    : aggregate.staffing.nursesLegacy.length > 0
-      ? aggregate.staffing.nursesLegacy
+    : compatibleDayShiftNurses.length > 0
+      ? compatibleDayShiftNurses
       : ['', ''];
   const nursesDay = [...(prevNurses || ['', ''])];
   while (nursesDay.length < 2) nursesDay.push('');

@@ -31,7 +31,7 @@
     "prepare": "husky",
     "docs:generate": "typedoc",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 1500",
-    "lint:strict:core": "eslint src/application src/hooks/controllers src/hooks/useAudit*.ts src/hooks/useBackup*.ts src/hooks/useBedManagement*.ts src/hooks/useCensusEmail*.ts src/hooks/useDailyRecord*.ts src/hooks/useExportManager.ts src/hooks/useFileOperations.ts src/hooks/useHandoffManagement*.ts src/hooks/usePatientAnalysis.ts src/hooks/usePatientMovementAudit.ts src/features/census src/features/analytics src/features/clinical-documents src/features/admin/components/CensusAccessManager.tsx --report-unused-disable-directives --max-warnings 0",
+    "lint:strict:core": "eslint src/application src/hooks/controllers src/hooks/admin/useSystemHealthReporter.ts src/hooks/useAudit*.ts src/hooks/useBackup*.ts src/hooks/useBedManagement*.ts src/hooks/useCensusEmail*.ts src/hooks/useDailyRecord*.ts src/hooks/useExportManager.ts src/hooks/useFileOperations.ts src/hooks/useHandoffManagement*.ts src/hooks/usePatientAnalysis.ts src/hooks/usePatientMovementAudit.ts src/features/census src/features/analytics src/features/clinical-documents src/features/admin/components/CensusAccessManager.tsx src/features/admin/components/SystemHealthDashboard.tsx src/services/observability src/services/staff --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint . --fix",
     "check:architecture": "node scripts/check-architecture.mjs",
     "check:application-port-boundary": "node scripts/check-application-port-boundary.mjs",

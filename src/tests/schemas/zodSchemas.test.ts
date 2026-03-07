@@ -259,6 +259,26 @@ describe('zodSchemas', () => {
     });
   });
 
+  describe('DailyRecordSchema staffing compatibility', () => {
+    it('promotes legacy nurses and nurseName into canonical day shift staffing', () => {
+      const record = DailyRecordSchema.parse({
+        date: '2026-03-06',
+        beds: {},
+        discharges: [],
+        transfers: [],
+        cma: [],
+        lastUpdated: '2026-03-06T10:00:00.000Z',
+        nurses: ['Legacy A', 'Legacy B'],
+        nurseName: 'Legacy Principal',
+        nursesDayShift: ['', ''],
+        nursesNightShift: ['', ''],
+      });
+
+      expect(record.nursesDayShift).toEqual(['Legacy A', 'Legacy B']);
+      expect(record.nurses).toEqual(['Legacy A', 'Legacy B']);
+    });
+  });
+
   describe('IeehDataSchema', () => {
     it('should parse an empty object due to nullableOptional', () => {
       const parsed = IeehDataSchema.parse({});

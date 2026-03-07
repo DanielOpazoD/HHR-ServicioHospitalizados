@@ -70,12 +70,27 @@ describe('operationalTelemetryService', () => {
       status: 'partial',
       operation: 'backup_handoff_pdf',
     });
+    recordOperationalTelemetry({
+      category: 'clinical_document',
+      status: 'degraded',
+      operation: 'export_clinical_document_pdf',
+    });
+    recordOperationalTelemetry({
+      category: 'create_day',
+      status: 'failed',
+      operation: 'copy_previous_day',
+    });
 
     const summary = buildOperationalTelemetrySummary(getOperationalTelemetryEvents());
-    expect(summary.recentObservedCount).toBe(3);
-    expect(summary.recentFailedCount).toBe(1);
+    expect(summary.recentObservedCount).toBe(5);
+    expect(summary.recentFailedCount).toBe(2);
     expect(summary.syncFailureCount).toBe(1);
+    expect(summary.syncObservedCount).toBe(1);
     expect(summary.degradedLocalCount).toBe(1);
+    expect(summary.indexedDbObservedCount).toBe(1);
+    expect(summary.clinicalDocumentObservedCount).toBe(1);
+    expect(summary.createDayObservedCount).toBe(1);
+    expect(summary.backupObservedCount).toBe(1);
     expect(summary.exportOrBackupObservedCount).toBe(1);
     expect(summary.latestIssueAt).toBeDefined();
   });

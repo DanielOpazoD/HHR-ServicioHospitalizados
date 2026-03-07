@@ -8,6 +8,21 @@ describe('minsalAnalyticsPresentationController', () => {
   it('returns explicit labels for period and current snapshot metrics', () => {
     expect(resolveAnalyticsPresentationCopy()).toEqual(DEFAULT_ANALYTICS_PRESENTATION_COPY);
     expect(DEFAULT_ANALYTICS_PRESENTATION_COPY.periodOccupancyTitle).toBe('Ocupación del período');
+    expect(DEFAULT_ANALYTICS_PRESENTATION_COPY.periodDischargesTitle).toBe('Egresos del período');
+    expect(DEFAULT_ANALYTICS_PRESENTATION_COPY.periodDischargesSubtitle).toBe(
+      'Altas, fallecidos y traslados del rango'
+    );
+    expect(DEFAULT_ANALYTICS_PRESENTATION_COPY.periodMortalitySubtitle).toBe(
+      'Fallecidos sobre egresos del rango'
+    );
+    expect(DEFAULT_ANALYTICS_PRESENTATION_COPY.periodRotationSubtitle).toBe(
+      'Egresos por cama dentro del rango'
+    );
+    expect(DEFAULT_ANALYTICS_PRESENTATION_COPY.trendTitle).toBe('Tendencia diaria de ocupación');
+    expect(DEFAULT_ANALYTICS_PRESENTATION_COPY.trendOccupancyLabel).toBe('Ocupación del día');
     expect(DEFAULT_ANALYTICS_PRESENTATION_COPY.currentSnapshotTitle).toBe('Situación actual');
+    expect(DEFAULT_ANALYTICS_PRESENTATION_COPY.currentSnapshotSubtitle).toBe(
+      'Último registro disponible del rango seleccionado'
+    );
   });
 });
