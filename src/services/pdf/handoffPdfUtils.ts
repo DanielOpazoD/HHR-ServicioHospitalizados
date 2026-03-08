@@ -1,9 +1,6 @@
 import { DailyRecord, ShiftType } from '@/types';
 import { calculateHospitalizedDays } from '@/utils/dateUtils';
-import {
-  resolveDayShiftNurses,
-  resolveNightShiftNurses,
-} from '@/services/staff/dailyRecordStaffing';
+import { resolveHandoffShiftStaff } from '@/services/staff/dailyRecordStaffing';
 
 export interface Schedule {
   dayStart?: string;
@@ -42,10 +39,7 @@ export { calculateHospitalizedDays };
  * Get staff info for nursing handoff.
  */
 export const getHandoffStaffInfo = (record: DailyRecord, selectedShift: ShiftType) => {
-  const delivers =
-    selectedShift === 'day' ? resolveDayShiftNurses(record) : resolveNightShiftNurses(record);
-  const receives =
-    selectedShift === 'day' ? resolveNightShiftNurses(record) : record.handoffNightReceives || [];
+  const { delivers, receives } = resolveHandoffShiftStaff(record, selectedShift);
   const tens = selectedShift === 'day' ? record.tensDayShift || [] : record.tensNightShift || [];
 
   return { delivers, receives, tens };

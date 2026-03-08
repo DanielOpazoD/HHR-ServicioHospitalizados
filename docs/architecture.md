@@ -164,6 +164,8 @@ npm run test
 - **Controller pattern**: lógica de validación, transformación y comandos fuera de componentes.
 - **Application use cases**: coordinación explícita de operaciones críticas sobre repositorios y outcomes homogéneos.
 - **Operational telemetry**: el core reporta eventos estructurados (`sync`, `indexeddb`, `export`, `backup`, `clinical_document`, `create_day`, `handoff`) a una telemetría local persistida y puede reenviarlos a un adapter externo opt-in vía `VITE_OPERATIONAL_TELEMETRY_ENDPOINT`.
+- **Error service facade**: `src/services/utils/errorService.ts` expone la API pública estable; `errorServiceController.ts` clasifica/reintenta y `errorServiceSinks.ts` decide persistencia IndexedDB, auditoría, consola de desarrollo y reenvío externo.
+- **Sync queue orchestration**: `syncQueueEngine.ts` orquesta; `syncQueueFailurePolicy.ts` decide transiciones y retry budget; `syncQueueTelemetryController.ts` concentra snapshots y reporting operativo.
 - **Configuración de observabilidad externa**:
   - `VITE_OPERATIONAL_TELEMETRY_ENDPOINT`: endpoint HTTP `POST` vendor-agnostic para reenviar eventos del core.
   - `VITE_OPERATIONAL_TELEMETRY_SAMPLE_RATE`: fracción `0..1` usada por el adapter para muestrear eventos.

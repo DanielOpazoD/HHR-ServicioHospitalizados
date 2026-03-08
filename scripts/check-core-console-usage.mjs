@@ -10,6 +10,7 @@ const TARGET_DIRECTORIES = [
   'src/services/exporters',
   'src/services/pdf',
   'src/services/admin',
+  'src/services/storage/sync',
 ];
 
 const FORBIDDEN_PATTERNS = [

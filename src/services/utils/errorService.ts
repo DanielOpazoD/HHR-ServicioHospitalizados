@@ -1,36 +1,20 @@
-/**
- * Centralized Error Logging Service
- * Handles error tracking, logging, reporting, and retry logic for Firestore operations
- */
-import { logSystemError } from '../admin/auditService';
-import { saveErrorLog } from '../storage/indexeddb/indexedDbErrorLogService';
 import { ErrorLog, ErrorSeverity, LogLevel } from '@/services/logging/errorLogTypes';
+import {
+  buildErrorLog,
+  buildRetryDelayMs,
+  DEFAULT_RETRY_CONFIG,
+  getFirebaseErrorSeverity,
+  getUserFriendlyErrorMessage as getUserFriendlyErrorMessageFromController,
+  isRetryableError as isRetryableErrorFromController,
+  type BuildErrorLogParams,
+  type RetryConfig,
+} from '@/services/utils/errorServiceController';
+import {
+  buildDefaultErrorServiceSinks,
+  runErrorServiceSinks,
+} from '@/services/utils/errorServiceSinks';
 
-// ============================================================================
-// Types and Enums
-// ============================================================================
-
-export type { ErrorLog, ErrorSeverity, LogLevel };
-
-export interface RetryConfig {
-  maxRetries: number;
-  baseDelayMs: number;
-  maxDelayMs: number;
-  retryableErrors: string[];
-}
-
-const DEFAULT_RETRY_CONFIG: RetryConfig = {
-  maxRetries: 3,
-  baseDelayMs: 500,
-  maxDelayMs: 5000,
-  retryableErrors: [
-    'unavailable',
-    'resource-exhausted',
-    'aborted',
-    'internal',
-    'deadline-exceeded',
-  ],
-};
+export type { ErrorLog, ErrorSeverity, LogLevel, RetryConfig };
 
 // ============================================================================
 // Retry Logic Utility
@@ -63,18 +47,14 @@ export async function withRetry<T>(
       lastError = error;
 
       // Check if error is retryable
-      const errorCode = (error as { code?: string })?.code || '';
-      const isRetryable = config.retryableErrors.some(code => errorCode.includes(code));
+      const isRetryable = isRetryableErrorFromController(error, config.retryableErrors);
 
       if (!isRetryable || attempt > config.maxRetries) {
         throw error;
       }
 
       // Calculate delay with exponential backoff + jitter
-      const delay = Math.min(
-        config.baseDelayMs * Math.pow(2, attempt - 1) + Math.random() * 100,
-        config.maxDelayMs
-      );
+      const delay = buildRetryDelayMs(attempt, config);
 
       options.onRetry?.(attempt, error);
 
@@ -89,8 +69,7 @@ export async function withRetry<T>(
  * Check if an error is retryable based on its code
  */
 export function isRetryableError(error: unknown): boolean {
-  const errorCode = (error as { code?: string })?.code || '';
-  return DEFAULT_RETRY_CONFIG.retryableErrors.some(code => errorCode.includes(code));
+  return isRetryableErrorFromController(error);
 }
 
 class ErrorService {
@@ -148,27 +127,8 @@ class ErrorService {
    *
    * @param params - Object containing error details (message, error, context)
    */
-  logError(params: {
-    message: string;
-    severity?: ErrorSeverity;
-    error?: Error | unknown;
-    stack?: string;
-    context?: Record<string, unknown>;
-    userId?: string;
-    userEmail?: string;
-  }): void {
-    const errorLog: ErrorLog = {
-      id: this.generateErrorId(),
-      timestamp: new Date().toISOString(),
-      message: params.message,
-      severity: params.severity || 'medium',
-      stack: params.stack || (params.error instanceof Error ? params.error.stack : undefined),
-      userId: params.userId,
-      userEmail: params.userEmail,
-      context: params.context,
-      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
-      url: typeof window !== 'undefined' ? window.location.href : undefined,
-    };
+  logError(params: BuildErrorLogParams): void {
+    const errorLog = buildErrorLog(params);
 
     // Store locally
     this.errors.push(errorLog);
@@ -176,17 +136,9 @@ class ErrorService {
       this.errors.shift(); // Remove oldest
     }
 
-    // Log to console in development
-    if (import.meta.env.DEV) {
-      console.error('[ErrorService]', errorLog);
-    }
-
-    // Send to external service (Sentry, LogRocket, etc.) - Future
-    this.sendToExternalService(errorLog);
-
-    // Store in IndexedDB for the local Error Dashboard (unlimited capacity)
-    void Promise.resolve(saveErrorLog(errorLog)).catch(err =>
-      console.error('Failed to log to IndexedDB:', err)
+    void runErrorServiceSinks(
+      errorLog,
+      buildDefaultErrorServiceSinks({ allowDevConsole: import.meta.env.DEV })
     );
   }
 
@@ -205,7 +157,7 @@ class ErrorService {
 
     this.logError({
       message,
-      severity: this.getFirebaseErrorSeverity(firebaseErrorCode),
+      severity: getFirebaseErrorSeverity(firebaseErrorCode),
       error,
       context: {
         operation,
@@ -239,33 +191,7 @@ class ErrorService {
    * @returns A friendly message suitable for user-facing UI
    */
   getUserFriendlyMessage(error: unknown): string {
-    const err = error as { code?: string; message?: string; name?: string };
-    // Firebase auth errors
-    if (err?.code?.startsWith('auth/')) {
-      return this.getFirebaseAuthMessage(err.code);
-    }
-
-    // Firebase Firestore errors
-    if (err?.code?.startsWith('permission-denied')) {
-      return 'No tiene permisos para realizar esta acción';
-    }
-
-    if (err?.code === 'unavailable') {
-      return 'Servicio temporalmente no disponible. Por favor, intente más tarde.';
-    }
-
-    // Network errors
-    if (err?.message?.includes('network') || err?.message?.includes('fetch')) {
-      return 'Error de conexión. Verifique su conexión a internet.';
-    }
-
-    // Validation errors
-    if (err?.name === 'ZodError') {
-      return 'Los datos ingresados no son válidos. Por favor, revise los campos.';
-    }
-
-    // Default
-    return 'Ha ocurrido un error. Por favor, intente nuevamente.';
+    return getUserFriendlyErrorMessageFromController(error);
   }
 
   /**
@@ -282,54 +208,6 @@ class ErrorService {
     this.errors = [];
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem('criticalErrors');
-    }
-  }
-
-  // ============================================
-  // PRIVATE METHODS
-  // ============================================
-
-  private generateErrorId(): string {
-    return `err_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  }
-
-  private getFirebaseErrorSeverity(code: string): ErrorSeverity {
-    if (code.includes('permission-denied')) return 'high';
-    if (code.includes('not-found')) return 'medium';
-    if (code.includes('unavailable')) return 'critical';
-    if (code.includes('unauthenticated')) return 'medium';
-    return 'medium';
-  }
-
-  private getFirebaseAuthMessage(code: string): string {
-    const messages: Record<string, string> = {
-      'auth/invalid-email': 'Email inválido',
-      'auth/user-disabled': 'Usuario deshabilitado',
-      'auth/user-not-found': 'Usuario no encontrado',
-      'auth/wrong-password': 'Contraseña incorrecta',
-      'auth/email-already-in-use': 'Email ya está en uso',
-      'auth/weak-password': 'Contraseña muy débil',
-      'auth/network-request-failed': 'Error de red. Verifique su conexión.',
-      'auth/too-many-requests': 'Demasiados intentos. Intente más tarde.',
-    };
-
-    return messages[code] || 'Error de autenticación';
-  }
-
-  private async sendToExternalService(error: ErrorLog): Promise<void> {
-    // Only log high or critical errors to remote audit
-    if (error.severity === 'high' || error.severity === 'critical') {
-      try {
-        await logSystemError(error.message, error.severity, {
-          stack: error.stack,
-          context: error.context,
-          url: error.url,
-          userAgent: error.userAgent,
-          originalErrorId: error.id,
-        });
-      } catch (err) {
-        console.error('[ErrorService] Failed to send to audit log:', err);
-      }
     }
   }
 }

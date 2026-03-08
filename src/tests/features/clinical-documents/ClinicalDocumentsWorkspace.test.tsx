@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { ClinicalDocumentsWorkspace } from '@/features/clinical-documents/components/ClinicalDocumentsWorkspace';
+import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
 import { createClinicalDocumentDraft } from '@/features/clinical-documents/domain/factories';
 import * as clinicalDocumentUseCases from '@/application/clinical-documents/clinicalDocumentUseCases';
 import { ClinicalDocumentRepository } from '@/services/repositories/ClinicalDocumentRepository';
@@ -328,5 +329,143 @@ describe('ClinicalDocumentsWorkspace', () => {
     expect(
       screen.getByRole('button', { name: /eliminar sección antecedentes/i })
     ).toBeInTheDocument();
+  });
+
+  it('marks remote updates as pending when a stale subscription arrives over a dirty draft', async () => {
+    let subscriptionCallback: ((docs: ClinicalDocumentRecord[]) => void) | null = null;
+    vi.mocked(ClinicalDocumentRepository.subscribeByEpisode).mockImplementation(
+      (_episodeKey, callback) => {
+        subscriptionCallback = callback;
+        callback([clinicalDocument]);
+        return vi.fn();
+      }
+    );
+
+    render(
+      <ClinicalDocumentsWorkspace
+        patient={
+          {
+            patientName: 'Paciente Test',
+            rut: '11.111.111-1',
+            admissionDate: '2026-03-06',
+            age: '40a',
+            birthDate: '1986-01-01',
+          } as any
+        }
+        currentDateString="2026-03-06"
+        bedId="R1"
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Doctor Test')).toBeInTheDocument();
+    });
+
+    const antecedentesEditor = screen.getByRole('textbox', { name: /contenido antecedentes/i });
+    antecedentesEditor.innerHTML = 'Cambio local sin guardar';
+    fireEvent.input(antecedentesEditor);
+
+    expect(subscriptionCallback).toBeTruthy();
+    await act(async () => {
+      subscriptionCallback?.([
+        {
+          ...clinicalDocument,
+          sections: clinicalDocument.sections.map(section =>
+            section.id === 'antecedentes'
+              ? { ...section, content: 'Cambio remoto pendiente' }
+              : section
+          ),
+        },
+      ]);
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          /hay cambios remotos pendientes\. guarda o recarga el documento para sincronizar/i
+        )
+      ).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /recargar/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText(
+          /hay cambios remotos pendientes\. guarda o recarga el documento para sincronizar/i
+        )
+      ).not.toBeInTheDocument();
+      expect(screen.getByText('Cambio remoto pendiente')).toBeInTheDocument();
+    });
+  });
+
+  it('can discard local changes and rehydrate the pending remote version', async () => {
+    let subscriptionCallback: ((docs: ClinicalDocumentRecord[]) => void) | null = null;
+    vi.mocked(ClinicalDocumentRepository.subscribeByEpisode).mockImplementation(
+      (_episodeKey, callback) => {
+        subscriptionCallback = callback;
+        callback([clinicalDocument]);
+        return vi.fn();
+      }
+    );
+
+    render(
+      <ClinicalDocumentsWorkspace
+        patient={
+          {
+            patientName: 'Paciente Test',
+            rut: '11.111.111-1',
+            admissionDate: '2026-03-06',
+            age: '40a',
+            birthDate: '1986-01-01',
+          } as any
+        }
+        currentDateString="2026-03-06"
+        bedId="R1"
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Doctor Test')).toBeInTheDocument();
+    });
+
+    const antecedentesEditor = screen.getByRole('textbox', { name: /contenido antecedentes/i });
+    antecedentesEditor.innerHTML = 'Cambio local temporal';
+    fireEvent.input(antecedentesEditor);
+
+    await act(async () => {
+      subscriptionCallback?.([
+        {
+          ...clinicalDocument,
+          sections: clinicalDocument.sections.map(section =>
+            section.id === 'antecedentes'
+              ? { ...section, content: 'Cambio remoto definitivo' }
+              : section
+          ),
+        },
+      ]);
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          /hay cambios remotos pendientes\. guarda o recarga el documento para sincronizar/i
+        )
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /descartar cambios locales/i })
+      ).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /descartar cambios locales/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText(
+          /hay cambios remotos pendientes\. guarda o recarga el documento para sincronizar/i
+        )
+      ).not.toBeInTheDocument();
+      expect(screen.getByText('Cambio remoto definitivo')).toBeInTheDocument();
+    });
   });
 });

@@ -63,6 +63,10 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
 
   const {
     draft,
+    hasPendingRemoteUpdate,
+    hasLocalDraftChanges,
+    applyPendingRemoteUpdate,
+    discardLocalDraftChanges,
     setDraft,
     isSaving,
     setIsSaving,
@@ -148,6 +152,10 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
       <section className="bg-[#f3f4f6] p-3 overflow-y-auto">
         <ClinicalDocumentSheet
           selectedDocument={selectedDocument}
+          hasPendingRemoteUpdate={hasPendingRemoteUpdate}
+          hasLocalDraftChanges={hasLocalDraftChanges}
+          onApplyPendingRemoteUpdate={applyPendingRemoteUpdate}
+          onDiscardLocalDraftChanges={discardLocalDraftChanges}
           canEdit={canEdit}
           canUnsignSelectedDocument={Boolean(canUnsignSelectedDocument)}
           role={role}

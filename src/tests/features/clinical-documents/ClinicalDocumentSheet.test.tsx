@@ -37,6 +37,8 @@ const buildDocument = () =>
   });
 
 const defaultHandlers = {
+  onApplyPendingRemoteUpdate: vi.fn(),
+  onDiscardLocalDraftChanges: vi.fn(),
   onSave: vi.fn(),
   onSign: vi.fn(),
   onUnsign: vi.fn(),
@@ -61,6 +63,7 @@ describe('ClinicalDocumentSheet', () => {
     render(
       <ClinicalDocumentSheet
         selectedDocument={null}
+        hasPendingRemoteUpdate={false}
         canEdit={true}
         canUnsignSelectedDocument={false}
         role="doctor_urgency"
@@ -85,6 +88,8 @@ describe('ClinicalDocumentSheet', () => {
     render(
       <ClinicalDocumentSheet
         selectedDocument={document}
+        hasPendingRemoteUpdate={true}
+        hasLocalDraftChanges={true}
         canEdit={true}
         canUnsignSelectedDocument={false}
         role="doctor_urgency"
@@ -97,6 +102,13 @@ describe('ClinicalDocumentSheet', () => {
 
     expect(screen.getByDisplayValue(document.medico)).toBeInTheDocument();
     expect(screen.getByText(/falta completar diagnóstico/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /hay cambios remotos pendientes\. guarda o recarga el documento para sincronizar/i
+      )
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /recargar/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /descartar cambios locales/i })).toBeInTheDocument();
     expect(screen.getByAltText(/logo institucional izquierdo/i)).toHaveAttribute(
       'src',
       '/images/logos/logo_HHR.png'
@@ -108,6 +120,7 @@ describe('ClinicalDocumentSheet', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /guardar/i }));
     fireEvent.click(screen.getByRole('button', { name: /pdf/i }));
+    fireEvent.click(screen.getByRole('button', { name: /descartar cambios locales/i }));
     fireEvent.click(screen.getByRole('button', { name: /formato/i }));
     expect(screen.getByRole('button', { name: /deshacer/i })).toBeDisabled();
     expect(screen.getByRole('button', { name: /rehacer/i })).toBeDisabled();
@@ -133,6 +146,7 @@ describe('ClinicalDocumentSheet', () => {
     fireEvent.click(screen.getByRole('button', { name: /eliminar campo nombre/i }));
     expect(defaultHandlers.onSave).toHaveBeenCalled();
     expect(defaultHandlers.onPrint).toHaveBeenCalled();
+    expect(defaultHandlers.onDiscardLocalDraftChanges).toHaveBeenCalled();
     expect(defaultHandlers.moveSection).toHaveBeenCalledWith('antecedentes', 'down');
     expect(defaultHandlers.reorderSection).toHaveBeenCalledWith(
       'antecedentes',

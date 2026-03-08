@@ -4,7 +4,10 @@ import { clonePatient, createEmptyPatient } from '@/services/factories/patientFa
 import { parsePatientDataWithDefaults } from '@/schemas/zodSchemas';
 import { mapPatientToFhir } from '@/services/utils/fhirMappers';
 import { createDailyRecordAggregate } from '@/services/repositories/dailyRecordAggregate';
-import { inheritPatientHandoffNotes } from '@/services/repositories/dailyRecordHandoffDomainService';
+import {
+  inheritPatientHandoffNotes,
+  inheritPatientMedicalHandoff,
+} from '@/services/repositories/dailyRecordHandoffDomainService';
 import { touchDailyRecordLastUpdated } from '@/services/repositories/dailyRecordMetadataDomainService';
 
 const normalizeComparablePatientName = (patientName: string | undefined): string =>
@@ -48,9 +51,11 @@ export const preparePatientForCarryover = (sourcePatient: PatientData): PatientD
   );
   resetCarryoverCudyr(clonedPatient);
   inheritPatientHandoffNotes(clonedPatient, sourcePatient);
+  inheritPatientMedicalHandoff(clonedPatient, sourcePatient);
 
   if (clonedPatient.clinicalCrib && sourcePatient.clinicalCrib) {
     inheritPatientHandoffNotes(clonedPatient.clinicalCrib, sourcePatient.clinicalCrib);
+    inheritPatientMedicalHandoff(clonedPatient.clinicalCrib, sourcePatient.clinicalCrib);
   }
 
   return clonedPatient;

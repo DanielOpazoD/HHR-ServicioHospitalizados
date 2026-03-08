@@ -29,6 +29,10 @@ interface UseClinicalDocumentWorkspaceDraftParams {
 
 export interface ClinicalDocumentWorkspaceDraftState {
   draft: ClinicalDocumentRecord | null;
+  hasPendingRemoteUpdate: boolean;
+  hasLocalDraftChanges: boolean;
+  applyPendingRemoteUpdate: () => void;
+  discardLocalDraftChanges: () => void;
   setDraft: React.Dispatch<React.SetStateAction<ClinicalDocumentRecord | null>>;
   isSaving: boolean;
   setIsSaving: React.Dispatch<React.SetStateAction<boolean>>;
@@ -60,11 +64,55 @@ export const useClinicalDocumentWorkspaceDraft = ({
   user,
 }: UseClinicalDocumentWorkspaceDraftParams): ClinicalDocumentWorkspaceDraftState => {
   const [draft, setDraft] = useState<ClinicalDocumentRecord | null>(null);
+  const [hasPendingRemoteUpdate, setHasPendingRemoteUpdate] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const autosaveTimerRef = useRef<number | null>(null);
   const lastPersistedSnapshotRef = useRef<string>('');
   const draftRef = useRef<ClinicalDocumentRecord | null>(null);
   const draftDirtyRef = useRef(false);
+  const pendingRemoteDocumentRef = useRef<ClinicalDocumentRecord | null>(null);
+  const pendingRemoteSnapshotRef = useRef<string>('');
+  const baseRemoteDocumentRef = useRef<ClinicalDocumentRecord | null>(null);
+  const baseRemoteSnapshotRef = useRef<string>('');
+
+  const clearPendingRemoteUpdate = () => {
+    pendingRemoteDocumentRef.current = null;
+    pendingRemoteSnapshotRef.current = '';
+    setHasPendingRemoteUpdate(false);
+  };
+
+  const applyPendingRemoteUpdate = () => {
+    const pendingRemoteDocument = pendingRemoteDocumentRef.current;
+    const pendingRemoteSnapshot = pendingRemoteSnapshotRef.current;
+    if (!pendingRemoteDocument || !pendingRemoteSnapshot) {
+      return;
+    }
+
+    setDraft(structuredClone(pendingRemoteDocument));
+    lastPersistedSnapshotRef.current = pendingRemoteSnapshot;
+    baseRemoteDocumentRef.current = structuredClone(pendingRemoteDocument);
+    baseRemoteSnapshotRef.current = pendingRemoteSnapshot;
+    clearPendingRemoteUpdate();
+  };
+
+  const discardLocalDraftChanges = () => {
+    const nextDraft =
+      pendingRemoteDocumentRef.current || baseRemoteDocumentRef.current || draftRef.current;
+    const nextSnapshot =
+      pendingRemoteSnapshotRef.current ||
+      baseRemoteSnapshotRef.current ||
+      lastPersistedSnapshotRef.current;
+
+    if (!nextDraft) {
+      return;
+    }
+
+    setDraft(structuredClone(nextDraft));
+    lastPersistedSnapshotRef.current = nextSnapshot;
+    baseRemoteDocumentRef.current = structuredClone(nextDraft);
+    baseRemoteSnapshotRef.current = nextSnapshot;
+    clearPendingRemoteUpdate();
+  };
 
   useEffect(() => {
     draftRef.current = draft;
@@ -78,6 +126,7 @@ export const useClinicalDocumentWorkspaceDraft = ({
   useEffect(() => {
     if (!selectedDocumentId) {
       setDraft(null);
+      clearPendingRemoteUpdate();
       lastPersistedSnapshotRef.current = '';
       return;
     }
@@ -85,15 +134,45 @@ export const useClinicalDocumentWorkspaceDraft = ({
     const selected = documents.find(document => document.id === selectedDocumentId) || null;
     const cloned = selected ? structuredClone(selected) : null;
     const hydratedClone = cloned ? hydrateLegacyClinicalDocument(cloned) : null;
+    const incomingSnapshot = serializeClinicalDocument(hydratedClone);
 
     const currentDraft = draftRef.current;
     const isSameSelectedDocument = Boolean(currentDraft) && currentDraft?.id === selectedDocumentId;
     if (isSameSelectedDocument && draftDirtyRef.current) {
+      const currentDraftSnapshot = serializeClinicalDocument(currentDraft);
+      const isNewRemoteSnapshot =
+        incomingSnapshot !== currentDraftSnapshot &&
+        incomingSnapshot !== lastPersistedSnapshotRef.current;
+      if (isNewRemoteSnapshot) {
+        pendingRemoteDocumentRef.current = hydratedClone;
+        pendingRemoteSnapshotRef.current = incomingSnapshot;
+        setHasPendingRemoteUpdate(true);
+      }
       return;
     }
+    clearPendingRemoteUpdate();
     setDraft(hydratedClone);
-    lastPersistedSnapshotRef.current = serializeClinicalDocument(hydratedClone);
+    lastPersistedSnapshotRef.current = incomingSnapshot;
+    baseRemoteDocumentRef.current = hydratedClone ? structuredClone(hydratedClone) : null;
+    baseRemoteSnapshotRef.current = incomingSnapshot;
   }, [documents, selectedDocumentId]);
+
+  useEffect(() => {
+    if (!hasPendingRemoteUpdate || draftDirtyRef.current) {
+      return;
+    }
+
+    if (!pendingRemoteDocumentRef.current || !pendingRemoteSnapshotRef.current) {
+      setHasPendingRemoteUpdate(false);
+      return;
+    }
+
+    setDraft(structuredClone(pendingRemoteDocumentRef.current));
+    lastPersistedSnapshotRef.current = pendingRemoteSnapshotRef.current;
+    baseRemoteDocumentRef.current = structuredClone(pendingRemoteDocumentRef.current);
+    baseRemoteSnapshotRef.current = pendingRemoteSnapshotRef.current;
+    clearPendingRemoteUpdate();
+  }, [draft, hasPendingRemoteUpdate]);
 
   useEffect(() => {
     if (!draft || !canEdit || draft.isLocked || !isActive || !user) {
@@ -125,6 +204,9 @@ export const useClinicalDocumentWorkspaceDraft = ({
         });
         if (result.status === 'success' && result.data) {
           lastPersistedSnapshotRef.current = serializeClinicalDocument(result.data);
+          baseRemoteDocumentRef.current = structuredClone(result.data);
+          baseRemoteSnapshotRef.current = lastPersistedSnapshotRef.current;
+          clearPendingRemoteUpdate();
           setDraft(result.data);
         } else {
           console.error('[ClinicalDocumentsWorkspace] Autosave failed', result.issues[0]?.message);
@@ -343,6 +425,10 @@ export const useClinicalDocumentWorkspaceDraft = ({
 
   return {
     draft,
+    hasPendingRemoteUpdate,
+    hasLocalDraftChanges: draftDirtyRef.current,
+    applyPendingRemoteUpdate,
+    discardLocalDraftChanges,
     setDraft,
     isSaving,
     setIsSaving,

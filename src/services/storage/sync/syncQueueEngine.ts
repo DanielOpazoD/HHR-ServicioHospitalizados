@@ -1,7 +1,8 @@
 import type { DailyRecord } from '@/types';
+import type { ErrorSeverity } from '@/services/logging/errorLogTypes';
 import { logError } from '@/services/utils/errorService';
-import { buildSyncErrorSummary, classifySyncError } from '@/services/storage/syncErrorCatalog';
 import type { SyncTask } from '@/services/storage/syncQueueTypes';
+import type { SyncErrorCategory } from '@/services/storage/syncErrorCatalog';
 import type {
   SyncQueueStorePort,
   SyncRuntimePort,
@@ -10,10 +11,16 @@ import type {
 import { measureRepositoryOperation } from '@/services/repositories/repositoryPerformance';
 import {
   buildSyncQueueDomainMetrics,
-  normalizeSyncTaskContexts,
-  resolveSyncDomainRetryProfile,
   type SyncQueueDomainMetrics,
 } from '@/services/storage/sync/syncDomainPolicy';
+import {
+  resolveSyncQueueFailureDecision,
+  buildSyncQueueTaskContextMeta,
+} from '@/services/storage/sync/syncQueueFailurePolicy';
+import {
+  buildSyncQueueTelemetryFromRows,
+  recordSyncQueueDecisionTelemetry,
+} from '@/services/storage/sync/syncQueueTelemetryController';
 
 export interface SyncQueueTelemetry {
   pending: number;
@@ -59,31 +66,6 @@ const clearTaskErrorState = () => ({
   lastErrorAt: undefined,
 });
 
-const buildTaskContextMeta = (task: Pick<SyncTask, 'contexts' | 'recoveryPolicy'>) => {
-  const contexts = normalizeSyncTaskContexts(task.contexts);
-  const domainProfile = resolveSyncDomainRetryProfile(contexts);
-  return {
-    contexts,
-    recoveryPolicy: task.recoveryPolicy || domainProfile.id,
-    domainProfile,
-  };
-};
-
-const buildTaskErrorMeta = (error: unknown) => {
-  const classification = classifySyncError(error);
-  return {
-    classification,
-    errorMeta: {
-      error: buildSyncErrorSummary(classification),
-      lastErrorCode: classification.code,
-      lastErrorCategory: classification.category,
-      lastErrorSeverity: classification.severity,
-      lastErrorAction: classification.recommendedAction,
-      lastErrorAt: Date.now(),
-    } as const,
-  };
-};
-
 const getTaskKey = (type: SyncTask['type'], payload: unknown): string | undefined => {
   if (type === 'UPDATE_DAILY_RECORD') {
     const record = payload as DailyRecord;
@@ -91,30 +73,6 @@ const getTaskKey = (type: SyncTask['type'], payload: unknown): string | undefine
   }
 
   return undefined;
-};
-
-const buildTelemetryFromRows = (
-  rows: SyncTask[],
-  now: number,
-  batchSize: number
-): SyncQueueTelemetry => {
-  const pendingRows = rows.filter(row => row.status === 'PENDING');
-  const oldestTimestamp = pendingRows.reduce<number>(
-    (acc, row) => (row.timestamp < acc ? row.timestamp : acc),
-    Number.POSITIVE_INFINITY
-  );
-
-  return {
-    pending: pendingRows.length,
-    failed: rows.filter(row => row.status === 'FAILED').length,
-    conflict: rows.filter(row => row.status === 'CONFLICT').length,
-    retrying: pendingRows.filter(row => row.retryCount > 0).length,
-    oldestPendingAgeMs:
-      Number.isFinite(oldestTimestamp) && oldestTimestamp > 0
-        ? Math.max(0, now - oldestTimestamp)
-        : 0,
-    batchSize,
-  };
 };
 
 export const createSyncQueueEngine = ({
@@ -127,12 +85,6 @@ export const createSyncQueueEngine = ({
   maxRetryDelayMs,
 }: CreateSyncQueueEngineOptions) => {
   let isProcessing = false;
-
-  const computeBackoffMs = (attempt: number): number => {
-    const jitter = Math.random() * 500;
-    const delay = Math.min(baseRetryDelayMs * Math.pow(2, attempt - 1), maxRetryDelayMs);
-    return delay + jitter;
-  };
 
   const triggerProcessing = (): void => {
     if (!runtime.isOnline()) return;
@@ -151,62 +103,49 @@ export const createSyncQueueEngine = ({
       return;
     }
 
-    const { classification, errorMeta } = buildTaskErrorMeta(error);
-    const { contexts, recoveryPolicy, domainProfile } = buildTaskContextMeta(task);
-    console.error(`[SyncQueue] Task ${task.id} failed:`, error);
+    const decision = resolveSyncQueueFailureDecision({
+      task,
+      error,
+      maxRetries,
+      baseRetryDelayMs,
+      maxRetryDelayMs,
+    });
 
-    if (classification.category === 'conflict') {
-      await updateTaskState(task.id, {
-        status: 'CONFLICT',
-        contexts,
-        recoveryPolicy,
-        ...errorMeta,
-        lastErrorAction: domainProfile.conflictAction,
-      });
-      return;
-    }
+    await updateTaskState(task.id, {
+      status: decision.status,
+      retryCount: decision.retryCount,
+      nextAttemptAt: decision.nextAttemptAt,
+      contexts: decision.contexts,
+      recoveryPolicy: decision.recoveryPolicy,
+      error: decision.error,
+      lastErrorCode: decision.lastErrorCode,
+      lastErrorCategory: decision.lastErrorCategory as SyncErrorCategory | undefined,
+      lastErrorSeverity: decision.lastErrorSeverity as ErrorSeverity | undefined,
+      lastErrorAction: decision.lastErrorAction,
+      lastErrorAt: decision.lastErrorAt,
+    });
 
-    if (!classification.retryable) {
-      await updateTaskState(task.id, {
-        status: 'FAILED',
-        retryCount: task.retryCount,
-        contexts,
-        recoveryPolicy,
-        ...errorMeta,
-      });
-      return;
-    }
-
-    const newRetryCount = task.retryCount + 1;
-    const retryBudget = Math.min(maxRetries, domainProfile.retryBudget);
-    if (newRetryCount >= retryBudget) {
-      await updateTaskState(task.id, {
-        status: 'FAILED',
-        retryCount: newRetryCount,
-        contexts,
-        recoveryPolicy,
-        ...errorMeta,
-      });
+    if (decision.shouldLogPermanentFailure) {
       logError('Sync task permanently failed', error instanceof Error ? error : undefined, {
         taskId: task.id,
         type: task.type,
         key: task.key,
-        retryCount: newRetryCount,
-        contexts,
-        recoveryPolicy,
+        retryCount: decision.retryCount,
+        contexts: decision.contexts,
+        recoveryPolicy: decision.recoveryPolicy,
       });
-      return;
     }
 
-    await updateTaskState(task.id, {
-      status: 'PENDING',
-      retryCount: newRetryCount,
-      nextAttemptAt:
-        Date.now() + computeBackoffMs(newRetryCount) * Math.max(1, domainProfile.delayMultiplier),
-      contexts,
-      recoveryPolicy,
-      ...errorMeta,
-    });
+    recordSyncQueueDecisionTelemetry(
+      task,
+      decision.error,
+      decision.status === 'CONFLICT'
+        ? 'conflict'
+        : decision.status === 'FAILED'
+          ? 'failed'
+          : 'degraded',
+      decision.status === 'CONFLICT' ? undefined : { retryCount: decision.retryCount }
+    );
   };
 
   const queueTask = async (
@@ -216,7 +155,7 @@ export const createSyncQueueEngine = ({
   ): Promise<void> => {
     const key = getTaskKey(type, payload);
     const now = Date.now();
-    const contextMeta = buildTaskContextMeta({
+    const contextMeta = buildSyncQueueTaskContextMeta({
       contexts: meta?.contexts,
       recoveryPolicy: meta?.recoveryPolicy,
     });
@@ -256,7 +195,7 @@ export const createSyncQueueEngine = ({
 
   const getTelemetry = async (): Promise<SyncQueueTelemetry> => {
     const rows = await store.listAll();
-    return buildTelemetryFromRows(rows, Date.now(), batchSize);
+    return buildSyncQueueTelemetryFromRows(rows, Date.now(), batchSize);
   };
 
   const getStats = async (): Promise<{ pending: number; failed: number; conflict: number }> => {
@@ -304,8 +243,6 @@ export const createSyncQueueEngine = ({
               return;
             }
 
-            console.warn(`[SyncQueue] Processing ${readyTasks.length} pending tasks...`);
-
             for (const task of readyTasks) {
               if (!task.id) continue;
 
@@ -332,7 +269,6 @@ export const createSyncQueueEngine = ({
 
   const ensureOnlineListener = (): void => {
     runtime.onOnline(() => {
-      console.warn('[SyncQueue] Online detected, flushing queue...');
       triggerProcessing();
     });
   };

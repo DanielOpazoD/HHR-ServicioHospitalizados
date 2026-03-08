@@ -46,6 +46,14 @@ describe('dailyRecordInitializationSupport', () => {
     const source = buildPatient('R1', {
       patientName: 'Madre',
       handoffNoteNightShift: 'Nota noche madre',
+      medicalHandoffNote: 'Resumen medico madre',
+      medicalHandoffEntries: [
+        {
+          id: 'medical-entry-1',
+          specialty: Specialty.MEDICINA,
+          note: 'Control por medicina interna',
+        },
+      ],
       cudyr: {
         changeClothes: 1,
         mobilization: 0,
@@ -65,6 +73,7 @@ describe('dailyRecordInitializationSupport', () => {
       clinicalCrib: buildPatient('C1', {
         patientName: 'RN',
         handoffNoteNightShift: 'Nota noche cuna',
+        medicalHandoffNote: 'Resumen medico cuna',
       }),
     });
 
@@ -73,8 +82,11 @@ describe('dailyRecordInitializationSupport', () => {
     expect(carried.cudyr).toBeUndefined();
     expect(carried.handoffNoteDayShift).toBe('Nota noche madre');
     expect(carried.handoffNoteNightShift).toBe('Nota noche madre');
+    expect(carried.medicalHandoffNote).toBe('Resumen medico madre');
+    expect(carried.medicalHandoffEntries?.[0]?.note).toBe('Control por medicina interna');
     expect(carried.clinicalCrib?.handoffNoteDayShift).toBe('Nota noche cuna');
     expect(carried.clinicalCrib?.handoffNoteNightShift).toBe('Nota noche cuna');
+    expect(carried.clinicalCrib?.medicalHandoffNote).toBe('Resumen medico cuna');
   });
 
   it('preserves cie10 only for matching patients by name', () => {

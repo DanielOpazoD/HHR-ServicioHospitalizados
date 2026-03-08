@@ -29,6 +29,20 @@ describe('dailyRecordClinicalDomainService', () => {
   it('prepares carryover patient by clearing cudyr and inheriting night notes', () => {
     const source = buildPatient('R1', {
       handoffNoteNightShift: 'Nota noche madre',
+      medicalHandoffNote: 'Evolucion medica madre',
+      medicalHandoffEntries: [
+        {
+          id: 'entry-1',
+          specialty: Specialty.MEDICINA,
+          note: 'Paciente estable',
+          updatedAt: '2026-03-08T09:15:00.000Z',
+          updatedBy: {
+            uid: 'doctor-1',
+            displayName: 'Dra. Guardia',
+            email: 'doctora@hospital.cl',
+          },
+        },
+      ],
       cudyr: {
         changeClothes: 1,
         mobilization: 0,
@@ -48,6 +62,7 @@ describe('dailyRecordClinicalDomainService', () => {
       clinicalCrib: buildPatient('C1', {
         patientName: 'RN',
         handoffNoteNightShift: 'Nota noche cuna',
+        medicalHandoffNote: 'Evolucion medica cuna',
       }),
     });
 
@@ -56,8 +71,12 @@ describe('dailyRecordClinicalDomainService', () => {
     expect(carried.cudyr).toBeUndefined();
     expect(carried.handoffNoteDayShift).toBe('Nota noche madre');
     expect(carried.handoffNoteNightShift).toBe('Nota noche madre');
+    expect(carried.medicalHandoffNote).toBe('Evolucion medica madre');
+    expect(carried.medicalHandoffEntries?.[0]?.note).toBe('Paciente estable');
+    expect(carried.medicalHandoffEntries).not.toBe(source.medicalHandoffEntries);
     expect(carried.clinicalCrib?.handoffNoteDayShift).toBe('Nota noche cuna');
     expect(carried.clinicalCrib?.handoffNoteNightShift).toBe('Nota noche cuna');
+    expect(carried.clinicalCrib?.medicalHandoffNote).toBe('Evolucion medica cuna');
   });
 
   it('sanitizes malformed legacy patient data during carryover', () => {
