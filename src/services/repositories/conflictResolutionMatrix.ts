@@ -28,6 +28,7 @@ import {
   mergeObject,
   mergePatientData,
 } from '@/services/repositories/conflictResolutionMergeUtils';
+import { resolveDayShiftNurses } from '@/services/staff/dailyRecordStaffing';
 
 interface ConflictResolutionOptions {
   changedPaths?: string[];
@@ -45,8 +46,8 @@ const resolveCanonicalDayShiftNurses = (
   traceContext?: ConflictResolutionTraceContext
 ): string[] =>
   mergeUniquePrimitiveArray(
-    remote.nursesDayShift || remote.nurses || [],
-    local.nursesDayShift || local.nurses || [],
+    resolveDayShiftNurses(remote),
+    resolveDayShiftNurses(local),
     preferLocal,
     traceContext,
     'nursesDayShift'
@@ -266,7 +267,7 @@ const resolveByChangedPaths = (
     if (root === 'nurses' || root === 'nursesDayShift') {
       const mergedDayShift = resolveCanonicalDayShiftNurses(remote, local, true, traceContext);
       (patches as Record<string, unknown>).nursesDayShift = mergedDayShift;
-      (patches as Record<string, unknown>).nurses = [...mergedDayShift];
+      (patches as Record<string, unknown>)['nurses'] = [...mergedDayShift];
       continue;
     }
 

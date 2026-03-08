@@ -6,6 +6,7 @@ import { BEDS } from '@/constants';
 import { getCategorization } from '@/features/cudyr/public';
 import { CudyrScore } from '@/types';
 import { calculateStats } from '@/services/calculations/statsCalculator';
+import { resolveNightShiftNurses } from '@/services/staff/dailyRecordStaffing';
 
 // ... (existing imports)
 
@@ -73,7 +74,7 @@ export const HandoffCudyrPrint: React.FC = () => {
     return `${day}-${month}-${year}`;
   };
 
-  const responsibleNurses = (record.nursesNightShift || []).filter(n => n && n.trim() !== '');
+  const responsibleNurses = resolveNightShiftNurses(record).filter(n => n && n.trim() !== '');
 
   // Helper to render score values consistently
   const renderScore = (value?: number) => {

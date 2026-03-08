@@ -1,6 +1,7 @@
 import type { jsPDF } from 'jspdf';
 import { BEDS } from '@/constants';
 import { CudyrScore, DailyRecord } from '@/types';
+import { resolveNightShiftNurses } from '@/services/staff/dailyRecordStaffing';
 import { formatDateDDMMYYYY } from '@/utils/dateUtils';
 import { AutoTableFunction, CellHookData, JsPDFWithAutoTable } from './handoffPdfTypes';
 
@@ -55,7 +56,7 @@ export const addCudyrTable = (
         minute: '2-digit',
       })
     : '--:--';
-  const nurses = (record.nursesNightShift || []).filter(n => n && n.trim() !== '');
+  const nurses = resolveNightShiftNurses(record).filter(n => n && n.trim() !== '');
   const nursesStr = nurses.length > 0 ? nurses.join(', ') : 'No registrados';
 
   doc.text(`Fecha: ${formatDateDDMMYYYY(record.date)}`, margin, currentY);

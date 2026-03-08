@@ -89,7 +89,7 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
 
         <h2 className="text-lg font-bold text-slate-800 flex items-center gap-1.5">
           <BarChart3 size={20} className="text-slate-600" />
-          Instrumento CUDYR
+          Instrumento CUDYR del último registro disponible
         </h2>
 
         {/* Lock Button */}

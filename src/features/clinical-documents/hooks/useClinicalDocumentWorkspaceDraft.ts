@@ -63,6 +63,17 @@ export const useClinicalDocumentWorkspaceDraft = ({
   const [isSaving, setIsSaving] = useState(false);
   const autosaveTimerRef = useRef<number | null>(null);
   const lastPersistedSnapshotRef = useRef<string>('');
+  const draftRef = useRef<ClinicalDocumentRecord | null>(null);
+  const draftDirtyRef = useRef(false);
+
+  useEffect(() => {
+    draftRef.current = draft;
+    if (!draft) {
+      draftDirtyRef.current = false;
+      return;
+    }
+    draftDirtyRef.current = serializeClinicalDocument(draft) !== lastPersistedSnapshotRef.current;
+  }, [draft]);
 
   useEffect(() => {
     if (!selectedDocumentId) {
@@ -74,6 +85,13 @@ export const useClinicalDocumentWorkspaceDraft = ({
     const selected = documents.find(document => document.id === selectedDocumentId) || null;
     const cloned = selected ? structuredClone(selected) : null;
     const hydratedClone = cloned ? hydrateLegacyClinicalDocument(cloned) : null;
+
+    const currentDraft = draftRef.current;
+    const isSameSelectedDocument = Boolean(currentDraft) && currentDraft?.id === selectedDocumentId;
+    if (isSameSelectedDocument && draftDirtyRef.current) {
+      return;
+    }
+
     setDraft(hydratedClone);
     lastPersistedSnapshotRef.current = serializeClinicalDocument(hydratedClone);
   }, [documents, selectedDocumentId]);
@@ -108,6 +126,7 @@ export const useClinicalDocumentWorkspaceDraft = ({
         });
         if (result.status === 'success' && result.data) {
           lastPersistedSnapshotRef.current = serializeClinicalDocument(result.data);
+          draftDirtyRef.current = false;
           setDraft(result.data);
         } else {
           console.error('[ClinicalDocumentsWorkspace] Autosave failed', result.issues[0]?.message);
@@ -148,6 +167,7 @@ export const useClinicalDocumentWorkspaceDraft = ({
           }
         : prev
     );
+    draftDirtyRef.current = true;
   };
 
   const patchSection = (sectionId: string, content: string) => {
@@ -163,6 +183,7 @@ export const useClinicalDocumentWorkspaceDraft = ({
           }
         : prev
     );
+    draftDirtyRef.current = true;
   };
 
   const patchPatientFieldLabel = (fieldId: string, label: string) => {
@@ -176,6 +197,7 @@ export const useClinicalDocumentWorkspaceDraft = ({
           }
         : prev
     );
+    draftDirtyRef.current = true;
   };
 
   const patchSectionTitle = (sectionId: string, title: string) => {
@@ -189,6 +211,7 @@ export const useClinicalDocumentWorkspaceDraft = ({
           }
         : prev
     );
+    draftDirtyRef.current = true;
   };
 
   const setPatientFieldVisibility = (fieldId: string, visible: boolean) => {
@@ -202,6 +225,7 @@ export const useClinicalDocumentWorkspaceDraft = ({
           }
         : prev
     );
+    draftDirtyRef.current = true;
   };
 
   const setSectionVisibility = (sectionId: string, visible: boolean) => {
@@ -215,6 +239,7 @@ export const useClinicalDocumentWorkspaceDraft = ({
           }
         : prev
     );
+    draftDirtyRef.current = true;
   };
 
   const reorderSection = (sourceSectionId: string, targetSectionId: string) => {
@@ -252,6 +277,7 @@ export const useClinicalDocumentWorkspaceDraft = ({
           .sort((left, right) => left.order - right.order),
       };
     });
+    draftDirtyRef.current = true;
   };
 
   const moveSection = (sectionId: string, direction: 'up' | 'down') => {
@@ -298,14 +324,17 @@ export const useClinicalDocumentWorkspaceDraft = ({
           .sort((left, right) => left.order - right.order),
       };
     });
+    draftDirtyRef.current = true;
   };
 
   const patchDocumentTitle = (title: string) => {
     setDraft(prev => (prev ? { ...prev, title } : prev));
+    draftDirtyRef.current = true;
   };
 
   const patchPatientInfoTitle = (title: string) => {
     setDraft(prev => (prev ? { ...prev, patientInfoTitle: title } : prev));
+    draftDirtyRef.current = true;
   };
 
   const patchFooterLabel = (kind: 'medico' | 'especialidad', title: string) => {
@@ -316,12 +345,14 @@ export const useClinicalDocumentWorkspaceDraft = ({
           : { ...prev, footerEspecialidadLabel: title }
         : prev
     );
+    draftDirtyRef.current = true;
   };
 
   const patchDocumentMeta = (
     patch: Partial<Pick<ClinicalDocumentRecord, 'medico' | 'especialidad'>>
   ) => {
     setDraft(prev => (prev ? { ...prev, ...patch } : prev));
+    draftDirtyRef.current = true;
   };
 
   return {

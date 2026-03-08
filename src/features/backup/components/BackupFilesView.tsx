@@ -91,7 +91,7 @@ export const BackupFilesView: React.FC<BackupFilesViewProps> = ({
         <div className="flex flex-col items-center justify-center py-20 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
           <Folder className="w-16 h-16 text-slate-200 mb-4" />
           <p className="text-slate-400 font-medium tracking-tight">
-            No se encontraron archivos en esta ubicación
+            No se encontraron respaldos en esta ubicación
           </p>
         </div>
       );

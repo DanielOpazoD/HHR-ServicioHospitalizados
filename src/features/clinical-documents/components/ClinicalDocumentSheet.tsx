@@ -96,6 +96,7 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
     canUndo: false,
     canRedo: false,
   });
+  const activeEditorSectionIdRef = useRef<string | null>(null);
   const activeEditorApiRef = useRef<{
     element: HTMLDivElement | null;
     canUndo: boolean;
@@ -166,6 +167,15 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
     if (formattingDisabled) return;
     activeEditorApiRef.current?.element?.focus();
     activeEditorApiRef.current?.applyCommand(command, value);
+  };
+
+  const clearActiveEditor = (sectionId: string) => {
+    setActiveEditorSectionId(current => (current === sectionId ? null : current));
+    if (activeEditorSectionIdRef.current === sectionId) {
+      activeEditorApiRef.current = null;
+      activeEditorSectionIdRef.current = null;
+      setActiveEditorHistoryState({ canUndo: false, canRedo: false });
+    }
   };
 
   return (
@@ -490,12 +500,14 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
                 onChange={content => patchSection(section.id, content)}
                 onActivate={(activeSectionId, editorApi) => {
                   activeEditorApiRef.current = editorApi;
+                  activeEditorSectionIdRef.current = activeSectionId;
                   setActiveEditorSectionId(activeSectionId);
                   setActiveEditorHistoryState({
                     canUndo: editorApi.canUndo,
                     canRedo: editorApi.canRedo,
                   });
                 }}
+                onDeactivate={clearActiveEditor}
                 disabled={!canEdit || selectedDocument.isLocked}
               />
             </div>

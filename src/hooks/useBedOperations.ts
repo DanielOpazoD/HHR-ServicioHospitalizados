@@ -102,7 +102,6 @@ export const useBedOperations = (
       if (!record) return;
       const resolvedOperation = resolveMoveOrCopyOperation(record, type, sourceBedId, targetBedId);
       if (resolvedOperation.kind === 'noop') {
-        console.warn(resolvedOperation.warning);
         return;
       }
       patchRecord(resolvedOperation.patch);

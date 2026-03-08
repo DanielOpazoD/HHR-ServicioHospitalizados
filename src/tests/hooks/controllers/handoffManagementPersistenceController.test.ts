@@ -5,6 +5,7 @@ import {
   buildMedicalSignatureAuditPayload,
   buildMedicalSpecialtyNoteAuditPayload,
   buildResetMedicalHandoffAuditPayload,
+  buildUpdatedMedicalHandoffDoctorRecord,
   buildUpdatedHandoffStaffRecord,
 } from '@/hooks/controllers/handoffManagementPersistenceController';
 import type { DailyRecord } from '@/types';
@@ -119,5 +120,12 @@ describe('handoffManagementPersistenceController', () => {
         hadMedicalSignature: true,
       })
     );
+  });
+
+  it('updates the handoff doctor through a pure record builder', () => {
+    const updated = buildUpdatedMedicalHandoffDoctorRecord(baseRecord(), 'Dr. Nuevo');
+
+    expect(updated.medicalHandoffDoctor).toBe('Dr. Nuevo');
+    expect(updated.lastUpdated).toBeTypeOf('string');
   });
 });

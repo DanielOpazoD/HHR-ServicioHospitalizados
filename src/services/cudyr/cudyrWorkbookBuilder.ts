@@ -290,7 +290,7 @@ const addDailySheets = (workbook: Workbook, dailySummaries: CudyrDailySummary[])
 
     const daySheet = workbook.addWorksheet(sheetName);
     daySheet.columns = [{ width: 22 }, { width: 10 }, { width: 10 }, { width: 10 }];
-    daySheet.getCell('A1').value = `CUDYR Diario - ${sheetName}`;
+    daySheet.getCell('A1').value = `CUDYR Diario del Registro - ${sheetName}`;
     daySheet.getCell('A1').font = { bold: true, size: 12 };
     daySheet.mergeCells('A1:D1');
 

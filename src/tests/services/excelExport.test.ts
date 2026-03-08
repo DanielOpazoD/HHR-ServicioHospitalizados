@@ -327,7 +327,7 @@ describe('reportService', () => {
 
       expect(saveAs).toHaveBeenCalled();
       const saveAsCall = vi.mocked(saveAs).mock.calls.at(-1);
-      expect(saveAsCall?.[1]).toBe('CUDYR_Diario_2025-12-25.xlsx');
+      expect(saveAsCall?.[1]).toBe('CUDYR_Diario_Registro_2025-12-25.xlsx');
     });
   });
 });

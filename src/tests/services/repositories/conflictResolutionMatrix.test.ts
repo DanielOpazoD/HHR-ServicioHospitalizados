@@ -96,6 +96,21 @@ describe('conflictResolutionMatrix', () => {
     expect(resolved.nurses).toEqual(resolved.nursesDayShift);
   });
 
+  it('uses canonical day-shift staffing as merge source even when legacy nurses differ', () => {
+    const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
+    remote.nurses = ['Legacy Remota'];
+    remote.nursesDayShift = ['Ana'];
+
+    const local = makeRecord('2026-02-18', '2026-02-18T10:05:00.000Z');
+    local.nurses = ['Legacy Local'];
+    local.nursesDayShift = ['Berta'];
+
+    const resolved = resolveDailyRecordConflict(remote, local, { changedPaths: ['*'] });
+
+    expect(resolved.nursesDayShift).toEqual(['Berta', 'Ana']);
+    expect(resolved.nurses).toEqual(['Berta', 'Ana']);
+  });
+
   it('preserves explicit empty-string clears from local', () => {
     const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
     remote.handoffNovedadesDayShift = 'Texto remoto';

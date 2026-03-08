@@ -30,7 +30,7 @@ const file: BaseStoredFile = {
 };
 
 describe('DailyBackupCalendarView', () => {
-  it('labels the second column as backup, not generic file', () => {
+  it('labels the second column as daily backup, not generic file', () => {
     render(
       <DailyBackupCalendarView
         files={[file]}
@@ -44,7 +44,7 @@ describe('DailyBackupCalendarView', () => {
       />
     );
 
-    expect(screen.getByText('Respaldo')).toBeInTheDocument();
+    expect(screen.getByText('Respaldo del día')).toBeInTheDocument();
     expect(screen.queryByText('Archivo')).not.toBeInTheDocument();
   });
 });

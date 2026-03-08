@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ensureArray } from '@/services/storage/firestore/firestoreShared';
+import { docToRecord, ensureArray } from '@/services/storage/firestore/firestoreShared';
 
 describe('ensureArray Logic', () => {
   describe('with array input', () => {
@@ -140,5 +140,26 @@ describe('Staff Array Sync Integration', () => {
     currentRecord.tensDayShift = updateTens('day', 1, 'TENS 2').tensDayShift;
 
     expect(currentRecord.tensDayShift).toEqual(['TENS 1', 'TENS 2', 'TENS 3']);
+  });
+
+  it('promotes legacy nurses into canonical staffing when reading a record', () => {
+    const record = docToRecord(
+      {
+        date: '2026-03-07',
+        beds: {},
+        discharges: [],
+        transfers: [],
+        cma: [],
+        lastUpdated: '2026-03-07T12:00:00.000Z',
+        nurses: ['María', 'Juan'],
+        nurseName: 'Nombre legacy',
+        nursesNightShift: ['Carla'],
+      },
+      '2026-03-07'
+    );
+
+    expect(record.nursesDayShift).toEqual(['María', 'Juan']);
+    expect(record.nurses).toEqual(['María', 'Juan']);
+    expect(record.nursesNightShift).toEqual(['Carla']);
   });
 });

@@ -141,4 +141,35 @@ describe('ClinicalDocumentSheet', () => {
     expect(defaultHandlers.setSectionVisibility).toHaveBeenCalledWith('antecedentes', false);
     expect(defaultHandlers.setPatientFieldVisibility).toHaveBeenCalledWith('nombre', false);
   });
+
+  it('disables the global formatting toolbar again when the editor loses focus', () => {
+    const document = buildDocument();
+    Object.defineProperty(globalThis.document, 'execCommand', {
+      value: vi.fn(() => true),
+      configurable: true,
+    });
+
+    render(
+      <ClinicalDocumentSheet
+        selectedDocument={document}
+        canEdit={true}
+        canUnsignSelectedDocument={false}
+        role="doctor_urgency"
+        isSaving={false}
+        isUploadingPdf={false}
+        validationIssues={[]}
+        {...defaultHandlers}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /formato/i }));
+    const antecedentesEditor = screen.getByRole('textbox', { name: /contenido antecedentes/i });
+    fireEvent.focus(antecedentesEditor);
+
+    expect(screen.getByRole('button', { name: /negrita/i })).not.toBeDisabled();
+
+    fireEvent.blur(antecedentesEditor);
+
+    expect(screen.getByRole('button', { name: /negrita/i })).toBeDisabled();
+  });
 });

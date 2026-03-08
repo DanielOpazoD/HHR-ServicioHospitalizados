@@ -4,6 +4,7 @@ import { CudyrHeader } from './CudyrHeader';
 import { CudyrRow, VerticalHeader } from './CudyrRow';
 import { CudyrSummaryTable } from './CudyrSummaryTable';
 import { useCudyrLogic } from '../hooks/useCudyrLogic';
+import { resolveNightShiftNurses } from '@/services/staff/dailyRecordStaffing';
 
 interface CudyrViewProps {
   readOnly?: boolean;
@@ -37,7 +38,7 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
     return `${day}-${month}-${year}`;
   };
 
-  const responsibleNurses = (record.nursesNightShift || []).filter(n => n && n.trim() !== '');
+  const responsibleNurses = resolveNightShiftNurses(record).filter(n => n && n.trim() !== '');
 
   return (
     <div className="space-y-6 animate-fade-in pb-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 print:max-w-none print:px-0 print:space-y-2 print:pb-0 print:break-inside-avoid">
@@ -45,7 +46,7 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
       <div className="hidden print:block mb-2 pb-2 border-b border-slate-300">
         <h1 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-1">
           <BarChart3 size={20} className="text-medical-600" />
-          Instrumento CUDYR
+          Instrumento CUDYR del último registro disponible
         </h1>
         <div className="flex items-center gap-4 text-sm text-slate-700">
           <span className="font-semibold">Fecha: {formatPrintDate()}</span>

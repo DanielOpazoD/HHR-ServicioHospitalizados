@@ -23,6 +23,9 @@ describe('CudyrHeader', () => {
       />
     );
 
+    expect(
+      screen.getByText('Instrumento CUDYR del último registro disponible')
+    ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /excel mensual/i })).toHaveAttribute(
       'title',
       'Exportar resumen mensual CUDYR hasta el último registro disponible del 2026-03-07'

@@ -7,6 +7,7 @@ const ROOT = process.cwd();
 const TARGET_FILES = [
   'src/tests/types/core.test.ts',
   'src/tests/schemas/zodSchemas.test.ts',
+  'src/tests/services/featureFlags.test.ts',
 ];
 
 const TRIVIAL_PATTERNS = [
@@ -14,6 +15,7 @@ const TRIVIAL_PATTERNS = [
   /expect\(\s*PatientStatus\.[A-Z_]+\s*\)\.toBe\(\s*['"][^'"]+['"]\s*\)/g,
   /expect\(\s*Specialty\.[A-Z_]+\s*\)\.toBe\(\s*['"][^'"]+['"]\s*\)/g,
   /expect\(\s*BedTypeSchema\.parse\(\s*['"][A-Z_]+['"]\s*\)\s*\)\.toBe\(\s*['"][A-Z_]+['"]\s*\)/g,
+  /expect\(\s*typeof\s+[A-Za-z0-9_.()]+\s*\)\.toBe\(\s*['"](function|object|boolean)['"]\s*\)/g,
 ];
 
 const violations = [];
@@ -24,6 +26,7 @@ for (const relativePath of TARGET_FILES) {
   const source = fs.readFileSync(absolutePath, 'utf8');
 
   for (const pattern of TRIVIAL_PATTERNS) {
+    pattern.lastIndex = 0;
     const matches = source.match(pattern);
     if (matches?.length) {
       violations.push({

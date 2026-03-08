@@ -67,7 +67,7 @@ export const DailyBackupCalendarView: React.FC<DailyBackupCalendarViewProps> = (
             <th className="px-2 py-1.5 text-center font-semibold text-slate-600 uppercase tracking-wider">
               <div className="flex items-center justify-center gap-1">
                 <FileText size={11} className="text-medical-500" />
-                Respaldo
+                Respaldo del día
               </div>
             </th>
           </tr>

@@ -46,6 +46,8 @@ export const useClinicalDocumentWorkspaceBootstrap = ({
   const [templates, setTemplates] = useState<ClinicalDocumentTemplate[]>(
     listActiveClinicalDocumentTemplates()
   );
+  const [hasLoadedRemoteTemplates, setHasLoadedRemoteTemplates] = useState(false);
+  const [remoteTemplateCount, setRemoteTemplateCount] = useState<number | null>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('epicrisis');
   const [documents, setDocuments] = useState<ClinicalDocumentRecord[]>([]);
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
@@ -82,7 +84,11 @@ export const useClinicalDocumentWorkspaceBootstrap = ({
       );
       const remoteTemplates = remoteTemplatesOutcome.data;
       if (!cancelled) {
-        setTemplates(remoteTemplates);
+        setHasLoadedRemoteTemplates(true);
+        setRemoteTemplateCount(remoteTemplates.length);
+        setTemplates(
+          remoteTemplates.length > 0 ? remoteTemplates : listActiveClinicalDocumentTemplates()
+        );
       }
     };
 
@@ -94,7 +100,13 @@ export const useClinicalDocumentWorkspaceBootstrap = ({
   }, [canRead, currentDateString, hospitalId, isActive]);
 
   useEffect(() => {
-    if (!isActive || role !== 'admin' || templates.length > 0) {
+    if (
+      !isActive ||
+      role !== 'admin' ||
+      !hasLoadedRemoteTemplates ||
+      remoteTemplateCount === null ||
+      remoteTemplateCount > 0
+    ) {
       return;
     }
 
@@ -109,9 +121,17 @@ export const useClinicalDocumentWorkspaceBootstrap = ({
         setTemplates(listActiveClinicalDocumentTemplates());
         return;
       }
+      setRemoteTemplateCount(outcome.data.length);
       setTemplates(outcome.data);
     });
-  }, [currentDateString, hospitalId, isActive, role, templates.length]);
+  }, [
+    currentDateString,
+    hasLoadedRemoteTemplates,
+    hospitalId,
+    isActive,
+    remoteTemplateCount,
+    role,
+  ]);
 
   useEffect(() => {
     if (!isActive || !canRead) {
@@ -123,7 +143,12 @@ export const useClinicalDocumentWorkspaceBootstrap = ({
       docs => {
         const hydrated = docs.map(document => hydrateLegacyClinicalDocument(document));
         setDocuments(hydrated);
-        setSelectedDocumentId(prev => prev || hydrated[0]?.id || null);
+        setSelectedDocumentId(prev => {
+          if (prev && hydrated.some(document => document.id === prev)) {
+            return prev;
+          }
+          return hydrated[0]?.id || null;
+        });
       },
       hospitalId
     );

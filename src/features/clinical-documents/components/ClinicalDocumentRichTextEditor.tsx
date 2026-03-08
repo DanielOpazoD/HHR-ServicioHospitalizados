@@ -36,6 +36,7 @@ interface ClinicalDocumentRichTextEditorProps {
       ) => void;
     }
   ) => void;
+  onDeactivate?: (sectionId: string) => void;
 }
 
 export const ClinicalDocumentRichTextEditor: React.FC<ClinicalDocumentRichTextEditorProps> = ({
@@ -45,6 +46,7 @@ export const ClinicalDocumentRichTextEditor: React.FC<ClinicalDocumentRichTextEd
   disabled = false,
   onChange,
   onActivate,
+  onDeactivate,
 }) => {
   const editorRef = useRef<HTMLDivElement | null>(null);
   const historyRef = useRef<string[]>([]);
@@ -188,6 +190,7 @@ export const ClinicalDocumentRichTextEditor: React.FC<ClinicalDocumentRichTextEd
         onMouseUp={notifyActive}
         onBlur={() => {
           isActiveRef.current = false;
+          onDeactivate?.(sectionId);
         }}
         onKeyDown={event => {
           if (!editorRef.current || disabled) return;

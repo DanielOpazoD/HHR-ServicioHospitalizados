@@ -88,23 +88,20 @@ export const docToRecord = (docData: Record<string, unknown>, docId: string): Da
     rawData.lastUpdated = rawData.lastUpdated.toDate().toISOString();
   }
 
-  rawData.nurses = ensureArray(rawData.nurses, 2);
-  rawData.nursesDayShift = ensureArray(rawData.nursesDayShift, 2);
-  rawData.nursesNightShift = ensureArray(rawData.nursesNightShift, 2);
+  const normalizedStaffing = applyDailyRecordStaffingCompatibility({
+    nurses: ensureArray(rawData.nurses, 2),
+    nurseName: typeof rawData.nurseName === 'string' ? rawData.nurseName : undefined,
+    nursesDayShift: ensureArray(rawData.nursesDayShift, 2),
+    nursesNightShift: ensureArray(rawData.nursesNightShift, 2),
+  });
+
+  rawData.nurses = normalizedStaffing.nurses;
+  rawData.nursesDayShift = normalizedStaffing.nursesDayShift;
+  rawData.nursesNightShift = normalizedStaffing.nursesNightShift;
   rawData.tensDayShift = ensureArray(rawData.tensDayShift, 3);
   rawData.tensNightShift = ensureArray(rawData.tensNightShift, 3);
 
   rawData.activeExtraBeds = Array.isArray(rawData.activeExtraBeds) ? rawData.activeExtraBeds : [];
-
-  const normalizedStaffing = applyDailyRecordStaffingCompatibility(
-    rawData as unknown as Pick<
-      DailyRecord,
-      'nurses' | 'nurseName' | 'nursesDayShift' | 'nursesNightShift'
-    >
-  );
-  rawData.nurses = normalizedStaffing.nurses;
-  rawData.nursesDayShift = normalizedStaffing.nursesDayShift;
-  rawData.nursesNightShift = normalizedStaffing.nursesNightShift;
 
   return migrateLegacyData(rawData as unknown as DailyRecord, docId);
 };

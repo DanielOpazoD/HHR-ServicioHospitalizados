@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { ClinicalDocumentsWorkspace } from '@/features/clinical-documents/components/ClinicalDocumentsWorkspace';
 import { createClinicalDocumentDraft } from '@/features/clinical-documents/domain/factories';
@@ -101,6 +101,8 @@ vi.mock('@/application/clinical-documents/clinicalDocumentUseCases', async () =>
 });
 
 describe('ClinicalDocumentsWorkspace', () => {
+  let emitDocuments: ((documents: any[]) => void) | null = null;
+
   beforeEach(() => {
     vi.clearAllMocks();
     Object.defineProperty(globalThis.document, 'execCommand', {
@@ -131,6 +133,7 @@ describe('ClinicalDocumentsWorkspace', () => {
 
     vi.mocked(ClinicalDocumentRepository.subscribeByEpisode).mockImplementation(
       (_episodeKey, callback) => {
+        emitDocuments = callback;
         callback([clinicalDocument]);
         return vi.fn();
       }
@@ -328,5 +331,73 @@ describe('ClinicalDocumentsWorkspace', () => {
     expect(
       screen.getByRole('button', { name: /eliminar sección antecedentes/i })
     ).toBeInTheDocument();
+  });
+
+  it('keeps local draft edits when a subscription emits the stale selected document again', async () => {
+    render(
+      <ClinicalDocumentsWorkspace
+        patient={
+          {
+            patientName: 'Paciente Test',
+            rut: '11.111.111-1',
+            admissionDate: '2026-03-06',
+            age: '40a',
+            birthDate: '1986-01-01',
+          } as any
+        }
+        currentDateString="2026-03-06"
+        bedId="R1"
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('textbox', { name: /contenido antecedentes/i })).toBeInTheDocument();
+    });
+
+    const antecedentesEditor = screen.getByRole('textbox', { name: /contenido antecedentes/i });
+    antecedentesEditor.innerHTML = 'Edición local en curso';
+    fireEvent.input(antecedentesEditor);
+
+    await act(async () => {
+      emitDocuments?.([clinicalDocument]);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('textbox', { name: /contenido antecedentes/i }).innerHTML).toContain(
+        'Edición local en curso'
+      );
+    });
+  });
+
+  it('clears the active selection when the selected remote document disappears', async () => {
+    render(
+      <ClinicalDocumentsWorkspace
+        patient={
+          {
+            patientName: 'Paciente Test',
+            rut: '11.111.111-1',
+            admissionDate: '2026-03-06',
+            age: '40a',
+            birthDate: '1986-01-01',
+          } as any
+        }
+        currentDateString="2026-03-06"
+        bedId="R1"
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Doctor Test')).toBeInTheDocument();
+    });
+
+    await act(async () => {
+      emitDocuments?.([]);
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/selecciona o crea un documento clínico para comenzar/i)
+      ).toBeInTheDocument();
+    });
   });
 });

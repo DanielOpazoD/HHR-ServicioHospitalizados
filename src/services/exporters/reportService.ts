@@ -56,5 +56,5 @@ export const generateCensusRangeFormatted = async (startDate: string, endDate: s
 export const generateCudyrDailyRaw = async (date: string) => {
   const workbook = await buildCudyrDailyWorkbookOrNull(date);
   if (!workbook) return;
-  await downloadWorkbookFile({ workbook, filename: `CUDYR_Diario_${date}.xlsx` });
+  await downloadWorkbookFile({ workbook, filename: `CUDYR_Diario_Registro_${date}.xlsx` });
 };

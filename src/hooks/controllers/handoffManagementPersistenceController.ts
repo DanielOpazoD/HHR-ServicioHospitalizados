@@ -110,6 +110,15 @@ export const buildMedicalSignatureAuditPayload = (
   scope,
 });
 
+export const buildUpdatedMedicalHandoffDoctorRecord = (
+  currentRecord: DailyRecord,
+  doctorName: string
+): DailyRecord => ({
+  ...currentRecord,
+  medicalHandoffDoctor: doctorName,
+  lastUpdated: new Date().toISOString(),
+});
+
 export const buildResetMedicalHandoffAuditPayload = (
   record: DailyRecord
 ): Record<string, unknown> => {

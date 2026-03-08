@@ -18,6 +18,7 @@ import {
   buildMedicalSignatureAuditPayload,
   buildMedicalSpecialtyNoteAuditPayload,
   buildResetMedicalHandoffAuditPayload,
+  buildUpdatedMedicalHandoffDoctorRecord,
   buildUpdatedHandoffStaffRecord,
 } from '@/hooks/controllers/handoffManagementPersistenceController';
 
@@ -187,11 +188,7 @@ export const useHandoffManagementPersistence = ({
     async (doctorName: string): Promise<void> => {
       const currentRecord = getCurrentRecord();
       if (!currentRecord) return;
-
-      const updatedRecord = { ...currentRecord };
-      updatedRecord.medicalHandoffDoctor = doctorName;
-      updatedRecord.lastUpdated = new Date().toISOString();
-      await saveAndUpdate(updatedRecord);
+      await saveAndUpdate(buildUpdatedMedicalHandoffDoctorRecord(currentRecord, doctorName));
     },
     [getCurrentRecord, saveAndUpdate]
   );

@@ -10,7 +10,6 @@ const SOURCE_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx']);
 const ALLOWLIST = [
   'src/schemas/',
   'src/services/repositories/dataMigration.ts',
-  'src/services/repositories/conflictResolutionMatrix.ts',
   'src/services/repositories/dailyRecordAggregate.ts',
   'src/services/storage/firestore/firestoreShared.ts',
   'src/services/staff/dailyRecordStaffing.ts',
@@ -19,8 +18,8 @@ const ALLOWLIST = [
 ];
 
 const LEGACY_PATTERNS = [
-  { label: '.nurses', regex: /\.\s*nurses\b(?![A-Z])/g },
-  { label: '.nurseName', regex: /\.\s*nurseName\b/g },
+  { label: '.nurses', regex: /\.[ \t]*nurses\b(?![A-Z])/g },
+  { label: '.nurseName', regex: /\.[ \t]*nurseName\b/g },
 ];
 
 const toPosix = value => value.split(path.sep).join('/');
@@ -61,6 +60,7 @@ for (const absolutePath of files) {
 
   const source = fs.readFileSync(absolutePath, 'utf8');
   for (const pattern of LEGACY_PATTERNS) {
+    pattern.regex.lastIndex = 0;
     if (pattern.regex.test(source)) {
       violations.push({ file: relativePath, pattern: pattern.label });
     }
