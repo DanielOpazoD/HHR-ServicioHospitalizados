@@ -11,12 +11,14 @@ import {
 } from '@/features/handoff/controllers/handoffManagementController';
 import type { ConfirmMedicalSpecialtyNoChangesInput } from '@/hooks/handoffManagementTypes';
 import {
-  buildHandoffNovedadesAuditPayload,
+  buildHandoffNovedadesAuditEvent,
   buildMedicalHandoffDoctorPersistencePayload,
+  buildMedicalNoChangesAuditEvent,
   buildMedicalNoChangesPersistencePayload,
-  buildMedicalSignatureAuditPayload,
+  buildMedicalSignatureAuditEvent,
+  buildMedicalSpecialtyAuditEvent,
   buildMedicalSpecialtyPersistencePayload,
-  buildResetMedicalHandoffAuditPayload,
+  buildResetMedicalHandoffAuditEvent,
   buildUpdatedHandoffStaffPersistencePayload,
 } from '@/hooks/controllers/handoffManagementPersistenceController';
 
@@ -70,21 +72,16 @@ export const useHandoffManagementPersistence = ({
       if (!currentRecord) return;
       void saveAndUpdate(buildNovedadesUpdateRecord(currentRecord, shift, value));
 
-      const { authors, details } = buildHandoffNovedadesAuditPayload(
-        currentRecord,
-        shift,
-        value,
-        userId
-      );
+      const auditEvent = buildHandoffNovedadesAuditEvent(currentRecord, shift, value, userId);
 
       logDebouncedEvent(
-        'HANDOFF_NOVEDADES_MODIFIED',
-        'dailyRecord',
-        currentRecord.date,
-        details,
+        auditEvent.action,
+        auditEvent.entityType,
+        auditEvent.entityId,
+        auditEvent.details,
         undefined,
-        currentRecord.date,
-        authors
+        auditEvent.recordDate,
+        auditEvent.authors
       );
     },
     [getCurrentRecord, logDebouncedEvent, saveAndUpdate, userId]
@@ -94,21 +91,22 @@ export const useHandoffManagementPersistence = ({
     async (specialty: MedicalSpecialty, value: string, actor: Partial<MedicalHandoffActor>) => {
       const currentRecord = getCurrentRecord();
       if (!currentRecord) return;
-      const { updatedRecord, auditDetails } = buildMedicalSpecialtyPersistencePayload(
+      const { updatedRecord } = buildMedicalSpecialtyPersistencePayload(
         currentRecord,
         specialty,
         value,
         actor
       );
       await saveAndUpdate(updatedRecord);
+      const auditEvent = buildMedicalSpecialtyAuditEvent(currentRecord, specialty, value);
 
       logDebouncedEvent(
-        'HANDOFF_NOVEDADES_MODIFIED',
-        'dailyRecord',
-        currentRecord.date,
-        auditDetails,
+        auditEvent.action,
+        auditEvent.entityType,
+        auditEvent.entityId,
+        auditEvent.details,
         undefined,
-        currentRecord.date
+        auditEvent.recordDate
       );
     },
     [getCurrentRecord, logDebouncedEvent, saveAndUpdate]
@@ -147,14 +145,15 @@ export const useHandoffManagementPersistence = ({
         }
       );
       await saveAndUpdate(updatedRecord);
+      const auditEvent = buildMedicalNoChangesAuditEvent(currentRecord, auditDetails);
 
       logEvent(
-        'HANDOFF_NOVEDADES_MODIFIED',
-        'dailyRecord',
-        currentRecord.date,
-        auditDetails,
+        auditEvent.action,
+        auditEvent.entityType,
+        auditEvent.entityId,
+        auditEvent.details,
         undefined,
-        currentRecord.date
+        auditEvent.recordDate
       );
     },
     [getCurrentRecord, logEvent, notifyError, saveAndUpdate]
@@ -181,14 +180,20 @@ export const useHandoffManagementPersistence = ({
       if (!currentRecord) return;
       const updatedRecord = buildMedicalSignatureRecord(currentRecord, doctorName, scope);
       await saveAndUpdate(updatedRecord);
+      const auditEvent = buildMedicalSignatureAuditEvent(
+        currentRecord,
+        updatedRecord,
+        doctorName,
+        scope
+      );
 
       logEvent(
-        'MEDICAL_HANDOFF_SIGNED',
-        'dailyRecord',
-        currentRecord.date,
-        buildMedicalSignatureAuditPayload(updatedRecord, doctorName, scope),
+        auditEvent.action,
+        auditEvent.entityType,
+        auditEvent.entityId,
+        auditEvent.details,
         undefined,
-        currentRecord.date
+        auditEvent.recordDate
       );
     },
     [getCurrentRecord, logEvent, saveAndUpdate]
@@ -212,14 +217,15 @@ export const useHandoffManagementPersistence = ({
     if (!currentRecord) return;
     const updatedRecord = buildResetMedicalHandoffRecord(currentRecord);
     await saveAndUpdate(updatedRecord);
+    const auditEvent = buildResetMedicalHandoffAuditEvent(currentRecord);
 
     logEvent(
-      'MEDICAL_HANDOFF_RESTORED',
-      'dailyRecord',
-      currentRecord.date,
-      buildResetMedicalHandoffAuditPayload(currentRecord),
+      auditEvent.action,
+      auditEvent.entityType,
+      auditEvent.entityId,
+      auditEvent.details,
       undefined,
-      currentRecord.date
+      auditEvent.recordDate
     );
   }, [getCurrentRecord, logEvent, saveAndUpdate]);
 

@@ -5,7 +5,6 @@ import type {
 } from '@/features/clinical-documents/domain/entities';
 import { generateClinicalDocumentPdfBlob } from '@/features/clinical-documents/services/clinicalDocumentPdfService';
 import { exportClinicalDocumentPdfViaBackend } from '@/features/clinical-documents/services/clinicalDocumentBackendExportService';
-import { uploadClinicalDocumentPdfToDrive } from '@/features/clinical-documents/services/clinicalDocumentDriveService';
 import {
   createApplicationFailed,
   createApplicationSuccess,
@@ -21,20 +20,6 @@ type PersistReason = 'autosave' | 'manual';
 interface ClinicalDocumentUseCaseDependencies {
   clinicalDocumentPort?: ClinicalDocumentPort;
 }
-
-const shouldFallbackToLegacyDriveUpload = (error: unknown): boolean => {
-  const code =
-    typeof error === 'object' && error && 'code' in error
-      ? String((error as { code?: string }).code || '')
-      : '';
-  return (
-    code === 'functions/unimplemented' ||
-    code === 'functions/not-found' ||
-    code === 'functions/internal' ||
-    code === 'functions/deadline-exceeded' ||
-    code === 'functions/failed-precondition'
-  );
-};
 
 const appendVersionAudit = (
   record: ClinicalDocumentRecord,
@@ -239,6 +224,8 @@ export interface ExportClinicalDocumentPdfInput {
   record: ClinicalDocumentRecord;
   hospitalId: string;
   fileName: string;
+  targetFolderId?: string;
+  targetFolderPath?: string;
 }
 
 export interface ExportClinicalDocumentPdfOutput {
@@ -246,38 +233,29 @@ export interface ExportClinicalDocumentPdfOutput {
 }
 
 export const executeExportClinicalDocumentPdf = async (
-  { record, hospitalId, fileName }: ExportClinicalDocumentPdfInput,
+  {
+    record,
+    hospitalId,
+    fileName,
+    targetFolderId,
+    targetFolderPath,
+  }: ExportClinicalDocumentPdfInput,
   dependencies: ClinicalDocumentUseCaseDependencies = {}
 ): Promise<ApplicationOutcome<ExportClinicalDocumentPdfOutput | null>> => {
+  void targetFolderId;
+  void targetFolderPath;
   const clinicalDocumentPort = dependencies.clinicalDocumentPort || defaultClinicalDocumentPort;
   try {
     const pdfBlob = await generateClinicalDocumentPdfBlob(record);
-    let result: { fileId: string; webViewLink: string; folderPath: string };
-
-    try {
-      result = await exportClinicalDocumentPdfViaBackend({
-        documentId: record.id,
-        fileName,
-        documentType: record.documentType,
-        patientName: record.patientName,
-        patientRut: record.patientRut,
-        episodeKey: record.episodeKey,
-        pdfBlob,
-      });
-    } catch (backendError) {
-      if (!shouldFallbackToLegacyDriveUpload(backendError)) {
-        throw backendError;
-      }
-
-      result = await uploadClinicalDocumentPdfToDrive(
-        pdfBlob,
-        fileName,
-        record.documentType,
-        record.patientName,
-        record.patientRut,
-        record.episodeKey
-      );
-    }
+    const result = await exportClinicalDocumentPdfViaBackend({
+      documentId: record.id,
+      fileName,
+      documentType: record.documentType,
+      patientName: record.patientName,
+      patientRut: record.patientRut,
+      episodeKey: record.episodeKey,
+      pdfBlob,
+    });
 
     const pdf: ClinicalDocumentPdfMeta = {
       fileId: result.fileId,

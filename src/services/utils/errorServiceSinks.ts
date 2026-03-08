@@ -52,31 +52,26 @@ export const externalTelemetryErrorSink: ErrorServiceSink = async errorLog => {
   });
 };
 
+export const createSafeErrorServiceSink = (
+  label: string,
+  sink: ErrorServiceSink
+): ErrorServiceSink => {
+  return async errorLog => {
+    try {
+      await sink(errorLog);
+    } catch (error) {
+      console.error(`[ErrorServiceSink] Failed in ${label}:`, error);
+    }
+  };
+};
+
 export const buildDefaultErrorServiceSinks = (
   options: ErrorServiceSinkOptions = {}
 ): ErrorServiceSink[] => [
   createDevConsoleErrorSink(Boolean(options.allowDevConsole)),
-  async errorLog => {
-    try {
-      await indexedDbErrorSink(errorLog);
-    } catch (error) {
-      console.error('[ErrorServiceSink] Failed to persist in IndexedDB:', error);
-    }
-  },
-  async errorLog => {
-    try {
-      await auditErrorSink(errorLog);
-    } catch (error) {
-      console.error('[ErrorServiceSink] Failed to persist in audit log:', error);
-    }
-  },
-  async errorLog => {
-    try {
-      await externalTelemetryErrorSink(errorLog);
-    } catch (error) {
-      console.error('[ErrorServiceSink] Failed to dispatch external telemetry:', error);
-    }
-  },
+  createSafeErrorServiceSink('indexeddb', indexedDbErrorSink),
+  createSafeErrorServiceSink('audit', auditErrorSink),
+  createSafeErrorServiceSink('external-telemetry', externalTelemetryErrorSink),
 ];
 
 export const runErrorServiceSinks = async (

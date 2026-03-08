@@ -414,6 +414,48 @@ body.clinical-documents-print .clinical-document-print-footer-right {
   text-align: right;
 }
 
+body.clinical-documents-print {
+  margin: 0;
+  padding: 0;
+  background: #ffffff;
+}
+
+body.clinical-documents-print .clinical-document-sheet {
+  width: auto;
+  max-width: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  margin: 0;
+  padding: 10mm 10mm 18mm;
+  background: #ffffff;
+  color: #1f2937;
+  overflow: visible;
+}
+
+body.clinical-documents-print .clinical-document-input,
+body.clinical-documents-print .clinical-document-textarea,
+body.clinical-documents-print .clinical-document-rich-text-editor {
+  background: #ffffff !important;
+  color: #1f2937 !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: none !important;
+}
+
+body.clinical-documents-print .clinical-document-inline-title,
+body.clinical-documents-print .clinical-document-inline-title-input {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: #1f2937 !important;
+}
+
+body.clinical-documents-print .clinical-document-toolbar,
+body.clinical-documents-print .clinical-document-inline-action,
+body.clinical-documents-print .clinical-document-section-drag-handle,
+body.clinical-documents-print .clinical-document-restore-panel {
+  display: none !important;
+}
+
 .clinical-document-inline-title {
   border: 1px dashed transparent;
   border-radius: 4px;
@@ -485,51 +527,14 @@ body.clinical-documents-print .clinical-document-print-footer-right {
   }
 
   body.clinical-documents-print {
-    margin: 0;
-    padding: 0;
-    background: #ffffff;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
-  }
-
-  body.clinical-documents-print .clinical-document-sheet {
-    width: auto;
-    max-width: none;
-    border: none;
-    border-radius: 0;
-    box-shadow: none;
-    margin: 0;
-    padding: 10mm 10mm 18mm;
-    background: #ffffff;
-    color: #1f2937;
-    overflow: visible;
-  }
-
-  body.clinical-documents-print .clinical-document-input,
-  body.clinical-documents-print .clinical-document-textarea,
-  body.clinical-documents-print .clinical-document-rich-text-editor {
-    background: #ffffff !important;
-    color: #1f2937 !important;
-    border: 1px solid #cbd5e1 !important;
-  }
-
-  body.clinical-documents-print .clinical-document-inline-title,
-  body.clinical-documents-print .clinical-document-inline-title-input {
-    background: transparent !important;
-    border-color: transparent !important;
-    color: #1f2937 !important;
   }
 
   body.clinical-documents-print .clinical-document-textarea {
     min-height: 92px;
     height: auto;
     overflow: visible;
-  }
-
-  body.clinical-documents-print .clinical-document-toolbar,
-  body.clinical-documents-print .clinical-document-inline-action,
-  body.clinical-documents-print .clinical-document-restore-panel {
-    display: none !important;
   }
 
   body.clinical-documents-print .clinical-document-sheet-logo {

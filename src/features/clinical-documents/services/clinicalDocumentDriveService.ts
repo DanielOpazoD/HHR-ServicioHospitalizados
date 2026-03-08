@@ -1,9 +1,15 @@
 import { requestAccessToken } from '@/services/google/googleDriveAuth';
-import { uploadToDriveFolder } from '@/services/google/googleDriveFolders';
+import {
+  listDriveFolders,
+  uploadToDriveFolder,
+  type DriveFolderEntry,
+} from '@/services/google/googleDriveFolders';
 
 const ROOT_FOLDER = 'Hospitalizados';
 const DOCUMENT_ROOT_FOLDER = 'Documentos Clinicos';
 const FOLDER_MIME_TYPE = 'application/vnd.google-apps.folder';
+
+export type ClinicalDocumentDriveFolder = DriveFolderEntry;
 
 const findFolderByName = async (
   token: string,
@@ -74,9 +80,21 @@ export const uploadClinicalDocumentPdfToDrive = async (
   patientName: string,
   patientRut: string,
   episodeKey: string,
-  now: Date = new Date()
+  now: Date = new Date(),
+  options?: {
+    targetFolderId?: string;
+    targetFolderPath?: string;
+  }
 ): Promise<{ fileId: string; webViewLink: string; folderPath: string }> => {
   const token = await requestAccessToken();
+  if (options?.targetFolderId) {
+    const upload = await uploadToDriveFolder(token, blob, fileName, options.targetFolderId);
+    return {
+      ...upload,
+      folderPath: options.targetFolderPath || options.targetFolderId,
+    };
+  }
+
   const year = now.getFullYear().toString();
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const patientFolder = `${patientName.trim().replace(/\s+/g, '_')}_${patientRut.replace(/[.-]/g, '')}_${episodeKey}`;
@@ -96,4 +114,12 @@ export const uploadClinicalDocumentPdfToDrive = async (
     ...upload,
     folderPath: `${ROOT_FOLDER}/${DOCUMENT_ROOT_FOLDER}/${documentFolder}/${year}/${month}/${patientFolder}`,
   };
+};
+
+export const listClinicalDocumentDriveFolders = async (
+  parentId = 'root',
+  parentPath = 'Mi unidad'
+): Promise<ClinicalDocumentDriveFolder[]> => {
+  const token = await requestAccessToken();
+  return listDriveFolders(token, parentId, parentPath);
 };

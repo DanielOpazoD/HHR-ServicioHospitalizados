@@ -4,6 +4,7 @@ import type { ErrorLog } from '@/services/logging/errorLogTypes';
 import {
   auditErrorSink,
   buildDefaultErrorServiceSinks,
+  createSafeErrorServiceSink,
   externalTelemetryErrorSink,
   runErrorServiceSinks,
 } from '@/services/utils/errorServiceSinks';
@@ -74,5 +75,14 @@ describe('errorServiceSinks', () => {
         status: 'degraded',
       })
     );
+  });
+
+  it('wraps sink errors without aborting the pipeline', async () => {
+    const sink = createSafeErrorServiceSink(
+      'broken-sink',
+      vi.fn().mockRejectedValue(new Error('broken'))
+    );
+
+    await expect(sink(buildErrorLog('low'))).resolves.toBeUndefined();
   });
 });

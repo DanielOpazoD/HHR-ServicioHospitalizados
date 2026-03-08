@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildHandoffNovedadesAuditEvent,
   buildHandoffNovedadesAuditPayload,
+  buildMedicalNoChangesAuditEvent,
   buildMedicalHandoffDoctorPersistencePayload,
+  buildMedicalSignatureAuditEvent,
   buildMedicalNoChangesAuditPayload,
   buildMedicalNoChangesPersistencePayload,
   buildMedicalSignatureAuditPayload,
+  buildMedicalSpecialtyAuditEvent,
   buildMedicalSpecialtyNoteAuditPayload,
   buildMedicalSpecialtyPersistencePayload,
+  buildResetMedicalHandoffAuditEvent,
   buildResetMedicalHandoffAuditPayload,
   buildUpdatedHandoffStaffPersistencePayload,
   buildUpdatedMedicalHandoffDoctorRecord,
@@ -49,6 +54,7 @@ const baseRecord = (): DailyRecord =>
 describe('handoffManagementPersistenceController', () => {
   it('builds novedades payloads using the previous content', () => {
     const payload = buildHandoffNovedadesAuditPayload(baseRecord(), 'day', 'Texto nuevo', 'u1');
+    const auditEvent = buildHandoffNovedadesAuditEvent(baseRecord(), 'day', 'Texto nuevo', 'u1');
 
     expect(payload.details).toEqual(
       expect.objectContaining({
@@ -57,6 +63,13 @@ describe('handoffManagementPersistenceController', () => {
         changes: {
           novedades: { old: 'Antes día', new: 'Texto nuevo' },
         },
+      })
+    );
+    expect(auditEvent).toEqual(
+      expect.objectContaining({
+        action: 'HANDOFF_NOVEDADES_MODIFIED',
+        entityId: '2026-03-07',
+        authors: expect.any(String),
       })
     );
   });
@@ -69,6 +82,12 @@ describe('handoffManagementPersistenceController', () => {
         changes: {
           novedades: { old: 'Nota previa', new: 'Nueva nota' },
         },
+      })
+    );
+    expect(buildMedicalSpecialtyAuditEvent(baseRecord(), 'cirugia', 'Nueva nota')).toEqual(
+      expect.objectContaining({
+        action: 'HANDOFF_NOVEDADES_MODIFIED',
+        entityId: '2026-03-07',
       })
     );
   });
@@ -110,18 +129,38 @@ describe('handoffManagementPersistenceController', () => {
         comment: 'Sin cambios',
       })
     );
+    expect(
+      buildMedicalNoChangesAuditEvent(baseRecord(), { operation: 'confirm_no_changes' })
+    ).toEqual(
+      expect.objectContaining({
+        action: 'HANDOFF_NOVEDADES_MODIFIED',
+        entityId: '2026-03-07',
+      })
+    );
 
     expect(buildMedicalSignatureAuditPayload(updatedRecord, 'Dr. Test', 'all')).toEqual({
       doctorName: 'Dr. Test',
       signedAt: '2026-03-07T09:00:00.000Z',
       scope: 'all',
     });
+    expect(buildMedicalSignatureAuditEvent(baseRecord(), updatedRecord, 'Dr. Test', 'all')).toEqual(
+      expect.objectContaining({
+        action: 'MEDICAL_HANDOFF_SIGNED',
+        entityId: '2026-03-07',
+      })
+    );
 
     expect(buildResetMedicalHandoffAuditPayload(baseRecord())).toEqual(
       expect.objectContaining({
         clearedFields: ['entrega', 'firma'],
         hadMedicalHandoffSentAt: true,
         hadMedicalSignature: true,
+      })
+    );
+    expect(buildResetMedicalHandoffAuditEvent(baseRecord())).toEqual(
+      expect.objectContaining({
+        action: 'MEDICAL_HANDOFF_RESTORED',
+        entityId: '2026-03-07',
       })
     );
   });

@@ -25,6 +25,13 @@ export const MONTHS_ES = [
   'Diciembre',
 ] as const;
 
+export interface DriveFolderEntry {
+  id: string;
+  name: string;
+  path: string;
+  parentId: string;
+}
+
 const authorizedJsonHeaders = (token: string): HeadersInit => ({
   Authorization: `Bearer ${token}`,
   'Content-Type': 'application/json',
@@ -169,6 +176,31 @@ export const uploadToDriveFolder = async (
   }
 
   return parseDriveUploadResult(response);
+};
+
+export const listDriveFolders = async (
+  token: string,
+  parentId = 'root',
+  parentPath = 'Mi unidad'
+): Promise<DriveFolderEntry[]> => {
+  const query = `mimeType='${FOLDER_MIME_TYPE}' and trashed=false and '${parentId}' in parents`;
+  const response = await fetch(
+    `${DRIVE_FILES_ENDPOINT}?q=${encodeURIComponent(query)}&fields=files(id,name)&orderBy=name_natural`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new Error(payload.error?.message || 'No se pudieron listar carpetas de Google Drive.');
+  }
+
+  const data = await response.json();
+  return (data.files || []).map((file: { id: string; name: string }) => ({
+    id: file.id,
+    name: file.name,
+    path: `${parentPath}/${file.name}`,
+    parentId,
+  }));
 };
 
 const formatPatientFolderName = (patientName: string, patientRut: string): string => {

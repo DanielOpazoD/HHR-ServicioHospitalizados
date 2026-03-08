@@ -2,6 +2,10 @@ import type { SyncTask } from '@/services/storage/syncQueueTypes';
 import type { SyncQueueTelemetry } from '@/services/storage/sync/syncQueueEngine';
 import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryService';
 
+export interface SyncQueueTelemetrySnapshot extends SyncQueueTelemetry {
+  capturedAt: number;
+}
+
 export const buildSyncQueueTelemetryFromRows = (
   rows: SyncTask[],
   now: number,
@@ -25,6 +29,15 @@ export const buildSyncQueueTelemetryFromRows = (
     batchSize,
   };
 };
+
+export const buildSyncQueueTelemetrySnapshot = (
+  rows: SyncTask[],
+  now: number,
+  batchSize: number
+): SyncQueueTelemetrySnapshot => ({
+  ...buildSyncQueueTelemetryFromRows(rows, now, batchSize),
+  capturedAt: now,
+});
 
 export const recordSyncQueueFailureTelemetry = (
   task: Pick<SyncTask, 'id' | 'type' | 'key' | 'contexts'>,

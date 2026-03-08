@@ -166,7 +166,7 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
           onSign={handleSign}
           onUnsign={() => void handleUnsign()}
           onPrint={handlePrint}
-          onUploadPdf={handleUploadPdf}
+          onUploadPdf={() => void handleUploadPdf()}
           patchDocumentTitle={patchDocumentTitle}
           patchPatientInfoTitle={patchPatientInfoTitle}
           patchPatientField={patchPatientField}

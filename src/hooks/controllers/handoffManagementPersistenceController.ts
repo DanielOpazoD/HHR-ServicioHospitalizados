@@ -12,6 +12,15 @@ type HandoffShift = 'day' | 'night' | 'medical';
 type StaffShift = 'day' | 'night';
 type StaffType = 'delivers' | 'receives' | 'tens';
 
+export interface HandoffAuditEventPayload {
+  action: 'HANDOFF_NOVEDADES_MODIFIED' | 'MEDICAL_HANDOFF_SIGNED' | 'MEDICAL_HANDOFF_RESTORED';
+  entityType: 'dailyRecord';
+  entityId: string;
+  details: Record<string, unknown>;
+  recordDate: string;
+  authors?: string;
+}
+
 export const buildHandoffNovedadesAuditPayload = (
   record: DailyRecord,
   shift: HandoffShift,
@@ -42,6 +51,23 @@ export const buildHandoffNovedadesAuditPayload = (
   };
 };
 
+export const buildHandoffNovedadesAuditEvent = (
+  record: DailyRecord,
+  shift: HandoffShift,
+  value: string,
+  userId: string
+): HandoffAuditEventPayload => {
+  const { authors, details } = buildHandoffNovedadesAuditPayload(record, shift, value, userId);
+  return {
+    action: 'HANDOFF_NOVEDADES_MODIFIED',
+    entityType: 'dailyRecord',
+    entityId: record.date,
+    details,
+    recordDate: record.date,
+    authors,
+  };
+};
+
 export const buildMedicalSpecialtyNoteAuditPayload = (
   record: DailyRecord,
   specialty: MedicalSpecialty,
@@ -68,6 +94,18 @@ export const buildMedicalSpecialtyPersistencePayload = (
     auditDetails: buildMedicalSpecialtyNoteAuditPayload(record, specialty, value),
   };
 };
+
+export const buildMedicalSpecialtyAuditEvent = (
+  record: DailyRecord,
+  specialty: MedicalSpecialty,
+  value: string
+): HandoffAuditEventPayload => ({
+  action: 'HANDOFF_NOVEDADES_MODIFIED',
+  entityType: 'dailyRecord',
+  entityId: record.date,
+  details: buildMedicalSpecialtyNoteAuditPayload(record, specialty, value),
+  recordDate: record.date,
+});
 
 export const buildMedicalNoChangesAuditPayload = (
   updatedRecord: DailyRecord,
@@ -123,6 +161,17 @@ export const buildMedicalNoChangesPersistencePayload = (
   };
 };
 
+export const buildMedicalNoChangesAuditEvent = (
+  record: DailyRecord,
+  auditDetails: Record<string, unknown>
+): HandoffAuditEventPayload => ({
+  action: 'HANDOFF_NOVEDADES_MODIFIED',
+  entityType: 'dailyRecord',
+  entityId: record.date,
+  details: auditDetails,
+  recordDate: record.date,
+});
+
 export const buildUpdatedHandoffStaffRecord = (
   currentRecord: DailyRecord,
   shift: StaffShift,
@@ -170,6 +219,19 @@ export const buildMedicalSignatureAuditPayload = (
   scope,
 });
 
+export const buildMedicalSignatureAuditEvent = (
+  record: DailyRecord,
+  updatedRecord: DailyRecord,
+  doctorName: string,
+  scope: MedicalHandoffScope
+): HandoffAuditEventPayload => ({
+  action: 'MEDICAL_HANDOFF_SIGNED',
+  entityType: 'dailyRecord',
+  entityId: record.date,
+  details: buildMedicalSignatureAuditPayload(updatedRecord, doctorName, scope),
+  recordDate: record.date,
+});
+
 export const buildUpdatedMedicalHandoffDoctorRecord = (
   currentRecord: DailyRecord,
   doctorName: string
@@ -213,3 +275,13 @@ export const buildResetMedicalHandoffAuditPayload = (
     doctorName: record.medicalHandoffDoctor || '',
   };
 };
+
+export const buildResetMedicalHandoffAuditEvent = (
+  record: DailyRecord
+): HandoffAuditEventPayload => ({
+  action: 'MEDICAL_HANDOFF_RESTORED',
+  entityType: 'dailyRecord',
+  entityId: record.date,
+  details: buildResetMedicalHandoffAuditPayload(record),
+  recordDate: record.date,
+});

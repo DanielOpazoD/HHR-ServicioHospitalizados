@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+
 import type { ConfirmOptions } from '@/context/uiContracts';
 import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
 import { openClinicalDocumentBrowserPrintPreview } from '@/features/clinical-documents/services/clinicalDocumentPrintPdfService';
@@ -32,9 +33,9 @@ export const useClinicalDocumentWorkspaceExportActions = ({
 }: UseClinicalDocumentWorkspaceExportActionsParams) => {
   const [isUploadingPdf, setIsUploadingPdf] = useState(false);
 
-  const handlePrint = useCallback(() => {
+  const handlePrint = useCallback(async () => {
     if (!selectedDocument) return;
-    const opened = openClinicalDocumentBrowserPrintPreview(selectedDocument.title);
+    const opened = await openClinicalDocumentBrowserPrintPreview(selectedDocument.title);
     if (!opened) {
       recordOperationalTelemetry({
         category: 'export',
@@ -91,7 +92,10 @@ export const useClinicalDocumentWorkspaceExportActions = ({
         throw new Error(result.issues[0]?.message || 'No se pudo exportar el PDF clínico.');
       }
       setDraft(prev => (prev ? { ...prev, pdf: result.data!.pdf } : prev));
-      notify.success('PDF exportado', 'El documento quedó respaldado en Google Drive.');
+      notify.success(
+        'PDF exportado',
+        'El documento quedó respaldado en el Google Drive institucional.'
+      );
     } catch (error) {
       console.error('[ClinicalDocumentsWorkspace] Drive upload failed', error);
       recordOperationalTelemetry({

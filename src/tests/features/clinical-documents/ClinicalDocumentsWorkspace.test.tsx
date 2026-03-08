@@ -265,7 +265,15 @@ describe('ClinicalDocumentsWorkspace', () => {
     fireEvent.click(screen.getByRole('button', { name: /quitar firma/i }));
 
     await waitFor(() => {
-      expect(clinicalDocumentUseCases.executeExportClinicalDocumentPdf).toHaveBeenCalled();
+      expect(clinicalDocumentUseCases.executeExportClinicalDocumentPdf).toHaveBeenCalledWith(
+        expect.objectContaining({
+          record: expect.objectContaining({
+            id: clinicalDocument.id,
+          }),
+          hospitalId: 'hhr',
+          fileName: expect.any(String),
+        })
+      );
       expect(clinicalDocumentUseCases.executeUnsignClinicalDocument).toHaveBeenCalled();
     });
   });
@@ -370,6 +378,10 @@ describe('ClinicalDocumentsWorkspace', () => {
       subscriptionCallback?.([
         {
           ...clinicalDocument,
+          audit: {
+            ...clinicalDocument.audit,
+            updatedAt: '2026-03-06T12:00:00.000Z',
+          },
           sections: clinicalDocument.sections.map(section =>
             section.id === 'antecedentes'
               ? { ...section, content: 'Cambio remoto pendiente' }
@@ -437,6 +449,10 @@ describe('ClinicalDocumentsWorkspace', () => {
       subscriptionCallback?.([
         {
           ...clinicalDocument,
+          audit: {
+            ...clinicalDocument.audit,
+            updatedAt: '2026-03-06T12:15:00.000Z',
+          },
           sections: clinicalDocument.sections.map(section =>
             section.id === 'antecedentes'
               ? { ...section, content: 'Cambio remoto definitivo' }

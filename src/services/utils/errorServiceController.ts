@@ -17,6 +17,14 @@ export interface BuildErrorLogParams {
   userEmail?: string;
 }
 
+export interface ErrorServiceClassification {
+  severity: ErrorSeverity;
+  retryable: boolean;
+  userFriendlyMessage: string;
+  code?: string;
+  name?: string;
+}
+
 export const DEFAULT_RETRY_CONFIG: RetryConfig = {
   maxRetries: 3,
   baseDelayMs: 500,
@@ -113,4 +121,15 @@ export const getUserFriendlyErrorMessage = (error: unknown): string => {
   }
 
   return 'Ha ocurrido un error. Por favor, intente nuevamente.';
+};
+
+export const classifyErrorForService = (error: unknown): ErrorServiceClassification => {
+  const err = error as { code?: string; name?: string };
+  return {
+    severity: err?.code ? getFirebaseErrorSeverity(err.code) : 'medium',
+    retryable: isRetryableError(error),
+    userFriendlyMessage: getUserFriendlyErrorMessage(error),
+    code: err?.code,
+    name: err?.name,
+  };
 };

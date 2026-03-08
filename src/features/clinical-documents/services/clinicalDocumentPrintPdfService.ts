@@ -3,6 +3,7 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
 import { getFunctionsInstance } from '@/firebaseConfig';
+import { CLINICAL_DOCUMENT_BRANDING } from '@/features/clinical-documents/domain/branding';
 import clinicalDocumentSheetStyles from '@/features/clinical-documents/styles/clinicalDocumentSheet.css?raw';
 
 const CLINICAL_DOCUMENT_SHEET_ID = 'clinical-document-sheet';
@@ -30,6 +31,100 @@ interface PrintHtmlOptions {
   includeAppStyles?: boolean;
   bodyFontFamily?: string;
 }
+
+const readBlobAsDataUrl = (blob: Blob): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(reader.error || new Error('No se pudo leer el archivo.'));
+    reader.readAsDataURL(blob);
+  });
+
+const cloneImageAsDataUrl = async (image: HTMLImageElement): Promise<string | null> => {
+  const source = image.currentSrc || image.src;
+  if (!source) return null;
+  if (source.startsWith('data:')) return source;
+
+  if (image.complete && image.naturalWidth > 0) {
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const context = canvas.getContext('2d');
+      if (!context) return null;
+      context.drawImage(image, 0, 0);
+      return canvas.toDataURL('image/png');
+    } catch {
+      // Fall through to fetch-based inlining.
+    }
+  }
+
+  try {
+    const response = await fetch(source);
+    if (!response.ok) return null;
+    const blob = await response.blob();
+    return await readBlobAsDataUrl(blob);
+  } catch {
+    return null;
+  }
+};
+
+const fetchAssetAsDataUrl = async (source: string): Promise<string | null> => {
+  if (!source) return null;
+  if (source.startsWith('data:')) return source;
+
+  try {
+    const response = await fetch(source);
+    if (!response.ok) return null;
+    const blob = await response.blob();
+    return await readBlobAsDataUrl(blob);
+  } catch {
+    return null;
+  }
+};
+
+const inlineSheetImages = async (originalSheet: HTMLElement, sheetClone: HTMLElement) => {
+  const originalImages = Array.from(originalSheet.querySelectorAll('img'));
+  const clonedImages = Array.from(sheetClone.querySelectorAll('img'));
+
+  await Promise.all(
+    clonedImages.map(async (clonedImage, index) => {
+      const originalImage = originalImages[index];
+      if (
+        !(clonedImage instanceof HTMLImageElement) ||
+        !(originalImage instanceof HTMLImageElement)
+      ) {
+        return;
+      }
+
+      const dataUrl = await cloneImageAsDataUrl(originalImage);
+      if (dataUrl) {
+        clonedImage.src = dataUrl;
+      }
+    })
+  );
+};
+
+const inlineBrandingImages = async (sheetClone: HTMLElement) => {
+  const [leftLogoDataUrl, rightLogoDataUrl] = await Promise.all([
+    fetchAssetAsDataUrl(CLINICAL_DOCUMENT_BRANDING.leftLogoUrl),
+    fetchAssetAsDataUrl(CLINICAL_DOCUMENT_BRANDING.rightLogoUrl),
+  ]);
+
+  const leftLogo = sheetClone.querySelector(
+    'img[alt="Logo institucional izquierdo"]'
+  ) as HTMLImageElement | null;
+  const rightLogo = sheetClone.querySelector(
+    'img[alt="Logo institucional derecho"]'
+  ) as HTMLImageElement | null;
+
+  if (leftLogoDataUrl && leftLogo) {
+    leftLogo.src = leftLogoDataUrl;
+  }
+  if (rightLogoDataUrl && rightLogo) {
+    rightLogo.src = rightLogoDataUrl;
+  }
+};
 
 const escapeHtmlAttr = (value: string): string =>
   value.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
@@ -64,7 +159,9 @@ const collectAppStyleTags = (): string => {
     .join('\n');
 };
 
-const buildPrintHtml = (options: PrintHtmlOptions = {}): string | null => {
+export const buildClinicalDocumentPrintHtml = async (
+  options: PrintHtmlOptions = {}
+): Promise<string | null> => {
   if (typeof document === 'undefined' || typeof window === 'undefined') {
     return null;
   }
@@ -75,10 +172,17 @@ const buildPrintHtml = (options: PrintHtmlOptions = {}): string | null => {
   }
 
   const sheetClone = sheet.cloneNode(true) as HTMLElement;
+  await inlineSheetImages(sheet, sheetClone);
+  await inlineBrandingImages(sheetClone);
   sheetClone.removeAttribute('contenteditable');
   sheetClone
     .querySelectorAll('[contenteditable]')
     .forEach(node => node.removeAttribute('contenteditable'));
+  sheetClone
+    .querySelectorAll(
+      '.clinical-document-restore-panel, .clinical-document-inline-action, .clinical-document-section-drag-handle'
+    )
+    .forEach(node => node.remove());
   sheetClone.querySelectorAll('input, textarea').forEach(node => {
     if (node instanceof HTMLInputElement || node instanceof HTMLTextAreaElement) {
       node.readOnly = true;
@@ -258,6 +362,7 @@ const generateDomSnapshotPdfBlob = async (html: string): Promise<Blob> => {
 
   try {
     await waitForSheetAssets(isolated.sheet, isolated.frameDocument, isolated.frameWindow);
+    updatePrintFooterPageCounter(isolated.frameDocument);
 
     const canvas = await html2canvas(isolated.sheet, {
       backgroundColor: '#ffffff',
@@ -316,34 +421,38 @@ const generateBackendPrintStyledPdfBlob = async (html: string): Promise<Blob> =>
 };
 
 export const generateClinicalDocumentPrintStyledPdfBlob = async (): Promise<Blob | null> => {
-  const html = buildPrintHtml();
+  const html = await buildClinicalDocumentPrintHtml({
+    includeAppStyles: true,
+  });
   if (!html) {
     return null;
   }
 
   try {
-    return await generateDomSnapshotPdfBlob(html);
+    return await generateBackendPrintStyledPdfBlob(html);
   } catch (error) {
     console.warn(
-      '[clinicalDocumentPrintPdfService] client snapshot failed, falling back to backend render:',
+      '[clinicalDocumentPrintPdfService] backend render failed, falling back to client snapshot:',
       error
     );
   }
 
   try {
-    return await generateBackendPrintStyledPdfBlob(html);
+    return await generateDomSnapshotPdfBlob(html);
   } catch (error) {
-    console.warn('[clinicalDocumentPrintPdfService] backend render failed:', error);
+    console.warn('[clinicalDocumentPrintPdfService] client snapshot failed:', error);
     return null;
   }
 };
 
-export const openClinicalDocumentBrowserPrintPreview = (pageTitle: string): boolean => {
+export const openClinicalDocumentBrowserPrintPreview = async (
+  pageTitle: string
+): Promise<boolean> => {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return false;
   }
 
-  const html = buildPrintHtml({
+  const html = await buildClinicalDocumentPrintHtml({
     pageTitle,
     autoPrint: false,
     hidePatientInfoTitle: false,

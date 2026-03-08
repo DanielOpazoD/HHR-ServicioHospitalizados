@@ -2,6 +2,7 @@ import { ErrorLog, ErrorSeverity, LogLevel } from '@/services/logging/errorLogTy
 import {
   buildErrorLog,
   buildRetryDelayMs,
+  classifyErrorForService,
   DEFAULT_RETRY_CONFIG,
   getFirebaseErrorSeverity,
   getUserFriendlyErrorMessage as getUserFriendlyErrorMessageFromController,
@@ -151,13 +152,13 @@ class ErrorService {
    * @param context - Additional debugging information
    */
   logFirebaseError(error: unknown, operation: string, context?: Record<string, unknown>): void {
-    const err = error as { code?: string };
-    const firebaseErrorCode = err?.code || 'unknown';
+    const classification = classifyErrorForService(error);
+    const firebaseErrorCode = classification.code || 'unknown';
     const message = `Firebase ${operation} failed: ${firebaseErrorCode}`;
 
     this.logError({
       message,
-      severity: getFirebaseErrorSeverity(firebaseErrorCode),
+      severity: getFirebaseErrorSeverity(firebaseErrorCode) || classification.severity,
       error,
       context: {
         operation,
@@ -191,7 +192,10 @@ class ErrorService {
    * @returns A friendly message suitable for user-facing UI
    */
   getUserFriendlyMessage(error: unknown): string {
-    return getUserFriendlyErrorMessageFromController(error);
+    return (
+      classifyErrorForService(error).userFriendlyMessage ||
+      getUserFriendlyErrorMessageFromController(error)
+    );
   }
 
   /**

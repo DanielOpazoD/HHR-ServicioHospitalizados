@@ -28,7 +28,8 @@ declare global {
 }
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
-const DRIVE_SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const DRIVE_SCOPES =
+  'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.metadata.readonly';
 
 let accessToken: string | null = null;
 let tokenExpiry = 0;

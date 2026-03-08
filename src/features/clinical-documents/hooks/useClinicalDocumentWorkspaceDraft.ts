@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
 import { validateClinicalDocument } from '@/features/clinical-documents/controllers/clinicalDocumentValidationController';
 import {
@@ -54,6 +54,12 @@ export interface ClinicalDocumentWorkspaceDraftState {
   ) => void;
 }
 
+export interface ClinicalDocumentDraftBaseState {
+  document: ClinicalDocumentRecord | null;
+  snapshot: string;
+  updatedAt: string;
+}
+
 export const useClinicalDocumentWorkspaceDraft = ({
   documents,
   selectedDocumentId,
@@ -70,49 +76,82 @@ export const useClinicalDocumentWorkspaceDraft = ({
   const lastPersistedSnapshotRef = useRef<string>('');
   const draftRef = useRef<ClinicalDocumentRecord | null>(null);
   const draftDirtyRef = useRef(false);
-  const pendingRemoteDocumentRef = useRef<ClinicalDocumentRecord | null>(null);
-  const pendingRemoteSnapshotRef = useRef<string>('');
-  const baseRemoteDocumentRef = useRef<ClinicalDocumentRecord | null>(null);
-  const baseRemoteSnapshotRef = useRef<string>('');
+  const pendingRemoteStateRef = useRef<ClinicalDocumentDraftBaseState>({
+    document: null,
+    snapshot: '',
+    updatedAt: '',
+  });
+  const baseDocumentStateRef = useRef<ClinicalDocumentDraftBaseState>({
+    document: null,
+    snapshot: '',
+    updatedAt: '',
+  });
 
-  const clearPendingRemoteUpdate = () => {
-    pendingRemoteDocumentRef.current = null;
-    pendingRemoteSnapshotRef.current = '';
+  const buildDraftBaseState = useCallback(
+    (
+      document: ClinicalDocumentRecord | null,
+      snapshot: string
+    ): ClinicalDocumentDraftBaseState => ({
+      document: document ? structuredClone(document) : null,
+      snapshot,
+      updatedAt: document?.audit.updatedAt || '',
+    }),
+    []
+  );
+
+  const commitBaseState = useCallback(
+    (document: ClinicalDocumentRecord | null, snapshot: string) => {
+      const nextBaseState = buildDraftBaseState(document, snapshot);
+      baseDocumentStateRef.current = nextBaseState;
+      lastPersistedSnapshotRef.current = snapshot;
+      return nextBaseState;
+    },
+    [buildDraftBaseState]
+  );
+
+  const stagePendingRemoteUpdate = useCallback(
+    (document: ClinicalDocumentRecord | null, snapshot: string) => {
+      pendingRemoteStateRef.current = buildDraftBaseState(document, snapshot);
+      setHasPendingRemoteUpdate(Boolean(document && snapshot));
+    },
+    [buildDraftBaseState]
+  );
+
+  const clearPendingRemoteUpdate = useCallback(() => {
+    pendingRemoteStateRef.current = {
+      document: null,
+      snapshot: '',
+      updatedAt: '',
+    };
     setHasPendingRemoteUpdate(false);
-  };
+  }, []);
 
-  const applyPendingRemoteUpdate = () => {
-    const pendingRemoteDocument = pendingRemoteDocumentRef.current;
-    const pendingRemoteSnapshot = pendingRemoteSnapshotRef.current;
-    if (!pendingRemoteDocument || !pendingRemoteSnapshot) {
+  const applyPendingRemoteUpdate = useCallback(() => {
+    const pendingRemoteState = pendingRemoteStateRef.current;
+    if (!pendingRemoteState.document || !pendingRemoteState.snapshot) {
       return;
     }
 
-    setDraft(structuredClone(pendingRemoteDocument));
-    lastPersistedSnapshotRef.current = pendingRemoteSnapshot;
-    baseRemoteDocumentRef.current = structuredClone(pendingRemoteDocument);
-    baseRemoteSnapshotRef.current = pendingRemoteSnapshot;
+    setDraft(structuredClone(pendingRemoteState.document));
+    commitBaseState(pendingRemoteState.document, pendingRemoteState.snapshot);
     clearPendingRemoteUpdate();
-  };
+  }, [clearPendingRemoteUpdate, commitBaseState]);
 
-  const discardLocalDraftChanges = () => {
-    const nextDraft =
-      pendingRemoteDocumentRef.current || baseRemoteDocumentRef.current || draftRef.current;
-    const nextSnapshot =
-      pendingRemoteSnapshotRef.current ||
-      baseRemoteSnapshotRef.current ||
-      lastPersistedSnapshotRef.current;
+  const discardLocalDraftChanges = useCallback(() => {
+    const nextState = pendingRemoteStateRef.current.document
+      ? pendingRemoteStateRef.current
+      : baseDocumentStateRef.current.document
+        ? baseDocumentStateRef.current
+        : null;
 
-    if (!nextDraft) {
+    if (!nextState?.document) {
       return;
     }
 
-    setDraft(structuredClone(nextDraft));
-    lastPersistedSnapshotRef.current = nextSnapshot;
-    baseRemoteDocumentRef.current = structuredClone(nextDraft);
-    baseRemoteSnapshotRef.current = nextSnapshot;
+    setDraft(structuredClone(nextState.document));
+    commitBaseState(nextState.document, nextState.snapshot);
     clearPendingRemoteUpdate();
-  };
+  }, [clearPendingRemoteUpdate, commitBaseState]);
 
   useEffect(() => {
     draftRef.current = draft;
@@ -127,7 +166,7 @@ export const useClinicalDocumentWorkspaceDraft = ({
     if (!selectedDocumentId) {
       setDraft(null);
       clearPendingRemoteUpdate();
-      lastPersistedSnapshotRef.current = '';
+      commitBaseState(null, '');
       return;
     }
 
@@ -139,40 +178,42 @@ export const useClinicalDocumentWorkspaceDraft = ({
     const currentDraft = draftRef.current;
     const isSameSelectedDocument = Boolean(currentDraft) && currentDraft?.id === selectedDocumentId;
     if (isSameSelectedDocument && draftDirtyRef.current) {
-      const currentDraftSnapshot = serializeClinicalDocument(currentDraft);
-      const isNewRemoteSnapshot =
-        incomingSnapshot !== currentDraftSnapshot &&
-        incomingSnapshot !== lastPersistedSnapshotRef.current;
-      if (isNewRemoteSnapshot) {
-        pendingRemoteDocumentRef.current = hydratedClone;
-        pendingRemoteSnapshotRef.current = incomingSnapshot;
-        setHasPendingRemoteUpdate(true);
+      const baseState = baseDocumentStateRef.current;
+      const isNewRemoteVersion =
+        hydratedClone?.audit.updatedAt &&
+        hydratedClone.audit.updatedAt !== baseState.updatedAt &&
+        incomingSnapshot !== baseState.snapshot;
+      if (isNewRemoteVersion) {
+        stagePendingRemoteUpdate(hydratedClone, incomingSnapshot);
       }
       return;
     }
     clearPendingRemoteUpdate();
     setDraft(hydratedClone);
-    lastPersistedSnapshotRef.current = incomingSnapshot;
-    baseRemoteDocumentRef.current = hydratedClone ? structuredClone(hydratedClone) : null;
-    baseRemoteSnapshotRef.current = incomingSnapshot;
-  }, [documents, selectedDocumentId]);
+    commitBaseState(hydratedClone, incomingSnapshot);
+  }, [
+    clearPendingRemoteUpdate,
+    commitBaseState,
+    documents,
+    selectedDocumentId,
+    stagePendingRemoteUpdate,
+  ]);
 
   useEffect(() => {
     if (!hasPendingRemoteUpdate || draftDirtyRef.current) {
       return;
     }
 
-    if (!pendingRemoteDocumentRef.current || !pendingRemoteSnapshotRef.current) {
+    const pendingRemoteState = pendingRemoteStateRef.current;
+    if (!pendingRemoteState.document || !pendingRemoteState.snapshot) {
       setHasPendingRemoteUpdate(false);
       return;
     }
 
-    setDraft(structuredClone(pendingRemoteDocumentRef.current));
-    lastPersistedSnapshotRef.current = pendingRemoteSnapshotRef.current;
-    baseRemoteDocumentRef.current = structuredClone(pendingRemoteDocumentRef.current);
-    baseRemoteSnapshotRef.current = pendingRemoteSnapshotRef.current;
+    setDraft(structuredClone(pendingRemoteState.document));
+    commitBaseState(pendingRemoteState.document, pendingRemoteState.snapshot);
     clearPendingRemoteUpdate();
-  }, [draft, hasPendingRemoteUpdate]);
+  }, [clearPendingRemoteUpdate, commitBaseState, draft, hasPendingRemoteUpdate]);
 
   useEffect(() => {
     if (!draft || !canEdit || draft.isLocked || !isActive || !user) {
@@ -203,9 +244,7 @@ export const useClinicalDocumentWorkspaceDraft = ({
           context: { documentId: draft.id },
         });
         if (result.status === 'success' && result.data) {
-          lastPersistedSnapshotRef.current = serializeClinicalDocument(result.data);
-          baseRemoteDocumentRef.current = structuredClone(result.data);
-          baseRemoteSnapshotRef.current = lastPersistedSnapshotRef.current;
+          commitBaseState(result.data, serializeClinicalDocument(result.data));
           clearPendingRemoteUpdate();
           setDraft(result.data);
         } else {
@@ -232,7 +271,7 @@ export const useClinicalDocumentWorkspaceDraft = ({
         autosaveTimerRef.current = null;
       }
     };
-  }, [canEdit, draft, hospitalId, isActive, role, user]);
+  }, [canEdit, clearPendingRemoteUpdate, commitBaseState, draft, hospitalId, isActive, role, user]);
 
   const validationIssues = useMemo(() => (draft ? validateClinicalDocument(draft) : []), [draft]);
 
