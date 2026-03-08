@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import clsx from 'clsx';
 
 interface InlineEditableTitleProps {
@@ -7,6 +7,8 @@ interface InlineEditableTitleProps {
   inputClassName?: string;
   disabled?: boolean;
   onChange: (value: string) => void;
+  onActivate?: () => void;
+  onDeactivate?: () => void;
 }
 
 export const InlineEditableTitle: React.FC<InlineEditableTitleProps> = ({
@@ -15,14 +17,21 @@ export const InlineEditableTitle: React.FC<InlineEditableTitleProps> = ({
   inputClassName,
   disabled = false,
   onChange,
+  onActivate,
+  onDeactivate,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [draftValue, setDraftValue] = useState(value);
+
+  useEffect(() => {
+    setDraftValue(value);
+  }, [value]);
 
   const commit = () => {
     const normalized = draftValue.trim();
     onChange(normalized.length > 0 ? normalized : value);
     setIsEditing(false);
+    onDeactivate?.();
   };
 
   if (disabled) {
@@ -33,6 +42,7 @@ export const InlineEditableTitle: React.FC<InlineEditableTitleProps> = ({
     return (
       <input
         value={draftValue}
+        aria-label={value || 'Editar título'}
         onChange={event => setDraftValue(event.target.value)}
         onBlur={commit}
         onKeyDown={event => {
@@ -44,6 +54,7 @@ export const InlineEditableTitle: React.FC<InlineEditableTitleProps> = ({
             event.preventDefault();
             setDraftValue(value);
             setIsEditing(false);
+            onDeactivate?.();
           }
         }}
         className={clsx('clinical-document-inline-title-input', inputClassName, className)}
@@ -55,10 +66,12 @@ export const InlineEditableTitle: React.FC<InlineEditableTitleProps> = ({
   return (
     <button
       type="button"
+      aria-label={value || 'Sin título'}
       className={clsx('clinical-document-inline-title', className)}
       onClick={() => {
         setDraftValue(value);
         setIsEditing(true);
+        onActivate?.();
       }}
       title="Haz clic para editar"
     >

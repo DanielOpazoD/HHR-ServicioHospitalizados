@@ -45,8 +45,13 @@ const defaultHandlers = {
   patchDocumentTitle: vi.fn(),
   patchPatientInfoTitle: vi.fn(),
   patchPatientField: vi.fn(),
+  patchPatientFieldLabel: vi.fn(),
+  setPatientFieldVisibility: vi.fn(),
   patchSectionTitle: vi.fn(),
   patchSection: vi.fn(),
+  setSectionVisibility: vi.fn(),
+  moveSection: vi.fn(),
+  reorderSection: vi.fn(),
   patchFooterLabel: vi.fn(),
   patchDocumentMeta: vi.fn(),
 };
@@ -71,8 +76,12 @@ describe('ClinicalDocumentSheet', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders editor and delegates toolbar actions', () => {
+  it('renders editor, local logos and delegates sheet actions', () => {
     const document = buildDocument();
+    Object.defineProperty(globalThis.document, 'execCommand', {
+      value: vi.fn(() => true),
+      configurable: true,
+    });
     render(
       <ClinicalDocumentSheet
         selectedDocument={document}
@@ -88,11 +97,48 @@ describe('ClinicalDocumentSheet', () => {
 
     expect(screen.getByDisplayValue(document.medico)).toBeInTheDocument();
     expect(screen.getByText(/falta completar diagnóstico/i)).toBeInTheDocument();
+    expect(screen.getByAltText(/logo institucional izquierdo/i)).toHaveAttribute(
+      'src',
+      '/images/logos/logo_HHR.png'
+    );
+    expect(screen.getByAltText(/logo institucional derecho/i)).toHaveAttribute(
+      'src',
+      '/images/logos/logo_SSMO.jpg'
+    );
 
     fireEvent.click(screen.getByRole('button', { name: /guardar/i }));
     fireEvent.click(screen.getByRole('button', { name: /pdf/i }));
-
+    fireEvent.click(screen.getByRole('button', { name: /formato/i }));
+    expect(screen.getByRole('button', { name: /deshacer/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /rehacer/i })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: /negrita/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Antecedentes' }));
+    fireEvent.click(screen.getByRole('button', { name: /bajar sección antecedentes/i }));
+    const dataTransfer = {
+      effectAllowed: 'move',
+      setData: vi.fn(),
+      getData: vi.fn(),
+    };
+    fireEvent.dragStart(screen.getByRole('button', { name: /arrastrar sección antecedentes/i }), {
+      dataTransfer,
+    });
+    const historiaSectionBlock = screen
+      .getByText('Historia y evolución clínica')
+      .closest('.clinical-document-section-block');
+    expect(historiaSectionBlock).not.toBeNull();
+    fireEvent.dragOver(historiaSectionBlock!, { dataTransfer });
+    fireEvent.drop(historiaSectionBlock!, { dataTransfer });
+    fireEvent.click(screen.getByRole('button', { name: /eliminar sección antecedentes/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Nombre' }));
+    fireEvent.click(screen.getByRole('button', { name: /eliminar campo nombre/i }));
     expect(defaultHandlers.onSave).toHaveBeenCalled();
     expect(defaultHandlers.onPrint).toHaveBeenCalled();
+    expect(defaultHandlers.moveSection).toHaveBeenCalledWith('antecedentes', 'down');
+    expect(defaultHandlers.reorderSection).toHaveBeenCalledWith(
+      'antecedentes',
+      'historia-evolucion'
+    );
+    expect(defaultHandlers.setSectionVisibility).toHaveBeenCalledWith('antecedentes', false);
+    expect(defaultHandlers.setPatientFieldVisibility).toHaveBeenCalledWith('nombre', false);
   });
 });

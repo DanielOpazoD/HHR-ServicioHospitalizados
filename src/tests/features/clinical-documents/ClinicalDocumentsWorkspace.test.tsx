@@ -36,7 +36,7 @@ vi.mock('@/features/clinical-documents/services/clinicalDocumentPrintPdfService'
   openClinicalDocumentBrowserPrintPreview: vi.fn(() => true),
 }));
 
-const document = createClinicalDocumentDraft({
+const clinicalDocument = createClinicalDocumentDraft({
   templateId: 'epicrisis',
   hospitalId: 'hhr',
   actor: {
@@ -67,7 +67,7 @@ const document = createClinicalDocumentDraft({
   especialidad: 'Medicina',
 });
 
-document.sections = document.sections.map(section => ({
+clinicalDocument.sections = clinicalDocument.sections.map(section => ({
   ...section,
   content: `${section.title} completo`,
 }));
@@ -103,6 +103,10 @@ vi.mock('@/application/clinical-documents/clinicalDocumentUseCases', async () =>
 describe('ClinicalDocumentsWorkspace', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    Object.defineProperty(globalThis.document, 'execCommand', {
+      value: vi.fn(() => true),
+      configurable: true,
+    });
     authState.user = { uid: 'u1', email: 'doctor@test.com', displayName: 'Doctor Test' };
     authState.role = 'doctor_urgency';
 
@@ -127,29 +131,29 @@ describe('ClinicalDocumentsWorkspace', () => {
 
     vi.mocked(ClinicalDocumentRepository.subscribeByEpisode).mockImplementation(
       (_episodeKey, callback) => {
-        callback([document]);
+        callback([clinicalDocument]);
         return vi.fn();
       }
     );
 
     vi.mocked(clinicalDocumentUseCases.executeCreateClinicalDocumentDraft).mockResolvedValue({
       status: 'success',
-      data: { ...document, id: 'new-doc' },
+      data: { ...clinicalDocument, id: 'new-doc' },
       issues: [],
     } as any);
     vi.mocked(clinicalDocumentUseCases.executePersistClinicalDocumentDraft).mockResolvedValue({
       status: 'success',
-      data: document,
+      data: clinicalDocument,
       issues: [],
     } as any);
     vi.mocked(clinicalDocumentUseCases.executeSignClinicalDocument).mockResolvedValue({
       status: 'success',
       data: {
-        ...document,
+        ...clinicalDocument,
         status: 'signed',
         isLocked: true,
         audit: {
-          ...document.audit,
+          ...clinicalDocument.audit,
           signedAt: new Date().toISOString(),
           signedBy: {
             uid: 'u1',
@@ -163,7 +167,7 @@ describe('ClinicalDocumentsWorkspace', () => {
     } as any);
     vi.mocked(clinicalDocumentUseCases.executeUnsignClinicalDocument).mockResolvedValue({
       status: 'success',
-      data: { ...document, status: 'draft', isLocked: false },
+      data: { ...clinicalDocument, status: 'draft', isLocked: false },
       issues: [],
     } as any);
     vi.mocked(clinicalDocumentUseCases.executeDeleteClinicalDocument).mockResolvedValue({
@@ -199,9 +203,9 @@ describe('ClinicalDocumentsWorkspace', () => {
       expect(screen.getByDisplayValue('Doctor Test')).toBeInTheDocument();
     });
 
-    fireEvent.change(screen.getByDisplayValue('Antecedentes completo'), {
-      target: { value: 'Antecedentes actualizados' },
-    });
+    const antecedentesEditor = screen.getByRole('textbox', { name: /contenido antecedentes/i });
+    antecedentesEditor.innerHTML = 'Antecedentes actualizados';
+    fireEvent.input(antecedentesEditor);
     fireEvent.click(screen.getByRole('button', { name: /crear documento/i }));
     fireEvent.click(screen.getByRole('button', { name: /guardar/i }));
     fireEvent.click(screen.getByRole('button', { name: /firmar/i }));
@@ -291,5 +295,38 @@ describe('ClinicalDocumentsWorkspace', () => {
 
     expect(screen.getByRole('button', { name: /guardar/i })).toBeDisabled();
     expect(screen.getByRole('button', { name: /firmar/i })).toBeDisabled();
+  });
+
+  it('allows hiding and restoring sections on the real shell boundary', async () => {
+    render(
+      <ClinicalDocumentsWorkspace
+        patient={
+          {
+            patientName: 'Paciente Test',
+            rut: '11.111.111-1',
+            admissionDate: '2026-03-06',
+            age: '40a',
+            birthDate: '1986-01-01',
+          } as any
+        }
+        currentDateString="2026-03-06"
+        bedId="R1"
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Antecedentes' })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Antecedentes' }));
+    fireEvent.click(screen.getByRole('button', { name: /eliminar sección antecedentes/i }));
+    expect(
+      screen.getByRole('button', { name: /restaurar sección: antecedentes/i })
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /restaurar sección: antecedentes/i }));
+    expect(
+      screen.getByRole('button', { name: /eliminar sección antecedentes/i })
+    ).toBeInTheDocument();
   });
 });

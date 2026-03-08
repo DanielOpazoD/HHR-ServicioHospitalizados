@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf';
 import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
 import { formatDateToCL } from '@/utils/clinicalUtils';
 import { generateClinicalDocumentPrintStyledPdfBlob } from '@/features/clinical-documents/services/clinicalDocumentPrintPdfService';
+import { stripClinicalDocumentHtml } from '@/features/clinical-documents/controllers/clinicalDocumentRichTextController';
 
 const normalizeFieldValue = (fieldId: string, value: string): string => {
   if (!value.trim()) return '—';
@@ -15,7 +16,11 @@ const getPatientFieldLabelForPdf = (
   record: ClinicalDocumentRecord,
   field: ClinicalDocumentRecord['patientFields'][number]
 ): string => {
-  if (record.documentType === 'epicrisis' && field.id === 'finf') {
+  if (
+    record.documentType === 'epicrisis' &&
+    field.id === 'finf' &&
+    (!field.label || field.label === 'Fecha del informe')
+  ) {
     return 'Fecha de alta';
   }
   return field.label;
@@ -61,14 +66,16 @@ const generateStructuredClinicalDocumentPdfBlob = async (
   pdf.text(record.patientInfoTitle || 'Información del Paciente', marginX, cursorY);
   cursorY += 6;
 
-  record.patientFields.forEach(field => {
-    addWrappedText(
-      `${getPatientFieldLabelForPdf(record, field)}: ${normalizeFieldValue(field.id, field.value)}`,
-      marginX,
-      contentWidth
-    );
-    cursorY += 0.5;
-  });
+  record.patientFields
+    .filter(field => field.visible !== false)
+    .forEach(field => {
+      addWrappedText(
+        `${getPatientFieldLabelForPdf(record, field)}: ${normalizeFieldValue(field.id, field.value)}`,
+        marginX,
+        contentWidth
+      );
+      cursorY += 0.5;
+    });
   cursorY += 2;
 
   record.sections
@@ -80,7 +87,11 @@ const generateStructuredClinicalDocumentPdfBlob = async (
       ensureSpace(lineHeight + 2);
       pdf.text(section.title, marginX, cursorY);
       cursorY += lineHeight + 1;
-      addWrappedText(section.content.trim() || 'Sin contenido registrado.', marginX, contentWidth);
+      addWrappedText(
+        stripClinicalDocumentHtml(section.content) || 'Sin contenido registrado.',
+        marginX,
+        contentWidth
+      );
       cursorY += 2;
     });
 

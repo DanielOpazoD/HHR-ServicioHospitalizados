@@ -8,8 +8,8 @@ export const validateClinicalDocument = (
 ): ClinicalDocumentValidationIssue[] => {
   const issues: ClinicalDocumentValidationIssue[] = [];
 
-  const requiredPatientFields = record.patientFields.filter(field =>
-    ['nombre', 'rut', 'fing', 'finf', 'hinf'].includes(field.id)
+  const requiredPatientFields = record.patientFields.filter(
+    field => field.visible !== false && ['nombre', 'rut', 'fing', 'finf', 'hinf'].includes(field.id)
   );
 
   requiredPatientFields.forEach(field => {

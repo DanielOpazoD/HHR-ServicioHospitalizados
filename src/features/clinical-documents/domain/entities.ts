@@ -14,6 +14,7 @@ export interface ClinicalDocumentPatientField {
   type: 'text' | 'date' | 'number' | 'time';
   placeholder?: string;
   readonly?: boolean;
+  visible?: boolean;
 }
 
 export type ClinicalDocumentSectionKind = 'standard' | 'clinical-update';
@@ -107,6 +108,7 @@ export interface ClinicalDocumentPatientFieldTemplate {
   type: 'text' | 'date' | 'number' | 'time';
   placeholder?: string;
   readonly?: boolean;
+  visible?: boolean;
 }
 
 export interface ClinicalDocumentSectionTemplate {

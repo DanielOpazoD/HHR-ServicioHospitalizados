@@ -69,8 +69,13 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
     validationIssues,
     lastPersistedSnapshotRef,
     patchPatientField,
+    patchPatientFieldLabel,
+    setPatientFieldVisibility,
     patchSection,
     patchSectionTitle,
+    setSectionVisibility,
+    moveSection,
+    reorderSection,
     patchDocumentTitle,
     patchPatientInfoTitle,
     patchFooterLabel,
@@ -157,8 +162,13 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
           patchDocumentTitle={patchDocumentTitle}
           patchPatientInfoTitle={patchPatientInfoTitle}
           patchPatientField={patchPatientField}
+          patchPatientFieldLabel={patchPatientFieldLabel}
+          setPatientFieldVisibility={setPatientFieldVisibility}
           patchSectionTitle={patchSectionTitle}
           patchSection={patchSection}
+          setSectionVisibility={setSectionVisibility}
+          moveSection={moveSection}
+          reorderSection={reorderSection}
           patchFooterLabel={patchFooterLabel}
           patchDocumentMeta={patchDocumentMeta}
         />

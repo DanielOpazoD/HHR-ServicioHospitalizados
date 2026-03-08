@@ -59,6 +59,132 @@
   color: #1f2937;
 }
 
+.clinical-document-restore-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.clinical-document-restore-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px dashed #94a3b8;
+  background: #f8fafc;
+  color: #334155;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.clinical-document-field-label-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+}
+
+.clinical-document-inline-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #64748b;
+  flex: 0 0 auto;
+}
+
+.clinical-document-inline-action--danger {
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.clinical-document-inline-action--drag {
+  cursor: grab;
+}
+
+.clinical-document-section-block.is-drag-over {
+  outline: 2px dashed #2563eb;
+  outline-offset: 4px;
+  border-radius: 8px;
+  background: rgba(239, 246, 255, 0.7);
+}
+
+.clinical-document-section-block {
+  position: relative;
+  padding-right: 36px;
+  transition:
+    background-color 120ms ease,
+    outline-color 120ms ease;
+}
+
+.clinical-document-section-block:hover {
+  background: rgba(248, 250, 252, 0.9);
+}
+
+.clinical-document-section-drag-handle {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #64748b;
+  cursor: grab;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease,
+    background-color 120ms ease;
+}
+
+.clinical-document-section-block:hover .clinical-document-section-drag-handle,
+.clinical-document-section-block:focus-within .clinical-document-section-drag-handle,
+.clinical-document-section-block.is-drag-over .clinical-document-section-drag-handle {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.clinical-document-section-drag-handle:hover {
+  background: #f8fafc;
+}
+
+.clinical-document-section-drag-handle:active {
+  cursor: grabbing;
+  transform: scale(0.97);
+}
+
+.clinical-document-global-toolbar-modal {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 30;
+  min-width: 260px;
+  border: 1px solid #dbe2ea;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+  padding: 10px;
+}
+
+.clinical-document-global-toolbar-caption {
+  margin: 0 0 8px;
+  font-size: 11px;
+  color: #64748b;
+}
+
 .clinical-document-patient-grid {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -156,6 +282,61 @@
   min-height: 92px;
   resize: none;
   overflow: hidden;
+}
+
+.clinical-document-rich-text-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.clinical-document-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.clinical-document-toolbar-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #475569;
+}
+
+.clinical-document-toolbar-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.clinical-document-rich-text-editor {
+  min-height: 92px;
+  white-space: pre-wrap;
+}
+
+.clinical-document-rich-text-editor:empty::before {
+  content: '';
+}
+
+.clinical-document-rich-text-editor ul,
+.clinical-document-rich-text-editor ol {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.clinical-document-rich-text-editor blockquote {
+  margin: 0;
+  padding-left: 12px;
+  border-left: 3px solid #cbd5e1;
+}
+
+.clinical-document-rich-text-editor.is-readonly {
+  pointer-events: none;
 }
 
 .clinical-document-footer {
@@ -325,7 +506,8 @@ body.clinical-documents-print .clinical-document-print-footer-right {
   }
 
   body.clinical-documents-print .clinical-document-input,
-  body.clinical-documents-print .clinical-document-textarea {
+  body.clinical-documents-print .clinical-document-textarea,
+  body.clinical-documents-print .clinical-document-rich-text-editor {
     background: #ffffff !important;
     color: #1f2937 !important;
     border: 1px solid #cbd5e1 !important;
@@ -342,6 +524,12 @@ body.clinical-documents-print .clinical-document-print-footer-right {
     min-height: 92px;
     height: auto;
     overflow: visible;
+  }
+
+  body.clinical-documents-print .clinical-document-toolbar,
+  body.clinical-documents-print .clinical-document-inline-action,
+  body.clinical-documents-print .clinical-document-restore-panel {
+    display: none !important;
   }
 
   body.clinical-documents-print .clinical-document-sheet-logo {

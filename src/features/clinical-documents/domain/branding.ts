@@ -1,4 +1,4 @@
 export const CLINICAL_DOCUMENT_BRANDING = {
-  leftLogoUrl: 'https://iili.io/FEirDCl.png',
-  rightLogoUrl: 'https://iili.io/FEirQjf.png',
+  leftLogoUrl: '/images/logos/logo_HHR.png',
+  rightLogoUrl: '/images/logos/logo_SSMO.jpg',
 } as const;

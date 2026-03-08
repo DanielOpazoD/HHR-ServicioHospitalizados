@@ -7,6 +7,7 @@ import type {
   ClinicalDocumentSection,
   ClinicalDocumentTemplate,
 } from '@/features/clinical-documents/domain/entities';
+import { stripClinicalDocumentHtml } from '@/features/clinical-documents/controllers/clinicalDocumentRichTextController';
 import {
   CLINICAL_DOCUMENT_TEMPLATES,
   DEFAULT_CLINICAL_DOCUMENT_TEMPLATE_ID,
@@ -19,6 +20,7 @@ const clonePatientFields = (
   template.patientFields.map(field => ({
     ...field,
     value: values[field.id] || '',
+    visible: field.visible ?? true,
   }));
 
 const cloneSections = (template: ClinicalDocumentTemplate): ClinicalDocumentSection[] =>
@@ -50,11 +52,15 @@ export const buildClinicalDocumentRenderedText = (
   >
 ): string => {
   const patientBlock = record.patientFields
+    .filter(field => field.visible !== false)
     .map(field => `${field.label}: ${field.value || '—'}`)
     .join('\n');
   const sectionsBlock = record.sections
     .filter(section => section.visible !== false)
-    .map(section => `${section.title}\n${section.content || 'Sin contenido registrado.'}`)
+    .map(
+      section =>
+        `${section.title}\n${stripClinicalDocumentHtml(section.content) || 'Sin contenido registrado.'}`
+    )
     .join('\n\n');
 
   return [

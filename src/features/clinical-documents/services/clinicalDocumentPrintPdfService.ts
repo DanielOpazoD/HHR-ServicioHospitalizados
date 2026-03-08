@@ -115,7 +115,7 @@ const buildPrintHtml = (options: PrintHtmlOptions = {}): string | null => {
     '<div class="clinical-document-print-bottom-bar" aria-hidden="true">',
     '  <div class="clinical-document-print-footer-left">',
     '    <div class="clinical-document-patient-signature-line"></div>',
-    '    <div class="clinical-document-patient-signature-label">Firma paciente</div>',
+    '    <div class="clinical-document-patient-signature-label">Firma paciente/familiar responsable</div>',
     '  </div>',
     '  <div class="clinical-document-print-footer-right">1/1</div>',
     '</div>',

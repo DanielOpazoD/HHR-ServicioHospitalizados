@@ -6,6 +6,7 @@ import {
   hydrateLegacyClinicalDocument,
   serializeClinicalDocument,
 } from '@/features/clinical-documents/controllers/clinicalDocumentWorkspaceController';
+import { normalizeClinicalDocumentContentForStorage } from '@/features/clinical-documents/controllers/clinicalDocumentRichTextController';
 import { executePersistClinicalDocumentDraft } from '@/application/clinical-documents/clinicalDocumentUseCases';
 import {
   recordOperationalOutcome,
@@ -34,8 +35,13 @@ export interface ClinicalDocumentWorkspaceDraftState {
   validationIssues: Array<{ message: string }>;
   lastPersistedSnapshotRef: React.MutableRefObject<string>;
   patchPatientField: (fieldId: string, value: string) => void;
+  patchPatientFieldLabel: (fieldId: string, label: string) => void;
+  setPatientFieldVisibility: (fieldId: string, visible: boolean) => void;
   patchSection: (sectionId: string, content: string) => void;
   patchSectionTitle: (sectionId: string, title: string) => void;
+  setSectionVisibility: (sectionId: string, visible: boolean) => void;
+  moveSection: (sectionId: string, direction: 'up' | 'down') => void;
+  reorderSection: (sourceSectionId: string, targetSectionId: string) => void;
   patchDocumentTitle: (title: string) => void;
   patchPatientInfoTitle: (title: string) => void;
   patchFooterLabel: (kind: 'medico' | 'especialidad', title: string) => void;
@@ -150,7 +156,22 @@ export const useClinicalDocumentWorkspaceDraft = ({
         ? {
             ...prev,
             sections: prev.sections.map(section =>
-              section.id === sectionId ? { ...section, content } : section
+              section.id === sectionId
+                ? { ...section, content: normalizeClinicalDocumentContentForStorage(content) }
+                : section
+            ),
+          }
+        : prev
+    );
+  };
+
+  const patchPatientFieldLabel = (fieldId: string, label: string) => {
+    setDraft(prev =>
+      prev
+        ? {
+            ...prev,
+            patientFields: prev.patientFields.map(field =>
+              field.id === fieldId ? { ...field, label } : field
             ),
           }
         : prev
@@ -168,6 +189,115 @@ export const useClinicalDocumentWorkspaceDraft = ({
           }
         : prev
     );
+  };
+
+  const setPatientFieldVisibility = (fieldId: string, visible: boolean) => {
+    setDraft(prev =>
+      prev
+        ? {
+            ...prev,
+            patientFields: prev.patientFields.map(field =>
+              field.id === fieldId ? { ...field, visible } : field
+            ),
+          }
+        : prev
+    );
+  };
+
+  const setSectionVisibility = (sectionId: string, visible: boolean) => {
+    setDraft(prev =>
+      prev
+        ? {
+            ...prev,
+            sections: prev.sections.map(section =>
+              section.id === sectionId ? { ...section, visible } : section
+            ),
+          }
+        : prev
+    );
+  };
+
+  const reorderSection = (sourceSectionId: string, targetSectionId: string) => {
+    setDraft(prev => {
+      if (!prev || sourceSectionId === targetSectionId) return prev;
+
+      const orderedSections = [...prev.sections].sort((left, right) => left.order - right.order);
+      const visibleSections = orderedSections.filter(section => section.visible !== false);
+      const hiddenSections = orderedSections.filter(section => section.visible === false);
+      const sourceIndex = visibleSections.findIndex(section => section.id === sourceSectionId);
+      const targetIndex = visibleSections.findIndex(section => section.id === targetSectionId);
+
+      if (sourceIndex === -1 || targetIndex === -1) return prev;
+
+      const reorderedVisibleSections = [...visibleSections];
+      const [movedSection] = reorderedVisibleSections.splice(sourceIndex, 1);
+      reorderedVisibleSections.splice(targetIndex, 0, movedSection);
+
+      const nextVisibleSections = reorderedVisibleSections.map((section, index) => ({
+        ...section,
+        order: index,
+      }));
+      const nextHiddenSections = hiddenSections.map((section, index) => ({
+        ...section,
+        order: nextVisibleSections.length + index,
+      }));
+      const nextSectionMap = new Map(
+        [...nextVisibleSections, ...nextHiddenSections].map(section => [section.id, section])
+      );
+
+      return {
+        ...prev,
+        sections: prev.sections
+          .map(section => nextSectionMap.get(section.id) || section)
+          .sort((left, right) => left.order - right.order),
+      };
+    });
+  };
+
+  const moveSection = (sectionId: string, direction: 'up' | 'down') => {
+    setDraft(prev => {
+      if (!prev) return prev;
+
+      const visibleOrdered = [...prev.sections]
+        .filter(section => section.visible !== false)
+        .sort((left, right) => left.order - right.order);
+      const currentVisibleIndex = visibleOrdered.findIndex(section => section.id === sectionId);
+      if (currentVisibleIndex === -1) return prev;
+
+      const targetVisibleIndex =
+        direction === 'up' ? currentVisibleIndex - 1 : currentVisibleIndex + 1;
+      if (targetVisibleIndex < 0 || targetVisibleIndex >= visibleOrdered.length) {
+        return prev;
+      }
+
+      const targetSection = visibleOrdered[targetVisibleIndex];
+      if (!targetSection) return prev;
+
+      const orderedSections = [...prev.sections].sort((left, right) => left.order - right.order);
+      const hiddenSections = orderedSections.filter(section => section.visible === false);
+      const reorderedVisibleSections = [...visibleOrdered];
+      const [movedSection] = reorderedVisibleSections.splice(currentVisibleIndex, 1);
+      reorderedVisibleSections.splice(targetVisibleIndex, 0, movedSection);
+
+      const nextVisibleSections = reorderedVisibleSections.map((section, index) => ({
+        ...section,
+        order: index,
+      }));
+      const nextHiddenSections = hiddenSections.map((section, index) => ({
+        ...section,
+        order: nextVisibleSections.length + index,
+      }));
+      const nextSectionMap = new Map(
+        [...nextVisibleSections, ...nextHiddenSections].map(section => [section.id, section])
+      );
+
+      return {
+        ...prev,
+        sections: prev.sections
+          .map(section => nextSectionMap.get(section.id) || section)
+          .sort((left, right) => left.order - right.order),
+      };
+    });
   };
 
   const patchDocumentTitle = (title: string) => {
@@ -202,8 +332,13 @@ export const useClinicalDocumentWorkspaceDraft = ({
     validationIssues,
     lastPersistedSnapshotRef,
     patchPatientField,
+    patchPatientFieldLabel,
+    setPatientFieldVisibility,
     patchSection,
     patchSectionTitle,
+    setSectionVisibility,
+    moveSection,
+    reorderSection,
     patchDocumentTitle,
     patchPatientInfoTitle,
     patchFooterLabel,

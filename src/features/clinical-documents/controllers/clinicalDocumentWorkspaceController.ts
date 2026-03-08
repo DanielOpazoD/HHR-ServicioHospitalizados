@@ -10,69 +10,90 @@ export const serializeClinicalDocument = (record: ClinicalDocumentRecord | null)
 const normalizeEpicrisisSections = (
   sections: ClinicalDocumentRecord['sections']
 ): ClinicalDocumentRecord['sections'] => {
-  const sectionMap = new Map(sections.map(section => [section.id, section]));
-  const antecedentes = sectionMap.get('antecedentes');
-  const historia = sectionMap.get('historia-evolucion');
-  const diagnosticos = sectionMap.get('diagnosticos');
-  const plan = sectionMap.get('plan');
-  const examenes = sectionMap.get('examenes-complementarios');
-
-  const ordered: ClinicalDocumentRecord['sections'] = [];
-
-  if (antecedentes) {
-    ordered.push({ ...antecedentes, order: 0, title: antecedentes.title || 'Antecedentes' });
-  }
-
-  if (historia) {
-    ordered.push({
-      ...historia,
+  const templateDefaults: Record<
+    string,
+    Pick<ClinicalDocumentRecord['sections'][number], 'title' | 'required' | 'visible'> & {
+      order: number;
+    }
+  > = {
+    antecedentes: { title: 'Antecedentes', order: 0, required: true, visible: true },
+    'historia-evolucion': {
+      title: 'Historia y evolución clínica',
       order: 1,
-      title: historia.title || 'Historia y evolución clínica',
-    });
-  }
-
-  if (diagnosticos) {
-    ordered.push({
-      ...diagnosticos,
-      order: 2,
-      title:
-        diagnosticos.title === 'Diagnósticos' || !diagnosticos.title
-          ? 'Diagnósticos de egreso'
-          : diagnosticos.title,
+      required: true,
       visible: true,
-    });
-  } else {
-    ordered.push({
-      id: 'diagnosticos',
-      title: 'Diagnósticos de egreso',
-      content: '',
+    },
+    'examenes-complementarios': {
+      title: 'Exámenes complementarios',
       order: 2,
       required: false,
-      visible: true,
-    });
-  }
-
-  if (plan) {
-    ordered.push({
-      ...plan,
+      visible: false,
+    },
+    diagnosticos: {
+      title: 'Diagnósticos de egreso',
       order: 3,
-      title: plan.title === 'Plan' || !plan.title ? 'Indicaciones al alta' : plan.title,
+      required: false,
+      visible: true,
+    },
+    plan: {
+      title: 'Indicaciones al alta',
+      order: 4,
+      required: true,
+      visible: true,
+    },
+  };
+
+  const seen = new Set<string>();
+  const normalizedSections = sections.map(section => {
+    seen.add(section.id);
+    const defaults = templateDefaults[section.id];
+    if (!defaults) {
+      return {
+        ...section,
+        order: section.order ?? Number.MAX_SAFE_INTEGER,
+      };
+    }
+
+    const normalizedTitle =
+      section.id === 'diagnosticos' && (!section.title || section.title === 'Diagnósticos')
+        ? defaults.title
+        : section.id === 'plan' && (!section.title || section.title === 'Plan')
+          ? defaults.title
+          : section.title || defaults.title;
+
+    return {
+      ...section,
+      title: normalizedTitle,
+      required: section.required ?? defaults.required,
+      visible: section.visible ?? defaults.visible,
+      order: section.order ?? defaults.order,
+    };
+  });
+
+  Object.entries(templateDefaults).forEach(([sectionId, defaults]) => {
+    if (seen.has(sectionId)) return;
+    normalizedSections.push({
+      id: sectionId,
+      title: defaults.title,
+      content: '',
+      order: defaults.order,
+      required: defaults.required,
+      visible: defaults.visible,
     });
-  }
+  });
 
-  if (examenes) {
-    ordered.push({ ...examenes, order: 4 });
-  }
-
-  const knownIds = new Set(ordered.map(section => section.id));
-  const extras = sections
-    .filter(section => !knownIds.has(section.id))
-    .sort((left, right) => left.order - right.order);
-
-  return [...ordered, ...extras].map((section, index) => ({
-    ...section,
-    order: section.order ?? index,
-  }));
+  return normalizedSections
+    .sort((left, right) => {
+      if (left.order !== right.order) return left.order - right.order;
+      return (
+        (templateDefaults[left.id]?.order ?? Number.MAX_SAFE_INTEGER) -
+        (templateDefaults[right.id]?.order ?? Number.MAX_SAFE_INTEGER)
+      );
+    })
+    .map((section, index) => ({
+      ...section,
+      order: index,
+    }));
 };
 
 export const hydrateLegacyClinicalDocument = (
@@ -113,7 +134,11 @@ export const getClinicalDocumentPatientFieldLabel = (
   field: ClinicalDocumentRecord['patientFields'][number],
   documentType: ClinicalDocumentRecord['documentType']
 ): string => {
-  if (documentType === 'epicrisis' && field.id === 'finf') {
+  if (
+    documentType === 'epicrisis' &&
+    field.id === 'finf' &&
+    (!field.label || field.label === 'Fecha del informe')
+  ) {
     return 'Fecha de alta';
   }
   return field.label;
