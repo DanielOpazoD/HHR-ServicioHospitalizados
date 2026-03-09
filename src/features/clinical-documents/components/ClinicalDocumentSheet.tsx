@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   ArrowDown,
   ArrowUp,
@@ -125,6 +125,62 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
     ) => void;
   } | null>(null);
 
+  const clearActiveEditor = useCallback((sectionId: string) => {
+    setActiveEditorSectionId(current => (current === sectionId ? null : current));
+    if (activeEditorSectionIdRef.current === sectionId) {
+      activeEditorApiRef.current = null;
+      activeEditorSectionIdRef.current = null;
+      setActiveEditorHistoryState({ canUndo: false, canRedo: false });
+    }
+  }, []);
+
+  const handleEditorActivate = useCallback(
+    (
+      activeSectionId: string,
+      editorApi: {
+        element: HTMLDivElement | null;
+        canUndo: boolean;
+        canRedo: boolean;
+        applyCommand: (
+          command:
+            | 'bold'
+            | 'italic'
+            | 'underline'
+            | 'insertUnorderedList'
+            | 'insertOrderedList'
+            | 'indent'
+            | 'outdent'
+            | 'removeFormat'
+            | 'undo'
+            | 'redo',
+          value?: string
+        ) => void;
+      }
+    ) => {
+      activeEditorApiRef.current = editorApi;
+      activeEditorSectionIdRef.current = activeSectionId;
+      setActiveEditorSectionId(current =>
+        current === activeSectionId ? current : activeSectionId
+      );
+      setActiveEditorHistoryState(current =>
+        current.canUndo === editorApi.canUndo && current.canRedo === editorApi.canRedo
+          ? current
+          : {
+              canUndo: editorApi.canUndo,
+              canRedo: editorApi.canRedo,
+            }
+      );
+    },
+    []
+  );
+
+  const handleEditorDeactivate = useCallback(
+    (sectionId: string) => {
+      clearActiveEditor(sectionId);
+    },
+    [clearActiveEditor]
+  );
+
   if (!selectedDocument) {
     return (
       <div className="mx-auto max-w-4xl rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500">
@@ -175,15 +231,6 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
     if (formattingDisabled) return;
     activeEditorApiRef.current?.element?.focus();
     activeEditorApiRef.current?.applyCommand(command, value);
-  };
-
-  const clearActiveEditor = (sectionId: string) => {
-    setActiveEditorSectionId(current => (current === sectionId ? null : current));
-    if (activeEditorSectionIdRef.current === sectionId) {
-      activeEditorApiRef.current = null;
-      activeEditorSectionIdRef.current = null;
-      setActiveEditorHistoryState({ canUndo: false, canRedo: false });
-    }
   };
 
   return (
@@ -529,16 +576,8 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
                 sectionTitle={section.title}
                 value={section.content}
                 onChange={content => patchSection(section.id, content)}
-                onActivate={(activeSectionId, editorApi) => {
-                  activeEditorApiRef.current = editorApi;
-                  activeEditorSectionIdRef.current = activeSectionId;
-                  setActiveEditorSectionId(activeSectionId);
-                  setActiveEditorHistoryState({
-                    canUndo: editorApi.canUndo,
-                    canRedo: editorApi.canRedo,
-                  });
-                }}
-                onDeactivate={clearActiveEditor}
+                onActivate={handleEditorActivate}
+                onDeactivate={handleEditorDeactivate}
                 disabled={!canEdit || selectedDocument.isLocked}
               />
             </div>

@@ -167,8 +167,41 @@ export const buildClinicalDocumentActor = (
   role: role || 'viewer',
 });
 
+const formatPdfFileDate = (rawDate: string | undefined): string | null => {
+  if (!rawDate) return null;
+
+  const dateOnlyMatch = rawDate.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (dateOnlyMatch) {
+    const [, year, month, day] = dateOnlyMatch;
+    return `${Number(day)}/${Number(month)}/${year}`;
+  }
+
+  const parsed = new Date(rawDate);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return `${parsed.getDate()}/${parsed.getMonth() + 1}/${parsed.getFullYear()}`;
+};
+
+const resolveClinicalDocumentPdfDate = (record: ClinicalDocumentRecord): string => {
+  const reportDate = record.patientFields.find(field => field.id === 'finf')?.value;
+  return (
+    formatPdfFileDate(reportDate) ||
+    formatPdfFileDate(record.sourceDailyRecordDate) ||
+    formatPdfFileDate(record.audit.updatedAt) ||
+    'Sin fecha'
+  );
+};
+
+const resolveClinicalDocumentPdfPatientName = (record: ClinicalDocumentRecord): string => {
+  const fieldName = record.patientFields.find(field => field.id === 'nombre')?.value?.trim();
+  const patientName = record.patientName.trim();
+  return (fieldName || patientName || 'Paciente').replace(/\s+/g, ' ');
+};
+
 export const buildClinicalDocumentPdfFileName = (record: ClinicalDocumentRecord): string =>
-  `${record.title.replace(/\s+/g, '_')}_${record.patientRut.replace(/[.-]/g, '')}_${record.episodeKey}.pdf`;
+  `${resolveClinicalDocumentPdfDate(record)} - ${resolveClinicalDocumentPdfPatientName(record)}.pdf`;
 
 export const buildClinicalDocumentWorkspaceNotifyPort = (
   success: (title: string, message?: string) => void,

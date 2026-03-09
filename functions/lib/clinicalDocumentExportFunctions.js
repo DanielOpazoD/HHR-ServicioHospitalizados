@@ -1,18 +1,25 @@
 const functions = require('firebase-functions/v1');
 const { google } = require('googleapis');
+const { Readable } = require('stream');
 const { HOSPITAL_ID } = require('./runtime/runtimeConfig');
 
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive';
 const FOLDER_MIME_TYPE = 'application/vnd.google-apps.folder';
 const EXPORT_ALLOWED_ROLES = new Set(['admin', 'doctor_urgency']);
-
-const DOCUMENT_TYPE_LABELS = {
-  epicrisis: 'Epicrisis',
-  evolucion: 'Evolucion',
-  informe_medico: 'Informe Medico',
-  epicrisis_traslado: 'Epicrisis Traslado',
-  otro: 'Otro',
-};
+const SPANISH_MONTH_NAMES = [
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Septiembre',
+  'Octubre',
+  'Noviembre',
+  'Diciembre',
+];
 
 const normalizeText = value =>
   String(value || '')
@@ -69,6 +76,11 @@ const decodeBase64Payload = payload => {
     throw new functions.https.HttpsError('invalid-argument', 'Invalid contentBase64 payload.');
   }
   return buffer;
+};
+
+const buildDriveMonthFolderName = date => {
+  const monthName = SPANISH_MONTH_NAMES[date.getMonth()] || 'Mes';
+  return `${monthName} ${date.getFullYear()}`;
 };
 
 const buildDriveClient = () => {
@@ -136,13 +148,14 @@ const findFileByName = async (drive, fileName, parentId) => {
 };
 
 const upsertPdfFile = async (drive, folderId, fileName, mimeType, bodyBuffer) => {
+  const toMediaBody = () => Readable.from(bodyBuffer);
   const existing = await findFileByName(drive, fileName, folderId);
   if (existing?.id) {
     const updated = await drive.files.update({
       fileId: existing.id,
       media: {
         mimeType,
-        body: bodyBuffer,
+        body: toMediaBody(),
       },
       fields: 'id,webViewLink',
       supportsAllDrives: true,
@@ -161,7 +174,7 @@ const upsertPdfFile = async (drive, folderId, fileName, mimeType, bodyBuffer) =>
     },
     media: {
       mimeType,
-      body: bodyBuffer,
+      body: toMediaBody(),
     },
     fields: 'id,webViewLink',
     supportsAllDrives: true,
@@ -237,23 +250,12 @@ const createClinicalDocumentExportFunctions = ({
 
     const now = new Date();
     const year = now.getFullYear().toString();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const typeFolder = sanitizePathSegment(
-      DOCUMENT_TYPE_LABELS[documentType] || documentType,
-      'Documento'
-    );
-    const patientFolder = sanitizePathSegment(
-      `${patientName}_${patientRut}_${episodeKey}`,
-      'Paciente'
-    );
-
+    const monthFolderName = buildDriveMonthFolderName(now);
     const drive = buildDriveClientOverride ? buildDriveClientOverride() : buildDriveClient();
-    const typeFolderId = await getOrCreateFolder(drive, typeFolder, rootFolderId);
-    const yearFolderId = await getOrCreateFolder(drive, year, typeFolderId);
-    const monthFolderId = await getOrCreateFolder(drive, month, yearFolderId);
-    const patientFolderId = await getOrCreateFolder(drive, patientFolder, monthFolderId);
+    const yearFolderId = await getOrCreateFolder(drive, year, rootFolderId);
+    const monthFolderId = await getOrCreateFolder(drive, monthFolderName, yearFolderId);
 
-    const upload = await upsertPdfFile(drive, patientFolderId, fileName, mimeType, content);
+    const upload = await upsertPdfFile(drive, monthFolderId, fileName, mimeType, content);
     await writeAuditEntry({
       admin,
       documentId: typeof data?.documentId === 'string' ? data.documentId : null,
@@ -270,7 +272,7 @@ const createClinicalDocumentExportFunctions = ({
     return {
       fileId: upload.id,
       webViewLink: upload.webViewLink,
-      folderPath: `${typeFolder}/${year}/${month}/${patientFolder}`,
+      folderPath: `${year}/${monthFolderName}`,
       usedBackend: true,
     };
   }),
