@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowDown,
   ArrowUp,
@@ -23,6 +23,10 @@ import {
 } from 'lucide-react';
 
 import type { UserRole } from '@/types';
+import {
+  resolveClinicalDocumentIndicationSpecialty,
+  type ClinicalDocumentIndicationSpecialtyId,
+} from '@/features/clinical-documents/controllers/clinicalDocumentIndicationsController';
 import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
 import { CLINICAL_DOCUMENT_BRANDING } from '@/features/clinical-documents/domain/branding';
 import {
@@ -30,8 +34,10 @@ import {
   getClinicalDocumentPatientFieldLabel,
 } from '@/features/clinical-documents/controllers/clinicalDocumentWorkspaceController';
 import { canSignClinicalDocument } from '@/features/clinical-documents/controllers/clinicalDocumentPermissionController';
+import { ClinicalDocumentIndicationsPanel } from '@/features/clinical-documents/components/ClinicalDocumentIndicationsPanel';
 import { InlineEditableTitle } from '@/features/clinical-documents/components/InlineEditableTitle';
 import { ClinicalDocumentRichTextEditor } from '@/features/clinical-documents/components/ClinicalDocumentRichTextEditor';
+import type { ClinicalDocumentIndicationsCatalog } from '@/features/clinical-documents/services/clinicalDocumentIndicationsCatalogService';
 
 interface ClinicalDocumentSheetProps {
   selectedDocument: ClinicalDocumentRecord | null;
@@ -57,6 +63,7 @@ interface ClinicalDocumentSheetProps {
   setPatientFieldVisibility: (fieldId: string, visible: boolean) => void;
   patchSectionTitle: (sectionId: string, title: string) => void;
   patchSection: (sectionId: string, content: string) => void;
+  appendSectionText: (sectionId: string, text: string) => void;
   setSectionVisibility: (sectionId: string, visible: boolean) => void;
   moveSection: (sectionId: string, direction: 'up' | 'down') => void;
   reorderSection: (sourceSectionId: string, targetSectionId: string) => void;
@@ -64,6 +71,22 @@ interface ClinicalDocumentSheetProps {
   patchDocumentMeta: (
     patch: Partial<Pick<ClinicalDocumentRecord, 'medico' | 'especialidad'>>
   ) => void;
+  indicationsCatalog: ClinicalDocumentIndicationsCatalog;
+  isSavingCustomIndication: boolean;
+  customIndicationError: string | null;
+  addCustomIndication: (
+    specialtyId: ClinicalDocumentIndicationSpecialtyId,
+    text: string
+  ) => Promise<boolean>;
+  updateIndication: (
+    specialtyId: ClinicalDocumentIndicationSpecialtyId,
+    itemId: string,
+    text: string
+  ) => Promise<boolean>;
+  deleteIndication: (
+    specialtyId: ClinicalDocumentIndicationSpecialtyId,
+    itemId: string
+  ) => Promise<boolean>;
 }
 
 export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
@@ -90,16 +113,26 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
   setPatientFieldVisibility,
   patchSectionTitle,
   patchSection,
+  appendSectionText,
   setSectionVisibility,
   moveSection,
   reorderSection,
   patchFooterLabel,
   patchDocumentMeta,
+  indicationsCatalog,
+  isSavingCustomIndication,
+  customIndicationError,
+  addCustomIndication,
+  updateIndication,
+  deleteIndication,
 }) => {
   const [activeTitleTarget, setActiveTitleTarget] = useState<string | null>(null);
   const [isFormattingOpen, setIsFormattingOpen] = useState(false);
   const [draggedSectionId, setDraggedSectionId] = useState<string | null>(null);
   const [dragOverSectionId, setDragOverSectionId] = useState<string | null>(null);
+  const [isIndicationsPanelOpen, setIsIndicationsPanelOpen] = useState(false);
+  const [activeIndicationsSpecialtyId, setActiveIndicationsSpecialtyId] =
+    useState<ClinicalDocumentIndicationSpecialtyId>('cirugia_tmt');
   const [activeEditorSectionId, setActiveEditorSectionId] = useState<string | null>(null);
   const [activeEditorHistoryState, setActiveEditorHistoryState] = useState({
     canUndo: false,
@@ -181,6 +214,18 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
     },
     [clearActiveEditor]
   );
+
+  useEffect(() => {
+    if (!selectedDocument) {
+      setIsIndicationsPanelOpen(false);
+      return;
+    }
+
+    setActiveIndicationsSpecialtyId(
+      resolveClinicalDocumentIndicationSpecialty(selectedDocument.especialidad)
+    );
+    setIsIndicationsPanelOpen(false);
+  }, [selectedDocument?.especialidad, selectedDocument?.id]);
 
   if (!selectedDocument) {
     return (
@@ -484,7 +529,7 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
               key={section.id}
               className={`block clinical-document-section-block${
                 dragOverSectionId === section.id ? ' is-drag-over' : ''
-              }`}
+              }${activeTitleTarget === `section:${section.id}` ? ' is-title-active' : ''}`}
               onDragOver={event => {
                 if (!canEdit || selectedDocument.isLocked || !draggedSectionId) return;
                 event.preventDefault();
@@ -528,67 +573,89 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
                   <GripVertical size={14} />
                 </button>
               )}
-              <span className="clinical-document-field-label-row">
-                <InlineEditableTitle
-                  value={section.title}
-                  onChange={title => patchSectionTitle(section.id, title)}
-                  onActivate={() => setActiveTitleTarget(`section:${section.id}`)}
-                  onDeactivate={() =>
-                    setActiveTitleTarget(current =>
-                      current === `section:${section.id}` ? null : current
-                    )
-                  }
-                  disabled={!canEdit || selectedDocument.isLocked}
-                  className="clinical-document-section-title"
-                />
-                {canEdit &&
-                  !selectedDocument.isLocked &&
-                  activeTitleTarget === `section:${section.id}` && (
-                    <>
-                      <button
-                        type="button"
-                        className="clinical-document-inline-action"
-                        onMouseDown={event => event.preventDefault()}
-                        onClick={() => moveSection(section.id, 'up')}
-                        aria-label={`Subir sección ${section.title}`}
-                        title="Subir sección"
-                        disabled={visibleSections[0]?.id === section.id}
-                      >
-                        <ArrowUp size={12} />
-                      </button>
-                      <button
-                        type="button"
-                        className="clinical-document-inline-action"
-                        onMouseDown={event => event.preventDefault()}
-                        onClick={() => moveSection(section.id, 'down')}
-                        aria-label={`Bajar sección ${section.title}`}
-                        title="Bajar sección"
-                        disabled={visibleSections[visibleSections.length - 1]?.id === section.id}
-                      >
-                        <ArrowDown size={12} />
-                      </button>
-                      <button
-                        type="button"
-                        className="clinical-document-inline-action clinical-document-inline-action--danger"
-                        onMouseDown={event => event.preventDefault()}
-                        onClick={() => setSectionVisibility(section.id, false)}
-                        aria-label={`Eliminar sección ${section.title}`}
-                        title="Eliminar sección"
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    </>
-                  )}
-              </span>
-              <ClinicalDocumentRichTextEditor
-                sectionId={section.id}
-                sectionTitle={section.title}
-                value={section.content}
-                onChange={content => patchSection(section.id, content)}
-                onActivate={handleEditorActivate}
-                onDeactivate={handleEditorDeactivate}
-                disabled={!canEdit || selectedDocument.isLocked}
-              />
+              <div className="clinical-document-section-layout">
+                <div className="clinical-document-section-main">
+                  <div className="clinical-document-field-label-row clinical-document-section-header-row">
+                    <InlineEditableTitle
+                      value={section.title}
+                      onChange={title => patchSectionTitle(section.id, title)}
+                      onActivate={() => setActiveTitleTarget(`section:${section.id}`)}
+                      onDeactivate={() =>
+                        setActiveTitleTarget(current =>
+                          current === `section:${section.id}` ? null : current
+                        )
+                      }
+                      disabled={!canEdit || selectedDocument.isLocked}
+                      className="clinical-document-section-title"
+                    />
+                    {selectedDocument.documentType === 'epicrisis' && section.id === 'plan' && (
+                      <ClinicalDocumentIndicationsPanel
+                        isOpen={isIndicationsPanelOpen}
+                        canEdit={canEdit && !selectedDocument.isLocked}
+                        activeSpecialtyId={activeIndicationsSpecialtyId}
+                        catalog={indicationsCatalog}
+                        isSavingCustomIndication={isSavingCustomIndication}
+                        customIndicationError={customIndicationError}
+                        onToggle={() => setIsIndicationsPanelOpen(current => !current)}
+                        onSelectSpecialty={setActiveIndicationsSpecialtyId}
+                        onInsertIndication={text => appendSectionText(section.id, text)}
+                        onAddCustomIndication={addCustomIndication}
+                        onUpdateIndication={updateIndication}
+                        onDeleteIndication={deleteIndication}
+                      />
+                    )}
+                    {canEdit &&
+                      !selectedDocument.isLocked &&
+                      activeTitleTarget === `section:${section.id}` && (
+                        <>
+                          <button
+                            type="button"
+                            className="clinical-document-inline-action"
+                            onMouseDown={event => event.preventDefault()}
+                            onClick={() => moveSection(section.id, 'up')}
+                            aria-label={`Subir sección ${section.title}`}
+                            title="Subir sección"
+                            disabled={visibleSections[0]?.id === section.id}
+                          >
+                            <ArrowUp size={12} />
+                          </button>
+                          <button
+                            type="button"
+                            className="clinical-document-inline-action"
+                            onMouseDown={event => event.preventDefault()}
+                            onClick={() => moveSection(section.id, 'down')}
+                            aria-label={`Bajar sección ${section.title}`}
+                            title="Bajar sección"
+                            disabled={
+                              visibleSections[visibleSections.length - 1]?.id === section.id
+                            }
+                          >
+                            <ArrowDown size={12} />
+                          </button>
+                          <button
+                            type="button"
+                            className="clinical-document-inline-action clinical-document-inline-action--danger"
+                            onMouseDown={event => event.preventDefault()}
+                            onClick={() => setSectionVisibility(section.id, false)}
+                            aria-label={`Eliminar sección ${section.title}`}
+                            title="Eliminar sección"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </>
+                      )}
+                  </div>
+                  <ClinicalDocumentRichTextEditor
+                    sectionId={section.id}
+                    sectionTitle={section.title}
+                    value={section.content}
+                    onChange={content => patchSection(section.id, content)}
+                    onActivate={handleEditorActivate}
+                    onDeactivate={handleEditorDeactivate}
+                    disabled={!canEdit || selectedDocument.isLocked}
+                  />
+                </div>
+              </div>
             </div>
           ))}
         </div>

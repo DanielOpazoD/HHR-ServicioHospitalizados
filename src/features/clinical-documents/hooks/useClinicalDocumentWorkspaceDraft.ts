@@ -6,6 +6,7 @@ import {
   hydrateLegacyClinicalDocument,
   serializeClinicalDocument,
 } from '@/features/clinical-documents/controllers/clinicalDocumentWorkspaceController';
+import { appendClinicalDocumentIndicationText } from '@/features/clinical-documents/controllers/clinicalDocumentIndicationsController';
 import { normalizeClinicalDocumentContentForStorage } from '@/features/clinical-documents/controllers/clinicalDocumentRichTextController';
 import { executePersistClinicalDocumentDraft } from '@/application/clinical-documents/clinicalDocumentUseCases';
 import {
@@ -42,6 +43,7 @@ export interface ClinicalDocumentWorkspaceDraftState {
   patchPatientFieldLabel: (fieldId: string, label: string) => void;
   setPatientFieldVisibility: (fieldId: string, visible: boolean) => void;
   patchSection: (sectionId: string, content: string) => void;
+  appendSectionText: (sectionId: string, text: string) => void;
   patchSectionTitle: (sectionId: string, title: string) => void;
   setSectionVisibility: (sectionId: string, visible: boolean) => void;
   moveSection: (sectionId: string, direction: 'up' | 'down') => void;
@@ -303,6 +305,24 @@ export const useClinicalDocumentWorkspaceDraft = ({
     );
   };
 
+  const appendSectionText = (sectionId: string, text: string) => {
+    setDraft(prev =>
+      prev
+        ? {
+            ...prev,
+            sections: prev.sections.map(section =>
+              section.id === sectionId
+                ? {
+                    ...section,
+                    content: appendClinicalDocumentIndicationText(section.content, text),
+                  }
+                : section
+            ),
+          }
+        : prev
+    );
+  };
+
   const patchPatientFieldLabel = (fieldId: string, label: string) => {
     setDraft(prev =>
       prev
@@ -477,6 +497,7 @@ export const useClinicalDocumentWorkspaceDraft = ({
     patchPatientFieldLabel,
     setPatientFieldVisibility,
     patchSection,
+    appendSectionText,
     patchSectionTitle,
     setSectionVisibility,
     moveSection,

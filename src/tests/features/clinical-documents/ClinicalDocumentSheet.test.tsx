@@ -1,8 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { ClinicalDocumentSheet } from '@/features/clinical-documents/components/ClinicalDocumentSheet';
 import { createClinicalDocumentDraft } from '@/features/clinical-documents/domain/factories';
+import { getDefaultClinicalDocumentIndicationsCatalog } from '@/features/clinical-documents/services/clinicalDocumentIndicationsCatalogService';
 
 const buildDocument = () =>
   createClinicalDocumentDraft({
@@ -21,7 +22,7 @@ const buildDocument = () =>
       admissionDate: '2026-03-06',
       sourceDailyRecordDate: '2026-03-06',
       sourceBedId: 'R1',
-      specialty: 'Medicina',
+      specialty: 'Cirugía',
     },
     patientFieldValues: {
       nombre: 'Paciente Test',
@@ -33,7 +34,7 @@ const buildDocument = () =>
       hinf: '10:30',
     },
     medico: 'Doctor Test',
-    especialidad: 'Medicina',
+    especialidad: 'Cirugía',
   });
 
 const defaultHandlers = {
@@ -51,14 +52,26 @@ const defaultHandlers = {
   setPatientFieldVisibility: vi.fn(),
   patchSectionTitle: vi.fn(),
   patchSection: vi.fn(),
+  appendSectionText: vi.fn(),
   setSectionVisibility: vi.fn(),
   moveSection: vi.fn(),
   reorderSection: vi.fn(),
   patchFooterLabel: vi.fn(),
   patchDocumentMeta: vi.fn(),
+  addCustomIndication: vi.fn(async () => true),
+  updateIndication: vi.fn(async () => true),
+  deleteIndication: vi.fn(async () => true),
 };
 
 describe('ClinicalDocumentSheet', () => {
+  beforeEach(() => {
+    Object.values(defaultHandlers).forEach(handler => {
+      if (typeof handler === 'function' && 'mockClear' in handler) {
+        handler.mockClear();
+      }
+    });
+  });
+
   it('shows empty state when there is no selected document', () => {
     render(
       <ClinicalDocumentSheet
@@ -70,6 +83,9 @@ describe('ClinicalDocumentSheet', () => {
         isSaving={false}
         isUploadingPdf={false}
         validationIssues={[]}
+        indicationsCatalog={getDefaultClinicalDocumentIndicationsCatalog()}
+        isSavingCustomIndication={false}
+        customIndicationError={null}
         {...defaultHandlers}
       />
     );
@@ -96,6 +112,9 @@ describe('ClinicalDocumentSheet', () => {
         isSaving={false}
         isUploadingPdf={false}
         validationIssues={[{ message: 'Falta completar diagnóstico.' }]}
+        indicationsCatalog={getDefaultClinicalDocumentIndicationsCatalog()}
+        isSavingCustomIndication={false}
+        customIndicationError={null}
         {...defaultHandlers}
       />
     );
@@ -125,6 +144,10 @@ describe('ClinicalDocumentSheet', () => {
     expect(screen.getByRole('button', { name: /deshacer/i })).toBeDisabled();
     expect(screen.getByRole('button', { name: /rehacer/i })).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: /negrita/i }));
+    fireEvent.click(
+      screen.getByRole('button', { name: /abrir panel de indicaciones predeterminadas/i })
+    );
+    fireEvent.click(screen.getByRole('button', { name: /^Reposo Absoluto$/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Antecedentes' }));
     fireEvent.click(screen.getByRole('button', { name: /bajar sección antecedentes/i }));
     const dataTransfer = {
@@ -147,6 +170,7 @@ describe('ClinicalDocumentSheet', () => {
     expect(defaultHandlers.onSave).toHaveBeenCalled();
     expect(defaultHandlers.onPrint).toHaveBeenCalled();
     expect(defaultHandlers.onDiscardLocalDraftChanges).toHaveBeenCalled();
+    expect(defaultHandlers.appendSectionText).toHaveBeenCalledWith('plan', 'Reposo Absoluto');
     expect(defaultHandlers.moveSection).toHaveBeenCalledWith('antecedentes', 'down');
     expect(defaultHandlers.reorderSection).toHaveBeenCalledWith(
       'antecedentes',
@@ -175,11 +199,97 @@ describe('ClinicalDocumentSheet', () => {
         isSaving={false}
         isUploadingPdf={false}
         validationIssues={[]}
+        indicationsCatalog={getDefaultClinicalDocumentIndicationsCatalog()}
+        isSavingCustomIndication={false}
+        customIndicationError={null}
         {...defaultHandlers}
       />
     );
 
     expect(screen.getByRole('button', { name: /guardado en drive/i })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /abrir drive/i })).not.toBeInTheDocument();
+  });
+
+  it('allows adding a custom indication to the active specialty', async () => {
+    const document = buildDocument();
+
+    render(
+      <ClinicalDocumentSheet
+        selectedDocument={document}
+        hasPendingRemoteUpdate={false}
+        canEdit={true}
+        canUnsignSelectedDocument={false}
+        role="doctor_urgency"
+        isSaving={false}
+        isUploadingPdf={false}
+        validationIssues={[]}
+        indicationsCatalog={getDefaultClinicalDocumentIndicationsCatalog()}
+        isSavingCustomIndication={false}
+        customIndicationError={null}
+        {...defaultHandlers}
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /abrir panel de indicaciones predeterminadas/i })
+    );
+    fireEvent.change(screen.getByLabelText(/agregar propia/i), {
+      target: { value: 'Curación diaria de herida' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /agregar\+/i }));
+
+    await waitFor(() => {
+      expect(defaultHandlers.addCustomIndication).toHaveBeenCalledWith(
+        'cirugia_tmt',
+        'Curación diaria de herida'
+      );
+    });
+  });
+
+  it('allows editing and deleting previous indications', async () => {
+    const document = buildDocument();
+
+    render(
+      <ClinicalDocumentSheet
+        selectedDocument={document}
+        hasPendingRemoteUpdate={false}
+        canEdit={true}
+        canUnsignSelectedDocument={false}
+        role="doctor_urgency"
+        isSaving={false}
+        isUploadingPdf={false}
+        validationIssues={[]}
+        indicationsCatalog={getDefaultClinicalDocumentIndicationsCatalog()}
+        isSavingCustomIndication={false}
+        customIndicationError={null}
+        {...defaultHandlers}
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /abrir panel de indicaciones predeterminadas/i })
+    );
+    fireEvent.click(screen.getByRole('button', { name: /editar indicación reposo absoluto/i }));
+    fireEvent.change(screen.getByDisplayValue('Reposo Absoluto'), {
+      target: { value: 'Reposo en domicilio' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /guardar indicación reposo absoluto/i }));
+
+    await waitFor(() => {
+      expect(defaultHandlers.updateIndication).toHaveBeenCalledWith(
+        'cirugia_tmt',
+        expect.any(String),
+        'Reposo en domicilio'
+      );
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /^Eliminar indicación Reposo Relativo$/i }));
+
+    await waitFor(() => {
+      expect(defaultHandlers.deleteIndication).toHaveBeenCalledWith(
+        'cirugia_tmt',
+        expect.any(String)
+      );
+    });
   });
 });

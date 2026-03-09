@@ -14,6 +14,7 @@ import {
 import { buildClinicalDocumentWorkspaceNotifyPort } from '@/features/clinical-documents/controllers/clinicalDocumentWorkspaceController';
 import { ClinicalDocumentsSidebar } from '@/features/clinical-documents/components/ClinicalDocumentsSidebar';
 import { ClinicalDocumentSheet } from '@/features/clinical-documents/components/ClinicalDocumentSheet';
+import { useClinicalDocumentIndicationsCatalog } from '@/features/clinical-documents/hooks/useClinicalDocumentIndicationsCatalog';
 import { useClinicalDocumentWorkspaceBootstrap } from '@/features/clinical-documents/hooks/useClinicalDocumentWorkspaceBootstrap';
 import { useClinicalDocumentWorkspaceDraft } from '@/features/clinical-documents/hooks/useClinicalDocumentWorkspaceDraft';
 import { useClinicalDocumentWorkspaceDocumentActions } from '@/features/clinical-documents/hooks/useClinicalDocumentWorkspaceDocumentActions';
@@ -76,6 +77,7 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
     patchPatientFieldLabel,
     setPatientFieldVisibility,
     patchSection,
+    appendSectionText,
     patchSectionTitle,
     setSectionVisibility,
     moveSection,
@@ -97,6 +99,18 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
   const selectedDocument = draft;
   const canUnsignSelectedDocument =
     selectedDocument && user ? canUnsignClinicalDocument(role, selectedDocument) : false;
+  const {
+    indicationsCatalog,
+    isSavingCustomIndication,
+    customIndicationError,
+    addCustomIndication,
+    updateIndication,
+    deleteIndication,
+  } = useClinicalDocumentIndicationsCatalog({
+    hospitalId,
+    isActive,
+    canEdit,
+  });
 
   const { createDocument, handleDeleteDocument, handleSaveNow, handleSign, handleUnsign } =
     useClinicalDocumentWorkspaceDocumentActions({
@@ -174,11 +188,18 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
           setPatientFieldVisibility={setPatientFieldVisibility}
           patchSectionTitle={patchSectionTitle}
           patchSection={patchSection}
+          appendSectionText={appendSectionText}
           setSectionVisibility={setSectionVisibility}
           moveSection={moveSection}
           reorderSection={reorderSection}
           patchFooterLabel={patchFooterLabel}
           patchDocumentMeta={patchDocumentMeta}
+          indicationsCatalog={indicationsCatalog}
+          isSavingCustomIndication={isSavingCustomIndication}
+          customIndicationError={customIndicationError}
+          addCustomIndication={addCustomIndication}
+          updateIndication={updateIndication}
+          deleteIndication={deleteIndication}
         />
       </section>
     </div>

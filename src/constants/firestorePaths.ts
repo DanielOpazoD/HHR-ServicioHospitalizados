@@ -73,6 +73,8 @@ export const SETTINGS_DOCS = {
   TENS: 'tens',
   /** Table column configuration */
   TABLE_CONFIG: 'tableConfig',
+  /** Default discharge indications catalog for clinical documents */
+  CLINICAL_DOCUMENT_INDICATIONS: 'clinicalDocumentIndications',
 } as const;
 
 // ============================================================================
