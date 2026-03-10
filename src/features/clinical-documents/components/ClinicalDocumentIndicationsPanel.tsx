@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, ListPlus, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { Check, Pencil, Plus, Trash2, X } from 'lucide-react';
 
 import type { ClinicalDocumentIndicationSpecialtyId } from '@/features/clinical-documents/controllers/clinicalDocumentIndicationsController';
 import type {
@@ -262,7 +262,7 @@ export const ClinicalDocumentIndicationsPanel: React.FC<ClinicalDocumentIndicati
     <>
       <button
         type="button"
-        className={`clinical-document-inline-action clinical-document-inline-action--panel-toggle${
+        className={`clinical-document-inline-action clinical-document-inline-action--panel-toggle clinical-document-inline-action--panel-emoji${
           isOpen ? ' is-open' : ''
         }`}
         onMouseDown={event => event.preventDefault()}
@@ -274,7 +274,7 @@ export const ClinicalDocumentIndicationsPanel: React.FC<ClinicalDocumentIndicati
         }
         title="Indicaciones predeterminadas"
       >
-        <ListPlus size={14} />
+        <span aria-hidden="true">📋</span>
       </button>
 
       {panel && typeof document !== 'undefined' ? createPortal(panel, document.body) : panel}

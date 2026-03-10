@@ -117,7 +117,7 @@
 
 .clinical-document-section-block {
   position: relative;
-  padding-right: 36px;
+  padding-right: 0;
   transition:
     background-color 120ms ease,
     outline-color 120ms ease;
@@ -137,6 +137,7 @@
 
 .clinical-document-section-header-row {
   justify-content: flex-start;
+  padding-right: 36px;
 }
 
 .clinical-document-section-drag-handle {
@@ -162,13 +163,6 @@
     background-color 120ms ease;
 }
 
-.clinical-document-section-block:hover .clinical-document-section-drag-handle,
-.clinical-document-section-block:focus-within .clinical-document-section-drag-handle,
-.clinical-document-section-block.is-drag-over .clinical-document-section-drag-handle {
-  opacity: 1;
-  pointer-events: auto;
-}
-
 .clinical-document-section-block.is-title-active .clinical-document-section-drag-handle {
   opacity: 1;
   pointer-events: auto;
@@ -187,6 +181,12 @@
   background: #eff6ff;
   border-color: #93c5fd;
   color: #1d4ed8;
+}
+
+.clinical-document-inline-action--panel-emoji {
+  margin-left: auto;
+  font-size: 16px;
+  line-height: 1;
 }
 
 .clinical-document-indications-portal-layer {
@@ -666,7 +666,7 @@
 }
 
 .clinical-document-footer {
-  margin-top: 8px;
+  margin-top: 20px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px 16px;
@@ -703,7 +703,10 @@
 .clinical-document-print-bottom-bar,
 .clinical-document-print-footer-left,
 .clinical-document-print-page-footer,
-.clinical-document-print-footer-right {
+.clinical-document-print-footer-right,
+.clinical-document-print-page-footer-clinical,
+.clinical-document-print-page-footer-meta,
+.clinical-document-print-signature-block {
   display: none;
 }
 
@@ -881,31 +884,11 @@ body.clinical-documents-print .clinical-document-indications-panel {
   body.clinical-document-inline-print-mode .clinical-document-print-bottom-bar {
   }
 
-  body.clinical-document-inline-print-mode .clinical-document-print-page {
-    display: flex;
-    flex-direction: column;
-    min-height: calc(279.4mm - 16mm);
-    break-after: page;
-    page-break-after: always;
-  }
-
-  body.clinical-document-inline-print-mode .clinical-document-print-page:last-child {
-    break-after: auto;
-    page-break-after: auto;
-  }
-
-  body.clinical-document-inline-print-mode .clinical-document-print-page-footer {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 12px;
-    margin: 4mm 8mm 0;
-    page-break-inside: avoid;
-  }
-
-  body.clinical-document-inline-print-mode .clinical-document-print-footer-left,
-  body.clinical-document-inline-print-mode .clinical-document-print-footer-right {
+  body.clinical-document-inline-print-mode .clinical-document-print-signature-block {
     display: block;
+    margin: 8mm 8mm 0;
+    page-break-inside: avoid;
+    break-inside: avoid;
     color: #334155;
     line-height: 1.2;
   }
@@ -921,13 +904,6 @@ body.clinical-documents-print .clinical-document-indications-panel {
     font-weight: 600;
   }
 
-  body.clinical-document-inline-print-mode .clinical-document-print-footer-right {
-    font-size: 10px;
-    font-weight: 600;
-    text-align: right;
-    color: #334155;
-  }
-
   body.clinical-document-inline-print-mode .clinical-document-sheet {
     width: 100%;
     max-width: none;
@@ -940,6 +916,12 @@ body.clinical-documents-print .clinical-document-indications-panel {
     background: #ffffff;
     color: #1f2937;
     overflow: visible;
+  }
+
+  body.clinical-document-inline-print-mode .clinical-document-footer {
+    margin-top: 12px;
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   body.clinical-document-inline-print-mode .clinical-document-input,

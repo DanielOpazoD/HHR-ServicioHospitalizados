@@ -589,31 +589,6 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
                       disabled={!canEdit || selectedDocument.isLocked}
                       className="clinical-document-section-title"
                     />
-                    {selectedDocument.documentType === 'epicrisis' && section.id === 'plan' && (
-                      <ClinicalDocumentIndicationsPanel
-                        isOpen={isIndicationsPanelOpen}
-                        canEdit={canEdit && !selectedDocument.isLocked}
-                        activeSpecialtyId={activeIndicationsSpecialtyId}
-                        catalog={indicationsCatalog}
-                        isSavingCustomIndication={isSavingCustomIndication}
-                        customIndicationError={customIndicationError}
-                        onToggle={() => setIsIndicationsPanelOpen(current => !current)}
-                        onSelectSpecialty={setActiveIndicationsSpecialtyId}
-                        onInsertIndication={text =>
-                          patchSection(
-                            section.id,
-                            appendClinicalDocumentPlanSubsectionText(
-                              section.content,
-                              activePlanSubsectionId,
-                              text
-                            )
-                          )
-                        }
-                        onAddCustomIndication={addCustomIndication}
-                        onUpdateIndication={updateIndication}
-                        onDeleteIndication={deleteIndication}
-                      />
-                    )}
                     {canEdit &&
                       !selectedDocument.isLocked &&
                       activeTitleTarget === `section:${section.id}` && (
@@ -654,6 +629,31 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
                           </button>
                         </>
                       )}
+                    {selectedDocument.documentType === 'epicrisis' && section.id === 'plan' && (
+                      <ClinicalDocumentIndicationsPanel
+                        isOpen={isIndicationsPanelOpen}
+                        canEdit={canEdit && !selectedDocument.isLocked}
+                        activeSpecialtyId={activeIndicationsSpecialtyId}
+                        catalog={indicationsCatalog}
+                        isSavingCustomIndication={isSavingCustomIndication}
+                        customIndicationError={customIndicationError}
+                        onToggle={() => setIsIndicationsPanelOpen(current => !current)}
+                        onSelectSpecialty={setActiveIndicationsSpecialtyId}
+                        onInsertIndication={text =>
+                          patchSection(
+                            section.id,
+                            appendClinicalDocumentPlanSubsectionText(
+                              section.content,
+                              activePlanSubsectionId,
+                              text
+                            )
+                          )
+                        }
+                        onAddCustomIndication={addCustomIndication}
+                        onUpdateIndication={updateIndication}
+                        onDeleteIndication={deleteIndication}
+                      />
+                    )}
                   </div>
                   {selectedDocument.documentType === 'epicrisis' && section.id === 'plan' ? (
                     <div className="clinical-document-plan-subsections-shell">

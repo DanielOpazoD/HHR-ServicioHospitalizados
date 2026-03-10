@@ -329,10 +329,71 @@ const createInlinePrintMeasureSheet = async (
   return measureSheet;
 };
 
+const measurePrintableSheetBlockHeights = async (
+  sheetClone: HTMLElement,
+  blocks: PrintableSheetBlock[]
+): Promise<number[]> => {
+  if (typeof document === 'undefined') {
+    return blocks.map(block => block.element.scrollHeight || 0);
+  }
+
+  const existingMeasureRoot = document.getElementById(CLINICAL_DOCUMENT_INLINE_PRINT_MEASURE_ID);
+  if (existingMeasureRoot) {
+    existingMeasureRoot.remove();
+  }
+
+  const measureRoot = document.createElement('div');
+  measureRoot.id = CLINICAL_DOCUMENT_INLINE_PRINT_MEASURE_ID;
+  measureRoot.style.position = 'fixed';
+  measureRoot.style.left = '-99999px';
+  measureRoot.style.top = '0';
+  measureRoot.style.width = `${(215.9 - PRINT_MARGIN_MM * 2) * MM_TO_PX}px`;
+  measureRoot.style.visibility = 'hidden';
+  measureRoot.style.pointerEvents = 'none';
+  measureRoot.style.zIndex = '-1';
+  document.body.appendChild(measureRoot);
+
+  const heights: number[] = [];
+  for (const block of blocks) {
+    const measureSheet = sheetClone.cloneNode(false) as HTMLElement;
+    measureSheet.innerHTML = '';
+    measureSheet.style.maxWidth = 'none';
+    measureSheet.style.width = '100%';
+    measureSheet.style.border = 'none';
+    measureSheet.style.borderRadius = '0';
+    measureSheet.style.boxShadow = 'none';
+    measureSheet.style.padding = '8mm 8mm 12mm';
+
+    if (block.kind === 'section') {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'space-y-3';
+      wrapper.appendChild(block.element.cloneNode(true));
+      measureSheet.appendChild(wrapper);
+    } else {
+      measureSheet.appendChild(block.element.cloneNode(true));
+    }
+
+    measureRoot.appendChild(measureSheet);
+    await waitForSheetAssets(measureSheet, document, window);
+    heights.push(measureSheet.scrollHeight);
+    measureSheet.remove();
+  }
+
+  measureRoot.remove();
+  return heights;
+};
+
 interface PrintableSheetBlock {
-  kind: 'single' | 'section';
+  kind: 'single' | 'section' | 'document_footer';
   element: HTMLElement;
   groupId?: string;
+}
+
+interface PaginatedPrintPage {
+  sheetHtml: string;
+  pageNumber: number;
+  totalPages: number;
+  isLastPage: boolean;
 }
 
 const explodePrintableSectionBlock = (
@@ -402,6 +463,14 @@ const extractPrintableSheetBlocks = (sheet: HTMLElement): PrintableSheetBlock[] 
       return;
     }
 
+    if (child.classList.contains('clinical-document-footer')) {
+      blocks.push({
+        kind: 'single',
+        element: child.cloneNode(true) as HTMLElement,
+      });
+      return;
+    }
+
     blocks.push({
       kind: 'single',
       element: child.cloneNode(true) as HTMLElement,
@@ -411,12 +480,7 @@ const extractPrintableSheetBlocks = (sheet: HTMLElement): PrintableSheetBlock[] 
   return blocks;
 };
 
-const paginateInlinePrintSheet = async (
-  sheetClone: HTMLElement
-): Promise<
-  Array<{ sheetHtml: string; pageNumber: number; totalPages: number; isLastPage: boolean }>
-> => {
-  const measureSheet = await createInlinePrintMeasureSheet(sheetClone);
+const paginateInlinePrintSheet = async (sheetClone: HTMLElement): Promise<PaginatedPrintPage[]> => {
   const sourceBlocks = extractPrintableSheetBlocks(sheetClone);
   const fallbackPage = [
     {
@@ -427,21 +491,11 @@ const paginateInlinePrintSheet = async (
     },
   ];
 
-  if (!(measureSheet instanceof HTMLElement) || sourceBlocks.length === 0) {
-    document.getElementById(CLINICAL_DOCUMENT_INLINE_PRINT_MEASURE_ID)?.remove();
+  if (sourceBlocks.length === 0) {
     return fallbackPage;
   }
 
-  const measuredBlocks = extractPrintableSheetBlocks(measureSheet).map(block => block.element);
-
-  const heights = measuredBlocks.map((child, index) => {
-    const currentTop = child instanceof HTMLElement ? child.offsetTop : 0;
-    const nextTop =
-      index < measuredBlocks.length - 1 && measuredBlocks[index + 1] instanceof HTMLElement
-        ? (measuredBlocks[index + 1] as HTMLElement).offsetTop
-        : measureSheet.scrollHeight;
-    return Math.max(0, nextTop - currentTop);
-  });
+  const heights = await measurePrintableSheetBlockHeights(sheetClone, sourceBlocks);
 
   const usableContentHeightPx = Math.max(1, PRINT_USABLE_HEIGHT_PX - PRINT_FOOTER_RESERVE_PX);
   const pages: PrintableSheetBlock[][] = [];
@@ -468,8 +522,6 @@ const paginateInlinePrintSheet = async (
   if (currentPage.length > 0) {
     pages.push(currentPage);
   }
-
-  document.getElementById(CLINICAL_DOCUMENT_INLINE_PRINT_MEASURE_ID)?.remove();
 
   if (pages.length === 0) {
     return fallbackPage;
@@ -707,28 +759,15 @@ export const openClinicalDocumentBrowserPrintPreview = async (
   const sheetClone = sheet.cloneNode(true) as HTMLElement;
   await sanitizeSheetClone(sheet, sheetClone);
 
-  const paginatedSheets = await paginateInlinePrintSheet(sheetClone);
   const printRoot = document.createElement('div');
   printRoot.id = CLINICAL_DOCUMENT_INLINE_PRINT_ROOT_ID;
-  printRoot.innerHTML = paginatedSheets
-    .map(
-      page => `
-        <div class="clinical-document-print-page">
-          ${page.sheetHtml}
-          <div class="clinical-document-print-page-footer" aria-hidden="true">
-            <div class="clinical-document-print-footer-left">
-              ${
-                page.isLastPage
-                  ? '<div class="clinical-document-patient-signature-line"></div><div class="clinical-document-patient-signature-label">Firma paciente/familiar responsable</div>'
-                  : ''
-              }
-            </div>
-            <div class="clinical-document-print-footer-right">${page.pageNumber}/${page.totalPages}</div>
-          </div>
-        </div>
-      `
-    )
-    .join('');
+  printRoot.innerHTML = [
+    sheetClone.outerHTML,
+    '<div class="clinical-document-print-signature-block" aria-hidden="true">',
+    '  <div class="clinical-document-patient-signature-line"></div>',
+    '  <div class="clinical-document-patient-signature-label">Firma paciente/familiar responsable</div>',
+    '</div>',
+  ].join('');
 
   const printStyle = document.createElement('style');
   printStyle.id = CLINICAL_DOCUMENT_INLINE_PRINT_STYLE_ID;
