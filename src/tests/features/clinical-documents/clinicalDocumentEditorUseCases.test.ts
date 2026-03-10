@@ -90,6 +90,24 @@ describe('clinicalDocumentEditorUseCases', () => {
     expect(resolution.kind).toBe('load');
   });
 
+  it('preserves the current draft when the selected remote document disappears transiently', () => {
+    const current = buildRecord();
+
+    const resolution = resolveClinicalDocumentDraftLoad({
+      documents: [],
+      selectedDocumentId: current.id,
+      currentDraft: current,
+      baseState: {
+        document: current,
+        snapshot: JSON.stringify(current),
+        updatedAt: current.audit.updatedAt,
+      },
+      hasLocalDraftChanges: true,
+    });
+
+    expect(resolution.kind).toBe('preserve');
+  });
+
   it('delegates browser print opening through the print use case', async () => {
     const record = buildRecord();
 

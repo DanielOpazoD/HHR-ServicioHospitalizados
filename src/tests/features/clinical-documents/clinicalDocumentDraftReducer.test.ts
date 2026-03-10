@@ -152,4 +152,31 @@ describe('clinicalDocumentDraftReducer', () => {
     expect(committed.baseState.updatedAt).toBe('2026-03-06T12:30:00.000Z');
     expect(committed.isSaving).toBe(false);
   });
+
+  it('marks autosave as clean without replacing the visible draft', () => {
+    const document = buildDocument();
+    const loaded = clinicalDocumentDraftReducer(createClinicalDocumentDraftReducerInitialState(), {
+      type: 'LOAD_DOCUMENT',
+      document,
+      snapshot: JSON.stringify(document),
+    });
+
+    const autosaved = {
+      ...document,
+      audit: {
+        ...document.audit,
+        updatedAt: '2026-03-06T12:45:00.000Z',
+      },
+    };
+
+    const committed = clinicalDocumentDraftReducer(loaded, {
+      type: 'AUTOSAVE_MARK_CLEAN',
+      document: autosaved,
+      snapshot: JSON.stringify(autosaved),
+    });
+
+    expect(committed.draft).toEqual(document);
+    expect(committed.baseState.updatedAt).toBe('2026-03-06T12:45:00.000Z');
+    expect(committed.isSaving).toBe(false);
+  });
 });

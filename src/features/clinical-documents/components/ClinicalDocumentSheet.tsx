@@ -165,7 +165,6 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
           onSetActivePlanSubsectionId={sheetState.setActivePlanSubsectionId}
           onSetActiveIndicationsSpecialtyId={sheetState.setActiveIndicationsSpecialtyId}
           onToggleIndicationsPanel={() => sheetState.setIsIndicationsPanelOpen(prev => !prev)}
-          onInsertIntoActiveEditor={sheetState.insertIntoActiveEditor}
           onAddCustomIndication={addCustomIndication}
           onUpdateIndication={updateIndication}
           onDeleteIndication={deleteIndication}

@@ -63,8 +63,6 @@ export const ClinicalDocumentFormattingToolbar: React.FC<
   ClinicalDocumentFormattingToolbarProps
 > = ({
   selectedDocument,
-  hasPendingRemoteUpdate,
-  hasLocalDraftChanges,
   canEdit,
   canUnsignSelectedDocument,
   role,
@@ -73,8 +71,6 @@ export const ClinicalDocumentFormattingToolbar: React.FC<
   formattingDisabled,
   isFormattingOpen,
   activeEditorHistoryState,
-  onApplyPendingRemoteUpdate,
-  onDiscardLocalDraftChanges,
   onSign,
   onUnsign,
   onPrint,
@@ -87,27 +83,7 @@ export const ClinicalDocumentFormattingToolbar: React.FC<
 
   return (
     <div className="flex flex-wrap items-center justify-end gap-3 rounded-2xl bg-white border border-slate-200 px-4 py-3">
-      {hasPendingRemoteUpdate && (
-        <div className="mr-auto flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={onApplyPendingRemoteUpdate}
-            className="rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50"
-          >
-            Recargar remoto
-          </button>
-          {hasLocalDraftChanges && (
-            <button
-              type="button"
-              onClick={onDiscardLocalDraftChanges}
-              className="rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50"
-            >
-              Descartar local
-            </button>
-          )}
-        </div>
-      )}
-      <div className="relative flex flex-wrap gap-2">
+      <div className="relative flex flex-wrap gap-2 shrink-0">
         <button
           type="button"
           onClick={onSign}
@@ -204,11 +180,14 @@ export const ClinicalDocumentFormattingToolbar: React.FC<
           </div>
         )}
       </div>
-      {isSaving && (
-        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-          Guardando...
-        </span>
-      )}
+      <span
+        className={`min-w-[92px] text-right text-[11px] font-bold uppercase tracking-wider ${
+          isSaving ? 'text-slate-400' : 'text-transparent select-none'
+        }`}
+        aria-live="polite"
+      >
+        Guardando...
+      </span>
     </div>
   );
 };

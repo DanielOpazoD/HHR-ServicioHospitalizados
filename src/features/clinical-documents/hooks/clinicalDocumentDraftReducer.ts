@@ -48,6 +48,7 @@ export type ClinicalDocumentDraftAction =
     }
   | { type: 'RESET_DOCUMENT_CONTENT' }
   | { type: 'AUTOSAVE_REQUESTED' }
+  | { type: 'AUTOSAVE_MARK_CLEAN'; document: ClinicalDocumentRecord; snapshot: string }
   | { type: 'AUTOSAVE_COMMIT_BASE'; document: ClinicalDocumentRecord; snapshot: string }
   | { type: 'AUTOSAVE_SUCCEEDED'; document: ClinicalDocumentRecord; snapshot: string }
   | { type: 'AUTOSAVE_FAILED' }
@@ -248,6 +249,18 @@ export const clinicalDocumentDraftReducer = (
       return {
         ...state,
         isSaving: true,
+      };
+    case 'AUTOSAVE_MARK_CLEAN':
+      return {
+        ...state,
+        isSaving: false,
+        hasPendingRemoteUpdate:
+          state.pendingRemoteState.snapshot !== action.snapshot && state.hasPendingRemoteUpdate,
+        baseState: buildClinicalDocumentDraftBaseState(action.document, action.snapshot),
+        pendingRemoteState:
+          state.pendingRemoteState.snapshot === action.snapshot
+            ? emptyBaseState()
+            : state.pendingRemoteState,
       };
     case 'AUTOSAVE_COMMIT_BASE':
       return {

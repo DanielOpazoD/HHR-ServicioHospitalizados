@@ -38,7 +38,6 @@ interface ClinicalDocumentSectionListProps {
   onSetActivePlanSubsectionId: (subsectionId: ClinicalDocumentPlanSubsectionId) => void;
   onSetActiveIndicationsSpecialtyId: (specialtyId: ClinicalDocumentIndicationSpecialtyId) => void;
   onToggleIndicationsPanel: () => void;
-  onInsertIntoActiveEditor: (text: string) => boolean;
   onAddCustomIndication: ClinicalDocumentSheetProps['addCustomIndication'];
   onUpdateIndication: ClinicalDocumentSheetProps['updateIndication'];
   onDeleteIndication: ClinicalDocumentSheetProps['deleteIndication'];
@@ -75,7 +74,6 @@ export const ClinicalDocumentSectionList: React.FC<ClinicalDocumentSectionListPr
   onSetActivePlanSubsectionId,
   onSetActiveIndicationsSpecialtyId,
   onToggleIndicationsPanel,
-  onInsertIntoActiveEditor,
   onAddCustomIndication,
   onUpdateIndication,
   onDeleteIndication,
@@ -143,11 +141,7 @@ export const ClinicalDocumentSectionList: React.FC<ClinicalDocumentSectionListPr
                     customIndicationError={customIndicationError}
                     onToggle={onToggleIndicationsPanel}
                     onSelectSpecialty={onSetActiveIndicationsSpecialtyId}
-                    onInsertIndication={text => {
-                      if (onInsertIntoActiveEditor(text)) {
-                        return;
-                      }
-
+                    onInsertIndication={text =>
                       onPatchSection(
                         section.id,
                         appendClinicalDocumentPlanSubsectionText(
@@ -155,8 +149,8 @@ export const ClinicalDocumentSectionList: React.FC<ClinicalDocumentSectionListPr
                           activePlanSubsectionId,
                           text
                         )
-                      );
-                    }}
+                      )
+                    }
                     onAddCustomIndication={onAddCustomIndication}
                     onUpdateIndication={onUpdateIndication}
                     onDeleteIndication={onDeleteIndication}

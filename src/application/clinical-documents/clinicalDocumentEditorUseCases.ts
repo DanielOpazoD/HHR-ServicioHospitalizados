@@ -11,6 +11,7 @@ import type { ApplicationOutcome } from '@/application/shared/applicationOutcome
 
 export type ClinicalDocumentDraftLoadResolution =
   | { kind: 'clear' }
+  | { kind: 'preserve' }
   | {
       kind: 'load';
       document: ClinicalDocumentRecord | null;
@@ -42,6 +43,10 @@ export const resolveClinicalDocumentDraftLoad = ({
   }
 
   const selected = documents.find(document => document.id === selectedDocumentId) || null;
+  if (!selected && currentDraft?.id === selectedDocumentId) {
+    return { kind: 'preserve' };
+  }
+
   const hydrated = selected ? hydrateLegacyClinicalDocument(structuredClone(selected)) : null;
   const snapshot = serializeClinicalDocument(hydrated);
   const isSameSelectedDocument = Boolean(currentDraft) && currentDraft?.id === selectedDocumentId;

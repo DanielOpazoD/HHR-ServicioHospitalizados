@@ -57,6 +57,7 @@ export const ClinicalDocumentRichTextEditor: React.FC<ClinicalDocumentRichTextEd
   const isActiveRef = useRef(false);
   const savedRangeRef = useRef<Range | null>(null);
   const pendingInsertBlockRef = useRef<HTMLElement | null>(null);
+  const lastLocalNormalizedValueRef = useRef('');
   const onActivateRef = useRef(onActivate);
   const onDeactivateRef = useRef(onDeactivate);
   const applyEditorCommandRef = useRef<
@@ -100,10 +101,13 @@ export const ClinicalDocumentRichTextEditor: React.FC<ClinicalDocumentRichTextEd
     const editor = editorRef.current;
     if (!editor) return;
     const currentNormalizedHtml = normalizeClinicalDocumentContentForStorage(editor.innerHTML);
-    if (currentNormalizedHtml !== normalizedValue) {
+    const isFocused = typeof document !== 'undefined' && document.activeElement === editor;
+    const isLocalEcho = normalizedValue === lastLocalNormalizedValueRef.current;
+
+    if (currentNormalizedHtml !== normalizedValue && (!isFocused || !isLocalEcho)) {
       editor.innerHTML = normalizedValue;
     }
-    if (!isApplyingHistoryRef.current) {
+    if (!isApplyingHistoryRef.current && (!isFocused || !isLocalEcho)) {
       historyRef.current = [normalizedValue];
       historyIndexRef.current = 0;
       updateHistoryState(0, historyRef.current);
@@ -233,6 +237,7 @@ export const ClinicalDocumentRichTextEditor: React.FC<ClinicalDocumentRichTextEd
         pendingInsertBlockRef.current = spacerBlock;
         saveSelectionRange();
         const nextHtml = normalizeInsertedHtml(editor.innerHTML);
+        lastLocalNormalizedValueRef.current = nextHtml;
         pushHistorySnapshot(nextHtml);
         onChange(nextHtml);
         requestAnimationFrame(() => {
@@ -283,6 +288,7 @@ export const ClinicalDocumentRichTextEditor: React.FC<ClinicalDocumentRichTextEd
 
       saveSelectionRange();
       const nextHtml = normalizeInsertedHtml(editor.innerHTML);
+      lastLocalNormalizedValueRef.current = nextHtml;
       pushHistorySnapshot(nextHtml);
       onChange(nextHtml);
       requestAnimationFrame(() => {
@@ -338,6 +344,7 @@ export const ClinicalDocumentRichTextEditor: React.FC<ClinicalDocumentRichTextEd
         isApplyingHistoryRef.current = true;
         editor.innerHTML = previous;
         updateHistoryState();
+        lastLocalNormalizedValueRef.current = previous;
         onChange(previous);
         return;
       }
@@ -349,13 +356,15 @@ export const ClinicalDocumentRichTextEditor: React.FC<ClinicalDocumentRichTextEd
         isApplyingHistoryRef.current = true;
         editor.innerHTML = next;
         updateHistoryState();
+        lastLocalNormalizedValueRef.current = next;
         onChange(next);
         return;
       }
 
       editor.focus();
       applyClinicalDocumentEditorCommand(command, value);
-      const html = editor.innerHTML;
+      const html = normalizeClinicalDocumentContentForStorage(editor.innerHTML);
+      lastLocalNormalizedValueRef.current = html;
       pushHistorySnapshot(html);
       onChange(html);
     },
@@ -370,7 +379,8 @@ export const ClinicalDocumentRichTextEditor: React.FC<ClinicalDocumentRichTextEd
     const editor = editorRef.current;
     if (!editor) return;
     pendingInsertBlockRef.current = null;
-    const html = editor.innerHTML;
+    const html = normalizeClinicalDocumentContentForStorage(editor.innerHTML);
+    lastLocalNormalizedValueRef.current = html;
     pushHistorySnapshot(html);
     onChange(html);
   }, [onChange, pushHistorySnapshot]);

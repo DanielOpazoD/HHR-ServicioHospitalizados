@@ -1,8 +1,8 @@
 import {
+  convertPlainTextToClinicalDocumentHtml,
   normalizeClinicalDocumentContentForStorage,
   sanitizeClinicalDocumentHtml,
 } from '@/features/clinical-documents/controllers/clinicalDocumentRichTextController';
-import { appendClinicalDocumentIndicationText } from '@/features/clinical-documents/controllers/clinicalDocumentIndicationsController';
 
 export type ClinicalDocumentPlanSubsectionId = 'generales' | 'farmacologicas' | 'control_clinico';
 
@@ -49,8 +49,61 @@ const isRecognizedPlanHeading = (element: HTMLElement): ClinicalDocumentPlanSubs
 };
 
 const normalizeSubsectionContent = (value: string): string => {
-  const normalized = normalizeClinicalDocumentContentForStorage(value);
+  const normalized = normalizeClinicalDocumentContentForStorage(value).replace(/(<br>\s*)+$/i, '');
   return normalized === '<br>' ? '' : normalized;
+};
+
+const appendClinicalDocumentPlanIndicationLine = (
+  currentContent: string,
+  indicationText: string
+): string => {
+  const trimmedText = indicationText.trim();
+  if (!trimmedText) {
+    return normalizeSubsectionContent(currentContent);
+  }
+
+  const normalizedCurrent = normalizeSubsectionContent(currentContent);
+  const nextLineHtml = `<div>${convertPlainTextToClinicalDocumentHtml(trimmedText)}</div>`;
+
+  if (!normalizedCurrent) {
+    return normalizeSubsectionContent(sanitizeClinicalDocumentHtml(nextLineHtml));
+  }
+
+  if (typeof document === 'undefined') {
+    return sanitizeClinicalDocumentHtml(`${normalizedCurrent}${nextLineHtml}`);
+  }
+
+  const container = document.createElement('div');
+  container.innerHTML = normalizedCurrent;
+
+  const removeTrailingEmptyNodes = () => {
+    while (container.lastChild) {
+      const lastNode = container.lastChild;
+      if (lastNode.nodeType === Node.TEXT_NODE && !(lastNode.textContent || '').trim()) {
+        container.removeChild(lastNode);
+        continue;
+      }
+
+      if (lastNode.nodeType === Node.ELEMENT_NODE) {
+        const wrapper = document.createElement('div');
+        wrapper.appendChild(lastNode.cloneNode(true));
+        const normalizedLastNode = normalizeSubsectionContent(wrapper.innerHTML);
+        if (!normalizedLastNode || normalizedLastNode === '<br>') {
+          container.removeChild(lastNode);
+          continue;
+        }
+      }
+      break;
+    }
+  };
+
+  removeTrailingEmptyNodes();
+
+  const template = document.createElement('template');
+  template.innerHTML = nextLineHtml;
+  container.appendChild(template.content.cloneNode(true));
+
+  return normalizeSubsectionContent(sanitizeClinicalDocumentHtml(container.innerHTML));
 };
 
 export const parseClinicalDocumentPlanSectionContent = (
@@ -159,7 +212,7 @@ export const appendClinicalDocumentPlanSubsectionText = (
   const parsed = parseClinicalDocumentPlanSectionContent(value);
   return buildClinicalDocumentPlanSectionContent({
     ...parsed,
-    [subsectionId]: appendClinicalDocumentIndicationText(parsed[subsectionId], text),
+    [subsectionId]: appendClinicalDocumentPlanIndicationLine(parsed[subsectionId], text),
   });
 };
 

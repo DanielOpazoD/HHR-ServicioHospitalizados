@@ -138,8 +138,8 @@ describe('ClinicalDocumentSheet', () => {
         /hay cambios remotos pendientes\. guarda o recarga el documento para sincronizar/i
       )
     ).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /recargar remoto/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /descartar local/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /recargar remoto/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /descartar local/i })).not.toBeInTheDocument();
     expect(screen.getByAltText(/logo institucional izquierdo/i)).toHaveAttribute(
       'src',
       '/images/logos/logo_HHR.png'
@@ -151,7 +151,6 @@ describe('ClinicalDocumentSheet', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /pdf/i }));
     fireEvent.click(screen.getByRole('button', { name: /reiniciar/i }));
-    fireEvent.click(screen.getByRole('button', { name: /descartar local/i }));
     fireEvent.click(screen.getByRole('button', { name: /formato/i }));
     expect(screen.getByRole('button', { name: /deshacer/i })).toBeDisabled();
     expect(screen.getByRole('button', { name: /rehacer/i })).toBeDisabled();
@@ -182,7 +181,6 @@ describe('ClinicalDocumentSheet', () => {
     fireEvent.click(screen.getByRole('button', { name: /eliminar campo nombre/i }));
     expect(defaultHandlers.onPrint).toHaveBeenCalled();
     expect(defaultHandlers.onResetDocumentContent).toHaveBeenCalled();
-    expect(defaultHandlers.onDiscardLocalDraftChanges).toHaveBeenCalled();
     expect(defaultHandlers.patchSection).toHaveBeenCalledWith(
       'plan',
       expect.stringContaining('Reposo Absoluto')

@@ -35,4 +35,12 @@ describe('clinicalDocumentPlanSectionController', () => {
     expect(parsed.farmacologicas).toContain('Ibuprofeno');
     expect(parsed.control_clinico).toBe('');
   });
+
+  it('appends consecutive indication phrases without blank spacer lines', () => {
+    const once = appendClinicalDocumentPlanSubsectionText('', 'generales', 'Reposo Absoluto');
+    const twice = appendClinicalDocumentPlanSubsectionText(once, 'generales', 'Reposo Relativo');
+    const parsed = parseClinicalDocumentPlanSectionContent(twice);
+
+    expect(parsed.generales).toBe('<div>Reposo Absoluto</div><div>Reposo Relativo</div>');
+  });
 });

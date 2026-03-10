@@ -327,7 +327,7 @@ describe('ClinicalDocumentsWorkspace', () => {
     ).toBeInTheDocument();
   });
 
-  it('marks remote updates as pending when a stale subscription arrives over a dirty draft', async () => {
+  it('keeps the current draft visible when a stale remote subscription arrives over local changes', async () => {
     let subscriptionCallback: ((docs: ClinicalDocumentRecord[]) => void) | null = null;
     vi.mocked(ClinicalDocumentRepository.subscribeByEpisode).mockImplementation(
       (_episodeKey, callback) => {
@@ -380,18 +380,12 @@ describe('ClinicalDocumentsWorkspace', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /recargar remoto/i })).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: /recargar remoto/i }));
-
-    await waitFor(() => {
       expect(screen.queryByRole('button', { name: /recargar remoto/i })).not.toBeInTheDocument();
-      expect(screen.getByText('Cambio remoto pendiente')).toBeInTheDocument();
+      expect(screen.getByText('Cambio local sin guardar')).toBeInTheDocument();
     });
   });
 
-  it('can discard local changes and rehydrate the pending remote version', async () => {
+  it('does not show remote resolution buttons after a staged remote update', async () => {
     let subscriptionCallback: ((docs: ClinicalDocumentRecord[]) => void) | null = null;
     vi.mocked(ClinicalDocumentRepository.subscribeByEpisode).mockImplementation(
       (_episodeKey, callback) => {
@@ -443,15 +437,9 @@ describe('ClinicalDocumentsWorkspace', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /recargar remoto/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /descartar local/i })).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: /descartar local/i }));
-
-    await waitFor(() => {
       expect(screen.queryByRole('button', { name: /recargar remoto/i })).not.toBeInTheDocument();
-      expect(screen.getByText('Cambio remoto definitivo')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /descartar local/i })).not.toBeInTheDocument();
+      expect(screen.getByText('Cambio local temporal')).toBeInTheDocument();
     });
   });
 });

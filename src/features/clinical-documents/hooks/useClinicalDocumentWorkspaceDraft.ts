@@ -115,6 +115,10 @@ export const useClinicalDocumentWorkspaceDraft = ({
       return;
     }
 
+    if (resolution.kind === 'preserve') {
+      return;
+    }
+
     if (resolution.kind === 'stage_remote') {
       dispatch({
         type: 'REMOTE_UPDATE_RECEIVED',
@@ -185,7 +189,7 @@ export const useClinicalDocumentWorkspaceDraft = ({
           if (currentDraftSnapshot === requestedSnapshot) {
             lastPersistedSnapshotRef.current = savedSnapshot;
             dispatch({
-              type: 'AUTOSAVE_SUCCEEDED',
+              type: 'AUTOSAVE_MARK_CLEAN',
               document: result.data,
               snapshot: savedSnapshot,
             });
