@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { Check, EllipsisVertical, FileDown, FileUp, Pencil, Plus, Trash2, X } from 'lucide-react';
 
 import type { ClinicalDocumentIndicationSpecialtyId } from '@/features/clinical-documents/controllers/clinicalDocumentIndicationsController';
 import type {
@@ -31,6 +31,7 @@ interface ClinicalDocumentIndicationsPanelProps {
     specialtyId: ClinicalDocumentIndicationSpecialtyId,
     itemId: string
   ) => Promise<boolean>;
+  onImportCatalog: (catalog: unknown) => Promise<boolean>;
 }
 
 const renderItemBadge = (item: ClinicalDocumentIndicationCatalogItem) =>
@@ -51,10 +52,13 @@ export const ClinicalDocumentIndicationsPanel: React.FC<ClinicalDocumentIndicati
   onAddCustomIndication,
   onUpdateIndication,
   onDeleteIndication,
+  onImportCatalog,
 }) => {
   const [customText, setCustomText] = useState('');
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
+  const [isTransferMenuOpen, setIsTransferMenuOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const activeSpecialty = catalog.specialties[activeSpecialtyId];
   const specialtyList = useMemo(() => Object.values(catalog.specialties), [catalog.specialties]);
 
@@ -78,6 +82,37 @@ export const ClinicalDocumentIndicationsPanel: React.FC<ClinicalDocumentIndicati
     }
   };
 
+  const handleExportCatalog = () => {
+    const blob = new Blob([JSON.stringify(catalog, null, 2)], { type: 'application/json' });
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = objectUrl;
+    link.download = 'indicaciones-predeterminadas-clinicas.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(objectUrl);
+    setIsTransferMenuOpen(false);
+  };
+
+  const handleImportFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    try {
+      const content = await file.text();
+      const parsed = JSON.parse(content);
+      await onImportCatalog(parsed);
+    } catch {
+      // The hook surfaces the error as panel feedback.
+    } finally {
+      event.target.value = '';
+      setIsTransferMenuOpen(false);
+    }
+  };
+
   const panel = isOpen ? (
     <div className="clinical-document-indications-portal-layer" aria-hidden={false}>
       <div className="clinical-document-indications-backdrop" onClick={onToggle} />
@@ -89,16 +124,58 @@ export const ClinicalDocumentIndicationsPanel: React.FC<ClinicalDocumentIndicati
             </p>
             <h3 className="clinical-document-indications-panel-title">Indicaciones</h3>
           </div>
-          <button
-            type="button"
-            className="clinical-document-inline-action"
-            onMouseDown={event => event.preventDefault()}
-            onClick={onToggle}
-            aria-label="Cerrar panel de indicaciones"
-            title="Cerrar panel"
-          >
-            <X size={12} />
-          </button>
+          <div className="clinical-document-indications-panel-header-actions">
+            <div className="clinical-document-indications-transfer-menu-wrap">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/json"
+                className="clinical-document-indications-hidden-input"
+                onChange={event => void handleImportFile(event)}
+              />
+              <button
+                type="button"
+                className="clinical-document-inline-action"
+                onMouseDown={event => event.preventDefault()}
+                onClick={() => setIsTransferMenuOpen(current => !current)}
+                aria-label="Importar o exportar catálogo"
+                title="Importar o exportar"
+              >
+                <EllipsisVertical size={12} />
+              </button>
+              {isTransferMenuOpen && (
+                <div className="clinical-document-indications-transfer-menu">
+                  <button
+                    type="button"
+                    className="clinical-document-indications-transfer-option"
+                    onClick={handleExportCatalog}
+                  >
+                    <FileDown size={12} />
+                    Exportar archivo
+                  </button>
+                  <button
+                    type="button"
+                    className="clinical-document-indications-transfer-option"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={!canEdit || isSavingCustomIndication}
+                  >
+                    <FileUp size={12} />
+                    Importar archivo
+                  </button>
+                </div>
+              )}
+            </div>
+            <button
+              type="button"
+              className="clinical-document-inline-action"
+              onMouseDown={event => event.preventDefault()}
+              onClick={onToggle}
+              aria-label="Cerrar panel de indicaciones"
+              title="Cerrar panel"
+            >
+              <X size={12} />
+            </button>
+          </div>
         </div>
 
         <div
@@ -149,6 +226,7 @@ export const ClinicalDocumentIndicationsPanel: React.FC<ClinicalDocumentIndicati
                       <button
                         type="button"
                         className="clinical-document-indications-item-insert"
+                        onMouseDown={event => event.preventDefault()}
                         onClick={() => onInsertIndication(item.text)}
                         disabled={!canEdit}
                       >

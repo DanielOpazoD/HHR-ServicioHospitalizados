@@ -46,6 +46,7 @@ const defaultHandlers = {
   onUnsign: vi.fn(),
   onPrint: vi.fn(),
   onUploadPdf: vi.fn(),
+  onResetDocumentContent: vi.fn(),
   patchDocumentTitle: vi.fn(),
   patchPatientInfoTitle: vi.fn(),
   patchPatientField: vi.fn(),
@@ -62,6 +63,7 @@ const defaultHandlers = {
   addCustomIndication: vi.fn(async () => true),
   updateIndication: vi.fn(async () => true),
   deleteIndication: vi.fn(async () => true),
+  importIndicationsCatalog: vi.fn(async () => true),
 };
 
 describe('ClinicalDocumentSheet', () => {
@@ -147,8 +149,8 @@ describe('ClinicalDocumentSheet', () => {
       '/images/logos/logo_SSMO.jpg'
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /guardar/i }));
     fireEvent.click(screen.getByRole('button', { name: /pdf/i }));
+    fireEvent.click(screen.getByRole('button', { name: /reiniciar/i }));
     fireEvent.click(screen.getByRole('button', { name: /descartar local/i }));
     fireEvent.click(screen.getByRole('button', { name: /formato/i }));
     expect(screen.getByRole('button', { name: /deshacer/i })).toBeDisabled();
@@ -157,6 +159,7 @@ describe('ClinicalDocumentSheet', () => {
     fireEvent.click(
       screen.getByRole('button', { name: /abrir panel de indicaciones predeterminadas/i })
     );
+    fireEvent.click(screen.getByRole('tab', { name: /TMT/i }));
     fireEvent.click(screen.getByRole('button', { name: /^Reposo Absoluto$/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Antecedentes' }));
     fireEvent.click(screen.getByRole('button', { name: /bajar sección antecedentes/i }));
@@ -177,8 +180,8 @@ describe('ClinicalDocumentSheet', () => {
     fireEvent.click(screen.getByRole('button', { name: /eliminar sección antecedentes/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Nombre' }));
     fireEvent.click(screen.getByRole('button', { name: /eliminar campo nombre/i }));
-    expect(defaultHandlers.onSave).toHaveBeenCalled();
     expect(defaultHandlers.onPrint).toHaveBeenCalled();
+    expect(defaultHandlers.onResetDocumentContent).toHaveBeenCalled();
     expect(defaultHandlers.onDiscardLocalDraftChanges).toHaveBeenCalled();
     expect(defaultHandlers.patchSection).toHaveBeenCalledWith(
       'plan',
@@ -221,6 +224,9 @@ describe('ClinicalDocumentSheet', () => {
 
     expect(screen.getByRole('button', { name: /guardado en drive/i })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /abrir drive/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /indicaciones predeterminadas/i })
+    ).not.toBeInTheDocument();
   });
 
   it('allows adding a custom indication to the active specialty', async () => {
@@ -246,6 +252,7 @@ describe('ClinicalDocumentSheet', () => {
     fireEvent.click(
       screen.getByRole('button', { name: /abrir panel de indicaciones predeterminadas/i })
     );
+    fireEvent.click(screen.getByRole('tab', { name: /TMT/i }));
     fireEvent.change(screen.getByLabelText(/agregar propia/i), {
       target: { value: 'Curación diaria de herida' },
     });
@@ -253,7 +260,7 @@ describe('ClinicalDocumentSheet', () => {
 
     await waitFor(() => {
       expect(defaultHandlers.addCustomIndication).toHaveBeenCalledWith(
-        'cirugia_tmt',
+        'tmt',
         'Curación diaria de herida'
       );
     });
@@ -282,6 +289,7 @@ describe('ClinicalDocumentSheet', () => {
     fireEvent.click(
       screen.getByRole('button', { name: /abrir panel de indicaciones predeterminadas/i })
     );
+    fireEvent.click(screen.getByRole('tab', { name: /TMT/i }));
     fireEvent.click(screen.getByRole('button', { name: /editar indicación reposo absoluto/i }));
     fireEvent.change(screen.getByDisplayValue('Reposo Absoluto'), {
       target: { value: 'Reposo en domicilio' },
@@ -290,7 +298,7 @@ describe('ClinicalDocumentSheet', () => {
 
     await waitFor(() => {
       expect(defaultHandlers.updateIndication).toHaveBeenCalledWith(
-        'cirugia_tmt',
+        'tmt',
         expect.any(String),
         'Reposo en domicilio'
       );
@@ -299,10 +307,7 @@ describe('ClinicalDocumentSheet', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Eliminar indicación Reposo Relativo$/i }));
 
     await waitFor(() => {
-      expect(defaultHandlers.deleteIndication).toHaveBeenCalledWith(
-        'cirugia_tmt',
-        expect.any(String)
-      );
+      expect(defaultHandlers.deleteIndication).toHaveBeenCalledWith('tmt', expect.any(String));
     });
   });
 });

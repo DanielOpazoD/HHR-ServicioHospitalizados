@@ -110,7 +110,6 @@ export const useClinicalDocumentWorkspaceDocumentActions = ({
       setDraft(result.data);
       notify.success(`${result.data.title} creada`, 'Se generó el borrador inicial del documento.');
     } catch (error) {
-      console.error('[ClinicalDocumentsWorkspace] Create document failed', error);
       recordOperationalTelemetry({
         category: 'clinical_document',
         status: 'failed',
@@ -177,7 +176,6 @@ export const useClinicalDocumentWorkspaceDocumentActions = ({
         }
         notify.success('Documento eliminado', `${document.title} fue eliminado correctamente.`);
       } catch (error) {
-        console.error('[ClinicalDocumentsWorkspace] Delete failed', error);
         recordOperationalTelemetry({
           category: 'clinical_document',
           status: 'failed',
@@ -226,7 +224,6 @@ export const useClinicalDocumentWorkspaceDocumentActions = ({
       setDraft(result.data);
       notify.success('Documento guardado', 'Los cambios se guardaron correctamente.');
     } catch (error) {
-      console.error('[ClinicalDocumentsWorkspace] Save failed', error);
       recordOperationalTelemetry({
         category: 'clinical_document',
         status: 'failed',
@@ -275,7 +272,6 @@ export const useClinicalDocumentWorkspaceDocumentActions = ({
       setDraft(result.data);
       notify.success('Documento firmado', `${result.data.title} quedó cerrado y bloqueado.`);
     } catch (error) {
-      console.error('[ClinicalDocumentsWorkspace] Sign failed', error);
       recordOperationalTelemetry({
         category: 'clinical_document',
         status: 'failed',
@@ -325,7 +321,6 @@ export const useClinicalDocumentWorkspaceDocumentActions = ({
       setDraft(result.data);
       notify.success('Firma quitada', 'La epicrisis volvió a borrador con registro en auditoría.');
     } catch (error) {
-      console.error('[ClinicalDocumentsWorkspace] Unsign failed', error);
       recordOperationalTelemetry({
         category: 'clinical_document',
         status: 'failed',

@@ -4,11 +4,13 @@ import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
 import { validateClinicalDocument } from '@/features/clinical-documents/controllers/clinicalDocumentValidationController';
 import {
-  buildClinicalDocumentActor,
   hydrateLegacyClinicalDocument,
   serializeClinicalDocument,
 } from '@/features/clinical-documents/controllers/clinicalDocumentWorkspaceController';
-import { executePersistClinicalDocumentDraft } from '@/application/clinical-documents/clinicalDocumentUseCases';
+import {
+  executePersistClinicalDocumentEditorDraft,
+  resolveClinicalDocumentDraftLoad,
+} from '@/application/clinical-documents/clinicalDocumentEditorUseCases';
 import {
   recordOperationalOutcome,
   recordOperationalTelemetry,
@@ -59,6 +61,7 @@ export interface ClinicalDocumentWorkspaceDraftState {
   patchDocumentMeta: (
     patch: Partial<Pick<ClinicalDocumentRecord, 'medico' | 'especialidad'>>
   ) => void;
+  resetDocumentContent: () => void;
 }
 
 const hydrateIncomingDocument = (
@@ -99,37 +102,32 @@ export const useClinicalDocumentWorkspaceDraft = ({
   }, [hasLocalDraftChanges, state.baseState, state.draft]);
 
   useEffect(() => {
-    if (!selectedDocumentId) {
+    const resolution = resolveClinicalDocumentDraftLoad({
+      documents,
+      selectedDocumentId,
+      currentDraft: draftRef.current,
+      baseState: baseStateRef.current,
+      hasLocalDraftChanges: draftDirtyRef.current,
+    });
+
+    if (resolution.kind === 'clear') {
       dispatch({ type: 'LOAD_DOCUMENT', document: null, snapshot: '' });
       return;
     }
 
-    const selected = documents.find(document => document.id === selectedDocumentId) || null;
-    const hydratedClone = hydrateIncomingDocument(selected);
-    const incomingSnapshot = serializeClinicalDocument(hydratedClone);
-
-    const currentDraft = draftRef.current;
-    const isSameSelectedDocument = Boolean(currentDraft) && currentDraft?.id === selectedDocumentId;
-    if (isSameSelectedDocument && draftDirtyRef.current) {
-      const baseState = baseStateRef.current;
-      const isNewRemoteVersion =
-        hydratedClone?.audit.updatedAt &&
-        hydratedClone.audit.updatedAt !== baseState.updatedAt &&
-        incomingSnapshot !== baseState.snapshot;
-      if (isNewRemoteVersion && hydratedClone) {
-        dispatch({
-          type: 'REMOTE_UPDATE_RECEIVED',
-          document: hydratedClone,
-          snapshot: incomingSnapshot,
-        });
-      }
+    if (resolution.kind === 'stage_remote') {
+      dispatch({
+        type: 'REMOTE_UPDATE_RECEIVED',
+        document: resolution.document,
+        snapshot: resolution.snapshot,
+      });
       return;
     }
 
     dispatch({
       type: 'LOAD_DOCUMENT',
-      document: hydratedClone,
-      snapshot: incomingSnapshot,
+      document: resolution.document,
+      snapshot: resolution.snapshot,
     });
   }, [documents, selectedDocumentId]);
 
@@ -164,16 +162,17 @@ export const useClinicalDocumentWorkspaceDraft = ({
     }
 
     autosaveTimerRef.current = window.setTimeout(async () => {
+      const requestedSnapshot = draftSnapshot;
       dispatch({ type: 'AUTOSAVE_REQUESTED' });
 
       try {
-        const actor = buildClinicalDocumentActor(user, role);
-        const result = await executePersistClinicalDocumentDraft(
-          state.draft!,
+        const result = await executePersistClinicalDocumentEditorDraft({
+          record: state.draft!,
           hospitalId,
-          actor,
-          'autosave'
-        );
+          role,
+          user,
+          reason: 'autosave',
+        });
         recordOperationalOutcome('clinical_document', 'autosave_clinical_document', result, {
           date: state.draft?.sourceDailyRecordDate,
           context: { documentId: state.draft?.id },
@@ -181,19 +180,35 @@ export const useClinicalDocumentWorkspaceDraft = ({
 
         if (result.status === 'success' && result.data) {
           const savedSnapshot = serializeClinicalDocument(result.data);
-          lastPersistedSnapshotRef.current = savedSnapshot;
-          dispatch({
-            type: 'AUTOSAVE_SUCCEEDED',
-            document: result.data,
-            snapshot: savedSnapshot,
-          });
+          const currentDraftSnapshot = serializeClinicalDocument(draftRef.current);
+
+          if (currentDraftSnapshot === requestedSnapshot) {
+            lastPersistedSnapshotRef.current = savedSnapshot;
+            dispatch({
+              type: 'AUTOSAVE_SUCCEEDED',
+              document: result.data,
+              snapshot: savedSnapshot,
+            });
+          } else {
+            dispatch({
+              type: 'AUTOSAVE_COMMIT_BASE',
+              document: result.data,
+              snapshot: savedSnapshot,
+            });
+          }
           return;
         }
 
-        console.error('[ClinicalDocumentsWorkspace] Autosave failed', result.issues[0]?.message);
+        recordOperationalTelemetry({
+          category: 'clinical_document',
+          status: 'failed',
+          operation: 'autosave_clinical_document_rejected',
+          date: state.draft?.sourceDailyRecordDate,
+          issues: [result.issues[0]?.message || 'Autosave rejected'],
+          context: { documentId: state.draft?.id },
+        });
         dispatch({ type: 'AUTOSAVE_FAILED' });
       } catch (error) {
-        console.error('[ClinicalDocumentsWorkspace] Autosave failed', error);
         recordOperationalTelemetry({
           category: 'clinical_document',
           status: 'failed',
@@ -276,5 +291,6 @@ export const useClinicalDocumentWorkspaceDraft = ({
     patchPatientInfoTitle: title => dispatch({ type: 'PATCH_PATIENT_INFO_TITLE', title }),
     patchFooterLabel: (kind, title) => dispatch({ type: 'PATCH_FOOTER_LABEL', kind, title }),
     patchDocumentMeta: patch => dispatch({ type: 'PATCH_DOCUMENT_META', patch }),
+    resetDocumentContent: () => dispatch({ type: 'RESET_DOCUMENT_CONTENT' }),
   };
 };

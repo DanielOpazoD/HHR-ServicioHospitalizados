@@ -10,7 +10,7 @@ import type {
 } from '@/features/clinical-documents/components/clinicalDocumentSheetShared';
 import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
 
-const DEFAULT_ACTIVE_SPECIALTY_ID: ClinicalDocumentIndicationSpecialtyId = 'cirugia_tmt';
+const DEFAULT_ACTIVE_SPECIALTY_ID: ClinicalDocumentIndicationSpecialtyId = 'tmt';
 
 export const useClinicalDocumentSheetState = (selectedDocument: ClinicalDocumentRecord | null) => {
   const [activeTitleTarget, setActiveTitleTarget] = useState<string | null>(null);
@@ -91,6 +91,17 @@ export const useClinicalDocumentSheetState = (selectedDocument: ClinicalDocument
     [formattingDisabled]
   );
 
+  const insertIntoActiveEditor = useCallback(
+    (text: string): boolean => {
+      if (formattingDisabled || !text.trim()) {
+        return false;
+      }
+
+      return activeEditorApiRef.current?.insertText(text) ?? false;
+    },
+    [formattingDisabled]
+  );
+
   const sectionDragHandlers = useMemo(
     () => ({
       onDragStart: (event: DragEvent<HTMLButtonElement>, sectionId: string) => {
@@ -137,6 +148,7 @@ export const useClinicalDocumentSheetState = (selectedDocument: ClinicalDocument
     activeEditorHistoryState,
     formattingDisabled,
     applyFormatting,
+    insertIntoActiveEditor,
     handleEditorActivate,
     handleEditorDeactivate,
     sectionDragHandlers,

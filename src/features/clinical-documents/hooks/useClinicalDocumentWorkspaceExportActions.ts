@@ -2,9 +2,9 @@ import { useCallback, useState } from 'react';
 
 import type { ConfirmOptions } from '@/context/uiContracts';
 import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
-import { openClinicalDocumentBrowserPrintPreview } from '@/features/clinical-documents/services/clinicalDocumentPrintPdfService';
 import { buildClinicalDocumentPdfFileName } from '@/features/clinical-documents/controllers/clinicalDocumentWorkspaceController';
 import { executeExportClinicalDocumentPdf } from '@/application/clinical-documents/clinicalDocumentUseCases';
+import { executeOpenClinicalDocumentPrint } from '@/application/clinical-documents/clinicalDocumentEditorUseCases';
 import {
   recordOperationalOutcome,
   recordOperationalTelemetry,
@@ -73,7 +73,6 @@ export const useClinicalDocumentWorkspaceExportActions = ({
           );
         }
       } catch (error) {
-        console.error('[ClinicalDocumentsWorkspace] Drive upload failed', error);
         recordOperationalTelemetry({
           category: 'export',
           status: 'failed',
@@ -107,10 +106,7 @@ export const useClinicalDocumentWorkspaceExportActions = ({
 
   const handlePrint = useCallback(async () => {
     if (!selectedDocument) return;
-    const opened = await openClinicalDocumentBrowserPrintPreview(
-      selectedDocument.title,
-      selectedDocument.documentType
-    );
+    const opened = await executeOpenClinicalDocumentPrint(selectedDocument);
     if (!opened) {
       recordOperationalTelemetry({
         category: 'export',

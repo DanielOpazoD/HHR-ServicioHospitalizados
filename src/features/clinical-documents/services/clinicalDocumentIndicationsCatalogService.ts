@@ -36,7 +36,7 @@ type RawClinicalDocumentIndicationsCatalog =
       updatedAt?: string;
       specialties?: Partial<
         Record<
-          ClinicalDocumentIndicationSpecialtyId,
+          ClinicalDocumentIndicationSpecialtyId | 'cirugia_tmt',
           Partial<ClinicalDocumentIndicationCatalogSpecialty> & { items?: unknown[] }
         >
       >;
@@ -48,7 +48,8 @@ const SETTINGS_DOC_PATH = (hospitalId?: string) =>
   doc(db, getSettingsDocPath(SETTINGS_DOCS.CLINICAL_DOCUMENT_INDICATIONS, hospitalId));
 
 const DEFAULT_SPECIALTY_ITEMS: Record<ClinicalDocumentIndicationSpecialtyId, string[]> = {
-  cirugia_tmt: [
+  cirugia: [],
+  tmt: [
     'Reposo Absoluto',
     'Reposo Relativo',
     'Reposo Relativo, sin carga en extremidad operada',
@@ -66,6 +67,22 @@ const DEFAULT_SPECIALTY_ITEMS: Record<ClinicalDocumentIndicationSpecialtyId, str
   ginecobstetricia: [],
   pediatria: [],
 };
+
+const LEGACY_SHARED_DEFAULT_TEXT_KEYS = new Set(
+  [
+    'Reposo Absoluto',
+    'Reposo Relativo',
+    'Reposo Relativo, sin carga en extremidad operada',
+    'Uso de bota ortopédica',
+    'Uso de Cabestrillo',
+    'Movilizacion de codo y dedos de forma regular',
+    'Mano en alto, movilización de dedos',
+    'Control SOS Servicio de Urgencias',
+    'No fumar',
+    'No mojar ni retirar apósitos',
+    'No aplicar cremas, aceites, u otras sustancias en herida',
+  ].map(normalizeClinicalDocumentIndicationTextKey)
+);
 
 const buildItemId = (specialtyId: ClinicalDocumentIndicationSpecialtyId, text: string): string =>
   `${specialtyId}-${normalizeClinicalDocumentIndicationTextKey(text).replace(/[^a-z0-9]+/g, '-')}`;
@@ -112,6 +129,10 @@ const normalizeItems = (
     }
 
     const textKey = normalizeClinicalDocumentIndicationTextKey(text);
+    if (specialtyId === 'cirugia' && LEGACY_SHARED_DEFAULT_TEXT_KEYS.has(textKey)) {
+      return;
+    }
+
     if (seen.has(textKey)) {
       return;
     }
@@ -133,6 +154,21 @@ const normalizeItems = (
   });
 
   return mergedItems;
+};
+
+const resolveLegacySpecialtyValue = (
+  rawSpecialties: Record<string, unknown>,
+  specialtyId: ClinicalDocumentIndicationSpecialtyId
+): unknown => {
+  if (specialtyId in rawSpecialties) {
+    return rawSpecialties[specialtyId];
+  }
+
+  if (specialtyId === 'cirugia' || specialtyId === 'tmt') {
+    return rawSpecialties.cirugia_tmt;
+  }
+
+  return undefined;
 };
 
 export const getDefaultClinicalDocumentIndicationsCatalog = (
@@ -182,10 +218,10 @@ export const normalizeClinicalDocumentIndicationsCatalog = (
       ) as ClinicalDocumentIndicationSpecialtyId[]
     ).reduce<ClinicalDocumentIndicationsCatalog['specialties']>(
       (accumulator, specialtyId) => {
-        const rawSpecialty =
-          specialtyId in rawSpecialties
-            ? (rawSpecialties as Record<string, unknown>)[specialtyId]
-            : undefined;
+        const rawSpecialty = resolveLegacySpecialtyValue(
+          rawSpecialties as Record<string, unknown>,
+          specialtyId
+        );
         accumulator[specialtyId] = {
           id: specialtyId,
           label: CLINICAL_DOCUMENT_INDICATION_SPECIALTY_LABELS[specialtyId],
@@ -372,4 +408,21 @@ export const deleteClinicalDocumentIndicationCatalogItem = async ({
 
   await setDoc(SETTINGS_DOC_PATH(hospitalId), nextCatalog);
   return nextCatalog;
+};
+
+export const replaceClinicalDocumentIndicationsCatalog = async ({
+  hospitalId,
+  catalog,
+}: {
+  hospitalId?: string;
+  catalog: RawClinicalDocumentIndicationsCatalog;
+}): Promise<ClinicalDocumentIndicationsCatalog> => {
+  const nextCatalog = normalizeClinicalDocumentIndicationsCatalog(catalog);
+  const persistedCatalog: ClinicalDocumentIndicationsCatalog = {
+    ...nextCatalog,
+    updatedAt: new Date().toISOString(),
+  };
+
+  await setDoc(SETTINGS_DOC_PATH(hospitalId), persistedCatalog);
+  return persistedCatalog;
 };

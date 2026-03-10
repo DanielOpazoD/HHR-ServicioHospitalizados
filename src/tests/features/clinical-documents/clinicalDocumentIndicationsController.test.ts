@@ -14,11 +14,11 @@ describe('clinicalDocumentIndicationsController', () => {
   });
 
   it('resolves the specialty tab from the document specialty label', () => {
-    expect(resolveClinicalDocumentIndicationSpecialty('Cirugía')).toBe('cirugia_tmt');
-    expect(resolveClinicalDocumentIndicationSpecialty('TMT')).toBe('cirugia_tmt');
+    expect(resolveClinicalDocumentIndicationSpecialty('Cirugía')).toBe('cirugia');
+    expect(resolveClinicalDocumentIndicationSpecialty('TMT')).toBe('tmt');
     expect(resolveClinicalDocumentIndicationSpecialty('Medicina Interna')).toBe('medicina_interna');
     expect(resolveClinicalDocumentIndicationSpecialty('Psiquiatría')).toBe('psiquiatria');
-    expect(resolveClinicalDocumentIndicationSpecialty('Ginecobstetricia')).toBe('ginecobstetricia');
+    expect(resolveClinicalDocumentIndicationSpecialty('GyO')).toBe('ginecobstetricia');
     expect(resolveClinicalDocumentIndicationSpecialty('Pediatría')).toBe('pediatria');
   });
 });

@@ -117,4 +117,39 @@ describe('clinicalDocumentDraftReducer', () => {
       reordered.draft?.sections.find(section => section.id === 'examenes-complementarios')?.order
     ).toBe(reordered.draft?.sections.length! - 1);
   });
+
+  it('updates the persisted base after autosave without overwriting a newer local draft', () => {
+    const document = buildDocument();
+    const loaded = clinicalDocumentDraftReducer(createClinicalDocumentDraftReducerInitialState(), {
+      type: 'LOAD_DOCUMENT',
+      document,
+      snapshot: JSON.stringify(document),
+    });
+
+    const locallyEdited = clinicalDocumentDraftReducer(loaded, {
+      type: 'PATCH_SECTION',
+      sectionId: 'antecedentes',
+      content: '<p>version local mas nueva</p>',
+    });
+
+    const autosaved = {
+      ...document,
+      audit: {
+        ...document.audit,
+        updatedAt: '2026-03-06T12:30:00.000Z',
+      },
+    };
+
+    const committed = clinicalDocumentDraftReducer(locallyEdited, {
+      type: 'AUTOSAVE_COMMIT_BASE',
+      document: autosaved,
+      snapshot: JSON.stringify(autosaved),
+    });
+
+    expect(committed.draft?.sections.find(section => section.id === 'antecedentes')?.content).toBe(
+      '<p>version local mas nueva</p>'
+    );
+    expect(committed.baseState.updatedAt).toBe('2026-03-06T12:30:00.000Z');
+    expect(committed.isSaving).toBe(false);
+  });
 });

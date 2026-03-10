@@ -2,8 +2,10 @@ import React from 'react';
 import type { DragEvent } from 'react';
 import { ArrowDown, ArrowUp, GripVertical, Trash2 } from 'lucide-react';
 
+import { ClinicalDocumentIndicationsPanel } from '@/features/clinical-documents/components/ClinicalDocumentIndicationsPanel';
 import { InlineEditableTitle } from '@/features/clinical-documents/components/InlineEditableTitle';
 import { renderClinicalDocumentSectionContent } from '@/features/clinical-documents/components/clinicalDocumentSectionRendererRegistry';
+import { appendClinicalDocumentPlanSubsectionText } from '@/features/clinical-documents/controllers/clinicalDocumentPlanSectionController';
 import type {
   ClinicalDocumentSheetEditorApi,
   ClinicalDocumentSheetProps,
@@ -36,9 +38,11 @@ interface ClinicalDocumentSectionListProps {
   onSetActivePlanSubsectionId: (subsectionId: ClinicalDocumentPlanSubsectionId) => void;
   onSetActiveIndicationsSpecialtyId: (specialtyId: ClinicalDocumentIndicationSpecialtyId) => void;
   onToggleIndicationsPanel: () => void;
+  onInsertIntoActiveEditor: (text: string) => boolean;
   onAddCustomIndication: ClinicalDocumentSheetProps['addCustomIndication'];
   onUpdateIndication: ClinicalDocumentSheetProps['updateIndication'];
   onDeleteIndication: ClinicalDocumentSheetProps['deleteIndication'];
+  onImportIndicationsCatalog: ClinicalDocumentSheetProps['importIndicationsCatalog'];
   dragHandlers: {
     onDragStart: (event: DragEvent<HTMLButtonElement>, sectionId: string) => void;
     onDragOver: (event: DragEvent<HTMLElement>, sectionId: string, canInteract: boolean) => void;
@@ -71,9 +75,11 @@ export const ClinicalDocumentSectionList: React.FC<ClinicalDocumentSectionListPr
   onSetActivePlanSubsectionId,
   onSetActiveIndicationsSpecialtyId,
   onToggleIndicationsPanel,
+  onInsertIntoActiveEditor,
   onAddCustomIndication,
   onUpdateIndication,
   onDeleteIndication,
+  onImportIndicationsCatalog,
   dragHandlers,
 }) => (
   <div className="space-y-3">
@@ -125,6 +131,38 @@ export const ClinicalDocumentSectionList: React.FC<ClinicalDocumentSectionListPr
                 disabled={!canEdit || document.isLocked}
                 className="clinical-document-section-title"
               />
+              {document.documentType === 'epicrisis' &&
+                section.id === 'plan' &&
+                !document.isLocked && (
+                  <ClinicalDocumentIndicationsPanel
+                    isOpen={isIndicationsPanelOpen}
+                    canEdit={canEdit && !document.isLocked}
+                    activeSpecialtyId={activeIndicationsSpecialtyId}
+                    catalog={indicationsCatalog}
+                    isSavingCustomIndication={isSavingCustomIndication}
+                    customIndicationError={customIndicationError}
+                    onToggle={onToggleIndicationsPanel}
+                    onSelectSpecialty={onSetActiveIndicationsSpecialtyId}
+                    onInsertIndication={text => {
+                      if (onInsertIntoActiveEditor(text)) {
+                        return;
+                      }
+
+                      onPatchSection(
+                        section.id,
+                        appendClinicalDocumentPlanSubsectionText(
+                          section.content,
+                          activePlanSubsectionId,
+                          text
+                        )
+                      );
+                    }}
+                    onAddCustomIndication={onAddCustomIndication}
+                    onUpdateIndication={onUpdateIndication}
+                    onDeleteIndication={onDeleteIndication}
+                    onImportCatalog={onImportIndicationsCatalog}
+                  />
+                )}
               {canEdit && !document.isLocked && activeTitleTarget === `section:${section.id}` && (
                 <>
                   <button
@@ -182,6 +220,7 @@ export const ClinicalDocumentSectionList: React.FC<ClinicalDocumentSectionListPr
               addCustomIndication: onAddCustomIndication,
               updateIndication: onUpdateIndication,
               deleteIndication: onDeleteIndication,
+              importIndicationsCatalog: onImportIndicationsCatalog,
             })}
           </div>
         </div>

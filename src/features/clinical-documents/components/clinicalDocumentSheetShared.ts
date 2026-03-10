@@ -21,6 +21,7 @@ export interface ClinicalDocumentSheetEditorApi {
   canUndo: boolean;
   canRedo: boolean;
   applyCommand: (command: ClinicalDocumentFormattingCommand, value?: string) => void;
+  insertText: (text: string) => boolean;
 }
 
 export interface ClinicalDocumentSheetProps {
@@ -71,6 +72,8 @@ export interface ClinicalDocumentSheetProps {
     specialtyId: ClinicalDocumentIndicationSpecialtyId,
     itemId: string
   ) => Promise<boolean>;
+  importIndicationsCatalog: (catalog: unknown) => Promise<boolean>;
+  onResetDocumentContent: () => void;
 }
 
 export interface ClinicalDocumentSpecialSectionRendererProps {
@@ -103,4 +106,5 @@ export interface ClinicalDocumentSpecialSectionRendererProps {
     specialtyId: ClinicalDocumentIndicationSpecialtyId,
     itemId: string
   ) => Promise<boolean>;
+  importIndicationsCatalog: (catalog: unknown) => Promise<boolean>;
 }

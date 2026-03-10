@@ -10,6 +10,12 @@ import {
   hydrateLegacyClinicalDocument,
   normalizeClinicalDocumentForPersistence,
 } from '@/features/clinical-documents/controllers/clinicalDocumentCompatibilityController';
+import {
+  formatClinicalDocumentContractIssues,
+  parseClinicalDocumentRecord,
+  safeParseClinicalDocumentRecord,
+} from '@/features/clinical-documents/contracts/clinicalDocumentRuntimeContracts';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryService';
 
 const getClinicalDocumentsCollectionPath = (hospitalId: string = getActiveHospitalId()): string =>
   `hospitals/${hospitalId}/clinicalDocuments`;
@@ -53,13 +59,29 @@ const sanitizeForFirestore = <T>(value: T): T => {
 };
 
 const enrichRecord = (record: ClinicalDocumentRecord): ClinicalDocumentRecord => {
-  const hydrated = normalizeClinicalDocumentForPersistence(record);
+  const hydrated = parseClinicalDocumentRecord(normalizeClinicalDocumentForPersistence(record));
   const renderedText = buildClinicalDocumentRenderedText(hydrated);
   return {
     ...hydrated,
     renderedText,
     integrityHash: createHash(renderedText),
   };
+};
+
+const validateReadRecord = (record: ClinicalDocumentRecord): ClinicalDocumentRecord | null => {
+  const parsed = safeParseClinicalDocumentRecord(hydrateLegacyClinicalDocument(record));
+  if (!parsed.success) {
+    recordOperationalTelemetry({
+      category: 'clinical_document',
+      status: 'failed',
+      operation: 'clinical_document_repository_invalid_read_record',
+      issues: formatClinicalDocumentContractIssues(parsed.error.issues),
+      context: { documentId: record.id, documentType: record.documentType },
+    });
+    return null;
+  }
+
+  return parsed.data;
 };
 
 export const ClinicalDocumentRepository = {
@@ -73,7 +95,11 @@ export const ClinicalDocumentRepository = {
         where: [{ field: 'episodeKey', operator: '==', value: episodeKey }],
       }
     );
-    return sortDocuments(documents.map(document => hydrateLegacyClinicalDocument(document)));
+    return sortDocuments(
+      documents
+        .map(document => validateReadRecord(document))
+        .filter((document): document is ClinicalDocumentRecord => Boolean(document))
+    );
   },
 
   async listByEpisodeKeys(
@@ -101,7 +127,9 @@ export const ClinicalDocumentRepository = {
     });
 
     return sortDocuments(
-      Array.from(deduplicated.values()).map(document => hydrateLegacyClinicalDocument(document))
+      Array.from(deduplicated.values())
+        .map(document => validateReadRecord(document))
+        .filter((document): document is ClinicalDocumentRecord => Boolean(document))
     );
   },
 
@@ -113,7 +141,7 @@ export const ClinicalDocumentRepository = {
       getClinicalDocumentsCollectionPath(hospitalId),
       documentId
     );
-    return document ? hydrateLegacyClinicalDocument(document) : null;
+    return document ? validateReadRecord(document) : null;
   },
 
   async createDraft(
@@ -200,7 +228,14 @@ export const ClinicalDocumentRepository = {
     return db.subscribeQuery<ClinicalDocumentRecord>(
       getClinicalDocumentsCollectionPath(hospitalId),
       { where: [{ field: 'episodeKey', operator: '==', value: episodeKey }] },
-      docs => callback(sortDocuments(docs.map(document => hydrateLegacyClinicalDocument(document))))
+      docs =>
+        callback(
+          sortDocuments(
+            docs
+              .map(document => validateReadRecord(document))
+              .filter((document): document is ClinicalDocumentRecord => Boolean(document))
+          )
+        )
     );
   },
 

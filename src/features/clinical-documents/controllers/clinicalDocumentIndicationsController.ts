@@ -4,7 +4,8 @@ import {
 } from '@/features/clinical-documents/controllers/clinicalDocumentRichTextController';
 
 export type ClinicalDocumentIndicationSpecialtyId =
-  | 'cirugia_tmt'
+  | 'tmt'
+  | 'cirugia'
   | 'medicina_interna'
   | 'psiquiatria'
   | 'ginecobstetricia'
@@ -14,11 +15,12 @@ export const CLINICAL_DOCUMENT_INDICATION_SPECIALTY_LABELS: Record<
   ClinicalDocumentIndicationSpecialtyId,
   string
 > = {
-  cirugia_tmt: 'Cirugía & TMT',
+  tmt: 'TMT',
+  cirugia: 'Cir',
   medicina_interna: 'Med Int.',
   psiquiatria: 'Psiq.',
-  ginecobstetricia: 'Ginecobstetricia',
-  pediatria: 'Pediatría',
+  ginecobstetricia: 'GyO',
+  pediatria: 'Ped',
 };
 
 const normalizeSearchValue = (value: string): string =>
@@ -54,19 +56,22 @@ export const resolveClinicalDocumentIndicationSpecialty = (
   const normalized = normalizeSearchValue(specialtyLabel || '');
 
   if (
-    normalized.includes('cirugia') ||
-    normalized.includes('cirugia y tmt') ||
     normalized.includes('trauma') ||
-    normalized.includes('tmt')
+    normalized === 'tmt' ||
+    normalized.includes('traumatologia')
   ) {
-    return 'cirugia_tmt';
+    return 'tmt';
+  }
+
+  if (normalized.includes('cirugia')) {
+    return 'cirugia';
   }
 
   if (normalized.includes('psiqu')) {
     return 'psiquiatria';
   }
 
-  if (normalized.includes('gine') || normalized.includes('obstet')) {
+  if (normalized.includes('gine') || normalized.includes('obstet') || normalized === 'gyo') {
     return 'ginecobstetricia';
   }
 
@@ -78,7 +83,7 @@ export const resolveClinicalDocumentIndicationSpecialty = (
     return 'medicina_interna';
   }
 
-  return 'cirugia_tmt';
+  return 'cirugia';
 };
 
 export const normalizeClinicalDocumentIndicationTextKey = (value: string): string =>

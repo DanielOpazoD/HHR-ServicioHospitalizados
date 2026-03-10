@@ -86,6 +86,7 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
     patchPatientInfoTitle,
     patchFooterLabel,
     patchDocumentMeta,
+    resetDocumentContent,
   } = useClinicalDocumentWorkspaceDraft({
     documents,
     selectedDocumentId,
@@ -106,6 +107,7 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
     addCustomIndication,
     updateIndication,
     deleteIndication,
+    importCatalog,
   } = useClinicalDocumentIndicationsCatalog({
     hospitalId,
     isActive,
@@ -140,6 +142,28 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
       notify: notifyPort,
       setDraft,
     });
+
+  const handleResetDocumentContent = async () => {
+    if (!draft || !canEdit || draft.isLocked) {
+      return;
+    }
+
+    const confirmed = await confirm({
+      title: 'Vaciar documento clínico',
+      message:
+        'Se limpiará el contenido clínico del documento actual y el borrador se volverá a guardar automáticamente.',
+      confirmText: 'Vaciar',
+      cancelText: 'Cancelar',
+      variant: 'warning',
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    resetDocumentContent();
+    info('Documento reiniciado', 'La planilla quedó en cero para seguir editando.');
+  };
 
   if (!canRead) {
     return (
@@ -181,6 +205,7 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
           onUnsign={() => void handleUnsign()}
           onPrint={handlePrint}
           onUploadPdf={() => void handleUploadPdf()}
+          onResetDocumentContent={() => void handleResetDocumentContent()}
           patchDocumentTitle={patchDocumentTitle}
           patchPatientInfoTitle={patchPatientInfoTitle}
           patchPatientField={patchPatientField}
@@ -200,6 +225,7 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
           addCustomIndication={addCustomIndication}
           updateIndication={updateIndication}
           deleteIndication={deleteIndication}
+          importIndicationsCatalog={importCatalog}
         />
       </section>
     </div>

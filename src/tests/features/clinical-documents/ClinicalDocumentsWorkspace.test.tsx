@@ -187,7 +187,7 @@ describe('ClinicalDocumentsWorkspace', () => {
     } as any);
   });
 
-  it('renders the real shell and wires create/save/sign/pdf through use-case boundaries', async () => {
+  it('renders the real shell and wires create/sign/pdf through use-case boundaries', async () => {
     render(
       <ClinicalDocumentsWorkspace
         patient={
@@ -212,29 +212,13 @@ describe('ClinicalDocumentsWorkspace', () => {
     antecedentesEditor.innerHTML = 'Antecedentes actualizados';
     fireEvent.input(antecedentesEditor);
     fireEvent.click(screen.getByRole('button', { name: /crear documento/i }));
-    fireEvent.click(screen.getByRole('button', { name: /guardar/i }));
     fireEvent.click(screen.getByRole('button', { name: /firmar/i }));
     fireEvent.click(screen.getByRole('button', { name: /pdf/i }));
 
     await waitFor(() => {
       expect(clinicalDocumentUseCases.executeCreateClinicalDocumentDraft).toHaveBeenCalled();
-      expect(clinicalDocumentUseCases.executePersistClinicalDocumentDraft).toHaveBeenCalled();
       expect(clinicalDocumentUseCases.executeSignClinicalDocument).toHaveBeenCalled();
-      expect(clinicalDocumentUseCases.executePersistClinicalDocumentDraft).toHaveBeenCalledWith(
-        expect.objectContaining({
-          sections: expect.arrayContaining([
-            expect.objectContaining({
-              title: 'Antecedentes',
-              content: 'Antecedentes actualizados',
-            }),
-          ]),
-        }),
-        'hhr',
-        expect.objectContaining({
-          uid: 'u1',
-        }),
-        'manual'
-      );
+      expect(notificationApi.info).toHaveBeenCalled();
     });
   });
 
@@ -306,7 +290,7 @@ describe('ClinicalDocumentsWorkspace', () => {
       expect(screen.getByDisplayValue('Doctor Test')).toBeInTheDocument();
     });
 
-    expect(screen.getByRole('button', { name: /guardar/i })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: /guardar/i })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /firmar/i })).toBeDisabled();
   });
 

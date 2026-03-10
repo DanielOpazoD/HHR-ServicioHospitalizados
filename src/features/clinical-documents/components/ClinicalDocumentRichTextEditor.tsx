@@ -3,6 +3,7 @@ import clsx from 'clsx';
 
 import {
   applyClinicalDocumentEditorCommand,
+  convertPlainTextToClinicalDocumentHtml,
   normalizeClinicalDocumentContentForStorage,
 } from '@/features/clinical-documents/controllers/clinicalDocumentRichTextController';
 
@@ -34,6 +35,7 @@ interface ClinicalDocumentRichTextEditorProps {
           | 'redo',
         value?: string
       ) => void;
+      insertText: (text: string) => boolean;
     }
   ) => void;
   onDeactivate?: (sectionId: string) => void;
@@ -53,6 +55,8 @@ export const ClinicalDocumentRichTextEditor: React.FC<ClinicalDocumentRichTextEd
   const historyIndexRef = useRef(-1);
   const isApplyingHistoryRef = useRef(false);
   const isActiveRef = useRef(false);
+  const savedRangeRef = useRef<Range | null>(null);
+  const pendingInsertBlockRef = useRef<HTMLElement | null>(null);
   const onActivateRef = useRef(onActivate);
   const onDeactivateRef = useRef(onDeactivate);
   const applyEditorCommandRef = useRef<
@@ -95,7 +99,8 @@ export const ClinicalDocumentRichTextEditor: React.FC<ClinicalDocumentRichTextEd
   useEffect(() => {
     const editor = editorRef.current;
     if (!editor) return;
-    if (editor.innerHTML !== normalizedValue) {
+    const currentNormalizedHtml = normalizeClinicalDocumentContentForStorage(editor.innerHTML);
+    if (currentNormalizedHtml !== normalizedValue) {
       editor.innerHTML = normalizedValue;
     }
     if (!isApplyingHistoryRef.current) {
@@ -121,6 +126,189 @@ export const ClinicalDocumentRichTextEditor: React.FC<ClinicalDocumentRichTextEd
       updateHistoryState();
     },
     [updateHistoryState]
+  );
+
+  const saveSelectionRange = useCallback(() => {
+    const editor = editorRef.current;
+    const selection = typeof window !== 'undefined' ? window.getSelection() : null;
+    if (!editor || !selection || selection.rangeCount === 0) {
+      return;
+    }
+
+    const range = selection.getRangeAt(0);
+    if (!editor.contains(range.commonAncestorContainer)) {
+      return;
+    }
+
+    savedRangeRef.current = range.cloneRange();
+  }, []);
+
+  const resolveBlockFromRange = useCallback(
+    (range: Range | null | undefined): HTMLElement | null => {
+      const editor = editorRef.current;
+      const startNode = range?.startContainer;
+      if (!editor || !startNode) {
+        return null;
+      }
+
+      let candidate: HTMLElement | null =
+        startNode.nodeType === Node.ELEMENT_NODE
+          ? (startNode as HTMLElement)
+          : startNode.parentElement;
+
+      while (candidate && candidate !== editor) {
+        if (['DIV', 'P', 'LI', 'BLOCKQUOTE'].includes(candidate.tagName.toUpperCase())) {
+          return candidate;
+        }
+        candidate = candidate.parentElement;
+      }
+
+      return null;
+    },
+    []
+  );
+
+  const normalizeInsertedHtml = useCallback((html: string): string => {
+    const normalized = normalizeClinicalDocumentContentForStorage(html);
+    return normalized
+      .replace(/^(<br>\s*)+/i, '')
+      .replace(/(<br>\s*)+$/i, '')
+      .trim();
+  }, []);
+
+  const insertTextAtCursor = useCallback(
+    (text: string): boolean => {
+      const editor = editorRef.current;
+      const normalizedText = text.trim();
+      if (!editor || disabled || !normalizedText) {
+        return false;
+      }
+
+      editor.focus();
+
+      const selection = typeof window !== 'undefined' ? window.getSelection() : null;
+      const savedRange = savedRangeRef.current;
+      if (selection && savedRange) {
+        selection.removeAllRanges();
+        selection.addRange(savedRange);
+      }
+
+      const html = convertPlainTextToClinicalDocumentHtml(normalizedText);
+      const currentRange =
+        selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : savedRangeRef.current;
+      const pendingInsertBlock =
+        pendingInsertBlockRef.current && editor.contains(pendingInsertBlockRef.current)
+          ? pendingInsertBlockRef.current
+          : null;
+      const blockElement = pendingInsertBlock || resolveBlockFromRange(currentRange);
+
+      const normalizedBlockHtml =
+        blockElement && blockElement !== editor
+          ? normalizeClinicalDocumentContentForStorage(blockElement.innerHTML || '')
+          : null;
+      const blockIsEmpty =
+        blockElement &&
+        blockElement !== editor &&
+        (normalizedBlockHtml === '' || normalizedBlockHtml === '<br>');
+
+      const createLineBreakBlock = (tagName: string) => {
+        const nextBlock = document.createElement(tagName.toLowerCase());
+        nextBlock.innerHTML = '<br>';
+        return nextBlock;
+      };
+
+      if (blockIsEmpty && blockElement) {
+        const entryBlock = document.createElement(blockElement.tagName.toLowerCase());
+        entryBlock.innerHTML = html;
+        const spacerBlock = createLineBreakBlock(blockElement.tagName);
+
+        blockElement.replaceWith(entryBlock);
+        entryBlock.insertAdjacentElement('afterend', spacerBlock);
+
+        const nextRange = document.createRange();
+        nextRange.selectNodeContents(spacerBlock);
+        nextRange.collapse(true);
+        selection?.removeAllRanges();
+        selection?.addRange(nextRange);
+        pendingInsertBlockRef.current = spacerBlock;
+        saveSelectionRange();
+        const nextHtml = normalizeInsertedHtml(editor.innerHTML);
+        pushHistorySnapshot(nextHtml);
+        onChange(nextHtml);
+        requestAnimationFrame(() => {
+          editor.focus();
+          const activeSelection = window.getSelection();
+          if (!activeSelection || !editor.contains(spacerBlock)) {
+            return;
+          }
+          const restoredRange = document.createRange();
+          restoredRange.selectNodeContents(spacerBlock);
+          restoredRange.collapse(true);
+          activeSelection.removeAllRanges();
+          activeSelection.addRange(restoredRange);
+          savedRangeRef.current = restoredRange.cloneRange();
+        });
+        return true;
+      }
+
+      if (blockElement && blockElement !== editor) {
+        const entryBlock = document.createElement(blockElement.tagName.toLowerCase());
+        entryBlock.innerHTML = html;
+        const spacerBlock = createLineBreakBlock(blockElement.tagName);
+
+        blockElement.insertAdjacentElement('afterend', spacerBlock);
+        blockElement.insertAdjacentElement('afterend', entryBlock);
+
+        const nextRange = document.createRange();
+        nextRange.selectNodeContents(spacerBlock);
+        nextRange.collapse(true);
+        selection?.removeAllRanges();
+        selection?.addRange(nextRange);
+        pendingInsertBlockRef.current = spacerBlock;
+      } else {
+        const entryBlock = document.createElement('div');
+        entryBlock.innerHTML = html;
+        const spacerBlock = createLineBreakBlock('DIV');
+
+        editor.appendChild(entryBlock);
+        editor.appendChild(spacerBlock);
+
+        const nextRange = document.createRange();
+        nextRange.selectNodeContents(spacerBlock);
+        nextRange.collapse(true);
+        selection?.removeAllRanges();
+        selection?.addRange(nextRange);
+        pendingInsertBlockRef.current = spacerBlock;
+      }
+
+      saveSelectionRange();
+      const nextHtml = normalizeInsertedHtml(editor.innerHTML);
+      pushHistorySnapshot(nextHtml);
+      onChange(nextHtml);
+      requestAnimationFrame(() => {
+        editor.focus();
+        const activeSelection = window.getSelection();
+        const spacerBlock = pendingInsertBlockRef.current;
+        if (!activeSelection || !spacerBlock || !editor.contains(spacerBlock)) {
+          return;
+        }
+        const restoredRange = document.createRange();
+        restoredRange.selectNodeContents(spacerBlock);
+        restoredRange.collapse(true);
+        activeSelection.removeAllRanges();
+        activeSelection.addRange(restoredRange);
+        savedRangeRef.current = restoredRange.cloneRange();
+      });
+      return true;
+    },
+    [
+      disabled,
+      normalizeInsertedHtml,
+      onChange,
+      pushHistorySnapshot,
+      resolveBlockFromRange,
+      saveSelectionRange,
+    ]
   );
 
   const applyEditorCommand = useCallback(
@@ -181,6 +369,7 @@ export const ClinicalDocumentRichTextEditor: React.FC<ClinicalDocumentRichTextEd
   const handleInput = useCallback(() => {
     const editor = editorRef.current;
     if (!editor) return;
+    pendingInsertBlockRef.current = null;
     const html = editor.innerHTML;
     pushHistorySnapshot(html);
     onChange(html);
@@ -194,9 +383,10 @@ export const ClinicalDocumentRichTextEditor: React.FC<ClinicalDocumentRichTextEd
         canUndo: history.canUndo,
         canRedo: history.canRedo,
         applyCommand: (command, value) => applyEditorCommandRef.current?.(command, value),
+        insertText: text => insertTextAtCursor(text),
       });
     },
-    [historyState, sectionId]
+    [historyState, insertTextAtCursor, sectionId]
   );
 
   const handleActivateInteraction = useCallback(() => {
@@ -210,8 +400,9 @@ export const ClinicalDocumentRichTextEditor: React.FC<ClinicalDocumentRichTextEd
       canUndo: historyState.canUndo,
       canRedo: historyState.canRedo,
       applyCommand: (command, value) => applyEditorCommandRef.current?.(command, value),
+      insertText: text => insertTextAtCursor(text),
     });
-  }, [historyState.canRedo, historyState.canUndo, sectionId]);
+  }, [historyState.canRedo, historyState.canUndo, insertTextAtCursor, sectionId]);
 
   return (
     <div className="clinical-document-rich-text-wrap">
@@ -228,8 +419,14 @@ export const ClinicalDocumentRichTextEditor: React.FC<ClinicalDocumentRichTextEd
         )}
         onInput={handleInput}
         onFocus={handleActivateInteraction}
-        onMouseUp={handleActivateInteraction}
+        onMouseUp={() => {
+          pendingInsertBlockRef.current = null;
+          saveSelectionRange();
+          handleActivateInteraction();
+        }}
+        onKeyUp={saveSelectionRange}
         onBlur={() => {
+          saveSelectionRange();
           isActiveRef.current = false;
           onDeactivateRef.current?.(sectionId);
         }}

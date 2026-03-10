@@ -184,8 +184,7 @@
 }
 
 .clinical-document-inline-action--panel-emoji {
-  margin-left: auto;
-  font-size: 16px;
+  font-size: 13px;
   line-height: 1;
 }
 
@@ -227,6 +226,60 @@
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 8px;
+}
+
+.clinical-document-indications-panel-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.clinical-document-indications-transfer-menu-wrap {
+  position: relative;
+}
+
+.clinical-document-indications-hidden-input {
+  display: none;
+}
+
+.clinical-document-indications-transfer-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 148px;
+  padding: 4px;
+  border: 1px solid #dbe2ea;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
+}
+
+.clinical-document-indications-transfer-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #334155;
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.clinical-document-indications-transfer-option:hover:not(:disabled) {
+  background: #f8fafc;
+}
+
+.clinical-document-indications-transfer-option:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
 }
 
 .clinical-document-indications-panel-eyebrow {
@@ -358,6 +411,17 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.clinical-document-indications-item:hover .clinical-document-indications-item-actions,
+.clinical-document-indications-item:focus-within .clinical-document-indications-item-actions,
+.clinical-document-indications-item:focus-within .clinical-document-indications-item-actions,
+.clinical-document-indications-item:hover .clinical-document-indications-item-actions {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .clinical-document-indications-badge {

@@ -25,6 +25,7 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
   onUnsign,
   onPrint,
   onUploadPdf,
+  onResetDocumentContent,
   patchDocumentTitle,
   patchPatientInfoTitle,
   patchPatientField,
@@ -43,6 +44,7 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
   addCustomIndication,
   updateIndication,
   deleteIndication,
+  importIndicationsCatalog,
 }) => {
   const sheetState = useClinicalDocumentSheetState(selectedDocument);
 
@@ -81,11 +83,11 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
         activeEditorHistoryState={sheetState.activeEditorHistoryState}
         onApplyPendingRemoteUpdate={onApplyPendingRemoteUpdate}
         onDiscardLocalDraftChanges={onDiscardLocalDraftChanges}
-        onSave={onSave}
         onSign={onSign}
         onUnsign={onUnsign}
         onPrint={onPrint}
         onUploadPdf={onUploadPdf}
+        onResetDocumentContent={onResetDocumentContent}
         onToggleFormatting={() => sheetState.setIsFormattingOpen(prev => !prev)}
         onApplyFormatting={sheetState.applyFormatting}
       />
@@ -163,9 +165,11 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
           onSetActivePlanSubsectionId={sheetState.setActivePlanSubsectionId}
           onSetActiveIndicationsSpecialtyId={sheetState.setActiveIndicationsSpecialtyId}
           onToggleIndicationsPanel={() => sheetState.setIsIndicationsPanelOpen(prev => !prev)}
+          onInsertIntoActiveEditor={sheetState.insertIntoActiveEditor}
           onAddCustomIndication={addCustomIndication}
           onUpdateIndication={updateIndication}
           onDeleteIndication={deleteIndication}
+          onImportIndicationsCatalog={importIndicationsCatalog}
           dragHandlers={sheetState.sectionDragHandlers}
         />
 

@@ -6,6 +6,7 @@ import {
   deleteClinicalDocumentIndicationCatalogItem,
   ensureClinicalDocumentIndicationsCatalog,
   getDefaultClinicalDocumentIndicationsCatalog,
+  replaceClinicalDocumentIndicationsCatalog,
   subscribeToClinicalDocumentIndicationsCatalog,
   type ClinicalDocumentIndicationsCatalog,
   updateClinicalDocumentIndicationCatalogItem,
@@ -34,6 +35,7 @@ interface UseClinicalDocumentIndicationsCatalogState {
     specialtyId: ClinicalDocumentIndicationSpecialtyId,
     itemId: string
   ) => Promise<boolean>;
+  importCatalog: (catalog: unknown) => Promise<boolean>;
 }
 
 export const useClinicalDocumentIndicationsCatalog = ({
@@ -131,6 +133,18 @@ export const useClinicalDocumentIndicationsCatalog = ({
       'Error deleting clinical indication:'
     );
 
+  const importCatalog = async (catalog: unknown): Promise<boolean> =>
+    runCatalogMutation(
+      () =>
+        replaceClinicalDocumentIndicationsCatalog({
+          hospitalId,
+          catalog: catalog as Parameters<
+            typeof replaceClinicalDocumentIndicationsCatalog
+          >[0]['catalog'],
+        }),
+      'Error importing clinical indications catalog:'
+    );
+
   return {
     indicationsCatalog,
     isSavingCustomIndication,
@@ -138,5 +152,6 @@ export const useClinicalDocumentIndicationsCatalog = ({
     addCustomIndication,
     updateIndication,
     deleteIndication,
+    importCatalog,
   };
 };

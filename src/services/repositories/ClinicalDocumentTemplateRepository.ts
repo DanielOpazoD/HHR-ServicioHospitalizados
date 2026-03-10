@@ -2,6 +2,12 @@ import { db } from '@/services/infrastructure/db';
 import { getActiveHospitalId } from '@/constants/firestorePaths';
 import type { ClinicalDocumentTemplate } from '@/features/clinical-documents/domain/entities';
 import { CLINICAL_DOCUMENT_TEMPLATES } from '@/features/clinical-documents/domain/rules';
+import {
+  formatClinicalDocumentContractIssues,
+  parseClinicalDocumentTemplate,
+  safeParseClinicalDocumentTemplate,
+} from '@/features/clinical-documents/contracts/clinicalDocumentRuntimeContracts';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryService';
 
 const getClinicalDocumentTemplatesCollectionPath = (
   hospitalId: string = getActiveHospitalId()
@@ -112,6 +118,22 @@ const normalizeTemplate = (
 const sortTemplates = (templates: ClinicalDocumentTemplate[]): ClinicalDocumentTemplate[] =>
   [...templates].sort((left, right) => left.name.localeCompare(right.name, 'es'));
 
+const validateTemplate = (template: ClinicalDocumentTemplate): ClinicalDocumentTemplate | null => {
+  const parsed = safeParseClinicalDocumentTemplate(template);
+  if (!parsed.success) {
+    recordOperationalTelemetry({
+      category: 'clinical_document',
+      status: 'failed',
+      operation: 'clinical_document_template_repository_invalid_template',
+      issues: formatClinicalDocumentContractIssues(parsed.error.issues),
+      context: { templateId: template.id, documentType: template.documentType },
+    });
+    return null;
+  }
+
+  return parsed.data;
+};
+
 export const ClinicalDocumentTemplateRepository = {
   async listAll(hospitalId: string = getActiveHospitalId()): Promise<ClinicalDocumentTemplate[]> {
     try {
@@ -124,11 +146,19 @@ export const ClinicalDocumentTemplateRepository = {
 
       const normalized = templates
         .map(template => normalizeTemplate(template))
+        .filter((template): template is ClinicalDocumentTemplate => Boolean(template))
+        .map(template => validateTemplate(template))
         .filter((template): template is ClinicalDocumentTemplate => Boolean(template));
 
       return normalized.length > 0 ? sortTemplates(normalized) : sortTemplates(defaultTemplates);
     } catch (error) {
-      console.error('[ClinicalDocumentTemplateRepository] Failed to list all templates:', error);
+      recordOperationalTelemetry({
+        category: 'clinical_document',
+        status: 'failed',
+        operation: 'clinical_document_template_repository_list_all',
+        issues: [error instanceof Error ? error.message : 'No se pudieron listar templates'],
+        context: { hospitalId },
+      });
       return sortTemplates(defaultTemplates);
     }
   },
@@ -146,11 +176,19 @@ export const ClinicalDocumentTemplateRepository = {
 
       const normalized = templates
         .map(template => normalizeTemplate(template))
+        .filter((template): template is ClinicalDocumentTemplate => Boolean(template))
+        .map(template => validateTemplate(template))
         .filter((template): template is ClinicalDocumentTemplate => Boolean(template));
 
       return normalized.length > 0 ? sortTemplates(normalized) : sortTemplates(defaultTemplates);
     } catch (error) {
-      console.error('[ClinicalDocumentTemplateRepository] Failed to list templates:', error);
+      recordOperationalTelemetry({
+        category: 'clinical_document',
+        status: 'failed',
+        operation: 'clinical_document_template_repository_list_active',
+        issues: [error instanceof Error ? error.message : 'No se pudieron listar templates'],
+        context: { hospitalId },
+      });
       return sortTemplates(defaultTemplates);
     }
   },
@@ -158,9 +196,14 @@ export const ClinicalDocumentTemplateRepository = {
   async seedDefaults(hospitalId: string = getActiveHospitalId()): Promise<void> {
     await db.runBatch(batch => {
       defaultTemplates.forEach(template => {
-        batch.set(getClinicalDocumentTemplatesCollectionPath(hospitalId), template.id, template, {
-          merge: true,
-        });
+        batch.set(
+          getClinicalDocumentTemplatesCollectionPath(hospitalId),
+          template.id,
+          parseClinicalDocumentTemplate(template),
+          {
+            merge: true,
+          }
+        );
       });
     });
   },
@@ -169,8 +212,13 @@ export const ClinicalDocumentTemplateRepository = {
     template: ClinicalDocumentTemplate,
     hospitalId: string = getActiveHospitalId()
   ): Promise<void> {
-    await db.setDoc(getClinicalDocumentTemplatesCollectionPath(hospitalId), template.id, template, {
-      merge: true,
-    });
+    await db.setDoc(
+      getClinicalDocumentTemplatesCollectionPath(hospitalId),
+      template.id,
+      parseClinicalDocumentTemplate(template),
+      {
+        merge: true,
+      }
+    );
   },
 };

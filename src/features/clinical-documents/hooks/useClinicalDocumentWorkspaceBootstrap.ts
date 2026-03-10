@@ -115,7 +115,6 @@ export const useClinicalDocumentWorkspaceBootstrap = ({
         allowSuccess: true,
       });
       if (outcome.status === 'failed') {
-        console.error('[ClinicalDocumentsWorkspace] Failed to seed templates:', outcome.issues);
         setTemplates(listActiveClinicalDocumentTemplates());
         return;
       }

@@ -158,4 +158,17 @@ describe('ClinicalDocumentRepository.listByEpisodeKeys', () => {
 
     expect(result.map(document => document.id)).toEqual(['d-3', 'd-2', 'd-1']);
   });
+
+  it('filters invalid documents returned by the repository query', async () => {
+    const invalid = buildDoc('broken', 'rut-1__2026-03-01', '2026-03-05T10:00:00.000Z') as any;
+    delete invalid.id;
+    vi.mocked(db.getDocs).mockResolvedValueOnce([
+      buildDoc('d-1', 'rut-1__2026-03-01', '2026-03-05T10:00:00.000Z'),
+      invalid,
+    ]);
+
+    const result = await ClinicalDocumentRepository.listByEpisodeKeys(['rut-1__2026-03-01'], 'hhr');
+
+    expect(result.map(document => document.id)).toEqual(['d-1']);
+  });
 });

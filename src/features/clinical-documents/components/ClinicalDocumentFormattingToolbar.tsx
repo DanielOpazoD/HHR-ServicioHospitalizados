@@ -11,7 +11,7 @@ import {
   Printer,
   Redo2,
   RotateCcw,
-  Save,
+  SquarePen,
   Underline,
   Undo2,
   UploadCloud,
@@ -37,11 +37,11 @@ interface ClinicalDocumentFormattingToolbarProps {
   activeEditorHistoryState: { canUndo: boolean; canRedo: boolean };
   onApplyPendingRemoteUpdate?: () => void;
   onDiscardLocalDraftChanges?: () => void;
-  onSave: () => void;
   onSign: () => void;
   onUnsign: () => void;
   onPrint: () => void;
   onUploadPdf: () => void;
+  onResetDocumentContent: () => void;
   onToggleFormatting: () => void;
   onApplyFormatting: (command: ClinicalDocumentFormattingCommand) => void;
 }
@@ -75,11 +75,11 @@ export const ClinicalDocumentFormattingToolbar: React.FC<
   activeEditorHistoryState,
   onApplyPendingRemoteUpdate,
   onDiscardLocalDraftChanges,
-  onSave,
   onSign,
   onUnsign,
   onPrint,
   onUploadPdf,
+  onResetDocumentContent,
   onToggleFormatting,
   onApplyFormatting,
 }) => {
@@ -108,15 +108,6 @@ export const ClinicalDocumentFormattingToolbar: React.FC<
         </div>
       )}
       <div className="relative flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={!canEdit || selectedDocument.isLocked || isSaving}
-          className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300"
-        >
-          <Save size={14} className="inline mr-2" />
-          Guardar
-        </button>
         <button
           type="button"
           onClick={onSign}
@@ -160,6 +151,15 @@ export const ClinicalDocumentFormattingToolbar: React.FC<
             <UploadCloud size={14} className="inline mr-2" />
           )}
           {driveExported ? 'Guardado en Drive' : 'Drive'}
+        </button>
+        <button
+          type="button"
+          onClick={onResetDocumentContent}
+          disabled={!canEdit || selectedDocument.isLocked}
+          className="rounded-xl border border-amber-200 px-3 py-2 text-xs font-black uppercase tracking-widest text-amber-700 hover:bg-amber-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:border-slate-200"
+        >
+          <SquarePen size={14} className="inline mr-2" />
+          Reiniciar
         </button>
         <button
           type="button"

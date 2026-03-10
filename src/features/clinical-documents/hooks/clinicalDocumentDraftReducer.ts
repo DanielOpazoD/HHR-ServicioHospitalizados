@@ -1,6 +1,10 @@
 import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
 import { appendClinicalDocumentIndicationText } from '@/features/clinical-documents/controllers/clinicalDocumentIndicationsController';
 import { normalizeClinicalDocumentContentForStorage } from '@/features/clinical-documents/controllers/clinicalDocumentRichTextController';
+import {
+  moveClinicalDocumentVisibleSection,
+  reorderClinicalDocumentVisibleSections,
+} from '@/features/clinical-documents/controllers/clinicalDocumentSectionOrderController';
 
 export interface ClinicalDocumentDraftBaseState {
   document: ClinicalDocumentRecord | null;
@@ -42,7 +46,9 @@ export type ClinicalDocumentDraftAction =
       type: 'PATCH_DOCUMENT_META';
       patch: Partial<Pick<ClinicalDocumentRecord, 'medico' | 'especialidad'>>;
     }
+  | { type: 'RESET_DOCUMENT_CONTENT' }
   | { type: 'AUTOSAVE_REQUESTED' }
+  | { type: 'AUTOSAVE_COMMIT_BASE'; document: ClinicalDocumentRecord; snapshot: string }
   | { type: 'AUTOSAVE_SUCCEEDED'; document: ClinicalDocumentRecord; snapshot: string }
   | { type: 'AUTOSAVE_FAILED' }
   | { type: 'SET_IS_SAVING'; value: boolean };
@@ -78,72 +84,6 @@ const patchDraft = (
   ...state,
   draft: state.draft ? patcher(state.draft) : state.draft,
 });
-
-const reorderVisibleSections = (
-  sections: ClinicalDocumentRecord['sections'],
-  sourceSectionId: string,
-  targetSectionId: string
-): ClinicalDocumentRecord['sections'] => {
-  if (sourceSectionId === targetSectionId) {
-    return sections;
-  }
-
-  const orderedSections = [...sections].sort((left, right) => left.order - right.order);
-  const visibleSections = orderedSections.filter(section => section.visible !== false);
-  const hiddenSections = orderedSections.filter(section => section.visible === false);
-  const sourceIndex = visibleSections.findIndex(section => section.id === sourceSectionId);
-  const targetIndex = visibleSections.findIndex(section => section.id === targetSectionId);
-
-  if (sourceIndex === -1 || targetIndex === -1) {
-    return sections;
-  }
-
-  const reorderedVisibleSections = [...visibleSections];
-  const [movedSection] = reorderedVisibleSections.splice(sourceIndex, 1);
-  reorderedVisibleSections.splice(targetIndex, 0, movedSection);
-
-  const nextVisibleSections = reorderedVisibleSections.map((section, index) => ({
-    ...section,
-    order: index,
-  }));
-  const nextHiddenSections = hiddenSections.map((section, index) => ({
-    ...section,
-    order: nextVisibleSections.length + index,
-  }));
-  const nextSectionMap = new Map(
-    [...nextVisibleSections, ...nextHiddenSections].map(section => [section.id, section])
-  );
-
-  return sections
-    .map(section => nextSectionMap.get(section.id) || section)
-    .sort((left, right) => left.order - right.order);
-};
-
-const moveVisibleSection = (
-  sections: ClinicalDocumentRecord['sections'],
-  sectionId: string,
-  direction: 'up' | 'down'
-): ClinicalDocumentRecord['sections'] => {
-  const visibleOrdered = [...sections]
-    .filter(section => section.visible !== false)
-    .sort((left, right) => left.order - right.order);
-  const currentVisibleIndex = visibleOrdered.findIndex(section => section.id === sectionId);
-  if (currentVisibleIndex === -1) {
-    return sections;
-  }
-
-  const targetVisibleIndex = direction === 'up' ? currentVisibleIndex - 1 : currentVisibleIndex + 1;
-  if (targetVisibleIndex < 0 || targetVisibleIndex >= visibleOrdered.length) {
-    return sections;
-  }
-
-  const targetSection = visibleOrdered[targetVisibleIndex];
-  if (!targetSection) {
-    return sections;
-  }
-
-  return reorderVisibleSections(sections, sectionId, targetSection.id);
-};
 
 const commitDocumentAsBase = (
   state: ClinicalDocumentDraftReducerState,
@@ -257,7 +197,7 @@ export const clinicalDocumentDraftReducer = (
     case 'REORDER_SECTION':
       return patchDraft(state, draft => ({
         ...draft,
-        sections: reorderVisibleSections(
+        sections: reorderClinicalDocumentVisibleSections(
           draft.sections,
           action.sourceSectionId,
           action.targetSectionId
@@ -266,7 +206,11 @@ export const clinicalDocumentDraftReducer = (
     case 'MOVE_SECTION':
       return patchDraft(state, draft => ({
         ...draft,
-        sections: moveVisibleSection(draft.sections, action.sectionId, action.direction),
+        sections: moveClinicalDocumentVisibleSection(
+          draft.sections,
+          action.sectionId,
+          action.direction
+        ),
       }));
     case 'PATCH_DOCUMENT_TITLE':
       return patchDraft(state, draft => ({
@@ -289,10 +233,33 @@ export const clinicalDocumentDraftReducer = (
         ...draft,
         ...action.patch,
       }));
+    case 'RESET_DOCUMENT_CONTENT':
+      return patchDraft(state, draft => ({
+        ...draft,
+        medico: '',
+        especialidad: '',
+        sections: draft.sections.map(section => ({
+          ...section,
+          content: '',
+          visible: true,
+        })),
+      }));
     case 'AUTOSAVE_REQUESTED':
       return {
         ...state,
         isSaving: true,
+      };
+    case 'AUTOSAVE_COMMIT_BASE':
+      return {
+        ...state,
+        isSaving: false,
+        hasPendingRemoteUpdate:
+          state.pendingRemoteState.snapshot !== action.snapshot && state.hasPendingRemoteUpdate,
+        baseState: buildClinicalDocumentDraftBaseState(action.document, action.snapshot),
+        pendingRemoteState:
+          state.pendingRemoteState.snapshot === action.snapshot
+            ? emptyBaseState()
+            : state.pendingRemoteState,
       };
     case 'AUTOSAVE_SUCCEEDED':
       return {
