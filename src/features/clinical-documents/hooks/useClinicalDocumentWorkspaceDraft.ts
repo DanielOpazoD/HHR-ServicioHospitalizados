@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
+import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
+
 import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
 import { validateClinicalDocument } from '@/features/clinical-documents/controllers/clinicalDocumentValidationController';
 import {
@@ -6,13 +8,16 @@ import {
   hydrateLegacyClinicalDocument,
   serializeClinicalDocument,
 } from '@/features/clinical-documents/controllers/clinicalDocumentWorkspaceController';
-import { appendClinicalDocumentIndicationText } from '@/features/clinical-documents/controllers/clinicalDocumentIndicationsController';
-import { normalizeClinicalDocumentContentForStorage } from '@/features/clinical-documents/controllers/clinicalDocumentRichTextController';
 import { executePersistClinicalDocumentDraft } from '@/application/clinical-documents/clinicalDocumentUseCases';
 import {
   recordOperationalOutcome,
   recordOperationalTelemetry,
 } from '@/services/observability/operationalTelemetryService';
+import {
+  clinicalDocumentDraftReducer,
+  createClinicalDocumentDraftReducerInitialState,
+  type ClinicalDocumentDraftBaseState,
+} from '@/features/clinical-documents/hooks/clinicalDocumentDraftReducer';
 
 interface UseClinicalDocumentWorkspaceDraftParams {
   documents: ClinicalDocumentRecord[];
@@ -34,11 +39,11 @@ export interface ClinicalDocumentWorkspaceDraftState {
   hasLocalDraftChanges: boolean;
   applyPendingRemoteUpdate: () => void;
   discardLocalDraftChanges: () => void;
-  setDraft: React.Dispatch<React.SetStateAction<ClinicalDocumentRecord | null>>;
+  setDraft: Dispatch<SetStateAction<ClinicalDocumentRecord | null>>;
   isSaving: boolean;
-  setIsSaving: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsSaving: Dispatch<SetStateAction<boolean>>;
   validationIssues: Array<{ message: string }>;
-  lastPersistedSnapshotRef: React.MutableRefObject<string>;
+  lastPersistedSnapshotRef: MutableRefObject<string>;
   patchPatientField: (fieldId: string, value: string) => void;
   patchPatientFieldLabel: (fieldId: string, label: string) => void;
   setPatientFieldVisibility: (fieldId: string, visible: boolean) => void;
@@ -56,11 +61,10 @@ export interface ClinicalDocumentWorkspaceDraftState {
   ) => void;
 }
 
-export interface ClinicalDocumentDraftBaseState {
-  document: ClinicalDocumentRecord | null;
-  snapshot: string;
-  updatedAt: string;
-}
+const hydrateIncomingDocument = (
+  document: ClinicalDocumentRecord | null
+): ClinicalDocumentRecord | null =>
+  document ? hydrateLegacyClinicalDocument(structuredClone(document)) : null;
 
 export const useClinicalDocumentWorkspaceDraft = ({
   documents,
@@ -71,158 +75,86 @@ export const useClinicalDocumentWorkspaceDraft = ({
   role,
   user,
 }: UseClinicalDocumentWorkspaceDraftParams): ClinicalDocumentWorkspaceDraftState => {
-  const [draft, setDraft] = useState<ClinicalDocumentRecord | null>(null);
-  const [hasPendingRemoteUpdate, setHasPendingRemoteUpdate] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const [state, dispatch] = useReducer(
+    clinicalDocumentDraftReducer,
+    undefined,
+    createClinicalDocumentDraftReducerInitialState
+  );
   const autosaveTimerRef = useRef<number | null>(null);
   const lastPersistedSnapshotRef = useRef<string>('');
   const draftRef = useRef<ClinicalDocumentRecord | null>(null);
   const draftDirtyRef = useRef(false);
-  const pendingRemoteStateRef = useRef<ClinicalDocumentDraftBaseState>({
-    document: null,
-    snapshot: '',
-    updatedAt: '',
-  });
-  const baseDocumentStateRef = useRef<ClinicalDocumentDraftBaseState>({
-    document: null,
-    snapshot: '',
-    updatedAt: '',
-  });
+  const baseStateRef = useRef<ClinicalDocumentDraftBaseState>(state.baseState);
 
-  const buildDraftBaseState = useCallback(
-    (
-      document: ClinicalDocumentRecord | null,
-      snapshot: string
-    ): ClinicalDocumentDraftBaseState => ({
-      document: document ? structuredClone(document) : null,
-      snapshot,
-      updatedAt: document?.audit.updatedAt || '',
-    }),
-    []
+  const hasLocalDraftChanges = useMemo(
+    () => serializeClinicalDocument(state.draft) !== lastPersistedSnapshotRef.current,
+    [state.draft]
   );
-
-  const commitBaseState = useCallback(
-    (document: ClinicalDocumentRecord | null, snapshot: string) => {
-      const nextBaseState = buildDraftBaseState(document, snapshot);
-      baseDocumentStateRef.current = nextBaseState;
-      lastPersistedSnapshotRef.current = snapshot;
-      return nextBaseState;
-    },
-    [buildDraftBaseState]
-  );
-
-  const stagePendingRemoteUpdate = useCallback(
-    (document: ClinicalDocumentRecord | null, snapshot: string) => {
-      pendingRemoteStateRef.current = buildDraftBaseState(document, snapshot);
-      setHasPendingRemoteUpdate(Boolean(document && snapshot));
-    },
-    [buildDraftBaseState]
-  );
-
-  const clearPendingRemoteUpdate = useCallback(() => {
-    pendingRemoteStateRef.current = {
-      document: null,
-      snapshot: '',
-      updatedAt: '',
-    };
-    setHasPendingRemoteUpdate(false);
-  }, []);
-
-  const applyPendingRemoteUpdate = useCallback(() => {
-    const pendingRemoteState = pendingRemoteStateRef.current;
-    if (!pendingRemoteState.document || !pendingRemoteState.snapshot) {
-      return;
-    }
-
-    setDraft(structuredClone(pendingRemoteState.document));
-    commitBaseState(pendingRemoteState.document, pendingRemoteState.snapshot);
-    clearPendingRemoteUpdate();
-  }, [clearPendingRemoteUpdate, commitBaseState]);
-
-  const discardLocalDraftChanges = useCallback(() => {
-    const nextState = pendingRemoteStateRef.current.document
-      ? pendingRemoteStateRef.current
-      : baseDocumentStateRef.current.document
-        ? baseDocumentStateRef.current
-        : null;
-
-    if (!nextState?.document) {
-      return;
-    }
-
-    setDraft(structuredClone(nextState.document));
-    commitBaseState(nextState.document, nextState.snapshot);
-    clearPendingRemoteUpdate();
-  }, [clearPendingRemoteUpdate, commitBaseState]);
 
   useEffect(() => {
-    draftRef.current = draft;
-    if (!draft) {
-      draftDirtyRef.current = false;
-      return;
-    }
-    draftDirtyRef.current = serializeClinicalDocument(draft) !== lastPersistedSnapshotRef.current;
-  }, [draft]);
+    draftRef.current = state.draft;
+    draftDirtyRef.current = hasLocalDraftChanges;
+    baseStateRef.current = state.baseState;
+    lastPersistedSnapshotRef.current = state.baseState.snapshot;
+  }, [hasLocalDraftChanges, state.baseState, state.draft]);
 
   useEffect(() => {
     if (!selectedDocumentId) {
-      setDraft(null);
-      clearPendingRemoteUpdate();
-      commitBaseState(null, '');
+      dispatch({ type: 'LOAD_DOCUMENT', document: null, snapshot: '' });
       return;
     }
 
     const selected = documents.find(document => document.id === selectedDocumentId) || null;
-    const cloned = selected ? structuredClone(selected) : null;
-    const hydratedClone = cloned ? hydrateLegacyClinicalDocument(cloned) : null;
+    const hydratedClone = hydrateIncomingDocument(selected);
     const incomingSnapshot = serializeClinicalDocument(hydratedClone);
 
     const currentDraft = draftRef.current;
     const isSameSelectedDocument = Boolean(currentDraft) && currentDraft?.id === selectedDocumentId;
     if (isSameSelectedDocument && draftDirtyRef.current) {
-      const baseState = baseDocumentStateRef.current;
+      const baseState = baseStateRef.current;
       const isNewRemoteVersion =
         hydratedClone?.audit.updatedAt &&
         hydratedClone.audit.updatedAt !== baseState.updatedAt &&
         incomingSnapshot !== baseState.snapshot;
-      if (isNewRemoteVersion) {
-        stagePendingRemoteUpdate(hydratedClone, incomingSnapshot);
+      if (isNewRemoteVersion && hydratedClone) {
+        dispatch({
+          type: 'REMOTE_UPDATE_RECEIVED',
+          document: hydratedClone,
+          snapshot: incomingSnapshot,
+        });
       }
       return;
     }
-    clearPendingRemoteUpdate();
-    setDraft(hydratedClone);
-    commitBaseState(hydratedClone, incomingSnapshot);
+
+    dispatch({
+      type: 'LOAD_DOCUMENT',
+      document: hydratedClone,
+      snapshot: incomingSnapshot,
+    });
+  }, [documents, selectedDocumentId]);
+
+  useEffect(() => {
+    if (!state.hasPendingRemoteUpdate || draftDirtyRef.current) {
+      return;
+    }
+
+    if (!state.pendingRemoteState.document || !state.pendingRemoteState.snapshot) {
+      return;
+    }
+
+    dispatch({ type: 'APPLY_REMOTE_UPDATE' });
   }, [
-    clearPendingRemoteUpdate,
-    commitBaseState,
-    documents,
-    selectedDocumentId,
-    stagePendingRemoteUpdate,
+    state.hasPendingRemoteUpdate,
+    state.pendingRemoteState.document,
+    state.pendingRemoteState.snapshot,
   ]);
 
   useEffect(() => {
-    if (!hasPendingRemoteUpdate || draftDirtyRef.current) {
+    if (!state.draft || !canEdit || state.draft.isLocked || !isActive || !user) {
       return;
     }
 
-    const pendingRemoteState = pendingRemoteStateRef.current;
-    if (!pendingRemoteState.document || !pendingRemoteState.snapshot) {
-      setHasPendingRemoteUpdate(false);
-      return;
-    }
-
-    setDraft(structuredClone(pendingRemoteState.document));
-    commitBaseState(pendingRemoteState.document, pendingRemoteState.snapshot);
-    clearPendingRemoteUpdate();
-  }, [clearPendingRemoteUpdate, commitBaseState, draft, hasPendingRemoteUpdate]);
-
-  useEffect(() => {
-    if (!draft || !canEdit || draft.isLocked || !isActive || !user) {
-      return;
-    }
-
-    const draftSnapshot = serializeClinicalDocument(draft);
+    const draftSnapshot = serializeClinicalDocument(state.draft);
     if (draftSnapshot === lastPersistedSnapshotRef.current) {
       return;
     }
@@ -232,38 +164,45 @@ export const useClinicalDocumentWorkspaceDraft = ({
     }
 
     autosaveTimerRef.current = window.setTimeout(async () => {
+      dispatch({ type: 'AUTOSAVE_REQUESTED' });
+
       try {
-        setIsSaving(true);
         const actor = buildClinicalDocumentActor(user, role);
         const result = await executePersistClinicalDocumentDraft(
-          draft,
+          state.draft!,
           hospitalId,
           actor,
           'autosave'
         );
         recordOperationalOutcome('clinical_document', 'autosave_clinical_document', result, {
-          date: draft.sourceDailyRecordDate,
-          context: { documentId: draft.id },
+          date: state.draft?.sourceDailyRecordDate,
+          context: { documentId: state.draft?.id },
         });
+
         if (result.status === 'success' && result.data) {
-          commitBaseState(result.data, serializeClinicalDocument(result.data));
-          clearPendingRemoteUpdate();
-          setDraft(result.data);
-        } else {
-          console.error('[ClinicalDocumentsWorkspace] Autosave failed', result.issues[0]?.message);
+          const savedSnapshot = serializeClinicalDocument(result.data);
+          lastPersistedSnapshotRef.current = savedSnapshot;
+          dispatch({
+            type: 'AUTOSAVE_SUCCEEDED',
+            document: result.data,
+            snapshot: savedSnapshot,
+          });
+          return;
         }
+
+        console.error('[ClinicalDocumentsWorkspace] Autosave failed', result.issues[0]?.message);
+        dispatch({ type: 'AUTOSAVE_FAILED' });
       } catch (error) {
         console.error('[ClinicalDocumentsWorkspace] Autosave failed', error);
         recordOperationalTelemetry({
           category: 'clinical_document',
           status: 'failed',
           operation: 'autosave_clinical_document',
-          date: draft.sourceDailyRecordDate,
+          date: state.draft?.sourceDailyRecordDate,
           issues: [error instanceof Error ? error.message : 'Autosave failed'],
-          context: { documentId: draft.id },
+          context: { documentId: state.draft?.id },
         });
-      } finally {
-        setIsSaving(false);
+        dispatch({ type: 'AUTOSAVE_FAILED' });
       }
     }, 900);
 
@@ -273,238 +212,69 @@ export const useClinicalDocumentWorkspaceDraft = ({
         autosaveTimerRef.current = null;
       }
     };
-  }, [canEdit, clearPendingRemoteUpdate, commitBaseState, draft, hospitalId, isActive, role, user]);
+  }, [canEdit, hospitalId, isActive, role, state.draft, user]);
 
-  const validationIssues = useMemo(() => (draft ? validateClinicalDocument(draft) : []), [draft]);
+  const validationIssues = useMemo(
+    () => (state.draft ? validateClinicalDocument(state.draft) : []),
+    [state.draft]
+  );
 
-  const patchPatientField = (fieldId: string, value: string) => {
-    setDraft(prev =>
-      prev
-        ? {
-            ...prev,
-            patientFields: prev.patientFields.map(field =>
-              field.id === fieldId ? { ...field, value } : field
-            ),
-          }
-        : prev
-    );
-  };
+  const setDraft = useCallback<Dispatch<SetStateAction<ClinicalDocumentRecord | null>>>(
+    nextDraftOrUpdater => {
+      const nextDraft =
+        typeof nextDraftOrUpdater === 'function'
+          ? nextDraftOrUpdater(draftRef.current)
+          : nextDraftOrUpdater;
+      const hydratedDraft = hydrateIncomingDocument(nextDraft);
+      dispatch({
+        type: 'LOAD_DOCUMENT',
+        document: hydratedDraft,
+        snapshot: serializeClinicalDocument(hydratedDraft),
+      });
+    },
+    []
+  );
 
-  const patchSection = (sectionId: string, content: string) => {
-    setDraft(prev =>
-      prev
-        ? {
-            ...prev,
-            sections: prev.sections.map(section =>
-              section.id === sectionId
-                ? { ...section, content: normalizeClinicalDocumentContentForStorage(content) }
-                : section
-            ),
-          }
-        : prev
-    );
-  };
-
-  const appendSectionText = (sectionId: string, text: string) => {
-    setDraft(prev =>
-      prev
-        ? {
-            ...prev,
-            sections: prev.sections.map(section =>
-              section.id === sectionId
-                ? {
-                    ...section,
-                    content: appendClinicalDocumentIndicationText(section.content, text),
-                  }
-                : section
-            ),
-          }
-        : prev
-    );
-  };
-
-  const patchPatientFieldLabel = (fieldId: string, label: string) => {
-    setDraft(prev =>
-      prev
-        ? {
-            ...prev,
-            patientFields: prev.patientFields.map(field =>
-              field.id === fieldId ? { ...field, label } : field
-            ),
-          }
-        : prev
-    );
-  };
-
-  const patchSectionTitle = (sectionId: string, title: string) => {
-    setDraft(prev =>
-      prev
-        ? {
-            ...prev,
-            sections: prev.sections.map(section =>
-              section.id === sectionId ? { ...section, title } : section
-            ),
-          }
-        : prev
-    );
-  };
-
-  const setPatientFieldVisibility = (fieldId: string, visible: boolean) => {
-    setDraft(prev =>
-      prev
-        ? {
-            ...prev,
-            patientFields: prev.patientFields.map(field =>
-              field.id === fieldId ? { ...field, visible } : field
-            ),
-          }
-        : prev
-    );
-  };
-
-  const setSectionVisibility = (sectionId: string, visible: boolean) => {
-    setDraft(prev =>
-      prev
-        ? {
-            ...prev,
-            sections: prev.sections.map(section =>
-              section.id === sectionId ? { ...section, visible } : section
-            ),
-          }
-        : prev
-    );
-  };
-
-  const reorderSection = (sourceSectionId: string, targetSectionId: string) => {
-    setDraft(prev => {
-      if (!prev || sourceSectionId === targetSectionId) return prev;
-
-      const orderedSections = [...prev.sections].sort((left, right) => left.order - right.order);
-      const visibleSections = orderedSections.filter(section => section.visible !== false);
-      const hiddenSections = orderedSections.filter(section => section.visible === false);
-      const sourceIndex = visibleSections.findIndex(section => section.id === sourceSectionId);
-      const targetIndex = visibleSections.findIndex(section => section.id === targetSectionId);
-
-      if (sourceIndex === -1 || targetIndex === -1) return prev;
-
-      const reorderedVisibleSections = [...visibleSections];
-      const [movedSection] = reorderedVisibleSections.splice(sourceIndex, 1);
-      reorderedVisibleSections.splice(targetIndex, 0, movedSection);
-
-      const nextVisibleSections = reorderedVisibleSections.map((section, index) => ({
-        ...section,
-        order: index,
-      }));
-      const nextHiddenSections = hiddenSections.map((section, index) => ({
-        ...section,
-        order: nextVisibleSections.length + index,
-      }));
-      const nextSectionMap = new Map(
-        [...nextVisibleSections, ...nextHiddenSections].map(section => [section.id, section])
-      );
-
-      return {
-        ...prev,
-        sections: prev.sections
-          .map(section => nextSectionMap.get(section.id) || section)
-          .sort((left, right) => left.order - right.order),
-      };
-    });
-  };
-
-  const moveSection = (sectionId: string, direction: 'up' | 'down') => {
-    setDraft(prev => {
-      if (!prev) return prev;
-
-      const visibleOrdered = [...prev.sections]
-        .filter(section => section.visible !== false)
-        .sort((left, right) => left.order - right.order);
-      const currentVisibleIndex = visibleOrdered.findIndex(section => section.id === sectionId);
-      if (currentVisibleIndex === -1) return prev;
-
-      const targetVisibleIndex =
-        direction === 'up' ? currentVisibleIndex - 1 : currentVisibleIndex + 1;
-      if (targetVisibleIndex < 0 || targetVisibleIndex >= visibleOrdered.length) {
-        return prev;
-      }
-
-      const targetSection = visibleOrdered[targetVisibleIndex];
-      if (!targetSection) return prev;
-
-      const orderedSections = [...prev.sections].sort((left, right) => left.order - right.order);
-      const hiddenSections = orderedSections.filter(section => section.visible === false);
-      const reorderedVisibleSections = [...visibleOrdered];
-      const [movedSection] = reorderedVisibleSections.splice(currentVisibleIndex, 1);
-      reorderedVisibleSections.splice(targetVisibleIndex, 0, movedSection);
-
-      const nextVisibleSections = reorderedVisibleSections.map((section, index) => ({
-        ...section,
-        order: index,
-      }));
-      const nextHiddenSections = hiddenSections.map((section, index) => ({
-        ...section,
-        order: nextVisibleSections.length + index,
-      }));
-      const nextSectionMap = new Map(
-        [...nextVisibleSections, ...nextHiddenSections].map(section => [section.id, section])
-      );
-
-      return {
-        ...prev,
-        sections: prev.sections
-          .map(section => nextSectionMap.get(section.id) || section)
-          .sort((left, right) => left.order - right.order),
-      };
-    });
-  };
-
-  const patchDocumentTitle = (title: string) => {
-    setDraft(prev => (prev ? { ...prev, title } : prev));
-  };
-
-  const patchPatientInfoTitle = (title: string) => {
-    setDraft(prev => (prev ? { ...prev, patientInfoTitle: title } : prev));
-  };
-
-  const patchFooterLabel = (kind: 'medico' | 'especialidad', title: string) => {
-    setDraft(prev =>
-      prev
-        ? kind === 'medico'
-          ? { ...prev, footerMedicoLabel: title }
-          : { ...prev, footerEspecialidadLabel: title }
-        : prev
-    );
-  };
-
-  const patchDocumentMeta = (
-    patch: Partial<Pick<ClinicalDocumentRecord, 'medico' | 'especialidad'>>
-  ) => {
-    setDraft(prev => (prev ? { ...prev, ...patch } : prev));
-  };
+  const setIsSaving = useCallback<Dispatch<SetStateAction<boolean>>>(
+    nextValueOrUpdater => {
+      const nextValue =
+        typeof nextValueOrUpdater === 'function'
+          ? nextValueOrUpdater(state.isSaving)
+          : nextValueOrUpdater;
+      dispatch({ type: 'SET_IS_SAVING', value: nextValue });
+    },
+    [state.isSaving]
+  );
 
   return {
-    draft,
-    hasPendingRemoteUpdate,
-    hasLocalDraftChanges: draftDirtyRef.current,
-    applyPendingRemoteUpdate,
-    discardLocalDraftChanges,
+    draft: state.draft,
+    hasPendingRemoteUpdate: state.hasPendingRemoteUpdate,
+    hasLocalDraftChanges,
+    applyPendingRemoteUpdate: () => dispatch({ type: 'APPLY_REMOTE_UPDATE' }),
+    discardLocalDraftChanges: () => dispatch({ type: 'DISCARD_LOCAL_CHANGES' }),
     setDraft,
-    isSaving,
+    isSaving: state.isSaving,
     setIsSaving,
     validationIssues,
     lastPersistedSnapshotRef,
-    patchPatientField,
-    patchPatientFieldLabel,
-    setPatientFieldVisibility,
-    patchSection,
-    appendSectionText,
-    patchSectionTitle,
-    setSectionVisibility,
-    moveSection,
-    reorderSection,
-    patchDocumentTitle,
-    patchPatientInfoTitle,
-    patchFooterLabel,
-    patchDocumentMeta,
+    patchPatientField: (fieldId, value) => dispatch({ type: 'PATCH_FIELD', fieldId, value }),
+    patchPatientFieldLabel: (fieldId, label) =>
+      dispatch({ type: 'PATCH_FIELD_LABEL', fieldId, label }),
+    setPatientFieldVisibility: (fieldId, visible) =>
+      dispatch({ type: 'SET_FIELD_VISIBILITY', fieldId, visible }),
+    patchSection: (sectionId, content) => dispatch({ type: 'PATCH_SECTION', sectionId, content }),
+    appendSectionText: (sectionId, text) =>
+      dispatch({ type: 'APPEND_SECTION_TEXT', sectionId, text }),
+    patchSectionTitle: (sectionId, title) =>
+      dispatch({ type: 'PATCH_SECTION_TITLE', sectionId, title }),
+    setSectionVisibility: (sectionId, visible) =>
+      dispatch({ type: 'SET_SECTION_VISIBILITY', sectionId, visible }),
+    moveSection: (sectionId, direction) => dispatch({ type: 'MOVE_SECTION', sectionId, direction }),
+    reorderSection: (sourceSectionId, targetSectionId) =>
+      dispatch({ type: 'REORDER_SECTION', sourceSectionId, targetSectionId }),
+    patchDocumentTitle: title => dispatch({ type: 'PATCH_DOCUMENT_TITLE', title }),
+    patchPatientInfoTitle: title => dispatch({ type: 'PATCH_PATIENT_INFO_TITLE', title }),
+    patchFooterLabel: (kind, title) => dispatch({ type: 'PATCH_FOOTER_LABEL', kind, title }),
+    patchDocumentMeta: patch => dispatch({ type: 'PATCH_DOCUMENT_META', patch }),
   };
 };

@@ -56,6 +56,7 @@ export interface ClinicalDocumentPdfMeta {
 
 export interface ClinicalDocumentRecord {
   id: string;
+  schemaVersion?: number;
   hospitalId: string;
   documentType: ClinicalDocumentType;
   templateId: string;

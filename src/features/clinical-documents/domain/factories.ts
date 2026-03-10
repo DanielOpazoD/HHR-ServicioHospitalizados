@@ -12,6 +12,7 @@ import {
   CLINICAL_DOCUMENT_TEMPLATES,
   DEFAULT_CLINICAL_DOCUMENT_TEMPLATE_ID,
 } from '@/features/clinical-documents/domain/rules';
+import { CURRENT_CLINICAL_DOCUMENT_SCHEMA_VERSION } from '@/features/clinical-documents/domain/schema';
 
 const clonePatientFields = (
   template: ClinicalDocumentTemplate,
@@ -106,6 +107,7 @@ export const createClinicalDocumentDraft = ({
 
   const draft: ClinicalDocumentRecord = {
     id,
+    schemaVersion: CURRENT_CLINICAL_DOCUMENT_SCHEMA_VERSION,
     hospitalId,
     documentType: template.documentType,
     templateId: template.id,

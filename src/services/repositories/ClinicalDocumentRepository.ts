@@ -6,6 +6,10 @@ import type {
 } from '@/features/clinical-documents/domain/entities';
 import { buildClinicalDocumentRenderedText } from '@/features/clinical-documents/domain/factories';
 import { createHash } from '@/features/clinical-documents/utils/hash';
+import {
+  hydrateLegacyClinicalDocument,
+  normalizeClinicalDocumentForPersistence,
+} from '@/features/clinical-documents/controllers/clinicalDocumentCompatibilityController';
 
 const getClinicalDocumentsCollectionPath = (hospitalId: string = getActiveHospitalId()): string =>
   `hospitals/${hospitalId}/clinicalDocuments`;
@@ -31,19 +35,6 @@ const normalizeEpisodeKeys = (episodeKeys: string[]): string[] =>
     )
   );
 
-const hydrateLegacyRecordDefaults = (record: ClinicalDocumentRecord): ClinicalDocumentRecord => ({
-  ...record,
-  patientInfoTitle: record.patientInfoTitle || 'Información del Paciente',
-  footerMedicoLabel: record.footerMedicoLabel || 'Médico',
-  footerEspecialidadLabel: record.footerEspecialidadLabel || 'Especialidad',
-  audit: {
-    ...record.audit,
-    signatureRevocations: Array.isArray(record.audit.signatureRevocations)
-      ? record.audit.signatureRevocations
-      : [],
-  },
-});
-
 const sanitizeForFirestore = <T>(value: T): T => {
   if (Array.isArray(value)) {
     return value
@@ -62,7 +53,7 @@ const sanitizeForFirestore = <T>(value: T): T => {
 };
 
 const enrichRecord = (record: ClinicalDocumentRecord): ClinicalDocumentRecord => {
-  const hydrated = hydrateLegacyRecordDefaults(record);
+  const hydrated = normalizeClinicalDocumentForPersistence(record);
   const renderedText = buildClinicalDocumentRenderedText(hydrated);
   return {
     ...hydrated,
@@ -82,7 +73,7 @@ export const ClinicalDocumentRepository = {
         where: [{ field: 'episodeKey', operator: '==', value: episodeKey }],
       }
     );
-    return sortDocuments(documents.map(document => hydrateLegacyRecordDefaults(document)));
+    return sortDocuments(documents.map(document => hydrateLegacyClinicalDocument(document)));
   },
 
   async listByEpisodeKeys(
@@ -110,7 +101,7 @@ export const ClinicalDocumentRepository = {
     });
 
     return sortDocuments(
-      Array.from(deduplicated.values()).map(document => hydrateLegacyRecordDefaults(document))
+      Array.from(deduplicated.values()).map(document => hydrateLegacyClinicalDocument(document))
     );
   },
 
@@ -122,7 +113,7 @@ export const ClinicalDocumentRepository = {
       getClinicalDocumentsCollectionPath(hospitalId),
       documentId
     );
-    return document ? hydrateLegacyRecordDefaults(document) : null;
+    return document ? hydrateLegacyClinicalDocument(document) : null;
   },
 
   async createDraft(
@@ -209,7 +200,7 @@ export const ClinicalDocumentRepository = {
     return db.subscribeQuery<ClinicalDocumentRecord>(
       getClinicalDocumentsCollectionPath(hospitalId),
       { where: [{ field: 'episodeKey', operator: '==', value: episodeKey }] },
-      docs => callback(sortDocuments(docs.map(document => hydrateLegacyRecordDefaults(document))))
+      docs => callback(sortDocuments(docs.map(document => hydrateLegacyClinicalDocument(document))))
     );
   },
 

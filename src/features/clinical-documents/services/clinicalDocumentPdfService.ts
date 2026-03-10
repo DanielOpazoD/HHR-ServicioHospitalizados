@@ -121,7 +121,7 @@ export const generateClinicalDocumentPdfBlob = async (
   record: ClinicalDocumentRecord
 ): Promise<Blob> => {
   try {
-    const printStyled = await generateClinicalDocumentPrintStyledPdfBlob();
+    const printStyled = await generateClinicalDocumentPrintStyledPdfBlob(record);
     if (printStyled) {
       return printStyled;
     }

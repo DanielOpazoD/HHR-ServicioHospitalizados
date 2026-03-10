@@ -107,7 +107,10 @@ export const useClinicalDocumentWorkspaceExportActions = ({
 
   const handlePrint = useCallback(async () => {
     if (!selectedDocument) return;
-    const opened = await openClinicalDocumentBrowserPrintPreview(selectedDocument.title);
+    const opened = await openClinicalDocumentBrowserPrintPreview(
+      selectedDocument.title,
+      selectedDocument.documentType
+    );
     if (!opened) {
       recordOperationalTelemetry({
         category: 'export',
