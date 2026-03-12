@@ -74,7 +74,7 @@ describe('CensusTableBody', () => {
         bed: { id: 'R1', name: 'R1', type: BedType.MEDIA, isCuna: false },
         data: DataFactory.createMockPatient('R1', {
           admissionDate: '2026-02-15',
-          admissionTime: '02:10',
+          admissionTime: '14:10',
         }),
         isSubRow: false,
       },
@@ -83,7 +83,7 @@ describe('CensusTableBody', () => {
         bed: { id: 'R1', name: 'R1', type: BedType.MEDIA, isCuna: false },
         data: DataFactory.createMockPatient('R1-crib', {
           admissionDate: '2026-02-15',
-          admissionTime: '02:10',
+          admissionTime: '14:10',
         }),
         isSubRow: true,
       },

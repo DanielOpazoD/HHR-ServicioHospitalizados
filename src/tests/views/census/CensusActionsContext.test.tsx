@@ -339,7 +339,7 @@ describe('CensusActionsContext hooks', () => {
     );
   });
 
-  it('ignores concurrent discharge execution while one request is in flight', () => {
+  it('ignores concurrent discharge execution while one request is in flight', async () => {
     const addDischarge = vi.fn();
     mockedUseDailyRecordBedActions.mockReturnValue({
       clearPatient: vi.fn(),
@@ -377,7 +377,9 @@ describe('CensusActionsContext hooks', () => {
       result.current.commands.executeDischarge();
     });
 
-    expect(addDischarge).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(addDischarge).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('ignores concurrent transfer execution while one request is in flight', () => {

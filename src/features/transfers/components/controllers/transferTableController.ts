@@ -11,8 +11,12 @@ export type TransferTableMode = 'active' | 'finalized';
 
 export const ACTIVE_TRANSFER_STATUSES: readonly TransferStatus[] =
   ACTIVE_TRANSFER_LIFECYCLE_STATUSES;
-export const FINALIZED_TRANSFER_STATUSES: readonly TransferStatus[] =
-  CLOSED_TRANSFER_LIFECYCLE_STATUSES;
+export const FINALIZED_TRANSFER_STATUSES: readonly TransferStatus[] = [
+  'TRANSFERRED',
+  'REJECTED',
+  'CANCELLED',
+  'NO_RESPONSE',
+] as const;
 export const isTransferActiveStatus = isActiveTransferStatus;
 export const isTransferFinalizedStatus = isFinalizedTransferStatus;
 export const isTransferredStatus = isTransferredTransferStatus;

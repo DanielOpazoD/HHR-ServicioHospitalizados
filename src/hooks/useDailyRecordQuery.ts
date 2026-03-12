@@ -19,6 +19,35 @@ import {
   setDailyRecordQueryData,
   shouldUseDailyRecordRealtimeSync,
 } from '@/hooks/controllers/dailyRecordQueryController';
+import type {
+  SaveDailyRecordResult,
+  UpdatePartialDailyRecordResult,
+} from '@/services/repositories/contracts/dailyRecordResults';
+
+const saveDailyRecordWithCompatibility = async (
+  dailyRecord: ReturnType<typeof useRepositories>['dailyRecord'],
+  record: DailyRecord
+): Promise<SaveDailyRecordResult | null> => {
+  if (typeof dailyRecord.saveDetailed === 'function') {
+    return dailyRecord.saveDetailed(record);
+  }
+
+  await dailyRecord.save(record);
+  return null;
+};
+
+const patchDailyRecordWithCompatibility = async (
+  dailyRecord: ReturnType<typeof useRepositories>['dailyRecord'],
+  date: string,
+  partial: DailyRecordPatch
+): Promise<UpdatePartialDailyRecordResult | null> => {
+  if (typeof dailyRecord.updatePartialDetailed === 'function') {
+    return dailyRecord.updatePartialDetailed(date, partial);
+  }
+
+  await dailyRecord.updatePartial(date, partial);
+  return null;
+};
 
 /**
  * Hook for fetching a daily record by date with React Query.
@@ -75,7 +104,7 @@ export const useSaveDailyRecordMutation = () => {
 
   return useMutation({
     mutationFn: async (record: DailyRecord) => {
-      const result = await dailyRecord.saveDetailed(record);
+      const result = await saveDailyRecordWithCompatibility(dailyRecord, record);
       return { record, result };
     },
     onMutate: newRecord => {
@@ -129,7 +158,7 @@ export const usePatchDailyRecordMutation = (date: string) => {
 
   return useMutation({
     mutationFn: async (partial: DailyRecordPatch) => {
-      const result = await dailyRecord.updatePartialDetailed(date, partial);
+      const result = await patchDailyRecordWithCompatibility(dailyRecord, date, partial);
       return { partial, result };
     },
     onMutate: partial => {

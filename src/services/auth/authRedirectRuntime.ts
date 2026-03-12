@@ -32,7 +32,7 @@ export const getAuthRedirectRuntimeSupport = (): AuthRedirectRuntimeSupport => {
       canUseRedirectAuth: false,
       supportLevel: 'disabled',
       redirectDisabledReason:
-        'En este equipo el ingreso directo está desactivado para evitar bucles de acceso en el navegador.',
+        'En este equipo el acceso alternativo está desactivado para evitar bucles de acceso en el navegador.',
       supportSummary:
         'En localhost el sistema prefiere la ventana normal de Google y evita cambiar de pestaña automáticamente.',
       supportAction:

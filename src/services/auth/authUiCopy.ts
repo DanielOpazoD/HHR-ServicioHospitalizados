@@ -6,8 +6,7 @@ export const AUTH_UI_COPY = {
     'Tu navegador no abrió la ventana de Google. Vamos a intentar una forma de ingreso más directa.',
   blockedPopupManual:
     'No se pudo abrir la ventana de Google. Revisa si el navegador bloqueó ventanas emergentes o prueba la opción de ingreso directo.',
-  redirectUnavailable:
-    'La forma de ingreso sin ventana emergente no está disponible en este entorno.',
+  redirectUnavailable: 'El acceso alternativo está desactivado en este entorno.',
   redirectGenericError:
     'No fue posible completar el ingreso directo. Intenta nuevamente con el botón principal.',
   resetStorageConfirm:

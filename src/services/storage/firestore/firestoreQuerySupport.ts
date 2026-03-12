@@ -10,10 +10,35 @@ export const buildFirestoreMonthDateRange = (
   endDate: `${year}-${padDatePart(monthIndex + 1)}-31`,
 });
 
+type FirestoreDocLike<T> = { id: string; data: () => T };
+
 export const mapFirestoreRecords = <T>(
-  docs: Array<{ id: string; data: () => T }>,
+  docsOrSnapshot:
+    | Array<FirestoreDocLike<T>>
+    | {
+        docs?: Array<FirestoreDocLike<T>>;
+        forEach?: (callback: (doc: FirestoreDocLike<T>) => void) => void;
+      },
   mapper: (data: T, id: string) => DailyRecord
-): DailyRecord[] => docs.map(docItem => mapper(docItem.data(), docItem.id));
+): DailyRecord[] => {
+  if (Array.isArray(docsOrSnapshot)) {
+    return docsOrSnapshot.map(docItem => mapper(docItem.data(), docItem.id));
+  }
+
+  if (Array.isArray(docsOrSnapshot.docs)) {
+    return docsOrSnapshot.docs.map(docItem => mapper(docItem.data(), docItem.id));
+  }
+
+  if (typeof docsOrSnapshot.forEach === 'function') {
+    const items: DailyRecord[] = [];
+    docsOrSnapshot.forEach(docItem => {
+      items.push(mapper(docItem.data(), docItem.id));
+    });
+    return items;
+  }
+
+  return [];
+};
 
 export const toFirestoreRecordMap = (records: DailyRecord[]): Record<string, DailyRecord> =>
   records.reduce<Record<string, DailyRecord>>((acc, record) => {

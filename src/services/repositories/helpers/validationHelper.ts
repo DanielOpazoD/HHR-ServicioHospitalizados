@@ -21,7 +21,7 @@ const logSalvageSummary = (
     return;
   }
 
-  console.warn(`[RepositoryValidation] Salvaged ${date}`, {
+  console.info(`[RepositoryValidation] Salvaged ${date}`, {
     nullsNormalized: nullNormalization.replacedNullCount,
     arrayEntriesDropped: nullNormalization.droppedArrayEntriesCount,
     affectedPaths: nullNormalization.affectedPaths,

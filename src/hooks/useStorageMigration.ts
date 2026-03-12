@@ -26,8 +26,8 @@ interface UseStorageMigrationOptions {
 export const useStorageMigration = (options: UseStorageMigrationOptions = {}): MigrationState => {
   const { enabled = true } = options;
   const [state, setState] = useState<MigrationState>({
-    isComplete: true,
-    isMigrating: false,
+    isComplete: !enabled,
+    isMigrating: enabled,
     didMigrate: false,
     error: null,
   });
@@ -38,6 +38,13 @@ export const useStorageMigration = (options: UseStorageMigrationOptions = {}): M
     }
 
     const runMigration = async () => {
+      setState({
+        isComplete: false,
+        isMigrating: true,
+        didMigrate: false,
+        error: null,
+      });
+
       // Check if IndexedDB is available
       if (!isIndexedDBAvailable()) {
         console.warn('⚠️ IndexedDB not available, using localStorage only');

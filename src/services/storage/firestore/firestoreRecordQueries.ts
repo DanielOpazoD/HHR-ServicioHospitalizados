@@ -46,7 +46,7 @@ export const getAllRecordsFromFirestore = async (): Promise<Record<string, Daily
   try {
     const q = query(getRecordsCollection(), orderBy('date', 'desc'));
     const querySnapshot = await getDocs(q);
-    return toFirestoreRecordMap(mapFirestoreRecords(querySnapshot.docs, docToRecord));
+    return toFirestoreRecordMap(mapFirestoreRecords(querySnapshot, docToRecord));
   } catch (error) {
     console.error('❌ Error getting all records from Firestore:', error);
     return {};

@@ -44,6 +44,23 @@ const mapInitializationOutcome = (
   return createApplicationSuccess(data);
 };
 
+const normalizeInitializationResult = (
+  result: DailyRecordInitializationResult | DailyRecord
+): DailyRecordInitializationResult => {
+  if (result && typeof result === 'object' && 'record' in result && 'outcome' in result) {
+    return result as DailyRecordInitializationResult;
+  }
+
+  const record = result as DailyRecord;
+  return {
+    outcome: 'clean',
+    record,
+    sourceDate: undefined,
+    sourceCompatibilityIntensity: 'none',
+    sourceMigrationRulesApplied: [],
+  };
+};
+
 export class InitializeDailyRecordUseCase implements UseCase<
   InitializeDailyRecordInput,
   InitializeDailyRecordOutput
@@ -53,10 +70,11 @@ export class InitializeDailyRecordUseCase implements UseCase<
   ): Promise<ApplicationOutcome<InitializeDailyRecordOutput>> {
     const repository = input.repository || defaultDailyRecordReadPort;
     try {
-      const initialization = (await repository.initializeDay(
-        input.date,
-        input.copyFromDate
-      )) as DailyRecordInitializationResult;
+      const initialization = normalizeInitializationResult(
+        (await repository.initializeDay(input.date, input.copyFromDate)) as
+          | DailyRecordInitializationResult
+          | DailyRecord
+      );
       return mapInitializationOutcome(initialization);
     } catch (error) {
       return createApplicationFailed(

@@ -172,7 +172,7 @@ service cloud.firestore {
     // - numeric counters are bounded to non-negative values
     function isValidSystemHealthWrite(userId) {
       let payload = request.resource.data;
-      return canReportSystemHealth() &&
+      return isAuthenticated() &&
              request.auth.uid == userId &&
              payload.keys().hasOnly([
                'uid',
@@ -196,24 +196,24 @@ service cloud.firestore {
                'userAgent'
              ]) &&
              payload.uid == request.auth.uid &&
-             (payload.email == null || payload.email is string) &&
-             (payload.displayName == null || payload.displayName is string) &&
-             (payload.lastSeen == null || payload.lastSeen is string) &&
-             (payload.isOnline == null || payload.isOnline is bool) &&
-             (payload.isOutdated == null || payload.isOutdated is bool) &&
-             (payload.pendingMutations == null || (payload.pendingMutations is int && payload.pendingMutations >= 0 && payload.pendingMutations <= 10000)) &&
-             (payload.pendingSyncTasks == null || (payload.pendingSyncTasks is int && payload.pendingSyncTasks >= 0 && payload.pendingSyncTasks <= 10000)) &&
-             (payload.failedSyncTasks == null || (payload.failedSyncTasks is int && payload.failedSyncTasks >= 0 && payload.failedSyncTasks <= 10000)) &&
-             (payload.conflictSyncTasks == null || (payload.conflictSyncTasks is int && payload.conflictSyncTasks >= 0 && payload.conflictSyncTasks <= 10000)) &&
-             (payload.retryingSyncTasks == null || (payload.retryingSyncTasks is int && payload.retryingSyncTasks >= 0 && payload.retryingSyncTasks <= 10000)) &&
-             (payload.oldestPendingAgeMs == null || (payload.oldestPendingAgeMs is int && payload.oldestPendingAgeMs >= 0 && payload.oldestPendingAgeMs <= 864000000)) &&
-             (payload.localErrorCount == null || (payload.localErrorCount is int && payload.localErrorCount >= 0 && payload.localErrorCount <= 10000)) &&
-             (payload.degradedLocalPersistence == null || payload.degradedLocalPersistence is bool) &&
-             (payload.repositoryWarningCount == null || (payload.repositoryWarningCount is int && payload.repositoryWarningCount >= 0 && payload.repositoryWarningCount <= 10000)) &&
-             (payload.slowestRepositoryOperationMs == null || (payload.slowestRepositoryOperationMs is int && payload.slowestRepositoryOperationMs >= 0 && payload.slowestRepositoryOperationMs <= 864000000)) &&
-             (payload.appVersion == null || payload.appVersion is string) &&
-             (payload.platform == null || payload.platform is string) &&
-             (payload.userAgent == null || payload.userAgent is string);
+             (!('email' in payload) || payload.email == null || payload.email is string) &&
+             (!('displayName' in payload) || payload.displayName == null || payload.displayName is string) &&
+             (!('lastSeen' in payload) || payload.lastSeen == null || payload.lastSeen is string) &&
+             (!('isOnline' in payload) || payload.isOnline == null || payload.isOnline is bool) &&
+             (!('isOutdated' in payload) || payload.isOutdated == null || payload.isOutdated is bool) &&
+             (!('pendingMutations' in payload) || payload.pendingMutations == null || (payload.pendingMutations is int && payload.pendingMutations >= 0 && payload.pendingMutations <= 10000)) &&
+             (!('pendingSyncTasks' in payload) || payload.pendingSyncTasks == null || (payload.pendingSyncTasks is int && payload.pendingSyncTasks >= 0 && payload.pendingSyncTasks <= 10000)) &&
+             (!('failedSyncTasks' in payload) || payload.failedSyncTasks == null || (payload.failedSyncTasks is int && payload.failedSyncTasks >= 0 && payload.failedSyncTasks <= 10000)) &&
+             (!('conflictSyncTasks' in payload) || payload.conflictSyncTasks == null || (payload.conflictSyncTasks is int && payload.conflictSyncTasks >= 0 && payload.conflictSyncTasks <= 10000)) &&
+             (!('retryingSyncTasks' in payload) || payload.retryingSyncTasks == null || (payload.retryingSyncTasks is int && payload.retryingSyncTasks >= 0 && payload.retryingSyncTasks <= 10000)) &&
+             (!('oldestPendingAgeMs' in payload) || payload.oldestPendingAgeMs == null || (payload.oldestPendingAgeMs is int && payload.oldestPendingAgeMs >= 0 && payload.oldestPendingAgeMs <= 864000000)) &&
+             (!('localErrorCount' in payload) || payload.localErrorCount == null || (payload.localErrorCount is int && payload.localErrorCount >= 0 && payload.localErrorCount <= 10000)) &&
+             (!('degradedLocalPersistence' in payload) || payload.degradedLocalPersistence == null || payload.degradedLocalPersistence is bool) &&
+             (!('repositoryWarningCount' in payload) || payload.repositoryWarningCount == null || (payload.repositoryWarningCount is int && payload.repositoryWarningCount >= 0 && payload.repositoryWarningCount <= 10000)) &&
+             (!('slowestRepositoryOperationMs' in payload) || payload.slowestRepositoryOperationMs == null || (payload.slowestRepositoryOperationMs is int && payload.slowestRepositoryOperationMs >= 0 && payload.slowestRepositoryOperationMs <= 864000000)) &&
+             (!('appVersion' in payload) || payload.appVersion == null || payload.appVersion is string) &&
+             (!('platform' in payload) || payload.platform == null || payload.platform is string) &&
+             (!('userAgent' in payload) || payload.userAgent == null || payload.userAgent is string);
     }
     
     // Check if a date (ms timestamp) is within the editing window (+/- 1 day)

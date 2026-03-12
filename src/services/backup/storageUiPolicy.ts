@@ -14,7 +14,7 @@ export const getStorageLookupNotice = (
   if (result.status === 'restricted') {
     return {
       channel: 'warning',
-      title: 'Respaldo con observaciones',
+      title: 'Respaldo no verificable',
       message: `No se pudo confirmar el respaldo de ${artifactLabel} por permisos de Storage.`,
     };
   }
@@ -22,7 +22,7 @@ export const getStorageLookupNotice = (
   if (result.status === 'timeout') {
     return {
       channel: 'warning',
-      title: 'Respaldo con observaciones',
+      title: 'Verificacion incompleta',
       message: `La verificacion del respaldo de ${artifactLabel} excedio el tiempo esperado.`,
     };
   }
@@ -36,7 +36,7 @@ export const getStorageListNotice = (report: StorageListReport): StorageNotice |
   if (report.timedOut) {
     return {
       channel: 'warning',
-      title: 'Respaldos con observaciones',
+      title: 'Carga parcial de respaldos',
       message: 'La consulta a Storage tardó demasiado. La lista puede estar incompleta.',
     };
   }
@@ -44,7 +44,7 @@ export const getStorageListNotice = (report: StorageListReport): StorageNotice |
   if (report.skippedRestricted > 0) {
     return {
       channel: 'warning',
-      title: 'Respaldos con observaciones',
+      title: 'Carga parcial de respaldos',
       message: `${report.skippedRestricted} archivo(s) no pudieron leerse por restricciones de acceso.`,
     };
   }
@@ -52,7 +52,7 @@ export const getStorageListNotice = (report: StorageListReport): StorageNotice |
   if (degradedCount > 0) {
     return {
       channel: 'info',
-      title: 'Respaldos con observaciones',
+      title: 'Carga parcial de respaldos',
       message: `${degradedCount} archivo(s) fueron omitidos por datos o metadata incompatibles.`,
     };
   }

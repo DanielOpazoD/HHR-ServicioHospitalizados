@@ -10,7 +10,7 @@ export const buildExportJsonNotification = (
   outcome === 'success'
     ? {
         channel: 'success',
-        title: 'JSON exportado',
+        title: 'Datos exportados',
         message: 'Se generó el respaldo JSON correctamente.',
       }
     : {
@@ -25,7 +25,7 @@ export const buildExportCsvNotification = (
   outcome === 'success'
     ? {
         channel: 'success',
-        title: 'CSV exportado',
+        title: 'Datos exportados',
         message: 'Se generó el archivo CSV correctamente.',
       }
     : {
@@ -41,13 +41,13 @@ export const buildImportFileErrorNotification = (
     case 'invalid_format':
       return {
         channel: 'error',
-        title: 'Formato no compatible',
-        message: 'Selecciona un archivo .json válido.',
+        title: 'Formato Inválido',
+        message: 'Formato Inválido',
       };
     case 'processing_failed':
       return {
         channel: 'error',
-        title: 'Importación fallida',
+        title: 'No se pudo procesar el archivo',
         message: 'No se pudo procesar el archivo seleccionado.',
       };
     default:
