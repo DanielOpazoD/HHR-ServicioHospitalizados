@@ -5,6 +5,7 @@ import type {
   TransferRequest,
   TransferStatus,
 } from '@/types/transfers';
+import { isClosedTransferStatus } from '@/services/transfers/transferStatusController';
 
 export const buildHospitalizedPatients = (
   beds: Record<string, PatientData> | null | undefined
@@ -66,12 +67,6 @@ export const resolvePreviousTransferStatus = (transfer: TransferRequest): Transf
       : null;
   return previousChange?.to || 'ACCEPTED';
 };
-
-export const isClosedTransferStatus = (status: TransferStatus): boolean =>
-  status === 'TRANSFERRED' ||
-  status === 'CANCELLED' ||
-  status === 'REJECTED' ||
-  status === 'NO_RESPONSE';
 
 export const filterVisibleTransfers = (transfers: TransferRequest[]): TransferRequest[] =>
   transfers.filter(transfer => !transfer.archived);

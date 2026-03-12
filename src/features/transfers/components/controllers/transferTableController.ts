@@ -1,27 +1,21 @@
 import type { TransferRequest, TransferStatus } from '@/types/transfers';
+import {
+  ACTIVE_TRANSFER_STATUSES as ACTIVE_TRANSFER_LIFECYCLE_STATUSES,
+  CLOSED_TRANSFER_STATUSES as CLOSED_TRANSFER_LIFECYCLE_STATUSES,
+  isActiveTransferStatus,
+  isFinalizedTransferStatus,
+  isTransferredTransferStatus,
+} from '@/services/transfers/transferStatusController';
 
 export type TransferTableMode = 'active' | 'finalized';
 
-export const ACTIVE_TRANSFER_STATUSES: readonly TransferStatus[] = [
-  'REQUESTED',
-  'RECEIVED',
-  'ACCEPTED',
-] as const;
-
-export const FINALIZED_TRANSFER_STATUSES: readonly TransferStatus[] = [
-  'TRANSFERRED',
-  'REJECTED',
-  'CANCELLED',
-  'NO_RESPONSE',
-] as const;
-
-export const isTransferActiveStatus = (status: TransferStatus): boolean =>
-  ACTIVE_TRANSFER_STATUSES.includes(status);
-
-export const isTransferFinalizedStatus = (status: TransferStatus): boolean =>
-  FINALIZED_TRANSFER_STATUSES.includes(status);
-
-export const isTransferredStatus = (status: TransferStatus): boolean => status === 'TRANSFERRED';
+export const ACTIVE_TRANSFER_STATUSES: readonly TransferStatus[] =
+  ACTIVE_TRANSFER_LIFECYCLE_STATUSES;
+export const FINALIZED_TRANSFER_STATUSES: readonly TransferStatus[] =
+  CLOSED_TRANSFER_LIFECYCLE_STATUSES;
+export const isTransferActiveStatus = isActiveTransferStatus;
+export const isTransferFinalizedStatus = isFinalizedTransferStatus;
+export const isTransferredStatus = isTransferredTransferStatus;
 
 export interface TransferRowActionState {
   canEditInline: boolean;

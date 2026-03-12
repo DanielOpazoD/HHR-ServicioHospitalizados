@@ -151,6 +151,28 @@ describe('Transfer Service', () => {
 
       expect(transfer).toBeNull();
     });
+
+    it('should fall back to history collection when active transfer is missing', async () => {
+      vi.mocked(getDoc)
+        .mockResolvedValueOnce({
+          exists: () => false,
+        } as unknown as Awaited<ReturnType<typeof getDoc>>)
+        .mockResolvedValueOnce({
+          exists: () => true,
+          data: () => ({
+            status: 'TRANSFERRED',
+            requestDate: '2025-01-01',
+            createdAt: '2025-01-01T10:00:00.000Z',
+            updatedAt: '2025-01-02T10:00:00.000Z',
+            statusHistory: [],
+          }),
+        } as unknown as Awaited<ReturnType<typeof getDoc>>);
+
+      const transfer = await getTransferById('archived-transfer');
+
+      expect(transfer?.id).toBe('archived-transfer');
+      expect(transfer?.status).toBe('TRANSFERRED');
+    });
   });
 
   describe('deleteTransferRequest', () => {
@@ -252,6 +274,8 @@ describe('Transfer Service', () => {
     it('should handle subscription errors', () => {
       const onSnapshotMock = vi.mocked(firestore.onSnapshot);
       const callback = vi.fn();
+      const onError = vi.fn();
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
       let subscriptionCall = 0;
       onSnapshotMock.mockImplementation((...args: unknown[]) => {
@@ -268,8 +292,10 @@ describe('Transfer Service', () => {
         return vi.fn();
       });
 
-      subscribeToTransfers(callback);
+      subscribeToTransfers(callback, { onError });
       expect(callback).toHaveBeenCalledWith([]);
+      expect(onError).toHaveBeenCalled();
+      consoleErrorSpy.mockRestore();
     });
   });
 

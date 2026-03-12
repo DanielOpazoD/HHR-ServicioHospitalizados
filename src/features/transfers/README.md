@@ -42,11 +42,23 @@ transfers/
 │       └── TransferDocumentPackageModal.tsx
 ├── controllers/
 │   └── transferStatusInteractionController.ts
+├── hooks/
+│   └── useTransferSubscriptions.ts
 ├── services/
 │   └── destinationHospitalCatalogService.ts
 └── utils/
     └── localDate.ts
 ```
+
+La persistencia y sincronización operativa de traslados vive en:
+
+- [transferService.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/services/transfers/transferService.ts)
+- [transferQueriesService.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/services/transfers/transferQueriesService.ts)
+- [transferMutationsService.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/services/transfers/transferMutationsService.ts)
+- [transferSubscriptionsService.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/services/transfers/transferSubscriptionsService.ts)
+- [transferStatusController.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/services/transfers/transferStatusController.ts)
+
+`transferService.ts` debe mantenerse como fachada pública. La lógica nueva debe entrar en estas capas internas, no volver a crecer dentro de la fachada.
 
 ## Responsabilidades clave
 
@@ -79,6 +91,12 @@ La preparación/caché de documentos se apoya en:
 
 - [transferDocumentPackageController.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/hooks/controllers/transferDocumentPackageController.ts)
 
+### `useTransferSubscriptions.ts`
+
+- encapsula suscripción realtime
+- separa `transfers`, `isLoading` y `error`
+- evita que `useTransferManagement` tenga que manejar directamente snapshots de Firestore
+
 ## Documentos y hospitales
 
 Hoy el soporte documental real está habilitado para:
@@ -99,16 +117,22 @@ Si un hospital no tiene configuración documental:
 ## Reglas de mantenimiento
 
 1. La separación de estados activos/finalizados debe seguir usando la policy compartida del controller.
-2. Los cambios en documentos de traslado deben mantener el comportamiento:
+2. El estado de ciclo de vida de traslados debe seguir saliendo de [transferStatusController.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/services/transfers/transferStatusController.ts), no de listas duplicadas en hooks o componentes.
+3. `transferService.ts` no debe volver a mezclar queries, mutaciones, normalización y suscripción en un solo archivo.
+4. La suscripción realtime debe exponer error legible al consumidor, aunque el UI decida no mostrarlo.
+5. Los cambios en documentos de traslado deben mantener el comportamiento:
    - `Preparar docs` persiste respuestas
    - `Ver docs` reutiliza el paquete ya generado dentro de la sesión si la firma no cambió
-3. La fecha de solicitud debe manejarse con fecha local, no UTC.
-4. Si se agregan nuevos hospitales con plantillas, actualizar la configuración documental y los tests del flujo.
+6. La fecha de solicitud debe manejarse con fecha local, no UTC.
+7. Si se agregan nuevos hospitales con plantillas, actualizar la configuración documental y los tests del flujo.
 
 ## Tests relevantes
 
 - [TransferManagementView.test.tsx](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/tests/features/transfers/TransferManagementView.test.tsx)
+- [useTransferSubscriptions.test.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/tests/features/transfers/useTransferSubscriptions.test.ts)
 - [TransferFormModal.test.tsx](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/tests/features/transfers/TransferFormModal.test.tsx)
 - [transferTableController.test.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/tests/features/transfers/transferTableController.test.ts)
+- [transferStatusController.test.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/tests/services/transfers/transferStatusController.test.ts)
+- [transferSubscriptionController.test.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/tests/services/transfers/transferSubscriptionController.test.ts)
 - [useTransferViewStates.test.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/tests/hooks/useTransferViewStates.test.ts)
 - [transferDocumentPackageController.test.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/tests/hooks/controllers/transferDocumentPackageController.test.ts)

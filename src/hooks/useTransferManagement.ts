@@ -3,9 +3,8 @@
  * Manages transfer requests state and operations
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { TransferRequest, TransferFormData, TransferStatus } from '@/types/transfers';
-import { subscribeToTransfers } from '@/services/transfers/transferService';
 import { useAuth } from '@/context/AuthContext';
 import { useDailyRecordData } from '@/context/DailyRecordContext';
 import {
@@ -18,6 +17,7 @@ import {
   filterVisibleTransfers,
 } from '@/hooks/controllers/transferManagementController';
 import { useTransferManagementActions } from '@/hooks/useTransferManagementActions';
+import { useTransferSubscriptions } from '@/features/transfers/hooks/useTransferSubscriptions';
 
 interface UseTransferManagementReturn {
   // State
@@ -43,25 +43,12 @@ interface UseTransferManagementReturn {
 }
 
 export const useTransferManagement = (): UseTransferManagementReturn => {
-  const [transfers, setTransfers] = useState<TransferRequest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
+  const [actionError, setActionError] = useState<string | null>(null);
   const { user } = useAuth();
   const { record } = useDailyRecordData();
   const { addTransfer } = useDailyRecordMovementActions();
   const { clearPatient } = useDailyRecordBedActions();
-
-  // Subscribe to transfers on mount
-  useEffect(() => {
-    // isLoading initialized to true
-    const unsubscribe = subscribeToTransfers(data => {
-      setTransfers(data);
-      setIsLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
+  const { transfers, isLoading, error } = useTransferSubscriptions();
 
   // Get list of hospitalized patients for the selector
   const getHospitalizedPatients = useCallback(() => {
@@ -83,7 +70,7 @@ export const useTransferManagement = (): UseTransferManagementReturn => {
     record,
     addTransfer,
     clearPatient,
-    setError,
+    setError: setActionError,
   });
 
   // Keep archived transfers hidden from operational views.
@@ -93,7 +80,7 @@ export const useTransferManagement = (): UseTransferManagementReturn => {
   return {
     transfers: visibleTransfers,
     isLoading,
-    error,
+    error: actionError || error,
     createTransfer,
     updateTransfer,
     advanceStatus,
