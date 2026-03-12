@@ -54,7 +54,7 @@ describe('useCensusActionsProviderModel', () => {
     });
   });
 
-  it('uses injected clock provider for default discharge/transfer time payloads', () => {
+  it('uses injected clock provider for default discharge/transfer time payloads', async () => {
     const addDischarge = vi.fn();
     const addTransfer = vi.fn();
 
@@ -86,7 +86,7 @@ describe('useCensusActionsProviderModel', () => {
       }));
     });
 
-    act(() => {
+    await act(async () => {
       result.current.commandsValue.executeDischarge();
     });
 
@@ -109,7 +109,7 @@ describe('useCensusActionsProviderModel', () => {
       }));
     });
 
-    act(() => {
+    await act(async () => {
       result.current.commandsValue.executeTransfer();
     });
 

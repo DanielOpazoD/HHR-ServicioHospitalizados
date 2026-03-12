@@ -17,12 +17,11 @@ import {
   buildPatientSubSectionBindings,
   type PatientRowViewContext,
 } from '@/features/census/controllers/patientRowBindingSectionsController';
-import { resolvePatientRowCapabilities } from '@/features/census/controllers/patientRowCapabilitiesController';
+import type { PatientRowResolvedIndicators } from '@/features/census/controllers/patientRowIndicatorsController';
 import {
-  EMPTY_PATIENT_ROW_INDICATORS,
-  type PatientRowResolvedIndicators,
-  resolvePatientRowIndicators,
-} from '@/features/census/controllers/patientRowIndicatorsController';
+  buildPatientRowModalViewContext,
+  resolvePatientRowViewContext,
+} from '@/features/census/controllers/patientRowViewContextController';
 
 export interface BuildPatientRowBindingsParams {
   bed: BedDefinition;
@@ -40,31 +39,6 @@ export interface BuildPatientRowBindingsParams {
 }
 
 export type PatientRowBindingsInput = Omit<BuildPatientRowBindingsParams, 'runtime'>;
-
-const resolvePatientRowViewContext = ({
-  role,
-  data,
-  runtime,
-  indicators,
-}: Pick<
-  BuildPatientRowBindingsParams,
-  'role' | 'data' | 'runtime' | 'indicators'
->): PatientRowViewContext => {
-  const capabilities = resolvePatientRowCapabilities({
-    role,
-    patient: data,
-    isBlocked: runtime.rowState.isBlocked,
-    isEmpty: runtime.rowState.isEmpty,
-  });
-
-  return {
-    capabilities,
-    indicators: resolvePatientRowIndicators({
-      indicators,
-      canShowClinicalDocumentIndicator: capabilities.canShowClinicalDocumentIndicator,
-    }),
-  };
-};
 
 export const buildPatientMainRowBindings = ({
   bed,
@@ -158,17 +132,20 @@ export const buildPatientRowModalsBindings = ({
     currentDateString,
     isSubRow,
     runtime,
-    viewContext: {
-      capabilities:
-        capabilitiesOverride ??
-        resolvePatientRowViewContext({
+    viewContext: capabilitiesOverride
+      ? {
+          capabilities: capabilitiesOverride,
+          indicators: buildPatientRowModalViewContext({
+            role,
+            data,
+            runtime,
+          }).indicators,
+        }
+      : buildPatientRowModalViewContext({
           role,
           data,
           runtime,
-          indicators: undefined,
-        }).capabilities,
-      indicators: EMPTY_PATIENT_ROW_INDICATORS,
-    },
+        }),
   });
 
 export const buildPatientRowBindings = ({

@@ -1,4 +1,8 @@
 import { getCurrentClockTimeHHMM } from '@/features/census/controllers/censusClockController';
+import {
+  buildCensusActionCommandsControllerParams,
+  buildCensusActionContextValuesParams,
+} from '@/features/census/controllers/censusActionsProviderModelController';
 import { buildCensusActionRuntimeRefsParams } from '@/features/census/controllers/censusActionRuntimeRefsController';
 import { useCensusActionCommandsController } from '@/features/census/hooks/useCensusActionCommandsController';
 import { useCensusActionContextValues } from '@/features/census/hooks/useCensusActionContextValues';
@@ -24,17 +28,6 @@ export const useCensusActionsProviderModel = ({
 }: UseCensusActionsProviderModelParams = {}): UseCensusActionsProviderModelResult => {
   const dependencies = useCensusActionDependencies();
   const stateStore = useCensusActionStateStore();
-  const {
-    actionState,
-    setActionState,
-    dischargeState,
-    setDischargeState,
-    transferState,
-    setTransferState,
-    handleEditDischarge,
-    handleEditTransfer,
-  } = stateStore;
-
   const runtimeRefs = useCensusActionRuntimeRefs(
     buildCensusActionRuntimeRefsParams({
       state: stateStore,
@@ -43,26 +36,23 @@ export const useCensusActionsProviderModel = ({
   );
 
   const { executeMoveOrCopy, executeDischarge, executeTransfer, handleRowAction } =
-    useCensusActionCommandsController({
-      ...runtimeRefs,
-      setActionState,
-      setDischargeState,
-      setTransferState,
-      getCurrentTime,
-    });
+    useCensusActionCommandsController(
+      buildCensusActionCommandsControllerParams({
+        runtimeRefs,
+        stateStore,
+        getCurrentTime,
+      })
+    );
 
-  return useCensusActionContextValues({
-    actionState,
-    setActionState,
-    dischargeState,
-    setDischargeState,
-    transferState,
-    setTransferState,
-    executeMoveOrCopy,
-    executeDischarge,
-    handleEditDischarge,
-    executeTransfer,
-    handleEditTransfer,
-    handleRowAction,
-  });
+  return useCensusActionContextValues(
+    buildCensusActionContextValuesParams({
+      stateStore,
+      commands: {
+        executeMoveOrCopy,
+        executeDischarge,
+        executeTransfer,
+        handleRowAction,
+      },
+    })
+  );
 };

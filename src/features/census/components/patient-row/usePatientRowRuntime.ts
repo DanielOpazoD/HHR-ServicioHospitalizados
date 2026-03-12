@@ -6,6 +6,10 @@ import type { PatientRowRuntime } from '@/features/census/components/patient-row
 import { usePatientRowEditingRuntime } from '@/features/census/components/patient-row/usePatientRowEditingRuntime';
 import { usePatientRowInteractionRuntime } from '@/features/census/components/patient-row/usePatientRowInteractionRuntime';
 import { buildPatientRowRuntime } from '@/features/census/controllers/patientRowRuntimeController';
+import {
+  buildPatientRowEditingRuntimeParams,
+  buildPatientRowInteractionRuntimeParams,
+} from '@/features/census/controllers/patientRowRuntimeModelController';
 
 interface UsePatientRowRuntimeParams {
   bed: BedDefinition;
@@ -29,23 +33,31 @@ export const usePatientRowRuntime = ({
   } = usePatientRowDependencies();
   const rowState = derivePatientRowState(data);
   const editingRuntime = usePatientRowEditingRuntime({
-    bedId: bed.id,
-    documentType: data?.documentType,
-    updatePatient,
-    updatePatientMultiple,
-    updateClinicalCrib,
-    updateClinicalCribMultiple,
+    ...buildPatientRowEditingRuntimeParams({
+      bed,
+      data,
+      dependencies: {
+        updatePatient,
+        updatePatientMultiple,
+        updateClinicalCrib,
+        updateClinicalCribMultiple,
+      },
+    }),
   });
   const interactionRuntime = usePatientRowInteractionRuntime({
-    bedId: bed.id,
-    data,
-    onAction,
-    rowState,
-    updatePatient,
-    updateClinicalCrib,
-    toggleBedType,
-    confirm,
-    alert,
+    ...buildPatientRowInteractionRuntimeParams({
+      bed,
+      data,
+      onAction,
+      rowState,
+      dependencies: {
+        updatePatient,
+        updateClinicalCrib,
+        toggleBedType,
+        confirm,
+        alert,
+      },
+    }),
   });
 
   return buildPatientRowRuntime({

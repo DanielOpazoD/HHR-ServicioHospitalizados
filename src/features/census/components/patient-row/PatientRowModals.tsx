@@ -4,8 +4,7 @@ import { ExamRequestModal } from '@/components/modals/ExamRequestModal';
 import { ImagingRequestDialog } from '@/components/modals/ImagingRequestDialog';
 import { PatientHistoryModal } from '@/components/modals/PatientHistoryModal';
 import { ClinicalDocumentsModal } from '@/features/clinical-documents';
-import { resolvePatientRowDemographicsBinding } from '@/features/census/controllers/patientRowModalController';
-import { resolvePatientRowModalVisibilityState } from '@/features/census/controllers/patientRowModalVisibilityController';
+import { buildPatientRowModalRenderModel } from '@/features/census/controllers/patientRowModalRenderController';
 import type { PatientRowModalsProps } from '@/features/census/components/patient-row/patientRowViewContracts';
 
 export const PatientRowModals: React.FC<PatientRowModalsProps> = ({
@@ -30,14 +29,16 @@ export const PatientRowModals: React.FC<PatientRowModalsProps> = ({
   onSaveDemographics,
   onSaveCribDemographics,
 }) => {
-  const demographicsBinding = resolvePatientRowDemographicsBinding({
+  const {
+    demographicsBinding,
+    visibilityState,
+    demographicsKey,
+    historyPatientRut,
+    historyPatientName,
+  } = buildPatientRowModalRenderModel({
     bedId,
-    isSubRow,
     data,
-    onSaveDemographics,
-    onSaveCribDemographics,
-  });
-  const visibilityState = resolvePatientRowModalVisibilityState({
+    isSubRow,
     showDemographics,
     showClinicalDocuments,
     canOpenClinicalDocuments,
@@ -47,13 +48,15 @@ export const PatientRowModals: React.FC<PatientRowModalsProps> = ({
     canOpenImagingRequest,
     showHistory,
     canOpenHistory,
+    onSaveDemographics,
+    onSaveCribDemographics,
   });
 
   return (
     <>
       {visibilityState.shouldRenderDemographics ? (
         <DemographicsModal
-          key={`demographics-${demographicsBinding.targetBedId}-${showDemographics ? 'open' : 'closed'}-${data.patientName}-${data.rut}-${data.identityStatus || 'na'}`}
+          key={demographicsKey}
           isOpen={showDemographics}
           onClose={onCloseDemographics}
           data={data}
@@ -95,8 +98,8 @@ export const PatientRowModals: React.FC<PatientRowModalsProps> = ({
         <PatientHistoryModal
           isOpen={showHistory}
           onClose={onCloseHistory}
-          patientRut={data.rut || ''}
-          patientName={data.patientName}
+          patientRut={historyPatientRut}
+          patientName={historyPatientName}
           patient={data}
           currentDateString={currentDateString}
           bedId={bedId}

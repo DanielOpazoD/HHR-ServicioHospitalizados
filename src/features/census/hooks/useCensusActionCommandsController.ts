@@ -1,8 +1,12 @@
-import { useCallback } from 'react';
+import { useMemo } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { PatientData } from '@/types';
 import type { PatientRowAction } from '@/features/census/types/patientRowActionTypes';
 import { type CensusActionNotification } from '@/features/census/controllers/censusActionNotificationController';
+import {
+  buildCensusActionCommandsControllerValue,
+  buildCensusActionNotifyErrorAdapter,
+} from '@/features/census/controllers/censusActionCommandsController';
 import type {
   DischargeExecutionInput,
   TransferExecutionInput,
@@ -53,10 +57,11 @@ export const useCensusActionCommandsController = ({
   setTransferState,
   getCurrentTime,
 }: UseCensusActionCommandsControllerParams): CensusActionCommandsController => {
-  const notifyError = useCallback(
-    ({ title, message }: CensusActionNotification) => {
-      notifyErrorRef.current(title, message);
-    },
+  const notifyError = useMemo(
+    () =>
+      buildCensusActionNotifyErrorAdapter((title, message) =>
+        notifyErrorRef.current(title, message)
+      ),
     [notifyErrorRef]
   );
 
@@ -103,10 +108,14 @@ export const useCensusActionCommandsController = ({
     notifyError,
   });
 
-  return {
-    executeMoveOrCopy,
-    executeDischarge,
-    executeTransfer,
-    handleRowAction,
-  };
+  return useMemo(
+    () =>
+      buildCensusActionCommandsControllerValue({
+        executeMoveOrCopy,
+        executeDischarge,
+        executeTransfer,
+        handleRowAction,
+      }),
+    [executeDischarge, executeMoveOrCopy, executeTransfer, handleRowAction]
+  );
 };

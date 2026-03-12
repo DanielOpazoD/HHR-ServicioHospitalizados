@@ -11,6 +11,7 @@ import {
   type CensusActionDependenciesRuntime,
   type CensusActionDependenciesUi,
 } from '@/features/census/controllers/censusActionDependenciesController';
+import { buildCensusActionDependenciesModelParams } from '@/features/census/controllers/censusActionDependenciesModelController';
 
 export type CensusActionDependencies = CensusActionDependenciesData &
   CensusActionDependenciesRuntime &
@@ -26,26 +27,32 @@ export const useCensusActionDependencies = (): CensusActionDependencies => {
 
   return useMemo(
     () =>
-      buildCensusActionDependencies({
-        data: {
-          record,
-          stabilityRules,
-        },
-        runtime: {
-          clearPatient,
-          moveOrCopyPatient,
-          addDischarge,
-          updateDischarge,
-          addTransfer,
-          updateTransfer,
-          addCMA,
-          copyPatientToDate,
-        },
-        ui: {
-          confirm,
-          notifyError,
-        },
-      }),
+      buildCensusActionDependencies(
+        buildCensusActionDependenciesModelParams({
+          dailyRecordData: {
+            record,
+            stabilityRules,
+          },
+          bedActions: {
+            clearPatient,
+            moveOrCopyPatient,
+            copyPatientToDate,
+          },
+          movementActions: {
+            addDischarge,
+            updateDischarge,
+            addTransfer,
+            updateTransfer,
+            addCMA,
+          },
+          confirmDialog: {
+            confirm,
+          },
+          notification: {
+            error: notifyError,
+          },
+        })
+      ),
     [
       addCMA,
       addDischarge,
