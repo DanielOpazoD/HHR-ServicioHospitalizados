@@ -40,10 +40,12 @@ describe('Excel Export Configuration', () => {
     });
 
     it('should keep dynamic ExcelJS import compatibility helper', () => {
+      const excelModuleLoaderSource = readSource('src/services/exporters/excelJsModuleLoader.ts');
       const excelUtilsSource = readSource('src/services/exporters/excelUtils.ts');
-      expect(excelUtilsSource).toContain('exceljs/dist/exceljs.min.js');
-      expect(excelUtilsSource).toContain("await import('exceljs')");
-      expect(excelUtilsSource).toContain('ExcelJS module could not be loaded correctly');
+      expect(excelModuleLoaderSource).toContain('exceljs/dist/exceljs.min.js');
+      expect(excelModuleLoaderSource).toContain("await import('exceljs')");
+      expect(excelModuleLoaderSource).toContain('ExcelJS module could not be loaded correctly');
+      expect(excelUtilsSource).toContain('loadExcelJSModule');
     });
   });
 

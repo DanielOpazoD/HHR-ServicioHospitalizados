@@ -4,11 +4,11 @@
 
 import { DailyRecord } from '@/types';
 import { Workbook } from 'exceljs';
-import {
-  buildCensusMasterWorkbook as buildWorkbook,
+import { buildCensusMasterWorkbook as buildWorkbook } from './excel/builder';
+import type {
   CensusMasterWorkbookOptions,
   CensusWorkbookSheetDescriptor,
-} from './excel/builder';
+} from './excel/censusWorkbookContracts';
 
 export type { CensusMasterWorkbookOptions, CensusWorkbookSheetDescriptor };
 
