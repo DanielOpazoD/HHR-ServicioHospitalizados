@@ -5,7 +5,6 @@ type LoginRuntimePolicy = {
   preferRedirectOnLocalhost: boolean;
   isLocalhostRuntime: boolean;
   forcePopupForE2E: boolean;
-  shouldAutoFallbackToRedirect: boolean;
   canUseRedirectAuth: boolean;
   redirectSupportLevel: 'disabled' | 'warning' | 'ready';
   redirectDisabledReason: string | null;
@@ -25,17 +24,10 @@ export const getLoginRuntimePolicy = (): LoginRuntimePolicy => {
     window.localStorage?.getItem('hhr_e2e_force_popup') === 'true';
   const canUseE2EAlternateAccess =
     hasE2ERedirectOverride && (forcePopupForE2E || isLocalE2ERuntime);
-  const autoRedirectFallbackEnabled =
-    String(import.meta.env.VITE_AUTH_AUTO_REDIRECT_FALLBACK || 'true').toLowerCase() !== 'false';
-
   return {
     preferRedirectOnLocalhost: redirectRuntimeSupport.preferRedirectOnLocalhost,
     isLocalhostRuntime: redirectRuntimeSupport.isLocalhostRuntime,
     forcePopupForE2E,
-    shouldAutoFallbackToRedirect:
-      autoRedirectFallbackEnabled &&
-      !forcePopupForE2E &&
-      (canUseE2EAlternateAccess || redirectRuntimeSupport.canUseRedirectAuth),
     canUseRedirectAuth: canUseE2EAlternateAccess || redirectRuntimeSupport.canUseRedirectAuth,
     redirectSupportLevel: redirectRuntimeSupport.supportLevel,
     redirectDisabledReason: canUseE2EAlternateAccess

@@ -7,14 +7,10 @@ import { resetLocalAppStorage } from '@/services/storage/indexedDBService';
 interface LoginPageCardProps {
   isAnyLoading: boolean;
   isGoogleLoading: boolean;
-  isRedirectLoading: boolean;
   accessMode: 'default' | 'shared-census' | 'specialist-medical-handoff';
-  showAlternateAccess: boolean;
-  alternateAccessHint: string | null;
   error: string | null;
   errorCode: string | null;
   onGoogleSignIn: () => void;
-  onAlternateAccess: () => void;
 }
 
 const GoogleIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -41,14 +37,10 @@ const GoogleIcon: React.FC<{ className?: string }> = ({ className }) => (
 export const LoginPageCard: React.FC<LoginPageCardProps> = ({
   isAnyLoading,
   isGoogleLoading,
-  isRedirectLoading,
   accessMode,
-  showAlternateAccess,
-  alternateAccessHint,
   error,
   errorCode,
   onGoogleSignIn,
-  onAlternateAccess,
 }) => (
   <div className="bg-white/85 backdrop-blur-md border border-white/40 rounded-3xl shadow-[0_24px_60px_-30px_rgba(15,23,42,0.45)] p-10 relative overflow-hidden animate-login-reveal animate-login-reveal-delay-2">
     <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-medical-400 to-medical-600"></div>
@@ -88,35 +80,6 @@ export const LoginPageCard: React.FC<LoginPageCardProps> = ({
         </>
       )}
     </button>
-
-    {showAlternateAccess && (
-      <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50/90 p-3">
-        <button
-          type="button"
-          onClick={onAlternateAccess}
-          disabled={isAnyLoading || isRedirectLoading}
-          data-testid="login-alternate-access"
-          className="w-full bg-slate-100 hover:bg-slate-200 disabled:bg-slate-100 border border-slate-200 text-slate-700 font-semibold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2"
-        >
-          {isRedirectLoading ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin text-slate-600" />
-              Abriendo acceso directo...
-            </>
-          ) : (
-            AUTH_UI_COPY.alternateAccessButton
-          )}
-        </button>
-        {alternateAccessHint ? (
-          <p
-            data-testid="login-alternate-access-hint"
-            className="mt-2 text-xs leading-relaxed text-slate-500 text-balance"
-          >
-            {alternateAccessHint}
-          </p>
-        ) : null}
-      </div>
-    )}
 
     {error && (
       <div className="mt-6 animate-fade-in">

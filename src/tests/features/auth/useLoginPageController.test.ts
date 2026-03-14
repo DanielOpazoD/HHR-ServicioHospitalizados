@@ -1,17 +1,14 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AUTH_UI_COPY } from '@/services/auth/authUiCopy';
 
 const mockSignInWithGoogle = vi.fn();
-const mockSignInWithGoogleRedirect = vi.fn();
 const mockIsPopupRecoverableAuthError = vi.fn();
 const mockResolveAuthErrorCode = vi.fn();
-const mockGetLoginRuntimePolicy = vi.fn();
 
 vi.mock('@/services/auth/authService', () => ({
   signInWithGoogle: (...args: unknown[]) => mockSignInWithGoogle(...args),
-  signInWithGoogleRedirect: (...args: unknown[]) => mockSignInWithGoogleRedirect(...args),
 }));
 
 vi.mock('@/services/auth/authErrorPolicy', () => ({
@@ -19,31 +16,14 @@ vi.mock('@/services/auth/authErrorPolicy', () => ({
   resolveAuthErrorCode: (...args: unknown[]) => mockResolveAuthErrorCode(...args),
 }));
 
-vi.mock('@/features/auth/components/loginRuntimePolicy', () => ({
-  getLoginRuntimePolicy: () => mockGetLoginRuntimePolicy(),
-  getRedirectErrorMessage: (error: unknown) =>
-    error instanceof Error ? error.message : AUTH_UI_COPY.redirectGenericError,
-}));
-
 import { useLoginPageController } from '@/features/auth/components/useLoginPageController';
 
 describe('useLoginPageController', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetLoginRuntimePolicy.mockReturnValue({
-      preferRedirectOnLocalhost: false,
-      isLocalhostRuntime: false,
-      forcePopupForE2E: false,
-      shouldAutoFallbackToRedirect: false,
-      canUseRedirectAuth: true,
-      redirectSupportLevel: 'ready',
-      redirectDisabledReason: null,
-      alternateAccessHint: 'Usa esta opción si el navegador bloqueó la ventana.',
-    });
     mockIsPopupRecoverableAuthError.mockReturnValue(false);
     mockResolveAuthErrorCode.mockReturnValue(null);
     mockSignInWithGoogle.mockResolvedValue(undefined);
-    mockSignInWithGoogleRedirect.mockResolvedValue(undefined);
   });
 
   it('calls onLoginSuccess when Google login succeeds', async () => {
@@ -54,39 +34,13 @@ describe('useLoginPageController', () => {
       await result.current.handleGoogleSignIn();
     });
 
-    expect(mockSignInWithGoogle).toHaveBeenCalled();
-    expect(onLoginSuccess).toHaveBeenCalled();
+    expect(mockSignInWithGoogle).toHaveBeenCalledTimes(1);
+    expect(onLoginSuccess).toHaveBeenCalledTimes(1);
     expect(result.current.error).toBeNull();
+    expect(result.current.isAnyLoading).toBe(false);
   });
 
-  it('shows alternate access when popup issue is recoverable', async () => {
-    const onLoginSuccess = vi.fn();
-    mockSignInWithGoogle.mockRejectedValueOnce(new Error('popup blocked'));
-    mockIsPopupRecoverableAuthError.mockReturnValueOnce(true);
-
-    const { result } = renderHook(() => useLoginPageController(onLoginSuccess));
-
-    await act(async () => {
-      await result.current.handleGoogleSignIn();
-    });
-
-    expect(result.current.showAlternateAccess).toBe(true);
-    expect(result.current.error).toBe(AUTH_UI_COPY.blockedPopupManual);
-    expect(result.current.alternateAccessHint).toContain('navegador bloqueó la ventana');
-    expect(onLoginSuccess).not.toHaveBeenCalled();
-  });
-
-  it('automatically switches to redirect flow when policy allows fallback', async () => {
-    mockGetLoginRuntimePolicy.mockReturnValue({
-      preferRedirectOnLocalhost: false,
-      isLocalhostRuntime: false,
-      forcePopupForE2E: false,
-      shouldAutoFallbackToRedirect: true,
-      canUseRedirectAuth: true,
-      redirectSupportLevel: 'ready',
-      redirectDisabledReason: null,
-      alternateAccessHint: AUTH_UI_COPY.alternateAccessHint,
-    });
+  it('keeps the user on the same login screen when the popup has a recoverable issue', async () => {
     mockSignInWithGoogle.mockRejectedValueOnce(new Error('popup blocked'));
     mockIsPopupRecoverableAuthError.mockReturnValueOnce(true);
 
@@ -96,30 +50,24 @@ describe('useLoginPageController', () => {
       await result.current.handleGoogleSignIn();
     });
 
-    expect(mockSignInWithGoogleRedirect).toHaveBeenCalled();
-    expect(result.current.error).toBe(AUTH_UI_COPY.blockedPopupRetrying);
+    expect(result.current.errorCode).toBe('auth/popup-recoverable');
+    expect(result.current.error).toBe(AUTH_UI_COPY.blockedPopupStayOnPage);
+    expect(result.current.isGoogleLoading).toBe(false);
+    expect(result.current.isAnyLoading).toBe(false);
   });
 
-  it('surfaces redirect disabled reason when alternate access is blocked by runtime policy', async () => {
-    mockGetLoginRuntimePolicy.mockReturnValue({
-      preferRedirectOnLocalhost: false,
-      isLocalhostRuntime: true,
-      forcePopupForE2E: false,
-      shouldAutoFallbackToRedirect: false,
-      canUseRedirectAuth: false,
-      redirectSupportLevel: 'disabled',
-      redirectDisabledReason: 'En este equipo el ingreso directo está desactivado.',
-      alternateAccessHint: 'La ventana normal de Google es la opción recomendada aquí.',
-    });
+  it('surfaces non-recoverable popup errors without switching flows', async () => {
+    mockSignInWithGoogle.mockRejectedValueOnce(new Error('google auth down'));
+    mockResolveAuthErrorCode.mockReturnValueOnce('auth/google-signin-failed');
 
     const { result } = renderHook(() => useLoginPageController(vi.fn()));
 
     await act(async () => {
-      await result.current.handleAlternateAccess();
+      await result.current.handleGoogleSignIn();
     });
 
-    await waitFor(() => {
-      expect(result.current.error).toContain('ingreso directo está desactivado');
-    });
+    expect(result.current.errorCode).toBe('auth/google-signin-failed');
+    expect(result.current.error).toBe('google auth down');
+    expect(result.current.isGoogleLoading).toBe(false);
   });
 });

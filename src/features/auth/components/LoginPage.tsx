@@ -16,13 +16,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, accessMode
     error,
     errorCode,
     isGoogleLoading,
-    isRedirectLoading,
-    showAlternateAccess,
-    alternateAccessHint,
     isAnyLoading,
     isDayGradient,
     handleGoogleSignIn,
-    handleAlternateAccess,
     toggleBackgroundMode,
   } = useLoginPageController(onLoginSuccess);
   const loginBackgroundClass = isDayGradient
@@ -32,9 +28,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, accessMode
   return (
     <div
       data-testid="login-page"
-      data-auth-state={
-        isGoogleLoading ? 'google-loading' : isRedirectLoading ? 'redirect-loading' : 'idle'
-      }
+      data-auth-state={isGoogleLoading ? 'google-loading' : 'idle'}
       className={`min-h-screen ${loginBackgroundClass} flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-1000`}
     >
       <div className="absolute top-4 right-4 z-50">
@@ -54,14 +48,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, accessMode
         <LoginPageCard
           isAnyLoading={isAnyLoading}
           isGoogleLoading={isGoogleLoading}
-          isRedirectLoading={isRedirectLoading}
           accessMode={accessMode}
-          showAlternateAccess={showAlternateAccess}
-          alternateAccessHint={alternateAccessHint}
           error={error}
           errorCode={errorCode}
           onGoogleSignIn={handleGoogleSignIn}
-          onAlternateAccess={handleAlternateAccess}
         />
         <LoginPageFooter isDayGradient={isDayGradient} />
       </div>
