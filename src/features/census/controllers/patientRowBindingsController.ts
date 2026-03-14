@@ -101,17 +101,25 @@ export const buildPatientSubRowBindings = ({
   currentDateString,
   readOnly,
   diagnosisMode,
+  accessProfile,
   style,
   runtime,
 }: Pick<
   BuildPatientRowBindingsParams,
-  'data' | 'currentDateString' | 'readOnly' | 'diagnosisMode' | 'style' | 'runtime'
+  | 'data'
+  | 'currentDateString'
+  | 'readOnly'
+  | 'diagnosisMode'
+  | 'accessProfile'
+  | 'style'
+  | 'runtime'
 >): PatientSubRowBindings =>
   buildPatientSubSectionBindings({
     data,
     currentDateString,
     readOnly,
     diagnosisMode,
+    accessProfile,
     style,
     runtime,
   });
@@ -200,6 +208,7 @@ export const buildPatientRowBindings = ({
       currentDateString,
       readOnly,
       diagnosisMode,
+      accessProfile,
       style,
       runtime,
     }),

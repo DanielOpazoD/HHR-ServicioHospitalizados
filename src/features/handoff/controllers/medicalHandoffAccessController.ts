@@ -2,6 +2,7 @@ import { ACTIONS, canDoAction } from '@/utils/permissions';
 import type { UserRole } from '@/types';
 
 export interface MedicalHandoffCapabilities {
+  canCreatePrimaryObservationEntry: boolean;
   canEditObservationEntries: boolean;
   canEditObservationEntrySpecialty: boolean;
   canAddObservationEntries: boolean;
@@ -40,6 +41,7 @@ export const resolveMedicalHandoffCapabilities = ({
   const canShareSignatureLinks = canSendWhatsApp;
 
   return {
+    canCreatePrimaryObservationEntry: canEditClinicalContent,
     canEditObservationEntries: canEditClinicalContent,
     canEditObservationEntrySpecialty: !specialistRestrictedAccess && canEditClinicalContent,
     canAddObservationEntries: !specialistRestrictedAccess && canEditClinicalContent,

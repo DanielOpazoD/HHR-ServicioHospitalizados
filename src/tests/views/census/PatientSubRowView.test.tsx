@@ -51,4 +51,16 @@ describe('PatientSubRowView', () => {
 
     expect(screen.queryByTitle('Datos demográficos')).not.toBeInTheDocument();
   });
+
+  it('hides demographics shortcut for specialist census access even when editable', () => {
+    render(
+      <table>
+        <tbody>
+          <PatientSubRowView {...baseProps} accessProfile="specialist" readOnly={false} />
+        </tbody>
+      </table>
+    );
+
+    expect(screen.queryByTitle('Datos demográficos')).not.toBeInTheDocument();
+  });
 });

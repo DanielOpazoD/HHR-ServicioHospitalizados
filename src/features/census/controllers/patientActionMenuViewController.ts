@@ -14,6 +14,7 @@ export interface PatientActionMenuViewState {
   showHistoryAction: boolean;
   showUtilityActions: boolean;
   showClinicalSection: boolean;
+  showBuiltInClinicalActions: boolean;
   showClinicalDocumentsAction: boolean;
   showExamRequestAction: boolean;
   showImagingRequestAction: boolean;
@@ -42,6 +43,7 @@ export const resolvePatientActionMenuViewState = ({
       showHistoryAction: false,
       showUtilityActions: false,
       showClinicalSection,
+      showBuiltInClinicalActions: false,
       showClinicalDocumentsAction,
       showExamRequestAction,
       showImagingRequestAction,
@@ -60,6 +62,7 @@ export const resolvePatientActionMenuViewState = ({
     showHistoryAction,
     showUtilityActions,
     showClinicalSection,
+    showBuiltInClinicalActions: showClinicalSection && !readOnly,
     showClinicalDocumentsAction: showClinicalSection && hasClinicalDocumentsAction,
     showExamRequestAction: !readOnly && showClinicalSection && hasExamRequestAction,
     showImagingRequestAction: !readOnly && showClinicalSection && hasImagingRequestAction,

@@ -34,5 +34,7 @@ export const resolvePatientActionMenuPanelModel = ({
   showExamRequestAction: viewState.showExamRequestAction,
   showImagingRequestAction: viewState.showImagingRequestAction,
   utilityActions,
-  clinicalActions: CLINICAL_ACTIONS.filter(action => action.action !== 'cma' || showCmaAction),
+  clinicalActions: viewState.showBuiltInClinicalActions
+    ? CLINICAL_ACTIONS.filter(action => action.action !== 'cma' || showCmaAction)
+    : [],
 });

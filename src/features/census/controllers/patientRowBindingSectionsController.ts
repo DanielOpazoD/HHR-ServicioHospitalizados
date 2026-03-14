@@ -10,6 +10,7 @@ import type {
 import type { PatientRowCapabilities } from '@/features/census/controllers/patientRowCapabilitiesController';
 import type { PatientRowResolvedIndicators } from '@/features/census/controllers/patientRowIndicatorsController';
 import { buildPatientMainRowViewState } from '@/features/census/controllers/patientRowMainViewController';
+import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 
 export interface PatientRowViewContext {
   capabilities: PatientRowCapabilities;
@@ -86,6 +87,7 @@ interface BuildSubSectionBindingsParams {
   currentDateString: string;
   readOnly: boolean;
   diagnosisMode: DiagnosisMode;
+  accessProfile?: CensusAccessProfile;
   style?: React.CSSProperties;
   runtime: PatientRowRuntime;
 }
@@ -95,6 +97,7 @@ export const buildPatientSubSectionBindings = ({
   currentDateString,
   readOnly,
   diagnosisMode,
+  accessProfile,
   style,
   runtime,
 }: BuildSubSectionBindingsParams): PatientSubRowBindings => ({
@@ -102,6 +105,7 @@ export const buildPatientSubSectionBindings = ({
   currentDateString,
   readOnly,
   diagnosisMode,
+  accessProfile,
   style,
   onOpenDemographics: runtime.uiState.openDemographics,
   onChange: runtime.handlers.cribInputChangeHandlers,

@@ -11,6 +11,7 @@ describe('patientActionMenuPanelController', () => {
         showHistoryAction: true,
         showUtilityActions: true,
         showClinicalSection: true,
+        showBuiltInClinicalActions: true,
         showClinicalDocumentsAction: true,
         showExamRequestAction: false,
         showImagingRequestAction: true,
@@ -49,6 +50,7 @@ describe('patientActionMenuPanelController', () => {
         showHistoryAction: true,
         showUtilityActions: true,
         showClinicalSection: true,
+        showBuiltInClinicalActions: true,
         showClinicalDocumentsAction: true,
         showExamRequestAction: true,
         showImagingRequestAction: true,
@@ -58,5 +60,28 @@ describe('patientActionMenuPanelController', () => {
     });
 
     expect(model.clinicalActions.map(action => action.action)).toEqual(['discharge', 'transfer']);
+  });
+
+  it('removes built-in clinical actions for specialist census access', () => {
+    const model = resolvePatientActionMenuPanelModel({
+      viewState: {
+        showDemographicsAction: false,
+        showMenuTrigger: true,
+        showHistoryAction: false,
+        showUtilityActions: false,
+        showClinicalSection: true,
+        showBuiltInClinicalActions: false,
+        showClinicalDocumentsAction: true,
+        showExamRequestAction: true,
+        showImagingRequestAction: true,
+      },
+      utilityActions: [],
+      showCmaAction: true,
+    });
+
+    expect(model.clinicalActions).toEqual([]);
+    expect(model.showClinicalDocumentsAction).toBe(true);
+    expect(model.showExamRequestAction).toBe(true);
+    expect(model.showImagingRequestAction).toBe(true);
   });
 });

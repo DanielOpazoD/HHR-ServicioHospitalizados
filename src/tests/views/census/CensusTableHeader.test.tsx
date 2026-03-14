@@ -118,4 +118,29 @@ describe('CensusTableHeader', () => {
       })
     );
   });
+
+  it('hides status, DMI, C.QX and UPC for specialist census access', () => {
+    render(
+      <table>
+        <CensusTableHeader
+          readOnly={true}
+          columns={columns}
+          isEditMode={false}
+          canDeleteRecord={false}
+          resetDayDeniedMessage=""
+          onClearAll={vi.fn().mockResolvedValue(undefined)}
+          diagnosisMode="free"
+          accessProfile="specialist"
+          onToggleDiagnosisMode={vi.fn()}
+          onResizeColumn={() => vi.fn()}
+        />
+      </table>
+    );
+
+    expect(screen.queryByText('Estado')).not.toBeInTheDocument();
+    expect(screen.queryByText('DMI')).not.toBeInTheDocument();
+    expect(screen.queryByText('C.QX')).not.toBeInTheDocument();
+    expect(screen.queryByText('UPC')).not.toBeInTheDocument();
+    expect(screen.getByText('Ingreso')).toBeInTheDocument();
+  });
 });

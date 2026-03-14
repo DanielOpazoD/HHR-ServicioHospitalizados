@@ -4,17 +4,22 @@ import { MedicalBadge } from '@/components/ui/base/MedicalBadge';
 import { PatientInputCells } from './PatientInputCells';
 import { shouldShowSubRowDemographicsButton } from '@/features/census/controllers/patientRowSubViewController';
 import type { PatientSubRowViewProps } from '@/features/census/components/patient-row/patientRowViewContracts';
+import { isSpecialistCensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 
 export const PatientSubRowView: React.FC<PatientSubRowViewProps> = ({
   data,
   currentDateString,
   readOnly,
   diagnosisMode,
+  accessProfile = 'default',
   style,
   onOpenDemographics,
   onChange,
 }) => {
-  const showDemographicsButton = shouldShowSubRowDemographicsButton({ readOnly });
+  const showDemographicsButton = shouldShowSubRowDemographicsButton({
+    readOnly,
+    specialistAccess: isSpecialistCensusAccessProfile(accessProfile),
+  });
 
   return (
     <tr
@@ -51,6 +56,7 @@ export const PatientSubRowView: React.FC<PatientSubRowViewProps> = ({
         onChange={onChange}
         onDemo={onOpenDemographics}
         readOnly={readOnly}
+        accessProfile={accessProfile}
       />
     </tr>
   );

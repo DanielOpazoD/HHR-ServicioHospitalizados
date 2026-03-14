@@ -53,6 +53,7 @@ export interface PatientMainRowBedTypeCellProps {
 
 export interface PatientMainRowBlockedCellProps {
   blockedReason?: string;
+  accessProfile?: CensusAccessProfile;
 }
 
 export interface PatientMainRowActionCellProps
@@ -101,6 +102,7 @@ export interface PatientSubRowViewProps {
   currentDateString: string;
   readOnly: boolean;
   diagnosisMode: DiagnosisMode;
+  accessProfile?: CensusAccessProfile;
   style?: CSSProperties;
   onOpenDemographics: () => void;
   onChange: ClinicalCribInputChangeHandlers;

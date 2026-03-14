@@ -46,6 +46,7 @@ export const buildPatientMainRowSections = (
   },
   blocked: {
     blockedReason: props.data.blockedReason,
+    accessProfile: props.accessProfile,
   },
   inputCells: {
     data: props.data,

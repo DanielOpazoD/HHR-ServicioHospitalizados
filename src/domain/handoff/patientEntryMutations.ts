@@ -126,6 +126,21 @@ export const buildMedicalEntryAddFields = (
   return buildMedicalHandoffFieldsFromEntries(patient, nextEntries);
 };
 
+export const buildMedicalPrimaryEntryCreateFields = (
+  patient: PatientData
+): Pick<PatientData, 'medicalHandoffEntries' | 'medicalHandoffNote' | 'medicalHandoffAudit'> => {
+  const entries = getPatientMedicalHandoffEntries(patient);
+  if (entries.length > 0) {
+    return buildMedicalHandoffFieldsFromEntries(patient, entries);
+  }
+
+  return buildMedicalHandoffFieldsFromEntries(patient, [
+    createMedicalHandoffEntry(patient.specialty || getNextMedicalHandoffSpecialty(patient, []), {
+      id: 'primary-entry',
+    }),
+  ]);
+};
+
 export const buildMedicalEntryDeleteFields = (
   patient: PatientData,
   entryId: string

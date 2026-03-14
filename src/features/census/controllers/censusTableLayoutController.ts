@@ -12,6 +12,11 @@ import type {
   CensusTableHeaderProps,
 } from '@/features/census/types/censusTableComponentContracts';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
+import {
+  resolveVisibleCensusColumnCount,
+  resolveVisibleCensusColumns,
+  resolveVisibleCensusTotalWidth,
+} from '@/features/census/controllers/censusTableColumnProfileController';
 
 export interface CensusTableLayoutParams {
   currentDateString: string;
@@ -48,31 +53,39 @@ export const resolveCensusTableStyle = (totalWidth: number): CSSProperties => ({
 
 export const buildCensusTableLayoutBindings = (
   params: CensusTableLayoutParams
-): CensusTableLayoutBindings => ({
-  headerProps: {
-    readOnly: params.readOnly,
-    columns: params.columns,
-    isEditMode: params.isEditMode,
-    canDeleteRecord: params.canDeleteRecord,
-    resetDayDeniedMessage: params.resetDayDeniedMessage,
-    onClearAll: params.onClearAll,
-    diagnosisMode: params.diagnosisMode,
-    accessProfile: params.accessProfile,
-    onToggleDiagnosisMode: params.onToggleDiagnosisMode,
-    onResizeColumn: params.onResizeColumn,
-  },
-  bodyProps: {
-    occupiedRows: params.occupiedRows,
-    emptyBeds: params.emptyBeds,
-    currentDateString: params.currentDateString,
-    readOnly: params.readOnly,
-    diagnosisMode: params.diagnosisMode,
-    bedTypes: params.bedTypes,
-    role: params.role,
-    accessProfile: params.accessProfile,
-    clinicalDocumentPresenceByBedId: params.clinicalDocumentPresenceByBedId,
-    onAction: params.onAction,
-    onActivateEmptyBed: params.onActivateEmptyBed,
-  },
-  tableStyle: resolveCensusTableStyle(params.totalWidth),
-});
+): CensusTableLayoutBindings => {
+  const projectedColumns = resolveVisibleCensusColumns(params.columns, params.accessProfile);
+  const visibleColumnCount = resolveVisibleCensusColumnCount(params.columns, params.accessProfile);
+  const visibleTotalWidth = resolveVisibleCensusTotalWidth(params.columns, params.accessProfile);
+
+  return {
+    headerProps: {
+      readOnly: params.readOnly,
+      columns: projectedColumns,
+      isEditMode: params.isEditMode,
+      canDeleteRecord: params.canDeleteRecord,
+      resetDayDeniedMessage: params.resetDayDeniedMessage,
+      onClearAll: params.onClearAll,
+      diagnosisMode: params.diagnosisMode,
+      accessProfile: params.accessProfile,
+      onToggleDiagnosisMode: params.onToggleDiagnosisMode,
+      onResizeColumn: params.onResizeColumn,
+    },
+    bodyProps: {
+      occupiedRows: params.occupiedRows,
+      emptyBeds: params.emptyBeds,
+      currentDateString: params.currentDateString,
+      readOnly: params.readOnly,
+      diagnosisMode: params.diagnosisMode,
+      columns: projectedColumns,
+      visibleColumnCount,
+      bedTypes: params.bedTypes,
+      role: params.role,
+      accessProfile: params.accessProfile,
+      clinicalDocumentPresenceByBedId: params.clinicalDocumentPresenceByBedId,
+      onAction: params.onAction,
+      onActivateEmptyBed: params.onActivateEmptyBed,
+    },
+    tableStyle: resolveCensusTableStyle(visibleTotalWidth),
+  };
+};

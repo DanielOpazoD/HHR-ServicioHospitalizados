@@ -47,4 +47,45 @@ describe('PatientInputCells', () => {
     expect(screen.getByTitle('Comp. Qx')).toBeInTheDocument();
     expect(screen.getByTitle('UPC')).toBeInTheDocument();
   });
+
+  it('hides specialist-restricted cells in specialist census access', () => {
+    vi.mocked(useDailyRecordStability).mockReturnValue({
+      canEditField: () => true,
+    } as unknown as ReturnType<typeof useDailyRecordStability>);
+
+    const data = DataFactory.createMockPatient('R1');
+    const textHandler = vi.fn();
+    const onChange = {
+      text: vi.fn().mockReturnValue(textHandler),
+      check: vi.fn().mockReturnValue(vi.fn()),
+      devices: vi.fn(),
+      deviceDetails: vi.fn(),
+      deviceHistory: vi.fn(),
+      toggleDocType: vi.fn(),
+      deliveryRoute: vi.fn(),
+      multiple: vi.fn(),
+    };
+
+    render(
+      <table>
+        <tbody>
+          <tr>
+            <PatientInputCells
+              data={data}
+              currentDateString="2026-02-15"
+              onChange={onChange}
+              onDemo={vi.fn()}
+              readOnly={true}
+              diagnosisMode="free"
+              accessProfile="specialist"
+            />
+          </tr>
+        </tbody>
+      </table>
+    );
+
+    expect(screen.queryByTitle('Comp. Qx')).not.toBeInTheDocument();
+    expect(screen.queryByTitle('UPC')).not.toBeInTheDocument();
+    expect(screen.queryByDisplayValue(/DE|ES|CU/)).not.toBeInTheDocument();
+  });
 });

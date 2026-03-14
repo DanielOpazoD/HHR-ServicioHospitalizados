@@ -26,6 +26,7 @@ export interface PatientActionMenuAvailability {
   showHistoryAction: boolean;
   showUtilityActions: boolean;
   showClinicalSection: boolean;
+  showBuiltInClinicalActions: boolean;
   showClinicalDocumentsAction: boolean;
   showExamRequestAction: boolean;
   showImagingRequestAction: boolean;

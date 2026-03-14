@@ -185,6 +185,7 @@ export const useHandoffLogic = ({
     // Handlers
     shouldShowPatient: visibility.shouldShowPatient,
     handleNursingNoteChange,
+    handleMedicalPrimaryEntryCreate: medicalHandlers.handleMedicalPrimaryEntryCreate,
     handleMedicalEntryAdd: medicalHandlers.handleMedicalEntryAdd,
     handleMedicalEntryDelete: medicalHandlers.handleMedicalEntryDelete,
     handleMedicalEntryNoteChange: medicalHandlers.handleMedicalEntryNoteChange,

@@ -1,7 +1,9 @@
 interface ResolveSubRowDemographicsButtonVisibilityParams {
   readOnly: boolean;
+  specialistAccess?: boolean;
 }
 
 export const shouldShowSubRowDemographicsButton = ({
   readOnly,
-}: ResolveSubRowDemographicsButtonVisibilityParams): boolean => !readOnly;
+  specialistAccess = false,
+}: ResolveSubRowDemographicsButtonVisibilityParams): boolean => !readOnly && !specialistAccess;

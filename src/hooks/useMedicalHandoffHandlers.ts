@@ -5,6 +5,7 @@ import {
   buildMedicalEntryContinuityFields,
   buildMedicalEntryDeleteFields,
   buildMedicalEntryNoteFields,
+  buildMedicalPrimaryEntryCreateFields,
   buildMedicalEntrySpecialtyFields,
   buildMedicalPrimaryNoteFields,
 } from '@/domain/handoff/patientEntryMutations';
@@ -151,6 +152,19 @@ export const useMedicalHandoffHandlers = ({
     [isMedical, persistMedicalFields, record]
   );
 
+  const handleMedicalPrimaryEntryCreate = useCallback(
+    async (bedId: string, isNested: boolean = false) => {
+      if (!record || !isMedical) return;
+
+      const patient = isNested ? record.beds[bedId]?.clinicalCrib : record.beds[bedId];
+      if (!patient) return;
+
+      const fields = buildMedicalPrimaryEntryCreateFields(patient);
+      await persistMedicalFields(bedId, fields, isNested);
+    },
+    [isMedical, persistMedicalFields, record]
+  );
+
   const handleMedicalEntryDelete = useCallback(
     async (bedId: string, entryId: string, isNested: boolean = false) => {
       if (!record || !isMedical) return;
@@ -235,6 +249,7 @@ export const useMedicalHandoffHandlers = ({
   );
 
   return {
+    handleMedicalPrimaryEntryCreate,
     handleMedicalPrimaryNoteChange,
     handleMedicalEntryNoteChange,
     handleMedicalEntrySpecialtyChange,

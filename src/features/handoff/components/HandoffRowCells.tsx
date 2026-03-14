@@ -10,6 +10,7 @@ import { MedicalHandoffObservationEntry } from './MedicalHandoffObservationEntry
 import { MedicalHandoffValidityEntry } from './MedicalHandoffValidityEntry';
 import {
   getDisplayMedicalHandoffEntries,
+  getPatientMedicalHandoffEntries,
   getMedicalHandoffSpecialtyOptions,
 } from '@/features/handoff/controllers';
 
@@ -250,8 +251,9 @@ export const HandoffObservationsCell: React.FC<HandoffObservationsCellProps> = (
 interface HandoffMedicalObservationsCellProps {
   patient: PatientData;
   isFieldReadOnly: boolean;
+  onCreatePrimaryEntry?: () => void;
   onEntryNoteChange: (entryId: string, value: string) => void;
-  onEntrySpecialtyChange: (entryId: string, specialty: string) => void;
+  onEntrySpecialtyChange?: (entryId: string, specialty: string) => void;
   onAddEntry?: () => void;
   onDeleteEntry?: (entryId: string) => void;
 }
@@ -261,20 +263,37 @@ const specialtyOptions = getMedicalHandoffSpecialtyOptions();
 export const HandoffMedicalObservationsCell: React.FC<HandoffMedicalObservationsCellProps> = ({
   patient,
   isFieldReadOnly,
+  onCreatePrimaryEntry,
   onEntryNoteChange,
   onEntrySpecialtyChange,
   onAddEntry,
   onDeleteEntry,
 }) => {
-  const entries = getDisplayMedicalHandoffEntries(patient, !isFieldReadOnly);
+  const persistedEntries = getPatientMedicalHandoffEntries(patient);
+  const entries =
+    persistedEntries.length > 0
+      ? persistedEntries
+      : !isFieldReadOnly && !onCreatePrimaryEntry
+        ? getDisplayMedicalHandoffEntries(patient, true)
+        : [];
 
   return (
     <td className="p-1.5 w-full min-w-[280px] align-top border-r border-slate-200 print:w-auto print:min-w-0 print:text-[8px] print:p-0.5">
       <div className="space-y-2">
         {entries.length === 0 ? (
-          <div className="text-sm text-slate-400 italic print:text-[8px]">
-            Sin entrega registrada
-          </div>
+          onCreatePrimaryEntry && !isFieldReadOnly ? (
+            <button
+              type="button"
+              onClick={onCreatePrimaryEntry}
+              className="inline-flex items-center rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-semibold text-sky-800 transition-colors hover:bg-sky-100 print:hidden"
+            >
+              Crear entrega médica
+            </button>
+          ) : (
+            <div className="text-sm text-slate-400 italic print:text-[8px]">
+              Sin entrega registrada
+            </div>
+          )
         ) : (
           entries.map((entry, index) => {
             return (
@@ -286,6 +305,7 @@ export const HandoffMedicalObservationsCell: React.FC<HandoffMedicalObservations
                 entriesCount={entries.length}
                 isFieldReadOnly={isFieldReadOnly}
                 specialtyOptions={specialtyOptions}
+                canEditSpecialty={Boolean(onEntrySpecialtyChange)}
                 onEntryNoteChange={onEntryNoteChange}
                 onEntrySpecialtyChange={onEntrySpecialtyChange}
                 onAddEntry={onAddEntry}

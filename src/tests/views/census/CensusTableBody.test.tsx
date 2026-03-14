@@ -6,6 +6,7 @@ import { DataFactory } from '@/tests/factories/DataFactory';
 import type { OccupiedBedRow } from '@/features/census/types/censusTableTypes';
 import type { BedDefinition } from '@/types';
 import { BedType } from '@/types';
+import type { TableColumnConfig } from '@/context/TableConfigContext';
 
 const patientRowSpy = vi.fn();
 const emptyBedRowSpy = vi.fn();
@@ -29,6 +30,22 @@ vi.mock('@/features/census/components/EmptyBedRow', () => ({
 }));
 
 describe('CensusTableBody', () => {
+  const columns: TableColumnConfig = {
+    actions: 42,
+    bed: 96,
+    type: 64,
+    name: 190,
+    rut: 128,
+    age: 56,
+    diagnosis: 220,
+    specialty: 112,
+    status: 0,
+    admission: 128,
+    dmi: 0,
+    cqx: 0,
+    upc: 0,
+  };
+
   it('assigns action menu alignment based on row position', () => {
     patientRowSpy.mockClear();
     const occupiedRows: OccupiedBedRow[] = Array.from({ length: 6 }, (_, i) => ({
@@ -46,6 +63,8 @@ describe('CensusTableBody', () => {
           currentDateString="2026-02-15"
           readOnly={false}
           diagnosisMode="free"
+          columns={columns}
+          visibleColumnCount={9}
           bedTypes={{}}
           role="viewer_census"
           clinicalDocumentPresenceByBedId={{}}
@@ -97,6 +116,8 @@ describe('CensusTableBody', () => {
           currentDateString="2026-02-15"
           readOnly={false}
           diagnosisMode="free"
+          columns={columns}
+          visibleColumnCount={9}
           bedTypes={{}}
           role="nurse_hospital"
           clinicalDocumentPresenceByBedId={{ R1: true }}
@@ -138,6 +159,8 @@ describe('CensusTableBody', () => {
           currentDateString="2026-02-15"
           readOnly={false}
           diagnosisMode="free"
+          columns={columns}
+          visibleColumnCount={9}
           bedTypes={{}}
           role="nurse_hospital"
           clinicalDocumentPresenceByBedId={{ R1: true }}
@@ -169,6 +192,8 @@ describe('CensusTableBody', () => {
           currentDateString="2026-02-15"
           readOnly={false}
           diagnosisMode="free"
+          columns={columns}
+          visibleColumnCount={9}
           bedTypes={{}}
           role="viewer_census"
           clinicalDocumentPresenceByBedId={{}}

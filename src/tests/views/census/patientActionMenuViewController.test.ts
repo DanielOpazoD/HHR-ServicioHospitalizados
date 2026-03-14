@@ -22,6 +22,7 @@ describe('patientActionMenuViewController', () => {
       showHistoryAction: true,
       showUtilityActions: true,
       showClinicalSection: true,
+      showBuiltInClinicalActions: true,
       showClinicalDocumentsAction: true,
       showExamRequestAction: true,
       showImagingRequestAction: true,
@@ -44,6 +45,7 @@ describe('patientActionMenuViewController', () => {
     expect(view.showHistoryAction).toBe(true);
     expect(view.showUtilityActions).toBe(true);
     expect(view.showClinicalSection).toBe(false);
+    expect(view.showBuiltInClinicalActions).toBe(false);
     expect(view.showClinicalDocumentsAction).toBe(false);
     expect(view.showExamRequestAction).toBe(false);
     expect(view.showImagingRequestAction).toBe(false);
@@ -65,6 +67,7 @@ describe('patientActionMenuViewController', () => {
     expect(view.showHistoryAction).toBe(false);
     expect(view.showUtilityActions).toBe(false);
     expect(view.showClinicalSection).toBe(true);
+    expect(view.showBuiltInClinicalActions).toBe(false);
     expect(view.showClinicalDocumentsAction).toBe(true);
     expect(view.showExamRequestAction).toBe(false);
     expect(view.showImagingRequestAction).toBe(false);
@@ -87,6 +90,7 @@ describe('patientActionMenuViewController', () => {
       showHistoryAction: false,
       showUtilityActions: false,
       showClinicalSection: true,
+      showBuiltInClinicalActions: false,
       showClinicalDocumentsAction: true,
       showExamRequestAction: true,
       showImagingRequestAction: true,

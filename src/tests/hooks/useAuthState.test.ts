@@ -75,6 +75,26 @@ describe('useAuthState baseline', () => {
     expect(result.current.isEditor).toBe(true);
   });
 
+  it('treats doctor_specialist as editor-capable for restricted medical handoff editing', async () => {
+    const { result } = renderHook(() => useAuthState());
+    await waitFor(() => expect(result.current.authLoading).toBe(false));
+
+    const user: AuthUser = {
+      uid: 'specialist-1',
+      email: 'specialist@hhr.cl',
+      role: 'doctor_specialist',
+      displayName: 'Especialista',
+    };
+
+    await act(async () => {
+      await authChangeCallback?.(user);
+    });
+
+    expect(result.current.user?.uid).toBe('specialist-1');
+    expect(result.current.role).toBe('doctor_specialist');
+    expect(result.current.isEditor).toBe(true);
+  });
+
   it('should handle manual logout', async () => {
     const { result } = renderHook(() => useAuthState());
     await waitFor(() => expect(result.current.authLoading).toBe(false));

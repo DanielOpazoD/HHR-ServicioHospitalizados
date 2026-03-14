@@ -14,6 +14,8 @@ export const CensusTableBody: React.FC<CensusTableBodyProps> = ({
   currentDateString,
   readOnly,
   diagnosisMode,
+  columns,
+  visibleColumnCount,
   bedTypes,
   role,
   accessProfile,
@@ -49,13 +51,18 @@ export const CensusTableBody: React.FC<CensusTableBodyProps> = ({
       ))}
 
       {showEmptyBedsDivider ? (
-        <CensusEmptyBedsDividerRow emptyBedsCount={emptyBeds.length} />
+        <CensusEmptyBedsDividerRow
+          emptyBedsCount={emptyBeds.length}
+          visibleColumnCount={visibleColumnCount}
+        />
       ) : null}
 
       {emptyBeds.map(bed => (
         <EmptyBedRow
           key={bed.id}
           bed={bed}
+          columns={columns}
+          visibleColumnCount={visibleColumnCount}
           readOnly={readOnly}
           onClick={() => onActivateEmptyBed(bed.id)}
         />

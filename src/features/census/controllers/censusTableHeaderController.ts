@@ -1,6 +1,6 @@
 import type { TableColumnConfig } from '@/context/TableConfigContext';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
-import { isSpecialistCensusAccessProfile } from '@/features/census/types/censusAccessProfile';
+import { isVisibleCensusColumn } from '@/features/census/controllers/censusTableColumnProfileController';
 
 export type CensusHeaderColumnKey = Exclude<keyof TableColumnConfig, 'actions'>;
 
@@ -38,15 +38,7 @@ export const buildCensusHeaderCellModels = (
   columns: readonly CensusHeaderColumnDefinition[] = CENSUS_HEADER_COLUMNS,
   accessProfile: CensusAccessProfile = 'default'
 ): CensusHeaderCellModel[] => {
-  const visibleColumns = isSpecialistCensusAccessProfile(accessProfile)
-    ? columns.filter(
-        column =>
-          column.key !== 'status' &&
-          column.key !== 'dmi' &&
-          column.key !== 'cqx' &&
-          column.key !== 'upc'
-      )
-    : columns;
+  const visibleColumns = columns.filter(column => isVisibleCensusColumn(column.key, accessProfile));
 
   return visibleColumns.map(column => ({
     key: column.key,

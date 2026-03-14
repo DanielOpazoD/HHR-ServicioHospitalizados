@@ -142,7 +142,10 @@ describe('HandoffRow', () => {
             {...defaultProps}
             noteField="medicalHandoffNote"
             onNoteChange={vi.fn()}
-            medicalActions={{ onContinuityConfirm: onMedicalContinuityConfirm }}
+            medicalActions={{
+              onContinuityConfirm: onMedicalContinuityConfirm,
+              onEntrySpecialtyChange: vi.fn(),
+            }}
             patient={{ ...mockPatient, medicalHandoffNote: 'Última evolución' }}
             isMedical={true}
           />
@@ -163,7 +166,10 @@ describe('HandoffRow', () => {
             {...defaultProps}
             noteField="medicalHandoffNote"
             onNoteChange={vi.fn()}
-            medicalActions={{ onEntryDelete: onMedicalEntryDelete }}
+            medicalActions={{
+              onEntryDelete: onMedicalEntryDelete,
+              onEntrySpecialtyChange: vi.fn(),
+            }}
             patient={{
               ...mockPatient,
               medicalHandoffEntries: [
@@ -192,6 +198,10 @@ describe('HandoffRow', () => {
             {...defaultProps}
             noteField="medicalHandoffNote"
             onNoteChange={vi.fn()}
+            medicalActions={{
+              onEntryNoteChange: vi.fn(),
+              onEntrySpecialtyChange: vi.fn(),
+            }}
             patient={{
               ...mockPatient,
               specialty: Specialty.MEDICINA,
@@ -233,5 +243,68 @@ describe('HandoffRow', () => {
     expect(
       screen.queryByRole('button', { name: /Agregar otra especialidad/i })
     ).not.toBeInTheDocument();
+  });
+
+  it('shows a create button for specialist-style medical access when there is no handoff entry yet', () => {
+    const onCreatePrimaryEntry = vi.fn();
+
+    render(
+      <table>
+        <tbody>
+          <HandoffRow
+            {...defaultProps}
+            noteField="medicalHandoffNote"
+            onNoteChange={vi.fn()}
+            medicalActions={{ onCreatePrimaryEntry }}
+            patient={{
+              ...mockPatient,
+              specialty: Specialty.MEDICINA,
+              medicalHandoffNote: '',
+              medicalHandoffEntries: [],
+            }}
+            isMedical={true}
+          />
+        </tbody>
+      </table>
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Crear entrega médica/i }));
+    expect(onCreatePrimaryEntry).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders specialty as read-only pill when specialty changes are restricted', () => {
+    render(
+      <table>
+        <tbody>
+          <HandoffRow
+            {...defaultProps}
+            noteField="medicalHandoffNote"
+            onNoteChange={vi.fn()}
+            medicalActions={{
+              onEntryNoteChange: vi.fn(),
+            }}
+            patient={{
+              ...mockPatient,
+              specialty: Specialty.MEDICINA,
+              medicalHandoffEntries: [
+                {
+                  id: 'entry-1',
+                  specialty: Specialty.MEDICINA,
+                  note: 'Observación editable',
+                },
+              ],
+            }}
+            isMedical={true}
+          />
+        </tbody>
+      </table>
+    );
+
+    expect(screen.queryByRole('combobox', { name: /Especialidad 1/i })).not.toBeInTheDocument();
+    expect(screen.getAllByText('Med Interna').length).toBeGreaterThan(0);
+    expect(
+      screen.queryByRole('button', { name: /Agregar otra especialidad/i })
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Eliminar entrega 1/i })).not.toBeInTheDocument();
   });
 });

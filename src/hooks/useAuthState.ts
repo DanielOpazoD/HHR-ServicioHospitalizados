@@ -36,7 +36,7 @@ export interface UseAuthStateReturn {
   // Role-based properties
   /** Current user's role */
   role: UserRole;
-  /** True if user has edit permissions (editor, admin, or nurse_hospital) */
+  /** True if user has edit permissions in at least one module */
   isEditor: boolean;
   /** True if user only has view permissions */
   isViewer: boolean;
@@ -73,7 +73,12 @@ export const useAuthState = (): UseAuthStateReturn => {
   });
 
   const role: UserRole = user?.role || 'viewer';
-  const isEditor = role === 'editor' || role === 'admin' || role === 'nurse_hospital';
+  const isEditor =
+    role === 'editor' ||
+    role === 'admin' ||
+    role === 'nurse_hospital' ||
+    role === 'doctor_urgency' ||
+    role === 'doctor_specialist';
   const isViewer = !isEditor;
   const canEdit = isEditor;
 

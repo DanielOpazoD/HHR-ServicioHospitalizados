@@ -10,6 +10,7 @@ describe('medicalHandoffAccessController', () => {
       specialistAccess: false,
     });
 
+    expect(capabilities.canCreatePrimaryObservationEntry).toBe(true);
     expect(capabilities.canEditObservationEntries).toBe(true);
     expect(capabilities.canEditClinicalEvents).toBe(true);
     expect(capabilities.canEditObservationEntrySpecialty).toBe(false);
@@ -33,6 +34,7 @@ describe('medicalHandoffAccessController', () => {
       specialistAccess: true,
     });
 
+    expect(capabilities.canCreatePrimaryObservationEntry).toBe(true);
     expect(capabilities.canEditObservationEntries).toBe(true);
     expect(capabilities.canEditClinicalEvents).toBe(true);
     expect(capabilities.canSign).toBe(false);

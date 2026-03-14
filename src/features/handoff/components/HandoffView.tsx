@@ -92,6 +92,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
     tensList,
     shouldShowPatient,
     handleNursingNoteChange,
+    handleMedicalPrimaryEntryCreate,
     handleMedicalEntryAdd,
     handleMedicalEntryDelete,
     handleMedicalEntryNoteChange,
@@ -207,6 +208,9 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
     [readOnly, role, specialistAccess]
   );
   const medicalActions: HandoffMedicalActions = {
+    onCreatePrimaryEntry: medicalCapabilities.canCreatePrimaryObservationEntry
+      ? handleMedicalPrimaryEntryCreate
+      : undefined,
     onEntryNoteChange: medicalCapabilities.canEditObservationEntries
       ? handleMedicalEntryNoteChange
       : undefined,

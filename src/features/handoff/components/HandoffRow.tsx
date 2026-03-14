@@ -19,6 +19,7 @@ import {
 // ============================================================================
 
 interface HandoffRowMedicalActions {
+  onCreatePrimaryEntry?: () => void;
   onEntryNoteChange?: (entryId: string, value: string) => void;
   onEntrySpecialtyChange?: (entryId: string, specialty: string) => void;
   onEntryAdd?: () => void;
@@ -128,12 +129,14 @@ export const HandoffRow: React.FC<HandoffRowProps> = ({
         <HandoffMedicalObservationsCell
           patient={patient}
           isFieldReadOnly={isFieldReadOnly}
-          onEntryNoteChange={(entryId, value) =>
-            medicalActions?.onEntryNoteChange?.(entryId, value)
+          onCreatePrimaryEntry={medicalActions?.onCreatePrimaryEntry}
+          onEntryNoteChange={
+            medicalActions?.onEntryNoteChange ??
+            (() => {
+              return undefined;
+            })
           }
-          onEntrySpecialtyChange={(entryId, specialty) =>
-            medicalActions?.onEntrySpecialtyChange?.(entryId, specialty)
-          }
+          onEntrySpecialtyChange={medicalActions?.onEntrySpecialtyChange}
           onAddEntry={medicalActions?.onEntryAdd}
           onDeleteEntry={medicalActions?.onEntryDelete}
         />

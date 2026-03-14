@@ -34,6 +34,9 @@ export const HandoffPatientTable: React.FC<HandoffPatientTableProps> = ({
   const [allEventsExpanded, setAllEventsExpanded] = useState(false);
 
   const resolveRowMedicalActions = (bedId: string, isNested: boolean) => ({
+    onCreatePrimaryEntry: medicalActions?.onCreatePrimaryEntry
+      ? () => medicalActions.onCreatePrimaryEntry?.(bedId, isNested)
+      : undefined,
     onEntryNoteChange: medicalActions?.onEntryNoteChange
       ? (entryId: string, value: string) =>
           medicalActions.onEntryNoteChange?.(bedId, entryId, value, isNested)

@@ -1,6 +1,7 @@
 import type { ClinicalEvent } from '@/types';
 
 export interface HandoffMedicalActions {
+  onCreatePrimaryEntry?: (bedId: string, isNested: boolean) => void;
   onEntryNoteChange?: (bedId: string, entryId: string, value: string, isNested: boolean) => void;
   onEntrySpecialtyChange?: (
     bedId: string,

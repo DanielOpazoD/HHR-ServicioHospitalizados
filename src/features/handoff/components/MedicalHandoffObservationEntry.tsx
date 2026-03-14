@@ -12,8 +12,9 @@ interface MedicalHandoffObservationEntryProps {
   entriesCount: number;
   isFieldReadOnly: boolean;
   specialtyOptions: string[];
+  canEditSpecialty?: boolean;
   onEntryNoteChange: (entryId: string, value: string) => void;
-  onEntrySpecialtyChange: (entryId: string, specialty: string) => void;
+  onEntrySpecialtyChange?: (entryId: string, specialty: string) => void;
   onAddEntry?: () => void;
   onDeleteEntry?: (entryId: string) => void;
 }
@@ -25,6 +26,7 @@ export const MedicalHandoffObservationEntry: React.FC<MedicalHandoffObservationE
   entriesCount,
   isFieldReadOnly,
   specialtyOptions,
+  canEditSpecialty = true,
   onEntryNoteChange,
   onEntrySpecialtyChange,
   onAddEntry,
@@ -50,23 +52,31 @@ export const MedicalHandoffObservationEntry: React.FC<MedicalHandoffObservationE
         </div>
       ) : (
         <div className="flex flex-wrap items-center gap-1.5 text-[10px] leading-tight text-slate-500 print:hidden">
-          <label className="sr-only" htmlFor={`medical-specialty-${patient.bedId}-${entry.id}`}>
-            Especialidad {index + 1}
-          </label>
-          <select
-            id={`medical-specialty-${patient.bedId}-${entry.id}`}
-            aria-label={`Especialidad ${index + 1}`}
-            value={entry.specialty}
-            onChange={event => onEntrySpecialtyChange(entry.id, event.target.value)}
-            className="rounded-full border border-slate-300 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-700"
-            style={{ width: specialtyWidth }}
-          >
-            {specialtyOptions.map(option => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
+          {canEditSpecialty && onEntrySpecialtyChange ? (
+            <>
+              <label className="sr-only" htmlFor={`medical-specialty-${patient.bedId}-${entry.id}`}>
+                Especialidad {index + 1}
+              </label>
+              <select
+                id={`medical-specialty-${patient.bedId}-${entry.id}`}
+                aria-label={`Especialidad ${index + 1}`}
+                value={entry.specialty}
+                onChange={event => onEntrySpecialtyChange(entry.id, event.target.value)}
+                className="rounded-full border border-slate-300 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-700"
+                style={{ width: specialtyWidth }}
+              >
+                {specialtyOptions.map(option => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </>
+          ) : (
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 font-semibold text-slate-700">
+              {specialtyLabel}
+            </span>
+          )}
           {inlineMeta && <span>{inlineMeta}</span>}
           <div className="ml-auto flex items-center gap-1">
             {!isFieldReadOnly && onAddEntry && index === entriesCount - 1 && (

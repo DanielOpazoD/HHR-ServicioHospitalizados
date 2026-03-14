@@ -29,6 +29,8 @@ export interface CensusTableBodyProps {
   currentDateString: string;
   readOnly: boolean;
   diagnosisMode: DiagnosisMode;
+  columns: TableColumnConfig;
+  visibleColumnCount: number;
   bedTypes: BedTypesById;
   role?: UserRole;
   accessProfile?: CensusAccessProfile;
