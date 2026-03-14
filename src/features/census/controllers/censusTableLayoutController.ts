@@ -11,6 +11,7 @@ import type {
   CensusTableBodyProps,
   CensusTableHeaderProps,
 } from '@/features/census/types/censusTableComponentContracts';
+import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 
 export interface CensusTableLayoutParams {
   currentDateString: string;
@@ -21,6 +22,7 @@ export interface CensusTableLayoutParams {
   resetDayDeniedMessage: string;
   onClearAll: () => Promise<void>;
   diagnosisMode: DiagnosisMode;
+  accessProfile?: CensusAccessProfile;
   onToggleDiagnosisMode: () => void;
   onResizeColumn: (column: keyof TableColumnConfig) => (width: number) => void;
   occupiedRows: OccupiedBedRow[];
@@ -55,6 +57,7 @@ export const buildCensusTableLayoutBindings = (
     resetDayDeniedMessage: params.resetDayDeniedMessage,
     onClearAll: params.onClearAll,
     diagnosisMode: params.diagnosisMode,
+    accessProfile: params.accessProfile,
     onToggleDiagnosisMode: params.onToggleDiagnosisMode,
     onResizeColumn: params.onResizeColumn,
   },
@@ -66,6 +69,7 @@ export const buildCensusTableLayoutBindings = (
     diagnosisMode: params.diagnosisMode,
     bedTypes: params.bedTypes,
     role: params.role,
+    accessProfile: params.accessProfile,
     clinicalDocumentPresenceByBedId: params.clinicalDocumentPresenceByBedId,
     onAction: params.onAction,
     onActivateEmptyBed: params.onActivateEmptyBed,

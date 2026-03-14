@@ -6,6 +6,7 @@ import {
   resolvePatientActionMenuCallbackAvailability,
 } from '@/features/census/controllers/patientActionMenuController';
 import type { PatientRowAction } from '@/features/census/types/patientRowActionTypes';
+import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 import type {
   PatientActionMenuBinding,
   PatientActionMenuIndicators,
@@ -15,6 +16,7 @@ import type {
 interface UsePatientActionMenuParams {
   isBlocked: boolean;
   readOnly: boolean;
+  accessProfile?: CensusAccessProfile;
   align?: RowMenuAlign;
   showCmaAction?: boolean;
   indicators?: Required<PatientActionMenuIndicators>;
@@ -42,6 +44,7 @@ interface UsePatientActionMenuResult {
 export const usePatientActionMenu = ({
   isBlocked,
   readOnly,
+  accessProfile = 'default',
   align,
   showCmaAction,
   indicators,
@@ -60,6 +63,7 @@ export const usePatientActionMenu = ({
         showCmaAction,
         isBlocked,
         readOnly,
+        accessProfile,
         indicators,
         callbackAvailability: resolvePatientActionMenuCallbackAvailability({
           onViewHistory,
@@ -76,6 +80,7 @@ export const usePatientActionMenu = ({
       onViewExamRequest,
       onViewImagingRequest,
       onViewHistory,
+      accessProfile,
       readOnly,
       showCmaAction,
     ]

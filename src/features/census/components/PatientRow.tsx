@@ -18,6 +18,7 @@ const PatientRowComponent: React.FC<PatientRowProps> = ({
   isSubRow = false,
   bedType,
   role,
+  accessProfile = 'default',
   indicators,
   style,
 }) => {
@@ -32,6 +33,7 @@ const PatientRowComponent: React.FC<PatientRowProps> = ({
     diagnosisMode,
     isSubRow,
     role,
+    accessProfile,
     style,
     indicators,
   });

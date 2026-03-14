@@ -216,6 +216,48 @@ describe('AppContent', () => {
     expect(screen.queryByTestId('bookmark-bar')).not.toBeInTheDocument();
   });
 
+  it('passes specialist census accessProfile to DateStrip and forces table mode', () => {
+    vi.mocked(useAuth).mockReturnValue({
+      ...mockAuth,
+      role: 'doctor_specialist',
+    } as unknown as AuthValue);
+
+    render(
+      <AppContent
+        ui={{
+          ...mockUI,
+          currentModule: 'CENSUS',
+          censusLocalViewMode: '3D' as unknown as AppContentUi['censusLocalViewMode'],
+        }}
+      />
+    );
+
+    expect(mockDateStrip).toHaveBeenCalledWith(
+      expect.objectContaining({
+        accessProfile: 'specialist',
+      })
+    );
+    expect(mockUI.setCensusLocalViewMode).toHaveBeenCalledWith('TABLE');
+  });
+
+  it('sanitizes invalid persisted modules for doctor_specialist', () => {
+    vi.mocked(useAuth).mockReturnValue({
+      ...mockAuth,
+      role: 'doctor_specialist',
+    } as unknown as AuthValue);
+
+    render(
+      <AppContent
+        ui={{
+          ...mockUI,
+          currentModule: 'AUDIT' as unknown as AppContentUi['currentModule'],
+        }}
+      />
+    );
+
+    expect(mockUI.setCurrentModule).toHaveBeenCalledWith('CENSUS');
+  });
+
   it('hides DateStrip for non-clinical modules', () => {
     render(
       <AppContent ui={{ ...mockUI, currentModule: 'TRANSFERS' } as unknown as AppContentUi} />

@@ -2,6 +2,7 @@ import {
   getVisibleUtilityActions,
   type UtilityActionConfig,
 } from '@/features/census/components/patient-row/patientActionMenuConfig';
+import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 import type {
   PatientActionMenuBinding,
   PatientActionMenuIndicators,
@@ -39,6 +40,7 @@ interface BuildPatientActionMenuModelParams {
   align?: RowMenuAlign;
   isBlocked: boolean;
   readOnly: boolean;
+  accessProfile?: CensusAccessProfile;
   showCmaAction?: boolean;
   indicators?: Required<PatientActionMenuIndicators>;
   callbackAvailability: PatientActionMenuCallbackAvailability;
@@ -53,6 +55,7 @@ export const buildPatientActionMenuModel = ({
   align,
   isBlocked,
   readOnly,
+  accessProfile = 'default',
   showCmaAction,
   indicators,
   callbackAvailability,
@@ -62,8 +65,9 @@ export const buildPatientActionMenuModel = ({
     showCmaAction,
     isBlocked,
     readOnly,
+    accessProfile,
     indicators,
     ...callbackAvailability,
   }),
-  utilityActions: getVisibleUtilityActions(isBlocked),
+  utilityActions: accessProfile === 'specialist' ? [] : getVisibleUtilityActions(isBlocked),
 });

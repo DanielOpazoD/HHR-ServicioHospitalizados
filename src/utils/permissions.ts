@@ -83,7 +83,7 @@ const PERMISSIONS: Record<string, RolePermissions> = {
     canEdit: ['MEDICAL_HANDOFF'],
   },
   [ROLES.DOCTOR_SPECIALIST]: {
-    modules: ['MEDICAL_HANDOFF'],
+    modules: ['CENSUS', 'MEDICAL_HANDOFF'],
     canEdit: ['MEDICAL_HANDOFF'],
   },
   [ROLES.VIEWER_CENSUS]: {

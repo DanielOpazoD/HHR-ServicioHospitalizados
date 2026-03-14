@@ -57,6 +57,12 @@ describe('permissions.ts - Security Critical Tests', () => {
       expect(canEditModule(ROLES.DOCTOR_URGENCY, 'MEDICAL_HANDOFF')).toBe(true);
     });
 
+    it('doctor_specialist should only edit MEDICAL_HANDOFF', () => {
+      expect(canEditModule(ROLES.DOCTOR_SPECIALIST, 'CENSUS')).toBe(false);
+      expect(canEditModule(ROLES.DOCTOR_SPECIALIST, 'MEDICAL_HANDOFF')).toBe(true);
+      expect(canEditModule(ROLES.DOCTOR_SPECIALIST, 'AUDIT')).toBe(false);
+    });
+
     it('viewer_census should NOT edit anything', () => {
       expect(canEditModule(ROLES.VIEWER_CENSUS, 'CENSUS')).toBe(false);
     });
@@ -107,6 +113,11 @@ describe('permissions.ts - Security Critical Tests', () => {
     it('viewer_census should only see CENSUS', () => {
       const modules = getVisibleModules(ROLES.VIEWER_CENSUS);
       expect(modules).toEqual(['CENSUS']);
+    });
+
+    it('doctor_specialist should only see CENSUS and MEDICAL_HANDOFF', () => {
+      const modules = getVisibleModules(ROLES.DOCTOR_SPECIALIST);
+      expect(modules).toEqual(['CENSUS', 'MEDICAL_HANDOFF']);
     });
 
     it('undefined role should default to CENSUS only', () => {

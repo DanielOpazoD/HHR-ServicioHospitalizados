@@ -12,6 +12,8 @@ import { DateStripBookmarkToggle } from '@/components/layout/date-strip/DateStri
 import { DateStripYearNavigator } from '@/components/layout/date-strip/DateStripYearNavigator';
 import { DateStripMonthNavigator } from '@/components/layout/date-strip/DateStripMonthNavigator';
 import { useDateStripWheelNavigation } from '@/components/layout/date-strip/useDateStripWheelNavigation';
+import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
+import { isSpecialistCensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 
 export interface DateNavigationProps {
   selectedYear: number;
@@ -66,6 +68,7 @@ export interface DateStripProps
   setLocalViewMode: (v: 'TABLE' | '3D') => void;
   isBackingUp: boolean;
   currentModule: string;
+  accessProfile?: CensusAccessProfile;
 }
 
 export const DateStrip: React.FC<DateStripProps> = ({
@@ -99,6 +102,7 @@ export const DateStrip: React.FC<DateStripProps> = ({
   setLocalViewMode,
   isBackingUp,
   currentModule,
+  accessProfile = 'default',
 }) => {
   const daysContainerRef = useRef<HTMLDivElement>(null);
 
@@ -118,6 +122,8 @@ export const DateStrip: React.FC<DateStripProps> = ({
 
   const today = new Date();
   const isCurrentMonth = today.getMonth() === selectedMonth && today.getFullYear() === selectedYear;
+  const specialistCensusAccess =
+    currentModule === 'CENSUS' && isSpecialistCensusAccessProfile(accessProfile);
 
   useDateStripWheelNavigation({ containerRef: daysContainerRef, navigateDays });
 
@@ -148,7 +154,7 @@ export const DateStrip: React.FC<DateStripProps> = ({
             {currentModule === 'CENSUS' && (
               <>
                 <PdfButtons onExportPDF={onExportPDF} />
-                {!isGuest && (
+                {!isGuest && !specialistCensusAccess && (
                   <SaveDropdown
                     onExportExcel={onExportExcel}
                     onBackupExcel={onBackupExcel}
@@ -160,7 +166,7 @@ export const DateStrip: React.FC<DateStripProps> = ({
             )}
           </div>
 
-          {!isGuest && (
+          {!isGuest && !specialistCensusAccess && (
             <EmailDropdown
               onSendEmail={onSendEmail}
               onCopyShareLink={onCopyShareLink}
@@ -199,9 +205,10 @@ export const DateStrip: React.FC<DateStripProps> = ({
           <div className="h-5 w-px bg-slate-200" />
 
           <DateStripQuickActions
-            onOpenBedManager={onOpenBedManager}
+            onOpenBedManager={specialistCensusAccess ? undefined : onOpenBedManager}
             localViewMode={localViewMode}
             setLocalViewMode={setLocalViewMode}
+            hide3DToggle={specialistCensusAccess}
           />
         </div>
       </div>

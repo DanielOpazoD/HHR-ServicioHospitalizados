@@ -17,10 +17,13 @@ import {
   resolveStaffSelectorsClassName,
   resolveStaffSelectorsState,
 } from '@/features/census/controllers/censusStaffHeaderController';
+import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
+import { isSpecialistCensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 
 interface CensusStaffHeaderProps {
   readOnly?: boolean;
   stats: Statistics | null;
+  accessProfile?: CensusAccessProfile;
 }
 
 /**
@@ -31,6 +34,7 @@ interface CensusStaffHeaderProps {
 export const CensusStaffHeader: React.FC<CensusStaffHeaderProps> = ({
   readOnly = false,
   stats,
+  accessProfile = 'default',
 }) => {
   const dailyRecordData = useDailyRecordData();
   const beds = useDailyRecordBeds();
@@ -49,28 +53,33 @@ export const CensusStaffHeader: React.FC<CensusStaffHeaderProps> = ({
     admissionsCount,
   });
   const selectorsClassName = resolveStaffSelectorsClassName(readOnly);
+  const specialistAccess = isSpecialistCensusAccessProfile(accessProfile);
 
   return (
     <div className="flex justify-center items-stretch gap-3 flex-wrap animate-fade-in px-4">
       {/* Staff Selectors */}
-      <NurseSelector
-        nursesDayShift={staffSelectorsState.nursesDayShift}
-        nursesNightShift={staffSelectorsState.nursesNightShift}
-        nursesList={nursesList}
-        onUpdateNurse={updateNurse}
-        className={selectorsClassName}
-      />
+      {!specialistAccess && (
+        <NurseSelector
+          nursesDayShift={staffSelectorsState.nursesDayShift}
+          nursesNightShift={staffSelectorsState.nursesNightShift}
+          nursesList={nursesList}
+          onUpdateNurse={updateNurse}
+          className={selectorsClassName}
+        />
+      )}
 
-      <TensSelector
-        tensDayShift={staffSelectorsState.tensDayShift}
-        tensNightShift={staffSelectorsState.tensNightShift}
-        tensList={tensList}
-        onUpdateTens={updateTens}
-        className={selectorsClassName}
-      />
+      {!specialistAccess && (
+        <TensSelector
+          tensDayShift={staffSelectorsState.tensDayShift}
+          tensNightShift={staffSelectorsState.tensNightShift}
+          tensList={tensList}
+          onUpdateTens={updateTens}
+          className={selectorsClassName}
+        />
+      )}
 
       {/* Combined Stats Summary Card */}
-      {stats && (
+      {stats && !specialistAccess && (
         <CombinedSummaryCard
           stats={stats}
           discharges={movementSummaryState.discharges}

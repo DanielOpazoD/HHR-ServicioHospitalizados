@@ -7,6 +7,7 @@ export const PatientMainRowActionCell: React.FC<PatientMainRowActionCellProps> =
   readOnly,
   align,
   showCmaAction = true,
+  accessProfile = 'default',
   hasClinicalDocument,
   isNewAdmission,
   onAction,
@@ -26,6 +27,7 @@ export const PatientMainRowActionCell: React.FC<PatientMainRowActionCellProps> =
       onViewImagingRequest={onViewImagingRequest}
       onViewHistory={onViewHistory}
       readOnly={readOnly}
+      accessProfile={accessProfile}
       align={align}
       showCmaAction={showCmaAction}
       hasClinicalDocument={hasClinicalDocument}

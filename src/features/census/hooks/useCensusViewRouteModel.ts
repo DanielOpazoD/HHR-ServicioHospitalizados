@@ -5,6 +5,7 @@ import {
   buildRegisterContentProps,
   resolveCensusViewBranch,
 } from '@/features/census/controllers/censusViewController';
+import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 
 type ViewMode = 'REGISTER' | 'ANALYTICS';
 
@@ -17,6 +18,7 @@ interface UseCensusViewRouteModelParams {
   onCloseBedManagerModal: () => void;
   readOnly: boolean;
   localViewMode: 'TABLE' | '3D';
+  accessProfile: CensusAccessProfile;
 }
 
 export const useCensusViewRouteModel = ({
@@ -28,6 +30,7 @@ export const useCensusViewRouteModel = ({
   onCloseBedManagerModal,
   readOnly,
   localViewMode,
+  accessProfile,
 }: UseCensusViewRouteModelParams) => {
   const viewModel = useCensusViewModel(currentDateString);
 
@@ -79,8 +82,10 @@ export const useCensusViewRouteModel = ({
       stats: viewModel.stats,
       showBedManagerModal,
       onCloseBedManagerModal,
+      accessProfile,
     });
   }, [
+    accessProfile,
     currentDateString,
     localViewMode,
     onCloseBedManagerModal,

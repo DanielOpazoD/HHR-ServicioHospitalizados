@@ -10,6 +10,7 @@ export const buildPatientActionSectionBinding = ({
   actionMenuAlign,
   indicators,
   mainRowViewState,
+  accessProfile,
   data,
   currentDateString,
   onAction,
@@ -25,6 +26,7 @@ export const buildPatientActionSectionBinding = ({
   | 'actionMenuAlign'
   | 'indicators'
   | 'mainRowViewState'
+  | 'accessProfile'
   | 'data'
   | 'currentDateString'
   | 'onAction'
@@ -44,6 +46,7 @@ export const buildPatientActionSectionBinding = ({
     readOnly,
     align: actionMenuAlign,
     showCmaAction: daysHospitalized === null || daysHospitalized <= 1,
+    accessProfile,
     hasClinicalDocument: indicators.hasClinicalDocument,
     isNewAdmission: indicators.isNewAdmission,
     onAction,

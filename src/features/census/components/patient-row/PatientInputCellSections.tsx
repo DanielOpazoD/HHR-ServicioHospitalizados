@@ -14,6 +14,8 @@ import type {
   PatientInputFlowSectionBindings,
   PatientInputIdentitySectionBindings,
 } from '@/features/census/components/patient-row/patientInputSectionContracts';
+import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
+import { isSpecialistCensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 
 export const PatientInputIdentitySection: React.FC<PatientInputIdentitySectionBindings> = ({
   shared,
@@ -55,12 +57,9 @@ export const PatientInputIdentitySection: React.FC<PatientInputIdentitySectionBi
   </>
 );
 
-export const PatientInputClinicalSection: React.FC<PatientInputClinicalSectionBindings> = ({
-  shared,
-  diagnosisMode,
-  handleDebouncedText,
-  onChange,
-}) => (
+export const PatientInputClinicalSection: React.FC<
+  PatientInputClinicalSectionBindings & { accessProfile?: CensusAccessProfile }
+> = ({ shared, diagnosisMode, handleDebouncedText, onChange, accessProfile = 'default' }) => (
   <>
     <DiagnosisInput
       data={shared.data}
@@ -79,21 +78,21 @@ export const PatientInputClinicalSection: React.FC<PatientInputClinicalSectionBi
       readOnly={shared.isLocked}
       onChange={onChange.text}
     />
-    <StatusSelect
-      data={shared.data}
-      isSubRow={shared.isSubRow}
-      isEmpty={shared.isEmpty}
-      readOnly={shared.isLocked}
-      onChange={onChange.text}
-    />
+    {!isSpecialistCensusAccessProfile(accessProfile) && (
+      <StatusSelect
+        data={shared.data}
+        isSubRow={shared.isSubRow}
+        isEmpty={shared.isEmpty}
+        readOnly={shared.isLocked}
+        onChange={onChange.text}
+      />
+    )}
   </>
 );
 
-export const PatientInputFlowSection: React.FC<PatientInputFlowSectionBindings> = ({
-  shared,
-  handleDebouncedText,
-  onChange,
-}) => (
+export const PatientInputFlowSection: React.FC<
+  PatientInputFlowSectionBindings & { accessProfile?: CensusAccessProfile }
+> = ({ shared, handleDebouncedText, onChange, accessProfile = 'default' }) => (
   <>
     <AdmissionInput
       data={shared.data}
@@ -103,16 +102,18 @@ export const PatientInputFlowSection: React.FC<PatientInputFlowSectionBindings> 
       onChange={handleDebouncedText}
       onMultipleUpdate={onChange.multiple}
     />
-    <DevicesCell
-      data={shared.data}
-      isSubRow={shared.isSubRow}
-      isEmpty={shared.isEmpty}
-      readOnly={shared.isLocked}
-      currentDateString={shared.currentDateString}
-      onDevicesChange={onChange.devices}
-      onDeviceDetailsChange={onChange.deviceDetails}
-      onDeviceHistoryChange={onChange.deviceHistory}
-    />
+    {!isSpecialistCensusAccessProfile(accessProfile) && (
+      <DevicesCell
+        data={shared.data}
+        isSubRow={shared.isSubRow}
+        isEmpty={shared.isEmpty}
+        readOnly={shared.isLocked}
+        currentDateString={shared.currentDateString}
+        onDevicesChange={onChange.devices}
+        onDeviceDetailsChange={onChange.deviceDetails}
+        onDeviceHistoryChange={onChange.deviceHistory}
+      />
+    )}
   </>
 );
 

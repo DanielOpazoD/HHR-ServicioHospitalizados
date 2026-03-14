@@ -55,5 +55,6 @@ export const buildPatientMainRowSections = (
     onDemo: props.onOpenDemographics,
     readOnly: props.readOnly,
     diagnosisMode: props.diagnosisMode,
+    accessProfile: props.accessProfile,
   },
 });

@@ -89,7 +89,9 @@ export const RoleForm: React.FC<RoleFormProps> = ({
               <option value="viewer">🎨 Invitado (Solo Lectura)</option>
               <option value="nurse_hospital">👩‍⚕️ Enfermería Hospitalaria</option>
               <option value="doctor_urgency">🩺 Médico de Urgencia</option>
-              <option value="doctor_specialist">🧠 Especialista (Entrega Médica)</option>
+              <option value="doctor_specialist">
+                🧠 Especialista (Censo abreviado + Entrega Médica)
+              </option>
               <option value="admin">🔑 Administrador Total</option>
             </select>
             <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300">

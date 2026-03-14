@@ -6,12 +6,14 @@ interface DateStripQuickActionsProps {
   onOpenBedManager?: () => void;
   localViewMode: 'TABLE' | '3D';
   setLocalViewMode: (v: 'TABLE' | '3D') => void;
+  hide3DToggle?: boolean;
 }
 
 export const DateStripQuickActions: React.FC<DateStripQuickActionsProps> = ({
   onOpenBedManager,
   localViewMode,
   setLocalViewMode,
+  hide3DToggle = false,
 }) => (
   <div className="flex items-center gap-1">
     {onOpenBedManager && (
@@ -25,17 +27,19 @@ export const DateStripQuickActions: React.FC<DateStripQuickActionsProps> = ({
       </button>
     )}
 
-    <button
-      onClick={() => setLocalViewMode(localViewMode === 'TABLE' ? '3D' : 'TABLE')}
-      className={clsx(
-        'flex items-center justify-center p-1.5 rounded-md border transition-all',
-        localViewMode === '3D'
-          ? 'bg-indigo-600 text-white border-indigo-700 shadow-sm'
-          : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
-      )}
-      title={localViewMode === '3D' ? 'Volver a Tabla' : 'Ver Mapa 3D'}
-    >
-      {localViewMode === '3D' ? <LayoutGrid size={15} /> : <Box size={15} />}
-    </button>
+    {!hide3DToggle && (
+      <button
+        onClick={() => setLocalViewMode(localViewMode === 'TABLE' ? '3D' : 'TABLE')}
+        className={clsx(
+          'flex items-center justify-center p-1.5 rounded-md border transition-all',
+          localViewMode === '3D'
+            ? 'bg-indigo-600 text-white border-indigo-700 shadow-sm'
+            : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
+        )}
+        title={localViewMode === '3D' ? 'Volver a Tabla' : 'Ver Mapa 3D'}
+      >
+        {localViewMode === '3D' ? <LayoutGrid size={15} /> : <Box size={15} />}
+      </button>
+    )}
   </div>
 );

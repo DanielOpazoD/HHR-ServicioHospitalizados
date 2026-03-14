@@ -24,6 +24,7 @@ interface HandoffMedicalContentProps {
   canCopySpecialistLink: boolean;
   scopedMedicalSignature: { doctorName: string; signedAt: string } | null;
   scopedMedicalHandoffSentAt: string | null;
+  showDeliverySection: boolean;
   canEditDoctorName: boolean;
   canSignMedicalHandoff: boolean;
   updateMedicalHandoffDoctor?: (doctorName: string) => Promise<void>;
@@ -48,11 +49,12 @@ export const HandoffMedicalContent: React.FC<HandoffMedicalContentProps> = ({
   effectiveVisibleBeds,
   specialtyFilteredBeds,
   readOnly,
-  role,
+  role: _role,
   specialistAccess = false,
   canCopySpecialistLink,
   scopedMedicalSignature,
   scopedMedicalHandoffSentAt,
+  showDeliverySection,
   canEditDoctorName,
   canSignMedicalHandoff,
   updateMedicalHandoffDoctor,
@@ -80,7 +82,8 @@ export const HandoffMedicalContent: React.FC<HandoffMedicalContentProps> = ({
       }}
       visibleBeds={effectiveVisibleBeds}
       readOnly={readOnly}
-      canRestoreSignatures={role === 'admin'}
+      canRestoreSignatures={Boolean(resetMedicalHandoffState)}
+      showDeliverySection={showDeliverySection}
       canEditDoctorName={canEditDoctorName}
       canSignMedicalHandoff={canSignMedicalHandoff}
       updateMedicalHandoffDoctor={updateMedicalHandoffDoctor}

@@ -14,12 +14,13 @@ export const CensusTableHeader: React.FC<CensusTableHeaderProps> = ({
   resetDayDeniedMessage,
   onClearAll,
   diagnosisMode,
+  accessProfile,
   onToggleDiagnosisMode,
   onResizeColumn,
 }) => {
   const headerClassName =
     'sticky top-0 z-20 bg-slate-50 py-1 px-1 border-r border-slate-100 text-center text-slate-500 text-[10px] uppercase tracking-wider font-bold shadow-sm';
-  const headerCells = buildCensusHeaderCellModels();
+  const headerCells = buildCensusHeaderCellModels(undefined, accessProfile);
 
   return (
     <thead className="sticky top-0 z-30 bg-white">
@@ -30,7 +31,7 @@ export const CensusTableHeader: React.FC<CensusTableHeaderProps> = ({
           onResize={onResizeColumn('actions')}
           headerClassName={headerClassName}
           readOnly={readOnly}
-          canDeleteRecord={canDeleteRecord}
+          canDeleteRecord={accessProfile === 'specialist' ? false : canDeleteRecord}
           deniedMessage={resetDayDeniedMessage}
           onClearAll={onClearAll}
         />

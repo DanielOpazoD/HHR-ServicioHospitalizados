@@ -3,6 +3,7 @@ import { Loader2 } from 'lucide-react';
 import type { BedDefinition, DailyRecord } from '@/types';
 import { SectionErrorBoundary } from '@/components/shared/SectionErrorBoundary';
 import { CensusTable } from './CensusTable';
+import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 
 interface CensusRegisterMainContentProps {
   localViewMode: 'TABLE' | '3D';
@@ -10,6 +11,7 @@ interface CensusRegisterMainContentProps {
   readOnly: boolean;
   visibleBeds: BedDefinition[];
   beds: DailyRecord['beds'];
+  accessProfile: CensusAccessProfile;
 }
 
 const HospitalFloorMap = React.lazy(() => import('./3d/HospitalFloorMap'));
@@ -20,11 +22,16 @@ export const CensusRegisterMainContent: React.FC<CensusRegisterMainContentProps>
   readOnly,
   visibleBeds,
   beds,
+  accessProfile,
 }) => {
   if (localViewMode === 'TABLE') {
     return (
       <SectionErrorBoundary sectionName="Tabla de Pacientes" fallbackHeight="400px">
-        <CensusTable currentDateString={currentDateString} readOnly={readOnly} />
+        <CensusTable
+          currentDateString={currentDateString}
+          readOnly={readOnly}
+          accessProfile={accessProfile}
+        />
       </SectionErrorBoundary>
     );
   }

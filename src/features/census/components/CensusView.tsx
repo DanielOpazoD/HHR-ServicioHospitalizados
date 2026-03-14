@@ -4,6 +4,7 @@ import { SectionErrorBoundary } from '@/components/shared/SectionErrorBoundary';
 import { AnalyticsView } from '@/features/analytics/public';
 import { useCensusMigrationBootstrap } from '@/features/census/hooks/useCensusMigrationBootstrap';
 import { useCensusViewRouteModel } from '@/features/census/hooks/useCensusViewRouteModel';
+import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 
 const LazyCensusRegisterContent = lazy(() =>
   import('./CensusRegisterContent').then(module => ({
@@ -28,6 +29,7 @@ interface CensusViewProps {
   onCloseBedManagerModal: () => void;
   readOnly?: boolean;
   localViewMode?: 'TABLE' | '3D';
+  accessProfile?: CensusAccessProfile;
 }
 
 const CensusViewContent: React.FC<CensusViewProps> = ({
@@ -39,6 +41,7 @@ const CensusViewContent: React.FC<CensusViewProps> = ({
   onCloseBedManagerModal,
   readOnly = false,
   localViewMode = 'TABLE',
+  accessProfile = 'default',
 }) => {
   const { branch, emptyDayPromptProps, registerContentProps } = useCensusViewRouteModel({
     viewMode,
@@ -49,6 +52,7 @@ const CensusViewContent: React.FC<CensusViewProps> = ({
     onCloseBedManagerModal,
     readOnly,
     localViewMode,
+    accessProfile,
   });
 
   useCensusMigrationBootstrap();

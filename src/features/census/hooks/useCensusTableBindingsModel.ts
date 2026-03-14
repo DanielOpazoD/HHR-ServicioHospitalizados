@@ -4,15 +4,18 @@ import { buildCensusTableLayoutBindings } from '@/features/census/controllers/ce
 import { useClinicalDocumentPresenceByBed } from '@/features/census/hooks/useClinicalDocumentPresenceByBed';
 import { useCensusTableViewModel } from '@/features/census/hooks/useCensusTableViewModel';
 import { canReadClinicalDocuments } from '@/application/clinical-documents/clinicalDocumentAccessPolicy';
+import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 
 interface UseCensusTableBindingsModelParams {
   currentDateString: string;
   readOnly?: boolean;
+  accessProfile?: CensusAccessProfile;
 }
 
 export const useCensusTableBindingsModel = ({
   currentDateString,
   readOnly = false,
+  accessProfile = 'default',
 }: UseCensusTableBindingsModelParams) => {
   const tableViewModel = useCensusTableViewModel({ currentDateString });
   const canReadClinical = canReadClinicalDocuments(tableViewModel.role);
@@ -36,6 +39,7 @@ export const useCensusTableBindingsModel = ({
       resetDayDeniedMessage: tableViewModel.resetDayDeniedMessage,
       onClearAll: tableViewModel.handleClearAll,
       diagnosisMode: tableViewModel.diagnosisMode,
+      accessProfile,
       onToggleDiagnosisMode: tableViewModel.toggleDiagnosisMode,
       onResizeColumn: tableViewModel.handleColumnResize,
       occupiedRows: tableViewModel.occupiedRows,
@@ -51,6 +55,7 @@ export const useCensusTableBindingsModel = ({
     clinicalDocumentPresenceByBedId,
     currentDateString,
     readOnly,
+    accessProfile,
     tableViewModel.activateEmptyBed,
     tableViewModel.bedTypes,
     tableViewModel.beds,

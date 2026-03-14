@@ -9,6 +9,7 @@ describe('patientActionMenuViewController', () => {
     const view = resolvePatientActionMenuViewState({
       isBlocked: false,
       readOnly: false,
+      accessProfile: 'default',
       hasHistoryAction: true,
       hasClinicalDocumentsAction: true,
       hasExamRequestAction: true,
@@ -31,6 +32,7 @@ describe('patientActionMenuViewController', () => {
     const view = resolvePatientActionMenuViewState({
       isBlocked: true,
       readOnly: false,
+      accessProfile: 'default',
       hasHistoryAction: true,
       hasClinicalDocumentsAction: true,
       hasExamRequestAction: true,
@@ -51,6 +53,7 @@ describe('patientActionMenuViewController', () => {
     const view = resolvePatientActionMenuViewState({
       isBlocked: false,
       readOnly: true,
+      accessProfile: 'default',
       hasHistoryAction: false,
       hasClinicalDocumentsAction: true,
       hasExamRequestAction: true,
@@ -65,6 +68,29 @@ describe('patientActionMenuViewController', () => {
     expect(view.showClinicalDocumentsAction).toBe(true);
     expect(view.showExamRequestAction).toBe(false);
     expect(view.showImagingRequestAction).toBe(false);
+  });
+
+  it('keeps only clinical documents, exam and imaging actions for specialist census access', () => {
+    const view = resolvePatientActionMenuViewState({
+      isBlocked: false,
+      readOnly: true,
+      accessProfile: 'specialist',
+      hasHistoryAction: true,
+      hasClinicalDocumentsAction: true,
+      hasExamRequestAction: true,
+      hasImagingRequestAction: true,
+    });
+
+    expect(view).toEqual({
+      showDemographicsAction: false,
+      showMenuTrigger: true,
+      showHistoryAction: false,
+      showUtilityActions: false,
+      showClinicalSection: true,
+      showClinicalDocumentsAction: true,
+      showExamRequestAction: true,
+      showImagingRequestAction: true,
+    });
   });
 
   it('resolves panel anchor class from row menu alignment', () => {

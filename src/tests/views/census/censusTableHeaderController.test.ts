@@ -1,26 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import {
-  buildCensusHeaderCellModels,
-  CENSUS_HEADER_COLUMNS,
-} from '@/features/census/controllers/censusTableHeaderController';
+
+import { buildCensusHeaderCellModels } from '@/features/census/controllers/censusTableHeaderController';
 
 describe('censusTableHeaderController', () => {
-  it('builds header models with diagnosis kind only for diagnosis column', () => {
-    const models = buildCensusHeaderCellModels();
-    const diagnosisModel = models.find(model => model.key === 'diagnosis');
-    const standardModels = models.filter(model => model.key !== 'diagnosis');
+  it('keeps all census columns in default access profile', () => {
+    const cells = buildCensusHeaderCellModels(undefined, 'default');
+    const keys = cells.map(cell => cell.key);
 
-    expect(models).toHaveLength(CENSUS_HEADER_COLUMNS.length);
-    expect(diagnosisModel?.kind).toBe('diagnosis');
-    expect(standardModels.every(model => model.kind === 'standard')).toBe(true);
+    expect(keys).toContain('status');
+    expect(keys).toContain('dmi');
+    expect(keys).toContain('cqx');
+    expect(keys).toContain('upc');
   });
 
-  it('keeps className/title metadata in generated models', () => {
-    const models = buildCensusHeaderCellModels();
-    const upc = models.find(model => model.key === 'upc');
-    const dmi = models.find(model => model.key === 'dmi');
+  it('hides specialist-restricted census columns', () => {
+    const cells = buildCensusHeaderCellModels(undefined, 'specialist');
+    const keys = cells.map(cell => cell.key);
 
-    expect(upc?.className).toBe('border-r-0');
-    expect(dmi?.title).toBe('Dispositivos médicos invasivos');
+    expect(keys).not.toContain('status');
+    expect(keys).not.toContain('dmi');
+    expect(keys).not.toContain('cqx');
+    expect(keys).not.toContain('upc');
+    expect(keys).toContain('diagnosis');
+    expect(keys).toContain('specialty');
   });
 });

@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react';
 import type { DiagnosisMode } from '@/features/census/types/censusTableTypes';
 import type { PatientRowAction } from '@/features/census/types/patientRowActionTypes';
 import type { BedDefinition, BedType, PatientData, UserRole } from '@/types';
+import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 import type {
   ClinicalCribInputChangeHandlers,
   EventTextHandler,
@@ -25,6 +26,7 @@ export interface PatientInputCellsProps {
   onDemo: () => void;
   readOnly?: boolean;
   diagnosisMode?: DiagnosisMode;
+  accessProfile?: CensusAccessProfile;
 }
 
 export interface PatientBedConfigProps extends PatientBedConfigCallbacks {
@@ -59,6 +61,7 @@ export interface PatientMainRowActionCellProps
   readOnly: boolean;
   align: RowMenuAlign;
   showCmaAction?: boolean;
+  accessProfile?: CensusAccessProfile;
 }
 
 export interface PatientMainRowViewProps
@@ -83,6 +86,7 @@ export interface PatientMainRowViewProps
   isCunaMode: boolean;
   indicators: Required<PatientActionMenuIndicators>;
   mainRowViewState: PatientMainRowViewState;
+  accessProfile?: CensusAccessProfile;
   onOpenDemographics: () => void;
   onOpenClinicalDocuments: () => void;
   onOpenExamRequest: () => void;
@@ -136,6 +140,7 @@ export interface PatientRowProps {
   isSubRow?: boolean;
   bedType: BedType;
   role?: UserRole;
+  accessProfile?: CensusAccessProfile;
   indicators?: PatientActionMenuIndicators;
   style?: CSSProperties;
 }

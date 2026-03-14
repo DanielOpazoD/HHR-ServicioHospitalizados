@@ -103,7 +103,7 @@ export const RoleTable: React.FC<RoleTableProps> = ({
                         : role === 'doctor_urgency'
                           ? 'URGENCIA'
                           : role === 'doctor_specialist'
-                            ? 'ESPECIALISTA'
+                            ? 'ESPECIALISTA LIMITADO'
                             : role === 'admin'
                               ? 'ADMIN'
                               : 'INVITADO'}

@@ -1,6 +1,7 @@
 import type { PatientRowAction } from '@/features/census/types/patientRowActionTypes';
 import type { VerticalPlacement } from '@/shared/ui/anchoredOverlayTypes';
 import type { DeviceDetails, DeviceInstance } from '@/types';
+import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 
 export type RowMenuAlign = VerticalPlacement;
 export type MaybePromiseVoid = void | Promise<void>;
@@ -35,6 +36,7 @@ export interface PatientActionMenuBinding {
   isBlocked: boolean;
   readOnly: boolean;
   showCmaAction: boolean;
+  accessProfile?: CensusAccessProfile;
   indicators: Required<PatientActionMenuIndicators>;
   availability: PatientActionMenuAvailability;
 }

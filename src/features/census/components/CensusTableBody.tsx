@@ -16,6 +16,7 @@ export const CensusTableBody: React.FC<CensusTableBodyProps> = ({
   diagnosisMode,
   bedTypes,
   role,
+  accessProfile,
   clinicalDocumentPresenceByBedId,
   onAction,
   onActivateEmptyBed,
@@ -42,6 +43,7 @@ export const CensusTableBody: React.FC<CensusTableBodyProps> = ({
           isSubRow={row.isSubRow}
           bedType={bedTypes[row.bed.id]}
           role={role}
+          accessProfile={accessProfile}
           indicators={indicators}
         />
       ))}

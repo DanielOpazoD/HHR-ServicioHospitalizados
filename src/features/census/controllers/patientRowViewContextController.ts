@@ -7,12 +7,14 @@ import {
 } from '@/features/census/controllers/patientRowIndicatorsController';
 import type { PatientData, UserRole } from '@/types';
 import type { PatientRowRuntime } from '@/features/census/components/patient-row/patientRowRuntimeContracts';
+import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 
 interface PatientRowViewContextInput {
   role?: UserRole;
   data: PatientData;
   runtime: PatientRowRuntime;
   indicators?: PatientActionMenuIndicators;
+  accessProfile?: CensusAccessProfile;
 }
 
 export const resolvePatientRowViewContext = ({
@@ -20,12 +22,14 @@ export const resolvePatientRowViewContext = ({
   data,
   runtime,
   indicators,
+  accessProfile = 'default',
 }: PatientRowViewContextInput): PatientRowViewContext => {
   const capabilities = resolvePatientRowCapabilities({
     role,
     patient: data,
     isBlocked: runtime.rowState.isBlocked,
     isEmpty: runtime.rowState.isEmpty,
+    accessProfile,
   });
 
   return {
@@ -41,11 +45,16 @@ export const buildPatientRowModalViewContext = ({
   role,
   data,
   runtime,
-}: Pick<PatientRowViewContextInput, 'role' | 'data' | 'runtime'>): PatientRowViewContext => ({
+  accessProfile = 'default',
+}: Pick<
+  PatientRowViewContextInput,
+  'role' | 'data' | 'runtime' | 'accessProfile'
+>): PatientRowViewContext => ({
   capabilities: resolvePatientRowViewContext({
     role,
     data,
     runtime,
+    accessProfile,
     indicators: undefined as PatientActionMenuIndicators | undefined,
   }).capabilities,
   indicators: EMPTY_PATIENT_ROW_INDICATORS,

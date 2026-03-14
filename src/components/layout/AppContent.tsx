@@ -14,6 +14,7 @@ import { useAuth } from '@/context/AuthContext';
 import { UseUIStateReturn } from '@/hooks/useUIState';
 import { useCensusContext } from '@/context/CensusContext';
 import { useExportManager } from '@/hooks/useExportManager';
+import { getVisibleModules } from '@/utils/permissions';
 import {
   shouldRenderBookmarkBar,
   shouldRenderDateStrip,
@@ -44,6 +45,8 @@ export const AppContent: React.FC<AppContentProps> = ({ ui }) => {
   const auth = useAuth();
   const { record, syncStatus, lastSyncTime } = dailyRecordHook;
   const { isSignatureMode, currentDateString } = dateNav;
+  const specialistCensusAccess = auth.role === 'doctor_specialist';
+  const { currentModule, setCurrentModule, censusLocalViewMode, setCensusLocalViewMode } = ui;
 
   // Export Manager Hook
   const exportManager = useExportManager({
@@ -57,9 +60,22 @@ export const AppContent: React.FC<AppContentProps> = ({ ui }) => {
   });
 
   useAppContentEventBridge({
-    setCurrentModule: ui.setCurrentModule,
+    setCurrentModule,
     setSelectedShift: ui.setSelectedShift,
   });
+
+  React.useEffect(() => {
+    const visibleModules = getVisibleModules(auth.role);
+    if (!visibleModules.includes(currentModule)) {
+      setCurrentModule(visibleModules[0] || 'CENSUS');
+    }
+  }, [auth.role, currentModule, setCurrentModule]);
+
+  React.useEffect(() => {
+    if (specialistCensusAccess && censusLocalViewMode !== 'TABLE') {
+      setCensusLocalViewMode('TABLE');
+    }
+  }, [censusLocalViewMode, setCensusLocalViewMode, specialistCensusAccess]);
 
   const handleExportExcel = React.useCallback(async () => {
     const generateCensusMasterExcel = await loadCensusMasterExcelExporter();
@@ -142,6 +158,7 @@ export const AppContent: React.FC<AppContentProps> = ({ ui }) => {
             setLocalViewMode={ui.setCensusLocalViewMode}
             onBackupPDF={exportManager.handleBackupHandoff}
             navigateDays={dateNav.navigateDays}
+            accessProfile={specialistCensusAccess ? 'specialist' : 'default'}
           />
         )}
 

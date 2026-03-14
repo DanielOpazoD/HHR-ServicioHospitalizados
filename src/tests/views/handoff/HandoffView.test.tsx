@@ -231,7 +231,8 @@ describe('HandoffView Component', () => {
       screen.queryByRole('button', { name: /Copiar link especialista/i })
     ).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Firmar/i })).not.toBeInTheDocument();
-    expect(screen.getByText('Dr. Responsable')).toBeInTheDocument();
+    expect(screen.queryByText(/Entregado por \(Dr\.\):/i)).not.toBeInTheDocument();
+    expect(screen.queryByText('Dr. Responsable')).not.toBeInTheDocument();
     expect(screen.queryByDisplayValue('Dr. Responsable')).not.toBeInTheDocument();
   });
 

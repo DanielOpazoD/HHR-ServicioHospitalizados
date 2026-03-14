@@ -1,5 +1,6 @@
 import type { BedDefinition, DailyRecord, Statistics } from '@/types';
 import type { CSSProperties } from 'react';
+import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 
 type ViewMode = 'REGISTER' | 'ANALYTICS';
 
@@ -31,6 +32,7 @@ export interface BuildRegisterContentPropsParams {
   stats: Statistics | null;
   showBedManagerModal: boolean;
   onCloseBedManagerModal: () => void;
+  accessProfile?: CensusAccessProfile;
 }
 
 export const resolveCensusViewBranch = ({
@@ -74,6 +76,7 @@ export const buildRegisterContentProps = ({
   stats,
   showBedManagerModal,
   onCloseBedManagerModal,
+  accessProfile = 'default',
 }: BuildRegisterContentPropsParams) => ({
   currentDateString,
   readOnly,
@@ -84,4 +87,5 @@ export const buildRegisterContentProps = ({
   stats,
   showBedManagerModal,
   onCloseBedManagerModal,
+  accessProfile,
 });

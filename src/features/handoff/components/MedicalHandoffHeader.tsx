@@ -17,6 +17,7 @@ interface MedicalHandoffHeaderProps {
   visibleBeds: BedDefinition[];
   readOnly: boolean;
   canRestoreSignatures: boolean;
+  showDeliverySection: boolean;
   canEditDoctorName: boolean;
   canSignMedicalHandoff: boolean;
   updateMedicalHandoffDoctor?: (name: string) => void;
@@ -29,6 +30,7 @@ export const MedicalHandoffHeader: React.FC<MedicalHandoffHeaderProps> = ({
   visibleBeds,
   readOnly,
   canRestoreSignatures,
+  showDeliverySection,
   canEditDoctorName,
   canSignMedicalHandoff,
   updateMedicalHandoffDoctor,
@@ -87,69 +89,70 @@ export const MedicalHandoffHeader: React.FC<MedicalHandoffHeaderProps> = ({
         <div className="flex flex-col gap-4 flex-1">
           <div className="flex flex-col sm:flex-row gap-4 print:gap-6">
             {/* Delivers */}
-            <div className="flex-1 min-w-[200px] max-w-xs">
-              <label className="block text-xs font-bold text-slate-500 uppercase mb-1 print:text-[9px] print:text-black">
-                Entregado por (Dr.):
-              </label>
-              {!readOnly && canEditDoctorName ? (
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder=""
-                    value={record.medicalHandoffDoctor || ''}
-                    onChange={e => updateMedicalHandoffDoctor?.(e.target.value)}
-                    className="flex-1 p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none print:hidden text-sm"
-                  />
-                  {canSignMedicalHandoff &&
-                    !record.medicalHandoffSentAt &&
-                    !record.medicalSignature && (
-                      <button
-                        onClick={handleSign}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs font-bold whitespace-nowrap print:hidden"
-                        title="Firmar entrega de turno"
-                      >
-                        <ShieldCheck size={14} />
-                        Firmar
-                      </button>
-                    )}
-                  {canRestoreSignatures &&
-                    (record.medicalHandoffSentAt || record.medicalSignature) && (
-                      <button
-                        onClick={() => void handleRestore()}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 text-amber-800 rounded hover:bg-amber-200 transition-colors text-xs font-bold whitespace-nowrap print:hidden"
-                        title="Restaurar firmas médicas"
-                      >
-                        <RotateCcw size={14} />
-                        Restaurar
-                      </button>
-                    )}
+            {showDeliverySection && (
+              <div className="flex-1 min-w-[200px] max-w-xs">
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-1 print:text-[9px] print:text-black">
+                  Entregado por (Dr.):
+                </label>
+                {!readOnly && canEditDoctorName ? (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder=""
+                      value={record.medicalHandoffDoctor || ''}
+                      onChange={e => updateMedicalHandoffDoctor?.(e.target.value)}
+                      className="flex-1 p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none print:hidden text-sm"
+                    />
+                    {canSignMedicalHandoff &&
+                      !record.medicalHandoffSentAt &&
+                      !record.medicalSignature && (
+                        <button
+                          onClick={handleSign}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs font-bold whitespace-nowrap print:hidden"
+                          title="Firmar entrega de turno"
+                        >
+                          <ShieldCheck size={14} />
+                          Firmar
+                        </button>
+                      )}
+                    {canRestoreSignatures &&
+                      (record.medicalHandoffSentAt || record.medicalSignature) && (
+                        <button
+                          onClick={() => void handleRestore()}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 text-amber-800 rounded hover:bg-amber-200 transition-colors text-xs font-bold whitespace-nowrap print:hidden"
+                          title="Restaurar firmas médicas"
+                        >
+                          <RotateCcw size={14} />
+                          Restaurar
+                        </button>
+                      )}
+                  </div>
+                ) : null}
+                <div
+                  className={clsx(
+                    'text-sm font-medium text-slate-800 print:text-[11px]',
+                    !readOnly && canEditDoctorName && 'hidden print:block'
+                  )}
+                >
+                  {record.medicalHandoffDoctor || (
+                    <span className="text-slate-400 italic">No especificado</span>
+                  )}
                 </div>
-              ) : null}
-              <div
-                className={clsx(
-                  'text-sm font-medium text-slate-800 print:text-[11px]',
-                  !readOnly && canEditDoctorName && 'hidden print:block'
-                )}
-              >
-                {record.medicalHandoffDoctor || (
-                  <span className="text-slate-400 italic">No especificado</span>
+
+                {record.medicalHandoffSentAt && (
+                  <div className="mt-1 flex items-center gap-1.5 text-xs text-blue-600">
+                    <ShieldCheck size={12} />
+                    <span className="font-medium">
+                      Entregado y firmado:{' '}
+                      {new Date(record.medicalHandoffSentAt).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                  </div>
                 )}
               </div>
-
-              {/* Sent Timestamp (Signature of Sender) */}
-              {record.medicalHandoffSentAt && (
-                <div className="mt-1 flex items-center gap-1.5 text-xs text-blue-600">
-                  <ShieldCheck size={12} />
-                  <span className="font-medium">
-                    Entregado y firmado:{' '}
-                    {new Date(record.medicalHandoffSentAt).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </span>
-                </div>
-              )}
-            </div>
+            )}
 
             {/* Receives */}
             <div className="flex-1 min-w-[200px] max-w-xs sm:ml-8 md:ml-12 lg:ml-16">

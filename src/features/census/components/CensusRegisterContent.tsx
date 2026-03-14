@@ -4,6 +4,7 @@ import { CensusActionsProvider } from './CensusActionsContext';
 import { CensusPrintHeader } from './CensusPrintHeader';
 import { CensusStaffHeader } from './CensusStaffHeader';
 import { CensusRegisterMainContent } from './CensusRegisterMainContent';
+import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 
 const LazyCensusRegisterSections = lazy(() =>
   import('./CensusRegisterSections').then(module => ({
@@ -21,6 +22,7 @@ interface CensusRegisterContentProps {
   stats: Statistics | null;
   showBedManagerModal: boolean;
   onCloseBedManagerModal: () => void;
+  accessProfile: CensusAccessProfile;
 }
 
 export const CensusRegisterContent: React.FC<CensusRegisterContentProps> = ({
@@ -33,12 +35,13 @@ export const CensusRegisterContent: React.FC<CensusRegisterContentProps> = ({
   stats,
   showBedManagerModal,
   onCloseBedManagerModal,
+  accessProfile,
 }) => (
   <CensusActionsProvider>
     <CensusPrintHeader currentDateString={currentDateString} />
 
     <div className="space-y-6" style={marginStyle}>
-      <CensusStaffHeader readOnly={readOnly} stats={stats} />
+      <CensusStaffHeader readOnly={readOnly} stats={stats} accessProfile={accessProfile} />
 
       <CensusRegisterMainContent
         localViewMode={localViewMode}
@@ -46,6 +49,7 @@ export const CensusRegisterContent: React.FC<CensusRegisterContentProps> = ({
         readOnly={readOnly}
         visibleBeds={visibleBeds}
         beds={beds}
+        accessProfile={accessProfile}
       />
 
       <Suspense fallback={null}>
@@ -53,6 +57,7 @@ export const CensusRegisterContent: React.FC<CensusRegisterContentProps> = ({
           readOnly={readOnly}
           showBedManagerModal={showBedManagerModal}
           onCloseBedManagerModal={onCloseBedManagerModal}
+          accessProfile={accessProfile}
         />
       </Suspense>
     </div>

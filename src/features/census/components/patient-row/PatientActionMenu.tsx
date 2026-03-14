@@ -1,6 +1,7 @@
 import React from 'react';
 import { FileText, MoreHorizontal, User } from 'lucide-react';
 import { MedicalButton } from '@/components/ui/base/MedicalButton';
+import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 import type {
   PatientActionMenuCallbacks,
   PatientActionMenuIndicators,
@@ -14,6 +15,7 @@ interface PatientActionMenuProps extends PatientActionMenuCallbacks, PatientActi
   readOnly?: boolean;
   align?: RowMenuAlign;
   showCmaAction?: boolean;
+  accessProfile?: CensusAccessProfile;
 }
 
 const PatientActionPrimaryIcon: React.FC<{
@@ -51,6 +53,7 @@ export const PatientActionMenu: React.FC<PatientActionMenuProps> = ({
   readOnly = false,
   align = 'top',
   showCmaAction = true,
+  accessProfile = 'default',
 }) => {
   const {
     isOpen,
@@ -67,6 +70,7 @@ export const PatientActionMenu: React.FC<PatientActionMenuProps> = ({
   } = usePatientActionMenu({
     isBlocked,
     readOnly,
+    accessProfile,
     align,
     showCmaAction,
     indicators: {

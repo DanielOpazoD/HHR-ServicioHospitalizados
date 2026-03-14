@@ -216,16 +216,6 @@ function AppInner({ auth, dateNav, medicalSpecialist, sharedCensus }: AppInnerPr
     );
   }
 
-  if (auth.role === 'doctor_specialist' && !medicalSpecialist.isSpecialistMedicalHandoffMode) {
-    return (
-      <SpecialistAccessNotice
-        title="Usa el link de especialista"
-        message="Este perfil solo puede entrar a la entrega de turno médica desde el enlace especial autorizado por administración."
-        onLogout={auth.signOut}
-      />
-    );
-  }
-
   // Construct Domain Context Value
   const censusContextValue: CensusContextType = {
     dailyRecord: dailyRecordHook,

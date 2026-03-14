@@ -31,6 +31,7 @@ import {
   RoleManagementView,
 } from '@/views/LazyViews';
 import { useSharedCensusMode } from '@/hooks/useSharedCensusMode';
+import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 
 export type AppModule =
   | 'CENSUS'
@@ -90,6 +91,9 @@ export const AppRouter: React.FC<AppRouterProps> = ({
   onCloseBedManagerModal,
   sharedCensus,
 }) => {
+  const censusAccessProfile: CensusAccessProfile =
+    role === 'doctor_specialist' ? 'specialist' : 'default';
+
   return (
     <GlobalErrorBoundary>
       <Suspense fallback={<ViewLoader />}>
@@ -114,6 +118,7 @@ export const AppRouter: React.FC<AppRouterProps> = ({
                   onCloseBedManagerModal={onCloseBedManagerModal}
                   readOnly={!canEditModule(role, 'CENSUS')}
                   localViewMode={ui.censusLocalViewMode}
+                  accessProfile={censusAccessProfile}
                 />
               </SectionErrorBoundary>
             )}

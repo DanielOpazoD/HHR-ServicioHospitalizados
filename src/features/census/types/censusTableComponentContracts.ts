@@ -1,4 +1,5 @@
 import type { TableColumnConfig } from '@/context/TableConfigContext';
+import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 import type {
   BedTypesById,
   DiagnosisMode,
@@ -17,6 +18,7 @@ export interface CensusTableHeaderProps {
   resetDayDeniedMessage: string;
   onClearAll: () => Promise<void>;
   diagnosisMode: DiagnosisMode;
+  accessProfile?: CensusAccessProfile;
   onToggleDiagnosisMode: () => void;
   onResizeColumn: (column: keyof TableColumnConfig) => (width: number) => void;
 }
@@ -29,6 +31,7 @@ export interface CensusTableBodyProps {
   diagnosisMode: DiagnosisMode;
   bedTypes: BedTypesById;
   role?: UserRole;
+  accessProfile?: CensusAccessProfile;
   clinicalDocumentPresenceByBedId: Record<string, boolean>;
   onAction: (action: PatientRowAction, bedId: string, patient: PatientData) => void;
   onActivateEmptyBed: (bedId: string) => void;

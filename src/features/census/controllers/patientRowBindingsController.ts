@@ -11,6 +11,7 @@ import type {
   PatientRowBindings,
   PatientRowRuntime,
 } from '@/features/census/components/patient-row/patientRowRuntimeContracts';
+import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 import {
   buildPatientMainSectionBindings,
   buildPatientModalSectionBindings,
@@ -33,6 +34,7 @@ export interface BuildPatientRowBindingsParams {
   diagnosisMode: DiagnosisMode;
   isSubRow: boolean;
   role?: UserRole;
+  accessProfile?: CensusAccessProfile;
   indicators?: PatientActionMenuIndicators;
   style?: React.CSSProperties;
   runtime: PatientRowRuntime;
@@ -50,6 +52,7 @@ export const buildPatientMainRowBindings = ({
   diagnosisMode,
   role,
   indicators,
+  accessProfile,
   style,
   capabilitiesOverride,
   resolvedIndicatorsOverride,
@@ -64,6 +67,7 @@ export const buildPatientMainRowBindings = ({
   | 'actionMenuAlign'
   | 'diagnosisMode'
   | 'role'
+  | 'accessProfile'
   | 'indicators'
   | 'style'
   | 'runtime'
@@ -77,7 +81,7 @@ export const buildPatientMainRowBindings = ({
           capabilities: capabilitiesOverride,
           indicators: resolvedIndicatorsOverride,
         }
-      : resolvePatientRowViewContext({ role, data, runtime, indicators });
+      : resolvePatientRowViewContext({ role, data, runtime, indicators, accessProfile });
   return buildPatientMainSectionBindings({
     bed,
     bedType,
@@ -118,6 +122,7 @@ export const buildPatientRowModalsBindings = ({
   currentDateString,
   isSubRow,
   role,
+  accessProfile,
   capabilitiesOverride,
   runtime,
 }: Pick<
@@ -125,6 +130,7 @@ export const buildPatientRowModalsBindings = ({
   'bed' | 'data' | 'currentDateString' | 'isSubRow' | 'role' | 'runtime'
 > & {
   capabilitiesOverride?: PatientRowViewContext['capabilities'];
+  accessProfile?: CensusAccessProfile;
 }): PatientRowModalsBindings =>
   buildPatientModalSectionBindings({
     bedId: bed.id,
@@ -145,6 +151,7 @@ export const buildPatientRowModalsBindings = ({
           role,
           data,
           runtime,
+          accessProfile,
         }),
   });
 
@@ -158,11 +165,18 @@ export const buildPatientRowBindings = ({
   diagnosisMode,
   isSubRow,
   role,
+  accessProfile,
   indicators,
   style,
   runtime,
 }: BuildPatientRowBindingsParams): PatientRowBindings => {
-  const viewContext = resolvePatientRowViewContext({ role, data, runtime, indicators });
+  const viewContext = resolvePatientRowViewContext({
+    role,
+    data,
+    runtime,
+    indicators,
+    accessProfile,
+  });
 
   return {
     mainRowProps: buildPatientMainRowBindings({
@@ -174,6 +188,7 @@ export const buildPatientRowBindings = ({
       actionMenuAlign,
       diagnosisMode,
       role,
+      accessProfile,
       indicators,
       style,
       capabilitiesOverride: viewContext.capabilities,
@@ -194,6 +209,7 @@ export const buildPatientRowBindings = ({
       currentDateString,
       isSubRow,
       role,
+      accessProfile,
       capabilitiesOverride: viewContext.capabilities,
       runtime,
     }),

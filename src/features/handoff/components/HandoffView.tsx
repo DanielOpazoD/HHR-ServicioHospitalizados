@@ -207,16 +207,24 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
     [readOnly, role, specialistAccess]
   );
   const medicalActions: HandoffMedicalActions = {
-    onEntryNoteChange: handleMedicalEntryNoteChange,
-    onEntrySpecialtyChange: handleMedicalEntrySpecialtyChange,
-    onEntryAdd: handleMedicalEntryAdd,
-    onEntryDelete: handleMedicalEntryDelete,
-    onContinuityConfirm: handleMedicalContinuityConfirm,
+    onEntryNoteChange: medicalCapabilities.canEditObservationEntries
+      ? handleMedicalEntryNoteChange
+      : undefined,
+    onEntrySpecialtyChange: medicalCapabilities.canEditObservationEntrySpecialty
+      ? handleMedicalEntrySpecialtyChange
+      : undefined,
+    onEntryAdd: medicalCapabilities.canAddObservationEntries ? handleMedicalEntryAdd : undefined,
+    onEntryDelete: medicalCapabilities.canDeleteObservationEntries
+      ? handleMedicalEntryDelete
+      : undefined,
+    onContinuityConfirm: medicalCapabilities.canConfirmObservationContinuity
+      ? handleMedicalContinuityConfirm
+      : undefined,
   };
   const clinicalEventActions: HandoffClinicalEventActions = {
-    onAdd: handleClinicalEventAdd,
-    onUpdate: handleClinicalEventUpdate,
-    onDelete: handleClinicalEventDelete,
+    onAdd: medicalCapabilities.canEditClinicalEvents ? handleClinicalEventAdd : undefined,
+    onUpdate: medicalCapabilities.canEditClinicalEvents ? handleClinicalEventUpdate : undefined,
+    onDelete: medicalCapabilities.canEditClinicalEvents ? handleClinicalEventDelete : undefined,
   };
 
   const handleOpenCudyr = () => {
@@ -298,6 +306,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
           canCopySpecialistLink={medicalCapabilities.canCopySpecialistLink}
           scopedMedicalSignature={scopedMedicalSignature}
           scopedMedicalHandoffSentAt={scopedMedicalHandoffSentAt}
+          showDeliverySection={medicalCapabilities.canShowDeliverySection}
           canEditDoctorName={medicalCapabilities.canEditDoctorName}
           canSignMedicalHandoff={medicalCapabilities.canSign}
           updateMedicalHandoffDoctor={
