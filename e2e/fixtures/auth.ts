@@ -148,7 +148,7 @@ export async function setupE2EContext(
   await page.waitForLoadState('domcontentloaded');
 
   // 4. If login screen is still visible, complete deterministic E2E popup login
-  const googleLoginButton = page.getByRole('button', { name: /Ingresar con Google/i });
+  const googleLoginButton = page.getByTestId('login-google-button');
   const loginVisible = await googleLoginButton.isVisible({ timeout: 2000 }).catch(() => false);
 
   if (loginVisible) {
@@ -231,7 +231,11 @@ export async function clearAuth(page: Page) {
  */
 export async function ensureRecordExists(page: Page) {
   const loginButton = page.getByRole('button', { name: /Ingresar con Google/i });
-  if (await loginButton.isVisible().catch(() => false)) {
+  const loginButtonById = page.getByTestId('login-google-button');
+  if (
+    (await loginButtonById.isVisible().catch(() => false)) ||
+    (await loginButton.isVisible().catch(() => false))
+  ) {
     await page.evaluate(() => {
       localStorage.removeItem('hhr_google_login_lock_v1');
       localStorage.setItem('hhr_e2e_force_popup', 'true');
@@ -242,8 +246,8 @@ export async function ensureRecordExists(page: Page) {
         localStorage.setItem('hhr_e2e_popup_success_user', bootstrapUserRaw);
       }
     });
-    await loginButton.click();
-    await expect(loginButton).toBeHidden({ timeout: 15000 });
+    await loginButtonById.click();
+    await expect(loginButtonById).toBeHidden({ timeout: 15000 });
   }
 
   const tableById = page.getByTestId('census-table');

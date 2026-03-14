@@ -14,16 +14,14 @@ test.describe('Auth multi-tab lock', () => {
 
     await page.goto('/');
 
-    const loginButton = page.getByRole('button', { name: /Ingresar con Google/i });
+    const loginButton = page.getByTestId('login-google-button');
     await expect(loginButton).toBeVisible();
     await loginButton.click();
 
-    await expect(
-      page.getByText(
-        /otra pestaña iniciando sesión|otra pestaña|ventana de Google|ventanas emergentes/i,
-        { exact: false }
-      )
-    ).toBeVisible();
+    await expect(page.getByTestId('login-error-alert')).toHaveAttribute(
+      'data-auth-error-code',
+      'auth/multi-tab-login-in-progress'
+    );
   });
 
   test('enforces lock across two real tabs during concurrent login attempt', async ({
@@ -45,8 +43,8 @@ test.describe('Auth multi-tab lock', () => {
     await tabA.goto('/');
     await tabB.goto('/');
 
-    const loginButtonA = tabA.getByRole('button', { name: /Ingresar con Google/i });
-    const loginButtonB = tabB.getByRole('button', { name: /Ingresar con Google/i });
+    const loginButtonA = tabA.getByTestId('login-google-button');
+    const loginButtonB = tabB.getByTestId('login-google-button');
 
     await expect(loginButtonA).toBeVisible();
     await expect(loginButtonB).toBeVisible();
@@ -62,12 +60,10 @@ test.describe('Auth multi-tab lock', () => {
       .toBe(true);
     await loginButtonB.click();
 
-    await expect(
-      tabB.getByText(
-        /otra pestaña iniciando sesión|otra pestaña|espera unos segundos|ventana de Google|ventanas emergentes/i,
-        { exact: false }
-      )
-    ).toBeVisible();
+    await expect(tabB.getByTestId('login-error-alert')).toHaveAttribute(
+      'data-auth-error-code',
+      'auth/multi-tab-login-in-progress'
+    );
 
     await context.close();
   });

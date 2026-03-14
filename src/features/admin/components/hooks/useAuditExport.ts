@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { AuditLogEntry } from '@/types/audit';
-import { generateAuditWorkbook } from '@/services/exporters/auditWorkbook';
 import { generateAuditPdfHtml } from '@/features/admin/components/components/audit/utils/auditPdfUtils';
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
 
@@ -25,6 +24,7 @@ export const useAuditExport = ({
   const handleExcelExport = async () => {
     setIsExporting(true);
     try {
+      const { generateAuditWorkbook } = await import('@/services/exporters/auditWorkbook');
       const workbook = await generateAuditWorkbook(filteredLogs);
       const buffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([new Uint8Array(buffer)], {

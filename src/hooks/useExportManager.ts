@@ -1,19 +1,15 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { DailyRecord } from '@/types';
 import { useConfirmDialog, useNotification } from '@/context/UIContext';
-import {
-  buildArchiveStatusState,
-  shouldCheckArchiveStatus,
-} from '@/hooks/controllers/exportManagerController';
+import { dispatchExportManagerNotice } from '@/hooks/controllers/exportManagerNoticeController';
 import {
   executeBackupCensusExcel,
   executeBackupHandoffPdf,
   executeExportHandoffPdf,
-  executeLookupBackupArchiveStatus,
 } from '@/application/backup-export/backupExportUseCases';
 import { presentBackupExportOutcome } from '@/hooks/controllers/backupExportOutcomeController';
-import { presentBackupLookupOutcome } from '@/hooks/controllers/backupStorageOutcomeController';
 import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryService';
+import { useBackupArchiveStatus } from '@/hooks/useBackupArchiveStatus';
 
 interface UseExportManagerProps {
   currentDateString: string;
@@ -45,35 +41,14 @@ export const useExportManager = ({
   const { success, error: notifyError, warning } = useNotification();
   const { confirm } = useConfirmDialog();
 
-  // Track if current date's census or handoff is already archived
-  const [isArchived, setIsArchived] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false);
-
-  // Check archive status when date/module changes
-  useEffect(() => {
-    if (!shouldCheckArchiveStatus(currentDateString, currentModule)) {
-      return;
-    }
-
-    const backupType = currentModule === 'CENSUS' ? 'census' : 'handoff';
-    void executeLookupBackupArchiveStatus({
-      backupType,
-      date: currentDateString,
-      shift: selectedShift,
-    }).then(outcome => {
-      recordOperationalOutcome('backup', 'lookup_archive_status', outcome, {
-        date: currentDateString,
-        context: { backupType, shift: selectedShift },
-      });
-      setIsArchived(buildArchiveStatusState(outcome.data.lookup));
-      const notice = presentBackupLookupOutcome(outcome);
-      if (notice?.channel === 'warning') {
-        warning(notice.title || 'Respaldo', notice.message);
-      } else if (notice?.channel === 'error') {
-        notifyError(notice.title || 'Respaldo', notice.message);
-      }
-    });
-  }, [currentDateString, currentModule, notifyError, selectedShift, warning]);
+  const { isArchived, setIsArchived } = useBackupArchiveStatus({
+    currentDateString,
+    currentModule,
+    selectedShift,
+    warning,
+    error: notifyError,
+  });
 
   const handleExportPDF = useCallback(async () => {
     const outcome = await executeExportHandoffPdf({ record, selectedShift });
@@ -88,13 +63,7 @@ export const useExportManager = ({
       failedTitle: 'Error al generar PDF',
       fallbackErrorMessage: 'Error al generar el PDF. Por favor intente nuevamente.',
     });
-    if (notice.channel === 'success') {
-      success(notice.title, notice.message);
-    } else if (notice.channel === 'warning') {
-      warning(notice.title, notice.message);
-    } else {
-      notifyError(notice.title, notice.message);
-    }
+    dispatchExportManagerNotice(notice, { success, warning, error: notifyError });
   }, [notifyError, record, selectedShift, success, warning]);
 
   const handleBackupExcel = useCallback(async () => {
@@ -121,13 +90,7 @@ export const useExportManager = ({
       if (outcome.status === 'success' || outcome.status === 'partial') {
         setIsArchived(true);
       }
-      if (notice.channel === 'success') {
-        success(notice.title, notice.message);
-      } else if (notice.channel === 'warning') {
-        warning(notice.title, notice.message);
-      } else {
-        notifyError(notice.title, notice.message);
-      }
+      dispatchExportManagerNotice(notice, { success, warning, error: notifyError });
     } finally {
       setIsBackingUp(false);
     }
@@ -183,13 +146,7 @@ export const useExportManager = ({
         if (outcome.status === 'success' || outcome.status === 'partial') {
           setIsArchived(true);
         }
-        if (notice.channel === 'success') {
-          success(notice.title, notice.message);
-        } else if (notice.channel === 'warning') {
-          warning(notice.title, notice.message);
-        } else {
-          notifyError(notice.title, notice.message);
-        }
+        dispatchExportManagerNotice(notice, { success, warning, error: notifyError });
       } finally {
         setIsBackingUp(false);
       }

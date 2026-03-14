@@ -6,7 +6,7 @@ test.describe('Auth login resilience matrix', () => {
       window.localStorage.setItem('hhr_e2e_force_popup', 'true');
     });
     await page.goto('/');
-    await expect(page.getByRole('button', { name: /Ingresar con Google/i })).toBeVisible();
+    await expect(page.getByTestId('login-google-button')).toBeVisible();
   });
 
   test('popup blocked shows alternate access control', async ({ page }) => {
@@ -14,9 +14,9 @@ test.describe('Auth login resilience matrix', () => {
       window.localStorage.setItem('hhr_e2e_popup_error_code', 'auth/popup-blocked');
     });
 
-    await page.getByRole('button', { name: /Ingresar con Google/i }).click();
+    await page.getByTestId('login-google-button').click();
 
-    await expect(page.getByRole('button', { name: /Acceso alternativo/i })).toBeVisible();
+    await expect(page.getByTestId('login-alternate-access')).toBeVisible();
   });
 
   test('redirect timeout path surfaces clear error', async ({ page }) => {
@@ -25,19 +25,13 @@ test.describe('Auth login resilience matrix', () => {
       window.localStorage.setItem('hhr_e2e_redirect_mode', 'timeout');
     });
 
-    await page.getByRole('button', { name: /Ingresar con Google/i }).click();
-    await expect(page.getByRole('button', { name: /Acceso alternativo/i })).toBeVisible();
-    await page.getByRole('button', { name: /Acceso alternativo/i }).click();
-
-    await expect(
-      page
-        .locator('p, span')
-        .filter({
-          hasText:
-            /timeout|ingreso directo|acceso alternativo está desactivado|localhost el sistema prefiere/i,
-        })
-        .first()
-    ).toBeVisible();
+    await page.getByTestId('login-google-button').click();
+    await expect(page.getByTestId('login-alternate-access')).toBeVisible();
+    await page.getByTestId('login-alternate-access').click();
+    await expect(page.getByTestId('login-error-alert')).toHaveAttribute(
+      'data-auth-error-code',
+      /auth\/redirect-(failed|unavailable)/
+    );
   });
 
   test('retry after transient popup failure succeeds', async ({ page }) => {
@@ -54,10 +48,10 @@ test.describe('Auth login resilience matrix', () => {
       );
     });
 
-    await page.getByRole('button', { name: /Ingresar con Google/i }).click();
-    await expect(page.getByRole('button', { name: /Acceso alternativo/i })).toBeVisible();
+    await page.getByTestId('login-google-button').click();
+    await expect(page.getByTestId('login-alternate-access')).toBeVisible();
 
-    await page.getByRole('button', { name: /Ingresar con Google/i }).click();
+    await page.getByTestId('login-google-button').click();
     await expect
       .poll(
         async () => page.evaluate(() => window.localStorage.getItem('hhr_e2e_popup_success_user')),

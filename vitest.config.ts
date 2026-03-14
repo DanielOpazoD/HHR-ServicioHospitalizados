@@ -10,8 +10,12 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@': path.resolve(dirname, 'src')
-    }
+      '@/services/exporters/excelJsModuleLoader': path.resolve(
+        dirname,
+        'src/services/exporters/excelJsModuleLoader.node.ts'
+      ),
+      '@': path.resolve(dirname, 'src'),
+    },
   },
   test: {
     environment: 'jsdom',
@@ -29,7 +33,7 @@ export default defineConfig({
         lines: 63,
         functions: 49,
         branches: 48,
-        statements: 62
+        statements: 62,
       },
       exclude: [
         'node_modules/',
@@ -39,8 +43,8 @@ export default defineConfig({
         '**/*.test.ts',
         '**/*.test.tsx',
         '**/*.stories.tsx',
-        '.storybook/'
-      ]
-    }
-  }
+        '.storybook/',
+      ],
+    },
+  },
 });

@@ -22,6 +22,10 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
+      '@/services/exporters/excelJsModuleLoader': path.resolve(
+        dirname,
+        'src/services/exporters/excelJsModuleLoader.node.ts'
+      ),
       '@': path.resolve(dirname, 'src'),
     },
   },

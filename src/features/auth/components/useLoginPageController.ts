@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { signInWithGoogle, signInWithGoogleRedirect } from '@/services/auth/authService';
-import { isPopupRecoverableAuthError } from '@/services/auth/authErrorPolicy';
+import { isPopupRecoverableAuthError, resolveAuthErrorCode } from '@/services/auth/authErrorPolicy';
 import {
   getLoginRuntimePolicy,
   getRedirectErrorMessage,
@@ -11,6 +11,7 @@ type BackgroundMode = 'auto' | 'day' | 'night';
 
 export interface LoginPageControllerState {
   error: string | null;
+  errorCode: string | null;
   isGoogleLoading: boolean;
   isRedirectLoading: boolean;
   showAlternateAccess: boolean;
@@ -24,6 +25,7 @@ export interface LoginPageControllerState {
 
 export const useLoginPageController = (onLoginSuccess: () => void): LoginPageControllerState => {
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isRedirectLoading, setIsRedirectLoading] = useState(false);
   const [backgroundMode, setBackgroundMode] = useState<BackgroundMode>('auto');
@@ -32,6 +34,7 @@ export const useLoginPageController = (onLoginSuccess: () => void): LoginPageCon
 
   const runRedirectFlow = async () => {
     if (!loginRuntimePolicy.canUseRedirectAuth) {
+      setErrorCode('auth/redirect-unavailable');
       setError(loginRuntimePolicy.redirectDisabledReason || AUTH_UI_COPY.redirectUnavailable);
       return;
     }
@@ -40,6 +43,7 @@ export const useLoginPageController = (onLoginSuccess: () => void): LoginPageCon
     try {
       await signInWithGoogleRedirect();
     } catch (redirectError) {
+      setErrorCode(resolveAuthErrorCode(redirectError) || 'auth/redirect-failed');
       setError(getRedirectErrorMessage(redirectError));
     } finally {
       setIsRedirectLoading(false);
@@ -48,6 +52,7 @@ export const useLoginPageController = (onLoginSuccess: () => void): LoginPageCon
 
   const handleGoogleSignIn = async () => {
     setError(null);
+    setErrorCode(null);
     setIsGoogleLoading(true);
     setShowAlternateAccess(false);
 
@@ -66,9 +71,11 @@ export const useLoginPageController = (onLoginSuccess: () => void): LoginPageCon
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       const isPopupIssue = isPopupRecoverableAuthError(err);
+      const resolvedErrorCode = resolveAuthErrorCode(err);
 
       if (isPopupIssue) {
         setShowAlternateAccess(true);
+        setErrorCode(resolvedErrorCode || 'auth/popup-recoverable');
         if (loginRuntimePolicy.shouldAutoFallbackToRedirect) {
           setError(AUTH_UI_COPY.blockedPopupRetrying);
           await runRedirectFlow();
@@ -78,6 +85,7 @@ export const useLoginPageController = (onLoginSuccess: () => void): LoginPageCon
         setError(AUTH_UI_COPY.blockedPopupManual);
       } else {
         console.error('[LoginPage] Google sign-in failed', err);
+        setErrorCode(resolvedErrorCode || 'auth/google-signin-failed');
         setError(errorMessage || 'Error al iniciar sesión con Google');
       }
     } finally {
@@ -87,6 +95,7 @@ export const useLoginPageController = (onLoginSuccess: () => void): LoginPageCon
 
   const handleAlternateAccess = async () => {
     setError(null);
+    setErrorCode(null);
     await runRedirectFlow();
   };
 
@@ -104,6 +113,7 @@ export const useLoginPageController = (onLoginSuccess: () => void): LoginPageCon
 
   return {
     error,
+    errorCode,
     isGoogleLoading,
     isRedirectLoading,
     showAlternateAccess,

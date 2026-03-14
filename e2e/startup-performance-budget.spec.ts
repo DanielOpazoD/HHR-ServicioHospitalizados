@@ -41,7 +41,7 @@ test.describe('Startup performance budget', () => {
   test('meets login, auth feedback, and censo visibility budgets', async ({ page }) => {
     const startLogin = performance.now();
     await page.goto('/');
-    const loginButton = page.getByRole('button', { name: /Ingresar con Google/i });
+    const loginButton = page.getByTestId('login-google-button');
     await expect(loginButton).toBeVisible();
     const loginVisibleMs = performance.now() - startLogin;
 
@@ -54,7 +54,10 @@ test.describe('Startup performance budget', () => {
 
     const startAuthFeedback = performance.now();
     await loginButton.click();
-    await expect(page.locator('button[disabled]').first()).toBeVisible();
+    await expect(page.getByTestId('login-page')).toHaveAttribute(
+      'data-auth-state',
+      'google-loading'
+    );
     const authFeedbackMs = performance.now() - startAuthFeedback;
 
     await page.addInitScript(

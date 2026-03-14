@@ -34,17 +34,21 @@ vi.mock('../../services/storage/indexedDBService', () => ({
 
 describe('Excel Export Configuration', () => {
   describe('Vite Configuration for ExcelJS', () => {
-    it('should have exceljs in optimizeDeps.include', () => {
+    it('should expose ExcelJS as a runtime asset instead of prebundling it', () => {
       const viteConfigSource = readSource('vite.config.ts');
-      expect(viteConfigSource).toMatch(/optimizeDeps:\s*\{[\s\S]*include:\s*\[[\s\S]*'exceljs'/);
+      expect(viteConfigSource).toContain('excelJsRuntimeAssetPlugin');
+      expect(viteConfigSource).toContain("fileName: 'vendor/exceljs.min.js'");
     });
 
-    it('should keep dynamic ExcelJS import compatibility helper', () => {
+    it('should keep browser runtime loading isolated from the Node test loader', () => {
       const excelModuleLoaderSource = readSource('src/services/exporters/excelJsModuleLoader.ts');
+      const nodeExcelModuleLoaderSource = readSource(
+        'src/services/exporters/excelJsModuleLoader.node.ts'
+      );
       const excelUtilsSource = readSource('src/services/exporters/excelUtils.ts');
-      expect(excelModuleLoaderSource).toContain('exceljs/dist/exceljs.min.js');
-      expect(excelModuleLoaderSource).toContain("await import('exceljs')");
-      expect(excelModuleLoaderSource).toContain('ExcelJS module could not be loaded correctly');
+      expect(excelModuleLoaderSource).toContain('/vendor/exceljs.min.js');
+      expect(excelModuleLoaderSource).not.toContain("await import('exceljs')");
+      expect(nodeExcelModuleLoaderSource).toContain("await import('exceljs')");
       expect(excelUtilsSource).toContain('loadExcelJSModule');
     });
   });

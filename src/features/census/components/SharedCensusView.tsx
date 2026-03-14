@@ -8,7 +8,6 @@
 import React from 'react';
 import { useSharedCensusFiles } from '@/hooks/useSharedCensusFiles';
 import { CensusAccessUser } from '@/types/censusAccess';
-import { ExcelViewerModal } from '@/components/shared/ExcelViewerModal';
 import {
   resolveSharedCensusAccessDisplayName,
   resolveSharedCensusViewState,
@@ -22,6 +21,12 @@ import {
   SharedCensusLoadErrorState,
   SharedCensusLoadingState,
 } from '@/features/census/components/shared-census';
+
+const ExcelViewerModal = React.lazy(() =>
+  import('@/components/shared/ExcelViewerModal').then(module => ({
+    default: module.ExcelViewerModal,
+  }))
+);
 
 interface SharedCensusViewProps {
   accessUser: CensusAccessUser | null;
@@ -89,13 +94,15 @@ export const SharedCensusView: React.FC<SharedCensusViewProps> = ({ accessUser, 
       )}
 
       {selectedFile && (
-        <ExcelViewerModal
-          fileName={selectedFile.name.split(' - ')[0]}
-          downloadUrl={selectedFile.downloadUrl}
-          canDownload={canDownload}
-          onClose={() => setSelectedFile(null)}
-          onDownload={() => handlers.handleDownload(selectedFile)}
-        />
+        <React.Suspense fallback={null}>
+          <ExcelViewerModal
+            fileName={selectedFile.name.split(' - ')[0]}
+            downloadUrl={selectedFile.downloadUrl}
+            canDownload={canDownload}
+            onClose={() => setSelectedFile(null)}
+            onDownload={() => handlers.handleDownload(selectedFile)}
+          />
+        </React.Suspense>
       )}
 
       <SharedCensusFooter />

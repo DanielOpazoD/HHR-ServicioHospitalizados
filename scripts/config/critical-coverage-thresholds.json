@@ -15,9 +15,9 @@
       "minTestFileCount": 15,
       "minTestToSourceRatio": 0.25,
       "coverageBaseline": {
-        "lines": 60.6,
-        "functions": 63.8,
-        "branches": 53.8
+        "lines": 63.5,
+        "functions": 66,
+        "branches": 56.5
       }
     },
     "src/services/transfers": {
@@ -25,9 +25,9 @@
       "minTestFileCount": 6,
       "minTestToSourceRatio": 0.3,
       "coverageBaseline": {
-        "lines": 67.5,
-        "functions": 69.3,
-        "branches": 62.6
+        "lines": 80,
+        "functions": 79,
+        "branches": 70
       }
     },
     "src/services/storage/firestore": {

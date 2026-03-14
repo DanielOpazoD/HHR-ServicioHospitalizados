@@ -7,18 +7,71 @@ interface ExcelJSModuleType {
     | typeof import('exceljs').Workbook;
 }
 
-export const loadExcelJSModule = async (): Promise<ExcelJSModuleType> => {
-  const isBrowserRuntime = typeof window !== 'undefined' && typeof document !== 'undefined';
+const EXCELJS_RUNTIME_SRC = '/vendor/exceljs.min.js';
+let browserExcelModulePromise: Promise<ExcelJSModuleType> | null = null;
 
-  if (isBrowserRuntime) {
-    try {
-      return (await import('exceljs/dist/exceljs.min.js')) as unknown as ExcelJSModuleType;
-    } catch {
-      // Fall back to standard entrypoint if the browser build cannot be loaded.
-    }
+declare global {
+  interface Window {
+    ExcelJS?: ExcelJSModuleType;
+  }
+}
+
+const loadExcelJsFromRuntimeAsset = async (): Promise<ExcelJSModuleType> => {
+  if (window.ExcelJS?.Workbook) {
+    return window.ExcelJS;
   }
 
-  return (await import('exceljs')) as unknown as ExcelJSModuleType;
+  if (!browserExcelModulePromise) {
+    browserExcelModulePromise = new Promise<ExcelJSModuleType>((resolve, reject) => {
+      const existingScript = document.querySelector<HTMLScriptElement>(
+        'script[data-hhr-exceljs-runtime="true"]'
+      );
+
+      const resolveFromWindow = () => {
+        if (window.ExcelJS?.Workbook) {
+          resolve(window.ExcelJS);
+          return;
+        }
+        browserExcelModulePromise = null;
+        reject(new Error('ExcelJS runtime asset loaded without exposing window.ExcelJS'));
+      };
+
+      const rejectLoad = () => {
+        browserExcelModulePromise = null;
+        reject(new Error('Failed to load ExcelJS runtime asset'));
+      };
+
+      if (existingScript) {
+        existingScript.addEventListener('load', resolveFromWindow, { once: true });
+        existingScript.addEventListener('error', rejectLoad, { once: true });
+        if (existingScript.dataset.loaded === 'true') {
+          resolveFromWindow();
+        }
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.async = true;
+      script.src = EXCELJS_RUNTIME_SRC;
+      script.dataset.hhrExceljsRuntime = 'true';
+      script.addEventListener(
+        'load',
+        () => {
+          script.dataset.loaded = 'true';
+          resolveFromWindow();
+        },
+        { once: true }
+      );
+      script.addEventListener('error', rejectLoad, { once: true });
+      document.head.appendChild(script);
+    });
+  }
+
+  return browserExcelModulePromise;
+};
+
+export const loadExcelJSModule = async (): Promise<ExcelJSModuleType> => {
+  return loadExcelJsFromRuntimeAsset();
 };
 
 export const resolveExcelWorkbookConstructor = (
@@ -39,7 +92,5 @@ export const resolveExcelWorkbookConstructor = (
     }
   }
 
-  throw new Error(
-    'ExcelJS module could not be loaded correctly. Check vite.config.ts optimizeDeps.include.'
-  );
+  throw new Error('ExcelJS runtime asset could not be loaded correctly.');
 };

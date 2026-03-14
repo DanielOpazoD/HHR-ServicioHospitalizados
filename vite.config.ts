@@ -1,5 +1,5 @@
+import fs from 'node:fs';
 import path from 'path';
-import fs from 'fs';
 import { defineConfig, Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
@@ -7,32 +7,61 @@ import viteCompression from 'vite-plugin-compression';
 import { VitePWA } from 'vite-plugin-pwa';
 
 /**
- * Custom plugin to generate version.json on each build.
- * This enables automatic cache invalidation when deploying new versions.
+ * Generate version.json directly in the build output so the repo does not
+ * accumulate tracked diffs on every build.
  */
 function versionPlugin(): Plugin {
+  let versionInfo: { version: string; buildDate: string } | null = null;
+
   return {
     name: 'version-plugin',
     buildStart() {
-      const version = Date.now().toString();
-      const versionInfo = {
-        version,
+      versionInfo = {
+        version: Date.now().toString(),
         buildDate: new Date().toISOString(),
       };
+      console.log(`[versionPlugin] Prepared version.json: ${versionInfo.version}`);
+    },
+    generateBundle() {
+      if (!versionInfo) return;
+      this.emitFile({
+        type: 'asset',
+        fileName: 'version.json',
+        source: JSON.stringify(versionInfo, null, 2),
+      });
+    },
+  };
+}
 
-      // Ensure public directory exists
-      const publicDir = path.resolve(__dirname, 'public');
-      if (!fs.existsSync(publicDir)) {
-        fs.mkdirSync(publicDir, { recursive: true });
-      }
+function excelJsRuntimeAssetPlugin(): Plugin {
+  const runtimeAssetPath = path.resolve(
+    __dirname,
+    'node_modules',
+    'exceljs',
+    'dist',
+    'exceljs.min.js'
+  );
+  const runtimeAssetRoute = '/vendor/exceljs.min.js';
 
-      // Write version.json
-      fs.writeFileSync(
-        path.resolve(publicDir, 'version.json'),
-        JSON.stringify(versionInfo, null, 2)
-      );
-
-      console.log(`[versionPlugin] Generated version.json: ${version}`);
+  return {
+    name: 'exceljs-runtime-asset',
+    configureServer(server) {
+      server.middlewares.use(runtimeAssetRoute, (_req, res, next) => {
+        try {
+          const source = fs.readFileSync(runtimeAssetPath);
+          res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+          res.end(source);
+        } catch (error) {
+          next(error as Error);
+        }
+      });
+    },
+    generateBundle() {
+      this.emitFile({
+        type: 'asset',
+        fileName: 'vendor/exceljs.min.js',
+        source: fs.readFileSync(runtimeAssetPath, 'utf8'),
+      });
     },
   };
 }
@@ -45,6 +74,21 @@ export default defineConfig(({ mode }) => {
     const has = (fragment: string): boolean => normalizedId.includes(fragment);
 
     if (!inNodeModules) {
+      if (
+        has('/src/application/backup-export/sharedCensusFilesUseCases.ts') ||
+        has('/src/services/backup/censusStorageService.ts') ||
+        has('/src/services/backup/baseStorageService.ts') ||
+        has('/src/services/backup/storageListFactories.ts') ||
+        has('/src/services/backup/storageListSupport.ts') ||
+        has('/src/services/backup/storageErrorPolicy.ts') ||
+        has('/src/services/backup/storageContracts.ts') ||
+        has('/src/services/backup/storageObservability.ts') ||
+        has('/src/services/backup/storageAvailability.ts') ||
+        has('/src/services/backup/storageLookupContracts.ts')
+      ) {
+        return 'feature-shared-census-storage';
+      }
+
       if (has('/src/features/census/components/patient-row/')) {
         return 'feature-census-patient-row';
       }
@@ -185,6 +229,7 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       versionPlugin(),
+      excelJsRuntimeAssetPlugin(),
       react(),
       tailwindcss(),
       // PWA plugin configuration
@@ -244,9 +289,24 @@ export default defineConfig(({ mode }) => {
       'import.meta.env.VITE_E2E_MODE': JSON.stringify(process.env.VITE_E2E_MODE || 'false'),
     },
     build: {
-      // Keep lazy routes truly on-demand; avoid eager dependency preloading
-      // that can pull large optional chunks on first load.
-      modulePreload: false,
+      modulePreload: {
+        polyfill: false,
+        resolveDependencies: (_filename, deps, context) => {
+          if (
+            context.hostType === 'js' &&
+            context.hostId.includes('/src/features/census/components/SharedCensusView.tsx')
+          ) {
+            return deps.filter(
+              dep =>
+                !dep.includes('vendor-excel-zip') &&
+                !dep.includes('ExcelParsingService-') &&
+                !dep.includes('excelUtils-')
+            );
+          }
+
+          return deps;
+        },
+      },
       rollupOptions: {
         output: {
           manualChunks: chunkForModule,
@@ -278,14 +338,7 @@ export default defineConfig(({ mode }) => {
     },
     // Optimize dependencies - pre-bundle CommonJS packages for ESM compatibility
     optimizeDeps: {
-      include: [
-        'react',
-        'react-dom',
-        'firebase/app',
-        'firebase/auth',
-        'firebase/firestore',
-        'exceljs',
-      ],
+      include: ['react', 'react-dom', 'firebase/app', 'firebase/auth', 'firebase/firestore'],
     },
     test: {
       environment: 'jsdom',

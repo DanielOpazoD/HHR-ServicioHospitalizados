@@ -9,7 +9,10 @@
  */
 
 import type { Workbook, Worksheet } from 'exceljs';
-import { loadExcelJSModule, resolveExcelWorkbookConstructor } from './excelJsModuleLoader';
+import {
+  loadExcelJSModule,
+  resolveExcelWorkbookConstructor,
+} from '@/services/exporters/excelJsModuleLoader';
 
 /**
  * Creates a new ExcelJS Workbook instance.

@@ -39,6 +39,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 }) => {
   const {
     error,
+    errorCode,
     isGoogleLoading,
     isRedirectLoading,
     showAlternateAccess,
@@ -55,6 +56,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
   return (
     <div
+      data-testid="login-page"
+      data-auth-state={
+        isGoogleLoading ? 'google-loading' : isRedirectLoading ? 'redirect-loading' : 'idle'
+      }
       className={`min-h-screen ${loginBackgroundClass} flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-1000`}
     >
       <div className="absolute top-4 right-4 z-50">
@@ -108,6 +113,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             type="button"
             onClick={handleGoogleSignIn}
             disabled={isAnyLoading}
+            data-testid="login-google-button"
             className="w-full bg-white hover:bg-slate-50 disabled:bg-slate-100 border-2 border-slate-200 text-slate-700 font-bold py-4 px-4 rounded-2xl transition-all duration-300 flex items-center justify-center gap-3 shadow-sm hover:shadow-lg hover:border-medical-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99]"
           >
             {isGoogleLoading ? (
@@ -126,6 +132,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 type="button"
                 onClick={handleAlternateAccess}
                 disabled={isAnyLoading || isRedirectLoading}
+                data-testid="login-alternate-access"
                 className="w-full bg-slate-100 hover:bg-slate-200 disabled:bg-slate-100 border border-slate-200 text-slate-700 font-semibold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2"
               >
                 {isRedirectLoading ? (
@@ -138,7 +145,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 )}
               </button>
               {alternateAccessHint ? (
-                <p className="mt-2 text-xs leading-relaxed text-slate-500 text-balance">
+                <p
+                  data-testid="login-alternate-access-hint"
+                  className="mt-2 text-xs leading-relaxed text-slate-500 text-balance"
+                >
                   {alternateAccessHint}
                 </p>
               ) : null}
@@ -148,7 +158,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           {/* Error Message */}
           {error && (
             <div className="mt-6 animate-fade-in">
-              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm text-balance">
+              <div
+                data-testid="login-error-alert"
+                data-auth-error-code={errorCode || undefined}
+                className="flex items-center gap-2 p-3 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm text-balance"
+              >
                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
                 <span>{error}</span>
               </div>
