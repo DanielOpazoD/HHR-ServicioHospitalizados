@@ -126,7 +126,7 @@ export const HandoffDiagnosisCell: React.FC<HandoffDiagnosisCellProps> = ({
       <div className="flex flex-col gap-1">
         <div className="flex items-start justify-between gap-0">
           <div className="font-medium leading-tight flex-1 pr-6">{patient.pathology}</div>
-          {!isMedical && !isSubRow && (onClinicalEventAdd || hasEvents) && (
+          {!isSubRow && (onClinicalEventAdd || hasEvents) && (
             <button
               onClick={() => setShowEvents(!showEvents)}
               className={clsx(
@@ -153,21 +153,17 @@ export const HandoffDiagnosisCell: React.FC<HandoffDiagnosisCellProps> = ({
           </div>
         )}
 
-        {showEvents &&
-          !isMedical &&
-          onClinicalEventAdd &&
-          onClinicalEventUpdate &&
-          onClinicalEventDelete && (
-            <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-              <ClinicalEventsPanel
-                events={patient.clinicalEvents || []}
-                onAdd={onClinicalEventAdd}
-                onUpdate={onClinicalEventUpdate}
-                onDelete={onClinicalEventDelete}
-                readOnly={isFieldReadOnly}
-              />
-            </div>
-          )}
+        {showEvents && onClinicalEventAdd && onClinicalEventUpdate && onClinicalEventDelete && (
+          <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+            <ClinicalEventsPanel
+              events={patient.clinicalEvents || []}
+              onAdd={onClinicalEventAdd}
+              onUpdate={onClinicalEventUpdate}
+              onDelete={onClinicalEventDelete}
+              readOnly={isFieldReadOnly}
+            />
+          </div>
+        )}
       </div>
     </td>
   );

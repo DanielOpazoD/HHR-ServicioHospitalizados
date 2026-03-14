@@ -93,16 +93,20 @@ export const RoleTable: React.FC<RoleTableProps> = ({
                             ? 'bg-emerald-500 text-white border-emerald-600'
                             : role === 'doctor_urgency'
                               ? 'bg-sky-500 text-white border-sky-600'
-                              : 'bg-slate-400 text-white border-slate-500'
+                              : role === 'doctor_specialist'
+                                ? 'bg-violet-500 text-white border-violet-600'
+                                : 'bg-slate-400 text-white border-slate-500'
                       }`}
                     >
                       {role === 'nurse_hospital'
                         ? 'ENFERMERÍA'
                         : role === 'doctor_urgency'
                           ? 'URGENCIA'
-                          : role === 'admin'
-                            ? 'ADMIN'
-                            : 'INVITADO'}
+                          : role === 'doctor_specialist'
+                            ? 'ESPECIALISTA'
+                            : role === 'admin'
+                              ? 'ADMIN'
+                              : 'INVITADO'}
                     </div>
                   </td>
                   <td className="px-5 py-4 align-middle">

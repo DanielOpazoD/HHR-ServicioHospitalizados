@@ -29,6 +29,7 @@ export { useDateNavigation } from './useDateNavigation';
 export { useExistingDaysQuery } from './useExistingDaysQuery';
 export { useSignatureMode } from './useSignatureMode';
 export { useSharedCensusMode } from './useSharedCensusMode';
+export { useMedicalSpecialistMode } from './useMedicalSpecialistMode';
 export { useDevMetrics } from './useDevMetrics';
 export { useDropdownMenu } from './useDropdownMenu';
 export { useLatest } from './useLatest';

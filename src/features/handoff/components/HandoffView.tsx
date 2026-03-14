@@ -19,6 +19,7 @@ import { useUIState, UseUIStateReturn } from '@/hooks/useUIState';
 import { useAuth } from '@/context';
 import {
   resolveInitialMedicalSpecialtyFromSearch,
+  resolveMedicalHandoffCapabilities,
   resolveHandoffScreenState,
   type MedicalHandoffScope,
   resolveHandoffDocumentTitle,
@@ -26,7 +27,6 @@ import {
   resolveHandoffTitle,
   shouldShowNightCudyrActions,
 } from '@/features/handoff/controllers';
-import { ACTIONS, canDoAction } from '@/utils/permissions';
 import { Specialty } from '@/types';
 
 interface HandoffViewProps {
@@ -34,6 +34,7 @@ interface HandoffViewProps {
   readOnly?: boolean;
   ui?: UseUIStateReturn;
   medicalScope?: MedicalHandoffScope;
+  specialistAccess?: boolean;
 }
 
 export const HandoffView: React.FC<HandoffViewProps> = ({
@@ -41,6 +42,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
   readOnly = false,
   ui: propUi,
   medicalScope = 'all',
+  specialistAccess = false,
 }) => {
   const initialMedicalSpecialtyFromUrl = React.useMemo(() => {
     if (typeof window === 'undefined') return 'all' as Specialty | 'all';
@@ -200,7 +202,10 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
   }, [record?.date, selectedShift, isMedical]);
 
   const title = resolveHandoffTitle({ isMedical, selectedShift });
-  const canSendMedicalHandoff = canDoAction(role, ACTIONS.HANDOFF_SEND_WHATSAPP);
+  const medicalCapabilities = React.useMemo(
+    () => resolveMedicalHandoffCapabilities({ role, readOnly, specialistAccess }),
+    [readOnly, role, specialistAccess]
+  );
   const medicalActions: HandoffMedicalActions = {
     onEntryNoteChange: handleMedicalEntryNoteChange,
     onEntrySpecialtyChange: handleMedicalEntrySpecialtyChange,
@@ -250,12 +255,13 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
         selectedShift={selectedShift}
         setSelectedShift={setSelectedShift}
         readOnly={readOnly}
-        showMedicalShareActions={canSendMedicalHandoff}
+        showMedicalShareActions={medicalCapabilities.canShareSignatureLinks}
         medicalSignature={scopedMedicalSignature}
         medicalHandoffSentAt={scopedMedicalHandoffSentAt}
         onSendWhatsApp={handleSendWhatsAppManual}
         onShareLink={handleShareLink}
         extraAction={
+          medicalCapabilities.canOpenNightCudyr &&
           shouldShowNightCudyrActions({ isMedical, selectedShift }) ? (
             <button
               onClick={handleOpenCudyr}
@@ -288,11 +294,21 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
           specialtyFilteredBeds={specialtyFilteredBeds}
           readOnly={readOnly}
           role={role}
+          specialistAccess={specialistAccess}
+          canCopySpecialistLink={medicalCapabilities.canCopySpecialistLink}
           scopedMedicalSignature={scopedMedicalSignature}
           scopedMedicalHandoffSentAt={scopedMedicalHandoffSentAt}
-          updateMedicalHandoffDoctor={updateMedicalHandoffDoctor}
-          markMedicalHandoffAsSent={markMedicalHandoffAsSent}
-          resetMedicalHandoffState={resetMedicalHandoffState}
+          canEditDoctorName={medicalCapabilities.canEditDoctorName}
+          canSignMedicalHandoff={medicalCapabilities.canSign}
+          updateMedicalHandoffDoctor={
+            medicalCapabilities.canEditDoctorName ? updateMedicalHandoffDoctor : undefined
+          }
+          markMedicalHandoffAsSent={
+            medicalCapabilities.canSign ? markMedicalHandoffAsSent : undefined
+          }
+          resetMedicalHandoffState={
+            medicalCapabilities.canRestoreSignatures ? resetMedicalHandoffState : undefined
+          }
           selectedMedicalSpecialty={effectiveSelectedMedicalSpecialty}
           setSelectedMedicalSpecialty={setSelectedMedicalSpecialty}
           medicalSpecialties={medicalSpecialties}
@@ -300,6 +316,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
           noteField={noteField}
           onNoteChange={handleNursingNoteChange}
           medicalActions={medicalActions}
+          clinicalEventActions={clinicalEventActions}
           tableHeaderClass={tableHeaderClass}
           shouldShowPatient={shouldShowPatient}
           scopedMedicalScope={scopedMedicalScope}

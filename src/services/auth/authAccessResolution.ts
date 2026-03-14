@@ -2,12 +2,18 @@ import { signOut as firebaseSignOut, User } from 'firebase/auth';
 import { auth } from '@/firebaseConfig';
 import { AuthUser, UserRole } from '@/types';
 import { checkSharedCensusAccess, isSharedCensusMode } from '@/services/auth/sharedCensusAuth';
+import {
+  canAccessSpecialistMedicalHandoff,
+  isSpecialistMedicalHandoffMode,
+} from '@/services/auth/specialistMedicalHandoffAuth';
 import { checkEmailInFirestore } from '@/services/auth/authPolicy';
 import { toAuthUser } from '@/services/auth/authShared';
 import { recordAuthOperationalError } from '@/services/auth/authOperationalTelemetry';
 
 const SHARED_CENSUS_UNAUTHORIZED_MESSAGE =
   'Acceso no autorizado. Tu correo no tiene permisos para censo compartido.';
+const SPECIALIST_MEDICAL_HANDOFF_UNAUTHORIZED_MESSAGE =
+  'Acceso no autorizado. Tu correo no tiene permisos para la entrega médica de especialistas.';
 const STANDARD_UNAUTHORIZED_MESSAGE =
   'Acceso no autorizado. Su correo no está en la lista de usuarios permitidos.';
 
@@ -24,6 +30,15 @@ export const authorizeFirebaseUser = async (user: User): Promise<AuthUser> => {
     }
 
     return toAuthUser(user, 'viewer_census');
+  }
+
+  if (isSpecialistMedicalHandoffMode()) {
+    const { allowed, role } = await checkEmailInFirestore(user.email || '');
+    if (!allowed || !canAccessSpecialistMedicalHandoff(role)) {
+      return rejectUnauthorizedUser(SPECIALIST_MEDICAL_HANDOFF_UNAUTHORIZED_MESSAGE);
+    }
+
+    return toAuthUser(user, 'doctor_specialist');
   }
 
   const { allowed, role } = await checkEmailInFirestore(user.email || '');

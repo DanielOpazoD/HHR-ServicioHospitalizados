@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { BedDefinition, DailyRecord } from '@/types';
 import { HandoffPatientTable } from './HandoffPatientTable';
 import type { MedicalHandoffScope } from '@/features/handoff/controllers';
-import type { HandoffMedicalActions } from './handoffRowContracts';
+import type { HandoffClinicalEventActions, HandoffMedicalActions } from './handoffRowContracts';
 import {
   countScopedPatients,
   resolveMedicalDisplayBeds,
@@ -20,6 +20,7 @@ interface MedicalHandoffTabsProps {
   noteField: 'handoffNoteDayShift' | 'handoffNoteNightShift' | 'medicalHandoffNote';
   onNoteChange: (bedId: string, value: string, isNested: boolean) => void;
   medicalActions?: HandoffMedicalActions;
+  clinicalEventActions?: HandoffClinicalEventActions;
   tableHeaderClass: string;
   readOnly: boolean;
   isMedical: boolean;
@@ -34,6 +35,7 @@ export const MedicalHandoffTabs: React.FC<MedicalHandoffTabsProps> = ({
   noteField,
   onNoteChange,
   medicalActions,
+  clinicalEventActions,
   tableHeaderClass,
   readOnly,
   isMedical,
@@ -87,6 +89,7 @@ export const MedicalHandoffTabs: React.FC<MedicalHandoffTabsProps> = ({
           noteField={noteField}
           onNoteChange={onNoteChange}
           medicalActions={medicalActions}
+          clinicalEventActions={clinicalEventActions}
           tableHeaderClass={tableHeaderClass}
           readOnly={readOnly}
           isMedical={isMedical}
@@ -107,6 +110,7 @@ export const MedicalHandoffTabs: React.FC<MedicalHandoffTabsProps> = ({
               noteField={noteField}
               onNoteChange={onNoteChange}
               medicalActions={medicalActions}
+              clinicalEventActions={clinicalEventActions}
               tableHeaderClass={tableHeaderClass}
               readOnly={readOnly}
               isMedical={isMedical}
@@ -129,6 +133,7 @@ export const MedicalHandoffTabs: React.FC<MedicalHandoffTabsProps> = ({
                 noteField={noteField}
                 onNoteChange={onNoteChange}
                 medicalActions={medicalActions}
+                clinicalEventActions={clinicalEventActions}
                 tableHeaderClass={tableHeaderClass}
                 readOnly={readOnly}
                 isMedical={isMedical}

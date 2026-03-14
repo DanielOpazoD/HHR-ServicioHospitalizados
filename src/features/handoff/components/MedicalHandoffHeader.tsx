@@ -17,9 +17,11 @@ interface MedicalHandoffHeaderProps {
   visibleBeds: BedDefinition[];
   readOnly: boolean;
   canRestoreSignatures: boolean;
-  updateMedicalHandoffDoctor: (name: string) => void;
-  markMedicalHandoffAsSent: (doctorName: string) => void;
-  resetMedicalHandoffState: () => Promise<void>;
+  canEditDoctorName: boolean;
+  canSignMedicalHandoff: boolean;
+  updateMedicalHandoffDoctor?: (name: string) => void;
+  markMedicalHandoffAsSent?: (doctorName: string) => void;
+  resetMedicalHandoffState?: () => Promise<void>;
 }
 
 export const MedicalHandoffHeader: React.FC<MedicalHandoffHeaderProps> = ({
@@ -27,6 +29,8 @@ export const MedicalHandoffHeader: React.FC<MedicalHandoffHeaderProps> = ({
   visibleBeds,
   readOnly,
   canRestoreSignatures,
+  canEditDoctorName,
+  canSignMedicalHandoff,
   updateMedicalHandoffDoctor,
   markMedicalHandoffAsSent,
   resetMedicalHandoffState,
@@ -49,7 +53,7 @@ export const MedicalHandoffHeader: React.FC<MedicalHandoffHeaderProps> = ({
     });
 
     if (confirmed) {
-      markMedicalHandoffAsSent(doctorName);
+      markMedicalHandoffAsSent?.(doctorName);
     }
   };
 
@@ -64,7 +68,7 @@ export const MedicalHandoffHeader: React.FC<MedicalHandoffHeaderProps> = ({
     });
 
     if (confirmed) {
-      await resetMedicalHandoffState();
+      await resetMedicalHandoffState?.();
     }
   };
 
@@ -87,25 +91,27 @@ export const MedicalHandoffHeader: React.FC<MedicalHandoffHeaderProps> = ({
               <label className="block text-xs font-bold text-slate-500 uppercase mb-1 print:text-[9px] print:text-black">
                 Entregado por (Dr.):
               </label>
-              {!readOnly ? (
+              {!readOnly && canEditDoctorName ? (
                 <div className="flex gap-2">
                   <input
                     type="text"
                     placeholder=""
                     value={record.medicalHandoffDoctor || ''}
-                    onChange={e => updateMedicalHandoffDoctor(e.target.value)}
+                    onChange={e => updateMedicalHandoffDoctor?.(e.target.value)}
                     className="flex-1 p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none print:hidden text-sm"
                   />
-                  {!record.medicalHandoffSentAt && !record.medicalSignature && (
-                    <button
-                      onClick={handleSign}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs font-bold whitespace-nowrap print:hidden"
-                      title="Firmar entrega de turno"
-                    >
-                      <ShieldCheck size={14} />
-                      Firmar
-                    </button>
-                  )}
+                  {canSignMedicalHandoff &&
+                    !record.medicalHandoffSentAt &&
+                    !record.medicalSignature && (
+                      <button
+                        onClick={handleSign}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs font-bold whitespace-nowrap print:hidden"
+                        title="Firmar entrega de turno"
+                      >
+                        <ShieldCheck size={14} />
+                        Firmar
+                      </button>
+                    )}
                   {canRestoreSignatures &&
                     (record.medicalHandoffSentAt || record.medicalSignature) && (
                       <button
@@ -122,7 +128,7 @@ export const MedicalHandoffHeader: React.FC<MedicalHandoffHeaderProps> = ({
               <div
                 className={clsx(
                   'text-sm font-medium text-slate-800 print:text-[11px]',
-                  !readOnly && 'hidden print:block'
+                  !readOnly && canEditDoctorName && 'hidden print:block'
                 )}
               >
                 {record.medicalHandoffDoctor || (

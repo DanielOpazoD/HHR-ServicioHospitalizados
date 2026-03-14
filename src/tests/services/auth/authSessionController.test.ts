@@ -27,7 +27,9 @@ describe('authSessionController', () => {
       } as never,
       {
         isSharedCensusMode: () => true,
+        isSpecialistMedicalHandoffMode: () => false,
         checkSharedCensusAccess: vi.fn().mockResolvedValue({ authorized: true }),
+        canAccessSpecialistMedicalHandoff: vi.fn().mockReturnValue(false),
         signOutUnauthorizedUser: vi.fn(),
         resolveFirebaseUserRole: vi.fn().mockResolvedValue('admin'),
       }
@@ -52,9 +54,34 @@ describe('authSessionController', () => {
       } as never,
       {
         isSharedCensusMode: () => true,
+        isSpecialistMedicalHandoffMode: () => false,
         checkSharedCensusAccess: vi.fn().mockResolvedValue({ authorized: false }),
+        canAccessSpecialistMedicalHandoff: vi.fn().mockReturnValue(false),
         signOutUnauthorizedUser,
         resolveFirebaseUserRole: vi.fn(),
+      }
+    );
+
+    expect(result).toBeNull();
+    expect(signOutUnauthorizedUser).toHaveBeenCalledTimes(1);
+  });
+
+  it('signs out non-specialist users in specialist medical handoff mode', async () => {
+    const signOutUnauthorizedUser = vi.fn().mockResolvedValue(undefined);
+
+    const result = await resolveAuthSessionUser(
+      {
+        uid: 'user-3',
+        email: 'doctor@hospital.cl',
+        isAnonymous: false,
+      } as never,
+      {
+        isSharedCensusMode: () => false,
+        isSpecialistMedicalHandoffMode: () => true,
+        checkSharedCensusAccess: vi.fn().mockResolvedValue({ authorized: false }),
+        canAccessSpecialistMedicalHandoff: vi.fn().mockReturnValue(false),
+        signOutUnauthorizedUser,
+        resolveFirebaseUserRole: vi.fn().mockResolvedValue('doctor_urgency'),
       }
     );
 

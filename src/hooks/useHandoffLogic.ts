@@ -41,6 +41,7 @@ import { useHandoffStaff } from './useHandoffStaff';
 import { useHandoffCommunication } from './useHandoffCommunication';
 import { useMedicalHandoffHandlers } from './useMedicalHandoffHandlers';
 import { useNursingHandoffHandlers } from './useNursingHandoffHandlers';
+import { useClinicalEventHandlers } from './useClinicalEventHandlers';
 
 interface UseHandoffLogicParams {
   type: 'nursing' | 'medical';
@@ -132,6 +133,11 @@ export const useHandoffLogic = ({
     updateClinicalCrib,
     updateClinicalCribMultiple,
     logDebouncedEvent,
+  });
+  const clinicalEventHandlers = useClinicalEventHandlers({
+    record,
+    updatePatient,
+    logDebouncedEvent,
     onSuccess,
   });
 
@@ -190,8 +196,8 @@ export const useHandoffLogic = ({
     formatPrintDate,
 
     // Clinical Events
-    handleClinicalEventAdd: nursingHandlers.handleClinicalEventAdd,
-    handleClinicalEventUpdate: nursingHandlers.handleClinicalEventUpdate,
-    handleClinicalEventDelete: nursingHandlers.handleClinicalEventDelete,
+    handleClinicalEventAdd: clinicalEventHandlers.handleClinicalEventAdd,
+    handleClinicalEventUpdate: clinicalEventHandlers.handleClinicalEventUpdate,
+    handleClinicalEventDelete: clinicalEventHandlers.handleClinicalEventDelete,
   };
 };

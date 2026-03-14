@@ -1,7 +1,7 @@
 import React from 'react';
 import type { BedDefinition, DailyRecord, Specialty } from '@/types';
 import type { MedicalHandoffScope } from '@/features/handoff/controllers';
-import type { HandoffMedicalActions } from './handoffRowContracts';
+import type { HandoffClinicalEventActions, HandoffMedicalActions } from './handoffRowContracts';
 import {
   defaultBrowserWindowRuntime,
   writeClipboardText,
@@ -9,6 +9,7 @@ import {
 import { MedicalHandoffHeader } from './MedicalHandoffHeader';
 import { MedicalHandoffTabs } from './MedicalHandoffTabs';
 import {
+  buildMedicalSpecialistAccessLink,
   buildMedicalSpecialtyLink,
   type MedicalHandoffScope as ScopeType,
 } from '@/features/handoff/controllers';
@@ -19,11 +20,15 @@ interface HandoffMedicalContentProps {
   specialtyFilteredBeds: BedDefinition[];
   readOnly: boolean;
   role?: string;
+  specialistAccess?: boolean;
+  canCopySpecialistLink: boolean;
   scopedMedicalSignature: { doctorName: string; signedAt: string } | null;
   scopedMedicalHandoffSentAt: string | null;
-  updateMedicalHandoffDoctor: (doctorName: string) => Promise<void>;
-  markMedicalHandoffAsSent: (doctorName?: string, scope?: ScopeType) => Promise<void>;
-  resetMedicalHandoffState: () => Promise<void>;
+  canEditDoctorName: boolean;
+  canSignMedicalHandoff: boolean;
+  updateMedicalHandoffDoctor?: (doctorName: string) => Promise<void>;
+  markMedicalHandoffAsSent?: (doctorName?: string, scope?: ScopeType) => Promise<void>;
+  resetMedicalHandoffState?: () => Promise<void>;
   selectedMedicalSpecialty: Specialty | 'all';
   setSelectedMedicalSpecialty: (specialty: Specialty | 'all') => void;
   medicalSpecialties: Specialty[];
@@ -31,6 +36,7 @@ interface HandoffMedicalContentProps {
   noteField: 'handoffNoteDayShift' | 'handoffNoteNightShift' | 'medicalHandoffNote';
   onNoteChange: (bedId: string, value: string, isNested: boolean) => void;
   medicalActions: HandoffMedicalActions;
+  clinicalEventActions: HandoffClinicalEventActions;
   tableHeaderClass: string;
   shouldShowPatient: (bedId: string) => boolean;
   scopedMedicalScope: MedicalHandoffScope;
@@ -43,8 +49,12 @@ export const HandoffMedicalContent: React.FC<HandoffMedicalContentProps> = ({
   specialtyFilteredBeds,
   readOnly,
   role,
+  specialistAccess = false,
+  canCopySpecialistLink,
   scopedMedicalSignature,
   scopedMedicalHandoffSentAt,
+  canEditDoctorName,
+  canSignMedicalHandoff,
   updateMedicalHandoffDoctor,
   markMedicalHandoffAsSent,
   resetMedicalHandoffState,
@@ -55,6 +65,7 @@ export const HandoffMedicalContent: React.FC<HandoffMedicalContentProps> = ({
   noteField,
   onNoteChange,
   medicalActions,
+  clinicalEventActions,
   tableHeaderClass,
   shouldShowPatient,
   scopedMedicalScope,
@@ -70,6 +81,8 @@ export const HandoffMedicalContent: React.FC<HandoffMedicalContentProps> = ({
       visibleBeds={effectiveVisibleBeds}
       readOnly={readOnly}
       canRestoreSignatures={role === 'admin'}
+      canEditDoctorName={canEditDoctorName}
+      canSignMedicalHandoff={canSignMedicalHandoff}
       updateMedicalHandoffDoctor={updateMedicalHandoffDoctor}
       markMedicalHandoffAsSent={markMedicalHandoffAsSent}
       resetMedicalHandoffState={resetMedicalHandoffState}
@@ -78,22 +91,29 @@ export const HandoffMedicalContent: React.FC<HandoffMedicalContentProps> = ({
     <div className="bg-white rounded-xl border border-sky-100 p-3 print:hidden">
       <div className="mb-2 flex items-center justify-between gap-3">
         <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Especialidad</div>
-        <button
-          type="button"
-          onClick={async () => {
-            const url = buildMedicalSpecialtyLink(
-              defaultBrowserWindowRuntime.getLocationOrigin(),
-              defaultBrowserWindowRuntime.getLocationPathname(),
-              record.date,
-              selectedMedicalSpecialty
-            );
-            await writeClipboardText(url);
-            success('Link copiado', 'Comparte este enlace con el especialista autorizado.');
-          }}
-          className="rounded-lg bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 hover:bg-sky-200 transition-colors"
-        >
-          Copiar link especialista
-        </button>
+        {canCopySpecialistLink ? (
+          <button
+            type="button"
+            onClick={async () => {
+              const origin = defaultBrowserWindowRuntime.getLocationOrigin();
+              const pathname = defaultBrowserWindowRuntime.getLocationPathname();
+              const url = specialistAccess
+                ? buildMedicalSpecialtyLink(origin, pathname, record.date, selectedMedicalSpecialty)
+                : buildMedicalSpecialistAccessLink(
+                    origin,
+                    pathname,
+                    record.date,
+                    scopedMedicalScope,
+                    selectedMedicalSpecialty
+                  );
+              await writeClipboardText(url);
+              success('Link copiado', 'Comparte este enlace con el especialista autorizado.');
+            }}
+            className="rounded-lg bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 hover:bg-sky-200 transition-colors"
+          >
+            Copiar link especialista
+          </button>
+        ) : null}
       </div>
       <div className="flex flex-wrap gap-2">
         <button
@@ -130,6 +150,7 @@ export const HandoffMedicalContent: React.FC<HandoffMedicalContentProps> = ({
       noteField={noteField}
       onNoteChange={onNoteChange}
       medicalActions={medicalActions}
+      clinicalEventActions={clinicalEventActions}
       tableHeaderClass={tableHeaderClass}
       readOnly={readOnly}
       isMedical={true}

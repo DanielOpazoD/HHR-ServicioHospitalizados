@@ -42,6 +42,7 @@ export {
 } from './medicalPatientHandoffMutationController';
 export { resolveHandoffScreenState } from './handoffScreenController';
 export {
+  buildMedicalSpecialistAccessLink,
   buildMedicalSpecialtyLink,
   collectMedicalSpecialties,
   filterBedsByMedicalScope,
@@ -49,6 +50,7 @@ export {
   hasVisibleMedicalPatients,
   resolveInitialMedicalSpecialtyFromSearch,
 } from './medicalPatientHandoffViewController';
+export { resolveMedicalHandoffCapabilities } from './medicalHandoffAccessController';
 export {
   resolveMedicalEntryInlineMeta,
   resolveMedicalHandoffValidityViewModel,

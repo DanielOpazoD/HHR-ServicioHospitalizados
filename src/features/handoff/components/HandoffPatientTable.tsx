@@ -107,7 +107,7 @@ export const HandoffPatientTable: React.FC<HandoffPatientTableProps> = ({
               <th className="p-2 border-r border-slate-200 w-[220px] print:w-[26%] print:text-[10px] print:p-1">
                 <div className="flex items-center justify-between">
                   <span>Diagnóstico</span>
-                  {!isMedical && (
+                  {clinicalEventActions && (
                     <button
                       onClick={() => setAllEventsExpanded(!allEventsExpanded)}
                       className="p-1 hover:bg-black/5 rounded transition-colors print:hidden flex items-center justify-center"

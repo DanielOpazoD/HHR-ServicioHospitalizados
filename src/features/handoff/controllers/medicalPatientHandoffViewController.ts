@@ -78,3 +78,20 @@ export const buildMedicalSpecialtyLink = (
   }
   return `${origin}${pathname}?${params.toString()}`;
 };
+
+export const buildMedicalSpecialistAccessLink = (
+  origin: string,
+  pathname: string,
+  date: string,
+  scope: MedicalHandoffScope,
+  specialty: Specialty | 'all'
+): string => {
+  const params = new URLSearchParams();
+  params.set('mode', 'specialist-medical-handoff');
+  params.set('date', date);
+  params.set('scope', scope);
+  if (specialty !== 'all') {
+    params.set('specialty', specialty);
+  }
+  return `${origin}${pathname}?${params.toString()}`;
+};

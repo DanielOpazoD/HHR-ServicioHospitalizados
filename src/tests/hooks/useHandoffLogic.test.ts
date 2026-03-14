@@ -234,6 +234,50 @@ describe('useHandoffLogic', () => {
     );
   });
 
+  it('adds clinical events from the medical handoff flow as a shared feature', async () => {
+    const mockUpdate = vi.fn();
+    const onSuccess = vi.fn();
+    vi.mocked(useDailyRecordBedActions).mockReturnValue({
+      updatePatient: mockUpdate,
+      updatePatientMultiple: vi.fn(),
+      updateClinicalCrib: vi.fn(),
+      updateClinicalCribMultiple: vi.fn(),
+    } as unknown as BedActionsMock);
+
+    const params = {
+      type: 'medical' as const,
+      selectedShift: 'day' as const,
+      setSelectedShift: vi.fn(),
+      onSuccess,
+    };
+
+    const { result } = renderHook(() => useHandoffLogic(params));
+
+    await act(async () => {
+      await result.current.handleClinicalEventAdd('R1', {
+        name: 'Broncoscopía',
+        date: '2025-01-01',
+        note: 'Procedimiento coordinado',
+      });
+    });
+
+    expect(mockUpdate).toHaveBeenCalledWith('R1', 'clinicalEvents', expect.any(Array));
+    expect(onSuccess).toHaveBeenCalledWith(
+      'Evento agregado',
+      'Se ha registrado el evento: Broncoscopía'
+    );
+    expect(mockLogDebouncedEvent).toHaveBeenCalledWith(
+      'CLINICAL_EVENT_ADDED',
+      'patient',
+      'R1',
+      expect.anything(),
+      'R1',
+      '2025-01-01',
+      undefined,
+      10000
+    );
+  });
+
   it('updates medical note with audit metadata and confirms current validity', async () => {
     const mockUpdateMultiple = vi.fn();
     vi.mocked(useDailyRecordBedActions).mockReturnValue({

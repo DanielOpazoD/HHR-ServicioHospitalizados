@@ -1,11 +1,5 @@
 import { useCallback } from 'react';
-import type {
-  AuditAction,
-  AuditLogEntry,
-  ClinicalEvent,
-  PatientData,
-  PatientFieldValue,
-} from '@/types';
+import type { AuditAction, AuditLogEntry, PatientData, PatientFieldValue } from '@/types';
 import type { NursingShift } from './useHandoffVisibility';
 
 interface UseNursingHandoffHandlersParams {
@@ -30,7 +24,6 @@ interface UseNursingHandoffHandlersParams {
     authors?: string,
     waitMs?: number
   ) => void;
-  onSuccess: (message: string, description?: string) => void;
 }
 
 export const useNursingHandoffHandlers = ({
@@ -42,7 +35,6 @@ export const useNursingHandoffHandlers = ({
   updateClinicalCrib,
   updateClinicalCribMultiple,
   logDebouncedEvent,
-  onSuccess,
 }: UseNursingHandoffHandlersParams) => {
   const handleNursingNoteChange = useCallback(
     async (bedId: string, value: string, isNested: boolean = false) => {
@@ -112,79 +104,11 @@ export const useNursingHandoffHandlers = ({
     ]
   );
 
-  const handleClinicalEventAdd = useCallback(
-    (bedId: string, event: Omit<ClinicalEvent, 'id' | 'createdAt'>) => {
-      if (!record || isMedical) return;
-      const patient = record.beds[bedId];
-      if (!patient) return;
+  const handleClinicalEventAdd = useCallback(() => undefined, []);
 
-      const newEvent: ClinicalEvent = {
-        ...event,
-        id: crypto.randomUUID(),
-        createdAt: new Date().toISOString(),
-      };
+  const handleClinicalEventUpdate = useCallback(() => undefined, []);
 
-      updatePatient(bedId, 'clinicalEvents', [...(patient.clinicalEvents || []), newEvent]);
-
-      logDebouncedEvent(
-        'CLINICAL_EVENT_ADDED',
-        'patient',
-        bedId,
-        { event: event.name },
-        bedId,
-        record.date,
-        undefined,
-        10000
-      );
-
-      onSuccess('Evento agregado', `Se ha registrado el evento: ${event.name}`);
-    },
-    [record, isMedical, updatePatient, logDebouncedEvent, onSuccess]
-  );
-
-  const handleClinicalEventUpdate = useCallback(
-    (bedId: string, eventId: string, data: Partial<ClinicalEvent>) => {
-      if (!record || isMedical) return;
-      const patient = record.beds[bedId];
-      if (!patient || !patient.clinicalEvents) return;
-
-      updatePatient(
-        bedId,
-        'clinicalEvents',
-        patient.clinicalEvents.map(event => (event.id === eventId ? { ...event, ...data } : event))
-      );
-    },
-    [record, isMedical, updatePatient]
-  );
-
-  const handleClinicalEventDelete = useCallback(
-    (bedId: string, eventId: string) => {
-      if (!record || isMedical) return;
-      const patient = record.beds[bedId];
-      if (!patient || !patient.clinicalEvents) return;
-
-      const eventToDelete = patient.clinicalEvents.find(event => event.id === eventId);
-      updatePatient(
-        bedId,
-        'clinicalEvents',
-        patient.clinicalEvents.filter(event => event.id !== eventId)
-      );
-
-      if (eventToDelete) {
-        logDebouncedEvent(
-          'CLINICAL_EVENT_DELETED',
-          'patient',
-          bedId,
-          { event: eventToDelete.name },
-          bedId,
-          record.date,
-          undefined,
-          10000
-        );
-      }
-    },
-    [record, isMedical, updatePatient, logDebouncedEvent]
-  );
+  const handleClinicalEventDelete = useCallback(() => undefined, []);
 
   return {
     handleNursingNoteChange,

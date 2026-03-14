@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Specialty, type BedDefinition, type DailyRecord } from '@/types';
 import {
+  buildMedicalSpecialistAccessLink,
   buildMedicalSpecialtyLink,
   collectMedicalSpecialties,
   filterBedsByMedicalScope,
@@ -63,6 +64,17 @@ describe('medicalPatientHandoffViewController', () => {
       )
     ).toBe(
       'https://app.hospitalhangaroa.cl/handoff?module=MEDICAL_HANDOFF&date=2026-03-03&specialty=Cirug%C3%ADa'
+    );
+    expect(
+      buildMedicalSpecialistAccessLink(
+        'https://app.hospitalhangaroa.cl',
+        '/handoff',
+        '2026-03-03',
+        'upc',
+        Specialty.CIRUGIA
+      )
+    ).toBe(
+      'https://app.hospitalhangaroa.cl/handoff?mode=specialist-medical-handoff&date=2026-03-03&scope=upc&specialty=Cirug%C3%ADa'
     );
   });
 });

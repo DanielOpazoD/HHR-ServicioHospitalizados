@@ -15,6 +15,7 @@ export type UserRole =
   | 'admin'
   | 'nurse_hospital'
   | 'doctor_urgency'
+  | 'doctor_specialist'
   | 'viewer_census';
 
 /**

@@ -2,6 +2,10 @@ import { onAuthStateChanged, signOut as firebaseSignOut, User } from 'firebase/a
 import { auth } from '@/firebaseConfig';
 import { AuthUser } from '@/types';
 import { checkSharedCensusAccess, isSharedCensusMode } from '@/services/auth/sharedCensusAuth';
+import {
+  canAccessSpecialistMedicalHandoff,
+  isSpecialistMedicalHandoffMode,
+} from '@/services/auth/specialistMedicalHandoffAuth';
 import { clearRoleCacheForEmail } from '@/services/auth/authPolicy';
 import { toAuthUser } from '@/services/auth/authShared';
 import { resolveFirebaseUserRole } from '@/services/auth/authAccessResolution';
@@ -39,7 +43,9 @@ export const onAuthChange = (callback: (user: AuthUser | null) => void): (() => 
     callback(
       await resolveAuthSessionUser(firebaseUser, {
         isSharedCensusMode,
+        isSpecialistMedicalHandoffMode,
         checkSharedCensusAccess,
+        canAccessSpecialistMedicalHandoff,
         signOutUnauthorizedUser: () => firebaseSignOut(auth),
         resolveFirebaseUserRole,
       })

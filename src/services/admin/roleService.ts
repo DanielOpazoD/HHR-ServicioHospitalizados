@@ -3,7 +3,7 @@ import { getFunctionsInstance } from '@/firebaseConfig';
 import { httpsCallable } from 'firebase/functions';
 
 export interface UserRoleMap {
-  [email: string]: 'admin' | 'nurse_hospital' | 'doctor_urgency' | 'viewer';
+  [email: string]: 'admin' | 'nurse_hospital' | 'doctor_urgency' | 'doctor_specialist' | 'viewer';
 }
 
 /**

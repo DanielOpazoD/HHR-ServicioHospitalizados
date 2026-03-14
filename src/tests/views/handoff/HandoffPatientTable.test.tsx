@@ -59,9 +59,13 @@ describe('HandoffPatientTable', () => {
     expect(screen.queryByText('Cirugía P1')).not.toBeInTheDocument();
   });
 
-  it('does not show global expand button in medical mode', () => {
+  it('shows global expand button in medical mode when clinical event actions are available', () => {
     render(<HandoffPatientTable {...defaultProps} isMedical={true} />);
-    expect(screen.queryByTitle(/Expandir todos los eventos/i)).not.toBeInTheDocument();
+
+    const globalExpandBtn = screen.getByTitle(/Expandir todos los eventos/i);
+    fireEvent.click(globalExpandBtn);
+
+    expect(screen.getByText('Cirugía P1')).toBeInTheDocument();
   });
 
   it('hides blocked beds in medical mode', () => {

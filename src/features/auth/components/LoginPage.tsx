@@ -8,14 +8,10 @@ import { LoginPageHeader } from '@/features/auth/components/LoginPageHeader';
 
 interface LoginPageProps {
   onLoginSuccess: () => void;
-  /** If true, shows a simplified message for shared census access */
-  isSharedCensusMode?: boolean;
+  accessMode?: 'default' | 'shared-census' | 'specialist-medical-handoff';
 }
 
-export const LoginPage: React.FC<LoginPageProps> = ({
-  onLoginSuccess,
-  isSharedCensusMode = false,
-}) => {
+export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, accessMode = 'default' }) => {
   const {
     error,
     errorCode,
@@ -59,7 +55,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           isAnyLoading={isAnyLoading}
           isGoogleLoading={isGoogleLoading}
           isRedirectLoading={isRedirectLoading}
-          isSharedCensusMode={isSharedCensusMode}
+          accessMode={accessMode}
           showAlternateAccess={showAlternateAccess}
           alternateAccessHint={alternateAccessHint}
           error={error}

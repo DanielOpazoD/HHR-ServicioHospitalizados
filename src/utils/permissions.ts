@@ -23,6 +23,7 @@ export const ROLES = {
   ADMIN: 'admin',
   NURSE_HOSPITAL: 'nurse_hospital', // Enfermera de turno servicio de hospitalizados
   DOCTOR_URGENCY: 'doctor_urgency', // Médico de turno en urgencias
+  DOCTOR_SPECIALIST: 'doctor_specialist', // Especialista con acceso restringido a entrega médica
   VIEWER_CENSUS: 'viewer_census', // Otros (Solo visualización censo)
 } as const;
 
@@ -79,6 +80,10 @@ const PERMISSIONS: Record<string, RolePermissions> = {
   [ROLES.DOCTOR_URGENCY]: {
     // Observador de Censo, Entrega Enf y Entrega Médica.
     modules: ['CENSUS', 'NURSING_HANDOFF', 'MEDICAL_HANDOFF'],
+    canEdit: ['MEDICAL_HANDOFF'],
+  },
+  [ROLES.DOCTOR_SPECIALIST]: {
+    modules: ['MEDICAL_HANDOFF'],
     canEdit: ['MEDICAL_HANDOFF'],
   },
   [ROLES.VIEWER_CENSUS]: {
@@ -180,6 +185,7 @@ const ACTION_PERMISSIONS: Record<string, ActionPermission[]> = {
     ACTIONS.HANDOFF_MEDICAL_SIGN,
     ACTIONS.EXPORT_PDF,
   ],
+  [ROLES.DOCTOR_SPECIALIST]: [ACTIONS.PATIENT_READ],
   [ROLES.VIEWER_CENSUS]: [
     // Viewer can only read
     ACTIONS.PATIENT_READ,
@@ -325,6 +331,8 @@ export function getRoleDisplayName(role?: UserRole): string {
       return 'Enfermería Hospitalizados';
     case ROLES.DOCTOR_URGENCY:
       return 'Médico de Urgencia';
+    case ROLES.DOCTOR_SPECIALIST:
+      return 'Especialista';
     case ROLES.VIEWER_CENSUS:
       return 'Visualizador de Censo';
     default:
