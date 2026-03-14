@@ -86,7 +86,7 @@ export const ImagingRequestDialog: React.FC<ImagingRequestDialogProps> = ({
       }
       size="full"
     >
-      <div className="flex h-[calc(100vh-140px)] w-full gap-3 pb-4">
+      <div className="flex h-[calc(100vh-116px)] w-full gap-3 pb-2">
         <ImagingSidebar
           documents={documents}
           selectedDoc={selectedDoc}

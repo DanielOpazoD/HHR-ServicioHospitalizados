@@ -27,10 +27,10 @@ export const ImagingSidebar: React.FC<ImagingSidebarProps> = ({
   handleUndoMark,
 }) => {
   return (
-    <div className="w-72 flex-shrink-0 bg-white border border-slate-200 rounded-xl px-3 py-3 flex flex-col h-full">
+    <div className="w-72 flex-shrink-0 self-start bg-white border border-slate-200 rounded-xl px-3 py-2.5 flex flex-col">
       {/* Physician Input */}
-      <div className="mb-3">
-        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-1.5 block">
+      <div className="mb-2.5">
+        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-1 block">
           Médico Solicitante
         </label>
         <input
@@ -38,17 +38,17 @@ export const ImagingSidebar: React.FC<ImagingSidebarProps> = ({
           placeholder="Nombre y Apellido"
           value={requestingPhysician}
           onChange={e => setRequestingPhysician(e.target.value)}
-          className="w-full text-sm px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-400"
+          className="w-full text-sm px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-400"
         />
       </div>
 
-      <div className="h-px bg-slate-100 my-1.5"></div>
+      <div className="h-px bg-slate-100 my-1"></div>
 
-      <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest px-2 mb-2 mt-1.5">
+      <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest px-2 mb-1.5 mt-1">
         Documentos Disponibles
       </h3>
 
-      <div className="flex flex-col gap-1.5 mb-3">
+      <div className="flex flex-col gap-1.5 mb-2">
         {documents.map(doc => {
           const Icon = doc.icon;
           const isSelected = selectedDoc === doc.id;
@@ -91,8 +91,8 @@ export const ImagingSidebar: React.FC<ImagingSidebarProps> = ({
         })}
       </div>
 
-      <div className="mt-auto pt-3 border-t border-slate-100">
-        <div className="bg-blue-50 rounded-lg p-3 border border-blue-100 flex flex-col gap-1.5">
+      <div className="mt-1 pt-1.5 border-t border-slate-100">
+        <div className="bg-blue-50 rounded-lg p-2.5 border border-blue-100 flex flex-col gap-1.5">
           <h4 className="flex items-center gap-2 text-sm font-bold text-blue-900">
             <Target size={15} /> Marcado Interactivo
           </h4>
