@@ -79,10 +79,47 @@ describe('CensusTableBody', () => {
     expect(patientRowSpy.mock.calls[2][0].actionMenuAlign).toBe('bottom');
     expect(patientRowSpy.mock.calls[5][0].actionMenuAlign).toBe('bottom');
     expect(patientRowSpy.mock.calls[0][0].role).toBe('viewer_census');
+    expect(patientRowSpy.mock.calls[0][0].accessProfile).toBeUndefined();
     expect(patientRowSpy.mock.calls[0][0].indicators).toEqual({
       hasClinicalDocument: false,
       isNewAdmission: false,
     });
+  });
+
+  it('forwards specialist census access profile to each patient row', () => {
+    patientRowSpy.mockClear();
+    const occupiedRows: OccupiedBedRow[] = [
+      {
+        id: 'row-1',
+        bed: { id: 'R1', name: 'R1', type: BedType.MEDIA, isCuna: false },
+        data: DataFactory.createMockPatient('R1'),
+        isSubRow: false,
+      },
+    ];
+
+    render(
+      <table>
+        <CensusTableBody
+          occupiedRows={occupiedRows}
+          emptyBeds={[]}
+          currentDateString="2026-02-15"
+          readOnly={true}
+          diagnosisMode="free"
+          columns={columns}
+          visibleColumnCount={9}
+          bedTypes={{}}
+          role="doctor_specialist"
+          accessProfile="specialist"
+          clinicalDocumentPresenceByBedId={{}}
+          onAction={vi.fn()}
+          onActivateEmptyBed={vi.fn()}
+        />
+      </table>
+    );
+
+    expect(patientRowSpy).toHaveBeenCalledTimes(1);
+    expect(patientRowSpy.mock.calls[0][0].accessProfile).toBe('specialist');
+    expect(patientRowSpy.mock.calls[0][0].role).toBe('doctor_specialist');
   });
 
   it('forwards resolved indicators to main rows only', () => {

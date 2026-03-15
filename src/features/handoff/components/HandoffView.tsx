@@ -204,8 +204,14 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
 
   const title = resolveHandoffTitle({ isMedical, selectedShift });
   const medicalCapabilities = React.useMemo(
-    () => resolveMedicalHandoffCapabilities({ role, readOnly, specialistAccess }),
-    [readOnly, role, specialistAccess]
+    () =>
+      resolveMedicalHandoffCapabilities({
+        role,
+        readOnly,
+        specialistAccess,
+        recordDate: record?.date,
+      }),
+    [readOnly, record?.date, role, specialistAccess]
   );
   const medicalActions: HandoffMedicalActions = {
     onCreatePrimaryEntry: medicalCapabilities.canCreatePrimaryObservationEntry

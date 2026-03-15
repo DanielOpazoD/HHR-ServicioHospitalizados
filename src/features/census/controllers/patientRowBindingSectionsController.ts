@@ -25,6 +25,7 @@ interface BuildMainSectionBindingsParams {
   readOnly: boolean;
   actionMenuAlign: RowMenuAlign;
   diagnosisMode: DiagnosisMode;
+  accessProfile?: CensusAccessProfile;
   style?: React.CSSProperties;
   runtime: PatientRowRuntime;
   viewContext: PatientRowViewContext;
@@ -38,6 +39,7 @@ export const buildPatientMainSectionBindings = ({
   readOnly,
   actionMenuAlign,
   diagnosisMode,
+  accessProfile,
   style,
   runtime,
   viewContext,
@@ -60,6 +62,7 @@ export const buildPatientMainSectionBindings = ({
     readOnly,
     actionMenuAlign,
     diagnosisMode,
+    accessProfile,
     isBlocked: runtime.rowState.isBlocked,
     isEmpty: runtime.rowState.isEmpty,
     hasCompanion: runtime.rowState.hasCompanion,

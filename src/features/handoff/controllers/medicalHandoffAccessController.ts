@@ -1,4 +1,5 @@
 import { ACTIONS, canDoAction } from '@/utils/permissions';
+import { getTodayISO } from '@/utils/dateUtils';
 import type { UserRole } from '@/types';
 
 export interface MedicalHandoffCapabilities {
@@ -22,17 +23,22 @@ export interface MedicalHandoffCapabilities {
 interface ResolveMedicalHandoffCapabilitiesParams {
   role: UserRole | undefined;
   readOnly: boolean;
+  recordDate?: string;
+  todayISO?: string;
   specialistAccess?: boolean;
 }
 
 export const resolveMedicalHandoffCapabilities = ({
   role,
   readOnly,
+  recordDate,
+  todayISO = getTodayISO(),
   specialistAccess = false,
 }: ResolveMedicalHandoffCapabilitiesParams): MedicalHandoffCapabilities => {
   const specialistRole = role === 'doctor_specialist';
   const specialistRestrictedAccess = specialistAccess || specialistRole;
-  const canEditClinicalContent = !readOnly;
+  const specialistCanEditRecord = !specialistRestrictedAccess || recordDate === todayISO;
+  const canEditClinicalContent = !readOnly && specialistCanEditRecord;
   const canSign =
     !specialistRestrictedAccess && !readOnly && canDoAction(role, ACTIONS.HANDOFF_MEDICAL_SIGN);
   const canRestoreSignatures = !specialistRestrictedAccess && role === 'admin';
@@ -43,10 +49,10 @@ export const resolveMedicalHandoffCapabilities = ({
   return {
     canCreatePrimaryObservationEntry: canEditClinicalContent,
     canEditObservationEntries: canEditClinicalContent,
-    canEditObservationEntrySpecialty: !specialistRestrictedAccess && canEditClinicalContent,
-    canAddObservationEntries: !specialistRestrictedAccess && canEditClinicalContent,
-    canDeleteObservationEntries: !specialistRestrictedAccess && canEditClinicalContent,
-    canConfirmObservationContinuity: !specialistRestrictedAccess && canEditClinicalContent,
+    canEditObservationEntrySpecialty: canEditClinicalContent,
+    canAddObservationEntries: canEditClinicalContent,
+    canDeleteObservationEntries: canEditClinicalContent,
+    canConfirmObservationContinuity: canEditClinicalContent,
     canEditClinicalEvents: canEditClinicalContent,
     canEditDoctorName: !specialistRestrictedAccess && !readOnly,
     canShowDeliverySection: !specialistRestrictedAccess,

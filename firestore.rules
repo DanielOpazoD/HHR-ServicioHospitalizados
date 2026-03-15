@@ -69,6 +69,19 @@ service cloud.firestore {
         )
       );
     }
+
+    function isDoctorSpecialist() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'doctor_specialist' ||
+        hasAllowedUserRole('doctor_specialist') ||
+        hasAllowedUserRole('admin') ||
+        (
+          hasEmail() &&
+          exists(/databases/$(database)/documents/config/roles) &&
+          get(/databases/$(database)/documents/config/roles).data[getUserEmail()] == 'doctor_specialist'
+        )
+      );
+    }
     
     // Check if user can edit (admin or nurse)
     function canEdit() {
@@ -91,12 +104,88 @@ service cloud.firestore {
       );
     }
 
+    function isValidSpecialistClinicalCribMedicalUpdate(beforeCrib, afterCrib) {
+      return beforeCrib != null &&
+             afterCrib != null &&
+             afterCrib.diff(beforeCrib).affectedKeys().hasOnly([
+               'medicalHandoffEntries',
+               'medicalHandoffNote',
+               'medicalHandoffAudit',
+               'clinicalEvents'
+             ]);
+    }
+
+    function isValidSpecialistMedicalBedUpdate(bedId) {
+      let beforeBed = resource.data.beds[bedId];
+      let afterBed = request.resource.data.beds[bedId];
+      let affectedBedKeys = afterBed.diff(beforeBed).affectedKeys();
+
+      return beforeBed != null &&
+             afterBed != null &&
+             affectedBedKeys.hasOnly([
+               'medicalHandoffEntries',
+               'medicalHandoffNote',
+               'medicalHandoffAudit',
+               'clinicalEvents',
+               'clinicalCrib'
+             ]) &&
+             (
+               !affectedBedKeys.hasAny(['clinicalCrib']) ||
+               isValidSpecialistClinicalCribMedicalUpdate(beforeBed.clinicalCrib, afterBed.clinicalCrib)
+             );
+    }
+
+    function isOnlySpecialistAffectedBed(affectedBedIds, bedId) {
+      return affectedBedIds.size() == 1 &&
+             affectedBedIds.hasOnly([bedId]) &&
+             isValidSpecialistMedicalBedUpdate(bedId);
+    }
+
+    function isSpecialistMedicalHandoffUpdate() {
+      let affectedRecordKeys = request.resource.data.diff(resource.data).affectedKeys();
+      let affectedBedIds = request.resource.data.beds.diff(resource.data.beds).affectedKeys();
+      let now = request.time.toMillis();
+      let recordTimestamp = resource.data.dateTimestamp;
+
+      return isDoctorSpecialist() &&
+             recordTimestamp != null &&
+             now >= recordTimestamp &&
+             now < (recordTimestamp + 86400000) &&
+             affectedRecordKeys.hasOnly(['beds', 'lastUpdated']) &&
+             (
+               isOnlySpecialistAffectedBed(affectedBedIds, 'R1') ||
+               isOnlySpecialistAffectedBed(affectedBedIds, 'R2') ||
+               isOnlySpecialistAffectedBed(affectedBedIds, 'R3') ||
+               isOnlySpecialistAffectedBed(affectedBedIds, 'R4') ||
+               isOnlySpecialistAffectedBed(affectedBedIds, 'NEO1') ||
+               isOnlySpecialistAffectedBed(affectedBedIds, 'NEO2') ||
+               isOnlySpecialistAffectedBed(affectedBedIds, 'H1C1') ||
+               isOnlySpecialistAffectedBed(affectedBedIds, 'H1C2') ||
+               isOnlySpecialistAffectedBed(affectedBedIds, 'H2C1') ||
+               isOnlySpecialistAffectedBed(affectedBedIds, 'H2C2') ||
+               isOnlySpecialistAffectedBed(affectedBedIds, 'H3C1') ||
+               isOnlySpecialistAffectedBed(affectedBedIds, 'H3C2') ||
+               isOnlySpecialistAffectedBed(affectedBedIds, 'H4C1') ||
+               isOnlySpecialistAffectedBed(affectedBedIds, 'H4C2') ||
+               isOnlySpecialistAffectedBed(affectedBedIds, 'H5C1') ||
+               isOnlySpecialistAffectedBed(affectedBedIds, 'H5C2') ||
+               isOnlySpecialistAffectedBed(affectedBedIds, 'H6C1') ||
+               isOnlySpecialistAffectedBed(affectedBedIds, 'H6C2') ||
+               isOnlySpecialistAffectedBed(affectedBedIds, 'E1') ||
+               isOnlySpecialistAffectedBed(affectedBedIds, 'E2') ||
+               isOnlySpecialistAffectedBed(affectedBedIds, 'E3') ||
+               isOnlySpecialistAffectedBed(affectedBedIds, 'E4') ||
+               isOnlySpecialistAffectedBed(affectedBedIds, 'E5')
+             );
+    }
+
     // Legacy/custom-claim role gate (prevents any random authenticated user access)
     function hasRoleClaim() {
       return isAuthenticated() && request.auth.token.role in [
         'admin',
         'nurse_hospital',
         'doctor_urgency',
+        'doctor_specialist',
         'viewer',
         'viewer_census',
         'editor'
@@ -261,7 +350,8 @@ service cloud.firestore {
         // Update: Admin siempre, Enfermero en ventana, o Médico solo campos de firma
         allow update: if isAdmin() || 
                         (isNurse() && isWithinEditingWindow(resource.data.dateTimestamp)) ||
-                        (isDoctor() && isMedicalUpdate());
+                        (isDoctor() && isMedicalUpdate()) ||
+                        isSpecialistMedicalHandoffUpdate();
         // Delete: Admin only (nurses must not hard-delete census records)
         allow delete: if isAdmin();
         

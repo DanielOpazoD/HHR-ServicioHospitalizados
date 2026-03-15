@@ -90,6 +90,7 @@ export const buildPatientMainRowBindings = ({
     readOnly,
     actionMenuAlign,
     diagnosisMode,
+    accessProfile,
     style,
     runtime,
     viewContext,

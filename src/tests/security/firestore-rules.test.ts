@@ -22,6 +22,7 @@ const describeRules = runRulesTests ? describe : describe.skip;
 const NOW_MS = Date.now();
 const THREE_DAYS_MS = 3 * 86400000;
 const CURRENT_RECORD_DATE = new Date(NOW_MS).toISOString().slice(0, 10);
+const PREVIOUS_RECORD_DATE = new Date(NOW_MS - 86400000).toISOString().slice(0, 10);
 
 // Run 'npx firebase emulators:start --only firestore' and set RUN_FIRESTORE_RULES_TESTS=1
 describeRules('Firestore Security Rules', () => {
@@ -50,6 +51,19 @@ describeRules('Firestore Security Rules', () => {
   const doctor = () =>
     testEnv
       .authenticatedContext('user_doctor', { email: 'doctor@example.com', role: 'doctor_urgency' })
+      .firestore();
+  const specialist = () =>
+    testEnv
+      .authenticatedContext('user_specialist', {
+        email: 'specialist@example.com',
+        role: 'doctor_specialist',
+      })
+      .firestore();
+  const specialistWithoutClaim = () =>
+    testEnv
+      .authenticatedContext('user_specialist_dynamic', {
+        email: 'specialist.dynamic@example.com',
+      })
       .firestore();
   const doctorWithoutClaim = () =>
     testEnv
@@ -180,6 +194,193 @@ describeRules('Firestore Security Rules', () => {
           .update({
             nursesDayShift: ['Nurse1'],
           })
+      );
+    });
+
+    it('Specialists can update only medical handoff and clinical event fields for one bed', async () => {
+      await setupDoc(admin(), recordPath, {
+        date: CURRENT_RECORD_DATE,
+        dateTimestamp: NOW_MS,
+        beds: {
+          R1: {
+            patientName: 'Paciente Test',
+            rut: '1-9',
+            pathology: 'Neumonia',
+            specialty: 'Med Interna',
+            medicalHandoffNote: '',
+            medicalHandoffEntries: [],
+            clinicalEvents: [],
+          },
+        },
+      });
+
+      await assertSucceeds(
+        specialist()
+          .doc(recordPath)
+          .update({
+            'beds.R1.medicalHandoffNote': 'Evolución especialista',
+            'beds.R1.medicalHandoffEntries': [
+              {
+                id: 'primary-entry',
+                specialty: 'Med Interna',
+                note: 'Evolución especialista',
+              },
+            ],
+            'beds.R1.medicalHandoffAudit': {
+              lastSpecialistUpdateAt: new Date(NOW_MS).toISOString(),
+              lastSpecialistUpdateBy: {
+                uid: 'user_specialist',
+                email: 'specialist@example.com',
+                displayName: 'Especialista',
+                role: 'doctor_specialist',
+              },
+              currentStatus: 'updated_by_specialist',
+            },
+            'beds.R1.clinicalEvents': [
+              {
+                id: 'event-1',
+                name: 'Evento clínico',
+                date: CURRENT_RECORD_DATE,
+                note: 'Control diario',
+                createdAt: new Date(NOW_MS).toISOString(),
+              },
+            ],
+            lastUpdated: NOW_MS,
+          })
+      );
+    });
+
+    it('Specialists resolved via config/roles can persist medical handoff changes', async () => {
+      await setupDoc(admin(), 'config/roles', {
+        'specialist.dynamic@example.com': 'doctor_specialist',
+      });
+      await setupDoc(admin(), recordPath, {
+        date: CURRENT_RECORD_DATE,
+        dateTimestamp: NOW_MS,
+        beds: {
+          R1: {
+            patientName: 'Paciente Test',
+            rut: '1-9',
+            pathology: 'Neumonia',
+            specialty: 'Med Interna',
+            medicalHandoffNote: '',
+            medicalHandoffEntries: [],
+            clinicalEvents: [],
+          },
+        },
+      });
+
+      await assertSucceeds(
+        specialistWithoutClaim()
+          .doc(recordPath)
+          .update({
+            'beds.R1.medicalHandoffNote': 'Persistencia por rol dinámico',
+            'beds.R1.medicalHandoffEntries': [
+              {
+                id: 'primary-entry',
+                specialty: 'Med Interna',
+                note: 'Persistencia por rol dinámico',
+              },
+            ],
+            'beds.R1.medicalHandoffAudit': {
+              lastSpecialistUpdateAt: new Date(NOW_MS).toISOString(),
+              lastSpecialistUpdateBy: {
+                uid: 'user_specialist_dynamic',
+                email: 'specialist.dynamic@example.com',
+                displayName: 'Especialista dinámico',
+                role: 'doctor_specialist',
+              },
+              currentStatus: 'updated_by_specialist',
+            },
+            lastUpdated: NOW_MS,
+          })
+      );
+    });
+
+    it('Specialists cannot update general census fields outside the allowed handoff scope', async () => {
+      await setupDoc(admin(), recordPath, {
+        date: CURRENT_RECORD_DATE,
+        dateTimestamp: NOW_MS,
+        beds: {
+          R1: {
+            patientName: 'Paciente Test',
+            rut: '1-9',
+            pathology: 'Neumonia',
+            specialty: 'Med Interna',
+            status: 'Estable',
+            medicalHandoffNote: '',
+            medicalHandoffEntries: [],
+            clinicalEvents: [],
+          },
+        },
+      });
+
+      await assertFails(
+        specialist().doc(recordPath).update({
+          'beds.R1.status': 'Grave',
+          lastUpdated: NOW_MS,
+        })
+      );
+    });
+
+    it('Specialists cannot update two beds at once', async () => {
+      await setupDoc(admin(), recordPath, {
+        date: CURRENT_RECORD_DATE,
+        dateTimestamp: NOW_MS,
+        beds: {
+          R1: {
+            patientName: 'Paciente Uno',
+            rut: '1-9',
+            pathology: 'Neumonia',
+            specialty: 'Med Interna',
+            medicalHandoffNote: '',
+            medicalHandoffEntries: [],
+            clinicalEvents: [],
+          },
+          R2: {
+            patientName: 'Paciente Dos',
+            rut: '2-7',
+            pathology: 'Fractura',
+            specialty: 'Cirugía',
+            medicalHandoffNote: '',
+            medicalHandoffEntries: [],
+            clinicalEvents: [],
+          },
+        },
+      });
+
+      await assertFails(
+        specialist().doc(recordPath).update({
+          'beds.R1.medicalHandoffNote': 'Cambio 1',
+          'beds.R2.medicalHandoffNote': 'Cambio 2',
+          lastUpdated: NOW_MS,
+        })
+      );
+    });
+
+    it('Specialists cannot update previous-day handoff records', async () => {
+      const previousRecordPath = `hospitals/H1/dailyRecords/${PREVIOUS_RECORD_DATE}`;
+      await setupDoc(admin(), previousRecordPath, {
+        date: PREVIOUS_RECORD_DATE,
+        dateTimestamp: NOW_MS - 86400000,
+        beds: {
+          R1: {
+            patientName: 'Paciente Prev',
+            rut: '3-5',
+            pathology: 'Control',
+            specialty: 'Med Interna',
+            medicalHandoffNote: '',
+            medicalHandoffEntries: [],
+            clinicalEvents: [],
+          },
+        },
+      });
+
+      await assertFails(
+        specialist().doc(previousRecordPath).update({
+          'beds.R1.medicalHandoffNote': 'Intento sobre día previo',
+          lastUpdated: NOW_MS,
+        })
       );
     });
 
