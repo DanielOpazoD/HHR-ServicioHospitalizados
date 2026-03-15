@@ -11,6 +11,7 @@ const systemHealthBudgetContent = read('src/services/admin/systemHealthOperation
 const syncDomainPolicyContent = read('src/services/storage/sync/syncDomainPolicy.ts');
 const conflictDomainContent = read('src/services/repositories/conflictResolutionDomainPolicy.ts');
 const indexedDbCoreContent = read('src/services/storage/indexeddb/indexedDbCore.ts');
+const authConfigContent = read('functions/lib/auth/authConfig.js');
 const repositoryFiles = [
   'src/services/repositories/dailyRecordRepositoryReadService.ts',
   'src/services/repositories/dailyRecordRepositoryInitializationService.ts',
@@ -44,6 +45,20 @@ const extractConstArrayNumbers = (content, name) => {
     .split(',')
     .map(part => Number(part.trim()))
     .filter(value => Number.isFinite(value));
+};
+
+const extractConstArrayStrings = (content, name) => {
+  const match = content.match(new RegExp(`const\\s+${name}\\s*=\\s*\\[([\\s\\S]*?)\\]`, 'm'));
+  if (!match) return [];
+
+  return [...match[1].matchAll(/'([^']+)'/g)].map(item => item[1]);
+};
+
+const extractSetStrings = (content, name) => {
+  const match = content.match(new RegExp(`const\\s+${name}\\s*=\\s*new Set\\(\\[([\\s\\S]*?)\\]\\)`, 'm'));
+  if (!match) return [];
+
+  return [...match[1].matchAll(/'([^']+)'/g)].map(item => item[1]);
 };
 
 const extractSyncDomainProfiles = content =>
@@ -162,10 +177,19 @@ const localPersistence = {
     'INDEXED_DB_RECOVERY_RETRY_DELAYS_MS'
   ),
 };
+const authAccess = {
+  bootstrapAdminEmails: extractConstArrayStrings(authConfigContent, 'BOOTSTRAP_ADMIN_EMAILS'),
+  generalLoginRoles: extractSetStrings(authConfigContent, 'GENERAL_LOGIN_ROLES'),
+  managedAssignableRoles: extractSetStrings(authConfigContent, 'MANAGED_ASSIGNABLE_ROLES'),
+  callableClinicalRoles: extractSetStrings(authConfigContent, 'CLINICAL_CALLABLE_ROLES'),
+  canonicalModelDoc: 'docs/AUTH_ACCESS_MODEL.md',
+  authIncidentRunbook: 'docs/RUNBOOK_AUTH_ACCESS_INCIDENTS.md',
+};
 const runbooks = [
   'docs/RUNBOOK_SYNC_RESILIENCE.md',
   'docs/RUNBOOK_SUPPORT_OPERATIONS.md',
   'docs/RUNBOOK_OPERATIONAL_BUDGETS.md',
+  authAccess.authIncidentRunbook,
 ];
 const flowPerformanceSummary = readJsonReport('reports/e2e/flow-performance-budget-summary.json');
 const criticalCoverageSummary = readJsonReport('reports/critical-coverage.json');
@@ -193,6 +217,7 @@ const summary = {
   conflictContexts,
   legacyBridge: legacyBridgeReport,
   localPersistence,
+  authAccess,
   flowPerformance: flowPerformanceSummary
     ? {
         status: flowPerformanceSummary.summary?.status ?? 'unknown',
@@ -312,6 +337,27 @@ ${Object.entries(summary.conflictContexts)
     ? summary.localPersistence.recoveryRetryDelaysMs.join(', ')
     : 'unknown'
 }
+
+## Auth Access Snapshot
+
+- Bootstrap admins: ${summary.authAccess.bootstrapAdminEmails.length}
+- Login general roles: ${
+  summary.authAccess.generalLoginRoles.length > 0
+    ? summary.authAccess.generalLoginRoles.join(', ')
+    : 'unknown'
+}
+- Roles asignables: ${
+  summary.authAccess.managedAssignableRoles.length > 0
+    ? summary.authAccess.managedAssignableRoles.join(', ')
+    : 'unknown'
+}
+- Roles con callable clínico: ${
+  summary.authAccess.callableClinicalRoles.length > 0
+    ? summary.authAccess.callableClinicalRoles.join(', ')
+    : 'unknown'
+}
+- Modelo canónico: \`${summary.authAccess.canonicalModelDoc}\`
+- Runbook auth: \`${summary.authAccess.authIncidentRunbook}\`
 
 ## Flow Performance Budgets
 

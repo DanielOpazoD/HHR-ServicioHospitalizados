@@ -9,29 +9,31 @@ test.describe('Auth login resilience matrix', () => {
     await expect(page.getByTestId('login-google-button')).toBeVisible();
   });
 
-  test('popup blocked shows alternate access control', async ({ page }) => {
+  test('popup blocked surfaces a clear error and stays on login', async ({ page }) => {
     await page.evaluate(() => {
       window.localStorage.setItem('hhr_e2e_popup_error_code', 'auth/popup-blocked');
     });
 
     await page.getByTestId('login-google-button').click();
 
-    await expect(page.getByTestId('login-alternate-access')).toBeVisible();
+    await expect(page.getByTestId('login-error-alert')).toHaveAttribute(
+      'data-auth-error-code',
+      'auth/popup-blocked'
+    );
+    await expect(page.getByTestId('login-google-button')).toBeVisible();
   });
 
-  test('redirect timeout path surfaces clear error', async ({ page }) => {
+  test('network failure does not switch flows and keeps the user on login', async ({ page }) => {
     await page.evaluate(() => {
       window.localStorage.setItem('hhr_e2e_popup_error_code', 'auth/network-request-failed');
-      window.localStorage.setItem('hhr_e2e_redirect_mode', 'timeout');
     });
 
     await page.getByTestId('login-google-button').click();
-    await expect(page.getByTestId('login-alternate-access')).toBeVisible();
-    await page.getByTestId('login-alternate-access').click();
     await expect(page.getByTestId('login-error-alert')).toHaveAttribute(
       'data-auth-error-code',
-      /auth\/redirect-(failed|unavailable)/
+      'auth/network-request-failed'
     );
+    await expect(page.getByTestId('login-google-button')).toBeVisible();
   });
 
   test('retry after transient popup failure succeeds', async ({ page }) => {
@@ -49,7 +51,10 @@ test.describe('Auth login resilience matrix', () => {
     });
 
     await page.getByTestId('login-google-button').click();
-    await expect(page.getByTestId('login-alternate-access')).toBeVisible();
+    await expect(page.getByTestId('login-error-alert')).toHaveAttribute(
+      'data-auth-error-code',
+      'auth/network-request-failed'
+    );
 
     await page.getByTestId('login-google-button').click();
     await expect

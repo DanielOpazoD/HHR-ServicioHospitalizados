@@ -62,4 +62,40 @@ describe('functions authHelpersFactory', () => {
       role: 'downloader',
     });
   });
+
+  it('treats doctor_specialist as valid general login access in callable helpers', async () => {
+    const helpers = createAuthHelpers(
+      createAdminStub({
+        dynamicRoles: { 'specialist@example.com': 'doctor_specialist' },
+      })
+    );
+
+    await expect(
+      helpers.hasCallableClinicalAccess({
+        auth: {
+          token: {
+            email: 'specialist@example.com',
+          },
+        },
+      })
+    ).resolves.toBe(true);
+  });
+
+  it('does not treat viewer_census as general login access in callable helpers', async () => {
+    const helpers = createAuthHelpers(
+      createAdminStub({
+        dynamicRoles: { 'shared@example.com': 'viewer_census' },
+      })
+    );
+
+    await expect(
+      helpers.hasCallableClinicalAccess({
+        auth: {
+          token: {
+            email: 'shared@example.com',
+          },
+        },
+      })
+    ).resolves.toBe(false);
+  });
 });

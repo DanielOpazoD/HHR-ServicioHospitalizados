@@ -3,6 +3,7 @@ import { X, CheckCircle2, AlertCircle, RefreshCw, ShieldAlert } from 'lucide-rea
 import { useAuth } from '@/context/AuthContext';
 import { useRoleManagement } from '@/hooks/useRoleManagement';
 import { AccessRestricted } from './components/AccessRestricted';
+import { RoleAccessPreview } from './components/RoleAccessPreview';
 import { RoleForm } from './components/RoleForm';
 import { RoleTable } from './components/RoleTable';
 import { DeleteRoleModal } from './components/DeleteRoleModal';
@@ -50,7 +51,7 @@ const RoleManagementView: React.FC = () => {
           </div>
           <p className="text-slate-500 max-w-2xl font-medium leading-snug text-sm md:text-[15px]">
             Control central de permisos. Estos cambios se almacenan en `config/roles` y prevalecen
-            sobre el sistema de Claims de Google.
+            sobre claims legacy o listas antiguas de acceso.
           </p>
         </div>
 
@@ -100,15 +101,21 @@ const RoleManagementView: React.FC = () => {
             onSubmit={handleSubmit}
           />
 
+          <RoleAccessPreview role={selectedRole} />
+
           <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/60 shadow-inner">
             <div className="flex gap-3">
               <ShieldAlert size={22} className="text-blue-500 shrink-0 mt-0.5" />
               <div>
                 <p className="text-[11px] text-blue-800 leading-relaxed font-bold mb-1.5 uppercase tracking-wider">
-                  Despliegue Requerido
+                  Modelo de acceso
                 </p>
-                <p className="text-[10px] text-blue-700 leading-snug font-semibold italic">
-                  Si al guardar ves errores de permiso, ejecuta el comando de reglas en tu terminal.
+                <p className="text-[10px] text-blue-700 leading-snug font-semibold">
+                  El login general entra solo por `config/roles`. Si remueves un correo aquí, debe
+                  quedar fuera al volver a iniciar sesión o al rehidratar la sesión.
+                </p>
+                <p className="text-[10px] text-blue-700/80 leading-snug font-semibold italic mt-2">
+                  Si al guardar ves errores de permiso, revisa despliegue de rules/functions.
                 </p>
               </div>
             </div>
