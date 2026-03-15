@@ -12,8 +12,8 @@ import { DateStripBookmarkToggle } from '@/components/layout/date-strip/DateStri
 import { DateStripYearNavigator } from '@/components/layout/date-strip/DateStripYearNavigator';
 import { DateStripMonthNavigator } from '@/components/layout/date-strip/DateStripMonthNavigator';
 import { useDateStripWheelNavigation } from '@/components/layout/date-strip/useDateStripWheelNavigation';
-import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
-import { isSpecialistCensusAccessProfile } from '@/features/census/types/censusAccessProfile';
+import type { CensusAccessProfile } from '@/shared/access/censusAccessProfile';
+import { isSpecialistCensusAccessProfile } from '@/shared/access/censusAccessProfile';
 
 export interface DateNavigationProps {
   selectedYear: number;

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Edit2, UserPlus, X, AlertCircle, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { getManagedRoleOptions } from '@/shared/access/roleAccessMatrix';
 
 interface RoleFormProps {
   email: string;
@@ -24,6 +25,8 @@ export const RoleForm: React.FC<RoleFormProps> = ({
   onReset,
   onSubmit,
 }) => {
+  const roleOptions = getManagedRoleOptions();
+
   return (
     <div
       className={`bg-white p-5 rounded-[1.75rem] shadow-xl transition-all duration-500 border ${
@@ -86,13 +89,20 @@ export const RoleForm: React.FC<RoleFormProps> = ({
               onChange={e => setSelectedRole(e.target.value)}
               className="w-full px-4 py-3 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-50/50 focus:border-indigo-500 outline-none bg-white transition-all cursor-pointer font-bold text-slate-700 appearance-none shadow-sm text-sm"
             >
-              <option value="viewer">🎨 Invitado (Solo Lectura)</option>
-              <option value="nurse_hospital">👩‍⚕️ Enfermería Hospitalaria</option>
-              <option value="doctor_urgency">🩺 Médico de Urgencia</option>
-              <option value="doctor_specialist">
-                🧠 Especialista (Censo abreviado + Entrega Médica)
-              </option>
-              <option value="admin">🔑 Administrador Total</option>
+              {roleOptions.map(option => (
+                <option key={option.role} value={option.role}>
+                  {option.role === 'viewer'
+                    ? '🎨'
+                    : option.role === 'nurse_hospital'
+                      ? '👩‍⚕️'
+                      : option.role === 'doctor_urgency'
+                        ? '🩺'
+                        : option.role === 'doctor_specialist'
+                          ? '🧠'
+                          : '🔑'}{' '}
+                  {option.label}
+                </option>
+              ))}
             </select>
             <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300">
               <RefreshCw size={16} />

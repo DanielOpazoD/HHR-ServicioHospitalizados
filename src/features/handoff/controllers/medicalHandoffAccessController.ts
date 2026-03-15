@@ -3,7 +3,7 @@ import type { UserRole } from '@/types';
 import {
   canEditSpecialistTodayBoundRecord,
   hasSpecialistRestrictedMedicalAccess,
-} from '@/features/specialist/access/specialistAccessPolicy';
+} from '@/shared/access/specialistAccessPolicy';
 
 export interface MedicalHandoffCapabilities {
   canCreatePrimaryObservationEntry: boolean;

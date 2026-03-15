@@ -24,7 +24,7 @@ import { CensusEmailConfigModal } from '@/views/LazyViews';
 import {
   resolveSpecialistCapabilities,
   resolveSpecialistCensusAccessProfile,
-} from '@/features/specialist/access/specialistAccessPolicy';
+} from '@/shared/access/specialistAccessPolicy';
 
 interface AppContentProps {
   ui: UseUIStateReturn;

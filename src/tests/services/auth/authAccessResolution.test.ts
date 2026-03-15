@@ -1,15 +1,30 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { authorizeFirebaseUser } from '@/services/auth/authAccessResolution';
+import {
+  authorizeCurrentFirebaseUser,
+  authorizeFirebaseUser,
+} from '@/services/auth/authAccessResolution';
 
-const mockFirebaseSignOut = vi.fn().mockResolvedValue(undefined);
-const mockCheckSharedCensusAccess = vi.fn();
-const mockIsSharedCensusMode = vi.fn();
-const mockCheckEmailInFirestore = vi.fn();
-const mockToAuthUser = vi.fn((user: { uid: string; email: string | null }, role?: string) => ({
-  uid: user.uid,
-  email: user.email,
-  role,
+const {
+  mockFirebaseSignOut,
+  mockCheckSharedCensusAccess,
+  mockIsSharedCensusMode,
+  mockCheckEmailInFirestore,
+  mockAuth,
+  mockToAuthUser,
+} = vi.hoisted(() => ({
+  mockFirebaseSignOut: vi.fn().mockResolvedValue(undefined),
+  mockCheckSharedCensusAccess: vi.fn(),
+  mockIsSharedCensusMode: vi.fn(),
+  mockCheckEmailInFirestore: vi.fn(),
+  mockAuth: {
+    currentUser: null as null | { uid: string; email: string | null; isAnonymous?: boolean },
+  },
+  mockToAuthUser: vi.fn((user: { uid: string; email: string | null }, role?: string) => ({
+    uid: user.uid,
+    email: user.email,
+    role,
+  })),
 }));
 
 vi.mock('firebase/auth', () => ({
@@ -17,7 +32,7 @@ vi.mock('firebase/auth', () => ({
 }));
 
 vi.mock('@/firebaseConfig', () => ({
-  auth: { currentUser: null },
+  auth: mockAuth,
 }));
 
 vi.mock('@/services/auth/sharedCensusAuth', () => ({
@@ -37,6 +52,7 @@ vi.mock('@/services/auth/authShared', () => ({
 describe('authAccessResolution', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockAuth.currentUser = null;
     mockIsSharedCensusMode.mockReturnValue(false);
     mockCheckSharedCensusAccess.mockResolvedValue({ authorized: false });
     mockCheckEmailInFirestore.mockResolvedValue({ allowed: true, role: 'admin' });
@@ -71,6 +87,36 @@ describe('authAccessResolution', () => {
       } as never)
     ).rejects.toThrow(/Acceso no autorizado/i);
 
+    expect(mockFirebaseSignOut).toHaveBeenCalledTimes(1);
+  });
+
+  it('rehydrates an authorized current user without exposing an empty shell', async () => {
+    mockAuth.currentUser = {
+      uid: 'spec-2',
+      email: 'specialist@hospital.cl',
+      isAnonymous: false,
+    };
+    mockCheckEmailInFirestore.mockResolvedValue({
+      allowed: true,
+      role: 'doctor_specialist',
+    });
+
+    await expect(authorizeCurrentFirebaseUser()).resolves.toEqual({
+      uid: 'spec-2',
+      email: 'specialist@hospital.cl',
+      role: 'doctor_specialist',
+    });
+  });
+
+  it('returns null after sign-out when the rehydrated current user no longer has a role', async () => {
+    mockAuth.currentUser = {
+      uid: 'removed-1',
+      email: 'removed@hospital.cl',
+      isAnonymous: false,
+    };
+    mockCheckEmailInFirestore.mockResolvedValue({ allowed: false, role: undefined });
+
+    await expect(authorizeCurrentFirebaseUser()).resolves.toBeNull();
     expect(mockFirebaseSignOut).toHaveBeenCalledTimes(1);
   });
 });

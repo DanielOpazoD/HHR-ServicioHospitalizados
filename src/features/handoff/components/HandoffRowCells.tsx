@@ -13,12 +13,7 @@ import {
   getPatientMedicalHandoffEntries,
   getMedicalHandoffSpecialtyOptions,
 } from '@/features/handoff/controllers';
-
 import { MedicalBadge, MedicalBadgeVariant } from '@/components/ui/base/MedicalBadge';
-
-// ============================================================================
-// HandoffBedCell
-// ============================================================================
 
 interface HandoffBedCellProps {
   bedName: string;
@@ -52,10 +47,6 @@ export const HandoffBedCell: React.FC<HandoffBedCellProps> = ({
   </td>
 );
 
-// ============================================================================
-// HandoffPatientCell
-// ============================================================================
-
 interface HandoffPatientCellProps {
   patient: PatientData;
   isSubRow?: boolean;
@@ -85,10 +76,6 @@ export const HandoffPatientCell: React.FC<HandoffPatientCellProps> = ({ patient,
     </div>
   </td>
 );
-
-// ============================================================================
-// HandoffDiagnosisCell
-// ============================================================================
 
 interface HandoffDiagnosisCellProps {
   patient: PatientData;
@@ -170,10 +157,6 @@ export const HandoffDiagnosisCell: React.FC<HandoffDiagnosisCellProps> = ({
   );
 };
 
-// ============================================================================
-// HandoffDevicesCell
-// ============================================================================
-
 interface HandoffDevicesCellProps {
   patient: PatientData;
   reportDate: string;
@@ -208,10 +191,6 @@ export const HandoffDevicesCell: React.FC<HandoffDevicesCellProps> = ({ patient,
     </div>
   </td>
 );
-
-// ============================================================================
-// HandoffObservationsCell
-// ============================================================================
 
 interface HandoffObservationsCellProps {
   noteValue: string;

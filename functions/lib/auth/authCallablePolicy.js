@@ -1,5 +1,5 @@
 const functions = require('firebase-functions/v1');
-const { ALLOWED_ASSIGNABLE_ROLES } = require('./authConfig');
+const { MANAGED_ASSIGNABLE_ROLES } = require('./authConfig');
 
 const assertRoleMutationAccess = ({ context, callerEmail, adminEmails }) => {
   const hasAdminClaim = context.auth?.token?.role === 'admin';
@@ -22,10 +22,10 @@ const assertAssignableRole = (email, role) => {
     throw new functions.https.HttpsError('invalid-argument', 'Email and role are required');
   }
 
-  if (!ALLOWED_ASSIGNABLE_ROLES.has(role)) {
+  if (!MANAGED_ASSIGNABLE_ROLES.has(role)) {
     throw new functions.https.HttpsError(
       'invalid-argument',
-      `Invalid role. Allowed roles: ${Array.from(ALLOWED_ASSIGNABLE_ROLES).join(', ')}`
+      `Invalid role. Allowed roles: ${Array.from(MANAGED_ASSIGNABLE_ROLES).join(', ')}`
     );
   }
 };

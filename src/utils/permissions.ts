@@ -8,7 +8,7 @@
  */
 
 import { ModuleType } from '@/constants/navigationConfig';
-import { resolveSpecialistCapabilities } from '@/features/specialist/access/specialistAccessPolicy';
+import { resolveRoleAccess } from '@/shared/access/roleAccessMatrix';
 
 // ==========================================
 // 1. DEFINICIÓN DE ROLES
@@ -43,54 +43,28 @@ interface RolePermissions {
 
 const PERMISSIONS: Record<string, RolePermissions> = {
   [ROLES.ADMIN]: {
-    modules: [
-      'CENSUS',
-      'CUDYR',
-      'NURSING_HANDOFF',
-      'MEDICAL_HANDOFF',
-      'AUDIT',
-      'WHATSAPP',
-      'ERRORS',
-      'TRANSFER_MANAGEMENT',
-      'BACKUP_FILES',
-      'ROLE_MANAGEMENT',
-    ],
-    canEdit: [
-      'CENSUS',
-      'CUDYR',
-      'NURSING_HANDOFF',
-      'MEDICAL_HANDOFF',
-      'AUDIT',
-      'WHATSAPP',
-      'ERRORS',
-      'TRANSFER_MANAGEMENT',
-      'BACKUP_FILES',
-      'ROLE_MANAGEMENT',
-    ],
+    modules: resolveRoleAccess(ROLES.ADMIN).modules,
+    canEdit: resolveRoleAccess(ROLES.ADMIN).canEdit,
   },
   [ROLES.NURSE_HOSPITAL]: {
-    // Editar: Censo, CUDYR, Entrega Enf, Entrega Médica, Gestión Traslados.
-    modules: ['CENSUS', 'CUDYR', 'NURSING_HANDOFF', 'MEDICAL_HANDOFF', 'TRANSFER_MANAGEMENT'],
-    canEdit: ['CENSUS', 'CUDYR', 'NURSING_HANDOFF', 'MEDICAL_HANDOFF', 'TRANSFER_MANAGEMENT'],
+    modules: resolveRoleAccess(ROLES.NURSE_HOSPITAL).modules,
+    canEdit: resolveRoleAccess(ROLES.NURSE_HOSPITAL).canEdit,
   },
   editor: {
-    // Fallback para cuentas con claim 'editor' antiguo -> Mismo que enfermería hospital
-    modules: ['CENSUS', 'CUDYR', 'NURSING_HANDOFF', 'MEDICAL_HANDOFF', 'TRANSFER_MANAGEMENT'],
-    canEdit: ['CENSUS', 'CUDYR', 'NURSING_HANDOFF', 'MEDICAL_HANDOFF', 'TRANSFER_MANAGEMENT'],
+    modules: resolveRoleAccess('editor').modules,
+    canEdit: resolveRoleAccess('editor').canEdit,
   },
   [ROLES.DOCTOR_URGENCY]: {
-    // Observador de Censo, Entrega Enf y Entrega Médica.
-    modules: ['CENSUS', 'NURSING_HANDOFF', 'MEDICAL_HANDOFF'],
-    canEdit: ['MEDICAL_HANDOFF'],
+    modules: resolveRoleAccess(ROLES.DOCTOR_URGENCY).modules,
+    canEdit: resolveRoleAccess(ROLES.DOCTOR_URGENCY).canEdit,
   },
   [ROLES.DOCTOR_SPECIALIST]: {
-    modules: resolveSpecialistCapabilities(ROLES.DOCTOR_SPECIALIST).visibleModules,
-    canEdit: resolveSpecialistCapabilities(ROLES.DOCTOR_SPECIALIST).editableModules,
+    modules: resolveRoleAccess(ROLES.DOCTOR_SPECIALIST).modules,
+    canEdit: resolveRoleAccess(ROLES.DOCTOR_SPECIALIST).canEdit,
   },
   [ROLES.VIEWER_CENSUS]: {
-    // Solo visualización censo diario.
-    modules: ['CENSUS'],
-    canEdit: [],
+    modules: resolveRoleAccess(ROLES.VIEWER_CENSUS).modules,
+    canEdit: resolveRoleAccess(ROLES.VIEWER_CENSUS).canEdit,
   },
 };
 
@@ -341,6 +315,8 @@ export function getRoleDisplayName(role?: UserRole): string {
     case ROLES.VIEWER_CENSUS:
       return 'Visualizador de Censo';
     default:
-      return resolveSpecialistCapabilities(role).isSpecialist ? 'Especialista' : 'Invitado';
+      return resolveRoleAccess(role).specialistRestrictedMedicalAccess
+        ? 'Especialista'
+        : 'Invitado';
   }
 }

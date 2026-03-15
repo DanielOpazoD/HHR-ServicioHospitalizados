@@ -2,19 +2,11 @@ import { httpsCallable } from 'firebase/functions';
 import { UserRole } from '@/types';
 import { getFunctionsInstance } from '@/firebaseConfig';
 import { BOOTSTRAP_ADMIN_EMAILS, normalizeEmail } from '@/services/auth/authShared';
+import { isGeneralLoginRole } from '@/shared/access/roleAccessMatrix';
 
 type CheckUserRoleResponse = {
   role?: string;
 };
-
-const VALID_LOGIN_ROLES = new Set<UserRole>([
-  'admin',
-  'nurse_hospital',
-  'doctor_urgency',
-  'doctor_specialist',
-  'viewer',
-  'editor',
-]);
 
 export const getBootstrapRoleForEmail = (email: string): UserRole | null => {
   const cleanEmail = normalizeEmail(email);
@@ -42,10 +34,10 @@ export const getDynamicRoleForEmail = async (email: string): Promise<UserRole | 
     );
     const response = await checkUserRole({});
     const role = response.data?.role;
-    if (!role || !VALID_LOGIN_ROLES.has(role as UserRole)) {
+    if (!isGeneralLoginRole(role)) {
       return null;
     }
-    return role as UserRole;
+    return role;
   } catch {
     return null;
   }

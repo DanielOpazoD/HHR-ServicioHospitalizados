@@ -10,7 +10,7 @@ import {
   resolveSpecialistCensusAccessProfile,
   SPECIALIST_EDITABLE_MODULES,
   SPECIALIST_VISIBLE_MODULES,
-} from '@/features/specialist/access/specialistAccessPolicy';
+} from '@/shared/access/specialistAccessPolicy';
 
 describe('specialistAccessPolicy', () => {
   it('recognizes the specialist role and resolves its census profile', () => {

@@ -26,28 +26,30 @@ const SHARED_CENSUS_ALLOWLIST_EMAILS = [
   'd.opazo.damiani@hospitalhangaroa.cl',
 ];
 
-const ALLOWED_ASSIGNABLE_ROLES = new Set([
+const MANAGED_ASSIGNABLE_ROLES = new Set([
   'admin',
   'nurse_hospital',
   'doctor_urgency',
   'doctor_specialist',
   'viewer',
-  'viewer_census',
   'unauthorized',
 ]);
 
-const CLINICAL_CALLABLE_ROLES = new Set([
+const GENERAL_LOGIN_ROLES = new Set([
   'admin',
   'nurse_hospital',
   'doctor_urgency',
+  'doctor_specialist',
   'viewer',
-  'viewer_census',
   'editor',
 ]);
+
+const CLINICAL_CALLABLE_ROLES = new Set([...GENERAL_LOGIN_ROLES, 'viewer_census']);
 
 module.exports = {
   BOOTSTRAP_ADMIN_EMAILS,
   SHARED_CENSUS_ALLOWLIST_EMAILS,
-  ALLOWED_ASSIGNABLE_ROLES,
+  MANAGED_ASSIGNABLE_ROLES,
+  GENERAL_LOGIN_ROLES,
   CLINICAL_CALLABLE_ROLES,
 };

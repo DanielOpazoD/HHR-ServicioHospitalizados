@@ -1,6 +1,7 @@
 import React from 'react';
 import { Search, UserPlus, Edit2, Trash2 } from 'lucide-react';
 import { UserRoleMap } from '@/services/admin/roleService';
+import { resolveRoleAccess } from '@/shared/access/roleAccessMatrix';
 
 interface RoleTableProps {
   roles: UserRoleMap;
@@ -71,62 +72,47 @@ export const RoleTable: React.FC<RoleTableProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {sortedRoles.map(([userEmail, role]) => (
-                <tr
-                  key={userEmail}
-                  className={`transition-all duration-300 ${editingEmail === userEmail ? 'bg-indigo-50' : 'hover:bg-slate-50/50'}`}
-                >
-                  <td className="px-5 py-4 align-middle">
-                    <div
-                      className="font-black text-slate-700 text-[13px] leading-tight tracking-tight break-all pr-3"
-                      title={userEmail}
-                    >
-                      {userEmail}
-                    </div>
-                  </td>
-                  <td className="px-4 py-4 align-middle">
-                    <div
-                      className={`px-3 py-1 rounded-2xl text-[10px] font-black inline-flex items-center gap-2 border shadow-sm whitespace-nowrap ${
-                        role === 'admin'
-                          ? 'bg-indigo-600 text-white border-indigo-700'
-                          : role === 'nurse_hospital'
-                            ? 'bg-emerald-500 text-white border-emerald-600'
-                            : role === 'doctor_urgency'
-                              ? 'bg-sky-500 text-white border-sky-600'
-                              : role === 'doctor_specialist'
-                                ? 'bg-violet-500 text-white border-violet-600'
-                                : 'bg-slate-400 text-white border-slate-500'
-                      }`}
-                    >
-                      {role === 'nurse_hospital'
-                        ? 'ENFERMERÍA'
-                        : role === 'doctor_urgency'
-                          ? 'URGENCIA'
-                          : role === 'doctor_specialist'
-                            ? 'ESPECIALISTA LIMITADO'
-                            : role === 'admin'
-                              ? 'ADMIN'
-                              : 'INVITADO'}
-                    </div>
-                  </td>
-                  <td className="px-5 py-4 align-middle">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => onEdit(userEmail, role)}
-                        className="flex items-center gap-1.5 px-3 py-2 bg-white text-indigo-600 border border-slate-100 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 rounded-xl transition-all font-black text-[10px] uppercase tracking-wider shadow-sm whitespace-nowrap"
+              {sortedRoles.map(([userEmail, role]) => {
+                const roleAccess = resolveRoleAccess(role);
+                return (
+                  <tr
+                    key={userEmail}
+                    className={`transition-all duration-300 ${editingEmail === userEmail ? 'bg-indigo-50' : 'hover:bg-slate-50/50'}`}
+                  >
+                    <td className="px-5 py-4 align-middle">
+                      <div
+                        className="font-black text-slate-700 text-[13px] leading-tight tracking-tight break-all pr-3"
+                        title={userEmail}
                       >
-                        <Edit2 size={12} /> Editar
-                      </button>
-                      <button
-                        onClick={() => onDelete(userEmail)}
-                        className="flex items-center gap-1.5 px-3 py-2 bg-white text-rose-500 border border-slate-100 hover:bg-rose-600 hover:text-white hover:border-rose-600 rounded-xl transition-all font-black text-[10px] uppercase tracking-wider shadow-sm whitespace-nowrap"
+                        {userEmail}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 align-middle">
+                      <div
+                        className={`px-3 py-1 rounded-2xl text-[10px] font-black inline-flex items-center gap-2 border shadow-sm whitespace-nowrap ${roleAccess.badgeClassName}`}
                       >
-                        <Trash2 size={12} /> Quitar
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        {roleAccess.badgeLabel}
+                      </div>
+                    </td>
+                    <td className="px-5 py-4 align-middle">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => onEdit(userEmail, role)}
+                          className="flex items-center gap-1.5 px-3 py-2 bg-white text-indigo-600 border border-slate-100 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 rounded-xl transition-all font-black text-[10px] uppercase tracking-wider shadow-sm whitespace-nowrap"
+                        >
+                          <Edit2 size={12} /> Editar
+                        </button>
+                        <button
+                          onClick={() => onDelete(userEmail)}
+                          className="flex items-center gap-1.5 px-3 py-2 bg-white text-rose-500 border border-slate-100 hover:bg-rose-600 hover:text-white hover:border-rose-600 rounded-xl transition-all font-black text-[10px] uppercase tracking-wider shadow-sm whitespace-nowrap"
+                        >
+                          <Trash2 size={12} /> Quitar
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

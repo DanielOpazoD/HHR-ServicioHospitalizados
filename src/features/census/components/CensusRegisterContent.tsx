@@ -22,7 +22,7 @@ interface CensusRegisterContentProps {
   stats: Statistics | null;
   showBedManagerModal: boolean;
   onCloseBedManagerModal: () => void;
-  accessProfile: CensusAccessProfile;
+  accessProfile?: CensusAccessProfile;
 }
 
 export const CensusRegisterContent: React.FC<CensusRegisterContentProps> = ({
@@ -35,7 +35,7 @@ export const CensusRegisterContent: React.FC<CensusRegisterContentProps> = ({
   stats,
   showBedManagerModal,
   onCloseBedManagerModal,
-  accessProfile,
+  accessProfile = 'default',
 }) => (
   <CensusActionsProvider>
     <CensusPrintHeader currentDateString={currentDateString} />

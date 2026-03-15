@@ -1,9 +1,10 @@
 import { db } from '../infrastructure/db';
 import { getFunctionsInstance } from '@/firebaseConfig';
 import { httpsCallable } from 'firebase/functions';
+import { isManagedUserRole, type ManagedUserRole } from '@/shared/access/roleAccessMatrix';
 
 export interface UserRoleMap {
-  [email: string]: 'admin' | 'nurse_hospital' | 'doctor_urgency' | 'doctor_specialist' | 'viewer';
+  [email: string]: ManagedUserRole;
 }
 
 /**
@@ -29,11 +30,14 @@ export const roleService = {
   async setRole(email: string, role: string): Promise<void> {
     try {
       const cleanEmail = email.toLowerCase().trim();
+      if (!isManagedUserRole(role)) {
+        throw new Error(`Rol no asignable: ${role}`);
+      }
 
       // We fetch the entire map, modify it locally, and replace it.
       // This is 100% safe against Firestore dot-notation (splitting emails into nested objects).
       const currentRoles = await this.getRoles();
-      const updatedRoles = { ...currentRoles, [cleanEmail]: role as UserRoleMap[string] };
+      const updatedRoles = { ...currentRoles, [cleanEmail]: role };
 
       await db.setDoc('config', 'roles', updatedRoles);
       console.warn(`[RoleService] Successfully updated roles map. Added ${cleanEmail}`);

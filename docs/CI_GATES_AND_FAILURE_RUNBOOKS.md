@@ -100,6 +100,14 @@ Salida esperada:
 3. si falla handoff, confirmar que la restricción de edición por día actual no se haya roto
 4. si falla clinical-documents, revisar permisos de `draft` en frontend y Firestore Rules
 
+### Falla de login / Gestión de Roles
+
+1. revisar primero [docs/AUTH_ACCESS_MODEL.md](./AUTH_ACCESS_MODEL.md)
+2. confirmar que el correo exista en `config/roles` con un rol válido
+3. confirmar que el frontend ya use resolución por callable y no lectura directa del documento
+4. confirmar que functions y `firestore.rules` publicadas correspondan al mismo modelo
+5. si el usuario fue removido, verificar que el login termine en `signOut` y no en shell vacío
+
 ### Falla `check:flow-performance-budget`
 
 1. correr `npm run test:e2e:flow-performance`

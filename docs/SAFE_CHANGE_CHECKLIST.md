@@ -16,3 +16,4 @@ Antes de cerrar una modificación relevante en este repo:
 11. Dejar referencias en README/ARCHITECTURE del módulo si la decisión cambia una regla estable.
 12. Si la change toca startup, lazy loading o vistas críticas, correr `npm run check:flow-performance-budget`.
 13. Si el budget por flujo cambia, regenerar y revisar `reports/e2e/flow-performance-budget-summary.json` y `.md`.
+14. Si la change toca login, roles o auth bootstrap, revisar y actualizar [docs/AUTH_ACCESS_MODEL.md](./AUTH_ACCESS_MODEL.md).

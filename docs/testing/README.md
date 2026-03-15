@@ -76,9 +76,13 @@ El budget diferencia entre:
 
 El perfil `doctor_specialist` ya no tiene un flujo de login o shell paralelo.
 
+El modelo canónico de acceso general vive en [docs/AUTH_ACCESS_MODEL.md](../AUTH_ACCESS_MODEL.md).
+
 Regresiones mínimas esperadas cuando una change toca auth, censo, documentos clínicos o handoff:
 
 - login normal con Gmail
+- acceso permitido solo si el correo existe en `config/roles` o bootstrap técnico
+- usuario sin rol no monta shell ni navbar
 - acceso visible solo a `CENSUS` y `MEDICAL_HANDOFF`
 - censo abreviado sin edición de datos censales
 - documentos clínicos con edición de `draft`

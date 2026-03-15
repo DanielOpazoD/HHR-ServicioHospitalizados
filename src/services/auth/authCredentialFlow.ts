@@ -41,7 +41,7 @@ export const signIn = async (email: string, password: string): Promise<AuthUser>
     if (!allowed) {
       await firebaseSignOut(auth);
       throw new Error(
-        'Acceso no autorizado. Su correo no está en la lista de usuarios permitidos.'
+        'Acceso no autorizado. Tu correo no tiene un rol vigente en Gestión de Roles.'
       );
     }
 

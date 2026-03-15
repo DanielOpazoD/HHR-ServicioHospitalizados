@@ -31,8 +31,8 @@ import {
   RoleManagementView,
 } from '@/views/LazyViews';
 import { useSharedCensusMode } from '@/hooks/useSharedCensusMode';
-import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
-import { resolveSpecialistCensusAccessProfile } from '@/features/specialist/access/specialistAccessPolicy';
+import type { CensusAccessProfile } from '@/shared/access/censusAccessProfile';
+import { resolveSpecialistCensusAccessProfile } from '@/shared/access/specialistAccessPolicy';
 
 export type AppModule =
   | 'CENSUS'

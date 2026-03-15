@@ -10,7 +10,6 @@ import { HandoffPrintHeader } from './HandoffPrintHeader';
 import { HandoffMedicalContent } from './HandoffMedicalContent';
 import { HandoffNursingContent } from './HandoffNursingContent';
 import type { HandoffClinicalEventActions, HandoffMedicalActions } from './handoffRowContracts';
-
 import { useNotification } from '@/context/UIContext';
 import { useHandoffLogic } from '@/hooks';
 import { useAuditContext } from '@/context/AuditContext';
@@ -79,7 +78,6 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
     recordRef.current = record;
   }, [record]);
 
-  // Use prop UI state (shared) or local UI state (if direct mount)
   const localUi = useUIState();
   const ui = propUi || localUi;
 
@@ -105,7 +103,6 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
     handleShareLink,
     handleSendWhatsAppManual,
     formatPrintDate,
-    // Clinical Events handlers
     handleClinicalEventAdd,
     handleClinicalEventUpdate,
     handleClinicalEventDelete,
@@ -160,21 +157,17 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
     ]
   );
 
-  // MINSAL Traceability: Log when clinical data is viewed
   const { userId } = useAuditContext();
   const recordDate = record?.date;
   useEffect(() => {
     if (recordDate) {
       const currentRecord = recordRef.current;
       if (!currentRecord) return;
-
-      // Attribution logic for shared accounts (MINSAL requirement)
       const authors = getAttributedAuthors(
         userId,
         currentRecord,
         isMedical ? undefined : (selectedShift as 'day' | 'night')
       );
-
       logEventRef.current(
         isMedical ? 'VIEW_MEDICAL_HANDOFF' : 'VIEW_NURSING_HANDOFF',
         'dailyRecord',
@@ -188,9 +181,8 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
         authors
       );
     }
-  }, [recordDate, type, selectedShift, isMedical, userId]); // Only log when essential state changes
+  }, [recordDate, type, selectedShift, isMedical, userId]);
 
-  // Update document title for PDF export filename
   useEffect(() => {
     const nextTitle = resolveHandoffDocumentTitle({
       isMedical,
@@ -199,8 +191,6 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
     });
     if (!nextTitle) return;
     document.title = nextTitle;
-
-    // Cleanup: Reset title when unmounting
     return () => {
       document.title = 'Hospital Hanga Roa';
     };
@@ -244,7 +234,6 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
     if (ui) ui.setCurrentModule('CUDYR');
   };
   const Icon = isMedical ? Stethoscope : MessageSquare;
-  // Removed unused headerColor
   const tableHeaderClass = resolveHandoffTableHeaderClass({ isMedical, selectedShift });
 
   if (!record) {
@@ -257,7 +246,6 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
 
   return (
     <div className="space-y-3 print:space-y-2 animate-fade-in pb-20 font-sans max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 print:max-w-none print:w-full print:px-0 print:pb-0">
-      {/* Print-only Header */}
       <HandoffPrintHeader
         title={title}
         dateString={formatPrintDate()}
@@ -269,8 +257,6 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
         receivesList={receivesList}
         tensList={tensList}
       />
-
-      {/* Main Header (Visible) with integrated Shift Switcher & Actions */}
       <HandoffHeader
         isMedical={isMedical}
         selectedShift={selectedShift}
@@ -294,8 +280,6 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
           ) : undefined
         }
       />
-
-      {/* Compact Staff & Checklist Section (Monitor view) */}
       <HandoffChecklistSection
         isMedical={isMedical}
         selectedShift={selectedShift}
@@ -359,8 +343,6 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
           updateHandoffNovedades={updateHandoffNovedades}
         />
       )}
-
-      {/* CUDYR - Night Nursing Print Only */}
       {shouldShowNightCudyrActions({ isMedical, selectedShift }) && (
         <div className="print:break-before-page">
           <HandoffCudyrPrint />

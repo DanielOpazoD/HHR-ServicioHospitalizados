@@ -14,6 +14,7 @@ vi.unmock('../../services/auth/authService');
 vi.unmock('@/services/auth/authService');
 
 const mockCheckSharedCensusAccessCallable = vi.fn();
+const mockCheckUserRoleCallable = vi.fn();
 
 // Mock setup for authService tests
 vi.mock('firebase/auth', () => {
@@ -40,7 +41,10 @@ vi.mock('firebase/functions', () => ({
     if (callableName === 'checkSharedCensusAccess') {
       return mockCheckSharedCensusAccessCallable;
     }
-    return vi.fn().mockResolvedValue({ data: { role: 'unauthorized' } });
+    if (callableName === 'checkUserRole') {
+      return mockCheckUserRoleCallable;
+    }
+    return vi.fn().mockResolvedValue({ data: {} });
   }),
 }));
 
@@ -70,6 +74,9 @@ describe('authService', () => {
     mockCheckSharedCensusAccessCallable.mockResolvedValue({
       data: { authorized: true, role: 'viewer' },
     });
+    mockCheckUserRoleCallable.mockResolvedValue({
+      data: { role: 'unauthorized' },
+    });
     setLocation('/');
   });
 
@@ -78,7 +85,7 @@ describe('authService', () => {
   });
 
   describe('signIn', () => {
-    it('should allow access if user is in whitelist', async () => {
+    it('should allow access for bootstrap recovery admins', async () => {
       const mockFirebaseUser = {
         user: {
           uid: '123',
@@ -91,7 +98,6 @@ describe('authService', () => {
         mockFirebaseUser as unknown as firebaseAuth.UserCredential
       );
 
-      // Static role check should catch this before Firestore
       const result = await signIn('daniel.opazo@hospitalhangaroa.cl', 'password');
 
       expect(result.uid).toBe('123');
@@ -99,7 +105,7 @@ describe('authService', () => {
       expect(firebaseAuth.signInWithEmailAndPassword).toHaveBeenCalled();
     });
 
-    it('should deny access and sign out if user is not in whitelist', async () => {
+    it('should deny access and sign out if user has no valid role', async () => {
       const mockFirebaseUser = {
         user: {
           uid: '456',
@@ -135,7 +141,7 @@ describe('authService', () => {
       expect(result.role).toBe('admin');
     });
 
-    it('should reject partial matches against static whitelist emails', async () => {
+    it('should reject partial matches against bootstrap admin emails', async () => {
       const mockFirebaseUser = {
         user: {
           uid: 'attacker-1',
@@ -157,14 +163,17 @@ describe('authService', () => {
   });
 
   describe('signInWithGoogle', () => {
-    it('should succeed for authorized users', async () => {
+    it('should succeed for authorized users resolved from config roles', async () => {
       const mockResult = {
         user: {
           uid: 'google-123',
-          email: 'd.opazo.damiani@gmail.com',
-          displayName: 'Daniel Google',
+          email: 'specialist@hospital.cl',
+          displayName: 'Specialist Google',
         },
       };
+      mockCheckUserRoleCallable.mockResolvedValue({
+        data: { role: 'doctor_specialist' },
+      });
 
       vi.mocked(firebaseAuth.signInWithPopup).mockResolvedValue(
         mockResult as unknown as firebaseAuth.UserCredential
@@ -173,7 +182,7 @@ describe('authService', () => {
       const result = await signInWithGoogle();
 
       expect(result.uid).toBe('google-123');
-      expect(result.role).toBe('doctor_urgency');
+      expect(result.role).toBe('doctor_specialist');
     });
 
     it('should reject shared-census login when callable denies access', async () => {

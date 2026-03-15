@@ -1,7 +1,7 @@
 const {
   BOOTSTRAP_ADMIN_EMAILS,
   SHARED_CENSUS_ALLOWLIST_EMAILS,
-  CLINICAL_CALLABLE_ROLES,
+  GENERAL_LOGIN_ROLES,
 } = require('./authConfig');
 const { normalizeEmail } = require('./authPolicies');
 
@@ -35,7 +35,7 @@ const createAuthHelpers = admin => {
     const callerEmail = normalizeEmail(context.auth.token?.email);
     if (!callerEmail) return false;
     const resolvedRole = await resolveRoleForEmail(callerEmail);
-    return CLINICAL_CALLABLE_ROLES.has(resolvedRole);
+    return GENERAL_LOGIN_ROLES.has(resolvedRole);
   };
 
   const isSharedCensusEmailAuthorized = async email => {

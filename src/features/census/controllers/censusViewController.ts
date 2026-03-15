@@ -76,7 +76,7 @@ export const buildRegisterContentProps = ({
   stats,
   showBedManagerModal,
   onCloseBedManagerModal,
-  accessProfile = 'default',
+  accessProfile,
 }: BuildRegisterContentPropsParams) => ({
   currentDateString,
   readOnly,
@@ -87,5 +87,5 @@ export const buildRegisterContentProps = ({
   stats,
   showBedManagerModal,
   onCloseBedManagerModal,
-  accessProfile,
+  ...(accessProfile ? { accessProfile } : {}),
 });
