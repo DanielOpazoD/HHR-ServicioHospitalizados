@@ -18,11 +18,13 @@ import {
   type SyncQueueTelemetry,
 } from './sync/syncQueueEngine';
 import { classifySyncError } from './syncErrorCatalog';
+import { logger } from '@/services/utils/loggerService';
 
 const MAX_RETRIES = 5;
 const SYNC_QUEUE_BATCH_SIZE = 25;
 const BASE_RETRY_DELAY_MS = 1000;
 const MAX_RETRY_DELAY_MS = 30000;
+const syncQueueLogger = logger.child('SyncQueue');
 
 const syncQueueEngine = createSyncQueueEngine({
   store: createDexieSyncQueueStore(),
@@ -48,7 +50,7 @@ export const getSyncQueueStats = async (): Promise<{
     await ensureDbReady();
     return await syncQueueEngine.getStats();
   } catch (error) {
-    console.warn('[SyncQueue] Failed to read queue stats:', error);
+    syncQueueLogger.warn('Failed to read queue stats', error);
     return { pending: 0, failed: 0, conflict: 0 };
   }
 };
@@ -58,7 +60,7 @@ export const getSyncQueueTelemetry = async (): Promise<SyncQueueTelemetry> => {
     await ensureDbReady();
     return await syncQueueEngine.getTelemetry();
   } catch (error) {
-    console.warn('[SyncQueue] Failed to read queue telemetry:', error);
+    syncQueueLogger.warn('Failed to read queue telemetry', error);
     return {
       pending: 0,
       failed: 0,
@@ -77,7 +79,7 @@ export const listRecentSyncQueueOperations = async (
     await ensureDbReady();
     return await syncQueueEngine.listRecentOperations(limit);
   } catch (error) {
-    console.warn('[SyncQueue] Failed to list recent operations:', error);
+    syncQueueLogger.warn('Failed to list recent operations', error);
     return [];
   }
 };
@@ -87,7 +89,7 @@ export const getSyncQueueDomainMetrics = async (): Promise<SyncQueueDomainMetric
     await ensureDbReady();
     return await syncQueueEngine.getDomainMetrics();
   } catch (error) {
-    console.warn('[SyncQueue] Failed to read domain metrics:', error);
+    syncQueueLogger.warn('Failed to read domain metrics', error);
     return {
       byContext: {
         clinical: { pending: 0, failed: 0, conflict: 0, retrying: 0 },
@@ -112,7 +114,7 @@ export const queueSyncTask = async (
     await ensureDbReady();
     await syncQueueEngine.queueTask(type, payload, meta);
   } catch (error) {
-    console.error('[SyncQueue] Failed to queue task:', error);
+    syncQueueLogger.error('Failed to queue task', error);
   }
 };
 

@@ -2,6 +2,9 @@ import { db } from '../infrastructure/db';
 import { getFunctionsInstance } from '@/firebaseConfig';
 import { httpsCallable } from 'firebase/functions';
 import { isManagedUserRole, type ManagedUserRole } from '@/shared/access/roleAccessMatrix';
+import { logger } from '@/services/utils/loggerService';
+
+const roleServiceLogger = logger.child('RoleService');
 
 export interface UserRoleMap {
   [email: string]: ManagedUserRole;
@@ -19,7 +22,7 @@ export const roleService = {
       const data = await db.getDoc<UserRoleMap>('config', 'roles');
       return data || {};
     } catch (error) {
-      console.error('[RoleService] Failed to fetch roles:', error);
+      roleServiceLogger.error('Failed to fetch roles', error);
       throw error;
     }
   },
@@ -40,9 +43,9 @@ export const roleService = {
       const updatedRoles = { ...currentRoles, [cleanEmail]: role };
 
       await db.setDoc('config', 'roles', updatedRoles);
-      console.warn(`[RoleService] Successfully updated roles map. Added ${cleanEmail}`);
+      roleServiceLogger.info(`Successfully updated roles map for ${cleanEmail}`);
     } catch (error) {
-      console.error(`[RoleService] Failed to set role for ${email}:`, error);
+      roleServiceLogger.error(`Failed to set role for ${email}`, error);
       throw error;
     }
   },
@@ -67,10 +70,10 @@ export const roleService = {
         if (updatedRoles[truncated]) delete updatedRoles[truncated];
 
         await db.setDoc('config', 'roles', updatedRoles);
-        console.warn(`[RoleService] Successfully removed role for ${cleanEmail}`);
+        roleServiceLogger.info(`Successfully removed role for ${cleanEmail}`);
       }
     } catch (error) {
-      console.error(`[RoleService] Failed to remove role for ${email}:`, error);
+      roleServiceLogger.error(`Failed to remove role for ${email}`, error);
       throw error;
     }
   },

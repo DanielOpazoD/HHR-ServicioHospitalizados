@@ -25,6 +25,9 @@ import {
   syncDailyRecordClinicalResources,
   touchDailyRecordLastUpdated,
 } from '@/services/repositories/dailyRecordDomainServices';
+import { logger } from '@/services/utils/loggerService';
+
+const dailyRecordWriteSupportLogger = logger.child('DailyRecordWriteSupport');
 
 export interface ConflictAutoMergeRecoveryResult {
   status: 'auto_merged' | 'not_possible';
@@ -167,11 +170,11 @@ export const attemptConflictAutoMergeRecovery = async (
     try {
       await logRepositoryConflictAutoMerged(date, auditDetails);
     } catch (auditError) {
-      console.warn('[Repository] Conflict auto-merge audit log failed:', auditError);
+      dailyRecordWriteSupportLogger.warn('Conflict auto-merge audit log failed', auditError);
     }
     return { status: 'auto_merged' };
   } catch (mergeError) {
-    console.warn('[Repository] Auto-merge conflict fallback failed:', mergeError);
+    dailyRecordWriteSupportLogger.warn('Auto-merge conflict fallback failed', mergeError);
     return { status: 'not_possible' };
   }
 };

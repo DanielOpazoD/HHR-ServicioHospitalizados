@@ -7,6 +7,7 @@ import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/firebaseConfig';
 import { SETTINGS_DOCS, getSettingsDocPath } from '@/constants/firestorePaths';
 import { safeJsonParse } from '@/utils/jsonUtils';
+import { logger } from '@/services/utils/loggerService';
 
 // ============================================================================
 // Types
@@ -40,6 +41,7 @@ export interface TableConfig {
 // ============================================================================
 
 let firestoreEnabled = true;
+const tableConfigLogger = logger.child('TableConfigService');
 
 export const setFirestoreEnabled = (enabled: boolean): void => {
   firestoreEnabled = enabled;
@@ -102,7 +104,7 @@ export const loadTableConfig = async (): Promise<TableConfig> => {
     }
     return getDefaultConfig();
   } catch (_error) {
-    console.error('Error loading table config:', _error);
+    tableConfigLogger.error('Error loading table config', _error);
     return getDefaultConfig();
   }
 };
@@ -118,7 +120,7 @@ export const saveTableConfig = async (config: TableConfig): Promise<void> => {
       lastUpdated: new Date().toISOString(),
     });
   } catch (_error) {
-    console.error('Error saving table config:', _error);
+    tableConfigLogger.error('Error saving table config', _error);
     throw _error;
   }
 };
@@ -150,7 +152,7 @@ export const subscribeToTableConfig = (callback: (config: TableConfig) => void):
       }
     },
     error => {
-      console.error('Error subscribing to table config:', error);
+      tableConfigLogger.error('Error subscribing to table config', error);
       callback(getDefaultConfig());
     }
   );

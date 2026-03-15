@@ -10,6 +10,9 @@ import { loadRemoteRecordWithFallback } from '@/services/repositories/dailyRecor
 import { resolvePreferredDailyRecord } from '@/services/repositories/dailyRecordSyncCompatibility';
 import { measureRepositoryOperation } from '@/services/repositories/repositoryPerformance';
 import { createSyncDailyRecordResult } from '@/services/repositories/contracts/dailyRecordResults';
+import { logger } from '@/services/utils/loggerService';
+
+const dailyRecordSyncLogger = logger.child('DailyRecordRepositorySyncService');
 
 const resolveIncomingRemoteRecord = async (
   date: string,
@@ -58,7 +61,7 @@ export const syncWithFirestoreDetailed = async (date: string) => {
           record,
         });
       } catch (err) {
-        console.warn(`[Repository] Sync failed for ${date}:`, err);
+        dailyRecordSyncLogger.warn(`Sync failed for ${date}`, err);
         return createSyncDailyRecordResult({
           date,
           outcome: 'blocked',

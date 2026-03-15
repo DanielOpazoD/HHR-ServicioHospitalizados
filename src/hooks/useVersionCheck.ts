@@ -12,9 +12,11 @@
 
 import { useEffect, useRef } from 'react';
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { logger } from '@/services/utils/loggerService';
 
 const VERSION_KEY = 'hhr_app_version';
 const VERSION_URL = '/version.json';
+const versionCheckLogger = logger.child('VersionCheck');
 
 interface VersionInfo {
   version: string;
@@ -31,7 +33,7 @@ const clearServiceWorkerCaches = async (): Promise<void> => {
       await Promise.all(cacheNames.map(name => caches.delete(name)));
       // console.info('[VersionCheck] ✅ Cleared all SW caches');
     } catch (error) {
-      console.warn('[VersionCheck] Failed to clear caches:', error);
+      versionCheckLogger.warn('Failed to clear caches', error);
     }
   }
 };
@@ -51,7 +53,7 @@ const refreshServiceWorker = async (): Promise<void> => {
         registration.active.postMessage({ type: 'CLEAR_CACHE' });
       }
     } catch (error) {
-      console.warn('[VersionCheck] SW refresh failed:', error);
+      versionCheckLogger.warn('SW refresh failed', error);
     }
   }
 };
@@ -104,7 +106,7 @@ export const useVersionCheck = (): void => {
 
         if (!response.ok) {
           // version.json might not exist in dev mode, that's ok
-          console.warn('[VersionCheck] version.json not found (dev mode?)');
+          versionCheckLogger.warn('version.json not found (dev mode?)');
           return;
         }
 
@@ -140,7 +142,7 @@ export const useVersionCheck = (): void => {
         }
       } catch (error) {
         // Network error or parsing error - not critical
-        console.warn('[VersionCheck] Check failed (offline?):', error);
+        versionCheckLogger.warn('Check failed (offline?)', error);
       }
     };
 

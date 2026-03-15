@@ -25,6 +25,7 @@ import {
   createCopyPatientResult,
   createInitializeDayResult,
 } from '@/services/repositories/contracts/dailyRecordResults';
+import { logger } from '@/services/utils/loggerService';
 
 export interface DailyRecordInitializationResult {
   record: DailyRecord;
@@ -51,6 +52,8 @@ export interface CopyPatientToDateResult {
     | 'legacy_schema_bridge';
   sourceMigrationRulesApplied: string[];
 }
+
+const dailyRecordInitializationLogger = logger.child('DailyRecordInitializationService');
 
 const loadCopySourceRecord = async (copyFromDate?: string): Promise<DailyRecord | null> => {
   if (!copyFromDate) return null;
@@ -112,7 +115,10 @@ const loadRemoteInitializationSeed = async (
       record: enrichedRecord,
     });
   } catch (err) {
-    console.warn(`[Repository] Failed to check remote sources for ${date} during init:`, err);
+    dailyRecordInitializationLogger.warn(
+      `Failed to check remote sources for ${date} during init`,
+      err
+    );
     return null;
   }
 };

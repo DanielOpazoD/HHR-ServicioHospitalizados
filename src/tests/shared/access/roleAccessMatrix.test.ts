@@ -38,4 +38,13 @@ describe('roleAccessMatrix', () => {
       canEditClinicalDocumentDrafts: true,
     });
   });
+
+  it('keeps admin system modules visible in the app shell', () => {
+    expect(resolveRoleAccess('admin').modules).toEqual(
+      expect.arrayContaining(['PATIENT_MASTER_INDEX', 'DATA_MAINTENANCE', 'DIAGNOSTICS'])
+    );
+    expect(resolveRoleAccess('admin').canEdit).toEqual(
+      expect.arrayContaining(['PATIENT_MASTER_INDEX', 'DATA_MAINTENANCE', 'DIAGNOSTICS'])
+    );
+  });
 });

@@ -1,10 +1,12 @@
 import { getSetting, saveSetting } from '@/services/storage/indexedDBService';
 import { safeJsonParse } from '@/utils/jsonUtils';
 import { ROLE_CACHE_PREFIX, normalizeEmail } from '@/services/auth/authShared';
+import { logger } from '@/services/utils/loggerService';
 
 type CachedRole = { role: string; timestamp: number };
 
 const ROLE_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const authRoleCacheLogger = logger.child('AuthRoleCache');
 
 const clearLegacyRoleCache = (key: string): void => {
   if (typeof window !== 'undefined' && window.localStorage) {
@@ -29,7 +31,7 @@ export const saveRoleToCache = async (email: string, role: string): Promise<void
     await saveSetting(key, cacheData);
     clearLegacyRoleCache(key);
   } catch (error) {
-    console.warn('[authService] Failed to cache role:', error);
+    authRoleCacheLogger.warn('Failed to cache role', error);
   }
 };
 
@@ -50,7 +52,7 @@ export const getCachedRole = async (email: string): Promise<string | null> => {
       return cached.role;
     }
   } catch (error) {
-    console.warn('[authService] Failed to read role cache:', error);
+    authRoleCacheLogger.warn('Failed to read role cache', error);
   }
 
   return null;

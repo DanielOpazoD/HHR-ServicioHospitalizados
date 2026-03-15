@@ -13,6 +13,9 @@ import {
   hasRecentManualLogout,
   markRecentManualLogout,
 } from '@/services/auth/authLogoutState';
+import { logger } from '@/services/utils/loggerService';
+
+const authStateLogger = logger.child('useAuthState');
 
 export const getE2EBootstrapUser = (): AuthUser | null => {
   if (typeof window === 'undefined' || !window.__HHR_E2E_OVERRIDE__) {
@@ -92,7 +95,7 @@ export const createHandleLogout =
     try {
       await signOut();
     } catch (error) {
-      console.warn('[useAuthState] Firebase signOut failed (probably offline):', error);
+      authStateLogger.warn('Firebase signOut failed (probably offline)', error);
     }
 
     setUser(null);
@@ -110,7 +113,7 @@ export const useInactivityLogout = (
     const resetTimer = () => {
       if (timeoutId) clearTimeout(timeoutId);
       timeoutId = setTimeout(() => {
-        console.warn('[useAuthState] Logout due to inactivity');
+        authStateLogger.warn('Logout due to inactivity');
         void handleLogout('automatic');
       }, SESSION_TIMEOUT_MS);
     };
@@ -156,7 +159,7 @@ export const subscribeToResolvedAuthState = async ({
       clearAuthBootstrapPending();
     }
   } catch (error) {
-    console.warn('[useAuthState] Redirect result check error:', error);
+    authStateLogger.warn('Redirect result check error', error);
   }
 
   return onAuthChange(async authUser => {
@@ -212,8 +215,8 @@ export const useResolvedAuthBootstrap = ({
     let unsubscribe: (() => void) | undefined;
     const timeoutMs = getAuthBootstrapTimeoutMs();
     const safetyTimeout = setTimeout(() => {
-      console.warn(
-        `[useAuthState] ⚠️ Auth initialization timed out (${timeoutMs}ms) - forcing load completion`
+      authStateLogger.warn(
+        `Auth initialization timed out (${timeoutMs}ms) - forcing load completion`
       );
       clearAuthBootstrapPending();
       setAuthLoading(false);
