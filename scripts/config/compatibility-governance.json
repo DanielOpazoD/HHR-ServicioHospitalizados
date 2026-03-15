@@ -45,6 +45,42 @@
       "remainingConsumers": "call sites legacy de storage e indexedDB",
       "retirementCriteria": "Consumidores movidos a modulos storage dueños o adapters especificos.",
       "target": "2026-Q3"
+    },
+    {
+      "path": "src/features/handoff/controllers/handoffManagementController.ts",
+      "owner": "handoff",
+      "kind": "deprecated_bridge",
+      "reason": "Mantener imports estables mientras consumers migran a application/domain handoff.",
+      "remainingConsumers": "consumidores handoff legacy y tests de compatibilidad",
+      "retirementCriteria": "Consumers migrados a entrypoints application/handoff sin imports de controller bridge.",
+      "target": "2026-Q2"
+    },
+    {
+      "path": "src/features/handoff/controllers/medicalPatientHandoffController.ts",
+      "owner": "handoff",
+      "kind": "deprecated_bridge",
+      "reason": "Preservar compatibilidad temporal del flujo médico por paciente durante la migración al dominio.",
+      "remainingConsumers": "tests y call sites legacy de handoff médico",
+      "retirementCriteria": "Consumers movidos a domain/application de patient entries y render model.",
+      "target": "2026-Q2"
+    },
+    {
+      "path": "src/features/handoff/controllers/medicalPatientHandoffMutationController.ts",
+      "owner": "handoff",
+      "kind": "deprecated_bridge",
+      "reason": "Sostener imports existentes mientras las mutaciones médicas se consumen desde use cases.",
+      "remainingConsumers": "tests y adapters legacy",
+      "retirementCriteria": "Mutaciones consumidas solo desde application/handoff y sin consumers externos al bridge.",
+      "target": "2026-Q2"
+    },
+    {
+      "path": "src/services/storage/legacyFirebaseService.ts",
+      "owner": "storage",
+      "kind": "legacy_bridge",
+      "reason": "Compatibilidad histórica con rutas Firestore legacy fuera del camino caliente actual.",
+      "remainingConsumers": "bridges de migración controlada y tests legacy",
+      "retirementCriteria": "Compatibilidad legacy desactivada o encapsulada completamente detrás de puertos de migración.",
+      "target": "2026-Q4"
     }
   ]
 }

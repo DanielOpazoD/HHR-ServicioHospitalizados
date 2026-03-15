@@ -5,6 +5,7 @@ import {
   isFinalizedTransferStatus,
   isTransferredTransferStatus,
 } from '@/services/transfers/transferStatusController';
+import { formatTransferDate } from '@/shared/transfers/transferPresentation';
 
 export type TransferTableMode = 'active' | 'finalized';
 
@@ -47,5 +48,4 @@ export const getTransferRowActionState = (
   };
 };
 
-export const getTransferTableDateLabel = (value: string): string =>
-  new Date(value).toLocaleDateString('es-CL');
+export const getTransferTableDateLabel = (value: string): string => formatTransferDate(value);

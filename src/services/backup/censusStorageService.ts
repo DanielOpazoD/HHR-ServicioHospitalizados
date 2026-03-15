@@ -15,6 +15,7 @@ import {
 import {
   isExpectedStorageLookupMiss,
   shouldLogStorageError,
+  classifyStorageError,
   resolveStorageLookupStatus,
   toStorageOperationalError,
 } from './storageErrorPolicy';
@@ -34,6 +35,18 @@ import {
 // ============= Types =============
 
 export type StoredCensusFile = BaseStoredFile;
+
+export type BackupStorageMutationStatus =
+  | 'success'
+  | 'permission_denied'
+  | 'not_found'
+  | 'invalid_date'
+  | 'timeout'
+  | 'unknown';
+
+export type BackupStorageMutationResult<T = null> =
+  | { status: 'success'; data: T }
+  | { status: BackupStorageMutationStatus; error: unknown; data: null };
 // ============= Constants =============
 
 const STORAGE_ROOT = 'censo-diario';
@@ -70,29 +83,58 @@ const parseFilePath = (path: string): { date: string } | null => {
  * Upload a Census Excel to Firebase Storage
  */
 export const uploadCensus = async (excelBlob: Blob, date: string): Promise<string> => {
-  // console.info(`[CensusStorage] Starting upload for ${date}...`);
-  await firebaseReady;
-  const storage = await getStorageInstance();
-  assertStorageAvailable(storage, 'CensusStorage', 'uploadCensus');
+  const result = await uploadCensusWithResult(excelBlob, date);
+  if (result.status !== 'success') {
+    throw result.error;
+  }
+  return result.data as string;
+};
 
-  const filePath = generateCensusPath(date);
-  const storageRef = ref(storage, filePath);
+export const uploadCensusWithResult = async (
+  excelBlob: Blob,
+  date: string
+): Promise<BackupStorageMutationResult<string>> => {
+  try {
+    await firebaseReady;
+    const storage = await getStorageInstance();
+    assertStorageAvailable(storage, 'CensusStorage', 'uploadCensus');
 
-  const user = auth.currentUser;
-  const metadata = {
-    contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    customMetadata: {
-      date,
-      uploadedBy: user?.email || 'unknown',
-      uploadedAt: new Date().toISOString(),
-    },
-  };
+    const filePath = generateCensusPath(date);
+    const storageRef = ref(storage, filePath);
 
-  await uploadBytes(storageRef, excelBlob, metadata);
-  const downloadUrl = await getDownloadURL(storageRef);
+    const user = auth.currentUser;
+    const metadata = {
+      contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      customMetadata: {
+        date,
+        uploadedBy: user?.email || 'unknown',
+        uploadedAt: new Date().toISOString(),
+      },
+    };
 
-  // console.info(`✅ [CensusStorage] Upload complete: ${filePath}`);
-  return downloadUrl;
+    await uploadBytes(storageRef, excelBlob, metadata);
+    const downloadUrl = await getDownloadURL(storageRef);
+
+    return { status: 'success', data: downloadUrl };
+  } catch (error) {
+    if (isBackupDateValidationError(error)) {
+      return { status: 'invalid_date', error, data: null };
+    }
+
+    const category = classifyStorageError(error);
+    return {
+      status:
+        category === 'permission_denied'
+          ? 'permission_denied'
+          : category === 'not_found'
+            ? 'not_found'
+            : category === 'timeout'
+              ? 'timeout'
+              : 'unknown',
+      error,
+      data: null,
+    };
+  }
 };
 
 /**
@@ -160,24 +202,44 @@ export const checkCensusExistsDetailed = async (date: string): Promise<StorageLo
  * Delete a Census file from Storage
  */
 export const deleteCensusFile = async (date: string): Promise<void> => {
+  const result = await deleteCensusFileWithResult(date);
+  if (
+    result.status !== 'success' &&
+    result.status !== 'not_found' &&
+    result.status !== 'invalid_date'
+  ) {
+    throw result.error;
+  }
+};
+
+export const deleteCensusFileWithResult = async (
+  date: string
+): Promise<BackupStorageMutationResult> => {
   await firebaseReady;
   const storage = await getStorageInstance();
   let filePath: string;
   try {
     filePath = generateCensusPath(date);
   } catch (error) {
-    if (isBackupDateValidationError(error)) return;
-    throw error;
+    if (isBackupDateValidationError(error)) {
+      return { status: 'invalid_date', error, data: null };
+    }
+    return { status: 'unknown', error, data: null };
   }
   const storageRef = ref(storage, filePath);
   try {
     await deleteObject(storageRef);
-    // console.info(`🗑️ Census deleted: ${filePath}`);
+    return { status: 'success', data: null };
   } catch (error: unknown) {
     if (isExpectedStorageLookupMiss(error)) {
-      return;
+      const category = classifyStorageError(error);
+      return {
+        status: category === 'permission_denied' ? 'permission_denied' : 'not_found',
+        error,
+        data: null,
+      };
     }
-    throw error;
+    return { status: 'unknown', error, data: null };
   }
 };
 

@@ -5,6 +5,7 @@ import { BaseModal } from '@/components/shared/BaseModal';
 import type { PatientData } from '@/types';
 import { buildClinicalDocumentEpisodeContext } from '@/features/clinical-documents/controllers/clinicalDocumentEpisodeController';
 import { ClinicalDocumentsWorkspace } from '@/features/clinical-documents/components/ClinicalDocumentsWorkspace';
+import { formatClinicalDocumentDate } from '@/shared/clinical-documents/clinicalDocumentPresentation';
 
 interface ClinicalDocumentsModalProps {
   isOpen: boolean;
@@ -14,16 +15,6 @@ interface ClinicalDocumentsModalProps {
   bedId: string;
 }
 
-const formatDateLabel = (value?: string): string => {
-  if (!value) return 'Sin fecha';
-  const parsed = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(parsed.getTime())) return value;
-  const day = String(parsed.getDate()).padStart(2, '0');
-  const month = String(parsed.getMonth() + 1).padStart(2, '0');
-  const year = parsed.getFullYear();
-  return `${day}-${month}-${year}`;
-};
-
 export const ClinicalDocumentsModal: React.FC<ClinicalDocumentsModalProps> = ({
   isOpen,
   onClose,
@@ -32,7 +23,7 @@ export const ClinicalDocumentsModal: React.FC<ClinicalDocumentsModalProps> = ({
   bedId,
 }) => {
   const episode = buildClinicalDocumentEpisodeContext(patient, currentDateString, bedId);
-  const episodeDate = formatDateLabel(episode.admissionDate || currentDateString);
+  const episodeDate = formatClinicalDocumentDate(episode.admissionDate || currentDateString);
 
   return (
     <BaseModal

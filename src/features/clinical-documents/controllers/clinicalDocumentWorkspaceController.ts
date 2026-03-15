@@ -5,6 +5,7 @@ import type {
 import type { ConfirmOptions } from '@/context/uiContracts';
 import { getClinicalDocumentDefinition } from '@/features/clinical-documents/domain/definitions';
 import { hydrateLegacyClinicalDocument as hydrateLegacyClinicalDocumentCompat } from '@/features/clinical-documents/controllers/clinicalDocumentCompatibilityController';
+import { formatClinicalDocumentDateTime as formatClinicalDocumentDateTimePresentation } from '@/shared/clinical-documents/clinicalDocumentPresentation';
 
 export const serializeClinicalDocument = (record: ClinicalDocumentRecord | null): string =>
   record ? JSON.stringify(record) : '';
@@ -14,17 +15,7 @@ export const hydrateLegacyClinicalDocument = (
 ): ClinicalDocumentRecord => hydrateLegacyClinicalDocumentCompat(record);
 
 export const formatClinicalDocumentDateTime = (isoString?: string): string => {
-  if (!isoString) return '—';
-  const value = new Date(isoString);
-  return Number.isNaN(value.getTime())
-    ? isoString
-    : value.toLocaleString('es-CL', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
+  return formatClinicalDocumentDateTimePresentation(isoString);
 };
 
 export const getClinicalDocumentPatientFieldGridClass = (fieldId: string): string =>

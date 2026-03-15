@@ -1,12 +1,12 @@
 import { useCallback } from 'react';
 import type { TransferRequest, TransferFormData, TransferStatus } from '@/types/transfers';
 import {
-  changeTransferStatus,
-  completeTransfer,
-  createTransferRequest,
-  deleteStatusHistoryEntry,
-  deleteTransferRequest,
-  updateTransferRequest,
+  changeTransferStatusWithResult,
+  completeTransferWithResult,
+  createTransferRequestWithResult,
+  deleteStatusHistoryEntryWithResult,
+  deleteTransferRequestWithResult,
+  updateTransferRequestWithResult,
 } from '@/services/transfers/transferService';
 import { getNextStatus } from '@/constants/transferConstants';
 import {
@@ -24,6 +24,7 @@ import {
 import type { DailyRecord } from '@/types';
 import type { DailyRecordActionsContextType } from '@/hooks/useDailyRecordTypes';
 import { logger } from '@/services/utils/loggerService';
+import type { TransferMutationResult } from '@/services/transfers/transferService';
 
 const transferManagementLogger = logger.child('useTransferManagementActions');
 
@@ -45,10 +46,13 @@ export const useTransferManagementActions = ({
   const runTransferAction = useCallback(
     async (
       action: Parameters<typeof getTransferActionErrorMessage>[0],
-      task: () => Promise<void>
+      task: () => Promise<TransferMutationResult<unknown>>
     ) => {
       try {
-        await task();
+        const result = await task();
+        if (result.status !== 'success') {
+          throw result.error;
+        }
         setError(null);
       } catch (err) {
         transferManagementLogger.error(`Transfer action "${action}" failed`, err);
@@ -72,7 +76,7 @@ export const useTransferManagementActions = ({
       }
 
       await runTransferAction('create', async () => {
-        await createTransferRequest(
+        return createTransferRequestWithResult(
           buildCreateTransferPayload(
             data,
             patient,
@@ -89,7 +93,7 @@ export const useTransferManagementActions = ({
   const updateTransfer = useCallback(
     async (id: string, data: Partial<TransferFormData>) => {
       await runTransferAction('update', async () => {
-        await updateTransferRequest(id, data);
+        return updateTransferRequestWithResult(id, data);
       });
     },
     [runTransferAction]
@@ -105,7 +109,7 @@ export const useTransferManagementActions = ({
       }
 
       await runTransferAction('advance', async () => {
-        await changeTransferStatus(transfer.id, nextStatus, userEmail);
+        return changeTransferStatusWithResult(transfer.id, nextStatus, userEmail);
       });
     },
     [runTransferAction, setError, userEmail]
@@ -120,7 +124,7 @@ export const useTransferManagementActions = ({
       }
 
       await runTransferAction('set_status', async () => {
-        await changeTransferStatus(transfer.id, status, userEmail);
+        return changeTransferStatusWithResult(transfer.id, status, userEmail);
       });
     },
     [runTransferAction, setError, userEmail]
@@ -135,7 +139,10 @@ export const useTransferManagementActions = ({
       }
 
       await runTransferAction('complete', async () => {
-        await completeTransfer(transfer.id, userEmail);
+        const result = await completeTransferWithResult(transfer.id, userEmail);
+        if (result.status !== 'success') {
+          return result;
+        }
         addTransfer(
           transfer.bedId,
           transferMethod,
@@ -145,6 +152,7 @@ export const useTransferManagementActions = ({
           buildTransferCompletionTimestamp()
         );
         clearPatient(transfer.bedId);
+        return result;
       });
     },
     [addTransfer, clearPatient, runTransferAction, setError, userEmail]
@@ -159,7 +167,7 @@ export const useTransferManagementActions = ({
       }
 
       await runTransferAction('cancel', async () => {
-        await changeTransferStatus(transfer.id, 'CANCELLED', userEmail, reason);
+        return changeTransferStatusWithResult(transfer.id, 'CANCELLED', userEmail, reason);
       });
     },
     [runTransferAction, setError, userEmail]
@@ -168,7 +176,7 @@ export const useTransferManagementActions = ({
   const deleteTransfer = useCallback(
     async (id: string) => {
       await runTransferAction('delete', async () => {
-        await deleteTransferRequest(id);
+        return deleteTransferRequestWithResult(id);
       });
     },
     [runTransferAction]
@@ -183,7 +191,7 @@ export const useTransferManagementActions = ({
       }
 
       await runTransferAction('undo', async () => {
-        await changeTransferStatus(
+        return changeTransferStatusWithResult(
           transfer.id,
           resolvePreviousTransferStatus(transfer),
           userEmail,
@@ -197,7 +205,7 @@ export const useTransferManagementActions = ({
   const archiveTransfer = useCallback(
     async (transfer: TransferRequest) => {
       await runTransferAction('archive', async () => {
-        await updateTransferRequest(transfer.id, {
+        return updateTransferRequestWithResult(transfer.id, {
           archived: true,
           archivedAt: new Date().toISOString(),
         } as Partial<TransferRequest>);
@@ -209,7 +217,7 @@ export const useTransferManagementActions = ({
   const deleteHistoryEntry = useCallback(
     async (transfer: TransferRequest, historyIndex: number) => {
       await runTransferAction('delete_history', async () => {
-        await deleteStatusHistoryEntry(transfer.id, historyIndex);
+        return deleteStatusHistoryEntryWithResult(transfer.id, historyIndex);
       });
     },
     [runTransferAction]

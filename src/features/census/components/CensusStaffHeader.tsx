@@ -11,14 +11,8 @@ import {
 } from '@/context/DailyRecordContext';
 import { useDailyRecordStaffActions } from '@/context/useDailyRecordScopedActions';
 import { useStaffContext } from '@/context/StaffContext';
-import {
-  resolveAdmissionsCountForRecord,
-  resolveMovementSummaryState,
-  resolveStaffSelectorsClassName,
-  resolveStaffSelectorsState,
-} from '@/features/census/controllers/censusStaffHeaderController';
+import { buildCensusStaffHeaderReadModel } from '@/application/census/censusStaffHeaderReadModel';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
-import { isSpecialistCensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 
 interface CensusStaffHeaderProps {
   readOnly?: boolean;
@@ -43,49 +37,47 @@ export const CensusStaffHeader: React.FC<CensusStaffHeaderProps> = ({
 
   const { updateNurse, updateTens } = useDailyRecordStaffActions();
   const { nursesList, tensList } = useStaffContext();
-  const staffSelectorsState = resolveStaffSelectorsState(staffData);
-  const admissionsCount = resolveAdmissionsCountForRecord({
+  const readModel = buildCensusStaffHeaderReadModel({
+    readOnly,
+    stats,
+    accessProfile,
     beds,
     recordDate: dailyRecordData.record?.date,
+    staffData,
+    movementsData,
   });
-  const movementSummaryState = resolveMovementSummaryState({
-    ...(movementsData || {}),
-    admissionsCount,
-  });
-  const selectorsClassName = resolveStaffSelectorsClassName(readOnly);
-  const specialistAccess = isSpecialistCensusAccessProfile(accessProfile);
 
   return (
     <div className="flex justify-center items-start gap-3 flex-wrap animate-fade-in px-4">
       {/* Staff Selectors */}
-      {!specialistAccess && (
+      {!readModel.specialistAccess && (
         <NurseSelector
-          nursesDayShift={staffSelectorsState.nursesDayShift}
-          nursesNightShift={staffSelectorsState.nursesNightShift}
+          nursesDayShift={readModel.staffSelectorsState.nursesDayShift}
+          nursesNightShift={readModel.staffSelectorsState.nursesNightShift}
           nursesList={nursesList}
           onUpdateNurse={updateNurse}
-          className={selectorsClassName}
+          className={readModel.selectorsClassName}
         />
       )}
 
-      {!specialistAccess && (
+      {!readModel.specialistAccess && (
         <TensSelector
-          tensDayShift={staffSelectorsState.tensDayShift}
-          tensNightShift={staffSelectorsState.tensNightShift}
+          tensDayShift={readModel.staffSelectorsState.tensDayShift}
+          tensNightShift={readModel.staffSelectorsState.tensNightShift}
           tensList={tensList}
           onUpdateTens={updateTens}
-          className={selectorsClassName}
+          className={readModel.selectorsClassName}
         />
       )}
 
       {/* Combined Stats Summary Card */}
-      {stats && !specialistAccess && (
+      {readModel.showSummary && stats && (
         <CombinedSummaryCard
           stats={stats}
-          discharges={movementSummaryState.discharges}
-          transfers={movementSummaryState.transfers}
-          cmaCount={movementSummaryState.cmaCount}
-          newAdmissions={movementSummaryState.admissionsCount}
+          discharges={readModel.movementSummaryState.discharges}
+          transfers={readModel.movementSummaryState.transfers}
+          cmaCount={readModel.movementSummaryState.cmaCount}
+          newAdmissions={readModel.movementSummaryState.admissionsCount}
         />
       )}
     </div>

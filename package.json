@@ -76,6 +76,7 @@
     "report:operational-health": "node scripts/report-operational-health.mjs",
     "report:legacy-bridge": "node scripts/report-legacy-bridge.mjs",
     "report:compatibility-governance": "node scripts/report-compatibility-governance.mjs",
+    "report:architectural-hotspots": "node scripts/report-architectural-hotspots.mjs",
     "report:runtime-contracts": "node scripts/report-runtime-contracts.mjs",
     "report:critical-coverage": "npm run test:coverage:critical && node scripts/report-critical-coverage.mjs",
     "report:flow-performance-budget": "node scripts/report-flow-performance-budget.mjs",

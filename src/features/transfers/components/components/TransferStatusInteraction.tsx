@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { TransferRequest, TRANSFER_STATUS_CONFIG, TransferStatus } from '@/types/transfers';
+import { TransferRequest, TransferStatus } from '@/types/transfers';
 import { ChevronDown, Clock, MessageSquare, User, Trash2 } from 'lucide-react';
 import clsx from 'clsx';
 import { usePortalPopoverRuntime } from '@/hooks/usePortalPopoverRuntime';
@@ -7,6 +7,11 @@ import {
   resolveTransferStatusDropdownPosition,
   TRANSFER_STATUS_OPTIONS,
 } from '@/features/transfers/controllers/transferStatusInteractionController';
+import {
+  formatTransferDateTime,
+  getTransferStatusLabel,
+  getTransferStatusPresentation,
+} from '@/shared/transfers/transferPresentation';
 
 interface TransferStatusInteractionProps {
   transfer: TransferRequest;
@@ -22,11 +27,7 @@ export const TransferStatusInteraction: React.FC<TransferStatusInteractionProps>
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const config = TRANSFER_STATUS_CONFIG[transfer.status] || {
-    label: transfer.status,
-    color: 'text-gray-700',
-    bgColor: 'bg-gray-100',
-  };
+  const config = getTransferStatusPresentation(transfer.status);
 
   const closeDropdown = useCallback(() => {
     setIsOpen(false);
@@ -104,7 +105,7 @@ export const TransferStatusInteraction: React.FC<TransferStatusInteractionProps>
           {/* Status Options */}
           <div className="p-2 grid grid-cols-2 gap-2">
             {TRANSFER_STATUS_OPTIONS.map(status => {
-              const optConfig = TRANSFER_STATUS_CONFIG[status];
+              const optionPresentation = getTransferStatusPresentation(status);
               const isCurrent = transfer.status === status;
               return (
                 <button
@@ -113,12 +114,12 @@ export const TransferStatusInteraction: React.FC<TransferStatusInteractionProps>
                   className={clsx(
                     'px-2 py-1.5 rounded-lg text-xs font-medium text-left transition-colors',
                     isCurrent
-                      ? `${optConfig.bgColor} ${optConfig.color} ring-1 ring-inset ring-current`
+                      ? `${optionPresentation.bgColor} ${optionPresentation.color} ring-1 ring-inset ring-current`
                       : 'hover:bg-slate-50 text-slate-600'
                   )}
                 >
                   {isCurrent && <span className="mr-1">●</span>}
-                  {optConfig.label}
+                  {optionPresentation.label}
                 </button>
               );
             })}
@@ -138,16 +139,11 @@ export const TransferStatusInteraction: React.FC<TransferStatusInteractionProps>
                     <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-slate-300 border border-white" />
                     <div className="flex justify-between items-start">
                       <p className="text-[11px] font-bold text-slate-700">
-                        {TRANSFER_STATUS_CONFIG[change.to]?.label || change.to}
+                        {getTransferStatusLabel(change.to)}
                       </p>
                       <div className="flex items-center gap-1">
                         <span className="text-[9px] text-slate-400">
-                          {new Date(change.timestamp).toLocaleString('es-CL', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
+                          {formatTransferDateTime(change.timestamp)}
                         </span>
                         {onDeleteHistoryEntry && transfer.statusHistory.length > 1 && (
                           <button

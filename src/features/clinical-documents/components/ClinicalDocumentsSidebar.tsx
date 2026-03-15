@@ -5,6 +5,10 @@ import clsx from 'clsx';
 import { getClinicalDocumentTypeLabel } from '@/features/clinical-documents/controllers/clinicalDocumentTemplateController';
 import { formatClinicalDocumentDateTime } from '@/features/clinical-documents/controllers/clinicalDocumentWorkspaceController';
 import type { ClinicalDocumentsSidebarProps } from '@/features/clinical-documents/contracts/clinicalDocumentsSidebarContracts';
+import {
+  getClinicalDocumentStatusClassName,
+  getClinicalDocumentStatusLabel,
+} from '@/shared/clinical-documents/clinicalDocumentPresentation';
 
 export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> = ({
   canEdit,
@@ -99,18 +103,10 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
                     <span
                       className={clsx(
                         'rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider',
-                        document.status === 'signed'
-                          ? 'bg-emerald-100 text-emerald-700'
-                          : document.status === 'ready_for_signature'
-                            ? 'bg-amber-100 text-amber-700'
-                            : 'bg-slate-100 text-slate-600'
+                        getClinicalDocumentStatusClassName(document.status)
                       )}
                     >
-                      {document.status === 'ready_for_signature'
-                        ? 'Lista'
-                        : document.status === 'signed'
-                          ? 'Firmada'
-                          : 'Borrador'}
+                      {getClinicalDocumentStatusLabel(document.status)}
                     </span>
                     {canDelete && (
                       <button

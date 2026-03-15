@@ -12,34 +12,4 @@ export type { AuthUser } from './auth/authService';
 
 export { getAppSetting, saveAppSetting } from './settingsService';
 
-export {
-  saveRecordToFirestore,
-  getRecordFromFirestore,
-  getAllRecordsFromFirestore,
-  getMonthRecordsFromFirestore,
-  subscribeToRecord,
-  isFirestoreAvailable,
-} from './storage/firestoreService';
-
-export {
-  setFirestoreEnabled,
-  isFirestoreEnabled,
-  getForDate,
-  getForDateWithMeta,
-  getAvailableDates,
-  getPreviousDay,
-  save,
-  updatePartial,
-  subscribe,
-  syncWithFirestore,
-  initializeDay,
-  copyPatientToDate,
-  bridgeLegacyRecord,
-  DailyRecordRepository,
-} from './repositories/DailyRecordRepository';
-export { ensureMonthIntegrity } from './repositories/monthIntegrity';
-export { migrateFromDailyRecords } from './repositories/patientMasterMigration';
-export type { IDailyRecordRepository } from './repositories/DailyRecordRepository';
-export type { MonthIntegrityResult } from './repositories/monthIntegrity';
-
 export { triggerCensusEmail } from './integrations/censusEmailService';
