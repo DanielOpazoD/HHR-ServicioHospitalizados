@@ -74,21 +74,6 @@ export default defineConfig(({ mode }) => {
     const has = (fragment: string): boolean => normalizedId.includes(fragment);
 
     if (!inNodeModules) {
-      if (
-        has('/src/application/backup-export/sharedCensusFilesUseCases.ts') ||
-        has('/src/services/backup/censusStorageService.ts') ||
-        has('/src/services/backup/baseStorageService.ts') ||
-        has('/src/services/backup/storageListFactories.ts') ||
-        has('/src/services/backup/storageListSupport.ts') ||
-        has('/src/services/backup/storageErrorPolicy.ts') ||
-        has('/src/services/backup/storageContracts.ts') ||
-        has('/src/services/backup/storageObservability.ts') ||
-        has('/src/services/backup/storageAvailability.ts') ||
-        has('/src/services/backup/storageLookupContracts.ts')
-      ) {
-        return 'feature-shared-census-storage';
-      }
-
       if (has('/src/features/census/components/patient-row/')) {
         return 'feature-census-patient-row';
       }
