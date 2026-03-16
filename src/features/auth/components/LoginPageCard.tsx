@@ -2,7 +2,7 @@ import React from 'react';
 import { AlertCircle, Loader2 } from 'lucide-react';
 
 import { AUTH_UI_COPY } from '@/services/auth/authUiCopy';
-import { resetLocalAppStorage } from '@/services/storage/indexeddb/indexedDbMaintenanceService';
+import { resetLocalAppStorage } from '@/services/storage/core';
 
 interface LoginPageCardProps {
   isAnyLoading: boolean;

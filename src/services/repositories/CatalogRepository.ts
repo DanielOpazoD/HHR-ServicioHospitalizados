@@ -14,8 +14,11 @@ import {
   getProfessionalsCatalogFromFirestore,
   saveProfessionalsCatalogToFirestore,
   subscribeToProfessionalsCatalog,
-} from '../storage/firestoreService';
-import { getLegacyNurseCatalog, getLegacyTensCatalog } from '../storage/legacyFirebaseService';
+} from '../storage/firestore';
+import {
+  getLegacyNurseCatalog,
+  getLegacyTensCatalog,
+} from '../storage/migration/legacyFirestoreBridge';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import { ProfessionalCatalogItem } from '@/types/core';
 import {

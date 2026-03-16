@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { isDatabaseInFallbackMode } from '@/services/storage/indexeddb/indexedDbCore';
+import { isDatabaseInFallbackMode } from '@/services/storage/core';
 
 export const DATABASE_FALLBACK_POLL_INTERVAL_MS = 5000;
 

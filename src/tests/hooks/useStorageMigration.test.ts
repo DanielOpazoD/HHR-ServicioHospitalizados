@@ -1,11 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useStorageMigration } from '@/hooks/useStorageMigration';
-import * as idbService from '@/services/storage/indexedDBService';
+import * as storageCore from '@/services/storage/core';
 import { restoreConsole, suppressConsole } from '@/tests/utils/consoleTestUtils';
 
-// Mock indexedDBService
-vi.mock('@/services/storage/indexedDBService', () => ({
+vi.mock('@/services/storage/core', () => ({
   migrateFromLocalStorage: vi.fn(),
   isIndexedDBAvailable: vi.fn(),
 }));
@@ -23,8 +22,8 @@ describe('useStorageMigration', () => {
   });
 
   it('should complete startup migration when enabled', async () => {
-    vi.mocked(idbService.isIndexedDBAvailable).mockReturnValue(true);
-    vi.mocked(idbService.migrateFromLocalStorage).mockResolvedValue(false);
+    vi.mocked(storageCore.isIndexedDBAvailable).mockReturnValue(true);
+    vi.mocked(storageCore.migrateFromLocalStorage).mockResolvedValue(false);
 
     const { result } = renderHook(() => useStorageMigration());
 
@@ -36,19 +35,19 @@ describe('useStorageMigration', () => {
   });
 
   it('should stay idle when disabled', async () => {
-    vi.mocked(idbService.isIndexedDBAvailable).mockReturnValue(true);
+    vi.mocked(storageCore.isIndexedDBAvailable).mockReturnValue(true);
 
     const { result } = renderHook(() => useStorageMigration({ enabled: false }));
 
     expect(result.current.isComplete).toBe(true);
     expect(result.current.isMigrating).toBe(false);
     expect(result.current.didMigrate).toBe(false);
-    expect(idbService.migrateFromLocalStorage).not.toHaveBeenCalled();
+    expect(storageCore.migrateFromLocalStorage).not.toHaveBeenCalled();
   });
 
   it('should complete migration successfully when IndexedDB is available', async () => {
-    vi.mocked(idbService.isIndexedDBAvailable).mockReturnValue(true);
-    vi.mocked(idbService.migrateFromLocalStorage).mockResolvedValue(true);
+    vi.mocked(storageCore.isIndexedDBAvailable).mockReturnValue(true);
+    vi.mocked(storageCore.migrateFromLocalStorage).mockResolvedValue(true);
 
     const { result } = renderHook(() => useStorageMigration());
 
@@ -62,7 +61,7 @@ describe('useStorageMigration', () => {
   });
 
   it('should skip migration when IndexedDB is not available', async () => {
-    vi.mocked(idbService.isIndexedDBAvailable).mockReturnValue(false);
+    vi.mocked(storageCore.isIndexedDBAvailable).mockReturnValue(false);
 
     const { result } = renderHook(() => useStorageMigration());
 
@@ -72,12 +71,12 @@ describe('useStorageMigration', () => {
 
     expect(result.current.isMigrating).toBe(false);
     expect(result.current.didMigrate).toBe(false);
-    expect(idbService.migrateFromLocalStorage).not.toHaveBeenCalled();
+    expect(storageCore.migrateFromLocalStorage).not.toHaveBeenCalled();
   });
 
   it('should handle migration errors gracefully', async () => {
-    vi.mocked(idbService.isIndexedDBAvailable).mockReturnValue(true);
-    vi.mocked(idbService.migrateFromLocalStorage).mockRejectedValue(new Error('Migration failed'));
+    vi.mocked(storageCore.isIndexedDBAvailable).mockReturnValue(true);
+    vi.mocked(storageCore.migrateFromLocalStorage).mockRejectedValue(new Error('Migration failed'));
 
     const { result } = renderHook(() => useStorageMigration());
 
@@ -91,8 +90,8 @@ describe('useStorageMigration', () => {
   });
 
   it('should handle non-Error exceptions', async () => {
-    vi.mocked(idbService.isIndexedDBAvailable).mockReturnValue(true);
-    vi.mocked(idbService.migrateFromLocalStorage).mockRejectedValue('String error');
+    vi.mocked(storageCore.isIndexedDBAvailable).mockReturnValue(true);
+    vi.mocked(storageCore.migrateFromLocalStorage).mockRejectedValue('String error');
 
     const { result } = renderHook(() => useStorageMigration());
 

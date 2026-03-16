@@ -12,7 +12,7 @@ export {
   subscribeToRecord,
   updateRecordPartial,
   isFirestoreAvailable,
-} from './firestoreService';
+} from './firestore';
 // Legacy facade kept for backwards compatibility.
 export * as LocalStorage from './localStorageService';
 // Preferred app-level local access facade.

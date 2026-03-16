@@ -1,4 +1,4 @@
-import { ConcurrencyError } from '@/services/storage/firestoreService';
+import { ConcurrencyError } from '@/services/storage/firestore';
 import { DataRegressionError, VersionMismatchError } from '@/utils/integrityGuard';
 import type {
   SaveDailyRecordResult,

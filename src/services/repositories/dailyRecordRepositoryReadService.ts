@@ -5,7 +5,7 @@ import {
   getAllDates as getAllDatesFromIndexedDB,
   saveRecord as saveToIndexedDB,
 } from '@/services/storage/indexeddb/indexedDbRecordService';
-import { getAvailableDatesFromFirestore } from '@/services/storage/firestoreService';
+import { getAvailableDatesFromFirestore } from '@/services/storage/firestore';
 import { logLegacyInfo } from '@/services/storage/legacyfirebase/legacyFirebaseLogger';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import { migrateLegacyDataWithReport } from '@/services/repositories/dataMigration';

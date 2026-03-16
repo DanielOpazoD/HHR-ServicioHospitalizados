@@ -1,6 +1,6 @@
 import type jsPDF from 'jspdf';
 import type { DailyRecord, ShiftType } from '@/types/core';
-import { getMonthRecordsFromFirestore } from '@/services/storage/firestoreService';
+import { getMonthRecordsFromFirestore } from '@/services/storage/firestore';
 import { generateDateRange, getShiftSchedule } from '@/utils/dateUtils';
 import type { BaseStoredFile } from '@/services/backup/baseStorageService';
 import type { StoredPdfFile } from '@/services/backup/pdfStorageService';

@@ -6,8 +6,7 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
-import { migrateFromLocalStorage } from '@/services/storage/indexeddb/indexedDbMigrationService';
-import { isIndexedDBAvailable } from '@/services/storage/indexeddb/indexedDbCore';
+import { isIndexedDBAvailable, migrateFromLocalStorage } from '@/services/storage/core';
 import { logger } from '@/services/utils/loggerService';
 
 interface MigrationState {

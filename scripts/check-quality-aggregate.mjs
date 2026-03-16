@@ -13,6 +13,7 @@ const QUALITY_STEPS = [
   'check:feature-dependencies',
   'check:shared-layer-boundary',
   'check:barrel-boundaries',
+  'check:storage-context-boundaries',
   'check:root-domain-barrels',
   'check:persistence-hub-boundaries',
   'check:legacy-localstorage-imports',

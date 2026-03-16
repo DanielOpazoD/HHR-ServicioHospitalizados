@@ -1,8 +1,10 @@
 /**
- * @deprecated Compatibility facade only.
+ * Canonical Firestore storage entrypoint.
  *
- * New product code should import from `@/services/storage/firestore`.
+ * New product code should import from this module instead of
+ * `@/services/storage/firestoreService`.
  */
+
 export {
   getAvailableDatesFromFirestore,
   getAllRecordsFromFirestore,

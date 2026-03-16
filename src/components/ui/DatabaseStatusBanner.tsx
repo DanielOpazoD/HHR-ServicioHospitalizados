@@ -1,9 +1,6 @@
 import React from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
-import {
-  getStorageFallbackUiCopy,
-  shouldShowStorageFallbackUi,
-} from '@/services/storage/storageFallbackUiPolicy';
+import { getStorageFallbackUiCopy, shouldShowStorageFallbackUi } from '@/services/storage/runtime';
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
 import { useDatabaseFallbackStatus } from '@/hooks/useDatabaseFallbackStatus';
 

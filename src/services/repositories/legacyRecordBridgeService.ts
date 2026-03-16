@@ -1,5 +1,8 @@
-import { saveRecord as saveToIndexedDB } from '@/services/storage/indexeddb/indexedDbRecordService';
-import { getLegacyRecord, getLegacyRecordsRange } from '@/services/storage/legacyFirebaseService';
+import { saveRecord as saveToIndexedDB } from '@/services/storage/records';
+import {
+  getLegacyRecord,
+  getLegacyRecordsRange,
+} from '@/services/storage/migration/legacyFirestoreBridge';
 import { migrateLegacyDataWithReport } from '@/services/repositories/dataMigration';
 import { isLegacyBridgeEnabled } from '@/services/repositories/legacyCompatibilityPolicy';
 import {

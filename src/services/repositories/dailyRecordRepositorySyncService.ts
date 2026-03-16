@@ -3,7 +3,7 @@ import {
   getRecordForDate as getRecordFromIndexedDB,
   saveRecord as saveToIndexedDB,
 } from '@/services/storage/indexeddb/indexedDbRecordService';
-import { subscribeToRecord } from '@/services/storage/firestoreService';
+import { subscribeToRecord } from '@/services/storage/firestore';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import { migrateLegacyData } from '@/services/repositories/dataMigration';
 import { loadRemoteRecordWithFallback } from '@/services/repositories/dailyRecordRemoteLoader';

@@ -3,7 +3,7 @@ import {
   getSyncQueueTelemetry,
   listRecentSyncQueueOperations,
   type SyncQueueOperationSnapshot,
-} from '@/services/storage/syncQueueService';
+} from '@/services/storage/sync';
 import { logger } from '@/services/utils/loggerService';
 
 export const SYNC_QUEUE_POLL_INTERVAL_MS = 4000;

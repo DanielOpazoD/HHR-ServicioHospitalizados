@@ -1,5 +1,5 @@
 import type { UserHealthStatus } from '@/services/admin/healthService';
-import type { SyncQueueTelemetry } from '@/services/storage/syncQueueService';
+import type { SyncQueueTelemetry } from '@/services/storage/sync';
 import type { RepositoryPerformanceSummary } from '@/services/repositories/repositoryPerformance';
 import { CURRENT_SCHEMA_VERSION } from '@/constants/version';
 import { BACKEND_RUNTIME_CONTRACT_VERSION } from '@/constants/runtimeContracts';

@@ -23,37 +23,85 @@ vi.mock('@/services/utils/errorService', () => ({
   logError: vi.fn(),
 }));
 
-vi.mock('@/services/storage/legacyFirebaseService', () => ({
-  getLegacyRecord: vi.fn().mockResolvedValue(null),
-  getLegacyNurseCatalog: vi.fn().mockResolvedValue([]),
-  getLegacyTensCatalog: vi.fn().mockResolvedValue([]),
+const { legacyFirebaseMock, indexedDbFacadeMock, firestoreMock } = vi.hoisted(() => ({
+  legacyFirebaseMock: {
+    getLegacyRecord: vi.fn().mockResolvedValue(null),
+    getLegacyNurseCatalog: vi.fn().mockResolvedValue([]),
+    getLegacyTensCatalog: vi.fn().mockResolvedValue([]),
+    getLegacyRecordsRange: vi.fn().mockResolvedValue([]),
+  },
+  indexedDbFacadeMock: {
+    getRecordForDate: vi.fn().mockResolvedValue(null),
+    getPreviousDayRecord: vi.fn().mockResolvedValue(null),
+    saveRecord: vi.fn(),
+    deleteRecord: vi.fn(),
+    getAllRecords: vi.fn().mockResolvedValue([]),
+    getAllDates: vi.fn().mockResolvedValue([]),
+    getRecordsRange: vi.fn().mockResolvedValue([]),
+    getRecordsForMonth: vi.fn().mockResolvedValue([]),
+    saveRecords: vi.fn(),
+    saveCatalog: vi.fn(),
+    getCatalog: vi.fn().mockResolvedValue([]),
+    getCatalogValues: vi.fn().mockResolvedValue([]),
+    saveCatalogValues: vi.fn(),
+    isIndexedDBAvailable: vi.fn().mockReturnValue(true),
+  },
+  firestoreMock: {
+    saveRecordToFirestore: vi.fn(),
+    subscribeToRecord: vi.fn(() => () => {}),
+    deleteRecordFromFirestore: vi.fn(),
+    updateRecordPartial: vi.fn(),
+    getRecordFromFirestore: vi.fn(),
+    getAvailableDatesFromFirestore: vi.fn().mockResolvedValue([]),
+    saveNurseCatalogToFirestore: vi.fn(),
+    saveTensCatalogToFirestore: vi.fn(),
+    getNurseCatalogFromFirestore: vi.fn().mockResolvedValue([]),
+    getTensCatalogFromFirestore: vi.fn().mockResolvedValue([]),
+    getProfessionalsCatalogFromFirestore: vi.fn().mockResolvedValue([]),
+    saveProfessionalsCatalogToFirestore: vi.fn(),
+    subscribeToNurseCatalog: vi.fn(() => () => {}),
+    subscribeToTensCatalog: vi.fn(() => () => {}),
+    subscribeToProfessionalsCatalog: vi.fn(() => () => {}),
+    moveRecordToTrash: vi.fn().mockResolvedValue(undefined),
+  },
 }));
+
+vi.mock('@/services/storage/legacyFirebaseService', () => legacyFirebaseMock);
+vi.mock('@/services/storage/migration/legacyFirestoreBridge', () => legacyFirebaseMock);
 
 // Mock the dependencies
-vi.mock('@/services/storage/indexedDBService', () => ({
-  getRecordForDate: vi.fn().mockResolvedValue(null),
-  getPreviousDayRecord: vi.fn().mockResolvedValue(null),
-  saveRecord: vi.fn(),
-  deleteRecord: vi.fn(),
-  getAllRecords: vi.fn().mockResolvedValue([]),
-  getAllDates: vi.fn().mockResolvedValue([]),
-  saveCatalog: vi.fn(),
-  getCatalog: vi.fn().mockResolvedValue([]),
-  isIndexedDBAvailable: vi.fn().mockReturnValue(true),
+vi.mock('@/services/storage/indexedDBService', () => indexedDbFacadeMock);
+vi.mock('@/services/storage/indexeddb/indexedDbRecordService', () => ({
+  getRecordForDate: indexedDbFacadeMock.getRecordForDate,
+  getPreviousDayRecord: indexedDbFacadeMock.getPreviousDayRecord,
+  saveRecord: indexedDbFacadeMock.saveRecord,
+  deleteRecord: indexedDbFacadeMock.deleteRecord,
+  getAllRecords: indexedDbFacadeMock.getAllRecords,
+  getAllDates: indexedDbFacadeMock.getAllDates,
+  getRecordsRange: indexedDbFacadeMock.getRecordsRange,
+  getRecordsForMonth: indexedDbFacadeMock.getRecordsForMonth,
+  saveRecords: indexedDbFacadeMock.saveRecords,
+}));
+vi.mock('@/services/storage/records', () => ({
+  getRecordForDate: indexedDbFacadeMock.getRecordForDate,
+  getPreviousDayRecord: indexedDbFacadeMock.getPreviousDayRecord,
+  saveRecord: indexedDbFacadeMock.saveRecord,
+  deleteRecord: indexedDbFacadeMock.deleteRecord,
+  getAllRecords: indexedDbFacadeMock.getAllRecords,
+  getAllDates: indexedDbFacadeMock.getAllDates,
+  getRecordsRange: indexedDbFacadeMock.getRecordsRange,
+  getRecordsForMonth: indexedDbFacadeMock.getRecordsForMonth,
+  saveRecords: indexedDbFacadeMock.saveRecords,
+}));
+vi.mock('@/services/storage/indexeddb/indexedDbCatalogService', () => ({
+  saveCatalog: indexedDbFacadeMock.saveCatalog,
+  getCatalog: indexedDbFacadeMock.getCatalog,
+  getCatalogValues: indexedDbFacadeMock.getCatalogValues,
+  saveCatalogValues: indexedDbFacadeMock.saveCatalogValues,
 }));
 
-vi.mock('@/services/storage/firestoreService', () => ({
-  saveRecordToFirestore: vi.fn(),
-  subscribeToRecord: vi.fn(() => () => {}),
-  deleteRecordFromFirestore: vi.fn(),
-  updateRecordPartial: vi.fn(),
-  getRecordFromFirestore: vi.fn(),
-  saveNurseCatalogToFirestore: vi.fn(),
-  saveTensCatalogToFirestore: vi.fn(),
-  subscribeToNurseCatalog: vi.fn(() => () => {}),
-  subscribeToTensCatalog: vi.fn(() => () => {}),
-  moveRecordToTrash: vi.fn().mockResolvedValue(undefined),
-}));
+vi.mock('@/services/storage/firestoreService', () => firestoreMock);
+vi.mock('@/services/storage/firestore', () => firestoreMock);
 
 describe('DailyRecordRepository', () => {
   const mockDate = '2025-01-01';
@@ -240,12 +288,10 @@ describe('DailyRecordRepository', () => {
         beds: { R1: buildPatient({ patientName: 'Patient X' }) },
       };
 
-      // 1. target date check (local & remote)
-      vi.mocked(idbService.getRecordForDate).mockResolvedValueOnce(null);
+      vi.mocked(idbService.getRecordForDate).mockImplementation(async date =>
+        date === '2024-12-31' ? prevRecord : null
+      );
       vi.mocked(firestoreService.getRecordFromFirestore).mockResolvedValueOnce(null);
-
-      // 2. copy from date check (local)
-      vi.mocked(idbService.getRecordForDate).mockResolvedValueOnce(prevRecord);
 
       const result = await Repository.initializeDay(mockDate, '2024-12-31');
 
@@ -315,11 +361,14 @@ describe('DailyRecordRepository', () => {
         },
       };
 
-      vi.mocked(idbService.getRecordForDate).mockResolvedValueOnce(null);
-      vi.mocked(firestoreService.getRecordFromFirestore)
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(remoteRecord);
-      vi.mocked(idbService.getRecordForDate).mockResolvedValueOnce(copySourceRecord);
+      vi.mocked(idbService.getRecordForDate).mockImplementation(async date =>
+        date === '2024-12-31' ? copySourceRecord : null
+      );
+      vi.mocked(firestoreService.getRecordFromFirestore).mockImplementation(async date => {
+        if (date === mockDate) return null;
+        if (date === '2024-12-31') return remoteRecord;
+        return null;
+      });
 
       const result = await Repository.initializeDay(mockDate, '2024-12-31');
 
@@ -412,7 +461,7 @@ describe('DailyRecordRepository', () => {
         lastUpdated: `${mockDate}T08:00:00.000Z`,
       };
 
-      vi.mocked(idbService.getRecordForDate).mockResolvedValueOnce(newerLocalRecord);
+      vi.mocked(idbService.getRecordForDate).mockImplementation(async () => newerLocalRecord);
       vi.mocked(firestoreService.getRecordFromFirestore).mockResolvedValueOnce(olderRemoteRecord);
 
       const result = await Repository.syncWithFirestore(mockDate);
@@ -533,9 +582,10 @@ describe('DailyRecordRepository', () => {
         },
       };
 
-      vi.mocked(idbService.getRecordForDate).mockResolvedValueOnce(null);
+      vi.mocked(idbService.getRecordForDate).mockImplementation(async date =>
+        date === '2024-12-31' ? prevRecord : null
+      );
       vi.mocked(firestoreService.getRecordFromFirestore).mockResolvedValueOnce(null);
-      vi.mocked(idbService.getRecordForDate).mockResolvedValueOnce(prevRecord);
 
       const result = await Repository.initializeDay(mockDate, '2024-12-31');
 

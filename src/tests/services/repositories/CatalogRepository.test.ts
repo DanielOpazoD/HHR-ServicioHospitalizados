@@ -1,16 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CatalogRepository } from '@/services/repositories/CatalogRepository';
-import * as idbService from '@/services/storage/indexedDBService';
-import * as firestoreService from '@/services/storage/firestoreService';
+import * as catalogService from '@/services/storage/indexeddb/indexedDbCatalogService';
+import * as firestoreService from '@/services/storage/firestore';
+import * as legacyBridge from '@/services/storage/migration/legacyFirestoreBridge';
 import { ProfessionalCatalogItem } from '@/types';
 
-vi.mock('@/services/storage/indexedDBService', () => ({
+vi.mock('@/services/storage/indexeddb/indexedDbCatalogService', () => ({
   getCatalog: vi.fn(),
   saveCatalog: vi.fn(),
   getCatalogValues: vi.fn(),
   saveCatalogValues: vi.fn(),
 }));
-vi.mock('@/services/storage/firestoreService', () => ({
+vi.mock('@/services/storage/firestore', () => ({
   saveNurseCatalogToFirestore: vi.fn(),
   saveTensCatalogToFirestore: vi.fn(),
   subscribeToNurseCatalog: vi.fn(() => () => {}),
@@ -24,7 +25,7 @@ vi.mock('@/services/storage/firestoreService', () => ({
 vi.mock('@/services/repositories/repositoryConfig', () => ({
   isFirestoreEnabled: vi.fn(() => true),
 }));
-vi.mock('@/services/storage/legacyFirebaseService', () => ({
+vi.mock('@/services/storage/migration/legacyFirestoreBridge', () => ({
   getLegacyNurseCatalog: vi.fn().mockResolvedValue([]),
   getLegacyTensCatalog: vi.fn().mockResolvedValue([]),
 }));
@@ -36,15 +37,15 @@ describe('CatalogRepository', () => {
 
   describe('Nurses', () => {
     it('getNurses should try Local then Firestore', async () => {
-      vi.mocked(idbService.getCatalog).mockResolvedValueOnce(['Local Nurse']);
+      vi.mocked(catalogService.getCatalog).mockResolvedValueOnce(['Local Nurse']);
 
       const result = await CatalogRepository.getNurses();
       expect(result).toEqual(['Local Nurse']);
-      expect(idbService.getCatalog).toHaveBeenCalledWith('nurses');
+      expect(catalogService.getCatalog).toHaveBeenCalledWith('nurses');
     });
 
     it('getNurses should return default placeholders when all sources are empty', async () => {
-      vi.mocked(idbService.getCatalog).mockResolvedValueOnce([]);
+      vi.mocked(catalogService.getCatalog).mockResolvedValueOnce([]);
       vi.mocked(firestoreService.getNurseCatalogFromFirestore).mockResolvedValueOnce([]);
 
       const result = await CatalogRepository.getNurses();
@@ -53,7 +54,7 @@ describe('CatalogRepository', () => {
 
     it('saveNurses should save to both', async () => {
       await CatalogRepository.saveNurses([' Nurse A ', 'Nurse A', '']);
-      expect(idbService.saveCatalog).toHaveBeenCalledWith('nurses', ['Nurse A']);
+      expect(catalogService.saveCatalog).toHaveBeenCalledWith('nurses', ['Nurse A']);
       expect(firestoreService.saveNurseCatalogToFirestore).toHaveBeenCalledWith(['Nurse A']);
     });
 
@@ -72,16 +73,17 @@ describe('CatalogRepository', () => {
 
   describe('TENS', () => {
     it('getTens should fetch from multiple sources', async () => {
-      vi.mocked(idbService.getCatalog).mockResolvedValueOnce([]);
+      vi.mocked(catalogService.getCatalog).mockResolvedValueOnce([]);
       const result = await CatalogRepository.getTens();
       expect(result).toEqual(['TENS 1', 'TENS 2', 'TENS 3']);
-      expect(idbService.getCatalog).toHaveBeenCalledWith('tens');
+      expect(catalogService.getCatalog).toHaveBeenCalledWith('tens');
       expect(firestoreService.getTensCatalogFromFirestore).toHaveBeenCalled();
+      expect(legacyBridge.getLegacyTensCatalog).toHaveBeenCalled();
     });
 
     it('saveTens should save to both', async () => {
       await CatalogRepository.saveTens([' TENS A ', 'TENS A', '']);
-      expect(idbService.saveCatalog).toHaveBeenCalledWith('tens', ['TENS A']);
+      expect(catalogService.saveCatalog).toHaveBeenCalledWith('tens', ['TENS A']);
       expect(firestoreService.saveTensCatalogToFirestore).toHaveBeenCalledWith(['TENS A']);
     });
 
@@ -94,10 +96,10 @@ describe('CatalogRepository', () => {
 
   describe('Professionals', () => {
     it('getProfessionals should work', async () => {
-      vi.mocked(idbService.getCatalogValues).mockResolvedValueOnce([]);
+      vi.mocked(catalogService.getCatalogValues).mockResolvedValueOnce([]);
       const result = await CatalogRepository.getProfessionals();
       expect(result).toEqual([]);
-      expect(idbService.getCatalogValues).toHaveBeenCalledWith('professionals');
+      expect(catalogService.getCatalogValues).toHaveBeenCalledWith('professionals');
       expect(firestoreService.getProfessionalsCatalogFromFirestore).toHaveBeenCalled();
     });
 
@@ -106,7 +108,7 @@ describe('CatalogRepository', () => {
         { name: 'Dr. X', phone: '123', specialty: 'Cirugía' },
       ];
       await CatalogRepository.saveProfessionals(profs);
-      expect(idbService.saveCatalogValues).toHaveBeenCalledWith('professionals', profs);
+      expect(catalogService.saveCatalogValues).toHaveBeenCalledWith('professionals', profs);
     });
 
     it('subscribeProfessionals should call firestore service', () => {

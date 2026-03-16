@@ -7,17 +7,20 @@ import {
   listRecentLegacyBridgeOperations,
 } from '@/services/repositories/legacyRecordBridgeService';
 
-vi.mock('@/services/storage/legacyFirebaseService', () => ({
+vi.mock('@/services/storage/migration/legacyFirestoreBridge', () => ({
   getLegacyRecord: vi.fn(),
   getLegacyRecordsRange: vi.fn(),
 }));
 
-vi.mock('@/services/storage/indexedDBService', () => ({
+vi.mock('@/services/storage/records', () => ({
   saveRecord: vi.fn(),
 }));
 
-import { getLegacyRecord, getLegacyRecordsRange } from '@/services/storage/legacyFirebaseService';
-import { saveRecord } from '@/services/storage/indexedDBService';
+import {
+  getLegacyRecord,
+  getLegacyRecordsRange,
+} from '@/services/storage/migration/legacyFirestoreBridge';
+import { saveRecord } from '@/services/storage/records';
 
 describe('legacyRecordBridgeService', () => {
   beforeEach(() => {

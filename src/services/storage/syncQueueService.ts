@@ -4,6 +4,8 @@
  * Public facade over the sync engine. The queue runtime, persistent store and
  * remote transport are now isolated behind ports so offline-first behavior can
  * evolve without hard-wiring Dexie, browser events and Firestore in one file.
+ *
+ * @deprecated New product code should import from `@/services/storage/sync`.
  */
 
 import { ensureDbReady } from './indexeddb/indexedDbCore';

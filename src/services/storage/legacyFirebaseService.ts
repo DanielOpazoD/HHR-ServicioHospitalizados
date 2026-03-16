@@ -3,6 +3,9 @@
  *
  * Keeps existing imports stable while delegating implementation
  * to focused modules.
+ *
+ * @deprecated Import from `@/services/storage/migration/legacyFirestoreBridge`
+ * instead. This facade remains only as a compatibility bridge.
  */
 
 export {

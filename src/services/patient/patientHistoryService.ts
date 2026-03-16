@@ -6,7 +6,7 @@
  */
 
 import { DailyRecord } from '@/types/core';
-import { getAllRecords } from '@/services/storage/indexeddb/indexedDbRecordService';
+import { getAllRecords } from '@/services/storage/records';
 import { BEDS } from '@/constants/beds';
 
 // ============================================================================

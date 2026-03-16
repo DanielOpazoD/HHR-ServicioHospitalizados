@@ -42,8 +42,8 @@
       "owner": "storage",
       "kind": "compatibility_barrel",
       "reason": "Exponer una surface curada mientras persisten dependencias legacy de storage.",
-      "remainingConsumers": "call sites legacy de storage e indexedDB",
-      "retirementCriteria": "Consumidores movidos a modulos storage dueños o adapters especificos.",
+      "remainingConsumers": "tests legacy puntuales y compatibilidad controlada",
+      "retirementCriteria": "Consumidores residuales movidos a `storage/firestore|sync|core|records|runtime` sin imports nuevos al barrel.",
       "target": "2026-Q3"
     },
     {
@@ -78,8 +78,8 @@
       "owner": "storage",
       "kind": "legacy_bridge",
       "reason": "Compatibilidad histórica con rutas Firestore legacy fuera del camino caliente actual.",
-      "remainingConsumers": "bridges de migración controlada y tests legacy",
-      "retirementCriteria": "Compatibilidad legacy desactivada o encapsulada completamente detrás de puertos de migración.",
+      "remainingConsumers": "migration/legacyFirestoreBridge y tests legacy",
+      "retirementCriteria": "Compatibilidad legacy desactivada o encapsulada completamente detrás de `storage/migration/legacyFirestoreBridge` sin imports directos al facade.",
       "target": "2026-Q4"
     }
   ]

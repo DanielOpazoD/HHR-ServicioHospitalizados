@@ -1,11 +1,11 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
-import { getStorageAutoRecoveryKey } from '@/services/storage/storageFallbackUiPolicy';
+import { getStorageAutoRecoveryKey } from '@/services/storage/runtime';
 
 const mockReload = vi.fn();
 
-vi.mock('@/services/storage/indexedDBService', () => ({
+vi.mock('@/services/storage/core', () => ({
   isDatabaseInFallbackMode: vi.fn(),
 }));
 
@@ -15,7 +15,7 @@ vi.mock('@/shared/runtime/browserWindowRuntime', () => ({
   },
 }));
 
-import { isDatabaseInFallbackMode } from '@/services/storage/indexedDBService';
+import { isDatabaseInFallbackMode } from '@/services/storage/core';
 import { DatabaseStatusBanner } from '@/components/ui/DatabaseStatusBanner';
 
 describe('DatabaseStatusBanner', () => {

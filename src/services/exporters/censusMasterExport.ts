@@ -9,8 +9,8 @@
 
 import { DailyRecord } from '@/types/core';
 import { MONTH_NAMES } from '@/constants/export';
-import { getMonthRecordsFromFirestore } from '../storage/firestoreService';
-import { getRecordsForMonth } from '@/services/storage/indexeddb/indexedDbRecordService';
+import { getRecordsForMonth } from '@/services/storage/records';
+import { getMonthRecordsFromFirestore } from '../storage/firestore';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import { buildCensusMasterWorkbook, getCensusMasterFilename } from './censusMasterWorkbook';
 import { downloadWorkbookFile } from './excelFileDownload';

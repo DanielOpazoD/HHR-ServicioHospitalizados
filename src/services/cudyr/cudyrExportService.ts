@@ -8,7 +8,7 @@ import type { DailyRecord } from '@/types/core';
 import { getCudyrMonthlyTotals } from './cudyrSummary';
 import { validateExcelExport, XLSX_MIME_TYPE } from '@/services/exporters/excelValidation';
 import { buildCudyrWorkbook } from './cudyrWorkbookBuilder';
-import { getRecordFromFirestore } from '@/services/storage/firestoreService';
+import { getRecordFromFirestore } from '@/services/storage/firestore';
 import { resolvePreferredDailyRecord } from '@/services/repositories/dailyRecordSyncCompatibility';
 import { logger } from '@/services/utils/loggerService';
 

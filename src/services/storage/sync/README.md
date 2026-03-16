@@ -3,7 +3,7 @@
 ## Contrato
 
 - El engine coordina runtime, store y transport mediante puertos.
-- `syncQueueService.ts` es la fachada pública; este directorio no debe ser importado desde UI.
+- `@/services/storage/sync` es la fachada pública; este directorio no debe ser importado desde UI.
 - Los errores de sync deben salir tipados por politica/runtime, no como strings ad hoc.
 
 ## Límites

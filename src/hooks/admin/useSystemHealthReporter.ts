@@ -4,8 +4,8 @@ import { useVersion } from '@/context/VersionContext';
 import { useIsMutating } from '@tanstack/react-query';
 import { fetchErrorLogs } from '@/services/errorLogService';
 import { reportUserHealth, UserHealthStatus } from '@/services/admin/healthService';
-import { getSyncQueueTelemetry } from '@/services/storage/syncQueueService';
-import { isDatabaseInFallbackMode } from '@/services/storage/indexeddb/indexedDbCore';
+import { isDatabaseInFallbackMode } from '@/services/storage/core';
+import { getSyncQueueTelemetry } from '@/services/storage/sync';
 import { getRepositoryPerformanceSummary } from '@/services/repositories/repositoryPerformance';
 import { getOperationalTelemetrySummary } from '@/services/observability/operationalTelemetryService';
 import {

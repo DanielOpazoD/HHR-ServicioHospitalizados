@@ -4,8 +4,8 @@ import {
   getRecordsForMonth,
   getRecordsRange,
   saveRecords as saveManyToIndexedDB,
-} from '@/services/storage/indexeddb/indexedDbRecordService';
-import { getRecordsRangeFromFirestore } from '@/services/storage/firestoreService';
+} from '@/services/storage/records';
+import { getRecordsRangeFromFirestore } from '@/services/storage/firestore';
 
 export const fetchRecordsForMonth = async (year: number, month: number): Promise<DailyRecord[]> => {
   return getRecordsForMonth(year, month);

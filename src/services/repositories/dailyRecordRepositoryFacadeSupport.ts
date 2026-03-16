@@ -1,10 +1,10 @@
 import { DailyRecord, DailyRecordPatch } from '@/types/core';
-import { deleteRecord as deleteFromIndexedDB } from '@/services/storage/indexeddb/indexedDbRecordService';
+import { deleteRecord as deleteFromIndexedDB } from '@/services/storage/records';
 import {
   deleteRecordFromFirestore,
   getRecordFromFirestore,
   moveRecordToTrash,
-} from '../storage/firestoreService';
+} from '../storage/firestore';
 import { softDeleteDailyRecordRemote } from './dailyRecordRepositoryLifecycleSupport';
 import { isFirestoreEnabled } from './repositoryConfig';
 import {

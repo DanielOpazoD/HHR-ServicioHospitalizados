@@ -6,7 +6,7 @@ import {
 import {
   saveRecordToFirestore,
   updateRecordPartial as updateRecordPartialToFirestore,
-} from '@/services/storage/firestoreService';
+} from '@/services/storage/firestore';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import {
   createPartialUpdateDailyRecordCommand,

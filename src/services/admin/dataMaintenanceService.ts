@@ -7,8 +7,8 @@
 
 import { DailyRecord } from '@/types/core';
 import { saveDetailed as saveDailyRecordDetailed } from '@/services/repositories/dailyRecordRepositoryWriteService';
-import { getRecordsRange, saveRecords } from '@/services/storage/indexeddb/indexedDbRecordService';
-import * as firestoreService from '../storage/firestoreService';
+import { getRecordsRange, saveRecords } from '@/services/storage/records';
+import * as firestoreService from '../storage/firestore';
 import { logAuditEvent } from './auditService';
 import { getCurrentUserEmail } from './utils/auditUtils';
 import { getTodayISO } from '@/utils/dateUtils';
