@@ -3,6 +3,7 @@ import {
   getRecordForDate as getRecordFromIndexedDB,
   getPreviousDayRecord as getPreviousDayFromIndexedDB,
   getAllDates as getAllDatesFromIndexedDB,
+  saveRecord as saveToIndexedDB,
 } from '@/services/storage/indexeddb/indexedDbRecordService';
 import { getAvailableDatesFromFirestore } from '@/services/storage/firestoreService';
 import { logLegacyInfo } from '@/services/storage/legacyfirebase/legacyFirebaseLogger';
@@ -19,6 +20,7 @@ import {
 import { mergeAvailableDates } from '@/services/repositories/dailyRecordSyncCompatibility';
 import { measureRepositoryOperation } from '@/services/repositories/repositoryPerformance';
 import { logger } from '@/services/utils/loggerService';
+import { resolveDailyRecordReadConsistency } from '@/services/repositories/dailyRecordConsistencyPolicy';
 
 const isRepositoryDebugEnabled = () =>
   import.meta.env.DEV &&
@@ -33,10 +35,25 @@ const createLocalRuntimeReadResult = (
   source: 'e2e' | 'indexeddb'
 ): DailyRecordReadResult => {
   const migrated = migrateLegacyDataWithReport(record, date);
+  const consistency = resolveDailyRecordReadConsistency({
+    localRecord: migrated.record,
+    remoteRecord: null,
+    selectedRecord: migrated.record,
+    remoteAvailability: 'not_requested',
+    repairApplied: migrated.compatibilityIntensity !== 'none' || migrated.appliedRules.length > 0,
+  });
   return createDailyRecordReadResult(date, migrated.record, source, {
     compatibilityTier: 'local_runtime',
     compatibilityIntensity: migrated.compatibilityIntensity,
     migrationRulesApplied: migrated.appliedRules,
+    consistencyState: consistency.consistencyState,
+    sourceOfTruth: consistency.sourceOfTruth,
+    retryability: consistency.retryability,
+    recoveryAction: consistency.recoveryAction,
+    conflictSummary: consistency.conflictSummary,
+    observabilityTags: consistency.observabilityTags,
+    userSafeMessage: consistency.userSafeMessage,
+    repairApplied: consistency.repairApplied,
   });
 };
 
@@ -66,15 +83,38 @@ const loadRemoteReadResult = async (date: string): Promise<DailyRecordReadResult
       try {
         logRemoteFetchAttempt(date);
 
+        const localRecord = await getRecordFromIndexedDB(date);
         const remoteResult = await loadRemoteRecordWithFallback(date);
         if (!remoteResult.record) {
           return null;
+        }
+
+        const consistency = resolveDailyRecordReadConsistency({
+          localRecord,
+          remoteRecord: remoteResult.record,
+          selectedRecord: remoteResult.record,
+          remoteAvailability: 'resolved',
+          repairApplied:
+            remoteResult.compatibilityIntensity !== 'none' ||
+            remoteResult.migrationRulesApplied.length > 0,
+        });
+
+        if (consistency.shouldHydrateLocal) {
+          await saveToIndexedDB(remoteResult.record);
         }
 
         return createDailyRecordReadResult(date, remoteResult.record, remoteResult.source, {
           compatibilityTier: remoteResult.compatibilityTier,
           compatibilityIntensity: remoteResult.compatibilityIntensity,
           migrationRulesApplied: remoteResult.migrationRulesApplied,
+          consistencyState: consistency.consistencyState,
+          sourceOfTruth: consistency.sourceOfTruth,
+          retryability: consistency.retryability,
+          recoveryAction: consistency.recoveryAction,
+          conflictSummary: consistency.conflictSummary,
+          observabilityTags: consistency.observabilityTags,
+          userSafeMessage: consistency.userSafeMessage,
+          repairApplied: consistency.repairApplied,
         });
       } catch (err) {
         dailyRecordReadLogger.warn(`Remote fetch failed for ${date}`, err);
@@ -113,18 +153,55 @@ export const getForDateWithMeta = async (
       }
 
       const localRecord = await getRecordFromIndexedDB(query.date);
-      if (localRecord) {
-        return createLocalRuntimeReadResult(query.date, localRecord, 'indexeddb');
-      }
-
       if (query.syncFromRemote && isFirestoreEnabled()) {
         const remoteReadResult = await loadRemoteReadResult(query.date);
         if (remoteReadResult) {
           return remoteReadResult;
         }
+
+        if (localRecord) {
+          const localResult = createLocalRuntimeReadResult(query.date, localRecord, 'indexeddb');
+          const consistency = resolveDailyRecordReadConsistency({
+            localRecord,
+            remoteRecord: null,
+            selectedRecord: localRecord,
+            remoteAvailability: 'missing',
+            repairApplied: localResult.repairApplied,
+          });
+          return {
+            ...localResult,
+            consistencyState: consistency.consistencyState,
+            sourceOfTruth: consistency.sourceOfTruth,
+            retryability: consistency.retryability,
+            recoveryAction: consistency.recoveryAction,
+            conflictSummary: consistency.conflictSummary,
+            observabilityTags: consistency.observabilityTags,
+            userSafeMessage: consistency.userSafeMessage,
+          };
+        }
+
+        return createDailyRecordReadResult(query.date, null, 'not_found', {
+          ...resolveDailyRecordReadConsistency({
+            localRecord: null,
+            remoteRecord: null,
+            selectedRecord: null,
+            remoteAvailability: 'missing',
+          }),
+        });
       }
 
-      return createDailyRecordReadResult(query.date, null, 'not_found');
+      if (localRecord) {
+        return createLocalRuntimeReadResult(query.date, localRecord, 'indexeddb');
+      }
+
+      return createDailyRecordReadResult(query.date, null, 'not_found', {
+        ...resolveDailyRecordReadConsistency({
+          localRecord: null,
+          remoteRecord: null,
+          selectedRecord: null,
+          remoteAvailability: 'not_requested',
+        }),
+      });
     },
     { thresholdMs: 120, context: date }
   );
@@ -132,10 +209,26 @@ export const getForDateWithMeta = async (
 
 export const bridgeLegacyRecordForDate = async (date: string): Promise<DailyRecordReadResult> => {
   const bridged = await bridgeLegacyRecord(date);
+  const consistency = resolveDailyRecordReadConsistency({
+    localRecord: bridged.record,
+    remoteRecord: null,
+    selectedRecord: bridged.record,
+    remoteAvailability: 'not_requested',
+    repairApplied:
+      bridged.compatibilityIntensity !== 'none' || bridged.migrationRulesApplied.length > 0,
+  });
   return createDailyRecordReadResult(date, bridged.record, bridged.source, {
     compatibilityTier: bridged.compatibilityTier,
     compatibilityIntensity: bridged.compatibilityIntensity,
     migrationRulesApplied: bridged.migrationRulesApplied,
+    consistencyState: consistency.consistencyState,
+    sourceOfTruth: consistency.sourceOfTruth,
+    retryability: consistency.retryability,
+    recoveryAction: consistency.recoveryAction,
+    conflictSummary: consistency.conflictSummary,
+    observabilityTags: consistency.observabilityTags,
+    userSafeMessage: consistency.userSafeMessage,
+    repairApplied: consistency.repairApplied,
   });
 };
 
@@ -180,5 +273,12 @@ export const getPreviousDayWithMeta = async (date: string): Promise<DailyRecordR
     }
   }
 
-  return createDailyRecordReadResult(query.date, null, 'not_found');
+  return createDailyRecordReadResult(query.date, null, 'not_found', {
+    ...resolveDailyRecordReadConsistency({
+      localRecord: null,
+      remoteRecord: null,
+      selectedRecord: null,
+      remoteAvailability: 'missing',
+    }),
+  });
 };

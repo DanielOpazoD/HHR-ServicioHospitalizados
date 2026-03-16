@@ -19,6 +19,14 @@ import { buildConflictAuditSummary } from '@/services/repositories/conflictResol
 import { classifyConflictChangedContexts } from '@/services/repositories/conflictResolutionDomainPolicy';
 import { logRepositoryConflictAutoMerged } from '@/services/repositories/ports/repositoryAuditPort';
 import {
+  createAutoMergeDecision,
+  createBlockedDecision,
+  createQueuedRetryDecision,
+  createUnrecoverableDecision,
+  type DailyRecordRecoveryDecision,
+} from '@/services/repositories/dailyRecordRecoveryPolicy';
+import type { DailyRecordConflictSummary } from '@/services/repositories/contracts/dailyRecordConsistency';
+import {
   addClinicalFhirPatchesForTouchedBeds,
   collectDailyRecordPatientsForMasterSync,
   ensureDailyRecordDateTimestamp,
@@ -38,6 +46,7 @@ export interface RemoteWriteRecoveryResult {
   queuedForRetry: boolean;
   autoMerged: boolean;
   error?: unknown;
+  decision: DailyRecordRecoveryDecision;
 }
 
 const isConcurrencyError = (error: unknown): boolean =>
@@ -185,12 +194,37 @@ export const resolveRemoteWriteRecovery = async (
   changedPaths: string[],
   error: unknown
 ): Promise<RemoteWriteRecoveryResult> => {
+  const conflictSummary = (
+    kind: DailyRecordConflictSummary['kind'],
+    message: string
+  ): DailyRecordConflictSummary => ({
+    kind,
+    sourceOfTruth: kind === 'concurrency' ? 'local' : 'none',
+    localTimestamp: record.lastUpdated,
+    changedPaths,
+    message,
+  });
+
   if (error instanceof DataRegressionError || error instanceof VersionMismatchError) {
+    const blockingReason = error instanceof DataRegressionError ? 'regression' : 'version_mismatch';
     return {
       status: 'throw',
       queuedForRetry: false,
       autoMerged: false,
       error,
+      decision: createBlockedDecision(
+        blockingReason,
+        conflictSummary(
+          blockingReason === 'regression' ? 'regression_blocked' : 'version_mismatch',
+          error.message
+        ),
+        [
+          'daily_record',
+          'write',
+          blockingReason === 'regression' ? 'regression_blocked' : 'version_mismatch',
+        ],
+        error.message
+      ),
     };
   }
 
@@ -201,6 +235,14 @@ export const resolveRemoteWriteRecovery = async (
         status: 'auto_merged',
         queuedForRetry: true,
         autoMerged: true,
+        decision: createAutoMergeDecision(
+          conflictSummary(
+            'concurrency',
+            'Se resolvió un conflicto remoto mediante fusión automática.'
+          ),
+          ['daily_record', 'write', 'auto_merged'],
+          'Se resolvió un conflicto remoto mediante fusión automática.'
+        ),
       };
     }
 
@@ -209,6 +251,14 @@ export const resolveRemoteWriteRecovery = async (
       queuedForRetry: false,
       autoMerged: false,
       error,
+      decision: createUnrecoverableDecision(
+        conflictSummary(
+          'concurrency',
+          'Se detectó un conflicto remoto que no pudo resolverse automáticamente.'
+        ),
+        ['daily_record', 'write', 'conflict_unrecoverable'],
+        'Se detectó un conflicto remoto que requiere revisión manual.'
+      ),
     };
   }
 
@@ -227,6 +277,14 @@ export const resolveRemoteWriteRecovery = async (
       status: 'queued_for_retry',
       queuedForRetry: true,
       autoMerged: false,
+      decision: createQueuedRetryDecision(
+        conflictSummary(
+          'remote_unavailable',
+          'El guardado remoto falló y se programó un reintento automático.'
+        ),
+        ['daily_record', 'write', 'queued_for_retry'],
+        'Los cambios se guardaron localmente y quedaron pendientes de sincronización.'
+      ),
     };
   }
 
@@ -234,6 +292,14 @@ export const resolveRemoteWriteRecovery = async (
     status: 'unrecoverable',
     queuedForRetry: false,
     autoMerged: false,
+    decision: createUnrecoverableDecision(
+      conflictSummary(
+        'remote_unavailable',
+        'El guardado remoto falló sin una ruta segura de recuperación automática.'
+      ),
+      ['daily_record', 'write', 'unrecoverable'],
+      'Los cambios se guardaron localmente, pero la sincronización remota requiere revisión manual.'
+    ),
   };
 };
 

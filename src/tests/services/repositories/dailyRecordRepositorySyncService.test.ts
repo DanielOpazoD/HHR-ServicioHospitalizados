@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DailyRecord } from '@/types';
 
-vi.mock('@/services/storage/indexedDBService', () => ({
+vi.mock('@/services/storage/indexeddb/indexedDbRecordService', () => ({
   getRecordForDate: vi.fn(),
   saveRecord: vi.fn(),
 }));
@@ -24,6 +24,7 @@ vi.mock('@/services/repositories/dailyRecordSyncCompatibility', () => ({
 
 import { loadRemoteRecordWithFallback } from '@/services/repositories/dailyRecordRemoteLoader';
 import { syncWithFirestoreDetailed } from '@/services/repositories/dailyRecordRepositorySyncService';
+import { getRecordForDate as getRecordFromIndexedDB } from '@/services/storage/indexeddb/indexedDbRecordService';
 
 describe('dailyRecordRepositorySyncService', () => {
   beforeEach(() => {
@@ -44,14 +45,16 @@ describe('dailyRecordRepositorySyncService', () => {
   });
 
   it('returns blocked outcome when sync throws', async () => {
+    vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(null);
     vi.mocked(loadRemoteRecordWithFallback).mockRejectedValueOnce(new Error('remote down'));
 
     const result = await syncWithFirestoreDetailed('2026-03-03');
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       date: '2026-03-03',
       outcome: 'blocked',
       record: null,
+      consistencyState: 'blocked',
     });
   });
 });

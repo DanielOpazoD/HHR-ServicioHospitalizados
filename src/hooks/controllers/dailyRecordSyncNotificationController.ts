@@ -4,6 +4,7 @@ import type {
   SaveDailyRecordResult,
   UpdatePartialDailyRecordResult,
 } from '@/services/repositories/contracts/dailyRecordResults';
+import { isDailyRecordWriteBlockedResult } from '@/services/repositories/contracts/dailyRecordResults';
 
 interface SaveErrorFeedback {
   title: string;
@@ -46,6 +47,7 @@ export const resolveSaveErrorFeedback = (error: unknown): SaveErrorFeedback | nu
 };
 
 interface SyncOutcomeFeedback {
+  channel: 'warning' | 'error';
   title: string;
   message: string;
 }
@@ -59,6 +61,7 @@ export const resolveSaveOutcomeFeedback = (
 
   if (result.outcome === 'queued') {
     return {
+      channel: 'warning',
       title: 'Guardado local pendiente',
       message: 'Los cambios se guardaron localmente y quedarán pendientes de sincronización.',
     };
@@ -66,8 +69,32 @@ export const resolveSaveOutcomeFeedback = (
 
   if (result.outcome === 'auto_merged') {
     return {
+      channel: 'warning',
       title: 'Conflicto resuelto automáticamente',
       message: 'Se detectó un conflicto remoto y el sistema aplicó una fusión automática.',
+    };
+  }
+
+  if (result.consistencyState === 'unrecoverable') {
+    return {
+      channel: 'warning',
+      title: 'Guardado local sin sincronización',
+      message:
+        result.userSafeMessage ||
+        'Los cambios quedaron guardados localmente, pero la sincronización remota requiere revisión manual.',
+    };
+  }
+
+  if (isDailyRecordWriteBlockedResult(result)) {
+    return {
+      channel: 'error',
+      title:
+        result.consistencyState === 'blocked_regression'
+          ? 'Protección de Datos'
+          : 'Versión de Datos Antigua',
+      message:
+        result.userSafeMessage ||
+        'La operación quedó bloqueada por una validación de consistencia remota.',
     };
   }
 
@@ -83,6 +110,7 @@ export const resolvePatchOutcomeFeedback = (
 
   if (result.outcome === 'blocked') {
     return {
+      channel: 'error',
       title: 'Actualización bloqueada',
       message: 'No se encontró un registro local válido para aplicar el cambio.',
     };
@@ -90,6 +118,7 @@ export const resolvePatchOutcomeFeedback = (
 
   if (result.outcome === 'queued') {
     return {
+      channel: 'warning',
       title: 'Cambio pendiente de sincronización',
       message: 'La actualización quedó guardada localmente y se reintentará la sincronización.',
     };
@@ -97,8 +126,32 @@ export const resolvePatchOutcomeFeedback = (
 
   if (result.outcome === 'auto_merged') {
     return {
+      channel: 'warning',
       title: 'Cambio fusionado automáticamente',
       message: 'Se resolvió un conflicto remoto sin intervención manual.',
+    };
+  }
+
+  if (result.consistencyState === 'unrecoverable') {
+    return {
+      channel: 'warning',
+      title: 'Cambio local sin sincronización',
+      message:
+        result.userSafeMessage ||
+        'El cambio quedó guardado localmente, pero la sincronización remota requiere revisión manual.',
+    };
+  }
+
+  if (isDailyRecordWriteBlockedResult(result)) {
+    return {
+      channel: 'error',
+      title:
+        result.consistencyState === 'blocked_regression'
+          ? 'Protección de Datos'
+          : 'Versión de Datos Antigua',
+      message:
+        result.userSafeMessage ||
+        'La actualización quedó bloqueada por una validación de consistencia remota.',
     };
   }
 

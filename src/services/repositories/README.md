@@ -66,6 +66,14 @@ de entrada (fecha, límites, RUT, IDs) antes de delegar en storage.
   - control de concurrencia también en `updatePartial`
   - auto-merge auditado solo cuando existe un remoto recuperable
   - rechazo explícito si el conflicto no puede resolverse sin arriesgar pérdida de datos
+- `contracts/dailyRecordConsistency.ts` y `dailyRecordConsistencyPolicy.ts` formalizan el
+  contrato canónico de consistencia:
+  - `consistencyState` como semántica principal para lectura/escritura/sync
+  - `sourceOfTruth`, `retryability`, `recoveryAction` y `conflictSummary`
+  - compatibilidad temporal con `outcome`/`source` legacy para no romper consumers de golpe
+- `dailyRecordRecoveryPolicy.ts` concentra las decisiones explícitas de recuperación
+  (`queue_retry`, `auto_merge_and_queue`, `block_and_surface`, `defer_remote_sync`) para que
+  write/sync y telemetría hablen el mismo idioma del dominio.
 - `dataMigration.ts` sigue siendo el punto único para adaptar shapes legacy al schema vigente, y
   expone un reporte de reglas aplicadas y una intensidad de compatibilidad para distinguir entre
   normalización liviana, promoción de staff legacy y puentes de schema histórico.
@@ -98,6 +106,8 @@ de entrada (fecha, límites, RUT, IDs) antes de delegar en storage.
 
 - `DailyRecordRepository.ts` debe seguir siendo una fachada mínima; la lógica de lectura,
   escritura, sync, lifecycle e inicialización vive en servicios dedicados.
+- `dailyRecordRemoteLoader.ts` ya no debe decidir por sí solo cuándo hidratar IndexedDB; esa
+  decisión pertenece a la policy de consistencia y a los servicios read/sync.
 - `repositories/index.ts` debe permanecer explícito y pequeño; código nuevo debe importar
   desde el módulo concreto del repositorio en vez de expandir el barrel.
 - Los servicios `dailyRecord*DomainService.ts` son internos al paquete `repositories`;

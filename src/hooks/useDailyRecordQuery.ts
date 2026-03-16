@@ -23,6 +23,7 @@ import type {
   SaveDailyRecordResult,
   UpdatePartialDailyRecordResult,
 } from '@/services/repositories/contracts/dailyRecordResults';
+import { isDailyRecordWriteBlockedResult } from '@/services/repositories/contracts/dailyRecordResults';
 
 const saveDailyRecordWithCompatibility = async (
   dailyRecord: ReturnType<typeof useRepositories>['dailyRecord'],
@@ -130,6 +131,11 @@ export const useSaveDailyRecordMutation = () => {
         setDailyRecordQueryData(queryClient, newRecord.date, context.previousRecord);
       }
     },
+    onSuccess: (payload, _newRecord, context) => {
+      if (isDailyRecordWriteBlockedResult(payload.result)) {
+        setDailyRecordQueryData(queryClient, payload.record.date, context?.previousRecord ?? null);
+      }
+    },
     onSettled: payload => {
       // Refetch to ensure we're in sync
       if (payload?.record) {
@@ -182,6 +188,11 @@ export const usePatchDailyRecordMutation = (date: string) => {
     onError: (err, partial, context) => {
       if (context?.previousRecord) {
         setDailyRecordQueryData(queryClient, date, context.previousRecord);
+      }
+    },
+    onSuccess: (payload, _partial, context) => {
+      if (isDailyRecordWriteBlockedResult(payload.result)) {
+        setDailyRecordQueryData(queryClient, date, context?.previousRecord ?? null);
       }
     },
     // Note: We don't invalidate queries here because the Firestore subscription

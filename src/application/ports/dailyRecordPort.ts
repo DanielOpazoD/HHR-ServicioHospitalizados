@@ -6,12 +6,19 @@ import {
   getAvailableDates,
 } from '@/services/repositories/dailyRecordRepositoryReadService';
 import { initializeDayDetailed } from '@/services/repositories/dailyRecordRepositoryInitializationService';
-import { updatePartial, save } from '@/services/repositories/dailyRecordRepositoryWriteService';
+import {
+  updatePartialDetailed,
+  saveDetailed,
+} from '@/services/repositories/dailyRecordRepositoryWriteService';
 import { syncWithFirestoreDetailed } from '@/services/repositories/dailyRecordRepositorySyncService';
 import { deleteDailyRecordAcrossStores } from '@/services/repositories/dailyRecordRepositoryFacadeSupport';
 import { getMonthRecordsFromFirestore } from '@/services/storage/firestoreService';
 import type { DailyRecord, DailyRecordPatch } from '@/types/core';
-import type { SyncDailyRecordResult } from '@/services/repositories/contracts/dailyRecordResults';
+import type {
+  SaveDailyRecordResult,
+  SyncDailyRecordResult,
+  UpdatePartialDailyRecordResult,
+} from '@/services/repositories/contracts/dailyRecordResults';
 import type { DailyRecordInitializationResult } from '@/services/repositories/dailyRecordRepositoryInitializationService';
 import type { DailyRecordReadResult } from '@/services/repositories/contracts/dailyRecordQueries';
 
@@ -29,8 +36,8 @@ export interface DailyRecordReadPort {
 }
 
 export interface DailyRecordWritePort {
-  updatePartial: (date: string, patch: DailyRecordPatch) => Promise<void>;
-  save: (record: DailyRecord, expectedLastUpdated?: string) => Promise<void>;
+  updatePartial: (date: string, patch: DailyRecordPatch) => Promise<UpdatePartialDailyRecordResult>;
+  save: (record: DailyRecord, expectedLastUpdated?: string) => Promise<SaveDailyRecordResult>;
   delete: (date: string) => Promise<void>;
 }
 
@@ -51,8 +58,8 @@ export const defaultDailyRecordReadPort: DailyRecordReadPort = {
 };
 
 export const defaultDailyRecordWritePort: DailyRecordWritePort = {
-  updatePartial: async (date, patch) => updatePartial(date, patch),
-  save: async (record, expectedLastUpdated) => save(record, expectedLastUpdated),
+  updatePartial: async (date, patch) => updatePartialDetailed(date, patch),
+  save: async (record, expectedLastUpdated) => saveDetailed(record, expectedLastUpdated),
   delete: async date => deleteDailyRecordAcrossStores(date),
 };
 

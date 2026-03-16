@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DailyRecord, PatientData, PatientStatus, Specialty } from '@/types';
 
-vi.mock('@/services/storage/indexedDBService', () => ({
+vi.mock('@/services/storage/indexeddb/indexedDbRecordService', () => ({
   getRecordForDate: vi.fn(),
   saveRecord: vi.fn(),
 }));
@@ -52,7 +52,7 @@ import {
 import {
   getRecordForDate as getRecordFromIndexedDB,
   saveRecord as saveToIndexedDB,
-} from '@/services/storage/indexedDBService';
+} from '@/services/storage/indexeddb/indexedDbRecordService';
 import {
   getRecordFromFirestore,
   saveRecordToFirestore,
@@ -269,7 +269,7 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
     );
   });
 
-  it('throws partial update concurrency error when auto-merge recovery is not possible', async () => {
+  it('keeps partial update locally when auto-merge recovery is not possible', async () => {
     const current = buildRecord('2026-02-14');
     current.beds = { R1: buildPatient('R1', 'Paciente local') };
 
@@ -280,17 +280,16 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
     vi.mocked(updateRecordPartialToFirestore).mockRejectedValueOnce(concurrencyError);
     vi.mocked(getRecordFromFirestore).mockResolvedValueOnce(null);
 
-    await expect(
-      updatePartial('2026-02-14', {
-        'beds.R1.patientName': 'Paciente actualizado',
-      })
-    ).rejects.toBe(concurrencyError);
+    const result = await updatePartialDetailed('2026-02-14', {
+      'beds.R1.patientName': 'Paciente actualizado',
+    });
 
     expect(queueSyncTask).not.toHaveBeenCalledWith(
       'UPDATE_DAILY_RECORD',
       expect.objectContaining({ date: '2026-02-14' })
     );
     expect(logRepositoryConflictAutoMerged).not.toHaveBeenCalled();
+    expect(result.consistencyState).toBe('unrecoverable');
   });
 
   it('passes local lastUpdated as concurrency base for partial remote update', async () => {

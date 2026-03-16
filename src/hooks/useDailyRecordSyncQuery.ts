@@ -130,7 +130,11 @@ export const useDailyRecordSyncQuery = (
         const payload = await saveMutation.mutateAsync(updatedRecord);
         const feedback = resolveSaveOutcomeFeedback(payload.result);
         if (feedback) {
-          warning(feedback.title, feedback.message);
+          if (feedback.channel === 'error') {
+            notifyError(feedback.title, feedback.message);
+          } else {
+            warning(feedback.title, feedback.message);
+          }
         }
       } catch (err) {
         const feedback = resolveSaveErrorFeedback(err);
@@ -160,10 +164,14 @@ export const useDailyRecordSyncQuery = (
       const payload = await patchMutation.mutateAsync(partial);
       const feedback = resolvePatchOutcomeFeedback(payload.result);
       if (feedback) {
-        warning(feedback.title, feedback.message);
+        if (feedback.channel === 'error') {
+          notifyError(feedback.title, feedback.message);
+        } else {
+          warning(feedback.title, feedback.message);
+        }
       }
     },
-    [patchMutation, warning]
+    [patchMutation, warning, notifyError]
   );
 
   const setRecord = useCallback(

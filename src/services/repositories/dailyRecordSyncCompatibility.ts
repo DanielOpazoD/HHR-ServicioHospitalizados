@@ -1,10 +1,7 @@
 import { DailyRecord } from '@/types/core';
+import { toRecordTimestamp as toPolicyRecordTimestamp } from '@/services/repositories/dailyRecordConsistencyPolicy';
 
-export const toRecordTimestamp = (value: string | undefined): number => {
-  if (!value) return 0;
-  const millis = Date.parse(value);
-  return Number.isFinite(millis) ? millis : 0;
-};
+export const toRecordTimestamp = toPolicyRecordTimestamp;
 
 export const shouldKeepLocalRecordOverRemote = (
   localRecord: DailyRecord | null,

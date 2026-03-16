@@ -109,7 +109,7 @@ export class SyncDailyRecordUseCase implements UseCase<SyncDailyRecordInput, Syn
         );
       }
 
-      if (sync.outcome === 'blocked') {
+      if (sync.consistencyState === 'blocked') {
         return createApplicationDegraded(
           {
             record: sync.record,
@@ -136,14 +136,14 @@ export class SyncDailyRecordUseCase implements UseCase<SyncDailyRecordInput, Syn
             severity: 'warning',
             technicalContext: {
               date: input.date,
-              syncOutcome: sync.outcome,
+              syncOutcome: sync.consistencyState,
             },
             telemetryTags: ['sync', 'remote_blocked'],
           }
         );
       }
 
-      if (sync.outcome === 'missing') {
+      if (sync.consistencyState === 'missing_remote') {
         return createApplicationPartial(
           {
             record: sync.record,
@@ -168,7 +168,7 @@ export class SyncDailyRecordUseCase implements UseCase<SyncDailyRecordInput, Syn
             severity: 'warning',
             technicalContext: {
               date: input.date,
-              syncOutcome: sync.outcome,
+              syncOutcome: sync.consistencyState,
             },
             telemetryTags: ['sync', 'missing_remote_record'],
           }

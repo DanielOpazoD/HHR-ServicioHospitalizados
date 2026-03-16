@@ -1,5 +1,4 @@
 import { DailyRecord } from '@/types/core';
-import { saveRecord as saveToIndexedDB } from '@/services/storage/indexeddb/indexedDbRecordService';
 import { getRecordFromFirestore } from '@/services/storage/firestoreService';
 import { migrateLegacyDataWithReport } from '@/services/repositories/dataMigration';
 import {
@@ -22,16 +21,15 @@ export interface DailyRecordRemoteLoadResult {
 
 const remoteLoadInFlight = new Map<string, Promise<DailyRecordRemoteLoadResult>>();
 
-const cacheRemoteRecord = async (
+const normalizeRemoteRecord = (
   record: DailyRecord,
   date: string
-): Promise<{
+): {
   record: DailyRecord;
   migrationRulesApplied: LegacyMigrationRule[];
   compatibilityIntensity: MigrationCompatibilityIntensity;
-}> => {
+} => {
   const migrated = migrateLegacyDataWithReport(record, date);
-  await saveToIndexedDB(migrated.record);
   return {
     record: migrated.record,
     migrationRulesApplied: migrated.appliedRules,
@@ -43,14 +41,15 @@ const createRemoteLoadResult = (
   source: DailyRecordRemoteSource,
   record: DailyRecord | null,
   migrationRulesApplied: LegacyMigrationRule[] = [],
-  compatibilityIntensity: MigrationCompatibilityIntensity = 'none'
+  compatibilityIntensity: MigrationCompatibilityIntensity = 'none',
+  cachedLocally: boolean = false
 ): DailyRecordRemoteLoadResult => ({
   record,
   source,
   compatibilityTier: source === 'firestore' ? 'current_firestore' : 'none',
   compatibilityIntensity,
   migrationRulesApplied,
-  cachedLocally: Boolean(record),
+  cachedLocally,
 });
 
 export const loadRemoteRecordWithFallback = async (
@@ -66,12 +65,13 @@ export const loadRemoteRecordWithFallback = async (
     async () => {
       const remoteRecord = await getRecordFromFirestore(date);
       if (remoteRecord) {
-        const cachedRemoteRecord = await cacheRemoteRecord(remoteRecord, date);
+        const normalizedRemoteRecord = normalizeRemoteRecord(remoteRecord, date);
         return createRemoteLoadResult(
           'firestore',
-          cachedRemoteRecord.record,
-          cachedRemoteRecord.migrationRulesApplied,
-          cachedRemoteRecord.compatibilityIntensity
+          normalizedRemoteRecord.record,
+          normalizedRemoteRecord.migrationRulesApplied,
+          normalizedRemoteRecord.compatibilityIntensity,
+          false
         );
       }
 
