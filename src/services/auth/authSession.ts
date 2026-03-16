@@ -63,10 +63,10 @@ export const onAuthSessionStateChange = (
         signOutUnauthorizedUser: () => firebaseSignOut(auth),
         resolveFirebaseUserRole,
       });
-      if (sessionState.status === 'authorized' && sessionState.user.role) {
-        await ensureUserRoleClaim(firebaseUser, sessionState.user.role);
-      }
       await callback(sessionState);
+      if (sessionState.status === 'authorized' && sessionState.user.role) {
+        void ensureUserRoleClaim(firebaseUser, sessionState.user.role);
+      }
     } catch (error) {
       const operationalError = recordAuthOperationalError('on_auth_session_state_change', error, {
         code: 'auth_session_state_resolution_failed',

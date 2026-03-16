@@ -50,6 +50,7 @@ vi.mock('@/services/auth/authAccessResolution', () => ({
 }));
 
 import { onAuthSessionStateChange } from '@/services/auth/authSession';
+import { ensureUserRoleClaim } from '@/services/auth/authClaimSyncService';
 
 const createFirebaseUserMock = (overrides: Record<string, unknown>) => ({
   uid: 'user-1',
@@ -95,6 +96,39 @@ describe('authSession', () => {
         }),
       })
     );
+  });
+
+  it('does not block auth callback while claim sync is still pending', async () => {
+    let releaseClaimSync: (() => void) | undefined;
+    vi.mocked(ensureUserRoleClaim).mockImplementationOnce(
+      () =>
+        new Promise<void>(resolve => {
+          releaseClaimSync = resolve;
+        })
+    );
+
+    const callback = vi.fn();
+    onAuthSessionStateChange(callback);
+
+    await authStateCallback?.(
+      createFirebaseUserMock({
+        uid: 'spec-1',
+        email: 'specialist@hospital.cl',
+        displayName: 'Specialist User',
+      })
+    );
+
+    expect(callback).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'authorized',
+        user: expect.objectContaining({
+          uid: 'spec-1',
+          role: 'doctor_specialist',
+        }),
+      })
+    );
+
+    releaseClaimSync?.();
   });
 
   it('emits explicit shared-census session state during auth state rehydration', async () => {

@@ -2,8 +2,21 @@ import { useState } from 'react';
 import { isPopupRecoverableAuthError, resolveAuthErrorCode } from '@/services/auth/authErrorPolicy';
 import { AUTH_UI_COPY } from '@/services/auth/authUiCopy';
 import { executeGoogleSignIn } from '@/application/auth';
+import { isAuthBootstrapPending } from '@/services/auth/authBootstrapState';
+import { getCurrentAuthSessionState } from '@/services/auth/authSession';
 
 type BackgroundMode = 'auto' | 'day' | 'night';
+const POPUP_RECOVERY_GRACE_MS = 1200;
+
+const waitForRecoverablePopupResolution = async (): Promise<boolean> => {
+  const hasResolvedSession = () => getCurrentAuthSessionState().status !== 'unauthenticated';
+  if (hasResolvedSession() || isAuthBootstrapPending()) {
+    return true;
+  }
+
+  await new Promise(resolve => setTimeout(resolve, POPUP_RECOVERY_GRACE_MS));
+  return hasResolvedSession() || isAuthBootstrapPending();
+};
 
 export interface LoginPageControllerState {
   error: string | null;
@@ -46,6 +59,9 @@ export const useLoginPageController = (onLoginSuccess: () => void): LoginPageCon
       const resolvedErrorCode = resolveAuthErrorCode(errorLike);
 
       if (isPopupIssue) {
+        if (await waitForRecoverablePopupResolution()) {
+          return;
+        }
         setErrorCode(resolvedErrorCode || 'auth/popup-recoverable');
         setError(AUTH_UI_COPY.blockedPopupStayOnPage);
       } else {
@@ -60,6 +76,9 @@ export const useLoginPageController = (onLoginSuccess: () => void): LoginPageCon
       const resolvedErrorCode = resolveAuthErrorCode(err);
 
       if (isPopupIssue) {
+        if (await waitForRecoverablePopupResolution()) {
+          return;
+        }
         setErrorCode(resolvedErrorCode || 'auth/popup-recoverable');
         setError(AUTH_UI_COPY.blockedPopupStayOnPage);
       } else {
