@@ -4,6 +4,15 @@ import * as whatsappService from '@/services/integrations/whatsapp/whatsappServi
 
 const mockNotifySuccess = vi.fn();
 const mockNotifyError = vi.fn();
+const mockAuthContext = {
+  currentUser: {
+    uid: 'admin-1',
+    email: 'admin@hospitalhangaroa.cl',
+    displayName: 'Admin Test',
+    role: 'admin',
+  },
+  role: 'admin',
+};
 
 // Mock dependencies before importing the hook
 vi.mock('@/context/UIContext', () => ({
@@ -35,6 +44,10 @@ vi.mock('@/services/observability/operationalTelemetryService', () => ({
   recordOperationalTelemetry: vi.fn(),
 }));
 
+vi.mock('@/context', () => ({
+  useAuth: () => mockAuthContext,
+}));
+
 import { useHandoffManagement } from '@/hooks/useHandoffManagement';
 import { DailyRecord, DailyRecordPatch } from '@/types';
 import {
@@ -49,6 +62,13 @@ describe('useHandoffManagement', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockAuthContext.currentUser = {
+      uid: 'admin-1',
+      email: 'admin@hospitalhangaroa.cl',
+      displayName: 'Admin Test',
+      role: 'admin',
+    };
+    mockAuthContext.role = 'admin';
     mockSaveAndUpdate = vi.fn().mockResolvedValue(undefined);
     mockPatchRecord = vi.fn().mockResolvedValue(undefined);
     mockRecord = {
@@ -154,6 +174,36 @@ describe('useHandoffManagement', () => {
         }),
         medicalHandoffNovedades: expect.stringContaining('Cirugía'),
       })
+    );
+  });
+
+  it('blocks specialist edits for previous-day medical handoff records', async () => {
+    mockAuthContext.currentUser = {
+      uid: 'specialist-1',
+      email: 'specialist@hospitalhangaroa.cl',
+      displayName: 'Especialista',
+      role: 'doctor_specialist',
+    };
+    mockAuthContext.role = 'doctor_specialist';
+    mockRecord.date = '2024-12-27';
+
+    const { result } = renderHook(() =>
+      useHandoffManagement(mockRecord, mockSaveAndUpdate, mockPatchRecord)
+    );
+
+    await act(async () => {
+      await result.current.updateMedicalSpecialtyNote('cirugia', 'No debería guardar', {
+        uid: 'specialist-1',
+        displayName: 'Especialista',
+        email: 'specialist@hospitalhangaroa.cl',
+        role: 'doctor_specialist',
+      });
+    });
+
+    expect(mockSaveAndUpdate).not.toHaveBeenCalled();
+    expect(mockNotifyError).toHaveBeenCalledWith(
+      'Edición no permitida',
+      'El médico especialista solo puede editar la entrega médica del día actual.'
     );
   });
 

@@ -13,9 +13,11 @@ import {
   recordOperationalTelemetry,
 } from '@/services/observability/operationalTelemetryService';
 import { presentHandoffManagementFailure } from '@/hooks/controllers/handoffManagementOutcomeController';
+import { canEditSpecialistTodayBoundRecord } from '@/shared/access/specialistAccessPolicy';
 
 interface HandoffManagementDeliveryInput {
   recordRef: RefObject<DailyRecord | null>;
+  role?: string;
   patchRecord: (partial: DailyRecordPatch) => Promise<void>;
   success: (title: string, message: string) => void;
   notifyError: (title: string, message: string) => void;
@@ -23,14 +25,36 @@ interface HandoffManagementDeliveryInput {
 
 export const useHandoffManagementDelivery = ({
   recordRef,
+  role,
   patchRecord,
   success,
   notifyError,
 }: HandoffManagementDeliveryInput) => {
   const getCurrentRecord = useCallback(() => recordRef.current, [recordRef]);
+  const canMutateCurrentMedicalRecord = useCallback(
+    () =>
+      canEditSpecialistTodayBoundRecord({
+        role,
+        readOnly: false,
+        recordDate: getCurrentRecord()?.date,
+      }),
+    [getCurrentRecord, role]
+  );
+
+  const presentSpecialistHistoricalEditError = useCallback(() => {
+    notifyError(
+      'Edición no permitida',
+      'El médico especialista solo puede editar la entrega médica del día actual.'
+    );
+  }, [notifyError]);
 
   const markMedicalHandoffAsSent = useCallback(
     async (doctorName?: string, scope: MedicalHandoffScope = 'all') => {
+      if (!canMutateCurrentMedicalRecord()) {
+        presentSpecialistHistoricalEditError();
+        return;
+      }
+
       const currentRecord = getCurrentRecord();
       const outcome = await executeMarkMedicalHandoffAsSent({
         doctorName,
@@ -43,11 +67,23 @@ export const useHandoffManagementDelivery = ({
       }
       recordRef.current = outcome.data.nextRecord;
     },
-    [getCurrentRecord, patchRecord, recordRef]
+    [
+      canMutateCurrentMedicalRecord,
+      getCurrentRecord,
+      patchRecord,
+      presentSpecialistHistoricalEditError,
+      recordRef,
+    ]
   );
 
   const ensureMedicalHandoffSignatureLink = useCallback(
     async (scope: MedicalHandoffScope = 'all'): Promise<string> => {
+      if (!canMutateCurrentMedicalRecord()) {
+        throw new Error(
+          'El médico especialista solo puede editar la entrega médica del día actual.'
+        );
+      }
+
       const outcome = await executeEnsureMedicalHandoffSignatureLink({
         patchRecord,
         record: getCurrentRecord(),
@@ -64,11 +100,16 @@ export const useHandoffManagementDelivery = ({
       recordRef.current = outcome.data.nextRecord;
       return outcome.data.handoffUrl;
     },
-    [getCurrentRecord, patchRecord, recordRef]
+    [canMutateCurrentMedicalRecord, getCurrentRecord, patchRecord, recordRef]
   );
 
   const sendMedicalHandoff = useCallback(
     async (templateContent: string, targetGroupId: string) => {
+      if (!canMutateCurrentMedicalRecord()) {
+        presentSpecialistHistoricalEditError();
+        return;
+      }
+
       const currentRecord = getCurrentRecord();
       if (!currentRecord) {
         recordOperationalTelemetry({
@@ -106,7 +147,14 @@ export const useHandoffManagementDelivery = ({
       recordRef.current = outcome.data.nextRecord;
       success('WhatsApp Enviado', 'Entrega médica enviada correctamente.');
     },
-    [getCurrentRecord, notifyError, patchRecord, success]
+    [
+      canMutateCurrentMedicalRecord,
+      getCurrentRecord,
+      notifyError,
+      patchRecord,
+      presentSpecialistHistoricalEditError,
+      success,
+    ]
   );
 
   return {

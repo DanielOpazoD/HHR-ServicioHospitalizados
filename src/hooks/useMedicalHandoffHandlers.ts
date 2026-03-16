@@ -12,6 +12,7 @@ import {
 import type { AuditAction, AuditLogEntry } from '@/types/audit';
 import type { MedicalHandoffAuditActor, PatientData } from '@/types/domain/patient';
 import { logger } from '@/services/utils/loggerService';
+import { canEditSpecialistTodayBoundRecord } from '@/shared/access/specialistAccessPolicy';
 
 type MedicalPatientFields = Pick<
   PatientData,
@@ -30,6 +31,7 @@ const SILENT_MEDICAL_PATIENT_OUTCOME_REASONS = new Set([
 interface UseMedicalHandoffHandlersParams {
   isMedical: boolean;
   record: { date: string; beds: Record<string, PatientData> } | null;
+  role?: string;
   medicalAuditActor: MedicalHandoffAuditActor | null;
   persistMedicalFields: (
     bedId: string,
@@ -51,10 +53,17 @@ interface UseMedicalHandoffHandlersParams {
 export const useMedicalHandoffHandlers = ({
   isMedical,
   record,
+  role,
   medicalAuditActor,
   persistMedicalFields,
   logDebouncedEvent,
 }: UseMedicalHandoffHandlersParams) => {
+  const canMutateCurrentMedicalRecord = canEditSpecialistTodayBoundRecord({
+    role,
+    readOnly: false,
+    recordDate: record?.date,
+  });
+
   const resolveMedicalPatient = useCallback(
     (bedId: string, isNested: boolean) => {
       const bed = record?.beds[bedId];
@@ -82,7 +91,7 @@ export const useMedicalHandoffHandlers = ({
 
   const handleMedicalPrimaryNoteChange = useCallback(
     async (bedId: string, value: string, isNested: boolean = false) => {
-      if (!record || !isMedical) return;
+      if (!record || !isMedical || !canMutateCurrentMedicalRecord) return;
 
       const { patient } = resolveMedicalPatient(bedId, isNested);
       const outcome = await executeUpdateMedicalPrimaryNote({
@@ -119,6 +128,7 @@ export const useMedicalHandoffHandlers = ({
       );
     },
     [
+      canMutateCurrentMedicalRecord,
       isMedical,
       logDebouncedEvent,
       logUnexpectedOutcome,
@@ -131,7 +141,7 @@ export const useMedicalHandoffHandlers = ({
 
   const handleMedicalEntryNoteChange = useCallback(
     async (bedId: string, entryId: string, value: string, isNested: boolean = false) => {
-      if (!record || !isMedical) return;
+      if (!record || !isMedical || !canMutateCurrentMedicalRecord) return;
 
       const { patient } = resolveMedicalPatient(bedId, isNested);
       const outcome = await executeUpdateMedicalEntryNote({
@@ -170,6 +180,7 @@ export const useMedicalHandoffHandlers = ({
       );
     },
     [
+      canMutateCurrentMedicalRecord,
       isMedical,
       logDebouncedEvent,
       logUnexpectedOutcome,
@@ -182,7 +193,7 @@ export const useMedicalHandoffHandlers = ({
 
   const handleMedicalEntrySpecialtyChange = useCallback(
     async (bedId: string, entryId: string, specialty: string, isNested: boolean = false) => {
-      if (!record || !isMedical) return;
+      if (!record || !isMedical || !canMutateCurrentMedicalRecord) return;
 
       const { patient } = resolveMedicalPatient(bedId, isNested);
       const outcome = await executeUpdateMedicalEntrySpecialty({
@@ -196,12 +207,19 @@ export const useMedicalHandoffHandlers = ({
         logUnexpectedOutcome('handleMedicalEntrySpecialtyChange', outcome);
       }
     },
-    [isMedical, logUnexpectedOutcome, persistMedicalFields, record, resolveMedicalPatient]
+    [
+      canMutateCurrentMedicalRecord,
+      isMedical,
+      logUnexpectedOutcome,
+      persistMedicalFields,
+      record,
+      resolveMedicalPatient,
+    ]
   );
 
   const handleMedicalEntryAdd = useCallback(
     async (bedId: string, isNested: boolean = false) => {
-      if (!record || !isMedical) return;
+      if (!record || !isMedical || !canMutateCurrentMedicalRecord) return;
 
       const { patient } = resolveMedicalPatient(bedId, isNested);
       const outcome = await executeAddMedicalEntry({
@@ -213,12 +231,19 @@ export const useMedicalHandoffHandlers = ({
         logUnexpectedOutcome('handleMedicalEntryAdd', outcome);
       }
     },
-    [isMedical, logUnexpectedOutcome, persistMedicalFields, record, resolveMedicalPatient]
+    [
+      canMutateCurrentMedicalRecord,
+      isMedical,
+      logUnexpectedOutcome,
+      persistMedicalFields,
+      record,
+      resolveMedicalPatient,
+    ]
   );
 
   const handleMedicalPrimaryEntryCreate = useCallback(
     async (bedId: string, isNested: boolean = false) => {
-      if (!record || !isMedical) return;
+      if (!record || !isMedical || !canMutateCurrentMedicalRecord) return;
 
       const { patient } = resolveMedicalPatient(bedId, isNested);
       const outcome = await executeCreateMedicalPrimaryEntry({
@@ -230,12 +255,19 @@ export const useMedicalHandoffHandlers = ({
         logUnexpectedOutcome('handleMedicalPrimaryEntryCreate', outcome);
       }
     },
-    [isMedical, logUnexpectedOutcome, persistMedicalFields, record, resolveMedicalPatient]
+    [
+      canMutateCurrentMedicalRecord,
+      isMedical,
+      logUnexpectedOutcome,
+      persistMedicalFields,
+      record,
+      resolveMedicalPatient,
+    ]
   );
 
   const handleMedicalEntryDelete = useCallback(
     async (bedId: string, entryId: string, isNested: boolean = false) => {
-      if (!record || !isMedical) return;
+      if (!record || !isMedical || !canMutateCurrentMedicalRecord) return;
 
       const { patient } = resolveMedicalPatient(bedId, isNested);
       const outcome = await executeDeleteMedicalEntry({
@@ -271,6 +303,7 @@ export const useMedicalHandoffHandlers = ({
       );
     },
     [
+      canMutateCurrentMedicalRecord,
       isMedical,
       logDebouncedEvent,
       logUnexpectedOutcome,
@@ -282,7 +315,7 @@ export const useMedicalHandoffHandlers = ({
 
   const handleMedicalContinuityConfirm = useCallback(
     (bedId: string, entryId: string, isNested: boolean = false) => {
-      if (!record || !isMedical) return;
+      if (!record || !isMedical || !canMutateCurrentMedicalRecord) return;
 
       const { patient } = resolveMedicalPatient(bedId, isNested);
       void (async () => {
@@ -323,6 +356,7 @@ export const useMedicalHandoffHandlers = ({
       })();
     },
     [
+      canMutateCurrentMedicalRecord,
       isMedical,
       logDebouncedEvent,
       logUnexpectedOutcome,

@@ -27,9 +27,11 @@ import {
   buildResetMedicalHandoffAuditEvent,
 } from '@/hooks/controllers/handoffManagementPersistenceController';
 import { presentHandoffManagementFailure } from '@/hooks/controllers/handoffManagementOutcomeController';
+import { canEditSpecialistTodayBoundRecord } from '@/shared/access/specialistAccessPolicy';
 
 interface HandoffManagementPersistenceInput {
   recordRef: RefObject<DailyRecord | null>;
+  role?: string;
   saveAndUpdate: (updatedRecord: DailyRecord) => Promise<void>;
   logEvent: (
     action: AuditAction,
@@ -55,6 +57,7 @@ interface HandoffManagementPersistenceInput {
 
 export const useHandoffManagementPersistence = ({
   recordRef,
+  role,
   saveAndUpdate,
   logEvent,
   logDebouncedEvent,
@@ -62,6 +65,22 @@ export const useHandoffManagementPersistence = ({
   notifyError,
 }: HandoffManagementPersistenceInput) => {
   const getCurrentRecord = useCallback(() => recordRef.current, [recordRef]);
+  const canMutateCurrentMedicalRecord = useCallback(
+    () =>
+      canEditSpecialistTodayBoundRecord({
+        role,
+        readOnly: false,
+        recordDate: getCurrentRecord()?.date,
+      }),
+    [getCurrentRecord, role]
+  );
+
+  const presentSpecialistHistoricalEditError = useCallback(() => {
+    notifyError(
+      'Edición no permitida',
+      'El médico especialista solo puede editar la entrega médica del día actual.'
+    );
+  }, [notifyError]);
 
   const updateHandoffChecklist = useCallback(
     (shift: 'day' | 'night', field: string, value: boolean | string) => {
@@ -124,6 +143,11 @@ export const useHandoffManagementPersistence = ({
 
   const updateMedicalSpecialtyNote = useCallback(
     async (specialty: MedicalSpecialty, value: string, actor: Partial<MedicalHandoffActor>) => {
+      if (!canMutateCurrentMedicalRecord()) {
+        presentSpecialistHistoricalEditError();
+        return;
+      }
+
       const currentRecord = getCurrentRecord();
       const outcome = await executeUpdateMedicalSpecialtyNote({
         actor,
@@ -153,11 +177,23 @@ export const useHandoffManagementPersistence = ({
         auditEvent.recordDate
       );
     },
-    [getCurrentRecord, logDebouncedEvent, notifyError, saveAndUpdate]
+    [
+      canMutateCurrentMedicalRecord,
+      getCurrentRecord,
+      logDebouncedEvent,
+      notifyError,
+      presentSpecialistHistoricalEditError,
+      saveAndUpdate,
+    ]
   );
 
   const confirmMedicalSpecialtyNoChanges = useCallback(
     async ({ specialty, actor, comment, dateKey }: ConfirmMedicalSpecialtyNoChangesInput) => {
+      if (!canMutateCurrentMedicalRecord()) {
+        presentSpecialistHistoricalEditError();
+        return;
+      }
+
       const currentRecord = getCurrentRecord();
       const outcome = await executeConfirmMedicalSpecialtyNoChanges({
         actor,
@@ -200,7 +236,14 @@ export const useHandoffManagementPersistence = ({
         auditEvent.recordDate
       );
     },
-    [getCurrentRecord, logEvent, notifyError, saveAndUpdate]
+    [
+      canMutateCurrentMedicalRecord,
+      getCurrentRecord,
+      logEvent,
+      notifyError,
+      presentSpecialistHistoricalEditError,
+      saveAndUpdate,
+    ]
   );
 
   const updateHandoffStaff = useCallback(
@@ -265,6 +308,11 @@ export const useHandoffManagementPersistence = ({
 
   const updateMedicalHandoffDoctor = useCallback(
     async (doctorName: string): Promise<void> => {
+      if (!canMutateCurrentMedicalRecord()) {
+        presentSpecialistHistoricalEditError();
+        return;
+      }
+
       const outcome = await executeUpdateMedicalHandoffDoctor({
         doctorName,
         record: getCurrentRecord(),
@@ -278,7 +326,13 @@ export const useHandoffManagementPersistence = ({
         notifyError(notice.title, notice.message);
       }
     },
-    [getCurrentRecord, notifyError, saveAndUpdate]
+    [
+      canMutateCurrentMedicalRecord,
+      getCurrentRecord,
+      notifyError,
+      presentSpecialistHistoricalEditError,
+      saveAndUpdate,
+    ]
   );
 
   const resetMedicalHandoffState = useCallback(async () => {

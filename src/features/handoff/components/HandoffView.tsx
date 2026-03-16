@@ -36,7 +36,7 @@ import {
 } from '@/features/handoff/controllers/handoffViewController';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 import { Specialty } from '@/types/domain/base';
-
+import { canEditSpecialistTodayBoundRecord } from '@/shared/access/specialistAccessPolicy';
 interface HandoffViewProps {
   type?: 'nursing' | 'medical';
   readOnly?: boolean;
@@ -117,7 +117,6 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
     setSelectedShift: ui.setSelectedShift,
     onSuccess: success,
   });
-
   const {
     scopedMedicalScope,
     effectiveVisibleBeds,
@@ -192,20 +191,25 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
     });
     if (!nextTitle) return;
     document.title = nextTitle;
-    return () => {
-      document.title = 'Hospital Hanga Roa';
-    };
+    return () => void (document.title = 'Hospital Hanga Roa');
   }, [record?.date, selectedShift, isMedical]);
-
   const title = resolveHandoffTitle({ isMedical, selectedShift });
+  const effectiveReadOnly =
+    readOnly ||
+    (isMedical &&
+      !canEditSpecialistTodayBoundRecord({
+        role,
+        readOnly,
+        recordDate: record?.date,
+      }));
   const medicalCapabilities = React.useMemo(
     () =>
       resolveMedicalHandoffCapabilities({
         role,
-        readOnly,
+        readOnly: effectiveReadOnly,
         recordDate: record?.date,
       }),
-    [readOnly, record?.date, role]
+    [effectiveReadOnly, record?.date, role]
   );
   const medicalActions: HandoffMedicalActions = React.useMemo(
     () =>
@@ -243,7 +247,6 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
       medicalCapabilities.canEditClinicalEvents,
     ]
   );
-
   const handleOpenCudyr = () => ui?.setCurrentModule('CUDYR');
   const Icon = isMedical ? Stethoscope : MessageSquare;
   const tableHeaderClass = resolveHandoffTableHeaderClass({ isMedical, selectedShift });
@@ -271,7 +274,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
         isMedical={isMedical}
         selectedShift={selectedShift}
         setSelectedShift={setSelectedShift}
-        readOnly={readOnly}
+        readOnly={effectiveReadOnly}
         showMedicalShareActions={medicalCapabilities.canShareSignatureLinks}
         medicalSignature={scopedMedicalSignature}
         medicalHandoffSentAt={scopedMedicalHandoffSentAt}
@@ -291,7 +294,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
         deliversList={deliversList}
         receivesList={receivesList}
         nursesList={nursesList}
-        readOnly={readOnly}
+        readOnly={effectiveReadOnly}
         onUpdateStaff={updateHandoffStaff}
         onUpdateChecklist={updateHandoffChecklist}
       />
@@ -300,7 +303,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
           record={record}
           effectiveVisibleBeds={effectiveVisibleBeds}
           specialtyFilteredBeds={specialtyFilteredBeds}
-          readOnly={readOnly}
+          readOnly={effectiveReadOnly}
           role={role}
           canCopySpecialistLink={medicalCapabilities.canCopySpecialistLink}
           scopedMedicalSignature={scopedMedicalSignature}
@@ -338,7 +341,7 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
           onNoteChange={handleNursingNoteChange}
           medicalActions={medicalActions}
           tableHeaderClass={tableHeaderClass}
-          readOnly={readOnly}
+          readOnly={effectiveReadOnly}
           hasAnyPatients={hasAnyPatients}
           shouldShowPatient={shouldShowPatient}
           clinicalEventActions={clinicalEventActions}

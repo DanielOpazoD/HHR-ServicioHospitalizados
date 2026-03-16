@@ -5,6 +5,7 @@ import type {
   MedicalSpecialtyHandoffNote,
 } from '@/types/domain/dailyRecord';
 import { canEditModule } from '@/utils/permissions';
+import { canEditSpecialistTodayBoundRecord } from '@/shared/access/specialistAccessPolicy';
 
 export const MEDICAL_SPECIALTY_ORDER: readonly MedicalSpecialty[] = [
   'cirugia',
@@ -56,8 +57,24 @@ export const resolveMedicalSpecialtyDailyStatus = (
 
 export const resolveEditableMedicalSpecialties = (
   user: AuthUser | null | undefined,
-  role: string | undefined
+  role: string | undefined,
+  options?: {
+    readOnly?: boolean;
+    recordDate?: string;
+    todayISO?: string;
+  }
 ): MedicalSpecialty[] => {
+  if (
+    !canEditSpecialistTodayBoundRecord({
+      role,
+      readOnly: options?.readOnly ?? false,
+      recordDate: options?.recordDate,
+      todayISO: options?.todayISO,
+    })
+  ) {
+    return [];
+  }
+
   const claimedSpecialties = (user?.medicalSpecialties || []).filter(
     (value): value is MedicalSpecialty =>
       MEDICAL_SPECIALTY_ORDER.includes(value as MedicalSpecialty)

@@ -2,6 +2,7 @@ import { useMemo, useRef, useEffect } from 'react';
 import { DailyRecord, DailyRecordPatch } from '@/types/domain/dailyRecord';
 import { useNotification } from '@/context/UIContext';
 import { useAuditContext } from '@/context/AuditContext';
+import { useAuth } from '@/context';
 import type { HandoffManagementActions } from '@/hooks/handoffManagementTypes';
 import { useHandoffManagementPersistence } from '@/hooks/useHandoffManagementPersistence';
 import { useHandoffManagementDelivery } from '@/hooks/useHandoffManagementDelivery';
@@ -13,6 +14,7 @@ export const useHandoffManagement = (
 ): HandoffManagementActions => {
   const { success, error: notifyError } = useNotification();
   const { logEvent, logDebouncedEvent, userId } = useAuditContext();
+  const { role } = useAuth();
   const recordRef = useRef(record);
   useEffect(() => {
     recordRef.current = record;
@@ -20,6 +22,7 @@ export const useHandoffManagement = (
 
   const persistence = useHandoffManagementPersistence({
     recordRef,
+    role,
     saveAndUpdate,
     logEvent,
     logDebouncedEvent,
@@ -28,6 +31,7 @@ export const useHandoffManagement = (
   });
   const delivery = useHandoffManagementDelivery({
     recordRef,
+    role,
     patchRecord,
     success,
     notifyError,

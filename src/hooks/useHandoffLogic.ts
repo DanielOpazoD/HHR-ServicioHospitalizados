@@ -144,6 +144,7 @@ export const useHandoffLogic = ({
   const medicalHandlers = useMedicalHandoffHandlers({
     isMedical,
     record,
+    role,
     medicalAuditActor,
     persistMedicalFields,
     logDebouncedEvent,

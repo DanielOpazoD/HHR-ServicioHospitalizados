@@ -9,6 +9,15 @@ import {
 import { Specialty, PatientStatus } from '@/types';
 import * as dateUtils from '@/utils/dateUtils';
 import { DEFAULT_NO_CHANGES_COMMENT } from '@/features/handoff/controllers';
+const mockAuthContext = {
+  currentUser: {
+    uid: 'doctor-1',
+    email: 'doctor@hospitalhangaroa.cl',
+    displayName: 'Dr. Test',
+    role: 'doctor_urgency',
+  },
+  role: 'doctor_urgency',
+};
 
 // Mock Audit
 const mockLogDebouncedEvent = vi.fn();
@@ -25,14 +34,7 @@ vi.mock('@/context/DailyRecordContext', () => ({
 }));
 
 vi.mock('@/context', () => ({
-  useAuth: () => ({
-    user: {
-      uid: 'doctor-1',
-      email: 'doctor@hospitalhangaroa.cl',
-      displayName: 'Dr. Test',
-    },
-    role: 'doctor_urgency',
-  }),
+  useAuth: () => mockAuthContext,
 }));
 
 vi.mock('@/context/useDailyRecordScopedActions', () => ({
@@ -82,6 +84,13 @@ describe('useHandoffLogic', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockAuthContext.currentUser = {
+      uid: 'doctor-1',
+      email: 'doctor@hospitalhangaroa.cl',
+      displayName: 'Dr. Test',
+      role: 'doctor_urgency',
+    };
+    mockAuthContext.role = 'doctor_urgency';
     vi.mocked(dateUtils.getShiftSchedule).mockReturnValue({
       dayStart: '08:00',
       dayEnd: '20:00',
@@ -90,6 +99,7 @@ describe('useHandoffLogic', () => {
       description: '',
     });
     vi.mocked(dateUtils.isAdmittedDuringShift).mockReturnValue(true);
+    vi.mocked(dateUtils.getTodayISO).mockReturnValue('2025-01-01');
 
     vi.mocked(useDailyRecordData).mockReturnValue({
       record: mockRecord as DailyRecordDataMock['record'],
@@ -368,6 +378,49 @@ describe('useHandoffLogic', () => {
       })
     );
     expect(DEFAULT_NO_CHANGES_COMMENT).toContain('sin cambios');
+  });
+
+  it('blocks specialist medical note edits for previous-day records', async () => {
+    const mockUpdateMultiple = vi.fn();
+    vi.mocked(useDailyRecordBedActions).mockReturnValue({
+      updatePatientMultiple: mockUpdateMultiple,
+      updatePatient: vi.fn(),
+      updateClinicalCrib: vi.fn(),
+      updateClinicalCribMultiple: vi.fn(),
+    } as unknown as BedActionsMock);
+    vi.mocked(useDailyRecordData).mockReturnValue({
+      record: {
+        ...mockRecord,
+        date: '2025-01-01',
+      } as DailyRecordDataMock['record'],
+      syncStatus: 'synced' as DailyRecordDataMock['syncStatus'],
+      lastSyncTime: null,
+      inventory: {} as DailyRecordDataMock['inventory'],
+      stabilityRules: {} as DailyRecordDataMock['stabilityRules'],
+    } as DailyRecordDataMock);
+    vi.mocked(dateUtils.getTodayISO).mockReturnValue('2025-01-02');
+    mockAuthContext.currentUser = {
+      uid: 'specialist-1',
+      email: 'specialist@hospitalhangaroa.cl',
+      displayName: 'Especialista',
+      role: 'doctor_specialist',
+    };
+    mockAuthContext.role = 'doctor_specialist';
+
+    const params = {
+      type: 'medical' as const,
+      selectedShift: 'day' as const,
+      setSelectedShift: vi.fn(),
+      onSuccess: vi.fn(),
+    };
+
+    const { result } = renderHook(() => useHandoffLogic(params));
+
+    await act(async () => {
+      await result.current.handleNursingNoteChange('R1', 'Intento bloqueado');
+    });
+
+    expect(mockUpdateMultiple).not.toHaveBeenCalled();
   });
 
   it('uses the clinical crib adapter for nested medical handoff changes', async () => {
