@@ -4,9 +4,11 @@ import { AUTH_UI_COPY } from '@/services/auth/authUiCopy';
 import { executeGoogleSignIn } from '@/application/auth';
 import { isAuthBootstrapPending } from '@/services/auth/authBootstrapState';
 import { getCurrentAuthSessionState } from '@/services/auth/authSession';
+import { logger } from '@/services/utils/loggerService';
 
 type BackgroundMode = 'auto' | 'day' | 'night';
 const POPUP_RECOVERY_GRACE_MS = 1200;
+const loginPageLogger = logger.child('LoginPage');
 
 const waitForRecoverablePopupResolution = async (): Promise<boolean> => {
   const hasResolvedSession = () => getCurrentAuthSessionState().status !== 'unauthenticated';
@@ -65,7 +67,7 @@ export const useLoginPageController = (onLoginSuccess: () => void): LoginPageCon
         setErrorCode(resolvedErrorCode || 'auth/popup-recoverable');
         setError(AUTH_UI_COPY.blockedPopupStayOnPage);
       } else {
-        console.error('[LoginPage] Google sign-in failed', outcome);
+        loginPageLogger.warn('Google sign-in failed', outcome);
         setErrorCode(resolvedErrorCode || 'auth/google-signin-failed');
         setError(errorLike.message);
       }
@@ -82,7 +84,7 @@ export const useLoginPageController = (onLoginSuccess: () => void): LoginPageCon
         setErrorCode(resolvedErrorCode || 'auth/popup-recoverable');
         setError(AUTH_UI_COPY.blockedPopupStayOnPage);
       } else {
-        console.error('[LoginPage] Google sign-in failed', err);
+        loginPageLogger.warn('Google sign-in failed', err);
         setErrorCode(resolvedErrorCode || 'auth/google-signin-failed');
         setError(errorMessage || 'Error al iniciar sesión con Google');
       }

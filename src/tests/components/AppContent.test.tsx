@@ -245,6 +245,21 @@ describe('AppContent', () => {
     expect(mockUI.setCensusLocalViewMode).toHaveBeenCalledWith('TABLE');
   });
 
+  it('does not allow doctor_specialist to trigger archive verification checks on census entry', () => {
+    vi.mocked(useAuth).mockReturnValue({
+      ...mockAuth,
+      role: 'doctor_specialist',
+    } as unknown as AuthValue);
+
+    render(<AppContent ui={{ ...mockUI, currentModule: 'CENSUS' }} />);
+
+    expect(useExportManager).toHaveBeenCalledWith(
+      expect.objectContaining({
+        canVerifyArchiveStatus: false,
+      })
+    );
+  });
+
   it('sanitizes invalid persisted modules for doctor_specialist', () => {
     vi.mocked(useAuth).mockReturnValue({
       ...mockAuth,

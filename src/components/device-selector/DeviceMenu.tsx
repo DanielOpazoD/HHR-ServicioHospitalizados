@@ -11,6 +11,7 @@ import { DeviceDetails } from '@/types/domain/clinical';
 import { DEVICE_OPTIONS } from '@/constants/clinical';
 import type { DeviceMenuPosition } from '@/components/device-selector/deviceMenuPositionController';
 import { resolveCustomDeviceOptions } from '@/components/device-selector/deviceSelectorController';
+import { LAYER_Z_INDEX } from '@/shared/ui/layering';
 interface DeviceMenuProps {
   devices: string[];
   deviceDetails: DeviceDetails;
@@ -53,10 +54,11 @@ export const DeviceMenu: React.FC<DeviceMenuProps> = ({
     <div
       ref={menuRef}
       className={clsx(
-        'fixed z-[120] isolate w-[360px] rounded-lg shadow-xl border border-slate-200 animate-scale-in text-left overflow-hidden',
+        'fixed isolate w-[360px] rounded-lg shadow-xl border border-slate-200 animate-scale-in text-left overflow-hidden',
         menuPosition.placement === 'top' ? 'origin-bottom' : 'origin-top'
       )}
       style={{
+        zIndex: LAYER_Z_INDEX.dropdown,
         top: menuPosition.placement === 'top' ? 'auto' : `${menuPosition.top}px`,
         bottom:
           menuPosition.placement === 'top' ? `${window.innerHeight - menuPosition.top}px` : 'auto',

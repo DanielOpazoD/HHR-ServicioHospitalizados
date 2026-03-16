@@ -11,14 +11,33 @@ interface OutcomePresentation {
   message?: string;
 }
 
+const isPermissionLikeLookupFailure = (message: string | undefined): boolean => {
+  const normalized = String(message || '').toLowerCase();
+  return (
+    normalized.includes('permiso') ||
+    normalized.includes('permission') ||
+    normalized.includes('storage/unauthorized') ||
+    normalized.includes('storage restringido')
+  );
+};
+
 export const presentBackupLookupOutcome = (
   outcome: ApplicationOutcome<LookupBackupArchiveStatusOutput>
 ): OutcomePresentation => {
   if (outcome.status === 'failed') {
+    const issueMessage = outcome.issues[0]?.message;
+    if (isPermissionLikeLookupFailure(issueMessage)) {
+      return {
+        channel: 'warning',
+        title: 'Respaldo no verificable',
+        message: 'No se pudo confirmar el respaldo remoto por permisos de Storage.',
+      };
+    }
+
     return {
       channel: 'error',
       title: 'Verificación de respaldo fallida',
-      message: outcome.issues[0]?.message || 'No se pudo consultar el respaldo remoto.',
+      message: issueMessage || 'No se pudo consultar el respaldo remoto.',
     };
   }
 

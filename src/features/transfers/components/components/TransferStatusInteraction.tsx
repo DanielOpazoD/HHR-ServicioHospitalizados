@@ -12,6 +12,7 @@ import {
   getTransferStatusLabel,
   getTransferStatusPresentation,
 } from '@/shared/transfers/transferPresentation';
+import { LAYER_Z_INDEX } from '@/shared/ui/layering';
 
 interface TransferStatusInteractionProps {
   transfer: TransferRequest;
@@ -89,8 +90,9 @@ export const TransferStatusInteraction: React.FC<TransferStatusInteractionProps>
       {isOpen && (
         <div
           ref={dropdownRef}
-          className="fixed w-72 bg-white rounded-xl shadow-2xl border border-slate-200 z-[9999] overflow-hidden animate-in fade-in duration-200"
+          className="fixed w-72 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in duration-200"
           style={{
+            zIndex: LAYER_Z_INDEX.dropdown,
             top: dropdownPos.dropUp ? 'auto' : dropdownPos.top,
             bottom: dropdownPos.dropUp ? `${window.innerHeight - dropdownPos.top + 8}px` : 'auto',
             left: dropdownPos.left,

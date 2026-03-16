@@ -27,3 +27,7 @@
 - Las capas UI no deben clasificar errores de Storage/Firestore en linea.
 - La presentacion de tipos/turnos/fechas de respaldos debe reutilizar `@/shared/backup/backupPresentation`.
 - Los casos de uso de `backup-export` son dueños del mapping entre resultados de infraestructura y `ApplicationOutcome`.
+- La verificacion pasiva de respaldos al entrar a una vista debe ejecutarse solo para roles con capacidad
+  operativa real sobre ese modulo.
+- Si un lookup remoto falla por permisos de Storage, la UI debe degradar a "respaldo no verificable"
+  y no tratarlo como error bloqueante del flujo clinico.

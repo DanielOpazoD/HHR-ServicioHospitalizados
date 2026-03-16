@@ -24,6 +24,11 @@ Entrega de turno de enfermeria y medicos, con flujos de gestion, delivery y hand
 - Los read models de pantalla deben alimentar la UI; no reinyectar decisiones de negocio en `.tsx`.
 - Los flows de firma, continuidad y patient entries deben seguir auditando con payload compatible.
 - Los bridges deprecated quedan permitidos solo para compatibilidad de tests o adapters inventariados.
+- Cuando una entrega medica se copia al dia siguiente, el contenido se hereda pero la vigencia diaria no:
+  `currentStatus*` debe reiniciarse para que la UI muestre "pendiente hoy" hasta nueva confirmacion
+  o actualizacion del especialista.
+- `doctor_specialist` puede editar solo la entrega del dia actual; dias previos deben quedar en solo lectura
+  tanto en la UI como en la capa de mutacion.
 
 ## Bridges activos
 

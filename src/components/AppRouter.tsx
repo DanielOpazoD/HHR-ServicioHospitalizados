@@ -8,7 +8,7 @@ import React, { Suspense } from 'react';
 import { GlobalErrorBoundary } from '@/components/shared/GlobalErrorBoundary';
 import { SectionErrorBoundary } from '@/components/shared/SectionErrorBoundary';
 import { ViewLoader } from '@/components/ui/ViewLoader';
-import { canEditModule, isAdmin } from '@/utils/permissions';
+import { canEditModule } from '@/utils/permissions';
 import { canAccessAuditView } from '@/services/admin/auditAccessPolicy';
 import { UserRole } from '@/context';
 import { UseUIStateReturn } from '@/hooks/useUIState';
@@ -34,6 +34,7 @@ import {
 import { useSharedCensusMode } from '@/hooks/useSharedCensusMode';
 import type { CensusAccessProfile } from '@/shared/access/censusAccessProfile';
 import { resolveSpecialistCensusAccessProfile } from '@/shared/access/specialistAccessPolicy';
+import { canForceCreateDayCopyOverride } from '@/shared/access/operationalAccessPolicy';
 
 export type AppModule =
   | 'CENSUS'
@@ -119,7 +120,7 @@ export const AppRouter: React.FC<AppRouterProps> = ({
                   showBedManagerModal={showBedManagerModal}
                   onCloseBedManagerModal={onCloseBedManagerModal}
                   readOnly={!canEditModule(role, 'CENSUS')}
-                  allowAdminCopyOverride={isAdmin(role)}
+                  allowAdminCopyOverride={canForceCreateDayCopyOverride(role)}
                   localViewMode={ui.censusLocalViewMode}
                   accessProfile={censusAccessProfile}
                 />

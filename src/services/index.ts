@@ -8,7 +8,6 @@
  */
 
 export { signIn, createUser, signOut } from './auth/authService';
-export type { AuthUser } from './auth/authService';
 
 export { getAppSetting, saveAppSetting } from './settingsService';
 

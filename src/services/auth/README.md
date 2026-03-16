@@ -23,6 +23,10 @@ Resolver autenticacion, bootstrap de sesion, claims, roles y degradacion operati
 - `anonymous_signature` y `shared_census` son estados soportados, no hacks implícitos.
 - Si un recurso depende de custom claim, la sesion debe intentar refresh/sync antes de asumir fallo definitivo.
 - No reintroducir decisiones de auth repartidas entre hooks, context y componentes.
+- El login por Google puede devolver errores recuperables de popup durante cambios de sesion
+  (`admin -> especialista`, por ejemplo). La UI debe esperar una breve ventana de gracia antes de
+  mostrar error si la sesion ya se está resolviendo.
+- La sincronizacion de custom claims no debe bloquear la entrega inicial de una sesion autorizada.
 
 ## Legacy activo
 
