@@ -14,7 +14,7 @@ import { useAuth } from '@/context/AuthContext';
 import { UseUIStateReturn } from '@/hooks/useUIState';
 import { useCensusContext } from '@/context/CensusContext';
 import { useExportManager } from '@/hooks/useExportManager';
-import { getVisibleModules } from '@/utils/permissions';
+import { canEditModule, getVisibleModules } from '@/utils/permissions';
 import {
   shouldRenderBookmarkBar,
   shouldRenderDateStrip,
@@ -58,6 +58,18 @@ export const AppContent: React.FC<AppContentProps> = ({ ui }) => {
   const specialistCensusAccess = specialistCapabilities.isSpecialist;
   const { currentModule, setCurrentModule, censusLocalViewMode, setCensusLocalViewMode } = ui;
 
+  const canVerifyArchiveStatus = React.useMemo(() => {
+    if (ui.currentModule === 'CENSUS') {
+      return canEditModule(auth.role, 'CENSUS');
+    }
+
+    if (ui.currentModule === 'NURSING_HANDOFF') {
+      return canEditModule(auth.role, 'NURSING_HANDOFF');
+    }
+
+    return false;
+  }, [auth.role, ui.currentModule]);
+
   // Export Manager Hook
   const exportManager = useExportManager({
     currentDateString,
@@ -67,6 +79,7 @@ export const AppContent: React.FC<AppContentProps> = ({ ui }) => {
     record,
     currentModule: ui.currentModule,
     selectedShift: ui.selectedShift,
+    canVerifyArchiveStatus,
   });
 
   useAppContentEventBridge({

@@ -12,6 +12,7 @@ interface UseBackupArchiveStatusParams {
   currentDateString: string;
   currentModule: string;
   selectedShift: 'day' | 'night';
+  canVerifyArchiveStatus: boolean;
   warning: (title: string, message?: string) => void;
   error: (title: string, message?: string) => void;
 }
@@ -20,13 +21,14 @@ export const useBackupArchiveStatus = ({
   currentDateString,
   currentModule,
   selectedShift,
+  canVerifyArchiveStatus,
   warning,
   error,
 }: UseBackupArchiveStatusParams) => {
   const [isArchived, setIsArchived] = useState(false);
 
   useEffect(() => {
-    if (!shouldCheckArchiveStatus(currentDateString, currentModule)) {
+    if (!canVerifyArchiveStatus || !shouldCheckArchiveStatus(currentDateString, currentModule)) {
       return;
     }
 
@@ -91,7 +93,7 @@ export const useBackupArchiveStatus = ({
         browserWindow.cancelIdleCallback(idleCallbackId);
       }
     };
-  }, [currentDateString, currentModule, error, selectedShift, warning]);
+  }, [canVerifyArchiveStatus, currentDateString, currentModule, error, selectedShift, warning]);
 
   return {
     isArchived,

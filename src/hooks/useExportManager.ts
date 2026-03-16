@@ -20,6 +20,7 @@ interface UseExportManagerProps {
   record: DailyRecord | null;
   currentModule: string;
   selectedShift: 'day' | 'night';
+  canVerifyArchiveStatus?: boolean;
 }
 
 export interface UseExportManagerReturn {
@@ -38,6 +39,7 @@ export const useExportManager = ({
   record,
   currentModule,
   selectedShift,
+  canVerifyArchiveStatus = false,
 }: UseExportManagerProps): UseExportManagerReturn => {
   const { success, error: notifyError, warning } = useNotification();
   const { confirm } = useConfirmDialog();
@@ -47,6 +49,7 @@ export const useExportManager = ({
     currentDateString,
     currentModule,
     selectedShift,
+    canVerifyArchiveStatus,
     warning,
     error: notifyError,
   });
