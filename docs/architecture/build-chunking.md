@@ -23,6 +23,20 @@
   - the feature can initialize without importing back into the parent chunk,
   - the production build is validated after the change.
 
+## Feature-oriented loading strategy
+
+- `feature-census-runtime` agrupa controladores y validaciones del censo diario.
+- `feature-census-patient-row` aísla la fila/panel de paciente, que se carga con patrones de interacción distintos.
+- `feature-clinical-documents` y `feature-transfers` se mantienen separados porque cargan flujos documentales pesados y no deben inflar el arranque base del censo.
+- `feature-backup-storage` conserva juntos exportación y storage porque comparten un grafo estrechamente acoplado; no se debe volver a separar `shared census` de ese bloque sin demostrar un runtime boundary real.
+
+## Vendor strategy
+
+- `vendor-firebase-core`: auth + firestore + módulos base usados en la mayor parte del runtime.
+- `vendor-firebase-aux`: storage/functions, cargados solo cuando se necesitan capacidades auxiliares.
+- `vendor-three-*`: separar `core`, `react` y `stdlib` evita arrastrar todo el stack 3D al arranque normal.
+- `vendor-pdf` y `vendor-excel-*`: la generación documental y exportaciones deben seguir siendo capacidades lazy y aisladas del shell principal.
+
 ## Validation
 
 - Run `npm run build` after any `manualChunks` change.

@@ -163,7 +163,8 @@ npm run test
 - **Feature-first híbrido**: módulos por feature + capas transversales (`services`, `shared`, `types`).
 - **Controller pattern**: lógica de validación, transformación y comandos fuera de componentes.
 - **Application use cases**: coordinación explícita de operaciones críticas sobre repositorios y outcomes homogéneos.
-- **Operational telemetry**: el core reporta eventos estructurados (`sync`, `indexeddb`, `export`, `backup`, `clinical_document`, `create_day`, `handoff`) a una telemetría local persistida y puede reenviarlos a un adapter externo opt-in vía `VITE_OPERATIONAL_TELEMETRY_ENDPOINT`.
+- **Operational telemetry**: el core reporta eventos estructurados (`auth`, `daily_record`, `sync`, `indexeddb`, `export`, `backup`, `clinical_document`, `reminders`, `transfers`, `create_day`, `handoff`) a una telemetría local persistida y puede reenviarlos a un adapter externo opt-in vía `VITE_OPERATIONAL_TELEMETRY_ENDPOINT`.
+- **Domain observability adapters**: los contextos críticos deben emitir eventos a través de wrappers por dominio (`authOperationalTelemetry`, `dailyRecordObservability`, `reminderObservability`, `clinicalDocumentObservability`, `storage`/`sync` adapters) y no depender directamente del servicio genérico salvo en sinks/base infra.
 - **Error service facade**: `src/services/utils/errorService.ts` expone la API pública estable; `errorServiceController.ts` clasifica/reintenta y `errorServiceSinks.ts` decide persistencia IndexedDB, auditoría, consola de desarrollo y reenvío externo.
 - **Sync queue orchestration**: `syncQueueEngine.ts` orquesta; `syncQueueFailurePolicy.ts` decide transiciones y retry budget; `syncQueueTelemetryController.ts` concentra snapshots y reporting operativo.
 - **Configuración de observabilidad externa**:

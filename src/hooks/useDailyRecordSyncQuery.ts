@@ -31,8 +31,8 @@ import {
 } from '@/hooks/controllers/dailyRecordSyncController';
 import { executeSyncDailyRecord } from '@/application/daily-record/syncDailyRecordUseCase';
 import { presentDailyRecordRefreshOutcome } from '@/hooks/controllers/dailyRecordRefreshOutcomeController';
-import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryService';
 import { logger } from '@/services/utils/loggerService';
+import { dailyRecordObservability } from '@/services/repositories/dailyRecordOperationalTelemetry';
 
 const dailyRecordSyncLogger = logger.child('DailyRecordSync');
 
@@ -193,7 +193,7 @@ export const useDailyRecordSyncQuery = (
       date: currentDateString,
       repository: dailyRecord,
     }).then(outcome => {
-      recordOperationalOutcome('sync', 'refresh_daily_record', outcome, {
+      dailyRecordObservability.recordOutcome('refresh_daily_record', outcome, {
         date: currentDateString,
       });
       const notice = presentDailyRecordRefreshOutcome(outcome);

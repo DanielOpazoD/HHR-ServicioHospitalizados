@@ -1,6 +1,5 @@
 import { getDoc, getDocs, setDoc } from 'firebase/firestore';
 import type { ReminderReadReceipt, ReminderShift } from '@/types/reminders';
-import { logger } from '@/services/utils/loggerService';
 import {
   buildReminderReadReceiptId,
   getReminderReadReceiptDocRef,
@@ -11,8 +10,9 @@ import {
   resolveReminderOperationErrorKind,
   type ReminderOperationErrorKind,
 } from './reminderErrorPolicy';
+import { reminderObservability } from './reminderObservability';
 
-const reminderReadLogger = logger.child('ReminderReadService');
+const reminderReadLogger = reminderObservability.logger;
 
 export type ReminderReadLookupStatus = 'read' | 'unread' | 'unavailable';
 
@@ -56,6 +56,10 @@ export const ReminderReadService = {
       return { status: 'success' };
     } catch (error) {
       reminderReadLogger.error('Error storing reminder read receipt', error);
+      reminderObservability.recordEvent('mark_reminder_read', 'failed', {
+        issues: ['No fue posible registrar la lectura del aviso.'],
+        context: { errorKind: resolveReminderOperationErrorKind(error) },
+      });
       return { status: resolveReminderOperationErrorKind(error), error };
     }
   },
@@ -73,6 +77,9 @@ export const ReminderReadService = {
       return { status: snapshot.exists() ? 'read' : 'unread' };
     } catch (error) {
       reminderReadLogger.warn('Error checking reminder read receipt', error);
+      reminderObservability.recordEvent('check_reminder_read', 'degraded', {
+        issues: ['No fue posible verificar si el aviso fue leido.'],
+      });
       return { status: 'unavailable' };
     }
   },
@@ -104,6 +111,10 @@ export const ReminderReadService = {
       };
     } catch (error) {
       reminderReadLogger.error('Error loading reminder receipts', error);
+      reminderObservability.recordEvent('list_reminder_receipts', 'failed', {
+        issues: ['No fue posible cargar el detalle de lecturas del aviso.'],
+        context: { errorKind: resolveReminderOperationErrorKind(error) },
+      });
       return {
         status: resolveReminderOperationErrorKind(error),
         error,

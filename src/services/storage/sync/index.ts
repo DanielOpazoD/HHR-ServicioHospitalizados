@@ -15,10 +15,10 @@ export {
   listRecentSyncQueueOperations,
   processSyncQueue,
   queueSyncTask,
-} from '@/services/storage/syncQueueService';
+} from '@/services/storage/sync/publicSyncQueue';
 
 export type {
   SyncQueueDomainMetrics,
   SyncQueueOperationSnapshot,
   SyncQueueTelemetry,
-} from '@/services/storage/syncQueueService';
+} from '@/services/storage/sync/publicSyncQueue';

@@ -60,7 +60,7 @@ describe('useCensusTransferCommand', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseAuth.mockReturnValue({
-      user: {
+      currentUser: {
         email: 'doctor@example.com',
       },
     });

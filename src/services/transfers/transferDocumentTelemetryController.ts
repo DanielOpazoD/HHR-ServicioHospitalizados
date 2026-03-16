@@ -1,10 +1,9 @@
-import {
-  recordOperationalErrorTelemetry,
-  recordOperationalTelemetry,
-} from '@/services/observability/operationalTelemetryService';
+import { createDomainObservability } from '@/services/observability/domainObservability';
+
+const transferObservability = createDomainObservability('transfers', 'TransferDocuments');
 
 export const recordTransferTemplateFetchFailure = (templateName: string, error: unknown): void => {
-  recordOperationalErrorTelemetry('transfers', 'fetch_transfer_template', error, {
+  transferObservability.recordError('fetch_transfer_template', error, {
     code: 'transfer_template_fetch_failed',
     message: `No fue posible obtener la plantilla ${templateName}.`,
     severity: 'warning',
@@ -18,7 +17,7 @@ export const recordTransferDocumentGenerationFailure = (
   hospitalCode: string,
   error: unknown
 ): void => {
-  recordOperationalErrorTelemetry('transfers', 'generate_transfer_document', error, {
+  transferObservability.recordError('generate_transfer_document', error, {
     code: 'transfer_document_generation_failed',
     message: `No fue posible generar el documento ${templateId}.`,
     severity: 'error',
@@ -28,20 +27,14 @@ export const recordTransferDocumentGenerationFailure = (
 };
 
 export const recordTransferTemplateFallback = (templateId: string, hospitalCode: string): void => {
-  recordOperationalTelemetry({
-    category: 'transfers',
-    operation: 'transfer_document_template_fallback',
-    status: 'degraded',
+  transferObservability.recordEvent('transfer_document_template_fallback', 'degraded', {
     issues: ['Se uso plantilla fallback por ausencia del archivo en Storage.'],
     context: { templateId, hospitalCode },
   });
 };
 
 export const recordUnknownTransferTemplate = (templateId: string): void => {
-  recordOperationalTelemetry({
-    category: 'transfers',
-    operation: 'transfer_document_unknown_template',
-    status: 'degraded',
+  transferObservability.recordEvent('transfer_document_unknown_template', 'degraded', {
     issues: ['Se solicito una plantilla de traslado desconocida.'],
     context: { templateId },
   });

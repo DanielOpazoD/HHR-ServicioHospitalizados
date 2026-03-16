@@ -1,11 +1,13 @@
 export type OperationalTelemetryCategory =
   | 'auth'
+  | 'daily_record'
   | 'firestore'
   | 'sync'
   | 'indexeddb'
   | 'integration'
   | 'export'
   | 'backup'
+  | 'reminders'
   | 'transfers'
   | 'clinical_document'
   | 'create_day'

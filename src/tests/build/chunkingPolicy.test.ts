@@ -31,4 +31,27 @@ describe('chunkingPolicy', () => {
       chunkForModule('/repo/src/features/census/controllers/patientMovementController.ts')
     ).toBe('feature-census-runtime');
   });
+
+  it('keeps clinical documents and transfers isolated in their own feature chunks', () => {
+    expect(
+      chunkForModule('/repo/src/features/clinical-documents/components/ClinicalDocumentsModal.tsx')
+    ).toBe('feature-clinical-documents');
+
+    expect(
+      chunkForModule('/repo/src/features/transfers/components/components/TransferStatusBadge.tsx')
+    ).toBe('feature-transfers');
+  });
+
+  it('splits heavyweight vendor capabilities by runtime concern', () => {
+    expect(chunkForModule('/repo/node_modules/firebase/firestore/dist/index.mjs')).toBe(
+      'vendor-firebase-core'
+    );
+    expect(chunkForModule('/repo/node_modules/firebase/storage/dist/index.mjs')).toBe(
+      'vendor-firebase-aux'
+    );
+    expect(chunkForModule('/repo/node_modules/three/build/three.module.js')).toBe(
+      'vendor-three-core'
+    );
+    expect(chunkForModule('/repo/node_modules/jspdf/dist/jspdf.es.min.js')).toBe('vendor-pdf');
+  });
 });

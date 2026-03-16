@@ -43,6 +43,7 @@ se mantienen solo como compatibilidad temporal.
 La construcción de rangos mensuales y helpers de escritura sigue viviendo en
 `firestore/firestoreQuerySupport.ts` y `firestore/firestoreWriteSupport.ts`.
 `storage/sync` es la fuente soportada para telemetría (`getSyncQueueTelemetry()`), stats (`getSyncQueueStats()`) y operaciones recientes (`listRecentSyncQueueOperations()`).
+La fachada pública vive en `sync/publicSyncQueue.ts`; `syncQueueService.ts` queda solo como compatibilidad deprecated.
 El outbox ahora se arma sobre un engine con puertos (`sync/syncQueueEngine.ts`, `sync/syncQueuePorts.ts`) para separar runtime navegador, store Dexie y transporte Firestore.
 `sync/syncDomainPolicy.ts` clasifica tareas por contexto (`clinical`, `staffing`, `movements`, `handoff`, `metadata`) para aplicar budgets de retry y métricas de conflicto más específicas.
 `storage/index.ts` queda como barrel de compatibilidad mínima; nuevos imports deben ir a `storage/firestore`, `storage/sync`, `storage/core`, `storage/records` o `storage/runtime`.
@@ -91,6 +92,8 @@ Cambios en esta capa requieren:
 - `storage/firestore` no debe reabsorber helpers de rango, concurrencia o snapshots.
 - `storage/sync` es el único punto de acceso soportado para telemetría, stats
   y operaciones recientes; la UI no debe leer Dexie directo para esta información.
+- `sync/publicSyncQueue.ts` es la implementación canónica del outbox; `syncQueueService.ts`
+  no debe recuperar lógica nueva.
 - `storage/core` es el único punto de acceso soportado para fallback/reset desde UI y hooks.
 - `storage/runtime` es el punto de acceso soportado para copy/UI de degradación y bootstrap IndexedDB.
 - Si cambia la policy domain-aware de sync, deben actualizarse en conjunto:

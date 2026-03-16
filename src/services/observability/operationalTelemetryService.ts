@@ -92,12 +92,14 @@ const isOperationalTelemetryStatus = (value: unknown): value is OperationalTelem
 
 const isOperationalTelemetryCategory = (value: unknown): value is OperationalTelemetryCategory =>
   value === 'auth' ||
+  value === 'daily_record' ||
   value === 'firestore' ||
   value === 'sync' ||
   value === 'indexeddb' ||
   value === 'integration' ||
   value === 'export' ||
   value === 'backup' ||
+  value === 'reminders' ||
   value === 'transfers' ||
   value === 'clinical_document' ||
   value === 'create_day' ||

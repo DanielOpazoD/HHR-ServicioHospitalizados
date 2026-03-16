@@ -25,10 +25,10 @@ import {
   getSyncQueueStats,
   getSyncQueueTelemetry,
   listRecentSyncQueueOperations,
-} from '@/services/storage/syncQueueService';
-import { DailyRecord } from '@/types';
+} from '@/services/storage/sync';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
 
-describe('syncQueueService', () => {
+describe('storage/sync public entrypoint', () => {
   const FIXED_NOW = 1760000000000;
 
   const makeRecord = (date: string, marker: string): DailyRecord => ({

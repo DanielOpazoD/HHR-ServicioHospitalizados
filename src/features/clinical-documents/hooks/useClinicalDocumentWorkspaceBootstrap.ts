@@ -12,7 +12,7 @@ import {
   executeSeedClinicalDocumentTemplates,
 } from '@/application/clinical-documents/clinicalDocumentTemplateUseCases';
 import { subscribeClinicalDocumentsByEpisode } from '@/application/clinical-documents/clinicalDocumentUseCases';
-import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryService';
+import { clinicalDocumentObservability } from '@/features/clinical-documents/services/clinicalDocumentOperationalTelemetry';
 
 interface UseClinicalDocumentWorkspaceBootstrapParams {
   patient: PatientData;
@@ -73,8 +73,7 @@ export const useClinicalDocumentWorkspaceBootstrap = ({
 
     const loadTemplates = async () => {
       const remoteTemplatesOutcome = await executeListActiveClinicalDocumentTemplates(hospitalId);
-      recordOperationalOutcome(
-        'clinical_document',
+      clinicalDocumentObservability.recordOutcome(
         'list_clinical_document_templates',
         remoteTemplatesOutcome,
         {
@@ -109,7 +108,7 @@ export const useClinicalDocumentWorkspaceBootstrap = ({
     }
 
     void executeSeedClinicalDocumentTemplates(hospitalId).then(outcome => {
-      recordOperationalOutcome('clinical_document', 'seed_clinical_document_templates', outcome, {
+      clinicalDocumentObservability.recordOutcome('seed_clinical_document_templates', outcome, {
         date: currentDateString,
         context: { hospitalId },
         allowSuccess: true,

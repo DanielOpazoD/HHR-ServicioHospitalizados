@@ -1,4 +1,6 @@
-import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryService';
+import { createDomainObservability } from '@/services/observability/domainObservability';
+
+const backupObservability = createDomainObservability('backup', 'BackupStorage');
 
 type MetricLevel = 'warn' | 'silent';
 
@@ -23,10 +25,7 @@ const logMetric = (
   context?: string
 ): void => {
   if (level !== 'warn') return;
-  recordOperationalTelemetry({
-    category: 'backup',
-    operation,
-    status: 'degraded',
+  backupObservability.recordEvent(operation, 'degraded', {
     issues: [`Operacion lenta de storage: ${Math.round(elapsedMs)}ms`],
     context: {
       elapsedMs: Math.round(elapsedMs),

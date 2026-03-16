@@ -9,7 +9,6 @@ import {
   updateDoc,
 } from 'firebase/firestore';
 import type { Reminder } from '@/types/reminders';
-import { logger } from '@/services/utils/loggerService';
 import {
   getReminderDocRef,
   getRemindersCollectionRef,
@@ -20,8 +19,9 @@ import {
   resolveReminderOperationErrorKind,
   type ReminderOperationErrorKind,
 } from './reminderErrorPolicy';
+import { reminderObservability } from './reminderObservability';
 
-const reminderRepositoryLogger = logger.child('ReminderRepository');
+const reminderRepositoryLogger = reminderObservability.logger;
 
 const sortReminders = (items: Reminder[]): Reminder[] =>
   [...items].sort((left, right) => {
@@ -64,6 +64,12 @@ export const ReminderRepository = {
       },
       error => {
         reminderRepositoryLogger.error('Error subscribing reminders', error);
+        reminderObservability.recordEvent('subscribe_reminders', 'failed', {
+          issues: ['No fue posible suscribirse a los avisos.'],
+          context: {
+            errorKind: isReminderPermissionDeniedError(error) ? 'permission_denied' : 'unknown',
+          },
+        });
         options.onError?.(
           error,
           isReminderPermissionDeniedError(error) ? 'permission_denied' : 'unknown'
@@ -98,6 +104,10 @@ export const ReminderRepository = {
       };
     } catch (error) {
       reminderRepositoryLogger.error('Error listing reminders', error);
+      reminderObservability.recordEvent('list_reminders', 'failed', {
+        issues: ['No fue posible cargar los avisos.'],
+        context: { errorKind: resolveReminderOperationErrorKind(error) },
+      });
       return {
         status: resolveReminderOperationErrorKind(error),
         error,
@@ -144,6 +154,10 @@ export const ReminderRepository = {
       return { status: 'success' };
     } catch (error) {
       reminderRepositoryLogger.error('Error creating reminder', error);
+      reminderObservability.recordEvent('create_reminder', 'failed', {
+        issues: ['No fue posible crear el aviso.'],
+        context: { errorKind: resolveReminderOperationErrorKind(error) },
+      });
       return { status: resolveReminderOperationErrorKind(error), error };
     }
   },
@@ -161,6 +175,10 @@ export const ReminderRepository = {
       return { status: 'success' };
     } catch (error) {
       reminderRepositoryLogger.error('Error updating reminder', error);
+      reminderObservability.recordEvent('update_reminder', 'failed', {
+        issues: ['No fue posible actualizar el aviso.'],
+        context: { errorKind: resolveReminderOperationErrorKind(error) },
+      });
       return { status: resolveReminderOperationErrorKind(error), error };
     }
   },
@@ -172,6 +190,10 @@ export const ReminderRepository = {
       return { status: 'success' };
     } catch (error) {
       reminderRepositoryLogger.error('Error removing reminder', error);
+      reminderObservability.recordEvent('remove_reminder', 'failed', {
+        issues: ['No fue posible eliminar el aviso.'],
+        context: { errorKind: resolveReminderOperationErrorKind(error) },
+      });
       return { status: resolveReminderOperationErrorKind(error), error };
     }
   },
