@@ -26,14 +26,16 @@ import {
   buildHandoffClinicalEventActions,
   buildHandoffMedicalActions,
   resolveEffectiveSelectedMedicalSpecialty,
-  resolveMedicalHandoffCapabilities,
-  type MedicalHandoffScope,
+} from '@/features/handoff/controllers/handoffViewBindingsController';
+import { resolveMedicalHandoffCapabilities } from '@/features/handoff/controllers/medicalHandoffAccessController';
+import {
   resolveHandoffDocumentTitle,
   resolveHandoffTableHeaderClass,
   resolveHandoffTitle,
   shouldShowNightCudyrActions,
-} from '@/features/handoff/controllers';
-import { Specialty } from '@/types/core';
+} from '@/features/handoff/controllers/handoffViewController';
+import type { MedicalHandoffScope } from '@/types/medicalHandoff';
+import { Specialty } from '@/types/domain/base';
 
 interface HandoffViewProps {
   type?: 'nursing' | 'medical';
@@ -80,13 +82,8 @@ export const HandoffView: React.FC<HandoffViewProps> = ({
   const [selectedMedicalSpecialty, setSelectedMedicalSpecialty] = useState<Specialty | 'all'>(
     initialMedicalSpecialtyFromUrl
   );
-  useEffect(() => {
-    logEventRef.current = logEvent;
-  }, [logEvent]);
-
-  useEffect(() => {
-    recordRef.current = record;
-  }, [record]);
+  useEffect(() => void (logEventRef.current = logEvent), [logEvent]);
+  useEffect(() => void (recordRef.current = record), [record]);
   const localUi = useUIState();
   const ui = propUi || localUi;
   const {

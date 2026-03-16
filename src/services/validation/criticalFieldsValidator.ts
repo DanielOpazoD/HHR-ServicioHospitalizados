@@ -6,7 +6,9 @@
  * @module services/validation/criticalFieldsValidator
  */
 
-import { DailyRecord, PatientData, PatientStatus } from '@/types/core';
+import { DailyRecord } from '@/types/domain/dailyRecord';
+import { PatientData } from '@/types/domain/patient';
+import { PatientStatus } from '@/types/domain/base';
 import { BEDS } from '@/constants/beds';
 
 // ============================================================================

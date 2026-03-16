@@ -1,4 +1,4 @@
-import type { DeviceDetails, DeviceInfo } from '@/types/core';
+import type { DeviceDetails, DeviceInfo } from '@/types/domain/clinical';
 import { buildRetireNote } from '@/components/device-selector/deviceSelectorController';
 
 interface BuildRetireDeviceMutationParams {

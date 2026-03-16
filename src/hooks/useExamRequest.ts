@@ -4,7 +4,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { PatientData } from '@/types/core';
+import { PatientData } from '@/types/domain/patient';
 
 interface UseExamRequestParams {
   patient: PatientData;

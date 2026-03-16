@@ -1,4 +1,4 @@
-import { DailyRecord } from '@/types/core';
+import { DailyRecord } from '@/types/domain/dailyRecord';
 import { safeJsonParse } from '@/utils/jsonUtils';
 
 export const STORAGE_KEY = 'hanga_roa_hospital_data';

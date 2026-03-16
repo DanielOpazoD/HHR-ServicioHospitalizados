@@ -1,7 +1,7 @@
 import React from 'react';
 
 import '@/features/clinical-documents/styles/clinicalDocumentSheet.css';
-import type { PatientData } from '@/types/core';
+import type { PatientData } from '@/types/domain/patient';
 import { ClinicalDocumentsSidebar } from '@/features/clinical-documents/components/ClinicalDocumentsSidebar';
 import { ClinicalDocumentSheet } from '@/features/clinical-documents/components/ClinicalDocumentSheet';
 import { useClinicalDocumentsWorkspaceModel } from '@/features/clinical-documents/hooks/useClinicalDocumentsWorkspaceModel';

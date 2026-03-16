@@ -7,7 +7,7 @@
  * Manual downloads are NOT encrypted because xlsx-populate doesn't work in browsers.
  */
 
-import { DailyRecord } from '@/types/core';
+import { DailyRecord } from '@/types/domain/dailyRecord';
 import { MONTH_NAMES } from '@/constants/export';
 import { getRecordsForMonth } from '@/services/storage/records';
 import { getMonthRecordsFromFirestore } from '../storage/firestore';

@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { PatientData } from '@/types/core';
+import { PatientData } from '@/types/domain/patient';
 import { formatDateDDMMYYYY } from '@/utils/dateUtils';
 
 interface ExamPatientInfoProps {

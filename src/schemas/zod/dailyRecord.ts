@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { DailyRecord } from '@/types/core';
+import { DailyRecord } from '@/types/domain/dailyRecord';
 import { DATE_REGEX, nullableOptional, nullishDefault } from './helpers';
 import { BedTypeSchema, PatientDataSchema } from './patient';
 import { DischargeDataSchema, TransferDataSchema, CMADataSchema } from './movements';

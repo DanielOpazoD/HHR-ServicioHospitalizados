@@ -1,4 +1,8 @@
-import type { DailyRecord, MedicalHandoffActor, MedicalSpecialty } from '@/types/core';
+import type {
+  DailyRecord,
+  MedicalHandoffActor,
+  MedicalSpecialty,
+} from '@/types/domain/dailyRecord';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 import { getAttributedAuthors } from '@/services/admin/attributionService';
 import {

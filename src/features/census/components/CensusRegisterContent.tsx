@@ -1,5 +1,6 @@
 import React, { Suspense, lazy, type CSSProperties } from 'react';
-import type { BedDefinition, DailyRecord, Statistics } from '@/types/core';
+import type { BedDefinition, Statistics } from '@/types/domain/base';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { CensusActionsProvider } from './CensusActionsContext';
 import { CensusPrintHeader } from './CensusPrintHeader';
 import { CensusStaffHeader } from './CensusStaffHeader';

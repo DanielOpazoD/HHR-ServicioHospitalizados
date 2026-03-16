@@ -1,6 +1,7 @@
 import type { jsPDF } from 'jspdf';
 import { BEDS } from '@/constants/beds';
-import { CudyrScore, DailyRecord } from '@/types/core';
+import { CudyrScore } from '@/types/domain/clinical';
+import { DailyRecord } from '@/types/domain/dailyRecord';
 import { resolveNightShiftNurses } from '@/services/staff/dailyRecordStaffing';
 import { formatDateDDMMYYYY } from '@/utils/dateUtils';
 import { AutoTableFunction, CellHookData, JsPDFWithAutoTable } from './handoffPdfTypes';

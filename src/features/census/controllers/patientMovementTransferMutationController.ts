@@ -1,4 +1,6 @@
-import { BedDefinition, PatientData, TransferData } from '@/types/core';
+import { BedDefinition } from '@/types/domain/base';
+import { PatientData } from '@/types/domain/patient';
+import { TransferData } from '@/types/domain/movements';
 import type { TransferCommandPayload } from '@/features/census/domain/movements/contracts';
 import {
   buildClearedBedPatient,

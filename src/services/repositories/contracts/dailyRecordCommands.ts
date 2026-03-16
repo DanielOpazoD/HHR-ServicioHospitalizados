@@ -1,4 +1,4 @@
-import { DailyRecord, DailyRecordPatch } from '@/types/core';
+import { DailyRecord, DailyRecordPatch } from '@/types/domain/dailyRecord';
 import {
   classifyDailyRecordPatchContexts,
   classifyDailyRecordSaveContexts,

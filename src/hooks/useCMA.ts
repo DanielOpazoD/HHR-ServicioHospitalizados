@@ -1,5 +1,6 @@
 import { useMemo, useCallback, useRef, useEffect } from 'react';
-import { DailyRecord, CMAData } from '@/types/core';
+import { DailyRecord } from '@/types/domain/dailyRecord';
+import { CMAData } from '@/types/domain/movements';
 import { capitalizeWords } from '@/utils/stringUtils';
 import { formatRut, isValidRut, isPassportFormat } from '@/utils/rutUtils';
 

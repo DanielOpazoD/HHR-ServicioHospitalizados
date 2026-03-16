@@ -1,4 +1,4 @@
-import type { BedDefinition } from '@/types/core';
+import type { BedDefinition } from '@/types/domain/base';
 import type {
   SavedBedTransform,
   SavedLayout,

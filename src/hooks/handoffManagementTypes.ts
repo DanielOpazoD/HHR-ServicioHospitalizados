@@ -1,4 +1,4 @@
-import type { MedicalHandoffActor, MedicalSpecialty } from '@/types/core';
+import type { MedicalHandoffActor, MedicalSpecialty } from '@/types/domain/dailyRecord';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 
 export interface ConfirmMedicalSpecialtyNoChangesInput {

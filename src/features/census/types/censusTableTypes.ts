@@ -1,4 +1,5 @@
-import type { BedDefinition, BedType, PatientData } from '@/types/core';
+import type { BedDefinition, BedType } from '@/types/domain/base';
+import type { PatientData } from '@/types/domain/patient';
 
 export type DiagnosisMode = 'free' | 'cie10';
 

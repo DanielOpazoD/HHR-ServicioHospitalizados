@@ -1,4 +1,5 @@
-import { BedDefinition, BedType, PatientData } from '@/types/core';
+import { BedDefinition, BedType } from '@/types/domain/base';
+import { PatientData } from '@/types/domain/patient';
 import {
   BedTypesById,
   CensusBedRows,

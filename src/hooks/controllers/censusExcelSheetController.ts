@@ -1,4 +1,4 @@
-import type { DailyRecord } from '@/types/core';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { CensusWorkbookSheetDescriptor } from '@/services/exporters/censusMasterWorkbook';
 
 export const CENSUS_EMAIL_EXCEL_SHEET_CONFIG_KEY = 'censusEmailExcelSheetConfig';

@@ -21,7 +21,7 @@ import {
   getTransferCreationPreconditionError,
   getTransferStatusAdvanceError,
 } from '@/hooks/controllers/transferManagementFeedbackController';
-import type { DailyRecord } from '@/types/core';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { DailyRecordActionsContextType } from '@/hooks/useDailyRecordTypes';
 import { logger } from '@/services/utils/loggerService';
 import type { TransferMutationResult } from '@/services/transfers/transferService';

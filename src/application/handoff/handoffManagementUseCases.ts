@@ -14,7 +14,7 @@ import type {
   DailyRecordPatch,
   MedicalHandoffActor,
   MedicalSpecialty,
-} from '@/types/core';
+} from '@/types/domain/dailyRecord';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 import {
   buildMedicalNoChangesRecord,

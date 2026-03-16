@@ -1,6 +1,6 @@
 import { RECEIVING_CENTER_EXTRASYSTEM, RECEIVING_CENTER_OTHER } from '@/constants/clinical';
 import type { TransferExecutionInput } from '@/features/census/domain/movements/contracts';
-import type { PatientData } from '@/types/core';
+import type { PatientData } from '@/types/domain/patient';
 import type {
   createTransferRequest,
   getLatestOpenTransferRequestByBedId,

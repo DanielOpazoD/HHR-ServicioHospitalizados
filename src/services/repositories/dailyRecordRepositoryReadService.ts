@@ -1,4 +1,4 @@
-import { DailyRecord } from '@/types/core';
+import { DailyRecord } from '@/types/domain/dailyRecord';
 import {
   getRecordForDate as getRecordFromIndexedDB,
   getPreviousDayRecord as getPreviousDayFromIndexedDB,

@@ -1,8 +1,10 @@
-import type { DailyRecord, DailyRecordPatch, PatientData, CudyrScore } from '@/types/core';
+import type { DailyRecord, DailyRecordPatch } from '@/types/domain/dailyRecord';
+import type { PatientData } from '@/types/domain/patient';
+import type { CudyrScore } from '@/types/domain/clinical';
 import type { PatientFieldValue } from '@/types/valueTypes';
 import { BEDS } from '@/constants/beds';
 import { getBedTypeForRecord } from '@/utils/bedTypeUtils';
-import { BedType } from '@/types/core';
+import { BedType } from '@/types/domain/base';
 import { type BedAction, bedManagementReducer } from '@/hooks/useBedManagementReducer';
 import { logger } from '@/services/utils/loggerService';
 export interface BedManagementValidationPort {

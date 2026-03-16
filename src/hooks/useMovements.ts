@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { DailyRecord } from '@/types/core';
+import { DailyRecord } from '@/types/domain/dailyRecord';
 import { usePatientDischarges } from '@/hooks/usePatientDischarges';
 import { usePatientTransfers } from '@/hooks/usePatientTransfers';
 import type { DischargeTarget, PatientMovementActions } from '@/types/movements';

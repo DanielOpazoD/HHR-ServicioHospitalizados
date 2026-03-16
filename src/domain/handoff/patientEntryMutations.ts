@@ -1,4 +1,8 @@
-import type { MedicalHandoffAuditActor, MedicalHandoffEntry, PatientData } from '@/types/core';
+import type {
+  MedicalHandoffAuditActor,
+  MedicalHandoffEntry,
+  PatientData,
+} from '@/types/domain/patient';
 import {
   buildMedicalHandoffFieldsFromEntries,
   createMedicalHandoffEntry,

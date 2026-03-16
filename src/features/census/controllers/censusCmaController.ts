@@ -1,4 +1,5 @@
-import type { CMAData, PatientData } from '@/types/core';
+import type { CMAData } from '@/types/domain/movements';
+import type { PatientData } from '@/types/domain/patient';
 import type { ControllerConfirmDescriptor } from '@/features/census/controllers/controllerConfirmDescriptor';
 import {
   type ControllerResult,

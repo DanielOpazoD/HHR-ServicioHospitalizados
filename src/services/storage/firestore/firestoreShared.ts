@@ -1,6 +1,6 @@
 import { collection, doc, type DocumentReference, Timestamp } from 'firebase/firestore';
 import { db } from '@/firebaseConfig';
-import { DailyRecord } from '@/types/core';
+import { DailyRecord } from '@/types/domain/dailyRecord';
 import { COLLECTIONS, getActiveHospitalId, HOSPITAL_COLLECTIONS } from '@/constants/firestorePaths';
 import { migrateLegacyData } from '@/services/repositories/dataMigration';
 import { normalizeUnknownDailyRecordStaffing } from '@/services/staff/dailyRecordStaffing';

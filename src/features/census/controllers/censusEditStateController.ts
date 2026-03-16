@@ -1,4 +1,4 @@
-import type { DischargeData, TransferData } from '@/types/core';
+import type { DischargeData, TransferData } from '@/types/domain/movements';
 import {
   DEFAULT_TRANSFER_ESCORT,
   normalizeEvacuationMethod,

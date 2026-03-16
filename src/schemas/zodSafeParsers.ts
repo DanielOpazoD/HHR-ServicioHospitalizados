@@ -1,11 +1,7 @@
-import type {
-  BedType,
-  CMAData,
-  DailyRecord,
-  DischargeData,
-  PatientData,
-  TransferData,
-} from '@/types/core';
+import type { BedType } from '@/types/domain/base';
+import type { CMAData, DischargeData, TransferData } from '@/types/domain/movements';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
+import type { PatientData } from '@/types/domain/patient';
 import { applyDailyRecordStaffingCompatibility } from '@/services/staff/dailyRecordStaffing';
 import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryService';
 import type { SafeParseReturnType } from 'zod';

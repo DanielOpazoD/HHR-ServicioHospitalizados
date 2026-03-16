@@ -1,6 +1,6 @@
 import type { PatientRowAction } from '@/features/census/types/patientRowActionTypes';
 import type { VerticalPlacement } from '@/shared/ui/anchoredOverlayTypes';
-import type { DeviceDetails, DeviceInstance } from '@/types/core';
+import type { DeviceDetails, DeviceInstance } from '@/types/domain/clinical';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 
 export type RowMenuAlign = VerticalPlacement;

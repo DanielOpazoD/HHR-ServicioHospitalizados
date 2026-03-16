@@ -20,7 +20,7 @@ import {
   getLegacyTensCatalog,
 } from '../storage/migration/legacyFirestoreBridge';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
-import { ProfessionalCatalogItem } from '@/types/core';
+import { ProfessionalCatalogItem } from '@/types/domain/base';
 import {
   normalizeProfessionalCatalog,
   normalizeStringCatalog,

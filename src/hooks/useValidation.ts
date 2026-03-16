@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { DailyRecordSchema } from '@/schemas/zodSchemas';
-import { PatientData, DailyRecord } from '@/types/core';
+import { PatientData } from '@/types/domain/patient';
+import { DailyRecord } from '@/types/domain/dailyRecord';
 
 /**
  * Hook to manage record and clinical validation.

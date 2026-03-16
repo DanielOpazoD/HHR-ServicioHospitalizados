@@ -2,7 +2,11 @@ import React, { useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { AlertTriangle, CheckCircle2, Clock3, LockKeyhole, Stethoscope } from 'lucide-react';
 import type { AuthUser } from '@/types/auth';
-import type { DailyRecord, MedicalHandoffActor, MedicalSpecialty } from '@/types/core';
+import type {
+  DailyRecord,
+  MedicalHandoffActor,
+  MedicalSpecialty,
+} from '@/types/domain/dailyRecord';
 import { DebouncedTextarea } from '@/components/ui/DebouncedTextarea';
 import {
   canConfirmMedicalSpecialtyNoChanges,
@@ -11,7 +15,7 @@ import {
   getMedicalSpecialtyNote,
   MEDICAL_SPECIALTY_ORDER,
   resolveMedicalSpecialtyDailyStatus,
-} from '@/features/handoff/controllers';
+} from '@/domain/handoff/specialty';
 
 interface MedicalSpecialtyHandoffSectionProps {
   record: DailyRecord;

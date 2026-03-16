@@ -5,7 +5,7 @@ import {
   EMPTY_PATIENT_ROW_INDICATORS,
   resolvePatientRowIndicators,
 } from '@/features/census/controllers/patientRowIndicatorsController';
-import type { PatientData } from '@/types/core';
+import type { PatientData } from '@/types/domain/patient';
 import type { UserRole } from '@/types/auth';
 import type { PatientRowRuntime } from '@/features/census/components/patient-row/patientRowRuntimeContracts';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';

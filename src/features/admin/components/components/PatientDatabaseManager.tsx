@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 import { Search, UploadCloud, AlertTriangle } from 'lucide-react';
 import { PatientMasterRepository } from '@/services/repositories/PatientMasterRepository';
-import { MasterPatient } from '@/types/core';
+import { MasterPatient } from '@/types/domain/clinical';
 import { usePatientAnalysis } from '@/hooks/usePatientAnalysis';
 import { PatientExplorer } from './PatientExplorer';
 import { SyncPanel } from './SyncPanel';

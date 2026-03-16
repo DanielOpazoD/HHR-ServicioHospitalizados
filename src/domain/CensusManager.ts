@@ -1,5 +1,7 @@
 import { ActionState, DischargeState, TransferState } from '@/domain/censusActionContracts';
-import { CMAData, DailyRecord, PatientData } from '@/types/core';
+import { CMAData } from '@/types/domain/movements';
+import { DailyRecord } from '@/types/domain/dailyRecord';
+import { PatientData } from '@/types/domain/patient';
 import {
   DEFAULT_DISCHARGE_STATUS,
   DEFAULT_TRANSFER_ESCORT,

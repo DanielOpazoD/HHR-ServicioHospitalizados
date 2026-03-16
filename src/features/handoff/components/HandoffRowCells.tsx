@@ -1,5 +1,7 @@
 import React from 'react';
-import { ClinicalEvent, PatientData, PatientStatus } from '@/types/core';
+import { ClinicalEvent } from '@/types/domain/clinical';
+import { PatientData } from '@/types/domain/patient';
+import { PatientStatus } from '@/types/domain/base';
 import { Baby, ChevronDown, Clock } from 'lucide-react';
 import clsx from 'clsx';
 import { formatDateDDMMYYYY } from '@/utils/dateUtils';
@@ -12,7 +14,7 @@ import {
   canToggleClinicalEvents,
   resolveHandoffStatusVariant,
   shouldRenderClinicalEventsPanel,
-} from '@/features/handoff/controllers';
+} from '@/features/handoff/controllers/handoffRowCellsController';
 import {
   getDisplayMedicalHandoffEntries,
   getMedicalHandoffSpecialtyOptions,

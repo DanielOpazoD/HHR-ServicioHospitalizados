@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import type { RefObject } from 'react';
-import type { DailyRecord, DailyRecordPatch } from '@/types/core';
+import type { DailyRecord, DailyRecordPatch } from '@/types/domain/dailyRecord';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 import {
   executeEnsureMedicalHandoffSignatureLink,

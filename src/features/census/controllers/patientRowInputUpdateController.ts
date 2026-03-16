@@ -1,4 +1,4 @@
-import type { PatientData } from '@/types/core';
+import type { PatientData } from '@/types/domain/patient';
 import type { PatientFieldValue } from '@/types/valueTypes';
 
 interface BuildPatientFieldUpdaterParams {

@@ -22,41 +22,7 @@ export {
   resolveMedicalSpecialtyDailyStatus,
 } from './medicalSpecialtyHandoffController';
 export type { MedicalSpecialtyDailyStatus } from './medicalSpecialtyHandoffController';
-export {
-  buildMedicalHandoffFieldsFromEntries,
-  createMedicalHandoffEntry,
-  formatMedicalHandoffActorLabel,
-  formatMedicalHandoffTimestamp,
-  getDisplayMedicalHandoffEntries,
-  getMedicalHandoffSpecialtyOptions,
-  getNextMedicalHandoffSpecialty,
-  getPatientMedicalHandoffEntries,
-} from './medicalPatientHandoffController';
-export {
-  buildMedicalEntryAddFields,
-  buildMedicalEntryContinuityFields,
-  buildMedicalEntryDeleteFields,
-  buildMedicalEntryNoteFields,
-  buildMedicalEntrySpecialtyFields,
-  buildMedicalPrimaryEntryCreateFields,
-  buildMedicalPrimaryNoteFields,
-} from './medicalPatientHandoffMutationController';
-export { resolveHandoffScreenState } from './handoffScreenController';
-export {
-  buildMedicalHandoffDeepLink,
-  buildMedicalSpecialtyLink,
-  collectMedicalSpecialties,
-  filterBedsByMedicalScope,
-  filterBedsBySelectedMedicalSpecialty,
-  hasVisibleMedicalPatients,
-  resolveInitialMedicalScopeFromSearch,
-  resolveInitialMedicalSpecialtyFromSearch,
-} from './medicalPatientHandoffViewController';
 export { resolveMedicalHandoffCapabilities } from './medicalHandoffAccessController';
-export {
-  resolveMedicalEntryInlineMeta,
-  resolveMedicalHandoffValidityViewModel,
-} from './medicalPatientHandoffRenderController';
 export {
   canToggleClinicalEvents,
   resolveHandoffStatusVariant,

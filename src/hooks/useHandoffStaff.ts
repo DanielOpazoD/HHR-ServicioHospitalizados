@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { DailyRecord } from '@/types/core';
+import { DailyRecord } from '@/types/domain/dailyRecord';
 import { resolveHandoffShiftStaff } from '@/services/staff/dailyRecordStaffing';
 
 export type NursingShift = 'day' | 'night';

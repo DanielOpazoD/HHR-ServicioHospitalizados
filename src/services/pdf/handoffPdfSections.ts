@@ -1,5 +1,6 @@
 import type { jsPDF } from 'jspdf';
-import { DailyRecord, ShiftType } from '@/types/core';
+import { DailyRecord } from '@/types/domain/dailyRecord';
+import { ShiftType } from '@/types/domain/base';
 export { addCudyrTable } from './handoffPdfCudyrSection';
 export {
   addHandoffHeader,

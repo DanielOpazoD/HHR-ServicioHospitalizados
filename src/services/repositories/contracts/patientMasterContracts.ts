@@ -1,4 +1,4 @@
-import { MasterPatient } from '@/types/core';
+import { MasterPatient } from '@/types/domain/clinical';
 import { formatRut, isValidRut } from '@/utils/rutUtils';
 
 const MAX_QUERY_LIMIT = 1000;

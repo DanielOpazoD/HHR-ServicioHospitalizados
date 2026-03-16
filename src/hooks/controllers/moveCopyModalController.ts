@@ -1,4 +1,5 @@
-import type { BedDefinition, DailyRecord } from '@/types/core';
+import type { BedDefinition } from '@/types/domain/base';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
 
 export interface MoveCopyDateOption {
   label: 'Ayer' | 'Hoy' | 'Mañana';

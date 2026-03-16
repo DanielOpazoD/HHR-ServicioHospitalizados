@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { DailyRecord } from '@/types/core';
+import { DailyRecord } from '@/types/domain/dailyRecord';
 import { useAuthState } from './useAuthState';
 import { buildStabilityRules, type StabilityRules } from './stabilityRulesController';
 export type { StabilityRules } from './stabilityRulesController';

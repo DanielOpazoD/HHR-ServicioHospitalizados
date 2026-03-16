@@ -1,4 +1,4 @@
-import type { ClinicalEvent } from '@/types/core';
+import type { ClinicalEvent } from '@/types/domain/clinical';
 
 export interface HandoffMedicalActions {
   onCreatePrimaryEntry?: (bedId: string, isNested: boolean) => void;

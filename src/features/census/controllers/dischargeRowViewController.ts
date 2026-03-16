@@ -1,4 +1,4 @@
-import type { DischargeData } from '@/types/core';
+import type { DischargeData } from '@/types/domain/movements';
 import type { DischargeRowViewModel } from '@/features/census/types/censusMovementRowViewModelTypes';
 import {
   buildDischargeRowActions,

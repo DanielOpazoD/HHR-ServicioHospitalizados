@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { BedDefinition, DailyRecord } from '@/types';
 import { Specialty } from '@/types';
-import { resolveHandoffScreenState } from '@/features/handoff/controllers/handoffScreenController';
+import { resolveHandoffMedicalScreenState } from '@/application/handoff';
 
 const BEDS: BedDefinition[] = [
   { id: 'R1', name: '101', type: 'MEDIA', isCuna: false },
@@ -22,9 +22,9 @@ const RECORD = {
   },
 } as unknown as DailyRecord;
 
-describe('handoffScreenController', () => {
+describe('handoff screen read model', () => {
   it('resolves scoped medical screen state in one place', () => {
-    const state = resolveHandoffScreenState({
+    const state = resolveHandoffMedicalScreenState({
       visibleBeds: BEDS,
       record: RECORD,
       isMedical: true,

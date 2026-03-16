@@ -1,4 +1,4 @@
-import { DailyRecord } from '@/types/core';
+import { DailyRecord } from '@/types/domain/dailyRecord';
 import { logger } from '@/services/utils/loggerService';
 
 interface RemoteDeleteDependencies {

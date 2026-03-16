@@ -1,4 +1,4 @@
-import { DailyRecord } from '@/types/core';
+import { DailyRecord } from '@/types/domain/dailyRecord';
 import { getTodayISO } from '@/utils/dateUtils';
 
 export interface StabilityRules {

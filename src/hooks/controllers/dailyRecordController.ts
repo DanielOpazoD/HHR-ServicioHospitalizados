@@ -1,4 +1,5 @@
-import type { DailyRecord, PatientData } from '@/types/core';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
+import type { PatientData } from '@/types/domain/patient';
 import type { DailyRecordContextType } from '@/hooks/useDailyRecordTypes';
 
 interface CopyPatientParams {

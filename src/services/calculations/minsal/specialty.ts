@@ -1,4 +1,4 @@
-import { PatientData } from '@/types/core';
+import { PatientData } from '@/types/domain/patient';
 import { BEDS } from '@/constants/beds';
 import { normalizeSpecialty } from './normalization';
 

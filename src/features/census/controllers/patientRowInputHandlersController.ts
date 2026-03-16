@@ -1,4 +1,5 @@
-import type { DeviceDetails, DeviceInstance, PatientData } from '@/types/core';
+import type { DeviceDetails, DeviceInstance } from '@/types/domain/clinical';
+import type { PatientData } from '@/types/domain/patient';
 import type { PatientFieldValue } from '@/types/valueTypes';
 
 interface BuildPatientRowInputCommandsParams {

@@ -1,4 +1,4 @@
-import type { MedicalHandoffEntry, PatientData } from '@/types/core';
+import type { MedicalHandoffEntry, PatientData } from '@/types/domain/patient';
 import {
   formatMedicalHandoffActorLabel,
   formatMedicalHandoffTimestamp,

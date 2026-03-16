@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { TransferData } from '@/types/core';
+import type { TransferData } from '@/types/domain/movements';
 import { resolveTransferRowViewModel } from '@/features/census/controllers/transferRowViewController';
 import { TransferRowView } from '@/features/census/components/TransferRowView';
 

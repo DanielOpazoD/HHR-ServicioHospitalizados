@@ -5,7 +5,7 @@
  * This allows administrators to have local backups and restore data by month.
  */
 
-import { DailyRecord } from '@/types/core';
+import { DailyRecord } from '@/types/domain/dailyRecord';
 import { saveDetailed as saveDailyRecordDetailed } from '@/services/repositories/dailyRecordRepositoryWriteService';
 import { getRecordsRange, saveRecords } from '@/services/storage/records';
 import * as firestoreService from '../storage/firestore';

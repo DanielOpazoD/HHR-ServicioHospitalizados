@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import { CensusMovementPrimaryCells } from '@/features/census/components/CensusMovementPrimaryCells';
 import { CensusMovementDateActionsCells } from '@/features/census/components/CensusMovementDateActionsCells';
 import type { DischargeRowViewModel } from '@/features/census/types/censusMovementRowViewModelTypes';
-import type { DischargeData } from '@/types/core';
+import type { DischargeData } from '@/types/domain/movements';
 import { IEEHFormDialog } from '@/features/census/components/IEEHFormDialog';
 import { FileText } from 'lucide-react';
 

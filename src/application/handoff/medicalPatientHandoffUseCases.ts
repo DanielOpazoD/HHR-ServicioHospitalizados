@@ -13,7 +13,11 @@ import {
   buildMedicalHandoffFieldsFromEntries,
   getPatientMedicalHandoffEntries,
 } from '@/domain/handoff/patientEntries';
-import type { MedicalHandoffAuditActor, MedicalHandoffEntry, PatientData } from '@/types/core';
+import type {
+  MedicalHandoffAuditActor,
+  MedicalHandoffEntry,
+  PatientData,
+} from '@/types/domain/patient';
 import {
   createNoEffectOutcome,
   createUnknownOutcome,

@@ -1,5 +1,6 @@
 import type { jsPDF } from 'jspdf';
-import { DailyRecord, ShiftType } from '@/types/core';
+import { DailyRecord } from '@/types/domain/dailyRecord';
+import { ShiftType } from '@/types/domain/base';
 import { formatDateDDMMYYYY } from '@/utils/dateUtils';
 import { getBase64ImageFromURL, getHandoffStaffInfo, Schedule } from './handoffPdfUtils';
 

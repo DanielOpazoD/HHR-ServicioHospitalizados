@@ -1,4 +1,6 @@
-import type { CudyrScore, DailyRecord, PatientData } from '@/types/core';
+import type { CudyrScore } from '@/types/domain/clinical';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
+import type { PatientData } from '@/types/domain/patient';
 import type { PatientFieldValue } from '@/types/valueTypes';
 import type { AuditDeviceChange, AuditDeviceChangesMap } from '@/types/audit';
 

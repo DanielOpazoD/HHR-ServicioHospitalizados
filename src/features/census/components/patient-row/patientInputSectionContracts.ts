@@ -1,4 +1,4 @@
-import type { PatientData } from '@/types/core';
+import type { PatientData } from '@/types/domain/patient';
 import type { DiagnosisMode } from '@/features/census/types/censusTableTypes';
 import type {
   DebouncedTextHandler,

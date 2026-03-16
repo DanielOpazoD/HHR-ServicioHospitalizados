@@ -7,7 +7,7 @@
  * Prevents "silent corruption" of historical patient records.
  */
 
-import { DailyRecord } from '@/types/core';
+import { DailyRecord } from '@/types/domain/dailyRecord';
 import { parseDailyRecordWithDefaultsReport } from '@/schemas/zodSchemas';
 import { normalizeDailyRecordInvariants } from '@/utils/recordInvariants';
 import {

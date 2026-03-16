@@ -29,6 +29,15 @@
       "target": "2026-Q3"
     },
     {
+      "path": "src/types/core.ts",
+      "owner": "types",
+      "kind": "compatibility_facade",
+      "reason": "Mantener compatibilidad temporal mientras el source converge a imports por dominio en `types/domain/*`.",
+      "remainingConsumers": "tests legacy puntuales y barrels de compatibilidad",
+      "retirementCriteria": "Source productivo sin imports a `@/types/core` y facade reducida a compatibilidad residual gobernada por check estático.",
+      "target": "2026-Q3"
+    },
+    {
       "path": "src/services/dataService.ts",
       "owner": "platform",
       "kind": "legacy_bridge",
@@ -51,8 +60,8 @@
       "owner": "handoff",
       "kind": "deprecated_bridge",
       "reason": "Mantener imports estables mientras consumers migran a application/domain handoff.",
-      "remainingConsumers": "consumidores handoff legacy y tests de compatibilidad",
-      "retirementCriteria": "Consumers migrados a entrypoints application/handoff sin imports de controller bridge.",
+      "remainingConsumers": "solo tests legacy o adapters de compatibilidad inventariados",
+      "retirementCriteria": "Puente sin consumidores fuera de compatibilidad y con checks impidiendo imports productivos nuevos.",
       "target": "2026-Q2"
     },
     {
@@ -60,8 +69,8 @@
       "owner": "handoff",
       "kind": "deprecated_bridge",
       "reason": "Preservar compatibilidad temporal del flujo médico por paciente durante la migración al dominio.",
-      "remainingConsumers": "tests y call sites legacy de handoff médico",
-      "retirementCriteria": "Consumers movidos a domain/application de patient entries y render model.",
+      "remainingConsumers": "solo tests legacy o adapters de compatibilidad inventariados",
+      "retirementCriteria": "Consumers movidos a domain/application de patient entries y render model, con source productivo bloqueado por guardrail.",
       "target": "2026-Q2"
     },
     {
@@ -69,8 +78,35 @@
       "owner": "handoff",
       "kind": "deprecated_bridge",
       "reason": "Sostener imports existentes mientras las mutaciones médicas se consumen desde use cases.",
-      "remainingConsumers": "tests y adapters legacy",
-      "retirementCriteria": "Mutaciones consumidas solo desde application/handoff y sin consumers externos al bridge.",
+      "remainingConsumers": "solo tests legacy o adapters de compatibilidad inventariados",
+      "retirementCriteria": "Mutaciones consumidas solo desde application/handoff y sin consumers productivos externos al bridge.",
+      "target": "2026-Q2"
+    },
+    {
+      "path": "src/features/handoff/controllers/handoffScreenController.ts",
+      "owner": "handoff",
+      "kind": "deprecated_bridge",
+      "reason": "Mantener compatibilidad con imports previos mientras el read model vive en application/handoff.",
+      "remainingConsumers": "solo tests legacy o adapters de compatibilidad inventariados",
+      "retirementCriteria": "Read model consumido solo desde application/handoff y sin imports productivos al bridge.",
+      "target": "2026-Q2"
+    },
+    {
+      "path": "src/features/handoff/controllers/medicalPatientHandoffViewController.ts",
+      "owner": "handoff",
+      "kind": "deprecated_bridge",
+      "reason": "Conservar compatibilidad temporal mientras links, filtros y deep links viven en domain/handoff/view.",
+      "remainingConsumers": "solo tests legacy o adapters de compatibilidad inventariados",
+      "retirementCriteria": "Consumers migrados a domain/handoff/view y source productivo bloqueado por guardrail.",
+      "target": "2026-Q2"
+    },
+    {
+      "path": "src/features/handoff/controllers/medicalPatientHandoffRenderController.ts",
+      "owner": "handoff",
+      "kind": "deprecated_bridge",
+      "reason": "Preservar imports temporales mientras la metadata/render logic vive en domain/handoff/patientView.",
+      "remainingConsumers": "solo tests legacy o adapters de compatibilidad inventariados",
+      "retirementCriteria": "Consumers migrados a domain/handoff/patientView y source productivo bloqueado por guardrail.",
       "target": "2026-Q2"
     },
     {

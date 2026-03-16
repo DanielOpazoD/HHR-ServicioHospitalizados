@@ -4,7 +4,7 @@ import { usePatientRowUiState } from '@/features/census/components/patient-row/u
 import { usePatientRowBedConfigActions } from '@/features/census/components/patient-row/usePatientRowBedConfigActions';
 import { buildPatientRowInteractionRuntime } from '@/features/census/controllers/patientRowRuntimeController';
 import type { ControllerConfirmDescriptor } from '@/features/census/controllers/controllerConfirmDescriptor';
-import type { PatientData } from '@/types/core';
+import type { PatientData } from '@/types/domain/patient';
 import type { PatientRowAction } from '@/features/census/types/patientRowActionTypes';
 
 interface UsePatientRowInteractionRuntimeParams {

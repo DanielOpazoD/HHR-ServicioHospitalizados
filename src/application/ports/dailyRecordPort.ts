@@ -13,7 +13,7 @@ import {
 import { syncWithFirestoreDetailed } from '@/services/repositories/dailyRecordRepositorySyncService';
 import { deleteDailyRecordAcrossStores } from '@/services/repositories/dailyRecordRepositoryFacadeSupport';
 import { getMonthRecordsFromFirestore } from '@/services/storage/firestore';
-import type { DailyRecord, DailyRecordPatch } from '@/types/core';
+import type { DailyRecord, DailyRecordPatch } from '@/types/domain/dailyRecord';
 import type {
   SaveDailyRecordResult,
   SyncDailyRecordResult,

@@ -1,4 +1,5 @@
-import { DailyRecord, PatientData } from '@/types/core';
+import { DailyRecord } from '@/types/domain/dailyRecord';
+import { PatientData } from '@/types/domain/patient';
 
 interface ApplyUndoDischargeInput {
   record: DailyRecord;

@@ -3,7 +3,8 @@
  * Default/empty patient data structure
  */
 
-import { PatientData, Specialty, PatientStatus } from '@/types/core';
+import { PatientData } from '@/types/domain/patient';
+import { Specialty, PatientStatus } from '@/types/domain/base';
 
 export const EMPTY_PATIENT: Omit<PatientData, 'bedId'> = {
   isBlocked: false,

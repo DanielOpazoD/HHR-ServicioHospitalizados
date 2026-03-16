@@ -1,5 +1,5 @@
 import { usePatientRowHandlersModel } from '@/features/census/components/patient-row/usePatientRowHandlersModel';
-import type { PatientData } from '@/types/core';
+import type { PatientData } from '@/types/domain/patient';
 import type { PatientFieldValue } from '@/types/valueTypes';
 
 interface UsePatientRowEditingRuntimeParams {

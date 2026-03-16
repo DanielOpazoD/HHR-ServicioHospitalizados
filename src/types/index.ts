@@ -1,7 +1,7 @@
 /**
  * @deprecated Compatibility barrel only.
  *
- * New source code must import from the owning module (`@/types/core`,
+ * New source code must import from the owning module (`@/types/domain/*`,
  * `@/types/auth`, `@/types/reminders`, etc.). Retirement is tracked via
  * compatibility governance and enforced by quality checks.
  */

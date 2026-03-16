@@ -6,7 +6,8 @@ import type {
   InventoryStats,
   SyncStatus,
 } from '@/hooks/useDailyRecordTypes';
-import type { CMAData, DischargeData, PatientData, TransferData } from '@/types/core';
+import type { CMAData, DischargeData, TransferData } from '@/types/domain/movements';
+import type { PatientData } from '@/types/domain/patient';
 import type { StabilityRules } from '@/hooks/useStabilityRules';
 
 interface UseDailyRecordFragmentedValuesResult {

@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { PatientData } from '@/types/core';
+import { PatientData } from '@/types/domain/patient';
 import { PatientFieldValue } from '@/types/valueTypes';
 import {
   buildDeliveryRoutePatch,

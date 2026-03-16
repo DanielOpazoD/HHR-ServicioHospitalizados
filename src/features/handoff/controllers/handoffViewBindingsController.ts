@@ -3,8 +3,8 @@ import type {
   HandoffMedicalActions,
 } from '@/features/handoff/components/handoffRowContracts';
 import type { MedicalHandoffCapabilities } from '@/features/handoff/controllers/medicalHandoffAccessController';
-import type { ClinicalEvent } from '@/types/core';
-import type { Specialty } from '@/types/core';
+import type { ClinicalEvent } from '@/types/domain/clinical';
+import type { Specialty } from '@/types/domain/base';
 
 interface BuildHandoffMedicalActionsParams {
   capabilities: MedicalHandoffCapabilities;

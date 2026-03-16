@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { BedDefinition, DailyRecord, PatientData, ClinicalEvent } from '@/types/core';
+import { BedDefinition } from '@/types/domain/base';
+import { DailyRecord } from '@/types/domain/dailyRecord';
+import { PatientData } from '@/types/domain/patient';
+import { ClinicalEvent } from '@/types/domain/clinical';
 import { HandoffRow } from './HandoffRow';
 import { Maximize2, Minimize2 } from 'lucide-react';
 import type { HandoffClinicalEventActions, HandoffMedicalActions } from './handoffRowContracts';

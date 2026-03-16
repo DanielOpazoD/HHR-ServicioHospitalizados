@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useConfirmDialog } from '@/context/UIContext';
-import { DailyRecord } from '@/types/core';
+import { DailyRecord } from '@/types/domain/dailyRecord';
 import { getAppSetting, saveAppSetting } from '@/services/settingsService';
 import { isAdmin } from '@/utils/permissions';
 import { CensusAccessRole } from '@/types/censusAccess';

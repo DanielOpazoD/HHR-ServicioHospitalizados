@@ -5,7 +5,7 @@ import {
   useDailyRecordDayActions,
 } from '@/context/useDailyRecordScopedActions';
 import { BEDS } from '@/constants/beds';
-import { CudyrScore } from '@/types/core';
+import { CudyrScore } from '@/types/domain/clinical';
 import { useAuditContext } from '@/context/AuditContext';
 import { useAuth } from '@/context/AuthContext';
 import { getCategorization } from '../services/CudyrScoreUtils';

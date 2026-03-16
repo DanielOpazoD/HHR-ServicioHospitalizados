@@ -1,4 +1,5 @@
-import type { BedDefinition, DailyRecord, Specialty } from '@/types/core';
+import type { BedDefinition, Specialty } from '@/types/domain/base';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 import {
   collectMedicalSpecialties,

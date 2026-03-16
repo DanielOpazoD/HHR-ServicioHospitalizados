@@ -1,6 +1,6 @@
 import React from 'react';
 import { calculateDeviceDays } from './DeviceDateConfigModal';
-import { DeviceDetails } from '@/types/core';
+import { DeviceDetails } from '@/types/domain/clinical';
 import { formatDateDDMMYYYY } from '@/utils/dateUtils';
 
 import { MedicalBadge } from '@/components/ui/base/MedicalBadge';

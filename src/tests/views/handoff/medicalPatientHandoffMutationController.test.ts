@@ -7,7 +7,7 @@ import {
   buildMedicalEntryNoteFields,
   buildMedicalEntrySpecialtyFields,
   buildMedicalPrimaryNoteFields,
-} from '@/features/handoff/controllers/medicalPatientHandoffMutationController';
+} from '@/domain/handoff/patientEntryMutations';
 
 const REPORT_DATE = '2026-03-03';
 const NOW = '2026-03-03T20:33:00.000Z';
@@ -39,7 +39,7 @@ const createPatient = (overrides: Partial<PatientData> = {}): PatientData =>
     ...overrides,
   }) as PatientData;
 
-describe('medicalPatientHandoffMutationController', () => {
+describe('medical patient handoff mutations domain', () => {
   it('builds legacy-compatible fields when updating the primary medical note', () => {
     const patient = createPatient();
 

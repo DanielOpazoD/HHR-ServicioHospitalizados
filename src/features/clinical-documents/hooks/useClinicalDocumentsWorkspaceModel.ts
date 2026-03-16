@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useNotification } from '@/context/UIContext';
 import { getActiveHospitalId } from '@/constants/firestorePaths';
-import type { PatientData } from '@/types/core';
+import type { PatientData } from '@/types/domain/patient';
 import {
   canDeleteClinicalDocuments,
   canEditClinicalDocuments,

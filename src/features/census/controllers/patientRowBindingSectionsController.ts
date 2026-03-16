@@ -1,5 +1,6 @@
 import type { DiagnosisMode } from '@/features/census/types/censusTableTypes';
-import type { BedDefinition, BedType, PatientData } from '@/types/core';
+import type { BedDefinition, BedType } from '@/types/domain/base';
+import type { PatientData } from '@/types/domain/patient';
 import type { RowMenuAlign } from '@/features/census/components/patient-row/patientRowContracts';
 import type {
   PatientMainRowBindings,

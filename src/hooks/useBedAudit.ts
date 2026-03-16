@@ -1,5 +1,7 @@
 import { useCallback, useRef, useEffect } from 'react';
-import { DailyRecord, PatientData, CudyrScore } from '@/types/core';
+import { DailyRecord } from '@/types/domain/dailyRecord';
+import { PatientData } from '@/types/domain/patient';
+import { CudyrScore } from '@/types/domain/clinical';
 import { PatientFieldValue } from '@/types/valueTypes';
 import { useAuditContext } from '@/context/AuditContext';
 import { getAttributedAuthors } from '@/services/admin/attributionService';

@@ -1,6 +1,10 @@
 import { useCallback } from 'react';
 import type { RefObject } from 'react';
-import type { DailyRecord, MedicalHandoffActor, MedicalSpecialty } from '@/types/core';
+import type {
+  DailyRecord,
+  MedicalHandoffActor,
+  MedicalSpecialty,
+} from '@/types/domain/dailyRecord';
 import type { AuditAction, AuditLogEntry } from '@/types/audit';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 import type { ConfirmMedicalSpecialtyNoChangesInput } from '@/hooks/handoffManagementTypes';

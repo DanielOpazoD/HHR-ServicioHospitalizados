@@ -1,4 +1,5 @@
-import { DailyRecord, DischargeType, TransferData } from '@/types/core';
+import { DailyRecord } from '@/types/domain/dailyRecord';
+import { DischargeType, TransferData } from '@/types/domain/movements';
 
 interface UpdateDischargeMovementInput {
   record: DailyRecord;

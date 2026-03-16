@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MasterPatient } from '@/types/core';
+import { MasterPatient } from '@/types/domain/clinical';
 import { PatientMasterRepository } from '@/services/repositories/PatientMasterRepository';
 import { isValidRut, formatRut } from '@/utils/rutUtils';
 import { logger } from '@/services/utils/loggerService';

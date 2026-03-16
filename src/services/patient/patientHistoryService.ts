@@ -5,7 +5,7 @@
  * Searches by RUT to find all beds, discharges, and transfers.
  */
 
-import { DailyRecord } from '@/types/core';
+import { DailyRecord } from '@/types/domain/dailyRecord';
 import { getAllRecords } from '@/services/storage/records';
 import { BEDS } from '@/constants/beds';
 

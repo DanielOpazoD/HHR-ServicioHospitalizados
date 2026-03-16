@@ -1,4 +1,4 @@
-import type { DailyRecord } from '@/types/core';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
 
 type DailyRecordStaffingCompatShape = Pick<
   DailyRecord,

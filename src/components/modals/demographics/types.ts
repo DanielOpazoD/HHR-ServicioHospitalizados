@@ -1,4 +1,5 @@
-import { PatientData, PatientIdentityStatus } from '@/types/core';
+import { PatientData } from '@/types/domain/patient';
+import { PatientIdentityStatus } from '@/types/domain/base';
 
 export type BiologicalSex = 'Masculino' | 'Femenino' | 'Indeterminado';
 export type Insurance = 'Fonasa' | 'Isapre' | 'Particular';

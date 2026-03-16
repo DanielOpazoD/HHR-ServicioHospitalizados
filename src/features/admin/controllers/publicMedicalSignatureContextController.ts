@@ -1,4 +1,4 @@
-import type { DailyRecord } from '@/types/core';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { DailyRecordContextType } from '@/hooks/useDailyRecordTypes';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 

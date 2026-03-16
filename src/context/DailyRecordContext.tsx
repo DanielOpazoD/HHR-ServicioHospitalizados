@@ -13,7 +13,8 @@ import {
   SyncStatus,
   InventoryStats,
 } from '@/hooks/useDailyRecordTypes';
-import { PatientData, DischargeData, TransferData, CMAData } from '@/types/core';
+import { PatientData } from '@/types/domain/patient';
+import { DischargeData, TransferData, CMAData } from '@/types/domain/movements';
 import { StabilityRules } from '@/hooks/useStabilityRules';
 import { useDailyRecordFragmentedValues } from '@/context/useDailyRecordFragmentedValues';
 import {

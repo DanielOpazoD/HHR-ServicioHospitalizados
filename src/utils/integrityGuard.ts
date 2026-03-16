@@ -1,5 +1,5 @@
-import { DailyRecord } from '@/types/core';
-import { buildMedicalHandoffSummary } from '@/features/handoff/controllers';
+import { DailyRecord } from '@/types/domain/dailyRecord';
+import { buildMedicalHandoffSummary } from '@/domain/handoff/specialty';
 
 /**
  * Error thrown when a significant loss of data is detected during a save operation.

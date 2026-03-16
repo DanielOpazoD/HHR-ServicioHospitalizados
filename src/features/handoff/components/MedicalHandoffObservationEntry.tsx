@@ -1,6 +1,6 @@
 import React from 'react';
 import clsx from 'clsx';
-import type { MedicalHandoffEntry, PatientData } from '@/types/core';
+import type { MedicalHandoffEntry, PatientData } from '@/types/domain/patient';
 import { Plus, Trash2 } from 'lucide-react';
 import { DebouncedTextarea } from '@/components/ui/DebouncedTextarea';
 import { resolveMedicalEntryInlineMeta } from '@/domain/handoff/patientView';

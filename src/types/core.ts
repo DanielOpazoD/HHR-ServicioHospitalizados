@@ -1,9 +1,12 @@
 /**
- * Core Type Definitions
- * Main data types for the hospital census application.
+ * @deprecated Compatibility facade only.
  *
- * This file now acts as an aggregator facade, re-exporting modular types
- * from the domain folder to avoid massive file sizes while keeping compatibility.
+ * New source code must import from the owning domain module:
+ * `@/types/domain/base`, `@/types/domain/clinical`, `@/types/domain/patient`,
+ * `@/types/domain/movements`, or `@/types/domain/dailyRecord`.
+ *
+ * This file remains as a transitional re-export and is protected by
+ * `check:core-type-facade-boundaries`.
  */
 
 export * from './domain/base';

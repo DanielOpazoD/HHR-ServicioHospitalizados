@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Bot, CheckCircle, XCircle, Loader2, Terminal } from 'lucide-react';
-import { DailyRecord, PatientData } from '@/types/core';
+import { DailyRecord } from '@/types/domain/dailyRecord';
+import { PatientData } from '@/types/domain/patient';
 import { calculateStats } from '@/services/calculations/statsCalculator';
 
 interface TestAgentProps {

@@ -1,4 +1,4 @@
-import type { DailyRecord } from '@/types/core';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { createDailyRecordAggregate } from '@/services/repositories/dailyRecordAggregate';
 import { resolveDayShiftNurses } from '@/services/staff/dailyRecordStaffing';
 

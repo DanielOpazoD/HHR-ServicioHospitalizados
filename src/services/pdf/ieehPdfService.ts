@@ -29,7 +29,7 @@
  */
 
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
-import { PatientData } from '@/types/core';
+import { PatientData } from '@/types/domain/patient';
 import { splitPatientName, calculateAge, formatDateToCL } from '@/utils/clinicalUtils';
 import { saveAndDownloadPdf } from './pdfBase';
 import { FIELD_COORDS, mapInsurance, mapSex, mapProcedencia } from './ieehPdfCoordinates';

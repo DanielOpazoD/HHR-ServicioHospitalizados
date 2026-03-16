@@ -9,7 +9,7 @@ import {
   hasVisibleMedicalPatients,
   resolveInitialMedicalScopeFromSearch,
   resolveInitialMedicalSpecialtyFromSearch,
-} from '@/features/handoff/controllers/medicalPatientHandoffViewController';
+} from '@/domain/handoff/view';
 
 const BEDS: BedDefinition[] = [
   { id: '1', name: '101', type: 'MEDIA', isCuna: false },
@@ -32,7 +32,7 @@ const RECORD = {
   },
 } as unknown as DailyRecord;
 
-describe('medicalPatientHandoffViewController', () => {
+describe('medical patient handoff view domain', () => {
   it('resolves the initial specialty from the URL search string', () => {
     expect(resolveInitialMedicalSpecialtyFromSearch('?specialty=Cirug%C3%ADa')).toBe(
       Specialty.CIRUGIA

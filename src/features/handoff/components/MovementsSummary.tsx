@@ -12,12 +12,12 @@
 
 import React, { useMemo } from 'react';
 import { UserMinus, ArrowRightLeft, Sun } from 'lucide-react';
-import type { DailyRecord } from '@/types/core';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
 import {
   filterCmaByShift,
   filterDischargesByShift,
   filterTransfersByShift,
-} from '@/features/handoff/controllers';
+} from '@/features/handoff/controllers/movementsSummaryController';
 
 interface MovementsSummaryProps {
   record: DailyRecord;

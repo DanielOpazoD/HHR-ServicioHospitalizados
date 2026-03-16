@@ -1,5 +1,7 @@
 import { useCallback, useRef, useEffect } from 'react';
-import { DailyRecord, DailyRecordPatch, PatientData, CudyrScore } from '@/types/core';
+import { DailyRecord, DailyRecordPatch } from '@/types/domain/dailyRecord';
+import { PatientData } from '@/types/domain/patient';
+import { CudyrScore } from '@/types/domain/clinical';
 import { PatientFieldValue } from '@/types/valueTypes';
 import { usePatientValidation } from './usePatientValidation';
 import { useBedAudit } from './useBedAudit';

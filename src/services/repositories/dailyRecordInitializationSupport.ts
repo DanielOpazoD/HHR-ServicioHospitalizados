@@ -1,4 +1,5 @@
-import { BedType, DailyRecord } from '@/types/core';
+import { BedType } from '@/types/domain/base';
+import { DailyRecord } from '@/types/domain/dailyRecord';
 import {
   assignCarriedPatientToRecord,
   buildClinicalBedsFromPreviousRecord,

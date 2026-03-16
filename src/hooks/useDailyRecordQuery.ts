@@ -5,7 +5,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../config/queryClient';
-import { DailyRecord } from '@/types/core';
+import { DailyRecord } from '@/types/domain/dailyRecord';
 import { useRepositories } from '@/services/RepositoryContext';
 import { useEffect } from 'react';
 import { DailyRecordPatch } from './useDailyRecordTypes';

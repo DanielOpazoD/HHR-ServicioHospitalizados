@@ -1,6 +1,6 @@
 import React from 'react';
 import { Calendar, Clock } from 'lucide-react';
-import { DeviceInfo } from '@/types/core';
+import { DeviceInfo } from '@/types/domain/clinical';
 import { VVP_DEVICE_KEYS } from '@/constants/clinical';
 import { BaseModal } from '@/components/shared/BaseModal';
 

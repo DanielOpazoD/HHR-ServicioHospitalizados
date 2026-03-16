@@ -1,5 +1,7 @@
 import React from 'react';
-import { CudyrScore, PatientData, BedDefinition } from '@/types/core';
+import { CudyrScore } from '@/types/domain/clinical';
+import { PatientData } from '@/types/domain/patient';
+import { BedDefinition } from '@/types/domain/base';
 import { getCategorization } from '../services/CudyrScoreUtils';
 import clsx from 'clsx';
 

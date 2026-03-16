@@ -1,6 +1,6 @@
 import { doc, getDoc, getDocs, onSnapshot, orderBy, query, where } from 'firebase/firestore';
 import { db } from '@/firebaseConfig';
-import { DailyRecord } from '@/types/core';
+import { DailyRecord } from '@/types/domain/dailyRecord';
 import { COLLECTIONS, getActiveHospitalId } from '@/constants/firestorePaths';
 import {
   docToRecord,

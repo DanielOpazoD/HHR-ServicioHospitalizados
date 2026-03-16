@@ -1,7 +1,7 @@
 import React from 'react';
 import { Plane, RefreshCcw } from 'lucide-react';
 import { MedicalBadge } from '@/components/ui/base/MedicalBadge';
-import { BedType } from '@/types/core';
+import { BedType } from '@/types/domain/base';
 import { usePatientActiveTransferQuery } from '@/features/census/components/patient-row/useBedActiveTransferQuery';
 import type { PatientMainRowBedTypeCellProps } from '@/features/census/components/patient-row/patientRowViewContracts';
 

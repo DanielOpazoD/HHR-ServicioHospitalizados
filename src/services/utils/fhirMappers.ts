@@ -5,7 +5,8 @@
  * FHIR resources (R4).
  */
 
-import { PatientData, FhirResource } from '@/types/core';
+import { PatientData } from '@/types/domain/patient';
+import { FhirResource } from '@/types/domain/clinical';
 
 /**
  * Systems and Standard URIs for Chile (Core-CL)

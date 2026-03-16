@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { DailyRecord } from '@/types/core';
+import { DailyRecord } from '@/types/domain/dailyRecord';
 import {
   MovementCreationError,
   MovementCreationErrorCode,

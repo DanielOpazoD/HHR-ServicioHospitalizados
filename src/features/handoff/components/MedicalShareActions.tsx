@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ChevronDown, Send, Share2 } from 'lucide-react';
 import clsx from 'clsx';
-import type { MedicalHandoffScope } from '@/features/handoff/controllers';
+import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 
 interface MedicalShareActionsProps {
   medicalSignature?: {

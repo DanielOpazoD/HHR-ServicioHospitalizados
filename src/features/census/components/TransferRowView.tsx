@@ -5,7 +5,7 @@ import { FileText } from 'lucide-react';
 import { CensusMovementPrimaryCells } from '@/features/census/components/CensusMovementPrimaryCells';
 import { CensusMovementDateActionsCells } from '@/features/census/components/CensusMovementDateActionsCells';
 import type { TransferRowViewModel } from '@/features/census/types/censusMovementRowViewModelTypes';
-import type { TransferData } from '@/types/core';
+import type { TransferData } from '@/types/domain/movements';
 import { IEEHFormDialog } from '@/features/census/components/IEEHFormDialog';
 
 interface TransferRowViewProps {

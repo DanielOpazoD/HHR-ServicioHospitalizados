@@ -1,4 +1,5 @@
-import type { BedDefinition, DailyRecord } from '@/types/core';
+import type { BedDefinition } from '@/types/domain/base';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
 
 export type MedicalPrintMode = 'all' | 'upc' | 'no-upc';
 export type MedicalTabMode = 'all' | 'upc' | 'no-upc';

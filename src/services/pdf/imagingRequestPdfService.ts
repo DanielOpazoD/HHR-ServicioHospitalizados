@@ -8,7 +8,7 @@
  * Template: public/docs/solicitud-imagen.pdf
  */
 
-import { PatientData } from '@/types/core';
+import { PatientData } from '@/types/domain/patient';
 import {
   splitPatientName,
   calculateAge,

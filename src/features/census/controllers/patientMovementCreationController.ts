@@ -1,4 +1,6 @@
-import { BedDefinition, DailyRecord, PatientData } from '@/types/core';
+import { BedDefinition } from '@/types/domain/base';
+import { DailyRecord } from '@/types/domain/dailyRecord';
+import { PatientData } from '@/types/domain/patient';
 import type {
   DischargeAddCommandPayload,
   TransferCommandPayload,

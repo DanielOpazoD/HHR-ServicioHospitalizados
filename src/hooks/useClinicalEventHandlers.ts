@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import type { AuditAction, AuditLogEntry } from '@/types/audit';
-import type { ClinicalEvent, PatientData } from '@/types/core';
+import type { ClinicalEvent } from '@/types/domain/clinical';
+import type { PatientData } from '@/types/domain/patient';
 import type { PatientFieldValue } from '@/types/valueTypes';
 
 interface UseClinicalEventHandlersParams {

@@ -1,5 +1,5 @@
 import { CURRENT_SCHEMA_VERSION } from '@/constants/version';
-import { DailyRecord, DailyRecordPatch } from '@/types/core';
+import { DailyRecord, DailyRecordPatch } from '@/types/domain/dailyRecord';
 import { getRecordFromFirestore } from '@/services/storage/firestore';
 import { isRetryableSyncError, queueSyncTask } from '@/services/storage/sync';
 import { saveRecord as saveToIndexedDB } from '@/services/storage/indexeddb/indexedDbRecordService';

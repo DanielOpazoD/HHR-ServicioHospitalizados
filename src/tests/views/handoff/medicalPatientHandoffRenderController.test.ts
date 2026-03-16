@@ -3,7 +3,7 @@ import type { MedicalHandoffEntry } from '@/types';
 import {
   resolveMedicalEntryInlineMeta,
   resolveMedicalHandoffValidityViewModel,
-} from '@/features/handoff/controllers/medicalPatientHandoffRenderController';
+} from '@/domain/handoff/patientView';
 
 const buildEntry = (overrides: Partial<MedicalHandoffEntry> = {}): MedicalHandoffEntry => ({
   id: 'entry-1',
@@ -12,7 +12,7 @@ const buildEntry = (overrides: Partial<MedicalHandoffEntry> = {}): MedicalHandof
   ...overrides,
 });
 
-describe('medicalPatientHandoffRenderController', () => {
+describe('medical patient handoff render domain', () => {
   it('builds compact inline metadata for a medical entry', () => {
     const entry = buildEntry({
       updatedAt: '2026-03-03T20:33:00.000Z',

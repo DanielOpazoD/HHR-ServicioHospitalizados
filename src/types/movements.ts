@@ -1,4 +1,4 @@
-import type { DischargeData, IeehData, TransferData } from '@/types/core';
+import type { DischargeData, IeehData, TransferData } from '@/types/domain/movements';
 
 export type DischargeTarget = 'mother' | 'baby' | 'both';
 

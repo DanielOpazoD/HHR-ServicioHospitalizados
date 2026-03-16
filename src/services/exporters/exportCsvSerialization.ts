@@ -1,4 +1,6 @@
-import { DailyRecord, DischargeData, PatientData, TransferData } from '@/types/core';
+import { DailyRecord } from '@/types/domain/dailyRecord';
+import { DischargeData, TransferData } from '@/types/domain/movements';
+import { PatientData } from '@/types/domain/patient';
 import { BEDS } from '@/constants/beds';
 import { CSV_HEADERS } from '@/constants/export';
 import { formatDateDDMMYYYY } from '@/utils/dateUtils';

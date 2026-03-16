@@ -1,5 +1,5 @@
 import { useMemo, useRef, useEffect } from 'react';
-import { DailyRecord, DailyRecordPatch } from '@/types/core';
+import { DailyRecord, DailyRecordPatch } from '@/types/domain/dailyRecord';
 import { useNotification } from '@/context/UIContext';
 import { useAuditContext } from '@/context/AuditContext';
 import type { HandoffManagementActions } from '@/hooks/handoffManagementTypes';

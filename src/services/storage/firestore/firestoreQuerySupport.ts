@@ -1,4 +1,4 @@
-import { DailyRecord } from '@/types/core';
+import { DailyRecord } from '@/types/domain/dailyRecord';
 
 const padDatePart = (value: number): string => String(value).padStart(2, '0');
 

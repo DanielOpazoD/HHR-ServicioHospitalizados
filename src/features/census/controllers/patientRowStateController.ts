@@ -1,4 +1,4 @@
-import type { PatientData } from '@/types/core';
+import type { PatientData } from '@/types/domain/patient';
 
 export interface PatientRowDerivedState {
   isCunaMode: boolean;

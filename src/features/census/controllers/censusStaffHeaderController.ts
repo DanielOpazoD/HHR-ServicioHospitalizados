@@ -1,4 +1,5 @@
-import type { DischargeData, PatientData, TransferData } from '@/types/core';
+import type { DischargeData, TransferData } from '@/types/domain/movements';
+import type { PatientData } from '@/types/domain/patient';
 import { classifyPatientMovementForRecord } from '@/application/patient-flow/clinicalEpisode';
 
 export interface StaffSelectorsState {

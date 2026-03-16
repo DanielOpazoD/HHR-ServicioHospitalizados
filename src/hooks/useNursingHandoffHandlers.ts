@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import type { AuditAction, AuditLogEntry } from '@/types/audit';
-import type { PatientData } from '@/types/core';
+import type { PatientData } from '@/types/domain/patient';
 import type { PatientFieldValue } from '@/types/valueTypes';
 import type { NursingShift } from './useHandoffVisibility';
 

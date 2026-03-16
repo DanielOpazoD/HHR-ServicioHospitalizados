@@ -1,10 +1,11 @@
 import React from 'react';
-import type { BedDefinition, DailyRecord } from '@/types/core';
+import type { BedDefinition } from '@/types/domain/base';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { HandoffPatientTable } from './HandoffPatientTable';
 import { MovementsSummary } from './MovementsSummary';
 import { HandoffNovedades } from './HandoffNovedades';
 import type { HandoffClinicalEventActions, HandoffMedicalActions } from './handoffRowContracts';
-import { resolveHandoffNovedadesValue } from '@/features/handoff/controllers';
+import { resolveHandoffNovedadesValue } from '@/features/handoff/controllers/handoffViewController';
 
 interface HandoffNursingContentProps {
   visibleBeds: BedDefinition[];

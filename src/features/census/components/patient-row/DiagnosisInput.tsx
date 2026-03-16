@@ -9,7 +9,7 @@ import { TerminologySuggestor } from '@/components/shared/TerminologySuggestor';
 import { DeliveryRoutePopover } from './DeliveryRoutePopover';
 import { PatientInputSchema } from '@/schemas/inputSchemas';
 import { getCIE10Description } from '@/services/terminology/terminologyService';
-import { PatientData } from '@/types/core';
+import { PatientData } from '@/types/domain/patient';
 import type { DiagnosisMode } from '@/features/census/types/censusTableTypes';
 import { BaseCellProps, DebouncedTextHandler } from './inputCellTypes';
 import { PatientEmptyCell } from './PatientEmptyCell';

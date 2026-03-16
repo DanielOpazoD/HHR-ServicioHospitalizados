@@ -2,7 +2,7 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import { Check, Info } from 'lucide-react';
 import clsx from 'clsx';
-import type { MedicalHandoffEntry } from '@/types/core';
+import type { MedicalHandoffEntry } from '@/types/domain/patient';
 import { resolveMedicalHandoffValidityViewModel } from '@/domain/handoff/patientView';
 
 interface HandoffInfoTooltipProps {

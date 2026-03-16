@@ -1,7 +1,8 @@
 import type { jsPDF } from 'jspdf';
 
 import { BEDS } from '@/constants/beds';
-import { DailyRecord, ShiftType } from '@/types/core';
+import { DailyRecord } from '@/types/domain/dailyRecord';
+import { ShiftType } from '@/types/domain/base';
 import { formatDateDDMMYYYY } from '@/utils/dateUtils';
 
 import { calculateHospitalizedDays } from './handoffPdfUtils';

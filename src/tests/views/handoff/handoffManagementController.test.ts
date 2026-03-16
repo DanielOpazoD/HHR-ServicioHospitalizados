@@ -8,7 +8,7 @@ import {
   buildMedicalSpecialtyNoteRecord,
   buildNovedadesUpdateRecord,
   buildResetMedicalHandoffRecord,
-} from '@/features/handoff/controllers/handoffManagementController';
+} from '@/domain/handoff/management';
 
 const createRecord = (): DailyRecord =>
   ({
@@ -27,7 +27,7 @@ const createRecord = (): DailyRecord =>
     lastUpdated: '',
   }) as unknown as DailyRecord;
 
-describe('handoffManagementController', () => {
+describe('handoff management domain', () => {
   it('builds checklist and novedades updates immutably', () => {
     const record = createRecord();
 

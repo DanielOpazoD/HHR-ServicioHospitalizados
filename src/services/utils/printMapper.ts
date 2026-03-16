@@ -1,4 +1,4 @@
-import { PatientData } from '@/types/core';
+import { PatientData } from '@/types/domain/patient';
 export interface SurveyData {
   diagnostico: string;
   peso: string;

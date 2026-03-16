@@ -3,7 +3,7 @@
  * Utilities for applying partial updates with structural sharing.
  */
 
-import { DailyRecordPatch } from '@/types/core';
+import { DailyRecordPatch } from '@/types/domain/dailyRecord';
 
 /**
  * Applies dot-notation updates to an object using structural sharing.

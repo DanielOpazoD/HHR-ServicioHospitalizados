@@ -13,7 +13,7 @@ import {
   useProfessionalsQuery,
   useSaveProfessionalsMutation,
 } from '@/hooks/useStaffQuery';
-import { ProfessionalCatalogItem } from '@/types/core';
+import { ProfessionalCatalogItem } from '@/types/domain/base';
 
 // ============================================================================
 // Types

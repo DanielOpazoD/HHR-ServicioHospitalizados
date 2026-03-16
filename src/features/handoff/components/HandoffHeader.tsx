@@ -1,6 +1,6 @@
 import React from 'react';
 import { MessageSquare, Stethoscope } from 'lucide-react';
-import type { MedicalHandoffScope } from '@/features/handoff/controllers';
+import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 import { HandoffShiftSwitcher } from './HandoffShiftSwitcher';
 import { MedicalShareActions } from './MedicalShareActions';
 

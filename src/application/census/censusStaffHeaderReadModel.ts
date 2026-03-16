@@ -1,4 +1,4 @@
-import type { Statistics } from '@/types/core';
+import type { Statistics } from '@/types/domain/base';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 import { isSpecialistCensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 import {
@@ -7,7 +7,8 @@ import {
   resolveStaffSelectorsClassName,
   resolveStaffSelectorsState,
 } from '@/features/census/controllers/censusStaffHeaderController';
-import type { DischargeData, PatientData, TransferData } from '@/types/core';
+import type { DischargeData, TransferData } from '@/types/domain/movements';
+import type { PatientData } from '@/types/domain/patient';
 
 interface CensusStaffData {
   nursesDayShift?: string[] | null;

@@ -6,13 +6,13 @@
 
 import {
   DailyRecord,
-  PatientData,
-  CudyrScore,
-  CMAData,
   DailyRecordPatch,
   MedicalHandoffActor,
   MedicalSpecialty,
-} from '@/types/core';
+} from '@/types/domain/dailyRecord';
+import { PatientData } from '@/types/domain/patient';
+import { CudyrScore } from '@/types/domain/clinical';
+import { CMAData } from '@/types/domain/movements';
 import { PatientFieldValue } from '@/types/valueTypes';
 import type { PatientMovementActions } from '@/types/movements';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';

@@ -3,7 +3,7 @@
  * Hospital bed definitions and capacity
  */
 
-import { BedDefinition, BedType } from '@/types/core';
+import { BedDefinition, BedType } from '@/types/domain/base';
 
 export const HOSPITAL_CAPACITY = 18;
 

@@ -4,7 +4,7 @@
  * Rehydrates the export range from Firestore before building the workbook.
  */
 
-import type { DailyRecord } from '@/types/core';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { getCudyrMonthlyTotals } from './cudyrSummary';
 import { validateExcelExport, XLSX_MIME_TYPE } from '@/services/exporters/excelValidation';
 import { buildCudyrWorkbook } from './cudyrWorkbookBuilder';

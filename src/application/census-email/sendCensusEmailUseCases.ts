@@ -1,5 +1,5 @@
 import type { CensusAccessRole } from '@/types/censusAccess';
-import type { DailyRecord } from '@/types/core';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { CensusEmailBrowserRuntime } from '@/hooks/controllers/censusEmailBrowserRuntimeController';
 import { formatDateDDMMYYYY as formatDate } from '@/utils/dateUtils';
 import { buildSharedCensusLink } from '@/hooks/controllers/censusEmailBrowserRuntimeController';

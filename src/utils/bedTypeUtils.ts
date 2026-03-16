@@ -3,7 +3,8 @@
  * Logic for calculating final bed types with overrides.
  */
 
-import { BedDefinition, DailyRecord, BedType } from '@/types/core';
+import { BedDefinition, BedType } from '@/types/domain/base';
+import { DailyRecord } from '@/types/domain/dailyRecord';
 
 /**
  * Calculates the final bed type for a given bed, considering daily overrides.

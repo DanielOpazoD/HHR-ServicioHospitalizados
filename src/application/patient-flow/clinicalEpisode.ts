@@ -1,4 +1,4 @@
-import type { PatientData } from '@/types/core';
+import type { PatientData } from '@/types/domain/patient';
 import { isNewAdmissionForClinicalDay } from '@/utils/dateUtils';
 
 export interface ClinicalEpisode {

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { DailyRecord } from '@/types/core';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { resolveShiftNurseSignature } from '@/services/staff/dailyRecordStaffing';
 
 export const useNurseSignature = (record: DailyRecord | null) => {

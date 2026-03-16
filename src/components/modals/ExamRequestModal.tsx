@@ -9,7 +9,7 @@
 
 import React from 'react';
 import { Printer, ClipboardList } from 'lucide-react';
-import { PatientData } from '@/types/core';
+import { PatientData } from '@/types/domain/patient';
 import { BaseModal } from '@/components/shared/BaseModal';
 import { EXAM_CATEGORIES } from '@/constants/examCategories';
 import { useExamRequest } from '@/hooks/useExamRequest';

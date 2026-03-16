@@ -6,8 +6,8 @@
  * for controlled compatibility and is protected by persistence boundary checks.
  */
 
-import { DailyRecord } from '@/types/core';
-import { DailyRecordPatch } from '@/types/core';
+import { DailyRecord } from '@/types/domain/dailyRecord';
+import { DailyRecordPatch } from '@/types/domain/dailyRecord';
 import type { DailyRecordReadResult } from './contracts/dailyRecordQueries';
 // import {
 //     getActiveHospitalId
