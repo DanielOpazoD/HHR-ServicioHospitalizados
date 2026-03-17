@@ -48,6 +48,8 @@
 - `clinicalDocumentPrintHtmlBuilder`: construye el HTML imprimible.
 - `clinicalDocumentBrowserPrintService`: abre impresión desde la misma página.
 - `clinicalDocumentPdfRenderService`: intenta backend render y luego fallback snapshot.
+- `clinicalDocumentDriveService`: debe exponer variantes con resultado tipado para uploads/listados
+  en Drive; la UI no debe interpretar errores remotos parseando excepciones inline.
 
 ## Invariantes
 
@@ -67,6 +69,8 @@
 - La hoja principal no debe recuperar `if` especiales por `documentType`; la extensibilidad entra por definiciones/section renderers.
 - Todo documento/template leído o persistido debe pasar por contratos runtime antes de salir del repositorio.
 - La impresión/exportación debe reportar fallos por telemetría operativa y no depender de logs sueltos.
+- Los errores de Drive recuperables deben salir con `userSafeMessage` y degradar a feedback visible,
+  no romper el workspace por excepciones sin clasificar.
 
 ## Test entrypoints recomendados
 

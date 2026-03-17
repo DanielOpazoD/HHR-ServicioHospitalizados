@@ -1,5 +1,7 @@
 export type DeliveryRoute = 'Vaginal' | 'Cesárea';
 
+import { formatCensusRouteDateLabel } from '@/shared/census/censusPresentation';
+
 interface ResolveDeliveryRoutePopoverPositionParams {
   buttonRect: DOMRect;
   panelWidth: number;
@@ -49,5 +51,5 @@ export const resolveDeliveryRouteTitle = (route?: DeliveryRoute, date?: string):
     return 'Vía del parto';
   }
 
-  return `${route} - ${date ? new Date(date).toLocaleDateString('es-CL') : 'Sin fecha'}`;
+  return `${route} - ${formatCensusRouteDateLabel(date)}`;
 };

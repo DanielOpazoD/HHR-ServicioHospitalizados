@@ -59,12 +59,13 @@ export const useFileOperations = (
   };
 
   const handleExportCSV = () => {
-    try {
-      ExportService.exportDataCSV(record);
+    const outcome = ExportService.exportDataCSVWithResult(record);
+    if (outcome.status === 'success') {
       dispatchNotification(buildExportCsvNotification('success'));
-    } catch (_err) {
-      dispatchNotification(buildExportCsvNotification('error'));
+      return;
     }
+
+    dispatchNotification(buildExportCsvNotification('error'));
   };
 
   const handleImportFile = async (file: File) => {

@@ -3,6 +3,7 @@ import {
   mapDataToTags,
   fetchTemplateFromStorage,
 } from '@/services/transfers/templateGeneratorService';
+import { formatCensusIsoDate } from '@/shared/census/censusPresentation';
 import { TransferPatientData, QuestionnaireResponse } from '@/types/transferDocuments';
 
 const { mockGetBlob, mockRef, mockGetStorageInstance } = vi.hoisted(() => ({
@@ -58,9 +59,7 @@ describe('templateGeneratorService - mapDataToTags', () => {
 
     it('debe mapear la fecha de ingreso para plantillas IAAS', () => {
       const tags = mapDataToTags(mockPatient, mockResponses);
-      const expectedAdmissionDate = new Date(
-        mockPatient.admissionDate as string
-      ).toLocaleDateString('es-CL');
+      const expectedAdmissionDate = formatCensusIsoDate(mockPatient.admissionDate as string);
       expect(tags.iaas_fecha_ingreso).toBe(expectedAdmissionDate);
       expect(tags.paciente_fecha_ingreso).toBe(expectedAdmissionDate);
     });

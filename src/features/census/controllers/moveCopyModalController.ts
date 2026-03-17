@@ -1,5 +1,6 @@
 import type { BedDefinition } from '@/types/domain/base';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
+import { formatCensusShortDayMonth } from '@/shared/census/censusPresentation';
 
 export interface MoveCopyDateOption {
   label: 'Ayer' | 'Hoy' | 'Mañana';
@@ -77,9 +78,7 @@ export const buildMoveCopyDateOptions = (
     return {
       ...option,
       isoDate,
-      displayDate: parsed
-        ? parsed.toLocaleDateString(locale, { day: '2-digit', month: '2-digit' })
-        : '--/--',
+      displayDate: parsed ? formatCensusShortDayMonth(isoDate, locale) : '--/--',
     };
   });
 

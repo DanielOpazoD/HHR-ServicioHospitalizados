@@ -143,6 +143,8 @@ Si un hospital no tiene configuración documental:
 - `transferService.ts` sigue siendo la fachada pública; lógica nueva entra en queries, mutations, status o subscriptions.
 - La vista de management no debe volver a mezclar filtros de período, lifecycle y wiring de modales en un solo componente.
 - Las fallas realtime deben mapearse a error operativo estructurado + telemetría, no solo a `console.error`.
+- Los generadores DOCX y templates deben reutilizar helpers compartidos de fecha; no deben volver a
+  introducir variantes locales de `toLocaleDateString()` por documento o template.
 
 ## Comandos de validación del módulo
 

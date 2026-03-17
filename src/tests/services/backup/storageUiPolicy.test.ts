@@ -4,7 +4,7 @@ import { getStorageListNotice, getStorageLookupNotice } from '@/services/backup/
 describe('storageUiPolicy', () => {
   it('returns restricted lookup warning', () => {
     expect(getStorageLookupNotice({ exists: false, status: 'restricted' }, 'censo')).toEqual({
-      channel: 'warning',
+      channel: 'info',
       title: 'Respaldo no verificable',
       message: 'No se pudo confirmar el respaldo de censo por permisos de Storage.',
     });

@@ -10,5 +10,3 @@
 export { signIn, createUser, signOut } from './auth/authService';
 
 export { getAppSetting, saveAppSetting } from './settingsService';
-
-export { triggerCensusEmail } from './integrations/censusEmailService';

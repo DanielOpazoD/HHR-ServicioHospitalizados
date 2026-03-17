@@ -1,3 +1,5 @@
+import { formatCensusMonthName } from '@/shared/census/censusPresentation';
+
 export const COPY_PREVIOUS_DAY_UNLOCK_HOUR = 8;
 
 export interface CreateDayCopyAvailability {
@@ -59,11 +61,8 @@ export const buildCopyUnlockDescription = (
   now: Date = new Date()
 ): string => {
   const availability = resolveCreateDayCopyAvailability(currentDateString, now);
-  const [year, month, day] = currentDateString.split('-');
-  const monthName = new Date(Number(year), Number(month) - 1, Number(day)).toLocaleString('es-CL', {
-    month: 'long',
-  });
-  const capitalizedMonthName = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+  const [, , day] = currentDateString.split('-');
+  const capitalizedMonthName = formatCensusMonthName(currentDateString);
   const formattedDate = `${parseInt(day, 10)} de ${capitalizedMonthName}`;
 
   return availability.isTargetToday

@@ -2,16 +2,19 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   exportDataJSON,
   exportDataCSV,
+  exportDataCSVWithResult,
   importDataJSON,
+  importDataJSONWithResult,
   importDataJSONDetailed,
   importDataCSV,
+  importDataCSVWithResult,
 } from '@/services/exporters/exportService';
-import * as indexedDBService from '@/services/storage/indexedDBService';
+import * as recordStorage from '@/services/storage/records';
 import { DailyRecord, PatientData, DischargeData, TransferData } from '@/types';
 
 // Mock dependencies
-vi.mock('@/services/storage/indexedDBService', async importOriginal => {
-  const actual = await importOriginal<typeof import('@/services/storage/indexedDBService')>();
+vi.mock('@/services/storage/records', async importOriginal => {
+  const actual = await importOriginal<typeof import('@/services/storage/records')>();
   return {
     ...actual,
     getAllRecords: vi.fn(),
@@ -88,13 +91,13 @@ describe('exportService', () => {
       vi.spyOn(document.body, 'appendChild').mockImplementation(node => node as unknown as Node);
       vi.spyOn(document.body, 'removeChild').mockImplementation(node => node as unknown as Node);
 
-      vi.mocked(indexedDBService.getAllRecords).mockResolvedValue({
+      vi.mocked(recordStorage.getAllRecords).mockResolvedValue({
         '2025-01-01': mockRecord,
       });
 
       await exportDataJSON();
 
-      expect(indexedDBService.getAllRecords).toHaveBeenCalled();
+      expect(recordStorage.getAllRecords).toHaveBeenCalled();
       expect(mockElement.click).toHaveBeenCalled();
     });
   });
@@ -105,12 +108,18 @@ describe('exportService', () => {
       exportDataCSV(null);
       expect(createSpy).not.toHaveBeenCalled();
     });
+
+    it('returns a typed validation failure when record is null', () => {
+      const result = exportDataCSVWithResult(null);
+      expect(result.status).toBe('failed');
+      expect(result.issues[0]?.kind).toBe('validation');
+    });
   });
 
   describe('importDataJSON', () => {
     it('imports valid JSON data', async () => {
       const validData = { '2025-01-01': mockRecord };
-      vi.mocked(indexedDBService.saveRecord).mockResolvedValue();
+      vi.mocked(recordStorage.saveRecord).mockResolvedValue();
 
       const file = new File([JSON.stringify(validData)], 'backup.json', {
         type: 'application/json',
@@ -118,7 +127,20 @@ describe('exportService', () => {
       const result = await importDataJSON(file);
 
       expect(result).toBe(true);
-      expect(indexedDBService.saveRecord).toHaveBeenCalled();
+      expect(recordStorage.saveRecord).toHaveBeenCalled();
+    });
+
+    it('returns a typed success for valid JSON imports', async () => {
+      const validData = { '2025-01-01': mockRecord };
+      vi.mocked(recordStorage.saveRecord).mockResolvedValue();
+
+      const file = new File([JSON.stringify(validData)], 'backup.json', {
+        type: 'application/json',
+      });
+      const result = await importDataJSONWithResult(file);
+
+      expect(result.status).toBe('success');
+      expect(result.data.imported).toBe(true);
     });
 
     it('rejects invalid JSON', async () => {
@@ -132,7 +154,7 @@ describe('exportService', () => {
     });
 
     it('reports repaired imports without failing', async () => {
-      vi.mocked(indexedDBService.saveRecord).mockResolvedValue();
+      vi.mocked(recordStorage.saveRecord).mockResolvedValue();
       const repairedData = {
         '2025-01-01': {
           ...mockRecord,
@@ -163,6 +185,13 @@ describe('exportService', () => {
       const file = new File(['data'], 'test.csv');
       const result = await importDataCSV(file);
       expect(result).toBe(false);
+    });
+
+    it('returns a typed validation failure as CSV import is not implemented', async () => {
+      const file = new File(['data'], 'test.csv');
+      const result = await importDataCSVWithResult(file);
+      expect(result.status).toBe('failed');
+      expect(result.issues[0]?.userSafeMessage).toContain('CSV');
     });
   });
 });

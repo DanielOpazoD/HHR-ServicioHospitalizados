@@ -1,6 +1,7 @@
 import { Paragraph, TextRun, TableRow, TableCell, WidthType, BorderStyle } from 'docx';
 import { QuestionnaireResponse } from '@/types/transferDocuments';
 import { getQuestionnaireResponseText } from './transferQuestionnaireResponseController';
+import { formatCensusIsoDate } from '@/shared/census/censusPresentation';
 
 /**
  * Get response value by question ID
@@ -14,15 +15,14 @@ export const getResponse = (responses: QuestionnaireResponse, questionId: string
  */
 export const formatDate = (dateString?: string): string => {
   if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('es-CL');
+  return formatCensusIsoDate(dateString);
 };
 
 /**
  * Format current date
  */
 export const getCurrentDate = (): string => {
-  return new Date().toLocaleDateString('es-CL');
+  return formatCensusIsoDate(new Date().toISOString().slice(0, 10));
 };
 
 /**

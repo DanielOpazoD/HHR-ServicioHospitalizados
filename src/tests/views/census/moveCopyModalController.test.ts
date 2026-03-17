@@ -23,6 +23,7 @@ describe('moveCopyModalController', () => {
       '2026-02-14',
     ]);
     expect(options.map(option => option.label)).toEqual(['Ayer', 'Hoy', 'Mañana']);
+    expect(options.map(option => option.displayDate)).toEqual(['12-02', '13-02', '14-02']);
   });
 
   it('falls back to fallback date when current record date is invalid', () => {

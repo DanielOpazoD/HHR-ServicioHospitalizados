@@ -32,5 +32,6 @@ describe('deliveryRoutePopoverController', () => {
   it('builds tooltip title for empty and populated data', () => {
     expect(resolveDeliveryRouteTitle(undefined, undefined)).toBe('Vía del parto');
     expect(resolveDeliveryRouteTitle('Vaginal', undefined)).toContain('Sin fecha');
+    expect(resolveDeliveryRouteTitle('Cesárea', '2025-01-02')).toContain('02-01-2025');
   });
 });

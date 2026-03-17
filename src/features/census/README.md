@@ -73,6 +73,8 @@ clinicalShiftCalendarController
 - `controllers/` no debe importar React ni hooks.
 - `components/` no debe recalcular reglas clínicas ya resueltas por controllers.
 - Las acciones del censo deben salir de los command/runtime controllers, no de callbacks ad hoc embebidos.
+- El formateo de fechas compactas de `census` debe reutilizar presentation helpers compartidos;
+  no deben reaparecer `toLocaleDateString()` o `toLocaleString()` inline en controllers de UI.
 
 ## Test entrypoints recomendados
 

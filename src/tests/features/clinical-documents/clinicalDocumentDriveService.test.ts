@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   listClinicalDocumentDriveFolders,
+  listClinicalDocumentDriveFoldersWithResult,
   uploadClinicalDocumentPdfToDrive,
+  uploadClinicalDocumentPdfToDriveWithResult,
 } from '@/features/clinical-documents/services/clinicalDocumentDriveService';
 
 const { mockRequestAccessToken, mockListDriveFolders, mockUploadToDriveFolder, fetchMock } =
@@ -146,5 +148,30 @@ describe('clinicalDocumentDriveService', () => {
       'Mi unidad/Hospitalizados'
     );
     expect(result).toEqual([{ id: 'folder-a', name: 'Documentos', path: 'Mi unidad/Documentos' }]);
+  });
+
+  it('returns a typed failure when Drive upload cannot be completed', async () => {
+    mockRequestAccessToken.mockRejectedValueOnce(new Error('auth failed'));
+
+    const result = await uploadClinicalDocumentPdfToDriveWithResult(
+      new Blob(['pdf'], { type: 'application/pdf' }),
+      'Epicrisis.pdf',
+      'epicrisis',
+      'Paciente Demo',
+      '11.111.111-1',
+      'episode-err'
+    );
+
+    expect(result.status).toBe('failed');
+    expect(result.issues[0]?.message).toContain('auth failed');
+  });
+
+  it('returns a typed folder listing failure when Drive list fails', async () => {
+    mockListDriveFolders.mockRejectedValueOnce(new Error('drive offline'));
+
+    const result = await listClinicalDocumentDriveFoldersWithResult('root', 'Mi unidad');
+
+    expect(result.status).toBe('failed');
+    expect(result.data).toEqual([]);
   });
 });

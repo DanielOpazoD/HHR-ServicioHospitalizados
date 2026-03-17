@@ -8,6 +8,11 @@ import {
   JsonImportResult,
 } from '@/services/exporters/exportImportJson';
 import { logger } from '@/services/utils/loggerService';
+import {
+  createApplicationFailed,
+  createApplicationSuccess,
+  type ApplicationOutcome,
+} from '@/application/shared/applicationOutcome';
 
 const exportServiceLogger = logger.child('ExportService');
 
@@ -19,14 +24,33 @@ export const exportDataJSON = async () => {
 };
 
 export const exportDataCSV = (record: DailyRecord | null) => {
-  if (!record) return;
+  const result = exportDataCSVWithResult(record);
+  if (result.status !== 'success') {
+    return;
+  }
+};
+
+export const exportDataCSVWithResult = (
+  record: DailyRecord | null
+): ApplicationOutcome<{ exported: boolean }> => {
+  if (!record) {
+    return createApplicationFailed({ exported: false }, [
+      {
+        kind: 'validation',
+        message: 'No hay datos del censo para exportar.',
+        userSafeMessage: 'No hay datos del censo para exportar.',
+      },
+    ]);
+  }
   const csvString = buildDailyRecordCsv(record);
   const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
   downloadBlob(blob, `Censo_HangaRoa_${record.date}.csv`);
+  return createApplicationSuccess({ exported: true });
 };
 
 export const importDataJSON = async (file: File): Promise<boolean> => {
-  return importDataJSONFile(file);
+  const result = await importDataJSONWithResult(file);
+  return result.status === 'success' ? result.data.imported : false;
 };
 
 export const importDataJSONDetailed = async (file: File): Promise<JsonImportResult> => {
@@ -34,6 +58,45 @@ export const importDataJSONDetailed = async (file: File): Promise<JsonImportResu
 };
 
 export const importDataCSV = async (_file: File): Promise<boolean> => {
+  const result = await importDataCSVWithResult(_file);
+  return result.status === 'success' ? result.data.imported : false;
+};
+
+export const importDataJSONWithResult = async (
+  file: File
+): Promise<ApplicationOutcome<{ imported: boolean }>> => {
+  try {
+    const imported = await importDataJSONFile(file);
+    if (!imported) {
+      return createApplicationFailed({ imported: false }, [
+        {
+          kind: 'validation',
+          message: 'No se pudo importar el respaldo JSON.',
+          userSafeMessage: 'No se pudo importar el respaldo JSON.',
+        },
+      ]);
+    }
+    return createApplicationSuccess({ imported: true });
+  } catch (error) {
+    return createApplicationFailed({ imported: false }, [
+      {
+        kind: 'unknown',
+        message: error instanceof Error ? error.message : 'No se pudo importar el respaldo JSON.',
+        userSafeMessage: 'No se pudo importar el respaldo JSON.',
+      },
+    ]);
+  }
+};
+
+export const importDataCSVWithResult = async (
+  _file: File
+): Promise<ApplicationOutcome<{ imported: boolean }>> => {
   exportServiceLogger.warn('CSV import is not fully implemented. Use JSON.');
-  return Promise.resolve(false);
+  return createApplicationFailed({ imported: false }, [
+    {
+      kind: 'validation',
+      message: 'La importación CSV no está disponible. Usa JSON.',
+      userSafeMessage: 'La importación CSV no está disponible. Usa JSON.',
+    },
+  ]);
 };

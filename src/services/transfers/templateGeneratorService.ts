@@ -2,6 +2,7 @@ import { TransferPatientData, QuestionnaireResponse } from '@/types/transferDocu
 import { createWorkbook } from '@/services/exporters/excelUtils';
 import { fetchTransferTemplateBlob } from './transferTemplateFetchController';
 import { recordTransferTemplateFetchFailure } from './transferDocumentTelemetryController';
+import { formatCensusIsoDate } from '@/shared/census/censusPresentation';
 // import ExcelJS from 'exceljs'; // Removed static import
 
 /**
@@ -12,7 +13,7 @@ export const mapDataToTags = (
   responses: QuestionnaireResponse
 ): Record<string, string | number | boolean> => {
   const today = new Date();
-  const fechaActual = today.toLocaleDateString('es-CL');
+  const fechaActual = formatCensusIsoDate(today.toISOString().slice(0, 10));
 
   // Calculate age: use direct age field if available, otherwise calculate from birthDate
   const ageStr =
@@ -24,13 +25,13 @@ export const mapDataToTags = (
 
   // Format birth date for display
   const fechaNacimiento = patientData.birthDate
-    ? new Date(patientData.birthDate).toLocaleDateString('es-CL')
+    ? formatCensusIsoDate(patientData.birthDate)
     : 'No registrada';
 
   // Use diagnosis from responses if available (it allows editing in the modal), otherwise fallback to patientData
   const currentDiagnosis = responses.diagnosis || patientData.diagnosis || 'No especificado';
   const fechaIngreso = patientData.admissionDate
-    ? new Date(patientData.admissionDate).toLocaleDateString('es-CL')
+    ? formatCensusIsoDate(patientData.admissionDate)
     : 'No registrado';
 
   const tags: Record<string, string | number | boolean> = {

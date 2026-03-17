@@ -13,7 +13,7 @@ export const getStorageLookupNotice = (
 ): StorageNotice | null => {
   if (result.status === 'restricted') {
     return {
-      channel: 'warning',
+      channel: 'info',
       title: 'Respaldo no verificable',
       message: `No se pudo confirmar el respaldo de ${artifactLabel} por permisos de Storage.`,
     };
