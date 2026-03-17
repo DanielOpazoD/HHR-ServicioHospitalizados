@@ -6,9 +6,19 @@ import { ClinicalDocumentRepository } from '@/services/repositories/ClinicalDocu
 import { createQueryClientTestWrapper } from '@/tests/utils/queryClientTestUtils';
 import { BedType } from '@/types';
 
+const warnMock = vi.hoisted(() => vi.fn());
+
 vi.mock('@/services/repositories/ClinicalDocumentRepository', () => ({
   ClinicalDocumentRepository: {
     listByEpisodeKeys: vi.fn(),
+  },
+}));
+
+vi.mock('@/services/utils/loggerService', () => ({
+  logger: {
+    child: () => ({
+      warn: warnMock,
+    }),
   },
 }));
 
@@ -50,7 +60,6 @@ describe('useClinicalDocumentPresenceByBed', () => {
     vi.mocked(ClinicalDocumentRepository.listByEpisodeKeys).mockRejectedValueOnce(
       new Error('denied')
     );
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const { wrapper } = createQueryClientTestWrapper();
 
     const { result } = renderHook(
@@ -67,10 +76,9 @@ describe('useClinicalDocumentPresenceByBed', () => {
       expect(ClinicalDocumentRepository.listByEpisodeKeys).toHaveBeenCalledTimes(1);
     });
     await waitFor(() => {
-      expect(result.current).toEqual({});
+      expect(result.current).toEqual({ R1: false });
     });
 
-    expect(warnSpy).toHaveBeenCalled();
-    warnSpy.mockRestore();
+    expect(warnMock).toHaveBeenCalled();
   });
 });

@@ -137,7 +137,7 @@ describe('Transfer Service', () => {
 
       await expect(
         changeTransferStatus('non-existent', 'RECEIVED', 'user@hospital.cl')
-      ).rejects.toThrow('not found');
+      ).rejects.toThrow('ya no existe o fue movida');
     });
   });
 
@@ -464,7 +464,9 @@ describe('Transfer Service', () => {
         exists: () => false,
       } as unknown as Awaited<ReturnType<typeof firestore.getDoc>>);
 
-      await expect(completeTransfer('TR-NONEXISTENT', 'user-1')).rejects.toThrow('not found');
+      await expect(completeTransfer('TR-NONEXISTENT', 'user-1')).rejects.toThrow(
+        'ya no existe o fue movida'
+      );
     });
   });
 
@@ -497,7 +499,9 @@ describe('Transfer Service', () => {
         data: () => ({ statusHistory: [{ to: 'REQUESTED' }] }),
       } as unknown as Awaited<ReturnType<typeof firestore.getDoc>>);
 
-      await expect(deleteStatusHistoryEntry('TR-1', 0)).rejects.toThrow('Cannot delete');
+      await expect(deleteStatusHistoryEntry('TR-1', 0)).rejects.toThrow(
+        'estado actual del traslado'
+      );
     });
   });
 });

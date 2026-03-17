@@ -36,6 +36,9 @@ describe('transfer mutation results', () => {
     );
 
     expect(result.status).toBe('not_found');
+    if (result.status !== 'success') {
+      expect(result.userSafeMessage).toContain('ya no existe');
+    }
   });
 
   it('returns success when creating a transfer', async () => {
@@ -72,5 +75,8 @@ describe('transfer mutation results', () => {
 
     const result = await deleteStatusHistoryEntryMutationWithResult('tr-1', 0);
     expect(result.status).toBe('conflict');
+    if (result.status !== 'success') {
+      expect(result.userSafeMessage).toContain('estado actual');
+    }
   });
 });

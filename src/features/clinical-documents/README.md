@@ -53,6 +53,9 @@
 - Los resultados esperados de exportación/impresión deben resolverse con outcomes tipados y
   notices compartidos; errores recuperables de Drive no deben volver a salir como excepciones
   “normales” dentro del workspace.
+- `useClinicalDocumentWorkspaceDocumentActions` debe tratar outcomes fallidos como estado esperado:
+  crear, eliminar, firmar y desfimar no deben depender de `throw` para informar bloqueos o
+  degradaciones recuperables al usuario.
 
 ## Invariantes
 

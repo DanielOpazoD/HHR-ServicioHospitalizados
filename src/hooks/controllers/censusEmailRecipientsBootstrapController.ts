@@ -56,6 +56,26 @@ const resolvePreferredActiveList = (
   return lists.find(list => list.id === CENSUS_GLOBAL_EMAIL_RECIPIENT_LIST.id) ?? lists[0] ?? null;
 };
 
+const resolveRecipientListOutcomeErrorMessage = (
+  fallback: string,
+  input: {
+    status: string;
+    issues?: Array<{ userSafeMessage?: string; message?: string }>;
+    userSafeMessage?: string;
+  }
+): string | null => {
+  if (input.status === 'success') {
+    return null;
+  }
+
+  return (
+    input.userSafeMessage ||
+    input.issues?.[0]?.userSafeMessage ||
+    input.issues?.[0]?.message ||
+    fallback
+  );
+};
+
 export const resolveCensusRecipientsBootstrap = async ({
   canManageGlobalRecipientLists,
   browserRuntime,
@@ -91,12 +111,12 @@ export const resolveCensusRecipientsBootstrap = async ({
 
   try {
     const listResult = await getGlobalEmailRecipientListsWithResult();
-    if (listResult.status !== 'success') {
-      throw new Error(
-        listResult.issues[0]?.userSafeMessage ||
-          listResult.issues[0]?.message ||
-          'No se pudo cargar la lista global en Firebase.'
-      );
+    const listResultError = resolveRecipientListOutcomeErrorMessage(
+      'No se pudo cargar la lista global en Firebase.',
+      listResult
+    );
+    if (listResultError) {
+      throw new Error(listResultError);
     }
     let lists = listResult.data;
     if (lists.length === 0) {
@@ -109,12 +129,12 @@ export const resolveCensusRecipientsBootstrap = async ({
         updatedByEmail: user?.email ?? null,
       });
       const refreshResult = await getGlobalEmailRecipientListsWithResult();
-      if (refreshResult.status !== 'success') {
-        throw new Error(
-          refreshResult.issues[0]?.userSafeMessage ||
-            refreshResult.issues[0]?.message ||
-            'No se pudo cargar la lista global en Firebase.'
-        );
+      const refreshResultError = resolveRecipientListOutcomeErrorMessage(
+        'No se pudo cargar la lista global en Firebase.',
+        refreshResult
+      );
+      if (refreshResultError) {
+        throw new Error(refreshResultError);
       }
       lists = refreshResult.data;
     }

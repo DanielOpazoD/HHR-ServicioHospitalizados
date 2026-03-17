@@ -22,6 +22,7 @@ import {
   executeSignClinicalDocument,
   executeUnsignClinicalDocument,
 } from '@/application/clinical-documents/clinicalDocumentUseCases';
+import type { ApplicationOutcome } from '@/application/shared/applicationOutcome';
 import {
   recordOperationalOutcome,
   recordOperationalTelemetry,
@@ -57,6 +58,22 @@ interface UseClinicalDocumentWorkspaceDocumentActionsParams {
   setIsSaving: React.Dispatch<React.SetStateAction<boolean>>;
   lastPersistedSnapshotRef: React.MutableRefObject<string>;
 }
+
+const resolveClinicalDocumentOutcomeError = <T>(
+  outcome: ApplicationOutcome<T>,
+  fallback: string
+): string | null => {
+  if (outcome.status === 'success') {
+    return null;
+  }
+
+  return (
+    outcome.userSafeMessage ||
+    outcome.issues[0]?.userSafeMessage ||
+    outcome.issues[0]?.message ||
+    fallback
+  );
+};
 
 export const useClinicalDocumentWorkspaceDocumentActions = ({
   patient,
@@ -102,8 +119,24 @@ export const useClinicalDocumentWorkspaceDocumentActions = ({
         context: { templateId },
         allowSuccess: true,
       });
-      if (result.status !== 'success' || !result.data) {
-        throw new Error(result.issues[0]?.message || 'No se pudo crear el documento clínico.');
+      const outcomeError = resolveClinicalDocumentOutcomeError(
+        result,
+        'No se pudo crear el documento clínico.'
+      );
+      if (outcomeError || !result.data) {
+        recordOperationalTelemetry({
+          category: 'clinical_document',
+          status: 'failed',
+          operation: 'create_clinical_document',
+          date: episode.sourceDailyRecordDate,
+          issues: [outcomeError || 'No se pudo crear el documento clínico.'],
+          context: { templateId },
+        });
+        notify.error(
+          'No se pudo crear el documento',
+          outcomeError || 'Ocurrió un error al crear el borrador clínico.'
+        );
+        return;
       }
       lastPersistedSnapshotRef.current = serializeClinicalDocument(result.data);
       setSelectedDocumentId(result.data.id);
@@ -166,8 +199,21 @@ export const useClinicalDocumentWorkspaceDocumentActions = ({
           context: { documentId: document.id },
           allowSuccess: true,
         });
-        if (result.status !== 'success') {
-          throw new Error(result.issues[0]?.message || 'No se pudo eliminar el documento.');
+        const outcomeError = resolveClinicalDocumentOutcomeError(
+          result,
+          'No se pudo eliminar el documento.'
+        );
+        if (outcomeError) {
+          recordOperationalTelemetry({
+            category: 'clinical_document',
+            status: 'failed',
+            operation: 'delete_clinical_document',
+            date: document.sourceDailyRecordDate,
+            issues: [outcomeError],
+            context: { documentId: document.id },
+          });
+          notify.error('No se pudo eliminar', outcomeError);
+          return;
         }
         if (selectedDocumentId === document.id) {
           setSelectedDocumentId(null);
@@ -218,8 +264,21 @@ export const useClinicalDocumentWorkspaceDocumentActions = ({
         context: { documentId: selectedDocument.id },
         allowSuccess: true,
       });
-      if (result.status !== 'success' || !result.data) {
-        throw new Error(result.issues[0]?.message || 'No se pudo firmar el documento.');
+      const outcomeError = resolveClinicalDocumentOutcomeError(
+        result,
+        'No se pudo firmar el documento.'
+      );
+      if (outcomeError || !result.data) {
+        recordOperationalTelemetry({
+          category: 'clinical_document',
+          status: 'failed',
+          operation: 'sign_clinical_document',
+          date: selectedDocument?.sourceDailyRecordDate,
+          issues: [outcomeError || 'No se pudo firmar el documento.'],
+          context: { documentId: selectedDocument?.id },
+        });
+        notify.error('No se pudo firmar', outcomeError || 'Intenta nuevamente.');
+        return;
       }
       lastPersistedSnapshotRef.current = serializeClinicalDocument(result.data);
       setDraft(result.data);
@@ -267,8 +326,21 @@ export const useClinicalDocumentWorkspaceDocumentActions = ({
         context: { documentId: selectedDocument.id },
         allowSuccess: true,
       });
-      if (result.status !== 'success' || !result.data) {
-        throw new Error(result.issues[0]?.message || 'No se pudo quitar la firma.');
+      const outcomeError = resolveClinicalDocumentOutcomeError(
+        result,
+        'No se pudo quitar la firma.'
+      );
+      if (outcomeError || !result.data) {
+        recordOperationalTelemetry({
+          category: 'clinical_document',
+          status: 'failed',
+          operation: 'unsign_clinical_document',
+          date: selectedDocument?.sourceDailyRecordDate,
+          issues: [outcomeError || 'No se pudo quitar la firma.'],
+          context: { documentId: selectedDocument?.id },
+        });
+        notify.error('No se pudo quitar la firma', outcomeError || 'Intenta nuevamente.');
+        return;
       }
       lastPersistedSnapshotRef.current = serializeClinicalDocument(result.data);
       setDraft(result.data);

@@ -115,4 +115,29 @@ describe('censusEmailRecipientsBootstrapController', () => {
     expect(saveAppSetting).toHaveBeenCalledWith('censusEmailRecipients', ['legacy@test.com']);
     expect(browserRuntime.clearLegacyRecipients).toHaveBeenCalled();
   });
+
+  it('falls back to local recipients when firebase returns a failed outcome', async () => {
+    vi.mocked(getAppSetting)
+      .mockResolvedValueOnce(['local@test.com'])
+      .mockResolvedValueOnce('census-default');
+    vi.mocked(getGlobalEmailRecipientListsWithResult).mockResolvedValueOnce({
+      status: 'failed',
+      data: [],
+      issues: [
+        { message: 'firebase denied', userSafeMessage: 'No se pudo cargar la lista global.' },
+      ],
+      userSafeMessage: 'No se pudo cargar la lista global.',
+    } as never);
+
+    const result = await resolveCensusRecipientsBootstrap({
+      canManageGlobalRecipientLists: true,
+      browserRuntime,
+      activeListStorageKey: 'active',
+      user: { email: 'admin@test.com', uid: '1' },
+    });
+
+    expect(result.recipients).toEqual(['local@test.com']);
+    expect(result.recipientsSource).toBe('local');
+    expect(result.syncError).toContain('No se pudo cargar la lista global');
+  });
 });

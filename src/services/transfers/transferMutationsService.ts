@@ -5,6 +5,7 @@ import {
   getTransfersCollection,
 } from '@/services/transfers/transferFirestoreCollections';
 import {
+  buildTransferOperationError,
   resolveTransferOperationErrorKind,
   type TransferOperationErrorKind,
 } from '@/services/transfers/transferErrorPolicy';
@@ -14,7 +15,12 @@ const transferMutationsLogger = logger.child('TransferMutationsService');
 
 export type TransferMutationResult<T = null> =
   | { status: 'success'; data: T }
-  | { status: TransferOperationErrorKind; error: unknown; data: null };
+  | {
+      status: TransferOperationErrorKind;
+      error: unknown;
+      data: null;
+      userSafeMessage: string;
+    };
 
 const generateTransferId = (): string =>
   `TR-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -60,7 +66,16 @@ export const createTransferRequestMutationWithResult = async (
     return { status: 'success', data: transfer };
   } catch (error) {
     transferMutationsLogger.error('Error creating transfer request', error);
-    return { status: resolveTransferOperationErrorKind(error), error, data: null };
+    const kind = resolveTransferOperationErrorKind(error);
+    return {
+      status: kind,
+      error: buildTransferOperationError(kind, 'No se pudo crear la solicitud de traslado.'),
+      data: null,
+      userSafeMessage: buildTransferOperationError(
+        kind,
+        'No se pudo crear la solicitud de traslado.'
+      ).userSafeMessage,
+    };
   }
 };
 
@@ -93,7 +108,16 @@ export const updateTransferRequestMutationWithResult = async (
     return { status: 'success', data: null };
   } catch (error) {
     transferMutationsLogger.error('Error updating transfer request', error);
-    return { status: resolveTransferOperationErrorKind(error), error, data: null };
+    const kind = resolveTransferOperationErrorKind(error);
+    return {
+      status: kind,
+      error: buildTransferOperationError(kind, 'No se pudo actualizar la solicitud de traslado.'),
+      data: null,
+      userSafeMessage: buildTransferOperationError(
+        kind,
+        'No se pudo actualizar la solicitud de traslado.'
+      ).userSafeMessage,
+    };
   }
 };
 
@@ -141,7 +165,16 @@ export const changeTransferStatusMutationWithResult = async (
     return { status: 'success', data: null };
   } catch (error) {
     transferMutationsLogger.error('Error changing transfer status', error);
-    return { status: resolveTransferOperationErrorKind(error), error, data: null };
+    const kind = resolveTransferOperationErrorKind(error);
+    return {
+      status: kind,
+      error: buildTransferOperationError(kind, 'No se pudo cambiar el estado del traslado.'),
+      data: null,
+      userSafeMessage: buildTransferOperationError(
+        kind,
+        'No se pudo cambiar el estado del traslado.'
+      ).userSafeMessage,
+    };
   }
 };
 
@@ -183,7 +216,14 @@ export const completeTransferMutationWithResult = async (
     return { status: 'success', data: null };
   } catch (error) {
     transferMutationsLogger.error('Error completing transfer request', error);
-    return { status: resolveTransferOperationErrorKind(error), error, data: null };
+    const kind = resolveTransferOperationErrorKind(error);
+    return {
+      status: kind,
+      error: buildTransferOperationError(kind, 'No se pudo completar el traslado.'),
+      data: null,
+      userSafeMessage: buildTransferOperationError(kind, 'No se pudo completar el traslado.')
+        .userSafeMessage,
+    };
   }
 };
 
@@ -202,7 +242,16 @@ export const deleteTransferRequestMutationWithResult = async (
     return { status: 'success', data: null };
   } catch (error) {
     transferMutationsLogger.error('Error deleting transfer request', error);
-    return { status: resolveTransferOperationErrorKind(error), error, data: null };
+    const kind = resolveTransferOperationErrorKind(error);
+    return {
+      status: kind,
+      error: buildTransferOperationError(kind, 'No se pudo eliminar la solicitud de traslado.'),
+      data: null,
+      userSafeMessage: buildTransferOperationError(
+        kind,
+        'No se pudo eliminar la solicitud de traslado.'
+      ).userSafeMessage,
+    };
   }
 };
 
@@ -251,6 +300,18 @@ export const deleteStatusHistoryEntryMutationWithResult = async (
     return { status: 'success', data: null };
   } catch (error) {
     transferMutationsLogger.error('Error deleting transfer history entry', error);
-    return { status: resolveTransferOperationErrorKind(error), error, data: null };
+    const kind = resolveTransferOperationErrorKind(error);
+    return {
+      status: kind,
+      error: buildTransferOperationError(
+        kind,
+        'No se pudo eliminar el registro del historial de traslado.'
+      ),
+      data: null,
+      userSafeMessage: buildTransferOperationError(
+        kind,
+        'No se pudo eliminar el registro del historial de traslado.'
+      ).userSafeMessage,
+    };
   }
 };

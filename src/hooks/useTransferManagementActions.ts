@@ -51,7 +51,9 @@ export const useTransferManagementActions = ({
       try {
         const result = await task();
         if (result.status !== 'success') {
-          throw result.error;
+          transferManagementLogger.warn(`Transfer action "${action}" returned non-success`, result);
+          setError(result.userSafeMessage || getTransferActionErrorMessage(action));
+          return;
         }
         setError(null);
       } catch (err) {

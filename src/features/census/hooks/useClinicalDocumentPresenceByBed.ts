@@ -7,6 +7,9 @@ import {
   buildClinicalDocumentPresenceByBed,
 } from '@/features/census/controllers/clinicalDocumentPresenceController';
 import { executeListClinicalDocumentsByEpisodeKeys } from '@/application/clinical-documents/clinicalDocumentUseCases';
+import { logger } from '@/services/utils/loggerService';
+
+const clinicalDocumentPresenceLogger = logger.child('useClinicalDocumentPresenceByBed');
 
 interface UseClinicalDocumentPresenceByBedParams {
   occupiedRows: OccupiedBedRow[];
@@ -31,7 +34,13 @@ export const useClinicalDocumentPresenceByBed = ({
     queryFn: async () => {
       const outcome = await executeListClinicalDocumentsByEpisodeKeys(episodeKeys);
       if (outcome.status === 'failed') {
-        throw new Error(outcome.issues[0]?.message || 'No se pudo resolver presencia documental.');
+        clinicalDocumentPresenceLogger.warn(
+          'Failed to resolve clinical document presence',
+          outcome.userSafeMessage ||
+            outcome.issues[0]?.message ||
+            'No se pudo resolver presencia documental.'
+        );
+        return [];
       }
       return outcome.data;
     },
@@ -42,8 +51,8 @@ export const useClinicalDocumentPresenceByBed = ({
 
   useEffect(() => {
     if (query.isError && enabled) {
-      console.warn(
-        '[useClinicalDocumentPresenceByBed] Failed to resolve clinical document presence:',
+      clinicalDocumentPresenceLogger.warn(
+        'Clinical document presence query failed unexpectedly',
         query.error
       );
     }

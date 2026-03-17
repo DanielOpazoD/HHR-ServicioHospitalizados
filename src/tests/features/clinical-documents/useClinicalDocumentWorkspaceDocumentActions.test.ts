@@ -297,4 +297,51 @@ describe('useClinicalDocumentWorkspaceDocumentActions', () => {
       `${selectedDocument.title} fue eliminado correctamente.`
     );
   });
+
+  it('surfaces failed outcome messages without relying on thrown exceptions', async () => {
+    const selectedDocument = buildRecord();
+    vi.mocked(clinicalDocumentUseCases.executeSignClinicalDocument).mockResolvedValue({
+      status: 'failed',
+      data: null,
+      issues: [
+        {
+          kind: 'remote_blocked',
+          message: 'Firma remota bloqueada',
+          userSafeMessage: 'La firma quedó bloqueada por consistencia.',
+        },
+      ],
+      userSafeMessage: 'La firma quedó bloqueada por consistencia.',
+    });
+
+    const { result } = renderHook(() =>
+      useClinicalDocumentWorkspaceDocumentActions({
+        patient: patient as never,
+        role: 'doctor_urgency',
+        user: { uid: 'u1', email: 'doctor@test.com', displayName: 'Doctor Test' },
+        hospitalId: 'hhr',
+        episode: selectedDocument,
+        selectedTemplateId: 'epicrisis',
+        templates,
+        selectedDocument,
+        selectedDocumentId: selectedDocument.id,
+        canEdit: true,
+        canDelete: true,
+        validationIssues: [],
+        notify,
+        setSelectedDocumentId,
+        setDraft,
+        setIsSaving,
+        lastPersistedSnapshotRef,
+      })
+    );
+
+    await act(async () => {
+      await result.current.handleSign();
+    });
+
+    expect(notify.error).toHaveBeenCalledWith(
+      'No se pudo firmar',
+      'La firma quedó bloqueada por consistencia.'
+    );
+  });
 });

@@ -151,6 +151,8 @@ Si un hospital no tiene configuración documental:
   introducir variantes locales de `toLocaleDateString()` por documento o template.
 - Los estados degradados del flujo documental o de upload deben mapearse a notices explícitos
   (`info`/`warning`/`error`) y no a mensajes armados inline dentro de modales o hooks de vista.
+- Las mutaciones de traslado deben devolver mensajes usuario-seguros estructurados para `not_found`,
+  `permission_denied` y `conflict`; los wrappers throw-based solo quedan como compatibilidad.
 
 ## Comandos de validación del módulo
 
