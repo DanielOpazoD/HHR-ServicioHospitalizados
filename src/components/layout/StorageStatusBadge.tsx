@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { AlertTriangle, ChevronDown, ChevronUp, Database, RefreshCw } from 'lucide-react';
 import { resetLocalDatabase } from '@/services/storage/core';
 import {
+  getStorageFallbackNotice,
   getStorageFallbackUiCopy,
   markStorageAutoRecoveryAttempted,
   shouldAttemptStorageAutoRecovery,
@@ -22,6 +23,7 @@ const StorageStatusBadge: React.FC = () => {
   const [showDetails, setShowDetails] = useState(false);
   const shouldShowBanner = shouldShowStorageFallbackUi(isFallback);
   const copy = getStorageFallbackUiCopy();
+  const notice = getStorageFallbackNotice();
 
   useEffect(() => {
     if (!isFallback) return;
@@ -45,8 +47,10 @@ const StorageStatusBadge: React.FC = () => {
           <AlertTriangle className="text-amber-600 w-5 h-5" />
         </div>
         <div className="flex-1">
-          <h4 className="text-amber-900 font-bold text-sm flex items-center gap-2">{copy.title}</h4>
-          <p className="text-amber-800 text-xs mt-1 leading-relaxed">{copy.summary}</p>
+          <h4 className="text-amber-900 font-bold text-sm flex items-center gap-2">
+            {notice.title}
+          </h4>
+          <p className="text-amber-800 text-xs mt-1 leading-relaxed">{notice.message}</p>
           {showDetails ? (
             <div className="mt-2 rounded-lg bg-amber-100/70 px-3 py-2 text-[11px] text-amber-900 leading-relaxed">
               {copy.detail}

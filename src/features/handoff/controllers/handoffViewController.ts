@@ -1,6 +1,7 @@
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { ShiftType } from '@/types/domain/base';
 import { buildMedicalHandoffSummary } from './medicalSpecialtyHandoffController';
+import { resolveHandoffDocumentTitleLabel } from '@/shared/handoff/handoffPresentation';
 
 interface HandoffTitleParams {
   isMedical: boolean;
@@ -36,14 +37,11 @@ export const resolveHandoffDocumentTitle = ({
   selectedShift,
   recordDate,
 }: ResolveHandoffDocumentTitleParams): string | null => {
-  if (!recordDate) return null;
-
-  const [year, month, day] = recordDate.split('-');
-  if (!year || !month || !day) return null;
-
-  const formattedDate = `${day}-${month}-${year}`;
-  if (isMedical) return `Entrega Medico ${formattedDate}`;
-  return `${selectedShift === 'day' ? 'TL' : 'TN'} ${formattedDate}`;
+  return resolveHandoffDocumentTitleLabel({
+    isMedical,
+    selectedShift,
+    recordDate,
+  });
 };
 
 interface ResolveHandoffNovedadesValueParams {

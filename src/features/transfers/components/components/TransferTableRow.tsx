@@ -2,6 +2,7 @@ import React from 'react';
 import { Pencil } from 'lucide-react';
 import { hasTransferDocumentConfig } from '@/constants/hospitalConfigs';
 import type { TransferRequest, TransferStatus } from '@/types/transfers';
+import type { UserRole } from '@/types/auth';
 import { TransferStatusInteraction } from './TransferStatusInteraction';
 import { TransferTableRowActions } from './TransferTableRowActions';
 import {
@@ -14,6 +15,7 @@ import {
 interface TransferTableRowProps {
   transfer: TransferRequest;
   mode: TransferTableMode;
+  role?: UserRole;
   onEdit: (transfer: TransferRequest) => void;
   onQuickStatusChange: (transfer: TransferRequest, newStatus: TransferStatus) => Promise<void>;
   onDeleteHistoryEntry: (transfer: TransferRequest, historyIndex: number) => Promise<void>;
@@ -27,6 +29,7 @@ interface TransferTableRowProps {
 export const TransferTableRow: React.FC<TransferTableRowProps> = ({
   transfer,
   mode,
+  role,
   onEdit,
   onQuickStatusChange,
   onDeleteHistoryEntry,
@@ -38,7 +41,7 @@ export const TransferTableRow: React.FC<TransferTableRowProps> = ({
 }) => {
   const hasDocumentSupport = hasTransferDocumentConfig(transfer.destinationHospital);
   const isActiveRow = isTransferActiveStatus(transfer.status);
-  const actionState = getTransferRowActionState(transfer, mode, hasDocumentSupport);
+  const actionState = getTransferRowActionState(transfer, mode, hasDocumentSupport, role);
 
   return (
     <tr className={`hover:bg-gray-50 ${!isActiveRow ? 'opacity-60' : ''}`}>

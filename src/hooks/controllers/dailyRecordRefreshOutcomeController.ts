@@ -1,10 +1,18 @@
 import type { ApplicationOutcome } from '@/application/shared/applicationOutcome';
 import type { SyncOutcome } from '@/application/daily-record/syncDailyRecordUseCase';
+import {
+  createBlockedNotice,
+  createDegradedNotice,
+  createRetryingNotice,
+  type OperationalNotice,
+} from '@/shared/feedback/operationalNoticePolicy';
 
 export interface DailyRecordRefreshOutcomePresentation {
   channel: 'warning' | 'error' | null;
   title?: string;
   message?: string;
+  state?: OperationalNotice['state'];
+  actionRequired?: boolean;
   actionLabel?: string;
   runbook?: string;
 }
@@ -45,15 +53,26 @@ export const presentDailyRecordRefreshOutcome = (
 ): DailyRecordRefreshOutcomePresentation => {
   if (outcome.status === 'partial' || outcome.status === 'degraded') {
     const actionLabel = resolveSyncConflictAction(outcome);
+    const notice =
+      outcome.data.conflict?.recommendedAction === 'retry_sync'
+        ? createRetryingNotice(
+            resolveSyncConflictTitle(outcome),
+            outcome.userSafeMessage ||
+              outcome.issues[0]?.userSafeMessage ||
+              outcome.issues[0]?.message ||
+              'La sincronización quedó pendiente.'
+          )
+        : createDegradedNotice(
+            resolveSyncConflictTitle(outcome),
+            outcome.userSafeMessage ||
+              outcome.issues[0]?.userSafeMessage ||
+              outcome.issues[0]?.message ||
+              'La sincronización continúa con limitaciones.'
+          );
     return {
+      ...notice,
       channel: 'warning',
-      title: resolveSyncConflictTitle(outcome),
-      message: [
-        outcome.userSafeMessage || outcome.issues[0]?.userSafeMessage || outcome.issues[0]?.message,
-        actionLabel,
-      ]
-        .filter(Boolean)
-        .join(' '),
+      message: [notice.message, actionLabel].filter(Boolean).join(' '),
       actionLabel,
       runbook: outcome.data.conflict?.runbook,
     };
@@ -61,18 +80,26 @@ export const presentDailyRecordRefreshOutcome = (
 
   if (outcome.status === 'failed') {
     const actionLabel = resolveSyncConflictAction(outcome);
+    const notice =
+      outcome.data.conflict?.recommendedAction === 'retry_sync'
+        ? createRetryingNotice(
+            resolveSyncConflictTitle(outcome),
+            outcome.userSafeMessage ||
+              outcome.issues[0]?.userSafeMessage ||
+              outcome.issues[0]?.message ||
+              'No se pudo sincronizar el registro.'
+          )
+        : createBlockedNotice(
+            resolveSyncConflictTitle(outcome),
+            outcome.userSafeMessage ||
+              outcome.issues[0]?.userSafeMessage ||
+              outcome.issues[0]?.message ||
+              'No se pudo sincronizar el registro.'
+          );
     return {
-      channel: 'error',
-      title: resolveSyncConflictTitle(outcome),
-      message: [
-        outcome.userSafeMessage ||
-          outcome.issues[0]?.userSafeMessage ||
-          outcome.issues[0]?.message ||
-          'No se pudo sincronizar el registro.',
-        actionLabel,
-      ]
-        .filter(Boolean)
-        .join(' '),
+      ...notice,
+      channel: notice.channel === 'info' ? 'warning' : notice.channel,
+      message: [notice.message, actionLabel].filter(Boolean).join(' '),
       actionLabel,
       runbook: outcome.data.conflict?.runbook,
     };

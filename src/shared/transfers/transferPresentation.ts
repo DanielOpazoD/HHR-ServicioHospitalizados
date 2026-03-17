@@ -24,6 +24,19 @@ export const formatTransferDateTime = (value: string): string => {
       });
 };
 
+export const formatTransferVerboseDateTime = (value: string): string => {
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime())
+    ? value
+    : parsed.toLocaleDateString('es-CL', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+};
+
 export const getTransferStatusPresentation = (status: TransferStatus) =>
   TRANSFER_STATUS_CONFIG[status] || TRANSFER_STATUS_FALLBACK;
 

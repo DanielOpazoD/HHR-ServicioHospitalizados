@@ -1,3 +1,8 @@
+import {
+  createDegradedNotice,
+  type OperationalNotice,
+} from '@/shared/feedback/operationalNoticePolicy';
+
 const STORAGE_AUTO_RECOVERY_KEY = 'hhr_storage_auto_recovery_attempted_v1';
 
 export type StorageFallbackUiCopy = {
@@ -49,3 +54,8 @@ export const getStorageFallbackUiCopy = (): StorageFallbackUiCopy => ({
   primaryActionLabel: 'Recargar',
   advancedActionLabel: 'Reiniciar guardado local',
 });
+
+export const getStorageFallbackNotice = (): OperationalNotice => {
+  const copy = getStorageFallbackUiCopy();
+  return createDegradedNotice(copy.title, copy.summary);
+};

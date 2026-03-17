@@ -10,8 +10,8 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import {
-  exportMonthRecords,
-  exportYearToDateRecords,
+  exportMonthRecordsWithResult,
+  exportYearToDateRecordsWithResult,
 } from '@/services/admin/dataMaintenanceService';
 import { DataImportModal } from './DataImportModal';
 import clsx from 'clsx';
@@ -57,11 +57,16 @@ export const DataMaintenancePanel: React.FC<DataMaintenancePanelProps> = ({
     setExportError(null);
     setExportSuccess(false);
     try {
-      if (scope === 'month') {
-        await exportMonthRecords(selectedYear, selectedMonth);
-      } else {
-        await exportYearToDateRecords(selectedYear);
+      const result =
+        scope === 'month'
+          ? await exportMonthRecordsWithResult(selectedYear, selectedMonth)
+          : await exportYearToDateRecordsWithResult(selectedYear);
+
+      if (result.status === 'failed') {
+        setExportError(result.userSafeMessage);
+        return;
       }
+
       setExportSuccess(true);
       setTimeout(() => setExportSuccess(false), 5000);
     } catch (err) {

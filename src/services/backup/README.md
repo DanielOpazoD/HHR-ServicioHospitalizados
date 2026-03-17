@@ -33,3 +33,6 @@
   y no tratarlo como error bloqueante del flujo clinico.
 - Cuando la lista remota llega parcial por permisos o metadata incompatible, la UI debe preferir
   notices `info`; reservar `warning` para timeouts o degradaciones que sí requieran atención operativa.
+- Los estados visibles de respaldo deben salir del vocabulario operativo compartido
+  (`ok`, `degraded`, `pending`, `retrying`, `blocked`, `not_verified`) para que banners,
+  toasts y badges no diverjan entre vistas.

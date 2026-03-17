@@ -1,12 +1,12 @@
 /**
  * Services compatibility barrel.
  *
- * This file exists only for a narrow app-level surface. New code should
- * prefer direct domain imports (`@/services/auth/...`, `@/services/storage/...`,
- * `@/services/repositories/...`) instead of growing this compatibility layer.
- * Retirement is tracked in `reports/compatibility-governance.md`.
+ * This file is intentionally kept as an empty compatibility placeholder.
+ * The repo no longer exposes product code through `@/services`.
+ *
+ * New code must import from the owning module (`@/services/auth/...`,
+ * `@/services/storage/...`, `@/services/repositories/...`, etc.) instead of
+ * reintroducing a transversal barrel. Retirement is tracked in
+ * `reports/compatibility-governance.md`.
  */
-
-export { signIn, createUser, signOut } from './auth/authService';
-
-export { getAppSetting, saveAppSetting } from './settingsService';
+export {};

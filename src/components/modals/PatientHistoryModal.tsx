@@ -16,6 +16,7 @@ import {
 } from '@/services/patient/patientHistoryService';
 import type { PatientData } from '@/types/domain/patient';
 import type { ReactNode } from 'react';
+import { formatHandoffVerboseDate } from '@/shared/handoff/handoffPresentation';
 
 interface PatientHistoryModalProps {
   isOpen: boolean;
@@ -117,17 +118,6 @@ export const PatientHistoryModal: React.FC<PatientHistoryModalProps> = ({
     }
   }, [isOpen, patientRut]);
 
-  // Format helper
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr + 'T12:00:00');
-    return date.toLocaleDateString('es-CL', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
-  };
-
   return (
     <BaseModal
       isOpen={isOpen}
@@ -209,7 +199,7 @@ export const PatientHistoryModal: React.FC<PatientHistoryModalProps> = ({
                 </span>
                 <div className="text-right">
                   <span className="text-[10px] font-bold text-slate-600 block">
-                    {formatDate(history.firstSeen)}
+                    {formatHandoffVerboseDate(history.firstSeen)}
                   </span>
                 </div>
               </div>
@@ -270,7 +260,7 @@ export const PatientHistoryModal: React.FC<PatientHistoryModalProps> = ({
                         </div>
 
                         <div className="text-[10px] text-slate-500 mb-1">
-                          {formatDate(movement.date)}
+                          {formatHandoffVerboseDate(movement.date)}
                         </div>
 
                         {movement.details && (

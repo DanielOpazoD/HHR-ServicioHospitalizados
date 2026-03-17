@@ -27,6 +27,8 @@ Resolver autenticacion, bootstrap de sesion, claims, roles y degradacion operati
   (`admin -> especialista`, por ejemplo). La UI debe esperar una breve ventana de gracia antes de
   mostrar error si la sesion ya se está resolviendo.
 - La sincronizacion de custom claims no debe bloquear la entrega inicial de una sesion autorizada.
+- Los warnings benignos de bootstrap o configuracion incompleta deben resolverse mediante
+  `operationalNoticePolicy`; auth no debe inventar severidades o copy inline por pantalla.
 
 ## Legacy activo
 

@@ -1,6 +1,7 @@
 import type { BackupFileType, BackupShiftType } from '@/types/backup';
 import { BACKUP_TYPE_CONFIG, SHIFT_TYPE_CONFIG } from '@/types/backup';
 import { formatCensusIsoDate } from '@/shared/census/censusPresentation';
+import { formatDateDDMMYYYY } from '@/utils/dateUtils';
 
 export const getBackupTypePresentation = (type: BackupFileType) => BACKUP_TYPE_CONFIG[type];
 
@@ -24,6 +25,8 @@ export const formatBackupTimestamp = (isoStr: string): string => {
 export const formatBackupDisplayDate = (dateStr: string): string => {
   return formatCensusIsoDate(dateStr);
 };
+
+export const formatBackupCompactDate = (dateStr: string): string => formatDateDDMMYYYY(dateStr);
 
 export const formatBackupDisplayDateVerbose = (dateStr: string): string => {
   const date = new Date(`${dateStr}T12:00:00`);

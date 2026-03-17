@@ -25,7 +25,10 @@ import {
   resolveSpecialistCapabilities,
   resolveSpecialistCensusAccessProfile,
 } from '@/shared/access/specialistAccessPolicy';
-import { canVerifyPassiveBackupForRole } from '@/shared/access/operationalAccessPolicy';
+import {
+  canTriggerCensusExports,
+  canVerifyPassiveBackupForRole,
+} from '@/shared/access/operationalAccessPolicy';
 import { ReminderModal } from '@/components/reminders/ReminderModal';
 import { ReminderCenterProvider } from '@/context/ReminderCenterContext';
 
@@ -57,6 +60,18 @@ export const AppContent: React.FC<AppContentProps> = ({ ui }) => {
     [auth.role]
   );
   const specialistCensusAccess = specialistCapabilities.isSpecialist;
+  const censusAccessProfile = React.useMemo(
+    () => resolveSpecialistCensusAccessProfile(auth.role),
+    [auth.role]
+  );
+  const canUseCensusExports = React.useMemo(
+    () =>
+      canTriggerCensusExports({
+        role: auth.role,
+        accessProfile: censusAccessProfile,
+      }),
+    [auth.role, censusAccessProfile]
+  );
   const { currentModule, setCurrentModule, censusLocalViewMode, setCensusLocalViewMode } = ui;
 
   const canVerifyArchiveStatus = React.useMemo(() => {
@@ -143,14 +158,16 @@ export const AppContent: React.FC<AppContentProps> = ({ ui }) => {
               existingDaysInMonth={dateNav.existingDaysInMonth}
               onExportPDF={ui.showPrintButton ? exportManager.handleExportPDF : undefined}
               onOpenBedManager={ui.currentModule === 'CENSUS' ? ui.bedManagerModal.open : undefined}
-              onExportExcel={ui.currentModule === 'CENSUS' ? handleExportExcel : undefined}
+              onExportExcel={
+                ui.currentModule === 'CENSUS' && canUseCensusExports ? handleExportExcel : undefined
+              }
               onConfigureEmail={
-                ui.currentModule === 'CENSUS'
+                ui.currentModule === 'CENSUS' && canUseCensusExports
                   ? () => censusEmail.setShowEmailConfig(true)
                   : undefined
               }
               onSendEmail={
-                ui.currentModule === 'CENSUS'
+                ui.currentModule === 'CENSUS' && canUseCensusExports
                   ? async () => {
                       await exportManager.handleBackupExcel();
                       await censusEmail.sendEmail();
@@ -158,12 +175,14 @@ export const AppContent: React.FC<AppContentProps> = ({ ui }) => {
                   : undefined
               }
               onCopyShareLink={
-                ui.currentModule === 'CENSUS'
+                ui.currentModule === 'CENSUS' && canUseCensusExports
                   ? () => censusEmail.copyShareLink('viewer')
                   : undefined
               }
               onBackupExcel={
-                ui.currentModule === 'CENSUS' ? exportManager.handleBackupExcel : undefined
+                ui.currentModule === 'CENSUS' && canUseCensusExports
+                  ? exportManager.handleBackupExcel
+                  : undefined
               }
               isArchived={exportManager.isArchived}
               isBackingUp={exportManager.isBackingUp}
@@ -179,7 +198,7 @@ export const AppContent: React.FC<AppContentProps> = ({ ui }) => {
               setLocalViewMode={ui.setCensusLocalViewMode}
               onBackupPDF={exportManager.handleBackupHandoff}
               navigateDays={dateNav.navigateDays}
-              accessProfile={resolveSpecialistCensusAccessProfile(auth.role)}
+              accessProfile={censusAccessProfile}
             />
           )}
 

@@ -1,4 +1,9 @@
 import type { FirebaseRuntimeConfigDiagnostics } from '@/services/auth/firebaseAuthConfigPolicy';
+import {
+  createBlockedNotice,
+  createDegradedNotice,
+  type OperationalNotice,
+} from '@/shared/feedback/operationalNoticePolicy';
 
 export type FirebaseStartupWarningCopy = {
   title: string;
@@ -34,3 +39,14 @@ export const getFirebaseStartupFailureMessage = (
 ): string =>
   diagnostics?.summary ||
   'No se pudo iniciar la conexión principal del sistema. Revisa la configuración de Firebase del entorno.';
+
+export const getFirebaseStartupNotice = (
+  diagnostics?: FirebaseRuntimeConfigDiagnostics
+): OperationalNotice => {
+  const copy = getFirebaseStartupWarningCopy(diagnostics);
+  if (diagnostics?.hasBlockingIssue) {
+    return createBlockedNotice(copy.title, copy.summary);
+  }
+
+  return createDegradedNotice(copy.title, copy.summary);
+};

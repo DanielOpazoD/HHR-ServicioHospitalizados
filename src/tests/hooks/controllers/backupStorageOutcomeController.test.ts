@@ -18,6 +18,8 @@ describe('backupStorageOutcomeController', () => {
       channel: 'info',
       title: 'Respaldo no verificable',
       message: 'No se pudo confirmar el respaldo remoto por permisos de Storage.',
+      state: 'not_verified',
+      actionRequired: false,
     });
   });
 });

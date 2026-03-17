@@ -39,6 +39,8 @@ describe('dailyRecordRefreshOutcomeController', () => {
       )
     );
     expect(notice.channel).toBe('warning');
+    expect(notice.state).toBe('degraded');
+    expect(notice.actionRequired).toBe(false);
     expect(notice.title).toBe('Registro remoto no disponible');
     expect(notice.message).toContain('Revisa el registro remoto');
   });
@@ -61,11 +63,13 @@ describe('dailyRecordRefreshOutcomeController', () => {
       )
     );
     expect(notice.channel).toBe('warning');
+    expect(notice.state).toBe('degraded');
+    expect(notice.actionRequired).toBe(false);
     expect(notice.title).toBe('Sincronización remota bloqueada');
     expect(notice.message).toContain('copia local');
   });
 
-  it('maps failure to error', () => {
+  it('maps retryable failure to a non-blocking retry warning', () => {
     const notice = presentDailyRecordRefreshOutcome(
       createApplicationFailed(
         {
@@ -82,7 +86,9 @@ describe('dailyRecordRefreshOutcomeController', () => {
         { userSafeMessage: 'failed' }
       )
     );
-    expect(notice.channel).toBe('error');
+    expect(notice.channel).toBe('warning');
+    expect(notice.state).toBe('retrying');
+    expect(notice.actionRequired).toBe(false);
     expect(notice.title).toBe('Sincronización fallida');
     expect(notice.message).toContain('Intenta sincronizar nuevamente');
   });

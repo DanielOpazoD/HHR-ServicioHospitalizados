@@ -9,6 +9,7 @@ import { TransferTableCloseActionsMenu } from './TransferTableCloseActionsMenu';
 import { TransferTableRow } from './TransferTableRow';
 import type { TransferTableMode } from '../controllers/transferTableController';
 import { getTransferRowActionState } from '../controllers/transferTableController';
+import { useAuth } from '@/context/AuthContext';
 
 interface TransferTableProps {
   transfers: TransferRequest[];
@@ -59,6 +60,7 @@ export const TransferTable: React.FC<TransferTableProps> = ({
   onDelete,
   onDeleteHistoryEntry,
 }) => {
+  const { role } = useAuth();
   const [openActionsMenu, setOpenActionsMenu] = useState<TransferActionsMenuState | null>(null);
   const [pendingDeleteTransfer, setPendingDeleteTransfer] = useState<TransferRequest | null>(null);
 
@@ -115,7 +117,7 @@ export const TransferTable: React.FC<TransferTableProps> = ({
   }
 
   const openMenuActionState = openActionsMenu
-    ? getTransferRowActionState(openActionsMenu.transfer, mode, true)
+    ? getTransferRowActionState(openActionsMenu.transfer, mode, true, role)
     : null;
 
   return (
@@ -139,6 +141,7 @@ export const TransferTable: React.FC<TransferTableProps> = ({
               key={transfer.id}
               transfer={transfer}
               mode={mode}
+              role={role}
               onEdit={onEdit}
               onQuickStatusChange={onQuickStatusChange}
               onDeleteHistoryEntry={onDeleteHistoryEntry}

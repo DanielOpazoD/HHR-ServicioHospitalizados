@@ -1,9 +1,10 @@
 import type { StorageListReport } from '@/services/backup/baseStorageService';
 import type { StorageLookupResult } from '@/services/backup/storageLookupContracts';
 import {
+  createDegradedNotice,
   createInfoNotice,
   createPassiveVerificationPermissionNotice,
-  createWarningNotice,
+  createRetryingNotice,
   type OperationalNotice,
 } from '@/shared/feedback/operationalNoticePolicy';
 
@@ -16,7 +17,7 @@ export const getStorageLookupNotice = (
   }
 
   if (result.status === 'timeout') {
-    return createWarningNotice(
+    return createRetryingNotice(
       'Verificacion incompleta',
       `La verificacion del respaldo de ${artifactLabel} excedio el tiempo esperado.`
     );
@@ -29,7 +30,7 @@ export const getStorageListNotice = (report: StorageListReport): OperationalNoti
   const degradedCount = report.skippedRestricted + report.skippedUnknown + report.skippedUnparsed;
 
   if (report.timedOut) {
-    return createWarningNotice(
+    return createRetryingNotice(
       'Carga parcial de respaldos',
       'La consulta a Storage tardó demasiado. La lista puede estar incompleta.'
     );
@@ -43,7 +44,7 @@ export const getStorageListNotice = (report: StorageListReport): OperationalNoti
   }
 
   if (degradedCount > 0) {
-    return createInfoNotice(
+    return createDegradedNotice(
       'Carga parcial de respaldos',
       `${degradedCount} archivo(s) fueron omitidos por datos o metadata incompatibles.`
     );

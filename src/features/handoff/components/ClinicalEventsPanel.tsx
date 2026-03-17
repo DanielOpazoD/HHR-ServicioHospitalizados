@@ -6,6 +6,7 @@ import React, { useState, useCallback } from 'react';
 import { ClinicalEvent } from '@/types/domain/clinical';
 import { Plus, Pencil, Trash2, Check, X } from 'lucide-react';
 import clsx from 'clsx';
+import { formatHandoffDate } from '@/shared/handoff/handoffPresentation';
 
 interface ClinicalEventsPanelProps {
   events: ClinicalEvent[];
@@ -85,11 +86,6 @@ export const ClinicalEventsPanel: React.FC<ClinicalEventsPanelProps> = ({
     [onDelete]
   );
 
-  const formatDate = (dateStr: string) => {
-    const [year, month, day] = dateStr.split('-');
-    return `${day}-${month}-${year}`;
-  };
-
   // Sort events by date (newest first)
   const sortedEvents = [...events].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
@@ -155,7 +151,7 @@ export const ClinicalEventsPanel: React.FC<ClinicalEventsPanelProps> = ({
                     </div>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <span className="text-[9px] text-slate-400 font-normal whitespace-nowrap">
-                        ({formatDate(event.date)})
+                        ({formatHandoffDate(event.date)})
                       </span>
                     </div>
                     {event.note && (

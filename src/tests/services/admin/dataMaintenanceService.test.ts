@@ -1,21 +1,36 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { DailyRecord } from '@/types';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
 
-const mockGetRecordsForMonth = vi.fn();
-const mockGetRecordsRange = vi.fn();
-const mockSaveRecords = vi.fn();
-const mockGetRemoteRecordsRange = vi.fn();
-const mockLogAuditEvent = vi.fn();
-const mockSaveAs = vi.fn();
-const mockRepositorySave = vi.fn();
+const {
+  mockGetRecordsRange,
+  mockSaveRecords,
+  mockGetRemoteRecordsRange,
+  mockLogAuditEvent,
+  mockSaveAs,
+  mockRepositorySave,
+} = vi.hoisted(() => ({
+  mockGetRecordsRange: vi.fn(),
+  mockSaveRecords: vi.fn(),
+  mockGetRemoteRecordsRange: vi.fn(),
+  mockLogAuditEvent: vi.fn(),
+  mockSaveAs: vi.fn(),
+  mockRepositorySave: vi.fn(),
+}));
 
-vi.mock('@/services/storage/indexedDBService', () => ({
-  getRecordsForMonth: mockGetRecordsForMonth,
+import {
+  exportMonthRecords,
+  exportMonthRecordsWithResult,
+  exportYearToDateRecords,
+  exportYearToDateRecordsWithResult,
+  importRecordsFromBackup,
+} from '@/services/admin/dataMaintenanceService';
+
+vi.mock('@/services/storage/records', () => ({
   getRecordsRange: mockGetRecordsRange,
   saveRecords: mockSaveRecords,
 }));
 
-vi.mock('@/services/storage/firestoreService', () => ({
+vi.mock('@/services/storage/firestore', () => ({
   getRecordsRangeFromFirestore: mockGetRemoteRecordsRange,
 }));
 
@@ -31,7 +46,7 @@ vi.mock('@/services/repositories/repositoryConfig', () => ({
   isFirestoreEnabled: () => true,
 }));
 
-vi.mock('@/services/repositories/DailyRecordRepository', () => ({
+vi.mock('@/services/repositories/dailyRecordRepositoryWriteService', () => ({
   saveDetailed: mockRepositorySave,
 }));
 
@@ -42,7 +57,12 @@ vi.mock('file-saver', () => ({
 describe('dataMaintenanceService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useRealTimers();
     mockRepositorySave.mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('exports year-to-date records using a bounded date range', async () => {
@@ -81,8 +101,6 @@ describe('dataMaintenanceService', () => {
       },
     ]);
 
-    const { exportYearToDateRecords } = await import('@/services/admin/dataMaintenanceService');
-
     await exportYearToDateRecords(2026);
 
     expect(mockGetRecordsRange).toHaveBeenCalledWith('2026-01-01', '2026-03-03');
@@ -102,19 +120,21 @@ describe('dataMaintenanceService', () => {
         exportScope: 'year-to-date',
       })
     );
-
-    vi.useRealTimers();
   });
 
   it('throws when there are no records to export for the selected annual range', async () => {
     mockGetRecordsRange.mockResolvedValue([]);
     mockGetRemoteRecordsRange.mockResolvedValue([]);
 
-    const { exportYearToDateRecords } = await import('@/services/admin/dataMaintenanceService');
-
     await expect(exportYearToDateRecords(2026)).rejects.toThrow(
       'No hay registros para exportar en el rango anual seleccionado.'
     );
+
+    await expect(exportYearToDateRecordsWithResult(2026)).resolves.toMatchObject({
+      status: 'failed',
+      reason: 'no_records',
+      userSafeMessage: 'No hay registros para exportar en el rango anual seleccionado.',
+    });
   });
 
   it('exports monthly records after hydrating the selected range from Firestore', async () => {
@@ -150,8 +170,6 @@ describe('dataMaintenanceService', () => {
       },
     ]);
 
-    const { exportMonthRecords } = await import('@/services/admin/dataMaintenanceService');
-
     await exportMonthRecords(2026, 3);
 
     expect(mockGetRecordsRange).toHaveBeenCalledWith('2026-03-01', '2026-03-31');
@@ -160,9 +178,27 @@ describe('dataMaintenanceService', () => {
     expect(mockSaveAs.mock.calls.at(-1)?.[1]).toContain('Respaldo HHR Marzo 2026.json');
   });
 
-  it('repairs legacy records during backup import and reports repaired count', async () => {
-    const { importRecordsFromBackup } = await import('@/services/admin/dataMaintenanceService');
+  it('returns a success result for monthly exports through the new explicit contract', async () => {
+    mockGetRecordsRange.mockResolvedValue([
+      {
+        date: '2026-03-01',
+        beds: {},
+        activeExtraBeds: [],
+        discharges: [],
+        transfers: [],
+        cma: [],
+        lastUpdated: '2026-03-01T08:00:00.000Z',
+      },
+    ]);
+    mockGetRemoteRecordsRange.mockResolvedValue([]);
 
+    await expect(exportMonthRecordsWithResult(2026, 3)).resolves.toMatchObject({
+      status: 'success',
+      reason: 'unknown',
+    });
+  });
+
+  it('repairs legacy records during backup import and reports repaired count', async () => {
     const result = await importRecordsFromBackup({
       version: '1.0',
       exportDate: '2026-03-03T10:00:00.000Z',

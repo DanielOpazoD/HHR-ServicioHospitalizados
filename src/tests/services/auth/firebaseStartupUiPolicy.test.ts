@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   getFirebaseStartupFailureMessage,
+  getFirebaseStartupNotice,
   getFirebaseStartupWarningCopy,
 } from '@/services/auth/firebaseStartupUiPolicy';
 
@@ -36,5 +37,35 @@ describe('firebaseStartupUiPolicy', () => {
 
     expect(copy.summary).toContain('no puede iniciar');
     expect(copy.steps[0]).toContain('VITE_FIREBASE_API_KEY');
+  });
+
+  it('maps blocking and degraded startup diagnostics to shared notices', () => {
+    expect(
+      getFirebaseStartupNotice({
+        issues: [],
+        hasBlockingIssue: true,
+        summary: 'Bloqueante',
+        nextStep: 'Revisar variables',
+      })
+    ).toMatchObject({
+      channel: 'error',
+      state: 'blocked',
+      actionRequired: true,
+      message: 'Bloqueante',
+    });
+
+    expect(
+      getFirebaseStartupNotice({
+        issues: [],
+        hasBlockingIssue: false,
+        summary: 'Advertencia',
+        nextStep: 'Revisar variables',
+      })
+    ).toMatchObject({
+      channel: 'warning',
+      state: 'degraded',
+      actionRequired: false,
+      message: 'Advertencia',
+    });
   });
 });

@@ -1,3 +1,5 @@
+import { formatCensusIsoDate } from '@/shared/census/censusPresentation';
+
 export const formatHandoffDateTime = (isoTimestamp?: string | null): string => {
   if (!isoTimestamp) {
     return 'sin registro';
@@ -9,6 +11,62 @@ export const formatHandoffDateTime = (isoTimestamp?: string | null): string => {
   }
 
   return parsed.toLocaleString('es-CL');
+};
+
+export const formatHandoffDate = (isoDate?: string | null): string => {
+  if (!isoDate) {
+    return 'Sin fecha';
+  }
+
+  return formatCensusIsoDate(isoDate);
+};
+
+export const formatHandoffVerboseDate = (isoDate?: string | null): string => {
+  if (!isoDate) {
+    return 'Sin fecha';
+  }
+
+  const parsed = new Date(`${isoDate}T12:00:00`);
+  if (Number.isNaN(parsed.getTime())) {
+    return isoDate;
+  }
+
+  return parsed.toLocaleDateString('es-CL', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+};
+
+export const resolveHandoffDocumentDate = (recordDate?: string): string | null => {
+  if (!recordDate) {
+    return null;
+  }
+
+  const formatted = formatHandoffDate(recordDate);
+  return formatted === recordDate ? null : formatted;
+};
+
+export const resolveHandoffDocumentTitleLabel = ({
+  isMedical,
+  selectedShift,
+  recordDate,
+}: {
+  isMedical: boolean;
+  selectedShift: 'day' | 'night';
+  recordDate?: string;
+}): string | null => {
+  const formattedDate = resolveHandoffDocumentDate(recordDate);
+  if (!formattedDate) {
+    return null;
+  }
+
+  if (isMedical) {
+    return `Entrega Medico ${formattedDate}`;
+  }
+
+  return `${selectedShift === 'day' ? 'TL' : 'TN'} ${formattedDate}`;
 };
 
 export const getMedicalSpecialtyStatusLabel = (

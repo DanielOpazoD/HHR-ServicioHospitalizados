@@ -66,7 +66,8 @@ export const CensusAccessManager: React.FC = () => {
         addedBy: currentUser.uid,
       });
       if (outcome.status === 'failed') {
-        throw new Error(outcome.issues[0]?.message || 'Error al autorizar correo.');
+        setError(outcome.issues[0]?.message || 'Error al autorizar correo.');
+        return;
       }
       setNewEmail('');
       setSuccessMessage(`Correo ${newEmail} autorizado exitosamente.`);
@@ -86,7 +87,8 @@ export const CensusAccessManager: React.FC = () => {
     try {
       const outcome = await executeRemoveAuthorizedCensusEmail(email);
       if (outcome.status === 'failed') {
-        throw new Error(outcome.issues[0]?.message || 'Error al eliminar el correo.');
+        setError(outcome.issues[0]?.message || 'Error al eliminar el correo.');
+        return;
       }
       setAuthorizedEmails(prev => prev.filter(e => e.email !== email));
     } catch (_err) {

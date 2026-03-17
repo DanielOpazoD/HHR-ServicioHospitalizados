@@ -7,6 +7,8 @@ describe('storageUiPolicy', () => {
       channel: 'info',
       title: 'Respaldo no verificable',
       message: 'No se pudo confirmar censo por permisos de Storage.',
+      state: 'not_verified',
+      actionRequired: false,
     });
   });
 
@@ -15,6 +17,8 @@ describe('storageUiPolicy', () => {
       channel: 'warning',
       title: 'Verificacion incompleta',
       message: 'La verificacion del respaldo de PDF excedio el tiempo esperado.',
+      state: 'retrying',
+      actionRequired: false,
     });
   });
 
@@ -31,6 +35,8 @@ describe('storageUiPolicy', () => {
       channel: 'warning',
       title: 'Carga parcial de respaldos',
       message: 'La consulta a Storage tardó demasiado. La lista puede estar incompleta.',
+      state: 'retrying',
+      actionRequired: false,
     });
   });
 
@@ -47,6 +53,8 @@ describe('storageUiPolicy', () => {
       channel: 'info',
       title: 'Carga parcial de respaldos',
       message: '2 archivo(s) no pudieron leerse por restricciones de acceso.',
+      state: 'ok',
+      actionRequired: false,
     });
   });
 
@@ -60,9 +68,11 @@ describe('storageUiPolicy', () => {
         timedOut: false,
       })
     ).toEqual({
-      channel: 'info',
+      channel: 'warning',
       title: 'Carga parcial de respaldos',
       message: '2 archivo(s) fueron omitidos por datos o metadata incompatibles.',
+      state: 'degraded',
+      actionRequired: false,
     });
   });
 });

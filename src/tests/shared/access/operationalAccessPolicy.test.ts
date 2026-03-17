@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
+  canOpenTransferDocuments,
   canEditMedicalHandoffForDate,
   canForceCreateDayCopyOverride,
   canOpenClinicalDocumentsFromCensus,
   canResetOrDeleteDailyRecord,
+  canTriggerCensusExports,
   canUseCensusUtilityActions,
+  canUseAdminMaintenanceActions,
   canVerifyPassiveBackupForRole,
   canVerifyArchiveStatusForModule,
+  canViewOrManageBackupFiles,
+  canViewPatientHistoryFromRestrictedProfiles,
 } from '@/shared/access/operationalAccessPolicy';
 
 describe('operationalAccessPolicy', () => {
@@ -22,6 +27,21 @@ describe('operationalAccessPolicy', () => {
     expect(canVerifyArchiveStatusForModule('doctor_specialist', 'CENSUS')).toBe(false);
     expect(canVerifyArchiveStatusForModule('doctor_specialist', 'MEDICAL_HANDOFF')).toBe(false);
     expect(canVerifyPassiveBackupForRole('admin', 'CENSUS')).toBe(true);
+    expect(canViewOrManageBackupFiles('nurse_hospital')).toBe(true);
+    expect(canViewOrManageBackupFiles('doctor_specialist')).toBe(false);
+  });
+
+  it('centralizes admin, export and transfer-document capabilities by intent', () => {
+    expect(canUseAdminMaintenanceActions('admin')).toBe(true);
+    expect(canUseAdminMaintenanceActions('nurse_hospital')).toBe(false);
+
+    expect(canTriggerCensusExports({ role: 'admin', accessProfile: 'default' })).toBe(true);
+    expect(
+      canTriggerCensusExports({ role: 'doctor_specialist', accessProfile: 'specialist' })
+    ).toBe(false);
+
+    expect(canOpenTransferDocuments('admin')).toBe(true);
+    expect(canOpenTransferDocuments('doctor_specialist')).toBe(false);
   });
 
   it('keeps medical handoff edit access bound to specialist current-day policy', () => {
@@ -69,6 +89,19 @@ describe('operationalAccessPolicy', () => {
       canResetOrDeleteDailyRecord({
         role: 'nurse_hospital',
         isToday: false,
+      })
+    ).toBe(false);
+
+    expect(
+      canViewPatientHistoryFromRestrictedProfiles({
+        accessProfile: 'default',
+        hasRut: true,
+      })
+    ).toBe(true);
+    expect(
+      canViewPatientHistoryFromRestrictedProfiles({
+        accessProfile: 'specialist',
+        hasRut: true,
       })
     ).toBe(false);
   });

@@ -50,6 +50,9 @@
 - `clinicalDocumentPdfRenderService`: intenta backend render y luego fallback snapshot.
 - `clinicalDocumentDriveService`: debe exponer variantes con resultado tipado para uploads/listados
   en Drive; la UI no debe interpretar errores remotos parseando excepciones inline.
+- Los resultados esperados de exportación/impresión deben resolverse con outcomes tipados y
+  notices compartidos; errores recuperables de Drive no deben volver a salir como excepciones
+  “normales” dentro del workspace.
 
 ## Invariantes
 

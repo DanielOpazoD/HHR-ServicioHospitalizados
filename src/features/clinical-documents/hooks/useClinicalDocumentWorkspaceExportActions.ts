@@ -74,7 +74,32 @@ export const useClinicalDocumentWorkspaceExportActions = ({
           allowSuccess: true,
         });
         if (result.status !== 'success' || !result.data) {
-          throw new Error(result.issues[0]?.message || 'No se pudo exportar el PDF clínico.');
+          const failureMessage = result.issues[0]?.message || 'No se pudo exportar el PDF clínico.';
+          recordOperationalTelemetry({
+            category: 'export',
+            status: 'failed',
+            operation: 'export_clinical_document_pdf',
+            date: selectedDocument.sourceDailyRecordDate,
+            issues: [failureMessage],
+            context: { documentId: selectedDocument.id },
+          });
+          setDraft(prev =>
+            prev
+              ? {
+                  ...prev,
+                  pdf: {
+                    ...prev.pdf,
+                    exportStatus: 'failed',
+                    exportError: failureMessage,
+                  },
+                }
+              : prev
+          );
+          notify.error(
+            'Falló la exportación',
+            'El documento quedó guardado, pero el PDF no se pudo subir.'
+          );
+          return;
         }
         setDraft(prev => (prev ? { ...prev, pdf: result.data!.pdf } : prev));
         if (options.notifySuccess !== false) {

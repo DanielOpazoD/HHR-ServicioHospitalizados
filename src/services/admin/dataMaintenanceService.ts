@@ -42,6 +42,13 @@ export interface BackupImportResult {
   outcome: 'clean' | 'repaired' | 'partial' | 'blocked';
 }
 
+export interface DataMaintenanceExportResult {
+  status: 'success' | 'failed';
+  reason: 'no_records' | 'unknown';
+  userSafeMessage: string;
+  recordCount: number;
+}
+
 const dataMaintenanceLogger = logger.child('DataMaintenanceService');
 
 const monthNames = [
@@ -99,17 +106,22 @@ const hydrateRangeRecords = async (startDate: string, endDate: string): Promise<
   return mergedRecords;
 };
 
-/**
- * Exports all records for a specific month as a JSON file
- */
-export const exportMonthRecords = async (year: number, month: number): Promise<void> => {
+const exportMonthRecordsInternal = async (
+  year: number,
+  month: number
+): Promise<DataMaintenanceExportResult> => {
   try {
     const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
     const endDate = `${year}-${String(month).padStart(2, '0')}-31`;
     const records = await hydrateRangeRecords(startDate, endDate);
 
     if (records.length === 0) {
-      throw new Error('No hay registros para exportar en este período.');
+      return {
+        status: 'failed',
+        reason: 'no_records',
+        userSafeMessage: 'No hay registros para exportar en este período.',
+        recordCount: 0,
+      };
     }
 
     const backup: MonthBackup = {
@@ -133,9 +145,21 @@ export const exportMonthRecords = async (year: number, month: number): Promise<v
       month,
       recordCount: records.length,
     });
+    return {
+      status: 'success',
+      reason: 'unknown',
+      userSafeMessage: 'Respaldo generado correctamente.',
+      recordCount: records.length,
+    };
   } catch (error) {
     dataMaintenanceLogger.error('Monthly export failed', error);
-    throw error;
+    return {
+      status: 'failed',
+      reason: 'unknown',
+      userSafeMessage:
+        error instanceof Error ? error.message : 'No se pudo exportar el respaldo mensual.',
+      recordCount: 0,
+    };
   }
 };
 
@@ -143,9 +167,9 @@ export const exportMonthRecords = async (year: number, month: number): Promise<v
  * Exports all records from January 1st of a year through today when the year is current,
  * or through December 31st when exporting a past year.
  */
-export const exportYearToDateRecords = async (
+const exportYearToDateRecordsInternal = async (
   year: number = new Date().getFullYear()
-): Promise<void> => {
+): Promise<DataMaintenanceExportResult> => {
   try {
     const currentYear = new Date().getFullYear();
     const startDate = `${year}-01-01`;
@@ -153,7 +177,12 @@ export const exportYearToDateRecords = async (
     const records = await hydrateRangeRecords(startDate, endDate);
 
     if (records.length === 0) {
-      throw new Error('No hay registros para exportar en el rango anual seleccionado.');
+      return {
+        status: 'failed',
+        reason: 'no_records',
+        userSafeMessage: 'No hay registros para exportar en el rango anual seleccionado.',
+        recordCount: 0,
+      };
     }
 
     const backup: YearToDateBackup = {
@@ -180,9 +209,49 @@ export const exportYearToDateRecords = async (
       recordCount: records.length,
       exportScope: 'year-to-date',
     });
+    return {
+      status: 'success',
+      reason: 'unknown',
+      userSafeMessage: 'Respaldo anual generado correctamente.',
+      recordCount: records.length,
+    };
   } catch (error) {
     dataMaintenanceLogger.error('Year-to-date export failed', error);
-    throw error;
+    return {
+      status: 'failed',
+      reason: 'unknown',
+      userSafeMessage:
+        error instanceof Error ? error.message : 'No se pudo exportar el respaldo anual.',
+      recordCount: 0,
+    };
+  }
+};
+
+export const exportMonthRecordsWithResult = async (
+  year: number,
+  month: number
+): Promise<DataMaintenanceExportResult> => exportMonthRecordsInternal(year, month);
+
+export const exportYearToDateRecordsWithResult = async (
+  year: number = new Date().getFullYear()
+): Promise<DataMaintenanceExportResult> => exportYearToDateRecordsInternal(year);
+
+/**
+ * Legacy throw-based compatibility wrappers.
+ */
+export const exportMonthRecords = async (year: number, month: number): Promise<void> => {
+  const result = await exportMonthRecordsInternal(year, month);
+  if (result.status === 'failed') {
+    throw new Error(result.userSafeMessage);
+  }
+};
+
+export const exportYearToDateRecords = async (
+  year: number = new Date().getFullYear()
+): Promise<void> => {
+  const result = await exportYearToDateRecordsInternal(year);
+  if (result.status === 'failed') {
+    throw new Error(result.userSafeMessage);
   }
 };
 

@@ -27,6 +27,30 @@ export const canVerifyPassiveBackupForRole = (
   return false;
 };
 
+export const canViewOrManageBackupFiles = (role: SupportedRole): boolean =>
+  canEditModule(role, 'NURSING_HANDOFF');
+
+export const canUseAdminMaintenanceActions = (role: SupportedRole): boolean => isAdmin(role);
+
+export const canTriggerCensusExports = ({
+  role,
+  accessProfile = 'default',
+}: {
+  role: SupportedRole;
+  accessProfile?: CensusAccessProfile;
+}): boolean => canEditModule(role, 'CENSUS') && !isSpecialistCensusAccessProfile(accessProfile);
+
+export const canOpenTransferDocuments = (role: SupportedRole): boolean =>
+  canEditModule(role, 'TRANSFER_MANAGEMENT');
+
+export const canViewPatientHistoryFromRestrictedProfiles = ({
+  accessProfile = 'default',
+  hasRut,
+}: {
+  accessProfile?: CensusAccessProfile;
+  hasRut: boolean;
+}): boolean => !isSpecialistCensusAccessProfile(accessProfile) && hasRut;
+
 export const canVerifyArchiveStatusForModule = (
   role: SupportedRole,
   moduleType: ModuleType | string

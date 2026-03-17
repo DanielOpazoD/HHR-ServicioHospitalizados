@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
   clearStorageAutoRecoveryAttempt,
   getStorageAutoRecoveryKey,
+  getStorageFallbackNotice,
   hasAttemptedStorageAutoRecovery,
   markStorageAutoRecoveryAttempted,
   shouldAttemptStorageAutoRecovery,
@@ -37,5 +38,14 @@ describe('storageFallbackUiPolicy', () => {
     clearStorageAutoRecoveryAttempt();
 
     expect(hasAttemptedStorageAutoRecovery()).toBe(false);
+  });
+
+  it('exposes a degraded operational notice for fallback mode', () => {
+    expect(getStorageFallbackNotice()).toMatchObject({
+      channel: 'warning',
+      state: 'degraded',
+      actionRequired: false,
+      title: 'Guardado local limitado',
+    });
   });
 });

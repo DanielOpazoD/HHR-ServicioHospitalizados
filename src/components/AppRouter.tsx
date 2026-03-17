@@ -34,7 +34,11 @@ import {
 import { useSharedCensusMode } from '@/hooks/useSharedCensusMode';
 import type { CensusAccessProfile } from '@/shared/access/censusAccessProfile';
 import { resolveSpecialistCensusAccessProfile } from '@/shared/access/specialistAccessPolicy';
-import { canForceCreateDayCopyOverride } from '@/shared/access/operationalAccessPolicy';
+import {
+  canForceCreateDayCopyOverride,
+  canUseAdminMaintenanceActions,
+  canViewOrManageBackupFiles,
+} from '@/shared/access/operationalAccessPolicy';
 
 export type AppModule =
   | 'CENSUS'
@@ -159,7 +163,7 @@ export const AppRouter: React.FC<AppRouterProps> = ({
                 <WhatsAppIntegrationView />
               </SectionErrorBoundary>
             )}
-            {currentModule === 'DIAGNOSTICS' && role === 'admin' && (
+            {currentModule === 'DIAGNOSTICS' && canUseAdminMaintenanceActions(role) && (
               <SectionErrorBoundary sectionName="Diagnóstico del Sistema">
                 <SystemDiagnosticsView />
               </SectionErrorBoundary>
@@ -169,32 +173,33 @@ export const AppRouter: React.FC<AppRouterProps> = ({
                 <TransferManagementView />
               </SectionErrorBoundary>
             )}
-            {currentModule === 'BACKUP_FILES' && (
+            {currentModule === 'BACKUP_FILES' && canViewOrManageBackupFiles(role) && (
               <SectionErrorBoundary sectionName="Respaldos">
                 <BackupFilesView backupType="handoff" />
               </SectionErrorBoundary>
             )}
-            {currentModule === 'PATIENT_MASTER_INDEX' && role === 'admin' && (
+            {currentModule === 'PATIENT_MASTER_INDEX' && canUseAdminMaintenanceActions(role) && (
               <SectionErrorBoundary sectionName="Base de Pacientes">
                 <PatientMasterView />
               </SectionErrorBoundary>
             )}
-            {currentModule === 'DATA_MAINTENANCE' && role === 'admin' && (
+            {currentModule === 'DATA_MAINTENANCE' && canUseAdminMaintenanceActions(role) && (
               <SectionErrorBoundary sectionName="Mantenimiento de Datos">
                 <DataMaintenanceView />
               </SectionErrorBoundary>
             )}
-            {currentModule === 'ROLE_MANAGEMENT' && (role === 'admin' || role === undefined) && (
-              <SectionErrorBoundary sectionName="Gestión de Roles">
-                <RoleManagementView />
-              </SectionErrorBoundary>
-            )}
-            {currentModule === 'REMINDERS' && role === 'admin' && (
+            {currentModule === 'ROLE_MANAGEMENT' &&
+              (canUseAdminMaintenanceActions(role) || role === undefined) && (
+                <SectionErrorBoundary sectionName="Gestión de Roles">
+                  <RoleManagementView />
+                </SectionErrorBoundary>
+              )}
+            {currentModule === 'REMINDERS' && canUseAdminMaintenanceActions(role) && (
               <SectionErrorBoundary sectionName="Avisos al Personal">
                 <ReminderAdminView />
               </SectionErrorBoundary>
             )}
-            {currentModule === 'ERRORS' && role === 'admin' && (
+            {currentModule === 'ERRORS' && canUseAdminMaintenanceActions(role) && (
               <SectionErrorBoundary sectionName="Panel de Errores">
                 <ErrorDashboard />
               </SectionErrorBoundary>

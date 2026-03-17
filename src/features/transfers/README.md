@@ -125,6 +125,10 @@ Si un hospital no tiene configuración documental:
    - `Ver docs` reutiliza el paquete ya generado dentro de la sesión si la firma no cambió
 6. La fecha de solicitud debe manejarse con fecha local, no UTC.
 7. Si se agregan nuevos hospitales con plantillas, actualizar la configuración documental y los tests del flujo.
+8. La capacidad para preparar o abrir documentos debe salir de policies compartidas
+   (`operationalAccessPolicy`) y no de checks inline por componente o fila.
+9. Las fechas visibles de estados/modales/documentos deben reutilizar presentation helpers
+   compartidos; no deben reaparecer variantes locales de `toLocaleDateString()`.
 
 ## Tests relevantes
 

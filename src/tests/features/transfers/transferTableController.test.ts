@@ -53,7 +53,7 @@ describe('transferTableController', () => {
 
   it('returns active-row actions for active transfers only', () => {
     const requested = buildTransfer('REQUESTED');
-    const state = getTransferRowActionState(requested, 'active', true);
+    const state = getTransferRowActionState(requested, 'active', true, 'admin');
 
     expect(state.canEditInline).toBe(true);
     expect(state.canPrepareDocuments).toBe(true);
@@ -64,11 +64,20 @@ describe('transferTableController', () => {
 
   it('limits finalized-row actions to transferred cases only', () => {
     const transferred = buildTransfer('TRANSFERRED');
-    const state = getTransferRowActionState(transferred, 'finalized', true);
+    const state = getTransferRowActionState(transferred, 'finalized', true, 'admin');
 
     expect(state.canUndoTransfer).toBe(true);
     expect(state.canArchiveTransfer).toBe(true);
     expect(state.canEditInline).toBe(false);
     expect(state.canPrepareDocuments).toBe(false);
+  });
+
+  it('gates transfer document actions by role capability', () => {
+    const requested = buildTransfer('REQUESTED');
+    const state = getTransferRowActionState(requested, 'active', true, 'doctor_specialist');
+
+    expect(state.canEditInline).toBe(true);
+    expect(state.canPrepareDocuments).toBe(false);
+    expect(state.canViewDocuments).toBe(false);
   });
 });

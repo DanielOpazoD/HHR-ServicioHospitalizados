@@ -6,6 +6,8 @@ import {
   isTransferredTransferStatus,
 } from '@/services/transfers/transferStatusController';
 import { formatTransferDate } from '@/shared/transfers/transferPresentation';
+import type { UserRole } from '@/types/auth';
+import { canOpenTransferDocuments } from '@/shared/access/operationalAccessPolicy';
 
 export type TransferTableMode = 'active' | 'finalized';
 
@@ -33,15 +35,18 @@ export interface TransferRowActionState {
 export const getTransferRowActionState = (
   transfer: TransferRequest,
   mode: TransferTableMode,
-  hasDocumentSupport: boolean
+  hasDocumentSupport: boolean,
+  role?: UserRole
 ): TransferRowActionState => {
   const isActiveRow = mode === 'active' && isTransferActiveStatus(transfer.status);
   const isFinalizedTransferredRow = mode === 'finalized' && isTransferredStatus(transfer.status);
+  const canAccessDocuments = canOpenTransferDocuments(role);
 
   return {
     canEditInline: isActiveRow,
-    canPrepareDocuments: isActiveRow && hasDocumentSupport,
-    canViewDocuments: isActiveRow && !!transfer.questionnaireResponses && hasDocumentSupport,
+    canPrepareDocuments: isActiveRow && hasDocumentSupport && canAccessDocuments,
+    canViewDocuments:
+      isActiveRow && !!transfer.questionnaireResponses && hasDocumentSupport && canAccessDocuments,
     canUndoTransfer: isFinalizedTransferredRow,
     canArchiveTransfer: isFinalizedTransferredRow,
     canCancelTransfer: isActiveRow,

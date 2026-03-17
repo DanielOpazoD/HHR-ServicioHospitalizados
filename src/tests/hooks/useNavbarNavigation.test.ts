@@ -8,8 +8,8 @@ vi.mock('@/context/AuthContext', () => ({
   }),
 }));
 
-vi.mock('@/utils/permissions', () => ({
-  isAdmin: (role: string) => role === 'admin',
+vi.mock('@/shared/access/operationalAccessPolicy', () => ({
+  canUseAdminMaintenanceActions: (role: string) => role === 'admin',
 }));
 
 vi.mock('@/constants/navigationConfig', () => ({
