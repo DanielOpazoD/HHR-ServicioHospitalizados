@@ -61,6 +61,12 @@ clinicalShiftCalendarController
 - El cálculo de `nuevo ingreso` debe salir del dominio temporal compartido, no de helpers locales de tabla.
 - Los indicadores clínicos de fila deben depender del sujeto correcto: paciente/episodio cuando corresponda, no cama por arrastre.
 - Los modales visibles deben derivar de capabilities/runtime de fila, no solo de estado UI.
+- La creación manual de un día con copia desde el anterior sigue respetando el horario clínico salvo
+  cuando el actor es `admin` y usa el override explícito; ese bypass no debe reutilizarse para otros roles.
+- La verificación pasiva de respaldos remotos no debe ejecutarse para roles sin capacidad operativa
+  real sobre el módulo, para evitar `403` ruidosos desde Storage.
+- Los warnings de creación de día deben distinguir entre `bloqueado por horario`, `permitido por override`
+  y `falla real de inicialización`.
 
 ## Runtime boundaries
 

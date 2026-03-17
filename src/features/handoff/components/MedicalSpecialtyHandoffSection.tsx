@@ -16,6 +16,10 @@ import {
   MEDICAL_SPECIALTY_ORDER,
   resolveMedicalSpecialtyDailyStatus,
 } from '@/domain/handoff/specialty';
+import {
+  formatHandoffDateTime,
+  getMedicalSpecialtyStatusLabel,
+} from '@/shared/handoff/handoffPresentation';
 
 interface MedicalSpecialtyHandoffSectionProps {
   record: DailyRecord;
@@ -38,17 +42,17 @@ interface MedicalSpecialtyHandoffSectionProps {
 
 const STATUS_STYLES = {
   updated_by_specialist: {
-    label: 'Actualizado por especialista hoy',
+    label: getMedicalSpecialtyStatusLabel('updated_by_specialist'),
     className: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     icon: CheckCircle2,
   },
   confirmed_no_changes: {
-    label: 'Confirmado sin cambios',
+    label: getMedicalSpecialtyStatusLabel('confirmed_no_changes'),
     className: 'bg-amber-50 text-amber-700 border-amber-200',
     icon: Clock3,
   },
   pending: {
-    label: 'Pendiente',
+    label: getMedicalSpecialtyStatusLabel('pending'),
     className: 'bg-rose-50 text-rose-700 border-rose-200',
     icon: AlertTriangle,
   },
@@ -164,12 +168,7 @@ export const MedicalSpecialtyHandoffSection: React.FC<MedicalSpecialtyHandoffSec
                 {getMedicalSpecialtyLabel(resolvedActiveSpecialty)}
               </div>
               <div className="mt-1 flex flex-wrap gap-2 text-xs text-slate-500">
-                <span>
-                  Última edición:{' '}
-                  {activeNote?.updatedAt
-                    ? new Date(activeNote.updatedAt).toLocaleString('es-CL')
-                    : 'sin registro'}
-                </span>
+                <span>Última edición: {formatHandoffDateTime(activeNote?.updatedAt)}</span>
                 <span>
                   Autor:{' '}
                   {activeNote?.author?.displayName || activeNote?.author?.email || 'sin autor'}
@@ -227,7 +226,7 @@ export const MedicalSpecialtyHandoffSection: React.FC<MedicalSpecialtyHandoffSec
               </div>
               {activeContinuity?.confirmedAt && (
                 <div className="text-xs text-slate-500">
-                  {new Date(activeContinuity.confirmedAt).toLocaleString('es-CL')}
+                  {formatHandoffDateTime(activeContinuity.confirmedAt)}
                 </div>
               )}
             </div>

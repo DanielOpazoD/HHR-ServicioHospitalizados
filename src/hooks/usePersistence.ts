@@ -4,7 +4,10 @@ import { useRepositories } from '@/services/RepositoryContext';
 import { DailyRecord } from '@/types/domain/dailyRecord';
 import { getUserFriendlyErrorMessage } from '@/services/utils/errorService';
 import { hasCriticalLegacyRepairSignal } from '@/hooks/controllers/legacyRepairWarningController';
-import { buildCreateDayNotifications } from '@/hooks/controllers/persistenceFeedbackController';
+import {
+  buildCreateDayNotifications,
+  resolveCreateDayFailureNotice,
+} from '@/hooks/controllers/persistenceFeedbackController';
 import { executeInitializeDailyRecord } from '@/application/daily-record/initializeDailyRecordUseCase';
 import { useAuditContext } from '@/context/AuditContext';
 import {
@@ -112,10 +115,20 @@ export const usePersistence = ({
           context: { copyFromPrevious, sourceDate: prevDate || null },
           allowSuccess: true,
         });
-        const initResult = initOutcome.data.initialization;
-        const newRecord = initOutcome.data.record;
+        const initResult = initOutcome.data?.initialization;
+        const newRecord = initOutcome.data?.record;
         if (!initResult || !newRecord) {
-          throw new Error(initOutcome.issues[0]?.message || 'No se pudo inicializar el día');
+          const failureNotice = resolveCreateDayFailureNotice(initOutcome.issues);
+          recordOperationalTelemetry({
+            category: 'create_day',
+            status: 'failed',
+            operation: 'initialize_daily_record',
+            date: currentDateString,
+            issues: [failureNotice.message || failureNotice.title],
+            context: { copyFromPrevious, sourceDate: prevDate || null, reason: initOutcome.reason },
+          });
+          notifyError(failureNotice.title, failureNotice.message);
+          return;
         }
         markLocalChange();
         setRecord(newRecord);

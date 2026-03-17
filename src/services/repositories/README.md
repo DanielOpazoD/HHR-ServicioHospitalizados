@@ -106,6 +106,9 @@ de entrada (fecha, límites, RUT, IDs) antes de delegar en storage.
 
 - `DailyRecordRepository.ts` debe seguir siendo una fachada mínima; la lógica de lectura,
   escritura, sync, lifecycle e inicialización vive en servicios dedicados.
+- `executeInitializeDailyRecord` y los hooks de persistencia no deben usar excepciones para
+  representar fallas esperadas de inicialización; esas rutas deben salir con outcomes/notices
+  tipados para no mezclar errores normales con fallas inesperadas.
 - `dailyRecordRemoteLoader.ts` ya no debe decidir por sí solo cuándo hidratar IndexedDB; esa
   decisión pertenece a la policy de consistencia y a los servicios read/sync.
 - `repositories/index.ts` debe permanecer explícito y pequeño; código nuevo debe importar

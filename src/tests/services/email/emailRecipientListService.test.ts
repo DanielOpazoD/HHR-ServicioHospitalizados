@@ -5,10 +5,14 @@ import {
   CENSUS_GLOBAL_EMAIL_RECIPIENT_LIST,
   getGlobalEmailRecipientLists,
   getGlobalEmailRecipientList,
+  getGlobalEmailRecipientListsWithResult,
+  getGlobalEmailRecipientListWithResult,
   normalizeGlobalEmailRecipients,
   saveGlobalEmailRecipientList,
+  saveGlobalEmailRecipientListWithResult,
   subscribeToGlobalEmailRecipientList,
   subscribeToGlobalEmailRecipientLists,
+  deleteGlobalEmailRecipientListWithResult,
 } from '@/services/email/emailRecipientListService';
 
 vi.mock('@/services/infrastructure/db', () => ({
@@ -67,6 +71,15 @@ describe('emailRecipientListService', () => {
     );
   });
 
+  it('returns a failed outcome when global list loading throws', async () => {
+    vi.mocked(db.getDoc).mockRejectedValueOnce(new Error('boom'));
+
+    const result = await getGlobalEmailRecipientListWithResult('missing');
+
+    expect(result.status).toBe('failed');
+    expect(result.issues[0]?.userSafeMessage).toContain('No se pudo cargar');
+  });
+
   it('persists a normalized global list', async () => {
     await saveGlobalEmailRecipientList({
       listId: CENSUS_GLOBAL_EMAIL_RECIPIENT_LIST.id,
@@ -86,6 +99,20 @@ describe('emailRecipientListService', () => {
         updatedByEmail: 'admin@test.com',
       })
     );
+  });
+
+  it('returns a typed save failure when persistence fails', async () => {
+    vi.mocked(db.setDoc).mockRejectedValueOnce(new Error('boom'));
+
+    const result = await saveGlobalEmailRecipientListWithResult({
+      listId: CENSUS_GLOBAL_EMAIL_RECIPIENT_LIST.id,
+      name: CENSUS_GLOBAL_EMAIL_RECIPIENT_LIST.name,
+      description: CENSUS_GLOBAL_EMAIL_RECIPIENT_LIST.description,
+      recipients: ['a@mail.com'],
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.data.saved).toBe(false);
   });
 
   it('subscribes to normalized updates', () => {
@@ -128,6 +155,24 @@ describe('emailRecipientListService', () => {
         recipients: ['a@mail.com'],
       }),
     ]);
+  });
+
+  it('returns a typed list failure when collection loading throws', async () => {
+    vi.mocked(db.getDocs).mockRejectedValueOnce(new Error('boom'));
+
+    const result = await getGlobalEmailRecipientListsWithResult();
+
+    expect(result.status).toBe('failed');
+    expect(result.data).toEqual([]);
+  });
+
+  it('returns a typed delete failure when deletion throws', async () => {
+    vi.mocked(db.deleteDoc).mockRejectedValueOnce(new Error('boom'));
+
+    const result = await deleteGlobalEmailRecipientListWithResult('lista-1');
+
+    expect(result.status).toBe('failed');
+    expect(result.data.deleted).toBe(false);
   });
 
   it('subscribes to list collection updates', () => {

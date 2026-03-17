@@ -28,3 +28,21 @@ export const formatBackupDisplayDate = (dateStr: string): string => {
     year: 'numeric',
   });
 };
+
+export const formatBackupDisplayDateVerbose = (dateStr: string): string => {
+  const date = new Date(`${dateStr}T12:00:00`);
+  return date.toLocaleDateString('es-CL', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+};
+
+export const formatBackupClockTime = (isoStr: string): string => {
+  const date = new Date(isoStr);
+  return date.toLocaleTimeString('es-CL', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};

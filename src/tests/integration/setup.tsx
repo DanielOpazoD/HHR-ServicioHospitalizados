@@ -201,9 +201,13 @@ export const createMockDailyRecordContext = (
   updateMedicalSignature: vi.fn().mockResolvedValue(undefined),
   updateMedicalHandoffDoctor: vi.fn().mockResolvedValue(undefined),
   markMedicalHandoffAsSent: vi.fn().mockResolvedValue(undefined),
-  ensureMedicalHandoffSignatureLink: vi
-    .fn()
-    .mockResolvedValue('https://hhr.test?mode=signature&date=2024-12-28&scope=all&token=test'),
+  ensureMedicalHandoffSignatureLink: vi.fn().mockResolvedValue({
+    status: 'success',
+    data: {
+      handoffUrl: 'https://hhr.test?mode=signature&date=2024-12-28&scope=all&token=test',
+    },
+    issues: [],
+  }),
   resetMedicalHandoffState: vi.fn().mockResolvedValue(undefined),
   sendMedicalHandoff: vi.fn().mockResolvedValue(undefined),
 

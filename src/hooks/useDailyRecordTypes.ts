@@ -16,6 +16,7 @@ import { CMAData } from '@/types/domain/movements';
 import { PatientFieldValue } from '@/types/valueTypes';
 import type { PatientMovementActions } from '@/types/movements';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
+import type { ApplicationOutcome } from '@/application/shared/applicationOutcome';
 export type { DailyRecordPatch };
 
 // ============================================================================
@@ -155,7 +156,9 @@ export interface DailyRecordActionsContextType extends PatientMovementActions {
   updateMedicalSignature: (doctorName: string, scope?: MedicalHandoffScope) => Promise<void>;
   updateMedicalHandoffDoctor: (doctorName: string) => Promise<void>;
   markMedicalHandoffAsSent: (doctorName?: string, scope?: MedicalHandoffScope) => Promise<void>;
-  ensureMedicalHandoffSignatureLink: (scope?: MedicalHandoffScope) => Promise<string>;
+  ensureMedicalHandoffSignatureLink: (
+    scope?: MedicalHandoffScope
+  ) => Promise<ApplicationOutcome<{ handoffUrl: string } | null>>;
   resetMedicalHandoffState: () => Promise<void>;
   sendMedicalHandoff: (templateContent: string, targetGroupId: string) => Promise<void>;
 }

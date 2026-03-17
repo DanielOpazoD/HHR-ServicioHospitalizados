@@ -1,6 +1,6 @@
 import {
-  deleteGlobalEmailRecipientList,
-  saveGlobalEmailRecipientList,
+  deleteGlobalEmailRecipientListWithResult,
+  saveGlobalEmailRecipientListWithResult,
   type GlobalEmailRecipientList,
 } from '@/services/email/emailRecipientListService';
 import type { CensusEmailBrowserRuntime } from '@/hooks/controllers/censusEmailBrowserRuntimeController';
@@ -86,13 +86,18 @@ export const executeSyncCensusRecipientList = async (
       input.activeRecipientListId
     );
 
-    await saveGlobalEmailRecipientList(
+    const saveResult = await saveGlobalEmailRecipientListWithResult(
       buildRecipientSyncPayload({
         activeList,
         recipients: input.recipients,
         actor: input.actor,
       })
     );
+    if (saveResult.status !== 'success') {
+      return createApplicationFailed({ skipped: false }, saveResult.issues, {
+        userSafeMessage: saveResult.userSafeMessage,
+      });
+    }
 
     return createApplicationSuccess({ skipped: false });
   } catch (error) {
@@ -132,7 +137,7 @@ export const executeCreateCensusRecipientList = async (
       input.actor
     );
 
-    await saveGlobalEmailRecipientList(
+    const saveResult = await saveGlobalEmailRecipientListWithResult(
       buildRecipientListSavePayload({
         listId: createdList.id,
         name: createdList.name,
@@ -141,6 +146,11 @@ export const executeCreateCensusRecipientList = async (
         actor: input.actor,
       })
     );
+    if (saveResult.status !== 'success') {
+      return createApplicationFailed(null, saveResult.issues, {
+        userSafeMessage: saveResult.userSafeMessage,
+      });
+    }
 
     return createApplicationSuccess(createdList);
   } catch (error) {
@@ -177,7 +187,7 @@ export const executeRenameCensusRecipientList = async (
 
   try {
     const resolvedName = resolveRenamedRecipientListName(input.activeList.id, input.name);
-    await saveGlobalEmailRecipientList(
+    const saveResult = await saveGlobalEmailRecipientListWithResult(
       buildRecipientListSavePayload({
         listId: input.activeList.id,
         name: resolvedName,
@@ -186,6 +196,11 @@ export const executeRenameCensusRecipientList = async (
         actor: input.actor,
       })
     );
+    if (saveResult.status !== 'success') {
+      return createApplicationFailed(null, saveResult.issues, {
+        userSafeMessage: saveResult.userSafeMessage,
+      });
+    }
 
     return createApplicationSuccess({
       ...input.activeList,
@@ -230,7 +245,12 @@ export const executeDeleteCensusRecipientList = async (
   }
 
   try {
-    await deleteGlobalEmailRecipientList(input.listId);
+    const deleteResult = await deleteGlobalEmailRecipientListWithResult(input.listId);
+    if (deleteResult.status !== 'success') {
+      return createApplicationFailed({ fallbackList }, deleteResult.issues, {
+        userSafeMessage: deleteResult.userSafeMessage,
+      });
+    }
     return createApplicationSuccess({ fallbackList });
   } catch (error) {
     return createApplicationFailed({ fallbackList }, [

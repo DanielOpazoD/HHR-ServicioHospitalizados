@@ -7,10 +7,13 @@ import {
 import {
   CENSUS_GLOBAL_EMAIL_RECIPIENT_LIST,
   ensureGlobalEmailRecipientList,
-  getGlobalEmailRecipientLists,
+  getGlobalEmailRecipientListsWithResult,
   type GlobalEmailRecipientList,
 } from '@/services/email/emailRecipientListService';
 import { getAppSetting, saveAppSetting } from '@/services/settingsService';
+import { logger } from '@/services/utils/loggerService';
+
+const censusEmailBootstrapLogger = logger.child('CensusEmailRecipientsBootstrap');
 
 export interface CensusEmailRecipientsBootstrapResult {
   recipients: string[];
@@ -87,7 +90,15 @@ export const resolveCensusRecipientsBootstrap = async ({
   }
 
   try {
-    let lists = await getGlobalEmailRecipientLists();
+    const listResult = await getGlobalEmailRecipientListsWithResult();
+    if (listResult.status !== 'success') {
+      throw new Error(
+        listResult.issues[0]?.userSafeMessage ||
+          listResult.issues[0]?.message ||
+          'No se pudo cargar la lista global en Firebase.'
+      );
+    }
+    let lists = listResult.data;
     if (lists.length === 0) {
       await ensureGlobalEmailRecipientList({
         listId: CENSUS_GLOBAL_EMAIL_RECIPIENT_LIST.id,
@@ -97,7 +108,15 @@ export const resolveCensusRecipientsBootstrap = async ({
         updatedByUid: user?.uid ?? null,
         updatedByEmail: user?.email ?? null,
       });
-      lists = await getGlobalEmailRecipientLists();
+      const refreshResult = await getGlobalEmailRecipientListsWithResult();
+      if (refreshResult.status !== 'success') {
+        throw new Error(
+          refreshResult.issues[0]?.userSafeMessage ||
+            refreshResult.issues[0]?.message ||
+            'No se pudo cargar la lista global en Firebase.'
+        );
+      }
+      lists = refreshResult.data;
     }
 
     const activeRecipientList = resolvePreferredActiveList(lists, storedActiveListId);
@@ -111,7 +130,7 @@ export const resolveCensusRecipientsBootstrap = async ({
       };
     }
   } catch (error) {
-    console.error('[useCensusEmail] Failed to load global recipient lists:', error);
+    censusEmailBootstrapLogger.warn('Failed to load global recipient lists', error);
     return {
       recipients: storedRecipients ?? CENSUS_DEFAULT_RECIPIENTS,
       recipientsSource: storedRecipients ? 'local' : 'default',

@@ -1,5 +1,6 @@
 import type { MedicalHandoffActor, MedicalSpecialty } from '@/types/domain/dailyRecord';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
+import type { ApplicationOutcome } from '@/application/shared/applicationOutcome';
 
 export interface ConfirmMedicalSpecialtyNoChangesInput {
   specialty: MedicalSpecialty;
@@ -25,7 +26,9 @@ export interface HandoffManagementActions {
   updateMedicalSignature: (doctorName: string, scope?: MedicalHandoffScope) => Promise<void>;
   updateMedicalHandoffDoctor: (doctorName: string) => Promise<void>;
   markMedicalHandoffAsSent: (doctorName?: string, scope?: MedicalHandoffScope) => Promise<void>;
-  ensureMedicalHandoffSignatureLink: (scope?: MedicalHandoffScope) => Promise<string>;
+  ensureMedicalHandoffSignatureLink: (
+    scope?: MedicalHandoffScope
+  ) => Promise<ApplicationOutcome<{ handoffUrl: string } | null>>;
   resetMedicalHandoffState: () => Promise<void>;
   sendMedicalHandoff: (templateContent: string, targetGroupId: string) => Promise<void>;
 }

@@ -10,6 +10,7 @@ import {
 } from '@/shared/runtime/browserWindowRuntime';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 import { logger } from '@/services/utils/loggerService';
+import type { ApplicationOutcome } from '@/application/shared/applicationOutcome';
 
 /**
  * useHandoffCommunication Hook
@@ -22,7 +23,9 @@ export const useHandoffCommunication = (
   record: DailyRecord | null,
   visibleBeds: { id: string }[],
   sendMedicalHandoff: (content: string, groupId: string) => Promise<void>,
-  ensureMedicalHandoffSignatureLink: (scope?: MedicalHandoffScope) => Promise<string>,
+  ensureMedicalHandoffSignatureLink: (
+    scope?: MedicalHandoffScope
+  ) => Promise<ApplicationOutcome<{ handoffUrl: string } | null>>,
   onSuccess: (message: string, description?: string) => void
 ) => {
   const [whatsappSending, setWhatsappSending] = useState(false);
@@ -35,8 +38,16 @@ export const useHandoffCommunication = (
     async (scope: MedicalHandoffScope = 'all') => {
       if (!record) return;
       try {
-        const url = await ensureMedicalHandoffSignatureLink(scope);
-        await writeClipboardText(url);
+        const result = await ensureMedicalHandoffSignatureLink(scope);
+        if (result.status !== 'success' || !result.data?.handoffUrl) {
+          onSuccess(
+            result.issues[0]?.userSafeMessage ||
+              result.issues[0]?.message ||
+              'No se pudo copiar el enlace al portapapeles.'
+          );
+          return;
+        }
+        await writeClipboardText(result.data.handoffUrl);
         const scopeLabel =
           scope === 'upc' ? 'UPC' : scope === 'no-upc' ? 'No UPC' : 'todos los pacientes';
         onSuccess(
@@ -105,7 +116,15 @@ export const useHandoffCommunication = (
 
       const [year, month, day] = record.date.split('-');
       const dateStr = `${day}-${month}-${year}`;
-      const handoffUrl = await ensureMedicalHandoffSignatureLink('all');
+      const handoffLinkResult = await ensureMedicalHandoffSignatureLink('all');
+      if (handoffLinkResult.status !== 'success' || !handoffLinkResult.data?.handoffUrl) {
+        throw new Error(
+          handoffLinkResult.issues[0]?.userSafeMessage ||
+            handoffLinkResult.issues[0]?.message ||
+            'No se pudo preparar el enlace de firma médica.'
+        );
+      }
+      const handoffUrl = handoffLinkResult.data.handoffUrl;
 
       const message =
         `\uD83C\uDFE5 Hospital Hanga Roa\n` +

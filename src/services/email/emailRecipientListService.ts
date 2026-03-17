@@ -1,5 +1,10 @@
 import { db } from '@/services/infrastructure/db';
 import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryService';
+import {
+  createApplicationFailed,
+  createApplicationSuccess,
+  type ApplicationOutcome,
+} from '@/application/shared/applicationOutcome';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const EMAIL_RECIPIENT_LISTS_COLLECTION = 'emailRecipientLists';
@@ -29,6 +34,8 @@ interface SaveGlobalEmailRecipientListInput {
   updatedByUid?: string | null;
   updatedByEmail?: string | null;
 }
+
+type GlobalEmailRecipientListOutcome<T> = ApplicationOutcome<T>;
 
 const normalizeEmail = (value: string): string => value.trim().toLowerCase();
 
@@ -109,12 +116,19 @@ const normalizeGlobalEmailRecipientList = (
 export const getGlobalEmailRecipientList = async (
   listId: string
 ): Promise<GlobalEmailRecipientList | null> => {
+  const result = await getGlobalEmailRecipientListWithResult(listId);
+  return result.status === 'success' ? result.data : null;
+};
+
+export const getGlobalEmailRecipientListWithResult = async (
+  listId: string
+): Promise<GlobalEmailRecipientListOutcome<GlobalEmailRecipientList | null>> => {
   try {
     const raw = await db.getDoc<Partial<GlobalEmailRecipientList>>(
       EMAIL_RECIPIENT_LISTS_COLLECTION,
       listId
     );
-    return normalizeGlobalEmailRecipientList(listId, raw);
+    return createApplicationSuccess(normalizeGlobalEmailRecipientList(listId, raw));
   } catch (error) {
     recordOperationalErrorTelemetry('integration', 'get_global_email_recipient_list', error, {
       code: 'email_recipient_list_fetch_failed',
@@ -123,11 +137,24 @@ export const getGlobalEmailRecipientList = async (
       context: { listId },
       userSafeMessage: 'No se pudo cargar la lista global de destinatarios.',
     });
-    return null;
+    return createApplicationFailed(null, [
+      {
+        kind: 'unknown',
+        message: 'No se pudo cargar la lista global de destinatarios.',
+        userSafeMessage: 'No se pudo cargar la lista global de destinatarios.',
+      },
+    ]);
   }
 };
 
 export const getGlobalEmailRecipientLists = async (): Promise<GlobalEmailRecipientList[]> => {
+  const result = await getGlobalEmailRecipientListsWithResult();
+  return result.status === 'success' ? result.data : [];
+};
+
+export const getGlobalEmailRecipientListsWithResult = async (): Promise<
+  GlobalEmailRecipientListOutcome<GlobalEmailRecipientList[]>
+> => {
   try {
     const rawLists = await db.getDocs<Partial<GlobalEmailRecipientList>>(
       EMAIL_RECIPIENT_LISTS_COLLECTION,
@@ -137,9 +164,13 @@ export const getGlobalEmailRecipientLists = async (): Promise<GlobalEmailRecipie
       }
     );
 
-    return rawLists
-      .map(raw => normalizeGlobalEmailRecipientList(typeof raw.id === 'string' ? raw.id : '', raw))
-      .filter((list): list is GlobalEmailRecipientList => Boolean(list && list.id));
+    return createApplicationSuccess(
+      rawLists
+        .map(raw =>
+          normalizeGlobalEmailRecipientList(typeof raw.id === 'string' ? raw.id : '', raw)
+        )
+        .filter((list): list is GlobalEmailRecipientList => Boolean(list && list.id))
+    );
   } catch (error) {
     recordOperationalErrorTelemetry('integration', 'get_global_email_recipient_lists', error, {
       code: 'email_recipient_lists_fetch_failed',
@@ -147,7 +178,16 @@ export const getGlobalEmailRecipientLists = async (): Promise<GlobalEmailRecipie
       severity: 'error',
       userSafeMessage: 'No se pudieron cargar las listas globales de destinatarios.',
     });
-    return [];
+    return createApplicationFailed(
+      [],
+      [
+        {
+          kind: 'unknown',
+          message: 'No se pudieron cargar las listas globales de destinatarios.',
+          userSafeMessage: 'No se pudieron cargar las listas globales de destinatarios.',
+        },
+      ]
+    );
   }
 };
 
@@ -175,22 +215,89 @@ export const saveGlobalEmailRecipientList = async ({
   updatedByUid = null,
   updatedByEmail = null,
 }: SaveGlobalEmailRecipientListInput): Promise<void> => {
-  const normalizedNow = new Date().toISOString();
-
-  await db.setDoc<GlobalEmailRecipientList>(EMAIL_RECIPIENT_LISTS_COLLECTION, listId, {
-    id: listId,
-    name: normalizeListName(name),
-    description: normalizeString(description),
-    recipients: normalizeGlobalEmailRecipients(recipients),
-    scope: 'global',
-    updatedAt: normalizedNow,
-    updatedByUid: normalizeString(updatedByUid),
-    updatedByEmail: normalizeString(updatedByEmail),
+  const result = await saveGlobalEmailRecipientListWithResult({
+    listId,
+    name,
+    description,
+    recipients,
+    updatedByUid,
+    updatedByEmail,
   });
+  if (result.status !== 'success') {
+    throw new Error(result.issues[0]?.message || 'No se pudo guardar la lista global.');
+  }
+};
+
+export const saveGlobalEmailRecipientListWithResult = async ({
+  listId,
+  name,
+  description = null,
+  recipients,
+  updatedByUid = null,
+  updatedByEmail = null,
+}: SaveGlobalEmailRecipientListInput): Promise<
+  GlobalEmailRecipientListOutcome<{ saved: boolean }>
+> => {
+  const normalizedNow = new Date().toISOString();
+  try {
+    await db.setDoc<GlobalEmailRecipientList>(EMAIL_RECIPIENT_LISTS_COLLECTION, listId, {
+      id: listId,
+      name: normalizeListName(name),
+      description: normalizeString(description),
+      recipients: normalizeGlobalEmailRecipients(recipients),
+      scope: 'global',
+      updatedAt: normalizedNow,
+      updatedByUid: normalizeString(updatedByUid),
+      updatedByEmail: normalizeString(updatedByEmail),
+    });
+    return createApplicationSuccess({ saved: true });
+  } catch (error) {
+    recordOperationalErrorTelemetry('integration', 'save_global_email_recipient_list', error, {
+      code: 'email_recipient_list_save_failed',
+      message: 'Failed to save global recipient list.',
+      severity: 'error',
+      context: { listId },
+      userSafeMessage: 'No se pudo guardar la lista global de destinatarios.',
+    });
+    return createApplicationFailed({ saved: false }, [
+      {
+        kind: 'unknown',
+        message: 'No se pudo guardar la lista global de destinatarios.',
+        userSafeMessage: 'No se pudo guardar la lista global de destinatarios.',
+      },
+    ]);
+  }
 };
 
 export const deleteGlobalEmailRecipientList = async (listId: string): Promise<void> => {
-  await db.deleteDoc(EMAIL_RECIPIENT_LISTS_COLLECTION, listId);
+  const result = await deleteGlobalEmailRecipientListWithResult(listId);
+  if (result.status !== 'success') {
+    throw new Error(result.issues[0]?.message || 'No se pudo eliminar la lista global.');
+  }
+};
+
+export const deleteGlobalEmailRecipientListWithResult = async (
+  listId: string
+): Promise<GlobalEmailRecipientListOutcome<{ deleted: boolean }>> => {
+  try {
+    await db.deleteDoc(EMAIL_RECIPIENT_LISTS_COLLECTION, listId);
+    return createApplicationSuccess({ deleted: true });
+  } catch (error) {
+    recordOperationalErrorTelemetry('integration', 'delete_global_email_recipient_list', error, {
+      code: 'email_recipient_list_delete_failed',
+      message: 'Failed to delete global recipient list.',
+      severity: 'error',
+      context: { listId },
+      userSafeMessage: 'No se pudo eliminar la lista global de destinatarios.',
+    });
+    return createApplicationFailed({ deleted: false }, [
+      {
+        kind: 'unknown',
+        message: 'No se pudo eliminar la lista global de destinatarios.',
+        userSafeMessage: 'No se pudo eliminar la lista global de destinatarios.',
+      },
+    ]);
+  }
 };
 
 export const ensureGlobalEmailRecipientList = async (

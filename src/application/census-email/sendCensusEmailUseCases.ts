@@ -182,7 +182,7 @@ export const executeSendCensusEmail = async (
       config: input.excelSheetConfig,
     });
 
-    await censusEmailDeliveryPort.sendEmail({
+    const sendResult = await censusEmailDeliveryPort.sendEmailWithResult({
       date: input.currentDateString,
       records: workbookPlan.records,
       sheetDescriptors: workbookPlan.sheetDescriptors,
@@ -192,6 +192,11 @@ export const executeSendCensusEmail = async (
       userEmail: input.user?.email,
       userRole: input.user?.role || input.role,
     });
+    if (sendResult.status !== 'success') {
+      return createApplicationFailed(null, sendResult.issues, {
+        userSafeMessage: sendResult.userSafeMessage,
+      });
+    }
 
     let backupUploaded = true;
     try {
@@ -205,7 +210,17 @@ export const executeSendCensusEmail = async (
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
 
-      await censusEmailDeliveryPort.uploadBackup(excelBlob, input.currentDateString);
+      const backupResult = await censusEmailDeliveryPort.uploadBackupWithResult(
+        excelBlob,
+        input.currentDateString
+      );
+      if (backupResult.status !== 'success') {
+        throw new Error(
+          backupResult.issues[0]?.userSafeMessage ||
+            backupResult.issues[0]?.message ||
+            'No se pudo respaldar la copia en la nube.'
+        );
+      }
     } catch (backupError) {
       backupUploaded = false;
       issues.push({
@@ -264,7 +279,7 @@ export const executeSendCensusEmailWithLink = async (
       ? recipientsResult.recipients
       : CENSUS_DEFAULT_RECIPIENTS;
 
-    await censusEmailDeliveryPort.sendLink({
+    const sendResult = await censusEmailDeliveryPort.sendLinkWithResult({
       date: input.currentDateString,
       records: [input.record],
       recipients: resolvedRecipients,
@@ -274,6 +289,11 @@ export const executeSendCensusEmailWithLink = async (
       userEmail: input.user?.email,
       userRole: input.user?.role || input.role,
     });
+    if (sendResult.status !== 'success') {
+      return createApplicationFailed(null, sendResult.issues, {
+        userSafeMessage: sendResult.userSafeMessage,
+      });
+    }
 
     return createApplicationSuccess({
       recipients: resolvedRecipients,

@@ -14,6 +14,11 @@ import {
 } from '@/services/observability/operationalTelemetryService';
 import { presentHandoffManagementFailure } from '@/hooks/controllers/handoffManagementOutcomeController';
 import { canEditSpecialistTodayBoundRecord } from '@/shared/access/specialistAccessPolicy';
+import {
+  createApplicationFailed,
+  createApplicationSuccess,
+  type ApplicationOutcome,
+} from '@/application/shared/applicationOutcome';
 
 interface HandoffManagementDeliveryInput {
   recordRef: RefObject<DailyRecord | null>;
@@ -77,11 +82,18 @@ export const useHandoffManagementDelivery = ({
   );
 
   const ensureMedicalHandoffSignatureLink = useCallback(
-    async (scope: MedicalHandoffScope = 'all'): Promise<string> => {
+    async (
+      scope: MedicalHandoffScope = 'all'
+    ): Promise<ApplicationOutcome<{ handoffUrl: string } | null>> => {
       if (!canMutateCurrentMedicalRecord()) {
-        throw new Error(
-          'El médico especialista solo puede editar la entrega médica del día actual.'
-        );
+        return createApplicationFailed(null, [
+          {
+            kind: 'permission',
+            message: 'El médico especialista solo puede editar la entrega médica del día actual.',
+            userSafeMessage:
+              'El médico especialista solo puede editar la entrega médica del día actual.',
+          },
+        ]);
       }
 
       const outcome = await executeEnsureMedicalHandoffSignatureLink({
@@ -90,15 +102,14 @@ export const useHandoffManagementDelivery = ({
         scope,
       });
       if (outcome.status === 'failed' || !outcome.data) {
-        const notice = presentHandoffManagementFailure(outcome, {
-          fallbackMessage: 'No se pudo copiar el enlace de firma médica.',
-          fallbackTitle: 'Error al compartir',
+        return createApplicationFailed(null, outcome.issues, {
+          userSafeMessage:
+            outcome.userSafeMessage || 'No se pudo copiar el enlace de firma médica.',
         });
-        throw new Error(notice.message);
       }
 
       recordRef.current = outcome.data.nextRecord;
-      return outcome.data.handoffUrl;
+      return createApplicationSuccess({ handoffUrl: outcome.data.handoffUrl });
     },
     [canMutateCurrentMedicalRecord, getCurrentRecord, patchRecord, recordRef]
   );

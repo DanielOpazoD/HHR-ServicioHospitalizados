@@ -41,9 +41,13 @@ describe('useHandoffCommunication', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    ensureMedicalHandoffSignatureLink.mockResolvedValue(
-      'https://hhr.test?mode=signature&date=2026-02-15&scope=all&token=test-token'
-    );
+    ensureMedicalHandoffSignatureLink.mockResolvedValue({
+      status: 'success',
+      data: {
+        handoffUrl: 'https://hhr.test?mode=signature&date=2026-02-15&scope=all&token=test-token',
+      },
+      issues: [],
+    });
   });
 
   it('copies signature link using runtime clipboard adapter', async () => {
@@ -76,9 +80,13 @@ describe('useHandoffCommunication', () => {
 
   it('copies differentiated UPC signature link', async () => {
     mockWriteClipboardText.mockResolvedValue(undefined);
-    ensureMedicalHandoffSignatureLink.mockResolvedValue(
-      'https://hhr.test?mode=signature&date=2026-02-15&scope=upc&token=upc-token'
-    );
+    ensureMedicalHandoffSignatureLink.mockResolvedValue({
+      status: 'success',
+      data: {
+        handoffUrl: 'https://hhr.test?mode=signature&date=2026-02-15&scope=upc&token=upc-token',
+      },
+      issues: [],
+    });
 
     const { result } = renderHook(() =>
       useHandoffCommunication(
@@ -124,6 +132,40 @@ describe('useHandoffCommunication', () => {
 
     await waitFor(() => {
       expect(onSuccess).toHaveBeenCalledWith('Clipboard blocked');
+    });
+  });
+
+  it('shows domain failure without trying to copy when link generation is blocked', async () => {
+    ensureMedicalHandoffSignatureLink.mockResolvedValue({
+      status: 'failed',
+      data: null,
+      issues: [
+        {
+          kind: 'permission',
+          message: 'El médico especialista solo puede editar la entrega médica del día actual.',
+        },
+      ],
+    });
+
+    const { result } = renderHook(() =>
+      useHandoffCommunication(
+        createRecord(),
+        [],
+        vi.fn(),
+        ensureMedicalHandoffSignatureLink,
+        onSuccess
+      )
+    );
+
+    act(() => {
+      result.current.handleShareLink();
+    });
+
+    await waitFor(() => {
+      expect(mockWriteClipboardText).not.toHaveBeenCalled();
+      expect(onSuccess).toHaveBeenCalledWith(
+        'El médico especialista solo puede editar la entrega médica del día actual.'
+      );
     });
   });
 

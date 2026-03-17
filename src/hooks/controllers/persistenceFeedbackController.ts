@@ -10,6 +10,14 @@ export interface PersistenceNotification {
   message?: string;
 }
 
+export const resolveCreateDayFailureNotice = (
+  issues: { message: string }[]
+): PersistenceNotification => ({
+  channel: 'warning',
+  title: 'No se pudo crear el día',
+  message: issues[0]?.message || 'No se pudo inicializar el día seleccionado.',
+});
+
 export const buildCreateDayNotifications = (
   input: CreateDayFeedbackInput
 ): PersistenceNotification[] => {

@@ -81,7 +81,16 @@ export const createPublicMedicalSignatureContextValue = ({
   updateMedicalSignature: onSign,
   updateMedicalHandoffDoctor: asyncNoop,
   markMedicalHandoffAsSent: asyncNoop,
-  ensureMedicalHandoffSignatureLink: async () => '',
+  ensureMedicalHandoffSignatureLink: async () => ({
+    status: 'failed',
+    data: null,
+    issues: [
+      {
+        kind: 'validation',
+        message: 'No se puede generar el enlace de firma en este contexto.',
+      },
+    ],
+  }),
   resetMedicalHandoffState: asyncNoop,
   sendMedicalHandoff: asyncNoop,
 });

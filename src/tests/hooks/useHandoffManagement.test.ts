@@ -50,6 +50,7 @@ vi.mock('@/context', () => ({
 
 import { useHandoffManagement } from '@/hooks/useHandoffManagement';
 import { DailyRecord, DailyRecordPatch } from '@/types';
+import type { ApplicationOutcome } from '@/application/shared/applicationOutcome';
 import {
   recordOperationalOutcome,
   recordOperationalTelemetry,
@@ -314,7 +315,8 @@ describe('useHandoffManagement', () => {
 
     let link = '';
     await act(async () => {
-      link = await result.current.ensureMedicalHandoffSignatureLink('upc');
+      const outcome = await result.current.ensureMedicalHandoffSignatureLink('upc');
+      link = outcome.data?.handoffUrl || '';
     });
 
     expect(mockPatchRecord).toHaveBeenCalledWith(
@@ -327,6 +329,30 @@ describe('useHandoffManagement', () => {
     expect(link).toContain('mode=signature');
     expect(link).toContain('scope=upc');
     expect(link).toContain('token=');
+  });
+
+  it('returns a failed outcome when specialist tries to generate signature link for previous day', async () => {
+    mockAuthContext.currentUser = {
+      uid: 'specialist-1',
+      email: 'specialist@hospitalhangaroa.cl',
+      displayName: 'Especialista',
+      role: 'doctor_specialist',
+    };
+    mockAuthContext.role = 'doctor_specialist';
+    mockRecord.date = '2024-12-27';
+
+    const { result } = renderHook(() =>
+      useHandoffManagement(mockRecord, mockSaveAndUpdate, mockPatchRecord)
+    );
+
+    let outcome: ApplicationOutcome<{ handoffUrl: string } | null> | undefined;
+    await act(async () => {
+      outcome = await result.current.ensureMedicalHandoffSignatureLink('all');
+    });
+
+    expect(outcome?.status).toBe('failed');
+    expect(outcome?.issues[0]?.kind).toBe('permission');
+    expect(mockPatchRecord).not.toHaveBeenCalled();
   });
 
   it('does not mark the handoff as sent when WhatsApp delivery fails', async () => {

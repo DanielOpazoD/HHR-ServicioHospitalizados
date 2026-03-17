@@ -13,13 +13,17 @@ vi.mock('@/services/email/emailRecipientListService', () => ({
     description: 'Lista global reutilizable para envios predeterminados de censo diario.',
   },
   ensureGlobalEmailRecipientList: vi.fn().mockResolvedValue(undefined),
-  getGlobalEmailRecipientLists: vi.fn().mockResolvedValue([]),
+  getGlobalEmailRecipientListsWithResult: vi.fn().mockResolvedValue({
+    status: 'success',
+    data: [],
+    issues: [],
+  }),
 }));
 
 import { getAppSetting, saveAppSetting } from '@/services/settingsService';
 import {
   ensureGlobalEmailRecipientList,
-  getGlobalEmailRecipientLists,
+  getGlobalEmailRecipientListsWithResult,
 } from '@/services/email/emailRecipientListService';
 
 describe('censusEmailRecipientsBootstrapController', () => {
@@ -52,20 +56,28 @@ describe('censusEmailRecipientsBootstrapController', () => {
     vi.mocked(getAppSetting)
       .mockResolvedValueOnce(['seed@test.com'])
       .mockResolvedValueOnce('census-default');
-    vi.mocked(getGlobalEmailRecipientLists)
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([
-        {
-          id: 'census-default',
-          name: 'Global',
-          description: null,
-          recipients: ['seed@test.com'],
-          scope: 'global',
-          updatedAt: '2026-03-03T10:00:00.000Z',
-          updatedByUid: null,
-          updatedByEmail: null,
-        },
-      ]);
+    vi.mocked(getGlobalEmailRecipientListsWithResult)
+      .mockResolvedValueOnce({
+        status: 'success',
+        data: [],
+        issues: [],
+      } as never)
+      .mockResolvedValueOnce({
+        status: 'success',
+        data: [
+          {
+            id: 'census-default',
+            name: 'Global',
+            description: null,
+            recipients: ['seed@test.com'],
+            scope: 'global',
+            updatedAt: '2026-03-03T10:00:00.000Z',
+            updatedByUid: null,
+            updatedByEmail: null,
+          },
+        ],
+        issues: [],
+      } as never);
 
     const result = await resolveCensusRecipientsBootstrap({
       canManageGlobalRecipientLists: true,
@@ -86,7 +98,11 @@ describe('censusEmailRecipientsBootstrapController', () => {
 
   it('migrates legacy browser recipients before creating firebase seed', async () => {
     vi.mocked(getAppSetting).mockResolvedValueOnce(null).mockResolvedValueOnce(null);
-    vi.mocked(getGlobalEmailRecipientLists).mockResolvedValue([]);
+    vi.mocked(getGlobalEmailRecipientListsWithResult).mockResolvedValue({
+      status: 'success',
+      data: [],
+      issues: [],
+    } as never);
     browserRuntime.getLegacyRecipients.mockReturnValue(JSON.stringify(['legacy@test.com']));
 
     await resolveCensusRecipientsBootstrap({

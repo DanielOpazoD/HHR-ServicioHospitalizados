@@ -20,7 +20,17 @@ vi.mock('@/services/email/emailRecipientListService', () => ({
     JSON.stringify(left) === JSON.stringify(right),
   buildGlobalEmailRecipientListId: vi.fn((name: string) => name.toLowerCase().replace(/\s+/g, '-')),
   deleteGlobalEmailRecipientList: vi.fn(),
+  deleteGlobalEmailRecipientListWithResult: vi.fn().mockResolvedValue({
+    status: 'success',
+    data: { deleted: true },
+    issues: [],
+  }),
   saveGlobalEmailRecipientList: vi.fn(),
+  saveGlobalEmailRecipientListWithResult: vi.fn().mockResolvedValue({
+    status: 'success',
+    data: { saved: true },
+    issues: [],
+  }),
 }));
 
 vi.mock('@/hooks/controllers/censusEmailRecipientsBootstrapController', () => ({
@@ -60,9 +70,9 @@ describe('censusRecipientListUseCases', () => {
   });
 
   it('creates a list through the application layer', async () => {
-    vi.mocked(emailRecipientListService.saveGlobalEmailRecipientList).mockResolvedValueOnce(
-      undefined
-    );
+    vi.mocked(
+      emailRecipientListService.saveGlobalEmailRecipientListWithResult
+    ).mockResolvedValueOnce({ status: 'success', data: { saved: true }, issues: [] });
 
     const result = await executeCreateCensusRecipientList({
       canManageGlobalRecipientLists: true,
@@ -77,9 +87,9 @@ describe('censusRecipientListUseCases', () => {
   });
 
   it('renames a list through the application layer', async () => {
-    vi.mocked(emailRecipientListService.saveGlobalEmailRecipientList).mockResolvedValueOnce(
-      undefined
-    );
+    vi.mocked(
+      emailRecipientListService.saveGlobalEmailRecipientListWithResult
+    ).mockResolvedValueOnce({ status: 'success', data: { saved: true }, issues: [] });
 
     const result = await executeRenameCensusRecipientList({
       canManageGlobalRecipientLists: true,
@@ -103,9 +113,9 @@ describe('censusRecipientListUseCases', () => {
   });
 
   it('deletes a list through the application layer', async () => {
-    vi.mocked(emailRecipientListService.deleteGlobalEmailRecipientList).mockResolvedValueOnce(
-      undefined
-    );
+    vi.mocked(
+      emailRecipientListService.deleteGlobalEmailRecipientListWithResult
+    ).mockResolvedValueOnce({ status: 'success', data: { deleted: true }, issues: [] });
 
     const result = await executeDeleteCensusRecipientList({
       canManageGlobalRecipientLists: true,

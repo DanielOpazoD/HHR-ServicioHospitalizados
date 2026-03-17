@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   saveNursingHandoffBackup,
+  saveNursingHandoffBackupWithResult,
   checkBackupExists,
   getBackupByDateShift,
   getBackupFile,
@@ -60,6 +61,20 @@ describe('backupService', () => {
       await expect(
         saveNursingHandoffBackup(mockDate, mockShift, 'D', 'R', mockContent)
       ).rejects.toThrow('Usuario no autenticado');
+    });
+
+    it('should return a typed unauthenticated result for withResult variant', async () => {
+      (auth as unknown as AuthMutable).currentUser = null;
+
+      const result = await saveNursingHandoffBackupWithResult(
+        mockDate,
+        mockShift,
+        'D',
+        'R',
+        mockContent
+      );
+
+      expect(result.status).toBe('unauthenticated');
     });
   });
 

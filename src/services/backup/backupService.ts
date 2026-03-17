@@ -67,6 +67,18 @@ const getCurrentUserInfo = () => {
   };
 };
 
+const getCurrentUserInfoWithResult = (): BackupCrudResult<{
+  uid: string;
+  email: string;
+  name: string;
+}> => {
+  try {
+    return createBackupCrudSuccess(getCurrentUserInfo());
+  } catch (error) {
+    return createBackupCrudFailure(error);
+  }
+};
+
 /**
  * Convert Firestore document to BackupFilePreview
  */
@@ -139,7 +151,11 @@ export const saveNursingHandoffBackupWithResult = async (
   content: Record<string, unknown>
 ): Promise<BackupCrudResult<string>> => {
   try {
-    const userInfo = getCurrentUserInfo();
+    const userInfoResult = getCurrentUserInfoWithResult();
+    if (userInfoResult.status !== 'success') {
+      return userInfoResult;
+    }
+    const userInfo = userInfoResult.data;
     const backupId = generateBackupId(date, shiftType);
 
     const beds = (content as { beds?: Record<string, { patientName?: string }> }).beds;

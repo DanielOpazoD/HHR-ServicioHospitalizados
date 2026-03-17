@@ -6,8 +6,9 @@
 import React from 'react';
 import { Download, Trash2, Calendar, Eye, FileText } from 'lucide-react';
 import type { BaseStoredFile } from '@/types/backupArtifacts';
-import { generateDateRange, formatDateDDMMYYYY } from '@/utils/dateUtils';
+import { generateDateRange } from '@/utils/dateUtils';
 import { MONTH_NAMES } from '@/types/backupArtifacts';
+import { formatBackupDisplayDate } from '@/shared/backup/backupPresentation';
 
 interface DailyBackupCalendarViewProps {
   files: BaseStoredFile[];
@@ -77,7 +78,7 @@ export const DailyBackupCalendarView: React.FC<DailyBackupCalendarViewProps> = (
             <tr key={dateStr} className="hover:bg-slate-50/50 transition-colors">
               <td className="px-2 py-1">
                 <span className="font-medium text-slate-700 text-xs">
-                  {formatDateDDMMYYYY(dateStr)}
+                  {formatBackupDisplayDate(dateStr)}
                 </span>
               </td>
               <td className="px-1 py-0.5 text-center">

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  formatBackupClockTime,
   formatBackupDisplayDate,
+  formatBackupDisplayDateVerbose,
   formatBackupShiftLabel,
   formatBackupTimestamp,
   getBackupShiftPresentation,
@@ -16,6 +18,8 @@ describe('backupPresentation', () => {
 
   it('formats backup dates for UI surfaces', () => {
     expect(formatBackupDisplayDate('2026-03-15')).toBe('15-03-2026');
+    expect(formatBackupDisplayDateVerbose('2026-03-15')).toContain('15');
+    expect(formatBackupClockTime('2026-03-15T10:30:00.000Z')).toMatch(/\d{1,2}:\d{2}/);
     expect(formatBackupTimestamp('2026-03-15T10:30:00.000Z')).toContain('15-03-2026');
   });
 });
