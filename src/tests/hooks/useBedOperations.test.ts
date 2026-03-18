@@ -37,10 +37,10 @@ vi.mock('@/context/AuditContext', () => ({
 }));
 
 // Mock constants
-vi.mock('@/constants', () => ({
+vi.mock('@/constants/beds', () => ({
   BEDS: [
-    { id: 'B1', name: 'Bed 1', type: 'MEDIA' },
-    { id: 'B2', name: 'Bed 2', type: 'MEDIA' },
+    { id: 'R1', name: 'Bed 1', type: 'MEDIA' },
+    { id: 'R2', name: 'Bed 2', type: 'MEDIA' },
   ],
 }));
 
@@ -127,8 +127,8 @@ describe('useBedOperations', () => {
   describe('clearAllBeds', () => {
     it('should clear all beds and reset metadata', () => {
       const record = createMockRecord({
-        B1: createMockPatient('B1', 'P1'),
-        B2: createMockPatient('B2', 'P2'),
+        R1: createMockPatient('R1', 'P1'),
+        R2: createMockPatient('R2', 'P2'),
       });
 
       const { result } = renderHook(() => useBedOperations(record, mockPatchRecord));
@@ -138,10 +138,10 @@ describe('useBedOperations', () => {
       });
 
       expect(mockPatchRecord).toHaveBeenCalledWith({
-        beds: {
-          B1: expect.objectContaining({ patientName: '' }),
-          B2: expect.objectContaining({ patientName: '' }),
-        },
+        beds: expect.objectContaining({
+          R1: expect.objectContaining({ patientName: '' }),
+          R2: expect.objectContaining({ patientName: '' }),
+        }),
         discharges: [],
         transfers: [],
       });

@@ -2,6 +2,10 @@ import { useCallback } from 'react';
 import { DailyRecordSchema } from '@/schemas/zodSchemas';
 import { PatientData } from '@/types/domain/patient';
 import { DailyRecord } from '@/types/domain/dailyRecord';
+import {
+  validateMovePatient,
+  validatePatientDischarge,
+} from '@/hooks/controllers/validationController';
 
 /**
  * Hook to manage record and clinical validation.
@@ -29,18 +33,7 @@ export const useValidation = () => {
       targetBedId: string,
       record: DailyRecord | null
     ): { canMove: boolean; reason?: string } => {
-      if (!record) return { canMove: false, reason: 'No hay registro cargado' };
-
-      const targetBed = record.beds[targetBedId];
-      if (targetBed?.patientName?.trim()) {
-        return { canMove: false, reason: 'La cama de destino ya está ocupada' };
-      }
-
-      if (targetBed?.isBlocked) {
-        return { canMove: false, reason: 'La cama de destino está bloqueada' };
-      }
-
-      return { canMove: true };
+      return validateMovePatient(targetBedId, record);
     },
     []
   );
@@ -48,9 +41,10 @@ export const useValidation = () => {
   /**
    * Custom clinical rule: Check if patient data is complete enough for discharge.
    */
-  const canDischargePatient = useCallback((patient: PatientData): boolean => {
-    return !!(patient.patientName?.trim() && patient.admissionDate);
-  }, []);
+  const canDischargePatient = useCallback(
+    (patient: PatientData): boolean => validatePatientDischarge(patient),
+    []
+  );
 
   return {
     validateRecordSchema,

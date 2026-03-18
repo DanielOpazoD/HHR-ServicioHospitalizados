@@ -53,6 +53,20 @@ export const buildMoveOrCopyPatch = (
   return patch;
 };
 
+export const buildClearPatientPatch = (
+  record: DailyRecord,
+  bedId: string
+): { patch: DailyRecordPatch; clearedPatient: PatientData } => {
+  const clearedPatient = buildClearedPatient(record, bedId);
+
+  return {
+    clearedPatient,
+    patch: {
+      [`beds.${bedId}`]: clearedPatient,
+    } as DailyRecordPatch,
+  };
+};
+
 export const buildToggleBlockedPatch = (
   record: DailyRecord,
   bedId: string,

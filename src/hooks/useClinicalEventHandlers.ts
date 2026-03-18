@@ -3,6 +3,16 @@ import type { AuditAction, AuditLogEntry } from '@/types/audit';
 import type { ClinicalEvent } from '@/types/domain/clinical';
 import type { PatientData } from '@/types/domain/patient';
 import type { PatientFieldValue } from '@/types/valueTypes';
+import {
+  buildClinicalEventAuditPayload,
+  buildClinicalEventSuccessFeedback,
+} from '@/hooks/controllers/clinicalEventFeedbackController';
+import {
+  appendClinicalEvent,
+  buildAddedClinicalEvent,
+  removeClinicalEventFromList,
+  updateClinicalEventList,
+} from '@/hooks/controllers/clinicalEventMutationController';
 
 interface UseClinicalEventHandlersParams {
   record: { date: string; beds: Record<string, PatientData> } | null;
@@ -32,26 +42,33 @@ export const useClinicalEventHandlers = ({
       const patient = record.beds[bedId];
       if (!patient) return;
 
-      const newEvent: ClinicalEvent = {
-        ...event,
-        id: crypto.randomUUID(),
-        createdAt: new Date().toISOString(),
-      };
+      const newEvent = buildAddedClinicalEvent(
+        event,
+        () => crypto.randomUUID(),
+        () => new Date().toISOString()
+      );
+      const auditPayload = buildClinicalEventAuditPayload(
+        'CLINICAL_EVENT_ADDED',
+        bedId,
+        event.name,
+        record.date
+      );
+      const successFeedback = buildClinicalEventSuccessFeedback(event.name);
 
-      updatePatient(bedId, 'clinicalEvents', [...(patient.clinicalEvents || []), newEvent]);
+      updatePatient(bedId, 'clinicalEvents', appendClinicalEvent(patient, newEvent));
 
       logDebouncedEvent(
-        'CLINICAL_EVENT_ADDED',
-        'patient',
-        bedId,
-        { event: event.name },
-        bedId,
-        record.date,
-        undefined,
-        10000
+        auditPayload.action,
+        auditPayload.entityType,
+        auditPayload.entityId,
+        auditPayload.details,
+        auditPayload.patientRut,
+        auditPayload.recordDate,
+        auditPayload.authors,
+        auditPayload.waitMs
       );
 
-      onSuccess('Evento agregado', `Se ha registrado el evento: ${event.name}`);
+      onSuccess(successFeedback.title, successFeedback.description);
     },
     [logDebouncedEvent, onSuccess, record, updatePatient]
   );
@@ -62,11 +79,7 @@ export const useClinicalEventHandlers = ({
       const patient = record.beds[bedId];
       if (!patient || !patient.clinicalEvents) return;
 
-      updatePatient(
-        bedId,
-        'clinicalEvents',
-        patient.clinicalEvents.map(event => (event.id === eventId ? { ...event, ...data } : event))
-      );
+      updatePatient(bedId, 'clinicalEvents', updateClinicalEventList(patient, eventId, data));
     },
     [record, updatePatient]
   );
@@ -77,23 +90,28 @@ export const useClinicalEventHandlers = ({
       const patient = record.beds[bedId];
       if (!patient || !patient.clinicalEvents) return;
 
-      const eventToDelete = patient.clinicalEvents.find(event => event.id === eventId);
-      updatePatient(
-        bedId,
-        'clinicalEvents',
-        patient.clinicalEvents.filter(event => event.id !== eventId)
+      const { nextEvents, deletedEvent: eventToDelete } = removeClinicalEventFromList(
+        patient,
+        eventId
       );
+      updatePatient(bedId, 'clinicalEvents', nextEvents);
 
       if (eventToDelete) {
-        logDebouncedEvent(
+        const auditPayload = buildClinicalEventAuditPayload(
           'CLINICAL_EVENT_DELETED',
-          'patient',
           bedId,
-          { event: eventToDelete.name },
-          bedId,
-          record.date,
-          undefined,
-          10000
+          eventToDelete.name,
+          record.date
+        );
+        logDebouncedEvent(
+          auditPayload.action,
+          auditPayload.entityType,
+          auditPayload.entityId,
+          auditPayload.details,
+          auditPayload.patientRut,
+          auditPayload.recordDate,
+          auditPayload.authors,
+          auditPayload.waitMs
         );
       }
     },

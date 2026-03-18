@@ -17,6 +17,10 @@ import {
   filterCmaByShift,
   filterDischargesByShift,
   filterTransfersByShift,
+  resolveMovementEmptyMessage,
+  resolveMovementShiftBadge,
+  resolveTransferDestinationLabel,
+  resolveTransferEscortLabel,
 } from '@/features/handoff/controllers/movementsSummaryController';
 
 interface MovementsSummaryProps {
@@ -40,6 +44,7 @@ export const MovementsSummary: React.FC<MovementsSummaryProps> = ({
     () => filterCmaByShift(record.cma, selectedShift),
     [record.cma, selectedShift]
   );
+  const shiftBadge = resolveMovementShiftBadge(selectedShift);
 
   return (
     <div className="space-y-4 print:space-y-2 print:text-[11px] print:leading-tight">
@@ -48,14 +53,11 @@ export const MovementsSummary: React.FC<MovementsSummaryProps> = ({
         <h3 className="font-bold text-lg text-slate-700 mb-2 flex items-center gap-2 print:text-sm print:mb-1 print:text-black">
           <UserMinus size={20} className="text-red-500 print:w-4 print:h-4" />
           Altas{' '}
-          {selectedShift === 'night' && (
-            <span className="text-sm font-normal text-slate-400">(turno noche)</span>
-          )}
+          {shiftBadge && <span className="text-sm font-normal text-slate-400">{shiftBadge}</span>}
         </h3>
         {filteredDischarges.length === 0 ? (
           <p className="text-slate-400 italic text-sm print:text-[10px]">
-            No hay altas registradas{' '}
-            {selectedShift === 'day' ? 'en este turno' : 'durante la noche'}.
+            {resolveMovementEmptyMessage('discharges', selectedShift)}
           </p>
         ) : (
           <table className="w-full text-left text-sm print:text-[10px] border-collapse print:[&_th]:p-1 print:[&_td]:p-1 print:table-fixed">
@@ -100,14 +102,11 @@ export const MovementsSummary: React.FC<MovementsSummaryProps> = ({
         <h3 className="font-bold text-lg text-slate-700 mb-2 flex items-center gap-2 print:text-sm print:mb-1 print:text-black">
           <ArrowRightLeft size={20} className="text-blue-500 print:w-4 print:h-4" />
           Traslados{' '}
-          {selectedShift === 'night' && (
-            <span className="text-sm font-normal text-slate-400">(turno noche)</span>
-          )}
+          {shiftBadge && <span className="text-sm font-normal text-slate-400">{shiftBadge}</span>}
         </h3>
         {filteredTransfers.length === 0 ? (
           <p className="text-slate-400 italic text-sm print:text-[10px]">
-            No hay traslados registrados{' '}
-            {selectedShift === 'day' ? 'en este turno' : 'durante la noche'}.
+            {resolveMovementEmptyMessage('transfers', selectedShift)}
           </p>
         ) : (
           <table className="w-full text-left text-sm print:text-[10px] border-collapse print:[&_th]:p-1 print:[&_td]:p-1 print:table-fixed">
@@ -138,10 +137,10 @@ export const MovementsSummary: React.FC<MovementsSummaryProps> = ({
                   <td className="p-2 border-r border-slate-200 truncate">{t.diagnosis}</td>
                   <td className="p-2 border-r border-slate-200 truncate">{t.evacuationMethod}</td>
                   <td className="p-2 border-r border-slate-200 truncate">
-                    {t.receivingCenter === 'Otro' ? t.receivingCenterOther : t.receivingCenter}
+                    {resolveTransferDestinationLabel(t)}
                   </td>
                   <td className="p-2 border-r border-slate-200 truncate">
-                    {t.evacuationMethod === 'Aerocardal' ? '-' : t.transferEscort || '-'}
+                    {resolveTransferEscortLabel(t)}
                   </td>
                   <td className="p-2">{t.time || '-'}</td>
                 </tr>
@@ -159,9 +158,7 @@ export const MovementsSummary: React.FC<MovementsSummaryProps> = ({
         </h3>
         {filteredCMA.length === 0 ? (
           <p className="text-slate-400 italic text-sm print:text-[10px]">
-            {selectedShift === 'night'
-              ? 'CMA solo aplica para turno de día.'
-              : 'No hay pacientes de CMA hoy.'}
+            {resolveMovementEmptyMessage('cma', selectedShift)}
           </p>
         ) : (
           <table className="w-full text-left text-sm print:text-[10px] border-collapse print:[&_th]:p-1 print:[&_td]:p-1 print:table-fixed">

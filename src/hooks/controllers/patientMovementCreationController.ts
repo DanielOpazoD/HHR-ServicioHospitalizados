@@ -60,6 +60,121 @@ const resolveBedDefinition = (
 
 const defaultCreateId = (): string => crypto.randomUUID();
 
+const buildClearedMovementPatient = (
+  record: DailyRecord,
+  bedId: string,
+  createEmptyPatient: (bedId: string) => PatientData
+): PatientData => {
+  const cleanPatient = createEmptyPatient(bedId);
+  cleanPatient.location = record.beds[bedId].location;
+  return cleanPatient;
+};
+
+const buildDischargeEntry = ({
+  id,
+  movementDate,
+  bedLabel,
+  bedId,
+  bedType,
+  patient,
+  time,
+  status,
+  dischargeType,
+  dischargeTypeOther,
+  insurance,
+  origin,
+  isRapanui,
+  isNested,
+}: {
+  id: string;
+  movementDate: string;
+  bedLabel: string;
+  bedId: string;
+  bedType: string;
+  patient: PatientData;
+  time: string;
+  status: 'Vivo' | 'Fallecido';
+  dischargeType?: DischargeType;
+  dischargeTypeOther?: string;
+  insurance: PatientData['insurance'];
+  origin: PatientData['origin'];
+  isRapanui: PatientData['isRapanui'];
+  isNested: boolean;
+}): DischargeData => ({
+  id,
+  movementDate,
+  bedName: bedLabel,
+  bedId,
+  bedType,
+  patientName: patient.patientName,
+  rut: patient.rut,
+  diagnosis: patient.pathology,
+  time,
+  status,
+  dischargeType,
+  dischargeTypeOther,
+  age: patient.age,
+  insurance,
+  origin,
+  isRapanui,
+  originalData: clonePatientSnapshot(patient),
+  isNested,
+});
+
+const buildTransferEntry = ({
+  id,
+  movementDate,
+  bedLabel,
+  bedId,
+  bedType,
+  patient,
+  time,
+  evacuationMethod,
+  receivingCenter,
+  receivingCenterOther,
+  transferEscort,
+  insurance,
+  origin,
+  isRapanui,
+  isNested,
+}: {
+  id: string;
+  movementDate: string;
+  bedLabel: string;
+  bedId: string;
+  bedType: string;
+  patient: PatientData;
+  time: string;
+  evacuationMethod: string;
+  receivingCenter: string;
+  receivingCenterOther: string;
+  transferEscort: string;
+  insurance: PatientData['insurance'];
+  origin: PatientData['origin'];
+  isRapanui: PatientData['isRapanui'];
+  isNested: boolean;
+}): TransferData => ({
+  id,
+  movementDate,
+  bedName: bedLabel,
+  bedId,
+  bedType,
+  patientName: patient.patientName,
+  rut: patient.rut,
+  diagnosis: patient.pathology,
+  time,
+  evacuationMethod,
+  receivingCenter,
+  receivingCenterOther,
+  transferEscort,
+  age: patient.age,
+  insurance,
+  origin,
+  isRapanui,
+  originalData: clonePatientSnapshot(patient),
+  isNested,
+});
+
 export const resolveAddDischargeMovement = ({
   record,
   bedId,
@@ -92,26 +207,24 @@ export const resolveAddDischargeMovement = ({
   const updatedBeds = { ...record.beds };
 
   if (target === 'mother' || target === 'both') {
-    newDischarges.push({
-      id: createId(),
-      movementDate: resolvedMovementDate,
-      bedName: bedDef?.name || bedId,
-      bedId,
-      bedType: bedDef?.type || '',
-      patientName: patient.patientName,
-      rut: patient.rut,
-      diagnosis: patient.pathology,
-      time: time || '',
-      status,
-      dischargeType: status === 'Vivo' ? (dischargeType as DischargeType) : undefined,
-      dischargeTypeOther: dischargeType === 'Otra' ? dischargeTypeOther : undefined,
-      age: patient.age,
-      insurance: patient.insurance,
-      origin: patient.origin,
-      isRapanui: patient.isRapanui,
-      originalData: clonePatientSnapshot(patient),
-      isNested: false,
-    });
+    newDischarges.push(
+      buildDischargeEntry({
+        id: createId(),
+        movementDate: resolvedMovementDate,
+        bedLabel: bedDef?.name || bedId,
+        bedId,
+        bedType: bedDef?.type || '',
+        patient,
+        time: time || '',
+        status,
+        dischargeType: status === 'Vivo' ? (dischargeType as DischargeType) : undefined,
+        dischargeTypeOther: dischargeType === 'Otra' ? dischargeTypeOther : undefined,
+        insurance: patient.insurance,
+        origin: patient.origin,
+        isRapanui: patient.isRapanui,
+        isNested: false,
+      })
+    );
     auditEntries.push({
       bedId,
       patientName: patient.patientName,
@@ -121,24 +234,22 @@ export const resolveAddDischargeMovement = ({
   }
 
   if ((target === 'baby' || target === 'both') && patient.clinicalCrib?.patientName && cribStatus) {
-    newDischarges.push({
-      id: createId(),
-      movementDate: resolvedMovementDate,
-      bedName: `${bedDef?.name || bedId} (Cuna)`,
-      bedId,
-      bedType: 'Cuna',
-      patientName: patient.clinicalCrib.patientName,
-      rut: patient.clinicalCrib.rut,
-      diagnosis: patient.clinicalCrib.pathology,
-      time: time || '',
-      status: cribStatus,
-      age: patient.clinicalCrib.age,
-      insurance: patient.insurance,
-      origin: patient.origin,
-      isRapanui: patient.isRapanui,
-      originalData: clonePatientSnapshot(patient.clinicalCrib),
-      isNested: true,
-    });
+    newDischarges.push(
+      buildDischargeEntry({
+        id: createId(),
+        movementDate: resolvedMovementDate,
+        bedLabel: `${bedDef?.name || bedId} (Cuna)`,
+        bedId,
+        bedType: 'Cuna',
+        patient: patient.clinicalCrib,
+        time: time || '',
+        status: cribStatus,
+        insurance: patient.insurance,
+        origin: patient.origin,
+        isRapanui: patient.isRapanui,
+        isNested: true,
+      })
+    );
     auditEntries.push({
       bedId,
       patientName: patient.clinicalCrib.patientName,
@@ -148,9 +259,7 @@ export const resolveAddDischargeMovement = ({
   }
 
   if (target === 'both') {
-    const cleanPatient = createEmptyPatient(bedId);
-    cleanPatient.location = updatedBeds[bedId].location;
-    updatedBeds[bedId] = cleanPatient;
+    updatedBeds[bedId] = buildClearedMovementPatient(record, bedId, createEmptyPatient);
   } else if (target === 'mother') {
     if (patient.clinicalCrib?.patientName) {
       updatedBeds[bedId] = {
@@ -162,9 +271,7 @@ export const resolveAddDischargeMovement = ({
         hasCompanionCrib: false,
       };
     } else {
-      const cleanPatient = createEmptyPatient(bedId);
-      cleanPatient.location = updatedBeds[bedId].location;
-      updatedBeds[bedId] = cleanPatient;
+      updatedBeds[bedId] = buildClearedMovementPatient(record, bedId, createEmptyPatient);
     }
   } else if (target === 'baby') {
     updatedBeds[bedId] = {
@@ -211,56 +318,50 @@ export const resolveAddTransferMovement = ({
   const resolvedMovementDate = resolveMovementDisplayDate(record.date, movementDate, time);
   const newTransfers: TransferData[] = [];
 
-  newTransfers.push({
-    id: createId(),
-    movementDate: resolvedMovementDate,
-    bedName: bedDef?.name || bedId,
-    bedId,
-    bedType: bedDef?.type || '',
-    patientName: patient.patientName,
-    rut: patient.rut,
-    diagnosis: patient.pathology,
-    time: time || '',
-    evacuationMethod: method,
-    receivingCenter: center,
-    receivingCenterOther: centerOther,
-    transferEscort: escort,
-    age: patient.age,
-    insurance: patient.insurance,
-    origin: patient.origin,
-    isRapanui: patient.isRapanui,
-    originalData: clonePatientSnapshot(patient),
-    isNested: false,
-  });
-
-  if (patient.clinicalCrib?.patientName) {
-    newTransfers.push({
+  newTransfers.push(
+    buildTransferEntry({
       id: createId(),
       movementDate: resolvedMovementDate,
-      bedName: `${bedDef?.name || bedId} (Cuna)`,
+      bedLabel: bedDef?.name || bedId,
       bedId,
-      bedType: 'Cuna',
-      patientName: patient.clinicalCrib.patientName,
-      rut: patient.clinicalCrib.rut,
-      diagnosis: patient.clinicalCrib.pathology,
+      bedType: bedDef?.type || '',
+      patient,
       time: time || '',
       evacuationMethod: method,
       receivingCenter: center,
       receivingCenterOther: centerOther,
       transferEscort: escort,
-      age: patient.clinicalCrib.age,
       insurance: patient.insurance,
       origin: patient.origin,
       isRapanui: patient.isRapanui,
-      originalData: clonePatientSnapshot(patient.clinicalCrib),
-      isNested: true,
-    });
+      isNested: false,
+    })
+  );
+
+  if (patient.clinicalCrib?.patientName) {
+    newTransfers.push(
+      buildTransferEntry({
+        id: createId(),
+        movementDate: resolvedMovementDate,
+        bedLabel: `${bedDef?.name || bedId} (Cuna)`,
+        bedId,
+        bedType: 'Cuna',
+        patient: patient.clinicalCrib,
+        time: time || '',
+        evacuationMethod: method,
+        receivingCenter: center,
+        receivingCenterOther: centerOther,
+        transferEscort: escort,
+        insurance: patient.insurance,
+        origin: patient.origin,
+        isRapanui: patient.isRapanui,
+        isNested: true,
+      })
+    );
   }
 
   const updatedBeds = { ...record.beds };
-  const cleanPatient = createEmptyPatient(bedId);
-  cleanPatient.location = updatedBeds[bedId].location;
-  updatedBeds[bedId] = cleanPatient;
+  updatedBeds[bedId] = buildClearedMovementPatient(record, bedId, createEmptyPatient);
 
   return ok({
     updatedRecord: {

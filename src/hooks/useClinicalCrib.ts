@@ -8,8 +8,14 @@ import { useCallback } from 'react';
 import { DailyRecord, DailyRecordPatch } from '@/types/domain/dailyRecord';
 import { PatientData } from '@/types/domain/patient';
 import { PatientFieldValue } from '@/types/valueTypes';
-import { createEmptyPatient } from '@/services/factories/patientFactory';
 import { logger } from '@/services/utils/loggerService';
+import {
+  buildClinicalCribMultiplePatch,
+  buildClinicalCribPatch,
+  buildRemoveClinicalCribPatch,
+  isClinicalCribFieldUpdateAllowed,
+  sanitizeClinicalCribUpdates,
+} from '@/hooks/controllers/clinicalCribController';
 
 export interface ClinicalCribActions {
   createCrib: (bedId: string) => void;
@@ -25,15 +31,6 @@ export const useClinicalCrib = (
   saveAndUpdate: (updatedRecord: DailyRecord) => void,
   patchRecord: (partial: DailyRecordPatch) => Promise<void>
 ): ClinicalCribActions => {
-  const resolveMotherLabel = (patient: PatientData): string => {
-    const fullNameFromParts = [patient.firstName, patient.lastName, patient.secondLastName]
-      .map(part => (part || '').trim())
-      .filter(Boolean)
-      .join(' ');
-    const fallbackName = (patient.patientName || '').trim();
-    return fullNameFromParts || fallbackName || 'Madre';
-  };
-
   /**
    * Create a new clinical crib for a patient bed
    */
@@ -49,20 +46,7 @@ export const useClinicalCrib = (
         return;
       }
 
-      const newCrib = createEmptyPatient(bedId);
-      newCrib.bedMode = 'Cuna';
-      newCrib.identityStatus = 'provisional';
-      newCrib.patientName = `RN de ${resolveMotherLabel(parentPatient)}`;
-      newCrib.firstName = '';
-      newCrib.lastName = '';
-      newCrib.secondLastName = '';
-      newCrib.rut = '';
-      newCrib.documentType = 'RUT';
-
-      patchRecord({
-        [`beds.${bedId}.clinicalCrib`]: newCrib,
-        [`beds.${bedId}.hasCompanionCrib`]: false,
-      } as DailyRecordPatch);
+      patchRecord(buildClinicalCribPatch(bedId, parentPatient));
     },
     [record, patchRecord]
   );
@@ -74,9 +58,7 @@ export const useClinicalCrib = (
     (bedId: string) => {
       if (!record) return;
 
-      patchRecord({
-        [`beds.${bedId}.clinicalCrib`]: null,
-      } as DailyRecordPatch);
+      patchRecord(buildRemoveClinicalCribPatch(bedId));
     },
     [record, patchRecord]
   );
@@ -88,15 +70,9 @@ export const useClinicalCrib = (
     (bedId: string, field: keyof PatientData, value: PatientFieldValue) => {
       if (!record) return;
 
-      // Validation: Admission date cannot be in the future
-      if (field === 'admissionDate' && typeof value === 'string') {
-        const selectedDate = new Date(value);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        if (selectedDate > today) {
-          clinicalCribLogger.warn('Cannot set admission date to future');
-          return;
-        }
+      if (!isClinicalCribFieldUpdateAllowed(field, value)) {
+        clinicalCribLogger.warn('Cannot set admission date to future');
+        return;
       }
 
       const parentPatient = record.beds[bedId];
@@ -119,22 +95,12 @@ export const useClinicalCrib = (
       const parentPatient = record.beds[bedId];
       if (!parentPatient.clinicalCrib) return;
 
-      if (updates.admissionDate) {
-        const selectedDate = new Date(updates.admissionDate as string);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        if (selectedDate > today) {
-          clinicalCribLogger.warn('Cannot set admission date to future');
-          delete updates.admissionDate;
-        }
+      const sanitizedUpdates = sanitizeClinicalCribUpdates(updates);
+      if (updates.admissionDate && !sanitizedUpdates.admissionDate) {
+        clinicalCribLogger.warn('Cannot set admission date to future');
       }
 
-      const patches: DailyRecordPatch = {};
-      Object.entries(updates).forEach(([key, value]) => {
-        (patches as Record<string, unknown>)[`beds.${bedId}.clinicalCrib.${key}`] = value;
-      });
-
-      patchRecord(patches);
+      patchRecord(buildClinicalCribMultiplePatch(bedId, sanitizedUpdates));
     },
     [record, patchRecord]
   );

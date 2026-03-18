@@ -35,3 +35,38 @@ export const filterCmaByShift = (
   cma: CMAData[] | undefined,
   selectedShift: ShiftType
 ): CMAData[] => (selectedShift === 'night' ? [] : cma || []);
+
+export const resolveMovementEmptyMessage = (
+  kind: 'discharges' | 'transfers' | 'cma',
+  selectedShift: ShiftType
+): string => {
+  if (kind === 'cma') {
+    return selectedShift === 'night'
+      ? 'CMA solo aplica para turno de día.'
+      : 'No hay pacientes de CMA hoy.';
+  }
+
+  if (kind === 'discharges') {
+    return selectedShift === 'day'
+      ? 'No hay altas registradas en este turno.'
+      : 'No hay altas registradas durante la noche.';
+  }
+
+  return selectedShift === 'day'
+    ? 'No hay traslados registrados en este turno.'
+    : 'No hay traslados registrados durante la noche.';
+};
+
+export const resolveTransferDestinationLabel = (
+  transfer: Pick<TransferData, 'receivingCenter' | 'receivingCenterOther'>
+): string =>
+  transfer.receivingCenter === 'Otro'
+    ? transfer.receivingCenterOther || 'Otro'
+    : transfer.receivingCenter;
+
+export const resolveTransferEscortLabel = (
+  transfer: Pick<TransferData, 'evacuationMethod' | 'transferEscort'>
+): string => (transfer.evacuationMethod === 'Aerocardal' ? '-' : transfer.transferEscort || '-');
+
+export const resolveMovementShiftBadge = (selectedShift: ShiftType): string | null =>
+  selectedShift === 'night' ? '(turno noche)' : null;

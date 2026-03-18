@@ -8,7 +8,7 @@ import { useCallback } from 'react';
 import { DailyRecord } from '@/types/domain/dailyRecord';
 import { useAuditContext } from '@/context/AuditContext';
 import type { DailyRecordPatch } from './useDailyRecordTypes';
-import { buildClearAllBedsPatch, buildClearedPatient } from './useBedOperationsController';
+import { buildClearAllBedsPatch, buildClearPatientPatch } from './useBedOperationsController';
 import {
   resolveBlockedReasonUpdate,
   resolveMoveOrCopyOperation,
@@ -85,7 +85,7 @@ export const useBedOperations = (
     (bedId: string) => {
       if (!record) return;
 
-      const cleanPatient = buildClearedPatient(record, bedId);
+      const { patch } = buildClearPatientPatch(record, bedId);
 
       // Audit Log
       const patientName = record.beds[bedId].patientName;
@@ -93,9 +93,6 @@ export const useBedOperations = (
         logPatientCleared(bedId, patientName, record.beds[bedId].rut, record.date);
       }
 
-      // Atomic replace of bed object
-      const patch: DailyRecordPatch = {};
-      patch[`beds.${bedId}`] = cleanPatient;
       patchRecord(patch);
     },
     [record, patchRecord, logPatientCleared]
