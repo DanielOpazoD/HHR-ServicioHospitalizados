@@ -11,6 +11,7 @@ import clsx from 'clsx';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { BedDefinition } from '@/types/domain/base';
 import { useConfirmDialog } from '@/context/UIContext';
+import { buildMedicalHandoffBedStats } from '@/features/handoff/controllers/medicalHandoffHeaderController';
 
 interface MedicalHandoffHeaderProps {
   record: DailyRecord;
@@ -74,13 +75,10 @@ export const MedicalHandoffHeader: React.FC<MedicalHandoffHeaderProps> = ({
     }
   };
 
-  // Calculate bed statistics
-  const totalBeds = visibleBeds.length;
-  const occupiedBeds = visibleBeds.filter(b => record.beds[b.id]?.patientName).length;
-  const freeBeds = visibleBeds.filter(
-    b => !record.beds[b.id]?.patientName && !record.beds[b.id]?.isBlocked
-  ).length;
-  const blockedBeds = visibleBeds.filter(b => record.beds[b.id]?.isBlocked).length;
+  const { totalBeds, occupiedBeds, freeBeds, blockedBeds } = buildMedicalHandoffBedStats(
+    record,
+    visibleBeds
+  );
 
   return (
     <div className="mb-4 bg-white p-3 rounded-lg border border-blue-100 shadow-sm print:shadow-none print:border-none print:p-0 print:mb-2">

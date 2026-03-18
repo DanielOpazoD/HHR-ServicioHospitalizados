@@ -7,9 +7,12 @@ import {
   defaultBrowserWindowRuntime,
   writeClipboardText,
 } from '@/shared/runtime/browserWindowRuntime';
+import {
+  buildMedicalSpecialtyFilterChips,
+  resolveMedicalSpecialistLink,
+} from '@/features/handoff/controllers/handoffMedicalContentController';
 import { MedicalHandoffHeader } from './MedicalHandoffHeader';
 import { MedicalHandoffTabs } from './MedicalHandoffTabs';
-import { buildMedicalHandoffDeepLink } from '@/domain/handoff/view';
 import type { MedicalHandoffScope as ScopeType } from '@/types/medicalHandoff';
 
 interface HandoffMedicalContentProps {
@@ -68,92 +71,88 @@ export const HandoffMedicalContent: React.FC<HandoffMedicalContentProps> = ({
   shouldShowPatient,
   scopedMedicalScope,
   hasAnyVisiblePatients,
-}) => (
-  <div className="space-y-3">
-    <MedicalHandoffHeader
-      record={{
-        ...record,
-        medicalSignature: scopedMedicalSignature || undefined,
-        medicalHandoffSentAt: scopedMedicalHandoffSentAt || undefined,
-      }}
-      visibleBeds={effectiveVisibleBeds}
-      readOnly={readOnly}
-      canRestoreSignatures={Boolean(resetMedicalHandoffState)}
-      showDeliverySection={showDeliverySection}
-      canEditDoctorName={canEditDoctorName}
-      canSignMedicalHandoff={canSignMedicalHandoff}
-      updateMedicalHandoffDoctor={updateMedicalHandoffDoctor}
-      markMedicalHandoffAsSent={markMedicalHandoffAsSent}
-      resetMedicalHandoffState={resetMedicalHandoffState}
-    />
+}) => {
+  const filterChips = buildMedicalSpecialtyFilterChips(
+    selectedMedicalSpecialty,
+    medicalSpecialties
+  );
 
-    <div className="bg-white rounded-xl border border-sky-100 p-3 print:hidden">
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Especialidad</div>
-        {canCopySpecialistLink ? (
-          <button
-            type="button"
-            onClick={async () => {
-              const origin = defaultBrowserWindowRuntime.getLocationOrigin();
-              const pathname = defaultBrowserWindowRuntime.getLocationPathname();
-              const url = buildMedicalHandoffDeepLink(
-                origin,
-                pathname,
-                record.date,
-                scopedMedicalScope,
-                selectedMedicalSpecialty
-              );
-              await writeClipboardText(url);
-              success('Enlace copiado', 'Comparte este acceso directo a la entrega médica.');
-            }}
-            className="rounded-lg bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 hover:bg-sky-200 transition-colors"
-          >
-            Copiar acceso directo
-          </button>
-        ) : null}
+  return (
+    <div className="space-y-3">
+      <MedicalHandoffHeader
+        record={{
+          ...record,
+          medicalSignature: scopedMedicalSignature || undefined,
+          medicalHandoffSentAt: scopedMedicalHandoffSentAt || undefined,
+        }}
+        visibleBeds={effectiveVisibleBeds}
+        readOnly={readOnly}
+        canRestoreSignatures={Boolean(resetMedicalHandoffState)}
+        showDeliverySection={showDeliverySection}
+        canEditDoctorName={canEditDoctorName}
+        canSignMedicalHandoff={canSignMedicalHandoff}
+        updateMedicalHandoffDoctor={updateMedicalHandoffDoctor}
+        markMedicalHandoffAsSent={markMedicalHandoffAsSent}
+        resetMedicalHandoffState={resetMedicalHandoffState}
+      />
+
+      <div className="bg-white rounded-xl border border-sky-100 p-3 print:hidden">
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <div className="text-xs font-bold uppercase tracking-wide text-slate-500">
+            Especialidad
+          </div>
+          {canCopySpecialistLink ? (
+            <button
+              type="button"
+              onClick={async () => {
+                const url = resolveMedicalSpecialistLink(
+                  defaultBrowserWindowRuntime.getLocationOrigin(),
+                  defaultBrowserWindowRuntime.getLocationPathname(),
+                  record.date,
+                  scopedMedicalScope,
+                  selectedMedicalSpecialty
+                );
+                await writeClipboardText(url);
+                success('Enlace copiado', 'Comparte este acceso directo a la entrega médica.');
+              }}
+              className="rounded-lg bg-sky-100 px-3 py-1.5 text-xs font-bold text-sky-800 hover:bg-sky-200 transition-colors"
+            >
+              Copiar acceso directo
+            </button>
+          ) : null}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {filterChips.map(chip => (
+            <button
+              key={chip.key}
+              type="button"
+              onClick={() => setSelectedMedicalSpecialty(chip.key)}
+              className={
+                chip.isActive
+                  ? 'px-3 py-2 rounded-lg bg-sky-100 text-sky-800 text-sm font-semibold'
+                  : 'px-3 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm font-medium'
+              }
+            >
+              {chip.label}
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => setSelectedMedicalSpecialty('all')}
-          className={
-            selectedMedicalSpecialty === 'all'
-              ? 'px-3 py-2 rounded-lg bg-sky-100 text-sky-800 text-sm font-semibold'
-              : 'px-3 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm font-medium'
-          }
-        >
-          Todos
-        </button>
-        {medicalSpecialties.map(specialty => (
-          <button
-            key={specialty}
-            type="button"
-            onClick={() => setSelectedMedicalSpecialty(specialty)}
-            className={
-              selectedMedicalSpecialty === specialty
-                ? 'px-3 py-2 rounded-lg bg-sky-100 text-sky-800 text-sm font-semibold'
-                : 'px-3 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm font-medium'
-            }
-          >
-            {specialty}
-          </button>
-        ))}
-      </div>
+
+      <MedicalHandoffTabs
+        visibleBeds={specialtyFilteredBeds}
+        record={record}
+        noteField={noteField}
+        onNoteChange={onNoteChange}
+        medicalActions={medicalActions}
+        clinicalEventActions={clinicalEventActions}
+        tableHeaderClass={tableHeaderClass}
+        readOnly={readOnly}
+        isMedical={true}
+        shouldShowPatient={shouldShowPatient}
+        fixedScope={scopedMedicalScope === 'all' ? null : scopedMedicalScope}
+        hasAnyPatients={hasAnyVisiblePatients}
+      />
     </div>
-
-    <MedicalHandoffTabs
-      visibleBeds={specialtyFilteredBeds}
-      record={record}
-      noteField={noteField}
-      onNoteChange={onNoteChange}
-      medicalActions={medicalActions}
-      clinicalEventActions={clinicalEventActions}
-      tableHeaderClass={tableHeaderClass}
-      readOnly={readOnly}
-      isMedical={true}
-      shouldShowPatient={shouldShowPatient}
-      fixedScope={scopedMedicalScope === 'all' ? null : scopedMedicalScope}
-      hasAnyPatients={hasAnyVisiblePatients}
-    />
-  </div>
-);
+  );
+};
