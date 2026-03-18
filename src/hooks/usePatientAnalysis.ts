@@ -18,6 +18,18 @@ export type { Conflict, AnalysisResult } from '@/application/patient-flow/patien
 
 const patientAnalysisLogger = logger.child('usePatientAnalysis');
 
+const resolveOutcomeErrorMessage = (
+  outcome: {
+    userSafeMessage?: string;
+    issues: Array<{ userSafeMessage?: string; message?: string }>;
+  },
+  fallbackMessage: string
+): string =>
+  outcome.userSafeMessage ||
+  outcome.issues[0]?.userSafeMessage ||
+  outcome.issues[0]?.message ||
+  fallbackMessage;
+
 export const usePatientAnalysis = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isMigrating, setIsMigrating] = useState(false);
@@ -79,7 +91,7 @@ export const usePatientAnalysis = () => {
       if (outcome.status === 'failed') {
         patientAnalysisLogger.error(
           'Analysis failed',
-          new Error(outcome.issues[0]?.message || 'Analysis failed')
+          new Error(resolveOutcomeErrorMessage(outcome, 'Analysis failed'))
         );
       }
       setAnalysis(outcome.data);
@@ -100,7 +112,7 @@ export const usePatientAnalysis = () => {
       if (outcome.status === 'failed') {
         patientAnalysisLogger.error(
           'Migration failed',
-          new Error(outcome.issues[0]?.message || 'Migration failed')
+          new Error(resolveOutcomeErrorMessage(outcome, 'Migration failed'))
         );
       }
       if (outcome.data) {

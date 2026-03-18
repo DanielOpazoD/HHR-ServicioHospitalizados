@@ -11,7 +11,6 @@ import {
 } from '@/application/shared/applicationOutcome';
 import type {
   DailyRecord,
-  DailyRecordPatch,
   MedicalHandoffActor,
   MedicalSpecialty,
 } from '@/types/domain/dailyRecord';

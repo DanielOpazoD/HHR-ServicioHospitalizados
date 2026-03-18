@@ -365,6 +365,31 @@ describe('usePatientAnalysis', () => {
     consoleSpy.mockRestore();
   });
 
+  it('should prefer userSafeMessage for migration failures', async () => {
+    const mockDates = ['2025-01-01'];
+    const record1 = {
+      date: '2025-01-01',
+      beds: { B1: { rut: '11.111.111-1', patientName: 'John' } },
+    };
+    dailyRecordReadPort.getAvailableDates.mockResolvedValue(mockDates);
+    dailyRecordReadPort.getForDate.mockResolvedValue(asRepoRecord(record1));
+    patientMasterWritePort.bulkUpsertPatients.mockRejectedValue(new Error('Migration fail'));
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const { result } = renderHook(() => usePatientAnalysis());
+    await act(async () => {
+      await result.current.runAnalysis();
+    });
+    await act(async () => {
+      await result.current.runMigration();
+    });
+
+    expect(consoleSpy.mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({ message: 'Migration fail' })
+    );
+    consoleSpy.mockRestore();
+  });
+
   it('should handle analysis failure', async () => {
     dailyRecordReadPort.getAvailableDates.mockRejectedValue(new Error('Analysis fail'));
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -377,6 +402,21 @@ describe('usePatientAnalysis', () => {
     expect(consoleSpy).toHaveBeenCalledWith(
       expect.stringContaining('[usePatientAnalysis] Analysis failed'),
       expect.any(Error)
+    );
+    consoleSpy.mockRestore();
+  });
+
+  it('should prefer userSafeMessage for analysis failures', async () => {
+    dailyRecordReadPort.getAvailableDates.mockRejectedValue(new Error('Analysis fail'));
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const { result } = renderHook(() => usePatientAnalysis());
+    await act(async () => {
+      await result.current.runAnalysis();
+    });
+
+    expect(consoleSpy.mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({ message: 'Analysis fail' })
     );
     consoleSpy.mockRestore();
   });

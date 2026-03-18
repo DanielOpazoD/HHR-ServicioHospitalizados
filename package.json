@@ -89,7 +89,7 @@
     "check:quality": "node scripts/check-quality-aggregate.mjs",
     "test:unit:critical": "npm run test:risk:auth && npm run test:risk:admin-health && npm run test:risk:platform",
     "ci:inner-loop": "npm run typecheck && npm run lint -- --max-warnings 0 && npm run check:quality && npm run test:unit:critical",
-    "ci:merge-gate": "npm run typecheck && npm run lint -- --max-warnings 0 && npm run check:quality && npm run test:ci:unit && npm run check:critical-coverage && npm run build && npm run check:bundle-budget",
+    "ci:merge-gate": "npm run typecheck && npm run lint -- --max-warnings 0 && npm run lint:strict:core && npm run check:quality && npm run test:ci:unit && npm run check:critical-coverage && npm run build && npm run check:bundle-budget",
     "ci:release-gate": "npm run ci:merge-gate && npm run test:firestore:release:ci",
     "clean": "bash scripts/cleanup.sh",
     "ci": "npm run ci:merge-gate",

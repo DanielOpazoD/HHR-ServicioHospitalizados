@@ -126,12 +126,16 @@ export const useClinicalDocumentWorkspaceExportActions = ({
           );
         }
       } catch (error) {
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : 'El documento quedó guardado, pero el PDF no se pudo subir.';
         recordOperationalTelemetry({
           category: 'export',
           status: 'failed',
           operation: 'export_clinical_document_pdf',
           date: selectedDocument?.sourceDailyRecordDate,
-          issues: [error instanceof Error ? error.message : 'No se pudo exportar el PDF clínico.'],
+          issues: [errorMessage],
           context: { documentId: selectedDocument?.id },
         });
         setDraft(prev =>
@@ -141,17 +145,12 @@ export const useClinicalDocumentWorkspaceExportActions = ({
                 pdf: {
                   ...prev.pdf,
                   exportStatus: 'failed',
-                  exportError: error instanceof Error ? error.message : 'Error desconocido',
+                  exportError: errorMessage,
                 },
               }
             : prev
         );
-        notify.error(
-          'Falló la exportación',
-          error instanceof Error
-            ? error.message
-            : 'El documento quedó guardado, pero el PDF no se pudo subir.'
-        );
+        notify.error('Falló la exportación', errorMessage);
       } finally {
         setIsUploadingPdf(false);
       }

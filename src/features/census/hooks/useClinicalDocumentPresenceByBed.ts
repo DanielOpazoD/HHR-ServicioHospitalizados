@@ -37,6 +37,7 @@ export const useClinicalDocumentPresenceByBed = ({
         clinicalDocumentPresenceLogger.warn(
           'Failed to resolve clinical document presence',
           outcome.userSafeMessage ||
+            outcome.issues[0]?.userSafeMessage ||
             outcome.issues[0]?.message ||
             'No se pudo resolver presencia documental.'
         );

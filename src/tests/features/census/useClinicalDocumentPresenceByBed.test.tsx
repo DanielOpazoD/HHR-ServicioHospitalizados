@@ -2,16 +2,14 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { OccupiedBedRow } from '@/features/census/types/censusTableTypes';
 import { useClinicalDocumentPresenceByBed } from '@/features/census/hooks/useClinicalDocumentPresenceByBed';
-import { ClinicalDocumentRepository } from '@/services/repositories/ClinicalDocumentRepository';
+import { executeListClinicalDocumentsByEpisodeKeys } from '@/application/clinical-documents/clinicalDocumentUseCases';
 import { createQueryClientTestWrapper } from '@/tests/utils/queryClientTestUtils';
 import { BedType } from '@/types';
 
 const warnMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@/services/repositories/ClinicalDocumentRepository', () => ({
-  ClinicalDocumentRepository: {
-    listByEpisodeKeys: vi.fn(),
-  },
+vi.mock('@/application/clinical-documents/clinicalDocumentUseCases', () => ({
+  executeListClinicalDocumentsByEpisodeKeys: vi.fn(),
 }));
 
 vi.mock('@/services/utils/loggerService', () => ({
@@ -38,6 +36,11 @@ describe('useClinicalDocumentPresenceByBed', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(executeListClinicalDocumentsByEpisodeKeys).mockResolvedValue({
+      status: 'success',
+      data: [],
+      issues: [],
+    });
   });
 
   it('does not query clinical documents when disabled', () => {
@@ -53,13 +56,11 @@ describe('useClinicalDocumentPresenceByBed', () => {
     );
 
     expect(result.current).toEqual({});
-    expect(ClinicalDocumentRepository.listByEpisodeKeys).not.toHaveBeenCalled();
+    expect(executeListClinicalDocumentsByEpisodeKeys).not.toHaveBeenCalled();
   });
 
   it('returns empty fallback when the query fails', async () => {
-    vi.mocked(ClinicalDocumentRepository.listByEpisodeKeys).mockRejectedValueOnce(
-      new Error('denied')
-    );
+    vi.mocked(executeListClinicalDocumentsByEpisodeKeys).mockRejectedValueOnce(new Error('denied'));
     const { wrapper } = createQueryClientTestWrapper();
 
     const { result } = renderHook(
@@ -73,12 +74,39 @@ describe('useClinicalDocumentPresenceByBed', () => {
     );
 
     await waitFor(() => {
-      expect(ClinicalDocumentRepository.listByEpisodeKeys).toHaveBeenCalledTimes(1);
+      expect(executeListClinicalDocumentsByEpisodeKeys).toHaveBeenCalledTimes(1);
     });
     await waitFor(() => {
       expect(result.current).toEqual({ R1: false });
     });
 
     expect(warnMock).toHaveBeenCalled();
+  });
+
+  it('prefers userSafeMessage when the presence listing fails with a typed outcome', async () => {
+    vi.mocked(executeListClinicalDocumentsByEpisodeKeys).mockResolvedValueOnce({
+      status: 'failed',
+      data: [],
+      userSafeMessage: 'La presencia documental no está disponible temporalmente.',
+      issues: [{ kind: 'unknown', message: 'raw failure' }],
+    });
+    const { wrapper } = createQueryClientTestWrapper();
+
+    renderHook(
+      () =>
+        useClinicalDocumentPresenceByBed({
+          occupiedRows,
+          currentDateString: '2026-03-05',
+          enabled: true,
+        }),
+      { wrapper }
+    );
+
+    await waitFor(() => {
+      expect(warnMock).toHaveBeenCalledWith(
+        'Failed to resolve clinical document presence',
+        'La presencia documental no está disponible temporalmente.'
+      );
+    });
   });
 });

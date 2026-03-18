@@ -1,24 +1,25 @@
 import { AuditLogEntry } from '@/types/audit';
 import { AUDIT_ACTION_LABELS } from '@/services/admin/auditConstants';
 import { formatTimestamp } from '../auditUIUtils';
+import { formatAuditTimestamp } from '@/services/admin/utils/auditUtils';
 
 interface AuditPdfReportParams {
-    filteredLogs: AuditLogEntry[];
-    stats: {
-        activeUserCount: number;
-        criticalCount: number;
-    };
-    startDate?: string;
-    endDate?: string;
+  filteredLogs: AuditLogEntry[];
+  stats: {
+    activeUserCount: number;
+    criticalCount: number;
+  };
+  startDate?: string;
+  endDate?: string;
 }
 
 export const generateAuditPdfHtml = ({
-    filteredLogs,
-    stats,
-    startDate,
-    endDate
+  filteredLogs,
+  stats,
+  startDate,
+  endDate,
 }: AuditPdfReportParams): string => {
-    return `
+  return `
         <!DOCTYPE html>
         <html>
             <head>
@@ -63,7 +64,7 @@ export const generateAuditPdfHtml = ({
                         </div>
                     </div>
                 </div>
-                <p><strong>Período:</strong> ${startDate || 'Inicio'} al ${endDate || 'Actual'} | <strong>Generado:</strong> ${new Date().toLocaleString('es-CL')}</p>
+                <p><strong>Período:</strong> ${startDate || 'Inicio'} al ${endDate || 'Actual'} | <strong>Generado:</strong> ${formatAuditTimestamp(new Date().toISOString())}</p>
                 <table>
                     <thead>
                         <tr>
@@ -76,11 +77,18 @@ export const generateAuditPdfHtml = ({
                         </tr>
                     </thead>
                     <tbody>
-                        ${filteredLogs.slice(0, 200).map(log => {
-        const isCritical = ['PATIENT_ADMITTED', 'PATIENT_DISCHARGED', 'PATIENT_TRANSFERRED', 'DAILY_RECORD_DELETED'].includes(log.action);
-        const patientName = (log.details?.patientName as string) || '-';
-        const bedId = (log.details?.bedId as string) || '-';
-        return `<tr class="${isCritical ? 'critical' : ''}">
+                        ${filteredLogs
+                          .slice(0, 200)
+                          .map(log => {
+                            const isCritical = [
+                              'PATIENT_ADMITTED',
+                              'PATIENT_DISCHARGED',
+                              'PATIENT_TRANSFERRED',
+                              'DAILY_RECORD_DELETED',
+                            ].includes(log.action);
+                            const patientName = (log.details?.patientName as string) || '-';
+                            const bedId = (log.details?.bedId as string) || '-';
+                            return `<tr class="${isCritical ? 'critical' : ''}">
                                 <td>${formatTimestamp(log.timestamp)}</td>
                                 <td>${log.userDisplayName || (log.userId || '-').split('@')[0]}</td>
                                 <td>${AUDIT_ACTION_LABELS[log.action] || log.action}</td>
@@ -88,7 +96,8 @@ export const generateAuditPdfHtml = ({
                                 <td>${patientName}</td>
                                 <td>${bedId}</td>
                             </tr>`;
-    }).join('')}
+                          })
+                          .join('')}
                     </tbody>
                 </table>
                 ${filteredLogs.length > 200 ? '<p style="text-align: center; color: #94a3b8; margin-top: 10px;">Mostrando primeros 200 de ' + filteredLogs.length + ' registros</p>' : ''}

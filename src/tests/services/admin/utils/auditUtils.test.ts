@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
+  formatAuditTimestamp,
   getCurrentUserEmail,
   getCurrentUserDisplayName,
   getCurrentUserUid,
@@ -169,6 +170,13 @@ describe('auditUtils', () => {
       const ip = await fetchAndCacheIpAddress();
       expect(ip).toBeUndefined();
       warnSpy.mockRestore();
+    });
+  });
+
+  describe('formatAuditTimestamp', () => {
+    it('should format valid timestamps and keep unknown ones defensive', () => {
+      expect(formatAuditTimestamp('2026-03-17T10:30:00.000Z')).toContain('2026');
+      expect(formatAuditTimestamp(null)).toBe('Fecha desconocida');
     });
   });
 });

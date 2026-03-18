@@ -7,6 +7,7 @@ import { StaffContextProvider, type StaffContextType } from '@/context/StaffCont
 import { resolveMedicalHandoffScope, resolveScopedMedicalSignature } from '@/features/handoff';
 import { createPublicMedicalSignatureContextValue } from '@/features/admin/controllers/publicMedicalSignatureContextController';
 import { usePublicMedicalSignature } from '@/features/admin/hooks/usePublicMedicalSignature';
+import { formatHandoffDateTime } from '@/shared/handoff/handoffPresentation';
 
 const EMPTY_STAFF_CONTEXT: StaffContextType = {
   nursesList: [],
@@ -141,7 +142,7 @@ export const MedicalSignatureView: React.FC = () => {
                     <h3 className="text-sm font-bold text-green-800">Entrega Recibida y Firmada</h3>
                     <p className="text-xs text-green-700">
                       Firmado por <strong>{signatureData.doctorName}</strong> el{' '}
-                      {new Date(signatureData.signedAt).toLocaleString()}
+                      {formatHandoffDateTime(signatureData.signedAt)}
                     </p>
                   </div>
                 </div>

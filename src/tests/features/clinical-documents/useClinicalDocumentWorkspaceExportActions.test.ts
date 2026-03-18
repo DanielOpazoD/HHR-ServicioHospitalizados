@@ -140,6 +140,34 @@ describe('useClinicalDocumentWorkspaceExportActions', () => {
     expect(setDraft).toHaveBeenCalledWith(expect.any(Function));
   });
 
+  it('prefers userSafeMessage when the export use case fails', async () => {
+    vi.mocked(pdfExportUseCase.executeExportClinicalDocumentPdf).mockResolvedValue({
+      status: 'failed',
+      data: null,
+      userSafeMessage: 'El respaldo en Drive no está disponible temporalmente.',
+      issues: [{ kind: 'unknown', message: 'drive raw failure' }],
+    });
+    const document = buildRecord('signed');
+
+    const { result } = renderHook(() =>
+      useClinicalDocumentWorkspaceExportActions({
+        selectedDocument: document,
+        hospitalId: 'hhr',
+        notify,
+        setDraft,
+      })
+    );
+
+    await act(async () => {
+      await result.current.handleUploadPdf();
+    });
+
+    expect(notify.error).toHaveBeenCalledWith(
+      'Falló la exportación',
+      'El respaldo en Drive no está disponible temporalmente.'
+    );
+  });
+
   it('warns when print preview cannot be prepared', async () => {
     vi.mocked(printOpenUseCase.executeOpenClinicalDocumentPrint).mockResolvedValue(false);
     const document = buildRecord('signed');

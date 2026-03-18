@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   UserPlus,
   Trash2,
@@ -22,6 +22,18 @@ import { CensusAuthorizedEmail, CensusAccessRole } from '@/types/censusAccess';
 import { useAuth } from '@/context/AuthContext';
 import clsx from 'clsx';
 
+const resolveOutcomeMessage = (
+  outcome: {
+    userSafeMessage?: string;
+    issues?: Array<{ userSafeMessage?: string; message?: string }>;
+  },
+  fallbackMessage: string
+): string =>
+  outcome.userSafeMessage ||
+  outcome.issues?.[0]?.userSafeMessage ||
+  outcome.issues?.[0]?.message ||
+  fallbackMessage;
+
 export const CensusAccessManager: React.FC = () => {
   const { currentUser } = useAuth();
   const [authorizedEmails, setAuthorizedEmails] = useState<CensusAuthorizedEmail[]>([]);
@@ -35,23 +47,7 @@ export const CensusAccessManager: React.FC = () => {
   const [newRole, setNewRole] = useState<CensusAccessRole>('viewer');
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    loadEmails();
-  }, []);
-
-  const resolveOutcomeMessage = (
-    outcome: {
-      userSafeMessage?: string;
-      issues?: Array<{ userSafeMessage?: string; message?: string }>;
-    },
-    fallbackMessage: string
-  ): string =>
-    outcome.userSafeMessage ||
-    outcome.issues?.[0]?.userSafeMessage ||
-    outcome.issues?.[0]?.message ||
-    fallbackMessage;
-
-  const loadEmails = async () => {
+  const loadEmails = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -63,7 +59,11 @@ export const CensusAccessManager: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    void loadEmails();
+  }, [loadEmails]);
 
   const handleAddEmail = async (e: React.FormEvent) => {
     e.preventDefault();
