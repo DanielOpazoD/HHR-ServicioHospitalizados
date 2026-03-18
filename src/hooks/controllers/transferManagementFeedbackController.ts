@@ -1,3 +1,4 @@
+import { resolveApplicationOutcomeMessage } from '@/application/shared/applicationOutcomeMessage';
 import type { TransferStatus } from '@/types/transfers';
 
 export const getTransferAuthError = (hasUserEmail: boolean): string | null =>
@@ -58,6 +59,24 @@ export const getTransferActionErrorMessage = (
       return 'Error al eliminar el registro del historial';
   }
 };
+
+export const resolveTransferMutationErrorMessage = (
+  action:
+    | 'create'
+    | 'update'
+    | 'advance'
+    | 'set_status'
+    | 'complete'
+    | 'cancel'
+    | 'delete'
+    | 'undo'
+    | 'archive'
+    | 'delete_history',
+  result: {
+    userSafeMessage?: string;
+    issues?: Array<{ userSafeMessage?: string; message?: string }>;
+  }
+): string => resolveApplicationOutcomeMessage(result, getTransferActionErrorMessage(action));
 
 export const buildTransferCompletionTimestamp = (): string =>
   new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });

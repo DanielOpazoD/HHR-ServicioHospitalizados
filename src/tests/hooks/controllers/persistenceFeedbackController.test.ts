@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildCopyPatientNotifications,
   buildCreateDayNotifications,
+  resolveCreateDayFailureNotice,
 } from '@/hooks/controllers/persistenceFeedbackController';
 
 describe('persistenceFeedbackController', () => {
@@ -52,5 +53,13 @@ describe('persistenceFeedbackController', () => {
           'La copia se realizó correctamente, pero se repararon datos antiguos del paciente.',
       },
     ]);
+  });
+
+  it('resolves create-day failure notice from the first issue', () => {
+    expect(resolveCreateDayFailureNotice([{ message: 'fallo visible' }])).toEqual({
+      channel: 'warning',
+      title: 'No se pudo crear el día',
+      message: 'fallo visible',
+    });
   });
 });

@@ -19,6 +19,7 @@ import {
   getTransferActionErrorMessage,
   getTransferAuthError,
   getTransferCreationPreconditionError,
+  resolveTransferMutationErrorMessage,
   getTransferStatusAdvanceError,
 } from '@/hooks/controllers/transferManagementFeedbackController';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
@@ -52,7 +53,7 @@ export const useTransferManagementActions = ({
         const result = await task();
         if (result.status !== 'success') {
           transferManagementLogger.warn(`Transfer action "${action}" returned non-success`, result);
-          setError(result.userSafeMessage || getTransferActionErrorMessage(action));
+          setError(resolveTransferMutationErrorMessage(action, result));
           return;
         }
         setError(null);

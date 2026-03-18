@@ -44,6 +44,59 @@ export interface BuildPatientRowBindingsParams {
 
 export type PatientRowBindingsInput = Omit<BuildPatientRowBindingsParams, 'runtime'>;
 
+const resolvePatientRowContextWithOverrides = ({
+  role,
+  data,
+  runtime,
+  indicators,
+  accessProfile,
+  capabilitiesOverride,
+  resolvedIndicatorsOverride,
+}: {
+  role?: UserRole;
+  data: PatientData;
+  runtime: PatientRowRuntime;
+  indicators?: PatientActionMenuIndicators;
+  accessProfile?: CensusAccessProfile;
+  capabilitiesOverride?: PatientRowViewContext['capabilities'];
+  resolvedIndicatorsOverride?: PatientRowResolvedIndicators;
+}): PatientRowViewContext =>
+  capabilitiesOverride && resolvedIndicatorsOverride
+    ? {
+        capabilities: capabilitiesOverride,
+        indicators: resolvedIndicatorsOverride,
+      }
+    : resolvePatientRowViewContext({ role, data, runtime, indicators, accessProfile });
+
+const resolvePatientRowModalContextWithOptionalCapabilities = ({
+  role,
+  data,
+  runtime,
+  accessProfile,
+  capabilitiesOverride,
+}: {
+  role?: UserRole;
+  data: PatientData;
+  runtime: PatientRowRuntime;
+  accessProfile?: CensusAccessProfile;
+  capabilitiesOverride?: PatientRowViewContext['capabilities'];
+}): PatientRowViewContext =>
+  capabilitiesOverride
+    ? {
+        capabilities: capabilitiesOverride,
+        indicators: buildPatientRowModalViewContext({
+          role,
+          data,
+          runtime,
+        }).indicators,
+      }
+    : buildPatientRowModalViewContext({
+        role,
+        data,
+        runtime,
+        accessProfile,
+      });
+
 export const buildPatientMainRowBindings = ({
   bed,
   bedType,
@@ -77,13 +130,15 @@ export const buildPatientMainRowBindings = ({
   capabilitiesOverride?: PatientRowViewContext['capabilities'];
   resolvedIndicatorsOverride?: PatientRowResolvedIndicators;
 }): PatientMainRowBindings => {
-  const viewContext =
-    capabilitiesOverride && resolvedIndicatorsOverride
-      ? {
-          capabilities: capabilitiesOverride,
-          indicators: resolvedIndicatorsOverride,
-        }
-      : resolvePatientRowViewContext({ role, data, runtime, indicators, accessProfile });
+  const viewContext = resolvePatientRowContextWithOverrides({
+    role,
+    data,
+    runtime,
+    indicators,
+    accessProfile,
+    capabilitiesOverride,
+    resolvedIndicatorsOverride,
+  });
   return buildPatientMainSectionBindings({
     bed,
     bedType,
@@ -149,21 +204,13 @@ export const buildPatientRowModalsBindings = ({
     currentDateString,
     isSubRow,
     runtime,
-    viewContext: capabilitiesOverride
-      ? {
-          capabilities: capabilitiesOverride,
-          indicators: buildPatientRowModalViewContext({
-            role,
-            data,
-            runtime,
-          }).indicators,
-        }
-      : buildPatientRowModalViewContext({
-          role,
-          data,
-          runtime,
-          accessProfile,
-        }),
+    viewContext: resolvePatientRowModalContextWithOptionalCapabilities({
+      role,
+      data,
+      runtime,
+      accessProfile,
+      capabilitiesOverride,
+    }),
   });
 
 export const buildPatientRowBindings = ({

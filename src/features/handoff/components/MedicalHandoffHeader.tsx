@@ -11,7 +11,14 @@ import clsx from 'clsx';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { BedDefinition } from '@/types/domain/base';
 import { useConfirmDialog } from '@/context/UIContext';
-import { buildMedicalHandoffBedStats } from '@/features/handoff/controllers/medicalHandoffHeaderController';
+import {
+  buildMedicalHandoffBedStats,
+  buildMedicalHandoffRestoreConfirm,
+  buildMedicalHandoffSignConfirm,
+  canPromptMedicalHandoffSign,
+  canRestoreMedicalHandoffSignatures,
+  resolveMedicalHandoffDoctorName,
+} from '@/features/handoff/controllers/medicalHandoffHeaderController';
 
 interface MedicalHandoffHeaderProps {
   record: DailyRecord;
@@ -41,19 +48,13 @@ export const MedicalHandoffHeader: React.FC<MedicalHandoffHeaderProps> = ({
   const { confirm: showConfirm, alert: showAlert } = useConfirmDialog();
 
   const handleSign = async () => {
-    const doctorName = record.medicalHandoffDoctor?.trim();
+    const doctorName = resolveMedicalHandoffDoctorName(record);
     if (!doctorName) {
       showAlert('Debe escribir su nombre para firmar la entrega.', 'Falta nombre');
       return;
     }
 
-    const confirmed = await showConfirm({
-      title: 'Confirmar Firma de Entrega',
-      message: `¿Estás seguro de que deseas firmar la entrega como "${doctorName}"?\nEsta acción quedará registrada con la hora actual.`,
-      confirmText: 'Firmar ahora',
-      cancelText: 'Cancelar',
-      variant: 'info',
-    });
+    const confirmed = await showConfirm(buildMedicalHandoffSignConfirm(doctorName));
 
     if (confirmed) {
       markMedicalHandoffAsSent?.(doctorName);
@@ -61,14 +62,7 @@ export const MedicalHandoffHeader: React.FC<MedicalHandoffHeaderProps> = ({
   };
 
   const handleRestore = async () => {
-    const confirmed = await showConfirm({
-      title: 'Restaurar firmas médicas',
-      message:
-        'Se eliminarán las marcas de entregado y recibido/firmado de esta entrega médica. ¿Deseas continuar?',
-      confirmText: 'Restaurar',
-      cancelText: 'Cancelar',
-      variant: 'warning',
-    });
+    const confirmed = await showConfirm(buildMedicalHandoffRestoreConfirm());
 
     if (confirmed) {
       await resetMedicalHandoffState?.();
@@ -101,29 +95,26 @@ export const MedicalHandoffHeader: React.FC<MedicalHandoffHeaderProps> = ({
                       onChange={e => updateMedicalHandoffDoctor?.(e.target.value)}
                       className="flex-1 p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none print:hidden text-sm"
                     />
-                    {canSignMedicalHandoff &&
-                      !record.medicalHandoffSentAt &&
-                      !record.medicalSignature && (
-                        <button
-                          onClick={handleSign}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs font-bold whitespace-nowrap print:hidden"
-                          title="Firmar entrega de turno"
-                        >
-                          <ShieldCheck size={14} />
-                          Firmar
-                        </button>
-                      )}
-                    {canRestoreSignatures &&
-                      (record.medicalHandoffSentAt || record.medicalSignature) && (
-                        <button
-                          onClick={() => void handleRestore()}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 text-amber-800 rounded hover:bg-amber-200 transition-colors text-xs font-bold whitespace-nowrap print:hidden"
-                          title="Restaurar firmas médicas"
-                        >
-                          <RotateCcw size={14} />
-                          Restaurar
-                        </button>
-                      )}
+                    {canSignMedicalHandoff && canPromptMedicalHandoffSign(record) && (
+                      <button
+                        onClick={handleSign}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs font-bold whitespace-nowrap print:hidden"
+                        title="Firmar entrega de turno"
+                      >
+                        <ShieldCheck size={14} />
+                        Firmar
+                      </button>
+                    )}
+                    {canRestoreSignatures && canRestoreMedicalHandoffSignatures(record) && (
+                      <button
+                        onClick={() => void handleRestore()}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 text-amber-800 rounded hover:bg-amber-200 transition-colors text-xs font-bold whitespace-nowrap print:hidden"
+                        title="Restaurar firmas médicas"
+                      >
+                        <RotateCcw size={14} />
+                        Restaurar
+                      </button>
+                    )}
                   </div>
                 ) : null}
                 <div

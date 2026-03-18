@@ -19,6 +19,7 @@ import {
   createApplicationSuccess,
   type ApplicationOutcome,
 } from '@/application/shared/applicationOutcome';
+import { resolveApplicationOutcomeMessage } from '@/application/shared/applicationOutcomeMessage';
 
 interface HandoffManagementDeliveryInput {
   recordRef: RefObject<DailyRecord | null>;
@@ -98,8 +99,10 @@ export const useHandoffManagementDelivery = ({
       });
       if (outcome.status === 'failed' || !outcome.data) {
         return createApplicationFailed(null, outcome.issues, {
-          userSafeMessage:
-            outcome.userSafeMessage || 'No se pudo copiar el enlace de firma médica.',
+          userSafeMessage: resolveApplicationOutcomeMessage(
+            outcome,
+            'No se pudo copiar el enlace de firma médica.'
+          ),
         });
       }
 

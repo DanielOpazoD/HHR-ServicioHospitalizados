@@ -45,3 +45,29 @@ export const resolveMedicalPrintBeds = ({
   if (printMode === 'no-upc') return { upc: [] as BedDefinition[], nonUpc: nonUpcBeds };
   return { upc: upcBeds, nonUpc: nonUpcBeds };
 };
+
+export const hasNamedPatientsInBeds = (beds: BedDefinition[], record: DailyRecord): boolean =>
+  beds.some(bed => Boolean(record.beds[bed.id]?.patientName));
+
+export const buildMedicalPrintSectionModel = (
+  label: 'upc' | 'no-upc',
+  beds: BedDefinition[],
+  record: DailyRecord
+): {
+  title: string;
+  beds: BedDefinition[];
+  hasPatients: boolean;
+  patientCount: number;
+} => {
+  const patientCount = countScopedPatients(beds, record);
+
+  return {
+    title:
+      label === 'upc'
+        ? `🔴 PACIENTES UPC (${patientCount})`
+        : `🟢 PACIENTES NO UPC (${patientCount})`,
+    beds,
+    hasPatients: patientCount > 0,
+    patientCount,
+  };
+};

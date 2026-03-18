@@ -1,3 +1,5 @@
+import { resolvePrimaryApplicationIssueMessage } from '@/application/shared/applicationOutcomeMessage';
+
 interface CreateDayFeedbackInput {
   sourceDate?: string;
   outcome: 'clean' | 'repaired';
@@ -15,7 +17,10 @@ export const resolveCreateDayFailureNotice = (
 ): PersistenceNotification => ({
   channel: 'warning',
   title: 'No se pudo crear el día',
-  message: issues[0]?.message || 'No se pudo inicializar el día seleccionado.',
+  message: resolvePrimaryApplicationIssueMessage(
+    issues,
+    'No se pudo inicializar el día seleccionado.'
+  ),
 });
 
 export const buildCreateDayNotifications = (

@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { BedDefinition, DailyRecord } from '@/types';
 import {
+  buildMedicalPrintSectionModel,
   countScopedPatients,
+  hasNamedPatientsInBeds,
   resolveMedicalDisplayBeds,
   resolveMedicalPrintBeds,
   splitMedicalBedsByScope,
@@ -79,5 +81,17 @@ describe('medicalHandoffTabsController', () => {
         nonUpcBeds,
       })
     ).toEqual({ upc: upcBeds, nonUpc: nonUpcBeds });
+  });
+
+  it('builds print section models and detects named patients', () => {
+    const { upcBeds } = splitMedicalBedsByScope(BEDS, RECORD);
+
+    expect(hasNamedPatientsInBeds(upcBeds, RECORD)).toBe(true);
+    expect(buildMedicalPrintSectionModel('upc', upcBeds, RECORD)).toEqual({
+      title: '🔴 PACIENTES UPC (1)',
+      beds: upcBeds,
+      hasPatients: true,
+      patientCount: 1,
+    });
   });
 });

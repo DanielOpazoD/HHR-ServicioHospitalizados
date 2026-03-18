@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { BedType, PatientStatus, Specialty } from '@/types/domain/base';
+import { BedType } from '@/types/domain/base';
 import type { BedDefinition } from '@/types/domain/base';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
-import type { PatientData } from '@/types/domain/patient';
-import { buildMedicalHandoffBedStats } from '@/features/handoff/controllers/medicalHandoffHeaderController';
+import {
+  buildMedicalHandoffBedStats,
+  buildMedicalHandoffRestoreConfirm,
+  buildMedicalHandoffSignConfirm,
+  canPromptMedicalHandoffSign,
+  canRestoreMedicalHandoffSignatures,
+  resolveMedicalHandoffDoctorName,
+} from '@/features/handoff/controllers/medicalHandoffHeaderController';
 
 describe('medicalHandoffHeaderController', () => {
   it('builds bed stats from visible beds and record occupancy state', () => {
@@ -12,34 +17,16 @@ describe('medicalHandoffHeaderController', () => {
       { id: 'R2', name: 'R2', type: BedType.MEDIA, isCuna: false },
       { id: 'R3', name: 'R3', type: BedType.MEDIA, isCuna: false },
     ];
-    const createPatient = (overrides: Partial<PatientData>): PatientData => ({
-      bedId: 'R0',
-      isBlocked: false,
-      bedMode: 'Cama',
-      hasCompanionCrib: false,
-      patientName: '',
-      rut: '',
-      age: '',
-      pathology: '',
-      specialty: Specialty.EMPTY,
-      status: PatientStatus.EMPTY,
-      admissionDate: '',
-      hasWristband: false,
-      devices: [],
-      surgicalComplication: false,
-      isUPC: false,
-      ...overrides,
-    });
 
     expect(
       buildMedicalHandoffBedStats(
         {
           beds: {
-            R1: createPatient({ bedId: 'R1', patientName: 'Paciente' }),
-            R2: createPatient({ bedId: 'R2', isBlocked: true }),
-            R3: createPatient({ bedId: 'R3' }),
+            R1: { patientName: 'Paciente', isBlocked: false },
+            R2: { patientName: '', isBlocked: true },
+            R3: { patientName: '', isBlocked: false },
           },
-        } as Pick<DailyRecord, 'beds'>,
+        } as never,
         visibleBeds
       )
     ).toEqual({
@@ -48,5 +35,28 @@ describe('medicalHandoffHeaderController', () => {
       freeBeds: 1,
       blockedBeds: 1,
     });
+  });
+
+  it('resolves doctor name and confirm models for sign and restore', () => {
+    expect(resolveMedicalHandoffDoctorName({ medicalHandoffDoctor: '  Dr. Test  ' })).toBe(
+      'Dr. Test'
+    );
+    expect(buildMedicalHandoffSignConfirm('Dr. Test').title).toBe('Confirmar Firma de Entrega');
+    expect(buildMedicalHandoffRestoreConfirm().title).toBe('Restaurar firmas médicas');
+  });
+
+  it('resolves sign/restore availability from signature state', () => {
+    expect(
+      canPromptMedicalHandoffSign({
+        medicalHandoffSentAt: undefined,
+        medicalSignature: undefined,
+      })
+    ).toBe(true);
+    expect(
+      canRestoreMedicalHandoffSignatures({
+        medicalHandoffSentAt: '2026-03-18T10:00:00.000Z',
+        medicalSignature: undefined,
+      })
+    ).toBe(true);
   });
 });

@@ -1,4 +1,5 @@
 import { CENSUS_DEFAULT_RECIPIENTS } from '@/constants/email';
+import { resolveFailedApplicationOutcomeMessage } from '@/application/shared/applicationOutcomeMessage';
 import type { CensusEmailBrowserRuntime } from '@/hooks/controllers/censusEmailBrowserRuntimeController';
 import {
   resolveLegacyRecipients,
@@ -64,16 +65,7 @@ const resolveRecipientListOutcomeErrorMessage = (
     userSafeMessage?: string;
   }
 ): string | null => {
-  if (input.status === 'success') {
-    return null;
-  }
-
-  return (
-    input.userSafeMessage ||
-    input.issues?.[0]?.userSafeMessage ||
-    input.issues?.[0]?.message ||
-    fallback
-  );
+  return resolveFailedApplicationOutcomeMessage(input, fallback);
 };
 
 export const resolveCensusRecipientsBootstrap = async ({

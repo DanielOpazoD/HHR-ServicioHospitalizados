@@ -5,7 +5,9 @@ import { HandoffPatientTable } from './HandoffPatientTable';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 import type { HandoffClinicalEventActions, HandoffMedicalActions } from './handoffRowContracts';
 import {
+  buildMedicalPrintSectionModel,
   countScopedPatients,
+  hasNamedPatientsInBeds,
   resolveMedicalDisplayBeds,
   resolveMedicalPrintBeds,
   splitMedicalBedsByScope,
@@ -56,14 +58,15 @@ export const MedicalHandoffTabs: React.FC<MedicalHandoffTabsProps> = ({
     activeTab,
     fixedScope,
   });
-  const hasDisplayPatients =
-    hasAnyPatients ?? displayBeds.some(b => record.beds[b.id]?.patientName);
+  const hasDisplayPatients = hasAnyPatients ?? hasNamedPatientsInBeds(displayBeds, record);
 
   const handlePrint = (mode: MedicalPrintMode) => {
     setPrintMode(mode);
     setTimeout(() => window.print(), 100);
   };
   const printBeds = resolveMedicalPrintBeds({ printMode, upcBeds, nonUpcBeds });
+  const upcPrintSection = buildMedicalPrintSectionModel('upc', printBeds.upc, record);
+  const nonUpcPrintSection = buildMedicalPrintSectionModel('no-upc', printBeds.nonUpc, record);
 
   return (
     <div className="space-y-3">
@@ -100,13 +103,13 @@ export const MedicalHandoffTabs: React.FC<MedicalHandoffTabsProps> = ({
       </div>
 
       <div className="hidden print:block space-y-4">
-        {printBeds.upc.length > 0 && printBeds.upc.some(b => record.beds[b.id]?.patientName) && (
+        {upcPrintSection.beds.length > 0 && upcPrintSection.hasPatients && (
           <div>
             <h3 className="text-xs font-bold text-red-700 bg-red-50 px-3 py-1 border border-red-200 border-b-0 rounded-t-lg">
-              🔴 PACIENTES UPC ({printBeds.upc.filter(b => record.beds[b.id]?.patientName).length})
+              {upcPrintSection.title}
             </h3>
             <HandoffPatientTable
-              visibleBeds={printBeds.upc}
+              visibleBeds={upcPrintSection.beds}
               record={record}
               noteField={noteField}
               onNoteChange={onNoteChange}
@@ -121,28 +124,26 @@ export const MedicalHandoffTabs: React.FC<MedicalHandoffTabsProps> = ({
           </div>
         )}
 
-        {printBeds.nonUpc.length > 0 &&
-          printBeds.nonUpc.some(b => record.beds[b.id]?.patientName) && (
-            <div>
-              <h3 className="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 border border-slate-200 border-b-0 rounded-t-lg">
-                🟢 PACIENTES NO UPC (
-                {printBeds.nonUpc.filter(b => record.beds[b.id]?.patientName).length})
-              </h3>
-              <HandoffPatientTable
-                visibleBeds={printBeds.nonUpc}
-                record={record}
-                noteField={noteField}
-                onNoteChange={onNoteChange}
-                medicalActions={medicalActions}
-                clinicalEventActions={clinicalEventActions}
-                tableHeaderClass={tableHeaderClass}
-                readOnly={readOnly}
-                isMedical={isMedical}
-                hasAnyPatients={true}
-                shouldShowPatient={shouldShowPatient}
-              />
-            </div>
-          )}
+        {nonUpcPrintSection.beds.length > 0 && nonUpcPrintSection.hasPatients && (
+          <div>
+            <h3 className="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1 border border-slate-200 border-b-0 rounded-t-lg">
+              {nonUpcPrintSection.title}
+            </h3>
+            <HandoffPatientTable
+              visibleBeds={nonUpcPrintSection.beds}
+              record={record}
+              noteField={noteField}
+              onNoteChange={onNoteChange}
+              medicalActions={medicalActions}
+              clinicalEventActions={clinicalEventActions}
+              tableHeaderClass={tableHeaderClass}
+              readOnly={readOnly}
+              isMedical={isMedical}
+              hasAnyPatients={true}
+              shouldShowPatient={shouldShowPatient}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
