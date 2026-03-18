@@ -11,6 +11,8 @@ import {
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 import { logger } from '@/services/utils/loggerService';
 import type { ApplicationOutcome } from '@/application/shared/applicationOutcome';
+import { resolveApplicationOutcomeMessage } from '@/application/shared/applicationOutcomeMessage';
+import { buildManualMedicalHandoffMessageModel } from '@/hooks/controllers/manualMedicalHandoffMessageController';
 
 /**
  * useHandoffCommunication Hook
@@ -18,15 +20,6 @@ import type { ApplicationOutcome } from '@/application/shared/applicationOutcome
  * Handles WhatsApp integrations and link sharing for handoffs.
  */
 const handoffCommunicationLogger = logger.child('useHandoffCommunication');
-
-const resolveOutcomeMessage = <T>(
-  outcome: ApplicationOutcome<T>,
-  fallbackMessage: string
-): string =>
-  outcome.userSafeMessage ||
-  outcome.issues[0]?.userSafeMessage ||
-  outcome.issues[0]?.message ||
-  fallbackMessage;
 
 export const useHandoffCommunication = (
   record: DailyRecord | null,
@@ -49,7 +42,9 @@ export const useHandoffCommunication = (
       try {
         const result = await ensureMedicalHandoffSignatureLink(scope);
         if (result.status !== 'success' || !result.data?.handoffUrl) {
-          onSuccess(resolveOutcomeMessage(result, 'No se pudo copiar el enlace al portapapeles.'));
+          onSuccess(
+            resolveApplicationOutcomeMessage(result, 'No se pudo copiar el enlace al portapapeles.')
+          );
           return;
         }
         await writeClipboardText(result.data.handoffUrl);
@@ -110,21 +105,14 @@ export const useHandoffCommunication = (
         throw new Error('No se encontró template de entrega médica');
       }
 
-      // Calculate Stats
-      const hospitalized = visibleBeds.filter(b => {
-        const p = record.beds[b.id];
-        return p && p.patientName && !p.isBlocked;
-      }).length;
-
-      const blockedBeds = visibleBeds.filter(b => record.beds[b.id]?.isBlocked).length;
-      const freeBeds = visibleBeds.length - hospitalized - blockedBeds;
-
-      const [year, month, day] = record.date.split('-');
-      const dateStr = `${day}-${month}-${year}`;
+      const handoffModel = buildManualMedicalHandoffMessageModel(record, visibleBeds);
       const handoffLinkResult = await ensureMedicalHandoffSignatureLink('all');
       if (handoffLinkResult.status !== 'success' || !handoffLinkResult.data?.handoffUrl) {
         throw new Error(
-          resolveOutcomeMessage(handoffLinkResult, 'No se pudo preparar el enlace de firma médica.')
+          resolveApplicationOutcomeMessage(
+            handoffLinkResult,
+            'No se pudo preparar el enlace de firma médica.'
+          )
         );
       }
       const handoffUrl = handoffLinkResult.data.handoffUrl;
@@ -132,12 +120,12 @@ export const useHandoffCommunication = (
       const message =
         `\uD83C\uDFE5 Hospital Hanga Roa\n` +
         `\uD83D\uDCCB Entrega de Turno M\u00E9dico\n\n` +
-        `\uD83D\uDCC5 Fecha: ${dateStr}\n` +
-        `\uD83D\uDC68\u200D\u2695\uFE0F Entregado por: ${record.medicalHandoffDoctor || 'Sin especificar'}\n` +
+        `\uD83D\uDCC5 Fecha: ${handoffModel.formattedDate}\n` +
+        `\uD83D\uDC68\u200D\u2695\uFE0F Entregado por: ${handoffModel.doctorName}\n` +
         `\uD83D\uDD51 Firmado: ${new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}\n\n` +
         `\uD83D\uDCCA Resumen:\n` +
-        `\u2022 Hospitalizados: ${hospitalized} pacientes\n` +
-        `\u2022 Camas libres: ${freeBeds}\n` +
+        `\u2022 Hospitalizados: ${handoffModel.hospitalized} pacientes\n` +
+        `\u2022 Camas libres: ${handoffModel.freeBeds}\n` +
         `\u2022 Nuevos ingresos: 0\n` +
         `\u2022 Altas: 0\n\n` +
         `\uD83D\uDD17 Ver entrega completa:\n` +

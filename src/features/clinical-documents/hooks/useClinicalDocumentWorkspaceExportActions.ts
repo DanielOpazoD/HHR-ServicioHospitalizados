@@ -5,6 +5,7 @@ import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domai
 import { buildClinicalDocumentPdfFileName } from '@/features/clinical-documents/controllers/clinicalDocumentWorkspaceController';
 import type { ExportClinicalDocumentPdfOutput } from '@/application/clinical-documents/clinicalDocumentPdfExportUseCase';
 import type { ApplicationOutcome } from '@/application/shared/applicationOutcome';
+import { resolveFailedApplicationOutcomeMessage } from '@/application/shared/applicationOutcomeMessage';
 import {
   recordOperationalOutcome,
   recordOperationalTelemetry,
@@ -30,22 +31,6 @@ interface UploadPdfOptions {
   successTitle?: string;
   successMessage?: string;
 }
-
-const resolveClinicalDocumentExportOutcomeError = <T>(
-  outcome: ApplicationOutcome<T>,
-  fallback: string
-): string | null => {
-  if (outcome.status === 'success') {
-    return null;
-  }
-
-  return (
-    outcome.userSafeMessage ||
-    outcome.issues[0]?.userSafeMessage ||
-    outcome.issues[0]?.message ||
-    fallback
-  );
-};
 
 const loadClinicalDocumentPdfExportUseCase = async () =>
   import('@/application/clinical-documents/clinicalDocumentPdfExportUseCase').then(
@@ -89,7 +74,7 @@ export const useClinicalDocumentWorkspaceExportActions = ({
           context: { documentId: selectedDocument.id },
           allowSuccess: true,
         });
-        const outcomeError = resolveClinicalDocumentExportOutcomeError(
+        const outcomeError = resolveFailedApplicationOutcomeMessage(
           result,
           'No se pudo exportar el PDF clínico.'
         );

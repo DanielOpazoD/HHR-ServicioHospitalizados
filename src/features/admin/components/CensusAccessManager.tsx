@@ -18,21 +18,10 @@ import {
   executeGetAuthorizedCensusEmails,
   executeRemoveAuthorizedCensusEmail,
 } from '@/application/census-access/censusAccessManagementUseCases';
+import { resolveApplicationOutcomeMessage } from '@/application/shared/applicationOutcomeMessage';
 import { CensusAuthorizedEmail, CensusAccessRole } from '@/types/censusAccess';
 import { useAuth } from '@/context/AuthContext';
 import clsx from 'clsx';
-
-const resolveOutcomeMessage = (
-  outcome: {
-    userSafeMessage?: string;
-    issues?: Array<{ userSafeMessage?: string; message?: string }>;
-  },
-  fallbackMessage: string
-): string =>
-  outcome.userSafeMessage ||
-  outcome.issues?.[0]?.userSafeMessage ||
-  outcome.issues?.[0]?.message ||
-  fallbackMessage;
 
 export const CensusAccessManager: React.FC = () => {
   const { currentUser } = useAuth();
@@ -54,7 +43,7 @@ export const CensusAccessManager: React.FC = () => {
       const outcome = await executeGetAuthorizedCensusEmails();
       setAuthorizedEmails((outcome.data ?? []).sort((a, b) => a.email.localeCompare(b.email)));
       if (outcome.status !== 'success') {
-        setError(resolveOutcomeMessage(outcome, 'Error al cargar la lista de correos.'));
+        setError(resolveApplicationOutcomeMessage(outcome, 'Error al cargar la lista de correos.'));
       }
     } finally {
       setIsLoading(false);
@@ -78,7 +67,7 @@ export const CensusAccessManager: React.FC = () => {
         addedBy: currentUser.uid,
       });
       if (outcome.status === 'failed') {
-        setError(resolveOutcomeMessage(outcome, 'Error al autorizar correo.'));
+        setError(resolveApplicationOutcomeMessage(outcome, 'Error al autorizar correo.'));
         return;
       }
       setNewEmail('');
@@ -99,7 +88,7 @@ export const CensusAccessManager: React.FC = () => {
     try {
       const outcome = await executeRemoveAuthorizedCensusEmail(email);
       if (outcome.status === 'failed') {
-        setError(resolveOutcomeMessage(outcome, 'Error al eliminar el correo.'));
+        setError(resolveApplicationOutcomeMessage(outcome, 'Error al eliminar el correo.'));
         return;
       }
       setAuthorizedEmails(prev => prev.filter(e => e.email !== email));

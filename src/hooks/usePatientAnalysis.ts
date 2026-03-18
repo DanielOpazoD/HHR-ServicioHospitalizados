@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { getCurrentUserEmail } from '@/services/admin/utils/auditUtils';
 import {
   executeAnalyzePatients,
@@ -9,28 +9,62 @@ import {
 import {
   defaultDailyRecordReadPort,
   defaultDailyRecordWritePort,
+  type DailyRecordReadPort,
+  type DailyRecordWritePort,
 } from '@/application/ports/dailyRecordPort';
-import { defaultPatientMasterWritePort } from '@/application/ports/patientMasterPort';
-import { defaultAuditPort } from '@/application/ports/auditPort';
+import {
+  defaultPatientMasterWritePort,
+  type PatientMasterWritePort,
+} from '@/application/ports/patientMasterPort';
+import { defaultAuditPort, type AuditPort } from '@/application/ports/auditPort';
+import { resolveApplicationOutcomeMessage } from '@/application/shared/applicationOutcomeMessage';
 import { logger } from '@/services/utils/loggerService';
 
 export type { Conflict, AnalysisResult } from '@/application/patient-flow/patientAnalysisUseCase';
 
 const patientAnalysisLogger = logger.child('usePatientAnalysis');
 
-const resolveOutcomeErrorMessage = (
-  outcome: {
-    userSafeMessage?: string;
-    issues: Array<{ userSafeMessage?: string; message?: string }>;
-  },
-  fallbackMessage: string
-): string =>
-  outcome.userSafeMessage ||
-  outcome.issues[0]?.userSafeMessage ||
-  outcome.issues[0]?.message ||
-  fallbackMessage;
+type PatientAnalysisDailyRecordPort = Pick<
+  DailyRecordReadPort & DailyRecordWritePort,
+  'getAvailableDates' | 'getForDate' | 'updatePartial'
+>;
 
-export const usePatientAnalysis = () => {
+export interface PatientAnalysisDependencies {
+  dailyRecordRepository: PatientAnalysisDailyRecordPort;
+  patientMasterRepository: PatientMasterWritePort;
+  auditPort: Pick<AuditPort, 'writeEvent'>;
+  getCurrentUserEmail: () => string;
+}
+
+const defaultPatientAnalysisDependencies: PatientAnalysisDependencies = {
+  dailyRecordRepository: {
+    getAvailableDates: defaultDailyRecordReadPort.getAvailableDates,
+    getForDate: defaultDailyRecordReadPort.getForDate,
+    updatePartial: defaultDailyRecordWritePort.updatePartial,
+  },
+  patientMasterRepository: defaultPatientMasterWritePort,
+  auditPort: defaultAuditPort,
+  getCurrentUserEmail,
+};
+
+const resolvePatientAnalysisDependencies = (
+  dependencies?: Partial<PatientAnalysisDependencies>
+): PatientAnalysisDependencies => ({
+  dailyRecordRepository:
+    dependencies?.dailyRecordRepository || defaultPatientAnalysisDependencies.dailyRecordRepository,
+  patientMasterRepository:
+    dependencies?.patientMasterRepository ||
+    defaultPatientAnalysisDependencies.patientMasterRepository,
+  auditPort: dependencies?.auditPort || defaultPatientAnalysisDependencies.auditPort,
+  getCurrentUserEmail:
+    dependencies?.getCurrentUserEmail || defaultPatientAnalysisDependencies.getCurrentUserEmail,
+});
+
+export const usePatientAnalysis = (dependencies?: Partial<PatientAnalysisDependencies>) => {
+  const resolvedDependencies = useMemo(
+    () => resolvePatientAnalysisDependencies(dependencies),
+    [dependencies]
+  );
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isMigrating, setIsMigrating] = useState(false);
   const [isHarmonizing, setIsHarmonizing] = useState(false);
@@ -52,13 +86,9 @@ export const usePatientAnalysis = () => {
           rut,
           correctName,
           harmonizeHistory,
-          dailyRecordRepository: {
-            getAvailableDates: defaultDailyRecordReadPort.getAvailableDates,
-            getForDate: defaultDailyRecordReadPort.getForDate,
-            updatePartial: defaultDailyRecordWritePort.updatePartial,
-          },
-          auditPort: defaultAuditPort,
-          currentUserEmail: getCurrentUserEmail(),
+          dailyRecordRepository: resolvedDependencies.dailyRecordRepository,
+          auditPort: resolvedDependencies.auditPort,
+          currentUserEmail: resolvedDependencies.getCurrentUserEmail(),
         });
 
         if (outcome.data) {
@@ -72,7 +102,7 @@ export const usePatientAnalysis = () => {
         }
       }
     },
-    [analysis]
+    [analysis, resolvedDependencies]
   );
 
   const runAnalysis = useCallback(async () => {
@@ -82,23 +112,19 @@ export const usePatientAnalysis = () => {
 
     try {
       const outcome = await executeAnalyzePatients({
-        dailyRecordRepository: {
-          getAvailableDates: defaultDailyRecordReadPort.getAvailableDates,
-          getForDate: defaultDailyRecordReadPort.getForDate,
-          updatePartial: defaultDailyRecordWritePort.updatePartial,
-        },
+        dailyRecordRepository: resolvedDependencies.dailyRecordRepository,
       });
       if (outcome.status === 'failed') {
         patientAnalysisLogger.error(
           'Analysis failed',
-          new Error(resolveOutcomeErrorMessage(outcome, 'Analysis failed'))
+          new Error(resolveApplicationOutcomeMessage(outcome, 'Analysis failed'))
         );
       }
       setAnalysis(outcome.data);
     } finally {
       setIsAnalyzing(false);
     }
-  }, []);
+  }, [resolvedDependencies]);
 
   const runMigration = useCallback(async () => {
     if (!analysis || analysis.validPatients.length === 0) return;
@@ -107,12 +133,12 @@ export const usePatientAnalysis = () => {
     try {
       const outcome = await executeMigratePatients({
         analysis,
-        patientMasterRepository: defaultPatientMasterWritePort,
+        patientMasterRepository: resolvedDependencies.patientMasterRepository,
       });
       if (outcome.status === 'failed') {
         patientAnalysisLogger.error(
           'Migration failed',
-          new Error(resolveOutcomeErrorMessage(outcome, 'Migration failed'))
+          new Error(resolveApplicationOutcomeMessage(outcome, 'Migration failed'))
         );
       }
       if (outcome.data) {
@@ -121,7 +147,7 @@ export const usePatientAnalysis = () => {
     } finally {
       setIsMigrating(false);
     }
-  }, [analysis]);
+  }, [analysis, resolvedDependencies]);
 
   return {
     isAnalyzing,

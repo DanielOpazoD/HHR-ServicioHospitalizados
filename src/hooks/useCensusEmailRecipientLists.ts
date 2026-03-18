@@ -15,7 +15,7 @@ import {
   executeSyncCensusRecipientList,
 } from '@/application/census-email/censusRecipientListUseCases';
 import { resolveStoredRecipients } from '@/hooks/controllers/censusEmailRecipientsController';
-import type { ApplicationOutcome } from '@/application/shared/applicationOutcome';
+import { resolveApplicationOutcomeMessage } from '@/application/shared/applicationOutcomeMessage';
 
 const RECIPIENT_LIST_KEY = 'censusEmailActiveRecipientListId';
 
@@ -57,15 +57,6 @@ export const useCensusEmailRecipientLists = ({
   const recipientsReadyRef = useRef(false);
   const lastRemoteRecipientsRef = useRef<string[] | null>(null);
   const activeRecipientListIdRef = useRef<string>(CENSUS_GLOBAL_EMAIL_RECIPIENT_LIST.id);
-
-  const resolveOutcomeError = useCallback(
-    <T>(result: ApplicationOutcome<T>, fallback: string): string =>
-      result.userSafeMessage ||
-      result.issues[0]?.userSafeMessage ||
-      result.issues[0]?.message ||
-      fallback,
-    []
-  );
 
   const setActiveRecipientListId = useCallback((listId: string) => {
     activeRecipientListIdRef.current = listId;
@@ -163,7 +154,7 @@ export const useCensusEmailRecipientLists = ({
       setRecipientsState(storedRecipients);
       setRecipientsSource(storedRecipients.length > 0 ? 'local' : 'default');
       setRecipientsSyncError(
-        resolveOutcomeError(
+        resolveApplicationOutcomeMessage(
           bootstrapResult,
           'No se pudo cargar la lista global en Firebase. Se usara la copia local.'
         )
@@ -176,13 +167,7 @@ export const useCensusEmailRecipientLists = ({
     return () => {
       isActive = false;
     };
-  }, [
-    applyActiveRecipientList,
-    browserRuntime,
-    canManageGlobalRecipientLists,
-    resolveOutcomeError,
-    user,
-  ]);
+  }, [applyActiveRecipientList, browserRuntime, canManageGlobalRecipientLists, user]);
 
   useEffect(() => {
     if (!recipientsReadyRef.current) {
@@ -220,7 +205,7 @@ export const useCensusEmailRecipientLists = ({
           }
 
           setRecipientsSyncError(
-            resolveOutcomeError(
+            resolveApplicationOutcomeMessage(
               result,
               'No se pudo sincronizar la lista global en Firebase. Se mantiene la copia local.'
             )
@@ -238,14 +223,7 @@ export const useCensusEmailRecipientLists = ({
       window.clearTimeout(timeoutId);
       setIsRecipientsSyncing(false);
     };
-  }, [
-    activeRecipientListId,
-    canManageGlobalRecipientLists,
-    recipientLists,
-    recipients,
-    resolveOutcomeError,
-    user,
-  ]);
+  }, [activeRecipientListId, canManageGlobalRecipientLists, recipientLists, recipients, user]);
 
   const createRecipientList = useCallback(
     async (name: string) => {
@@ -264,7 +242,7 @@ export const useCensusEmailRecipientLists = ({
         applyActiveRecipientList(result.data);
       } else {
         setRecipientsSyncError(
-          resolveOutcomeError(result, 'No se pudo crear la nueva lista global.')
+          resolveApplicationOutcomeMessage(result, 'No se pudo crear la nueva lista global.')
         );
       }
       setIsRecipientsSyncing(false);
@@ -275,7 +253,6 @@ export const useCensusEmailRecipientLists = ({
       recipientLists,
       recipients,
       upsertRecipientList,
-      resolveOutcomeError,
       user,
     ]
   );
@@ -296,7 +273,10 @@ export const useCensusEmailRecipientLists = ({
         upsertRecipientList(result.data);
       } else {
         setRecipientsSyncError(
-          resolveOutcomeError(result, 'No se pudo actualizar el nombre de la lista global.')
+          resolveApplicationOutcomeMessage(
+            result,
+            'No se pudo actualizar el nombre de la lista global.'
+          )
         );
       }
       setIsRecipientsSyncing(false);
@@ -306,7 +286,6 @@ export const useCensusEmailRecipientLists = ({
       canManageGlobalRecipientLists,
       recipientLists,
       recipients,
-      resolveOutcomeError,
       upsertRecipientList,
       user,
     ]
@@ -330,12 +309,15 @@ export const useCensusEmailRecipientLists = ({
         }
       } else {
         setRecipientsSyncError(
-          resolveOutcomeError(result, 'No se pudo eliminar la lista global seleccionada.')
+          resolveApplicationOutcomeMessage(
+            result,
+            'No se pudo eliminar la lista global seleccionada.'
+          )
         );
       }
       setIsRecipientsSyncing(false);
     },
-    [canManageGlobalRecipientLists, recipientLists, resolveOutcomeError, setActiveRecipientListId]
+    [canManageGlobalRecipientLists, recipientLists, setActiveRecipientListId]
   );
 
   return {

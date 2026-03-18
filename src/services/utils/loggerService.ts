@@ -1,7 +1,7 @@
 /**
  * Logger Service
  * Centralized logging with configurable levels and structured output.
- * 
+ *
  * Features:
  * - Configurable log levels (debug, info, warn, error)
  * - Environment-aware (verbose in dev, minimal in prod)
@@ -16,27 +16,59 @@
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'none';
 
 export interface LogEntry {
-    timestamp: string;
-    level: LogLevel;
-    message: string;
-    context?: string;
-    data?: unknown;
+  timestamp: string;
+  level: LogLevel;
+  message: string;
+  context?: string;
+  data?: unknown;
 }
 
 interface LoggerConfig {
-    minLevel: LogLevel;
-    enableTimestamps: boolean;
-    enableContext: boolean;
-    maxStoredEntries: number;
+  minLevel: LogLevel;
+  enableTimestamps: boolean;
+  enableContext: boolean;
+  maxStoredEntries: number;
 }
 
 // Level priority for filtering
 const LEVEL_PRIORITY: Record<LogLevel, number> = {
-    debug: 0,
-    info: 1,
-    warn: 2,
-    error: 3,
-    none: 4
+  debug: 0,
+  info: 1,
+  warn: 2,
+  error: 3,
+  none: 4,
+};
+
+const isLocalDevelopmentHost = (): boolean =>
+  typeof window !== 'undefined' &&
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+const getPerformanceNow = (): number =>
+  typeof performance !== 'undefined' && typeof performance.now === 'function'
+    ? performance.now()
+    : Date.now();
+
+const emitConsole = (level: LogLevel, formattedMessage: string, data?: unknown): void => {
+  const payload = data !== undefined ? data : '';
+
+  switch (level) {
+    case 'debug':
+      // eslint-disable-next-line no-console
+      console.debug(formattedMessage, payload);
+      break;
+    case 'info':
+      // eslint-disable-next-line no-console
+      console.info(formattedMessage, payload);
+      break;
+    case 'warn':
+      // eslint-disable-next-line no-console
+      console.warn(formattedMessage, payload);
+      break;
+    case 'error':
+      // eslint-disable-next-line no-console
+      console.error(formattedMessage, payload);
+      break;
+  }
 };
 
 // ============================================================================
@@ -44,198 +76,178 @@ const LEVEL_PRIORITY: Record<LogLevel, number> = {
 // ============================================================================
 
 class LoggerService {
-    private static instance: LoggerService;
-    private config: LoggerConfig;
-    private entries: LogEntry[] = [];
+  private static instance: LoggerService;
+  private config: LoggerConfig;
+  private entries: LogEntry[] = [];
 
-    private constructor() {
-        // Default config based on environment
-        const isDev = typeof window !== 'undefined' &&
-            (window.location.hostname === 'localhost' ||
-                window.location.hostname === '127.0.0.1');
+  private constructor() {
+    // Default config based on environment
+    this.config = {
+      minLevel: isLocalDevelopmentHost() ? 'debug' : 'warn',
+      enableTimestamps: true,
+      enableContext: true,
+      maxStoredEntries: 100,
+    };
+  }
 
-        this.config = {
-            minLevel: isDev ? 'debug' : 'warn',
-            enableTimestamps: true,
-            enableContext: true,
-            maxStoredEntries: 100
-        };
+  static getInstance(): LoggerService {
+    if (!LoggerService.instance) {
+      LoggerService.instance = new LoggerService();
+    }
+    return LoggerService.instance;
+  }
+
+  // ========================================================================
+  // Configuration
+  // ========================================================================
+
+  configure(config: Partial<LoggerConfig>): void {
+    this.config = { ...this.config, ...config };
+  }
+
+  setLevel(level: LogLevel): void {
+    this.config.minLevel = level;
+  }
+
+  getLevel(): LogLevel {
+    return this.config.minLevel;
+  }
+
+  // ========================================================================
+  // Core Logging Methods
+  // ========================================================================
+
+  private shouldLog(level: LogLevel): boolean {
+    return LEVEL_PRIORITY[level] >= LEVEL_PRIORITY[this.config.minLevel];
+  }
+
+  private formatMessage(level: LogLevel, message: string, context?: string): string {
+    const parts: string[] = [];
+
+    if (this.config.enableTimestamps) {
+      parts.push(`[${new Date().toISOString().slice(11, 23)}]`);
     }
 
-    static getInstance(): LoggerService {
-        if (!LoggerService.instance) {
-            LoggerService.instance = new LoggerService();
-        }
-        return LoggerService.instance;
+    parts.push(`[${level.toUpperCase()}]`);
+
+    if (context && this.config.enableContext) {
+      parts.push(`[${context}]`);
     }
 
-    // ========================================================================
-    // Configuration
-    // ========================================================================
+    parts.push(message);
 
-    configure(config: Partial<LoggerConfig>): void {
-        this.config = { ...this.config, ...config };
+    return parts.join(' ');
+  }
+
+  private storeEntry(entry: LogEntry): void {
+    this.entries.push(entry);
+    if (this.entries.length > this.config.maxStoredEntries) {
+      this.entries.shift();
     }
+  }
 
-    setLevel(level: LogLevel): void {
-        this.config.minLevel = level;
+  private log(level: LogLevel, message: string, context?: string, data?: unknown): void {
+    if (!this.shouldLog(level)) return;
+
+    const entry: LogEntry = {
+      timestamp: new Date().toISOString(),
+      level,
+      message,
+      context,
+      data,
+    };
+
+    this.storeEntry(entry);
+
+    const formattedMessage = this.formatMessage(level, message, context);
+    emitConsole(level, formattedMessage, data);
+  }
+
+  // ========================================================================
+  // Public API
+  // ========================================================================
+
+  debug(message: string, data?: unknown): void;
+  debug(context: string, message: string, data?: unknown): void;
+  debug(arg1: string, arg2?: unknown, arg3?: unknown): void {
+    if (typeof arg2 === 'string') {
+      this.log('debug', arg2, arg1, arg3);
+    } else {
+      this.log('debug', arg1, undefined, arg2);
     }
+  }
 
-    getLevel(): LogLevel {
-        return this.config.minLevel;
+  info(message: string, data?: unknown): void;
+  info(context: string, message: string, data?: unknown): void;
+  info(arg1: string, arg2?: unknown, arg3?: unknown): void {
+    if (typeof arg2 === 'string') {
+      this.log('info', arg2, arg1, arg3);
+    } else {
+      this.log('info', arg1, undefined, arg2);
     }
+  }
 
-    // ========================================================================
-    // Core Logging Methods
-    // ========================================================================
-
-    private shouldLog(level: LogLevel): boolean {
-        return LEVEL_PRIORITY[level] >= LEVEL_PRIORITY[this.config.minLevel];
+  warn(message: string, data?: unknown): void;
+  warn(context: string, message: string, data?: unknown): void;
+  warn(arg1: string, arg2?: unknown, arg3?: unknown): void {
+    if (typeof arg2 === 'string') {
+      this.log('warn', arg2, arg1, arg3);
+    } else {
+      this.log('warn', arg1, undefined, arg2);
     }
+  }
 
-    private formatMessage(level: LogLevel, message: string, context?: string): string {
-        const parts: string[] = [];
-
-        if (this.config.enableTimestamps) {
-            parts.push(`[${new Date().toISOString().slice(11, 23)}]`);
-        }
-
-        parts.push(`[${level.toUpperCase()}]`);
-
-        if (context && this.config.enableContext) {
-            parts.push(`[${context}]`);
-        }
-
-        parts.push(message);
-
-        return parts.join(' ');
+  error(message: string, data?: unknown): void;
+  error(context: string, message: string, data?: unknown): void;
+  error(arg1: string, arg2?: unknown, arg3?: unknown): void {
+    if (typeof arg2 === 'string') {
+      this.log('error', arg2, arg1, arg3);
+    } else {
+      this.log('error', arg1, undefined, arg2);
     }
+  }
 
-    private storeEntry(entry: LogEntry): void {
-        this.entries.push(entry);
-        if (this.entries.length > this.config.maxStoredEntries) {
-            this.entries.shift();
-        }
+  // ========================================================================
+  // Utility Methods
+  // ========================================================================
+
+  /**
+   * Create a child logger with a fixed context
+   */
+  child(context: string): ChildLogger {
+    return new ChildLogger(this, context);
+  }
+
+  /**
+   * Get all stored log entries
+   */
+  getEntries(): LogEntry[] {
+    return [...this.entries];
+  }
+
+  /**
+   * Clear stored entries
+   */
+  clearEntries(): void {
+    this.entries = [];
+  }
+
+  /**
+   * Time a function execution
+   */
+  async time<T>(label: string, fn: () => Promise<T>): Promise<T> {
+    const start = getPerformanceNow();
+    try {
+      const result = await fn();
+      const duration = getPerformanceNow() - start;
+      this.debug(`${label} completed in ${duration.toFixed(2)}ms`);
+      return result;
+    } catch (error) {
+      const duration = getPerformanceNow() - start;
+      this.error(`${label} failed after ${duration.toFixed(2)}ms`, error);
+      throw error;
     }
-
-    private log(level: LogLevel, message: string, context?: string, data?: unknown): void {
-        if (!this.shouldLog(level)) return;
-
-        const entry: LogEntry = {
-            timestamp: new Date().toISOString(),
-            level,
-            message,
-            context,
-            data
-        };
-
-        this.storeEntry(entry);
-
-        const formattedMessage = this.formatMessage(level, message, context);
-
-        switch (level) {
-            case 'debug':
-                // eslint-disable-next-line no-console
-                console.debug(formattedMessage, data !== undefined ? data : '');
-                break;
-            case 'info':
-                // eslint-disable-next-line no-console
-                console.info(formattedMessage, data !== undefined ? data : '');
-                break;
-            case 'warn':
-                console.warn(formattedMessage, data !== undefined ? data : '');
-                break;
-            case 'error':
-                console.error(formattedMessage, data !== undefined ? data : '');
-                break;
-        }
-    }
-
-    // ========================================================================
-    // Public API
-    // ========================================================================
-
-    debug(message: string, data?: unknown): void;
-    debug(context: string, message: string, data?: unknown): void;
-    debug(arg1: string, arg2?: unknown, arg3?: unknown): void {
-        if (typeof arg2 === 'string') {
-            this.log('debug', arg2, arg1, arg3);
-        } else {
-            this.log('debug', arg1, undefined, arg2);
-        }
-    }
-
-    info(message: string, data?: unknown): void;
-    info(context: string, message: string, data?: unknown): void;
-    info(arg1: string, arg2?: unknown, arg3?: unknown): void {
-        if (typeof arg2 === 'string') {
-            this.log('info', arg2, arg1, arg3);
-        } else {
-            this.log('info', arg1, undefined, arg2);
-        }
-    }
-
-    warn(message: string, data?: unknown): void;
-    warn(context: string, message: string, data?: unknown): void;
-    warn(arg1: string, arg2?: unknown, arg3?: unknown): void {
-        if (typeof arg2 === 'string') {
-            this.log('warn', arg2, arg1, arg3);
-        } else {
-            this.log('warn', arg1, undefined, arg2);
-        }
-    }
-
-    error(message: string, data?: unknown): void;
-    error(context: string, message: string, data?: unknown): void;
-    error(arg1: string, arg2?: unknown, arg3?: unknown): void {
-        if (typeof arg2 === 'string') {
-            this.log('error', arg2, arg1, arg3);
-        } else {
-            this.log('error', arg1, undefined, arg2);
-        }
-    }
-
-    // ========================================================================
-    // Utility Methods
-    // ========================================================================
-
-    /**
-     * Create a child logger with a fixed context
-     */
-    child(context: string): ChildLogger {
-        return new ChildLogger(this, context);
-    }
-
-    /**
-     * Get all stored log entries
-     */
-    getEntries(): LogEntry[] {
-        return [...this.entries];
-    }
-
-    /**
-     * Clear stored entries
-     */
-    clearEntries(): void {
-        this.entries = [];
-    }
-
-    /**
-     * Time a function execution
-     */
-    async time<T>(label: string, fn: () => Promise<T>): Promise<T> {
-        const start = performance.now();
-        try {
-            const result = await fn();
-            const duration = performance.now() - start;
-            this.debug(`${label} completed in ${duration.toFixed(2)}ms`);
-            return result;
-        } catch (error) {
-            const duration = performance.now() - start;
-            this.error(`${label} failed after ${duration.toFixed(2)}ms`, error);
-            throw error;
-        }
-    }
+  }
 }
 
 // ============================================================================
@@ -243,26 +255,26 @@ class LoggerService {
 // ============================================================================
 
 class ChildLogger {
-    constructor(
-        private parent: LoggerService,
-        private context: string
-    ) { }
+  constructor(
+    private parent: LoggerService,
+    private context: string
+  ) {}
 
-    debug(message: string, data?: unknown): void {
-        this.parent.debug(this.context, message, data);
-    }
+  debug(message: string, data?: unknown): void {
+    this.parent.debug(this.context, message, data);
+  }
 
-    info(message: string, data?: unknown): void {
-        this.parent.info(this.context, message, data);
-    }
+  info(message: string, data?: unknown): void {
+    this.parent.info(this.context, message, data);
+  }
 
-    warn(message: string, data?: unknown): void {
-        this.parent.warn(this.context, message, data);
-    }
+  warn(message: string, data?: unknown): void {
+    this.parent.warn(this.context, message, data);
+  }
 
-    error(message: string, data?: unknown): void {
-        this.parent.error(this.context, message, data);
-    }
+  error(message: string, data?: unknown): void {
+    this.parent.error(this.context, message, data);
+  }
 }
 
 // ============================================================================
@@ -273,8 +285,8 @@ export const logger = LoggerService.getInstance();
 
 // Convenience exports for common patterns
 export const log = {
-    debug: logger.debug.bind(logger),
-    info: logger.info.bind(logger),
-    warn: logger.warn.bind(logger),
-    error: logger.error.bind(logger)
+  debug: logger.debug.bind(logger),
+  info: logger.info.bind(logger),
+  warn: logger.warn.bind(logger),
+  error: logger.error.bind(logger),
 };

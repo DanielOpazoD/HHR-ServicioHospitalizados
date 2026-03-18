@@ -443,4 +443,47 @@ describe('usePatientAnalysis', () => {
     expect(result.current.analysis?.conflicts[0].options).toHaveLength(3);
     expect(result.current.analysis?.conflicts[0].records).toHaveLength(2); // First record is base, next 2 are conflicts
   });
+
+  it('uses injected dependencies instead of default ports', async () => {
+    const customDailyRecordRepository = {
+      getAvailableDates: vi.fn().mockResolvedValue(['2025-01-01']),
+      getForDate: vi.fn().mockResolvedValue(
+        asRepoRecord({
+          date: '2025-01-01',
+          beds: { B1: { rut: '11.111.111-1', patientName: 'Injected Patient' } },
+        })
+      ),
+      updatePartial: vi.fn(),
+    };
+    const customPatientMasterRepository = {
+      bulkUpsertPatients: vi.fn().mockResolvedValue({ successes: 1, errors: 0 }),
+    };
+    const customAuditPort = {
+      writeEvent: vi.fn().mockResolvedValue(undefined),
+    };
+    const getInjectedUserEmail = vi.fn().mockReturnValue('inject@test.com');
+
+    const { result } = renderHook(() =>
+      usePatientAnalysis({
+        dailyRecordRepository: customDailyRecordRepository,
+        patientMasterRepository: customPatientMasterRepository,
+        auditPort: customAuditPort,
+        getCurrentUserEmail: getInjectedUserEmail,
+      })
+    );
+
+    await act(async () => {
+      await result.current.runAnalysis();
+    });
+
+    await act(async () => {
+      await result.current.runMigration();
+    });
+
+    expect(customDailyRecordRepository.getAvailableDates).toHaveBeenCalled();
+    expect(customDailyRecordRepository.getForDate).toHaveBeenCalledWith('2025-01-01');
+    expect(customPatientMasterRepository.bulkUpsertPatients).toHaveBeenCalled();
+    expect(dailyRecordReadPort.getAvailableDates).not.toHaveBeenCalled();
+    expect(patientMasterWritePort.bulkUpsertPatients).not.toHaveBeenCalled();
+  });
 });
