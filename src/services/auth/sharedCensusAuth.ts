@@ -1,6 +1,7 @@
 import { httpsCallable } from 'firebase/functions';
-import { auth, getFunctionsInstance } from '@/firebaseConfig';
 import { logger } from '@/services/utils/loggerService';
+import { defaultAuthRuntime } from '@/services/firebase-runtime/authRuntime';
+import { defaultFunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
 
 type SharedCensusAccessResult = {
   authorized: boolean;
@@ -21,15 +22,20 @@ const isSharedCensusPath = (pathname: string): boolean =>
 export const isSharedCensusMode = (): boolean =>
   typeof window !== 'undefined' && isSharedCensusPath(window.location.pathname);
 
+const resolveSharedCensusEmail = async (email?: string | null): Promise<string> => {
+  await defaultAuthRuntime.ready;
+  return normalizeEmail(email || defaultAuthRuntime.getCurrentUser()?.email || '');
+};
+
 export const checkSharedCensusAccess = async (
-  email: string | null | undefined = auth.currentUser?.email
+  email?: string | null
 ): Promise<SharedCensusAccessResult> => {
-  const currentEmail = normalizeEmail(email || auth.currentUser?.email || '');
+  const currentEmail = await resolveSharedCensusEmail(email);
   if (!currentEmail) {
     return { authorized: false, role: 'viewer' };
   }
   try {
-    const functions = await getFunctionsInstance();
+    const functions = await defaultFunctionsRuntime.getFunctions();
     const checkSharedAccess = httpsCallable<Record<string, never>, SharedCensusAccessResult>(
       functions,
       'checkSharedCensusAccess'

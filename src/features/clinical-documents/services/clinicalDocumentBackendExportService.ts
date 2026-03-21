@@ -1,7 +1,7 @@
 import { httpsCallable } from 'firebase/functions';
-import { getFunctionsInstance } from '@/firebaseConfig';
 import type { ClinicalDocumentType } from '@/features/clinical-documents/domain/entities';
 import { z } from 'zod';
+import { defaultFunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
 
 interface ExportClinicalDocumentPdfPayload {
   documentId: string;
@@ -69,7 +69,7 @@ export const exportClinicalDocumentPdfViaBackend = async ({
   episodeKey: string;
   pdfBlob: Blob;
 }): Promise<ExportClinicalDocumentPdfResult> => {
-  const functions = await getFunctionsInstance();
+  const functions = await defaultFunctionsRuntime.getFunctions();
   const callable = httpsCallable<ExportClinicalDocumentPdfPayload, ExportClinicalDocumentPdfResult>(
     functions,
     'exportClinicalDocumentPdfToDrive'

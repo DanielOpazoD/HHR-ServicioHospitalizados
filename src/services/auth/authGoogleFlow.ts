@@ -1,6 +1,5 @@
 import { signInWithPopup } from 'firebase/auth';
 
-import { auth } from '@/firebaseConfig';
 import { AuthUser } from '@/types/auth';
 import {
   acquireGoogleLoginLock,
@@ -18,6 +17,7 @@ import {
   emitAuthOperationalEvent,
   recordAuthOperationalError,
 } from '@/services/auth/authOperationalTelemetry';
+import { defaultAuthRuntime } from '@/services/firebase-runtime/authRuntime';
 
 const GOOGLE_POPUP_TIMEOUT_MS = 12000;
 
@@ -65,7 +65,7 @@ const signInWithPopupOrTimeout = async (): Promise<AuthUser> =>
       );
     }, GOOGLE_POPUP_TIMEOUT_MS);
 
-    signInWithPopup(auth, googleProvider)
+    signInWithPopup(defaultAuthRuntime.auth, googleProvider)
       .then(result => authorizeFirebaseUser(result.user))
       .then(user => {
         finish(() => resolve(user));
@@ -97,6 +97,7 @@ const withGoogleLoginLock = async <T>(runner: () => Promise<T>): Promise<T> => {
 export const signInWithGoogle = async (): Promise<AuthUser> =>
   withGoogleLoginLock(async () => {
     try {
+      await defaultAuthRuntime.ready;
       await waitForE2EPopupDelay();
 
       const existingUser = await authorizeCurrentFirebaseUser();

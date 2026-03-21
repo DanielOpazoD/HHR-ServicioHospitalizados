@@ -56,28 +56,45 @@ const defaultFirestoreProviderApi: FirestoreProviderApi = {
 };
 
 interface FirestoreProviderOptions {
-  firestore: Firestore;
+  firestore?: Firestore;
+  getFirestore?: () => Firestore;
   api?: FirestoreProviderApi;
 }
 
 export class FirestoreProvider implements IDatabaseProvider {
-  private readonly firestore: Firestore;
+  private readonly getFirestoreInstance: () => Firestore;
   private readonly api: FirestoreProviderApi;
 
-  constructor({ firestore, api = defaultFirestoreProviderApi }: FirestoreProviderOptions) {
-    this.firestore = firestore;
+  constructor({
+    firestore,
+    getFirestore,
+    api = defaultFirestoreProviderApi,
+  }: FirestoreProviderOptions) {
+    const resolveFirestore = getFirestore ?? (firestore ? () => firestore : null);
+
+    if (!resolveFirestore) {
+      throw new Error('FirestoreProvider requires a firestore instance or getter.');
+    }
+
+    this.getFirestoreInstance = () => {
+      const instance = resolveFirestore();
+      if (!instance) {
+        throw new Error('Firestore instance is not available yet.');
+      }
+      return instance;
+    };
     this.api = api;
   }
 
   async getDoc<T>(collectionName: string, id: string): Promise<T | null> {
-    const docRef = this.api.doc(this.firestore, collectionName, id);
+    const docRef = this.api.doc(this.getFirestoreInstance(), collectionName, id);
     const snapshot = await this.api.getDoc(docRef);
     return snapshot.exists() ? (snapshot.data() as T) : null;
   }
 
   async getDocs<T>(collectionName: string, options?: QueryOptions): Promise<T[]> {
     const constraints = this.buildConstraints(options);
-    const collectionRef = this.api.collection(this.firestore, collectionName);
+    const collectionRef = this.api.collection(this.getFirestoreInstance(), collectionName);
     const snapshot = await this.api.getDocs(this.api.query(collectionRef, ...constraints));
     return snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }) as T);
   }
@@ -89,7 +106,7 @@ export class FirestoreProvider implements IDatabaseProvider {
     options?: { merge?: boolean }
   ): Promise<void> {
     const docRef = this.api.doc(
-      this.firestore,
+      this.getFirestoreInstance(),
       collectionName,
       id
     ) as unknown as DocumentReference<T>;
@@ -107,12 +124,12 @@ export class FirestoreProvider implements IDatabaseProvider {
     id: string,
     data: Record<string, unknown>
   ): Promise<void> {
-    const docRef = this.api.doc(this.firestore, collectionName, id);
+    const docRef = this.api.doc(this.getFirestoreInstance(), collectionName, id);
     await this.api.updateDoc(docRef, data as UpdateData<Record<string, unknown>>);
   }
 
   async deleteDoc(collectionName: string, id: string): Promise<void> {
-    const docRef = this.api.doc(this.firestore, collectionName, id);
+    const docRef = this.api.doc(this.getFirestoreInstance(), collectionName, id);
     await this.api.deleteDoc(docRef);
   }
 
@@ -121,7 +138,7 @@ export class FirestoreProvider implements IDatabaseProvider {
     id: string,
     callback: (data: T | null) => void
   ): () => void {
-    const docRef = this.api.doc(this.firestore, collectionName, id);
+    const docRef = this.api.doc(this.getFirestoreInstance(), collectionName, id);
     return this.api.onSnapshot(docRef, snapshot => {
       callback(snapshot.exists() ? (snapshot.data() as T) : null);
     });
@@ -133,17 +150,18 @@ export class FirestoreProvider implements IDatabaseProvider {
     callback: (data: T[]) => void
   ): () => void {
     const constraints = this.buildConstraints(options);
-    const collectionRef = this.api.collection(this.firestore, collectionName);
+    const collectionRef = this.api.collection(this.getFirestoreInstance(), collectionName);
     return this.api.onSnapshot(this.api.query(collectionRef, ...constraints), snapshot => {
       callback(snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }) as T));
     });
   }
 
   async runBatch(operations: (batch: IDatabaseBatch) => void): Promise<void> {
-    const batch = this.api.writeBatch(this.firestore);
+    const firestore = this.getFirestoreInstance();
+    const batch = this.api.writeBatch(firestore);
     const dbBatch: IDatabaseBatch = {
       set: (collectionName, id, data, options) => {
-        const docRef = this.api.doc(this.firestore, collectionName, id) as DocumentReference<
+        const docRef = this.api.doc(firestore, collectionName, id) as DocumentReference<
           Record<string, unknown>
         >;
         if (options?.merge) {
@@ -154,13 +172,10 @@ export class FirestoreProvider implements IDatabaseProvider {
       },
       update: (collectionName, id, data) =>
         batch.update(
-          this.api.doc(this.firestore, collectionName, id) as DocumentReference<
-            Record<string, unknown>
-          >,
+          this.api.doc(firestore, collectionName, id) as DocumentReference<Record<string, unknown>>,
           data as UpdateData<Record<string, unknown>>
         ),
-      delete: (collectionName, id) =>
-        batch.delete(this.api.doc(this.firestore, collectionName, id)),
+      delete: (collectionName, id) => batch.delete(this.api.doc(firestore, collectionName, id)),
     };
 
     operations(dbBatch);

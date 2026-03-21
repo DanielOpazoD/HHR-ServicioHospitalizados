@@ -1,5 +1,4 @@
 import { getRedirectResult, signInWithRedirect } from 'firebase/auth';
-import { auth } from '@/firebaseConfig';
 import { AuthSessionState } from '@/types/auth';
 import { googleProvider } from '@/services/auth/authShared';
 import {
@@ -19,6 +18,7 @@ import {
   createAuthErrorSessionState,
   toResolvedAuthSessionState,
 } from '@/services/auth/authSessionState';
+import { defaultAuthRuntime } from '@/services/firebase-runtime/authRuntime';
 
 const runE2ERedirectMode = async (mode: 'success' | 'error' | 'timeout'): Promise<void> => {
   if (mode === 'error') {
@@ -46,7 +46,7 @@ const runE2ERedirectMode = async (mode: 'success' | 'error' | 'timeout'): Promis
   }
 };
 
-export const hasActiveFirebaseSession = (): boolean => auth.currentUser !== null;
+export const hasActiveFirebaseSession = (): boolean => defaultAuthRuntime.getCurrentUser() !== null;
 
 export const signInWithGoogleRedirect = async (): Promise<void> => {
   try {
@@ -56,6 +56,7 @@ export const signInWithGoogleRedirect = async (): Promise<void> => {
       return;
     }
 
+    await defaultAuthRuntime.ready;
     const redirectRuntimeSupport = getAuthRedirectRuntimeSupport();
     if (!redirectRuntimeSupport.canUseRedirectAuth) {
       throw createOperationalError({
@@ -71,7 +72,7 @@ export const signInWithGoogleRedirect = async (): Promise<void> => {
     }
 
     markAuthBootstrapPending('redirect');
-    await signInWithRedirect(auth, googleProvider);
+    await signInWithRedirect(defaultAuthRuntime.auth, googleProvider);
   } catch (error) {
     const operationalError = recordOperationalErrorTelemetry(
       'auth',
@@ -95,12 +96,13 @@ export const signInWithGoogleRedirect = async (): Promise<void> => {
 
 export const handleSignInRedirectResult = async (): Promise<AuthSessionState | null> => {
   try {
+    await defaultAuthRuntime.ready;
     const e2eRedirectUser = consumeE2ERedirectPendingUser();
     if (e2eRedirectUser) {
       return toResolvedAuthSessionState(e2eRedirectUser);
     }
 
-    const result = await getRedirectResult(auth);
+    const result = await getRedirectResult(defaultAuthRuntime.auth);
     if (!result) return null;
     return toResolvedAuthSessionState(await authorizeFirebaseUser(result.user));
   } catch (error) {

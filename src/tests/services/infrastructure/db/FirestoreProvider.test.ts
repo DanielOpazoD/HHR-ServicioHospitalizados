@@ -140,4 +140,25 @@ describe('FirestoreProvider', () => {
 
     expect(callback).toHaveBeenCalledWith([{ id: 'doc-1', title: 'Recordatorio' }]);
   });
+
+  it('resolves firestore lazily through the injected getter', async () => {
+    const { api, collectionMock, docMock, getDocsMock, getDocMock } = buildApi();
+    getDocsMock.mockResolvedValue({ docs: [] });
+    getDocMock.mockResolvedValue({
+      exists: () => false,
+    });
+    const firestoreRef = { current: undefined as unknown };
+    const provider = new FirestoreProvider({
+      getFirestore: () => firestoreRef.current as never,
+      api,
+    });
+
+    firestoreRef.current = { instance: 'live-firestore' };
+
+    await provider.getDocs('reminders');
+    await provider.getDoc('reminders', 'doc-1');
+
+    expect(collectionMock).toHaveBeenCalledWith(firestoreRef.current, 'reminders');
+    expect(docMock).toHaveBeenCalledWith(firestoreRef.current, 'reminders', 'doc-1');
+  });
 });

@@ -1,10 +1,10 @@
 import { signOut as firebaseSignOut, User } from 'firebase/auth';
-import { auth } from '@/firebaseConfig';
 import { AuthUser, UserRole } from '@/types/auth';
 import { checkSharedCensusAccess, isSharedCensusMode } from '@/services/auth/sharedCensusAuth';
 import { resolveGeneralLoginAccessForEmail } from '@/services/auth/authPolicy';
 import { toAuthUser } from '@/services/auth/authShared';
 import { recordAuthOperationalError } from '@/services/auth/authOperationalTelemetry';
+import { defaultAuthRuntime } from '@/services/firebase-runtime/authRuntime';
 
 const SHARED_CENSUS_UNAUTHORIZED_MESSAGE =
   'Acceso no autorizado. Tu correo no tiene permisos para censo compartido.';
@@ -12,7 +12,8 @@ const STANDARD_UNAUTHORIZED_MESSAGE =
   'Acceso no autorizado. Tu correo no tiene un rol vigente en Gestión de Roles.';
 
 const rejectUnauthorizedUser = async (message: string): Promise<never> => {
-  await firebaseSignOut(auth);
+  await defaultAuthRuntime.ready;
+  await firebaseSignOut(defaultAuthRuntime.auth);
   throw new Error(message);
 };
 
@@ -35,7 +36,8 @@ export const authorizeFirebaseUser = async (user: User): Promise<AuthUser> => {
 };
 
 export const authorizeCurrentFirebaseUser = async (): Promise<AuthUser | null> => {
-  const existingUser = auth.currentUser;
+  await defaultAuthRuntime.ready;
+  const existingUser = defaultAuthRuntime.getCurrentUser();
   if (!existingUser || existingUser.isAnonymous) {
     return null;
   }

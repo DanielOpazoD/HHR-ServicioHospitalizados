@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { waitFor } from '@testing-library/react';
 
 vi.mock('firebase/firestore', async () => {
   const actual = await vi.importActual('firebase/firestore');
@@ -129,7 +130,9 @@ describe('firestoreCatalogService', () => {
       return vi.fn();
     });
     subscribeToNurseCatalog(nurseCallback);
-    expect(nurseCallback).toHaveBeenCalledWith(['Nurse A']);
+    await waitFor(() => {
+      expect(nurseCallback).toHaveBeenCalledWith(['Nurse A']);
+    });
 
     const tensCallback = vi.fn();
     vi.mocked(onSnapshot).mockImplementationOnce((...args: unknown[]) => {
@@ -138,7 +141,9 @@ describe('firestoreCatalogService', () => {
       return vi.fn();
     });
     subscribeToTensCatalog(tensCallback);
-    expect(tensCallback).toHaveBeenCalledWith([]);
+    await waitFor(() => {
+      expect(tensCallback).toHaveBeenCalledWith([]);
+    });
 
     const professionalsCallback = vi.fn();
     vi.mocked(onSnapshot).mockImplementationOnce((...args: unknown[]) => {
@@ -147,6 +152,8 @@ describe('firestoreCatalogService', () => {
       return vi.fn();
     });
     subscribeToProfessionalsCatalog(professionalsCallback);
-    expect(professionalsCallback).toHaveBeenCalledWith([{ name: 'Dr. B' }]);
+    await waitFor(() => {
+      expect(professionalsCallback).toHaveBeenCalledWith([{ name: 'Dr. B' }]);
+    });
   });
 });

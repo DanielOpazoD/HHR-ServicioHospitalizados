@@ -4,6 +4,7 @@ import {
   getTransferHistoryCollection,
   getTransfersCollection,
 } from '@/services/transfers/transferFirestoreCollections';
+import { defaultFirestoreRuntime } from '@/services/firebase-runtime/firestoreRuntime';
 import {
   buildTransferOperationError,
   resolveTransferOperationErrorKind,
@@ -36,6 +37,7 @@ export const createTransferRequestMutation = async (
 export const createTransferRequestMutationWithResult = async (
   data: Omit<TransferRequest, 'id' | 'createdAt' | 'updatedAt' | 'statusHistory'>
 ): Promise<TransferMutationResult<TransferRequest>> => {
+  await defaultFirestoreRuntime.ready;
   const id = generateTransferId();
   const now = new Date().toISOString();
 
@@ -92,6 +94,7 @@ export const updateTransferRequestMutationWithResult = async (
   data: Partial<TransferRequest>
 ): Promise<TransferMutationResult> => {
   try {
+    await defaultFirestoreRuntime.ready;
     const docRef = doc(getTransfersCollection(), id);
     await setDoc(
       docRef,
@@ -137,6 +140,7 @@ export const changeTransferStatusMutationWithResult = async (
   userId: string,
   notes?: string
 ): Promise<TransferMutationResult> => {
+  await defaultFirestoreRuntime.ready;
   const docRef = doc(getTransfersCollection(), id);
   try {
     const docSnap = await getDoc(docRef);
@@ -187,6 +191,7 @@ export const completeTransferMutationWithResult = async (
   id: string,
   userId: string
 ): Promise<TransferMutationResult> => {
+  await defaultFirestoreRuntime.ready;
   const docRef = doc(getTransfersCollection(), id);
   try {
     const docSnap = await getDoc(docRef);
@@ -236,6 +241,7 @@ export const deleteTransferRequestMutationWithResult = async (
   id: string
 ): Promise<TransferMutationResult> => {
   try {
+    await defaultFirestoreRuntime.ready;
     const docRef = doc(getTransfersCollection(), id);
     await deleteDoc(docRef);
     transferMutationsLogger.info('Deleted transfer request', { transferId: id });
@@ -267,6 +273,7 @@ export const deleteStatusHistoryEntryMutationWithResult = async (
   id: string,
   historyIndex: number
 ): Promise<TransferMutationResult> => {
+  await defaultFirestoreRuntime.ready;
   const docRef = doc(getTransfersCollection(), id);
   try {
     const docSnap = await getDoc(docRef);

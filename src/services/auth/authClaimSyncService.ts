@@ -1,8 +1,8 @@
 import type { User } from 'firebase/auth';
 import { httpsCallable } from 'firebase/functions';
-import { getFunctionsInstance } from '@/firebaseConfig';
 import type { UserRole } from '@/types/auth';
 import { logger } from '@/services/utils/loggerService';
+import { defaultFunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
 
 const authClaimSyncLogger = logger.child('AuthClaimSync');
 
@@ -12,7 +12,7 @@ const resolveTokenRole = async (firebaseUser: User): Promise<string | null> => {
 };
 
 export const syncCurrentUserRoleClaim = async (): Promise<{ role: UserRole | null }> => {
-  const functions = await getFunctionsInstance();
+  const functions = await defaultFunctionsRuntime.getFunctions();
   const syncUserRoleClaim = httpsCallable<undefined, { role?: UserRole | null }>(
     functions,
     'syncCurrentUserRoleClaim'

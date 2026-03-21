@@ -15,7 +15,6 @@ import {
   getDateRangeFromPreset,
 } from '@/services/calculations/minsalStatsCalculator';
 import { resolveDisplayedMinsalStats } from '@/hooks/controllers/minsalStatsPresentationController';
-import { getFunctionsInstance } from '@/firebaseConfig';
 import { getActiveHospitalId } from '@/constants/firestorePaths';
 import {
   DailyStatsSnapshot,
@@ -24,6 +23,7 @@ import {
   MinsalStatistics,
 } from '@/types/minsalTypes';
 import { DailyRecord } from '@/types/domain/dailyRecord';
+import { defaultFunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
 
 interface UseMinsalStatsResult {
   stats: MinsalStatistics | null;
@@ -97,7 +97,7 @@ export function useMinsalStats(initialPreset: DateRangePreset = 'lastMonth'): Us
   const remoteStatsQuery = useQuery({
     queryKey: queryKeys.analytics.remoteStats(hospitalId, startDate, endDate),
     queryFn: async (): Promise<MinsalStatistics> => {
-      const functions = await getFunctionsInstance();
+      const functions = await defaultFunctionsRuntime.getFunctions();
       const calculateStats = httpsCallable(functions, 'calculateMinsalStats');
       const result = await calculateStats({
         hospitalId,

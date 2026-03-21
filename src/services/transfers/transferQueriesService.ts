@@ -4,6 +4,7 @@ import {
   getTransferHistoryCollection,
   getTransfersCollection,
 } from '@/services/transfers/transferFirestoreCollections';
+import { defaultFirestoreRuntime } from '@/services/firebase-runtime/firestoreRuntime';
 import {
   pickLatestOpenTransferFromSnapshot,
   querySnapshotToTransfers,
@@ -11,6 +12,7 @@ import {
 } from '@/services/transfers/transferSerializationController';
 
 export const getActiveTransfersQuery = async (): Promise<TransferRequest[]> => {
+  await defaultFirestoreRuntime.ready;
   const q = query(
     getTransfersCollection(),
     where('status', '!=', 'TRANSFERRED'),
@@ -23,6 +25,7 @@ export const getActiveTransfersQuery = async (): Promise<TransferRequest[]> => {
 };
 
 export const getTransferByIdQuery = async (id: string): Promise<TransferRequest | null> => {
+  await defaultFirestoreRuntime.ready;
   const activeDocRef = doc(getTransfersCollection(), id);
   const activeSnapshot = await getDoc(activeDocRef);
 
@@ -43,6 +46,7 @@ export const getTransferByIdQuery = async (id: string): Promise<TransferRequest 
 export const getLatestOpenTransferRequestByBedIdQuery = async (
   bedId: string
 ): Promise<TransferRequest | null> => {
+  await defaultFirestoreRuntime.ready;
   const q = query(getTransfersCollection(), where('bedId', '==', bedId));
   const querySnapshot = await getDocs(q);
   return pickLatestOpenTransferFromSnapshot(querySnapshot);
@@ -56,6 +60,7 @@ export const getLatestOpenTransferRequestByPatientRutQuery = async (
     return null;
   }
 
+  await defaultFirestoreRuntime.ready;
   const q = query(getTransfersCollection(), where('patientSnapshot.rut', '==', normalizedRut));
   const querySnapshot = await getDocs(q);
   return pickLatestOpenTransferFromSnapshot(querySnapshot);

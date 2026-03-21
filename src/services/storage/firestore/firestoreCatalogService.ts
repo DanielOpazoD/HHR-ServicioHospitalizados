@@ -36,6 +36,7 @@ const saveStringCatalog = async (
   values: string[]
 ): Promise<void> => {
   const normalizedValues = normalizeStringCatalog(values);
+  await defaultFirestoreRuntime.ready;
   await withRetry(() =>
     setDoc(docRef, {
       list: normalizedValues,
@@ -50,29 +51,50 @@ const subscribeStringCatalog = (
   legacyField: 'nurses' | 'tens',
   callback: (values: string[]) => void,
   errorLabel: string
-): (() => void) =>
-  onSnapshot(
-    docRef,
-    docSnap => {
-      if (docSnap.exists()) {
-        const values = readStringCatalogFromSnapshot(
-          docSnap as unknown as {
-            exists: () => boolean;
-            data: () => Record<string, unknown> | undefined;
-          },
-          legacyField
-        );
-        callback(values);
+): (() => void) => {
+  let active = true;
+  let unsubscribeSnapshot = () => {};
+
+  void defaultFirestoreRuntime.ready
+    .then(() => {
+      if (!active) {
+        return;
       }
-    },
-    error => {
-      firestoreCatalogLogger.error(`Error subscribing to ${errorLabel}`, error);
+
+      unsubscribeSnapshot = onSnapshot(
+        docRef,
+        docSnap => {
+          if (docSnap.exists()) {
+            const values = readStringCatalogFromSnapshot(
+              docSnap as unknown as {
+                exists: () => boolean;
+                data: () => Record<string, unknown> | undefined;
+              },
+              legacyField
+            );
+            callback(values);
+          }
+        },
+        error => {
+          firestoreCatalogLogger.error(`Error subscribing to ${errorLabel}`, error);
+          callback([]);
+        }
+      );
+    })
+    .catch(error => {
+      firestoreCatalogLogger.error(`Error preparing ${errorLabel} subscription`, error);
       callback([]);
-    }
-  );
+    });
+
+  return () => {
+    active = false;
+    unsubscribeSnapshot();
+  };
+};
 
 export const getNurseCatalogFromFirestore = async (): Promise<string[]> => {
   try {
+    await defaultFirestoreRuntime.ready;
     const docSnap = await getDoc(getNurseCatalogDocRef());
     return readStringCatalogFromSnapshot(
       docSnap as unknown as {
@@ -101,6 +123,7 @@ export const subscribeToNurseCatalog = (callback: (nurses: string[]) => void): (
 
 export const getTensCatalogFromFirestore = async (): Promise<string[]> => {
   try {
+    await defaultFirestoreRuntime.ready;
     const docSnap = await getDoc(getTensCatalogDocRef());
     return readStringCatalogFromSnapshot(
       docSnap as unknown as {
@@ -131,6 +154,7 @@ export const getProfessionalsCatalogFromFirestore = async (): Promise<
   ProfessionalCatalogItem[]
 > => {
   try {
+    await defaultFirestoreRuntime.ready;
     const docSnap = await getDoc(getProfessionalsCatalogDocRef());
     if (docSnap.exists()) {
       const data = docSnap.data();
@@ -148,6 +172,7 @@ export const saveProfessionalsCatalogToFirestore = async (
 ): Promise<void> => {
   try {
     const normalized = normalizeProfessionalCatalog(professionals);
+    await defaultFirestoreRuntime.ready;
     await withRetry(() =>
       setDoc(getProfessionalsCatalogDocRef(), {
         list: normalized,
@@ -162,18 +187,38 @@ export const saveProfessionalsCatalogToFirestore = async (
 
 export const subscribeToProfessionalsCatalog = (
   callback: (professionals: ProfessionalCatalogItem[]) => void
-): (() => void) =>
-  onSnapshot(
-    getProfessionalsCatalogDocRef(),
-    docSnap => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        const professionals = normalizeProfessionalCatalog(data.list);
-        callback(professionals);
+): (() => void) => {
+  let active = true;
+  let unsubscribeSnapshot = () => {};
+
+  void defaultFirestoreRuntime.ready
+    .then(() => {
+      if (!active) {
+        return;
       }
-    },
-    error => {
-      firestoreCatalogLogger.error('Error subscribing to professionals catalog', error);
+
+      unsubscribeSnapshot = onSnapshot(
+        getProfessionalsCatalogDocRef(),
+        docSnap => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            const professionals = normalizeProfessionalCatalog(data.list);
+            callback(professionals);
+          }
+        },
+        error => {
+          firestoreCatalogLogger.error('Error subscribing to professionals catalog', error);
+          callback([]);
+        }
+      );
+    })
+    .catch(error => {
+      firestoreCatalogLogger.error('Error preparing professionals catalog subscription', error);
       callback([]);
-    }
-  );
+    });
+
+  return () => {
+    active = false;
+    unsubscribeSnapshot();
+  };
+};

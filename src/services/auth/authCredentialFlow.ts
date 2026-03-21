@@ -4,10 +4,10 @@ import {
   signOut as firebaseSignOut,
 } from 'firebase/auth';
 
-import { auth } from '@/firebaseConfig';
 import { AuthUser, UserRole } from '@/types/auth';
 import { resolveGeneralLoginAccessForEmail } from '@/services/auth/authPolicy';
 import { toAuthUser } from '@/services/auth/authShared';
+import { defaultAuthRuntime } from '@/services/firebase-runtime/authRuntime';
 
 const EMAIL_SIGN_IN_ERRORS: Record<string, string> = {
   'auth/user-not-found': 'Usuario no encontrado',
@@ -35,11 +35,12 @@ const toCredentialErrorMessage = (
 
 export const signIn = async (email: string, password: string): Promise<AuthUser> => {
   try {
-    const result = await signInWithEmailAndPassword(auth, email, password);
+    await defaultAuthRuntime.ready;
+    const result = await signInWithEmailAndPassword(defaultAuthRuntime.auth, email, password);
 
     const { allowed, role } = await resolveGeneralLoginAccessForEmail(result.user.email || '');
     if (!allowed) {
-      await firebaseSignOut(auth);
+      await firebaseSignOut(defaultAuthRuntime.auth);
       throw new Error(
         'Acceso no autorizado. Tu correo no tiene un rol vigente en Gestión de Roles.'
       );
@@ -60,7 +61,8 @@ export const signIn = async (email: string, password: string): Promise<AuthUser>
 
 export const createUser = async (email: string, password: string): Promise<AuthUser> => {
   try {
-    const result = await createUserWithEmailAndPassword(auth, email, password);
+    await defaultAuthRuntime.ready;
+    const result = await createUserWithEmailAndPassword(defaultAuthRuntime.auth, email, password);
     return toAuthUser(result.user);
   } catch (error: unknown) {
     throw new Error(toCredentialErrorMessage(error, 'Error al crear usuario', CREATE_USER_ERRORS));

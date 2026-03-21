@@ -89,6 +89,7 @@ const getDocRef = () =>
 export const loadTableConfig = async (): Promise<TableConfig> => {
   if (!firestoreEnabled) return getDefaultConfig();
   try {
+    await defaultFirestoreRuntime.ready;
     const docSnap = await getDoc(getDocRef());
     if (docSnap.exists()) {
       const data = docSnap.data() as TableConfig;
@@ -116,6 +117,7 @@ export const loadTableConfig = async (): Promise<TableConfig> => {
 export const saveTableConfig = async (config: TableConfig): Promise<void> => {
   if (!firestoreEnabled) return;
   try {
+    await defaultFirestoreRuntime.ready;
     await setDoc(getDocRef(), {
       ...config,
       lastUpdated: new Date().toISOString(),
@@ -134,29 +136,48 @@ export const subscribeToTableConfig = (callback: (config: TableConfig) => void):
     callback(getDefaultConfig());
     return () => {};
   }
-  return onSnapshot(
-    getDocRef(),
-    docSnap => {
-      if (docSnap.exists()) {
-        const data = docSnap.data() as TableConfig;
-        callback({
-          ...getDefaultConfig(),
-          ...data,
-          columns: {
-            ...DEFAULT_COLUMN_WIDTHS,
-            ...data.columns,
-          },
-          pageMargin: data.pageMargin ?? DEFAULT_PAGE_MARGIN,
-        });
-      } else {
-        callback(getDefaultConfig());
+  let active = true;
+  let unsubscribeSnapshot = () => {};
+
+  void defaultFirestoreRuntime.ready
+    .then(() => {
+      if (!active) {
+        return;
       }
-    },
-    error => {
-      tableConfigLogger.error('Error subscribing to table config', error);
+
+      unsubscribeSnapshot = onSnapshot(
+        getDocRef(),
+        docSnap => {
+          if (docSnap.exists()) {
+            const data = docSnap.data() as TableConfig;
+            callback({
+              ...getDefaultConfig(),
+              ...data,
+              columns: {
+                ...DEFAULT_COLUMN_WIDTHS,
+                ...data.columns,
+              },
+              pageMargin: data.pageMargin ?? DEFAULT_PAGE_MARGIN,
+            });
+          } else {
+            callback(getDefaultConfig());
+          }
+        },
+        error => {
+          tableConfigLogger.error('Error subscribing to table config', error);
+          callback(getDefaultConfig());
+        }
+      );
+    })
+    .catch(error => {
+      tableConfigLogger.error('Error preparing table config subscription', error);
       callback(getDefaultConfig());
-    }
-  );
+    });
+
+  return () => {
+    active = false;
+    unsubscribeSnapshot();
+  };
 };
 
 // ============================================================================

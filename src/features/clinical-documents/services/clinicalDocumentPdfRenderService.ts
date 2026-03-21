@@ -4,12 +4,12 @@ import { jsPDF } from 'jspdf';
 import { z } from 'zod';
 
 import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
-import { getFunctionsInstance } from '@/firebaseConfig';
 import { buildClinicalDocumentPrintHtml } from '@/features/clinical-documents/services/clinicalDocumentPrintHtmlBuilder';
 import {
   CLINICAL_DOCUMENT_SHEET_ID,
   waitForClinicalDocumentSheetAssets,
 } from '@/features/clinical-documents/services/clinicalDocumentPrintSupport';
+import { defaultFunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
 import { logger } from '@/services/utils/loggerService';
 
 interface RenderClinicalDocumentPdfPayload {
@@ -153,7 +153,7 @@ const generateDomSnapshotPdfBlob = async (html: string): Promise<Blob> => {
 };
 
 const generateBackendPrintStyledPdfBlob = async (html: string): Promise<Blob> => {
-  const functions = await getFunctionsInstance();
+  const functions = await defaultFunctionsRuntime.getFunctions();
   const callable = httpsCallable<RenderClinicalDocumentPdfPayload, RenderClinicalDocumentPdfResult>(
     functions,
     'renderClinicalDocumentPdfFromHtml'

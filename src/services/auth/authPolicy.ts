@@ -1,4 +1,3 @@
-import { auth } from '@/firebaseConfig';
 import { UserRole } from '@/types/auth';
 import { normalizeEmail } from '@/services/auth/authShared';
 import { getDynamicRoleForEmail, getBootstrapRoleForEmail } from '@/services/auth/authRoleLookup';
@@ -7,6 +6,7 @@ import {
   emitAuthOperationalEvent,
 } from '@/services/auth/authOperationalTelemetry';
 import { resolveAllowedRoleForEmail } from '@/services/auth/authRoleResolutionController';
+import { defaultAuthRuntime } from '@/services/firebase-runtime/authRuntime';
 
 export { clearRoleCacheForEmail } from '@/services/auth/authRoleCache';
 
@@ -50,7 +50,8 @@ export const resolveGeneralLoginAccessForEmail = async (
 };
 
 export const isCurrentUserAuthorizedForGeneralLogin = async (): Promise<boolean> => {
-  const user = auth.currentUser;
+  await defaultAuthRuntime.ready;
+  const user = defaultAuthRuntime.getCurrentUser();
   if (!user) return false;
   const { allowed } = await resolveGeneralLoginAccessForEmail(user.email || '');
   return allowed;

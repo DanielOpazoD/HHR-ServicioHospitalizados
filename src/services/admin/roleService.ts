@@ -1,8 +1,8 @@
 import { db } from '../infrastructure/db';
-import { getFunctionsInstance } from '@/firebaseConfig';
 import { httpsCallable } from 'firebase/functions';
 import { isManagedUserRole, type ManagedUserRole } from '@/shared/access/roleAccessMatrix';
 import { logger } from '@/services/utils/loggerService';
+import { defaultFunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
 
 const roleServiceLogger = logger.child('RoleService');
 
@@ -91,7 +91,7 @@ export const roleService = {
     email: string,
     role: ManagedUserRole | 'unauthorized'
   ): Promise<{ success?: boolean; message?: string }> {
-    const functions = await getFunctionsInstance();
+    const functions = await defaultFunctionsRuntime.getFunctions();
     const setUserRole = httpsCallable(functions, 'setUserRole');
     const result = await setUserRole({ email, role });
     return (result as { data?: { success?: boolean; message?: string } }).data || {};

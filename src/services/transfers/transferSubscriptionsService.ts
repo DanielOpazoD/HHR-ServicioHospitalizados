@@ -10,6 +10,7 @@ import {
   createInitialTransferSubscriptionState,
   mergeSubscribedTransfers,
 } from '@/services/transfers/transferSubscriptionController';
+import { defaultFirestoreRuntime } from '@/services/firebase-runtime/firestoreRuntime';
 import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryService';
 
 interface SubscribeToTransfersOptions {
@@ -20,10 +21,11 @@ export const subscribeToTransfersRealtime = (
   callback: (transfers: TransferRequest[]) => void,
   options: SubscribeToTransfersOptions = {}
 ): (() => void) => {
-  const activeQuery = query(getTransfersCollection(), orderBy('requestDate', 'desc'));
-  const historyQuery = query(getTransferHistoryCollection(), orderBy('requestDate', 'desc'));
-
   const state = createInitialTransferSubscriptionState();
+  let active = true;
+  let unsubscribeActive = () => {};
+  let unsubscribeHistory = () => {};
+
   const emitMergedTransfers = () => {
     callback(mergeSubscribedTransfers(state));
   };
@@ -48,25 +50,40 @@ export const subscribeToTransfersRealtime = (
     emitMergedTransfers();
   };
 
-  const unsubscribeActive = onSnapshot(
-    activeQuery,
-    snapshot => {
-      state.activeTransfers = querySnapshotToTransfers(snapshot);
-      emitMergedTransfers();
-    },
-    error => handleSubscriptionError('active', error)
-  );
+  void defaultFirestoreRuntime.ready
+    .then(() => {
+      if (!active) {
+        return;
+      }
 
-  const unsubscribeHistory = onSnapshot(
-    historyQuery,
-    snapshot => {
-      state.historyTransfers = querySnapshotToTransfers(snapshot);
-      emitMergedTransfers();
-    },
-    error => handleSubscriptionError('history', error)
-  );
+      const activeQuery = query(getTransfersCollection(), orderBy('requestDate', 'desc'));
+      const historyQuery = query(getTransferHistoryCollection(), orderBy('requestDate', 'desc'));
+
+      unsubscribeActive = onSnapshot(
+        activeQuery,
+        snapshot => {
+          state.activeTransfers = querySnapshotToTransfers(snapshot);
+          emitMergedTransfers();
+        },
+        error => handleSubscriptionError('active', error)
+      );
+
+      unsubscribeHistory = onSnapshot(
+        historyQuery,
+        snapshot => {
+          state.historyTransfers = querySnapshotToTransfers(snapshot);
+          emitMergedTransfers();
+        },
+        error => handleSubscriptionError('history', error)
+      );
+    })
+    .catch(error => {
+      handleSubscriptionError('active', error);
+      handleSubscriptionError('history', error);
+    });
 
   return () => {
+    active = false;
     unsubscribeActive();
     unsubscribeHistory();
   };

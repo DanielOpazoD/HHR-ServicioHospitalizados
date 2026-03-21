@@ -1,8 +1,8 @@
 import { httpsCallable } from 'firebase/functions';
 import { UserRole } from '@/types/auth';
-import { getFunctionsInstance } from '@/firebaseConfig';
 import { BOOTSTRAP_ADMIN_EMAILS, normalizeEmail } from '@/services/auth/authShared';
 import { isGeneralLoginRole } from '@/shared/access/roleAccessMatrix';
+import { defaultFunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
 
 type CheckUserRoleResponse = {
   role?: string;
@@ -27,7 +27,7 @@ export const getDynamicRoleForEmail = async (email: string): Promise<UserRole | 
     const cleanEmail = normalizeEmail(email);
     if (!cleanEmail) return null;
 
-    const functions = await getFunctionsInstance();
+    const functions = await defaultFunctionsRuntime.getFunctions();
     const checkUserRole = httpsCallable<Record<string, never>, CheckUserRoleResponse>(
       functions,
       'checkUserRole'

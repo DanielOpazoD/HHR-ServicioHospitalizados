@@ -8,7 +8,6 @@ import { AccessRestricted } from './components/AccessRestricted';
 import { AuditSectionTabs } from './components/audit/AuditSectionTabs';
 import { AuditDynamicPanels } from './components/audit/AuditDynamicPanels';
 import { isAdministratorEmail } from '@/constants/identities';
-import { auth } from '@/firebaseConfig';
 import { useAuditExport } from './hooks/useAuditExport';
 import { useAuditConsolidation } from './hooks/useAuditConsolidation';
 import { AUDIT_CLINICAL_SECTIONS, AUDIT_SYSTEM_SECTIONS } from '@/services/admin/auditViewConfig';
@@ -21,7 +20,7 @@ import {
 import { useAuth } from '@/context/AuthContext';
 
 export const AuditView: React.FC = () => {
-  const { role } = useAuth();
+  const { role, currentUser } = useAuth();
 
   // Use extracted hook for all audit data management
   const {
@@ -55,7 +54,7 @@ export const AuditView: React.FC = () => {
   const [, setShowComplianceInfo] = useState(false);
 
   // Admin check
-  const userEmail = auth.currentUser?.email;
+  const userEmail = currentUser?.email;
   const isAdmin = isAdministratorEmail(userEmail);
   const canSeeSensitivePanels = canAccessAuditSensitivePanels(role);
   const canExport = canExportAuditData(role);

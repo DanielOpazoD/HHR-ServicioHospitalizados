@@ -1,6 +1,6 @@
 import { FirestoreProvider } from './FirestoreProvider';
 import { IDatabaseProvider } from './types';
-import { db as firebaseDb } from '@/firebaseConfig';
+import { defaultFirestoreRuntime } from '@/services/firebase-runtime/firestoreRuntime';
 
 /**
  * Singleton instance of the configured database provider.
@@ -8,7 +8,9 @@ import { db as firebaseDb } from '@/firebaseConfig';
  * without knowing whether it's Firestore, MongoDB, or an in-memory DB for tests.
  */
 export const createFirestoreDatabaseProvider = (): IDatabaseProvider =>
-  new FirestoreProvider({ firestore: firebaseDb });
+  new FirestoreProvider({
+    getFirestore: () => defaultFirestoreRuntime.db,
+  });
 
 export const db: IDatabaseProvider = createFirestoreDatabaseProvider();
 

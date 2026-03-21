@@ -1,6 +1,6 @@
 import { ref, getBlob } from 'firebase/storage';
 
-import { getStorageInstance } from '@/firebaseConfig';
+import { defaultStorageRuntime } from '@/services/firebase-runtime/storageRuntime';
 
 const TEMPLATE_FETCH_TIMEOUT_MS = 2500;
 
@@ -22,7 +22,7 @@ const withTimeout = async <T>(promise: Promise<T>, timeoutMs: number, timeoutMes
 };
 
 export const fetchTransferTemplateBlob = async (templateName: string): Promise<Blob> => {
-  const storage = await getStorageInstance();
+  const storage = await defaultStorageRuntime.getStorage();
   const templateRef = ref(storage, `templates/${templateName}`);
   return withTimeout(
     getBlob(templateRef),

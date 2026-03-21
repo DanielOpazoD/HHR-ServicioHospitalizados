@@ -52,6 +52,10 @@ vi.mock('@/services/auth/authAccessResolution', () => ({
 import { onAuthSessionStateChange } from '@/services/auth/authSession';
 import { ensureUserRoleClaim } from '@/services/auth/authClaimSyncService';
 
+const flushObserverRegistration = async (): Promise<void> => {
+  await Promise.resolve();
+};
+
 const createFirebaseUserMock = (overrides: Record<string, unknown>) => ({
   uid: 'user-1',
   email: 'user@hospital.cl',
@@ -78,6 +82,7 @@ describe('authSession', () => {
   it('emits the authorized session state for general-login roles during auth state rehydration', async () => {
     const callback = vi.fn();
     onAuthSessionStateChange(callback);
+    await flushObserverRegistration();
 
     await authStateCallback?.(
       createFirebaseUserMock({
@@ -109,6 +114,7 @@ describe('authSession', () => {
 
     const callback = vi.fn();
     onAuthSessionStateChange(callback);
+    await flushObserverRegistration();
 
     await authStateCallback?.(
       createFirebaseUserMock({
@@ -137,6 +143,7 @@ describe('authSession', () => {
     mockCheckSharedCensusAccess.mockResolvedValue({ authorized: true });
 
     onAuthSessionStateChange(callback);
+    await flushObserverRegistration();
 
     await authStateCallback?.(
       createFirebaseUserMock({
@@ -161,6 +168,7 @@ describe('authSession', () => {
     const callback = vi.fn();
     mockResolveFirebaseUserRole.mockResolvedValue(null);
     onAuthSessionStateChange(callback);
+    await flushObserverRegistration();
 
     await authStateCallback?.(
       createFirebaseUserMock({
@@ -181,6 +189,7 @@ describe('authSession', () => {
   it('emits anonymous signature session state explicitly', async () => {
     const callback = vi.fn();
     onAuthSessionStateChange(callback);
+    await flushObserverRegistration();
 
     await authStateCallback?.(
       createFirebaseUserMock({
