@@ -1,4 +1,5 @@
 import React from 'react';
+import { createReminderUseCases } from '@/application/reminders/reminderUseCases';
 import { useAuth } from '@/context/AuthContext';
 import { useConfirmDialog, useNotification } from '@/context/UIContext';
 import {
@@ -6,12 +7,7 @@ import {
   validateReminderDraft,
   type ReminderDraftInput,
 } from '@/domain/reminders';
-import {
-  ReminderImageService,
-  ReminderReadService,
-  ReminderRepository,
-  resolveReminderAdminErrorMessage,
-} from '@/services/reminders';
+import { resolveReminderAdminErrorMessage } from '@/services/reminders';
 import type { Reminder, ReminderReadReceipt } from '@/types/reminders';
 
 const buildReminderId = (): string => {
@@ -33,6 +29,7 @@ type ReminderSaveResult =
   | 'permission_denied_image_upload';
 
 export const useReminderAdmin = () => {
+  const reminderUseCases = React.useMemo(() => createReminderUseCases(), []);
   const { currentUser } = useAuth();
   const { success, error: notifyError } = useNotification();
   const { confirm } = useConfirmDialog();
@@ -49,20 +46,25 @@ export const useReminderAdmin = () => {
 
   React.useEffect(() => {
     setLoadError(null);
-    const unsubscribe = ReminderRepository.subscribe(
-      nextReminders => {
+    const unsubscribe = reminderUseCases.subscribeToReminderFeed({
+      onOutcome: outcome => {
+        const nextReminders = outcome.data;
         setReminders(nextReminders);
         setLoading(false);
-      },
-      {
-        onError: error => {
+        if (outcome.status === 'degraded' || outcome.status === 'failed') {
           setLoading(false);
-          setLoadError(resolveReminderAdminErrorMessage(error, { operation: 'firestore_read' }));
-        },
-      }
-    );
+          setLoadError(
+            outcome.userSafeMessage ||
+              outcome.issues[0]?.userSafeMessage ||
+              resolveReminderAdminErrorMessage(outcome.issues[0]?.message, {
+                operation: 'firestore_read',
+              })
+          );
+        }
+      },
+    });
     return unsubscribe;
-  }, []);
+  }, [reminderUseCases]);
 
   const openCreateForm = React.useCallback(() => {
     setFormReminder(null);
@@ -111,59 +113,62 @@ export const useReminderAdmin = () => {
           formReminder
         );
 
-        const createResult = await ReminderRepository.createWithResult({
+        const createResult = await reminderUseCases.createReminder({
           ...reminder,
           imageUrl: removeImage ? undefined : reminder.imageUrl,
           imagePath: removeImage ? undefined : formReminder?.imagePath,
         });
 
         if (createResult.status !== 'success') {
-          throw createResult.error;
+          throw new Error(createResult.userSafeMessage || 'No se pudo crear el aviso.');
         }
 
         let saveResult: ReminderSaveResult = 'saved_without_image';
 
         if (nextImageWasRemoved && previousImagePath) {
-          try {
-            await ReminderImageService.deleteImage(previousImagePath);
-          } catch (error) {
+          const deleteImageResult = await reminderUseCases.deleteReminderImage(previousImagePath);
+          if (deleteImageResult.status !== 'success') {
             notifyError(
               'Avisos al personal',
-              resolveReminderAdminErrorMessage(error, { operation: 'image_delete' })
+              deleteImageResult.userSafeMessage || 'No se pudo eliminar la imagen del aviso.'
             );
           }
         }
 
         if (imageFile) {
-          try {
-            const upload = await ReminderImageService.uploadImage(reminderId, imageFile);
-            const updateResult = await ReminderRepository.updateWithResult(reminderId, {
-              imageUrl: upload.imageUrl,
-              imagePath: upload.imagePath,
+          const uploadResult = await reminderUseCases.uploadReminderImage({
+            reminderId,
+            file: imageFile,
+          });
+          if (uploadResult.status === 'success' && uploadResult.data) {
+            const updateResult = await reminderUseCases.updateReminder(reminderId, {
+              imageUrl: uploadResult.data.imageUrl,
+              imagePath: uploadResult.data.imagePath,
               updatedAt: new Date().toISOString(),
             });
 
             if (updateResult.status !== 'success') {
-              throw updateResult.error;
+              throw new Error(updateResult.userSafeMessage || 'No se pudo actualizar el aviso.');
             }
 
-            if (previousImagePath && previousImagePath !== upload.imagePath) {
-              try {
-                await ReminderImageService.deleteImage(previousImagePath);
-              } catch (error) {
+            if (previousImagePath && previousImagePath !== uploadResult.data.imagePath) {
+              const previousDeleteResult =
+                await reminderUseCases.deleteReminderImage(previousImagePath);
+              if (previousDeleteResult.status !== 'success') {
                 notifyError(
                   'Avisos al personal',
-                  resolveReminderAdminErrorMessage(error, { operation: 'image_delete' })
+                  previousDeleteResult.userSafeMessage ||
+                    'No se pudo eliminar la imagen anterior del aviso.'
                 );
               }
             }
 
             saveResult = 'saved_with_image';
-          } catch (error) {
+          } else {
             saveResult = 'permission_denied_image_upload';
             notifyError(
               'Avisos al personal',
-              resolveReminderAdminErrorMessage(error, { operation: 'image_upload' })
+              uploadResult.userSafeMessage || 'No se pudo subir la imagen del aviso.'
             );
           }
         }
@@ -188,6 +193,7 @@ export const useReminderAdmin = () => {
       currentUser?.uid,
       formReminder,
       notifyError,
+      reminderUseCases,
       success,
     ]
   );
@@ -206,11 +212,11 @@ export const useReminderAdmin = () => {
 
       setProcessing(true);
       try {
-        const removeResult = await ReminderRepository.removeWithResult(reminder.id);
+        const removeResult = await reminderUseCases.deleteReminder(reminder.id);
         if (removeResult.status !== 'success') {
-          throw removeResult.error;
+          throw new Error(removeResult.userSafeMessage || 'No se pudo eliminar el aviso.');
         }
-        await ReminderImageService.deleteImage(reminder.imagePath);
+        await reminderUseCases.deleteReminderImage(reminder.imagePath);
         success('Avisos al personal', 'El aviso fue eliminado.');
       } catch (error) {
         notifyError(
@@ -221,7 +227,7 @@ export const useReminderAdmin = () => {
         setProcessing(false);
       }
     },
-    [confirm, notifyError, success]
+    [confirm, notifyError, reminderUseCases, success]
   );
 
   const openReadStatus = React.useCallback(
@@ -229,19 +235,19 @@ export const useReminderAdmin = () => {
       setReceiptsReminder(reminder);
       setReceiptsLoading(true);
       try {
-        const result = await ReminderReadService.getReadReceiptsWithResult(reminder.id);
-        setReadReceipts(result.receipts);
+        const result = await reminderUseCases.getReminderReadReceipts(reminder.id);
+        setReadReceipts(result.data);
         if (result.status !== 'success') {
           notifyError(
             'Avisos al personal',
-            resolveReminderAdminErrorMessage(result.error, { operation: 'firestore_read' })
+            result.userSafeMessage || 'No se pudo cargar el detalle de lecturas.'
           );
         }
       } finally {
         setReceiptsLoading(false);
       }
     },
-    [notifyError]
+    [notifyError, reminderUseCases]
   );
 
   const closeReadStatus = React.useCallback(() => {

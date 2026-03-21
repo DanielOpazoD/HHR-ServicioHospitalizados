@@ -1,12 +1,17 @@
 import { collection, doc, type DocumentReference, Timestamp } from 'firebase/firestore';
-import { db } from '@/firebaseConfig';
 import { DailyRecord } from '@/types/domain/dailyRecord';
 import { COLLECTIONS, getActiveHospitalId, HOSPITAL_COLLECTIONS } from '@/constants/firestorePaths';
+import { defaultFirestoreRuntime } from '@/services/firebase-runtime/firestoreRuntime';
 import { migrateLegacyData } from '@/services/repositories/dataMigration';
 import { normalizeUnknownDailyRecordStaffing } from '@/services/staff/dailyRecordStaffing';
 
 export const getRecordsCollection = () =>
-  collection(db, COLLECTIONS.HOSPITALS, getActiveHospitalId(), HOSPITAL_COLLECTIONS.DAILY_RECORDS);
+  collection(
+    defaultFirestoreRuntime.db,
+    COLLECTIONS.HOSPITALS,
+    getActiveHospitalId(),
+    HOSPITAL_COLLECTIONS.DAILY_RECORDS
+  );
 
 export const getRecordDocRef = (date: string): DocumentReference =>
   doc(getRecordsCollection(), date);

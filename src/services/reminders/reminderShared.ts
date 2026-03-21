@@ -1,7 +1,10 @@
-import { collection, doc } from 'firebase/firestore';
-import { db } from '@/firebaseConfig';
+import type { CollectionReference, DocumentReference } from 'firebase/firestore';
 import { COLLECTIONS, getActiveHospitalId, HOSPITAL_COLLECTIONS } from '@/constants/firestorePaths';
 import { ReminderReadReceiptSchema, ReminderSchema } from '@/schemas/reminderSchemas';
+import {
+  defaultReminderFirestoreRuntime,
+  type ReminderFirestoreRuntime,
+} from '@/services/firebase-runtime/reminderRuntime';
 import type { Reminder, ReminderReadReceipt } from '@/types/reminders';
 
 export const REMINDER_IMAGE_MAX_BYTES = 2 * 1024 * 1024;
@@ -9,14 +12,26 @@ export const REMINDER_IMAGE_MAX_BYTES = 2 * 1024 * 1024;
 export const getRemindersCollectionPath = (hospitalId: string = getActiveHospitalId()) =>
   `${COLLECTIONS.HOSPITALS}/${hospitalId}/${HOSPITAL_COLLECTIONS.REMINDERS}`;
 
-export const getRemindersCollectionRef = () =>
-  collection(db, COLLECTIONS.HOSPITALS, getActiveHospitalId(), HOSPITAL_COLLECTIONS.REMINDERS);
+export const getRemindersCollectionRef = (
+  runtime: ReminderFirestoreRuntime = defaultReminderFirestoreRuntime
+): CollectionReference =>
+  runtime.collection(
+    runtime.firestore,
+    COLLECTIONS.HOSPITALS,
+    getActiveHospitalId(),
+    HOSPITAL_COLLECTIONS.REMINDERS
+  );
 
-export const getReminderDocRef = (reminderId: string) =>
-  doc(getRemindersCollectionRef(), reminderId);
+export const getReminderDocRef = (
+  reminderId: string,
+  runtime: ReminderFirestoreRuntime = defaultReminderFirestoreRuntime
+): DocumentReference => runtime.doc(getRemindersCollectionRef(runtime), reminderId);
 
-export const getReminderReadReceiptsCollectionRef = (reminderId: string) =>
-  collection(getReminderDocRef(reminderId), 'readReceipts');
+export const getReminderReadReceiptsCollectionRef = (
+  reminderId: string,
+  runtime: ReminderFirestoreRuntime = defaultReminderFirestoreRuntime
+): CollectionReference =>
+  runtime.collection(getReminderDocRef(reminderId, runtime), 'readReceipts');
 
 export const buildReminderReadReceiptId = (
   userId: string,
@@ -24,8 +39,12 @@ export const buildReminderReadReceiptId = (
   dateKey: string
 ) => `${userId}__${dateKey}__${shift}`;
 
-export const getReminderReadReceiptDocRef = (reminderId: string, receiptId: string) =>
-  doc(getReminderReadReceiptsCollectionRef(reminderId), receiptId);
+export const getReminderReadReceiptDocRef = (
+  reminderId: string,
+  receiptId: string,
+  runtime: ReminderFirestoreRuntime = defaultReminderFirestoreRuntime
+): DocumentReference =>
+  runtime.doc(getReminderReadReceiptsCollectionRef(reminderId, runtime), receiptId);
 
 export const normalizeReminderRecord = (record: unknown, fallbackId?: string): Reminder | null => {
   const parsed = ReminderSchema.safeParse(record);

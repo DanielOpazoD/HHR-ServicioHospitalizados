@@ -4,8 +4,11 @@ import {
   failWithCode,
   ok,
 } from '@/features/census/controllers/controllerResult';
-import { ACTIONS, canDoAction, isAdmin } from '@/utils/permissions';
-import { canResetOrDeleteDailyRecord } from '@/shared/access/operationalAccessPolicy';
+import {
+  canDeleteTodayDailyRecord,
+  canResetOrDeleteDailyRecord,
+  isAdminAppRole,
+} from '@/shared/access/operationalAccessPolicy';
 
 export interface ResetDayPermissionResult {
   canDeleteRecord: boolean;
@@ -48,7 +51,7 @@ export const resolveResetDayPermission = ({
     };
   }
 
-  if (isAdmin(role)) {
+  if (isAdminAppRole(role)) {
     return {
       canDeleteRecord: true,
       denialTitle: DELETE_DENIED_TITLE,
@@ -64,7 +67,7 @@ export const resolveResetDayPermission = ({
     };
   }
 
-  if (!canDoAction(role, ACTIONS.RECORD_DELETE)) {
+  if (!canDeleteTodayDailyRecord(role)) {
     return {
       canDeleteRecord: false,
       denialTitle: DELETE_DENIED_TITLE,

@@ -6,7 +6,7 @@
 import React from 'react';
 import { LogOut } from 'lucide-react';
 import { UserRole } from '@/hooks/useAuthState';
-import { getRoleDisplayName } from '@/utils/permissions';
+import { getRoleDisplayLabel } from '@/shared/access/operationalAccessPolicy';
 import { useDropdownMenu } from '@/hooks/useDropdownMenu';
 
 interface UserMenuProps {
@@ -48,7 +48,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
               {userEmail}
             </p>
             <p className="mt-1.5 text-xs text-slate-600">
-              Rol: <span className="font-semibold text-slate-800">{getRoleDisplayName(role)}</span>
+              Rol: <span className="font-semibold text-slate-800">{getRoleDisplayLabel(role)}</span>
             </p>
             <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
               <span

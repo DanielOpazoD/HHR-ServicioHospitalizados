@@ -10,15 +10,20 @@ import {
   getDocs,
   writeBatch,
 } from 'firebase/firestore';
-import { db } from '@/firebaseConfig';
 import { Bookmark, BookmarkInput } from '@/types/bookmarks';
 import { logger } from '@/services/utils/loggerService';
 import { COLLECTIONS, HOSPITAL_COLLECTIONS, getActiveHospitalId } from '@/constants/firestorePaths';
+import { defaultFirestoreRuntime } from '@/services/firebase-runtime/firestoreRuntime';
 
 const bookmarkLogger = logger.child('BookmarkService');
 
 const getBookmarksCollection = () =>
-  collection(db, COLLECTIONS.HOSPITALS, getActiveHospitalId(), HOSPITAL_COLLECTIONS.BOOKMARKS);
+  collection(
+    defaultFirestoreRuntime.db,
+    COLLECTIONS.HOSPITALS,
+    getActiveHospitalId(),
+    HOSPITAL_COLLECTIONS.BOOKMARKS
+  );
 
 /**
  * Subscribe to bookmarks list in real-time
@@ -116,7 +121,7 @@ export const importBookmarksFromJson = async (jsonContent: string) => {
     const items = JSON.parse(jsonContent);
     if (!Array.isArray(items)) throw new Error('Formato inválido');
 
-    const batch = writeBatch(db);
+    const batch = writeBatch(defaultFirestoreRuntime.db);
     const colRef = getBookmarksCollection();
 
     // Note: This adds to existing ones. If we want to replace, we should delete first.
@@ -146,7 +151,7 @@ export const importBookmarksFromJson = async (jsonContent: string) => {
  */
 export const reorderBookmarks = async (bookmarks: Bookmark[]) => {
   try {
-    const batch = writeBatch(db);
+    const batch = writeBatch(defaultFirestoreRuntime.db);
     const colRef = getBookmarksCollection();
 
     bookmarks.forEach((bookmark, index) => {
@@ -176,7 +181,7 @@ export interface BookmarkBarPreferences {
 
 const getPreferencesDocRef = () =>
   doc(
-    db,
+    defaultFirestoreRuntime.db,
     COLLECTIONS.HOSPITALS,
     getActiveHospitalId(),
     HOSPITAL_COLLECTIONS.BOOKMARKS,

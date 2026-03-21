@@ -20,9 +20,9 @@ import {
   limit,
   Timestamp,
 } from 'firebase/firestore';
-import { db, auth } from '@/firebaseConfig';
 import { BackupFile, BackupFilePreview, BackupFilters } from '@/types/backup';
 import { COLLECTIONS, getActiveHospitalId } from '@/constants/firestorePaths';
+import { defaultBackupFirestoreRuntime } from '@/services/firebase-runtime/backupRuntime';
 import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryService';
 import {
   createBackupCrudFailure,
@@ -39,7 +39,12 @@ import {
 // ============= Collection Reference =============
 
 const getBackupCollection = () =>
-  collection(db, COLLECTIONS.HOSPITALS, getActiveHospitalId(), 'backupFiles');
+  collection(
+    defaultBackupFirestoreRuntime.db,
+    COLLECTIONS.HOSPITALS,
+    getActiveHospitalId(),
+    'backupFiles'
+  );
 
 // ============= Helper Functions =============
 
@@ -47,7 +52,7 @@ const getBackupCollection = () =>
  * Get current user info for audit trail
  */
 const getCurrentUserInfo = () => {
-  const user = auth.currentUser;
+  const user = defaultBackupFirestoreRuntime.auth.currentUser;
   if (!user) {
     throw new Error('Usuario no autenticado');
   }

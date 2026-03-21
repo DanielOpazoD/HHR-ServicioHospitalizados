@@ -1,5 +1,5 @@
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '@/firebaseConfig';
+import { defaultFirestoreRuntime } from '@/services/firebase-runtime/firestoreRuntime';
 import type { WhatsAppConfig } from '@/types/whatsapp';
 import { logger } from '@/services/utils/loggerService';
 
@@ -21,7 +21,7 @@ export const getDefaultWhatsAppConfig = (): WhatsAppConfig => ({
 
 export async function getWhatsAppConfig(): Promise<WhatsAppConfig | null> {
   try {
-    const docRef = doc(db, 'whatsapp', 'config');
+    const docRef = doc(defaultFirestoreRuntime.db, 'whatsapp', 'config');
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
@@ -37,7 +37,7 @@ export async function getWhatsAppConfig(): Promise<WhatsAppConfig | null> {
 
 export async function updateWhatsAppConfig(config: Partial<WhatsAppConfig>): Promise<boolean> {
   try {
-    const docRef = doc(db, 'whatsapp', 'config');
+    const docRef = doc(defaultFirestoreRuntime.db, 'whatsapp', 'config');
     await setDoc(docRef, config, { merge: true });
     return true;
   } catch (_error) {

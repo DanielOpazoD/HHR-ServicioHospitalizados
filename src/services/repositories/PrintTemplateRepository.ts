@@ -1,14 +1,14 @@
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
-import { db } from '@/firebaseConfig';
 import { PrintTemplateConfig } from '@/types/printTemplates';
 import { COLLECTIONS, HOSPITAL_COLLECTIONS, getActiveHospitalId } from '@/constants/firestorePaths';
+import { defaultFirestoreRuntime } from '@/services/firebase-runtime/firestoreRuntime';
 import { logger } from '@/services/utils/loggerService';
 
 const printTemplateRepositoryLogger = logger.child('PrintTemplateRepository');
 
 const getTemplateRef = (templateId: string) =>
   doc(
-    db,
+    defaultFirestoreRuntime.db,
     COLLECTIONS.HOSPITALS,
     getActiveHospitalId(),
     HOSPITAL_COLLECTIONS.PRINT_TEMPLATES,

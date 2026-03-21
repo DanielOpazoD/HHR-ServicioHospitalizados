@@ -4,7 +4,7 @@
  */
 
 import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from 'firebase/storage';
-import { auth, firebaseReady, getStorageInstance } from '@/firebaseConfig';
+import { defaultBackupStorageRuntime } from '@/services/firebase-runtime/backupRuntime';
 import {
   createListYears,
   createListMonths,
@@ -105,14 +105,14 @@ export const uploadCensusWithResult = async (
   date: string
 ): Promise<BackupStorageMutationResult<string>> => {
   try {
-    await firebaseReady;
-    const storage = await getStorageInstance();
+    await defaultBackupStorageRuntime.ready;
+    const storage = await defaultBackupStorageRuntime.getStorage();
     assertStorageAvailable(storage, 'CensusStorage', 'uploadCensus');
 
     const filePath = generateCensusPath(date);
     const storageRef = ref(storage, filePath);
 
-    const user = auth.currentUser;
+    const user = defaultBackupStorageRuntime.auth.currentUser;
     const metadata = {
       contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       customMetadata: {
@@ -161,8 +161,8 @@ export const checkCensusExistsDetailed = async (date: string): Promise<StorageLo
     'censusExists',
     async (): Promise<StorageLookupResult> => {
       try {
-        await firebaseReady;
-        const storage = await getStorageInstance();
+        await defaultBackupStorageRuntime.ready;
+        const storage = await defaultBackupStorageRuntime.getStorage();
         const monthRef = ref(storage, generateCensusMonthPath(date));
         const expectedFilename = generateCensusFilename(date);
         const result = await listAll(monthRef);
@@ -226,8 +226,8 @@ export const deleteCensusFile = async (date: string): Promise<void> => {
 export const deleteCensusFileWithResult = async (
   date: string
 ): Promise<BackupStorageMutationResult> => {
-  await firebaseReady;
-  const storage = await getStorageInstance();
+  await defaultBackupStorageRuntime.ready;
+  const storage = await defaultBackupStorageRuntime.getStorage();
   let filePath: string;
   try {
     filePath = generateCensusPath(date);

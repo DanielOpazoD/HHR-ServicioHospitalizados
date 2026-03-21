@@ -1,7 +1,6 @@
 import { doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
 
 import { SETTINGS_DOCS, getSettingsDocPath } from '@/constants/firestorePaths';
-import { db } from '@/firebaseConfig';
 import {
   type ClinicalDocumentIndicationSpecialtyId,
   normalizeClinicalDocumentIndicationTextKey,
@@ -13,6 +12,7 @@ import {
   type ClinicalDocumentIndicationsCatalog,
   type RawClinicalDocumentIndicationsCatalog,
 } from '@/features/clinical-documents/controllers/clinicalDocumentIndicationsCatalogController';
+import { defaultFirestoreRuntime } from '@/services/firebase-runtime/firestoreRuntime';
 import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryService';
 
 export type {
@@ -27,7 +27,10 @@ export {
 } from '@/features/clinical-documents/controllers/clinicalDocumentIndicationsCatalogController';
 
 const SETTINGS_DOC_PATH = (hospitalId?: string) =>
-  doc(db, getSettingsDocPath(SETTINGS_DOCS.CLINICAL_DOCUMENT_INDICATIONS, hospitalId));
+  doc(
+    defaultFirestoreRuntime.db,
+    getSettingsDocPath(SETTINGS_DOCS.CLINICAL_DOCUMENT_INDICATIONS, hospitalId)
+  );
 
 export const loadClinicalDocumentIndicationsCatalog = async (
   hospitalId?: string

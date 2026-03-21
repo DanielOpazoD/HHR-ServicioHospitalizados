@@ -5,7 +5,7 @@ import { ReminderCenterProvider } from '@/context/ReminderCenterContext';
 import { useReminderCenter } from '@/hooks/useReminders';
 
 const subscribeMock = vi.fn();
-const hasUserReadForShiftWindowMock = vi.fn();
+const getUserShiftReadStateMock = vi.fn();
 const markAsReadWithResultMock = vi.fn();
 let mockShift: 'day' | 'night' = 'day';
 
@@ -35,11 +35,15 @@ vi.mock('@/context/AuthContext', () => ({
 }));
 
 vi.mock('@/services/reminders', () => ({
+  ReminderImageService: {
+    uploadImage: vi.fn(),
+    deleteImage: vi.fn(),
+  },
   ReminderRepository: {
     subscribe: (...args: unknown[]) => subscribeMock(...args),
   },
   ReminderReadService: {
-    hasUserReadForShiftWindow: (...args: unknown[]) => hasUserReadForShiftWindowMock(...args),
+    getUserShiftReadState: (...args: unknown[]) => getUserShiftReadStateMock(...args),
     markAsReadWithResult: (...args: unknown[]) => markAsReadWithResultMock(...args),
     buildReceipt: vi.fn(({ userId, userName, shift, dateKey }) => ({
       userId,
@@ -49,6 +53,7 @@ vi.mock('@/services/reminders', () => ({
       readAt: '2026-03-15T12:00:00.000Z',
     })),
   },
+  resolveReminderAdminErrorMessage: vi.fn(() => 'No fue posible cargar avisos.'),
 }));
 
 vi.mock('@/services/admin/attributionService', () => ({
@@ -91,7 +96,7 @@ describe('ReminderCenterProvider', () => {
     vi.clearAllMocks();
     mockShift = 'day';
     window.localStorage.clear();
-    hasUserReadForShiftWindowMock.mockResolvedValue(false);
+    getUserShiftReadStateMock.mockResolvedValue({ status: 'unread' });
     markAsReadWithResultMock.mockResolvedValue({ status: 'success' });
     subscribeMock.mockImplementation((callback: (reminders: unknown[]) => void) => {
       callback([reminder]);
@@ -144,9 +149,10 @@ describe('ReminderCenterProvider', () => {
   });
 
   it('vuelve a mostrar el aviso si cambia el turno o la fecha de lectura', async () => {
-    hasUserReadForShiftWindowMock.mockImplementation(
-      async (_reminderId: string, _userId: string, shift: string, dateKey: string) =>
-        shift === 'day' && dateKey === getCurrentDateKey()
+    getUserShiftReadStateMock.mockImplementation(
+      async (_reminderId: string, _userId: string, shift: string, dateKey: string) => ({
+        status: shift === 'day' && dateKey === getCurrentDateKey() ? 'read' : 'unread',
+      })
     );
 
     render(
@@ -156,7 +162,7 @@ describe('ReminderCenterProvider', () => {
     );
 
     await waitFor(() => {
-      expect(hasUserReadForShiftWindowMock).toHaveBeenCalledWith(
+      expect(getUserShiftReadStateMock).toHaveBeenCalledWith(
         'rem-1',
         'user-1',
         'day',

@@ -1,5 +1,5 @@
 import { getDownloadURL, getMetadata, listAll, ref, type StorageReference } from 'firebase/storage';
-import { firebaseReady, getStorageInstance } from '@/firebaseConfig';
+import { defaultBackupStorageRuntime } from '@/services/firebase-runtime/backupRuntime';
 import {
   classifyStorageError,
   isExpectedStorageLookupMiss,
@@ -29,8 +29,8 @@ import type {
 export const createListYears = (storageRoot: string) => {
   return async (): Promise<string[]> => {
     try {
-      await firebaseReady;
-      const storage = await getStorageInstance();
+      await defaultBackupStorageRuntime.ready;
+      const storage = await defaultBackupStorageRuntime.getStorage();
 
       const timeoutPromise = new Promise<string[]>(resolve =>
         setTimeout(() => resolve([]), DEFAULT_LIST_TIMEOUT_MS)
@@ -73,8 +73,8 @@ export const createListYears = (storageRoot: string) => {
 export const createListMonths = (storageRoot: string) => {
   return async (year: string): Promise<MonthInfo[]> => {
     try {
-      await firebaseReady;
-      const storage = await getStorageInstance();
+      await defaultBackupStorageRuntime.ready;
+      const storage = await defaultBackupStorageRuntime.getStorage();
 
       const timeoutPromise = new Promise<MonthInfo[]>(resolve =>
         setTimeout(() => resolve([]), DEFAULT_LIST_TIMEOUT_MS)
@@ -197,8 +197,8 @@ export const createListFilesInMonthWithReport = <
     const report = createStorageListReport();
 
     try {
-      await firebaseReady;
-      const storage = await getStorageInstance();
+      await defaultBackupStorageRuntime.ready;
+      const storage = await defaultBackupStorageRuntime.getStorage();
 
       const timeoutPromise = new Promise<StorageListResult<T>>(resolve =>
         setTimeout(() => {

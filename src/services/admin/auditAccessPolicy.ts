@@ -1,10 +1,15 @@
 import { UserRole } from '@/types/auth';
-import { ACTIONS, canDoAction, canViewModule, isAdmin } from '@/utils/permissions';
+import {
+  canAccessAuditSensitivePanelsForRole,
+  canAccessAuditViewForRole,
+  canExportAuditDataForRole,
+} from '@/shared/access/operationalAccessPolicy';
 
 export const canAccessAuditView = (role: UserRole | undefined): boolean =>
-  canViewModule(role, 'AUDIT') && canDoAction(role, ACTIONS.AUDIT_READ);
+  canAccessAuditViewForRole(role);
 
-export const canAccessAuditSensitivePanels = (role: UserRole | undefined): boolean => isAdmin(role);
+export const canAccessAuditSensitivePanels = (role: UserRole | undefined): boolean =>
+  canAccessAuditSensitivePanelsForRole(role);
 
 export const canExportAuditData = (role: UserRole | undefined): boolean =>
-  canDoAction(role, ACTIONS.EXPORT_EXCEL) || canDoAction(role, ACTIONS.EXPORT_PDF);
+  canExportAuditDataForRole(role);

@@ -10,7 +10,7 @@
  */
 
 import { ref, uploadBytes, getDownloadURL, getMetadata } from 'firebase/storage';
-import { auth, firebaseReady, getStorageInstance } from '@/firebaseConfig';
+import { defaultBackupStorageRuntime } from '@/services/firebase-runtime/backupRuntime';
 import {
   createListYears,
   createListMonths,
@@ -98,8 +98,8 @@ const parseFilePath = (path: string): { date: string; year: string; month: strin
  */
 export const uploadCudyrExcel = async (excelBlob: Blob, date: string): Promise<string> => {
   // console.info(`[CudyrStorage] Starting upload for ${date}...`);
-  await firebaseReady;
-  const storage = await getStorageInstance();
+  await defaultBackupStorageRuntime.ready;
+  const storage = await defaultBackupStorageRuntime.getStorage();
   assertStorageAvailable(storage, 'CudyrStorage', 'uploadCudyrExcel');
 
   const filePath = generateCudyrPath(date);
@@ -125,7 +125,7 @@ export const uploadCudyrExcel = async (excelBlob: Blob, date: string): Promise<s
 
   const storageRef = ref(storage, filePath);
 
-  const user = auth.currentUser;
+  const user = defaultBackupStorageRuntime.auth.currentUser;
   const metadata = {
     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     customMetadata: {
@@ -156,8 +156,8 @@ export const cudyrExistsDetailed = async (date: string): Promise<StorageLookupRe
     'cudyrExists',
     async (): Promise<StorageLookupResult> => {
       try {
-        await firebaseReady;
-        const storage = await getStorageInstance();
+        await defaultBackupStorageRuntime.ready;
+        const storage = await defaultBackupStorageRuntime.getStorage();
 
         const filePath = generateCudyrPath(date);
         const storageRef = ref(storage, filePath);
@@ -208,8 +208,8 @@ export const cudyrExistsDetailed = async (date: string): Promise<StorageLookupRe
  * Delete a CUDYR file from Storage
  */
 export const deleteCudyrFile = async (date: string): Promise<void> => {
-  await firebaseReady;
-  const storage = await getStorageInstance();
+  await defaultBackupStorageRuntime.ready;
+  const storage = await defaultBackupStorageRuntime.getStorage();
   const { deleteObject } = await import('firebase/storage');
   let filePath: string;
   try {

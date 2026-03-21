@@ -7,8 +7,8 @@ import {
   type DocumentData,
   type DocumentReference,
 } from 'firebase/firestore';
-import { db } from '@/firebaseConfig';
 import { COLLECTIONS, getActiveHospitalId, HOSPITAL_COLLECTIONS } from '@/constants/firestorePaths';
+import { defaultFirestoreRuntime } from '@/services/firebase-runtime/firestoreRuntime';
 import { createOperationalError } from '@/services/observability/operationalError';
 import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryService';
 import { getRecordDocRef } from '@/services/storage/firestore/firestoreShared';
@@ -118,7 +118,7 @@ export const saveHistorySnapshot = async (date: string): Promise<void> => {
 
 export const createDeletedRecordRef = (date: string): DocumentReference =>
   doc(
-    db,
+    defaultFirestoreRuntime.db,
     COLLECTIONS.HOSPITALS,
     getActiveHospitalId(),
     HOSPITAL_COLLECTIONS.DELETED_RECORDS,

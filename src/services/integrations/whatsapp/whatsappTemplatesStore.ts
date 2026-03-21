@@ -1,5 +1,5 @@
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
-import { db } from '@/firebaseConfig';
+import { defaultFirestoreRuntime } from '@/services/firebase-runtime/firestoreRuntime';
 import { logger } from '@/services/utils/loggerService';
 
 const whatsappTemplatesLogger = logger.child('WhatsAppTemplatesStore');
@@ -55,7 +55,7 @@ export function getDefaultTemplates(): MessageTemplate[] {
 
 export async function getMessageTemplates(): Promise<MessageTemplate[]> {
   try {
-    const docRef = doc(db, 'whatsapp', 'templates');
+    const docRef = doc(defaultFirestoreRuntime.db, 'whatsapp', 'templates');
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
@@ -71,7 +71,7 @@ export async function getMessageTemplates(): Promise<MessageTemplate[]> {
 
 export async function saveMessageTemplates(templates: MessageTemplate[]): Promise<boolean> {
   try {
-    const docRef = doc(db, 'whatsapp', 'templates');
+    const docRef = doc(defaultFirestoreRuntime.db, 'whatsapp', 'templates');
     await setDoc(docRef, { templates }, { merge: true });
     return true;
   } catch (_error) {

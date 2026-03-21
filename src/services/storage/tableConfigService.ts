@@ -4,8 +4,8 @@
  */
 
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
-import { db } from '@/firebaseConfig';
 import { SETTINGS_DOCS, getSettingsDocPath } from '@/constants/firestorePaths';
+import { defaultFirestoreRuntime } from '@/services/firebase-runtime/firestoreRuntime';
 import { safeJsonParse } from '@/utils/jsonUtils';
 import { logger } from '@/services/utils/loggerService';
 
@@ -80,7 +80,8 @@ export const getDefaultConfig = (): TableConfig => ({
 // Firebase Operations
 // ============================================================================
 
-const getDocRef = () => doc(db, getSettingsDocPath(SETTINGS_DOCS.TABLE_CONFIG));
+const getDocRef = () =>
+  doc(defaultFirestoreRuntime.db, getSettingsDocPath(SETTINGS_DOCS.TABLE_CONFIG));
 
 /**
  * Load table configuration from Firestore

@@ -1,12 +1,12 @@
 import React from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { createReminderUseCases } from '@/application/reminders/reminderUseCases';
 import {
   filterVisibleReminders,
   getReminderUnreadCount,
   hasUrgentVisibleReminders,
   sortRemindersByPriority,
 } from '@/shared/reminders/reminderVisibility';
-import { ReminderReadService, ReminderRepository } from '@/services/reminders';
 import { getCurrentShift } from '@/services/admin/attributionService';
 import type { Reminder, ReminderShift } from '@/types/reminders';
 import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryService';
@@ -39,6 +39,7 @@ interface ReminderCenterContextValue {
 const ReminderCenterContext = React.createContext<ReminderCenterContextValue | undefined>(
   undefined
 );
+const reminderUseCases = createReminderUseCases();
 
 export const ReminderCenterProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser, role, isAuthenticated } = useAuth();
@@ -97,24 +98,28 @@ export const ReminderCenterProvider: React.FC<{ children: React.ReactNode }> = (
 
     setLoading(true);
     setIsAvailable(true);
-    const unsubscribe = ReminderRepository.subscribe(
-      nextReminders => {
+    const unsubscribe = reminderUseCases.subscribeToReminderFeed({
+      onOutcome: outcome => {
+        const nextReminders = outcome.data;
         setReminders(nextReminders);
         setLoading(false);
-        recordOperationalTelemetry(
-          {
-            category: 'reminders',
-            operation: 'center_subscription_ready',
-            status: 'success',
-            context: {
-              count: nextReminders.length,
+        if (outcome.status === 'success') {
+          setIsAvailable(true);
+          recordOperationalTelemetry(
+            {
+              category: 'reminders',
+              operation: 'center_subscription_ready',
+              status: 'success',
+              context: {
+                count: nextReminders.length,
+              },
             },
-          },
-          { allowSuccess: true }
-        );
-      },
-      {
-        onError: (_error, _kind) => {
+            { allowSuccess: true }
+          );
+          return;
+        }
+
+        if (outcome.status === 'degraded' || outcome.status === 'failed') {
           setLoading(false);
           setIsAvailable(false);
           setIsOpen(false);
@@ -122,11 +127,13 @@ export const ReminderCenterProvider: React.FC<{ children: React.ReactNode }> = (
             category: 'reminders',
             operation: 'center_subscription_ready',
             status: 'degraded',
-            issues: ['El centro de avisos quedo temporalmente no disponible.'],
+            issues: outcome.issues.map(issue => issue.userSafeMessage || issue.message) || [
+              'El centro de avisos quedo temporalmente no disponible.',
+            ],
           });
-        },
-      }
-    );
+        }
+      },
+    });
 
     return unsubscribe;
   }, [isAuthenticated]);
@@ -139,20 +146,15 @@ export const ReminderCenterProvider: React.FC<{ children: React.ReactNode }> = (
 
     let cancelled = false;
     void (async () => {
-      const results = await Promise.all(
-        visibleReminders.map(async reminder => ({
-          reminderId: reminder.id,
-          hasRead: await ReminderReadService.hasUserReadForShiftWindow(
-            reminder.id,
-            currentUser.uid,
-            currentShift,
-            currentDate
-          ),
-        }))
-      );
+      const result = await reminderUseCases.resolveReminderReadStates({
+        reminders: visibleReminders,
+        userId: currentUser.uid,
+        shift: currentShift,
+        dateKey: currentDate,
+      });
 
       if (cancelled) return;
-      setReadReminderIds(results.filter(result => result.hasRead).map(result => result.reminderId));
+      setReadReminderIds(result.data);
     })();
 
     return () => {
@@ -165,17 +167,17 @@ export const ReminderCenterProvider: React.FC<{ children: React.ReactNode }> = (
       if (!currentUser?.uid) return;
       if (readReminderIdsRef.current.includes(reminderId)) return;
 
-      const result = await ReminderReadService.markAsReadWithResult(
+      const result = await reminderUseCases.markReminderAsRead({
         reminderId,
-        ReminderReadService.buildReceipt({
+        receipt: reminderUseCases.buildReadReceipt({
           userId: currentUser.uid,
           userName: buildUserName(currentUser.displayName, currentUser.email),
           shift: currentShift,
           dateKey: currentDate,
-        })
-      );
+        }),
+      });
 
-      if (result.status !== 'success') {
+      if (result.status === 'failed') {
         return;
       }
 

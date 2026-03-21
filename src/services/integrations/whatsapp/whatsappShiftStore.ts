@@ -1,5 +1,5 @@
 import { collection, doc, limit, onSnapshot, orderBy, query, setDoc } from 'firebase/firestore';
-import { db } from '@/firebaseConfig';
+import { defaultFirestoreRuntime } from '@/services/firebase-runtime/firestoreRuntime';
 import type { WeeklyShift } from '@/types/whatsapp';
 import { logger } from '@/services/utils/loggerService';
 
@@ -26,7 +26,7 @@ const parseShiftDates = (messageText: string): { startDate: string; endDate: str
 };
 
 export function subscribeToCurrentShift(callback: (shift: WeeklyShift | null) => void): () => void {
-  const shiftsRef = collection(db, 'shifts', 'weekly', 'data');
+  const shiftsRef = collection(defaultFirestoreRuntime.db, 'shifts', 'weekly', 'data');
   const shiftsQuery = query(shiftsRef, orderBy('parsedAt', 'desc'), limit(1));
 
   return onSnapshot(shiftsQuery, snapshot => {
@@ -68,7 +68,7 @@ export async function saveManualShift(
       originalMessage: messageText,
     };
 
-    const shiftsRef = collection(db, 'shifts', 'weekly', 'data');
+    const shiftsRef = collection(defaultFirestoreRuntime.db, 'shifts', 'weekly', 'data');
     await setDoc(doc(shiftsRef, shift.startDate), shift);
     return { success: true };
   } catch (error: unknown) {

@@ -11,7 +11,7 @@
  */
 
 import { ref, uploadBytes, getDownloadURL, deleteObject, getMetadata } from 'firebase/storage';
-import { auth, firebaseReady, getStorageInstance } from '@/firebaseConfig';
+import { defaultBackupStorageRuntime } from '@/services/firebase-runtime/backupRuntime';
 import {
   createListYears,
   createListMonths,
@@ -108,14 +108,14 @@ export const uploadPdf = async (
   shiftType: 'day' | 'night'
 ): Promise<string> => {
   pdfStorageLogger.debug(`Starting PDF upload for ${date}`);
-  await firebaseReady;
-  const storage = await getStorageInstance();
+  await defaultBackupStorageRuntime.ready;
+  const storage = await defaultBackupStorageRuntime.getStorage();
   assertStorageAvailable(storage, 'PdfStorage', 'uploadPdf');
 
   const filePath = generatePdfPath(date, shiftType);
   const storageRef = ref(storage, filePath);
 
-  const user = auth.currentUser;
+  const user = defaultBackupStorageRuntime.auth.currentUser;
   const metadata = {
     contentType: 'application/pdf',
     customMetadata: {
@@ -137,8 +137,8 @@ export const uploadPdf = async (
  * Delete a PDF from Storage
  */
 export const deletePdf = async (date: string, shiftType: 'day' | 'night'): Promise<void> => {
-  await firebaseReady;
-  const storage = await getStorageInstance();
+  await defaultBackupStorageRuntime.ready;
+  const storage = await defaultBackupStorageRuntime.getStorage();
   let filePath: string;
   try {
     filePath = generatePdfPath(date, shiftType);
@@ -165,8 +165,8 @@ export const getPdfUrl = async (
   date: string,
   shiftType: 'day' | 'night'
 ): Promise<string | null> => {
-  await firebaseReady;
-  const storage = await getStorageInstance();
+  await defaultBackupStorageRuntime.ready;
+  const storage = await defaultBackupStorageRuntime.getStorage();
   try {
     const filePath = generatePdfPath(date, shiftType);
     const storageRef = ref(storage, filePath);
@@ -198,8 +198,8 @@ export const pdfExistsDetailed = async (
     'pdfExists',
     async (): Promise<StorageLookupResult> => {
       try {
-        await firebaseReady;
-        const storage = await getStorageInstance();
+        await defaultBackupStorageRuntime.ready;
+        const storage = await defaultBackupStorageRuntime.getStorage();
 
         const filePath = generatePdfPath(date, shiftType);
         const storageRef = ref(storage, filePath);

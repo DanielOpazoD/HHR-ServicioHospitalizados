@@ -11,7 +11,7 @@ import {
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore';
-import { db, firebaseReady } from '@/firebaseConfig';
+import { defaultFirestoreRuntime } from '@/services/firebase-runtime/firestoreRuntime';
 import { logger } from '@/services/utils/loggerService';
 import {
   CensusAccessInvitation,
@@ -62,8 +62,7 @@ export const createInvitation = async (
   role: CensusAccessRole = 'viewer',
   email?: string
 ): Promise<string> => {
-  await firebaseReady;
-  if (!db) throw new Error('Firestore not initialized');
+  await defaultFirestoreRuntime.ready;
 
   const invitation: Omit<CensusAccessInvitation, 'id'> = {
     email: email?.toLowerCase(),
@@ -74,7 +73,10 @@ export const createInvitation = async (
     status: 'pending',
   };
 
-  const docRef = await addDoc(collection(db, INVITATIONS_COLLECTION), invitation);
+  const docRef = await addDoc(
+    collection(defaultFirestoreRuntime.db, INVITATIONS_COLLECTION),
+    invitation
+  );
   return docRef.id;
 };
 
@@ -84,10 +86,9 @@ export const createInvitation = async (
 export const verifyInvitation = async (
   invitationId: string
 ): Promise<CensusAccessInvitation | null> => {
-  await firebaseReady;
-  if (!db) throw new Error('Firestore not initialized');
+  await defaultFirestoreRuntime.ready;
 
-  const docRef = doc(db, INVITATIONS_COLLECTION, invitationId);
+  const docRef = doc(defaultFirestoreRuntime.db, INVITATIONS_COLLECTION, invitationId);
   const docSnap = await getDoc(docRef);
 
   if (!docSnap.exists()) return null;
@@ -113,8 +114,7 @@ export const registerUserFromInvitation = async (
   invitationId: string,
   user: { uid: string; email: string; displayName: string }
 ): Promise<boolean> => {
-  await firebaseReady;
-  if (!db) throw new Error('Firestore not initialized');
+  await defaultFirestoreRuntime.ready;
 
   const invitation = await verifyInvitation(invitationId);
   if (!invitation) return false;
@@ -125,7 +125,7 @@ export const registerUserFromInvitation = async (
   }
 
   // 1. Mark invitation as used
-  await updateDoc(doc(db, INVITATIONS_COLLECTION, invitationId), {
+  await updateDoc(doc(defaultFirestoreRuntime.db, INVITATIONS_COLLECTION, invitationId), {
     status: 'used',
     usedBy: user.uid,
     usedAt: serverTimestamp(),
@@ -143,7 +143,7 @@ export const registerUserFromInvitation = async (
     isActive: true,
   };
 
-  await setDoc(doc(db, USERS_COLLECTION, user.uid), userDoc);
+  await setDoc(doc(defaultFirestoreRuntime.db, USERS_COLLECTION, user.uid), userDoc);
   return true;
 };
 
@@ -151,10 +151,9 @@ export const registerUserFromInvitation = async (
  * Checks if a user has active access
  */
 export const checkUserAccess = async (userId: string): Promise<CensusAccessUser | null> => {
-  await firebaseReady;
-  if (!db) throw new Error('Firestore not initialized');
+  await defaultFirestoreRuntime.ready;
 
-  const docRef = doc(db, USERS_COLLECTION, userId);
+  const docRef = doc(defaultFirestoreRuntime.db, USERS_COLLECTION, userId);
   const docSnap = await getDoc(docRef);
 
   if (!docSnap.exists()) return null;
@@ -177,10 +176,9 @@ export const logAccess = async (
   config: Omit<CensusAccessLog, 'id' | 'timestamp'>
 ): Promise<void> => {
   try {
-    await firebaseReady;
-    if (!db) return;
+    await defaultFirestoreRuntime.ready;
 
-    await addDoc(collection(db, LOGS_COLLECTION), {
+    await addDoc(collection(defaultFirestoreRuntime.db, LOGS_COLLECTION), {
       ...config,
       timestamp: serverTimestamp(),
       userAgent: navigator.userAgent,
@@ -196,9 +194,8 @@ export const logAccess = async (
 
 export const getAuthorizedEmails = async (): Promise<CensusAuthorizedEmail[]> => {
   try {
-    await firebaseReady;
-    if (!db) return [];
-    const q = query(collection(db, AUTHORIZED_EMAILS_COLLECTION));
+    await defaultFirestoreRuntime.ready;
+    const q = query(collection(defaultFirestoreRuntime.db, AUTHORIZED_EMAILS_COLLECTION));
     const snap = await getDocs(q);
     return snap.docs.map(doc => doc.data() as CensusAuthorizedEmail);
   } catch (err) {
@@ -213,10 +210,9 @@ export const addAuthorizedEmail = async (
   addedBy: string
 ): Promise<void> => {
   try {
-    await firebaseReady;
-    if (!db) return;
+    await defaultFirestoreRuntime.ready;
     const normalizedEmail = email.toLowerCase().trim();
-    await setDoc(doc(db, AUTHORIZED_EMAILS_COLLECTION, normalizedEmail), {
+    await setDoc(doc(defaultFirestoreRuntime.db, AUTHORIZED_EMAILS_COLLECTION, normalizedEmail), {
       email: normalizedEmail,
       role,
       addedAt: serverTimestamp(),
@@ -230,9 +226,10 @@ export const addAuthorizedEmail = async (
 
 export const removeAuthorizedEmail = async (email: string): Promise<void> => {
   try {
-    await firebaseReady;
-    if (!db) return;
-    await deleteDoc(doc(db, AUTHORIZED_EMAILS_COLLECTION, email.toLowerCase().trim()));
+    await defaultFirestoreRuntime.ready;
+    await deleteDoc(
+      doc(defaultFirestoreRuntime.db, AUTHORIZED_EMAILS_COLLECTION, email.toLowerCase().trim())
+    );
   } catch (err) {
     censusAccessLogger.error('Error removing authorized email', err);
     throw err;
@@ -243,9 +240,12 @@ export const checkEmailAuthorization = async (
   email: string
 ): Promise<CensusAuthorizedEmail | null> => {
   try {
-    await firebaseReady;
-    if (!db) return null;
-    const docRef = doc(db, AUTHORIZED_EMAILS_COLLECTION, email.toLowerCase().trim());
+    await defaultFirestoreRuntime.ready;
+    const docRef = doc(
+      defaultFirestoreRuntime.db,
+      AUTHORIZED_EMAILS_COLLECTION,
+      email.toLowerCase().trim()
+    );
     const snap = await getDoc(docRef);
 
     if (snap.exists()) {
@@ -286,9 +286,8 @@ export const checkUserAccessWithWhitelist = async (
         isActive: true,
       };
 
-      await firebaseReady;
-      if (!db) return null;
-      await setDoc(doc(db, USERS_COLLECTION, userId), newUser);
+      await defaultFirestoreRuntime.ready;
+      await setDoc(doc(defaultFirestoreRuntime.db, USERS_COLLECTION, userId), newUser);
 
       return newUser;
     }

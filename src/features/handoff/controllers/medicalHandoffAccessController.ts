@@ -1,7 +1,10 @@
-import { ACTIONS, canDoAction } from '@/utils/permissions';
 import type { UserRole } from '@/types/auth';
 import { hasSpecialistRestrictedMedicalAccess } from '@/shared/access/specialistAccessPolicy';
-import { canEditMedicalHandoffForDate } from '@/shared/access/operationalAccessPolicy';
+import {
+  canEditMedicalHandoffForDate,
+  canSendMedicalHandoffWhatsApp,
+  canSignMedicalHandoff,
+} from '@/shared/access/operationalAccessPolicy';
 
 export interface MedicalHandoffCapabilities {
   canCreatePrimaryObservationEntry: boolean;
@@ -41,11 +44,17 @@ export const resolveMedicalHandoffCapabilities = ({
     recordDate,
     todayISO,
   });
-  const canSign =
-    !specialistRestrictedAccess && !readOnly && canDoAction(role, ACTIONS.HANDOFF_MEDICAL_SIGN);
+  const canSign = canSignMedicalHandoff({
+    role,
+    readOnly,
+    specialistRestrictedAccess,
+  });
   const canRestoreSignatures = !specialistRestrictedAccess && role === 'admin';
-  const canSendWhatsApp =
-    !specialistRestrictedAccess && !readOnly && canDoAction(role, ACTIONS.HANDOFF_SEND_WHATSAPP);
+  const canSendWhatsApp = canSendMedicalHandoffWhatsApp({
+    role,
+    readOnly,
+    specialistRestrictedAccess,
+  });
   const canShareSignatureLinks = canSendWhatsApp;
 
   return {

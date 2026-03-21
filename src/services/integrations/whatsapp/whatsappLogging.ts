@@ -1,5 +1,5 @@
 import { addDoc, collection, Timestamp } from 'firebase/firestore';
-import { db } from '@/firebaseConfig';
+import { defaultFirestoreRuntime } from '@/services/firebase-runtime/firestoreRuntime';
 import type { WhatsAppLog } from '@/types/whatsapp';
 import { logger } from '@/services/utils/loggerService';
 
@@ -9,7 +9,7 @@ export async function logWhatsAppOperation(
   log: Omit<WhatsAppLog, 'id' | 'timestamp'>
 ): Promise<void> {
   try {
-    await addDoc(collection(db, 'whatsappLogs'), {
+    await addDoc(collection(defaultFirestoreRuntime.db, 'whatsappLogs'), {
       ...log,
       timestamp: Timestamp.now(),
     });

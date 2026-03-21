@@ -1,5 +1,4 @@
 import { doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
-import { db } from '@/firebaseConfig';
 import { ProfessionalCatalogItem } from '@/types/domain/base';
 import { withRetry } from '@/utils/networkUtils';
 import { logger } from '@/services/utils/loggerService';
@@ -9,6 +8,7 @@ import {
   HOSPITAL_COLLECTIONS,
   SETTINGS_DOCS,
 } from '@/constants/firestorePaths';
+import { defaultFirestoreRuntime } from '@/services/firebase-runtime/firestoreRuntime';
 import { readStringCatalogFromSnapshot } from '@/services/storage/firestore/firestoreShared';
 import {
   normalizeProfessionalCatalog,
@@ -18,7 +18,13 @@ import {
 const firestoreCatalogLogger = logger.child('FirestoreCatalogService');
 
 const getSettingsDocRef = (docId: string) =>
-  doc(db, COLLECTIONS.HOSPITALS, getActiveHospitalId(), HOSPITAL_COLLECTIONS.SETTINGS, docId);
+  doc(
+    defaultFirestoreRuntime.db,
+    COLLECTIONS.HOSPITALS,
+    getActiveHospitalId(),
+    HOSPITAL_COLLECTIONS.SETTINGS,
+    docId
+  );
 
 const getNurseCatalogDocRef = () => getSettingsDocRef(SETTINGS_DOCS.NURSES);
 const getTensCatalogDocRef = () => getSettingsDocRef(SETTINGS_DOCS.TENS);

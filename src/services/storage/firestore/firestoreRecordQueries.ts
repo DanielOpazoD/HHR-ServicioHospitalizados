@@ -1,7 +1,7 @@
 import { doc, getDoc, getDocs, onSnapshot, orderBy, query, where } from 'firebase/firestore';
-import { db } from '@/firebaseConfig';
 import { DailyRecord } from '@/types/domain/dailyRecord';
 import { COLLECTIONS, getActiveHospitalId } from '@/constants/firestorePaths';
+import { defaultFirestoreRuntime } from '@/services/firebase-runtime/firestoreRuntime';
 import {
   docToRecord,
   getRecordDocRef,
@@ -115,7 +115,7 @@ export const subscribeToRecord = (
 
 export const isFirestoreAvailable = async (): Promise<boolean> => {
   try {
-    const docRef = doc(db, COLLECTIONS.HOSPITALS, getActiveHospitalId());
+    const docRef = doc(defaultFirestoreRuntime.db, COLLECTIONS.HOSPITALS, getActiveHospitalId());
     await getDoc(docRef);
     return true;
   } catch (_error) {

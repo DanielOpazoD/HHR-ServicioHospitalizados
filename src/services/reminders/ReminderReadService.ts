@@ -1,4 +1,5 @@
 import { getDoc, getDocs, setDoc } from 'firebase/firestore';
+import { defaultReminderFirestoreRuntime } from '@/services/firebase-runtime/reminderRuntime';
 import type { ReminderReadReceipt, ReminderShift } from '@/types/reminders';
 import {
   buildReminderReadReceiptId,
@@ -28,7 +29,13 @@ export type ReminderReadReceiptsResult =
   | { status: 'success'; receipts: ReminderReadReceipt[] }
   | { status: ReminderOperationErrorKind; error: unknown; receipts: ReminderReadReceipt[] };
 
-export const ReminderReadService = {
+export interface ReminderReadServiceDependencies {
+  runtime?: typeof defaultReminderFirestoreRuntime;
+}
+
+export const createReminderReadService = ({
+  runtime = defaultReminderFirestoreRuntime,
+}: ReminderReadServiceDependencies = {}) => ({
   async markAsRead(reminderId: string, receipt: ReminderReadReceipt): Promise<void> {
     const result = await this.markAsReadWithResult(reminderId, receipt);
     if (result.status !== 'success') {
@@ -46,7 +53,7 @@ export const ReminderReadService = {
       receipt.dateKey ?? receipt.readAt.slice(0, 10)
     );
     try {
-      await setDoc(getReminderReadReceiptDocRef(reminderId, receiptId), receipt);
+      await setDoc(getReminderReadReceiptDocRef(reminderId, receiptId, runtime), receipt);
       reminderReadLogger.info('Stored reminder read receipt', {
         reminderId,
         receiptId,
@@ -72,7 +79,11 @@ export const ReminderReadService = {
   ): Promise<ReminderReadLookupResult> {
     try {
       const snapshot = await getDoc(
-        getReminderReadReceiptDocRef(reminderId, buildReminderReadReceiptId(userId, shift, dateKey))
+        getReminderReadReceiptDocRef(
+          reminderId,
+          buildReminderReadReceiptId(userId, shift, dateKey),
+          runtime
+        )
       );
       return { status: snapshot.exists() ? 'read' : 'unread' };
     } catch (error) {
@@ -101,7 +112,7 @@ export const ReminderReadService = {
 
   async getReadReceiptsWithResult(reminderId: string): Promise<ReminderReadReceiptsResult> {
     try {
-      const snapshot = await getDocs(getReminderReadReceiptsCollectionRef(reminderId));
+      const snapshot = await getDocs(getReminderReadReceiptsCollectionRef(reminderId, runtime));
       return {
         status: 'success',
         receipts: snapshot.docs
@@ -137,4 +148,6 @@ export const ReminderReadService = {
       readAt: new Date().toISOString(),
     };
   },
-};
+});
+
+export const ReminderReadService = createReminderReadService();

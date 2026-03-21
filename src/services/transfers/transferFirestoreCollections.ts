@@ -1,9 +1,19 @@
 import { collection } from 'firebase/firestore';
-import { db } from '@/firebaseConfig';
+import { defaultFirestoreRuntime } from '@/services/firebase-runtime/firestoreRuntime';
 import { getActiveHospitalId, COLLECTIONS } from '@/constants/firestorePaths';
 
 export const getTransfersCollection = () =>
-  collection(db, COLLECTIONS.HOSPITALS, getActiveHospitalId(), 'transferRequests');
+  collection(
+    defaultFirestoreRuntime.db,
+    COLLECTIONS.HOSPITALS,
+    getActiveHospitalId(),
+    'transferRequests'
+  );
 
 export const getTransferHistoryCollection = () =>
-  collection(db, COLLECTIONS.HOSPITALS, getActiveHospitalId(), 'transferHistory');
+  collection(
+    defaultFirestoreRuntime.db,
+    COLLECTIONS.HOSPITALS,
+    getActiveHospitalId(),
+    'transferHistory'
+  );

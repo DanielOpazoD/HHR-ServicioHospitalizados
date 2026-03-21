@@ -5,8 +5,8 @@
  */
 
 import { collection, doc, getDocs, limit, orderBy, query, writeBatch } from 'firebase/firestore';
-import { db } from '@/firebaseConfig';
 import { getActiveHospitalId } from '@/constants/firestorePaths';
+import { defaultFirestoreRuntime } from '@/services/firebase-runtime/firestoreRuntime';
 import type {
   AuditLogWithId,
   ConsolidationGroup,
@@ -48,7 +48,7 @@ export interface ConsolidationPreview {
 }
 
 const fetchAuditLogs = async (): Promise<AuditLogWithId[]> => {
-  const auditRef = collection(db, getAuditCollectionPath());
+  const auditRef = collection(defaultFirestoreRuntime.db, getAuditCollectionPath());
   const auditQuery = query(auditRef, orderBy('timestamp', 'desc'), limit(5000));
   const snapshot = await getDocs(auditQuery);
 
@@ -88,10 +88,10 @@ const applyConsolidationBatch = async (
   groups: PreparedConsolidationGroup[],
   result: ConsolidationResult
 ) => {
-  const batch = writeBatch(db);
+  const batch = writeBatch(defaultFirestoreRuntime.db);
 
   for (const group of groups) {
-    const keepRef = doc(db, getAuditCollectionPath(), group.keepId);
+    const keepRef = doc(defaultFirestoreRuntime.db, getAuditCollectionPath(), group.keepId);
     batch.update(keepRef, {
       details: group.merged,
       consolidatedCount: group.logs.length,
@@ -100,7 +100,7 @@ const applyConsolidationBatch = async (
     result.logsConsolidated += 1;
 
     for (const deleteId of group.deleteIds) {
-      batch.delete(doc(db, getAuditCollectionPath(), deleteId));
+      batch.delete(doc(defaultFirestoreRuntime.db, getAuditCollectionPath(), deleteId));
       result.logsDeleted += 1;
     }
   }

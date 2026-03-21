@@ -4,11 +4,11 @@ import {
   ACTIONS,
   canDoAction,
   canEditModule,
+  getRoleDisplayName,
   getVisibleModules,
   isAdmin,
 } from '@/utils/permissions';
 import { canReadClinicalDocuments } from '@/application/clinical-documents/clinicalDocumentAccessPolicy';
-import { canAccessAuditView } from '@/services/admin/auditAccessPolicy';
 import {
   isSpecialistCensusAccessProfile,
   type CensusAccessProfile,
@@ -70,9 +70,7 @@ export const canAccessAppModuleRoute = ({
 
   switch (module) {
     case 'AUDIT':
-      return canAccessAuditView(
-        (typeof role === 'string' ? role : undefined) as UserRole | undefined
-      );
+      return canAccessAuditViewForRole(role);
     case 'BACKUP_FILES':
       return canViewOrManageBackupFiles(role);
     case 'DATA_MAINTENANCE':
@@ -181,3 +179,43 @@ export const canResetOrDeleteDailyRecord = ({
 
   return canDoAction(role, ACTIONS.RECORD_DELETE);
 };
+
+export const canDeleteTodayDailyRecord = (role: SupportedRole): boolean =>
+  canDoAction(role, ACTIONS.RECORD_DELETE);
+
+export const isAdminAppRole = (role: SupportedRole): boolean => isAdmin(role);
+
+export const canManageAllMedicalSpecialties = (role: SupportedRole): boolean =>
+  canEditAppModule(role, 'MEDICAL_HANDOFF');
+
+export const canAccessAuditViewForRole = (role: SupportedRole): boolean =>
+  getVisibleAppModules(role).includes('AUDIT') && canDoAction(role, ACTIONS.AUDIT_READ);
+
+export const canAccessAuditSensitivePanelsForRole = (role: SupportedRole): boolean => isAdmin(role);
+
+export const canExportAuditDataForRole = (role: SupportedRole): boolean =>
+  canDoAction(role, ACTIONS.EXPORT_EXCEL) || canDoAction(role, ACTIONS.EXPORT_PDF);
+
+export const canSignMedicalHandoff = ({
+  role,
+  readOnly,
+  specialistRestrictedAccess,
+}: {
+  role: SupportedRole;
+  readOnly: boolean;
+  specialistRestrictedAccess: boolean;
+}): boolean =>
+  !specialistRestrictedAccess && !readOnly && canDoAction(role, ACTIONS.HANDOFF_MEDICAL_SIGN);
+
+export const canSendMedicalHandoffWhatsApp = ({
+  role,
+  readOnly,
+  specialistRestrictedAccess,
+}: {
+  role: SupportedRole;
+  readOnly: boolean;
+  specialistRestrictedAccess: boolean;
+}): boolean =>
+  !specialistRestrictedAccess && !readOnly && canDoAction(role, ACTIONS.HANDOFF_SEND_WHATSAPP);
+
+export const getRoleDisplayLabel = (role?: UserRole): string => getRoleDisplayName(role);

@@ -4,7 +4,7 @@ import type {
   MedicalSpecialty,
   MedicalSpecialtyHandoffNote,
 } from '@/types/domain/dailyRecord';
-import { canEditModule } from '@/utils/permissions';
+import { canManageAllMedicalSpecialties } from '@/shared/access/operationalAccessPolicy';
 
 export const MEDICAL_SPECIALTY_ORDER: readonly MedicalSpecialty[] = [
   'cirugia',
@@ -61,7 +61,7 @@ export const resolveEditableMedicalSpecialties = (
       MEDICAL_SPECIALTY_ORDER.includes(value as MedicalSpecialty)
   );
   if (claimedSpecialties.length > 0) return claimedSpecialties;
-  if (canEditModule(role, 'MEDICAL_HANDOFF')) return [...MEDICAL_SPECIALTY_ORDER];
+  if (canManageAllMedicalSpecialties(role)) return [...MEDICAL_SPECIALTY_ORDER];
   return [];
 };
 

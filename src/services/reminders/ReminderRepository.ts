@@ -8,6 +8,7 @@ import {
   setDoc,
   updateDoc,
 } from 'firebase/firestore';
+import { defaultReminderFirestoreRuntime } from '@/services/firebase-runtime/reminderRuntime';
 import type { Reminder } from '@/types/reminders';
 import {
   getReminderDocRef,
@@ -45,12 +46,18 @@ export interface ReminderRepositorySubscriptionOptions {
   onError?: (error: unknown, kind: ReminderRepositoryErrorKind) => void;
 }
 
-export const ReminderRepository = {
+export interface ReminderRepositoryDependencies {
+  runtime?: typeof defaultReminderFirestoreRuntime;
+}
+
+export const createReminderRepository = ({
+  runtime = defaultReminderFirestoreRuntime,
+}: ReminderRepositoryDependencies = {}) => ({
   subscribe(
     callback: (reminders: Reminder[]) => void,
     options: ReminderRepositorySubscriptionOptions = {}
   ): () => void {
-    const remindersQuery = query(getRemindersCollectionRef(), orderBy('createdAt', 'desc'));
+    const remindersQuery = query(getRemindersCollectionRef(runtime), orderBy('createdAt', 'desc'));
 
     return onSnapshot(
       remindersQuery,
@@ -90,7 +97,7 @@ export const ReminderRepository = {
   async listWithResult(): Promise<ReminderRepositoryListResult> {
     try {
       const snapshot = await getDocs(
-        query(getRemindersCollectionRef(), orderBy('createdAt', 'desc'))
+        query(getRemindersCollectionRef(runtime), orderBy('createdAt', 'desc'))
       );
       return {
         status: 'success',
@@ -117,7 +124,7 @@ export const ReminderRepository = {
   },
 
   async getById(reminderId: string): Promise<Reminder | null> {
-    const snapshot = await getDoc(getReminderDocRef(reminderId));
+    const snapshot = await getDoc(getReminderDocRef(reminderId, runtime));
     if (!snapshot.exists()) return null;
     return normalizeReminderRecord({ id: snapshot.id, ...snapshot.data() }, snapshot.id);
   },
@@ -145,7 +152,7 @@ export const ReminderRepository = {
 
   async createWithResult(reminder: Reminder): Promise<ReminderRepositoryMutationResult> {
     try {
-      await setDoc(getReminderDocRef(reminder.id), reminder);
+      await setDoc(getReminderDocRef(reminder.id, runtime), reminder);
       reminderRepositoryLogger.info('Created reminder', {
         reminderId: reminder.id,
         type: reminder.type,
@@ -167,7 +174,7 @@ export const ReminderRepository = {
     patch: Partial<Reminder>
   ): Promise<ReminderRepositoryMutationResult> {
     try {
-      await updateDoc(getReminderDocRef(reminderId), patch);
+      await updateDoc(getReminderDocRef(reminderId, runtime), patch);
       reminderRepositoryLogger.info('Updated reminder', {
         reminderId,
         fields: Object.keys(patch),
@@ -185,7 +192,7 @@ export const ReminderRepository = {
 
   async removeWithResult(reminderId: string): Promise<ReminderRepositoryMutationResult> {
     try {
-      await deleteDoc(getReminderDocRef(reminderId));
+      await deleteDoc(getReminderDocRef(reminderId, runtime));
       reminderRepositoryLogger.info('Removed reminder', { reminderId });
       return { status: 'success' };
     } catch (error) {
@@ -197,4 +204,6 @@ export const ReminderRepository = {
       return { status: resolveReminderOperationErrorKind(error), error };
     }
   },
-};
+});
+
+export const ReminderRepository = createReminderRepository();

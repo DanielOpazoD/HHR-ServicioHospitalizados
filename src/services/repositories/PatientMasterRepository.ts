@@ -1,4 +1,3 @@
-import { db } from '@/firebaseConfig';
 import {
   doc,
   getDoc,
@@ -16,6 +15,7 @@ import {
 } from 'firebase/firestore';
 import { MasterPatient } from '@/types/domain/clinical';
 import { getActiveHospitalId, HOSPITAL_COLLECTIONS } from '@/constants/firestorePaths';
+import { defaultFirestoreRuntime } from '@/services/firebase-runtime/firestoreRuntime';
 import {
   createBulkUpsertPatientsCommand,
   createUpsertPatientCommand,
@@ -46,7 +46,7 @@ export const getPatientByRut = async (rut: string): Promise<MasterPatient | null
   if (!normalizedRut) return null;
 
   const path = getCollectionPath();
-  const docRef = doc(db, path, normalizedRut);
+  const docRef = doc(defaultFirestoreRuntime.db, path, normalizedRut);
 
   try {
     const snap = await getDoc(docRef);
@@ -73,7 +73,7 @@ export const upsertPatient = async (
   }
 
   const path = getCollectionPath();
-  const docRef = doc(db, path, command.rut);
+  const docRef = doc(defaultFirestoreRuntime.db, path, command.rut);
 
   const now = Date.now();
 
@@ -117,10 +117,10 @@ export const bulkUpsertPatients = async (
 
   for (let i = 0; i < normalizedPatients.length; i += batchSize) {
     const chunk = normalizedPatients.slice(i, i + batchSize);
-    const batch = writeBatch(db);
+    const batch = writeBatch(defaultFirestoreRuntime.db);
 
     chunk.forEach(p => {
-      const docRef = doc(db, path, p.rut);
+      const docRef = doc(defaultFirestoreRuntime.db, path, p.rut);
       batch.set(docRef, { ...p, rut: p.rut }, { merge: true });
     });
 
@@ -142,7 +142,11 @@ export const bulkUpsertPatients = async (
 export const getAllPatients = async (): Promise<MasterPatient[]> => {
   const path = getCollectionPath();
   try {
-    const q = query(collection(db, path), orderBy('updatedAt', 'desc'), limit(1000));
+    const q = query(
+      collection(defaultFirestoreRuntime.db, path),
+      orderBy('updatedAt', 'desc'),
+      limit(1000)
+    );
     const snap = await getDocs(q);
     return snap.docs.map(d => d.data() as MasterPatient);
   } catch (err) {
@@ -161,7 +165,11 @@ export const getPatientsPaginated = async (
   const safeLimit = sanitizePatientQueryLimit(limitCount);
   const path = getCollectionPath();
   try {
-    let q = query(collection(db, path), orderBy('updatedAt', 'desc'), limit(safeLimit));
+    let q = query(
+      collection(defaultFirestoreRuntime.db, path),
+      orderBy('updatedAt', 'desc'),
+      limit(safeLimit)
+    );
 
     if (lastDoc) {
       q = query(q, startAfter(lastDoc));
@@ -202,7 +210,7 @@ export const searchPatients = async (
     // we use a prefix search if possible, or just fetch more and filter.
     // For the hospital context, we'll use a prefix query on fullName.
     const q = query(
-      collection(db, path),
+      collection(defaultFirestoreRuntime.db, path),
       orderBy('fullName'),
       where('fullName', '>=', normalizedTerm),
       where('fullName', '<=', normalizedTerm + '\uf8ff'),
