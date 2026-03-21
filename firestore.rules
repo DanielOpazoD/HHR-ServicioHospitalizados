@@ -120,13 +120,22 @@ service cloud.firestore {
       let affectedRecordKeys = request.resource.data.diff(resource.data).affectedKeys();
       let affectedBedIds = request.resource.data.beds.diff(resource.data.beds).affectedKeys();
       let now = request.time.toMillis();
-      let recordTimestamp = resource.data.dateTimestamp;
+      let currentRecordTimestamp = resource.data.dateTimestamp;
+      let nextRecordTimestamp = request.resource.data.dateTimestamp;
+      let effectiveRecordTimestamp =
+        nextRecordTimestamp != null
+          ? nextRecordTimestamp
+          : currentRecordTimestamp;
 
       return isDoctorSpecialist() &&
-             recordTimestamp != null &&
-             now >= recordTimestamp &&
-             now < (recordTimestamp + 86400000) &&
-             affectedRecordKeys.hasOnly(['beds', 'lastUpdated']) &&
+             effectiveRecordTimestamp != null &&
+             now >= effectiveRecordTimestamp &&
+             now < (effectiveRecordTimestamp + 86400000) &&
+             affectedRecordKeys.hasOnly(['beds', 'lastUpdated', 'dateTimestamp']) &&
+             (
+               currentRecordTimestamp != null ||
+               nextRecordTimestamp != null
+             ) &&
              (
                isOnlySpecialistAffectedBed(affectedBedIds, 'R1') ||
                isOnlySpecialistAffectedBed(affectedBedIds, 'R2') ||

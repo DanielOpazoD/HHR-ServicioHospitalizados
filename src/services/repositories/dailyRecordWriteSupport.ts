@@ -80,6 +80,12 @@ export const preparePatchedRecordForPersistence = (
 ): { record: DailyRecord; mergedPatches: DailyRecordPatch } => {
   const updatedForInvariants = applyPatches(current, patch);
   const mergedPatches: DailyRecordPatch = { ...patch };
+  ensureDailyRecordDateTimestamp(updatedForInvariants);
+
+  if (!current.dateTimestamp && updatedForInvariants.dateTimestamp) {
+    mergedPatches.dateTimestamp = updatedForInvariants.dateTimestamp;
+  }
+
   const normalized = normalizeDailyRecordInvariants(updatedForInvariants);
 
   Object.assign(mergedPatches, normalized.patches);

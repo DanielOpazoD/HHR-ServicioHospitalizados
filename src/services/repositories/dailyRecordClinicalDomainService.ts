@@ -190,11 +190,44 @@ const getTouchedBedIds = (patch: DailyRecordPatch): string[] =>
     )
   );
 
+const getTouchedBedPaths = (patch: DailyRecordPatch, bedId: string): string[] =>
+  Object.keys(patch)
+    .filter(key => key.startsWith(`beds.${bedId}.`))
+    .map(key => key.slice(`beds.${bedId}.`.length));
+
+const SPECIALIST_ALLOWED_BED_PATH_PREFIXES = [
+  'medicalHandoffEntries',
+  'medicalHandoffNote',
+  'medicalHandoffAudit',
+  'clinicalEvents',
+  'clinicalCrib.medicalHandoffEntries',
+  'clinicalCrib.medicalHandoffNote',
+  'clinicalCrib.medicalHandoffAudit',
+  'clinicalCrib.clinicalEvents',
+];
+
+const isSpecialistScopedBedPatch = (patch: DailyRecordPatch, bedId: string): boolean => {
+  const touchedPaths = getTouchedBedPaths(patch, bedId);
+  if (touchedPaths.length === 0) {
+    return false;
+  }
+
+  return touchedPaths.every(path =>
+    SPECIALIST_ALLOWED_BED_PATH_PREFIXES.some(
+      prefix => path === prefix || path.startsWith(`${prefix}.`)
+    )
+  );
+};
+
 export const addClinicalFhirPatchesForTouchedBeds = (
   mergedPatches: DailyRecordPatch,
   validatedRecord: DailyRecord
 ): void => {
   getTouchedBedIds(mergedPatches).forEach(bedId => {
+    if (isSpecialistScopedBedPatch(mergedPatches, bedId)) {
+      return;
+    }
+
     const patient = validatedRecord.beds[bedId];
     if (!patient) {
       return;

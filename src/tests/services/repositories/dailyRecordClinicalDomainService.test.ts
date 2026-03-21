@@ -181,4 +181,33 @@ describe('dailyRecordClinicalDomainService', () => {
     expect(mergedPatches['beds.R1.clinicalCrib.fhir_resource']).toBeTruthy();
     expect(mergedPatches['beds.R2.fhir_resource']).toBeUndefined();
   });
+
+  it('does not add fhir patches for specialist-scoped medical handoff updates', () => {
+    const mergedPatches: DailyRecordPatch = {
+      'beds.R1.medicalHandoffNote': 'Nueva evolución',
+      'beds.R1.medicalHandoffEntries': [
+        {
+          id: 'entry-1',
+          specialty: Specialty.MEDICINA,
+          note: 'Nueva evolución',
+        },
+      ] as never,
+      'beds.R1.medicalHandoffAudit': {
+        lastSpecialistUpdateAt: '2026-03-21T22:10:00.000Z',
+      },
+    };
+    const record = {
+      beds: {
+        R1: buildPatient('R1', {
+          patientName: 'Paciente Uno',
+          clinicalCrib: buildPatient('C1', { patientName: 'RN Uno' }),
+        }),
+      },
+    } as never;
+
+    addClinicalFhirPatchesForTouchedBeds(mergedPatches, record);
+
+    expect(mergedPatches['beds.R1.fhir_resource']).toBeUndefined();
+    expect(mergedPatches['beds.R1.clinicalCrib.fhir_resource']).toBeUndefined();
+  });
 });

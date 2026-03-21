@@ -334,4 +334,30 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
       current.lastUpdated
     );
   });
+
+  it('does not append fhir patches for specialist-scoped medical handoff updates', async () => {
+    const current = buildRecord('2026-02-11');
+    current.beds = { R1: buildPatient('R1', 'Paciente local') };
+
+    vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(current);
+
+    await updatePartial('2026-02-11', {
+      'beds.R1.medicalHandoffNote': 'Evolución especialista',
+      'beds.R1.medicalHandoffEntries': [
+        {
+          id: 'entry-1',
+          specialty: 'Med Interna',
+          note: 'Evolución especialista',
+        },
+      ] as never,
+    });
+
+    expect(updateRecordPartialToFirestore).toHaveBeenCalledWith(
+      '2026-02-11',
+      expect.not.objectContaining({
+        'beds.R1.fhir_resource': expect.anything(),
+      }),
+      current.lastUpdated
+    );
+  });
 });

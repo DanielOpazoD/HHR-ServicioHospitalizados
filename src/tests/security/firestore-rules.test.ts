@@ -392,6 +392,50 @@ describeRules('Firestore Security Rules', () => {
       );
     });
 
+    it('Specialists can repair missing dateTimestamp while persisting today handoff changes', async () => {
+      await setupDoc(admin(), recordPath, {
+        date: CURRENT_RECORD_DATE,
+        beds: {
+          R1: {
+            patientName: 'Paciente Legacy',
+            rut: '4-4',
+            pathology: 'Control',
+            specialty: 'Med Interna',
+            medicalHandoffNote: '',
+            medicalHandoffEntries: [],
+            clinicalEvents: [],
+          },
+        },
+      });
+
+      await assertSucceeds(
+        specialist()
+          .doc(recordPath)
+          .update({
+            'beds.R1.medicalHandoffNote': 'Actualización sobre registro legacy',
+            'beds.R1.medicalHandoffEntries': [
+              {
+                id: 'primary-entry',
+                specialty: 'Med Interna',
+                note: 'Actualización sobre registro legacy',
+              },
+            ],
+            'beds.R1.medicalHandoffAudit': {
+              lastSpecialistUpdateAt: new Date(NOW_MS).toISOString(),
+              lastSpecialistUpdateBy: {
+                uid: 'user_specialist',
+                email: 'specialist@example.com',
+                displayName: 'Especialista',
+                role: 'doctor_specialist',
+              },
+              currentStatus: 'updated_by_specialist',
+            },
+            dateTimestamp: NOW_MS,
+            lastUpdated: NOW_MS,
+          })
+      );
+    });
+
     it('Admins can delete daily records', async () => {
       await setupDoc(admin(), recordPath, { date: CURRENT_RECORD_DATE });
       await assertSucceeds(admin().doc(recordPath).delete());
