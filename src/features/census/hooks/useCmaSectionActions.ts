@@ -3,7 +3,7 @@ import React from 'react';
 import type { CMAData } from '@/types/domain/movements';
 import type { PatientData } from '@/types/domain/patient';
 import { executeUndoCmaController } from '@/features/census/controllers/censusCmaController';
-import type { ControllerConfirmDescriptor } from '@/features/census/controllers/controllerConfirmDescriptor';
+import type { ControllerConfirmDescriptor } from '@/shared/contracts/controllers/confirmDescriptor';
 
 interface UseCmaSectionActionsParams {
   confirm: (options: ControllerConfirmDescriptor) => Promise<boolean>;

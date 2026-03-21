@@ -1,7 +1,7 @@
 import { useConfirmDialog, useNotification } from '@/context/UIContext';
 import { useConfirmedMovementAction } from '@/features/census/hooks/useConfirmedMovementAction';
 import { useMovementSectionConfirmHandlers } from '@/features/census/hooks/useMovementSectionConfirmHandlers';
-import type { ControllerConfirmDescriptor } from '@/features/census/controllers/controllerConfirmDescriptor';
+import type { ControllerConfirmDescriptor } from '@/shared/contracts/controllers/confirmDescriptor';
 
 interface UseMovementSectionActionsParams {
   undoDialog: ControllerConfirmDescriptor;

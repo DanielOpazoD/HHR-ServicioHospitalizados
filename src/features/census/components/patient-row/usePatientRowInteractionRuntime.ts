@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { usePatientRowUiState } from '@/features/census/components/patient-row/usePatientRowUiState';
 import { usePatientRowBedConfigActions } from '@/features/census/components/patient-row/usePatientRowBedConfigActions';
 import { buildPatientRowInteractionRuntime } from '@/features/census/controllers/patientRowRuntimeController';
-import type { ControllerConfirmDescriptor } from '@/features/census/controllers/controllerConfirmDescriptor';
+import type { ControllerConfirmDescriptor } from '@/shared/contracts/controllers/confirmDescriptor';
 import type { PatientData } from '@/types/domain/patient';
 import type { PatientRowAction } from '@/features/census/types/patientRowActionTypes';
 

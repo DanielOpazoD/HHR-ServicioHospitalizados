@@ -4,7 +4,7 @@ import {
   executeToggleClinicalCribController,
   executeToggleCompanionCribController,
 } from '@/features/census/controllers/patientRowBedConfigRuntimeController';
-import type { ControllerConfirmDescriptor } from '@/features/census/controllers/controllerConfirmDescriptor';
+import type { ControllerConfirmDescriptor } from '@/shared/contracts/controllers/confirmDescriptor';
 
 interface UsePatientRowBedConfigActionsParams {
   bedId: string;

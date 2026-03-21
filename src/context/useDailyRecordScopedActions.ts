@@ -1,65 +1,19 @@
 import { useMemo } from 'react';
 import type { DailyRecordActionsContextType } from '@/hooks/useDailyRecordTypes';
+import type {
+  DailyRecordBedActions,
+  DailyRecordDayActions,
+  DailyRecordHandoffActions,
+  DailyRecordMovementActions,
+  DailyRecordStaffActions,
+} from '@/hooks/useDailyRecordTypes';
 import { useRequiredDailyRecordActionsContext } from '@/context/dailyRecordActionsContext';
-
-type DailyRecordDayActions = Pick<
-  DailyRecordActionsContextType,
-  'createDay' | 'resetDay' | 'refresh'
->;
-type DailyRecordBedActions = Pick<
-  DailyRecordActionsContextType,
-  | 'updatePatient'
-  | 'updatePatientMultiple'
-  | 'updateClinicalCrib'
-  | 'updateClinicalCribMultiple'
-  | 'updateClinicalCribCudyr'
-  | 'updateClinicalCribCudyrMultiple'
-  | 'updateCudyr'
-  | 'updateCudyrMultiple'
-  | 'clearPatient'
-  | 'clearAllBeds'
-  | 'moveOrCopyPatient'
-  | 'toggleBlockBed'
-  | 'updateBlockedReason'
-  | 'toggleExtraBed'
-  | 'toggleBedType'
-  | 'copyPatientToDate'
->;
-type DailyRecordMovementActions = Pick<
-  DailyRecordActionsContextType,
-  | 'addDischarge'
-  | 'updateDischarge'
-  | 'deleteDischarge'
-  | 'undoDischarge'
-  | 'addTransfer'
-  | 'updateTransfer'
-  | 'deleteTransfer'
-  | 'undoTransfer'
-  | 'addCMA'
-  | 'deleteCMA'
-  | 'updateCMA'
->;
-type DailyRecordStaffActions = Pick<DailyRecordActionsContextType, 'updateNurse' | 'updateTens'>;
 type DailyRecordCudyrActions = Pick<
   DailyRecordActionsContextType,
   | 'updateCudyr'
   | 'updateCudyrMultiple'
   | 'updateClinicalCribCudyr'
   | 'updateClinicalCribCudyrMultiple'
->;
-type DailyRecordHandoffActions = Pick<
-  DailyRecordActionsContextType,
-  | 'updateHandoffChecklist'
-  | 'updateHandoffNovedades'
-  | 'updateMedicalSpecialtyNote'
-  | 'confirmMedicalSpecialtyNoChanges'
-  | 'updateHandoffStaff'
-  | 'updateMedicalSignature'
-  | 'updateMedicalHandoffDoctor'
-  | 'markMedicalHandoffAsSent'
-  | 'ensureMedicalHandoffSignatureLink'
-  | 'resetMedicalHandoffState'
-  | 'sendMedicalHandoff'
 >;
 
 const useResolvedActionsContext = (hookName: string): DailyRecordActionsContextType => {

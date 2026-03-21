@@ -76,8 +76,7 @@ export interface DailyRecordDataContextType {
  * These functions are generally stable (referentially consistent)
  * and won't trigger re-renders when data changes.
  */
-export interface DailyRecordActionsContextType extends PatientMovementActions {
-  // Day Management
+export interface DailyRecordDayActions {
   createDay: (
     copyFromPrevious: boolean,
     specificDate?: string,
@@ -85,8 +84,9 @@ export interface DailyRecordActionsContextType extends PatientMovementActions {
   ) => void;
   resetDay: () => Promise<void>;
   refresh: () => void;
+}
 
-  // Validation helpers
+export interface DailyRecordValidationActions {
   validateRecordSchema: (record: DailyRecord) => {
     isValid: boolean;
     errors: import('zod').ZodIssue[];
@@ -97,8 +97,9 @@ export interface DailyRecordActionsContextType extends PatientMovementActions {
     record: DailyRecord | null
   ) => { canMove: boolean; reason?: string };
   canDischargePatient: (patient: PatientData) => boolean;
+}
 
-  // Bed Management (from useBedManagement)
+export interface DailyRecordBedActions {
   updatePatient: (bedId: string, field: keyof PatientData, value: PatientFieldValue) => void;
   updatePatientMultiple: (bedId: string, fields: Partial<PatientData>) => void;
   updateClinicalCrib: (
@@ -122,19 +123,21 @@ export interface DailyRecordActionsContextType extends PatientMovementActions {
   toggleExtraBed: (bedId: string) => void;
   toggleBedType: (bedId: string) => void;
   copyPatientToDate: (bedId: string, targetDate: string, targetBedId?: string) => Promise<void>;
+}
 
-  // Nurse Management (from useNurseManagement)
+export interface DailyRecordStaffActions {
   updateNurse: (shift: 'day' | 'night', index: number, name: string) => void;
 
-  // TENS Management (from useTensManagement)
   updateTens: (shift: 'day' | 'night', index: number, name: string) => void;
+}
 
-  // CMA / Day Hospitalization (from useCMA)
+export interface DailyRecordMovementActions extends PatientMovementActions {
   addCMA: (data: Omit<CMAData, 'id' | 'timestamp'>) => void;
   deleteCMA: (id: string) => void;
   updateCMA: (id: string, updates: Partial<CMAData>) => void;
+}
 
-  // Handoff Management (from useHandoffManagement)
+export interface DailyRecordHandoffActions {
   updateHandoffChecklist: (shift: 'day' | 'night', field: string, value: boolean | string) => void;
   updateHandoffNovedades: (shift: 'day' | 'night' | 'medical', value: string) => void;
   updateMedicalSpecialtyNote: (
@@ -162,6 +165,15 @@ export interface DailyRecordActionsContextType extends PatientMovementActions {
   resetMedicalHandoffState: () => Promise<void>;
   sendMedicalHandoff: (templateContent: string, targetGroupId: string) => Promise<void>;
 }
+
+export interface DailyRecordActionsContextType
+  extends
+    DailyRecordDayActions,
+    DailyRecordValidationActions,
+    DailyRecordBedActions,
+    DailyRecordStaffActions,
+    DailyRecordMovementActions,
+    DailyRecordHandoffActions {}
 
 /**
  * Union type for compatibility with legacy components

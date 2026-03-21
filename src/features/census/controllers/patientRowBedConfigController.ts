@@ -1,9 +1,9 @@
-import type { ControllerConfirmDescriptor } from '@/features/census/controllers/controllerConfirmDescriptor';
+import type { ControllerConfirmDescriptor } from '@/shared/contracts/controllers/confirmDescriptor';
 import {
-    ControllerError,
-    ControllerResult,
-    fail,
-    ok
+  ControllerError,
+  ControllerResult,
+  fail,
+  ok,
 } from '@/features/census/controllers/controllerResult';
 
 export type PatientRowConfirmDescriptor = ControllerConfirmDescriptor;
@@ -11,90 +11,92 @@ export type PatientRowConfirmDescriptor = ControllerConfirmDescriptor;
 export type PatientRowBedConfigErrorCode = 'COMPANION_NOT_ALLOWED_IN_CUNA';
 
 export interface PatientRowBedConfigError extends ControllerError<PatientRowBedConfigErrorCode> {
-    title: string;
+  title: string;
 }
 
 export type PatientRowBedModeCommand =
-    | { kind: 'setBedMode'; nextMode: 'Cama' | 'Cuna' }
-    | {
-        kind: 'confirmAndSetBedMode';
-        nextMode: 'Cuna';
-        companionPatch: false;
-        confirm: PatientRowConfirmDescriptor;
+  | { kind: 'setBedMode'; nextMode: 'Cama' | 'Cuna' }
+  | {
+      kind: 'confirmAndSetBedMode';
+      nextMode: 'Cuna';
+      companionPatch: false;
+      confirm: PatientRowConfirmDescriptor;
     };
 
 export type PatientRowCompanionCommand = { kind: 'toggleCompanion'; nextValue: boolean };
 export type PatientRowCompanionResult = ControllerResult<
-    PatientRowCompanionCommand,
-    PatientRowBedConfigErrorCode,
-    PatientRowBedConfigError
+  PatientRowCompanionCommand,
+  PatientRowBedConfigErrorCode,
+  PatientRowBedConfigError
 >;
 
 export type PatientRowClinicalCribCommand = {
-    kind: 'toggleClinicalCrib';
-    action: 'create' | 'remove';
+  kind: 'toggleClinicalCrib';
+  action: 'create' | 'remove';
 };
 
 interface ResolveBedModeParams {
-    isCunaMode: boolean;
-    hasCompanion: boolean;
+  isCunaMode: boolean;
+  hasCompanion: boolean;
 }
 
 interface ResolveCompanionParams {
-    isCunaMode: boolean;
-    hasCompanion: boolean;
+  isCunaMode: boolean;
+  hasCompanion: boolean;
 }
 
 interface ResolveClinicalCribParams {
-    hasClinicalCrib: boolean;
+  hasClinicalCrib: boolean;
 }
 
 export const resolveToggleBedModeCommand = ({
-    isCunaMode,
-    hasCompanion
+  isCunaMode,
+  hasCompanion,
 }: ResolveBedModeParams): PatientRowBedModeCommand => {
-    if (!isCunaMode && hasCompanion) {
-        return {
-            kind: 'confirmAndSetBedMode',
-            nextMode: 'Cuna',
-            companionPatch: false,
-            confirm: {
-                title: 'Cambiar a modo Cuna',
-                message: "El 'Modo Cuna clínica' (Paciente principal) no suele ser compatible con 'RN Sano' (Acompañante). ¿Desea desactivar RN Sano y continuar?",
-                confirmText: 'Sí, continuar',
-                cancelText: 'Cancelar',
-                variant: 'warning'
-            }
-        };
-    }
-
+  if (!isCunaMode && hasCompanion) {
     return {
-        kind: 'setBedMode',
-        nextMode: isCunaMode ? 'Cama' : 'Cuna'
+      kind: 'confirmAndSetBedMode',
+      nextMode: 'Cuna',
+      companionPatch: false,
+      confirm: {
+        title: 'Cambiar a modo Cuna',
+        message:
+          "El 'Modo Cuna clínica' (Paciente principal) no suele ser compatible con 'RN Sano' (Acompañante). ¿Desea desactivar RN Sano y continuar?",
+        confirmText: 'Sí, continuar',
+        cancelText: 'Cancelar',
+        variant: 'warning',
+      },
     };
+  }
+
+  return {
+    kind: 'setBedMode',
+    nextMode: isCunaMode ? 'Cama' : 'Cuna',
+  };
 };
 
 export const resolveToggleCompanionCribCommand = ({
-    isCunaMode,
-    hasCompanion
+  isCunaMode,
+  hasCompanion,
 }: ResolveCompanionParams): PatientRowCompanionResult => {
-    if (isCunaMode) {
-        return fail({
-            code: 'COMPANION_NOT_ALLOWED_IN_CUNA',
-            title: 'Acción no permitida',
-            message: "No se puede agregar 'RN Sano' si la cama principal está en 'Modo Cuna clínica'. Use el modo Cama para la madre."
-        });
-    }
-
-    return ok({
-        kind: 'toggleCompanion',
-        nextValue: !hasCompanion
+  if (isCunaMode) {
+    return fail({
+      code: 'COMPANION_NOT_ALLOWED_IN_CUNA',
+      title: 'Acción no permitida',
+      message:
+        "No se puede agregar 'RN Sano' si la cama principal está en 'Modo Cuna clínica'. Use el modo Cama para la madre.",
     });
+  }
+
+  return ok({
+    kind: 'toggleCompanion',
+    nextValue: !hasCompanion,
+  });
 };
 
 export const resolveToggleClinicalCribCommand = ({
-    hasClinicalCrib
+  hasClinicalCrib,
 }: ResolveClinicalCribParams): PatientRowClinicalCribCommand => ({
-    kind: 'toggleClinicalCrib',
-    action: hasClinicalCrib ? 'remove' : 'create'
+  kind: 'toggleClinicalCrib',
+  action: hasClinicalCrib ? 'remove' : 'create',
 });

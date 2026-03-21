@@ -1,6 +1,6 @@
 import type { CMAData } from '@/types/domain/movements';
 import type { PatientData } from '@/types/domain/patient';
-import type { ControllerConfirmDescriptor } from '@/features/census/controllers/controllerConfirmDescriptor';
+import type { ControllerConfirmDescriptor } from '@/shared/contracts/controllers/confirmDescriptor';
 import {
   type ControllerResult,
   failWithCode,

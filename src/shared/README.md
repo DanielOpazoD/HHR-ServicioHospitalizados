@@ -8,6 +8,7 @@ Utilidades y contratos transversales compartidos entre múltiples capas/features
 
 | Path                              | Propósito                                                                           |
 | --------------------------------- | ----------------------------------------------------------------------------------- |
+| `contracts/controllers/*.ts`      | Contratos tipados de controllers reutilizables entre features sin ownership cruzado |
 | `runtime/browserWindowRuntime.ts` | Adapter para efectos browser (`alert`, `confirm`, `open`, `reload`, `localStorage`) |
 | `ui/anchoredOverlayTypes.ts`      | Tipos de overlays/posicionamiento reutilizables                                     |
 

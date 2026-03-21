@@ -4,7 +4,7 @@ import type {
   DischargeState,
   TransferState,
 } from '@/features/census/types/censusActionTypes';
-import type { ControllerConfirmDescriptor } from '@/features/census/controllers/controllerConfirmDescriptor';
+import type { ControllerConfirmDescriptor } from '@/shared/contracts/controllers/confirmDescriptor';
 
 export type RowActionConfirmDescriptor = ControllerConfirmDescriptor;
 

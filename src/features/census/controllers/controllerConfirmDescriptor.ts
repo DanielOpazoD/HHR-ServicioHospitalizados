@@ -1,8 +1,1 @@
-export interface ControllerConfirmDescriptor {
-  title: string;
-  message: string;
-  confirmText?: string;
-  cancelText?: string;
-  variant?: 'danger' | 'warning' | 'info';
-  requireInputConfirm?: string;
-}
+export type { ControllerConfirmDescriptor } from '@/shared/contracts/controllers/confirmDescriptor';

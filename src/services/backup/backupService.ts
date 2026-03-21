@@ -33,9 +33,11 @@ import {
   type BackupCrudResult,
 } from '@/services/backup/backupCrudResults';
 import {
-  formatBackupDisplayDate,
-  formatBackupShiftLabel,
-} from '@/shared/backup/backupPresentation';
+  buildNursingHandoffBackupPayload,
+  docToBackupFile,
+  docToBackupPreview,
+  generateBackupId,
+} from '@/services/backup/backupServiceHelpers';
 
 // ============= Collection Reference =============
 
@@ -43,14 +45,6 @@ const getBackupCollection = () =>
   collection(db, COLLECTIONS.HOSPITALS, getActiveHospitalId(), 'backupFiles');
 
 // ============= Helper Functions =============
-
-/**
- * Generate a deterministic ID for a backup based on date and shift
- * This ensures only one backup per day+shift exists
- */
-const generateBackupId = (date: string, shiftType: 'day' | 'night'): string => {
-  return `${date}_${shiftType}`;
-};
 
 /**
  * Get current user info for audit trail
@@ -77,44 +71,6 @@ const getCurrentUserInfoWithResult = (): BackupCrudResult<{
   } catch (error) {
     return createBackupCrudFailure(error);
   }
-};
-
-/**
- * Convert Firestore document to BackupFilePreview
- */
-const docToPreview = (
-  docSnap: QueryDocumentSnapshot<DocumentData> | DocumentSnapshot<DocumentData>
-): BackupFilePreview => {
-  const data = docSnap.data();
-  if (!data) {
-    throw new Error('Document data is undefined');
-  }
-  return {
-    id: docSnap.id,
-    type: data.type,
-    shiftType: data.shiftType,
-    date: data.date,
-    title: data.title,
-    createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt?.toString(),
-    createdBy: data.createdBy,
-    metadata: data.metadata,
-  };
-};
-
-/**
- * Convert Firestore document to full BackupFile
- */
-const docToBackupFile = (
-  docSnap: QueryDocumentSnapshot<DocumentData> | DocumentSnapshot<DocumentData>
-): BackupFile => {
-  const data = docSnap.data();
-  if (!data) {
-    throw new Error('Document data is undefined');
-  }
-  return {
-    ...docToPreview(docSnap),
-    content: data.content,
-  };
 };
 
 // ============= CRUD Operations =============
@@ -157,25 +113,15 @@ export const saveNursingHandoffBackupWithResult = async (
     }
     const userInfo = userInfoResult.data;
     const backupId = generateBackupId(date, shiftType);
-
-    const beds = (content as { beds?: Record<string, { patientName?: string }> }).beds;
-    const patientCount = beds ? Object.values(beds).filter(b => b?.patientName).length : 0;
-
-    const backupData = {
-      type: 'NURSING_HANDOFF' as BackupFileType,
-      shiftType,
+    const backupData = buildNursingHandoffBackupPayload({
       date,
-      title: `Entrega de Turno Enfermería - ${formatBackupShiftLabel(shiftType)} - ${formatDateForTitle(date)}`,
+      shiftType,
+      deliveryStaff,
+      receivingStaff,
+      content,
       createdAt: Timestamp.now(),
       createdBy: userInfo,
-      metadata: {
-        deliveryStaff,
-        receivingStaff,
-        patientCount,
-        shiftType,
-      },
-      content,
-    };
+    });
 
     const docRef = doc(getBackupCollection(), backupId);
     await setDoc(docRef, backupData);
@@ -320,7 +266,7 @@ export const listBackupFilesWithResult = async (
     }
 
     const snapshot = await getDocs(q);
-    const files = snapshot.docs.map(docToPreview);
+    const files = snapshot.docs.map(docToBackupPreview);
 
     // Client-side search filter (Firestore doesn't support text search)
     if (filters?.searchQuery) {
@@ -376,13 +322,4 @@ export const deleteBackupFileWithResult = async (
     });
     return createBackupCrudFailure(error);
   }
-};
-
-// ============= Helpers =============
-
-/**
- * Format date for display in title
- */
-const formatDateForTitle = (dateStr: string): string => {
-  return formatBackupDisplayDate(dateStr);
 };

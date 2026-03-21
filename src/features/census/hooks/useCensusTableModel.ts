@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { BEDS } from '@/constants/beds';
 import { TableColumnConfig } from '@/context/TableConfigContext';
 import { getTodayISO } from '@/utils/dateUtils';
-import type { ControllerConfirmDescriptor } from '@/features/census/controllers/controllerConfirmDescriptor';
+import type { ControllerConfirmDescriptor } from '@/shared/contracts/controllers/confirmDescriptor';
 import {
   buildCensusBedRows,
   buildVisibleBeds,

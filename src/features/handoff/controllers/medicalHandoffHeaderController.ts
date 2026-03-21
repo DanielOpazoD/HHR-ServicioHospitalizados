@@ -1,6 +1,6 @@
 import type { BedDefinition } from '@/types/domain/base';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
-import type { ControllerConfirmDescriptor } from '@/features/census/controllers/controllerConfirmDescriptor';
+import type { ControllerConfirmDescriptor } from '@/shared/contracts/controllers/confirmDescriptor';
 
 export interface MedicalHandoffBedStats {
   totalBeds: number;

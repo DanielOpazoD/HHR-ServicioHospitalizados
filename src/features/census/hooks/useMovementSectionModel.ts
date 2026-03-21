@@ -1,5 +1,5 @@
 import { resolveMovementSectionState } from '@/features/census/controllers/censusMovementSectionController';
-import type { ControllerConfirmDescriptor } from '@/features/census/controllers/controllerConfirmDescriptor';
+import type { ControllerConfirmDescriptor } from '@/shared/contracts/controllers/confirmDescriptor';
 import { useMovementSectionActions } from '@/features/census/hooks/useMovementSectionActions';
 import type { CensusMovementSectionModel } from '@/features/census/types/censusMovementSectionModelTypes';
 

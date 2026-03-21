@@ -9,6 +9,20 @@ import type {
   OperationalTelemetryStatus,
 } from '@/services/observability/operationalTelemetryTypes';
 import { logger } from '@/services/utils/loggerService';
+import {
+  buildTopObservedOperationalKey,
+  canUseOperationalTelemetryLocalStorage,
+  createRecordedOperationalTelemetryEvent,
+  isDefinedOperationalTelemetryEvent,
+  isObservedOperationalTelemetryStatus,
+  normalizeOperationalTelemetryIssues,
+  OBSERVED_CATEGORY_ORDER,
+  OPERATIONAL_TELEMETRY_DEFAULT_WINDOW_MS,
+  OPERATIONAL_TELEMETRY_STORAGE_KEY,
+  sanitizeOperationalTelemetryContext,
+  sanitizePersistedOperationalTelemetryEvent,
+  trimOperationalTelemetryEvents,
+} from '@/services/observability/operationalTelemetrySupport';
 
 export interface OperationalTelemetrySummary {
   recentEventCount: number;
@@ -36,119 +50,18 @@ interface ApplicationOutcomeLike {
   issues?: Array<{ message?: string }>;
 }
 
-const STORAGE_KEY = 'operationalTelemetryEvents';
-const MAX_EVENTS = 200;
-const DEFAULT_WINDOW_MS = 12 * 60 * 60 * 1000;
-const OBSERVED_STATUSES: OperationalTelemetryStatus[] = ['partial', 'degraded', 'failed'];
-const OBSERVED_CATEGORY_ORDER: OperationalTelemetryCategory[] = [
-  'sync',
-  'indexeddb',
-  'clinical_document',
-  'create_day',
-  'handoff',
-  'export',
-  'backup',
-];
-
 let memoryEvents: OperationalTelemetryEvent[] = [];
 const operationalTelemetryLogger = logger.child('OperationalTelemetry');
 
-const canUseLocalStorage = (): boolean =>
-  typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
-
-const normalizeIssues = (issues?: string[]): string[] | undefined => {
-  if (!issues || issues.length === 0) return undefined;
-  const normalized = issues.map(issue => String(issue).trim()).filter(Boolean);
-  return normalized.length > 0 ? normalized.slice(0, 5) : undefined;
-};
-
-const sanitizeContext = (
-  context?: Record<string, unknown>
-): Record<string, unknown> | undefined => {
-  if (!context) return undefined;
-  const sanitizedEntries = Object.entries(context)
-    .filter(([, value]) => value !== undefined)
-    .slice(0, 12)
-    .map(([key, value]) => {
-      if (
-        value === null ||
-        typeof value === 'string' ||
-        typeof value === 'number' ||
-        typeof value === 'boolean'
-      ) {
-        return [key, value];
-      }
-      return [key, JSON.stringify(value)];
-    });
-
-  return sanitizedEntries.length > 0 ? Object.fromEntries(sanitizedEntries) : undefined;
-};
-
-const trimEvents = (events: OperationalTelemetryEvent[]): OperationalTelemetryEvent[] =>
-  events.slice(-MAX_EVENTS);
-
-const isOperationalTelemetryStatus = (value: unknown): value is OperationalTelemetryStatus =>
-  value === 'success' || value === 'partial' || value === 'degraded' || value === 'failed';
-
-const isOperationalTelemetryCategory = (value: unknown): value is OperationalTelemetryCategory =>
-  value === 'auth' ||
-  value === 'daily_record' ||
-  value === 'firestore' ||
-  value === 'sync' ||
-  value === 'indexeddb' ||
-  value === 'integration' ||
-  value === 'export' ||
-  value === 'backup' ||
-  value === 'reminders' ||
-  value === 'transfers' ||
-  value === 'clinical_document' ||
-  value === 'create_day' ||
-  value === 'handoff';
-
-const sanitizePersistedEvent = (value: unknown): OperationalTelemetryEvent | null => {
-  if (!value || typeof value !== 'object') return null;
-  const event = value as Partial<OperationalTelemetryEvent>;
-  if (
-    !isOperationalTelemetryCategory(event.category) ||
-    !isOperationalTelemetryStatus(event.status) ||
-    typeof event.operation !== 'string' ||
-    event.operation.trim().length === 0 ||
-    typeof event.timestamp !== 'string' ||
-    Number.isNaN(Date.parse(event.timestamp))
-  ) {
-    return null;
-  }
-
-  return {
-    category: event.category,
-    status: event.status,
-    operation: event.operation,
-    timestamp: event.timestamp,
-    date: typeof event.date === 'string' ? event.date : undefined,
-    issues: Array.isArray(event.issues) ? normalizeIssues(event.issues) : undefined,
-    context:
-      event.context && typeof event.context === 'object'
-        ? sanitizeContext(event.context as Record<string, unknown>)
-        : undefined,
-  };
-};
-
-const isObservedStatus = (status: OperationalTelemetryStatus): boolean =>
-  OBSERVED_STATUSES.includes(status);
-
-const isDefinedEvent = (
-  event: OperationalTelemetryEvent | null
-): event is OperationalTelemetryEvent => event !== null;
-
 const persistEvents = (events: OperationalTelemetryEvent[]): void => {
-  memoryEvents = trimEvents(events);
+  memoryEvents = trimOperationalTelemetryEvents(events);
 
-  if (!canUseLocalStorage()) {
+  if (!canUseOperationalTelemetryLocalStorage()) {
     return;
   }
 
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryEvents));
+    window.localStorage.setItem(OPERATIONAL_TELEMETRY_STORAGE_KEY, JSON.stringify(memoryEvents));
   } catch (error) {
     operationalTelemetryLogger.warn('Failed to persist events', error);
   }
@@ -159,16 +72,20 @@ const readPersistedEvents = (): OperationalTelemetryEvent[] => {
     return memoryEvents;
   }
 
-  if (!canUseLocalStorage()) {
+  if (!canUseOperationalTelemetryLocalStorage()) {
     return [];
   }
 
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(OPERATIONAL_TELEMETRY_STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    memoryEvents = trimEvents(parsed.map(sanitizePersistedEvent).filter(isDefinedEvent));
+    memoryEvents = trimOperationalTelemetryEvents(
+      parsed
+        .map(sanitizePersistedOperationalTelemetryEvent)
+        .filter(isDefinedOperationalTelemetryEvent)
+    );
     return memoryEvents;
   } catch (error) {
     operationalTelemetryLogger.warn('Failed to read persisted events', error);
@@ -193,12 +110,7 @@ export const recordOperationalTelemetry = (
     return;
   }
 
-  const event: OperationalTelemetryEvent = {
-    ...input,
-    timestamp: new Date().toISOString(),
-    issues: normalizeIssues(input.issues),
-    context: sanitizeContext(input.context),
-  };
+  const event = createRecordedOperationalTelemetryEvent(input);
 
   const nextEvents = [...readPersistedEvents(), event];
   persistEvents(nextEvents);
@@ -214,41 +126,41 @@ export const clearOperationalTelemetryEvents = (): void => {
 
 export const buildOperationalTelemetrySummary = (
   events: OperationalTelemetryEvent[],
-  windowMs: number = DEFAULT_WINDOW_MS
+  windowMs: number = OPERATIONAL_TELEMETRY_DEFAULT_WINDOW_MS
 ): OperationalTelemetrySummary => {
   const now = Date.now();
   const recentEvents = events.filter(event => now - Date.parse(event.timestamp) <= windowMs);
   const lastHourEvents = events.filter(
     event => now - Date.parse(event.timestamp) <= 60 * 60 * 1000
   );
-  const observedEvents = recentEvents.filter(event => isObservedStatus(event.status));
-  const buildTopKey = <T extends string>(values: T[]): T | undefined => {
-    if (values.length === 0) return undefined;
-    const counts = values.reduce<Record<string, number>>((acc, value) => {
-      acc[value] = (acc[value] || 0) + 1;
-      return acc;
-    }, {});
-    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] as T | undefined;
-  };
+  const observedEvents = recentEvents.filter(event =>
+    isObservedOperationalTelemetryStatus(event.status)
+  );
   const failedEvents = recentEvents.filter(event => event.status === 'failed');
   const observedCategoryCounts = OBSERVED_CATEGORY_ORDER.reduce<Record<string, number>>(
     (acc, category) => {
       acc[category] = recentEvents.filter(
-        event => event.category === category && isObservedStatus(event.status)
+        event => event.category === category && isObservedOperationalTelemetryStatus(event.status)
       ).length;
       return acc;
     },
     {}
   );
-  const topObservedCategory = buildTopKey(observedEvents.map(event => event.category));
-  const topObservedOperation = buildTopKey(observedEvents.map(event => event.operation));
+  const topObservedCategory = buildTopObservedOperationalKey(
+    observedEvents.map(event => event.category)
+  );
+  const topObservedOperation = buildTopObservedOperationalKey(
+    observedEvents.map(event => event.operation)
+  );
   const latestObservedOperation = observedEvents.at(-1)?.operation;
 
   return {
     recentEventCount: recentEvents.length,
     recentFailedCount: failedEvents.length,
     recentObservedCount: observedEvents.length,
-    lastHourObservedCount: lastHourEvents.filter(event => isObservedStatus(event.status)).length,
+    lastHourObservedCount: lastHourEvents.filter(event =>
+      isObservedOperationalTelemetryStatus(event.status)
+    ).length,
     syncFailureCount: recentEvents.filter(
       event => event.category === 'sync' && event.status === 'failed'
     ).length,
@@ -266,7 +178,7 @@ export const buildOperationalTelemetrySummary = (
     exportOrBackupObservedCount: recentEvents.filter(
       event =>
         (event.category === 'export' || event.category === 'backup') &&
-        isObservedStatus(event.status)
+        isObservedOperationalTelemetryStatus(event.status)
     ).length,
     topObservedCategory,
     topObservedOperation,
@@ -276,7 +188,7 @@ export const buildOperationalTelemetrySummary = (
 };
 
 export const getOperationalTelemetrySummary = (
-  windowMs: number = DEFAULT_WINDOW_MS
+  windowMs: number = OPERATIONAL_TELEMETRY_DEFAULT_WINDOW_MS
 ): OperationalTelemetrySummary => buildOperationalTelemetrySummary(readPersistedEvents(), windowMs);
 
 export const recordOperationalOutcome = (
@@ -296,7 +208,9 @@ export const recordOperationalOutcome = (
       status: outcome.status,
       date: options.date,
       context: options.context,
-      issues: (outcome.issues || []).map(issue => issue.message || 'Sin detalle'),
+      issues: normalizeOperationalTelemetryIssues(
+        (outcome.issues || []).map(issue => issue.message || 'Sin detalle')
+      ),
     },
     { allowSuccess: options.allowSuccess }
   );
@@ -326,7 +240,9 @@ export const recordOperationalErrorTelemetry = (
       ...operationalError.context,
       ...options.context,
     },
-    issues: [operationalError.userSafeMessage || operationalError.message],
+    issues: normalizeOperationalTelemetryIssues([
+      operationalError.userSafeMessage || operationalError.message,
+    ]),
   });
   return operationalError;
 };

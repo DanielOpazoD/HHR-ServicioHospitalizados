@@ -1,5 +1,5 @@
 import React from 'react';
-import type { ControllerConfirmDescriptor } from '@/features/census/controllers/controllerConfirmDescriptor';
+import type { ControllerConfirmDescriptor } from '@/shared/contracts/controllers/confirmDescriptor';
 
 interface ConfirmedMovementRunnerParams {
   dialog: ControllerConfirmDescriptor;
