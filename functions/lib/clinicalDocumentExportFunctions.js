@@ -6,7 +6,11 @@ const { HOSPITAL_ID } = require('./runtime/runtimeConfig');
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive';
 const FOLDER_MIME_TYPE = 'application/vnd.google-apps.folder';
 const EXPORT_ALLOWED_ROLES = new Set(['admin', 'doctor_urgency']);
-const CLINICAL_DRIVE_SERVICE_ACCOUNT = 'documentos-hhr@hhr-pruebas.iam.gserviceaccount.com';
+const GCLOUD_PROJECT =
+  process.env.GCLOUD_PROJECT || process.env.FIREBASE_CONFIG
+    ? JSON.parse(process.env.FIREBASE_CONFIG).projectId
+    : 'hhr-serviciohospitalizados';
+const CLINICAL_DRIVE_SERVICE_ACCOUNT = `documentos-hhr@${GCLOUD_PROJECT}.iam.gserviceaccount.com`;
 const SPANISH_MONTH_NAMES = [
   'Enero',
   'Febrero',
@@ -21,6 +25,14 @@ const SPANISH_MONTH_NAMES = [
   'Noviembre',
   'Diciembre',
 ];
+
+const DOCUMENT_TYPE_FOLDER_MAPPING = {
+  epicrisis: 'Epicrisis',
+  evolucion: 'Evoluciones',
+  informe_medico: 'Informes Médicos',
+  epicrisis_traslado: 'Epicrisis de Traslado',
+  otro: 'Otros Documentos',
+};
 
 const normalizeText = value =>
   String(value || '')
@@ -226,7 +238,11 @@ const createClinicalDocumentExportFunctions = ({
   buildDriveClientOverride,
 }) => ({
   exportClinicalDocumentPdfToDrive: functions
-    .runWith({ serviceAccount: CLINICAL_DRIVE_SERVICE_ACCOUNT })
+    .runWith({
+      timeoutSeconds: 300,
+      memory: '1GB',
+      serviceAccount: CLINICAL_DRIVE_SERVICE_ACCOUNT,
+    })
     .https.onCall(async (data, context) => {
       await assertExportAccess(context, resolveRoleForEmail);
 
@@ -249,8 +265,13 @@ const createClinicalDocumentExportFunctions = ({
       const now = new Date();
       const year = now.getFullYear().toString();
       const monthFolderName = buildDriveMonthFolderName(now);
+      const typeFolderName = DOCUMENT_TYPE_FOLDER_MAPPING[documentType] || 'Otros';
+
       const drive = buildDriveClientOverride ? buildDriveClientOverride() : buildDriveClient();
-      const yearFolderId = await getOrCreateFolder(drive, year, rootFolderId);
+
+      // Navegación jerárquica: Root -> Tipo -> Año -> Mes Año
+      const typeFolderId = await getOrCreateFolder(drive, typeFolderName, rootFolderId);
+      const yearFolderId = await getOrCreateFolder(drive, year, typeFolderId);
       const monthFolderId = await getOrCreateFolder(drive, monthFolderName, yearFolderId);
 
       const upload = await upsertPdfFile(drive, monthFolderId, fileName, mimeType, content);
