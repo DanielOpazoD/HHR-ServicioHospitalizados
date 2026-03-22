@@ -1,6 +1,3 @@
-import { createRequire } from 'module';
-const requireNode = createRequire(import.meta.url);
-
 import { CENSUS_DEFAULT_RECIPIENTS } from '../../src/constants/email';
 import {
   buildCensusMasterBuffer,
@@ -145,7 +142,8 @@ export const handler = async (event: NetlifyEvent) => {
 
     let attachmentBuffer = null;
     if (!shareLink) {
-      const XlsxPopulate = requireNode('xlsx-populate');
+      const XlsxPopulateModule = await import('xlsx-populate/lib/XlsxPopulate.js');
+      const XlsxPopulate = XlsxPopulateModule.default || XlsxPopulateModule;
       attachmentBuffer = await XlsxPopulate.fromDataAsync(attachmentBufferRaw)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .then((workbook: any) => workbook.outputAsync({ password }));
