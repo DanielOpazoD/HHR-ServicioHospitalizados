@@ -1,7 +1,5 @@
-if (typeof window === 'undefined') {
-  (global as any).window = {};
-  (global as any).document = { createElement: () => ({}) };
-}
+import { createRequire } from 'module';
+const requireNode = createRequire(import.meta.url);
 
 import { CENSUS_DEFAULT_RECIPIENTS } from '../../src/constants/email';
 import {
@@ -147,7 +145,7 @@ export const handler = async (event: NetlifyEvent) => {
 
     let attachmentBuffer = null;
     if (!shareLink) {
-      const XlsxPopulate = (await import('xlsx-populate')).default;
+      const XlsxPopulate = requireNode('xlsx-populate');
       attachmentBuffer = await XlsxPopulate.fromDataAsync(attachmentBufferRaw)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .then((workbook: any) => workbook.outputAsync({ password }));
