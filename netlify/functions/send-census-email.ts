@@ -142,8 +142,7 @@ export const handler = async (event: NetlifyEvent) => {
 
     let attachmentBuffer = null;
     if (!shareLink) {
-      const XlsxPopulateModule = await import('xlsx-populate/lib/XlsxPopulate.js');
-      const XlsxPopulate = XlsxPopulateModule.default || XlsxPopulateModule;
+      const XlsxPopulate = (await import('xlsx-populate')).default;
       attachmentBuffer = await XlsxPopulate.fromDataAsync(attachmentBufferRaw)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .then((workbook: any) => workbook.outputAsync({ password }));
