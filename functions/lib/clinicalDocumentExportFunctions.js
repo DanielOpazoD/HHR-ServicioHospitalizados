@@ -23,6 +23,14 @@ const SPANISH_MONTH_NAMES = [
   'Diciembre',
 ];
 
+const DOCUMENT_TYPE_FOLDER_MAPPING = {
+  epicrisis: 'Epicrisis',
+  evolucion: 'Evoluciones',
+  informe_medico: 'Informes Médicos',
+  epicrisis_traslado: 'Epicrisis de Traslado',
+  otro: 'Otros Documentos',
+};
+
 const normalizeText = value =>
   String(value || '')
     .trim()
@@ -250,8 +258,13 @@ const createClinicalDocumentExportFunctions = ({
       const now = new Date();
       const year = now.getFullYear().toString();
       const monthFolderName = buildDriveMonthFolderName(now);
+      const typeFolderName = DOCUMENT_TYPE_FOLDER_MAPPING[documentType] || 'Otros';
+
       const drive = buildDriveClientOverride ? buildDriveClientOverride() : buildDriveClient();
-      const yearFolderId = await getOrCreateFolder(drive, year, rootFolderId);
+
+      // Navegación jerárquica: Root -> Tipo -> Año -> Mes Año
+      const typeFolderId = await getOrCreateFolder(drive, typeFolderName, rootFolderId);
+      const yearFolderId = await getOrCreateFolder(drive, year, typeFolderId);
       const monthFolderId = await getOrCreateFolder(drive, monthFolderName, yearFolderId);
 
       const upload = await upsertPdfFile(drive, monthFolderId, fileName, mimeType, content);
