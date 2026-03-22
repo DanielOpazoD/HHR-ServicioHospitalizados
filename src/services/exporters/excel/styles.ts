@@ -10,7 +10,13 @@ export const BORDER_THIN = {
 export const HEADER_FILL: Fill = {
   type: 'pattern',
   pattern: 'solid',
-  fgColor: { argb: 'FFE9ECEF' },
+  fgColor: { argb: 'FF005691' }, // HHR Corporate Blue
+};
+
+export const ADMISSION_FILL: Fill = {
+  type: 'pattern',
+  pattern: 'solid',
+  fgColor: { argb: 'FFFFFFD4' }, // Soft Yellow for admissions
 };
 
 export const FREE_FILL: Fill = {
@@ -25,7 +31,16 @@ export const BLOCKED_FILL: Fill = {
   fgColor: { argb: 'FFFBE5D6' },
 };
 
-export const TITLE_STYLE: Partial<Font> = { bold: true, size: 11 };
-export const MAIN_TITLE_STYLE: Partial<Font> = { bold: true, size: 14 };
+export const TITLE_STYLE: Partial<Font> = { bold: true, size: 12, color: { argb: 'FF005691' } };
+export const MAIN_TITLE_STYLE: Partial<Font> = {
+  bold: true,
+  size: 16,
+  color: { argb: 'FF005691' },
+};
+export const HEADER_FONT_STYLE: Partial<Font> = {
+  bold: true,
+  size: 10,
+  color: { argb: 'FFFFFFFF' },
+};
 
 export const EXCEL_SHEET_NAME_MAX_LENGTH = 31;

@@ -38,5 +38,17 @@ export const createCensusWorkbookDaySheet = (
   currentRow++;
 
   addCMATable(sheet, record.cma || [], currentRow);
+
+  // Freeze panes: Header row and first 4 columns (up to Patient Name)
+  sheet.views = [
+    {
+      state: 'frozen',
+      xSplit: 4,
+      ySplit: 11,
+      topLeftCell: 'E12',
+      activeCell: 'E12',
+    },
+  ];
+
   applyCensusDaySheetColumnLayout(sheet);
 };
