@@ -12,7 +12,7 @@ import { sendCensusEmail } from '../../src/services/email/gmailClient';
 import type { DailyRecord } from '../../src/types';
 import type { CensusWorkbookSheetDescriptor } from '../../src/services/exporters/censusMasterWorkbook';
 import { generateCensusPassword } from '../../src/services/security/passwordGenerator';
-import XlsxPopulate from 'xlsx-populate';
+import XlsxPopulate from 'xlsx-populate/lib/XlsxPopulate.js';
 
 const ALLOWED_ROLES = ['nurse_hospital', 'admin'];
 
