@@ -1,5 +1,6 @@
 import { db } from '../infrastructure/db';
 import { logger } from '@/services/utils/loggerService';
+import type { OperationalRuntimeState } from '@/services/observability/operationalRuntimeState';
 
 const HEALTH_COLLECTION = 'system_health';
 const STATS_DOC = 'stats';
@@ -25,6 +26,11 @@ export interface UserHealthStatus {
   slowestRepositoryOperationMs: number;
   operationalObservedCount: number;
   operationalFailureCount: number;
+  operationalRetryableCount: number;
+  operationalRecoverableCount: number;
+  operationalDegradedCount: number;
+  operationalBlockedCount: number;
+  operationalUnauthorizedCount: number;
   operationalLastHourObservedCount: number;
   operationalSyncObservedCount: number;
   operationalIndexedDbObservedCount: number;
@@ -35,6 +41,7 @@ export interface UserHealthStatus {
   operationalTopObservedCategory?: string;
   operationalTopObservedOperation?: string;
   latestOperationalOperation?: string;
+  latestOperationalRuntimeState?: OperationalRuntimeState;
   latestOperationalIssueAt?: string;
   appVersion: string;
   platform: string;
@@ -58,6 +65,11 @@ export interface SystemHealthSummary {
   oldestObservedPendingAgeMs: number;
   totalOperationalObservedCount: number;
   totalOperationalFailureCount: number;
+  totalOperationalRetryableCount: number;
+  totalOperationalRecoverableCount: number;
+  totalOperationalDegradedCount: number;
+  totalOperationalBlockedCount: number;
+  totalOperationalUnauthorizedCount: number;
   totalOperationalLastHourObservedCount: number;
   totalOperationalSyncObservedCount: number;
   totalOperationalIndexedDbObservedCount: number;
@@ -67,6 +79,7 @@ export interface SystemHealthSummary {
   totalOperationalExportBackupObservedCount: number;
   topOperationalCategory?: string;
   topOperationalOperation?: string;
+  topOperationalRuntimeState?: OperationalRuntimeState;
   usersWithRecentOperationalIssues: number;
   latestOperationalIssueAt?: string;
 }
@@ -108,6 +121,11 @@ export const normalizeUserHealthStatus = (raw: Partial<UserHealthStatus>): UserH
   slowestRepositoryOperationMs: toNumber(raw.slowestRepositoryOperationMs),
   operationalObservedCount: toNumber(raw.operationalObservedCount),
   operationalFailureCount: toNumber(raw.operationalFailureCount),
+  operationalRetryableCount: toNumber(raw.operationalRetryableCount),
+  operationalRecoverableCount: toNumber(raw.operationalRecoverableCount),
+  operationalDegradedCount: toNumber(raw.operationalDegradedCount),
+  operationalBlockedCount: toNumber(raw.operationalBlockedCount),
+  operationalUnauthorizedCount: toNumber(raw.operationalUnauthorizedCount),
   operationalLastHourObservedCount: toNumber(raw.operationalLastHourObservedCount),
   operationalSyncObservedCount: toNumber(raw.operationalSyncObservedCount),
   operationalIndexedDbObservedCount: toNumber(raw.operationalIndexedDbObservedCount),
@@ -125,6 +143,14 @@ export const normalizeUserHealthStatus = (raw: Partial<UserHealthStatus>): UserH
       : undefined,
   latestOperationalOperation:
     typeof raw.latestOperationalOperation === 'string' ? raw.latestOperationalOperation : undefined,
+  latestOperationalRuntimeState:
+    raw.latestOperationalRuntimeState === 'retryable' ||
+    raw.latestOperationalRuntimeState === 'recoverable' ||
+    raw.latestOperationalRuntimeState === 'degraded' ||
+    raw.latestOperationalRuntimeState === 'blocked' ||
+    raw.latestOperationalRuntimeState === 'unauthorized'
+      ? raw.latestOperationalRuntimeState
+      : undefined,
   latestOperationalIssueAt:
     typeof raw.latestOperationalIssueAt === 'string' ? raw.latestOperationalIssueAt : undefined,
   appVersion: toStringValue(raw.appVersion, 'unknown'),
@@ -156,6 +182,11 @@ export const buildSystemHealthSummary = (statuses: UserHealthStatus[]): SystemHe
       .map(status => status.operationalTopObservedOperation)
       .filter((value): value is string => Boolean(value))
   );
+  const topOperationalRuntimeState = topCount(
+    statuses
+      .map(status => status.latestOperationalRuntimeState)
+      .filter((value): value is OperationalRuntimeState => Boolean(value))
+  ) as OperationalRuntimeState | undefined;
 
   return {
     totalUsers: statuses.length,
@@ -193,6 +224,26 @@ export const buildSystemHealthSummary = (statuses: UserHealthStatus[]): SystemHe
       (sum, status) => sum + status.operationalFailureCount,
       0
     ),
+    totalOperationalRetryableCount: statuses.reduce(
+      (sum, status) => sum + status.operationalRetryableCount,
+      0
+    ),
+    totalOperationalRecoverableCount: statuses.reduce(
+      (sum, status) => sum + status.operationalRecoverableCount,
+      0
+    ),
+    totalOperationalDegradedCount: statuses.reduce(
+      (sum, status) => sum + status.operationalDegradedCount,
+      0
+    ),
+    totalOperationalBlockedCount: statuses.reduce(
+      (sum, status) => sum + status.operationalBlockedCount,
+      0
+    ),
+    totalOperationalUnauthorizedCount: statuses.reduce(
+      (sum, status) => sum + status.operationalUnauthorizedCount,
+      0
+    ),
     totalOperationalLastHourObservedCount: statuses.reduce(
       (sum, status) => sum + status.operationalLastHourObservedCount,
       0
@@ -223,6 +274,7 @@ export const buildSystemHealthSummary = (statuses: UserHealthStatus[]): SystemHe
     ),
     topOperationalCategory,
     topOperationalOperation,
+    topOperationalRuntimeState,
     usersWithRecentOperationalIssues: statuses.filter(status => !!status.latestOperationalIssueAt)
       .length,
     latestOperationalIssueAt,

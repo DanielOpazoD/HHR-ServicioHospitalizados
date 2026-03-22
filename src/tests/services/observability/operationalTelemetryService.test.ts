@@ -59,32 +59,42 @@ describe('operationalTelemetryService', () => {
     recordOperationalTelemetry({
       category: 'sync',
       status: 'failed',
+      runtimeState: 'blocked',
       operation: 'sync_daily_record',
     });
     recordOperationalTelemetry({
       category: 'indexeddb',
       status: 'degraded',
+      runtimeState: 'degraded',
       operation: 'repair_indexeddb',
     });
     recordOperationalTelemetry({
       category: 'backup',
       status: 'partial',
+      runtimeState: 'recoverable',
       operation: 'backup_handoff_pdf',
     });
     recordOperationalTelemetry({
       category: 'clinical_document',
       status: 'degraded',
+      runtimeState: 'retryable',
       operation: 'export_clinical_document_pdf',
     });
     recordOperationalTelemetry({
       category: 'create_day',
       status: 'failed',
+      runtimeState: 'unauthorized',
       operation: 'copy_previous_day',
     });
 
     const summary = buildOperationalTelemetrySummary(getOperationalTelemetryEvents());
     expect(summary.recentObservedCount).toBe(5);
     expect(summary.recentFailedCount).toBe(2);
+    expect(summary.recentRetryableCount).toBe(1);
+    expect(summary.recentRecoverableCount).toBe(1);
+    expect(summary.recentDegradedCount).toBe(1);
+    expect(summary.recentBlockedCount).toBe(1);
+    expect(summary.recentUnauthorizedCount).toBe(1);
     expect(summary.lastHourObservedCount).toBe(5);
     expect(summary.syncFailureCount).toBe(1);
     expect(summary.syncObservedCount).toBe(1);
@@ -95,6 +105,7 @@ describe('operationalTelemetryService', () => {
     expect(summary.handoffObservedCount).toBe(0);
     expect(summary.backupObservedCount).toBe(1);
     expect(summary.exportOrBackupObservedCount).toBe(1);
+    expect(summary.latestRuntimeState).toBe('unauthorized');
     expect(summary.latestIssueAt).toBeDefined();
   });
 
@@ -102,6 +113,7 @@ describe('operationalTelemetryService', () => {
     recordOperationalTelemetry({
       category: 'handoff',
       status: 'degraded',
+      runtimeState: 'recoverable',
       operation: 'send_medical_handoff',
     });
 
@@ -109,6 +121,7 @@ describe('operationalTelemetryService', () => {
     expect(summary.handoffObservedCount).toBe(1);
     expect(summary.topObservedCategory).toBe('handoff');
     expect(summary.topObservedOperation).toBe('send_medical_handoff');
+    expect(summary.latestRuntimeState).toBe('recoverable');
   });
 
   it('filters malformed persisted events and sanitizes persisted issues/context', () => {
@@ -118,6 +131,7 @@ describe('operationalTelemetryService', () => {
         {
           category: 'sync',
           status: 'failed',
+          runtimeState: 'blocked',
           operation: 'sync_daily_record',
           timestamp: '2026-03-06T20:00:00.000Z',
           issues: [' Error ', '', 1],
@@ -143,6 +157,7 @@ describe('operationalTelemetryService', () => {
     expect(events[0]).toEqual({
       category: 'sync',
       status: 'failed',
+      runtimeState: 'blocked',
       operation: 'sync_daily_record',
       timestamp: '2026-03-06T20:00:00.000Z',
       issues: ['Error', '1'],
@@ -182,6 +197,7 @@ describe('operationalTelemetryService', () => {
         code: 'transfer_active_subscription_failed',
         message: 'socket down',
         severity: 'warning',
+        runtimeState: 'retryable',
         userSafeMessage: 'No se pudo sincronizar traslados activos.',
       }
     );
@@ -192,5 +208,6 @@ describe('operationalTelemetryService', () => {
       expect.objectContaining({ errorCode: 'transfer_active_subscription_failed' })
     );
     expect(event?.status).toBe('degraded');
+    expect(event?.runtimeState).toBe('retryable');
   });
 });

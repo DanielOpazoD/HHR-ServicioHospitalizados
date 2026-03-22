@@ -3,6 +3,7 @@ import type {
   OperationalTelemetryEvent,
   OperationalTelemetryStatus,
 } from '@/services/observability/operationalTelemetryTypes';
+import { isOperationalRuntimeState } from '@/services/observability/operationalRuntimeState';
 
 export const OPERATIONAL_TELEMETRY_STORAGE_KEY = 'operationalTelemetryEvents';
 export const OPERATIONAL_TELEMETRY_MAX_EVENTS = 200;
@@ -96,6 +97,7 @@ export const sanitizePersistedOperationalTelemetryEvent = (
   return {
     category: event.category,
     status: event.status,
+    runtimeState: isOperationalRuntimeState(event.runtimeState) ? event.runtimeState : undefined,
     operation: event.operation,
     timestamp: event.timestamp,
     date: typeof event.date === 'string' ? event.date : undefined,

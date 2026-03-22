@@ -93,6 +93,7 @@ export const resolveFirebaseUserRole = async (firebaseUser: User): Promise<UserR
       code: 'auth_token_role_resolution_failed',
       message: 'Error resolving role from config/roles.',
       severity: 'warning',
+      runtimeState: 'retryable',
       userSafeMessage: 'No se pudo resolver el rol desde la sesión actual.',
       context: {
         email: firebaseUser.email || null,

@@ -86,14 +86,16 @@ export const signInWithGoogle = async (): Promise<AuthUser> =>
         code: mappedError.code,
         message: mappedError.message,
         severity: isPopupRecoverableAuthError(error) ? 'warning' : 'error',
+        runtimeState: isPopupRecoverableAuthError(error) ? 'recoverable' : 'blocked',
         userSafeMessage: mappedError.message,
       });
 
       if (isPopupRecoverableAuthError(error)) {
-        emitAuthOperationalEvent('sign_in_google_popup_recovery', 'degraded', {
+        emitAuthOperationalEvent('sign_in_google_popup_recovery', 'recoverable', {
           code: 'auth_google_popup_recovery_suggested',
           message: 'Trying alternate Google sign-in flow after browser popup issue.',
           severity: 'warning',
+          runtimeState: 'recoverable',
           userSafeMessage: 'Puedes probar la forma alternativa de ingreso con Google.',
           context: {
             errorCode: mappedError.code,

@@ -12,6 +12,9 @@ const syncDomainPolicyContent = read('src/services/storage/sync/syncDomainPolicy
 const conflictDomainContent = read('src/services/repositories/conflictResolutionDomainPolicy.ts');
 const indexedDbCoreContent = read('src/services/storage/indexeddb/indexedDbCore.ts');
 const authConfigContent = read('functions/lib/auth/authConfig.js');
+const operationalRuntimeStateContent = read(
+  'src/services/observability/operationalRuntimeState.ts'
+);
 const repositoryFiles = [
   'src/services/repositories/dailyRecordRepositoryReadService.ts',
   'src/services/repositories/dailyRecordRepositoryInitializationService.ts',
@@ -56,6 +59,13 @@ const extractConstArrayStrings = (content, name) => {
 
 const extractSetStrings = (content, name) => {
   const match = content.match(new RegExp(`const\\s+${name}\\s*=\\s*new Set\\(\\[([\\s\\S]*?)\\]\\)`, 'm'));
+  if (!match) return [];
+
+  return [...match[1].matchAll(/'([^']+)'/g)].map(item => item[1]);
+};
+
+const extractConstTupleStrings = (content, name) => {
+  const match = content.match(new RegExp(`const\\s+${name}\\s*=\\s*\\[([\\s\\S]*?)\\]`, 'm'));
   if (!match) return [];
 
   return [...match[1].matchAll(/'([^']+)'/g)].map(item => item[1]);
@@ -185,6 +195,10 @@ const authAccess = {
   canonicalModelDoc: 'docs/AUTH_ACCESS_MODEL.md',
   authIncidentRunbook: 'docs/RUNBOOK_AUTH_ACCESS_INCIDENTS.md',
 };
+const operationalRuntimeStates = {
+  contract: 'src/services/observability/operationalRuntimeState.ts',
+  states: extractConstTupleStrings(operationalRuntimeStateContent, 'OPERATIONAL_RUNTIME_STATES'),
+};
 const runbooks = [
   'docs/RUNBOOK_SYNC_RESILIENCE.md',
   'docs/RUNBOOK_SUPPORT_OPERATIONS.md',
@@ -218,6 +232,7 @@ const summary = {
   legacyBridge: legacyBridgeReport,
   localPersistence,
   authAccess,
+  operationalRuntimeStates,
   flowPerformance: flowPerformanceSummary
     ? {
         status: flowPerformanceSummary.summary?.status ?? 'unknown',
@@ -358,6 +373,15 @@ ${Object.entries(summary.conflictContexts)
 }
 - Modelo canónico: \`${summary.authAccess.canonicalModelDoc}\`
 - Runbook auth: \`${summary.authAccess.authIncidentRunbook}\`
+
+## Operational Runtime Taxonomy
+
+- Contrato: \`${summary.operationalRuntimeStates.contract}\`
+- Estados canónicos: ${
+  summary.operationalRuntimeStates.states.length > 0
+    ? summary.operationalRuntimeStates.states.map(state => `\`${state}\``).join(', ')
+    : 'unknown'
+}
 
 ## Flow Performance Budgets
 

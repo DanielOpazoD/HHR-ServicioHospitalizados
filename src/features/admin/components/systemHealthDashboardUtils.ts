@@ -75,7 +75,7 @@ export const buildSystemHealthMetricCards = (
     title: 'Operaciones con observaciones (12h)',
     value: summary.totalOperationalObservedCount,
     accentClassName: 'text-amber-600',
-    detail: `Fallidas: ${summary.totalOperationalFailureCount} · Export/backup: ${summary.totalOperationalExportBackupObservedCount}`,
+    detail: `Bloqueadas: ${summary.totalOperationalBlockedCount} · Recuperables: ${summary.totalOperationalRecoverableCount} · No autorizadas: ${summary.totalOperationalUnauthorizedCount}`,
   },
   {
     title: 'Observaciones por tipo',
@@ -88,7 +88,7 @@ export const buildSystemHealthMetricCards = (
     value: summary.topOperationalOperation || 'Sin patrón dominante',
     accentClassName: 'text-slate-900',
     detail: summary.topOperationalCategory
-      ? `Tipo principal: ${summary.topOperationalCategory}`
+      ? `Tipo principal: ${summary.topOperationalCategory}${summary.topOperationalRuntimeState ? ` · Estado dominante: ${summary.topOperationalRuntimeState}` : ''}`
       : 'Sin categoría dominante reciente',
   },
   {

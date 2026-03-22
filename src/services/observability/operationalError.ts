@@ -1,9 +1,12 @@
+import type { OperationalRuntimeState } from '@/services/observability/operationalRuntimeState';
+
 export type OperationalErrorSeverity = 'info' | 'warning' | 'error' | 'critical';
 
 export interface OperationalErrorShape {
   code: string;
   message: string;
   severity: OperationalErrorSeverity;
+  runtimeState?: OperationalRuntimeState;
   context?: Record<string, unknown>;
   userSafeMessage?: string;
 }
@@ -11,6 +14,7 @@ export interface OperationalErrorShape {
 export class OperationalError extends Error implements OperationalErrorShape {
   code: string;
   severity: OperationalErrorSeverity;
+  runtimeState?: OperationalRuntimeState;
   context?: Record<string, unknown>;
   userSafeMessage?: string;
 
@@ -19,6 +23,7 @@ export class OperationalError extends Error implements OperationalErrorShape {
     this.name = 'OperationalError';
     this.code = input.code;
     this.severity = input.severity;
+    this.runtimeState = input.runtimeState;
     this.context = input.context;
     this.userSafeMessage = input.userSafeMessage;
   }

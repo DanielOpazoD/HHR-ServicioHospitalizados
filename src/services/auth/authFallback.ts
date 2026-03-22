@@ -82,6 +82,7 @@ export const signInWithGoogleRedirect = async (): Promise<void> => {
         code: 'auth_redirect_start_failed',
         message: AUTH_UI_COPY.redirectUnavailable,
         severity: 'error',
+        runtimeState: 'blocked',
         userSafeMessage: AUTH_UI_COPY.redirectUnavailable,
       },
       {
@@ -114,6 +115,7 @@ export const handleSignInRedirectResult = async (): Promise<AuthSessionState | n
         code: 'auth_redirect_result_failed',
         message: 'No se pudo completar el retorno del acceso con Google.',
         severity: 'warning',
+        runtimeState: 'recoverable',
         userSafeMessage: 'No se pudo completar el retorno del acceso con Google.',
       }
     );

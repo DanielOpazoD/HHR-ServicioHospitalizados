@@ -83,6 +83,24 @@ Los budgets de degradación local se derivan desde `indexedDbCore.ts` y aparecen
 - max background recovery attempts
 - recovery retry delays
 
+## Taxonomía Operativa Unificada
+
+El contrato canónico vive en `src/services/observability/operationalRuntimeState.ts`.
+
+Estados obligatorios para incidentes operativos:
+
+- `retryable`: el flujo falló, pero el sistema puede reintentar sin intervención mayor.
+- `recoverable`: el flujo falló, pero existe camino alternativo o recuperación guiada para el usuario.
+- `degraded`: el flujo sigue operativo, pero con capacidad reducida o señal de riesgo.
+- `blocked`: el flujo quedó detenido y requiere intervención técnica o corrección de datos/configuración.
+- `unauthorized`: el bloqueo viene de permisos, roles o contexto de autenticación no válido.
+
+Regla práctica:
+
+1. no usar `failed` como lenguaje de negocio o soporte; ese estado queda como compatibilidad de telemetría
+2. clasificar auth, sync, storage y repositorios con uno de los estados anteriores
+3. si un incidente llega a `blocked` o `unauthorized`, debe tener runbook o owner claro
+
 ## Comandos
 
 ```bash

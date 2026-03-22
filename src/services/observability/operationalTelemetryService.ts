@@ -3,6 +3,10 @@ import {
   normalizeOperationalError,
   type OperationalErrorShape,
 } from '@/services/observability/operationalError';
+import {
+  toOperationalTelemetryStatus,
+  type OperationalRuntimeState,
+} from '@/services/observability/operationalRuntimeState';
 import type {
   OperationalTelemetryCategory,
   OperationalTelemetryEvent,
@@ -27,6 +31,11 @@ export interface OperationalTelemetrySummary {
   recentEventCount: number;
   recentFailedCount: number;
   recentObservedCount: number;
+  recentRetryableCount: number;
+  recentRecoverableCount: number;
+  recentDegradedCount: number;
+  recentBlockedCount: number;
+  recentUnauthorizedCount: number;
   lastHourObservedCount: number;
   syncFailureCount: number;
   syncObservedCount: number;
@@ -41,6 +50,7 @@ export interface OperationalTelemetrySummary {
   topObservedCategory?: OperationalTelemetryCategory;
   topObservedOperation?: string;
   latestObservedOperation?: string;
+  latestRuntimeState?: OperationalRuntimeState;
   latestIssueAt?: string;
 }
 
@@ -51,6 +61,16 @@ interface ApplicationOutcomeLike {
 
 let memoryEvents: OperationalTelemetryEvent[] = [];
 const operationalTelemetryLogger = logger.child('OperationalTelemetry');
+
+const deriveRuntimeStateFromSeverity = (
+  severity: OperationalErrorShape['severity']
+): OperationalRuntimeState => {
+  if (severity === 'warning' || severity === 'info') {
+    return 'degraded';
+  }
+
+  return 'blocked';
+};
 
 const persistEvents = (events: OperationalTelemetryEvent[]): void => {
   memoryEvents = trimOperationalTelemetryEvents(events);
@@ -152,11 +172,21 @@ export const buildOperationalTelemetrySummary = (
     observedEvents.map(event => event.operation)
   );
   const latestObservedOperation = observedEvents.at(-1)?.operation;
+  const countRuntimeState = (runtimeState: OperationalRuntimeState): number =>
+    recentEvents.filter(event => event.runtimeState === runtimeState).length;
+  const latestRuntimeState = [...observedEvents]
+    .reverse()
+    .find(event => event.runtimeState)?.runtimeState;
 
   return {
     recentEventCount: recentEvents.length,
     recentFailedCount: failedEvents.length,
     recentObservedCount: observedEvents.length,
+    recentRetryableCount: countRuntimeState('retryable'),
+    recentRecoverableCount: countRuntimeState('recoverable'),
+    recentDegradedCount: countRuntimeState('degraded'),
+    recentBlockedCount: countRuntimeState('blocked'),
+    recentUnauthorizedCount: countRuntimeState('unauthorized'),
     lastHourObservedCount: lastHourEvents.filter(event =>
       isObservedOperationalTelemetryStatus(event.status)
     ).length,
@@ -182,6 +212,7 @@ export const buildOperationalTelemetrySummary = (
     topObservedCategory,
     topObservedOperation,
     latestObservedOperation,
+    latestRuntimeState,
     latestIssueAt: observedEvents.at(-1)?.timestamp,
   };
 };
@@ -226,13 +257,13 @@ export const recordOperationalErrorTelemetry = (
   } = {}
 ) => {
   const operationalError = normalizeOperationalError(error, fallback);
+  const runtimeState =
+    operationalError.runtimeState || deriveRuntimeStateFromSeverity(operationalError.severity);
   recordOperationalTelemetry({
     category,
     operation,
-    status:
-      operationalError.severity === 'warning' || operationalError.severity === 'info'
-        ? 'degraded'
-        : 'failed',
+    status: toOperationalTelemetryStatus(runtimeState),
+    runtimeState,
     date: options.date,
     context: {
       errorCode: operationalError.code,

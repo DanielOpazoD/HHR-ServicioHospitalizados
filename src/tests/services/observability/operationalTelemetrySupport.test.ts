@@ -29,6 +29,7 @@ describe('operationalTelemetrySupport', () => {
       sanitizePersistedOperationalTelemetryEvent({
         category: 'sync',
         status: 'failed',
+        runtimeState: 'blocked',
         operation: 'sync_daily_record',
         timestamp: '2026-03-06T20:00:00.000Z',
         issues: [' Error '],
@@ -37,6 +38,7 @@ describe('operationalTelemetrySupport', () => {
     ).toEqual({
       category: 'sync',
       status: 'failed',
+      runtimeState: 'blocked',
       operation: 'sync_daily_record',
       timestamp: '2026-03-06T20:00:00.000Z',
       issues: ['Error'],
@@ -56,6 +58,7 @@ describe('operationalTelemetrySupport', () => {
     const event = createRecordedOperationalTelemetryEvent({
       category: 'backup',
       status: 'partial',
+      runtimeState: 'recoverable',
       operation: 'backup_handoff_pdf',
       issues: [' warn '],
       context: { attempt: 2 },
@@ -63,6 +66,7 @@ describe('operationalTelemetrySupport', () => {
 
     expect(event.issues).toEqual(['warn']);
     expect(event.context).toEqual({ attempt: 2 });
+    expect(event.runtimeState).toBe('recoverable');
     expect(typeof event.timestamp).toBe('string');
     expect(trimOperationalTelemetryEvents(Array.from({ length: 205 }, () => event))).toHaveLength(
       200

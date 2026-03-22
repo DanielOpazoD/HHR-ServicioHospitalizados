@@ -46,6 +46,11 @@ describe('systemHealthReporterController', () => {
         recentEventCount: 5,
         recentFailedCount: 2,
         recentObservedCount: 3,
+        recentRetryableCount: 1,
+        recentRecoverableCount: 1,
+        recentDegradedCount: 0,
+        recentBlockedCount: 1,
+        recentUnauthorizedCount: 0,
         lastHourObservedCount: 2,
         syncFailureCount: 1,
         syncObservedCount: 2,
@@ -60,6 +65,7 @@ describe('systemHealthReporterController', () => {
         topObservedCategory: 'backup',
         topObservedOperation: 'backup_handoff_pdf',
         latestObservedOperation: 'backup_handoff_pdf',
+        latestRuntimeState: 'recoverable',
         latestIssueAt: '2026-03-02T00:00:00.000Z',
       },
     });
@@ -72,6 +78,9 @@ describe('systemHealthReporterController', () => {
     expect(status.slowestRepositoryOperationMs).toBe(480);
     expect(status.operationalObservedCount).toBe(3);
     expect(status.operationalFailureCount).toBe(2);
+    expect(status.operationalRetryableCount).toBe(1);
+    expect(status.operationalRecoverableCount).toBe(1);
+    expect(status.operationalBlockedCount).toBe(1);
     expect(status.operationalLastHourObservedCount).toBe(2);
     expect(status.operationalSyncObservedCount).toBe(2);
     expect(status.operationalIndexedDbObservedCount).toBe(1);
@@ -82,6 +91,7 @@ describe('systemHealthReporterController', () => {
     expect(status.operationalTopObservedCategory).toBe('backup');
     expect(status.operationalTopObservedOperation).toBe('backup_handoff_pdf');
     expect(status.latestOperationalOperation).toBe('backup_handoff_pdf');
+    expect(status.latestOperationalRuntimeState).toBe('recoverable');
     expect(status.appVersion).toContain('sync-batch:25');
   });
 });

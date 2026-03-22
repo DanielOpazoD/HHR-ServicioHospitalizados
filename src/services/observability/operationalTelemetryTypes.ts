@@ -1,3 +1,5 @@
+import type { OperationalRuntimeState } from '@/services/observability/operationalRuntimeState';
+
 export type OperationalTelemetryCategory =
   | 'auth'
   | 'daily_record'
@@ -18,6 +20,7 @@ export type OperationalTelemetryStatus = 'success' | 'partial' | 'degraded' | 'f
 export interface OperationalTelemetryEvent {
   category: OperationalTelemetryCategory;
   status: OperationalTelemetryStatus;
+  runtimeState?: OperationalRuntimeState;
   operation: string;
   timestamp: string;
   date?: string;

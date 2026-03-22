@@ -43,6 +43,11 @@ describe('healthService', () => {
     slowestRepositoryOperationMs: 0,
     operationalObservedCount: 0,
     operationalFailureCount: 0,
+    operationalRetryableCount: 0,
+    operationalRecoverableCount: 0,
+    operationalDegradedCount: 0,
+    operationalBlockedCount: 0,
+    operationalUnauthorizedCount: 0,
     operationalLastHourObservedCount: 0,
     operationalSyncObservedCount: 0,
     operationalIndexedDbObservedCount: 0,
@@ -53,6 +58,7 @@ describe('healthService', () => {
     operationalTopObservedCategory: undefined,
     operationalTopObservedOperation: undefined,
     latestOperationalOperation: undefined,
+    latestOperationalRuntimeState: undefined,
     appVersion: '1.0.0',
     platform: 'MacIntel',
     userAgent: 'Mozilla/5.0',
@@ -182,6 +188,7 @@ describe('healthService', () => {
       expect(normalized.pendingMutations).toBe(0);
       expect(normalized.isOnline).toBe(false);
       expect(normalized.operationalObservedCount).toBe(0);
+      expect(normalized.operationalBlockedCount).toBe(0);
       expect(normalized.operationalSyncObservedCount).toBe(0);
       expect(normalized.operationalTopObservedOperation).toBeUndefined();
     });
@@ -203,6 +210,11 @@ describe('healthService', () => {
           slowestRepositoryOperationMs: 280,
           operationalObservedCount: 5,
           operationalFailureCount: 2,
+          operationalRetryableCount: 1,
+          operationalRecoverableCount: 1,
+          operationalDegradedCount: 1,
+          operationalBlockedCount: 1,
+          operationalUnauthorizedCount: 1,
           operationalLastHourObservedCount: 3,
           operationalSyncObservedCount: 2,
           operationalIndexedDbObservedCount: 1,
@@ -213,6 +225,7 @@ describe('healthService', () => {
           operationalTopObservedCategory: 'backup',
           operationalTopObservedOperation: 'backup_handoff_pdf',
           latestOperationalOperation: 'backup_handoff_pdf',
+          latestOperationalRuntimeState: 'recoverable',
         },
       ]);
 
@@ -228,6 +241,11 @@ describe('healthService', () => {
       expect(summary.oldestObservedPendingAgeMs).toBe(0);
       expect(summary.totalOperationalObservedCount).toBe(5);
       expect(summary.totalOperationalFailureCount).toBe(2);
+      expect(summary.totalOperationalRetryableCount).toBe(1);
+      expect(summary.totalOperationalRecoverableCount).toBe(1);
+      expect(summary.totalOperationalDegradedCount).toBe(1);
+      expect(summary.totalOperationalBlockedCount).toBe(1);
+      expect(summary.totalOperationalUnauthorizedCount).toBe(1);
       expect(summary.totalOperationalLastHourObservedCount).toBe(3);
       expect(summary.totalOperationalSyncObservedCount).toBe(2);
       expect(summary.totalOperationalIndexedDbObservedCount).toBe(1);
@@ -237,6 +255,7 @@ describe('healthService', () => {
       expect(summary.totalOperationalExportBackupObservedCount).toBe(3);
       expect(summary.topOperationalCategory).toBe('backup');
       expect(summary.topOperationalOperation).toBe('backup_handoff_pdf');
+      expect(summary.topOperationalRuntimeState).toBe('recoverable');
       expect(summary.usersWithRecentOperationalIssues).toBe(0);
       expect(summary.latestOperationalIssueAt).toBeUndefined();
     });
