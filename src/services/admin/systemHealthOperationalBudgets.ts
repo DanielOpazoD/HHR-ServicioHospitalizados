@@ -1,3 +1,5 @@
+import { SYNC_QUEUE_RUNTIME_THRESHOLDS } from '@/services/storage/sync/syncQueueOperationalBudgets';
+
 export interface SystemHealthThresholds {
   warningOldestPendingAgeMs: number;
   criticalOldestPendingAgeMs: number;
@@ -14,10 +16,10 @@ export interface SystemHealthThresholds {
 }
 
 export const DEFAULT_SYSTEM_HEALTH_THRESHOLDS: SystemHealthThresholds = {
-  warningOldestPendingAgeMs: 300000,
-  criticalOldestPendingAgeMs: 900000,
-  warningRetryingSyncTasks: 1,
-  criticalRetryingSyncTasks: 3,
+  warningOldestPendingAgeMs: SYNC_QUEUE_RUNTIME_THRESHOLDS.warningOldestPendingAgeMs,
+  criticalOldestPendingAgeMs: SYNC_QUEUE_RUNTIME_THRESHOLDS.criticalOldestPendingAgeMs,
+  warningRetryingSyncTasks: SYNC_QUEUE_RUNTIME_THRESHOLDS.warningRetryingSyncTasks,
+  criticalRetryingSyncTasks: SYNC_QUEUE_RUNTIME_THRESHOLDS.criticalRetryingSyncTasks,
   warningPendingMutations: 1,
   criticalPendingMutations: 8,
   warningLocalErrorCount: 1,

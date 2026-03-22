@@ -18,6 +18,13 @@ import {
   recordIndexedDbRecoveryNotice,
   recordIndexedDbRecoveryFailure,
 } from './indexedDbRecoveryController';
+import {
+  INDEXED_DB_DELETE_TIMEOUT_MS,
+  INDEXED_DB_OPEN_TIMEOUT_MS,
+  INDEXED_DB_RECOVERY_RETRY_DELAYS_MS,
+  MAX_BACKGROUND_RECOVERY_ATTEMPTS,
+  getIndexedDbRecoveryBudgetSnapshot,
+} from './indexedDbRecoveryBudgets';
 
 export class HangaRoaDatabase extends Dexie {
   dailyRecords!: Table<DailyRecord>;
@@ -55,10 +62,6 @@ let db: HangaRoaDatabase;
 let isUsingMock = false;
 let isOpening = false;
 let onDatabaseRecreated: (() => void) | null = null;
-const INDEXED_DB_OPEN_TIMEOUT_MS = 7000;
-const INDEXED_DB_DELETE_TIMEOUT_MS = 5000;
-const INDEXED_DB_RECOVERY_RETRY_DELAYS_MS = [300, 1000, 3000] as const;
-const MAX_BACKGROUND_RECOVERY_ATTEMPTS = 3;
 let recoveryRetryTimer: ReturnType<typeof setTimeout> | null = null;
 let backgroundRecoveryAttempts = 0;
 let stickyFallbackMode = false;
@@ -82,7 +85,8 @@ const initializeDatabase = () => {
     isUsingMock = true;
     recordIndexedDbFallbackMode(
       'construct_failed',
-      'IndexedDB no pudo inicializarse y se activo el modo fallback local.'
+      'IndexedDB no pudo inicializarse y se activo el modo fallback local.',
+      { ...getIndexedDbRecoveryBudgetSnapshot() }
     );
   }
 };
@@ -111,7 +115,12 @@ const scheduleBackgroundRecoveryRetry = () => {
       recordIndexedDbRecoveryNotice(
         'indexeddb_recovery_disabled',
         'La recuperacion de IndexedDB fue deshabilitada por esta sesion tras fallos persistentes.',
-        { stickyFallbackMode: true }
+        {
+          stickyFallbackMode: true,
+          attempts: backgroundRecoveryAttempts,
+          ...getIndexedDbRecoveryBudgetSnapshot(),
+        },
+        'blocked'
       );
       return;
     }
@@ -119,16 +128,31 @@ const scheduleBackgroundRecoveryRetry = () => {
     recordIndexedDbRecoveryNotice(
       'indexeddb_recovery_stopped',
       'Se detuvo la recuperacion en segundo plano de IndexedDB.',
-      { attempts: MAX_BACKGROUND_RECOVERY_ATTEMPTS }
+      {
+        attempts: MAX_BACKGROUND_RECOVERY_ATTEMPTS,
+        ...getIndexedDbRecoveryBudgetSnapshot(),
+      },
+      'recoverable'
     );
     return;
   }
 
   backgroundRecoveryAttempts++;
+  const scheduledDelayMs = 5000;
   recoveryRetryTimer = setTimeout(() => {
     recoveryRetryTimer = null;
     void ensureDbReady({ allowRecoveryWhenMock: true });
-  }, 5000);
+  }, scheduledDelayMs);
+  recordIndexedDbRecoveryNotice(
+    'indexeddb_recovery_retry_scheduled',
+    'Se programo un nuevo intento de recuperacion de IndexedDB.',
+    {
+      attempt: backgroundRecoveryAttempts,
+      scheduledDelayMs,
+      ...getIndexedDbRecoveryBudgetSnapshot(),
+    },
+    'retryable'
+  );
 };
 
 const tryOpenWithTimeout = async (): Promise<void> => {
@@ -188,7 +212,8 @@ export const ensureDbReady = async (options: EnsureDbReadyOptions = {}): Promise
         recordIndexedDbRecoveryNotice(
           'indexeddb_database_closed',
           'Se detecto cierre inesperado de IndexedDB; se intentara reabrir.',
-          { errorName: 'DatabaseClosedError' }
+          { errorName: 'DatabaseClosedError', ...getIndexedDbRecoveryBudgetSnapshot() },
+          'retryable'
         );
       } else {
         return;
@@ -207,7 +232,8 @@ export const ensureDbReady = async (options: EnsureDbReadyOptions = {}): Promise
       recordIndexedDbRecoveryNotice(
         'indexeddb_open_stalled',
         'La apertura de IndexedDB excedio el tiempo esperado; se activo fallback.',
-        { waitedMs: 5000 }
+        { waitedMs: 5000, ...getIndexedDbRecoveryBudgetSnapshot() },
+        'recoverable'
       );
       isUsingMock = true;
       return;
@@ -252,6 +278,7 @@ export const ensureDbReady = async (options: EnsureDbReadyOptions = {}): Promise
       {
         errorName,
         errorMessage,
+        ...getIndexedDbRecoveryBudgetSnapshot(),
       }
     );
 

@@ -6,6 +6,7 @@ import { useResolvedAuthBootstrap } from '@/hooks/useAuthStateSupport';
 
 const mockWarn = vi.fn();
 const mockIsAuthBootstrapPending = vi.fn();
+const mockGetAuthBootstrapPendingAgeMs = vi.fn();
 const mockClearAuthBootstrapPending = vi.fn();
 const mockRestoreAuthBootstrapReturnTo = vi.fn();
 const mockClearRecentManualLogout = vi.fn();
@@ -24,6 +25,7 @@ vi.mock('@/services/utils/loggerService', () => ({
 
 vi.mock('@/services/auth/authBootstrapState', () => ({
   clearAuthBootstrapPending: () => mockClearAuthBootstrapPending(),
+  getAuthBootstrapPendingAgeMs: () => mockGetAuthBootstrapPendingAgeMs(),
   isAuthBootstrapPending: () => mockIsAuthBootstrapPending(),
   restoreAuthBootstrapReturnTo: () => mockRestoreAuthBootstrapReturnTo(),
 }));
@@ -51,6 +53,7 @@ describe('useResolvedAuthBootstrap', () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     mockIsAuthBootstrapPending.mockReturnValue(false);
+    mockGetAuthBootstrapPendingAgeMs.mockReturnValue(0);
     mockHasRecentManualLogout.mockReturnValue(false);
     Object.defineProperty(window.navigator, 'onLine', {
       configurable: true,
@@ -160,6 +163,11 @@ describe('useResolvedAuthBootstrap', () => {
         category: 'auth',
         operation: 'bootstrap_timeout',
         status: 'degraded',
+        runtimeState: 'recoverable',
+        context: expect.objectContaining({
+          budgetProfile: 'default',
+          pendingAgeMs: 0,
+        }),
       })
     );
   });

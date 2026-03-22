@@ -11,11 +11,13 @@ import {
 } from '@/services/storage/sync/syncQueueEngine';
 import { classifySyncError } from '@/services/storage/syncErrorCatalog';
 import { createDomainObservability } from '@/services/observability/domainObservability';
-
-const MAX_RETRIES = 5;
-const SYNC_QUEUE_BATCH_SIZE = 25;
-const BASE_RETRY_DELAY_MS = 1000;
-const MAX_RETRY_DELAY_MS = 30000;
+import {
+  BASE_RETRY_DELAY_MS,
+  MAX_RETRIES,
+  MAX_RETRY_DELAY_MS,
+  SYNC_QUEUE_BATCH_SIZE,
+} from '@/services/storage/sync/syncQueueOperationalBudgets';
+import { recordSyncQueueBudgetTelemetry } from '@/services/storage/sync/syncQueueTelemetryController';
 
 const syncObservability = createDomainObservability('sync', 'SyncQueue');
 
@@ -51,7 +53,13 @@ export const getSyncQueueStats = async (): Promise<{
 export const getSyncQueueTelemetry = async (): Promise<SyncQueueTelemetry> => {
   try {
     await ensureDbReady();
-    return await syncQueueEngine.getTelemetry();
+    const telemetry = await syncQueueEngine.getTelemetry();
+    recordSyncQueueBudgetTelemetry(telemetry, {
+      source: 'public_sync_queue',
+      batchSize: SYNC_QUEUE_BATCH_SIZE,
+      maxRetries: MAX_RETRIES,
+    });
+    return telemetry;
   } catch (error) {
     syncObservability.logger.warn('Failed to read queue telemetry', error);
     return {
@@ -61,6 +69,9 @@ export const getSyncQueueTelemetry = async (): Promise<SyncQueueTelemetry> => {
       retrying: 0,
       oldestPendingAgeMs: 0,
       batchSize: SYNC_QUEUE_BATCH_SIZE,
+      oldestPendingBudgetState: 'ok',
+      retryingBudgetState: 'ok',
+      runtimeState: 'ok',
     };
   }
 };

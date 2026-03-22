@@ -33,6 +33,9 @@ describe('systemHealthReporterController', () => {
         retrying: 1,
         oldestPendingAgeMs: 9000,
         batchSize: 25,
+        oldestPendingBudgetState: 'ok',
+        retryingBudgetState: 'warning',
+        runtimeState: 'degraded',
       },
       repositoryPerformance: {
         totalRecorded: 12,

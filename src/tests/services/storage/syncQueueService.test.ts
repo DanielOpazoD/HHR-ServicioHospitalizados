@@ -92,6 +92,22 @@ describe('storage/sync public entrypoint', () => {
     expect(telemetry.retrying).toBe(1);
     expect(telemetry.oldestPendingAgeMs).toBeGreaterThanOrEqual(0);
     expect(telemetry.batchSize).toBeGreaterThan(0);
+    expect(telemetry.retryingBudgetState).toBe('warning');
+    expect(telemetry.runtimeState).toBe('degraded');
+  });
+
+  it('marks telemetry as blocked when a pending task exceeds the critical queue age budget', async () => {
+    await queueSyncTask('UPDATE_DAILY_RECORD', makeRecord('2025-01-11', 'v1'));
+    await hospitalDB.syncQueue
+      .where('status')
+      .equals('PENDING')
+      .modify(task => {
+        task.timestamp = Date.now() - 901_000;
+      });
+
+    const telemetry = await getSyncQueueTelemetry();
+    expect(telemetry.oldestPendingBudgetState).toBe('critical');
+    expect(telemetry.runtimeState).toBe('blocked');
   });
 
   it('marks task as failed without retry for non-retryable errors', async () => {

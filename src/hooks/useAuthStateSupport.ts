@@ -6,6 +6,7 @@ import { ACTIVITY_EVENTS, SESSION_TIMEOUT_MS } from '@/constants/security';
 import { defaultAuditPort } from '@/application/ports/auditPort';
 import {
   clearAuthBootstrapPending,
+  getAuthBootstrapPendingAgeMs,
   isAuthBootstrapPending,
   restoreAuthBootstrapReturnTo,
 } from '@/services/auth/authBootstrapState';
@@ -24,6 +25,7 @@ import {
   recordOperationalOutcome,
   recordOperationalTelemetry,
 } from '@/services/observability/operationalTelemetryService';
+import { resolveAuthBootstrapBudget } from '@/services/auth/authBootstrapBudgets';
 
 const authStateLogger = logger.child('useAuthState');
 
@@ -143,9 +145,11 @@ export const useInactivityLogout = (
 };
 
 export const getAuthBootstrapTimeoutMs = (): number => {
-  if (hasRecentManualLogout()) return 1500;
-  if (!window.navigator.onLine) return 5000;
-  return isAuthBootstrapPending() ? 45000 : 15000;
+  return resolveAuthBootstrapBudget({
+    hasRecentManualLogout: hasRecentManualLogout(),
+    isOnline: window.navigator.onLine,
+    hasPendingRedirect: isAuthBootstrapPending(),
+  }).timeoutMs;
 };
 
 export const subscribeToResolvedAuthState = async ({
@@ -185,6 +189,18 @@ export const subscribeToResolvedAuthState = async ({
     }
   } catch (error) {
     authStateLogger.warn('Redirect result check error', error);
+    recordOperationalTelemetry({
+      category: 'auth',
+      operation: 'redirect_resolution_failure',
+      status: 'degraded',
+      runtimeState: 'recoverable',
+      context: {
+        isOnline: window.navigator.onLine,
+        authBootstrapPending: isAuthBootstrapPending(),
+        pendingAgeMs: getAuthBootstrapPendingAgeMs(),
+      },
+      issues: [error instanceof Error ? error.message : 'No se pudo revisar el redirect de auth.'],
+    });
   }
 
   return onAuthSessionStateChange(async sessionState => {
@@ -260,7 +276,12 @@ export const useResolvedAuthBootstrap = ({
     }
 
     let unsubscribe: (() => void) | undefined;
-    const timeoutMs = getAuthBootstrapTimeoutMs();
+    const bootstrapBudget = resolveAuthBootstrapBudget({
+      hasRecentManualLogout: hasRecentManualLogout(),
+      isOnline: window.navigator.onLine,
+      hasPendingRedirect: isAuthBootstrapPending(),
+    });
+    const timeoutMs = bootstrapBudget.timeoutMs;
     let isBootstrapResolved = false;
     const safetyTimeout: ReturnType<typeof setTimeout> = setTimeout(() => {
       if (isBootstrapResolved) {
@@ -278,8 +299,11 @@ export const useResolvedAuthBootstrap = ({
         category: 'auth',
         operation: 'bootstrap_timeout',
         status: 'degraded',
+        runtimeState: 'recoverable',
         context: {
           timeoutMs,
+          budgetProfile: bootstrapBudget.profile,
+          pendingAgeMs: getAuthBootstrapPendingAgeMs(),
           isOnline: window.navigator.onLine,
           authBootstrapPending: isAuthBootstrapPending(),
         },

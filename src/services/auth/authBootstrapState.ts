@@ -1,5 +1,6 @@
+import { AUTH_BOOTSTRAP_PENDING_TTL_MS } from '@/services/auth/authBootstrapBudgets';
+
 const AUTH_BOOTSTRAP_PENDING_KEY = 'hhr_auth_bootstrap_pending_v1';
-const AUTH_BOOTSTRAP_PENDING_TTL_MS = 90_000;
 
 type AuthBootstrapState = {
   startedAt: number;
@@ -52,6 +53,12 @@ export const markAuthBootstrapPending = (
 };
 
 export const isAuthBootstrapPending = (): boolean => Boolean(readState());
+
+export const getAuthBootstrapPendingAgeMs = (): number => {
+  const state = readState();
+  if (!state) return 0;
+  return Math.max(0, Date.now() - state.startedAt);
+};
 
 export const restoreAuthBootstrapReturnTo = (): void => {
   const state = readState();

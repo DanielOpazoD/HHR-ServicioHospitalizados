@@ -1,32 +1,48 @@
 import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryService';
+import type { OperationalRuntimeState } from '@/services/observability/operationalRuntimeState';
 
-export const recordIndexedDbRecoveryFailure = (error: unknown): void => {
+export const recordIndexedDbRecoveryFailure = (
+  error: unknown,
+  options: {
+    runtimeState?: OperationalRuntimeState;
+    context?: Record<string, unknown>;
+  } = {}
+): void => {
   recordOperationalTelemetry({
     category: 'indexeddb',
     status: 'failed',
+    runtimeState: options.runtimeState || 'blocked',
     operation: 'indexeddb_recovery',
     issues: [error instanceof Error ? error.message : 'Recovery failed'],
+    context: options.context,
   });
 };
 
-export const recordIndexedDbFallbackMode = (errorName: string, errorMessage: string): void => {
+export const recordIndexedDbFallbackMode = (
+  errorName: string,
+  errorMessage: string,
+  context?: Record<string, unknown>
+): void => {
   recordOperationalTelemetry({
     category: 'indexeddb',
     status: 'degraded',
+    runtimeState: 'recoverable',
     operation: 'indexeddb_fallback_mode',
     issues: [errorMessage || 'IndexedDB fallback activated'],
-    context: { errorName },
+    context: { errorName, ...context },
   });
 };
 
 export const recordIndexedDbRecoveryNotice = (
   operation: string,
   issue: string,
-  context?: Record<string, unknown>
+  context?: Record<string, unknown>,
+  runtimeState: OperationalRuntimeState = 'degraded'
 ): void => {
   recordOperationalTelemetry({
     category: 'indexeddb',
-    status: 'degraded',
+    status: runtimeState === 'blocked' ? 'failed' : 'degraded',
+    runtimeState,
     operation,
     issues: [issue],
     context,

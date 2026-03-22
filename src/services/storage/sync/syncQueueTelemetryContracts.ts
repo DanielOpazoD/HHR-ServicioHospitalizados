@@ -1,3 +1,8 @@
+import type {
+  SyncQueueBudgetState,
+  SyncQueueRuntimeState,
+} from '@/services/storage/sync/syncQueueOperationalBudgets';
+
 export interface SyncQueueTelemetry {
   pending: number;
   failed: number;
@@ -5,4 +10,7 @@ export interface SyncQueueTelemetry {
   retrying: number;
   oldestPendingAgeMs: number;
   batchSize: number;
+  oldestPendingBudgetState: SyncQueueBudgetState;
+  retryingBudgetState: SyncQueueBudgetState;
+  runtimeState: SyncQueueRuntimeState;
 }

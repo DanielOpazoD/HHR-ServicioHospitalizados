@@ -41,6 +41,8 @@ Budgets monitoreables desde `reports/operational-health.md`:
 - tamaño de batch
 - retries máximos
 - delays base y máximos
+- warning/critical para edad de cola pendiente
+- warning/critical para tareas reintentando
 - perfiles de recovery por contexto
 
 Si estos valores cambian:
@@ -76,12 +78,25 @@ Controles mínimos:
 
 ## Local Persistence
 
-Los budgets de degradación local se derivan desde `indexedDbCore.ts` y aparecen en `reports/operational-health.md`:
+Los budgets de degradación local se derivan desde `src/services/storage/indexeddb/indexedDbRecoveryBudgets.ts` y aparecen en `reports/operational-health.md`:
 
 - open timeout
 - delete timeout
 - max background recovery attempts
 - recovery retry delays
+
+## Auth Bootstrap
+
+Los budgets de bootstrap de autenticación viven en `src/services/auth/authBootstrapBudgets.ts`.
+
+Estados monitoreables:
+
+- `recent_manual_logout`
+- `offline`
+- `default`
+- `redirect_pending`
+
+Cada timeout de bootstrap debe quedar clasificado con perfil y `pendingAgeMs` en telemetría auth.
 
 ## Taxonomía Operativa Unificada
 

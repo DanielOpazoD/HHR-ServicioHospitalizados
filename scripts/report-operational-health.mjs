@@ -6,15 +6,18 @@ import path from 'node:path';
 const workspaceRoot = process.cwd();
 const read = relativePath => fs.readFileSync(path.join(workspaceRoot, relativePath), 'utf8');
 
-const syncQueueServiceContent = read('src/services/storage/syncQueueService.ts');
 const systemHealthBudgetContent = read('src/services/admin/systemHealthOperationalBudgets.ts');
 const syncDomainPolicyContent = read('src/services/storage/sync/syncDomainPolicy.ts');
 const conflictDomainContent = read('src/services/repositories/conflictResolutionDomainPolicy.ts');
-const indexedDbCoreContent = read('src/services/storage/indexeddb/indexedDbCore.ts');
+const indexedDbRecoveryBudgetsContent = read(
+  'src/services/storage/indexeddb/indexedDbRecoveryBudgets.ts'
+);
 const authConfigContent = read('functions/lib/auth/authConfig.js');
 const operationalRuntimeStateContent = read(
   'src/services/observability/operationalRuntimeState.ts'
 );
+const authBootstrapBudgetContent = read('src/services/auth/authBootstrapBudgets.ts');
+const syncQueueBudgetContent = read('src/services/storage/sync/syncQueueOperationalBudgets.ts');
 const repositoryFiles = [
   'src/services/repositories/dailyRecordRepositoryReadService.ts',
   'src/services/repositories/dailyRecordRepositoryInitializationService.ts',
@@ -154,10 +157,11 @@ const collectThresholds = () => {
 };
 
 const syncConfig = {
-  batchSize: extractConstNumber(syncQueueServiceContent, 'SYNC_QUEUE_BATCH_SIZE'),
-  maxRetries: extractConstNumber(syncQueueServiceContent, 'MAX_RETRIES'),
-  baseRetryDelayMs: extractConstNumber(syncQueueServiceContent, 'BASE_RETRY_DELAY_MS'),
-  maxRetryDelayMs: extractConstNumber(syncQueueServiceContent, 'MAX_RETRY_DELAY_MS'),
+  batchSize: extractConstNumber(syncQueueBudgetContent, 'SYNC_QUEUE_BATCH_SIZE'),
+  maxRetries: extractConstNumber(syncQueueBudgetContent, 'MAX_RETRIES'),
+  baseRetryDelayMs: extractConstNumber(syncQueueBudgetContent, 'BASE_RETRY_DELAY_MS'),
+  maxRetryDelayMs: extractConstNumber(syncQueueBudgetContent, 'MAX_RETRY_DELAY_MS'),
+  runtimeThresholds: extractObjectNumbers(syncQueueBudgetContent, 'SYNC_QUEUE_RUNTIME_THRESHOLDS'),
 };
 
 const versionContent = read('src/constants/version.ts');
@@ -176,14 +180,17 @@ const prolongedOfflineUserAgeMs = extractConstNumber(
   'PROLONGED_OFFLINE_USER_AGE_MS'
 );
 const localPersistence = {
-  openTimeoutMs: extractConstNumber(indexedDbCoreContent, 'INDEXED_DB_OPEN_TIMEOUT_MS'),
-  deleteTimeoutMs: extractConstNumber(indexedDbCoreContent, 'INDEXED_DB_DELETE_TIMEOUT_MS'),
+  openTimeoutMs: extractConstNumber(indexedDbRecoveryBudgetsContent, 'INDEXED_DB_OPEN_TIMEOUT_MS'),
+  deleteTimeoutMs: extractConstNumber(
+    indexedDbRecoveryBudgetsContent,
+    'INDEXED_DB_DELETE_TIMEOUT_MS'
+  ),
   maxBackgroundRecoveryAttempts: extractConstNumber(
-    indexedDbCoreContent,
+    indexedDbRecoveryBudgetsContent,
     'MAX_BACKGROUND_RECOVERY_ATTEMPTS'
   ),
   recoveryRetryDelaysMs: extractConstArrayNumbers(
-    indexedDbCoreContent,
+    indexedDbRecoveryBudgetsContent,
     'INDEXED_DB_RECOVERY_RETRY_DELAYS_MS'
   ),
 };
@@ -198,6 +205,10 @@ const authAccess = {
 const operationalRuntimeStates = {
   contract: 'src/services/observability/operationalRuntimeState.ts',
   states: extractConstTupleStrings(operationalRuntimeStateContent, 'OPERATIONAL_RUNTIME_STATES'),
+};
+const authBootstrap = {
+  pendingTtlMs: extractConstNumber(authBootstrapBudgetContent, 'AUTH_BOOTSTRAP_PENDING_TTL_MS'),
+  timeoutsMs: extractObjectNumbers(authBootstrapBudgetContent, 'AUTH_BOOTSTRAP_TIMEOUTS_MS'),
 };
 const runbooks = [
   'docs/RUNBOOK_SYNC_RESILIENCE.md',
@@ -225,6 +236,7 @@ const summary = {
   syncQueue: syncConfig,
   systemHealth: {
     ...systemHealthBudgets,
+    ...syncConfig.runtimeThresholds,
     prolongedOfflineUserAgeMs,
   },
   syncDomainProfiles,
@@ -232,6 +244,7 @@ const summary = {
   legacyBridge: legacyBridgeReport,
   localPersistence,
   authAccess,
+  authBootstrap,
   operationalRuntimeStates,
   flowPerformance: flowPerformanceSummary
     ? {
@@ -302,6 +315,10 @@ const markdown = `# Operational Health Snapshot
 - Max retries: ${summary.syncQueue.maxRetries ?? 'unknown'}
 - Base retry delay (ms): ${summary.syncQueue.baseRetryDelayMs ?? 'unknown'}
 - Max retry delay (ms): ${summary.syncQueue.maxRetryDelayMs ?? 'unknown'}
+- Warning queue age (ms): ${summary.syncQueue.runtimeThresholds.warningOldestPendingAgeMs ?? 'unknown'}
+- Critical queue age (ms): ${summary.syncQueue.runtimeThresholds.criticalOldestPendingAgeMs ?? 'unknown'}
+- Warning retrying tasks: ${summary.syncQueue.runtimeThresholds.warningRetryingSyncTasks ?? 'unknown'}
+- Critical retrying tasks: ${summary.syncQueue.runtimeThresholds.criticalRetryingSyncTasks ?? 'unknown'}
 
 ## System Health Budgets
 
@@ -373,6 +390,11 @@ ${Object.entries(summary.conflictContexts)
 }
 - Modelo canónico: \`${summary.authAccess.canonicalModelDoc}\`
 - Runbook auth: \`${summary.authAccess.authIncidentRunbook}\`
+
+## Auth Bootstrap Budgets
+
+- Pending TTL (ms): ${summary.authBootstrap.pendingTtlMs ?? 'unknown'}
+- Timeouts (ms): recent logout ${summary.authBootstrap.timeoutsMs.recentManualLogout ?? 'unknown'} · offline ${summary.authBootstrap.timeoutsMs.offline ?? 'unknown'} · default ${summary.authBootstrap.timeoutsMs.default ?? 'unknown'} · redirect pending ${summary.authBootstrap.timeoutsMs.redirectPending ?? 'unknown'}
 
 ## Operational Runtime Taxonomy
 
