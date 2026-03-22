@@ -1,5 +1,6 @@
 if (typeof window === 'undefined') {
   (global as any).window = {};
+  (global as any).document = { createElement: () => ({}) };
 }
 
 import { CENSUS_DEFAULT_RECIPIENTS } from '../../src/constants/email';
