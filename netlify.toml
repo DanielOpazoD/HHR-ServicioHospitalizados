@@ -8,7 +8,7 @@
 
 [functions]
   node_bundler = "esbuild"
-  external_node_modules = ["xlsx-populate"]
+  external_node_modules = ["xlsx-populate", "exceljs"]
 
 [[headers]]
   for = "/*"
