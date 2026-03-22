@@ -71,6 +71,11 @@ const loadExcelJsFromRuntimeAsset = async (): Promise<ExcelJSModuleType> => {
 };
 
 export const loadExcelJSModule = async (): Promise<ExcelJSModuleType> => {
+  // If we're not in a browser environment (e.g. Netlify functions), 
+  // we can't use the runtime asset script loading trick.
+  if (typeof window === 'undefined') {
+    return (await import('exceljs')) as unknown as ExcelJSModuleType;
+  }
   return loadExcelJsFromRuntimeAsset();
 };
 

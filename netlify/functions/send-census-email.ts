@@ -1,3 +1,6 @@
+import { generateCensusPassword } from '../../src/services/security/passwordGenerator';
+import XlsxPopulate from 'xlsx-populate';
+import { sendCensusEmail } from '../../src/services/email/gmailClient';
 import { CENSUS_DEFAULT_RECIPIENTS } from '../../src/constants/email';
 import {
   buildCensusMasterBuffer,
@@ -8,7 +11,6 @@ import {
   validateExcelFilename,
   MIN_EXCEL_SIZE,
 } from '../../src/services/exporters/excelValidation';
-import { sendCensusEmail } from '../../src/services/email/gmailClient';
 import type { DailyRecord } from '../../src/types';
 import type { CensusWorkbookSheetDescriptor } from '../../src/services/exporters/censusMasterWorkbook';
 
@@ -102,9 +104,6 @@ export const handler = async (event: NetlifyEvent) => {
       };
     }
 
-    // Generate deterministic password based on census date
-    const { generateCensusPassword } =
-      await import('../../src/services/security/passwordGenerator');
     const password = shareLink ? '' : generateCensusPassword(date);
 
     // Ensure the PIN or Link is included in the email body
@@ -142,7 +141,6 @@ export const handler = async (event: NetlifyEvent) => {
 
     let attachmentBuffer = null;
     if (!shareLink) {
-      const XlsxPopulate = (await import('xlsx-populate')).default;
       attachmentBuffer = await XlsxPopulate.fromDataAsync(attachmentBufferRaw)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .then((workbook: any) => workbook.outputAsync({ password }));
