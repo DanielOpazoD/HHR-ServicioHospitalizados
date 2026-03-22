@@ -1,3 +1,4 @@
+/* @flake-safe: Date.now is used only to derive a future date boundary for admission validation. */
 import { describe, expect, it } from 'vitest';
 import { PatientStatus, Specialty } from '@/types';
 import type { PatientData } from '@/types';

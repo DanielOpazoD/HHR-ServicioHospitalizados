@@ -8,6 +8,14 @@ import { applyPatches } from '@/utils/patchUtils';
 import { DataFactory } from '../factories/DataFactory';
 import { createQueryClientTestWrapper } from '@/tests/utils/queryClientTestUtils';
 
+const { mockDailyRecordPorts } = vi.hoisted(() => ({
+  mockDailyRecordPorts: {
+    getForDateWithMeta: vi.fn(),
+    getPreviousDayWithMeta: vi.fn(),
+    delete: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
 // Mock dependencies
 vi.mock('@/services/repositories/DailyRecordRepository', () => {
   const repo = {
@@ -78,6 +86,16 @@ vi.mock('@/services/repositories/DailyRecordRepository', () => {
     ...repo,
   };
 });
+
+vi.mock('@/application/ports/dailyRecordPort', () => ({
+  defaultDailyRecordReadPort: {
+    getForDateWithMeta: mockDailyRecordPorts.getForDateWithMeta,
+    getPreviousDayWithMeta: mockDailyRecordPorts.getPreviousDayWithMeta,
+  },
+  defaultDailyRecordWritePort: {
+    delete: mockDailyRecordPorts.delete,
+  },
+}));
 
 const createWrapper = () => {
   const { wrapper } = createQueryClientTestWrapper({
@@ -153,6 +171,30 @@ describe('useDailyRecord', () => {
 
     vi.mocked(repo.save).mockImplementation(async record => {
       recordsMap[record.date] = record;
+    });
+
+    mockDailyRecordPorts.getForDateWithMeta.mockImplementation(async (date: string) => ({
+      date,
+      record: recordsMap[date] || null,
+      source: recordsMap[date] ? 'indexeddb' : 'not_found',
+      compatibilityTier: 'none',
+      compatibilityIntensity: 'none',
+      migrationRulesApplied: [],
+    }));
+    mockDailyRecordPorts.getPreviousDayWithMeta.mockImplementation(async (date: string) => {
+      const previousDate = Object.keys(recordsMap)
+        .filter(candidate => candidate < date)
+        .sort()
+        .at(-1);
+
+      return {
+        date: previousDate || date,
+        record: previousDate ? recordsMap[previousDate] : null,
+        source: previousDate ? 'indexeddb' : 'not_found',
+        compatibilityTier: 'none',
+        compatibilityIntensity: 'none',
+        migrationRulesApplied: [],
+      };
     });
   });
 

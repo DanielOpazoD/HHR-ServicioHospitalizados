@@ -8,7 +8,7 @@ describe('syncDailyRecordUseCase', () => {
     const repository = {
       syncWithFirestoreDetailed: vi.fn().mockResolvedValue({
         date: '2026-03-05',
-        outcome: 'clean',
+        consistencyState: 'clean',
         record,
       }),
     };
@@ -23,11 +23,12 @@ describe('syncDailyRecordUseCase', () => {
   });
 
   it('returns degraded for blocked sync', async () => {
+    const record = DataFactory.createMockDailyRecord('2026-03-05');
     const repository = {
       syncWithFirestoreDetailed: vi.fn().mockResolvedValue({
         date: '2026-03-05',
-        outcome: 'blocked',
-        record: null,
+        consistencyState: 'blocked',
+        record,
       }),
     };
 
@@ -42,6 +43,7 @@ describe('syncDailyRecordUseCase', () => {
       expect.objectContaining({
         kind: 'remote_blocked',
         retryStrategy: 'manual_review',
+        recommendedAction: 'continue_with_local_copy',
       })
     );
     expect(outcome.reason).toBe('remote_blocked');
@@ -52,7 +54,7 @@ describe('syncDailyRecordUseCase', () => {
     const repository = {
       syncWithFirestoreDetailed: vi.fn().mockResolvedValue({
         date: '2026-03-05',
-        outcome: 'missing',
+        consistencyState: 'missing_remote',
         record: null,
       }),
     };

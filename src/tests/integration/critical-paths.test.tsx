@@ -79,12 +79,16 @@ vi.mock('firebase/auth', async importOriginal => {
 });
 
 // Mock firebase/firestore to prevent errors during Auth checks
-vi.mock('firebase/firestore', () => ({
-  collection: vi.fn(),
-  getDocs: vi.fn(),
-  query: vi.fn(),
-  where: vi.fn(),
-}));
+vi.mock('firebase/firestore', async importOriginal => {
+  const actual = await importOriginal<typeof import('firebase/firestore')>();
+  return {
+    ...actual,
+    collection: vi.fn(),
+    getDocs: vi.fn(),
+    query: vi.fn(),
+    where: vi.fn(),
+  };
+});
 
 vi.mock('@/services/utils/errorService', () => ({
   logFirebaseError: vi.fn(),

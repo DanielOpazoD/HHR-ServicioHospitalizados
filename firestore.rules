@@ -29,40 +29,54 @@ service cloud.firestore {
              ];
     }
 
-    function getConfiguredRole() {
-      return hasEmail() &&
-             exists(/databases/$(database)/documents/config/roles)
-        ? get(/databases/$(database)/documents/config/roles).data[getUserEmail()]
-        : null;
-    }
-    
-    function isAdmin() {
-      return isAuthenticated() && (
-        isBootstrapAdmin() ||
-        getConfiguredRole() == 'admin'
-      );
-    }
-    
-    function isNurse() {
-      return isAuthenticated() && (
-        isAdmin() ||
-        getConfiguredRole() == 'nurse_hospital'
-      );
-    }
+	    function getConfiguredRole() {
+	      return hasEmail() &&
+	             exists(/databases/$(database)/documents/config/roles)
+	        ? get(/databases/$(database)/documents/config/roles).data[getUserEmail()]
+	        : null;
+	    }
 
-    function isDoctor() {
-      return isAuthenticated() && (
-        isAdmin() ||
-        getConfiguredRole() == 'doctor_urgency'
-      );
-    }
+	    function getClaimRole() {
+	      return isAuthenticated() &&
+	             request.auth.token.keys().hasAny(['role']) &&
+	             request.auth.token.role != null
+	        ? request.auth.token.role
+	        : null;
+	    }
 
-    function isDoctorSpecialist() {
-      return isAuthenticated() && (
-        isAdmin() ||
-        getConfiguredRole() == 'doctor_specialist'
-      );
-    }
+	    function getEffectiveRole() {
+	      return getClaimRole() != null
+	        ? getClaimRole()
+	        : getConfiguredRole();
+	    }
+	    
+	    function isAdmin() {
+	      return isAuthenticated() && (
+	        isBootstrapAdmin() ||
+	        getEffectiveRole() == 'admin'
+	      );
+	    }
+	    
+	    function isNurse() {
+	      return isAuthenticated() && (
+	        isAdmin() ||
+	        getEffectiveRole() == 'nurse_hospital'
+	      );
+	    }
+
+	    function isDoctor() {
+	      return isAuthenticated() && (
+	        isAdmin() ||
+	        getEffectiveRole() == 'doctor_urgency'
+	      );
+	    }
+
+	    function isDoctorSpecialist() {
+	      return isAuthenticated() && (
+	        isAdmin() ||
+	        getEffectiveRole() == 'doctor_specialist'
+	      );
+	    }
     
     // Check if user can edit (admin or nurse)
     function canEdit() {
@@ -73,11 +87,11 @@ service cloud.firestore {
       return isAdmin() || isNurse();
     }
 
-    function isEditorRole() {
-      return isAuthenticated() && (
-        getConfiguredRole() == 'editor'
-      );
-    }
+	    function isEditorRole() {
+	      return isAuthenticated() && (
+	        getEffectiveRole() == 'editor'
+	      );
+	    }
 
     function isValidSpecialistClinicalCribMedicalUpdate(beforeCrib, afterCrib) {
       return beforeCrib != null &&
@@ -173,13 +187,13 @@ service cloud.firestore {
              );
     }
 
-    function hasConfiguredRole() {
-      return getConfiguredRole() != null;
-    }
+	    function hasConfiguredRole() {
+	      return getEffectiveRole() != null;
+	    }
 
-    function isGeneralViewer() {
-      return isAuthenticated() && getConfiguredRole() == 'viewer';
-    }
+	    function isGeneralViewer() {
+	      return isAuthenticated() && getEffectiveRole() == 'viewer';
+	    }
 
     // Shared census allowlist by email (doc id = normalized email)
     function hasCensusAuthorizedEmail() {
@@ -386,17 +400,19 @@ service cloud.firestore {
         allow read: if canReadClinicalData();
         allow create, update, delete: if isAdmin();
 
-        match /readReceipts/{receiptId} {
-          allow read: if isAdmin() ||
-                       (isAuthenticated() && resource.data.userId == request.auth.uid);
-          allow create, update: if isAuthenticated() &&
-                                request.resource.data.userId == request.auth.uid &&
-                                request.resource.data.userName is string &&
-                                request.resource.data.readAt is string &&
-                                request.resource.data.shift in ['day', 'night'] &&
-                                request.resource.data.dateKey is string;
-          allow delete: if isAdmin();
-        }
+	        match /readReceipts/{receiptId} {
+	          allow read: if isAdmin() ||
+	                       (isAuthenticated() && resource.data.userId == request.auth.uid);
+	          allow create, update: if isAdmin() || (
+	                                isAuthenticated() &&
+	                                request.resource.data.userId == request.auth.uid &&
+	                                request.resource.data.userName is string &&
+	                                request.resource.data.readAt is string &&
+	                                request.resource.data.shift in ['day', 'night'] &&
+	                                request.resource.data.dateKey is string
+	                              );
+	          allow delete: if isAdmin();
+	        }
       }
       
       // ----------------------------------------

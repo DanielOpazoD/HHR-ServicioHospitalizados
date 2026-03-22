@@ -6,13 +6,13 @@ vi.mock('@/services/storage/indexeddb/indexedDbRecordService', () => ({
   saveRecord: vi.fn(),
 }));
 
-vi.mock('@/services/storage/firestoreService', () => ({
+vi.mock('@/services/storage/firestore', () => ({
   getRecordFromFirestore: vi.fn(),
   saveRecordToFirestore: vi.fn(),
   updateRecordPartial: vi.fn(),
 }));
 
-vi.mock('@/services/storage/syncQueueService', () => ({
+vi.mock('@/services/storage/sync', () => ({
   isRetryableSyncError: vi.fn(),
   queueSyncTask: vi.fn(),
 }));
@@ -57,8 +57,8 @@ import {
   getRecordFromFirestore,
   saveRecordToFirestore,
   updateRecordPartial as updateRecordPartialToFirestore,
-} from '@/services/storage/firestoreService';
-import { isRetryableSyncError, queueSyncTask } from '@/services/storage/syncQueueService';
+} from '@/services/storage/firestore';
+import { isRetryableSyncError, queueSyncTask } from '@/services/storage/sync';
 import { logRepositoryConflictAutoMerged } from '@/services/repositories/ports/repositoryAuditPort';
 
 const buildRecord = (date: string): DailyRecord => ({
@@ -148,7 +148,7 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
         }),
       }),
       expect.objectContaining({
-        contexts: ['clinical'],
+        contexts: expect.arrayContaining(['clinical', 'metadata']),
         origin: 'partial_update_retry',
       })
     );
@@ -251,7 +251,7 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
         }),
       }),
       expect.objectContaining({
-        contexts: ['clinical'],
+        contexts: expect.arrayContaining(['clinical', 'metadata']),
         origin: 'conflict_auto_merge',
       })
     );
@@ -259,8 +259,12 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
       '2026-02-15',
       expect.objectContaining({
         policyVersion: '2026-03-v3',
-        changedPaths: expect.arrayContaining(['beds.R1.pathology', 'beds.R1.fhir_resource']),
-        impactedContexts: ['clinical'],
+        changedPaths: expect.arrayContaining([
+          'beds.R1.pathology',
+          'beds.R1.fhir_resource',
+          'dateTimestamp',
+        ]),
+        impactedContexts: ['clinical', 'metadata'],
         assessment: expect.objectContaining({
           riskLevel: 'low',
           reviewRecommended: false,

@@ -100,6 +100,7 @@ Los accesos directos al handoff médico ya no usan un “modo especialista” se
 | `npm run test:e2e:critical`             | E2E crítico emulador (Chromium por defecto; multi-browser por `E2E_CRITICAL_BROWSERS`)           |
 | `npm run lint`                          | Lint global con tolerancia cero a warnings                                                       |
 | `npm run check:quality`                 | Checks de arquitectura, tamaño de módulo y boundaries runtime                                    |
+| `npm run check:test-failure-catalog`    | Valida el catálogo versionado de fallos conocidos y cuarentenas                                  |
 | `npm run ci:inner-loop`                 | Gate corto para desarrollo diario (`typecheck`, lint estricto, quality y riesgo unitario)        |
 | `npm run ci:merge-gate`                 | Gate blocking previo a merge (`quality`, unitarios completos, cobertura crítica, build, bundle)  |
 | `npm run ci:release-gate`               | Gate final de release (`merge-gate` + Firestore rules/emulador/E2E crítico)                      |
@@ -107,6 +108,7 @@ Los accesos directos al handoff médico ya no usan un “modo especialista” se
 | `npm run test:risk:admin-health`        | Riesgo operativo de health dashboard y contratos                                                 |
 | `npm run report:quality-metrics`        | Snapshot de métricas de calidad para artefactos CI                                               |
 | `npm run report:operational-health`     | Snapshot operativo de budgets, sync y runbooks                                                   |
+| `npm run report:system-confidence`      | Scorecard mínimo de confianza del sistema con 5 indicadores                                      |
 | `npm run report:runtime-contracts`      | Snapshot de contratos runtime y evolución de esquema                                             |
 | `npm run report:critical-coverage`      | Reporte gated de cobertura crítica por zona                                                      |
 | `npm run check:critical-coverage`       | Gate de cobertura crítica instrumentada por zona                                                 |

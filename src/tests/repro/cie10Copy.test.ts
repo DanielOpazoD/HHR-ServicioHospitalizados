@@ -1,16 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import { initializeDay } from '@/services/repositories/DailyRecordRepository';
 import { DailyRecord, PatientData, Specialty, PatientStatus } from '@/types';
-import * as IndexedDBService from '@/services/storage/indexedDBService';
-import * as FirestoreService from '@/services/storage/firestoreService';
+import * as IndexedDBService from '@/services/storage/indexeddb/indexedDbRecordService';
+import * as FirestoreService from '@/services/storage/firestore';
 import { vi } from 'vitest';
 
 // Unmock the repository so we test the REAL logic
 vi.unmock('../../services/repositories/DailyRecordRepository');
 
 // Mock services
-vi.mock('../../services/storage/indexedDBService');
-vi.mock('../../services/storage/firestoreService');
+vi.mock('../../services/storage/indexeddb/indexedDbRecordService');
+vi.mock('../../services/storage/firestore');
 vi.mock('../../services/storage/legacyFirebaseService', () => ({
   getLegacyRecord: vi.fn().mockResolvedValue(null),
   getLegacyNurseCatalog: vi.fn().mockResolvedValue([]),

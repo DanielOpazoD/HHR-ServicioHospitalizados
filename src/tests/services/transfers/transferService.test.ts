@@ -69,6 +69,9 @@ vi.mock('@/firebaseConfig', () => ({
 
 describe('Transfer Service', () => {
   type TransferInput = Parameters<typeof createTransferRequest>[0];
+  const flushAsyncSubscription = async () => {
+    await Promise.resolve();
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -191,14 +194,15 @@ describe('Transfer Service', () => {
       expect(typeof unsubscribe).toBe('function');
     });
 
-    it('should call callback with transfers array', () => {
+    it('should call callback with transfers array', async () => {
       const callback = vi.fn();
       subscribeToTransfers(callback);
+      await flushAsyncSubscription();
 
       expect(callback).toHaveBeenCalledWith([]);
     });
 
-    it('should merge active and history transfers in subscription', () => {
+    it('should merge active and history transfers in subscription', async () => {
       const onSnapshotMock = vi.mocked(firestore.onSnapshot);
       const callbacks: Array<
         (snapshot: { docs: Array<{ id: string; data: () => Record<string, unknown> }> }) => void
@@ -213,6 +217,7 @@ describe('Transfer Service', () => {
       subscribeToTransfers(t => {
         latest = t;
       });
+      await flushAsyncSubscription();
 
       const activeSnapshot = {
         docs: [
@@ -241,7 +246,7 @@ describe('Transfer Service', () => {
       expect(latest.some(t => t.id === 'TR-CLOSED')).toBe(true);
     });
 
-    it('should include history transfers even without status history', () => {
+    it('should include history transfers even without status history', async () => {
       const onSnapshotMock = vi.mocked(firestore.onSnapshot);
       const callbacks: Array<
         (snapshot: { docs: Array<{ id: string; data: () => Record<string, unknown> }> }) => void
@@ -256,6 +261,7 @@ describe('Transfer Service', () => {
       subscribeToTransfers(t => {
         latest = t;
       });
+      await flushAsyncSubscription();
 
       const historySnapshot = {
         docs: [
@@ -271,7 +277,7 @@ describe('Transfer Service', () => {
       expect(latest.map(t => t.id)).toContain('TR-NO-HISTORY');
     });
 
-    it('should handle subscription errors', () => {
+    it('should handle subscription errors', async () => {
       const onSnapshotMock = vi.mocked(firestore.onSnapshot);
       const callback = vi.fn();
       const onError = vi.fn();
@@ -293,6 +299,7 @@ describe('Transfer Service', () => {
       });
 
       subscribeToTransfers(callback, { onError });
+      await flushAsyncSubscription();
       expect(callback).toHaveBeenCalledWith([]);
       expect(onError).toHaveBeenCalled();
       consoleErrorSpy.mockRestore();

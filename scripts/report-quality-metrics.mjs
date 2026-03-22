@@ -13,6 +13,7 @@ const MD_OUTPUT = path.join(REPORTS_DIR, 'quality-metrics.md');
 const MODULE_ALLOWLIST_PATH = path.join(ROOT, 'scripts', 'module-size-allowlist.json');
 const FOLDER_MATRIX_PATH = path.join(ROOT, 'scripts', 'folder-dependency-matrix.json');
 const FLAKY_QUARANTINE_PATH = path.join(ROOT, 'scripts', 'config', 'flaky-quarantine.json');
+const TEST_FAILURE_CATALOG_PATH = path.join(ROOT, 'scripts', 'config', 'test-failure-catalog.json');
 
 const SOURCE_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx']);
 const TEST_FILE_PATTERN = /\.(test|spec)\.(ts|tsx|js|jsx)$/;
@@ -239,6 +240,7 @@ const getFolderDependencyDebtMetrics = () => {
 const getTestMetrics = () => {
   const testFiles = walkFiles(TEST_ROOT).filter(filePath => TEST_FILE_PATTERN.test(filePath));
   const flakyQuarantine = safeReadJson(FLAKY_QUARANTINE_PATH);
+  const failureCatalog = safeReadJson(TEST_FAILURE_CATALOG_PATH);
   const quarantinedFiles = new Set(
     Array.isArray(flakyQuarantine?.quarantined)
       ? flakyQuarantine.quarantined
@@ -292,6 +294,11 @@ const getTestMetrics = () => {
     skippedMarkers: skipCount,
     onlyMarkers: onlyCount,
     flakeRiskFiles,
+    quarantinedFiles: quarantinedFiles.size,
+    knownFailureEntries: Array.isArray(failureCatalog?.entries) ? failureCatalog.entries.length : 0,
+    openKnownFailureEntries: Array.isArray(failureCatalog?.entries)
+      ? failureCatalog.entries.filter(entry => entry?.status !== 'fixed').length
+      : 0,
   };
 };
 
@@ -368,6 +375,9 @@ const mdLines = [
   `- Forbidden .skip markers: ${metrics.tests.skippedMarkers}`,
   `- Forbidden .only markers: ${metrics.tests.onlyMarkers}`,
   `- Flake-risk test files: ${metrics.tests.flakeRiskFiles}`,
+  `- Quarantined test files: ${metrics.tests.quarantinedFiles}`,
+  `- Known failure entries: ${metrics.tests.knownFailureEntries}`,
+  `- Open known failure entries: ${metrics.tests.openKnownFailureEntries}`,
   '',
   '## Type Safety Signals',
   '',

@@ -7,7 +7,7 @@ import {
 import { DailyRecord } from '@/types';
 
 // Mock BEDS
-vi.mock('@/constants', () => ({
+vi.mock('@/constants/beds', () => ({
   BEDS: [
     { id: 'R1', name: 'R1', type: 'UTI', isExtra: false },
     { id: 'M1', name: 'M1', type: 'MEDIA', isExtra: false },

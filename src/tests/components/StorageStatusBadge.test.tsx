@@ -3,10 +3,14 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
 
 const mockReload = vi.fn();
+const mockUseDatabaseFallbackStatus = vi.fn();
 
-vi.mock('@/services/storage/indexedDBService', () => ({
-  isDatabaseInFallbackMode: vi.fn(),
+vi.mock('@/services/storage/core', () => ({
   resetLocalDatabase: vi.fn(),
+}));
+
+vi.mock('@/hooks/useDatabaseFallbackStatus', () => ({
+  useDatabaseFallbackStatus: (...args: unknown[]) => mockUseDatabaseFallbackStatus(...args),
 }));
 
 vi.mock('@/shared/runtime/browserWindowRuntime', () => ({
@@ -15,25 +19,25 @@ vi.mock('@/shared/runtime/browserWindowRuntime', () => ({
   },
 }));
 
-import { isDatabaseInFallbackMode, resetLocalDatabase } from '@/services/storage/indexedDBService';
+import { resetLocalDatabase } from '@/services/storage/core';
 import StorageStatusBadge from '@/components/layout/StorageStatusBadge';
-import { getStorageAutoRecoveryKey } from '@/services/storage/storageFallbackUiPolicy';
+import { getStorageAutoRecoveryKey } from '@/services/storage/runtime';
 
 describe('StorageStatusBadge', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.sessionStorage.clear();
+    mockUseDatabaseFallbackStatus.mockReturnValue(false);
   });
 
   it('does not render when fallback mode is disabled', () => {
-    vi.mocked(isDatabaseInFallbackMode).mockReturnValue(false);
     render(<StorageStatusBadge />);
     expect(screen.queryByText('Guardado local limitado')).not.toBeInTheDocument();
   });
 
   it('uses runtime reload on retry and reset on hard cleanup', () => {
     window.sessionStorage.setItem(getStorageAutoRecoveryKey(), 'true');
-    vi.mocked(isDatabaseInFallbackMode).mockReturnValue(true);
+    mockUseDatabaseFallbackStatus.mockReturnValue(true);
     render(<StorageStatusBadge />);
 
     fireEvent.click(screen.getByRole('button', { name: /Recargar/i }));
@@ -48,7 +52,7 @@ describe('StorageStatusBadge', () => {
   });
 
   it('auto-recovers once before showing the banner', () => {
-    vi.mocked(isDatabaseInFallbackMode).mockReturnValue(true);
+    mockUseDatabaseFallbackStatus.mockReturnValue(true);
 
     render(<StorageStatusBadge />);
 

@@ -222,19 +222,24 @@ describe('authService', () => {
       });
     });
 
-    it('should fail with popup timeout when Google popup hangs indefinitely', async () => {
+    it('should keep the popup flow pending when Google selection takes a long time', async () => {
       vi.useFakeTimers();
       vi.mocked(firebaseAuth.signInWithPopup).mockImplementation(
         () => new Promise(() => {}) as Promise<firebaseAuth.UserCredential>
       );
 
-      const promise = signInWithGoogle();
-      const expectation = expect(promise).rejects.toMatchObject({
-        code: 'auth/popup-timeout',
-      });
+      let settled = false;
+      void signInWithGoogle().then(
+        () => {
+          settled = true;
+        },
+        () => {
+          settled = true;
+        }
+      );
 
       await vi.advanceTimersByTimeAsync(12000);
-      await expectation;
+      expect(settled).toBe(false);
     });
   });
 

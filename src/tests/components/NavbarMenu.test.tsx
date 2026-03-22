@@ -25,7 +25,20 @@ describe('NavbarMenu', () => {
     setModule: vi.fn(),
     censusViewMode: 'REGISTER' as const,
     onOpenSettings: vi.fn(),
-    visibleModules: ['CENSUS', 'CUDYR', 'NURSING_HANDOFF', 'MEDICAL_HANDOFF'] as const,
+    visibleModules: [
+      'CENSUS',
+      'CUDYR',
+      'NURSING_HANDOFF',
+      'MEDICAL_HANDOFF',
+      'AUDIT',
+      'DIAGNOSTICS',
+      'DATA_MAINTENANCE',
+      'PATIENT_MASTER_INDEX',
+      'ROLE_MANAGEMENT',
+      'REMINDERS',
+      'ERRORS',
+      'WHATSAPP',
+    ] as const,
   };
 
   beforeEach(() => {
@@ -64,7 +77,7 @@ describe('NavbarMenu', () => {
   });
 
   it('hides admin items for non-admin users', () => {
-    mockRole = 'user';
+    mockRole = 'viewer';
     render(<NavbarMenu {...defaultProps} />);
     const brandButton = screen
       .queryByRole('heading', { name: /Hospital Hanga Roa/i })

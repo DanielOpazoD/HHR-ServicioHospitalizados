@@ -39,9 +39,11 @@ Evitar que la deuda estructural vuelva a crecer después de las fases de estabil
 - `npm run ci:release-gate`
 - `npm run ci:quality-core`
 - `npm run check:quality`
+- `npm run check:test-failure-catalog`
 - `npm run check:hotspot-growth`
 - `npm run report:quality-metrics`
 - `npm run report:operational-health`
+- `npm run report:system-confidence`
 - `npm run report:runtime-contracts`
 - `npm run report:critical-coverage`
 - `npm run check:flow-performance-budget`
@@ -57,6 +59,8 @@ Evitar que la deuda estructural vuelva a crecer después de las fases de estabil
 - El estado operativo por flujo distingue `ok`, `near-limit`, `target-miss` y `blocking`.
 - La definición de terminado vive en [docs/ENGINEERING_DEFINITION_OF_DONE.md](./ENGINEERING_DEFINITION_OF_DONE.md).
 - La deuda priorizada vive en [docs/TECHNICAL_DEBT_REGISTER.md](./TECHNICAL_DEBT_REGISTER.md).
+- Los fallos conocidos no resueltos deben vivir en `scripts/config/test-failure-catalog.json` con owner, clasificación y SLA.
+- Los riesgos flaky aceptados temporalmente deben vivir en `scripts/config/flaky-quarantine.json` y reflejarse también en el catálogo de fallos.
 
 ## Cuándo abrir una excepción
 

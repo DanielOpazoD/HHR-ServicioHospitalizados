@@ -7,7 +7,7 @@ import { getCudyrMonthlyTotals } from '@/services/cudyr/cudyrSummary';
 import type { CudyrMonthlySummary } from '@/services/cudyr/cudyrSummary';
 import { createWorkbook } from '@/services/exporters/excelUtils';
 import { saveAs } from 'file-saver';
-import { getRecordFromFirestore } from '@/services/storage/firestoreService';
+import { getRecordFromFirestore } from '@/services/storage/firestore';
 
 // Mock dependencies
 vi.mock('file-saver', () => ({
@@ -27,7 +27,7 @@ vi.mock('@/services/cudyr/cudyrSummary', () => ({
   getCudyrMonthlyTotals: vi.fn(),
 }));
 
-vi.mock('@/services/storage/firestoreService', () => ({
+vi.mock('@/services/storage/firestore', () => ({
   getRecordFromFirestore: vi.fn(),
 }));
 

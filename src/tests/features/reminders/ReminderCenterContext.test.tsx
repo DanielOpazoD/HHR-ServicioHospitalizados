@@ -1,3 +1,4 @@
+/* @flake-safe: Date usage is limited to deriving a same-day key for deterministic reminder receipts. */
 import React from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

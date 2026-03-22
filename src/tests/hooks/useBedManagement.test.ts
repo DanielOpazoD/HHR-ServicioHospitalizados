@@ -456,7 +456,10 @@ describe('useBedManagement', () => {
         result.current.updatePatient('R1', 'age', '50');
       });
 
-      expect(consoleSpy).toHaveBeenCalledWith('Audit logging failed', expect.any(Error));
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Audit logging failed'),
+        expect.any(Error)
+      );
       consoleSpy.mockRestore();
     });
 

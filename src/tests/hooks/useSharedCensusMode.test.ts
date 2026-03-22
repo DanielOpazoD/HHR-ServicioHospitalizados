@@ -28,9 +28,26 @@ let mockAuthUser: {
 
 vi.mock('@/context/AuthContext', () => ({
   useAuth: () => ({
+    currentUser: mockAuthUser,
+    authorizedUser: mockAuthUser,
     user: mockAuthUser,
     role: mockAuthRole,
     isLoading: mockAuthLoading,
+    isAuthenticated: !!mockAuthUser,
+    isAuthorizedSession: !!mockAuthUser,
+    isAnonymousSignature: false,
+    isSharedCensus: false,
+    isUnauthorized: false,
+    isEditor: mockAuthRole === 'admin' || mockAuthRole === 'editor',
+    isViewer: !(mockAuthRole === 'admin' || mockAuthRole === 'editor'),
+    isFirebaseConnected: !!mockAuthUser,
+    sessionState: mockAuthUser
+      ? {
+          status: 'authorized',
+          user: { ...mockAuthUser, role: mockAuthRole },
+        }
+      : { status: 'unauthenticated', user: null },
+    signOut: vi.fn(),
   }),
 }));
 

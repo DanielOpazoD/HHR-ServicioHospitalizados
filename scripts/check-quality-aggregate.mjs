@@ -34,6 +34,7 @@ const QUALITY_STEPS = [
   'check:census-runtime-boundary',
   'check:runtime-adapter-boundary',
   'check:test-governance',
+  'check:test-failure-catalog',
   'check:flaky-quarantine',
   'check:critical-any',
   'check:source-any',

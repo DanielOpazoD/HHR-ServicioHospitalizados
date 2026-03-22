@@ -15,6 +15,7 @@ Incluye:
 - `npm run typecheck`
 - `npm run lint -- --max-warnings 0`
 - `npm run check:quality`
+- `npm run check:test-failure-catalog`
 - `npm run test:unit:critical`
 
 Salida esperada:
@@ -30,6 +31,7 @@ Incluye:
 - `npm run typecheck`
 - `npm run lint -- --max-warnings 0`
 - `npm run check:quality`
+- `npm run check:test-failure-catalog`
 - `npm run test:ci:unit`
 - `npm run check:critical-coverage`
 - `npm run build`
@@ -78,6 +80,14 @@ Salida esperada:
    - archivo nuevo sin tests;
    - refactor que movió líneas entre zonas
 5. primero corregir tests o mapping de zona; solo después actualizar baseline si la nueva medición quedó validada a propósito
+
+### Falla `check:test-failure-catalog`
+
+1. revisar `scripts/config/test-failure-catalog.json`
+2. confirmar que toda falla conocida tenga `owner`, `classification`, `status`, `sla` y `reason`
+3. si una entrada es `flaky`, debe existir también en `scripts/config/flaky-quarantine.json`
+4. si una falla fue corregida, marcarla `fixed` o removerla junto con su cuarentena asociada
+5. no aceptar fallos conocidos fuera del catálogo versionado
 
 ### Falla `test:firestore:release:ci`
 

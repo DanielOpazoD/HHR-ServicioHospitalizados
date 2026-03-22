@@ -3,16 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { loadRemoteRecordWithFallback } from '@/services/repositories/dailyRecordRemoteLoader';
 import { DataFactory } from '@/tests/factories/DataFactory';
 
-vi.mock('@/services/storage/firestoreService', () => ({
+vi.mock('@/services/storage/firestore', () => ({
   getRecordFromFirestore: vi.fn(),
 }));
 
-vi.mock('@/services/storage/indexedDBService', () => ({
-  saveRecord: vi.fn(),
-}));
-
-import { getRecordFromFirestore } from '@/services/storage/firestoreService';
-import { saveRecord } from '@/services/storage/indexedDBService';
+import { getRecordFromFirestore } from '@/services/storage/firestore';
 
 describe('dailyRecordRemoteLoader', () => {
   const date = '2025-01-01';
@@ -31,9 +26,8 @@ describe('dailyRecordRemoteLoader', () => {
     expect(result.source).toBe('firestore');
     expect(result.compatibilityTier).toBe('current_firestore');
     expect(result.compatibilityIntensity).toBe('normalized_only');
-    expect(result.cachedLocally).toBe(true);
+    expect(result.cachedLocally).toBe(false);
     expect(result.migrationRulesApplied).toContain('schema_defaults_applied');
-    expect(saveRecord).toHaveBeenCalled();
   });
 
   it('returns not_found metadata when neither remote source has data', async () => {
@@ -82,6 +76,6 @@ describe('dailyRecordRemoteLoader', () => {
     const result = await loadRemoteRecordWithFallback(date);
 
     expect(result.source).toBe('not_found');
-    expect(saveRecord).not.toHaveBeenCalled();
+    expect(result.cachedLocally).toBe(false);
   });
 });

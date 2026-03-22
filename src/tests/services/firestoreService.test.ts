@@ -52,6 +52,9 @@ vi.mock('firebase/firestore', async () => {
 
 describe('firestoreService', () => {
   type PartialUpdatePatch = Parameters<typeof updateRecordPartial>[1];
+  const flushAsyncSubscription = async () => {
+    await Promise.resolve();
+  };
 
   const mockDate = '2024-12-24';
   const mockRecord = {
@@ -240,6 +243,7 @@ describe('firestoreService', () => {
     });
 
     const unsub = subscribeToNurseCatalog(callback);
+    await flushAsyncSubscription();
 
     expect(callback).toHaveBeenCalledWith(['Staff 1']);
     expect(typeof unsub).toBe('function');
@@ -262,6 +266,7 @@ describe('firestoreService', () => {
     });
 
     subscribeToNurseCatalog(callback);
+    await flushAsyncSubscription();
     expect(callback).toHaveBeenCalledWith(['Legacy Nurse']);
   });
 
@@ -369,6 +374,7 @@ describe('firestoreService', () => {
     });
 
     const unsub = subscribeToTensCatalog(callback);
+    await flushAsyncSubscription();
 
     expect(callback).toHaveBeenCalledWith(['TENS A']);
     expect(typeof unsub).toBe('function');

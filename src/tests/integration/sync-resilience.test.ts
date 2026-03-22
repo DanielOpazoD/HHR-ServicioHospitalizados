@@ -8,10 +8,14 @@ vi.mock('@/services/infrastructure/db', () => ({
   },
 }));
 
-vi.mock('@/services/storage/firestoreService', () => ({
+vi.mock('@/services/storage/firestore', () => ({
   getRecordFromFirestore: vi.fn(),
   saveRecordToFirestore: vi.fn(),
   updateRecordPartial: vi.fn(),
+}));
+
+vi.mock('@/services/repositories/ports/repositoryAuditPort', () => ({
+  logRepositoryConflictAutoMerged: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { db } from '@/services/infrastructure/db';
@@ -20,15 +24,11 @@ import {
   clearAllRecords,
   saveRecord as saveRecordLocal,
 } from '@/services/storage/indexedDBService';
-import {
-  getSyncQueueTelemetry,
-  processSyncQueue,
-  queueSyncTask,
-} from '@/services/storage/syncQueueService';
+import { getSyncQueueTelemetry, processSyncQueue, queueSyncTask } from '@/services/storage/sync';
 import {
   getRecordFromFirestore,
   updateRecordPartial as updateRecordPartialToFirestore,
-} from '@/services/storage/firestoreService';
+} from '@/services/storage/firestore';
 import { updatePartial } from '@/services/repositories/dailyRecordRepositoryWriteService';
 
 const buildPatient = (bedId: string, overrides: Partial<PatientData> = {}): PatientData => ({

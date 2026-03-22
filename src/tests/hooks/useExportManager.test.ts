@@ -71,6 +71,7 @@ describe('useExportManager', () => {
     record: mockRecord,
     currentModule: 'CENSUS',
     selectedShift: 'day' as const,
+    canVerifyArchiveStatus: true,
   };
 
   beforeEach(() => {
@@ -135,8 +136,8 @@ describe('useExportManager', () => {
   it('surfaces degraded lookup as warning on mount', async () => {
     const degradedLookup: ApplicationOutcome<LookupBackupArchiveStatusOutput> = {
       status: 'degraded',
-      data: { exists: false, lookup: { exists: false, status: 'restricted' } },
-      issues: [{ kind: 'unknown', message: 'Storage restringido' }],
+      data: { exists: false, lookup: { exists: false, status: 'timeout' } },
+      issues: [{ kind: 'unknown', message: 'Storage tardó demasiado' }],
     };
     vi.mocked(backupExportUseCases.executeLookupBackupArchiveStatus).mockResolvedValue(
       degradedLookup
