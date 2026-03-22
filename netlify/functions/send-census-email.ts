@@ -1,3 +1,7 @@
+if (typeof window === 'undefined') {
+  (global as any).window = {};
+}
+
 import { CENSUS_DEFAULT_RECIPIENTS } from '../../src/constants/email';
 import {
   buildCensusMasterBuffer,

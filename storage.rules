@@ -33,11 +33,11 @@ service firebase.storage {
     }
 
     function hasClinicalWriteRole() {
-      return isAuthenticated() && request.auth.token.role in [
+      return (isAuthenticated() && request.auth.token.role in [
         'admin',
         'nurse_hospital',
         'editor'
-      ];
+      ]) || isBootstrapAdmin();
     }
 
     function canWriteReminderAssets() {
