@@ -72,6 +72,9 @@
 
 ## Runtime boundaries
 
+- El consumo externo a la feature debe entrar por `index.ts` o `public.ts`. `public.ts` es la
+  superficie permitida para `application` y `shared` cuando necesitan tipos, helpers del
+  workspace o servicios documentales sin entrar por internals.
 - La hoja principal no debe recuperar `if` especiales por `documentType`; la extensibilidad entra por definiciones/section renderers.
 - Todo documento/template leído o persistido debe pasar por contratos runtime antes de salir del repositorio.
 - La impresión/exportación debe reportar fallos por telemetría operativa y no depender de logs sueltos.
@@ -81,6 +84,8 @@
   compartidos; no deben reaparecer variantes locales de fecha u origen documental en controllers.
 - La fecha visible del nombre de PDF debe salir del helper compartido del feature; no se debe
   volver a formatear inline según origen (`finf`, `sourceDailyRecordDate`, `audit.updatedAt`).
+- `scripts/check-clinical-documents-feature-boundary.mjs` bloquea imports profundos nuevos desde
+  fuera de la feature para que `application` y `shared` dependan solo de entrypoints públicos.
 
 ## Test entrypoints recomendados
 

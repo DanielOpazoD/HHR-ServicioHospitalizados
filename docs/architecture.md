@@ -59,11 +59,17 @@ Documento de referencia para entender cómo se organiza el sistema, cómo fluyen
 - `scripts/check-module-size.mjs`
 - `scripts/check-census-runtime-boundary.mjs`
 - `scripts/check-runtime-adapter-boundary.mjs`
+- `scripts/check-auth-feature-boundary.mjs`
+- `scripts/check-clinical-documents-feature-boundary.mjs`
 
 Reglas específicas adicionales:
 
 - En código productivo (`src/**` fuera de tests y `DailyRecordContext`) no se permite `useDailyRecordActions`; deben usarse hooks acotados (`useDailyRecordBedActions`, `useDailyRecordMovementActions`, `useDailyRecordDayActions`, etc.).
 - En código productivo, si ya existe un use-case o port equivalente, `hooks`, `components` y `features` no deben importar directo `auditService`, `DailyRecordRepository`, `ClinicalDocumentRepository` ni `censusEmailService`.
+- El consumo externo a una feature debe entrar por `index.ts` o `public.ts`; dentro de la feature,
+  preferir imports relativos para distinguir implementación interna de API pública. El primer
+  guardrail específico de esta familia empezó por `auth` y `clinical-documents`
+  (`npm run check:auth-feature-boundary`, `npm run check:clinical-documents-feature-boundary`).
 - `src/application/ports/*` es el boundary permitido para adapters por defecto a servicios concretos.
 - El guardrail automático correspondiente es `npm run check:application-port-boundary`.
 

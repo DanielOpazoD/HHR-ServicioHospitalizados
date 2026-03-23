@@ -43,6 +43,8 @@
     "check:core-test-boundary": "node scripts/check-core-test-boundary.mjs",
     "check:core-trivial-tests": "node scripts/check-core-trivial-tests.mjs",
     "check:core-console-usage": "node scripts/check-core-console-usage.mjs",
+    "check:auth-feature-boundary": "node scripts/check-auth-feature-boundary.mjs",
+    "check:clinical-documents-feature-boundary": "node scripts/check-clinical-documents-feature-boundary.mjs",
     "check:feature-dependencies": "node scripts/check-feature-dependencies.mjs",
     "check:shared-layer-boundary": "node scripts/check-shared-layer-boundary.mjs",
     "check:barrel-boundaries": "node scripts/check-barrel-boundaries.mjs",

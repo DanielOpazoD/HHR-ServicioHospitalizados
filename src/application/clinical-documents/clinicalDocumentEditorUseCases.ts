@@ -1,10 +1,10 @@
-import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
-import type { ClinicalDocumentDraftBaseState } from '@/features/clinical-documents/hooks/clinicalDocumentDraftReducer';
 import {
   buildClinicalDocumentActor,
   hydrateLegacyClinicalDocument,
   serializeClinicalDocument,
-} from '@/features/clinical-documents/controllers/clinicalDocumentWorkspaceController';
+  type ClinicalDocumentDraftBaseState,
+  type ClinicalDocumentRecord,
+} from '@/features/clinical-documents/public';
 import { executePersistClinicalDocumentDraft } from '@/application/clinical-documents/clinicalDocumentUseCases';
 import type { ApplicationOutcome } from '@/application/shared/applicationOutcome';
 

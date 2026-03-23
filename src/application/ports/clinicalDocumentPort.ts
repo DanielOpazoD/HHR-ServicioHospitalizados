@@ -2,7 +2,7 @@ import { ClinicalDocumentRepository } from '@/services/repositories/ClinicalDocu
 import type {
   ClinicalDocumentPdfMeta,
   ClinicalDocumentRecord,
-} from '@/features/clinical-documents/domain/entities';
+} from '@/features/clinical-documents/public';
 
 export interface ClinicalDocumentPort {
   listByEpisode: (episodeKey: string, hospitalId?: string) => Promise<ClinicalDocumentRecord[]>;

@@ -1,9 +1,11 @@
+import {
+  exportClinicalDocumentPdfViaBackend,
+  generateClinicalDocumentPdfBlob,
+} from '@/features/clinical-documents/public';
 import type {
   ClinicalDocumentPdfMeta,
   ClinicalDocumentRecord,
-} from '@/features/clinical-documents/domain/entities';
-import { exportClinicalDocumentPdfViaBackend } from '@/features/clinical-documents/services/clinicalDocumentBackendExportService';
-import { generateClinicalDocumentPdfBlob } from '@/features/clinical-documents/services/clinicalDocumentPdfService';
+} from '@/features/clinical-documents/public';
 import {
   createApplicationFailed,
   createApplicationSuccess,

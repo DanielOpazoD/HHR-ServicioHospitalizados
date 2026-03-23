@@ -1,12 +1,12 @@
 import React from 'react';
 import { Palette } from 'lucide-react';
 import { GamesMenu } from '@/features/games';
-import { useLoginPageController } from '@/features/auth/components/useLoginPageController';
-import { LoginPageCard } from '@/features/auth/components/LoginPageCard';
-import { LoginPageFooter } from '@/features/auth/components/LoginPageFooter';
-import { LoginPageHeader } from '@/features/auth/components/LoginPageHeader';
+import { LoginPageCard } from './LoginPageCard';
+import { LoginPageFooter } from './LoginPageFooter';
+import { LoginPageHeader } from './LoginPageHeader';
+import { useLoginPageController } from './useLoginPageController';
 
-interface LoginPageProps {
+export interface LoginPageProps {
   onLoginSuccess: () => void;
   accessMode?: 'default' | 'shared-census';
 }

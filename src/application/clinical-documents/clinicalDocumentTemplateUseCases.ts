@@ -3,7 +3,7 @@ import {
   createApplicationSuccess,
   type ApplicationOutcome,
 } from '@/application/shared/applicationOutcome';
-import type { ClinicalDocumentTemplate } from '@/features/clinical-documents/domain/entities';
+import type { ClinicalDocumentTemplate } from '@/features/clinical-documents/public';
 import { ClinicalDocumentTemplateRepository } from '@/services/repositories/ClinicalDocumentTemplateRepository';
 
 export const executeListActiveClinicalDocumentTemplates = async (

@@ -59,6 +59,9 @@ feature/
 - `controllers/hooks/domain/types` de una feature no deben importar capas restringidas de otra feature (controlado por script de arquitectura).
 - Priorizar contratos locales (`types`, `domain/contracts`) antes de usar tipos ad-hoc en componentes.
 - Todo consumo externo a la feature debe entrar por `index.ts` o `public.ts`. Evitar imports profundos desde `src/App.tsx`, `src/views/*` o desde otras features.
+- Dentro de la feature, preferir imports relativos para distinguir claramente implementación interna
+  de API pública. Los aliases `@/features/<feature>/...` quedan reservados para consumo externo y
+  deben apuntar solo al entrypoint público.
 - Si una vista/componente debe ser lazy-loaded por el router, exponerla primero desde el entrypoint público de la feature.
 
 ## Ejemplo de flujo dentro de una feature
@@ -83,6 +86,8 @@ components/Modal
 ## Entry points públicos actuales
 
 - `auth/index.ts`: autenticación de alto nivel.
+- `auth/public.ts`: API pública mínima de autenticación (`LoginPage` + props).
+- `clinical-documents/public.ts`: contratos y helpers permitidos para `application`/`shared`.
 - `admin/index.ts`: vistas operativas del panel admin.
 - `backup/index.ts`: explorador de respaldos.
 - `census/index.ts`: vistas y modales públicos del módulo.
