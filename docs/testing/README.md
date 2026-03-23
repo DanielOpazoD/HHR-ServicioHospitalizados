@@ -18,23 +18,24 @@ Playwright cubre auth, startup, módulos críticos y regresiones de UX prioritar
 
 ## 2. Comandos vigentes
 
-| Comando                                 | Descripción                                                                                                               |
-| :-------------------------------------- | :------------------------------------------------------------------------------------------------------------------------ |
-| `npm run test:ci:unit`                  | Suite unitaria/integración de CI sin reglas ni emulador                                                                   |
-| `npm run test:coverage:critical`        | Cobertura crítica instrumentada por zona                                                                                  |
-| `npm run test:smoke:critical-runtime`   | Smoke pack curado para `cold boot`, `login`, `offline -> online`, `sync conflict`, `export` y `clinical-documents`        |
-| `npm run test:release-confidence`       | Pack compacto blocking de release confidence: smoke runtime, rules, emulador, coverage, performance y E2E críticos        |
-| `npm run test:release-confidence:full`  | Pack extendido de release confidence: agrega `unit_critical` para corridas de validación más profundas                    |
-| `npm run test:e2e:critical`             | E2E críticos sobre emulador                                                                                               |
-| `npm run test:e2e:flow-performance`     | Budgets de performance por flujo (`login`, `auth`, `censo visible`, `censo record-ready`, `clinical-documents`, `backup`) |
-| `npm run test:rules`                    | Reglas Firestore                                                                                                          |
-| `npm run test:emulator:sync`            | Suite de emulador sync                                                                                                    |
-| `npm run test:emulator:ui`              | Suite de emulador UI                                                                                                      |
-| `npm run check:critical-smoke-pack`     | Verifica que el smoke pack crítico siga cubriendo todos los escenarios obligatorios                                       |
-| `npm run check:release-confidence-pack` | Verifica perfiles, tiers, solapes permitidos y scripts válidos del release confidence pack                                |
-| `npm run ci:inner-loop`                 | Ruta rápida para desarrollo diario                                                                                        |
-| `npm run ci:merge-gate`                 | Ruta blocking previa a merge                                                                                              |
-| `npm run ci:release-gate`               | Ruta completa con Firestore + E2E                                                                                         |
+| Comando                                   | Descripción                                                                                                               |
+| :---------------------------------------- | :------------------------------------------------------------------------------------------------------------------------ |
+| `npm run test:ci:unit`                    | Suite unitaria/integración de CI sin reglas ni emulador                                                                   |
+| `npm run test:coverage:critical`          | Cobertura crítica instrumentada por zona                                                                                  |
+| `npm run test:smoke:critical-runtime`     | Smoke pack curado para `cold boot`, `login`, `offline -> online`, `sync conflict`, `export` y `clinical-documents`        |
+| `npm run test:release-confidence`         | Pack compacto blocking de release confidence: smoke runtime, rules, emulador, coverage, performance y E2E críticos        |
+| `npm run test:release-confidence:full`    | Pack extendido de release confidence: agrega `unit_critical` para corridas de validación más profundas                    |
+| `npm run test:e2e:critical`               | E2E críticos sobre emulador                                                                                               |
+| `npm run test:e2e:flow-performance`       | Budgets de performance por flujo (`login`, `auth`, `censo visible`, `censo record-ready`, `clinical-documents`, `backup`) |
+| `npm run test:rules`                      | Reglas Firestore                                                                                                          |
+| `npm run test:emulator:sync`              | Suite de emulador sync                                                                                                    |
+| `npm run test:emulator:ui`                | Suite de emulador UI                                                                                                      |
+| `npm run check:critical-smoke-pack`       | Verifica que el smoke pack crítico siga cubriendo todos los escenarios obligatorios                                       |
+| `npm run check:release-confidence-pack`   | Verifica perfiles, tiers, solapes permitidos y scripts válidos del release confidence pack                                |
+| `npm run check:release-confidence-matrix` | Verifica que cada área crítica tenga trazabilidad explícita hacia coverage, smoke, budgets y pasos blocking de release    |
+| `npm run ci:inner-loop`                   | Ruta rápida para desarrollo diario                                                                                        |
+| `npm run ci:merge-gate`                   | Ruta blocking previa a merge                                                                                              |
+| `npm run ci:release-gate`                 | Ruta completa con Firestore + E2E                                                                                         |
 
 ## 3. Cobertura crítica
 
@@ -46,6 +47,10 @@ Ahora se valida por zonas instrumentadas:
 - `clinical-documents`
 - `services/transfers`
 - `services/storage/firestore`
+- `services/auth/bootstrap`
+- `features/reminders/admin`
+- `services/storage/sync-critical`
+- `services/storage/indexeddb-recovery`
 
 Artefactos:
 
@@ -133,6 +138,24 @@ Regla de diseño:
 - el perfil full existe para auditorías más profundas o corridas de diagnóstico
 
 Objetivo: dejar una ruta blocking más compacta para release, sin perder una variante extendida cuando se necesite profundidad adicional.
+
+## 5.4 Release Confidence Matrix
+
+La matriz versionada vive en `scripts/config/release-confidence-matrix.json`.
+
+Gobierna la trazabilidad entre:
+
+- zonas de `critical coverage`
+- escenarios del `critical smoke pack`
+- `flow budgets`
+- pasos blocking de `test:release-confidence`
+
+Artefactos:
+
+- `reports/release-confidence-matrix.md`
+- `reports/release-confidence-matrix.json`
+
+Objetivo: que el pack blocking siga siendo chico, pero con cobertura explícita por área crítica y sin huecos no intencionales entre runtime, coverage y release gates.
 
 ## 6. Buenas prácticas
 

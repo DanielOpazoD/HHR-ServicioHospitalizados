@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "areas": [
+    {
+      "id": "auth_bootstrap",
+      "label": "Auth bootstrap y login",
+      "criticalCoverageZones": ["src/services/auth", "src/services/auth/bootstrap"],
+      "blockingSteps": [
+        "runtime_smoke",
+        "critical_coverage",
+        "flow_performance",
+        "e2e_critical_ci"
+      ],
+      "smokeScenarios": ["cold_boot", "login"],
+      "flowBudgets": ["loginVisibleMs", "authFeedbackMs"]
+    },
+    {
+      "id": "census_runtime",
+      "label": "Censo y shell inicial",
+      "criticalCoverageZones": ["src/features/census/controllers"],
+      "blockingSteps": [
+        "runtime_smoke",
+        "critical_coverage",
+        "flow_performance",
+        "e2e_critical_ci"
+      ],
+      "flowBudgets": ["censoVisibleMs", "censoRecordReadyMs"]
+    },
+    {
+      "id": "clinical_documents",
+      "label": "Documentos clinicos",
+      "criticalCoverageZones": ["src/features/clinical-documents"],
+      "blockingSteps": [
+        "runtime_smoke",
+        "critical_coverage",
+        "flow_performance",
+        "e2e_critical_ci"
+      ],
+      "smokeScenarios": ["clinical_documents"],
+      "flowBudgets": ["clinicalDocumentsVisibleMs"]
+    },
+    {
+      "id": "sync_and_firestore",
+      "label": "Sync, Firestore y recovery local",
+      "criticalCoverageZones": [
+        "src/services/storage/firestore",
+        "src/services/storage/sync-critical",
+        "src/services/storage/indexeddb-recovery"
+      ],
+      "blockingSteps": ["runtime_smoke", "rules_ci", "emulator_sync_ci", "critical_coverage"],
+      "smokeScenarios": ["offline_to_online", "sync_conflict"]
+    },
+    {
+      "id": "transfers",
+      "label": "Transfers y derivaciones",
+      "criticalCoverageZones": ["src/services/transfers"],
+      "blockingSteps": ["critical_coverage"]
+    },
+    {
+      "id": "reminders_admin",
+      "label": "Avisos administrativos",
+      "criticalCoverageZones": ["src/features/reminders/admin"],
+      "blockingSteps": ["critical_coverage"]
+    },
+    {
+      "id": "handoff",
+      "label": "Handoff medico",
+      "criticalCoverageZones": ["src/features/handoff"],
+      "blockingSteps": ["critical_coverage"]
+    },
+    {
+      "id": "export_and_backup",
+      "label": "Exportacion y respaldo",
+      "blockingSteps": ["runtime_smoke", "flow_performance", "e2e_critical_ci"],
+      "smokeScenarios": ["export"],
+      "flowBudgets": ["backupFilesVisibleMs"]
+    }
+  ]
+}

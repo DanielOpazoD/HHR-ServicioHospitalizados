@@ -14,9 +14,17 @@ const criticalCoverageConfigPath = path.join(
 );
 
 const criticalCoverageConfig = JSON.parse(fs.readFileSync(criticalCoverageConfigPath, 'utf8'));
-const criticalCoverageInclude = Object.keys(criticalCoverageConfig.zones || {}).map(
-  sourceRoot => `${sourceRoot}/**/*.{ts,tsx}`
-);
+const criticalCoverageInclude = [
+  ...new Set(
+    Object.entries(criticalCoverageConfig.zones || {}).flatMap(([zoneKey, config]) => {
+      const sources =
+        Array.isArray(config?.sources) && config.sources.length > 0 ? config.sources : [zoneKey];
+      return sources.map(source =>
+        source.endsWith('.ts') || source.endsWith('.tsx') ? source : `${source}/**/*.{ts,tsx}`
+      );
+    })
+  ),
+];
 
 export default defineConfig({
   plugins: [react()],

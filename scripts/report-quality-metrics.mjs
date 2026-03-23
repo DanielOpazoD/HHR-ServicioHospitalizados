@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
+import { buildReleaseConfidenceMatrixReport } from './releaseConfidenceMatrixSupport.mjs';
 
 const ROOT = process.cwd();
 const SRC_ROOT = path.join(ROOT, 'src');
@@ -335,6 +336,7 @@ const getTypeSafetySignals = () => {
 };
 
 const generatedAt = new Date().toISOString();
+const releaseConfidenceMatrix = buildReleaseConfidenceMatrixReport(ROOT);
 const metrics = {
   generatedAt,
   gitSha: getGitSha(),
@@ -343,6 +345,18 @@ const metrics = {
   folderDependencyDebt: getFolderDependencyDebtMetrics(),
   tests: getTestMetrics(),
   typeSafety: getTypeSafetySignals(),
+  releaseConfidence: {
+    overall: releaseConfidenceMatrix.overall,
+    areaCount: releaseConfidenceMatrix.counts.areaCount,
+    mappedCoverageZones: releaseConfidenceMatrix.coverageZones.mapped,
+    totalCoverageZones: releaseConfidenceMatrix.counts.criticalCoverageZones,
+    mappedSmokeScenarios: releaseConfidenceMatrix.smokeScenarios.mapped,
+    totalSmokeScenarios: releaseConfidenceMatrix.counts.smokeScenarios,
+    mappedFlowBudgets: releaseConfidenceMatrix.flowBudgets.mapped,
+    totalFlowBudgets: releaseConfidenceMatrix.counts.flowBudgets,
+    mappedBlockingSteps: releaseConfidenceMatrix.blockingSteps.mapped,
+    totalBlockingSteps: releaseConfidenceMatrix.counts.blockingSteps,
+  },
 };
 
 fs.mkdirSync(REPORTS_DIR, { recursive: true });
@@ -384,6 +398,15 @@ const mdLines = [
   `- Explicit any occurrences (total): ${metrics.typeSafety.explicitAnyCount}`,
   `- Explicit any in source (non-test): ${metrics.typeSafety.explicitAnySourceCount}`,
   `- Explicit any in tests: ${metrics.typeSafety.explicitAnyTestCount}`,
+  '',
+  '## Release Confidence Governance',
+  '',
+  `- Overall: ${metrics.releaseConfidence.overall}`,
+  `- Areas: ${metrics.releaseConfidence.areaCount}`,
+  `- Coverage zones mapped: ${metrics.releaseConfidence.mappedCoverageZones}/${metrics.releaseConfidence.totalCoverageZones}`,
+  `- Blocking steps mapped: ${metrics.releaseConfidence.mappedBlockingSteps}/${metrics.releaseConfidence.totalBlockingSteps}`,
+  `- Smoke scenarios mapped: ${metrics.releaseConfidence.mappedSmokeScenarios}/${metrics.releaseConfidence.totalSmokeScenarios}`,
+  `- Flow budgets mapped: ${metrics.releaseConfidence.mappedFlowBudgets}/${metrics.releaseConfidence.totalFlowBudgets}`,
   '',
 ];
 

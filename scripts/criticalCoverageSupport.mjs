@@ -51,6 +51,11 @@ const readThresholds = root => {
   return parsed.zones && typeof parsed.zones === 'object' ? parsed.zones : {};
 };
 
+const normalizeSourceEntries = (zoneKey, config) => {
+  const configuredSources = Array.isArray(config.sources) ? config.sources : [zoneKey];
+  return [...new Set(configuredSources.filter(source => typeof source === 'string' && source.trim()))];
+};
+
 const readCoverageMap = root => {
   const coveragePath = path.join(root, COVERAGE_FINAL_PATH);
   if (!fs.existsSync(coveragePath)) {
@@ -61,11 +66,30 @@ const readCoverageMap = root => {
   return createCoverageMap(raw);
 };
 
-const listSourceFiles = (root, sourceRoot) =>
-  walkFiles(path.join(root, sourceRoot))
-    .filter(isSourceFile)
-    .map(filePath => toRelativePosix(root, filePath))
-    .sort((left, right) => left.localeCompare(right));
+const listSourceFiles = (root, sourceEntries) => {
+  const discovered = [];
+
+  for (const sourceEntry of sourceEntries) {
+    const absoluteEntry = path.join(root, sourceEntry);
+    if (!fs.existsSync(absoluteEntry)) {
+      continue;
+    }
+
+    const stat = fs.statSync(absoluteEntry);
+    if (stat.isDirectory()) {
+      discovered.push(...walkFiles(absoluteEntry));
+      continue;
+    }
+
+    if (stat.isFile()) {
+      discovered.push(absoluteEntry);
+    }
+  }
+
+  return [...new Set(discovered.filter(isSourceFile).map(filePath => toRelativePosix(root, filePath)))].sort(
+    (left, right) => left.localeCompare(right)
+  );
+};
 
 const countTestFiles = (root, testRoot) =>
   walkFiles(path.join(root, testRoot)).filter(filePath => TEST_FILE_PATTERN.test(filePath)).length;
@@ -179,10 +203,11 @@ const evaluateCoverageGate = zone => {
 export const loadCriticalCoverageConfig = root => {
   const zones = readThresholds(root);
 
-  return Object.entries(zones).map(([sourceRoot, config]) => ({
-    root: sourceRoot,
-    label: config.label || sourceRoot,
+  return Object.entries(zones).map(([zoneKey, config]) => ({
+    root: zoneKey,
+    label: config.label || zoneKey,
     tests: config.tests,
+    sources: normalizeSourceEntries(zoneKey, config),
     minTestFileCount: Number(config.minTestFileCount || 0),
     minTestToSourceRatio: Number(config.minTestToSourceRatio || 0),
     coverageBaseline: {
@@ -203,7 +228,7 @@ export const buildCriticalCoverageReport = root => {
   const configuredZones = loadCriticalCoverageConfig(root);
 
   const criticalZones = configuredZones.map(zoneConfig => {
-    const sourceFiles = listSourceFiles(root, zoneConfig.root);
+    const sourceFiles = listSourceFiles(root, zoneConfig.sources);
     const sourceFileCount = sourceFiles.length;
     const testFileCount = countTestFiles(root, zoneConfig.tests);
     const testToSourceRatio = sourceFileCount === 0 ? 0 : testFileCount / sourceFileCount;

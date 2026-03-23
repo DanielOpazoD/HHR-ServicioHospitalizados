@@ -50,6 +50,72 @@
         "branches": 57.0
       }
     },
+    "src/services/auth/bootstrap": {
+      "label": "src/services/auth/bootstrap",
+      "sources": [
+        "src/services/auth/authBootstrapBudgets.ts",
+        "src/services/auth/authBootstrapState.ts",
+        "src/services/auth/authLogoutState.ts",
+        "src/services/auth/firebaseStartupUiPolicy.ts",
+        "src/services/auth/firebaseStartupWarningRenderer.ts"
+      ],
+      "tests": "src/tests/services/auth",
+      "minTestFileCount": 3,
+      "minTestToSourceRatio": 0.6,
+      "coverageBaseline": {
+        "lines": 87.0,
+        "functions": 89.0,
+        "branches": 75.0
+      }
+    },
+    "src/features/reminders/admin": {
+      "label": "src/features/reminders/admin",
+      "sources": [
+        "src/features/reminders/components/admin/ReminderAdminView.tsx",
+        "src/features/reminders/components/admin/ReminderFormModal.tsx",
+        "src/features/reminders/components/admin/ReminderReadStatusTable.tsx"
+      ],
+      "tests": "src/tests/features/reminders",
+      "minTestFileCount": 1,
+      "minTestToSourceRatio": 0.3,
+      "coverageBaseline": {
+        "lines": 77.5,
+        "functions": 60.0,
+        "branches": 85.0
+      }
+    },
+    "src/services/storage/sync-critical": {
+      "label": "src/services/storage/sync-critical",
+      "sources": [
+        "src/services/storage/sync/syncDomainPolicy.ts",
+        "src/services/storage/sync/syncQueueOperationalBudgets.ts",
+        "src/services/storage/sync/syncQueueTelemetryController.ts"
+      ],
+      "tests": "src/tests/services/storage",
+      "minTestFileCount": 8,
+      "minTestToSourceRatio": 2,
+      "coverageBaseline": {
+        "lines": 95.0,
+        "functions": 95.0,
+        "branches": 90.5
+      }
+    },
+    "src/services/storage/indexeddb-recovery": {
+      "label": "src/services/storage/indexeddb-recovery",
+      "sources": [
+        "src/services/storage/indexeddb/indexedDbRecoveryBudgets.ts",
+        "src/services/storage/indexeddb/indexedDbRecoveryController.ts",
+        "src/services/storage/indexeddb/indexedDbRecoveryPolicy.ts"
+      ],
+      "tests": "src/tests/services/storage",
+      "minTestFileCount": 8,
+      "minTestToSourceRatio": 2,
+      "coverageBaseline": {
+        "lines": 99.0,
+        "functions": 99.0,
+        "branches": 83.0
+      }
+    },
     "src/features/handoff": {
       "tests": "src/tests/views/handoff",
       "minTestFileCount": 15,

@@ -66,12 +66,36 @@ Debe seguir cubriendo:
 - `test:e2e:critical:ci`
 
 El script extendido `test:release-confidence:full` agrega `test:unit:critical` cuando se quiere una corrida más profunda o diagnóstica.
+La trazabilidad obligatoria por área crítica vive en `scripts/config/release-confidence-matrix.json` y se valida con `npm run check:release-confidence-matrix`.
+El ownership técnico por subsistema crítico vive en `scripts/config/technical-ownership-map.json` y se valida con `npm run check:technical-ownership-map`.
 
 Salida esperada:
 
 - ruta blocking compacta y repetible para release;
 - reglas, emulador sync y E2E críticos verdes en la misma corrida;
 - sin duplicar en la ruta por defecto checks que ya quedan cubiertos por smoke/E2E críticos.
+
+### Falla `check:release-confidence-matrix`
+
+1. correr `npm run report:release-confidence-matrix`
+2. revisar `reports/release-confidence-matrix.md`
+3. confirmar que cada área crítica siga mapeada a:
+   - una o más zonas de `critical coverage`, o evidencia equivalente de smoke/flow
+   - al menos un paso blocking del release pack
+4. si agregaste una zona nueva de coverage, un smoke nuevo o un flow budget nuevo, actualizar la matriz en la misma change
+5. no aceptar perfiles compactos sin trazabilidad explícita de qué área protegen
+
+### Falla `check:technical-ownership-map`
+
+1. correr `npm run report:technical-ownership-map`
+2. revisar `reports/technical-ownership-map.md`
+3. confirmar que cada subsistema crítico siga teniendo:
+   - `owner` técnico
+   - `primaryMetric`
+   - al menos un `gate`
+   - al menos un `runbook`
+4. si agregaste un subsistema crítico nuevo o cambió el runbook operativo, actualizar el mapa en la misma change
+5. no aceptar deuda crítica sin owner operativo explícito
 
 ## Qué hacer cuando falla
 
