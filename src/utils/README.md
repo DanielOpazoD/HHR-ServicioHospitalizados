@@ -30,3 +30,4 @@ Helpers puros reutilizables (sin estado global ni efectos de UI).
 
 - Funciones determinísticas y testeables en aislamiento.
 - Mantener datasets voluminosos y constantes operativas en archivos dedicados cuando hagan crecer demasiado una utilidad general.
+- Cuando una misma presentación temporal se usa en UI y PDF, centralizar el formateo en `dateUtils.ts` para evitar divergencias visuales y de auditoría.

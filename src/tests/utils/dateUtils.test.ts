@@ -3,6 +3,7 @@ import {
   formatDateDDMMYYYY,
   getTodayISO,
   formatDateForDisplay,
+  formatTimeHHMM,
   daysBetween,
   getTimeRoundedToStep,
   isFutureDate,
@@ -49,6 +50,17 @@ describe('dateUtils', () => {
       // Result depends on environment locale but should include the month and day
       expect(result).toContain('diciembre');
       expect(result).toContain('25');
+    });
+  });
+
+  describe('formatTimeHHMM', () => {
+    it('should format an ISO timestamp to 24h HH:MM output', () => {
+      expect(formatTimeHHMM('2026-03-07T21:45:00')).toBe('21:45');
+    });
+
+    it('should return fallback for empty or invalid values', () => {
+      expect(formatTimeHHMM()).toBe('--:--');
+      expect(formatTimeHHMM('invalid')).toBe('--:--');
     });
   });
 

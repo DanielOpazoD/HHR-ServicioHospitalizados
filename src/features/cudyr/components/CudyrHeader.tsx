@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 import { PdfViewerModal } from '@/components/shared/PdfViewerModal';
+import { formatTimeHHMM } from '@/utils/dateUtils';
 
 const CUDYR_INSTRUMENT_PDF_PATH = '/docs/instrumento-cudyr.pdf';
 
@@ -72,15 +73,6 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
     });
   };
 
-  const formatShortTime = (isoString?: string) => {
-    if (!isoString) return '';
-    return new Date(isoString).toLocaleTimeString('es-CL', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    });
-  };
-
   const lockTooltip =
     isLocked && lockedAt
       ? `Bloqueado el ${formatLockTime(lockedAt)}${lockedBy ? ` por ${lockedBy}` : ''}`
@@ -126,7 +118,7 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
               className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500"
               title={`Última modificación CUDYR: ${formatLockTime(lastCudyrTimestamp)}`}
             >
-              Últ. mod. {formatShortTime(lastCudyrTimestamp)}
+              Últ. mod. {formatTimeHHMM(lastCudyrTimestamp)}
             </span>
           )}
 

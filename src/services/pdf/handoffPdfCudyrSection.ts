@@ -3,7 +3,7 @@ import { BEDS } from '@/constants/beds';
 import { CudyrScore } from '@/types/domain/clinical';
 import { DailyRecord } from '@/types/domain/dailyRecord';
 import { resolveNightShiftNurses } from '@/services/staff/dailyRecordStaffing';
-import { formatDateDDMMYYYY } from '@/utils/dateUtils';
+import { formatDateDDMMYYYY, formatTimeHHMM } from '@/utils/dateUtils';
 import { AutoTableFunction, CellHookData, JsPDFWithAutoTable } from './handoffPdfTypes';
 
 const getCudyrScores = (score: CudyrScore) => {
@@ -52,13 +52,7 @@ export const addCudyrTable = (
   doc.setFont('helvetica', 'normal');
 
   const cudyrTimestamp = record.cudyrUpdatedAt ?? record.cudyrLockedAt;
-  const cudyrTime = cudyrTimestamp
-    ? new Date(cudyrTimestamp).toLocaleTimeString('es-CL', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      })
-    : '--:--';
+  const cudyrTime = formatTimeHHMM(cudyrTimestamp);
   const nurses = resolveNightShiftNurses(record).filter(n => n && n.trim() !== '');
   const nursesStr = nurses.length > 0 ? nurses.join(', ') : 'No registrados';
 

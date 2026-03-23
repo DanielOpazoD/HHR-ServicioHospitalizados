@@ -77,4 +77,26 @@ describe('handoffPdfCudyrSection', () => {
       expect.any(Number)
     );
   });
+
+  it('falls back to cudyrLockedAt when cudyrUpdatedAt is missing', () => {
+    const doc = createDocMock();
+    const autoTable = vi.fn();
+    const record = {
+      date: '2026-03-07',
+      beds: {},
+      discharges: [],
+      transfers: [],
+      cma: [],
+      lastUpdated: '2026-03-07T10:00:00.000Z',
+      cudyrLockedAt: '2026-03-07T18:20:00',
+    } as unknown as DailyRecord;
+
+    addCudyrTable(doc, record, 10, autoTable as never);
+
+    expect(doc.text).toHaveBeenCalledWith(
+      expect.stringContaining('Últ. mod. CUDYR: 18:20'),
+      expect.any(Number),
+      expect.any(Number)
+    );
+  });
 });

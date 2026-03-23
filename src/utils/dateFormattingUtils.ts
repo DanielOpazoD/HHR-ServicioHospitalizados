@@ -19,6 +19,19 @@ export const formatDateForDisplay = (date: Date): string =>
     day: 'numeric',
   });
 
+export const formatTimeHHMM = (isoDateTime?: string): string => {
+  if (!isoDateTime) return '--:--';
+
+  const date = new Date(isoDateTime);
+  if (Number.isNaN(date.getTime())) return '--:--';
+
+  return date.toLocaleTimeString('es-CL', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+};
+
 export const daysBetween = (startDate: string, endDate: string): number => {
   const start = new Date(startDate);
   const end = new Date(endDate);

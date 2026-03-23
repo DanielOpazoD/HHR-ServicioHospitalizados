@@ -7,6 +7,7 @@ import { getCategorization } from '@/features/cudyr/public';
 import { CudyrScore } from '@/types/domain/clinical';
 import { calculateStats } from '@/services/calculations/statsCalculator';
 import { resolveNightShiftNurses } from '@/services/staff/dailyRecordStaffing';
+import { formatTimeHHMM } from '@/utils/dateUtils';
 
 // ... (existing imports)
 
@@ -83,14 +84,6 @@ export const HandoffCudyrPrint: React.FC = () => {
     return value;
   };
 
-  const formatTime = (isoString?: string) => {
-    if (!isoString) return '--:--';
-    return new Date(isoString).toLocaleTimeString('es-CL', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    });
-  };
   const lastCudyrTimestamp = record.cudyrUpdatedAt ?? record.cudyrLockedAt;
 
   return (
@@ -134,7 +127,7 @@ export const HandoffCudyrPrint: React.FC = () => {
               <span className="text-slate-400">|</span>
               <span>
                 <span className="font-semibold">Últ. mod. CUDYR: </span>
-                {formatTime(lastCudyrTimestamp)}
+                {formatTimeHHMM(lastCudyrTimestamp)}
               </span>
             </>
           )}
