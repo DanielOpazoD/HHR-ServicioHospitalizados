@@ -88,6 +88,7 @@ components/Modal
 - `auth/index.ts`: autenticación de alto nivel.
 - `auth/public.ts`: API pública mínima de autenticación (`LoginPage` + props).
 - `clinical-documents/public.ts`: contratos y helpers permitidos para `application`/`shared`.
+- `reminders/index.ts` y `reminders/public.ts`: vista administrativa pública del feature.
 - `admin/index.ts`: vistas operativas del panel admin.
 - `backup/index.ts`: explorador de respaldos.
 - `census/index.ts`: vistas y modales públicos del módulo.

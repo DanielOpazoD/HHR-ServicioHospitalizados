@@ -61,6 +61,7 @@ Documento de referencia para entender cómo se organiza el sistema, cómo fluyen
 - `scripts/check-runtime-adapter-boundary.mjs`
 - `scripts/check-auth-feature-boundary.mjs`
 - `scripts/check-clinical-documents-feature-boundary.mjs`
+- `scripts/check-lazy-views-feature-entrypoints.mjs`
 
 Reglas específicas adicionales:
 
@@ -70,6 +71,9 @@ Reglas específicas adicionales:
   preferir imports relativos para distinguir implementación interna de API pública. El primer
   guardrail específico de esta familia empezó por `auth` y `clinical-documents`
   (`npm run check:auth-feature-boundary`, `npm run check:clinical-documents-feature-boundary`).
+- El router/lazy loading también debe consumir features por entrypoint público; `LazyViews.ts`
+  no debe volver a importar `components/...` directos cuando la feature ya expone `index.ts`
+  o `public.ts`.
 - `src/application/ports/*` es el boundary permitido para adapters por defecto a servicios concretos.
 - El guardrail automático correspondiente es `npm run check:application-port-boundary`.
 

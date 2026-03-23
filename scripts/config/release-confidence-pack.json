@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "steps": [
+    {
+      "id": "unit_critical",
+      "label": "Critical unit risk pack",
+      "command": "npm run test:unit:critical"
+    },
+    {
+      "id": "runtime_smoke",
+      "label": "Critical runtime smoke pack",
+      "command": "npm run test:smoke:critical-runtime"
+    },
+    {
+      "id": "rules_ci",
+      "label": "Firestore rules CI pack",
+      "command": "npm run test:rules:ci"
+    },
+    {
+      "id": "emulator_sync_ci",
+      "label": "Firestore sync emulator CI pack",
+      "command": "npm run test:emulator:sync:ci"
+    },
+    {
+      "id": "critical_coverage",
+      "label": "Critical coverage gate",
+      "command": "npm run check:critical-coverage"
+    },
+    {
+      "id": "flow_performance",
+      "label": "Flow performance budgets",
+      "command": "npm run check:flow-performance-budget"
+    },
+    {
+      "id": "e2e_critical_ci",
+      "label": "Critical E2E emulator pack",
+      "command": "npm run test:e2e:critical:ci"
+    }
+  ]
+}

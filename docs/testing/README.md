@@ -18,20 +18,22 @@ Playwright cubre auth, startup, módulos críticos y regresiones de UX prioritar
 
 ## 2. Comandos vigentes
 
-| Comando                               | Descripción                                                                                                               |
-| :------------------------------------ | :------------------------------------------------------------------------------------------------------------------------ |
-| `npm run test:ci:unit`                | Suite unitaria/integración de CI sin reglas ni emulador                                                                   |
-| `npm run test:coverage:critical`      | Cobertura crítica instrumentada por zona                                                                                  |
-| `npm run test:smoke:critical-runtime` | Smoke pack curado para `cold boot`, `login`, `offline -> online`, `sync conflict`, `export` y `clinical-documents`        |
-| `npm run test:e2e:critical`           | E2E críticos sobre emulador                                                                                               |
-| `npm run test:e2e:flow-performance`   | Budgets de performance por flujo (`login`, `auth`, `censo visible`, `censo record-ready`, `clinical-documents`, `backup`) |
-| `npm run test:rules`                  | Reglas Firestore                                                                                                          |
-| `npm run test:emulator:sync`          | Suite de emulador sync                                                                                                    |
-| `npm run test:emulator:ui`            | Suite de emulador UI                                                                                                      |
-| `npm run check:critical-smoke-pack`   | Verifica que el smoke pack crítico siga cubriendo todos los escenarios obligatorios                                       |
-| `npm run ci:inner-loop`               | Ruta rápida para desarrollo diario                                                                                        |
-| `npm run ci:merge-gate`               | Ruta blocking previa a merge                                                                                              |
-| `npm run ci:release-gate`             | Ruta completa con Firestore + E2E                                                                                         |
+| Comando                                 | Descripción                                                                                                                 |
+| :-------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------- |
+| `npm run test:ci:unit`                  | Suite unitaria/integración de CI sin reglas ni emulador                                                                     |
+| `npm run test:coverage:critical`        | Cobertura crítica instrumentada por zona                                                                                    |
+| `npm run test:smoke:critical-runtime`   | Smoke pack curado para `cold boot`, `login`, `offline -> online`, `sync conflict`, `export` y `clinical-documents`          |
+| `npm run test:release-confidence`       | Pack de release confidence que encadena unit critical, smoke runtime, rules, emulador, coverage, performance y E2E críticos |
+| `npm run test:e2e:critical`             | E2E críticos sobre emulador                                                                                                 |
+| `npm run test:e2e:flow-performance`     | Budgets de performance por flujo (`login`, `auth`, `censo visible`, `censo record-ready`, `clinical-documents`, `backup`)   |
+| `npm run test:rules`                    | Reglas Firestore                                                                                                            |
+| `npm run test:emulator:sync`            | Suite de emulador sync                                                                                                      |
+| `npm run test:emulator:ui`              | Suite de emulador UI                                                                                                        |
+| `npm run check:critical-smoke-pack`     | Verifica que el smoke pack crítico siga cubriendo todos los escenarios obligatorios                                         |
+| `npm run check:release-confidence-pack` | Verifica que el pack de release confidence siga completo y apunte a scripts válidos                                         |
+| `npm run ci:inner-loop`                 | Ruta rápida para desarrollo diario                                                                                          |
+| `npm run ci:merge-gate`                 | Ruta blocking previa a merge                                                                                                |
+| `npm run ci:release-gate`               | Ruta completa con Firestore + E2E                                                                                           |
 
 ## 3. Cobertura crítica
 
@@ -104,6 +106,22 @@ Regresiones mínimas esperadas cuando una change toca auth, censo, documentos cl
 - censo abreviado sin edición de datos censales
 - documentos clínicos con edición de `draft`
 - entrega médica editable solo en día actual
+
+## 5.3 Release Confidence Pack
+
+El pack versionado vive en `scripts/config/release-confidence-pack.json`.
+
+Pasos obligatorios actuales:
+
+- `unit_critical`
+- `runtime_smoke`
+- `rules_ci`
+- `emulator_sync_ci`
+- `critical_coverage`
+- `flow_performance`
+- `e2e_critical_ci`
+
+Objetivo: dejar una ruta única, pequeña y gobernada para validar releases sin reconstruir manualmente la secuencia de scripts.
 
 ## 6. Buenas prácticas
 

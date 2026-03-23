@@ -52,6 +52,20 @@ Incluye:
 - `npm run ci:merge-gate`
 - `npm run test:firestore:release:ci`
 
+### `test:release-confidence`
+
+Pack versionado para release confidence, definido en `scripts/config/release-confidence-pack.json`.
+
+Debe seguir cubriendo:
+
+- `test:unit:critical`
+- `test:smoke:critical-runtime`
+- `test:rules:ci`
+- `test:emulator:sync:ci`
+- `check:critical-coverage`
+- `check:flow-performance-budget`
+- `test:e2e:critical:ci`
+
 Salida esperada:
 
 - merge-gate verde;

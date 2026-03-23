@@ -12,6 +12,7 @@ const QUALITY_STEPS = [
   'check:core-console-usage',
   'check:auth-feature-boundary',
   'check:clinical-documents-feature-boundary',
+  'check:lazy-views-feature-entrypoints',
   'check:feature-dependencies',
   'check:shared-layer-boundary',
   'check:barrel-boundaries',
