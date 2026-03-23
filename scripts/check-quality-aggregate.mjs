@@ -42,6 +42,7 @@ const QUALITY_STEPS = [
   'check:flaky-quarantine',
   'check:release-confidence-matrix',
   'check:release-readiness-scorecard',
+  'check:sustainable-change-policy',
   'check:technical-ownership-map',
   'check:critical-any',
   'check:source-any',

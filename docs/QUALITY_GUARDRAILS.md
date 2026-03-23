@@ -59,6 +59,7 @@ Evitar que la deuda estructural vuelva a crecer después de las fases de estabil
 - Los budgets por flujo se leen desde `reports/e2e/flow-performance-budget.json` y su resumen en `reports/e2e/flow-performance-budget-summary.json` / `.md`.
 - El estado operativo por flujo distingue `ok`, `near-limit`, `target-miss` y `blocking`.
 - El ownership técnico crítico vive en `scripts/config/technical-ownership-map.json` y se valida con `npm run check:technical-ownership-map`.
+- La política de cambio sostenible vive en `scripts/config/sustainable-change-policy.json` y se valida con `npm run check:sustainable-change-policy`.
 - La definición de terminado vive en [docs/ENGINEERING_DEFINITION_OF_DONE.md](./ENGINEERING_DEFINITION_OF_DONE.md).
 - La deuda priorizada vive en [docs/TECHNICAL_DEBT_REGISTER.md](./TECHNICAL_DEBT_REGISTER.md).
 - Los fallos conocidos no resueltos deben vivir en `scripts/config/test-failure-catalog.json` con owner, clasificación y SLA.

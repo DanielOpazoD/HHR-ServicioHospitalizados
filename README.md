@@ -110,6 +110,7 @@ Los accesos directos al handoff médico ya no usan un “modo especialista” se
 | `npm run report:operational-health`          | Snapshot operativo de budgets, sync y runbooks                                                   |
 | `npm run report:system-confidence`           | Scorecard mínimo de confianza del sistema con 5 indicadores                                      |
 | `npm run report:release-readiness-scorecard` | Scorecard ejecutivo unificado para calidad, operación y readiness de release                     |
+| `npm run report:sustainable-change-policy`   | Política versionada para tipos de cambio, upgrades y excepciones                                 |
 | `npm run report:runtime-contracts`           | Snapshot de contratos runtime y evolución de esquema                                             |
 | `npm run report:critical-coverage`           | Reporte gated de cobertura crítica por zona                                                      |
 | `npm run check:critical-coverage`            | Gate de cobertura crítica instrumentada por zona                                                 |
@@ -175,6 +176,7 @@ import { useDailyRecord } from '@/hooks/useDailyRecord';
 - [Guardrails de calidad](docs/QUALITY_GUARDRAILS.md)
 - [Gates de CI y runbooks de falla](docs/CI_GATES_AND_FAILURE_RUNBOOKS.md)
 - [Scorecard de release readiness](reports/release-readiness-scorecard.md)
+- [Política de cambio sostenible](reports/sustainable-change-policy.md)
 - [Checklist de cambio seguro](docs/SAFE_CHANGE_CHECKLIST.md)
 - [Definition of Done técnico](docs/ENGINEERING_DEFINITION_OF_DONE.md)
 - [Registro de deuda técnica](docs/TECHNICAL_DEBT_REGISTER.md)

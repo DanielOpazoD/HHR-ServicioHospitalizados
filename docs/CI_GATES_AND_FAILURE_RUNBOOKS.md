@@ -69,6 +69,7 @@ El script extendido `test:release-confidence:full` agrega `test:unit:critical` c
 La trazabilidad obligatoria por área crítica vive en `scripts/config/release-confidence-matrix.json` y se valida con `npm run check:release-confidence-matrix`.
 El ownership técnico por subsistema crítico vive en `scripts/config/technical-ownership-map.json` y se valida con `npm run check:technical-ownership-map`.
 El scorecard ejecutivo consolidado vive en `reports/release-readiness-scorecard.md` y se regenera con `npm run report:release-readiness-scorecard`.
+La política formal de upgrades, excepciones y tipos de cambio vive en `scripts/config/sustainable-change-policy.json` y se valida con `npm run check:sustainable-change-policy`.
 
 Salida esperada:
 
@@ -109,6 +110,17 @@ Salida esperada:
    - release confidence
    - ownership
 4. si el scorecard se degrada por un reporte base, corregir ese reporte o su fuente; no maquillar el scorecard
+
+### Falla `check:sustainable-change-policy`
+
+1. correr `npm run report:sustainable-change-policy`
+2. revisar `reports/sustainable-change-policy.md`
+3. confirmar que sigan presentes:
+   - los tipos de cambio canónicos
+   - las reglas mínimas para upgrades
+   - los campos obligatorios para excepciones
+   - la relación con `Definition of Done`
+4. si agregaste un tipo de cambio nuevo o una excepción nueva, actualizar esta policy en la misma change
 
 ## Qué hacer cuando falla
 

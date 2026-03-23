@@ -9,3 +9,4 @@ Una change queda lista solo si cumple todo lo siguiente:
 5. No agrega bypasses a `application`, `shared/access` ni providers obligatorios.
 6. No deja excepciones abiertas sin owner, motivo y criterio de cierre documentados.
 7. Si toca un subsistema crítico, mantiene actualizado `scripts/config/technical-ownership-map.json` con owner, gate y runbook vigentes.
+8. Si la change entra en una categoría gobernada, sigue `scripts/config/sustainable-change-policy.json` y deja evidencia del gate o artefacto requerido.
