@@ -71,6 +71,7 @@ export const useCudyrLogic = (readOnly: boolean) => {
         cudyrLocked: newLockedState,
         cudyrLockedAt: newLockedState ? now : undefined,
         cudyrLockedBy: newLockedState ? currentUser?.email || userId : undefined,
+        cudyrUpdatedAt: newLockedState ? now : record.cudyrUpdatedAt,
       });
       refresh();
     } catch (error) {

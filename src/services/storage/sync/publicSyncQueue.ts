@@ -11,6 +11,7 @@ import {
 } from '@/services/storage/sync/syncQueueEngine';
 import { classifySyncError } from '@/services/storage/syncErrorCatalog';
 import { createDomainObservability } from '@/services/observability/domainObservability';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryService';
 import {
   BASE_RETRY_DELAY_MS,
   MAX_RETRIES,
@@ -20,6 +21,38 @@ import {
 import { recordSyncQueueBudgetTelemetry } from '@/services/storage/sync/syncQueueTelemetryController';
 
 const syncObservability = createDomainObservability('sync', 'SyncQueue');
+
+const toSyncIssueMessage = (error: unknown, fallback: string): string =>
+  error instanceof Error && error.message.trim().length > 0 ? error.message : fallback;
+
+const recordSyncRuntimeReadFailure = (
+  operation: string,
+  error: unknown,
+  context: Record<string, unknown> = {}
+): void => {
+  recordOperationalTelemetry({
+    category: 'sync',
+    operation,
+    status: 'failed',
+    runtimeState: 'blocked',
+    issues: [toSyncIssueMessage(error, 'La cola de sincronizacion no pudo leerse.')],
+    context,
+  });
+};
+
+const buildUnavailableSyncQueueTelemetry = (error: unknown): SyncQueueTelemetry => ({
+  pending: 0,
+  failed: 0,
+  conflict: 0,
+  retrying: 0,
+  oldestPendingAgeMs: 0,
+  batchSize: SYNC_QUEUE_BATCH_SIZE,
+  oldestPendingBudgetState: 'ok',
+  retryingBudgetState: 'ok',
+  runtimeState: 'blocked',
+  readState: 'unavailable',
+  issues: [toSyncIssueMessage(error, 'La cola de sincronizacion no pudo leerse.')],
+});
 
 const syncQueueEngine = createSyncQueueEngine({
   store: createDexieSyncQueueStore(),
@@ -46,6 +79,9 @@ export const getSyncQueueStats = async (): Promise<{
     return await syncQueueEngine.getStats();
   } catch (error) {
     syncObservability.logger.warn('Failed to read queue stats', error);
+    recordSyncRuntimeReadFailure('sync_queue_stats_unavailable', error, {
+      source: 'public_sync_queue',
+    });
     return { pending: 0, failed: 0, conflict: 0 };
   }
 };
@@ -59,20 +95,18 @@ export const getSyncQueueTelemetry = async (): Promise<SyncQueueTelemetry> => {
       batchSize: SYNC_QUEUE_BATCH_SIZE,
       maxRetries: MAX_RETRIES,
     });
-    return telemetry;
+    return {
+      ...telemetry,
+      readState: 'ok',
+    };
   } catch (error) {
     syncObservability.logger.warn('Failed to read queue telemetry', error);
-    return {
-      pending: 0,
-      failed: 0,
-      conflict: 0,
-      retrying: 0,
-      oldestPendingAgeMs: 0,
+    recordSyncRuntimeReadFailure('sync_queue_telemetry_unavailable', error, {
+      source: 'public_sync_queue',
       batchSize: SYNC_QUEUE_BATCH_SIZE,
-      oldestPendingBudgetState: 'ok',
-      retryingBudgetState: 'ok',
-      runtimeState: 'ok',
-    };
+      maxRetries: MAX_RETRIES,
+    });
+    return buildUnavailableSyncQueueTelemetry(error);
   }
 };
 
@@ -84,6 +118,10 @@ export const listRecentSyncQueueOperations = async (
     return await syncQueueEngine.listRecentOperations(limit);
   } catch (error) {
     syncObservability.logger.warn('Failed to list recent operations', error);
+    recordSyncRuntimeReadFailure('sync_queue_recent_operations_unavailable', error, {
+      source: 'public_sync_queue',
+      limit,
+    });
     return [];
   }
 };
@@ -94,6 +132,9 @@ export const getSyncQueueDomainMetrics = async (): Promise<SyncQueueDomainMetric
     return await syncQueueEngine.getDomainMetrics();
   } catch (error) {
     syncObservability.logger.warn('Failed to read domain metrics', error);
+    recordSyncRuntimeReadFailure('sync_queue_domain_metrics_unavailable', error, {
+      source: 'public_sync_queue',
+    });
     return {
       byContext: {
         clinical: { pending: 0, failed: 0, conflict: 0, retrying: 0 },
@@ -119,12 +160,39 @@ export const queueSyncTask = async (
     await syncQueueEngine.queueTask(type, payload, meta);
   } catch (error) {
     syncObservability.logger.error('Failed to queue task', error);
+    recordOperationalTelemetry({
+      category: 'sync',
+      operation: 'sync_queue_enqueue_failure',
+      status: 'failed',
+      runtimeState: 'blocked',
+      issues: [toSyncIssueMessage(error, 'La cola de sincronizacion no pudo recibir la tarea.')],
+      context: {
+        type,
+        contexts: meta?.contexts,
+        origin: meta?.origin,
+        recoveryPolicy: meta?.recoveryPolicy,
+      },
+    });
   }
 };
 
 export const processSyncQueue = async (): Promise<void> => {
-  await ensureDbReady();
-  await syncQueueEngine.processQueue();
+  try {
+    await ensureDbReady();
+    await syncQueueEngine.processQueue();
+  } catch (error) {
+    syncObservability.logger.error('Failed to process queue', error);
+    recordOperationalTelemetry({
+      category: 'sync',
+      operation: 'sync_queue_process_failure',
+      status: 'failed',
+      runtimeState: 'blocked',
+      issues: [toSyncIssueMessage(error, 'La cola de sincronizacion no pudo procesarse.')],
+      context: {
+        source: 'public_sync_queue',
+      },
+    });
+  }
 };
 
 export const ensureSyncQueueOnlineListener = (): void => {

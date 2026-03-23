@@ -46,6 +46,8 @@ La construcción de rangos mensuales y helpers de escritura sigue viviendo en
 La fachada pública vive en `sync/publicSyncQueue.ts`; `syncQueueService.ts` queda solo como compatibilidad deprecated.
 El outbox ahora se arma sobre un engine con puertos (`sync/syncQueueEngine.ts`, `sync/syncQueuePorts.ts`) para separar runtime navegador, store Dexie y transporte Firestore.
 `sync/syncDomainPolicy.ts` clasifica tareas por contexto (`clinical`, `staffing`, `movements`, `handoff`, `metadata`) para aplicar budgets de retry y métricas de conflicto más específicas.
+`getSyncQueueTelemetry()` puede devolver `readState = unavailable` cuando la cola no puede inspeccionarse;
+ese caso debe tratarse como degradación operativa real, no como cola vacía.
 `storage/index.ts` queda como barrel de compatibilidad mínima; nuevos imports deben ir a `storage/firestore`, `storage/sync`, `storage/core`, `storage/records` o `storage/runtime`.
 
 ## Estrategia

@@ -125,6 +125,8 @@ export interface DailyRecord {
   cudyrLockedAt?: string;
   /** User ID who locked the CUDYR */
   cudyrLockedBy?: string;
+  /** ISO timestamp when the last CUDYR score or closure was saved */
+  cudyrUpdatedAt?: string;
 }
 
 // ============================================================================
@@ -171,6 +173,7 @@ type TopLevelPath = keyof Pick<
   | 'cudyrLocked'
   | 'cudyrLockedAt'
   | 'cudyrLockedBy'
+  | 'cudyrUpdatedAt'
 >;
 
 // Type-safe paths for Handoff Checklist

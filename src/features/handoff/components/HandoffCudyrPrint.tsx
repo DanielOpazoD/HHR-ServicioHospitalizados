@@ -85,8 +85,13 @@ export const HandoffCudyrPrint: React.FC = () => {
 
   const formatTime = (isoString?: string) => {
     if (!isoString) return '--:--';
-    return new Date(isoString).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+    return new Date(isoString).toLocaleTimeString('es-CL', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
   };
+  const lastCudyrTimestamp = record.cudyrUpdatedAt ?? record.cudyrLockedAt;
 
   return (
     <div className="handoff-cudyr-print bg-white print:bg-white print:m-0 print:p-0 list-none">
@@ -124,12 +129,12 @@ export const HandoffCudyrPrint: React.FC = () => {
         <div className="flex flex-wrap items-center gap-3 text-sm text-slate-700 mt-2">
           <span className="font-semibold">Último registro disponible: {formatPrintDate()}</span>
 
-          {record.cudyrLockedAt && (
+          {lastCudyrTimestamp && (
             <>
               <span className="text-slate-400">|</span>
               <span>
-                <span className="font-semibold">Cierre CUDYR del registro: </span>
-                {formatTime(record.cudyrLockedAt)}
+                <span className="font-semibold">Últ. mod. CUDYR: </span>
+                {formatTime(lastCudyrTimestamp)}
               </span>
             </>
           )}

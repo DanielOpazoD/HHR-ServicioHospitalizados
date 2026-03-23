@@ -99,6 +99,7 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
             isLocked={record.cudyrLocked}
             lockedAt={record.cudyrLockedAt}
             lockedBy={record.cudyrLockedBy}
+            updatedAt={record.cudyrUpdatedAt}
             onToggleLock={handleToggleLock}
             canToggle={canToggleLock}
           />

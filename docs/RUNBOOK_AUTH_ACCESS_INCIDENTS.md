@@ -43,6 +43,15 @@ No usar como referencia primaria:
    - redeploy functions si cambió backend auth;
    - recarga dura una vez.
 
+Chequeo operativo adicional:
+
+- revisar `authRuntimeSnapshot` si el shell no aparece:
+  - `budgetProfile`
+  - `pendingAgeMs`
+  - `runtimeState`
+- si `runtimeState = recoverable`, priorizar redirect/popup pendiente antes de asumir fallo duro.
+- si `runtimeState = unauthorized`, revisar rol/configuracion antes de depurar bootstrap.
+
 ## Caso 2: el correo fue removido pero todavía entra
 
 1. confirmar que el correo ya no exista en `config/roles`;

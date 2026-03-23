@@ -19,6 +19,7 @@ import { isAuthenticatedAuthSessionState } from '@/services/auth/authSessionStat
 
 export interface AuthContextType {
   sessionState: ReturnType<typeof useAuthState>['sessionState'];
+  authRuntime: ReturnType<typeof useAuthState>['authRuntime'];
   currentUser: AuthUser | null;
   authorizedUser: AuthUser | null;
   /** @deprecated Prefer currentUser or authorizedUser */
@@ -61,6 +62,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const value = useMemo<AuthContextType>(
     () => ({
       sessionState: authState.sessionState,
+      authRuntime: authState.authRuntime,
       currentUser: authState.currentUser,
       authorizedUser: authState.authorizedUser,
       user: authState.currentUser,
@@ -78,6 +80,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }),
     [
       authState.sessionState,
+      authState.authRuntime,
       authState.currentUser,
       authState.authorizedUser,
       authState.role,

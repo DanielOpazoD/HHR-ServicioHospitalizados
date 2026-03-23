@@ -55,4 +55,26 @@ describe('handoffPdfCudyrSection', () => {
       expect.any(Number)
     );
   });
+
+  it('renders the last CUDYR modification time with lock fallback in the PDF header', () => {
+    const doc = createDocMock();
+    const autoTable = vi.fn();
+    const record = {
+      date: '2026-03-07',
+      beds: {},
+      discharges: [],
+      transfers: [],
+      cma: [],
+      lastUpdated: '2026-03-07T10:00:00.000Z',
+      cudyrUpdatedAt: '2026-03-07T21:45:00',
+    } as unknown as DailyRecord;
+
+    addCudyrTable(doc, record, 10, autoTable as never);
+
+    expect(doc.text).toHaveBeenCalledWith(
+      expect.stringContaining('Últ. mod. CUDYR: 21:45'),
+      expect.any(Number),
+      expect.any(Number)
+    );
+  });
 });

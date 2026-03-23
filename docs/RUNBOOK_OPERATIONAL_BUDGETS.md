@@ -44,6 +44,12 @@ Budgets monitoreables desde `reports/operational-health.md`:
 - warning/critical para edad de cola pendiente
 - warning/critical para tareas reintentando
 - perfiles de recovery por contexto
+- `readState = unavailable` cuando la cola no puede leerse desde runtime local
+
+Regla operativa:
+
+- si `getSyncQueueTelemetry()` devuelve `readState = unavailable`, tratar el estado de sync como
+  `blocked` aunque los contadores aparezcan en `0`; primero revisar `IndexedDB` y telemetría de sync.
 
 Si estos valores cambian:
 
@@ -85,6 +91,12 @@ Los budgets de degradación local se derivan desde `src/services/storage/indexed
 - max background recovery attempts
 - recovery retry delays
 
+Snapshot operativo canónico:
+
+- `getLocalPersistenceRuntimeSnapshot()`
+- `runtimeState = ok | recoverable | blocked`
+- `stickyFallbackMode = true` debe tratarse como persistencia local bloqueada para la sesión
+
 ## Auth Bootstrap
 
 Los budgets de bootstrap de autenticación viven en `src/services/auth/authBootstrapBudgets.ts`.
@@ -97,6 +109,12 @@ Estados monitoreables:
 - `redirect_pending`
 
 Cada timeout de bootstrap debe quedar clasificado con perfil y `pendingAgeMs` en telemetría auth.
+
+Snapshot operativo canónico:
+
+- `buildAuthRuntimeSnapshot()`
+- `runtimeState = ok | degraded | recoverable | retryable | blocked | unauthorized`
+- `budgetProfile` y `pendingAgeMs` deben viajar juntos para interpretar el bootstrap
 
 ## Taxonomía Operativa Unificada
 

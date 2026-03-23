@@ -25,7 +25,7 @@ import {
   isGinecobstetriciaSpecialty,
   resolveGinecobstetriciaBadgeClassName,
   resolveGinecobstetriciaBadgeTitle,
-} from '@/features/census/controllers/ginecobstetriciaClassificationController';
+} from '@/shared/census/ginecobstetriciaClassification';
 import type { GinecobstetriciaType, PatientData } from '@/types/domain/patient';
 
 interface DualSpecialtyCellProps extends BaseCellProps {

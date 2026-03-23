@@ -20,6 +20,10 @@ import {
   isAuthenticatedAuthSessionState,
   toResolvedAuthSessionState,
 } from '@/services/auth/authSessionState';
+import {
+  buildAuthRuntimeSnapshot,
+  type AuthRuntimeSnapshot,
+} from '@/services/auth/authRuntimeSnapshot';
 
 /**
  * Return type for the useAuthState hook.
@@ -38,6 +42,8 @@ export interface UseAuthStateReturn {
   authLoading: boolean;
   /** True if connected to Firebase (either real or anonymous auth) */
   isFirebaseConnected: boolean;
+  /** Snapshot operativo de auth bootstrap y sesión */
+  authRuntime: AuthRuntimeSnapshot;
   /** Signs out the current user */
   handleLogout: (reason?: 'manual' | 'automatic') => Promise<void>;
 
@@ -104,6 +110,16 @@ export const useAuthState = (): UseAuthStateReturn => {
   const isEditor = canEditAnyAppModule(role);
   const isViewer = !isEditor;
   const canEdit = isEditor;
+  const authRuntime = useMemo(
+    () =>
+      buildAuthRuntimeSnapshot({
+        sessionState,
+        authLoading,
+        isFirebaseConnected,
+        isOnline,
+      }),
+    [sessionState, authLoading, isFirebaseConnected, isOnline]
+  );
 
   return {
     sessionState,
@@ -112,6 +128,7 @@ export const useAuthState = (): UseAuthStateReturn => {
     user: currentUser,
     authLoading,
     isFirebaseConnected,
+    authRuntime,
     handleLogout,
     role,
     isEditor,

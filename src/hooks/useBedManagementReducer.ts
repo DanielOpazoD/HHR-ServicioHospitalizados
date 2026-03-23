@@ -11,7 +11,11 @@ import {
   clearGinecobstetriciaFields,
   isGinecobstetriciaSpecialty,
   isObstetricGinecobstetricia,
-} from '@/features/census/controllers/ginecobstetriciaClassificationController';
+} from '@/shared/census/ginecobstetriciaClassification';
+
+const getCudyrTimestampPatch = () => ({
+  cudyrUpdatedAt: new Date().toISOString(),
+});
 
 // ============================================================================
 // Actions
@@ -138,6 +142,7 @@ export const bedManagementReducer = (
       const { bedId, field, value } = action;
       return {
         [`beds.${bedId}.cudyr.${field}`]: value,
+        ...getCudyrTimestampPatch(),
       } as DailyRecordPatch;
     }
 
@@ -266,6 +271,7 @@ export const bedManagementReducer = (
       const { bedId, field, value } = action;
       return {
         [`beds.${bedId}.clinicalCrib.cudyr.${field}`]: value,
+        ...getCudyrTimestampPatch(),
       } as DailyRecordPatch;
     }
 

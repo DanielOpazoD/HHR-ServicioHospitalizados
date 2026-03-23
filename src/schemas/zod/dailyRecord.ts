@@ -146,6 +146,7 @@ export const DailyRecordSchema: z.ZodType<DailyRecord, z.ZodTypeDef, unknown> = 
       cudyrLocked: nullableOptional(z.boolean()),
       cudyrLockedAt: nullableOptional(z.string()),
       cudyrLockedBy: nullableOptional(z.string()),
+      cudyrUpdatedAt: nullableOptional(z.string()),
       handoffNightReceives: nullishDefault(z.array(z.string()), () => []),
     })
     .passthrough()

@@ -70,6 +70,7 @@ describe('useBedManagement', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useRealTimers();
   });
 
   describe('updatePatient', () => {
@@ -219,6 +220,8 @@ describe('useBedManagement', () => {
 
   describe('updateCudyr', () => {
     it('should update Cudyr field and log modification', () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-03-23T10:15:00.000Z'));
       const patient = createMockPatient('R1');
       const record = createMockRecord({ R1: patient });
 
@@ -232,6 +235,7 @@ describe('useBedManagement', () => {
 
       expect(mockPatchRecord).toHaveBeenCalledWith({
         'beds.R1.cudyr.changeClothes': 3,
+        cudyrUpdatedAt: '2026-03-23T10:15:00.000Z',
       });
       expect(mockAuditContextValue.logDebouncedEvent).toHaveBeenCalledWith(
         'CUDYR_MODIFIED',
@@ -258,6 +262,8 @@ describe('useBedManagement', () => {
     });
 
     it('should update clinical crib CUDYR', () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-03-23T11:05:00.000Z'));
       const patient = createMockPatient('R1', {
         clinicalCrib: { patientName: 'Baby', rut: '1-1', cudyr: {} } as PatientData,
       });
@@ -273,6 +279,7 @@ describe('useBedManagement', () => {
 
       expect(mockPatchRecord).toHaveBeenCalledWith({
         'beds.R1.clinicalCrib.cudyr.feeding': 2,
+        cudyrUpdatedAt: '2026-03-23T11:05:00.000Z',
       });
       expect(mockAuditContextValue.logDebouncedEvent).toHaveBeenCalled();
     });

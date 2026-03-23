@@ -69,6 +69,18 @@ describe('HandoffView Component', () => {
     expect(screen.getByText(/Entrega Turno Enfermería - Noche/i)).toBeInTheDocument();
   });
 
+  it('shows the night CUDYR shortcut for nursing', () => {
+    const record = createMockRecord('2024-12-11');
+    const ui = createMockUIState({ selectedShift: 'night' });
+
+    render(<HandoffView type="nursing" ui={ui} />, {
+      contextValue: createMockDailyRecordContext(record),
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /^CUDYR$/i }));
+    expect(ui.setCurrentModule).toHaveBeenCalledWith('CUDYR');
+  });
+
   it('displays patients based on shift boundaries', async () => {
     const record = createMockRecord('2024-12-11');
 

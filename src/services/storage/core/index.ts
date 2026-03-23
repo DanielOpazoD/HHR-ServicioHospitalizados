@@ -7,6 +7,7 @@
  */
 
 export {
+  getLocalPersistenceRuntimeSnapshot,
   HangaRoaDatabase,
   createMockDatabase,
   ensureDbReady,

@@ -10,11 +10,15 @@ Resolver autenticacion, bootstrap de sesion, claims, roles y degradacion operati
 - `authFlow.ts`, `authGoogleFlow.ts`, `authCredentialFlow.ts`: ejecucion de login.
 - `authRoleLookup.ts`, `authAccessResolution.ts`, `authClaimSyncService.ts`: resolucion de rol y sincronizacion de claims.
 - `authErrorPolicy.ts`, `authUiCopy.ts`, `authOperationalTelemetry.ts`: copy, errores y observabilidad.
+- `authRuntimeSnapshot.ts`: snapshot operativo reutilizable para bootstrap, sesion y reporter.
 - `authService.ts` e `index.ts`: superficies legacy/compatibilidad controladas.
+- `clientOperationalRuntimeSnapshot.ts` compone auth con persistencia local y sync desde observability.
 
 ## Contratos principales
 
 - La UI debe consumir estado de sesion, no inferir auth por `user/null`.
+- La UI y los reporters deben preferir `authRuntimeSnapshot` cuando necesiten razonamiento operativo
+  (`budgetProfile`, `pendingAgeMs`, `runtimeState`) en vez de reconstruirlo con flags ad hoc.
 - El rol canonico del producto viene de `config/roles`; custom claims complementan recursos que lo requieren.
 - Los fallos de claims o redirect no deben romper la carga de la app; deben degradar a estado controlado.
 

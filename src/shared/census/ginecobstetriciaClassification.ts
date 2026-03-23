@@ -35,8 +35,6 @@ export const buildGinecobstetriciaTypePatch = (
   ...(isObstetricGinecobstetricia(ginecobstetriciaType) ? {} : clearDeliveryRouteFields()),
 });
 
-export const resolveGinecobstetriciaBadgeLabel = (): string => 'Tipo';
-
 export const resolveGinecobstetriciaBadgeTitle = (): string => 'Definir tipo de atención';
 
 export const resolveGinecobstetriciaBadgeClassName = (): string =>

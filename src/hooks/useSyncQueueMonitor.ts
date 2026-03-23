@@ -5,6 +5,7 @@ import {
   type SyncQueueOperationSnapshot,
 } from '@/services/storage/sync';
 import { logger } from '@/services/utils/loggerService';
+import type { SyncQueueRuntimeState } from '@/services/storage/sync/syncQueueOperationalBudgets';
 
 export const SYNC_QUEUE_POLL_INTERVAL_MS = 4000;
 const syncQueueMonitorLogger = logger.child('useSyncQueueMonitor');
@@ -30,6 +31,8 @@ export interface SyncQueueStats {
   acked: number;
   conflict: number;
   batchSize?: number;
+  runtimeState?: SyncQueueRuntimeState;
+  readState?: 'ok' | 'unavailable';
 }
 
 export interface SyncQueueOperation {
@@ -72,6 +75,8 @@ export const useSyncQueueMonitor = (
         acked: 0,
         conflict: nextStats.conflict || 0,
         batchSize: nextStats.batchSize,
+        runtimeState: nextStats.runtimeState,
+        readState: nextStats.readState,
       });
       setOperations(nextOps);
     } catch (error) {
@@ -101,7 +106,13 @@ export const useSyncQueueMonitor = (
   }, [enabled, pollIntervalMs, refresh]);
 
   const hasQueueIssues =
-    stats.pending > 0 || stats.retrying > 0 || stats.failed > 0 || stats.conflict > 0;
+    stats.pending > 0 ||
+    stats.retrying > 0 ||
+    stats.failed > 0 ||
+    stats.conflict > 0 ||
+    stats.runtimeState === 'degraded' ||
+    stats.runtimeState === 'blocked' ||
+    stats.readState === 'unavailable';
 
   return { stats, operations, hasQueueIssues, refresh };
 };

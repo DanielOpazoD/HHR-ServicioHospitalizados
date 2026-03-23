@@ -13,4 +13,6 @@ export interface SyncQueueTelemetry {
   oldestPendingBudgetState: SyncQueueBudgetState;
   retryingBudgetState: SyncQueueBudgetState;
   runtimeState: SyncQueueRuntimeState;
+  readState?: 'ok' | 'unavailable';
+  issues?: string[];
 }

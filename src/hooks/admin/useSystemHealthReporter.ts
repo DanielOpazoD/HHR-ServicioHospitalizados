@@ -4,10 +4,12 @@ import { useVersion } from '@/context/VersionContext';
 import { useIsMutating } from '@tanstack/react-query';
 import { fetchErrorLogs } from '@/services/errorLogService';
 import { reportUserHealth, UserHealthStatus } from '@/services/admin/healthService';
-import { isDatabaseInFallbackMode } from '@/services/storage/core';
+import { getLocalPersistenceRuntimeSnapshot } from '@/services/storage/core';
 import { getSyncQueueTelemetry } from '@/services/storage/sync';
 import { getRepositoryPerformanceSummary } from '@/services/repositories/repositoryPerformance';
 import { getOperationalTelemetrySummary } from '@/services/observability/operationalTelemetryService';
+import { buildClientOperationalRuntimeSnapshot } from '@/services/observability/clientOperationalRuntimeSnapshot';
+import { buildAuthRuntimeSnapshot } from '@/services/auth/authRuntimeSnapshot';
 import {
   buildUserHealthStatus,
   canReportSystemHealthForRole,
@@ -22,7 +24,8 @@ const systemHealthReporterLogger = logger.child('SystemHealthReporter');
  * Runs in the background and only reports if a user is logged in.
  */
 export const useSystemHealthReporter = () => {
-  const { currentUser, role, isFirebaseConnected } = useAuth();
+  const auth = useAuth();
+  const { currentUser, role } = auth;
   const { isOutdated } = useVersion();
   const mutatingCount = useIsMutating();
   const lastReportTime = useRef<number>(0);
@@ -44,16 +47,30 @@ export const useSystemHealthReporter = () => {
         const syncBatchSize = syncTelemetry.batchSize;
         const repositoryPerformance = getRepositoryPerformanceSummary();
         const operationalTelemetry = getOperationalTelemetrySummary();
+        const localPersistence = getLocalPersistenceRuntimeSnapshot();
+        const authRuntime =
+          auth.authRuntime ||
+          buildAuthRuntimeSnapshot({
+            sessionState: auth.sessionState,
+            authLoading: auth.isLoading,
+            isFirebaseConnected: auth.isFirebaseConnected,
+            isOnline: navigator.onLine,
+          });
+        const runtimeSnapshot = buildClientOperationalRuntimeSnapshot({
+          auth: authRuntime,
+          localPersistence,
+          sync: syncTelemetry,
+        });
 
         const status: UserHealthStatus = buildUserHealthStatus({
           uid: currentUser.uid,
           email: currentUser.email,
           displayName: currentUser.displayName,
-          isFirebaseConnected,
+          isFirebaseConnected: authRuntime.isFirebaseConnected,
           isOutdated: !!isOutdated,
           mutatingCount,
           localErrorCount,
-          degradedLocalPersistence: isDatabaseInFallbackMode(),
+          degradedLocalPersistence: runtimeSnapshot.degradedLocalPersistence,
           navigatorOnline: navigator.onLine,
           platform: navigator.platform,
           userAgent: navigator.userAgent,
@@ -92,5 +109,5 @@ export const useSystemHealthReporter = () => {
     }, REPORT_INTERVAL_MS);
 
     return () => clearInterval(interval);
-  }, [currentUser, role, isFirebaseConnected, isOutdated, mutatingCount]);
+  }, [auth, currentUser, role, isOutdated, mutatingCount]);
 };

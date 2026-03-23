@@ -8,23 +8,25 @@ describe('useDeliveryRoutePopoverState', () => {
     const close = vi.fn();
 
     const { result, rerender } = renderHook(
-      ({ route, date }) =>
+      ({ route, date, cesareanLabor }) =>
         useDeliveryRoutePopoverState({
           deliveryRoute: route,
           deliveryDate: date,
+          deliveryCesareanLabor: cesareanLabor,
           onSave,
         }),
       {
         initialProps: {
           route: undefined as 'Vaginal' | 'Cesárea' | undefined,
           date: undefined as string | undefined,
+          cesareanLabor: undefined as 'Sin TdP' | 'Con TdP' | undefined,
         },
       }
     );
 
     expect(result.current.canSave).toBe(false);
 
-    rerender({ route: 'Vaginal', date: '2026-02-14' });
+    rerender({ route: 'Vaginal', date: '2026-02-14', cesareanLabor: undefined });
     expect(result.current.selectedRoute).toBe('Vaginal');
     expect(result.current.selectedDate).toBe('2026-02-14');
     expect(result.current.canSave).toBe(true);
@@ -36,7 +38,7 @@ describe('useDeliveryRoutePopoverState', () => {
       result.current.saveAndClose(close);
     });
 
-    expect(onSave).toHaveBeenCalledWith('Vaginal', undefined);
+    expect(onSave).toHaveBeenCalledWith('Vaginal', undefined, undefined);
     expect(close).toHaveBeenCalledTimes(1);
   });
 
@@ -48,6 +50,7 @@ describe('useDeliveryRoutePopoverState', () => {
       useDeliveryRoutePopoverState({
         deliveryRoute: 'Cesárea',
         deliveryDate: '2026-02-15',
+        deliveryCesareanLabor: 'Con TdP',
         onSave,
       })
     );
@@ -56,9 +59,10 @@ describe('useDeliveryRoutePopoverState', () => {
       result.current.clearAndClose(close);
     });
 
-    expect(onSave).toHaveBeenCalledWith(undefined, undefined);
+    expect(onSave).toHaveBeenCalledWith(undefined, undefined, undefined);
     expect(close).toHaveBeenCalledTimes(1);
     expect(result.current.selectedRoute).toBeUndefined();
     expect(result.current.selectedDate).toBe('');
+    expect(result.current.selectedCesareanLabor).toBeUndefined();
   });
 });

@@ -51,18 +51,20 @@ export const addCudyrTable = (
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
 
-  const lockTime = record.cudyrLockedAt
-    ? new Date(record.cudyrLockedAt).toLocaleTimeString('es-CL', {
+  const cudyrTimestamp = record.cudyrUpdatedAt ?? record.cudyrLockedAt;
+  const cudyrTime = cudyrTimestamp
+    ? new Date(cudyrTimestamp).toLocaleTimeString('es-CL', {
         hour: '2-digit',
         minute: '2-digit',
+        hour12: false,
       })
     : '--:--';
   const nurses = resolveNightShiftNurses(record).filter(n => n && n.trim() !== '');
   const nursesStr = nurses.length > 0 ? nurses.join(', ') : 'No registrados';
 
   doc.text(`Fecha: ${formatDateDDMMYYYY(record.date)}`, margin, currentY);
-  if (record.cudyrLockedAt) {
-    doc.text(` | Cierre CUDYR: ${lockTime}`, margin + 35, currentY);
+  if (cudyrTimestamp) {
+    doc.text(` | Últ. mod. CUDYR: ${cudyrTime}`, margin + 35, currentY);
   }
 
   currentY += 5;

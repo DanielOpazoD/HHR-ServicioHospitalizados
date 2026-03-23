@@ -627,6 +627,7 @@ describe('zodSchemas', () => {
         cudyrLocked: null,
         cudyrLockedAt: null,
         cudyrLockedBy: null,
+        cudyrUpdatedAt: null,
         handoffNightReceives: null,
       });
 
@@ -660,6 +661,7 @@ describe('zodSchemas', () => {
       expect(record.cudyrLocked).toBeUndefined();
       expect(record.cudyrLockedAt).toBeUndefined();
       expect(record.cudyrLockedBy).toBeUndefined();
+      expect(record.cudyrUpdatedAt).toBeUndefined();
       expect(record.handoffNightReceives).toEqual([]);
     });
   });

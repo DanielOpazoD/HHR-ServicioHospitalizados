@@ -25,6 +25,7 @@ import {
   MAX_BACKGROUND_RECOVERY_ATTEMPTS,
   getIndexedDbRecoveryBudgetSnapshot,
 } from './indexedDbRecoveryBudgets';
+import type { OperationalRuntimeState } from '@/services/observability/operationalRuntimeState';
 
 export class HangaRoaDatabase extends Dexie {
   dailyRecords!: Table<DailyRecord>;
@@ -171,6 +172,13 @@ export const registerDatabaseRecreatedHandler = (handler: () => void): void => {
 
 interface EnsureDbReadyOptions {
   allowRecoveryWhenMock?: boolean;
+}
+
+export interface LocalPersistenceRuntimeSnapshot {
+  indexedDbAvailable: boolean;
+  fallbackMode: boolean;
+  stickyFallbackMode: boolean;
+  runtimeState: 'ok' | OperationalRuntimeState;
 }
 
 export const ensureDbReady = async (options: EnsureDbReadyOptions = {}): Promise<void> => {
@@ -323,6 +331,13 @@ export const ensureDbReady = async (options: EnsureDbReadyOptions = {}): Promise
 export const isIndexedDBAvailable = (): boolean => typeof indexedDB !== 'undefined';
 
 export const isDatabaseInFallbackMode = (): boolean => isUsingMock;
+
+export const getLocalPersistenceRuntimeSnapshot = (): LocalPersistenceRuntimeSnapshot => ({
+  indexedDbAvailable: isIndexedDBAvailable(),
+  fallbackMode: isUsingMock,
+  stickyFallbackMode,
+  runtimeState: stickyFallbackMode ? 'blocked' : isUsingMock ? 'recoverable' : 'ok',
+});
 
 export { db as hospitalDB };
 export { createMockDatabase } from './indexedDbMockFactory';
