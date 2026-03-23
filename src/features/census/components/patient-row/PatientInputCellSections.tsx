@@ -77,6 +77,7 @@ export const PatientInputClinicalSection: React.FC<
       isEmpty={shared.isEmpty}
       readOnly={shared.isLocked}
       onChange={onChange.text}
+      onMultipleUpdate={onChange.multiple}
     />
     {!isSpecialistCensusAccessProfile(accessProfile) && (
       <StatusSelect

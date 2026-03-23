@@ -1,12 +1,18 @@
 import { useCallback, useMemo } from 'react';
-import { SPECIALTY_OPTIONS, SPECIALTY_ABBREVIATIONS } from '@/constants/clinical';
+import { SPECIALTY_OPTIONS } from '@/constants/clinical';
 import type { PatientData } from '@/types/domain/patient';
+import { Specialty } from '@/types/domain/base';
 import type { EventTextHandler } from '@/features/census/components/patient-row/inputCellTypes';
 import {
   dispatchSpecialtyChange,
   resolveDualSpecialtyCellState,
   resolveSpecialtyDisplayLabel,
 } from '@/features/census/controllers/dualSpecialtyCellController';
+
+const WEB_SPECIALTY_LABELS: Record<string, string> = {
+  [Specialty.GINECOBSTETRICIA]: 'GyO',
+  [Specialty.TRAUMATOLOGIA]: 'TMT',
+};
 
 interface UseDualSpecialtyCellModelParams {
   data: PatientData;
@@ -36,11 +42,11 @@ export const useDualSpecialtyCellModel = ({
   );
 
   const primaryLabel = useMemo(
-    () => resolveSpecialtyDisplayLabel(data.specialty, SPECIALTY_ABBREVIATIONS),
+    () => resolveSpecialtyDisplayLabel(data.specialty, WEB_SPECIALTY_LABELS),
     [data.specialty]
   );
   const secondaryLabel = useMemo(
-    () => resolveSpecialtyDisplayLabel(data.secondarySpecialty, SPECIALTY_ABBREVIATIONS),
+    () => resolveSpecialtyDisplayLabel(data.secondarySpecialty, WEB_SPECIALTY_LABELS),
     [data.secondarySpecialty]
   );
 

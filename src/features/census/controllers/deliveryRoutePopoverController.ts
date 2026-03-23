@@ -1,4 +1,4 @@
-export type DeliveryRoute = 'Vaginal' | 'Cesárea';
+import type { CesareanLabor, DeliveryRoute } from '@/types/domain/patient';
 
 import { formatCensusRouteDateLabel } from '@/shared/census/censusPresentation';
 
@@ -46,9 +46,17 @@ export const resolveDeliveryRouteIconColor = (
   return 'text-slate-400';
 };
 
-export const resolveDeliveryRouteTitle = (route?: DeliveryRoute, date?: string): string => {
+export const resolveDeliveryRouteTitle = (
+  route?: DeliveryRoute,
+  date?: string,
+  cesareanLabor?: CesareanLabor
+): string => {
   if (!route) {
     return 'Vía del parto';
+  }
+
+  if (route === 'Cesárea' && cesareanLabor) {
+    return `${route} (${cesareanLabor}) - ${formatCensusRouteDateLabel(date)}`;
   }
 
   return `${route} - ${formatCensusRouteDateLabel(date)}`;

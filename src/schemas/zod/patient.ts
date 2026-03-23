@@ -163,6 +163,9 @@ export const PatientDataSchema: z.ZodType<PatientData, z.ZodTypeDef, unknown> = 
       cie10Description: nullableOptional(z.string()),
       diagnosisComments: nullableOptional(z.string()),
       specialty: SpecialtySchema.default(Specialty.EMPTY),
+      ginecobstetriciaType: nullableOptional(
+        emptyStringToUndefined(z.enum(['Obstétrica', 'Ginecológica']))
+      ),
       secondarySpecialty: nullableOptional(z.union([z.nativeEnum(Specialty), z.string()])),
       status: z.nativeEnum(PatientStatus).default(PatientStatus.EMPTY),
       admissionDate: z.string().default(''),
@@ -180,6 +183,11 @@ export const PatientDataSchema: z.ZodType<PatientData, z.ZodTypeDef, unknown> = 
       medicalHandoffNote: nullableOptional(z.string()),
       medicalHandoffAudit: nullableOptional(MedicalHandoffAuditSchema),
       medicalHandoffEntries: nullableOptional(z.array(MedicalHandoffEntrySchema)),
+      deliveryRoute: nullableOptional(emptyStringToUndefined(z.enum(['Vaginal', 'Cesárea']))),
+      deliveryDate: nullableOptional(z.string()),
+      deliveryCesareanLabor: nullableOptional(
+        emptyStringToUndefined(z.enum(['Sin TdP', 'Con TdP']))
+      ),
       clinicalEvents: nullishDefault(z.array(ClinicalEventSchema), () => []),
       fhir_resource: nullableOptional(FhirResourceSchema),
     })

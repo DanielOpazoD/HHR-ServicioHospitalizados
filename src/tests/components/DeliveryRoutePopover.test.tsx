@@ -18,7 +18,7 @@ describe('DeliveryRoutePopover', () => {
     fireEvent.change(dateInput, { target: { value: '2026-02-15' } });
     fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
-    expect(onSave).toHaveBeenCalledWith('Vaginal', '2026-02-15');
+    expect(onSave).toHaveBeenCalledWith('Vaginal', '2026-02-15', undefined);
   });
 
   it('clears persisted delivery route data', () => {
@@ -31,7 +31,21 @@ describe('DeliveryRoutePopover', () => {
     fireEvent.click(screen.getByTitle(/Cesárea/i));
     fireEvent.click(screen.getByTitle('Limpiar'));
 
-    expect(onSave).toHaveBeenCalledWith(undefined, undefined);
+    expect(onSave).toHaveBeenCalledWith(undefined, undefined, undefined);
+  });
+
+  it('allows saving cesárea without labor classification', () => {
+    const onSave = vi.fn();
+
+    render(<DeliveryRoutePopover onSave={onSave} />);
+
+    fireEvent.click(screen.getByTitle('Vía del parto'));
+    fireEvent.click(screen.getByRole('button', { name: 'Cesárea' }));
+
+    expect(screen.getByText('Trabajo de parto')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+
+    expect(onSave).toHaveBeenCalledWith('Cesárea', undefined, undefined);
   });
 
   it('closes on outside click', () => {

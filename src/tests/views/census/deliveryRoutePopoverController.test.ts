@@ -33,5 +33,6 @@ describe('deliveryRoutePopoverController', () => {
     expect(resolveDeliveryRouteTitle(undefined, undefined)).toBe('Vía del parto');
     expect(resolveDeliveryRouteTitle('Vaginal', undefined)).toContain('Sin fecha');
     expect(resolveDeliveryRouteTitle('Cesárea', '2025-01-02')).toContain('02-01-2025');
+    expect(resolveDeliveryRouteTitle('Cesárea', '2025-01-02', 'Sin TdP')).toContain('Sin TdP');
   });
 });

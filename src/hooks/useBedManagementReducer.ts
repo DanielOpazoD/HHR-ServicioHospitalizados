@@ -6,6 +6,12 @@ import { PatientFieldValue } from '@/types/valueTypes';
 import { createEmptyPatient } from '@/services/factories/patientFactory';
 import { BEDS } from '@/constants/beds';
 import { getBedTypeForRecord } from '@/utils/bedTypeUtils';
+import {
+  clearDeliveryRouteFields,
+  clearGinecobstetriciaFields,
+  isGinecobstetriciaSpecialty,
+  isObstetricGinecobstetricia,
+} from '@/features/census/controllers/ginecobstetriciaClassificationController';
 
 // ============================================================================
 // Actions
@@ -69,6 +75,22 @@ export const bedManagementReducer = (
         patches[`beds.${bedId}.cie10Description`] = undefined;
       }
 
+      if (field === 'specialty' && !isGinecobstetriciaSpecialty(String(value ?? ''))) {
+        Object.entries(clearGinecobstetriciaFields()).forEach(([key, fieldValue]) => {
+          patches[`beds.${bedId}.${key}`] = fieldValue;
+        });
+      }
+
+      if (field === 'ginecobstetriciaType' && !isObstetricGinecobstetricia(value as never)) {
+        Object.entries(clearDeliveryRouteFields()).forEach(([key, fieldValue]) => {
+          patches[`beds.${bedId}.${key}`] = fieldValue;
+        });
+      }
+
+      if (field === 'deliveryRoute' && value !== 'Cesárea') {
+        patches[`beds.${bedId}.deliveryCesareanLabor`] = undefined;
+      }
+
       return patches as DailyRecordPatch;
     }
 
@@ -90,6 +112,23 @@ export const bedManagementReducer = (
 
       if (hasIdentityChange) {
         Object.assign(patches, getClearClinicalDataPatches(bedId));
+      }
+
+      const nextSpecialty = String(fields.specialty ?? oldPatient.specialty ?? '');
+      const nextGinecobstetriciaType =
+        fields.ginecobstetriciaType ?? oldPatient.ginecobstetriciaType;
+      const nextDeliveryRoute = fields.deliveryRoute ?? oldPatient.deliveryRoute;
+
+      if (!isGinecobstetriciaSpecialty(nextSpecialty)) {
+        Object.entries(clearGinecobstetriciaFields()).forEach(([key, value]) => {
+          patches[`beds.${bedId}.${key}`] = value;
+        });
+      } else if (!isObstetricGinecobstetricia(nextGinecobstetriciaType)) {
+        Object.entries(clearDeliveryRouteFields()).forEach(([key, value]) => {
+          patches[`beds.${bedId}.${key}`] = value;
+        });
+      } else if (nextDeliveryRoute !== 'Cesárea') {
+        patches[`beds.${bedId}.deliveryCesareanLabor`] = undefined;
       }
 
       return patches as DailyRecordPatch;
@@ -269,8 +308,10 @@ const getClearClinicalDataPatches = (bedId: string) => ({
   [`beds.${bedId}.medicalHandoffNote`]: '',
   [`beds.${bedId}.medicalHandoffAudit`]: undefined,
   [`beds.${bedId}.medicalHandoffEntries`]: [],
+  [`beds.${bedId}.ginecobstetriciaType`]: undefined,
   [`beds.${bedId}.deliveryRoute`]: undefined,
   [`beds.${bedId}.deliveryDate`]: undefined,
+  [`beds.${bedId}.deliveryCesareanLabor`]: undefined,
 });
 
 const resolveMotherLabel = (patient: PatientData): string => {

@@ -3,7 +3,7 @@
  */
 
 import type { ChangeEvent } from 'react';
-import { PatientData } from '@/types/domain/patient';
+import type { CesareanLabor, DeliveryRoute, PatientData } from '@/types/domain/patient';
 import { DeviceDetails, DeviceInstance } from '@/types/domain/clinical';
 import type { PatientDeviceCallbacks } from './patientRowContracts';
 
@@ -57,7 +57,11 @@ export interface PatientInputChangeHandlers {
   deviceDetails: (details: DeviceDetails) => void;
   deviceHistory: (history: DeviceInstance[]) => void;
   toggleDocType?: () => void;
-  deliveryRoute?: (route: 'Vaginal' | 'Cesárea' | undefined, date: string | undefined) => void;
+  deliveryRoute?: (
+    route: DeliveryRoute | undefined,
+    date: string | undefined,
+    cesareanLabor: CesareanLabor | undefined
+  ) => void;
   multiple?: (fields: Partial<PatientData>) => void;
 }
 
@@ -66,7 +70,11 @@ export interface MainPatientInputChangeHandlers extends Omit<
   'toggleDocType' | 'deliveryRoute' | 'multiple'
 > {
   toggleDocType: () => void;
-  deliveryRoute: (route: 'Vaginal' | 'Cesárea' | undefined, date: string | undefined) => void;
+  deliveryRoute: (
+    route: DeliveryRoute | undefined,
+    date: string | undefined,
+    cesareanLabor: CesareanLabor | undefined
+  ) => void;
   multiple: (fields: Partial<PatientData>) => void;
 }
 

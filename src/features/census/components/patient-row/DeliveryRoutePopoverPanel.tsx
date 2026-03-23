@@ -1,10 +1,11 @@
 import React from 'react';
 import { Check, Trash2, X } from 'lucide-react';
 import clsx from 'clsx';
-import type { DeliveryRoute } from '@/features/census/controllers/deliveryRoutePopoverController';
+import type { CesareanLabor, DeliveryRoute } from '@/types/domain/patient';
 
 interface DeliveryRoutePopoverPanelProps {
   selectedDate: string;
+  selectedRoute: DeliveryRoute | undefined;
   canSave: boolean;
   hasPersistedData: boolean;
   routeButtonModels: Array<{
@@ -13,8 +14,15 @@ interface DeliveryRoutePopoverPanelProps {
     isSelected: boolean;
     className: string;
   }>;
+  cesareanLaborButtonModels: Array<{
+    value: CesareanLabor;
+    label: string;
+    isSelected: boolean;
+    className: string;
+  }>;
   onClose: () => void;
   onRouteSelect: (route: DeliveryRoute) => void;
+  onCesareanLaborSelect: (cesareanLabor: CesareanLabor) => void;
   onDateChange: (value: string) => void;
   onClear: () => void;
   onSave: () => void;
@@ -22,16 +30,19 @@ interface DeliveryRoutePopoverPanelProps {
 
 export const DeliveryRoutePopoverPanel: React.FC<DeliveryRoutePopoverPanelProps> = ({
   selectedDate,
+  selectedRoute,
   canSave,
   hasPersistedData,
   routeButtonModels,
+  cesareanLaborButtonModels,
   onClose,
   onRouteSelect,
+  onCesareanLaborSelect,
   onDateChange,
   onClear,
   onSave,
 }) => (
-  <div className="fixed w-52 bg-white rounded-xl shadow-2xl border border-slate-200 z-[9999] animate-in fade-in slide-in-from-top-1 duration-150">
+  <div className="w-56 bg-white rounded-xl shadow-2xl border border-slate-200 animate-in fade-in slide-in-from-top-1 duration-150">
     <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 bg-slate-50/50 rounded-t-xl">
       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
         Vía del Parto
@@ -59,6 +70,27 @@ export const DeliveryRoutePopoverPanel: React.FC<DeliveryRoutePopoverPanelProps>
           </button>
         ))}
       </div>
+
+      {selectedRoute === 'Cesárea' && (
+        <div className="space-y-1">
+          <label className="block text-[10px] font-medium text-slate-400 px-0.5">
+            Trabajo de parto
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            {cesareanLaborButtonModels.map(option => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => onCesareanLaborSelect(option.value)}
+                className={option.className}
+              >
+                {option.isSelected && <Check size={10} />}
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="space-y-1">
         <label className="block text-[10px] font-medium text-slate-400 px-0.5">Fecha</label>

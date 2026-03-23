@@ -7,9 +7,13 @@ import clsx from 'clsx';
 import { DebouncedInput } from '@/components/ui/DebouncedInput';
 import { TerminologySuggestor } from '@/components/shared/TerminologySuggestor';
 import { DeliveryRoutePopover } from './DeliveryRoutePopover';
+import {
+  isGinecobstetriciaSpecialty,
+  isObstetricGinecobstetricia,
+} from '@/features/census/controllers/ginecobstetriciaClassificationController';
 import { PatientInputSchema } from '@/schemas/inputSchemas';
 import { getCIE10Description } from '@/services/terminology/terminologyService';
-import { PatientData } from '@/types/domain/patient';
+import type { CesareanLabor, DeliveryRoute, PatientData } from '@/types/domain/patient';
 import type { DiagnosisMode } from '@/features/census/types/censusTableTypes';
 import { BaseCellProps, DebouncedTextHandler } from './inputCellTypes';
 import { PatientEmptyCell } from './PatientEmptyCell';
@@ -19,8 +23,9 @@ interface DiagnosisInputProps extends BaseCellProps {
   onChange: DebouncedTextHandler;
   onMultipleUpdate?: (fields: Partial<PatientData>) => void;
   onDeliveryRouteChange?: (
-    route: 'Vaginal' | 'Cesárea' | undefined,
-    date: string | undefined
+    route: DeliveryRoute | undefined,
+    date: string | undefined,
+    cesareanLabor: CesareanLabor | undefined
   ) => void;
 }
 
@@ -34,7 +39,9 @@ export const DiagnosisInput: React.FC<DiagnosisInputProps> = ({
   onMultipleUpdate,
   onDeliveryRouteChange,
 }) => {
-  const isGinecobstetricia = data.specialty === 'Ginecobstetricia';
+  const isGinecobstetricia = isGinecobstetriciaSpecialty(data.specialty);
+  const canShowDeliveryRoute =
+    isGinecobstetricia && isObstetricGinecobstetricia(data.ginecobstetriciaType);
   const hasPathologyError =
     !PatientInputSchema.pick({ pathology: true }).safeParse({ pathology: data.pathology })
       .success && !!data.pathology;
@@ -131,7 +138,7 @@ export const DiagnosisInput: React.FC<DiagnosisInputProps> = ({
               ? 'border-red-400 focus:ring-red-200 focus:border-red-500'
               : 'border-slate-200 focus:ring-medical-500/20 focus:border-medical-500',
             isSubRow && 'text-xs h-6',
-            isGinecobstetricia && 'pr-8' // Always leave space for birth icon in Gyn
+            canShowDeliveryRoute && 'pr-8'
           )}
           placeholder="Diagnóstico (texto libre)"
           value={data.pathology || ''}
@@ -140,11 +147,11 @@ export const DiagnosisInput: React.FC<DiagnosisInputProps> = ({
         />
 
         <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1">
-          {/* Delivery Route icon for Ginecobstetricia (Free Text mode ONLY) */}
-          {isGinecobstetricia && onDeliveryRouteChange && (
+          {canShowDeliveryRoute && onDeliveryRouteChange && (
             <DeliveryRoutePopover
               deliveryRoute={data.deliveryRoute}
               deliveryDate={data.deliveryDate}
+              deliveryCesareanLabor={data.deliveryCesareanLabor}
               onSave={onDeliveryRouteChange}
               disabled={readOnly}
             />

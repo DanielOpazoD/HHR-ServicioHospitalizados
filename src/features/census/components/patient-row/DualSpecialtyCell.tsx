@@ -7,17 +7,30 @@
  * 3. Remove the secondary specialty via "X" button
  */
 
-import React from 'react';
+import React, { useCallback, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import clsx from 'clsx';
-import { Plus, X } from 'lucide-react';
+import { Plus, Settings2, X } from 'lucide-react';
 import { SPECIALTY_OPTIONS } from '@/constants/clinical';
 import { DebouncedInput } from '@/components/ui/DebouncedInput';
 import { BaseCellProps, EventTextHandler } from './inputCellTypes';
 import { useDualSpecialtyCellModel } from '@/features/census/components/patient-row/useDualSpecialtyCellModel';
 import { dispatchTextChangeValue } from '@/features/census/controllers/textChangeAdapterController';
+import { usePortalPopoverRuntime } from '@/hooks/usePortalPopoverRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { resolveDeliveryRoutePopoverPosition } from '@/features/census/controllers/deliveryRoutePopoverController';
+import {
+  buildGinecobstetriciaTypePatch,
+  buildPrimarySpecialtyPatch,
+  isGinecobstetriciaSpecialty,
+  resolveGinecobstetriciaBadgeClassName,
+  resolveGinecobstetriciaBadgeTitle,
+} from '@/features/census/controllers/ginecobstetriciaClassificationController';
+import type { GinecobstetriciaType, PatientData } from '@/types/domain/patient';
 
 interface DualSpecialtyCellProps extends BaseCellProps {
   onChange: EventTextHandler;
+  onMultipleUpdate?: (fields: Partial<PatientData>) => void;
 }
 
 export const DualSpecialtyCell: React.FC<DualSpecialtyCellProps> = ({
@@ -26,10 +39,97 @@ export const DualSpecialtyCell: React.FC<DualSpecialtyCellProps> = ({
   isEmpty = false,
   readOnly = false,
   onChange,
+  onMultipleUpdate,
 }) => {
+  const GINECOB_WIDTH = 240;
   const { state, primaryLabel, secondaryLabel, handleAddSecondary, handleRemoveSecondary } =
     useDualSpecialtyCellModel({ data, onChange });
   const { hasSecondary, isPrimaryOther, isSecondaryOther } = state;
+  const isGinecobstetricia = isGinecobstetriciaSpecialty(data.specialty);
+  const [isSubtypeOpen, setIsSubtypeOpen] = useState(false);
+  const subtypeButtonRef = useRef<HTMLButtonElement>(null);
+  const subtypePopoverRef = useRef<HTMLDivElement>(null);
+  const isSubtypePopoverVisible = isSubtypeOpen && isGinecobstetricia;
+
+  const closeSubtypePopover = useCallback(() => {
+    setIsSubtypeOpen(false);
+  }, []);
+
+  const resolveSubtypePopoverPosition = useCallback(() => {
+    if (!subtypeButtonRef.current) {
+      return null;
+    }
+
+    return resolveDeliveryRoutePopoverPosition({
+      buttonRect: subtypeButtonRef.current.getBoundingClientRect(),
+      panelWidth: GINECOB_WIDTH,
+      viewportWidth: defaultBrowserWindowRuntime.getViewportWidth(),
+      offsetY: 8,
+    });
+  }, []);
+
+  const { position: subtypePopoverPos, updatePosition: updateSubtypePosition } =
+    usePortalPopoverRuntime({
+      isOpen: isSubtypePopoverVisible,
+      anchorRef: subtypeButtonRef,
+      popoverRef: subtypePopoverRef,
+      initialPosition: { top: 0, left: 0 },
+      resolvePosition: resolveSubtypePopoverPosition,
+      onClose: closeSubtypePopover,
+    });
+
+  const applyPrimarySpecialtyChange = useCallback(
+    (nextSpecialty: string) => {
+      if (onMultipleUpdate) {
+        onMultipleUpdate(buildPrimarySpecialtyPatch(nextSpecialty));
+      } else {
+        dispatchTextChangeValue(onChange, 'specialty', nextSpecialty);
+      }
+
+      if (isGinecobstetriciaSpecialty(nextSpecialty)) {
+        window.requestAnimationFrame(() => {
+          updateSubtypePosition();
+          setIsSubtypeOpen(true);
+        });
+        return;
+      }
+
+      setIsSubtypeOpen(false);
+    },
+    [onChange, onMultipleUpdate, updateSubtypePosition]
+  );
+
+  const handlePrimarySpecialtySelectChange = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>) => {
+      applyPrimarySpecialtyChange(event.target.value);
+    },
+    [applyPrimarySpecialtyChange]
+  );
+
+  const handlePrimarySpecialtyTextChange = useCallback(
+    (value: string) => {
+      applyPrimarySpecialtyChange(value);
+    },
+    [applyPrimarySpecialtyChange]
+  );
+
+  const toggleSubtypePopover = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      updateSubtypePosition();
+      setIsSubtypeOpen(current => !current);
+    },
+    [updateSubtypePosition]
+  );
+
+  const handleSubtypeSelect = useCallback(
+    (ginecobstetriciaType: GinecobstetriciaType) => {
+      onMultipleUpdate?.(buildGinecobstetriciaTypePatch(ginecobstetriciaType));
+      closeSubtypePopover();
+    },
+    [closeSubtypePopover, onMultipleUpdate]
+  );
 
   if (isEmpty && !isSubRow) {
     return (
@@ -59,7 +159,7 @@ export const DualSpecialtyCell: React.FC<DualSpecialtyCellProps> = ({
                 type="text"
                 className="w-full p-0 h-5 border-none bg-transparent focus:ring-0 text-[11px] font-medium"
                 value={data.specialty === 'Otro' ? '' : data.specialty || ''}
-                onChange={val => dispatchTextChangeValue(onChange, 'specialty', val)}
+                onChange={handlePrimarySpecialtyTextChange}
                 placeholder="Esp"
                 disabled={readOnly}
               />
@@ -69,10 +169,11 @@ export const DualSpecialtyCell: React.FC<DualSpecialtyCellProps> = ({
               <select
                 className={clsx(
                   'w-full p-0 h-5 border-none bg-transparent focus:ring-0 text-[11px] font-medium cursor-pointer appearance-none',
-                  data.specialty ? 'text-transparent' : 'text-slate-400 italic'
+                  data.specialty ? 'text-transparent' : 'text-slate-400 italic',
+                  isGinecobstetricia && 'pr-12'
                 )}
                 value={data.specialty || ''}
-                onChange={onChange('specialty')}
+                onChange={handlePrimarySpecialtySelectChange}
                 disabled={readOnly}
               >
                 <option value="" className="text-slate-700">
@@ -91,14 +192,31 @@ export const DualSpecialtyCell: React.FC<DualSpecialtyCellProps> = ({
                   <span
                     className={clsx(
                       'text-[11px] font-medium truncate',
+                      isGinecobstetricia && 'pr-12',
                       hasSecondary ? 'text-slate-600' : 'text-slate-700'
                     )}
                   >
-                    {hasSecondary ? primaryLabel || data.specialty : data.specialty}
+                    {primaryLabel || data.specialty}
                   </span>
                 </div>
               )}
             </div>
+          )}
+
+          {isGinecobstetricia && !readOnly && (
+            <button
+              ref={subtypeButtonRef}
+              type="button"
+              onClick={toggleSubtypePopover}
+              className={clsx(
+                'absolute right-0.5 top-1/2 -translate-y-1/2 rounded-md border p-1 transition-colors z-10',
+                resolveGinecobstetriciaBadgeClassName()
+              )}
+              title={resolveGinecobstetriciaBadgeTitle()}
+              aria-label={resolveGinecobstetriciaBadgeTitle()}
+            >
+              <Settings2 size={11} />
+            </button>
           )}
 
           {/* Subtle Overlay Add Button */}
@@ -177,6 +295,59 @@ export const DualSpecialtyCell: React.FC<DualSpecialtyCellProps> = ({
           </div>
         )}
       </div>
+
+      {isSubtypePopoverVisible &&
+        createPortal(
+          <div
+            ref={subtypePopoverRef}
+            className="fixed z-[10000]"
+            style={{
+              top: subtypePopoverPos.top,
+              left: subtypePopoverPos.left,
+            }}
+          >
+            <div className="w-60 rounded-xl border border-slate-200 bg-white shadow-2xl animate-in fade-in slide-in-from-top-1 duration-150">
+              <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/60 px-3 py-2 rounded-t-xl">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    Tipo de atención
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeSubtypePopover}
+                  className="rounded p-0.5 text-slate-400 transition-colors hover:text-slate-600"
+                  title="Cerrar"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+
+              <div className="space-y-3 p-3">
+                <div className="grid grid-cols-2 gap-2">
+                  {(['Obstétrica', 'Ginecológica'] as const).map(option => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => handleSubtypeSelect(option)}
+                      className={clsx(
+                        'rounded-lg border px-2 py-2 text-[11px] font-bold transition-all',
+                        data.ginecobstetriciaType === option
+                          ? option === 'Obstétrica'
+                            ? 'border-pink-200 bg-pink-50 text-pink-700 shadow-sm'
+                            : 'border-sky-200 bg-sky-50 text-sky-700 shadow-sm'
+                          : 'border-slate-100 bg-slate-50 text-slate-600 hover:border-slate-200'
+                      )}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </td>
   );
 };

@@ -1,23 +1,31 @@
 import { useCallback, useMemo, useState } from 'react';
-import type { DeliveryRoute } from '@/features/census/controllers/deliveryRoutePopoverController';
+import type { CesareanLabor, DeliveryRoute } from '@/types/domain/patient';
 import {
   buildDeliveryRouteDraft,
   canSaveDeliveryRouteDraft,
+  normalizeDeliveryCesareanLabor,
   normalizeDeliveryRouteDate,
 } from '@/features/census/controllers/deliveryRoutePopoverStateController';
 
 interface UseDeliveryRoutePopoverStateParams {
   deliveryRoute?: DeliveryRoute;
   deliveryDate?: string;
-  onSave: (route: DeliveryRoute | undefined, date: string | undefined) => void;
+  deliveryCesareanLabor?: CesareanLabor;
+  onSave: (
+    route: DeliveryRoute | undefined,
+    date: string | undefined,
+    cesareanLabor: CesareanLabor | undefined
+  ) => void;
 }
 
 interface UseDeliveryRoutePopoverStateResult {
   selectedRoute: DeliveryRoute | undefined;
   selectedDate: string;
+  selectedCesareanLabor: CesareanLabor | undefined;
   canSave: boolean;
   setSelectedRoute: (route: DeliveryRoute | undefined) => void;
   setSelectedDate: (date: string) => void;
+  setSelectedCesareanLabor: (cesareanLabor: CesareanLabor | undefined) => void;
   resetFromPersisted: () => void;
   saveAndClose: (close: () => void) => void;
   clearAndClose: (close: () => void) => void;
@@ -26,18 +34,20 @@ interface UseDeliveryRoutePopoverStateResult {
 export const useDeliveryRoutePopoverState = ({
   deliveryRoute,
   deliveryDate,
+  deliveryCesareanLabor,
   onSave,
 }: UseDeliveryRoutePopoverStateParams): UseDeliveryRoutePopoverStateResult => {
   type DeliveryRouteDraft = ReturnType<typeof buildDeliveryRouteDraft>;
 
   const persistedDraft = useMemo(
-    () => buildDeliveryRouteDraft(deliveryRoute, deliveryDate),
-    [deliveryDate, deliveryRoute]
+    () => buildDeliveryRouteDraft(deliveryRoute, deliveryDate, deliveryCesareanLabor),
+    [deliveryCesareanLabor, deliveryDate, deliveryRoute]
   );
   const [draftOverride, setDraftOverride] = useState<DeliveryRouteDraft | null>(null);
 
   const selectedRoute = (draftOverride ?? persistedDraft).selectedRoute;
   const selectedDate = (draftOverride ?? persistedDraft).selectedDate;
+  const selectedCesareanLabor = (draftOverride ?? persistedDraft).selectedCesareanLabor;
 
   const setSelectedRoute = useCallback(
     (route: DeliveryRoute | undefined) => {
@@ -46,6 +56,7 @@ export const useDeliveryRoutePopoverState = ({
         return {
           ...base,
           selectedRoute: route,
+          selectedCesareanLabor: route === 'Cesárea' ? base.selectedCesareanLabor : undefined,
         };
       });
     },
@@ -65,16 +76,33 @@ export const useDeliveryRoutePopoverState = ({
     [persistedDraft]
   );
 
+  const setSelectedCesareanLabor = useCallback(
+    (cesareanLabor: CesareanLabor | undefined) => {
+      setDraftOverride(previous => {
+        const base = previous ?? persistedDraft;
+        return {
+          ...base,
+          selectedCesareanLabor: cesareanLabor,
+        };
+      });
+    },
+    [persistedDraft]
+  );
+
   const resetFromPersisted = useCallback(() => {
     setDraftOverride(null);
   }, []);
 
   const saveAndClose = useCallback(
     (close: () => void) => {
-      onSave(selectedRoute, normalizeDeliveryRouteDate(selectedDate));
+      onSave(
+        selectedRoute,
+        normalizeDeliveryRouteDate(selectedDate),
+        normalizeDeliveryCesareanLabor(selectedRoute, selectedCesareanLabor)
+      );
       close();
     },
-    [onSave, selectedDate, selectedRoute]
+    [onSave, selectedCesareanLabor, selectedDate, selectedRoute]
   );
 
   const clearAndClose = useCallback(
@@ -82,8 +110,9 @@ export const useDeliveryRoutePopoverState = ({
       setDraftOverride({
         selectedRoute: undefined,
         selectedDate: '',
+        selectedCesareanLabor: undefined,
       });
-      onSave(undefined, undefined);
+      onSave(undefined, undefined, undefined);
       close();
     },
     [onSave]
@@ -92,9 +121,11 @@ export const useDeliveryRoutePopoverState = ({
   return {
     selectedRoute,
     selectedDate,
-    canSave: canSaveDeliveryRouteDraft(selectedRoute),
+    selectedCesareanLabor,
+    canSave: canSaveDeliveryRouteDraft(selectedRoute, selectedCesareanLabor),
     setSelectedRoute,
     setSelectedDate,
+    setSelectedCesareanLabor,
     resetFromPersisted,
     saveAndClose,
     clearAndClose,

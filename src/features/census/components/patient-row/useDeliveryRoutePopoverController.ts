@@ -1,21 +1,27 @@
 import { MouseEvent, useCallback, useRef, useState } from 'react';
-import {
-  type DeliveryRoute,
-  resolveDeliveryRoutePopoverPosition,
-} from '@/features/census/controllers/deliveryRoutePopoverController';
+import { resolveDeliveryRoutePopoverPosition } from '@/features/census/controllers/deliveryRoutePopoverController';
 import { usePortalPopoverRuntime } from '@/hooks/usePortalPopoverRuntime';
 import { useDeliveryRoutePopoverState } from '@/features/census/components/patient-row/useDeliveryRoutePopoverState';
-import { buildDeliveryRouteButtonModels } from '@/features/census/controllers/deliveryRoutePopoverViewController';
+import {
+  buildCesareanLaborButtonModels,
+  buildDeliveryRouteButtonModels,
+} from '@/features/census/controllers/deliveryRoutePopoverViewController';
 import {
   resolveDeliveryRoutePopoverToggle,
   resolveHasPersistedDeliveryRoute,
 } from '@/features/census/controllers/deliveryRoutePopoverRuntimeController';
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import type { CesareanLabor, DeliveryRoute } from '@/types/domain/patient';
 
 interface UseDeliveryRoutePopoverControllerParams {
   deliveryRoute?: DeliveryRoute;
   deliveryDate?: string;
-  onSave: (route: DeliveryRoute | undefined, date: string | undefined) => void;
+  deliveryCesareanLabor?: CesareanLabor;
+  onSave: (
+    route: DeliveryRoute | undefined,
+    date: string | undefined,
+    cesareanLabor: CesareanLabor | undefined
+  ) => void;
   disabled: boolean;
   panelWidth: number;
 }
@@ -23,6 +29,7 @@ interface UseDeliveryRoutePopoverControllerParams {
 export const useDeliveryRoutePopoverController = ({
   deliveryRoute,
   deliveryDate,
+  deliveryCesareanLabor,
   onSave,
   disabled,
   panelWidth,
@@ -33,15 +40,18 @@ export const useDeliveryRoutePopoverController = ({
   const {
     selectedRoute,
     selectedDate,
+    selectedCesareanLabor,
     canSave,
     setSelectedRoute,
     setSelectedDate,
+    setSelectedCesareanLabor,
     resetFromPersisted,
     saveAndClose,
     clearAndClose,
   } = useDeliveryRoutePopoverState({
     deliveryRoute,
     deliveryDate,
+    deliveryCesareanLabor,
     onSave,
   });
 
@@ -88,6 +98,7 @@ export const useDeliveryRoutePopoverController = ({
 
   const hasPersistedData = resolveHasPersistedDeliveryRoute(deliveryRoute);
   const routeButtonModels = buildDeliveryRouteButtonModels(selectedRoute);
+  const cesareanLaborButtonModels = buildCesareanLaborButtonModels(selectedCesareanLabor);
 
   return {
     isOpen,
@@ -96,11 +107,14 @@ export const useDeliveryRoutePopoverController = ({
     popoverPos,
     selectedRoute,
     selectedDate,
+    selectedCesareanLabor,
     canSave,
     routeButtonModels,
+    cesareanLaborButtonModels,
     hasPersistedData,
     setSelectedRoute,
     setSelectedDate,
+    setSelectedCesareanLabor,
     saveAndClose,
     clearAndClose,
     closePopover,

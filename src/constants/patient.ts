@@ -31,6 +31,7 @@ export const EMPTY_PATIENT: Omit<PatientData, 'bedId'> = {
   cie10Code: undefined,
   cie10Description: undefined,
   specialty: Specialty.EMPTY,
+  ginecobstetriciaType: undefined,
   status: PatientStatus.EMPTY,
   admissionDate: '',
   admissionTime: '',
@@ -40,4 +41,7 @@ export const EMPTY_PATIENT: Omit<PatientData, 'bedId'> = {
   isUPC: false,
   location: '',
   clinicalEvents: [],
+  deliveryRoute: undefined,
+  deliveryDate: undefined,
+  deliveryCesareanLabor: undefined,
 };

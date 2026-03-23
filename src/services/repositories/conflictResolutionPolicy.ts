@@ -41,6 +41,7 @@ const CLINICAL_PATIENT_FIELDS = new Set([
   'cie10Description',
   'diagnosisComments',
   'specialty',
+  'ginecobstetriciaType',
   'secondarySpecialty',
   'status',
   'medicalHandoffNote',
@@ -52,6 +53,7 @@ const CLINICAL_PATIENT_FIELDS = new Set([
   'clinicalCrib',
   'deliveryRoute',
   'deliveryDate',
+  'deliveryCesareanLabor',
 ]);
 
 const ADMIN_PATIENT_FIELDS = new Set([

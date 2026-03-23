@@ -41,6 +41,10 @@ export interface MedicalHandoffEntry {
   currentStatusBy?: MedicalHandoffAuditActor;
 }
 
+export type GinecobstetriciaType = 'Obstétrica' | 'Ginecológica';
+export type DeliveryRoute = 'Vaginal' | 'Cesárea';
+export type CesareanLabor = 'Sin TdP' | 'Con TdP';
+
 export interface PatientData {
   bedId: string;
   isBlocked: boolean;
@@ -78,6 +82,7 @@ export interface PatientData {
   cie10Description?: string; // Official CIE-10 description recorded at selection
   diagnosisComments?: string; // New field for sub-diagnosis details (e.g. surgical dates)
   specialty: Specialty;
+  ginecobstetriciaType?: GinecobstetriciaType;
   /** Optional secondary specialty for co-managed patients. Not used for statistics. */
   secondarySpecialty?: Specialty | string;
   status: PatientStatus;
@@ -113,8 +118,9 @@ export interface PatientData {
   deviceInstanceHistory?: DeviceInstance[];
 
   // Obstetric delivery tracking (Ginecobstetricia only)
-  deliveryRoute?: 'Vaginal' | 'Cesárea';
+  deliveryRoute?: DeliveryRoute;
   deliveryDate?: string; // ISO date string
+  deliveryCesareanLabor?: CesareanLabor;
 
   // HL7 FHIR Core-CL Resource (Optional for dual-mode sync)
   fhir_resource?: FhirResource;

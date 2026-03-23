@@ -10,38 +10,47 @@ import { createPortal } from 'react-dom';
 import { HeartPulse } from 'lucide-react';
 import clsx from 'clsx';
 import {
-  type DeliveryRoute,
   resolveDeliveryRouteIconColor,
   resolveDeliveryRouteTitle,
 } from '@/features/census/controllers/deliveryRoutePopoverController';
 import { useDeliveryRoutePopoverController } from '@/features/census/components/patient-row/useDeliveryRoutePopoverController';
 import { DeliveryRoutePopoverPanel } from '@/features/census/components/patient-row/DeliveryRoutePopoverPanel';
+import type { CesareanLabor, DeliveryRoute } from '@/types/domain/patient';
 
 interface DeliveryRoutePopoverProps {
   deliveryRoute?: DeliveryRoute;
   deliveryDate?: string;
-  onSave: (route: DeliveryRoute | undefined, date: string | undefined) => void;
+  deliveryCesareanLabor?: CesareanLabor;
+  onSave: (
+    route: DeliveryRoute | undefined,
+    date: string | undefined,
+    cesareanLabor: CesareanLabor | undefined
+  ) => void;
   disabled?: boolean;
 }
 
 export const DeliveryRoutePopover: React.FC<DeliveryRoutePopoverProps> = ({
   deliveryRoute,
   deliveryDate,
+  deliveryCesareanLabor,
   onSave,
   disabled = false,
 }) => {
-  const POPOVER_WIDTH = 208;
+  const POPOVER_WIDTH = 224;
   const {
     isOpen,
     popoverRef,
     buttonRef,
     popoverPos,
     selectedDate,
+    selectedRoute,
     canSave,
     routeButtonModels,
+    cesareanLaborButtonModels,
     hasPersistedData,
     setSelectedRoute,
     setSelectedDate,
+    setSelectedCesareanLabor,
     saveAndClose,
     clearAndClose,
     closePopover,
@@ -49,6 +58,7 @@ export const DeliveryRoutePopover: React.FC<DeliveryRoutePopoverProps> = ({
   } = useDeliveryRoutePopoverController({
     deliveryRoute,
     deliveryDate,
+    deliveryCesareanLabor,
     onSave,
     disabled,
     panelWidth: POPOVER_WIDTH,
@@ -66,30 +76,32 @@ export const DeliveryRoutePopover: React.FC<DeliveryRoutePopoverProps> = ({
           disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-slate-100',
           resolveDeliveryRouteIconColor(hasPersistedData, deliveryRoute)
         )}
-        title={resolveDeliveryRouteTitle(deliveryRoute, deliveryDate)}
+        title={resolveDeliveryRouteTitle(deliveryRoute, deliveryDate, deliveryCesareanLabor)}
       >
         <HeartPulse size={14} />
       </button>
 
-      {/* Popover - Compacted size and fonts */}
       {isOpen &&
         createPortal(
           <div
             ref={popoverRef}
+            className="fixed z-[10000]"
             style={{
               top: popoverPos.top,
               left: popoverPos.left,
-              position: 'fixed',
             }}
             onClick={e => e.stopPropagation()}
           >
             <DeliveryRoutePopoverPanel
+              selectedRoute={selectedRoute}
               selectedDate={selectedDate}
               canSave={canSave}
               hasPersistedData={hasPersistedData}
               routeButtonModels={routeButtonModels}
+              cesareanLaborButtonModels={cesareanLaborButtonModels}
               onClose={closePopover}
               onRouteSelect={setSelectedRoute}
+              onCesareanLaborSelect={setSelectedCesareanLabor}
               onDateChange={setSelectedDate}
               onClear={() => clearAndClose(closePopover)}
               onSave={() => saveAndClose(closePopover)}

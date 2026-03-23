@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { PatientData } from '@/types/domain/patient';
+import type { CesareanLabor, DeliveryRoute, PatientData } from '@/types/domain/patient';
 import { PatientFieldValue } from '@/types/valueTypes';
 import {
   buildDeliveryRoutePatch,
@@ -76,8 +76,12 @@ export const usePatientRowMainInputHandlers = ({
   }, [documentType, updateField]);
 
   const handleDeliveryRouteChange = useCallback(
-    (route: 'Vaginal' | 'Cesárea' | undefined, date: string | undefined) => {
-      updateMultiple(buildDeliveryRoutePatch(route, date));
+    (
+      route: DeliveryRoute | undefined,
+      date: string | undefined,
+      cesareanLabor: CesareanLabor | undefined
+    ) => {
+      updateMultiple(buildDeliveryRoutePatch(route, date, cesareanLabor));
     },
     [updateMultiple]
   );

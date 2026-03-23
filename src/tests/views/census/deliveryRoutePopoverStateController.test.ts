@@ -10,11 +10,13 @@ describe('deliveryRoutePopoverStateController', () => {
     expect(buildDeliveryRouteDraft('Vaginal', '2026-02-15')).toEqual({
       selectedRoute: 'Vaginal',
       selectedDate: '2026-02-15',
+      selectedCesareanLabor: undefined,
     });
 
     expect(buildDeliveryRouteDraft(undefined, undefined)).toEqual({
       selectedRoute: undefined,
       selectedDate: '',
+      selectedCesareanLabor: undefined,
     });
   });
 
@@ -24,8 +26,10 @@ describe('deliveryRoutePopoverStateController', () => {
     expect(normalizeDeliveryRouteDate('   ')).toBeUndefined();
   });
 
-  it('allows save only when route is selected', () => {
-    expect(canSaveDeliveryRouteDraft(undefined)).toBe(false);
-    expect(canSaveDeliveryRouteDraft('Cesárea')).toBe(true);
+  it('allows saving any selected delivery route', () => {
+    expect(canSaveDeliveryRouteDraft(undefined, undefined)).toBe(false);
+    expect(canSaveDeliveryRouteDraft('Vaginal', undefined)).toBe(true);
+    expect(canSaveDeliveryRouteDraft('Cesárea', undefined)).toBe(true);
+    expect(canSaveDeliveryRouteDraft('Cesárea', 'Con TdP')).toBe(true);
   });
 });
