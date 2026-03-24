@@ -24,6 +24,7 @@ import type {
   UpdatePartialDailyRecordResult,
 } from '@/services/repositories/contracts/dailyRecordResults';
 import { isDailyRecordWriteBlockedResult } from '@/services/repositories/contracts/dailyRecordResults';
+import type { DailyRecordQueryResult } from '@/services/repositories/contracts/dailyRecordQueries';
 
 const saveDailyRecordWithCompatibility = async (
   dailyRecord: ReturnType<typeof useRepositories>['dailyRecord'],
@@ -68,7 +69,7 @@ export const useDailyRecordQuery = (
   const { dailyRecord } = useRepositories();
 
   const queryKey = getDailyRecordQueryKey(date);
-  const query = useQuery({
+  const query = useQuery<DailyRecordQueryResult>({
     queryKey,
     queryFn: createDailyRecordQueryFn(dailyRecord, date),
     enabled: !!date,
@@ -92,7 +93,11 @@ export const useDailyRecordQuery = (
     prefetchPreviousDailyRecord(queryClient, dailyRecord, date);
   }, [date, queryClient, dailyRecord, isOfflineMode, isFirebaseConnected]);
 
-  return query;
+  return {
+    ...query,
+    data: query.data?.record ?? null,
+    runtime: query.data?.runtime ?? null,
+  };
 };
 
 /**
@@ -115,9 +120,9 @@ export const useSaveDailyRecordMutation = () => {
       });
 
       // Snapshot the previous value
-      const previousRecord = queryClient.getQueryData<DailyRecord>(
+      const previousRecord = queryClient.getQueryData<DailyRecordQueryResult>(
         getDailyRecordQueryKey(newRecord.date)
-      );
+      )?.record;
 
       // Optimistically update
       setDailyRecordQueryData(queryClient, newRecord.date, newRecord);
@@ -173,7 +178,9 @@ export const usePatchDailyRecordMutation = (date: string) => {
         queryKey: queryKeys.dailyRecord.byDate(date),
       });
 
-      const previousRecord = queryClient.getQueryData<DailyRecord>(getDailyRecordQueryKey(date));
+      const previousRecord = queryClient.getQueryData<DailyRecordQueryResult>(
+        getDailyRecordQueryKey(date)
+      )?.record;
 
       if (previousRecord) {
         setDailyRecordQueryData(

@@ -48,6 +48,11 @@ Entrega de turno de enfermeria y medicos, con flujos de gestion, delivery y hand
 - `src/domain/handoff/patientView.ts`
 - `src/domain/handoff/view.ts`
 - `src/domain/handoff/scope.ts`
+- `src/features/handoff/public.ts`
+
+El consumo externo a la feature debe entrar por `public.ts` o `index.ts`. Los imports profundos a
+`components/`, `controllers/` o bridges internos quedan reservados para implementación interna del
+feature.
 
 ## Checks recomendados
 

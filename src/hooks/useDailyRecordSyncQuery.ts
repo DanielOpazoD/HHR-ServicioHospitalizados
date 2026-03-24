@@ -34,6 +34,7 @@ import { presentDailyRecordRefreshOutcome } from '@/hooks/controllers/dailyRecor
 import { logger } from '@/services/utils/loggerService';
 import { dailyRecordObservability } from '@/services/repositories/dailyRecordOperationalTelemetry';
 import { getTodayISO } from '@/utils/dateUtils';
+import { setDailyRecordQueryData } from '@/hooks/controllers/dailyRecordQueryController';
 
 const dailyRecordSyncLogger = logger.child('DailyRecordSync');
 
@@ -49,6 +50,7 @@ export const useDailyRecordSyncQuery = (
   // 1. Fetching
   const {
     data: record,
+    runtime: recordRuntime,
     dataUpdatedAt,
     refetch,
   } = useDailyRecordQuery(currentDateString, _isOfflineMode, _isFirebaseConnected);
@@ -93,6 +95,10 @@ export const useDailyRecordSyncQuery = (
       return;
     }
 
+    if (recordRuntime?.availabilityState === 'confirmed_missing') {
+      return;
+    }
+
     todayNullRecoveryAttemptedRef.current = currentDateString;
 
     void executeSyncDailyRecord({
@@ -107,7 +113,7 @@ export const useDailyRecordSyncQuery = (
       });
       refetch();
     });
-  }, [currentDateString, dailyRecord, record, refetch]);
+  }, [currentDateString, dailyRecord, record, recordRuntime, refetch]);
 
   // 3. Status Mapping
   const syncStatus = useMemo(
@@ -211,7 +217,7 @@ export const useDailyRecordSyncQuery = (
   const setRecord = useCallback(
     (updater: DailyRecord | null | ((prev: DailyRecord | null) => DailyRecord | null)) => {
       const key = queryKeys.dailyRecord.byDate(currentDateString);
-      queryClient.setQueryData(key, updater);
+      setDailyRecordQueryData(queryClient, currentDateString, updater);
       queryClient.invalidateQueries({ queryKey: key });
     },
     [queryClient, currentDateString]

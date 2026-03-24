@@ -57,8 +57,21 @@ test.describe('Critical Census Flows (Firestore emulator-backed runtime)', () =>
     await bootstrapCensusSession(page, 'viewer', { ensureEditableRecord: false });
 
     await expect(page.getByRole('main')).toBeVisible();
-    await expect(
-      page.getByText(/No existe registro para esta fecha|MOCK PATIENT/i, { exact: false })
-    ).toBeVisible();
+    const censusTable = page.getByTestId('census-table');
+    const emptyDayPrompt = page.getByText(/No existe registro para esta fecha/i, {
+      exact: false,
+    });
+
+    await expect
+      .poll(async () => {
+        if (await censusTable.isVisible().catch(() => false)) {
+          return 'census-table';
+        }
+        if (await emptyDayPrompt.isVisible().catch(() => false)) {
+          return 'empty-day-prompt';
+        }
+        return 'pending';
+      })
+      .toMatch(/census-table|empty-day-prompt/);
   });
 });

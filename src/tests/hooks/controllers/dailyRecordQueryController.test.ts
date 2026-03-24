@@ -24,7 +24,13 @@ describe('dailyRecordQueryController', () => {
     const record = DataFactory.createMockDailyRecord('2025-01-08');
     const repository = { getForDate: vi.fn().mockResolvedValue(record) };
 
-    await expect(createDailyRecordQueryFn(repository, '2025-01-08')()).resolves.toEqual(record);
+    await expect(createDailyRecordQueryFn(repository, '2025-01-08')()).resolves.toMatchObject({
+      record,
+      runtime: {
+        availabilityState: 'resolved',
+        consistencyState: 'local_only',
+      },
+    });
     expect(repository.getForDate).toHaveBeenCalledWith('2025-01-08');
     expect(getDailyRecordQueryKey('2025-01-08')).toEqual(['dailyRecord', '2025-01-08']);
   });
@@ -55,7 +61,12 @@ describe('dailyRecordQueryController', () => {
     );
 
     expect(unsubscribe).toBeTypeOf('function');
-    expect(queryClient.getQueryData(getDailyRecordQueryKey('2025-01-08'))).toEqual(record);
+    expect(queryClient.getQueryData(getDailyRecordQueryKey('2025-01-08'))).toMatchObject({
+      record,
+      runtime: {
+        availabilityState: 'resolved',
+      },
+    });
   });
 
   it('reconciles null realtime payloads against the repository before clearing cache', async () => {
@@ -65,7 +76,20 @@ describe('dailyRecordQueryController', () => {
       ...previousRecord,
       lastUpdated: '2025-01-08T10:10:00.000Z',
     };
-    queryClient.setQueryData(getDailyRecordQueryKey('2025-01-08'), previousRecord);
+    queryClient.setQueryData(getDailyRecordQueryKey('2025-01-08'), {
+      record: previousRecord,
+      runtime: {
+        date: '2025-01-08',
+        availabilityState: 'resolved',
+        consistencyState: 'local_only',
+        sourceOfTruth: 'local',
+        retryability: 'not_applicable',
+        recoveryAction: 'none',
+        conflictSummary: null,
+        observabilityTags: ['daily_record', 'read'],
+        repairApplied: false,
+      },
+    });
 
     const subscribe = vi.fn((_date, callback) => {
       void callback(null, false);
@@ -82,7 +106,12 @@ describe('dailyRecordQueryController', () => {
     await Promise.resolve();
 
     expect(unsubscribe).toBeTypeOf('function');
-    expect(queryClient.getQueryData(getDailyRecordQueryKey('2025-01-08'))).toEqual(recoveredRecord);
+    expect(queryClient.getQueryData(getDailyRecordQueryKey('2025-01-08'))).toMatchObject({
+      record: recoveredRecord,
+      runtime: {
+        availabilityState: 'recoverable_local',
+      },
+    });
   });
 
   it('manages query cache helpers and realtime gating', async () => {
@@ -90,7 +119,12 @@ describe('dailyRecordQueryController', () => {
     const record = DataFactory.createMockDailyRecord('2025-01-08');
 
     setDailyRecordQueryData(queryClient, '2025-01-08', record);
-    expect(queryClient.getQueryData(getDailyRecordQueryKey('2025-01-08'))).toEqual(record);
+    expect(queryClient.getQueryData(getDailyRecordQueryKey('2025-01-08'))).toMatchObject({
+      record,
+      runtime: {
+        availabilityState: 'resolved',
+      },
+    });
 
     invalidateDailyRecordQuery(queryClient, '2025-01-08');
     expect(shouldUseDailyRecordRealtimeSync('2025-01-08', false, true)).toBe(true);

@@ -87,6 +87,7 @@ components/Modal
 
 - `auth/index.ts`: autenticación de alto nivel.
 - `auth/public.ts`: API pública mínima de autenticación (`LoginPage` + props).
+- `census/public.ts`: vistas públicas y read-model helpers permitidos para `application`.
 - `clinical-documents/public.ts`: contratos y helpers permitidos para `application`/`shared`.
 - `reminders/index.ts` y `reminders/public.ts`: vista administrativa pública del feature.
 - `admin/index.ts`: vistas operativas del panel admin.
@@ -94,6 +95,6 @@ components/Modal
 - `census/index.ts`: vistas y modales públicos del módulo.
 - `cudyr/index.ts` y `cudyr/public.ts`: vistas y utilidades permitidas.
 - `games/index.ts`: menú y accesos del feature lúdico.
-- `handoff/index.ts`: vista principal de entrega de turno.
-- `transfers/index.ts`: vista de gestión de traslados.
+- `handoff/index.ts` y `handoff/public.ts`: shell público de entrega de turno y helpers permitidos.
+- `transfers/index.ts` y `transfers/public.ts`: vista pública de gestión de traslados.
 - `whatsapp/index.ts`: integración principal de WhatsApp.

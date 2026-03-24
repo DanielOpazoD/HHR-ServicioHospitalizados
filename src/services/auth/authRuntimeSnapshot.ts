@@ -22,6 +22,7 @@ export interface AuthRuntimeSnapshot {
   budgetProfile: AuthBootstrapBudgetProfile;
   timeoutMs: number;
   runtimeState: AuthRuntimeState;
+  issues: string[];
 }
 
 export interface BuildAuthRuntimeSnapshotInput {
@@ -57,6 +58,21 @@ export const buildAuthRuntimeSnapshot = (
     runtimeState = 'degraded';
   }
 
+  const issues = [
+    ...(bootstrapPending
+      ? ['El bootstrap de autenticacion sigue pendiente y puede requerir recuperacion.']
+      : []),
+    ...(input.sessionState.status === 'unauthorized'
+      ? ['La sesion actual no tiene autorizacion valida para el acceso solicitado.']
+      : []),
+    ...(input.sessionState.status === 'auth_error'
+      ? [input.sessionState.error.message || 'La autenticacion encontro un error operativo.']
+      : []),
+    ...(!input.isOnline && !input.isFirebaseConnected
+      ? ['Firebase no esta conectado mientras el cliente permanece sin red.']
+      : []),
+  ];
+
   return {
     sessionStatus: input.sessionState.status,
     authLoading: input.authLoading,
@@ -67,5 +83,6 @@ export const buildAuthRuntimeSnapshot = (
     budgetProfile: budget.profile,
     timeoutMs: budget.timeoutMs,
     runtimeState,
+    issues,
   };
 };

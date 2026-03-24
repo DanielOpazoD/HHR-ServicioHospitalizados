@@ -9,6 +9,7 @@
 import { DailyRecord } from '@/types/domain/dailyRecord';
 import { DailyRecordPatch } from '@/types/domain/dailyRecord';
 import type { DailyRecordReadResult } from './contracts/dailyRecordQueries';
+import type { SyncDailyRecordResult } from './contracts/dailyRecordResults';
 // import {
 //     getActiveHospitalId
 // } from '@/constants/firestorePaths';
@@ -38,6 +39,7 @@ import {
 } from './dailyRecordRepositoryWriteService';
 import {
   subscribe as subscribeFromSyncService,
+  subscribeDetailed as subscribeDetailedFromSyncService,
   syncWithFirestore as syncWithFirestoreFromSyncService,
   syncWithFirestoreDetailed as syncWithFirestoreDetailedFromSyncService,
 } from './dailyRecordRepositorySyncService';
@@ -63,6 +65,7 @@ import {
 
 export interface IDailyRecordRepository {
   getForDate(date: string): Promise<DailyRecord | null>;
+  getForDateWithMeta?: (date: string, syncFromRemote?: boolean) => Promise<DailyRecordReadResult>;
   getPreviousDay(date: string): Promise<DailyRecord | null>;
   getPreviousDayWithMeta(date: string): Promise<DailyRecordReadResult>;
   save(record: DailyRecord, expectedLastUpdated?: string): Promise<void>;
@@ -71,6 +74,10 @@ export interface IDailyRecordRepository {
     date: string,
     callback: (r: DailyRecord | null, hasPendingWrites: boolean) => void
   ): () => void;
+  subscribeDetailed?: (
+    date: string,
+    callback: (result: SyncDailyRecordResult, hasPendingWrites: boolean) => void
+  ) => () => void;
   initializeDay(date: string, copyFromDate?: string): Promise<DailyRecord>;
   initializeDayDetailed: typeof initializeDayDetailed;
   deleteDay(date: string): Promise<void>;
@@ -137,6 +144,13 @@ export const subscribe = (
   const query = buildDailyRecordQuery(date, true);
   return subscribeFromSyncService(query.date, callback);
 };
+export const subscribeDetailed = (
+  date: string,
+  callback: (result: SyncDailyRecordResult, hasPendingWrites: boolean) => void
+) => {
+  const query = buildDailyRecordQuery(date, true);
+  return subscribeDetailedFromSyncService(query.date, callback);
+};
 export const syncWithFirestore = syncWithFirestoreFromSyncService;
 export const syncWithFirestoreDetailed = syncWithFirestoreDetailedFromSyncService;
 
@@ -196,11 +210,13 @@ export const DailyRecordRepository: IDailyRecordRepository & {
   bridgeLegacyRecord: typeof bridgeLegacyRecord;
 } = Object.freeze({
   getForDate,
+  getForDateWithMeta,
   getPreviousDay,
   getPreviousDayWithMeta,
   save,
   saveDetailed,
   subscribe,
+  subscribeDetailed,
   initializeDay,
   initializeDayDetailed,
   deleteDay,

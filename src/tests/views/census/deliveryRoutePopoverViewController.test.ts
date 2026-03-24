@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { buildDeliveryRouteButtonModels } from '@/features/census/controllers/deliveryRoutePopoverViewController';
+import {
+  buildCesareanLaborButtonModels,
+  buildDeliveryRouteButtonModels,
+} from '@/features/census/controllers/deliveryRoutePopoverViewController';
 
 describe('deliveryRoutePopoverViewController', () => {
   it('builds route button models with selected state and classes', () => {
@@ -12,5 +15,23 @@ describe('deliveryRoutePopoverViewController', () => {
 
     const none = buildDeliveryRouteButtonModels(undefined);
     expect(none.every(item => item.isSelected === false)).toBe(true);
+  });
+
+  it('builds cesarean labor button models with selected state and neutral fallback', () => {
+    const selected = buildCesareanLaborButtonModels('Con TdP');
+    expect(selected).toHaveLength(2);
+    expect(selected[0]).toMatchObject({
+      value: 'Sin TdP',
+      isSelected: false,
+    });
+    expect(selected[1]).toMatchObject({
+      value: 'Con TdP',
+      isSelected: true,
+    });
+    expect(selected[1].className).toContain('bg-violet-50');
+
+    const none = buildCesareanLaborButtonModels(undefined);
+    expect(none.every(item => item.isSelected === false)).toBe(true);
+    expect(none.every(item => item.className.includes('bg-slate-50'))).toBe(true);
   });
 });

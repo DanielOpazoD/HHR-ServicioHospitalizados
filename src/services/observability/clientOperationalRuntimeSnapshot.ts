@@ -62,6 +62,7 @@ export const buildClientOperationalRuntimeSnapshot = ({
   const degradedLocalPersistence =
     localPersistence.runtimeState !== 'ok' || sync.readState === 'unavailable';
   const issues = [
+    ...(auth.issues || []),
     ...(sync.issues || []),
     ...(sync.readState === 'unavailable'
       ? ['La cola de sincronizacion no pudo inspeccionarse desde runtime local.']

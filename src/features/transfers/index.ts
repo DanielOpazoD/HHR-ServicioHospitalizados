@@ -1,1 +1,1 @@
-export { TransferManagementView } from './components/TransferManagementView';
+export * from './public';

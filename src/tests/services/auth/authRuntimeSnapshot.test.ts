@@ -37,6 +37,9 @@ describe('authRuntimeSnapshot', () => {
     expect(snapshot.runtimeState).toBe('recoverable');
     expect(snapshot.bootstrapPending).toBe(true);
     expect(snapshot.budgetProfile).toBe('redirect_pending');
+    expect(snapshot.issues).toContain(
+      'El bootstrap de autenticacion sigue pendiente y puede requerir recuperacion.'
+    );
   });
 
   it('classifies unauthorized sessions with unauthorized runtime state', () => {
@@ -49,6 +52,9 @@ describe('authRuntimeSnapshot', () => {
 
     expect(snapshot.runtimeState).toBe('unauthorized');
     expect(snapshot.sessionStatus).toBe('unauthorized');
+    expect(snapshot.issues).toContain(
+      'La sesion actual no tiene autorizacion valida para el acceso solicitado.'
+    );
   });
 
   it('classifies retryable auth errors without collapsing them into blocked', () => {
@@ -67,5 +73,6 @@ describe('authRuntimeSnapshot', () => {
     });
 
     expect(snapshot.runtimeState).toBe('retryable');
+    expect(snapshot.issues).toContain('Temporary failure');
   });
 });

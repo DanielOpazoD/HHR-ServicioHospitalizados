@@ -1,12 +1,12 @@
 import type { Statistics } from '@/types/domain/base';
-import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
-import { isSpecialistCensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 import {
+  type CensusAccessProfile,
+  isSpecialistCensusAccessProfile,
   resolveAdmissionsCountForRecord,
   resolveMovementSummaryState,
   resolveStaffSelectorsClassName,
   resolveStaffSelectorsState,
-} from '@/features/census/controllers/censusStaffHeaderController';
+} from '@/features/census/public';
 import type { DischargeData, TransferData } from '@/types/domain/movements';
 import type { PatientData } from '@/types/domain/patient';
 

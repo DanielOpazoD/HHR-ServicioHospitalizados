@@ -145,6 +145,8 @@ Si un hospital no tiene configuración documental:
 ## Runtime boundaries
 
 - `transferService.ts` sigue siendo la fachada pública; lógica nueva entra en queries, mutations, status o subscriptions.
+- El consumo externo de UI del feature debe entrar por `src/features/transfers/public.ts` o `index.ts`;
+  evitar imports profundos a `components/`, `hooks/` o `services/` desde fuera del módulo.
 - La vista de management no debe volver a mezclar filtros de período, lifecycle y wiring de modales en un solo componente.
 - Las fallas realtime deben mapearse a error operativo estructurado + telemetría, no solo a `console.error`.
 - Los generadores DOCX y templates deben reutilizar helpers compartidos de fecha; no deben volver a

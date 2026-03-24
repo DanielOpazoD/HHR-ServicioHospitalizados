@@ -3,21 +3,14 @@
  * Main view for managing patient transfer requests
  */
 
-import React, { useMemo, useState } from 'react';
+import React from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { TransferTable } from './components/TransferTable';
 import { TransferFormModal } from './components/TransferFormModal';
 import { StatusChangeModal } from './components/StatusChangeModal';
 import { ConfirmTransferModal } from './components/ConfirmTransferModal';
 import { CancelTransferModal } from './components/CancelTransferModal';
-import { useTransferManagement } from '@/hooks/useTransferManagement';
-import { useTransferViewStates } from '@/hooks/useTransferViewStates';
-import { useDailyRecordData } from '@/context/DailyRecordContext';
-import { getHospitalConfigById } from '@/constants/hospitalConfigs';
-import {
-  buildTransferManagementPeriodModel,
-  TRANSFER_MONTH_LABELS,
-} from './controllers/transferManagementViewController';
+import { useTransferManagementViewRuntime } from '../hooks/useTransferManagementViewRuntime';
 
 const TransferQuestionnaireModal = React.lazy(() =>
   import('./components/TransferQuestionnaireModal').then(module => ({
@@ -32,58 +25,32 @@ const TransferDocumentPackageModal = React.lazy(() =>
 );
 
 export const TransferManagementView: React.FC = () => {
-  const currentDate = new Date();
-  const currentYear = currentDate.getFullYear();
-  const [selectedYear, setSelectedYear] = useState(currentYear);
-  const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
-  const [showFinalizedTransfers, setShowFinalizedTransfers] = useState(false);
-
   const {
-    transfers,
+    selectedYear,
+    setSelectedYear,
+    selectedMonth,
+    setSelectedMonth,
+    showFinalizedTransfers,
+    setShowFinalizedTransfers,
+    monthLabels,
+    transferManagement,
+    viewStates,
+    periodModel,
+    selectedHospital,
+  } = useTransferManagementViewRuntime();
+  const {
     isLoading,
     error,
-    createTransfer,
-    updateTransfer,
-    advanceStatus,
     setTransferStatus,
-    markAsTransferred,
-    cancelTransfer,
-    deleteTransfer,
     undoTransfer,
     archiveTransfer,
     deleteHistoryEntry,
+    deleteTransfer,
     getHospitalizedPatients,
-  } = useTransferManagement();
-
-  const { record } = useDailyRecordData();
-
-  const {
-    modals,
-    selectedTransfer,
-    selectedHospitalId,
-    isGenerating,
-    generatedDocs,
-    patientDataForDocs,
-    handlers,
-  } = useTransferViewStates(
-    record,
-    updateTransfer,
-    createTransfer,
-    advanceStatus,
-    markAsTransferred,
-    cancelTransfer
-  );
-
-  const { availableYears, filteredActiveCount, activeTransfers, finalizedTransfers } = useMemo(
-    () =>
-      buildTransferManagementPeriodModel({
-        transfers,
-        selectedYear,
-        selectedMonth,
-        currentYear,
-      }),
-    [currentYear, selectedMonth, selectedYear, transfers]
-  );
+  } = transferManagement;
+  const { modals, selectedTransfer, isGenerating, generatedDocs, patientDataForDocs, handlers } =
+    viewStates;
+  const { availableYears, filteredActiveCount, activeTransfers, finalizedTransfers } = periodModel;
 
   return (
     <div className="p-4 max-w-7xl mx-auto animate-in fade-in duration-500">
@@ -128,7 +95,7 @@ export const TransferManagementView: React.FC = () => {
           ))}
         </div>
         <div className="grid grid-cols-6 gap-1.5 md:grid-cols-12">
-          {TRANSFER_MONTH_LABELS.map((label, index) => {
+          {monthLabels.map((label, index) => {
             const monthValue = index + 1;
             return (
               <button
@@ -263,7 +230,7 @@ export const TransferManagementView: React.FC = () => {
         <React.Suspense fallback={null}>
           <TransferQuestionnaireModal
             isOpen={modals.questionnaire}
-            hospital={getHospitalConfigById(selectedHospitalId)!}
+            hospital={selectedHospital!}
             patientData={{
               patientName: selectedTransfer.patientSnapshot.name,
               rut: selectedTransfer.patientSnapshot.rut,
@@ -285,7 +252,7 @@ export const TransferManagementView: React.FC = () => {
         <React.Suspense fallback={null}>
           <TransferDocumentPackageModal
             isOpen={modals.package}
-            hospital={getHospitalConfigById(selectedHospitalId)!}
+            hospital={selectedHospital!}
             patientData={patientDataForDocs}
             documents={generatedDocs}
             onClose={handlers.handleClosePackageModal}

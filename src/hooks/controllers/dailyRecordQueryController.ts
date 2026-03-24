@@ -3,23 +3,103 @@ import { queryKeys } from '@/config/queryClient';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { DailyRecordPatch } from '@/hooks/useDailyRecordTypes';
 import { applyPatches } from '@/utils/patchUtils';
-import { createGetDailyRecordQuery } from '@/services/repositories/contracts/dailyRecordQueries';
+import {
+  createDailyRecordQueryResult,
+  createGetDailyRecordQuery,
+  type DailyRecordQueryResult,
+  type DailyRecordQueryRuntime,
+  type DailyRecordReadResult,
+} from '@/services/repositories/contracts/dailyRecordQueries';
 import { dailyRecordObservability } from '@/services/repositories/dailyRecordOperationalTelemetry';
+import type { SyncDailyRecordResult } from '@/services/repositories/contracts/dailyRecordResults';
 
 interface DailyRecordReader {
   getForDate: (date: string) => Promise<DailyRecord | null>;
+  getForDateWithMeta?: (date: string, syncFromRemote?: boolean) => Promise<DailyRecordReadResult>;
   subscribe?: (
     date: string,
     callback: (record: DailyRecord | null, hasPendingWrites: boolean) => void
+  ) => () => void;
+  subscribeDetailed?: (
+    date: string,
+    callback: (result: SyncDailyRecordResult, hasPendingWrites: boolean) => void
   ) => () => void;
 }
 
 export const getDailyRecordQueryKey = (date: string) => queryKeys.dailyRecord.byDate(date);
 
+const createDefaultRuntime = (
+  date: string,
+  record: DailyRecord | null
+): DailyRecordQueryRuntime => ({
+  date,
+  availabilityState: record ? 'resolved' : 'confirmed_missing',
+  consistencyState: record ? 'local_only' : 'missing',
+  sourceOfTruth: record ? 'local' : 'none',
+  retryability: 'not_applicable',
+  recoveryAction: 'none',
+  conflictSummary: null,
+  observabilityTags: ['daily_record', 'read'],
+  repairApplied: false,
+});
+
+const createQueryResultFromRecord = (
+  date: string,
+  record: DailyRecord | null,
+  runtime: DailyRecordQueryRuntime = createDefaultRuntime(date, record)
+): DailyRecordQueryResult => createDailyRecordQueryResult(record, runtime);
+
+const createRuntimeFromReadResult = (result: DailyRecordReadResult): DailyRecordQueryRuntime => ({
+  date: result.date,
+  availabilityState: result.record
+    ? result.retryability !== 'not_applicable' || result.sourceOfTruth === 'local'
+      ? 'recoverable_local'
+      : 'resolved'
+    : result.consistencyState === 'unavailable'
+      ? 'temporarily_unavailable'
+      : 'confirmed_missing',
+  consistencyState: result.consistencyState,
+  sourceOfTruth: result.sourceOfTruth,
+  retryability: result.retryability,
+  recoveryAction: result.recoveryAction,
+  conflictSummary: result.conflictSummary,
+  observabilityTags: result.observabilityTags,
+  userSafeMessage: result.userSafeMessage,
+  repairApplied: result.repairApplied,
+});
+
+const createRuntimeFromSyncResult = (
+  date: string,
+  result: SyncDailyRecordResult
+): DailyRecordQueryRuntime => ({
+  date,
+  availabilityState: result.record
+    ? result.consistencyState === 'local_kept' || result.consistencyState === 'blocked'
+      ? 'recoverable_local'
+      : 'resolved'
+    : result.consistencyState === 'blocked'
+      ? 'temporarily_unavailable'
+      : 'confirmed_missing',
+  consistencyState: result.consistencyState,
+  sourceOfTruth: result.sourceOfTruth,
+  retryability: result.retryability,
+  recoveryAction: result.recoveryAction,
+  conflictSummary: result.conflictSummary,
+  observabilityTags: result.observabilityTags,
+  userSafeMessage: result.userSafeMessage,
+  repairApplied: result.repairApplied,
+});
+
 export const createDailyRecordQueryFn =
-  (dailyRecord: DailyRecordReader, date: string) => async (): Promise<DailyRecord | null> => {
+  (dailyRecord: DailyRecordReader, date: string) => async (): Promise<DailyRecordQueryResult> => {
     const query = createGetDailyRecordQuery(date);
-    return dailyRecord.getForDate(query.date);
+    if (typeof dailyRecord.getForDateWithMeta === 'function') {
+      const result = await dailyRecord.getForDateWithMeta(query.date, query.syncFromRemote);
+      return createDailyRecordQueryResult(result.record, createRuntimeFromReadResult(result));
+    }
+
+    const record = await dailyRecord.getForDate(query.date);
+    return createQueryResultFromRecord(query.date, record);
   };
 
 export const shouldUseDailyRecordRealtimeSync = (
@@ -34,35 +114,42 @@ export const createDailyRecordSubscription = (
   queryClient: QueryClient
 ) => {
   if (!dailyRecord.subscribe) {
-    return null;
+    if (!dailyRecord.subscribeDetailed) {
+      return null;
+    }
   }
 
-  return dailyRecord.subscribe(date, (record, hasPendingWrites) => {
-    if (hasPendingWrites) {
-      return;
-    }
+  const applyResolvedQueryResult = (result: DailyRecordQueryResult) => {
+    queryClient.setQueryData(getDailyRecordQueryKey(date), result);
+  };
 
-    const applyResolvedRecord = (resolvedRecord: DailyRecord | null) => {
-      queryClient.setQueryData(getDailyRecordQueryKey(date), resolvedRecord);
-    };
+  const reconcileNullRealtimeRecord = (previousResult: DailyRecordQueryResult) => {
+    const read =
+      typeof dailyRecord.getForDateWithMeta === 'function'
+        ? dailyRecord.getForDateWithMeta(date)
+        : dailyRecord.getForDate(date).then<DailyRecordReadResult>(record => ({
+            date,
+            record,
+            consistencyState: record ? 'local_only' : 'missing',
+            sourceOfTruth: record ? 'local' : 'none',
+            retryability: 'not_applicable',
+            recoveryAction: 'none',
+            conflictSummary: null,
+            observabilityTags: ['daily_record', 'read'],
+            repairApplied: false,
+            compatibilityTier: 'none',
+            compatibilityIntensity: 'none',
+            migrationRulesApplied: [],
+            source: record ? 'indexeddb' : 'not_found',
+          }));
 
-    if (record) {
-      applyResolvedRecord(record);
-      return;
-    }
-
-    const previousRecord = queryClient.getQueryData<DailyRecord | null>(
-      getDailyRecordQueryKey(date)
-    );
-    if (!previousRecord) {
-      applyResolvedRecord(null);
-      return;
-    }
-
-    void dailyRecord
-      .getForDate(date)
-      .then(reconciledRecord => {
-        if (reconciledRecord) {
+    void read
+      .then(reconciledResult => {
+        const recovered = createDailyRecordQueryResult(
+          reconciledResult.record,
+          createRuntimeFromReadResult(reconciledResult)
+        );
+        if (recovered.record) {
           dailyRecordObservability.recordEvent('recovered_null_realtime_record', 'degraded', {
             date,
             runtimeState: 'recoverable',
@@ -70,25 +157,32 @@ export const createDailyRecordSubscription = (
               'Se evitó un vaciado transitorio del registro después de una suscripción realtime nula.',
             ],
             context: {
-              previousLastUpdated: previousRecord.lastUpdated,
-              recoveredLastUpdated: reconciledRecord.lastUpdated,
+              previousLastUpdated: previousResult.record?.lastUpdated,
+              recoveredLastUpdated: recovered.record.lastUpdated,
+              consistencyState: recovered.runtime.consistencyState,
+              availabilityState: recovered.runtime.availabilityState,
             },
           });
-          applyResolvedRecord(reconciledRecord);
+          applyResolvedQueryResult(recovered);
           return;
         }
 
         dailyRecordObservability.recordEvent('confirmed_null_realtime_record', 'degraded', {
           date,
-          runtimeState: 'retryable',
+          runtimeState:
+            recovered.runtime.availabilityState === 'temporarily_unavailable'
+              ? 'blocked'
+              : 'retryable',
           issues: [
-            'La suscripción realtime emitió null y el repositorio confirmó ausencia del registro.',
+            'La suscripción realtime emitió null y el repositorio confirmó ausencia o indisponibilidad del registro.',
           ],
           context: {
-            previousLastUpdated: previousRecord.lastUpdated,
+            previousLastUpdated: previousResult.record?.lastUpdated,
+            consistencyState: recovered.runtime.consistencyState,
+            availabilityState: recovered.runtime.availabilityState,
           },
         });
-        applyResolvedRecord(null);
+        applyResolvedQueryResult(recovered);
       })
       .catch(error => {
         dailyRecordObservability.recordError(
@@ -103,12 +197,61 @@ export const createDailyRecordSubscription = (
           {
             date,
             context: {
-              previousLastUpdated: previousRecord.lastUpdated,
+              previousLastUpdated: previousResult.record?.lastUpdated,
             },
           }
         );
-        applyResolvedRecord(previousRecord);
+        applyResolvedQueryResult(previousResult);
       });
+  };
+
+  const handleResolvedRealtimeResult = (
+    result: DailyRecordQueryResult,
+    hasPendingWrites: boolean
+  ) => {
+    if (hasPendingWrites) {
+      return;
+    }
+
+    if (result.record) {
+      applyResolvedQueryResult(result);
+      return;
+    }
+
+    const previousResult =
+      queryClient.getQueryData<DailyRecordQueryResult>(getDailyRecordQueryKey(date)) ||
+      createQueryResultFromRecord(date, null, result.runtime);
+    if (!previousResult.record) {
+      applyResolvedQueryResult(result);
+      return;
+    }
+
+    reconcileNullRealtimeRecord(previousResult);
+  };
+
+  if (typeof dailyRecord.subscribeDetailed === 'function') {
+    return dailyRecord.subscribeDetailed(date, (result, hasPendingWrites) => {
+      handleResolvedRealtimeResult(
+        createDailyRecordQueryResult(result.record, createRuntimeFromSyncResult(date, result)),
+        hasPendingWrites
+      );
+    });
+  }
+
+  return dailyRecord.subscribe!(date, (record, hasPendingWrites) => {
+    if (hasPendingWrites) {
+      return;
+    }
+    const result = createQueryResultFromRecord(date, record);
+    const previousResult =
+      queryClient.getQueryData<DailyRecordQueryResult>(getDailyRecordQueryKey(date)) ||
+      createQueryResultFromRecord(date, null);
+    if (record || !previousResult.record) {
+      applyResolvedQueryResult(result);
+      return;
+    }
+
+    reconcileNullRealtimeRecord(previousResult);
   });
 };
 
@@ -134,7 +277,19 @@ export const setDailyRecordQueryData = (
   date: string,
   updater: DailyRecord | null | ((previous: DailyRecord | null) => DailyRecord | null)
 ) => {
-  queryClient.setQueryData(getDailyRecordQueryKey(date), updater);
+  queryClient.setQueryData<DailyRecordQueryResult>(getDailyRecordQueryKey(date), previous => {
+    const previousResult = previous || createQueryResultFromRecord(date, null);
+    const nextRecord = typeof updater === 'function' ? updater(previousResult.record) : updater;
+    return createQueryResultFromRecord(
+      date,
+      nextRecord,
+      nextRecord
+        ? createDefaultRuntime(date, nextRecord)
+        : previousResult.runtime.availabilityState === 'temporarily_unavailable'
+          ? previousResult.runtime
+          : createDefaultRuntime(date, null)
+    );
+  });
 };
 
 export const invalidateDailyRecordQuery = (queryClient: QueryClient, date?: string) => {

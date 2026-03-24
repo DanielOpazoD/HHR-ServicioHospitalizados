@@ -12,49 +12,83 @@ import { createSyncDailyRecordResult } from '@/services/repositories/contracts/d
 import { logger } from '@/services/utils/loggerService';
 import { resolveDailyRecordSyncConsistency } from '@/services/repositories/dailyRecordConsistencyPolicy';
 import { resolveDailyRecordPersistenceGoldenPath } from '@/services/repositories/dailyRecordPersistenceGoldenPath';
+import type { SyncDailyRecordResult } from '@/services/repositories/contracts/dailyRecordResults';
 
 const dailyRecordSyncLogger = logger.child('DailyRecordRepositorySyncService');
 
-const resolveIncomingSubscriptionRecord = async (
+const resolveSubscriptionResult = async (
   date: string,
   remoteRecord: DailyRecord | null,
   remoteAvailability: 'resolved' | 'missing'
-): Promise<DailyRecord | null> => {
+): Promise<SyncDailyRecordResult> => {
   const localRecord = await getRecordFromIndexedDB(date);
   const goldenPath = resolveDailyRecordPersistenceGoldenPath({
     localRecord,
     remoteRecord,
     remoteAvailability,
   });
-  if (!goldenPath.selectedRecord) {
-    return null;
-  }
-
   if (goldenPath.shouldHydrateLocal && remoteRecord) {
     await saveToIndexedDB(remoteRecord);
   }
+  const record = goldenPath.selectedRecord;
+  const consistency = resolveDailyRecordSyncConsistency({
+    localRecord,
+    remoteRecord,
+    selectedRecord: record,
+    remoteAvailability,
+  });
 
-  return goldenPath.selectedRecord;
+  return createSyncDailyRecordResult({
+    date,
+    outcome:
+      consistency.consistencyState === 'blocked'
+        ? 'blocked'
+        : consistency.consistencyState === 'missing_remote'
+          ? 'missing'
+          : 'clean',
+    record,
+    consistencyState: consistency.consistencyState,
+    sourceOfTruth: consistency.sourceOfTruth,
+    retryability: consistency.retryability,
+    recoveryAction: consistency.recoveryAction,
+    conflictSummary: consistency.conflictSummary,
+    observabilityTags: consistency.observabilityTags,
+    userSafeMessage: consistency.userSafeMessage,
+    repairApplied: consistency.repairApplied,
+  });
+};
+
+export const subscribeDetailed = (
+  date: string,
+  callback: (result: SyncDailyRecordResult, hasPendingWrites: boolean) => void
+): (() => void) => {
+  return subscribeToRecord(date, async (record, hasPendingWrites) => {
+    const migrated = record ? migrateLegacyData(record, date) : null;
+    const result = hasPendingWrites
+      ? createSyncDailyRecordResult({
+          date,
+          outcome: migrated ? 'clean' : 'missing',
+          record: migrated,
+          consistencyState: migrated ? 'up_to_date' : 'missing_remote',
+          sourceOfTruth: migrated ? 'local' : 'none',
+          retryability: 'not_applicable',
+          recoveryAction: 'none',
+          conflictSummary: null,
+          observabilityTags: ['daily_record', 'sync', 'subscription_pending_write'],
+          repairApplied: false,
+        })
+      : await resolveSubscriptionResult(date, migrated, migrated ? 'resolved' : 'missing');
+    callback(result, hasPendingWrites);
+  });
 };
 
 export const subscribe = (
   date: string,
   callback: (r: DailyRecord | null, hasPendingWrites: boolean) => void
-): (() => void) => {
-  return subscribeToRecord(date, async (record, hasPendingWrites) => {
-    const migrated = record ? migrateLegacyData(record, date) : null;
-    if (!hasPendingWrites) {
-      const resolvedRecord = await resolveIncomingSubscriptionRecord(
-        date,
-        migrated,
-        migrated ? 'resolved' : 'missing'
-      );
-      callback(resolvedRecord, hasPendingWrites);
-      return;
-    }
-    callback(migrated, hasPendingWrites);
+): (() => void) =>
+  subscribeDetailed(date, (result, hasPendingWrites) => {
+    callback(result.record, hasPendingWrites);
   });
-};
 
 export const syncWithFirestoreDetailed = async (date: string) => {
   if (!isFirestoreEnabled()) return null;

@@ -14,6 +14,7 @@ describe('clientOperationalRuntimeSnapshot', () => {
         budgetProfile: 'default',
         timeoutMs: 15000,
         runtimeState: 'ok',
+        issues: [],
       },
       localPersistence: {
         indexedDbAvailable: true,
@@ -54,6 +55,7 @@ describe('clientOperationalRuntimeSnapshot', () => {
         budgetProfile: 'default',
         timeoutMs: 15000,
         runtimeState: 'unauthorized',
+        issues: ['Rol no autorizado'],
       },
       localPersistence: {
         indexedDbAvailable: true,
@@ -76,5 +78,6 @@ describe('clientOperationalRuntimeSnapshot', () => {
     });
 
     expect(snapshot.runtimeState).toBe('unauthorized');
+    expect(snapshot.issues).toContain('Rol no autorizado');
   });
 });

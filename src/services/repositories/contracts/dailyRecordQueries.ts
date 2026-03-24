@@ -9,6 +9,7 @@ import type {
   DailyRecordRecoveryAction,
   DailyRecordRetryability,
   DailyRecordSourceOfTruth,
+  DailyRecordSyncConsistencyState,
 } from '@/services/repositories/contracts/dailyRecordConsistency';
 
 const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
@@ -45,6 +46,30 @@ export interface DailyRecordReadResult {
   observabilityTags: string[];
   userSafeMessage?: string;
   repairApplied: boolean;
+}
+
+export type DailyRecordQueryAvailabilityState =
+  | 'resolved'
+  | 'recoverable_local'
+  | 'confirmed_missing'
+  | 'temporarily_unavailable';
+
+export interface DailyRecordQueryRuntime {
+  date: string;
+  availabilityState: DailyRecordQueryAvailabilityState;
+  consistencyState: DailyRecordReadConsistencyState | DailyRecordSyncConsistencyState;
+  sourceOfTruth: DailyRecordSourceOfTruth;
+  retryability: DailyRecordRetryability;
+  recoveryAction: DailyRecordRecoveryAction;
+  conflictSummary: DailyRecordConflictSummary | null;
+  observabilityTags: string[];
+  userSafeMessage?: string;
+  repairApplied: boolean;
+}
+
+export interface DailyRecordQueryResult {
+  record: DailyRecord | null;
+  runtime: DailyRecordQueryRuntime;
 }
 
 const assertDate = (date: string, operation: string): void => {
@@ -132,3 +157,16 @@ export const createDailyRecordReadResult = (
     repairApplied: options.repairApplied || false,
   };
 };
+
+export const createDailyRecordQueryResult = (
+  record: DailyRecord | null,
+  runtime: DailyRecordQueryRuntime
+): DailyRecordQueryResult => ({
+  record,
+  runtime: {
+    ...runtime,
+    conflictSummary: runtime.conflictSummary || null,
+    observabilityTags: Array.from(new Set(runtime.observabilityTags)),
+    repairApplied: runtime.repairApplied || false,
+  },
+});
