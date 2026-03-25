@@ -71,6 +71,9 @@ La política formal de upgrades, excepciones y tipos de cambio vive en `scripts/
 La clasificación compacta de guardrails blocking vs report-only vive en `scripts/config/guardrail-governance.json` y se valida con `npm run check:guardrail-governance`.
 El reporte de release readiness ya regenera también `guardrail-governance`; no debe depender de un artefacto previo manual.
 `release-readiness-scorecard` sigue siendo ejecutivo y obligatorio para release, pero ya no duplica bloqueo dentro de `check:quality` si las fuentes primarias siguen verdes.
+`release-confidence-matrix` también pasa a report-only dentro del aggregate: sigue exigiéndose para trazabilidad y revisión técnica, pero no como bloqueo duplicado si el release pack y la cobertura primaria siguen verdes.
+`technical-ownership-map` también pasa a report-only dentro del aggregate: sigue siendo obligatorio para ownership y trazabilidad operativa, pero no bloquea `check:quality` porque no cubre un riesgo primario distinto de los gates y runbooks ya activos.
+`sustainable-change-policy` también pasa a report-only dentro del aggregate: sigue siendo obligatoria para upgrades, excepciones y definición de cambio seguro, pero no bloquea `check:quality` cuando los gates técnicos primarios ya cubren el riesgo efectivo.
 
 Salida esperada:
 

@@ -69,6 +69,11 @@
       "artifact": "reports/release-readiness-scorecard.md"
     },
     {
+      "id": "release_confidence_matrix",
+      "script": "report:release-confidence-matrix",
+      "artifact": "reports/release-confidence-matrix.md"
+    },
+    {
       "id": "runtime_contracts",
       "script": "report:runtime-contracts",
       "artifact": "reports/runtime-contracts.md"
@@ -77,6 +82,16 @@
       "id": "guardrail_governance",
       "script": "report:guardrail-governance",
       "artifact": "reports/guardrail-governance.md"
+    },
+    {
+      "id": "technical_ownership",
+      "script": "report:technical-ownership-map",
+      "artifact": "reports/technical-ownership-map.md"
+    },
+    {
+      "id": "sustainable_change_policy",
+      "script": "report:sustainable-change-policy",
+      "artifact": "reports/sustainable-change-policy.md"
     }
   ],
   "qualityAggregate": {
@@ -122,10 +137,7 @@
       { "id": "check:test-governance", "group": "tests" },
       { "id": "check:test-failure-catalog", "group": "tests" },
       { "id": "check:flaky-quarantine", "group": "tests" },
-      { "id": "check:release-confidence-matrix", "group": "governance" },
       { "id": "check:guardrail-governance", "group": "governance" },
-      { "id": "check:sustainable-change-policy", "group": "governance" },
-      { "id": "check:technical-ownership-map", "group": "governance" },
       { "id": "check:critical-any", "group": "type-safety" },
       { "id": "check:source-any", "group": "type-safety" },
       { "id": "check:repo-hygiene", "group": "hygiene" },

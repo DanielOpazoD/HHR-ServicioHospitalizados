@@ -39,6 +39,7 @@ Evitar que la deuda estructural vuelva a crecer después de las fases de estabil
 - Se valida con `npm run check:guardrail-governance` y se reporta con `npm run report:guardrail-governance`.
 - La composición exacta de `check:quality` también sale de ese mismo archivo; `check-quality-aggregate.mjs` ya no mantiene una lista paralela.
 - `check:quality` no debe bloquear por scorecards ejecutivos derivados si las fuentes primarias del riesgo ya están protegidas; `release-readiness-scorecard` queda como artefacto report-only.
+- `release-confidence-matrix` también queda como guardrail report-only: sigue siendo obligatorio para trazabilidad, pero no duplica bloqueo si el pack de release, la cobertura crítica y los budgets ya siguen verdes.
 - `npm run ci:inner-loop`
 - `npm run ci:merge-gate`
 - `npm run ci:release-gate`
@@ -66,7 +67,9 @@ Evitar que la deuda estructural vuelva a crecer después de las fases de estabil
 - Los budgets por flujo se leen desde `reports/e2e/flow-performance-budget.json` y su resumen en `reports/e2e/flow-performance-budget-summary.json` / `.md`.
 - El estado operativo por flujo distingue `ok`, `near-limit`, `target-miss` y `blocking`.
 - El ownership técnico crítico vive en `scripts/config/technical-ownership-map.json` y se valida con `npm run check:technical-ownership-map`.
+- `technical-ownership-map` se mantiene como gobernanza report-only dentro del aggregate: sigue siendo obligatorio para trazabilidad y release readiness, pero ya no bloquea `check:quality` porque los riesgos primarios ya quedan cubiertos por gates, runbooks y release confidence.
 - La política de cambio sostenible vive en `scripts/config/sustainable-change-policy.json` y se valida con `npm run check:sustainable-change-policy`.
+- `sustainable-change-policy` también queda como gobernanza report-only dentro del aggregate: sigue siendo obligatoria para upgrades, excepciones y DoD, pero no bloquea `check:quality` si los gates primarios y las fuentes técnicas siguen verdes.
 - La definición de terminado vive en [docs/ENGINEERING_DEFINITION_OF_DONE.md](./ENGINEERING_DEFINITION_OF_DONE.md).
 - La deuda priorizada vive en [docs/TECHNICAL_DEBT_REGISTER.md](./TECHNICAL_DEBT_REGISTER.md).
 - Los fallos conocidos no resueltos deben vivir en `scripts/config/test-failure-catalog.json` con owner, clasificación y SLA.
