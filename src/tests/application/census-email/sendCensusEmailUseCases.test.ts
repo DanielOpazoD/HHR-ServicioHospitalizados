@@ -5,12 +5,10 @@ import {
 } from '@/application/census-email/sendCensusEmailUseCases';
 import type { DailyRecord } from '@/types';
 
-const buildCensusMasterWorkbookMock = vi.fn().mockResolvedValue({
-  xlsx: { writeBuffer: vi.fn().mockResolvedValue(Buffer.from([])) },
-});
+const buildCensusMasterBinaryMock = vi.fn().mockResolvedValue(new Uint8Array());
 
 vi.mock('@/services/exporters/censusMasterWorkbook', () => ({
-  buildCensusMasterWorkbook: (...args: unknown[]) => buildCensusMasterWorkbookMock(...args),
+  buildCensusMasterBinary: (...args: unknown[]) => buildCensusMasterBinaryMock(...args),
 }));
 
 describe('sendCensusEmailUseCases', () => {

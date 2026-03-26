@@ -52,10 +52,9 @@ export const executeBackupCensusExcel = async (
       ]);
     }
 
-    const { buildCensusMasterWorkbook } = await import('@/services/exporters/censusMasterWorkbook');
-    const workbook = await buildCensusMasterWorkbook(filteredRecords);
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], {
+    const { buildCensusMasterBinary } = await import('@/services/exporters/censusMasterWorkbook');
+    const binary = await buildCensusMasterBinary(filteredRecords);
+    const blob = new Blob([binary], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     });
 

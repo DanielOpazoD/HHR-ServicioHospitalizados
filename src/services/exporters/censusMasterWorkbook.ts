@@ -5,6 +5,7 @@
 import { DailyRecord } from '@/types/domain/dailyRecord';
 import type { Workbook } from 'exceljs';
 import { buildCensusMasterWorkbook as buildWorkbook } from './excel/builder';
+import { serializeProtectedCensusWorkbook } from './excel/censusWorkbookSerializer';
 import type {
   CensusMasterWorkbookOptions,
   CensusWorkbookSheetDescriptor,
@@ -22,6 +23,14 @@ export const buildCensusMasterWorkbook = async (
   return buildWorkbook(records, options);
 };
 
+export const buildCensusMasterBinary = async (
+  records: DailyRecord[],
+  options?: CensusMasterWorkbookOptions
+): Promise<Uint8Array> => {
+  const workbook = await buildCensusMasterWorkbook(records, options);
+  return serializeProtectedCensusWorkbook(workbook);
+};
+
 /**
  * Return a Node-friendly buffer for the workbook.
  */
@@ -29,9 +38,8 @@ export const buildCensusMasterBuffer = async (
   records: DailyRecord[],
   options?: CensusMasterWorkbookOptions
 ): Promise<Buffer> => {
-  const workbook = await buildCensusMasterWorkbook(records, options);
-  const arrayBuffer = await workbook.xlsx.writeBuffer();
-  return Buffer.from(arrayBuffer);
+  const binary = await buildCensusMasterBinary(records, options);
+  return Buffer.from(binary);
 };
 
 /**

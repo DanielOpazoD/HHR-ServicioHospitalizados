@@ -1,12 +1,17 @@
 import ExcelJS from 'exceljs';
 import { describe, expect, it } from 'vitest';
+import PizZip from 'pizzip';
 
 import { BEDS } from '@/constants';
 import {
+  buildCensusMasterBinary,
   buildCensusMasterBuffer,
   buildCensusMasterWorkbook,
 } from '@/services/exporters/censusMasterWorkbook';
 import { PatientStatus, Specialty, type DailyRecord, type PatientData } from '@/types';
+
+const getVisibleSheets = (workbook: ExcelJS.Workbook) =>
+  workbook.worksheets.filter(sheet => sheet.state !== 'hidden');
 
 const buildPatient = (bedId: string, patientName: string): PatientData => ({
   bedId,
@@ -46,16 +51,36 @@ const buildRecord = (date: string, patientName: string): DailyRecord => ({
 });
 
 describe('census master workbook builder', () => {
-  it('creates one sheet per day sorted by date with header content intact', async () => {
+  it('creates hidden census summary sheets first and keeps visible day sheets sorted', async () => {
     const records = [
       buildRecord('2024-05-02', 'Paciente Dos'),
       buildRecord('2024-05-01', 'Paciente Uno'),
     ];
 
     const workbook = await buildCensusMasterWorkbook(records);
+    const visibleSheets = getVisibleSheets(workbook);
 
-    expect(workbook.worksheets.map(sheet => sheet.name)).toEqual(['01-05-2024', '02-05-2024']);
-    const firstSheet = workbook.worksheets[0];
+    expect(workbook.worksheets.map(sheet => sheet.name)).toEqual([
+      'RESUMEN MAYO 2024',
+      'PACIENTES UPC MAYO 2024',
+      'DETALLE DIARIO UPC',
+      '01-05-2024',
+      '02-05-2024',
+    ]);
+    expect(workbook.worksheets.slice(0, 3).map(sheet => sheet.state)).toEqual([
+      'hidden',
+      'hidden',
+      'hidden',
+    ]);
+    expect(workbook.views[0]).toEqual(
+      expect.objectContaining({
+        firstSheet: 3,
+        activeTab: 3,
+        visibility: 'visible',
+      })
+    );
+
+    const firstSheet = visibleSheets[0];
 
     // Header Section
     expect(firstSheet.getCell('A1').value).toBe('CENSO CAMAS DIARIO - HOSPITAL HANGA ROA');
@@ -106,7 +131,12 @@ describe('census master workbook builder', () => {
     const loadInput = buffer as unknown as Parameters<typeof workbook.xlsx.load>[0];
     await workbook.xlsx.load(loadInput);
 
-    expect(workbook.worksheets[0]?.name).toBe('03-05-2024');
+    expect(getVisibleSheets(workbook)[0]?.name).toBe('03-05-2024');
+    expect(workbook.worksheets.slice(0, 3).map(sheet => sheet.state)).toEqual([
+      'hidden',
+      'hidden',
+      'hidden',
+    ]);
   });
 
   it('supports duplicated day sheets via recordLookupIndex descriptors', async () => {
@@ -133,8 +163,24 @@ describe('census master workbook builder', () => {
     });
 
     expect(workbook.worksheets.map(sheet => sheet.name)).toEqual([
+      'RESUMEN MAYO 2024',
+      'PACIENTES UPC MAYO 2024',
+      'DETALLE DIARIO UPC',
       '03-05-2024 23-59',
       '03-05-2024 01-10',
     ]);
+  });
+
+  it('serializes workbook structure protection into workbook.xml', async () => {
+    const records = [buildRecord('2024-05-03', 'Paciente Tres')];
+    const binary = await buildCensusMasterBinary(records);
+    const zip = new PizZip(binary);
+    const workbookXml = zip.file('xl/workbook.xml')?.asText();
+
+    expect(workbookXml).toContain('<workbookProtection');
+    expect(workbookXml).toContain('lockStructure="1"');
+    expect(workbookXml).toMatch(/workbookPassword="[0-9A-F]{4}"/);
+    expect(workbookXml).toContain('activeTab="3"');
+    expect(workbookXml).toContain('firstSheet="3"');
   });
 });

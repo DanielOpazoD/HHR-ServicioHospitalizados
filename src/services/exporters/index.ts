@@ -10,6 +10,7 @@ export {
 } from './reportService';
 export { generateCensusMasterExcel } from './censusMasterExport';
 export {
+  buildCensusMasterBinary,
   buildCensusMasterBuffer,
   buildCensusMasterWorkbook,
   getCensusMasterFilename,

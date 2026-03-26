@@ -159,13 +159,11 @@ export const executeSendCensusEmail = async (
 
     let backupUploaded = true;
     try {
-      const { buildCensusMasterWorkbook } =
-        await import('@/services/exporters/censusMasterWorkbook');
-      const workbook = await buildCensusMasterWorkbook(workbookPlan.records, {
+      const { buildCensusMasterBinary } = await import('@/services/exporters/censusMasterWorkbook');
+      const binary = await buildCensusMasterBinary(workbookPlan.records, {
         sheetDescriptors: workbookPlan.sheetDescriptors,
       });
-      const buffer = await workbook.xlsx.writeBuffer();
-      const excelBlob = new Blob([buffer], {
+      const excelBlob = new Blob([binary], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
 

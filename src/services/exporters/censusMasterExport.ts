@@ -12,8 +12,8 @@ import { MONTH_NAMES } from '@/constants/export';
 import { getRecordsForMonth } from '@/services/storage/records';
 import { getMonthRecordsFromFirestore } from '../storage/firestore';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
-import { buildCensusMasterWorkbook, getCensusMasterFilename } from './censusMasterWorkbook';
-import { downloadWorkbookFile } from './excelFileDownload';
+import { buildCensusMasterBinary, getCensusMasterFilename } from './censusMasterWorkbook';
+import { validateExcelExport, XLSX_MIME_TYPE } from './excelValidation';
 import { logger } from '@/services/utils/loggerService';
 
 const censusMasterExportLogger = logger.child('CensusMasterExport');
@@ -74,15 +74,24 @@ export const generateCensusMasterExcel = async (
 
     censusMasterExportLogger.info(`Found ${monthRecords.length} census days to export`);
 
-    // Generate the workbook (without encryption - xlsx-populate doesn't work in browsers)
-    const workbook = await buildCensusMasterWorkbook(monthRecords);
+    const binary = await buildCensusMasterBinary(monthRecords);
     const filename = getCensusMasterFilename(limitDateStr);
-    await downloadWorkbookFile({
-      workbook,
-      filename,
-      invalidAlertMessage: 'Error al generar el archivo Excel:',
-      successLogMessage: byteLength => `📥 Archivo descargado: ${filename} (${byteLength} bytes)`,
-    });
+    const validation = validateExcelExport(binary, filename);
+
+    if (!validation.valid) {
+      censusMasterExportLogger.error(`Excel validation failed for ${filename}`, validation.error);
+      alert(
+        `Error al generar el archivo Excel:\n${validation.error}\n\nPor favor, recarga la página e intenta de nuevo.`
+      );
+      return;
+    }
+
+    const blob = new Blob([binary], { type: XLSX_MIME_TYPE });
+    const { saveAs } = await import('file-saver');
+    saveAs(blob, filename);
+    censusMasterExportLogger.info(
+      `📥 Archivo descargado: ${filename} (${binary.byteLength} bytes)`
+    );
   } catch (error) {
     censusMasterExportLogger.error('Failed to generate census master Excel', error);
     const message = error instanceof Error ? error.message : 'Error desconocido';

@@ -147,7 +147,7 @@ const createTaskProcessor = async (
   }
 
   if (backupType === 'census') {
-    const [{ buildCensusMasterWorkbook }, { uploadCensus }] = await Promise.all([
+    const [{ buildCensusMasterBinary }, { uploadCensus }] = await Promise.all([
       import('@/services/exporters/censusMasterWorkbook'),
       import('@/services/backup/censusStorageService'),
     ]);
@@ -159,9 +159,8 @@ const createTaskProcessor = async (
       if (recordIndex === undefined) return;
 
       const recordsUntilDate = sortedRecords.slice(0, recordIndex + 1);
-      const workbook = await buildCensusMasterWorkbook(recordsUntilDate);
-      const buffer = await workbook.xlsx.writeBuffer();
-      const blob = new Blob([buffer], {
+      const binary = await buildCensusMasterBinary(recordsUntilDate);
+      const blob = new Blob([binary], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
 
