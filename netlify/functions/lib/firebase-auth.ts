@@ -1,5 +1,5 @@
 import { createVerify } from 'node:crypto';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import type { Firestore } from 'firebase/firestore';
 
 import authConfigModule from '../../../functions/lib/auth/authConfig.js';
@@ -55,9 +55,6 @@ const normalizeEmail = (value: string): string => {
     .trim()
     .toLowerCase();
 };
-
-const normalizeResolvedRole = (role: string): string =>
-  role === 'viewer_census' ? 'viewer' : role;
 
 const decodeBase64Url = (value: string): Buffer => {
   const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
@@ -225,8 +222,14 @@ export const resolveRoleForEmail = async (
     if (roleDoc.exists()) {
       const rolesMap = (roleDoc.data() || {}) as Record<string, unknown>;
       const resolvedRole = rolesMap[cleanEmail];
+      if (resolvedRole === 'viewer_census') {
+        const nextRolesMap = { ...rolesMap, [cleanEmail]: 'viewer' };
+        await setDoc(doc(db, 'config', 'roles'), nextRolesMap);
+        return 'viewer';
+      }
+
       if (typeof resolvedRole === 'string' && resolvedRole.trim()) {
-        return normalizeResolvedRole(resolvedRole);
+        return resolvedRole;
       }
     }
   } catch (error) {

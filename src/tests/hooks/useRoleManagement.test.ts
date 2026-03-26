@@ -8,6 +8,7 @@ import { restoreConsole, suppressConsole } from '@/tests/utils/consoleTestUtils'
 vi.mock('@/services/admin/roleService', () => ({
   roleService: {
     getRoles: vi.fn(),
+    getRolesSnapshot: vi.fn(),
     setRole: vi.fn(),
     removeRole: vi.fn(),
     forceSyncUser: vi.fn(),
@@ -22,7 +23,10 @@ describe('useRoleManagement', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(roleService.getRoles).mockResolvedValue({});
+    vi.mocked(roleService.getRolesSnapshot).mockResolvedValue({
+      roles: {},
+      migratedLegacyEntries: [],
+    });
     vi.mocked(roleService.forceSyncUser).mockResolvedValue({ success: true });
     consoleSpies = suppressConsole(['error']);
   });
@@ -32,7 +36,10 @@ describe('useRoleManagement', () => {
   });
 
   it('should initialize with loading state and load roles', async () => {
-    vi.mocked(roleService.getRoles).mockResolvedValue({ 'test@email.com': 'admin' });
+    vi.mocked(roleService.getRolesSnapshot).mockResolvedValue({
+      roles: { 'test@email.com': 'admin' },
+      migratedLegacyEntries: [],
+    });
 
     const { result } = renderHook(() => useRoleManagement());
 
@@ -87,12 +94,28 @@ describe('useRoleManagement', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     act(() => {
-      result.current.handleEdit('user@email.com', 'editor');
+      result.current.handleEdit('user@email.com', 'admin');
     });
 
     expect(result.current.email).toBe('user@email.com');
-    expect(result.current.selectedRole).toBe('editor');
+    expect(result.current.selectedRole).toBe('admin');
     expect(result.current.editingEmail).toBe('user@email.com');
+  });
+
+  it('should block editing for legacy roles that are no longer assignable', async () => {
+    const { result } = renderHook(() => useRoleManagement());
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    act(() => {
+      result.current.handleEdit('legacy@email.com', 'editor');
+    });
+
+    expect(result.current.editingEmail).toBeNull();
+    expect(result.current.message).toEqual({
+      type: 'error',
+      text: 'Este rol legacy ya no es editable. Quita el acceso y reasigna un rol canónico.',
+    });
   });
 
   it('should handle delete click', async () => {
@@ -108,7 +131,7 @@ describe('useRoleManagement', () => {
   });
 
   it('should handle role service error gracefully', async () => {
-    vi.mocked(roleService.getRoles).mockRejectedValue(new Error('Connection error'));
+    vi.mocked(roleService.getRolesSnapshot).mockRejectedValue(new Error('Connection error'));
 
     const { result } = renderHook(() => useRoleManagement());
 
@@ -117,6 +140,24 @@ describe('useRoleManagement', () => {
     });
 
     expect(result.current.message?.type).toBe('error');
+  });
+
+  it('should surface a success message when legacy roles are normalized on load', async () => {
+    vi.mocked(roleService.getRolesSnapshot).mockResolvedValue({
+      roles: { 'viewer@hospital.cl': 'viewer' },
+      migratedLegacyEntries: ['viewer@hospital.cl'],
+    });
+
+    const { result } = renderHook(() => useRoleManagement());
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    expect(result.current.message).toEqual({
+      type: 'success',
+      text: 'Se normalizaron 1 registro(s) legacy en config/roles.',
+    });
   });
 
   it('should sync custom claims after saving a role', async () => {

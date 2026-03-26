@@ -57,6 +57,7 @@ Puntos clave:
 - el cliente **no** lee `config/roles` directamente
 - el rol efectivo se resuelve desde backend
 - claims viejos no deben volver a autorizar por sí solos un acceso ya revocado
+- si aparece un alias legacy de rol en `config/roles`, backend y Gestión de Roles lo recanonizan a `viewer`
 
 ## 4. Shared Census
 
@@ -100,9 +101,10 @@ Efecto esperado:
 
 1. confirmar que el correo esté presente y bien escrito en `config/roles`
 2. confirmar que el rol asignado sea válido
-3. confirmar que frontend publicado incluya la resolución actual por `checkUserRole`
-4. confirmar que functions publicadas consulten `config/roles`
-5. confirmar que `firestore.rules` publicadas no hayan cambiado el perímetro
+3. si el documento viene de una migración antigua, recargar Gestión de Roles o reintentar login para forzar recanonización del alias legacy
+4. confirmar que frontend publicado incluya la resolución actual por `checkUserRole`
+5. confirmar que functions publicadas consulten `config/roles`
+6. confirmar que `firestore.rules` publicadas no hayan cambiado el perímetro
 
 ## 9. Qué revisar si un usuario “removido” sigue entrando
 

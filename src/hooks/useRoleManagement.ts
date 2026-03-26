@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { roleService, UserRoleMap } from '@/services/admin/roleService';
+import { isManagedUserRole } from '@/shared/access/roleAccessMatrix';
 import { logger } from '@/services/utils/loggerService';
 
 const roleManagementLogger = logger.child('RoleManagement');
@@ -22,8 +23,18 @@ export const useRoleManagement = () => {
   const loadRoles = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await roleService.getRoles();
-      setRoles(data);
+      const snapshot = await roleService.getRolesSnapshot();
+      setRoles(snapshot.roles);
+      setMessage(currentMessage => {
+        if (currentMessage || snapshot.migratedLegacyEntries.length === 0) {
+          return currentMessage;
+        }
+
+        return {
+          type: 'success',
+          text: `Se normalizaron ${snapshot.migratedLegacyEntries.length} registro(s) legacy en config/roles.`,
+        };
+      });
     } catch (error) {
       roleManagementLogger.error('Load error', error);
       setMessage({ type: 'error', text: 'Error de conexión con Firestore.' });
@@ -100,6 +111,14 @@ export const useRoleManagement = () => {
   };
 
   const handleEdit = useCallback((targetEmail: string, currentRole: string) => {
+    if (!isManagedUserRole(currentRole)) {
+      setMessage({
+        type: 'error',
+        text: 'Este rol legacy ya no es editable. Quita el acceso y reasigna un rol canónico.',
+      });
+      return;
+    }
+
     setEmail(targetEmail);
     setSelectedRole(currentRole);
     setEditingEmail(targetEmail);

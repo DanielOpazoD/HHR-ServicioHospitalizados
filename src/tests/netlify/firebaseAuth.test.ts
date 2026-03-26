@@ -3,15 +3,18 @@ import { createSign, generateKeyPairSync } from 'node:crypto';
 
 const docMock = vi.fn();
 const getDocMock = vi.fn();
+const setDocMock = vi.fn();
 
 vi.mock('firebase/firestore', () => ({
   doc: (...args: unknown[]) => docMock(...args),
   getDoc: (...args: unknown[]) => getDocMock(...args),
+  setDoc: (...args: unknown[]) => setDocMock(...args),
 }));
 
 import {
   authorizeRoleRequest,
   extractBearerToken,
+  resolveRoleForEmail,
   verifyFirebaseIdToken,
 } from '../../../netlify/functions/lib/firebase-auth';
 
@@ -50,6 +53,7 @@ describe('firebase-auth netlify helper', () => {
         'doctor@hospital.cl': 'doctor_urgency',
       }),
     });
+    setDocMock.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -123,6 +127,23 @@ describe('firebase-auth netlify helper', () => {
         email: 'doctor@hospital.cl',
         role: 'doctor_urgency',
       })
+    );
+  });
+
+  it('self-heals legacy role aliases before authorizing Netlify requests', async () => {
+    getDocMock.mockResolvedValue({
+      exists: () => true,
+      data: () => ({
+        'doctor@hospital.cl': 'viewer_census',
+      }),
+    });
+
+    await expect(
+      resolveRoleForEmail({ kind: 'firestore' } as never, 'doctor@hospital.cl')
+    ).resolves.toBe('viewer');
+    expect(setDocMock).toHaveBeenCalledWith(
+      { id: 'config-roles-ref' },
+      { 'doctor@hospital.cl': 'viewer' }
     );
   });
 

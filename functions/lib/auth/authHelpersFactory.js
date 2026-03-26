@@ -1,9 +1,12 @@
 const { BOOTSTRAP_ADMIN_EMAILS, GENERAL_LOGIN_ROLES } = require('./authConfig');
 const { normalizeEmail } = require('./authPolicies');
 
-const normalizeResolvedRole = role => (role === 'viewer_census' ? 'viewer' : role);
-
 const createAuthHelpers = admin => {
+  const persistCanonicalRoleAlias = async (rolesMap, cleanEmail, canonicalRole) => {
+    const nextRolesMap = { ...rolesMap, [cleanEmail]: canonicalRole };
+    await admin.firestore().collection('config').doc('roles').set(nextRolesMap);
+  };
+
   const resolveRoleForEmail = async email => {
     const cleanEmail = normalizeEmail(email);
     if (!cleanEmail) return 'unauthorized';
@@ -12,8 +15,14 @@ const createAuthHelpers = admin => {
       const roleDoc = await admin.firestore().collection('config').doc('roles').get();
       if (roleDoc.exists) {
         const rolesMap = roleDoc.data() || {};
-        if (rolesMap[cleanEmail]) {
-          return normalizeResolvedRole(rolesMap[cleanEmail]);
+        const resolvedRole = rolesMap[cleanEmail];
+        if (resolvedRole === 'viewer_census') {
+          await persistCanonicalRoleAlias(rolesMap, cleanEmail, 'viewer');
+          return 'viewer';
+        }
+
+        if (typeof resolvedRole === 'string' && resolvedRole.trim()) {
+          return resolvedRole;
         }
       }
     } catch (error) {
