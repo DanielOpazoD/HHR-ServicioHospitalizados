@@ -30,8 +30,8 @@ vi.mock('../../../src/services/utils/fhirMappers', () => ({
   mapEncounterToFhir: (...args: unknown[]) => mapEncounterToFhirMock(...args),
 }));
 
-vi.mock('../../../netlify/functions/lib/fhir-auth', () => ({
-  authorizeFhirRequest: (...args: unknown[]) => authorizeFhirRequestMock(...args),
+vi.mock('../../../netlify/functions/lib/firebase-auth', () => ({
+  authorizeRoleRequest: (...args: unknown[]) => authorizeFhirRequestMock(...args),
   extractBearerToken: (...args: unknown[]) => extractBearerTokenMock(...args),
 }));
 
@@ -143,7 +143,7 @@ describe('fhir-api netlify function', () => {
   });
 
   it('returns 403 when the authenticated user role cannot access FHIR', async () => {
-    authorizeFhirRequestMock.mockRejectedValue(new Error("FHIR access denied for role 'viewer'."));
+    authorizeFhirRequestMock.mockRejectedValue(new Error("Access denied for role 'viewer'."));
 
     const response = await handler({
       httpMethod: 'GET',

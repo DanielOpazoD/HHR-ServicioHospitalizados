@@ -9,9 +9,15 @@ import {
   isOriginAllowed,
   type NetlifyEventLike,
 } from './lib/http';
-import { authorizeFhirRequest, extractBearerToken } from './lib/fhir-auth';
+import { authorizeRoleRequest, extractBearerToken } from './lib/firebase-auth';
 
 const hospitalId = 'hanga_roa'; // Could be dynamic via headers in future
+const FHIR_ALLOWED_ROLES = new Set([
+  'admin',
+  'nurse_hospital',
+  'doctor_urgency',
+  'doctor_specialist',
+]);
 
 const buildOperationOutcomeResponse = (
   statusCode: number,
@@ -76,11 +82,11 @@ export const handler = async (event: NetlifyEventLike) => {
     }
 
     try {
-      await authorizeFhirRequest(db, authorizationHeader);
+      await authorizeRoleRequest(db, authorizationHeader, FHIR_ALLOWED_ROLES);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'FHIR authorization failed.';
       const statusCode =
-        message.includes('FHIR access denied') || message.includes('no email claim') ? 403 : 401;
+        message.includes('Access denied') || message.includes('no email claim') ? 403 : 401;
       const code = statusCode === 403 ? 'forbidden' : 'login';
 
       return buildOperationOutcomeResponse(statusCode, code, message, requestOrigin);

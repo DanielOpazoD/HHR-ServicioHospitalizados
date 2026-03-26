@@ -10,6 +10,7 @@ import { CIE10Entry } from './cie10SpanishDatabase';
 import { aiRequestManager } from '../ai/aiRequestManager';
 import { GoogleGenAI } from '@google/genai';
 import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryService';
+import { resolveCurrentUserAuthHeaders } from '@/services/auth/authRequestHeaders';
 
 let aiAvailabilityChecked = false;
 let aiIsAvailable = false;
@@ -54,9 +55,10 @@ async function searchWithServerlessFunction(
   signal?: AbortSignal
 ): Promise<{ available: boolean; results: CIE10Entry[] }> {
   try {
+    const authHeaders = await resolveCurrentUserAuthHeaders();
     const response = await fetch('/.netlify/functions/cie10-ai-search', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders },
       body: JSON.stringify({ query }),
       signal,
     });
@@ -180,9 +182,10 @@ export async function checkAIAvailability(): Promise<boolean> {
   }
 
   try {
+    const authHeaders = await resolveCurrentUserAuthHeaders();
     const response = await fetch('/.netlify/functions/cie10-ai-search', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders },
       body: JSON.stringify({ query: '' }),
     });
 

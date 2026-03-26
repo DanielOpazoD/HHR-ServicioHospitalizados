@@ -1,3 +1,5 @@
+import { resolveCurrentUserAuthHeaders } from '@/services/auth/authRequestHeaders';
+
 export interface CensusEmailTransportRequest {
   endpoint: string;
   body: string;
@@ -9,14 +11,16 @@ export interface CensusEmailTransportRequest {
 export const sendCensusEmailTransportRequest = async (
   request: CensusEmailTransportRequest,
   fetchImpl: typeof fetch
-): Promise<Response> =>
-  fetchImpl(request.endpoint, {
+): Promise<Response> => {
+  const authHeaders = await resolveCurrentUserAuthHeaders();
+
+  return fetchImpl(request.endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-user-email': request.userEmail || '',
-      'x-user-role': request.userRole || '',
+      ...authHeaders,
     },
     body: request.body,
     signal: request.signal,
   });
+};

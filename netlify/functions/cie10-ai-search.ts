@@ -1,4 +1,14 @@
 import { GoogleGenAI } from '@google/genai';
+import { getFirebaseServer } from './lib/firebase-server';
+import { authorizeRoleRequest, extractBearerToken } from './lib/firebase-auth';
+import {
+  buildCorsHeaders,
+  buildJsonResponse,
+  getRequestOrigin,
+  isOriginAllowed,
+  parseJsonBody,
+  type NetlifyEventLike,
+} from './lib/http';
 
 interface CIE10Entry {
   code: string;
@@ -6,16 +16,38 @@ interface CIE10Entry {
   category?: string;
 }
 
-interface NetlifyEvent {
-  httpMethod: string;
-  body?: string;
-}
+const CIE10_ALLOWED_ROLES = new Set([
+  'admin',
+  'nurse_hospital',
+  'doctor_urgency',
+  'doctor_specialist',
+  'viewer',
+  'editor',
+]);
 
-const handler = async (event: NetlifyEvent) => {
-  // Only allow POST requests
+const handler = async (event: NetlifyEventLike) => {
+  const requestOrigin = getRequestOrigin(event);
+  const corsHeaders = buildCorsHeaders(requestOrigin, {
+    allowedHeaders: 'Content-Type, Authorization, Accept',
+    allowedMethods: 'POST,OPTIONS',
+  });
+
+  if (!isOriginAllowed(requestOrigin)) {
+    return buildJsonResponse(403, { error: 'Origin not allowed' }, { requestOrigin });
+  }
+
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers: corsHeaders,
+      body: '',
+    };
+  }
+
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
+      headers: corsHeaders,
       body: JSON.stringify({ error: 'Method not allowed' }),
     };
   }
@@ -36,14 +68,30 @@ const handler = async (event: NetlifyEvent) => {
   }
 
   try {
-    const { query } = JSON.parse(event.body || '{}');
+    const { db } = getFirebaseServer();
+    const authorizationHeader =
+      typeof event.headers?.authorization === 'string'
+        ? event.headers.authorization
+        : typeof event.headers?.Authorization === 'string'
+          ? event.headers.Authorization
+          : undefined;
+
+    extractBearerToken(authorizationHeader);
+    await authorizeRoleRequest(db, authorizationHeader, CIE10_ALLOWED_ROLES);
+
+    const body = parseJsonBody<{ query?: string }>(event.body);
+    if (!body.ok) {
+      return buildJsonResponse(
+        400,
+        { available: true, results: [], error: body.error },
+        { requestOrigin }
+      );
+    }
+
+    const { query } = body.value;
 
     if (!query || query.length < 2) {
-      return {
-        statusCode: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ available: true, results: [] }),
-      };
+      return buildJsonResponse(200, { available: true, results: [] }, { requestOrigin });
     }
 
     const ai = new GoogleGenAI({ apiKey });
@@ -98,22 +146,30 @@ IMPORTANTE: Responde SOLO con el JSON, sin explicaciones ni markdown.
         }));
     }
 
-    return {
-      statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ available: true, results }),
-    };
+    return buildJsonResponse(200, { available: true, results }, { requestOrigin });
   } catch (error) {
+    const message = error instanceof Error ? error.message : 'AI search failed';
+    const statusCode =
+      message.includes('Access denied') || message.includes('no email claim')
+        ? 403
+        : message.includes('Authorization')
+          ? 401
+          : 200;
+
+    if (statusCode !== 200) {
+      return buildJsonResponse(statusCode, { error: message }, { requestOrigin });
+    }
+
     console.error('Error in AI CIE-10 search:', error);
-    return {
-      statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    return buildJsonResponse(
+      200,
+      {
         available: true,
         results: [],
         error: 'AI search failed',
-      }),
-    };
+      },
+      { requestOrigin }
+    );
   }
 };
 

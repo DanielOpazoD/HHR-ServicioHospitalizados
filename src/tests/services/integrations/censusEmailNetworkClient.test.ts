@@ -1,4 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
+
+vi.mock('@/services/auth/authRequestHeaders', () => ({
+  resolveCurrentUserAuthHeaders: vi.fn().mockResolvedValue({
+    Authorization: 'Bearer token-123',
+  }),
+}));
+
 import { sendCensusEmailRequest } from '@/services/integrations/censusEmailNetworkClient';
 
 const makeResponse = (status: number, text: string): Response =>
@@ -22,6 +29,15 @@ describe('censusEmailNetworkClient', () => {
 
     expect(response.ok).toBe(true);
     expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(fetchImpl).toHaveBeenCalledWith(
+      '/.netlify/functions/send-census-email',
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: 'Bearer token-123',
+          'Content-Type': 'application/json',
+        }),
+      })
+    );
   });
 
   it('retries once on retryable HTTP status', async () => {

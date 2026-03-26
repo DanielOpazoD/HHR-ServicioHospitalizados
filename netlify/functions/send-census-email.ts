@@ -1,6 +1,7 @@
 import { generateCensusPassword } from '../../src/services/security/passwordGenerator';
 import XlsxPopulate from 'xlsx-populate';
 import { sendCensusEmail } from '../../src/services/email/gmailClient';
+import { getFirebaseServer } from './lib/firebase-server';
 import { CENSUS_DEFAULT_RECIPIENTS } from '../../src/constants/email';
 import {
   buildCensusMasterBuffer,
@@ -17,12 +18,12 @@ import {
   buildCorsHeaders,
   buildJsonResponse,
   buildTextResponse,
-  getHeader,
   getRequestOrigin,
   isOriginAllowed,
   parseJsonBody,
   type NetlifyEventLike,
 } from './lib/http';
+import { authorizeRoleRequest, extractBearerToken } from './lib/firebase-auth';
 
 const ALLOWED_ROLES = new Set(['nurse_hospital', 'admin']);
 
@@ -49,26 +50,49 @@ export const handler = async (event: NetlifyEventLike) => {
     return buildTextResponse(405, 'Método no permitido', { requestOrigin });
   }
 
-  const requesterRole = getHeader(event.headers, 'x-user-role');
-  if (!requesterRole || !ALLOWED_ROLES.has(requesterRole)) {
-    return buildTextResponse(403, 'No autorizado para enviar correos de censo.', { requestOrigin });
-  }
-
-  const parsedBody = parseJsonBody<{
-    date: string;
-    records: DailyRecord[];
-    recipients?: string[];
-    nursesSignature?: string;
-    body?: string;
-    shareLink?: string;
-    sheetDescriptors?: CensusWorkbookSheetDescriptor[];
-  }>(event.body);
-
-  if (!parsedBody.ok) {
-    return buildTextResponse(400, parsedBody.error, { requestOrigin });
-  }
-
   try {
+    const { db } = getFirebaseServer();
+    const authorizationHeader =
+      typeof event.headers?.authorization === 'string'
+        ? event.headers.authorization
+        : typeof event.headers?.Authorization === 'string'
+          ? event.headers.Authorization
+          : undefined;
+
+    try {
+      extractBearerToken(authorizationHeader);
+    } catch (error) {
+      return buildTextResponse(
+        401,
+        error instanceof Error ? error.message : 'Authentication required.',
+        { requestOrigin }
+      );
+    }
+
+    try {
+      await authorizeRoleRequest(db, authorizationHeader, ALLOWED_ROLES);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'No autorizado para enviar correos de censo.';
+      const statusCode =
+        message.includes('Access denied') || message.includes('no email claim') ? 403 : 401;
+      return buildTextResponse(statusCode, message, { requestOrigin });
+    }
+
+    const parsedBody = parseJsonBody<{
+      date: string;
+      records: DailyRecord[];
+      recipients?: string[];
+      nursesSignature?: string;
+      body?: string;
+      shareLink?: string;
+      sheetDescriptors?: CensusWorkbookSheetDescriptor[];
+    }>(event.body);
+
+    if (!parsedBody.ok) {
+      return buildTextResponse(400, parsedBody.error, { requestOrigin });
+    }
+
     const {
       date,
       records,

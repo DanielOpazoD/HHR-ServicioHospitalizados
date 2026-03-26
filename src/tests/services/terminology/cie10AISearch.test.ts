@@ -36,6 +36,12 @@ vi.mock('../ai/aiRequestManager', () => ({
   },
 }));
 
+vi.mock('@/services/auth/authRequestHeaders', () => ({
+  resolveCurrentUserAuthHeaders: vi.fn().mockResolvedValue({
+    Authorization: 'Bearer token-123',
+  }),
+}));
+
 // Mock fetch — simula el endpoint serverless de Netlify
 global.fetch = vi.fn();
 const mockFetch = vi.mocked(global.fetch);

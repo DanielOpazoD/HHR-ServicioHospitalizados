@@ -8,12 +8,6 @@ import authPoliciesModule from '../../../functions/lib/auth/authPolicies.js';
 const FIREBASE_CERTS_URL =
   'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com';
 const TOKEN_CLOCK_SKEW_SECONDS = 300;
-const FHIR_ALLOWED_ROLES = new Set([
-  'admin',
-  'nurse_hospital',
-  'doctor_urgency',
-  'doctor_specialist',
-]);
 
 type AuthConfigModule = {
   BOOTSTRAP_ADMIN_EMAILS?: string[];
@@ -29,7 +23,7 @@ type JwtHeader = {
   typ?: string;
 };
 
-type FirebaseJwtPayload = {
+export type FirebaseJwtPayload = {
   aud?: string;
   iss?: string;
   sub?: string;
@@ -41,7 +35,7 @@ type FirebaseJwtPayload = {
   [key: string]: unknown;
 };
 
-export type AuthorizedFhirRequest = {
+export type AuthorizedRoleRequest = {
   email: string;
   role: string;
   token: FirebaseJwtPayload;
@@ -236,7 +230,7 @@ export const resolveRoleForEmail = async (
       }
     }
   } catch (error) {
-    console.warn(`[FHIR API] resolveRoleForEmail failed for ${cleanEmail}:`, error);
+    console.warn(`[NetlifyAuth] resolveRoleForEmail failed for ${cleanEmail}:`, error);
   }
 
   if (BOOTSTRAP_ADMIN_EMAILS.includes(cleanEmail)) {
@@ -246,10 +240,11 @@ export const resolveRoleForEmail = async (
   return 'unauthorized';
 };
 
-export const authorizeFhirRequest = async (
+export const authorizeRoleRequest = async (
   db: Firestore,
-  authorizationHeader: string | undefined
-): Promise<AuthorizedFhirRequest> => {
+  authorizationHeader: string | undefined,
+  allowedRoles: ReadonlySet<string>
+): Promise<AuthorizedRoleRequest> => {
   const token = extractBearerToken(authorizationHeader);
   const decodedToken = await verifyFirebaseIdToken(token);
   const email = normalizeEmail(typeof decodedToken.email === 'string' ? decodedToken.email : '');
@@ -258,8 +253,8 @@ export const authorizeFhirRequest = async (
   }
 
   const role = await resolveRoleForEmail(db, email);
-  if (!FHIR_ALLOWED_ROLES.has(role)) {
-    throw new Error(`FHIR access denied for role '${role}'.`);
+  if (!allowedRoles.has(role)) {
+    throw new Error(`Access denied for role '${role}'.`);
   }
 
   return {
