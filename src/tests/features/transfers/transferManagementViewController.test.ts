@@ -1,7 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { buildTransferManagementPeriodModel } from '@/features/transfers/components/controllers/transferManagementViewController';
-import type { TransferRequest } from '@/types/transfers';
+import {
+  buildTransferManagementPeriodModel,
+  buildTransferQuestionnairePatientData,
+  buildTransferTableBindings,
+} from '@/features/transfers/components/controllers/transferManagementViewController';
+import type { TransferFormData, TransferRequest, TransferStatus } from '@/types/transfers';
 
 const buildTransfer = (overrides: Partial<TransferRequest> = {}): TransferRequest =>
   ({
@@ -47,5 +51,86 @@ describe('transferManagementViewController', () => {
     });
 
     expect(model.finalizedTransfers.map(transfer => transfer.id)).toEqual(['TR-CLOSED-IN-PERIOD']);
+  });
+
+  it('builds reusable table bindings for active and finalized tables', async () => {
+    const transfer = buildTransfer({ id: 'TR-ACTIVE' });
+    const setTransferStatus =
+      vi.fn<(transfer: TransferRequest, status: TransferStatus) => Promise<void>>();
+    const updateTransfer =
+      vi.fn<(transferId: string, data: Partial<TransferFormData>) => Promise<void>>();
+    const undoTransfer = vi.fn<(transfer: TransferRequest) => Promise<void>>();
+    const archiveTransfer = vi.fn<(transfer: TransferRequest) => Promise<void>>();
+    const deleteHistoryEntry =
+      vi.fn<(transfer: TransferRequest, historyIndex: number) => Promise<void>>();
+    const deleteTransfer = vi.fn<(transferId: string) => Promise<void>>();
+    const handlers = {
+      handleEditTransfer: vi.fn(),
+      handleStatusChange: vi.fn(),
+      handleMarkTransferred: vi.fn(),
+      handleCancel: vi.fn(),
+      handleGenerateDocs: vi.fn(),
+      handleViewDocs: vi.fn(),
+    };
+
+    const activeBindings = buildTransferTableBindings({
+      transfers: [transfer],
+      handlers,
+      actions: {
+        setTransferStatus,
+        updateTransfer,
+        undoTransfer,
+        archiveTransfer,
+        deleteHistoryEntry,
+        deleteTransfer,
+      },
+    });
+    const finalizedBindings = buildTransferTableBindings({
+      transfers: [transfer],
+      mode: 'finalized',
+      handlers,
+      actions: {
+        setTransferStatus,
+        updateTransfer,
+        undoTransfer,
+        archiveTransfer,
+        deleteHistoryEntry,
+        deleteTransfer,
+      },
+    });
+
+    expect(activeBindings.emptyMessage).toBe(
+      'No hay solicitudes activas de traslado para este período'
+    );
+    expect(finalizedBindings.emptyMessage).toBe('No hay traslados finalizados para este período');
+
+    await activeBindings.onDelete(transfer);
+    expect(deleteTransfer).toHaveBeenCalledWith('TR-ACTIVE');
+    expect(finalizedBindings.mode).toBe('finalized');
+  });
+
+  it('builds questionnaire patient data from the selected transfer snapshot', () => {
+    const transfer = buildTransfer({
+      bedId: 'BED_H3',
+      patientSnapshot: {
+        name: 'Paciente Demo',
+        rut: '12.345.678-9',
+        age: 34,
+        sex: 'M',
+        diagnosis: 'Neumonía',
+        admissionDate: '2026-03-02',
+      },
+    });
+
+    expect(buildTransferQuestionnairePatientData(transfer)).toEqual({
+      patientName: 'Paciente Demo',
+      rut: '12.345.678-9',
+      admissionDate: '2026-03-02',
+      diagnosis: 'Neumonía',
+      bedName: 'H3',
+      bedType: 'Básica',
+      isUPC: false,
+      originHospital: 'Hospital Hanga Roa',
+    });
   });
 });

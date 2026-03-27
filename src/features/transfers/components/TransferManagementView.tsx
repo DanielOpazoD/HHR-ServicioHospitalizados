@@ -11,6 +11,10 @@ import { StatusChangeModal } from './components/StatusChangeModal';
 import { ConfirmTransferModal } from './components/ConfirmTransferModal';
 import { CancelTransferModal } from './components/CancelTransferModal';
 import { useTransferManagementViewRuntime } from '../hooks/useTransferManagementViewRuntime';
+import {
+  buildTransferQuestionnairePatientData,
+  buildTransferTableBindings,
+} from './controllers/transferManagementViewController';
 
 const TransferQuestionnaireModal = React.lazy(() =>
   import('./components/TransferQuestionnaireModal').then(module => ({
@@ -52,6 +56,25 @@ export const TransferManagementView: React.FC = () => {
   const { modals, selectedTransfer, isGenerating, generatedDocs, patientDataForDocs, handlers } =
     viewStates;
   const { availableYears, filteredActiveCount, activeTransfers, finalizedTransfers } = periodModel;
+  const tableActions = {
+    setTransferStatus,
+    updateTransfer,
+    undoTransfer,
+    archiveTransfer,
+    deleteHistoryEntry,
+    deleteTransfer,
+  };
+  const activeTableBindings = buildTransferTableBindings({
+    transfers: activeTransfers,
+    handlers,
+    actions: tableActions,
+  });
+  const finalizedTableBindings = buildTransferTableBindings({
+    transfers: finalizedTransfers,
+    mode: 'finalized',
+    handlers,
+    actions: tableActions,
+  });
 
   return (
     <div className="p-4 max-w-7xl mx-auto animate-in fade-in duration-500">
@@ -123,22 +146,7 @@ export const TransferManagementView: React.FC = () => {
             <p className="text-gray-400 font-medium tracking-tight">Cargando solicitudes...</p>
           </div>
         ) : (
-          <TransferTable
-            transfers={activeTransfers}
-            onEdit={handlers.handleEditTransfer}
-            onStatusChange={handlers.handleStatusChange}
-            onQuickStatusChange={setTransferStatus}
-            onMarkTransferred={handlers.handleMarkTransferred}
-            onCancel={handlers.handleCancel}
-            onGenerateDocs={handlers.handleGenerateDocs}
-            onViewDocs={handlers.handleViewDocs}
-            onUndo={undoTransfer}
-            onArchive={archiveTransfer}
-            onDelete={transfer => deleteTransfer(transfer.id)}
-            onDeleteHistoryEntry={deleteHistoryEntry}
-            onUpdateTransfer={updateTransfer}
-            emptyMessage="No hay solicitudes activas de traslado para este período"
-          />
+          <TransferTable {...activeTableBindings} />
         )}
       </div>
 
@@ -173,23 +181,7 @@ export const TransferManagementView: React.FC = () => {
                 Cargando traslados finalizados...
               </div>
             ) : (
-              <TransferTable
-                transfers={finalizedTransfers}
-                mode="finalized"
-                onEdit={handlers.handleEditTransfer}
-                onStatusChange={handlers.handleStatusChange}
-                onQuickStatusChange={setTransferStatus}
-                onMarkTransferred={handlers.handleMarkTransferred}
-                onCancel={handlers.handleCancel}
-                onGenerateDocs={handlers.handleGenerateDocs}
-                onViewDocs={handlers.handleViewDocs}
-                onUndo={undoTransfer}
-                onArchive={archiveTransfer}
-                onDelete={transfer => deleteTransfer(transfer.id)}
-                onDeleteHistoryEntry={deleteHistoryEntry}
-                onUpdateTransfer={updateTransfer}
-                emptyMessage="No hay traslados finalizados para este período"
-              />
+              <TransferTable {...finalizedTableBindings} />
             )}
           </div>
         )}
@@ -234,16 +226,7 @@ export const TransferManagementView: React.FC = () => {
           <TransferQuestionnaireModal
             isOpen={modals.questionnaire}
             hospital={selectedHospital!}
-            patientData={{
-              patientName: selectedTransfer.patientSnapshot.name,
-              rut: selectedTransfer.patientSnapshot.rut,
-              admissionDate: selectedTransfer.patientSnapshot.admissionDate,
-              diagnosis: selectedTransfer.patientSnapshot.diagnosis,
-              bedName: selectedTransfer.bedId.replace('BED_', ''),
-              bedType: 'Básica',
-              isUPC: false,
-              originHospital: 'Hospital Hanga Roa',
-            }}
+            patientData={buildTransferQuestionnairePatientData(selectedTransfer)}
             onClose={handlers.handleCloseQuestionnaire}
             initialResponses={selectedTransfer.questionnaireResponses}
             onComplete={handlers.handleQuestionnaireComplete}

@@ -9,13 +9,18 @@ import type {
 } from '@/types/domain/dailyRecord';
 import { DebouncedTextarea } from '@/components/ui/DebouncedTextarea';
 import {
+  buildMedicalSpecialtyActor,
+  buildPrintableMedicalSpecialtyBlocks,
   canConfirmMedicalSpecialtyNoChanges,
   DEFAULT_NO_CHANGES_COMMENT,
   getMedicalSpecialtyLabel,
   getMedicalSpecialtyNote,
+  hasMedicalSpecialtyStructuredData,
   MEDICAL_SPECIALTY_ORDER,
+  resolveActiveMedicalSpecialty,
+  resolveMedicalSpecialtyContinuityDraft,
   resolveMedicalSpecialtyDailyStatus,
-} from '@/domain/handoff/specialty';
+} from '@/features/handoff/controllers/medicalSpecialtyHandoffController';
 import {
   formatHandoffDateTime,
   getMedicalSpecialtyContinuityHint,
@@ -59,13 +64,6 @@ const STATUS_STYLES = {
   },
 } as const;
 
-const buildActor = (user: AuthUser | null, role?: string): Partial<MedicalHandoffActor> => ({
-  uid: user?.uid,
-  email: user?.email || undefined,
-  displayName: user?.displayName || user?.email || undefined,
-  role,
-});
-
 export const MedicalSpecialtyHandoffSection: React.FC<MedicalSpecialtyHandoffSectionProps> = ({
   record,
   readOnly,
@@ -82,12 +80,12 @@ export const MedicalSpecialtyHandoffSection: React.FC<MedicalSpecialtyHandoffSec
     Partial<Record<MedicalSpecialty, string>>
   >({});
 
-  const resolvedActiveSpecialty =
-    editableSpecialties.length > 0 && !editableSpecialties.includes(activeSpecialty)
-      ? editableSpecialties[0]
-      : activeSpecialty;
+  const resolvedActiveSpecialty = resolveActiveMedicalSpecialty({
+    activeSpecialty,
+    editableSpecialties,
+  });
 
-  const actor = useMemo(() => buildActor(user, role), [role, user]);
+  const actor = useMemo(() => buildMedicalSpecialtyActor(user, role), [role, user]);
   const canConfirmToday = canConfirmMedicalSpecialtyNoChanges(role) && !readOnly;
 
   const activeNote = getMedicalSpecialtyNote(record, resolvedActiveSpecialty);
@@ -96,13 +94,14 @@ export const MedicalSpecialtyHandoffSection: React.FC<MedicalSpecialtyHandoffSec
   const canEditActiveSpecialty = !readOnly && editableSpecialties.includes(resolvedActiveSpecialty);
   const activeStatusMeta = STATUS_STYLES[activeStatus];
   const ActiveStatusIcon = activeStatusMeta.icon;
-  const activeContinuityDraft =
-    continuityDrafts[resolvedActiveSpecialty] ||
-    activeContinuity?.comment ||
-    DEFAULT_NO_CHANGES_COMMENT;
-  const hasSpecialtyData = MEDICAL_SPECIALTY_ORDER.some(specialty =>
-    Boolean(getMedicalSpecialtyNote(record, specialty))
-  );
+  const activeContinuityDraft = resolveMedicalSpecialtyContinuityDraft({
+    drafts: continuityDrafts,
+    specialty: resolvedActiveSpecialty,
+    note: activeNote,
+    dateKey: record.date,
+  });
+  const hasSpecialtyData = hasMedicalSpecialtyStructuredData(record);
+  const printableBlocks = buildPrintableMedicalSpecialtyBlocks(record);
 
   return (
     <section className="space-y-3">
@@ -294,28 +293,20 @@ export const MedicalSpecialtyHandoffSection: React.FC<MedicalSpecialtyHandoffSec
       </div>
 
       <div className="hidden print:block space-y-3">
-        {MEDICAL_SPECIALTY_ORDER.map(specialty => {
-          const note = getMedicalSpecialtyNote(record, specialty);
-          const status = resolveMedicalSpecialtyDailyStatus(note, record.date);
-          const continuity = note?.dailyContinuity?.[record.date];
-          const content = note?.note?.trim();
-          const continuityComment = continuity?.comment?.trim();
-
-          if (!content && !continuityComment) return null;
-
-          return (
-            <div
-              key={specialty}
-              className="rounded border border-slate-300 px-3 py-2 text-[10px] text-slate-800"
-            >
-              <div className="font-bold mb-1">{getMedicalSpecialtyLabel(specialty)}</div>
-              {content && <div className="whitespace-pre-wrap">{content}</div>}
-              {status === 'confirmed_no_changes' && (
-                <div className="mt-2 italic">{continuityComment || DEFAULT_NO_CHANGES_COMMENT}</div>
-              )}
-            </div>
-          );
-        })}
+        {printableBlocks.map(block => (
+          <div
+            key={block.specialty}
+            className="rounded border border-slate-300 px-3 py-2 text-[10px] text-slate-800"
+          >
+            <div className="font-bold mb-1">{block.title}</div>
+            {block.content && <div className="whitespace-pre-wrap">{block.content}</div>}
+            {block.continuityComment && (
+              <div className="mt-2 italic">
+                {block.continuityComment || DEFAULT_NO_CHANGES_COMMENT}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </section>
   );

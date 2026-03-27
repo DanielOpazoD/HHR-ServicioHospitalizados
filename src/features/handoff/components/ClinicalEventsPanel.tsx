@@ -7,6 +7,16 @@ import { ClinicalEvent } from '@/types/domain/clinical';
 import { Plus, Pencil, Trash2, Check, X } from 'lucide-react';
 import clsx from 'clsx';
 import { formatHandoffDate } from '@/shared/handoff/handoffPresentation';
+import {
+  buildClinicalEventAddForm,
+  buildClinicalEventEditForm,
+  buildClinicalEventSubmission,
+  buildClinicalEventToday,
+  canSaveClinicalEventForm,
+  EMPTY_CLINICAL_EVENT_FORM,
+  type ClinicalEventFormData,
+  sortClinicalEventsByDateDesc,
+} from '@/features/handoff/controllers/clinicalEventsPanelController';
 
 interface ClinicalEventsPanelProps {
   events: ClinicalEvent[];
@@ -15,14 +25,6 @@ interface ClinicalEventsPanelProps {
   onDelete: (id: string) => void;
   readOnly?: boolean;
 }
-
-interface EventFormData {
-  name: string;
-  date: string;
-  note: string;
-}
-
-const emptyForm: EventFormData = { name: '', date: '', note: '' };
 
 export const ClinicalEventsPanel: React.FC<ClinicalEventsPanelProps> = ({
   events,
@@ -33,20 +35,20 @@ export const ClinicalEventsPanel: React.FC<ClinicalEventsPanelProps> = ({
 }) => {
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState<EventFormData>(emptyForm);
+  const [formData, setFormData] = useState<ClinicalEventFormData>(EMPTY_CLINICAL_EVENT_FORM);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Get today's date in YYYY-MM-DD format
-  const today = new Date().toISOString().split('T')[0];
+  const today = buildClinicalEventToday(new Date().toISOString());
 
   const handleStartAdd = useCallback(() => {
-    setFormData({ name: '', date: today, note: '' });
+    setFormData(buildClinicalEventAddForm(today));
     setIsAddingNew(true);
     setEditingId(null);
   }, [today]);
 
   const handleStartEdit = useCallback((event: ClinicalEvent) => {
-    setFormData({ name: event.name, date: event.date, note: event.note || '' });
+    setFormData(buildClinicalEventEditForm(event));
     setEditingId(event.id);
     setIsAddingNew(false);
   }, []);
@@ -54,27 +56,19 @@ export const ClinicalEventsPanel: React.FC<ClinicalEventsPanelProps> = ({
   const handleCancel = useCallback(() => {
     setIsAddingNew(false);
     setEditingId(null);
-    setFormData(emptyForm);
+    setFormData(EMPTY_CLINICAL_EVENT_FORM);
     setConfirmDeleteId(null);
   }, []);
 
   const handleSaveNew = useCallback(() => {
-    if (!formData.name.trim() || !formData.date) return;
-    onAdd({
-      name: formData.name.trim(),
-      date: formData.date,
-      note: formData.note.trim() || undefined,
-    });
+    if (!canSaveClinicalEventForm(formData)) return;
+    onAdd(buildClinicalEventSubmission(formData));
     handleCancel();
   }, [formData, onAdd, handleCancel]);
 
   const handleSaveEdit = useCallback(() => {
-    if (!editingId || !formData.name.trim() || !formData.date) return;
-    onUpdate(editingId, {
-      name: formData.name.trim(),
-      date: formData.date,
-      note: formData.note.trim() || undefined,
-    });
+    if (!editingId || !canSaveClinicalEventForm(formData)) return;
+    onUpdate(editingId, buildClinicalEventSubmission(formData));
     handleCancel();
   }, [editingId, formData, onUpdate, handleCancel]);
 
@@ -87,9 +81,7 @@ export const ClinicalEventsPanel: React.FC<ClinicalEventsPanelProps> = ({
   );
 
   // Sort events by date (newest first)
-  const sortedEvents = [...events].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
+  const sortedEvents = sortClinicalEventsByDateDesc(events);
 
   return (
     <div className="mt-2 border-t border-slate-200 pt-2 print:hidden">
@@ -203,8 +195,8 @@ export const ClinicalEventsPanel: React.FC<ClinicalEventsPanelProps> = ({
 // ============================================================================
 
 interface EventFormProps {
-  formData: EventFormData;
-  onChange: (data: EventFormData) => void;
+  formData: ClinicalEventFormData;
+  onChange: (data: ClinicalEventFormData) => void;
   onSave: () => void;
   onCancel: () => void;
   onDelete?: () => void;
@@ -217,7 +209,7 @@ const EventForm: React.FC<EventFormProps> = ({
   onCancel,
   onDelete,
 }) => {
-  const isValid = formData.name.trim() && formData.date;
+  const isValid = canSaveClinicalEventForm(formData);
 
   return (
     <div className="bg-blue-50 p-2 rounded border border-blue-200 space-y-2 shadow-sm animate-in fade-in zoom-in duration-200">

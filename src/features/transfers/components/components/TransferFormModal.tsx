@@ -12,17 +12,15 @@ import { BaseModal, ModalSection } from '@/components/shared/BaseModal';
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
 import { getDestinationHospitalCatalog } from '@/features/transfers/services/destinationHospitalCatalogService';
 import { getLocalDateInputValue } from '@/features/transfers/utils/localDate';
-
-interface Patient {
-  id: string;
-  name: string;
-  bedId: string;
-  diagnosis: string;
-}
+import {
+  buildTransferFormSubmission,
+  resolveTransferFormState,
+  type TransferFormPatientOption,
+} from '../controllers/transferFormController';
 
 interface TransferFormModalProps {
   transfer: TransferRequest | null;
-  patients: Patient[];
+  patients: TransferFormPatientOption[];
   onClose: () => void;
   onSave: (data: TransferFormData) => Promise<void>;
 }
@@ -34,6 +32,7 @@ export const TransferFormModal: React.FC<TransferFormModalProps> = ({
   onSave,
 }) => {
   const isEditing = transfer !== null;
+  const defaultRequestDate = getLocalDateInputValue();
 
   // Form state
   const [selectedPatientId, setSelectedPatientId] = useState(transfer?.bedId || '');
@@ -46,7 +45,7 @@ export const TransferFormModal: React.FC<TransferFormModalProps> = ({
   const [requiredSpecialtyOther, setRequiredSpecialtyOther] = useState('');
   const [requiredBedType, setRequiredBedType] = useState('');
   const [requiredBedTypeOther, setRequiredBedTypeOther] = useState('');
-  const [requestDate, setRequestDate] = useState(transfer?.requestDate || getLocalDateInputValue());
+  const [requestDate, setRequestDate] = useState(transfer?.requestDate || defaultRequestDate);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -68,32 +67,20 @@ export const TransferFormModal: React.FC<TransferFormModalProps> = ({
   }, []);
 
   useEffect(() => {
-    if (!transfer) {
-      setRequestDate(getLocalDateInputValue());
-      return;
-    }
-
-    setRequestDate(transfer.requestDate || getLocalDateInputValue());
-
-    const destinationExists = destinationHospitals.some(
-      hospital => hospital.name === transfer.destinationHospital
-    );
-    setDestinationHospital(destinationExists ? transfer.destinationHospital : 'Otro');
-    setDestinationHospitalOther(destinationExists ? '' : transfer.destinationHospital);
-
-    const currentBedType = transfer.requiredBedType || '';
-    const bedTypeExists = TRANSFER_BED_REQUIREMENTS.includes(
-      currentBedType as (typeof TRANSFER_BED_REQUIREMENTS)[number]
-    );
-    setRequiredBedType(bedTypeExists ? currentBedType : currentBedType ? 'Otra' : '');
-    setRequiredBedTypeOther(bedTypeExists ? '' : currentBedType);
-    const currentSpecialty = transfer.requiredSpecialty || '';
-    const specialtyExists = MEDICAL_SPECIALTIES.includes(
-      currentSpecialty as (typeof MEDICAL_SPECIALTIES)[number]
-    );
-    setRequiredSpecialty(specialtyExists ? currentSpecialty : currentSpecialty ? 'Otra' : '');
-    setRequiredSpecialtyOther(specialtyExists ? '' : currentSpecialty);
-  }, [destinationHospitals, transfer]);
+    const nextState = resolveTransferFormState({
+      transfer,
+      destinationHospitals,
+      defaultRequestDate,
+    });
+    setSelectedPatientId(nextState.selectedPatientId);
+    setRequestDate(nextState.requestDate);
+    setDestinationHospital(nextState.destinationHospital);
+    setDestinationHospitalOther(nextState.destinationHospitalOther);
+    setRequiredSpecialty(nextState.requiredSpecialty);
+    setRequiredSpecialtyOther(nextState.requiredSpecialtyOther);
+    setRequiredBedType(nextState.requiredBedType);
+    setRequiredBedTypeOther(nextState.requiredBedTypeOther);
+  }, [defaultRequestDate, destinationHospitals, transfer]);
 
   // Find selected patient
   const selectedPatient = patients.find(p => p.id === selectedPatientId);
@@ -101,43 +88,25 @@ export const TransferFormModal: React.FC<TransferFormModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const destinationHospitalValue =
-      destinationHospital === 'Otro' ? destinationHospitalOther.trim() : destinationHospital;
-    const requiredSpecialtyValue =
-      requiredSpecialty === 'Otra' ? requiredSpecialtyOther.trim() : requiredSpecialty;
-    const requiredBedTypeValue =
-      requiredBedType === 'Otra' ? requiredBedTypeOther.trim() : requiredBedType;
+    const submission = buildTransferFormSubmission({
+      selectedPatientId,
+      requestDate,
+      destinationHospital,
+      destinationHospitalOther,
+      requiredSpecialty,
+      requiredSpecialtyOther,
+      requiredBedType,
+      requiredBedTypeOther,
+    });
 
-    if (!selectedPatientId || !destinationHospitalValue) {
-      defaultBrowserWindowRuntime.alert('Por favor complete todos los campos requeridos');
-      return;
-    }
-    if (destinationHospital === 'Otro' && !destinationHospitalOther.trim()) {
-      defaultBrowserWindowRuntime.alert('Debe detallar el hospital destino');
-      return;
-    }
-    if (requiredSpecialty === 'Otra' && !requiredSpecialtyOther.trim()) {
-      defaultBrowserWindowRuntime.alert('Debe detallar la especialidad requerida');
-      return;
-    }
-    if (requiredBedType === 'Otra' && !requiredBedTypeOther.trim()) {
-      defaultBrowserWindowRuntime.alert('Debe detallar el tipo de cama requerida');
+    if (!submission.ok) {
+      defaultBrowserWindowRuntime.alert(submission.error);
       return;
     }
 
     setIsSaving(true);
     try {
-      await onSave({
-        patientId: selectedPatientId,
-        bedId: selectedPatientId,
-        requestDate,
-        destinationHospital: destinationHospitalValue,
-        transferReason: 'Derivación a especialidad',
-        requiredSpecialty: requiredSpecialtyValue || undefined,
-        requiredBedType: requiredBedTypeValue || undefined,
-        requestingDoctor: '',
-        observations: '',
-      });
+      await onSave(submission.data);
     } finally {
       setIsSaving(false);
     }

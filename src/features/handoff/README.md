@@ -13,13 +13,16 @@ Entrega de turno de enfermeria y medicos, con flujos de gestion, delivery y hand
 
 - `components/`: shell visual y vistas de handoff.
 - `hooks/`: screen models/runtime hooks para aislar wiring grande de las vistas.
-- `controllers/`: bridges deprecated y algunos adapters de compatibilidad.
+- `controllers/`: policies de pantalla, adapters internos y bridges deprecated inventariados.
 - `application/handoff`: use cases y read models del contexto.
 - `domain/handoff`: reglas puras de entries, management y vistas.
 
 ## Contratos principales
 
 - La logica de negocio nueva entra en `application/handoff` o `domain/handoff`.
+- Los controllers de pantalla (`handoffViewController`, `handoffViewBindingsController`,
+  `handoffMedicalContentController`, `clinicalEventsPanelController`) concentran wiring puro,
+  presentation policy y payload normalization; la UI no debe reabsorber esas decisiones.
 - Los controllers deprecated solo mantienen compatibilidad temporal; no deben recibir logica nueva.
 - Los resultados operativos de gestion y delivery deben salir como `ApplicationOutcome`.
 - El source productivo no debe importar el barrel `features/handoff/controllers` ni los bridges deprecated.
@@ -30,6 +33,10 @@ Entrega de turno de enfermeria y medicos, con flujos de gestion, delivery y hand
 - Los read models de pantalla deben alimentar la UI; no reinyectar decisiones de negocio en `.tsx`.
 - `HandoffView.tsx` debe mantenerse presentacional; la coordinacion de contexts, auth, audit y
   bindings de pantalla debe salir por hooks locales del feature como `useHandoffViewScreenModel`.
+- `useHandoffViewScreenModel` no debe volver a mezclar efectos de auditoria, `document.title`,
+  rules de read-only e inicializacion desde URL en el mismo bloque sin controller intermedio.
+- `ClinicalEventsPanel.tsx` debe limitarse a estado local de UI; sorting, defaults y normalizacion
+  del formulario deben salir por `clinicalEventsPanelController.ts`.
 - Los flows de firma, continuidad y patient entries deben seguir auditando con payload compatible.
 - Los bridges deprecated quedan permitidos solo para compatibilidad de tests o adapters inventariados.
 - Cuando una entrega medica se copia al dia siguiente, el contenido se hereda pero la vigencia diaria no:
@@ -58,6 +65,17 @@ Entrega de turno de enfermeria y medicos, con flujos de gestion, delivery y hand
 - `src/domain/handoff/scope.ts`
 - `src/features/handoff/public.ts`
 
+## Controllers activos recomendados
+
+- [handoffViewController.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/features/handoff/controllers/handoffViewController.ts)
+  para frame de pantalla, audit descriptor y bindings del shell.
+- [handoffViewBindingsController.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/features/handoff/controllers/handoffViewBindingsController.ts)
+  para acciones medicas y eventos clinicos con gating por capabilities.
+- [handoffMedicalContentController.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/features/handoff/controllers/handoffMedicalContentController.ts)
+  para filtros/chips y links de handoff medico.
+- [clinicalEventsPanelController.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/features/handoff/controllers/clinicalEventsPanelController.ts)
+  para defaults, sorting y payload del panel de eventos clinicos.
+
 El consumo externo a la feature debe entrar por `public.ts` o `index.ts`. Los imports profundos a
 `components/`, `controllers/` o bridges internos quedan reservados para implementación interna del
 feature.
@@ -65,6 +83,7 @@ feature.
 ## Checks recomendados
 
 - `npm exec -- vitest run src/tests/application/handoff src/tests/domain/handoff src/tests/hooks/controllers`
+- `npx vitest run src/tests/views/handoff`
 - `npm run check:handoff-context-boundaries`
 - `npm run check:quality`
 - `npm run typecheck`

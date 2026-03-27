@@ -12,13 +12,18 @@ export {
   shouldShowNightCudyrActions,
 } from './handoffViewController';
 export {
+  buildMedicalSpecialtyActor,
   buildMedicalHandoffSummary,
+  buildPrintableMedicalSpecialtyBlocks,
   canConfirmMedicalSpecialtyNoChanges,
   DEFAULT_NO_CHANGES_COMMENT,
   getMedicalSpecialtyLabel,
   getMedicalSpecialtyNote,
+  hasMedicalSpecialtyStructuredData,
   MEDICAL_SPECIALTY_ORDER,
+  resolveActiveMedicalSpecialty,
   resolveEditableMedicalSpecialties,
+  resolveMedicalSpecialtyContinuityDraft,
   resolveMedicalSpecialtyDailyStatus,
 } from './medicalSpecialtyHandoffController';
 export type { MedicalSpecialtyDailyStatus } from './medicalSpecialtyHandoffController';

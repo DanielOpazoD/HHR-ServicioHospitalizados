@@ -1,4 +1,4 @@
-import type { TransferRequest, TransferStatus } from '@/types/transfers';
+import type { TransferFormData, TransferRequest, TransferStatus } from '@/types/transfers';
 import {
   ACTIVE_TRANSFER_STATUSES,
   FINALIZED_TRANSFER_STATUSES,
@@ -33,6 +33,53 @@ export interface TransferManagementPeriodModel {
   filteredActiveCount: number;
   activeTransfers: TransferRequest[];
   finalizedTransfers: TransferRequest[];
+}
+
+interface TransferTableActionBindings {
+  setTransferStatus: (transfer: TransferRequest, newStatus: TransferStatus) => Promise<void>;
+  updateTransfer: (transferId: string, data: Partial<TransferFormData>) => Promise<void>;
+  undoTransfer: (transfer: TransferRequest) => Promise<void>;
+  archiveTransfer: (transfer: TransferRequest) => Promise<void>;
+  deleteHistoryEntry: (transfer: TransferRequest, historyIndex: number) => Promise<void>;
+  deleteTransfer: (transferId: string) => Promise<void>;
+}
+
+interface TransferTableHandlerBindings {
+  handleEditTransfer: (transfer: TransferRequest) => void;
+  handleStatusChange: (transfer: TransferRequest) => void;
+  handleMarkTransferred: (transfer: TransferRequest) => void;
+  handleCancel: (transfer: TransferRequest) => void;
+  handleGenerateDocs: (transfer: TransferRequest) => void;
+  handleViewDocs: (transfer: TransferRequest) => void;
+}
+
+export interface TransferTableViewBindings {
+  transfers: TransferRequest[];
+  mode?: 'active' | 'finalized';
+  emptyMessage: string;
+  onEdit: (transfer: TransferRequest) => void;
+  onStatusChange: (transfer: TransferRequest) => void;
+  onQuickStatusChange: (transfer: TransferRequest, newStatus: TransferStatus) => Promise<void>;
+  onMarkTransferred: (transfer: TransferRequest) => void;
+  onCancel: (transfer: TransferRequest) => void;
+  onGenerateDocs: (transfer: TransferRequest) => void;
+  onViewDocs: (transfer: TransferRequest) => void;
+  onUndo: (transfer: TransferRequest) => Promise<void>;
+  onArchive: (transfer: TransferRequest) => Promise<void>;
+  onDelete: (transfer: TransferRequest) => Promise<void>;
+  onDeleteHistoryEntry: (transfer: TransferRequest, historyIndex: number) => Promise<void>;
+  onUpdateTransfer: (transferId: string, data: Partial<TransferFormData>) => Promise<void>;
+}
+
+export interface TransferQuestionnairePatientData {
+  patientName: string;
+  rut: string;
+  admissionDate: string;
+  diagnosis: string;
+  bedName: string;
+  bedType: string;
+  isUPC: boolean;
+  originHospital: string;
 }
 
 export const buildTransferManagementPeriodModel = ({
@@ -98,3 +145,47 @@ export const buildTransferManagementPeriodModel = ({
     ),
   };
 };
+
+export const buildTransferTableBindings = ({
+  transfers,
+  mode = 'active',
+  handlers,
+  actions,
+}: {
+  transfers: TransferRequest[];
+  mode?: 'active' | 'finalized';
+  handlers: TransferTableHandlerBindings;
+  actions: TransferTableActionBindings;
+}): TransferTableViewBindings => ({
+  transfers,
+  mode,
+  emptyMessage:
+    mode === 'finalized'
+      ? 'No hay traslados finalizados para este período'
+      : 'No hay solicitudes activas de traslado para este período',
+  onEdit: handlers.handleEditTransfer,
+  onStatusChange: handlers.handleStatusChange,
+  onQuickStatusChange: actions.setTransferStatus,
+  onMarkTransferred: handlers.handleMarkTransferred,
+  onCancel: handlers.handleCancel,
+  onGenerateDocs: handlers.handleGenerateDocs,
+  onViewDocs: handlers.handleViewDocs,
+  onUndo: actions.undoTransfer,
+  onArchive: actions.archiveTransfer,
+  onDelete: transfer => actions.deleteTransfer(transfer.id),
+  onDeleteHistoryEntry: actions.deleteHistoryEntry,
+  onUpdateTransfer: actions.updateTransfer,
+});
+
+export const buildTransferQuestionnairePatientData = (
+  transfer: TransferRequest
+): TransferQuestionnairePatientData => ({
+  patientName: transfer.patientSnapshot.name,
+  rut: transfer.patientSnapshot.rut,
+  admissionDate: transfer.patientSnapshot.admissionDate,
+  diagnosis: transfer.patientSnapshot.diagnosis,
+  bedName: transfer.bedId.replace('BED_', ''),
+  bedType: 'Básica',
+  isUPC: false,
+  originHospital: 'Hospital Hanga Roa',
+});

@@ -1,6 +1,7 @@
 import type { AuthUser } from '@/types/auth';
 import type {
   DailyRecord,
+  MedicalHandoffActor,
   MedicalSpecialty,
   MedicalSpecialtyHandoffNote,
 } from '@/types/domain/dailyRecord';
@@ -90,6 +91,79 @@ export const resolveEditableMedicalSpecialties = (
 
 export const canConfirmMedicalSpecialtyNoChanges = (role: string | undefined): boolean =>
   role === 'admin' || role === 'nurse_hospital' || role === 'editor';
+
+export const buildMedicalSpecialtyActor = (
+  user: AuthUser | null | undefined,
+  role?: string
+): Partial<MedicalHandoffActor> => ({
+  uid: user?.uid,
+  email: user?.email || undefined,
+  displayName: user?.displayName || user?.email || undefined,
+  role,
+});
+
+export const resolveActiveMedicalSpecialty = ({
+  activeSpecialty,
+  editableSpecialties,
+}: {
+  activeSpecialty: MedicalSpecialty;
+  editableSpecialties: MedicalSpecialty[];
+}): MedicalSpecialty =>
+  editableSpecialties.length > 0 && !editableSpecialties.includes(activeSpecialty)
+    ? editableSpecialties[0]
+    : activeSpecialty;
+
+export const resolveMedicalSpecialtyContinuityDraft = ({
+  drafts,
+  specialty,
+  note,
+  dateKey,
+}: {
+  drafts: Partial<Record<MedicalSpecialty, string>>;
+  specialty: MedicalSpecialty;
+  note: MedicalSpecialtyHandoffNote | undefined;
+  dateKey: string;
+}): string =>
+  drafts[specialty] || note?.dailyContinuity?.[dateKey]?.comment || DEFAULT_NO_CHANGES_COMMENT;
+
+export const hasMedicalSpecialtyStructuredData = (
+  record: Pick<DailyRecord, 'medicalHandoffBySpecialty'>
+): boolean =>
+  MEDICAL_SPECIALTY_ORDER.some(specialty => Boolean(getMedicalSpecialtyNote(record, specialty)));
+
+export interface PrintableMedicalSpecialtyBlock {
+  specialty: MedicalSpecialty;
+  title: string;
+  content?: string;
+  continuityComment?: string;
+}
+
+export const buildPrintableMedicalSpecialtyBlocks = (
+  record: Pick<DailyRecord, 'date' | 'medicalHandoffBySpecialty'>
+): PrintableMedicalSpecialtyBlock[] =>
+  MEDICAL_SPECIALTY_ORDER.flatMap(specialty => {
+    const note = getMedicalSpecialtyNote(record, specialty);
+    const status = resolveMedicalSpecialtyDailyStatus(note, record.date);
+    const continuity = note?.dailyContinuity?.[record.date];
+    const content = note?.note?.trim();
+    const continuityComment =
+      status === 'confirmed_no_changes'
+        ? continuity?.comment?.trim() || DEFAULT_NO_CHANGES_COMMENT
+        : undefined;
+
+    if (!content && !continuityComment) {
+      return [];
+    }
+
+    return [
+      {
+        specialty,
+        title: getMedicalSpecialtyLabel(specialty),
+        content,
+        continuityComment,
+      },
+    ];
+  });
 
 const buildSpecialtySummaryBlock = (
   specialty: MedicalSpecialty,

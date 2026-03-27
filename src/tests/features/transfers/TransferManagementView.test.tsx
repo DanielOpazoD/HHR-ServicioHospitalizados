@@ -207,7 +207,7 @@ describe('TransferManagementView', () => {
     fireEvent.change(screen.getByLabelText(/editar nota note-1/i), {
       target: { value: 'Nota actualizada por admin' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /^guardar$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /guardar nota/i }));
 
     await waitFor(() => {
       expect(mockUpdateTransfer).toHaveBeenCalledWith(

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { MessageSquare, Stethoscope } from 'lucide-react';
 
 import { useDailyRecordData } from '@/context/DailyRecordContext';
 import { useDailyRecordHandoffActions } from '@/context/useDailyRecordScopedActions';
@@ -11,21 +10,17 @@ import { useHandoffLogic } from '@/hooks';
 import { useUIState, type UseUIStateReturn } from '@/hooks/useUIState';
 import { getAttributedAuthors } from '@/services/admin/attributionService';
 import {
-  resolveInitialMedicalScopeFromSearch,
-  resolveInitialMedicalSpecialtyFromSearch,
-} from '@/domain/handoff/view';
-import {
   buildHandoffClinicalEventActions,
   buildHandoffMedicalActions,
   resolveHandoffMedicalBindings,
 } from '@/features/handoff/controllers/handoffViewBindingsController';
 import { resolveMedicalHandoffCapabilities } from '@/features/handoff/controllers/medicalHandoffAccessController';
 import {
-  resolveHandoffDocumentTitle,
-  resolveHandoffTableHeaderClass,
-  resolveHandoffTitle,
+  resolveHandoffAuditDescriptor,
+  resolveHandoffScreenFrame,
+  resolveInitialMedicalScopeFromLocation,
+  resolveInitialMedicalSpecialtyFromLocation,
 } from '@/features/handoff/controllers/handoffViewController';
-import { canEditMedicalHandoffForDate } from '@/shared/access/operationalAccessPolicy';
 import type { Specialty } from '@/types/domain/base';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 import type {
@@ -48,16 +43,16 @@ export const useHandoffViewScreenModel = ({
 }: UseHandoffViewScreenModelParams) => {
   const initialMedicalSpecialtyFromUrl = useMemo(
     () =>
-      typeof window === 'undefined'
-        ? ('all' as Specialty | 'all')
-        : resolveInitialMedicalSpecialtyFromSearch(window.location.search),
+      resolveInitialMedicalSpecialtyFromLocation(
+        typeof window === 'undefined' ? undefined : window.location.search
+      ),
     []
   );
   const initialMedicalScopeFromUrl = useMemo(
     () =>
-      typeof window === 'undefined'
-        ? ('all' as MedicalHandoffScope)
-        : resolveInitialMedicalScopeFromSearch(window.location.search),
+      resolveInitialMedicalScopeFromLocation(
+        typeof window === 'undefined' ? undefined : window.location.search
+      ),
     []
   );
   const effectiveMedicalScope = medicalScope ?? initialMedicalScopeFromUrl;
@@ -140,6 +135,25 @@ export const useHandoffViewScreenModel = ({
   );
 
   const recordDate = record?.date;
+  const screenFrame = useMemo(
+    () =>
+      resolveHandoffScreenFrame({
+        isMedical,
+        selectedShift,
+        role,
+        readOnly,
+        recordDate,
+      }),
+    [isMedical, readOnly, recordDate, role, selectedShift]
+  );
+  const auditDescriptor = useMemo(
+    () =>
+      resolveHandoffAuditDescriptor({
+        isMedical,
+        selectedShift,
+      }),
+    [isMedical, selectedShift]
+  );
 
   useEffect(() => {
     if (!recordDate) {
@@ -158,51 +172,34 @@ export const useHandoffViewScreenModel = ({
     );
 
     logEventRef.current(
-      isMedical ? 'VIEW_MEDICAL_HANDOFF' : 'VIEW_NURSING_HANDOFF',
+      auditDescriptor.action,
       'dailyRecord',
       recordDate,
-      {
-        view: isMedical ? 'medical_handoff' : 'nursing_handoff',
-        shift: selectedShift,
-      },
+      auditDescriptor.details,
       undefined,
       recordDate,
       authors
     );
-  }, [isMedical, recordDate, selectedShift, userId]);
+  }, [auditDescriptor, isMedical, recordDate, selectedShift, userId]);
 
   useEffect(() => {
-    const nextTitle = resolveHandoffDocumentTitle({
-      isMedical,
-      selectedShift,
-      recordDate: record?.date,
-    });
+    const nextTitle = screenFrame.documentTitle;
     if (!nextTitle) {
       return;
     }
 
     document.title = nextTitle;
     return () => void (document.title = 'Hospital Hanga Roa');
-  }, [isMedical, record?.date, selectedShift]);
-
-  const title = resolveHandoffTitle({ isMedical, selectedShift });
-  const effectiveReadOnly =
-    readOnly ||
-    (isMedical &&
-      !canEditMedicalHandoffForDate({
-        role,
-        readOnly,
-        recordDate: record?.date,
-      }));
+  }, [screenFrame.documentTitle]);
 
   const medicalCapabilities = useMemo(
     () =>
       resolveMedicalHandoffCapabilities({
         role,
-        readOnly: effectiveReadOnly,
-        recordDate: record?.date,
+        readOnly: screenFrame.effectiveReadOnly,
+        recordDate,
       }),
-    [effectiveReadOnly, record?.date, role]
+    [recordDate, role, screenFrame.effectiveReadOnly]
   );
 
   const medicalActions: HandoffMedicalActions = useMemo(
@@ -248,8 +245,8 @@ export const useHandoffViewScreenModel = ({
     record,
     isMedical,
     role,
-    title,
-    readOnly: effectiveReadOnly,
+    title: screenFrame.title,
+    readOnly: screenFrame.effectiveReadOnly,
     nursesList,
     success,
     schedule,
@@ -278,7 +275,7 @@ export const useHandoffViewScreenModel = ({
     updateMedicalHandoffDoctor,
     markMedicalHandoffAsSent,
     resetMedicalHandoffState,
-    tableHeaderClass: resolveHandoffTableHeaderClass({ isMedical, selectedShift }),
-    Icon: isMedical ? Stethoscope : MessageSquare,
+    tableHeaderClass: screenFrame.tableHeaderClass,
+    Icon: screenFrame.Icon,
   };
 };
