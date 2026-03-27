@@ -74,6 +74,7 @@ const requiredKeys = [
   'syncDomainProfiles',
   'conflictContexts',
   'legacyBridge',
+  'compatibilityGovernance',
   'localPersistence',
   'repositoryPerformance',
   'runbooks',
@@ -89,6 +90,10 @@ if (!Array.isArray(report.syncDomainProfiles) || report.syncDomainProfiles.lengt
 
 if (!report.legacyBridge || typeof report.legacyBridge !== 'object') {
   fail('reports/operational-health.json must include legacyBridge summary');
+}
+
+if (!report.compatibilityGovernance || typeof report.compatibilityGovernance !== 'object') {
+  fail('reports/operational-health.json must include compatibilityGovernance summary');
 }
 
 if (!Array.isArray(report.runbooks) || report.runbooks.length < 6) {

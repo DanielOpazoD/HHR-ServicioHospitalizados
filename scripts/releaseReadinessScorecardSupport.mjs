@@ -27,6 +27,7 @@ export const buildReleaseReadinessScorecard = root => {
     releaseConfidenceMatrix: 'reports/release-confidence-matrix.json',
     technicalOwnershipMap: 'reports/technical-ownership-map.json',
     guardrailGovernance: 'reports/guardrail-governance.json',
+    compatibilityImportGovernance: 'reports/compatibility-import-governance.json',
   };
 
   const sources = Object.fromEntries(
@@ -122,6 +123,21 @@ export const buildReleaseReadinessScorecard = root => {
         guardrailOk,
         `blockingTiers=${guardrailGovernance.blockingTierCount ?? 'n/a'}, reportOnly=${guardrailGovernance.reportOnlyCount ?? 'n/a'}`,
         `blockingTiers=${guardrailGovernance.blockingTierCount ?? 'n/a'}, reportOnly=${guardrailGovernance.reportOnlyCount ?? 'n/a'}`
+      ),
+    });
+  }
+
+  const compatibilityImportGovernance = sources.compatibilityImportGovernance;
+  if (compatibilityImportGovernance) {
+    const compatibilityOk =
+      Number(compatibilityImportGovernance.checkedEntries || 0) > 0 &&
+      Number(compatibilityImportGovernance.issues?.length || 0) === 0;
+    indicators.push({
+      name: 'compatibility_governance',
+      ...statusFrom(
+        compatibilityOk,
+        `restrictedEntries=${compatibilityImportGovernance.checkedEntries ?? 'n/a'}, unauthorizedImports=${compatibilityImportGovernance.issues?.length ?? 'n/a'}`,
+        `restrictedEntries=${compatibilityImportGovernance.checkedEntries ?? 'n/a'}, unauthorizedImports=${compatibilityImportGovernance.issues?.length ?? 'n/a'}`
       ),
     });
   }

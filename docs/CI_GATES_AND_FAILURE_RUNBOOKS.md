@@ -106,6 +106,28 @@ Salida esperada:
 4. si agregaste un subsistema crítico nuevo o cambió el runbook operativo, actualizar el mapa en la misma change
 5. no aceptar deuda crítica sin owner operativo explícito
 
+### Falla `check:compatibility-import-governance`
+
+1. correr `npm run report:compatibility-import-governance`
+2. revisar `reports/compatibility-import-governance.md`
+3. confirmar si el importer detectado es:
+   - un consumidor legacy explícitamente tolerado;
+   - una dependencia nueva no autorizada hacia un bridge transicional
+4. si la dependencia nueva es legítima por migración activa, agregarla al inventario en `scripts/config/compatibility-governance.json` en la misma change
+5. si no es legítima, mover el import al entrypoint canónico dueño y no al facade/bridge legacy
+6. no aceptar nuevas dependencias productivas a compatibilidad transitoria sin excepción documentada
+
+### Falla `check:serverless-sensitive-coverage`
+
+1. correr `npm run report:serverless-sensitive-coverage`
+2. revisar `reports/serverless-sensitive-coverage.md`
+3. confirmar para cada Function sensible que sigan presentes:
+   - archivo de Function
+   - al menos un test de frontera dueño
+   - documentación en `docs/SERVERLESS_SENSITIVE_CONTRACTS.md`
+4. si agregaste una Function sensible nueva, registrarla en `scripts/config/serverless-sensitive-coverage.json` en la misma change
+5. no aceptar endpoints sensibles sin test focalizado y contrato operativo documentado
+
 ### Falla `check:release-readiness-scorecard`
 
 1. correr `npm run report:release-readiness-scorecard`

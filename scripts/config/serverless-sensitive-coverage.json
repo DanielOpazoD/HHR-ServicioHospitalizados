@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "contractsDoc": "docs/SERVERLESS_SENSITIVE_CONTRACTS.md",
+  "entries": [
+    {
+      "id": "send_census_email",
+      "functionFile": "netlify/functions/send-census-email.ts",
+      "endpoint": "send-census-email",
+      "testFiles": ["src/tests/netlify/sendCensusEmailFunction.test.ts"]
+    },
+    {
+      "id": "fhir_api",
+      "functionFile": "netlify/functions/fhir-api.ts",
+      "endpoint": "fhir-api",
+      "testFiles": ["src/tests/netlify/fhirApi.test.ts"]
+    },
+    {
+      "id": "clinical_ai_summary",
+      "functionFile": "netlify/functions/clinical-ai-summary.ts",
+      "endpoint": "clinical-ai-summary",
+      "testFiles": ["src/tests/netlify/clinicalAiSummary.test.ts"]
+    },
+    {
+      "id": "cie10_ai_search",
+      "functionFile": "netlify/functions/cie10-ai-search.ts",
+      "endpoint": "cie10-ai-search",
+      "testFiles": ["src/tests/netlify/cie10AiSearch.test.ts"]
+    },
+    {
+      "id": "whatsapp_proxy",
+      "functionFile": "netlify/functions/whatsapp-proxy.ts",
+      "endpoint": "whatsapp-proxy",
+      "testFiles": ["src/tests/security/whatsappProxy.test.ts"]
+    }
+  ]
+}

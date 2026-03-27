@@ -4,16 +4,14 @@
  */
 
 import {
-  PatientData,
   CudyrScore,
-  PatientStatus,
-  Specialty,
   DeviceDetails,
   ClinicalEvent,
   DeviceInstance,
-  MedicalHandoffAudit,
-  MedicalHandoffEntry,
-} from './core';
+  FhirResource,
+} from './domain/clinical';
+import type { PatientData, MedicalHandoffAudit, MedicalHandoffEntry } from './domain/patient';
+import type { PatientStatus, Specialty } from './domain/base';
 import { LucideIcon } from 'lucide-react';
 
 // ============================================================================
@@ -38,7 +36,7 @@ export type PatientFieldValue =
   | DeviceInstance[]
   | MedicalHandoffAudit
   | MedicalHandoffEntry[]
-  | import('./core').FhirResource;
+  | FhirResource;
 
 /**
  * Specific field value types for type-safe updates

@@ -35,10 +35,23 @@ vi.mock('../../../netlify/functions/lib/firebase-auth', () => ({
   extractBearerToken: (...args: unknown[]) => extractBearerTokenMock(...args),
 }));
 
-import { handler } from '../../../netlify/functions/fhir-api';
+import { createFhirApiHandler } from '../../../netlify/functions/fhir-api';
 
 describe('fhir-api netlify function', () => {
   const originalEnv = { ...process.env };
+  const handler = createFhirApiHandler({
+    getFirebaseServer: getFirebaseServerMock as typeof getFirebaseServerMock,
+    authorizeRoleRequest: authorizeFhirRequestMock as typeof authorizeFhirRequestMock,
+    extractBearerToken: extractBearerTokenMock as typeof extractBearerTokenMock,
+    getDoc: getDocMock as typeof getDocMock,
+    getDocs: getDocsMock as typeof getDocsMock,
+    doc: docMock as typeof docMock,
+    collection: collectionMock as typeof collectionMock,
+    query: queryMock as typeof queryMock,
+    where: whereMock as typeof whereMock,
+    mapMasterPatientToFhir: mapMasterPatientToFhirMock as typeof mapMasterPatientToFhirMock,
+    mapEncounterToFhir: mapEncounterToFhirMock as typeof mapEncounterToFhirMock,
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -210,5 +223,77 @@ describe('fhir-api netlify function', () => {
         issue: [expect.objectContaining({ code: 'required' })],
       })
     );
+  });
+
+  it('returns 400 for invalid encounter ids before touching firestore', async () => {
+    const response = await handler({
+      httpMethod: 'GET',
+      headers: {
+        origin: 'https://app.example.com',
+        authorization: 'Bearer token-123',
+      },
+      body: null,
+      path: '/.netlify/functions/fhir-api/Encounter/bad-id',
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(JSON.parse(response.body)).toEqual(
+      expect.objectContaining({
+        resourceType: 'OperationOutcome',
+        issue: [expect.objectContaining({ code: 'invalid' })],
+      })
+    );
+    expect(docMock).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 operation outcomes for unsupported resources', async () => {
+    const response = await handler({
+      httpMethod: 'GET',
+      headers: {
+        origin: 'https://app.example.com',
+        authorization: 'Bearer token-123',
+      },
+      body: null,
+      path: '/.netlify/functions/fhir-api/Observation/obs-1',
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(JSON.parse(response.body)).toEqual(
+      expect.objectContaining({
+        resourceType: 'OperationOutcome',
+        issue: [expect.objectContaining({ code: 'not-found' })],
+      })
+    );
+  });
+
+  it('falls back to query by rut when the patient document id does not match', async () => {
+    getDocMock.mockResolvedValue({
+      exists: () => false,
+    });
+    getDocsMock.mockResolvedValue({
+      empty: false,
+      docs: [
+        {
+          data: () => ({ rut: '12345678-9' }),
+        },
+      ],
+    });
+
+    const response = await handler({
+      httpMethod: 'GET',
+      headers: {
+        origin: 'https://app.example.com',
+        authorization: 'Bearer token-123',
+      },
+      body: null,
+      path: '/.netlify/functions/fhir-api/Patient/12345678-9',
+    });
+
+    expect(queryMock).toHaveBeenCalled();
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual({
+      resourceType: 'Patient',
+      id: '12345678-9',
+    });
   });
 });

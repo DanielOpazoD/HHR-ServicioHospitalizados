@@ -47,6 +47,48 @@ export const ClinicalSummaryResponseSchema = z.object({
 
 export type ClinicalSummaryResponse = z.infer<typeof ClinicalSummaryResponseSchema>;
 
+export const FhirIssueSchema = z.object({
+  severity: z.string(),
+  code: z.string(),
+  diagnostics: z.string(),
+});
+
+export const FhirOperationOutcomeSchema = z.object({
+  resourceType: z.literal('OperationOutcome'),
+  issue: z.array(FhirIssueSchema).min(1),
+});
+
+export type FhirOperationOutcome = z.infer<typeof FhirOperationOutcomeSchema>;
+
+export const FhirCapabilityStatementSchema = z.object({
+  resourceType: z.literal('CapabilityStatement'),
+  status: z.string(),
+  date: z.string(),
+  kind: z.string(),
+  software: z.object({
+    name: z.string(),
+    version: z.string(),
+  }),
+  implementation: z.object({
+    description: z.string(),
+  }),
+  fhirVersion: z.string(),
+  format: z.array(z.string()),
+  rest: z.array(
+    z.object({
+      mode: z.string(),
+      resource: z.array(
+        z.object({
+          type: z.string(),
+          interaction: z.array(z.object({ code: z.string() })),
+        })
+      ),
+    })
+  ),
+});
+
+export type FhirCapabilityStatement = z.infer<typeof FhirCapabilityStatementSchema>;
+
 const CensusWorkbookSheetDescriptorSchema: z.ZodType<CensusWorkbookSheetDescriptor> = z.custom();
 const DailyRecordArraySchema: z.ZodType<DailyRecord[]> = z.custom(
   (value): value is DailyRecord[] =>

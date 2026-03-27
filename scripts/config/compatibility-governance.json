@@ -11,7 +11,9 @@
       "reason": "Mantener una superficie estable mientras el consumo migra a session-state y modulos auth internos.",
       "remainingConsumers": "app-level auth imports y tests legacy",
       "retirementCriteria": "Consumers migrados a entrypoints auth especificos y session-state canónico.",
-      "target": "2026-Q2"
+      "target": "2026-Q2",
+      "importPolicy": "restricted",
+      "allowedImporters": ["src/services/auth/index.ts"]
     },
     {
       "path": "functions/lib/auth/authHelpersFactory.js",
@@ -56,7 +58,12 @@
       "reason": "Evitar imports internos profundos desde consumidores externos al contexto auth.",
       "remainingConsumers": "consumidores auth de alto nivel",
       "retirementCriteria": "Entry points publicos auth estabilizados y uso directo del barrel minimizado.",
-      "target": "2026-Q2"
+      "target": "2026-Q2",
+      "importPolicy": "restricted",
+      "allowedImporters": [
+        "src/application/auth/authSessionUseCases.ts",
+        "src/hooks/useAuthState.ts"
+      ]
     },
     {
       "path": "src/services/index.ts",
@@ -65,7 +72,9 @@
       "reason": "Sostener imports legacy mientras el repo converge a imports por contexto.",
       "remainingConsumers": "imports legacy transversales",
       "retirementCriteria": "Imports profundos legacy removidos y surface del barrel reducida al minimo.",
-      "target": "2026-Q3"
+      "target": "2026-Q3",
+      "importPolicy": "restricted",
+      "allowedImporters": []
     },
     {
       "path": "src/types/index.ts",
@@ -83,7 +92,9 @@
       "reason": "Mantener compatibilidad temporal mientras el source converge a imports por dominio en `types/domain/*`.",
       "remainingConsumers": "tests legacy puntuales y barrels de compatibilidad",
       "retirementCriteria": "Source productivo sin imports a `@/types/core` y facade reducida a compatibilidad residual gobernada por check estático.",
-      "target": "2026-Q3"
+      "target": "2026-Q3",
+      "importPolicy": "restricted",
+      "allowedImporters": []
     },
     {
       "path": "src/constants/index.ts",
@@ -92,7 +103,9 @@
       "reason": "Sostener imports legacy mientras el source converge a constants dueños por contexto.",
       "remainingConsumers": "tests legacy puntuales y compatibilidad transicional inventariada",
       "retirementCriteria": "Source productivo sin imports a `@/constants` y barrel reducido a compatibilidad residual gobernada por check estático.",
-      "target": "2026-Q3"
+      "target": "2026-Q3",
+      "importPolicy": "restricted",
+      "allowedImporters": []
     },
     {
       "path": "src/services/dataService.ts",
@@ -101,7 +114,9 @@
       "reason": "Conservar compatibilidad temporal con utilidades historicas consolidadas.",
       "remainingConsumers": "call sites historicos de datos locales/repositorio",
       "retirementCriteria": "Call sites migrados a servicios dueños y sin nuevas dependencias.",
-      "target": "2026-Q3"
+      "target": "2026-Q3",
+      "importPolicy": "restricted",
+      "allowedImporters": []
     },
     {
       "path": "src/services/storage/index.ts",
@@ -110,7 +125,9 @@
       "reason": "Exponer una surface curada mientras persisten dependencias legacy de storage.",
       "remainingConsumers": "tests legacy puntuales y compatibilidad controlada",
       "retirementCriteria": "Consumidores residuales movidos a `storage/firestore|sync|core|records|runtime` sin imports nuevos al barrel.",
-      "target": "2026-Q3"
+      "target": "2026-Q3",
+      "importPolicy": "restricted",
+      "allowedImporters": []
     },
     {
       "path": "src/services/storage/firestoreService.ts",
@@ -119,7 +136,9 @@
       "reason": "Mantener compatibilidad temporal mientras el runtime productivo converge a `storage/firestore` como entrypoint canónico.",
       "remainingConsumers": "tests legacy puntuales y adaptadores de compatibilidad inventariados",
       "retirementCriteria": "Consumers residuales movidos a `storage/firestore` y guardrails sin allowlists nuevas.",
-      "target": "2026-Q3"
+      "target": "2026-Q3",
+      "importPolicy": "restricted",
+      "allowedImporters": []
     },
     {
       "path": "src/services/storage/syncQueueService.ts",
@@ -128,7 +147,9 @@
       "reason": "Preservar imports históricos mientras `storage/sync` concentra la surface pública canónica del outbox.",
       "remainingConsumers": "tests legacy puntuales y adaptadores de compatibilidad inventariados",
       "retirementCriteria": "Consumers residuales movidos a `storage/sync` y facade relegada a compatibilidad controlada.",
-      "target": "2026-Q3"
+      "target": "2026-Q3",
+      "importPolicy": "restricted",
+      "allowedImporters": []
     },
     {
       "path": "src/features/handoff/controllers/handoffManagementController.ts",
@@ -137,7 +158,9 @@
       "reason": "Mantener imports estables mientras consumers migran a application/domain handoff.",
       "remainingConsumers": "solo tests legacy o adapters de compatibilidad inventariados",
       "retirementCriteria": "Puente sin consumidores fuera de compatibilidad y con checks impidiendo imports productivos nuevos.",
-      "target": "2026-Q2"
+      "target": "2026-Q2",
+      "importPolicy": "restricted",
+      "allowedImporters": []
     },
     {
       "path": "src/features/handoff/controllers/medicalPatientHandoffController.ts",
@@ -146,7 +169,9 @@
       "reason": "Preservar compatibilidad temporal del flujo médico por paciente durante la migración al dominio.",
       "remainingConsumers": "solo tests legacy o adapters de compatibilidad inventariados",
       "retirementCriteria": "Consumers movidos a domain/application de patient entries y render model, con source productivo bloqueado por guardrail.",
-      "target": "2026-Q2"
+      "target": "2026-Q2",
+      "importPolicy": "restricted",
+      "allowedImporters": []
     },
     {
       "path": "src/features/handoff/controllers/medicalPatientHandoffMutationController.ts",
@@ -155,7 +180,9 @@
       "reason": "Sostener imports existentes mientras las mutaciones médicas se consumen desde use cases.",
       "remainingConsumers": "solo tests legacy o adapters de compatibilidad inventariados",
       "retirementCriteria": "Mutaciones consumidas solo desde application/handoff y sin consumers productivos externos al bridge.",
-      "target": "2026-Q2"
+      "target": "2026-Q2",
+      "importPolicy": "restricted",
+      "allowedImporters": []
     },
     {
       "path": "src/features/handoff/controllers/handoffScreenController.ts",
@@ -164,7 +191,9 @@
       "reason": "Mantener compatibilidad con imports previos mientras el read model vive en application/handoff.",
       "remainingConsumers": "solo tests legacy o adapters de compatibilidad inventariados",
       "retirementCriteria": "Read model consumido solo desde application/handoff y sin imports productivos al bridge.",
-      "target": "2026-Q2"
+      "target": "2026-Q2",
+      "importPolicy": "restricted",
+      "allowedImporters": []
     },
     {
       "path": "src/features/handoff/controllers/medicalPatientHandoffViewController.ts",
@@ -173,7 +202,9 @@
       "reason": "Conservar compatibilidad temporal mientras links, filtros y deep links viven en domain/handoff/view.",
       "remainingConsumers": "solo tests legacy o adapters de compatibilidad inventariados",
       "retirementCriteria": "Consumers migrados a domain/handoff/view y source productivo bloqueado por guardrail.",
-      "target": "2026-Q2"
+      "target": "2026-Q2",
+      "importPolicy": "restricted",
+      "allowedImporters": []
     },
     {
       "path": "src/features/handoff/controllers/medicalPatientHandoffRenderController.ts",
@@ -182,7 +213,9 @@
       "reason": "Preservar imports temporales mientras la metadata/render logic vive en domain/handoff/patientView.",
       "remainingConsumers": "solo tests legacy o adapters de compatibilidad inventariados",
       "retirementCriteria": "Consumers migrados a domain/handoff/patientView y source productivo bloqueado por guardrail.",
-      "target": "2026-Q2"
+      "target": "2026-Q2",
+      "importPolicy": "restricted",
+      "allowedImporters": []
     },
     {
       "path": "src/services/storage/legacyFirebaseService.ts",
@@ -191,7 +224,9 @@
       "reason": "Compatibilidad histórica con rutas Firestore legacy fuera del camino caliente actual.",
       "remainingConsumers": "migration/legacyFirestoreBridge y tests legacy",
       "retirementCriteria": "Compatibilidad legacy desactivada o encapsulada completamente detrás de `storage/migration/legacyFirestoreBridge` sin imports directos al facade.",
-      "target": "2026-Q4"
+      "target": "2026-Q4",
+      "importPolicy": "restricted",
+      "allowedImporters": []
     }
   ]
 }

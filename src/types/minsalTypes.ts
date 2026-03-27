@@ -4,7 +4,7 @@
  * Based on DEIS (Departamento de Estadísticas e Información de Salud) standards
  */
 
-import { Specialty } from './core';
+import type { Specialty } from './domain/base';
 
 /**
  * Date range preset options for statistics filtering

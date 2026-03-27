@@ -186,6 +186,10 @@ const systemHealthBudgets = extractObjectNumbers(
 const syncDomainProfiles = extractSyncDomainProfiles(syncDomainPolicyContent);
 const conflictContexts = extractConflictRunbookActions(conflictDomainContent);
 const legacyBridgeReport = readJsonReport('reports/legacy-bridge-governance.json');
+const compatibilityGovernanceReport = readJsonReport('reports/compatibility-governance.json');
+const compatibilityImportGovernanceReport = readJsonReport(
+  'reports/compatibility-import-governance.json'
+);
 const prolongedOfflineUserAgeMs = extractConstNumber(
   systemHealthBudgetContent,
   'PROLONGED_OFFLINE_USER_AGE_MS'
@@ -256,6 +260,21 @@ const summary = {
   syncDomainProfiles,
   conflictContexts,
   legacyBridge: legacyBridgeReport,
+  compatibilityGovernance: compatibilityGovernanceReport
+    ? {
+        policyVersion: compatibilityGovernanceReport.policyVersion ?? 'unknown',
+        trackedEntries: compatibilityGovernanceReport.trackedEntries ?? 0,
+        missingEntries: Array.isArray(compatibilityGovernanceReport.missingEntries)
+          ? compatibilityGovernanceReport.missingEntries
+          : [],
+        restrictedEntries: Array.isArray(compatibilityImportGovernanceReport?.entries)
+          ? compatibilityImportGovernanceReport.entries.length
+          : 0,
+        unauthorizedImportCount: Array.isArray(compatibilityImportGovernanceReport?.issues)
+          ? compatibilityImportGovernanceReport.issues.length
+          : 0,
+      }
+    : null,
   localPersistence,
   authAccess,
   authBootstrap,
@@ -372,6 +391,19 @@ ${Object.entries(summary.conflictContexts)
     : 'unknown'
 }
 - Hot path policy: ${summary.legacyBridge?.hotPathPolicy ?? 'unknown'}
+
+## Compatibility Governance
+
+- Policy version: ${summary.compatibilityGovernance?.policyVersion ?? 'unknown'}
+- Tracked entries: ${summary.compatibilityGovernance?.trackedEntries ?? 'unknown'}
+- Missing entries: ${
+  Array.isArray(summary.compatibilityGovernance?.missingEntries) &&
+  summary.compatibilityGovernance.missingEntries.length > 0
+    ? summary.compatibilityGovernance.missingEntries.join(', ')
+    : 'none'
+}
+- Restricted import surfaces: ${summary.compatibilityGovernance?.restrictedEntries ?? 'unknown'}
+- Unauthorized importers: ${summary.compatibilityGovernance?.unauthorizedImportCount ?? 'unknown'}
 
 ## Local Persistence Recovery Budgets
 

@@ -64,6 +64,21 @@
       "artifact": "reports/system-confidence.md"
     },
     {
+      "id": "compatibility_governance",
+      "script": "report:compatibility-governance",
+      "artifact": "reports/compatibility-governance.md"
+    },
+    {
+      "id": "serverless_sensitive_coverage",
+      "script": "report:serverless-sensitive-coverage",
+      "artifact": "reports/serverless-sensitive-coverage.md"
+    },
+    {
+      "id": "compatibility_import_governance",
+      "script": "report:compatibility-import-governance",
+      "artifact": "reports/compatibility-import-governance.md"
+    },
+    {
       "id": "release_readiness",
       "script": "report:release-readiness-scorecard",
       "artifact": "reports/release-readiness-scorecard.md"
@@ -124,9 +139,11 @@
       { "id": "check:persistence-hub-boundaries", "group": "boundaries" },
       { "id": "check:legacy-localstorage-imports", "group": "boundaries" },
       { "id": "check:legacy-bridge-boundary", "group": "boundaries" },
+      { "id": "check:compatibility-import-governance", "group": "governance" },
       { "id": "check:schema-governance", "group": "governance" },
       { "id": "check:runtime-contracts", "group": "governance" },
       { "id": "check:serverless-runtime-governance", "group": "governance" },
+      { "id": "check:serverless-sensitive-coverage", "group": "governance" },
       { "id": "check:docs-drift", "group": "governance" },
       { "id": "check:operational-runbooks", "group": "governance" },
       { "id": "check:folder-dependencies", "group": "boundaries" },
