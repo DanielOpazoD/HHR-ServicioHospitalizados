@@ -1,4 +1,4 @@
-import type { PatientData } from '@/types/domain/patient';
+import type { PatientData } from '@/features/census/components/patient-row/patientRowContracts';
 import type { StabilityRules } from '@/hooks/useStabilityRules';
 import type { PatientRowAction } from '@/features/census/types/patientRowActionTypes';
 import {

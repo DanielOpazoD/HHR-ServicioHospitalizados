@@ -1,5 +1,5 @@
 import type { BedDefinition } from '@/types/domain/base';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
+import type { DailyRecord } from '@/domain/handoff/recordContracts';
 
 export type MedicalPrintMode = 'all' | 'upc' | 'no-upc';
 export type MedicalTabMode = 'all' | 'upc' | 'no-upc';

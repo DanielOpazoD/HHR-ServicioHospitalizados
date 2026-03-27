@@ -1,5 +1,5 @@
 import React from 'react';
-import { DailyRecord } from '@/types/domain/dailyRecord';
+import { DailyRecord } from '@/domain/handoff/recordContracts';
 import { HandoffStaffSelector } from './HandoffStaffSelector';
 import { HandoffStaffDisplay } from './HandoffStaffDisplay';
 import { HandoffChecklistDay } from './HandoffChecklistDay';

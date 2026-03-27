@@ -1,5 +1,5 @@
 import type { DeviceDetails, DeviceInstance } from '@/types/domain/clinical';
-import type { PatientData } from '@/types/domain/patient';
+import type { PatientData } from '@/features/census/components/patient-row/patientRowContracts';
 import type { PatientFieldValue } from '@/types/valueTypes';
 
 interface BuildPatientRowInputCommandsParams {

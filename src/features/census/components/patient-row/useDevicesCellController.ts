@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { DeviceDetails, DeviceInstance } from '@/types/domain/clinical';
-import { PatientData } from '@/types/domain/patient';
+import { PatientData } from '@/features/census/components/patient-row/patientRowContracts';
 import {
   buildDetailsChangeResult,
   buildModalSaveResult,

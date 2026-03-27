@@ -6,7 +6,7 @@ import { resolveHandoffMedicalScreenState } from '@/application/handoff';
 import type { MedicalHandoffCapabilities } from '@/features/handoff/controllers/medicalHandoffAccessController';
 import type { ClinicalEvent } from '@/types/domain/clinical';
 import type { Specialty, BedDefinition } from '@/types/domain/base';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
+import type { DailyRecord } from '@/domain/handoff/recordContracts';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 
 interface BuildHandoffMedicalActionsParams {

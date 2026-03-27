@@ -1,7 +1,10 @@
 import React from 'react';
 import { Check, Trash2, X } from 'lucide-react';
 import clsx from 'clsx';
-import type { CesareanLabor, DeliveryRoute } from '@/types/domain/patient';
+import type {
+  CesareanLabor,
+  DeliveryRoute,
+} from '@/features/census/components/patient-row/patientRowContracts';
 
 interface DeliveryRoutePopoverPanelProps {
   selectedDate: string;

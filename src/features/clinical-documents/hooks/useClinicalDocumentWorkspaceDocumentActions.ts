@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import type { PatientData } from '@/types/domain/patient';
+import type { PatientData } from '@/features/clinical-documents/contracts/clinicalDocumentsPatientContract';
 import type { UserRole } from '@/types/auth';
 import type { ConfirmOptions } from '@/context/uiContracts';
 import type {

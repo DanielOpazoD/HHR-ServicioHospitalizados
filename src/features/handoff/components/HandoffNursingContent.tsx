@@ -1,6 +1,6 @@
 import React from 'react';
 import type { BedDefinition } from '@/types/domain/base';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
+import type { DailyRecord } from '@/domain/handoff/recordContracts';
 import { HandoffPatientTable } from './HandoffPatientTable';
 import { MovementsSummary } from './MovementsSummary';
 import { HandoffNovedades } from './HandoffNovedades';

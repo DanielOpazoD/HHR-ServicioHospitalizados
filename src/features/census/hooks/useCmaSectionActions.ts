@@ -1,7 +1,7 @@
 import React from 'react';
 
 import type { CMAData } from '@/types/domain/movements';
-import type { PatientData } from '@/types/domain/patient';
+import type { PatientData } from '@/features/census/contracts/censusDomainContracts';
 import { executeUndoCmaController } from '@/features/census/controllers/censusCmaController';
 import type { ControllerConfirmDescriptor } from '@/shared/contracts/controllers/confirmDescriptor';
 

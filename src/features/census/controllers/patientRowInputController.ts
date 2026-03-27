@@ -1,4 +1,8 @@
-import type { CesareanLabor, DeliveryRoute, PatientData } from '@/types/domain/patient';
+import type {
+  CesareanLabor,
+  DeliveryRoute,
+  PatientData,
+} from '@/features/census/components/patient-row/patientRowContracts';
 
 export const resolveNextDocumentType = (
   currentType: PatientData['documentType'] | undefined

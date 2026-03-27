@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 import type { DiagnosisMode } from '@/features/census/types/censusTableTypes';
 import type { PatientRowAction } from '@/features/census/types/patientRowActionTypes';
 import type { BedDefinition, BedType } from '@/types/domain/base';
-import type { PatientData } from '@/types/domain/patient';
+import type { PatientData } from '@/features/census/components/patient-row/patientRowContracts';
 import type { UserRole } from '@/types/auth';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 import type {

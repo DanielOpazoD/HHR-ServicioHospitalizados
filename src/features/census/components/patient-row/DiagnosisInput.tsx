@@ -13,7 +13,11 @@ import {
 } from '@/shared/census/ginecobstetriciaClassification';
 import { PatientInputSchema } from '@/schemas/inputSchemas';
 import { getCIE10Description } from '@/services/terminology/terminologyService';
-import type { CesareanLabor, DeliveryRoute, PatientData } from '@/types/domain/patient';
+import type {
+  CesareanLabor,
+  DeliveryRoute,
+  PatientData,
+} from '@/features/census/components/patient-row/patientRowContracts';
 import type { DiagnosisMode } from '@/features/census/types/censusTableTypes';
 import { BaseCellProps, DebouncedTextHandler } from './inputCellTypes';
 import { PatientEmptyCell } from './PatientEmptyCell';

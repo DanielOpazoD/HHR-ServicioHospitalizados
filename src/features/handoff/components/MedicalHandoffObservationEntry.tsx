@@ -1,7 +1,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
-import type { MedicalHandoffEntry, PatientData } from '@/types/domain/patient';
+import type { MedicalHandoffEntry, PatientData } from '@/domain/handoff/patientContracts';
 import { Info, Plus, Trash2 } from 'lucide-react';
 import { DebouncedTextarea } from '@/components/ui/DebouncedTextarea';
 import {

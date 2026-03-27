@@ -6,7 +6,7 @@ import type {
   DailyRecord,
   MedicalHandoffActor,
   MedicalSpecialty,
-} from '@/types/domain/dailyRecord';
+} from '@/domain/handoff/recordContracts';
 import { DebouncedTextarea } from '@/components/ui/DebouncedTextarea';
 import {
   buildMedicalSpecialtyActor,

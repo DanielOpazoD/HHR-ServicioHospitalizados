@@ -1,5 +1,5 @@
 import type { BedDefinition } from '@/types/domain/base';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
+import type { DailyRecord } from '@/features/census/contracts/censusDomainContracts';
 
 export interface BedManagerBlockedGridItem {
   id: string;

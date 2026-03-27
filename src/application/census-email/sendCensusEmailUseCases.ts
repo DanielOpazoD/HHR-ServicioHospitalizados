@@ -1,4 +1,4 @@
-import type { DailyRecord } from '@/types/domain/dailyRecord';
+import type { DailyRecord } from '@/application/shared/dailyRecordContracts';
 import { formatDateDDMMYYYY as formatDate } from '@/utils/dateUtils';
 import { resolveSendingRecipients } from '@/hooks/controllers/censusEmailRecipientsController';
 import { buildCensusWorkbookPlan } from '@/hooks/controllers/censusExcelSheetController';

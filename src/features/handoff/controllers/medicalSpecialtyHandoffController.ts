@@ -4,7 +4,7 @@ import type {
   MedicalHandoffActor,
   MedicalSpecialty,
   MedicalSpecialtyHandoffNote,
-} from '@/types/domain/dailyRecord';
+} from '@/domain/handoff/recordContracts';
 import {
   canEditMedicalHandoffForDate,
   canManageAllMedicalSpecialties,

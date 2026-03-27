@@ -18,7 +18,7 @@ import type {
   MedicalHandoffAuditActor,
   MedicalHandoffEntry,
   PatientData,
-} from '@/types/domain/patient';
+} from '@/application/handoff/medicalPatientContracts';
 import {
   createNoEffectOutcome,
   createUnknownOutcome,

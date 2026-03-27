@@ -2,7 +2,7 @@ import type {
   MedicalHandoffAuditActor,
   MedicalHandoffEntry,
   PatientData,
-} from '@/types/domain/patient';
+} from '@/domain/handoff/patientContracts';
 import {
   buildMedicalHandoffFieldsFromEntries,
   createMedicalHandoffEntry,

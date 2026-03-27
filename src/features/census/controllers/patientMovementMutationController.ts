@@ -1,4 +1,4 @@
-import { DailyRecord } from '@/types/domain/dailyRecord';
+import { DailyRecord } from '@/features/census/contracts/censusDomainContracts';
 import { DischargeType, TransferData } from '@/types/domain/movements';
 
 interface UpdateDischargeMovementInput {

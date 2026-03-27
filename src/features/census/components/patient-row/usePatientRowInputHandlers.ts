@@ -1,5 +1,9 @@
 import { useCallback, useMemo } from 'react';
-import type { CesareanLabor, DeliveryRoute, PatientData } from '@/types/domain/patient';
+import type {
+  CesareanLabor,
+  DeliveryRoute,
+  PatientData,
+} from '@/features/census/components/patient-row/patientRowContracts';
 import { PatientFieldValue } from '@/types/valueTypes';
 import {
   buildDeliveryRoutePatch,

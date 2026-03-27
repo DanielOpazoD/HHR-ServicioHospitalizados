@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import type { PatientData } from '@/types/domain/patient';
+import type { PatientData } from '@/features/census/contracts/censusDomainContracts';
 import type { PatientRowAction } from '@/features/census/types/patientRowActionTypes';
 import { buildCensusActionCommandsControllerValue } from '@/features/census/controllers/censusActionCommandsController';
 import type { CensusActionNotification } from '@/features/census/controllers/censusActionNotificationController';

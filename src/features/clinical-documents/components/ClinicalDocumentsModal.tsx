@@ -2,7 +2,7 @@ import React from 'react';
 import { FileText } from 'lucide-react';
 
 import { BaseModal } from '@/components/shared/BaseModal';
-import type { PatientData } from '@/types/domain/patient';
+import type { PatientData } from '@/features/clinical-documents/contracts/clinicalDocumentsPatientContract';
 import { buildClinicalDocumentEpisodeContext } from '@/features/clinical-documents/controllers/clinicalDocumentEpisodeController';
 import { ClinicalDocumentsWorkspace } from '@/features/clinical-documents/components/ClinicalDocumentsWorkspace';
 import { formatClinicalDocumentDate } from '@/shared/clinical-documents/clinicalDocumentPresentation';

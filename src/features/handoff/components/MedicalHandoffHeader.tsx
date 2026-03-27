@@ -8,7 +8,7 @@
 import React from 'react';
 import { CheckCircle, RotateCcw, ShieldCheck } from 'lucide-react';
 import clsx from 'clsx';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
+import type { DailyRecord } from '@/domain/handoff/recordContracts';
 import type { BedDefinition } from '@/types/domain/base';
 import { useConfirmDialog } from '@/context/UIContext';
 import {

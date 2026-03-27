@@ -6,7 +6,7 @@ import React, { useId, useState } from 'react';
 import clsx from 'clsx';
 import { AlertCircle, Pencil } from 'lucide-react';
 import { DebouncedInput } from '@/components/ui/DebouncedInput';
-import { PatientData } from '@/types/domain/patient';
+import { PatientData } from '@/features/census/components/patient-row/patientRowContracts';
 import { BaseCellProps, DebouncedTextHandler } from './inputCellTypes';
 import { PatientEmptyCell } from './PatientEmptyCell';
 import {

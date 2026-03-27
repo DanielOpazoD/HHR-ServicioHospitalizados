@@ -14,7 +14,7 @@ import {
 } from '@/features/census/controllers/censusResetDayController';
 import type { BedTypesById, OccupiedBedRow } from '@/features/census/types/censusTableTypes';
 import type { BedDefinition } from '@/types/domain/base';
-import type { PatientData } from '@/types/domain/patient';
+import type { PatientData } from '@/features/census/contracts/censusDomainContracts';
 
 interface UseCensusTableModelParams {
   currentDateString: string;

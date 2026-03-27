@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { SpecialtyStats } from '@/types/minsalTypes';
-import { DailyRecord } from '@/types/domain/dailyRecord';
+import { DailyRecord } from '@/features/analytics/contracts/analyticsDailyRecordContracts';
 import {
   buildSpecialtyTraceability,
   SpecialtyTraceabilityType,

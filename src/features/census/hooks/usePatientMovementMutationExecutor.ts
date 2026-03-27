@@ -1,5 +1,5 @@
 import { useCallback, MutableRefObject } from 'react';
-import { DailyRecord } from '@/types/domain/dailyRecord';
+import { DailyRecord } from '@/features/census/contracts/censusDomainContracts';
 import { usePatientMovementCurrentRecord } from '@/features/census/hooks/usePatientMovementCurrentRecord';
 
 interface UsePatientMovementMutationExecutorParams {

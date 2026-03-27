@@ -1,6 +1,6 @@
 import { CensusManager } from '@/domain/CensusManager';
 import { DEFAULT_EVACUATION_METHOD, DEFAULT_RECEIVING_CENTER } from '@/constants/clinical';
-import { PatientData } from '@/types/domain/patient';
+import { PatientData } from '@/features/census/components/patient-row/patientRowContracts';
 import { StabilityRules } from '@/hooks/useStabilityRules';
 import type { PatientRowAction } from '@/features/census/types/patientRowActionTypes';
 import {

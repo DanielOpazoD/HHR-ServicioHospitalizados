@@ -3,7 +3,11 @@
  */
 
 import type { ChangeEvent } from 'react';
-import type { CesareanLabor, DeliveryRoute, PatientData } from '@/types/domain/patient';
+import type {
+  CesareanLabor,
+  DeliveryRoute,
+  PatientData,
+} from '@/features/census/components/patient-row/patientRowContracts';
 import { DeviceDetails, DeviceInstance } from '@/types/domain/clinical';
 import type { PatientDeviceCallbacks } from './patientRowContracts';
 

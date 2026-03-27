@@ -1,4 +1,4 @@
-import { PatientData } from '@/types/domain/patient';
+import { PatientData } from '@/features/census/components/patient-row/patientRowContracts';
 import {
   ControllerError,
   ControllerResult,

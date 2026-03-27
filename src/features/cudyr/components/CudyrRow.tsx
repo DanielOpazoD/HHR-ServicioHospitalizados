@@ -1,6 +1,6 @@
 import React from 'react';
 import { CudyrScore } from '@/types/domain/clinical';
-import { PatientData } from '@/types/domain/patient';
+import { PatientData } from '@/features/cudyr/contracts/cudyrPatientContracts';
 import { BedDefinition } from '@/types/domain/base';
 import { getCategorization } from '../services/CudyrScoreUtils';
 import clsx from 'clsx';

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { BedDefinition } from '@/types/domain/base';
-import { DailyRecord } from '@/types/domain/dailyRecord';
-import { PatientData } from '@/types/domain/patient';
+import { DailyRecord } from '@/domain/handoff/recordContracts';
+import { PatientData } from '@/domain/handoff/patientContracts';
 import { ClinicalEvent } from '@/types/domain/clinical';
 import { resolveHandoffPatientRowPlan } from '@/features/handoff/controllers/handoffPatientTableController';
 import { HandoffRow } from './HandoffRow';

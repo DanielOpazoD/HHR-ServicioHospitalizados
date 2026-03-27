@@ -83,6 +83,7 @@
     "check:census-runtime-boundary": "node scripts/check-census-runtime-boundary.mjs",
     "check:runtime-adapter-boundary": "node scripts/check-runtime-adapter-boundary.mjs",
     "check:firestore-runtime-boundary": "node scripts/check-firestore-runtime-boundary.mjs",
+    "check:domain-hotspot-boundary": "node scripts/check-domain-hotspot-boundary.mjs",
     "check:legacy-permissions-boundary": "node scripts/check-legacy-permissions-boundary.mjs",
     "check:test-governance": "node scripts/check-test-governance.mjs",
     "check:critical-smoke-pack": "node scripts/check-critical-smoke-pack.mjs",

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { PatientData } from '@/types/domain/patient';
+import type { PatientData } from '@/features/clinical-documents/contracts/clinicalDocumentsPatientContract';
 import type {
   ClinicalDocumentRecord,
   ClinicalDocumentTemplate,

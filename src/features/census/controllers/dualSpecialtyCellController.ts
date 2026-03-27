@@ -1,5 +1,5 @@
 import type React from 'react';
-import type { PatientData } from '@/types/domain/patient';
+import type { PatientData } from '@/features/census/components/patient-row/patientRowContracts';
 
 interface ResolveDualSpecialtyStateParams {
   specialty?: string;

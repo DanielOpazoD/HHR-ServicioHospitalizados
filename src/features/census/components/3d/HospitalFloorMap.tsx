@@ -3,7 +3,7 @@ import React from 'react';
 import { Canvas } from '@react-three/fiber';
 import { ContactShadows, Environment, OrbitControls } from '@react-three/drei';
 import type { BedDefinition } from '@/types/domain/base';
-import type { PatientData } from '@/types/domain/patient';
+import type { PatientData } from '@/features/census/contracts/censusDomainContracts';
 import { HospitalFloorMapBedMesh } from '@/features/census/components/3d/HospitalFloorMapBedMesh';
 import { HospitalFloorMapZoomControls } from '@/features/census/components/3d/HospitalFloorMapZoomControls';
 import { HospitalFloorMapToolbar } from '@/features/census/components/3d/HospitalFloorMapToolbar';

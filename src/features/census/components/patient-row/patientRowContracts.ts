@@ -1,10 +1,39 @@
-import type { PatientRowAction } from '@/features/census/types/patientRowActionTypes';
-import type { VerticalPlacement } from '@/shared/ui/anchoredOverlayTypes';
+import type {
+  CesareanLabor as RootCesareanLabor,
+  DeliveryRoute as RootDeliveryRoute,
+  GinecobstetriciaType as RootGinecobstetriciaType,
+  PatientData as RootPatientData,
+} from '@/features/census/contracts/censusDomainContracts';
 import type { DeviceDetails, DeviceInstance } from '@/types/domain/clinical';
+import type { PatientRowAction } from '@/features/census/types/patientRowActionTypes';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 
-export type RowMenuAlign = VerticalPlacement;
+export type PatientRowPatientContract = RootPatientData;
+export type PatientData = PatientRowPatientContract;
+export type DeliveryRoute = RootDeliveryRoute;
+export type CesareanLabor = RootCesareanLabor;
+export type GinecobstetriciaType = RootGinecobstetriciaType;
+export type PatientRowPatientPatch = Partial<PatientRowPatientContract>;
 export type MaybePromiseVoid = void | Promise<void>;
+export type RowMenuAlign = 'top' | 'bottom';
+
+export interface PatientDeviceCallbacks {
+  onDevicesChange: (devices: string[]) => void;
+  onDeviceDetailsChange: (details: DeviceDetails) => void;
+  onDeviceHistoryChange: (history: DeviceInstance[]) => void;
+}
+
+export interface PatientBedConfigCallbacks {
+  onToggleMode: () => MaybePromiseVoid;
+  onToggleCompanion: () => MaybePromiseVoid;
+  onToggleClinicalCrib: () => void;
+  onUpdateClinicalCrib: (action: 'remove') => void;
+}
+
+export interface PatientActionMenuIndicators {
+  hasClinicalDocument?: boolean;
+  isNewAdmission?: boolean;
+}
 
 export interface PatientActionMenuCallbacks {
   onAction: (action: PatientRowAction) => void;
@@ -13,11 +42,6 @@ export interface PatientActionMenuCallbacks {
   onViewExamRequest?: () => void;
   onViewImagingRequest?: () => void;
   onViewHistory?: () => void;
-}
-
-export interface PatientActionMenuIndicators {
-  hasClinicalDocument?: boolean;
-  isNewAdmission?: boolean;
 }
 
 export interface PatientActionMenuAvailability {
@@ -40,17 +64,4 @@ export interface PatientActionMenuBinding {
   accessProfile?: CensusAccessProfile;
   indicators: Required<PatientActionMenuIndicators>;
   availability: PatientActionMenuAvailability;
-}
-
-export interface PatientBedConfigCallbacks {
-  onToggleMode: () => MaybePromiseVoid;
-  onToggleCompanion: () => MaybePromiseVoid;
-  onToggleClinicalCrib: () => void;
-  onUpdateClinicalCrib: (action: 'remove') => void;
-}
-
-export interface PatientDeviceCallbacks {
-  onDevicesChange: (newDevices: string[]) => void;
-  onDeviceDetailsChange: (details: DeviceDetails) => void;
-  onDeviceHistoryChange: (history: DeviceInstance[]) => void;
 }

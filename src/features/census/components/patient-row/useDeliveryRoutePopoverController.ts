@@ -11,7 +11,10 @@ import {
   resolveHasPersistedDeliveryRoute,
 } from '@/features/census/controllers/deliveryRoutePopoverRuntimeController';
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
-import type { CesareanLabor, DeliveryRoute } from '@/types/domain/patient';
+import type {
+  CesareanLabor,
+  DeliveryRoute,
+} from '@/features/census/components/patient-row/patientRowContracts';
 
 interface UseDeliveryRoutePopoverControllerParams {
   deliveryRoute?: DeliveryRoute;

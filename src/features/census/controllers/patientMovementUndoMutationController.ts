@@ -1,5 +1,5 @@
-import { DailyRecord } from '@/types/domain/dailyRecord';
-import { PatientData } from '@/types/domain/patient';
+import { DailyRecord } from '@/features/census/contracts/censusDomainContracts';
+import { PatientData } from '@/features/census/components/patient-row/patientRowContracts';
 
 interface ApplyUndoDischargeInput {
   record: DailyRecord;

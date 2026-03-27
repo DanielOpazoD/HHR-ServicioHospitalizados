@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { PatientData } from '@/types/domain/patient';
+import type { PatientData } from '@/features/census/contracts/censusDomainContracts';
 import type { IeehData } from '@/types/domain/movements';
 import type { DischargeFormData } from '@/services/pdf/ieehPdfService';
 import { downloadIEEHForm } from '@/services/pdf/ieehPdfService';

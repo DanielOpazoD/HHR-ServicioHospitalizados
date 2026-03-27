@@ -26,7 +26,10 @@ import {
   resolveGinecobstetriciaBadgeClassName,
   resolveGinecobstetriciaBadgeTitle,
 } from '@/shared/census/ginecobstetriciaClassification';
-import type { GinecobstetriciaType, PatientData } from '@/types/domain/patient';
+import type {
+  GinecobstetriciaType,
+  PatientData,
+} from '@/features/census/components/patient-row/patientRowContracts';
 
 interface DualSpecialtyCellProps extends BaseCellProps {
   onChange: EventTextHandler;
