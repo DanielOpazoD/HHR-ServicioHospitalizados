@@ -11,9 +11,15 @@ Modelo de acceso:
 
 ### Requisitos
 
-- Node.js 20+
+- Node.js 22.x
 - npm 10+
 - Firebase project (variables de entorno en `.env`)
+
+### Política de versiones de Node
+
+- El workspace principal (`package.json`) usa Node.js `22.x` para desarrollo local, tests, lint, typecheck y build.
+- `functions/package.json` mantiene runtime Node.js `20` porque ese sigue siendo el target actual de Firebase Functions para este proyecto.
+- Si se cambia alguno de esos targets, esta sección debe actualizarse junto con ambos `package.json`.
 
 ### Instalación
 

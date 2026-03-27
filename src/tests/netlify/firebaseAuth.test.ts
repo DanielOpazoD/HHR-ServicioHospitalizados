@@ -24,12 +24,15 @@ const base64UrlEncode = (value: string | Buffer) =>
 describe('firebase-auth netlify helper', () => {
   const originalEnv = { ...process.env };
   const originalFetch = global.fetch;
+  const fixedNow = new Date('2026-03-26T12:00:00.000Z');
   const { privateKey, publicKey } = generateKeyPairSync('rsa', {
     modulusLength: 2048,
   });
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(fixedNow);
     process.env = {
       ...originalEnv,
       VITE_FIREBASE_PROJECT_ID: 'hhr-pruebas',
@@ -57,6 +60,7 @@ describe('firebase-auth netlify helper', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     process.env = originalEnv;
     global.fetch = originalFetch;
   });

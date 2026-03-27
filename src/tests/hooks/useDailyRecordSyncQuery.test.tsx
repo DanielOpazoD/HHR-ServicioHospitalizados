@@ -18,6 +18,7 @@ vi.mock('@/utils/dateUtils', async () => {
 vi.mock('@/services/repositories/DailyRecordRepository', () => {
   const mockImpl = {
     getForDate: vi.fn(),
+    getForDateWithMeta: vi.fn(),
     save: vi.fn().mockResolvedValue(undefined),
     saveDetailed: vi.fn().mockResolvedValue({
       date: '2025-12-27',
@@ -75,8 +76,26 @@ describe('useDailyRecordSyncQuery', () => {
     vi.clearAllMocks();
   });
 
+  const buildReadResult = (record: DailyRecord | null) => ({
+    date: mockDate,
+    record,
+    source: record ? ('indexeddb' as const) : ('not_found' as const),
+    compatibilityTier: 'none' as const,
+    compatibilityIntensity: 'none' as const,
+    migrationRulesApplied: [],
+    consistencyState: record ? ('local_only' as const) : ('missing' as const),
+    sourceOfTruth: record ? ('local' as const) : ('none' as const),
+    retryability: 'not_applicable' as const,
+    recoveryAction: 'none' as const,
+    conflictSummary: null,
+    observabilityTags: ['daily_record', 'read'],
+    repairApplied: false,
+  });
+
   it('should fetch the record on mount', async () => {
-    vi.mocked(DailyRecordRepository.getForDate).mockResolvedValue(mockRecord);
+    vi.mocked(DailyRecordRepository.getForDateWithMeta).mockResolvedValue(
+      buildReadResult(mockRecord)
+    );
 
     const { result } = renderHook(() => useDailyRecordSyncQuery(mockDate), {
       wrapper: createWrapper(),
@@ -86,11 +105,13 @@ describe('useDailyRecordSyncQuery', () => {
       expect(result.current.record).toEqual(mockRecord);
     });
 
-    expect(DailyRecordRepository.getForDate).toHaveBeenCalledWith(mockDate);
+    expect(DailyRecordRepository.getForDateWithMeta).toHaveBeenCalledWith(mockDate, true);
   });
 
   it('should handle updates via saveAndUpdate', async () => {
-    vi.mocked(DailyRecordRepository.getForDate).mockResolvedValue(mockRecord);
+    vi.mocked(DailyRecordRepository.getForDateWithMeta).mockResolvedValue(
+      buildReadResult(mockRecord)
+    );
 
     const { result } = renderHook(() => useDailyRecordSyncQuery(mockDate), {
       wrapper: createWrapper(),
@@ -105,7 +126,9 @@ describe('useDailyRecordSyncQuery', () => {
   });
 
   it('refreshes through detailed sync before refetching', async () => {
-    vi.mocked(DailyRecordRepository.getForDate).mockResolvedValue(mockRecord);
+    vi.mocked(DailyRecordRepository.getForDateWithMeta).mockResolvedValue(
+      buildReadResult(mockRecord)
+    );
 
     const { result } = renderHook(() => useDailyRecordSyncQuery(mockDate), {
       wrapper: createWrapper(),
@@ -121,7 +144,7 @@ describe('useDailyRecordSyncQuery', () => {
   });
 
   it('forces a recovery sync once when today loads as empty', async () => {
-    vi.mocked(DailyRecordRepository.getForDate).mockResolvedValue(null);
+    vi.mocked(DailyRecordRepository.getForDateWithMeta).mockResolvedValue(buildReadResult(null));
 
     renderHook(() => useDailyRecordSyncQuery(mockDate), {
       wrapper: createWrapper(),

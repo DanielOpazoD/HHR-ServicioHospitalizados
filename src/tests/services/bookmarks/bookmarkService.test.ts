@@ -6,11 +6,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   addBookmark,
+  createBookmarkService,
   updateBookmark,
   deleteBookmark,
   reorderBookmarks,
 } from '@/services/bookmarks/bookmarkService';
-import { addDoc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { addDoc, collection, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import type { Bookmark } from '@/types/bookmarks';
 
 // Mock Firebase
@@ -53,6 +54,30 @@ describe('Bookmark Service', () => {
 
       expect(addDoc).toHaveBeenCalled();
       expect(result).toEqual({ id: 'new-bookmark-id' });
+    });
+
+    it('should allow injecting a Firestore runtime instead of using the singleton', async () => {
+      const customDb = { name: 'custom-db' } as never;
+      const bookmarkService = createBookmarkService({
+        getDb: () => customDb,
+        ready: Promise.resolve(),
+      });
+
+      await bookmarkService.addBookmark(
+        {
+          name: 'Injected Runtime',
+          url: 'https://example.com',
+          icon: '📌',
+        },
+        1
+      );
+
+      expect(collection).toHaveBeenCalledWith(
+        customDb,
+        expect.any(String),
+        expect.any(String),
+        expect.any(String)
+      );
     });
 
     it('should set order based on count', async () => {

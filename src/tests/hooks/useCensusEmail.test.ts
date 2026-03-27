@@ -2,18 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useCensusEmail } from '@/hooks/useCensusEmail';
 import { useConfirmDialog } from '@/context/UIContext';
-import { getAppSetting, saveAppSetting } from '@/services/settingsService';
 import { useCensusEmailRecipientLists } from '@/hooks/useCensusEmailRecipientLists';
 import { useCensusEmailDeliveryActions } from '@/hooks/useCensusEmailDeliveryActions';
 import { DailyRecord } from '@/types/domain/dailyRecord';
 
 vi.mock('@/context/UIContext', () => ({
   useConfirmDialog: vi.fn(),
-}));
-
-vi.mock('@/services/settingsService', () => ({
-  getAppSetting: vi.fn(),
-  saveAppSetting: vi.fn(),
 }));
 
 vi.mock('@/hooks/useCensusEmailRecipientLists', () => ({
@@ -57,9 +51,6 @@ describe('useCensusEmail', () => {
       alert: mockAlert,
     } as unknown as ReturnType<typeof useConfirmDialog>);
 
-    vi.mocked(getAppSetting).mockResolvedValue(['Hoja diaria', 'Resumen']);
-    vi.mocked(saveAppSetting).mockResolvedValue(undefined);
-
     vi.mocked(useCensusEmailRecipientLists).mockReturnValue({
       recipients: ['test@test.com'],
       setRecipients: vi.fn(),
@@ -86,10 +77,12 @@ describe('useCensusEmail', () => {
     expect(result.current.showEmailConfig).toBe(false);
     expect(result.current.isAdminUser).toBe(true);
     expect(result.current.recipients).toEqual(['test@test.com']);
-
-    await waitFor(() => {
-      expect(getAppSetting).toHaveBeenCalledWith('censusEmailExcelSheetConfig', expect.any(Object));
-    });
+    expect(useCensusEmailRecipientLists).toHaveBeenCalledWith(
+      expect.objectContaining({
+        canManageGlobalRecipientLists: true,
+        user: defaultParams.user,
+      })
+    );
   });
 
   it('updates message when nurseSignature changes until manual edit occurs', async () => {
@@ -154,13 +147,10 @@ describe('useCensusEmail', () => {
       })
     );
 
-    await waitFor(() => {
-      expect(getAppSetting).toHaveBeenCalled();
-    });
-
     expect(useCensusEmailRecipientLists).toHaveBeenLastCalledWith(
       expect.objectContaining({
         canManageGlobalRecipientLists: true,
+        user: { email: 'nurse@test.com', role: 'nurse_hospital' },
       })
     );
 
@@ -179,7 +169,27 @@ describe('useCensusEmail', () => {
     expect(useCensusEmailRecipientLists).toHaveBeenLastCalledWith(
       expect.objectContaining({
         canManageGlobalRecipientLists: false,
+        user: { email: 'specialist@test.com', role: 'doctor_specialist' },
       })
     );
+  });
+
+  it('keeps test mode disabled for users without admin maintenance access', () => {
+    const { result } = renderHook(() =>
+      useCensusEmail({
+        ...defaultParams,
+        role: 'doctor_specialist',
+        user: { email: 'specialist@test.com', role: 'doctor_specialist' },
+      })
+    );
+
+    act(() => {
+      result.current.setTestModeEnabled(true);
+      result.current.setTestRecipient('test@example.com');
+    });
+
+    expect(result.current.isAdminUser).toBe(false);
+    expect(result.current.testModeEnabled).toBe(false);
+    expect(result.current.testRecipient).toBe('');
   });
 });

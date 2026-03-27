@@ -205,7 +205,10 @@ describe('useDailyRecord', () => {
       expect(result.current.record).not.toBeNull();
       expect(result.current.record?.date).toBe(mockDate);
     });
-    expect(DailyRecordRepository.DailyRecordRepository.getForDate).toHaveBeenCalledWith(mockDate);
+    expect(DailyRecordRepository.DailyRecordRepository.getForDateWithMeta).toHaveBeenCalledWith(
+      mockDate,
+      true
+    );
   });
 
   it('should update record when date changes', async () => {

@@ -44,7 +44,7 @@ export default tseslint.config(
     settings: {
       react: { version: 'detect' },
       'boundaries/elements': [
-        { type: 'app', pattern: 'src/app/*' },
+        { type: 'app', pattern: 'src/application/*' },
         { type: 'features', pattern: 'src/features/*' },
         { type: 'services', pattern: 'src/services/*' }, // Considering domain/services equivalent logic layer for now based on current structure
         {
