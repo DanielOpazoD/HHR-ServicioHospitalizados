@@ -1,6 +1,6 @@
-import { GoogleGenAI } from '@google/genai';
 import { getFirebaseServer } from './lib/firebase-server';
 import { authorizeRoleRequest, extractBearerToken } from './lib/firebase-auth';
+import { generateClinicalAIText, resolveClinicalAIProviderConfig } from './lib/ai-provider';
 import {
   buildCorsHeaders,
   buildJsonResponse,
@@ -52,10 +52,9 @@ const handler = async (event: NetlifyEventLike) => {
     };
   }
 
-  // Get API key from environment (server-side only, never exposed to client)
-  const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+  const providerConfig = resolveClinicalAIProviderConfig();
 
-  if (!apiKey) {
+  if (!providerConfig) {
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
@@ -94,8 +93,6 @@ const handler = async (event: NetlifyEventLike) => {
       return buildJsonResponse(200, { available: true, results: [] }, { requestOrigin });
     }
 
-    const ai = new GoogleGenAI({ apiKey });
-
     const prompt = `
 Eres un experto en codificación CIE-10 (Clasificación Internacional de Enfermedades, 10a revisión) en español.
 
@@ -113,12 +110,12 @@ Ejemplo de formato de respuesta (solo el JSON, sin texto adicional):
 IMPORTANTE: Responde SOLO con el JSON, sin explicaciones ni markdown.
 `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: prompt,
+    const text = await generateClinicalAIText({
+      config: providerConfig,
+      systemPrompt:
+        'Eres un experto en codificación CIE-10 en español. Debes responder solo con JSON válido.',
+      userPrompt: prompt,
     });
-
-    const text = response.text?.trim() || '';
 
     // Parse JSON from response
     let jsonText = text;

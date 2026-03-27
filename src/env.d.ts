@@ -9,9 +9,13 @@ interface ImportMetaEnv {
   readonly VITE_FIREBASE_MESSAGING_SENDER_ID: string;
   readonly VITE_FIREBASE_APP_ID: string;
   readonly VITE_LOCAL_GEMINI_API_KEY?: string;
+  readonly VITE_LOCAL_OPENAI_API_KEY?: string;
+  readonly VITE_LOCAL_ANTHROPIC_API_KEY?: string;
+  readonly VITE_LOCAL_AI_PROVIDER?: 'gemini' | 'openai' | 'anthropic';
   readonly VITE_E2E_MODE?: string;
   readonly VITE_ALLOW_DEV_EMAIL_SEND?: string;
   readonly VITE_CENSUS_EMAIL_ENDPOINT?: string;
+  readonly VITE_CLINICAL_AI_SUMMARY_ENDPOINT?: string;
   readonly VITE_GOOGLE_CLIENT_ID?: string;
   readonly VITE_FUNCTIONS_EMULATOR_HOST?: string;
   readonly VITE_AUTH_EMULATOR_HOST?: string;
