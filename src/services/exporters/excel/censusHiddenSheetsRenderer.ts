@@ -16,7 +16,6 @@ import {
   setMergedTitle,
   setRowFill,
 } from './censusHiddenSheetsExcelHelpers';
-import { applyHiddenSheetProtection } from './censusHiddenSheetsProtection';
 import { solidFill, THIN_BORDER, toArgb } from './censusHiddenSheetsStyles';
 export { applyHiddenSheetProtection } from './censusHiddenSheetsProtection';
 

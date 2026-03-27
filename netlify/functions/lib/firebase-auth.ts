@@ -3,7 +3,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import type { Firestore } from 'firebase/firestore';
 
 import authConfigModule from '../../../functions/lib/auth/authConfig.js';
-import authPoliciesModule from '../../../functions/lib/auth/authPolicies.js';
+import authEmailUtilsModule from '../../../functions/lib/auth/authEmailUtils.js';
 
 const FIREBASE_CERTS_URL =
   'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com';
@@ -13,7 +13,7 @@ type AuthConfigModule = {
   BOOTSTRAP_ADMIN_EMAILS?: string[];
 };
 
-type AuthPoliciesModule = {
+type AuthEmailUtilsModule = {
   normalizeEmail?: (value: string) => string;
 };
 
@@ -44,7 +44,7 @@ export type AuthorizedRoleRequest = {
 type FetchLike = typeof fetch;
 
 const { BOOTSTRAP_ADMIN_EMAILS = [] } = authConfigModule as AuthConfigModule;
-const { normalizeEmail: normalizeImportedEmail } = authPoliciesModule as AuthPoliciesModule;
+const { normalizeEmail: normalizeImportedEmail } = authEmailUtilsModule as AuthEmailUtilsModule;
 
 const normalizeEmail = (value: string): string => {
   if (typeof normalizeImportedEmail === 'function') {

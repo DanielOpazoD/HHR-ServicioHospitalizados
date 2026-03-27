@@ -1,5 +1,5 @@
 const { BOOTSTRAP_ADMIN_EMAILS, GENERAL_LOGIN_ROLES } = require('./authConfig');
-const { normalizeEmail } = require('./authPolicies');
+const { normalizeEmail } = require('./authEmailUtils');
 
 const createAuthHelpers = admin => {
   const persistCanonicalRoleAlias = async (rolesMap, cleanEmail, canonicalRole) => {

@@ -3,7 +3,7 @@
 ## Contrato
 
 - Resolver roles, claims y autorización reusable para callables/eventos de auth.
-- Mantener helpers puros en `authPolicies.js` y factories testables en `authHelpersFactory.js`.
+- Mantener helpers puros en `authEmailUtils.js` y factories testables en `authHelpersFactory.js`.
 
 ## Límites
 
