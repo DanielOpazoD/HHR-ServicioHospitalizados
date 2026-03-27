@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 import type { DiagnosisMode } from '@/features/census/types/censusTableTypes';
 import type { PatientRowAction } from '@/features/census/types/patientRowActionTypes';
 import type { BedDefinition, BedType } from '@/types/domain/base';
-import type { PatientData } from '@/features/census/components/patient-row/patientRowContracts';
+import type { PatientData } from '@/features/census/components/patient-row/patientRowDataContracts';
 import type { UserRole } from '@/types/auth';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 import type {
@@ -14,9 +14,9 @@ import type {
 import type {
   PatientActionMenuCallbacks,
   PatientActionMenuIndicators,
-  PatientBedConfigCallbacks,
-  RowMenuAlign,
-} from '@/features/census/components/patient-row/patientRowContracts';
+} from '@/features/census/components/patient-row/patientRowActionContracts';
+import type { PatientBedConfigCallbacks } from '@/features/census/components/patient-row/patientRowBedConfigContracts';
+import type { RowMenuAlign } from '@/features/census/components/patient-row/patientRowUiContracts';
 import type { PatientMainRowViewState } from '@/features/census/controllers/patientRowMainViewController';
 
 export interface PatientInputCellsProps {

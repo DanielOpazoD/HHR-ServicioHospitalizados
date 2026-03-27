@@ -1,5 +1,5 @@
 import { BedDefinition, BedType } from '@/types/domain/base';
-import { PatientData } from '@/features/census/components/patient-row/patientRowContracts';
+import { PatientData } from '@/features/census/components/patient-row/patientRowDataContracts';
 import {
   BedTypesById,
   CensusBedRows,

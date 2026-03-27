@@ -1,8 +1,8 @@
 import type {
   PatientActionMenuBinding,
   PatientActionMenuIndicators,
-  RowMenuAlign,
-} from '@/features/census/components/patient-row/patientRowContracts';
+} from '@/features/census/components/patient-row/patientRowActionContracts';
+import type { RowMenuAlign } from '@/features/census/components/patient-row/patientRowUiContracts';
 import { EMPTY_PATIENT_ROW_INDICATORS } from '@/features/census/controllers/patientRowIndicatorsController';
 import {
   resolvePatientActionMenuViewState,

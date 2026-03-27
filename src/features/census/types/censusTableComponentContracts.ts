@@ -6,11 +6,11 @@ import type {
   OccupiedBedRow,
 } from '@/features/census/types/censusTableTypes';
 import type { PatientRowAction } from '@/features/census/types/patientRowActionTypes';
-import type { RowMenuAlign } from '@/features/census/components/patient-row/patientRowContracts';
+import type { RowMenuAlign } from '@/features/census/components/patient-row/patientRowUiContracts';
 import type { BedDefinition } from '@/types/domain/base';
 import type { PatientData } from '@/features/census/contracts/censusDomainContracts';
 import type { UserRole } from '@/types/auth';
-import type { PatientActionMenuIndicators } from '@/features/census/components/patient-row/patientRowContracts';
+import type { PatientActionMenuIndicators } from '@/features/census/components/patient-row/patientRowActionContracts';
 
 export interface CensusTableHeaderProps {
   readOnly: boolean;

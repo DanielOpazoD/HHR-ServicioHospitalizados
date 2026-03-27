@@ -1,4 +1,4 @@
-import type { PatientData } from '@/features/census/components/patient-row/patientRowContracts';
+import type { PatientData } from '@/features/census/components/patient-row/patientRowDataContracts';
 import type { DiagnosisMode } from '@/features/census/types/censusTableTypes';
 import type {
   DebouncedTextHandler,

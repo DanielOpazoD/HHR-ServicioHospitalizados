@@ -5,8 +5,8 @@ import type { CensusAccessProfile } from '@/features/census/types/censusAccessPr
 import type {
   PatientActionMenuCallbacks,
   PatientActionMenuIndicators,
-  RowMenuAlign,
-} from './patientRowContracts';
+} from './patientRowActionContracts';
+import type { RowMenuAlign } from './patientRowUiContracts';
 import { usePatientActionMenu } from './usePatientActionMenu';
 import { PatientActionMenuPanel } from '@/features/census/components/patient-row/PatientActionMenuPanel';
 

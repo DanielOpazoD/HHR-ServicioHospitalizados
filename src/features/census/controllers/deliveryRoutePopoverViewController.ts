@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import type {
   CesareanLabor,
   DeliveryRoute,
-} from '@/features/census/components/patient-row/patientRowContracts';
+} from '@/features/census/components/patient-row/patientRowDataContracts';
 
 interface DeliveryRouteOption {
   route: DeliveryRoute;

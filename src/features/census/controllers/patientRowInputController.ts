@@ -2,7 +2,7 @@ import type {
   CesareanLabor,
   DeliveryRoute,
   PatientData,
-} from '@/features/census/components/patient-row/patientRowContracts';
+} from '@/features/census/components/patient-row/patientRowDataContracts';
 
 export const resolveNextDocumentType = (
   currentType: PatientData['documentType'] | undefined

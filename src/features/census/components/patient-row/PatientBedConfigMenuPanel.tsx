@@ -1,6 +1,6 @@
 import React from 'react';
 import clsx from 'clsx';
-import type { RowMenuAlign } from './patientRowContracts';
+import type { RowMenuAlign } from './patientRowUiContracts';
 import type { MouseEventHandler } from 'react';
 
 interface PatientBedConfigMenuPanelProps {

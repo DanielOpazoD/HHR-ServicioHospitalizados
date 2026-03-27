@@ -1,4 +1,4 @@
-import type { PatientActionMenuIndicators } from '@/features/census/components/patient-row/patientRowContracts';
+import type { PatientActionMenuIndicators } from '@/features/census/components/patient-row/patientRowActionContracts';
 import { resolveIsNewAdmissionForRecord } from '@/features/census/controllers/patientRowNewAdmissionIndicatorController';
 
 export interface PatientRowResolvedIndicators {

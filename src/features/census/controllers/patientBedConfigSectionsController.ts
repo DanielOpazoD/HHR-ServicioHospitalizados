@@ -2,7 +2,7 @@ import type { MouseEventHandler } from 'react';
 
 import type { EventTextHandler } from '@/features/census/components/patient-row/inputCellTypes';
 import type { PatientBedConfigProps } from '@/features/census/components/patient-row/patientRowViewContracts';
-import type { RowMenuAlign } from '@/features/census/components/patient-row/patientRowContracts';
+import type { RowMenuAlign } from '@/features/census/components/patient-row/patientRowUiContracts';
 
 interface PatientBedConfigMenuBindings {
   align: RowMenuAlign;

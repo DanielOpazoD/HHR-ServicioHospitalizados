@@ -10,8 +10,8 @@ import type { CensusAccessProfile } from '@/features/census/types/censusAccessPr
 import type {
   PatientActionMenuBinding,
   PatientActionMenuIndicators,
-  RowMenuAlign,
-} from './patientRowContracts';
+} from './patientRowActionContracts';
+import type { RowMenuAlign } from './patientRowUiContracts';
 
 interface UsePatientActionMenuParams {
   isBlocked: boolean;

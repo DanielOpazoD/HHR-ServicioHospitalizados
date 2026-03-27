@@ -1,4 +1,4 @@
-import type { RowMenuAlign } from '@/features/census/components/patient-row/patientRowContracts';
+import type { RowMenuAlign } from '@/features/census/components/patient-row/patientRowUiContracts';
 import { buildOccupiedPatientRowIndicators } from '@/features/census/controllers/patientRowIndicatorsController';
 import type { CensusTableResolvedOccupiedRow } from '@/features/census/types/censusTableComponentContracts';
 import type { OccupiedBedRow } from '@/features/census/types/censusTableTypes';

@@ -29,7 +29,7 @@ import {
 import type {
   GinecobstetriciaType,
   PatientData,
-} from '@/features/census/components/patient-row/patientRowContracts';
+} from '@/features/census/components/patient-row/patientRowDataContracts';
 
 interface DualSpecialtyCellProps extends BaseCellProps {
   onChange: EventTextHandler;

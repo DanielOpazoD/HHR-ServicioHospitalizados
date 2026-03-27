@@ -17,7 +17,7 @@ import type {
   CesareanLabor,
   DeliveryRoute,
   PatientData,
-} from '@/features/census/components/patient-row/patientRowContracts';
+} from '@/features/census/components/patient-row/patientRowDataContracts';
 import type { DiagnosisMode } from '@/features/census/types/censusTableTypes';
 import { BaseCellProps, DebouncedTextHandler } from './inputCellTypes';
 import { PatientEmptyCell } from './PatientEmptyCell';

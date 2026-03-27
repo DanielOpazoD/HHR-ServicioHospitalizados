@@ -1,6 +1,7 @@
 import { MouseEvent, useCallback } from 'react';
 import { useDropdownMenu } from '@/hooks/useDropdownMenu';
-import type { MaybePromiseVoid, PatientBedConfigCallbacks } from './patientRowContracts';
+import type { PatientBedConfigCallbacks } from './patientRowBedConfigContracts';
+import type { MaybePromiseVoid } from './patientRowUiContracts';
 import { runPatientRowAsyncActionSafely } from '@/features/census/controllers/patientRowAsyncActionController';
 import { buildPatientBedConfigCardState } from '@/features/census/controllers/patientBedConfigCardController';
 

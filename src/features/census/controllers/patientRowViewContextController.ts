@@ -1,11 +1,11 @@
-import type { PatientActionMenuIndicators } from '@/features/census/components/patient-row/patientRowContracts';
+import type { PatientActionMenuIndicators } from '@/features/census/components/patient-row/patientRowActionContracts';
 import type { PatientRowViewContext } from '@/features/census/controllers/patientRowBindingSectionsController';
 import { resolvePatientRowCapabilities } from '@/features/census/controllers/patientRowCapabilitiesController';
 import {
   EMPTY_PATIENT_ROW_INDICATORS,
   resolvePatientRowIndicators,
 } from '@/features/census/controllers/patientRowIndicatorsController';
-import type { PatientData } from '@/features/census/components/patient-row/patientRowContracts';
+import type { PatientData } from '@/features/census/components/patient-row/patientRowDataContracts';
 import type { UserRole } from '@/types/auth';
 import type { PatientRowRuntime } from '@/features/census/components/patient-row/patientRowRuntimeContracts';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';

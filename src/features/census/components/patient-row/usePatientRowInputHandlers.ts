@@ -3,7 +3,7 @@ import type {
   CesareanLabor,
   DeliveryRoute,
   PatientData,
-} from '@/features/census/components/patient-row/patientRowContracts';
+} from '@/features/census/components/patient-row/patientRowDataContracts';
 import { PatientFieldValue } from '@/types/valueTypes';
 import {
   buildDeliveryRoutePatch,

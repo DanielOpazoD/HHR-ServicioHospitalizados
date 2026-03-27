@@ -1,6 +1,6 @@
 import { BedDefinition } from '@/types/domain/base';
 import { DailyRecord } from '@/features/census/contracts/censusDomainContracts';
-import { PatientData } from '@/features/census/components/patient-row/patientRowContracts';
+import { PatientData } from '@/features/census/components/patient-row/patientRowDataContracts';
 import type {
   DischargeAddCommandPayload,
   TransferCommandPayload,

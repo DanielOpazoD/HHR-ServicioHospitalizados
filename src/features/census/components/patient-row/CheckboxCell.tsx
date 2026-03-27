@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { BaseCellProps, CheckHandler } from './inputCellTypes';
-import { PatientData } from '@/features/census/components/patient-row/patientRowContracts';
+import { PatientData } from '@/features/census/components/patient-row/patientRowDataContracts';
 import { PatientEmptyCell } from './PatientEmptyCell';
 
 interface CheckboxCellProps extends BaseCellProps {

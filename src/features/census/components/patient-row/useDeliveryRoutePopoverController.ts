@@ -14,7 +14,7 @@ import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRunti
 import type {
   CesareanLabor,
   DeliveryRoute,
-} from '@/features/census/components/patient-row/patientRowContracts';
+} from '@/features/census/components/patient-row/patientRowDataContracts';
 
 interface UseDeliveryRoutePopoverControllerParams {
   deliveryRoute?: DeliveryRoute;

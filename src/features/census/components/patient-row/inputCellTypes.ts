@@ -7,9 +7,9 @@ import type {
   CesareanLabor,
   DeliveryRoute,
   PatientData,
-} from '@/features/census/components/patient-row/patientRowContracts';
+} from '@/features/census/components/patient-row/patientRowDataContracts';
 import { DeviceDetails, DeviceInstance } from '@/types/domain/clinical';
-import type { PatientDeviceCallbacks } from './patientRowContracts';
+import type { PatientDeviceCallbacks } from './patientRowDeviceContracts';
 
 /**
  * Common props shared by all input cell components

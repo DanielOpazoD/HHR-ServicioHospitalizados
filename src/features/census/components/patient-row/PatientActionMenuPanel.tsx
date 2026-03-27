@@ -1,7 +1,7 @@
 import React from 'react';
 import clsx from 'clsx';
 
-import type { PatientActionMenuBinding } from '@/features/census/components/patient-row/patientRowContracts';
+import type { PatientActionMenuBinding } from '@/features/census/components/patient-row/patientRowActionContracts';
 import type { UtilityActionConfig } from '@/features/census/components/patient-row/patientActionMenuConfig';
 import { resolvePatientActionMenuPanelClassName } from '@/features/census/controllers/patientActionMenuViewController';
 import type { PatientRowAction } from '@/features/census/types/patientRowActionTypes';

@@ -1,5 +1,5 @@
 import type { CMAData } from '@/types/domain/movements';
-import type { PatientData } from '@/features/census/components/patient-row/patientRowContracts';
+import type { PatientData } from '@/features/census/components/patient-row/patientRowDataContracts';
 import type { ControllerConfirmDescriptor } from '@/shared/contracts/controllers/confirmDescriptor';
 import {
   type ControllerResult,

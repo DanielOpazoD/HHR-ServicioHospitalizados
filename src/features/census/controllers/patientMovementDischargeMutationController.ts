@@ -1,6 +1,6 @@
 import { BedDefinition } from '@/types/domain/base';
 import { DischargeData, DischargeType } from '@/types/domain/movements';
-import { PatientData } from '@/features/census/components/patient-row/patientRowContracts';
+import { PatientData } from '@/features/census/components/patient-row/patientRowDataContracts';
 import type { DischargeAddCommandPayload } from '@/features/census/domain/movements/contracts';
 import {
   buildClearedBedPatient,

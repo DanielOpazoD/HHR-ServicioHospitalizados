@@ -7,8 +7,8 @@ import { canUseCensusUtilityActions } from '@/shared/access/operationalAccessPol
 import type {
   PatientActionMenuBinding,
   PatientActionMenuIndicators,
-  RowMenuAlign,
-} from '@/features/census/components/patient-row/patientRowContracts';
+} from '@/features/census/components/patient-row/patientRowActionContracts';
+import type { RowMenuAlign } from '@/features/census/components/patient-row/patientRowUiContracts';
 import { resolvePatientActionMenuBinding } from '@/features/census/controllers/patientActionMenuBindingController';
 
 export interface PatientActionMenuCallbackAvailability {

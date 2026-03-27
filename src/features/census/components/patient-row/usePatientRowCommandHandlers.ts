@@ -1,6 +1,6 @@
 import { ChangeEvent, useCallback } from 'react';
 import type { DeviceDetails, DeviceInstance } from '@/types/domain/clinical';
-import type { PatientData } from '@/features/census/components/patient-row/patientRowContracts';
+import type { PatientData } from '@/features/census/components/patient-row/patientRowDataContracts';
 import type { PatientRowInputCommands } from '@/features/census/controllers/patientRowInputHandlersController';
 
 interface UsePatientRowCommandHandlersResult {
