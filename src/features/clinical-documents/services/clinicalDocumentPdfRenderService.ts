@@ -10,7 +10,7 @@ import {
   waitForClinicalDocumentSheetAssets,
 } from '@/features/clinical-documents/services/clinicalDocumentPrintSupport';
 import { defaultFunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
-import { createScopedLogger } from '@/services/utils/loggerScope';
+import { clinicalDocumentPdfRenderLogger } from '@/features/clinical-documents/services/clinicalDocumentLoggers';
 
 interface RenderClinicalDocumentPdfPayload {
   html: string;
@@ -25,8 +25,6 @@ const renderClinicalDocumentPdfResultSchema = z.object({
   contentBase64: z.string().min(1),
   mimeType: z.string().min(1),
 });
-
-const clinicalDocumentPdfRenderLogger = createScopedLogger('ClinicalDocumentPdfRender');
 
 const decodeBase64Pdf = (contentBase64: string, mimeType: string): Blob => {
   const clean = contentBase64.replace(/\s+/g, '');

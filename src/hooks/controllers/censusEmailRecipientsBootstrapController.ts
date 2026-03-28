@@ -12,9 +12,7 @@ import {
   type GlobalEmailRecipientList,
 } from '@/services/email/emailRecipientListService';
 import { getAppSetting, saveAppSetting } from '@/services/settingsService';
-import { createScopedLogger } from '@/services/utils/loggerScope';
-
-const censusEmailBootstrapLogger = createScopedLogger('CensusEmailRecipientsBootstrap');
+import { censusEmailBootstrapLogger } from '@/hooks/controllers/hookControllerLoggers';
 
 export interface CensusEmailRecipientsBootstrapResult {
   recipients: string[];

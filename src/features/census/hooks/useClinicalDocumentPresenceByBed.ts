@@ -8,9 +8,7 @@ import {
 } from '@/features/census/controllers/clinicalDocumentPresenceController';
 import { executeListClinicalDocumentsByEpisodeKeys } from '@/application/clinical-documents/clinicalDocumentUseCases';
 import { resolveApplicationOutcomeMessage } from '@/application/shared/applicationOutcomeMessage';
-import { createScopedLogger } from '@/services/utils/loggerScope';
-
-const clinicalDocumentPresenceLogger = createScopedLogger('useClinicalDocumentPresenceByBed');
+import { clinicalDocumentPresenceLogger } from '@/features/census/hooks/censusHookLoggers';
 
 interface UseClinicalDocumentPresenceByBedParams {
   occupiedRows: OccupiedBedRow[];

@@ -20,14 +20,12 @@ import {
   isAuthenticatedAuthSessionState,
   toResolvedAuthSessionState,
 } from '@/services/auth/authSessionState';
-import { createScopedLogger } from '@/services/utils/loggerScope';
+import { authStateLogger } from '@/hooks/hookLoggers';
 import {
   recordOperationalOutcome,
   recordOperationalTelemetry,
 } from '@/services/observability/operationalTelemetryService';
 import { resolveAuthBootstrapBudget } from '@/services/auth/authBootstrapBudgets';
-
-const authStateLogger = createScopedLogger('useAuthState');
 
 export const getE2EBootstrapUser = (): AuthUser | null => {
   if (typeof window === 'undefined' || !window.__HHR_E2E_OVERRIDE__) {

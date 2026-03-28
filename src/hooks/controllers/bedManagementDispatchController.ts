@@ -7,7 +7,7 @@ import { BEDS } from '@/constants/beds';
 import { getBedTypeForRecord } from '@/utils/bedTypeUtils';
 import { BedType } from '@/types/domain/beds';
 import { type BedAction, bedManagementReducer } from '@/hooks/useBedManagementReducer';
-import { createScopedLogger } from '@/services/utils/loggerScope';
+import { bedManagementDispatchLogger } from '@/hooks/controllers/hookControllerLoggers';
 export interface BedManagementValidationPort {
   processFieldValue: (
     field: keyof PatientData,
@@ -27,8 +27,6 @@ export interface BedManagementAuditPort {
   auditPatientCleared: (bedId: string, patientName: string, rut?: string) => void;
   auditPatientModified: (bedId: string, details: Record<string, unknown>) => void;
 }
-
-const bedManagementDispatchLogger = createScopedLogger('BedManagementDispatch');
 
 interface ExecuteBedManagementActionInput {
   currentRecord: DailyRecord | null;
