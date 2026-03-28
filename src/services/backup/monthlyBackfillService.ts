@@ -1,11 +1,16 @@
 import type jsPDF from 'jspdf';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { ShiftType } from '@/types/domain/shift';
 import { getMonthRecordsFromFirestore } from '@/services/storage/firestore';
 import { generateDateRange, getShiftSchedule } from '@/utils/dateUtils';
 import type { BaseStoredFile } from '@/services/backup/baseStorageService';
 import type { StoredPdfFile } from '@/services/backup/pdfStorageService';
 import { formatBackupShiftLabel } from '@/shared/backup/backupPresentation';
+import type { CensusExportRecord } from '@/services/contracts/censusExportServiceContracts';
+import type { HandoffPdfRecord } from '@/services/pdf/contracts/handoffPdfContracts';
+import type {
+  DailyRecordBackfillRef,
+  DailyRecordCudyrExportState,
+} from '@/types/domain/dailyRecordSlices';
 
 export type MonthlyBackfillType = 'handoff' | 'census' | 'cudyr';
 
@@ -47,6 +52,11 @@ interface MonthlyBackfillPlan {
   skippedNoRecordDates: string[];
 }
 
+type MonthlyBackfillRecord = HandoffPdfRecord &
+  CensusExportRecord &
+  DailyRecordCudyrExportState &
+  DailyRecordBackfillRef;
+
 const isStoredPdfFile = (file: BaseStoredFile | StoredPdfFile): file is StoredPdfFile => {
   return 'shiftType' in file;
 };
@@ -59,7 +69,7 @@ const resolveCurrentMonthFlag = (year: number, monthNumber: number): boolean => 
 const getNoRecordDates = (
   year: number,
   monthNumber: number,
-  recordMap: Map<string, DailyRecord>
+  recordMap: Map<string, MonthlyBackfillRecord>
 ): string[] => {
   const allDays = generateDateRange(year, monthNumber, resolveCurrentMonthFlag(year, monthNumber));
   return allDays.filter(date => !recordMap.has(date));
@@ -67,7 +77,7 @@ const getNoRecordDates = (
 
 const createMonthlyBackfillPlan = (
   backupType: MonthlyBackfillType,
-  records: DailyRecord[],
+  records: MonthlyBackfillRecord[],
   existingFiles: Array<BaseStoredFile | StoredPdfFile>,
   year: number,
   monthNumber: number
@@ -117,8 +127,8 @@ const taskLabel = (task: BackfillTask): string => {
 
 const createTaskProcessor = async (
   backupType: MonthlyBackfillType,
-  sortedRecords: DailyRecord[],
-  recordMap: Map<string, DailyRecord>,
+  sortedRecords: MonthlyBackfillRecord[],
+  recordMap: Map<string, MonthlyBackfillRecord>,
   year: number,
   monthNumber: number
 ): Promise<(task: BackfillTask) => Promise<void>> => {

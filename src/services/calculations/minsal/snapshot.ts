@@ -1,7 +1,7 @@
-import { DailyRecord } from '@/types/domain/dailyRecord';
 import { PatientData } from '@/services/contracts/patientServiceContracts';
 import { BEDS, HOSPITAL_CAPACITY } from '@/constants/beds';
 import { DailyStatsSnapshot } from '@/types/minsalTypes';
+import type { MinsalDailyRecord } from './minsalRecordContracts';
 
 export function countOccupiedBeds(beds: Record<string, PatientData>): number {
   let count = 0;
@@ -25,7 +25,7 @@ export function countBlockedBeds(beds: Record<string, PatientData>): number {
   return count;
 }
 
-export function calculateDailySnapshot(record: DailyRecord): DailyStatsSnapshot {
+export function calculateDailySnapshot(record: MinsalDailyRecord): DailyStatsSnapshot {
   const ocupadas = countOccupiedBeds(record.beds);
   const bloqueadas = countBlockedBeds(record.beds);
   const disponibles = HOSPITAL_CAPACITY - bloqueadas;

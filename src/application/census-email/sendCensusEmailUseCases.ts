@@ -1,4 +1,3 @@
-import type { DailyRecord } from '@/application/shared/dailyRecordContracts';
 import { formatDateDDMMYYYY as formatDate } from '@/utils/dateUtils';
 import { resolveSendingRecipients } from '@/hooks/controllers/censusEmailRecipientsController';
 import { buildCensusWorkbookPlan } from '@/hooks/controllers/censusExcelSheetController';
@@ -22,11 +21,12 @@ import {
   defaultCensusEmailDeliveryPort,
   type CensusEmailDeliveryPort,
 } from '@/application/ports/censusEmailPort';
+import type { CensusExportRecord } from '@/services/contracts/censusExportServiceContracts';
 
 interface BaseCensusEmailInput {
   currentDateString: string;
   nurseSignature: string;
-  record: DailyRecord | null;
+  record: CensusExportRecord | null;
   recipients: string[];
   message: string;
   role: string;

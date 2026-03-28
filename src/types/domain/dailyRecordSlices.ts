@@ -1,6 +1,7 @@
 import type { DailyRecord } from './dailyRecord';
 
 export type DailyRecordDateRef = Pick<DailyRecord, 'date'>;
+export type DailyRecordBackfillRef = DailyRecordDateRef;
 
 export type DailyRecordMetadataState = Pick<DailyRecord, 'date' | 'dateTimestamp' | 'lastUpdated'>;
 
@@ -51,6 +52,7 @@ export type DailyRecordMedicalHandoffSummaryState = Pick<
 export type DailyRecordCmaState = Pick<DailyRecord, 'cma'>;
 
 export type DailyRecordCudyrState = Pick<DailyRecord, 'date' | 'beds' | 'activeExtraBeds'>;
+export type DailyRecordCudyrExportState = DailyRecordCudyrState & Pick<DailyRecord, 'lastUpdated'>;
 
 export type DailyRecordCsvExportState = Pick<
   DailyRecord,

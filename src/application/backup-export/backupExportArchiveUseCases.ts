@@ -1,4 +1,3 @@
-import type { DailyRecord } from '@/application/shared/dailyRecordContracts';
 import {
   createApplicationFailed,
   createApplicationPartial,
@@ -13,13 +12,23 @@ import {
 } from '@/hooks/controllers/exportManagerController';
 import { getShiftSchedule } from '@/utils/dateUtils';
 import { validateCriticalFields } from '@/services/validation/criticalFieldsValidator';
+import type { CensusExportRecord } from '@/services/contracts/censusExportServiceContracts';
+import type { HandoffPdfRecord } from '@/services/pdf/contracts/handoffPdfContracts';
+import type {
+  DailyRecordCriticalValidationState,
+  DailyRecordCudyrExportState,
+} from '@/types/domain/dailyRecordSlices';
+
+type HandoffBackupRecord = HandoffPdfRecord &
+  DailyRecordCriticalValidationState &
+  DailyRecordCudyrExportState;
 
 export interface BackupCensusExcelInput {
   selectedYear: number;
   selectedMonth: number;
   selectedDay: number;
   currentDateString: string;
-  record: DailyRecord | null;
+  record: CensusExportRecord | null;
 }
 
 export interface BackupCensusExcelOutput {
@@ -76,7 +85,7 @@ export const executeBackupCensusExcel = async (
 };
 
 export interface ExportHandoffPdfInput {
-  record: DailyRecord | null;
+  record: HandoffPdfRecord | null;
   selectedShift: 'day' | 'night';
 }
 
@@ -109,7 +118,7 @@ export const executeExportHandoffPdf = async (
 };
 
 export interface BackupHandoffPdfInput {
-  record: DailyRecord | null;
+  record: HandoffBackupRecord | null;
   selectedShift: 'day' | 'night';
 }
 

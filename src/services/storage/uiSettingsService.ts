@@ -4,7 +4,7 @@
  */
 
 import { safeJsonParse } from '@/utils/jsonUtils';
-import { createScopedLogger } from '@/services/utils/loggerScope';
+import { uiSettingsLogger } from '@/services/storage/storageLoggers';
 
 export interface UISettings {
   glassmorphism: boolean;
@@ -14,7 +14,6 @@ export interface UISettings {
 }
 
 const STORAGE_KEY = 'hhr_ui_settings';
-const uiSettingsLogger = createScopedLogger('UISettingsService');
 
 export const DEFAULT_UI_SETTINGS: UISettings = {
   glassmorphism: false,

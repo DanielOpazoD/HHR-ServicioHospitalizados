@@ -1,9 +1,7 @@
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { defaultFirestoreServiceRuntime } from '@/services/storage/firestore/firestoreServiceRuntime';
 import type { FirestoreServiceRuntimePort } from '@/services/storage/firestore/ports/firestoreServiceRuntimePort';
-import { createScopedLogger } from '@/services/utils/loggerScope';
-
-const whatsappTemplatesLogger = createScopedLogger('WhatsAppTemplatesStore');
+import { whatsappTemplatesLogger } from '@/services/integrations/integrationLoggers';
 
 export interface MessageTemplate {
   id?: string;

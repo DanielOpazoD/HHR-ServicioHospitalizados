@@ -6,7 +6,7 @@
  */
 
 import { PatientData } from '@/services/contracts/patientServiceContracts';
-import { DailyRecord } from '@/types/domain/dailyRecord';
+import type { FhirRecord } from '@/services/integrations/fhir/fhirRecordContracts';
 
 /**
  * Minimal FHIR Patient Resource
@@ -127,7 +127,7 @@ export const mapToFhirEncounter = (
 /**
  * Maps an entire DailyRecord to a FHIR Bundle (collection of resources)
  */
-export const mapRecordToFhirBundle = (record: DailyRecord) => {
+export const mapRecordToFhirBundle = (record: FhirRecord) => {
   const entries = Object.values(record.beds)
     .filter(p => p.patientName && p.patientName !== 'Bloqueada')
     .flatMap(patient => {

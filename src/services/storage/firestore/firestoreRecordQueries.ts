@@ -12,9 +12,7 @@ import {
   mapFirestoreRecords,
   toFirestoreRecordMap,
 } from '@/services/storage/firestore/firestoreQuerySupport';
-import { createScopedLogger } from '@/services/utils/loggerScope';
-
-const firestoreQueryLogger = createScopedLogger('FirestoreQueries');
+import { firestoreQueryLogger } from '@/services/storage/storageLoggers';
 
 export const getAvailableDatesFromFirestore = async (): Promise<string[]> => {
   try {

@@ -1,13 +1,13 @@
 import { doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
 import type { ProfessionalCatalogItem } from '@/types/domain/professionals';
 import { withRetry } from '@/utils/networkUtils';
-import { createScopedLogger } from '@/services/utils/loggerScope';
 import {
   COLLECTIONS,
   getActiveHospitalId,
   HOSPITAL_COLLECTIONS,
   SETTINGS_DOCS,
 } from '@/constants/firestorePaths';
+import { firestoreCatalogLogger } from '@/services/storage/storageLoggers';
 import { readStringCatalogFromSnapshot } from '@/services/storage/firestore/firestoreShared';
 import { defaultFirestoreServiceRuntime } from '@/services/storage/firestore/firestoreServiceRuntime';
 import type { FirestoreServiceRuntimePort } from '@/services/storage/firestore/ports/firestoreServiceRuntimePort';
@@ -15,8 +15,6 @@ import {
   normalizeProfessionalCatalog,
   normalizeStringCatalog,
 } from '@/services/repositories/contracts/catalogContracts';
-
-const firestoreCatalogLogger = createScopedLogger('FirestoreCatalogService');
 
 const getSettingsDocRef = (docId: string, runtime: FirestoreServiceRuntimePort) =>
   doc(

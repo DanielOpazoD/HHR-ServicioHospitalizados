@@ -37,7 +37,7 @@ import {
   recordOperationalErrorTelemetry,
   recordOperationalTelemetry,
 } from '@/services/observability/operationalTelemetryService';
-import { createScopedLogger } from '@/services/utils/loggerScope';
+import { pdfStorageLogger } from '@/services/backup/backupLoggers';
 
 // ============= Types =============
 
@@ -56,7 +56,6 @@ export interface PdfFolder {
 // ============= Constants =============
 
 const STORAGE_ROOT = 'entregas-enfermeria';
-const pdfStorageLogger = createScopedLogger('PdfStorage');
 
 // ============= Helper Functions =============
 

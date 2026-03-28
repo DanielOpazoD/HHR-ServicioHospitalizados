@@ -1,4 +1,3 @@
-import { DailyRecord } from '@/types/domain/dailyRecord';
 import { Specialty } from '@/types/domain/patientClassification';
 import { HOSPITAL_CAPACITY } from '@/constants/beds';
 import { EVACUATION_METHOD_AEROCARDAL } from '@/constants/clinical';
@@ -6,6 +5,7 @@ import { MinsalStatistics, SpecialtyStats, PatientTraceability } from '@/types/m
 import { normalizeSpecialty, isFachEvacuationMethod } from './normalization';
 import { countOccupiedBeds, countBlockedBeds, calculateDailySnapshot } from './snapshot';
 import { getPatientsBySpecialty } from './specialty';
+import type { MinsalDailyRecord } from './minsalRecordContracts';
 
 const resolveTraceabilityDiagnosis = (value: unknown): string | undefined => {
   if (typeof value !== 'string') return undefined;
@@ -17,10 +17,10 @@ const resolveTraceabilityDiagnosis = (value: unknown): string | undefined => {
  * Filter records by date range
  */
 export function filterRecordsByDateRange(
-  records: DailyRecord[],
+  records: MinsalDailyRecord[],
   startDate: string,
   endDate: string
-): DailyRecord[] {
+): MinsalDailyRecord[] {
   return records.filter(r => r.date >= startDate && r.date <= endDate);
 }
 
@@ -28,7 +28,7 @@ export function filterRecordsByDateRange(
  * Main MINSAL statistics calculator
  */
 export function calculateMinsalStats(
-  records: DailyRecord[],
+  records: MinsalDailyRecord[],
   startDate: string,
   endDate: string
 ): MinsalStatistics {

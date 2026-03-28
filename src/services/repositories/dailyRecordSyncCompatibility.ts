@@ -1,20 +1,23 @@
-import { DailyRecord } from '@/types/domain/dailyRecord';
 import { toRecordTimestamp as toPolicyRecordTimestamp } from '@/services/repositories/dailyRecordConsistencyPolicy';
 
 export const toRecordTimestamp = toPolicyRecordTimestamp;
 
-export const shouldKeepLocalRecordOverRemote = (
-  localRecord: DailyRecord | null,
-  remoteRecord: DailyRecord | null
+type TimestampedRecord = {
+  lastUpdated: string;
+};
+
+export const shouldKeepLocalRecordOverRemote = <T extends TimestampedRecord>(
+  localRecord: T | null,
+  remoteRecord: T | null
 ): boolean => {
   if (!localRecord || !remoteRecord) return false;
   return toRecordTimestamp(localRecord.lastUpdated) > toRecordTimestamp(remoteRecord.lastUpdated);
 };
 
-export const resolvePreferredDailyRecord = (
-  localRecord: DailyRecord | null,
-  remoteRecord: DailyRecord | null
-): DailyRecord | null => {
+export const resolvePreferredDailyRecord = <T extends TimestampedRecord>(
+  localRecord: T | null,
+  remoteRecord: T | null
+): T | null => {
   if (!remoteRecord) {
     return localRecord;
   }

@@ -9,12 +9,10 @@ import { migrateLegacyData } from '@/services/repositories/dataMigration';
 import { loadRemoteRecordWithFallback } from '@/services/repositories/dailyRecordRemoteLoader';
 import { measureRepositoryOperation } from '@/services/repositories/repositoryPerformance';
 import { createSyncDailyRecordResult } from '@/services/repositories/contracts/dailyRecordResults';
-import { createScopedLogger } from '@/services/utils/loggerScope';
+import { dailyRecordSyncLogger } from '@/services/repositories/repositoryLoggers';
 import { resolveDailyRecordSyncConsistency } from '@/services/repositories/dailyRecordConsistencyPolicy';
 import { resolveDailyRecordPersistenceGoldenPath } from '@/services/repositories/dailyRecordPersistenceGoldenPath';
 import type { SyncDailyRecordResult } from '@/services/repositories/contracts/dailyRecordResults';
-
-const dailyRecordSyncLogger = createScopedLogger('DailyRecordRepositorySyncService');
 
 const resolveSubscriptionResult = async (
   date: string,

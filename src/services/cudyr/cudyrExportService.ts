@@ -4,17 +4,17 @@
  * Rehydrates the export range from Firestore before building the workbook.
  */
 
-import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { getCudyrMonthlyTotals } from './cudyrSummary';
 import { validateExcelExport, XLSX_MIME_TYPE } from '@/services/exporters/excelValidation';
 import { buildCudyrWorkbook } from './cudyrWorkbookBuilder';
 import { getRecordFromFirestore } from '@/services/storage/firestore';
 import { resolvePreferredDailyRecord } from '@/services/repositories/dailyRecordSyncCompatibility';
 import { createScopedLogger } from '@/services/utils/loggerScope';
+import type { DailyRecordCudyrExportState } from '@/types/domain/dailyRecordSlices';
 
 const cudyrExportLogger = createScopedLogger('CudyrExport');
 
-const fetchDailyRecord = async (dateStr: string): Promise<DailyRecord | null> => {
+const fetchDailyRecord = async (dateStr: string): Promise<DailyRecordCudyrExportState | null> => {
   try {
     return await getRecordFromFirestore(dateStr);
   } catch (error) {
@@ -25,8 +25,8 @@ const fetchDailyRecord = async (dateStr: string): Promise<DailyRecord | null> =>
 
 const resolveCurrentRecordForExport = async (
   endDate: string | undefined,
-  currentRecord?: DailyRecord | null
-): Promise<DailyRecord | null | undefined> => {
+  currentRecord?: DailyRecordCudyrExportState | null
+): Promise<DailyRecordCudyrExportState | null | undefined> => {
   if (!endDate && !currentRecord) {
     return currentRecord;
   }
@@ -44,7 +44,7 @@ const buildMonthlyWorkbook = async (
   year: number,
   month: number,
   endDate?: string,
-  currentRecord?: DailyRecord | null
+  currentRecord?: DailyRecordCudyrExportState | null
 ) => {
   const hydratedCurrentRecord = await resolveCurrentRecordForExport(endDate, currentRecord);
   const monthlySummary = await getCudyrMonthlyTotals(
@@ -67,7 +67,7 @@ export const generateCudyrMonthlyExcel = async (
   year: number,
   month: number,
   endDate?: string,
-  currentRecord?: DailyRecord | null
+  currentRecord?: DailyRecordCudyrExportState | null
 ): Promise<void> => {
   const { workbook, fileName } = await buildMonthlyWorkbook(year, month, endDate, currentRecord);
   const buffer = await workbook.xlsx.writeBuffer();
@@ -93,7 +93,7 @@ export const generateCudyrMonthlyExcelBlob = async (
   year: number,
   month: number,
   endDate?: string,
-  currentRecord?: DailyRecord | null
+  currentRecord?: DailyRecordCudyrExportState | null
 ): Promise<Blob> => {
   const { workbook } = await buildMonthlyWorkbook(year, month, endDate, currentRecord);
   const buffer = await workbook.xlsx.writeBuffer();

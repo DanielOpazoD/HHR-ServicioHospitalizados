@@ -2,12 +2,12 @@
  * MINSAL/DEIS statistics calculator - Facade
  */
 
-import { DailyRecord } from '@/types/domain/dailyRecord';
 import {
   DailyStatsSnapshot,
   SpecialtyTraceabilityType,
   PatientTraceability,
 } from '@/types/minsalTypes';
+import type { MinsalDailyRecord } from '@/services/calculations/minsal/minsalRecordContracts';
 
 // Re-exports
 export { getDateRangeFromPreset } from './minsal/dateUtils';
@@ -26,7 +26,7 @@ import { buildSpecialtyTraceability as buildTraceability } from './minsal/tracea
 /**
  * Generate daily trend data for charts
  */
-export function generateDailyTrend(records: DailyRecord[]): DailyStatsSnapshot[] {
+export function generateDailyTrend(records: MinsalDailyRecord[]): DailyStatsSnapshot[] {
   return records.map(calculateDailySnapshot).sort((a, b) => a.date.localeCompare(b.date));
 }
 
@@ -35,7 +35,7 @@ export function generateDailyTrend(records: DailyRecord[]): DailyStatsSnapshot[]
  * Re-exported for backward compatibility.
  */
 export function buildSpecialtyTraceability(
-  records: DailyRecord[],
+  records: MinsalDailyRecord[],
   specialty: string,
   type: SpecialtyTraceabilityType
 ): PatientTraceability[] {

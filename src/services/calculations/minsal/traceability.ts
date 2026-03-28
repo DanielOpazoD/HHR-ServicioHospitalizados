@@ -1,8 +1,8 @@
-import { DailyRecord } from '@/types/domain/dailyRecord';
 import { BEDS } from '@/constants/beds';
 import { EVACUATION_METHOD_AEROCARDAL } from '@/constants/clinical';
 import { PatientTraceability, SpecialtyTraceabilityType } from '@/types/minsalTypes';
 import { normalizeSpecialty, isFachEvacuationMethod } from './normalization';
+import type { MinsalDailyRecord } from './minsalRecordContracts';
 
 const resolveTraceabilityDiagnosis = (value: unknown): string | undefined => {
   if (typeof value !== 'string') return undefined;
@@ -14,7 +14,7 @@ const resolveTraceabilityDiagnosis = (value: unknown): string | undefined => {
  * Build traceability list lazily for a specialty + indicator type.
  */
 export function buildSpecialtyTraceability(
-  records: DailyRecord[],
+  records: MinsalDailyRecord[],
   specialty: string,
   type: SpecialtyTraceabilityType
 ): PatientTraceability[] {

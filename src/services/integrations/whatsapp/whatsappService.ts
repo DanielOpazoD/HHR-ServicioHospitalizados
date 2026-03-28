@@ -24,11 +24,10 @@ import {
   saveManualShift,
   subscribeToCurrentShift,
 } from '@/services/integrations/whatsapp/whatsappShiftStore';
-import { createScopedLogger } from '@/services/utils/loggerScope';
+import { whatsappServiceLogger } from '@/services/integrations/integrationLoggers';
 import { z } from 'zod';
 
 export type { MessageTemplate };
-const whatsappServiceLogger = createScopedLogger('WhatsAppService');
 
 const whatsAppHealthSchema = z.object({
   status: z.enum(['ok', 'error']),

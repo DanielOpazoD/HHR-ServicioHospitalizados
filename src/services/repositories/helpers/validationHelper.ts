@@ -4,9 +4,7 @@ import {
   hasStructuralRepairs,
   parseDailyRecordWithDefaultsReport,
 } from '@/schemas/zodSchemas';
-import { createScopedLogger } from '@/services/utils/loggerScope';
-
-const repositoryValidationLogger = createScopedLogger('RepositoryValidation');
+import { repositoryValidationLogger } from '@/services/repositories/repositoryLoggers';
 
 const logSalvageSummary = (
   date: string,

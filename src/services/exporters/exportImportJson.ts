@@ -1,7 +1,7 @@
 import { DailyRecord } from '@/types/domain/dailyRecord';
 import { saveRecord } from '@/services/storage/records';
 import { hasStructuralRepairs, parseDailyRecordWithDefaultsReport } from '@/schemas/zodSchemas';
-import { createScopedLogger } from '@/services/utils/loggerScope';
+import { jsonImportLogger } from '@/services/exporters/exporterLoggers';
 
 export interface JsonImportResult {
   success: boolean;
@@ -10,8 +10,6 @@ export interface JsonImportResult {
   repairedCount: number;
   skippedEntries: string[];
 }
-
-const jsonImportLogger = createScopedLogger('JsonImport');
 
 const readFileAsText = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {

@@ -2,10 +2,9 @@ import { collection, doc, limit, onSnapshot, orderBy, query, setDoc } from 'fire
 import { defaultFirestoreServiceRuntime } from '@/services/storage/firestore/firestoreServiceRuntime';
 import type { FirestoreServiceRuntimePort } from '@/services/storage/firestore/ports/firestoreServiceRuntimePort';
 import type { WeeklyShift } from '@/types/whatsapp';
-import { createScopedLogger } from '@/services/utils/loggerScope';
+import { whatsappShiftLogger } from '@/services/integrations/integrationLoggers';
 
 const TURNO_KEYWORDS = ['turno pabellon', 'turno pabellón', 'envío turno', 'envio turno'];
-const whatsappShiftLogger = createScopedLogger('WhatsAppShiftStore');
 
 const parseShiftDates = (messageText: string): { startDate: string; endDate: string } | null => {
   const dateMatch = messageText.match(

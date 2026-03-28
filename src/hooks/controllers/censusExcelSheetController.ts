@@ -1,14 +1,14 @@
-import type { DailyRecord } from '@/hooks/contracts/dailyRecordHookContracts';
+import type { CensusExportRecord } from '@/services/contracts/censusExportServiceContracts';
 import type { CensusWorkbookSheetDescriptor } from '@/services/exporters/censusMasterWorkbook';
 
 interface BuildCensusSheetDescriptorsParams {
-  monthRecords: DailyRecord[];
+  monthRecords: CensusExportRecord[];
   currentDateString: string;
   now?: Date;
 }
 
 export interface CensusWorkbookBuildPlan {
-  records: DailyRecord[];
+  records: CensusExportRecord[];
   sheetDescriptors: CensusWorkbookSheetDescriptor[];
 }
 
@@ -54,8 +54,8 @@ const reserveUniqueName = (desiredName: string, usedNames: Set<string>): string 
   return fallback;
 };
 
-const deepCloneRecord = (record: DailyRecord): DailyRecord =>
-  JSON.parse(JSON.stringify(record)) as DailyRecord;
+const deepCloneRecord = (record: CensusExportRecord): CensusExportRecord =>
+  JSON.parse(JSON.stringify(record)) as CensusExportRecord;
 
 const parseTimeParts = (timeValue?: string): { hours: number; minutes: number } | null => {
   if (!timeValue || typeof timeValue !== 'string') {
@@ -119,7 +119,10 @@ const isMovementIncludedInCutoff = (
   return movementDateTime.getTime() <= cutoff.getTime();
 };
 
-const buildRecordSnapshotAtCutoff = (record: DailyRecord, cutoff: Date): DailyRecord => {
+const buildRecordSnapshotAtCutoff = (
+  record: CensusExportRecord,
+  cutoff: Date
+): CensusExportRecord => {
   const snapshot = deepCloneRecord(record);
 
   Object.entries(snapshot.beds || {}).forEach(([bedId, patient]) => {
@@ -206,7 +209,7 @@ export const buildCensusWorkbookPlan = ({
   const usedNames = new Set<string>();
   const normalizedRecords = [...monthRecords].sort((a, b) => a.date.localeCompare(b.date));
   const currentTime = toSheetTime(now);
-  const recordsForWorkbook: DailyRecord[] = [];
+  const recordsForWorkbook: CensusExportRecord[] = [];
   const sheetDescriptors: CensusWorkbookSheetDescriptor[] = [];
 
   normalizedRecords.forEach(record => {

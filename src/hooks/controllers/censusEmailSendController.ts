@@ -1,5 +1,5 @@
 import { buildCensusEmailBody } from '@/constants/email';
-import type { DailyRecord } from '@/hooks/contracts/dailyRecordHookContracts';
+import type { CensusExportRecord } from '@/services/contracts/censusExportServiceContracts';
 
 interface BuildConfirmationTextParams {
   currentDateString: string;
@@ -64,13 +64,13 @@ export const resolveMonthRecordsForDelivery = ({
   selectedMonth,
   selectedDay,
 }: {
-  monthRecords: DailyRecord[];
-  currentRecord: DailyRecord | null;
+  monthRecords: CensusExportRecord[];
+  currentRecord: CensusExportRecord | null;
   currentDateString: string;
   selectedYear: number;
   selectedMonth: number;
   selectedDay: number;
-}): DailyRecord[] => {
+}): CensusExportRecord[] => {
   const limitDate = toIsoDate(selectedYear, selectedMonth + 1, selectedDay);
 
   const filteredRecords = monthRecords

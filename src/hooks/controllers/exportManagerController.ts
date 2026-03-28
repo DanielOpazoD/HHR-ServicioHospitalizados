@@ -1,4 +1,4 @@
-import type { DailyRecord } from '@/hooks/contracts/dailyRecordHookContracts';
+import type { CensusExportRecord } from '@/services/contracts/censusExportServiceContracts';
 import type { DailyRecordStaffingState } from '@/types/domain/dailyRecordSlices';
 import type { StorageLookupResult } from '@/services/backup/storageLookupContracts';
 import { resolveHandoffShiftStaff } from '@/services/staff/dailyRecordStaffing';
@@ -10,11 +10,11 @@ export const shouldCheckArchiveStatus = (
   Boolean(currentDateString) && (currentModule === 'CENSUS' || currentModule === 'NURSING_HANDOFF');
 
 export const mergeMonthlyRecordsForBackup = (
-  monthRecords: DailyRecord[],
-  currentRecord: DailyRecord | null,
+  monthRecords: CensusExportRecord[],
+  currentRecord: CensusExportRecord | null,
   currentDateString: string,
   limitDate: string
-): DailyRecord[] => {
+): CensusExportRecord[] => {
   const filteredRecords = monthRecords
     .filter(record => record.date <= limitDate)
     .sort((left, right) => left.date.localeCompare(right.date));

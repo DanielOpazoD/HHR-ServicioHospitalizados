@@ -24,7 +24,7 @@ import {
   preparePatchedRecordForPersistence,
   syncPatientsToMasterInBackground,
 } from '@/services/repositories/dailyRecordWriteSupport';
-import { createScopedLogger } from '@/services/utils/loggerScope';
+import { dailyRecordWriteLogger } from '@/services/repositories/repositoryLoggers';
 import type { DailyRecordRecoveryDecision } from '@/services/repositories/dailyRecordRecoveryPolicy';
 import { DataRegressionError, VersionMismatchError } from '@/utils/integrityGuard';
 import type { DailyRecordRetryability } from '@/services/repositories/contracts/dailyRecordConsistency';
@@ -54,8 +54,6 @@ interface RemoteWriteState {
   blockingReason?: 'regression' | 'version_mismatch';
   blockingError?: Error;
 }
-
-const dailyRecordWriteLogger = createScopedLogger('DailyRecordWriteRepository');
 
 const createRemoteWriteState = (): RemoteWriteState => ({
   savedRemotely: false,

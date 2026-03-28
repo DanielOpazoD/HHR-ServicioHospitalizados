@@ -19,15 +19,13 @@ import {
 } from '@/services/repositories/contracts/dailyRecordQueries';
 import { mergeAvailableDates } from '@/services/repositories/dailyRecordSyncCompatibility';
 import { measureRepositoryOperation } from '@/services/repositories/repositoryPerformance';
-import { createScopedLogger } from '@/services/utils/loggerScope';
+import { dailyRecordReadLogger } from '@/services/repositories/repositoryLoggers';
 import { resolveDailyRecordReadConsistency } from '@/services/repositories/dailyRecordConsistencyPolicy';
 import { resolveDailyRecordPersistenceGoldenPath } from '@/services/repositories/dailyRecordPersistenceGoldenPath';
 
 const isRepositoryDebugEnabled = () =>
   import.meta.env.DEV &&
   String(import.meta.env.VITE_DEBUG_REPOSITORY || '').toLowerCase() === 'true';
-
-const dailyRecordReadLogger = createScopedLogger('DailyRecordReadRepository');
 
 interface LocalRuntimeReadCandidate {
   record: DailyRecord;

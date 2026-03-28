@@ -1,4 +1,3 @@
-import { DailyRecord } from '@/types/domain/dailyRecord';
 import { getAllRecords } from '@/services/storage/records';
 import { downloadBlob } from '@/services/exporters/exportDownload';
 import { buildDailyRecordCsv } from '@/services/exporters/exportCsvSerialization';
@@ -7,14 +6,16 @@ import {
   importDataJSONDetailed as importDataJSONDetailedFile,
   JsonImportResult,
 } from '@/services/exporters/exportImportJson';
-import { createScopedLogger } from '@/services/utils/loggerScope';
+import type {
+  DailyRecordCsvExportState,
+  DailyRecordDateRef,
+} from '@/types/domain/dailyRecordSlices';
 import {
   createApplicationFailed,
   createApplicationSuccess,
   type ApplicationOutcome,
 } from '@/application/shared/applicationOutcome';
-
-const exportServiceLogger = createScopedLogger('ExportService');
+import { exportServiceLogger } from '@/services/exporters/exporterLoggers';
 
 export const exportDataJSON = async () => {
   const result = await exportDataJSONWithResult();
@@ -33,7 +34,9 @@ export const exportDataJSONWithResult = async (): Promise<
   return createApplicationSuccess({ exported: true });
 };
 
-export const exportDataCSV = (record: DailyRecord | null) => {
+type DailyRecordCsvExportInput = DailyRecordCsvExportState & DailyRecordDateRef;
+
+export const exportDataCSV = (record: DailyRecordCsvExportInput | null) => {
   const result = exportDataCSVWithResult(record);
   if (result.status !== 'success') {
     return;
@@ -41,7 +44,7 @@ export const exportDataCSV = (record: DailyRecord | null) => {
 };
 
 export const exportDataCSVWithResult = (
-  record: DailyRecord | null
+  record: DailyRecordCsvExportInput | null
 ): ApplicationOutcome<{ exported: boolean }> => {
   if (!record) {
     return createApplicationFailed({ exported: false }, [

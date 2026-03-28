@@ -24,10 +24,9 @@ import {
 } from '@/services/repositories/contracts/patientMasterContracts';
 import { defaultRepositoryFirestoreRuntime } from '@/services/repositories/repositoryFirestoreRuntime';
 import type { RepositoryFirestoreRuntimePort } from '@/services/repositories/ports/repositoryFirestoreRuntimePort';
-import { createScopedLogger } from '@/services/utils/loggerScope';
+import { patientMasterRepositoryLogger } from '@/services/repositories/repositoryLoggers';
 
 const COLLECTION_NAME = HOSPITAL_COLLECTIONS.PATIENTS;
-const patientMasterRepositoryLogger = createScopedLogger('PatientMasterRepository');
 
 /**
  * Normalizes RUT for use as Document ID

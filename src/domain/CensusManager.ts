@@ -1,7 +1,7 @@
 import { ActionState, DischargeState, TransferState } from '@/domain/censusActionContracts';
 import { CMAData } from '@/types/domain/movements';
-import { DailyRecord } from '@/types/domain/dailyRecord';
 import { PatientData } from '@/types/domain/patient';
+import type { DailyRecordBedsState } from '@/types/domain/dailyRecordSlices';
 import {
   DEFAULT_DISCHARGE_STATUS,
   DEFAULT_TRANSFER_ESCORT,
@@ -62,7 +62,7 @@ export class CensusManager {
    */
   static validateMovement(
     state: ActionState,
-    record: DailyRecord
+    record: DailyRecordBedsState
   ): { isValid: boolean; error?: string } {
     if (!state.sourceBedId || !state.targetBedId)
       return { isValid: false, error: 'Cama de origen o destino no especificada.' };

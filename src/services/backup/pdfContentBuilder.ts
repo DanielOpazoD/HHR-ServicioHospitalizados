@@ -8,18 +8,17 @@
 
 import type jsPDF from 'jspdf';
 // import autoTable from 'jspdf-autotable'; // Removed static import
-import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { PatientData } from '@/services/contracts/patientServiceContracts';
 import type { ShiftType } from '@/types/domain/shift';
 import type { DeviceDetails } from '@/types/domain/devices';
 import { BEDS } from '@/constants/beds';
 import { formatDateDDMMYYYY } from '@/utils/dateUtils';
 import { resolveHandoffShiftStaff } from '@/services/staff/dailyRecordStaffing';
-import { createScopedLogger } from '@/services/utils/loggerScope';
+import type { HandoffPdfRecord } from '@/services/pdf/contracts/handoffPdfContracts';
+import { pdfContentBuilderLogger } from '@/services/backup/backupLoggers';
 
 // Logo path
 const LOGO_PATH = '/images/logos/logo_HHR.svg';
-const pdfContentBuilderLogger = createScopedLogger('PdfContentBuilder');
 
 export interface Schedule {
   dayStart?: string;
@@ -82,7 +81,7 @@ interface AutoTableOptions {
  */
 export const buildHandoffPdfContent = async (
   doc: jsPDF,
-  record: DailyRecord,
+  record: HandoffPdfRecord,
   shiftType: ShiftType,
   schedule: Schedule,
   autoTable: (doc: jsPDF, options: AutoTableOptions) => void // Injected dependency
@@ -318,9 +317,8 @@ export const buildHandoffPdfContent = async (
 
   // 4. NOVEDADES
   const finalY = doc.lastAutoTable?.finalY || currentY + 20;
-  const novedadesKey =
-    shiftType === 'day' ? 'handoffNovedadesDayShift' : ('handoffNovedadesNightShift' as const);
-  const novedades = record[novedadesKey as keyof DailyRecord] as string | undefined;
+  const novedades =
+    shiftType === 'day' ? record.handoffNovedadesDayShift : record.handoffNovedadesNightShift;
 
   if (novedades && finalY < 260) {
     doc.setFontSize(9);
