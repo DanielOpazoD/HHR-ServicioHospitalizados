@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { queryKeys } from '../config/queryClient';
 import { CatalogRepository } from '@/services/repositories/CatalogRepository';
 import { useAuthState } from './useAuthState';
-import { ProfessionalCatalogItem } from '@/types/domain/base';
+import type { ProfessionalCatalogItem } from '@/types/domain/professionals';
 
 /**
  * Hook to manage the list of nurses.

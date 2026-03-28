@@ -1,4 +1,4 @@
-import { DailyRecord } from '@/services/contracts/dailyRecordServiceContracts';
+import { DailyRecord } from '@/types/domain/dailyRecord';
 import { Specialty } from '@/types/domain/base';
 import { HOSPITAL_CAPACITY } from '@/constants/beds';
 import { EVACUATION_METHOD_AEROCARDAL } from '@/constants/clinical';

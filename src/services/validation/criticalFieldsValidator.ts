@@ -6,7 +6,7 @@
  * @module services/validation/criticalFieldsValidator
  */
 
-import { DailyRecord } from '@/services/contracts/dailyRecordServiceContracts';
+import { DailyRecord } from '@/types/domain/dailyRecord';
 import { PatientData } from '@/services/contracts/patientServiceContracts';
 import { PatientStatus } from '@/types/domain/base';
 import { BEDS } from '@/constants/beds';

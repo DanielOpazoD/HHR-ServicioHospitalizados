@@ -1,5 +1,5 @@
 import React from 'react';
-import { Statistics } from '@/types/domain/base';
+import type { Statistics } from '@/types/domain/statistics';
 import { NurseSelector } from './NurseSelector';
 import { TensSelector } from './TensSelector';
 import { CombinedSummaryCard } from '@/components/layout/SummaryCard';

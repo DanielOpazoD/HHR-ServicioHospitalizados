@@ -1,5 +1,5 @@
 import React from 'react';
-import { Statistics } from '@/types/domain/base';
+import type { Statistics } from '@/types/domain/statistics';
 import { DischargeData, TransferData } from '@/types/domain/movements';
 import { Activity, Bed, Baby } from 'lucide-react';
 import { buildMovementSummaryModel } from '@/components/layout/controllers/movementSummaryController';

@@ -5,7 +5,7 @@
  * @module services/calculations/cudyrSummary
  */
 
-import { DailyRecord } from '@/services/contracts/dailyRecordServiceContracts';
+import { DailyRecord } from '@/types/domain/dailyRecord';
 import { PatientData } from '@/services/contracts/patientServiceContracts';
 import { BedType } from '@/types/domain/base';
 import { BEDS } from '@/constants/beds';

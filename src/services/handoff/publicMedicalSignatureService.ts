@@ -1,5 +1,5 @@
 import { httpsCallable } from 'firebase/functions';
-import type { DailyRecord } from '@/services/contracts/dailyRecordServiceContracts';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 import { defaultFunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
 

@@ -6,7 +6,7 @@
  */
 
 import { PatientData } from '@/services/contracts/patientServiceContracts';
-import { DailyRecord } from '@/services/contracts/dailyRecordServiceContracts';
+import { DailyRecord } from '@/types/domain/dailyRecord';
 
 /**
  * Minimal FHIR Patient Resource

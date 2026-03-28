@@ -1,4 +1,4 @@
-import { DailyRecord } from '@/services/contracts/dailyRecordServiceContracts';
+import { DailyRecord } from '@/types/domain/dailyRecord';
 import { PatientData } from '@/services/contracts/patientServiceContracts';
 import { BEDS, HOSPITAL_CAPACITY } from '@/constants/beds';
 import { DailyStatsSnapshot } from '@/types/minsalTypes';

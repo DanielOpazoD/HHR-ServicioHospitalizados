@@ -1,4 +1,4 @@
-import type { Statistics } from '@/types/domain/base';
+import type { Statistics } from '@/types/domain/statistics';
 import type { CensusHeaderPatientContract } from '@/application/census/censusStaffHeaderContracts';
 import {
   type CensusAccessProfile,

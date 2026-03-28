@@ -1,4 +1,4 @@
-import { DailyRecord } from '@/services/contracts/dailyRecordServiceContracts';
+import { DailyRecord } from '@/types/domain/dailyRecord';
 import { getAllRecords } from '@/services/storage/records';
 import { downloadBlob } from '@/services/exporters/exportDownload';
 import { buildDailyRecordCsv } from '@/services/exporters/exportCsvSerialization';

@@ -36,16 +36,15 @@ export {
   type MedicalHandoffDailyContinuityEntry,
   type MedicalSpecialty,
   type MedicalSpecialtyHandoffNote,
-  type Statistics,
   type DischargeType,
   type ShiftType,
   type PatientIdentityStatus,
   type FhirResource,
   type DailyRecordPatch,
   type DailyRecordPatchPath,
-  type ProfessionalSpecialty,
-  type ProfessionalCatalogItem,
 } from './core';
+export type { Statistics } from './domain/statistics';
+export type { ProfessionalSpecialty, ProfessionalCatalogItem } from './domain/professionals';
 
 // Value types and utilities
 export {

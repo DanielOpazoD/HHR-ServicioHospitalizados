@@ -14,3 +14,5 @@ export * from './domain/clinical';
 export * from './domain/patient';
 export * from './domain/movements';
 export * from './domain/dailyRecord';
+export * from './domain/professionals';
+export * from './domain/statistics';

@@ -1,5 +1,5 @@
 import type { Workbook } from 'exceljs';
-import { DailyRecord } from '@/services/contracts/dailyRecordServiceContracts';
+import { DailyRecord } from '@/types/domain/dailyRecord';
 import { PatientData } from '@/services/contracts/patientServiceContracts';
 import { BEDS } from '@/constants/beds';
 import { formatDateDDMMYYYY } from '@/utils/dateUtils';
