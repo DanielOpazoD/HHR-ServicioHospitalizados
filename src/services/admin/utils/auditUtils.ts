@@ -5,9 +5,7 @@
 
 import { getAuth } from 'firebase/auth';
 import { Timestamp } from 'firebase/firestore';
-import { logger } from '@/services/utils/loggerService';
-
-const auditUtilsLogger = logger.child('AuditUtils');
+import { auditUtilsLogger } from '@/services/admin/adminLoggers';
 
 // ============================================================================
 // User Identification

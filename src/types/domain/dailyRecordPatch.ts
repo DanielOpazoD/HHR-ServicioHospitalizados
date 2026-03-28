@@ -1,12 +1,10 @@
-import type { Specialty, PatientStatus, BedType } from './base';
+import type { BedType } from './base';
+import type { Specialty, PatientStatus } from './patientClassification';
 import type { PatientData } from './patient';
-import type {
-  CudyrScore,
-  ClinicalEvent,
-  DeviceDetails,
-  DeviceInstance,
-  FhirResource,
-} from './clinical';
+import type { ClinicalEvent } from './clinicalEvents';
+import type { CudyrScore } from './cudyr';
+import type { DeviceDetails, DeviceInstance } from './devices';
+import type { FhirResource } from './fhir';
 import type { CMAData, DischargeData, TransferData } from './movements';
 import type {
   MedicalHandoffBySpecialty,

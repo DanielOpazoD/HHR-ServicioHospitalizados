@@ -1,4 +1,4 @@
-import { BedDefinition } from '@/types/domain/base';
+import { BedDefinition } from '@/types/domain/beds';
 import type { DailyRecord } from '@/hooks/contracts/dailyRecordHookContracts';
 import { DischargeData, DischargeType, TransferData } from '@/types/domain/movements';
 import { PatientData } from '@/hooks/contracts/patientHookContracts';

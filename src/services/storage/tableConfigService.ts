@@ -8,7 +8,7 @@ import { SETTINGS_DOCS, getSettingsDocPath } from '@/constants/firestorePaths';
 import { defaultFirestoreServiceRuntime } from '@/services/storage/firestore/firestoreServiceRuntime';
 import type { FirestoreServiceRuntimePort } from '@/services/storage/firestore/ports/firestoreServiceRuntimePort';
 import { safeJsonParse } from '@/utils/jsonUtils';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
 // ============================================================================
 // Types
@@ -42,7 +42,7 @@ export interface TableConfig {
 // ============================================================================
 
 let firestoreEnabled = true;
-const tableConfigLogger = logger.child('TableConfigService');
+const tableConfigLogger = createScopedLogger('TableConfigService');
 
 export const setFirestoreEnabled = (enabled: boolean): void => {
   firestoreEnabled = enabled;

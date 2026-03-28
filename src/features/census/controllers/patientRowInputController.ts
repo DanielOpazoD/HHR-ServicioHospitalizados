@@ -1,18 +1,22 @@
 import type {
   CesareanLabor,
   DeliveryRoute,
-  PatientData,
+} from '@/features/census/contracts/censusObstetricContracts';
+import type {
+  PatientRowDeliveryPatch,
+  PatientRowPatientDocumentType,
 } from '@/features/census/components/patient-row/patientRowDataContracts';
 
 export const resolveNextDocumentType = (
-  currentType: PatientData['documentType'] | undefined
-): NonNullable<PatientData['documentType']> => (currentType === 'Pasaporte' ? 'RUT' : 'Pasaporte');
+  currentType: PatientRowPatientDocumentType | undefined
+): NonNullable<PatientRowPatientDocumentType> =>
+  currentType === 'Pasaporte' ? 'RUT' : 'Pasaporte';
 
 export const buildDeliveryRoutePatch = (
   route: DeliveryRoute | undefined,
   date: string | undefined,
   cesareanLabor: CesareanLabor | undefined
-): Pick<PatientData, 'deliveryRoute' | 'deliveryDate' | 'deliveryCesareanLabor'> => ({
+): PatientRowDeliveryPatch => ({
   deliveryRoute: route,
   deliveryDate: date,
   deliveryCesareanLabor: route === 'Cesárea' ? cesareanLabor : undefined,

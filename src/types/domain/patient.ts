@@ -1,11 +1,9 @@
-import type { Specialty, PatientStatus, PatientIdentityStatus } from './base';
-import type {
-  CudyrScore,
-  ClinicalEvent,
-  DeviceInstance,
-  DeviceDetails,
-  FhirResource,
-} from './clinical';
+import type { PatientIdentityStatus } from './patientIdentity';
+import type { Specialty, PatientStatus } from './patientClassification';
+import type { ClinicalEvent } from './clinicalEvents';
+import type { CudyrScore } from './cudyr';
+import type { DeviceInstance, DeviceDetails } from './devices';
+import type { FhirResource } from './fhir';
 
 export interface MedicalHandoffAuditActor {
   uid: string;

@@ -11,7 +11,7 @@ import {
 } from '@/application/handoff';
 import type { AuditAction, AuditLogEntry } from '@/types/audit';
 import type { MedicalHandoffAuditActor, PatientData } from '@/hooks/contracts/patientHookContracts';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 import { canEditMedicalHandoffForDate } from '@/shared/access/operationalAccessPolicy';
 
 type MedicalPatientFields = Pick<
@@ -19,7 +19,7 @@ type MedicalPatientFields = Pick<
   'medicalHandoffEntries' | 'medicalHandoffNote' | 'medicalHandoffAudit'
 >;
 
-const medicalHandoffHandlersLogger = logger.child('useMedicalHandoffHandlers');
+const medicalHandoffHandlersLogger = createScopedLogger('useMedicalHandoffHandlers');
 const SILENT_MEDICAL_PATIENT_OUTCOME_REASONS = new Set([
   'missing_patient',
   'missing_audit_actor',

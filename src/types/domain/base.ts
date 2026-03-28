@@ -1,35 +1,8 @@
-export enum BedType {
-  UTI = 'UTI',
-  UCI = 'UCI',
-  MEDIA = 'MEDIA',
-}
+export { BedType } from './beds';
 
-export enum Specialty {
-  MEDICINA = 'Med Interna',
-  CIRUGIA = 'Cirugía',
-  TRAUMATOLOGIA = 'Traumatología',
-  GINECOBSTETRICIA = 'Ginecobstetricia',
-  PSIQUIATRIA = 'Psiquiatría',
-  PEDIATRIA = 'Pediatría',
-  ODONTOLOGIA = 'Odontología',
-  OTRO = 'Otro',
-  EMPTY = '',
-}
-
-export enum PatientStatus {
-  GRAVE = 'Grave',
-  DE_CUIDADO = 'De cuidado',
-  ESTABLE = 'Estable',
-  EMPTY = '',
-}
+export { Specialty, PatientStatus } from './patientClassification';
 
 export type { ShiftType } from './shift';
 export type { PatientIdentityStatus } from './patientIdentity';
 
-export interface BedDefinition {
-  id: string;
-  name: string;
-  type: BedType;
-  isCuna: boolean; // Default configuration
-  isExtra?: boolean;
-}
+export type { BedDefinition } from './beds';

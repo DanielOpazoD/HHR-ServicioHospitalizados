@@ -20,15 +20,13 @@ import {
   parseEmulatorHost,
   shouldUseSingleTabFirestoreCache,
 } from '@/services/firebase-runtime/firebaseEnvironmentPolicy';
-import { logger } from '@/services/utils/loggerService';
+import { firebaseBootstrapLogger } from '@/services/firebase-runtime/firebaseRuntimeLoggers';
 
 export interface FirebaseBootstrapResult {
   app: FirebaseApp;
   auth: Auth;
   db: Firestore;
 }
-
-const firebaseBootstrapLogger = logger.child('FirebaseBootstrap');
 
 const configureAuthPersistence = async (
   auth: Auth

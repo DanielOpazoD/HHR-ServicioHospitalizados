@@ -3,9 +3,9 @@ import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domai
 import { formatDateToCL } from '@/utils/clinicalUtils';
 import { generateClinicalDocumentPrintStyledPdfBlob } from '@/features/clinical-documents/services/clinicalDocumentPrintPdfService';
 import { stripClinicalDocumentHtml } from '@/features/clinical-documents/controllers/clinicalDocumentRichTextController';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
-const clinicalDocumentPdfLogger = logger.child('ClinicalDocumentPdfService');
+const clinicalDocumentPdfLogger = createScopedLogger('ClinicalDocumentPdfService');
 
 const normalizeFieldValue = (fieldId: string, value: string): string => {
   if (!value.trim()) return '—';

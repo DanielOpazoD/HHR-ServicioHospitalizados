@@ -1,9 +1,9 @@
-import type { DailyRecord } from '@/types/domain/dailyRecord';
+import type { DailyRecordMovementCollectionsState } from '@/types/domain/dailyRecordSlices';
 
 export interface EmptyDailyRecordMovements {
-  discharges: DailyRecord['discharges'];
-  transfers: DailyRecord['transfers'];
-  cma: DailyRecord['cma'];
+  discharges: DailyRecordMovementCollectionsState['discharges'];
+  transfers: DailyRecordMovementCollectionsState['transfers'];
+  cma: DailyRecordMovementCollectionsState['cma'];
 }
 
 export const createEmptyDailyRecordMovements = (): EmptyDailyRecordMovements => ({

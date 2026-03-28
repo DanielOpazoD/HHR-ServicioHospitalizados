@@ -1,4 +1,4 @@
-import { BedType } from '@/types/domain/base';
+import { BedType } from '@/types/domain/beds';
 import { DailyRecord } from '@/types/domain/dailyRecord';
 import {
   assignCarriedPatientToRecord,

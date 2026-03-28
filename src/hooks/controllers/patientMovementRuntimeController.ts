@@ -1,12 +1,12 @@
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
 export interface PatientMovementRuntime {
   alert: (message: string) => void;
   warn?: (message: string) => void;
 }
 
-const patientMovementRuntimeLogger = logger.child('PatientMovementRuntime');
+const patientMovementRuntimeLogger = createScopedLogger('PatientMovementRuntime');
 
 export const patientMovementBrowserRuntime: PatientMovementRuntime = {
   alert: (message: string) => {

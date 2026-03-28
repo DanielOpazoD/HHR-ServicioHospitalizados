@@ -1,6 +1,6 @@
-import type { BedDefinition } from '@/types/domain/base';
+import type { BedDefinition } from '@/types/domain/beds';
 import type { Statistics } from '@/types/domain/statistics';
-import type { DailyRecord } from '@/features/census/contracts/censusDomainContracts';
+import type { DailyRecord } from '@/features/census/contracts/censusRecordContracts';
 import type { CSSProperties } from 'react';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 

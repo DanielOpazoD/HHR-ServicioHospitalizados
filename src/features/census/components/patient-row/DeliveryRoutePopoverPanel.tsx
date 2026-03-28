@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import type {
   CesareanLabor,
   DeliveryRoute,
-} from '@/features/census/components/patient-row/patientRowDataContracts';
+} from '@/features/census/contracts/censusObstetricContracts';
 
 interface DeliveryRoutePopoverPanelProps {
   selectedDate: string;

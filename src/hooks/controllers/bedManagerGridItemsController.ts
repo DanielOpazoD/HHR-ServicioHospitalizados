@@ -1,4 +1,4 @@
-import type { BedDefinition } from '@/types/domain/base';
+import type { BedDefinition } from '@/types/domain/beds';
 import type { DailyRecordBedLayoutState } from '@/types/domain/dailyRecordSlices';
 
 export interface BedManagerBlockedGridItem {

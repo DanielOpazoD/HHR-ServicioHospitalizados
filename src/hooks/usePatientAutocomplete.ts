@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { MasterPatient } from '@/types/domain/clinical';
+import type { MasterPatient } from '@/types/domain/patientMaster';
 import { PatientMasterRepository } from '@/services/repositories/PatientMasterRepository';
 import { isValidRut, formatRut } from '@/utils/rutUtils';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
-const patientAutocompleteLogger = logger.child('usePatientAutocomplete');
+const patientAutocompleteLogger = createScopedLogger('usePatientAutocomplete');
 
 interface UsePatientAutocompleteResult {
   suggestion: MasterPatient | null;

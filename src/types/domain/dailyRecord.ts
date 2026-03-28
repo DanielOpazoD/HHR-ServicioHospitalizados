@@ -8,6 +8,10 @@ import type {
   MedicalSignatureScope,
   MedicalSignatureTimestampByScope,
 } from './dailyRecordMedicalHandoff';
+import type {
+  DailyRecordHandoffDayChecklist,
+  DailyRecordHandoffNightChecklist,
+} from './dailyRecordNursingHandoff';
 export type {
   MedicalHandoffActor,
   MedicalHandoffBySpecialty,
@@ -20,6 +24,10 @@ export type {
   MedicalSpecialtyHandoffNote,
 } from './dailyRecordMedicalHandoff';
 export type { DailyRecordPatch, DailyRecordPatchPath } from './dailyRecordPatch';
+export type {
+  DailyRecordHandoffDayChecklist,
+  DailyRecordHandoffNightChecklist,
+} from './dailyRecordNursingHandoff';
 
 export interface DailyRecord {
   date: string;
@@ -44,22 +52,10 @@ export interface DailyRecord {
   activeExtraBeds: string[];
 
   // ===== Handoff Checklist - Day Shift (Turno Largo) =====
-  handoffDayChecklist?: {
-    escalaBraden?: boolean;
-    escalaRiesgoCaidas?: boolean;
-    escalaRiesgoLPP?: boolean;
-  };
+  handoffDayChecklist?: DailyRecordHandoffDayChecklist;
 
   // ===== Handoff Checklist - Night Shift (Turno Noche) =====
-  handoffNightChecklist?: {
-    estadistica?: boolean;
-    categorizacionCudyr?: boolean;
-    encuestaUTI?: boolean;
-    encuestaMedias?: boolean;
-    conteoMedicamento?: boolean;
-    conteoNoControlados?: boolean;
-    conteoNoControladosProximaFecha?: string;
-  };
+  handoffNightChecklist?: DailyRecordHandoffNightChecklist;
 
   // ===== Handoff Novedades (Free text section) =====
   handoffNovedadesDayShift?: string;

@@ -1,10 +1,10 @@
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
 const isTestEnvironment = (): boolean =>
   typeof process !== 'undefined' &&
   (process.env.VITEST === 'true' || process.env.NODE_ENV === 'test');
 
-const legacyFirebaseLogger = logger.child('LegacyFirebase');
+const legacyFirebaseLogger = createScopedLogger('LegacyFirebase');
 
 const isLegacyDebugEnabled = (): boolean =>
   !isTestEnvironment() &&

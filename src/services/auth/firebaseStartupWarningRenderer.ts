@@ -2,9 +2,9 @@ import {
   getFirebaseStartupWarningCopy,
   type FirebaseStartupWarningCopy,
 } from './firebaseStartupUiPolicy';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
-const firebaseStartupWarningLogger = logger.child('FirebaseStartupWarningRenderer');
+const firebaseStartupWarningLogger = createScopedLogger('FirebaseStartupWarningRenderer');
 
 const highlightEnvToken = (step: string) =>
   step

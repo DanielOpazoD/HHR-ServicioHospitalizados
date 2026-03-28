@@ -34,9 +34,9 @@ import {
   syncDailyRecordClinicalResources,
   touchDailyRecordLastUpdated,
 } from '@/services/repositories/dailyRecordDomainServices';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
-const dailyRecordWriteSupportLogger = logger.child('DailyRecordWriteSupport');
+const dailyRecordWriteSupportLogger = createScopedLogger('DailyRecordWriteSupport');
 
 export interface ConflictAutoMergeRecoveryResult {
   status: 'auto_merged' | 'not_possible';

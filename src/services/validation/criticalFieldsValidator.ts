@@ -6,9 +6,9 @@
  * @module services/validation/criticalFieldsValidator
  */
 
-import { DailyRecord } from '@/types/domain/dailyRecord';
 import { PatientData } from '@/services/contracts/patientServiceContracts';
-import { PatientStatus } from '@/types/domain/base';
+import type { DailyRecordCriticalValidationState } from '@/types/domain/dailyRecordSlices';
+import { PatientStatus } from '@/types/domain/patientClassification';
 import { BEDS } from '@/constants/beds';
 
 // ============================================================================
@@ -62,7 +62,9 @@ const getMissingCriticalFields = (patient: PatientData): CriticalField[] => {
  * @param record - The daily record to validate
  * @returns Validation result with issues list
  */
-export const validateCriticalFields = (record: DailyRecord): CriticalFieldsValidationResult => {
+export const validateCriticalFields = (
+  record: DailyRecordCriticalValidationState
+): CriticalFieldsValidationResult => {
   const issues: CriticalFieldIssue[] = [];
   const activeExtras = record.activeExtraBeds || [];
   const visibleBeds = BEDS.filter(b => !b.isExtra || activeExtras.includes(b.id));
@@ -123,7 +125,7 @@ export const getMissingFieldsLabel = (fields: CriticalField[]): string => {
  * Check if a specific bed has critical field issues
  */
 export const hasCriticalIssues = (
-  record: DailyRecord,
+  record: DailyRecordCriticalValidationState,
   bedId: string,
   isCrib: boolean = false
 ): CriticalField[] => {

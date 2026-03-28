@@ -1,6 +1,4 @@
-import { logger } from '@/services/utils/loggerService';
-
-const firebaseEnvironmentPolicyLogger = logger.child('FirebaseEnvironmentPolicy');
+import { firebaseEnvironmentPolicyLogger } from '@/services/firebase-runtime/firebaseRuntimeLoggers';
 
 export const shouldUseSingleTabFirestoreCache = () => {
   if (typeof window === 'undefined') return false;

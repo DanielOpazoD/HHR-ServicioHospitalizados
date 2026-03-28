@@ -6,7 +6,7 @@ import { firebaseReady, mountConfigWarning } from '@/firebaseConfig';
 import { queryClient } from '@/config/queryClient';
 import { GlobalErrorBoundary } from '@/components/shared/GlobalErrorBoundary';
 import { getFirebaseStartupFailureMessage } from '@/services/auth/firebaseStartupUiPolicy';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -14,7 +14,7 @@ if (!rootElement) {
 }
 
 const root = ReactDOM.createRoot(rootElement);
-const bootLogger = logger.child('Bootstrap');
+const bootLogger = createScopedLogger('Bootstrap');
 
 const clearLocalServiceWorkers = async (): Promise<void> => {
   if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {

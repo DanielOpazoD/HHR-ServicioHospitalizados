@@ -20,10 +20,10 @@ import {
   resolveFunctionsInstance,
   resolveStorageInstance,
 } from '@/services/firebase-runtime/firebaseLazyServices';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
 const FIREBASE_READY_TIMEOUT_MS = 10000;
-const firebaseConfigLogger = logger.child('FirebaseConfig');
+const firebaseConfigLogger = createScopedLogger('FirebaseConfig');
 
 export let app!: FirebaseApp;
 export let auth!: Auth;

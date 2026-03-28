@@ -2,9 +2,9 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { defaultFirestoreServiceRuntime } from '@/services/storage/firestore/firestoreServiceRuntime';
 import type { FirestoreServiceRuntimePort } from '@/services/storage/firestore/ports/firestoreServiceRuntimePort';
 import type { WhatsAppConfig } from '@/types/whatsapp';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
-const whatsappConfigLogger = logger.child('WhatsAppConfigStore');
+const whatsappConfigLogger = createScopedLogger('WhatsAppConfigStore');
 
 export const getDefaultWhatsAppConfig = (): WhatsAppConfig => ({
   enabled: true,

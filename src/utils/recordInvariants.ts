@@ -1,11 +1,11 @@
-import type { DailyRecord } from '@/types/domain/dailyRecord';
+import type { DailyRecordBedLayoutState } from '@/types/domain/dailyRecordSlices';
 import type { DailyRecordPatch } from '@/types/domain/dailyRecordPatch';
 import { BEDS, EXTRA_BEDS } from '@/constants/beds';
 import { createEmptyPatient } from '@/services/factories/patientFactory';
 
-export const normalizeDailyRecordInvariants = (
-  record: DailyRecord
-): { record: DailyRecord; patches: DailyRecordPatch } => {
+export const normalizeDailyRecordInvariants = <T extends DailyRecordBedLayoutState>(
+  record: T
+): { record: T; patches: DailyRecordPatch } => {
   // 1. Create a shallow copy of the record and its beds to ensure purity
   const patches: DailyRecordPatch = {};
   const extraBedIds = new Set(EXTRA_BEDS.map(bed => bed.id));
@@ -80,7 +80,7 @@ export const normalizeDailyRecordInvariants = (
       ...record,
       beds: updatedBeds,
       activeExtraBeds: updatedActiveExtraBeds,
-    },
+    } as T,
     patches,
   };
 };

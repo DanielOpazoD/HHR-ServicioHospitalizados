@@ -20,12 +20,11 @@ import {
   mergeDetails,
   prepareConsolidationGroups,
 } from './auditConsolidationPolicy';
-import { logger } from '@/services/utils/loggerService';
+import { auditConsolidationLogger } from '@/services/admin/adminLoggers';
 
 const getAuditCollectionPath = () => `hospitals/${getActiveHospitalId()}/auditLogs`;
 const DEFAULT_WINDOW_MINUTES = 5;
 const MAX_BATCH_OPERATIONS = 500;
-const auditConsolidationLogger = logger.child('AuditConsolidation');
 
 export interface ConsolidationResult {
   success: boolean;

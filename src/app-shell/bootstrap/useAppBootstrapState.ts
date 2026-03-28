@@ -3,7 +3,7 @@ import { useDateNavigation, useSignatureMode, useVersionCheck } from '@/hooks';
 import type { UseDateNavigationReturn } from '@/hooks/useDateNavigation';
 import { useStorageMigration } from '@/hooks/useStorageMigration';
 import { setFirestoreEnabled } from '@/services/repositories/repositoryConfig';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 import { useAuth, type AuthContextType } from '@/context';
 
 export interface AppAuthenticatedDateNavigation extends UseDateNavigationReturn {
@@ -35,7 +35,7 @@ const isIgnorableWorkerShutdownImportError = (error: unknown): boolean => {
   return message.includes('[vitest-worker]: Closing rpc while "fetch" was pending');
 };
 
-const appLogger = logger.child('App');
+const appLogger = createScopedLogger('App');
 
 const useSyncFirestoreStatus = (isFirebaseConnected: boolean) => {
   React.useEffect(() => {

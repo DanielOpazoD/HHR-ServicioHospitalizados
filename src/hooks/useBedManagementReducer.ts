@@ -1,8 +1,8 @@
 import type { DailyRecord } from '@/hooks/contracts/dailyRecordHookContracts';
 import type { DailyRecordPatch } from '@/types/domain/dailyRecordPatch';
 import { PatientData } from '@/hooks/contracts/patientHookContracts';
-import { CudyrScore } from '@/types/domain/clinical';
-import { BedType } from '@/types/domain/base';
+import type { CudyrScore } from '@/types/domain/cudyr';
+import { BedType } from '@/types/domain/beds';
 import { PatientFieldValue } from '@/types/valueTypes';
 import { createEmptyPatient } from '@/services/factories/patientFactory';
 import { BEDS } from '@/constants/beds';

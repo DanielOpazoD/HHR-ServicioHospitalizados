@@ -4,12 +4,12 @@ import { AUTH_UI_COPY } from '@/services/auth/authUiCopy';
 import { executeGoogleSignIn } from '@/application/auth';
 import { isAuthBootstrapPending } from '@/services/auth/authBootstrapState';
 import { getCurrentAuthSessionState } from '@/services/auth/authSession';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
 type BackgroundMode = 'auto' | 'day' | 'night';
 const POPUP_RECOVERY_GRACE_MS = 4000;
 const POPUP_RECOVERY_POLL_MS = 200;
-const loginPageLogger = logger.child('LoginPage');
+const loginPageLogger = createScopedLogger('LoginPage');
 
 const waitForRecoverablePopupResolution = async (): Promise<boolean> => {
   const hasResolvedSession = () => getCurrentAuthSessionState().status !== 'unauthenticated';

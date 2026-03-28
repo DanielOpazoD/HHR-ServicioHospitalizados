@@ -1,31 +1,36 @@
 import { ChangeEvent, useCallback } from 'react';
-import type { DeviceDetails, DeviceInstance } from '@/types/domain/clinical';
-import type { PatientData } from '@/features/census/components/patient-row/patientRowDataContracts';
+import type { DeviceDetails, DeviceInstance } from '@/types/domain/devices';
+import type {
+  PatientRowPatientField,
+  PatientRowPatientPatch,
+} from '@/features/census/components/patient-row/patientRowDataContracts';
 import type { PatientRowInputCommands } from '@/features/census/controllers/patientRowInputHandlersController';
 
 interface UsePatientRowCommandHandlersResult {
   handleTextChange: (
-    field: keyof PatientData
+    field: PatientRowPatientField
   ) => (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
-  handleCheckboxChange: (field: keyof PatientData) => (e: ChangeEvent<HTMLInputElement>) => void;
+  handleCheckboxChange: (
+    field: PatientRowPatientField
+  ) => (e: ChangeEvent<HTMLInputElement>) => void;
   handleDevicesChange: (newDevices: string[]) => void;
   handleDeviceDetailsChange: (details: DeviceDetails) => void;
   handleDeviceHistoryChange: (history: DeviceInstance[]) => void;
-  handleDemographicsSave: (updatedFields: Partial<PatientData>) => void;
+  handleDemographicsSave: (updatedFields: PatientRowPatientPatch) => void;
 }
 
 export const usePatientRowCommandHandlers = (
   commands: PatientRowInputCommands
 ): UsePatientRowCommandHandlersResult => {
   const handleTextChange = useCallback(
-    (field: keyof PatientData) => (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    (field: PatientRowPatientField) => (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       commands.setTextField(field, e.target.value);
     },
     [commands]
   );
 
   const handleCheckboxChange = useCallback(
-    (field: keyof PatientData) => (e: ChangeEvent<HTMLInputElement>) => {
+    (field: PatientRowPatientField) => (e: ChangeEvent<HTMLInputElement>) => {
       commands.setCheckboxField(field, e.target.checked);
     },
     [commands]
@@ -53,7 +58,7 @@ export const usePatientRowCommandHandlers = (
   );
 
   const handleDemographicsSave = useCallback(
-    (updatedFields: Partial<PatientData>) => {
+    (updatedFields: PatientRowPatientPatch) => {
       commands.saveDemographics(updatedFields);
     },
     [commands]

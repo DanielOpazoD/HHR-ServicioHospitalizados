@@ -2,7 +2,7 @@ import { logSystemError } from '@/services/admin/auditService';
 import { dispatchOperationalTelemetryExternally } from '@/services/observability/operationalTelemetryExternalAdapter';
 import { saveErrorLog } from '@/services/storage/indexeddb/indexedDbErrorLogService';
 import type { ErrorLog } from '@/services/logging/errorLogTypes';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
 export type ErrorServiceSink = (errorLog: ErrorLog) => Promise<void> | void;
 
@@ -10,7 +10,7 @@ export interface ErrorServiceSinkOptions {
   allowDevConsole?: boolean;
 }
 
-const errorServiceSinksLogger = logger.child('ErrorServiceSinks');
+const errorServiceSinksLogger = createScopedLogger('ErrorServiceSinks');
 
 export const createDevConsoleErrorSink =
   (enabled: boolean): ErrorServiceSink =>

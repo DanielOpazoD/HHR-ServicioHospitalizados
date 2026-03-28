@@ -1,5 +1,5 @@
 import { PatientMasterRepository } from '@/services/repositories/PatientMasterRepository';
-import type { MasterPatient } from '@/types/domain/clinical';
+import type { MasterPatient } from '@/types/domain/patientMaster';
 
 export interface PatientMasterWritePort {
   bulkUpsertPatients: (patients: MasterPatient[]) => Promise<{

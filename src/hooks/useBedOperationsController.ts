@@ -2,7 +2,7 @@ import { BEDS } from '@/constants/beds';
 import { createEmptyPatient } from '@/services/factories/patientFactory';
 import type { DailyRecord, DailyRecordPatch } from '@/hooks/contracts/dailyRecordHookContracts';
 import type { PatientData } from '@/hooks/contracts/patientHookContracts';
-import { BedType } from '@/types/domain/base';
+import { BedType } from '@/types/domain/beds';
 import { getBedTypeForRecord } from '@/utils/bedTypeUtils';
 
 export const buildClearedPatient = (record: DailyRecord, bedId: string): PatientData => {

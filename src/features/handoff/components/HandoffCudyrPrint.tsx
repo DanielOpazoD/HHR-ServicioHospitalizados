@@ -4,7 +4,7 @@ import { ClipboardList } from 'lucide-react';
 import { useDailyRecordData } from '@/context/DailyRecordContext';
 import { BEDS } from '@/constants/beds';
 import { getCategorization } from '@/features/cudyr/public';
-import { CudyrScore } from '@/types/domain/clinical';
+import type { CudyrScore } from '@/types/domain/cudyr';
 import { calculateStats } from '@/services/calculations/statsCalculator';
 import { resolveNightShiftNurses } from '@/services/staff/dailyRecordStaffing';
 import { formatTimeHHMM } from '@/utils/dateUtils';

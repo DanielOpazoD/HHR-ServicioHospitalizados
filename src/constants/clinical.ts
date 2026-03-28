@@ -3,7 +3,7 @@
  * Medical devices, specialties, statuses, and clinical options
  */
 
-import { Specialty, PatientStatus } from '@/types/domain/base';
+import { Specialty, PatientStatus } from '@/types/domain/patientClassification';
 
 // Specialty and Status Options (filtered)
 export const SPECIALTY_OPTIONS = Object.values(Specialty).filter(s => s !== '');

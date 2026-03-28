@@ -1,4 +1,4 @@
-import type { ClinicalEvent } from '@/types/domain/clinical';
+import type { ClinicalEvent } from '@/types/domain/clinicalEvents';
 
 export interface ClinicalEventFormData {
   name: string;

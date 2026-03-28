@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { BedType, PatientStatus, Specialty } from '@/types/domain/base';
-import type { BedDefinition } from '@/types/domain/base';
+import { BedType } from '@/types/domain/beds';
+import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
+import type { BedDefinition } from '@/types/domain/beds';
 import type { PatientData } from '@/types/domain/patient';
 import { resolveHandoffPatientRowPlan } from '@/features/handoff/controllers/handoffPatientTableController';
 

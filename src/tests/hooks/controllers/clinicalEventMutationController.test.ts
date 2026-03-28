@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ClinicalEvent } from '@/types/domain/clinical';
+import type { ClinicalEvent } from '@/types/domain/clinicalEvents';
 import {
   appendClinicalEvent,
   buildAddedClinicalEvent,

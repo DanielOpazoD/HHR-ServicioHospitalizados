@@ -6,7 +6,7 @@
  */
 
 import { PatientData } from '@/services/contracts/patientServiceContracts';
-import { FhirResource } from '@/types/domain/clinical';
+import type { FhirResource } from '@/types/domain/fhir';
 
 /**
  * Systems and Standard URIs for Chile (Core-CL)

@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { DailyRecord } from '@/features/census/contracts/censusDomainContracts';
+import type { DailyRecord } from '@/features/census/contracts/censusRecordContracts';
 import {
   MovementCreationError,
   MovementCreationErrorCode,

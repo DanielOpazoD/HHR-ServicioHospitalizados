@@ -1,11 +1,11 @@
 import type { User } from 'firebase/auth';
 import { httpsCallable } from 'firebase/functions';
 import type { UserRole } from '@/types/auth';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 import { defaultFunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
 import { isGeneralLoginRole } from '@/shared/access/roleAccessMatrix';
 
-const authClaimSyncLogger = logger.child('AuthClaimSync');
+const authClaimSyncLogger = createScopedLogger('AuthClaimSync');
 
 const resolveTokenRole = async (firebaseUser: User): Promise<string | null> => {
   const token = await firebaseUser.getIdTokenResult();

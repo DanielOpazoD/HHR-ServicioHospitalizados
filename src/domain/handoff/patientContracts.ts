@@ -1,11 +1,12 @@
-import type { DeviceDetails, ClinicalEvent as RootClinicalEvent } from '@/types/domain/clinical';
+import type { ClinicalEvent as RootClinicalEvent } from '@/types/domain/clinicalEvents';
+import type { DeviceDetails } from '@/types/domain/devices';
 import type {
   MedicalHandoffAudit as RootMedicalHandoffAudit,
   MedicalHandoffAuditActor as RootMedicalHandoffAuditActor,
   MedicalHandoffEntry as RootMedicalHandoffEntry,
   PatientData as RootPatientData,
 } from '@/types/domain/patient';
-import type { PatientStatus, Specialty } from '@/types/domain/base';
+import type { PatientStatus, Specialty } from '@/types/domain/patientClassification';
 
 export type MedicalHandoffAuditActor = RootMedicalHandoffAuditActor;
 export type MedicalHandoffAudit = RootMedicalHandoffAudit;

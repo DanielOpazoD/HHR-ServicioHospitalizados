@@ -1,7 +1,7 @@
 import type { Workbook } from 'exceljs';
 
 import { validateExcelExport, XLSX_MIME_TYPE } from './excelValidation';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
 export interface DownloadWorkbookOptions {
   workbook: Workbook;
@@ -10,7 +10,7 @@ export interface DownloadWorkbookOptions {
   successLogMessage?: (byteLength: number) => string;
 }
 
-const excelFileDownloadLogger = logger.child('ExcelFileDownload');
+const excelFileDownloadLogger = createScopedLogger('ExcelFileDownload');
 
 export const downloadWorkbookFile = async ({
   workbook,

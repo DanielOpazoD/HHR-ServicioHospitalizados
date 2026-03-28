@@ -4,11 +4,11 @@ import {
   listRecentSyncQueueOperations,
   type SyncQueueOperationSnapshot,
 } from '@/services/storage/sync';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 import type { SyncQueueRuntimeState } from '@/services/storage/sync/syncQueueOperationalBudgets';
 
 export const SYNC_QUEUE_POLL_INTERVAL_MS = 4000;
-const syncQueueMonitorLogger = logger.child('useSyncQueueMonitor');
+const syncQueueMonitorLogger = createScopedLogger('useSyncQueueMonitor');
 
 interface UseSyncQueueMonitorOptions {
   enabled?: boolean;

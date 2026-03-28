@@ -1,5 +1,5 @@
 import { DailyRecord } from '@/types/domain/dailyRecord';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
 interface RemoteDeleteDependencies {
   isRemoteEnabled: boolean;
@@ -8,7 +8,7 @@ interface RemoteDeleteDependencies {
   deleteRemote: (date: string) => Promise<void>;
 }
 
-const dailyRecordLifecycleLogger = logger.child('DailyRecordRepositoryLifecycle');
+const dailyRecordLifecycleLogger = createScopedLogger('DailyRecordRepositoryLifecycle');
 
 export const softDeleteDailyRecordRemote = async (
   date: string,

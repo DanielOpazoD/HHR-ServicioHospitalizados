@@ -1,6 +1,6 @@
 import React from 'react';
 import { Search, RefreshCw, ChevronRight, Users } from 'lucide-react';
-import { MasterPatient } from '@/types/domain/clinical';
+import type { MasterPatient } from '@/types/domain/patientMaster';
 import { formatDateDDMMYYYY } from '@/utils/dateUtils';
 import clsx from 'clsx';
 

@@ -10,9 +10,9 @@ import { validateExcelExport, XLSX_MIME_TYPE } from '@/services/exporters/excelV
 import { buildCudyrWorkbook } from './cudyrWorkbookBuilder';
 import { getRecordFromFirestore } from '@/services/storage/firestore';
 import { resolvePreferredDailyRecord } from '@/services/repositories/dailyRecordSyncCompatibility';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
-const cudyrExportLogger = logger.child('CudyrExport');
+const cudyrExportLogger = createScopedLogger('CudyrExport');
 
 const fetchDailyRecord = async (dateStr: string): Promise<DailyRecord | null> => {
   try {

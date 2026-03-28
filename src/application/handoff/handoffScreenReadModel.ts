@@ -1,4 +1,5 @@
-import type { BedDefinition, Specialty } from '@/types/domain/base';
+import type { BedDefinition } from '@/types/domain/beds';
+import type { Specialty } from '@/types/domain/patientClassification';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 import type { HandoffMedicalRecordContract } from '@/domain/handoff/viewContracts';
 import {

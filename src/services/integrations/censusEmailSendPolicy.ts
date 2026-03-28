@@ -1,7 +1,7 @@
 import { CENSUS_DEFAULT_RECIPIENTS } from '@/constants/email';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
-const censusEmailSendPolicyLogger = logger.child('CensusEmailSendPolicy');
+const censusEmailSendPolicyLogger = createScopedLogger('CensusEmailSendPolicy');
 
 export const assertCensusEmailSendingAllowed = ({
   isDevelopment,

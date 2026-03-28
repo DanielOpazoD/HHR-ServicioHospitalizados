@@ -6,7 +6,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Plus } from 'lucide-react';
-import { DeviceDetails, DeviceInfo } from '@/types/domain/clinical';
+import type { DeviceDetails, DeviceInfo } from '@/types/domain/devices';
 import { useLatestRef } from '@/hooks/useLatestRef';
 import { usePortalPopoverRuntime } from '@/hooks/usePortalPopoverRuntime';
 import {

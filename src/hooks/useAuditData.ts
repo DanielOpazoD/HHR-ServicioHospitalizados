@@ -27,12 +27,12 @@ import {
   AUDIT_SECTIONS,
   type AuditSectionConfig,
 } from '@/services/admin/auditViewConfig';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
 export { AUDIT_SECTIONS } from '@/services/admin/auditViewConfig';
 
 export type SectionConfig = AuditSectionConfig;
-const auditDataLogger = logger.child('useAuditData');
+const auditDataLogger = createScopedLogger('useAuditData');
 
 export interface AuditFiltersState {
   searchTerm: string;

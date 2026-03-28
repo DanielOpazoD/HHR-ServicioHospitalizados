@@ -20,14 +20,14 @@ import {
   isAuthenticatedAuthSessionState,
   toResolvedAuthSessionState,
 } from '@/services/auth/authSessionState';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 import {
   recordOperationalOutcome,
   recordOperationalTelemetry,
 } from '@/services/observability/operationalTelemetryService';
 import { resolveAuthBootstrapBudget } from '@/services/auth/authBootstrapBudgets';
 
-const authStateLogger = logger.child('useAuthState');
+const authStateLogger = createScopedLogger('useAuthState');
 
 export const getE2EBootstrapUser = (): AuthUser | null => {
   if (typeof window === 'undefined' || !window.__HHR_E2E_OVERRIDE__) {

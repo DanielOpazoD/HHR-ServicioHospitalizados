@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
-import { DailyRecord } from '@/features/census/contracts/censusDomainContracts';
-import { PatientData } from '@/features/census/contracts/censusDomainContracts';
+import type { DailyRecord } from '@/features/census/contracts/censusRecordContracts';
+import type { PatientData } from '@/features/census/domain/movements/contracts/patient';
 import { resolveUndoPatientMovement } from '@/features/census/controllers/patientMovementUndoController';
 import { UndoMovementKind } from '@/features/census/controllers/patientMovementUndoErrorPresentation';
 import { UndoPatientMovementErrorCode } from '@/features/census/controllers/patientMovementUndoController';

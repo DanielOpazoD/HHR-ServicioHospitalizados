@@ -11,7 +11,7 @@ import type {
   MedicalSpecialty,
 } from '@/types/domain/dailyRecordMedicalHandoff';
 import { PatientData } from '@/hooks/contracts/patientHookContracts';
-import { CudyrScore } from '@/types/domain/clinical';
+import type { CudyrScore } from '@/types/domain/cudyr';
 import { CMAData } from '@/types/domain/movements';
 import { PatientFieldValue } from '@/types/valueTypes';
 import type { PatientMovementActions } from '@/types/movements';

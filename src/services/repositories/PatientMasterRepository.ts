@@ -13,7 +13,7 @@ import {
   QueryDocumentSnapshot,
   DocumentData,
 } from 'firebase/firestore';
-import { MasterPatient } from '@/types/domain/clinical';
+import type { MasterPatient } from '@/types/domain/patientMaster';
 import { getActiveHospitalId, HOSPITAL_COLLECTIONS } from '@/constants/firestorePaths';
 import {
   createBulkUpsertPatientsCommand,
@@ -24,10 +24,10 @@ import {
 } from '@/services/repositories/contracts/patientMasterContracts';
 import { defaultRepositoryFirestoreRuntime } from '@/services/repositories/repositoryFirestoreRuntime';
 import type { RepositoryFirestoreRuntimePort } from '@/services/repositories/ports/repositoryFirestoreRuntimePort';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
 const COLLECTION_NAME = HOSPITAL_COLLECTIONS.PATIENTS;
-const patientMasterRepositoryLogger = logger.child('PatientMasterRepository');
+const patientMasterRepositoryLogger = createScopedLogger('PatientMasterRepository');
 
 /**
  * Normalizes RUT for use as Document ID

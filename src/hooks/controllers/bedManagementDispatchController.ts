@@ -1,13 +1,13 @@
 import type { DailyRecord } from '@/hooks/contracts/dailyRecordHookContracts';
 import type { DailyRecordPatch } from '@/types/domain/dailyRecordPatch';
 import type { PatientData } from '@/hooks/contracts/patientHookContracts';
-import type { CudyrScore } from '@/types/domain/clinical';
+import type { CudyrScore } from '@/types/domain/cudyr';
 import type { PatientFieldValue } from '@/types/valueTypes';
 import { BEDS } from '@/constants/beds';
 import { getBedTypeForRecord } from '@/utils/bedTypeUtils';
-import { BedType } from '@/types/domain/base';
+import { BedType } from '@/types/domain/beds';
 import { type BedAction, bedManagementReducer } from '@/hooks/useBedManagementReducer';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 export interface BedManagementValidationPort {
   processFieldValue: (
     field: keyof PatientData,
@@ -28,7 +28,7 @@ export interface BedManagementAuditPort {
   auditPatientModified: (bedId: string, details: Record<string, unknown>) => void;
 }
 
-const bedManagementDispatchLogger = logger.child('BedManagementDispatch');
+const bedManagementDispatchLogger = createScopedLogger('BedManagementDispatch');
 
 interface ExecuteBedManagementActionInput {
   currentRecord: DailyRecord | null;

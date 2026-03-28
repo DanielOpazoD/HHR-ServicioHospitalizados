@@ -1,4 +1,4 @@
-import type { BedDefinition } from '@/types/domain/base';
+import type { BedDefinition } from '@/types/domain/beds';
 import type { DailyRecordBedLayoutState } from '@/types/domain/dailyRecordSlices';
 import { formatCensusShortDayMonth } from '@/shared/census/censusPresentation';
 

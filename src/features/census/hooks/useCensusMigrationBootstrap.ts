@@ -3,9 +3,9 @@ import {
   createCensusMigrationStorageRuntime,
   executeCensusMigrationBootstrapController,
 } from '@/features/census/controllers/censusMigrationBootstrapController';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
-const censusMigrationLogger = logger.child('useCensusMigrationBootstrap');
+const censusMigrationLogger = createScopedLogger('useCensusMigrationBootstrap');
 
 export const useCensusMigrationBootstrap = (enabled = true): void => {
   const migrationStorage = useMemo(() => createCensusMigrationStorageRuntime(), []);

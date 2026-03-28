@@ -8,7 +8,7 @@ import {
   CheckCircle,
   Clock,
 } from 'lucide-react';
-import { MasterPatient, HospitalizationEvent } from '@/types/domain/clinical';
+import type { MasterPatient, HospitalizationEvent } from '@/types/domain/patientMaster';
 import { formatDateDDMMYYYY } from '@/utils/dateUtils';
 import clsx from 'clsx';
 

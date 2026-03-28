@@ -2,9 +2,9 @@ import { addDoc, collection, Timestamp } from 'firebase/firestore';
 import { defaultFirestoreServiceRuntime } from '@/services/storage/firestore/firestoreServiceRuntime';
 import type { FirestoreServiceRuntimePort } from '@/services/storage/firestore/ports/firestoreServiceRuntimePort';
 import type { WhatsAppLog } from '@/types/whatsapp';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
-const whatsappLoggingLogger = logger.child('WhatsAppLogging');
+const whatsappLoggingLogger = createScopedLogger('WhatsAppLogging');
 
 export const createWhatsAppLoggingStore = (
   runtime: FirestoreServiceRuntimePort = defaultFirestoreServiceRuntime

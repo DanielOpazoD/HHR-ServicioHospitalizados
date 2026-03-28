@@ -3,15 +3,12 @@
  * These replace `any` types throughout the codebase for better type safety.
  */
 
-import {
-  CudyrScore,
-  DeviceDetails,
-  ClinicalEvent,
-  DeviceInstance,
-  FhirResource,
-} from './domain/clinical';
+import { ClinicalEvent } from './domain/clinicalEvents';
+import type { CudyrScore } from './domain/cudyr';
+import type { DeviceDetails, DeviceInstance } from './domain/devices';
+import type { FhirResource } from './domain/fhir';
 import type { PatientData, MedicalHandoffAudit, MedicalHandoffEntry } from './domain/patient';
-import type { PatientStatus, Specialty } from './domain/base';
+import type { PatientStatus, Specialty } from './domain/patientClassification';
 import { LucideIcon } from 'lucide-react';
 
 // ============================================================================

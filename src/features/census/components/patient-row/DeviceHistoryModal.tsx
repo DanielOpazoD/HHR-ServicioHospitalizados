@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { Calendar, MapPin, History, AlertCircle, Trash2 } from 'lucide-react';
-import { DeviceInstance, DeviceDetails } from '@/types/domain/clinical';
+import type { DeviceInstance, DeviceDetails } from '@/types/domain/devices';
 import { BaseModal as Modal } from '@/components/shared/BaseModal';
 import clsx from 'clsx';
 import { useDeviceHistoryEditor } from '@/features/census/components/patient-row/useDeviceHistoryEditor';

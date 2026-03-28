@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { ClinicalDocumentRecord } from '@/domain/clinical-documents/entities';
-import { PatientStatus, Specialty } from '@/types/domain/base';
+import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
 import {
   buildClinicalAISummaryContext,
   buildClinicalAISummaryPrompt,

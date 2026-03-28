@@ -1,10 +1,10 @@
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
 type RepositoryMetricLevel = 'silent' | 'warn';
 
 const MAX_RECORDED_METRICS = 100;
 const MAX_REPORTED_WARNINGS = 5;
-const repositoryPerformanceLogger = logger.child('RepositoryPerformance');
+const repositoryPerformanceLogger = createScopedLogger('RepositoryPerformance');
 
 export interface RepositoryPerformanceMetric {
   operation: string;

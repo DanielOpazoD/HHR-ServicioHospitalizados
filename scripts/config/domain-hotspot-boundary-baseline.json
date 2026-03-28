@@ -10,7 +10,8 @@
         "src/application/shared/dailyRecordContracts.ts",
         "src/features/admin/contracts/publicMedicalSignatureContracts.ts",
         "src/features/analytics/contracts/analyticsDailyRecordContracts.ts",
-        "src/features/census/contracts/censusDomainContracts.ts"
+        "src/features/census/contracts/censusDomainContracts.ts",
+        "src/features/census/contracts/censusRecordContracts.ts"
       ]
     },
     {
@@ -18,6 +19,8 @@
       "module": "@/types/domain/patient",
       "allowedFiles": [
         "src/features/census/contracts/censusDomainContracts.ts",
+        "src/features/census/contracts/censusObstetricContracts.ts",
+        "src/features/census/contracts/censusPatientContracts.ts",
         "src/features/cudyr/contracts/cudyrPatientContracts.ts",
         "src/shared/census/patientContracts.ts"
       ]

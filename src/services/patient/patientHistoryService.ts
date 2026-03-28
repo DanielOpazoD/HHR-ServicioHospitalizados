@@ -5,7 +5,7 @@
  * Searches by RUT to find all beds, discharges, and transfers.
  */
 
-import { DailyRecord } from '@/types/domain/dailyRecord';
+import type { DailyRecordPatientHistoryState } from '@/types/domain/dailyRecordSlices';
 import { getAllRecords } from '@/services/storage/records';
 import { BEDS } from '@/constants/beds';
 
@@ -91,7 +91,7 @@ export async function getPatientMovementHistory(rut: string): Promise<PatientHis
 
   // We process records to find movements and the latest admission date
   for (const date of sortedDates) {
-    const record: DailyRecord = allRecords[date];
+    const record: DailyRecordPatientHistoryState = allRecords[date];
 
     // 1. Check active beds
     for (const bedId of Object.keys(record.beds)) {

@@ -1,7 +1,7 @@
 import type {
   CesareanLabor,
   DeliveryRoute,
-} from '@/features/census/components/patient-row/patientRowDataContracts';
+} from '@/features/census/contracts/censusObstetricContracts';
 
 export interface DeliveryRoutePopoverDraft {
   selectedRoute: DeliveryRoute | undefined;

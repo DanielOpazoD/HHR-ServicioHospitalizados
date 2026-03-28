@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
 export interface DevMetrics {
   testStats: {
@@ -18,7 +18,7 @@ export interface DevMetrics {
   lastRun: string;
 }
 
-const devMetricsLogger = logger.child('DevMetrics');
+const devMetricsLogger = createScopedLogger('DevMetrics');
 
 interface VitestJsonReport {
   numTotalTests: number;

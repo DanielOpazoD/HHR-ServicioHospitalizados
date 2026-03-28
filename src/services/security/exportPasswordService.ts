@@ -17,9 +17,9 @@ import {
   limit,
 } from 'firebase/firestore';
 import { getExportPasswordsPath } from '@/constants/firestorePaths';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
-const exportPasswordLogger = logger.child('ExportPasswordService');
+const exportPasswordLogger = createScopedLogger('ExportPasswordService');
 
 // Re-export the pure generator for convenience
 export { generateCensusPassword, getCensusPassword } from './passwordGenerator';

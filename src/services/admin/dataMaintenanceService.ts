@@ -15,7 +15,7 @@ import { getTodayISO } from '@/utils/dateUtils';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import { resolvePreferredDailyRecord } from '@/services/repositories/dailyRecordSyncCompatibility';
 import { parseDailyRecordWithDefaultsReport } from '@/schemas/zodSchemas';
-import { logger } from '@/services/utils/loggerService';
+import { dataMaintenanceLogger } from '@/services/admin/adminLoggers';
 import {
   createApplicationFailed,
   createApplicationSuccess,
@@ -78,8 +78,6 @@ const toDataMaintenanceOutcome = (
           severity: 'warning',
         }
       );
-
-const dataMaintenanceLogger = logger.child('DataMaintenanceService');
 
 const monthNames = [
   'Enero',

@@ -16,8 +16,8 @@ import { getCIE10Description } from '@/services/terminology/terminologyService';
 import type {
   CesareanLabor,
   DeliveryRoute,
-  PatientData,
-} from '@/features/census/components/patient-row/patientRowDataContracts';
+} from '@/features/census/contracts/censusObstetricContracts';
+import type { PatientData } from '@/features/census/components/patient-row/patientRowDataContracts';
 import type { DiagnosisMode } from '@/features/census/types/censusTableTypes';
 import { BaseCellProps, DebouncedTextHandler } from './inputCellTypes';
 import { PatientEmptyCell } from './PatientEmptyCell';

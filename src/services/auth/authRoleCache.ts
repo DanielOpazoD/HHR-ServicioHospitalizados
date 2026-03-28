@@ -1,12 +1,12 @@
 import { getSetting, saveSetting } from '@/services/storage/indexeddb/indexedDbSettingsService';
 import { safeJsonParse } from '@/utils/jsonUtils';
 import { ROLE_CACHE_PREFIX, normalizeEmail } from '@/services/auth/authShared';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
 type CachedRole = { role: string; timestamp: number };
 
 const ROLE_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-const authRoleCacheLogger = logger.child('AuthRoleCache');
+const authRoleCacheLogger = createScopedLogger('AuthRoleCache');
 
 const clearLegacyRoleCache = (key: string): void => {
   if (typeof window !== 'undefined' && window.localStorage) {

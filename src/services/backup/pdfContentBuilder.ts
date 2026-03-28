@@ -11,15 +11,15 @@ import type jsPDF from 'jspdf';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { PatientData } from '@/services/contracts/patientServiceContracts';
 import type { ShiftType } from '@/types/domain/shift';
-import { DeviceDetails } from '@/types/domain/clinical';
+import type { DeviceDetails } from '@/types/domain/devices';
 import { BEDS } from '@/constants/beds';
 import { formatDateDDMMYYYY } from '@/utils/dateUtils';
 import { resolveHandoffShiftStaff } from '@/services/staff/dailyRecordStaffing';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
 // Logo path
 const LOGO_PATH = '/images/logos/logo_HHR.svg';
-const pdfContentBuilderLogger = logger.child('PdfContentBuilder');
+const pdfContentBuilderLogger = createScopedLogger('PdfContentBuilder');
 
 export interface Schedule {
   dayStart?: string;

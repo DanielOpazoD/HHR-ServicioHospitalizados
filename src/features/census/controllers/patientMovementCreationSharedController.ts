@@ -1,6 +1,6 @@
-import { BedDefinition } from '@/types/domain/base';
-import { DailyRecord } from '@/features/census/contracts/censusDomainContracts';
-import { PatientData } from '@/features/census/components/patient-row/patientRowDataContracts';
+import { BedDefinition } from '@/types/domain/beds';
+import type { DailyRecord } from '@/features/census/contracts/censusRecordContracts';
+import type { PatientData } from '@/features/census/domain/movements/contracts/patient';
 import { ControllerResult, failWithCode, ok } from '@/features/census/controllers/controllerResult';
 
 export type MovementCreationErrorCode = 'BED_NOT_FOUND' | 'SOURCE_BED_EMPTY';

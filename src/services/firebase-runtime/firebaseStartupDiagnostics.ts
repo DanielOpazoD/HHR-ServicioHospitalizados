@@ -9,9 +9,7 @@ import {
   getFirebaseStartupWarningCopy,
 } from '@/services/auth/firebaseStartupUiPolicy';
 import { mountFirebaseConfigWarning } from '@/services/auth/firebaseStartupWarningRenderer';
-import { logger } from '@/services/utils/loggerService';
-
-const firebaseStartupDiagnosticsLogger = logger.child('FirebaseStartupDiagnostics');
+import { firebaseStartupDiagnosticsLogger } from '@/services/firebase-runtime/firebaseRuntimeLoggers';
 
 export const warnWithFirebaseDiagnostics = (
   diagnostics: FirebaseRuntimeConfigDiagnostics,

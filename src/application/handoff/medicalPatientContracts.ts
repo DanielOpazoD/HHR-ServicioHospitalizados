@@ -4,7 +4,7 @@ import type {
   MedicalHandoffEntry as RootMedicalHandoffEntry,
   PatientData as RootPatientData,
 } from '@/domain/handoff/patientContracts';
-import type { Specialty } from '@/types/domain/base';
+import type { Specialty } from '@/types/domain/patientClassification';
 
 export type MedicalHandoffAuditActor = RootMedicalHandoffAuditActor;
 export type MedicalHandoffEntry = RootMedicalHandoffEntry;

@@ -24,7 +24,7 @@ import {
   preparePatchedRecordForPersistence,
   syncPatientsToMasterInBackground,
 } from '@/services/repositories/dailyRecordWriteSupport';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 import type { DailyRecordRecoveryDecision } from '@/services/repositories/dailyRecordRecoveryPolicy';
 import { DataRegressionError, VersionMismatchError } from '@/utils/integrityGuard';
 import type { DailyRecordRetryability } from '@/services/repositories/contracts/dailyRecordConsistency';
@@ -55,7 +55,7 @@ interface RemoteWriteState {
   blockingError?: Error;
 }
 
-const dailyRecordWriteLogger = logger.child('DailyRecordWriteRepository');
+const dailyRecordWriteLogger = createScopedLogger('DailyRecordWriteRepository');
 
 const createRemoteWriteState = (): RemoteWriteState => ({
   savedRemotely: false,

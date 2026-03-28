@@ -1,5 +1,5 @@
 import { useCallback, MutableRefObject } from 'react';
-import { DailyRecord } from '@/features/census/contracts/censusDomainContracts';
+import type { DailyRecord } from '@/features/census/contracts/censusRecordContracts';
 
 interface UsePatientMovementCurrentRecordParams {
   recordRef: MutableRefObject<DailyRecord | null>;

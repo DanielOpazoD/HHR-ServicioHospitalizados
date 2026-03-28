@@ -9,7 +9,7 @@ import {
   writeClipboardText,
 } from '@/shared/runtime/browserWindowRuntime';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 import type { ApplicationOutcome } from '@/application/shared/applicationOutcome';
 import { resolveApplicationOutcomeMessage } from '@/application/shared/applicationOutcomeMessage';
 import { buildManualMedicalHandoffMessageModel } from '@/hooks/controllers/manualMedicalHandoffMessageController';
@@ -19,7 +19,7 @@ import { buildManualMedicalHandoffMessageModel } from '@/hooks/controllers/manua
  *
  * Handles WhatsApp integrations and link sharing for handoffs.
  */
-const handoffCommunicationLogger = logger.child('useHandoffCommunication');
+const handoffCommunicationLogger = createScopedLogger('useHandoffCommunication');
 
 export const useHandoffCommunication = (
   record: DailyRecord | null,

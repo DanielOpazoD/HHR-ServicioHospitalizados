@@ -1,6 +1,6 @@
-import { DailyRecord } from '@/features/census/contracts/censusDomainContracts';
+import type { DailyRecord } from '@/features/census/contracts/censusRecordContracts';
 import { DischargeData, TransferData } from '@/types/domain/movements';
-import { PatientData } from '@/features/census/components/patient-row/patientRowDataContracts';
+import type { PatientData } from '@/features/census/domain/movements/contracts/patient';
 
 export interface UndoMovementDescriptor {
   id: string;

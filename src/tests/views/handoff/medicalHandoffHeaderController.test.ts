@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { BedType } from '@/types/domain/base';
-import type { BedDefinition } from '@/types/domain/base';
+import { BedType } from '@/types/domain/beds';
+import type { BedDefinition } from '@/types/domain/beds';
 import {
   buildMedicalHandoffBedStats,
   buildMedicalHandoffRestoreConfirm,

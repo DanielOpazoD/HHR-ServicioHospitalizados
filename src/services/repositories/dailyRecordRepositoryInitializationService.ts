@@ -25,7 +25,7 @@ import {
   createCopyPatientResult,
   createInitializeDayResult,
 } from '@/services/repositories/contracts/dailyRecordResults';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
 export interface DailyRecordInitializationResult {
   record: DailyRecord;
@@ -53,7 +53,7 @@ export interface CopyPatientToDateResult {
   sourceMigrationRulesApplied: string[];
 }
 
-const dailyRecordInitializationLogger = logger.child('DailyRecordInitializationService');
+const dailyRecordInitializationLogger = createScopedLogger('DailyRecordInitializationService');
 
 const loadCopySourceRecord = async (copyFromDate?: string): Promise<DailyRecord | null> => {
   if (!copyFromDate) return null;

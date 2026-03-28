@@ -1,6 +1,6 @@
 import { isWorkingDay } from './calendarService';
 import { INSTITUTIONAL_ACCOUNTS, isInstitutionalAccount } from '@/constants/identities';
-import { DailyRecord } from '@/types/domain/dailyRecord';
+import type { DailyRecordStaffingState } from '@/types/domain/dailyRecordSlices';
 import {
   resolveDayShiftNurses,
   resolveNightShiftNurses,
@@ -55,7 +55,7 @@ export const getCurrentShift = (date: Date = new Date()): 'day' | 'night' => {
  * Extracts the names of nurses assigned to a specific shift from a daily record.
  */
 export const getNurseAuthors = (
-  record: DailyRecord | null | undefined,
+  record: DailyRecordStaffingState | null | undefined,
   shift?: 'day' | 'night'
 ): string | undefined => {
   if (!record) return undefined;
@@ -77,7 +77,7 @@ export const getNurseAuthors = (
  */
 export const getAttributedAuthors = (
   userId: string | undefined,
-  record: DailyRecord | null | undefined,
+  record: DailyRecordStaffingState | null | undefined,
   shift?: 'day' | 'night'
 ): string | undefined => {
   if (!isSharedNursingAccount(userId)) return undefined;

@@ -1,4 +1,4 @@
-import type { BedDefinition } from '@/types/domain/base';
+import type { BedDefinition } from '@/types/domain/beds';
 import type { DailyRecord } from '@/domain/handoff/recordContracts';
 import type { ControllerConfirmDescriptor } from '@/shared/contracts/controllers/confirmDescriptor';
 

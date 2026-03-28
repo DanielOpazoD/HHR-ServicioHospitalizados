@@ -1,4 +1,4 @@
-import type { PatientData } from '@/features/census/components/patient-row/patientRowDataContracts';
+import type { PatientData } from '@/features/census/controllers/censusActionPatientContracts';
 import type { PatientRowAction } from '@/features/census/types/patientRowActionTypes';
 import type { CensusActionNotification } from '@/features/census/controllers/censusActionNotificationController';
 import type {

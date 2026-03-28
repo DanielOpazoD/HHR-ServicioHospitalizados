@@ -2,6 +2,8 @@ import type { DailyRecord } from './dailyRecord';
 
 export type DailyRecordDateRef = Pick<DailyRecord, 'date'>;
 
+export type DailyRecordMetadataState = Pick<DailyRecord, 'date' | 'dateTimestamp' | 'lastUpdated'>;
+
 export type DailyRecordBedsState = Pick<DailyRecord, 'beds'>;
 
 export type DailyRecordBedLayoutState = Pick<
@@ -9,12 +11,21 @@ export type DailyRecordBedLayoutState = Pick<
   'beds' | 'activeExtraBeds' | 'bedTypeOverrides'
 >;
 
+export type DailyRecordCriticalValidationState = Pick<DailyRecord, 'beds' | 'activeExtraBeds'>;
+
 export type DailyRecordBedAuditState = Pick<DailyRecord, 'date' | 'beds'>;
 
 export type DailyRecordMovementState = Pick<
   DailyRecord,
   'date' | 'beds' | 'discharges' | 'transfers'
 >;
+
+export type DailyRecordMovementCollectionsState = Pick<
+  DailyRecord,
+  'discharges' | 'transfers' | 'cma'
+>;
+
+export type DailyRecordPatientHistoryState = DailyRecordMovementState;
 
 export type DailyRecordStaffingState = Pick<
   DailyRecord,
@@ -33,3 +44,33 @@ export type DailyRecordMedicalMessagingState = Pick<
 >;
 
 export type DailyRecordCmaState = Pick<DailyRecord, 'cma'>;
+
+export type DailyRecordCudyrState = Pick<DailyRecord, 'date' | 'beds' | 'activeExtraBeds'>;
+
+export type DailyRecordCsvExportState = Pick<
+  DailyRecord,
+  | 'beds'
+  | 'discharges'
+  | 'transfers'
+  | 'nurses'
+  | 'nurseName'
+  | 'nursesDayShift'
+  | 'nursesNightShift'
+>;
+
+export type DailyRecordIntegrityState = Pick<
+  DailyRecord,
+  | 'date'
+  | 'beds'
+  | 'discharges'
+  | 'transfers'
+  | 'cma'
+  | 'nursesDayShift'
+  | 'nursesNightShift'
+  | 'tensDayShift'
+  | 'tensNightShift'
+  | 'handoffNovedadesDayShift'
+  | 'handoffNovedadesNightShift'
+  | 'medicalHandoffNovedades'
+  | 'medicalHandoffBySpecialty'
+>;

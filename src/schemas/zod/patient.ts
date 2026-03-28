@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { BedType, PatientStatus, Specialty } from '@/types/domain/base';
+import { BedType } from '@/types/domain/beds';
+import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
 import {
   emptyStringToUndefined,
   nullableOptional,

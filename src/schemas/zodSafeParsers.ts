@@ -1,4 +1,4 @@
-import type { BedType } from '@/types/domain/base';
+import type { BedType } from '@/types/domain/beds';
 import type { CMAData, DischargeData, TransferData } from '@/types/domain/movements';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { PatientData } from '@/types/domain/patient';

@@ -18,11 +18,11 @@ import {
 } from '@/application/ports/patientMasterPort';
 import { defaultAuditPort, type AuditPort } from '@/application/ports/auditPort';
 import { resolveApplicationOutcomeMessage } from '@/application/shared/applicationOutcomeMessage';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
 export type { Conflict, AnalysisResult } from '@/application/patient-flow/patientAnalysisUseCase';
 
-const patientAnalysisLogger = logger.child('usePatientAnalysis');
+const patientAnalysisLogger = createScopedLogger('usePatientAnalysis');
 
 type PatientAnalysisDailyRecordPort = Pick<
   DailyRecordReadPort & DailyRecordWritePort,

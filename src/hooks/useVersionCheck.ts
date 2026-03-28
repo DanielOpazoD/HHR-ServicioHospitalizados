@@ -12,11 +12,11 @@
 
 import { useEffect, useRef } from 'react';
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
 const VERSION_KEY = 'hhr_app_version';
 const VERSION_URL = '/version.json';
-const versionCheckLogger = logger.child('VersionCheck');
+const versionCheckLogger = createScopedLogger('VersionCheck');
 
 interface VersionInfo {
   version: string;

@@ -1,4 +1,4 @@
-import { DailyRecord } from '@/types/domain/dailyRecord';
+import type { DailyRecordIntegrityState } from '@/types/domain/dailyRecordSlices';
 import { buildMedicalHandoffSummary } from '@/domain/handoff/specialty';
 
 /**
@@ -29,7 +29,7 @@ export class VersionMismatchError extends Error {
  * Calculates a "density score" for a daily record.
  * This is a heuristic metric representing how much clinical data the record contains.
  */
-export const calculateDensity = (record: DailyRecord | null | undefined): number => {
+export const calculateDensity = (record: DailyRecordIntegrityState | null | undefined): number => {
   if (!record) return 0;
 
   let score = 0;
@@ -90,8 +90,8 @@ export const calculateDensity = (record: DailyRecord | null | undefined): number
  * - Total wipes are always suspicious if old record was full.
  */
 export const checkRegression = (
-  oldRecord: DailyRecord | null | undefined,
-  newRecord: DailyRecord
+  oldRecord: DailyRecordIntegrityState | null | undefined,
+  newRecord: DailyRecordIntegrityState
 ): { isSuspicious: boolean; dropPercentage: number } => {
   if (!oldRecord) return { isSuspicious: false, dropPercentage: 0 };
 

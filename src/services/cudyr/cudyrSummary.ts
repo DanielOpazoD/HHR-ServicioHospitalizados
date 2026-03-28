@@ -5,9 +5,9 @@
  * @module services/calculations/cudyrSummary
  */
 
-import { DailyRecord } from '@/types/domain/dailyRecord';
 import { PatientData } from '@/services/contracts/patientServiceContracts';
-import { BedType } from '@/types/domain/base';
+import { BedType } from '@/types/domain/beds';
+import type { DailyRecordCudyrState } from '@/types/domain/dailyRecordSlices';
 import { BEDS } from '@/constants/beds';
 import { getCategorization } from './CudyrScoreUtils';
 
@@ -103,7 +103,7 @@ const createEmptyCounts = (): Record<CudyrCategory, number> => ({
  * @param record - The daily record to process
  * @returns Array of categorized patients
  */
-export const collectDailyCudyrPatients = (record: DailyRecord): CategorizedPatient[] => {
+export const collectDailyCudyrPatients = (record: DailyRecordCudyrState): CategorizedPatient[] => {
   const patients: CategorizedPatient[] = [];
   const activeExtras = record.activeExtraBeds || [];
   const visibleBeds = BEDS.filter(b => !b.isExtra || activeExtras.includes(b.id));
@@ -154,7 +154,7 @@ export const collectDailyCudyrPatients = (record: DailyRecord): CategorizedPatie
  * @param record - The daily record to process
  * @returns Daily summary object with counts and statistics
  */
-export const buildDailyCudyrSummary = (record: DailyRecord): CudyrDailySummary => {
+export const buildDailyCudyrSummary = (record: DailyRecordCudyrState): CudyrDailySummary => {
   const counts: CategoryCounts = {
     uti: createEmptyCounts(),
     media: createEmptyCounts(),
@@ -223,8 +223,8 @@ export const getCudyrMonthlyTotals = async (
   year: number,
   month: number,
   endDate: string | undefined,
-  fetchRecordFn: (dateStr: string) => Promise<DailyRecord | null>,
-  overrideRecord?: DailyRecord | null // Optional override for current day
+  fetchRecordFn: (dateStr: string) => Promise<DailyRecordCudyrState | null>,
+  overrideRecord?: DailyRecordCudyrState | null // Optional override for current day
 ): Promise<CudyrMonthlySummary> => {
   const totals: CategoryCounts = {
     uti: createEmptyCounts(),
@@ -246,7 +246,7 @@ export const getCudyrMonthlyTotals = async (
   for (let day = 1; day <= endDay; day++) {
     const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
-    let record: DailyRecord | null = null;
+    let record: DailyRecordCudyrState | null = null;
 
     // Use override if available and matches date
     if (overrideRecord && overrideRecord.date === dateStr) {

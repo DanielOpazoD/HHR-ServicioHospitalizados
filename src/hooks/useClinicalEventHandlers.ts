@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import type { AuditAction, AuditLogEntry } from '@/types/audit';
-import type { ClinicalEvent } from '@/types/domain/clinical';
+import type { ClinicalEvent } from '@/types/domain/clinicalEvents';
 import type { PatientData } from '@/hooks/contracts/patientHookContracts';
 import type { PatientFieldValue } from '@/types/valueTypes';
 import {

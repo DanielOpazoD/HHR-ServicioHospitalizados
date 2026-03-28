@@ -1,5 +1,5 @@
 import React from 'react';
-import { ClinicalEvent } from '@/types/domain/clinical';
+import type { ClinicalEvent } from '@/types/domain/clinicalEvents';
 import { PatientData } from '@/domain/handoff/patientContracts';
 import { Baby, ChevronDown, Clock } from 'lucide-react';
 import clsx from 'clsx';

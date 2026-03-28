@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { DailyRecord } from '@/features/census/contracts/censusDomainContracts';
+import type { DailyRecord } from '@/features/census/contracts/censusRecordContracts';
 import { useLatestRef } from '@/hooks/useLatestRef';
 
 interface UseMoveCopyTargetRecordParams {

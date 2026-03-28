@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { isIndexedDBAvailable, migrateFromLocalStorage } from '@/services/storage/core';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
 interface MigrationState {
   isComplete: boolean;
@@ -20,7 +20,7 @@ interface UseStorageMigrationOptions {
   enabled?: boolean;
 }
 
-const storageMigrationLogger = logger.child('useStorageMigration');
+const storageMigrationLogger = createScopedLogger('useStorageMigration');
 
 /**
  * Hook that runs storage migration on mount.

@@ -1,7 +1,7 @@
 import { doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
 import type { ProfessionalCatalogItem } from '@/types/domain/professionals';
 import { withRetry } from '@/utils/networkUtils';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 import {
   COLLECTIONS,
   getActiveHospitalId,
@@ -16,7 +16,7 @@ import {
   normalizeStringCatalog,
 } from '@/services/repositories/contracts/catalogContracts';
 
-const firestoreCatalogLogger = logger.child('FirestoreCatalogService');
+const firestoreCatalogLogger = createScopedLogger('FirestoreCatalogService');
 
 const getSettingsDocRef = (docId: string, runtime: FirestoreServiceRuntimePort) =>
   doc(

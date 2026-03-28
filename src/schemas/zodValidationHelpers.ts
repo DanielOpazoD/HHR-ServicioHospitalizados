@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import type { PatientData } from '@/types/domain/patient';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
-import type { CudyrScore } from '@/types/domain/clinical';
+import type { CudyrScore } from '@/types/domain/cudyr';
 
 import { DATE_REGEX, RUT_REGEX } from './zod/helpers';
 import { PatientDataSchema, CudyrScoreSchema } from './zod/patient';

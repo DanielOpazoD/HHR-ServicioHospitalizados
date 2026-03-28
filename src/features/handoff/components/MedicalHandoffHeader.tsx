@@ -9,7 +9,7 @@ import React from 'react';
 import { CheckCircle, RotateCcw, ShieldCheck } from 'lucide-react';
 import clsx from 'clsx';
 import type { DailyRecord } from '@/domain/handoff/recordContracts';
-import type { BedDefinition } from '@/types/domain/base';
+import type { BedDefinition } from '@/types/domain/beds';
 import { useConfirmDialog } from '@/context/UIContext';
 import {
   buildMedicalHandoffBedStats,

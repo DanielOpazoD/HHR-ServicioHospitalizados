@@ -26,7 +26,7 @@ import {
   normalizeStringCatalog,
   assertCatalogSubscriptionCallback,
 } from '@/services/repositories/contracts/catalogContracts';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
 export interface ICatalogRepository {
   getNurses(): Promise<string[]>;
@@ -40,7 +40,7 @@ export interface ICatalogRepository {
   subscribeProfessionals(callback: (professionals: ProfessionalCatalogItem[]) => void): () => void;
 }
 
-const catalogRepositoryLogger = logger.child('CatalogRepository');
+const catalogRepositoryLogger = createScopedLogger('CatalogRepository');
 
 // ============================================================================
 // Nurses Catalog

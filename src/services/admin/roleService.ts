@@ -6,10 +6,9 @@ import {
   type ManagedUserRole,
 } from '@/shared/access/roleAccessMatrix';
 import type { UserRole } from '@/types/auth';
-import { logger } from '@/services/utils/loggerService';
+import { roleServiceLogger } from '@/services/admin/adminLoggers';
 import { defaultFunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
 
-const roleServiceLogger = logger.child('RoleService');
 const LEGACY_ROLE_ALIASES = {
   viewer_census: 'viewer',
 } as const;

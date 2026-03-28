@@ -1,9 +1,9 @@
-import type { DailyRecord } from '@/types/domain/dailyRecord';
+import type { DailyRecordMetadataState } from '@/types/domain/dailyRecordSlices';
 
 export const createRecordDateTimestamp = (date: string): number =>
   new Date(`${date}T00:00:00`).getTime();
 
-export const ensureDailyRecordDateTimestamp = (record: DailyRecord): void => {
+export const ensureDailyRecordDateTimestamp = (record: DailyRecordMetadataState): void => {
   if (record.dateTimestamp || !record.date) {
     return;
   }
@@ -11,6 +11,6 @@ export const ensureDailyRecordDateTimestamp = (record: DailyRecord): void => {
   record.dateTimestamp = createRecordDateTimestamp(record.date);
 };
 
-export const touchDailyRecordLastUpdated = (record: DailyRecord): void => {
+export const touchDailyRecordLastUpdated = (record: DailyRecordMetadataState): void => {
   record.lastUpdated = new Date().toISOString();
 };

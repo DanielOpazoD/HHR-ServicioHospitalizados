@@ -3,24 +3,20 @@ import {
   recordOperationalOutcome,
   recordOperationalTelemetry,
 } from '@/services/observability/operationalTelemetryService';
+import type { OperationalOutcomeLike } from '@/services/observability/operationalTelemetryContracts';
 import type {
   OperationalTelemetryCategory,
   OperationalTelemetryEvent,
   OperationalTelemetryStatus,
 } from '@/services/observability/operationalTelemetryTypes';
 import type { OperationalErrorShape } from '@/services/observability/operationalError';
-import { logger } from '@/services/utils/loggerService';
-
-interface ApplicationOutcomeLike {
-  status: OperationalTelemetryStatus;
-  issues?: Array<{ message?: string }>;
-}
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
 export const createDomainObservability = (
   category: OperationalTelemetryCategory,
   loggerContext: string
 ) => {
-  const domainLogger = logger.child(loggerContext);
+  const domainLogger = createScopedLogger(loggerContext);
 
   return {
     logger: domainLogger,
@@ -38,7 +34,7 @@ export const createDomainObservability = (
     },
     recordOutcome: (
       operation: string,
-      outcome: ApplicationOutcomeLike,
+      outcome: OperationalOutcomeLike,
       options: {
         date?: string;
         context?: Record<string, unknown>;

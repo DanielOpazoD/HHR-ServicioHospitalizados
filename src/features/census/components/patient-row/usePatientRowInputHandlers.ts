@@ -2,7 +2,11 @@ import { useCallback, useMemo } from 'react';
 import type {
   CesareanLabor,
   DeliveryRoute,
-  PatientData,
+} from '@/features/census/contracts/censusObstetricContracts';
+import type {
+  PatientRowPatientDocumentType,
+  PatientRowPatientField,
+  PatientRowPatientPatch,
 } from '@/features/census/components/patient-row/patientRowDataContracts';
 import { PatientFieldValue } from '@/types/valueTypes';
 import {
@@ -18,21 +22,25 @@ import { usePatientRowCommandHandlers } from '@/features/census/components/patie
 
 interface UsePatientRowMainInputHandlersParams {
   bedId: string;
-  documentType?: PatientData['documentType'];
-  updatePatient: (bedId: string, field: keyof PatientData, value: PatientFieldValue) => void;
-  updatePatientMultiple: (bedId: string, fields: Partial<PatientData>) => void;
+  documentType?: PatientRowPatientDocumentType;
+  updatePatient: (bedId: string, field: PatientRowPatientField, value: PatientFieldValue) => void;
+  updatePatientMultiple: (bedId: string, fields: PatientRowPatientPatch) => void;
 }
 
 interface UsePatientRowCribInputHandlersParams {
   bedId: string;
-  updateClinicalCrib: (bedId: string, field: keyof PatientData, value: PatientFieldValue) => void;
-  updateClinicalCribMultiple: (bedId: string, fields: Partial<PatientData>) => void;
+  updateClinicalCrib: (
+    bedId: string,
+    field: PatientRowPatientField,
+    value: PatientFieldValue
+  ) => void;
+  updateClinicalCribMultiple: (bedId: string, fields: PatientRowPatientPatch) => void;
 }
 
 interface UsePatientRowUpdateAdapterParams {
   bedId: string;
-  updateSingle: (bedId: string, field: keyof PatientData, value: PatientFieldValue) => void;
-  updateMany: (bedId: string, fields: Partial<PatientData>) => void;
+  updateSingle: (bedId: string, field: PatientRowPatientField, value: PatientFieldValue) => void;
+  updateMany: (bedId: string, fields: PatientRowPatientPatch) => void;
 }
 
 const usePatientRowUpdateAdapter = ({

@@ -19,7 +19,7 @@ import {
 } from '@/services/repositories/contracts/dailyRecordQueries';
 import { mergeAvailableDates } from '@/services/repositories/dailyRecordSyncCompatibility';
 import { measureRepositoryOperation } from '@/services/repositories/repositoryPerformance';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 import { resolveDailyRecordReadConsistency } from '@/services/repositories/dailyRecordConsistencyPolicy';
 import { resolveDailyRecordPersistenceGoldenPath } from '@/services/repositories/dailyRecordPersistenceGoldenPath';
 
@@ -27,7 +27,7 @@ const isRepositoryDebugEnabled = () =>
   import.meta.env.DEV &&
   String(import.meta.env.VITE_DEBUG_REPOSITORY || '').toLowerCase() === 'true';
 
-const dailyRecordReadLogger = logger.child('DailyRecordReadRepository');
+const dailyRecordReadLogger = createScopedLogger('DailyRecordReadRepository');
 
 interface LocalRuntimeReadCandidate {
   record: DailyRecord;

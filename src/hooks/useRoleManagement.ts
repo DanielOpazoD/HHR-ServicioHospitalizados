@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { roleService, UserRoleMap } from '@/services/admin/roleService';
 import { isManagedUserRole } from '@/shared/access/roleAccessMatrix';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
-const roleManagementLogger = logger.child('RoleManagement');
+const roleManagementLogger = createScopedLogger('RoleManagement');
 
 export const useRoleManagement = () => {
   const [roles, setRoles] = useState<UserRoleMap>({});

@@ -10,7 +10,7 @@ import type { DailyRecordPatch } from '@/types/domain/dailyRecordPatch';
 import type { DailyRecord } from '@/hooks/contracts/dailyRecordHookContracts';
 import { PatientData } from '@/hooks/contracts/patientHookContracts';
 import { PatientFieldValue } from '@/types/valueTypes';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 import {
   buildClinicalCribMultiplePatch,
   buildClinicalCribPatch,
@@ -26,7 +26,7 @@ export interface ClinicalCribActions {
   updateCribMultiple: (bedId: string, updates: Partial<PatientData>) => void;
 }
 
-const clinicalCribLogger = logger.child('useClinicalCrib');
+const clinicalCribLogger = createScopedLogger('useClinicalCrib');
 
 export const useClinicalCrib = (
   record: DailyRecordBedsState | null,

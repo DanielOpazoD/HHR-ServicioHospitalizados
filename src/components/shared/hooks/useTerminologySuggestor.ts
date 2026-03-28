@@ -6,9 +6,9 @@ import {
 } from '@/services/terminology/terminologyService';
 import { checkAIAvailability } from '@/services/terminology/cie10AISearch';
 import { getCachedAIResults, cacheAIResults } from '@/services/terminology/aiResultsCache';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
-const terminologySuggestorLogger = logger.child('TerminologySuggestor');
+const terminologySuggestorLogger = createScopedLogger('TerminologySuggestor');
 
 export interface UseTerminologySuggestorProps {
   value: string;

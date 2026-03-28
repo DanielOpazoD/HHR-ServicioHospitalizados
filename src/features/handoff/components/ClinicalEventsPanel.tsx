@@ -3,7 +3,7 @@
  * Used in nursing handoff view, within the diagnosis cell
  */
 import React, { useState, useCallback } from 'react';
-import { ClinicalEvent } from '@/types/domain/clinical';
+import type { ClinicalEvent } from '@/types/domain/clinicalEvents';
 import { Plus, Pencil, Trash2, Check, X } from 'lucide-react';
 import clsx from 'clsx';
 import { formatHandoffDate } from '@/shared/handoff/handoffPresentation';

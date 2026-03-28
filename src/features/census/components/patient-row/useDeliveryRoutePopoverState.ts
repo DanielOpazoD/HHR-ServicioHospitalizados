@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import type {
   CesareanLabor,
   DeliveryRoute,
-} from '@/features/census/components/patient-row/patientRowDataContracts';
+} from '@/features/census/contracts/censusObstetricContracts';
 import {
   buildDeliveryRouteDraft,
   canSaveDeliveryRouteDraft,

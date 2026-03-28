@@ -1,5 +1,5 @@
 import type { DailyRecordPatch } from '@/application/shared/dailyRecordContracts';
-import type { MasterPatient } from '@/types/domain/clinical';
+import type { MasterPatient } from '@/types/domain/patientMaster';
 import { formatRut, isValidRut } from '@/utils/rutUtils';
 import {
   createApplicationFailed,

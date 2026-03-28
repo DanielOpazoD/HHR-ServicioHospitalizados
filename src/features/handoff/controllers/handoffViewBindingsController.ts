@@ -4,8 +4,9 @@ import type {
 } from '@/features/handoff/components/handoffRowContracts';
 import { resolveHandoffMedicalScreenState } from '@/application/handoff';
 import type { MedicalHandoffCapabilities } from '@/features/handoff/controllers/medicalHandoffAccessController';
-import type { ClinicalEvent } from '@/types/domain/clinical';
-import type { Specialty, BedDefinition } from '@/types/domain/base';
+import type { ClinicalEvent } from '@/types/domain/clinicalEvents';
+import type { BedDefinition } from '@/types/domain/beds';
+import type { Specialty } from '@/types/domain/patientClassification';
 import type { DailyRecord } from '@/domain/handoff/recordContracts';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 

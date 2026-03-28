@@ -1,4 +1,4 @@
-import { Specialty } from '@/types/domain/base';
+import { Specialty } from '@/types/domain/patientClassification';
 
 export const SUMMARY_OCCUPANCY_ALERT_THRESHOLD = 0.88;
 

@@ -1,5 +1,5 @@
 import { DailyRecord } from '@/types/domain/dailyRecord';
-import { Specialty } from '@/types/domain/base';
+import { Specialty } from '@/types/domain/patientClassification';
 import { HOSPITAL_CAPACITY } from '@/constants/beds';
 import { EVACUATION_METHOD_AEROCARDAL } from '@/constants/clinical';
 import { MinsalStatistics, SpecialtyStats, PatientTraceability } from '@/types/minsalTypes';

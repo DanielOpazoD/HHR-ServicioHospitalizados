@@ -20,11 +20,11 @@ import {
   createDeletedRecordRef,
   saveHistorySnapshot,
 } from '@/services/storage/firestore/firestoreWriteSupport';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
 export { ConcurrencyError } from '@/services/storage/firestore/firestoreWriteSupport';
 
-const firestoreWriteLogger = logger.child('FirestoreWrites');
+const firestoreWriteLogger = createScopedLogger('FirestoreWrites');
 
 export const saveRecordToFirestore = async (
   record: DailyRecord,

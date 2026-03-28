@@ -6,9 +6,13 @@ import type { ChangeEvent } from 'react';
 import type {
   CesareanLabor,
   DeliveryRoute,
+} from '@/features/census/contracts/censusObstetricContracts';
+import type {
   PatientData,
+  PatientRowPatientField,
+  PatientRowPatientPatch,
 } from '@/features/census/components/patient-row/patientRowDataContracts';
-import { DeviceDetails, DeviceInstance } from '@/types/domain/clinical';
+import type { DeviceDetails, DeviceInstance } from '@/types/domain/devices';
 import type { PatientDeviceCallbacks } from './patientRowDeviceContracts';
 
 /**
@@ -28,25 +32,27 @@ export interface BaseCellProps {
 /**
  * Handler for text field changes - adapts debounced value to event-based API
  */
-export type DebouncedTextHandler = (field: keyof PatientData) => (value: string) => void;
+export type DebouncedTextHandler = (field: PatientRowPatientField) => (value: string) => void;
 
 /**
  * Handler for native event-based changes (selects, etc.)
  */
 export type EventTextHandler = (
-  field: keyof PatientData
+  field: PatientRowPatientField
 ) => (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
 
 /**
  * Handler for checkbox changes
  */
-export type CheckHandler = (field: keyof PatientData) => (e: ChangeEvent<HTMLInputElement>) => void;
+export type CheckHandler = (
+  field: PatientRowPatientField
+) => (e: ChangeEvent<HTMLInputElement>) => void;
 
 /**
  * Props for components that need multiple field updates atomically
  */
 export interface MultipleUpdateProps {
-  onMultipleUpdate?: (fields: Partial<PatientData>) => void;
+  onMultipleUpdate?: (fields: PatientRowPatientPatch) => void;
 }
 
 /**
@@ -66,7 +72,7 @@ export interface PatientInputChangeHandlers {
     date: string | undefined,
     cesareanLabor: CesareanLabor | undefined
   ) => void;
-  multiple?: (fields: Partial<PatientData>) => void;
+  multiple?: (fields: PatientRowPatientPatch) => void;
 }
 
 export interface MainPatientInputChangeHandlers extends Omit<
@@ -79,12 +85,12 @@ export interface MainPatientInputChangeHandlers extends Omit<
     date: string | undefined,
     cesareanLabor: CesareanLabor | undefined
   ) => void;
-  multiple: (fields: Partial<PatientData>) => void;
+  multiple: (fields: PatientRowPatientPatch) => void;
 }
 
 export interface ClinicalCribInputChangeHandlers extends Omit<
   PatientInputChangeHandlers,
   'toggleDocType' | 'deliveryRoute'
 > {
-  multiple: (fields: Partial<PatientData>) => void;
+  multiple: (fields: PatientRowPatientPatch) => void;
 }

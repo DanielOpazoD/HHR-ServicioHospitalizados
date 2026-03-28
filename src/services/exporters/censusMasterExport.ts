@@ -14,9 +14,9 @@ import { getMonthRecordsFromFirestore } from '../storage/firestore';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import { buildCensusMasterBinary, getCensusMasterFilename } from './censusMasterWorkbook';
 import { validateExcelExport, XLSX_MIME_TYPE } from './excelValidation';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
-const censusMasterExportLogger = logger.child('CensusMasterExport');
+const censusMasterExportLogger = createScopedLogger('CensusMasterExport');
 
 /**
  * Generate and download the Census Master Excel file for a given month.

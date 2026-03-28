@@ -13,8 +13,8 @@ import {
   resolveResetDayPermission,
 } from '@/features/census/controllers/censusResetDayController';
 import type { BedTypesById, OccupiedBedRow } from '@/features/census/types/censusTableTypes';
-import type { BedDefinition } from '@/types/domain/base';
-import type { PatientData } from '@/features/census/contracts/censusDomainContracts';
+import type { BedDefinition } from '@/types/domain/beds';
+import type { PatientData } from '@/features/census/types/censusTablePatientContracts';
 
 interface UseCensusTableModelParams {
   currentDateString: string;

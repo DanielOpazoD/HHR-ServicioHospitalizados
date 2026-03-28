@@ -7,14 +7,14 @@ import {
   importDataJSONDetailed as importDataJSONDetailedFile,
   JsonImportResult,
 } from '@/services/exporters/exportImportJson';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 import {
   createApplicationFailed,
   createApplicationSuccess,
   type ApplicationOutcome,
 } from '@/application/shared/applicationOutcome';
 
-const exportServiceLogger = logger.child('ExportService');
+const exportServiceLogger = createScopedLogger('ExportService');
 
 export const exportDataJSON = async () => {
   const result = await exportDataJSONWithResult();

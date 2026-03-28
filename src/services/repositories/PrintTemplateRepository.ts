@@ -3,9 +3,9 @@ import { PrintTemplateConfig } from '@/types/printTemplates';
 import { COLLECTIONS, HOSPITAL_COLLECTIONS, getActiveHospitalId } from '@/constants/firestorePaths';
 import { defaultRepositoryFirestoreRuntime } from '@/services/repositories/repositoryFirestoreRuntime';
 import type { RepositoryFirestoreRuntimePort } from '@/services/repositories/ports/repositoryFirestoreRuntimePort';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
-const printTemplateRepositoryLogger = logger.child('PrintTemplateRepository');
+const printTemplateRepositoryLogger = createScopedLogger('PrintTemplateRepository');
 
 export const createPrintTemplateRepository = (
   runtime: RepositoryFirestoreRuntimePort = defaultRepositoryFirestoreRuntime

@@ -1,4 +1,4 @@
-import { DeviceDetails, DeviceInstance } from '@/types/domain/clinical';
+import type { DeviceDetails, DeviceInstance } from '@/types/domain/devices';
 import {
   buildDeviceHistoryTimestamp,
   resolveActiveDeviceTypesFromHistory,

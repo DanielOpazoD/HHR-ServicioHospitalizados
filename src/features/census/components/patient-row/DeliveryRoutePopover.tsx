@@ -18,7 +18,7 @@ import { DeliveryRoutePopoverPanel } from '@/features/census/components/patient-
 import type {
   CesareanLabor,
   DeliveryRoute,
-} from '@/features/census/components/patient-row/patientRowDataContracts';
+} from '@/features/census/contracts/censusObstetricContracts';
 
 interface DeliveryRoutePopoverProps {
   deliveryRoute?: DeliveryRoute;

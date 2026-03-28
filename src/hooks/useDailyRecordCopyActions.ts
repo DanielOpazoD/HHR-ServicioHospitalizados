@@ -3,7 +3,7 @@ import type { DailyRecord } from '@/hooks/contracts/dailyRecordHookContracts';
 import { resolveCopyPatientRequest } from '@/hooks/controllers/dailyRecordController';
 import { hasCriticalLegacyRepairSignal } from '@/hooks/controllers/legacyRepairWarningController';
 import { buildCopyPatientNotifications } from '@/hooks/controllers/persistenceFeedbackController';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
 type CopyPatientToDateResultLike = {
   sourceDate: string;
@@ -33,7 +33,7 @@ interface UseDailyRecordCopyActionsOptions {
   warning: (title: string, message?: string) => void;
 }
 
-const dailyRecordCopyLogger = logger.child('useDailyRecordCopyActions');
+const dailyRecordCopyLogger = createScopedLogger('useDailyRecordCopyActions');
 
 export const useDailyRecordCopyActions = ({
   record,

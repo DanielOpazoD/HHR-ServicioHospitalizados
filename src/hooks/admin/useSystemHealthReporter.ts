@@ -14,10 +14,10 @@ import {
   buildUserHealthStatus,
   canReportSystemHealthForRole,
 } from '@/hooks/controllers/systemHealthReporterController';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
 const REPORT_INTERVAL_MS = 2 * 60 * 1000; // Report every 2 minutes
-const systemHealthReporterLogger = logger.child('SystemHealthReporter');
+const systemHealthReporterLogger = createScopedLogger('SystemHealthReporter');
 
 /**
  * Hook that periodically reports the system health status to Firestore.

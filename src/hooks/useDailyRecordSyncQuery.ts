@@ -31,12 +31,12 @@ import {
 } from '@/hooks/controllers/dailyRecordSyncController';
 import { executeSyncDailyRecord } from '@/application/daily-record/syncDailyRecordUseCase';
 import { presentDailyRecordRefreshOutcome } from '@/hooks/controllers/dailyRecordRefreshOutcomeController';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 import { dailyRecordObservability } from '@/services/repositories/dailyRecordOperationalTelemetry';
 import { getTodayISO } from '@/utils/dateUtils';
 import { setDailyRecordQueryData } from '@/hooks/controllers/dailyRecordQueryController';
 
-const dailyRecordSyncLogger = logger.child('DailyRecordSync');
+const dailyRecordSyncLogger = createScopedLogger('DailyRecordSync');
 
 export const useDailyRecordSyncQuery = (
   currentDateString: string,

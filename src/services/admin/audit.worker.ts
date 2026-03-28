@@ -1,13 +1,11 @@
 import { filterLogs, groupLogs, calculateAuditStats, WorkerFilterParams } from './auditWorkerLogic';
 import { AuditLogEntry } from '@/types/audit';
-import { logger } from '@/services/utils/loggerService';
+import { auditWorkerLogger } from '@/services/admin/adminLoggers';
 
 /**
  * Audit Web Worker
  * Processes audit logs in the background to avoid blocking the main thread.
  */
-
-const auditWorkerLogger = logger.child('AuditWorker');
 
 self.onmessage = (event: MessageEvent) => {
   const { type, payload } = event.data;

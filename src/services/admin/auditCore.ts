@@ -14,10 +14,9 @@ import {
 } from './utils/auditUtils';
 import { generateSummary } from './utils/auditSummaryGenerator';
 import { getActiveHospitalId } from '@/constants/firestorePaths';
-import { logger } from '@/services/utils/loggerService';
+import { auditCoreLogger } from '@/services/admin/adminLoggers';
 
 const COLLECTION_NAME = () => `hospitals/${getActiveHospitalId()}/auditLogs`;
-const auditCoreLogger = logger.child('AuditCore');
 
 const EXCLUDED_VIEW_AUDIT_EMAILS: string[] = [
   'daniel.opazo@hospitalhangaroa.cl',

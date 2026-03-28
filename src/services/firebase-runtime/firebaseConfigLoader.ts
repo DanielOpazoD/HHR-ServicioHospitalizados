@@ -1,10 +1,9 @@
 import type { FirebaseOptions } from 'firebase/app';
 import { safeJsonParse } from '@/utils/jsonUtils';
 import { readDevFirebaseApiKey } from '@/services/firebase-runtime/firebaseEnvironmentPolicy';
-import { logger } from '@/services/utils/loggerService';
+import { firebaseConfigLoaderLogger } from '@/services/firebase-runtime/firebaseRuntimeLoggers';
 
 const CACHED_CONFIG_KEY = 'hhr_firebase_config';
-const firebaseConfigLoaderLogger = logger.child('FirebaseConfigLoader');
 
 const saveCachedConfig = (config: FirebaseOptions) => {
   try {

@@ -1,19 +1,22 @@
-import type { DeviceDetails, DeviceInstance } from '@/types/domain/clinical';
-import type { PatientData } from '@/features/census/components/patient-row/patientRowDataContracts';
+import type { DeviceDetails, DeviceInstance } from '@/types/domain/devices';
+import type {
+  PatientRowPatientField,
+  PatientRowPatientPatch,
+} from '@/features/census/components/patient-row/patientRowDataContracts';
 import type { PatientFieldValue } from '@/types/valueTypes';
 
 interface BuildPatientRowInputCommandsParams {
-  updateField: (field: keyof PatientData, value: PatientFieldValue) => void;
-  updateMultiple: (fields: Partial<PatientData>) => void;
+  updateField: (field: PatientRowPatientField, value: PatientFieldValue) => void;
+  updateMultiple: (fields: PatientRowPatientPatch) => void;
 }
 
 export interface PatientRowInputCommands {
-  setTextField: (field: keyof PatientData, value: string) => void;
-  setCheckboxField: (field: keyof PatientData, checked: boolean) => void;
+  setTextField: (field: PatientRowPatientField, value: string) => void;
+  setCheckboxField: (field: PatientRowPatientField, checked: boolean) => void;
   setDevices: (newDevices: string[]) => void;
   setDeviceDetails: (details: DeviceDetails) => void;
   setDeviceHistory: (history: DeviceInstance[]) => void;
-  saveDemographics: (updatedFields: Partial<PatientData>) => void;
+  saveDemographics: (updatedFields: PatientRowPatientPatch) => void;
 }
 
 export const buildPatientRowInputCommands = ({

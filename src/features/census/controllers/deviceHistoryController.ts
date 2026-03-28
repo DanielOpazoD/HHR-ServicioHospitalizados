@@ -1,4 +1,4 @@
-import type { DeviceDetails, DeviceInstance } from '@/types/domain/clinical';
+import type { DeviceDetails, DeviceInstance } from '@/types/domain/devices';
 
 interface DeviceHistoryTimestamp {
   date: string;

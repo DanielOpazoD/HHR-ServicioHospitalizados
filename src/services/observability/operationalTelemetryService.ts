@@ -8,11 +8,15 @@ import {
   type OperationalRuntimeState,
 } from '@/services/observability/operationalRuntimeState';
 import type {
+  OperationalOutcomeLike,
+  OperationalTelemetrySummary,
+} from '@/services/observability/operationalTelemetryContracts';
+import type {
   OperationalTelemetryCategory,
   OperationalTelemetryEvent,
   OperationalTelemetryStatus,
 } from '@/services/observability/operationalTelemetryTypes';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 import {
   buildTopObservedOperationalKey,
   canUseOperationalTelemetryLocalStorage,
@@ -27,45 +31,8 @@ import {
   trimOperationalTelemetryEvents,
 } from '@/services/observability/operationalTelemetrySupport';
 
-export interface OperationalTelemetrySummary {
-  recentEventCount: number;
-  recentFailedCount: number;
-  recentObservedCount: number;
-  recentRetryableCount: number;
-  recentRecoverableCount: number;
-  recentDegradedCount: number;
-  recentBlockedCount: number;
-  recentUnauthorizedCount: number;
-  lastHourObservedCount: number;
-  syncFailureCount: number;
-  syncObservedCount: number;
-  degradedLocalCount: number;
-  indexedDbObservedCount: number;
-  clinicalDocumentObservedCount: number;
-  createDayObservedCount: number;
-  handoffObservedCount: number;
-  exportObservedCount: number;
-  backupObservedCount: number;
-  exportOrBackupObservedCount: number;
-  dailyRecordRecoveredRealtimeNullCount: number;
-  dailyRecordConfirmedRealtimeNullCount: number;
-  syncReadUnavailableCount: number;
-  indexedDbFallbackModeCount: number;
-  authBootstrapTimeoutCount: number;
-  topObservedCategory?: OperationalTelemetryCategory;
-  topObservedOperation?: string;
-  latestObservedOperation?: string;
-  latestRuntimeState?: OperationalRuntimeState;
-  latestIssueAt?: string;
-}
-
-interface ApplicationOutcomeLike {
-  status: OperationalTelemetryStatus;
-  issues?: Array<{ message?: string }>;
-}
-
 let memoryEvents: OperationalTelemetryEvent[] = [];
-const operationalTelemetryLogger = logger.child('OperationalTelemetry');
+const operationalTelemetryLogger = createScopedLogger('OperationalTelemetry');
 
 const deriveRuntimeStateFromSeverity = (
   severity: OperationalErrorShape['severity']
@@ -240,7 +207,7 @@ export const getOperationalTelemetrySummary = (
 export const recordOperationalOutcome = (
   category: OperationalTelemetryCategory,
   operation: string,
-  outcome: ApplicationOutcomeLike,
+  outcome: OperationalOutcomeLike,
   options: {
     date?: string;
     context?: Record<string, unknown>;

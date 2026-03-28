@@ -3,7 +3,7 @@ import {
   MedicalHandoffEntry,
   PatientData,
 } from '@/domain/handoff/patientContracts';
-import { Specialty } from '@/types/domain/base';
+import { Specialty } from '@/types/domain/patientClassification';
 
 const MEDICAL_SPECIALTY_OPTIONS = Object.values(Specialty).filter(Boolean) as string[];
 

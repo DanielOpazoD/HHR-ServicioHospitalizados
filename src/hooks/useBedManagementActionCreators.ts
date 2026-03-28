@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import type { CudyrScore } from '@/types/domain/clinical';
+import type { CudyrScore } from '@/types/domain/cudyr';
 import type { PatientData } from '@/hooks/contracts/patientHookContracts';
 import type { PatientFieldValue } from '@/types/valueTypes';
 import type { BedAction } from '@/hooks/useBedManagementReducer';

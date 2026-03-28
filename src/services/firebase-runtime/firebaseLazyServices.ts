@@ -2,9 +2,7 @@ import type { FirebaseApp } from 'firebase/app';
 import type { FirebaseStorage } from 'firebase/storage';
 import type { Functions } from 'firebase/functions';
 import { parseEmulatorHost } from '@/services/firebase-runtime/firebaseEnvironmentPolicy';
-import { logger } from '@/services/utils/loggerService';
-
-const firebaseLazyServicesLogger = logger.child('FirebaseLazyServices');
+import { firebaseLazyServicesLogger } from '@/services/firebase-runtime/firebaseRuntimeLoggers';
 
 interface FirebaseLazyServicesState {
   storage?: FirebaseStorage;

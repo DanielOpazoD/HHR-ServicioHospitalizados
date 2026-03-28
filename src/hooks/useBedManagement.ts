@@ -2,7 +2,7 @@ import { useCallback, useRef, useEffect } from 'react';
 import type { DailyRecord } from '@/hooks/contracts/dailyRecordHookContracts';
 import type { DailyRecordPatch } from '@/types/domain/dailyRecordPatch';
 import { PatientData } from '@/hooks/contracts/patientHookContracts';
-import { CudyrScore } from '@/types/domain/clinical';
+import type { CudyrScore } from '@/types/domain/cudyr';
 import { PatientFieldValue } from '@/types/valueTypes';
 import { usePatientValidation } from './usePatientValidation';
 import { useBedAudit } from './useBedAudit';

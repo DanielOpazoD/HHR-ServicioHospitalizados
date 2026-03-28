@@ -27,10 +27,10 @@ import type {
   DailyRecordBedActions,
   DailyRecordMovementActions,
 } from '@/hooks/useDailyRecordTypes';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 import type { TransferMutationResult } from '@/services/transfers/transferService';
 
-const transferManagementLogger = logger.child('useTransferManagementActions');
+const transferManagementLogger = createScopedLogger('useTransferManagementActions');
 
 interface UseTransferManagementActionsParams {
   userEmail: string | null;

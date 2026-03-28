@@ -14,12 +14,12 @@ import {
   PatientHistoryResult,
   MovementType,
 } from '@/services/patient/patientHistoryService';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 import type { PatientData } from '@/types/domain/patient';
 import type { ReactNode } from 'react';
 import { formatHandoffVerboseDate } from '@/shared/handoff/handoffPresentation';
 
-const patientHistoryLogger = logger.child('PatientHistoryModal');
+const patientHistoryLogger = createScopedLogger('PatientHistoryModal');
 
 interface PatientHistoryModalProps {
   isOpen: boolean;

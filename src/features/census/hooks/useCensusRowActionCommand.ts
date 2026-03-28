@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 
-import type { PatientData } from '@/features/census/contracts/censusDomainContracts';
+import type { PatientData } from '@/features/census/controllers/censusActionPatientContracts';
 import { executeRowActionController } from '@/features/census/controllers/censusRowActionRuntimeController';
 import { buildRowActionRuntimeActions } from '@/features/census/controllers/censusRowActionRuntimeAdapterController';
 import {

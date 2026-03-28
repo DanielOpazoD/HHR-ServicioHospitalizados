@@ -4,7 +4,7 @@ import type { RepositoryPerformanceSummary } from '@/services/repositories/repos
 import { CURRENT_SCHEMA_VERSION } from '@/constants/version';
 import { BACKEND_RUNTIME_CONTRACT_VERSION } from '@/constants/runtimeContracts';
 import type { UserRole } from '@/types/auth';
-import type { OperationalTelemetrySummary } from '@/services/observability/operationalTelemetryService';
+import type { OperationalTelemetrySummary } from '@/services/observability/operationalTelemetryContracts';
 
 export interface BuildUserHealthStatusOptions {
   uid: string;

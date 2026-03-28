@@ -1,6 +1,6 @@
-import { DailyRecord } from '@/types/domain/dailyRecord';
 import { DischargeData, TransferData } from '@/types/domain/movements';
 import { PatientData } from '@/services/contracts/patientServiceContracts';
+import type { DailyRecordCsvExportState } from '@/types/domain/dailyRecordSlices';
 import { BEDS } from '@/constants/beds';
 import { CSV_HEADERS } from '@/constants/export';
 import { formatDateDDMMYYYY } from '@/utils/dateUtils';
@@ -15,10 +15,11 @@ const escapeCsvValue = (value: unknown): string => {
   return stringValue;
 };
 
-const resolveNurseField = (record: DailyRecord): string => resolveExportableNursesText(record);
+const resolveNurseField = (record: DailyRecordCsvExportState): string =>
+  resolveExportableNursesText(record);
 
 const generatePatientRow = (
-  record: DailyRecord,
+  record: DailyRecordCsvExportState,
   bedId: string,
   bedName: string,
   bedType: string,
@@ -120,7 +121,7 @@ const generateTransferRows = (transfers: TransferData[]): string[] => {
   ];
 };
 
-export const buildDailyRecordCsv = (record: DailyRecord): string => {
+export const buildDailyRecordCsv = (record: DailyRecordCsvExportState): string => {
   const rows = [CSV_HEADERS.join(',')];
 
   BEDS.forEach(bed => {

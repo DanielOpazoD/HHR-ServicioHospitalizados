@@ -1,11 +1,10 @@
 import { db } from '../infrastructure/db';
-import { logger } from '@/services/utils/loggerService';
+import { healthServiceLogger } from '@/services/admin/adminLoggers';
 import type { OperationalRuntimeState } from '@/services/observability/operationalRuntimeState';
 
 const HEALTH_COLLECTION = 'system_health';
 const STATS_DOC = 'stats';
 const USERS_SUBCOLLECTION = 'users';
-const healthServiceLogger = logger.child('HealthService');
 
 export interface UserHealthStatus {
   uid: string;

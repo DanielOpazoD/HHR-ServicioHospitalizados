@@ -28,13 +28,13 @@ export const buildChecklistUpdateRecord = (
   if (shift === 'day') {
     updatedRecord.handoffDayChecklist = {
       ...updatedRecord.handoffDayChecklist,
-      [field]: value,
-    };
+      [field]: value as boolean,
+    } as DailyRecord['handoffDayChecklist'];
   } else {
     updatedRecord.handoffNightChecklist = {
       ...updatedRecord.handoffNightChecklist,
       [field]: value,
-    };
+    } as DailyRecord['handoffNightChecklist'];
   }
   updatedRecord.lastUpdated = new Date().toISOString();
   return updatedRecord;

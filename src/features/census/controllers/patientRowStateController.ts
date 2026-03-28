@@ -1,4 +1,4 @@
-import type { PatientData } from '@/features/census/components/patient-row/patientRowDataContracts';
+import type { PatientRowStateContract } from '@/features/census/components/patient-row/patientRowDataContracts';
 
 export interface PatientRowDerivedState {
   isCunaMode: boolean;
@@ -9,7 +9,7 @@ export interface PatientRowDerivedState {
 }
 
 export const derivePatientRowState = (
-  data: PatientData | null | undefined
+  data: PatientRowStateContract | null | undefined
 ): PatientRowDerivedState => ({
   isCunaMode: data?.bedMode === 'Cuna',
   hasCompanion: data?.hasCompanionCrib || false,

@@ -2,7 +2,9 @@ export type {
   CesareanLabor,
   DeliveryRoute,
   GinecobstetriciaType,
-  PatientData,
+} from '@/features/census/contracts/censusObstetricContracts';
+export type { PatientData } from '@/features/census/components/patient-row/patientRowDataContracts';
+export type {
   PatientRowPatientContract,
   PatientRowPatientPatch,
 } from '@/features/census/components/patient-row/patientRowDataContracts';

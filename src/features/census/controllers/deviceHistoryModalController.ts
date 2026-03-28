@@ -1,4 +1,4 @@
-import { DeviceInstance } from '@/types/domain/clinical';
+import type { DeviceInstance } from '@/types/domain/devices';
 
 export const removeDeviceHistoryRecord = (
   history: DeviceInstance[],

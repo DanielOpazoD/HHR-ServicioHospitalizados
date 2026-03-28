@@ -3,16 +3,24 @@ import {
   usePatientRowCribInputHandlers,
   usePatientRowMainInputHandlers,
 } from '@/features/census/components/patient-row/usePatientRowInputHandlers';
-import type { PatientData } from '@/features/census/components/patient-row/patientRowDataContracts';
+import type {
+  PatientRowPatientDocumentType,
+  PatientRowPatientField,
+  PatientRowPatientPatch,
+} from '@/features/census/components/patient-row/patientRowDataContracts';
 import type { PatientFieldValue } from '@/types/valueTypes';
 
 interface UsePatientRowHandlersModelParams {
   bedId: string;
-  documentType?: PatientData['documentType'];
-  updatePatient: (bedId: string, field: keyof PatientData, value: PatientFieldValue) => void;
-  updatePatientMultiple: (bedId: string, fields: Partial<PatientData>) => void;
-  updateClinicalCrib: (bedId: string, field: keyof PatientData, value: PatientFieldValue) => void;
-  updateClinicalCribMultiple: (bedId: string, fields: Partial<PatientData>) => void;
+  documentType?: PatientRowPatientDocumentType;
+  updatePatient: (bedId: string, field: PatientRowPatientField, value: PatientFieldValue) => void;
+  updatePatientMultiple: (bedId: string, fields: PatientRowPatientPatch) => void;
+  updateClinicalCrib: (
+    bedId: string,
+    field: PatientRowPatientField,
+    value: PatientFieldValue
+  ) => void;
+  updateClinicalCribMultiple: (bedId: string, fields: PatientRowPatientPatch) => void;
 }
 
 export const usePatientRowHandlersModel = ({

@@ -1,6 +1,6 @@
 import type { jsPDF } from 'jspdf';
 import { BEDS } from '@/constants/beds';
-import { CudyrScore } from '@/types/domain/clinical';
+import type { CudyrScore } from '@/types/domain/cudyr';
 import type { HandoffPdfRecord } from '@/services/pdf/contracts/handoffPdfContracts';
 import { resolveNightShiftNurses } from '@/services/staff/dailyRecordStaffing';
 import { formatDateDDMMYYYY, formatTimeHHMM } from '@/utils/dateUtils';

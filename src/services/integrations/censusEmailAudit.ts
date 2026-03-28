@@ -1,9 +1,9 @@
 import { doc, getFirestore, setDoc } from 'firebase/firestore';
 
 import { getExportPasswordsPath } from '@/constants/firestorePaths';
-import { logger } from '@/services/utils/loggerService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
-const censusEmailAuditLogger = logger.child('CensusEmailAudit');
+const censusEmailAuditLogger = createScopedLogger('CensusEmailAudit');
 
 export const saveCensusEmailExportPassword = async (
   date: string,
