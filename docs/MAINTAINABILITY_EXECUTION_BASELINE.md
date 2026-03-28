@@ -23,16 +23,17 @@ Baseline operativo para ejecutar el plan de mejora técnica por bloques iterativ
 
 ## Backlog priorizado
 
-| Prioridad | Eje                      | Item                                                                             | Señal actual                                                                 | Criterio de cierre                                                                     |
-| --------- | ------------------------ | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `P0`      | `domain-contracts`       | Mantener `DailyRecord` y `patient` detrás de ports/facades                       | Checks de hotspot ya existen pero el fan-in sigue alto                       | Nuevos consumers solo entran por superficies curadas                                   |
-| `P0`      | `testing-governance`     | Formalizar `app-shell` como zona crítica                                         | Auth bootstrap y reminders ya existen; app shell faltaba como zona explícita | `check:critical-coverage` incluye `src/app-shell` con baseline estable                 |
-| `P1`      | `runtime-infrastructure` | Introducir seams inyectables en auth runtime                                     | Varias rutas de auth consumen `defaultAuthRuntime` directo                   | Helpers y servicios clave aceptan runtime explícito sin romper compatibilidad          |
-| `P1`      | `domain-contracts`       | Sacar `handoffPdf` del contrato monolítico de `DailyRecord`                      | El clúster PDF solo necesita una vista parcial del registro                  | `src/services/pdf` consume `HandoffPdfRecord` y el boundary evita regresiones          |
-| `P1`      | `domain-contracts`       | Sacar `census-email` y workbook maestro del contrato monolítico de `DailyRecord` | El pipeline de exportación usa un subconjunto estable del registro           | `census-email` y `exporters/excel` consumen `CensusExportRecord` con boundary blocking |
-| `P1`      | `app-shell-composition`  | Mantener shell inicial separado de lógica no esencial                            | El shell concentra wiring transversal                                        | Flujo visible preservado y efectos aislados en seams específicos                       |
-| `P1`      | `testing-governance`     | Mantener scorecards consistentes con nuevos owners y zonas                       | La matriz de release confidence aún no conocía `app-shell`                   | Reportes regenerados y zonas mapeadas sin huecos                                       |
-| `P2`      | `runtime-infrastructure` | Reducir `console.warn/error` fuera de sinks estructurados                        | Sigue habiendo uso legacy en UI y hooks                                      | Nuevas rutas pasan por `logger`/telemetría y la deuda legacy no crece                  |
+| Prioridad | Eje                      | Item                                                                               | Señal actual                                                                   | Criterio de cierre                                                                     |
+| --------- | ------------------------ | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| `P0`      | `domain-contracts`       | Mantener `DailyRecord` y `patient` detrás de ports/facades                         | Checks de hotspot ya existen pero el fan-in sigue alto                         | Nuevos consumers solo entran por superficies curadas                                   |
+| `P0`      | `testing-governance`     | Formalizar `app-shell` como zona crítica                                           | Auth bootstrap y reminders ya existen; app shell faltaba como zona explícita   | `check:critical-coverage` incluye `src/app-shell` con baseline estable                 |
+| `P1`      | `runtime-infrastructure` | Introducir seams inyectables en auth runtime                                       | Varias rutas de auth consumen `defaultAuthRuntime` directo                     | Helpers y servicios clave aceptan runtime explícito sin romper compatibilidad          |
+| `P1`      | `runtime-infrastructure` | Extender seams inyectables a adapters Firestore/Storage de servicios reutilizables | Algunos controllers y adapters base todavía componen runtime singleton directo | Factories/adapters aceptan runtime explícito y los consumers nuevos entran por esa vía |
+| `P1`      | `domain-contracts`       | Sacar `handoffPdf` del contrato monolítico de `DailyRecord`                        | El clúster PDF solo necesita una vista parcial del registro                    | `src/services/pdf` consume `HandoffPdfRecord` y el boundary evita regresiones          |
+| `P1`      | `domain-contracts`       | Sacar `census-email` y workbook maestro del contrato monolítico de `DailyRecord`   | El pipeline de exportación usa un subconjunto estable del registro             | `census-email` y `exporters/excel` consumen `CensusExportRecord` con boundary blocking |
+| `P1`      | `app-shell-composition`  | Mantener shell inicial separado de lógica no esencial                              | El shell concentra wiring transversal                                          | Flujo visible preservado y efectos aislados en seams específicos                       |
+| `P1`      | `testing-governance`     | Mantener scorecards consistentes con nuevos owners y zonas                         | La matriz de release confidence aún no conocía `app-shell`                     | Reportes regenerados y zonas mapeadas sin huecos                                       |
+| `P2`      | `runtime-infrastructure` | Reducir `console.warn/error` fuera de sinks estructurados                          | Sigue habiendo uso legacy en UI y hooks                                        | Nuevas rutas pasan por `logger`/telemetría y la deuda legacy no crece                  |
 
 ## Seams aprobados
 
@@ -47,6 +48,8 @@ Baseline operativo para ejecutar el plan de mejora técnica por bloques iterativ
 ### Runtime e infraestructura
 
 - Auth, Firestore y Storage deben aceptar runtimes o providers explícitos en seams de servicio.
+- `storage/firestore/firestoreServiceRuntime.ts` y `repositories/repositoryFirestoreRuntime.ts` deben exponer factories/adapters inyectables; el singleton queda solo como composición por defecto.
+- Los fetchers reutilizables de Storage, como `transferTemplateFetchController`, deben aceptar `storageRuntime` explícito cuando el caller necesite composición controlada o tests aislados.
 - La composición por defecto puede seguir existiendo, pero solo como fallback de compatibilidad.
 - El runtime singleton no debe volver a crecer como dependencia obligatoria de nuevas rutas.
 

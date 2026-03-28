@@ -1,5 +1,6 @@
 import { TransferPatientData, QuestionnaireResponse } from '@/types/transferDocuments';
 import { createWorkbook } from '@/services/exporters/excelUtils';
+import type { StorageRuntime } from '@/services/firebase-runtime/storageRuntime';
 import { fetchTransferTemplateBlob } from './transferTemplateFetchController';
 import { recordTransferTemplateFetchFailure } from './transferDocumentTelemetryController';
 import { formatCensusIsoDate } from '@/shared/census/censusPresentation';
@@ -221,8 +222,15 @@ const calculateAge = (birthDateStr: string): string => {
  * Downloads a template from Firebase Storage.
  */
 export const fetchTemplateFromStorage = async (templateName: string): Promise<Blob | null> => {
+  return fetchTemplateFromStorageWithRuntime(templateName);
+};
+
+export const fetchTemplateFromStorageWithRuntime = async (
+  templateName: string,
+  storageRuntime?: StorageRuntime
+): Promise<Blob | null> => {
   try {
-    return await fetchTransferTemplateBlob(templateName);
+    return await fetchTransferTemplateBlob(templateName, { storageRuntime });
   } catch (error) {
     recordTransferTemplateFetchFailure(templateName, error);
     return null;

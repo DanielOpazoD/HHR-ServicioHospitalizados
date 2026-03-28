@@ -17,7 +17,14 @@ import {
   emitAuthOperationalEvent,
   recordAuthOperationalError,
 } from '@/services/auth/authOperationalTelemetry';
-import { defaultAuthRuntime } from '@/services/firebase-runtime/authRuntime';
+import { type AuthRuntime, defaultAuthRuntime } from '@/services/firebase-runtime/authRuntime';
+
+interface AuthRuntimeOptions {
+  authRuntime?: AuthRuntime;
+}
+
+const resolveAuthRuntime = ({ authRuntime }: AuthRuntimeOptions = {}): AuthRuntime =>
+  authRuntime ?? defaultAuthRuntime;
 
 const waitForE2EPopupDelay = async (): Promise<void> => {
   const { consumeE2EPopupDelayMs } = await import('@/services/auth/authE2EPopupRuntime');
@@ -57,13 +64,14 @@ const withGoogleLoginLock = async <T>(runner: () => Promise<T>): Promise<T> => {
   }
 };
 
-export const signInWithGoogle = async (): Promise<AuthUser> =>
+export const signInWithGoogle = async (options?: AuthRuntimeOptions): Promise<AuthUser> =>
   withGoogleLoginLock(async () => {
+    const authRuntime = resolveAuthRuntime(options);
     try {
-      await defaultAuthRuntime.ready;
+      await authRuntime.ready;
       await waitForE2EPopupDelay();
 
-      const existingUser = await authorizeCurrentFirebaseUser();
+      const existingUser = await authorizeCurrentFirebaseUser({ authRuntime });
       if (existingUser) {
         return existingUser;
       }
@@ -73,8 +81,8 @@ export const signInWithGoogle = async (): Promise<AuthUser> =>
         return e2ePopupUser;
       }
 
-      const result = await signInWithPopup(defaultAuthRuntime.auth, googleProvider);
-      return await authorizeFirebaseUser(result.user);
+      const result = await signInWithPopup(authRuntime.auth, googleProvider);
+      return await authorizeFirebaseUser(result.user, { authRuntime });
     } catch (error: unknown) {
       const authError = error as { message?: string };
       if (authError.message?.includes('no autorizado')) {

@@ -47,6 +47,12 @@
       "closureSignal": "Seams clave de auth aceptan runtime explícito sin romper compatibilidad"
     },
     {
+      "id": "firestore-storage-runtime-adapters",
+      "priority": "P1",
+      "stream": "runtime-infrastructure",
+      "closureSignal": "Adapters base de Firestore/Storage aceptan runtime explícito y dejan el singleton como fallback"
+    },
+    {
       "id": "release-confidence-app-shell",
       "priority": "P1",
       "stream": "testing-governance",

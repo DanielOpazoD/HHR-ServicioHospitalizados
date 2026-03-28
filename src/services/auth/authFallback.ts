@@ -18,7 +18,14 @@ import {
   createAuthErrorSessionState,
   toResolvedAuthSessionState,
 } from '@/services/auth/authSessionState';
-import { defaultAuthRuntime } from '@/services/firebase-runtime/authRuntime';
+import { type AuthRuntime, defaultAuthRuntime } from '@/services/firebase-runtime/authRuntime';
+
+interface AuthRuntimeOptions {
+  authRuntime?: AuthRuntime;
+}
+
+const resolveAuthRuntime = ({ authRuntime }: AuthRuntimeOptions = {}): AuthRuntime =>
+  authRuntime ?? defaultAuthRuntime;
 
 const runE2ERedirectMode = async (mode: 'success' | 'error' | 'timeout'): Promise<void> => {
   if (mode === 'error') {
@@ -46,9 +53,11 @@ const runE2ERedirectMode = async (mode: 'success' | 'error' | 'timeout'): Promis
   }
 };
 
-export const hasActiveFirebaseSession = (): boolean => defaultAuthRuntime.getCurrentUser() !== null;
+export const hasActiveFirebaseSession = (options?: AuthRuntimeOptions): boolean =>
+  resolveAuthRuntime(options).getCurrentUser() !== null;
 
-export const signInWithGoogleRedirect = async (): Promise<void> => {
+export const signInWithGoogleRedirect = async (options?: AuthRuntimeOptions): Promise<void> => {
+  const authRuntime = resolveAuthRuntime(options);
   try {
     const e2eRedirectMode = readE2ERedirectMode();
     if (e2eRedirectMode) {
@@ -56,7 +65,7 @@ export const signInWithGoogleRedirect = async (): Promise<void> => {
       return;
     }
 
-    await defaultAuthRuntime.ready;
+    await authRuntime.ready;
     const redirectRuntimeSupport = getAuthRedirectRuntimeSupport();
     if (!redirectRuntimeSupport.canUseRedirectAuth) {
       throw createOperationalError({
@@ -72,7 +81,7 @@ export const signInWithGoogleRedirect = async (): Promise<void> => {
     }
 
     markAuthBootstrapPending('redirect');
-    await signInWithRedirect(defaultAuthRuntime.auth, googleProvider);
+    await signInWithRedirect(authRuntime.auth, googleProvider);
   } catch (error) {
     const operationalError = recordOperationalErrorTelemetry(
       'auth',
@@ -87,7 +96,7 @@ export const signInWithGoogleRedirect = async (): Promise<void> => {
       },
       {
         context: {
-          hasActiveFirebaseSession: hasActiveFirebaseSession(),
+          hasActiveFirebaseSession: hasActiveFirebaseSession({ authRuntime }),
         },
       }
     );
@@ -95,17 +104,20 @@ export const signInWithGoogleRedirect = async (): Promise<void> => {
   }
 };
 
-export const handleSignInRedirectResult = async (): Promise<AuthSessionState | null> => {
+export const handleSignInRedirectResult = async (
+  options?: AuthRuntimeOptions
+): Promise<AuthSessionState | null> => {
+  const authRuntime = resolveAuthRuntime(options);
   try {
-    await defaultAuthRuntime.ready;
+    await authRuntime.ready;
     const e2eRedirectUser = consumeE2ERedirectPendingUser();
     if (e2eRedirectUser) {
       return toResolvedAuthSessionState(e2eRedirectUser);
     }
 
-    const result = await getRedirectResult(defaultAuthRuntime.auth);
+    const result = await getRedirectResult(authRuntime.auth);
     if (!result) return null;
-    return toResolvedAuthSessionState(await authorizeFirebaseUser(result.user));
+    return toResolvedAuthSessionState(await authorizeFirebaseUser(result.user, { authRuntime }));
   } catch (error) {
     const operationalError = recordOperationalErrorTelemetry(
       'auth',

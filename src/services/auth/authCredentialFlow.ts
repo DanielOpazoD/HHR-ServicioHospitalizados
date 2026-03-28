@@ -7,7 +7,14 @@ import {
 import { AuthUser, UserRole } from '@/types/auth';
 import { resolveGeneralLoginAccessForEmail } from '@/services/auth/authPolicy';
 import { toAuthUser } from '@/services/auth/authShared';
-import { defaultAuthRuntime } from '@/services/firebase-runtime/authRuntime';
+import { type AuthRuntime, defaultAuthRuntime } from '@/services/firebase-runtime/authRuntime';
+
+interface AuthRuntimeOptions {
+  authRuntime?: AuthRuntime;
+}
+
+const resolveAuthRuntime = ({ authRuntime }: AuthRuntimeOptions = {}): AuthRuntime =>
+  authRuntime ?? defaultAuthRuntime;
 
 const EMAIL_SIGN_IN_ERRORS: Record<string, string> = {
   'auth/user-not-found': 'Usuario no encontrado',
@@ -33,14 +40,19 @@ const toCredentialErrorMessage = (
   return authError.code ? errorMap[authError.code] || fallbackMessage : fallbackMessage;
 };
 
-export const signIn = async (email: string, password: string): Promise<AuthUser> => {
+export const signIn = async (
+  email: string,
+  password: string,
+  options?: AuthRuntimeOptions
+): Promise<AuthUser> => {
+  const authRuntime = resolveAuthRuntime(options);
   try {
-    await defaultAuthRuntime.ready;
-    const result = await signInWithEmailAndPassword(defaultAuthRuntime.auth, email, password);
+    await authRuntime.ready;
+    const result = await signInWithEmailAndPassword(authRuntime.auth, email, password);
 
     const { allowed, role } = await resolveGeneralLoginAccessForEmail(result.user.email || '');
     if (!allowed) {
-      await firebaseSignOut(defaultAuthRuntime.auth);
+      await firebaseSignOut(authRuntime.auth);
       throw new Error(
         'Acceso no autorizado. Tu correo no tiene un rol vigente en Gestión de Roles.'
       );
@@ -59,10 +71,15 @@ export const signIn = async (email: string, password: string): Promise<AuthUser>
   }
 };
 
-export const createUser = async (email: string, password: string): Promise<AuthUser> => {
+export const createUser = async (
+  email: string,
+  password: string,
+  options?: AuthRuntimeOptions
+): Promise<AuthUser> => {
+  const authRuntime = resolveAuthRuntime(options);
   try {
-    await defaultAuthRuntime.ready;
-    const result = await createUserWithEmailAndPassword(defaultAuthRuntime.auth, email, password);
+    await authRuntime.ready;
+    const result = await createUserWithEmailAndPassword(authRuntime.auth, email, password);
     return toAuthUser(result.user);
   } catch (error: unknown) {
     throw new Error(toCredentialErrorMessage(error, 'Error al crear usuario', CREATE_USER_ERRORS));

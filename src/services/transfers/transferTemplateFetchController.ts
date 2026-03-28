@@ -1,8 +1,18 @@
 import { ref, getBlob } from 'firebase/storage';
 
-import { defaultStorageRuntime } from '@/services/firebase-runtime/storageRuntime';
+import {
+  type StorageRuntime,
+  defaultStorageRuntime,
+} from '@/services/firebase-runtime/storageRuntime';
 
 const TEMPLATE_FETCH_TIMEOUT_MS = 2500;
+
+interface StorageRuntimeOptions {
+  storageRuntime?: StorageRuntime;
+}
+
+const resolveStorageRuntime = ({ storageRuntime }: StorageRuntimeOptions = {}): StorageRuntime =>
+  storageRuntime ?? defaultStorageRuntime;
 
 const withTimeout = async <T>(promise: Promise<T>, timeoutMs: number, timeoutMessage: string) => {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -21,8 +31,13 @@ const withTimeout = async <T>(promise: Promise<T>, timeoutMs: number, timeoutMes
   }
 };
 
-export const fetchTransferTemplateBlob = async (templateName: string): Promise<Blob> => {
-  const storage = await defaultStorageRuntime.getStorage();
+export const fetchTransferTemplateBlob = async (
+  templateName: string,
+  options?: StorageRuntimeOptions
+): Promise<Blob> => {
+  const storageRuntime = resolveStorageRuntime(options);
+  await storageRuntime.ready;
+  const storage = await storageRuntime.getStorage();
   const templateRef = ref(storage, `templates/${templateName}`);
   return withTimeout(
     getBlob(templateRef),
