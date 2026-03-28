@@ -1,5 +1,4 @@
 import type { Workbook } from 'exceljs';
-import { DailyRecord } from '@/types/domain/dailyRecord';
 import { PatientData } from '@/services/contracts/patientServiceContracts';
 import { BEDS } from '@/constants/beds';
 import { formatDateDDMMYYYY } from '@/utils/dateUtils';
@@ -7,6 +6,7 @@ import { createWorkbook } from './excelUtils';
 import { getBedTypeForRecord } from '../../utils/bedTypeUtils';
 import { resolveDayShiftNurses } from '@/services/staff/dailyRecordStaffing';
 import { formatCensusDateTime } from '@/shared/census/censusPresentation';
+import type { DailyRecordRawExportState } from '@/types/domain/dailyRecordSlices';
 
 const getRawHeader = () => [
   'FECHA',
@@ -79,7 +79,7 @@ const generateRawRow = (
 /** Type for a single row of census data */
 type CensusRawRow = (string | boolean | number)[];
 
-export const extractRowsFromRecord = (record: DailyRecord): CensusRawRow[] => {
+export const extractRowsFromRecord = (record: DailyRecordRawExportState): CensusRawRow[] => {
   const rows: CensusRawRow[] = [];
   const nurses = resolveDayShiftNurses(record);
   const date = record.date;
@@ -119,7 +119,9 @@ export const extractRowsFromRecord = (record: DailyRecord): CensusRawRow[] => {
   return rows;
 };
 
-export const buildCensusDailyRawWorkbook = async (record: DailyRecord): Promise<Workbook> => {
+export const buildCensusDailyRawWorkbook = async (
+  record: DailyRecordRawExportState
+): Promise<Workbook> => {
   const workbook = await createWorkbook();
   const sheet = workbook.addWorksheet('Censo Diario');
 
@@ -135,7 +137,7 @@ export const buildCensusDailyRawWorkbook = async (record: DailyRecord): Promise<
   return workbook;
 };
 
-export const buildCensusDailyRawBuffer = async (record: DailyRecord) => {
+export const buildCensusDailyRawBuffer = async (record: DailyRecordRawExportState) => {
   const workbook = await buildCensusDailyRawWorkbook(record);
   return workbook.xlsx.writeBuffer();
 };

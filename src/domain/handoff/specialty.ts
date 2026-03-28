@@ -1,5 +1,5 @@
 import type { AuthUser } from '@/types/auth';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
+import type { DailyRecordMedicalHandoffSummaryState } from '@/types/domain/dailyRecordSlices';
 import type {
   MedicalSpecialty,
   MedicalSpecialtyHandoffNote,
@@ -36,7 +36,7 @@ export const getMedicalSpecialtyLabel = (specialty: MedicalSpecialty): string =>
   MEDICAL_SPECIALTY_LABELS[specialty];
 
 export const getMedicalSpecialtyNote = (
-  record: Pick<DailyRecord, 'medicalHandoffBySpecialty'>,
+  record: Pick<DailyRecordMedicalHandoffSummaryState, 'medicalHandoffBySpecialty'>,
   specialty: MedicalSpecialty
 ): MedicalSpecialtyHandoffNote | undefined => record.medicalHandoffBySpecialty?.[specialty];
 
@@ -87,7 +87,7 @@ const buildSpecialtySummaryBlock = (
 };
 
 export const buildMedicalHandoffSummary = (
-  record: Pick<DailyRecord, 'date' | 'medicalHandoffNovedades' | 'medicalHandoffBySpecialty'>
+  record: DailyRecordMedicalHandoffSummaryState
 ): string => {
   const specialtyBlocks = MEDICAL_SPECIALTY_ORDER.map(specialty => {
     const note = record.medicalHandoffBySpecialty?.[specialty];

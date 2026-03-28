@@ -1,26 +1,6 @@
-import type { DailyRecord } from '@/types/domain/dailyRecord';
+import type { DailyRecordHandoffPdfState } from '@/types/domain/dailyRecordSlices';
 
-export type HandoffPdfRecord = Pick<
-  DailyRecord,
-  | 'date'
-  | 'beds'
-  | 'discharges'
-  | 'transfers'
-  | 'cma'
-  | 'handoffDayChecklist'
-  | 'handoffNightChecklist'
-  | 'handoffNovedadesDayShift'
-  | 'handoffNovedadesNightShift'
-  | 'cudyrUpdatedAt'
-  | 'cudyrLockedAt'
-  | 'nurses'
-  | 'nurseName'
-  | 'nursesDayShift'
-  | 'nursesNightShift'
-  | 'tensDayShift'
-  | 'tensNightShift'
-  | 'handoffNightReceives'
->;
+export type HandoffPdfRecord = DailyRecordHandoffPdfState;
 
 export type HandoffPdfStaffingRecord = Pick<
   HandoffPdfRecord,

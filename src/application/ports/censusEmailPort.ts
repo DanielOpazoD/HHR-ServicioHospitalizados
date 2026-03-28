@@ -1,5 +1,5 @@
 import { triggerCensusEmail } from '@/services/integrations/censusEmailService';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
+import type { CensusExportRecord } from '@/services/contracts/censusExportServiceContracts';
 import type { CensusWorkbookSheetDescriptor } from '@/services/exporters/censusMasterWorkbook';
 import {
   createApplicationFailed,
@@ -9,7 +9,7 @@ import {
 
 export interface CensusEmailSendPayload {
   date: string;
-  records: DailyRecord[];
+  records: CensusExportRecord[];
   recipients?: string[];
   nursesSignature?: string;
   body?: string;

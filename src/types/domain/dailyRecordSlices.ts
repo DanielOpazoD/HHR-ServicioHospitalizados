@@ -43,6 +43,11 @@ export type DailyRecordMedicalMessagingState = Pick<
   'date' | 'beds' | 'medicalHandoffDoctor'
 >;
 
+export type DailyRecordMedicalHandoffSummaryState = Pick<
+  DailyRecord,
+  'date' | 'medicalHandoffNovedades' | 'medicalHandoffBySpecialty'
+>;
+
 export type DailyRecordCmaState = Pick<DailyRecord, 'cma'>;
 
 export type DailyRecordCudyrState = Pick<DailyRecord, 'date' | 'beds' | 'activeExtraBeds'>;
@@ -56,6 +61,41 @@ export type DailyRecordCsvExportState = Pick<
   | 'nurseName'
   | 'nursesDayShift'
   | 'nursesNightShift'
+>;
+
+export type DailyRecordRawExportState = Pick<
+  DailyRecord,
+  | 'date'
+  | 'beds'
+  | 'bedTypeOverrides'
+  | 'activeExtraBeds'
+  | 'lastUpdated'
+  | 'nurses'
+  | 'nurseName'
+  | 'nursesDayShift'
+  | 'nursesNightShift'
+>;
+
+export type DailyRecordHandoffPdfState = Pick<
+  DailyRecord,
+  | 'date'
+  | 'beds'
+  | 'discharges'
+  | 'transfers'
+  | 'cma'
+  | 'handoffDayChecklist'
+  | 'handoffNightChecklist'
+  | 'handoffNovedadesDayShift'
+  | 'handoffNovedadesNightShift'
+  | 'cudyrUpdatedAt'
+  | 'cudyrLockedAt'
+  | 'nurses'
+  | 'nurseName'
+  | 'nursesDayShift'
+  | 'nursesNightShift'
+  | 'tensDayShift'
+  | 'tensNightShift'
+  | 'handoffNightReceives'
 >;
 
 export type DailyRecordIntegrityState = Pick<
