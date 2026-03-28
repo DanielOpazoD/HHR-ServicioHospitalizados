@@ -11,12 +11,10 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { Bookmark, BookmarkInput } from '@/types/bookmarks';
-import { createScopedLogger } from '@/services/utils/loggerScope';
+import { bookmarkLogger } from '@/services/bookmarks/bookmarkLoggers';
 import { COLLECTIONS, HOSPITAL_COLLECTIONS, getActiveHospitalId } from '@/constants/firestorePaths';
 import { defaultFirestoreServiceRuntime } from '@/services/storage/firestore/firestoreServiceRuntime';
 import type { FirestoreServiceRuntimePort } from '@/services/storage/firestore/ports/firestoreServiceRuntimePort';
-
-const bookmarkLogger = createScopedLogger('BookmarkService');
 
 export interface BookmarkBarPreferences {
   alignment: 'left' | 'center' | 'right' | 'custom';

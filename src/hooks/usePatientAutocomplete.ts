@@ -2,9 +2,7 @@ import { useState, useEffect } from 'react';
 import type { MasterPatient } from '@/types/domain/patientMaster';
 import { PatientMasterRepository } from '@/services/repositories/PatientMasterRepository';
 import { isValidRut, formatRut } from '@/utils/rutUtils';
-import { createScopedLogger } from '@/services/utils/loggerScope';
-
-const patientAutocompleteLogger = createScopedLogger('usePatientAutocomplete');
+import { patientAutocompleteLogger } from '@/hooks/hookLoggers';
 
 interface UsePatientAutocompleteResult {
   suggestion: MasterPatient | null;

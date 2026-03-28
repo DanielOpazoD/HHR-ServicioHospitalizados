@@ -9,11 +9,9 @@ import {
   resolveTransferOperationErrorKind,
   type TransferOperationErrorKind,
 } from '@/services/transfers/transferErrorPolicy';
-import { createScopedLogger } from '@/services/utils/loggerScope';
+import { transferMutationsLogger } from '@/services/transfers/transferLoggers';
 import { defaultFirestoreServiceRuntime } from '@/services/storage/firestore/firestoreServiceRuntime';
 import type { FirestoreServiceRuntimePort } from '@/services/storage/firestore/ports/firestoreServiceRuntimePort';
-
-const transferMutationsLogger = createScopedLogger('TransferMutationsService');
 
 export type TransferMutationResult<T = null> =
   | { status: 'success'; data: T }

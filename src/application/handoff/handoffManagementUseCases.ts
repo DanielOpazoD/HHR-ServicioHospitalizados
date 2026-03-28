@@ -13,7 +13,7 @@ import type {
   DailyRecord,
   MedicalHandoffActor,
   MedicalSpecialty,
-} from '@/application/shared/dailyRecordContracts';
+} from '@/domain/handoff/recordContracts';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 import {
   buildMedicalNoChangesRecord,

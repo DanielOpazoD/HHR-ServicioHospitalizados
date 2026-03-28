@@ -6,7 +6,7 @@
 
 import { expect, Page } from '@playwright/test';
 
-const E2E_DEFAULT_DATE = process.env.E2E_FIXED_DATE ?? '2026-01-01';
+export const E2E_DEFAULT_DATE = process.env.E2E_FIXED_DATE ?? '2026-01-01';
 const RECORD_LAST_UPDATED = `${E2E_DEFAULT_DATE}T00:00:00.000Z`;
 
 // Mock user data for different roles
@@ -29,6 +29,125 @@ export const MOCK_USERS = {
     displayName: 'E2E Test Viewer',
     role: 'doctor_urgency',
   },
+};
+
+type E2ERole = keyof typeof MOCK_USERS;
+
+interface BootstrapSeededRecordOptions {
+  role?: E2ERole;
+  date?: string;
+  record: Record<string, unknown>;
+  useRuntimeOverride?: boolean;
+}
+
+const BASE_BED_IDS = [
+  'R1',
+  'R2',
+  'R3',
+  'R4',
+  'NEO1',
+  'NEO2',
+  'H1C1',
+  'H1C2',
+  'H2C1',
+  'H2C2',
+  'H3C1',
+  'H3C2',
+  'H4C1',
+  'H4C2',
+  'H5C1',
+  'H5C2',
+  'H6C1',
+  'H6C2',
+  'E1',
+  'E2',
+  'E3',
+  'E4',
+  'E5',
+] as const;
+
+const createEmptyBed = (bedId: string) => ({
+  id: bedId,
+  bedId,
+  patientName: '',
+  rut: '',
+  isBlocked: false,
+  bedMode: 'Adulto',
+  hasCompanionCrib: false,
+  devices: [],
+  status: '',
+  pathology: '',
+  specialty: '',
+  age: '',
+  admissionDate: E2E_DEFAULT_DATE,
+  hasWristband: false,
+  surgicalComplication: false,
+  isUPC: false,
+});
+
+export const buildCanonicalE2ERecord = (
+  date: string,
+  overrides: Record<string, unknown> = {}
+): Record<string, unknown> => {
+  const beds = Object.fromEntries(BASE_BED_IDS.map(id => [id, createEmptyBed(id)]));
+  return {
+    date,
+    beds,
+    discharges: [],
+    transfers: [],
+    cma: [],
+    lastUpdated: `${date}T12:00:00.000Z`,
+    nurses: ['Dr. Sender', 'Enf. A'],
+    nursesDayShift: ['Dr. Sender', 'Enf. A'],
+    nursesNightShift: ['Enf. Night', 'Enf. Cover'],
+    tensDayShift: ['', '', ''],
+    tensNightShift: ['', '', ''],
+    handoffNightReceives: ['Enf. Night', 'Enf. Cover'],
+    activeExtraBeds: [],
+    schemaVersion: 1,
+    ...overrides,
+  };
+};
+
+export const buildLegacyE2ERecord = (
+  date: string,
+  overrides: Record<string, unknown> = {}
+): Record<string, unknown> => {
+  const canonical = buildCanonicalE2ERecord(date);
+  const beds = {
+    ...(canonical.beds as Record<string, Record<string, unknown>>),
+    R1: {
+      ...(canonical.beds as Record<string, Record<string, unknown>>).R1,
+      patientName: 'LEGACY PATIENT',
+      rut: '12345678-5',
+      pathology: 'LEGACY DX',
+      status: 'Estable',
+      age: '45',
+      admissionDate: date,
+    },
+    E1: {
+      ...(canonical.beds as Record<string, Record<string, unknown>>).E1,
+      patientName: 'EXTRA BED LEGACY',
+      rut: '11111111-1',
+      pathology: 'EXTRA BED DX',
+      status: 'De cuidado',
+      age: '53',
+      admissionDate: date,
+      location: 'Extra',
+    },
+  };
+
+  return {
+    date,
+    beds,
+    discharges: [],
+    transfers: [],
+    cma: [],
+    lastUpdated: `${date}T01:00:00.000Z`,
+    nurses: ['Legacy Nurse'],
+    activeExtraBeds: ['E1'],
+    ...overrides,
+  };
 };
 
 /**
@@ -214,6 +333,153 @@ export async function injectMockData(
     },
     { dateStr: targetDate, _populate: populateWithPatient }
   );
+}
+
+export async function bootstrapSeededRecord(
+  page: Page,
+  {
+    role = 'admin',
+    date = E2E_DEFAULT_DATE,
+    record,
+    useRuntimeOverride = true,
+  }: BootstrapSeededRecordOptions
+) {
+  const mockUser = MOCK_USERS[role];
+
+  await page.addInitScript(
+    ({
+      user,
+      dateStr,
+      seededRecord,
+      runtimeOverride,
+    }: {
+      user: typeof mockUser;
+      dateStr: string;
+      seededRecord: Record<string, unknown>;
+      runtimeOverride: boolean;
+    }) => {
+      const STORAGE_KEY = 'hanga_roa_hospital_data';
+      localStorage.setItem('hhr_e2e_bootstrap_user', JSON.stringify(user));
+      localStorage.setItem('hhr_db_initialized', 'true');
+
+      const records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      records[dateStr] = seededRecord;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+
+      const runtimeWindow = window as Window & {
+        __HHR_E2E_OVERRIDE__?: Record<string, unknown>;
+      };
+
+      if (runtimeOverride) {
+        const latestRecords = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+        runtimeWindow.__HHR_E2E_OVERRIDE__ = {
+          ...(runtimeWindow.__HHR_E2E_OVERRIDE__ || {}),
+          [dateStr]: latestRecords[dateStr],
+        };
+      } else {
+        // Keep the E2E runtime flag enabled for auth/bootstrap while forcing reads through storage.
+        runtimeWindow.__HHR_E2E_OVERRIDE__ = {};
+      }
+    },
+    {
+      user: mockUser,
+      dateStr: date,
+      seededRecord: record,
+      runtimeOverride: useRuntimeOverride,
+    }
+  );
+}
+
+export async function ensureAuthenticated(page: Page) {
+  const loginButton = page.getByRole('button', { name: /Ingresar con Google/i });
+  const loginButtonById = page.getByTestId('login-google-button');
+
+  if (
+    !(await loginButtonById.isVisible().catch(() => false)) &&
+    !(await loginButton.isVisible().catch(() => false))
+  ) {
+    return;
+  }
+
+  await page.evaluate(() => {
+    localStorage.removeItem('hhr_google_login_lock_v1');
+    localStorage.setItem('hhr_e2e_force_popup', 'true');
+
+    const bootstrapUserRaw = localStorage.getItem('hhr_e2e_bootstrap_user');
+    if (bootstrapUserRaw) {
+      localStorage.setItem('hhr_e2e_popup_success_user', bootstrapUserRaw);
+    }
+  });
+
+  await loginButtonById.click();
+  await expect
+    .poll(
+      async () =>
+        page.evaluate(() => ({
+          popupUserPending: window.localStorage.getItem('hhr_e2e_popup_success_user'),
+          loginButtonVisible: Boolean(
+            document.querySelector('[data-testid="login-google-button"]')
+          ),
+        })),
+      { timeout: 15000 }
+    )
+    .toMatchObject({
+      popupUserPending: null,
+    });
+}
+
+export async function installClipboardCapture(page: Page) {
+  await page.addInitScript(() => {
+    const runtimeWindow = window as Window & {
+      __HHR_LAST_CLIPBOARD__?: string;
+    };
+
+    const clipboard = navigator.clipboard || ({} as Clipboard);
+    const nextClipboard = {
+      ...clipboard,
+      writeText: async (value: string) => {
+        runtimeWindow.__HHR_LAST_CLIPBOARD__ = value;
+      },
+      readText: async () => runtimeWindow.__HHR_LAST_CLIPBOARD__ || '',
+    };
+
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: nextClipboard,
+    });
+  });
+}
+
+export async function getCapturedClipboardText(page: Page): Promise<string> {
+  return page.evaluate(() => {
+    const runtimeWindow = window as Window & {
+      __HHR_LAST_CLIPBOARD__?: string;
+    };
+    return runtimeWindow.__HHR_LAST_CLIPBOARD__ || '';
+  });
+}
+
+export async function readIndexedDbDailyRecord(page: Page, date: string) {
+  return page.evaluate(async targetDate => {
+    const request = indexedDB.open('HangaRoaDB');
+
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+    });
+
+    const transaction = db.transaction('dailyRecords', 'readonly');
+    const store = transaction.objectStore('dailyRecords');
+    const getRequest = store.get(targetDate);
+
+    const record = await new Promise<unknown>((resolve, reject) => {
+      getRequest.onerror = () => reject(getRequest.error);
+      getRequest.onsuccess = () => resolve(getRequest.result ?? null);
+    });
+
+    db.close();
+    return record;
+  }, date);
 }
 
 /**

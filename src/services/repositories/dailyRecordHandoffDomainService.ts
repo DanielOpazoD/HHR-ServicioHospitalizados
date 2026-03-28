@@ -1,10 +1,9 @@
-import type { DailyRecord } from '@/types/domain/dailyRecord';
+import type { HandoffDailyRecordContract } from '@/domain/handoff/recordContracts';
 import type {
   MedicalHandoffAudit,
   MedicalHandoffEntry,
   PatientData,
 } from '@/services/contracts/patientServiceContracts';
-import { createDailyRecordAggregate } from '@/services/repositories/dailyRecordAggregate';
 
 export const inheritPatientHandoffNotes = (
   targetPatient: PatientData,
@@ -73,11 +72,10 @@ export const inheritPatientMedicalHandoff = (
   );
 };
 
-export const resolveInitialDayHandoff = (prevRecord: DailyRecord | null): string => {
+export const resolveInitialDayHandoff = (prevRecord: HandoffDailyRecordContract | null): string => {
   if (!prevRecord) {
     return '';
   }
 
-  const previousAggregate = createDailyRecordAggregate(prevRecord);
-  return previousAggregate.handoff.nightNovedades || previousAggregate.handoff.dayNovedades;
+  return prevRecord.handoffNovedadesNightShift || prevRecord.handoffNovedadesDayShift || '';
 };

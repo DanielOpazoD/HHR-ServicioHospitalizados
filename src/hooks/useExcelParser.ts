@@ -9,12 +9,11 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { ParsedCell } from '@/services/ExcelParsingService';
-import { createScopedLogger } from '@/services/utils/loggerScope';
+import { excelParserLogger } from '@/hooks/hookLoggers';
 export type { ParsedCell };
 
 const loadExcelParsingService = async () =>
   import('@/services/ExcelParsingService').then(module => module.ExcelParsingService);
-const excelParserLogger = createScopedLogger('useExcelParser');
 
 export interface UseExcelParserReturn {
   // Data

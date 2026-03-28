@@ -2,9 +2,7 @@ import { useState, useEffect } from 'react';
 import type { DailyRecord } from '@/hooks/contracts/dailyRecordHookContracts';
 import { PatientData } from '@/hooks/contracts/patientHookContracts';
 import { fetchRecordsForMonth } from '@/services/records/recordQueryService';
-import { createScopedLogger } from '@/services/utils/loggerScope';
-
-const existingDaysLogger = createScopedLogger('useExistingDays');
+import { existingDaysLogger } from '@/hooks/hookLoggers';
 
 /**
  * Hook to calculate which days in the selected month have patient data

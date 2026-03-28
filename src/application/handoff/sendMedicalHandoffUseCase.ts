@@ -1,6 +1,5 @@
 import { BEDS } from '@/constants/beds';
-import type { DailyRecord } from '@/application/shared/dailyRecordContracts';
-import type { DailyRecordPatch } from '@/application/shared/dailyRecordContracts';
+import type { DailyRecord, DailyRecordPatch } from '@/domain/handoff/recordContracts';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 import {
   formatHandoffMessage,

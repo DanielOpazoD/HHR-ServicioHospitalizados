@@ -27,10 +27,8 @@ import type {
   DailyRecordBedActions,
   DailyRecordMovementActions,
 } from '@/hooks/useDailyRecordTypes';
-import { createScopedLogger } from '@/services/utils/loggerScope';
+import { transferManagementLogger } from '@/hooks/hookLoggers';
 import type { TransferMutationResult } from '@/services/transfers/transferService';
-
-const transferManagementLogger = createScopedLogger('useTransferManagementActions');
 
 interface UseTransferManagementActionsParams {
   userEmail: string | null;

@@ -1,6 +1,6 @@
-import type { DailyRecord } from '@/types/domain/dailyRecord';
-import { createDailyRecordAggregate } from '@/services/repositories/dailyRecordAggregate';
+import type { DailyRecordStaffingState } from '@/types/domain/dailyRecordSlices';
 import { resolveDayShiftNurses } from '@/services/staff/dailyRecordStaffing';
+import { resolveNightShiftNurses } from '@/services/staff/dailyRecordStaffing';
 
 export interface InheritedDailyRecordStaffing {
   nursesDay: string[];
@@ -10,7 +10,7 @@ export interface InheritedDailyRecordStaffing {
 }
 
 export const resolveInheritedDailyRecordStaffing = (
-  prevRecord: DailyRecord | null
+  prevRecord: DailyRecordStaffingState | null
 ): InheritedDailyRecordStaffing => {
   if (!prevRecord) {
     return {
@@ -21,19 +21,21 @@ export const resolveInheritedDailyRecordStaffing = (
     };
   }
 
-  const aggregate = createDailyRecordAggregate(prevRecord);
   const compatibleDayShiftNurses = resolveDayShiftNurses(prevRecord);
-  const isNightShiftEmpty = aggregate.staffing.nursesNight.every(n => !n);
+  const nightShiftNurses = resolveNightShiftNurses(prevRecord);
+  const isNightShiftEmpty = nightShiftNurses.every(n => !n);
   const prevNurses = !isNightShiftEmpty
-    ? aggregate.staffing.nursesNight
+    ? nightShiftNurses
     : compatibleDayShiftNurses.length > 0
       ? compatibleDayShiftNurses
       : ['', ''];
   const nursesDay = [...(prevNurses || ['', ''])];
   while (nursesDay.length < 2) nursesDay.push('');
 
-  const isNightTensEmpty = aggregate.staffing.tensNight.every(t => !t);
-  const rawTens = !isNightTensEmpty ? aggregate.staffing.tensNight : aggregate.staffing.tensDay;
+  const nightTens = prevRecord.tensNightShift || [];
+  const dayTens = prevRecord.tensDayShift || [];
+  const isNightTensEmpty = nightTens.every(t => !t);
+  const rawTens = !isNightTensEmpty ? nightTens : dayTens;
   const tensDay = [...rawTens];
   while (tensDay.length < 3) tensDay.push('');
 
