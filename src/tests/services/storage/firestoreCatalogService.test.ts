@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { waitFor } from '@testing-library/react';
 
+const { mockGetDb, runtimeReady } = vi.hoisted(() => ({
+  mockGetDb: vi.fn(() => ({ runtime: 'db' })),
+  runtimeReady: Promise.resolve(),
+}));
+
 vi.mock('firebase/firestore', async () => {
   const actual = await vi.importActual('firebase/firestore');
   return {
@@ -12,8 +17,11 @@ vi.mock('firebase/firestore', async () => {
   };
 });
 
-vi.mock('@/firebaseConfig', () => ({
-  db: {},
+vi.mock('@/services/storage/firestore/firestoreServiceRuntime', () => ({
+  defaultFirestoreServiceRuntime: {
+    getDb: mockGetDb,
+    ready: runtimeReady,
+  },
 }));
 
 vi.mock('@/constants/firestorePaths', () => ({
@@ -83,6 +91,8 @@ describe('firestoreCatalogService', () => {
 
     vi.mocked(getDoc).mockRejectedValueOnce(new Error('offline'));
     await expect(getNurseCatalogFromFirestore()).resolves.toEqual([]);
+
+    expect(mockGetDb).toHaveBeenCalled();
   });
 
   it('saves normalized nurse, tens and professional catalogs', async () => {
@@ -155,5 +165,7 @@ describe('firestoreCatalogService', () => {
     await waitFor(() => {
       expect(professionalsCallback).toHaveBeenCalledWith([{ name: 'Dr. B' }]);
     });
+
+    expect(mockGetDb).toHaveBeenCalled();
   });
 });
