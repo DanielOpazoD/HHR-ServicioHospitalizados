@@ -22,7 +22,7 @@ import {
   resolveTransferMutationErrorMessage,
   getTransferStatusAdvanceError,
 } from '@/hooks/controllers/transferManagementFeedbackController';
-import type { DailyRecord } from '@/hooks/useDailyRecordTypes';
+import type { DailyRecord } from '@/hooks/contracts/dailyRecordHookContracts';
 import type {
   DailyRecordBedActions,
   DailyRecordMovementActions,

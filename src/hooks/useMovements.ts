@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { DailyRecord } from '@/hooks/useDailyRecordTypes';
+import type { DailyRecord } from '@/hooks/contracts/dailyRecordHookContracts';
 import { usePatientDischarges } from '@/hooks/usePatientDischarges';
 import { usePatientTransfers } from '@/hooks/usePatientTransfers';
 import type { DischargeTarget, PatientMovementActions } from '@/types/movements';

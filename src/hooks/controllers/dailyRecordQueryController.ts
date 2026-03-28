@@ -1,7 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/config/queryClient';
-import type { DailyRecord } from '@/hooks/useDailyRecordTypes';
-import type { DailyRecordPatch } from '@/hooks/useDailyRecordTypes';
+import type { DailyRecord, DailyRecordPatch } from '@/hooks/contracts/dailyRecordHookContracts';
 import { applyPatches } from '@/utils/patchUtils';
 import {
   createDailyRecordQueryResult,

@@ -1,5 +1,4 @@
-import type { DailyRecord } from '@/hooks/useDailyRecordTypes';
-import type { DailyRecordPatch } from '@/hooks/useDailyRecordTypes';
+import type { DailyRecord, DailyRecordPatch } from '@/hooks/contracts/dailyRecordHookContracts';
 import {
   buildActiveExtraBeds,
   buildBlockedReasonPatch,

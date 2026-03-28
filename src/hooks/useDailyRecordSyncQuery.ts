@@ -14,8 +14,8 @@ import {
 } from './useDailyRecordQuery';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../config/queryClient';
-import { SyncStatus, UseDailyRecordSyncResult, DailyRecordPatch } from './useDailyRecordTypes';
-import type { DailyRecord } from '@/hooks/useDailyRecordTypes';
+import { SyncStatus, UseDailyRecordSyncResult } from './useDailyRecordTypes';
+import type { DailyRecord, DailyRecordPatch } from '@/hooks/contracts/dailyRecordHookContracts';
 import { useRepositories } from '@/services/RepositoryContext';
 import { useNotification } from '@/context/UIContext';
 import { useVersion } from '@/context/VersionContext';

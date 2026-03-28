@@ -5,10 +5,9 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../config/queryClient';
-import type { DailyRecord } from '@/hooks/useDailyRecordTypes';
+import type { DailyRecord, DailyRecordPatch } from '@/hooks/contracts/dailyRecordHookContracts';
 import { useRepositories } from '@/services/RepositoryContext';
 import { useEffect } from 'react';
-import { DailyRecordPatch } from './useDailyRecordTypes';
 import {
   applyOptimisticDailyRecordPatch,
   createDailyRecordQueryFn,

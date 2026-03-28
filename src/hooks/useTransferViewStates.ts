@@ -6,7 +6,7 @@ import {
   GeneratedDocument,
 } from '@/types/transferDocuments';
 import { getHospitalConfigByDestinationName } from '@/constants/hospitalConfigs';
-import type { DailyRecord } from '@/hooks/useDailyRecordTypes';
+import type { DailyRecord } from '@/hooks/contracts/dailyRecordHookContracts';
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
 import {
   prepareTransferDocumentPackage,

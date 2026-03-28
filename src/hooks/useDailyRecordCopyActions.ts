@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import type { DailyRecord } from '@/hooks/useDailyRecordTypes';
+import type { DailyRecord } from '@/hooks/contracts/dailyRecordHookContracts';
 import { resolveCopyPatientRequest } from '@/hooks/controllers/dailyRecordController';
 import { hasCriticalLegacyRepairSignal } from '@/hooks/controllers/legacyRepairWarningController';
 import { buildCopyPatientNotifications } from '@/hooks/controllers/persistenceFeedbackController';

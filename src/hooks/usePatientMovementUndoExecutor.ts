@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import type { DailyRecord } from '@/hooks/useDailyRecordTypes';
+import type { DailyRecord } from '@/hooks/contracts/dailyRecordHookContracts';
 import { PatientData } from '@/hooks/contracts/patientHookContracts';
 import { resolveUndoPatientMovement } from '@/hooks/controllers/patientMovementUndoController';
 import { UndoMovementKind } from '@/hooks/controllers/patientMovementUndoErrorPresentation';

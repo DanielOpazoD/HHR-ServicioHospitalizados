@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import type { DailyRecord } from '@/hooks/useDailyRecordTypes';
+import type { DailyRecord } from '@/hooks/contracts/dailyRecordHookContracts';
 import {
   MovementCreationError,
   MovementCreationErrorCode,

@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { DailyRecordSchema } from '@/schemas/zodSchemas';
 import { PatientData } from '@/hooks/contracts/patientHookContracts';
-import type { DailyRecord } from '@/hooks/useDailyRecordTypes';
+import type { DailyRecord } from '@/hooks/contracts/dailyRecordHookContracts';
 import {
   validateMovePatient,
   validatePatientDischarge,

@@ -1,5 +1,5 @@
 import { useMemo, useCallback, useRef, useEffect } from 'react';
-import type { DailyRecord } from '@/hooks/useDailyRecordTypes';
+import type { DailyRecord } from '@/hooks/contracts/dailyRecordHookContracts';
 import { CMAData } from '@/types/domain/movements';
 import { capitalizeWords } from '@/utils/stringUtils';
 import { formatRut, isValidRut, isPassportFormat } from '@/utils/rutUtils';

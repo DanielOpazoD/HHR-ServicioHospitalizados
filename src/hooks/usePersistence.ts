@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useNotification } from '@/context/UIContext';
 import { useRepositories } from '@/services/RepositoryContext';
-import type { DailyRecord } from '@/hooks/useDailyRecordTypes';
+import type { DailyRecord } from '@/hooks/contracts/dailyRecordHookContracts';
 import { getUserFriendlyErrorMessage } from '@/services/utils/errorService';
 import { hasCriticalLegacyRepairSignal } from '@/hooks/controllers/legacyRepairWarningController';
 import {

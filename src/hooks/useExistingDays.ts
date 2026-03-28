@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { DailyRecord } from '@/hooks/useDailyRecordTypes';
+import type { DailyRecord } from '@/hooks/contracts/dailyRecordHookContracts';
 import { PatientData } from '@/hooks/contracts/patientHookContracts';
 import { fetchRecordsForMonth } from '@/services/records/recordQueryService';
 import { logger } from '@/services/utils/loggerService';

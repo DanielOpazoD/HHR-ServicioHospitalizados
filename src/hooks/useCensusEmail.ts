@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useConfirmDialog } from '@/context/UIContext';
-import type { DailyRecord } from '@/hooks/useDailyRecordTypes';
+import type { DailyRecord } from '@/hooks/contracts/dailyRecordHookContracts';
 import { defaultCensusEmailBrowserRuntime } from '@/hooks/controllers/censusEmailBrowserRuntimeController';
 import type { GlobalEmailRecipientList } from '@/services/email/emailRecipientListService';
 import {

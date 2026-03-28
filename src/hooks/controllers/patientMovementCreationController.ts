@@ -1,5 +1,5 @@
 import { BedDefinition } from '@/types/domain/base';
-import type { DailyRecord } from '@/hooks/useDailyRecordTypes';
+import type { DailyRecord } from '@/hooks/contracts/dailyRecordHookContracts';
 import { DischargeData, DischargeType, TransferData } from '@/types/domain/movements';
 import { PatientData } from '@/hooks/contracts/patientHookContracts';
 import type { DischargeAddCommandPayload, TransferCommandPayload } from '@/types/movements';

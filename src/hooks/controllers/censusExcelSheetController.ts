@@ -1,4 +1,4 @@
-import type { DailyRecord } from '@/hooks/useDailyRecordTypes';
+import type { DailyRecord } from '@/hooks/contracts/dailyRecordHookContracts';
 import type { CensusWorkbookSheetDescriptor } from '@/services/exporters/censusMasterWorkbook';
 
 interface BuildCensusSheetDescriptorsParams {

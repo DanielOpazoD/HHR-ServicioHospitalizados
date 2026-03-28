@@ -1,6 +1,6 @@
 import { useCallback, type Dispatch, type SetStateAction } from 'react';
 import type { ConfirmOptions } from '@/context/uiContracts';
-import type { DailyRecord } from '@/hooks/useDailyRecordTypes';
+import type { DailyRecord } from '@/hooks/contracts/dailyRecordHookContracts';
 import {
   buildSendCensusConfirmationMessage,
   executeSendCensusEmail,
