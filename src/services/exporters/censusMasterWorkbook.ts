@@ -2,7 +2,7 @@
  * Census Master Workbook Exporter - Facade
  */
 
-import { DailyRecord } from '@/services/contracts/dailyRecordServiceContracts';
+import type { CensusExportRecord } from '@/services/contracts/censusExportServiceContracts';
 import type { Workbook } from 'exceljs';
 import { buildCensusMasterWorkbook as buildWorkbook } from './excel/builder';
 import { serializeProtectedCensusWorkbook } from './excel/censusWorkbookSerializer';
@@ -17,14 +17,14 @@ export type { CensusMasterWorkbookOptions, CensusWorkbookSheetDescriptor };
  * Build the formatted "Censo Maestro" workbook from an array of daily records.
  */
 export const buildCensusMasterWorkbook = async (
-  records: DailyRecord[],
+  records: CensusExportRecord[],
   options?: CensusMasterWorkbookOptions
 ): Promise<Workbook> => {
   return buildWorkbook(records, options);
 };
 
 export const buildCensusMasterBinary = async (
-  records: DailyRecord[],
+  records: CensusExportRecord[],
   options?: CensusMasterWorkbookOptions
 ): Promise<Uint8Array> => {
   const workbook = await buildCensusMasterWorkbook(records, options);
@@ -35,7 +35,7 @@ export const buildCensusMasterBinary = async (
  * Return a Node-friendly buffer for the workbook.
  */
 export const buildCensusMasterBuffer = async (
-  records: DailyRecord[],
+  records: CensusExportRecord[],
   options?: CensusMasterWorkbookOptions
 ): Promise<Buffer> => {
   const binary = await buildCensusMasterBinary(records, options);

@@ -1,4 +1,4 @@
-import { DailyRecord } from '@/services/contracts/dailyRecordServiceContracts';
+import type { CensusExportRecord } from '@/services/contracts/censusExportServiceContracts';
 import type { CensusWorkbookSheetDescriptor } from '@/services/exporters/censusMasterWorkbook';
 import {
   CensusEmailRequestPayloadSchema,
@@ -10,7 +10,7 @@ export interface CensusEmailRequestPayloadInput extends Omit<
   'shareLink'
 > {
   date: string;
-  records: DailyRecord[];
+  records: CensusExportRecord[];
   recipients: string[];
   nursesSignature?: string;
   body?: string;

@@ -125,6 +125,7 @@
       { "id": "check:core-console-usage", "group": "hygiene" },
       { "id": "check:auth-feature-boundary", "group": "boundaries" },
       { "id": "check:census-feature-boundary", "group": "boundaries" },
+      { "id": "check:census-export-contract-boundary", "group": "boundaries" },
       { "id": "check:clinical-documents-feature-boundary", "group": "boundaries" },
       { "id": "check:handoff-feature-boundary", "group": "boundaries" },
       { "id": "check:handoff-pdf-contract-boundary", "group": "boundaries" },

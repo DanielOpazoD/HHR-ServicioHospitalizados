@@ -1,4 +1,4 @@
-import type { DailyRecord } from '@/services/contracts/dailyRecordServiceContracts';
+import type { CensusExportRecord } from '@/services/contracts/censusExportServiceContracts';
 
 import { formatSheetDate } from '@/services/exporters/excel/formatters';
 import type {
@@ -7,13 +7,13 @@ import type {
 } from '@/services/exporters/excel/censusWorkbookContracts';
 
 export interface CensusWorkbookResolvedSheetDescriptor {
-  record: DailyRecord;
+  record: CensusExportRecord;
   descriptor: CensusWorkbookSheetDescriptor;
 }
 
 export const buildCensusWorkbookSheetDescriptors = (
-  sourceRecords: DailyRecord[],
-  sortedRecords: DailyRecord[],
+  sourceRecords: CensusExportRecord[],
+  sortedRecords: CensusExportRecord[],
   options?: CensusMasterWorkbookOptions
 ): CensusWorkbookResolvedSheetDescriptor[] => {
   const providedDescriptors = options?.sheetDescriptors || [];

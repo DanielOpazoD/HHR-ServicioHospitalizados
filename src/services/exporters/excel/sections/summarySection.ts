@@ -1,10 +1,10 @@
 import type { Worksheet } from 'exceljs';
-import { DailyRecord } from '@/services/contracts/dailyRecordServiceContracts';
+import type { CensusExportRecord } from '@/services/contracts/censusExportServiceContracts';
 import { CensusStatistics } from '../../../calculations/statsCalculator';
 
 export function addSummarySection(
   sheet: Worksheet,
-  record: DailyRecord,
+  record: CensusExportRecord,
   stats: CensusStatistics,
   startRow: number
 ): number {

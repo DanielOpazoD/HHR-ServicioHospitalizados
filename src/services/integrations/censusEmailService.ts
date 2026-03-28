@@ -1,4 +1,4 @@
-import { DailyRecord } from '@/services/contracts/dailyRecordServiceContracts';
+import type { CensusExportRecord } from '@/services/contracts/censusExportServiceContracts';
 import type { CensusWorkbookSheetDescriptor } from '@/services/exporters/censusMasterWorkbook';
 import {
   getDevelopmentSendDisabledMessage,
@@ -13,7 +13,7 @@ import { CensusEmailResponseSchema, type CensusEmailResponse } from '@/contracts
 
 interface TriggerEmailParams {
   date: string;
-  records: DailyRecord[];
+  records: CensusExportRecord[];
   recipients?: string[];
   nursesSignature?: string;
   body?: string;

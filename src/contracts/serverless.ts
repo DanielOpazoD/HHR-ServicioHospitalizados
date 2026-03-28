@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
+import type { CensusExportRecord } from '@/services/contracts/censusExportServiceContracts';
 import type { CensusWorkbookSheetDescriptor } from '@/services/exporters/censusMasterWorkbook';
 
 export const ServerlessErrorResponseSchema = z.object({
@@ -90,8 +90,8 @@ export const FhirCapabilityStatementSchema = z.object({
 export type FhirCapabilityStatement = z.infer<typeof FhirCapabilityStatementSchema>;
 
 const CensusWorkbookSheetDescriptorSchema: z.ZodType<CensusWorkbookSheetDescriptor> = z.custom();
-const DailyRecordArraySchema: z.ZodType<DailyRecord[]> = z.custom(
-  (value): value is DailyRecord[] =>
+const CensusExportRecordArraySchema: z.ZodType<CensusExportRecord[]> = z.custom(
+  (value): value is CensusExportRecord[] =>
     Array.isArray(value) &&
     value.every(
       item =>
@@ -101,7 +101,7 @@ const DailyRecordArraySchema: z.ZodType<DailyRecord[]> = z.custom(
 
 export interface CensusEmailRequestPayload {
   date: string;
-  records: DailyRecord[];
+  records: CensusExportRecord[];
   recipients?: string[];
   nursesSignature?: string;
   body?: string;
@@ -111,7 +111,7 @@ export interface CensusEmailRequestPayload {
 
 export const CensusEmailRequestPayloadSchema: z.ZodType<CensusEmailRequestPayload> = z.object({
   date: z.string(),
-  records: DailyRecordArraySchema,
+  records: CensusExportRecordArraySchema,
   recipients: z.array(z.string()).optional(),
   nursesSignature: z.string().optional(),
   body: z.string().optional(),

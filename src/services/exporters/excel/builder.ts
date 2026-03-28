@@ -1,5 +1,5 @@
 import type { Workbook } from 'exceljs';
-import { DailyRecord } from '@/services/contracts/dailyRecordServiceContracts';
+import type { CensusExportRecord } from '@/services/contracts/censusExportServiceContracts';
 import { createWorkbook } from '../excelUtils';
 import type { CensusMasterWorkbookOptions } from './censusWorkbookContracts';
 import { applyCensusWorkbookMetadata } from './censusWorkbookMetadataController';
@@ -9,7 +9,7 @@ import { createCensusWorkbookDaySheet } from './censusWorkbookDaySheetBuilder';
 import { addCensusHiddenSheets } from './censusHiddenSheetsBuilder';
 
 export const buildCensusMasterWorkbook = async (
-  records: DailyRecord[],
+  records: CensusExportRecord[],
   options?: CensusMasterWorkbookOptions
 ): Promise<Workbook> => {
   if (!records || records.length === 0) {

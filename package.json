@@ -50,6 +50,7 @@
     "check:core-console-usage": "node scripts/check-core-console-usage.mjs",
     "check:auth-feature-boundary": "node scripts/check-auth-feature-boundary.mjs",
     "check:census-feature-boundary": "node scripts/check-census-feature-boundary.mjs",
+    "check:census-export-contract-boundary": "node scripts/check-census-export-contract-boundary.mjs",
     "check:clinical-documents-feature-boundary": "node scripts/check-clinical-documents-feature-boundary.mjs",
     "check:handoff-feature-boundary": "node scripts/check-handoff-feature-boundary.mjs",
     "check:handoff-pdf-contract-boundary": "node scripts/check-handoff-pdf-contract-boundary.mjs",

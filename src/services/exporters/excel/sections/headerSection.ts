@@ -1,11 +1,11 @@
 import type { Worksheet } from 'exceljs';
-import { DailyRecord } from '@/services/contracts/dailyRecordServiceContracts';
+import type { CensusExportRecord } from '@/services/contracts/censusExportServiceContracts';
 import { MAIN_TITLE_STYLE } from '../styles';
 import { resolveNightShiftNurses } from '@/services/staff/dailyRecordStaffing';
 
 export function addHeaderSection(
   sheet: Worksheet,
-  record: DailyRecord,
+  record: CensusExportRecord,
   startRow: number,
   snapshotLabel?: string
 ): number {

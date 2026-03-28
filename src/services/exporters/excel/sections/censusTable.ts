@@ -1,12 +1,16 @@
 import type { Worksheet } from 'exceljs';
-import { DailyRecord } from '@/services/contracts/dailyRecordServiceContracts';
+import type { CensusExportRecord } from '@/services/contracts/censusExportServiceContracts';
 import { PatientData } from '@/services/contracts/patientServiceContracts';
 import { BEDS } from '@/constants/beds';
 import { getBedTypeForRecord } from '@/utils/bedTypeUtils';
 import { TITLE_STYLE, HEADER_FILL, BORDER_THIN, FREE_FILL, BLOCKED_FILL } from '../styles';
 import { mapBedType, formatAge, formatDateDDMMYYYY } from '../formatters';
 
-export function addCensusTable(sheet: Worksheet, record: DailyRecord, startRow: number): number {
+export function addCensusTable(
+  sheet: Worksheet,
+  record: CensusExportRecord,
+  startRow: number
+): number {
   const titleRow = sheet.getRow(startRow);
   titleRow.getCell(1).value = 'TABLA DE PACIENTES HOSPITALIZADOS';
   titleRow.getCell(1).font = TITLE_STYLE;

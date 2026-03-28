@@ -1,7 +1,7 @@
 import { MONTH_NAMES } from '@/constants/export';
 import { calculateStats } from '@/services/calculations/statsCalculator';
 import { formatDateDDMMYYYY } from '@/services/exporters/excel/formatters';
-import type { DailyRecord } from '@/services/contracts/dailyRecordServiceContracts';
+import type { CensusExportRecord } from '@/services/contracts/censusExportServiceContracts';
 import type { PatientData } from '@/services/contracts/patientServiceContracts';
 
 import type {
@@ -74,7 +74,7 @@ const buildBedHistory = (dailyBeds: Array<{ date: string; bedCode: string }>) =>
  * Extracts the clinical rows that should count as real patients in hidden-sheet summaries.
  * Empty beds and blocked beds are excluded; clinical cribs are promoted as independent rows.
  */
-const collectRealPatients = (record: DailyRecord): ExtractedPatientRow[] => {
+const collectRealPatients = (record: CensusExportRecord): ExtractedPatientRow[] => {
   const patients: ExtractedPatientRow[] = [];
 
   Object.entries(record.beds || {}).forEach(([bedId, bedData]) => {

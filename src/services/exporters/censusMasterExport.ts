@@ -7,7 +7,7 @@
  * Manual downloads are NOT encrypted because xlsx-populate doesn't work in browsers.
  */
 
-import { DailyRecord } from '@/services/contracts/dailyRecordServiceContracts';
+import type { CensusExportRecord } from '@/services/contracts/censusExportServiceContracts';
 import { MONTH_NAMES } from '@/constants/export';
 import { getRecordsForMonth } from '@/services/storage/records';
 import { getMonthRecordsFromFirestore } from '../storage/firestore';
@@ -37,7 +37,7 @@ export const generateCensusMasterExcel = async (
 ): Promise<void> => {
   const limitDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
 
-  let allMonthRecords: DailyRecord[] = [];
+  let allMonthRecords: CensusExportRecord[] = [];
 
   try {
     if (isFirestoreEnabled()) {
