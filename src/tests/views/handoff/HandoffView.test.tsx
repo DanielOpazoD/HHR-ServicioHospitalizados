@@ -256,6 +256,48 @@ describe('HandoffView Component', () => {
     expect(mockContext.updateMedicalSpecialtyNote).not.toHaveBeenCalled();
   });
 
+  it('renders top medical scope controls and filters the table by UPC status', async () => {
+    const record = createMockRecord('2024-12-11');
+    record.beds['R1'] = {
+      ...createMockPatient({
+        bedId: 'R1',
+        patientName: 'PACIENTE UPC',
+        specialty: 'Med Interna',
+      }),
+      isUPC: true,
+    };
+    record.beds['H1C1'] = createMockPatient({
+      bedId: 'H1C1',
+      patientName: 'PACIENTE NO UPC',
+      specialty: 'Med Interna',
+    });
+
+    render(<HandoffView type="medical" medicalScope="all" />, {
+      contextValue: createMockDailyRecordContext(record),
+    });
+
+    expect(screen.getByRole('button', { name: /^todos \(2\)$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^upc \(1\)$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^no upc \(1\)$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /imprimir/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /^upc \(1\)$/i }));
+
+    await waitFor(() => {
+      const filteredTable = screen.getAllByRole('table')[0];
+      expect(within(filteredTable).getByText('PACIENTE UPC')).toBeInTheDocument();
+      expect(within(filteredTable).queryByText('PACIENTE NO UPC')).not.toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /^no upc \(1\)$/i }));
+
+    await waitFor(() => {
+      const filteredTable = screen.getAllByRole('table')[0];
+      expect(within(filteredTable).getByText('PACIENTE NO UPC')).toBeInTheDocument();
+      expect(within(filteredTable).queryByText('PACIENTE UPC')).not.toBeInTheDocument();
+    });
+  });
+
   it('shows scoped medical signature only in the matching filtered view', () => {
     const record = createMockRecord('2024-12-11');
     record.beds['R1'] = {

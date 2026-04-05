@@ -9,6 +9,14 @@ import { MedicalHandoffHeader, type MedicalHandoffBedStatsData } from './Medical
 import { MedicalShareActions } from './MedicalShareActions';
 import { MedicalHandoffTabs } from './MedicalHandoffTabs';
 import type { MedicalHandoffScope as ScopeType } from '@/types/medicalHandoff';
+import {
+  countScopedPatients,
+  splitMedicalBedsByScope,
+  type MedicalPrintMode,
+  type MedicalTabMode,
+} from '@/features/handoff/controllers/medicalHandoffTabsController';
+import { MedicalHandoffTabSwitcher } from './MedicalHandoffTabSwitcher';
+import { MedicalHandoffPrintMenu } from './MedicalHandoffPrintMenu';
 
 interface HandoffMedicalContentProps {
   record: DailyRecord;
@@ -72,10 +80,20 @@ export const HandoffMedicalContent: React.FC<HandoffMedicalContentProps> = ({
   onShareLink,
 }) => {
   const [bedStats, setBedStats] = useState<MedicalHandoffBedStatsData | null>(null);
+  const [activeTab, setActiveTab] = useState<MedicalTabMode>('all');
+  const [printMode, setPrintMode] = useState<MedicalPrintMode>('all');
   const filterChips = buildMedicalSpecialtyFilterChips(
     selectedMedicalSpecialty,
     medicalSpecialties
   );
+  const { upcBeds, nonUpcBeds } = splitMedicalBedsByScope(specialtyFilteredBeds, record);
+  const upcPatientCount = countScopedPatients(upcBeds, record);
+  const nonUpcPatientCount = countScopedPatients(nonUpcBeds, record);
+
+  const handlePrint = (mode: MedicalPrintMode) => {
+    setPrintMode(mode);
+    setTimeout(() => window.print(), 100);
+  };
 
   return (
     <div className="space-y-3">
@@ -107,7 +125,7 @@ export const HandoffMedicalContent: React.FC<HandoffMedicalContentProps> = ({
       />
 
       {/* Unified filter bar: Specialty + UPC scope + Bed stats */}
-      <div className="flex items-center gap-3 rounded-xl border border-slate-200/80 bg-white px-3 py-2 print:hidden ring-1 ring-black/[0.02]">
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200/80 bg-white px-3 py-2 print:hidden ring-1 ring-black/[0.02]">
         {/* Specialty selector */}
         <div className="flex items-center gap-2">
           <label className="text-[10px] font-semibold uppercase tracking-[0.06em] text-slate-400 shrink-0">
@@ -144,6 +162,27 @@ export const HandoffMedicalContent: React.FC<HandoffMedicalContentProps> = ({
             </span>
           </div>
         )}
+
+        {!scopedMedicalScope || scopedMedicalScope === 'all' ? (
+          <>
+            <div className="h-5 w-px bg-slate-200/60" />
+
+            <MedicalHandoffTabSwitcher
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              upcPatientCount={upcPatientCount}
+              nonUpcPatientCount={nonUpcPatientCount}
+            />
+
+            <div className="ml-auto">
+              <MedicalHandoffPrintMenu
+                upcPatientCount={upcPatientCount}
+                nonUpcPatientCount={nonUpcPatientCount}
+                onPrint={handlePrint}
+              />
+            </div>
+          </>
+        ) : null}
       </div>
 
       <MedicalHandoffTabs
@@ -159,6 +198,8 @@ export const HandoffMedicalContent: React.FC<HandoffMedicalContentProps> = ({
         shouldShowPatient={shouldShowPatient}
         fixedScope={scopedMedicalScope === 'all' ? null : scopedMedicalScope}
         hasAnyPatients={hasAnyVisiblePatients}
+        activeTab={activeTab}
+        printMode={printMode}
       />
     </div>
   );

@@ -63,4 +63,19 @@ describe('PatientSubRowView', () => {
 
     expect(screen.queryByTitle('Datos demográficos')).not.toBeInTheDocument();
   });
+
+  it('renders attached clinical cribs with a white row background', () => {
+    const { container } = render(
+      <table>
+        <tbody>
+          <PatientSubRowView {...baseProps} readOnly={false} />
+        </tbody>
+      </table>
+    );
+
+    const row = container.querySelector('tr[data-testid="patient-row"]');
+
+    expect(row).toHaveClass('bg-white');
+    expect(row).toHaveClass('hover:bg-white');
+  });
 });

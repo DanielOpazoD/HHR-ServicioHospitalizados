@@ -23,7 +23,7 @@ export const PatientSubRowView: React.FC<PatientSubRowViewProps> = ({
 
   return (
     <tr
-      className="hover:bg-slate-50 transition-colors border-b border-slate-200 text-[13px] leading-tight"
+      className="bg-white hover:bg-white transition-colors border-b border-slate-200 text-[13px] leading-tight"
       style={style}
       data-testid="patient-row"
     >
