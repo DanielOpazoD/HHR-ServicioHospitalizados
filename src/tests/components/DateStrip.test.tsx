@@ -136,9 +136,9 @@ describe('DateStrip', () => {
     expect(defaultProps.setSelectedDay).toHaveBeenCalledWith(5);
   });
 
-  it('toggles local view mode button', () => {
+  it('does not render a 3D toggle in census quick actions anymore', () => {
     render(<DateStrip {...defaultProps} localViewMode="TABLE" />);
-    fireEvent.click(screen.getByTitle('Ver Mapa 3D'));
-    expect(defaultProps.setLocalViewMode).toHaveBeenCalledWith('3D');
+    expect(screen.queryByTitle('Ver Mapa 3D')).not.toBeInTheDocument();
+    expect(screen.queryByTitle('Volver a Tabla')).not.toBeInTheDocument();
   });
 });

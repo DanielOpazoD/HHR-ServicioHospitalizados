@@ -52,8 +52,6 @@ vi.mock('@/features/census/components/EmptyDayPrompt', () => ({
 vi.mock('@/features/census/components/CensusRegisterContent', () => ({
   CensusRegisterContent: ({
     readOnly,
-    localViewMode,
-    visibleBeds,
   }: {
     readOnly: boolean;
     localViewMode: 'TABLE' | '3D';
@@ -61,11 +59,7 @@ vi.mock('@/features/census/components/CensusRegisterContent', () => ({
   }) => (
     <div data-testid="census-register-content">
       <div data-testid="census-staff-header">Census Staff Header</div>
-      {localViewMode === '3D' ? (
-        <div data-testid="hospital-floor-map">{visibleBeds.map(bed => bed.id).join(',')}</div>
-      ) : (
-        <div data-testid="census-table">Census Table</div>
-      )}
+      <div data-testid="census-table">Census Table</div>
       <div data-testid="discharges-section">Discharges Section</div>
       <div data-testid="transfers-section">Transfers Section</div>
       <div data-testid="cma-section">CMA Section</div>
@@ -221,7 +215,7 @@ describe('CensusView', () => {
     expect(screen.queryByTestId('census-modals')).not.toBeInTheDocument();
   });
 
-  it('renders 3D map when localViewMode is 3D', async () => {
+  it('keeps rendering the census table even if localViewMode is 3D', async () => {
     vi.mocked(useCensusViewModel).mockReturnValue(
       buildViewModel({
         beds: {},
@@ -231,8 +225,7 @@ describe('CensusView', () => {
 
     render(<CensusView {...defaultProps} localViewMode="3D" />);
 
-    const floorMap = await screen.findByTestId('hospital-floor-map');
-    expect(floorMap).toBeInTheDocument();
-    expect(floorMap.textContent).toContain('E1');
+    expect(await screen.findByTestId('census-table')).toBeInTheDocument();
+    expect(screen.queryByTestId('hospital-floor-map')).not.toBeInTheDocument();
   });
 });

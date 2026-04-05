@@ -14,7 +14,9 @@ export const AUTH_UI_COPY = {
     'No fue posible completar el ingreso con Google. Intenta nuevamente desde el botón principal.',
   roleValidationRetryAction: 'Reintentar ingreso',
   roleValidationRetryHint: 'Vuelve a intentar el acceso para revalidar tu sesión.',
+  resetStorageTitle: 'Reiniciar datos locales',
   resetStorageConfirm:
-    'Esto cerrará la sesión actual y reiniciará el guardado local de esta app para corregir problemas de carga. ¿Continuar?',
-  resetStorageAction: '¿Problemas de carga? Reiniciar guardado local',
+    'Esto limpiará los datos locales guardados en este navegador y volverá a abrir la aplicación desde cero. Úsalo si la app quedó pegada o con información local inconsistente.',
+  resetStorageConfirmAction: 'Reiniciar ahora',
+  resetStorageAction: 'Reiniciar',
 } as const;

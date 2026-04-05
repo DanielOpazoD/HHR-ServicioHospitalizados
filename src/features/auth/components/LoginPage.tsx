@@ -1,6 +1,5 @@
 import React from 'react';
 import { Palette } from 'lucide-react';
-import { GamesMenu } from '@/features/games';
 import { LoginPageCard } from './LoginPageCard';
 import { LoginPageFooter } from './LoginPageFooter';
 import { LoginPageHeader } from './LoginPageHeader';
@@ -31,9 +30,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       data-auth-state={isGoogleLoading ? 'google-loading' : 'idle'}
       className={`min-h-screen ${loginBackgroundClass} flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-1000`}
     >
-      <div className="absolute top-4 right-4 z-50">
-        <GamesMenu />
-      </div>
       <button
         type="button"
         onClick={toggleBackgroundMode}

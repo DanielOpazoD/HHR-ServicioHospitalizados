@@ -1,6 +1,5 @@
 import React from 'react';
-import { Box, LayoutGrid, Lock, Radio } from 'lucide-react';
-import clsx from 'clsx';
+import { Lock, Radio } from 'lucide-react';
 import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medicalIndications';
 import { RadiologyViewerModal } from '@/components/modals/RadiologyViewerModal';
 
@@ -14,9 +13,9 @@ interface DateStripQuickActionsProps {
 
 export const DateStripQuickActions: React.FC<DateStripQuickActionsProps> = ({
   onOpenBedManager,
-  localViewMode,
-  setLocalViewMode,
-  hide3DToggle = false,
+  localViewMode: _localViewMode,
+  setLocalViewMode: _setLocalViewMode,
+  hide3DToggle: _hide3DToggle = false,
   medicalIndicationsPatients = [],
 }) => {
   const [isRadiologyOpen, setIsRadiologyOpen] = React.useState(false);
@@ -64,21 +63,6 @@ export const DateStripQuickActions: React.FC<DateStripQuickActionsProps> = ({
             patients={radiologyPatients}
           />
         </>
-      )}
-
-      {!hide3DToggle && (
-        <button
-          onClick={() => setLocalViewMode(localViewMode === 'TABLE' ? '3D' : 'TABLE')}
-          className={clsx(
-            'flex items-center justify-center p-1.5 rounded-md border transition-all',
-            localViewMode === '3D'
-              ? 'bg-indigo-600 text-white border-indigo-700 shadow-sm'
-              : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
-          )}
-          title={localViewMode === '3D' ? 'Volver a Tabla' : 'Ver Mapa 3D'}
-        >
-          {localViewMode === '3D' ? <LayoutGrid size={15} /> : <Box size={15} />}
-        </button>
       )}
     </div>
   );
