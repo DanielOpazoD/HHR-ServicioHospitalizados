@@ -12,7 +12,10 @@ import { AuthUser, UserRole } from '@/types/auth';
 export type { AuthUser, UserRole };
 import { useAuthState } from '@/hooks/useAuthState';
 import { isAuthenticatedAuthSessionState } from '@/services/auth/authSessionState';
-import { resolveNormalizedAuthOperationalState } from '@/services/auth/authOperationalState';
+import {
+  resolveNormalizedAuthOperationalState,
+  type NormalizedAuthOperationalState,
+} from '@/services/auth/authOperationalState';
 
 // ============================================================================
 // Types
@@ -36,7 +39,7 @@ export interface AuthContextType {
   isFirebaseConnected: boolean;
   remoteSyncStatus: ReturnType<typeof useAuthState>['remoteSyncStatus'];
   remoteSyncState: ReturnType<typeof useAuthState>['remoteSyncState'];
-  signOut: () => Promise<void>;
+  signOut: (reason?: 'manual' | 'automatic') => Promise<void>;
 }
 
 // ============================================================================
@@ -52,6 +55,28 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 interface AuthProviderProps {
   children: ReactNode;
 }
+
+export const buildAuthContextValue = (
+  normalizedAuthState: NormalizedAuthOperationalState
+): AuthContextType => ({
+  sessionState: normalizedAuthState.sessionState,
+  authRuntime: normalizedAuthState.authRuntime,
+  currentUser: normalizedAuthState.currentUser,
+  authorizedUser: normalizedAuthState.authorizedUser,
+  user: normalizedAuthState.currentUser,
+  role: normalizedAuthState.role,
+  isLoading: normalizedAuthState.authLoading,
+  isAuthenticated: isAuthenticatedAuthSessionState(normalizedAuthState.sessionState),
+  isAuthorizedSession: normalizedAuthState.sessionState.status === 'authorized',
+  isAnonymousSignature: normalizedAuthState.sessionState.status === 'anonymous_signature',
+  isUnauthorized: normalizedAuthState.sessionState.status === 'unauthorized',
+  isEditor: normalizedAuthState.isEditor,
+  isViewer: normalizedAuthState.isViewer,
+  isFirebaseConnected: normalizedAuthState.isFirebaseConnected,
+  remoteSyncStatus: normalizedAuthState.remoteSyncStatus,
+  remoteSyncState: normalizedAuthState.remoteSyncState,
+  signOut: normalizedAuthState.handleLogout,
+});
 
 /**
  * AuthProvider wraps the application and provides authentication state.
@@ -89,25 +114,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   );
 
   const value = useMemo<AuthContextType>(
-    () => ({
-      sessionState: normalizedAuthState.sessionState,
-      authRuntime: normalizedAuthState.authRuntime,
-      currentUser: normalizedAuthState.currentUser,
-      authorizedUser: normalizedAuthState.authorizedUser,
-      user: normalizedAuthState.currentUser,
-      role: normalizedAuthState.role,
-      isLoading: normalizedAuthState.authLoading,
-      isAuthenticated: isAuthenticatedAuthSessionState(normalizedAuthState.sessionState),
-      isAuthorizedSession: normalizedAuthState.sessionState.status === 'authorized',
-      isAnonymousSignature: normalizedAuthState.sessionState.status === 'anonymous_signature',
-      isUnauthorized: normalizedAuthState.sessionState.status === 'unauthorized',
-      isEditor: normalizedAuthState.isEditor,
-      isViewer: normalizedAuthState.isViewer,
-      isFirebaseConnected: normalizedAuthState.isFirebaseConnected,
-      remoteSyncStatus: normalizedAuthState.remoteSyncStatus,
-      remoteSyncState: normalizedAuthState.remoteSyncState,
-      signOut: normalizedAuthState.handleLogout,
-    }),
+    () => buildAuthContextValue(normalizedAuthState),
     [normalizedAuthState]
   );
 

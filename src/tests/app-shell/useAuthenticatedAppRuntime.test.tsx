@@ -38,7 +38,12 @@ vi.mock('@/services/staff/dailyRecordStaffing', () => ({
   resolveShiftNurseSignature: (...args: unknown[]) => mockResolveShiftNurseSignature(...args),
 }));
 
-import { useAuthenticatedAppRuntime } from '@/app-shell/runtime/useAuthenticatedAppRuntime';
+import {
+  buildAuthenticatedAppRuntime,
+  buildAuthenticatedCensusContextValue,
+  resolveExistingDaysInMonth,
+  useAuthenticatedAppRuntime,
+} from '@/app-shell/runtime/useAuthenticatedAppRuntime';
 
 const createAuthorizedUser = (): AuthUser => ({
   uid: 'user-1',
@@ -148,5 +153,66 @@ describe('useAuthenticatedAppRuntime', () => {
 
     expect(result.current.existingDaysInMonth).toEqual([]);
     expect(result.current.censusContextValue.dateNav.existingDaysInMonth).toEqual([]);
+  });
+
+  it('resolveExistingDaysInMonth returns a stable empty list fallback', () => {
+    expect(resolveExistingDaysInMonth(undefined)).toEqual([]);
+    expect(resolveExistingDaysInMonth([2, 5])).toEqual([2, 5]);
+  });
+
+  it('buildAuthenticatedCensusContextValue wires the census context without hook execution', () => {
+    const dailyRecordHook = {
+      record: { date: '2026-03-27', beds: {} },
+      refresh: vi.fn(),
+    } as unknown as ReturnType<typeof mockUseDailyRecord>;
+    const dateNav = createDateNavigation();
+    const fileOps = { handleExportJSON: vi.fn() } as ReturnType<typeof mockUseFileOperations>;
+    const censusEmail = { sendEmail: vi.fn(), status: 'idle' } as ReturnType<
+      typeof mockUseCensusEmail
+    >;
+
+    const result = buildAuthenticatedCensusContextValue({
+      dailyRecordHook,
+      dateNav,
+      existingDaysInMonth: [1, 4, 8],
+      fileOps,
+      censusEmail,
+      nurseSignature: 'Night Nurse',
+    });
+
+    expect(result.dailyRecord).toBe(dailyRecordHook);
+    expect(result.dateNav.existingDaysInMonth).toEqual([1, 4, 8]);
+    expect(result.fileOps).toBe(fileOps);
+    expect(result.censusEmail).toBe(censusEmail);
+    expect(result.nurseSignature).toBe('Night Nurse');
+  });
+
+  it('buildAuthenticatedAppRuntime keeps the runtime payload aligned with the context payload', () => {
+    const dailyRecordHook = {
+      record: { date: '2026-03-27', beds: {} },
+      refresh: vi.fn(),
+    } as unknown as ReturnType<typeof mockUseDailyRecord>;
+    const dateNav = createDateNavigation();
+    const fileOps = { handleExportJSON: vi.fn() } as ReturnType<typeof mockUseFileOperations>;
+    const censusEmail = { sendEmail: vi.fn(), status: 'idle' } as ReturnType<
+      typeof mockUseCensusEmail
+    >;
+    const ui = { currentModule: 'CENSUS' } as ReturnType<typeof mockUseAppState>;
+
+    const result = buildAuthenticatedAppRuntime({
+      dailyRecordHook,
+      dateNav,
+      existingDaysInMonth: [3, 9],
+      fileOps,
+      censusEmail,
+      nurseSignature: 'Night Nurse',
+      ui,
+    });
+
+    expect(result.existingDaysInMonth).toEqual([3, 9]);
+    expect(result.ui).toBe(ui);
+    expect(result.censusContextValue.dateNav.existingDaysInMonth).toEqual([3, 9]);
+    expect(result.censusContextValue.nurseSignature).toBe('Night Nurse');
+    expect(result.censusContextValue.fileOps).toBe(fileOps);
   });
 });

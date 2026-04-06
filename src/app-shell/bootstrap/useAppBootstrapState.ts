@@ -30,6 +30,13 @@ export type AppBootstrapState =
       dateNav: AppAuthenticatedDateNavigation;
     };
 
+interface BuildAppBootstrapStateParams {
+  auth: AuthContextType;
+  dateNav: UseDateNavigationReturn;
+  isSignatureMode: boolean;
+  currentDateString: string;
+}
+
 const isIgnorableWorkerShutdownImportError = (error: unknown): boolean => {
   const message = String(error);
   return message.includes('[vitest-worker]: Closing rpc while "fetch" was pending');
@@ -50,6 +57,44 @@ const useSyncFirestoreStatus = (remoteSyncState: AuthContextType['remoteSyncStat
   }, [remoteSyncState]);
 };
 
+export const buildAppBootstrapState = ({
+  auth,
+  dateNav,
+  isSignatureMode,
+  currentDateString,
+}: BuildAppBootstrapStateParams): AppBootstrapState => {
+  if (isSignatureMode) {
+    return {
+      status: 'signature_mode',
+      auth,
+    };
+  }
+
+  if (auth.isLoading) {
+    return {
+      status: 'loading',
+      auth,
+    };
+  }
+
+  if (!auth.isAuthenticated) {
+    return {
+      status: 'unauthenticated',
+      auth,
+    };
+  }
+
+  return {
+    status: 'authenticated',
+    auth,
+    dateNav: {
+      ...dateNav,
+      isSignatureMode,
+      currentDateString,
+    },
+  };
+};
+
 export const useAppBootstrapState = (): AppBootstrapState => {
   const auth = useAuth();
 
@@ -64,36 +109,14 @@ export const useAppBootstrapState = (): AppBootstrapState => {
     auth.isLoading
   );
 
-  return React.useMemo<AppBootstrapState>(() => {
-    if (isSignatureMode) {
-      return {
-        status: 'signature_mode',
+  return React.useMemo<AppBootstrapState>(
+    () =>
+      buildAppBootstrapState({
         auth,
-      };
-    }
-
-    if (auth.isLoading) {
-      return {
-        status: 'loading',
-        auth,
-      };
-    }
-
-    if (!auth.isAuthenticated) {
-      return {
-        status: 'unauthenticated',
-        auth,
-      };
-    }
-
-    return {
-      status: 'authenticated',
-      auth,
-      dateNav: {
-        ...dateNav,
+        dateNav,
         isSignatureMode,
         currentDateString,
-      },
-    };
-  }, [auth, currentDateString, dateNav, isSignatureMode]);
+      }),
+    [auth, currentDateString, dateNav, isSignatureMode]
+  );
 };

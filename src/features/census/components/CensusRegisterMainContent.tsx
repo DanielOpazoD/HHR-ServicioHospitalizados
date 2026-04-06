@@ -1,5 +1,4 @@
 import React from 'react';
-import { Loader2 } from 'lucide-react';
 import type { BedDefinition } from '@/features/census/contracts/censusBedContracts';
 import type { DailyRecord } from '@/features/census/contracts/censusRecordContracts';
 import { SectionErrorBoundary } from '@/components/shared/SectionErrorBoundary';
@@ -15,40 +14,19 @@ interface CensusRegisterMainContentProps {
   accessProfile: CensusAccessProfile;
 }
 
-const HospitalFloorMap = React.lazy(() => import('./3d/HospitalFloorMap'));
-
 export const CensusRegisterMainContent: React.FC<CensusRegisterMainContentProps> = ({
-  localViewMode,
+  localViewMode: _localViewMode,
   currentDateString,
   readOnly,
-  visibleBeds,
-  beds,
+  visibleBeds: _visibleBeds,
+  beds: _beds,
   accessProfile,
-}) => {
-  if (localViewMode === 'TABLE') {
-    return (
-      <SectionErrorBoundary sectionName="Tabla de Pacientes" fallbackHeight="400px">
-        <CensusTable
-          currentDateString={currentDateString}
-          readOnly={readOnly}
-          accessProfile={accessProfile}
-        />
-      </SectionErrorBoundary>
-    );
-  }
-
-  return (
-    <div className="animate-fade-in">
-      <React.Suspense
-        fallback={
-          <div className="h-[500px] w-full rounded-xl border border-slate-200 bg-slate-50 flex flex-col items-center justify-center">
-            <Loader2 className="mb-2 animate-spin text-indigo-500" size={32} />
-            <p className="text-sm font-medium text-slate-500">Cargando entorno 3D...</p>
-          </div>
-        }
-      >
-        <HospitalFloorMap beds={visibleBeds} patients={beds} />
-      </React.Suspense>
-    </div>
-  );
-};
+}) => (
+  <SectionErrorBoundary sectionName="Tabla de Pacientes" fallbackHeight="400px">
+    <CensusTable
+      currentDateString={currentDateString}
+      readOnly={readOnly}
+      accessProfile={accessProfile}
+    />
+  </SectionErrorBoundary>
+);

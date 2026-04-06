@@ -6,7 +6,6 @@ import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 import type { HandoffClinicalEventActions, HandoffMedicalActions } from './handoffRowContracts';
 import {
   buildMedicalPrintSectionModel,
-  countScopedPatients,
   hasNamedPatientsInBeds,
   resolveMedicalDisplayBeds,
   resolveMedicalPrintBeds,
@@ -14,8 +13,6 @@ import {
   type MedicalPrintMode,
   type MedicalTabMode,
 } from '@/features/handoff/controllers/medicalHandoffTabsController';
-import { MedicalHandoffTabSwitcher } from './MedicalHandoffTabSwitcher';
-import { MedicalHandoffPrintMenu } from './MedicalHandoffPrintMenu';
 
 interface MedicalHandoffTabsProps {
   visibleBeds: BedDefinition[];
@@ -30,6 +27,8 @@ interface MedicalHandoffTabsProps {
   shouldShowPatient: (bedId: string) => boolean;
   fixedScope?: MedicalHandoffScope | null;
   hasAnyPatients?: boolean;
+  activeTab?: MedicalTabMode;
+  printMode?: MedicalPrintMode;
 }
 
 export const MedicalHandoffTabs: React.FC<MedicalHandoffTabsProps> = ({
@@ -45,47 +44,32 @@ export const MedicalHandoffTabs: React.FC<MedicalHandoffTabsProps> = ({
   shouldShowPatient,
   fixedScope = null,
   hasAnyPatients,
+  activeTab,
+  printMode,
 }) => {
-  const [activeTab, setActiveTab] = useState<MedicalTabMode>('all');
-  const [printMode, setPrintMode] = useState<MedicalPrintMode>('all');
+  const [internalActiveTab] = useState<MedicalTabMode>('all');
+  const internalPrintMode: MedicalPrintMode = 'all';
   const { upcBeds, nonUpcBeds } = splitMedicalBedsByScope(visibleBeds, record);
-  const upcPatientCount = countScopedPatients(upcBeds, record);
-  const nonUpcPatientCount = countScopedPatients(nonUpcBeds, record);
+  const resolvedActiveTab = activeTab ?? internalActiveTab;
+  const resolvedPrintMode = printMode ?? internalPrintMode;
   const displayBeds = resolveMedicalDisplayBeds({
     visibleBeds,
     upcBeds,
     nonUpcBeds,
-    activeTab,
+    activeTab: resolvedActiveTab,
     fixedScope,
   });
   const hasDisplayPatients = hasAnyPatients ?? hasNamedPatientsInBeds(displayBeds, record);
-
-  const handlePrint = (mode: MedicalPrintMode) => {
-    setPrintMode(mode);
-    setTimeout(() => window.print(), 100);
-  };
-  const printBeds = resolveMedicalPrintBeds({ printMode, upcBeds, nonUpcBeds });
+  const printBeds = resolveMedicalPrintBeds({
+    printMode: resolvedPrintMode,
+    upcBeds,
+    nonUpcBeds,
+  });
   const upcPrintSection = buildMedicalPrintSectionModel('upc', printBeds.upc, record);
   const nonUpcPrintSection = buildMedicalPrintSectionModel('no-upc', printBeds.nonUpc, record);
 
   return (
     <div className="space-y-3">
-      {!fixedScope && (
-        <div className="flex items-center justify-between print:hidden">
-          <MedicalHandoffTabSwitcher
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            upcPatientCount={upcPatientCount}
-            nonUpcPatientCount={nonUpcPatientCount}
-          />
-          <MedicalHandoffPrintMenu
-            upcPatientCount={upcPatientCount}
-            nonUpcPatientCount={nonUpcPatientCount}
-            onPrint={handlePrint}
-          />
-        </div>
-      )}
-
       <div className="print:hidden">
         <HandoffPatientTable
           visibleBeds={displayBeds}

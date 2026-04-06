@@ -77,6 +77,39 @@ const getLocalStorageBootstrapWarningCopy = (): FirebaseStartupWarningCopy => ({
     'Este aviso apunta a recuperación local del navegador, no a una falta confirmada de variables Firebase.',
 });
 
+type BootstrapFailureResolution =
+  | {
+      action: 'hard_reset_reload';
+    }
+  | {
+      action: 'blocked';
+      warningCopy?: FirebaseStartupWarningCopy;
+      messageOverride?: string;
+    };
+
+export const resolveBootstrapFailureResolution = (
+  error: unknown,
+  hasStorageRepairAttempted: boolean
+): BootstrapFailureResolution => {
+  if (isLocalStorageBootstrapFailure(error) && !hasStorageRepairAttempted) {
+    return {
+      action: 'hard_reset_reload',
+    };
+  }
+
+  if (isLocalStorageBootstrapFailure(error)) {
+    return {
+      action: 'blocked',
+      warningCopy: getLocalStorageBootstrapWarningCopy(),
+      messageOverride: 'No se pudo iniciar correctamente por un problema local del navegador.',
+    };
+  }
+
+  return {
+    action: 'blocked',
+  };
+};
+
 const resolveBlockedBootstrapResult = (
   clientRecovery: ClientBootstrapRecoveryResult,
   error: unknown,
@@ -125,7 +158,9 @@ export const bootstrapAppRuntime = async (): Promise<AppBootstrapRuntimeResult> 
       services,
     };
   } catch (error) {
-    if (isLocalStorageBootstrapFailure(error) && !hasAttemptedStorageRepair()) {
+    const resolution = resolveBootstrapFailureResolution(error, hasAttemptedStorageRepair());
+
+    if (resolution.action === 'hard_reset_reload') {
       markStorageRepairAttempt();
       bootstrapRuntimeLogger.warn(
         'Detected local browser storage corruption during bootstrap; hard reset'
@@ -141,10 +176,8 @@ export const bootstrapAppRuntime = async (): Promise<AppBootstrapRuntimeResult> 
     return resolveBlockedBootstrapResult(
       clientRecovery,
       error,
-      isLocalStorageBootstrapFailure(error) ? getLocalStorageBootstrapWarningCopy() : undefined,
-      isLocalStorageBootstrapFailure(error)
-        ? 'No se pudo iniciar correctamente por un problema local del navegador.'
-        : undefined
+      resolution.warningCopy,
+      resolution.messageOverride
     );
   }
 };

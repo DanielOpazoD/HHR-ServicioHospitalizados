@@ -35,6 +35,7 @@ vi.mock('@/services/storage/core', () => ({
 import {
   bootstrapAppRuntime,
   reconcileBootstrapRuntime,
+  resolveBootstrapFailureResolution,
 } from '@/app-shell/bootstrap/bootstrapAppRuntime';
 
 describe('bootstrapAppRuntime', () => {
@@ -192,5 +193,36 @@ describe('bootstrapAppRuntime', () => {
       reason: null,
     });
     expect(mockPrepareClientBootstrap).toHaveBeenCalledTimes(1);
+  });
+
+  it('plans a hard reset on the first local-storage bootstrap failure', () => {
+    expect(
+      resolveBootstrapFailureResolution(new Error('Firebase initialization timed out'), false)
+    ).toEqual({
+      action: 'hard_reset_reload',
+    });
+  });
+
+  it('returns a blocked local-browser warning after a repair attempt already happened', () => {
+    expect(
+      resolveBootstrapFailureResolution(
+        new Error('Internal error opening backing store for indexedDB.open.'),
+        true
+      )
+    ).toMatchObject({
+      action: 'blocked',
+      messageOverride: 'No se pudo iniciar correctamente por un problema local del navegador.',
+      warningCopy: expect.objectContaining({
+        title: 'Problema local del navegador',
+      }),
+    });
+  });
+
+  it('keeps non-storage bootstrap failures as generic blocked errors', () => {
+    expect(
+      resolveBootstrapFailureResolution(new Error('unexpected runtime failure'), false)
+    ).toEqual({
+      action: 'blocked',
+    });
   });
 });

@@ -1,6 +1,7 @@
 import React from 'react';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2, RotateCcw } from 'lucide-react';
 
+import { useConfirmDialog } from '@/context';
 import { AUTH_UI_COPY } from '@/services/auth/authUiCopy';
 import { resetLocalAppStorage } from '@/services/storage/core';
 
@@ -41,86 +42,104 @@ export const LoginPageCard: React.FC<LoginPageCardProps> = ({
   errorCode,
   canRetryGoogleSignIn = false,
   onGoogleSignIn,
-}) => (
-  <div className="bg-white/85 backdrop-blur-md border border-white/40 rounded-3xl shadow-[0_24px_60px_-30px_rgba(15,23,42,0.45)] p-10 relative overflow-hidden animate-login-reveal animate-login-reveal-delay-2">
-    <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-medical-400 to-medical-600"></div>
+}) => {
+  const { confirm } = useConfirmDialog();
 
-    <h2 className="text-xl font-bold text-slate-800 mb-2 text-center text-balance">
-      Acceso al Sistema
-    </h2>
-    <div className="mb-8" />
+  const handleResetLocalSession = async () => {
+    const confirmed = await confirm({
+      title: AUTH_UI_COPY.resetStorageTitle,
+      message: AUTH_UI_COPY.resetStorageConfirm,
+      confirmText: AUTH_UI_COPY.resetStorageConfirmAction,
+      cancelText: 'Volver',
+      variant: 'info',
+    });
 
-    <button
-      type="button"
-      onClick={onGoogleSignIn}
-      disabled={isAnyLoading}
-      data-testid="login-google-button"
-      className="w-full bg-white hover:bg-slate-50 disabled:bg-slate-100 border-2 border-slate-200 text-slate-700 font-bold py-4 px-4 rounded-2xl transition-all duration-300 flex items-center justify-center gap-3 shadow-sm hover:shadow-lg hover:border-medical-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99]"
-    >
-      {isGoogleLoading ? (
-        <>
-          <Loader2 className="w-6 h-6 animate-spin text-medical-600" />
-          Conectando con Google...
-        </>
-      ) : (
-        <>
-          <GoogleIcon className="w-6 h-6" />
-          Ingresar con Google
-        </>
-      )}
-    </button>
+    if (confirmed) {
+      await resetLocalAppStorage();
+    }
+  };
 
-    {isGoogleLoading && (
-      <div
-        data-testid="login-google-pending"
-        className="mt-4 rounded-2xl border border-medical-100 bg-medical-50/80 px-4 py-3 text-center"
+  return (
+    <div className="bg-white/85 backdrop-blur-md border border-white/40 rounded-3xl shadow-[0_24px_60px_-30px_rgba(15,23,42,0.45)] p-10 relative overflow-hidden animate-login-reveal animate-login-reveal-delay-2">
+      <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-medical-400 to-medical-600"></div>
+
+      <h2 className="text-xl font-bold text-slate-800 mb-2 text-center text-balance">
+        Acceso al Sistema
+      </h2>
+      <div className="mb-8" />
+
+      <button
+        type="button"
+        onClick={onGoogleSignIn}
+        disabled={isAnyLoading}
+        data-testid="login-google-button"
+        className="w-full bg-white hover:bg-slate-50 disabled:bg-slate-100 border-2 border-slate-200 text-slate-700 font-bold py-4 px-4 rounded-2xl transition-all duration-300 flex items-center justify-center gap-3 shadow-sm hover:shadow-lg hover:border-medical-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99]"
       >
-        <p className="text-sm font-semibold text-medical-800">{AUTH_UI_COPY.popupPendingTitle}</p>
-        <p className="mt-1 text-xs text-medical-700 text-balance">
-          {AUTH_UI_COPY.popupPendingHint}
-        </p>
-      </div>
-    )}
-
-    {error && (
-      <div className="mt-6 animate-fade-in">
-        <div
-          data-testid="login-error-alert"
-          data-auth-error-code={errorCode || undefined}
-          className="flex items-center gap-2 p-3 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm text-balance"
-        >
-          <AlertCircle className="w-5 h-5 flex-shrink-0" />
-          <span>{error}</span>
-        </div>
-        {canRetryGoogleSignIn && (
-          <div className="mt-3 rounded-2xl border border-amber-100 bg-amber-50/80 px-4 py-3 text-center">
-            <p className="text-xs text-amber-800 text-balance">
-              {AUTH_UI_COPY.roleValidationRetryHint}
-            </p>
-            <button
-              type="button"
-              onClick={() => void onGoogleSignIn()}
-              className="mt-3 inline-flex items-center justify-center rounded-xl bg-amber-500 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white transition hover:bg-amber-600"
-              data-testid="login-retry-button"
-            >
-              {AUTH_UI_COPY.roleValidationRetryAction}
-            </button>
-          </div>
+        {isGoogleLoading ? (
+          <>
+            <Loader2 className="w-6 h-6 animate-spin text-medical-600" />
+            Conectando con Google...
+          </>
+        ) : (
+          <>
+            <GoogleIcon className="w-6 h-6" />
+            Ingresar con Google
+          </>
         )}
-        <div className="mt-2 text-center">
-          <button
-            type="button"
-            onClick={async () => {
-              if (confirm(AUTH_UI_COPY.resetStorageConfirm)) {
-                await resetLocalAppStorage();
-              }
-            }}
-            className="text-[10px] text-slate-400 hover:text-medical-600 underline font-medium uppercase tracking-wider"
-          >
-            {AUTH_UI_COPY.resetStorageAction}
-          </button>
-        </div>
+      </button>
+
+      <div className="mt-3 flex justify-center">
+        <button
+          type="button"
+          onClick={() => void handleResetLocalSession()}
+          disabled={isAnyLoading}
+          data-testid="login-reset-local-button"
+          className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50/70 px-2.5 py-1.5 text-[11px] font-medium text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 disabled:text-slate-300"
+        >
+          <RotateCcw className="h-3 w-3" />
+          {AUTH_UI_COPY.resetStorageAction}
+        </button>
       </div>
-    )}
-  </div>
-);
+
+      {isGoogleLoading && (
+        <div
+          data-testid="login-google-pending"
+          className="mt-4 rounded-2xl border border-medical-100 bg-medical-50/80 px-4 py-3 text-center"
+        >
+          <p className="text-sm font-semibold text-medical-800">{AUTH_UI_COPY.popupPendingTitle}</p>
+          <p className="mt-1 text-xs text-medical-700 text-balance">
+            {AUTH_UI_COPY.popupPendingHint}
+          </p>
+        </div>
+      )}
+
+      {error && (
+        <div className="mt-6 animate-fade-in">
+          <div
+            data-testid="login-error-alert"
+            data-auth-error-code={errorCode || undefined}
+            className="flex items-center gap-2 p-3 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm text-balance"
+          >
+            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            <span>{error}</span>
+          </div>
+          {canRetryGoogleSignIn && (
+            <div className="mt-3 rounded-2xl border border-amber-100 bg-amber-50/80 px-4 py-3 text-center">
+              <p className="text-xs text-amber-800 text-balance">
+                {AUTH_UI_COPY.roleValidationRetryHint}
+              </p>
+              <button
+                type="button"
+                onClick={() => void onGoogleSignIn()}
+                className="mt-3 inline-flex items-center justify-center rounded-xl bg-amber-500 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white transition hover:bg-amber-600"
+                data-testid="login-retry-button"
+              >
+                {AUTH_UI_COPY.roleValidationRetryAction}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
