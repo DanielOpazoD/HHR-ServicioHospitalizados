@@ -10,15 +10,15 @@ export const SPECIALIST_HIDDEN_CENSUS_COLUMNS: readonly (keyof TableColumnConfig
 ] as const;
 
 const SPECIALIST_MINIMUM_COLUMN_WIDTHS: Readonly<Partial<TableColumnConfig>> = {
-  actions: 42,
-  bed: 96,
-  type: 64,
-  name: 190,
-  rut: 128,
-  age: 56,
-  diagnosis: 220,
-  specialty: 112,
-  admission: 128,
+  actions: 28,
+  bed: 40,
+  type: 40,
+  name: 150,
+  rut: 100,
+  age: 40,
+  diagnosis: 200,
+  specialty: 80,
+  admission: 90,
 };
 
 export const isVisibleCensusColumn = (
