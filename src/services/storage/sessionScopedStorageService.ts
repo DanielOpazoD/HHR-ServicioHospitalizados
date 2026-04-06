@@ -28,9 +28,61 @@ const setStoredSessionOwnerKey = (ownerKey: string | null): void => {
   localStorage.setItem(SESSION_OWNER_KEY, ownerKey);
 };
 
+/**
+ * localStorage keys that must survive logout because they hold
+ * infrastructure state unrelated to the authenticated user.
+ * Everything else prefixed with `hhr_` is cleared on session end.
+ *
+ * Whitelist approach: new keys are cleaned automatically unless
+ * explicitly preserved here.
+ */
+const KEYS_SURVIVING_LOGOUT = new Set([
+  'hhr_app_version',
+  'hhr_firebase_config',
+  'hhr_diagnosis_mode',
+  'hhr_storage_auto_recovery_attempted_v1',
+  'hhr_storage_persistent_fallback_count_v1',
+  'hhr_3d_layout_v2',
+  'hhr_feature_flags',
+  'hhr_chunk_reload_count',
+]);
+
+/** sessionStorage keys that must survive logout (bootstrap coordination). */
+const SESSION_KEYS_SURVIVING_LOGOUT = new Set([
+  'hhr_bootstrap_recovery_v1',
+  'hhr_bootstrap_storage_repair_v1',
+  'hhr_recent_manual_logout_v1',
+]);
+
+const clearUserScopedLocalStorage = (): void => {
+  if (typeof localStorage === 'undefined') return;
+  const keysToRemove: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('hhr_') && !KEYS_SURVIVING_LOGOUT.has(key)) {
+      keysToRemove.push(key);
+    }
+  }
+  keysToRemove.forEach(key => localStorage.removeItem(key));
+};
+
+const clearUserScopedSessionStorage = (): void => {
+  if (typeof sessionStorage === 'undefined') return;
+  const keysToRemove: string[] = [];
+  for (let i = 0; i < sessionStorage.length; i++) {
+    const key = sessionStorage.key(i);
+    if (key && key.startsWith('hhr_') && !SESSION_KEYS_SURVIVING_LOGOUT.has(key)) {
+      keysToRemove.push(key);
+    }
+  }
+  keysToRemove.forEach(key => sessionStorage.removeItem(key));
+};
+
 const clearSensitiveSessionState = async (ownerKey: string | null): Promise<void> => {
   await clearAllRecords();
   await clearSyncQueueForOwner(ownerKey);
+  clearUserScopedLocalStorage();
+  clearUserScopedSessionStorage();
 };
 
 export const reconcileAuthorizedSessionOwner = async (ownerKey: string): Promise<void> => {
