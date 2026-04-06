@@ -22,6 +22,7 @@ export interface MedicalHandoffCapabilities {
   canShareSignatureLinks: boolean;
   canCopySpecialistLink: boolean;
   canOpenNightCudyr: boolean;
+  canPrint: boolean;
 }
 
 interface ResolveMedicalHandoffCapabilitiesParams {
@@ -73,5 +74,6 @@ export const resolveMedicalHandoffCapabilities = ({
     canShareSignatureLinks,
     canCopySpecialistLink: !specialistRestrictedAccess && !readOnly,
     canOpenNightCudyr: !specialistRestrictedAccess,
+    canPrint: !specialistRestrictedAccess && !readOnly,
   };
 };

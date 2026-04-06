@@ -167,6 +167,7 @@ describe('handoffViewController', () => {
       shouldShowPatient: vi.fn(() => true),
       scopedMedicalScope: 'all',
       hasAnyVisiblePatients: true,
+      canPrint: true,
     });
     const nursingBindings = buildNursingHandoffContentBindings({
       visibleBeds: [],

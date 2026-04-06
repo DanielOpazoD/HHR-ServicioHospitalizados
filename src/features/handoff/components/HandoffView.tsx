@@ -127,6 +127,7 @@ const HandoffViewContent: React.FC<HandoffViewContentProps> = ({
     hasAnyVisiblePatients: medicalBindings.hasAnyVisiblePatients,
     onSendWhatsApp: effectiveReadOnly ? undefined : handleSendWhatsAppManual,
     onShareLink: effectiveReadOnly ? undefined : handleShareLink,
+    canPrint: medicalCapabilities.canPrint,
   });
   const nursingContentBindings = buildNursingHandoffContentBindings({
     visibleBeds,

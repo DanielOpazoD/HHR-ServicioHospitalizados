@@ -240,6 +240,7 @@ export interface MedicalHandoffContentBindings {
   hasAnyVisiblePatients: boolean;
   onSendWhatsApp?: () => void;
   onShareLink?: (scope: MedicalHandoffScope) => void;
+  canPrint: boolean;
 }
 
 export const buildMedicalHandoffContentBindings = (

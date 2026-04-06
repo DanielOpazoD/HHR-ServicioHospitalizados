@@ -29,6 +29,7 @@ const buildCapabilities = (
   canShareSignatureLinks: true,
   canCopySpecialistLink: true,
   canOpenNightCudyr: true,
+  canPrint: true,
   ...overrides,
 });
 

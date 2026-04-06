@@ -47,6 +47,7 @@ interface HandoffMedicalContentProps {
   hasAnyVisiblePatients: boolean;
   onSendWhatsApp?: () => void;
   onShareLink?: (scope: MedicalHandoffScope) => void;
+  canPrint: boolean;
 }
 
 export const HandoffMedicalContent: React.FC<HandoffMedicalContentProps> = ({
@@ -78,6 +79,7 @@ export const HandoffMedicalContent: React.FC<HandoffMedicalContentProps> = ({
   hasAnyVisiblePatients,
   onSendWhatsApp,
   onShareLink,
+  canPrint,
 }) => {
   const [bedStats, setBedStats] = useState<MedicalHandoffBedStatsData | null>(null);
   const [activeTab, setActiveTab] = useState<MedicalTabMode>('all');
@@ -174,7 +176,7 @@ export const HandoffMedicalContent: React.FC<HandoffMedicalContentProps> = ({
               nonUpcPatientCount={nonUpcPatientCount}
             />
 
-            {!readOnly && (
+            {canPrint && (
               <div className="ml-auto">
                 <MedicalHandoffPrintMenu
                   upcPatientCount={upcPatientCount}
