@@ -1,5 +1,6 @@
 import React from 'react';
 import { useDateNavigation, useSignatureMode, useVersionCheck } from '@/hooks';
+import { useStalenessGuard } from '@/hooks/useStalenessGuard';
 import type { UseDateNavigationReturn } from '@/hooks/useDateNavigation';
 import { useStorageMigration } from '@/hooks/useStorageMigration';
 import { setFirestoreSyncState } from '@/services/repositories/repositoryConfig';
@@ -100,6 +101,7 @@ export const useAppBootstrapState = (): AppBootstrapState => {
 
   useStorageMigration({ enabled: !auth.isLoading && auth.isAuthenticated });
   useVersionCheck();
+  useStalenessGuard();
   useSyncFirestoreStatus(auth.remoteSyncState);
 
   const dateNav = useDateNavigation();
