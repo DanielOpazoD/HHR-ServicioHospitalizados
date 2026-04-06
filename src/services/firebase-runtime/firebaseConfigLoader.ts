@@ -44,23 +44,33 @@ const getCachedConfig = (): FirebaseOptions | null => {
   }
 };
 
+const FETCH_TIMEOUT_MS = 8_000;
+
 const fetchRuntimeConfig = async (): Promise<FirebaseOptions> => {
   const configUrl = `/.netlify/functions/firebase-config?t=${Date.now()}&mode=recovery`;
-  const response = await fetch(configUrl, {
-    cache: 'no-store',
-    headers: { 'Cache-Control': 'no-cache' },
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
-  if (!response.ok) {
-    throw new Error(`Runtime config request failed (${response.status})`);
+  try {
+    const response = await fetch(configUrl, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' },
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Runtime config request failed (${response.status})`);
+    }
+
+    const config = (await response.json()) as Partial<FirebaseOptions>;
+    if (!hasRequiredFirebaseFields(config)) {
+      throw new Error('Runtime config response is incomplete');
+    }
+
+    return config satisfies FirebaseOptions;
+  } finally {
+    clearTimeout(timeout);
   }
-
-  const config = (await response.json()) as Partial<FirebaseOptions>;
-  if (!hasRequiredFirebaseFields(config)) {
-    throw new Error('Runtime config response is incomplete');
-  }
-
-  return config satisfies FirebaseOptions;
 };
 
 const buildDevConfig = (): FirebaseOptions => {
@@ -84,26 +94,46 @@ const buildDevConfig = (): FirebaseOptions => {
   } satisfies FirebaseOptions;
 };
 
+/**
+ * Revalidates the Firebase config from the Netlify Function in the background.
+ * Errors are logged but never thrown — this is fire-and-forget.
+ */
+const revalidateConfigInBackground = (): void => {
+  fetchRuntimeConfig()
+    .then(fresh => {
+      saveCachedConfig(fresh);
+    })
+    .catch(error => {
+      firebaseConfigLoaderLogger.warn(
+        '[FirebaseConfig] Background config revalidation failed (non-blocking)',
+        error
+      );
+    });
+};
+
+/**
+ * Loads Firebase config using a cache-first strategy:
+ * 1. If a valid cached config exists in localStorage, return it immediately
+ *    and revalidate from the Netlify Function in the background.
+ * 2. If no cache exists (first visit), fetch from the Netlify Function (blocking).
+ *
+ * This eliminates the 5-10s cold-start delay of the Netlify Function on
+ * subsequent page loads and after logout+refresh.
+ */
 export const loadFirebaseConfig = async (): Promise<FirebaseOptions> => {
   if (import.meta.env.DEV) {
     return buildDevConfig();
   }
 
+  // Cache-first: return cached config immediately if available
   const cached = getCachedConfig();
-
-  try {
-    const config = await fetchRuntimeConfig();
-    saveCachedConfig(config);
-    return config;
-  } catch (error) {
-    if (hasRequiredFirebaseFields(cached)) {
-      firebaseConfigLoaderLogger.warn(
-        '[FirebaseConfig] Using cached Firebase config due to network error',
-        error
-      );
-      return cached;
-    }
-
-    throw error;
+  if (cached) {
+    revalidateConfigInBackground();
+    return cached;
   }
+
+  // No cache (first visit): blocking fetch
+  const config = await fetchRuntimeConfig();
+  saveCachedConfig(config);
+  return config;
 };
