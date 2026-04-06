@@ -84,3 +84,11 @@ export const queryKeys = {
     activeByPatientRut: (rut: string) => ['transfers', 'activeByPatientRut', rut] as const,
   },
 } as const;
+
+/**
+ * Clears all queries and mutations from the query cache.
+ * Must be called on logout to prevent clinical data leakage between sessions.
+ */
+export const clearQueryCache = (): void => {
+  queryClient.clear();
+};
