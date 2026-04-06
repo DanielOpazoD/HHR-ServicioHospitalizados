@@ -174,13 +174,15 @@ export const HandoffMedicalContent: React.FC<HandoffMedicalContentProps> = ({
               nonUpcPatientCount={nonUpcPatientCount}
             />
 
-            <div className="ml-auto">
-              <MedicalHandoffPrintMenu
-                upcPatientCount={upcPatientCount}
-                nonUpcPatientCount={nonUpcPatientCount}
-                onPrint={handlePrint}
-              />
-            </div>
+            {!readOnly && (
+              <div className="ml-auto">
+                <MedicalHandoffPrintMenu
+                  upcPatientCount={upcPatientCount}
+                  nonUpcPatientCount={nonUpcPatientCount}
+                  onPrint={handlePrint}
+                />
+              </div>
+            )}
           </>
         ) : null}
       </div>

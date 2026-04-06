@@ -145,12 +145,12 @@ export const MedicalSignatureView: React.FC = () => {
             />
           </div>
 
-          <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white p-6 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] print:hidden">
-            <div className="mx-auto max-w-3xl">
+          <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white px-4 py-3 shadow-[0_-2px_8px_rgba(0,0,0,0.08)] print:hidden">
+            <div className="mx-auto max-w-2xl">
               {isSigned ? (
-                <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-3">
-                  <div className="rounded-full bg-green-100 p-1.5 text-green-600">
-                    <CheckCircle size={20} />
+                <div className="flex items-center gap-2 rounded-md border border-green-200 bg-green-50 px-3 py-2">
+                  <div className="rounded-full bg-green-100 p-1 text-green-600">
+                    <CheckCircle size={16} />
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-green-800">Entrega Recibida y Firmada</h3>
@@ -162,32 +162,32 @@ export const MedicalSignatureView: React.FC = () => {
                 </div>
               ) : (
                 <>
-                  <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-800">
-                    <PenTool className="text-purple-600" />
+                  <h3 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-700">
+                    <PenTool size={14} className="text-purple-600" />
                     Recepción de Turno Médico
                   </h3>
 
-                  <div className="flex flex-col gap-4 sm:flex-row">
+                  <div className="flex items-center gap-3">
                     <input
                       type="text"
                       placeholder="Nombre y Apellido del Médico"
                       value={doctorName}
                       onChange={event => setDoctorName(event.target.value)}
-                      className="flex-1 rounded-lg border border-slate-300 p-3 text-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="min-w-0 flex-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                     />
                     <button
                       onClick={() => void handleSign()}
                       disabled={!doctorName.trim() || isSigning}
-                      className="whitespace-nowrap rounded-lg bg-purple-600 px-8 py-3 text-lg font-bold text-white shadow-md transition-colors hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="whitespace-nowrap rounded-md bg-purple-600 px-5 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isSigning ? 'Firmando...' : 'Firmar y Recibir'}
                     </button>
                   </div>
-                  <p className="mt-2 text-sm text-slate-500">
+                  <p className="mt-1 text-xs text-slate-400">
                     Al firmar, certifica que ha leído y recibido la entrega de turno conforme.
                   </p>
                   {signError instanceof Error && (
-                    <p className="mt-2 text-sm text-rose-600">{signError.message}</p>
+                    <p className="mt-1 text-xs text-rose-600">{signError.message}</p>
                   )}
                 </>
               )}

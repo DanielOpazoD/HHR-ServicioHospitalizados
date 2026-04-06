@@ -171,8 +171,8 @@ export interface HandoffHeaderBindings {
     signedAt: string;
   } | null;
   medicalHandoffSentAt?: string | null;
-  onSendWhatsApp: () => void;
-  onShareLink: (scope: MedicalHandoffScope) => void;
+  onSendWhatsApp?: () => void;
+  onShareLink?: (scope: MedicalHandoffScope) => void;
   showNightCudyrAction: boolean;
 }
 
@@ -184,8 +184,8 @@ interface BuildHandoffHeaderBindingsParams {
   canShareSignatureLinks: boolean;
   medicalSignature?: { doctorName: string; signedAt: string } | null;
   medicalHandoffSentAt?: string | null;
-  onSendWhatsApp: () => void;
-  onShareLink: (scope: MedicalHandoffScope) => void;
+  onSendWhatsApp?: () => void;
+  onShareLink?: (scope: MedicalHandoffScope) => void;
 }
 
 export const buildHandoffHeaderBindings = ({
@@ -203,7 +203,7 @@ export const buildHandoffHeaderBindings = ({
   selectedShift,
   setSelectedShift,
   readOnly,
-  showMedicalShareActions: canShareSignatureLinks,
+  showMedicalShareActions: canShareSignatureLinks && !readOnly,
   medicalSignature,
   medicalHandoffSentAt,
   onSendWhatsApp,
