@@ -34,6 +34,8 @@ import {
   type NormalizedAuthOperationalState,
 } from '@/services/auth/authOperationalState';
 import type { AuthRuntimeSnapshot } from '@/services/auth/authRuntimeSnapshot';
+import { onAuthChannelMessage } from '@/services/auth/authBroadcastChannel';
+import { clearQueryCache } from '@/config/queryClient';
 
 /**
  * Return type for the useAuthState hook.
@@ -143,6 +145,20 @@ export const useAuthState = (): UseAuthStateReturn => {
 
     void reconcileAuthorizedSessionOwner(ownerKey);
   }, [operationalState.authLoading, operationalState.authorizedUser]);
+
+  // Cross-tab: react to logout/session events from other tabs
+  useEffect(() => {
+    const cleanup = onAuthChannelMessage(message => {
+      if (message.type === 'LOGOUT') {
+        clearQueryCache();
+        setSessionState(createUnauthenticatedAuthSessionState());
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.removeItem('hhr_logged_this_session');
+        }
+      }
+    });
+    return cleanup;
+  }, []);
 
   return {
     sessionState: operationalState.sessionState,
