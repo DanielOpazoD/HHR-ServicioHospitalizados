@@ -12,6 +12,8 @@ import {
   clearSessionScopedClientState,
   resolveSessionOwnerKey,
 } from '@/services/storage/sessionScopedStorageService';
+import { clearQueryCache } from '@/config/queryClient';
+import { broadcastLogout } from '@/services/auth/authBroadcastChannel';
 
 export const getE2EBootstrapUser = (): AuthUser | null => {
   if (typeof window === 'undefined' || !window.__HHR_E2E_OVERRIDE__) {
@@ -75,9 +77,10 @@ export const createHandleLogout =
   ): ((reason?: 'manual' | 'automatic') => Promise<void>) =>
   async (reason: 'manual' | 'automatic' = 'manual') => {
     const ownerKey = resolveSessionOwnerKey(user?.uid);
-    if (user?.email) {
-      await defaultAuditPort.logUserLogout(user.email, reason);
-    }
+
+    // 1. Synchronous operations first — cannot be interrupted by navigation or tab close
+    setSessionState(createUnauthenticatedAuthSessionState());
+    clearQueryCache();
 
     if (typeof sessionStorage !== 'undefined') {
       sessionStorage.removeItem('hhr_logged_this_session');
@@ -89,21 +92,27 @@ export const createHandleLogout =
       markRecentManualLogout();
     }
 
-    try {
-      await signOut();
-    } catch (error) {
-      authStateLogger.warn('Firebase signOut failed (probably offline)', error);
-    }
+    // Notify other tabs so they can perform their own cleanup
+    broadcastLogout(reason);
 
-    try {
-      if (ownerKey) {
-        await clearSessionScopedClientState(reason);
+    // 2. Async operations in parallel — best-effort, one failure does not block others
+    const results = await Promise.allSettled([
+      user?.email ? defaultAuditPort.logUserLogout(user.email, reason) : Promise.resolve(),
+      Promise.resolve(signOut()).catch((e: unknown) =>
+        authStateLogger.warn('Firebase signOut failed (probably offline)', e)
+      ),
+      ownerKey
+        ? Promise.resolve(clearSessionScopedClientState(reason)).catch((e: unknown) =>
+            authStateLogger.warn('Local session cleanup failed during logout', e)
+          )
+        : Promise.resolve(),
+    ]);
+
+    for (const result of results) {
+      if (result.status === 'rejected') {
+        authStateLogger.warn('Logout async step rejected', result.reason);
       }
-    } catch (error) {
-      authStateLogger.warn('Local session cleanup failed during logout', error);
     }
-
-    setSessionState(createUnauthenticatedAuthSessionState());
   };
 
 export const useInactivityLogout = (
