@@ -30,6 +30,14 @@ const getRemoteLastUpdatedIso = (data: Record<string, unknown>): string | undefi
   return typeof value === 'string' ? value : undefined;
 };
 
+/**
+ * Tolerance window for same-session rapid edits (e.g. clicking checkboxes fast).
+ * Changes within this window are assumed to come from the same user/tab and
+ * are allowed through. Changes older than this are likely from a different
+ * PC/session with stale data and are blocked.
+ */
+const SAME_SESSION_TOLERANCE_MS = 30_000;
+
 export const assertFirestoreConcurrency = async (
   docRef: DocumentReference,
   expectedLastUpdated: string | undefined,
@@ -47,7 +55,13 @@ export const assertFirestoreConcurrency = async (
     }
 
     const remoteLastUpdated = getRemoteLastUpdatedIso(remoteDoc.data());
-    if (remoteLastUpdated && new Date(remoteLastUpdated) > new Date(expectedLastUpdated)) {
+    if (!remoteLastUpdated) {
+      return;
+    }
+
+    const drift = new Date(remoteLastUpdated).getTime() - new Date(expectedLastUpdated).getTime();
+
+    if (drift > SAME_SESSION_TOLERANCE_MS) {
       recordOperationalErrorTelemetry(
         'firestore',
         'verify_record_concurrency',
@@ -60,6 +74,7 @@ export const assertFirestoreConcurrency = async (
             contextLabel,
             remoteLastUpdated,
             expectedLastUpdated,
+            driftSeconds: Math.round(drift / 1000),
           },
         }),
         {

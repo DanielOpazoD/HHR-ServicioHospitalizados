@@ -12,9 +12,20 @@ import type { FirestoreServiceRuntimePort } from '@/services/storage/firestore/p
 import { ConcurrencyError } from '@/services/storage/firestore/firestoreWriteSupport';
 
 /**
- * Checks whether the remote record has been updated more recently than
- * the local copy. If so, throws a ConcurrencyError to prevent overwriting
- * newer data from another session/PC.
+ * Tolerance window for same-session rapid edits (e.g. clicking checkboxes fast).
+ * Changes within this window are assumed to come from the same user/tab and
+ * are allowed through. Changes older than this are likely from a different
+ * PC/session with stale data and are blocked.
+ */
+const SAME_SESSION_TOLERANCE_MS = 30_000;
+
+/**
+ * Checks whether the remote record has been updated significantly more
+ * recently than the local copy. If so, throws a ConcurrencyError to prevent
+ * overwriting newer data from another session/PC.
+ *
+ * Small differences (< 30s) are tolerated to allow rapid same-user edits
+ * without false positives.
  */
 const assertSyncQueueConcurrency = async (
   record: DailyRecord,
@@ -35,10 +46,13 @@ const assertSyncQueueConcurrency = async (
         ? remoteData.lastUpdated
         : undefined;
 
-  if (remoteLastUpdated && new Date(remoteLastUpdated) > new Date(localLastUpdated)) {
+  if (!remoteLastUpdated) return;
+
+  const drift = new Date(remoteLastUpdated).getTime() - new Date(localLastUpdated).getTime();
+  if (drift > SAME_SESSION_TOLERANCE_MS) {
     throw new ConcurrencyError(
       `Sync queue: remote record for ${record.date} is newer ` +
-        `(remote=${remoteLastUpdated}, local=${localLastUpdated}). ` +
+        `(remote=${remoteLastUpdated}, local=${localLastUpdated}, drift=${Math.round(drift / 1000)}s). ` +
         `Skipping stale write to prevent data loss.`
     );
   }
