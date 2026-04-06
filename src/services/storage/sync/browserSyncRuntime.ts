@@ -1,14 +1,18 @@
 import type { SyncRuntimePort } from '@/services/storage/sync/syncQueuePorts';
 import { getStoredSessionOwnerKey } from '@/services/storage/sessionScopedStorageService';
 
-export const createBrowserSyncRuntime = (): SyncRuntimePort => ({
-  isOnline: () => typeof navigator !== 'undefined' && navigator.onLine,
-  onOnline: callback => {
-    if (typeof window === 'undefined') {
-      return;
-    }
+export const createBrowserSyncRuntime = (): SyncRuntimePort => {
+  let onlineListenerRegistered = false;
 
-    window.addEventListener('online', callback);
-  },
-  getOwnerKey: () => getStoredSessionOwnerKey(),
-});
+  return {
+    isOnline: () => typeof navigator !== 'undefined' && navigator.onLine,
+    onOnline: callback => {
+      if (onlineListenerRegistered) return;
+      if (typeof window === 'undefined') return;
+
+      window.addEventListener('online', callback);
+      onlineListenerRegistered = true;
+    },
+    getOwnerKey: () => getStoredSessionOwnerKey(),
+  };
+};
