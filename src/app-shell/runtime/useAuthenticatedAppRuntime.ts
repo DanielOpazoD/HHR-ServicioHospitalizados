@@ -31,6 +31,64 @@ interface UseAuthenticatedAppRuntimeParams {
   dateNav: AppAuthenticatedDateNavigation;
 }
 
+interface BuildCensusContextValueParams {
+  dailyRecordHook: DailyRecordContextType;
+  dateNav: AppAuthenticatedDateNavigation;
+  existingDaysInMonth: number[];
+  fileOps: UseFileOperationsReturn;
+  censusEmail: UseCensusEmailReturn;
+  nurseSignature: string;
+}
+
+interface BuildAuthenticatedAppRuntimeParams extends BuildCensusContextValueParams {
+  ui: UseAppStateReturn;
+}
+
+export const resolveExistingDaysInMonth = (data: number[] | undefined): number[] => data ?? [];
+
+export const buildAuthenticatedCensusContextValue = ({
+  dailyRecordHook,
+  dateNav,
+  existingDaysInMonth,
+  fileOps,
+  censusEmail,
+  nurseSignature,
+}: BuildCensusContextValueParams): CensusContextType => ({
+  dailyRecord: dailyRecordHook,
+  dateNav: {
+    ...dateNav,
+    existingDaysInMonth,
+  },
+  fileOps,
+  censusEmail,
+  nurseSignature,
+});
+
+export const buildAuthenticatedAppRuntime = ({
+  dailyRecordHook,
+  dateNav,
+  existingDaysInMonth,
+  fileOps,
+  censusEmail,
+  nurseSignature,
+  ui,
+}: BuildAuthenticatedAppRuntimeParams): AuthenticatedAppRuntime => ({
+  dailyRecordHook,
+  existingDaysInMonth,
+  nurseSignature,
+  censusEmail,
+  fileOps,
+  ui,
+  censusContextValue: buildAuthenticatedCensusContextValue({
+    dailyRecordHook,
+    dateNav,
+    existingDaysInMonth,
+    fileOps,
+    censusEmail,
+    nurseSignature,
+  }),
+});
+
 export const useAuthenticatedAppRuntime = ({
   auth,
   dateNav,
@@ -41,7 +99,7 @@ export const useAuthenticatedAppRuntime = ({
   const { record } = dailyRecordHook;
 
   const { data } = useExistingDaysQuery(dateNav.selectedYear, dateNav.selectedMonth);
-  const existingDaysInMonth = React.useMemo(() => data ?? [], [data]);
+  const existingDaysInMonth = React.useMemo(() => resolveExistingDaysInMonth(data), [data]);
 
   const nurseSignature = React.useMemo(() => resolveShiftNurseSignature(record, 'night'), [record]);
 
@@ -60,37 +118,29 @@ export const useAuthenticatedAppRuntime = ({
   const ui = useAppState();
 
   const censusContextValue = React.useMemo<CensusContextType>(
-    () => ({
-      dailyRecord: dailyRecordHook,
-      dateNav: {
-        ...dateNav,
+    () =>
+      buildAuthenticatedCensusContextValue({
+        dailyRecordHook,
+        dateNav,
         existingDaysInMonth,
-      },
-      fileOps,
-      censusEmail,
-      nurseSignature,
-    }),
+        fileOps,
+        censusEmail,
+        nurseSignature,
+      }),
     [censusEmail, dailyRecordHook, dateNav, existingDaysInMonth, fileOps, nurseSignature]
   );
 
   return React.useMemo(
-    () => ({
-      dailyRecordHook,
-      existingDaysInMonth,
-      nurseSignature,
-      censusEmail,
-      fileOps,
-      ui,
-      censusContextValue,
-    }),
-    [
-      censusContextValue,
-      censusEmail,
-      dailyRecordHook,
-      existingDaysInMonth,
-      fileOps,
-      nurseSignature,
-      ui,
-    ]
+    () =>
+      buildAuthenticatedAppRuntime({
+        dailyRecordHook,
+        dateNav,
+        existingDaysInMonth,
+        fileOps,
+        censusEmail,
+        nurseSignature,
+        ui,
+      }),
+    [censusEmail, dailyRecordHook, dateNav, existingDaysInMonth, fileOps, nurseSignature, ui]
   );
 };
