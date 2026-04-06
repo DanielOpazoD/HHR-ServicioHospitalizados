@@ -6,7 +6,6 @@ import {
 } from '@/application/auth';
 import { AuthSessionState, AuthUser, UserRole } from '@/types/auth';
 export type { AuthSessionState, UserRole };
-import { canEditAnyAppModule } from '@/shared/access/operationalAccessPolicy';
 import {
   createHandleLogout,
   getE2EBootstrapUser,
@@ -20,23 +19,21 @@ import {
   createAuthenticatingAuthSessionState,
   createUnauthenticatedAuthSessionState,
   getAuthSessionStateUser,
-  isAuthenticatedAuthSessionState,
   toResolvedAuthSessionState,
 } from '@/services/auth/authSessionState';
 import {
-  buildAuthRuntimeSnapshot,
-  type AuthRuntimeSnapshot,
-} from '@/services/auth/authRuntimeSnapshot';
-import {
-  resolveRemoteSyncRuntimeState,
   type FirestoreSyncState,
   type RemoteSyncRuntimeStatus,
 } from '@/services/repositories/repositoryConfig';
-import { buildAuthRemoteSyncState } from '@/services/auth/authRemoteSyncState';
 import {
   reconcileAuthorizedSessionOwner,
   resolveSessionOwnerKey,
 } from '@/services/storage/sessionScopedStorageService';
+import {
+  resolveNormalizedAuthOperationalState,
+  type NormalizedAuthOperationalState,
+} from '@/services/auth/authOperationalState';
+import type { AuthRuntimeSnapshot } from '@/services/auth/authRuntimeSnapshot';
 
 /**
  * Return type for the useAuthState hook.
@@ -96,10 +93,6 @@ export const useAuthState = (): UseAuthStateReturn => {
       : createAuthenticatingAuthSessionState();
   });
   const currentUser = getAuthSessionStateUser(sessionState);
-  const authorizedUser =
-    isAuthenticatedAuthSessionState(sessionState) && sessionState.status === 'authorized'
-      ? sessionState.user
-      : null;
   const [authLoading, setAuthLoading] = useState(
     !e2eBootstrapUser && !(hasRecentManualLogout() && !hasActiveFirebaseSession())
   );
@@ -124,67 +117,47 @@ export const useAuthState = (): UseAuthStateReturn => {
     setAuthLoading,
   });
 
-  const role: UserRole = currentUser?.role || 'viewer';
-  const isEditor = canEditAnyAppModule(role);
-  const isViewer = !isEditor;
-  const canEdit = isEditor;
-  const remoteSyncState = useMemo(
+  // Keep auth-derived operational flags behind the shared normalizer so the hook
+  // and the context stay aligned on the same semantics.
+  const operationalState = useMemo<NormalizedAuthOperationalState>(
     () =>
-      buildAuthRemoteSyncState({
+      resolveNormalizedAuthOperationalState({
         sessionState,
         authLoading,
         isFirebaseConnected,
         isOnline,
+        handleLogout,
       }),
-    [sessionState, authLoading, isFirebaseConnected, isOnline]
-  );
-  const remoteSyncStatus = useMemo(
-    () =>
-      resolveRemoteSyncRuntimeState({
-        authLoading,
-        isFirebaseConnected,
-        firestoreSyncState: remoteSyncState,
-      }),
-    [authLoading, isFirebaseConnected, remoteSyncState]
-  );
-  const authRuntime = useMemo(
-    () =>
-      buildAuthRuntimeSnapshot({
-        sessionState,
-        authLoading,
-        isFirebaseConnected,
-        isOnline,
-      }),
-    [sessionState, authLoading, isFirebaseConnected, isOnline]
+    [sessionState, authLoading, isFirebaseConnected, isOnline, handleLogout]
   );
 
   useEffect(() => {
-    if (authLoading || !authorizedUser) {
+    if (operationalState.authLoading || !operationalState.authorizedUser) {
       return;
     }
 
-    const ownerKey = resolveSessionOwnerKey(authorizedUser.uid);
+    const ownerKey = resolveSessionOwnerKey(operationalState.authorizedUser.uid);
     if (!ownerKey) {
       return;
     }
 
     void reconcileAuthorizedSessionOwner(ownerKey);
-  }, [authLoading, authorizedUser]);
+  }, [operationalState.authLoading, operationalState.authorizedUser]);
 
   return {
-    sessionState,
-    currentUser,
-    authorizedUser,
-    user: currentUser,
-    authLoading,
-    isFirebaseConnected,
-    remoteSyncStatus: remoteSyncStatus.status,
-    remoteSyncState,
-    authRuntime,
+    sessionState: operationalState.sessionState,
+    currentUser: operationalState.currentUser,
+    authorizedUser: operationalState.authorizedUser,
+    user: operationalState.currentUser,
+    authLoading: operationalState.authLoading,
+    isFirebaseConnected: operationalState.isFirebaseConnected,
+    remoteSyncStatus: operationalState.remoteSyncStatus,
+    remoteSyncState: operationalState.remoteSyncState,
+    authRuntime: operationalState.authRuntime,
     handleLogout,
-    role,
-    isEditor,
-    isViewer,
-    canEdit,
+    role: operationalState.role,
+    isEditor: operationalState.isEditor,
+    isViewer: operationalState.isViewer,
+    canEdit: operationalState.isEditor,
   };
 };

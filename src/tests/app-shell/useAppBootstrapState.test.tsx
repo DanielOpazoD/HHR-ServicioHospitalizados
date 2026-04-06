@@ -1,5 +1,8 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AuthContextType } from '@/context';
+import type { UseDateNavigationReturn } from '@/hooks/useDateNavigation';
+import type { AuthUser } from '@/types/auth';
 
 const {
   mockUseAuth,
@@ -35,9 +38,12 @@ vi.mock('@/services/repositories/repositoryConfig', () => ({
   setFirestoreSyncState: (...args: unknown[]) => mockSetFirestoreSyncState(...args),
 }));
 
-import { useAppBootstrapState } from '@/app-shell/bootstrap/useAppBootstrapState';
+import {
+  buildAppBootstrapState,
+  useAppBootstrapState,
+} from '@/app-shell/bootstrap/useAppBootstrapState';
 
-const createAuthState = (overrides: Record<string, unknown> = {}) => {
+const createAuthState = (overrides: Partial<AuthContextType> = {}): AuthContextType => {
   const remoteSyncStatus = (overrides.remoteSyncStatus || 'local_only') as
     | 'ready'
     | 'bootstrapping'
@@ -81,7 +87,9 @@ const createAuthState = (overrides: Record<string, unknown> = {}) => {
   };
 };
 
-const createDateNavigation = (overrides: Record<string, unknown> = {}) => ({
+const createDateNavigation = (
+  overrides: Partial<UseDateNavigationReturn> = {}
+): UseDateNavigationReturn => ({
   selectedYear: 2026,
   setSelectedYear: vi.fn(),
   selectedMonth: 2,
@@ -180,9 +188,10 @@ describe('useAppBootstrapState', () => {
   });
 
   it('returns authenticated with the resolved app date navigation', () => {
-    const currentUser = {
+    const currentUser: AuthUser = {
       uid: 'user-1',
       email: 'admin@hospital.cl',
+      displayName: 'Admin',
       role: 'admin',
     };
     mockUseAuth.mockReturnValue(
@@ -221,9 +230,10 @@ describe('useAppBootstrapState', () => {
   });
 
   it('keeps Firestore disabled while an authenticated session reconnects Firebase', () => {
-    const currentUser = {
+    const currentUser: AuthUser = {
       uid: 'user-1',
       email: 'admin@hospital.cl',
+      displayName: 'Admin',
       role: 'admin',
     };
     mockUseAuth.mockReturnValue(
@@ -248,5 +258,55 @@ describe('useAppBootstrapState', () => {
       mode: 'bootstrapping',
       reason: 'auth_loading',
     });
+  });
+
+  it('buildAppBootstrapState prioritizes signature mode over the other gates', () => {
+    const auth = createAuthState({
+      isLoading: true,
+      isAuthenticated: false,
+    });
+    const dateNav = createDateNavigation();
+
+    const result = buildAppBootstrapState({
+      auth,
+      dateNav,
+      isSignatureMode: true,
+      currentDateString: '2026-03-27',
+    });
+
+    expect(result.status).toBe('signature_mode');
+  });
+
+  it('buildAppBootstrapState returns authenticated navigation wiring when access is ready', () => {
+    const currentUser: AuthUser = {
+      uid: 'user-1',
+      email: 'admin@hospital.cl',
+      displayName: 'Admin',
+      role: 'admin',
+    };
+    const auth = createAuthState({
+      currentUser,
+      authorizedUser: currentUser,
+      user: currentUser,
+      role: 'admin',
+      isAuthenticated: true,
+      isAuthorizedSession: true,
+      isEditor: true,
+      isViewer: false,
+    });
+    const dateNav = createDateNavigation();
+
+    const result = buildAppBootstrapState({
+      auth,
+      dateNav,
+      isSignatureMode: false,
+      currentDateString: '2026-03-31',
+    });
+
+    expect(result.status).toBe('authenticated');
+    if (result.status === 'authenticated') {
+      expect(result.dateNav.currentDateString).toBe('2026-03-31');
+      expect(result.dateNav.selectedDay).toBe(27);
+    }
   });
 });
