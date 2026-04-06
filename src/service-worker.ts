@@ -171,7 +171,9 @@ self.addEventListener('install', (event: Event) => {
   extendableEvent.waitUntil(
     caches.open(`offline-${CACHE_VERSION}`).then(cache => cache.add(OFFLINE_PAGE))
   );
-  self.skipWaiting();
+  // skipWaiting is NOT called here to avoid disrupting active tabs during deploys.
+  // VitePWA's autoUpdate will send a SKIP_WAITING message (handled below)
+  // when it is safe to activate the new worker.
 });
 
 self.addEventListener('activate', (event: Event) => {
