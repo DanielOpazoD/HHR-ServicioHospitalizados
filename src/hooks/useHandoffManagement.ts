@@ -25,6 +25,7 @@ export const useHandoffManagement = (
     recordRef,
     role,
     saveAndUpdate,
+    patchRecord,
     logEvent,
     logDebouncedEvent,
     userId,

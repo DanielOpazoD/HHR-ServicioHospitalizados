@@ -1,7 +1,17 @@
 import {
+  buildChecklistPatch,
   buildChecklistUpdateRecord,
+  buildHandoffStaffPatch,
+  buildMedicalHandoffDoctorPatch,
+  buildMedicalNoChangesPatch,
+  buildMedicalNoChangesRecord,
+  buildMedicalSignaturePatch,
   buildMedicalSignatureRecord,
+  buildMedicalSpecialtyNotePatch,
+  buildMedicalSpecialtyNoteRecord,
+  buildNovedadesPatch,
   buildNovedadesUpdateRecord,
+  buildResetMedicalHandoffPatch,
   buildResetMedicalHandoffRecord,
   buildUpdatedHandoffStaffRecord,
 } from '@/domain/handoff/management';
@@ -11,14 +21,11 @@ import {
 } from '@/shared/contracts/applicationOutcome';
 import type {
   DailyRecord,
+  DailyRecordPatch,
   MedicalHandoffActor,
   MedicalSpecialty,
 } from '@/domain/handoff/recordContracts';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
-import {
-  buildMedicalNoChangesRecord,
-  buildMedicalSpecialtyNoteRecord,
-} from '@/domain/handoff/management';
 import { createMissingRecordOutcome, createValidationOutcome } from './handoffUseCaseSupport';
 
 export interface PersistedHandoffRecordOutput {
@@ -33,6 +40,7 @@ export interface ConfirmMedicalSpecialtyNoChangesOutput extends PersistedHandoff
 interface PersistRecordInput {
   record: DailyRecord | null;
   saveRecord: (updatedRecord: DailyRecord) => Promise<void>;
+  patchRecord?: (patch: DailyRecordPatch) => Promise<void>;
 }
 
 interface UpdateHandoffChecklistInput extends PersistRecordInput {
@@ -74,6 +82,23 @@ interface UpdateMedicalHandoffDoctorInput extends PersistRecordInput {
   doctorName: string;
 }
 
+/**
+ * Persist via patch if available, otherwise fall back to full save.
+ * The patch path uses Firestore updateDoc (field-level), which is safe
+ * for concurrent edits by different users on different fields.
+ */
+const persistWithPatchPreference = async (
+  input: PersistRecordInput,
+  patch: DailyRecordPatch | null,
+  updatedRecord: DailyRecord
+): Promise<void> => {
+  if (input.patchRecord && patch) {
+    await input.patchRecord(patch);
+  } else {
+    await input.saveRecord(updatedRecord);
+  }
+};
+
 export const executeUpdateHandoffChecklist = async (
   input: UpdateHandoffChecklistInput
 ): Promise<ApplicationOutcome<PersistedHandoffRecordOutput | null>> => {
@@ -87,7 +112,8 @@ export const executeUpdateHandoffChecklist = async (
     input.field,
     input.value
   );
-  await input.saveRecord(updatedRecord);
+  const patch = buildChecklistPatch(input.shift, input.field, input.value);
+  await persistWithPatchPreference(input, patch, updatedRecord);
   return createApplicationSuccess({ updatedRecord });
 };
 
@@ -99,7 +125,8 @@ export const executeUpdateHandoffNovedades = async (
   }
 
   const updatedRecord = buildNovedadesUpdateRecord(input.record, input.shift, input.value);
-  await input.saveRecord(updatedRecord);
+  const patch = buildNovedadesPatch(input.shift, input.value);
+  await persistWithPatchPreference(input, patch, updatedRecord);
   return createApplicationSuccess({ updatedRecord });
 };
 
@@ -120,7 +147,13 @@ export const executeUpdateMedicalSpecialtyNote = async (
     input.value,
     input.actor
   );
-  await input.saveRecord(updatedRecord);
+  const patch = buildMedicalSpecialtyNotePatch(
+    input.record,
+    input.specialty,
+    input.value,
+    input.actor
+  );
+  await persistWithPatchPreference(input, patch, updatedRecord);
   return createApplicationSuccess({ updatedRecord });
 };
 
@@ -162,11 +195,18 @@ export const executeConfirmMedicalSpecialtyNoChanges = async (
     input.comment,
     effectiveDateKey
   );
+  const patch = buildMedicalNoChangesPatch(
+    input.record,
+    input.specialty,
+    input.actor,
+    input.comment,
+    effectiveDateKey
+  );
   const confirmedAt =
     updatedRecord.medicalHandoffBySpecialty?.[input.specialty]?.dailyContinuity?.[effectiveDateKey]
       ?.confirmedAt || new Date().toISOString();
 
-  await input.saveRecord(updatedRecord);
+  await persistWithPatchPreference(input, patch, updatedRecord);
   return createApplicationSuccess({
     updatedRecord,
     confirmedAt,
@@ -187,7 +227,8 @@ export const executeUpdateHandoffStaff = async (
     input.type,
     input.staffList
   );
-  await input.saveRecord(updatedRecord);
+  const patch = buildHandoffStaffPatch(input.shift, input.type, input.staffList);
+  await persistWithPatchPreference(input, patch, updatedRecord);
   return createApplicationSuccess({ updatedRecord });
 };
 
@@ -204,7 +245,8 @@ export const executeUpdateMedicalSignature = async (
 
   const scope = input.scope || 'all';
   const updatedRecord = buildMedicalSignatureRecord(input.record, input.doctorName, scope);
-  await input.saveRecord(updatedRecord);
+  const patch = buildMedicalSignaturePatch(input.record, input.doctorName, scope);
+  await persistWithPatchPreference(input, patch, updatedRecord);
   return createApplicationSuccess({ updatedRecord });
 };
 
@@ -224,7 +266,8 @@ export const executeUpdateMedicalHandoffDoctor = async (
     medicalHandoffDoctor: input.doctorName,
     lastUpdated: new Date().toISOString(),
   };
-  await input.saveRecord(updatedRecord);
+  const patch = buildMedicalHandoffDoctorPatch(input.doctorName);
+  await persistWithPatchPreference(input, patch, updatedRecord);
   return createApplicationSuccess({ updatedRecord });
 };
 
@@ -240,6 +283,7 @@ export const executeResetMedicalHandoffState = async (
   }
 
   const updatedRecord = buildResetMedicalHandoffRecord(input.record);
-  await input.saveRecord(updatedRecord);
+  const patch = buildResetMedicalHandoffPatch();
+  await persistWithPatchPreference(input, patch, updatedRecord);
   return createApplicationSuccess({ updatedRecord });
 };

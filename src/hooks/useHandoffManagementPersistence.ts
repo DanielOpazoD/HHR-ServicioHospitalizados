@@ -1,7 +1,8 @@
 import { useCallback } from 'react';
 import type { RefObject } from 'react';
-import type { DailyRecord } from '@/application/shared/dailyRecordContracts';
 import type {
+  DailyRecord,
+  DailyRecordPatch,
   MedicalHandoffActor,
   MedicalSpecialty,
 } from '@/application/shared/dailyRecordContracts';
@@ -36,6 +37,7 @@ interface HandoffManagementPersistenceInput {
   recordRef: RefObject<DailyRecord | null>;
   role?: string;
   saveAndUpdate: (updatedRecord: DailyRecord) => Promise<void>;
+  patchRecord: (patch: DailyRecordPatch) => Promise<void>;
   logEvent: (
     action: AuditAction,
     entityType: AuditLogEntry['entityType'],
@@ -68,6 +70,7 @@ export const useHandoffManagementPersistence = ({
   recordRef,
   role,
   saveAndUpdate,
+  patchRecord,
   logEvent,
   logDebouncedEvent,
   userId,
@@ -120,6 +123,7 @@ export const useHandoffManagementPersistence = ({
             field,
             record,
             saveRecord: saveAndUpdate,
+            patchRecord,
             shift,
             value,
           }),
@@ -139,6 +143,7 @@ export const useHandoffManagementPersistence = ({
           executeUpdateHandoffNovedades({
             record,
             saveRecord: saveAndUpdate,
+            patchRecord,
             shift,
             value,
           }),
@@ -177,6 +182,7 @@ export const useHandoffManagementPersistence = ({
             actor,
             record,
             saveRecord: saveAndUpdate,
+            patchRecord,
             specialty,
             value,
           }),
@@ -222,6 +228,7 @@ export const useHandoffManagementPersistence = ({
             dateKey,
             record,
             saveRecord: saveAndUpdate,
+            patchRecord,
             specialty,
           }),
         {
@@ -269,6 +276,7 @@ export const useHandoffManagementPersistence = ({
           executeUpdateHandoffStaff({
             record,
             saveRecord: saveAndUpdate,
+            patchRecord,
             shift,
             staffList,
             type,
@@ -290,6 +298,7 @@ export const useHandoffManagementPersistence = ({
             doctorName,
             record,
             saveRecord: saveAndUpdate,
+            patchRecord,
             scope,
           }),
         {
@@ -331,6 +340,7 @@ export const useHandoffManagementPersistence = ({
             doctorName,
             record,
             saveRecord: saveAndUpdate,
+            patchRecord,
           }),
         {
           fallbackMessage: 'No se pudo actualizar el médico de entrega.',
