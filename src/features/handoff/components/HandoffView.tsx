@@ -91,8 +91,8 @@ const HandoffViewContent: React.FC<HandoffViewContentProps> = ({
     canShareSignatureLinks: medicalCapabilities.canShareSignatureLinks,
     medicalSignature: medicalBindings.scopedMedicalSignature,
     medicalHandoffSentAt: medicalBindings.scopedMedicalHandoffSentAt,
-    onSendWhatsApp: effectiveReadOnly ? undefined : handleSendWhatsAppManual,
-    onShareLink: effectiveReadOnly ? undefined : handleShareLink,
+    onSendWhatsApp: medicalCapabilities.canSendWhatsApp ? handleSendWhatsAppManual : undefined,
+    onShareLink: medicalCapabilities.canShareSignatureLinks ? handleShareLink : undefined,
   });
   const medicalContentBindings = buildMedicalHandoffContentBindings({
     record,
@@ -125,8 +125,8 @@ const HandoffViewContent: React.FC<HandoffViewContentProps> = ({
     shouldShowPatient,
     scopedMedicalScope: medicalBindings.scopedMedicalScope,
     hasAnyVisiblePatients: medicalBindings.hasAnyVisiblePatients,
-    onSendWhatsApp: effectiveReadOnly ? undefined : handleSendWhatsAppManual,
-    onShareLink: effectiveReadOnly ? undefined : handleShareLink,
+    onSendWhatsApp: medicalCapabilities.canSendWhatsApp ? handleSendWhatsAppManual : undefined,
+    onShareLink: medicalCapabilities.canShareSignatureLinks ? handleShareLink : undefined,
     canPrint: medicalCapabilities.canPrint,
   });
   const nursingContentBindings = buildNursingHandoffContentBindings({
