@@ -16,6 +16,8 @@ export type TransferStatus =
   | 'REQUESTED'
   | 'RECEIVED'
   | 'ACCEPTED'
+  | 'ACCEPTED_WITH_CAPACITY'
+  | 'ACCEPTED_WAITING_CAPACITY'
   | 'REJECTED'
   | 'NO_RESPONSE'
   | 'TRANSFERRED'
@@ -35,6 +37,16 @@ export const TRANSFER_STATUS_CONFIG: Record<
   REQUESTED: { label: 'Solicitado', color: 'text-amber-700', bgColor: 'bg-amber-100' },
   RECEIVED: { label: 'Recepcionado', color: 'text-cyan-700', bgColor: 'bg-cyan-100' },
   ACCEPTED: { label: 'Aceptado', color: 'text-emerald-700', bgColor: 'bg-emerald-100' },
+  ACCEPTED_WITH_CAPACITY: {
+    label: 'Aceptado + Con cupo',
+    color: 'text-emerald-700',
+    bgColor: 'bg-emerald-100',
+  },
+  ACCEPTED_WAITING_CAPACITY: {
+    label: 'Aceptado + En espera de cupo',
+    color: 'text-emerald-700',
+    bgColor: 'bg-emerald-100',
+  },
   REJECTED: { label: 'Rechazado', color: 'text-rose-700', bgColor: 'bg-rose-100' },
   NO_RESPONSE: { label: 'Sin respuesta', color: 'text-orange-700', bgColor: 'bg-orange-100' },
   TRANSFERRED: { label: 'Trasladado', color: 'text-slate-700', bgColor: 'bg-slate-100' },

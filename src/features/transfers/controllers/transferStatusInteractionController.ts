@@ -16,7 +16,8 @@ interface ResolveTransferStatusDropdownPositionParams {
 export const TRANSFER_STATUS_OPTIONS: readonly TransferStatus[] = [
   'REQUESTED',
   'RECEIVED',
-  'ACCEPTED',
+  'ACCEPTED_WITH_CAPACITY',
+  'ACCEPTED_WAITING_CAPACITY',
   'REJECTED',
   'NO_RESPONSE',
   'TRANSFERRED',

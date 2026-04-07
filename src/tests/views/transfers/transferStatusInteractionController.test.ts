@@ -53,7 +53,8 @@ describe('transferStatusInteractionController', () => {
     expect(TRANSFER_STATUS_OPTIONS).toEqual([
       'REQUESTED',
       'RECEIVED',
-      'ACCEPTED',
+      'ACCEPTED_WITH_CAPACITY',
+      'ACCEPTED_WAITING_CAPACITY',
       'REJECTED',
       'NO_RESPONSE',
       'TRANSFERRED',

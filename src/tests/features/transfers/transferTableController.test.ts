@@ -35,7 +35,13 @@ const buildTransfer = (status: TransferRequest['status']): TransferRequest =>
 
 describe('transferTableController', () => {
   it('keeps the canonical split between active and finalized statuses', () => {
-    expect(ACTIVE_TRANSFER_STATUSES).toEqual(['REQUESTED', 'RECEIVED', 'ACCEPTED']);
+    expect(ACTIVE_TRANSFER_STATUSES).toEqual([
+      'REQUESTED',
+      'RECEIVED',
+      'ACCEPTED',
+      'ACCEPTED_WITH_CAPACITY',
+      'ACCEPTED_WAITING_CAPACITY',
+    ]);
     expect(FINALIZED_TRANSFER_STATUSES).toEqual([
       'TRANSFERRED',
       'REJECTED',
@@ -49,6 +55,7 @@ describe('transferTableController', () => {
     expect(isTransferActiveStatus('TRANSFERRED')).toBe(false);
     expect(isTransferFinalizedStatus('REJECTED')).toBe(true);
     expect(isTransferFinalizedStatus('ACCEPTED')).toBe(false);
+    expect(isTransferFinalizedStatus('ACCEPTED_WITH_CAPACITY')).toBe(false);
   });
 
   it('returns active-row actions for active transfers only', () => {
