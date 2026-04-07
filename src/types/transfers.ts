@@ -26,24 +26,27 @@ export type TransferStatus =
 /**
  * Status display configuration
  */
-export const TRANSFER_STATUS_CONFIG: Record<
-  TransferStatus,
-  {
-    label: string;
-    color: string;
-    bgColor: string;
-  }
-> = {
+export interface TransferStatusDisplay {
+  label: string;
+  /** Short label used inside grouped dropdown entries (falls back to label) */
+  shortLabel?: string;
+  color: string;
+  bgColor: string;
+}
+
+export const TRANSFER_STATUS_CONFIG: Record<TransferStatus, TransferStatusDisplay> = {
   REQUESTED: { label: 'Solicitado', color: 'text-amber-700', bgColor: 'bg-amber-100' },
   RECEIVED: { label: 'Recepcionado', color: 'text-cyan-700', bgColor: 'bg-cyan-100' },
   ACCEPTED: { label: 'Aceptado', color: 'text-emerald-700', bgColor: 'bg-emerald-100' },
   ACCEPTED_WITH_CAPACITY: {
-    label: 'Aceptado + Con cupo',
+    label: 'Aceptado · Cupo confirmado',
+    shortLabel: 'Cupo confirmado',
     color: 'text-emerald-700',
     bgColor: 'bg-emerald-100',
   },
   ACCEPTED_WAITING_CAPACITY: {
-    label: 'Aceptado + En espera de cupo',
+    label: 'Aceptado · En espera cupo',
+    shortLabel: 'En espera cupo',
     color: 'text-emerald-700',
     bgColor: 'bg-emerald-100',
   },

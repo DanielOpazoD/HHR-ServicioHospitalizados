@@ -1,7 +1,5 @@
 import clsx from 'clsx';
 import type { PatientRowCapabilities } from '@/features/census/controllers/patientRowCapabilitiesController';
-import { resolveNormalizedUpcFlag } from '@/shared/census/upcBedPolicy';
-
 interface ResolveBedTypeToggleVisibilityParams {
   bedId: string;
   readOnly: boolean;
@@ -22,19 +20,13 @@ interface ResolvePatientMainRowClassNameParams {
 }
 
 export const resolvePatientMainRowClassName = ({
-  bedId,
   isBlocked,
-  isUpc,
   patientName,
 }: ResolvePatientMainRowClassNameParams): string =>
   clsx(
     'group/row relative border-b border-slate-100/80 transition-all duration-150',
     'hover:bg-blue-50/40 hover:shadow-[inset_0_0_0_1px_rgba(59,130,246,0.08)]',
-    isBlocked
-      ? 'bg-slate-50/50'
-      : resolveNormalizedUpcFlag(bedId, isUpc)
-        ? 'bg-rose-50/50'
-        : 'bg-white',
+    isBlocked ? 'bg-slate-50/50' : 'bg-white',
     'text-[12px] leading-tight',
     patientName?.trim() === '' && 'animate-slide-fade-in'
   );

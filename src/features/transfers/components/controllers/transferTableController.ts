@@ -5,6 +5,7 @@ import {
   isFinalizedTransferStatus,
   isTransferredTransferStatus,
 } from '@/services/transfers/transferStatusController';
+import { isAcceptedSubState } from '@/features/transfers/controllers/transferStatusInteractionController';
 import { formatTransferDate } from '@/shared/transfers/transferPresentation';
 import type { UserRole } from '@/types/auth';
 import { canOpenTransferDocuments } from '@/shared/access/operationalAccessPolicy';
@@ -27,9 +28,11 @@ export interface TransferRowActionState {
   canEditInline: boolean;
   canPrepareDocuments: boolean;
   canViewDocuments: boolean;
+  canMarkTransferred: boolean;
   canUndoTransfer: boolean;
   canArchiveTransfer: boolean;
   canCancelTransfer: boolean;
+  canDeleteTransfer: boolean;
 }
 
 export const getTransferRowActionState = (
@@ -47,9 +50,11 @@ export const getTransferRowActionState = (
     canPrepareDocuments: isActiveRow && hasDocumentSupport && canAccessDocuments,
     canViewDocuments:
       isActiveRow && !!transfer.questionnaireResponses && hasDocumentSupport && canAccessDocuments,
+    canMarkTransferred: isActiveRow && isAcceptedSubState(transfer.status),
     canUndoTransfer: isFinalizedTransferredRow,
     canArchiveTransfer: isFinalizedTransferredRow,
     canCancelTransfer: isActiveRow,
+    canDeleteTransfer: isActiveRow,
   };
 };
 

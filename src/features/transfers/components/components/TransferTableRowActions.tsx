@@ -1,6 +1,6 @@
 import React from 'react';
 import clsx from 'clsx';
-import { Archive, Eye, FileDown, Undo2, XCircle } from 'lucide-react';
+import { Archive, CheckCircle, Eye, FileDown, Undo2, XCircle } from 'lucide-react';
 import type { TransferRequest } from '@/types/transfers';
 import type { TransferRowActionState } from '../controllers/transferTableController';
 
@@ -17,6 +17,7 @@ interface TransferTableRowActionsProps {
   hasDocumentSupport: boolean;
   onGenerateDocs: (transfer: TransferRequest) => void;
   onViewDocs: (transfer: TransferRequest) => void;
+  onMarkTransferred: (transfer: TransferRequest) => void;
   onUndo: (transfer: TransferRequest) => void;
   onArchive: (transfer: TransferRequest) => void;
   onOpenCloseMenu: (event: React.MouseEvent<HTMLButtonElement>) => void;
@@ -28,6 +29,7 @@ export const TransferTableRowActions: React.FC<TransferTableRowActionsProps> = (
   hasDocumentSupport,
   onGenerateDocs,
   onViewDocs,
+  onMarkTransferred,
   onUndo,
   onArchive,
   onOpenCloseMenu,
@@ -77,6 +79,16 @@ export const TransferTableRowActions: React.FC<TransferTableRowActionsProps> = (
       </button>
     )}
 
+    {actionState.canMarkTransferred && (
+      <button
+        onClick={() => onMarkTransferred(transfer)}
+        className="flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1.5 text-[11px] font-semibold text-emerald-700 transition-all hover:bg-emerald-100"
+        title="Marcar traslado como completado (egreso)"
+      >
+        <CheckCircle size={14} /> Traslado completado
+      </button>
+    )}
+
     {actionState.canUndoTransfer && (
       <button
         onClick={() => onUndo(transfer)}
@@ -97,14 +109,16 @@ export const TransferTableRowActions: React.FC<TransferTableRowActionsProps> = (
       </button>
     )}
 
-    <div className="relative ml-auto" data-transfer-actions-root="true">
-      <button
-        onClick={onOpenCloseMenu}
-        className="shrink-0 rounded-md p-1 text-rose-600 transition-colors hover:bg-rose-50 hover:text-rose-700"
-        title="Opciones de cierre"
-      >
-        <XCircle size={16} />
-      </button>
-    </div>
+    {(actionState.canCancelTransfer || actionState.canDeleteTransfer) && (
+      <div className="relative ml-auto" data-transfer-actions-root="true">
+        <button
+          onClick={onOpenCloseMenu}
+          className="shrink-0 rounded-md p-1 text-rose-600 transition-colors hover:bg-rose-50 hover:text-rose-700"
+          title="Opciones de cierre"
+        >
+          <XCircle size={16} />
+        </button>
+      </div>
+    )}
   </div>
 );

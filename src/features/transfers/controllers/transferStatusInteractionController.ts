@@ -16,12 +16,21 @@ interface ResolveTransferStatusDropdownPositionParams {
 export const TRANSFER_STATUS_OPTIONS: readonly TransferStatus[] = [
   'REQUESTED',
   'RECEIVED',
-  'ACCEPTED_WITH_CAPACITY',
   'ACCEPTED_WAITING_CAPACITY',
+  'ACCEPTED_WITH_CAPACITY',
   'REJECTED',
   'NO_RESPONSE',
-  'TRANSFERRED',
 ] as const;
+
+/** Sub-states that belong under the "Aceptado" parent group */
+export const ACCEPTED_SUB_STATES: readonly TransferStatus[] = [
+  'ACCEPTED_WAITING_CAPACITY',
+  'ACCEPTED_WITH_CAPACITY',
+] as const;
+
+/** Check whether a status is an accepted sub-state */
+export const isAcceptedSubState = (status: TransferStatus): boolean =>
+  ACCEPTED_SUB_STATES.includes(status);
 
 export const resolveTransferStatusDropdownPosition = ({
   buttonRect,

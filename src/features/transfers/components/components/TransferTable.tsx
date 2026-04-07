@@ -51,7 +51,7 @@ export const TransferTable: React.FC<TransferTableProps> = ({
   onEdit,
   onStatusChange: _onStatusChange,
   onQuickStatusChange,
-  onMarkTransferred: _onMarkTransferred,
+  onMarkTransferred,
   onCancel,
   onGenerateDocs,
   onViewDocs,
@@ -148,6 +148,7 @@ export const TransferTable: React.FC<TransferTableProps> = ({
               onDeleteHistoryEntry={onDeleteHistoryEntry}
               onGenerateDocs={onGenerateDocs}
               onViewDocs={onViewDocs}
+              onMarkTransferred={onMarkTransferred}
               onUndo={onUndo}
               onArchive={onArchive}
               onUpdateTransfer={onUpdateTransfer}

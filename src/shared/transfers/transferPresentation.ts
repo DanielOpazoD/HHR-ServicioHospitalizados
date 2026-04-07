@@ -42,3 +42,8 @@ export const getTransferStatusPresentation = (status: TransferStatus) =>
 
 export const getTransferStatusLabel = (status: TransferStatus): string =>
   getTransferStatusPresentation(status).label;
+
+export const getTransferStatusShortLabel = (status: TransferStatus): string => {
+  const presentation = getTransferStatusPresentation(status);
+  return presentation.shortLabel ?? presentation.label;
+};

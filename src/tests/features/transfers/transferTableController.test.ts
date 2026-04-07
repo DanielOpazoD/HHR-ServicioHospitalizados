@@ -65,8 +65,24 @@ describe('transferTableController', () => {
     expect(state.canEditInline).toBe(true);
     expect(state.canPrepareDocuments).toBe(true);
     expect(state.canCancelTransfer).toBe(true);
+    expect(state.canDeleteTransfer).toBe(true);
+    expect(state.canMarkTransferred).toBe(false);
     expect(state.canUndoTransfer).toBe(false);
     expect(state.canArchiveTransfer).toBe(false);
+  });
+
+  it('enables canMarkTransferred only for accepted sub-states', () => {
+    const withCapacity = buildTransfer('ACCEPTED_WITH_CAPACITY');
+    const stateWith = getTransferRowActionState(withCapacity, 'active', true, 'admin');
+    expect(stateWith.canMarkTransferred).toBe(true);
+
+    const waitingCapacity = buildTransfer('ACCEPTED_WAITING_CAPACITY');
+    const stateWaiting = getTransferRowActionState(waitingCapacity, 'active', true, 'admin');
+    expect(stateWaiting.canMarkTransferred).toBe(true);
+
+    const received = buildTransfer('RECEIVED');
+    const stateReceived = getTransferRowActionState(received, 'active', true, 'admin');
+    expect(stateReceived.canMarkTransferred).toBe(false);
   });
 
   it('limits finalized-row actions to transferred cases only', () => {
@@ -77,6 +93,7 @@ describe('transferTableController', () => {
     expect(state.canArchiveTransfer).toBe(true);
     expect(state.canEditInline).toBe(false);
     expect(state.canPrepareDocuments).toBe(false);
+    expect(state.canDeleteTransfer).toBe(false);
   });
 
   it('gates transfer document actions by role capability', () => {

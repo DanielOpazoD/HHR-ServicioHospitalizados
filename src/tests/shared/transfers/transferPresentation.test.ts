@@ -5,6 +5,7 @@ import {
   formatTransferVerboseDateTime,
   getTransferStatusLabel,
   getTransferStatusPresentation,
+  getTransferStatusShortLabel,
 } from '@/shared/transfers/transferPresentation';
 
 describe('transferPresentation', () => {
@@ -17,5 +18,16 @@ describe('transferPresentation', () => {
   it('centraliza label y tonos de estado', () => {
     expect(getTransferStatusLabel('REJECTED')).toBe('Rechazado');
     expect(getTransferStatusPresentation('SIGNED' as never).label).toBe('Desconocido');
+  });
+
+  it('returns full label for accepted sub-states', () => {
+    expect(getTransferStatusLabel('ACCEPTED_WITH_CAPACITY')).toBe('Aceptado · Cupo confirmado');
+    expect(getTransferStatusLabel('ACCEPTED_WAITING_CAPACITY')).toBe('Aceptado · En espera cupo');
+  });
+
+  it('returns short label for dropdown display', () => {
+    expect(getTransferStatusShortLabel('ACCEPTED_WITH_CAPACITY')).toBe('Cupo confirmado');
+    expect(getTransferStatusShortLabel('ACCEPTED_WAITING_CAPACITY')).toBe('En espera cupo');
+    expect(getTransferStatusShortLabel('REQUESTED')).toBe('Solicitado');
   });
 });

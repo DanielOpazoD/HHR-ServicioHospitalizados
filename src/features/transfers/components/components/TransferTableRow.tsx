@@ -23,6 +23,7 @@ interface TransferTableRowProps {
   onDeleteHistoryEntry: (transfer: TransferRequest, historyIndex: number) => Promise<void>;
   onGenerateDocs: (transfer: TransferRequest) => void;
   onViewDocs: (transfer: TransferRequest) => void;
+  onMarkTransferred: (transfer: TransferRequest) => void;
   onUndo: (transfer: TransferRequest) => void;
   onArchive: (transfer: TransferRequest) => void;
   onUpdateTransfer: (transferId: string, data: Partial<TransferFormData>) => Promise<void>;
@@ -38,6 +39,7 @@ export const TransferTableRow: React.FC<TransferTableRowProps> = ({
   onDeleteHistoryEntry,
   onGenerateDocs,
   onViewDocs,
+  onMarkTransferred,
   onUndo,
   onArchive,
   onUpdateTransfer,
@@ -120,6 +122,7 @@ export const TransferTableRow: React.FC<TransferTableRowProps> = ({
           hasDocumentSupport={hasDocumentSupport}
           onGenerateDocs={onGenerateDocs}
           onViewDocs={onViewDocs}
+          onMarkTransferred={onMarkTransferred}
           onUndo={onUndo}
           onArchive={onArchive}
           onOpenCloseMenu={onOpenCloseMenu}

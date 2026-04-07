@@ -61,7 +61,7 @@ describe('patientRowMainViewController', () => {
       isUpc: true,
       patientName: 'Paciente UPC',
     });
-    expect(upcRowClassName).toContain('bg-rose-50/50');
+    expect(upcRowClassName).toContain('bg-white');
 
     expect(
       resolvePatientMainRowActionsAvailability({

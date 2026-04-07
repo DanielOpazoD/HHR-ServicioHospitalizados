@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   resolveTransferStatusDropdownPosition,
   TRANSFER_STATUS_OPTIONS,
+  ACCEPTED_SUB_STATES,
+  isAcceptedSubState,
 } from '@/features/transfers/controllers/transferStatusInteractionController';
 
 describe('transferStatusInteractionController', () => {
@@ -49,15 +51,22 @@ describe('transferStatusInteractionController', () => {
     });
   });
 
-  it('exposes stable transfer status options order', () => {
+  it('exposes stable transfer status options order (without TRANSFERRED)', () => {
     expect(TRANSFER_STATUS_OPTIONS).toEqual([
       'REQUESTED',
       'RECEIVED',
-      'ACCEPTED_WITH_CAPACITY',
       'ACCEPTED_WAITING_CAPACITY',
+      'ACCEPTED_WITH_CAPACITY',
       'REJECTED',
       'NO_RESPONSE',
-      'TRANSFERRED',
     ]);
+  });
+
+  it('identifies accepted sub-states correctly', () => {
+    expect(ACCEPTED_SUB_STATES).toEqual(['ACCEPTED_WAITING_CAPACITY', 'ACCEPTED_WITH_CAPACITY']);
+    expect(isAcceptedSubState('ACCEPTED_WAITING_CAPACITY')).toBe(true);
+    expect(isAcceptedSubState('ACCEPTED_WITH_CAPACITY')).toBe(true);
+    expect(isAcceptedSubState('ACCEPTED')).toBe(false);
+    expect(isAcceptedSubState('REQUESTED')).toBe(false);
   });
 });
