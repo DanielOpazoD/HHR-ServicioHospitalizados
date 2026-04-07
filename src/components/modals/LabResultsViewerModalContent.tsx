@@ -402,10 +402,10 @@ interface LabViewerPdfProps {
 
 export const LabViewerPdf = ({ exam, onBack }: LabViewerPdfProps) => {
   const [isLoading, setIsLoading] = React.useState(true);
-  const pdfUrl = exam.link ? buildSyslabPdfUrl(exam.link) : '';
+  const pdfUrl = exam.link ? `${buildSyslabPdfUrl(exam.link)}#navpanes=0&scrollbar=1&zoom=110` : '';
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <div className="flex items-center justify-between">
         <button
           type="button"
@@ -425,17 +425,6 @@ export const LabViewerPdf = ({ exam, onBack }: LabViewerPdfProps) => {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-1 mb-2">
-        {exam.exams.map((name, i) => (
-          <span
-            key={i}
-            className="rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 border border-emerald-100"
-          >
-            {name}
-          </span>
-        ))}
-      </div>
-
       <div className="relative rounded-xl border border-slate-200/80 bg-white overflow-hidden">
         {isLoading && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 z-10">
@@ -448,7 +437,7 @@ export const LabViewerPdf = ({ exam, onBack }: LabViewerPdfProps) => {
           src={pdfUrl}
           title={`PDF Examen ${exam.id}`}
           className="w-full border-0"
-          style={{ height: '70vh' }}
+          style={{ height: '80vh' }}
           onLoad={() => setIsLoading(false)}
         />
       </div>
