@@ -91,6 +91,7 @@ const MOCK_ANALYSIS: LabAnalysisData = {
         result: '14.5',
         unit: 'g/dL',
         refValue: '12.0-16.0',
+        examDate: '06/04/2026',
       },
     ],
   },

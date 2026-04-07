@@ -98,10 +98,16 @@ export interface LabTrendPoint {
   refMax?: number;
 }
 
+/** Summary entry: a result row with its exam date. */
+export interface LabSummaryRow extends LabResultRow {
+  /** Exam date (DD/MM/YYYY). */
+  examDate: string;
+}
+
 /** Processed analytics data built from multiple exam details. */
 export interface LabAnalysisData {
-  /** All result rows grouped by section name. */
-  sections: Record<string, LabResultRow[]>;
+  /** All result rows grouped by section name, with exam date attached. */
+  sections: Record<string, LabSummaryRow[]>;
   /** Trend data for variables with 2+ measurements, keyed by analysis name. */
   trends: Record<string, LabTrendPoint[]>;
   /** Ordered exam dates (DD/MM/YYYY) for the comparison table columns. */

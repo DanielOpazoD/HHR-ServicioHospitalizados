@@ -14,6 +14,7 @@ import type {
   LabAnalysisData,
   LabTrendPoint,
   LabResultRow,
+  LabSummaryRow,
   AnalysisViewTab,
 } from '@/types/domain/laboratory';
 
@@ -84,53 +85,108 @@ export const isOutOfRange = (result: string, refValue: string): boolean | null =
 };
 
 /**
+ * Key clinical variables that should be shown as trends.
+ * Only these variables (matched case-insensitively) generate trend charts.
+ * All other variables still appear in the summary table and comparison table.
+ */
+const TREND_VARIABLES: string[] = [
+  'Hematocrito',
+  'Hemoglobina',
+  'Creatinina',
+  'Nitrogeno Ureico',
+  'Uremia',
+  'Sodio',
+  'Potasio',
+  'Cloro',
+  'HCO3 ACTUAL',
+  'CO2 TOTAL',
+  'Proteina C Reactiva',
+  'VHS',
+  'Bilirrubina Total',
+  'Bilirrubina Directa',
+  'Troponina',
+  'LDH',
+  'CK Total',
+  'Magnesio',
+  'Acido Urico',
+  'Glicemia',
+  'Albumina',
+  'Recuento Leucocitos',
+  'Recuento de Plaquetas',
+  'pH',
+  'pCO2',
+  'pO2',
+  'Lactato',
+];
+
+/** Check if a variable name matches any key trend variable (case-insensitive, partial). */
+const isTrendVariable = (analysis: string): boolean => {
+  const lower = analysis.toLowerCase();
+  return TREND_VARIABLES.some(v => lower.includes(v.toLowerCase()));
+};
+
+/**
  * Build the processed analytics data from raw exam details and the original exam list.
  */
 export const buildAnalysisData = (
   details: SyslabExamDetail[],
   examList: SyslabExamItem[]
 ): LabAnalysisData => {
-  const sections: Record<string, LabResultRow[]> = {};
+  const sections: Record<string, LabSummaryRow[]> = {};
   const trendMap: Record<string, LabTrendPoint[]> = {};
   const comparison: Record<string, Record<string, LabResultRow>> = {};
   const dateSet = new Set<string>();
 
+  // Track seen analysis+date combinations to deduplicate
+  // (e.g., Creatinina appears in both BIOQUIMICA and CREA + VFG sections)
+  const seenTrend = new Set<string>();
+  const seenComparison = new Set<string>();
+
   for (const detail of details) {
-    // Match URL back to the original exam to get the date
     const exam = examList.find(e => e.link === detail.url);
     const examDate = exam?.date || 'Desconocido';
     const isoDate = parseDateDDMMYYYY(examDate);
     dateSet.add(examDate);
 
     for (const finding of detail.findings) {
-      const key = finding.section || 'GENERAL';
+      const sectionKey = finding.section || 'GENERAL';
 
-      // Sections (all rows grouped)
-      if (!sections[key]) sections[key] = [];
-      sections[key].push(finding);
+      // Sections — include date for display, keep all rows
+      if (!sections[sectionKey]) sections[sectionKey] = [];
+      sections[sectionKey].push({ ...finding, examDate });
 
-      // Comparison grid
-      if (!comparison[finding.analysis]) comparison[finding.analysis] = {};
-      comparison[finding.analysis][examDate] = finding;
+      // Comparison grid — deduplicate by analysis+date (keep first occurrence)
+      const compKey = `${finding.analysis}::${examDate}`;
+      if (!seenComparison.has(compKey)) {
+        seenComparison.add(compKey);
+        if (!comparison[finding.analysis]) comparison[finding.analysis] = {};
+        comparison[finding.analysis][examDate] = finding;
+      }
 
-      // Trends (only numeric values)
-      const numValue = parseFloat(finding.result.replace(',', '.'));
-      if (!isNaN(numValue)) {
-        if (!trendMap[finding.analysis]) trendMap[finding.analysis] = [];
-        const range = parseRefRange(finding.refValue);
-        trendMap[finding.analysis].push({
-          date: examDate,
-          isoDate,
-          value: numValue,
-          unit: finding.unit,
-          refMin: range?.min,
-          refMax: range?.max,
-        });
+      // Trends — deduplicate by analysis+date, only key clinical variables
+      if (isTrendVariable(finding.analysis)) {
+        const trendKey = `${finding.analysis}::${examDate}`;
+        if (!seenTrend.has(trendKey)) {
+          seenTrend.add(trendKey);
+          const numValue = parseFloat(finding.result.replace(',', '.'));
+          if (!isNaN(numValue)) {
+            if (!trendMap[finding.analysis]) trendMap[finding.analysis] = [];
+            const range = parseRefRange(finding.refValue);
+            trendMap[finding.analysis].push({
+              date: examDate,
+              isoDate,
+              value: numValue,
+              unit: finding.unit,
+              refMin: range?.min,
+              refMax: range?.max,
+            });
+          }
+        }
       }
     }
   }
 
-  // Only keep trends with 2+ data points, sorted by date
+  // Only keep trends with 2+ unique data points, sorted by date
   const trends: Record<string, LabTrendPoint[]> = {};
   for (const [name, points] of Object.entries(trendMap)) {
     if (points.length >= 2) {

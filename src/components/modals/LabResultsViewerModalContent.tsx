@@ -44,7 +44,7 @@ import type {
   LabPatient,
   LabAnalysisData,
   LabTrendPoint,
-  LabResultRow,
+  LabSummaryRow,
   AnalysisViewTab,
 } from '@/types/domain/laboratory';
 import { buildSyslabPdfUrl } from '@/services/laboratory/syslabService';
@@ -406,8 +406,17 @@ const LabAnalysisSummaryTable: React.FC<{ data: LabAnalysisData }> = ({ data }) 
   );
 };
 
-const SummarySection: React.FC<{ name: string; rows: LabResultRow[] }> = ({ name, rows }) => {
+const SummarySection: React.FC<{ name: string; rows: LabSummaryRow[] }> = ({ name, rows }) => {
   const [isOpen, setIsOpen] = React.useState(true);
+
+  // Group rows by date for better readability
+  const byDate: Record<string, LabSummaryRow[]> = {};
+  for (const row of rows) {
+    const d = row.examDate;
+    if (!byDate[d]) byDate[d] = [];
+    byDate[d].push(row);
+  }
+  const dates = Object.keys(byDate);
 
   return (
     <div className="rounded-xl border border-slate-200/80 bg-white overflow-hidden">
@@ -426,61 +435,69 @@ const SummarySection: React.FC<{ name: string; rows: LabResultRow[] }> = ({ name
       </button>
       {isOpen && (
         <div className="border-t border-slate-100">
-          <table className="w-full">
-            <thead>
-              <tr className="text-left text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                <th className="px-4 py-2">Variable</th>
-                <th className="px-4 py-2">Resultado</th>
-                <th className="px-4 py-2">Unidad</th>
-                <th className="px-4 py-2">Referencia</th>
-                <th className="px-4 py-2 text-center">Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, i) => {
-                const oor = isOutOfRange(row.result, row.refValue);
-                return (
-                  <tr
-                    key={i}
-                    className="border-t border-slate-50 transition-colors hover:bg-slate-50/50"
-                  >
-                    <td className="px-4 py-2 text-[12px] font-medium text-slate-700">
-                      {row.analysis}
-                    </td>
-                    <td
-                      className={clsx(
-                        'px-4 py-2 text-[12px] font-bold',
-                        oor === true && 'text-red-600',
-                        oor === false && 'text-emerald-600',
-                        oor === null && 'text-slate-800'
-                      )}
-                    >
-                      {row.result}
-                    </td>
-                    <td className="px-4 py-2 text-[11px] text-slate-500">{row.unit}</td>
-                    <td className="px-4 py-2 text-[11px] text-slate-400">{row.refValue}</td>
-                    <td className="px-4 py-2 text-center">
-                      {oor === true && (
-                        <span className="rounded-full bg-red-50 px-2 py-0.5 text-[9px] font-bold text-red-600 border border-red-200">
-                          Fuera de rango
-                        </span>
-                      )}
-                      {oor === false && (
-                        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-bold text-emerald-600 border border-emerald-200">
-                          Normal
-                        </span>
-                      )}
-                      {oor === null && (
-                        <span className="rounded-full bg-slate-50 px-2 py-0.5 text-[9px] font-semibold text-slate-400 border border-slate-200">
-                          —
-                        </span>
-                      )}
-                    </td>
+          {dates.map(date => (
+            <div key={date}>
+              {/* Date sub-header */}
+              <div className="bg-emerald-50/50 px-4 py-1.5 border-b border-emerald-100">
+                <span className="text-[10px] font-bold text-emerald-700">{date}</span>
+              </div>
+              <table className="w-full">
+                <thead>
+                  <tr className="text-left text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                    <th className="px-4 py-1.5">Variable</th>
+                    <th className="px-4 py-1.5">Resultado</th>
+                    <th className="px-4 py-1.5">Unidad</th>
+                    <th className="px-4 py-1.5">Referencia</th>
+                    <th className="px-4 py-1.5 text-center">Estado</th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                </thead>
+                <tbody>
+                  {byDate[date].map((row, i) => {
+                    const oor = isOutOfRange(row.result, row.refValue);
+                    return (
+                      <tr
+                        key={i}
+                        className="border-t border-slate-50 transition-colors hover:bg-slate-50/50"
+                      >
+                        <td className="px-4 py-1.5 text-[12px] font-medium text-slate-700">
+                          {row.analysis}
+                        </td>
+                        <td
+                          className={clsx(
+                            'px-4 py-1.5 text-[12px] font-bold',
+                            oor === true && 'text-red-600',
+                            oor === false && 'text-emerald-600',
+                            oor === null && 'text-slate-800'
+                          )}
+                        >
+                          {row.result}
+                        </td>
+                        <td className="px-4 py-1.5 text-[11px] text-slate-500">{row.unit}</td>
+                        <td className="px-4 py-1.5 text-[11px] text-slate-400">{row.refValue}</td>
+                        <td className="px-4 py-1.5 text-center">
+                          {oor === true && (
+                            <span className="rounded-full bg-red-50 px-2 py-0.5 text-[9px] font-bold text-red-600 border border-red-200">
+                              Fuera de rango
+                            </span>
+                          )}
+                          {oor === false && (
+                            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-bold text-emerald-600 border border-emerald-200">
+                              Normal
+                            </span>
+                          )}
+                          {oor === null && (
+                            <span className="rounded-full bg-slate-50 px-2 py-0.5 text-[9px] font-semibold text-slate-400 border border-slate-200">
+                              —
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ))}
         </div>
       )}
     </div>

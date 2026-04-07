@@ -175,9 +175,10 @@ describe('buildAnalysisData', () => {
     },
   ];
 
-  it('groups findings by section', () => {
+  it('groups findings by section with examDate attached', () => {
     const result = buildAnalysisData(details, examList);
     expect(result.sections['HEMOGRAMA']).toHaveLength(3);
+    expect(result.sections['HEMOGRAMA'][0].examDate).toBe('06/04/2026');
   });
 
   it('creates trends for variables with 2+ points', () => {
@@ -287,13 +288,25 @@ describe('useLabViewer', () => {
         {
           url: MOCK_EXAM.link,
           findings: [
-            { section: 'HEMOGRAMA', analysis: 'HB', result: '14', unit: 'g/dL', refValue: '12-16' },
+            {
+              section: 'HEMOGRAMA',
+              analysis: 'Hemoglobina',
+              result: '14',
+              unit: 'g/dL',
+              refValue: '12-16',
+            },
           ],
         },
         {
           url: MOCK_EXAM_2.link,
           findings: [
-            { section: 'HEMOGRAMA', analysis: 'HB', result: '13', unit: 'g/dL', refValue: '12-16' },
+            {
+              section: 'HEMOGRAMA',
+              analysis: 'Hemoglobina',
+              result: '13',
+              unit: 'g/dL',
+              refValue: '12-16',
+            },
           ],
         },
       ],
@@ -312,7 +325,7 @@ describe('useLabViewer', () => {
     });
 
     expect(result.current.analysisData).not.toBeNull();
-    expect(result.current.analysisData!.trends['HB']).toHaveLength(2);
+    expect(result.current.analysisData!.trends['Hemoglobina']).toHaveLength(2);
     expect(result.current.analysisView).toBe('summary');
   });
 
