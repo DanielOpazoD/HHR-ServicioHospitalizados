@@ -193,15 +193,16 @@ describe('buildAnalysisData', () => {
     expect(hb[1].isoDate).toBe('2026-04-06');
   });
 
-  it('builds comparison grid', () => {
+  it('builds comparison grid with date+time column keys', () => {
     const result = buildAnalysisData(details, examList);
-    expect(result.comparison['HEMOGLOBINA']['06/04/2026'].result).toBe('14.5');
-    expect(result.comparison['HEMOGLOBINA']['01/03/2026'].result).toBe('13.2');
+    // Column keys include time: "DD/MM/YYYY HH:MM"
+    expect(result.comparison['HEMOGLOBINA']['06/04/2026 13:08'].result).toBe('14.5');
+    expect(result.comparison['HEMOGLOBINA']['01/03/2026 09:00'].result).toBe('13.2');
   });
 
-  it('includes sorted exam dates', () => {
+  it('includes sorted exam dates with time', () => {
     const result = buildAnalysisData(details, examList);
-    expect(result.examDates).toEqual(['01/03/2026', '06/04/2026']);
+    expect(result.examDates).toEqual(['01/03/2026 09:00', '06/04/2026 13:08']);
   });
 
   it('includes reference range in trend points', () => {

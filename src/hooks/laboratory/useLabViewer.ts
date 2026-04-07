@@ -177,55 +177,66 @@ const isExcludedFromComparison = (analysis: string): boolean => {
 /**
  * Build the processed analytics data from raw exam details and the original exam list.
  */
+/**
+ * Build a unique column key for each exam occurrence.
+ * Uses "DD/MM/YYYY HH:MM" when time is available, otherwise "DD/MM/YYYY (#ID)".
+ * This ensures multiple exams on the same day get separate columns.
+ */
+const buildExamColumnKey = (exam: SyslabExamItem | undefined, fallbackDate: string): string => {
+  if (!exam) return fallbackDate;
+  const date = exam.date || fallbackDate;
+  const time = exam.time ? exam.time.substring(0, 5) : ''; // HH:MM only
+  return time ? `${date} ${time}` : `${date} (#${exam.id})`;
+};
+
 export const buildAnalysisData = (
   details: SyslabExamDetail[],
   examList: SyslabExamItem[]
 ): LabAnalysisData => {
   const trendMap: Record<string, LabTrendPoint[]> = {};
   const comparison: Record<string, Record<string, LabResultRow>> = {};
-  const dateSet = new Set<string>();
+  const columnKeySet = new Set<string>();
   const seenTrend = new Set<string>();
   const seenComparison = new Set<string>();
 
-  // Bilirrubina merge: collect Total/Directa/Indirecta per date
-  const bilirubinByDate: Record<string, { total?: string; directa?: string; indirecta?: string }> =
+  // Bilirrubina merge: collect Total/Directa/Indirecta per column
+  const bilirubinByCol: Record<string, { total?: string; directa?: string; indirecta?: string }> =
     {};
 
   for (const detail of details) {
     const exam = examList.find(e => e.link === detail.url);
     const examDate = exam?.date || 'Desconocido';
     const isoDate = parseDateDDMMYYYY(examDate);
-    dateSet.add(examDate);
+    const colKey = buildExamColumnKey(exam, examDate);
+    columnKeySet.add(colKey);
 
     for (const finding of detail.findings) {
       const lowerAnalysis = finding.analysis.toLowerCase();
 
       // Collect bilirrubinas for merged display
       if (lowerAnalysis.includes('bilirrubina')) {
-        if (!bilirubinByDate[examDate]) bilirubinByDate[examDate] = {};
-        if (lowerAnalysis.includes('total')) bilirubinByDate[examDate].total = finding.result;
-        else if (lowerAnalysis.includes('directa'))
-          bilirubinByDate[examDate].directa = finding.result;
+        if (!bilirubinByCol[colKey]) bilirubinByCol[colKey] = {};
+        if (lowerAnalysis.includes('total')) bilirubinByCol[colKey].total = finding.result;
+        else if (lowerAnalysis.includes('directa')) bilirubinByCol[colKey].directa = finding.result;
         else if (lowerAnalysis.includes('indirecta'))
-          bilirubinByDate[examDate].indirecta = finding.result;
+          bilirubinByCol[colKey].indirecta = finding.result;
       }
 
-      // Comparison grid — skip excluded variables, deduplicate
+      // Comparison grid — skip excluded variables, deduplicate within same exam
       if (!isExcludedFromComparison(finding.analysis)) {
-        // Skip individual bilirrubinas (will add merged row later)
         if (!lowerAnalysis.includes('bilirrubina')) {
-          const compKey = `${finding.analysis}::${examDate}`;
+          const compKey = `${finding.analysis}::${colKey}`;
           if (!seenComparison.has(compKey)) {
             seenComparison.add(compKey);
             if (!comparison[finding.analysis]) comparison[finding.analysis] = {};
-            comparison[finding.analysis][examDate] = finding;
+            comparison[finding.analysis][colKey] = finding;
           }
         }
       }
 
-      // Trends — deduplicate by analysis+date, only key clinical variables
+      // Trends — deduplicate by analysis+columnKey, only key clinical variables
       if (isTrendVariable(finding.analysis)) {
-        const trendKey = `${finding.analysis}::${examDate}`;
+        const trendKey = `${finding.analysis}::${colKey}`;
         if (!seenTrend.has(trendKey)) {
           seenTrend.add(trendKey);
           const numValue = parseFloat(finding.result.replace(',', '.'));
@@ -233,7 +244,7 @@ export const buildAnalysisData = (
             if (!trendMap[finding.analysis]) trendMap[finding.analysis] = [];
             const range = parseRefRange(finding.refValue);
             trendMap[finding.analysis].push({
-              date: examDate,
+              date: colKey,
               isoDate,
               value: numValue,
               unit: finding.unit,
@@ -246,14 +257,14 @@ export const buildAnalysisData = (
     }
   }
 
-  // Add merged bilirrubina row to comparison (Total/Directa/Indirecta)
-  const bilDates = Object.keys(bilirubinByDate);
-  if (bilDates.length > 0) {
+  // Add merged bilirrubina row to comparison
+  const bilCols = Object.keys(bilirubinByCol);
+  if (bilCols.length > 0) {
     comparison['Bilirrubinas (T/D/I)'] = {};
-    for (const date of bilDates) {
-      const b = bilirubinByDate[date];
+    for (const col of bilCols) {
+      const b = bilirubinByCol[col];
       const merged = [b.total || '-', b.directa || '-', b.indirecta || '-'].join(' / ');
-      comparison['Bilirrubinas (T/D/I)'][date] = {
+      comparison['Bilirrubinas (T/D/I)'][col] = {
         section: 'PERFIL HEPATICO',
         analysis: 'Bilirrubinas (T/D/I)',
         result: merged,
@@ -263,7 +274,7 @@ export const buildAnalysisData = (
     }
   }
 
-  // Build trend groups — only include groups that have at least one variable with 2+ points
+  // Build trend groups
   const trendGroups: LabTrendGroup[] = [];
   for (const groupDef of TREND_GROUPS) {
     const variables: Record<string, LabTrendPoint[]> = {};
@@ -278,10 +289,13 @@ export const buildAnalysisData = (
     }
   }
 
-  // Sort dates chronologically
-  const examDates = Array.from(dateSet).sort((a, b) =>
-    parseDateDDMMYYYY(a).localeCompare(parseDateDDMMYYYY(b))
-  );
+  // Sort column keys chronologically (they start with DD/MM/YYYY so convert for sorting)
+  const examDates = Array.from(columnKeySet).sort((a, b) => {
+    const isoA = parseDateDDMMYYYY(a.substring(0, 10));
+    const isoB = parseDateDDMMYYYY(b.substring(0, 10));
+    if (isoA !== isoB) return isoA.localeCompare(isoB);
+    return a.localeCompare(b); // same date → sort by time
+  });
 
   return { trendGroups, examDates, comparison };
 };
