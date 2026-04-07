@@ -24,10 +24,7 @@ import {
   FlaskConical,
   Loader2,
   Search,
-  Table2,
   TrendingUp,
-  ChevronDown,
-  ChevronRight,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -44,7 +41,7 @@ import type {
   LabPatient,
   LabAnalysisData,
   LabTrendPoint,
-  LabSummaryRow,
+  LabTrendGroup,
   AnalysisViewTab,
 } from '@/types/domain/laboratory';
 import { buildSyslabPdfUrl } from '@/services/laboratory/syslabService';
@@ -329,7 +326,6 @@ interface LabViewerAnalysisProps {
 }
 
 const TAB_CONFIG: { key: AnalysisViewTab; label: string; icon: React.ReactNode }[] = [
-  { key: 'summary', label: 'Resumen', icon: <Table2 size={13} /> },
   { key: 'trends', label: 'Tendencias', icon: <TrendingUp size={13} /> },
   { key: 'comparison', label: 'Comparación', icon: <BarChart3 size={13} /> },
 ];
@@ -376,164 +372,152 @@ export const LabViewerAnalysis: React.FC<LabViewerAnalysisProps> = ({
     </div>
 
     {/* Tab content */}
-    {activeTab === 'summary' && <LabAnalysisSummaryTable data={data} />}
     {activeTab === 'trends' && <LabAnalysisTrendCharts data={data} />}
     {activeTab === 'comparison' && <LabAnalysisComparisonTable data={data} />}
   </div>
 );
 
 /* ================================================================== */
-/*  Summary table — results grouped by section, color-coded            */
+/*  Trend charts — grouped by clinical category                        */
 /* ================================================================== */
 
-const LabAnalysisSummaryTable: React.FC<{ data: LabAnalysisData }> = ({ data }) => {
-  const sectionNames = Object.keys(data.sections);
-
-  if (sectionNames.length === 0) {
-    return (
-      <p className="py-8 text-center text-[12px] text-slate-400">
-        No se encontraron resultados estructurados.
-      </p>
-    );
-  }
-
-  return (
-    <div className="space-y-3">
-      {sectionNames.map(section => (
-        <SummarySection key={section} name={section} rows={data.sections[section]} />
-      ))}
-    </div>
-  );
-};
-
-const SummarySection: React.FC<{ name: string; rows: LabSummaryRow[] }> = ({ name, rows }) => {
-  const [isOpen, setIsOpen] = React.useState(true);
-
-  // Group rows by date for better readability
-  const byDate: Record<string, LabSummaryRow[]> = {};
-  for (const row of rows) {
-    const d = row.examDate;
-    if (!byDate[d]) byDate[d] = [];
-    byDate[d].push(row);
-  }
-  const dates = Object.keys(byDate);
-
-  return (
-    <div className="rounded-xl border border-slate-200/80 bg-white overflow-hidden">
-      <button
-        type="button"
-        onClick={() => setIsOpen(p => !p)}
-        className="flex w-full items-center gap-2 px-4 py-2.5 text-left transition-colors hover:bg-slate-50"
-      >
-        {isOpen ? (
-          <ChevronDown size={14} className="text-slate-400" />
-        ) : (
-          <ChevronRight size={14} className="text-slate-400" />
-        )}
-        <span className="text-[12px] font-bold uppercase tracking-wide text-slate-600">{name}</span>
-        <span className="text-[10px] text-slate-400">({rows.length})</span>
-      </button>
-      {isOpen && (
-        <div className="border-t border-slate-100">
-          {dates.map(date => (
-            <div key={date}>
-              {/* Date sub-header */}
-              <div className="bg-emerald-50/50 px-4 py-1.5 border-b border-emerald-100">
-                <span className="text-[10px] font-bold text-emerald-700">{date}</span>
-              </div>
-              <table className="w-full">
-                <thead>
-                  <tr className="text-left text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                    <th className="px-4 py-1.5">Variable</th>
-                    <th className="px-4 py-1.5">Resultado</th>
-                    <th className="px-4 py-1.5">Unidad</th>
-                    <th className="px-4 py-1.5">Referencia</th>
-                    <th className="px-4 py-1.5 text-center">Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {byDate[date].map((row, i) => {
-                    const oor = isOutOfRange(row.result, row.refValue);
-                    return (
-                      <tr
-                        key={i}
-                        className="border-t border-slate-50 transition-colors hover:bg-slate-50/50"
-                      >
-                        <td className="px-4 py-1.5 text-[12px] font-medium text-slate-700">
-                          {row.analysis}
-                        </td>
-                        <td
-                          className={clsx(
-                            'px-4 py-1.5 text-[12px] font-bold',
-                            oor === true && 'text-red-600',
-                            oor === false && 'text-emerald-600',
-                            oor === null && 'text-slate-800'
-                          )}
-                        >
-                          {row.result}
-                        </td>
-                        <td className="px-4 py-1.5 text-[11px] text-slate-500">{row.unit}</td>
-                        <td className="px-4 py-1.5 text-[11px] text-slate-400">{row.refValue}</td>
-                        <td className="px-4 py-1.5 text-center">
-                          {oor === true && (
-                            <span className="rounded-full bg-red-50 px-2 py-0.5 text-[9px] font-bold text-red-600 border border-red-200">
-                              Fuera de rango
-                            </span>
-                          )}
-                          {oor === false && (
-                            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-bold text-emerald-600 border border-emerald-200">
-                              Normal
-                            </span>
-                          )}
-                          {oor === null && (
-                            <span className="rounded-full bg-slate-50 px-2 py-0.5 text-[9px] font-semibold text-slate-400 border border-slate-200">
-                              —
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
-/* ================================================================== */
-/*  Trend charts — Recharts line charts with reference band            */
-/* ================================================================== */
+/** Color palette for multiple lines within a group. */
+const LINE_COLORS = ['#10b981', '#0ea5e9', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
 const LabTrendTooltip: React.FC<{
   active?: boolean;
-  payload?: Array<{ payload: LabTrendPoint }>;
+  payload?: Array<{ name: string; value: number; payload: LabTrendPoint }>;
 }> = ({ active, payload }) => {
-  const d = payload?.[0]?.payload;
-  if (!active || !d) return null;
+  if (!active || !payload?.length) return null;
 
   return (
     <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-lg">
-      <p className="text-[11px] font-semibold text-slate-700">{d.date}</p>
-      <p className="text-[13px] font-bold text-emerald-600">
-        {d.value} {d.unit}
-      </p>
-      {d.refMin != null && d.refMax != null && (
-        <p className="text-[10px] text-slate-400">
-          Ref: {d.refMin} - {d.refMax}
+      <p className="text-[11px] font-semibold text-slate-700 mb-1">{payload[0]?.payload?.date}</p>
+      {payload.map((entry, i) => (
+        <p key={i} className="text-[12px]" style={{ color: entry.name ? undefined : '#10b981' }}>
+          <span className="font-bold">{entry.name}: </span>
+          {entry.value} {entry.payload?.unit}
+        </p>
+      ))}
+      {payload[0]?.payload?.refMin != null && payload[0]?.payload?.refMax != null && (
+        <p className="text-[10px] text-slate-400 mt-1">
+          Ref: {payload[0].payload.refMin} - {payload[0].payload.refMax}
         </p>
       )}
     </div>
   );
 };
 
-const LabAnalysisTrendCharts: React.FC<{ data: LabAnalysisData }> = ({ data }) => {
-  const trendNames = Object.keys(data.trends);
+/** Render a single trend group card with multiple overlaid lines. */
+const TrendGroupCard: React.FC<{ group: LabTrendGroup }> = ({ group }) => {
+  const varNames = Object.keys(group.variables);
 
-  if (trendNames.length === 0) {
+  // Merge all data points by date for the shared X axis
+  const dateMap: Record<string, Record<string, number>> = {};
+  let firstRef: { min?: number; max?: number } = {};
+
+  for (const [name, points] of Object.entries(group.variables)) {
+    for (const p of points) {
+      if (!dateMap[p.date]) dateMap[p.date] = {};
+      dateMap[p.date][name] = p.value;
+      if (!firstRef.min && p.refMin != null) firstRef = { min: p.refMin, max: p.refMax };
+    }
+  }
+
+  const chartData = Object.entries(dateMap)
+    .map(([date, vals]) => ({ date, ...vals }))
+    .sort((a, b) => {
+      const isoA = a.date.replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$3-$2-$1');
+      const isoB = b.date.replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$3-$2-$1');
+      return isoA.localeCompare(isoB);
+    });
+
+  // Y domain
+  const allVals: number[] = [];
+  for (const points of Object.values(group.variables)) {
+    for (const p of points) {
+      allVals.push(p.value);
+      if (p.refMin != null) allVals.push(p.refMin);
+      if (p.refMax != null) allVals.push(p.refMax);
+    }
+  }
+  const yMin = Math.floor(Math.min(...allVals) * 0.9);
+  const yMax = Math.ceil(Math.max(...allVals) * 1.1);
+
+  const hasRef = firstRef.min != null && firstRef.max != null;
+  const unit = Object.values(group.variables)[0]?.[0]?.unit || '';
+
+  return (
+    <div className="rounded-xl border border-slate-200/80 bg-white p-4">
+      <h4 className="mb-1 text-[13px] font-bold text-slate-700">{group.label}</h4>
+      <div className="mb-3 flex flex-wrap gap-2">
+        {varNames.map((name, i) => (
+          <span key={name} className="inline-flex items-center gap-1 text-[10px] font-medium">
+            <span
+              className="inline-block h-2 w-2 rounded-full"
+              style={{ backgroundColor: LINE_COLORS[i % LINE_COLORS.length] }}
+            />
+            {name} ({unit})
+          </span>
+        ))}
+      </div>
+      <div className="h-56">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+            <XAxis
+              dataKey="date"
+              tick={{ fontSize: 10, fill: '#64748b' }}
+              tickLine={false}
+              axisLine={{ stroke: '#e2e8f0' }}
+            />
+            <YAxis
+              domain={[yMin, yMax]}
+              tick={{ fontSize: 10, fill: '#64748b' }}
+              tickLine={false}
+              axisLine={false}
+            />
+            <Tooltip content={<LabTrendTooltip />} />
+
+            {hasRef && (
+              <ReferenceArea
+                y1={firstRef.min!}
+                y2={firstRef.max!}
+                fill="#10b981"
+                fillOpacity={0.06}
+                stroke="#10b981"
+                strokeOpacity={0.15}
+                strokeDasharray="3 3"
+              />
+            )}
+
+            {varNames.map((name, i) => (
+              <Line
+                key={name}
+                name={name}
+                type="monotone"
+                dataKey={name}
+                stroke={LINE_COLORS[i % LINE_COLORS.length]}
+                strokeWidth={2.5}
+                dot={{
+                  r: 3,
+                  fill: LINE_COLORS[i % LINE_COLORS.length],
+                  strokeWidth: 2,
+                  stroke: '#fff',
+                }}
+                activeDot={{ r: 5, stroke: '#fff', strokeWidth: 2 }}
+                connectNulls
+              />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+};
+
+const LabAnalysisTrendCharts: React.FC<{ data: LabAnalysisData }> = ({ data }) => {
+  if (data.trendGroups.length === 0) {
     return (
       <div className="py-8 text-center">
         <TrendingUp size={28} className="mx-auto mb-2 text-slate-200" />
@@ -546,72 +530,9 @@ const LabAnalysisTrendCharts: React.FC<{ data: LabAnalysisData }> = ({ data }) =
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      {trendNames.map(name => {
-        const points = data.trends[name];
-        const hasRef = points[0]?.refMin != null && points[0]?.refMax != null;
-        const unit = points[0]?.unit || '';
-
-        // Calculate Y domain
-        const values = points.map(p => p.value);
-        const allNums = [...values];
-        if (hasRef) {
-          allNums.push(points[0].refMin!, points[0].refMax!);
-        }
-        const yMin = Math.floor(Math.min(...allNums) * 0.9);
-        const yMax = Math.ceil(Math.max(...allNums) * 1.1);
-
-        return (
-          <div key={name} className="rounded-xl border border-slate-200/80 bg-white p-4">
-            <h4 className="mb-1 text-[12px] font-bold text-slate-700">{name}</h4>
-            <p className="mb-3 text-[10px] text-slate-400">
-              {points.length} mediciones · {unit}
-            </p>
-            <div className="h-52">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={points} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fontSize: 10, fill: '#64748b' }}
-                    tickLine={false}
-                    axisLine={{ stroke: '#e2e8f0' }}
-                  />
-                  <YAxis
-                    domain={[yMin, yMax]}
-                    tick={{ fontSize: 10, fill: '#64748b' }}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={v => `${v}`}
-                  />
-                  <Tooltip content={<LabTrendTooltip />} />
-
-                  {/* Reference range band */}
-                  {hasRef && (
-                    <ReferenceArea
-                      y1={points[0].refMin!}
-                      y2={points[0].refMax!}
-                      fill="#10b981"
-                      fillOpacity={0.08}
-                      stroke="#10b981"
-                      strokeOpacity={0.2}
-                      strokeDasharray="3 3"
-                    />
-                  )}
-
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke="#10b981"
-                    strokeWidth={2.5}
-                    dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }}
-                    activeDot={{ r: 6, fill: '#059669', stroke: '#fff', strokeWidth: 2 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        );
-      })}
+      {data.trendGroups.map(group => (
+        <TrendGroupCard key={group.label} group={group} />
+      ))}
     </div>
   );
 };

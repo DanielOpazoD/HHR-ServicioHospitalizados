@@ -175,21 +175,20 @@ describe('buildAnalysisData', () => {
     },
   ];
 
-  it('groups findings by section with examDate attached', () => {
+  it('creates trend groups for variables with 2+ points', () => {
     const result = buildAnalysisData(details, examList);
-    expect(result.sections['HEMOGRAMA']).toHaveLength(3);
-    expect(result.sections['HEMOGRAMA'][0].examDate).toBe('06/04/2026');
+    // HEMOGLOBINA has 2 points → should be in a group
+    const hbGroup = result.trendGroups.find(g =>
+      Object.keys(g.variables).some(v => v === 'HEMOGLOBINA')
+    );
+    expect(hbGroup).toBeDefined();
+    expect(hbGroup!.variables['HEMOGLOBINA']).toHaveLength(2);
   });
 
-  it('creates trends for variables with 2+ points', () => {
+  it('sorts trend points chronologically', () => {
     const result = buildAnalysisData(details, examList);
-    expect(result.trends['HEMOGLOBINA']).toHaveLength(2);
-    expect(result.trends['LEUCOCITOS']).toBeUndefined(); // only 1 measurement
-  });
-
-  it('sorts trends chronologically', () => {
-    const result = buildAnalysisData(details, examList);
-    const hb = result.trends['HEMOGLOBINA'];
+    const hbGroup = result.trendGroups.find(g => g.variables['HEMOGLOBINA']);
+    const hb = hbGroup!.variables['HEMOGLOBINA'];
     expect(hb[0].isoDate).toBe('2026-03-01');
     expect(hb[1].isoDate).toBe('2026-04-06');
   });
@@ -207,8 +206,9 @@ describe('buildAnalysisData', () => {
 
   it('includes reference range in trend points', () => {
     const result = buildAnalysisData(details, examList);
-    expect(result.trends['HEMOGLOBINA'][0].refMin).toBe(12);
-    expect(result.trends['HEMOGLOBINA'][0].refMax).toBe(16);
+    const hbGroup = result.trendGroups.find(g => g.variables['HEMOGLOBINA']);
+    expect(hbGroup!.variables['HEMOGLOBINA'][0].refMin).toBe(12);
+    expect(hbGroup!.variables['HEMOGLOBINA'][0].refMax).toBe(16);
   });
 });
 
@@ -325,8 +325,10 @@ describe('useLabViewer', () => {
     });
 
     expect(result.current.analysisData).not.toBeNull();
-    expect(result.current.analysisData!.trends['Hemoglobina']).toHaveLength(2);
-    expect(result.current.analysisView).toBe('summary');
+    const hbGroup = result.current.analysisData!.trendGroups.find(g => g.variables['Hemoglobina']);
+    expect(hbGroup).toBeDefined();
+    expect(hbGroup!.variables['Hemoglobina']).toHaveLength(2);
+    expect(result.current.analysisView).toBe('trends');
   });
 
   it('closeAnalysis clears analysisData', async () => {

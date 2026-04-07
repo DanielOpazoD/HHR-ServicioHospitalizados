@@ -13,8 +13,8 @@ import type {
   LabPatient,
   LabAnalysisData,
   LabTrendPoint,
+  LabTrendGroup,
   LabResultRow,
-  LabSummaryRow,
   AnalysisViewTab,
 } from '@/types/domain/laboratory';
 
@@ -85,44 +85,93 @@ export const isOutOfRange = (result: string, refValue: string): boolean | null =
 };
 
 /**
- * Key clinical variables that should be shown as trends.
- * Only these variables (matched case-insensitively) generate trend charts.
- * All other variables still appear in the summary table and comparison table.
+ * Clinical trend groups — related variables shown together in a single chart panel.
+ * Each group has a label and an array of variable name patterns (case-insensitive match).
  */
-const TREND_VARIABLES: string[] = [
-  'Hematocrito',
-  'Hemoglobina',
-  'Creatinina',
-  'Nitrogeno Ureico',
-  'Uremia',
-  'Sodio',
-  'Potasio',
-  'Cloro',
-  'HCO3 ACTUAL',
-  'CO2 TOTAL',
-  'Proteina C Reactiva',
-  'VHS',
-  'Bilirrubina Total',
-  'Bilirrubina Directa',
-  'Troponina',
-  'LDH',
-  'CK Total',
-  'Magnesio',
-  'Acido Urico',
-  'Glicemia',
-  'Albumina',
-  'Recuento Leucocitos',
-  'Recuento de Plaquetas',
-  'pH',
-  'pCO2',
-  'pO2',
-  'Lactato',
+const TREND_GROUPS: { label: string; patterns: string[] }[] = [
+  {
+    label: 'Electrolitos',
+    patterns: ['Sodio', 'Potasio', 'Cloro', 'HCO3 ACTUAL'],
+  },
+  {
+    label: 'Función Renal',
+    patterns: ['Creatinina', 'Nitrogeno Ureico', 'Uremia'],
+  },
+  {
+    label: 'Perfil Hepático',
+    patterns: [
+      'ASAT',
+      'ALAT',
+      'GGT',
+      'Fosfatasa Alcalina',
+      'Bilirrubina Total',
+      'Bilirrubina Directa',
+    ],
+  },
+  {
+    label: 'Actividad Inflamatoria',
+    patterns: ['Recuento Leucocitos', 'Segmentados', 'Proteina C Reactiva', 'VHS'],
+  },
+  {
+    label: 'Hemograma',
+    patterns: ['Hemoglobina', 'Hematocrito', 'Recuento de Plaquetas'],
+  },
+  {
+    label: 'Glicemia',
+    patterns: ['Glicemia'],
+  },
+  {
+    label: 'Gases',
+    patterns: ['pH', 'pCO2', 'pO2', 'Lactato'],
+  },
+  {
+    label: 'Otros',
+    patterns: ['Troponina', 'LDH', 'CK Total', 'Magnesio', 'Acido Urico', 'Albumina'],
+  },
 ];
 
-/** Check if a variable name matches any key trend variable (case-insensitive, partial). */
+/** All trend patterns flattened for quick lookup. */
+const ALL_TREND_PATTERNS = TREND_GROUPS.flatMap(g => g.patterns);
+
+/** Check if a variable name matches any trend pattern (case-insensitive, partial). */
 const isTrendVariable = (analysis: string): boolean => {
   const lower = analysis.toLowerCase();
-  return TREND_VARIABLES.some(v => lower.includes(v.toLowerCase()));
+  return ALL_TREND_PATTERNS.some(p => lower.includes(p.toLowerCase()));
+};
+
+/** Find which group a variable belongs to. */
+const findTrendGroup = (analysis: string): string | null => {
+  const lower = analysis.toLowerCase();
+  for (const group of TREND_GROUPS) {
+    if (group.patterns.some(p => lower.includes(p.toLowerCase()))) {
+      return group.label;
+    }
+  }
+  return null;
+};
+
+/**
+ * Variables to exclude from the comparison table (noise/redundant).
+ */
+const COMPARISON_EXCLUDE: string[] = [
+  'Razon A/G',
+  'Raz',
+  'CHCM',
+  'Conc.Hb.Corp',
+  'Baciliformes',
+  'Mielocitos',
+  'Juveniles',
+  'Blastos',
+  'Promielocitos',
+  'sO2c',
+  'CO2 TOTAL',
+  'Hora',
+];
+
+/** Check if a variable should be excluded from comparison. */
+const isExcludedFromComparison = (analysis: string): boolean => {
+  const lower = analysis.toLowerCase();
+  return COMPARISON_EXCLUDE.some(e => lower.includes(e.toLowerCase()));
 };
 
 /**
@@ -132,15 +181,15 @@ export const buildAnalysisData = (
   details: SyslabExamDetail[],
   examList: SyslabExamItem[]
 ): LabAnalysisData => {
-  const sections: Record<string, LabSummaryRow[]> = {};
   const trendMap: Record<string, LabTrendPoint[]> = {};
   const comparison: Record<string, Record<string, LabResultRow>> = {};
   const dateSet = new Set<string>();
-
-  // Track seen analysis+date combinations to deduplicate
-  // (e.g., Creatinina appears in both BIOQUIMICA and CREA + VFG sections)
   const seenTrend = new Set<string>();
   const seenComparison = new Set<string>();
+
+  // Bilirrubina merge: collect Total/Directa/Indirecta per date
+  const bilirubinByDate: Record<string, { total?: string; directa?: string; indirecta?: string }> =
+    {};
 
   for (const detail of details) {
     const exam = examList.find(e => e.link === detail.url);
@@ -149,18 +198,29 @@ export const buildAnalysisData = (
     dateSet.add(examDate);
 
     for (const finding of detail.findings) {
-      const sectionKey = finding.section || 'GENERAL';
+      const lowerAnalysis = finding.analysis.toLowerCase();
 
-      // Sections — include date for display, keep all rows
-      if (!sections[sectionKey]) sections[sectionKey] = [];
-      sections[sectionKey].push({ ...finding, examDate });
+      // Collect bilirrubinas for merged display
+      if (lowerAnalysis.includes('bilirrubina')) {
+        if (!bilirubinByDate[examDate]) bilirubinByDate[examDate] = {};
+        if (lowerAnalysis.includes('total')) bilirubinByDate[examDate].total = finding.result;
+        else if (lowerAnalysis.includes('directa'))
+          bilirubinByDate[examDate].directa = finding.result;
+        else if (lowerAnalysis.includes('indirecta'))
+          bilirubinByDate[examDate].indirecta = finding.result;
+      }
 
-      // Comparison grid — deduplicate by analysis+date (keep first occurrence)
-      const compKey = `${finding.analysis}::${examDate}`;
-      if (!seenComparison.has(compKey)) {
-        seenComparison.add(compKey);
-        if (!comparison[finding.analysis]) comparison[finding.analysis] = {};
-        comparison[finding.analysis][examDate] = finding;
+      // Comparison grid — skip excluded variables, deduplicate
+      if (!isExcludedFromComparison(finding.analysis)) {
+        // Skip individual bilirrubinas (will add merged row later)
+        if (!lowerAnalysis.includes('bilirrubina')) {
+          const compKey = `${finding.analysis}::${examDate}`;
+          if (!seenComparison.has(compKey)) {
+            seenComparison.add(compKey);
+            if (!comparison[finding.analysis]) comparison[finding.analysis] = {};
+            comparison[finding.analysis][examDate] = finding;
+          }
+        }
       }
 
       // Trends — deduplicate by analysis+date, only key clinical variables
@@ -186,11 +246,35 @@ export const buildAnalysisData = (
     }
   }
 
-  // Only keep trends with 2+ unique data points, sorted by date
-  const trends: Record<string, LabTrendPoint[]> = {};
-  for (const [name, points] of Object.entries(trendMap)) {
-    if (points.length >= 2) {
-      trends[name] = points.sort((a, b) => a.isoDate.localeCompare(b.isoDate));
+  // Add merged bilirrubina row to comparison (Total/Directa/Indirecta)
+  const bilDates = Object.keys(bilirubinByDate);
+  if (bilDates.length > 0) {
+    comparison['Bilirrubinas (T/D/I)'] = {};
+    for (const date of bilDates) {
+      const b = bilirubinByDate[date];
+      const merged = [b.total || '-', b.directa || '-', b.indirecta || '-'].join(' / ');
+      comparison['Bilirrubinas (T/D/I)'][date] = {
+        section: 'PERFIL HEPATICO',
+        analysis: 'Bilirrubinas (T/D/I)',
+        result: merged,
+        unit: 'mg/dL',
+        refValue: '',
+      };
+    }
+  }
+
+  // Build trend groups — only include groups that have at least one variable with 2+ points
+  const trendGroups: LabTrendGroup[] = [];
+  for (const groupDef of TREND_GROUPS) {
+    const variables: Record<string, LabTrendPoint[]> = {};
+    for (const [name, points] of Object.entries(trendMap)) {
+      const groupLabel = findTrendGroup(name);
+      if (groupLabel === groupDef.label && points.length >= 2) {
+        variables[name] = points.sort((a, b) => a.isoDate.localeCompare(b.isoDate));
+      }
+    }
+    if (Object.keys(variables).length > 0) {
+      trendGroups.push({ label: groupDef.label, variables });
     }
   }
 
@@ -199,7 +283,7 @@ export const buildAnalysisData = (
     parseDateDDMMYYYY(a).localeCompare(parseDateDDMMYYYY(b))
   );
 
-  return { sections, trends, examDates, comparison };
+  return { trendGroups, examDates, comparison };
 };
 
 /* ------------------------------------------------------------------ */
@@ -264,7 +348,7 @@ export const useLabViewer = (
   // Analysis state
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisData, setAnalysisData] = useState<LabAnalysisData | null>(null);
-  const [analysisView, setAnalysisView] = useState<AnalysisViewTab>('summary');
+  const [analysisView, setAnalysisView] = useState<AnalysisViewTab>('trends');
 
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -323,7 +407,7 @@ export const useLabViewer = (
     setError(null);
     setSelectedExamIds(new Set());
     setAnalysisData(null);
-    setAnalysisView('summary');
+    setAnalysisView('trends');
   }, []);
 
   const selectPatient = useCallback(
@@ -408,7 +492,7 @@ export const useLabViewer = (
       if (data.success) {
         const processed = buildAnalysisData(data.data, examList);
         setAnalysisData(processed);
-        setAnalysisView('summary');
+        setAnalysisView('trends');
       } else {
         setError(data.error || 'No se pudieron obtener los detalles de los exámenes.');
       }
@@ -426,7 +510,7 @@ export const useLabViewer = (
 
   const closeAnalysis = useCallback(() => {
     setAnalysisData(null);
-    setAnalysisView('summary');
+    setAnalysisView('trends');
   }, []);
 
   return {

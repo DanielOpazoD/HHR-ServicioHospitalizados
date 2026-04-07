@@ -83,51 +83,44 @@ const MOCK_EXAM: SyslabExamItem = {
 };
 
 const MOCK_ANALYSIS: LabAnalysisData = {
-  sections: {
-    HEMOGRAMA: [
-      {
-        section: 'HEMOGRAMA',
-        analysis: 'HEMOGLOBINA',
-        result: '14.5',
-        unit: 'g/dL',
-        refValue: '12.0-16.0',
-        examDate: '06/04/2026',
+  trendGroups: [
+    {
+      label: 'Hemograma',
+      variables: {
+        Hemoglobina: [
+          {
+            date: '01/03/2026',
+            isoDate: '2026-03-01',
+            value: 13.2,
+            unit: 'g/dL',
+            refMin: 12,
+            refMax: 16,
+          },
+          {
+            date: '06/04/2026',
+            isoDate: '2026-04-06',
+            value: 14.5,
+            unit: 'g/dL',
+            refMin: 12,
+            refMax: 16,
+          },
+        ],
       },
-    ],
-  },
-  trends: {
-    HEMOGLOBINA: [
-      {
-        date: '01/03/2026',
-        isoDate: '2026-03-01',
-        value: 13.2,
-        unit: 'g/dL',
-        refMin: 12,
-        refMax: 16,
-      },
-      {
-        date: '06/04/2026',
-        isoDate: '2026-04-06',
-        value: 14.5,
-        unit: 'g/dL',
-        refMin: 12,
-        refMax: 16,
-      },
-    ],
-  },
+    },
+  ],
   examDates: ['01/03/2026', '06/04/2026'],
   comparison: {
-    HEMOGLOBINA: {
+    Hemoglobina: {
       '01/03/2026': {
-        section: 'HG',
-        analysis: 'HEMOGLOBINA',
+        section: 'HEMOGRAMA',
+        analysis: 'Hemoglobina',
         result: '13.2',
         unit: 'g/dL',
         refValue: '12-16',
       },
       '06/04/2026': {
-        section: 'HG',
-        analysis: 'HEMOGLOBINA',
+        section: 'HEMOGRAMA',
+        analysis: 'Hemoglobina',
         result: '14.5',
         unit: 'g/dL',
         refValue: '12-16',
@@ -147,7 +140,7 @@ const DEFAULT_HOOK_STATE = {
   selectedExamIds: new Set<string>(),
   isAnalyzing: false,
   analysisData: null,
-  analysisView: 'summary' as const,
+  analysisView: 'trends' as const,
   selectPatient: vi.fn(),
   search: vi.fn(),
   openPdf: vi.fn(),
@@ -228,33 +221,19 @@ describe('LabResultsViewerModal', () => {
       analysisData: MOCK_ANALYSIS,
     });
     render(<LabResultsViewerModal isOpen={true} onClose={vi.fn()} patients={PATIENTS} />);
-    expect(screen.getByText('Resumen')).toBeInTheDocument();
     expect(screen.getByText('Tendencias')).toBeInTheDocument();
     expect(screen.getByText('Comparación')).toBeInTheDocument();
     expect(screen.getByText('2 exámenes analizados')).toBeInTheDocument();
   });
 
-  it('summary tab shows section table', () => {
-    mockUseLabViewer.mockReturnValue({
-      ...DEFAULT_HOOK_STATE,
-      analysisData: MOCK_ANALYSIS,
-      analysisView: 'summary',
-    });
-    render(<LabResultsViewerModal isOpen={true} onClose={vi.fn()} patients={PATIENTS} />);
-    expect(screen.getByText('HEMOGRAMA')).toBeInTheDocument();
-    expect(screen.getByText('HEMOGLOBINA')).toBeInTheDocument();
-    expect(screen.getByText('14.5')).toBeInTheDocument();
-  });
-
-  it('trends tab shows charts', () => {
+  it('trends tab shows grouped charts', () => {
     mockUseLabViewer.mockReturnValue({
       ...DEFAULT_HOOK_STATE,
       analysisData: MOCK_ANALYSIS,
       analysisView: 'trends',
     });
     render(<LabResultsViewerModal isOpen={true} onClose={vi.fn()} patients={PATIENTS} />);
-    expect(screen.getByText('HEMOGLOBINA')).toBeInTheDocument();
-    expect(screen.getByText('2 mediciones · g/dL')).toBeInTheDocument();
+    expect(screen.getByText('Hemograma')).toBeInTheDocument();
   });
 
   it('comparison tab shows pivot table', () => {

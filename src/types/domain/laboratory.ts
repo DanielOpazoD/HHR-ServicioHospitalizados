@@ -98,18 +98,18 @@ export interface LabTrendPoint {
   refMax?: number;
 }
 
-/** Summary entry: a result row with its exam date. */
-export interface LabSummaryRow extends LabResultRow {
-  /** Exam date (DD/MM/YYYY). */
-  examDate: string;
+/** A group of related trend variables shown together in the UI. */
+export interface LabTrendGroup {
+  /** Display label (e.g. "Electrolitos"). */
+  label: string;
+  /** Variable names in this group, keyed to their trend data. */
+  variables: Record<string, LabTrendPoint[]>;
 }
 
 /** Processed analytics data built from multiple exam details. */
 export interface LabAnalysisData {
-  /** All result rows grouped by section name, with exam date attached. */
-  sections: Record<string, LabSummaryRow[]>;
-  /** Trend data for variables with 2+ measurements, keyed by analysis name. */
-  trends: Record<string, LabTrendPoint[]>;
+  /** Trend data grouped by clinical category. */
+  trendGroups: LabTrendGroup[];
   /** Ordered exam dates (DD/MM/YYYY) for the comparison table columns. */
   examDates: string[];
   /** Comparison grid: analysis name → date → LabResultRow. */
@@ -130,4 +130,4 @@ export interface LabPatient {
 }
 
 /** Active tab in the analysis view. */
-export type AnalysisViewTab = 'summary' | 'trends' | 'comparison';
+export type AnalysisViewTab = 'trends' | 'comparison';
