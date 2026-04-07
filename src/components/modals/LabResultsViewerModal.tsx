@@ -2,12 +2,11 @@
  * @module LabResultsViewerModal
  * @description Modal for viewing laboratory exams from the Syslab system.
  *
- * Renders a {@link BaseModal} with three possible views:
- * 1. **Empty state** — before any search (patient selector visible)
- * 2. **Exam list** — after searching, shows exam cards with "Ver PDF" buttons
+ * Views:
+ * 1. **Empty state** — before any search
+ * 2. **Exam list** — with checkboxes for selection + "Ver PDF" buttons
  * 3. **PDF viewer** — inline iframe showing the original lab report PDF
- *
- * All state management is delegated to the {@link useLabViewer} hook.
+ * 4. **Analysis** — summary table, trend charts, and comparison table
  */
 
 import React, { useEffect } from 'react';
@@ -19,7 +18,9 @@ import {
   LabViewerControls,
   LabViewerProgress,
   LabViewerExamList,
+  LabViewerAnalyzeBar,
   LabViewerPdf,
+  LabViewerAnalysis,
   LabViewerEmptyState,
 } from '@/components/modals/LabResultsViewerModalContent';
 
@@ -56,13 +57,17 @@ export const LabResultsViewerModal: React.FC<LabResultsViewerModalProps> = ({
   if (!isOpen) return null;
 
   const isViewingPdf = lab.pdfExam !== null;
+  const isViewingAnalysis = lab.analysisData !== null;
+
+  // Dynamic modal size
+  const modalSize = isViewingAnalysis ? 'full' : isViewingPdf ? '5xl' : '3xl';
 
   return (
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
       variant="white"
-      size={isViewingPdf ? '5xl' : '3xl'}
+      size={modalSize}
       className="!rounded-2xl ring-1 ring-black/[0.03]"
       bodyClassName="max-h-[90vh] overflow-y-auto px-5 py-4"
       title={
@@ -76,14 +81,16 @@ export const LabResultsViewerModal: React.FC<LabResultsViewerModalProps> = ({
         </span>
       }
     >
-      {/* Controls — always visible */}
-      <LabViewerControls
-        uniquePatients={lab.uniquePatients}
-        selectedRut={lab.selectedRut}
-        isLoading={lab.isLoading}
-        onPatientChange={lab.selectPatient}
-        onSearch={lab.search}
-      />
+      {/* Controls — hidden during analysis */}
+      {!isViewingAnalysis && (
+        <LabViewerControls
+          uniquePatients={lab.uniquePatients}
+          selectedRut={lab.selectedRut}
+          isLoading={lab.isLoading || lab.isAnalyzing}
+          onPatientChange={lab.selectPatient}
+          onSearch={lab.search}
+        />
+      )}
 
       {/* Progress bar */}
       <LabViewerProgress progress={lab.progress} />
@@ -95,18 +102,47 @@ export const LabResultsViewerModal: React.FC<LabResultsViewerModalProps> = ({
         </div>
       )}
 
+      {/* Analysis view */}
+      {isViewingAnalysis && !lab.isAnalyzing && (
+        <LabViewerAnalysis
+          data={lab.analysisData!}
+          activeTab={lab.analysisView}
+          onTabChange={lab.setAnalysisView}
+          onBack={lab.closeAnalysis}
+        />
+      )}
+
       {/* PDF viewer */}
-      {isViewingPdf && <LabViewerPdf exam={lab.pdfExam!} onBack={lab.closePdf} />}
+      {isViewingPdf && !isViewingAnalysis && (
+        <LabViewerPdf exam={lab.pdfExam!} onBack={lab.closePdf} />
+      )}
 
       {/* Exam list */}
-      {!isViewingPdf && lab.examList.length > 0 && !lab.isLoading && (
-        <LabViewerExamList exams={lab.examList} onViewPdf={lab.openPdf} />
+      {!isViewingPdf && !isViewingAnalysis && lab.examList.length > 0 && !lab.isLoading && (
+        <>
+          <LabViewerExamList
+            exams={lab.examList}
+            selectedIds={lab.selectedExamIds}
+            onToggleSelect={lab.toggleExamSelection}
+            onSelectAll={lab.selectAllExams}
+            onViewPdf={lab.openPdf}
+          />
+          <LabViewerAnalyzeBar
+            selectedCount={lab.selectedExamIds.size}
+            isAnalyzing={lab.isAnalyzing}
+            onAnalyze={lab.analyzeSelected}
+            onClear={lab.clearSelection}
+          />
+        </>
       )}
 
       {/* Empty state */}
-      {!isViewingPdf && lab.examList.length === 0 && !lab.isLoading && !lab.error && (
-        <LabViewerEmptyState />
-      )}
+      {!isViewingPdf &&
+        !isViewingAnalysis &&
+        lab.examList.length === 0 &&
+        !lab.isLoading &&
+        !lab.isAnalyzing &&
+        !lab.error && <LabViewerEmptyState />}
     </BaseModal>
   );
 };

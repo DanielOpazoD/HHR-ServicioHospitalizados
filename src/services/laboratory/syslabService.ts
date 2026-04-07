@@ -18,7 +18,7 @@
  */
 
 import { createScopedLogger } from '@/services/utils/loggerScope';
-import type { SyslabSearchResponse } from '@/types/domain/laboratory';
+import type { SyslabSearchResponse, SyslabDetailsResponse } from '@/types/domain/laboratory';
 
 const syslabLogger = createScopedLogger('syslabService');
 
@@ -63,6 +63,38 @@ export const searchSyslabExams = async (rut: string): Promise<SyslabSearchRespon
     return await response.json();
   } catch (error) {
     syslabLogger.error('Syslab exam search failed', error);
+    throw error;
+  }
+};
+
+/**
+ * Fetch structured lab results by parsing exam PDFs server-side.
+ *
+ * Calls `POST /api/exams/details` on the Express proxy with an array of
+ * Syslab exam links. The server opens each link via Playwright, extracts
+ * the PDF text, and parses it into structured findings.
+ *
+ * @param links - Array of Syslab exam URLs (from {@link SyslabExamItem.link}).
+ * @throws {Error} On network failure or non-OK HTTP status.
+ */
+export const fetchSyslabExamDetails = async (links: string[]): Promise<SyslabDetailsResponse> => {
+  const url = `${getSyslabBaseUrl()}/api/exams/details`;
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ links }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Error de conexión' }));
+      throw new Error(errorData.error || `Error ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    syslabLogger.error('Syslab exam details fetch failed', error);
     throw error;
   }
 };

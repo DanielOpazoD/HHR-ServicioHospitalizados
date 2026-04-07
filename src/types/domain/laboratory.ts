@@ -33,6 +33,34 @@ export interface SyslabExamItem {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Parsed lab results (from PDF extraction)                           */
+/* ------------------------------------------------------------------ */
+
+/** A single parsed lab result row extracted from a PDF report. */
+export interface LabResultRow {
+  /** Medical section (e.g. "HEMOGRAMA", "BIOQUIMICA", "GENERAL"). */
+  section: string;
+  /** Analysis/variable name (e.g. "HEMOGLOBINA", "GLUCOSA"). */
+  analysis: string;
+  /** Result value as string (e.g. "14.5", "<0.5"). */
+  result: string;
+  /** Measurement unit (e.g. "g/dL", "mg/dL", "uL"). */
+  unit: string;
+  /** Reference range as raw string (e.g. "12.0-16.0", "70-100"). */
+  refValue: string;
+}
+
+/** Detail response for a single exam (PDF parsed). */
+export interface SyslabExamDetail {
+  /** Original Syslab URL that was parsed. */
+  url: string;
+  /** Parsed lab result rows. Empty if parsing failed. */
+  findings: LabResultRow[];
+  /** Error message if PDF extraction failed for this exam. */
+  error?: string;
+}
+
+/* ------------------------------------------------------------------ */
 /*  API responses                                                      */
 /* ------------------------------------------------------------------ */
 
@@ -41,6 +69,45 @@ export interface SyslabSearchResponse {
   success: boolean;
   data: SyslabExamItem[];
   error?: string;
+}
+
+/** Response from `POST /api/exams/details` (PDF parsing). */
+export interface SyslabDetailsResponse {
+  success: boolean;
+  data: SyslabExamDetail[];
+  error?: string;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Analytics types                                                    */
+/* ------------------------------------------------------------------ */
+
+/** A single data point for trend charts. */
+export interface LabTrendPoint {
+  /** Display date (DD/MM/YYYY). */
+  date: string;
+  /** ISO date for sorting (YYYY-MM-DD). */
+  isoDate: string;
+  /** Numeric result value. */
+  value: number;
+  /** Measurement unit. */
+  unit: string;
+  /** Parsed reference range minimum, if available. */
+  refMin?: number;
+  /** Parsed reference range maximum, if available. */
+  refMax?: number;
+}
+
+/** Processed analytics data built from multiple exam details. */
+export interface LabAnalysisData {
+  /** All result rows grouped by section name. */
+  sections: Record<string, LabResultRow[]>;
+  /** Trend data for variables with 2+ measurements, keyed by analysis name. */
+  trends: Record<string, LabTrendPoint[]>;
+  /** Ordered exam dates (DD/MM/YYYY) for the comparison table columns. */
+  examDates: string[];
+  /** Comparison grid: analysis name → date → LabResultRow. */
+  comparison: Record<string, Record<string, LabResultRow>>;
 }
 
 /* ------------------------------------------------------------------ */
@@ -55,3 +122,6 @@ export interface LabPatient {
   rut: string;
   diagnosis?: string;
 }
+
+/** Active tab in the analysis view. */
+export type AnalysisViewTab = 'summary' | 'trends' | 'comparison';

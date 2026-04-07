@@ -1,22 +1,24 @@
 /**
  * @module useLabViewer
  * @description React hook that encapsulates all state and logic for the
- * laboratory exam viewer modal. Separates business logic from presentation.
- *
- * Manages:
- * - Patient selection (deduplication by RUT)
- * - Exam list search via Syslab API
- * - PDF viewer state (which exam is being viewed)
- * - Progress bar animation
- * - Error handling
+ * laboratory exam viewer modal, including exam search, PDF viewing,
+ * exam selection, and analytics processing.
  */
 
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { searchSyslabExams } from '@/services/laboratory/syslabService';
-import type { SyslabExamItem, LabPatient } from '@/types/domain/laboratory';
+import { searchSyslabExams, fetchSyslabExamDetails } from '@/services/laboratory/syslabService';
+import type {
+  SyslabExamItem,
+  SyslabExamDetail,
+  LabPatient,
+  LabAnalysisData,
+  LabTrendPoint,
+  LabResultRow,
+  AnalysisViewTab,
+} from '@/types/domain/laboratory';
 
 /* ------------------------------------------------------------------ */
-/*  Progress bar                                                       */
+/*  Progress bar steps                                                 */
 /* ------------------------------------------------------------------ */
 
 interface ProgressState {
@@ -32,38 +34,156 @@ const SEARCH_STEPS: ProgressState[] = [
   { pct: 85, text: 'Procesando resultados...' },
 ];
 
+const ANALYSIS_STEPS: ProgressState[] = [
+  { pct: 10, text: 'Conectando con Syslab...' },
+  { pct: 25, text: 'Abriendo informes PDF...' },
+  { pct: 45, text: 'Extrayendo datos de laboratorio...' },
+  { pct: 65, text: 'Parseando resultados numéricos...' },
+  { pct: 80, text: 'Construyendo tablas y tendencias...' },
+  { pct: 90, text: 'Finalizando análisis...' },
+];
+
 const STEP_INTERVAL_MS = 2500;
+
+/* ------------------------------------------------------------------ */
+/*  Pure helpers                                                       */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Parse a reference range string into numeric min/max bounds.
+ * Handles formats like "12.0-16.0", "4.5 - 11.0", "70 - 100".
+ */
+export const parseRefRange = (refValue: string): { min: number; max: number } | null => {
+  const match = refValue.match(/([\d.,]+)\s*[-–]\s*([\d.,]+)/);
+  if (!match) return null;
+  const min = parseFloat(match[1].replace(',', '.'));
+  const max = parseFloat(match[2].replace(',', '.'));
+  if (isNaN(min) || isNaN(max)) return null;
+  return { min, max };
+};
+
+/**
+ * Convert DD/MM/YYYY date string to ISO YYYY-MM-DD for sorting.
+ */
+export const parseDateDDMMYYYY = (date: string): string => {
+  const match = date.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (!match) return date;
+  return `${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}`;
+};
+
+/**
+ * Check if a result value is outside the reference range.
+ * Returns `true` if out of range, `false` if within range, `null` if unparseable.
+ */
+export const isOutOfRange = (result: string, refValue: string): boolean | null => {
+  const range = parseRefRange(refValue);
+  if (!range) return null;
+  const val = parseFloat(result.replace(',', '.'));
+  if (isNaN(val)) return null;
+  return val < range.min || val > range.max;
+};
+
+/**
+ * Build the processed analytics data from raw exam details and the original exam list.
+ */
+export const buildAnalysisData = (
+  details: SyslabExamDetail[],
+  examList: SyslabExamItem[]
+): LabAnalysisData => {
+  const sections: Record<string, LabResultRow[]> = {};
+  const trendMap: Record<string, LabTrendPoint[]> = {};
+  const comparison: Record<string, Record<string, LabResultRow>> = {};
+  const dateSet = new Set<string>();
+
+  for (const detail of details) {
+    // Match URL back to the original exam to get the date
+    const exam = examList.find(e => e.link === detail.url);
+    const examDate = exam?.date || 'Desconocido';
+    const isoDate = parseDateDDMMYYYY(examDate);
+    dateSet.add(examDate);
+
+    for (const finding of detail.findings) {
+      const key = finding.section || 'GENERAL';
+
+      // Sections (all rows grouped)
+      if (!sections[key]) sections[key] = [];
+      sections[key].push(finding);
+
+      // Comparison grid
+      if (!comparison[finding.analysis]) comparison[finding.analysis] = {};
+      comparison[finding.analysis][examDate] = finding;
+
+      // Trends (only numeric values)
+      const numValue = parseFloat(finding.result.replace(',', '.'));
+      if (!isNaN(numValue)) {
+        if (!trendMap[finding.analysis]) trendMap[finding.analysis] = [];
+        const range = parseRefRange(finding.refValue);
+        trendMap[finding.analysis].push({
+          date: examDate,
+          isoDate,
+          value: numValue,
+          unit: finding.unit,
+          refMin: range?.min,
+          refMax: range?.max,
+        });
+      }
+    }
+  }
+
+  // Only keep trends with 2+ data points, sorted by date
+  const trends: Record<string, LabTrendPoint[]> = {};
+  for (const [name, points] of Object.entries(trendMap)) {
+    if (points.length >= 2) {
+      trends[name] = points.sort((a, b) => a.isoDate.localeCompare(b.isoDate));
+    }
+  }
+
+  // Sort dates chronologically
+  const examDates = Array.from(dateSet).sort((a, b) =>
+    parseDateDDMMYYYY(a).localeCompare(parseDateDDMMYYYY(b))
+  );
+
+  return { sections, trends, examDates, comparison };
+};
 
 /* ------------------------------------------------------------------ */
 /*  Hook return type                                                   */
 /* ------------------------------------------------------------------ */
 
 export interface UseLabViewerReturn {
-  /** Deduplicated patient list. */
+  // Search state
   uniquePatients: LabPatient[];
-  /** Currently selected patient RUT. */
   selectedRut: string;
-  /** Whether the exam list is loading. */
   isLoading: boolean;
-  /** List of exams returned by the last search. */
   examList: SyslabExamItem[];
-  /** The exam currently being viewed as PDF, or `null`. */
   pdfExam: SyslabExamItem | null;
-  /** Error message from the last operation, or `null`. */
   error: string | null;
-  /** Current progress bar state, or `null` when idle. */
   progress: ProgressState | null;
 
-  /** Change the selected patient and reset state. */
+  // Selection state
+  selectedExamIds: Set<string>;
+
+  // Analysis state
+  isAnalyzing: boolean;
+  analysisData: LabAnalysisData | null;
+  analysisView: AnalysisViewTab;
+
+  // Search actions
   selectPatient: (rut: string) => void;
-  /** Trigger an exam list search for the selected patient. */
   search: () => Promise<void>;
-  /** Open the PDF viewer for a specific exam. */
   openPdf: (exam: SyslabExamItem) => void;
-  /** Close the PDF viewer and return to the exam list. */
   closePdf: () => void;
-  /** Reset all state (used when modal closes/reopens). */
   reset: () => void;
+
+  // Selection actions
+  toggleExamSelection: (id: string) => void;
+  selectAllExams: () => void;
+  clearSelection: () => void;
+
+  // Analysis actions
+  analyzeSelected: () => Promise<void>;
+  closeAnalysis: () => void;
+  setAnalysisView: (tab: AnalysisViewTab) => void;
 }
 
 /* ------------------------------------------------------------------ */
@@ -74,6 +194,7 @@ export const useLabViewer = (
   patients: LabPatient[],
   initialPatientRut?: string
 ): UseLabViewerReturn => {
+  // Search state
   const [selectedRut, setSelectedRut] = useState(initialPatientRut || patients[0]?.rut || '');
   const [isLoading, setIsLoading] = useState(false);
   const [examList, setExamList] = useState<SyslabExamItem[]>([]);
@@ -81,7 +202,14 @@ export const useLabViewer = (
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<ProgressState | null>(null);
 
-  // Track mount state to avoid state updates after unmount
+  // Selection state
+  const [selectedExamIds, setSelectedExamIds] = useState<Set<string>>(new Set());
+
+  // Analysis state
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisData, setAnalysisData] = useState<LabAnalysisData | null>(null);
+  const [analysisView, setAnalysisView] = useState<AnalysisViewTab>('summary');
+
   const mountedRef = useRef(true);
   useEffect(() => {
     mountedRef.current = true;
@@ -102,7 +230,8 @@ export const useLabViewer = (
 
   // Animated progress bar
   useEffect(() => {
-    if (!isLoading) {
+    const active = isLoading || isAnalyzing;
+    if (!active) {
       if (progress) {
         setProgress({ pct: 100, text: '¡Completado!' });
         const timeout = setTimeout(() => setProgress(null), 600);
@@ -111,13 +240,14 @@ export const useLabViewer = (
       return;
     }
 
+    const steps = isAnalyzing ? ANALYSIS_STEPS : SEARCH_STEPS;
     let step = 0;
-    setProgress(SEARCH_STEPS[0]);
+    setProgress(steps[0]);
     step = 1;
 
     const interval = setInterval(() => {
-      if (step < SEARCH_STEPS.length) {
-        setProgress(SEARCH_STEPS[step]);
+      if (step < steps.length) {
+        setProgress(steps[step]);
         step++;
       } else {
         setProgress(prev =>
@@ -129,12 +259,15 @@ export const useLabViewer = (
     }, STEP_INTERVAL_MS);
 
     return () => clearInterval(interval);
-  }, [isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isLoading, isAnalyzing]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const resetState = useCallback(() => {
     setExamList([]);
     setPdfExam(null);
     setError(null);
+    setSelectedExamIds(new Set());
+    setAnalysisData(null);
+    setAnalysisView('summary');
   }, []);
 
   const selectPatient = useCallback(
@@ -153,7 +286,6 @@ export const useLabViewer = (
     try {
       const data = await searchSyslabExams(selectedRut);
       if (!mountedRef.current) return;
-
       if (data.success) {
         setExamList(data.data);
       } else {
@@ -179,6 +311,68 @@ export const useLabViewer = (
     setSelectedRut(initialPatientRut || patients[0]?.rut || '');
   }, [initialPatientRut, patients, resetState]);
 
+  // --- Selection ---
+
+  const toggleExamSelection = useCallback((id: string) => {
+    setSelectedExamIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const selectAllExams = useCallback(() => {
+    const allIds = examList.filter(e => e.link).map(e => e.id);
+    setSelectedExamIds(prev => {
+      const allSelected = allIds.every(id => prev.has(id));
+      return allSelected ? new Set() : new Set(allIds);
+    });
+  }, [examList]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedExamIds(new Set());
+  }, []);
+
+  // --- Analysis ---
+
+  const analyzeSelected = useCallback(async () => {
+    const selectedExams = examList.filter(e => selectedExamIds.has(e.id) && e.link);
+    const links = selectedExams.map(e => e.link!);
+    if (links.length === 0) return;
+
+    setIsAnalyzing(true);
+    setAnalysisData(null);
+    setError(null);
+
+    try {
+      const data = await fetchSyslabExamDetails(links);
+      if (!mountedRef.current) return;
+
+      if (data.success) {
+        const processed = buildAnalysisData(data.data, examList);
+        setAnalysisData(processed);
+        setAnalysisView('summary');
+      } else {
+        setError(data.error || 'No se pudieron obtener los detalles de los exámenes.');
+      }
+    } catch (err) {
+      if (!mountedRef.current) return;
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Error al analizar exámenes. Verifica que el servidor Syslab esté activo.'
+      );
+    } finally {
+      if (mountedRef.current) setIsAnalyzing(false);
+    }
+  }, [examList, selectedExamIds]);
+
+  const closeAnalysis = useCallback(() => {
+    setAnalysisData(null);
+    setAnalysisView('summary');
+  }, []);
+
   return {
     uniquePatients,
     selectedRut,
@@ -187,10 +381,20 @@ export const useLabViewer = (
     pdfExam,
     error,
     progress,
+    selectedExamIds,
+    isAnalyzing,
+    analysisData,
+    analysisView,
     selectPatient,
     search,
     openPdf,
     closePdf,
     reset,
+    toggleExamSelection,
+    selectAllExams,
+    clearSelection,
+    analyzeSelected,
+    closeAnalysis,
+    setAnalysisView,
   };
 };

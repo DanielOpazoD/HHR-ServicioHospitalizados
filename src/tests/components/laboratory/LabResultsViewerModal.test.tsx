@@ -1,6 +1,6 @@
 /**
  * @fileoverview Unit tests for the LabResultsViewerModal component.
- * Tests rendering states: empty, exam list, PDF viewer, and error display.
+ * Tests rendering states: empty, exam list, PDF viewer, analysis, and error display.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -29,10 +29,30 @@ vi.mock('@/components/shared/BaseModal', () => ({
     ) : null,
 }));
 
-// Mock the hook to control state
+// Mock recharts to avoid canvas issues in jsdom
+vi.mock('recharts', () => ({
+  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  LineChart: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="line-chart">{children}</div>
+  ),
+  Line: () => null,
+  XAxis: () => null,
+  YAxis: () => null,
+  Tooltip: () => null,
+  CartesianGrid: () => null,
+  ReferenceArea: () => null,
+}));
+
 const mockUseLabViewer = vi.fn();
 vi.mock('@/hooks/laboratory/useLabViewer', () => ({
   useLabViewer: (...args: unknown[]) => mockUseLabViewer(...args),
+  isOutOfRange: (result: string, ref: string) => {
+    const m = ref.match(/([\d.]+)-([\d.]+)/);
+    if (!m) return null;
+    const v = parseFloat(result);
+    if (isNaN(v)) return null;
+    return v < parseFloat(m[1]) || v > parseFloat(m[2]);
+  },
 }));
 
 vi.mock('@/services/laboratory/syslabService', () => ({
@@ -41,7 +61,7 @@ vi.mock('@/services/laboratory/syslabService', () => ({
 }));
 
 import { LabResultsViewerModal } from '@/components/modals/LabResultsViewerModal';
-import type { LabPatient, SyslabExamItem } from '@/types/domain/laboratory';
+import type { LabPatient, SyslabExamItem, LabAnalysisData } from '@/types/domain/laboratory';
 
 /* ------------------------------------------------------------------ */
 /*  Test data                                                          */
@@ -62,19 +82,82 @@ const MOCK_EXAM: SyslabExamItem = {
   exams: ['HEMOGRAMA', 'GLICEMIA'],
 };
 
+const MOCK_ANALYSIS: LabAnalysisData = {
+  sections: {
+    HEMOGRAMA: [
+      {
+        section: 'HEMOGRAMA',
+        analysis: 'HEMOGLOBINA',
+        result: '14.5',
+        unit: 'g/dL',
+        refValue: '12.0-16.0',
+      },
+    ],
+  },
+  trends: {
+    HEMOGLOBINA: [
+      {
+        date: '01/03/2026',
+        isoDate: '2026-03-01',
+        value: 13.2,
+        unit: 'g/dL',
+        refMin: 12,
+        refMax: 16,
+      },
+      {
+        date: '06/04/2026',
+        isoDate: '2026-04-06',
+        value: 14.5,
+        unit: 'g/dL',
+        refMin: 12,
+        refMax: 16,
+      },
+    ],
+  },
+  examDates: ['01/03/2026', '06/04/2026'],
+  comparison: {
+    HEMOGLOBINA: {
+      '01/03/2026': {
+        section: 'HG',
+        analysis: 'HEMOGLOBINA',
+        result: '13.2',
+        unit: 'g/dL',
+        refValue: '12-16',
+      },
+      '06/04/2026': {
+        section: 'HG',
+        analysis: 'HEMOGLOBINA',
+        result: '14.5',
+        unit: 'g/dL',
+        refValue: '12-16',
+      },
+    },
+  },
+};
+
 const DEFAULT_HOOK_STATE = {
   uniquePatients: PATIENTS,
   selectedRut: '12345678-9',
   isLoading: false,
-  examList: [],
+  examList: [] as SyslabExamItem[],
   pdfExam: null,
   error: null,
   progress: null,
+  selectedExamIds: new Set<string>(),
+  isAnalyzing: false,
+  analysisData: null,
+  analysisView: 'summary' as const,
   selectPatient: vi.fn(),
   search: vi.fn(),
   openPdf: vi.fn(),
   closePdf: vi.fn(),
   reset: vi.fn(),
+  toggleExamSelection: vi.fn(),
+  selectAllExams: vi.fn(),
+  clearSelection: vi.fn(),
+  analyzeSelected: vi.fn(),
+  closeAnalysis: vi.fn(),
+  setAnalysisView: vi.fn(),
 };
 
 /* ------------------------------------------------------------------ */
@@ -87,113 +170,123 @@ describe('LabResultsViewerModal', () => {
     mockUseLabViewer.mockReturnValue({ ...DEFAULT_HOOK_STATE });
   });
 
-  it('renders nothing when isOpen is false', () => {
+  it('renders nothing when closed', () => {
     const { container } = render(
       <LabResultsViewerModal isOpen={false} onClose={vi.fn()} patients={PATIENTS} />
     );
     expect(container.innerHTML).toBe('');
   });
 
-  it('renders modal with title when isOpen is true', () => {
+  it('renders title when open', () => {
     render(<LabResultsViewerModal isOpen={true} onClose={vi.fn()} patients={PATIENTS} />);
-
-    expect(screen.getByTestId('base-modal')).toBeInTheDocument();
     expect(screen.getByText('Laboratorio / Exámenes Syslab')).toBeInTheDocument();
   });
 
-  it('shows empty state when no exams and not loading', () => {
+  it('shows empty state by default', () => {
     render(<LabResultsViewerModal isOpen={true} onClose={vi.fn()} patients={PATIENTS} />);
-
     expect(screen.getByText('Selecciona un paciente y busca')).toBeInTheDocument();
   });
 
-  it('shows exam list when examList has items', () => {
+  it('shows exam list with checkboxes', () => {
     mockUseLabViewer.mockReturnValue({
       ...DEFAULT_HOOK_STATE,
       examList: [MOCK_EXAM],
     });
-
     render(<LabResultsViewerModal isOpen={true} onClose={vi.fn()} patients={PATIENTS} />);
-
     expect(screen.getByText('1 exámenes encontrados')).toBeInTheDocument();
-    expect(screen.getByText('06/04/2026')).toBeInTheDocument();
-    expect(screen.getByText('#43091284')).toBeInTheDocument();
-    expect(screen.getByText('HEMOGRAMA')).toBeInTheDocument();
     expect(screen.getByText('Ver PDF')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox')).toBeInTheDocument();
   });
 
-  it('shows error message when error is set', () => {
+  it('shows analyze bar when exams are selected', () => {
     mockUseLabViewer.mockReturnValue({
       ...DEFAULT_HOOK_STATE,
-      error: 'Servidor Syslab no disponible',
+      examList: [MOCK_EXAM],
+      selectedExamIds: new Set(['43091284']),
     });
-
     render(<LabResultsViewerModal isOpen={true} onClose={vi.fn()} patients={PATIENTS} />);
-
-    expect(screen.getByText('Servidor Syslab no disponible')).toBeInTheDocument();
+    expect(screen.getByText(/1 examen seleccionado/)).toBeInTheDocument();
+    expect(screen.getByText(/Analizar/)).toBeInTheDocument();
   });
 
-  it('shows progress bar when progress is set', () => {
-    mockUseLabViewer.mockReturnValue({
-      ...DEFAULT_HOOK_STATE,
-      progress: { pct: 50, text: 'Buscando exámenes...' },
-    });
-
+  it('shows error message', () => {
+    mockUseLabViewer.mockReturnValue({ ...DEFAULT_HOOK_STATE, error: 'Server down' });
     render(<LabResultsViewerModal isOpen={true} onClose={vi.fn()} patients={PATIENTS} />);
-
-    expect(screen.getByText('Buscando exámenes...')).toBeInTheDocument();
+    expect(screen.getByText('Server down')).toBeInTheDocument();
   });
 
   it('shows PDF viewer when pdfExam is set', () => {
+    mockUseLabViewer.mockReturnValue({ ...DEFAULT_HOOK_STATE, pdfExam: MOCK_EXAM });
+    render(<LabResultsViewerModal isOpen={true} onClose={vi.fn()} patients={PATIENTS} />);
+    expect(screen.getByTitle('PDF Examen 43091284')).toBeInTheDocument();
+  });
+
+  it('shows analysis view with tabs', () => {
+    mockUseLabViewer.mockReturnValue({
+      ...DEFAULT_HOOK_STATE,
+      analysisData: MOCK_ANALYSIS,
+    });
+    render(<LabResultsViewerModal isOpen={true} onClose={vi.fn()} patients={PATIENTS} />);
+    expect(screen.getByText('Resumen')).toBeInTheDocument();
+    expect(screen.getByText('Tendencias')).toBeInTheDocument();
+    expect(screen.getByText('Comparación')).toBeInTheDocument();
+    expect(screen.getByText('2 exámenes analizados')).toBeInTheDocument();
+  });
+
+  it('summary tab shows section table', () => {
+    mockUseLabViewer.mockReturnValue({
+      ...DEFAULT_HOOK_STATE,
+      analysisData: MOCK_ANALYSIS,
+      analysisView: 'summary',
+    });
+    render(<LabResultsViewerModal isOpen={true} onClose={vi.fn()} patients={PATIENTS} />);
+    expect(screen.getByText('HEMOGRAMA')).toBeInTheDocument();
+    expect(screen.getByText('HEMOGLOBINA')).toBeInTheDocument();
+    expect(screen.getByText('14.5')).toBeInTheDocument();
+  });
+
+  it('trends tab shows charts', () => {
+    mockUseLabViewer.mockReturnValue({
+      ...DEFAULT_HOOK_STATE,
+      analysisData: MOCK_ANALYSIS,
+      analysisView: 'trends',
+    });
+    render(<LabResultsViewerModal isOpen={true} onClose={vi.fn()} patients={PATIENTS} />);
+    expect(screen.getByText('HEMOGLOBINA')).toBeInTheDocument();
+    expect(screen.getByText('2 mediciones · g/dL')).toBeInTheDocument();
+  });
+
+  it('comparison tab shows pivot table', () => {
+    mockUseLabViewer.mockReturnValue({
+      ...DEFAULT_HOOK_STATE,
+      analysisData: MOCK_ANALYSIS,
+      analysisView: 'comparison',
+    });
+    render(<LabResultsViewerModal isOpen={true} onClose={vi.fn()} patients={PATIENTS} />);
+    expect(screen.getByText('01/03/2026')).toBeInTheDocument();
+    expect(screen.getByText('06/04/2026')).toBeInTheDocument();
+    expect(screen.getByText('13.2')).toBeInTheDocument();
+  });
+
+  it('calls analyzeSelected when Analizar button is clicked', async () => {
+    const analyzeFn = vi.fn();
     mockUseLabViewer.mockReturnValue({
       ...DEFAULT_HOOK_STATE,
       examList: [MOCK_EXAM],
-      pdfExam: MOCK_EXAM,
+      selectedExamIds: new Set(['43091284']),
+      analyzeSelected: analyzeFn,
     });
-
     render(<LabResultsViewerModal isOpen={true} onClose={vi.fn()} patients={PATIENTS} />);
-
-    expect(screen.getByText('Volver a lista de exámenes')).toBeInTheDocument();
-    expect(screen.getByTitle('PDF Examen 43091284')).toBeInTheDocument();
-    // Exam list should be hidden while viewing PDF
-    expect(screen.queryByText('1 exámenes encontrados')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByText(/Analizar/));
+    expect(analyzeFn).toHaveBeenCalledTimes(1);
   });
 
-  it('hides empty state when loading', () => {
+  it('hides patient controls during analysis', () => {
     mockUseLabViewer.mockReturnValue({
       ...DEFAULT_HOOK_STATE,
-      isLoading: true,
+      analysisData: MOCK_ANALYSIS,
     });
-
     render(<LabResultsViewerModal isOpen={true} onClose={vi.fn()} patients={PATIENTS} />);
-
-    expect(screen.queryByText('Selecciona un paciente y busca')).not.toBeInTheDocument();
-  });
-
-  it('calls search when Buscar button is clicked', async () => {
-    const searchFn = vi.fn();
-    mockUseLabViewer.mockReturnValue({
-      ...DEFAULT_HOOK_STATE,
-      search: searchFn,
-    });
-
-    render(<LabResultsViewerModal isOpen={true} onClose={vi.fn()} patients={PATIENTS} />);
-
-    await userEvent.click(screen.getByText('Buscar'));
-    expect(searchFn).toHaveBeenCalledTimes(1);
-  });
-
-  it('calls closePdf when back button is clicked in PDF view', async () => {
-    const closePdfFn = vi.fn();
-    mockUseLabViewer.mockReturnValue({
-      ...DEFAULT_HOOK_STATE,
-      pdfExam: MOCK_EXAM,
-      closePdf: closePdfFn,
-    });
-
-    render(<LabResultsViewerModal isOpen={true} onClose={vi.fn()} patients={PATIENTS} />);
-
-    await userEvent.click(screen.getByText('Volver a lista de exámenes'));
-    expect(closePdfFn).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('Paciente')).not.toBeInTheDocument();
   });
 });

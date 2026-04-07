@@ -21,6 +21,7 @@ import {
   cleanRutForSyslab,
   getSyslabBaseUrl,
   searchSyslabExams,
+  fetchSyslabExamDetails,
   buildSyslabPdfUrl,
 } from '@/services/laboratory/syslabService';
 
@@ -170,5 +171,70 @@ describe('searchSyslabExams', () => {
     });
 
     await expect(searchSyslabExams('12345678')).rejects.toThrow('Error de conexión');
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/*  fetchSyslabExamDetails                                             */
+/* ------------------------------------------------------------------ */
+
+describe('fetchSyslabExamDetails', () => {
+  const mockFetch = vi.fn();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    global.fetch = mockFetch;
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('sends POST with links array', async () => {
+    const links = ['http://example.com/exam1', 'http://example.com/exam2'];
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ success: true, data: [] }),
+    });
+
+    await fetchSyslabExamDetails(links);
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    const [url, options] = mockFetch.mock.calls[0];
+    expect(url).toContain('/api/exams/details');
+    expect(options.method).toBe('POST');
+    expect(JSON.parse(options.body)).toEqual({ links });
+  });
+
+  it('returns parsed findings on success', async () => {
+    const mockData = {
+      success: true,
+      data: [
+        {
+          url: 'http://example.com/exam1',
+          findings: [
+            { section: 'HG', analysis: 'HB', result: '14', unit: 'g/dL', refValue: '12-16' },
+          ],
+        },
+      ],
+    };
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(mockData),
+    });
+
+    const result = await fetchSyslabExamDetails(['http://example.com/exam1']);
+    expect(result.success).toBe(true);
+    expect(result.data[0].findings).toHaveLength(1);
+  });
+
+  it('throws on non-OK HTTP response', async () => {
+    mockFetch.mockResolvedValue({
+      ok: false,
+      status: 500,
+      json: () => Promise.resolve({ error: 'Internal error' }),
+    });
+
+    await expect(fetchSyslabExamDetails(['link'])).rejects.toThrow('Internal error');
   });
 });
