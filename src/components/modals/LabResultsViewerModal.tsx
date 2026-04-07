@@ -1,24 +1,31 @@
-import React, { useState, useCallback, useMemo } from 'react';
+/**
+ * @module LabResultsViewerModal
+ * @description Modal for viewing laboratory exams from the Syslab system.
+ *
+ * Renders a {@link BaseModal} with three possible views:
+ * 1. **Empty state** — before any search (patient selector visible)
+ * 2. **Exam list** — after searching, shows exam cards with "Ver PDF" buttons
+ * 3. **PDF viewer** — inline iframe showing the original lab report PDF
+ *
+ * All state management is delegated to the {@link useLabViewer} hook.
+ */
+
+import React, { useEffect } from 'react';
 import { FlaskConical } from 'lucide-react';
 import { BaseModal } from '@/components/shared/BaseModal';
-import { searchSyslabExams, fetchSyslabExamDetails } from '@/services/laboratory/syslabService';
-import type { SyslabExamItem, SyslabExamDetail } from '@/types/domain/laboratory';
+import { useLabViewer } from '@/hooks/laboratory/useLabViewer';
+import type { LabPatient } from '@/types/domain/laboratory';
 import {
   LabViewerControls,
   LabViewerProgress,
   LabViewerExamList,
-  LabViewerResults,
   LabViewerPdf,
   LabViewerEmptyState,
 } from '@/components/modals/LabResultsViewerModalContent';
 
-interface LabPatient {
-  bedId: string;
-  label: string;
-  patientName: string;
-  rut: string;
-  diagnosis?: string;
-}
+/* ------------------------------------------------------------------ */
+/*  Props                                                              */
+/* ------------------------------------------------------------------ */
 
 interface LabResultsViewerModalProps {
   isOpen: boolean;
@@ -27,168 +34,35 @@ interface LabResultsViewerModalProps {
   initialPatientRut?: string;
 }
 
+/* ------------------------------------------------------------------ */
+/*  Component                                                          */
+/* ------------------------------------------------------------------ */
+
 export const LabResultsViewerModal: React.FC<LabResultsViewerModalProps> = ({
   isOpen,
   onClose,
   patients,
   initialPatientRut,
 }) => {
-  const [selectedRut, setSelectedRut] = useState(initialPatientRut || patients[0]?.rut || '');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
-  const [examList, setExamList] = useState<SyslabExamItem[]>([]);
-  const [examDetails, setExamDetails] = useState<SyslabExamDetail[]>([]);
-  const [selectedLinks, setSelectedLinks] = useState<Set<string>>(new Set());
-  const [error, setError] = useState<string | null>(null);
-  const [progress, setProgress] = useState<{ pct: number; text: string } | null>(null);
-  const [pdfExam, setPdfExam] = useState<SyslabExamItem | null>(null);
+  const lab = useLabViewer(patients, initialPatientRut);
 
-  // Deduplicate patients by RUT
-  const uniquePatients = useMemo(() => {
-    const seen = new Set<string>();
-    return patients.filter(p => {
-      if (!p.rut || seen.has(p.rut)) return false;
-      seen.add(p.rut);
-      return true;
-    });
-  }, [patients]);
-
-  // Progress bar animation
-  React.useEffect(() => {
-    const active = isLoading || isLoadingDetails;
-    if (!active) {
-      if (progress) {
-        setProgress({ pct: 100, text: '¡Completado!' });
-        const timeout = setTimeout(() => setProgress(null), 600);
-        return () => clearTimeout(timeout);
-      }
-      return;
-    }
-
-    const steps = isLoadingDetails
-      ? [
-          { pct: 10, text: 'Conectando con Syslab...' },
-          { pct: 30, text: 'Abriendo informes PDF...' },
-          { pct: 50, text: 'Extrayendo datos de laboratorio...' },
-          { pct: 70, text: 'Parseando resultados...' },
-          { pct: 85, text: 'Estructurando por secciones...' },
-        ]
-      : [
-          { pct: 10, text: 'Conectando con servidor de laboratorio...' },
-          { pct: 30, text: 'Iniciando sesión en Syslab...' },
-          { pct: 50, text: 'Buscando exámenes del paciente...' },
-          { pct: 70, text: 'Extrayendo lista de órdenes...' },
-          { pct: 85, text: 'Procesando resultados...' },
-        ];
-
-    let step = 0;
-    setProgress({ pct: steps[0].pct, text: steps[0].text });
-    step = 1;
-
-    const interval = setInterval(() => {
-      if (step < steps.length) {
-        setProgress({ pct: steps[step].pct, text: steps[step].text });
-        step++;
-      } else {
-        setProgress(prev =>
-          prev && prev.pct < 95
-            ? { pct: Math.min(prev.pct + 1, 95), text: 'Finalizando consulta...' }
-            : prev
-        );
-      }
-    }, 2500);
-
-    return () => clearInterval(interval);
-  }, [isLoading, isLoadingDetails]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleSearch = useCallback(async () => {
-    if (!selectedRut) return;
-    setIsLoading(true);
-    setError(null);
-    setExamList([]);
-    setExamDetails([]);
-    setSelectedLinks(new Set());
-    setPdfExam(null);
-
-    try {
-      const data = await searchSyslabExams(selectedRut);
-      if (data.success) {
-        setExamList(data.data);
-      } else {
-        setError(data.error || 'No se pudieron obtener los resultados.');
-      }
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Error al buscar exámenes. Verifica que el servidor Syslab esté activo.'
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [selectedRut]);
-
-  const handleToggleLink = useCallback((link: string) => {
-    setSelectedLinks(prev => {
-      const next = new Set(prev);
-      if (next.has(link)) next.delete(link);
-      else next.add(link);
-      return next;
-    });
-  }, []);
-
-  const handleToggleAll = useCallback(() => {
-    const selectableLinks = examList.filter(e => e.link).map(e => e.link!);
-    setSelectedLinks(prev => {
-      const allSelected = selectableLinks.every(l => prev.has(l));
-      return allSelected ? new Set() : new Set(selectableLinks);
-    });
-  }, [examList]);
-
-  const handleFetchDetails = useCallback(async () => {
-    const links = Array.from(selectedLinks);
-    if (links.length === 0) return;
-
-    setIsLoadingDetails(true);
-    setExamDetails([]);
-    setError(null);
-
-    try {
-      const data = await fetchSyslabExamDetails(links);
-      if (data.success) {
-        setExamDetails(data.data);
-      } else {
-        setError(data.error || 'No se pudieron obtener los detalles.');
-      }
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Error al obtener detalles. Verifica que el servidor Syslab esté activo.'
-      );
-    } finally {
-      setIsLoadingDetails(false);
-    }
-  }, [selectedLinks]);
-
-  React.useEffect(() => {
+  // Reset state when modal reopens with a different patient
+  useEffect(() => {
     if (isOpen && initialPatientRut) {
-      setSelectedRut(initialPatientRut);
-      setExamList([]);
-      setExamDetails([]);
-      setSelectedLinks(new Set());
-      setError(null);
+      lab.reset();
     }
-  }, [isOpen, initialPatientRut]);
+  }, [isOpen, initialPatientRut]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!isOpen) return null;
+
+  const isViewingPdf = lab.pdfExam !== null;
 
   return (
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
       variant="white"
-      size={pdfExam ? '5xl' : '3xl'}
+      size={isViewingPdf ? '5xl' : '3xl'}
       className="!rounded-2xl ring-1 ring-black/[0.03]"
       bodyClassName="max-h-[90vh] overflow-y-auto px-5 py-4"
       title={
@@ -202,69 +76,37 @@ export const LabResultsViewerModal: React.FC<LabResultsViewerModalProps> = ({
         </span>
       }
     >
+      {/* Controls — always visible */}
       <LabViewerControls
-        uniquePatients={uniquePatients}
-        selectedRut={selectedRut}
-        isLoading={isLoading || isLoadingDetails}
-        onPatientChange={rut => {
-          setSelectedRut(rut);
-          setExamList([]);
-          setExamDetails([]);
-          setSelectedLinks(new Set());
-          setPdfExam(null);
-          setError(null);
-        }}
-        onSearch={handleSearch}
+        uniquePatients={lab.uniquePatients}
+        selectedRut={lab.selectedRut}
+        isLoading={lab.isLoading}
+        onPatientChange={lab.selectPatient}
+        onSearch={lab.search}
       />
 
-      <LabViewerProgress progress={progress} />
+      {/* Progress bar */}
+      <LabViewerProgress progress={lab.progress} />
 
       {/* Error */}
-      {error && (
+      {lab.error && (
         <div className="mb-4 rounded-xl border border-red-200/80 bg-red-50 px-4 py-3 text-[13px] text-red-700">
-          {error}
+          {lab.error}
         </div>
       )}
 
-      {/* PDF Viewer */}
-      {pdfExam && <LabViewerPdf exam={pdfExam} onBack={() => setPdfExam(null)} />}
+      {/* PDF viewer */}
+      {isViewingPdf && <LabViewerPdf exam={lab.pdfExam!} onBack={lab.closePdf} />}
 
-      {/* Phase 1: Exam list */}
-      {!pdfExam && examList.length > 0 && examDetails.length === 0 && !isLoading && (
-        <LabViewerExamList
-          exams={examList}
-          selectedLinks={selectedLinks}
-          onToggle={handleToggleLink}
-          onToggleAll={handleToggleAll}
-          onFetchDetails={handleFetchDetails}
-          onViewPdf={exam => setPdfExam(exam)}
-          isLoadingDetails={isLoadingDetails}
-        />
-      )}
-
-      {/* Phase 2: Detailed results */}
-      {!pdfExam && examDetails.length > 0 && !isLoadingDetails && (
-        <>
-          <div className="mb-3">
-            <button
-              type="button"
-              onClick={() => setExamDetails([])}
-              className="text-[11px] font-medium text-emerald-600 hover:text-emerald-700"
-            >
-              &larr; Volver a lista de exámenes
-            </button>
-          </div>
-          <LabViewerResults details={examDetails} exams={examList} />
-        </>
+      {/* Exam list */}
+      {!isViewingPdf && lab.examList.length > 0 && !lab.isLoading && (
+        <LabViewerExamList exams={lab.examList} onViewPdf={lab.openPdf} />
       )}
 
       {/* Empty state */}
-      {!pdfExam &&
-        examList.length === 0 &&
-        examDetails.length === 0 &&
-        !isLoading &&
-        !isLoadingDetails &&
-        !error && <LabViewerEmptyState />}
+      {!isViewingPdf && lab.examList.length === 0 && !lab.isLoading && !lab.error && (
+        <LabViewerEmptyState />
+      )}
     </BaseModal>
   );
 };
