@@ -14,8 +14,10 @@ import { TransferStatus } from '@/types/transfers';
  */
 export const STATUS_TRANSITIONS: Record<TransferStatus, TransferStatus | null> = {
   REQUESTED: 'RECEIVED',
-  RECEIVED: 'ACCEPTED',
+  RECEIVED: 'ACCEPTED_WAITING_CAPACITY',
   ACCEPTED: 'TRANSFERRED',
+  ACCEPTED_WITH_CAPACITY: 'TRANSFERRED',
+  ACCEPTED_WAITING_CAPACITY: 'TRANSFERRED',
   REJECTED: null,
   NO_RESPONSE: null,
   TRANSFERRED: null,

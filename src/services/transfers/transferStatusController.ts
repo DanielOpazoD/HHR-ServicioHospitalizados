@@ -11,6 +11,8 @@ export const ACTIVE_TRANSFER_STATUSES: readonly TransferStatus[] = [
   'REQUESTED',
   'RECEIVED',
   'ACCEPTED',
+  'ACCEPTED_WITH_CAPACITY',
+  'ACCEPTED_WAITING_CAPACITY',
 ] as const;
 
 export const isClosedTransferStatus = (status: TransferStatus): boolean =>
@@ -30,6 +32,12 @@ export const normalizeLegacyTransferStatus = (
 ): TransferStatus => {
   if (rawStatus === 'SENT') {
     return 'RECEIVED';
+  }
+  if (rawStatus === 'ACCEPTED_WITH_BED') {
+    return 'ACCEPTED_WITH_CAPACITY';
+  }
+  if (rawStatus === 'ACCEPTED_WAITING_BED') {
+    return 'ACCEPTED_WAITING_CAPACITY';
   }
 
   return (rawStatus || 'REQUESTED') as TransferStatus;
