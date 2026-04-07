@@ -1,7 +1,8 @@
 import React from 'react';
-import { Lock, Radio } from 'lucide-react';
+import { FlaskConical, Lock, Radio } from 'lucide-react';
 import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medicalIndications';
 import { RadiologyViewerModal } from '@/components/modals/RadiologyViewerModal';
+import { LabResultsViewerModal } from '@/components/modals/LabResultsViewerModal';
 
 interface DateStripQuickActionsProps {
   onOpenBedManager?: () => void;
@@ -19,8 +20,23 @@ export const DateStripQuickActions: React.FC<DateStripQuickActionsProps> = ({
   medicalIndicationsPatients = [],
 }) => {
   const [isRadiologyOpen, setIsRadiologyOpen] = React.useState(false);
+  const [isLabOpen, setIsLabOpen] = React.useState(false);
 
   const radiologyPatients = React.useMemo(
+    () =>
+      medicalIndicationsPatients
+        .filter(p => p.rut && p.patientName)
+        .map(p => ({
+          bedId: p.bedId,
+          label: p.label,
+          patientName: p.patientName,
+          rut: p.rut,
+          diagnosis: p.diagnosis,
+        })),
+    [medicalIndicationsPatients]
+  );
+
+  const labPatients = React.useMemo(
     () =>
       medicalIndicationsPatients
         .filter(p => p.rut && p.patientName)
@@ -61,6 +77,24 @@ export const DateStripQuickActions: React.FC<DateStripQuickActionsProps> = ({
             isOpen={isRadiologyOpen}
             onClose={() => setIsRadiologyOpen(false)}
             patients={radiologyPatients}
+          />
+        </>
+      )}
+
+      {labPatients.length > 0 && (
+        <>
+          <button
+            onClick={() => setIsLabOpen(true)}
+            className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg border border-emerald-200 transition-colors text-[11px] font-semibold"
+            title="Laboratorio / Exámenes Syslab"
+          >
+            <FlaskConical size={14} />
+            <span className="hidden sm:inline">Lab</span>
+          </button>
+          <LabResultsViewerModal
+            isOpen={isLabOpen}
+            onClose={() => setIsLabOpen(false)}
+            patients={labPatients}
           />
         </>
       )}
