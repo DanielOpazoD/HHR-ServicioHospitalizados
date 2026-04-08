@@ -435,6 +435,43 @@ const sortByDate = (a: string, b: string): number => {
   return isoA.localeCompare(isoB);
 };
 
+/** Stroke dash patterns to visually distinguish overlapping lines. */
+const DASH_PATTERNS = ['', '8 4', '4 4', '12 4 4 4', '2 4', '8 4 2 4'];
+
+/** Staggered label vertical offsets so labels don't overlap when values are similar. */
+const LABEL_OFFSETS = [
+  { position: 'top' as const, dy: -10 },
+  { position: 'bottom' as const, dy: 14 },
+  { position: 'top' as const, dy: -22 },
+  { position: 'bottom' as const, dy: 26 },
+  { position: 'top' as const, dy: -34 },
+  { position: 'bottom' as const, dy: 38 },
+];
+
+/** Custom label renderer that staggers positions to avoid overlap. */
+const StaggeredLabel: React.FC<{
+  x?: number;
+  y?: number;
+  value?: number;
+  index?: number;
+  color: string;
+  labelConfig: { position: 'top' | 'bottom'; dy: number };
+}> = ({ x, y, value, color, labelConfig }) => {
+  if (x == null || y == null || value == null) return null;
+  return (
+    <text
+      x={x}
+      y={y + labelConfig.dy}
+      textAnchor="middle"
+      fill={color}
+      fontSize={9}
+      fontWeight={700}
+    >
+      {typeof value === 'number' ? (value % 1 === 0 ? value : value.toFixed(1)) : value}
+    </text>
+  );
+};
+
 /** A single sub-chart for variables sharing the same unit. */
 const UnitSubChart: React.FC<{
   varEntries: Record<string, LabTrendPoint[]>;
@@ -470,22 +507,40 @@ const UnitSubChart: React.FC<{
   const yMax = Math.ceil(Math.max(...allVals) * 1.15);
   const hasRef = firstRef.min != null && firstRef.max != null;
 
+  // Extra top/bottom margin for staggered labels
+  const extraMargin = varNames.length > 2 ? 30 : 18;
+
   return (
     <div>
-      <div className="mb-2 flex flex-wrap gap-2">
-        {varNames.map((name, i) => (
-          <span key={name} className="inline-flex items-center gap-1 text-[10px] font-medium">
-            <span
-              className="inline-block h-2 w-2 rounded-full"
-              style={{ backgroundColor: LINE_COLORS[(i + colorOffset) % LINE_COLORS.length] }}
-            />
-            {name} ({unit})
-          </span>
-        ))}
+      <div className="mb-2 flex flex-wrap gap-3">
+        {varNames.map((name, i) => {
+          const ci = (i + colorOffset) % LINE_COLORS.length;
+          const dash = DASH_PATTERNS[i % DASH_PATTERNS.length];
+          return (
+            <span key={name} className="inline-flex items-center gap-1.5 text-[10px] font-medium">
+              <svg width="18" height="8">
+                <line
+                  x1="0"
+                  y1="4"
+                  x2="18"
+                  y2="4"
+                  stroke={LINE_COLORS[ci]}
+                  strokeWidth={2.5}
+                  strokeDasharray={dash || undefined}
+                />
+              </svg>
+              <span style={{ color: LINE_COLORS[ci] }}>{name}</span>
+              <span className="text-slate-400">({unit})</span>
+            </span>
+          );
+        })}
       </div>
-      <div className="h-48">
+      <div className="h-52">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 18, right: 20, left: 0, bottom: 5 }}>
+          <LineChart
+            data={chartData}
+            margin={{ top: extraMargin, right: 25, left: 0, bottom: extraMargin }}
+          >
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
             <XAxis
               dataKey="date"
@@ -513,31 +568,33 @@ const UnitSubChart: React.FC<{
               />
             )}
 
-            {varNames.map((name, i) => (
-              <Line
-                key={name}
-                name={name}
-                type="monotone"
-                dataKey={name}
-                stroke={LINE_COLORS[(i + colorOffset) % LINE_COLORS.length]}
-                strokeWidth={2.5}
-                dot={{
-                  r: 3,
-                  fill: LINE_COLORS[(i + colorOffset) % LINE_COLORS.length],
-                  strokeWidth: 2,
-                  stroke: '#fff',
-                }}
-                activeDot={{ r: 5, stroke: '#fff', strokeWidth: 2 }}
-                label={{
-                  position: 'top',
-                  fontSize: 9,
-                  fill: LINE_COLORS[(i + colorOffset) % LINE_COLORS.length],
-                  fontWeight: 700,
-                  offset: 6,
-                }}
-                connectNulls
-              />
-            ))}
+            {varNames.map((name, i) => {
+              const ci = (i + colorOffset) % LINE_COLORS.length;
+              const dash = DASH_PATTERNS[i % DASH_PATTERNS.length];
+              const labelCfg = LABEL_OFFSETS[i % LABEL_OFFSETS.length];
+              const color = LINE_COLORS[ci];
+
+              return (
+                <Line
+                  key={name}
+                  name={name}
+                  type="monotone"
+                  dataKey={name}
+                  stroke={color}
+                  strokeWidth={2.5}
+                  strokeDasharray={dash || undefined}
+                  dot={{
+                    r: 3 + (i % 2),
+                    fill: color,
+                    strokeWidth: 2,
+                    stroke: '#fff',
+                  }}
+                  activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }}
+                  label={<StaggeredLabel color={color} labelConfig={labelCfg} />}
+                  connectNulls
+                />
+              );
+            })}
           </LineChart>
         </ResponsiveContainer>
       </div>
