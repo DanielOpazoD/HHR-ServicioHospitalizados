@@ -34,5 +34,7 @@ export {
   findTrendGroup,
 } from './controllers/labAnalyticsController';
 
+export { buildLabSummaryText } from './controllers/labSummaryController';
+
 // Types
 export type { ProgressState, ExportConfig } from './types/labViewerTypes';

@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Bold,
   CheckCircle2,
   Eraser,
+  FlaskConical,
   IndentDecrease,
   IndentIncrease,
   Italic,
@@ -13,6 +14,7 @@ import {
   Underline,
   UploadCloud,
 } from 'lucide-react';
+import { ClinicalDocumentLabInsertDialog } from './ClinicalDocumentLabInsertDialog';
 
 import type {
   ClinicalDocumentFormattingCommand,
@@ -32,6 +34,8 @@ interface ClinicalDocumentFormattingToolbarProps {
   onRestoreTemplate: () => void;
   onToggleFormatting: () => void;
   onApplyFormatting: (command: ClinicalDocumentFormattingCommand) => void;
+  patientRut?: string;
+  onInsertLabText?: (text: string) => void;
 }
 
 const formattingActions = [
@@ -60,7 +64,10 @@ export const ClinicalDocumentFormattingToolbar: React.FC<
   onRestoreTemplate,
   onToggleFormatting,
   onApplyFormatting,
+  patientRut,
+  onInsertLabText,
 }) => {
+  const [showLabDialog, setShowLabDialog] = useState(false);
   const driveExported = selectedDocument.pdf?.exportStatus === 'exported';
   const formattingReady = canEdit && !selectedDocument.isLocked && !formattingDisabled;
   const iconButtonClass =
@@ -85,6 +92,29 @@ export const ClinicalDocumentFormattingToolbar: React.FC<
           <Printer size={13} className="mr-1.5 inline" />
           PDF
         </button>
+        {patientRut && onInsertLabText && (
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowLabDialog(prev => !prev)}
+              className="inline-flex h-8 items-center rounded-lg border border-emerald-200 px-2.5 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700 hover:bg-emerald-50"
+              title="Insertar resumen de laboratorio"
+            >
+              <FlaskConical size={13} className="mr-1.5 inline" />
+              Lab
+            </button>
+            {showLabDialog && (
+              <ClinicalDocumentLabInsertDialog
+                patientRut={patientRut}
+                onInsert={text => {
+                  onInsertLabText(text);
+                  setShowLabDialog(false);
+                }}
+                onClose={() => setShowLabDialog(false)}
+              />
+            )}
+          </div>
+        )}
         <button
           type="button"
           onClick={onUploadPdf}

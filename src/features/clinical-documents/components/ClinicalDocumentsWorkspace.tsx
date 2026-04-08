@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { createPortal } from 'react-dom';
 
 import '@/features/clinical-documents/styles/clinicalDocumentSheet.css';
@@ -38,6 +38,20 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
     );
   }
 
+  // Insert lab summary text into the first visible section of the document
+  const handleInsertLabText = useCallback(
+    (text: string) => {
+      const doc = sheetProps.selectedDocument;
+      if (!doc || !sheetProps.patchSection) return;
+      const firstSection = doc.sections?.find(s => s.visible !== false);
+      if (!firstSection) return;
+      const existing = firstSection.content || '';
+      const separator = existing.trim() ? '<br>' : '';
+      sheetProps.patchSection(firstSection.id, existing + separator + text);
+    },
+    [sheetProps]
+  );
+
   const toolbarNode = sheetProps.selectedDocument ? (
     <ClinicalDocumentFormattingToolbar
       selectedDocument={sheetProps.selectedDocument}
@@ -52,6 +66,8 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
       onRestoreTemplate={sheetProps.onRestoreTemplate}
       onToggleFormatting={() => sheetState.setIsFormattingOpen(prev => !prev)}
       onApplyFormatting={sheetState.applyFormatting}
+      patientRut={patient.rut}
+      onInsertLabText={sheetProps.canEdit ? handleInsertLabText : undefined}
     />
   ) : null;
 
