@@ -47,6 +47,30 @@ import type {
 import { buildSyslabPdfUrl } from '@/services/laboratory/syslabService';
 import { isOutOfRange } from '@/hooks/laboratory/useLabViewer';
 
+/**
+ * Format a lab result for display. Handles x10^3 / x10^6 unit conversions:
+ * - "879" with unit "x10^3/uL" → "879.000"
+ * - "3,01" with unit "x10^6/uL" → "3.010.000"
+ * - Regular values pass through unchanged.
+ */
+const formatLabResult = (
+  result: string,
+  unit: string
+): { display: string; displayUnit: string } => {
+  const sciMatch = unit.match(/x10\^(\d+)(.*)/);
+  if (sciMatch) {
+    const exponent = parseInt(sciMatch[1], 10);
+    const unitSuffix = sciMatch[2]?.replace(/^\//, '') || '';
+    const numVal = parseFloat(result.replace(',', '.'));
+    if (!isNaN(numVal) && exponent >= 3) {
+      const multiplied = Math.round(numVal * Math.pow(10, exponent));
+      const formatted = multiplied.toLocaleString('es-CL');
+      return { display: formatted, displayUnit: unitSuffix ? `/${unitSuffix}` : '' };
+    }
+  }
+  return { display: result, displayUnit: unit };
+};
+
 /* ================================================================== */
 /*  Controls — patient selector + search button                        */
 /* ================================================================== */
@@ -701,9 +725,165 @@ const LabAnalysisTrendCharts: React.FC<{ data: LabAnalysisData }> = ({ data }) =
 /*  Comparison table — dates as columns, variables as rows             */
 /* ================================================================== */
 
+/* ================================================================== */
+/*  Excel export                                                       */
+/* ================================================================== */
+
+interface ExportConfig {
+  selectedDates: Set<string>;
+  selectedVars: Set<string>;
+}
+
+const ExportConfigDialog: React.FC<{
+  dates: string[];
+  variables: string[];
+  onExport: (config: ExportConfig) => void;
+  onCancel: () => void;
+}> = ({ dates, variables, onExport, onCancel }) => {
+  const [selectedDates, setSelectedDates] = React.useState<Set<string>>(new Set(dates));
+  const [selectedVars, setSelectedVars] = React.useState<Set<string>>(new Set(variables));
+
+  const toggleDate = (d: string) =>
+    setSelectedDates(prev => {
+      const n = new Set(prev);
+      n.has(d) ? n.delete(d) : n.add(d);
+      return n;
+    });
+  const toggleVar = (v: string) =>
+    setSelectedVars(prev => {
+      const n = new Set(prev);
+      n.has(v) ? n.delete(v) : n.add(v);
+      return n;
+    });
+
+  return (
+    <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 space-y-3">
+      <h4 className="text-[12px] font-bold text-slate-700">Configurar exportación Excel</h4>
+
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 mb-1.5">
+          Fechas ({selectedDates.size}/{dates.length})
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {dates.map(d => (
+            <button
+              key={d}
+              type="button"
+              onClick={() => toggleDate(d)}
+              className={clsx(
+                'rounded-lg px-2 py-1 text-[10px] font-medium border transition-colors',
+                selectedDates.has(d)
+                  ? 'bg-emerald-100 text-emerald-700 border-emerald-300'
+                  : 'bg-white text-slate-400 border-slate-200'
+              )}
+            >
+              {d}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 mb-1.5">
+          Variables ({selectedVars.size}/{variables.length})
+        </p>
+        <div className="max-h-40 overflow-y-auto flex flex-wrap gap-1.5">
+          {variables.map(v => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => toggleVar(v)}
+              className={clsx(
+                'rounded-lg px-2 py-1 text-[10px] font-medium border transition-colors',
+                selectedVars.has(v)
+                  ? 'bg-emerald-100 text-emerald-700 border-emerald-300'
+                  : 'bg-white text-slate-400 border-slate-200'
+              )}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-2 pt-1">
+        <button
+          onClick={onCancel}
+          className="rounded-lg px-3 py-1.5 text-[11px] font-medium text-slate-500 hover:text-slate-700"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={() => onExport({ selectedDates, selectedVars })}
+          disabled={selectedDates.size === 0 || selectedVars.size === 0}
+          className="rounded-lg bg-emerald-600 px-4 py-1.5 text-[11px] font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+        >
+          Exportar Excel
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const doExcelExport = async (data: LabAnalysisData, config: ExportConfig) => {
+  const ExcelJS = await import('exceljs');
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Comparación Lab');
+
+  const dates = data.examDates.filter(d => config.selectedDates.has(d));
+  const vars = Object.keys(data.comparison).filter(v => config.selectedVars.has(v));
+
+  // Header row
+  ws.addRow(['Variable', ...dates]);
+  const headerRow = ws.getRow(1);
+  headerRow.font = { bold: true, size: 10 };
+  headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F5E9' } };
+
+  // Data rows
+  for (const name of vars) {
+    const cells = [name];
+    for (const date of dates) {
+      const row = data.comparison[name]?.[date];
+      if (!row) {
+        cells.push('');
+      } else {
+        const { display } = formatLabResult(row.result, row.unit);
+        cells.push(display);
+      }
+    }
+    ws.addRow(cells);
+  }
+
+  // Auto-width columns
+  ws.columns.forEach(col => {
+    let maxLen = 10;
+    col.eachCell?.({ includeEmpty: false }, cell => {
+      const len = String(cell.value || '').length;
+      if (len > maxLen) maxLen = len;
+    });
+    col.width = Math.min(maxLen + 2, 30);
+  });
+
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `laboratorio_comparacion_${new Date().toISOString().split('T')[0]}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+/* ================================================================== */
+/*  Comparison table                                                   */
+/* ================================================================== */
+
 const LabAnalysisComparisonTable: React.FC<{ data: LabAnalysisData }> = ({ data }) => {
   const variableNames = Object.keys(data.comparison);
   const { examDates } = data;
+  const [showExportConfig, setShowExportConfig] = React.useState(false);
 
   if (variableNames.length === 0) {
     return (
@@ -712,65 +892,96 @@ const LabAnalysisComparisonTable: React.FC<{ data: LabAnalysisData }> = ({ data 
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200/80">
-      <table className="w-full min-w-[600px]">
-        <thead>
-          <tr className="bg-slate-50">
-            <th className="sticky left-0 z-10 bg-slate-50 px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-500 border-r border-slate-200">
-              Variable
-            </th>
-            {examDates.map(date => (
-              <th
-                key={date}
-                className="px-4 py-2.5 text-center text-[10px] font-bold uppercase tracking-wide text-slate-500"
-              >
-                {date}
+    <div className="space-y-3">
+      {/* Export button */}
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={() => setShowExportConfig(prev => !prev)}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-[11px] font-medium text-emerald-700 transition-colors hover:bg-emerald-50"
+        >
+          <FileText size={12} />
+          Exportar Excel
+        </button>
+      </div>
+
+      {/* Export config dialog */}
+      {showExportConfig && (
+        <ExportConfigDialog
+          dates={examDates}
+          variables={variableNames}
+          onExport={async config => {
+            await doExcelExport(data, config);
+            setShowExportConfig(false);
+          }}
+          onCancel={() => setShowExportConfig(false)}
+        />
+      )}
+
+      {/* Table */}
+      <div className="overflow-x-auto rounded-xl border border-slate-200/80">
+        <table className="w-full min-w-[600px]">
+          <thead>
+            <tr className="bg-slate-50">
+              <th className="sticky left-0 z-10 bg-slate-50 px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-500 border-r border-slate-200">
+                Variable
               </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {variableNames.map((name, i) => (
-            <tr
-              key={name}
-              className={clsx(
-                'border-t border-slate-100 transition-colors hover:bg-slate-50/50',
-                i % 2 === 1 && 'bg-slate-50/30'
-              )}
-            >
-              <td className="sticky left-0 z-10 bg-white px-4 py-2 text-[11px] font-semibold text-slate-700 border-r border-slate-200">
-                {name}
-              </td>
-              {examDates.map(date => {
-                const row = data.comparison[name]?.[date];
-                if (!row) {
+              {examDates.map(date => (
+                <th
+                  key={date}
+                  className="px-4 py-2.5 text-center text-[10px] font-bold uppercase tracking-wide text-slate-500"
+                >
+                  {date}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {variableNames.map((name, i) => (
+              <tr
+                key={name}
+                className={clsx(
+                  'border-t border-slate-100 transition-colors hover:bg-slate-50/50',
+                  i % 2 === 1 && 'bg-slate-50/30'
+                )}
+              >
+                <td className="sticky left-0 z-10 bg-white px-4 py-2 text-[11px] font-semibold text-slate-700 border-r border-slate-200">
+                  {name}
+                </td>
+                {examDates.map(date => {
+                  const row = data.comparison[name]?.[date];
+                  if (!row) {
+                    return (
+                      <td key={date} className="px-4 py-2 text-center text-[11px] text-slate-300">
+                        —
+                      </td>
+                    );
+                  }
+                  const oor = isOutOfRange(row.result, row.refValue);
+                  const { display, displayUnit } = formatLabResult(row.result, row.unit);
                   return (
-                    <td key={date} className="px-4 py-2 text-center text-[11px] text-slate-300">
-                      —
+                    <td key={date} className="px-4 py-2 text-center">
+                      <span
+                        className={clsx(
+                          'text-[12px] font-bold',
+                          oor === true && 'text-red-600',
+                          oor === false && 'text-emerald-600',
+                          oor === null && 'text-slate-700'
+                        )}
+                      >
+                        {display}
+                      </span>
+                      {displayUnit && (
+                        <span className="ml-1 text-[9px] text-slate-400">{displayUnit}</span>
+                      )}
                     </td>
                   );
-                }
-                const oor = isOutOfRange(row.result, row.refValue);
-                return (
-                  <td key={date} className="px-4 py-2 text-center">
-                    <span
-                      className={clsx(
-                        'text-[12px] font-bold',
-                        oor === true && 'text-red-600',
-                        oor === false && 'text-emerald-600',
-                        oor === null && 'text-slate-700'
-                      )}
-                    >
-                      {row.result}
-                    </span>
-                    {row.unit && <span className="ml-1 text-[9px] text-slate-400">{row.unit}</span>}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
