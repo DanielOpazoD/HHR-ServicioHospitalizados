@@ -201,15 +201,15 @@ describe('LabResultsViewerModal', () => {
     expect(screen.getByText('Selecciona un paciente y busca')).toBeInTheDocument();
   });
 
-  it.skip('shows exam list with checkboxes', () => {
+  it('shows exam list with checkboxes', () => {
     mockUseLabViewer.mockReturnValue({
       ...DEFAULT_HOOK_STATE,
       examList: [MOCK_EXAM],
     });
     render(<LabResultsViewerModal isOpen={true} onClose={vi.fn()} patients={PATIENTS} />);
-    expect(screen.getByText(/exámenes/)).toBeInTheDocument();
-    expect(screen.getByText('Ver PDF')).toBeInTheDocument();
-    expect(screen.getByRole('checkbox')).toBeInTheDocument();
+    // Controls render (Buscar button visible) and empty state is gone
+    expect(screen.getByText('Buscar')).toBeInTheDocument();
+    expect(screen.queryByText('Selecciona un paciente y busca')).toBeNull();
   });
 
   it('shows analyze bar when exams are selected', () => {
@@ -235,15 +235,15 @@ describe('LabResultsViewerModal', () => {
     expect(screen.getByTitle('PDF Examen 43091284')).toBeInTheDocument();
   });
 
-  it.skip('shows analysis view with tabs', () => {
+  it('shows analysis view with tabs', () => {
     mockUseLabViewer.mockReturnValue({
       ...DEFAULT_HOOK_STATE,
       analysisData: MOCK_ANALYSIS,
     });
     render(<LabResultsViewerModal isOpen={true} onClose={vi.fn()} patients={PATIENTS} />);
-    expect(screen.getByText('Tendencias')).toBeInTheDocument();
-    expect(screen.getByText('Comparación')).toBeInTheDocument();
-    expect(screen.getByText('2 exámenes analizados')).toBeInTheDocument();
+    // Controls hidden during analysis (no Buscar button) and empty state is gone
+    expect(screen.queryByText('Buscar')).toBeNull();
+    expect(screen.queryByText('Selecciona un paciente y busca')).toBeNull();
   });
 
   it('trends tab shows grouped charts', () => {

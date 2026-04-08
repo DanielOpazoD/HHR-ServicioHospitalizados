@@ -377,6 +377,40 @@ describe('useLabViewer', () => {
     expect(result.current.pdfExam).toBeNull();
   });
 
+  // Edge cases
+  it('selectByDays returns empty set when no exams match', async () => {
+    // Load exams with old dates that won't match a 1-day window
+    mockSearchSyslabExams.mockResolvedValue({ success: true, data: [MOCK_EXAM_2] });
+    const { result } = renderHook(() => useLabViewer(PATIENTS));
+    await act(async () => {
+      await result.current.search();
+    });
+    // MOCK_EXAM_2 date is 01/03/2026 — selecting last 1 day should not match
+    act(() => result.current.selectByDays(1));
+    expect(result.current.selectedExamIds.size).toBe(0);
+  });
+
+  it('hook works with empty patients array', () => {
+    const { result } = renderHook(() => useLabViewer([]));
+    expect(result.current.uniquePatients).toHaveLength(0);
+    expect(result.current.selectedRut).toBe('');
+  });
+
+  it('analyzeSelected does nothing when no exams selected', async () => {
+    mockSearchSyslabExams.mockResolvedValue({ success: true, data: [MOCK_EXAM] });
+    const { result } = renderHook(() => useLabViewer(PATIENTS));
+    await act(async () => {
+      await result.current.search();
+    });
+    // Don't select anything, then analyze
+    await act(async () => {
+      await result.current.analyzeSelected();
+    });
+    // analysisData stays null, fetchSyslabExamDetails never called
+    expect(result.current.analysisData).toBeNull();
+    expect(mockFetchSyslabExamDetails).not.toHaveBeenCalled();
+  });
+
   // Reset
   it('reset clears all state', async () => {
     mockSearchSyslabExams.mockResolvedValue({ success: true, data: [MOCK_EXAM] });

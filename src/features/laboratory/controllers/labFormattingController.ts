@@ -80,13 +80,6 @@ export const formatLabResult = (
 };
 
 /**
- * Strip a Chilean RUT to its numeric body only (no dots, dash, or check digit).
- * @example cleanRutForSyslab("12.345.678-9") // "12345678"
- */
-export const cleanRutForSyslab = (rut: string): string =>
-  rut.replace(/\./g, '').replace(/-.*$/, '').trim();
-
-/**
  * Bed sort order: R1-R4 (0-3), Neo1-Neo2 (4-5), H1C1-H6C2 (10-21).
  */
 export const bedSortKey = (bedId: string): number => {

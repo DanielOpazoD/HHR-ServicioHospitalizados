@@ -43,13 +43,26 @@ export const findTrendGroup = (analysis: string): string | null => {
 /*  Comparison helpers                                                 */
 /* ------------------------------------------------------------------ */
 
-/** Check if a variable should be excluded from comparison. */
+/**
+ * Check if a variable should be excluded from the comparison table.
+ * Uses partial case-insensitive matching against {@link COMPARISON_EXCLUDE}.
+ *
+ * @param analysis - The analysis variable name to check.
+ * @returns `true` if the variable should be hidden from comparison.
+ */
 export const isExcludedFromComparison = (analysis: string): boolean => {
   const lower = analysis.toLowerCase();
   return COMPARISON_EXCLUDE.some(e => lower.includes(e.toLowerCase()));
 };
 
-/** Get the sort index for a variable name (lower = shown first). */
+/**
+ * Get the clinical priority sort index for a variable name.
+ * Lower index = shown first in the comparison table.
+ * Variables not in {@link COMPARISON_ORDER} get index `length + 1` (shown last).
+ *
+ * @param name - The analysis variable name.
+ * @returns Numeric sort index.
+ */
 export const comparisonSortIndex = (name: string): number => {
   const lower = name.toLowerCase();
   for (let i = 0; i < COMPARISON_ORDER.length; i++) {

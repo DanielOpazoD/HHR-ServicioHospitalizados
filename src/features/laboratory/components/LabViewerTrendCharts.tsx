@@ -15,6 +15,7 @@ import {
   ReferenceArea,
 } from 'recharts';
 import { TrendingUp } from 'lucide-react';
+import { LabChartErrorBoundary } from './LabChartErrorBoundary';
 import type { LabAnalysisData, LabTrendPoint, LabTrendGroup } from '@/types/domain/laboratory';
 import {
   LINE_COLORS,
@@ -326,7 +327,9 @@ export const LabViewerTrendCharts: React.FC<{ data: LabAnalysisData }> = ({ data
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       {data.trendGroups.map(group => (
-        <TrendGroupCard key={group.label} group={group} />
+        <LabChartErrorBoundary key={group.label} chartLabel={group.label}>
+          <TrendGroupCard group={group} />
+        </LabChartErrorBoundary>
       ))}
     </div>
   );

@@ -22,9 +22,11 @@ export {
   isOutOfRange,
   formatLabResult,
   normalizeAnalysisName,
-  cleanRutForSyslab,
   bedSortKey,
 } from './controllers/labFormattingController';
+
+// Re-export from service layer (single source of truth)
+export { cleanRutForSyslab } from '@/services/laboratory/syslabService';
 
 export {
   buildAnalysisData,
