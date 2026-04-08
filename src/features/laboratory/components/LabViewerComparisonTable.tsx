@@ -89,6 +89,23 @@ export const LabViewerComparisonTable: React.FC<{ data: LabAnalysisData }> = ({ 
                       </td>
                     );
                   }
+                  // Qualitative results: color by positive/negative
+                  if (row.qualitative) {
+                    const isPositive = /positivo|reactivo/i.test(row.result);
+                    return (
+                      <td key={date} className="px-1 py-0.5 text-center whitespace-nowrap">
+                        <span
+                          className={clsx(
+                            'text-[10px] font-semibold',
+                            isPositive ? 'text-red-600' : 'text-emerald-600'
+                          )}
+                        >
+                          {row.result.length > 20 ? row.result.substring(0, 20) + '…' : row.result}
+                        </span>
+                      </td>
+                    );
+                  }
+
                   const oor = isOutOfRange(row.result, row.refValue);
                   const { display } = formatLabResult(row.result, row.unit);
                   return (

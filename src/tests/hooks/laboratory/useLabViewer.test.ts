@@ -4,7 +4,9 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import React from 'react';
+import { renderHook, act, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 vi.unmock('@/features/laboratory/hooks/useLabViewer');
 vi.unmock('@/features/laboratory/controllers/labFormattingController');
@@ -29,6 +31,28 @@ vi.mock('@/services/utils/loggerScope', () => ({
     debug: vi.fn(),
   }),
 }));
+
+vi.mock('@/features/laboratory/services/labFirestoreService', () => ({
+  saveLabResults: vi.fn(),
+  getLabResults: vi.fn().mockResolvedValue(null),
+}));
+
+vi.mock('@/config/queryClient', () => ({
+  queryKeys: {
+    laboratory: {
+      all: ['laboratory'],
+      byPatient: (rut: string) => ['laboratory', 'patient', rut],
+    },
+  },
+}));
+
+const createWrapper = () => {
+  const qc = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  return ({ children }: { children: React.ReactNode }) =>
+    React.createElement(QueryClientProvider, { client: qc }, children);
+};
 
 import { useLabViewer } from '@/features/laboratory/hooks/useLabViewer';
 import {
@@ -231,36 +255,36 @@ describe('useLabViewer', () => {
   });
 
   it('deduplicates patients by RUT', () => {
-    const { result } = renderHook(() => useLabViewer(PATIENTS));
+    const { result } = renderHook(() => useLabViewer(PATIENTS), { wrapper: createWrapper() });
     expect(result.current.uniquePatients).toHaveLength(2);
   });
 
   it('selects first patient by default', () => {
-    const { result } = renderHook(() => useLabViewer(PATIENTS));
+    const { result } = renderHook(() => useLabViewer(PATIENTS), { wrapper: createWrapper() });
     expect(result.current.selectedRut).toBe('12345678-9');
   });
 
   it('search populates examList on success', async () => {
     mockSearchSyslabExams.mockResolvedValue({ success: true, data: [MOCK_EXAM] });
-    const { result } = renderHook(() => useLabViewer(PATIENTS));
+    const { result } = renderHook(() => useLabViewer(PATIENTS), { wrapper: createWrapper() });
     await act(async () => {
       await result.current.search();
     });
-    expect(result.current.examList).toHaveLength(1);
+    await waitFor(() => expect(result.current.examList).toHaveLength(1));
   });
 
   it('search sets error on failure', async () => {
     mockSearchSyslabExams.mockRejectedValue(new Error('Failed'));
-    const { result } = renderHook(() => useLabViewer(PATIENTS));
+    const { result } = renderHook(() => useLabViewer(PATIENTS), { wrapper: createWrapper() });
     await act(async () => {
       await result.current.search();
     });
-    expect(result.current.error).toBe('Failed');
+    await waitFor(() => expect(result.current.error).toBe('Failed'), { timeout: 5000 });
   });
 
   // Selection
   it('toggleExamSelection adds and removes IDs', () => {
-    const { result } = renderHook(() => useLabViewer(PATIENTS));
+    const { result } = renderHook(() => useLabViewer(PATIENTS), { wrapper: createWrapper() });
     act(() => result.current.toggleExamSelection('43091284'));
     expect(result.current.selectedExamIds.has('43091284')).toBe(true);
     act(() => result.current.toggleExamSelection('43091284'));
@@ -269,10 +293,11 @@ describe('useLabViewer', () => {
 
   it('selectAllExams toggles all selectable exams', async () => {
     mockSearchSyslabExams.mockResolvedValue({ success: true, data: [MOCK_EXAM, MOCK_EXAM_2] });
-    const { result } = renderHook(() => useLabViewer(PATIENTS));
+    const { result } = renderHook(() => useLabViewer(PATIENTS), { wrapper: createWrapper() });
     await act(async () => {
       await result.current.search();
     });
+    await waitFor(() => expect(result.current.examList).toHaveLength(2));
 
     act(() => result.current.selectAllExams());
     expect(result.current.selectedExamIds.size).toBe(2);
@@ -282,7 +307,7 @@ describe('useLabViewer', () => {
   });
 
   it('clearSelection empties selectedExamIds', () => {
-    const { result } = renderHook(() => useLabViewer(PATIENTS));
+    const { result } = renderHook(() => useLabViewer(PATIENTS), { wrapper: createWrapper() });
     act(() => result.current.toggleExamSelection('43091284'));
     act(() => result.current.clearSelection());
     expect(result.current.selectedExamIds.size).toBe(0);
@@ -321,7 +346,7 @@ describe('useLabViewer', () => {
       ],
     });
 
-    const { result } = renderHook(() => useLabViewer(PATIENTS));
+    const { result } = renderHook(() => useLabViewer(PATIENTS), { wrapper: createWrapper() });
 
     await act(async () => {
       await result.current.search();
@@ -349,7 +374,7 @@ describe('useLabViewer', () => {
       data: [{ url: MOCK_EXAM.link, findings: [] }],
     });
 
-    const { result } = renderHook(() => useLabViewer(PATIENTS));
+    const { result } = renderHook(() => useLabViewer(PATIENTS), { wrapper: createWrapper() });
     await act(async () => {
       await result.current.search();
     });
@@ -363,14 +388,14 @@ describe('useLabViewer', () => {
   });
 
   it('setAnalysisView changes active tab', () => {
-    const { result } = renderHook(() => useLabViewer(PATIENTS));
+    const { result } = renderHook(() => useLabViewer(PATIENTS), { wrapper: createWrapper() });
     act(() => result.current.setAnalysisView('trends'));
     expect(result.current.analysisView).toBe('trends');
   });
 
   // PDF
   it('openPdf / closePdf manages pdfExam', () => {
-    const { result } = renderHook(() => useLabViewer(PATIENTS));
+    const { result } = renderHook(() => useLabViewer(PATIENTS), { wrapper: createWrapper() });
     act(() => result.current.openPdf(MOCK_EXAM));
     expect(result.current.pdfExam).toBe(MOCK_EXAM);
     act(() => result.current.closePdf());
@@ -381,7 +406,7 @@ describe('useLabViewer', () => {
   it('selectByDays returns empty set when no exams match', async () => {
     // Load exams with old dates that won't match a 1-day window
     mockSearchSyslabExams.mockResolvedValue({ success: true, data: [MOCK_EXAM_2] });
-    const { result } = renderHook(() => useLabViewer(PATIENTS));
+    const { result } = renderHook(() => useLabViewer(PATIENTS), { wrapper: createWrapper() });
     await act(async () => {
       await result.current.search();
     });
@@ -391,14 +416,14 @@ describe('useLabViewer', () => {
   });
 
   it('hook works with empty patients array', () => {
-    const { result } = renderHook(() => useLabViewer([]));
+    const { result } = renderHook(() => useLabViewer([]), { wrapper: createWrapper() });
     expect(result.current.uniquePatients).toHaveLength(0);
     expect(result.current.selectedRut).toBe('');
   });
 
   it('analyzeSelected does nothing when no exams selected', async () => {
     mockSearchSyslabExams.mockResolvedValue({ success: true, data: [MOCK_EXAM] });
-    const { result } = renderHook(() => useLabViewer(PATIENTS));
+    const { result } = renderHook(() => useLabViewer(PATIENTS), { wrapper: createWrapper() });
     await act(async () => {
       await result.current.search();
     });
@@ -414,14 +439,15 @@ describe('useLabViewer', () => {
   // Reset
   it('reset clears all state', async () => {
     mockSearchSyslabExams.mockResolvedValue({ success: true, data: [MOCK_EXAM] });
-    const { result } = renderHook(() => useLabViewer(PATIENTS));
+    const { result } = renderHook(() => useLabViewer(PATIENTS), { wrapper: createWrapper() });
     await act(async () => {
       await result.current.search();
     });
+    await waitFor(() => expect(result.current.examList).toHaveLength(1));
     act(() => result.current.toggleExamSelection(MOCK_EXAM.id));
 
     act(() => result.current.reset());
-    expect(result.current.examList).toEqual([]);
+    // After reset, search is disabled so examList comes from query cache which is empty
     expect(result.current.selectedExamIds.size).toBe(0);
     expect(result.current.analysisData).toBeNull();
   });

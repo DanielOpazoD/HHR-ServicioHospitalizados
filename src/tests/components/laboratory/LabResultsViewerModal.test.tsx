@@ -169,6 +169,10 @@ const DEFAULT_HOOK_STATE = {
   selectAllExams: vi.fn(),
   clearSelection: vi.fn(),
   selectByDays: vi.fn(),
+  filteredExamList: [] as SyslabExamItem[],
+  examFilterCategories: [] as string[],
+  activeExamFilter: null,
+  setExamFilter: vi.fn(),
   analyzeSelected: vi.fn(),
   closeAnalysis: vi.fn(),
   setAnalysisView: vi.fn(),
@@ -205,6 +209,7 @@ describe('LabResultsViewerModal', () => {
     mockUseLabViewer.mockReturnValue({
       ...DEFAULT_HOOK_STATE,
       examList: [MOCK_EXAM],
+      filteredExamList: [MOCK_EXAM],
     });
     render(<LabResultsViewerModal isOpen={true} onClose={vi.fn()} patients={PATIENTS} />);
     // Controls render (Buscar button visible) and empty state is gone
@@ -216,6 +221,7 @@ describe('LabResultsViewerModal', () => {
     mockUseLabViewer.mockReturnValue({
       ...DEFAULT_HOOK_STATE,
       examList: [MOCK_EXAM],
+      filteredExamList: [MOCK_EXAM],
       selectedExamIds: new Set(['43091284']),
     });
     render(<LabResultsViewerModal isOpen={true} onClose={vi.fn()} patients={PATIENTS} />);
@@ -273,6 +279,7 @@ describe('LabResultsViewerModal', () => {
     mockUseLabViewer.mockReturnValue({
       ...DEFAULT_HOOK_STATE,
       examList: [MOCK_EXAM],
+      filteredExamList: [MOCK_EXAM],
       selectedExamIds: new Set(['43091284']),
       analyzeSelected: analyzeFn,
     });

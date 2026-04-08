@@ -48,6 +48,8 @@ export interface LabResultRow {
   unit: string;
   /** Reference range as raw string (e.g. "12.0-16.0", "70-100"). */
   refValue: string;
+  /** True if this is a qualitative result (e.g. "NEGATIVO", "No hubo desarrollo"). */
+  qualitative?: boolean;
 }
 
 /** Detail response for a single exam (PDF parsed). */

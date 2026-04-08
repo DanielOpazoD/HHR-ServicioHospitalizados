@@ -143,8 +143,8 @@ const processFindings = (
         }
       }
 
-      // Trends
-      if (isTrendVariable(finding.analysis)) {
+      // Trends (skip qualitative results — not graphable)
+      if (isTrendVariable(finding.analysis) && !finding.qualitative) {
         const trendKey = `${finding.analysis}::${colKey}`;
         if (!seenTrend.has(trendKey)) {
           seenTrend.add(trendKey);

@@ -6,6 +6,9 @@ import type { SyslabExamItem } from '@/types/domain/laboratory';
 interface LabViewerExamListProps {
   exams: SyslabExamItem[];
   selectedIds: Set<string>;
+  filterCategories: string[];
+  activeFilter: string | null;
+  onFilterChange: (category: string | null) => void;
   onToggleSelect: (id: string) => void;
   onSelectAll: () => void;
   onSelectByDays: (days: number) => void;
@@ -15,6 +18,9 @@ interface LabViewerExamListProps {
 export const LabViewerExamList: React.FC<LabViewerExamListProps> = ({
   exams,
   selectedIds,
+  filterCategories,
+  activeFilter,
+  onFilterChange,
   onToggleSelect,
   onSelectAll,
   onSelectByDays,
@@ -57,6 +63,39 @@ export const LabViewerExamList: React.FC<LabViewerExamListProps> = ({
           </button>
         )}
       </div>
+
+      {/* Filter chips */}
+      {filterCategories.length > 1 && (
+        <div className="flex flex-wrap gap-1">
+          <button
+            type="button"
+            onClick={() => onFilterChange(null)}
+            className={clsx(
+              'rounded-lg px-2 py-0.5 text-[9px] font-medium border transition-colors',
+              !activeFilter
+                ? 'bg-emerald-100 text-emerald-700 border-emerald-300'
+                : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'
+            )}
+          >
+            Todos
+          </button>
+          {filterCategories.map(cat => (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => onFilterChange(activeFilter === cat ? null : cat)}
+              className={clsx(
+                'rounded-lg px-2 py-0.5 text-[9px] font-medium border transition-colors',
+                activeFilter === cat
+                  ? 'bg-emerald-100 text-emerald-700 border-emerald-300'
+                  : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'
+              )}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="space-y-1.5">
         {exams.map((exam, index) => {

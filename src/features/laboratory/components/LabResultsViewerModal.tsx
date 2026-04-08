@@ -94,8 +94,11 @@ export const LabResultsViewerModal: React.FC<LabResultsViewerModalProps> = ({
       {!isViewingPdf && !isViewingAnalysis && lab.examList.length > 0 && !lab.isLoading && (
         <>
           <LabViewerExamList
-            exams={lab.examList}
+            exams={lab.filteredExamList}
             selectedIds={lab.selectedExamIds}
+            filterCategories={lab.examFilterCategories}
+            activeFilter={lab.activeExamFilter}
+            onFilterChange={lab.setExamFilter}
             onToggleSelect={lab.toggleExamSelection}
             onSelectAll={lab.selectAllExams}
             onSelectByDays={lab.selectByDays}

@@ -6,7 +6,9 @@
  */
 
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { searchSyslabExams, fetchSyslabExamDetails } from '@/services/laboratory/syslabService';
+import { queryKeys } from '@/config/queryClient';
 import type {
   SyslabExamItem,
   LabPatient,
@@ -14,9 +16,15 @@ import type {
   AnalysisViewTab,
 } from '@/types/domain/laboratory';
 import type { ProgressState } from '../types/labViewerTypes';
-import { SEARCH_STEPS, ANALYSIS_STEPS, STEP_INTERVAL_MS } from '../constants/labConstants';
+import {
+  SEARCH_STEPS,
+  ANALYSIS_STEPS,
+  STEP_INTERVAL_MS,
+  EXAM_FILTER_CATEGORIES,
+} from '../constants/labConstants';
 import { bedSortKey } from '../controllers/labFormattingController';
 import { buildAnalysisData } from '../controllers/labAnalyticsController';
+import { saveLabResults } from '../services/labFirestoreService';
 
 /* ------------------------------------------------------------------ */
 /*  Return type                                                        */
@@ -27,6 +35,9 @@ export interface UseLabViewerReturn {
   selectedRut: string;
   isLoading: boolean;
   examList: SyslabExamItem[];
+  filteredExamList: SyslabExamItem[];
+  examFilterCategories: string[];
+  activeExamFilter: string | null;
   pdfExam: SyslabExamItem | null;
   error: string | null;
   progress: ProgressState | null;
@@ -40,6 +51,7 @@ export interface UseLabViewerReturn {
   openPdf: (exam: SyslabExamItem) => void;
   closePdf: () => void;
   reset: () => void;
+  setExamFilter: (category: string | null) => void;
   toggleExamSelection: (id: string) => void;
   selectAllExams: () => void;
   clearSelection: () => void;
@@ -57,9 +69,9 @@ export const useLabViewer = (
   patients: LabPatient[],
   initialPatientRut?: string
 ): UseLabViewerReturn => {
+  const queryClient = useQueryClient();
   const [selectedRut, setSelectedRut] = useState(initialPatientRut || patients[0]?.rut || '');
-  const [isLoading, setIsLoading] = useState(false);
-  const [examList, setExamList] = useState<SyslabExamItem[]>([]);
+  const [searchEnabled, setSearchEnabled] = useState(false);
   const [pdfExam, setPdfExam] = useState<SyslabExamItem | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<ProgressState | null>(null);
@@ -67,6 +79,31 @@ export const useLabViewer = (
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisData, setAnalysisData] = useState<LabAnalysisData | null>(null);
   const [analysisView, setAnalysisView] = useState<AnalysisViewTab>('trends');
+  const [activeExamFilter, setActiveExamFilter] = useState<string | null>(null);
+
+  // Cached exam search via TanStack Query (10 min staleTime — exams don't change often)
+  const examQuery = useQuery({
+    queryKey: queryKeys.laboratory.byPatient(selectedRut),
+    queryFn: () => searchSyslabExams(selectedRut),
+    enabled: searchEnabled && !!selectedRut,
+    staleTime: 10 * 60 * 1000, // 10 min
+    gcTime: 30 * 60 * 1000, // 30 min
+    retry: 1,
+  });
+
+  const examList = examQuery.data?.success ? examQuery.data.data : [];
+  const isLoading = examQuery.isFetching;
+
+  // Sync query errors to local error state
+  useEffect(() => {
+    if (examQuery.error) {
+      setError(
+        examQuery.error instanceof Error ? examQuery.error.message : 'Error al buscar exámenes.'
+      );
+    } else if (examQuery.data && !examQuery.data.success) {
+      setError(examQuery.data.error || 'No se pudieron obtener los resultados.');
+    }
+  }, [examQuery.error, examQuery.data]);
 
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -87,6 +124,31 @@ export const useLabViewer = (
       })
       .sort((a, b) => bedSortKey(a.bedId) - bedSortKey(b.bedId));
   }, [patients]);
+
+  // Derive filter categories from exam list
+  const examFilterCategories = useMemo(() => {
+    const cats = new Set<string>();
+    for (const exam of examList) {
+      for (const examName of exam.exams) {
+        const upper = examName.toUpperCase();
+        const match = EXAM_FILTER_CATEGORIES.find(c => c.patterns.some(p => upper.includes(p)));
+        cats.add(match?.label || 'Otros');
+      }
+    }
+    return Array.from(cats);
+  }, [examList]);
+
+  // Filter exam list by active category
+  const filteredExamList = useMemo(() => {
+    if (!activeExamFilter) return examList;
+    const category = EXAM_FILTER_CATEGORIES.find(c => c.label === activeExamFilter);
+    if (!category) return examList;
+    return examList.filter(exam =>
+      exam.exams.some(name => category.patterns.some(p => name.toUpperCase().includes(p)))
+    );
+  }, [examList, activeExamFilter]);
+
+  const setExamFilter = useCallback((cat: string | null) => setActiveExamFilter(cat), []);
 
   // Animated progress bar
   useEffect(() => {
@@ -119,12 +181,13 @@ export const useLabViewer = (
   }, [isLoading, isAnalyzing]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const resetState = useCallback(() => {
-    setExamList([]);
+    setSearchEnabled(false);
     setPdfExam(null);
     setError(null);
     setSelectedExamIds(new Set());
     setAnalysisData(null);
     setAnalysisView('trends');
+    setActiveExamFilter(null);
   }, []);
 
   const selectPatient = useCallback(
@@ -137,25 +200,15 @@ export const useLabViewer = (
 
   const search = useCallback(async () => {
     if (!selectedRut) return;
-    setIsLoading(true);
-    resetState();
-    try {
-      const data = await searchSyslabExams(selectedRut);
-      if (!mountedRef.current) return;
-      data.success
-        ? setExamList(data.data)
-        : setError(data.error || 'No se pudieron obtener los resultados.');
-    } catch (err) {
-      if (!mountedRef.current) return;
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Error al buscar exámenes. Verifica que el servidor Syslab esté activo.'
-      );
-    } finally {
-      if (mountedRef.current) setIsLoading(false);
-    }
-  }, [selectedRut, resetState]);
+    setError(null);
+    setSelectedExamIds(new Set());
+    setAnalysisData(null);
+    setPdfExam(null);
+    setActiveExamFilter(null);
+    setSearchEnabled(true);
+    // If already cached, useQuery returns immediately; otherwise triggers fetch
+    await queryClient.invalidateQueries({ queryKey: queryKeys.laboratory.byPatient(selectedRut) });
+  }, [selectedRut, queryClient]);
 
   const openPdf = useCallback((exam: SyslabExamItem) => setPdfExam(exam), []);
   const closePdf = useCallback(() => setPdfExam(null), []);
@@ -208,9 +261,15 @@ export const useLabViewer = (
     try {
       const data = await fetchSyslabExamDetails(links);
       if (!mountedRef.current) return;
-      data.success
-        ? (setAnalysisData(buildAnalysisData(data.data, examList)), setAnalysisView('trends'))
-        : setError(data.error || 'No se pudieron obtener los detalles de los exámenes.');
+      if (data.success) {
+        setAnalysisData(buildAnalysisData(data.data, examList));
+        setAnalysisView('trends');
+        // Persist to Firestore in background (non-blocking)
+        const patientName = examList[0]?.patientName || '';
+        saveLabResults(selectedRut, patientName, data.data, examList);
+      } else {
+        setError(data.error || 'No se pudieron obtener los detalles de los exámenes.');
+      }
     } catch (err) {
       if (!mountedRef.current) return;
       setError(
@@ -221,7 +280,7 @@ export const useLabViewer = (
     } finally {
       if (mountedRef.current) setIsAnalyzing(false);
     }
-  }, [examList, selectedExamIds]);
+  }, [examList, selectedExamIds, selectedRut]);
 
   const closeAnalysis = useCallback(() => {
     setAnalysisData(null);
@@ -233,6 +292,9 @@ export const useLabViewer = (
     selectedRut,
     isLoading,
     examList,
+    filteredExamList,
+    examFilterCategories,
+    activeExamFilter,
     pdfExam,
     error,
     progress,
@@ -245,6 +307,7 @@ export const useLabViewer = (
     openPdf,
     closePdf,
     reset,
+    setExamFilter,
     toggleExamSelection,
     selectAllExams,
     clearSelection,

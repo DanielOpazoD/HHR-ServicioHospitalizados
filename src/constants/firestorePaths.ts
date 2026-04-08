@@ -59,6 +59,8 @@ export const HOSPITAL_COLLECTIONS = {
   PRINT_TEMPLATES: 'printTemplates',
   /** Internal staff reminders/announcements */
   REMINDERS: 'reminders',
+  /** Laboratory results parsed from Syslab */
+  LAB_RESULTS: 'labResults',
 } as const;
 
 // ============================================================================
@@ -114,6 +116,12 @@ export const getSettingsDocPath = (
  */
 export const getExportPasswordsPath = (hospitalId: string = getActiveHospitalId()) =>
   `${COLLECTIONS.HOSPITALS}/${hospitalId}/${HOSPITAL_COLLECTIONS.EXPORT_PASSWORDS}` as const;
+
+/**
+ * Build path to laboratory results collection
+ */
+export const getLabResultsPath = (hospitalId: string = getActiveHospitalId()) =>
+  `${COLLECTIONS.HOSPITALS}/${hospitalId}/${HOSPITAL_COLLECTIONS.LAB_RESULTS}` as const;
 
 // ============================================================================
 // Type Exports

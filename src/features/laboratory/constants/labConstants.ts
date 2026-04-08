@@ -178,6 +178,32 @@ export const COMPARISON_ORDER: string[] = [
   'Cetonemia',
 ];
 
+/* ================================================================== */
+/*  Exam list filter categories                                        */
+/* ================================================================== */
+
+/**
+ * Maps exam name patterns to filter categories.
+ * Used to group exams in the filter bar above the exam list.
+ * Order matters — first match wins.
+ */
+export const EXAM_FILTER_CATEGORIES: { label: string; patterns: string[] }[] = [
+  { label: 'Hemograma', patterns: ['HEMOGRAMA'] },
+  {
+    label: 'Bioquímica',
+    patterns: ['BIOQUIMIC', 'PERFIL BIOQUIM', 'ALBUMINA', 'PROTEINA', 'GLICEMIA'],
+  },
+  { label: 'Gases', patterns: ['GASES'] },
+  { label: 'Electrolitos', patterns: ['ELECTROLITOS'] },
+  { label: 'Perfil Hepático', patterns: ['PERFIL HEPAT', 'HEPAT'] },
+  { label: 'Perfil Lipídico', patterns: ['LIPID', 'COLESTEROL'] },
+  { label: 'Coagulación', patterns: ['PROTROMBINA', 'TTPK', 'INR', 'COAGUL'] },
+  { label: 'Función Renal', patterns: ['CREA', 'UREMIA', 'VFG', 'BUN'] },
+  { label: 'Cultivos', patterns: ['CULTIVO', 'COPROCULTIVO', 'UROCULTIVO'] },
+  { label: 'PCR Panel', patterns: ['PCR PANEL'] },
+  { label: 'Orina', patterns: ['ORINA', 'SEDIMENTO'] },
+];
+
 /** Analysis name normalization rules (regex → replacement). */
 export const ANALYSIS_NAME_REPLACEMENTS: [RegExp, string][] = [
   [/HCO3\s*ACTUAL/i, 'HCO3'],
