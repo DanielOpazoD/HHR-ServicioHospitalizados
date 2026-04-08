@@ -122,7 +122,7 @@ const TREND_GROUPS: { label: string; patterns: string[] }[] = [
   },
   {
     label: 'Gases',
-    patterns: ['pH', 'pCO2', 'pO2', 'HCO3 ACTUAL', 'Lactato'],
+    patterns: ['pH', 'pCO2', 'pO2', 'HCO3', 'Lactato'],
   },
   {
     label: 'Otros',
@@ -178,6 +178,9 @@ const COMPARISON_EXCLUDE: string[] = [
   'Basofilos',
   'Control',
   'OT',
+  'VLDL',
+  'RDW',
+  'Amilasa',
 ];
 
 /** Check if a variable should be excluded from comparison. */
@@ -189,6 +192,21 @@ const isExcludedFromComparison = (analysis: string): boolean => {
 /**
  * Build the processed analytics data from raw exam details and the original exam list.
  */
+/** Clean up display names for analysis variables. */
+const ANALYSIS_NAME_REPLACEMENTS: [RegExp, string][] = [
+  [/HCO3\s*ACTUAL/i, 'HCO3'],
+  [/Hb\.\s*Corp\.\s*Media\s*-\s*HCM/i, 'HCM'],
+  [/Vol\.\s*Corp\.\s*Medio\s*VCM/i, 'VCM'],
+];
+
+const normalizeAnalysisName = (name: string): string => {
+  let result = name;
+  for (const [pattern, replacement] of ANALYSIS_NAME_REPLACEMENTS) {
+    result = result.replace(pattern, replacement);
+  }
+  return result;
+};
+
 /**
  * Build a unique column key for each exam occurrence.
  * Uses "DD/MM/YYYY HH:MM" when time is available, otherwise "DD/MM/YYYY (#ID)".
@@ -222,7 +240,9 @@ export const buildAnalysisData = (
     const colKey = buildExamColumnKey(exam, examDate);
     columnKeySet.add(colKey);
 
-    for (const finding of detail.findings) {
+    for (const rawFinding of detail.findings) {
+      // Normalize the display name (e.g., "HCO3 ACTUAL" → "HCO3")
+      const finding = { ...rawFinding, analysis: normalizeAnalysisName(rawFinding.analysis) };
       const lowerAnalysis = finding.analysis.toLowerCase();
 
       // Collect bilirrubinas for merged display
