@@ -198,14 +198,14 @@ const COMPARISON_ORDER: string[] = [
   'VCM',
   'HCM',
   'Recuento de Plaquetas',
-  // VHS + PCR inmediatamente después del hemograma
-  'VHS',
-  'Proteina C Reactiva',
   // Fórmula diferencial
   'Segmentados',
   'Linfocitos',
   'Monocitos',
   'Eosinofilos',
+  // VHS + PCR al final del bloque hemograma/inflamación
+  'VHS',
+  'Proteina C Reactiva',
   // Función renal + ELP
   'Creatinina',
   'Nitrogeno Ureico',
