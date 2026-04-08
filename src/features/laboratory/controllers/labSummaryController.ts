@@ -16,7 +16,7 @@
  */
 
 import type { LabResultRow } from '@/types/domain/laboratory';
-import { normalizeAnalysisName } from './labFormattingController';
+import { normalizeAnalysisName, parseScientificValue } from './labFormattingController';
 
 /* ------------------------------------------------------------------ */
 /*  Clinical abbreviation map                                          */
@@ -110,14 +110,9 @@ const formatSummaryValue = (finding: LabResultRow, config: AbbreviationConfig): 
 
   // Multiply x10^N values (e.g., RGB 5,81 x10^3 → 5.810)
   if (config.multiplyExponent) {
-    const sciMatch = finding.unit.match(/x10\^(\d+)/);
-    if (sciMatch) {
-      const exp = parseInt(sciMatch[1], 10);
-      const num = parseFloat(value.replace(',', '.'));
-      if (!isNaN(num)) {
-        const multiplied = Math.round(num * Math.pow(10, exp));
-        value = multiplied.toLocaleString('es-CL');
-      }
+    const sci = parseScientificValue(value, finding.unit);
+    if (sci) {
+      value = sci.multiplied.toLocaleString('es-CL');
     }
   }
 

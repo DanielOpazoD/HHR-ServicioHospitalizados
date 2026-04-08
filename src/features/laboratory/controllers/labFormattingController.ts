@@ -7,6 +7,32 @@
 import { ANALYSIS_NAME_REPLACEMENTS } from '../constants/labConstants';
 
 /**
+ * Parse a localized number string (using comma as decimal separator) to a float.
+ * @example parseLocalizedNumber("14,5") // 14.5
+ * @example parseLocalizedNumber("7.280") // 7.28
+ * @example parseLocalizedNumber("abc") // NaN
+ */
+export const parseLocalizedNumber = (str: string): number => parseFloat(str.replace(',', '.'));
+
+/**
+ * Parse a scientific notation unit (x10^N) and multiply the value.
+ * @returns The multiplied integer and clean unit suffix, or null if not scientific.
+ * @example parseScientificValue("879", "x10^3/ul") // { multiplied: 879000, unitSuffix: "ul" }
+ */
+export const parseScientificValue = (
+  result: string,
+  unit: string
+): { multiplied: number; unitSuffix: string } | null => {
+  const match = unit.match(/x10\^(\d+)(.*)/);
+  if (!match) return null;
+  const exponent = parseInt(match[1], 10);
+  const unitSuffix = match[2]?.replace(/^\//, '') || '';
+  const num = parseLocalizedNumber(result);
+  if (isNaN(num)) return null;
+  return { multiplied: Math.round(num * Math.pow(10, exponent)), unitSuffix };
+};
+
+/**
  * Parse a reference range string into numeric min/max bounds.
  * @example parseRefRange("12.0-16.0") // { min: 12, max: 16 }
  * @example parseRefRange("4,5 - 11,0") // { min: 4.5, max: 11 }
@@ -15,8 +41,8 @@ import { ANALYSIS_NAME_REPLACEMENTS } from '../constants/labConstants';
 export const parseRefRange = (refValue: string): { min: number; max: number } | null => {
   const match = refValue.match(/([\d.,]+)\s*[-–]\s*([\d.,]+)/);
   if (!match) return null;
-  const min = parseFloat(match[1].replace(',', '.'));
-  const max = parseFloat(match[2].replace(',', '.'));
+  const min = parseLocalizedNumber(match[1]);
+  const max = parseLocalizedNumber(match[2]);
   if (isNaN(min) || isNaN(max)) return null;
   return { min, max };
 };
@@ -38,7 +64,7 @@ export const parseDateDDMMYYYY = (date: string): string => {
 export const isOutOfRange = (result: string, refValue: string): boolean | null => {
   const range = parseRefRange(refValue);
   if (!range) return null;
-  const val = parseFloat(result.replace(',', '.'));
+  const val = parseLocalizedNumber(result);
   if (isNaN(val)) return null;
   return val < range.min || val > range.max;
 };
@@ -65,16 +91,10 @@ export const formatLabResult = (
   result: string,
   unit: string
 ): { display: string; displayUnit: string } => {
-  const sciMatch = unit.match(/x10\^(\d+)(.*)/);
-  if (sciMatch) {
-    const exponent = parseInt(sciMatch[1], 10);
-    const unitSuffix = sciMatch[2]?.replace(/^\//, '') || '';
-    const numVal = parseFloat(result.replace(',', '.'));
-    if (!isNaN(numVal) && exponent >= 3) {
-      const multiplied = Math.round(numVal * Math.pow(10, exponent));
-      const formatted = multiplied.toLocaleString('es-CL');
-      return { display: formatted, displayUnit: unitSuffix ? `/${unitSuffix}` : '' };
-    }
+  const sci = parseScientificValue(result, unit);
+  if (sci) {
+    const formatted = sci.multiplied.toLocaleString('es-CL');
+    return { display: formatted, displayUnit: sci.unitSuffix ? `/${sci.unitSuffix}` : '' };
   }
   return { display: result, displayUnit: unit };
 };

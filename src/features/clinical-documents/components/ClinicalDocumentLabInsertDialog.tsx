@@ -6,11 +6,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { FlaskConical, Loader2, X } from 'lucide-react';
-import { getLabResults } from '@/features/laboratory/services/labFirestoreService';
+import { getLabResults, buildLabSummaryText } from '@/features/laboratory/public';
+import type { StoredLabExam } from '@/features/laboratory/public';
 import { searchSyslabExams, fetchSyslabExamDetails } from '@/services/laboratory/syslabService';
-import { buildLabSummaryText } from '@/features/laboratory/public';
 import type { LabResultRow } from '@/types/domain/laboratory';
-import type { StoredLabExam } from '@/features/laboratory/services/labFirestoreService';
 
 interface ClinicalDocumentLabInsertDialogProps {
   patientRut: string;

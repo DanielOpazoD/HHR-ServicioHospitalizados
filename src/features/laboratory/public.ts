@@ -22,6 +22,8 @@ export {
   isOutOfRange,
   formatLabResult,
   normalizeAnalysisName,
+  parseLocalizedNumber,
+  parseScientificValue,
   bedSortKey,
 } from './controllers/labFormattingController';
 
@@ -35,6 +37,10 @@ export {
 } from './controllers/labAnalyticsController';
 
 export { buildLabSummaryText } from './controllers/labSummaryController';
+
+// Firestore persistence (for cross-module access to lab results)
+export { getLabResults, saveLabResults } from './services/labFirestoreService';
+export type { StoredLabExam, LabResultsDocument } from './services/labFirestoreService';
 
 // Types
 export type { ProgressState, ExportConfig } from './types/labViewerTypes';

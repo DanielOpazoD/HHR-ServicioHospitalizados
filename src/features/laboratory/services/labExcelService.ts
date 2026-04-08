@@ -6,7 +6,7 @@
 
 import type { LabAnalysisData } from '@/types/domain/laboratory';
 import type { ExportConfig } from '../types/labViewerTypes';
-import { formatLabResult } from '../controllers/labFormattingController';
+import { parseLocalizedNumber, parseScientificValue } from '../controllers/labFormattingController';
 
 /**
  * Export the comparison table to an Excel file and trigger download.
@@ -40,17 +40,13 @@ export const exportComparisonToExcel = async (
         cells.push('');
       } else {
         // For x10^N units, export the multiplied integer (e.g. 192000)
-        const sciMatch = row.unit.match(/x10\^(\d+)/);
-        if (sciMatch) {
-          const exp = parseInt(sciMatch[1], 10);
-          const num = parseFloat(row.result.replace(',', '.'));
-          if (!isNaN(num)) {
-            cells.push(Math.round(num * Math.pow(10, exp)));
-            continue;
-          }
+        const sci = parseScientificValue(row.result, row.unit);
+        if (sci) {
+          cells.push(sci.multiplied);
+          continue;
         }
         // Regular numeric value
-        const num = parseFloat(row.result.replace(',', '.'));
+        const num = parseLocalizedNumber(row.result);
         if (!isNaN(num) && !row.result.includes('/')) {
           cells.push(num);
         } else {
