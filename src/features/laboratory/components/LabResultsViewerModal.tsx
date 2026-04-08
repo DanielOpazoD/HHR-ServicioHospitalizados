@@ -1,32 +1,20 @@
 /**
  * @module LabResultsViewerModal
  * @description Modal for viewing laboratory exams from the Syslab system.
- *
- * Views:
- * 1. **Empty state** — before any search
- * 2. **Exam list** — with checkboxes for selection + "Ver PDF" buttons
- * 3. **PDF viewer** — inline iframe showing the original lab report PDF
- * 4. **Analysis** — summary table, trend charts, and comparison table
  */
 
 import React, { useEffect } from 'react';
 import { FlaskConical } from 'lucide-react';
 import { BaseModal } from '@/components/shared/BaseModal';
-import { useLabViewer } from '@/hooks/laboratory/useLabViewer';
+import { useLabViewer } from '../hooks/useLabViewer';
 import type { LabPatient } from '@/types/domain/laboratory';
-import {
-  LabViewerControls,
-  LabViewerProgress,
-  LabViewerExamList,
-  LabViewerAnalyzeBar,
-  LabViewerPdf,
-  LabViewerAnalysis,
-  LabViewerEmptyState,
-} from '@/components/modals/LabResultsViewerModalContent';
-
-/* ------------------------------------------------------------------ */
-/*  Props                                                              */
-/* ------------------------------------------------------------------ */
+import { LabViewerControls } from './LabViewerControls';
+import { LabViewerProgress } from './LabViewerProgress';
+import { LabViewerExamList } from './LabViewerExamList';
+import { LabViewerAnalyzeBar } from './LabViewerAnalyzeBar';
+import { LabViewerPdf } from './LabViewerPdf';
+import { LabViewerAnalysis } from './LabViewerAnalysis';
+import { LabViewerEmptyState } from './LabViewerEmptyState';
 
 interface LabResultsViewerModalProps {
   isOpen: boolean;
@@ -34,10 +22,6 @@ interface LabResultsViewerModalProps {
   patients: LabPatient[];
   initialPatientRut?: string;
 }
-
-/* ------------------------------------------------------------------ */
-/*  Component                                                          */
-/* ------------------------------------------------------------------ */
 
 export const LabResultsViewerModal: React.FC<LabResultsViewerModalProps> = ({
   isOpen,
@@ -47,19 +31,14 @@ export const LabResultsViewerModal: React.FC<LabResultsViewerModalProps> = ({
 }) => {
   const lab = useLabViewer(patients, initialPatientRut);
 
-  // Always reset when modal opens — start fresh every time
   useEffect(() => {
-    if (isOpen) {
-      lab.reset();
-    }
+    if (isOpen) lab.reset();
   }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!isOpen) return null;
 
   const isViewingPdf = lab.pdfExam !== null;
   const isViewingAnalysis = lab.analysisData !== null;
-
-  // Dynamic modal size
   const modalSize = isViewingAnalysis ? 'full' : isViewingPdf ? '5xl' : '3xl';
 
   return (
@@ -81,7 +60,6 @@ export const LabResultsViewerModal: React.FC<LabResultsViewerModalProps> = ({
         </span>
       }
     >
-      {/* Controls — hidden during analysis */}
       {!isViewingAnalysis && (
         <LabViewerControls
           uniquePatients={lab.uniquePatients}
@@ -92,17 +70,14 @@ export const LabResultsViewerModal: React.FC<LabResultsViewerModalProps> = ({
         />
       )}
 
-      {/* Progress bar */}
       <LabViewerProgress progress={lab.progress} />
 
-      {/* Error */}
       {lab.error && (
         <div className="mb-4 rounded-xl border border-red-200/80 bg-red-50 px-4 py-3 text-[13px] text-red-700">
           {lab.error}
         </div>
       )}
 
-      {/* Analysis view */}
       {isViewingAnalysis && !lab.isAnalyzing && (
         <LabViewerAnalysis
           data={lab.analysisData!}
@@ -112,12 +87,10 @@ export const LabResultsViewerModal: React.FC<LabResultsViewerModalProps> = ({
         />
       )}
 
-      {/* PDF viewer */}
       {isViewingPdf && !isViewingAnalysis && (
         <LabViewerPdf exam={lab.pdfExam!} onBack={lab.closePdf} />
       )}
 
-      {/* Exam list */}
       {!isViewingPdf && !isViewingAnalysis && lab.examList.length > 0 && !lab.isLoading && (
         <>
           <LabViewerExamList
@@ -137,7 +110,6 @@ export const LabResultsViewerModal: React.FC<LabResultsViewerModalProps> = ({
         </>
       )}
 
-      {/* Empty state */}
       {!isViewingPdf &&
         !isViewingAnalysis &&
         lab.examList.length === 0 &&

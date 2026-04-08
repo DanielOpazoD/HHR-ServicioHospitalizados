@@ -6,7 +6,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 
-vi.unmock('@/hooks/laboratory/useLabViewer');
+vi.unmock('@/features/laboratory/hooks/useLabViewer');
+vi.unmock('@/features/laboratory/controllers/labFormattingController');
+vi.unmock('@/features/laboratory/controllers/labAnalyticsController');
+vi.unmock('@/features/laboratory/constants/labConstants');
 
 const mockSearchSyslabExams = vi.fn();
 const mockFetchSyslabExamDetails = vi.fn();
@@ -27,14 +30,19 @@ vi.mock('@/services/utils/loggerScope', () => ({
   }),
 }));
 
+import { useLabViewer } from '@/features/laboratory/hooks/useLabViewer';
 import {
-  useLabViewer,
   parseRefRange,
   parseDateDDMMYYYY,
   isOutOfRange,
-  buildAnalysisData,
-} from '@/hooks/laboratory/useLabViewer';
-import type { LabPatient, SyslabExamDetail, SyslabExamItem } from '@/types/domain/laboratory';
+} from '@/features/laboratory/controllers/labFormattingController';
+import { buildAnalysisData } from '@/features/laboratory/controllers/labAnalyticsController';
+import type {
+  LabPatient,
+  SyslabExamDetail,
+  SyslabExamItem,
+  LabTrendGroup,
+} from '@/types/domain/laboratory';
 
 /* ------------------------------------------------------------------ */
 /*  Test data                                                          */
@@ -178,7 +186,7 @@ describe('buildAnalysisData', () => {
   it('creates trend groups for variables with 2+ points', () => {
     const result = buildAnalysisData(details, examList);
     // HEMOGLOBINA has 2 points → should be in a group
-    const hbGroup = result.trendGroups.find(g =>
+    const hbGroup = result.trendGroups.find((g: LabTrendGroup) =>
       Object.keys(g.variables).some(v => v === 'HEMOGLOBINA')
     );
     expect(hbGroup).toBeDefined();
@@ -187,7 +195,7 @@ describe('buildAnalysisData', () => {
 
   it('sorts trend points chronologically', () => {
     const result = buildAnalysisData(details, examList);
-    const hbGroup = result.trendGroups.find(g => g.variables['HEMOGLOBINA']);
+    const hbGroup = result.trendGroups.find((g: LabTrendGroup) => g.variables['HEMOGLOBINA']);
     const hb = hbGroup!.variables['HEMOGLOBINA'];
     expect(hb[0].isoDate).toBe('2026-03-01');
     expect(hb[1].isoDate).toBe('2026-04-06');
@@ -207,7 +215,7 @@ describe('buildAnalysisData', () => {
 
   it('includes reference range in trend points', () => {
     const result = buildAnalysisData(details, examList);
-    const hbGroup = result.trendGroups.find(g => g.variables['HEMOGLOBINA']);
+    const hbGroup = result.trendGroups.find((g: LabTrendGroup) => g.variables['HEMOGLOBINA']);
     expect(hbGroup!.variables['HEMOGLOBINA'][0].refMin).toBe(12);
     expect(hbGroup!.variables['HEMOGLOBINA'][0].refMax).toBe(16);
   });
@@ -326,7 +334,9 @@ describe('useLabViewer', () => {
     });
 
     expect(result.current.analysisData).not.toBeNull();
-    const hbGroup = result.current.analysisData!.trendGroups.find(g => g.variables['Hemoglobina']);
+    const hbGroup = result.current.analysisData!.trendGroups.find(
+      (g: LabTrendGroup) => g.variables['Hemoglobina']
+    );
     expect(hbGroup).toBeDefined();
     expect(hbGroup!.variables['Hemoglobina']).toHaveLength(2);
     expect(result.current.analysisView).toBe('trends');
