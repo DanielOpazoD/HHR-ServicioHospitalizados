@@ -177,7 +177,7 @@ const COMPARISON_EXCLUDE: string[] = [
   'Recuento Hematies',
   'Basofilos',
   'Control',
-  'OT',
+  ', OT',
   'VLDL',
   'RDW',
   'Amilasa',
