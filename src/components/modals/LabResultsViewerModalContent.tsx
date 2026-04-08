@@ -839,16 +839,31 @@ const doExcelExport = async (data: LabAnalysisData, config: ExportConfig) => {
   headerRow.font = { bold: true, size: 10 };
   headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F5E9' } };
 
-  // Data rows
+  // Data rows — write numbers as actual numbers so Excel doesn't flag them as text
   for (const name of vars) {
-    const cells = [name];
+    const cells: (string | number)[] = [name];
     for (const date of dates) {
       const row = data.comparison[name]?.[date];
       if (!row) {
         cells.push('');
       } else {
-        const { display } = formatLabResult(row.result, row.unit);
-        cells.push(display);
+        // For x10^N units, export the multiplied integer (e.g. 192000)
+        const sciMatch = row.unit.match(/x10\^(\d+)/);
+        if (sciMatch) {
+          const exp = parseInt(sciMatch[1], 10);
+          const num = parseFloat(row.result.replace(',', '.'));
+          if (!isNaN(num)) {
+            cells.push(Math.round(num * Math.pow(10, exp)));
+            continue;
+          }
+        }
+        // Regular numeric value
+        const num = parseFloat(row.result.replace(',', '.'));
+        if (!isNaN(num) && !row.result.includes('/')) {
+          cells.push(num);
+        } else {
+          cells.push(row.result);
+        }
       }
     }
     ws.addRow(cells);
@@ -918,18 +933,18 @@ const LabAnalysisComparisonTable: React.FC<{ data: LabAnalysisData }> = ({ data 
         />
       )}
 
-      {/* Table */}
+      {/* Table — compact layout */}
       <div className="overflow-x-auto rounded-xl border border-slate-200/80">
-        <table className="w-full min-w-[600px]">
+        <table className="w-full border-collapse">
           <thead>
             <tr className="bg-slate-50">
-              <th className="sticky left-0 z-10 bg-slate-50 px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-500 border-r border-slate-200">
+              <th className="sticky left-0 z-10 bg-slate-50 px-2 py-1.5 text-left text-[9px] font-bold uppercase tracking-wide text-slate-500 border-r border-slate-200 whitespace-nowrap">
                 Variable
               </th>
               {examDates.map(date => (
                 <th
                   key={date}
-                  className="px-4 py-2.5 text-center text-[10px] font-bold uppercase tracking-wide text-slate-500"
+                  className="px-1.5 py-1.5 text-center text-[8px] font-bold uppercase tracking-wide text-slate-500 whitespace-nowrap"
                 >
                   {date}
                 </th>
@@ -941,29 +956,29 @@ const LabAnalysisComparisonTable: React.FC<{ data: LabAnalysisData }> = ({ data 
               <tr
                 key={name}
                 className={clsx(
-                  'border-t border-slate-100 transition-colors hover:bg-slate-50/50',
+                  'border-t border-slate-100 hover:bg-slate-50/50',
                   i % 2 === 1 && 'bg-slate-50/30'
                 )}
               >
-                <td className="sticky left-0 z-10 bg-white px-4 py-2 text-[11px] font-semibold text-slate-700 border-r border-slate-200">
+                <td className="sticky left-0 z-10 bg-white px-2 py-1 text-[10px] font-semibold text-slate-700 border-r border-slate-200 whitespace-nowrap">
                   {name}
                 </td>
                 {examDates.map(date => {
                   const row = data.comparison[name]?.[date];
                   if (!row) {
                     return (
-                      <td key={date} className="px-4 py-2 text-center text-[11px] text-slate-300">
+                      <td key={date} className="px-1.5 py-1 text-center text-[10px] text-slate-300">
                         —
                       </td>
                     );
                   }
                   const oor = isOutOfRange(row.result, row.refValue);
-                  const { display, displayUnit } = formatLabResult(row.result, row.unit);
+                  const { display } = formatLabResult(row.result, row.unit);
                   return (
-                    <td key={date} className="px-4 py-2 text-center">
+                    <td key={date} className="px-1.5 py-1 text-center whitespace-nowrap">
                       <span
                         className={clsx(
-                          'text-[12px] font-bold',
+                          'text-[11px] font-bold',
                           oor === true && 'text-red-600',
                           oor === false && 'text-emerald-600',
                           oor === null && 'text-slate-700'
@@ -971,9 +986,6 @@ const LabAnalysisComparisonTable: React.FC<{ data: LabAnalysisData }> = ({ data 
                       >
                         {display}
                       </span>
-                      {displayUnit && (
-                        <span className="ml-1 text-[9px] text-slate-400">{displayUnit}</span>
-                      )}
                     </td>
                   );
                 })}
