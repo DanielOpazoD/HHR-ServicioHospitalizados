@@ -149,6 +149,7 @@ const DEFAULT_HOOK_STATE = {
   toggleExamSelection: vi.fn(),
   selectAllExams: vi.fn(),
   clearSelection: vi.fn(),
+  selectByDays: vi.fn(),
   analyzeSelected: vi.fn(),
   closeAnalysis: vi.fn(),
   setAnalysisView: vi.fn(),
@@ -187,7 +188,7 @@ describe('LabResultsViewerModal', () => {
       examList: [MOCK_EXAM],
     });
     render(<LabResultsViewerModal isOpen={true} onClose={vi.fn()} patients={PATIENTS} />);
-    expect(screen.getByText('1 exámenes encontrados')).toBeInTheDocument();
+    expect(screen.getByText('1 exámenes')).toBeInTheDocument();
     expect(screen.getByText('Ver PDF')).toBeInTheDocument();
     expect(screen.getByRole('checkbox')).toBeInTheDocument();
   });

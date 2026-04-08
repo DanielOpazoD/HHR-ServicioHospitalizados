@@ -125,6 +125,7 @@ export const LabResultsViewerModal: React.FC<LabResultsViewerModalProps> = ({
             selectedIds={lab.selectedExamIds}
             onToggleSelect={lab.toggleExamSelection}
             onSelectAll={lab.selectAllExams}
+            onSelectByDays={lab.selectByDays}
             onViewPdf={lab.openPdf}
           />
           <LabViewerAnalyzeBar

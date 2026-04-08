@@ -145,11 +145,19 @@ export const LabViewerProgress: React.FC<LabViewerProgressProps> = ({ progress }
 /*  Exam list — cards with checkboxes + "Ver PDF" button               */
 /* ================================================================== */
 
+/** Parse DD/MM/YYYY to a Date object for date range filtering. */
+const parseDDMMYYYYtoDate = (dateStr: string): Date | null => {
+  const m = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (!m) return null;
+  return new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1]));
+};
+
 interface LabViewerExamListProps {
   exams: SyslabExamItem[];
   selectedIds: Set<string>;
   onToggleSelect: (id: string) => void;
   onSelectAll: () => void;
+  onSelectByDays: (days: number) => void;
   onViewPdf: (exam: SyslabExamItem) => void;
 }
 
@@ -158,6 +166,7 @@ export const LabViewerExamList: React.FC<LabViewerExamListProps> = ({
   selectedIds,
   onToggleSelect,
   onSelectAll,
+  onSelectByDays,
   onViewPdf,
 }) => {
   const selectableExams = exams.filter(e => e.link);
@@ -167,9 +176,26 @@ export const LabViewerExamList: React.FC<LabViewerExamListProps> = ({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-slate-400">
-          {exams.length} exámenes encontrados
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-slate-400">
+            {exams.length} exámenes
+          </p>
+          <div className="h-3 w-px bg-slate-200" />
+          <button
+            type="button"
+            onClick={() => onSelectByDays(7)}
+            className="rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[9px] font-medium text-emerald-700 hover:bg-emerald-100"
+          >
+            Últimos 7 días
+          </button>
+          <button
+            type="button"
+            onClick={() => onSelectByDays(14)}
+            className="rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[9px] font-medium text-emerald-700 hover:bg-emerald-100"
+          >
+            Últimos 14 días
+          </button>
+        </div>
         {selectableExams.length > 0 && (
           <button
             type="button"

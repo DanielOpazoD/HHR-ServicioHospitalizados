@@ -181,6 +181,8 @@ const COMPARISON_EXCLUDE: string[] = [
   'VLDL',
   'RDW',
   'Amilasa',
+  'BEecf',
+  'Globulinas',
 ];
 
 /**
@@ -196,13 +198,14 @@ const COMPARISON_ORDER: string[] = [
   'VCM',
   'HCM',
   'Recuento de Plaquetas',
-  // Inflamación
+  // VHS + PCR inmediatamente después del hemograma
+  'VHS',
+  'Proteina C Reactiva',
+  // Fórmula diferencial
   'Segmentados',
   'Linfocitos',
   'Monocitos',
   'Eosinofilos',
-  'VHS',
-  'Proteina C Reactiva',
   // Función renal + ELP
   'Creatinina',
   'Nitrogeno Ureico',
@@ -216,7 +219,6 @@ const COMPARISON_ORDER: string[] = [
   'pO2',
   'HCO3',
   'Lactato',
-  'BEecf',
   // Minerales
   'Calcio',
   'Fosforo',
@@ -234,7 +236,6 @@ const COMPARISON_ORDER: string[] = [
   'INR',
   'Albumina',
   'Proteinas Totales',
-  'Globulinas',
   'Troponina',
   'Dimero',
   'CK Total',
@@ -468,6 +469,7 @@ export interface UseLabViewerReturn {
   toggleExamSelection: (id: string) => void;
   selectAllExams: () => void;
   clearSelection: () => void;
+  selectByDays: (days: number) => void;
 
   // Analysis actions
   analyzeSelected: () => Promise<void>;
@@ -624,6 +626,26 @@ export const useLabViewer = (
     setSelectedExamIds(new Set());
   }, []);
 
+  const selectByDays = useCallback(
+    (days: number) => {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - days);
+      cutoff.setHours(0, 0, 0, 0);
+
+      const ids = examList
+        .filter(e => {
+          if (!e.link) return false;
+          const m = e.date.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+          if (!m) return false;
+          const examDate = new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1]));
+          return examDate >= cutoff;
+        })
+        .map(e => e.id);
+      setSelectedExamIds(new Set(ids));
+    },
+    [examList]
+  );
+
   // --- Analysis ---
 
   const analyzeSelected = useCallback(async () => {
@@ -683,6 +705,7 @@ export const useLabViewer = (
     toggleExamSelection,
     selectAllExams,
     clearSelection,
+    selectByDays,
     analyzeSelected,
     closeAnalysis,
     setAnalysisView,
