@@ -408,15 +408,45 @@ const LabTrendTooltip: React.FC<{
   );
 };
 
-/** Render a single trend group card with multiple overlaid lines. */
-const TrendGroupCard: React.FC<{ group: LabTrendGroup }> = ({ group }) => {
-  const varNames = Object.keys(group.variables);
+/**
+ * Group variables by their unit so variables with vastly different scales
+ * (e.g. Fosfatasa Alcalina ~500 U/L vs Bilirrubina ~0.3 mg/dL) get
+ * separate sub-charts with appropriate Y-axis scales.
+ */
+const groupVariablesByUnit = (
+  variables: Record<string, LabTrendPoint[]>
+): { unit: string; vars: Record<string, LabTrendPoint[]> }[] => {
+  const byUnit: Record<string, Record<string, LabTrendPoint[]>> = {};
+  for (const [name, points] of Object.entries(variables)) {
+    const unit = (points[0]?.unit || '').toLowerCase().replace(/\s/g, '');
+    if (!byUnit[unit]) byUnit[unit] = {};
+    byUnit[unit][name] = points;
+  }
+  return Object.entries(byUnit).map(([unit, vars]) => ({
+    unit: Object.values(vars)[0]?.[0]?.unit || unit,
+    vars,
+  }));
+};
 
-  // Merge all data points by date for the shared X axis
+/** Sort date strings that start with DD/MM/YYYY. */
+const sortByDate = (a: string, b: string): number => {
+  const isoA = a.replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$3-$2-$1');
+  const isoB = b.replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$3-$2-$1');
+  return isoA.localeCompare(isoB);
+};
+
+/** A single sub-chart for variables sharing the same unit. */
+const UnitSubChart: React.FC<{
+  varEntries: Record<string, LabTrendPoint[]>;
+  unit: string;
+  colorOffset: number;
+}> = ({ varEntries, unit, colorOffset }) => {
+  const varNames = Object.keys(varEntries);
+
   const dateMap: Record<string, Record<string, number>> = {};
   let firstRef: { min?: number; max?: number } = {};
 
-  for (const [name, points] of Object.entries(group.variables)) {
+  for (const [name, points] of Object.entries(varEntries)) {
     for (const p of points) {
       if (!dateMap[p.date]) dateMap[p.date] = {};
       dateMap[p.date][name] = p.value;
@@ -426,56 +456,46 @@ const TrendGroupCard: React.FC<{ group: LabTrendGroup }> = ({ group }) => {
 
   const chartData = Object.entries(dateMap)
     .map(([date, vals]) => ({ date, ...vals }))
-    .sort((a, b) => {
-      const isoA = a.date.replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$3-$2-$1');
-      const isoB = b.date.replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$3-$2-$1');
-      return isoA.localeCompare(isoB);
-    });
+    .sort((a, b) => sortByDate(a.date, b.date));
 
-  // Y domain
   const allVals: number[] = [];
-  for (const points of Object.values(group.variables)) {
+  for (const points of Object.values(varEntries)) {
     for (const p of points) {
       allVals.push(p.value);
       if (p.refMin != null) allVals.push(p.refMin);
       if (p.refMax != null) allVals.push(p.refMax);
     }
   }
-  const yMin = Math.floor(Math.min(...allVals) * 0.9);
-  const yMax = Math.ceil(Math.max(...allVals) * 1.1);
-
+  const yMin = Math.floor(Math.min(...allVals) * 0.85);
+  const yMax = Math.ceil(Math.max(...allVals) * 1.15);
   const hasRef = firstRef.min != null && firstRef.max != null;
 
   return (
-    <div className="rounded-xl border border-slate-200/80 bg-white p-4">
-      <h4 className="mb-1 text-[13px] font-bold text-slate-700">{group.label}</h4>
-      <div className="mb-3 flex flex-wrap gap-2">
-        {varNames.map((name, i) => {
-          const varUnit = group.variables[name]?.[0]?.unit || '';
-          return (
-            <span key={name} className="inline-flex items-center gap-1 text-[10px] font-medium">
-              <span
-                className="inline-block h-2 w-2 rounded-full"
-                style={{ backgroundColor: LINE_COLORS[i % LINE_COLORS.length] }}
-              />
-              {name} {varUnit ? `(${varUnit})` : ''}
-            </span>
-          );
-        })}
+    <div>
+      <div className="mb-2 flex flex-wrap gap-2">
+        {varNames.map((name, i) => (
+          <span key={name} className="inline-flex items-center gap-1 text-[10px] font-medium">
+            <span
+              className="inline-block h-2 w-2 rounded-full"
+              style={{ backgroundColor: LINE_COLORS[(i + colorOffset) % LINE_COLORS.length] }}
+            />
+            {name} ({unit})
+          </span>
+        ))}
       </div>
-      <div className="h-56">
+      <div className="h-48">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+          <LineChart data={chartData} margin={{ top: 18, right: 20, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
             <XAxis
               dataKey="date"
-              tick={{ fontSize: 10, fill: '#64748b' }}
+              tick={{ fontSize: 9, fill: '#64748b' }}
               tickLine={false}
               axisLine={{ stroke: '#e2e8f0' }}
             />
             <YAxis
               domain={[yMin, yMax]}
-              tick={{ fontSize: 10, fill: '#64748b' }}
+              tick={{ fontSize: 9, fill: '#64748b' }}
               tickLine={false}
               axisLine={false}
             />
@@ -499,11 +519,11 @@ const TrendGroupCard: React.FC<{ group: LabTrendGroup }> = ({ group }) => {
                 name={name}
                 type="monotone"
                 dataKey={name}
-                stroke={LINE_COLORS[i % LINE_COLORS.length]}
+                stroke={LINE_COLORS[(i + colorOffset) % LINE_COLORS.length]}
                 strokeWidth={2.5}
                 dot={{
                   r: 3,
-                  fill: LINE_COLORS[i % LINE_COLORS.length],
+                  fill: LINE_COLORS[(i + colorOffset) % LINE_COLORS.length],
                   strokeWidth: 2,
                   stroke: '#fff',
                 }}
@@ -511,15 +531,42 @@ const TrendGroupCard: React.FC<{ group: LabTrendGroup }> = ({ group }) => {
                 label={{
                   position: 'top',
                   fontSize: 9,
-                  fill: LINE_COLORS[i % LINE_COLORS.length],
+                  fill: LINE_COLORS[(i + colorOffset) % LINE_COLORS.length],
                   fontWeight: 700,
-                  offset: 8,
+                  offset: 6,
                 }}
                 connectNulls
               />
             ))}
           </LineChart>
         </ResponsiveContainer>
+      </div>
+    </div>
+  );
+};
+
+/** Render a trend group card — splits into sub-charts per unit for readability. */
+const TrendGroupCard: React.FC<{ group: LabTrendGroup }> = ({ group }) => {
+  const unitGroups = groupVariablesByUnit(group.variables);
+
+  return (
+    <div className="rounded-xl border border-slate-200/80 bg-white p-4">
+      <h4 className="mb-3 text-[13px] font-bold text-slate-700">{group.label}</h4>
+      <div className="space-y-4">
+        {unitGroups.map((ug, idx) => {
+          // Offset colors so each sub-chart continues the palette
+          const prevCount = unitGroups
+            .slice(0, idx)
+            .reduce((sum, g) => sum + Object.keys(g.vars).length, 0);
+          return (
+            <UnitSubChart
+              key={ug.unit}
+              varEntries={ug.vars}
+              unit={ug.unit}
+              colorOffset={prevCount}
+            />
+          );
+        })}
       </div>
     </div>
   );

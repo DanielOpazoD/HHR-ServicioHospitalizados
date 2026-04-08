@@ -91,7 +91,7 @@ export const isOutOfRange = (result: string, refValue: string): boolean | null =
 const TREND_GROUPS: { label: string; patterns: string[] }[] = [
   {
     label: 'Electrolitos',
-    patterns: ['Sodio', 'Potasio', 'Cloro', 'HCO3 ACTUAL'],
+    patterns: ['Sodio', 'Potasio', 'Cloro'],
   },
   {
     label: 'Función Renal',
@@ -122,7 +122,7 @@ const TREND_GROUPS: { label: string; patterns: string[] }[] = [
   },
   {
     label: 'Gases',
-    patterns: ['pH', 'pCO2', 'pO2', 'Lactato'],
+    patterns: ['pH', 'pCO2', 'pO2', 'HCO3 ACTUAL', 'Lactato'],
   },
   {
     label: 'Otros',
