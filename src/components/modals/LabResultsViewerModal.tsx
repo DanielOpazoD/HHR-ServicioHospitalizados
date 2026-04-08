@@ -47,12 +47,12 @@ export const LabResultsViewerModal: React.FC<LabResultsViewerModalProps> = ({
 }) => {
   const lab = useLabViewer(patients, initialPatientRut);
 
-  // Reset state when modal reopens with a different patient
+  // Always reset when modal opens — start fresh every time
   useEffect(() => {
-    if (isOpen && initialPatientRut) {
+    if (isOpen) {
       lab.reset();
     }
-  }, [isOpen, initialPatientRut]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!isOpen) return null;
 

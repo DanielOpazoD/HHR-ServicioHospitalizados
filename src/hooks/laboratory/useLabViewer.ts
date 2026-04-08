@@ -192,6 +192,24 @@ const isExcludedFromComparison = (analysis: string): boolean => {
 /**
  * Build the processed analytics data from raw exam details and the original exam list.
  */
+/**
+ * Bed sort order: R1-R4 (0-3), Neo1-Neo2 (4-5), H1C1-H6C2 (10-21).
+ * Returns a numeric key for sorting.
+ */
+const bedSortKey = (bedId: string): number => {
+  const upper = bedId.toUpperCase().replace(/\s+/g, '');
+  // R1-R4
+  const rMatch = upper.match(/^R(\d+)$/);
+  if (rMatch) return parseInt(rMatch[1], 10);
+  // NEO1, NEO2
+  const neoMatch = upper.match(/^NEO(\d+)$/);
+  if (neoMatch) return 4 + parseInt(neoMatch[1], 10);
+  // H1C1, H1C2, H2C1, ..., H6C2
+  const hMatch = upper.match(/^H(\d+)C(\d+)$/);
+  if (hMatch) return 10 + (parseInt(hMatch[1], 10) - 1) * 2 + (parseInt(hMatch[2], 10) - 1);
+  return 100; // unknown beds at the end
+};
+
 /** Clean up display names for analysis variables. */
 const ANALYSIS_NAME_REPLACEMENTS: [RegExp, string][] = [
   [/HCO3\s*ACTUAL/i, 'HCO3'],
@@ -404,14 +422,15 @@ export const useLabViewer = (
     };
   }, []);
 
-  // Deduplicate patients by RUT
+  // Deduplicate patients by RUT and sort by bed order
   const uniquePatients = useMemo(() => {
     const seen = new Set<string>();
-    return patients.filter(p => {
+    const deduped = patients.filter(p => {
       if (!p.rut || seen.has(p.rut)) return false;
       seen.add(p.rut);
       return true;
     });
+    return deduped.sort((a, b) => bedSortKey(a.bedId) - bedSortKey(b.bedId));
   }, [patients]);
 
   // Animated progress bar

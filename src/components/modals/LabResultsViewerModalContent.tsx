@@ -935,16 +935,16 @@ const LabAnalysisComparisonTable: React.FC<{ data: LabAnalysisData }> = ({ data 
 
       {/* Table — compact layout */}
       <div className="overflow-x-auto rounded-xl border border-slate-200/80">
-        <table className="w-full border-collapse">
+        <table className="border-collapse">
           <thead>
             <tr className="bg-slate-50">
-              <th className="sticky left-0 z-10 bg-slate-50 px-2 py-1.5 text-left text-[9px] font-bold uppercase tracking-wide text-slate-500 border-r border-slate-200 whitespace-nowrap">
+              <th className="sticky left-0 z-10 bg-slate-50 px-2 py-1 text-left text-[9px] font-bold uppercase text-slate-500 border-r border-slate-200 whitespace-nowrap">
                 Variable
               </th>
               {examDates.map(date => (
                 <th
                   key={date}
-                  className="px-1.5 py-1.5 text-center text-[8px] font-bold uppercase tracking-wide text-slate-500 whitespace-nowrap"
+                  className="px-1 py-1 text-center text-[8px] font-bold text-slate-500 whitespace-nowrap"
                 >
                   {date}
                 </th>
@@ -960,14 +960,14 @@ const LabAnalysisComparisonTable: React.FC<{ data: LabAnalysisData }> = ({ data 
                   i % 2 === 1 && 'bg-slate-50/30'
                 )}
               >
-                <td className="sticky left-0 z-10 bg-white px-2 py-1 text-[10px] font-semibold text-slate-700 border-r border-slate-200 whitespace-nowrap">
+                <td className="sticky left-0 z-10 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-700 border-r border-slate-200 whitespace-nowrap">
                   {name}
                 </td>
                 {examDates.map(date => {
                   const row = data.comparison[name]?.[date];
                   if (!row) {
                     return (
-                      <td key={date} className="px-1.5 py-1 text-center text-[10px] text-slate-300">
+                      <td key={date} className="px-1 py-0.5 text-center text-[10px] text-slate-300">
                         —
                       </td>
                     );
@@ -975,7 +975,7 @@ const LabAnalysisComparisonTable: React.FC<{ data: LabAnalysisData }> = ({ data 
                   const oor = isOutOfRange(row.result, row.refValue);
                   const { display } = formatLabResult(row.result, row.unit);
                   return (
-                    <td key={date} className="px-1.5 py-1 text-center whitespace-nowrap">
+                    <td key={date} className="px-1 py-0.5 text-center whitespace-nowrap">
                       <span
                         className={clsx(
                           'text-[11px] font-bold',
