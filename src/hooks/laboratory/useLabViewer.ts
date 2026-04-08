@@ -183,6 +183,82 @@ const COMPARISON_EXCLUDE: string[] = [
   'Amilasa',
 ];
 
+/**
+ * Preferred display order for comparison table variables.
+ * Variables not in this list appear at the end in their original order.
+ * Uses partial case-insensitive matching.
+ */
+const COMPARISON_ORDER: string[] = [
+  // Hemograma
+  'Recuento Leucocitos',
+  'Hemoglobina',
+  'Hematocrito',
+  'VCM',
+  'HCM',
+  'Recuento de Plaquetas',
+  // Inflamación
+  'Segmentados',
+  'Linfocitos',
+  'Monocitos',
+  'Eosinofilos',
+  'VHS',
+  'Proteina C Reactiva',
+  // Función renal + ELP
+  'Creatinina',
+  'Nitrogeno Ureico',
+  'Uremia',
+  'Sodio',
+  'Potasio',
+  'Cloro',
+  // Gases
+  'pH',
+  'pCO2',
+  'pO2',
+  'HCO3',
+  'Lactato',
+  'BEecf',
+  // Minerales
+  'Calcio',
+  'Fosforo',
+  'Magnesio',
+  // Perfil hepático
+  'ASAT/GOT',
+  'ALAT/GPT',
+  'GGT',
+  'Fosfatasa Alcalina',
+  'Bilirrubinas',
+  // Otros
+  'Lipasa',
+  'Protrombina',
+  'TTPK',
+  'INR',
+  'Albumina',
+  'Proteinas Totales',
+  'Globulinas',
+  'Troponina',
+  'Dimero',
+  'CK Total',
+  'LDH',
+  'TSH',
+  'Acido Urico',
+  'Glicemia',
+  'Colesterol Total',
+  'LDL',
+  'HDL',
+  'Trigliceridos',
+  'Cuerpos Ceton',
+  'Cetonemia',
+];
+
+/** Get the sort index for a variable name. Lower = shown first. */
+const comparisonSortIndex = (name: string): number => {
+  const lower = name.toLowerCase();
+  for (let i = 0; i < COMPARISON_ORDER.length; i++) {
+    if (lower.includes(COMPARISON_ORDER[i].toLowerCase())) return i;
+  }
+  return COMPARISON_ORDER.length + 1; // unknown → end
+};
+
 /** Check if a variable should be excluded from comparison. */
 const isExcludedFromComparison = (analysis: string): boolean => {
   const lower = analysis.toLowerCase();
@@ -347,7 +423,16 @@ export const buildAnalysisData = (
     return a.localeCompare(b); // same date → sort by time
   });
 
-  return { trendGroups, examDates, comparison };
+  // Sort comparison keys by clinical priority order
+  const sortedComparison: Record<string, Record<string, LabResultRow>> = {};
+  const sortedKeys = Object.keys(comparison).sort(
+    (a, b) => comparisonSortIndex(a) - comparisonSortIndex(b)
+  );
+  for (const key of sortedKeys) {
+    sortedComparison[key] = comparison[key];
+  }
+
+  return { trendGroups, examDates, comparison: sortedComparison };
 };
 
 /* ------------------------------------------------------------------ */
