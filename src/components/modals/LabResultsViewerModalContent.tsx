@@ -409,23 +409,70 @@ const LabTrendTooltip: React.FC<{
 };
 
 /**
- * Group variables by their unit so variables with vastly different scales
- * (e.g. Fosfatasa Alcalina ~500 U/L vs Bilirrubina ~0.3 mg/dL) get
- * separate sub-charts with appropriate Y-axis scales.
+ * Compute the representative magnitude of a variable (median of its max values).
  */
-const groupVariablesByUnit = (
+const varMagnitude = (points: LabTrendPoint[]): number => {
+  const vals = points.map(p => Math.abs(p.value)).sort((a, b) => a - b);
+  return vals[Math.floor(vals.length / 2)] || 0;
+};
+
+/** Ratio threshold: if largest / smallest magnitude > this, split into separate charts. */
+const SCALE_SPLIT_RATIO = 4;
+
+/**
+ * Group variables by unit, then further split by scale when values differ
+ * drastically (e.g., Fosfatasa Alcalina ~500 vs GOT/GPT ~15 in the same U/L group).
+ * This prevents small-value lines from being squished at the bottom.
+ */
+const groupVariablesByScale = (
   variables: Record<string, LabTrendPoint[]>
 ): { unit: string; vars: Record<string, LabTrendPoint[]> }[] => {
+  // Step 1: group by unit
   const byUnit: Record<string, Record<string, LabTrendPoint[]>> = {};
   for (const [name, points] of Object.entries(variables)) {
     const unit = (points[0]?.unit || '').toLowerCase().replace(/\s/g, '');
     if (!byUnit[unit]) byUnit[unit] = {};
     byUnit[unit][name] = points;
   }
-  return Object.entries(byUnit).map(([unit, vars]) => ({
-    unit: Object.values(vars)[0]?.[0]?.unit || unit,
-    vars,
-  }));
+
+  const result: { unit: string; vars: Record<string, LabTrendPoint[]> }[] = [];
+
+  // Step 2: within each unit group, split by scale if needed
+  for (const [, unitVars] of Object.entries(byUnit)) {
+    const displayUnit = Object.values(unitVars)[0]?.[0]?.unit || '';
+    const entries = Object.entries(unitVars);
+
+    if (entries.length <= 1) {
+      result.push({ unit: displayUnit, vars: Object.fromEntries(entries) });
+      continue;
+    }
+
+    // Compute magnitude for each variable and sort
+    const withMag = entries.map(([name, pts]) => ({ name, pts, mag: varMagnitude(pts) }));
+    withMag.sort((a, b) => a.mag - b.mag);
+
+    // Cluster: start a new cluster when the ratio to the cluster's min exceeds threshold
+    const clusters: { name: string; pts: LabTrendPoint[] }[][] = [[]];
+    let clusterMin = withMag[0].mag || 1;
+
+    for (const item of withMag) {
+      const ratio = (item.mag || 1) / (clusterMin || 1);
+      if (ratio > SCALE_SPLIT_RATIO && clusters[clusters.length - 1].length > 0) {
+        clusters.push([]);
+        clusterMin = item.mag || 1;
+      }
+      clusters[clusters.length - 1].push(item);
+      if (item.mag < clusterMin) clusterMin = item.mag;
+    }
+
+    for (const cluster of clusters) {
+      const vars: Record<string, LabTrendPoint[]> = {};
+      for (const { name, pts } of cluster) vars[name] = pts;
+      result.push({ unit: displayUnit, vars });
+    }
+  }
+
+  return result;
 };
 
 /** Sort date strings that start with DD/MM/YYYY. */
@@ -602,9 +649,9 @@ const UnitSubChart: React.FC<{
   );
 };
 
-/** Render a trend group card — splits into sub-charts per unit for readability. */
+/** Render a trend group card — splits into sub-charts per unit AND scale for readability. */
 const TrendGroupCard: React.FC<{ group: LabTrendGroup }> = ({ group }) => {
-  const unitGroups = groupVariablesByUnit(group.variables);
+  const unitGroups = groupVariablesByScale(group.variables);
 
   return (
     <div className="rounded-xl border border-slate-200/80 bg-white p-4">
