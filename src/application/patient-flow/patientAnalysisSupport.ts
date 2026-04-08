@@ -4,12 +4,17 @@ import type {
   DailyRecordWritePort,
 } from '@/application/ports/dailyRecordPort';
 import type { AuditPort } from '@/application/ports/auditPort';
-import type {
-  PatientAnalysisPatientContract,
-  PatientAnalysisRecordContract,
-} from '@/application/patient-flow/patientAnalysisContracts';
+import type { PatientAnalysisRecordContract } from '@/application/patient-flow/patientAnalysisContracts';
 import type { MasterPatient } from '@/types/domain/patientMaster';
-import { formatRut, isValidRut } from '@/utils/rutUtils';
+import {
+  normalizeAnalysisRut,
+  isPatientAnalysisOccupiedBedEntry,
+  createAnalysisAccumulator,
+  registerAdmissionPresence,
+  registerDischargeEvent,
+  registerTransferEvent,
+  closePatientsMissingFromCensus,
+} from './patientAnalysisEngine';
 
 export interface Conflict {
   rut: string;
@@ -31,29 +36,6 @@ export type PatientAnalysisDailyRecordRepository = Pick<DailyRecordReadPort, 'ge
     getForDate: (date: string) => Promise<PatientAnalysisRecordContract | null>;
   };
 
-type PatientAnalysisOccupiedBedEntry = [
-  string,
-  PatientAnalysisPatientContract & {
-    rut: string;
-    patientName: string;
-  },
-];
-
-type PatientAnalysisPresentPatient = PatientAnalysisOccupiedBedEntry[1];
-
-interface ActivePatientEvent {
-  startDate: string;
-  lastSeen: string;
-  bedId: string;
-  diagnosis: string;
-}
-
-interface AnalysisAccumulator {
-  patientsMap: Map<string, MasterPatient>;
-  conflicts: Conflict[];
-  activeEvents: Map<string, ActivePatientEvent>;
-}
-
 interface HarmonizeConflictHistoryInput {
   conflict: Conflict;
   dailyRecordRepository: PatientAnalysisDailyRecordRepository;
@@ -63,217 +45,12 @@ interface HarmonizeConflictHistoryInput {
   correctName: string;
 }
 
-const normalizeAnalysisRut = (rut: string): string => formatRut(rut).toUpperCase();
-
-const isPatientAnalysisOccupiedBedEntry = (
-  entry: [string, PatientAnalysisPatientContract | undefined]
-): entry is PatientAnalysisOccupiedBedEntry => {
-  const patient = entry[1];
-  return Boolean(patient?.rut && isValidRut(patient.rut) && patient.patientName?.trim());
-};
-
-const createAnalysisAccumulator = (): AnalysisAccumulator => ({
-  patientsMap: new Map<string, MasterPatient>(),
-  conflicts: [],
-  activeEvents: new Map<string, ActivePatientEvent>(),
-});
-
-const ensureMasterPatient = (
-  accumulator: AnalysisAccumulator,
-  normalizedRut: string,
-  patient: PatientAnalysisPresentPatient,
-  date: string,
-  now: number
-): MasterPatient => {
-  const existing = accumulator.patientsMap.get(normalizedRut);
-  if (existing) {
-    return existing;
-  }
-
-  const created: MasterPatient = {
-    rut: normalizedRut,
-    fullName: patient.patientName,
-    birthDate: patient.birthDate,
-    forecast: patient.insurance,
-    gender: patient.biologicalSex,
-    hospitalizations: [],
-    vitalStatus: 'Vivo',
-    lastAdmission: patient.admissionDate || date,
-    createdAt: now,
-    updatedAt: now,
-  };
-  accumulator.patientsMap.set(normalizedRut, created);
-  return created;
-};
-
-const registerNameConflict = (
-  conflicts: Conflict[],
-  normalizedRut: string,
-  currentName: string,
-  nextName: string,
-  date: string,
-  bedId: string
-) => {
-  if (currentName.trim().toLowerCase() === nextName.trim().toLowerCase()) {
-    return;
-  }
-
-  const existingConflict = conflicts.find(conflict => conflict.rut === normalizedRut);
-  if (!existingConflict) {
-    conflicts.push({
-      rut: normalizedRut,
-      description: 'Diferencia de nombres detectada',
-      options: Array.from(new Set([currentName, nextName])),
-      records: [date],
-      bedMap: { [date]: bedId },
-    });
-    return;
-  }
-
-  if (!existingConflict.records.includes(date)) {
-    existingConflict.records.push(date);
-  }
-  if (!existingConflict.options.includes(nextName)) {
-    existingConflict.options.push(nextName);
-  }
-  existingConflict.bedMap[date] = bedId;
-};
-
-const registerAdmissionPresence = ({
-  accumulator,
-  date,
-  bedId,
-  patient,
-  now,
-}: {
-  accumulator: AnalysisAccumulator;
-  date: string;
-  bedId: string;
-  patient: PatientAnalysisPresentPatient;
-  now: number;
-}) => {
-  const normalizedRut = normalizeAnalysisRut(patient.rut);
-  const master = ensureMasterPatient(accumulator, normalizedRut, patient, date, now);
-
-  registerNameConflict(
-    accumulator.conflicts,
-    normalizedRut,
-    master.fullName,
-    patient.patientName,
-    date,
-    bedId
-  );
-
-  const active = accumulator.activeEvents.get(normalizedRut);
-  if (!active) {
-    accumulator.activeEvents.set(normalizedRut, {
-      startDate: patient.admissionDate || date,
-      lastSeen: date,
-      bedId,
-      diagnosis: patient.pathology || 'Ingreso detected by presence',
-    });
-    master.hospitalizations?.push({
-      id: `${date}-ingreso-auto`,
-      type: 'Ingreso',
-      date: patient.admissionDate || date,
-      diagnosis: patient.pathology || 'Ingreso detectado',
-      bedName: bedId,
-    });
-    master.lastAdmission = patient.admissionDate || date;
-    return normalizedRut;
-  }
-
-  active.lastSeen = date;
-  return normalizedRut;
-};
-
-const registerDischargeEvent = (
-  accumulator: AnalysisAccumulator,
-  date: string,
-  discharge: NonNullable<PatientAnalysisRecordContract['discharges']>[number]
-) => {
-  if (!discharge.rut || !isValidRut(discharge.rut)) {
-    return;
-  }
-
-  const normalizedRut = normalizeAnalysisRut(discharge.rut);
-  const master = accumulator.patientsMap.get(normalizedRut);
-  if (!master) {
-    return;
-  }
-
-  master.hospitalizations?.push({
-    id: `${date}-egreso`,
-    type: 'Egreso',
-    date,
-    diagnosis: discharge.diagnosis || 'S/D',
-    bedName: discharge.bedName,
-  });
-  master.lastDischarge = date;
-
-  if (discharge.status === 'Fallecido') {
-    master.vitalStatus = 'Fallecido';
-    master.hospitalizations?.push({
-      id: `${date}-defuncion`,
-      type: 'Fallecimiento',
-      date,
-      diagnosis: discharge.diagnosis,
-    });
-  }
-
-  accumulator.activeEvents.delete(normalizedRut);
-};
-
-const registerTransferEvent = (
-  accumulator: AnalysisAccumulator,
-  date: string,
-  transfer: NonNullable<PatientAnalysisRecordContract['transfers']>[number]
-) => {
-  if (!transfer.rut || !isValidRut(transfer.rut)) {
-    return;
-  }
-
-  const normalizedRut = normalizeAnalysisRut(transfer.rut);
-  const master = accumulator.patientsMap.get(normalizedRut);
-  if (!master) {
-    return;
-  }
-
-  master.hospitalizations?.push({
-    id: `${date}-traslado`,
-    type: 'Traslado',
-    date,
-    diagnosis: transfer.diagnosis || 'S/D',
-    bedName: transfer.bedName,
-    receivingCenter: transfer.receivingCenter,
-  });
-  accumulator.activeEvents.delete(normalizedRut);
-};
-
-const closePatientsMissingFromCensus = (
-  accumulator: AnalysisAccumulator,
-  rutsInCensusToday: Set<string>
-) => {
-  for (const [rut, active] of Array.from(accumulator.activeEvents.entries())) {
-    if (rutsInCensusToday.has(rut)) {
-      continue;
-    }
-
-    const master = accumulator.patientsMap.get(rut);
-    if (master) {
-      master.hospitalizations?.push({
-        id: `${active.lastSeen}-egreso-auto`,
-        type: 'Egreso',
-        date: active.lastSeen,
-        diagnosis: active.diagnosis || 'Salida automática (no detectado en censo)',
-        bedName: active.bedId,
-      });
-      master.lastDischarge = active.lastSeen;
-    }
-
-    accumulator.activeEvents.delete(rut);
-  }
-};
+// Internal types re-exported from engine for backward compatibility
+export type {
+  ActivePatientEvent,
+  AnalysisAccumulator,
+  PatientAnalysisOccupiedBedEntry,
+} from './patientAnalysisEngine';
 
 export const buildPatientAnalysis = async (
   dailyRecordRepository: Pick<
