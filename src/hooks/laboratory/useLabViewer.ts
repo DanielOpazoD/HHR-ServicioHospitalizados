@@ -203,9 +203,9 @@ const COMPARISON_ORDER: string[] = [
   'Linfocitos',
   'Monocitos',
   'Eosinofilos',
-  // VHS + PCR al final del bloque hemograma/inflamación
-  'VHS',
+  // PCR y VHS al final del bloque hemograma/inflamación
   'Proteina C Reactiva',
+  'VHS',
   // Función renal + ELP
   'Creatinina',
   'Nitrogeno Ureico',
