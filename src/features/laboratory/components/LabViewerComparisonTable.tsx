@@ -5,7 +5,7 @@
 
 import React from 'react';
 import clsx from 'clsx';
-import { FileText } from 'lucide-react';
+import { FileText, Search } from 'lucide-react';
 import type { LabAnalysisData } from '@/types/domain/laboratory';
 import type { ExportConfig } from '../types/labViewerTypes';
 import { isOutOfRange, formatLabResult } from '../controllers/labFormattingController';
@@ -13,11 +13,16 @@ import { exportComparisonToExcel } from '../services/labExcelService';
 import { LabExportConfigDialog } from './LabExportConfigDialog';
 
 export const LabViewerComparisonTable: React.FC<{ data: LabAnalysisData }> = ({ data }) => {
-  const variableNames = Object.keys(data.comparison);
+  const allVariableNames = Object.keys(data.comparison);
   const { examDates } = data;
   const [showExportConfig, setShowExportConfig] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState('');
 
-  if (variableNames.length === 0) {
+  const variableNames = searchQuery
+    ? allVariableNames.filter(n => n.toLowerCase().includes(searchQuery.toLowerCase()))
+    : allVariableNames;
+
+  if (allVariableNames.length === 0) {
     return (
       <p className="py-8 text-center text-[12px] text-slate-400">No hay datos para comparar.</p>
     );
@@ -25,8 +30,18 @@ export const LabViewerComparisonTable: React.FC<{ data: LabAnalysisData }> = ({ 
 
   return (
     <div className="space-y-3">
-      {/* Export button */}
-      <div className="flex justify-end">
+      {/* Search + Export */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="relative flex-1 max-w-xs">
+          <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Buscar variable..."
+            className="w-full rounded-lg border border-slate-200 bg-white py-1 pl-7 pr-2 text-[11px] text-slate-700 placeholder:text-slate-300 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/10"
+          />
+        </div>
         <button
           type="button"
           onClick={() => setShowExportConfig(prev => !prev)}

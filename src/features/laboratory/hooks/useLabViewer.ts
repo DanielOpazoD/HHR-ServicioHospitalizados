@@ -56,6 +56,7 @@ export interface UseLabViewerReturn {
   selectAllExams: () => void;
   clearSelection: () => void;
   selectByDays: (days: number) => void;
+  selectByDateRange: (from: Date, to: Date) => void;
   analyzeSelected: () => Promise<void>;
   closeAnalysis: () => void;
   setAnalysisView: (tab: AnalysisViewTab) => void;
@@ -251,6 +252,22 @@ export const useLabViewer = (
     [examList]
   );
 
+  const selectByDateRange = useCallback(
+    (from: Date, to: Date) => {
+      const ids = examList
+        .filter(e => {
+          if (!e.link) return false;
+          const m = e.date.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+          if (!m) return false;
+          const examDate = new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1]));
+          return examDate >= from && examDate <= to;
+        })
+        .map(e => e.id);
+      setSelectedExamIds(new Set(ids));
+    },
+    [examList]
+  );
+
   // Analysis
   const analyzeSelected = useCallback(async () => {
     const links = examList.filter(e => selectedExamIds.has(e.id) && e.link).map(e => e.link!);
@@ -312,6 +329,7 @@ export const useLabViewer = (
     selectAllExams,
     clearSelection,
     selectByDays,
+    selectByDateRange,
     analyzeSelected,
     closeAnalysis,
     setAnalysisView,

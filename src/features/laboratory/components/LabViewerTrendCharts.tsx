@@ -14,7 +14,7 @@ import {
   CartesianGrid,
   ReferenceArea,
 } from 'recharts';
-import { TrendingUp } from 'lucide-react';
+import { Download, TrendingUp } from 'lucide-react';
 import { LabChartErrorBoundary } from './LabChartErrorBoundary';
 import type { LabAnalysisData, LabTrendPoint, LabTrendGroup } from '@/types/domain/laboratory';
 import {
@@ -312,7 +312,20 @@ const TrendGroupCard: React.FC<{ group: LabTrendGroup }> = ({ group }) => {
 /*  Main export                                                        */
 /* ================================================================== */
 
+const exportChartsAsPng = async (container: HTMLDivElement) => {
+  const html2canvas = (await import('html2canvas')).default;
+  const canvas = await html2canvas(container, { backgroundColor: '#ffffff', scale: 2 });
+  const url = canvas.toDataURL('image/png');
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `laboratorio_tendencias_${new Date().toISOString().substring(0, 10)}.png`;
+  a.click();
+};
+
 export const LabViewerTrendCharts: React.FC<{ data: LabAnalysisData }> = ({ data }) => {
+  const chartsRef = React.useRef<HTMLDivElement>(null);
+  const [isExporting, setIsExporting] = React.useState(false);
+
   if (data.trendGroups.length === 0) {
     return (
       <div className="py-8 text-center">
@@ -325,12 +338,33 @@ export const LabViewerTrendCharts: React.FC<{ data: LabAnalysisData }> = ({ data
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      {data.trendGroups.map(group => (
-        <LabChartErrorBoundary key={group.label} chartLabel={group.label}>
-          <TrendGroupCard group={group} />
-        </LabChartErrorBoundary>
-      ))}
+    <div>
+      <div className="flex justify-end mb-3">
+        <button
+          type="button"
+          disabled={isExporting}
+          onClick={async () => {
+            if (!chartsRef.current) return;
+            setIsExporting(true);
+            try {
+              await exportChartsAsPng(chartsRef.current);
+            } finally {
+              setIsExporting(false);
+            }
+          }}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-[11px] font-medium text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-50"
+        >
+          <Download size={12} />
+          {isExporting ? 'Exportando...' : 'Descargar PNG'}
+        </button>
+      </div>
+      <div ref={chartsRef} className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {data.trendGroups.map(group => (
+          <LabChartErrorBoundary key={group.label} chartLabel={group.label}>
+            <TrendGroupCard group={group} />
+          </LabChartErrorBoundary>
+        ))}
+      </div>
     </div>
   );
 };

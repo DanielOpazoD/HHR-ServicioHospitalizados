@@ -1,7 +1,14 @@
 import React from 'react';
 import clsx from 'clsx';
-import { FileText } from 'lucide-react';
+import { Calendar, FileText } from 'lucide-react';
 import type { SyslabExamItem } from '@/types/domain/laboratory';
+
+/** Parse DD/MM/YYYY to Date for date range comparisons. */
+const parseDDMMYYYYtoDate = (dateStr: string): Date | null => {
+  const m = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (!m) return null;
+  return new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1]));
+};
 
 interface LabViewerExamListProps {
   exams: SyslabExamItem[];
@@ -12,6 +19,7 @@ interface LabViewerExamListProps {
   onToggleSelect: (id: string) => void;
   onSelectAll: () => void;
   onSelectByDays: (days: number) => void;
+  onSelectByDateRange: (from: Date, to: Date) => void;
   onViewPdf: (exam: SyslabExamItem) => void;
 }
 
@@ -24,16 +32,29 @@ export const LabViewerExamList: React.FC<LabViewerExamListProps> = ({
   onToggleSelect,
   onSelectAll,
   onSelectByDays,
+  onSelectByDateRange,
   onViewPdf,
 }) => {
+  const [dateFrom, setDateFrom] = React.useState('');
+  const [dateTo, setDateTo] = React.useState('');
+
   const selectableExams = exams.filter(e => e.link);
   const allSelected =
     selectableExams.length > 0 && selectableExams.every(e => selectedIds.has(e.id));
 
+  const handleDateRangeSelect = () => {
+    if (!dateFrom || !dateTo) return;
+    const from = new Date(dateFrom);
+    from.setHours(0, 0, 0, 0);
+    const to = new Date(dateTo);
+    to.setHours(23, 59, 59, 999);
+    onSelectByDateRange(from, to);
+  };
+
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between flex-wrap gap-1">
+        <div className="flex items-center gap-2 flex-wrap">
           <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-slate-400">
             {exams.length} examenes
           </p>
@@ -43,15 +64,40 @@ export const LabViewerExamList: React.FC<LabViewerExamListProps> = ({
             onClick={() => onSelectByDays(7)}
             className="rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[9px] font-medium text-emerald-700 hover:bg-emerald-100"
           >
-            Ultimos 7 dias
+            7 dias
           </button>
           <button
             type="button"
             onClick={() => onSelectByDays(14)}
             className="rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[9px] font-medium text-emerald-700 hover:bg-emerald-100"
           >
-            Ultimos 14 dias
+            14 dias
           </button>
+          <div className="h-3 w-px bg-slate-200" />
+          <div className="flex items-center gap-1">
+            <Calendar size={10} className="text-slate-400" />
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={e => setDateFrom(e.target.value)}
+              className="rounded border border-slate-200 px-1 py-0.5 text-[9px] text-slate-600 focus:border-emerald-400 focus:outline-none"
+            />
+            <span className="text-[9px] text-slate-400">—</span>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={e => setDateTo(e.target.value)}
+              className="rounded border border-slate-200 px-1 py-0.5 text-[9px] text-slate-600 focus:border-emerald-400 focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={handleDateRangeSelect}
+              disabled={!dateFrom || !dateTo}
+              className="rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[9px] font-medium text-emerald-700 hover:bg-emerald-100 disabled:opacity-40"
+            >
+              Aplicar
+            </button>
+          </div>
         </div>
         {selectableExams.length > 0 && (
           <button

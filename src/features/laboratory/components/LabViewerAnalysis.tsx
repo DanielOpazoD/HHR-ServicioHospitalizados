@@ -1,7 +1,8 @@
 import React from 'react';
 import clsx from 'clsx';
-import { ArrowLeft, BarChart3, TrendingUp } from 'lucide-react';
+import { ArrowLeft, BarChart3, Check, Clipboard, TrendingUp } from 'lucide-react';
 import type { LabAnalysisData, AnalysisViewTab } from '@/types/domain/laboratory';
+import { buildLabSummaryText } from '../controllers/labSummaryController';
 import { LabViewerTrendCharts } from './LabViewerTrendCharts';
 import { LabViewerComparisonTable } from './LabViewerComparisonTable';
 
@@ -22,42 +23,75 @@ export const LabViewerAnalysis: React.FC<LabViewerAnalysisProps> = ({
   activeTab,
   onTabChange,
   onBack,
-}) => (
-  <div className="space-y-4">
-    <div className="flex items-center justify-between">
-      <button
-        type="button"
-        onClick={onBack}
-        className="inline-flex items-center gap-1.5 text-[12px] font-medium text-emerald-600 hover:text-emerald-700"
-      >
-        <ArrowLeft size={14} />
-        Volver a lista de examenes
-      </button>
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-        {data.examDates.length} examenes analizados
-      </span>
-    </div>
+}) => {
+  const [copied, setCopied] = React.useState(false);
 
-    <div className="flex items-center gap-1 border-b border-slate-200 pb-0">
-      {TAB_CONFIG.map(tab => (
+  const handleCopyToClipboard = async () => {
+    // Build summary text for each exam date using comparison data
+    const lines: string[] = [];
+    for (const dateKey of data.examDates) {
+      const findings = Object.entries(data.comparison)
+        .filter(([, dateMap]) => dateMap[dateKey])
+        .map(([, dateMap]) => dateMap[dateKey]);
+      if (findings.length === 0) continue;
+      const datePart = dateKey.substring(0, 10);
+      const timePart = dateKey.substring(11) || '00:00';
+      const text = buildLabSummaryText(findings, datePart, timePart);
+      if (text) lines.push(text);
+    }
+    if (lines.length === 0) return;
+    await navigator.clipboard.writeText(lines.join('\n'));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
         <button
-          key={tab.key}
           type="button"
-          onClick={() => onTabChange(tab.key)}
-          className={clsx(
-            'inline-flex items-center gap-1.5 px-3 py-2 text-[12px] font-semibold transition-all border-b-2 -mb-px',
-            activeTab === tab.key
-              ? 'border-emerald-500 text-emerald-700'
-              : 'border-transparent text-slate-400 hover:text-slate-600'
-          )}
+          onClick={onBack}
+          className="inline-flex items-center gap-1.5 text-[12px] font-medium text-emerald-600 hover:text-emerald-700"
         >
-          {tab.icon}
-          {tab.label}
+          <ArrowLeft size={14} />
+          Volver a lista de examenes
         </button>
-      ))}
-    </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleCopyToClipboard}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-2.5 py-1 text-[10px] font-medium text-emerald-700 transition-colors hover:bg-emerald-50"
+          >
+            {copied ? <Check size={11} className="text-emerald-500" /> : <Clipboard size={11} />}
+            {copied ? 'Copiado' : 'Copiar resumen'}
+          </button>
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+            {data.examDates.length} examenes analizados
+          </span>
+        </div>
+      </div>
 
-    {activeTab === 'trends' && <LabViewerTrendCharts data={data} />}
-    {activeTab === 'comparison' && <LabViewerComparisonTable data={data} />}
-  </div>
-);
+      <div className="flex items-center gap-1 border-b border-slate-200 pb-0">
+        {TAB_CONFIG.map(tab => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => onTabChange(tab.key)}
+            className={clsx(
+              'inline-flex items-center gap-1.5 px-3 py-2 text-[12px] font-semibold transition-all border-b-2 -mb-px',
+              activeTab === tab.key
+                ? 'border-emerald-500 text-emerald-700'
+                : 'border-transparent text-slate-400 hover:text-slate-600'
+            )}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'trends' && <LabViewerTrendCharts data={data} />}
+      {activeTab === 'comparison' && <LabViewerComparisonTable data={data} />}
+    </div>
+  );
+};
