@@ -1,3 +1,8 @@
+/**
+ * @module LabViewerAnalysis
+ * @description Analysis container with trend/comparison tabs and clipboard copy.
+ */
+
 import React from 'react';
 import clsx from 'clsx';
 import { ArrowLeft, BarChart3, Check, Clipboard, TrendingUp } from 'lucide-react';
@@ -13,6 +18,7 @@ interface LabViewerAnalysisProps {
   onBack: () => void;
 }
 
+// TAB_CONFIG stays in this component (not in labConstants) because it contains JSX icon elements.
 const TAB_CONFIG: { key: AnalysisViewTab; label: string; icon: React.ReactNode }[] = [
   { key: 'trends', label: 'Tendencias', icon: <TrendingUp size={13} /> },
   { key: 'comparison', label: 'Comparacion', icon: <BarChart3 size={13} /> },

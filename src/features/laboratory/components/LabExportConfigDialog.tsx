@@ -1,3 +1,8 @@
+/**
+ * @module LabExportConfigDialog
+ * @description Configuration dialog for selecting dates and variables before Excel export.
+ */
+
 import React from 'react';
 import clsx from 'clsx';
 import type { ExportConfig } from '../types/labViewerTypes';

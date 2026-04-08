@@ -1,3 +1,8 @@
+/**
+ * @module LabViewerEmptyState
+ * @description Placeholder shown before any lab search has been performed.
+ */
+
 import React from 'react';
 import { FlaskConical } from 'lucide-react';
 

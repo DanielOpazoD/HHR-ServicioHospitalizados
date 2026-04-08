@@ -1,3 +1,8 @@
+/**
+ * @module LabViewerAnalyzeBar
+ * @description Sticky bottom bar showing selected exam count with Analyze/Clear buttons.
+ */
+
 import React from 'react';
 import { BarChart3, Loader2 } from 'lucide-react';
 

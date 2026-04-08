@@ -1,3 +1,8 @@
+/**
+ * @module LabViewerPdf
+ * @description Inline PDF viewer using iframe with loading overlay.
+ */
+
 import React from 'react';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import type { SyslabExamItem } from '@/types/domain/laboratory';

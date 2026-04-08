@@ -1,3 +1,8 @@
+/**
+ * @module LabViewerControls
+ * @description Patient selector dropdown and search button for the lab viewer.
+ */
+
 import React from 'react';
 import { Loader2, Search } from 'lucide-react';
 import type { LabPatient } from '@/types/domain/laboratory';

@@ -36,6 +36,25 @@ const varMagnitude = (points: LabTrendPoint[]): number => {
   return vals[Math.floor(vals.length / 2)] || 0;
 };
 
+/** Cluster sorted items by magnitude ratio. Groups split when ratio exceeds threshold. */
+const clusterByMagnitude = (
+  sortedItems: { name: string; pts: LabTrendPoint[]; mag: number }[],
+  ratio: number
+): { name: string; pts: LabTrendPoint[] }[][] => {
+  const clusters: { name: string; pts: LabTrendPoint[] }[][] = [[]];
+  let clusterMin = sortedItems[0]?.mag || 1;
+  for (const item of sortedItems) {
+    const r = (item.mag || 1) / (clusterMin || 1);
+    if (r > ratio && clusters[clusters.length - 1].length > 0) {
+      clusters.push([]);
+      clusterMin = item.mag || 1;
+    }
+    clusters[clusters.length - 1].push(item);
+    if (item.mag < clusterMin) clusterMin = item.mag;
+  }
+  return clusters;
+};
+
 /**
  * Group variables by unit, then further split by scale when values differ
  * drastically (e.g., Fosfatasa Alcalina ~500 vs GOT/GPT ~15 in the same U/L group).
@@ -68,19 +87,7 @@ const groupVariablesByScale = (
     const withMag = entries.map(([name, pts]) => ({ name, pts, mag: varMagnitude(pts) }));
     withMag.sort((a, b) => a.mag - b.mag);
 
-    // Cluster: start a new cluster when the ratio to the cluster's min exceeds threshold
-    const clusters: { name: string; pts: LabTrendPoint[] }[][] = [[]];
-    let clusterMin = withMag[0].mag || 1;
-
-    for (const item of withMag) {
-      const ratio = (item.mag || 1) / (clusterMin || 1);
-      if (ratio > SCALE_SPLIT_RATIO && clusters[clusters.length - 1].length > 0) {
-        clusters.push([]);
-        clusterMin = item.mag || 1;
-      }
-      clusters[clusters.length - 1].push(item);
-      if (item.mag < clusterMin) clusterMin = item.mag;
-    }
+    const clusters = clusterByMagnitude(withMag, SCALE_SPLIT_RATIO);
 
     for (const cluster of clusters) {
       const vars: Record<string, LabTrendPoint[]> = {};

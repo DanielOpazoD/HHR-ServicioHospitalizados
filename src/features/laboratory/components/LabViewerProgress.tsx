@@ -1,3 +1,8 @@
+/**
+ * @module LabViewerProgress
+ * @description Animated progress bar for search and analysis operations.
+ */
+
 import React from 'react';
 import type { ProgressState } from '../types/labViewerTypes';
 

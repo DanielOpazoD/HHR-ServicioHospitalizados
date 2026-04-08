@@ -101,7 +101,14 @@ export const getLabResults = async (rut: string): Promise<LabResultsDocument | n
     const path = getLabResultsPath();
     const docRef = doc(getDb(), path, docId);
     const snap = await getDoc(docRef);
-    return snap.exists() ? (snap.data() as LabResultsDocument) : null;
+    if (!snap.exists()) return null;
+    const raw = snap.data();
+    // Basic shape validation
+    if (!raw || typeof raw.rut !== 'string' || typeof raw.exams !== 'object') {
+      logger.warn(`Invalid lab results document for ${docId}`);
+      return null;
+    }
+    return raw as LabResultsDocument;
   } catch (error) {
     logger.error('Failed to load lab results from Firestore', error);
     return null;
