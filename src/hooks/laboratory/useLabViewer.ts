@@ -166,6 +166,18 @@ const COMPARISON_EXCLUDE: string[] = [
   'sO2c',
   'CO2 TOTAL',
   'Hora',
+  'Veloc. Filtr. Glomer',
+  'Veloc Filtr',
+  'Deseable',
+  'Indice de riesgo',
+  'Hemoglobina Glicosilada',
+  'Glucosa promedio',
+  'Normal',
+  'Muy alto',
+  'Recuento Hematies',
+  'Basofilos',
+  'Control',
+  'OT',
 ];
 
 /** Check if a variable should be excluded from comparison. */

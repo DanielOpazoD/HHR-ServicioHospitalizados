@@ -445,21 +445,23 @@ const TrendGroupCard: React.FC<{ group: LabTrendGroup }> = ({ group }) => {
   const yMax = Math.ceil(Math.max(...allVals) * 1.1);
 
   const hasRef = firstRef.min != null && firstRef.max != null;
-  const unit = Object.values(group.variables)[0]?.[0]?.unit || '';
 
   return (
     <div className="rounded-xl border border-slate-200/80 bg-white p-4">
       <h4 className="mb-1 text-[13px] font-bold text-slate-700">{group.label}</h4>
       <div className="mb-3 flex flex-wrap gap-2">
-        {varNames.map((name, i) => (
-          <span key={name} className="inline-flex items-center gap-1 text-[10px] font-medium">
-            <span
-              className="inline-block h-2 w-2 rounded-full"
-              style={{ backgroundColor: LINE_COLORS[i % LINE_COLORS.length] }}
-            />
-            {name} ({unit})
-          </span>
-        ))}
+        {varNames.map((name, i) => {
+          const varUnit = group.variables[name]?.[0]?.unit || '';
+          return (
+            <span key={name} className="inline-flex items-center gap-1 text-[10px] font-medium">
+              <span
+                className="inline-block h-2 w-2 rounded-full"
+                style={{ backgroundColor: LINE_COLORS[i % LINE_COLORS.length] }}
+              />
+              {name} {varUnit ? `(${varUnit})` : ''}
+            </span>
+          );
+        })}
       </div>
       <div className="h-56">
         <ResponsiveContainer width="100%" height="100%">
@@ -506,6 +508,13 @@ const TrendGroupCard: React.FC<{ group: LabTrendGroup }> = ({ group }) => {
                   stroke: '#fff',
                 }}
                 activeDot={{ r: 5, stroke: '#fff', strokeWidth: 2 }}
+                label={{
+                  position: 'top',
+                  fontSize: 9,
+                  fill: LINE_COLORS[i % LINE_COLORS.length],
+                  fontWeight: 700,
+                  offset: 8,
+                }}
                 connectNulls
               />
             ))}
