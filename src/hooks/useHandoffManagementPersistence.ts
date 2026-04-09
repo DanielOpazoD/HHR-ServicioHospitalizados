@@ -33,6 +33,20 @@ import {
 import { runHandoffMutation } from '@/hooks/controllers/handoffManagementMutationController';
 import { canEditMedicalHandoffForDate } from '@/shared/access/operationalAccessPolicy';
 
+/* ================================================================
+ * SECTION INDEX
+ * 1. Types & Interfaces           (line ~37)
+ * 2. Hook Setup & Access Guards   (line ~69)
+ * 3. Checklist & Novedades        (line ~118)
+ * 4. Medical Specialty Note       (line ~172)
+ * 5. Confirm No Changes           (line ~216)
+ * 6. Staff & Signature            (line ~272)
+ * 7. Doctor & Reset               (line ~330)
+ * 8. Return Value                 (line ~385)
+ * ================================================================ */
+
+// === TYPES & INTERFACES ===
+
 interface HandoffManagementPersistenceInput {
   recordRef: RefObject<DailyRecord | null>;
   role?: string;
@@ -65,6 +79,8 @@ interface MutationFailureOptions {
   fallbackTitle: string;
   reasonTitles?: Partial<Record<string, string>>;
 }
+
+// === HOOK SETUP & ACCESS GUARDS ===
 
 export const useHandoffManagementPersistence = ({
   recordRef,
@@ -114,6 +130,8 @@ export const useHandoffManagementPersistence = ({
       }),
     [getCurrentRecord, notifyError]
   );
+
+  // === CHECKLIST & NOVEDADES ===
 
   const updateHandoffChecklist = useCallback(
     (shift: 'day' | 'night', field: string, value: boolean | string) => {
@@ -169,6 +187,8 @@ export const useHandoffManagementPersistence = ({
     [logDebouncedEvent, runMutation, saveAndUpdate, userId]
   );
 
+  // === MEDICAL SPECIALTY NOTE ===
+
   const updateMedicalSpecialtyNote = useCallback(
     async (specialty: MedicalSpecialty, value: string, actor: Partial<MedicalHandoffActor>) => {
       if (!canMutateCurrentMedicalRecord()) {
@@ -212,6 +232,8 @@ export const useHandoffManagementPersistence = ({
       saveAndUpdate,
     ]
   );
+
+  // === CONFIRM NO CHANGES ===
 
   const confirmMedicalSpecialtyNoChanges = useCallback(
     async ({ specialty, actor, comment, dateKey }: ConfirmMedicalSpecialtyNoChangesInput) => {
@@ -268,6 +290,8 @@ export const useHandoffManagementPersistence = ({
       saveAndUpdate,
     ]
   );
+
+  // === STAFF & SIGNATURE ===
 
   const updateHandoffStaff = useCallback(
     (shift: 'day' | 'night', type: 'delivers' | 'receives' | 'tens', staffList: string[]) => {
@@ -327,6 +351,8 @@ export const useHandoffManagementPersistence = ({
     [logEvent, runMutation, saveAndUpdate]
   );
 
+  // === DOCTOR & RESET ===
+
   const updateMedicalHandoffDoctor = useCallback(
     async (doctorName: string): Promise<void> => {
       if (!canMutateCurrentMedicalRecord()) {
@@ -381,6 +407,8 @@ export const useHandoffManagementPersistence = ({
       }
     );
   }, [logEvent, runMutation, saveAndUpdate]);
+
+  // === RETURN VALUE ===
 
   return {
     updateHandoffChecklist,

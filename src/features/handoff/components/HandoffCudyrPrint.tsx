@@ -11,6 +11,18 @@ import { formatTimeHHMM } from '@/utils/dateFormattingUtils';
 
 // ... (existing imports)
 
+/* ================================================================
+ * SECTION INDEX
+ * 1. VerticalHeader Sub-component (line ~15)
+ * 2. Main Component               (line ~32)
+ * 3. Summary Metrics              (line ~41)
+ * 4. Print Header & Info          (line ~73)
+ * 5. Table Header                 (line ~148)
+ * 6. Table Body (Bed Rows)        (line ~243)
+ * ================================================================ */
+
+// === VERTICAL HEADER SUB-COMPONENT ===
+
 const VerticalHeader = ({ text, colorClass }: { text: string; colorClass: string }) => (
   <th
     className={clsx(
@@ -29,6 +41,8 @@ const VerticalHeader = ({ text, colorClass }: { text: string; colorClass: string
   </th>
 );
 
+// === MAIN COMPONENT ===
+
 export const HandoffCudyrPrint: React.FC = () => {
   const { record } = useDailyRecordData();
 
@@ -37,6 +51,8 @@ export const HandoffCudyrPrint: React.FC = () => {
     const activeExtras = record.activeExtraBeds || [];
     return BEDS.filter(b => !b.isExtra || activeExtras.includes(b.id));
   }, [record]);
+
+  // === SUMMARY METRICS ===
 
   // Calculate Summary Metrics for Header
   const metrics = useMemo(() => {
@@ -85,6 +101,8 @@ export const HandoffCudyrPrint: React.FC = () => {
   };
 
   const lastCudyrTimestamp = record.cudyrUpdatedAt ?? record.cudyrLockedAt;
+
+  // === PRINT HEADER & INFO ===
 
   return (
     <div className="handoff-cudyr-print bg-white print:bg-white print:m-0 print:p-0 list-none">
@@ -147,6 +165,7 @@ export const HandoffCudyrPrint: React.FC = () => {
       <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 overflow-hidden print:shadow-none print:border-none print:p-0 print:rounded-none">
         <div className="overflow-x-auto print:overflow-visible">
           <table className="w-full text-left text-xs border-collapse border border-slate-300 table-fixed min-w-[720px] print:table-auto print:min-w-0 print:text-[7px]">
+            {/* === TABLE HEADER === */}
             <thead>
               <tr>
                 <th
@@ -239,6 +258,7 @@ export const HandoffCudyrPrint: React.FC = () => {
                 </th>
               </tr>
             </thead>
+            {/* === TABLE BODY (BED ROWS) === */}
             <tbody>
               {visibleBeds.map(bed => {
                 const patient = record.beds[bed.id];

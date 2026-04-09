@@ -24,6 +24,18 @@ import {
   SCALE_SPLIT_RATIO,
 } from '../constants/labConstants';
 
+/* ================================================================
+ * SECTION INDEX
+ * 1. Helper Functions             (line ~34)
+ * 2. Sub-components               (line ~113)
+ * 3. UnitSubChart Component       (line ~162)
+ * 4. TrendGroupCard Component     (line ~292)
+ * 5. PNG Export Utility            (line ~320)
+ * 6. Main Component               (line ~374)
+ * ================================================================ */
+
+// === HELPER FUNCTIONS ===
+
 /* ================================================================== */
 /*  Helpers                                                            */
 /* ================================================================== */
@@ -106,6 +118,8 @@ const sortByDate = (a: string, b: string): number => {
   return isoA.localeCompare(isoB);
 };
 
+// === SUB-COMPONENTS ===
+
 /* ================================================================== */
 /*  Sub-components                                                     */
 /* ================================================================== */
@@ -157,6 +171,8 @@ const LabTrendTooltip: React.FC<{
     </div>
   );
 };
+
+// === UNIT SUB-CHART COMPONENT ===
 
 /** A single sub-chart for variables sharing the same unit. */
 const UnitSubChart: React.FC<{
@@ -288,6 +304,8 @@ const UnitSubChart: React.FC<{
   );
 };
 
+// === TREND GROUP CARD COMPONENT ===
+
 /** Render a trend group card -- splits into sub-charts per unit AND scale for readability. */
 const TrendGroupCard: React.FC<{ group: LabTrendGroup }> = ({ group }) => {
   const unitGroups = groupVariablesByScale(group.variables);
@@ -314,6 +332,8 @@ const TrendGroupCard: React.FC<{ group: LabTrendGroup }> = ({ group }) => {
     </div>
   );
 };
+
+// === PNG EXPORT UTILITY ===
 
 /* ================================================================== */
 /*  Main export                                                        */
@@ -368,6 +388,8 @@ const exportChartsAsPng = async (container: HTMLDivElement) => {
   };
   img.src = svgUrl;
 };
+
+// === MAIN COMPONENT ===
 
 export const LabViewerTrendCharts: React.FC<{ data: LabAnalysisData }> = ({ data }) => {
   const chartsRef = React.useRef<HTMLDivElement>(null);

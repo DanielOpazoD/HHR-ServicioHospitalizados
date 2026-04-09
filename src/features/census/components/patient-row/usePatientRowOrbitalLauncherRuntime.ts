@@ -21,9 +21,23 @@ import {
 
 export { HOVER_EXIT_GRACE_MS };
 
+/* ================================================================
+ * SECTION INDEX
+ * 1. Hook State & Refs            (line ~37)
+ * 2. Ref Synchronization          (line ~56)
+ * 3. Hover Grace Timer            (line ~72)
+ * 4. Visibility & Media Query     (line ~108)
+ * 5. Row Event Listeners          (line ~150)
+ * 6. Global Ownership Events      (line ~281)
+ * 7. Trigger Visibility Logic     (line ~316)
+ * 8. Return Value                 (line ~348)
+ * ================================================================ */
+
 // ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
+
+// === HOOK STATE & REFS ===
 
 export const usePatientRowOrbitalLauncherRuntime = ({
   hasQuickActions,
@@ -45,6 +59,8 @@ export const usePatientRowOrbitalLauncherRuntime = ({
   const [ownerLauncherRowId, setOwnerLauncherRowId] = React.useState<string | null>(null);
   const ownerLauncherRowIdRef = React.useRef<string | null>(null);
   const hoverExitTimerRef = React.useRef<number | null>(null);
+
+  // === REF SYNCHRONIZATION ===
 
   // Refs mirror the latest state values so timer callbacks avoid stale closures.
   const isOpenRef = React.useRef(isOpen);
@@ -68,6 +84,8 @@ export const usePatientRowOrbitalLauncherRuntime = ({
   React.useEffect(() => {
     ownerLauncherRowIdRef.current = ownerLauncherRowId;
   }, [ownerLauncherRowId]);
+
+  // === HOVER GRACE TIMER ===
 
   const clearHoverExitTimer = React.useCallback(() => {
     if (hoverExitTimerRef.current !== null && typeof window !== 'undefined') {
@@ -103,6 +121,8 @@ export const usePatientRowOrbitalLauncherRuntime = ({
       hoverExitTimerRef.current = null;
     }, HOVER_EXIT_GRACE_MS);
   }, [clearHoverExitTimer]);
+
+  // === VISIBILITY & MEDIA QUERY ===
 
   // --- visibilitychange: flush hover state when the tab goes to background ---
   React.useEffect(() => {
@@ -145,6 +165,8 @@ export const usePatientRowOrbitalLauncherRuntime = ({
       mediaQuery.removeEventListener('change', sync);
     };
   }, []);
+
+  // === ROW EVENT LISTENERS ===
 
   // --- Row event listeners: hover, focus, position syncing ---
   React.useEffect(() => {
@@ -278,6 +300,8 @@ export const usePatientRowOrbitalLauncherRuntime = ({
     wrapperWidth,
   ]);
 
+  // === GLOBAL OWNERSHIP EVENTS ===
+
   // --- Global ownership event listeners ---
   React.useEffect(() => {
     if (typeof window === 'undefined') {
@@ -313,6 +337,8 @@ export const usePatientRowOrbitalLauncherRuntime = ({
     };
   }, [isOpen, rowId]);
 
+  // === TRIGGER VISIBILITY LOGIC ===
+
   // ---------------------------------------------------------------------------
   // canRevealTrigger -- the compound predicate that gates trigger visibility.
   //
@@ -344,6 +370,8 @@ export const usePatientRowOrbitalLauncherRuntime = ({
     isOpen,
     supportsHoverFine,
   });
+
+  // === RETURN VALUE ===
 
   return {
     anchorRef,

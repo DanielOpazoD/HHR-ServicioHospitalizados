@@ -17,6 +17,19 @@ import {
 import { createEpisodeAdmissionTracker } from '@/services/calculations/minsal/episodeTracker';
 import { dataMaintenanceLogger } from '@/services/admin/adminLoggers';
 
+/* ================================================================
+ * SECTION INDEX
+ * 1. Types & Interfaces           (line ~28)
+ * 2. Utility Functions            (line ~66)
+ * 3. Target Collection            (line ~75)
+ * 4. Admission Date Correction    (line ~137)
+ * 5. Backfill Plan Builder        (line ~178)
+ * 6. Audit (Dry Run)              (line ~239)
+ * 7. Apply Backfill               (line ~282)
+ * ================================================================ */
+
+// === TYPES & INTERFACES ===
+
 /**
  * Historical correction service for admission dates.
  *
@@ -63,6 +76,8 @@ interface RecordPlan {
   corrections: AdmissionDateBackfillSample[];
 }
 
+// === UTILITY FUNCTIONS ===
+
 const normalizeRutKey = (rut: string): string =>
   rut
     .replace(/[.\-\s]/g, '')
@@ -71,6 +86,8 @@ const normalizeRutKey = (rut: string): string =>
 
 const hasPatientIdentity = (patient: PatientData | undefined): patient is PatientData =>
   Boolean(patient?.patientName?.trim() && patient?.rut?.trim());
+
+// === TARGET COLLECTION ===
 
 const collectTargetsFromDischarge = (date: string, discharge: DischargeData): BackfillTarget[] => {
   if (!discharge.originalData) return [];
@@ -134,6 +151,8 @@ const collectTargetsFromRecord = (record: DailyRecord): BackfillTarget[] => {
   return targets;
 };
 
+// === ADMISSION DATE CORRECTION ===
+
 const applyAdmissionDateCorrection = (
   target: BackfillTarget,
   firstSeenDate: string
@@ -174,6 +193,8 @@ const applyAdmissionDateCorrection = (
     firstSeenDate,
   };
 };
+
+// === BACKFILL PLAN BUILDER ===
 
 const buildBackfillPlan = async (): Promise<{
   records: RecordPlan[];
@@ -236,6 +257,8 @@ const buildBackfillPlan = async (): Promise<{
   };
 };
 
+// === AUDIT (DRY RUN) ===
+
 export const auditAdmissionDateBackfill = async (): Promise<AdmissionDateBackfillResult> => {
   try {
     const plan = await buildBackfillPlan();
@@ -278,6 +301,8 @@ export const auditAdmissionDateBackfill = async (): Promise<AdmissionDateBackfil
     };
   }
 };
+
+// === APPLY BACKFILL ===
 
 export const applyAdmissionDateBackfill = async (
   onProgress?: (current: number, total: number) => void
