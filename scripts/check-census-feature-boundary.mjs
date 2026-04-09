@@ -19,6 +19,15 @@ const DYNAMIC_IMPORT_REGEX = /import\(\s*["']([^"']+)["']\s*\)/g;
 
 const toPosix = value => value.split(path.sep).join('/');
 
+const isGovernedCensusControllerShim = ({ importerPath, importPath, source }) => {
+  if (!importerPath.startsWith('src/hooks/controllers/')) return false;
+  if (!importPath.startsWith('@/features/census/controllers/')) return false;
+
+  const importerModule = path.basename(importerPath, path.extname(importerPath));
+  const expectedSource = `export * from '@/features/census/controllers/${importerModule}';`;
+  return source.trim() === expectedSource;
+};
+
 const isSourceFile = filePath => {
   const extension = path.extname(filePath);
   if (!SOURCE_EXTENSIONS.has(extension) || filePath.endsWith('.d.ts')) return false;
@@ -89,6 +98,7 @@ for (const absolutePath of walkFiles(SRC_ROOT)) {
   while ((match = IMPORT_EXPORT_REGEX.exec(source)) !== null) {
     const importPath = match[1] || match[2];
     if (!importPath || PUBLIC_MODULES.has(importPath)) continue;
+    if (isGovernedCensusControllerShim({ importerPath, importPath, source })) continue;
     const resolved = resolveImport(absolutePath, importPath);
     if (resolved && resolved.startsWith(FEATURE_ROOT)) {
       violations.push(`${importerPath} -> ${importPath}`);

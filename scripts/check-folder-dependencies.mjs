@@ -14,6 +14,16 @@ const UPDATE_ALLOWLIST = process.argv.includes('--update-allowlist');
 
 const toPosix = value => value.split(path.sep).join('/');
 
+const isGovernedCensusControllerShim = ({ importerPath, importPath, importedPath, source }) => {
+  if (!importerPath.startsWith('src/hooks/controllers/')) return false;
+  if (!importedPath.startsWith('src/features/census/controllers/')) return false;
+  if (!importPath.startsWith('@/features/census/controllers/')) return false;
+
+  const importerModule = path.basename(importerPath, path.extname(importerPath));
+  const expectedSource = `export * from '@/features/census/controllers/${importerModule}';`;
+  return source.trim() === expectedSource;
+};
+
 const isSourceFile = filePath => {
   const extension = path.extname(filePath);
   if (!SOURCE_EXTENSIONS.has(extension)) return false;
@@ -109,9 +119,9 @@ for (const absolutePath of files) {
   const importerZone = getZoneFromPath(importerPath, knownZones);
   if (!importerZone) continue;
 
-  const source = fs.readFileSync(absolutePath, 'utf8');
-  IMPORT_REGEX.lastIndex = 0;
-  let match;
+    const source = fs.readFileSync(absolutePath, 'utf8');
+    IMPORT_REGEX.lastIndex = 0;
+    let match;
 
   while ((match = IMPORT_REGEX.exec(source)) !== null) {
     const importPath = match[1] || match[2];
@@ -123,6 +133,17 @@ for (const absolutePath of files) {
     const importedPath = toPosix(path.relative(ROOT, resolvedPath));
     const importedZone = getZoneFromPath(importedPath, knownZones);
     if (!importedZone || importedZone === importerZone) continue;
+
+    if (
+      isGovernedCensusControllerShim({
+        importerPath,
+        importPath,
+        importedPath,
+        source,
+      })
+    ) {
+      continue;
+    }
 
     const allowedDependencies = matrix.zones[importerZone]?.allowedDependencies || [];
     if (!allowedDependencies.includes(importedZone)) {

@@ -10,8 +10,20 @@ const SOURCE_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx']);
 const IMPORT_EXPORT_REGEX =
   /(?:^|\n)\s*import(?:[\s\S]*?\sfrom\s*)?["']([^"']+)["']|(?:^|\n)\s*export\s+[^;\n]*\sfrom\s*["']([^"']+)["']/g;
 const DYNAMIC_IMPORT_REGEX = /import\(\s*["']([^"']+)["']\s*\)/g;
+const GOVERNED_PUBLIC_FEATURE_IMPORTS = new Set([
+  'src/components/layout/date-strip/DateStripQuickActions.tsx|@/features/laboratory/public',
+]);
 
 const toPosix = value => value.split(path.sep).join('/');
+
+const isGovernedCensusControllerShim = ({ relativePath, importPath, source }) => {
+  if (!relativePath.startsWith('src/hooks/controllers/')) return false;
+  if (!importPath.startsWith('@/features/census/controllers/')) return false;
+
+  const importerModule = path.basename(relativePath, path.extname(relativePath));
+  const expectedSource = `export * from '@/features/census/controllers/${importerModule}';`;
+  return source.trim() === expectedSource;
+};
 
 const isSourceFile = filePath => {
   const extension = path.extname(filePath);
@@ -60,6 +72,8 @@ for (const layer of SHARED_LAYERS) {
     while ((match = IMPORT_EXPORT_REGEX.exec(source)) !== null) {
       const importPath = match[1] || match[2];
       if (!importPath || !importPath.startsWith('@/features/')) continue;
+      if (isGovernedCensusControllerShim({ relativePath, importPath, source })) continue;
+      if (GOVERNED_PUBLIC_FEATURE_IMPORTS.has(`${relativePath}|${importPath}`)) continue;
       if (seen.has(importPath)) continue;
       seen.add(importPath);
       violations.push(`${relativePath} -> ${importPath}`);
@@ -68,6 +82,7 @@ for (const layer of SHARED_LAYERS) {
     while ((match = DYNAMIC_IMPORT_REGEX.exec(source)) !== null) {
       const importPath = match[1];
       if (!importPath || !importPath.startsWith('@/features/')) continue;
+      if (GOVERNED_PUBLIC_FEATURE_IMPORTS.has(`${relativePath}|${importPath}`)) continue;
       if (seen.has(importPath)) continue;
       seen.add(importPath);
       violations.push(`${relativePath} -> ${importPath}`);

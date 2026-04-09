@@ -1,7 +1,7 @@
 import {
-  defaultBrowserWindowRuntime,
-  type BrowserWindowRuntime,
-} from '@/shared/runtime/browserWindowRuntime';
+  createCensusDialogRuntime,
+  type CensusDialogRuntime,
+} from '@/features/census/controllers/censusBrowserRuntimeAdapter';
 
 export interface SharedCensusBrowserRuntime {
   alert: (message: string) => void;
@@ -9,7 +9,7 @@ export interface SharedCensusBrowserRuntime {
 }
 
 export const createSharedCensusBrowserRuntime = (
-  runtime: BrowserWindowRuntime = defaultBrowserWindowRuntime
+  runtime: CensusDialogRuntime = createCensusDialogRuntime()
 ): SharedCensusBrowserRuntime => ({
   alert: message => runtime.alert(message),
   open: (url, target = '_blank') => runtime.open(url, target),

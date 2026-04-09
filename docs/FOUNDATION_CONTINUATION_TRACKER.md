@@ -5,8 +5,8 @@
 ## Resumen
 
 - Ciclo activo: `Q00-Q07`
-- Tareas resueltas o no requeridas: `2/8`
-- Estado global del ciclo: `25%`
+- Tareas resueltas o no requeridas: `3/8`
+- Estado global del ciclo: `37.5%`
 
 ## Regla activa
 
@@ -15,16 +15,16 @@
 
 ## Estado actual del ciclo `Q00-Q07`
 
-| Id    | Estado     | Nota                                                                                                                       |
-| ----- | ---------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `Q00` | completado | plan iterativo abierto en `docs/ITERATIVE_QUALITY_EXECUTION_PLAN.md` y deuda registrada                                    |
-| `Q01` | completado | `feature-dependency-matrix`, `test-failure-catalog` y artefactos `reports/*` quedaron alineados; checks de salida en verde |
-| `Q02` | pendiente  | restaurar ownership entre `hooks/controllers` y `features/census/controllers`                                              |
-| `Q03` | pendiente  | romper ciclos activos de `clinical-documents` y `patient-flow`                                                             |
-| `Q04` | pendiente  | alinear `repo-hygiene` y `domain-hotspot-boundary` con contratos canónicos de `dailyRecord`                                |
-| `Q05` | pendiente  | consolidar entrypoints públicos por feature                                                                                |
-| `Q06` | pendiente  | redefinir PIN local como barrera UX explícita                                                                              |
-| `Q07` | pendiente  | corrida final, cierre documental y convergencia                                                                            |
+| Id    | Estado     | Nota                                                                                                                                                                                                                                           |
+| ----- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Q00` | completado | plan iterativo abierto en `docs/ITERATIVE_QUALITY_EXECUTION_PLAN.md` y deuda registrada                                                                                                                                                        |
+| `Q01` | completado | `feature-dependency-matrix`, `test-failure-catalog` y artefactos `reports/*` quedaron alineados; checks de salida en verde                                                                                                                     |
+| `Q02` | completado | los shims de compatibilidad de `census` quedaron gobernados explícitamente, `sharedCensusBrowserRuntimeController` ya usa el adapter del feature y la única excepción restante `components -> laboratory/public` quedó inventariada para `Q05` |
+| `Q03` | pendiente  | romper ciclos activos de `clinical-documents` y `patient-flow`                                                                                                                                                                                 |
+| `Q04` | pendiente  | alinear `repo-hygiene` y `domain-hotspot-boundary` con contratos canónicos de `dailyRecord`                                                                                                                                                    |
+| `Q05` | pendiente  | consolidar entrypoints públicos por feature                                                                                                                                                                                                    |
+| `Q06` | pendiente  | redefinir PIN local como barrera UX explícita                                                                                                                                                                                                  |
+| `Q07` | pendiente  | corrida final, cierre documental y convergencia                                                                                                                                                                                                |
 
 ## Historial del ciclo previo `N01-N15`
 
@@ -54,6 +54,6 @@
 
 ## Siguiente paso recomendado
 
-1. Ejecutar `Q02` completo antes de tocar ciclos de `clinical-documents`
-2. No abrir la fase del PIN ni de APIs públicas hasta tener boundaries saneados
+1. Ejecutar `Q03` completo antes de abrir consolidación de APIs públicas
+2. Mantener la excepción `components -> laboratory/public` congelada hasta `Q05`
 3. Cerrar cada fase actualizando este tracker y el plan iterativo
