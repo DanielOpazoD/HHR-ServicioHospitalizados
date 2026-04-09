@@ -7,6 +7,7 @@ import type { AuditPort } from '@/application/ports/auditPort';
 import type { PatientAnalysisRecordContract } from '@/application/patient-flow/patientAnalysisContracts';
 import type { MasterPatient } from '@/types/domain/patientMaster';
 import {
+  type Conflict,
   normalizeAnalysisRut,
   isPatientAnalysisOccupiedBedEntry,
   createAnalysisAccumulator,
@@ -15,14 +16,6 @@ import {
   registerTransferEvent,
   closePatientsMissingFromCensus,
 } from './patientAnalysisEngine';
-
-export interface Conflict {
-  rut: string;
-  description: string;
-  options: string[];
-  records: string[];
-  bedMap: Record<string, string>;
-}
 
 export interface AnalysisResult {
   totalRecords: number;
@@ -49,6 +42,7 @@ interface HarmonizeConflictHistoryInput {
 export type {
   ActivePatientEvent,
   AnalysisAccumulator,
+  Conflict,
   PatientAnalysisOccupiedBedEntry,
 } from './patientAnalysisEngine';
 

@@ -14,11 +14,18 @@ import type {
 } from '@/application/patient-flow/patientAnalysisContracts';
 import type { MasterPatient } from '@/types/domain/patientMaster';
 import { formatRut, isValidRut } from '@/utils/rutUtils';
-import type { Conflict } from './patientAnalysisSupport';
 
 /* ------------------------------------------------------------------ */
 /*  Internal types                                                     */
 /* ------------------------------------------------------------------ */
+
+export interface Conflict {
+  rut: string;
+  description: string;
+  options: string[];
+  records: string[];
+  bedMap: Record<string, string>;
+}
 
 export interface ActivePatientEvent {
   startDate: string;
