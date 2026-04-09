@@ -13,7 +13,13 @@ describe('DailyRecord contracts import governance', () => {
     try {
       rawOutput = execSync(command, { cwd: ROOT, encoding: 'utf8' }).trim();
     } catch (error) {
-      rawOutput = '';
+      const execError = error as { status?: number; stdout?: string | Buffer };
+      const stdout = String(execError.stdout || '').trim();
+      if (execError.status === 1 && stdout.length === 0) {
+        rawOutput = '';
+      } else {
+        throw error;
+      }
     }
     const referencedFiles = rawOutput
       .split('\n')

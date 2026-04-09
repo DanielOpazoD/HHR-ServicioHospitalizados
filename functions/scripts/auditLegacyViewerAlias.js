@@ -1,13 +1,33 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const { admin } = require('../lib/appContext');
+const admin = require('firebase-admin');
 
 const LEGACY_ALIAS = ['viewer', 'census'].join('_');
 const CANONICAL_ROLE = 'viewer';
 const ROOT = path.resolve(__dirname, '..', '..');
 const REPORTS_DIR = path.join(ROOT, 'reports');
 
+const ensureAdminApp = () => {
+  if (admin.apps.length > 0) {
+    return admin.app();
+  }
+
+  const explicitProjectId = String(
+    process.env.GOOGLE_CLOUD_PROJECT ||
+      process.env.GCLOUD_PROJECT ||
+      process.env.FIREBASE_CONFIG_PROJECT_ID ||
+      ''
+  ).trim();
+
+  if (explicitProjectId) {
+    return admin.initializeApp({ projectId: explicitProjectId });
+  }
+
+  return admin.initializeApp();
+};
+
 const collectUsersWithLegacyClaim = async () => {
+  ensureAdminApp();
   const auth = admin.auth();
   const legacyClaimUsers = [];
   let nextPageToken = undefined;
@@ -29,6 +49,7 @@ const collectUsersWithLegacyClaim = async () => {
 };
 
 const collectLegacyConfigEntries = async () => {
+  ensureAdminApp();
   const roleDoc = await admin.firestore().collection('config').doc('roles').get();
   const rolesMap = roleDoc.exists ? roleDoc.data() || {} : {};
 
@@ -115,7 +136,7 @@ run().catch(error => {
   const message = error instanceof Error ? error.message : String(error);
   if (/Project Id|authentication/i.test(message)) {
     console.error(
-      '[auth-legacy-viewer-alias-audit] This audit requires Firebase Admin credentials and a resolvable project id. Run it from an environment with ADC or GOOGLE_CLOUD_PROJECT configured.'
+      '[auth-legacy-viewer-alias-audit] This audit requires Firebase Admin credentials and a resolvable project id. Run it from an environment with ADC or set GOOGLE_CLOUD_PROJECT/GCLOUD_PROJECT first.'
     );
   }
   console.error('[auth-legacy-viewer-alias-audit] Failed to audit legacy viewer alias.', error);
