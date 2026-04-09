@@ -159,6 +159,29 @@ Usuarios con "passport" pueden trabajar sin conexión a internet.
 - `src/hooks/useAuthState.ts`
 - `src/context/VersionContext.tsx`
 
+## 4.2. Bloqueo rápido local (PIN)
+
+### Descripción
+
+El PIN local funciona como una barrera de privacidad visual del puesto de trabajo en el navegador actual.
+
+### Comportamiento Esperado
+
+1. La configuración se guarda solo en el navegador/dispositivo actual.
+2. Puede pedir el PIN local al abrir la app o tras un período de inactividad.
+3. El bloqueo solo oculta la pantalla hasta que el mismo PIN local sea ingresado.
+4. No reemplaza:
+   - autenticación Firebase;
+   - logout;
+   - permisos por rol;
+   - reglas de Firestore o controles server-side.
+
+### Archivos Relacionados
+
+- `src/context/SecurityContext.tsx`
+- `src/components/modals/SecuritySettings.tsx`
+- `src/components/security/PinLockScreen.tsx`
+
 ---
 
 ## 5. Respaldo Automático en la Nube

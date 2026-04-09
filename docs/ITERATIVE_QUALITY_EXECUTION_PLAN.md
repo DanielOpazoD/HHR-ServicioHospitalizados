@@ -32,7 +32,7 @@ Una fase se considera cerrada solo si:
 | `Q03` | completado | romper ciclos de `clinical-documents`              |
 | `Q04` | completado | alinear `repo-hygiene` y `domain-hotspot-boundary` |
 | `Q05` | completado | consolidar APIs públicas por feature               |
-| `Q06` | pendiente  | rebajar el PIN local a barrera UX explícita        |
+| `Q06` | completado | rebajar el PIN local a barrera UX explícita        |
 | `Q07` | pendiente  | corrida final de convergencia y cierre del ciclo   |
 
 ## Fase `Q00` - Planificación versionada
@@ -334,5 +334,5 @@ Ejecutar la validación integral y dejar el ciclo documentado como cerrado.
 | 2026-04-09 | `Q03` | completado | Los casos de uso de `clinical-documents` dejaron de reingresar por la API pública del feature, `patient-flow` concentra el tipo `Conflict` en el engine y `check:architecture` + `typecheck` quedaron en verde                |
 | 2026-04-09 | `Q04` | completado | `handoff` ya consume `DailyRecord` desde contratos canónicos de aplicación, `dailyRecordCoreContracts` quedó explicitado como facade permitida y `repo-hygiene` reconoce a los colaboradores internos de `clinical-documents` |
 | 2026-04-09 | `Q05` | completado | `clinical-documents` expone un entrypoint interno explícito para `application/shared`, `laboratory` ya ofrece root barrel y la única excepción residual de `DateStripQuickActions` quedó acotada al root del feature          |
-| 2026-04-09 | `Q06` | pendiente  | Sin iniciar                                                                                                                                                                                                                   |
+| 2026-04-09 | `Q06` | completado | El PIN local quedó presentado como bloqueo rápido de privacidad del dispositivo, la UI ya aclara que no reemplaza auth/permisos y las suites focalizadas más `test:risk:*` quedaron en verde                                  |
 | 2026-04-09 | `Q07` | pendiente  | Sin iniciar                                                                                                                                                                                                                   |

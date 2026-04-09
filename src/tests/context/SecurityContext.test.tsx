@@ -60,7 +60,7 @@ describe('SecurityContext', () => {
     expect(screen.getByTestId('pin-value').textContent).toBe('5555');
   });
 
-  it('should keep security config as local-only (no remote sync on mount)', async () => {
+  it('should keep privacy lock config as local-only (no remote sync on mount)', async () => {
     render(
       <SecurityProvider>
         <TestComponent />
@@ -70,6 +70,8 @@ describe('SecurityContext', () => {
     await waitFor(() => {
       expect(screen.getByTestId('pin-value').textContent).toBe('null');
     });
+
+    expect(localStorage.getItem('hhr_security_config')).toBeNull();
   });
 
   it('should update state and localStorage when setting a PIN', async () => {

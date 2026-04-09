@@ -46,8 +46,8 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return !!parsedConfig.pin && parsedConfig.lockOnStartup;
   });
 
-  // Security preferences are device-local by design.
-  // We avoid cloud sync for PIN-related settings.
+  // This privacy lock is intentionally device-local UX.
+  // It does not participate in auth, RBAC, or server-side permission checks.
   const updateConfig = useCallback((newConfig: SecurityConfig) => {
     setConfig(newConfig);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newConfig));

@@ -5,8 +5,8 @@
 ## Resumen
 
 - Ciclo activo: `Q00-Q07`
-- Tareas resueltas o no requeridas: `6/8`
-- Estado global del ciclo: `75%`
+- Tareas resueltas o no requeridas: `7/8`
+- Estado global del ciclo: `87.5%`
 
 ## Regla activa
 
@@ -23,7 +23,7 @@
 | `Q03` | completado | los casos de uso de `clinical-documents` ya consumen contratos internos en lugar de reingresar por `index/public`, `patient-flow` consolidó `Conflict` en el engine y `check:architecture` más `typecheck` quedaron en verde                   |
 | `Q04` | completado | `handoff` migra `DailyRecord` al facade `@/application/shared/dailyRecordContracts`, `dailyRecordCoreContracts` queda declarado como facade permitida y `repo-hygiene` acepta el boundary interno de `clinical-documents`                      |
 | `Q05` | completado | `clinical-documents` usa `internal.ts` como colaboración explícita para `application/shared`, `laboratory` expone `index.ts` como root barrel y el único debt residual sigue siendo la excepción gobernada de `DateStripQuickActions`          |
-| `Q06` | pendiente  | redefinir PIN local como barrera UX explícita                                                                                                                                                                                                  |
+| `Q06` | completado | el PIN local ahora se comunica como bloqueo rápido de privacidad del navegador actual, la documentación aclara que no reemplaza auth/RBAC y las pruebas focalizadas del lock screen quedaron en verde                                          |
 | `Q07` | pendiente  | corrida final, cierre documental y convergencia                                                                                                                                                                                                |
 
 ## Historial del ciclo previo `N01-N15`
@@ -50,10 +50,10 @@
 
 - `typecheck`: `ok`
 - `check:quality`: `failing`
-- focos activos: `local PIN UX copy`, `runtime adapter debt`, `convergencia final`
+- focos activos: `runtime adapter debt`, `convergencia final`
 
 ## Siguiente paso recomendado
 
-1. Ejecutar `Q06` completo antes del cierre de convergencia
+1. Ejecutar `Q07` cerrando primero la deuda aislada de runtime adapters
 2. Mantener la excepción `components -> laboratory` gobernada y visible hasta decidir si vale la pena invertirla
 3. Cerrar cada fase actualizando este tracker y el plan iterativo

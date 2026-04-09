@@ -92,6 +92,14 @@ Restricciones clave:
 
 Los accesos directos al handoff médico ya no usan un “modo especialista” separado; son deep-links normales al módulo `MEDICAL_HANDOFF`.
 
+## Privacidad local del puesto
+
+El PIN local es un bloqueo rápido de privacidad visual en el navegador/dispositivo actual.
+
+- Se guarda solo localmente.
+- Puede bloquear al abrir la app o por inactividad.
+- No reemplaza login, logout, permisos clínicos ni controles server-side.
+
 ## Comandos Principales
 
 | Comando                   | Objetivo                                               |
