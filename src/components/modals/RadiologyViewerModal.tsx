@@ -12,6 +12,7 @@ import {
   RadiologyViewerProgress,
   RadiologyViewerResults,
 } from '@/components/modals/RadiologyViewerModalContent';
+import { BEDS } from '@/constants/beds';
 
 interface RadiologyPatient {
   bedId: string;
@@ -58,24 +59,43 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
   const [dateTo, setDateTo] = useState('');
   const [activeModTab, setActiveModTab] = useState<string | null>(null);
 
-  // Deduplicate patients by RUT
+  // Deduplicate patients by RUT, sorted by hospital bed order (R1-R4, NEO, H1C1…H6C2)
   const uniquePatients = useMemo(() => {
+    const bedOrder = new Map(BEDS.map((bed, idx) => [bed.id, idx]));
     const seen = new Set<string>();
-    return patients.filter(p => {
-      if (!p.rut || seen.has(p.rut)) return false;
-      seen.add(p.rut);
-      return true;
-    });
+    return patients
+      .filter(p => {
+        if (!p.rut || seen.has(p.rut)) return false;
+        seen.add(p.rut);
+        return true;
+      })
+      .sort((a, b) => (bedOrder.get(a.bedId) ?? 999) - (bedOrder.get(b.bedId) ?? 999));
   }, [patients]);
 
   // Modality tabs from results
   const modalities = useMemo(() => (result ? extractModalities(result.examenes) : []), [result]);
 
-  // Filtered exams by active tab
+  // Filtered exams by active tab, sorted most-recent first
   const filteredExams = useMemo(() => {
     if (!result) return [];
-    if (!activeModTab) return result.examenes;
-    return result.examenes.filter(e => (e.mod || '').trim().toUpperCase() === activeModTab);
+    const exams = activeModTab
+      ? result.examenes.filter(e => (e.mod || '').trim().toUpperCase() === activeModTab)
+      : [...result.examenes];
+    exams.sort((a, b) => {
+      const toTimestamp = (raw: string): number => {
+        if (!raw) return 0;
+        // Try DD/MM/YYYY or DD-MM-YYYY (common RIS format)
+        const parts = raw.split(/[/\-\.]/);
+        if (parts.length === 3 && parts[0].length <= 2) {
+          const [dd, mm, yyyy] = parts;
+          return new Date(`${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`).getTime() || 0;
+        }
+        // Fallback: try direct parse (handles ISO or other formats)
+        return new Date(raw).getTime() || 0;
+      };
+      return toTimestamp(b.fecha_examen) - toTimestamp(a.fecha_examen);
+    });
+    return exams;
   }, [result, activeModTab]);
 
   // Reset tab when results change
