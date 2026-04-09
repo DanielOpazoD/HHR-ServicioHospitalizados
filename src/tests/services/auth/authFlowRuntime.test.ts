@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as firebaseAuth from 'firebase/auth';
 import type { AuthRuntime } from '@/services/firebase-runtime/authRuntime';
+
+vi.unmock('@/services/auth/authFallback');
+
 import { signInWithGoogle } from '@/services/auth/authGoogleFlow';
 import { signIn, createUser } from '@/services/auth/authCredentialFlow';
 import {

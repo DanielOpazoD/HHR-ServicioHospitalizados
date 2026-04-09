@@ -41,6 +41,7 @@ Evitar que la deuda estructural vuelva a crecer después de las fases de estabil
 - La fuente de verdad de tiers blocking, release confidence y report-only guards vive en `scripts/config/guardrail-governance.json`.
 - Se valida con `npm run check:guardrail-governance` y se reporta con `npm run report:guardrail-governance`.
 - La composición exacta de `check:quality` también sale de ese mismo archivo; `check-quality-aggregate.mjs` ya no mantiene una lista paralela.
+- CI regenera los artefactos obligatorios antes de correr `check:quality` usando `npm run report:governance-snapshots`.
 - `check:quality` no debe bloquear por scorecards ejecutivos derivados si las fuentes primarias del riesgo ya están protegidas; `release-readiness-scorecard` queda como artefacto report-only.
 - `release-confidence-matrix` también queda como guardrail report-only: sigue siendo obligatorio para trazabilidad, pero no duplica bloqueo si el pack de release, la cobertura crítica y los budgets ya siguen verdes.
 - `npm run ci:inner-loop`
@@ -55,6 +56,7 @@ Evitar que la deuda estructural vuelva a crecer después de las fases de estabil
 - `npm run report:operational-health`
 - `npm run report:system-confidence`
 - `npm run report:release-readiness-scorecard`
+- `npm run report:governance-snapshots`
 - `npm run report:guardrail-governance`
 - `npm run report:runtime-contracts`
 - `npm run report:critical-coverage`

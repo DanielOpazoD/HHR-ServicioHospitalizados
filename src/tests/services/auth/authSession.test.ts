@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.unmock('@/services/auth/authSession');
+
 const {
   mockOnAuthStateChanged,
   mockFirebaseSignOut,

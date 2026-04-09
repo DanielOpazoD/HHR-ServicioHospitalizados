@@ -5,6 +5,24 @@ import {
   stripClinicalDocumentHtml,
 } from '@/features/clinical-documents/controllers/clinicalDocumentRichTextController';
 
+const MALICIOUS_HTML_PAYLOADS = [
+  '<script>alert(1)</script>',
+  '<img src="x" onerror="alert(1)">',
+  '<iframe srcdoc="<script>alert(1)</script>"></iframe>',
+  '<object data="javascript:alert(1)"></object>',
+  '<svg><script>alert(1)</script><circle /></svg>',
+  '<span onclick="alert(1)">Texto</span>',
+  '<span style="color: red; position: fixed; background-image: url(javascript:alert(1)); background-color: yellow;">Marcado</span>',
+] as const;
+
+const MALICIOUS_WRAPPERS = [
+  (payload: string) => payload,
+  (payload: string) => `<div>${payload}</div>`,
+  (payload: string) => `<p>${payload}</p>`,
+  (payload: string) => `<blockquote>${payload}</blockquote>`,
+  (payload: string) => `<ul><li>${payload}</li></ul>`,
+] as const;
+
 describe('clinicalDocumentRichTextController', () => {
   it('converts plain text to safe rich text markup', () => {
     expect(normalizeClinicalDocumentContentForStorage('Linea 1\nLinea 2')).toBe(
@@ -58,5 +76,40 @@ describe('clinicalDocumentRichTextController', () => {
     expect(text).toContain('  1. Control en 7 días');
     expect(text).toContain('  2. Repetir exámenes');
     expect(text).toContain('2. Alta');
+  });
+
+  it('drops dangerous tags, attributes and disallowed style properties', () => {
+    const html = normalizeClinicalDocumentContentForStorage(
+      '<div onclick="alert(1)"><span style="color: red; position: fixed; background-image: url(javascript:alert(1)); background-color: yellow">Texto</span><img src="x" onerror="alert(1)"><iframe src="javascript:alert(1)"></iframe><a href="javascript:alert(1)">enlace</a></div>'
+    );
+
+    expect(html).toContain('<span style="color: red; background-color: yellow">Texto</span>');
+    expect(html).not.toContain('onclick');
+    expect(html).not.toContain('onerror');
+    expect(html).not.toContain('<img');
+    expect(html).not.toContain('<iframe');
+    expect(html).not.toContain('position:');
+    expect(html).not.toContain('background-image');
+
+    const text = stripClinicalDocumentHtml(html);
+    expect(text).toContain('Texto');
+    expect(text).toContain('enlace');
+  });
+
+  it('keeps sanitization idempotent across a malicious html corpus', () => {
+    for (const wrap of MALICIOUS_WRAPPERS) {
+      for (const payload of MALICIOUS_HTML_PAYLOADS) {
+        const sanitized = normalizeClinicalDocumentContentForStorage(wrap(payload));
+        const resanitized = normalizeClinicalDocumentContentForStorage(sanitized);
+
+        expect(resanitized).toBe(sanitized);
+        expect(sanitized).not.toMatch(/<(script|iframe|object|embed|svg|math|style|img)\b/i);
+        expect(sanitized).not.toMatch(/\son[a-z]+\s*=/i);
+        expect(sanitized).not.toContain('position:');
+        expect(sanitized).not.toContain('background-image');
+
+        expect(() => stripClinicalDocumentHtml(sanitized)).not.toThrow();
+      }
+    }
   });
 });
