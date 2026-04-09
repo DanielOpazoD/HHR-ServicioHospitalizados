@@ -18,6 +18,23 @@ describe('chunkingPolicy', () => {
     ).toBeUndefined();
   });
 
+  it('never assigns app-level source modules to manual chunks', () => {
+    // App source must NOT be forced into named chunks — this caused circular
+    // vendor↔feature dependencies that crashed production (createContext undefined).
+    const appPaths = [
+      '/repo/src/features/census/context/censusActionContexts.ts',
+      '/repo/src/features/census/components/patient-row/PatientRow.tsx',
+      '/repo/src/features/census/controllers/patientMovementController.ts',
+      '/repo/src/features/clinical-documents/components/ClinicalDocumentsModal.tsx',
+      '/repo/src/features/transfers/components/TransferStatusBadge.tsx',
+      '/repo/src/application/backup-export/backupExportService.ts',
+      '/repo/src/services/backup/censusStorageService.ts',
+    ];
+    for (const p of appPaths) {
+      expect(chunkForModule(p), `${p} should NOT be manually chunked`).toBeUndefined();
+    }
+  });
+
   it('splits heavyweight vendor capabilities by runtime concern', () => {
     expect(chunkForModule('/repo/node_modules/firebase/firestore/dist/index.mjs')).toBe(
       'vendor-firebase-core'

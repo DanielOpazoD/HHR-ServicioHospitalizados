@@ -106,6 +106,7 @@
     "check:security": "npm run check:secret-leaks && node scripts/check-security-hardening.mjs",
     "check:clinical-documents": "npm run typecheck && npm run test:clinical-documents",
     "check:bundle-budget": "node scripts/check-bundle-budget.mjs",
+    "check:chunk-graph": "node scripts/check-chunk-graph.mjs",
     "check:flow-performance-budget": "node scripts/check-flow-performance-budget.mjs && node scripts/report-flow-performance-budget.mjs",
     "report:dependency-debt": "node scripts/report-folder-dependency-debt.mjs",
     "report:quality-metrics": "node scripts/report-quality-metrics.mjs",
