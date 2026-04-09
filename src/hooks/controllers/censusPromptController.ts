@@ -1,4 +1,4 @@
-import type { DailyRecordDateRef } from '@/application/shared/dailyRecordContracts';
+import type { DailyRecordDateRef } from '@/application/shared/dailyRecordCoreContracts';
 
 export interface CensusPromptState {
   previousRecordAvailable: boolean;

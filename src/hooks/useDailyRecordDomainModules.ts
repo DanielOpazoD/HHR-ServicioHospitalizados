@@ -1,5 +1,4 @@
-import type { DailyRecord } from '@/application/shared/dailyRecordContracts';
-import type { DailyRecordPatch } from '@/application/shared/dailyRecordContracts';
+import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
 import { useBedManagement } from '@/hooks/useBedManagement';
 import { usePatientDischarges } from '@/hooks/usePatientDischarges';
 import { usePatientTransfers } from '@/hooks/usePatientTransfers';

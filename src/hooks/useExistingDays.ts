@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { DailyRecord } from '@/application/shared/dailyRecordContracts';
+import type { DailyRecord } from '@/application/shared/dailyRecordCoreContracts';
 import { PatientData } from '@/hooks/contracts/patientHookContracts';
 import { fetchRecordsForMonth } from '@/services/records/recordQueryService';
 import { existingDaysLogger } from '@/hooks/hookLoggers';

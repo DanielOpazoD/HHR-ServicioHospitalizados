@@ -21,8 +21,7 @@ import {
 import { copyPatientToDateDetailed } from '@/services/repositories/dailyRecordRepositoryInitializationService';
 import { deleteDailyRecordAcrossStores } from '@/services/repositories/dailyRecordRepositoryFacadeSupport';
 import { getMonthRecordsFromFirestore } from '@/services/storage/firestore';
-import type { DailyRecord } from '@/application/shared/dailyRecordContracts';
-import type { DailyRecordPatch } from '@/application/shared/dailyRecordContracts';
+import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
 import type {
   SaveDailyRecordResult,
   SyncDailyRecordResult,

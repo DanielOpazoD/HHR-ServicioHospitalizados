@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { DailyRecord } from '@/application/shared/dailyRecordContracts';
+import type { DailyRecord } from '@/application/shared/dailyRecordCoreContracts';
 import {
   getWhatsAppConfig,
   getMessageTemplates,

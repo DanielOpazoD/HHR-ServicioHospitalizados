@@ -5,7 +5,7 @@ import path from 'node:path';
 const ROOT = path.resolve(__dirname, '../../../');
 
 const ALLOWED_ROOT_DAILY_RECORD_IMPORTS = [
-  'src/application/shared/dailyRecordContracts.ts',
+  'src/application/shared/dailyRecordCoreContracts.ts',
   'src/schemas/zod/dailyRecord.ts',
   'src/schemas/zodSafeParsers.ts',
   'src/schemas/zodValidationHelpers.ts',

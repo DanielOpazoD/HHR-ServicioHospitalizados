@@ -1,6 +1,6 @@
 import React from 'react';
 import * as ExportService from '@/services/exporters/exportService';
-import type { DailyRecord } from '@/application/shared/dailyRecordContracts';
+import type { DailyRecord } from '@/application/shared/dailyRecordCoreContracts';
 import { useNotification } from '@/context/UIContext';
 import { buildJsonImportNotifications } from '@/hooks/controllers/fileImportFeedbackController';
 import {

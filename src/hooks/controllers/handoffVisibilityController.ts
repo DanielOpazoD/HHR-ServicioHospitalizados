@@ -1,7 +1,5 @@
-import type {
-  DailyRecordBedLayoutState,
-  DailyRecordDateRef,
-} from '@/application/shared/dailyRecordContracts';
+import type { DailyRecordBedLayoutState } from '@/application/shared/dailyRecordBedContracts';
+import type { DailyRecordDateRef as DailyRecordVisibilityDateRef } from '@/application/shared/dailyRecordCoreContracts';
 
 interface BedDescriptor {
   id: string;
@@ -19,7 +17,7 @@ export const getVisibleHandoffBeds = <TBed extends BedDescriptor>(
 };
 
 export const shouldShowHandoffPatient = (
-  record: (DailyRecordDateRef & DailyRecordBedLayoutState) | null,
+  record: (DailyRecordVisibilityDateRef & DailyRecordBedLayoutState) | null,
   bedId: string,
   selectedShift: 'day' | 'night',
   isAdmittedDuringShift: (

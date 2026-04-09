@@ -1,4 +1,4 @@
-import type { DailyRecordBedsState } from '@/application/shared/dailyRecordContracts';
+import type { DailyRecordBedsState } from '@/application/shared/dailyRecordBedContracts';
 import type { TransferRequest } from '@/types/transfers';
 import type {
   GeneratedDocument,

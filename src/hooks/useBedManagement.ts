@@ -1,6 +1,5 @@
 import { useCallback, useRef, useEffect } from 'react';
-import type { DailyRecord } from '@/application/shared/dailyRecordContracts';
-import type { DailyRecordPatch } from '@/application/shared/dailyRecordContracts';
+import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
 import { PatientData } from '@/hooks/contracts/patientHookContracts';
 import type { CudyrScore } from '@/types/domain/cudyr';
 import { PatientFieldValue } from '@/types/valueTypes';

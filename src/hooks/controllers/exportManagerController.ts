@@ -1,5 +1,5 @@
 import type { CensusExportRecord } from '@/services/contracts/censusExportServiceContracts';
-import type { DailyRecordStaffingState } from '@/application/shared/dailyRecordContracts';
+import type { DailyRecordStaffingState } from '@/application/shared/dailyRecordStaffContracts';
 import type { StorageLookupResult } from '@/services/backup/storageLookupContracts';
 import { resolveHandoffShiftStaff } from '@/services/staff/dailyRecordStaffing';
 

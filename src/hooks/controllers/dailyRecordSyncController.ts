@@ -1,4 +1,4 @@
-import type { DailyRecordDateRef } from '@/application/shared/dailyRecordContracts';
+import type { DailyRecordDateRef } from '@/application/shared/dailyRecordCoreContracts';
 import type { SyncStatus } from '@/context/dailyRecordContextContracts';
 import { resolveDailyRecordSyncStatus } from '@/hooks/controllers/dailyRecordSyncStatusController';
 

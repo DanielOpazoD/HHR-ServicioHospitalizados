@@ -1,7 +1,7 @@
 import type {
   MedicalHandoffActor,
   MedicalSpecialty,
-} from '@/application/shared/dailyRecordContracts';
+} from '@/application/shared/dailyRecordMedicalContracts';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcome';
 

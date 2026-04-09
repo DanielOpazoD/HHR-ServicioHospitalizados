@@ -1,4 +1,4 @@
-import type { DailyRecordMedicalMessagingState } from '@/application/shared/dailyRecordContracts';
+import type { DailyRecordMedicalMessagingState } from '@/application/shared/dailyRecordMedicalContracts';
 
 interface VisibleBed {
   id: string;

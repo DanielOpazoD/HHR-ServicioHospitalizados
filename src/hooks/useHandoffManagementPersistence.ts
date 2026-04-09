@@ -1,11 +1,10 @@
 import { useCallback } from 'react';
 import type { RefObject } from 'react';
+import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
 import type {
-  DailyRecord,
-  DailyRecordPatch,
   MedicalHandoffActor,
   MedicalSpecialty,
-} from '@/application/shared/dailyRecordContracts';
+} from '@/application/shared/dailyRecordMedicalContracts';
 import type { AuditAction, AuditLogEntry } from '@/types/audit';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcome';

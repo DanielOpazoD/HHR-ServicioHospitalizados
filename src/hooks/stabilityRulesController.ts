@@ -1,4 +1,4 @@
-import type { DailyRecordDateRef } from '@/application/shared/dailyRecordContracts';
+import type { DailyRecordDateRef } from '@/application/shared/dailyRecordCoreContracts';
 import { getTodayISO } from '@/utils/dateFormattingUtils';
 
 export interface StabilityRules {

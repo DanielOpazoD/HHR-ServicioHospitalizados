@@ -1,4 +1,4 @@
-import type { DailyRecordPatch } from '@/application/shared/dailyRecordContracts';
+import type { DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
 import type {
   DailyRecordReadPort,
   DailyRecordWritePort,

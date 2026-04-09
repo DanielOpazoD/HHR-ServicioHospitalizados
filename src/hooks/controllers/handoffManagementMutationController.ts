@@ -1,5 +1,5 @@
 import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcome';
-import type { DailyRecord } from '@/application/shared/dailyRecordContracts';
+import type { DailyRecord } from '@/application/shared/dailyRecordCoreContracts';
 import {
   presentHandoffManagementFailure,
   type HandoffManagementOutcomeNotice,

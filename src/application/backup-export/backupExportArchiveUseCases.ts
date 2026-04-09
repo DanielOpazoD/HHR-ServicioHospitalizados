@@ -14,10 +14,8 @@ import { getShiftSchedule } from '@/utils/clinicalDayUtils';
 import { validateCriticalFields } from '@/services/validation/criticalFieldsValidator';
 import type { CensusExportRecord } from '@/services/contracts/censusExportServiceContracts';
 import type { HandoffPdfRecord } from '@/services/pdf/contracts/handoffPdfContracts';
-import type {
-  DailyRecordCriticalValidationState,
-  DailyRecordCudyrExportState,
-} from '@/application/shared/dailyRecordContracts';
+import type { DailyRecordCriticalValidationState } from '@/application/shared/dailyRecordBedContracts';
+import type { DailyRecordCudyrExportState } from '@/application/shared/dailyRecordStaffContracts';
 
 type HandoffBackupRecord = HandoffPdfRecord &
   DailyRecordCriticalValidationState &

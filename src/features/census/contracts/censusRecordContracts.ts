@@ -1,7 +1,7 @@
 import type {
   DailyRecord as ApplicationDailyRecord,
   DailyRecordPatch as ApplicationDailyRecordPatch,
-} from '@/application/shared/dailyRecordContracts';
+} from '@/application/shared/dailyRecordCoreContracts';
 
 /**
  * Census code should depend on the application-facing daily record contract.

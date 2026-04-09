@@ -7,7 +7,7 @@ import type {
 } from '@/types/domain/dailyRecordMedicalHandoff';
 import type { DischargeData, TransferData, CMAData } from '@/types/domain/movements';
 import type { HandoffPatientContract } from '@/domain/handoff/patientContracts';
-import type { DailyRecord as ApplicationDailyRecord } from '@/application/shared/dailyRecordContracts';
+import type { DailyRecord as ApplicationDailyRecord } from '@/application/shared/dailyRecordCoreContracts';
 
 export type MedicalHandoffActor = RootMedicalHandoffActor;
 export type MedicalSpecialty = RootMedicalSpecialty;

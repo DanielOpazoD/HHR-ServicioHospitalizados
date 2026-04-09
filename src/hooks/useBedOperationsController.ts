@@ -1,6 +1,6 @@
 import { BEDS } from '@/constants/beds';
 import { createEmptyPatient } from '@/services/factories/patientFactory';
-import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordContracts';
+import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
 import type { PatientData } from '@/hooks/contracts/patientHookContracts';
 import { BedType } from '@/types/domain/beds';
 import { getBedTypeForRecord } from '@/utils/bedTypeUtils';
