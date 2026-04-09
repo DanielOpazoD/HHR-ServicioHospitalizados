@@ -15,16 +15,16 @@
 
 ## Estado actual del ciclo `Q00-Q07`
 
-| Id    | Estado     | Nota                                                                                                                                                                                                                                           |
-| ----- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Q00` | completado | plan iterativo abierto en `docs/ITERATIVE_QUALITY_EXECUTION_PLAN.md` y deuda registrada                                                                                                                                                        |
-| `Q01` | completado | `feature-dependency-matrix`, `test-failure-catalog` y artefactos `reports/*` quedaron alineados; checks de salida en verde                                                                                                                     |
-| `Q02` | completado | los shims de compatibilidad de `census` quedaron gobernados explícitamente, `sharedCensusBrowserRuntimeController` ya usa el adapter del feature y la única excepción restante `components -> laboratory/public` quedó inventariada para `Q05` |
-| `Q03` | completado | los casos de uso de `clinical-documents` ya consumen contratos internos en lugar de reingresar por `index/public`, `patient-flow` consolidó `Conflict` en el engine y `check:architecture` más `typecheck` quedaron en verde                   |
-| `Q04` | completado | `handoff` migra `DailyRecord` al facade `@/application/shared/dailyRecordContracts`, `dailyRecordCoreContracts` queda declarado como facade permitida y `repo-hygiene` acepta el boundary interno de `clinical-documents`                      |
-| `Q05` | completado | `clinical-documents` usa `internal.ts` como colaboración explícita para `application/shared`, `laboratory` expone `index.ts` como root barrel y el único debt residual sigue siendo la excepción gobernada de `DateStripQuickActions`          |
-| `Q06` | completado | el PIN local ahora se comunica como bloqueo rápido de privacidad del navegador actual, la documentación aclara que no reemplaza auth/RBAC y las pruebas focalizadas del lock screen quedaron en verde                                          |
-| `Q07` | completado | `runtime-adapter-boundary`, `typecheck` y `check:quality` quedaron en verde; el ciclo se cierra con una única excepción gobernada y no bloqueante en `folder-dependency-allowlist`                                                             |
+| Id    | Estado     | Nota                                                                                                                                                                                                                         |
+| ----- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Q00` | completado | plan iterativo abierto en `docs/ITERATIVE_QUALITY_EXECUTION_PLAN.md` y deuda registrada                                                                                                                                      |
+| `Q01` | completado | `feature-dependency-matrix`, `test-failure-catalog` y artefactos `reports/*` quedaron alineados; checks de salida en verde                                                                                                   |
+| `Q02` | completado | los shims de compatibilidad de `census` quedaron gobernados explícitamente y `sharedCensusBrowserRuntimeController` ya usa el adapter del feature                                                                            |
+| `Q03` | completado | los casos de uso de `clinical-documents` ya consumen contratos internos en lugar de reingresar por `index/public`, `patient-flow` consolidó `Conflict` en el engine y `check:architecture` más `typecheck` quedaron en verde |
+| `Q04` | completado | `handoff` migra `DailyRecord` al facade `@/application/shared/dailyRecordContracts`, `dailyRecordCoreContracts` queda declarado como facade permitida y `repo-hygiene` acepta el boundary interno de `clinical-documents`    |
+| `Q05` | completado | `clinical-documents` usa `internal.ts` como colaboración explícita para `application/shared` y `laboratory` expone `index.ts` como root barrel                                                                               |
+| `Q06` | completado | el PIN local ahora se comunica como bloqueo rápido de privacidad del navegador actual, la documentación aclara que no reemplaza auth/RBAC y las pruebas focalizadas del lock screen quedaron en verde                        |
+| `Q07` | completado | `runtime-adapter-boundary`, `typecheck` y `check:quality` quedaron en verde; el ciclo se cierra sin excepciones activas de debt en guardrails                                                                                |
 
 ## Historial del ciclo previo `N01-N15`
 
@@ -54,6 +54,6 @@
 
 ## Siguiente paso recomendado
 
-1. Mantener la excepción `components -> laboratory` gobernada y visible hasta decidir si vale la pena invertirla
-2. Reabrir un ciclo solo si esa excepción deja de ser suficiente o aparece nueva deuda blocking
-3. Sostener `typecheck` y `check:quality` como gates diarios de regresión
+1. Reabrir un ciclo solo si aparece nueva deuda blocking o regresiones en guardrails
+2. Sostener `typecheck` y `check:quality` como gates diarios de regresión
+3. Mantener el tracker alineado cuando se cierre o abra deuda nueva

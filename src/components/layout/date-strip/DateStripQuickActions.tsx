@@ -1,8 +1,7 @@
 import React from 'react';
-import { FlaskConical, Lock, Radio } from 'lucide-react';
+import { Lock, Radio } from 'lucide-react';
 import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medicalIndications';
 import { RadiologyViewerModal } from '@/components/modals/RadiologyViewerModal';
-import { LabResultsViewerModal } from '@/features/laboratory';
 
 interface DateStripQuickActionsProps {
   onOpenBedManager?: () => void;
@@ -10,6 +9,7 @@ interface DateStripQuickActionsProps {
   setLocalViewMode: (v: 'TABLE' | '3D') => void;
   hide3DToggle?: boolean;
   medicalIndicationsPatients?: MedicalIndicationsPatientOption[];
+  renderFeatureQuickActions?: (patients: MedicalIndicationsPatientOption[]) => React.ReactNode;
 }
 
 export const DateStripQuickActions: React.FC<DateStripQuickActionsProps> = ({
@@ -18,36 +18,25 @@ export const DateStripQuickActions: React.FC<DateStripQuickActionsProps> = ({
   setLocalViewMode: _setLocalViewMode,
   hide3DToggle: _hide3DToggle = false,
   medicalIndicationsPatients = [],
+  renderFeatureQuickActions,
 }) => {
   const [isRadiologyOpen, setIsRadiologyOpen] = React.useState(false);
-  const [isLabOpen, setIsLabOpen] = React.useState(false);
 
-  const radiologyPatients = React.useMemo(
-    () =>
-      medicalIndicationsPatients
-        .filter(p => p.rut && p.patientName)
-        .map(p => ({
-          bedId: p.bedId,
-          label: p.label,
-          patientName: p.patientName,
-          rut: p.rut,
-          diagnosis: p.diagnosis,
-        })),
+  const quickActionPatients = React.useMemo(
+    () => medicalIndicationsPatients.filter(p => p.rut && p.patientName),
     [medicalIndicationsPatients]
   );
 
-  const labPatients = React.useMemo(
+  const radiologyPatients = React.useMemo(
     () =>
-      medicalIndicationsPatients
-        .filter(p => p.rut && p.patientName)
-        .map(p => ({
-          bedId: p.bedId,
-          label: p.label,
-          patientName: p.patientName,
-          rut: p.rut,
-          diagnosis: p.diagnosis,
-        })),
-    [medicalIndicationsPatients]
+      quickActionPatients.map(p => ({
+        bedId: p.bedId,
+        label: p.label,
+        patientName: p.patientName,
+        rut: p.rut,
+        diagnosis: p.diagnosis,
+      })),
+    [quickActionPatients]
   );
 
   return (
@@ -81,23 +70,7 @@ export const DateStripQuickActions: React.FC<DateStripQuickActionsProps> = ({
         </>
       )}
 
-      {labPatients.length > 0 && (
-        <>
-          <button
-            onClick={() => setIsLabOpen(true)}
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg border border-emerald-200 transition-colors text-[11px] font-semibold"
-            title="Laboratorio / Exámenes Syslab"
-          >
-            <FlaskConical size={14} />
-            <span className="hidden sm:inline">Lab</span>
-          </button>
-          <LabResultsViewerModal
-            isOpen={isLabOpen}
-            onClose={() => setIsLabOpen(false)}
-            patients={labPatients}
-          />
-        </>
-      )}
+      {renderFeatureQuickActions?.(quickActionPatients)}
     </div>
   );
 };

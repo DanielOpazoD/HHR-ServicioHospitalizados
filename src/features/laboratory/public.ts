@@ -11,6 +11,7 @@
 
 // Main modal component
 export { LabResultsViewerModal } from './components/LabResultsViewerModal';
+export { LaboratoryQuickAction } from './components/LaboratoryQuickAction';
 
 // Hook (for advanced consumers that need direct access to lab state)
 export { useLabViewer } from './hooks/useLabViewer';

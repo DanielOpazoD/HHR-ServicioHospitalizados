@@ -16,6 +16,7 @@ import { formatDateToCL } from '@/utils/clinicalUtils';
 export interface AppContentChromeProps {
   ui: UseUIStateReturn;
   runtime: AppContentRuntime;
+  renderFeatureQuickActions?: (patients: MedicalIndicationsPatientOption[]) => React.ReactNode;
 }
 
 const calculateDaysOfStay = (admissionDate?: string): string => {
@@ -27,7 +28,11 @@ const calculateDaysOfStay = (admissionDate?: string): string => {
   return String(Math.max(days, 1));
 };
 
-export const AppContentChrome: React.FC<AppContentChromeProps> = ({ ui, runtime }) => {
+export const AppContentChrome: React.FC<AppContentChromeProps> = ({
+  ui,
+  runtime,
+  renderFeatureQuickActions,
+}) => {
   const { auth, dateNav, censusEmail, fileOps, syncStatus, lastSyncTime, exportManager } = runtime;
   const { isSignatureMode, currentDateString } = dateNav;
 
@@ -152,6 +157,7 @@ export const AppContentChrome: React.FC<AppContentChromeProps> = ({ ui, runtime 
           navigateDays={dateNav.navigateDays}
           accessProfile={runtime.censusAccessProfile}
           medicalIndicationsPatients={medicalIndicationsPatients}
+          renderFeatureQuickActions={renderFeatureQuickActions}
         />
       )}
 

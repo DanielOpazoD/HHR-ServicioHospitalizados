@@ -6,12 +6,14 @@ import { AppContentChrome } from '@/components/layout/app-content/AppContentChro
 import { AppContentOverlays } from '@/components/layout/app-content/AppContentOverlays';
 import { useAppContentRuntime } from '@/components/layout/app-content/useAppContentRuntime';
 import { useAppContentShellEffects } from '@/components/layout/app-content/useAppContentShellEffects';
+import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medicalIndications';
 
 interface AppContentProps {
   ui: UseUIStateReturn;
+  renderFeatureQuickActions?: (patients: MedicalIndicationsPatientOption[]) => React.ReactNode;
 }
 
-export const AppContent: React.FC<AppContentProps> = ({ ui }) => {
+export const AppContent: React.FC<AppContentProps> = ({ ui, renderFeatureQuickActions }) => {
   const runtime = useAppContentRuntime({ ui });
   const { auth, dailyRecordHook, dateNav } = runtime;
 
@@ -29,7 +31,11 @@ export const AppContent: React.FC<AppContentProps> = ({ ui }) => {
     <AppProviders dailyRecordHook={dailyRecordHook}>
       <ReminderCenterProvider>
         <div className="min-h-screen bg-slate-100 font-sans flex flex-col print:bg-white print:p-0">
-          <AppContentChrome ui={ui} runtime={runtime} />
+          <AppContentChrome
+            ui={ui}
+            runtime={runtime}
+            renderFeatureQuickActions={renderFeatureQuickActions}
+          />
           <AppContentOverlays ui={ui} runtime={runtime} />
         </div>
       </ReminderCenterProvider>

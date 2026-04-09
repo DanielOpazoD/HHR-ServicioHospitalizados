@@ -71,6 +71,7 @@ export interface DateStripProps
   currentModule: string;
   accessProfile?: CensusAccessProfile;
   medicalIndicationsPatients?: MedicalIndicationsPatientOption[];
+  renderFeatureQuickActions?: (patients: MedicalIndicationsPatientOption[]) => React.ReactNode;
 }
 
 export const DateStrip: React.FC<DateStripProps> = ({
@@ -106,6 +107,7 @@ export const DateStrip: React.FC<DateStripProps> = ({
   currentModule,
   accessProfile = 'default',
   medicalIndicationsPatients = [],
+  renderFeatureQuickActions,
 }) => {
   const daysContainerRef = useRef<HTMLDivElement>(null);
 
@@ -221,6 +223,7 @@ export const DateStrip: React.FC<DateStripProps> = ({
             localViewMode={localViewMode}
             setLocalViewMode={setLocalViewMode}
             hide3DToggle={specialistCensusAccess}
+            renderFeatureQuickActions={renderFeatureQuickActions}
             medicalIndicationsPatients={
               currentModule === 'CENSUS' ? medicalIndicationsPatients : []
             }

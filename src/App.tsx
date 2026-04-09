@@ -6,6 +6,7 @@
 
 import React from 'react';
 import { LoginPage } from '@/features/auth';
+import { LaboratoryQuickAction } from '@/features/laboratory';
 import { GlobalErrorBoundary } from '@/components/shared/GlobalErrorBoundary';
 import { AppContent } from '@/components/layout/AppContent';
 import { CensusProvider } from '@/context/CensusContext';
@@ -23,6 +24,7 @@ import {
   type AppAuthenticatedDateNavigation,
 } from '@/app-shell/bootstrap/useAppBootstrapState';
 import { useAuthenticatedAppRuntime } from '@/app-shell/runtime/useAuthenticatedAppRuntime';
+import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medicalIndications';
 
 const AppLoadingScreen = () => (
   <div className="min-h-screen bg-slate-100 flex items-center justify-center">
@@ -44,10 +46,14 @@ interface AuthenticatedAppShellProps {
 
 const AuthenticatedAppShell = ({ auth, dateNav }: AuthenticatedAppShellProps) => {
   const { censusContextValue, ui } = useAuthenticatedAppRuntime({ auth, dateNav });
+  const renderFeatureQuickActions = React.useCallback(
+    (patients: MedicalIndicationsPatientOption[]) => <LaboratoryQuickAction patients={patients} />,
+    []
+  );
 
   return (
     <CensusProvider value={censusContextValue}>
-      <AppContent ui={ui} />
+      <AppContent ui={ui} renderFeatureQuickActions={renderFeatureQuickActions} />
     </CensusProvider>
   );
 };
