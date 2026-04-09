@@ -6,113 +6,31 @@ import {
   type ApplicationOutcome,
 } from '@/shared/contracts/applicationOutcome';
 import { resolveApplicationOutcomeMessage } from '@/shared/contracts/applicationOutcomeMessage';
+import {
+  buildEnsuredGlobalEmailRecipientList,
+  buildGlobalEmailRecipientListId,
+  CENSUS_GLOBAL_EMAIL_RECIPIENT_LIST,
+  EMAIL_RECIPIENT_LISTS_COLLECTION,
+  GLOBAL_EMAIL_RECIPIENT_LIST_QUERY,
+  normalizeGlobalEmailRecipientList,
+  normalizeGlobalEmailRecipientLists,
+  normalizeGlobalEmailRecipients,
+  normalizeListName,
+  normalizeString,
+  areGlobalEmailRecipientsEqual,
+  type GlobalEmailRecipientList,
+  type SaveGlobalEmailRecipientListInput,
+} from '@/services/email/emailRecipientListSupport';
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const EMAIL_RECIPIENT_LISTS_COLLECTION = 'emailRecipientLists';
-
-export const CENSUS_GLOBAL_EMAIL_RECIPIENT_LIST = {
-  id: 'census-default',
-  name: 'Censo diario (predeterminado)',
-  description: 'Lista global reutilizable para envios predeterminados de censo diario.',
-} as const;
-
-export interface GlobalEmailRecipientList {
-  id: string;
-  name: string;
-  description: string | null;
-  recipients: string[];
-  scope: 'global';
-  updatedAt: string;
-  updatedByUid: string | null;
-  updatedByEmail: string | null;
-}
-
-interface SaveGlobalEmailRecipientListInput {
-  listId: string;
-  name: string;
-  description?: string | null;
-  recipients: string[];
-  updatedByUid?: string | null;
-  updatedByEmail?: string | null;
-}
+export {
+  areGlobalEmailRecipientsEqual,
+  buildGlobalEmailRecipientListId,
+  CENSUS_GLOBAL_EMAIL_RECIPIENT_LIST,
+  normalizeGlobalEmailRecipients,
+  type GlobalEmailRecipientList,
+};
 
 type GlobalEmailRecipientListOutcome<T> = ApplicationOutcome<T>;
-
-const normalizeEmail = (value: string): string => value.trim().toLowerCase();
-
-const isValidEmail = (value: string): boolean => EMAIL_REGEX.test(value);
-
-const normalizeString = (value: unknown): string | null => {
-  if (typeof value !== 'string') {
-    return null;
-  }
-
-  const normalized = value.trim();
-  return normalized.length > 0 ? normalized : null;
-};
-
-const normalizeListName = (value: string): string => value.trim();
-
-const normalizeListId = (value: string): string =>
-  value
-    .trim()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-
-export const normalizeGlobalEmailRecipients = (value: unknown): string[] => {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return Array.from(
-    new Set(
-      value
-        .filter((item): item is string => typeof item === 'string')
-        .map(normalizeEmail)
-        .filter(email => email.length > 0 && isValidEmail(email))
-    )
-  );
-};
-
-export const areGlobalEmailRecipientsEqual = (
-  left: string[] | null | undefined,
-  right: string[] | null | undefined
-): boolean => {
-  const normalizedLeft = normalizeGlobalEmailRecipients(left);
-  const normalizedRight = normalizeGlobalEmailRecipients(right);
-
-  if (normalizedLeft.length !== normalizedRight.length) {
-    return false;
-  }
-
-  return normalizedLeft.every((value, index) => value === normalizedRight[index]);
-};
-
-const normalizeGlobalEmailRecipientList = (
-  listId: string,
-  raw: Partial<GlobalEmailRecipientList> | null
-): GlobalEmailRecipientList | null => {
-  if (!raw) {
-    return null;
-  }
-
-  return {
-    id: listId,
-    name:
-      listId === CENSUS_GLOBAL_EMAIL_RECIPIENT_LIST.id
-        ? CENSUS_GLOBAL_EMAIL_RECIPIENT_LIST.name
-        : (normalizeString(raw.name) ?? 'Lista global de correos'),
-    description: normalizeString(raw.description),
-    recipients: normalizeGlobalEmailRecipients(raw.recipients),
-    scope: 'global',
-    updatedAt: normalizeString(raw.updatedAt) ?? new Date(0).toISOString(),
-    updatedByUid: normalizeString(raw.updatedByUid),
-    updatedByEmail: normalizeString(raw.updatedByEmail),
-  };
-};
 
 export const getGlobalEmailRecipientList = async (
   listId: string
@@ -159,19 +77,10 @@ export const getGlobalEmailRecipientListsWithResult = async (): Promise<
   try {
     const rawLists = await firestoreDb.getDocs<Partial<GlobalEmailRecipientList>>(
       EMAIL_RECIPIENT_LISTS_COLLECTION,
-      {
-        orderBy: [{ field: 'updatedAt', direction: 'desc' }],
-        limit: 100,
-      }
+      GLOBAL_EMAIL_RECIPIENT_LIST_QUERY
     );
 
-    return createApplicationSuccess(
-      rawLists
-        .map(raw =>
-          normalizeGlobalEmailRecipientList(typeof raw.id === 'string' ? raw.id : '', raw)
-        )
-        .filter((list): list is GlobalEmailRecipientList => Boolean(list && list.id))
-    );
+    return createApplicationSuccess(normalizeGlobalEmailRecipientLists(rawLists));
   } catch (error) {
     recordOperationalErrorTelemetry('integration', 'get_global_email_recipient_lists', error, {
       code: 'email_recipient_lists_fetch_failed',
@@ -190,22 +99,6 @@ export const getGlobalEmailRecipientListsWithResult = async (): Promise<
       ]
     );
   }
-};
-
-export const buildGlobalEmailRecipientListId = (
-  name: string,
-  existingIds: string[] = []
-): string => {
-  const baseId = normalizeListId(name) || 'lista-correos';
-  let candidate = baseId;
-  let suffix = 2;
-
-  while (existingIds.includes(candidate)) {
-    candidate = `${baseId}-${suffix}`;
-    suffix += 1;
-  }
-
-  return candidate;
 };
 
 export const saveGlobalEmailRecipientList = async ({
@@ -316,14 +209,7 @@ export const ensureGlobalEmailRecipientList = async (
   await saveGlobalEmailRecipientList(input);
 
   return {
-    id: input.listId,
-    name: normalizeListName(input.name),
-    description: normalizeString(input.description),
-    recipients: normalizeGlobalEmailRecipients(input.recipients),
-    scope: 'global',
-    updatedAt: new Date().toISOString(),
-    updatedByUid: normalizeString(input.updatedByUid),
-    updatedByEmail: normalizeString(input.updatedByEmail),
+    ...buildEnsuredGlobalEmailRecipientList(input),
   };
 };
 
@@ -342,16 +228,6 @@ export const subscribeToGlobalEmailRecipientLists = (
 ): (() => void) =>
   firestoreDb.subscribeQuery<Partial<GlobalEmailRecipientList>>(
     EMAIL_RECIPIENT_LISTS_COLLECTION,
-    {
-      orderBy: [{ field: 'updatedAt', direction: 'desc' }],
-      limit: 100,
-    },
-    rawLists => {
-      const lists = rawLists
-        .map(raw =>
-          normalizeGlobalEmailRecipientList(typeof raw.id === 'string' ? raw.id : '', raw)
-        )
-        .filter((list): list is GlobalEmailRecipientList => Boolean(list && list.id));
-      onUpdate(lists);
-    }
+    GLOBAL_EMAIL_RECIPIENT_LIST_QUERY,
+    rawLists => onUpdate(normalizeGlobalEmailRecipientLists(rawLists))
   );
