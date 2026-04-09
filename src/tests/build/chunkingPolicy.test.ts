@@ -2,39 +2,20 @@ import { describe, expect, it } from 'vitest';
 import { chunkForModule } from '../../../scripts/config/chunkingPolicy';
 
 describe('chunkingPolicy', () => {
-  it('keeps backup storage modules inside feature-backup-storage', () => {
-    expect(chunkForModule('/repo/src/services/backup/censusStorageService.ts')).toBe(
-      'feature-backup-storage'
-    );
-  });
-
-  it('does not recreate the removed shared-census-storage chunk', () => {
-    const assignedChunks = [
-      chunkForModule('/repo/src/services/backup/censusStorageService.ts'),
-      chunkForModule('/repo/src/services/backup/baseStorageService.ts'),
-    ];
-
-    expect(assignedChunks).not.toContain('feature-shared-census-storage');
-  });
-
-  it('keeps census patient-row modules and runtime controllers inside the same chunk', () => {
-    expect(chunkForModule('/repo/src/features/census/components/patient-row/PatientRow.tsx')).toBe(
-      'feature-census-runtime'
-    );
-
+  it('does not force manual chunks for application source modules', () => {
+    expect(chunkForModule('/repo/src/services/backup/censusStorageService.ts')).toBeUndefined();
+    expect(
+      chunkForModule('/repo/src/features/census/components/patient-row/PatientRow.tsx')
+    ).toBeUndefined();
     expect(
       chunkForModule('/repo/src/features/census/controllers/patientMovementController.ts')
-    ).toBe('feature-census-runtime');
-  });
-
-  it('keeps clinical documents and transfers isolated in their own feature chunks', () => {
+    ).toBeUndefined();
     expect(
       chunkForModule('/repo/src/features/clinical-documents/components/ClinicalDocumentsModal.tsx')
-    ).toBe('feature-clinical-documents');
-
+    ).toBeUndefined();
     expect(
       chunkForModule('/repo/src/features/transfers/components/components/TransferStatusBadge.tsx')
-    ).toBe('feature-transfers');
+    ).toBeUndefined();
   });
 
   it('splits heavyweight vendor capabilities by runtime concern', () => {

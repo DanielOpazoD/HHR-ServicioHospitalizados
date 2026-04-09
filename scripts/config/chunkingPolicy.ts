@@ -3,33 +3,6 @@ export const chunkForModule = (moduleId: string): string | undefined => {
   const inNodeModules = normalizedId.includes('/node_modules/');
   const has = (fragment: string): boolean => normalizedId.includes(fragment);
 
-  if (!inNodeModules) {
-    if (
-      has('/src/features/census/components/patient-row/') ||
-      has('/src/features/census/context/') ||
-      has('/src/features/census/controllers/') ||
-      has('/src/features/census/domain/movements/') ||
-      has('/src/features/census/validation/')
-    ) {
-      return 'feature-census-runtime';
-    }
-
-    if (has('/src/features/clinical-documents/')) {
-      return 'feature-clinical-documents';
-    }
-
-    if (has('/src/features/transfers/')) {
-      return 'feature-transfers';
-    }
-
-    // Keep backup/storage together unless there is a clearly isolated runtime boundary.
-    // A previous dedicated shared-census storage chunk created a production-only
-    // initialization cycle with feature-backup-storage on Netlify.
-    if (has('/src/application/backup-export/') || has('/src/services/backup/')) {
-      return 'feature-backup-storage';
-    }
-  }
-
   if (inNodeModules) {
     // React + libraries that call React.createContext at module scope must
     // live in the same chunk to avoid load-order race conditions in production.
