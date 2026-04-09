@@ -31,7 +31,13 @@ const proxyFetch = async (url: string, options: RequestInit = {}): Promise<Respo
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    const response = await fetch(url, { ...options, signal: controller.signal });
+    const headers = {
+      ...(options.headers as Record<string, string>),
+      // Skip ngrok free-tier browser interstitial warning page
+      'ngrok-skip-browser-warning': 'true',
+      'User-Agent': 'HHR-Netlify-Function',
+    };
+    const response = await fetch(url, { ...options, headers, signal: controller.signal });
     return response;
   } finally {
     clearTimeout(timeout);
