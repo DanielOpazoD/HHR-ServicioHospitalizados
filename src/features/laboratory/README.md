@@ -12,7 +12,7 @@ features/laboratory/
 │   ├── labFormattingController.ts  # Puro: parsing, formateo, validación, utilidades compartidas
 │   ├── labAnalyticsController.ts   # Puro: buildAnalysisData + helpers
 │   └── labSummaryController.ts     # Puro: resumen con siglas clínicas para documentos
-├── components/               # 12 componentes React (1 por archivo)
+├── components/               # Componentes React + helpers locales de charts
 │   ├── LabResultsViewerModal.tsx
 │   ├── LabViewerControls.tsx
 │   ├── LabViewerExamList.tsx (con filtro por categoría)
@@ -20,6 +20,10 @@ features/laboratory/
 │   ├── LabViewerPdf.tsx
 │   ├── LabViewerAnalysis.tsx
 │   ├── LabViewerTrendCharts.tsx
+│   ├── LabTrendGroupCard.tsx
+│   ├── LabTrendChartHelpers.ts
+│   ├── LabTrendChartRenderers.tsx
+│   ├── labTrendChartExport.ts
 │   ├── LabViewerComparisonTable.tsx
 │   ├── LabExportConfigDialog.tsx
 │   ├── LabViewerEmptyState.tsx
