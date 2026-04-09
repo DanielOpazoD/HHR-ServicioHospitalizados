@@ -30,20 +30,17 @@ export const chunkForModule = (moduleId: string): string | undefined => {
   }
 
   if (inNodeModules) {
+    // React + libraries that call React.createContext at module scope must
+    // live in the same chunk to avoid load-order race conditions in production.
     if (
       has('/node_modules/react/') ||
       has('/node_modules/react-dom/') ||
-      has('/node_modules/lucide-react/')
-    ) {
-      return 'vendor-react';
-    }
-
-    if (
+      has('/node_modules/lucide-react/') ||
       has('/node_modules/@tanstack/react-query/') ||
       has('/node_modules/@tanstack/query-core/') ||
       has('/node_modules/@tanstack/react-virtual/')
     ) {
-      return 'vendor-tanstack';
+      return 'vendor-react';
     }
 
     if (has('/node_modules/dexie/')) {
