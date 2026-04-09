@@ -1,26 +1,102 @@
 /**
  * @module LabViewerComparisonTable
  * @description Comparison table with dates as columns and lab variables as rows.
+ * Uses @tanstack/react-virtual for row virtualization when >20 rows.
  */
 
 import React from 'react';
 import clsx from 'clsx';
 import { FileText, Search } from 'lucide-react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import type { LabAnalysisData } from '@/types/domain/laboratory';
 import type { ExportConfig } from '../types/labViewerTypes';
 import { isOutOfRange, formatLabResult } from '../controllers/labFormattingController';
 import { exportComparisonToExcel } from '../services/labExcelService';
 import { LabExportConfigDialog } from './LabExportConfigDialog';
 
+const ROW_HEIGHT = 28;
+const VIRTUALIZATION_THRESHOLD = 20;
+
+const ComparisonRow: React.FC<{
+  name: string;
+  examDates: string[];
+  data: LabAnalysisData;
+  index: number;
+}> = ({ name, examDates, data, index }) => (
+  <tr
+    className={clsx(
+      'border-t border-slate-100 hover:bg-slate-50/50',
+      index % 2 === 1 && 'bg-slate-50/30'
+    )}
+  >
+    <td className="sticky left-0 z-10 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-700 border-r border-slate-200 whitespace-nowrap">
+      {name}
+    </td>
+    {examDates.map(date => {
+      const row = data.comparison[name]?.[date];
+      if (!row) {
+        return (
+          <td key={date} className="px-1 py-0.5 text-center text-[10px] text-slate-300">
+            --
+          </td>
+        );
+      }
+      if (row.qualitative) {
+        const isPositive = /positivo|reactivo/i.test(row.result);
+        return (
+          <td key={date} className="px-1 py-0.5 text-center whitespace-nowrap">
+            <span
+              className={clsx(
+                'text-[10px] font-semibold',
+                isPositive ? 'text-red-600' : 'text-emerald-600'
+              )}
+            >
+              {row.result.length > 20 ? row.result.substring(0, 20) + '…' : row.result}
+            </span>
+          </td>
+        );
+      }
+      const oor = isOutOfRange(row.result, row.refValue);
+      const { display } = formatLabResult(row.result, row.unit);
+      return (
+        <td key={date} className="px-1 py-0.5 text-center whitespace-nowrap">
+          <span
+            className={clsx(
+              'text-[11px] font-bold',
+              oor === true && 'text-red-600',
+              oor === false && 'text-emerald-600',
+              oor === null && 'text-slate-700'
+            )}
+          >
+            {display}
+          </span>
+        </td>
+      );
+    })}
+  </tr>
+);
+
 export const LabViewerComparisonTable: React.FC<{ data: LabAnalysisData }> = ({ data }) => {
   const allVariableNames = Object.keys(data.comparison);
   const { examDates } = data;
   const [showExportConfig, setShowExportConfig] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
+  const scrollRef = React.useRef<HTMLDivElement>(null);
 
   const variableNames = searchQuery
     ? allVariableNames.filter(n => n.toLowerCase().includes(searchQuery.toLowerCase()))
     : allVariableNames;
+
+  const useVirtual = variableNames.length > VIRTUALIZATION_THRESHOLD;
+
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const virtualizer = useVirtualizer({
+    count: variableNames.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => ROW_HEIGHT,
+    overscan: 10,
+    enabled: useVirtual,
+  });
 
   if (allVariableNames.length === 0) {
     return (
@@ -65,12 +141,16 @@ export const LabViewerComparisonTable: React.FC<{ data: LabAnalysisData }> = ({ 
         />
       )}
 
-      {/* Table -- compact layout */}
-      <div className="overflow-x-auto rounded-xl border border-slate-200/80">
+      {/* Table — virtualized when >20 rows */}
+      <div
+        ref={scrollRef}
+        className="overflow-auto rounded-xl border border-slate-200/80"
+        style={useVirtual ? { maxHeight: '60vh' } : undefined}
+      >
         <table className="border-collapse">
-          <thead>
+          <thead className="sticky top-0 z-20">
             <tr className="bg-slate-50">
-              <th className="sticky left-0 z-10 bg-slate-50 px-2 py-1 text-left text-[9px] font-bold uppercase text-slate-500 border-r border-slate-200 whitespace-nowrap">
+              <th className="sticky left-0 z-30 bg-slate-50 px-2 py-1 text-left text-[9px] font-bold uppercase text-slate-500 border-r border-slate-200 whitespace-nowrap">
                 Variable
               </th>
               {examDates.map(date => (
@@ -83,63 +163,93 @@ export const LabViewerComparisonTable: React.FC<{ data: LabAnalysisData }> = ({ 
               ))}
             </tr>
           </thead>
-          <tbody>
-            {variableNames.map((name, i) => (
-              <tr
-                key={name}
-                className={clsx(
-                  'border-t border-slate-100 hover:bg-slate-50/50',
-                  i % 2 === 1 && 'bg-slate-50/30'
-                )}
-              >
-                <td className="sticky left-0 z-10 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-700 border-r border-slate-200 whitespace-nowrap">
-                  {name}
-                </td>
-                {examDates.map(date => {
-                  const row = data.comparison[name]?.[date];
-                  if (!row) {
-                    return (
-                      <td key={date} className="px-1 py-0.5 text-center text-[10px] text-slate-300">
-                        --
-                      </td>
-                    );
-                  }
-                  // Qualitative results: color by positive/negative
-                  if (row.qualitative) {
-                    const isPositive = /positivo|reactivo/i.test(row.result);
-                    return (
-                      <td key={date} className="px-1 py-0.5 text-center whitespace-nowrap">
-                        <span
-                          className={clsx(
-                            'text-[10px] font-semibold',
-                            isPositive ? 'text-red-600' : 'text-emerald-600'
-                          )}
-                        >
-                          {row.result.length > 20 ? row.result.substring(0, 20) + '…' : row.result}
-                        </span>
-                      </td>
-                    );
-                  }
-
-                  const oor = isOutOfRange(row.result, row.refValue);
-                  const { display } = formatLabResult(row.result, row.unit);
+          <tbody
+            style={
+              useVirtual
+                ? { height: `${virtualizer.getTotalSize()}px`, position: 'relative' }
+                : undefined
+            }
+          >
+            {useVirtual
+              ? virtualizer.getVirtualItems().map(virtualRow => {
+                  const name = variableNames[virtualRow.index];
                   return (
-                    <td key={date} className="px-1 py-0.5 text-center whitespace-nowrap">
-                      <span
-                        className={clsx(
-                          'text-[11px] font-bold',
-                          oor === true && 'text-red-600',
-                          oor === false && 'text-emerald-600',
-                          oor === null && 'text-slate-700'
-                        )}
-                      >
-                        {display}
-                      </span>
-                    </td>
+                    <tr
+                      key={name}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: `${virtualRow.size}px`,
+                        transform: `translateY(${virtualRow.start}px)`,
+                      }}
+                      className={clsx(
+                        'border-t border-slate-100 hover:bg-slate-50/50',
+                        virtualRow.index % 2 === 1 && 'bg-slate-50/30'
+                      )}
+                    >
+                      <td className="sticky left-0 z-10 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-700 border-r border-slate-200 whitespace-nowrap">
+                        {name}
+                      </td>
+                      {examDates.map(date => {
+                        const row = data.comparison[name]?.[date];
+                        if (!row) {
+                          return (
+                            <td
+                              key={date}
+                              className="px-1 py-0.5 text-center text-[10px] text-slate-300"
+                            >
+                              --
+                            </td>
+                          );
+                        }
+                        if (row.qualitative) {
+                          const isPositive = /positivo|reactivo/i.test(row.result);
+                          return (
+                            <td key={date} className="px-1 py-0.5 text-center whitespace-nowrap">
+                              <span
+                                className={clsx(
+                                  'text-[10px] font-semibold',
+                                  isPositive ? 'text-red-600' : 'text-emerald-600'
+                                )}
+                              >
+                                {row.result.length > 20
+                                  ? row.result.substring(0, 20) + '…'
+                                  : row.result}
+                              </span>
+                            </td>
+                          );
+                        }
+                        const oor = isOutOfRange(row.result, row.refValue);
+                        const { display } = formatLabResult(row.result, row.unit);
+                        return (
+                          <td key={date} className="px-1 py-0.5 text-center whitespace-nowrap">
+                            <span
+                              className={clsx(
+                                'text-[11px] font-bold',
+                                oor === true && 'text-red-600',
+                                oor === false && 'text-emerald-600',
+                                oor === null && 'text-slate-700'
+                              )}
+                            >
+                              {display}
+                            </span>
+                          </td>
+                        );
+                      })}
+                    </tr>
                   );
-                })}
-              </tr>
-            ))}
+                })
+              : variableNames.map((name, i) => (
+                  <ComparisonRow
+                    key={name}
+                    name={name}
+                    examDates={examDates}
+                    data={data}
+                    index={i}
+                  />
+                ))}
           </tbody>
         </table>
       </div>
