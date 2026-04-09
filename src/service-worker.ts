@@ -5,7 +5,7 @@
 
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
 import { registerRoute, setCatchHandler } from 'workbox-routing';
-import { StaleWhileRevalidate, CacheFirst, NetworkFirst, NetworkOnly } from 'workbox-strategies';
+import { CacheFirst, NetworkFirst, NetworkOnly } from 'workbox-strategies';
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 
@@ -67,7 +67,7 @@ declare let self: ServiceWorkerGlobalScope & {
 precacheAndRoute(self.__WB_MANIFEST);
 cleanupOutdatedCaches();
 
-const CACHE_VERSION = 'v2.3.0';
+const CACHE_VERSION = 'v2.4.0';
 const OFFLINE_PAGE = '/offline.html';
 const serviceWorkerLogger = createScopedLogger('ServiceWorker');
 
@@ -83,16 +83,10 @@ const isClientsClaimRaceError = (error: unknown): boolean => {
 // CACHING STRATEGIES
 // ============================================
 
-// Static assets (JS, CSS) - Stale While Revalidate
-registerRoute(
-  ({ request, url }) =>
-    url.origin === self.location.origin &&
-    (request.destination === 'script' || request.destination === 'style'),
-  new StaleWhileRevalidate({
-    cacheName: `static-${CACHE_VERSION}`,
-    plugins: [new CacheableResponsePlugin({ statuses: [0, 200] })],
-  })
-);
+// Hashed JS/CSS assets are already served by precacheAndRoute above.
+// A separate StaleWhileRevalidate route was removed because it created a
+// shadow cache that could serve stale versioned files after a new deploy,
+// causing load-order crashes (e.g. vendor-react missing → createContext error).
 
 // Google Fonts - Cache First
 registerRoute(

@@ -6,6 +6,7 @@ export const chunkForModule = (moduleId: string): string | undefined => {
   if (!inNodeModules) {
     if (
       has('/src/features/census/components/patient-row/') ||
+      has('/src/features/census/context/') ||
       has('/src/features/census/controllers/') ||
       has('/src/features/census/domain/movements/') ||
       has('/src/features/census/validation/')
