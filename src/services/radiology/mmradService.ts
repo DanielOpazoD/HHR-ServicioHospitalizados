@@ -45,6 +45,14 @@ export const searchMMRADExams = async ({
   try {
     const response = await fetch(url);
 
+    // Detect when Vite dev server returns HTML instead of JSON (Netlify Functions not available)
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('text/html')) {
+      throw new Error(
+        'Servidor MMRAD no disponible. En desarrollo local, usa "netlify dev" en vez de "npm run dev" para habilitar las funciones de Netlify.'
+      );
+    }
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Error de conexión' }));
       throw new Error(errorData.error || `Error ${response.status}`);
