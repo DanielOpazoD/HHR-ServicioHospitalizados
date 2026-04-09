@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { createScopedLogger } from '@/services/utils/loggerScope';
+
+const singleFlightLogger = createScopedLogger('SingleFlightAsyncCommand');
 
 interface SingleFlightCommandRunner {
   runSingleFlight: (task: () => Promise<void>) => boolean;
@@ -36,7 +39,9 @@ export const useSingleFlightAsyncCommand = (): SingleFlightCommandRunner => {
     }
 
     void taskPromise
-      .catch(() => undefined)
+      .catch((error: unknown) => {
+        singleFlightLogger.error('Single-flight async command failed', error);
+      })
       .finally(() => {
         isInFlightRef.current = false;
       });

@@ -69,7 +69,9 @@ const createFolder = async (
   });
 
   if (!response.ok) {
-    const payload = await response.json().catch(() => ({}));
+    const payload = await response
+      .json()
+      .catch(() => ({ error: { message: `HTTP ${response.status}` } }));
     throw new Error(payload.error?.message || 'No se pudo crear carpeta en Google Drive.');
   }
 

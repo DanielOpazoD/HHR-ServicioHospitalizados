@@ -70,47 +70,67 @@ export const createBookmarkService = (
       updatedAt: new Date().toISOString(),
     };
 
-    return addDoc(getBookmarksCollection(), data);
+    try {
+      return await addDoc(getBookmarksCollection(), data);
+    } catch (error) {
+      bookmarkLogger.error('Error adding bookmark', error);
+      throw error;
+    }
   };
 
   const updateBookmark = async (id: string, updates: Partial<Bookmark>) => {
     const docRef = doc(getBookmarksCollection(), id);
-    return updateDoc(docRef, {
-      ...updates,
-      updatedAt: new Date().toISOString(),
-    });
+    try {
+      return await updateDoc(docRef, {
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      bookmarkLogger.error('Error updating bookmark', { id, error });
+      throw error;
+    }
   };
 
   const deleteBookmark = async (id: string) => {
     const docRef = doc(getBookmarksCollection(), id);
-    return deleteDoc(docRef);
+    try {
+      return await deleteDoc(docRef);
+    } catch (error) {
+      bookmarkLogger.error('Error deleting bookmark', { id, error });
+      throw error;
+    }
   };
 
   const exportBookmarksToJson = async () => {
-    const bookmarksQuery = query(getBookmarksCollection(), orderBy('order', 'asc'));
-    const snapshot = await getDocs(bookmarksQuery);
-    const bookmarks = snapshot.docs.map(currentDoc => {
-      const data = currentDoc.data();
-      return {
-        name: data.name,
-        url: data.url,
-        icon: data.icon,
-        notes: data.notes,
-        order: data.order,
-      };
-    });
+    try {
+      const bookmarksQuery = query(getBookmarksCollection(), orderBy('order', 'asc'));
+      const snapshot = await getDocs(bookmarksQuery);
+      const bookmarks = snapshot.docs.map(currentDoc => {
+        const data = currentDoc.data();
+        return {
+          name: data.name,
+          url: data.url,
+          icon: data.icon,
+          notes: data.notes,
+          order: data.order,
+        };
+      });
 
-    const dataStr =
-      'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(bookmarks, null, 2));
-    const downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute('href', dataStr);
-    downloadAnchorNode.setAttribute(
-      'download',
-      `marcadores_hospital_${new Date().toISOString().split('T')[0]}.json`
-    );
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
+      const dataStr =
+        'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(bookmarks, null, 2));
+      const downloadAnchorNode = document.createElement('a');
+      downloadAnchorNode.setAttribute('href', dataStr);
+      downloadAnchorNode.setAttribute(
+        'download',
+        `marcadores_hospital_${new Date().toISOString().split('T')[0]}.json`
+      );
+      document.body.appendChild(downloadAnchorNode);
+      downloadAnchorNode.click();
+      downloadAnchorNode.remove();
+    } catch (error) {
+      bookmarkLogger.error('Error exporting bookmarks to JSON', error);
+      throw error;
+    }
   };
 
   const importBookmarksFromJson = async (jsonContent: string) => {

@@ -1,4 +1,5 @@
 import type { Workbook, Worksheet } from 'exceljs';
+import { formatDateDDMMYYYY } from '@/utils/dateFormattingUtils';
 
 import type { CategoryCounts, CudyrCategory, CudyrMonthlySummary } from './cudyrSummary';
 
@@ -36,10 +37,8 @@ const DAILY_SHEET_CATEGORY_START_ROW = 4;
 const DAILY_SHEET_OCCUPIED_ROW = 19;
 const DAILY_SHEET_CATEGORIZED_ROW = 20;
 
-export const formatDateDMY = (dateStr: string): string => {
-  const [year, month, day] = dateStr.split('-');
-  return `${day}-${month}-${year}`;
-};
+/** @deprecated Use formatDateDDMMYYYY from dateFormattingUtils — identical logic */
+export const formatDateDMY = (dateStr: string): string => formatDateDDMMYYYY(dateStr);
 
 export const buildMonthlyCutoffLabel = (year: number, month: number, endDate?: string): string => {
   const endDateFormatted = endDate

@@ -2,14 +2,7 @@
  * Data formatters for Excel export
  */
 
-export function formatDateDDMMYYYY(date?: string): string {
-  if (!date) return '';
-  const parts = date.split('-');
-  if (parts.length !== 3) return date;
-  const [year, month, day] = parts;
-  if (!year || !month || !day) return date;
-  return `${day.padStart(2, '0')}-${month.padStart(2, '0')}-${year}`;
-}
+export { formatDateDDMMYYYY } from '@/utils/dateFormattingUtils';
 
 export function formatAge(age?: string): string {
   if (!age) return '';
@@ -24,7 +17,5 @@ export function mapBedType(type: string): string {
   return type.toUpperCase();
 }
 
-export function formatSheetDate(date: string): string {
-  const [year, month, day] = date.split('-');
-  return `${day}-${month}-${year}`;
-}
+/** @deprecated Use formatDateDDMMYYYY instead — identical conversion YYYY-MM-DD → DD-MM-YYYY */
+export { formatDateDDMMYYYY as formatSheetDate } from '@/utils/dateFormattingUtils';
