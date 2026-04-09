@@ -30,9 +30,9 @@ const checks = [
     failIfMatches: /match \/censo-diario\/\{allPaths=\*\*\}\s*\{[\s\S]*?allow read:\s*if true;/m,
   },
   {
-    id: 'authservice-static-whitelist-partial-match',
+    id: 'auth-rolelookup-static-whitelist-partial-match',
     description: 'auth whitelist must use exact email equality, not includes',
-    file: 'src/services/auth/authService.ts',
+    file: 'src/services/auth/authRoleLookup.ts',
     failIfMatches: /cleanEmail\.includes\(staticEmail\)/m,
   },
   {

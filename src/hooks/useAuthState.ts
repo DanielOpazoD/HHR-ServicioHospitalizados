@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { onAuthSessionStateChange, signOut, hasActiveFirebaseSession } from '@/services/auth';
+import { signOut, onAuthSessionStateChange } from '@/services/auth/authSession';
+import { hasActiveFirebaseSession } from '@/services/auth/authFallback';
 import {
   executeRedirectAuthResolution,
   executeResolvedCurrentAuthSessionState,

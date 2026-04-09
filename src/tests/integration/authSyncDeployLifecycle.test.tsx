@@ -8,14 +8,18 @@ import { useAuthState } from '@/hooks/useAuthState';
 import { useDateNavigation } from '@/hooks/useDateNavigation';
 import { useVersionCheck } from '@/hooks/useVersionCheck';
 import type { AuthSessionState, AuthUser } from '@/types/auth';
-import * as authService from '@/services/auth/authService';
+import * as authSession from '@/services/auth/authSession';
+import * as authFallback from '@/services/auth/authFallback';
 import * as authUseCases from '@/application/auth';
 import * as sessionScopedStorageService from '@/services/storage/sessionScopedStorageService';
 import * as bootstrapAppRuntime from '@/app-shell/bootstrap/bootstrapAppRuntime';
 
-vi.mock('@/services/auth/authService', () => ({
+vi.mock('@/services/auth/authSession', () => ({
   onAuthSessionStateChange: vi.fn(),
   signOut: vi.fn(),
+}));
+
+vi.mock('@/services/auth/authFallback', () => ({
   hasActiveFirebaseSession: vi.fn(),
 }));
 
@@ -68,7 +72,7 @@ describe('auth/sync/deploy lifecycle integration', () => {
     setOnlineStatus(true);
     window.history.replaceState({}, '', '/medical-handoff');
 
-    vi.mocked(authService.onAuthSessionStateChange).mockImplementation(
+    vi.mocked(authSession.onAuthSessionStateChange).mockImplementation(
       (cb: (sessionState: AuthSessionState) => void | Promise<void>) => {
         authSessionStateCallback = cb;
         void cb({ status: 'unauthenticated', user: null });
@@ -85,7 +89,7 @@ describe('auth/sync/deploy lifecycle integration', () => {
       data: null,
       issues: [],
     });
-    vi.mocked(authService.hasActiveFirebaseSession).mockReturnValue(false);
+    vi.mocked(authFallback.hasActiveFirebaseSession).mockReturnValue(false);
   });
 
   afterEach(() => {

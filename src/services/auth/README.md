@@ -11,7 +11,6 @@ Resolver autenticacion, bootstrap de sesion, claims, roles y degradacion operati
 - `authRoleLookup.ts`, `authAccessResolution.ts`, `authClaimSyncService.ts`: resolucion de rol y sincronizacion de claims.
 - `authErrorPolicy.ts`, `authUiCopy.ts`, `authOperationalTelemetry.ts`: copy, errores y observabilidad.
 - `authRuntimeSnapshot.ts`: snapshot operativo reutilizable para bootstrap, sesion y reporter.
-- `authService.ts` e `index.ts`: superficies legacy/compatibilidad controladas.
 - `clientOperationalRuntimeSnapshot.ts` compone auth con persistencia local y sync desde observability.
 - `useAuthState.ts` expone `remoteSyncStatus` como contrato canonico para consumers que necesitan decidir si el runtime remoto esta `ready`, `bootstrapping` o `local_only`.
   Ese estado debe seguir siendo una derivacion liviana del bootstrap de auth, no una segunda FSM con timers y overrides implícitos.
@@ -51,8 +50,9 @@ Resolver autenticacion, bootstrap de sesion, claims, roles y degradacion operati
 
 ## Legacy activo
 
-- `authService.ts`
-- `index.ts`
+- La compatibilidad cliente `authService.ts` / `index.ts` fue retirada.
+- La deuda legacy restante de auth queda gobernada en `scripts/config/compatibility-governance.json`
+  y hoy se concentra en functions/rules ligadas al alias legacy del rol viewer.
 
 ## Checks recomendados
 

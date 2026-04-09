@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { roleService, UserRoleMap } from '@/services/admin/roleService';
-import { isManagedUserRole } from '@/shared/access/roleAccessMatrix';
+import { isManagedUserRole, type ManagedUserRole } from '@/shared/access/roleAccessMatrix';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 
 const roleManagementLogger = createScopedLogger('RoleManagement');
@@ -20,19 +20,67 @@ export const useRoleManagement = () => {
     return emailRegex.test(email);
   }, [email]);
 
+  const syncNormalizedLegacyClaims = useCallback(
+    async (roles: UserRoleMap, migratedLegacyEntries: string[]) => {
+      const syncCandidates = migratedLegacyEntries
+        .map(migratedEmail => ({
+          email: migratedEmail,
+          role: roles[migratedEmail],
+        }))
+        .filter((candidate): candidate is { email: string; role: ManagedUserRole } =>
+          isManagedUserRole(candidate.role)
+        );
+
+      const results = await Promise.allSettled(
+        syncCandidates.map(({ email, role }) => roleService.forceSyncUser(email, role))
+      );
+
+      const failedEmails = results.flatMap((result, index) =>
+        result.status === 'rejected' ? [syncCandidates[index].email] : []
+      );
+
+      if (failedEmails.length > 0) {
+        roleManagementLogger.warn('Legacy role claim sync warning', { failedEmails });
+      }
+
+      return {
+        attempted: syncCandidates.length,
+        failedEmails,
+      };
+    },
+    []
+  );
+
   const loadRoles = useCallback(async () => {
     try {
       setLoading(true);
       const snapshot = await roleService.getRolesSnapshot();
       setRoles(snapshot.roles);
+      const syncSummary =
+        snapshot.migratedLegacyEntries.length > 0
+          ? await syncNormalizedLegacyClaims(snapshot.roles, snapshot.migratedLegacyEntries)
+          : null;
       setMessage(currentMessage => {
         if (currentMessage || snapshot.migratedLegacyEntries.length === 0) {
           return currentMessage;
         }
 
+        const normalizedCount = snapshot.migratedLegacyEntries.length;
+        if (syncSummary && syncSummary.failedEmails.length > 0) {
+          return {
+            type: 'success',
+            text:
+              `Se normalizaron ${normalizedCount} registro(s) legacy en config/roles. ` +
+              `No se pudo sincronizar el claim de ${syncSummary.failedEmails.length} usuario(s); ` +
+              'deben cerrar sesión y volver a entrar o revisar functions.',
+          };
+        }
+
         return {
           type: 'success',
-          text: `Se normalizaron ${snapshot.migratedLegacyEntries.length} registro(s) legacy en config/roles.`,
+          text:
+            `Se normalizaron ${normalizedCount} registro(s) legacy en config/roles ` +
+            'y se reintentó sincronizar su claim de Firebase.',
         };
       });
     } catch (error) {
@@ -41,7 +89,7 @@ export const useRoleManagement = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [syncNormalizedLegacyClaims]);
 
   useEffect(() => {
     loadRoles();

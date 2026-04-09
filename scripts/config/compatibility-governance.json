@@ -1,20 +1,9 @@
 {
-  "policyVersion": "2026-03-v1",
+  "policyVersion": "2026-04-v1",
   "expansionRule": "Ninguna feature nueva puede depender de compatibilidad legacy salvo excepcion documentada y gobernada.",
   "documentationRule": "Todo bridge debe tener owner, motivo, retirementCriteria y remainingConsumers.",
   "exceptionProcess": "Las excepciones deben agregarse a este inventario antes de merge y deben quedar cubiertas por guardrail o test de regresion.",
   "entries": [
-    {
-      "path": "src/services/auth/authService.ts",
-      "owner": "auth",
-      "kind": "compatibility_facade",
-      "reason": "Mantener una superficie estable mientras el consumo migra a session-state y modulos auth internos.",
-      "remainingConsumers": "app-level auth imports y tests legacy",
-      "retirementCriteria": "Consumers migrados a entrypoints auth especificos y session-state canónico.",
-      "target": "2026-Q2",
-      "importPolicy": "restricted",
-      "allowedImporters": ["src/services/auth/index.ts"]
-    },
     {
       "path": "functions/lib/auth/authHelpersFactory.js",
       "owner": "auth",
@@ -50,20 +39,6 @@
       "remainingConsumers": "sesiones existentes con claim viewer_census todavía sin refresh de token",
       "retirementCriteria": "Claims activos sin viewer_census en producción y rules limitadas al rol viewer canónico.",
       "target": "2026-Q2"
-    },
-    {
-      "path": "src/services/auth/index.ts",
-      "owner": "auth",
-      "kind": "compatibility_barrel",
-      "reason": "Evitar imports internos profundos desde consumidores externos al contexto auth.",
-      "remainingConsumers": "consumidores auth de alto nivel",
-      "retirementCriteria": "Entry points publicos auth estabilizados y uso directo del barrel minimizado.",
-      "target": "2026-Q2",
-      "importPolicy": "restricted",
-      "allowedImporters": [
-        "src/application/auth/authSessionUseCases.ts",
-        "src/hooks/useAuthState.ts"
-      ]
     }
   ]
 }

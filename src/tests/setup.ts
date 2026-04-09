@@ -468,33 +468,42 @@ vi.mock('../hooks/useAuthState', () => ({
   useAuthState: () => mockAuthState,
 }));
 
-// Mock authService globally
-const mockAuthService = {
+// Mock canonical auth entrypoints globally
+const mockAuthFlow = {
   signIn: vi.fn(),
   signInWithGoogle: vi.fn(),
+  createUser: vi.fn(),
+};
+
+const mockAuthSession = {
   signOut: vi.fn(),
   onAuthSessionStateChange: vi.fn(cb => {
     cb({ status: 'unauthenticated', user: null });
     return () => {};
   }),
-  onAuthChange: vi.fn(cb => {
-    cb(null);
-    return () => {};
-  }),
-  getCurrentUser: vi.fn(() => null),
+  getCurrentAuthSessionState: vi.fn(() => ({ status: 'unauthenticated', user: null })),
   resolveCurrentAuthSessionState: vi.fn().mockResolvedValue({
     status: 'unauthenticated',
     user: null,
   }),
-  isCurrentUserAuthorizedForGeneralLogin: vi.fn().mockResolvedValue(true),
-  createUser: vi.fn(),
+};
+
+const mockAuthFallback = {
+  signInWithGoogleRedirect: vi.fn(),
+  handleSignInRedirectResult: vi.fn().mockResolvedValue(null),
   hasActiveFirebaseSession: vi.fn().mockReturnValue(false),
 };
 
-const mockAuthFactory = () => mockAuthService;
+const mockAuthFlowFactory = () => mockAuthFlow;
+const mockAuthSessionFactory = () => mockAuthSession;
+const mockAuthFallbackFactory = () => mockAuthFallback;
 
-vi.mock('@/services/auth/authService', () => mockAuthFactory());
-vi.mock('../services/auth/authService', () => mockAuthFactory());
+vi.mock('@/services/auth/authFlow', () => mockAuthFlowFactory());
+vi.mock('../services/auth/authFlow', () => mockAuthFlowFactory());
+vi.mock('@/services/auth/authSession', () => mockAuthSessionFactory());
+vi.mock('../services/auth/authSession', () => mockAuthSessionFactory());
+vi.mock('@/services/auth/authFallback', () => mockAuthFallbackFactory());
+vi.mock('../services/auth/authFallback', () => mockAuthFallbackFactory());
 
 vi.mock('@/application/auth', () => ({
   executeGoogleSignIn: vi.fn(),
@@ -594,5 +603,7 @@ export {
   mockAuditContextValue,
   mockAuthContextValue,
   mockAuditService,
-  mockAuthService,
+  mockAuthFlow,
+  mockAuthSession,
+  mockAuthFallback,
 };

@@ -4,16 +4,20 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 vi.unmock('@/hooks/useAuthState');
 
 import { useAuthState } from '@/hooks/useAuthState';
-import * as authService from '@/services/auth/authService';
+import * as authSession from '@/services/auth/authSession';
+import * as authFallback from '@/services/auth/authFallback';
 import * as authUseCases from '@/application/auth';
 import * as auditService from '@/services/admin/auditService';
 import { setFirestoreSyncState } from '@/services/repositories/repositoryConfig';
 import type { AuthSessionState, AuthUser, UserRole } from '@/types/auth';
 import * as sessionScopedStorageService from '@/services/storage/sessionScopedStorageService';
 
-vi.mock('@/services/auth/authService', () => ({
+vi.mock('@/services/auth/authSession', () => ({
   onAuthSessionStateChange: vi.fn(),
   signOut: vi.fn(),
+}));
+
+vi.mock('@/services/auth/authFallback', () => ({
   hasActiveFirebaseSession: vi.fn(),
 }));
 
@@ -52,7 +56,7 @@ describe('useAuthState baseline', () => {
     localStorage.removeItem(AUTH_BOOTSTRAP_PENDING_KEY);
     sessionStorage.removeItem(RECENT_MANUAL_LOGOUT_KEY);
 
-    vi.mocked(authService.onAuthSessionStateChange).mockImplementation(
+    vi.mocked(authSession.onAuthSessionStateChange).mockImplementation(
       (cb: (sessionState: AuthSessionState) => void | Promise<void>) => {
         authSessionStateCallback = cb;
         void cb({ status: 'unauthenticated', user: null });
@@ -70,7 +74,7 @@ describe('useAuthState baseline', () => {
       data: null,
       issues: [],
     });
-    vi.mocked(authService.hasActiveFirebaseSession).mockReturnValue(false);
+    vi.mocked(authFallback.hasActiveFirebaseSession).mockReturnValue(false);
     setFirestoreSyncState({
       mode: 'enabled',
       reason: 'ready',
@@ -154,7 +158,7 @@ describe('useAuthState baseline', () => {
     });
 
     expect(result.current.user).toBe(null);
-    expect(authService.signOut).toHaveBeenCalled();
+    expect(authSession.signOut).toHaveBeenCalled();
     expect(sessionStorage.getItem(RECENT_MANUAL_LOGOUT_KEY)).toBeTruthy();
     expect(sessionScopedStorageService.clearSessionScopedClientState).toHaveBeenCalledWith(
       'manual'
@@ -166,8 +170,8 @@ describe('useAuthState baseline', () => {
       RECENT_MANUAL_LOGOUT_KEY,
       JSON.stringify({ reason: 'manual', at: Date.now() })
     );
-    vi.mocked(authService.hasActiveFirebaseSession).mockReturnValue(false);
-    vi.mocked(authService.onAuthSessionStateChange).mockImplementation(() => () => {});
+    vi.mocked(authFallback.hasActiveFirebaseSession).mockReturnValue(false);
+    vi.mocked(authSession.onAuthSessionStateChange).mockImplementation(() => () => {});
 
     const { result } = renderHook(() => useAuthState());
 
@@ -211,7 +215,7 @@ describe('useAuthState baseline', () => {
     vi.useFakeTimers();
     const { result } = renderHook(() => useAuthState());
 
-    vi.mocked(authService.hasActiveFirebaseSession).mockReturnValue(true);
+    vi.mocked(authFallback.hasActiveFirebaseSession).mockReturnValue(true);
     act(() => {
       vi.advanceTimersByTime(1100);
     });
@@ -250,7 +254,7 @@ describe('useAuthState baseline', () => {
       displayName: 'Test Editor',
     };
 
-    vi.mocked(authService.hasActiveFirebaseSession).mockReturnValue(true);
+    vi.mocked(authFallback.hasActiveFirebaseSession).mockReturnValue(true);
 
     await act(async () => {
       await authSessionStateCallback?.({
@@ -271,7 +275,7 @@ describe('useAuthState baseline', () => {
     );
 
     // Simulate Firebase not notifying auth state yet.
-    vi.mocked(authService.onAuthSessionStateChange).mockImplementation(() => () => {});
+    vi.mocked(authSession.onAuthSessionStateChange).mockImplementation(() => () => {});
 
     const { result } = renderHook(() => useAuthState());
 
@@ -306,7 +310,7 @@ describe('useAuthState baseline', () => {
       },
       issues: [],
     });
-    vi.mocked(authService.onAuthSessionStateChange).mockImplementation(() => () => {});
+    vi.mocked(authSession.onAuthSessionStateChange).mockImplementation(() => () => {});
 
     const { result } = renderHook(() => useAuthState());
 
@@ -332,7 +336,7 @@ describe('useAuthState baseline', () => {
       },
       issues: [],
     });
-    vi.mocked(authService.onAuthSessionStateChange).mockImplementation(() => () => {});
+    vi.mocked(authSession.onAuthSessionStateChange).mockImplementation(() => () => {});
 
     const { result } = renderHook(() => useAuthState());
 

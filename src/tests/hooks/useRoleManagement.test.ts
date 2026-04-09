@@ -156,7 +156,28 @@ describe('useRoleManagement', () => {
 
     expect(result.current.message).toEqual({
       type: 'success',
-      text: 'Se normalizaron 1 registro(s) legacy en config/roles.',
+      text: 'Se normalizaron 1 registro(s) legacy en config/roles y se reintentó sincronizar su claim de Firebase.',
+    });
+    expect(roleService.forceSyncUser).toHaveBeenCalledWith('viewer@hospital.cl', 'viewer');
+  });
+
+  it('should keep roles loaded and surface a warning when claim sync fails for normalized aliases', async () => {
+    vi.mocked(roleService.getRolesSnapshot).mockResolvedValue({
+      roles: { 'viewer@hospital.cl': 'viewer' },
+      migratedLegacyEntries: ['viewer@hospital.cl'],
+    });
+    vi.mocked(roleService.forceSyncUser).mockRejectedValue(new Error('sync failed'));
+
+    const { result } = renderHook(() => useRoleManagement());
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    expect(result.current.roles).toEqual({ 'viewer@hospital.cl': 'viewer' });
+    expect(result.current.message).toEqual({
+      type: 'success',
+      text: 'Se normalizaron 1 registro(s) legacy en config/roles. No se pudo sincronizar el claim de 1 usuario(s); deben cerrar sesión y volver a entrar o revisar functions.',
     });
   });
 

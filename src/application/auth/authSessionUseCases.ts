@@ -5,13 +5,12 @@ import {
   type ApplicationOutcome,
 } from '@/shared/contracts/applicationOutcome';
 import type { AuthSessionState } from '@/types/auth';
+import { signIn, signInWithGoogle } from '@/services/auth/authFlow';
 import {
   getCurrentAuthSessionState,
-  handleSignInRedirectResult,
   resolveCurrentAuthSessionState,
-  signIn,
-  signInWithGoogle,
-} from '@/services/auth';
+} from '@/services/auth/authSession';
+import { handleSignInRedirectResult } from '@/services/auth/authFallback';
 import { isPopupRecoverableAuthError, resolveAuthErrorCode } from '@/services/auth/authErrorPolicy';
 import { toResolvedAuthSessionState } from '@/services/auth/authSessionState';
 

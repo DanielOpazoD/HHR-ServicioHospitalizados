@@ -80,5 +80,5 @@ await saveDetailed(record);
 - Mantener contratos de entrada/salida tipados (preferir `types`/`schemas`).
 - `src/services/repositories/index.ts` fue retirado; código nuevo debe entrar por módulos dueños o ports explícitos.
 - En integraciones externas complejas, usar una fachada pública pequeña y mover auth, payload builders y folder/file helpers a módulos internos específicos.
-- Mantener `authService.ts` como fachada pública; evitar que la UI importe módulos internos de `auth/` directamente.
-- Mantener `authPolicy.ts` y `authService.ts` estables aunque la resolución de roles se siga particionando internamente.
+- Consumir auth desde entrypoints canónicos (`authFlow.ts`, `authSession.ts`, `authFallback.ts`, `authPolicy.ts`) en vez de reintroducir una fachada única.
+- Mantener `authPolicy.ts` estable y preferir módulos dueños específicos cuando el flujo requiera login, sesión o fallback.

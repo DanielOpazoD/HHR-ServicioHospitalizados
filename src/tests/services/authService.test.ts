@@ -1,20 +1,21 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import {
-  signIn,
-  signInWithGoogle,
-  signInWithGoogleRedirect,
-  handleSignInRedirectResult,
-} from '@/services/auth/authService';
+import { signIn, signInWithGoogle, createUser } from '@/services/auth/authFlow';
+import { signInWithGoogleRedirect, handleSignInRedirectResult } from '@/services/auth/authFallback';
+import { signOut } from '@/services/auth/authSession';
 import * as firebaseAuth from 'firebase/auth';
 import { getDocs } from 'firebase/firestore';
 import { QuerySnapshot } from 'firebase/firestore';
 
-vi.unmock('../../services/auth/authService');
-vi.unmock('@/services/auth/authService');
+vi.unmock('../../services/auth/authFlow');
+vi.unmock('@/services/auth/authFlow');
+vi.unmock('../../services/auth/authFallback');
+vi.unmock('@/services/auth/authFallback');
+vi.unmock('../../services/auth/authSession');
+vi.unmock('@/services/auth/authSession');
 
 const mockCheckUserRoleCallable = vi.fn();
 
-// Mock setup for authService tests
+// Mock setup for canonical auth public entrypoints
 vi.mock('firebase/auth', () => {
   const GoogleAuthProvider = vi.fn();
   (
@@ -50,7 +51,7 @@ vi.mock('firebase/firestore', () => ({
   where: vi.fn(),
 }));
 
-describe('authService', () => {
+describe('auth public entrypoints', () => {
   const AUTH_BOOTSTRAP_PENDING_KEY = 'hhr_auth_bootstrap_pending_v1';
   const GOOGLE_LOGIN_LOCK_KEY = 'hhr_google_login_lock_v1';
   const originalLocation = window.location;
@@ -231,9 +232,7 @@ describe('authService', () => {
         mockUser as unknown as firebaseAuth.UserCredential
       );
 
-      const result = await (
-        await import('@/services/auth/authService')
-      ).createUser('new@test.com', 'password');
+      const result = await createUser('new@test.com', 'password');
       expect(result.uid).toBe('new-123');
     });
 
@@ -242,15 +241,15 @@ describe('authService', () => {
         code: 'auth/email-already-in-use',
       });
 
-      await expect(
-        (await import('@/services/auth/authService')).createUser('used@test.com', 'password')
-      ).rejects.toThrow('Este email ya está registrado');
+      await expect(createUser('used@test.com', 'password')).rejects.toThrow(
+        'Este email ya está registrado'
+      );
     });
   });
 
   describe('signOut', () => {
     it('should sign out and clear cache', async () => {
-      await (await import('@/services/auth/authService')).signOut();
+      await signOut();
       expect(firebaseAuth.signOut).toHaveBeenCalled();
     });
   });
@@ -258,9 +257,7 @@ describe('authService', () => {
   describe('handleSignInRedirectResult', () => {
     it('should return null if no result', async () => {
       vi.mocked(firebaseAuth.getRedirectResult).mockResolvedValue(null);
-      const result = await (
-        await import('@/services/auth/authService')
-      ).handleSignInRedirectResult();
+      const result = await handleSignInRedirectResult();
       expect(result).toBeNull();
     });
 
@@ -272,9 +269,7 @@ describe('authService', () => {
         data: { role: 'admin' },
       });
 
-      const result = await (
-        await import('@/services/auth/authService')
-      ).handleSignInRedirectResult();
+      const result = await handleSignInRedirectResult();
       expect(result).toEqual(
         expect.objectContaining({
           status: 'authorized',

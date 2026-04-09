@@ -10,13 +10,19 @@ const mockResolveCurrentAuthSessionState = vi.fn();
 const mockIsPopupRecoverableAuthError = vi.fn();
 const mockResolveAuthErrorCode = vi.fn();
 
-vi.mock('@/services/auth/authService', () => ({
+vi.mock('@/services/auth/authFlow', () => ({
   signIn: (...args: unknown[]) => mockSignIn(...args),
   signInWithGoogle: (...args: unknown[]) => mockSignInWithGoogle(...args),
-  handleSignInRedirectResult: (...args: unknown[]) => mockHandleSignInRedirectResult(...args),
+}));
+
+vi.mock('@/services/auth/authSession', () => ({
   getCurrentAuthSessionState: (...args: unknown[]) => mockGetCurrentAuthSessionState(...args),
   resolveCurrentAuthSessionState: (...args: unknown[]) =>
     mockResolveCurrentAuthSessionState(...args),
+}));
+
+vi.mock('@/services/auth/authFallback', () => ({
+  handleSignInRedirectResult: (...args: unknown[]) => mockHandleSignInRedirectResult(...args),
 }));
 
 vi.mock('@/services/auth/authErrorPolicy', () => ({

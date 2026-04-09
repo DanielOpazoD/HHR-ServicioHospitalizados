@@ -34,12 +34,16 @@ No usar como referencia primaria:
 3. validar que las Functions publicadas correspondan al mismo modelo:
    - `checkUserRole` debe consultar `config/roles`;
    - no debe depender de listas legacy para login general.
-4. revisar consola/red:
+4. si el correo viene de una migración antigua:
+   - abrir Gestión de Roles;
+   - usar `Actualizar Lista` para forzar recanonización de aliases legacy;
+   - confirmar si aparece un aviso de normalización/sync.
+5. revisar consola/red:
    - error en callable `checkUserRole`;
    - CSP bloqueando Cloud Functions;
    - build viejo en Netlify.
    - `/.netlify/functions/firebase-config` respondiendo `500` o con campos faltantes (`apiKey`, `projectId`, `appId`).
-5. si en localhost funciona y en Netlify no:
+6. si en localhost funciona y en Netlify no:
    - redeploy frontend;
    - redeploy functions si cambió backend auth;
    - recarga dura una vez.
@@ -58,9 +62,10 @@ Chequeo operativo adicional:
 1. confirmar que el correo ya no exista en `config/roles`;
 2. confirmar que el callable publicado ya resuelva `null` o `unauthorized`;
 3. confirmar que el frontend publicado ya haga `signOut` en usuarios sin rol;
-4. cerrar sesión y volver a entrar;
-5. si persiste, revisar si la sesión actual está rehidratando desde un build viejo.
-6. confirmar que el logout manual limpió también estado sensible local:
+4. abrir Gestión de Roles y usar `Actualizar Lista` para forzar recanonización/sync si hubo aliases legacy recientes;
+5. cerrar sesión y volver a entrar;
+6. si persiste, revisar si la sesión actual está rehidratando desde un build viejo.
+7. confirmar que el logout manual limpió también estado sensible local:
    - ownership de la cola de sync;
    - cache clínica de sesión;
    - marcas de sesión reciente.
@@ -116,6 +121,22 @@ Chequeo operativo adicional:
   - vuelve al login con error visible.
 - usuario removido:
   - no rehidrata shell al recargar.
+
+## Gate para retirar el alias legacy del viewer
+
+Antes de eliminar la compatibilidad del alias legacy en functions o rules:
+
+1. ejecutar `cd functions && npm run audit:legacy-viewer-alias`
+   - requiere credenciales de Firebase Admin y `GOOGLE_CLOUD_PROJECT` resoluble
+2. revisar `reports/auth-legacy-viewer-alias-audit.md`
+3. confirmar que:
+   - `configRolesLegacyCount = 0`
+   - `authClaimsLegacyCount = 0`
+4. solo entonces recortar:
+   - `functions/lib/auth/authHelpersFactory.js`
+   - `netlify/functions/lib/firebase-auth.ts`
+   - `firestore.rules`
+   - `storage.rules`
 
 ## Archivos clave
 
