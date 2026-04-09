@@ -33,7 +33,7 @@ Una fase se considera cerrada solo si:
 | `Q04` | completado | alinear `repo-hygiene` y `domain-hotspot-boundary` |
 | `Q05` | completado | consolidar APIs públicas por feature               |
 | `Q06` | completado | rebajar el PIN local a barrera UX explícita        |
-| `Q07` | pendiente  | corrida final de convergencia y cierre del ciclo   |
+| `Q07` | completado | corrida final de convergencia y cierre del ciclo   |
 
 ## Fase `Q00` - Planificación versionada
 
@@ -335,4 +335,4 @@ Ejecutar la validación integral y dejar el ciclo documentado como cerrado.
 | 2026-04-09 | `Q04` | completado | `handoff` ya consume `DailyRecord` desde contratos canónicos de aplicación, `dailyRecordCoreContracts` quedó explicitado como facade permitida y `repo-hygiene` reconoce a los colaboradores internos de `clinical-documents` |
 | 2026-04-09 | `Q05` | completado | `clinical-documents` expone un entrypoint interno explícito para `application/shared`, `laboratory` ya ofrece root barrel y la única excepción residual de `DateStripQuickActions` quedó acotada al root del feature          |
 | 2026-04-09 | `Q06` | completado | El PIN local quedó presentado como bloqueo rápido de privacidad del dispositivo, la UI ya aclara que no reemplaza auth/permisos y las suites focalizadas más `test:risk:*` quedaron en verde                                  |
-| 2026-04-09 | `Q07` | pendiente  | Sin iniciar                                                                                                                                                                                                                   |
+| 2026-04-09 | `Q07` | completado | `runtime-adapter-boundary`, `typecheck` y `check:quality` quedaron en verde; el ciclo cierra con una única excepción gobernada y no bloqueante en `folder-dependency-allowlist`                                               |

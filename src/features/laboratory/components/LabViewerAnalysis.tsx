@@ -6,6 +6,7 @@
 import React from 'react';
 import clsx from 'clsx';
 import { ArrowLeft, BarChart3, Check, Clipboard, TrendingUp } from 'lucide-react';
+import { writeClipboardText } from '@/shared/runtime/browserWindowRuntime';
 import type { LabAnalysisData, AnalysisViewTab } from '@/types/domain/laboratory';
 import { buildLabSummaryText } from '../controllers/labSummaryController';
 import { LabViewerTrendCharts } from './LabViewerTrendCharts';
@@ -46,7 +47,7 @@ export const LabViewerAnalysis: React.FC<LabViewerAnalysisProps> = ({
       if (text) lines.push(text);
     }
     if (lines.length === 0) return;
-    await navigator.clipboard.writeText(lines.join('\n'));
+    await writeClipboardText(lines.join('\n'));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };

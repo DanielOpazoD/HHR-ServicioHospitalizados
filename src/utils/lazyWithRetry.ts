@@ -7,6 +7,7 @@
  */
 
 import { lazy, type ComponentType } from 'react';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
 import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryService';
 
 const RELOAD_KEY = 'hhr_chunk_reload_count';
@@ -46,7 +47,7 @@ export function lazyWithRetry<T extends ComponentType<any>>(
 
         if (reloadCount < MAX_RELOADS) {
           sessionStorage.setItem(RELOAD_KEY, String(reloadCount + 1));
-          window.location.reload();
+          defaultBrowserWindowRuntime.reload();
           // Never resolves — page reloads before this returns
           return new Promise<never>(() => {});
         }

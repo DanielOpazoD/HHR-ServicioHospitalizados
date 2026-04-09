@@ -5,8 +5,8 @@
 ## Resumen
 
 - Ciclo activo: `Q00-Q07`
-- Tareas resueltas o no requeridas: `7/8`
-- Estado global del ciclo: `87.5%`
+- Tareas resueltas o no requeridas: `8/8`
+- Estado global del ciclo: `100%`
 
 ## Regla activa
 
@@ -24,7 +24,7 @@
 | `Q04` | completado | `handoff` migra `DailyRecord` al facade `@/application/shared/dailyRecordContracts`, `dailyRecordCoreContracts` queda declarado como facade permitida y `repo-hygiene` acepta el boundary interno de `clinical-documents`                      |
 | `Q05` | completado | `clinical-documents` usa `internal.ts` como colaboración explícita para `application/shared`, `laboratory` expone `index.ts` como root barrel y el único debt residual sigue siendo la excepción gobernada de `DateStripQuickActions`          |
 | `Q06` | completado | el PIN local ahora se comunica como bloqueo rápido de privacidad del navegador actual, la documentación aclara que no reemplaza auth/RBAC y las pruebas focalizadas del lock screen quedaron en verde                                          |
-| `Q07` | pendiente  | corrida final, cierre documental y convergencia                                                                                                                                                                                                |
+| `Q07` | completado | `runtime-adapter-boundary`, `typecheck` y `check:quality` quedaron en verde; el ciclo se cierra con una única excepción gobernada y no bloqueante en `folder-dependency-allowlist`                                                             |
 
 ## Historial del ciclo previo `N01-N15`
 
@@ -49,11 +49,11 @@
 ## Señal actual
 
 - `typecheck`: `ok`
-- `check:quality`: `failing`
-- focos activos: `runtime adapter debt`, `convergencia final`
+- `check:quality`: `ok`
+- focos activos: `mantenimiento normal`
 
 ## Siguiente paso recomendado
 
-1. Ejecutar `Q07` cerrando primero la deuda aislada de runtime adapters
-2. Mantener la excepción `components -> laboratory` gobernada y visible hasta decidir si vale la pena invertirla
-3. Cerrar cada fase actualizando este tracker y el plan iterativo
+1. Mantener la excepción `components -> laboratory` gobernada y visible hasta decidir si vale la pena invertirla
+2. Reabrir un ciclo solo si esa excepción deja de ser suficiente o aparece nueva deuda blocking
+3. Sostener `typecheck` y `check:quality` como gates diarios de regresión
