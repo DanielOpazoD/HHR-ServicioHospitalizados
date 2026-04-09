@@ -67,7 +67,7 @@ declare let self: ServiceWorkerGlobalScope & {
 precacheAndRoute(self.__WB_MANIFEST);
 cleanupOutdatedCaches();
 
-const CACHE_VERSION = 'v2.2.0';
+const CACHE_VERSION = 'v2.3.0';
 const OFFLINE_PAGE = '/offline.html';
 const serviceWorkerLogger = createScopedLogger('ServiceWorker');
 
@@ -171,9 +171,9 @@ self.addEventListener('install', (event: Event) => {
   extendableEvent.waitUntil(
     caches.open(`offline-${CACHE_VERSION}`).then(cache => cache.add(OFFLINE_PAGE))
   );
-  // skipWaiting is NOT called here to avoid disrupting active tabs during deploys.
-  // VitePWA's autoUpdate will send a SKIP_WAITING message (handled below)
-  // when it is safe to activate the new worker.
+  // Force immediate activation to replace stale cached chunks.
+  // This ensures users get the latest build without waiting for all tabs to close.
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event: Event) => {
