@@ -18,7 +18,7 @@ const ALLOWED_ORIGINAL_DATA_REFERENCES = [
   'src/features/census/hooks/usePatientMovementUndoExecutor.ts',
   'src/features/census/controllers/censusCmaController.ts',
   'src/domain/CensusManager.ts',
-  'src/services/admin/admissionDateBackfillService.ts',
+  'src/services/admin/admissionDateBackfillPlanner.ts',
   'src/types/virtual-minsal-shared.d.ts',
 ];
 

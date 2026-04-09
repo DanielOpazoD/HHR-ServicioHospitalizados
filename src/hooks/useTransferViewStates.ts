@@ -38,6 +38,7 @@ export const useTransferViewStates = (
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedDocs, setGeneratedDocs] = useState<GeneratedDocument[]>([]);
   const [patientDataForDocs, setPatientDataForDocs] = useState<TransferPatientData | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const generateDocumentPackage = useCallback(
     async (
@@ -47,6 +48,7 @@ export const useTransferViewStates = (
       options?: { persistResponses?: boolean }
     ) => {
       setIsGenerating(true);
+      setError(null);
       try {
         const result = await prepareTransferDocumentPackage({
           cache: generatedPackageCacheRef.current,
@@ -59,17 +61,18 @@ export const useTransferViewStates = (
         });
 
         if (result.kind === 'empty') {
-          defaultBrowserWindowRuntime.alert(
-            'No fue posible preparar los documentos en este momento. Verifique las plantillas o intente nuevamente en unos segundos.'
-          );
+          const message =
+            'No fue posible preparar los documentos en este momento. Verifique las plantillas o intente nuevamente en unos segundos.';
+          setError(message);
+          defaultBrowserWindowRuntime.alert(message);
           return;
         }
 
         if (result.kind === 'error') {
+          const message = 'Error al generar documentos. Por favor intente nuevamente.';
           transferViewStatesLogger.error('Error generating transfer documents', result.error);
-          defaultBrowserWindowRuntime.alert(
-            'Error al generar documentos. Por favor intente nuevamente.'
-          );
+          setError(message);
+          defaultBrowserWindowRuntime.alert(message);
           return;
         }
 
@@ -209,7 +212,11 @@ export const useTransferViewStates = (
     setGeneratedDocs([]);
   }, []);
 
+  const clearError = useCallback(() => setError(null), []);
+
   return {
+    error,
+    clearError,
     modals: {
       form: isFormModalOpen,
       status: isStatusModalOpen,

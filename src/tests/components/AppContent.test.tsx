@@ -1,6 +1,33 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import React from 'react';
+
+// Shared state accessible from both vi.mock factory and test code.
+const { _lazyPending, _lazyResolved } = vi.hoisted(() => ({
+  _lazyPending: [] as Promise<void>[],
+  _lazyResolved: new Map<symbol, React.ComponentType<never>>(),
+}));
+
+// Bypass React.lazy so lazy-loaded components render synchronously in tests.
+vi.mock('@/utils/lazyWithRetry', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const React = require('react');
+  return {
+    lazyWithRetry: (factory: () => Promise<{ default: React.ComponentType<never> }>) => {
+      const key = Symbol();
+      const p = factory().then((m: { default: React.ComponentType<never> }) => {
+        _lazyResolved.set(key, m.default);
+      });
+      _lazyPending.push(p);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return React.forwardRef(function LazyBypass(props: any, ref: unknown) {
+        const Comp = _lazyResolved.get(key) ?? null;
+        return Comp ? React.createElement(Comp, { ...props, ref }) : null;
+      });
+    },
+  };
+});
+
 import { AppContent } from '@/components/layout/AppContent';
 import { useCensusContext } from '@/context/CensusContext';
 import { useAuth } from '@/context/AuthContext';
@@ -80,6 +107,9 @@ vi.mock('@/context/AuthContext', () => ({
 vi.mock('@/hooks/useExportManager', () => ({
   useExportManager: vi.fn(),
 }));
+
+// Flush lazy component resolutions before any test renders.
+beforeAll(() => Promise.all(_lazyPending));
 
 describe('AppContent', () => {
   type AppContentUi = React.ComponentProps<typeof AppContent>['ui'];

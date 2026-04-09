@@ -1,6 +1,36 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeAll } from 'vitest';
+
+// Shared state accessible from both vi.mock factory and test code.
+const { _lazyPending, _lazyResolved } = vi.hoisted(() => ({
+  _lazyPending: [] as Promise<void>[],
+  _lazyResolved: new Map<symbol, React.ComponentType<never>>(),
+}));
+
+// Bypass React.lazy so lazy-loaded components render synchronously in tests.
+// vi.mock'd dynamic imports resolve as micro-tasks.  We collect all pending
+// resolutions and flush them in a beforeAll so every LazyBypass wrapper has
+// its component available before the first render().
+vi.mock('@/utils/lazyWithRetry', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const React = require('react');
+  return {
+    lazyWithRetry: (factory: () => Promise<{ default: React.ComponentType<never> }>) => {
+      const key = Symbol();
+      const p = factory().then((m: { default: React.ComponentType<never> }) => {
+        _lazyResolved.set(key, m.default);
+      });
+      _lazyPending.push(p);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return React.forwardRef(function LazyBypass(props: any, ref: unknown) {
+        const Comp = _lazyResolved.get(key) ?? null;
+        return Comp ? React.createElement(Comp, { ...props, ref }) : null;
+      });
+    },
+  };
+});
+
 import { AppContentChrome } from '@/components/layout/app-content/AppContentChrome';
 
 const mockDateStrip = vi.fn();
@@ -27,6 +57,9 @@ vi.mock('@/components/bookmarks/BookmarkBar', () => ({
 vi.mock('@/components/AppRouter', () => ({
   AppRouter: () => <div data-testid="app-router">AppRouter</div>,
 }));
+
+// Flush lazy component resolutions before any test renders.
+beforeAll(() => Promise.all(_lazyPending));
 
 describe('AppContentChrome', () => {
   const ui = {

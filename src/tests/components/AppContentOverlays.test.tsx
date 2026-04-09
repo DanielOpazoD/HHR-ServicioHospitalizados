@@ -1,6 +1,33 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeAll } from 'vitest';
+
+// Shared state accessible from both vi.mock factory and test code.
+const { _lazyPending, _lazyResolved } = vi.hoisted(() => ({
+  _lazyPending: [] as Promise<void>[],
+  _lazyResolved: new Map<symbol, React.ComponentType<never>>(),
+}));
+
+// Bypass React.lazy so lazy-loaded components render synchronously in tests.
+vi.mock('@/utils/lazyWithRetry', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const React = require('react');
+  return {
+    lazyWithRetry: (factory: () => Promise<{ default: React.ComponentType<never> }>) => {
+      const key = Symbol();
+      const p = factory().then((m: { default: React.ComponentType<never> }) => {
+        _lazyResolved.set(key, m.default);
+      });
+      _lazyPending.push(p);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return React.forwardRef(function LazyBypass(props: any, ref: unknown) {
+        const Comp = _lazyResolved.get(key) ?? null;
+        return Comp ? React.createElement(Comp, { ...props, ref }) : null;
+      });
+    },
+  };
+});
+
 import { AppContentOverlays } from '@/components/layout/app-content/AppContentOverlays';
 
 vi.mock('@/components/modals/SettingsModal', () => ({
@@ -30,6 +57,9 @@ vi.mock('@/components/layout/StorageStatusBadge', () => ({
 vi.mock('@/views/LazyViews', () => ({
   CensusEmailConfigModal: () => <div data-testid="email-modal">EmailModal</div>,
 }));
+
+// Flush lazy component resolutions before any test renders.
+beforeAll(() => Promise.all(_lazyPending));
 
 describe('AppContentOverlays', () => {
   const ui = {

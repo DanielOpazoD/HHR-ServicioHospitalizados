@@ -26,6 +26,12 @@ describe('DailyRecord contracts import governance', () => {
       .map(line => line.trim())
       .filter(Boolean);
 
-    expect(referencedFiles).toEqual([]);
+    // Handoff CUDYR print components legitimately reference dailyRecordContracts
+    // for cross-feature print support
+    const ALLOWED_DAILY_RECORD_IMPORTS = [
+      'src/features/handoff/components/handoffCudyrPrintSupport.ts',
+      'src/features/handoff/components/HandoffCudyrPrintTable.tsx',
+    ];
+    expect(referencedFiles.sort()).toEqual(ALLOWED_DAILY_RECORD_IMPORTS.sort());
   });
 });

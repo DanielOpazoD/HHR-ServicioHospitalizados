@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import * as ExportService from '@/services/exporters/exportService';
 import type { DailyRecord } from '@/application/shared/dailyRecordCoreContracts';
 import { useNotification } from '@/context/UIContext';
@@ -24,6 +24,8 @@ export interface UseFileOperationsReturn {
   handleExportCSV: () => void;
   handleImportJSON: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
   handleImportFile: (file: File) => Promise<void>;
+  error: string | null;
+  clearError: () => void;
 }
 
 /**
@@ -34,7 +36,10 @@ export const useFileOperations = (
   record: DailyRecord | null,
   onRefresh: () => void
 ): UseFileOperationsReturn => {
-  const { success, error, warning } = useNotification();
+  const [error, setError] = useState<string | null>(null);
+  const clearError = useCallback(() => setError(null), []);
+
+  const { success, error: notifyError, warning } = useNotification();
   const dispatchNotification = (notification: {
     channel: 'success' | 'warning' | 'error';
     title: string;
@@ -45,7 +50,7 @@ export const useFileOperations = (
     } else if (notification.channel === 'warning') {
       warning(notification.title, notification.message);
     } else {
-      error(notification.title, notification.message);
+      notifyError(notification.title, notification.message);
     }
   };
 
@@ -74,6 +79,7 @@ export const useFileOperations = (
   };
 
   const handleImportFile = async (file: File) => {
+    setError(null);
     if (isJsonImportFile(file)) {
       const outcome = await executeImportJsonBackup(file);
       recordOperationalOutcome('backup', 'import_json_backup', outcome, {
@@ -94,6 +100,8 @@ export const useFileOperations = (
           failedTitle: 'Error al importar',
           fallbackErrorMessage: 'No se pudo importar el archivo JSON.',
         });
+        const message = notice.message ? `${notice.title}: ${notice.message}` : notice.title;
+        setError(message);
         dispatchNotification({
           channel: notice.channel === 'info' ? 'warning' : notice.channel,
           title: notice.title,
@@ -108,7 +116,9 @@ export const useFileOperations = (
         issues: ['Se intentó importar un formato no compatible.'],
         context: { fileName: file.name, mimeType: file.type || 'unknown' },
       });
-      dispatchNotification(buildImportFileErrorNotification('invalid_format'));
+      const notification = buildImportFileErrorNotification('invalid_format');
+      setError(notification.message ?? notification.title);
+      dispatchNotification(notification);
     }
   };
 
@@ -125,5 +135,7 @@ export const useFileOperations = (
     handleExportCSV,
     handleImportJSON,
     handleImportFile,
+    error,
+    clearError,
   };
 };

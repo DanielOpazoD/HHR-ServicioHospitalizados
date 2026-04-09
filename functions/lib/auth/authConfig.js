@@ -1,4 +1,11 @@
-const BOOTSTRAP_ADMIN_EMAILS = ['daniel.opazo@hospitalhangaroa.cl', 'd.opazo.damiani@gmail.com'];
+// Bootstrap admin emails: configurable via BOOTSTRAP_ADMIN_EMAILS env var
+// (comma-separated). Falls back to the hardcoded defaults when unset.
+const BOOTSTRAP_ADMIN_EMAILS = (
+  process.env.BOOTSTRAP_ADMIN_EMAILS || 'daniel.opazo@hospitalhangaroa.cl,d.opazo.damiani@gmail.com'
+)
+  .split(',')
+  .map(e => e.trim().toLowerCase())
+  .filter(Boolean);
 
 const MANAGED_ASSIGNABLE_ROLES = new Set([
   'admin',
