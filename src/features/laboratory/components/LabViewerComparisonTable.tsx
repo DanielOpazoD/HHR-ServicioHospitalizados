@@ -147,7 +147,13 @@ export const LabViewerComparisonTable: React.FC<{ data: LabAnalysisData }> = ({ 
         className="overflow-auto rounded-xl border border-slate-200/80"
         style={useVirtual ? { maxHeight: '60vh' } : undefined}
       >
-        <table className="border-collapse">
+        <table className="w-full border-collapse table-fixed">
+          <colgroup>
+            <col style={{ width: '140px', minWidth: '140px' }} />
+            {examDates.map(date => (
+              <col key={date} style={{ minWidth: '72px' }} />
+            ))}
+          </colgroup>
           <thead className="sticky top-0 z-20">
             <tr className="bg-slate-50">
               <th className="sticky left-0 z-30 bg-slate-50 px-2 py-1 text-left text-[9px] font-bold uppercase text-slate-500 border-r border-slate-200 whitespace-nowrap">
@@ -163,84 +169,49 @@ export const LabViewerComparisonTable: React.FC<{ data: LabAnalysisData }> = ({ 
               ))}
             </tr>
           </thead>
-          <tbody
-            style={
-              useVirtual
-                ? { height: `${virtualizer.getTotalSize()}px`, position: 'relative' }
-                : undefined
-            }
-          >
+          <tbody>
             {useVirtual
-              ? virtualizer.getVirtualItems().map(virtualRow => {
-                  const name = variableNames[virtualRow.index];
+              ? (() => {
+                  const items = virtualizer.getVirtualItems();
                   return (
-                    <tr
-                      key={name}
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        height: `${virtualRow.size}px`,
-                        transform: `translateY(${virtualRow.start}px)`,
-                      }}
-                      className={clsx(
-                        'border-t border-slate-100 hover:bg-slate-50/50',
-                        virtualRow.index % 2 === 1 && 'bg-slate-50/30'
+                    <>
+                      {/* Top spacer row to push visible rows into position */}
+                      {items.length > 0 && (
+                        <tr>
+                          <td
+                            colSpan={examDates.length + 1}
+                            style={{ height: `${items[0].start}px`, padding: 0, border: 'none' }}
+                          />
+                        </tr>
                       )}
-                    >
-                      <td className="sticky left-0 z-10 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-700 border-r border-slate-200 whitespace-nowrap">
-                        {name}
-                      </td>
-                      {examDates.map(date => {
-                        const row = data.comparison[name]?.[date];
-                        if (!row) {
-                          return (
-                            <td
-                              key={date}
-                              className="px-1 py-0.5 text-center text-[10px] text-slate-300"
-                            >
-                              --
-                            </td>
-                          );
-                        }
-                        if (row.qualitative) {
-                          const isPositive = /positivo|reactivo/i.test(row.result);
-                          return (
-                            <td key={date} className="px-1 py-0.5 text-center whitespace-nowrap">
-                              <span
-                                className={clsx(
-                                  'text-[10px] font-semibold',
-                                  isPositive ? 'text-red-600' : 'text-emerald-600'
-                                )}
-                              >
-                                {row.result.length > 20
-                                  ? row.result.substring(0, 20) + '…'
-                                  : row.result}
-                              </span>
-                            </td>
-                          );
-                        }
-                        const oor = isOutOfRange(row.result, row.refValue);
-                        const { display } = formatLabResult(row.result, row.unit);
+                      {items.map(virtualRow => {
+                        const name = variableNames[virtualRow.index];
                         return (
-                          <td key={date} className="px-1 py-0.5 text-center whitespace-nowrap">
-                            <span
-                              className={clsx(
-                                'text-[11px] font-bold',
-                                oor === true && 'text-red-600',
-                                oor === false && 'text-emerald-600',
-                                oor === null && 'text-slate-700'
-                              )}
-                            >
-                              {display}
-                            </span>
-                          </td>
+                          <ComparisonRow
+                            key={name}
+                            name={name}
+                            examDates={examDates}
+                            data={data}
+                            index={virtualRow.index}
+                          />
                         );
                       })}
-                    </tr>
+                      {/* Bottom spacer row */}
+                      {items.length > 0 && (
+                        <tr>
+                          <td
+                            colSpan={examDates.length + 1}
+                            style={{
+                              height: `${virtualizer.getTotalSize() - items[items.length - 1].end}px`,
+                              padding: 0,
+                              border: 'none',
+                            }}
+                          />
+                        </tr>
+                      )}
+                    </>
                   );
-                })
+                })()
               : variableNames.map((name, i) => (
                   <ComparisonRow
                     key={name}
