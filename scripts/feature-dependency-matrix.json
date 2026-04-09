@@ -5,10 +5,11 @@
     "auth": ["games"],
     "backup": [],
     "census": ["analytics", "clinical-documents"],
-    "clinical-documents": [],
+    "clinical-documents": ["laboratory"],
     "cudyr": [],
     "games": [],
     "handoff": ["cudyr"],
+    "laboratory": [],
     "reminders": [],
     "transfers": [],
     "whatsapp": []

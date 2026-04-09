@@ -1,15 +1,15 @@
 {
   "version": 1,
-  "updatedAt": "2026-03-22",
+  "updatedAt": "2026-04-09",
   "entries": [
     {
-      "file": "src/tests/services/transfers/transferService.test.ts",
+      "file": "src/tests/services/transfers/transferService.mutations.test.ts",
       "command": "npm run test:ci:unit",
       "classification": "deterministic",
       "status": "fixed",
       "owner": "transfers",
       "sla": "2026-04-30",
-      "reason": "Resuelto alineando las pruebas a la suscripcion asincrona real y al merge vigente de transfers activos e historicos."
+      "reason": "Resuelto tras partir la suite original y alinear las mutaciones al flujo asincrono real y al merge vigente de transfers activos e historicos."
     },
     {
       "file": "src/tests/components/StorageStatusBadge.test.tsx",
@@ -57,13 +57,13 @@
       "reason": "Resuelto actualizando el test al pipeline vigente de inicializacion y a los servicios canonicos de indexeddb/firestore."
     },
     {
-      "file": "src/tests/hooks/useBedManagement.test.ts",
+      "file": "src/tests/hooks/useBedManagement.operations.test.ts",
       "command": "npm run test:ci:unit",
       "classification": "deterministic",
       "status": "fixed",
       "owner": "census",
       "sla": "2026-04-30",
-      "reason": "Resuelto ajustando el test al logger estructurado actual del dispatch controller."
+      "reason": "Resuelto tras dividir la suite original y ajustar la variante de operaciones al logger estructurado actual del dispatch controller."
     },
     {
       "file": "src/tests/services/firestoreService.test.ts",

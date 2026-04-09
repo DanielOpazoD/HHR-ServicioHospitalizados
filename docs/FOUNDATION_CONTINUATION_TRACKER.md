@@ -1,14 +1,32 @@
 # Foundation Continuation Tracker
 
-Última actualización: 2026-04-05
+Última actualización: 2026-04-09
 
 ## Resumen
 
-- Ciclo activo: `N01-N15`
-- Tareas resueltas o no requeridas: `15/15`
-- Estado global del ciclo: `100%`
+- Ciclo activo: `Q00-Q07`
+- Tareas resueltas o no requeridas: `2/8`
+- Estado global del ciclo: `25%`
 
-## Estado actual
+## Regla activa
+
+- No se inicia una fase nueva hasta cerrar completamente la actual.
+- Toda fase cerrada debe dejar commit dedicado, tracker actualizado y checks de salida en verde.
+
+## Estado actual del ciclo `Q00-Q07`
+
+| Id    | Estado     | Nota                                                                                                                       |
+| ----- | ---------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `Q00` | completado | plan iterativo abierto en `docs/ITERATIVE_QUALITY_EXECUTION_PLAN.md` y deuda registrada                                    |
+| `Q01` | completado | `feature-dependency-matrix`, `test-failure-catalog` y artefactos `reports/*` quedaron alineados; checks de salida en verde |
+| `Q02` | pendiente  | restaurar ownership entre `hooks/controllers` y `features/census/controllers`                                              |
+| `Q03` | pendiente  | romper ciclos activos de `clinical-documents` y `patient-flow`                                                             |
+| `Q04` | pendiente  | alinear `repo-hygiene` y `domain-hotspot-boundary` con contratos canónicos de `dailyRecord`                                |
+| `Q05` | pendiente  | consolidar entrypoints públicos por feature                                                                                |
+| `Q06` | pendiente  | redefinir PIN local como barrera UX explícita                                                                              |
+| `Q07` | pendiente  | corrida final, cierre documental y convergencia                                                                            |
+
+## Historial del ciclo previo `N01-N15`
 
 | Id    | Estado                 | Nota                                                                                                                                             |
 | ----- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -30,15 +48,12 @@
 
 ## Señal actual
 
-- `folder dependency debt`: `0`
-- `release confidence`: `ok`
-- `megatests >500`: `4`
-- `flake-risk files`: `0`
-- `compatibility shims gobernados`: `25`
-- `raw console warn/error outside structured sink`: `0`
+- `typecheck`: `ok`
+- `check:quality`: `failing`
+- focos activos: `governance artifacts`, `census boundaries`, `clinical-documents cycles`, `dailyRecord canonical contracts`, `feature public APIs`, `local PIN UX copy`
 
 ## Siguiente paso recomendado
 
-1. Tratar la siguiente ola como mantenimiento normal y no como continuación estructural
-2. Mantener la cadencia mensual sin reabrir deuda de boundaries, shims o métricas
-3. Usar la reevaluación de cierre como nuevo baseline para futuras mejoras incrementales
+1. Ejecutar `Q02` completo antes de tocar ciclos de `clinical-documents`
+2. No abrir la fase del PIN ni de APIs públicas hasta tener boundaries saneados
+3. Cerrar cada fase actualizando este tracker y el plan iterativo
