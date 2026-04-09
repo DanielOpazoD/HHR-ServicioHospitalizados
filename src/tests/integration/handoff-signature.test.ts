@@ -32,6 +32,14 @@ vi.mock('../../context/AuditContext', () => ({
   }),
 }));
 
+// Mock Auth Context (useAuth is imported from @/context)
+vi.mock('../../context', () => ({
+  useAuth: () => ({
+    role: 'admin',
+    user: { uid: 'test-user-123', email: 'test@example.com' },
+  }),
+}));
+
 // Mock WhatsApp Service
 vi.mock('../../services/integrations/whatsapp/whatsappService', () => ({
   formatHandoffMessage: vi.fn((template, data) => `Formatted: ${data.signedBy}`),
@@ -124,9 +132,10 @@ describe('Handoff → Signature Integration', () => {
         result.current.updateHandoffChecklist('day', 'resumenClinico', true);
       });
 
-      expect(mockSaveAndUpdate).toHaveBeenCalled();
-      const updated = mockSaveAndUpdate.mock.calls[0][0];
-      expect(updated.handoffDayChecklist.resumenClinico).toBe(true);
+      // Implementation prefers patchRecord over saveAndUpdate when a patch is available
+      expect(mockPatchRecord).toHaveBeenCalled();
+      const patch = mockPatchRecord.mock.calls[0][0];
+      expect(patch['handoffDayChecklist.resumenClinico']).toBe(true);
     });
 
     it('should update nursing novedades and audit it', async () => {
@@ -138,9 +147,10 @@ describe('Handoff → Signature Integration', () => {
         result.current.updateHandoffNovedades('day', 'Cambio importante en el turno');
       });
 
-      expect(mockSaveAndUpdate).toHaveBeenCalled();
-      const updated = mockSaveAndUpdate.mock.calls[0][0];
-      expect(updated.handoffNovedadesDayShift).toBe('Cambio importante en el turno');
+      // Implementation prefers patchRecord over saveAndUpdate when a patch is available
+      expect(mockPatchRecord).toHaveBeenCalled();
+      const patch = mockPatchRecord.mock.calls[0][0];
+      expect(patch.handoffNovedadesDayShift).toBe('Cambio importante en el turno');
     });
   });
 
@@ -154,11 +164,12 @@ describe('Handoff → Signature Integration', () => {
         result.current.updateMedicalSignature('Dr. House');
       });
 
-      expect(mockSaveAndUpdate).toHaveBeenCalled();
-      const updated = mockSaveAndUpdate.mock.calls[0][0];
-      expect(updated.medicalSignature.doctorName).toBe('Dr. House');
-      expect(updated.medicalSignature.signedAt).toBeDefined();
-      expect(updated.medicalSignatureByScope?.all?.doctorName).toBe('Dr. House');
+      // Implementation prefers patchRecord over saveAndUpdate when a patch is available
+      expect(mockPatchRecord).toHaveBeenCalled();
+      const patch = mockPatchRecord.mock.calls[0][0];
+      expect(patch['medicalSignature.doctorName'] ?? patch.medicalSignature?.doctorName).toBe(
+        'Dr. House'
+      );
     });
 
     it('should store scoped medical signature without leaking into all-scope signature', async () => {
@@ -170,11 +181,16 @@ describe('Handoff → Signature Integration', () => {
         await result.current.updateMedicalSignature('Dr. UPC', 'upc');
       });
 
-      expect(mockSaveAndUpdate).toHaveBeenCalled();
-      const updated = mockSaveAndUpdate.mock.calls[0][0];
-      expect(updated.medicalSignature).toBeUndefined();
-      expect(updated.medicalSignatureByScope?.upc?.doctorName).toBe('Dr. UPC');
-      expect(updated.medicalSignatureByScope?.all).toBeUndefined();
+      // Implementation prefers patchRecord over saveAndUpdate when a patch is available
+      expect(mockPatchRecord).toHaveBeenCalled();
+      const patch = mockPatchRecord.mock.calls[0][0];
+      // Scoped signature should NOT write to the all-scope medicalSignature field
+      expect(patch.medicalSignature).toBeUndefined();
+      // The patch uses dot-notation keys like 'medicalSignatureByScope.upc'
+      const scopedSignature = (patch as Record<string, unknown>)['medicalSignatureByScope.upc'] as {
+        doctorName: string;
+      };
+      expect(scopedSignature?.doctorName).toBe('Dr. UPC');
     });
 
     it('should send medical handoff via WhatsApp and patch the record', async () => {

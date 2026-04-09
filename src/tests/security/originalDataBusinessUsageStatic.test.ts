@@ -7,9 +7,6 @@ const ROOT = path.resolve(__dirname, '../../../');
 const ALLOWED_ORIGINAL_DATA_REFERENCES = [
   'src/schemas/zod/movements.ts',
   'src/types/domain/movements.ts',
-  'src/hooks/controllers/patientMovementCreationController.ts',
-  'src/hooks/controllers/patientMovementSelectionController.ts',
-  'src/hooks/controllers/patientMovementUndoController.ts',
   'src/hooks/usePatientMovementUndoExecutor.ts',
   'src/hooks/controllers/censusExcelSheetController.ts',
   'src/features/census/components/DischargeRowView.tsx',
@@ -27,7 +24,8 @@ const ALLOWED_ORIGINAL_DATA_REFERENCES = [
 
 describe('originalData business governance', () => {
   it('limits originalData usage to undo, audit, compatibility and historical maintenance surfaces', () => {
-    const command = 'rg -l "originalData" src --glob "!src/tests/**" --glob "!src/**/*.md"';
+    const command =
+      'grep -rl "originalData" src --include="*.ts" --include="*.tsx" | grep -v "src/tests/" | grep -v "\\.md$"';
     const rawOutput = execSync(command, { cwd: ROOT, encoding: 'utf8' });
     const referencedFiles = rawOutput
       .split('\n')

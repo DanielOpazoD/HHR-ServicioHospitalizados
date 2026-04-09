@@ -14,19 +14,19 @@ import {
 } from '@/domain/handoff/view';
 
 const BEDS: BedDefinition[] = [
-  { id: '1', name: '101', type: 'MEDIA', isCuna: false },
-  { id: '2', name: '102', type: 'MEDIA', isCuna: false },
+  { id: 'R1', name: '101', type: 'MEDIA', isCuna: false },
+  { id: 'R2', name: '102', type: 'MEDIA', isCuna: false },
 ] as BedDefinition[];
 
 const RECORD = {
   date: '2026-03-03',
   beds: {
-    '1': {
+    R1: {
       patientName: 'Paciente UPC',
       specialty: Specialty.MEDICINA,
       isUPC: true,
     },
-    '2': {
+    R2: {
       patientName: 'Paciente Sala',
       specialty: Specialty.CIRUGIA,
       isUPC: false,
@@ -50,9 +50,9 @@ describe('medical patient handoff view domain', () => {
     const noUpcBeds = filterBedsByMedicalScope(BEDS, RECORD, true, 'no-upc');
     const surgeryBeds = filterBedsBySelectedMedicalSpecialty(BEDS, RECORD, true, Specialty.CIRUGIA);
 
-    expect(upcBeds.map(bed => bed.id)).toEqual(['1']);
-    expect(noUpcBeds.map(bed => bed.id)).toEqual(['2']);
-    expect(surgeryBeds.map(bed => bed.id)).toEqual(['2']);
+    expect(upcBeds.map(bed => bed.id)).toEqual(['R1']);
+    expect(noUpcBeds.map(bed => bed.id)).toEqual(['R2']);
+    expect(surgeryBeds.map(bed => bed.id)).toEqual(['R2']);
   });
 
   it('collects specialties, detects visible patients, and builds deep links', () => {
@@ -60,7 +60,7 @@ describe('medical patient handoff view domain', () => {
       Specialty.MEDICINA,
       Specialty.CIRUGIA,
     ]);
-    expect(hasVisibleMedicalPatients(BEDS, RECORD, bedId => bedId === '2')).toBe(true);
+    expect(hasVisibleMedicalPatients(BEDS, RECORD, bedId => bedId === 'R2')).toBe(true);
     expect(
       buildMedicalSpecialtyLink(
         'https://app.hospitalhangaroa.cl',

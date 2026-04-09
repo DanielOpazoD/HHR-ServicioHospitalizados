@@ -14,6 +14,7 @@ vi.mock('firebase/firestore', async importOriginal => {
   return {
     ...actual,
     setDoc: vi.fn().mockResolvedValue(undefined),
+    getDoc: vi.fn().mockResolvedValue({ exists: () => false, data: () => undefined }),
   };
 });
 

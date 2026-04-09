@@ -300,7 +300,7 @@ describe('Critical Integration Paths', () => {
       expect(result.current.record?.medicalSignature?.doctorName).toBe('Dr. House');
     });
 
-    // 3. Verify Async Persistence
-    expect(mockDailyRecordRepositoryPort.saveDetailed).toHaveBeenCalled();
+    // 3. Verify Async Persistence (now uses patchRecord / updatePartialDetailed)
+    expect(mockDailyRecordRepositoryPort.updatePartialDetailed).toHaveBeenCalled();
   });
 });

@@ -19,10 +19,21 @@ vi.mock('@/utils/dateUtils', () => ({
   },
   getTodayISO: () => '2026-01-02',
   generateDateRange: (_year: number, _month: number, _limitToToday: boolean) => {
-    // Return a fixed small range to make testing easier
     return ['2026-01-01', '2026-01-02'];
   },
 }));
+
+// Also mock dateFormattingUtils since HandoffCalendarView imports from there
+vi.mock('@/utils/dateFormattingUtils', async importOriginal => {
+  const actual = await importOriginal<typeof import('@/utils/dateFormattingUtils')>();
+  return {
+    ...actual,
+    getTodayISO: () => '2026-01-02',
+    generateDateRange: (_year: number, _month: number, _limitToToday: boolean) => {
+      return ['2026-01-01', '2026-01-02'];
+    },
+  };
+});
 
 // Mock lucide-react icons
 vi.mock('lucide-react', () => ({

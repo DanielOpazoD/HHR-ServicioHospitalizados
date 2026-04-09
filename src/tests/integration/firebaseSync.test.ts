@@ -22,19 +22,23 @@ class MockTimestamp {
   }
 }
 
-vi.mock('firebase/firestore', () => ({
-  collection: vi.fn(),
-  doc: vi.fn(() => ({})),
-  getDoc: vi.fn(),
-  setDoc: vi.fn(() => Promise.resolve()),
-  deleteDoc: vi.fn(),
-  getDocs: vi.fn(),
-  query: vi.fn(),
-  orderBy: vi.fn(),
-  Timestamp: MockTimestamp,
-  onSnapshot: vi.fn(),
-  where: vi.fn(),
-}));
+vi.mock('firebase/firestore', async importOriginal => {
+  const actual = await importOriginal<typeof import('firebase/firestore')>();
+  return {
+    ...actual,
+    collection: vi.fn(),
+    doc: vi.fn(() => ({})),
+    getDoc: vi.fn(),
+    setDoc: vi.fn(() => Promise.resolve()),
+    deleteDoc: vi.fn(),
+    getDocs: vi.fn(),
+    query: vi.fn(),
+    orderBy: vi.fn(),
+    Timestamp: MockTimestamp,
+    onSnapshot: vi.fn(),
+    where: vi.fn(),
+  };
+});
 
 vi.mock('@/firebaseConfig', () => ({
   db: {},

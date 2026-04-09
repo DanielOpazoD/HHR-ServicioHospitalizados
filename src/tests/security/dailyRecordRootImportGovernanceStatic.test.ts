@@ -5,9 +5,7 @@ import path from 'node:path';
 const ROOT = path.resolve(__dirname, '../../../');
 
 const ALLOWED_ROOT_DAILY_RECORD_IMPORTS = [
-  'src/application/ports/dailyRecordPort.ts',
   'src/application/shared/dailyRecordContracts.ts',
-  'src/hooks/contracts/dailyRecordHookContracts.ts',
   'src/schemas/zod/dailyRecord.ts',
   'src/schemas/zodSafeParsers.ts',
   'src/schemas/zodValidationHelpers.ts',
@@ -44,7 +42,7 @@ const ALLOWED_ROOT_DAILY_RECORD_IMPORTS = [
 describe('DailyRecord root import governance', () => {
   it('keeps root DailyRecord imports confined to storage, repository, schema and contract layers', () => {
     const command =
-      'rg -l "from \'@/types/domain/dailyRecord\'|from \\"@/types/domain/dailyRecord\\"" src --glob "!src/tests/**"';
+      'grep -rl "from \'@/types/domain/dailyRecord\'\\|from \\"@/types/domain/dailyRecord\\"" src --include="*.ts" --include="*.tsx" | grep -v "src/tests/"';
     const rawOutput = execSync(command, { cwd: ROOT, encoding: 'utf8' });
     const referencedFiles = rawOutput
       .split('\n')

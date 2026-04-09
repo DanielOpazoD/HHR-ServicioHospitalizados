@@ -15,6 +15,29 @@ vi.mock('@/utils/dateUtils', () => ({
   }),
 }));
 
+// monthlyBackfillService imports from dateFormattingUtils and clinicalDayUtils
+vi.mock('@/utils/dateFormattingUtils', async importOriginal => {
+  const actual = await importOriginal<typeof import('@/utils/dateFormattingUtils')>();
+  return {
+    ...actual,
+    generateDateRange: () => ['2026-02-01', '2026-02-02', '2026-02-03'],
+  };
+});
+
+vi.mock('@/utils/clinicalDayUtils', async importOriginal => {
+  const actual = await importOriginal<typeof import('@/utils/clinicalDayUtils')>();
+  return {
+    ...actual,
+    getShiftSchedule: () => ({
+      dayStart: '08:00',
+      dayEnd: '20:00',
+      nightStart: '20:00',
+      nightEnd: '08:00',
+      description: 'test',
+    }),
+  };
+});
+
 const createRecord = (date: string): DailyRecord => ({
   date,
   beds: {},

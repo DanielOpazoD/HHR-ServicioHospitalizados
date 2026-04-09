@@ -15,7 +15,7 @@ const ALLOWED_COMPATIBILITY_REFERENCES = [
 describe('legacy role alias governance', () => {
   it('limits viewer_census references to the approved migration surfaces', () => {
     const command =
-      'rg -l "viewer_census" firestore.rules storage.rules functions netlify scripts src/services src/shared src/hooks src/features src/types';
+      'grep -rl "viewer_census" firestore.rules storage.rules functions netlify scripts src/services src/shared src/hooks src/features src/types';
     const rawOutput = execSync(command, { cwd: ROOT, encoding: 'utf8' });
     const referencedFiles = rawOutput
       .split('\n')
