@@ -43,9 +43,22 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# Cache-Control: Service worker must never be cached
+# Cache-Control: Service workers and the registration script must never be cached.
+# Older deployments used /sw.js, while the current VitePWA build registers
+# /service-worker.js via /registerSW.js. All three must stay revalidated to
+# avoid mixed-version chunk graphs after a deploy.
 [[headers]]
   for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/service-worker.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/registerSW.js"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
 

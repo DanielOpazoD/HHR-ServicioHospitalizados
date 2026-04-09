@@ -27,4 +27,13 @@ describe('netlify security headers', () => {
     expect(content).toContain('to = "/index.html"');
     expect(content).toContain('status = 200');
   });
+
+  it('prevents caching for service worker entrypoints used across deploys', () => {
+    const content = readFileSync('netlify.toml', 'utf-8');
+
+    expect(content).toContain('for = "/sw.js"');
+    expect(content).toContain('for = "/service-worker.js"');
+    expect(content).toContain('for = "/registerSW.js"');
+    expect(content).toContain('Cache-Control = "no-cache, no-store, must-revalidate"');
+  });
 });
