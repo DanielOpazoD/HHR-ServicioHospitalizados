@@ -9,8 +9,11 @@ import {
 } from '../../src/contracts/serverless';
 import {
   buildJsonResponse,
+  buildTooManyRequestsResponse,
+  getClientIp,
   getRequestOrigin,
   isOriginAllowed,
+  isRateLimited,
   parseJsonBody,
   type NetlifyEventLike,
 } from './lib/http';
@@ -47,6 +50,12 @@ export const createClinicalAISummaryHandler = (
 
     if (!isOriginAllowed(requestOrigin)) {
       return buildJsonResponse(403, { error: 'Origin not allowed' }, { requestOrigin });
+    }
+
+    // Rate limit: 10 requests per minute per IP
+    const clientIp = getClientIp(event);
+    if (isRateLimited(clientIp, { maxPerWindow: 10, windowMs: 60_000 })) {
+      return buildTooManyRequestsResponse(requestOrigin);
     }
 
     if (event.httpMethod === 'OPTIONS') {

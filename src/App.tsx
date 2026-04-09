@@ -6,7 +6,6 @@
 
 import React from 'react';
 import { LoginPage } from '@/features/auth';
-import { LaboratoryQuickAction } from '@/features/laboratory';
 import { GlobalErrorBoundary } from '@/components/shared/GlobalErrorBoundary';
 import { AppContent } from '@/components/layout/AppContent';
 import { CensusProvider } from '@/context/CensusContext';
@@ -14,7 +13,14 @@ import { VersionProvider } from '@/context/VersionContext';
 import { VersionMismatchOverlay } from '@/components/shared/VersionMismatchOverlay';
 import { ViewLoader } from '@/components/ui/ViewLoader';
 import { MedicalSignatureView } from '@/views/LazyViews';
+import { lazyWithRetry } from '@/utils/lazyWithRetry';
 import { AuditProvider, AuthProvider, UIProvider } from './context';
+
+const LaboratoryQuickAction = lazyWithRetry(() =>
+  import('@/features/laboratory').then(module => ({
+    default: module.LaboratoryQuickAction,
+  }))
+);
 import { HospitalProvider } from './context/HospitalContext';
 import { DefaultRepositoryProvider } from '@/services/RepositoryContext';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -47,7 +53,11 @@ interface AuthenticatedAppShellProps {
 const AuthenticatedAppShell = ({ auth, dateNav }: AuthenticatedAppShellProps) => {
   const { censusContextValue, ui } = useAuthenticatedAppRuntime({ auth, dateNav });
   const renderFeatureQuickActions = React.useCallback(
-    (patients: MedicalIndicationsPatientOption[]) => <LaboratoryQuickAction patients={patients} />,
+    (patients: MedicalIndicationsPatientOption[]) => (
+      <React.Suspense fallback={null}>
+        <LaboratoryQuickAction patients={patients} />
+      </React.Suspense>
+    ),
     []
   );
 

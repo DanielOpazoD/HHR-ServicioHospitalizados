@@ -1,0 +1,176 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { handler } from '../../../netlify/functions/mmrad-search';
+
+describe('mmrad-search', () => {
+  const originalEnv = { ...process.env };
+  const fetchMock = vi.fn();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    process.env = {
+      ...originalEnv,
+      URL: 'https://app.example.com',
+      DEPLOY_PRIME_URL: '',
+      DEPLOY_URL: '',
+      SITE_URL: '',
+      APP_URL: '',
+      MMRAD_USERNAME: 'testuser',
+      MMRAD_PASSWORD: 'testpass',
+    };
+    vi.stubGlobal('fetch', fetchMock);
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+    vi.unstubAllGlobals();
+  });
+
+  it('returns 200 with CORS headers on OPTIONS', async () => {
+    const response = await handler({
+      httpMethod: 'OPTIONS',
+      headers: { origin: 'https://app.example.com' },
+      body: null,
+      rawQuery: '',
+    });
+    const headers = response.headers as Record<string, string>;
+
+    expect(response.statusCode).toBe(200);
+    expect(headers['Access-Control-Allow-Origin']).toBe('https://app.example.com');
+  });
+
+  it('returns 405 for non-GET methods', async () => {
+    const response = await handler({
+      httpMethod: 'POST',
+      headers: {},
+      body: null,
+      rawQuery: 'rut=12345678-9',
+    });
+
+    expect(response.statusCode).toBe(405);
+    expect(response.body).toContain('Method not allowed');
+  });
+
+  it('returns 400 when rut is missing', async () => {
+    const response = await handler({
+      httpMethod: 'GET',
+      headers: {},
+      body: null,
+      rawQuery: '',
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.body).toContain('RUT');
+  });
+
+  it('handles login failure gracefully (no search form found)', async () => {
+    // Step 1: GET home page — no login form in HTML
+    fetchMock.mockResolvedValueOnce({
+      status: 200,
+      headers: new Headers(),
+      text: vi.fn().mockResolvedValue('<html><body>No login form here</body></html>'),
+    });
+
+    const response = await handler({
+      httpMethod: 'GET',
+      headers: {},
+      body: null,
+      rawQuery: 'rut=12345678-9',
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = JSON.parse(response.body);
+    expect(body.examenes).toEqual([]);
+    expect(body._debug.error).toContain('Login failed');
+  });
+
+  it('handles successful search flow with exam results', async () => {
+    const loginActionUrl =
+      'https://ris.mmrad.cl/c/portal/login%2Flogin;jsessionid=abc123?p_l_id=123';
+    const dashboardUrl = '/group/hhangaroa';
+    const searchActionUrl = 'https://ris.mmrad.cl/examenportlet_WAR_portlet/search?p_l_id=456';
+
+    // Step 1: GET home page — returns HTML with login form
+    fetchMock.mockResolvedValueOnce({
+      status: 200,
+      headers: new Headers(),
+      text: vi
+        .fn()
+        .mockResolvedValue(
+          `<html><form action="${loginActionUrl}" method="post"><input name="_58_login"/></form></html>`
+        ),
+    });
+
+    // Step 2: POST login credentials — 302 redirect
+    fetchMock.mockResolvedValueOnce({
+      status: 302,
+      headers: new Headers({ location: '/c/portal/redirect' }),
+      text: vi.fn().mockResolvedValue(''),
+    });
+
+    // Step 3: Follow first redirect — 302 to dashboard
+    fetchMock.mockResolvedValueOnce({
+      status: 302,
+      headers: new Headers({ location: dashboardUrl }),
+      text: vi.fn().mockResolvedValue(''),
+    });
+
+    // Step 4: Follow second redirect — dashboard with search form
+    fetchMock.mockResolvedValueOnce({
+      status: 200,
+      headers: new Headers(),
+      text: vi.fn().mockResolvedValue(
+        `<html><body>
+          <form action="${searchActionUrl}" method="post">
+            <input name="idpaciente" />
+          </form>
+        </body></html>`
+      ),
+    });
+
+    // Step 5: POST search — exam results table
+    fetchMock.mockResolvedValueOnce({
+      status: 200,
+      headers: new Headers(),
+      text: vi.fn().mockResolvedValue(
+        `<html><body><table>
+          <tr>
+            <td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td>
+            <td>01/01/2026</td><td>02/01/2026</td><td>8</td><td>9</td>
+            <td>RX Torax</td><td>CR</td><td>12</td><td>Informado</td>
+            <td>Acciones</td>
+            <td><a href="/informePDF/123">PDF</a></td>
+          </tr>
+        </table></body></html>`
+      ),
+    });
+
+    const response = await handler({
+      httpMethod: 'GET',
+      headers: {},
+      body: null,
+      rawQuery: 'rut=12.345.678-9',
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = JSON.parse(response.body);
+    expect(body.rut).toBe('12345678-9');
+    expect(body.examenes).toBeInstanceOf(Array);
+    expect(body._debug.login).toBeInstanceOf(Array);
+    expect(body._debug.searchUrl).toBeDefined();
+  });
+
+  it('returns 500 on fetch error', async () => {
+    fetchMock.mockRejectedValue(new Error('Network error'));
+
+    const response = await handler({
+      httpMethod: 'GET',
+      headers: {},
+      body: null,
+      rawQuery: 'rut=12345678-9',
+    });
+
+    expect(response.statusCode).toBe(500);
+    expect(response.body).toContain('Network error');
+  });
+});

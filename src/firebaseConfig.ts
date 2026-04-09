@@ -18,9 +18,19 @@ import {
   resolveStorageInstance,
 } from '@/services/firebase-runtime/firebaseLazyServices';
 import { createScopedLogger } from '@/services/utils/loggerScope';
+import { validateClientEnv } from '@/config/envValidator';
 
 const FIREBASE_READY_TIMEOUT_MS = 10000;
 const firebaseConfigLogger = createScopedLogger('FirebaseConfig');
+
+// Validate environment variables early — fail fast on misconfiguration
+const envValidation = validateClientEnv();
+if (!envValidation.success) {
+  firebaseConfigLogger.error('Environment validation failed', { issues: envValidation.issues });
+  if (import.meta.env.DEV) {
+    throw new Error(`Missing required environment variables:\n${envValidation.issues.join('\n')}`);
+  }
+}
 
 export let app!: FirebaseApp;
 export let auth!: Auth;

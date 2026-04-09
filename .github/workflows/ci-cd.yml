@@ -251,6 +251,9 @@ jobs:
       - name: Enforce bundle budget
         run: npm run check:bundle-budget
 
+      - name: Validate chunk import graph (no vendor↔feature cycles)
+        run: npm run check:chunk-graph
+
   ci-strict-summary:
     name: ci-summary
     runs-on: ubuntu-latest

@@ -114,6 +114,52 @@ export const buildTextResponse = (
   body,
 });
 
+/* ── Client IP extraction ─────────────────────────────────────────────── */
+
+export const getClientIp = (event: Pick<NetlifyEventLike, 'headers'>): string => {
+  const h = event.headers;
+  return (
+    getHeader(h, 'x-nf-client-connection-ip') ||
+    getHeader(h, 'x-forwarded-for')?.split(',')[0]?.trim() ||
+    getHeader(h, 'client-ip') ||
+    'unknown'
+  );
+};
+
+/* ── Simple in-memory rate limiter (per function instance) ───────────── */
+
+const rateBuckets = new Map<string, number[]>();
+
+/**
+ * Returns `true` if the caller has exceeded `maxPerWindow` requests
+ * within the last `windowMs` milliseconds.
+ */
+export const isRateLimited = (
+  ip: string,
+  { maxPerWindow = 10, windowMs = 60_000 }: { maxPerWindow?: number; windowMs?: number } = {}
+): boolean => {
+  const now = Date.now();
+  const hits = (rateBuckets.get(ip) || []).filter(t => now - t < windowMs);
+  hits.push(now);
+  rateBuckets.set(ip, hits);
+  // Prevent unbounded Map growth: prune stale IPs periodically
+  if (rateBuckets.size > 500) {
+    for (const [key, timestamps] of rateBuckets) {
+      if (timestamps.every(t => now - t >= windowMs)) rateBuckets.delete(key);
+    }
+  }
+  return hits.length > maxPerWindow;
+};
+
+export const buildTooManyRequestsResponse = (requestOrigin?: string) =>
+  buildJsonResponse(
+    429,
+    { error: 'Demasiadas solicitudes. Intente de nuevo en un minuto.' },
+    { requestOrigin, headers: { 'Retry-After': '60' } }
+  );
+
+/* ── JSON body parser ────────────────────────────────────────────────── */
+
 export const parseJsonBody = <T>(body: string | null | undefined) => {
   if (!body) {
     return { ok: false as const, error: 'Solicitud inválida: falta el cuerpo.' };

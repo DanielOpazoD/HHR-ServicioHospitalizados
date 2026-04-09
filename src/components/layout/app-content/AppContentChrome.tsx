@@ -1,8 +1,12 @@
 import React from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { DateStrip } from '@/components/layout/DateStrip';
-import { BookmarkBar } from '@/components/bookmarks/BookmarkBar';
+import { lazyWithRetry } from '@/utils/lazyWithRetry';
 import { AppRouter } from '@/components/AppRouter';
+
+const BookmarkBar = lazyWithRetry(() =>
+  import('@/components/bookmarks/BookmarkBar').then(m => ({ default: m.BookmarkBar }))
+);
 import { BEDS } from '@/constants/beds';
 import {
   shouldRenderBookmarkBar,
@@ -167,7 +171,11 @@ export const AppContentChrome: React.FC<AppContentChromeProps> = ({
         isSignatureMode,
         showBookmarksBar: ui.showBookmarksBar,
         role: auth.role,
-      }) && <BookmarkBar />}
+      }) && (
+        <React.Suspense fallback={null}>
+          <BookmarkBar />
+        </React.Suspense>
+      )}
 
       <main className="max-w-screen-2xl mx-auto px-4 pt-4 pb-20 flex-1 w-full print:p-0 print:pb-0 print:max-w-none">
         <AppRouter

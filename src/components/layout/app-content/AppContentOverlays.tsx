@@ -1,13 +1,21 @@
 import React from 'react';
-import { SettingsModal } from '@/components/modals/SettingsModal';
-import { TestAgent } from '@/components/debug/TestAgent';
+import { lazyWithRetry } from '@/utils/lazyWithRetry';
 import { SyncWatcher } from '@/components/shared/SyncWatcher';
 import StorageStatusBadge from '@/components/layout/StorageStatusBadge';
 import { PinLockScreen } from '@/components/security/PinLockScreen';
 import { CensusEmailConfigModal } from '@/views/LazyViews';
-import { ReminderModal } from '@/components/reminders/ReminderModal';
 import type { UseUIStateReturn } from '@/hooks/useUIState';
 import type { AppContentRuntime } from '@/components/layout/app-content/useAppContentRuntime';
+
+const SettingsModal = lazyWithRetry(() =>
+  import('@/components/modals/SettingsModal').then(m => ({ default: m.SettingsModal }))
+);
+const TestAgent = lazyWithRetry(() =>
+  import('@/components/debug/TestAgent').then(m => ({ default: m.TestAgent }))
+);
+const ReminderModal = lazyWithRetry(() =>
+  import('@/components/reminders/ReminderModal').then(m => ({ default: m.ReminderModal }))
+);
 
 export interface AppContentOverlaysProps {
   ui: UseUIStateReturn;
@@ -24,12 +32,16 @@ export const AppContentOverlays: React.FC<AppContentOverlaysProps> = ({ ui, runt
 
   return (
     <>
-      <SettingsModal
-        isOpen={ui.settingsModal.isOpen}
-        onClose={ui.settingsModal.close}
-        onRunTest={() => ui.setIsTestAgentRunning(true)}
-      />
-      <ReminderModal />
+      <React.Suspense fallback={null}>
+        <SettingsModal
+          isOpen={ui.settingsModal.isOpen}
+          onClose={ui.settingsModal.close}
+          onRunTest={() => ui.setIsTestAgentRunning(true)}
+        />
+      </React.Suspense>
+      <React.Suspense fallback={null}>
+        <ReminderModal />
+      </React.Suspense>
 
       {censusEmail.showEmailConfig && (
         <React.Suspense fallback={null}>
@@ -61,11 +73,13 @@ export const AppContentOverlays: React.FC<AppContentOverlaysProps> = ({ ui, runt
         </React.Suspense>
       )}
 
-      <TestAgent
-        isRunning={ui.isTestAgentRunning}
-        onComplete={() => ui.setIsTestAgentRunning(false)}
-        currentRecord={record}
-      />
+      <React.Suspense fallback={null}>
+        <TestAgent
+          isRunning={ui.isTestAgentRunning}
+          onComplete={() => ui.setIsTestAgentRunning(false)}
+          currentRecord={record}
+        />
+      </React.Suspense>
 
       <SyncWatcher />
       <PinLockScreen />

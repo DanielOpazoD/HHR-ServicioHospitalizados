@@ -93,7 +93,6 @@ export const useSystemHealthReporter = () => {
 
         await reportUserHealth(status);
         lastReportTime.current = Date.now();
-        // console.log('[HealthReporter] Status reported successfully');
       } catch (error) {
         systemHealthReporterLogger.error('Failed to report status', error);
       }
