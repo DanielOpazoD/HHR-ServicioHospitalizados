@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createClinicalAISummaryHandler } from '../../../netlify/functions/clinical-ai-summary';
 import type { ClinicalAISummaryContext } from '@/application/ai/clinicalSummaryContextUseCase';
 
@@ -33,6 +33,7 @@ const baseContext: ClinicalAISummaryContext = {
 };
 
 describe('clinical-ai-summary netlify function', () => {
+  const originalEnv = { ...process.env };
   const getFirebaseServerMock = vi.fn();
   const authorizeRoleRequestMock = vi.fn();
   const extractBearerTokenMock = vi.fn();
@@ -53,6 +54,10 @@ describe('clinical-ai-summary netlify function', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env = {
+      ...originalEnv,
+      URL: 'https://app.example.com',
+    };
     getFirebaseServerMock.mockReturnValue({ db: { kind: 'firestore' } });
     extractBearerTokenMock.mockReturnValue('token-123');
     authorizeRoleRequestMock.mockResolvedValue({
@@ -66,6 +71,10 @@ describe('clinical-ai-summary netlify function', () => {
       model: 'gpt-4o-mini',
     });
     generateClinicalAITextMock.mockResolvedValue('Resumen clínico generado.');
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
   });
 
   it('returns available false when no provider is configured', async () => {
@@ -108,6 +117,37 @@ describe('clinical-ai-summary netlify function', () => {
 
     expect(response.statusCode).toBe(400);
     expect(response.body).toContain('recordDate y bedId son requeridos');
+  });
+
+  it('does not consume rate limit quota on trusted preflight requests', async () => {
+    for (let i = 0; i < 10; i++) {
+      const preflight = await handler({
+        httpMethod: 'OPTIONS',
+        headers: {
+          origin: 'https://app.example.com',
+          'x-nf-client-connection-ip': '198.51.100.11',
+        },
+        body: null,
+      });
+
+      expect(preflight.statusCode).toBe(200);
+    }
+
+    const response = await handler({
+      httpMethod: 'POST',
+      headers: {
+        origin: 'https://app.example.com',
+        authorization: 'Bearer token-123',
+        'x-nf-client-connection-ip': '198.51.100.11',
+      },
+      body: JSON.stringify({
+        recordDate: '2026-03-25',
+        bedId: 'R1',
+        instruction: 'Resumir para relevo clínico.',
+      }),
+    });
+
+    expect(response.statusCode).toBe(200);
   });
 
   it('returns a clinical summary for authorized callers', async () => {

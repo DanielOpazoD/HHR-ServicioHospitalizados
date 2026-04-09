@@ -15,6 +15,17 @@ describe('netlify security headers', () => {
     expect(content).not.toContain('https://fonts.gstatic.com');
   });
 
+  it('keeps the SPA shell strict while allowing legacy static pages with inline scripts', () => {
+    const content = readFileSync('netlify.toml', 'utf-8');
+
+    expect(content).toContain(
+      "script-src 'self' https://apis.google.com https://www.gstatic.com https://accounts.google.com;"
+    );
+    expect(content).toContain('for = "/offline.html"');
+    expect(content).toContain('for = "/games/*"');
+    expect(content).toContain("script-src 'self' 'unsafe-inline' https:;");
+  });
+
   it('keeps COOP mode compatible with popup login flow', () => {
     const content = readFileSync('netlify.toml', 'utf-8');
     expect(content).toContain('Cross-Origin-Opener-Policy = "unsafe-none"');

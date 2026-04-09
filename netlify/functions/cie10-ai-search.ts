@@ -43,12 +43,6 @@ const handler = async (event: NetlifyEventLike) => {
     return buildJsonResponse(403, { error: 'Origin not allowed' }, { requestOrigin });
   }
 
-  // Rate limit: 10 requests per minute per IP
-  const clientIp = getClientIp(event);
-  if (isRateLimited(clientIp, { maxPerWindow: 10, windowMs: 60_000 })) {
-    return buildTooManyRequestsResponse(requestOrigin);
-  }
-
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
@@ -63,6 +57,12 @@ const handler = async (event: NetlifyEventLike) => {
       headers: corsHeaders,
       body: JSON.stringify({ error: 'Method not allowed' }),
     };
+  }
+
+  // Rate limit only the actual mutation/read request, not the CORS preflight.
+  const clientIp = getClientIp(event);
+  if (isRateLimited(clientIp, { maxPerWindow: 10, windowMs: 60_000 })) {
+    return buildTooManyRequestsResponse(requestOrigin);
   }
 
   const providerConfig = resolveClinicalAIProviderConfig();

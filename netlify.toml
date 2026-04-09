@@ -31,6 +31,18 @@
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
 
+# Legacy static pages still ship inline scripts/handlers.
+# Keep the SPA shell strict, but relax CSP for these isolated static assets.
+[[headers]]
+  for = "/offline.html"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self' https: data: blob:; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https:; frame-src 'self' https: blob:;"
+
+[[headers]]
+  for = "/games/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self' https: data: blob:; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https:; frame-src 'self' https: blob:;"
+
 # Cache-Control: HTML and dynamic files must never be cached
 [[headers]]
   for = "/index.html"

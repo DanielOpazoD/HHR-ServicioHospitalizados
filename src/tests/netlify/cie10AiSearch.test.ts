@@ -62,6 +62,35 @@ describe('cie10-ai-search netlify function', () => {
     expect(headers['Access-Control-Allow-Origin']).toBe('https://app.example.com');
   });
 
+  it('does not consume rate limit quota on trusted preflight requests', async () => {
+    for (let i = 0; i < 10; i++) {
+      const preflight = await handler({
+        httpMethod: 'OPTIONS',
+        headers: {
+          origin: 'https://app.example.com',
+          'x-nf-client-connection-ip': '198.51.100.10',
+        },
+        body: null,
+        path: '/.netlify/functions/cie10-ai-search',
+      });
+
+      expect(preflight.statusCode).toBe(200);
+    }
+
+    const response = await handler({
+      httpMethod: 'POST',
+      headers: {
+        origin: 'https://app.example.com',
+        authorization: 'Bearer token-123',
+        'x-nf-client-connection-ip': '198.51.100.10',
+      },
+      body: JSON.stringify({ query: 'neumonia' }),
+      path: '/.netlify/functions/cie10-ai-search',
+    });
+
+    expect(response.statusCode).toBe(200);
+  });
+
   it('returns 401 when the caller has no bearer token', async () => {
     extractBearerTokenMock.mockImplementation(() => {
       throw new Error('Missing Authorization bearer token.');
