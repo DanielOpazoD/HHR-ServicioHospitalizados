@@ -30,7 +30,7 @@ Una fase se considera cerrada solo si:
 | `Q01` | completado | recuperar gobernanza y artefactos de calidad       |
 | `Q02` | completado | restaurar ownership y boundaries de `census`       |
 | `Q03` | completado | romper ciclos de `clinical-documents`              |
-| `Q04` | pendiente  | alinear `repo-hygiene` y `domain-hotspot-boundary` |
+| `Q04` | completado | alinear `repo-hygiene` y `domain-hotspot-boundary` |
 | `Q05` | pendiente  | consolidar APIs públicas por feature               |
 | `Q06` | pendiente  | rebajar el PIN local a barrera UX explícita        |
 | `Q07` | pendiente  | corrida final de convergencia y cierre del ciclo   |
@@ -326,13 +326,13 @@ Ejecutar la validación integral y dejar el ciclo documentado como cerrado.
 
 ## Registro de progreso
 
-| Fecha      | Fase  | Estado     | Nota                                                                                                                                                                                                           |
-| ---------- | ----- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-04-09 | `Q00` | completado | Plan inicial versionado y ciclo abierto                                                                                                                                                                        |
-| 2026-04-09 | `Q01` | completado | Matriz de features, catálogo de fallos y artefactos `reports/*` alineados; checks de salida en verde                                                                                                           |
-| 2026-04-09 | `Q02` | completado | Shims gobernados de `hooks/controllers` aceptados por guardrail, runtime de `sharedCensus` migrado a adapter y queda 1 excepción explícita en `folder-dependency-allowlist` para tratar en `Q05`               |
-| 2026-04-09 | `Q03` | completado | Los casos de uso de `clinical-documents` dejaron de reingresar por la API pública del feature, `patient-flow` concentra el tipo `Conflict` en el engine y `check:architecture` + `typecheck` quedaron en verde |
-| 2026-04-09 | `Q04` | pendiente  | Sin iniciar                                                                                                                                                                                                    |
-| 2026-04-09 | `Q05` | pendiente  | Sin iniciar                                                                                                                                                                                                    |
-| 2026-04-09 | `Q06` | pendiente  | Sin iniciar                                                                                                                                                                                                    |
-| 2026-04-09 | `Q07` | pendiente  | Sin iniciar                                                                                                                                                                                                    |
+| Fecha      | Fase  | Estado     | Nota                                                                                                                                                                                                                          |
+| ---------- | ----- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-04-09 | `Q00` | completado | Plan inicial versionado y ciclo abierto                                                                                                                                                                                       |
+| 2026-04-09 | `Q01` | completado | Matriz de features, catálogo de fallos y artefactos `reports/*` alineados; checks de salida en verde                                                                                                                          |
+| 2026-04-09 | `Q02` | completado | Shims gobernados de `hooks/controllers` aceptados por guardrail, runtime de `sharedCensus` migrado a adapter y queda 1 excepción explícita en `folder-dependency-allowlist` para tratar en `Q05`                              |
+| 2026-04-09 | `Q03` | completado | Los casos de uso de `clinical-documents` dejaron de reingresar por la API pública del feature, `patient-flow` concentra el tipo `Conflict` en el engine y `check:architecture` + `typecheck` quedaron en verde                |
+| 2026-04-09 | `Q04` | completado | `handoff` ya consume `DailyRecord` desde contratos canónicos de aplicación, `dailyRecordCoreContracts` quedó explicitado como facade permitida y `repo-hygiene` reconoce a los colaboradores internos de `clinical-documents` |
+| 2026-04-09 | `Q05` | pendiente  | Sin iniciar                                                                                                                                                                                                                   |
+| 2026-04-09 | `Q06` | pendiente  | Sin iniciar                                                                                                                                                                                                                   |
+| 2026-04-09 | `Q07` | pendiente  | Sin iniciar                                                                                                                                                                                                                   |

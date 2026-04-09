@@ -1,7 +1,7 @@
 import { BEDS } from '@/constants/beds';
 import { getCategorization } from '@/features/cudyr/public';
+import type { DailyRecord } from '@/application/shared/dailyRecordContracts';
 import type { CudyrScore } from '@/types/domain/cudyr';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { calculateStats } from '@/services/calculations/statsCalculator';
 import { resolveNightShiftNurses } from '@/services/staff/dailyRecordStaffing';
 

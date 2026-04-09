@@ -1,7 +1,7 @@
 import React from 'react';
 import clsx from 'clsx';
 import type { CudyrScore } from '@/types/domain/cudyr';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
+import type { DailyRecord } from '@/application/shared/dailyRecordContracts';
 import {
   CUDYR_DEPENDENCY_COLUMNS,
   CUDYR_RISK_COLUMNS,

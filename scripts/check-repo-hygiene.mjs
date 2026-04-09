@@ -43,7 +43,11 @@ const FEATURE_PUBLIC_BOUNDARIES = [
     description:
       'Code outside src/features/clinical-documents must import clinical documents only from "@/features/clinical-documents"; internal subpaths are reserved for the feature itself.',
     allowBypass: file =>
-      file.startsWith('src/features/clinical-documents/') || file.startsWith('src/tests/'),
+      file.startsWith('src/features/clinical-documents/') ||
+      file.startsWith('src/application/clinical-documents/') ||
+      file === 'src/application/ports/clinicalDocumentPort.ts' ||
+      file.startsWith('src/shared/clinical-documents/') ||
+      file.startsWith('src/tests/'),
   },
 ];
 
@@ -112,6 +116,10 @@ const DAILY_RECORD_ROOT_IMPORTS = [
 
 const isDailyRecordApplicationBoundaryBypass = file =>
   file === 'src/application/shared/dailyRecordContracts.ts' ||
+  file === 'src/application/shared/dailyRecordBedContracts.ts' ||
+  file === 'src/application/shared/dailyRecordCoreContracts.ts' ||
+  file === 'src/application/shared/dailyRecordMedicalContracts.ts' ||
+  file === 'src/application/shared/dailyRecordStaffContracts.ts' ||
   file.startsWith('src/tests/');
 
 const isDailyRecordHookBoundaryBypass = file =>

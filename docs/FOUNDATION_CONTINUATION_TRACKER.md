@@ -5,8 +5,8 @@
 ## Resumen
 
 - Ciclo activo: `Q00-Q07`
-- Tareas resueltas o no requeridas: `4/8`
-- Estado global del ciclo: `50%`
+- Tareas resueltas o no requeridas: `5/8`
+- Estado global del ciclo: `62.5%`
 
 ## Regla activa
 
@@ -21,7 +21,7 @@
 | `Q01` | completado | `feature-dependency-matrix`, `test-failure-catalog` y artefactos `reports/*` quedaron alineados; checks de salida en verde                                                                                                                     |
 | `Q02` | completado | los shims de compatibilidad de `census` quedaron gobernados explícitamente, `sharedCensusBrowserRuntimeController` ya usa el adapter del feature y la única excepción restante `components -> laboratory/public` quedó inventariada para `Q05` |
 | `Q03` | completado | los casos de uso de `clinical-documents` ya consumen contratos internos en lugar de reingresar por `index/public`, `patient-flow` consolidó `Conflict` en el engine y `check:architecture` más `typecheck` quedaron en verde                   |
-| `Q04` | pendiente  | alinear `repo-hygiene` y `domain-hotspot-boundary` con contratos canónicos de `dailyRecord`                                                                                                                                                    |
+| `Q04` | completado | `handoff` migra `DailyRecord` al facade `@/application/shared/dailyRecordContracts`, `dailyRecordCoreContracts` queda declarado como facade permitida y `repo-hygiene` acepta el boundary interno de `clinical-documents`                      |
 | `Q05` | pendiente  | consolidar entrypoints públicos por feature                                                                                                                                                                                                    |
 | `Q06` | pendiente  | redefinir PIN local como barrera UX explícita                                                                                                                                                                                                  |
 | `Q07` | pendiente  | corrida final, cierre documental y convergencia                                                                                                                                                                                                |
@@ -50,10 +50,10 @@
 
 - `typecheck`: `ok`
 - `check:quality`: `failing`
-- focos activos: `dailyRecord canonical contracts`, `feature public APIs`, `local PIN UX copy`, `convergencia final`
+- focos activos: `feature public APIs`, `local PIN UX copy`, `convergencia final`
 
 ## Siguiente paso recomendado
 
-1. Ejecutar `Q04` completo antes de abrir consolidación de APIs públicas
+1. Ejecutar `Q05` completo antes de tocar el PIN local
 2. Mantener la excepción `components -> laboratory/public` congelada hasta `Q05`
 3. Cerrar cada fase actualizando este tracker y el plan iterativo
