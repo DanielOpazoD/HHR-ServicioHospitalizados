@@ -61,3 +61,17 @@ sin exigir un big bang.
 1. Migrar los barrels secundarios (`dailyRecordHookContracts`, contratos de contexto y feature contracts) para que también expongan slices más específicos.
 2. Regenerar el reporte de hotspots cuando convenga medir reducción formal del acoplamiento.
 3. Evaluar si `dailyRecordContracts.ts` ya puede pasar a deprecación explícita.
+
+## Iteración 2
+
+### Cambios planeados
+
+- Marcar `dailyRecordContracts.ts` como agregador transitorio explícitamente deprecated.
+- Blindar el repo con un guardrail que falle si reaparecen imports productivos a ese agregador.
+- Dejar documentado que `useDailyRecordTypes.ts` es shim y no entrypoint recomendado.
+
+### Resultado de la iteración
+
+- `dailyRecordContracts.ts` ya quedó marcado como compatibilidad temporal deprecated.
+- `useDailyRecordTypes.ts` quedó señalado como shim deprecated.
+- Se agregó un test estático para impedir nuevos imports productivos al agregador.

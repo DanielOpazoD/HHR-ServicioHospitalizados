@@ -7,6 +7,10 @@
  *
  * This file remains as a temporary compatibility aggregator while imports move
  * to slice-specific contracts.
+ *
+ * @deprecated Prefer importing from the slice-specific modules:
+ * `dailyRecordCoreContracts`, `dailyRecordBedContracts`,
+ * `dailyRecordStaffContracts`, or `dailyRecordMedicalContracts`.
  */
 export type {
   DailyRecord,
