@@ -9,6 +9,7 @@ const SOURCE_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx']);
 const FEATURE_ROOT = path.normalize(path.join(ROOT, 'src', 'features', 'clinical-documents'));
 const PUBLIC_MODULES = new Set([
   '@/features/clinical-documents',
+  '@/features/clinical-documents/internal',
   '@/features/clinical-documents/index',
   '@/features/clinical-documents/public',
 ]);

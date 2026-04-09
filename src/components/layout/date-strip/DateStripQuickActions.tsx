@@ -2,7 +2,7 @@ import React from 'react';
 import { FlaskConical, Lock, Radio } from 'lucide-react';
 import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medicalIndications';
 import { RadiologyViewerModal } from '@/components/modals/RadiologyViewerModal';
-import { LabResultsViewerModal } from '@/features/laboratory/public';
+import { LabResultsViewerModal } from '@/features/laboratory';
 
 interface DateStripQuickActionsProps {
   onOpenBedManager?: () => void;

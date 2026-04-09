@@ -1,5 +1,5 @@
 {
   "violations": [
-    "folder-dependency-not-allowed|src/components/layout/date-strip/DateStripQuickActions.tsx|@/features/laboratory/public|src/features/laboratory/public.ts|components|features"
+    "folder-dependency-not-allowed|src/components/layout/date-strip/DateStripQuickActions.tsx|@/features/laboratory|src/features/laboratory/index.ts|components|features"
   ]
 }

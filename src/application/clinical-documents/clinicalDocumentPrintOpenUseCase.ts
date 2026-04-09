@@ -1,5 +1,7 @@
-import { openClinicalDocumentBrowserPrintPreview } from '@/features/clinical-documents/services/clinicalDocumentPrintPdfService';
-import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
+import {
+  openClinicalDocumentBrowserPrintPreview,
+  type ClinicalDocumentRecord,
+} from '@/features/clinical-documents/internal';
 
 export const executeOpenClinicalDocumentPrint = (
   record: ClinicalDocumentRecord

@@ -6,8 +6,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { FlaskConical, Loader2, X } from 'lucide-react';
-import { getLabResults, buildLabSummaryText } from '@/features/laboratory/public';
-import type { StoredLabExam } from '@/features/laboratory/public';
+import { getLabResults, buildLabSummaryText } from '@/features/laboratory';
+import type { StoredLabExam } from '@/features/laboratory';
 import { searchSyslabExams, fetchSyslabExamDetails } from '@/services/laboratory/syslabService';
 import type { LabResultRow } from '@/types/domain/laboratory';
 

@@ -11,7 +11,7 @@ const IMPORT_EXPORT_REGEX =
   /(?:^|\n)\s*import(?:[\s\S]*?\sfrom\s*)?["']([^"']+)["']|(?:^|\n)\s*export\s+[^;\n]*\sfrom\s*["']([^"']+)["']/g;
 const DYNAMIC_IMPORT_REGEX = /import\(\s*["']([^"']+)["']\s*\)/g;
 const GOVERNED_PUBLIC_FEATURE_IMPORTS = new Set([
-  'src/components/layout/date-strip/DateStripQuickActions.tsx|@/features/laboratory/public',
+  'src/components/layout/date-strip/DateStripQuickActions.tsx|@/features/laboratory',
 ]);
 
 const toPosix = value => value.split(path.sep).join('/');

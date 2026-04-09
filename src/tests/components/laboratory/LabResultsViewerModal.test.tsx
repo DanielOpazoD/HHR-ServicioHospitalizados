@@ -79,7 +79,7 @@ vi.mock('@/services/laboratory/syslabService', () => ({
     `http://localhost:3000/api/exams/pdf?link=${encodeURIComponent(link)}`,
 }));
 
-import { LabResultsViewerModal } from '@/features/laboratory/public';
+import { LabResultsViewerModal } from '@/features/laboratory';
 import type { LabPatient, SyslabExamItem, LabAnalysisData } from '@/types/domain/laboratory';
 
 /* ------------------------------------------------------------------ */
