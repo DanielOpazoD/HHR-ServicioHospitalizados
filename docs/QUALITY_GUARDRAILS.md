@@ -27,6 +27,7 @@ Evitar que la deuda estructural vuelva a crecer después de las fases de estabil
 8. Los servicios críticos que dependan de Firebase Functions/Auth/Storage deben preferir `create...Service(...)` o runtime inyectable y conservar singleton por defecto solo por compatibilidad.
 9. Los refactors de backup/exportación deben dejar tests de runtime o fallback; no basta con tests puramente superficiales del consumer.
 10. Si `backup/export` pasa a ser subsistema crítico de release, debe quedar también reflejado en `critical-coverage` y en `technical-ownership-map`, no solo en budgets de flujo.
+11. Los chunks de arranque del shell crítico deben vivir en `scripts/config/bundle-budget.json` y no quedar como heurísticas hardcodeadas en el checker.
 
 ## Cómo agregar un guardrail nuevo
 
@@ -83,6 +84,8 @@ Evitar que la deuda estructural vuelva a crecer después de las fases de estabil
 - La política para decidir si una mejora técnica vale la pena antes de ejecutarla vive en [docs/ENGINEERING_CHANGE_DECISION_POLICY.md](./ENGINEERING_CHANGE_DECISION_POLICY.md).
 - La definición de terminado vive en [docs/ENGINEERING_DEFINITION_OF_DONE.md](./ENGINEERING_DEFINITION_OF_DONE.md).
 - La deuda priorizada vive en [docs/TECHNICAL_DEBT_REGISTER.md](./TECHNICAL_DEBT_REGISTER.md).
+- El registro interno recurrente de iteraciones de mantenimiento vive en [docs/MAINTENANCE_ITERATION_LOG.md](./MAINTENANCE_ITERATION_LOG.md).
+- `ci:release-gate` valida `check:report-freshness` para evitar releases con reportes ejecutivos generados contra otro commit.
 - Los fallos conocidos no resueltos deben vivir en `scripts/config/test-failure-catalog.json` con owner, clasificación y SLA.
 - Los riesgos flaky aceptados temporalmente deben vivir en `scripts/config/flaky-quarantine.json` y reflejarse también en el catálogo de fallos.
 

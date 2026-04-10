@@ -17,18 +17,6 @@ const fail = message => {
 const toKb = value => `${(value / 1024).toFixed(1)} KB`;
 const toPct = (value, max) => `${((value / max) * 100).toFixed(1)}%`;
 const nearLimitThresholdRatio = 0.9;
-const baseChunkAdvisories = [
-  {
-    label: 'entry-app',
-    pattern: /^index-.*\.js$/,
-    recommendedMaxBytes: 620000,
-  },
-  {
-    label: 'firebase-core',
-    pattern: /^vendor-firebase-core-.*\.js$/,
-    recommendedMaxBytes: 560000,
-  },
-];
 
 if (!fs.existsSync(configPath)) {
   fail(`Missing config file: ${configPath}`);
@@ -47,6 +35,9 @@ try {
 
 const entryMaxBytes = Number(parsedConfig?.entryMaxBytes || 0);
 const chunkMaxBytes = Number(parsedConfig?.chunkMaxBytes || 0);
+const startupChunkBudgets = Array.isArray(parsedConfig?.startupChunkBudgets)
+  ? parsedConfig.startupChunkBudgets
+  : [];
 const chunkPatternBudgets = Array.isArray(parsedConfig?.chunkPatternBudgets)
   ? parsedConfig.chunkPatternBudgets
   : [];
@@ -142,11 +133,36 @@ for (const patternBudget of chunkPatternBudgets) {
   }
 }
 
-for (const advisory of baseChunkAdvisories) {
-  for (const asset of jsAssets.filter(candidate => advisory.pattern.test(candidate.name))) {
-    if (asset.size > advisory.recommendedMaxBytes) {
+for (const startupBudget of startupChunkBudgets) {
+  const label = typeof startupBudget?.label === 'string' ? startupBudget.label : 'startup-chunk';
+  const pattern = typeof startupBudget?.pattern === 'string' ? startupBudget.pattern : '';
+  const maxBytes = Number(startupBudget?.maxBytes || 0);
+  const severity = startupBudget?.severity === 'warn' ? 'warn' : 'error';
+
+  if (!pattern || !maxBytes) {
+    fail(`Invalid startup chunk budget for ${label}`);
+  }
+
+  let regex;
+  try {
+    regex = new RegExp(pattern);
+  } catch (error) {
+    fail(
+      `Invalid startup chunk regex "${pattern}" for ${label}: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+
+  for (const asset of jsAssets.filter(candidate => regex.test(candidate.name))) {
+    if (asset.size > maxBytes) {
+      const message = `Startup chunk budget (${label}): "${asset.name}" is ${toKb(asset.size)} (limit ${toKb(maxBytes)})`;
+      if (severity === 'error') {
+        violations.push(message);
+      } else {
+        nearLimitWarnings.push(message);
+      }
+    } else if (asset.size / maxBytes >= nearLimitThresholdRatio) {
       nearLimitWarnings.push(
-        `Base chunk advisory (${advisory.label}): "${asset.name}" is ${toKb(asset.size)} (recommended <= ${toKb(advisory.recommendedMaxBytes)})`
+        `Startup chunk (${label}) is near limit: "${asset.name}" is ${toKb(asset.size)} (${toPct(asset.size, maxBytes)} of ${toKb(maxBytes)})`
       );
     }
   }

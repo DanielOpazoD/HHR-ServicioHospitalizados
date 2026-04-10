@@ -27,6 +27,19 @@ export const chunkForModule = (moduleId: string): string | undefined => {
 
     if (has('/node_modules/firebase/') || has('/node_modules/@firebase/')) {
       if (
+        has('/node_modules/firebase/auth') ||
+        has('/node_modules/@firebase/auth') ||
+        has('/node_modules/@firebase/auth-compat') ||
+        has('/node_modules/@firebase/util')
+      ) {
+        return 'vendor-firebase-auth';
+      }
+
+      if (has('/node_modules/firebase/firestore') || has('/node_modules/@firebase/firestore')) {
+        return 'vendor-firebase-firestore';
+      }
+
+      if (
         has('/node_modules/firebase/storage') ||
         has('/node_modules/firebase/functions') ||
         has('/node_modules/@firebase/storage') ||
@@ -34,6 +47,7 @@ export const chunkForModule = (moduleId: string): string | undefined => {
       ) {
         return 'vendor-firebase-aux';
       }
+
       return 'vendor-firebase-core';
     }
 
