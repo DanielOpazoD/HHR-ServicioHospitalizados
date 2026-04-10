@@ -208,9 +208,6 @@ export const handler = async (event: NetlifyEventLike) => {
       encryptionPin: password || undefined,
     });
 
-    // eslint-disable-next-line no-console
-    console.log('Gmail send response', gmailResponse);
-
     return buildJsonResponse(
       200,
       CensusEmailResponseSchema.parse({
