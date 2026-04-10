@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import type { BedDefinition } from '@/types/domain/beds';
 import type { Specialty } from '@/domain/handoff/patientContracts';
 import type { DailyRecord } from '@/domain/handoff/recordContracts';
@@ -84,6 +84,14 @@ export const HandoffMedicalContent: React.FC<HandoffMedicalContentProps> = ({
   const [bedStats, setBedStats] = useState<MedicalHandoffBedStatsData | null>(null);
   const [activeTab, setActiveTab] = useState<MedicalTabMode>('all');
   const [printMode, setPrintMode] = useState<MedicalPrintMode>('all');
+  const headerRecord = useMemo(
+    () => ({
+      ...record,
+      medicalSignature: scopedMedicalSignature || undefined,
+      medicalHandoffSentAt: scopedMedicalHandoffSentAt || undefined,
+    }),
+    [record, scopedMedicalHandoffSentAt, scopedMedicalSignature]
+  );
   const filterChips = buildMedicalSpecialtyFilterChips(
     selectedMedicalSpecialty,
     medicalSpecialties
@@ -101,11 +109,7 @@ export const HandoffMedicalContent: React.FC<HandoffMedicalContentProps> = ({
     <div className="space-y-3">
       <MedicalHandoffHeader
         onBedStats={setBedStats}
-        record={{
-          ...record,
-          medicalSignature: scopedMedicalSignature || undefined,
-          medicalHandoffSentAt: scopedMedicalHandoffSentAt || undefined,
-        }}
+        record={headerRecord}
         visibleBeds={effectiveVisibleBeds}
         readOnly={readOnly}
         canRestoreSignatures={Boolean(resetMedicalHandoffState)}

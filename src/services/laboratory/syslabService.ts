@@ -70,7 +70,10 @@ const fetchWithRetry = async (
       clearTimeout(timeout);
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Error de conexión' }));
+        const errorData = await response.json().catch(error => {
+          syslabLogger.warn('Failed to parse Syslab error response body', error);
+          return { error: 'Error de conexión' };
+        });
         throw new Error(errorData.error || `Error ${response.status}`);
       }
 

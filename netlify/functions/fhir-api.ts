@@ -10,8 +10,11 @@ import {
 import {
   buildCorsHeaders,
   buildJsonResponse,
+  buildTooManyRequestsResponse,
+  getClientIp,
   getRequestOrigin,
   isOriginAllowed,
+  isRateLimited,
   type NetlifyEventLike,
 } from './lib/http';
 import { authorizeRoleRequest, extractBearerToken } from './lib/firebase-auth';
@@ -102,6 +105,12 @@ export const createFhirApiHandler =
 
     if (event.httpMethod !== 'GET') {
       return buildOperationOutcomeResponse(405, 'forbidden', 'Method not allowed', requestOrigin);
+    }
+
+    // Rate limit only the actual GET request, not the CORS preflight.
+    const clientIp = getClientIp(event);
+    if (isRateLimited(clientIp, { maxPerWindow: 20, windowMs: 60_000 })) {
+      return buildTooManyRequestsResponse(requestOrigin);
     }
 
     const { resourceType, resourceId } = resolveFhirRoute(event.path);

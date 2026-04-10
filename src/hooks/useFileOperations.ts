@@ -18,6 +18,9 @@ import {
   recordOperationalOutcome,
   recordOperationalTelemetry,
 } from '@/services/observability/operationalTelemetryService';
+import { createScopedLogger } from '@/services/utils/loggerScope';
+
+const logger = createScopedLogger('useFileOperations');
 
 export interface UseFileOperationsReturn {
   handleExportJSON: () => void;
@@ -63,7 +66,8 @@ export const useFileOperations = (
         }
         dispatchNotification(buildExportJsonNotification('error'));
       })
-      .catch(() => {
+      .catch(error => {
+        logger.error('JSON export failed', error);
         dispatchNotification(buildExportJsonNotification('error'));
       });
   };

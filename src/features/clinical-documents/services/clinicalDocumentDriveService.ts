@@ -9,6 +9,9 @@ import {
   createApplicationSuccess,
   type ApplicationOutcome,
 } from '@/shared/contracts/applicationOutcome';
+import { createScopedLogger } from '@/services/utils/loggerScope';
+
+const logger = createScopedLogger('clinicalDocumentDriveService');
 
 const ROOT_FOLDER = 'Hospitalizados';
 const DOCUMENT_ROOT_FOLDER = 'Documentos Clinicos';
@@ -69,9 +72,10 @@ const createFolder = async (
   });
 
   if (!response.ok) {
-    const payload = await response
-      .json()
-      .catch(() => ({ error: { message: `HTTP ${response.status}` } }));
+    const payload = await response.json().catch(error => {
+      logger.warn('Failed to parse Drive folder creation error response', error);
+      return { error: { message: `HTTP ${response.status}` } };
+    });
     throw new Error(payload.error?.message || 'No se pudo crear carpeta en Google Drive.');
   }
 

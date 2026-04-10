@@ -13,7 +13,14 @@
  *   5. POST patient RUT to the search form → HTML with exam results
  */
 
-import { buildJsonResponse, getRequestOrigin, type NetlifyEventLike } from './lib/http';
+import {
+  buildJsonResponse,
+  buildTooManyRequestsResponse,
+  getClientIp,
+  getRequestOrigin,
+  isRateLimited,
+  type NetlifyEventLike,
+} from './lib/http';
 
 const MMRAD_BASE_URL = 'https://ris.mmrad.cl';
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
@@ -269,6 +276,12 @@ export const handler = async (event: NetlifyEventLike) => {
 
   if (event.httpMethod === 'OPTIONS') {
     return buildJsonResponse(200, {}, { requestOrigin });
+  }
+
+  // Rate limit only the actual request, not the CORS preflight.
+  const clientIp = getClientIp(event);
+  if (isRateLimited(clientIp, { maxPerWindow: 10, windowMs: 60_000 })) {
+    return buildTooManyRequestsResponse(requestOrigin);
   }
 
   if (event.httpMethod !== 'GET') {

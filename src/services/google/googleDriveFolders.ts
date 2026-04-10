@@ -4,6 +4,9 @@ import {
   parseDriveUploadResult,
   type DriveUploadResult,
 } from './googleDriveMultipart';
+import { createScopedLogger } from '@/services/utils/loggerScope';
+
+const logger = createScopedLogger('googleDriveFolders');
 
 const DRIVE_FILES_ENDPOINT = 'https://www.googleapis.com/drive/v3/files';
 const DRIVE_UPLOAD_ENDPOINT = 'https://www.googleapis.com/upload/drive/v3/files';
@@ -190,9 +193,10 @@ export const listDriveFolders = async (
   );
 
   if (!response.ok) {
-    const payload = await response
-      .json()
-      .catch(() => ({ error: { message: `HTTP ${response.status}` } }));
+    const payload = await response.json().catch(error => {
+      logger.warn('Failed to parse Drive folder list error response', error);
+      return { error: { message: `HTTP ${response.status}` } };
+    });
     throw new Error(payload.error?.message || 'No se pudieron listar carpetas de Google Drive.');
   }
 

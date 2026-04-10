@@ -54,7 +54,10 @@ export const searchMMRADExams = async ({
     }
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Error de conexión' }));
+      const errorData = await response.json().catch(error => {
+        mmradLogger.warn('Failed to parse MMRAD error response body', error);
+        return { error: 'Error de conexión' };
+      });
       throw new Error(errorData.error || `Error ${response.status}`);
     }
 

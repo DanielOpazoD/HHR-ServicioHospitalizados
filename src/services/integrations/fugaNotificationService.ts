@@ -1,4 +1,7 @@
 import { resolveCurrentUserAuthHeaders } from '@/services/auth/authRequestHeaders';
+import { createScopedLogger } from '@/services/utils/loggerScope';
+
+const logger = createScopedLogger('fugaNotificationService');
 
 const DEFAULT_FUGA_NOTIFICATION_ENDPOINT = '/.netlify/functions/send-fuga-notification';
 
@@ -42,7 +45,10 @@ export const sendFugaNotification = async (
   });
 
   if (!response.ok) {
-    const errorText = await response.text().catch(() => 'No se pudo enviar la notificación.');
+    const errorText = await response.text().catch(error => {
+      logger.warn('Failed to read fuga notification error response', error);
+      return 'No se pudo enviar la notificación.';
+    });
     throw new Error(errorText || 'No se pudo enviar la notificación.');
   }
 

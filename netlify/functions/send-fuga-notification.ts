@@ -5,8 +5,11 @@ import {
   buildCorsHeaders,
   buildJsonResponse,
   buildTextResponse,
+  buildTooManyRequestsResponse,
+  getClientIp,
   getRequestOrigin,
   isOriginAllowed,
+  isRateLimited,
   parseJsonBody,
   type NetlifyEventLike,
 } from './lib/http';
@@ -61,6 +64,12 @@ export const handler = async (event: NetlifyEventLike) => {
 
   if (event.httpMethod !== 'POST') {
     return buildTextResponse(405, 'Método no permitido', { requestOrigin });
+  }
+
+  // Rate limit only the actual POST request, not the CORS preflight.
+  const clientIp = getClientIp(event);
+  if (isRateLimited(clientIp, { maxPerWindow: 5, windowMs: 60_000 })) {
+    return buildTooManyRequestsResponse(requestOrigin);
   }
 
   try {

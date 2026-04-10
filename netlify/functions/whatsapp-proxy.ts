@@ -1,9 +1,12 @@
 import {
   buildCorsHeaders,
   buildJsonResponse,
+  buildTooManyRequestsResponse,
+  getClientIp,
   getHeader,
   getRequestOrigin,
   isOriginAllowed,
+  isRateLimited,
   type NetlifyEventLike,
 } from './lib/http';
 
@@ -35,6 +38,12 @@ export const handler = async (event: NetlifyEventLike) => {
       headers: corsHeaders,
       body: '',
     };
+  }
+
+  // Rate limit only the actual request, not the CORS preflight.
+  const clientIp = getClientIp(event);
+  if (isRateLimited(clientIp, { maxPerWindow: 15, windowMs: 60_000 })) {
+    return buildTooManyRequestsResponse(requestOrigin);
   }
 
   const botBaseUrl = resolveBotBaseUrl();

@@ -6,6 +6,9 @@ import {
   getNavigatorUserAgent,
   writeClipboardText,
 } from '@/shared/runtime/browserWindowRuntime';
+import { createScopedLogger } from '@/services/utils/loggerScope';
+
+const logger = createScopedLogger('GlobalErrorBoundary');
 
 interface Props {
   children: ReactNode;
@@ -82,7 +85,8 @@ export class GlobalErrorBoundary extends Component<Props, State> {
           'Información del error copiada al portapapeles. Por favor, envíe esto al administrador.'
         );
       })
-      .catch(() => {
+      .catch(error => {
+        logger.warn('Clipboard write failed during error reporting', error);
         defaultBrowserWindowRuntime.alert(
           'No se pudo copiar el error automáticamente. Por favor, contacte al administrador.'
         );

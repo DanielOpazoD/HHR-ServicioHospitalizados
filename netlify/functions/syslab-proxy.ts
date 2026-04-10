@@ -18,7 +18,10 @@
 import {
   buildJsonResponse,
   buildTextResponse,
+  buildTooManyRequestsResponse,
+  getClientIp,
   getRequestOrigin,
+  isRateLimited,
   parseJsonBody,
   type NetlifyEventLike,
 } from './lib/http';
@@ -125,6 +128,12 @@ export const handler = async (event: NetlifyEventLike) => {
 
   if (event.httpMethod === 'OPTIONS') {
     return buildJsonResponse(200, {}, { requestOrigin });
+  }
+
+  // Rate limit only the actual request, not the CORS preflight.
+  const clientIp = getClientIp(event);
+  if (isRateLimited(clientIp, { maxPerWindow: 20, windowMs: 60_000 })) {
+    return buildTooManyRequestsResponse(requestOrigin);
   }
 
   const proxyUrl = getProxyUrl();
