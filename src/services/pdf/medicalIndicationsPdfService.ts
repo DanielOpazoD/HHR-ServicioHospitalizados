@@ -1,4 +1,4 @@
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import type { PDFFont, PDFPage } from 'pdf-lib';
 import { openPdfPrintDialog } from '@/services/pdf/pdfBase';
 import {
   MEDICAL_INDICATIONS_LINE_FIELD_NAMES,
@@ -8,9 +8,14 @@ import {
 } from '@/services/pdf/medicalIndicationsPdfCoordinates';
 import { formatMedicalIndicationsDate } from '@/shared/contracts/medicalIndications';
 
-const TEXT_COLOR = rgb(0, 0, 0);
 const FONT_SIZE = 11;
 const PDF_HEADER = '%PDF-';
+let pdfLibPromise: Promise<typeof import('pdf-lib')> | null = null;
+
+const loadPdfLib = () => {
+  pdfLibPromise ??= import('pdf-lib');
+  return pdfLibPromise;
+};
 
 export interface MedicalIndicationsPdfData {
   paciente_nombre: string;
@@ -33,8 +38,8 @@ export interface MedicalIndicationsPdfData {
 }
 
 const drawFieldText = (
-  page: import('pdf-lib').PDFPage,
-  font: import('pdf-lib').PDFFont,
+  page: PDFPage,
+  font: PDFFont,
   variableName: keyof typeof MEDICAL_INDICATIONS_PDF_COORDINATES,
   value: string
 ): void => {
@@ -46,7 +51,6 @@ const drawFieldText = (
     y: coords.y,
     size: FONT_SIZE,
     font,
-    color: TEXT_COLOR,
     maxWidth: coords.width,
   });
 };
@@ -54,7 +58,7 @@ const drawFieldText = (
 const fitTextToWidth = (
   text: string,
   maxWidth: number,
-  font: import('pdf-lib').PDFFont
+  font: PDFFont
 ): { fitted: string; rest: string } => {
   const cleanText = text.trim();
   if (!cleanText) return { fitted: '', rest: '' };
@@ -95,11 +99,7 @@ const fitTextToWidth = (
   return { fitted: fitted.trim(), rest: '' };
 };
 
-const drawIndications = (
-  page: import('pdf-lib').PDFPage,
-  font: import('pdf-lib').PDFFont,
-  indications: string[]
-): void => {
+const drawIndications = (page: PDFPage, font: PDFFont, indications: string[]): void => {
   const printableLines = Array.from(
     { length: MEDICAL_INDICATIONS_LINE_FIELD_NAMES.length },
     () => ''
@@ -130,6 +130,7 @@ const drawIndications = (
 export const fillMedicalIndicationsPdf = async (
   data: MedicalIndicationsPdfData
 ): Promise<Uint8Array> => {
+  const { PDFDocument, StandardFonts } = await loadPdfLib();
   const templateBytes = await loadMedicalIndicationsTemplateBytes();
   const pdfDoc = await PDFDocument.load(templateBytes);
   const page = pdfDoc.getPage(0);

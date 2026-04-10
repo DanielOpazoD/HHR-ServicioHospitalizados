@@ -28,7 +28,7 @@
  * TEST DE GOBERNANZA: src/tests/services/pdf/ieehPdfCoordinates.test.ts
  */
 
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import type { PDFFont } from 'pdf-lib';
 import { PatientData } from '@/services/contracts/patientServiceContracts';
 import { openPdfPrintDialog, saveAndDownloadPdf } from './pdfBase';
 import { FIELD_COORDS, mapInsurance, mapSex, mapProcedencia } from './ieehPdfCoordinates';
@@ -47,6 +47,12 @@ import {
 } from './ieehPdfSupport';
 
 export type { DischargeFormData } from './ieehPdfContracts';
+let pdfLibPromise: Promise<typeof import('pdf-lib')> | null = null;
+
+const loadPdfLib = () => {
+  pdfLibPromise ??= import('pdf-lib');
+  return pdfLibPromise;
+};
 
 // ── Template PDF path (loaded as asset via fetch) ──
 const TEMPLATE_PATH = '/docs/estadistico-egreso.pdf';
@@ -54,9 +60,6 @@ const TEMPLATE_PATH = '/docs/estadistico-egreso.pdf';
 // --- Constants ---
 const FONT_SIZE = 12; // Uniform size for all fields (20% larger than original 10pt)
 const CHAR_SPACING = 1; // Extra spacing between characters for form legibility
-
-// ── Color for filled text (dark black) ──
-const TEXT_COLOR = rgb(0, 0, 0);
 
 /**
  * Main function: Fill the IEEH form with patient data
@@ -69,10 +72,13 @@ export const fillIEEHForm = async (
   patient: PatientData,
   discharge: DischargeFormData = {}
 ): Promise<Uint8Array> => {
+  const { PDFDocument, StandardFonts, rgb } = await loadPdfLib();
+
   // 1. Load the template PDF
   const templateResponse = await fetch(TEMPLATE_PATH);
   const templateBytes = await templateResponse.arrayBuffer();
   const pdfDoc = await PDFDocument.load(templateBytes);
+  const textColor = rgb(0, 0, 0);
 
   // 2. Embed font
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -89,7 +95,7 @@ export const fillIEEHForm = async (
   ) => {
     if (!text) return;
     const fontSize = options.fontSize ?? FONT_SIZE;
-    const f = options.bold ? fontBold : font;
+    const f: PDFFont = options.bold ? fontBold : font;
 
     // Force uppercase for all form text
     const displayText = text.toUpperCase();
@@ -102,7 +108,7 @@ export const fillIEEHForm = async (
         y: coords.y,
         size: fontSize,
         font: f,
-        color: TEXT_COLOR,
+        color: textColor,
       });
       xOffset += f.widthOfTextAtSize(char, fontSize) + CHAR_SPACING;
     }
@@ -115,7 +121,7 @@ export const fillIEEHForm = async (
   ) => {
     if (!text) return;
     const fontSize = options.fontSize ?? FONT_SIZE;
-    const f = options.bold ? fontBold : font;
+    const f: PDFFont = options.bold ? fontBold : font;
     const lineHeight = options.lineHeight ?? fontSize + 2;
     const maxLines = options.maxLines ?? 3;
     const displayText = text.toUpperCase();
