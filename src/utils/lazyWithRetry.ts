@@ -24,6 +24,7 @@ function isChunkLoadError(error: unknown): boolean {
   );
 }
 
+// ComponentType<any> preserves the wrapped lazy component props; unknown erases them.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function lazyWithRetry<T extends ComponentType<any>>(
   factory: () => Promise<{ default: T }>
