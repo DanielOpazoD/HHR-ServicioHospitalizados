@@ -47,10 +47,18 @@ const decodeHtmlEntities = (text: string): string =>
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"');
 
-const getCredentials = () => ({
-  username: process.env.MMRAD_USERNAME || 'vsalfate',
-  password: process.env.MMRAD_PASSWORD || 'balooh',
-});
+const getCredentials = () => {
+  const username = process.env.MMRAD_USERNAME?.trim();
+  const password = process.env.MMRAD_PASSWORD?.trim();
+
+  if (!username || !password) {
+    throw new Error(
+      'MMRAD credentials not configured. Set MMRAD_USERNAME and MMRAD_PASSWORD environment variables.'
+    );
+  }
+
+  return { username, password };
+};
 
 /** Collect all Set-Cookie headers from a fetch Response. */
 const collectSetCookies = (response: Response): string[] => {

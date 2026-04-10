@@ -185,14 +185,11 @@ export interface MmradConfig {
   password: string;
 }
 
-export const validateMmradEnv = (): EnvValidationResult<MmradConfig> => {
-  // MMRAD has hardcoded defaults in the function, so it's always "valid"
-  // but we expose this for explicit validation when desired
-  const username = env('MMRAD_USERNAME') || 'vsalfate';
-  const password = env('MMRAD_PASSWORD') || 'balooh';
-
-  return { valid: true, config: { username, password } };
-};
+export const validateMmradEnv = (): EnvValidationResult<MmradConfig> =>
+  check<MmradConfig>({
+    username: 'MMRAD_USERNAME',
+    password: 'MMRAD_PASSWORD',
+  });
 
 /* ── CORS / Netlify built-ins (informational) ───────────────────────── */
 

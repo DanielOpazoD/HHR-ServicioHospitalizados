@@ -160,6 +160,21 @@ describe('mmrad-search', () => {
     expect(body._debug.searchUrl).toBeDefined();
   });
 
+  it('returns 500 when MMRAD credentials are not configured', async () => {
+    delete process.env.MMRAD_USERNAME;
+    delete process.env.MMRAD_PASSWORD;
+
+    const response = await handler({
+      httpMethod: 'GET',
+      headers: {},
+      body: null,
+      rawQuery: 'rut=12345678-9',
+    });
+
+    expect(response.statusCode).toBe(500);
+    expect(response.body).toContain('MMRAD_USERNAME');
+  });
+
   it('returns 500 on fetch error', async () => {
     fetchMock.mockRejectedValue(new Error('Network error'));
 
