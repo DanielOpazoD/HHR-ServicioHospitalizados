@@ -90,8 +90,16 @@ export const chunkForModule = (moduleId: string): string | undefined => {
       return 'vendor-excel-core';
     }
 
-    if (has('/node_modules/jspdf/') || has('/node_modules/jspdf-autotable/')) {
-      return 'vendor-pdf';
+    if (has('/node_modules/pdf-lib/')) {
+      return 'vendor-pdf-lib';
+    }
+
+    if (has('/node_modules/jspdf-autotable/')) {
+      return 'vendor-pdf-table';
+    }
+
+    if (has('/node_modules/jspdf/')) {
+      return 'vendor-pdf-core';
     }
   }
 

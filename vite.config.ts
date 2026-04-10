@@ -142,9 +142,9 @@ export default defineConfig(({ mode }) => {
       ),
     },
     build: {
-      modulePreload: {
-        polyfill: false,
-      },
+      // Prefer true lazy loading over speculative preload for heavy feature chunks.
+      // This keeps PDF/Excel vendors out of the critical bootstrap path.
+      modulePreload: false,
       commonjsOptions: {
         include: [/node_modules/, /functions\/lib\/minsal\/.*\.js$/],
       },
