@@ -1,11 +1,33 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 
 // Sub-components
 import { PatientSubRowView } from './patient-row/PatientSubRowView';
 import { PatientMainRowView } from './patient-row/PatientMainRowView';
-import { PatientRowModals } from './patient-row/PatientRowModals';
 import { usePatientRowBindingsModel } from './patient-row/usePatientRowBindingsModel';
-import type { PatientRowProps } from './patient-row/patientRowViewContracts';
+import type { PatientRowModalsProps, PatientRowProps } from './patient-row/patientRowViewContracts';
+
+const LazyPatientRowModals = lazy(() =>
+  import('./patient-row/PatientRowModals').then(module => ({
+    default: module.PatientRowModals,
+  }))
+);
+
+const shouldRenderPatientRowModals = ({
+  showDemographics,
+  showClinicalDocuments,
+  canOpenClinicalDocuments,
+  showExamRequest,
+  canOpenExamRequest,
+  showImagingRequest,
+  canOpenImagingRequest,
+  showHistory,
+  canOpenHistory,
+}: PatientRowModalsProps) =>
+  showDemographics ||
+  (showClinicalDocuments && canOpenClinicalDocuments) ||
+  (showExamRequest && canOpenExamRequest) ||
+  (showImagingRequest && canOpenImagingRequest) ||
+  (showHistory && canOpenHistory);
 
 const PatientRowComponent: React.FC<PatientRowProps> = ({
   bed,
@@ -41,6 +63,8 @@ const PatientRowComponent: React.FC<PatientRowProps> = ({
   // EARLY RETURN ONLY AFTER ALL HOOKS
   if (!data) return null;
 
+  const shouldRenderModals = shouldRenderPatientRowModals(bindings.modalsProps);
+
   return (
     <>
       {isSubRow ? (
@@ -49,7 +73,11 @@ const PatientRowComponent: React.FC<PatientRowProps> = ({
         <PatientMainRowView {...bindings.mainRowProps} />
       )}
 
-      <PatientRowModals {...bindings.modalsProps} />
+      {shouldRenderModals ? (
+        <Suspense fallback={null}>
+          <LazyPatientRowModals {...bindings.modalsProps} />
+        </Suspense>
+      ) : null}
     </>
   );
 };

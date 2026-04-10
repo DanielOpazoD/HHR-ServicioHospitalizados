@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { FileText, MoreHorizontal, User } from 'lucide-react';
 import { MedicalButton } from '@/components/ui/base/MedicalButton';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
@@ -9,9 +9,19 @@ import type {
 } from './patientRowActionContracts';
 import type { RowMenuAlign } from './patientRowUiContracts';
 import { usePatientActionMenu } from './usePatientActionMenu';
-import { PatientActionMenuPanel } from '@/features/census/components/patient-row/PatientActionMenuPanel';
 import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medicalIndications';
-import { MedicalIndicationsDialog } from '@/components/layout/date-strip/MedicalIndicationsDialog';
+
+const LazyPatientActionMenuPanel = lazy(() =>
+  import('@/features/census/components/patient-row/PatientActionMenuPanel').then(module => ({
+    default: module.PatientActionMenuPanel,
+  }))
+);
+
+const LazyMedicalIndicationsDialog = lazy(() =>
+  import('@/components/layout/date-strip/MedicalIndicationsDialog').then(module => ({
+    default: module.MedicalIndicationsDialog,
+  }))
+);
 
 interface PatientActionMenuProps extends PatientActionMenuCallbacks, PatientActionMenuIndicators {
   isBlocked: boolean;
@@ -133,22 +143,30 @@ export const PatientActionMenu: React.FC<PatientActionMenuProps> = ({
         />
       )}
 
-      <PatientActionMenuPanel
-        isOpen={isOpen}
-        binding={binding}
-        utilityActions={utilityActions}
-        onClose={close}
-        onAction={handleAction}
-        onViewHistory={handleViewHistory}
-        onViewClinicalDocuments={handleViewClinicalDocuments}
-        onViewExamRequest={handleViewExamRequest}
-        onViewImagingRequest={handleViewImagingRequest}
-      />
-      <MedicalIndicationsDialog
-        isOpen={isMedicalIndicationsOpen}
-        onClose={() => setIsMedicalIndicationsOpen(false)}
-        patients={medicalIndicationsPatient ? [medicalIndicationsPatient] : []}
-      />
+      {isOpen ? (
+        <Suspense fallback={null}>
+          <LazyPatientActionMenuPanel
+            isOpen={isOpen}
+            binding={binding}
+            utilityActions={utilityActions}
+            onClose={close}
+            onAction={handleAction}
+            onViewHistory={handleViewHistory}
+            onViewClinicalDocuments={handleViewClinicalDocuments}
+            onViewExamRequest={handleViewExamRequest}
+            onViewImagingRequest={handleViewImagingRequest}
+          />
+        </Suspense>
+      ) : null}
+      {isMedicalIndicationsOpen ? (
+        <Suspense fallback={null}>
+          <LazyMedicalIndicationsDialog
+            isOpen={isMedicalIndicationsOpen}
+            onClose={() => setIsMedicalIndicationsOpen(false)}
+            patients={medicalIndicationsPatient ? [medicalIndicationsPatient] : []}
+          />
+        </Suspense>
+      ) : null}
     </div>
   );
 };

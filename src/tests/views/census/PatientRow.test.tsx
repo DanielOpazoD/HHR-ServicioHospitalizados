@@ -26,10 +26,20 @@ describe('PatientRow', () => {
   const bindings = {
     mainRowProps: {} as never,
     subRowProps: {} as never,
-    modalsProps: {} as never,
+    modalsProps: {
+      showDemographics: true,
+      showClinicalDocuments: false,
+      canOpenClinicalDocuments: false,
+      showExamRequest: false,
+      canOpenExamRequest: true,
+      showImagingRequest: false,
+      canOpenImagingRequest: true,
+      showHistory: false,
+      canOpenHistory: true,
+    } as never,
   };
 
-  it('renders main row view and modals for primary patient rows', () => {
+  it('renders main row view and modals for primary patient rows', async () => {
     vi.mocked(usePatientRowBindingsModel).mockReturnValue(bindings);
 
     render(
@@ -49,10 +59,10 @@ describe('PatientRow', () => {
 
     expect(screen.getByTestId('main-row-view')).toBeInTheDocument();
     expect(screen.queryByTestId('sub-row-view')).not.toBeInTheDocument();
-    expect(screen.getByTestId('row-modals')).toBeInTheDocument();
+    expect(await screen.findByTestId('row-modals')).toBeInTheDocument();
   });
 
-  it('renders sub row view and modals for clinical crib rows', () => {
+  it('renders sub row view and modals for clinical crib rows', async () => {
     vi.mocked(usePatientRowBindingsModel).mockReturnValue(bindings);
 
     render(
@@ -72,6 +82,6 @@ describe('PatientRow', () => {
 
     expect(screen.queryByTestId('main-row-view')).not.toBeInTheDocument();
     expect(screen.getByTestId('sub-row-view')).toBeInTheDocument();
-    expect(screen.getByTestId('row-modals')).toBeInTheDocument();
+    expect(await screen.findByTestId('row-modals')).toBeInTheDocument();
   });
 });
