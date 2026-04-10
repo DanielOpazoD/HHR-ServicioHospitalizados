@@ -10,19 +10,34 @@ import {
   GeneratedDocument,
 } from '@/types/transferDocuments';
 import {
-  fetchTemplateFromStorage,
-  mapDataToTags,
-  generateDocxFromTemplate,
-  generateXlsxFromTemplate,
-} from './templateGeneratorService';
-import {
   recordTransferDocumentGenerationFailure,
   recordTransferTemplateFallback,
   recordUnknownTransferTemplate,
 } from './transferDocumentTelemetryController';
 import { createGeneratedDocument } from './transferGeneratedDocumentController';
 import { getSuggestedExtension } from './transferDocumentNamingController';
-import { resolveTransferFallbackGenerator } from './transferDocumentFallbackRegistry';
+
+type TemplateGeneratorModule = typeof import('./templateGeneratorService');
+type TransferFallbackRegistryModule = typeof import('./transferDocumentFallbackRegistry');
+
+let templateGeneratorModulePromise: Promise<TemplateGeneratorModule> | null = null;
+let transferFallbackRegistryModulePromise: Promise<TransferFallbackRegistryModule> | null = null;
+
+const loadTemplateGeneratorModule = async (): Promise<TemplateGeneratorModule> => {
+  if (!templateGeneratorModulePromise) {
+    templateGeneratorModulePromise = import('./templateGeneratorService');
+  }
+
+  return templateGeneratorModulePromise;
+};
+
+const loadTransferFallbackRegistryModule = async (): Promise<TransferFallbackRegistryModule> => {
+  if (!transferFallbackRegistryModulePromise) {
+    transferFallbackRegistryModulePromise = import('./transferDocumentFallbackRegistry');
+  }
+
+  return transferFallbackRegistryModulePromise;
+};
 
 const triggerBrowserDownload = (blob: Blob, fileName: string): void => {
   const url = URL.createObjectURL(blob);
@@ -106,20 +121,21 @@ export const generateTransferDocuments = async (
   hospital: HospitalConfig
 ): Promise<GeneratedDocument[]> => {
   const enabledTemplates = hospital.templates.filter(t => t.enabled);
-  const tags = mapDataToTags(patientData, responses);
+  const templateGenerator = await loadTemplateGeneratorModule();
+  const tags = templateGenerator.mapDataToTags(patientData, responses);
   const generatedDocs = await Promise.all(
     enabledTemplates.map(async template => {
       try {
         let doc: GeneratedDocument | null = null;
         const templateFileName = `${hospital.code}/${template.id}.${template.format}`;
-        const templateBlob = await fetchTemplateFromStorage(templateFileName);
+        const templateBlob = await templateGenerator.fetchTemplateFromStorage(templateFileName);
 
         if (templateBlob) {
           let processedBlob: Blob;
           if (template.format === 'docx') {
-            processedBlob = await generateDocxFromTemplate(templateBlob, tags);
+            processedBlob = await templateGenerator.generateDocxFromTemplate(templateBlob, tags);
           } else if (template.format === 'xlsx') {
-            processedBlob = await generateXlsxFromTemplate(templateBlob, tags);
+            processedBlob = await templateGenerator.generateXlsxFromTemplate(templateBlob, tags);
           } else {
             processedBlob = templateBlob;
           }
@@ -159,7 +175,8 @@ const generateFallbackDocument = async (
   responses: QuestionnaireResponse,
   hospital: HospitalConfig
 ): Promise<GeneratedDocument | null> => {
-  const fallbackGenerator = resolveTransferFallbackGenerator(templateId);
+  const fallbackRegistry = await loadTransferFallbackRegistryModule();
+  const fallbackGenerator = fallbackRegistry.resolveTransferFallbackGenerator(templateId);
   if (!fallbackGenerator) {
     recordUnknownTransferTemplate(templateId);
     return null;
