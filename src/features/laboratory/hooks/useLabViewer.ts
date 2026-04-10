@@ -81,6 +81,7 @@ export const useLabViewer = (
   const [analysisData, setAnalysisData] = useState<LabAnalysisData | null>(null);
   const [analysisView, setAnalysisView] = useState<AnalysisViewTab>('trends');
   const [activeExamFilter, setActiveExamFilter] = useState<string | null>(null);
+  const progressRef = useRef<ProgressState | null>(null);
 
   // Cached exam search via TanStack Query (10 min staleTime — exams don't change often)
   const examQuery = useQuery({
@@ -154,11 +155,15 @@ export const useLabViewer = (
 
   const setExamFilter = useCallback((cat: string | null) => setActiveExamFilter(cat), []);
 
+  useEffect(() => {
+    progressRef.current = progress;
+  }, [progress]);
+
   // Animated progress bar
   useEffect(() => {
     const active = isLoading || isAnalyzing;
     if (!active) {
-      if (progress) {
+      if (progressRef.current) {
         setProgress({ pct: 100, text: '¡Completado!' });
         const t = setTimeout(() => setProgress(null), 600);
         return () => clearTimeout(t);
@@ -182,7 +187,7 @@ export const useLabViewer = (
       }
     }, STEP_INTERVAL_MS);
     return () => clearInterval(interval);
-  }, [isLoading, isAnalyzing]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isLoading, isAnalyzing]);
 
   const resetState = useCallback(() => {
     setSearchEnabled(false);
