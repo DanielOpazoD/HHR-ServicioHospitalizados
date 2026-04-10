@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { FugaNotificationModal } from '@/features/census/components/FugaNotificationModal';
+import type { DischargeData } from '@/features/census/contracts/censusMovementContracts';
 
 const sendFugaNotificationMock = vi.fn();
 const useAuthStateMock = vi.fn();
@@ -34,11 +35,14 @@ describe('FugaNotificationModal', () => {
     rut: '11.111.111-1',
     diagnosis: 'Diagnóstico Test',
     bedName: 'Cama 1',
+    bedId: 'R1',
+    bedType: 'MEDIA',
     specialty: 'Cirugía',
     dischargeType: 'Fuga',
     movementDate: '2026-03-31',
     time: '14:30',
-  } as any;
+    status: 'Vivo',
+  } satisfies DischargeData;
 
   beforeEach(() => {
     vi.clearAllMocks();

@@ -1,7 +1,10 @@
 import { BEDS } from '@/constants/beds';
 import type { DailyRecord, DailyRecordPatch } from '@/domain/handoff/recordContracts';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
-// WhatsApp service is dynamically imported to avoid pulling it into the entry chunk
+import {
+  formatHandoffMessage,
+  sendWhatsAppMessage,
+} from '@/services/integrations/whatsapp/whatsappService';
 import {
   createApplicationFailed,
   createApplicationSuccess,
@@ -88,9 +91,6 @@ export const executeSendMedicalHandoff = async (
         },
       ]);
     }
-
-    const { formatHandoffMessage, sendWhatsAppMessage } =
-      await import('@/services/integrations/whatsapp/whatsappService');
 
     const [year, month, day] = input.record.date.split('-');
     const dateStr = `${day}-${month}-${year}`;

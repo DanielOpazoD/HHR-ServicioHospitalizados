@@ -2,10 +2,12 @@ import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import React from 'react';
 
+type LazyBypassProps = Record<string, unknown>;
+
 // Shared state accessible from both vi.mock factory and test code.
 const { _lazyPending, _lazyResolved } = vi.hoisted(() => ({
   _lazyPending: [] as Promise<void>[],
-  _lazyResolved: new Map<symbol, React.ComponentType<never>>(),
+  _lazyResolved: new Map<symbol, React.ComponentType<LazyBypassProps>>(),
 }));
 
 // Bypass React.lazy so lazy-loaded components render synchronously in tests.
@@ -13,13 +15,16 @@ vi.mock('@/utils/lazyWithRetry', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require('react');
   return {
-    lazyWithRetry: (factory: () => Promise<{ default: React.ComponentType<never> }>) => {
+    lazyWithRetry: (factory: () => Promise<{ default: React.ComponentType<LazyBypassProps> }>) => {
       const key = Symbol();
-      const p = factory().then((m: { default: React.ComponentType<never> }) => {
+      const p = factory().then((m: { default: React.ComponentType<LazyBypassProps> }) => {
         _lazyResolved.set(key, m.default);
       });
       _lazyPending.push(p);
-      return React.forwardRef(function LazyBypass(props: any, ref: unknown) {
+      return React.forwardRef(function LazyBypass(
+        props: LazyBypassProps,
+        ref: React.ForwardedRef<unknown>
+      ) {
         const Comp = _lazyResolved.get(key) ?? null;
         return Comp ? React.createElement(Comp, { ...props, ref }) : null;
       });

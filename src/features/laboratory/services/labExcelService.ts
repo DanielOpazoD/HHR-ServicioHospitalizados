@@ -7,6 +7,7 @@
 import type { LabAnalysisData } from '@/types/domain/laboratory';
 import type { ExportConfig } from '../types/labViewerTypes';
 import { parseLocalizedNumber, parseScientificValue } from '../controllers/labFormattingController';
+import { createWorkbook } from '@/services/exporters/excelUtils';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 
 const logger = createScopedLogger('labExcelService');
@@ -22,8 +23,7 @@ export const exportComparisonToExcel = async (
   config: ExportConfig
 ): Promise<void> => {
   try {
-    const ExcelJS = await import('exceljs');
-    const wb = new ExcelJS.Workbook();
+    const wb = await createWorkbook();
     const ws = wb.addWorksheet('Comparación Lab');
 
     const dates = data.examDates.filter(d => config.selectedDates.has(d));

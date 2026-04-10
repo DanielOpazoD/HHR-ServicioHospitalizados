@@ -7,7 +7,6 @@
  */
 
 import type jsPDF from 'jspdf';
-// import autoTable from 'jspdf-autotable'; // Removed static import
 import { PatientData } from '@/services/contracts/patientServiceContracts';
 import type { ShiftType } from '@/types/domain/shift';
 import type { DeviceDetails } from '@/types/domain/devices';

@@ -4,7 +4,6 @@ import type { StorageRuntime } from '@/services/firebase-runtime/storageRuntime'
 import { fetchTransferTemplateBlob } from './transferTemplateFetchController';
 import { recordTransferTemplateFetchFailure } from './transferDocumentTelemetryController';
 import { formatCensusIsoDate } from '@/shared/census/censusPresentation';
-// import ExcelJS from 'exceljs'; // Removed static import
 
 /**
  * Maps system data and questionnaire responses to a flat object of template tags.
