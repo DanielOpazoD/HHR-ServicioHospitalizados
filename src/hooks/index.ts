@@ -85,7 +85,3 @@ export { useVersionCheck } from './useVersionCheck';
 export { useAuditData, AUDIT_SECTIONS } from './useAuditData';
 export type { AuditFiltersState, UseAuditDataReturn } from './useAuditData';
 export type { AuditSection } from '@/types/audit';
-
-// Excel Parsing
-export { useExcelParser } from './useExcelParser';
-export type { ParsedCell, UseExcelParserReturn } from './useExcelParser';

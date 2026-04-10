@@ -45,10 +45,6 @@
       "maxBytes": 120000
     },
     {
-      "pattern": "^vendor-excel-core-.*\\.js$",
-      "maxBytes": 950000
-    },
-    {
       "pattern": "^vendor-excel-(?!core-).*\\.js$",
       "maxBytes": 950000
     },

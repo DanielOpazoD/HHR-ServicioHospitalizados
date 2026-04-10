@@ -12,6 +12,14 @@ export const chunkForModule = (moduleId: string): string | undefined => {
     return 'vendor-preload';
   }
 
+  if (
+    normalizedId.includes('commonjsHelpers.js') ||
+    normalizedId.includes('\u0000commonjsHelpers.js') ||
+    normalizedId.includes('commonjs-dynamic-modules')
+  ) {
+    return 'vendor-cjs-helpers';
+  }
+
   if (inNodeModules) {
     // React + libraries that call React.createContext at module scope must
     // live in the same chunk to avoid load-order race conditions in production.
@@ -95,10 +103,6 @@ export const chunkForModule = (moduleId: string): string | undefined => {
     ) {
       return 'vendor-excel-xml';
     }
-    if (has('/node_modules/exceljs/')) {
-      return 'vendor-excel-core';
-    }
-
     if (has('/node_modules/pdf-lib/')) {
       return 'vendor-pdf-lib';
     }

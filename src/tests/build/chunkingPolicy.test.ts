@@ -37,11 +37,18 @@ describe('chunkingPolicy', () => {
 
   it('splits heavyweight vendor capabilities by runtime concern', () => {
     expect(chunkForModule('/repo/node_modules/firebase/firestore/dist/index.mjs')).toBe(
-      'vendor-firebase-core'
+      'vendor-firebase-firestore'
     );
     expect(chunkForModule('/repo/node_modules/firebase/storage/dist/index.mjs')).toBe(
       'vendor-firebase-aux'
     );
-    expect(chunkForModule('/repo/node_modules/jspdf/dist/jspdf.es.min.js')).toBe('vendor-pdf');
+    expect(chunkForModule('/repo/node_modules/jspdf/dist/jspdf.es.min.js')).toBe('vendor-pdf-core');
+  });
+
+  it('isolates shared commonjs helpers from feature-labelled vendor chunks', () => {
+    expect(chunkForModule('\u0000commonjsHelpers.js')).toBe('vendor-cjs-helpers');
+    expect(chunkForModule('/repo/node_modules/.vite/deps/commonjsHelpers.js')).toBe(
+      'vendor-cjs-helpers'
+    );
   });
 });
