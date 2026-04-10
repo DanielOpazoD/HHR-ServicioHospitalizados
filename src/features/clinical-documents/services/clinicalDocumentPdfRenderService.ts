@@ -1,6 +1,4 @@
 import { httpsCallable } from 'firebase/functions';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
 import { z } from 'zod';
 
 import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
@@ -12,6 +10,30 @@ import {
 import { defaultFunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
 import type { FunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
 import { clinicalDocumentPdfRenderLogger } from '@/features/clinical-documents/services/clinicalDocumentLoggers';
+
+type Html2CanvasModule = typeof import('html2canvas');
+type JsPdfModule = typeof import('jspdf');
+
+let html2canvasModulePromise: Promise<Html2CanvasModule> | null = null;
+let jsPdfModulePromise: Promise<JsPdfModule> | null = null;
+
+const loadHtml2Canvas = async (): Promise<Html2CanvasModule['default']> => {
+  if (!html2canvasModulePromise) {
+    html2canvasModulePromise = import('html2canvas');
+  }
+
+  const module = await html2canvasModulePromise;
+  return module.default;
+};
+
+const loadJsPdf = async (): Promise<JsPdfModule['jsPDF']> => {
+  if (!jsPdfModulePromise) {
+    jsPdfModulePromise = import('jspdf');
+  }
+
+  const module = await jsPdfModulePromise;
+  return module.jsPDF;
+};
 
 interface RenderClinicalDocumentPdfPayload {
   html: string;
@@ -107,6 +129,8 @@ const generateDomSnapshotPdfBlob = async (html: string): Promise<Blob> => {
   const isolated = await createIsolatedPrintFrame(html);
 
   try {
+    const [html2canvas, JsPdf] = await Promise.all([loadHtml2Canvas(), loadJsPdf()]);
+
     await waitForClinicalDocumentSheetAssets(
       isolated.sheet,
       isolated.frameDocument,
@@ -122,7 +146,7 @@ const generateDomSnapshotPdfBlob = async (html: string): Promise<Blob> => {
     });
 
     const imageData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF({
+    const pdf = new JsPdf({
       orientation: 'portrait',
       unit: 'mm',
       format: 'letter',

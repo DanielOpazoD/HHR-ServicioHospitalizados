@@ -1,13 +1,17 @@
 import React from 'react';
 import { Activity, ClipboardList, Printer, Stethoscope, UserRound } from 'lucide-react';
 import { BaseModal } from '@/components/shared/BaseModal';
-import { printMedicalIndicationsPdf } from '@/services/pdf/medicalIndicationsPdfService';
 import {
   formatMedicalIndicationsDate,
   type MedicalIndicationsPatientOption,
 } from '@/shared/contracts/medicalIndications';
 import { MedicalIndicationsListSection } from './MedicalIndicationsListSection';
 import { useMedicalIndicationsEditor } from './useMedicalIndicationsEditor';
+
+const loadPrintMedicalIndicationsPdf = async () =>
+  import('@/services/pdf/medicalIndicationsPdfService').then(
+    module => module.printMedicalIndicationsPdf
+  );
 
 interface MedicalIndicationsDialogProps {
   isOpen: boolean;
@@ -39,6 +43,7 @@ export const MedicalIndicationsDialog: React.FC<MedicalIndicationsDialogProps> =
 
     editor.setIsPrinting(true);
     try {
+      const printMedicalIndicationsPdf = await loadPrintMedicalIndicationsPdf();
       await printMedicalIndicationsPdf({
         paciente_nombre: editor.selectedPatient.patientName,
         paciente_rut: editor.selectedPatient.rut,

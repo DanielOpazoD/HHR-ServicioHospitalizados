@@ -1,6 +1,6 @@
 import React from 'react';
 import { DocumentOption, DocumentTypeOption, ActiveTextMark } from './types';
-import { CustomMark } from '@/services/pdf/imagingRequestPdfService';
+import type { CustomMark } from '@/services/pdf/imagingRequestPdfService';
 import type { PatientData } from '@/types/domain/patient';
 import {
   splitPatientName,

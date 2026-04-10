@@ -1,11 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { PatientData } from '@/types/domain/patient';
-import {
-  printImagingRequestForm,
-  printImagingEncuestaForm,
-  printConsentimientoForm,
-  CustomMark,
-} from '@/services/pdf/imagingRequestPdfService';
+import type { CustomMark } from '@/services/pdf/imagingRequestPdfService';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 import { DocumentOption, ActiveTextMark } from './types';
 
@@ -15,6 +10,14 @@ interface UseImagingLogicProps {
 }
 
 const imagingDialogLogger = createScopedLogger('ImagingDialog');
+let imagingPdfServicePromise: Promise<
+  typeof import('@/services/pdf/imagingRequestPdfService')
+> | null = null;
+
+const loadImagingPdfService = () => {
+  imagingPdfServicePromise ??= import('@/services/pdf/imagingRequestPdfService');
+  return imagingPdfServicePromise;
+};
 
 export const useImagingLogic = ({ isOpen, patient }: UseImagingLogicProps) => {
   const [selectedDoc, setSelectedDoc] = useState<DocumentOption>('solicitud');
@@ -46,12 +49,14 @@ export const useImagingLogic = ({ isOpen, patient }: UseImagingLogicProps) => {
   const handlePrint = async () => {
     setIsPrinting(true);
     try {
+      const imagingPdfService = await loadImagingPdfService();
+
       if (selectedDoc === 'solicitud') {
-        await printImagingRequestForm(patient, debouncedPhysician, marks);
+        await imagingPdfService.printImagingRequestForm(patient, debouncedPhysician, marks);
       } else if (selectedDoc === 'encuesta') {
-        await printImagingEncuestaForm(patient, debouncedPhysician, marks);
+        await imagingPdfService.printImagingEncuestaForm(patient, debouncedPhysician, marks);
       } else if (selectedDoc === 'consentimiento') {
-        await printConsentimientoForm(patient, debouncedPhysician, marks);
+        await imagingPdfService.printConsentimientoForm(patient, debouncedPhysician, marks);
       }
     } catch (err) {
       imagingDialogLogger.error('Error printing imaging document', err);

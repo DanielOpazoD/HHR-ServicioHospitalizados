@@ -1,9 +1,21 @@
-import { jsPDF } from 'jspdf';
 import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
 import { formatDateToCL } from '@/utils/clinicalUtils';
 import { generateClinicalDocumentPrintStyledPdfBlob } from '@/features/clinical-documents/services/clinicalDocumentPrintPdfService';
 import { stripClinicalDocumentHtml } from '@/features/clinical-documents/controllers/clinicalDocumentRichTextController';
 import { clinicalDocumentPdfLogger } from '@/features/clinical-documents/services/clinicalDocumentLoggers';
+
+type JsPdfModule = typeof import('jspdf');
+
+let jsPdfModulePromise: Promise<JsPdfModule> | null = null;
+
+const loadJsPdf = async (): Promise<JsPdfModule['jsPDF']> => {
+  if (!jsPdfModulePromise) {
+    jsPdfModulePromise = import('jspdf');
+  }
+
+  const module = await jsPdfModulePromise;
+  return module.jsPDF;
+};
 
 const normalizeFieldValue = (fieldId: string, value: string): string => {
   if (!value.trim()) return '—';
@@ -30,7 +42,8 @@ const getPatientFieldLabelForPdf = (
 const generateStructuredClinicalDocumentPdfBlob = async (
   record: ClinicalDocumentRecord
 ): Promise<Blob> => {
-  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
+  const JsPdf = await loadJsPdf();
+  const pdf = new JsPdf({ orientation: 'portrait', unit: 'mm', format: 'letter' });
   const marginX = 14;
   const marginY = 16;
   const pageWidth = pdf.internal.pageSize.getWidth();
