@@ -152,7 +152,9 @@ Salida esperada:
    - readiness operativa
    - release confidence
    - ownership
+   - compatibility governance
 4. si el scorecard se degrada por un reporte base, corregir ese reporte o su fuente; no maquillar el scorecard
+5. `compatibility_governance` puede tener `restrictedEntries=0` y seguir `ok` si `unauthorizedImports=0`; eso significa que no hay superficies restringidas activas que auditar en ese snapshot
 
 ### Falla `check:sustainable-change-policy`
 
