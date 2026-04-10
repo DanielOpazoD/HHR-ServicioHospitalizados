@@ -1,11 +1,10 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { useDropdownMenu } from '@/hooks/useDropdownMenu';
 import {
   buildPatientRowOrbitalQuickActionItems,
   hasPatientRowOrbitalQuickActions,
   type PatientRowOrbitalQuickActionsAvailability,
 } from '@/features/census/controllers/patientRowOrbitalQuickActionsController';
-import { PatientRowOrbitalQuickActionsPortal } from '@/features/census/components/patient-row/PatientRowOrbitalQuickActionsPortal';
 import {
   ACTION_ROW_HEIGHT,
   ACTION_STACK_GAP,
@@ -16,6 +15,14 @@ import {
   TRIGGER_CENTER_Y_OPEN,
 } from '@/features/census/components/patient-row/patientRowOrbitalQuickActionLayout';
 import { usePatientRowOrbitalLauncherRuntime } from '@/features/census/components/patient-row/usePatientRowOrbitalLauncherRuntime';
+
+const LazyPatientRowOrbitalQuickActionsPortal = lazy(() =>
+  import('@/features/census/components/patient-row/PatientRowOrbitalQuickActionsPortal').then(
+    module => ({
+      default: module.PatientRowOrbitalQuickActionsPortal,
+    })
+  )
+);
 
 interface PatientRowOrbitalQuickActionsProps extends PatientRowOrbitalQuickActionsAvailability {
   onViewClinicalDocuments?: () => void;
@@ -191,28 +198,30 @@ export const PatientRowOrbitalQuickActions: React.FC<PatientRowOrbitalQuickActio
   return (
     <>
       <span ref={anchorRef} className="pointer-events-none absolute inset-0" aria-hidden="true" />
-      <PatientRowOrbitalQuickActionsPortal
-        actionButtonRefs={actionButtonRefs}
-        activeActionIndex={activeActionIndex}
-        close={close}
-        handleActionKeyDown={handleActionKeyDown}
-        handleItemClick={handleItemClick}
-        handleLauncherMouseEnter={handleLauncherMouseEnter}
-        handleLauncherMouseLeave={handleLauncherMouseLeave}
-        handleTriggerKeyDown={handleTriggerKeyDown}
-        isOpen={isOpen}
-        launcherWrapperHeight={launcherWrapperHeight}
-        launcherWrapperWidth={launcherWrapperWidth}
-        menuRef={menuRef}
-        orbitalItems={orbitalItems}
-        phase={phase}
-        position={position}
-        showTrigger={showTrigger}
-        toggle={toggle}
-        triggerCenterX={triggerCenterX}
-        triggerCenterY={triggerCenterY}
-        triggerRef={triggerRef}
-      />
+      <Suspense fallback={null}>
+        <LazyPatientRowOrbitalQuickActionsPortal
+          actionButtonRefs={actionButtonRefs}
+          activeActionIndex={activeActionIndex}
+          close={close}
+          handleActionKeyDown={handleActionKeyDown}
+          handleItemClick={handleItemClick}
+          handleLauncherMouseEnter={handleLauncherMouseEnter}
+          handleLauncherMouseLeave={handleLauncherMouseLeave}
+          handleTriggerKeyDown={handleTriggerKeyDown}
+          isOpen={isOpen}
+          launcherWrapperHeight={launcherWrapperHeight}
+          launcherWrapperWidth={launcherWrapperWidth}
+          menuRef={menuRef}
+          orbitalItems={orbitalItems}
+          phase={phase}
+          position={position}
+          showTrigger={showTrigger}
+          toggle={toggle}
+          triggerCenterX={triggerCenterX}
+          triggerCenterY={triggerCenterY}
+          triggerRef={triggerRef}
+        />
+      </Suspense>
     </>
   );
 };

@@ -1,7 +1,12 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Lock, Radio } from 'lucide-react';
 import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medicalIndications';
-import { RadiologyViewerModal } from '@/components/modals/RadiologyViewerModal';
+
+const LazyRadiologyViewerModal = lazy(() =>
+  import('@/components/modals/RadiologyViewerModal').then(module => ({
+    default: module.RadiologyViewerModal,
+  }))
+);
 
 interface DateStripQuickActionsProps {
   onOpenBedManager?: () => void;
@@ -56,11 +61,15 @@ export const DateStripQuickActions: React.FC<DateStripQuickActionsProps> = ({
             <Radio size={14} />
             <span className="hidden sm:inline">MMRAD</span>
           </button>
-          <RadiologyViewerModal
-            isOpen={isRadiologyOpen}
-            onClose={() => setIsRadiologyOpen(false)}
-            patients={radiologyPatients}
-          />
+          {isRadiologyOpen ? (
+            <Suspense fallback={null}>
+              <LazyRadiologyViewerModal
+                isOpen={isRadiologyOpen}
+                onClose={() => setIsRadiologyOpen(false)}
+                patients={radiologyPatients}
+              />
+            </Suspense>
+          ) : null}
         </>
       )}
 
