@@ -1,4 +1,3 @@
-import type { DailyRecord } from '@/services/contracts/dailyRecordServiceContracts';
 import { saveDetailed as saveDailyRecordDetailed } from '@/services/repositories/dailyRecordRepositoryWriteService';
 import { logAuditEvent } from '@/services/admin/auditService';
 import { getCurrentUserEmail } from '@/services/admin/utils/auditUtils';

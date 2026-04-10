@@ -22,7 +22,6 @@ vi.mock('@/utils/lazyWithRetry', () => {
         _lazyResolved.set(key, m.default);
       });
       _lazyPending.push(p);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return React.forwardRef(function LazyBypass(props: any, ref: unknown) {
         const Comp = _lazyResolved.get(key) ?? null;
         return Comp ? React.createElement(Comp, { ...props, ref }) : null;

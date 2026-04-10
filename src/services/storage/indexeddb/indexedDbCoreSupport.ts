@@ -7,6 +7,25 @@ export type IndexedDbOpenWaitOutcome = 'opened' | 'mock' | 'stalled' | 'settled'
 
 export const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
 
+export const runIndexedDbOperationWithTimeout = async <T>(
+  operation: () => Promise<T>,
+  timeoutMs: number,
+  timeoutMessage: string
+): Promise<T> => {
+  let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutHandle = setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
+  });
+
+  try {
+    return await Promise.race([operation(), timeoutPromise]);
+  } finally {
+    if (timeoutHandle) {
+      clearTimeout(timeoutHandle);
+    }
+  }
+};
+
 export const resolveIndexedDbErrorDetails = (error: unknown): IndexedDbErrorDetails => ({
   errorName: error && typeof error === 'object' && 'name' in error ? String(error.name) : 'Unknown',
   errorMessage:

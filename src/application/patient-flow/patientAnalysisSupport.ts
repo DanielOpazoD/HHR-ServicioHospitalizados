@@ -8,7 +8,6 @@ import type { PatientAnalysisRecordContract } from '@/application/patient-flow/p
 import type { MasterPatient } from '@/types/domain/patientMaster';
 import {
   type Conflict,
-  normalizeAnalysisRut,
   isPatientAnalysisOccupiedBedEntry,
   createAnalysisAccumulator,
   registerAdmissionPresence,

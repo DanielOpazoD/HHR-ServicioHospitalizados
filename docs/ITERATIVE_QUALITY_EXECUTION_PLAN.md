@@ -336,3 +336,59 @@ Ejecutar la validación integral y dejar el ciclo documentado como cerrado.
 | 2026-04-09 | `Q05` | completado | `clinical-documents` expone un entrypoint interno explícito para `application/shared` y `laboratory` ya ofrece root barrel                                                                                                    |
 | 2026-04-09 | `Q06` | completado | El PIN local quedó presentado como bloqueo rápido de privacidad del dispositivo, la UI ya aclara que no reemplaza auth/permisos y las suites focalizadas más `test:risk:*` quedaron en verde                                  |
 | 2026-04-09 | `Q07` | completado | `runtime-adapter-boundary`, `typecheck` y `check:quality` quedaron en verde; el ciclo quedó convergido sin excepciones activas de debt en guardrails                                                                          |
+
+## Ciclo `R00-R06`
+
+### Objetivo
+
+Subir la confianza operativa del repo sin re-arquitectura: cerrar el desalineamiento entre guardrails y reportes, recuperar cobertura crítica en `clinical-documents`, restaurar budgets de flujo y dejar la deuda residual acotada a boundaries y hotspots concretos.
+
+### Ventana temporal
+
+- Día 1: `R00`
+- Día 2-3: `R01`
+- Día 4: `R02`
+- Día 5: `R03`
+- Día 6: `R04`
+- Día 7: `R05` + arranque de `R06`
+- Si `R06` no cierra el Día 7, continúa solo `R06` hasta converger
+
+### Baseline real del ciclo
+
+- `npm run check:quality`: `ok`
+- `npm run check:docs-drift`: `ok`
+- `npm run check:critical-coverage`: `ok`
+- `npm run check:flow-performance-budget`: `ok`
+- `reports/system-confidence.json`: `overallStatus=ok`
+- convergencia reportada en `reports/quality-metrics.json`: `featureBoundaryViolations=0`, `dailyRecordBoundaryViolations=0`
+
+### Fases y checks
+
+| Fase  | Estado     | Objetivo                                                                 | Checks de salida                                                                                | Commit sugerido                                         |
+| ----- | ---------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| `R00` | completado | abrir ciclo, registrar baseline y dejar tracker/debt alineados           | revisión manual de consistencia documental                                                      | `docs: reopen iterative execution cycle`                |
+| `R01` | completado | volver a verde `src/features/clinical-documents` en cobertura crítica    | `npm run test:coverage:critical`, `npm run check:critical-coverage`                             | `test: restore clinical documents critical coverage`    |
+| `R02` | completado | cerrar residual de boundaries reportado por `quality-metrics`            | checks de boundary afectados, `npm run check:quality`                                           | `chore: align quality metrics with boundary governance` |
+| `R03` | completado | reparar drift documental y de artefactos canónicos                       | `npm run check:docs-drift`, regeneración de `technical-execution-baseline`                      | `docs: restore canonical report artifacts`              |
+| `R04` | completado | restaurar budgets operativos de flujo y evitar reuse accidental del host | `npm run test:e2e:flow-performance`, `npm run check:flow-performance-budget`                    | `test: restore flow performance budget artifact`        |
+| `R05` | completado | reducir hotspots de alto retorno sin tocar contratos públicos            | `npm run typecheck`, `npm run lint`, tests focalizados del hotspot tocado                       | `refactor: reduce high-value hotspots`                  |
+| `R06` | completado | convergencia final y cierre documental del ciclo                         | `npm run ci:pre-merge` mínimo; `npm run ci:merge-gate` si el alcance final toca runtime crítico | `docs: close iterative execution cycle r00-r06`         |
+
+### Regla operativa
+
+- No se inicia una fase nueva hasta cerrar completamente la actual.
+- Cada jornada empieza revisando tracker + artefactos canónicos.
+- Cada jornada termina actualizando `docs/FOUNDATION_CONTINUATION_TRACKER.md`, este plan y la deuda afectada.
+- Si una fase se desliza, el calendario se mueve; la secuencia no.
+
+### Historial de avance `R00-R06`
+
+| Fecha      | Fase  | Estado     | Nota                                                                                                                                                      |
+| ---------- | ----- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-04-09 | `R00` | completado | Baseline real confirmado con `check:quality` y `check:docs-drift`; se reabre el ciclo con foco en artifacts y deuda focalizada                            |
+| 2026-04-09 | `R01` | completado | `ClinicalDocumentLabInsertDialog` suma cobertura dirigida y `clinical-documents` vuelve a `PASS` en `critical-coverage`                                   |
+| 2026-04-09 | `R03` | completado | `reports/technical-execution-baseline.{md,json}` se regeneran y desaparece el drift por reporte faltante                                                  |
+| 2026-04-09 | `R04` | completado | `flow-performance` se vuelve medible en puerto aislado; el menu de acciones clínicas recupera `Documentos Clínicos` y budgets pasan                       |
+| 2026-04-09 | `R02` | completado | `report-quality-metrics` se alinea con la misma gobernanza que `check:repo-hygiene`; el residual de boundaries baja a `0`                                 |
+| 2026-04-09 | `R05` | completado | se extrajeron seams pequeñas en `patient-row` orbital runtime e `indexedDbCore`; `typecheck`, `lint`, tests focalizados y hook hotspots quedaron en verde |
+| 2026-04-09 | `R06` | completado | `ci:pre-merge`, checks restantes de `ci:merge-gate`, `check:docs-drift` y reportes canónicos quedaron en verde; ciclo `R00-R06` cerrado                   |

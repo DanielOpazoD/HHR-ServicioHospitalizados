@@ -4,8 +4,8 @@
 
 ## Resumen
 
-- Ciclo activo: `Q00-Q07`
-- Tareas resueltas o no requeridas: `8/8`
+- Ciclo activo: `R00-R06`
+- Tareas resueltas o no requeridas: `7/7`
 - Estado global del ciclo: `100%`
 
 ## Regla activa
@@ -13,7 +13,19 @@
 - No se inicia una fase nueva hasta cerrar completamente la actual.
 - Toda fase cerrada debe dejar commit dedicado, tracker actualizado y checks de salida en verde.
 
-## Estado actual del ciclo `Q00-Q07`
+## Estado actual del ciclo `R00-R06`
+
+| Id    | Estado     | Nota                                                                                                                                                       |
+| ----- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `R00` | completado | baseline real confirmado con `check:quality` y `check:docs-drift` en verde; ciclo reabierto en docs y debt register                                        |
+| `R01` | completado | `clinical-documents` volvió a verde en `critical-coverage` con tests dirigidos sobre `ClinicalDocumentLabInsertDialog` y regeneración de artefactos        |
+| `R02` | completado | `report-quality-metrics` quedó alineado con los mismos bypasses de `check:repo-hygiene`; las métricas residuales bajaron a `0`                             |
+| `R03` | completado | `reports/technical-execution-baseline.{md,json}` volvió a existir y el drift documental por artefactos faltantes quedó corregido sin crear trackers nuevos |
+| `R04` | completado | `reports/e2e/flow-performance-budget.*` quedó restaurado; `operational-health` ahora marca `flowPerformance: passing`                                      |
+| `R05` | completado | hotspots acotados en `patient-row` orbital runtime e `indexedDbCore`; `BaseModal` queda diferido a mantenimiento si vuelve a ser cuello real de cambio     |
+| `R06` | completado | convergencia final cerrada con `ci:pre-merge`, checks restantes de `ci:merge-gate`, reportes regenerados y deuda residual acotada a mantenimiento normal   |
+
+## Historial del ciclo previo `Q00-Q07`
 
 | Id    | Estado     | Nota                                                                                                                                                                                                                         |
 | ----- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -48,12 +60,14 @@
 
 ## Señal actual
 
-- `typecheck`: `ok`
 - `check:quality`: `ok`
-- focos activos: `mantenimiento normal`
+- `check:critical-coverage`: `ok`
+- `check:flow-performance-budget`: `ok`
+- `system-confidence`: `ok`
+- `quality-metrics`: `featureBoundaryViolations=0`, `dailyRecordBoundaryViolations=0`
+- focos activos: ninguno; sostener mantenimiento normal
 
 ## Siguiente paso recomendado
 
-1. Reabrir un ciclo solo si aparece nueva deuda blocking o regresiones en guardrails
-2. Sostener `typecheck` y `check:quality` como gates diarios de regresión
-3. Mantener el tracker alineado cuando se cierre o abra deuda nueva
+1. Sostener la regeneración de `reports/*` al final de cada lote que toque guardrails o budgets
+2. Mantener `BaseModal` como candidato de mantenimiento si vuelve a aparecer como cuello real de cambio

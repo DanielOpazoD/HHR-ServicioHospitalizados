@@ -3,7 +3,6 @@ import {
   broadcastLogout,
   broadcastSyncCompleted,
   onAuthChannelMessage,
-  type AuthChannelMessage,
 } from '@/services/auth/authBroadcastChannel';
 
 describe('authBroadcastChannel', () => {

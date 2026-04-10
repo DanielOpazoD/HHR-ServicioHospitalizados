@@ -39,11 +39,7 @@ describe('lazyWithRetry', () => {
     const regularError = new Error('Network timeout');
     const factory = vi.fn().mockRejectedValue(regularError);
 
-    const LazyComponent = lazyWithRetry(factory);
-
-    // Force the lazy factory to execute
-    // @ts-expect-error - accessing internal lazy init
-    const lazyInit = LazyComponent._init || LazyComponent._payload?._init;
+    lazyWithRetry(factory);
 
     // The factory hasn't been called yet since lazy defers it
     // We test the factory wrapper directly

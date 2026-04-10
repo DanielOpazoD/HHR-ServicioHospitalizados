@@ -9,6 +9,7 @@ import {
   dispatchLauncherOwnerChange,
   isPointerInActivationZone,
   isPointerInExternalLeftActivationBand,
+  resolveLauncherTriggerVisibility,
   resolveLauncherPosition,
   resolveRowElement,
   resolveRowId,
@@ -339,31 +340,17 @@ export const usePatientRowOrbitalLauncherRuntime = ({
 
   // === TRIGGER VISIBILITY LOGIC ===
 
-  // ---------------------------------------------------------------------------
-  // canRevealTrigger -- the compound predicate that gates trigger visibility.
-  //
-  // The trigger is revealed when ALL of the following hold:
-  //   1. The row has quick actions to show (`hasQuickActions`).
-  //   2. No *other* row's launcher is currently open (`!isAnotherLauncherActive`).
-  //   3. At least one of:
-  //      a. The device does not support hover+fine (touch -- always show).
-  //      b. The action stack is open.
-  //      c. The pointer is over the launcher portal itself.
-  //      d. This row currently owns the launcher.
-  //      e. The row is hovered (or grace is active) AND no other row owns
-  //         the launcher.
-  // ---------------------------------------------------------------------------
-  const isAnotherLauncherActive = activeLauncherRowId !== null && activeLauncherRowId !== rowId;
-  const isOwnedByCurrentRow = rowId !== null && ownerLauncherRowId === rowId;
-  const canRevealTrigger =
-    hasQuickActions &&
-    !isAnotherLauncherActive &&
-    (!supportsHoverFine ||
-      isOpen ||
-      isLauncherHovered ||
-      isOwnedByCurrentRow ||
-      ((isRowHovered || isHoverGraceActive) &&
-        (ownerLauncherRowId === null || ownerLauncherRowId === rowId)));
+  const canRevealTrigger = resolveLauncherTriggerVisibility({
+    hasQuickActions,
+    supportsHoverFine,
+    isOpen,
+    isLauncherHovered,
+    isRowHovered,
+    isHoverGraceActive,
+    rowId,
+    activeLauncherRowId,
+    ownerLauncherRowId,
+  });
 
   const { phase, showTrigger } = usePatientRowOrbitalLauncherMachine({
     canRevealTrigger,

@@ -85,7 +85,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
       const toTimestamp = (raw: string): number => {
         if (!raw) return 0;
         // Try DD/MM/YYYY or DD-MM-YYYY (common RIS format)
-        const parts = raw.split(/[/\-\.]/);
+        const parts = raw.split(/[/.-]/);
         if (parts.length === 3 && parts[0].length <= 2) {
           const [dd, mm, yyyy] = parts;
           return new Date(`${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`).getTime() || 0;

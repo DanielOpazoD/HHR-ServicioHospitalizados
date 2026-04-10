@@ -3,6 +3,7 @@ import {
   isDatabaseClosedError,
   resolveIndexedDbErrorDetails,
   resolveIndexedDbRecoveryDelay,
+  runIndexedDbOperationWithTimeout,
   shouldAttemptIndexedDbRecreation,
   waitForIndexedDbOpenResolution,
 } from '@/services/storage/indexeddb/indexedDbCoreSupport';
@@ -36,6 +37,24 @@ describe('indexedDbCoreSupport', () => {
     expect(shouldAttemptIndexedDbRecreation('VersionError', false)).toBe(true);
     expect(shouldAttemptIndexedDbRecreation('VersionError', true)).toBe(false);
     expect(shouldAttemptIndexedDbRecreation('AbortError', false)).toBe(false);
+  });
+
+  it('wraps IndexedDB operations with a timeout boundary', async () => {
+    await expect(
+      runIndexedDbOperationWithTimeout(() => Promise.resolve('ready'), 1000, 'timed out')
+    ).resolves.toBe('ready');
+
+    vi.useFakeTimers();
+    const timedOut = runIndexedDbOperationWithTimeout(
+      () => new Promise(() => undefined),
+      10,
+      'indexeddb stalled'
+    );
+    const timeoutExpectation = expect(timedOut).rejects.toThrow('indexeddb stalled');
+
+    await vi.advanceTimersByTimeAsync(10);
+    await timeoutExpectation;
+    vi.useRealTimers();
   });
 
   it('waits for concurrent opens to settle into opened, mock, stalled or settled states', async () => {

@@ -32,12 +32,6 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
   });
   const sheetState = useClinicalDocumentSheetState(sheetProps.selectedDocument);
 
-  if (!canRead) {
-    return (
-      <p className="p-4 text-sm text-slate-600">No tienes permisos para acceder a este módulo.</p>
-    );
-  }
-
   // Insert lab summary text into the first visible section of the document
   const handleInsertLabText = useCallback(
     (text: string) => {
@@ -51,6 +45,12 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
     },
     [sheetProps]
   );
+
+  if (!canRead) {
+    return (
+      <p className="p-4 text-sm text-slate-600">No tienes permisos para acceder a este módulo.</p>
+    );
+  }
 
   const toolbarNode = sheetProps.selectedDocument ? (
     <ClinicalDocumentFormattingToolbar

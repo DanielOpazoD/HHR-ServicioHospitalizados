@@ -5,12 +5,14 @@
  * (fetched at runtime from the Netlify `firebase-config` function).
  */
 import { z } from 'zod';
+import { createScopedLogger } from '@/services/utils/loggerScope';
+
+const envValidatorLogger = createScopedLogger('EnvValidator');
 
 /* ── Helpers ────────────────────────────────────────────────────────── */
 
 const nonEmpty = z.string().min(1);
 const optionalStr = z.string().optional().default('');
-const optionalBool = z.string().optional();
 
 // In DEV, Firebase vars come from .env; in PROD they come from Netlify Function at runtime
 const isDevMode = typeof import.meta !== 'undefined' && import.meta.env?.DEV === true;
@@ -107,9 +109,8 @@ export function validateClientEnv(): ClientEnvValidationResult {
   });
 
   // Log a clear table so the developer can immediately see what is missing
-  console.error(
-    '[EnvValidator] Validación de variables de entorno falló:\n' +
-      issues.map(i => `  ✗ ${i}`).join('\n')
+  envValidatorLogger.error(
+    `Validación de variables de entorno falló:\n${issues.map(i => `  ✗ ${i}`).join('\n')}`
   );
 
   return { success: false, issues };

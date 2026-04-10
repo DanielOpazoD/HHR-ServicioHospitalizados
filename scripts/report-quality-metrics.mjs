@@ -45,7 +45,11 @@ const FEATURE_PUBLIC_BOUNDARIES = [
   {
     importPrefix: '@/features/clinical-documents/',
     allowBypass: file =>
-      file.startsWith('src/features/clinical-documents/') || file.startsWith('src/tests/'),
+      file.startsWith('src/features/clinical-documents/') ||
+      file.startsWith('src/application/clinical-documents/') ||
+      file === 'src/application/ports/clinicalDocumentPort.ts' ||
+      file.startsWith('src/shared/clinical-documents/') ||
+      file.startsWith('src/tests/'),
   },
 ];
 const DEPRECATED_IMPORTS = [
@@ -477,7 +481,12 @@ const getConvergenceSignals = () => {
     }
 
     const isApplicationBypass =
-      relative === 'src/application/shared/dailyRecordContracts.ts' || isTestFile(relative);
+      relative === 'src/application/shared/dailyRecordContracts.ts' ||
+      relative === 'src/application/shared/dailyRecordBedContracts.ts' ||
+      relative === 'src/application/shared/dailyRecordCoreContracts.ts' ||
+      relative === 'src/application/shared/dailyRecordMedicalContracts.ts' ||
+      relative === 'src/application/shared/dailyRecordStaffContracts.ts' ||
+      isTestFile(relative);
     const isHookBypass =
       relative === 'src/hooks/contracts/dailyRecordHookContracts.ts' || isTestFile(relative);
     const isServiceBypass =

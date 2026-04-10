@@ -11,7 +11,6 @@ import {
   useMinesweeper,
   DIFFICULTIES,
   type Difficulty,
-  type CellData,
 } from '@/features/games/hooks/useMinesweeper';
 
 describe('useMinesweeper', () => {

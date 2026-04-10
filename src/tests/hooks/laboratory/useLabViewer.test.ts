@@ -50,8 +50,9 @@ const createWrapper = () => {
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
-  return ({ children }: { children: React.ReactNode }) =>
-    React.createElement(QueryClientProvider, { client: qc }, children);
+  return function QueryClientTestWrapper({ children }: { children: React.ReactNode }) {
+    return React.createElement(QueryClientProvider, { client: qc }, children);
+  };
 };
 
 import { useLabViewer } from '@/features/laboratory/hooks/useLabViewer';

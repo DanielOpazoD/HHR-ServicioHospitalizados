@@ -26,13 +26,21 @@ export const LabExportConfigDialog: React.FC<LabExportConfigDialogProps> = ({
   const toggleDate = (d: string) =>
     setSelectedDates(prev => {
       const n = new Set(prev);
-      n.has(d) ? n.delete(d) : n.add(d);
+      if (n.has(d)) {
+        n.delete(d);
+      } else {
+        n.add(d);
+      }
       return n;
     });
   const toggleVar = (v: string) =>
     setSelectedVars(prev => {
       const n = new Set(prev);
-      n.has(v) ? n.delete(v) : n.add(v);
+      if (n.has(v)) {
+        n.delete(v);
+      } else {
+        n.add(v);
+      }
       return n;
     });
 

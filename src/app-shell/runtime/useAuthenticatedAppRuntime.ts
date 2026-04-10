@@ -117,19 +117,6 @@ export const useAuthenticatedAppRuntime = ({
   const fileOps = useFileOperations(record, dailyRecordHook.refresh);
   const ui = useAppState();
 
-  const censusContextValue = React.useMemo<CensusContextType>(
-    () =>
-      buildAuthenticatedCensusContextValue({
-        dailyRecordHook,
-        dateNav,
-        existingDaysInMonth,
-        fileOps,
-        censusEmail,
-        nurseSignature,
-      }),
-    [censusEmail, dailyRecordHook, dateNav, existingDaysInMonth, fileOps, nurseSignature]
-  );
-
   return React.useMemo(
     () =>
       buildAuthenticatedAppRuntime({

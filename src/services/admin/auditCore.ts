@@ -221,7 +221,7 @@ export const createAuditCoreService = (
       fetchAndCacheIpAddress().catch((error: unknown) => {
         // Non-blocking: IP is best-effort for audit enrichment
         if (import.meta.env.DEV) {
-          console.warn('[AuditCore] IP address fetch failed (non-blocking)', error);
+          auditCoreLogger.warn('IP address fetch failed (non-blocking)', error);
         }
       });
 

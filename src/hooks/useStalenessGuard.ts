@@ -45,5 +45,5 @@ export const useStalenessGuard = (): void => {
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [queryClient]);
+  }, []);
 };

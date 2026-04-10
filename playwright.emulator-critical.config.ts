@@ -1,5 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const webServerHost = '127.0.0.1';
+const webServerPort = Number.parseInt(process.env.PLAYWRIGHT_WEB_SERVER_PORT || '3000', 10);
+const webServerOrigin = `http://${webServerHost}:${webServerPort}`;
+
 const baseEnv = {
   VITE_E2E_MODE: 'true',
   VITE_FIREBASE_API_KEY: process.env.VITE_FIREBASE_API_KEY || 'demo-api-key',
@@ -33,7 +37,7 @@ export default defineConfig({
   timeout: 45_000,
 
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: webServerOrigin,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -70,8 +74,8 @@ export default defineConfig({
   })(),
 
   webServer: {
-    command: 'npm run dev -- --host 127.0.0.1 --port 3000',
-    url: 'http://127.0.0.1:3000',
+    command: `npm run dev -- --host ${webServerHost} --port ${webServerPort}`,
+    url: webServerOrigin,
     reuseExistingServer: !process.env.CI,
     env: baseEnv,
     timeout: 120_000,

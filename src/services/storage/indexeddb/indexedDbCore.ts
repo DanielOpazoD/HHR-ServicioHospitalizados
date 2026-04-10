@@ -23,6 +23,7 @@ import {
   isDatabaseClosedError,
   resolveIndexedDbErrorDetails,
   resolveIndexedDbRecoveryDelay,
+  runIndexedDbOperationWithTimeout,
   shouldAttemptIndexedDbRecreation,
   sleep,
   waitForIndexedDbOpenResolution,
@@ -185,13 +186,12 @@ const scheduleBackgroundRecoveryRetry = () => {
   );
 };
 
-const tryOpenWithTimeout = async (): Promise<void> => {
-  const openPromise = db.open();
-  const timeoutPromise = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error('IndexedDB open timeout')), INDEXED_DB_OPEN_TIMEOUT_MS)
+const tryOpenWithTimeout = (): Promise<Dexie> =>
+  runIndexedDbOperationWithTimeout(
+    () => db.open(),
+    INDEXED_DB_OPEN_TIMEOUT_MS,
+    'IndexedDB open timeout'
   );
-  await Promise.race([openPromise, timeoutPromise]);
-};
 
 initializeDatabase();
 
@@ -316,12 +316,11 @@ export const ensureDbReady = async (options: EnsureDbReadyOptions = {}): Promise
       try {
         db.close();
 
-        const deletePromise = Dexie.delete('HangaRoaDB');
-        const deleteTimeout = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Deletion timeout')), INDEXED_DB_DELETE_TIMEOUT_MS)
+        await runIndexedDbOperationWithTimeout(
+          () => Dexie.delete('HangaRoaDB'),
+          INDEXED_DB_DELETE_TIMEOUT_MS,
+          'Deletion timeout'
         );
-
-        await Promise.race([deletePromise, deleteTimeout]);
 
         db = new HangaRoaDatabase();
         attachDatabaseEvents(db);

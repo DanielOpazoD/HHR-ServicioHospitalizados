@@ -93,15 +93,6 @@ const SUMMARY_ABBREVIATIONS: [string, AbbreviationConfig][] = [
 /* ------------------------------------------------------------------ */
 
 /**
- * Find the abbreviation config for a given analysis name.
- * Uses partial case-insensitive matching.
- */
-const findAbbreviation = (analysis: string): [string, AbbreviationConfig] | null => {
-  const lower = analysis.toLowerCase();
-  return SUMMARY_ABBREVIATIONS.find(([pattern]) => lower.includes(pattern.toLowerCase())) || null;
-};
-
-/**
  * Format a single finding value for the summary.
  * Handles x10^N multiplication, unit display, and suffix.
  */

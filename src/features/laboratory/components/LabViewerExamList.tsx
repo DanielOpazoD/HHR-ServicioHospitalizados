@@ -3,13 +3,6 @@ import clsx from 'clsx';
 import { Calendar, FileText } from 'lucide-react';
 import type { SyslabExamItem } from '@/types/domain/laboratory';
 
-/** Parse DD/MM/YYYY to Date for date range comparisons. */
-const parseDDMMYYYYtoDate = (dateStr: string): Date | null => {
-  const m = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-  if (!m) return null;
-  return new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1]));
-};
-
 interface LabViewerExamListProps {
   exams: SyslabExamItem[];
   selectedIds: Set<string>;

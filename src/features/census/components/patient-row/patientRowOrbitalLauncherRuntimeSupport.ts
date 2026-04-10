@@ -36,6 +36,52 @@ export interface UsePatientRowOrbitalLauncherRuntimeResult {
   handleLauncherMouseLeave: () => void;
 }
 
+export interface ResolveLauncherTriggerVisibilityInput {
+  hasQuickActions: boolean;
+  supportsHoverFine: boolean;
+  isOpen: boolean;
+  isLauncherHovered: boolean;
+  isRowHovered: boolean;
+  isHoverGraceActive: boolean;
+  rowId: string | null;
+  activeLauncherRowId: string | null;
+  ownerLauncherRowId: string | null;
+}
+
+export const resolveLauncherTriggerVisibility = ({
+  hasQuickActions,
+  supportsHoverFine,
+  isOpen,
+  isLauncherHovered,
+  isRowHovered,
+  isHoverGraceActive,
+  rowId,
+  activeLauncherRowId,
+  ownerLauncherRowId,
+}: ResolveLauncherTriggerVisibilityInput): boolean => {
+  if (!hasQuickActions) {
+    return false;
+  }
+
+  const isAnotherLauncherActive = activeLauncherRowId !== null && activeLauncherRowId !== rowId;
+  if (isAnotherLauncherActive) {
+    return false;
+  }
+
+  const isOwnedByCurrentRow = rowId !== null && ownerLauncherRowId === rowId;
+  const rowCanClaimOrKeepOwnership =
+    (isRowHovered || isHoverGraceActive) &&
+    (ownerLauncherRowId === null || ownerLauncherRowId === rowId);
+
+  return (
+    !supportsHoverFine ||
+    isOpen ||
+    isLauncherHovered ||
+    isOwnedByCurrentRow ||
+    rowCanClaimOrKeepOwnership
+  );
+};
+
 export const dispatchLauncherOpenChange = (rowId: string | null): void => {
   if (typeof window === 'undefined') {
     return;

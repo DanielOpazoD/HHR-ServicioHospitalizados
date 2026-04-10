@@ -92,7 +92,10 @@ export const useLabViewer = (
     retry: 1,
   });
 
-  const examList = examQuery.data?.success ? examQuery.data.data : [];
+  const examList = useMemo(
+    () => (examQuery.data?.success ? examQuery.data.data : []),
+    [examQuery.data]
+  );
   const isLoading = examQuery.isFetching;
 
   // Sync query errors to local error state
@@ -222,7 +225,11 @@ export const useLabViewer = (
   const toggleExamSelection = useCallback((id: string) => {
     setSelectedExamIds(prev => {
       const n = new Set(prev);
-      n.has(id) ? n.delete(id) : n.add(id);
+      if (n.has(id)) {
+        n.delete(id);
+      } else {
+        n.add(id);
+      }
       return n;
     });
   }, []);
