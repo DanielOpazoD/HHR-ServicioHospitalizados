@@ -81,12 +81,15 @@ export const MedicalHandoffHeader: React.FC<MedicalHandoffHeaderProps> = ({
     }
   };
 
-  const bedStats = buildMedicalHandoffBedStats(record, visibleBeds);
+  const bedStats = React.useMemo(
+    () => buildMedicalHandoffBedStats(record, visibleBeds),
+    [record, visibleBeds]
+  );
 
   // Pass bed stats to parent so it can render them in the specialty card
   React.useEffect(() => {
     onBedStats?.(bedStats);
-  }, [bedStats.totalBeds, bedStats.occupiedBeds, bedStats.freeBeds, bedStats.blockedBeds]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [bedStats, onBedStats]);
 
   return (
     <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-sm ring-1 ring-black/[0.02] print:shadow-none print:border-none print:p-0 print:mb-2">
