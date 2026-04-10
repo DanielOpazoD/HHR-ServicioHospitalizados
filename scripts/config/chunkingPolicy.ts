@@ -3,6 +3,15 @@ export const chunkForModule = (moduleId: string): string | undefined => {
   const inNodeModules = normalizedId.includes('/node_modules/');
   const has = (fragment: string): boolean => normalizedId.includes(fragment);
 
+  if (
+    normalizedId.includes('vite/preload-helper') ||
+    normalizedId.includes('\u0000vite/preload-helper') ||
+    normalizedId.includes('vite/modulepreload-polyfill') ||
+    normalizedId.includes('\u0000vite/modulepreload-polyfill')
+  ) {
+    return 'vendor-preload';
+  }
+
   if (inNodeModules) {
     // React + libraries that call React.createContext at module scope must
     // live in the same chunk to avoid load-order race conditions in production.
