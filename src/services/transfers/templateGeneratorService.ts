@@ -1,9 +1,11 @@
 import { TransferPatientData, QuestionnaireResponse } from '@/types/transferDocuments';
-import { createWorkbook } from '@/services/exporters/excelUtils';
 import type { StorageRuntime } from '@/services/firebase-runtime/storageRuntime';
 import { fetchTransferTemplateBlob } from './transferTemplateFetchController';
 import { recordTransferTemplateFetchFailure } from './transferDocumentTelemetryController';
 import { formatCensusIsoDate } from '@/shared/census/censusPresentation';
+
+const loadCreateWorkbook = async () =>
+  import('@/services/exporters/excelUtils').then(module => module.createWorkbook);
 
 /**
  * Maps system data and questionnaire responses to a flat object of template tags.
@@ -280,6 +282,7 @@ export const generateXlsxFromTemplate = async (
   templateBlob: Blob,
   tags: Record<string, string | number | boolean>
 ): Promise<Blob> => {
+  const createWorkbook = await loadCreateWorkbook();
   const workbook = await createWorkbook();
   const arrayBuffer = await templateBlob.arrayBuffer();
   await workbook.xlsx.load(arrayBuffer);

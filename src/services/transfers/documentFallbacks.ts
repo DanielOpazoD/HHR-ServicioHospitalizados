@@ -12,11 +12,13 @@ import {
   calculateAge,
   getResponse,
 } from './documentGeneratorUtils';
-import { createWorkbook } from '@/services/exporters/excelUtils';
 import { createGeneratedDocument } from './transferGeneratedDocumentController';
 import { createTransferDocxSection } from './transferDocxSectionFactory';
 import { createTransferDocxTable, type TransferTableRowInput } from './transferDocxTableController';
 import { populateTransferIaasWorkbook } from './transferIaasWorkbookController';
+
+const loadCreateWorkbook = async () =>
+  import('@/services/exporters/excelUtils').then(module => module.createWorkbook);
 
 const packDocxDocument = async (
   templateId: string,
@@ -300,6 +302,7 @@ export const generateFormularioIAAS = async (
   responses: QuestionnaireResponse,
   _hospital: HospitalConfig
 ): Promise<GeneratedDocument> => {
+  const createWorkbook = await loadCreateWorkbook();
   const workbook = await createWorkbook();
   populateTransferIaasWorkbook(workbook, patientData, responses);
 

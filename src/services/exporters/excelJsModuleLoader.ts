@@ -7,6 +7,8 @@ interface ExcelJSModuleType {
     | typeof import('exceljs').Workbook;
 }
 
+declare const __ENABLE_NODE_EXCEL_LOADER__: boolean;
+
 const EXCELJS_RUNTIME_SRC = '/vendor/exceljs.min.js';
 let browserExcelModulePromise: Promise<ExcelJSModuleType> | null = null;
 
@@ -69,13 +71,16 @@ const loadExcelJsFromRuntimeAsset = async (): Promise<ExcelJSModuleType> => {
 
   return browserExcelModulePromise;
 };
-
 export const loadExcelJSModule = async (): Promise<ExcelJSModuleType> => {
-  if (typeof window === 'undefined') {
-    const nodeLoader = await import('@/services/exporters/excelJsModuleLoader.node');
+  if (__ENABLE_NODE_EXCEL_LOADER__) {
+    const nodeLoader = await loadNodeExcelLoader();
     return nodeLoader.loadExcelJSModule();
   }
   return loadExcelJsFromRuntimeAsset();
+};
+
+const loadNodeExcelLoader = async () => {
+  return import('@/services/exporters/excelJsModuleLoader.node');
 };
 
 export const resolveExcelWorkbookConstructor = (

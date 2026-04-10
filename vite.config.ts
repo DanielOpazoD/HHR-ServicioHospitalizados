@@ -137,6 +137,9 @@ export default defineConfig(({ mode }) => {
     define: {
       'import.meta.env.VITE_E2E_MODE': JSON.stringify(process.env.VITE_E2E_MODE || 'false'),
       __APP_BUILD_VERSION__: JSON.stringify(buildVersionInfo.version),
+      __ENABLE_NODE_EXCEL_LOADER__: JSON.stringify(
+        process.env.VITEST === 'true' || process.env.NODE_ENV === 'test'
+      ),
     },
     build: {
       modulePreload: {

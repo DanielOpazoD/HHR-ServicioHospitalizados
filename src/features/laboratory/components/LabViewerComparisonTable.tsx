@@ -11,8 +11,10 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import type { LabAnalysisData } from '@/types/domain/laboratory';
 import type { ExportConfig } from '../types/labViewerTypes';
 import { isOutOfRange, formatLabResult } from '../controllers/labFormattingController';
-import { exportComparisonToExcel } from '../services/labExcelService';
 import { LabExportConfigDialog } from './LabExportConfigDialog';
+
+const loadLabExcelExporter = async () =>
+  import('../services/labExcelService').then(module => module.exportComparisonToExcel);
 
 const ROW_HEIGHT = 28;
 const VIRTUALIZATION_THRESHOLD = 20;
@@ -134,6 +136,7 @@ export const LabViewerComparisonTable: React.FC<{ data: LabAnalysisData }> = ({ 
           dates={examDates}
           variables={variableNames}
           onExport={async (config: ExportConfig) => {
+            const exportComparisonToExcel = await loadLabExcelExporter();
             await exportComparisonToExcel(data, config);
             setShowExportConfig(false);
           }}
