@@ -2,12 +2,11 @@
   "features": {
     "admin": ["clinical-documents", "handoff"],
     "analytics": [],
-    "auth": ["games"],
+    "auth": [],
     "backup": [],
     "census": ["analytics", "clinical-documents"],
     "clinical-documents": ["laboratory"],
     "cudyr": [],
-    "games": [],
     "handoff": ["cudyr"],
     "laboratory": [],
     "reminders": [],

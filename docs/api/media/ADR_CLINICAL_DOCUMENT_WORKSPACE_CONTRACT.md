@@ -18,7 +18,7 @@ No new document-type behavior should be reintroduced through ad hoc `if` branche
 ## Source Of Truth
 
 - Public entrypoint: `src/features/clinical-documents/public.ts`
-- Architecture map: `src/features/clinical-documents/ARCHITECTURE.md`
+- Architecture map: `../src/features/clinical-documents/ARCHITECTURE.md`
 - Workspace bootstrap/draft/actions hooks inside `src/features/clinical-documents/hooks`
 - Definitions and registries inside `src/features/clinical-documents/domain`
 - Repository/runtime contracts in feature services and repositories

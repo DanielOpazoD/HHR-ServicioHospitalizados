@@ -109,7 +109,6 @@ export const AppRouter: React.FC<AppRouterProps> = ({
                   onOpenCensusDate={onOpenCensusDate}
                   readOnly={!canEditAppModule(role, 'CENSUS') && !e2eEditableOverride}
                   allowAdminCopyOverride={canForceCreateDayCopyOverride(role)}
-                  localViewMode={ui.censusLocalViewMode}
                   accessProfile={censusAccessProfile}
                 />
               </SectionErrorBoundary>

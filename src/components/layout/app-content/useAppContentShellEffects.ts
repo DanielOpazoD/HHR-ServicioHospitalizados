@@ -2,7 +2,6 @@ import React from 'react';
 import type { AuthContextType } from '@/context/AuthContext';
 import type { UseUIStateReturn } from '@/hooks/useUIState';
 import { sanitizeAppModuleForRole } from '@/shared/access/operationalAccessPolicy';
-import { resolveSpecialistCapabilities } from '@/shared/access/specialistAccessPolicy';
 import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryService';
 import { useAppContentEventBridge } from '@/components/layout/app-content/useAppContentEventBridge';
 
@@ -10,8 +9,6 @@ interface UseAppContentShellEffectsParams {
   role: AuthContextType['role'];
   currentModule: UseUIStateReturn['currentModule'];
   setCurrentModule: UseUIStateReturn['setCurrentModule'];
-  censusLocalViewMode: UseUIStateReturn['censusLocalViewMode'];
-  setCensusLocalViewMode: UseUIStateReturn['setCensusLocalViewMode'];
   isSignatureMode: boolean;
   setSelectedShift: UseUIStateReturn['setSelectedShift'];
 }
@@ -20,8 +17,6 @@ export const useAppContentShellEffects = ({
   role,
   currentModule,
   setCurrentModule,
-  censusLocalViewMode,
-  setCensusLocalViewMode,
   isSignatureMode,
   setSelectedShift,
 }: UseAppContentShellEffectsParams): void => {
@@ -38,14 +33,6 @@ export const useAppContentShellEffects = ({
       setCurrentModule(sanitizedModule);
     }
   }, [currentModule, role, setCurrentModule]);
-
-  React.useEffect(() => {
-    if (!resolveSpecialistCapabilities(role).isSpecialist || censusLocalViewMode === 'TABLE') {
-      return;
-    }
-
-    setCensusLocalViewMode('TABLE');
-  }, [censusLocalViewMode, role, setCensusLocalViewMode]);
 
   React.useEffect(() => {
     if (appShellTelemetryRecordedRef.current || isSignatureMode) {

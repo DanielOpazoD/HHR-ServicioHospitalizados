@@ -28,6 +28,42 @@ Umbrales operativos:
 - Snapshot técnico base: `reports/operational-health.md`
 - Budgets completos: `docs/RUNBOOK_OPERATIONAL_BUDGETS.md`
 
+## Diagnostico rapido del arranque
+
+Cuando el incidente ocurre "solo al abrir" o "tras F5", revisar este orden antes de asumir
+pérdida real de datos:
+
+1. `remoteSyncStatus`
+   - `bootstrapping`: auth/Firebase aun no terminan de resolver.
+   - `ready`: el runtime remoto ya puede leer/suscribirse.
+   - `local_only`: la app quedó degradada a modo local.
+2. `remoteSyncState.reason`
+   - `auth_loading`: bootstrap auth todavía pendiente.
+   - `auth_connecting`: hay sesión válida pero el runtime remoto aún no materializa conexión usable.
+   - `offline`: degradación por red.
+   - `runtime_unavailable`: auth resolvió, pero el runtime remoto/config sigue no usable.
+   - `auth_unavailable`: no hay sesión reutilizable.
+   - `ready`: remoto operativo.
+3. `isFirebaseConnected`
+   - si está en `false`, el shell no debe habilitar realtime.
+4. `recordRuntime.availabilityState`
+   - `resolved` o `recoverable_local`: hay registro usable.
+   - `temporarily_unavailable`: falló la lectura remota; no tratarlo como "no existe".
+   - `confirmed_missing`: el repositorio sí confirmó ausencia real.
+5. `bootstrapPhase`
+   - `remote_runtime_bootstrapping`: auth/runtime remoto aun se está rehidratando.
+   - `remote_record_bootstrapping`: el runtime está listo, pero la primera lectura del día sigue pendiente.
+   - `remote_record_timeout`: la primera lectura remota no resolvió dentro de la ventana esperada.
+   - `confirmed_empty`: ausencia real confirmada.
+   - `local_only`: degradación a IndexedDB/local.
+   - `record_ready`: el registro quedó resuelto para la UI.
+
+Referencia técnica:
+
+- [dailyRecordBootstrapController.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/hooks/controllers/dailyRecordBootstrapController.ts)
+- [useDailyRecordSyncQuery.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/hooks/useDailyRecordSyncQuery.ts)
+- [useDailyRecordQuery.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/hooks/useDailyRecordQuery.ts)
+
 ## Procedimiento 1: IndexedDB bloqueado
 
 Síntomas:
@@ -53,13 +89,17 @@ Síntomas:
 
 - `pendingSyncTasks` crece.
 - `oldestPendingAgeMs` supera 15 min.
+- `orphanedTasks` > 0 en telemetría de sync.
 
 Acciones:
 
 1. Confirmar conectividad (`ONLINE` en dashboard).
-2. Esperar 1 ciclo de reintento (backoff).
-3. Si no baja, recargar sesión del usuario.
-4. Si sigue crítico, solicitar captura de consola y revisar tipo de error:
+2. Revisar si el usuario actual heredó ownership local extraño:
+   - `ownerKey` de telemetría debe corresponder al usuario autenticado.
+   - `orphanedTasks > 0` indica tareas de otra sesión local no drenadas.
+3. Esperar 1 ciclo de reintento (backoff).
+4. Si no baja, recargar sesión del usuario.
+5. Si sigue crítico, solicitar captura de consola y revisar tipo de error:
    - `permission-denied` -> ir a Procedimiento 3.
    - `ConcurrencyError` -> ir a Procedimiento 4.
 
@@ -67,6 +107,28 @@ Verificación:
 
 - `pendingSyncTasks` desciende.
 - `retryingSyncTasks` retorna a 0.
+- `orphanedTasks` queda en 0 tras cambio de usuario/logout manual.
+
+## Procedimiento 2.1: contaminación entre sesiones locales
+
+Síntomas:
+
+- un usuario nuevo ve tareas pendientes que no generó;
+- `ownerKey` no coincide con la sesión autenticada;
+- `orphanedTasks` permanece > 0.
+
+Acciones:
+
+1. Forzar logout manual del usuario actual.
+2. Confirmar que el cliente limpie estado sensible local de sesión.
+3. Reingresar con el usuario correcto.
+4. Si el problema persiste, ejecutar limpieza dura y escalar como incidente de aislamiento de sesión.
+
+Verificación:
+
+- el outbox vuelve a ownership del usuario actual;
+- no reaparecen tareas del usuario anterior;
+- `pendingSyncTasks` refleja solo actividad actual.
 
 ## Procedimiento 3: `permission-denied`
 

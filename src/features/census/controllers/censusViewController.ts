@@ -29,7 +29,6 @@ export interface BuildEmptyDayPromptPropsParams {
 export interface BuildRegisterContentPropsParams {
   currentDateString: string;
   readOnly: boolean;
-  localViewMode: 'TABLE' | '3D';
   beds: DailyRecord['beds'];
   visibleBeds: BedDefinition[];
   marginStyle: CSSProperties;
@@ -68,7 +67,6 @@ export const buildEmptyDayPromptProps = ({
 export const buildRegisterContentProps = ({
   currentDateString,
   readOnly,
-  localViewMode,
   beds,
   visibleBeds,
   marginStyle,
@@ -79,7 +77,6 @@ export const buildRegisterContentProps = ({
 }: BuildRegisterContentPropsParams) => ({
   currentDateString,
   readOnly,
-  localViewMode,
   beds,
   visibleBeds,
   marginStyle,

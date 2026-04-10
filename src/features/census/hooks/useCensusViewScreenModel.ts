@@ -15,7 +15,6 @@ interface UseCensusViewScreenModelParams {
   onCloseBedManagerModal: () => void;
   readOnly: boolean;
   allowAdminCopyOverride: boolean;
-  localViewMode: 'TABLE' | '3D';
   accessProfile: CensusAccessProfile;
 }
 
@@ -27,7 +26,6 @@ export const useCensusViewScreenModel = ({
   onCloseBedManagerModal,
   readOnly,
   allowAdminCopyOverride,
-  localViewMode,
   accessProfile,
 }: UseCensusViewScreenModelParams) => {
   const auth = useAuth();
@@ -40,7 +38,6 @@ export const useCensusViewScreenModel = ({
     onCloseBedManagerModal,
     readOnly,
     allowAdminCopyOverride,
-    localViewMode,
     accessProfile,
   });
   const [resolvedTodayEmptyDate, setResolvedTodayEmptyDate] = useState('');

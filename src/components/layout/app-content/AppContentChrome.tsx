@@ -155,8 +155,6 @@ export const AppContentChrome: React.FC<AppContentChromeProps> = ({
           onToggleBookmarks={() => ui.setShowBookmarksBar(!ui.showBookmarksBar)}
           showBookmarks={ui.showBookmarksBar}
           role={auth.role}
-          localViewMode={ui.censusLocalViewMode}
-          setLocalViewMode={ui.setCensusLocalViewMode}
           onBackupPDF={exportManager.handleBackupHandoff}
           navigateDays={dateNav.navigateDays}
           accessProfile={runtime.censusAccessProfile}

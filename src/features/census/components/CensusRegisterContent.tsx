@@ -17,7 +17,6 @@ const LazyCensusRegisterSections = lazy(() =>
 interface CensusRegisterContentProps {
   currentDateString: string;
   readOnly: boolean;
-  localViewMode: 'TABLE' | '3D';
   beds: DailyRecord['beds'];
   visibleBeds: BedDefinition[];
   marginStyle: CSSProperties;
@@ -30,7 +29,6 @@ interface CensusRegisterContentProps {
 export const CensusRegisterContent: React.FC<CensusRegisterContentProps> = ({
   currentDateString,
   readOnly,
-  localViewMode,
   beds,
   visibleBeds,
   marginStyle,
@@ -46,7 +44,6 @@ export const CensusRegisterContent: React.FC<CensusRegisterContentProps> = ({
       <CensusStaffHeader readOnly={readOnly} stats={stats} accessProfile={accessProfile} />
 
       <CensusRegisterMainContent
-        localViewMode={localViewMode}
         currentDateString={currentDateString}
         readOnly={readOnly}
         visibleBeds={visibleBeds}

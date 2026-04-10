@@ -33,6 +33,8 @@ Contratos TypeScript de dominio, entidades, payloads y value objects.
 - Evitar `any`; expresar contratos explícitos.
 - Importar desde el owner real del contrato, no desde `core.ts`.
 - `core.ts` existe solo como bridge temporal y no debe recibir imports productivos nuevos.
+- `src/types/` es el owner canónico de tipos de dominio y payloads estables; `src/shared/` puede reexportar compatibilidad, pero no debe reemplazar ese ownership.
+- Si una feature necesita un subtipo/fachada propia, debe declararla dentro de la feature o en `application/shared`, no reubicar la entidad base en `shared/`.
 
 ## Notas de dominio recientes
 

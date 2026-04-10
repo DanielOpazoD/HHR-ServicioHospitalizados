@@ -12,8 +12,6 @@ describe('useAppContentShellEffects', () => {
     role: 'admin',
     currentModule: 'CENSUS',
     setCurrentModule: vi.fn(),
-    censusLocalViewMode: 'TABLE',
-    setCensusLocalViewMode: vi.fn(),
     isSignatureMode: false,
     setSelectedShift: vi.fn(),
   });
@@ -48,20 +46,6 @@ describe('useAppContentShellEffects', () => {
     );
 
     expect(baseParams.setCurrentModule).toHaveBeenCalledWith('CENSUS');
-  });
-
-  it('forces table mode for specialist roles', () => {
-    const baseParams = createBaseParams();
-
-    renderHook(() =>
-      useAppContentShellEffects({
-        ...baseParams,
-        role: 'doctor_specialist',
-        censusLocalViewMode: '3D',
-      })
-    );
-
-    expect(baseParams.setCensusLocalViewMode).toHaveBeenCalledWith('TABLE');
   });
 
   it('forwards navigate-module and set-shift events', () => {

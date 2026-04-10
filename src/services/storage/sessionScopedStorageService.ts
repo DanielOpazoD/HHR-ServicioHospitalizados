@@ -42,7 +42,6 @@ const KEYS_SURVIVING_LOGOUT = new Set([
   'hhr_diagnosis_mode',
   'hhr_storage_auto_recovery_attempted_v1',
   'hhr_storage_persistent_fallback_count_v1',
-  'hhr_3d_layout_v2',
   'hhr_feature_flags',
   'hhr_chunk_reload_count',
 ]);

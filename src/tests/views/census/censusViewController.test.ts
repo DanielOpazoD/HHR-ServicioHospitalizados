@@ -46,7 +46,6 @@ describe('censusViewController', () => {
     const result = buildRegisterContentProps({
       currentDateString: '2026-03-14',
       readOnly: true,
-      localViewMode: 'TABLE',
       beds: {},
       visibleBeds: [],
       marginStyle: { padding: '0 12px' },
@@ -58,7 +57,6 @@ describe('censusViewController', () => {
     expect(result).toEqual({
       currentDateString: '2026-03-14',
       readOnly: true,
-      localViewMode: 'TABLE',
       beds: {},
       visibleBeds: [],
       marginStyle: { padding: '0 12px' },

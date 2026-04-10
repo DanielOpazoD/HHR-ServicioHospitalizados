@@ -242,8 +242,6 @@ export const createMockUIState = (overrides: Partial<UseUIStateReturn> = {}): Us
   setIsTestAgentRunning: vi.fn(),
   selectedShift: 'day',
   setSelectedShift: vi.fn(),
-  censusLocalViewMode: 'TABLE',
-  setCensusLocalViewMode: vi.fn(),
   showPrintButton: true,
   showBookmarksBar: true,
   setShowBookmarksBar: vi.fn(),

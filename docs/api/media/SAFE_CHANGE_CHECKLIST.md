@@ -9,7 +9,7 @@ Antes de cerrar una modificación relevante en este repo:
 5. Correr `npm run typecheck`.
 6. Correr `npm run check:quality`.
 7. Elegir y ejecutar el gate correcto:
-   `npm run ci:inner-loop`, `npm run ci:merge-gate` o `npm run ci:release-gate`.
+   `npm run ci:inner-loop`, `npm run ci:pre-merge`, `npm run ci:merge-gate` o `npm run ci:release-gate`.
 8. Verificar límites de tamaño/hotspots si el cambio toca archivos grandes.
 9. Revisar contratos runtime si la change toca repositorios, Firestore, templates o serialización.
 10. Revisar si la change impacta `firestore.rules`, emulador o E2E crítico.

@@ -5,9 +5,14 @@
 <li><a href="media/RUNBOOK_AUTH_ACCESS_INCIDENTS.md">Runbook Auth Access Incidents</a></li>
 </ul>
 <h2 id="quick-start" class="tsd-anchor-link">Quick Start<a href="#quick-start" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><h3 id="requisitos" class="tsd-anchor-link">Requisitos<a href="#requisitos" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
-<li>Node.js 20+</li>
+<li>Node.js 22.x</li>
 <li>npm 10+</li>
 <li>Firebase project (variables de entorno en <code>.env</code>)</li>
+</ul>
+<h3 id="política-de-versiones-de-node" class="tsd-anchor-link">Política de versiones de Node<a href="#política-de-versiones-de-node" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
+<li>El workspace principal (<code>package.json</code>) usa Node.js <code>22.x</code> para desarrollo local, tests, lint, typecheck y build.</li>
+<li><code>functions/package.json</code> mantiene runtime Node.js <code>20</code> porque ese sigue siendo el target actual de Firebase Functions para este proyecto.</li>
+<li>Si se cambia alguno de esos targets, esta sección debe actualizarse junto con ambos <code>package.json</code>.</li>
 </ul>
 <h3 id="instalación" class="tsd-anchor-link">Instalación<a href="#instalación" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><pre><code class="bash"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">install</span>
 </code><button type="button">Copy</button></pre>
@@ -23,6 +28,7 @@
 <h3 id="variables-de-entorno" class="tsd-anchor-link">Variables de entorno<a href="#variables-de-entorno" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
 <li><code>VITE_FIREBASE_*</code>: configuración cliente de Firebase para desarrollo local.</li>
 <li><code>VITE_FIREBASE_API_KEY_B64</code>: alternativa opcional a la API key plana.</li>
+<li><code>VITE_LEGACY_FIREBASE_*</code>: configuración opcional de solo lectura para imports/control de compatibilidad desde el proyecto legacy.</li>
 <li><code>VITE_FUNCTIONS_EMULATOR_HOST</code>, <code>VITE_AUTH_EMULATOR_HOST</code>, <code>VITE_FIRESTORE_EMULATOR_HOST</code>: solo para emuladores locales.</li>
 <li><code>VITE_LOCAL_GEMINI_API_KEY</code>: solo fallback local de CIE-10 en <code>localhost</code>.</li>
 <li><code>GEMINI_API_KEY</code>, <code>API_KEY</code>, <code>GMAIL_*</code>: uso server-side en Netlify Functions, nunca como <code>VITE_*</code>.</li>
@@ -103,6 +109,12 @@
 <li>no edita entregas médicas de días previos</li>
 </ul>
 <p>Los accesos directos al handoff médico ya no usan un “modo especialista” separado; son deep-links normales al módulo <code>MEDICAL_HANDOFF</code>.</p>
+<h2 id="privacidad-local-del-puesto" class="tsd-anchor-link">Privacidad local del puesto<a href="#privacidad-local-del-puesto" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>El PIN local es un bloqueo rápido de privacidad visual en el navegador/dispositivo actual.</p>
+<ul>
+<li>Se guarda solo localmente.</li>
+<li>Puede bloquear al abrir la app o por inactividad.</li>
+<li>No reemplaza login, logout, permisos clínicos ni controles server-side.</li>
+</ul>
 <h2 id="comandos-principales" class="tsd-anchor-link">Comandos Principales<a href="#comandos-principales" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><table>
 <thead>
 <tr>
@@ -116,111 +128,40 @@
 <td>Levantar app en modo desarrollo</td>
 </tr>
 <tr>
-<td><code>npm run build</code></td>
-<td>Build de producción</td>
-</tr>
-<tr>
-<td><code>npm run preview</code></td>
-<td>Preview local del build</td>
-</tr>
-<tr>
 <td><code>npm run typecheck</code></td>
 <td>Verificación TypeScript</td>
-</tr>
-<tr>
-<td><code>npm run test</code></td>
-<td>Suite Vitest completa</td>
-</tr>
-<tr>
-<td><code>npm run test:watch</code></td>
-<td>Vitest en watch mode</td>
-</tr>
-<tr>
-<td><code>npm run test:coverage</code></td>
-<td>Cobertura de tests</td>
-</tr>
-<tr>
-<td><code>npm run test:e2e</code></td>
-<td>End-to-end (Playwright)</td>
-</tr>
-<tr>
-<td><code>npm run test:e2e:critical</code></td>
-<td>E2E crítico emulador (Chromium por defecto; multi-browser por <code>E2E_CRITICAL_BROWSERS</code>)</td>
 </tr>
 <tr>
 <td><code>npm run lint</code></td>
 <td>Lint global con tolerancia cero a warnings</td>
 </tr>
 <tr>
-<td><code>npm run check:quality</code></td>
-<td>Checks de arquitectura, tamaño de módulo y boundaries runtime</td>
+<td><code>npm run test:ci:unit</code></td>
+<td>Suite unitaria/integración base sin reglas ni emulador</td>
 </tr>
 <tr>
-<td><code>npm run check:test-failure-catalog</code></td>
-<td>Valida el catálogo versionado de fallos conocidos y cuarentenas</td>
+<td><code>npm run check:quality</code></td>
+<td>Guardrails estructurales y de gobernanza</td>
 </tr>
 <tr>
 <td><code>npm run ci:inner-loop</code></td>
-<td>Gate corto para desarrollo diario (<code>typecheck</code>, lint estricto, quality y riesgo unitario)</td>
+<td>Ruta rápida para trabajo local</td>
+</tr>
+<tr>
+<td><code>npm run ci:pre-merge</code></td>
+<td>Gate compacto obligatorio antes de merge</td>
 </tr>
 <tr>
 <td><code>npm run ci:merge-gate</code></td>
-<td>Gate blocking previo a merge (<code>quality</code>, unitarios completos, cobertura crítica, build, bundle)</td>
+<td>Gate blocking ampliado para cambios sensibles</td>
 </tr>
 <tr>
 <td><code>npm run ci:release-gate</code></td>
-<td>Gate final de release (<code>merge-gate</code> + Firestore rules/emulador/E2E crítico)</td>
-</tr>
-<tr>
-<td><code>npm run test:rules</code></td>
-<td>Tests de reglas Firestore</td>
-</tr>
-<tr>
-<td><code>npm run test:risk:admin-health</code></td>
-<td>Riesgo operativo de health dashboard y contratos</td>
-</tr>
-<tr>
-<td><code>npm run report:quality-metrics</code></td>
-<td>Snapshot de métricas de calidad para artefactos CI</td>
-</tr>
-<tr>
-<td><code>npm run report:operational-health</code></td>
-<td>Snapshot operativo de budgets, sync y runbooks</td>
-</tr>
-<tr>
-<td><code>npm run report:system-confidence</code></td>
-<td>Scorecard mínimo de confianza del sistema con 5 indicadores</td>
-</tr>
-<tr>
-<td><code>npm run report:release-readiness-scorecard</code></td>
-<td>Scorecard ejecutivo unificado para calidad, operación y readiness de release</td>
-</tr>
-<tr>
-<td><code>npm run report:sustainable-change-policy</code></td>
-<td>Política versionada para tipos de cambio, upgrades y excepciones</td>
-</tr>
-<tr>
-<td><code>npm run report:runtime-contracts</code></td>
-<td>Snapshot de contratos runtime y evolución de esquema</td>
-</tr>
-<tr>
-<td><code>npm run report:critical-coverage</code></td>
-<td>Reporte gated de cobertura crítica por zona</td>
-</tr>
-<tr>
-<td><code>npm run check:critical-coverage</code></td>
-<td>Gate de cobertura crítica instrumentada por zona</td>
-</tr>
-<tr>
-<td><code>npm run test:e2e:flow-performance</code></td>
-<td>Medición E2E de performance por flujo (<code>login</code>, <code>auth</code>, <code>censo</code>, <code>clinical-documents</code>, <code>backup</code>)</td>
-</tr>
-<tr>
-<td><code>npm run check:flow-performance-budget</code></td>
-<td>Gate y reporte de budgets operativos por flujo</td>
+<td>Validación final con Firestore/emuladores/E2E críticos</td>
 </tr>
 </tbody>
 </table>
+<p>El resto de <code>check:*</code>, <code>report:*</code> y <code>test:*</code> especializados siguen soportados, pero se consideran herramientas focalizadas. Catálogo curado: <a href="media/DEVELOPER_COMMANDS.md">docs/DEVELOPER_COMMANDS.md</a></p>
 <h2 id="estructura-del-proyecto" class="tsd-anchor-link">Estructura del Proyecto<a href="#estructura-del-proyecto" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><h3 id="raíz" class="tsd-anchor-link">Raíz<a href="#raíz" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><table>
 <thead>
 <tr>
@@ -280,6 +221,10 @@
 <td>Módulos de negocio por feature (census, handoff, transfers, etc.)</td>
 </tr>
 <tr>
+<td><code>src/application/</code></td>
+<td>Casos de uso compartidos, outcomes y puertos</td>
+</tr>
+<tr>
 <td><code>src/components/</code></td>
 <td>Componentes UI reutilizables y layout global</td>
 </tr>
@@ -321,6 +266,7 @@
 </tr>
 </tbody>
 </table>
+<p>Taxonomía canónica y reglas de ownership: <a href="media/CODEBASE_CANON.md">docs/CODEBASE_CANON.md</a></p>
 <h2 id="path-aliases" class="tsd-anchor-link">Path Aliases<a href="#path-aliases" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>Definidos en <code>tsconfig.json</code> y <code>vite.config.ts</code>:</p>
 <table>
 <thead>
@@ -341,9 +287,12 @@
 </code><button type="button">Copy</button></pre>
 
 <h2 id="índice-de-documentación" class="tsd-anchor-link">Índice de Documentación<a href="#índice-de-documentación" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><h3 id="documentos-troncales" class="tsd-anchor-link">Documentos troncales<a href="#documentos-troncales" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
+<li><a href="media/TECHNICAL_APPLICATION_AUDIT.md">Auditoría técnica de la aplicación</a></li>
+<li><a href="media/CODEBASE_CANON.md">Taxonomía canónica del código</a></li>
 <li><a href="media/AUTH_ACCESS_MODEL.md">Modelo de acceso y login</a></li>
 <li><a href="media/RUNBOOK_AUTH_ACCESS_INCIDENTS.md">Runbook de incidentes de acceso</a></li>
-<li><a href="media/ARCHITECTURE.md">Arquitectura global</a></li>
+<li><a href="media/architecture.md">Arquitectura global</a></li>
+<li><a href="media/DEVELOPER_COMMANDS.md">Comandos de desarrollo</a></li>
 <li><a href="media/RUNBOOK_SYNC_RESILIENCE.md">Runbook de sync y resiliencia</a></li>
 <li><a href="media/RUNBOOK_DAILY_ADMIN_CHECKLIST.md">Checklist diario admin (1 pagina)</a></li>
 <li><a href="media/RUNBOOK_SUPPORT_OPERATIONS.md">Runbook técnico de soporte</a></li>
@@ -352,7 +301,9 @@
 <li><a href="media/release-readiness-scorecard.md">Scorecard de release readiness</a></li>
 <li><a href="media/guardrail-governance.md">Gobernanza de guardrails</a></li>
 <li><a href="media/sustainable-change-policy.md">Política de cambio sostenible</a></li>
+<li><a href="media/technical-execution-baseline.md">Baseline de ejecución técnica</a></li>
 <li><a href="media/SAFE_CHANGE_CHECKLIST.md">Checklist de cambio seguro</a></li>
+<li><a href="media/ENGINEERING_CHANGE_DECISION_POLICY.md">Política de decisión para cambios de ingeniería</a></li>
 <li><a href="media/ENGINEERING_DEFINITION_OF_DONE.md">Definition of Done técnico</a></li>
 <li><a href="media/TECHNICAL_DEBT_REGISTER.md">Registro de deuda técnica</a></li>
 <li><a href="media/ADR_REPOSITORY_PROVIDER_REQUIRED.md">ADR Repository Provider obligatorio</a></li>
@@ -363,6 +314,7 @@
 <li><a href="media/ADR_CLINICAL_DOCUMENT_WORKSPACE_CONTRACT.md">ADR clinical-documents workspace contract</a></li>
 <li><a href="media/ADR_HANDOFF_RUNTIME_SURFACES.md">ADR handoff runtime surfaces</a></li>
 <li><a href="media/README.md">Mapa de código fuente</a></li>
+<li><a href="media/FOUNDATION_TRACKER.md">Tracker de cimientos</a></li>
 </ul>
 <h3 id="documentación-existente-relevante" class="tsd-anchor-link">Documentación existente relevante<a href="#documentación-existente-relevante" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
 <li><a href="media/architecture.md">docs/architecture.md</a></li>
@@ -414,6 +366,7 @@
 <h2 id="gates-de-ci-actual" class="tsd-anchor-link">Gates de CI (actual)<a href="#gates-de-ci-actual" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2><p>Mapa operativo resumido:</p>
 <ul>
 <li><code>npm run ci:inner-loop</code></li>
+<li><code>npm run ci:pre-merge</code></li>
 <li><code>npm run ci:merge-gate</code></li>
 <li><code>npm run ci:release-gate</code></li>
 </ul>
@@ -457,4 +410,4 @@
 <blockquote>
 <p>⚠️ IMPORTANT: When modifying any layer, update the corresponding <a href="http://README.md">README.md</a> in that directory.</p>
 </blockquote>
-</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#hhr-hospital-handoff-record"><span>HHR (<wbr/>Hospital <wbr/>Handoff <wbr/>Record)</span></a><ul><li><a href="#quick-start"><span>Quick <wbr/>Start</span></a></li><li><ul><li><a href="#requisitos"><span>Requisitos</span></a></li><li><a href="#instalación"><span>Instalación</span></a></li><li><a href="#desarrollo"><span>Desarrollo</span></a></li><li><a href="#variables-de-entorno"><span>Variables de entorno</span></a></li><li><a href="#build-y-preview"><span>Build y preview</span></a></li></ul></li><li><a href="#tech-stack"><span>Tech <wbr/>Stack</span></a></li><li><a href="#perfil-especialista"><span>Perfil <wbr/>Especialista</span></a></li><li><a href="#comandos-principales"><span>Comandos <wbr/>Principales</span></a></li><li><a href="#estructura-del-proyecto"><span>Estructura del <wbr/>Proyecto</span></a></li><li><ul><li><a href="#raíz"><span>Raíz</span></a></li><li><a href="#capas-en"><span>Capas en </span></a></li></ul></li><li><a href="#path-aliases"><span>Path <wbr/>Aliases</span></a></li><li><a href="#índice-de-documentación"><span>Índice de <wbr/>Documentación</span></a></li><li><ul><li><a href="#documentos-troncales"><span>Documentos troncales</span></a></li><li><a href="#documentación-existente-relevante"><span>Documentación existente relevante</span></a></li><li><a href="#readmes-por-directorio-principal-de"><span>READM<wbr/>Es por directorio principal de </span></a></li><li><a href="#readmes-de-profundización-módulos-críticos"><span>READM<wbr/>Es de profundización (módulos críticos)</span></a></li></ul></li><li><a href="#testing"><span>Testing</span></a></li><li><ul><li><a href="#validación-rápida-recomendada"><span>Validación rápida recomendada</span></a></li><li><a href="#suite-completa"><span>Suite completa</span></a></li><li><a href="#cobertura"><span>Cobertura</span></a></li><li><a href="#end-to-end"><span>End-<wbr/>to-<wbr/>end</span></a></li></ul></li><li><a href="#gates-de-ci-actual"><span>Gates de <wbr/>CI (actual)</span></a></li><li><a href="#baseline-de-calidad"><span>Baseline de <wbr/>Calidad</span></a></li><li><a href="#notas-operativas-recientes"><span>Notas <wbr/>Operativas <wbr/>Recientes</span></a></li><li><ul><li><a href="#próximo-hotspot-recomendado"><span>Próximo hotspot recomendado</span></a></li></ul></li><li><a href="#convenciones-de-calidad-resumen"><span>Convenciones de <wbr/>Calidad (resumen)</span></a></li></ul></div></details></div><div class="site-menu"><nav id="tsd-sidebar-links" class="tsd-navigation"><a href="https://github.com/DanielOpazoD/HospitalizadosHHR" class="tsd-nav-link">GitHub</a></nav><nav class="tsd-navigation"><a href="modules.html">HHR Hospitalizados - API Documentation - v0.0.1</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#hhr-hospital-handoff-record"><span>HHR (<wbr/>Hospital <wbr/>Handoff <wbr/>Record)</span></a><ul><li><a href="#quick-start"><span>Quick <wbr/>Start</span></a></li><li><ul><li><a href="#requisitos"><span>Requisitos</span></a></li><li><a href="#política-de-versiones-de-node"><span>Política de versiones de <wbr/>Node</span></a></li><li><a href="#instalación"><span>Instalación</span></a></li><li><a href="#desarrollo"><span>Desarrollo</span></a></li><li><a href="#variables-de-entorno"><span>Variables de entorno</span></a></li><li><a href="#build-y-preview"><span>Build y preview</span></a></li></ul></li><li><a href="#tech-stack"><span>Tech <wbr/>Stack</span></a></li><li><a href="#perfil-especialista"><span>Perfil <wbr/>Especialista</span></a></li><li><a href="#privacidad-local-del-puesto"><span>Privacidad local del puesto</span></a></li><li><a href="#comandos-principales"><span>Comandos <wbr/>Principales</span></a></li><li><a href="#estructura-del-proyecto"><span>Estructura del <wbr/>Proyecto</span></a></li><li><ul><li><a href="#raíz"><span>Raíz</span></a></li><li><a href="#capas-en"><span>Capas en </span></a></li></ul></li><li><a href="#path-aliases"><span>Path <wbr/>Aliases</span></a></li><li><a href="#índice-de-documentación"><span>Índice de <wbr/>Documentación</span></a></li><li><ul><li><a href="#documentos-troncales"><span>Documentos troncales</span></a></li><li><a href="#documentación-existente-relevante"><span>Documentación existente relevante</span></a></li><li><a href="#readmes-por-directorio-principal-de"><span>READM<wbr/>Es por directorio principal de </span></a></li><li><a href="#readmes-de-profundización-módulos-críticos"><span>READM<wbr/>Es de profundización (módulos críticos)</span></a></li></ul></li><li><a href="#testing"><span>Testing</span></a></li><li><ul><li><a href="#validación-rápida-recomendada"><span>Validación rápida recomendada</span></a></li><li><a href="#suite-completa"><span>Suite completa</span></a></li><li><a href="#cobertura"><span>Cobertura</span></a></li><li><a href="#end-to-end"><span>End-<wbr/>to-<wbr/>end</span></a></li></ul></li><li><a href="#gates-de-ci-actual"><span>Gates de <wbr/>CI (actual)</span></a></li><li><a href="#baseline-de-calidad"><span>Baseline de <wbr/>Calidad</span></a></li><li><a href="#notas-operativas-recientes"><span>Notas <wbr/>Operativas <wbr/>Recientes</span></a></li><li><ul><li><a href="#próximo-hotspot-recomendado"><span>Próximo hotspot recomendado</span></a></li></ul></li><li><a href="#convenciones-de-calidad-resumen"><span>Convenciones de <wbr/>Calidad (resumen)</span></a></li></ul></div></details></div><div class="site-menu"><nav id="tsd-sidebar-links" class="tsd-navigation"><a href="https://github.com/DanielOpazoD/HospitalizadosHHR" class="tsd-nav-link">GitHub</a></nav><nav class="tsd-navigation"><a href="modules.html">HHR Hospitalizados - API Documentation - v0.0.1</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>

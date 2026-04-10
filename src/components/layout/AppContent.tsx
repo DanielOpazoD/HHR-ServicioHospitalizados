@@ -21,8 +21,6 @@ export const AppContent: React.FC<AppContentProps> = ({ ui, renderFeatureQuickAc
     role: auth.role,
     currentModule: ui.currentModule,
     setCurrentModule: ui.setCurrentModule,
-    censusLocalViewMode: ui.censusLocalViewMode,
-    setCensusLocalViewMode: ui.setCensusLocalViewMode,
     isSignatureMode: dateNav.isSignatureMode,
     setSelectedShift: ui.setSelectedShift,
   });

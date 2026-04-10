@@ -101,7 +101,6 @@ components/Modal
 - `backup/index.ts`: explorador de respaldos.
 - `census/index.ts`: vistas y modales públicos del módulo.
 - `cudyr/index.ts` y `cudyr/public.ts`: vistas y utilidades permitidas.
-- `games/index.ts`: menú y accesos del feature lúdico.
 - `handoff/index.ts` y `handoff/public.ts`: shell público de entrega de turno y helpers permitidos.
 - `transfers/index.ts` y `transfers/public.ts`: vista pública de gestión de traslados.
 - `whatsapp/index.ts`: integración principal de WhatsApp.

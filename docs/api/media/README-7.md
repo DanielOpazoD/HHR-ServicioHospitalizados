@@ -10,6 +10,7 @@ Providers de estado global y contratos para features transversales.
 | ----------------------------------- | ------------------------------------------------------------------------ |
 | `AuthContext.tsx`                   | Sesión, usuario, rol, conectividad                                       |
 | `DailyRecordContext.tsx`            | Contexto fragmentado de censo diario (data/actions/beds/staff/sync)      |
+| `dailyRecordContextContracts.ts`    | Contrato canónico del contexto diario y su API tipada                    |
 | `UIContext.tsx`                     | Toasts, confirm dialogs y UX runtime global                              |
 | `UISettingsContext.tsx`             | Preferencias visuales persistibles                                       |
 | `ConfirmDialogContext.tsx`          | Canal de confirmación desacoplado                                        |
@@ -30,6 +31,12 @@ Providers de estado global y contratos para features transversales.
 - Hooks de acceso especializados (`useDailyRecordData`, `useDailyRecordBedActions`, `useDailyRecordMovementActions`, etc.).
   Los hooks de **acciones** deben importarse desde `useDailyRecordScopedActions` para evitar ciclos de chunking.
 - Contratos tipados para evitar props drilling masivo.
+- Los tipos del contexto diario viven en `dailyRecordContextContracts.ts`; `hooks/useDailyRecordTypes.ts` queda solo como shim de compatibilidad.
+- Los contratos base del registro diario ya se separan por slice en `src/application/shared/`:
+  - `dailyRecordCoreContracts.ts`
+  - `dailyRecordBedContracts.ts`
+  - `dailyRecordStaffContracts.ts`
+  - `dailyRecordMedicalContracts.ts`
 - `AuthContext` debe seguir dependiendo solo de `useAuthState`; la orquestación interna de auth/bootstrap/conectividad vive fuera del contexto para mantenerlo como fachada estable.
 
 ## Ejemplo

@@ -15,10 +15,6 @@
       "maxBytes": 950000
     },
     {
-      "pattern": "^vendor-three-.*\\.js$",
-      "maxBytes": 1150000
-    },
-    {
       "pattern": "^TransferManagementView-.*\\.js$",
       "maxBytes": 750000
     }

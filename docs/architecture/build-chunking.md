@@ -34,7 +34,6 @@
 
 - `vendor-firebase-core`: auth + firestore + módulos base usados en la mayor parte del runtime.
 - `vendor-firebase-aux`: storage/functions, cargados solo cuando se necesitan capacidades auxiliares.
-- `vendor-three-*`: separar `core`, `react` y `stdlib` evita arrastrar todo el stack 3D al arranque normal.
 - `vendor-pdf` y `vendor-excel-*`: la generación documental y exportaciones deben seguir siendo capacidades lazy y aisladas del shell principal.
 
 ## Validation

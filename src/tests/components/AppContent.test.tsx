@@ -130,8 +130,6 @@ describe('AppContent', () => {
     setIsTestAgentRunning: vi.fn(),
     selectedShift: 'day' as const,
     setSelectedShift: vi.fn(),
-    censusLocalViewMode: 'CARDS' as const,
-    setCensusLocalViewMode: vi.fn(),
   } as unknown as AppContentUi;
 
   const mockCensusContext = {
@@ -242,7 +240,7 @@ describe('AppContent', () => {
     expect(screen.queryByTestId('bookmark-bar')).not.toBeInTheDocument();
   });
 
-  it('passes specialist census accessProfile to DateStrip and forces table mode', () => {
+  it('passes specialist census accessProfile to DateStrip', () => {
     vi.mocked(useAuth).mockReturnValue({
       ...mockAuth,
       role: 'doctor_specialist',
@@ -253,7 +251,6 @@ describe('AppContent', () => {
         ui={{
           ...mockUI,
           currentModule: 'CENSUS',
-          censusLocalViewMode: '3D' as unknown as AppContentUi['censusLocalViewMode'],
         }}
       />
     );
@@ -263,7 +260,6 @@ describe('AppContent', () => {
         accessProfile: 'specialist',
       })
     );
-    expect(mockUI.setCensusLocalViewMode).toHaveBeenCalledWith('TABLE');
   });
 
   it('does not allow doctor_specialist to trigger archive verification checks on census entry', () => {

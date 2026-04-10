@@ -107,10 +107,6 @@ export interface UseAppStateReturn {
   // Bookmarks bar toggle
   showBookmarksBar: boolean;
   setShowBookmarksBar: (v: boolean) => void;
-
-  // Census Local View Mode (Table vs 3D)
-  censusLocalViewMode: 'TABLE' | '3D';
-  setCensusLocalViewMode: (v: 'TABLE' | '3D') => void;
 }
 
 export interface UseAppStateOptions {
@@ -144,9 +140,6 @@ export function useAppState(options: UseAppStateOptions = {}): UseAppStateReturn
 
   // Shift state
   const [selectedShift, setSelectedShift] = useState<'day' | 'night'>('day');
-
-  // Census Local View Mode
-  const [censusLocalViewMode, setCensusLocalViewMode] = useState<'TABLE' | '3D'>('TABLE');
 
   // Derived state
   const showPrintButton = useMemo(() => {
@@ -191,10 +184,6 @@ export function useAppState(options: UseAppStateOptions = {}): UseAppStateReturn
     // Bookmarks
     showBookmarksBar,
     setShowBookmarksBar,
-
-    // Census Local View Mode
-    censusLocalViewMode,
-    setCensusLocalViewMode,
   };
 }
 

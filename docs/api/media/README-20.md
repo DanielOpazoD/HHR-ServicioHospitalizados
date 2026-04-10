@@ -14,6 +14,7 @@ Helpers puros reutilizables (sin estado global ni efectos de UI).
 | `chileanHolidays.ts`   | Catálogo de feriados chilenos consumido por reglas de turno |
 | `dateUtils.ts`         | Fechas, turnos, formateo y reglas temporales                |
 | `integrityGuard.ts`    | Guardas de integridad de datos                              |
+| `deepClone.ts`         | Clonado profundo tipado para estructuras serializables      |
 | `jsonUtils.ts`         | Operaciones JSON seguras                                    |
 | `networkUtils.ts`      | Helpers de conectividad/red                                 |
 | `optimisticUpdates.ts` | Utilidades para updates optimistas                          |

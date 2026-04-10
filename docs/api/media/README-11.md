@@ -12,7 +12,7 @@ Organización principal por módulo funcional (feature-first). Cada feature agru
 | `handoff/`   | Entrega de turno (enfermería/médica), controllers y servicios         | Activo                       |
 | `transfers/` | Flujo de gestión de traslados y documentos                            | Activo                       |
 | `admin/`     | Paneles de administración, roles, auditoría                           | Activo                       |
-| `analytics/` | KPIs MINSAL/DEIS y visualización                                      | Activo                       |
+| `analytics/` | KPIs MINSAL/DEIS, visualización y ruta propia `/statistics`           | Activo                       |
 | `backup/`    | Gestión de respaldos y archivos                                       | Activo                       |
 | `cudyr/`     | Módulo clínico CUDYR                                                  | Activo                       |
 | `whatsapp/`  | Integración y configuración WhatsApp                                  | Activo                       |
@@ -49,6 +49,12 @@ feature/
 - Gestión de solicitud/confirmación/cancelación de traslados.
 - Integración con generación documental y Google Drive.
 - Documentación específica del módulo en [transfers/README.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/features/transfers/README.md).
+
+### `analytics/`
+
+- Dashboard estadístico autónomo, desacoplado del render del censo diario.
+- Se monta como módulo independiente en `/statistics`.
+- Documentación específica del módulo en [analytics/README.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/features/analytics/README.md).
 
 ### `admin/`
 
@@ -91,10 +97,10 @@ components/Modal
 - `clinical-documents/public.ts`: contratos y helpers permitidos para `application`/`shared`.
 - `reminders/index.ts` y `reminders/public.ts`: vista administrativa pública del feature.
 - `admin/index.ts`: vistas operativas del panel admin.
+- `analytics/index.ts` y `analytics/public.ts`: vista pública del dashboard MINSAL/DEIS.
 - `backup/index.ts`: explorador de respaldos.
 - `census/index.ts`: vistas y modales públicos del módulo.
 - `cudyr/index.ts` y `cudyr/public.ts`: vistas y utilidades permitidas.
-- `games/index.ts`: menú y accesos del feature lúdico.
 - `handoff/index.ts` y `handoff/public.ts`: shell público de entrega de turno y helpers permitidos.
 - `transfers/index.ts` y `transfers/public.ts`: vista pública de gestión de traslados.
 - `whatsapp/index.ts`: integración principal de WhatsApp.

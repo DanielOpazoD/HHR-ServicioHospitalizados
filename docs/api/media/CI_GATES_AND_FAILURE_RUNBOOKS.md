@@ -21,9 +21,9 @@ Salida esperada:
 
 - feedback rápido sobre tipado, lint, guardrails estructurales y riesgos unitarios críticos.
 
-### `ci:merge-gate`
+### `ci:pre-merge`
 
-Usar antes de merge o cuando una change toca código clínico, almacenamiento, auth, bundle o lazy loading.
+Usar como verificación compacta obligatoria antes de merge.
 
 Incluye:
 
@@ -31,6 +31,19 @@ Incluye:
 - `npm run lint -- --max-warnings 0`
 - `npm run check:quality`
 - `npm run test:ci:unit`
+
+Salida esperada:
+
+- contrato base de tipado, lint, guardrails y suite unitaria/integración de CI en verde antes de abrir o actualizar un PR.
+
+### `ci:merge-gate`
+
+Usar cuando una change toca código clínico, almacenamiento, auth, bundle o lazy loading.
+
+Incluye:
+
+- `npm run ci:pre-merge`
+- `npm run lint:strict:core`
 - `npm run check:critical-coverage`
 - `npm run build`
 - `npm run check:bundle-budget`
@@ -70,6 +83,7 @@ El scorecard ejecutivo consolidado vive en `reports/release-readiness-scorecard.
 La política formal de upgrades, excepciones y tipos de cambio vive en `scripts/config/sustainable-change-policy.json` y se valida con `npm run check:sustainable-change-policy`.
 La clasificación compacta de guardrails blocking vs report-only vive en `scripts/config/guardrail-governance.json` y se valida con `npm run check:guardrail-governance`.
 El reporte de release readiness ya regenera también `guardrail-governance`; no debe depender de un artefacto previo manual.
+CI regenera los snapshots report-only obligatorios con `npm run report:governance-snapshots` antes de ejecutar `check:quality`.
 `release-readiness-scorecard` sigue siendo ejecutivo y obligatorio para release, pero ya no duplica bloqueo dentro de `check:quality` si las fuentes primarias siguen verdes.
 `release-confidence-matrix` también pasa a report-only dentro del aggregate: sigue exigiéndose para trazabilidad y revisión técnica, pero no como bloqueo duplicado si el release pack y la cobertura primaria siguen verdes.
 `technical-ownership-map` también pasa a report-only dentro del aggregate: sigue siendo obligatorio para ownership y trazabilidad operativa, pero no bloquea `check:quality` porque no cubre un riesgo primario distinto de los gates y runbooks ya activos.
@@ -86,10 +100,13 @@ Salida esperada:
 1. correr `npm run report:release-confidence-matrix`
 2. revisar `reports/release-confidence-matrix.md`
 3. confirmar que cada área crítica siga mapeada a:
+   - un `ownerAreaId` válido de `technical-ownership-map`
    - una o más zonas de `critical coverage`, o evidencia equivalente de smoke/flow
+   - una o más `validationSuites` con scripts reales para el loop diario o la regresión específica
    - al menos un paso blocking del release pack
 4. si agregaste una zona nueva de coverage, un smoke nuevo o un flow budget nuevo, actualizar la matriz en la misma change
-5. no aceptar perfiles compactos sin trazabilidad explícita de qué área protegen
+5. si agregaste un subsistema crítico nuevo, enlazarlo en la misma change con ownership y suites
+6. no aceptar perfiles compactos sin trazabilidad explícita de qué área protegen
 
 ### Falla `check:technical-ownership-map`
 
@@ -102,6 +119,28 @@ Salida esperada:
    - al menos un `runbook`
 4. si agregaste un subsistema crítico nuevo o cambió el runbook operativo, actualizar el mapa en la misma change
 5. no aceptar deuda crítica sin owner operativo explícito
+
+### Falla `check:compatibility-import-governance`
+
+1. correr `npm run report:compatibility-import-governance`
+2. revisar `reports/compatibility-import-governance.md`
+3. confirmar si el importer detectado es:
+   - un consumidor legacy explícitamente tolerado;
+   - una dependencia nueva no autorizada hacia un bridge transicional
+4. si la dependencia nueva es legítima por migración activa, agregarla al inventario en `scripts/config/compatibility-governance.json` en la misma change
+5. si no es legítima, mover el import al entrypoint canónico dueño y no al facade/bridge legacy
+6. no aceptar nuevas dependencias productivas a compatibilidad transitoria sin excepción documentada
+
+### Falla `check:serverless-sensitive-coverage`
+
+1. correr `npm run report:serverless-sensitive-coverage`
+2. revisar `reports/serverless-sensitive-coverage.md`
+3. confirmar para cada Function sensible que sigan presentes:
+   - archivo de Function
+   - al menos un test de frontera dueño
+   - documentación en `docs/SERVERLESS_SENSITIVE_CONTRACTS.md`
+4. si agregaste una Function sensible nueva, registrarla en `scripts/config/serverless-sensitive-coverage.json` en la misma change
+5. no aceptar endpoints sensibles sin test focalizado y contrato operativo documentado
 
 ### Falla `check:release-readiness-scorecard`
 
@@ -131,7 +170,7 @@ Salida esperada:
 1. correr `npm run report:guardrail-governance`
 2. revisar `reports/guardrail-governance.md`
 3. confirmar que:
-   - `ci:inner-loop`, `ci:merge-gate` y `ci:release-gate` sigan declarando exactamente los scripts protegidos
+   - `ci:inner-loop`, `ci:pre-merge`, `ci:merge-gate` y `ci:release-gate` sigan declarando exactamente los scripts protegidos
    - `test:release-confidence` siga cubriendo el pack blocking compacto
    - los reportes report-only sigan apuntando a artefactos reales
 4. si agregaste un guardrail nuevo, decidir en la misma change si nace como blocking o report-only
@@ -212,5 +251,6 @@ Salida esperada:
 ## Regla práctica
 
 - cambio local chico: `ci:inner-loop`
+- cambio funcional antes de abrir o actualizar PR: `ci:pre-merge`
 - cambio funcional o refactor con impacto real: `ci:merge-gate`
 - cambio de release, Firebase o UX crítica: `ci:release-gate`

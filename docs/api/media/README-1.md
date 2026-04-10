@@ -18,6 +18,8 @@ Playwright cubre auth, startup, módulos críticos y regresiones de UX prioritar
 
 ## 2. Comandos vigentes
 
+Superficie pública mínima recomendada para trabajo diario: [docs/DEVELOPER_COMMANDS.md](../DEVELOPER_COMMANDS.md)
+
 | Comando                                   | Descripción                                                                                                               |
 | :---------------------------------------- | :------------------------------------------------------------------------------------------------------------------------ |
 | `npm run test:ci:unit`                    | Suite unitaria/integración de CI sin reglas ni emulador                                                                   |
@@ -34,7 +36,8 @@ Playwright cubre auth, startup, módulos críticos y regresiones de UX prioritar
 | `npm run check:release-confidence-pack`   | Verifica perfiles, tiers, solapes permitidos y scripts válidos del release confidence pack                                |
 | `npm run check:release-confidence-matrix` | Verifica que cada área crítica tenga trazabilidad explícita hacia coverage, smoke, budgets y pasos blocking de release    |
 | `npm run ci:inner-loop`                   | Ruta rápida para desarrollo diario                                                                                        |
-| `npm run ci:merge-gate`                   | Ruta blocking previa a merge                                                                                              |
+| `npm run ci:pre-merge`                    | Verificación compacta obligatoria antes de merge                                                                          |
+| `npm run ci:merge-gate`                   | Ruta blocking ampliada previa a merge                                                                                     |
 | `npm run ci:release-gate`                 | Ruta completa con Firestore + E2E                                                                                         |
 
 ## 3. Cobertura crítica
@@ -79,8 +82,11 @@ El budget diferencia entre:
 ## 5. Criterio práctico
 
 1. Si la change es local o todavía exploratoria, correr `npm run ci:inner-loop`.
-2. Si toca código clínico, runtime, bundle o cobertura, correr `npm run ci:merge-gate`.
-3. Si toca Firestore, reglas, emulador o UX crítica, cerrar con `npm run ci:release-gate`.
+2. Antes de merge, correr al menos `npm run ci:pre-merge`.
+3. Si toca código clínico, runtime, bundle o cobertura, cerrar con `npm run ci:merge-gate`.
+4. Si toca Firestore, reglas, emulador o UX crítica, cerrar con `npm run ci:release-gate`.
+
+Los demás scripts de este documento deben tratarse como validaciones especializadas, no como superficie pública mínima.
 
 ## 5.1 Smoke Pack Crítico
 
@@ -149,6 +155,8 @@ Gobierna la trazabilidad entre:
 - escenarios del `critical smoke pack`
 - `flow budgets`
 - pasos blocking de `test:release-confidence`
+- `ownerAreaId` hacia `technical-ownership-map`
+- `validationSuites` que sirven de entrada rápida o regresión focalizada por subsistema
 
 Artefactos:
 

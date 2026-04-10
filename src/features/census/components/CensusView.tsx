@@ -24,7 +24,6 @@ interface CensusViewProps {
   onOpenCensusDate?: (date: string) => void;
   readOnly?: boolean;
   allowAdminCopyOverride?: boolean;
-  localViewMode?: 'TABLE' | '3D';
   accessProfile?: CensusAccessProfile;
 }
 
@@ -37,7 +36,6 @@ const CensusViewContent: React.FC<CensusViewProps> = ({
   onOpenCensusDate: _onOpenCensusDate,
   readOnly = false,
   allowAdminCopyOverride = false,
-  localViewMode = 'TABLE',
   accessProfile = 'default',
 }) => {
   const {
@@ -54,7 +52,6 @@ const CensusViewContent: React.FC<CensusViewProps> = ({
     onCloseBedManagerModal,
     readOnly,
     allowAdminCopyOverride,
-    localViewMode,
     accessProfile,
   });
 

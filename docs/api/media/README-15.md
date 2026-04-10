@@ -34,8 +34,16 @@ Capa de datos e integración: repositorios, persistencia, exportadores, integrac
 ## Patrones clave
 
 - **Repository Pattern** con entrypoints concretos (`dailyRecordRepositoryReadService`, `dailyRecordRepositoryWriteService`, `CatalogRepository`, etc.).
+- **Repository provider desacoplado**:
+  - `DefaultRepositoryProvider` compone el wiring por defecto del runtime.
+  - `createRepositoryContainer` y `createTestRepositoryContainer` quedan para composición explícita e inyección en tests.
 - **Service split por responsabilidad** (`read/write/sync/init` en repositorio diario).
 - **Storage abstraction** con estrategia offline-first y fallback.
+- **Ownership explícito del acceso Firestore concreto**:
+  - `storage/firestore/firestoreServiceRuntime.ts` define el runtime canónico.
+  - `storage/firestore/firestoreDatabaseProvider.ts` expone el provider Firestore-backed soportado.
+  - `services/infrastructure/db` conserva implementación y tipos del provider, pero no es el
+    entrypoint recomendado para nuevos consumers del singleton concreto.
 - **Domain observability**:
   - `observability/domainObservability.ts` crea adapters pequenos por dominio
   - `operationalTelemetryService.ts` queda como sink/base compartida
@@ -70,7 +78,7 @@ await saveDetailed(record);
 
 - No importar componentes ni hooks de UI desde `services`.
 - Mantener contratos de entrada/salida tipados (preferir `types`/`schemas`).
-- `src/services/repositories/index.ts` fue retirado; código nuevo debe preferir imports directos al módulo dueño cuando no exista un entrypoint público explícito.
+- `src/services/repositories/index.ts` fue retirado; código nuevo debe entrar por módulos dueños o ports explícitos.
 - En integraciones externas complejas, usar una fachada pública pequeña y mover auth, payload builders y folder/file helpers a módulos internos específicos.
 - Consumir auth desde entrypoints canónicos (`authFlow.ts`, `authSession.ts`, `authFallback.ts`, `authPolicy.ts`) en vez de reintroducir una fachada única.
 - Mantener `authPolicy.ts` estable y preferir módulos dueños específicos cuando el flujo requiera login, sesión o fallback.

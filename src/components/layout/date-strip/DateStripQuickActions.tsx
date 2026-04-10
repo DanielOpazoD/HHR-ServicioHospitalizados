@@ -5,18 +5,12 @@ import { RadiologyViewerModal } from '@/components/modals/RadiologyViewerModal';
 
 interface DateStripQuickActionsProps {
   onOpenBedManager?: () => void;
-  localViewMode: 'TABLE' | '3D';
-  setLocalViewMode: (v: 'TABLE' | '3D') => void;
-  hide3DToggle?: boolean;
   medicalIndicationsPatients?: MedicalIndicationsPatientOption[];
   renderFeatureQuickActions?: (patients: MedicalIndicationsPatientOption[]) => React.ReactNode;
 }
 
 export const DateStripQuickActions: React.FC<DateStripQuickActionsProps> = ({
   onOpenBedManager,
-  localViewMode: _localViewMode,
-  setLocalViewMode: _setLocalViewMode,
-  hide3DToggle: _hide3DToggle = false,
   medicalIndicationsPatients = [],
   renderFeatureQuickActions,
 }) => {

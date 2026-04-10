@@ -9,9 +9,10 @@ Este documento es la puerta de entrada para navegar el código rápidamente. El 
 ## Orden recomendado de lectura
 
 1. [`/README.md`](../README.md)
-2. [`/docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md)
-3. Este archivo (`src/README.md`)
-4. README del directorio que vas a modificar (tabla de abajo)
+2. [`/docs/CODEBASE_CANON.md`](../docs/CODEBASE_CANON.md)
+3. [`/docs/architecture.md`](../docs/architecture.md)
+4. Este archivo (`src/README.md`)
+5. README del directorio que vas a modificar (tabla de abajo)
 
 ## Árbol principal de `src/`
 
@@ -46,14 +47,14 @@ src/
 
 ## Archivo raíz -> propósito
 
-| Archivo                                  | Propósito                                                                              |
-| ---------------------------------------- | -------------------------------------------------------------------------------------- |
-| `src/index.tsx`                          | Bootstrap React, `QueryClientProvider`, `GlobalErrorBoundary`, gate de `firebaseReady` |
-| `src/App.tsx`                            | Orquestación principal de auth, date nav, record sync, providers y routing             |
-| `src/index.css`                          | Estilos globales y variables CSS base                                                  |
-| `src/firebaseConfig.ts`                  | Inicialización/configuración de Firebase                                               |
-| `src/service-worker.ts`                  | Lógica PWA/offline                                                                     |
-| `src/env.d.ts` / `src/vitest.shims.d.ts` | Tipados de entorno/soporte testing                                                     |
+| Archivo                                  | Propósito                                                                           |
+| ---------------------------------------- | ----------------------------------------------------------------------------------- |
+| `src/index.tsx`                          | Bootstrap React, `StrictMode` y gate de `firebaseReady`                             |
+| `src/App.tsx`                            | Orquestación principal de auth, date nav, record sync, providers globales y routing |
+| `src/index.css`                          | Estilos globales y variables CSS base                                               |
+| `src/firebaseConfig.ts`                  | Inicialización/configuración de Firebase                                            |
+| `src/service-worker.ts`                  | Lógica PWA/offline                                                                  |
+| `src/env.d.ts` / `src/vitest.shims.d.ts` | Tipados de entorno/soporte testing                                                  |
 
 ## Mapa por directorio (con documentación asociada)
 
@@ -70,7 +71,7 @@ src/
 | `src/domain`         | Dominio transversal (independiente de React)     | [src/domain/README.md](domain/README.md)                 |
 | `src/features`       | Módulos por feature (census/admin/transfers/...) | [src/features/README.md](features/README.md)             |
 | `src/hooks`          | Hooks de aplicación y controllers de hooks       | [src/hooks/README.md](hooks/README.md)                   |
-| `src/infrastructure` | Capa infra (en evolución)                        | [src/infrastructure/README.md](infrastructure/README.md) |
+| `src/infrastructure` | Placeholder retirado; no admite código nuevo     | [src/infrastructure/README.md](infrastructure/README.md) |
 | `src/schemas`        | Validación y contratos de entrada                | [src/schemas/README.md](schemas/README.md)               |
 | `src/services`       | Repositorios, storage, integraciones externas    | [src/services/README.md](services/README.md)             |
 | `src/shared`         | Contratos/runtime adapter reutilizable           | [src/shared/README.md](shared/README.md)                 |
@@ -121,7 +122,8 @@ find src/features -maxdepth 3 -type d | sort
 ## Reglas de mantenimiento
 
 - Si agregas un archivo en un directorio principal, actualiza su `README.md`.
-- Si mueves responsabilidades entre capas, actualiza también `docs/ARCHITECTURE.md`.
+- Si mueves responsabilidades entre capas, actualiza también `docs/architecture.md`.
+- Si cambias ownership de capas, actualiza `docs/CODEBASE_CANON.md`.
 - Si cambias contratos (`types`, `schemas`, `domain/contracts`), documenta el impacto en el README del módulo.
 - Los contratos de controller reutilizados entre features deben vivir en `src/shared/contracts/`, no dentro de una feature.
 - Las imports desde `src/App.tsx`, `src/views/*` y cualquier consumidor externo a una feature deben pasar por el `index.ts` o `public.ts` del módulo correspondiente.

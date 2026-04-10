@@ -34,11 +34,16 @@ No usar como referencia primaria:
 3. validar que las Functions publicadas correspondan al mismo modelo:
    - `checkUserRole` debe consultar `config/roles`;
    - no debe depender de listas legacy para login general.
-4. revisar consola/red:
+4. si el correo viene de una migración antigua:
+   - abrir Gestión de Roles;
+   - usar `Actualizar Lista` para forzar recanonización de aliases legacy;
+   - confirmar si aparece un aviso de normalización/sync.
+5. revisar consola/red:
    - error en callable `checkUserRole`;
    - CSP bloqueando Cloud Functions;
    - build viejo en Netlify.
-5. si en localhost funciona y en Netlify no:
+   - `/.netlify/functions/firebase-config` respondiendo `500` o con campos faltantes (`apiKey`, `projectId`, `appId`).
+6. si en localhost funciona y en Netlify no:
    - redeploy frontend;
    - redeploy functions si cambió backend auth;
    - recarga dura una vez.
@@ -57,8 +62,13 @@ Chequeo operativo adicional:
 1. confirmar que el correo ya no exista en `config/roles`;
 2. confirmar que el callable publicado ya resuelva `null` o `unauthorized`;
 3. confirmar que el frontend publicado ya haga `signOut` en usuarios sin rol;
-4. cerrar sesión y volver a entrar;
-5. si persiste, revisar si la sesión actual está rehidratando desde un build viejo.
+4. abrir Gestión de Roles y usar `Actualizar Lista` para forzar recanonización/sync si hubo aliases legacy recientes;
+5. cerrar sesión y volver a entrar;
+6. si persiste, revisar si la sesión actual está rehidratando desde un build viejo.
+7. confirmar que el logout manual limpió también estado sensible local:
+   - ownership de la cola de sync;
+   - cache clínica de sesión;
+   - marcas de sesión reciente.
 
 ## Caso 3: el usuario entra a Google pero vuelve al login con “Acceso no autorizado”
 
@@ -77,7 +87,27 @@ Chequeo operativo adicional:
 1. comparar build/local vs deploy actual;
 2. revisar `netlify.toml` si hay síntomas de CSP o popup Google;
 3. verificar que Netlify esté sirviendo un frontend con el flujo nuevo;
-4. verificar que Firebase Functions del proyecto activo estén desplegadas.
+4. verificar que `/.netlify/functions/firebase-config` responda `200` con `apiKey`, `projectId` y `appId`;
+5. si la consola muestra `SW-Kill` o hay registro histórico de `/sw.js`, confirmar que el cliente recargó una vez para retirar el Service Worker legacy.
+6. si incógnito funciona pero una sesión vieja tarda en autenticarse, revisar telemetría y consola para confirmar que el bootstrap alcanzó:
+   - `redirect_resolution`
+   - `current_session_resolution`
+     antes de depender del observer continuo de auth.
+7. revisar si `VersionContext` marcó:
+   - `new_build_available`
+   - `runtime_contract_mismatch`
+   - `schema_ahead_of_client`
+     Si hay mismatch real, no insistir con la sesión vieja: la acción correcta es actualización/recarga segura.
+
+## Caso 5: tras `F5` no vuelve a la misma vista funcional
+
+1. validar que la URL conserve al menos:
+   - `module`
+   - `date`
+2. si falta `module`, revisar shell/navigation state.
+3. si falta `date`, revisar `useDateNavigation`.
+4. si la sesión ya no es válida, el comportamiento esperado es volver a login, no restaurar shell.
+5. si la app quedó bloqueada por mismatch de runtime/schema, tratarlo como incidente de versión, no de navegación.
 
 ## Señales esperadas del sistema sano
 
@@ -91,6 +121,22 @@ Chequeo operativo adicional:
   - vuelve al login con error visible.
 - usuario removido:
   - no rehidrata shell al recargar.
+
+## Gate para retirar el alias legacy del viewer
+
+Antes de eliminar la compatibilidad del alias legacy en functions o rules:
+
+1. ejecutar `cd functions && npm run audit:legacy-viewer-alias`
+   - requiere credenciales de Firebase Admin y `GOOGLE_CLOUD_PROJECT` resoluble
+2. revisar `reports/auth-legacy-viewer-alias-audit.md`
+3. confirmar que:
+   - `configRolesLegacyCount = 0`
+   - `authClaimsLegacyCount = 0`
+4. solo entonces recortar:
+   - `functions/lib/auth/authHelpersFactory.js`
+   - `netlify/functions/lib/firebase-auth.ts`
+   - `firestore.rules`
+   - `storage.rules`
 
 ## Archivos clave
 

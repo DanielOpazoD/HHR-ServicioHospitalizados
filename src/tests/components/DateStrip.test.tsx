@@ -32,8 +32,6 @@ describe('DateStrip', () => {
     onToggleBookmarks: vi.fn(),
     showBookmarks: true,
     role: 'admin',
-    localViewMode: 'TABLE' as const,
-    setLocalViewMode: vi.fn(),
     onBackupPDF: vi.fn(),
     navigateDays: vi.fn(),
   };
@@ -134,11 +132,5 @@ describe('DateStrip', () => {
     // Day 5 should be visible even if selectedDay is 1 (endDay is 13)
     fireEvent.click(screen.getByText('5'));
     expect(defaultProps.setSelectedDay).toHaveBeenCalledWith(5);
-  });
-
-  it('does not render a 3D toggle in census quick actions anymore', () => {
-    render(<DateStrip {...defaultProps} localViewMode="TABLE" />);
-    expect(screen.queryByTitle('Ver Mapa 3D')).not.toBeInTheDocument();
-    expect(screen.queryByTitle('Volver a Tabla')).not.toBeInTheDocument();
   });
 });

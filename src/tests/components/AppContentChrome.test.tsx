@@ -75,8 +75,6 @@ describe('AppContentChrome', () => {
     setIsTestAgentRunning: vi.fn(),
     selectedShift: 'day',
     setSelectedShift: vi.fn(),
-    censusLocalViewMode: 'TABLE',
-    setCensusLocalViewMode: vi.fn(),
   } as const;
 
   const runtime = {

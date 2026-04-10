@@ -41,24 +41,6 @@ export const chunkForModule = (moduleId: string): string | undefined => {
       return 'vendor-canvas';
     }
 
-    if (has('/node_modules/three/examples/')) {
-      return 'vendor-three-stdlib';
-    }
-    if (has('/node_modules/three/')) {
-      return 'vendor-three-core';
-    }
-    if (has('/node_modules/@react-three/')) {
-      return 'vendor-three-react';
-    }
-    if (
-      has('/node_modules/three-stdlib/') ||
-      has('/node_modules/meshline/') ||
-      has('/node_modules/troika-') ||
-      has('/node_modules/camera-controls/')
-    ) {
-      return 'vendor-three-stdlib';
-    }
-
     if (has('/node_modules/exceljs/lib/xlsx/')) {
       return 'vendor-excel-xlsx';
     }

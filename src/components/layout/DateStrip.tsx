@@ -65,8 +65,6 @@ export interface DateStripProps
     EmailConfigProps,
     SyncConfigProps,
     BookmarkConfigProps {
-  localViewMode: 'TABLE' | '3D';
-  setLocalViewMode: (v: 'TABLE' | '3D') => void;
   isBackingUp: boolean;
   currentModule: string;
   accessProfile?: CensusAccessProfile;
@@ -101,8 +99,6 @@ export const DateStrip: React.FC<DateStripProps> = ({
   onToggleBookmarks,
   showBookmarks,
   role,
-  localViewMode,
-  setLocalViewMode,
   isBackingUp,
   currentModule,
   accessProfile = 'default',
@@ -220,9 +216,6 @@ export const DateStrip: React.FC<DateStripProps> = ({
 
           <DateStripQuickActions
             onOpenBedManager={specialistCensusAccess ? undefined : onOpenBedManager}
-            localViewMode={localViewMode}
-            setLocalViewMode={setLocalViewMode}
-            hide3DToggle={specialistCensusAccess}
             renderFeatureQuickActions={renderFeatureQuickActions}
             medicalIndicationsPatients={
               currentModule === 'CENSUS' ? medicalIndicationsPatients : []

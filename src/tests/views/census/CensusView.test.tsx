@@ -54,7 +54,6 @@ vi.mock('@/features/census/components/CensusRegisterContent', () => ({
     readOnly,
   }: {
     readOnly: boolean;
-    localViewMode: 'TABLE' | '3D';
     visibleBeds: Array<{ id: string }>;
   }) => (
     <div data-testid="census-register-content">
@@ -213,19 +212,5 @@ describe('CensusView', () => {
     render(<CensusView {...defaultProps} readOnly={true} />);
 
     expect(screen.queryByTestId('census-modals')).not.toBeInTheDocument();
-  });
-
-  it('keeps rendering the census table even if localViewMode is 3D', async () => {
-    vi.mocked(useCensusViewModel).mockReturnValue(
-      buildViewModel({
-        beds: {},
-        visibleBeds: [buildVisibleBed('E1')],
-      })
-    );
-
-    render(<CensusView {...defaultProps} localViewMode="3D" />);
-
-    expect(await screen.findByTestId('census-table')).toBeInTheDocument();
-    expect(screen.queryByTestId('hospital-floor-map')).not.toBeInTheDocument();
   });
 });

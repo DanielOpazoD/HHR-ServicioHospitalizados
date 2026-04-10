@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Evitar que la deuda estructural vuelva a crecer después de las fases de estabilización de `clinical-documents`, `census` y `transfers`.
+Evitar que la deuda estructural vuelva a crecer después de las fases de estabilización de `clinical-documents`, `census`, `transfers` y `backup/export`.
 
 ## Capas estándar
 
@@ -24,6 +24,9 @@ Evitar que la deuda estructural vuelva a crecer después de las fases de estabil
 5. La regla por defecto es extraer controllers/helpers puros antes de mover JSX o cambiar contratos públicos.
 6. `npm run lint` es tolerancia cero; no se aceptan warnings nuevos en `src/`.
 7. Los providers de infraestructura obligatorios deben fallar rápido si falta wiring.
+8. Los servicios críticos que dependan de Firebase Functions/Auth/Storage deben preferir `create...Service(...)` o runtime inyectable y conservar singleton por defecto solo por compatibilidad.
+9. Los refactors de backup/exportación deben dejar tests de runtime o fallback; no basta con tests puramente superficiales del consumer.
+10. Si `backup/export` pasa a ser subsistema crítico de release, debe quedar también reflejado en `critical-coverage` y en `technical-ownership-map`, no solo en budgets de flujo.
 
 ## Cómo agregar un guardrail nuevo
 
@@ -38,9 +41,11 @@ Evitar que la deuda estructural vuelva a crecer después de las fases de estabil
 - La fuente de verdad de tiers blocking, release confidence y report-only guards vive en `scripts/config/guardrail-governance.json`.
 - Se valida con `npm run check:guardrail-governance` y se reporta con `npm run report:guardrail-governance`.
 - La composición exacta de `check:quality` también sale de ese mismo archivo; `check-quality-aggregate.mjs` ya no mantiene una lista paralela.
+- CI regenera los artefactos obligatorios antes de correr `check:quality` usando `npm run report:governance-snapshots`.
 - `check:quality` no debe bloquear por scorecards ejecutivos derivados si las fuentes primarias del riesgo ya están protegidas; `release-readiness-scorecard` queda como artefacto report-only.
 - `release-confidence-matrix` también queda como guardrail report-only: sigue siendo obligatorio para trazabilidad, pero no duplica bloqueo si el pack de release, la cobertura crítica y los budgets ya siguen verdes.
 - `npm run ci:inner-loop`
+- `npm run ci:pre-merge`
 - `npm run ci:merge-gate`
 - `npm run ci:release-gate`
 - `npm run ci:quality-core`
@@ -51,6 +56,7 @@ Evitar que la deuda estructural vuelva a crecer después de las fases de estabil
 - `npm run report:operational-health`
 - `npm run report:system-confidence`
 - `npm run report:release-readiness-scorecard`
+- `npm run report:governance-snapshots`
 - `npm run report:guardrail-governance`
 - `npm run report:runtime-contracts`
 - `npm run report:critical-coverage`
@@ -60,8 +66,12 @@ Evitar que la deuda estructural vuelva a crecer después de las fases de estabil
 ## Operación diaria
 
 - El mapa corto de ejecución y fallback vive en [docs/CI_GATES_AND_FAILURE_RUNBOOKS.md](./CI_GATES_AND_FAILURE_RUNBOOKS.md).
+- La superficie pública mínima de comandos vive en [docs/DEVELOPER_COMMANDS.md](./DEVELOPER_COMMANDS.md).
+- La cadencia mensual de convergencia vive en [docs/FOUNDATION_MAINTENANCE_CADENCE.md](./FOUNDATION_MAINTENANCE_CADENCE.md).
+- El estado persistente del roadmap estructural vive en [docs/FOUNDATION_TRACKER.md](./FOUNDATION_TRACKER.md).
 - `ci:inner-loop` es la ruta local rápida.
-- `ci:merge-gate` es la ruta blocking previa a merge.
+- `ci:pre-merge` es la verificación compacta obligatoria antes de merge.
+- `ci:merge-gate` es la ruta blocking ampliada previa a merge.
 - `ci:release-gate` agrega emuladores, reglas y E2E críticos.
 - `test:release-confidence` es el pack blocking compacto; no debe crecer sin justificar el riesgo nuevo en `guardrail-governance.json`.
 - Los budgets por flujo se leen desde `reports/e2e/flow-performance-budget.json` y su resumen en `reports/e2e/flow-performance-budget-summary.json` / `.md`.
@@ -70,10 +80,23 @@ Evitar que la deuda estructural vuelva a crecer después de las fases de estabil
 - `technical-ownership-map` se mantiene como gobernanza report-only dentro del aggregate: sigue siendo obligatorio para trazabilidad y release readiness, pero ya no bloquea `check:quality` porque los riesgos primarios ya quedan cubiertos por gates, runbooks y release confidence.
 - La política de cambio sostenible vive en `scripts/config/sustainable-change-policy.json` y se valida con `npm run check:sustainable-change-policy`.
 - `sustainable-change-policy` también queda como gobernanza report-only dentro del aggregate: sigue siendo obligatoria para upgrades, excepciones y DoD, pero no bloquea `check:quality` si los gates primarios y las fuentes técnicas siguen verdes.
+- La política para decidir si una mejora técnica vale la pena antes de ejecutarla vive en [docs/ENGINEERING_CHANGE_DECISION_POLICY.md](./ENGINEERING_CHANGE_DECISION_POLICY.md).
 - La definición de terminado vive en [docs/ENGINEERING_DEFINITION_OF_DONE.md](./ENGINEERING_DEFINITION_OF_DONE.md).
 - La deuda priorizada vive en [docs/TECHNICAL_DEBT_REGISTER.md](./TECHNICAL_DEBT_REGISTER.md).
 - Los fallos conocidos no resueltos deben vivir en `scripts/config/test-failure-catalog.json` con owner, clasificación y SLA.
 - Los riesgos flaky aceptados temporalmente deben vivir en `scripts/config/flaky-quarantine.json` y reflejarse también en el catálogo de fallos.
+
+## Señales de convergencia
+
+Además de tamaño, lint y coverage, la base debe vigilar:
+
+- imports profundos fuera de la API pública de `census`, `handoff`, `transfers` y `clinical-documents`;
+- imports nuevos hacia shims de compatibilidad;
+- drift entre owners documentados y owners reales en controllers compartidos;
+- megatests de más de `500` líneas;
+- fallos de `typecheck` causados por contratos o shapes ya retirados.
+
+La referencia reportable de estas señales vive en `reports/quality-metrics.md` y el backlog operativo en `docs/FOUNDATION_TRACKER.md`.
 
 ## Cuándo abrir una excepción
 

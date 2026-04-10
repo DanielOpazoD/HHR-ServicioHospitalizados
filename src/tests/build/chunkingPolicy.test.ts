@@ -42,9 +42,6 @@ describe('chunkingPolicy', () => {
     expect(chunkForModule('/repo/node_modules/firebase/storage/dist/index.mjs')).toBe(
       'vendor-firebase-aux'
     );
-    expect(chunkForModule('/repo/node_modules/three/build/three.module.js')).toBe(
-      'vendor-three-core'
-    );
     expect(chunkForModule('/repo/node_modules/jspdf/dist/jspdf.es.min.js')).toBe('vendor-pdf');
   });
 });

@@ -15,7 +15,6 @@ interface UseCensusViewRouteModelParams {
   onCloseBedManagerModal: () => void;
   readOnly: boolean;
   allowAdminCopyOverride: boolean;
-  localViewMode: 'TABLE' | '3D';
   accessProfile: CensusAccessProfile;
 }
 
@@ -27,7 +26,6 @@ export const useCensusViewRouteModel = ({
   onCloseBedManagerModal,
   readOnly,
   allowAdminCopyOverride,
-  localViewMode,
   accessProfile,
 }: UseCensusViewRouteModelParams) => {
   const viewModel = useCensusViewModel(currentDateString);
@@ -77,7 +75,6 @@ export const useCensusViewRouteModel = ({
     return buildRegisterContentProps({
       currentDateString,
       readOnly,
-      localViewMode,
       beds: viewModel.beds,
       visibleBeds: viewModel.visibleBeds,
       marginStyle: viewModel.marginStyle,
@@ -90,7 +87,6 @@ export const useCensusViewRouteModel = ({
     accessProfile,
     branch,
     currentDateString,
-    localViewMode,
     onCloseBedManagerModal,
     readOnly,
     showBedManagerModal,

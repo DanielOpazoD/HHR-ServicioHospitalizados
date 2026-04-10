@@ -6,7 +6,6 @@ import { CensusTable } from './CensusTable';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 
 interface CensusRegisterMainContentProps {
-  localViewMode: 'TABLE' | '3D';
   currentDateString: string;
   readOnly: boolean;
   visibleBeds: BedDefinition[];
@@ -15,7 +14,6 @@ interface CensusRegisterMainContentProps {
 }
 
 export const CensusRegisterMainContent: React.FC<CensusRegisterMainContentProps> = ({
-  localViewMode: _localViewMode,
   currentDateString,
   readOnly,
   visibleBeds: _visibleBeds,
