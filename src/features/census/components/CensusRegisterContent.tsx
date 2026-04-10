@@ -7,6 +7,7 @@ import { CensusPrintHeader } from './CensusPrintHeader';
 import { CensusStaffHeader } from './CensusStaffHeader';
 import { CensusRegisterMainContent } from './CensusRegisterMainContent';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
+import { isSpecialistCensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 
 const LazyCensusRegisterSections = lazy(() =>
   import('./CensusRegisterSections').then(module => ({
@@ -36,29 +37,35 @@ export const CensusRegisterContent: React.FC<CensusRegisterContentProps> = ({
   showBedManagerModal,
   onCloseBedManagerModal,
   accessProfile = 'default',
-}) => (
-  <CensusActionsProvider>
-    <CensusPrintHeader currentDateString={currentDateString} />
+}) => {
+  const shouldRenderSections = !isSpecialistCensusAccessProfile(accessProfile);
 
-    <div className="space-y-6" style={marginStyle}>
-      <CensusStaffHeader readOnly={readOnly} stats={stats} accessProfile={accessProfile} />
+  return (
+    <CensusActionsProvider>
+      <CensusPrintHeader currentDateString={currentDateString} />
 
-      <CensusRegisterMainContent
-        currentDateString={currentDateString}
-        readOnly={readOnly}
-        visibleBeds={visibleBeds}
-        beds={beds}
-        accessProfile={accessProfile}
-      />
+      <div className="space-y-6" style={marginStyle}>
+        <CensusStaffHeader readOnly={readOnly} stats={stats} accessProfile={accessProfile} />
 
-      <Suspense fallback={null}>
-        <LazyCensusRegisterSections
+        <CensusRegisterMainContent
+          currentDateString={currentDateString}
           readOnly={readOnly}
-          showBedManagerModal={showBedManagerModal}
-          onCloseBedManagerModal={onCloseBedManagerModal}
+          visibleBeds={visibleBeds}
+          beds={beds}
           accessProfile={accessProfile}
         />
-      </Suspense>
-    </div>
-  </CensusActionsProvider>
-);
+
+        {shouldRenderSections ? (
+          <Suspense fallback={null}>
+            <LazyCensusRegisterSections
+              readOnly={readOnly}
+              showBedManagerModal={showBedManagerModal}
+              onCloseBedManagerModal={onCloseBedManagerModal}
+              accessProfile={accessProfile}
+            />
+          </Suspense>
+        ) : null}
+      </div>
+    </CensusActionsProvider>
+  );
+};

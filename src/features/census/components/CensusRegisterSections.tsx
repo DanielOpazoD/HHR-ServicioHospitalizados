@@ -1,11 +1,16 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { SectionErrorBoundary } from '@/components/shared/SectionErrorBoundary';
 import { CMASection } from '@/features/census/components/CMASection';
-import { CensusModals } from '@/features/census/components/CensusModals';
 import { DischargesSection } from '@/features/census/components/DischargesSection';
 import { TransfersSection } from '@/features/census/components/TransfersSection';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 import { isSpecialistCensusAccessProfile } from '@/features/census/types/censusAccessProfile';
+
+const LazyCensusModals = lazy(() =>
+  import('@/features/census/components/CensusModals').then(module => ({
+    default: module.CensusModals,
+  }))
+);
 
 interface CensusRegisterSectionsProps {
   readOnly: boolean;
@@ -40,10 +45,12 @@ export const CensusRegisterSections: React.FC<CensusRegisterSectionsProps> = ({
     )}
 
     {!readOnly && !isSpecialistCensusAccessProfile(accessProfile) && (
-      <CensusModals
-        showBedManagerModal={showBedManagerModal}
-        onCloseBedManagerModal={onCloseBedManagerModal}
-      />
+      <Suspense fallback={null}>
+        <LazyCensusModals
+          showBedManagerModal={showBedManagerModal}
+          onCloseBedManagerModal={onCloseBedManagerModal}
+        />
+      </Suspense>
     )}
   </>
 );
