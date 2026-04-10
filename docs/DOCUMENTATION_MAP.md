@@ -50,7 +50,7 @@ Artefactos producidos por tooling o reportes automáticos. Son útiles para cons
 - Si un archivo se regenera desde scripts o CI, debe tratarse como generado aunque esté versionado.
 - No duplicar decisiones arquitectónicas entre documentos generados y canónicos.
 - Si un documento canónico cambia una regla, el tracker y el README correspondiente deben quedar alineados en la misma iteración.
-- Las rutas internas de documentación deben ser relativas al repo. No agregar links absolutos locales como `/Users/...` ni URLs `file://`.
+- Las rutas internas de documentación deben ser relativas al repo. No agregar rutas absolutas locales ni URLs de archivo local.
 - Las compatibilidades legacy de roles/auth/rules se documentan como protección de migración hasta que la app sea oficial; no deben crecer con consumidores nuevos.
 
 ## Decisión sobre `docs/api`

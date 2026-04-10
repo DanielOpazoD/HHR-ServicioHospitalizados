@@ -55,6 +55,8 @@ const trackedFiles = execSync('git ls-files -z', { encoding: 'utf8' })
   .split('\0')
   .filter(Boolean);
 const SOURCE_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx']);
+const EDITABLE_MARKDOWN_EXTENSIONS = new Set(['.md', '.mdx']);
+const LOCAL_DOC_LINK_PATTERNS = [/\/Users\//, /file:\/\//];
 
 const forbiddenPatterns = [
   {
@@ -148,6 +150,13 @@ const getSourceBasenameSet = dirPath => {
 
 const isSourceFile = file => SOURCE_EXTENSIONS.has(path.extname(file));
 
+const isEditableMarkdownFile = file => {
+  if (!EDITABLE_MARKDOWN_EXTENSIONS.has(path.extname(file))) return false;
+  if (file.startsWith('docs/api/')) return false;
+  if (file.startsWith('reports/')) return false;
+  return true;
+};
+
 for (const file of trackedFiles) {
   const absolutePath = path.join(root, file);
   if (!fs.existsSync(absolutePath)) continue;
@@ -155,6 +164,21 @@ for (const file of trackedFiles) {
   for (const rule of forbiddenPatterns) {
     if (rule.match(file)) {
       failures.push({ file, rule });
+    }
+  }
+
+  if (isEditableMarkdownFile(file)) {
+    const markdown = fs.readFileSync(absolutePath, 'utf8');
+    const hasLocalDocPath = LOCAL_DOC_LINK_PATTERNS.some(pattern => pattern.test(markdown));
+    if (hasLocalDocPath) {
+      failures.push({
+        file,
+        rule: {
+          id: 'local-doc-link',
+          description:
+            'Editable documentation must use repo-relative links and must not contain local filesystem paths or local file URLs.',
+        },
+      });
     }
   }
 

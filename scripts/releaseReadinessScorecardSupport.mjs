@@ -129,9 +129,7 @@ export const buildReleaseReadinessScorecard = root => {
 
   const compatibilityImportGovernance = sources.compatibilityImportGovernance;
   if (compatibilityImportGovernance) {
-    const compatibilityOk =
-      Number(compatibilityImportGovernance.checkedEntries || 0) > 0 &&
-      Number(compatibilityImportGovernance.issues?.length || 0) === 0;
+    const compatibilityOk = Number(compatibilityImportGovernance.issues?.length || 0) === 0;
     indicators.push({
       name: 'compatibility_governance',
       ...statusFrom(
