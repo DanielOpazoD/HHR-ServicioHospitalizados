@@ -75,8 +75,7 @@ interface UseAuditReturn {
 }
 
 export const useAudit = (userId: string): UseAuditReturn => {
-  // Store timers for debounced events (key: action-entityId)
-  // We use 'any' for timer to avoid NodeJS vs Browser type conflicts
+  // Store browser timeout handles for debounced events (key: action-entityId)
   const timersRef = React.useRef<Record<string, PendingAuditEntry>>({});
 
   const logEvent = useCallback(
