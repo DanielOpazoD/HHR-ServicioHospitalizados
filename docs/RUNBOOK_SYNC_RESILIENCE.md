@@ -60,9 +60,9 @@ pérdida real de datos:
 
 Referencia técnica:
 
-- [dailyRecordBootstrapController.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/hooks/controllers/dailyRecordBootstrapController.ts)
-- [useDailyRecordSyncQuery.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/hooks/useDailyRecordSyncQuery.ts)
-- [useDailyRecordQuery.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/hooks/useDailyRecordQuery.ts)
+- [dailyRecordBootstrapController.ts](../src/hooks/controllers/dailyRecordBootstrapController.ts)
+- [useDailyRecordSyncQuery.ts](../src/hooks/useDailyRecordSyncQuery.ts)
+- [useDailyRecordQuery.ts](../src/hooks/useDailyRecordQuery.ts)
 
 ## Procedimiento 1: IndexedDB bloqueado
 

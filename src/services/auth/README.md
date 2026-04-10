@@ -17,9 +17,9 @@ Resolver autenticacion, bootstrap de sesion, claims, roles y degradacion operati
 
 ## Decision Guide
 
-- Runtime y recovery de auth: [docs/ADR_AUTH_RUNTIME_RECOVERY.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/docs/ADR_AUTH_RUNTIME_RECOVERY.md)
-- Modelo de acceso del producto: [docs/AUTH_ACCESS_MODEL.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/docs/AUTH_ACCESS_MODEL.md)
-- Runbook de incidentes de acceso: [docs/RUNBOOK_AUTH_ACCESS_INCIDENTS.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/docs/RUNBOOK_AUTH_ACCESS_INCIDENTS.md)
+- Runtime y recovery de auth: [docs/ADR_AUTH_RUNTIME_RECOVERY.md](../../../docs/ADR_AUTH_RUNTIME_RECOVERY.md)
+- Modelo de acceso del producto: [docs/AUTH_ACCESS_MODEL.md](../../../docs/AUTH_ACCESS_MODEL.md)
+- Runbook de incidentes de acceso: [docs/RUNBOOK_AUTH_ACCESS_INCIDENTS.md](../../../docs/RUNBOOK_AUTH_ACCESS_INCIDENTS.md)
 
 ## Contratos principales
 

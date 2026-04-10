@@ -140,9 +140,9 @@ Antes de eliminar la compatibilidad del alias legacy en functions o rules:
 
 ## Archivos clave
 
-- [src/services/auth/authPolicy.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/services/auth/authPolicy.ts)
-- [src/services/auth/authAccessResolution.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/services/auth/authAccessResolution.ts)
-- [src/services/auth/authSession.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/services/auth/authSession.ts)
-- [src/services/auth/authRoleLookup.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/services/auth/authRoleLookup.ts)
-- [functions/lib/auth/authFunctionsFactory.js](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/functions/lib/auth/authFunctionsFactory.js)
-- [functions/lib/auth/authHelpersFactory.js](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/functions/lib/auth/authHelpersFactory.js)
+- [src/services/auth/authPolicy.ts](../src/services/auth/authPolicy.ts)
+- [src/services/auth/authAccessResolution.ts](../src/services/auth/authAccessResolution.ts)
+- [src/services/auth/authSession.ts](../src/services/auth/authSession.ts)
+- [src/services/auth/authRoleLookup.ts](../src/services/auth/authRoleLookup.ts)
+- [functions/lib/auth/authFunctionsFactory.js](../functions/lib/auth/authFunctionsFactory.js)
+- [functions/lib/auth/authHelpersFactory.js](../functions/lib/auth/authHelpersFactory.js)

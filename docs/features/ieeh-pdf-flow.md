@@ -21,11 +21,11 @@ This pattern solves the discrepancy between "System Record Data" (structured, of
 
 ## Key Components
 
-- [IEEHFormDialog.tsx](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/features/census/components/IEEHFormDialog.tsx): handles dialog state and delegates orchestration to the hook.
-- [useIEEHForm.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/features/census/hooks/useIEEHForm.ts): orchestrates search, persistence and print flow.
-- [ieehFormDataController.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/features/census/controllers/ieehFormDataController.ts): pure serialization of dialog values into persisted and printable shapes.
-- [ieehPdfService.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/services/pdf/ieehPdfService.ts): pure PDF mapping over the official coordinates.
-- [pdfBase.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/services/pdf/pdfBase.ts): browser print-opening and fallback runtime.
+- [IEEHFormDialog.tsx](../../src/features/census/components/IEEHFormDialog.tsx): handles dialog state and delegates orchestration to the hook.
+- [useIEEHForm.ts](../../src/features/census/hooks/useIEEHForm.ts): orchestrates search, persistence and print flow.
+- [ieehFormDataController.ts](../../src/features/census/controllers/ieehFormDataController.ts): pure serialization of dialog values into persisted and printable shapes.
+- [ieehPdfService.ts](../../src/services/pdf/ieehPdfService.ts): pure PDF mapping over the official coordinates.
+- [pdfBase.ts](../../src/services/pdf/pdfBase.ts): browser print-opening and fallback runtime.
 
 ## Benefits
 

@@ -6,8 +6,8 @@ Entrega de turno de enfermeria y medicos, con flujos de gestion, delivery y hand
 
 ## Decision Guide
 
-- Superficies runtime y puntos de cambio seguros: [docs/ADR_HANDOFF_RUNTIME_SURFACES.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/docs/ADR_HANDOFF_RUNTIME_SURFACES.md)
-- Checklist transversal de cambio seguro: [docs/SAFE_CHANGE_CHECKLIST.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/docs/SAFE_CHANGE_CHECKLIST.md)
+- Superficies runtime y puntos de cambio seguros: [docs/ADR_HANDOFF_RUNTIME_SURFACES.md](../../../docs/ADR_HANDOFF_RUNTIME_SURFACES.md)
+- Checklist transversal de cambio seguro: [docs/SAFE_CHANGE_CHECKLIST.md](../../../docs/SAFE_CHANGE_CHECKLIST.md)
 
 ## Estructura
 
@@ -56,13 +56,13 @@ Entrega de turno de enfermeria y medicos, con flujos de gestion, delivery y hand
 
 ## Controllers activos recomendados
 
-- [handoffViewController.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/features/handoff/controllers/handoffViewController.ts)
+- [handoffViewController.ts](controllers/handoffViewController.ts)
   para frame de pantalla, audit descriptor y bindings del shell.
-- [handoffViewBindingsController.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/features/handoff/controllers/handoffViewBindingsController.ts)
+- [handoffViewBindingsController.ts](controllers/handoffViewBindingsController.ts)
   para acciones medicas y eventos clinicos con gating por capabilities.
-- [handoffMedicalContentController.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/features/handoff/controllers/handoffMedicalContentController.ts)
+- [handoffMedicalContentController.ts](controllers/handoffMedicalContentController.ts)
   para filtros/chips y links de handoff medico.
-- [clinicalEventsPanelController.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/features/handoff/controllers/clinicalEventsPanelController.ts)
+- [clinicalEventsPanelController.ts](controllers/clinicalEventsPanelController.ts)
   para defaults, sorting y payload del panel de eventos clinicos.
 
 El consumo externo a la feature debe entrar por `@/features/handoff`. Los imports profundos a

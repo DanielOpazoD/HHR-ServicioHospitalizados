@@ -60,13 +60,19 @@ Puntos clave:
 - si aparece un alias legacy de rol en `config/roles`, backend y Gestión de Roles lo recanonizan a `viewer`
 - Gestión de Roles además intenta resincronizar el custom claim del usuario afectado cuando detecta esa recanonización
 
-## 4. Shared Census
+## 4. Política de compatibilidad legacy
+
+La compatibilidad con alias legacy como `viewer_census` se mantiene mientras esta aplicación aún no sea la versión oficial. Esa compatibilidad es una protección de migración, no una superficie para construir features nuevas.
+
+No debe crecer con consumidores nuevos. Su retiro queda diferido hasta que el sistema sea oficial y exista una auditoría de producción que confirme ausencia de claims, `config/roles`, sesiones o flujos activos dependientes de aliases legacy.
+
+## 5. Shared Census
 
 No existe una vía paralela de acceso por link para el censo.
 
 No usa la misma regla de acceso que el login general y no debe mezclarse con este modelo.
 
-## 5. Roles operativos actuales
+## 6. Roles operativos actuales
 
 | Rol                 | Puede usar login general | Alcance resumido                                       |
 | ------------------- | ------------------------ | ------------------------------------------------------ |
@@ -77,7 +83,7 @@ No usa la misma regla de acceso que el login general y no debe mezclarse con est
 | `viewer`            | sí                       | acceso limitado según policy vigente                   |
 | `editor`            | sí                       | accesos técnicos/operativos según policy vigente       |
 
-## 6. Perfil especialista
+## 7. Perfil especialista
 
 `doctor_specialist`:
 
@@ -86,7 +92,7 @@ No usa la misma regla de acceso que el login general y no debe mezclarse con est
 - no usa modo/link especial separado
 - depende de la misma resolución de rol que los demás usuarios internos
 
-## 7. Qué hace Gestión de Roles
+## 8. Qué hace Gestión de Roles
 
 La sección web de Gestión de Roles:
 
@@ -98,7 +104,7 @@ Efecto esperado:
 - si un correo se agrega en `config/roles`, puede entrar
 - si un correo se elimina de `config/roles`, deja de poder entrar
 
-## 8. Qué revisar si un usuario “debería entrar” pero no entra
+## 9. Qué revisar si un usuario “debería entrar” pero no entra
 
 1. confirmar que el correo esté presente y bien escrito en `config/roles`
 2. confirmar que el rol asignado sea válido
@@ -107,23 +113,23 @@ Efecto esperado:
 5. confirmar que functions publicadas consulten `config/roles`
 6. confirmar que `firestore.rules` publicadas no hayan cambiado el perímetro
 
-## 9. Qué revisar si un usuario “removido” sigue entrando
+## 10. Qué revisar si un usuario “removido” sigue entrando
 
 1. verificar que el correo realmente ya no esté en `config/roles`
 2. verificar que el callable `checkUserRole` ya esté desplegado
 3. verificar que el frontend publicado ya no dependa de fuentes legacy
 4. hacer recarga dura y repetir login
 
-## 10. Archivos clave
+## 11. Archivos clave
 
-- [src/services/auth/authAccessResolution.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/services/auth/authAccessResolution.ts)
-- [src/services/auth/authPolicy.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/services/auth/authPolicy.ts)
-- [src/services/auth/authRoleLookup.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/services/auth/authRoleLookup.ts)
-- [functions/lib/auth/authFunctionsFactory.js](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/functions/lib/auth/authFunctionsFactory.js)
-- [functions/lib/auth/authHelpersFactory.js](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/functions/lib/auth/authHelpersFactory.js)
-- [firestore.rules](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/firestore.rules)
+- [src/services/auth/authAccessResolution.ts](../src/services/auth/authAccessResolution.ts)
+- [src/services/auth/authPolicy.ts](../src/services/auth/authPolicy.ts)
+- [src/services/auth/authRoleLookup.ts](../src/services/auth/authRoleLookup.ts)
+- [functions/lib/auth/authFunctionsFactory.js](../functions/lib/auth/authFunctionsFactory.js)
+- [functions/lib/auth/authHelpersFactory.js](../functions/lib/auth/authHelpersFactory.js)
+- [firestore.rules](../firestore.rules)
 
-## 11. Runbook de incidentes
+## 12. Runbook de incidentes
 
 Para soporte operativo rápido:
 

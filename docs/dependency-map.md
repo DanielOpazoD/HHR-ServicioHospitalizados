@@ -3,8 +3,8 @@
 Este documento define responsabilidades por carpeta y el contrato de dependencias permitido.
 El contrato ejecutable vive en:
 
-- `/Users/danielopazodamiani/Desktop/FEB 10 2144/scripts/folder-dependency-matrix.json`
-- `/Users/danielopazodamiani/Desktop/FEB 10 2144/scripts/check-folder-dependencies.mjs`
+- `../scripts/folder-dependency-matrix.json`
+- `../scripts/check-folder-dependencies.mjs`
 
 ## Objetivo
 

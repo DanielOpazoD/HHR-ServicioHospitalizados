@@ -58,11 +58,11 @@ transfers/
 
 La persistencia y sincronización operativa de traslados vive en:
 
-- [transferService.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/services/transfers/transferService.ts)
-- [transferQueriesService.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/services/transfers/transferQueriesService.ts)
-- [transferMutationsService.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/services/transfers/transferMutationsService.ts)
-- [transferSubscriptionsService.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/services/transfers/transferSubscriptionsService.ts)
-- [transferStatusController.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/services/transfers/transferStatusController.ts)
+- [transferService.ts](../../services/transfers/transferService.ts)
+- [transferQueriesService.ts](../../services/transfers/transferQueriesService.ts)
+- [transferMutationsService.ts](../../services/transfers/transferMutationsService.ts)
+- [transferSubscriptionsService.ts](../../services/transfers/transferSubscriptionsService.ts)
+- [transferStatusController.ts](../../services/transfers/transferStatusController.ts)
 
 `transferService.ts` debe mantenerse como fachada pública. La lógica nueva debe entrar en estas capas internas, no volver a crecer dentro de la fachada.
 
@@ -76,7 +76,7 @@ La persistencia y sincronización operativa de traslados vive en:
 
 El filtrado por período y la separación entre activos/finalizados se centralizan en:
 
-- [transferManagementViewController.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/features/transfers/components/controllers/transferManagementViewController.ts)
+- [transferManagementViewController.ts](components/controllers/transferManagementViewController.ts)
 
 ### `TransferTable.tsx`
 
@@ -86,12 +86,12 @@ El filtrado por período y la separación entre activos/finalizados se centraliz
 
 La policy de estados y acciones no vive aquí; se centraliza en:
 
-- [transferTableController.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/features/transfers/components/controllers/transferTableController.ts)
+- [transferTableController.ts](components/controllers/transferTableController.ts)
 
 La gestión inline de notas se mantiene aislada en:
 
-- [TransferNotesCell.tsx](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/features/transfers/components/components/TransferNotesCell.tsx)
-- [transferNotesController.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/features/transfers/components/controllers/transferNotesController.ts)
+- [TransferNotesCell.tsx](components/components/TransferNotesCell.tsx)
+- [transferNotesController.ts](components/controllers/transferNotesController.ts)
 
 ### `TransferFormModal.tsx`
 
@@ -100,7 +100,7 @@ La gestión inline de notas se mantiene aislada en:
 
 La inicialización y validación del formulario se centralizan en:
 
-- [transferFormController.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/features/transfers/components/controllers/transferFormController.ts)
+- [transferFormController.ts](components/controllers/transferFormController.ts)
 
 ### `useTransferViewStates.ts`
 
@@ -113,7 +113,7 @@ Hook orquestador de UX para:
 
 La preparación/caché de documentos se apoya en:
 
-- [transferDocumentPackageController.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/hooks/controllers/transferDocumentPackageController.ts)
+- [transferDocumentPackageController.ts](../../hooks/controllers/transferDocumentPackageController.ts)
 
 ### `useTransferSubscriptions.ts`
 
@@ -135,7 +135,7 @@ Si un hospital no tiene configuración documental:
 ### Modo oculto de paquete documental
 
 - El flujo de paquete documental sigue existiendo en el feature:
-  - [TransferDocumentPackageModal.tsx](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/features/transfers/components/components/TransferDocumentPackageModal.tsx)
+  - [TransferDocumentPackageModal.tsx](components/components/TransferDocumentPackageModal.tsx)
   - `onGenerateDocs` / persistencia de `questionnaireResponses`
 - El botón de tabla `Preparar docs` está oculto intencionalmente del UI público.
 - Si se vuelve a habilitar, debe hacerse reusando la capacidad existente y no recreando otro modal o flujo paralelo.
@@ -149,7 +149,7 @@ Si un hospital no tiene configuración documental:
 ## Reglas de mantenimiento
 
 1. La separación de estados activos/finalizados debe seguir usando la policy compartida del controller.
-2. El estado de ciclo de vida de traslados debe seguir saliendo de [transferStatusController.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/services/transfers/transferStatusController.ts), no de listas duplicadas en hooks o componentes.
+2. El estado de ciclo de vida de traslados debe seguir saliendo de [transferStatusController.ts](../../services/transfers/transferStatusController.ts), no de listas duplicadas en hooks o componentes.
 3. `transferService.ts` no debe volver a mezclar queries, mutaciones, normalización y suscripción en un solo archivo.
 4. La suscripción realtime debe exponer error legible al consumidor, aunque el UI decida no mostrarlo.
 5. Los cambios en documentos de traslado deben mantener el comportamiento:
@@ -161,22 +161,24 @@ Si un hospital no tiene configuración documental:
    (`operationalAccessPolicy`) y no de checks inline por componente o fila.
 9. Las fechas visibles de estados/modales/documentos deben reutilizar presentation helpers
    compartidos; no deben reaparecer variantes locales de `toLocaleDateString()`.
-10. Las notas inline deben seguir usando [transferNotesController.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/features/transfers/components/controllers/transferNotesController.ts) para sorting/permisos y no reintroducir estado repetido dentro de la fila.
-11. El formulario de traslado debe construir y validar su payload a través de [transferFormController.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/features/transfers/components/controllers/transferFormController.ts), no con validaciones duplicadas dentro del modal.
+10. Las notas inline deben seguir usando [transferNotesController.ts](components/controllers/transferNotesController.ts) para sorting/permisos y no reintroducir estado repetido dentro de la fila.
+11. El formulario de traslado debe construir y validar su payload a través de [transferFormController.ts](components/controllers/transferFormController.ts), no con validaciones duplicadas dentro del modal.
 
 ## Tests relevantes
 
-- [TransferManagementView.test.tsx](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/tests/features/transfers/TransferManagementView.test.tsx)
-- [transferManagementViewController.test.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/tests/features/transfers/transferManagementViewController.test.ts)
-- [useTransferSubscriptions.test.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/tests/features/transfers/useTransferSubscriptions.test.ts)
-- [TransferFormModal.test.tsx](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/tests/features/transfers/TransferFormModal.test.tsx)
-- [transferFormController.test.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/tests/features/transfers/transferFormController.test.ts)
-- [transferNotesController.test.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/tests/features/transfers/transferNotesController.test.ts)
-- [transferTableController.test.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/tests/features/transfers/transferTableController.test.ts)
-- [transferStatusController.test.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/tests/services/transfers/transferStatusController.test.ts)
-- [transferSubscriptionController.test.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/tests/services/transfers/transferSubscriptionController.test.ts)
-- [useTransferViewStates.test.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/tests/hooks/useTransferViewStates.test.ts)
-- [transferDocumentPackageController.test.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/tests/hooks/controllers/transferDocumentPackageController.test.ts)
+- [TransferManagementView.grouping.test.tsx](../../tests/features/transfers/TransferManagementView.grouping.test.tsx)
+- [TransferManagementView.notes-inline.test.tsx](../../tests/features/transfers/TransferManagementView.notes-inline.test.tsx)
+- [transferManagementViewController.test.ts](../../tests/features/transfers/transferManagementViewController.test.ts)
+- [useTransferSubscriptions.test.ts](../../tests/features/transfers/useTransferSubscriptions.test.ts)
+- [TransferFormModal.test.tsx](../../tests/features/transfers/TransferFormModal.test.tsx)
+- [transferFormController.test.ts](../../tests/features/transfers/transferFormController.test.ts)
+- [transferNotesController.test.ts](../../tests/features/transfers/transferNotesController.test.ts)
+- [transferTableController.test.ts](../../tests/features/transfers/transferTableController.test.ts)
+- [transferStatusController.test.ts](../../tests/services/transfers/transferStatusController.test.ts)
+- [transferSubscriptionController.test.ts](../../tests/services/transfers/transferSubscriptionController.test.ts)
+- [useTransferViewStates.document-package.test.ts](../../tests/hooks/useTransferViewStates.document-package.test.ts)
+- [useTransferViewStates.modal-state.test.ts](../../tests/hooks/useTransferViewStates.modal-state.test.ts)
+- [transferDocumentPackageController.test.ts](../../tests/hooks/controllers/transferDocumentPackageController.test.ts)
 
 ## Runtime boundaries
 
@@ -200,5 +202,5 @@ Si un hospital no tiene configuración documental:
 
 ## Safe change links
 
-- [docs/QUALITY_GUARDRAILS.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/docs/QUALITY_GUARDRAILS.md)
-- [docs/SAFE_CHANGE_CHECKLIST.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/docs/SAFE_CHANGE_CHECKLIST.md)
+- [docs/QUALITY_GUARDRAILS.md](../../../docs/QUALITY_GUARDRAILS.md)
+- [docs/SAFE_CHANGE_CHECKLIST.md](../../../docs/SAFE_CHANGE_CHECKLIST.md)

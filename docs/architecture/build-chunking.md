@@ -7,8 +7,8 @@
 
 ## Current policy
 
-- The source of truth for manual chunk classification is [scripts/config/chunkingPolicy.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/scripts/config/chunkingPolicy.ts).
-- [vite.config.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/vite.config.ts) consumes that policy directly instead of duplicating chunk rules inline.
+- The source of truth for manual chunk classification is [scripts/config/chunkingPolicy.ts](../../scripts/config/chunkingPolicy.ts).
+- [vite.config.ts](../../vite.config.ts) consumes that policy directly instead of duplicating chunk rules inline.
 
 ## Important guardrail
 

@@ -1,7 +1,7 @@
 # HHR Hospital Tracker - Estado del Proyecto
 
-> **Última actualización:** 2026-04-05
-> **Evaluación técnica de referencia:** 6.1 / 7.0
+> **Última actualización:** 2026-04-10
+> **Evaluación técnica de referencia:** 6.4 / 7.0
 
 ## Resumen
 
@@ -25,25 +25,26 @@ Las mejoras recientes se han concentrado en:
 ## Deuda técnica principal
 
 - Complejidad estructural alta en módulos críticos de runtime y storage.
-- Compatibilidad legacy todavía necesaria, con costo de mantenimiento asociado.
+- Compatibilidad legacy todavía necesaria como protección de migración hasta que la app sea oficial, con costo de mantenimiento controlado.
 - Documentación técnica histórica que puede desalinearse si no se regenera con disciplina.
 - Features experimentales presentes en el repo, aunque ya no expuestas en el acceso principal.
 
 ## Próximo foco recomendado
 
-1. Recuperar `typecheck` global alineando tests de `census` al modelo `unifiedRows`.
-2. Ejecutar la siguiente ola de megatests (`PatientRowOrbitalQuickActions`, `transferService`).
-3. Mantener la convergencia con la rutina de [docs/FOUNDATION_MAINTENANCE_CADENCE.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/docs/FOUNDATION_MAINTENANCE_CADENCE.md).
+1. Mantener verdes `typecheck`, `lint`, `check:quality`, build y cobertura crítica.
+2. Mantener documentación canónica y READMEs sin rutas absolutas locales.
+3. Mantener la convergencia con la rutina de [docs/FOUNDATION_MAINTENANCE_CADENCE.md](docs/FOUNDATION_MAINTENANCE_CADENCE.md).
+4. No cerrar compatibilidades legacy de auth/roles/rules hasta que la app sea oficial y exista auditoría de producción sin consumidores activos.
 
 ## Tracker de cimientos
 
 El seguimiento persistente del roadmap estructural vive en:
 
-- [docs/FOUNDATION_TRACKER.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/docs/FOUNDATION_TRACKER.md)
-- Taxonomía canónica: [docs/CODEBASE_CANON.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/docs/CODEBASE_CANON.md)
-- Mapa documental: [docs/DOCUMENTATION_MAP.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/docs/DOCUMENTATION_MAP.md)
+- [docs/FOUNDATION_TRACKER.md](docs/FOUNDATION_TRACKER.md)
+- Taxonomía canónica: [docs/CODEBASE_CANON.md](docs/CODEBASE_CANON.md)
+- Mapa documental: [docs/DOCUMENTATION_MAP.md](docs/DOCUMENTATION_MAP.md)
 
 ## Fuente de verdad
 
-- Métricas actuales: [reports/quality-metrics.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/reports/quality-metrics.md)
-- Pipeline activa: [ci-cd.yml](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/.github/workflows/ci-cd.yml)
+- Métricas actuales: [reports/quality-metrics.md](reports/quality-metrics.md)
+- Pipeline activa: [ci-cd.yml](.github/workflows/ci-cd.yml)

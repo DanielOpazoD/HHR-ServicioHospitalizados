@@ -79,10 +79,10 @@ Reglas específicas adicionales:
 
 ### ADRs de cambio seguro por subsistema
 
-- `daily-record/sync`: [ADR_DAILY_RECORD_RUNTIME_PATH.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/docs/ADR_DAILY_RECORD_RUNTIME_PATH.md)
-- `auth`: [ADR_AUTH_RUNTIME_RECOVERY.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/docs/ADR_AUTH_RUNTIME_RECOVERY.md)
-- `clinical-documents`: [ADR_CLINICAL_DOCUMENT_WORKSPACE_CONTRACT.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/docs/ADR_CLINICAL_DOCUMENT_WORKSPACE_CONTRACT.md)
-- `handoff`: [ADR_HANDOFF_RUNTIME_SURFACES.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/docs/ADR_HANDOFF_RUNTIME_SURFACES.md)
+- `daily-record/sync`: [ADR_DAILY_RECORD_RUNTIME_PATH.md](ADR_DAILY_RECORD_RUNTIME_PATH.md)
+- `auth`: [ADR_AUTH_RUNTIME_RECOVERY.md](ADR_AUTH_RUNTIME_RECOVERY.md)
+- `clinical-documents`: [ADR_CLINICAL_DOCUMENT_WORKSPACE_CONTRACT.md](ADR_CLINICAL_DOCUMENT_WORKSPACE_CONTRACT.md)
+- `handoff`: [ADR_HANDOFF_RUNTIME_SURFACES.md](ADR_HANDOFF_RUNTIME_SURFACES.md)
 
 ## 3) Flujo de Datos (Write)
 

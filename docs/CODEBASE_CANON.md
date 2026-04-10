@@ -35,6 +35,12 @@ Este documento define la taxonomía canónica del repo. Su objetivo es bajar amb
 - Outcomes y helpers de mensaje reutilizados por varias capas pertenecen a `src/shared/contracts/`, no a `application/shared/`.
 - Cuando un hotspot de dominio como `patient` necesita una surface transversal curada, la fachada vive en `src/shared/contracts/`; no se importan entidades hotspot directo desde `shared`, `features` o `application`.
 
+## Compatibilidad legacy
+
+Las compatibilidades legacy de roles, auth, `firestore.rules` y `storage.rules` se mantienen como protección de migración hasta que esta aplicación sea la versión oficial. No deben recibir consumidores nuevos ni usarse como ruta conveniente para features nuevas.
+
+Su retiro solo se habilita después de auditar producción y confirmar que no quedan claims, `config/roles`, sesiones o flujos operativos activos dependientes de alias legacy como `viewer_census`. Hasta ese hito, la mejora correcta es mantenerlas inventariadas, testeadas y sin crecimiento.
+
 ## Estado de `src/infrastructure`
 
 `src/infrastructure/` queda retirado como capa activa. Se conserva solo como marcador histórico para evitar reintroducir una migración incompleta.

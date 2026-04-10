@@ -14,10 +14,10 @@ Solo `admin` puede usar `modo prueba`.
 ## Flujo
 
 1. Un egreso con tipo `Fuga` expone la acción `FUGA` en la fila.
-2. [FugaNotificationModal.tsx](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/features/census/components/FugaNotificationModal.tsx) muestra el mensaje automático y la nota opcional.
-3. [useFugaNotificationModalModel.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/features/census/hooks/useFugaNotificationModalModel.ts) resuelve destinatarios y validación de envío.
-4. [fugaNotificationPolicyController.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/features/census/controllers/fugaNotificationPolicyController.ts) decide si el envío es `manual`, `automatic` o `test`.
-5. [send-fuga-notification.ts](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/netlify/functions/send-fuga-notification.ts) valida autenticación, rol, destinatarios efectivos y envía usando Gmail.
+2. [FugaNotificationModal.tsx](../../src/features/census/components/FugaNotificationModal.tsx) muestra el mensaje automático y la nota opcional.
+3. [useFugaNotificationModalModel.ts](../../src/features/census/hooks/useFugaNotificationModalModel.ts) resuelve destinatarios y validación de envío.
+4. [fugaNotificationPolicyController.ts](../../src/features/census/controllers/fugaNotificationPolicyController.ts) decide si el envío es `manual`, `automatic` o `test`.
+5. [send-fuga-notification.ts](../../netlify/functions/send-fuga-notification.ts) valida autenticación, rol, destinatarios efectivos y envía usando Gmail.
 
 ## Destinatarios automáticos de Psiquiatría
 

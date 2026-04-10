@@ -48,13 +48,13 @@ feature/
 
 - Gestión de solicitud/confirmación/cancelación de traslados.
 - Integración con generación documental y Google Drive.
-- Documentación específica del módulo en [transfers/README.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/features/transfers/README.md).
+- Documentación específica del módulo en [transfers/README.md](transfers/README.md).
 
 ### `analytics/`
 
 - Dashboard estadístico autónomo, desacoplado del render del censo diario.
 - Se monta como módulo independiente en `/statistics`.
-- Documentación específica del módulo en [analytics/README.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/src/features/analytics/README.md).
+- Documentación específica del módulo en [analytics/README.md](analytics/README.md).
 
 ### `admin/`
 

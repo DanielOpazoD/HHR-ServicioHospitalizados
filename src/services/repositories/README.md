@@ -40,8 +40,8 @@ const unsubscribe = subscribe(date, callback);
 
 ## Decision Guide
 
-- Runtime path y precedence de `daily-record`: [docs/ADR_DAILY_RECORD_RUNTIME_PATH.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/docs/ADR_DAILY_RECORD_RUNTIME_PATH.md)
-- Outcome policy de sync: [docs/ADR_SYNC_OUTCOME_POLICY.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/docs/ADR_SYNC_OUTCOME_POLICY.md)
+- Runtime path y precedence de `daily-record`: [docs/ADR_DAILY_RECORD_RUNTIME_PATH.md](../../../docs/ADR_DAILY_RECORD_RUNTIME_PATH.md)
+- Outcome policy de sync: [docs/ADR_SYNC_OUTCOME_POLICY.md](../../../docs/ADR_SYNC_OUTCOME_POLICY.md)
 
 ## Regla
 

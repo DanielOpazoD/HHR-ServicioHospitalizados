@@ -2,7 +2,7 @@
 
 ## 1. IEEH PDF Calibration
 
-Calibrated all 25+ field coordinates in [ieehPdfService.ts](file:///Users/danielopazodamiani/Desktop/FEB%2010%202144%20copia%203/src/services/pdf/ieehPdfService.ts) through **5 visual inspection iterations** and a final **JSON-based coordinate update** provided by the user.
+Calibrated all 25+ field coordinates in [ieehPdfService.ts](services/pdf/ieehPdfService.ts) through **5 visual inspection iterations** and a final **JSON-based coordinate update** provided by the user.
 
 ### Key Geometry Fixes (Final JSON Update):
 
@@ -23,11 +23,7 @@ Implemented a "Pre-Download Data Enrichment" pattern using a modal dialog to ref
 
 ### UI Improvements
 
-```carousel
-![Top section - Names, RUN, Birth Date correctly positioned](/Users/danielopazodamiani/.gemini/antigravity/brain/dffe6eea-6021-426e-a55d-d8fd0b231528/ieeh_top_section_v5_final_check_1771894181679.png)
-<!-- slide -->
-![New enriched dialog UI with inline radios and reordered doctor fields](/Users/danielopazodamiani/.gemini/antigravity/brain/dffe6eea-6021-426e-a55d-d8fd0b231528/media__1771986997389.png)
-```
+Visual calibration artifacts were reviewed locally during the original implementation and are not part of the repository.
 
 ## 3. IEEH Form Data Persistence & UI Alignment (Phase 3)
 
@@ -45,9 +41,9 @@ Verified the robustness of the new features through automated tests and technica
 
 ### Verification Results ✅
 
-- **Unit Tests**: [ieehPdfService.test.ts](file:///Users/danielopazodamiani/Desktop/FEB%2010%202144%20copia%203/src/tests/services/pdf/ieehPdfService.test.ts) (Pass 100%).
-- **Component Tests**: [IEEHFormDialog.test.tsx](file:///Users/danielopazodamiani/Desktop/FEB%2010%202144%20copia%203/src/tests/components/IEEHFormDialog.test.tsx) (Pass 100%).
-- **Architectural Impact**: Documented the "Pre-download Enrichment" pattern in [ieeh-pdf-flow.md](file:///Users/danielopazodamiani/Desktop/FEB%2010%202144%20copia%203/docs/features/ieeh-pdf-flow.md).
+- **Unit Tests**: [ieehPdfService.test.ts](tests/services/pdf/ieehPdfService.test.ts) (Pass 100%).
+- **Component Tests**: [IEEHFormDialog.test.tsx](tests/components/IEEHFormDialog.test.tsx) (Pass 100%).
+- **Architectural Impact**: Documented the "Pre-download Enrichment" pattern in [ieeh-pdf-flow.md](../docs/features/ieeh-pdf-flow.md).
 
 ---
 

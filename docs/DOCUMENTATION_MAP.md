@@ -1,13 +1,13 @@
 # Documentation Map
 
-Última actualización: 2026-04-05
+Última actualización: 2026-04-10
 
 ## Lectura recomendada
 
-1. [README.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/README.md)
-2. [docs/CODEBASE_CANON.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/docs/CODEBASE_CANON.md)
-3. [docs/FOUNDATION_TRACKER.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/docs/FOUNDATION_TRACKER.md)
-4. [PROJECT_STATUS.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/PROJECT_STATUS.md)
+1. [README.md](../README.md)
+2. [docs/CODEBASE_CANON.md](CODEBASE_CANON.md)
+3. [docs/FOUNDATION_TRACKER.md](FOUNDATION_TRACKER.md)
+4. [PROJECT_STATUS.md](../PROJECT_STATUS.md)
 5. README del módulo que vas a tocar en `src/features/*/README.md` o `src/*/README.md`
 
 ## Categorías
@@ -16,13 +16,13 @@
 
 Documentos que gobiernan decisiones activas y estructura actual del repo.
 
-- [README.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/README.md)
-- [ARCHITECTURE.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/ARCHITECTURE.md)
-- [PROJECT_STATUS.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/PROJECT_STATUS.md)
-- [docs/CODEBASE_CANON.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/docs/CODEBASE_CANON.md)
-- [docs/FOUNDATION_TRACKER.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/docs/FOUNDATION_TRACKER.md)
-- [docs/QUALITY_GUARDRAILS.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/docs/QUALITY_GUARDRAILS.md)
-- [docs/SAFE_CHANGE_CHECKLIST.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/docs/SAFE_CHANGE_CHECKLIST.md)
+- [README.md](../README.md)
+- [ARCHITECTURE.md](../ARCHITECTURE.md)
+- [PROJECT_STATUS.md](../PROJECT_STATUS.md)
+- [docs/CODEBASE_CANON.md](CODEBASE_CANON.md)
+- [docs/FOUNDATION_TRACKER.md](FOUNDATION_TRACKER.md)
+- [docs/QUALITY_GUARDRAILS.md](QUALITY_GUARDRAILS.md)
+- [docs/SAFE_CHANGE_CHECKLIST.md](SAFE_CHANGE_CHECKLIST.md)
 
 ### Operativa
 
@@ -33,8 +33,8 @@ Documentos que ayudan a ejecutar trabajo, validar cambios o entender un área co
 - `docs/architecture/*`
 - `docs/compliance/*`
 - README por módulo en `src/`
-- [docs/DEVELOPER_COMMANDS.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/docs/DEVELOPER_COMMANDS.md)
-- [docs/TEST_MEGATEST_BACKLOG.md](/Users/danielopazodamiani/Desktop/HHR%20Tracker%20Marzo%202026/docs/TEST_MEGATEST_BACKLOG.md)
+- [docs/DEVELOPER_COMMANDS.md](DEVELOPER_COMMANDS.md)
+- [docs/TEST_MEGATEST_BACKLOG.md](TEST_MEGATEST_BACKLOG.md)
 
 ### Generada
 
@@ -50,6 +50,8 @@ Artefactos producidos por tooling o reportes automáticos. Son útiles para cons
 - Si un archivo se regenera desde scripts o CI, debe tratarse como generado aunque esté versionado.
 - No duplicar decisiones arquitectónicas entre documentos generados y canónicos.
 - Si un documento canónico cambia una regla, el tracker y el README correspondiente deben quedar alineados en la misma iteración.
+- Las rutas internas de documentación deben ser relativas al repo. No agregar links absolutos locales como `/Users/...` ni URLs `file://`.
+- Las compatibilidades legacy de roles/auth/rules se documentan como protección de migración hasta que la app sea oficial; no deben crecer con consumidores nuevos.
 
 ## Decisión sobre `docs/api`
 
