@@ -176,12 +176,15 @@ export const handler = async (event: NetlifyEventLike) => {
       }
     }
 
-    const attachmentBuffer = await XlsxPopulate.fromDataAsync(attachmentBufferRaw)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .then((workbook: any) => workbook.outputAsync({ password }));
+    const attachmentBuffer = await XlsxPopulate.fromDataAsync(attachmentBufferRaw).then(workbook =>
+      workbook.outputAsync({ password })
+    );
+    const encryptedAttachmentBuffer = Buffer.isBuffer(attachmentBuffer)
+      ? attachmentBuffer
+      : Buffer.from(attachmentBuffer);
 
     // Validate encrypted buffer
-    if (!attachmentBuffer || attachmentBuffer.length < MIN_EXCEL_SIZE) {
+    if (encryptedAttachmentBuffer.length < MIN_EXCEL_SIZE) {
       console.error(
         '[CensusEmail] Encrypted buffer validation failed: buffer is too small or empty'
       );
@@ -198,7 +201,7 @@ export const handler = async (event: NetlifyEventLike) => {
     const gmailResponse = await sendCensusEmail({
       date,
       recipients: resolvedRecipients,
-      attachmentBuffer,
+      attachmentBuffer: encryptedAttachmentBuffer,
       attachmentName,
       nursesSignature,
       body: finalBody,
