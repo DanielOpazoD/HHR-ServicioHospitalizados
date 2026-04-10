@@ -3,7 +3,7 @@
  * @description Modal for viewing laboratory exams from the Syslab system.
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { FlaskConical } from 'lucide-react';
 import { BaseModal } from '@/components/shared/BaseModal';
 import { useLabViewer } from '../hooks/useLabViewer';
@@ -30,10 +30,15 @@ export const LabResultsViewerModal: React.FC<LabResultsViewerModalProps> = ({
   initialPatientRut,
 }) => {
   const lab = useLabViewer(patients, initialPatientRut);
+  const { reset } = lab;
+  const wasOpenRef = useRef(false);
 
   useEffect(() => {
-    if (isOpen) lab.reset();
-  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (isOpen && !wasOpenRef.current) {
+      reset();
+    }
+    wasOpenRef.current = isOpen;
+  }, [isOpen, reset]);
 
   if (!isOpen) return null;
 
