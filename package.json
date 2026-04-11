@@ -137,7 +137,8 @@
     "test:serverless-deploy-smoke": "npm run check:serverless-runtime-governance && npm run check:netlify-functions-bundle && npm run build",
     "ci:inner-loop": "npm run typecheck && npm run lint -- --max-warnings 0 && npm run check:quality && npm run test:unit:critical",
     "ci:pre-merge": "npm run typecheck && npm run lint -- --max-warnings 0 && npm run check:quality && npm run test:ci:unit",
-    "ci:merge-gate": "npm run ci:pre-merge && npm run lint:strict:core && npm run check:critical-coverage && npm run check:netlify-functions-bundle && npm run build && npm run check:bundle-budget && npm run check:chunk-graph && npm run test:e2e:preview:census-bootstrap:built",
+    "ci:preview-gate": "npm run check:bundle-budget && npm run check:chunk-graph && npm run test:e2e:preview:census-bootstrap:built",
+    "ci:merge-gate": "npm run ci:pre-merge && npm run lint:strict:core && npm run check:critical-coverage && npm run check:netlify-functions-bundle && npm run build && npm run ci:preview-gate",
     "ci:release-gate": "npm run ci:merge-gate && npm run check:report-freshness && npm run test:firestore:release:ci",
     "clean": "bash scripts/cleanup.sh",
     "ci": "npm run ci:merge-gate",
@@ -168,7 +169,7 @@
     "firebase": "^12.6.0",
     "googleapis": "^144.0.0",
     "html2canvas": "^1.4.1",
-    "jspdf": "^4.1.0",
+    "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.556.0",
     "motion": "^12.38.0",
@@ -237,7 +238,9 @@
     "workbox-strategies": "^7.4.0"
   },
   "overrides": {
-    "lodash": "4.17.23",
+    "@xmldom/xmldom": "0.9.9",
+    "dompurify": "3.3.3",
+    "lodash": "4.18.1",
     "qs": "6.15.0",
     "@isaacs/brace-expansion": "5.0.1",
     "markdown-it": "14.1.1"

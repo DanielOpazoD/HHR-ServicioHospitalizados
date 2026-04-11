@@ -1,33 +1,73 @@
-import {
-  getForDate,
-  getForDateWithMeta,
-  getPreviousDay,
-  getPreviousDayWithMeta,
-  getAvailableDates,
-} from '@/services/repositories/dailyRecordRepositoryReadService';
-import {
-  initializeDay,
-  type CopyPatientToDateResult,
-} from '@/services/repositories/dailyRecordRepositoryInitializationService';
-import {
-  updatePartialDetailed,
-  saveDetailed,
-} from '@/services/repositories/dailyRecordRepositoryWriteService';
-import { syncWithFirestoreDetailed } from '@/services/repositories/dailyRecordRepositorySyncService';
-import {
-  subscribe,
-  subscribeDetailed,
-} from '@/services/repositories/dailyRecordRepositorySyncService';
-import { copyPatientToDateDetailed } from '@/services/repositories/dailyRecordRepositoryInitializationService';
-import { deleteDailyRecordAcrossStores } from '@/services/repositories/dailyRecordRepositoryFacadeSupport';
-import { getMonthRecordsFromFirestore } from '@/services/storage/firestore';
 import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
+import type { CopyPatientToDateResult } from '@/services/repositories/dailyRecordRepositoryInitializationService';
 import type {
   SaveDailyRecordResult,
   SyncDailyRecordResult,
   UpdatePartialDailyRecordResult,
 } from '@/services/repositories/contracts/dailyRecordResults';
 import type { DailyRecordReadResult } from '@/services/repositories/contracts/dailyRecordQueries';
+
+type DailyRecordReadService =
+  typeof import('@/services/repositories/dailyRecordRepositoryReadService');
+type DailyRecordInitializationService =
+  typeof import('@/services/repositories/dailyRecordRepositoryInitializationService');
+type DailyRecordWriteService =
+  typeof import('@/services/repositories/dailyRecordRepositoryWriteService');
+type DailyRecordSyncService =
+  typeof import('@/services/repositories/dailyRecordRepositorySyncService');
+type DailyRecordFacadeSupportService =
+  typeof import('@/services/repositories/dailyRecordRepositoryFacadeSupport');
+type FirestoreRecordQueryService = typeof import('@/services/storage/firestore');
+
+let readServicePromise: Promise<DailyRecordReadService> | null = null;
+let initializationServicePromise: Promise<DailyRecordInitializationService> | null = null;
+let writeServicePromise: Promise<DailyRecordWriteService> | null = null;
+let syncServicePromise: Promise<DailyRecordSyncService> | null = null;
+let facadeSupportServicePromise: Promise<DailyRecordFacadeSupportService> | null = null;
+let firestoreRecordQueryServicePromise: Promise<FirestoreRecordQueryService> | null = null;
+
+const loadDailyRecordReadService = (): Promise<DailyRecordReadService> =>
+  (readServicePromise ??= import('@/services/repositories/dailyRecordRepositoryReadService'));
+
+const loadDailyRecordInitializationService = (): Promise<DailyRecordInitializationService> =>
+  (initializationServicePromise ??=
+    import('@/services/repositories/dailyRecordRepositoryInitializationService'));
+
+const loadDailyRecordWriteService = (): Promise<DailyRecordWriteService> =>
+  (writeServicePromise ??= import('@/services/repositories/dailyRecordRepositoryWriteService'));
+
+const loadDailyRecordSyncService = (): Promise<DailyRecordSyncService> =>
+  (syncServicePromise ??= import('@/services/repositories/dailyRecordRepositorySyncService'));
+
+const loadDailyRecordFacadeSupportService = (): Promise<DailyRecordFacadeSupportService> =>
+  (facadeSupportServicePromise ??=
+    import('@/services/repositories/dailyRecordRepositoryFacadeSupport'));
+
+const loadFirestoreRecordQueryService = (): Promise<FirestoreRecordQueryService> =>
+  (firestoreRecordQueryServicePromise ??= import('@/services/storage/firestore'));
+
+const createLazySubscription = (
+  start: (service: DailyRecordSyncService) => () => void
+): (() => void) => {
+  let active = true;
+  let unsubscribe = () => {};
+
+  void loadDailyRecordSyncService()
+    .then(service => {
+      if (!active) {
+        return;
+      }
+      unsubscribe = start(service);
+    })
+    .catch(() => {
+      // Keep a stable no-op unsubscribe. Bootstrap/runtime telemetry captures the chunk error path.
+    });
+
+  return () => {
+    active = false;
+    unsubscribe();
+  };
+};
 
 export interface DailyRecordReadPort {
   getPreviousDay: (date: string) => Promise<DailyRecord | null>;
@@ -81,36 +121,52 @@ export interface DailyRecordRepositoryPort
 }
 
 export const defaultDailyRecordReadPort: DailyRecordReadPort = {
-  getPreviousDay: async date => getPreviousDay(date),
-  getAvailableDates: async () => getAvailableDates(),
+  getPreviousDay: async date => (await loadDailyRecordReadService()).getPreviousDay(date),
+  getAvailableDates: async () => (await loadDailyRecordReadService()).getAvailableDates(),
   getMonthRecords: async (year, monthZeroBased) =>
-    getMonthRecordsFromFirestore(year, monthZeroBased),
-  getForDate: async date => getForDate(date),
+    (await loadFirestoreRecordQueryService()).getMonthRecordsFromFirestore(year, monthZeroBased),
+  getForDate: async date => (await loadDailyRecordReadService()).getForDate(date),
   getForDateWithMeta: async (date, syncFromRemote = true) =>
-    getForDateWithMeta(date, syncFromRemote),
-  initializeDay: async (date, copyFromDate) => initializeDay(date, copyFromDate),
-  getPreviousDayWithMeta: async date => getPreviousDayWithMeta(date),
+    (await loadDailyRecordReadService()).getForDateWithMeta(date, syncFromRemote),
+  initializeDay: async (date, copyFromDate) =>
+    (await loadDailyRecordInitializationService()).initializeDay(date, copyFromDate),
+  getPreviousDayWithMeta: async date =>
+    (await loadDailyRecordReadService()).getPreviousDayWithMeta(date),
 };
 
 export const defaultDailyRecordWritePort: DailyRecordWritePort = {
-  updatePartial: async (date, patch) => updatePartialDetailed(date, patch),
-  save: async (record, expectedLastUpdated) => saveDetailed(record, expectedLastUpdated),
-  delete: async date => deleteDailyRecordAcrossStores(date),
+  updatePartial: async (date, patch) =>
+    (await loadDailyRecordWriteService()).updatePartialDetailed(date, patch),
+  save: async (record, expectedLastUpdated) =>
+    (await loadDailyRecordWriteService()).saveDetailed(record, expectedLastUpdated),
+  delete: async date =>
+    (await loadDailyRecordFacadeSupportService()).deleteDailyRecordAcrossStores(date),
 };
 
 export const defaultDailyRecordSyncPort: DailyRecordSyncPort = {
-  syncWithFirestoreDetailed: async date => syncWithFirestoreDetailed(date),
+  syncWithFirestoreDetailed: async date =>
+    (await loadDailyRecordSyncService()).syncWithFirestoreDetailed(date),
 };
 
 export const defaultDailyRecordRepositoryPort: DailyRecordRepositoryPort = {
   ...defaultDailyRecordReadPort,
   ...defaultDailyRecordWritePort,
   ...defaultDailyRecordSyncPort,
-  saveDetailed: async (record, expectedLastUpdated) => saveDetailed(record, expectedLastUpdated),
-  updatePartialDetailed: async (date, patch) => updatePartialDetailed(date, patch),
-  subscribe: (date, callback) => subscribe(date, callback),
-  subscribeDetailed: (date, callback) => subscribeDetailed(date, callback),
-  deleteDay: async date => deleteDailyRecordAcrossStores(date),
+  saveDetailed: async (record, expectedLastUpdated) =>
+    (await loadDailyRecordWriteService()).saveDetailed(record, expectedLastUpdated),
+  updatePartialDetailed: async (date, patch) =>
+    (await loadDailyRecordWriteService()).updatePartialDetailed(date, patch),
+  subscribe: (date, callback) =>
+    createLazySubscription(service => service.subscribe(date, callback)),
+  subscribeDetailed: (date, callback) =>
+    createLazySubscription(service => service.subscribeDetailed(date, callback)),
+  deleteDay: async date =>
+    (await loadDailyRecordFacadeSupportService()).deleteDailyRecordAcrossStores(date),
   copyPatientToDateDetailed: async (sourceDate, sourceBedId, targetDate, targetBedId) =>
-    copyPatientToDateDetailed(sourceDate, sourceBedId, targetDate, targetBedId),
+    (await loadDailyRecordInitializationService()).copyPatientToDateDetailed(
+      sourceDate,
+      sourceBedId,
+      targetDate,
+      targetBedId
+    ),
 };

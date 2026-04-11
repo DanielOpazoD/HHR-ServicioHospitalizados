@@ -2,7 +2,7 @@ import { CURRENT_SCHEMA_VERSION } from '@/constants/version';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { DailyRecordPatch } from '@/types/domain/dailyRecordPatch';
 import { getRecordFromFirestore } from '@/services/storage/firestore';
-import { isRetryableSyncError, queueSyncTask } from '@/services/storage/sync';
+import { isRetryableSyncError, queueSyncTask } from '@/services/storage/sync/publicSyncQueue';
 import { saveRecord as saveToIndexedDB } from '@/services/storage/indexeddb/indexedDbRecordService';
 import { normalizeDailyRecordInvariants } from '@/utils/recordInvariants';
 import { validateAndSalvageRecord } from '@/services/repositories/helpers/validationHelper';

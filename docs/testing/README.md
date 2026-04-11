@@ -37,6 +37,7 @@ Superficie pública mínima recomendada para trabajo diario: [docs/DEVELOPER_COM
 | `npm run check:release-confidence-matrix` | Verifica que cada área crítica tenga trazabilidad explícita hacia coverage, smoke, budgets y pasos blocking de release    |
 | `npm run ci:inner-loop`                   | Ruta rápida para desarrollo diario                                                                                        |
 | `npm run ci:pre-merge`                    | Verificación compacta obligatoria antes de merge                                                                          |
+| `npm run ci:preview-gate`                 | Gate productivo del bundle real: budgets, grafo de chunks y smoke preview local                                           |
 | `npm run ci:merge-gate`                   | Ruta blocking ampliada previa a merge                                                                                     |
 | `npm run ci:release-gate`                 | Ruta completa con Firestore + E2E                                                                                         |
 
@@ -85,6 +86,8 @@ El budget diferencia entre:
 2. Antes de merge, correr al menos `npm run ci:pre-merge`.
 3. Si toca código clínico, runtime, bundle o cobertura, cerrar con `npm run ci:merge-gate`.
 4. Si toca Firestore, reglas, emulador o UX crítica, cerrar con `npm run ci:release-gate`.
+
+`ci:merge-gate` ya incorpora `ci:preview-gate`, que hoy es la fuente de verdad para validar que el bundle productivo realmente monta en preview local sin blank page silenciosa.
 
 Los demás scripts de este documento deben tratarse como validaciones especializadas, no como superficie pública mínima.
 
@@ -171,3 +174,4 @@ Objetivo: que el pack blocking siga siendo chico, pero con cobertura explícita 
 2. Evitar `any` en tests; preferir fixtures tipadas y `ApplicationOutcome` explícito.
 3. Si aparece una falla E2E, migrar el spec a contratos estables (`data-testid`, ready states, errores visibles) antes de relajar assertions.
 4. Si cambia el estándar operativo, actualizar [docs/CI_GATES_AND_FAILURE_RUNBOOKS.md](../CI_GATES_AND_FAILURE_RUNBOOKS.md).
+5. Si cambia el smoke de preview o el grafo de chunks de arranque, actualizar también `scripts/config/guardrail-governance.json` para que CI, reportes y documentación sigan alineados.

@@ -19,6 +19,7 @@ Estos son los entrypoints recomendados para trabajo normal.
 | `npm run check:quality`   | guardrails estructurales y de gobernanza               |
 | `npm run ci:inner-loop`   | verificación local rápida antes de seguir iterando     |
 | `npm run ci:pre-merge`    | gate compacto antes de merge                           |
+| `npm run ci:preview-gate` | gate del bundle real en preview local                  |
 | `npm run ci:merge-gate`   | gate blocking ampliado para cambios sensibles          |
 | `npm run ci:release-gate` | validación final con Firestore/emuladores/E2E críticos |
 
@@ -35,6 +36,7 @@ Estos son los entrypoints recomendados para trabajo normal.
 
 1. `npm run ci:pre-merge`
 2. Si el cambio toca runtime clínico, storage, auth, bundle o boundaries críticos: `npm run ci:merge-gate`
+3. Si quieres aislar solo el riesgo del bundle productivo ya construido: `npm run ci:preview-gate`
 
 ### Antes de release o validación operativa fuerte
 

@@ -4,6 +4,8 @@ const previewCommand =
   process.env.PLAYWRIGHT_SKIP_PREVIEW_BUILD === '1'
     ? 'npm run preview -- --host 127.0.0.1 --port 4173'
     : 'npm run build && npm run preview -- --host 127.0.0.1 --port 4173';
+const previewArtifactsDir =
+  process.env.PLAYWRIGHT_PREVIEW_ARTIFACTS_DIR || 'reports/e2e/preview-bootstrap';
 
 export default defineConfig({
   testDir: './e2e',
@@ -11,7 +13,15 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: 0,
   workers: 1,
-  reporter: 'list',
+  reporter: process.env.CI
+    ? [
+        ['github'],
+        ['list'],
+        ['html', { open: 'never', outputFolder: `${previewArtifactsDir}/html` }],
+        ['json', { outputFile: `${previewArtifactsDir}/report.json` }],
+        ['junit', { outputFile: `${previewArtifactsDir}/report.junit.xml` }],
+      ]
+    : 'list',
   use: {
     baseURL: 'http://127.0.0.1:4173',
     trace: 'retain-on-failure',

@@ -48,6 +48,7 @@ Evitar que la deuda estructural vuelva a crecer después de las fases de estabil
 - `npm run ci:inner-loop`
 - `npm run ci:pre-merge`
 - `npm run ci:merge-gate`
+- `npm run ci:preview-gate`
 - `npm run ci:release-gate`
 - `npm run ci:quality-core`
 - `npm run check:quality`
@@ -72,8 +73,10 @@ Evitar que la deuda estructural vuelva a crecer después de las fases de estabil
 - El estado persistente del roadmap estructural vive en [docs/FOUNDATION_TRACKER.md](./FOUNDATION_TRACKER.md).
 - `ci:inner-loop` es la ruta local rápida.
 - `ci:pre-merge` es la verificación compacta obligatoria antes de merge.
-- `ci:merge-gate` es la ruta blocking ampliada previa a merge.
+- `ci:preview-gate` es el sub-gate productivo del merge gate: budgets, chunk graph y smoke del bundle real en preview local.
+- `ci:merge-gate` es la ruta blocking ampliada previa a merge y debe delegar el chequeo del bundle productivo a `ci:preview-gate`.
 - `ci:release-gate` agrega emuladores, reglas y E2E críticos.
+- Los artifacts del smoke de preview deben quedar en `reports/e2e/preview-bootstrap/` y/o `playwright-report/` para diagnóstico cuando falle CI.
 - `test:release-confidence` es el pack blocking compacto; no debe crecer sin justificar el riesgo nuevo en `guardrail-governance.json`.
 - Los budgets por flujo se leen desde `reports/e2e/flow-performance-budget.json` y su resumen en `reports/e2e/flow-performance-budget-summary.json` / `.md`.
 - El estado operativo por flujo distingue `ok`, `near-limit`, `target-miss` y `blocking`.

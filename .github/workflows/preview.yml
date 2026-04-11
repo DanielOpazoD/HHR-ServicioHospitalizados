@@ -31,10 +31,11 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run local preview bootstrap smoke
-        run: npm run test:e2e:preview:census-bootstrap:built
+        run: npm run ci:preview-gate
         env:
           CI: true
           PLAYWRIGHT_SKIP_PREVIEW_BUILD: '1'
+          PLAYWRIGHT_PREVIEW_ARTIFACTS_DIR: reports/e2e/preview-bootstrap
 
       - name: Upload preview validation artifacts
         if: failure()
@@ -42,6 +43,7 @@ jobs:
         with:
           name: preview-validation-artifacts
           path: |
+            reports/e2e/preview-bootstrap/**
             playwright-report/**
             test-results/**
           retention-days: 14

@@ -45,7 +45,16 @@ Incluye:
 - `npm run ci:pre-merge`
 - `npm run lint:strict:core`
 - `npm run check:critical-coverage`
+- `npm run check:netlify-functions-bundle`
 - `npm run build`
+- `npm run ci:preview-gate`
+
+### `ci:preview-gate`
+
+Usar cuando se quiere validar específicamente el bundle productivo ya construido antes de merge o como diagnóstico de blank page.
+
+Incluye:
+
 - `npm run check:bundle-budget`
 - `npm run check:chunk-graph`
 - `npm run test:e2e:preview:census-bootstrap:built`
@@ -56,6 +65,12 @@ Salida esperada:
 - build productivo válido;
 - budgets de bundle dentro de los límites vigentes;
 - preview local del bundle montando `root` sin blank page silenciosa.
+
+Artefactos esperados cuando falla en CI:
+
+- `reports/e2e/preview-bootstrap/`
+- `playwright-report/`
+- `test-results/`
 
 ### `ci:release-gate`
 
@@ -181,6 +196,25 @@ Salida esperada:
    - los reportes report-only sigan apuntando a artefactos reales
 4. si agregaste un guardrail nuevo, decidir en la misma change si nace como blocking o report-only
 5. no duplicar un mismo riesgo en varios gates sin justificación explícita
+
+### Falla `check:dependency-vulnerabilities`
+
+1. revisar `reports/security/dependency-audit.md`
+2. identificar si el fallo viene de:
+   - `root`
+   - `functions`
+   - ambos workspaces
+3. distinguir si la categoría es:
+   - `high_or_critical_vulnerabilities`
+   - `network_unavailable`
+   - `invalid_output`
+   - `missing_inputs`
+4. si hay vulnerabilidades reales:
+   - priorizar upgrade de dependencias productivas
+   - documentar excepciones solo si el upgrade rompe compatibilidad y existe mitigación temporal explícita
+5. si el fallo es de red o registry:
+   - reintentar el workflow
+   - no marcar la app como segura por ausencia de reporte
 
 ## Qué hacer cuando falla
 
