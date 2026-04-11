@@ -136,6 +136,67 @@ service cloud.firestore {
              isValidSpecialistMedicalBedUpdate(bedId);
     }
 
+    function getSpecialistStructuredBeforeBySpecialty() {
+      return resource.data.medicalHandoffBySpecialty == null
+        ? {}
+        : resource.data.medicalHandoffBySpecialty;
+    }
+
+    function getSpecialistStructuredAfterBySpecialty() {
+      return request.resource.data.medicalHandoffBySpecialty == null
+        ? {}
+        : request.resource.data.medicalHandoffBySpecialty;
+    }
+
+    function isValidSpecialistStructuredMedicalSpecialtyEntry(specialty) {
+      let beforeEntry = getSpecialistStructuredBeforeBySpecialty()[specialty];
+      let afterEntry = getSpecialistStructuredAfterBySpecialty()[specialty];
+
+      return afterEntry != null &&
+             (
+               beforeEntry == null ||
+               afterEntry.diff(beforeEntry).affectedKeys().hasOnly([
+                 'note',
+                 'createdAt',
+                 'updatedAt',
+                 'author',
+                 'lastEditor',
+                 'version',
+                 'dailyContinuity'
+               ])
+             );
+    }
+
+    function isSpecialistStructuredMedicalHandoffUpdate() {
+      let affectedRecordKeys = request.resource.data.diff(resource.data).affectedKeys();
+      let affectedSpecialties =
+        getSpecialistStructuredAfterBySpecialty()
+          .diff(getSpecialistStructuredBeforeBySpecialty())
+          .affectedKeys();
+
+      return affectedRecordKeys.hasOnly([
+               'medicalHandoffBySpecialty',
+               'medicalHandoffNovedades',
+               'lastUpdated',
+               'dateTimestamp'
+             ]) &&
+             affectedSpecialties.size() == 1 &&
+             (
+               affectedSpecialties.hasOnly(['cirugia']) &&
+               isValidSpecialistStructuredMedicalSpecialtyEntry('cirugia') ||
+               affectedSpecialties.hasOnly(['traumatologia']) &&
+               isValidSpecialistStructuredMedicalSpecialtyEntry('traumatologia') ||
+               affectedSpecialties.hasOnly(['ginecobstetricia']) &&
+               isValidSpecialistStructuredMedicalSpecialtyEntry('ginecobstetricia') ||
+               affectedSpecialties.hasOnly(['pediatria']) &&
+               isValidSpecialistStructuredMedicalSpecialtyEntry('pediatria') ||
+               affectedSpecialties.hasOnly(['psiquiatria']) &&
+               isValidSpecialistStructuredMedicalSpecialtyEntry('psiquiatria') ||
+               affectedSpecialties.hasOnly(['medicinaInterna']) &&
+               isValidSpecialistStructuredMedicalSpecialtyEntry('medicinaInterna')
+             );
+    }
+
     function isSpecialistMedicalHandoffUpdate() {
       let affectedRecordKeys = request.resource.data.diff(resource.data).affectedKeys();
       let affectedBedIds = request.resource.data.beds.diff(resource.data.beds).affectedKeys();
@@ -151,12 +212,21 @@ service cloud.firestore {
              effectiveRecordTimestamp != null &&
              now >= effectiveRecordTimestamp &&
              now < (effectiveRecordTimestamp + 86400000) &&
-             affectedRecordKeys.hasOnly(['beds', 'lastUpdated', 'dateTimestamp']) &&
+             (
+               affectedRecordKeys.hasOnly(['beds', 'lastUpdated', 'dateTimestamp']) ||
+               affectedRecordKeys.hasOnly([
+                 'medicalHandoffBySpecialty',
+                 'medicalHandoffNovedades',
+                 'lastUpdated',
+                 'dateTimestamp'
+               ])
+             ) &&
              (
                currentRecordTimestamp != null ||
                nextRecordTimestamp != null
              ) &&
              (
+               isSpecialistStructuredMedicalHandoffUpdate() ||
                isOnlySpecialistAffectedBed(affectedBedIds, 'R1') ||
                isOnlySpecialistAffectedBed(affectedBedIds, 'R2') ||
                isOnlySpecialistAffectedBed(affectedBedIds, 'R3') ||
