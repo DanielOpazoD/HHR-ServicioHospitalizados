@@ -36,14 +36,21 @@ test.describe('Census persistence and reload', () => {
     await expect(page.getByTestId('census-table')).toBeVisible({ timeout: 20_000 });
 
     const row = getRow(page, 'R1');
-    const patientNameInput = row.locator('input[name="patientName"]').first();
+    const demographicsButton = row.getByRole('button', { name: /Datos del Paciente/i });
     const diagnosisInput = row.locator('input[placeholder*="Diagnóstico"]').first();
     const statusSelect = row
       .locator('select')
       .filter({ has: page.locator('option[value="Grave"]') });
 
-    await patientNameInput.fill('UPDATED PATIENT');
-    await patientNameInput.blur();
+    await demographicsButton.click();
+    const demographicsDialog = page.getByRole('dialog', { name: 'Datos Demográficos' });
+    await expect(demographicsDialog).toBeVisible();
+    await demographicsDialog.getByPlaceholder('Nombre').fill('Updated');
+    await demographicsDialog.getByPlaceholder('Apellido paterno').fill('Patient');
+    await demographicsDialog.getByRole('button', { name: /Guardar Cambios/i }).click();
+    await expect(demographicsDialog).toBeHidden();
+
+    const patientNameInput = row.locator('input[name="patientName"]').first();
     await diagnosisInput.fill('UPDATED DX');
     await diagnosisInput.blur();
     await statusSelect.selectOption({ label: 'Grave' });
@@ -78,6 +85,7 @@ test.describe('Census persistence and reload', () => {
 
     await page.reload();
     await expect(page.getByTestId('census-table')).toBeVisible({ timeout: 20_000 });
+    await expect(getRow(page, 'R1')).toBeVisible();
     await expect(patientNameInput).toHaveValue('Updated Patient');
     await expect(diagnosisInput).toHaveValue('UPDATED DX');
     await expect(statusSelect).toHaveValue('Grave');

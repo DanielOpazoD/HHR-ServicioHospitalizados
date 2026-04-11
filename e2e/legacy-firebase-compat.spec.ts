@@ -20,12 +20,20 @@ test.describe('Legacy Firebase compatibility', () => {
     const legacyRow = page.locator('[data-testid="patient-row"][data-bed-id="R1"]').first();
     const extraBedRow = page.locator('[data-testid="patient-row"][data-bed-id="E1"]').first();
     const patientNameInput = legacyRow.locator('input[name="patientName"]').first();
+    const demographicsButton = legacyRow.getByRole('button', { name: /Datos del Paciente/i });
 
     await expect(patientNameInput).toHaveValue('LEGACY PATIENT');
     await expect(extraBedRow).toBeVisible();
 
-    await patientNameInput.fill('LEGACY PATIENT NORMALIZED');
-    await patientNameInput.blur();
+    await demographicsButton.click();
+    const demographicsDialog = page.getByRole('dialog', { name: 'Datos Demográficos' });
+    await expect(demographicsDialog).toBeVisible();
+    await demographicsDialog.getByPlaceholder('Nombre').fill('Legacy');
+    await demographicsDialog.getByPlaceholder('Apellido paterno').fill('Patient');
+    await demographicsDialog.getByPlaceholder('Apellido materno').fill('Normalized');
+    await demographicsDialog.getByRole('button', { name: /Guardar Cambios/i }).click();
+    await expect(demographicsDialog).toBeHidden();
+
     await expect(patientNameInput).toHaveValue('Legacy Patient Normalized');
 
     await expect

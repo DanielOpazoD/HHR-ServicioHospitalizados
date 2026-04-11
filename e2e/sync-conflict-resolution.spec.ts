@@ -37,13 +37,20 @@ test.describe('Sync conflict resolution', () => {
     await expect(page.getByTestId('census-table')).toBeVisible({ timeout: 20_000 });
 
     const row = getRow(page, 'R1');
+    const demographicsButton = row.getByRole('button', { name: /Datos del Paciente/i });
     const patientNameInput = row.locator('input[name="patientName"]').first();
     const statusSelect = row
       .locator('select')
       .filter({ has: page.locator('option[value="Grave"]') });
 
-    await patientNameInput.fill('LOCAL DRAFT');
-    await patientNameInput.blur();
+    await demographicsButton.click();
+    const demographicsDialog = page.getByRole('dialog', { name: 'Datos Demográficos' });
+    await expect(demographicsDialog).toBeVisible();
+    await demographicsDialog.getByPlaceholder('Nombre').fill('Local');
+    await demographicsDialog.getByPlaceholder('Apellido paterno').fill('Draft');
+    await demographicsDialog.getByRole('button', { name: /Guardar Cambios/i }).click();
+    await expect(demographicsDialog).toBeHidden();
+
     await expect(patientNameInput).toHaveValue('Local Draft');
 
     await page.evaluate(date => {

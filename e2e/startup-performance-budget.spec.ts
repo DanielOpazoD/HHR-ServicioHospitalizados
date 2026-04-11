@@ -282,18 +282,15 @@ test.describe('Startup performance budget', () => {
 
     const patientRow = page.locator('[data-testid="patient-row"][data-bed-id="R1"]').first();
     const openClinicalDocumentsMenuStart = performance.now();
-    await patientRow.locator('button[title="Acciones"]').evaluate(element => {
-      (element as HTMLButtonElement).click();
-    });
+    await patientRow.hover();
+    await page.getByLabel('Acciones clínicas rápidas').click();
     clinicalDocumentsBreakdown.openMenuMs = Number(
       (performance.now() - openClinicalDocumentsMenuStart).toFixed(2)
     );
-    await expect(page.getByText('Gestión Clínica')).toBeVisible();
+    await expect(page.getByTitle('Documentos clínicos')).toBeVisible();
 
     const startClinicalDocuments = performance.now();
-    await page.getByTestId('patient-row-open-clinical-documents').evaluate(element => {
-      (element as HTMLButtonElement).click();
-    });
+    await page.getByTitle('Documentos clínicos').click();
     await waitForClinicalDocumentsReady(page);
     const clinicalDocumentsVisibleMs = performance.now() - startClinicalDocuments;
     clinicalDocumentsBreakdown.workspaceReadyMs = Number(clinicalDocumentsVisibleMs.toFixed(2));
