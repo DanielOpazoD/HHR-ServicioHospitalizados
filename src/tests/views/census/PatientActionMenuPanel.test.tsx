@@ -36,9 +36,6 @@ describe('PatientActionMenuPanel', () => {
         onClose={vi.fn()}
         onAction={vi.fn()}
         onViewHistory={vi.fn()}
-        onViewClinicalDocuments={vi.fn()}
-        onViewExamRequest={vi.fn()}
-        onViewImagingRequest={vi.fn()}
       />
     );
 
@@ -49,9 +46,6 @@ describe('PatientActionMenuPanel', () => {
     const onClose = vi.fn();
     const onAction = vi.fn();
     const onViewHistory = vi.fn();
-    const onViewClinicalDocuments = vi.fn();
-    const onViewExamRequest = vi.fn();
-    const onViewImagingRequest = vi.fn();
 
     render(
       <PatientActionMenuPanel
@@ -91,9 +85,6 @@ describe('PatientActionMenuPanel', () => {
         onClose={onClose}
         onAction={onAction}
         onViewHistory={onViewHistory}
-        onViewClinicalDocuments={onViewClinicalDocuments}
-        onViewExamRequest={onViewExamRequest}
-        onViewImagingRequest={onViewImagingRequest}
       />
     );
 
@@ -111,15 +102,9 @@ describe('PatientActionMenuPanel', () => {
 
     fireEvent.click(screen.getByText('Egreso CMA'));
     expect(onAction).toHaveBeenCalledWith('cma');
-
-    fireEvent.click(screen.getByText('Documentos Clínicos'));
-    expect(onViewClinicalDocuments).toHaveBeenCalledTimes(1);
-
-    fireEvent.click(screen.getByText('Solicitud Exámenes'));
-    expect(onViewExamRequest).toHaveBeenCalledTimes(1);
-
-    fireEvent.click(screen.getByText('Solicitud de Imágenes'));
-    expect(onViewImagingRequest).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('Documentos Clínicos')).not.toBeInTheDocument();
+    expect(screen.queryByText('Solicitud Exámenes')).not.toBeInTheDocument();
+    expect(screen.queryByText('Solicitud de Imágenes')).not.toBeInTheDocument();
 
     const overlay = document.querySelector('.fixed.inset-0.z-40');
     if (!overlay) {
@@ -160,9 +145,6 @@ describe('PatientActionMenuPanel', () => {
         onClose={vi.fn()}
         onAction={vi.fn()}
         onViewHistory={vi.fn()}
-        onViewClinicalDocuments={vi.fn()}
-        onViewExamRequest={vi.fn()}
-        onViewImagingRequest={vi.fn()}
       />
     );
 

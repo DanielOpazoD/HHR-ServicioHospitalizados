@@ -5,15 +5,26 @@ import {
   usePatientRowCribInputHandlers,
   usePatientRowMainInputHandlers,
 } from '@/features/census/components/patient-row/usePatientRowInputHandlers';
+import { harmonizeEpisodeDemographicsHistorySafely } from '@/features/census/controllers/patientDemographicsEpisodeSyncController';
+import { DataFactory } from '@/tests/factories/DataFactory';
+
+vi.mock('@/features/census/controllers/patientDemographicsEpisodeSyncController', () => ({
+  harmonizeEpisodeDemographicsHistorySafely: vi.fn(),
+}));
 
 describe('usePatientRowInputHandlers', () => {
   it('maps main row handlers to daily record actions', () => {
     const updatePatient = vi.fn();
     const updatePatientMultiple = vi.fn();
+    const data = DataFactory.createMockPatient('R1', {
+      firstSeenDate: '2026-01-01',
+    });
 
     const { result } = renderHook(() =>
       usePatientRowMainInputHandlers({
         bedId: 'R1',
+        currentDateString: '2026-01-03',
+        data,
         documentType: 'RUT',
         updatePatient,
         updatePatientMultiple,
@@ -36,6 +47,11 @@ describe('usePatientRowInputHandlers', () => {
     expect(updatePatient).toHaveBeenCalledWith('R1', 'isUPC', true);
     expect(updatePatient).toHaveBeenCalledWith('R1', 'documentType', 'Pasaporte');
     expect(updatePatientMultiple).toHaveBeenCalledWith('R1', { age: '40' });
+    expect(harmonizeEpisodeDemographicsHistorySafely).toHaveBeenCalledWith({
+      currentDate: '2026-01-03',
+      sourcePatient: data,
+      updatedFields: { age: '40' },
+    });
     expect(updatePatientMultiple).toHaveBeenCalledWith('R1', {
       deliveryRoute: 'Vaginal',
       deliveryDate: '2026-02-12',
@@ -46,10 +62,16 @@ describe('usePatientRowInputHandlers', () => {
   it('maps clinical crib handlers to clinical crib actions', () => {
     const updateClinicalCrib = vi.fn();
     const updateClinicalCribMultiple = vi.fn();
+    const cribData = DataFactory.createMockPatient('C1', {
+      patientName: 'RN X',
+      firstSeenDate: '2026-01-01',
+    });
 
     const { result } = renderHook(() =>
       usePatientRowCribInputHandlers({
         bedId: 'R1',
+        currentDateString: '2026-01-03',
+        data: cribData,
         updateClinicalCrib,
         updateClinicalCribMultiple,
       })
@@ -70,6 +92,12 @@ describe('usePatientRowInputHandlers', () => {
     expect(updateClinicalCrib).toHaveBeenCalledWith('R1', 'isUPC', true);
     expect(updateClinicalCrib).toHaveBeenCalledWith('R1', 'devices', ['VVP#1']);
     expect(updateClinicalCribMultiple).toHaveBeenCalledWith('R1', { age: '2d' });
+    expect(harmonizeEpisodeDemographicsHistorySafely).toHaveBeenCalledWith({
+      currentDate: '2026-01-03',
+      sourcePatient: cribData,
+      updatedFields: { age: '2d' },
+      isClinicalCribPatient: true,
+    });
   });
 
   it('defaults document type toggle to Pasaporte when current type is undefined', () => {
@@ -79,6 +107,8 @@ describe('usePatientRowInputHandlers', () => {
     const { result } = renderHook(() =>
       usePatientRowMainInputHandlers({
         bedId: 'R5',
+        currentDateString: '2026-01-03',
+        data: DataFactory.createMockPatient('R5'),
         documentType: undefined,
         updatePatient,
         updatePatientMultiple,

@@ -103,7 +103,9 @@ describe('usePatientRowRuntime', () => {
   });
 
   it('delegates row action with bed id and patient data', () => {
-    const { result } = renderHook(() => usePatientRowRuntime({ bed, data, onAction }));
+    const { result } = renderHook(() =>
+      usePatientRowRuntime({ bed, data, currentDateString: '2026-01-03', onAction })
+    );
 
     act(() => {
       result.current.handleAction('move');
@@ -113,7 +115,9 @@ describe('usePatientRowRuntime', () => {
   });
 
   it('wires bed type and clinical crib update handlers', () => {
-    const { result } = renderHook(() => usePatientRowRuntime({ bed, data, onAction }));
+    const { result } = renderHook(() =>
+      usePatientRowRuntime({ bed, data, currentDateString: '2026-01-03', onAction })
+    );
 
     act(() => {
       result.current.bedTypeToggles.onToggleBedType();

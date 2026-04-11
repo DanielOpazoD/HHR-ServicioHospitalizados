@@ -1,11 +1,11 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { DataFactory } from '@/tests/factories/DataFactory';
 import { AdmissionInput } from '@/features/census/components/patient-row/AdmissionInput';
 
 describe('AdmissionInput', () => {
-  it('renders an edit icon button that focuses the admission selector', () => {
+  it('opens an integrated date/time editor from the admission field trigger', () => {
     const data = DataFactory.createMockPatient('R1', {
       admissionDate: '2026-02-20',
       admissionTime: '10:00',
@@ -29,12 +29,12 @@ describe('AdmissionInput', () => {
       </table>
     );
 
-    const editControl = screen.getByLabelText('Editar fecha de ingreso') as HTMLSelectElement;
+    fireEvent.click(screen.getByLabelText('Editar fecha y hora de ingreso'));
 
-    act(() => {
-      editControl.focus();
-    });
-    expect(document.activeElement).toBe(editControl);
+    expect(
+      screen.getByRole('dialog', { name: 'Configurar fecha y hora de ingreso' })
+    ).toBeInTheDocument();
+    expect(screen.getByDisplayValue('10:00')).toBeInTheDocument();
   });
 
   it('shows a correction hint for suspicious admission dates and applies the suggestion', () => {
@@ -102,9 +102,8 @@ describe('AdmissionInput', () => {
       </table>
     );
 
-    fireEvent.change(screen.getByLabelText('Editar fecha de ingreso'), {
-      target: { value: '2026-03-10' },
-    });
+    fireEvent.click(screen.getByLabelText('Editar fecha y hora de ingreso'));
+    fireEvent.click(screen.getByRole('button', { name: '10/03/2026' }));
 
     expect(onMultipleUpdate).toHaveBeenCalledWith({
       admissionDate: '2026-03-10',
@@ -136,9 +135,9 @@ describe('AdmissionInput', () => {
       </table>
     );
 
-    const dateInput = screen.getByDisplayValue('10/03/2026') as HTMLSelectElement;
-    expect(dateInput).not.toBeDisabled();
-    expect(screen.getByLabelText('Editar fecha de ingreso')).not.toBeDisabled();
+    const trigger = screen.getByLabelText('Editar fecha y hora de ingreso');
+    expect(trigger).toBeEnabled();
+    expect(screen.getByText('10/03/2026')).toBeInTheDocument();
   });
 
   it('locks admission date editing when firstSeenDate is missing and the patient is no longer a same-day admission', () => {
@@ -166,8 +165,7 @@ describe('AdmissionInput', () => {
     );
 
     expect(screen.getByText('10/03/2024')).toBeInTheDocument();
-    expect(screen.queryByDisplayValue('10/03/2024')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Editar fecha de ingreso')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Editar fecha y hora de ingreso')).not.toBeInTheDocument();
   });
 
   it('locks admission date editing after the first observed day when firstSeenDate anchors the episode', () => {
@@ -196,8 +194,7 @@ describe('AdmissionInput', () => {
     );
 
     expect(screen.getByText('10/03/2026')).toBeInTheDocument();
-    expect(screen.queryByDisplayValue('10/03/2026')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Editar fecha de ingreso')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Editar fecha y hora de ingreso')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Corregir fecha de ingreso sugerida')).not.toBeInTheDocument();
   });
 });

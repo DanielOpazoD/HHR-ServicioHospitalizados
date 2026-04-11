@@ -2,9 +2,9 @@
  * AdmissionInput - Admission date/time input (critical field)
  */
 
-import React, { useId, useState } from 'react';
+import React, { useState } from 'react';
 import clsx from 'clsx';
-import { AlertCircle, Pencil } from 'lucide-react';
+import { AlertCircle, Clock3, Pencil } from 'lucide-react';
 import { DebouncedInput } from '@/components/ui/DebouncedInput';
 import type { PatientData } from '@/features/census/components/patient-row/patientRowDataContracts';
 import { BaseCellProps, DebouncedTextHandler } from './inputCellTypes';
@@ -34,8 +34,7 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
   onChange,
   onMultipleUpdate,
 }) => {
-  const [showTime, setShowTime] = useState(false);
-  const admissionDateInputId = useId();
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
   const isCriticalEmpty = resolveIsCriticalAdmissionEmpty(data.patientName, data.admissionDate);
   const audit = resolveAdmissionDateAudit({
     recordDate: currentDateString,
@@ -116,18 +115,27 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
     <td className="py-0.5 px-1 border-r border-slate-200 w-32">
       <div
         className="w-full relative"
-        onFocusCapture={() => setShowTime(true)}
+        onFocusCapture={() => {
+          if (showEditButton) {
+            setIsEditorOpen(true);
+          }
+        }}
         onBlur={event => {
           const next = event.relatedTarget as HTMLElement | null;
           if (next && event.currentTarget.contains(next)) return;
-          setShowTime(false);
+          setIsEditorOpen(false);
         }}
       >
         {showEditButton ? (
           <div className="relative">
-            <div
+            <button
+              type="button"
+              aria-label="Editar fecha y hora de ingreso"
+              aria-haspopup="dialog"
+              aria-expanded={isEditorOpen}
+              onClick={() => setIsEditorOpen(current => !current)}
               className={clsx(
-                'w-full h-7 border rounded text-[11px] leading-none flex items-center bg-white px-1.5',
+                'w-full h-7 border rounded text-[11px] leading-none flex items-center bg-white px-1.5 text-left relative',
                 isCriticalEmpty
                   ? 'border-red-400 border-2 bg-red-50'
                   : isAdmissionDateSuspicious
@@ -135,41 +143,66 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
                     : 'border-slate-300',
                 isSubRow && 'h-6'
               )}
-            >
-              <span className="truncate">{selectedAdmissionLabel}</span>
-              <span className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 text-slate-400">
-                <Pencil size={10} />
-              </span>
-            </div>
-            <select
-              id={admissionDateInputId}
-              data-admission-date-input="true"
-              aria-label="Editar fecha de ingreso"
-              className={clsx(
-                'absolute inset-0 w-full h-full opacity-0 cursor-pointer appearance-none focus:outline-none',
-                readOnly || !isAdmissionDateEditable ? 'pointer-events-none' : ''
-              )}
-              value={data.admissionDate || ''}
-              onChange={event => {
-                handleDateChange(event.target.value);
-                setShowTime(true);
-              }}
-              disabled={readOnly || !isAdmissionDateEditable}
               title={
                 isCriticalEmpty
                   ? 'Campo crítico requerido para entrega'
                   : isAdmissionDateSuspicious
-                    ? `${audit.message || 'Fecha sospechosa'} Sugerida: ${audit.suggestedAdmissionDate}`
-                    : undefined
+                    ? `${audit.message || 'Fecha sospechosa'}${audit.suggestedAdmissionDate ? ` Sugerida: ${audit.suggestedAdmissionDate}` : ''}`
+                    : 'Configurar fecha y hora de ingreso'
               }
             >
-              <option value="">--</option>
-              {admissionDateOptions.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+              <span className="truncate block w-full pr-4">{selectedAdmissionLabel}</span>
+              <span className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 text-slate-400">
+                <Pencil size={9} />
+              </span>
+            </button>
+            {isEditorOpen && (
+              <div
+                role="dialog"
+                aria-label="Configurar fecha y hora de ingreso"
+                className="absolute left-0 top-full mt-1 min-w-[10rem] rounded-xl border border-slate-200 bg-white p-2 shadow-xl z-30"
+              >
+                <div className="space-y-1">
+                  {admissionDateOptions.length === 0 ? (
+                    <div className="px-2 py-1.5 text-xs text-slate-500">Sin fechas disponibles</div>
+                  ) : (
+                    admissionDateOptions.map(option => {
+                      const isSelected = option.value === (data.admissionDate || '');
+
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => handleDateChange(option.value)}
+                          className={clsx(
+                            'w-full rounded-lg px-2 py-1.5 text-left text-sm transition-colors',
+                            isSelected
+                              ? 'bg-blue-500 text-white'
+                              : 'text-slate-800 hover:bg-slate-100'
+                          )}
+                        >
+                          {option.label}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+                <div className="mt-2 border-t border-slate-200 pt-2">
+                  <label className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                    <Clock3 size={10} />
+                    Hora de ingreso
+                  </label>
+                  <DebouncedInput
+                    type="time"
+                    step={300}
+                    className="mt-1 w-full h-8 rounded-md border border-slate-300 bg-white px-2 text-xs focus:ring-2 focus:ring-medical-500 focus:outline-none"
+                    value={data.admissionTime || ''}
+                    onChange={onChange('admissionTime')}
+                    disabled={readOnly}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div
@@ -214,17 +247,6 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
           >
             <AlertCircle size={8} className="text-white" />
           </div>
-        )}
-        {/* Time input popup */}
-        {showTime && (
-          <DebouncedInput
-            type="time"
-            step={300}
-            className="w-24 p-0.5 h-7 border border-slate-300 rounded focus:ring-2 focus:ring-medical-500 focus:outline-none text-xs absolute left-full top-1/2 -translate-y-1/2 ml-2 bg-white shadow-lg z-30"
-            value={data.admissionTime || ''}
-            onChange={onChange('admissionTime')}
-            disabled={readOnly}
-          />
         )}
       </div>
     </td>

@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { usePatientRowHandlersModel } from '@/features/census/components/patient-row/usePatientRowHandlersModel';
 import { usePatientRowEditingRuntime } from '@/features/census/components/patient-row/usePatientRowEditingRuntime';
+import { DataFactory } from '@/tests/factories/DataFactory';
 
 vi.mock('@/features/census/components/patient-row/usePatientRowHandlersModel', () => ({
   usePatientRowHandlersModel: vi.fn(),
@@ -30,6 +31,8 @@ describe('usePatientRowEditingRuntime', () => {
     const { result } = renderHook(() =>
       usePatientRowEditingRuntime({
         bedId: 'R1',
+        currentDateString: '2026-01-03',
+        data: DataFactory.createMockPatient('R1'),
         documentType: 'RUT',
         updatePatient,
         updatePatientMultiple,
@@ -40,6 +43,8 @@ describe('usePatientRowEditingRuntime', () => {
 
     expect(usePatientRowHandlersModel).toHaveBeenCalledWith({
       bedId: 'R1',
+      currentDateString: '2026-01-03',
+      data: expect.objectContaining({ bedId: 'R1' }),
       documentType: 'RUT',
       updatePatient,
       updatePatientMultiple,

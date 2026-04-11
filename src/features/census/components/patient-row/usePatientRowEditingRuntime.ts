@@ -1,5 +1,6 @@
 import { usePatientRowHandlersModel } from './usePatientRowHandlersModel';
 import type {
+  PatientData,
   PatientRowPatientDocumentType,
   PatientRowPatientField,
   PatientRowPatientPatch,
@@ -8,6 +9,8 @@ import type { PatientFieldValue } from '@/types/valueTypes';
 
 interface UsePatientRowEditingRuntimeParams {
   bedId: string;
+  currentDateString: string;
+  data: PatientData;
   documentType?: PatientRowPatientDocumentType;
   updatePatient: (bedId: string, field: PatientRowPatientField, value: PatientFieldValue) => void;
   updatePatientMultiple: (bedId: string, fields: PatientRowPatientPatch) => void;
@@ -21,6 +24,8 @@ interface UsePatientRowEditingRuntimeParams {
 
 export const usePatientRowEditingRuntime = ({
   bedId,
+  currentDateString,
+  data,
   documentType,
   updatePatient,
   updatePatientMultiple,
@@ -29,6 +34,8 @@ export const usePatientRowEditingRuntime = ({
 }: UsePatientRowEditingRuntimeParams) =>
   usePatientRowHandlersModel({
     bedId,
+    currentDateString,
+    data,
     documentType,
     updatePatient,
     updatePatientMultiple,

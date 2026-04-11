@@ -15,12 +15,14 @@ import {
 interface UsePatientRowRuntimeParams {
   bed: BedDefinition;
   data: PatientData;
+  currentDateString: string;
   onAction: (action: PatientRowAction, bedId: string, patient: PatientData) => void;
 }
 
 export const usePatientRowRuntime = ({
   bed,
   data,
+  currentDateString,
   onAction,
 }: UsePatientRowRuntimeParams): PatientRowRuntime => {
   const {
@@ -37,6 +39,7 @@ export const usePatientRowRuntime = ({
     ...buildPatientRowEditingRuntimeParams({
       bed,
       data,
+      currentDateString,
       dependencies: {
         updatePatient,
         updatePatientMultiple,

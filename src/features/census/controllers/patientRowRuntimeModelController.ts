@@ -6,7 +6,8 @@ import type { PatientRowDerivedState } from '@/features/census/controllers/patie
 
 interface BuildPatientRowEditingRuntimeParamsInput {
   bed: Pick<BedDefinition, 'id'>;
-  data: Pick<PatientData, 'documentType'>;
+  data: PatientData;
+  currentDateString: string;
   dependencies: Pick<
     PatientRowDependencies,
     'updatePatient' | 'updatePatientMultiple' | 'updateClinicalCrib' | 'updateClinicalCribMultiple'
@@ -16,9 +17,12 @@ interface BuildPatientRowEditingRuntimeParamsInput {
 export const buildPatientRowEditingRuntimeParams = ({
   bed,
   data,
+  currentDateString,
   dependencies,
 }: BuildPatientRowEditingRuntimeParamsInput) => ({
   bedId: bed.id,
+  currentDateString,
+  data,
   documentType: data.documentType,
   updatePatient: dependencies.updatePatient,
   updatePatientMultiple: dependencies.updatePatientMultiple,

@@ -152,9 +152,6 @@ export const PatientActionMenu: React.FC<PatientActionMenuProps> = ({
             onClose={close}
             onAction={handleAction}
             onViewHistory={handleViewHistory}
-            onViewClinicalDocuments={handleViewClinicalDocuments}
-            onViewExamRequest={handleViewExamRequest}
-            onViewImagingRequest={handleViewImagingRequest}
           />
         </Suspense>
       ) : null}

@@ -26,7 +26,7 @@ export const usePatientRowBindingsModel = ({
   bedType,
   style,
 }: UsePatientRowBindingsModelParams) => {
-  const runtime = usePatientRowRuntime({ bed, data, onAction });
+  const runtime = usePatientRowRuntime({ bed, data, currentDateString, onAction });
 
   return useMemo(
     () =>

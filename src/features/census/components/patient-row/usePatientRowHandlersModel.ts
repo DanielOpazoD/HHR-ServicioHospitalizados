@@ -4,6 +4,7 @@ import {
   usePatientRowMainInputHandlers,
 } from '@/features/census/components/patient-row/usePatientRowInputHandlers';
 import type {
+  PatientData,
   PatientRowPatientDocumentType,
   PatientRowPatientField,
   PatientRowPatientPatch,
@@ -12,6 +13,8 @@ import type { PatientFieldValue } from '@/types/valueTypes';
 
 interface UsePatientRowHandlersModelParams {
   bedId: string;
+  currentDateString: string;
+  data: PatientData;
   documentType?: PatientRowPatientDocumentType;
   updatePatient: (bedId: string, field: PatientRowPatientField, value: PatientFieldValue) => void;
   updatePatientMultiple: (bedId: string, fields: PatientRowPatientPatch) => void;
@@ -25,6 +28,8 @@ interface UsePatientRowHandlersModelParams {
 
 export const usePatientRowHandlersModel = ({
   bedId,
+  currentDateString,
+  data,
   documentType,
   updatePatient,
   updatePatientMultiple,
@@ -33,6 +38,8 @@ export const usePatientRowHandlersModel = ({
 }: UsePatientRowHandlersModelParams) => {
   const mainHandlers = usePatientRowMainInputHandlers({
     bedId,
+    currentDateString,
+    data,
     documentType,
     updatePatient,
     updatePatientMultiple,
@@ -40,6 +47,8 @@ export const usePatientRowHandlersModel = ({
 
   const cribHandlers = usePatientRowCribInputHandlers({
     bedId,
+    currentDateString,
+    data: data.clinicalCrib,
     updateClinicalCrib,
     updateClinicalCribMultiple,
   });

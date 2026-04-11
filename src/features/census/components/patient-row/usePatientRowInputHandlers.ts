@@ -4,6 +4,7 @@ import type {
   DeliveryRoute,
 } from '@/features/census/contracts/censusObstetricContracts';
 import type {
+  PatientData,
   PatientRowPatientDocumentType,
   PatientRowPatientField,
   PatientRowPatientPatch,
@@ -18,10 +19,13 @@ import {
   buildPatientMultipleUpdater,
 } from '@/features/census/controllers/patientRowInputUpdateController';
 import { buildPatientRowInputCommands } from '@/features/census/controllers/patientRowInputHandlersController';
+import { harmonizeEpisodeDemographicsHistorySafely } from '@/features/census/controllers/patientDemographicsEpisodeSyncController';
 import { usePatientRowCommandHandlers } from '@/features/census/components/patient-row/usePatientRowCommandHandlers';
 
 interface UsePatientRowMainInputHandlersParams {
   bedId: string;
+  currentDateString: string;
+  data: PatientData;
   documentType?: PatientRowPatientDocumentType;
   updatePatient: (bedId: string, field: PatientRowPatientField, value: PatientFieldValue) => void;
   updatePatientMultiple: (bedId: string, fields: PatientRowPatientPatch) => void;
@@ -29,6 +33,8 @@ interface UsePatientRowMainInputHandlersParams {
 
 interface UsePatientRowCribInputHandlersParams {
   bedId: string;
+  currentDateString: string;
+  data?: PatientData;
   updateClinicalCrib: (
     bedId: string,
     field: PatientRowPatientField,
@@ -66,6 +72,8 @@ const usePatientRowUpdateAdapter = ({
 
 export const usePatientRowMainInputHandlers = ({
   bedId,
+  currentDateString,
+  data,
   documentType,
   updatePatient,
   updatePatientMultiple,
@@ -98,8 +106,21 @@ export const usePatientRowMainInputHandlers = ({
     [updateMultiple]
   );
 
+  const handleDemographicsSave = useCallback(
+    (updatedFields: PatientRowPatientPatch) => {
+      commandHandlers.handleDemographicsSave(updatedFields);
+      harmonizeEpisodeDemographicsHistorySafely({
+        currentDate: currentDateString,
+        sourcePatient: data,
+        updatedFields,
+      });
+    },
+    [commandHandlers, currentDateString, data]
+  );
+
   return {
     ...commandHandlers,
+    handleDemographicsSave,
     toggleDocumentType,
     handleDeliveryRouteChange,
   };
@@ -107,6 +128,8 @@ export const usePatientRowMainInputHandlers = ({
 
 export const usePatientRowCribInputHandlers = ({
   bedId,
+  currentDateString,
+  data,
   updateClinicalCrib,
   updateClinicalCribMultiple,
 }: UsePatientRowCribInputHandlersParams) => {
@@ -122,12 +145,29 @@ export const usePatientRowCribInputHandlers = ({
   );
   const commandHandlers = usePatientRowCommandHandlers(commands);
 
+  const handleCribDemographicsSave = useCallback(
+    (updatedFields: PatientRowPatientPatch) => {
+      commandHandlers.handleDemographicsSave(updatedFields);
+      if (!data) {
+        return;
+      }
+
+      harmonizeEpisodeDemographicsHistorySafely({
+        currentDate: currentDateString,
+        sourcePatient: data,
+        updatedFields,
+        isClinicalCribPatient: true,
+      });
+    },
+    [commandHandlers, currentDateString, data]
+  );
+
   return {
     handleCribTextChange: commandHandlers.handleTextChange,
     handleCribCheckboxChange: commandHandlers.handleCheckboxChange,
     handleCribDevicesChange: commandHandlers.handleDevicesChange,
     handleCribDeviceDetailsChange: commandHandlers.handleDeviceDetailsChange,
     handleCribDeviceHistoryChange: commandHandlers.handleDeviceHistoryChange,
-    handleCribDemographicsSave: commandHandlers.handleDemographicsSave,
+    handleCribDemographicsSave,
   };
 };

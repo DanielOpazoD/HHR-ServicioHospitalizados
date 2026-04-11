@@ -7,6 +7,7 @@ import {
 } from '@/features/census/components/patient-row/usePatientRowInputHandlers';
 import { usePatientRowChangeHandlers } from '@/features/census/components/patient-row/usePatientRowChangeHandlers';
 import type { BuildPatientRowChangeHandlersResult } from '@/features/census/controllers/patientRowChangeHandlersController';
+import { DataFactory } from '@/tests/factories/DataFactory';
 
 vi.mock('@/features/census/components/patient-row/usePatientRowInputHandlers', () => ({
   usePatientRowMainInputHandlers: vi.fn(),
@@ -51,6 +52,8 @@ describe('usePatientRowHandlersModel', () => {
     const { result } = renderHook(() =>
       usePatientRowHandlersModel({
         bedId: 'R1',
+        currentDateString: '2026-01-03',
+        data: DataFactory.createMockPatient('R1'),
         documentType: 'RUT',
         updatePatient: vi.fn(),
         updatePatientMultiple: vi.fn(),

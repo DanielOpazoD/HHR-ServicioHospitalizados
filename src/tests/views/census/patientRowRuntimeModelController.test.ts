@@ -14,7 +14,8 @@ describe('patientRowRuntimeModelController', () => {
 
     const result = buildPatientRowEditingRuntimeParams({
       bed: { id: 'R1' },
-      data: { documentType: 'RUT' },
+      data: DataFactory.createMockPatient('R1', { documentType: 'RUT' }),
+      currentDateString: '2026-01-03',
       dependencies: {
         updatePatient,
         updatePatientMultiple,
@@ -25,6 +26,8 @@ describe('patientRowRuntimeModelController', () => {
 
     expect(result).toEqual({
       bedId: 'R1',
+      currentDateString: '2026-01-03',
+      data: expect.objectContaining({ documentType: 'RUT' }),
       documentType: 'RUT',
       updatePatient,
       updatePatientMultiple,
