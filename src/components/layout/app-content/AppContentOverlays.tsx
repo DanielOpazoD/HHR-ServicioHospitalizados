@@ -25,9 +25,14 @@ const GlobalPatientSearchModal = lazyWithRetry(() =>
 export interface AppContentOverlaysProps {
   ui: UseUIStateReturn;
   runtime: AppContentRuntime;
+  onOpenCensusDate?: (isoDate: string) => void;
 }
 
-export const AppContentOverlays: React.FC<AppContentOverlaysProps> = ({ ui, runtime }) => {
+export const AppContentOverlays: React.FC<AppContentOverlaysProps> = ({
+  ui,
+  runtime,
+  onOpenCensusDate,
+}) => {
   const {
     censusEmail,
     dateNav: { currentDateString },
@@ -102,6 +107,7 @@ export const AppContentOverlays: React.FC<AppContentOverlaysProps> = ({ ui, runt
         <GlobalPatientSearchModal
           isOpen={ui.patientSearchModal.isOpen}
           onClose={ui.patientSearchModal.close}
+          onNavigateToDate={onOpenCensusDate}
         />
       </React.Suspense>
 

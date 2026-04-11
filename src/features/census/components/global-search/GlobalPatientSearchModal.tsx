@@ -11,6 +11,7 @@ import { Search, X, Loader2, Users } from 'lucide-react';
 import { useGlobalPatientSearch } from '@/features/census/components/global-search/useGlobalPatientSearch';
 import { PatientSearchResultItem } from '@/features/census/components/global-search/PatientSearchResultItem';
 import { PatientEpisodeTimeline } from '@/features/census/components/global-search/PatientEpisodeTimeline';
+import { SearchResultsSkeleton } from '@/features/census/components/global-search/SearchResultsSkeleton';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -19,6 +20,7 @@ import { PatientEpisodeTimeline } from '@/features/census/components/global-sear
 interface GlobalPatientSearchModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onNavigateToDate?: (isoDate: string) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -28,8 +30,17 @@ interface GlobalPatientSearchModalProps {
 export const GlobalPatientSearchModal: React.FC<GlobalPatientSearchModalProps> = ({
   isOpen,
   onClose,
+  onNavigateToDate,
 }) => {
   const search = useGlobalPatientSearch();
+
+  const handleNavigateToDate = useCallback(
+    (isoDate: string) => {
+      onClose();
+      onNavigateToDate?.(isoDate);
+    },
+    [onClose, onNavigateToDate]
+  );
   const inputRef = useRef<HTMLInputElement>(null);
   const resetRef = useRef(search.reset);
 
@@ -143,6 +154,7 @@ export const GlobalPatientSearchModal: React.FC<GlobalPatientSearchModalProps> =
                 episodeDocuments={search.episodeDocuments}
                 onLoadDocuments={search.loadEpisodeDocuments}
                 onDownloadPdf={search.downloadDocumentPdf}
+                onNavigateToDate={onNavigateToDate ? handleNavigateToDate : undefined}
                 onBack={search.clearSelection}
               />
             </div>
@@ -161,6 +173,9 @@ export const GlobalPatientSearchModal: React.FC<GlobalPatientSearchModalProps> =
                   </p>
                 </div>
               )}
+
+              {/* Skeleton loading */}
+              {search.isSearching && <SearchResultsSkeleton />}
 
               {/* No results */}
               {search.hasSearched && !search.isSearching && search.results.length === 0 && (

@@ -26,6 +26,7 @@ interface PatientEpisodeTimelineProps {
   episodeDocuments: Record<string, EpisodeDocuments>;
   onLoadDocuments: (episodeKey: string) => void;
   onDownloadPdf: (docId: string, docType: string) => Promise<void>;
+  onNavigateToDate?: (isoDate: string) => void;
   onBack: () => void;
 }
 
@@ -40,6 +41,7 @@ export const PatientEpisodeTimeline: React.FC<PatientEpisodeTimelineProps> = ({
   episodeDocuments,
   onLoadDocuments,
   onDownloadPdf,
+  onNavigateToDate,
   onBack,
 }) => {
   const groupedEpisodes = useMemo(
@@ -86,6 +88,7 @@ export const PatientEpisodeTimeline: React.FC<PatientEpisodeTimelineProps> = ({
             episodeDocuments={episodeDocuments}
             onLoadDocuments={onLoadDocuments}
             onDownloadPdf={onDownloadPdf}
+            onNavigateToDate={onNavigateToDate}
           />
         ))}
       </div>

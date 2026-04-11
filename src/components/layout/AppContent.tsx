@@ -17,6 +17,20 @@ export const AppContent: React.FC<AppContentProps> = ({ ui, renderFeatureQuickAc
   const runtime = useAppContentRuntime({ ui });
   const { auth, dailyRecordHook, dateNav } = runtime;
 
+  const openCensusDate = React.useCallback(
+    (isoDate: string) => {
+      const datePart = isoDate.split('T')[0];
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return;
+      const [year, month, day] = datePart.split('-').map(Number);
+      ui.setCurrentModule('CENSUS');
+      ui.setCensusViewMode('REGISTER');
+      dateNav.setSelectedYear(year);
+      dateNav.setSelectedMonth(month - 1);
+      dateNav.setSelectedDay(day);
+    },
+    [dateNav, ui]
+  );
+
   useAppContentShellEffects({
     role: auth.role,
     currentModule: ui.currentModule,
@@ -34,7 +48,7 @@ export const AppContent: React.FC<AppContentProps> = ({ ui, renderFeatureQuickAc
             runtime={runtime}
             renderFeatureQuickActions={renderFeatureQuickActions}
           />
-          <AppContentOverlays ui={ui} runtime={runtime} />
+          <AppContentOverlays ui={ui} runtime={runtime} onOpenCensusDate={openCensusDate} />
         </div>
       </ReminderCenterProvider>
     </AppProviders>

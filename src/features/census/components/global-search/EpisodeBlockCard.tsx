@@ -17,6 +17,7 @@ import {
   LogOut,
   ArrowRightLeft,
   Clock,
+  ExternalLink,
 } from 'lucide-react';
 import type { HospitalizationEvent } from '@/types/domain/patientMaster';
 import type { EpisodeDocuments } from '@/features/census/components/global-search/globalSearchContracts';
@@ -34,6 +35,7 @@ interface EpisodeBlockCardProps {
   episodeDocuments: Record<string, EpisodeDocuments>;
   onLoadDocuments: (key: string) => void;
   onDownloadPdf: (docId: string, docType: string) => Promise<void>;
+  onNavigateToDate?: (isoDate: string) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -77,6 +79,7 @@ export const EpisodeBlockCard: React.FC<EpisodeBlockCardProps> = ({
   episodeDocuments,
   onLoadDocuments,
   onDownloadPdf,
+  onNavigateToDate,
 }) => {
   const [isDocsExpanded, setIsDocsExpanded] = useState(false);
 
@@ -126,12 +129,25 @@ export const EpisodeBlockCard: React.FC<EpisodeBlockCardProps> = ({
             )}
           </div>
 
-          {episode.daysOfStay !== null && (
-            <span className="flex items-center gap-1 text-[10px] font-medium text-slate-400">
-              <Clock size={10} />
-              {episode.daysOfStay} dia{episode.daysOfStay !== 1 ? 's' : ''}
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {episode.daysOfStay !== null && (
+              <span className="flex items-center gap-1 text-[10px] font-medium text-slate-400">
+                <Clock size={10} />
+                {episode.daysOfStay} dia{episode.daysOfStay !== 1 ? 's' : ''}
+              </span>
+            )}
+            {onNavigateToDate && (
+              <button
+                type="button"
+                onClick={() => onNavigateToDate(episode.admission.date)}
+                className="flex items-center gap-1 text-[10px] font-medium text-medical-600 hover:text-medical-800 bg-medical-50 hover:bg-medical-100 rounded px-1.5 py-0.5 transition-colors"
+                title="Ir al censo de este dia"
+              >
+                <ExternalLink size={10} />
+                Ir al censo
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Body: diagnosis, bed, discharge info */}

@@ -30,8 +30,6 @@ let clinicalEpisodePromise: Promise<
 let clinicalDocPdfPromise: Promise<
   typeof import('@/features/clinical-documents/services/clinicalDocumentPdfService')
 > | null = null;
-let exportDownloadPromise: Promise<typeof import('@/services/exporters/exportDownload')> | null =
-  null;
 
 const loadPatientHistory = () => {
   patientHistoryPromise ??= import('@/services/patient/patientHistoryService');
@@ -49,10 +47,6 @@ const loadClinicalDocPdf = () => {
   clinicalDocPdfPromise ??=
     import('@/features/clinical-documents/services/clinicalDocumentPdfService');
   return clinicalDocPdfPromise;
-};
-const loadExportDownload = () => {
-  exportDownloadPromise ??= import('@/services/exporters/exportDownload');
-  return exportDownloadPromise;
 };
 
 // ---------------------------------------------------------------------------
@@ -166,25 +160,22 @@ export function usePatientSelection(): UsePatientSelectionReturn {
     }
   }, []);
 
-  const downloadDocumentPdf = useCallback(async (docId: string, docType: string) => {
+  /** Generate a clinical document PDF and open it in a new browser tab for preview. */
+  const downloadDocumentPdf = useCallback(async (docId: string, _docType: string) => {
     try {
-      const [docMod, pdfMod, downloadMod] = await Promise.all([
-        loadClinicalDocRepo(),
-        loadClinicalDocPdf(),
-        loadExportDownload(),
-      ]);
+      const [docMod, pdfMod] = await Promise.all([loadClinicalDocRepo(), loadClinicalDocPdf()]);
 
       const record = await docMod.ClinicalDocumentRepository.get(docId);
       if (!record) {
-        globalPatientSearchLogger.warn(`Document not found for PDF export: ${docId}`);
+        globalPatientSearchLogger.warn(`Document not found for PDF preview: ${docId}`);
         return;
       }
 
       const blob = await pdfMod.generateClinicalDocumentPdfBlob(record);
-      const patientName = record.patientName?.replace(/\s+/g, '_') || 'paciente';
-      downloadMod.downloadBlob(blob, `${docType}_${patientName}.pdf`);
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
     } catch (err) {
-      globalPatientSearchLogger.error(`PDF download failed for document ${docId}`, err);
+      globalPatientSearchLogger.error(`PDF preview failed for document ${docId}`, err);
       throw err;
     }
   }, []);
