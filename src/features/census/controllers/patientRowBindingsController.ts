@@ -14,15 +14,12 @@ import type {
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 import {
   buildPatientMainSectionBindings,
-  buildPatientModalSectionBindings,
   buildPatientSubSectionBindings,
   type PatientRowViewContext,
 } from '@/features/census/controllers/patientRowBindingSectionsController';
 import type { PatientRowResolvedIndicators } from '@/features/census/controllers/patientRowIndicatorsController';
-import {
-  buildPatientRowModalViewContext,
-  resolvePatientRowViewContext,
-} from '@/features/census/controllers/patientRowViewContextController';
+import { resolvePatientRowViewContext } from '@/features/census/controllers/patientRowViewContextController';
+import { resolvePatientRowCapabilities } from '@/features/census/controllers/patientRowCapabilitiesController';
 
 export interface BuildPatientRowBindingsParams {
   bed: BedDefinition;
@@ -66,7 +63,7 @@ const resolvePatientRowContextWithOverrides = ({
       }
     : resolvePatientRowViewContext({ role, data, runtime, indicators, accessProfile });
 
-const resolvePatientRowModalContextWithOptionalCapabilities = ({
+const resolvePatientRowCapabilitiesWithOverrides = ({
   role,
   data,
   runtime,
@@ -78,20 +75,14 @@ const resolvePatientRowModalContextWithOptionalCapabilities = ({
   runtime: PatientRowRuntime;
   accessProfile?: CensusAccessProfile;
   capabilitiesOverride?: PatientRowViewContext['capabilities'];
-}): PatientRowViewContext =>
+}): PatientRowViewContext['capabilities'] =>
   capabilitiesOverride
-    ? {
-        capabilities: capabilitiesOverride,
-        indicators: buildPatientRowModalViewContext({
-          role,
-          data,
-          runtime,
-        }).indicators,
-      }
-    : buildPatientRowModalViewContext({
+    ? capabilitiesOverride
+    : resolvePatientRowCapabilities({
         role,
-        data,
-        runtime,
+        patient: data,
+        isBlocked: runtime.rowState.isBlocked,
+        isEmpty: runtime.rowState.isEmpty,
         accessProfile,
       });
 
@@ -195,21 +186,38 @@ export const buildPatientRowModalsBindings = ({
 > & {
   capabilitiesOverride?: PatientRowViewContext['capabilities'];
   accessProfile?: CensusAccessProfile;
-}): PatientRowModalsBindings =>
-  buildPatientModalSectionBindings({
+}): PatientRowModalsBindings => {
+  const capabilities = resolvePatientRowCapabilitiesWithOverrides({
+    role,
+    data,
+    runtime,
+    accessProfile,
+    capabilitiesOverride,
+  });
+
+  return {
     bedId: bed.id,
     data,
     currentDateString,
     isSubRow,
-    runtime,
-    viewContext: resolvePatientRowModalContextWithOptionalCapabilities({
-      role,
-      data,
-      runtime,
-      accessProfile,
-      capabilitiesOverride,
-    }),
-  });
+    showDemographics: runtime.uiState.showDemographics,
+    showClinicalDocuments: runtime.uiState.showClinicalDocuments,
+    canOpenClinicalDocuments: capabilities.canOpenClinicalDocuments,
+    showExamRequest: runtime.uiState.showExamRequest,
+    canOpenExamRequest: capabilities.canOpenExamRequest,
+    showImagingRequest: runtime.uiState.showImagingRequest,
+    canOpenImagingRequest: capabilities.canOpenImagingRequest,
+    showHistory: runtime.uiState.showHistory,
+    canOpenHistory: capabilities.canOpenHistory,
+    onCloseDemographics: runtime.uiState.closeDemographics,
+    onCloseClinicalDocuments: runtime.uiState.closeClinicalDocuments,
+    onCloseExamRequest: runtime.uiState.closeExamRequest,
+    onCloseImagingRequest: runtime.uiState.closeImagingRequest,
+    onCloseHistory: runtime.uiState.closeHistory,
+    onSaveDemographics: runtime.modalSavers.onSaveDemographics,
+    onSaveCribDemographics: runtime.modalSavers.onSaveCribDemographics,
+  };
+};
 
 export const buildPatientRowBindings = ({
   bed,

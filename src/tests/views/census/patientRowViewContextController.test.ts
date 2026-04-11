@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  buildPatientRowModalViewContext,
-  resolvePatientRowViewContext,
-} from '@/features/census/controllers/patientRowViewContextController';
+import { resolvePatientRowViewContext } from '@/features/census/controllers/patientRowViewContextController';
 import type { PatientRowRuntime } from '@/features/census/components/patient-row/patientRowRuntimeContracts';
 import { DataFactory } from '@/tests/factories/DataFactory';
 
@@ -39,7 +36,7 @@ describe('patientRowViewContextController', () => {
     });
   });
 
-  it('builds modal view context with empty indicators and same capabilities', () => {
+  it('returns empty indicators when no explicit indicator state is provided', () => {
     const runtime = asRuntime({
       rowState: {
         isBlocked: false,
@@ -50,10 +47,11 @@ describe('patientRowViewContextController', () => {
       },
     });
 
-    const context = buildPatientRowModalViewContext({
+    const context = resolvePatientRowViewContext({
       role: 'viewer',
       data: DataFactory.createMockPatient('R1'),
       runtime,
+      indicators: undefined,
     });
 
     expect(context.capabilities.canOpenClinicalDocuments).toBe(false);
