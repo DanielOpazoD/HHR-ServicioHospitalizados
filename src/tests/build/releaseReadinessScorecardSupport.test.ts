@@ -15,6 +15,12 @@ const writeJson = (root: string, relativePath: string, value: unknown) => {
   fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
 };
 
+const writeText = (root: string, relativePath: string, value: string) => {
+  const filePath = path.join(root, relativePath);
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, value, 'utf8');
+};
+
 const createScorecardRoot = () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'release-readiness-scorecard-'));
   tempRoots.push(root);
@@ -121,6 +127,8 @@ describe('buildReleaseReadinessScorecard', () => {
       checkedEntries: 0,
       issues: [],
     });
+    writeText(root, 'dist/assets/index-real.js', 'x'.repeat(1000));
+    writeText(root, 'dist/assets/vendor-excel-core-real.js', 'x'.repeat(2000));
 
     const report = buildReleaseReadinessScorecard(root);
     const hotspotIndicator = report.indicators.find(
@@ -132,8 +140,23 @@ describe('buildReleaseReadinessScorecard', () => {
     expect(hotspotIndicator).toMatchObject({
       status: 'ok',
     });
-    expect(hotspotIndicator?.summary).toContain('vendor-excel-core-BNwEF2Ha.js');
+    expect(hotspotIndicator?.summary).toContain('vendor-excel-core-real.js');
     expect(markdown).toContain('## Release Hotspots');
-    expect(markdown).toContain('vendor-excel-core-BNwEF2Ha.js');
+    expect(markdown).toContain('vendor-excel-core-real.js');
+    expect(markdown).not.toContain('vendor-excel-core-BNwEF2Ha.js');
+  });
+
+  it('falls back to operational health assets when dist assets are absent', () => {
+    const root = createScorecardRoot();
+    writeJson(root, 'reports/compatibility-import-governance.json', {
+      generatedAt: '2026-04-10T00:00:00.000Z',
+      checkedEntries: 0,
+      issues: [],
+    });
+
+    const report = buildReleaseReadinessScorecard(root);
+
+    expect(report.releaseHotspots?.assets).toHaveLength(2);
+    expect(report.releaseHotspots?.assets?.[0]?.file).toContain('vendor-excel-core-BNwEF2Ha.js');
   });
 });

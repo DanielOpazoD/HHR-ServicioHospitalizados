@@ -14,6 +14,88 @@ const readOptionalReport = (root, relativePath) => {
   return readJson(absolutePath);
 };
 
+const readBundleBudgetConfig = root => {
+  const budgetPath = path.join(root, 'scripts', 'config', 'bundle-budget.json');
+  if (!fs.existsSync(budgetPath)) {
+    return null;
+  }
+
+  return readJson(budgetPath);
+};
+
+const readBuildAssetsFromDist = root => {
+  const assetsDir = path.join(root, 'dist', 'assets');
+  if (!fs.existsSync(assetsDir) || !fs.statSync(assetsDir).isDirectory()) {
+    return [];
+  }
+
+  const bundleBudget = readBundleBudgetConfig(root);
+  const chunkMaxBytes = Number(bundleBudget?.chunkMaxBytes || 0);
+  const startupBudgets = Array.isArray(bundleBudget?.startupChunkBudgets)
+    ? bundleBudget.startupChunkBudgets
+    : [];
+  const chunkPatternBudgets = Array.isArray(bundleBudget?.chunkPatternBudgets)
+    ? bundleBudget.chunkPatternBudgets
+    : [];
+
+  const resolveAssetBudget = assetName => {
+    const matchBudget = budgets =>
+      budgets.find(budget => {
+        const pattern = typeof budget?.pattern === 'string' ? budget.pattern : '';
+        if (!pattern) return false;
+
+        try {
+          return new RegExp(pattern).test(assetName);
+        } catch {
+          return false;
+        }
+      });
+
+    const startupBudget = matchBudget(startupBudgets);
+    if (startupBudget) {
+      return {
+        maxBytes: Number(startupBudget.maxBytes || 0),
+        severity: startupBudget.severity === 'warn' ? 'warn' : 'error',
+      };
+    }
+
+    const patternBudget = matchBudget(chunkPatternBudgets);
+    if (patternBudget) {
+      return {
+        maxBytes: Number(patternBudget.maxBytes || 0),
+        severity: 'error',
+      };
+    }
+
+    return {
+      maxBytes: chunkMaxBytes || null,
+      severity: 'error',
+    };
+  };
+
+  return fs
+    .readdirSync(assetsDir, { withFileTypes: true })
+    .filter(entry => entry.isFile() && entry.name.endsWith('.js'))
+    .map(entry => {
+      const filePath = path.join(assetsDir, entry.name);
+      const budget = resolveAssetBudget(entry.name);
+      const maxBytes = Number(budget.maxBytes || 0) || null;
+      const status =
+        maxBytes && fs.statSync(filePath).size > maxBytes
+          ? budget.severity === 'warn'
+            ? 'warn'
+            : 'error'
+          : 'ok';
+      return {
+        file: path.join('dist', 'assets', entry.name),
+        sizeBytes: fs.statSync(filePath).size,
+        maxBytes,
+        status,
+      };
+    })
+    .sort((a, b) => b.sizeBytes - a.sizeBytes);
+};
+
 const statusFrom = (condition, okSummary, degradedSummary) => ({
   status: condition ? 'ok' : 'degraded',
   summary: condition ? okSummary : degradedSummary,
@@ -105,12 +187,16 @@ export const buildReleaseReadinessScorecard = root => {
   }
 
   const operationalHealth = sources.operationalHealth;
+  const distBuildAssets = readBuildAssetsFromDist(root);
+  const currentBuildAssets =
+    distBuildAssets.length > 0
+      ? distBuildAssets
+      : Array.isArray(operationalHealth?.buildAssets?.largestAssets)
+        ? operationalHealth.buildAssets.largestAssets
+        : [];
   let releaseHotspots = null;
   if (operationalHealth) {
-    const buildAssets = Array.isArray(operationalHealth.buildAssets?.largestAssets)
-      ? operationalHealth.buildAssets.largestAssets
-      : [];
-    const bundleOk = buildAssets.every(asset => asset?.status === 'ok');
+    const bundleOk = currentBuildAssets.every(asset => asset?.status === 'ok');
     const flowOk = operationalHealth.flowPerformance?.status === 'passing';
     indicators.push({
       name: 'operational_readiness',
@@ -120,7 +206,10 @@ export const buildReleaseReadinessScorecard = root => {
         `flow=${operationalHealth.flowPerformance?.status ?? 'n/a'}, bundle=${bundleOk ? 'ok' : 'degraded'}`
       ),
     });
-    releaseHotspots = buildReleaseHotspots(operationalHealth);
+    releaseHotspots = buildReleaseHotspots({
+      ...operationalHealth,
+      buildAssets: { ...(operationalHealth.buildAssets || {}), largestAssets: currentBuildAssets },
+    });
     indicators.push({
       name: 'release_hotspots',
       status: releaseHotspots.status,
