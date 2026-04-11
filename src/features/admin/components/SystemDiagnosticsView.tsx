@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
+import React, { Suspense, lazy, useState } from 'react';
 import { Activity, Bug, FileText, Terminal, ShieldCheck } from 'lucide-react';
 import { ErrorDashboard } from './ErrorDashboard';
 import { DevDashboard } from './DevDashboard';
 import { SystemHealthDashboard } from './SystemHealthDashboard';
-import { ClinicalDocumentTemplatesManager } from './ClinicalDocumentTemplatesManager';
 import clsx from 'clsx';
+
+const LazyClinicalDocumentTemplatesManager = lazy(() =>
+  import('./ClinicalDocumentTemplatesManager').then(module => ({
+    default: module.ClinicalDocumentTemplatesManager,
+  }))
+);
 
 type DiagnosticTab = 'TELEMETRY' | 'ERRORS' | 'ENGINEERING' | 'CLINICAL_TEMPLATES';
 
@@ -73,7 +78,17 @@ export const SystemDiagnosticsView: React.FC = () => {
         {activeTab === 'TELEMETRY' && <SystemHealthDashboard />}
         {activeTab === 'ERRORS' && <ErrorDashboard />}
         {activeTab === 'ENGINEERING' && <DevDashboard />}
-        {activeTab === 'CLINICAL_TEMPLATES' && <ClinicalDocumentTemplatesManager />}
+        {activeTab === 'CLINICAL_TEMPLATES' && (
+          <Suspense
+            fallback={
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-500">
+                Cargando plantillas clínicas...
+              </div>
+            }
+          >
+            <LazyClinicalDocumentTemplatesManager />
+          </Suspense>
+        )}
       </div>
     </div>
   );

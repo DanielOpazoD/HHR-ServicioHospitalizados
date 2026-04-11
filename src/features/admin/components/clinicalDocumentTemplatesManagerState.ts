@@ -2,8 +2,11 @@ import type {
   ClinicalDocumentPatientFieldTemplate,
   ClinicalDocumentSectionTemplate,
   ClinicalDocumentTemplate,
-} from '@/features/clinical-documents';
-import { createTemplatePatientField, createTemplateSection } from '@/features/clinical-documents';
+} from '@/features/clinical-documents/domain/entities';
+import {
+  createTemplatePatientField,
+  createTemplateSection,
+} from '@/features/clinical-documents/controllers/clinicalDocumentTemplateEditorController';
 
 const patchTemplateItem = <T extends { id: string }>(
   items: T[],
