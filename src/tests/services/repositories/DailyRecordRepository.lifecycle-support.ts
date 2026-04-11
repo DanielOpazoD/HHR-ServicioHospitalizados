@@ -112,6 +112,18 @@ vi.mock('@/services/storage/indexeddb/indexedDbCatalogService', () => ({
   getCatalogValues: indexedDbFacadeMock.getCatalogValues,
   saveCatalogValues: indexedDbFacadeMock.saveCatalogValues,
 }));
+vi.mock('@/services/storage/firestore/firestoreRecordQueries', () => ({
+  getRecordFromFirestore: firestoreMock.getRecordFromFirestore,
+  getRecordFromFirestoreDetailed: firestoreMock.getRecordFromFirestoreDetailed,
+  getAvailableDatesFromFirestore: firestoreMock.getAvailableDatesFromFirestore,
+  subscribeToRecord: firestoreMock.subscribeToRecord,
+}));
+vi.mock('@/services/storage/firestore/firestoreRecordWrites', () => ({
+  saveRecordToFirestore: firestoreMock.saveRecordToFirestore,
+  updateRecordPartial: firestoreMock.updateRecordPartial,
+  deleteRecordFromFirestore: firestoreMock.deleteRecordFromFirestore,
+  moveRecordToTrash: firestoreMock.moveRecordToTrash,
+}));
 vi.mock('@/services/storage/firestore', () => firestoreMock);
 
 export const Repository = {

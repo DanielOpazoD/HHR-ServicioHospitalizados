@@ -3,11 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { loadRemoteRecordWithFallback } from '@/services/repositories/dailyRecordRemoteLoader';
 import { DataFactory } from '@/tests/factories/DataFactory';
 
-vi.mock('@/services/storage/firestore', () => ({
+vi.mock('@/services/storage/firestore/firestoreRecordQueries', () => ({
   getRecordFromFirestoreDetailed: vi.fn(),
 }));
 
-import { getRecordFromFirestoreDetailed } from '@/services/storage/firestore';
+import { getRecordFromFirestoreDetailed } from '@/services/storage/firestore/firestoreRecordQueries';
 
 describe('dailyRecordRemoteLoader', () => {
   const date = '2025-01-01';

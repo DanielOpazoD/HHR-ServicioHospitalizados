@@ -7,7 +7,7 @@ import * as path from 'node:path';
 import { createQueryClientTestWrapper } from '@/tests/utils/queryClientTestUtils';
 import { useDailyRecordSyncQuery } from '@/hooks/useDailyRecordSyncQuery';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
-import { clearAllRecords, getRecordForDate } from '@/services/storage/indexedDBService';
+import { clearAllRecords, getRecordForDate, saveRecord } from '@/services/storage/indexedDBService';
 import { setFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 
 const runEmulatorUiTests =
@@ -220,6 +220,7 @@ describeUiEmulator('UI sync flow with Firestore emulator', () => {
     await testEnv.withSecurityRulesDisabled(async context => {
       await context.firestore().doc(`hospitals/hanga_roa/dailyRecords/${date}`).set(seed);
     });
+    await saveRecord(seed);
 
     const { wrapper } = createQueryClientTestWrapper();
     let safeResult: { current: unknown } | null = null;

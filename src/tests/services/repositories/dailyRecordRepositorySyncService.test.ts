@@ -6,7 +6,7 @@ vi.mock('@/services/storage/indexeddb/indexedDbRecordService', () => ({
   saveRecord: vi.fn(),
 }));
 
-vi.mock('@/services/storage/firestore', () => ({
+vi.mock('@/services/storage/firestore/firestoreRecordQueries', () => ({
   subscribeToRecord: vi.fn(),
 }));
 
@@ -28,7 +28,7 @@ import {
   getRecordForDate as getRecordFromIndexedDB,
   saveRecord as saveToIndexedDB,
 } from '@/services/storage/indexeddb/indexedDbRecordService';
-import { subscribeToRecord } from '@/services/storage/firestore';
+import { subscribeToRecord } from '@/services/storage/firestore/firestoreRecordQueries';
 
 describe('dailyRecordRepositorySyncService', () => {
   beforeEach(() => {
