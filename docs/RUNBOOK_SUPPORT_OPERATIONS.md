@@ -24,6 +24,8 @@ Este runbook complementa `docs/RUNBOOK_SYNC_RESILIENCE.md` con una pauta más op
 3. Confirmar que no hay alertas repetidas de `permission-denied` en consola.
 4. Registrar incidentes abiertos/cerrados del día.
 5. Revisar `reports/operational-health.md` y `reports/legacy-bridge-governance.md` antes de cambios manuales.
+6. Si el cambio o incidente afecta `Censo Diario`, usar también:
+   - [docs/CENSUS_OPERATIONAL_VALIDATION_CHECKLIST.md](./CENSUS_OPERATIONAL_VALIDATION_CHECKLIST.md)
 
 ## Controles Nuevos (Auth + Legacy)
 
