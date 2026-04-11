@@ -1,5 +1,5 @@
 import type { PatientEpisodeContract } from '@/application/patient-flow/clinicalEpisodeContracts';
-import { isNewAdmissionForClinicalDay } from '@/utils/clinicalDayUtils';
+import { isNewAdmissionForClinicalDay, normalizeDateOnly } from '@/utils/clinicalDayUtils';
 
 export interface ClinicalEpisode {
   patientRut: string;
@@ -77,13 +77,25 @@ export const buildPatientPresenceSnapshot = (
 export const classifyPatientMovementForRecord = (
   recordDate: string,
   patient: {
+    firstSeenDate?: string;
     admissionDate?: string;
     admissionTime?: string;
   }
-): PatientMovementClassification => ({
-  isNewAdmission: isNewAdmissionForClinicalDay(
-    recordDate,
-    patient.admissionDate,
-    patient.admissionTime
-  ),
-});
+): PatientMovementClassification => {
+  const normalizedRecordDate = normalizeDateOnly(recordDate);
+  const normalizedFirstSeenDate = normalizeDateOnly(patient.firstSeenDate);
+
+  if (normalizedRecordDate && normalizedFirstSeenDate) {
+    return {
+      isNewAdmission: normalizedRecordDate === normalizedFirstSeenDate,
+    };
+  }
+
+  return {
+    isNewAdmission: isNewAdmissionForClinicalDay(
+      recordDate,
+      patient.admissionDate,
+      patient.admissionTime
+    ),
+  };
+};

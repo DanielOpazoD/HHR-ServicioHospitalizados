@@ -27,6 +27,7 @@ export const resolvePatientRowIndicators = ({
 interface BuildOccupiedPatientRowIndicatorsParams {
   isSubRow: boolean;
   currentDateString: string;
+  firstSeenDate?: string;
   admissionDate?: string;
   admissionTime?: string;
   hasClinicalDocument: boolean;
@@ -35,6 +36,7 @@ interface BuildOccupiedPatientRowIndicatorsParams {
 export const buildOccupiedPatientRowIndicators = ({
   isSubRow,
   currentDateString,
+  firstSeenDate,
   admissionDate,
   admissionTime,
   hasClinicalDocument,
@@ -47,6 +49,7 @@ export const buildOccupiedPatientRowIndicators = ({
     hasClinicalDocument,
     isNewAdmission: resolveIsNewAdmissionForRecord({
       recordDate: currentDateString,
+      firstSeenDate,
       admissionDate,
       admissionTime,
     }),

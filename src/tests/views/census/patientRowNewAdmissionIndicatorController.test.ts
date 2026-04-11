@@ -69,4 +69,15 @@ describe('patientRowNewAdmissionIndicatorController', () => {
       })
     ).toBe(false);
   });
+
+  it('prefers firstSeenDate over an incorrect admissionDate', () => {
+    expect(
+      resolveIsNewAdmissionForRecord({
+        recordDate,
+        firstSeenDate: '2026-03-05',
+        admissionDate: '2026-03-06',
+        admissionTime: '11:00',
+      })
+    ).toBe(true);
+  });
 });

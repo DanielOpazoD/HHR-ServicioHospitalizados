@@ -53,6 +53,19 @@ describe('clinicalEpisode application model', () => {
     expect(classifyPatientMovementForRecord('2026-03-06', patient).isNewAdmission).toBe(false);
   });
 
+  it('keeps the first observed day as the admission anchor even when admissionDate is mistyped', () => {
+    const patient = {
+      rut: '11.111.111-1',
+      patientName: 'Paciente',
+      admissionDate: '2026-03-06',
+      firstSeenDate: '2026-03-05',
+      admissionTime: '10:15',
+    };
+
+    expect(classifyPatientMovementForRecord('2026-03-05', patient).isNewAdmission).toBe(true);
+    expect(classifyPatientMovementForRecord('2026-03-06', patient).isNewAdmission).toBe(false);
+  });
+
   it('prefers the first observed census day for active episode anchors', () => {
     expect(
       resolveClinicalEpisodeAdmissionDate({

@@ -27,6 +27,7 @@ describe('patientRowIndicatorsController', () => {
       buildOccupiedPatientRowIndicators({
         isSubRow: true,
         currentDateString: '2026-03-10',
+        firstSeenDate: '2026-03-10',
         admissionDate: '2026-03-10',
         admissionTime: '14:00',
         hasClinicalDocument: true,
@@ -39,6 +40,7 @@ describe('patientRowIndicatorsController', () => {
       buildOccupiedPatientRowIndicators({
         isSubRow: false,
         currentDateString: '2026-03-10',
+        firstSeenDate: '2026-03-10',
         admissionDate: '2026-03-11',
         admissionTime: '02:00',
         hasClinicalDocument: true,
@@ -52,6 +54,7 @@ describe('patientRowIndicatorsController', () => {
       buildOccupiedPatientRowIndicators({
         isSubRow: false,
         currentDateString: '2026-03-11',
+        firstSeenDate: '2026-03-10',
         admissionDate: '2026-03-11',
         admissionTime: '02:00',
         hasClinicalDocument: true,
@@ -59,6 +62,22 @@ describe('patientRowIndicatorsController', () => {
     ).toEqual({
       hasClinicalDocument: true,
       isNewAdmission: false,
+    });
+  });
+
+  it('prefers firstSeenDate over a mistyped admissionDate when deciding new admission state', () => {
+    expect(
+      buildOccupiedPatientRowIndicators({
+        isSubRow: false,
+        currentDateString: '2026-03-10',
+        firstSeenDate: '2026-03-10',
+        admissionDate: '2026-03-11',
+        admissionTime: '10:00',
+        hasClinicalDocument: false,
+      })
+    ).toEqual({
+      hasClinicalDocument: false,
+      isNewAdmission: true,
     });
   });
 });

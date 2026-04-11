@@ -2,13 +2,19 @@ import { classifyPatientMovementForRecord } from '@/application/patient-flow/cli
 
 interface ResolveIsNewAdmissionForRecordParams {
   recordDate: string;
+  firstSeenDate?: string;
   admissionDate?: string;
   admissionTime?: string;
 }
 
 export const resolveIsNewAdmissionForRecord = ({
   recordDate,
+  firstSeenDate,
   admissionDate,
   admissionTime,
 }: ResolveIsNewAdmissionForRecordParams): boolean =>
-  classifyPatientMovementForRecord(recordDate, { admissionDate, admissionTime }).isNewAdmission;
+  classifyPatientMovementForRecord(recordDate, {
+    firstSeenDate,
+    admissionDate,
+    admissionTime,
+  }).isNewAdmission;

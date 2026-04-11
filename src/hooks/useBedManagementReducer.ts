@@ -19,6 +19,33 @@ const getCudyrTimestampPatch = () => ({
   cudyrUpdatedAt: new Date().toISOString(),
 });
 
+const hasMeaningfulIdentityValue = (value?: string): boolean => Boolean(value?.trim());
+
+const shouldAnchorFirstSeenDate = ({
+  currentPatientName,
+  currentRut,
+  nextPatientName,
+  nextRut,
+  currentFirstSeenDate,
+}: {
+  currentPatientName?: string;
+  currentRut?: string;
+  nextPatientName?: string;
+  nextRut?: string;
+  currentFirstSeenDate?: string;
+}): boolean => {
+  if (hasMeaningfulIdentityValue(currentFirstSeenDate)) {
+    return false;
+  }
+
+  const hadIdentity =
+    hasMeaningfulIdentityValue(currentPatientName) || hasMeaningfulIdentityValue(currentRut);
+  const hasIdentityNow =
+    hasMeaningfulIdentityValue(nextPatientName) || hasMeaningfulIdentityValue(nextRut);
+
+  return !hadIdentity && hasIdentityNow;
+};
+
 // ============================================================================
 // Actions
 // ============================================================================
@@ -63,18 +90,34 @@ export const bedManagementReducer = (
   switch (action.type) {
     case 'UPDATE_PATIENT': {
       const { bedId, field, value } = action;
+      const oldPatient = state.beds[bedId];
       const patches: Record<string, unknown> = {
         [`beds.${bedId}.${field}`]:
           field === 'isUPC' ? resolveNormalizedUpcFlag(bedId, Boolean(value)) : value,
       };
 
       // Identity logic side-effects
-      const oldPatient = state.beds[bedId];
       const isIdentityChange =
         (field === 'rut' || field === 'patientName') && value !== oldPatient[field];
 
       if (isIdentityChange) {
         Object.assign(patches, getClearClinicalDataPatches(bedId));
+      }
+
+      const nextPatientName =
+        field === 'patientName' ? String(value ?? '') : String(oldPatient.patientName ?? '');
+      const nextRut = field === 'rut' ? String(value ?? '') : String(oldPatient.rut ?? '');
+
+      if (
+        shouldAnchorFirstSeenDate({
+          currentPatientName: oldPatient.patientName,
+          currentRut: oldPatient.rut,
+          nextPatientName,
+          nextRut,
+          currentFirstSeenDate: oldPatient.firstSeenDate,
+        })
+      ) {
+        patches[`beds.${bedId}.firstSeenDate`] = state.date;
       }
 
       if (field === 'pathology' && value !== oldPatient.pathology) {
@@ -118,8 +161,23 @@ export const bedManagementReducer = (
         }
       });
 
+      const nextPatientName = String(fields.patientName ?? oldPatient.patientName ?? '');
+      const nextRut = String(fields.rut ?? oldPatient.rut ?? '');
+
       if (hasIdentityChange) {
         Object.assign(patches, getClearClinicalDataPatches(bedId));
+      }
+
+      if (
+        shouldAnchorFirstSeenDate({
+          currentPatientName: oldPatient.patientName,
+          currentRut: oldPatient.rut,
+          nextPatientName,
+          nextRut,
+          currentFirstSeenDate: oldPatient.firstSeenDate,
+        })
+      ) {
+        patches[`beds.${bedId}.firstSeenDate`] = state.date;
       }
 
       const nextSpecialty = String(fields.specialty ?? oldPatient.specialty ?? '');

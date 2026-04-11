@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { DataFactory } from '@/tests/factories/DataFactory';
 import { AdmissionInput } from '@/features/census/components/patient-row/AdmissionInput';
 
@@ -29,10 +29,12 @@ describe('AdmissionInput', () => {
       </table>
     );
 
-    const dateInput = screen.getByDisplayValue('20/02/2026 (X)') as HTMLSelectElement;
+    const editControl = screen.getByLabelText('Editar fecha de ingreso') as HTMLSelectElement;
 
-    fireEvent.click(screen.getByLabelText('Editar fecha de ingreso'));
-    expect(document.activeElement).toBe(dateInput);
+    act(() => {
+      editControl.focus();
+    });
+    expect(document.activeElement).toBe(editControl);
   });
 
   it('shows a correction hint for suspicious admission dates and applies the suggestion', () => {
@@ -69,12 +71,79 @@ describe('AdmissionInput', () => {
     expect(onMultipleUpdate).toHaveBeenCalledWith({
       admissionDate: '2026-03-10',
       admissionTime: expect.any(String),
+      firstSeenDate: '2026-03-10',
     });
   });
 
-  it('keeps admission date editable when firstSeenDate is missing so invalid values can be corrected', () => {
+  it('anchors firstSeenDate when editing admission date on the first observed day', () => {
     const data = DataFactory.createMockPatient('R1', {
-      admissionDate: '2025-03-10',
+      admissionDate: '2026-03-11',
+      admissionTime: '08:30',
+      patientName: 'Paciente Prueba',
+      firstSeenDate: undefined,
+    });
+
+    const onChange = vi.fn((_: string) => vi.fn());
+    const onMultipleUpdate = vi.fn();
+
+    render(
+      <table>
+        <tbody>
+          <tr>
+            <AdmissionInput
+              data={data}
+              currentDateString="2026-03-10"
+              isNewAdmission
+              onChange={onChange}
+              onMultipleUpdate={onMultipleUpdate}
+            />
+          </tr>
+        </tbody>
+      </table>
+    );
+
+    fireEvent.change(screen.getByLabelText('Editar fecha de ingreso'), {
+      target: { value: '2026-03-10' },
+    });
+
+    expect(onMultipleUpdate).toHaveBeenCalledWith({
+      admissionDate: '2026-03-10',
+      firstSeenDate: '2026-03-10',
+    });
+  });
+
+  it('keeps admission date editable on the first observed day when firstSeenDate is missing', () => {
+    const data = DataFactory.createMockPatient('R1', {
+      admissionDate: '2026-03-10',
+      admissionTime: '08:30',
+      patientName: 'Paciente Prueba',
+    });
+
+    const onChange = vi.fn((_: string) => vi.fn());
+
+    render(
+      <table>
+        <tbody>
+          <tr>
+            <AdmissionInput
+              data={data}
+              currentDateString="2026-03-10"
+              isNewAdmission
+              onChange={onChange}
+            />
+          </tr>
+        </tbody>
+      </table>
+    );
+
+    const dateInput = screen.getByDisplayValue('10/03/2026') as HTMLSelectElement;
+    expect(dateInput).not.toBeDisabled();
+    expect(screen.getByLabelText('Editar fecha de ingreso')).not.toBeDisabled();
+  });
+
+  it('locks admission date editing when firstSeenDate is missing and the patient is no longer a same-day admission', () => {
+    const data = DataFactory.createMockPatient('R1', {
+      admissionDate: '2024-03-10',
       admissionTime: '08:30',
       patientName: 'Paciente Prueba',
     });
@@ -96,11 +165,9 @@ describe('AdmissionInput', () => {
       </table>
     );
 
-    const dateInput = screen.getByDisplayValue(
-      '2025-03-10 (fuera de ventana)'
-    ) as HTMLSelectElement;
-    expect(dateInput).not.toBeDisabled();
-    expect(screen.getByLabelText('Editar fecha de ingreso')).not.toBeDisabled();
+    expect(screen.getByText('10/03/2024')).toBeInTheDocument();
+    expect(screen.queryByDisplayValue('10/03/2024')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Editar fecha de ingreso')).not.toBeInTheDocument();
   });
 
   it('locks admission date editing after the first observed day when firstSeenDate anchors the episode', () => {
@@ -128,9 +195,9 @@ describe('AdmissionInput', () => {
       </table>
     );
 
-    const dateInput = screen.getByDisplayValue('10/03/2026 (X-1)') as HTMLSelectElement;
-    expect(dateInput).toBeDisabled();
-    expect(screen.getByLabelText('Editar fecha de ingreso')).toBeDisabled();
+    expect(screen.getByText('10/03/2026')).toBeInTheDocument();
+    expect(screen.queryByDisplayValue('10/03/2026')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Editar fecha de ingreso')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Corregir fecha de ingreso sugerida')).not.toBeInTheDocument();
   });
 });

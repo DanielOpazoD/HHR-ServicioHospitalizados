@@ -30,6 +30,7 @@ export const buildResolvedOccupiedRows = ({
     indicators: buildOccupiedPatientRowIndicators({
       isSubRow: row.isSubRow,
       currentDateString,
+      firstSeenDate: row.data.firstSeenDate,
       admissionDate: row.data.admissionDate,
       admissionTime: row.data.admissionTime,
       hasClinicalDocument: Boolean(clinicalDocumentPresenceByBedId[row.bed.id]),

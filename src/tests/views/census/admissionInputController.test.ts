@@ -87,7 +87,7 @@ describe('admissionInputController', () => {
     ).toBe(false);
   });
 
-  it('keeps editing available when firstSeenDate is missing but there is a patient to correct', () => {
+  it('falls back to same-day new admission when firstSeenDate is missing', () => {
     expect(
       resolveAdmissionDateIsEditable({
         recordDate: '2026-03-10',
@@ -102,23 +102,23 @@ describe('admissionInputController', () => {
         hasPatient: true,
         isNewAdmission: false,
       })
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it('returns the only allowed admission date options around the census tab date', () => {
     expect(resolveAdmissionDateOptions('2026-03-10')).toEqual([
-      { value: '2026-03-09', label: '09/03/2026 (X-1)' },
-      { value: '2026-03-10', label: '10/03/2026 (X)' },
-      { value: '2026-03-11', label: '11/03/2026 (X+1)' },
+      { value: '2026-03-09', label: '09/03/2026' },
+      { value: '2026-03-10', label: '10/03/2026' },
+      { value: '2026-03-11', label: '11/03/2026' },
     ]);
   });
 
   it('preserves an out-of-window value so it can be corrected visibly', () => {
     expect(resolveAdmissionDateOptions('2026-03-10', '2024-03-10')).toEqual([
-      { value: '2024-03-10', label: '2024-03-10 (fuera de ventana)', isFallbackValue: true },
-      { value: '2026-03-09', label: '09/03/2026 (X-1)' },
-      { value: '2026-03-10', label: '10/03/2026 (X)' },
-      { value: '2026-03-11', label: '11/03/2026 (X+1)' },
+      { value: '2024-03-10', label: '10/03/2024', isFallbackValue: true },
+      { value: '2026-03-09', label: '09/03/2026' },
+      { value: '2026-03-10', label: '10/03/2026' },
+      { value: '2026-03-11', label: '11/03/2026' },
     ]);
   });
 });

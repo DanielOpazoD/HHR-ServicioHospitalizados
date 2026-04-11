@@ -253,7 +253,12 @@ describe('PatientRow layout and actions', () => {
       </table>
     );
 
-    fireEvent.focus(screen.getByDisplayValue('2023-01-01'));
+    const admissionDateSelect = document.querySelector(
+      '[data-admission-date-input="true"]'
+    ) as HTMLSelectElement | null;
+
+    expect(admissionDateSelect).not.toBeNull();
+    fireEvent.focus(admissionDateSelect!);
 
     expect(document.querySelector('input[type="time"]')).toBeInTheDocument();
   });

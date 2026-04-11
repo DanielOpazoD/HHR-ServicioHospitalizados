@@ -25,16 +25,9 @@ const formatTimeHHMM = (date: Date): string => {
 
 export const resolveAdmissionDateMax = (todayIso: string = getTodayISO()): string => todayIso;
 
-const formatAdmissionDateOptionLabel = (
-  value: string,
-  variant: 'previous' | 'current' | 'next'
-) => {
+const formatAdmissionDateOptionLabel = (value: string) => {
   const [year, month, day] = value.split('-');
-  const formatted = `${day}/${month}/${year}`;
-
-  if (variant === 'previous') return `${formatted} (X-1)`;
-  if (variant === 'next') return `${formatted} (X+1)`;
-  return `${formatted} (X)`;
+  return `${day}/${month}/${year}`;
 };
 
 export const resolveAllowedAdmissionDates = (recordDate: string): string[] => {
@@ -55,19 +48,16 @@ export const resolveAdmissionDateOptions = (
   admissionDate?: string
 ): AdmissionDateOption[] => {
   const allowedDates = resolveAllowedAdmissionDates(recordDate);
-  const options: AdmissionDateOption[] = allowedDates.map((value, index) => ({
+  const options: AdmissionDateOption[] = allowedDates.map(value => ({
     value,
-    label: formatAdmissionDateOptionLabel(
-      value,
-      index === 0 ? 'previous' : index === 2 ? 'next' : 'current'
-    ),
+    label: formatAdmissionDateOptionLabel(value),
   }));
 
   const normalizedAdmissionDate = normalizeDateOnly(admissionDate);
   if (normalizedAdmissionDate && !allowedDates.includes(normalizedAdmissionDate)) {
     options.unshift({
       value: normalizedAdmissionDate,
-      label: `${normalizedAdmissionDate} (fuera de ventana)`,
+      label: formatAdmissionDateOptionLabel(normalizedAdmissionDate),
       isFallbackValue: true,
     });
   }
@@ -102,7 +92,7 @@ export const resolveAdmissionDateIsEditable = ({
     return normalizedRecordDate === normalizedFirstSeenDate;
   }
 
-  return isNewAdmission || Boolean(normalizedRecordDate);
+  return isNewAdmission;
 };
 
 export const resolveAdmissionDateChange = ({
