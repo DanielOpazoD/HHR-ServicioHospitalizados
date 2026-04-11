@@ -2,7 +2,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { buildReleaseReadinessScorecard } from '../../../scripts/releaseReadinessScorecardSupport.mjs';
+import {
+  buildReleaseReadinessScorecard,
+  formatReleaseReadinessScorecardMarkdown,
+} from '../../../scripts/releaseReadinessScorecardSupport.mjs';
 
 const tempRoots: string[] = [];
 
@@ -30,7 +33,23 @@ const createScorecardRoot = () => {
   writeJson(root, 'reports/operational-health.json', {
     generatedAt: '2026-04-10T00:00:00.000Z',
     flowPerformance: { status: 'passing' },
-    buildAssets: { largestAssets: [{ status: 'ok' }] },
+    buildAssets: {
+      chunkMaxBytes: 1250000,
+      largestAssets: [
+        {
+          file: 'dist/assets/vendor-excel-core-BNwEF2Ha.js',
+          sizeBytes: 932406,
+          maxBytes: 1250000,
+          status: 'ok',
+        },
+        {
+          file: 'dist/assets/index-B31MiZPh.js',
+          sizeBytes: 509316,
+          maxBytes: 1250000,
+          status: 'ok',
+        },
+      ],
+    },
   });
   writeJson(root, 'reports/release-confidence-matrix.json', {
     generatedAt: '2026-04-10T00:00:00.000Z',
@@ -93,5 +112,28 @@ describe('buildReleaseReadinessScorecard', () => {
     expect(report.issues).toContain(
       'compatibility_governance: restrictedEntries=1, unauthorizedImports=1'
     );
+  });
+
+  it('surfaces release build hotspots in the scorecard output', () => {
+    const root = createScorecardRoot();
+    writeJson(root, 'reports/compatibility-import-governance.json', {
+      generatedAt: '2026-04-10T00:00:00.000Z',
+      checkedEntries: 0,
+      issues: [],
+    });
+
+    const report = buildReleaseReadinessScorecard(root);
+    const hotspotIndicator = report.indicators.find(
+      indicator => indicator.name === 'release_hotspots'
+    );
+    const markdown = formatReleaseReadinessScorecardMarkdown(report);
+
+    expect(report.releaseHotspots?.assets).toHaveLength(2);
+    expect(hotspotIndicator).toMatchObject({
+      status: 'ok',
+    });
+    expect(hotspotIndicator?.summary).toContain('vendor-excel-core-BNwEF2Ha.js');
+    expect(markdown).toContain('## Release Hotspots');
+    expect(markdown).toContain('vendor-excel-core-BNwEF2Ha.js');
   });
 });

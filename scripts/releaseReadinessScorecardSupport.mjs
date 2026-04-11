@@ -19,6 +19,41 @@ const statusFrom = (condition, okSummary, degradedSummary) => ({
   summary: condition ? okSummary : degradedSummary,
 });
 
+const toKb = bytes => `${(bytes / 1024).toFixed(1)} KB`;
+
+const formatBuildAssetHotspot = asset => {
+  if (!asset) return null;
+
+  const file = typeof asset.file === 'string' ? asset.file : 'unknown-asset';
+  const sizeBytes = Number(asset.sizeBytes || 0);
+  const maxBytes = Number(asset.maxBytes || 0);
+  const status = typeof asset.status === 'string' ? asset.status : 'unknown';
+  const statusLabel = status === 'ok' ? 'ok' : status;
+
+  if (sizeBytes > 0 && maxBytes > 0) {
+    return `${path.basename(file)}: ${toKb(sizeBytes)} / ${toKb(maxBytes)} (${statusLabel})`;
+  }
+
+  return `${path.basename(file)}: ${statusLabel}`;
+};
+
+const buildReleaseHotspots = operationalHealth => {
+  const buildAssets = Array.isArray(operationalHealth?.buildAssets?.largestAssets)
+    ? operationalHealth.buildAssets.largestAssets
+    : [];
+  const topAssets = buildAssets.slice(0, 5);
+  const hasProblematicAsset = topAssets.some(asset => asset?.status && asset.status !== 'ok');
+
+  return {
+    status: hasProblematicAsset ? 'degraded' : 'ok',
+    summary:
+      topAssets.length > 0
+        ? topAssets.map(formatBuildAssetHotspot).filter(Boolean).join(' | ')
+        : 'no build assets reported',
+    assets: topAssets,
+  };
+};
+
 export const buildReleaseReadinessScorecard = root => {
   const sourceFiles = {
     qualityMetrics: 'reports/quality-metrics.json',
@@ -70,6 +105,7 @@ export const buildReleaseReadinessScorecard = root => {
   }
 
   const operationalHealth = sources.operationalHealth;
+  let releaseHotspots = null;
   if (operationalHealth) {
     const buildAssets = Array.isArray(operationalHealth.buildAssets?.largestAssets)
       ? operationalHealth.buildAssets.largestAssets
@@ -83,6 +119,12 @@ export const buildReleaseReadinessScorecard = root => {
         `flow=${operationalHealth.flowPerformance?.status ?? 'n/a'}, bundle=${bundleOk ? 'ok' : 'degraded'}`,
         `flow=${operationalHealth.flowPerformance?.status ?? 'n/a'}, bundle=${bundleOk ? 'ok' : 'degraded'}`
       ),
+    });
+    releaseHotspots = buildReleaseHotspots(operationalHealth);
+    indicators.push({
+      name: 'release_hotspots',
+      status: releaseHotspots.status,
+      summary: releaseHotspots.summary,
     });
   }
 
@@ -156,6 +198,7 @@ export const buildReleaseReadinessScorecard = root => {
     overallStatus: issues.length === 0 ? 'ok' : 'degraded',
     indicators,
     missingReports,
+    releaseHotspots,
     sources: Object.fromEntries(
       Object.entries(sourceFiles).map(([key, relativePath]) => [
         key,
@@ -193,6 +236,16 @@ export const formatReleaseReadinessScorecardMarkdown = report => {
     lines.push('', '## Issues', '');
     for (const issue of report.issues) {
       lines.push(`- ${issue}`);
+    }
+  }
+
+  if (Array.isArray(report.releaseHotspots?.assets) && report.releaseHotspots.assets.length > 0) {
+    lines.push('', '## Release Hotspots', '');
+    for (const asset of report.releaseHotspots.assets) {
+      const summary = formatBuildAssetHotspot(asset);
+      if (summary) {
+        lines.push(`- ${summary}`);
+      }
     }
   }
 
