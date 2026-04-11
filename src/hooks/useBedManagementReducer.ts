@@ -149,6 +149,12 @@ export const bedManagementReducer = (
       const patches: Record<string, unknown> = {};
       const oldPatient = state.beds[bedId];
       let hasIdentityChange = false;
+      const updatesSpecialty = Object.prototype.hasOwnProperty.call(fields, 'specialty');
+      const updatesGinecobstetriciaType = Object.prototype.hasOwnProperty.call(
+        fields,
+        'ginecobstetriciaType'
+      );
+      const updatesDeliveryRoute = Object.prototype.hasOwnProperty.call(fields, 'deliveryRoute');
 
       Object.entries(fields).forEach(([key, value]) => {
         patches[`beds.${bedId}.${key}`] =
@@ -185,15 +191,18 @@ export const bedManagementReducer = (
         fields.ginecobstetriciaType ?? oldPatient.ginecobstetriciaType;
       const nextDeliveryRoute = fields.deliveryRoute ?? oldPatient.deliveryRoute;
 
-      if (!isGinecobstetriciaSpecialty(nextSpecialty)) {
+      if (updatesSpecialty && !isGinecobstetriciaSpecialty(nextSpecialty)) {
         Object.entries(clearGinecobstetriciaFields()).forEach(([key, value]) => {
           patches[`beds.${bedId}.${key}`] = value;
         });
-      } else if (!isObstetricGinecobstetricia(nextGinecobstetriciaType)) {
+      } else if (
+        updatesGinecobstetriciaType &&
+        !isObstetricGinecobstetricia(nextGinecobstetriciaType)
+      ) {
         Object.entries(clearDeliveryRouteFields()).forEach(([key, value]) => {
           patches[`beds.${bedId}.${key}`] = value;
         });
-      } else if (nextDeliveryRoute !== 'Cesárea') {
+      } else if (updatesDeliveryRoute && nextDeliveryRoute !== 'Cesárea') {
         patches[`beds.${bedId}.deliveryCesareanLabor`] = undefined;
       }
 

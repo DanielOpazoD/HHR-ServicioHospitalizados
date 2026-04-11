@@ -12,8 +12,12 @@ service cloud.firestore {
     }
     
     // Get user email
+    function normalizeEmail(email) {
+      return email.lower();
+    }
+
     function getUserEmail() {
-      return request.auth.token.email;
+      return normalizeEmail(request.auth.token.email);
     }
 
     // Check if authenticated user has an email claim

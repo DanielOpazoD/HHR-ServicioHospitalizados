@@ -4,11 +4,14 @@ export const createRecordDateTimestamp = (date: string): number =>
   new Date(`${date}T00:00:00`).getTime();
 
 export const ensureDailyRecordDateTimestamp = (record: DailyRecordMetadataState): void => {
-  if (record.dateTimestamp || !record.date) {
+  if (!record.date) {
     return;
   }
 
-  record.dateTimestamp = createRecordDateTimestamp(record.date);
+  const canonicalTimestamp = createRecordDateTimestamp(record.date);
+  if (record.dateTimestamp !== canonicalTimestamp) {
+    record.dateTimestamp = canonicalTimestamp;
+  }
 };
 
 export const touchDailyRecordLastUpdated = (record: DailyRecordMetadataState): void => {

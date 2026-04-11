@@ -219,6 +219,56 @@ export function registerFirestoreRulesAccessGroups({
       );
     });
 
+    it('Specialists resolved via config/roles remain authorized when the auth email uses different casing', async () => {
+      await setupDoc(admin(), 'config/roles', {
+        'specialist.case@example.com': 'doctor_specialist',
+      });
+      await setupDoc(admin(), recordPath, {
+        date: CURRENT_RECORD_DATE,
+        dateTimestamp: NOW_MS,
+        beds: {
+          R1: {
+            patientName: 'Paciente Test',
+            rut: '1-9',
+            pathology: 'Neumonia',
+            specialty: 'Med Interna',
+            medicalHandoffNote: '',
+            medicalHandoffEntries: [],
+            clinicalEvents: [],
+          },
+        },
+      });
+
+      await assertSucceeds(
+        firestoreForUser('user_specialist_case', {
+          email: 'Specialist.Case@Example.com',
+          role: 'viewer',
+        })
+          .doc(recordPath)
+          .update({
+            'beds.R1.medicalHandoffNote': 'Persistencia con email normalizado',
+            'beds.R1.medicalHandoffEntries': [
+              {
+                id: 'primary-entry',
+                specialty: 'Med Interna',
+                note: 'Persistencia con email normalizado',
+              },
+            ],
+            'beds.R1.medicalHandoffAudit': {
+              lastSpecialistUpdateAt: new Date(NOW_MS).toISOString(),
+              lastSpecialistUpdateBy: {
+                uid: 'user_specialist_case',
+                email: 'Specialist.Case@Example.com',
+                displayName: 'Especialista Case',
+                role: 'doctor_specialist',
+              },
+              currentStatus: 'updated_by_specialist',
+            },
+            lastUpdated: NOW_MS,
+          })
+      );
+    });
+
     it('Specialists can update structured medical handoff by specialty for the current day', async () => {
       await setupDoc(admin(), recordPath, {
         date: CURRENT_RECORD_DATE,

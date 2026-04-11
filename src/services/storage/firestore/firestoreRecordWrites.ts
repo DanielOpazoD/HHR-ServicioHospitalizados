@@ -20,6 +20,9 @@ import {
   saveHistorySnapshot,
 } from '@/services/storage/firestore/firestoreWriteSupport';
 import { firestoreWriteLogger } from '@/services/storage/storageLoggers';
+import { ensureUserRoleClaim } from '@/services/auth/authClaimSyncService';
+import { resolveFirebaseUserRole } from '@/services/auth/authAccessResolution';
+import { defaultAuthRuntime } from '@/services/firebase-runtime/authRuntime';
 
 const logFirestoreWriteRetry = (
   operation: 'save' | 'partialUpdate' | 'delete',
@@ -45,6 +48,44 @@ const logFirestoreWriteError = (
   });
 };
 
+const isPermissionDeniedError = (error: unknown): boolean => {
+  const code = String((error as { code?: unknown })?.code || '').toLowerCase();
+  const message = String((error as { message?: unknown })?.message || '').toLowerCase();
+
+  return (
+    code.includes('permission-denied') || message.includes('missing or insufficient permissions')
+  );
+};
+
+const tryRefreshCurrentUserRoleClaim = async (date: string): Promise<boolean> => {
+  try {
+    await defaultAuthRuntime.ready;
+    const firebaseUser = defaultAuthRuntime.getCurrentUser();
+    if (!firebaseUser || firebaseUser.isAnonymous) {
+      return false;
+    }
+
+    const resolvedRole = await resolveFirebaseUserRole(firebaseUser);
+    if (!resolvedRole) {
+      return false;
+    }
+
+    await ensureUserRoleClaim(firebaseUser, resolvedRole);
+    firestoreWriteLogger.warn('Firestore write auth refresh succeeded', {
+      date,
+      resolvedRole,
+      uid: firebaseUser.uid,
+    });
+    return true;
+  } catch (error) {
+    firestoreWriteLogger.warn('Firestore write auth refresh failed', {
+      date,
+      error,
+    });
+    return false;
+  }
+};
+
 export { ConcurrencyError } from '@/services/storage/firestore/firestoreWriteSupport';
 
 export const saveRecordToFirestore = async (
@@ -67,10 +108,21 @@ export const saveRecordToFirestore = async (
       lastUpdated: Timestamp.now(),
     });
 
-    await withRetry(() => setDoc(docRef, sanitizedRecord as Record<string, unknown>), {
-      onRetry: (err: unknown, attempt: number) =>
-        logFirestoreWriteRetry('save', record.date, attempt, err),
-    });
+    const persist = () =>
+      withRetry(() => setDoc(docRef, sanitizedRecord as Record<string, unknown>), {
+        onRetry: (err: unknown, attempt: number) =>
+          logFirestoreWriteRetry('save', record.date, attempt, err),
+      });
+
+    try {
+      await persist();
+    } catch (error) {
+      if (isPermissionDeniedError(error) && (await tryRefreshCurrentUserRoleClaim(record.date))) {
+        await persist();
+      } else {
+        throw error;
+      }
+    }
   } catch (error) {
     logFirestoreWriteError('save', record.date, error);
     throw error;
@@ -100,14 +152,25 @@ export const updateRecordPartial = async (
     }) as Record<string, unknown>;
 
     try {
-      await withRetry(
-        () =>
-          updateDoc(docRef, asFirestoreUpdatePayload(sanitizedData) as UpdateData<DocumentData>),
-        {
-          onRetry: (err: unknown, attempt: number) =>
-            logFirestoreWriteRetry('partialUpdate', date, attempt, err),
+      const persist = () =>
+        withRetry(
+          () =>
+            updateDoc(docRef, asFirestoreUpdatePayload(sanitizedData) as UpdateData<DocumentData>),
+          {
+            onRetry: (err: unknown, attempt: number) =>
+              logFirestoreWriteRetry('partialUpdate', date, attempt, err),
+          }
+        );
+
+      try {
+        await persist();
+      } catch (error) {
+        if (isPermissionDeniedError(error) && (await tryRefreshCurrentUserRoleClaim(date))) {
+          await persist();
+        } else {
+          throw error;
         }
-      );
+      }
     } catch (error: unknown) {
       const storageError = error as { code?: string };
       if (storageError?.code === 'not-found') {

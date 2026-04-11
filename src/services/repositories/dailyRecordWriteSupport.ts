@@ -31,6 +31,7 @@ import {
   addClinicalFhirPatchesForTouchedBeds,
   collectDailyRecordPatientsForMasterSync,
   ensureDailyRecordDateTimestamp,
+  isSpecialistScopedDailyRecordPatch,
   syncDailyRecordClinicalResources,
   touchDailyRecordLastUpdated,
 } from '@/services/repositories/dailyRecordDomainServices';
@@ -96,15 +97,21 @@ export const preparePatchedRecordForPersistence = (
   const mergedPatches: DailyRecordPatch = { ...patch };
   ensureDailyRecordDateTimestamp(updatedForInvariants);
 
-  if (!current.dateTimestamp && updatedForInvariants.dateTimestamp) {
+  if (
+    updatedForInvariants.dateTimestamp != null &&
+    current.dateTimestamp !== updatedForInvariants.dateTimestamp
+  ) {
     mergedPatches.dateTimestamp = updatedForInvariants.dateTimestamp;
   }
 
   const normalized = normalizeDailyRecordInvariants(updatedForInvariants);
+  const shouldSkipStructuralNormalization = isSpecialistScopedDailyRecordPatch(mergedPatches);
 
-  Object.assign(mergedPatches, normalized.patches);
+  if (!shouldSkipStructuralNormalization) {
+    Object.assign(mergedPatches, normalized.patches);
+  }
 
-  if (Object.keys(normalized.patches).length > 0) {
+  if (!shouldSkipStructuralNormalization && Object.keys(normalized.patches).length > 0) {
     logError('Invariant repair applied on updatePartial', undefined, {
       date,
       patches: Object.keys(normalized.patches),

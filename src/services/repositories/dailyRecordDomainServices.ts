@@ -5,6 +5,7 @@ export {
   buildEmptyClinicalBeds,
   collectDailyRecordPatientsForMasterSync,
   enrichInitializationRecordFromCopySource,
+  isSpecialistScopedDailyRecordPatch,
   preserveCIE10FromPreviousDay,
   preparePatientForCarryover,
   syncDailyRecordClinicalResources,

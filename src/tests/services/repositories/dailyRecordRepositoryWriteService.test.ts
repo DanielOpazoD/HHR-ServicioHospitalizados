@@ -384,6 +384,27 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
     );
   });
 
+  it('repairs drifted dateTimestamp during partial updates before the remote write', async () => {
+    const current = buildRecord('2026-02-11');
+    current.dateTimestamp = Date.parse('2026-02-11T00:00:00.000Z');
+    current.beds = { R1: buildPatient('R1', 'Paciente local') };
+
+    vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(current);
+
+    await updatePartial('2026-02-11', {
+      medicalHandoffNovedades: 'Nota especialista',
+    });
+
+    expect(updateRecordPartialToFirestore).toHaveBeenCalledWith(
+      '2026-02-11',
+      expect.objectContaining({
+        medicalHandoffNovedades: 'Nota especialista',
+        dateTimestamp: Date.parse('2026-02-11T00:00:00'),
+      }),
+      current.lastUpdated
+    );
+  });
+
   it('adds clinical crib fhir patch when nested crib data changes', async () => {
     const current = buildRecord('2026-02-12');
     current.beds = {
@@ -430,6 +451,33 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
       '2026-02-11',
       expect.not.objectContaining({
         'beds.R1.fhir_resource': expect.anything(),
+      }),
+      current.lastUpdated
+    );
+  });
+
+  it('does not append structural bed normalization patches for specialist-scoped medical handoff updates', async () => {
+    const current = buildRecord('2026-02-11');
+    current.beds = { R1: buildPatient('R1', 'Paciente local') };
+
+    vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(current);
+
+    await updatePartial('2026-02-11', {
+      'beds.R1.medicalHandoffNote': 'Evolución especialista',
+      'beds.R1.medicalHandoffEntries': [
+        {
+          id: 'entry-1',
+          specialty: 'Med Interna',
+          note: 'Evolución especialista',
+        },
+      ] as never,
+    });
+
+    expect(updateRecordPartialToFirestore).toHaveBeenCalledWith(
+      '2026-02-11',
+      expect.not.objectContaining({
+        'beds.R2': expect.anything(),
+        'beds.NEO1': expect.anything(),
       }),
       current.lastUpdated
     );

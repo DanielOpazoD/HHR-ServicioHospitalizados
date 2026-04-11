@@ -5,6 +5,14 @@ const { firestoreWriteLoggerWarn, firestoreWriteLoggerError } = vi.hoisted(() =>
   firestoreWriteLoggerError: vi.fn(),
 }));
 
+const { mockEnsureUserRoleClaim, mockResolveFirebaseUserRole, mockGetCurrentUser, mockAuthReady } =
+  vi.hoisted(() => ({
+    mockEnsureUserRoleClaim: vi.fn(),
+    mockResolveFirebaseUserRole: vi.fn(),
+    mockGetCurrentUser: vi.fn(),
+    mockAuthReady: Promise.resolve(),
+  }));
+
 vi.mock('firebase/firestore', async () => {
   const actual = await vi.importActual('firebase/firestore');
 
@@ -48,6 +56,21 @@ vi.mock('@/services/storage/storageLoggers', () => ({
   },
 }));
 
+vi.mock('@/services/auth/authClaimSyncService', () => ({
+  ensureUserRoleClaim: (...args: unknown[]) => mockEnsureUserRoleClaim(...args),
+}));
+
+vi.mock('@/services/auth/authAccessResolution', () => ({
+  resolveFirebaseUserRole: (...args: unknown[]) => mockResolveFirebaseUserRole(...args),
+}));
+
+vi.mock('@/services/firebase-runtime/authRuntime', () => ({
+  defaultAuthRuntime: {
+    ready: mockAuthReady,
+    getCurrentUser: () => mockGetCurrentUser(),
+  },
+}));
+
 import { deleteDoc, setDoc, updateDoc } from 'firebase/firestore';
 import {
   deleteRecordFromFirestore,
@@ -65,6 +88,9 @@ import { withRetry } from '@/utils/networkUtils';
 describe('firestoreRecordWrites', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGetCurrentUser.mockReturnValue(null);
+    mockResolveFirebaseUserRole.mockResolvedValue(null);
+    mockEnsureUserRoleClaim.mockResolvedValue(undefined);
   });
 
   it('saves full records after concurrency and history checks', async () => {
@@ -98,6 +124,36 @@ describe('firestoreRecordWrites', () => {
     expect(firestoreWriteLoggerWarn).toHaveBeenCalledWith(
       'Firestore write fallback: partialUpdateNotFound',
       expect.objectContaining({ date: '2026-03-15' })
+    );
+  });
+
+  it('refreshes the current user role claim and retries partial updates after permission-denied', async () => {
+    const currentUser = {
+      uid: 'specialist-1',
+      email: 'specialist@example.com',
+      isAnonymous: false,
+    };
+    mockGetCurrentUser.mockReturnValue(currentUser);
+    mockResolveFirebaseUserRole.mockResolvedValue('doctor_specialist');
+    vi.mocked(updateDoc)
+      .mockRejectedValueOnce({
+        code: 'permission-denied',
+        message: 'Missing or insufficient permissions.',
+      })
+      .mockResolvedValueOnce(undefined as never);
+
+    await updateRecordPartial('2026-03-14', { status: 'ok' } as never);
+
+    expect(mockResolveFirebaseUserRole).toHaveBeenCalledWith(currentUser);
+    expect(mockEnsureUserRoleClaim).toHaveBeenCalledWith(currentUser, 'doctor_specialist');
+    expect(updateDoc).toHaveBeenCalledTimes(2);
+    expect(firestoreWriteLoggerWarn).toHaveBeenCalledWith(
+      'Firestore write auth refresh succeeded',
+      expect.objectContaining({
+        date: '2026-03-14',
+        resolvedRole: 'doctor_specialist',
+        uid: 'specialist-1',
+      })
     );
   });
 

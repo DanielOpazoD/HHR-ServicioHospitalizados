@@ -216,6 +216,43 @@ describe('useBedManagement patient updates', () => {
         'beds.R1.pathology': 'New Diagnosis',
       });
     });
+
+    it('does not append gineco cleanup fields when updating only medical handoff fields', () => {
+      const patient = createMockPatient('R1', {
+        specialty: 'Med Interna' as PatientData['specialty'],
+        ginecobstetriciaType: 'Obstétrica' as PatientData['ginecobstetriciaType'],
+        deliveryRoute: 'Cesárea' as PatientData['deliveryRoute'],
+      });
+      const record = createMockRecord({ R1: patient });
+
+      const { result } = renderHook(() =>
+        useBedManagement(record, mockSaveAndUpdate, mockPatchRecord)
+      );
+
+      act(() => {
+        result.current.updatePatientMultiple('R1', {
+          medicalHandoffNote: 'Evolución especialista',
+          medicalHandoffEntries: [
+            {
+              id: 'entry-1',
+              specialty: 'Med Interna',
+              note: 'Evolución especialista',
+            },
+          ] as PatientData['medicalHandoffEntries'],
+        });
+      });
+
+      expect(mockPatchRecord).toHaveBeenCalledWith({
+        'beds.R1.medicalHandoffNote': 'Evolución especialista',
+        'beds.R1.medicalHandoffEntries': [
+          {
+            id: 'entry-1',
+            specialty: 'Med Interna',
+            note: 'Evolución especialista',
+          },
+        ],
+      });
+    });
   });
 
   describe('updateCudyr', () => {

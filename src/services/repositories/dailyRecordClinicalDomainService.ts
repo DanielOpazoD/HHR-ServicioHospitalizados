@@ -208,6 +208,8 @@ const SPECIALIST_ALLOWED_BED_PATH_PREFIXES = [
   'clinicalCrib.clinicalEvents',
 ];
 
+const SPECIALIST_ALLOWED_RECORD_KEYS = ['lastUpdated', 'dateTimestamp'];
+
 const isSpecialistScopedBedPatch = (patch: DailyRecordPatch, bedId: string): boolean => {
   const touchedPaths = getTouchedBedPaths(patch, bedId);
   if (touchedPaths.length === 0) {
@@ -221,12 +223,23 @@ const isSpecialistScopedBedPatch = (patch: DailyRecordPatch, bedId: string): boo
   );
 };
 
+export const isSpecialistScopedDailyRecordPatch = (patch: DailyRecordPatch): boolean => {
+  const touchedBedIds = getTouchedBedIds(patch);
+  const nonBedKeys = Object.keys(patch).filter(key => !key.startsWith('beds.'));
+
+  if (!nonBedKeys.every(key => SPECIALIST_ALLOWED_RECORD_KEYS.includes(key))) {
+    return false;
+  }
+
+  return touchedBedIds.length == 1 && isSpecialistScopedBedPatch(patch, touchedBedIds[0]);
+};
+
 export const addClinicalFhirPatchesForTouchedBeds = (
   mergedPatches: DailyRecordPatch,
   validatedRecord: DailyRecord
 ): void => {
   getTouchedBedIds(mergedPatches).forEach(bedId => {
-    if (isSpecialistScopedBedPatch(mergedPatches, bedId)) {
+    if (isSpecialistScopedDailyRecordPatch(mergedPatches)) {
       return;
     }
 
