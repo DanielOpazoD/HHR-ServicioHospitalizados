@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useDailyRecordSyncQuery } from '@/hooks/useDailyRecordSyncQuery';
 import { defaultDailyRecordRepositoryPort } from '@/application/ports/dailyRecordPort';
@@ -132,10 +132,15 @@ describe('useDailyRecordSyncQuery', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useRealTimers();
     mockExecuteSyncDailyRecord.mockResolvedValue({
       success: true,
       data: { date: mockDate, outcome: 'clean', record: null },
     });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   const buildReadResult = (record: DailyRecord | null) => ({
@@ -186,7 +191,33 @@ describe('useDailyRecordSyncQuery', () => {
 
     expect(defaultDailyRecordRepositoryPort.getForDateWithMeta).toHaveBeenCalledWith(
       mockDate,
-      true
+      false
+    );
+
+    await waitFor(() => {
+      expect(defaultDailyRecordRepositoryPort.getForDateWithMeta).toHaveBeenCalledWith(
+        mockDate,
+        true
+      );
+    });
+  });
+
+  it('keeps local data visible before deferred remote hydration completes', async () => {
+    vi.mocked(defaultDailyRecordRepositoryPort.getForDateWithMeta).mockImplementation(
+      async (_date, syncFromRemote) => buildReadResult(syncFromRemote ? null : mockRecord)
+    );
+
+    const { result } = renderHook(() => useDailyRecordSyncQuery(mockDate, false, 'local_only'), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.record).toEqual(mockRecord);
+    });
+
+    expect(defaultDailyRecordRepositoryPort.getForDateWithMeta).toHaveBeenCalledWith(
+      mockDate,
+      false
     );
   });
 
@@ -259,8 +290,12 @@ describe('useDailyRecordSyncQuery', () => {
       data: { date: mockDate, outcome: 'clean', record: mockRecord },
     });
 
+    let refetchCallsAfterNewestRefresh = 0;
     await waitFor(() => {
-      expect(defaultDailyRecordRepositoryPort.getForDateWithMeta).toHaveBeenCalledTimes(1);
+      refetchCallsAfterNewestRefresh = vi.mocked(
+        defaultDailyRecordRepositoryPort.getForDateWithMeta
+      ).mock.calls.length;
+      expect(refetchCallsAfterNewestRefresh).toBeGreaterThan(0);
     });
 
     firstRefresh.resolve({
@@ -269,7 +304,9 @@ describe('useDailyRecordSyncQuery', () => {
     });
 
     await waitFor(() => {
-      expect(defaultDailyRecordRepositoryPort.getForDateWithMeta).toHaveBeenCalledTimes(1);
+      expect(defaultDailyRecordRepositoryPort.getForDateWithMeta).toHaveBeenCalledTimes(
+        refetchCallsAfterNewestRefresh
+      );
     });
   });
 

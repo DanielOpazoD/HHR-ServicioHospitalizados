@@ -7,21 +7,24 @@ import {
   type GlobalEmailRecipientList,
 } from '@/services/email/emailRecipientListService';
 import type { CensusEmailBrowserRuntime } from '@/hooks/controllers/censusEmailBrowserRuntimeController';
-import {
-  executeBootstrapCensusRecipientLists,
-  executeCreateCensusRecipientList,
-  executeDeleteCensusRecipientList,
-  executeRenameCensusRecipientList,
-  executeSyncCensusRecipientList,
-} from '@/application/census-email/censusRecipientListUseCases';
 import { resolveStoredRecipients } from '@/hooks/controllers/censusEmailRecipientsController';
 import { resolveApplicationOutcomeMessage } from '@/shared/contracts/applicationOutcomeMessage';
 
 const RECIPIENT_LIST_KEY = 'censusEmailActiveRecipientListId';
+let censusRecipientListUseCasesPromise: Promise<
+  typeof import('@/application/census-email/censusRecipientListUseCases')
+> | null = null;
+
+const loadCensusRecipientListUseCases = async () => {
+  censusRecipientListUseCasesPromise ??=
+    import('@/application/census-email/censusRecipientListUseCases');
+  return censusRecipientListUseCasesPromise;
+};
 
 interface UseCensusEmailRecipientListsParams {
   canManageGlobalRecipientLists: boolean;
   browserRuntime: CensusEmailBrowserRuntime;
+  enabled: boolean;
   user: { uid?: string; email?: string | null } | null;
 }
 
@@ -42,6 +45,7 @@ interface UseCensusEmailRecipientListsReturn {
 export const useCensusEmailRecipientLists = ({
   canManageGlobalRecipientLists,
   browserRuntime,
+  enabled,
   user,
 }: UseCensusEmailRecipientListsParams): UseCensusEmailRecipientListsReturn => {
   const [recipients, setRecipientsState] = useState<string[]>(CENSUS_DEFAULT_RECIPIENTS);
@@ -120,6 +124,30 @@ export const useCensusEmailRecipientLists = ({
     let isActive = true;
 
     const loadRecipients = async () => {
+      if (!canManageGlobalRecipientLists || !enabled) {
+        const [storedRecipients, storedActiveListId] = await Promise.all([
+          getAppSetting<string[] | null>('censusEmailRecipients', null),
+          getAppSetting<string | null>(RECIPIENT_LIST_KEY, null),
+        ]);
+
+        if (!isActive) {
+          return;
+        }
+
+        const resolvedStoredRecipients = resolveStoredRecipients(storedRecipients);
+        const resolvedRecipients = resolvedStoredRecipients ?? CENSUS_DEFAULT_RECIPIENTS;
+        const resolvedActiveListId = storedActiveListId ?? CENSUS_GLOBAL_EMAIL_RECIPIENT_LIST.id;
+
+        activeRecipientListIdRef.current = resolvedActiveListId;
+        setActiveRecipientListIdState(resolvedActiveListId);
+        setRecipientsState(resolvedRecipients);
+        setRecipientsSource(resolvedStoredRecipients ? 'local' : 'default');
+        setRecipientsSyncError(null);
+        recipientsReadyRef.current = true;
+        return;
+      }
+
+      const { executeBootstrapCensusRecipientLists } = await loadCensusRecipientListUseCases();
       const bootstrapResult = await executeBootstrapCensusRecipientLists({
         canManageGlobalRecipientLists,
         browserRuntime,
@@ -167,7 +195,7 @@ export const useCensusEmailRecipientLists = ({
     return () => {
       isActive = false;
     };
-  }, [applyActiveRecipientList, browserRuntime, canManageGlobalRecipientLists, user]);
+  }, [applyActiveRecipientList, browserRuntime, canManageGlobalRecipientLists, enabled, user]);
 
   useEffect(() => {
     if (!recipientsReadyRef.current) {
@@ -178,20 +206,27 @@ export const useCensusEmailRecipientLists = ({
   }, [recipients]);
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
     let cancelled = false;
     const timeoutId = window.setTimeout(() => {
       setIsRecipientsSyncing(true);
       setRecipientsSyncError(null);
 
-      void executeSyncCensusRecipientList({
-        canManageGlobalRecipientLists,
-        recipientsReady: recipientsReadyRef.current,
-        recipients,
-        lastRemoteRecipients: lastRemoteRecipientsRef.current,
-        recipientLists,
-        activeRecipientListId: activeRecipientListIdRef.current,
-        actor: user,
-      })
+      void loadCensusRecipientListUseCases()
+        .then(({ executeSyncCensusRecipientList }) =>
+          executeSyncCensusRecipientList({
+            canManageGlobalRecipientLists,
+            recipientsReady: recipientsReadyRef.current,
+            recipients,
+            lastRemoteRecipients: lastRemoteRecipientsRef.current,
+            recipientLists,
+            activeRecipientListId: activeRecipientListIdRef.current,
+            actor: user,
+          })
+        )
         .then(result => {
           if (cancelled) {
             return;
@@ -223,12 +258,20 @@ export const useCensusEmailRecipientLists = ({
       window.clearTimeout(timeoutId);
       setIsRecipientsSyncing(false);
     };
-  }, [activeRecipientListId, canManageGlobalRecipientLists, recipientLists, recipients, user]);
+  }, [
+    activeRecipientListId,
+    canManageGlobalRecipientLists,
+    enabled,
+    recipientLists,
+    recipients,
+    user,
+  ]);
 
   const createRecipientList = useCallback(
     async (name: string) => {
       setIsRecipientsSyncing(true);
       setRecipientsSyncError(null);
+      const { executeCreateCensusRecipientList } = await loadCensusRecipientListUseCases();
       const result = await executeCreateCensusRecipientList({
         canManageGlobalRecipientLists,
         name,
@@ -261,6 +304,7 @@ export const useCensusEmailRecipientLists = ({
     async (name: string) => {
       setIsRecipientsSyncing(true);
       setRecipientsSyncError(null);
+      const { executeRenameCensusRecipientList } = await loadCensusRecipientListUseCases();
       const result = await executeRenameCensusRecipientList({
         canManageGlobalRecipientLists,
         activeList: recipientLists.find(list => list.id === activeRecipientListId),
@@ -295,6 +339,7 @@ export const useCensusEmailRecipientLists = ({
     async (listId: string) => {
       setIsRecipientsSyncing(true);
       setRecipientsSyncError(null);
+      const { executeDeleteCensusRecipientList } = await loadCensusRecipientListUseCases();
       const result = await executeDeleteCensusRecipientList({
         canManageGlobalRecipientLists,
         recipientLists,

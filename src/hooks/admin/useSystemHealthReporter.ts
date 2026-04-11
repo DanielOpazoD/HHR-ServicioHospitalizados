@@ -3,7 +3,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useVersion } from '@/context/VersionContext';
 import { useIsMutating } from '@tanstack/react-query';
 import { fetchErrorLogs } from '@/services/errorLogService';
-import { reportUserHealth, UserHealthStatus } from '@/services/admin/healthService';
+import type { UserHealthStatus } from '@/services/admin/healthService';
 import { getLocalPersistenceRuntimeSnapshot } from '@/services/storage/core';
 import { getSyncQueueTelemetry } from '@/services/storage/sync';
 import { getRepositoryPerformanceSummary } from '@/services/repositories/repositoryPerformance';
@@ -17,12 +17,19 @@ import {
 import { systemHealthReporterLogger } from '@/hooks/hookLoggers';
 
 const REPORT_INTERVAL_MS = 2 * 60 * 1000; // Report every 2 minutes
+let healthServiceModulePromise: Promise<typeof import('@/services/admin/healthService')> | null =
+  null;
+
+const loadHealthService = async () => {
+  healthServiceModulePromise ??= import('@/services/admin/healthService');
+  return healthServiceModulePromise;
+};
 
 /**
  * Hook that periodically reports the system health status to Firestore.
  * Runs in the background and only reports if a user is logged in.
  */
-export const useSystemHealthReporter = () => {
+export const useSystemHealthReporter = (enabled = true) => {
   const auth = useAuth();
   const { currentUser, role } = auth;
   const { isOutdated, updateReason } = useVersion();
@@ -30,7 +37,7 @@ export const useSystemHealthReporter = () => {
   const lastReportTime = useRef<number>(0);
 
   useEffect(() => {
-    if (!currentUser || !canReportSystemHealthForRole(role)) return;
+    if (!enabled || !currentUser || !canReportSystemHealthForRole(role)) return;
 
     const reportHealth = async () => {
       try {
@@ -91,6 +98,7 @@ export const useSystemHealthReporter = () => {
           operationalTelemetry,
         });
 
+        const { reportUserHealth } = await loadHealthService();
         await reportUserHealth(status);
         lastReportTime.current = Date.now();
       } catch (error) {
@@ -110,5 +118,5 @@ export const useSystemHealthReporter = () => {
     }, REPORT_INTERVAL_MS);
 
     return () => clearInterval(interval);
-  }, [auth, currentUser, role, isOutdated, mutatingCount, updateReason]);
+  }, [auth, currentUser, enabled, role, isOutdated, mutatingCount, updateReason]);
 };

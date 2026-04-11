@@ -80,9 +80,32 @@ describe('useCensusEmail', () => {
     expect(useCensusEmailRecipientLists).toHaveBeenCalledWith(
       expect.objectContaining({
         canManageGlobalRecipientLists: true,
+        enabled: false,
         user: defaultParams.user,
       })
     );
+  });
+
+  it('enables global recipient list bootstrap when the email config is opened', async () => {
+    const { result } = renderHook(() => useCensusEmail(defaultParams));
+
+    expect(useCensusEmailRecipientLists).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        enabled: false,
+      })
+    );
+
+    act(() => {
+      result.current.setShowEmailConfig(true);
+    });
+
+    await waitFor(() => {
+      expect(useCensusEmailRecipientLists).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          enabled: true,
+        })
+      );
+    });
   });
 
   it('updates message when nurseSignature changes until manual edit occurs', async () => {
@@ -150,6 +173,7 @@ describe('useCensusEmail', () => {
     expect(useCensusEmailRecipientLists).toHaveBeenLastCalledWith(
       expect.objectContaining({
         canManageGlobalRecipientLists: true,
+        enabled: false,
         user: { email: 'nurse@test.com', role: 'nurse_hospital' },
       })
     );
@@ -169,6 +193,7 @@ describe('useCensusEmail', () => {
     expect(useCensusEmailRecipientLists).toHaveBeenLastCalledWith(
       expect.objectContaining({
         canManageGlobalRecipientLists: false,
+        enabled: false,
         user: { email: 'specialist@test.com', role: 'doctor_specialist' },
       })
     );

@@ -16,6 +16,8 @@ import type { AuthContextType } from '@/context';
 import type { CensusContextType } from '@/context/CensusContext';
 import type { AppAuthenticatedDateNavigation } from '@/app-shell/bootstrap/useAppBootstrapState';
 
+const HEALTH_REPORTING_ENABLE_DELAY_MS = 1500;
+
 export interface AuthenticatedAppRuntime {
   dailyRecordHook: DailyRecordContextType;
   existingDaysInMonth: number[];
@@ -93,7 +95,19 @@ export const useAuthenticatedAppRuntime = ({
   auth,
   dateNav,
 }: UseAuthenticatedAppRuntimeParams): AuthenticatedAppRuntime => {
-  useSystemHealthReporter();
+  const [healthReportingEnabled, setHealthReportingEnabled] = React.useState(false);
+
+  React.useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setHealthReportingEnabled(true);
+    }, HEALTH_REPORTING_ENABLE_DELAY_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, []);
+
+  useSystemHealthReporter(healthReportingEnabled);
 
   const dailyRecordHook = useDailyRecord(dateNav.currentDateString, false, auth.remoteSyncStatus);
   const { record } = dailyRecordHook;

@@ -79,10 +79,12 @@ export const useCensusEmail = ({
   const { confirm, alert } = useConfirmDialog();
   const isAdminUser = canUseAdminMaintenanceActions(role);
   const browserRuntime = defaultCensusEmailBrowserRuntime;
+  const [showEmailConfig, setShowEmailConfig] = useState(false);
   const canManageGlobalRecipientLists = canManageGlobalCensusEmailRecipients({
     role,
     userId: user?.uid || user?.email || null,
   });
+  const areGlobalRecipientListsEnabled = canManageGlobalRecipientLists && showEmailConfig;
 
   // ========== RECIPIENTS STATE ==========
   const {
@@ -100,6 +102,7 @@ export const useCensusEmail = ({
   } = useCensusEmailRecipientLists({
     canManageGlobalRecipientLists,
     browserRuntime,
+    enabled: areGlobalRecipientListsEnabled,
     user,
   });
 
@@ -134,7 +137,6 @@ export const useCensusEmail = ({
   );
 
   // ========== UI STATE ==========
-  const [showEmailConfig, setShowEmailConfig] = useState(false);
   const { status, error, setStatus, setError, resetStatus } =
     useCensusEmailSendState(currentDateString);
 

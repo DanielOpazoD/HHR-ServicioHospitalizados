@@ -4,7 +4,7 @@
  * Provides the same interface for compatibility.
  */
 
-import { useCallback, useMemo, useEffect, useRef } from 'react';
+import { useCallback, useMemo, useEffect, useRef, useState } from 'react';
 import {
   useDailyRecordQuery,
   useSaveDailyRecordMutation,
@@ -29,7 +29,6 @@ import {
   resolveCreateDaySourceDate,
   resolveMutationSyncStatus,
 } from '@/hooks/controllers/dailyRecordSyncController';
-import { executeSyncDailyRecord } from '@/application/daily-record/syncDailyRecordUseCase';
 import { presentDailyRecordRefreshOutcome } from '@/hooks/controllers/dailyRecordRefreshOutcomeController';
 import { dailyRecordSyncLogger } from '@/hooks/hookLoggers';
 import { dailyRecordObservability } from '@/services/repositories/dailyRecordOperationalTelemetry';
@@ -42,6 +41,22 @@ import {
   type DailyRecordBootstrapPhase,
 } from '@/hooks/controllers/dailyRecordBootstrapController';
 
+const REMOTE_HYDRATION_IDLE_TIMEOUT_MS = 1_200;
+const REMOTE_HYDRATION_FALLBACK_DELAY_MS = 150;
+let syncDailyRecordUseCasePromise: Promise<
+  typeof import('@/application/daily-record/syncDailyRecordUseCase')
+> | null = null;
+
+const loadSyncDailyRecordUseCase = async () => {
+  syncDailyRecordUseCasePromise ??= import('@/application/daily-record/syncDailyRecordUseCase');
+  return syncDailyRecordUseCasePromise;
+};
+
+type BrowserWindowWithIdleCallback = Window & {
+  requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
+  cancelIdleCallback?: (handle: number) => void;
+};
+
 export const useDailyRecordSyncQuery = (
   currentDateString: string,
   _isOfflineMode: boolean = false, // Handled implicitly by TanStack Query & Repository
@@ -50,6 +65,48 @@ export const useDailyRecordSyncQuery = (
   const queryClient = useQueryClient();
   const { dailyRecord } = useRepositories();
   const { checkVersion } = useVersion();
+  const [remoteHydrationReadyDate, setRemoteHydrationReadyDate] = useState<string | null>(null);
+  const readySignature = remoteSyncStatus === 'ready' ? currentDateString : null;
+  const shouldDeferRemoteHydration =
+    readySignature !== null && remoteHydrationReadyDate !== currentDateString;
+  const effectiveRemoteSyncStatus = shouldDeferRemoteHydration ? 'local_only' : remoteSyncStatus;
+
+  useEffect(() => {
+    if (readySignature === null) {
+      return;
+    }
+
+    let timeoutId: number | null = null;
+    let idleCallbackId: number | null = null;
+    let cancelled = false;
+
+    const enableRemoteHydration = () => {
+      if (!cancelled) {
+        setRemoteHydrationReadyDate(currentDateString);
+      }
+    };
+
+    const browserWindow =
+      typeof window !== 'undefined' ? (window as BrowserWindowWithIdleCallback) : null;
+
+    if (browserWindow?.requestIdleCallback) {
+      idleCallbackId = browserWindow.requestIdleCallback(enableRemoteHydration, {
+        timeout: REMOTE_HYDRATION_IDLE_TIMEOUT_MS,
+      });
+    } else {
+      timeoutId = window.setTimeout(enableRemoteHydration, REMOTE_HYDRATION_FALLBACK_DELAY_MS);
+    }
+
+    return () => {
+      cancelled = true;
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
+      if (idleCallbackId !== null && browserWindow?.cancelIdleCallback) {
+        browserWindow.cancelIdleCallback(idleCallbackId);
+      }
+    };
+  }, [currentDateString, readySignature]);
 
   // 1. Fetching
   const {
@@ -57,7 +114,7 @@ export const useDailyRecordSyncQuery = (
     runtime: recordRuntime,
     dataUpdatedAt,
     refetch,
-  } = useDailyRecordQuery(currentDateString, _isOfflineMode, remoteSyncStatus);
+  } = useDailyRecordQuery(currentDateString, _isOfflineMode, effectiveRemoteSyncStatus);
 
   // Monitor version in incoming records
   useEffect(() => {
@@ -93,12 +150,23 @@ export const useDailyRecordSyncQuery = (
   const bootstrapPhase = useMemo(
     (): DailyRecordBootstrapPhase =>
       resolveDailyRecordBootstrapPhase({
-        remoteSyncStatus,
+        remoteSyncStatus: effectiveRemoteSyncStatus,
         record,
         runtime: recordRuntime,
         gracePeriodExpired: recordRuntime?.availabilityState === 'temporarily_unavailable',
       }),
-    [record, recordRuntime, remoteSyncStatus]
+    [effectiveRemoteSyncStatus, record, recordRuntime]
+  );
+
+  const runRemoteSync = useCallback(
+    async (date: string) => {
+      const { executeSyncDailyRecord } = await loadSyncDailyRecordUseCase();
+      return executeSyncDailyRecord({
+        date,
+        repository: dailyRecord,
+      });
+    },
+    [dailyRecord]
   );
 
   useEffect(() => {
@@ -129,10 +197,7 @@ export const useDailyRecordSyncQuery = (
 
     let cancelled = false;
 
-    void executeSyncDailyRecord({
-      date: currentDateString,
-      repository: dailyRecord,
-    }).then(outcome => {
+    void runRemoteSync(currentDateString).then(outcome => {
       if (cancelled || !isMountedRef.current) {
         return;
       }
@@ -149,7 +214,7 @@ export const useDailyRecordSyncQuery = (
     return () => {
       cancelled = true;
     };
-  }, [bootstrapPhase, currentDateString, dailyRecord, record, refetch]);
+  }, [bootstrapPhase, currentDateString, record, refetch, runRemoteSync]);
 
   // 3. Status Mapping
   const syncStatus = useMemo(
@@ -267,10 +332,7 @@ export const useDailyRecordSyncQuery = (
   const refresh = useCallback(() => {
     const requestId = ++refreshRequestIdRef.current;
 
-    void executeSyncDailyRecord({
-      date: currentDateString,
-      repository: dailyRecord,
-    }).then(outcome => {
+    void runRemoteSync(currentDateString).then(outcome => {
       if (!isMountedRef.current || requestId !== refreshRequestIdRef.current) {
         return;
       }
@@ -286,7 +348,7 @@ export const useDailyRecordSyncQuery = (
       }
       void refetch();
     });
-  }, [currentDateString, dailyRecord, refetch, warning, notifyError]);
+  }, [currentDateString, notifyError, refetch, runRemoteSync, warning]);
 
   const createDay = useCallback(
     async (copyFromPrevious: boolean, specificDate?: string) => {
