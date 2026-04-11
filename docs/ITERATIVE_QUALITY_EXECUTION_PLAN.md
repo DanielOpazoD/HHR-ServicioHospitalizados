@@ -383,12 +383,12 @@ Subir la confianza operativa del repo sin re-arquitectura: cerrar el desalineami
 
 ### Historial de avance `R00-R06`
 
-| Fecha      | Fase  | Estado     | Nota                                                                                                                                                      |
-| ---------- | ----- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-04-09 | `R00` | completado | Baseline real confirmado con `check:quality` y `check:docs-drift`; se reabre el ciclo con foco en artifacts y deuda focalizada                            |
-| 2026-04-09 | `R01` | completado | `ClinicalDocumentLabInsertDialog` suma cobertura dirigida y `clinical-documents` vuelve a `PASS` en `critical-coverage`                                   |
-| 2026-04-09 | `R03` | completado | `reports/technical-execution-baseline.{md,json}` se regeneran y desaparece el drift por reporte faltante                                                  |
-| 2026-04-09 | `R04` | completado | `flow-performance` se vuelve medible en puerto aislado; el menu de acciones clínicas recupera `Documentos Clínicos` y budgets pasan                       |
-| 2026-04-09 | `R02` | completado | `report-quality-metrics` se alinea con la misma gobernanza que `check:repo-hygiene`; el residual de boundaries baja a `0`                                 |
-| 2026-04-09 | `R05` | completado | se extrajeron seams pequeñas en `patient-row` orbital runtime e `indexedDbCore`; `typecheck`, `lint`, tests focalizados y hook hotspots quedaron en verde |
-| 2026-04-09 | `R06` | completado | `ci:pre-merge`, checks restantes de `ci:merge-gate`, `check:docs-drift` y reportes canónicos quedaron en verde; ciclo `R00-R06` cerrado                   |
+| Fecha      | Fase  | Estado     | Nota                                                                                                                                                                                             |
+| ---------- | ----- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-04-09 | `R00` | completado | Baseline real confirmado con `check:quality` y `check:docs-drift`; se reabre el ciclo con foco en artifacts y deuda focalizada                                                                   |
+| 2026-04-09 | `R01` | completado | `ClinicalDocumentLabInsertDialog` suma cobertura dirigida y `clinical-documents` vuelve a `PASS` en `critical-coverage`                                                                          |
+| 2026-04-09 | `R03` | completado | `reports/technical-execution-baseline.{md,json}` se regeneran y desaparece el drift por reporte faltante                                                                                         |
+| 2026-04-09 | `R04` | completado | `flow-performance` se vuelve medible en puerto aislado; el menú clásico de acciones clínicas queda delimitado y los accesos clínicos duplicados se consolidan en Honu mientras los budgets pasan |
+| 2026-04-09 | `R02` | completado | `report-quality-metrics` se alinea con la misma gobernanza que `check:repo-hygiene`; el residual de boundaries baja a `0`                                                                        |
+| 2026-04-09 | `R05` | completado | se extrajeron seams pequeñas en `patient-row` orbital runtime e `indexedDbCore`; `typecheck`, `lint`, tests focalizados y hook hotspots quedaron en verde                                        |
+| 2026-04-09 | `R06` | completado | `ci:pre-merge`, checks restantes de `ci:merge-gate`, `check:docs-drift` y reportes canónicos quedaron en verde; ciclo `R00-R06` cerrado                                                          |
