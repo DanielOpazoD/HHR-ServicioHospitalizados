@@ -1,5 +1,12 @@
 import { resolveCurrentUserAuthHeaders } from '@/services/auth/authRequestHeaders';
 import { createScopedLogger } from '@/services/utils/loggerScope';
+import { z } from 'zod';
+
+const fugaNotificationResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+  gmailId: z.string(),
+});
 
 const logger = createScopedLogger('fugaNotificationService');
 
@@ -52,5 +59,5 @@ export const sendFugaNotification = async (
     throw new Error(errorText || 'No se pudo enviar la notificación.');
   }
 
-  return (await response.json()) as FugaNotificationResponse;
+  return fugaNotificationResponseSchema.parse(await response.json());
 };

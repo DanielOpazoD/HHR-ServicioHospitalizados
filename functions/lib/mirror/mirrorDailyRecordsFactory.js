@@ -4,6 +4,7 @@ const {
   canParseMirrorRecordDate,
   shouldSkipMirroringDailyRecord,
 } = require('./mirrorRuntimeSupport');
+const { sanitizeLogValue } = require('../logging/redaction');
 
 const createMirrorDailyRecords = ({ dbBeta, admin }) =>
   functions.firestore
@@ -13,7 +14,8 @@ const createMirrorDailyRecords = ({ dbBeta, admin }) =>
 
       if (!dbBeta) {
         console.error(
-          'ERROR: dbBeta no está inicializada. Configura BETA_SERVICE_ACCOUNT_JSON/B64 o functions config mirror.beta_service_account_json/_b64.'
+          'dbBeta is not initialized for daily record mirroring',
+          sanitizeLogValue({ docId })
         );
         return null;
       }
@@ -24,14 +26,17 @@ const createMirrorDailyRecords = ({ dbBeta, admin }) =>
           return null;
         }
       } catch (dateError) {
-        console.warn(`⚠️ No se pudo parsear fecha de ${docId}:`, dateError.message);
+        console.warn(
+          'Unable to parse mirror record date',
+          sanitizeLogValue({ docId, error: dateError })
+        );
       }
 
       const path = `hospitals/${HOSPITAL_ID}/dailyRecords/${docId}`;
 
       try {
         if (!change.after.exists) {
-          console.warn(`⚠️ Documento borrado en Oficial: ${path}. NO se borra en Beta.`);
+          console.warn('Official document deleted; keeping beta copy', sanitizeLogValue({ path }));
           return null;
         }
 
@@ -68,7 +73,7 @@ const createMirrorDailyRecords = ({ dbBeta, admin }) =>
           { merge: true }
         );
       } catch (error) {
-        console.error(`ERROR sincronizando ${docId}:`, error);
+        console.error('Error syncing mirrored daily record', sanitizeLogValue({ docId, error }));
         return null;
       }
     });

@@ -1,5 +1,6 @@
 const functions = require('firebase-functions/v1');
 const { HOSPITAL_ID } = require('./mirrorConfig');
+const { sanitizeLogValue } = require('../logging/redaction');
 
 const createMirrorWriteHandler = ({ collection, logLabel, preserveDeletes = false, dbBeta }) =>
   functions.firestore
@@ -8,7 +9,10 @@ const createMirrorWriteHandler = ({ collection, logLabel, preserveDeletes = fals
       const { docId } = context.params;
 
       if (!dbBeta) {
-        console.error(`ERROR: dbBeta no está inicializada para ${collection}.`);
+        console.error(
+          'dbBeta is not initialized for mirror write handler',
+          sanitizeLogValue({ collection })
+        );
         return null;
       }
 
@@ -17,7 +21,10 @@ const createMirrorWriteHandler = ({ collection, logLabel, preserveDeletes = fals
       try {
         if (!change.after.exists) {
           if (preserveDeletes) {
-            console.warn(`⚠️ Documento borrado en Oficial: ${path}. NO se borra en Beta.`);
+            console.warn(
+              'Official document deleted; preserving beta copy',
+              sanitizeLogValue({ path })
+            );
             return null;
           }
 
@@ -26,7 +33,10 @@ const createMirrorWriteHandler = ({ collection, logLabel, preserveDeletes = fals
 
         return await dbBeta.doc(path).set(change.after.data());
       } catch (error) {
-        console.error(`ERROR sincronizando ${logLabel} ${docId}:`, error);
+        console.error(
+          'Error syncing mirrored collection write',
+          sanitizeLogValue({ collection, logLabel, docId, error })
+        );
         return null;
       }
     });

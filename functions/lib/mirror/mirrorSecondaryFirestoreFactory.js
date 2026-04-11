@@ -1,4 +1,5 @@
 const functions = require('firebase-functions/v1');
+const { sanitizeLogValue } = require('../logging/redaction');
 
 const readMirrorRuntimeConfig = () => {
   try {
@@ -32,14 +33,12 @@ const parseMirrorSecondaryServiceAccount = () => {
     const json = rawJson || Buffer.from(rawB64, 'base64').toString('utf8');
     const credentials = JSON.parse(json);
     if (!isValidServiceAccountSecret(credentials)) {
-      console.error(
-        'BETA service account secret is incomplete. Expected project_id, client_email and private_key.'
-      );
+      console.error('BETA service account secret is incomplete', sanitizeLogValue(credentials));
       return null;
     }
     return credentials;
   } catch (error) {
-    console.error('BETA service account secret is malformed:', error.message);
+    console.error('BETA service account secret is malformed', sanitizeLogValue({ error }));
     return null;
   }
 };
@@ -47,9 +46,7 @@ const parseMirrorSecondaryServiceAccount = () => {
 const createMirrorSecondaryFirestore = admin => {
   const serviceAccountCredentials = parseMirrorSecondaryServiceAccount();
   if (!serviceAccountCredentials) {
-    console.error(
-      'Missing BETA service account secret. Configure BETA_SERVICE_ACCOUNT_JSON/B64 (or functions config mirror.beta_service_account_json/_b64).'
-    );
+    console.error('Missing BETA service account secret for mirror initialization');
     return null;
   }
 
@@ -62,7 +59,7 @@ const createMirrorSecondaryFirestore = admin => {
     );
     return secondaryApp.firestore();
   } catch (error) {
-    console.error('Failed to initialize secondary Firebase app:', error.message);
+    console.error('Failed to initialize secondary Firebase app', sanitizeLogValue({ error }));
     return null;
   }
 };

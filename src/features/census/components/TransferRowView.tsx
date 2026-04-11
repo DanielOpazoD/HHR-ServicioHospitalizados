@@ -1,12 +1,16 @@
-import React from 'react';
-import { useState } from 'react';
+import React, { Suspense, lazy, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { FileText } from 'lucide-react';
 import { CensusMovementPrimaryCells } from '@/features/census/components/CensusMovementPrimaryCells';
 import { CensusMovementDateActionsCells } from '@/features/census/components/CensusMovementDateActionsCells';
 import type { TransferRowViewModel } from '@/features/census/types/censusMovementRowViewModelTypes';
 import type { TransferData } from '@/features/census/contracts/censusMovementContracts';
-import { IEEHFormDialog } from '@/features/census/components/IEEHFormDialog';
+
+const LazyIEEHFormDialog = lazy(() =>
+  import('@/features/census/components/IEEHFormDialog').then(module => ({
+    default: module.IEEHFormDialog,
+  }))
+);
 
 interface TransferRowViewProps {
   viewModel: TransferRowViewModel;
@@ -55,15 +59,17 @@ export const TransferRowView: React.FC<TransferRowViewProps> = ({
       {showDialog &&
         transferItem?.originalData &&
         createPortal(
-          <IEEHFormDialog
-            isOpen={showDialog}
-            onClose={() => setShowDialog(false)}
-            patient={transferItem.originalData}
-            baseDischargeData={{
-              dischargeDate: transferItem.movementDate || recordDate,
-              dischargeTime: transferItem.time,
-            }}
-          />,
+          <Suspense fallback={null}>
+            <LazyIEEHFormDialog
+              isOpen={showDialog}
+              onClose={() => setShowDialog(false)}
+              patient={transferItem.originalData}
+              baseDischargeData={{
+                dischargeDate: transferItem.movementDate || recordDate,
+                dischargeTime: transferItem.time,
+              }}
+            />
+          </Suspense>,
           document.body
         )}
     </tr>

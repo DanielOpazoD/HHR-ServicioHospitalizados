@@ -1,13 +1,22 @@
-import React, { useState } from 'react';
+import React, { Suspense, lazy, useState } from 'react';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import { CensusMovementPrimaryCells } from '@/features/census/components/CensusMovementPrimaryCells';
 import { CensusMovementDateActionsCells } from '@/features/census/components/CensusMovementDateActionsCells';
 import type { DischargeRowViewModel } from '@/features/census/types/censusMovementRowViewModelTypes';
 import type { DischargeData } from '@/features/census/contracts/censusMovementContracts';
-import { IEEHFormDialog } from '@/features/census/components/IEEHFormDialog';
 import { FileText, MailWarning } from 'lucide-react';
-import { FugaNotificationModal } from '@/features/census/components/FugaNotificationModal';
+
+const LazyFugaNotificationModal = lazy(() =>
+  import('@/features/census/components/FugaNotificationModal').then(module => ({
+    default: module.FugaNotificationModal,
+  }))
+);
+const LazyIEEHFormDialog = lazy(() =>
+  import('@/features/census/components/IEEHFormDialog').then(module => ({
+    default: module.IEEHFormDialog,
+  }))
+);
 
 interface DischargeRowViewProps {
   viewModel: DischargeRowViewModel;
@@ -77,32 +86,36 @@ export const DischargeRowView: React.FC<DischargeRowViewProps> = ({
         {showDialog &&
           dischargeItem?.originalData &&
           createPortal(
-            <IEEHFormDialog
-              isOpen={showDialog}
-              onClose={() => setShowDialog(false)}
-              patient={dischargeItem.originalData}
-              baseDischargeData={{
-                dischargeDate: dischargeItem.movementDate || recordDate,
-                dischargeTime: dischargeItem.time,
-              }}
-              savedIeehData={dischargeItem.ieehData}
-              onSaveData={
-                onUpdateDischarge
-                  ? ieehData => onUpdateDischarge({ ...dischargeItem, ieehData })
-                  : undefined
-              }
-            />,
+            <Suspense fallback={null}>
+              <LazyIEEHFormDialog
+                isOpen={showDialog}
+                onClose={() => setShowDialog(false)}
+                patient={dischargeItem.originalData}
+                baseDischargeData={{
+                  dischargeDate: dischargeItem.movementDate || recordDate,
+                  dischargeTime: dischargeItem.time,
+                }}
+                savedIeehData={dischargeItem.ieehData}
+                onSaveData={
+                  onUpdateDischarge
+                    ? ieehData => onUpdateDischarge({ ...dischargeItem, ieehData })
+                    : undefined
+                }
+              />
+            </Suspense>,
             document.body
           )}
       </tr>
 
       {dischargeItem && isFugaDischarge && (
-        <FugaNotificationModal
-          isOpen={showFugaNotificationModal}
-          onClose={() => setShowFugaNotificationModal(false)}
-          dischargeItem={dischargeItem}
-          recordDate={recordDate}
-        />
+        <Suspense fallback={null}>
+          <LazyFugaNotificationModal
+            isOpen={showFugaNotificationModal}
+            onClose={() => setShowFugaNotificationModal(false)}
+            dischargeItem={dischargeItem}
+            recordDate={recordDate}
+          />
+        </Suspense>
       )}
     </>
   );

@@ -1,5 +1,6 @@
 const { BOOTSTRAP_ADMIN_EMAILS, GENERAL_LOGIN_ROLES } = require('./authConfig');
 const { normalizeEmail } = require('./authEmailUtils');
+const { sanitizeLogValue } = require('../logging/redaction');
 
 const createAuthHelpers = admin => {
   const persistCanonicalRoleAlias = async (rolesMap, cleanEmail, canonicalRole) => {
@@ -27,7 +28,8 @@ const createAuthHelpers = admin => {
       }
     } catch (error) {
       console.warn(
-        `⚠️ resolveRoleForEmail dynamic lookup failed for ${cleanEmail}: ${error.message}`
+        'resolveRoleForEmail dynamic lookup failed',
+        sanitizeLogValue({ email: cleanEmail, error })
       );
     }
 
@@ -53,7 +55,7 @@ const createAuthHelpers = admin => {
       await admin.auth().setCustomUserClaims(user.uid, { role });
       return role;
     } catch (error) {
-      console.error(`❌ Error assigning role to ${email}:`, error);
+      console.error('Error assigning role to user', sanitizeLogValue({ email, error }));
       throw error;
     }
   };

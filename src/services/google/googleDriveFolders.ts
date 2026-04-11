@@ -5,6 +5,7 @@ import {
   type DriveUploadResult,
 } from './googleDriveMultipart';
 import { createScopedLogger } from '@/services/utils/loggerScope';
+import { z } from 'zod';
 
 const logger = createScopedLogger('googleDriveFolders');
 
@@ -12,6 +13,27 @@ const DRIVE_FILES_ENDPOINT = 'https://www.googleapis.com/drive/v3/files';
 const DRIVE_UPLOAD_ENDPOINT = 'https://www.googleapis.com/upload/drive/v3/files';
 const FOLDER_MIME_TYPE = 'application/vnd.google-apps.folder';
 const ROOT_TRANSFER_FOLDER = 'Traslados HHR';
+
+const driveFolderEntrySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+});
+
+const driveFolderListResponseSchema = z.object({
+  files: z.array(driveFolderEntrySchema).default([]),
+});
+
+const driveFolderCreateResponseSchema = z.object({
+  id: z.string(),
+});
+
+const driveErrorResponseSchema = z.object({
+  error: z
+    .object({
+      message: z.string().optional(),
+    })
+    .optional(),
+});
 
 export const MONTHS_ES = [
   'Enero',
@@ -58,7 +80,7 @@ const findFolderByName = async (
 
     if (!response.ok) return null;
 
-    const data = await response.json();
+    const data = driveFolderListResponseSchema.parse(await response.json());
     return data.files?.[0]?.id || null;
   } catch {
     return null;
@@ -79,7 +101,7 @@ const findFileByName = async (
 
     if (!response.ok) return null;
 
-    const data = await response.json();
+    const data = driveFolderListResponseSchema.parse(await response.json());
     return data.files?.[0]?.id || null;
   } catch {
     return null;
@@ -107,11 +129,14 @@ const createFolder = async (
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(`Failed to create folder: ${error.error?.message}`);
+    const payload = driveErrorResponseSchema.safeParse(await response.json().catch(() => null));
+    const errorMessage = payload.success ? payload.data.error?.message : undefined;
+    throw new Error(
+      `Failed to create folder: ${errorMessage || response.statusText || 'Unknown error'}`
+    );
   }
 
-  const data = await response.json();
+  const data = driveFolderCreateResponseSchema.parse(await response.json());
   return data.id;
 };
 
@@ -142,8 +167,9 @@ const updateFileContent = async (
   );
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(`Update failed: ${errorData.error?.message}`);
+    const errorData = driveErrorResponseSchema.safeParse(await response.json().catch(() => null));
+    const errorMessage = errorData.success ? errorData.data.error?.message : undefined;
+    throw new Error(`Update failed: ${errorMessage || response.statusText || 'Unknown error'}`);
   }
 
   return parseDriveUploadResult(response);
@@ -200,7 +226,7 @@ export const listDriveFolders = async (
     throw new Error(payload.error?.message || 'No se pudieron listar carpetas de Google Drive.');
   }
 
-  const data = await response.json();
+  const data = driveFolderListResponseSchema.parse(await response.json());
   return (data.files || []).map((file: { id: string; name: string }) => ({
     id: file.id,
     name: file.name,
