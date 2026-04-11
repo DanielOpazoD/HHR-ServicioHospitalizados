@@ -4,6 +4,7 @@ import { useStalenessGuard } from '@/hooks/useStalenessGuard';
 import type { UseDateNavigationReturn } from '@/hooks/useDateNavigation';
 import { useStorageMigration } from '@/hooks/useStorageMigration';
 import { setFirestoreSyncState } from '@/services/repositories/repositoryConfig';
+import { defaultFirebaseConfigRuntimeAdapter } from '@/services/firebase-runtime/firebaseConfigRuntimeAdapter';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 import { useAuth, type AuthContextType } from '@/context';
 
@@ -45,16 +46,61 @@ const isIgnorableWorkerShutdownImportError = (error: unknown): boolean => {
 
 const appLogger = createScopedLogger('App');
 
+const FIRESTORE_RUNTIME_POLL_MS = 250;
+
+const resolveSyncedFirestoreState = (
+  remoteSyncState: AuthContextType['remoteSyncState'],
+  isFirestoreReady: boolean
+): AuthContextType['remoteSyncState'] => {
+  if (remoteSyncState.mode !== 'enabled') {
+    return remoteSyncState;
+  }
+
+  if (isFirestoreReady) {
+    return {
+      mode: 'enabled',
+      reason: 'ready',
+    };
+  }
+
+  return {
+    mode: 'bootstrapping',
+    reason: 'auth_connecting',
+  };
+};
+
 const useSyncFirestoreStatus = (remoteSyncState: AuthContextType['remoteSyncState']) => {
   React.useEffect(() => {
-    try {
-      setFirestoreSyncState(remoteSyncState);
-    } catch (error) {
-      if (isIgnorableWorkerShutdownImportError(error)) {
-        return;
+    const syncState = () => {
+      try {
+        const nextState = resolveSyncedFirestoreState(
+          remoteSyncState,
+          defaultFirebaseConfigRuntimeAdapter.getOptionalDb() !== null
+        );
+        setFirestoreSyncState(nextState);
+        return nextState.mode === 'enabled';
+      } catch (error) {
+        if (isIgnorableWorkerShutdownImportError(error)) {
+          return true;
+        }
+        appLogger.error('Failed to sync Firestore status', error);
+        return true;
       }
-      appLogger.error('Failed to sync Firestore status', error);
+    };
+
+    if (syncState()) {
+      return;
     }
+
+    const intervalId = window.setInterval(() => {
+      if (syncState()) {
+        window.clearInterval(intervalId);
+      }
+    }, FIRESTORE_RUNTIME_POLL_MS);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
   }, [remoteSyncState]);
 };
 

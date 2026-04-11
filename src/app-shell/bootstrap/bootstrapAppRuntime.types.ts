@@ -7,7 +7,7 @@ import type { ClientBootstrapRecoveryResult } from '@/services/config/clientBoot
 export interface BootstrapRuntimeServices {
   app: FirebaseApp;
   auth: Auth;
-  db: Firestore;
+  db: Firestore | null;
 }
 
 export type AppBootstrapRuntimeResult =

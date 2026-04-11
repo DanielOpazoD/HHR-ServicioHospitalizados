@@ -15,7 +15,7 @@ export const createFirestoreRuntime = (
   get db() {
     return adapter.getDb();
   },
-  ready: adapter.ready,
+  ready: adapter.readyFirestore,
 });
 
 export const defaultFirestoreRuntime: FirestoreRuntime = createFirestoreRuntime();

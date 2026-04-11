@@ -11,6 +11,7 @@ const {
   mockUseStorageMigration,
   mockUseVersionCheck,
   mockSetFirestoreSyncState,
+  mockGetOptionalDb,
 } = vi.hoisted(() => ({
   mockUseAuth: vi.fn(),
   mockUseDateNavigation: vi.fn(),
@@ -18,6 +19,7 @@ const {
   mockUseStorageMigration: vi.fn(),
   mockUseVersionCheck: vi.fn(),
   mockSetFirestoreSyncState: vi.fn(),
+  mockGetOptionalDb: vi.fn(() => null),
 }));
 
 vi.mock('@/context', () => ({
@@ -36,6 +38,12 @@ vi.mock('@/hooks/useStorageMigration', () => ({
 
 vi.mock('@/services/repositories/repositoryConfig', () => ({
   setFirestoreSyncState: (...args: unknown[]) => mockSetFirestoreSyncState(...args),
+}));
+
+vi.mock('@/services/firebase-runtime/firebaseConfigRuntimeAdapter', () => ({
+  defaultFirebaseConfigRuntimeAdapter: {
+    getOptionalDb: () => mockGetOptionalDb(),
+  },
 }));
 
 import {
@@ -105,6 +113,7 @@ const createDateNavigation = (
 describe('useAppBootstrapState', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGetOptionalDb.mockReturnValue(null);
     mockUseAuth.mockReturnValue(createAuthState());
     mockUseDateNavigation.mockReturnValue(createDateNavigation());
     mockUseSignatureMode.mockReturnValue({
@@ -213,6 +222,7 @@ describe('useAppBootstrapState', () => {
       signatureDate: null,
       currentDateString: '2026-03-31',
     });
+    mockGetOptionalDb.mockReturnValue({ name: 'db' } as never);
 
     const { result } = renderHook(() => useAppBootstrapState());
 
@@ -258,6 +268,45 @@ describe('useAppBootstrapState', () => {
       mode: 'bootstrapping',
       reason: 'auth_loading',
     });
+  });
+
+  it('keeps Firestore in bootstrapping until the runtime exposes db for an authenticated session', async () => {
+    const currentUser: AuthUser = {
+      uid: 'user-1',
+      email: 'admin@hospital.cl',
+      displayName: 'Admin',
+      role: 'admin',
+    };
+    mockUseAuth.mockReturnValue(
+      createAuthState({
+        currentUser,
+        authorizedUser: currentUser,
+        user: currentUser,
+        role: 'admin',
+        isAuthenticated: true,
+        isAuthorizedSession: true,
+        isEditor: true,
+        isViewer: false,
+        isFirebaseConnected: true,
+        remoteSyncStatus: 'ready',
+      })
+    );
+
+    renderHook(() => useAppBootstrapState());
+
+    expect(mockSetFirestoreSyncState).toHaveBeenCalledWith({
+      mode: 'bootstrapping',
+      reason: 'auth_connecting',
+    });
+
+    mockGetOptionalDb.mockReturnValue({ name: 'db' } as never);
+
+    await waitFor(() =>
+      expect(mockSetFirestoreSyncState).toHaveBeenCalledWith({
+        mode: 'enabled',
+        reason: 'ready',
+      })
+    );
   });
 
   it('buildAppBootstrapState prioritizes signature mode over the other gates', () => {

@@ -13,6 +13,11 @@ export interface FirebaseBootstrapResult {
   db: Firestore;
 }
 
+export interface FirebaseCoreBootstrapResult {
+  app: FirebaseApp;
+  auth: Auth;
+}
+
 const AUTH_PERSISTENCE_TIMEOUTS_MS = {
   local: 2_500,
   session: 1_500,
@@ -89,18 +94,28 @@ const startAuthPersistenceConfiguration = (
   attemptCandidate(0);
 };
 
-export const initializeFirebaseServices = async (
+export const initializeFirebaseCore = async (
   config: FirebaseOptions
-): Promise<FirebaseBootstrapResult> => {
-  firebaseBootstrapLogger.info('Initializing services');
-  const [{ initializeApp }, authRuntime, firestoreRuntime] = await Promise.all([
+): Promise<FirebaseCoreBootstrapResult> => {
+  firebaseBootstrapLogger.info('Initializing Firebase core');
+  const [{ initializeApp }, authRuntime] = await Promise.all([
     import('firebase/app'),
     import('firebase/auth'),
-    import('firebase/firestore'),
   ]);
 
   const app = initializeApp(config);
   const auth = authRuntime.getAuth(app);
+
+  startAuthPersistenceConfiguration(auth, authRuntime);
+  firebaseBootstrapLogger.info('Firebase core ready');
+  return { app, auth };
+};
+
+export const initializeFirestoreService = async (
+  app: FirebaseApp
+): Promise<Pick<FirebaseBootstrapResult, 'db'>> => {
+  firebaseBootstrapLogger.info('Initializing Firestore runtime');
+  const firestoreRuntime = await import('firebase/firestore');
 
   let db: Firestore;
   try {
@@ -127,26 +142,31 @@ export const initializeFirebaseServices = async (
     });
   }
 
-  startAuthPersistenceConfiguration(auth, authRuntime);
-
-  firebaseBootstrapLogger.info('Firebase services ready');
-  return { app, auth, db };
+  firebaseBootstrapLogger.info('Firestore runtime ready');
+  return { db };
 };
 
-export const connectFirebaseEmulators = async ({
-  auth,
-  db,
-}: Pick<FirebaseBootstrapResult, 'auth' | 'db'>) => {
+export const initializeFirebaseServices = async (
+  config: FirebaseOptions
+): Promise<FirebaseBootstrapResult> => {
+  const core = await initializeFirebaseCore(config);
+  const firestore = await initializeFirestoreService(core.app);
+  firebaseBootstrapLogger.info('Firebase services ready');
+  return { ...core, ...firestore };
+};
+
+export const connectAuthEmulator = async ({ auth }: Pick<FirebaseBootstrapResult, 'auth'>) => {
   const authEmulatorHost = import.meta.env.VITE_AUTH_EMULATOR_HOST;
-  const firestoreEmulatorHost = import.meta.env.VITE_FIRESTORE_EMULATOR_HOST;
-  const [authRuntime, firestoreRuntime] = await Promise.all([
-    import('firebase/auth'),
-    import('firebase/firestore'),
-  ]);
+  const authRuntime = await import('firebase/auth');
 
   if (import.meta.env.DEV && authEmulatorHost) {
     authRuntime.connectAuthEmulator(auth, authEmulatorHost);
   }
+};
+
+export const connectFirestoreEmulator = async ({ db }: Pick<FirebaseBootstrapResult, 'db'>) => {
+  const firestoreEmulatorHost = import.meta.env.VITE_FIRESTORE_EMULATOR_HOST;
+  const firestoreRuntime = await import('firebase/firestore');
 
   if (import.meta.env.DEV && firestoreEmulatorHost) {
     const emulatorHost = parseEmulatorHost(firestoreEmulatorHost);
@@ -159,4 +179,11 @@ export const connectFirebaseEmulators = async ({
       );
     }
   }
+};
+
+export const connectFirebaseEmulators = async ({
+  auth,
+  db,
+}: Pick<FirebaseBootstrapResult, 'auth' | 'db'>) => {
+  await Promise.all([connectAuthEmulator({ auth }), connectFirestoreEmulator({ db })]);
 };

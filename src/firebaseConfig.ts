@@ -9,8 +9,10 @@ import {
   warnOnFirebaseAuthConfig,
 } from '@/services/firebase-runtime/firebaseStartupDiagnostics';
 import {
-  connectFirebaseEmulators,
-  initializeFirebaseServices,
+  connectAuthEmulator,
+  connectFirestoreEmulator,
+  initializeFirebaseCore,
+  initializeFirestoreService,
 } from '@/services/firebase-runtime/firebaseServiceBootstrap';
 import {
   createFirebaseLazyServicesState,
@@ -65,6 +67,15 @@ const loadValidatedFirebaseConfig = async (): Promise<FirebaseOptions> => {
   }
 };
 
+const firebaseCoreBootstrapPromise = (async () => {
+  const config = await loadValidatedFirebaseConfig();
+  const services = await initializeFirebaseCore(config);
+  app = services.app;
+  auth = services.auth;
+  await connectAuthEmulator(services);
+  return { config, ...services };
+})();
+
 export const firebaseReady = (async () => {
   firebaseConfigLogger.info('Starting Firebase ready sequence');
 
@@ -76,20 +87,9 @@ export const firebaseReady = (async () => {
   );
 
   try {
-    const bootstrapPromise = (async () => {
-      const config = await loadValidatedFirebaseConfig();
-      const services = await initializeFirebaseServices(config);
-      app = services.app;
-      auth = services.auth;
-      db = services.db;
-      await connectFirebaseEmulators(services);
-      return services;
-    })();
-
-    const services = (await Promise.race([bootstrapPromise, timeout])) as {
+    const services = (await Promise.race([firebaseCoreBootstrapPromise, timeout])) as {
       app: FirebaseApp;
       auth: Auth;
-      db: Firestore;
     };
 
     return services;
@@ -99,5 +99,22 @@ export const firebaseReady = (async () => {
     throw err;
   }
 })();
+
+export const firestoreReady = (async () => {
+  const coreServices = await firebaseCoreBootstrapPromise;
+  const firestoreServices = await initializeFirestoreService(coreServices.app);
+  db = firestoreServices.db;
+  await connectFirestoreEmulator(firestoreServices);
+  return {
+    app: coreServices.app,
+    auth: coreServices.auth,
+    db,
+  };
+})();
+
+void firestoreReady.catch(error => {
+  const message = error instanceof Error ? error.message : String(error);
+  firebaseConfigLogger.error('Firestore initialization failed', { message });
+});
 
 export default app;

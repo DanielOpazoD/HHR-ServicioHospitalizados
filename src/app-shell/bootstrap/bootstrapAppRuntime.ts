@@ -146,9 +146,15 @@ export const bootstrapAppRuntime = async (): Promise<AppBootstrapRuntimeResult> 
   }
 
   try {
-    const services = (await defaultFirebaseConfigRuntimeAdapter.ready) as BootstrapRuntimeServices;
+    await defaultFirebaseConfigRuntimeAdapter.ready;
+    const services: BootstrapRuntimeServices = {
+      app: defaultFirebaseConfigRuntimeAdapter.getApp(),
+      auth: defaultFirebaseConfigRuntimeAdapter.getAuth(),
+      db: defaultFirebaseConfigRuntimeAdapter.getOptionalDb(),
+    };
     bootstrapRuntimeLogger.info('Bootstrap runtime ready', {
       recoveryReason: clientRecovery.reason,
+      firestoreReady: Boolean(services.db),
     });
     clearStorageRepairAttempt();
     return {

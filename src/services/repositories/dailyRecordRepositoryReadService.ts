@@ -4,14 +4,9 @@ import {
   getPreviousDayRecord as getPreviousDayFromIndexedDB,
   getAllDates as getAllDatesFromIndexedDB,
 } from '@/services/storage/indexeddb/indexedDbRecordService';
-import {
-  getAvailableDatesFromFirestore,
-  getMonthRecordsFromFirestore,
-} from '@/services/storage/firestore/firestoreRecordQueries';
 import { logLegacyInfo } from '@/services/storage/legacyfirebase/legacyFirebaseLogger';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import { migrateLegacyDataWithReport } from '@/services/repositories/dataMigration';
-import { loadRemoteRecordWithFallback } from '@/services/repositories/dailyRecordRemoteLoader';
 import { bridgeLegacyRecord } from '@/services/repositories/legacyRecordBridgeService';
 import { persistHydratedRecordToLocalCache } from '@/services/repositories/dailyRecordLocalCachePersistence';
 import {
@@ -26,6 +21,24 @@ import { dailyRecordReadLogger } from '@/services/repositories/repositoryLoggers
 import { resolveDailyRecordReadConsistency } from '@/services/repositories/dailyRecordConsistencyPolicy';
 import { resolveDailyRecordPersistenceGoldenPath } from '@/services/repositories/dailyRecordPersistenceGoldenPath';
 import { AdmissionDatePolicyViolationError } from '@/application/patient-flow/admissionDatePolicy';
+
+type FirestoreRecordQueriesModule =
+  typeof import('@/services/storage/firestore/firestoreRecordQueries');
+type DailyRecordRemoteLoaderModule =
+  typeof import('@/services/repositories/dailyRecordRemoteLoader');
+
+let firestoreRecordQueriesPromise: Promise<FirestoreRecordQueriesModule> | null = null;
+let dailyRecordRemoteLoaderPromise: Promise<DailyRecordRemoteLoaderModule> | null = null;
+
+const loadFirestoreRecordQueries = async (): Promise<FirestoreRecordQueriesModule> => {
+  firestoreRecordQueriesPromise ??= import('@/services/storage/firestore/firestoreRecordQueries');
+  return firestoreRecordQueriesPromise;
+};
+
+const loadDailyRecordRemoteLoader = async (): Promise<DailyRecordRemoteLoaderModule> => {
+  dailyRecordRemoteLoaderPromise ??= import('@/services/repositories/dailyRecordRemoteLoader');
+  return dailyRecordRemoteLoaderPromise;
+};
 
 const isRepositoryDebugEnabled = () =>
   import.meta.env.DEV &&
@@ -141,6 +154,7 @@ export const getForDateWithMeta = async (
             'dailyRecord.getForDate.remote',
             async () => {
               logRemoteFetchAttempt(query.date);
+              const { loadRemoteRecordWithFallback } = await loadDailyRecordRemoteLoader();
               return loadRemoteRecordWithFallback(query.date);
             },
             { thresholdMs: 250, context: date }
@@ -301,6 +315,7 @@ export const getAvailableDates = async (): Promise<string[]> => {
 
   if (isFirestoreEnabled()) {
     try {
+      const { getAvailableDatesFromFirestore } = await loadFirestoreRecordQueries();
       const remoteDates = await getAvailableDatesFromFirestore();
       return mergeAvailableDates(localDates, remoteDates);
     } catch (err) {
@@ -319,6 +334,7 @@ export const getMonthRecords = async (
     return [];
   }
 
+  const { getMonthRecordsFromFirestore } = await loadFirestoreRecordQueries();
   return getMonthRecordsFromFirestore(year, monthZeroBased);
 };
 

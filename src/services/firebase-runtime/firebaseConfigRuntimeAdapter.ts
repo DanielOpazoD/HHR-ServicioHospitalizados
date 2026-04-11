@@ -1,3 +1,4 @@
+import type { FirebaseApp } from 'firebase/app';
 import type { Auth } from 'firebase/auth';
 import type { Firestore } from 'firebase/firestore';
 import type { Functions } from 'firebase/functions';
@@ -7,6 +8,9 @@ import * as firebaseConfig from '@/firebaseConfig';
 
 export interface FirebaseConfigRuntimeAdapter {
   ready: Promise<unknown>;
+  readyFirestore: Promise<unknown>;
+  getApp: () => FirebaseApp;
+  getOptionalApp: () => FirebaseApp | null;
   getAuth: () => Auth;
   getOptionalAuth: () => Auth | null;
   getDb: () => Firestore;
@@ -20,10 +24,24 @@ const resolveReadyPromise = (): Promise<unknown> =>
     ? (firebaseConfig as { firebaseReady: Promise<unknown> }).firebaseReady
     : Promise.resolve();
 
+const resolveFirestoreReadyPromise = (): Promise<unknown> =>
+  'firestoreReady' in firebaseConfig
+    ? (firebaseConfig as { firestoreReady: Promise<unknown> }).firestoreReady
+    : resolveReadyPromise();
+
 export const createFirebaseConfigRuntimeAdapter = (
   overrides: Partial<FirebaseConfigRuntimeAdapter> = {}
 ): FirebaseConfigRuntimeAdapter => ({
   ready: resolveReadyPromise(),
+  readyFirestore: resolveFirestoreReadyPromise(),
+  getApp: () => {
+    const app = (firebaseConfig as { app?: FirebaseApp }).app;
+    if (!app) {
+      throw new Error('Firebase app instance is not available yet.');
+    }
+    return app;
+  },
+  getOptionalApp: () => (firebaseConfig as { app?: FirebaseApp }).app ?? null,
   getAuth: () => {
     const auth = (firebaseConfig as { auth?: Auth }).auth;
     if (!auth) {

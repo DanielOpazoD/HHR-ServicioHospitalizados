@@ -21,6 +21,9 @@ vi.mock('@/services/firebase-runtime/firebaseConfigRuntimeAdapter', () => ({
     get ready() {
       return mockGetFirebaseReady();
     },
+    getApp: () => ({ name: 'app' }),
+    getAuth: () => ({ name: 'auth' }),
+    getOptionalDb: () => ({ name: 'db' }),
   },
 }));
 
@@ -66,16 +69,13 @@ describe('bootstrapAppRuntime', () => {
   });
 
   it('returns continue when recovery passes and firebase is ready', async () => {
-    const services = {
-      app: { name: 'app' },
-      auth: { name: 'auth' },
-      db: { name: 'db' },
-    };
     mockPrepareClientBootstrap.mockResolvedValue({
       status: 'continue',
       reason: null,
     });
-    mockGetFirebaseReady.mockReturnValue(Promise.resolve(services));
+    mockGetFirebaseReady.mockReturnValue(
+      Promise.resolve({ app: { name: 'app' }, auth: { name: 'auth' } })
+    );
 
     const result = await bootstrapAppRuntime();
 
@@ -86,7 +86,11 @@ describe('bootstrapAppRuntime', () => {
         status: 'continue',
         reason: null,
       },
-      services,
+      services: {
+        app: { name: 'app' },
+        auth: { name: 'auth' },
+        db: { name: 'db' },
+      },
     });
   });
 

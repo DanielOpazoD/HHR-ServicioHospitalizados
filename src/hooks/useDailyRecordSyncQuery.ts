@@ -4,7 +4,7 @@
  * Provides the same interface for compatibility.
  */
 
-import { useCallback, useMemo, useEffect, useRef, useState } from 'react';
+import { useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   useDailyRecordQuery,
   useSaveDailyRecordMutation,
@@ -32,30 +32,17 @@ import {
 import { presentDailyRecordRefreshOutcome } from '@/hooks/controllers/dailyRecordRefreshOutcomeController';
 import { dailyRecordSyncLogger } from '@/hooks/hookLoggers';
 import { dailyRecordObservability } from '@/services/repositories/dailyRecordOperationalTelemetry';
-import { getTodayISO } from '@/utils/dateFormattingUtils';
 import { setDailyRecordQueryData } from '@/hooks/controllers/dailyRecordQueryController';
 import type { RemoteSyncRuntimeStatus } from '@/services/repositories/repositoryConfig';
 import {
   resolveDailyRecordBootstrapPhase,
-  shouldAttemptTodayEmptyRecovery,
   type DailyRecordBootstrapPhase,
 } from '@/hooks/controllers/dailyRecordBootstrapController';
-
-const REMOTE_HYDRATION_IDLE_TIMEOUT_MS = 1_200;
-const REMOTE_HYDRATION_FALLBACK_DELAY_MS = 150;
-let syncDailyRecordUseCasePromise: Promise<
-  typeof import('@/application/daily-record/syncDailyRecordUseCase')
-> | null = null;
-
-const loadSyncDailyRecordUseCase = async () => {
-  syncDailyRecordUseCasePromise ??= import('@/application/daily-record/syncDailyRecordUseCase');
-  return syncDailyRecordUseCasePromise;
-};
-
-type BrowserWindowWithIdleCallback = Window & {
-  requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
-  cancelIdleCallback?: (handle: number) => void;
-};
+import {
+  useDeferredRemoteHydration,
+  useRemoteDailyRecordSync,
+  useTodayEmptyDailyRecordRecovery,
+} from '@/hooks/useDailyRecordSyncQuerySupport';
 
 export const useDailyRecordSyncQuery = (
   currentDateString: string,
@@ -65,48 +52,7 @@ export const useDailyRecordSyncQuery = (
   const queryClient = useQueryClient();
   const { dailyRecord } = useRepositories();
   const { checkVersion } = useVersion();
-  const [remoteHydrationReadyDate, setRemoteHydrationReadyDate] = useState<string | null>(null);
-  const readySignature = remoteSyncStatus === 'ready' ? currentDateString : null;
-  const shouldDeferRemoteHydration =
-    readySignature !== null && remoteHydrationReadyDate !== currentDateString;
-  const effectiveRemoteSyncStatus = shouldDeferRemoteHydration ? 'local_only' : remoteSyncStatus;
-
-  useEffect(() => {
-    if (readySignature === null) {
-      return;
-    }
-
-    let timeoutId: number | null = null;
-    let idleCallbackId: number | null = null;
-    let cancelled = false;
-
-    const enableRemoteHydration = () => {
-      if (!cancelled) {
-        setRemoteHydrationReadyDate(currentDateString);
-      }
-    };
-
-    const browserWindow =
-      typeof window !== 'undefined' ? (window as BrowserWindowWithIdleCallback) : null;
-
-    if (browserWindow?.requestIdleCallback) {
-      idleCallbackId = browserWindow.requestIdleCallback(enableRemoteHydration, {
-        timeout: REMOTE_HYDRATION_IDLE_TIMEOUT_MS,
-      });
-    } else {
-      timeoutId = window.setTimeout(enableRemoteHydration, REMOTE_HYDRATION_FALLBACK_DELAY_MS);
-    }
-
-    return () => {
-      cancelled = true;
-      if (timeoutId !== null) {
-        window.clearTimeout(timeoutId);
-      }
-      if (idleCallbackId !== null && browserWindow?.cancelIdleCallback) {
-        browserWindow.cancelIdleCallback(idleCallbackId);
-      }
-    };
-  }, [currentDateString, readySignature]);
+  const effectiveRemoteSyncStatus = useDeferredRemoteHydration(currentDateString, remoteSyncStatus);
 
   // 1. Fetching
   const {
@@ -129,7 +75,6 @@ export const useDailyRecordSyncQuery = (
   const initMutation = useInitializeDailyRecordMutation();
   const deleteMutation = useDeleteDailyRecordMutation();
   const pendingRefetchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const todayNullRecoveryAttemptedRef = useRef<string | null>(null);
   const isMountedRef = useRef(true);
   const refreshRequestIdRef = useRef(0);
 
@@ -158,63 +103,21 @@ export const useDailyRecordSyncQuery = (
     [effectiveRemoteSyncStatus, record, recordRuntime]
   );
 
-  const runRemoteSync = useCallback(
-    async (date: string) => {
-      const { executeSyncDailyRecord } = await loadSyncDailyRecordUseCase();
-      return executeSyncDailyRecord({
-        date,
-        repository: dailyRecord,
-      });
+  const runRemoteSync = useRemoteDailyRecordSync(dailyRecord);
+
+  useTodayEmptyDailyRecordRecovery({
+    bootstrapPhase,
+    currentDateString,
+    record,
+    refetch,
+    runRemoteSync: async date => {
+      const outcome = await runRemoteSync(date);
+      if (!isMountedRef.current) {
+        return outcome;
+      }
+      return outcome;
     },
-    [dailyRecord]
-  );
-
-  useEffect(() => {
-    if (record) {
-      if (todayNullRecoveryAttemptedRef.current === currentDateString) {
-        todayNullRecoveryAttemptedRef.current = null;
-      }
-      return;
-    }
-
-    const todayDateString = getTodayISO();
-
-    if (
-      !shouldAttemptTodayEmptyRecovery({
-        currentDateString,
-        todayDateString,
-        bootstrapPhase,
-      })
-    ) {
-      return;
-    }
-
-    if (todayNullRecoveryAttemptedRef.current === currentDateString) {
-      return;
-    }
-
-    todayNullRecoveryAttemptedRef.current = currentDateString;
-
-    let cancelled = false;
-
-    void runRemoteSync(currentDateString).then(outcome => {
-      if (cancelled || !isMountedRef.current) {
-        return;
-      }
-
-      dailyRecordObservability.recordOutcome('recover_today_empty_daily_record', outcome, {
-        date: currentDateString,
-        context: {
-          source: 'useDailyRecordSyncQuery',
-        },
-      });
-      void refetch();
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [bootstrapPhase, currentDateString, record, refetch, runRemoteSync]);
+  });
 
   // 3. Status Mapping
   const syncStatus = useMemo(

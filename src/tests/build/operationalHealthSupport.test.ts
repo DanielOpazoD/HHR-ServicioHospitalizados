@@ -63,10 +63,6 @@ describe('operationalHealthSupport', () => {
         file: 'dist/assets/app-authenticated-shell-app.js',
         status: 'ok',
       },
-      {
-        file: 'dist/assets/vendor-firebase-firestore-app.js',
-        status: 'ok',
-      },
     ];
 
     const report = summarizeFrontendStartupHealth({
@@ -84,7 +80,7 @@ describe('operationalHealthSupport', () => {
     });
 
     expect(report.status).toBe('degraded');
-    expect(report.criticalAssets).toHaveLength(4);
+    expect(report.criticalAssets).toHaveLength(3);
     expect(
       report.criticalAssets.some(
         (asset: StartupAsset) => asset.file === 'dist/assets/index-entry.js'

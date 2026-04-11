@@ -15,6 +15,9 @@ const createAdapterStub = (): FirebaseConfigRuntimeAdapter => {
 
   return {
     ready: Promise.resolve(),
+    readyFirestore: Promise.resolve(),
+    getApp: () => ({ name: 'app' }) as never,
+    getOptionalApp: () => ({ name: 'app' }) as never,
     getAuth: () => auth as never,
     getOptionalAuth: () => auth as never,
     getDb: () => db as never,

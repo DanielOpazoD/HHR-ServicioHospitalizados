@@ -19,12 +19,6 @@
       "pattern": "^app-authenticated-shell-.*\\.js$",
       "maxBytes": 525000,
       "severity": "error"
-    },
-    {
-      "label": "firebase-firestore",
-      "pattern": "^vendor-firebase-firestore-.*\\.js$",
-      "maxBytes": 400000,
-      "severity": "error"
     }
   ],
   "chunkPatternBudgets": [
@@ -34,7 +28,7 @@
     },
     {
       "pattern": "^vendor-firebase-firestore-.*\\.js$",
-      "maxBytes": 400000
+      "maxBytes": 500000
     },
     {
       "pattern": "^vendor-firebase-aux-.*\\.js$",

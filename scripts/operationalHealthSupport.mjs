@@ -2,7 +2,6 @@ const FRONTEND_STARTUP_CRITICAL_ASSET_PATTERNS = [
   /^dist\/assets\/vendor-preload-[^/]+\.js$/,
   /^dist\/assets\/vendor-firebase-core-[^/]+\.js$/,
   /^dist\/assets\/app-authenticated-shell-[^/]+\.js$/,
-  /^dist\/assets\/vendor-firebase-firestore-[^/]+\.js$/,
 ];
 
 const dedupeStrings = values => [...new Set(values.filter(Boolean))];
