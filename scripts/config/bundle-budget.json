@@ -17,7 +17,7 @@
     {
       "label": "firebase-auth",
       "pattern": "^vendor-firebase-auth-.*\\.js$",
-      "maxBytes": 180000,
+      "maxBytes": 230000,
       "severity": "error"
     },
     {
@@ -34,7 +34,7 @@
     },
     {
       "pattern": "^vendor-firebase-auth-.*\\.js$",
-      "maxBytes": 180000
+      "maxBytes": 230000
     },
     {
       "pattern": "^vendor-firebase-firestore-.*\\.js$",

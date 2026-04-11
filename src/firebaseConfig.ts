@@ -82,7 +82,7 @@ export const firebaseReady = (async () => {
       app = services.app;
       auth = services.auth;
       db = services.db;
-      connectFirebaseEmulators(services);
+      await connectFirebaseEmulators(services);
       return services;
     })();
 

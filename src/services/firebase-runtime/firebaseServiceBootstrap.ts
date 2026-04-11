@@ -1,21 +1,6 @@
-import { initializeApp, type FirebaseApp, type FirebaseOptions } from 'firebase/app';
-import {
-  getAuth,
-  connectAuthEmulator,
-  setPersistence,
-  browserLocalPersistence,
-  browserSessionPersistence,
-  inMemoryPersistence,
-  type Auth,
-} from 'firebase/auth';
-import {
-  initializeFirestore,
-  connectFirestoreEmulator,
-  type Firestore,
-  persistentLocalCache,
-  persistentMultipleTabManager,
-  persistentSingleTabManager,
-} from 'firebase/firestore';
+import type { FirebaseApp, FirebaseOptions } from 'firebase/app';
+import type { Auth } from 'firebase/auth';
+import type { Firestore } from 'firebase/firestore';
 import {
   parseEmulatorHost,
   shouldUseSingleTabFirestoreCache,
@@ -37,11 +22,32 @@ const AUTH_PERSISTENCE_TIMEOUTS_MS = {
 const getErrorMessage = (error: unknown): string =>
   error && typeof error === 'object' && 'message' in error ? String(error.message) : String(error);
 
-const startAuthPersistenceConfiguration = (auth: Auth): void => {
+type FirebaseAuthRuntimeModule = Pick<
+  typeof import('firebase/auth'),
+  | 'browserLocalPersistence'
+  | 'browserSessionPersistence'
+  | 'connectAuthEmulator'
+  | 'inMemoryPersistence'
+  | 'setPersistence'
+>;
+
+type FirebaseFirestoreRuntimeModule = Pick<
+  typeof import('firebase/firestore'),
+  | 'connectFirestoreEmulator'
+  | 'initializeFirestore'
+  | 'persistentLocalCache'
+  | 'persistentMultipleTabManager'
+  | 'persistentSingleTabManager'
+>;
+
+const startAuthPersistenceConfiguration = (
+  auth: Auth,
+  authRuntime: FirebaseAuthRuntimeModule
+): void => {
   const persistenceCandidates = [
-    { mode: 'local' as const, persistence: browserLocalPersistence },
-    { mode: 'session' as const, persistence: browserSessionPersistence },
-    { mode: 'memory' as const, persistence: inMemoryPersistence },
+    { mode: 'local' as const, persistence: authRuntime.browserLocalPersistence },
+    { mode: 'session' as const, persistence: authRuntime.browserSessionPersistence },
+    { mode: 'memory' as const, persistence: authRuntime.inMemoryPersistence },
   ];
 
   const attemptCandidate = (index: number): void => {
@@ -66,7 +72,8 @@ const startAuthPersistenceConfiguration = (auth: Auth): void => {
       );
     }, timeoutMs);
 
-    void setPersistence(auth, candidate.persistence)
+    void authRuntime
+      .setPersistence(auth, candidate.persistence)
       .then(() => {
         clearTimeout(timeoutId);
         firebaseBootstrapLogger.info('Auth persistence configured', {
@@ -95,18 +102,24 @@ export const initializeFirebaseServices = async (
   config: FirebaseOptions
 ): Promise<FirebaseBootstrapResult> => {
   firebaseBootstrapLogger.info('Initializing services');
+  const [{ initializeApp }, authRuntime, firestoreRuntime] = await Promise.all([
+    import('firebase/app'),
+    import('firebase/auth'),
+    import('firebase/firestore'),
+  ]);
+
   const app = initializeApp(config);
-  const auth = getAuth(app);
+  const auth = authRuntime.getAuth(app);
 
   let db: Firestore;
   try {
     const useSingleTabCache = shouldUseSingleTabFirestoreCache();
-    db = initializeFirestore(app, {
+    db = firestoreRuntime.initializeFirestore(app, {
       ignoreUndefinedProperties: true,
-      localCache: persistentLocalCache({
+      localCache: firestoreRuntime.persistentLocalCache({
         tabManager: useSingleTabCache
-          ? persistentSingleTabManager({})
-          : persistentMultipleTabManager(),
+          ? firestoreRuntime.persistentSingleTabManager({})
+          : firestoreRuntime.persistentMultipleTabManager(),
       }),
     });
     firebaseBootstrapLogger.info('Firestore initialized', {
@@ -118,32 +131,36 @@ export const initializeFirebaseServices = async (
       '[FirebaseConfig] ⚠️ Firestore persistence failed at init:',
       fsErr
     );
-    db = initializeFirestore(app, {
+    db = firestoreRuntime.initializeFirestore(app, {
       ignoreUndefinedProperties: true,
     });
   }
 
-  startAuthPersistenceConfiguration(auth);
+  startAuthPersistenceConfiguration(auth, authRuntime);
 
   firebaseBootstrapLogger.info('Firebase services ready');
   return { app, auth, db };
 };
 
-export const connectFirebaseEmulators = ({
+export const connectFirebaseEmulators = async ({
   auth,
   db,
 }: Pick<FirebaseBootstrapResult, 'auth' | 'db'>) => {
   const authEmulatorHost = import.meta.env.VITE_AUTH_EMULATOR_HOST;
   const firestoreEmulatorHost = import.meta.env.VITE_FIRESTORE_EMULATOR_HOST;
+  const [authRuntime, firestoreRuntime] = await Promise.all([
+    import('firebase/auth'),
+    import('firebase/firestore'),
+  ]);
 
   if (import.meta.env.DEV && authEmulatorHost) {
-    connectAuthEmulator(auth, authEmulatorHost);
+    authRuntime.connectAuthEmulator(auth, authEmulatorHost);
   }
 
   if (import.meta.env.DEV && firestoreEmulatorHost) {
     const emulatorHost = parseEmulatorHost(firestoreEmulatorHost);
     if (emulatorHost) {
-      connectFirestoreEmulator(db, emulatorHost.host, emulatorHost.port);
+      firestoreRuntime.connectFirestoreEmulator(db, emulatorHost.host, emulatorHost.port);
     } else {
       firebaseBootstrapLogger.warn(
         '[FirebaseConfig] Invalid Firestore emulator host:',

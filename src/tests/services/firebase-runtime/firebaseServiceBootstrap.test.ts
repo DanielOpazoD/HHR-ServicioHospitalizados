@@ -171,31 +171,31 @@ describe('firebaseServiceBootstrap', () => {
       typeof connectFirebaseEmulators
     >[0]['db'];
 
-    it('connects auth emulator when VITE_AUTH_EMULATOR_HOST is set in DEV mode', () => {
+    it('connects auth emulator when VITE_AUTH_EMULATOR_HOST is set in DEV mode', async () => {
       setDevMode(true);
       (import.meta.env as Record<string, string>).VITE_AUTH_EMULATOR_HOST = 'http://localhost:9099';
 
-      connectFirebaseEmulators({ auth: mockAuth, db: mockDb });
+      await connectFirebaseEmulators({ auth: mockAuth, db: mockDb });
 
       expect(connectAuthEmulatorMock).toHaveBeenCalledWith(mockAuth, 'http://localhost:9099');
     });
 
-    it('connects firestore emulator when VITE_FIRESTORE_EMULATOR_HOST is set in DEV mode', () => {
+    it('connects firestore emulator when VITE_FIRESTORE_EMULATOR_HOST is set in DEV mode', async () => {
       setDevMode(true);
       (import.meta.env as Record<string, string>).VITE_FIRESTORE_EMULATOR_HOST = 'localhost:8080';
       parseEmulatorHostMock.mockReturnValue({ host: 'localhost', port: 8080 });
 
-      connectFirebaseEmulators({ auth: mockAuth, db: mockDb });
+      await connectFirebaseEmulators({ auth: mockAuth, db: mockDb });
 
       expect(connectFirestoreEmulatorMock).toHaveBeenCalledWith(mockDb, 'localhost', 8080);
     });
 
-    it('does NOT connect emulators when not in DEV mode', () => {
+    it('does NOT connect emulators when not in DEV mode', async () => {
       setDevMode(false);
       (import.meta.env as Record<string, string>).VITE_AUTH_EMULATOR_HOST = 'http://localhost:9099';
       (import.meta.env as Record<string, string>).VITE_FIRESTORE_EMULATOR_HOST = 'localhost:8080';
 
-      connectFirebaseEmulators({ auth: mockAuth, db: mockDb });
+      await connectFirebaseEmulators({ auth: mockAuth, db: mockDb });
 
       expect(connectAuthEmulatorMock).not.toHaveBeenCalled();
       expect(connectFirestoreEmulatorMock).not.toHaveBeenCalled();
@@ -210,7 +210,7 @@ describe('firebaseServiceBootstrap', () => {
         await import('@/services/firebase-runtime/firebaseRuntimeLoggers')
       );
 
-      connectFirebaseEmulators({ auth: mockAuth, db: mockDb });
+      await connectFirebaseEmulators({ auth: mockAuth, db: mockDb });
 
       expect(firebaseBootstrapLogger.warn).toHaveBeenCalledWith(
         '[FirebaseConfig] Invalid Firestore emulator host:',
@@ -218,12 +218,12 @@ describe('firebaseServiceBootstrap', () => {
       );
     });
 
-    it('does not connect auth emulator when env var is not set', () => {
+    it('does not connect auth emulator when env var is not set', async () => {
       setDevMode(true);
       delete (import.meta.env as Record<string, string | undefined>).VITE_AUTH_EMULATOR_HOST;
       delete (import.meta.env as Record<string, string | undefined>).VITE_FIRESTORE_EMULATOR_HOST;
 
-      connectFirebaseEmulators({ auth: mockAuth, db: mockDb });
+      await connectFirebaseEmulators({ auth: mockAuth, db: mockDb });
 
       expect(connectAuthEmulatorMock).not.toHaveBeenCalled();
       expect(connectFirestoreEmulatorMock).not.toHaveBeenCalled();
