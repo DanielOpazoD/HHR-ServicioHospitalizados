@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getForDateWithMeta } from '@/services/repositories/dailyRecordRepositoryReadService';
+import {
+  getForDateWithMeta,
+  getMonthRecords,
+} from '@/services/repositories/dailyRecordRepositoryReadService';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 
 vi.mock('@/services/storage/indexeddb/indexedDbRecordService', () => ({
@@ -10,8 +13,9 @@ vi.mock('@/services/storage/indexeddb/indexedDbRecordService', () => ({
   saveRecord: vi.fn(),
 }));
 
-vi.mock('@/services/storage/firestore', () => ({
+vi.mock('@/services/storage/firestore/firestoreRecordQueries', () => ({
   getAvailableDatesFromFirestore: vi.fn(),
+  getMonthRecordsFromFirestore: vi.fn(),
 }));
 
 vi.mock('@/services/repositories/repositoryConfig', () => ({
@@ -27,6 +31,7 @@ import {
   saveRecord as saveToIndexedDB,
 } from '@/services/storage/indexeddb/indexedDbRecordService';
 import { loadRemoteRecordWithFallback } from '@/services/repositories/dailyRecordRemoteLoader';
+import { getMonthRecordsFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
 
 const buildRecord = (date: string, lastUpdated: string): DailyRecord =>
   ({
@@ -118,5 +123,16 @@ describe('dailyRecordRepositoryReadService', () => {
     expect(result.record?.lastUpdated).toBe(local.lastUpdated);
     expect(result.sourceOfTruth).toBe('local');
     expect(result.retryability).toBe('automatic_retry');
+  });
+
+  it('delegates month record loading to firestore queries when remote sync is enabled', async () => {
+    vi.mocked(getMonthRecordsFromFirestore).mockResolvedValueOnce([
+      { date: '2026-03-19' },
+    ] as DailyRecord[]);
+
+    const result = await getMonthRecords(2026, 2);
+
+    expect(getMonthRecordsFromFirestore).toHaveBeenCalledWith(2026, 2);
+    expect(result).toEqual([{ date: '2026-03-19' }]);
   });
 });

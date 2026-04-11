@@ -1,13 +1,15 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from '@/App';
 import { bootstrapAppRuntime } from '@/app-shell/bootstrap/bootstrapAppRuntime';
 import {
   installBootstrapRuntimeErrorListeners,
   recordBootstrapRuntimeError,
   recordBootstrapRuntimeResult,
 } from '@/app-shell/bootstrap/bootstrapRuntimeTelemetry';
-import { getFirebaseStartupFailureMessage } from '@/services/auth/firebaseStartupUiPolicy';
+import {
+  getFirebaseStartupFailureMessage,
+  type FirebaseStartupWarningCopy,
+} from '@/services/auth/firebaseStartupUiPolicy';
 import { mountFirebaseConfigWarning } from '@/services/firebase-runtime/firebaseStartupDiagnostics';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 
@@ -20,9 +22,44 @@ const root = ReactDOM.createRoot(rootElement);
 const bootLogger = createScopedLogger('Bootstrap');
 const detachBootstrapRuntimeErrorListeners =
   typeof window !== 'undefined' ? installBootstrapRuntimeErrorListeners() : () => {};
+const APP_SHELL_LOAD_WARNING_COPY: FirebaseStartupWarningCopy = {
+  title: 'No se pudo completar el arranque',
+  summary:
+    'La app no logró cargar una parte crítica de la interfaz después de preparar el runtime inicial.',
+  steps: [
+    'Recarga la página para forzar la descarga del bundle actualizado.',
+    'Si el problema persiste, limpia la caché del sitio y vuelve a intentar.',
+    'Si falla en varios navegadores, revisa primero el smoke de preview y los chunks críticos del build.',
+  ],
+  footnote:
+    'Este aviso apunta al bundle de interfaz o a la caché del navegador, no a una falta confirmada de variables Firebase.',
+};
 
-const renderApp = () => {
+const isAppShellLoadFailure = (error: unknown): boolean => {
+  const message =
+    error instanceof Error
+      ? error.message
+      : error && typeof error === 'object' && 'message' in error
+        ? String(error.message)
+        : String(error);
+  return /chunkloaderror|failed to fetch dynamically imported module|cannot access '.+' before initialization/i.test(
+    message
+  );
+};
+
+const renderBootstrapLoadingScreen = () => {
+  root.render(
+    <React.StrictMode>
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
+        <div className="animate-pulse text-medical-600 text-xl font-bold">Cargando...</div>
+      </div>
+    </React.StrictMode>
+  );
+};
+
+const renderApp = async () => {
   bootLogger.info('Rendering application');
+  const { default: App } = await import('@/App');
   root.render(
     <React.StrictMode>
       <App />
@@ -30,8 +67,10 @@ const renderApp = () => {
   );
 };
 
+renderBootstrapLoadingScreen();
+
 bootstrapAppRuntime()
-  .then(result => {
+  .then(async result => {
     recordBootstrapRuntimeResult(result);
 
     if (result.status === 'reload') {
@@ -43,11 +82,19 @@ bootstrapAppRuntime()
       return;
     }
 
-    renderApp();
+    await renderApp();
   })
   .catch(error => {
     recordBootstrapRuntimeError(error);
     bootLogger.error('Firebase initialization failed', error);
+    if (isAppShellLoadFailure(error)) {
+      mountFirebaseConfigWarning(
+        'No se pudo cargar una parte crítica de la interfaz.',
+        APP_SHELL_LOAD_WARNING_COPY
+      );
+      return;
+    }
+
     mountFirebaseConfigWarning(getFirebaseStartupFailureMessage());
   })
   .finally(() => {

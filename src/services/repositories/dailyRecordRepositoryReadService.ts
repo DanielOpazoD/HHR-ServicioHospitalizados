@@ -4,7 +4,10 @@ import {
   getPreviousDayRecord as getPreviousDayFromIndexedDB,
   getAllDates as getAllDatesFromIndexedDB,
 } from '@/services/storage/indexeddb/indexedDbRecordService';
-import { getAvailableDatesFromFirestore } from '@/services/storage/firestore';
+import {
+  getAvailableDatesFromFirestore,
+  getMonthRecordsFromFirestore,
+} from '@/services/storage/firestore/firestoreRecordQueries';
 import { logLegacyInfo } from '@/services/storage/legacyfirebase/legacyFirebaseLogger';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import { migrateLegacyDataWithReport } from '@/services/repositories/dataMigration';
@@ -306,6 +309,17 @@ export const getAvailableDates = async (): Promise<string[]> => {
   }
 
   return localDates.sort().reverse();
+};
+
+export const getMonthRecords = async (
+  year: number,
+  monthZeroBased: number
+): Promise<DailyRecord[]> => {
+  if (!isFirestoreEnabled()) {
+    return [];
+  }
+
+  return getMonthRecordsFromFirestore(year, monthZeroBased);
 };
 
 export const getPreviousDay = async (date: string): Promise<DailyRecord | null> => {

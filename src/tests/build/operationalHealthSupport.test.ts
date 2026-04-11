@@ -6,6 +6,11 @@ import {
   summarizePreviewGate,
 } from '../../../scripts/operationalHealthSupport.mjs';
 
+type StartupAsset = {
+  file: string;
+  status: string;
+};
+
 describe('operationalHealthSupport', () => {
   it('extracts bootstrap telemetry signals from the bootstrap runtime module', () => {
     const content = `
@@ -45,7 +50,7 @@ describe('operationalHealthSupport', () => {
   });
 
   it('surfaces degraded startup health when preview artifacts are missing or chunks are near limit', () => {
-    const buildAssets = [
+    const buildAssets: StartupAsset[] = [
       {
         file: 'dist/assets/index-app.js',
         status: 'ok',
@@ -55,6 +60,10 @@ describe('operationalHealthSupport', () => {
         status: 'near-limit',
       },
       {
+        file: 'dist/assets/app-authenticated-shell-app.js',
+        status: 'ok',
+      },
+      {
         file: 'dist/assets/vendor-firebase-firestore-app.js',
         status: 'ok',
       },
@@ -62,12 +71,30 @@ describe('operationalHealthSupport', () => {
 
     const report = summarizeFrontendStartupHealth({
       previewGate: summarizePreviewGate(null),
-      criticalAssets: selectFrontendStartupCriticalAssets(buildAssets),
+      criticalAssets: selectFrontendStartupCriticalAssets({
+        buildAssets: buildAssets as never[],
+        entryAssets: [
+          {
+            file: 'dist/assets/index-entry.js',
+            status: 'ok',
+          },
+        ] as never[],
+      }) as StartupAsset[],
       bootstrapTelemetrySignals: ['bootstrap_chunk_load_failed'],
     });
 
     expect(report.status).toBe('degraded');
-    expect(report.criticalAssets).toHaveLength(3);
+    expect(report.criticalAssets).toHaveLength(4);
+    expect(
+      report.criticalAssets.some(
+        (asset: StartupAsset) => asset.file === 'dist/assets/index-entry.js'
+      )
+    ).toBe(true);
+    expect(
+      report.criticalAssets.some(
+        (asset: StartupAsset) => asset.file === 'dist/assets/app-authenticated-shell-app.js'
+      )
+    ).toBe(true);
     expect(report.issues).toContain(
       'No hay artefacto reciente del smoke de preview para validar el arranque real.'
     );

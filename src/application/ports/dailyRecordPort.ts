@@ -17,14 +17,12 @@ type DailyRecordSyncService =
   typeof import('@/services/repositories/dailyRecordRepositorySyncService');
 type DailyRecordFacadeSupportService =
   typeof import('@/services/repositories/dailyRecordRepositoryFacadeSupport');
-type FirestoreRecordQueryService = typeof import('@/services/storage/firestore');
 
 let readServicePromise: Promise<DailyRecordReadService> | null = null;
 let initializationServicePromise: Promise<DailyRecordInitializationService> | null = null;
 let writeServicePromise: Promise<DailyRecordWriteService> | null = null;
 let syncServicePromise: Promise<DailyRecordSyncService> | null = null;
 let facadeSupportServicePromise: Promise<DailyRecordFacadeSupportService> | null = null;
-let firestoreRecordQueryServicePromise: Promise<FirestoreRecordQueryService> | null = null;
 
 const loadDailyRecordReadService = (): Promise<DailyRecordReadService> =>
   (readServicePromise ??= import('@/services/repositories/dailyRecordRepositoryReadService'));
@@ -42,9 +40,6 @@ const loadDailyRecordSyncService = (): Promise<DailyRecordSyncService> =>
 const loadDailyRecordFacadeSupportService = (): Promise<DailyRecordFacadeSupportService> =>
   (facadeSupportServicePromise ??=
     import('@/services/repositories/dailyRecordRepositoryFacadeSupport'));
-
-const loadFirestoreRecordQueryService = (): Promise<FirestoreRecordQueryService> =>
-  (firestoreRecordQueryServicePromise ??= import('@/services/storage/firestore'));
 
 const createLazySubscription = (
   start: (service: DailyRecordSyncService) => () => void
@@ -124,7 +119,7 @@ export const defaultDailyRecordReadPort: DailyRecordReadPort = {
   getPreviousDay: async date => (await loadDailyRecordReadService()).getPreviousDay(date),
   getAvailableDates: async () => (await loadDailyRecordReadService()).getAvailableDates(),
   getMonthRecords: async (year, monthZeroBased) =>
-    (await loadFirestoreRecordQueryService()).getMonthRecordsFromFirestore(year, monthZeroBased),
+    (await loadDailyRecordReadService()).getMonthRecords(year, monthZeroBased),
   getForDate: async date => (await loadDailyRecordReadService()).getForDate(date),
   getForDateWithMeta: async (date, syncFromRemote = true) =>
     (await loadDailyRecordReadService()).getForDateWithMeta(date, syncFromRemote),

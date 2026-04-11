@@ -1,4 +1,4 @@
-import { ConcurrencyError } from '@/services/storage/firestore';
+import { ConcurrencyError } from '@/services/storage/firestore/firestoreRecordWrites';
 import { DataRegressionError, VersionMismatchError } from '@/utils/integrityGuard';
 import { resolveApplicationOutcomeMessage } from '@/shared/contracts/applicationOutcomeMessage';
 import { AdmissionDatePolicyViolationError } from '@/application/patient-flow/admissionDatePolicy';

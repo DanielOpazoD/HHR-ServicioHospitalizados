@@ -135,24 +135,32 @@ for (const patternBudget of chunkPatternBudgets) {
 
 for (const startupBudget of startupChunkBudgets) {
   const label = typeof startupBudget?.label === 'string' ? startupBudget.label : 'startup-chunk';
+  const source = startupBudget?.source === 'entry' ? 'entry' : 'pattern';
   const pattern = typeof startupBudget?.pattern === 'string' ? startupBudget.pattern : '';
   const maxBytes = Number(startupBudget?.maxBytes || 0);
   const severity = startupBudget?.severity === 'warn' ? 'warn' : 'error';
 
-  if (!pattern || !maxBytes) {
+  if ((!pattern && source !== 'entry') || !maxBytes) {
     fail(`Invalid startup chunk budget for ${label}`);
   }
 
-  let regex;
-  try {
-    regex = new RegExp(pattern);
-  } catch (error) {
-    fail(
-      `Invalid startup chunk regex "${pattern}" for ${label}: ${error instanceof Error ? error.message : String(error)}`
-    );
+  let candidateAssets;
+  if (source === 'entry') {
+    candidateAssets = entryFiles;
+  } else {
+    let regex;
+    try {
+      regex = new RegExp(pattern);
+    } catch (error) {
+      fail(
+        `Invalid startup chunk regex "${pattern}" for ${label}: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+
+    candidateAssets = jsAssets.filter(candidate => regex.test(candidate.name));
   }
 
-  for (const asset of jsAssets.filter(candidate => regex.test(candidate.name))) {
+  for (const asset of candidateAssets) {
     if (asset.size > maxBytes) {
       const message = `Startup chunk budget (${label}): "${asset.name}" is ${toKb(asset.size)} (limit ${toKb(maxBytes)})`;
       if (severity === 'error') {
@@ -179,6 +187,9 @@ console.warn('[bundle-budget] OK');
 console.warn(
   `[bundle-budget] Entry budget: ${toKb(entryMaxBytes)} | Chunk budget: ${toKb(chunkMaxBytes)}`
 );
+entryFiles.forEach(entryFile => {
+  console.warn(`[bundle-budget] Entry asset: ${entryFile.name} (${toKb(entryFile.size)})`);
+});
 largestChunks.forEach(chunk => {
   console.warn(`[bundle-budget] Largest chunk: ${chunk.name} (${toKb(chunk.size)})`);
 });

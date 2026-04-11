@@ -128,6 +128,19 @@ const readJsonConfig = relativePath => {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 };
 
+const extractEntryAssetsFromHtml = (htmlContent, { entryMaxBytes }) =>
+  [...htmlContent.matchAll(/<script[^>]+src="\/assets\/([^"]+\.js)"/g)].map(match => {
+    const file = `dist/assets/${match[1]}`;
+    const fullPath = path.join(workspaceRoot, file);
+    const sizeBytes = fs.existsSync(fullPath) ? fs.statSync(fullPath).size : 0;
+    return {
+      file,
+      sizeBytes,
+      maxBytes: entryMaxBytes,
+      status: classifyBudgetStatus(sizeBytes, entryMaxBytes, entryMaxBytes),
+    };
+  });
+
 const getGitSha = () => {
   try {
     return execSync('git rev-parse --short HEAD', {
@@ -258,9 +271,14 @@ const runbooks = [
 const flowPerformanceSummary = readJsonReport('reports/e2e/flow-performance-budget-summary.json');
 const criticalCoverageSummary = readJsonReport('reports/critical-coverage.json');
 const bundleBudgetConfig = readJsonConfig('scripts/config/bundle-budget.json');
+const entryMaxBytes = bundleBudgetConfig?.entryMaxBytes ?? null;
 const previewBootstrapReport = readJsonReport('reports/e2e/preview-bootstrap/report.json');
+const indexHtmlContent = fs.existsSync(path.join(workspaceRoot, 'dist', 'index.html'))
+  ? read('dist/index.html')
+  : '';
 const largestBuildAssets = collectLargestBuildAssets('dist/assets');
 const chunkMaxBytes = bundleBudgetConfig?.chunkMaxBytes ?? null;
+const entryBuildAssets = extractEntryAssetsFromHtml(indexHtmlContent, { entryMaxBytes });
 const buildAssets = largestBuildAssets.map(asset => ({
   ...asset,
   maxBytes: chunkMaxBytes,
@@ -269,7 +287,10 @@ const buildAssets = largestBuildAssets.map(asset => ({
 const bootstrapTelemetrySignals = extractBootstrapTelemetrySignals(bootstrapRuntimeTelemetryContent);
 const frontendStartup = summarizeFrontendStartupHealth({
   previewGate: summarizePreviewGate(previewBootstrapReport),
-  criticalAssets: selectFrontendStartupCriticalAssets(buildAssets),
+  criticalAssets: selectFrontendStartupCriticalAssets({
+    buildAssets,
+    entryAssets: entryBuildAssets,
+  }),
   bootstrapTelemetrySignals,
 });
 
@@ -341,7 +362,9 @@ const summary = {
       }
     : null,
   buildAssets: {
+    entryMaxBytes,
     chunkMaxBytes,
+    entryAssets: entryBuildAssets,
     largestAssets: buildAssets,
   },
   frontendStartup,

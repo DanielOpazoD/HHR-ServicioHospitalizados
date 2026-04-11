@@ -4,6 +4,18 @@ export const chunkForModule = (moduleId: string): string | undefined => {
   const has = (fragment: string): boolean => normalizedId.includes(fragment);
 
   if (
+    has('/src/app-shell/runtime/AuthenticatedAppShell.tsx') ||
+    has('/src/app-shell/runtime/useAuthenticatedAppRuntime.ts') ||
+    has('/src/components/layout/AppContent.tsx') ||
+    has('/src/components/layout/app-content/') ||
+    has('/src/components/AppProviders.tsx') ||
+    has('/src/context/CensusContext.tsx') ||
+    has('/src/context/ReminderCenterContext.tsx')
+  ) {
+    return 'app-authenticated-shell';
+  }
+
+  if (
     normalizedId.includes('vite/preload-helper') ||
     normalizedId.includes('\u0000vite/preload-helper') ||
     normalizedId.includes('vite/modulepreload-polyfill') ||

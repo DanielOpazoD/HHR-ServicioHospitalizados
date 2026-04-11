@@ -1,6 +1,6 @@
 import { DailyRecord } from '@/types/domain/dailyRecord';
 import { getRecordForDate as getRecordFromIndexedDB } from '@/services/storage/indexeddb/indexedDbRecordService';
-import { subscribeToRecord } from '@/services/storage/firestore';
+import { subscribeToRecord } from '@/services/storage/firestore/firestoreRecordQueries';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import { migrateLegacyData } from '@/services/repositories/dataMigration';
 import { loadRemoteRecordWithFallback } from '@/services/repositories/dailyRecordRemoteLoader';

@@ -35,6 +35,18 @@ describe('chunkingPolicy', () => {
     }
   });
 
+  it('allows a targeted manual chunk for the authenticated app shell tree', () => {
+    expect(chunkForModule('/repo/src/app-shell/runtime/AuthenticatedAppShell.tsx')).toBe(
+      'app-authenticated-shell'
+    );
+    expect(chunkForModule('/repo/src/app-shell/runtime/useAuthenticatedAppRuntime.ts')).toBe(
+      'app-authenticated-shell'
+    );
+    expect(chunkForModule('/repo/src/components/layout/app-content/useAppContentRuntime.ts')).toBe(
+      'app-authenticated-shell'
+    );
+  });
+
   it('splits heavyweight vendor capabilities by runtime concern', () => {
     expect(chunkForModule('/repo/node_modules/firebase/auth/dist/index.esm.js')).toBe(
       'vendor-firebase-core'

@@ -1,5 +1,5 @@
 import { DailyRecord } from '@/types/domain/dailyRecord';
-import { getRecordFromFirestoreDetailed } from '@/services/storage/firestore';
+import { getRecordFromFirestoreDetailed } from '@/services/storage/firestore/firestoreRecordQueries';
 import { migrateLegacyDataWithReport } from '@/services/repositories/dataMigration';
 import {
   LegacyMigrationRule,

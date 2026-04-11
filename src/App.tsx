@@ -7,30 +7,23 @@
 import React from 'react';
 import { LoginPage } from '@/features/auth';
 import { GlobalErrorBoundary } from '@/components/shared/GlobalErrorBoundary';
-import { AppContent } from '@/components/layout/AppContent';
-import { CensusProvider } from '@/context/CensusContext';
 import { VersionProvider } from '@/context/VersionContext';
 import { VersionMismatchOverlay } from '@/components/shared/VersionMismatchOverlay';
 import { ViewLoader } from '@/components/ui/ViewLoader';
 import { MedicalSignatureView } from '@/views/LazyViews';
 import { lazyWithRetry } from '@/utils/lazyWithRetry';
 import { AuditProvider, AuthProvider, UIProvider } from './context';
-
-const LaboratoryQuickAction = lazyWithRetry(() =>
-  import('@/features/laboratory').then(module => ({
-    default: module.LaboratoryQuickAction,
-  }))
-);
 import { HospitalProvider } from './context/HospitalContext';
 import { DefaultRepositoryProvider } from '@/services/RepositoryContext';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/config/queryClient';
-import {
-  useAppBootstrapState,
-  type AppAuthenticatedDateNavigation,
-} from '@/app-shell/bootstrap/useAppBootstrapState';
-import { useAuthenticatedAppRuntime } from '@/app-shell/runtime/useAuthenticatedAppRuntime';
-import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medicalIndications';
+import { useAppBootstrapState } from '@/app-shell/bootstrap/useAppBootstrapState';
+
+const AuthenticatedAppShell = lazyWithRetry(() =>
+  import('@/app-shell/runtime/AuthenticatedAppShell').then(module => ({
+    default: module.AuthenticatedAppShell,
+  }))
+);
 
 const AppLoadingScreen = () => (
   <div className="min-h-screen bg-slate-100 flex items-center justify-center">
@@ -44,29 +37,6 @@ const VersionedAppShell = ({ children }: { children: React.ReactNode }) => (
     {children}
   </VersionProvider>
 );
-
-interface AuthenticatedAppShellProps {
-  auth: Extract<ReturnType<typeof useAppBootstrapState>, { status: 'authenticated' }>['auth'];
-  dateNav: AppAuthenticatedDateNavigation;
-}
-
-const AuthenticatedAppShell = ({ auth, dateNav }: AuthenticatedAppShellProps) => {
-  const { censusContextValue, ui } = useAuthenticatedAppRuntime({ auth, dateNav });
-  const renderFeatureQuickActions = React.useCallback(
-    (patients: MedicalIndicationsPatientOption[]) => (
-      <React.Suspense fallback={null}>
-        <LaboratoryQuickAction patients={patients} />
-      </React.Suspense>
-    ),
-    []
-  );
-
-  return (
-    <CensusProvider value={censusContextValue}>
-      <AppContent ui={ui} renderFeatureQuickActions={renderFeatureQuickActions} />
-    </CensusProvider>
-  );
-};
 
 function App() {
   const bootstrapState = useAppBootstrapState();
@@ -91,7 +61,9 @@ function App() {
 
   return (
     <VersionedAppShell>
-      <AuthenticatedAppShell auth={bootstrapState.auth} dateNav={bootstrapState.dateNav} />
+      <React.Suspense fallback={<ViewLoader />}>
+        <AuthenticatedAppShell auth={bootstrapState.auth} dateNav={bootstrapState.dateNav} />
+      </React.Suspense>
     </VersionedAppShell>
   );
 }

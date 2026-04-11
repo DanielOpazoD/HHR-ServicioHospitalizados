@@ -4,14 +4,20 @@
   "startupChunkBudgets": [
     {
       "label": "entry-app",
-      "pattern": "^index-.*\\.js$",
-      "maxBytes": 620000,
+      "source": "entry",
+      "maxBytes": 120000,
       "severity": "error"
     },
     {
       "label": "firebase-core",
       "pattern": "^vendor-firebase-core-.*\\.js$",
       "maxBytes": 320000,
+      "severity": "error"
+    },
+    {
+      "label": "app-authenticated-shell",
+      "pattern": "^app-authenticated-shell-.*\\.js$",
+      "maxBytes": 525000,
       "severity": "error"
     },
     {

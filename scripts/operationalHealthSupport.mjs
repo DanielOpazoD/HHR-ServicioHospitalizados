@@ -1,7 +1,7 @@
 const FRONTEND_STARTUP_CRITICAL_ASSET_PATTERNS = [
-  /^dist\/assets\/index-[^/]+\.js$/,
   /^dist\/assets\/vendor-preload-[^/]+\.js$/,
   /^dist\/assets\/vendor-firebase-core-[^/]+\.js$/,
+  /^dist\/assets\/app-authenticated-shell-[^/]+\.js$/,
   /^dist\/assets\/vendor-firebase-firestore-[^/]+\.js$/,
 ];
 
@@ -42,12 +42,27 @@ export const summarizePreviewGate = report => {
   };
 };
 
-export const selectFrontendStartupCriticalAssets = buildAssets =>
-  Array.isArray(buildAssets)
-    ? buildAssets.filter(asset =>
-        FRONTEND_STARTUP_CRITICAL_ASSET_PATTERNS.some(pattern => pattern.test(asset.file || ''))
-      )
-    : [];
+export const selectFrontendStartupCriticalAssets = ({
+  buildAssets,
+  entryAssets = [],
+}) => {
+  const criticalAssets = [
+    ...entryAssets,
+    ...(Array.isArray(buildAssets)
+      ? buildAssets.filter(asset =>
+          FRONTEND_STARTUP_CRITICAL_ASSET_PATTERNS.some(pattern => pattern.test(asset.file || ''))
+        )
+      : []),
+  ];
+
+  const deduped = new Map();
+  for (const asset of criticalAssets) {
+    if (!asset?.file) continue;
+    deduped.set(asset.file, asset);
+  }
+
+  return [...deduped.values()];
+};
 
 export const summarizeFrontendStartupHealth = ({
   previewGate,
