@@ -1,5 +1,6 @@
 import {
   getNextDay,
+  getPreviousDay,
   normalizeDateOnly,
   parseTimeMinutes,
   resolveClinicalDayBounds,
@@ -85,7 +86,9 @@ export const resolveAdmissionDateAudit = ({
     };
   }
 
-  const candidateDates = Array.from(new Set([baseDate, getNextDay(baseDate)]));
+  const candidateDates = Array.from(
+    new Set([getPreviousDay(baseDate), baseDate, getNextDay(baseDate)])
+  );
   const suggestedAdmissionDate =
     resolveAdmissionDateSuggestion(baseDate, admissionTime) || baseDate;
   const normalizedAdmissionDate = normalizeDateOnly(admissionDate);

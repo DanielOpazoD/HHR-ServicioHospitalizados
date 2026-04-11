@@ -78,7 +78,7 @@ export const getNextDay = (dateString: string): string => {
   return date.toISOString().split('T')[0];
 };
 
-const getPreviousDay = (dateString: string): string => {
+export const getPreviousDay = (dateString: string): string => {
   const date = new Date(`${dateString}T12:00:00`);
   date.setDate(date.getDate() - 1);
   return date.toISOString().split('T')[0];

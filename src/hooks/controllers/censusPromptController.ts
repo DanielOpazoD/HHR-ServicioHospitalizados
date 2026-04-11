@@ -1,3 +1,4 @@
+import { getPreviousDay } from '@/utils/clinicalDayUtils';
 import type { DailyRecordDateRef } from '@/application/shared/dailyRecordCoreContracts';
 
 export interface CensusPromptState {
@@ -19,10 +20,18 @@ export const INITIAL_CENSUS_PROMPT_STATE: CensusPromptState = {
 };
 
 export const resolvePreviousDayState = (
-  previousDay: DailyRecordDateRef | null
+  currentDateString: string,
+  previousDay: DailyRecordDateRef | null,
+  availableDates: string[] = []
 ): Pick<CensusPromptState, 'previousRecordAvailable' | 'previousRecordDate'> => ({
-  previousRecordAvailable: Boolean(previousDay),
-  previousRecordDate: previousDay?.date,
+  previousRecordAvailable:
+    previousDay?.date === getPreviousDay(currentDateString) ||
+    availableDates.includes(getPreviousDay(currentDateString)),
+  previousRecordDate:
+    previousDay?.date === getPreviousDay(currentDateString) ||
+    availableDates.includes(getPreviousDay(currentDateString))
+      ? getPreviousDay(currentDateString)
+      : undefined,
 });
 
 export const filterAvailableDates = (currentDateString: string, dates: string[]): string[] => {
@@ -40,22 +49,17 @@ export const executeLoadCensusPromptDataController = async ({
     getAvailableDates(),
   ]);
 
-  const previousDayState =
-    previousDayResult.status === 'fulfilled'
-      ? resolvePreviousDayState(previousDayResult.value)
-      : {
-          previousRecordAvailable: false,
-          previousRecordDate: undefined,
-        };
-
   const availableDates =
     availableDatesResult.status === 'fulfilled'
       ? filterAvailableDates(currentDateString, availableDatesResult.value)
       : [];
 
   return {
-    previousRecordAvailable: previousDayState.previousRecordAvailable,
-    previousRecordDate: previousDayState.previousRecordDate,
+    ...resolvePreviousDayState(
+      currentDateString,
+      previousDayResult.status === 'fulfilled' ? previousDayResult.value : null,
+      availableDates
+    ),
     availableDates,
   };
 };

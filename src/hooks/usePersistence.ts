@@ -22,6 +22,8 @@ import {
   recordOperationalOutcome,
   recordOperationalTelemetry,
 } from '@/services/observability/operationalTelemetryService';
+import { getPreviousDay as getPreviousCalendarDay } from '@/utils/clinicalDayUtils';
+import { defaultDailyRecordSyncPort } from '@/application/ports/dailyRecordPort';
 
 interface UsePersistenceProps {
   currentDateString: string;
@@ -78,8 +80,18 @@ export const usePersistence = ({
         }
 
         if (copyFromPrevious) {
+          const defaultPreviousDate = getPreviousCalendarDay(currentDateString);
+          const requestedSourceDate = specificDate || defaultPreviousDate;
+
+          if (requestedSourceDate) {
+            await defaultDailyRecordSyncPort.syncWithFirestoreDetailed(requestedSourceDate);
+          }
+
           if (specificDate) {
-            const source = await defaultDailyRecordReadPort.getForDateWithMeta(specificDate, true);
+            const source = await defaultDailyRecordReadPort.getForDateWithMeta(
+              requestedSourceDate,
+              true
+            );
             if (!source.record) {
               warning(
                 'No se encontró registro anterior',
@@ -87,21 +99,22 @@ export const usePersistence = ({
               );
               return;
             }
-            prevDate = source.record.date;
+            prevDate = requestedSourceDate;
             copySourceMeta = source;
           } else {
-            const prevRecord =
-              await defaultDailyRecordReadPort.getPreviousDayWithMeta(currentDateString);
-            if (prevRecord.record) {
-              prevDate = prevRecord.record.date;
-              copySourceMeta = prevRecord;
-            } else {
+            const prevRecord = await defaultDailyRecordReadPort.getForDateWithMeta(
+              requestedSourceDate,
+              true
+            );
+            if (!prevRecord.record) {
               warning(
                 'No se encontró registro anterior',
-                'No hay datos del día previo para copiar.'
+                'No hay datos sincronizados del día previo para copiar.'
               );
               return;
             }
+            prevDate = requestedSourceDate;
+            copySourceMeta = prevRecord;
           }
         }
 

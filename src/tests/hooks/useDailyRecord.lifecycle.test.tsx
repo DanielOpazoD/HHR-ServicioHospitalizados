@@ -321,6 +321,28 @@ describe('useDailyRecord lifecycle', () => {
     vi.useRealTimers();
   });
 
+  it('should force the default copy source to the exact previous calendar day', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2025, 0, 2, 8, 1, 0));
+
+    const targetDate = '2025-01-02';
+    const exactPreviousDate = '2025-01-01';
+    recordsMap[exactPreviousDate] = DataFactory.createMockDailyRecord(exactPreviousDate);
+
+    const { result } = renderHook(() => useDailyRecord(targetDate), { wrapper: createWrapper() });
+
+    await act(async () => {
+      await result.current.createDay(true);
+    });
+
+    expect(defaultDailyRecordRepositoryPort.initializeDay).toHaveBeenCalledWith(
+      targetDate,
+      exactPreviousDate
+    );
+
+    vi.useRealTimers();
+  });
+
   describe('copyPatientToDate', () => {
     it('should copy patient to a future date and specific bed', async () => {
       // Setup source record

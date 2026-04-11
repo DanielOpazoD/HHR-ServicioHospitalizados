@@ -1,5 +1,5 @@
 import { getTodayISO } from '@/utils/dateFormattingUtils';
-import { normalizeDateOnly } from '@/utils/clinicalDayUtils';
+import { getNextDay, getPreviousDay, normalizeDateOnly } from '@/utils/clinicalDayUtils';
 import {
   resolveAdmissionDateAudit as resolveAdmissionDateAuditPolicy,
   type AdmissionDateAuditResolution,
@@ -11,6 +11,12 @@ export interface AdmissionDateChangeResolution {
   shouldPatchMultiple: boolean;
 }
 
+export interface AdmissionDateOption {
+  value: string;
+  label: string;
+  isFallbackValue?: boolean;
+}
+
 const formatTimeHHMM = (date: Date): string => {
   const hours = String(date.getHours()).padStart(2, '0');
   const minutes = String(date.getMinutes()).padStart(2, '0');
@@ -18,6 +24,56 @@ const formatTimeHHMM = (date: Date): string => {
 };
 
 export const resolveAdmissionDateMax = (todayIso: string = getTodayISO()): string => todayIso;
+
+const formatAdmissionDateOptionLabel = (
+  value: string,
+  variant: 'previous' | 'current' | 'next'
+) => {
+  const [year, month, day] = value.split('-');
+  const formatted = `${day}/${month}/${year}`;
+
+  if (variant === 'previous') return `${formatted} (X-1)`;
+  if (variant === 'next') return `${formatted} (X+1)`;
+  return `${formatted} (X)`;
+};
+
+export const resolveAllowedAdmissionDates = (recordDate: string): string[] => {
+  const normalizedRecordDate = normalizeDateOnly(recordDate);
+  if (!normalizedRecordDate) {
+    return [];
+  }
+
+  return [
+    getPreviousDay(normalizedRecordDate),
+    normalizedRecordDate,
+    getNextDay(normalizedRecordDate),
+  ];
+};
+
+export const resolveAdmissionDateOptions = (
+  recordDate: string,
+  admissionDate?: string
+): AdmissionDateOption[] => {
+  const allowedDates = resolveAllowedAdmissionDates(recordDate);
+  const options: AdmissionDateOption[] = allowedDates.map((value, index) => ({
+    value,
+    label: formatAdmissionDateOptionLabel(
+      value,
+      index === 0 ? 'previous' : index === 2 ? 'next' : 'current'
+    ),
+  }));
+
+  const normalizedAdmissionDate = normalizeDateOnly(admissionDate);
+  if (normalizedAdmissionDate && !allowedDates.includes(normalizedAdmissionDate)) {
+    options.unshift({
+      value: normalizedAdmissionDate,
+      label: `${normalizedAdmissionDate} (fuera de ventana)`,
+      isFallbackValue: true,
+    });
+  }
+
+  return options;
+};
 
 export const resolveIsCriticalAdmissionEmpty = (
   patientName?: string,
@@ -27,21 +83,26 @@ export const resolveIsCriticalAdmissionEmpty = (
 export const resolveAdmissionDateIsEditable = ({
   recordDate,
   firstSeenDate,
+  hasPatient,
   isNewAdmission,
 }: {
   recordDate: string;
   firstSeenDate?: string;
+  hasPatient?: boolean;
   isNewAdmission: boolean;
 }): boolean => {
-  // Admission stays editable only on the first observed census day of the episode.
   const normalizedRecordDate = normalizeDateOnly(recordDate);
   const normalizedFirstSeenDate = normalizeDateOnly(firstSeenDate);
+
+  if (!hasPatient) {
+    return false;
+  }
 
   if (normalizedRecordDate && normalizedFirstSeenDate) {
     return normalizedRecordDate === normalizedFirstSeenDate;
   }
 
-  return isNewAdmission;
+  return isNewAdmission || Boolean(normalizedRecordDate);
 };
 
 export const resolveAdmissionDateChange = ({

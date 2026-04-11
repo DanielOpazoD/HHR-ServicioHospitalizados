@@ -153,6 +153,7 @@ describe('admission episode consistency integration', () => {
       resolveAdmissionDateIsEditable({
         recordDate: '2026-03-01',
         firstSeenDate: '2026-03-01',
+        hasPatient: true,
         isNewAdmission: true,
       })
     ).toBe(true);
@@ -160,6 +161,7 @@ describe('admission episode consistency integration', () => {
       resolveAdmissionDateIsEditable({
         recordDate: '2026-03-02',
         firstSeenDate: '2026-03-01',
+        hasPatient: true,
         isNewAdmission: false,
       })
     ).toBe(false);

@@ -12,7 +12,7 @@ import { PatientEmptyCell } from './PatientEmptyCell';
 import {
   resolveAdmissionDateChange,
   resolveAdmissionDateAudit,
-  resolveAdmissionDateMax,
+  resolveAdmissionDateOptions,
   resolveAdmissionDateIsEditable,
   resolveIsCriticalAdmissionEmpty,
 } from '@/features/census/controllers/admissionInputController';
@@ -48,8 +48,13 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
     resolveAdmissionDateIsEditable({
       recordDate: currentDateString,
       firstSeenDate: data.firstSeenDate,
+      hasPatient: Boolean(data.patientName?.trim()),
       isNewAdmission,
     });
+  const admissionDateOptions = React.useMemo(
+    () => resolveAdmissionDateOptions(currentDateString, data.admissionDate),
+    [currentDateString, data.admissionDate]
+  );
   const isAdmissionDateSuspicious = isNewAdmission && audit.isSuspicious && !isCriticalEmpty;
 
   if (isEmpty && !isSubRow) {
@@ -82,15 +87,12 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
       return;
     }
 
-    const dateInput = document.getElementById(admissionDateInputId) as HTMLInputElement | null;
+    const dateInput = document.getElementById(admissionDateInputId) as HTMLSelectElement | null;
     if (!dateInput) {
       return;
     }
 
     dateInput.focus();
-    if (typeof dateInput.showPicker === 'function') {
-      dateInput.showPicker();
-    }
   };
 
   const handleApplySuggestedDate = () => {
@@ -125,14 +127,11 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
           setShowTime(false);
         }}
       >
-        <DebouncedInput
+        <select
           id={admissionDateInputId}
           data-admission-date-input="true"
-          type="date"
-          max={resolveAdmissionDateMax()}
           className={clsx(
             'w-full p-0.5 h-7 border rounded focus:ring-2 focus:outline-none text-xs pr-4',
-            'hide-calendar-icon',
             isCriticalEmpty
               ? 'border-red-400 border-2 bg-red-50 focus:ring-red-200 focus:border-red-500'
               : isAdmissionDateSuspicious
@@ -141,19 +140,28 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
             isSubRow && 'h-6'
           )}
           value={data.admissionDate || ''}
-          onChange={handleDateChange}
-          onClick={() => setShowTime(true)}
+          onChange={event => {
+            handleDateChange(event.target.value);
+            setShowTime(true);
+          }}
           disabled={readOnly || !isAdmissionDateEditable}
           title={
             isCriticalEmpty
               ? 'Campo crítico requerido para entrega'
               : !isAdmissionDateEditable
-                ? 'Solo editable el primer día de aparición en censo'
+                ? 'Solo editable durante el día del censo en que apareció el paciente'
                 : isAdmissionDateSuspicious
                   ? `${audit.message || 'Fecha sospechosa'} Sugerida: ${audit.suggestedAdmissionDate}`
                   : undefined
           }
-        />
+        >
+          <option value="">--</option>
+          {admissionDateOptions.map(option => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
         <button
           type="button"
           onClick={handleOpenDateEditor}
