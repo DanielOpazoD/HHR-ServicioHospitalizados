@@ -21,6 +21,8 @@ vi.mock('@/services/auth/authClaimSyncService', () => ({
 import { buildAuthRuntimeSnapshot } from '@/services/auth/authRuntimeSnapshot';
 
 describe('authRuntimeSnapshot', () => {
+  const FIXED_ATTEMPT_AT = 1_777_000_000_000;
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockIsAuthBootstrapPending.mockReturnValue(false);
@@ -134,7 +136,7 @@ describe('authRuntimeSnapshot', () => {
   it('surfaces failed claim sync as a degraded authorized runtime', () => {
     mockGetAuthClaimSyncSnapshot.mockReturnValue({
       status: 'failed',
-      lastAttemptAt: Date.now(),
+      lastAttemptAt: FIXED_ATTEMPT_AT,
       lastResolvedRole: 'admin',
       lastErrorMessage: 'claim sync failed',
     });

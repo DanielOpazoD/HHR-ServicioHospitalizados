@@ -201,13 +201,17 @@ describe('PatientRow layout and actions', () => {
       </table>
     );
 
-    const actions = ['Copiar', 'Mover', 'Dar de Alta', 'Trasladar'];
-    const expectedActions = ['copy', 'move', 'discharge', 'transfer'];
+    const actions = [
+      { matcher: () => screen.findByTitle('Copiar a otro día'), expected: 'copy' },
+      { matcher: () => screen.findByTitle('Mover de cama'), expected: 'move' },
+      { matcher: () => screen.findByText(/Dar de Alta/i), expected: 'discharge' },
+      { matcher: () => screen.findByText(/Trasladar/i), expected: 'transfer' },
+    ] as const;
 
-    for (const [index, actionText] of actions.entries()) {
+    for (const { matcher, expected } of actions) {
       fireEvent.click(screen.getByTitle('Acciones'));
-      fireEvent.click(await screen.findByText(new RegExp(actionText, 'i')));
-      expect(mockOnAction).toHaveBeenCalledWith(expectedActions[index], 'R1', mockPatient);
+      fireEvent.click(await matcher());
+      expect(mockOnAction).toHaveBeenCalledWith(expected, 'R1', mockPatient);
     }
   });
 
@@ -238,12 +242,18 @@ describe('PatientRow layout and actions', () => {
     }
   });
 
-  it('shows admission time input when admission date is focused', () => {
+  it('shows the integrated admission editor with time input when the field is opened', () => {
+    const editablePatient = {
+      ...mockPatient,
+      admissionDate: '2023-01-01',
+      firstSeenDate: '2023-01-01',
+    };
+
     render(
       <table>
         <tbody>
           <PatientRow
-            data={mockPatient}
+            data={editablePatient}
             bed={mockBedDef}
             currentDateString="2023-01-01"
             onAction={mockOnAction}
@@ -253,13 +263,11 @@ describe('PatientRow layout and actions', () => {
       </table>
     );
 
-    const admissionDateSelect = document.querySelector(
-      '[data-admission-date-input="true"]'
-    ) as HTMLSelectElement | null;
+    fireEvent.click(screen.getByLabelText('Editar fecha y hora de ingreso'));
 
-    expect(admissionDateSelect).not.toBeNull();
-    fireEvent.focus(admissionDateSelect!);
-
+    expect(
+      screen.getByRole('dialog', { name: 'Configurar fecha y hora de ingreso' })
+    ).toBeInTheDocument();
     expect(document.querySelector('input[type="time"]')).toBeInTheDocument();
   });
 
