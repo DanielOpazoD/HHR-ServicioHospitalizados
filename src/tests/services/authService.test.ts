@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { signIn, signInWithGoogle, createUser } from '@/services/auth/authFlow';
 import { signInWithGoogleRedirect, handleSignInRedirectResult } from '@/services/auth/authFallback';
 import { signOut } from '@/services/auth/authSession';
+import * as authRedirectRuntime from '@/services/auth/authRedirectRuntime';
 import * as firebaseAuth from 'firebase/auth';
 import { getDocs } from 'firebase/firestore';
 import { QuerySnapshot } from 'firebase/firestore';
@@ -54,6 +55,18 @@ vi.mock('firebase/firestore', () => ({
 describe('auth public entrypoints', () => {
   const AUTH_BOOTSTRAP_PENDING_KEY = 'hhr_auth_bootstrap_pending_v1';
   const GOOGLE_LOGIN_LOCK_KEY = 'hhr_google_login_lock_v1';
+  const defaultRedirectRuntimeSupport: authRedirectRuntime.AuthRedirectRuntimeSupport = {
+    isLocalhostRuntime: false,
+    preferRedirectOnLocalhost: false,
+    canUseRedirectAuth: true,
+    supportLevel: 'ready',
+    redirectDisabledReason: null,
+    supportSummary: null,
+    supportAction: null,
+    recommendedFlowLabel: 'Acceso alternativo',
+    authDomain: 'hospitalhangaroa.firebaseapp.com',
+    usesFirebaseHostedAuthDomain: true,
+  };
   const originalLocation = window.location;
   const setLocation = (pathname: string, hostname = originalLocation.hostname) => {
     Reflect.deleteProperty(window, 'location');
@@ -65,6 +78,9 @@ describe('auth public entrypoints', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(authRedirectRuntime, 'getAuthRedirectRuntimeSupport').mockReturnValue(
+      defaultRedirectRuntimeSupport
+    );
     localStorage.removeItem(AUTH_BOOTSTRAP_PENDING_KEY);
     localStorage.removeItem(GOOGLE_LOGIN_LOCK_KEY);
     mockCheckUserRoleCallable.mockResolvedValue({
@@ -305,6 +321,20 @@ describe('auth public entrypoints', () => {
     });
 
     it('should reject redirect flow on localhost when runtime policy disables it', async () => {
+      vi.spyOn(authRedirectRuntime, 'getAuthRedirectRuntimeSupport').mockReturnValue({
+        ...defaultRedirectRuntimeSupport,
+        isLocalhostRuntime: true,
+        canUseRedirectAuth: false,
+        supportLevel: 'disabled',
+        redirectDisabledReason:
+          'En este equipo el acceso alternativo está desactivado para evitar bucles de acceso en el navegador.',
+        supportSummary:
+          'En localhost el sistema prefiere la ventana normal de Google y evita cambiar de pestaña automáticamente.',
+        supportAction:
+          'Si la ventana no aparece, usa el botón principal otra vez o revisa si el navegador bloqueó ventanas emergentes.',
+        recommendedFlowLabel: 'Ventana de Google',
+      });
+
       await expect(signInWithGoogleRedirect()).rejects.toThrow(
         /acceso alternativo está desactivado/i
       );
