@@ -7,21 +7,24 @@ const previewCommand =
 const previewArtifactsDir =
   process.env.PLAYWRIGHT_PREVIEW_ARTIFACTS_DIR || 'reports/e2e/preview-bootstrap';
 
+const reporters = [
+  ['list'],
+  ['json', { outputFile: `${previewArtifactsDir}/report.json` }],
+  ['junit', { outputFile: `${previewArtifactsDir}/report.junit.xml` }],
+];
+
+if (process.env.CI) {
+  reporters.unshift(['github']);
+  reporters.push(['html', { open: 'never', outputFolder: `${previewArtifactsDir}/html` }]);
+}
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: 0,
   workers: 1,
-  reporter: process.env.CI
-    ? [
-        ['github'],
-        ['list'],
-        ['html', { open: 'never', outputFolder: `${previewArtifactsDir}/html` }],
-        ['json', { outputFile: `${previewArtifactsDir}/report.json` }],
-        ['junit', { outputFile: `${previewArtifactsDir}/report.junit.xml` }],
-      ]
-    : 'list',
+  reporter: reporters,
   use: {
     baseURL: 'http://127.0.0.1:4173',
     trace: 'retain-on-failure',

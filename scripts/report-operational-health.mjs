@@ -3,6 +3,12 @@
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import {
+  extractBootstrapTelemetrySignals,
+  selectFrontendStartupCriticalAssets,
+  summarizeFrontendStartupHealth,
+  summarizePreviewGate,
+} from './operationalHealthSupport.mjs';
 
 const workspaceRoot = process.cwd();
 const read = relativePath => fs.readFileSync(path.join(workspaceRoot, relativePath), 'utf8');
@@ -17,6 +23,9 @@ const authConfigContent = read('functions/lib/auth/authConfig.js');
 const authHelpersContent = read('functions/lib/auth/authHelpersFactory.js');
 const operationalRuntimeStateContent = read(
   'src/services/observability/operationalRuntimeState.ts'
+);
+const bootstrapRuntimeTelemetryContent = read(
+  'src/app-shell/bootstrap/bootstrapRuntimeTelemetry.ts'
 );
 const authBootstrapBudgetContent = read('src/services/auth/authBootstrapBudgets.ts');
 const syncQueueBudgetContent = read('src/services/storage/sync/syncQueueOperationalBudgets.ts');
@@ -249,6 +258,7 @@ const runbooks = [
 const flowPerformanceSummary = readJsonReport('reports/e2e/flow-performance-budget-summary.json');
 const criticalCoverageSummary = readJsonReport('reports/critical-coverage.json');
 const bundleBudgetConfig = readJsonConfig('scripts/config/bundle-budget.json');
+const previewBootstrapReport = readJsonReport('reports/e2e/preview-bootstrap/report.json');
 const largestBuildAssets = collectLargestBuildAssets('dist/assets');
 const chunkMaxBytes = bundleBudgetConfig?.chunkMaxBytes ?? null;
 const buildAssets = largestBuildAssets.map(asset => ({
@@ -256,6 +266,12 @@ const buildAssets = largestBuildAssets.map(asset => ({
   maxBytes: chunkMaxBytes,
   status: classifyBudgetStatus(asset.sizeBytes, chunkMaxBytes, chunkMaxBytes),
 }));
+const bootstrapTelemetrySignals = extractBootstrapTelemetrySignals(bootstrapRuntimeTelemetryContent);
+const frontendStartup = summarizeFrontendStartupHealth({
+  previewGate: summarizePreviewGate(previewBootstrapReport),
+  criticalAssets: selectFrontendStartupCriticalAssets(buildAssets),
+  bootstrapTelemetrySignals,
+});
 
 const summary = {
   generatedAt: new Date().toISOString(),
@@ -328,6 +344,7 @@ const summary = {
     chunkMaxBytes,
     largestAssets: buildAssets,
   },
+  frontendStartup,
   repositoryPerformance: {
     monitoredOperations: thresholds.length,
     maxThresholdMs: thresholds.reduce((max, item) => Math.max(max, item.thresholdMs), 0),
@@ -467,6 +484,39 @@ ${Object.entries(summary.conflictContexts)
     : 'unknown'
 }
 
+## Frontend Startup Health
+
+- Status: ${summary.frontendStartup?.status ?? 'unknown'}
+- Preview gate: ${summary.frontendStartup?.previewGate?.status ?? 'unknown'}
+- Preview tests: ${summary.frontendStartup?.previewGate?.total ?? 'unknown'}
+- Preview unexpected: ${summary.frontendStartup?.previewGate?.unexpected ?? 'unknown'}
+- Preview flaky: ${summary.frontendStartup?.previewGate?.flaky ?? 'unknown'}
+- Preview skipped: ${summary.frontendStartup?.previewGate?.skipped ?? 'unknown'}
+- Preview duration (ms): ${summary.frontendStartup?.previewGate?.durationMs ?? 'unknown'}
+- Bootstrap signals: ${
+  Array.isArray(summary.frontendStartup?.bootstrapTelemetrySignals) &&
+  summary.frontendStartup.bootstrapTelemetrySignals.length > 0
+    ? summary.frontendStartup.bootstrapTelemetrySignals.map(signal => `\`${signal}\``).join(', ')
+    : 'unknown'
+}
+- Startup issues: ${
+  Array.isArray(summary.frontendStartup?.issues) && summary.frontendStartup.issues.length > 0
+    ? summary.frontendStartup.issues.join(' | ')
+    : 'none'
+}
+
+| Critical startup asset | Size (bytes) | Max (bytes) | Status |
+| --- | ---: | ---: | --- |
+${
+  summary.frontendStartup?.criticalAssets?.length
+    ? summary.frontendStartup.criticalAssets
+        .map(
+          asset => `| \`${asset.file}\` | ${asset.sizeBytes} | ${asset.maxBytes ?? '-'} | ${asset.status} |`
+        )
+        .join('\n')
+    : '| `unavailable` | - | - | missing |'
+}
+
 ## Incident Signals To Watch
 
 - Realtime null recuperado: \`recovered_null_realtime_record\`
@@ -474,6 +524,12 @@ ${Object.entries(summary.conflictContexts)
 - Telemetría sync no disponible: \`sync_queue_telemetry_unavailable\`, \`sync_queue_stats_unavailable\`, \`sync_queue_recent_operations_unavailable\`, \`sync_queue_domain_metrics_unavailable\`
 - Fallback IndexedDB: \`indexeddb_fallback_mode\`
 - Timeout bootstrap auth: \`bootstrap_timeout\`
+- Bootstrap frontend: ${
+  Array.isArray(summary.frontendStartup?.bootstrapTelemetrySignals) &&
+  summary.frontendStartup.bootstrapTelemetrySignals.length > 0
+    ? summary.frontendStartup.bootstrapTelemetrySignals.map(signal => `\`${signal}\``).join(', ')
+    : 'unknown'
+}
 
 ## Flow Performance Budgets
 

@@ -76,6 +76,7 @@ const requiredKeys = [
   'legacyBridge',
   'compatibilityGovernance',
   'localPersistence',
+  'frontendStartup',
   'repositoryPerformance',
   'runbooks',
 ];

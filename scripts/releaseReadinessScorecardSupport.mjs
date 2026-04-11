@@ -198,12 +198,21 @@ export const buildReleaseReadinessScorecard = root => {
   if (operationalHealth) {
     const bundleOk = currentBuildAssets.every(asset => asset?.status === 'ok');
     const flowOk = operationalHealth.flowPerformance?.status === 'passing';
+    const frontendStartupOk = operationalHealth.frontendStartup?.status === 'ok';
     indicators.push({
       name: 'operational_readiness',
       ...statusFrom(
         flowOk && bundleOk,
         `flow=${operationalHealth.flowPerformance?.status ?? 'n/a'}, bundle=${bundleOk ? 'ok' : 'degraded'}`,
         `flow=${operationalHealth.flowPerformance?.status ?? 'n/a'}, bundle=${bundleOk ? 'ok' : 'degraded'}`
+      ),
+    });
+    indicators.push({
+      name: 'frontend_startup',
+      ...statusFrom(
+        frontendStartupOk,
+        `status=${operationalHealth.frontendStartup?.status ?? 'n/a'}, preview=${operationalHealth.frontendStartup?.previewGate?.status ?? 'n/a'}, issues=${operationalHealth.frontendStartup?.issues?.length ?? 0}`,
+        `status=${operationalHealth.frontendStartup?.status ?? 'n/a'}, preview=${operationalHealth.frontendStartup?.previewGate?.status ?? 'n/a'}, issues=${operationalHealth.frontendStartup?.issues?.length ?? 0}`
       ),
     });
     releaseHotspots = buildReleaseHotspots({

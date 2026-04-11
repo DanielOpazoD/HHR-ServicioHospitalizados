@@ -39,6 +39,11 @@ const createScorecardRoot = () => {
   writeJson(root, 'reports/operational-health.json', {
     generatedAt: '2026-04-10T00:00:00.000Z',
     flowPerformance: { status: 'passing' },
+    frontendStartup: {
+      status: 'ok',
+      previewGate: { status: 'ok' },
+      issues: [],
+    },
     buildAssets: {
       chunkMaxBytes: 1250000,
       largestAssets: [
@@ -158,5 +163,38 @@ describe('buildReleaseReadinessScorecard', () => {
 
     expect(report.releaseHotspots?.assets).toHaveLength(2);
     expect(report.releaseHotspots?.assets?.[0]?.file).toContain('vendor-excel-core-BNwEF2Ha.js');
+  });
+
+  it('surfaces frontend startup health as its own readiness indicator', () => {
+    const root = createScorecardRoot();
+    writeJson(root, 'reports/compatibility-import-governance.json', {
+      generatedAt: '2026-04-10T00:00:00.000Z',
+      checkedEntries: 0,
+      issues: [],
+    });
+    writeJson(root, 'reports/operational-health.json', {
+      generatedAt: '2026-04-10T00:00:00.000Z',
+      flowPerformance: { status: 'passing' },
+      frontendStartup: {
+        status: 'degraded',
+        previewGate: { status: 'ok' },
+        issues: ['Chunks criticos cerca del limite'],
+      },
+      buildAssets: {
+        chunkMaxBytes: 1250000,
+        largestAssets: [],
+      },
+    });
+
+    const report = buildReleaseReadinessScorecard(root);
+    const startupIndicator = report.indicators.find(
+      indicator => indicator.name === 'frontend_startup'
+    );
+
+    expect(report.overallStatus).toBe('degraded');
+    expect(startupIndicator).toMatchObject({
+      status: 'degraded',
+    });
+    expect(startupIndicator?.summary).toContain('status=degraded');
   });
 });

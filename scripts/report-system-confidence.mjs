@@ -72,6 +72,11 @@ const indicators = [
         : 'degraded',
     summary: `flow=${operationalHealth.flowPerformance?.status || 'unknown'}, coverage=${operationalHealth.criticalCoverage?.status || 'unknown'}`,
   },
+  {
+    name: 'frontend_startup',
+    status: operationalHealth.frontendStartup?.status === 'ok' ? 'ok' : 'degraded',
+    summary: `status=${operationalHealth.frontendStartup?.status || 'unknown'}, preview=${operationalHealth.frontendStartup?.previewGate?.status || 'unknown'}, issues=${operationalHealth.frontendStartup?.issues?.length || 0}`,
+  },
 ];
 
 const overallStatus = indicators.every(indicator => indicator.status === 'ok') ? 'ok' : 'degraded';

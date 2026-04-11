@@ -15,16 +15,27 @@ const trackedReports = [
     file: 'reports/system-confidence.json',
     field: 'gitSha',
     refreshScript: 'report:system-confidence',
+    dependsOn: ['reports/operational-health.json', 'reports/quality-metrics.json'],
   },
   {
     file: 'reports/operational-health.json',
     field: 'gitSha',
     refreshScript: 'report:operational-health',
+    dependsOn: ['reports/e2e/preview-bootstrap/report.json'],
   },
   {
     file: 'reports/release-readiness-scorecard.json',
     field: 'gitSha',
     refreshScript: 'report:release-readiness-scorecard',
+    dependsOn: [
+      'reports/quality-metrics.json',
+      'reports/system-confidence.json',
+      'reports/operational-health.json',
+      'reports/release-confidence-matrix.json',
+      'reports/technical-ownership-map.json',
+      'reports/guardrail-governance.json',
+      'reports/compatibility-import-governance.json',
+    ],
   },
 ];
 
@@ -84,6 +95,19 @@ for (const report of trackedReports) {
 
   if (!isSameCommit(reportSha, currentGitSha)) {
     issues.push(`${report.file} was generated for ${reportSha}, current HEAD is ${currentGitSha}.`);
+  }
+
+  const reportMtimeMs = fs.statSync(reportPath).mtimeMs;
+  for (const dependencyFile of report.dependsOn || []) {
+    const dependencyPath = path.join(ROOT, dependencyFile);
+    if (!fs.existsSync(dependencyPath)) {
+      continue;
+    }
+
+    const dependencyMtimeMs = fs.statSync(dependencyPath).mtimeMs;
+    if (dependencyMtimeMs > reportMtimeMs) {
+      issues.push(`${report.file} is older than dependency ${dependencyFile}.`);
+    }
   }
 }
 
