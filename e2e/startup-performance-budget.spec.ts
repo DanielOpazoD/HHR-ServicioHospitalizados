@@ -209,6 +209,15 @@ const waitForClinicalDocumentsReady = async (page: Parameters<typeof ensureRecor
   await expect(page.getByTestId('clinical-documents-workspace')).toBeVisible();
 };
 
+const revealPatientRowQuickActions = async (
+  page: Parameters<typeof ensureRecordExists>[0],
+  patientRow: ReturnType<Parameters<typeof ensureRecordExists>[0]['locator']>
+) => {
+  const demographicsButton = patientRow.getByRole('button', { name: /Datos del Paciente/i });
+  await demographicsButton.focus();
+  await expect(page.getByLabel('Acciones clínicas rápidas')).toBeVisible();
+};
+
 test.afterAll(async () => {
   fs.mkdirSync(path.dirname(FLOW_REPORT_PATH), { recursive: true });
   fs.writeFileSync(
@@ -282,7 +291,7 @@ test.describe('Startup performance budget', () => {
 
     const patientRow = page.locator('[data-testid="patient-row"][data-bed-id="R1"]').first();
     const openClinicalDocumentsMenuStart = performance.now();
-    await patientRow.hover();
+    await revealPatientRowQuickActions(page, patientRow);
     await page.getByLabel('Acciones clínicas rápidas').click();
     clinicalDocumentsBreakdown.openMenuMs = Number(
       (performance.now() - openClinicalDocumentsMenuStart).toFixed(2)
