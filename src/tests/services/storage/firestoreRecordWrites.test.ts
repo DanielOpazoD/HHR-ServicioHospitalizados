@@ -13,6 +13,12 @@ const { mockEnsureUserRoleClaim, mockResolveFirebaseUserRole, mockGetCurrentUser
     mockAuthReady: Promise.resolve(),
   }));
 
+const { mockHttpsCallable, mockSpecialistCallable, mockGetFunctions } = vi.hoisted(() => ({
+  mockHttpsCallable: vi.fn(),
+  mockSpecialistCallable: vi.fn(),
+  mockGetFunctions: vi.fn().mockResolvedValue({ name: 'functions-runtime' }),
+}));
+
 vi.mock('firebase/firestore', async () => {
   const actual = await vi.importActual('firebase/firestore');
 
@@ -30,6 +36,10 @@ vi.mock('firebase/firestore', async () => {
     updateDoc: vi.fn(),
   };
 });
+
+vi.mock('firebase/functions', () => ({
+  httpsCallable: (...args: unknown[]) => mockHttpsCallable(...args),
+}));
 
 vi.mock('@/utils/networkUtils', () => ({
   withRetry: vi.fn((operation: () => Promise<unknown> | unknown) => operation()),
@@ -71,6 +81,12 @@ vi.mock('@/services/firebase-runtime/authRuntime', () => ({
   },
 }));
 
+vi.mock('@/services/firebase-runtime/functionsRuntime', () => ({
+  defaultFunctionsRuntime: {
+    getFunctions: () => mockGetFunctions(),
+  },
+}));
+
 import { deleteDoc, setDoc, updateDoc } from 'firebase/firestore';
 import {
   deleteRecordFromFirestore,
@@ -91,6 +107,8 @@ describe('firestoreRecordWrites', () => {
     mockGetCurrentUser.mockReturnValue(null);
     mockResolveFirebaseUserRole.mockResolvedValue(null);
     mockEnsureUserRoleClaim.mockResolvedValue(undefined);
+    mockHttpsCallable.mockReturnValue(mockSpecialistCallable);
+    mockSpecialistCallable.mockResolvedValue({ data: { success: true } });
   });
 
   it('saves full records after concurrency and history checks', async () => {
@@ -155,6 +173,37 @@ describe('firestoreRecordWrites', () => {
         uid: 'specialist-1',
       })
     );
+  });
+
+  it('routes specialist-scoped patches through the callable backend for doctor_specialist users', async () => {
+    const currentUser = {
+      uid: 'specialist-2',
+      email: 'specialist@example.com',
+      isAnonymous: false,
+    };
+    mockGetCurrentUser.mockReturnValue(currentUser);
+    mockResolveFirebaseUserRole.mockResolvedValue('doctor_specialist');
+
+    await updateRecordPartial('2026-03-20', {
+      'beds.R4.medicalHandoffEntries': [{ id: 'entry-1', note: 'Seguimiento' }],
+      'beds.R4.medicalHandoffNote': 'Seguimiento',
+      'beds.R4.medicalHandoffAudit': { currentStatus: 'updated_by_specialist' },
+    } as never);
+
+    expect(mockGetFunctions).toHaveBeenCalled();
+    expect(mockHttpsCallable).toHaveBeenCalledWith(
+      { name: 'functions-runtime' },
+      'updateSpecialistMedicalHandoff'
+    );
+    expect(mockSpecialistCallable).toHaveBeenCalledWith({
+      date: '2026-03-20',
+      patch: {
+        'beds.R4.medicalHandoffEntries': [{ id: 'entry-1', note: 'Seguimiento' }],
+        'beds.R4.medicalHandoffNote': 'Seguimiento',
+        'beds.R4.medicalHandoffAudit': { currentStatus: 'updated_by_specialist' },
+      },
+    });
+    expect(updateDoc).not.toHaveBeenCalled();
   });
 
   it('rethrows write failures that are not recoverable', async () => {

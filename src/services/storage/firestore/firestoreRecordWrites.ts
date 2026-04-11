@@ -6,6 +6,7 @@ import {
   type DocumentData,
   type UpdateData,
 } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import type { DailyRecord, DailyRecordPatch } from '@/services/storage/storageDailyRecordContracts';
 import { withRetry } from '@/utils/networkUtils';
 import {
@@ -13,6 +14,7 @@ import {
   getRecordDocRef,
   sanitizeForFirestore,
 } from '@/services/storage/firestore/firestoreShared';
+import { isSpecialistScopedDailyRecordPatch } from '@/services/repositories/dailyRecordClinicalDomainService';
 import {
   asFirestoreUpdatePayload,
   assertFirestoreConcurrency,
@@ -23,6 +25,8 @@ import { firestoreWriteLogger } from '@/services/storage/storageLoggers';
 import { ensureUserRoleClaim } from '@/services/auth/authClaimSyncService';
 import { resolveFirebaseUserRole } from '@/services/auth/authAccessResolution';
 import { defaultAuthRuntime } from '@/services/firebase-runtime/authRuntime';
+import { defaultFunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
+import type { UserRole } from '@/types/auth';
 
 const logFirestoreWriteRetry = (
   operation: 'save' | 'partialUpdate' | 'delete',
@@ -55,6 +59,45 @@ const isPermissionDeniedError = (error: unknown): boolean => {
   return (
     code.includes('permission-denied') || message.includes('missing or insufficient permissions')
   );
+};
+
+interface SpecialistMedicalHandoffCallablePayload {
+  date: string;
+  patch: Record<string, unknown>;
+}
+
+const isDoctorSpecialistRole = (role: UserRole | null): role is 'doctor_specialist' =>
+  role === 'doctor_specialist';
+
+const shouldRouteSpecialistPatchViaCallable = async (): Promise<boolean> => {
+  try {
+    await defaultAuthRuntime.ready;
+    const firebaseUser = defaultAuthRuntime.getCurrentUser();
+    if (!firebaseUser || firebaseUser.isAnonymous) {
+      return false;
+    }
+
+    return isDoctorSpecialistRole(await resolveFirebaseUserRole(firebaseUser));
+  } catch (error) {
+    firestoreWriteLogger.warn('Specialist callable routing role check failed', { error });
+    return false;
+  }
+};
+
+const updateSpecialistMedicalHandoffViaCallable = async (
+  date: string,
+  patch: Record<string, unknown>
+): Promise<void> => {
+  const functions = await defaultFunctionsRuntime.getFunctions();
+  const callable = httpsCallable<
+    SpecialistMedicalHandoffCallablePayload,
+    { success: boolean; date: string; bedId: string }
+  >(functions, 'updateSpecialistMedicalHandoff');
+
+  await callable({
+    date,
+    patch,
+  });
 };
 
 const tryRefreshCurrentUserRoleClaim = async (date: string): Promise<boolean> => {
@@ -145,15 +188,37 @@ export const updateRecordPartial = async (
 
     await saveHistorySnapshot(date);
 
-    const flatData = flattenObject(partialData as unknown as Record<string, unknown>);
+    // Specialist patches arrive in correct dot-notation (e.g. "beds.R1.medicalHandoffAudit").
+    // flattenObject would recursively expand nested objects into sub-field paths
+    // (e.g. "beds.R1.medicalHandoffAudit.lastEditor"), which causes Firestore rules
+    // to reject the write because the diff shape changes at the bed level.
+    const specialistScopedPatch = isSpecialistScopedDailyRecordPatch(partialData);
+    const flatData = specialistScopedPatch
+      ? (partialData as unknown as Record<string, unknown>)
+      : flattenObject(partialData as unknown as Record<string, unknown>);
+    const sanitizedPatch = sanitizeForFirestore(flatData) as Record<string, unknown>;
     const sanitizedData = sanitizeForFirestore({
-      ...flatData,
+      ...sanitizedPatch,
       lastUpdated: Timestamp.now(),
     }) as Record<string, unknown>;
 
+    firestoreWriteLogger.warn('DEBUG partialUpdate', {
+      date,
+      skipFlatten: specialistScopedPatch,
+      keyCount: Object.keys(sanitizedData).length,
+      keys: Object.keys(sanitizedData).join(' | '),
+    });
+
     try {
-      const persist = () =>
-        withRetry(
+      const persist = async () => {
+        if (specialistScopedPatch && (await shouldRouteSpecialistPatchViaCallable())) {
+          return withRetry(() => updateSpecialistMedicalHandoffViaCallable(date, sanitizedPatch), {
+            onRetry: (err: unknown, attempt: number) =>
+              logFirestoreWriteRetry('partialUpdate', date, attempt, err),
+          });
+        }
+
+        return withRetry(
           () =>
             updateDoc(docRef, asFirestoreUpdatePayload(sanitizedData) as UpdateData<DocumentData>),
           {
@@ -161,6 +226,7 @@ export const updateRecordPartial = async (
               logFirestoreWriteRetry('partialUpdate', date, attempt, err),
           }
         );
+      };
 
       try {
         await persist();
