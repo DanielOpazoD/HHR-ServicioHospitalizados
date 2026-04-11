@@ -308,8 +308,6 @@ jobs:
     
     permissions:
       contents: read
-      pages: write
-      id-token: write
 
     steps:
       - name: Checkout code
@@ -329,11 +327,8 @@ jobs:
       
       - name: Upload documentation artifact
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
+          name: api-documentation
           path: './docs/api'
-
-      - name: Deploy to GitHub Pages
-        if: github.ref == 'refs/heads/main'
-        id: deployment
-        uses: actions/deploy-pages@v4
+          retention-days: 7
