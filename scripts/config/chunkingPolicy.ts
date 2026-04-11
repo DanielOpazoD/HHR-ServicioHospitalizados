@@ -43,15 +43,6 @@ export const chunkForModule = (moduleId: string): string | undefined => {
     }
 
     if (has('/node_modules/firebase/') || has('/node_modules/@firebase/')) {
-      if (
-        has('/node_modules/firebase/auth') ||
-        has('/node_modules/@firebase/auth') ||
-        has('/node_modules/@firebase/auth-compat') ||
-        has('/node_modules/@firebase/util')
-      ) {
-        return 'vendor-firebase-auth';
-      }
-
       if (has('/node_modules/firebase/firestore') || has('/node_modules/@firebase/firestore')) {
         return 'vendor-firebase-firestore';
       }
@@ -65,6 +56,9 @@ export const chunkForModule = (moduleId: string): string | undefined => {
         return 'vendor-firebase-aux';
       }
 
+      // Keep app + auth together. Splitting them created a vendor↔vendor cycle
+      // in production (`vendor-firebase-core` <-> `vendor-firebase-auth`) that
+      // crashed Netlify before the app could paint.
       return 'vendor-firebase-core';
     }
 

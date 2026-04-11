@@ -54,6 +54,7 @@ describe('Excel Export Configuration', () => {
       expect(chunkingPolicySource).toContain("has('/node_modules/firebase/')");
       expect(chunkingPolicySource).toContain("has('/node_modules/@firebase/')");
       expect(chunkingPolicySource).toContain("return 'vendor-firebase-core';");
+      expect(chunkingPolicySource).not.toContain("return 'vendor-firebase-auth';");
       expect(chunkingPolicySource).toContain("return 'vendor-firebase-aux';");
     });
   });

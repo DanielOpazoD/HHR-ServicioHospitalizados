@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { PatientRow } from '@/features/census/components/PatientRow';
@@ -186,7 +186,7 @@ describe('PatientRow layout and actions', () => {
     expect(screen.queryByDisplayValue('Juan Pérez')).not.toBeInTheDocument();
   });
 
-  it('calls onAction when copy, move, discharge, or transfer is clicked', () => {
+  it('calls onAction when copy, move, discharge, or transfer is clicked', async () => {
     render(
       <table>
         <tbody>
@@ -204,14 +204,14 @@ describe('PatientRow layout and actions', () => {
     const actions = ['Copiar', 'Mover', 'Dar de Alta', 'Trasladar'];
     const expectedActions = ['copy', 'move', 'discharge', 'transfer'];
 
-    actions.forEach((actionText, index) => {
+    for (const [index, actionText] of actions.entries()) {
       fireEvent.click(screen.getByTitle('Acciones'));
-      fireEvent.click(screen.getByText(new RegExp(actionText, 'i')));
+      fireEvent.click(await screen.findByText(new RegExp(actionText, 'i')));
       expect(mockOnAction).toHaveBeenCalledWith(expectedActions[index], 'R1', mockPatient);
-    });
+    }
   });
 
-  it('closes menu when clicking background overlay', () => {
+  it('closes menu when clicking background overlay', async () => {
     render(
       <table>
         <tbody>
@@ -227,12 +227,14 @@ describe('PatientRow layout and actions', () => {
     );
 
     fireEvent.click(screen.getByTitle('Acciones'));
-    expect(screen.getByText(/Copiar/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Copiar/i)).toBeInTheDocument();
 
     const overlay = document.querySelector('.fixed.inset-0.z-40');
     if (overlay) {
       fireEvent.click(overlay);
-      expect(screen.queryByText(/Copiar/i)).not.toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.queryByText(/Copiar/i)).not.toBeInTheDocument();
+      });
     }
   });
 

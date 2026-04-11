@@ -14,18 +14,18 @@ describe('PatientRowOrbitalQuickActions visibility', () => {
     mockMatchMedia(true);
   });
 
-  it('keeps the trigger visible on touch-like devices', () => {
+  it('keeps the trigger visible on touch-like devices', async () => {
     mockMatchMedia(false);
     renderSinglePatientRowOrbitalQuickActions();
 
-    const trigger = screen.getByRole('button', { name: /acciones clínicas rápidas/i });
+    const trigger = await screen.findByRole('button', { name: /acciones clínicas rápidas/i });
     expect(trigger.className).toContain('opacity-100');
   });
 
   it('reveals the trigger while hovering the patient row on desktop pointers', async () => {
     renderSinglePatientRowOrbitalQuickActions();
 
-    const trigger = screen.getByRole('button', { name: /acciones clínicas rápidas/i });
+    const trigger = await screen.findByRole('button', { name: /acciones clínicas rápidas/i });
     expect(trigger.className).toContain('opacity-0');
 
     fireEvent.mouseMove(screen.getByTestId('patient-row'), { clientX: 0 });
@@ -56,7 +56,7 @@ describe('PatientRowOrbitalQuickActions visibility', () => {
       toJSON: () => ({}),
     } as DOMRect);
 
-    const trigger = screen.getByRole('button', { name: /acciones clínicas rápidas/i });
+    const trigger = await screen.findByRole('button', { name: /acciones clínicas rápidas/i });
     expect(trigger.className).toContain('opacity-0');
 
     fireEvent.mouseMove(window, { clientX: 4, clientY: 140 });
@@ -70,7 +70,7 @@ describe('PatientRowOrbitalQuickActions visibility', () => {
     renderSinglePatientRowOrbitalQuickActions();
 
     fireEvent.mouseMove(screen.getByTestId('patient-row'), { clientX: 0 });
-    const trigger = screen.getByRole('button', { name: /acciones clínicas rápidas/i });
+    const trigger = await screen.findByRole('button', { name: /acciones clínicas rápidas/i });
     fireEvent.click(trigger);
 
     const documentsButton = screen.getByRole('button', { name: /documentos clínicos/i });
@@ -110,7 +110,7 @@ describe('PatientRowOrbitalQuickActions visibility', () => {
 
       fireEvent.mouseMove(row, { clientX: 0 });
 
-      const trigger = screen.getByRole('button', { name: /acciones clínicas rápidas/i });
+      const trigger = await screen.findByRole('button', { name: /acciones clínicas rápidas/i });
       const closedWrapper = trigger.closest('.fixed');
       if (!(closedWrapper instanceof HTMLDivElement)) {
         throw new Error('Launcher wrapper not found');
@@ -148,7 +148,7 @@ describe('PatientRowOrbitalQuickActions visibility', () => {
   it('keeps other launchers hidden while one row launcher is open', async () => {
     renderMultiPatientRowOrbitalQuickActions();
 
-    const triggers = screen.getAllByRole('button', { name: /acciones clínicas rápidas/i });
+    const triggers = await screen.findAllByRole('button', { name: /acciones clínicas rápidas/i });
     fireEvent.mouseMove(screen.getByTestId('patient-row'), { clientX: 0 });
     fireEvent.click(triggers[0]);
 

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { CudyrScore } from '@/types/domain/cudyr';
 import { DataFactory } from '@/tests/factories/DataFactory';
 import {

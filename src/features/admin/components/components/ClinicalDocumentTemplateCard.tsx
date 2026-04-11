@@ -5,7 +5,7 @@ import type {
   ClinicalDocumentPatientFieldTemplate,
   ClinicalDocumentSectionTemplate,
   ClinicalDocumentTemplate,
-} from '@/features/clinical-documents/domain/entities';
+} from '@/features/clinical-documents';
 
 interface ClinicalDocumentTemplateCardProps {
   template: ClinicalDocumentTemplate;

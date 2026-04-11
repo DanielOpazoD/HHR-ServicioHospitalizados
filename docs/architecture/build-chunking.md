@@ -32,8 +32,9 @@
 
 ## Vendor strategy
 
-- `vendor-firebase-core`: auth + firestore + módulos base usados en la mayor parte del runtime.
+- `vendor-firebase-core`: `firebase/app`, `firebase/auth` y módulos base acoplados al arranque.
 - `vendor-firebase-aux`: storage/functions, cargados solo cuando se necesitan capacidades auxiliares.
+- `vendor-firebase-firestore`: Firestore queda separado del core, pero no se debe separar `auth` del core mientras ambos sigan importándose mutuamente en el bundle generado.
 - `vendor-pdf` y `vendor-excel-*`: la generación documental y exportaciones deben seguir siendo capacidades lazy y aisladas del shell principal.
 
 ## Validation

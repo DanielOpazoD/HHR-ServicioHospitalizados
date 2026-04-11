@@ -31,15 +31,6 @@ type FirebaseAuthRuntimeModule = Pick<
   | 'setPersistence'
 >;
 
-type FirebaseFirestoreRuntimeModule = Pick<
-  typeof import('firebase/firestore'),
-  | 'connectFirestoreEmulator'
-  | 'initializeFirestore'
-  | 'persistentLocalCache'
-  | 'persistentMultipleTabManager'
-  | 'persistentSingleTabManager'
->;
-
 const startAuthPersistenceConfiguration = (
   auth: Auth,
   authRuntime: FirebaseAuthRuntimeModule

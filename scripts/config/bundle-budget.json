@@ -11,13 +11,7 @@
     {
       "label": "firebase-core",
       "pattern": "^vendor-firebase-core-.*\\.js$",
-      "maxBytes": 120000,
-      "severity": "error"
-    },
-    {
-      "label": "firebase-auth",
-      "pattern": "^vendor-firebase-auth-.*\\.js$",
-      "maxBytes": 230000,
+      "maxBytes": 320000,
       "severity": "error"
     },
     {
@@ -30,11 +24,7 @@
   "chunkPatternBudgets": [
     {
       "pattern": "^vendor-firebase-core-.*\\.js$",
-      "maxBytes": 120000
-    },
-    {
-      "pattern": "^vendor-firebase-auth-.*\\.js$",
-      "maxBytes": 230000
+      "maxBytes": 320000
     },
     {
       "pattern": "^vendor-firebase-firestore-.*\\.js$",

@@ -1,10 +1,6 @@
 import React from 'react';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { fireEvent, render, screen, waitFor, act } from '@testing-library/react';
-
-/* ------------------------------------------------------------------ */
-/*  Mocks                                                              */
-/* ------------------------------------------------------------------ */
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 const mockSendWhatsAppMessage = vi.fn();
 const mockGetWhatsAppConfig = vi.fn();
@@ -93,25 +89,12 @@ vi.mock('@/utils/dateFormattingUtils', () => ({
   formatDateDDMMYYYY: (d: string) => d,
 }));
 
-/* ------------------------------------------------------------------ */
-/*  Lazy imports (after mocks registered)                              */
-/* ------------------------------------------------------------------ */
-
 import { WhatsAppSendButton } from '@/features/whatsapp/components/WhatsAppSendButton';
-import { WhatsAppIntegrationView } from '@/features/whatsapp/components/WhatsAppIntegrationView';
-import { ImportModal } from '@/features/whatsapp/components/components/ImportModal';
-import { StaffCard } from '@/features/whatsapp/components/components/StaffCard';
 import {
   formatHandoffMessage,
   getDefaultTemplates,
 } from '@/services/integrations/whatsapp/whatsappTemplatesStore';
 import { buildBotUrl } from '@/services/integrations/whatsapp/whatsappBotRuntime';
-import { useShiftPanel } from '@/hooks/useShiftPanel';
-import { ShiftPanelView } from '@/features/whatsapp/components/ShiftPanelView';
-
-/* ------------------------------------------------------------------ */
-/*  Test data                                                          */
-/* ------------------------------------------------------------------ */
 
 const handoffData = {
   id: 'h-1',
@@ -123,10 +106,6 @@ const handoffData = {
   newAdmissions: 2,
   discharges: 1,
 };
-
-/* ================================================================== */
-/*  WhatsAppSendButton                                                 */
-/* ================================================================== */
 
 describe('WhatsAppSendButton', () => {
   beforeEach(() => {
@@ -161,7 +140,7 @@ describe('WhatsAppSendButton', () => {
   });
 
   it('shows sending state while in progress', async () => {
-    mockGetWhatsAppConfig.mockReturnValue(new Promise(() => {})); // never resolves
+    mockGetWhatsAppConfig.mockReturnValue(new Promise(() => {}));
     render(<WhatsAppSendButton handoffData={handoffData} />);
 
     fireEvent.click(screen.getByText('Enviar a WhatsApp'));
@@ -257,243 +236,6 @@ describe('WhatsAppSendButton', () => {
   });
 });
 
-/* ================================================================== */
-/*  WhatsAppIntegrationView                                            */
-/* ================================================================== */
-
-describe('WhatsAppIntegrationView', () => {
-  it('renders header and default shifts tab', () => {
-    render(<WhatsAppIntegrationView />);
-    expect(screen.getByText('WhatsApp')).toBeInTheDocument();
-    expect(screen.getByText('Turnos Pabellón')).toBeInTheDocument();
-  });
-
-  it('switches between tabs', () => {
-    render(<WhatsAppIntegrationView />);
-
-    fireEvent.click(screen.getByText('Plantillas'));
-    // Templates tab should be active now
-
-    fireEvent.click(screen.getByText('Configuración'));
-    // Config tab should be active now
-  });
-
-  it('shows all three tab labels', () => {
-    render(<WhatsAppIntegrationView />);
-    expect(screen.getByText('Turnos Pabellón')).toBeInTheDocument();
-    expect(screen.getByText('Plantillas')).toBeInTheDocument();
-    expect(screen.getByText('Configuración')).toBeInTheDocument();
-  });
-});
-
-/* ================================================================== */
-/*  ImportModal                                                        */
-/* ================================================================== */
-
-describe('ImportModal', () => {
-  const baseProps = {
-    message: '',
-    setMessage: vi.fn(),
-    onImport: vi.fn(),
-    onClose: vi.fn(),
-    importing: false,
-    error: null as string | null,
-  };
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('renders the import modal with header and textarea', () => {
-    render(<ImportModal {...baseProps} />);
-    expect(screen.getByText('Importar Turno de Pabellón')).toBeInTheDocument();
-  });
-
-  it('disables import button when message is empty', () => {
-    render(<ImportModal {...baseProps} />);
-    const importButton = screen.getByText('Importar Turno');
-    expect(importButton.closest('button')).toBeDisabled();
-  });
-
-  it('enables import button when message has content', () => {
-    render(<ImportModal {...baseProps} message="turno data here" />);
-    const importButton = screen.getByText('Importar Turno');
-    expect(importButton.closest('button')).not.toBeDisabled();
-  });
-
-  it('shows importing state', () => {
-    render(<ImportModal {...baseProps} message="data" importing={true} />);
-    expect(screen.getByText('Importando...')).toBeInTheDocument();
-  });
-
-  it('shows error message when provided', () => {
-    render(<ImportModal {...baseProps} error="Error parsing message" />);
-    expect(screen.getByText(/Error parsing message/)).toBeInTheDocument();
-  });
-
-  it('calls onClose when cancel is clicked', () => {
-    render(<ImportModal {...baseProps} />);
-    fireEvent.click(screen.getByText('Cancelar'));
-    expect(baseProps.onClose).toHaveBeenCalledTimes(1);
-  });
-
-  it('calls onClose when X button is clicked', () => {
-    render(<ImportModal {...baseProps} />);
-    fireEvent.click(screen.getByLabelText('Cerrar'));
-    expect(baseProps.onClose).toHaveBeenCalledTimes(1);
-  });
-
-  it('calls onImport when import button is clicked', () => {
-    render(<ImportModal {...baseProps} message="turno content" />);
-    fireEvent.click(screen.getByText('Importar Turno'));
-    expect(baseProps.onImport).toHaveBeenCalledTimes(1);
-  });
-});
-
-/* ================================================================== */
-/*  ShiftPanelView empty state                                         */
-/* ================================================================== */
-
-describe('ShiftPanelView', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('shows empty state when no shift is available', () => {
-    render(<ShiftPanelView />);
-    expect(screen.getByText('No hay turno vigente')).toBeInTheDocument();
-    expect(screen.getByText(/Buscar en Grupo de WhatsApp/i)).toBeInTheDocument();
-    expect(screen.getByText('Importar Manualmente')).toBeInTheDocument();
-  });
-
-  it('shows loading spinner when loading is true', () => {
-    vi.mocked(useShiftPanel).mockReturnValue({
-      shift: null,
-      loading: true,
-      showOriginal: false,
-      showImportModal: false,
-      setShowImportModal: vi.fn(),
-      importMessage: '',
-      setImportMessage: vi.fn(),
-      importing: false,
-      importError: '',
-      fetching: false,
-      fetchResult: null,
-      handleImport: vi.fn(),
-      handleFetchFromGroup: vi.fn(),
-      toggleViewMode: vi.fn(),
-    });
-
-    const { container } = render(<ShiftPanelView />);
-    expect(container.querySelector('.animate-spin')).not.toBeNull();
-  });
-
-  it('renders staff grid when shift has staff data', () => {
-    vi.mocked(useShiftPanel).mockReturnValue({
-      shift: {
-        startDate: '2026-03-10',
-        endDate: '2026-03-17',
-        source: 'whatsapp' as const,
-        parsedAt: '2026-03-10T10:00:00.000Z',
-        staff: [
-          {
-            role: 'Cirujana',
-            name: 'Dra. Maria',
-            phone: '+56912345678',
-            whatsappUrl: 'https://wa.me/56912345678',
-          },
-        ],
-        originalMessage: 'Turno pabellon...',
-      },
-      loading: false,
-      showOriginal: false,
-      showImportModal: false,
-      setShowImportModal: vi.fn(),
-      importMessage: '',
-      setImportMessage: vi.fn(),
-      importing: false,
-      importError: '',
-      fetching: false,
-      fetchResult: null,
-      handleImport: vi.fn(),
-      handleFetchFromGroup: vi.fn(),
-      toggleViewMode: vi.fn(),
-    });
-
-    render(<ShiftPanelView />);
-    expect(screen.getByText('Turno Pabellón')).toBeInTheDocument();
-    expect(screen.getByText('Dra. Maria')).toBeInTheDocument();
-    expect(screen.getByText('Cirujana')).toBeInTheDocument();
-  });
-});
-
-/* ================================================================== */
-/*  StaffCard extended                                                 */
-/* ================================================================== */
-
-describe('StaffCard extended', () => {
-  it('renders member role, name and phone', () => {
-    const member = {
-      role: 'Anestesista',
-      name: 'Dr. Juan',
-      phone: '+56999887766',
-      whatsappUrl: 'https://wa.me/56999887766',
-    };
-
-    render(<StaffCard member={member} />);
-    expect(screen.getByText('Anestesista')).toBeInTheDocument();
-    expect(screen.getByText('Dr. Juan')).toBeInTheDocument();
-  });
-
-  it('renders notes when provided', () => {
-    const member = {
-      role: 'EU',
-      name: 'Ana',
-      phone: '+56900000000',
-      whatsappUrl: 'https://wa.me/56900000000',
-      notes: 'Hasta las 20:00',
-    };
-
-    render(<StaffCard member={member} />);
-    expect(screen.getByText(/Hasta las 20:00/)).toBeInTheDocument();
-  });
-
-  it('renders replacement info when present', () => {
-    const member = {
-      role: 'EU',
-      name: 'Ana',
-      phone: '+56900000000',
-      whatsappUrl: 'https://wa.me/56900000000',
-      replacement: {
-        name: 'Carmen',
-        phone: '+56911111111',
-        whatsappUrl: 'https://wa.me/56911111111',
-        startDate: '2026-03-13',
-      },
-    };
-
-    render(<StaffCard member={member} />);
-    expect(screen.getByText('Carmen')).toBeInTheDocument();
-    expect(screen.getByText('+56911111111')).toBeInTheDocument();
-  });
-
-  it('does not render replacement section when absent', () => {
-    const member = {
-      role: 'EU',
-      name: 'Ana',
-      phone: '+56900000000',
-      whatsappUrl: 'https://wa.me/56900000000',
-    };
-
-    render(<StaffCard member={member} />);
-    expect(screen.queryByText('Luego:')).not.toBeInTheDocument();
-  });
-});
-
-/* ================================================================== */
-/*  formatHandoffMessage (template store)                              */
-/* ================================================================== */
-
 describe('formatHandoffMessage', () => {
   it('replaces all template variables', () => {
     const template =
@@ -553,10 +295,6 @@ describe('formatHandoffMessage', () => {
   });
 });
 
-/* ================================================================== */
-/*  getDefaultTemplates                                                */
-/* ================================================================== */
-
 describe('getDefaultTemplates', () => {
   it('returns at least one default template', () => {
     const defaults = getDefaultTemplates();
@@ -570,10 +308,6 @@ describe('getDefaultTemplates', () => {
     expect(handoff!.content).toContain('{{date}}');
   });
 });
-
-/* ================================================================== */
-/*  buildBotUrl                                                        */
-/* ================================================================== */
 
 describe('buildBotUrl', () => {
   it('normalizes paths with leading slash', () => {

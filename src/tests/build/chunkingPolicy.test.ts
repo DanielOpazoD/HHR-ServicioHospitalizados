@@ -36,6 +36,9 @@ describe('chunkingPolicy', () => {
   });
 
   it('splits heavyweight vendor capabilities by runtime concern', () => {
+    expect(chunkForModule('/repo/node_modules/firebase/auth/dist/index.esm.js')).toBe(
+      'vendor-firebase-core'
+    );
     expect(chunkForModule('/repo/node_modules/firebase/firestore/dist/index.mjs')).toBe(
       'vendor-firebase-firestore'
     );

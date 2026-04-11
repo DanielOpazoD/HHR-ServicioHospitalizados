@@ -16,8 +16,8 @@ import type {
   ClinicalDocumentPatientFieldTemplate,
   ClinicalDocumentSectionTemplate,
   ClinicalDocumentTemplate,
-} from '@/features/clinical-documents/domain/entities';
-import { normalizeTemplateForSave } from '@/features/clinical-documents/controllers/clinicalDocumentTemplateEditorController';
+} from '@/features/clinical-documents';
+import { normalizeTemplateForSave } from '@/features/clinical-documents';
 import { ClinicalDocumentTemplateRepository } from '@/services/repositories/ClinicalDocumentTemplateRepository';
 
 export const ClinicalDocumentTemplatesManager: React.FC = () => {

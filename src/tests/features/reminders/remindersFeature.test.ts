@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { Reminder, ReminderVisibilityContext } from '@/types/reminders';
 import type { ReminderDraftInput } from '@/domain/reminders/reminderValidation';
 import {
@@ -22,7 +22,6 @@ import {
 } from '@/shared/reminders/reminderPresentation';
 import {
   buildReminderReadReceiptId,
-  normalizeReminderRecord,
   REMINDER_IMAGE_MAX_BYTES,
 } from '@/services/reminders/reminderShared';
 import {
