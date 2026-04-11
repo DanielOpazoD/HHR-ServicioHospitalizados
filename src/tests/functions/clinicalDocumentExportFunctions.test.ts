@@ -39,15 +39,34 @@ vi.mock('googleapis', () => ({
 const require = createRequire(import.meta.url);
 const {
   createClinicalDocumentExportFunctions,
+  resolveConfiguredProjectId,
 } = require('../../../functions/lib/clinicalDocumentExportFunctions.js');
 
 describe('functions clinicalDocumentExportFunctions', () => {
   let nextFolderId = 1;
+  const originalGcloudProject = process.env.GCLOUD_PROJECT;
+  const originalFirebaseConfig = process.env.FIREBASE_CONFIG;
 
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.CLINICAL_DRIVE_ROOT_FOLDER_ID = 'root-folder-id';
     nextFolderId = 1;
+    process.env.GCLOUD_PROJECT = originalGcloudProject;
+    process.env.FIREBASE_CONFIG = originalFirebaseConfig;
+  });
+
+  it('prefers GCLOUD_PROJECT without parsing FIREBASE_CONFIG', () => {
+    process.env.GCLOUD_PROJECT = 'project-from-env';
+    delete process.env.FIREBASE_CONFIG;
+
+    expect(resolveConfiguredProjectId()).toBe('project-from-env');
+  });
+
+  it('falls back safely when FIREBASE_CONFIG is malformed', () => {
+    delete process.env.GCLOUD_PROJECT;
+    process.env.FIREBASE_CONFIG = '{invalid-json';
+
+    expect(resolveConfiguredProjectId()).toBe('hhr-pruebas');
   });
 
   it('rejects unauthenticated calls', async () => {

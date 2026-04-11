@@ -6,8 +6,6 @@ const { HOSPITAL_ID } = require('./runtime/runtimeConfig');
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive';
 const FOLDER_MIME_TYPE = 'application/vnd.google-apps.folder';
 const EXPORT_ALLOWED_ROLES = new Set(['admin', 'doctor_urgency']);
-const GCLOUD_PROJECT = process.env.GCLOUD_PROJECT || process.env.FIREBASE_CONFIG ? JSON.parse(process.env.FIREBASE_CONFIG).projectId : 'hhr-pruebas';
-const CLINICAL_DRIVE_SERVICE_ACCOUNT = `documentos-hhr@${GCLOUD_PROJECT}.iam.gserviceaccount.com`;
 const SPANISH_MONTH_NAMES = [
   'Enero',
   'Febrero',
@@ -22,6 +20,26 @@ const SPANISH_MONTH_NAMES = [
   'Noviembre',
   'Diciembre',
 ];
+
+const resolveConfiguredProjectId = () => {
+  const explicitProjectId = String(process.env.GCLOUD_PROJECT || '').trim();
+  if (explicitProjectId) {
+    return explicitProjectId;
+  }
+
+  const firebaseConfig = process.env.FIREBASE_CONFIG;
+  if (!firebaseConfig) {
+    return 'hhr-pruebas';
+  }
+
+  try {
+    const parsedConfig = JSON.parse(firebaseConfig);
+    const projectId = String(parsedConfig?.projectId || '').trim();
+    return projectId || 'hhr-pruebas';
+  } catch (_error) {
+    return 'hhr-pruebas';
+  }
+};
 
 const DOCUMENT_TYPE_FOLDER_MAPPING = {
   epicrisis: 'Epicrisis',
@@ -292,4 +310,5 @@ const createClinicalDocumentExportFunctions = ({
 
 module.exports = {
   createClinicalDocumentExportFunctions,
+  resolveConfiguredProjectId,
 };
