@@ -47,12 +47,15 @@ Incluye:
 - `npm run check:critical-coverage`
 - `npm run build`
 - `npm run check:bundle-budget`
+- `npm run check:chunk-graph`
+- `npm run test:e2e:preview:census-bootstrap:built`
 
 Salida esperada:
 
 - cobertura crítica instrumentada sin regresión;
 - build productivo válido;
-- budgets de bundle dentro de los límites vigentes.
+- budgets de bundle dentro de los límites vigentes;
+- preview local del bundle montando `root` sin blank page silenciosa.
 
 ### `ci:release-gate`
 
@@ -61,6 +64,7 @@ Usar antes de release o para validar cambios con impacto en Firestore, emuladore
 Incluye:
 
 - `npm run ci:merge-gate`
+- `npm run check:report-freshness`
 - `npm run test:firestore:release:ci`
 
 ### `test:release-confidence`
@@ -190,6 +194,30 @@ Salida esperada:
    - mover librerías pesadas fuera del camino inicial;
    - dividir use cases/UI por flujo
 5. no subir el threshold como primera respuesta
+
+### Falla `check:chunk-graph`
+
+1. correr `npm run build`
+2. correr `npm run check:chunk-graph`
+3. si aparece un ciclo vendor↔vendor o vendor→feature:
+   - revisar `scripts/config/chunkingPolicy.ts`
+   - revisar imports estáticos reintroducidos en el shell
+   - confirmar que `firebase/app` y `firebase/auth` sigan juntos en `vendor-firebase-core`
+4. no aceptar un split “más prolijo” si vuelve a abrir un ciclo productivo
+
+### Falla `test:e2e:preview:census-bootstrap:built`
+
+1. correr `npm run build`
+2. correr `npm run test:e2e:preview:census-bootstrap:built`
+3. revisar artifacts de Playwright:
+   - `playwright-report`
+   - `test-results`
+4. distinguir si la caída viene de:
+   - `pageerror` fatal,
+   - `Cannot access '<symbol>' before initialization`,
+   - `ChunkLoadError` o `Failed to fetch dynamically imported module`,
+   - un root que nunca monta
+5. si el fallo menciona chunks o bootstrap, revisar primero `check:chunk-graph`, budgets de startup y `clientBootstrapRecovery`
 
 ### Falla `check:critical-coverage`
 

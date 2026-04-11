@@ -1,5 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const previewCommand =
+  process.env.PLAYWRIGHT_SKIP_PREVIEW_BUILD === '1'
+    ? 'npm run preview -- --host 127.0.0.1 --port 4173'
+    : 'npm run build && npm run preview -- --host 127.0.0.1 --port 4173';
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,
@@ -19,7 +24,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run build && npm run preview -- --host 127.0.0.1 --port 4173',
+    command: previewCommand,
     url: 'http://127.0.0.1:4173',
     reuseExistingServer: false,
     timeout: 180000,

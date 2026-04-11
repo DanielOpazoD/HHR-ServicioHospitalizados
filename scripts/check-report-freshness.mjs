@@ -16,6 +16,16 @@ const trackedReports = [
     field: 'gitSha',
     refreshScript: 'report:system-confidence',
   },
+  {
+    file: 'reports/operational-health.json',
+    field: 'gitSha',
+    refreshScript: 'report:operational-health',
+  },
+  {
+    file: 'reports/release-readiness-scorecard.json',
+    field: 'gitSha',
+    refreshScript: 'report:release-readiness-scorecard',
+  },
 ];
 
 const fail = issues => {

@@ -40,5 +40,8 @@
 ## Validation
 
 - Run `npm run build` after any `manualChunks` change.
+- Run `npm run check:bundle-budget` and watch startup chunk warnings, not only hard failures.
+- Run `npm run check:chunk-graph` to guarantee no vendor↔vendor or vendor→feature cycles.
+- Run `npm run test:e2e:preview:census-bootstrap:built` after the build when the change touches startup, Firebase or lazy-loading seams.
 - Run the focused test `vitest run src/tests/build/chunkingPolicy.test.ts`.
 - Inspect the built assets and confirm there is no two-way import between runtime chunks, especially any `vendor-*` chunk importing back into a feature chunk.

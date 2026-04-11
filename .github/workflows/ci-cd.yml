@@ -254,6 +254,25 @@ jobs:
       - name: Validate chunk import graph (no vendor↔feature cycles)
         run: npm run check:chunk-graph
 
+      - name: Install Playwright browsers for preview bootstrap smoke
+        run: npx playwright install --with-deps chromium
+
+      - name: Validate production preview bootstrap
+        run: npm run test:e2e:preview:census-bootstrap:built
+        env:
+          CI: true
+          PLAYWRIGHT_SKIP_PREVIEW_BUILD: '1'
+
+      - name: Upload preview bootstrap artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-bootstrap-artifacts
+          path: |
+            playwright-report/**
+            test-results/**
+          retention-days: 14
+
   ci-strict-summary:
     name: ci-summary
     runs-on: ubuntu-latest

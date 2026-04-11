@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -116,6 +117,17 @@ const readJsonConfig = relativePath => {
   const filePath = path.join(workspaceRoot, relativePath);
   if (!fs.existsSync(filePath)) return null;
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+};
+
+const getGitSha = () => {
+  try {
+    return execSync('git rev-parse --short HEAD', {
+      cwd: workspaceRoot,
+      encoding: 'utf8',
+    }).trim();
+  } catch {
+    return 'unknown';
+  }
 };
 
 const NEAR_LIMIT_RATIO = 0.85;
@@ -247,6 +259,7 @@ const buildAssets = largestBuildAssets.map(asset => ({
 
 const summary = {
   generatedAt: new Date().toISOString(),
+  gitSha: getGitSha(),
   schema: {
     current: currentVersionMatch ? Number(currentVersionMatch[1]) : null,
     legacy: legacyVersionMatch ? Number(legacyVersionMatch[1]) : null,
@@ -339,6 +352,7 @@ fs.writeFileSync(
 const markdown = `# Operational Health Snapshot
 
 - Generated: ${summary.generatedAt}
+- Git SHA: ${summary.gitSha}
 - Schema current: v${summary.schema.current ?? 'unknown'}
 - Schema legacy: v${summary.schema.legacy ?? 'unknown'}
 

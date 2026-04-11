@@ -2,6 +2,11 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from '@/App';
 import { bootstrapAppRuntime } from '@/app-shell/bootstrap/bootstrapAppRuntime';
+import {
+  installBootstrapRuntimeErrorListeners,
+  recordBootstrapRuntimeError,
+  recordBootstrapRuntimeResult,
+} from '@/app-shell/bootstrap/bootstrapRuntimeTelemetry';
 import { getFirebaseStartupFailureMessage } from '@/services/auth/firebaseStartupUiPolicy';
 import { mountFirebaseConfigWarning } from '@/services/firebase-runtime/firebaseStartupDiagnostics';
 import { createScopedLogger } from '@/services/utils/loggerScope';
@@ -13,6 +18,8 @@ if (!rootElement) {
 
 const root = ReactDOM.createRoot(rootElement);
 const bootLogger = createScopedLogger('Bootstrap');
+const detachBootstrapRuntimeErrorListeners =
+  typeof window !== 'undefined' ? installBootstrapRuntimeErrorListeners() : () => {};
 
 const renderApp = () => {
   bootLogger.info('Rendering application');
@@ -25,6 +32,8 @@ const renderApp = () => {
 
 bootstrapAppRuntime()
   .then(result => {
+    recordBootstrapRuntimeResult(result);
+
     if (result.status === 'reload') {
       return;
     }
@@ -37,6 +46,12 @@ bootstrapAppRuntime()
     renderApp();
   })
   .catch(error => {
+    recordBootstrapRuntimeError(error);
     bootLogger.error('Firebase initialization failed', error);
     mountFirebaseConfigWarning(getFirebaseStartupFailureMessage());
+  })
+  .finally(() => {
+    // Keep the listeners active only through bootstrap to avoid mixing startup
+    // incidents with later domain/runtime errors already captured elsewhere.
+    detachBootstrapRuntimeErrorListeners();
   });

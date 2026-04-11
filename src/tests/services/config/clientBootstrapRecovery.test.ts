@@ -32,6 +32,8 @@ const createRegistration = (scriptURL: string): ServiceWorkerRegistrationStub =>
 });
 
 describe('prepareClientBootstrap', () => {
+  let mockCachesDelete: ReturnType<typeof vi.fn>;
+
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
@@ -47,11 +49,13 @@ describe('prepareClientBootstrap', () => {
       },
     });
 
+    mockCachesDelete = vi.fn().mockResolvedValue(true);
+
     Object.defineProperty(globalThis, 'caches', {
       configurable: true,
       value: {
         keys: vi.fn().mockResolvedValue(['static-v1']),
-        delete: vi.fn().mockResolvedValue(true),
+        delete: mockCachesDelete,
       },
     });
 
@@ -101,6 +105,7 @@ describe('prepareClientBootstrap', () => {
 
     expect(result).toEqual({ status: 'reload', reason: 'legacy-sw' });
     expect(legacyRegistration.unregister).toHaveBeenCalledTimes(2);
+    expect(mockCachesDelete).toHaveBeenCalledWith('static-v1');
     expect(localStorage.getItem(firebaseConfigCacheKey)).toBeNull();
     expect(sessionStorage.getItem(bootstrapRecoveryKey)).toBe('legacy-sw');
     expect(mockReload).toHaveBeenCalledTimes(1);
@@ -116,6 +121,7 @@ describe('prepareClientBootstrap', () => {
 
     expect(result).toEqual({ status: 'reload', reason: 'version-change' });
     expect(mockSetLocalStorageItem).toHaveBeenCalledWith('hhr_app_version', 'deploy-002');
+    expect(mockCachesDelete).toHaveBeenCalledWith('static-v1');
     expect(localStorage.getItem(firebaseConfigCacheKey)).toBeNull();
     expect(sessionStorage.getItem(bootstrapRecoveryKey)).toBe('version-change');
     expect(mockReload).toHaveBeenCalledTimes(1);

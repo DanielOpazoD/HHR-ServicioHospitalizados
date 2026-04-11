@@ -9,6 +9,7 @@ const allowedSkipFiles = new Set(['src/tests/security/firestore-rules.test.ts'])
 const testFilePattern = /\.(test|spec)\.(ts|tsx|js|jsx)$/;
 const skipPattern = /\b(?:it|test|describe)\.skip\s*\(/g;
 const onlyPattern = /\b(?:it|test|describe)\.only\s*\(/g;
+const MEGATEST_LINE_LIMIT = 500;
 
 const violations = [];
 
@@ -29,6 +30,16 @@ const walk = dir => {
 
     const relative = toPosixRelative(fullPath);
     const content = fs.readFileSync(fullPath, 'utf8');
+    const lineCount = content.length === 0 ? 0 : content.split('\n').length;
+
+    if (lineCount > MEGATEST_LINE_LIMIT) {
+      violations.push({
+        relative,
+        line: 1,
+        rule: 'megatest',
+        source: `${lineCount} lines (limit ${MEGATEST_LINE_LIMIT})`,
+      });
+    }
 
     const lineIndexes = content.split('\n');
     lineIndexes.forEach((line, index) => {
@@ -67,7 +78,7 @@ if (!fs.existsSync(testsRoot)) {
 walk(testsRoot);
 
 if (violations.length > 0) {
-  console.error('[test-governance] Found forbidden skip/only markers:');
+  console.error('[test-governance] Found forbidden test governance violations:');
   for (const violation of violations) {
     console.error(
       `- ${violation.relative}:${violation.line} [${violation.rule}] ${violation.source}`
