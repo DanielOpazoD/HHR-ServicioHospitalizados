@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mockIsAuthBootstrapPending = vi.fn();
 const mockGetAuthBootstrapPendingAgeMs = vi.fn();
 const mockHasRecentManualLogout = vi.fn();
+const mockGetAuthClaimSyncSnapshot = vi.fn();
 
 vi.mock('@/services/auth/authBootstrapState', () => ({
   isAuthBootstrapPending: () => mockIsAuthBootstrapPending(),
@@ -13,6 +14,10 @@ vi.mock('@/services/auth/authLogoutState', () => ({
   hasRecentManualLogout: () => mockHasRecentManualLogout(),
 }));
 
+vi.mock('@/services/auth/authClaimSyncService', () => ({
+  getAuthClaimSyncSnapshot: () => mockGetAuthClaimSyncSnapshot(),
+}));
+
 import { buildAuthRuntimeSnapshot } from '@/services/auth/authRuntimeSnapshot';
 
 describe('authRuntimeSnapshot', () => {
@@ -21,6 +26,11 @@ describe('authRuntimeSnapshot', () => {
     mockIsAuthBootstrapPending.mockReturnValue(false);
     mockGetAuthBootstrapPendingAgeMs.mockReturnValue(0);
     mockHasRecentManualLogout.mockReturnValue(false);
+    mockGetAuthClaimSyncSnapshot.mockReturnValue({
+      status: 'idle',
+      lastAttemptAt: null,
+      lastResolvedRole: null,
+    });
   });
 
   it('classifies pending bootstrap as recoverable with redirect budget profile', () => {
@@ -119,5 +129,28 @@ describe('authRuntimeSnapshot', () => {
     expect(snapshot.issues).toContain(
       'Firebase no esta conectado mientras el cliente permanece sin red.'
     );
+  });
+
+  it('surfaces failed claim sync as a degraded authorized runtime', () => {
+    mockGetAuthClaimSyncSnapshot.mockReturnValue({
+      status: 'failed',
+      lastAttemptAt: Date.now(),
+      lastResolvedRole: 'admin',
+      lastErrorMessage: 'claim sync failed',
+    });
+
+    const snapshot = buildAuthRuntimeSnapshot({
+      sessionState: {
+        status: 'authorized',
+        user: { uid: 'user-1', role: 'admin' } as never,
+      },
+      authLoading: false,
+      isFirebaseConnected: true,
+      isOnline: true,
+    });
+
+    expect(snapshot.runtimeState).toBe('degraded');
+    expect(snapshot.claimSyncStatus).toBe('failed');
+    expect(snapshot.issues).toContain('El claim de rol no se pudo sincronizar: claim sync failed');
   });
 });

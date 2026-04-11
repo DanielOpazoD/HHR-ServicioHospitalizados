@@ -11,6 +11,7 @@ export interface SyncQueueTelemetry {
   orphanedTasks?: number;
   oldestPendingAgeMs: number;
   batchSize: number;
+  pendingBudgetState?: SyncQueueBudgetState;
   oldestPendingBudgetState: SyncQueueBudgetState;
   retryingBudgetState: SyncQueueBudgetState;
   runtimeState: SyncQueueRuntimeState;

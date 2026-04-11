@@ -34,6 +34,23 @@ describe('syncQueueTelemetryController', () => {
     expect(telemetry.runtimeState).toBe('degraded');
   });
 
+  it('builds blocked telemetry when pending tasks exceed the critical queue threshold', () => {
+    const telemetry = buildSyncQueueTelemetryFromRows(
+      Array.from({ length: 192 }, (_, index) =>
+        baseTask({
+          opId: `task-${index + 1}`,
+          timestamp: Date.parse('2026-03-22T10:00:00.000Z') + index,
+        })
+      ),
+      Date.parse('2026-03-22T10:01:00.000Z'),
+      25
+    );
+
+    expect(telemetry.pending).toBe(192);
+    expect(telemetry.pendingBudgetState).toBe('critical');
+    expect(telemetry.runtimeState).toBe('blocked');
+  });
+
   it('builds blocked telemetry when oldest pending age exceeds critical threshold', () => {
     const telemetry = buildSyncQueueTelemetryFromRows(
       [baseTask({ timestamp: Date.parse('2026-03-22T09:40:00.000Z') })],
@@ -53,6 +70,7 @@ describe('syncQueueTelemetryController', () => {
       retrying: 1,
       oldestPendingAgeMs: 1000,
       batchSize: 25,
+      pendingBudgetState: 'ok',
       oldestPendingBudgetState: 'ok',
       retryingBudgetState: 'warning',
       runtimeState: 'degraded',

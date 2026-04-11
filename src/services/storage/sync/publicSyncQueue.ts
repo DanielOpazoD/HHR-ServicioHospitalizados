@@ -6,6 +6,7 @@ import { createFirestoreSyncTransport } from '@/services/storage/sync/firestoreS
 import {
   createSyncQueueEngine,
   type SyncQueueDomainMetrics,
+  type SyncQueueEnqueueResult,
   type SyncQueueOperationSnapshot,
   type SyncQueueTelemetry,
 } from '@/services/storage/sync/syncQueueEngine';
@@ -17,6 +18,7 @@ import {
   MAX_RETRIES,
   MAX_RETRY_DELAY_MS,
   SYNC_QUEUE_BATCH_SIZE,
+  SYNC_QUEUE_MAX_PENDING_TASKS,
 } from '@/services/storage/sync/syncQueueOperationalBudgets';
 import { recordSyncQueueBudgetTelemetry } from '@/services/storage/sync/syncQueueTelemetryController';
 
@@ -57,6 +59,7 @@ const buildUnavailableSyncQueueTelemetry = (error: unknown): SyncQueueTelemetry 
   orphanedTasks: 0,
   oldestPendingAgeMs: 0,
   batchSize: SYNC_QUEUE_BATCH_SIZE,
+  pendingBudgetState: 'ok',
   oldestPendingBudgetState: 'ok',
   retryingBudgetState: 'ok',
   runtimeState: 'blocked',
@@ -70,6 +73,7 @@ const syncQueueEngine = createSyncQueueEngine({
   runtime: syncRuntime,
   transport: createFirestoreSyncTransport(),
   batchSize: SYNC_QUEUE_BATCH_SIZE,
+  maxPendingTasks: SYNC_QUEUE_MAX_PENDING_TASKS,
   maxRetries: MAX_RETRIES,
   baseRetryDelayMs: BASE_RETRY_DELAY_MS,
   maxRetryDelayMs: MAX_RETRY_DELAY_MS,
@@ -190,10 +194,30 @@ export const queueSyncTask = async (
   type: SyncTask['type'],
   payload: unknown,
   meta?: Pick<SyncTask, 'contexts' | 'origin' | 'recoveryPolicy'>
-): Promise<void> => {
+): Promise<SyncQueueEnqueueResult> => {
   try {
     await ensureDbReady();
-    await syncQueueEngine.queueTask(type, payload, meta);
+    const result = await syncQueueEngine.queueTask(type, payload, meta);
+    if (!result.accepted && result.mode === 'rejected_backpressure') {
+      recordOperationalTelemetry({
+        category: 'sync',
+        operation: 'sync_queue_backpressure_rejected',
+        status: 'failed',
+        runtimeState: 'blocked',
+        issues: [
+          'La cola de sincronizacion alcanzo su limite operativo y no acepto una nueva tarea.',
+        ],
+        context: {
+          type,
+          contexts: meta?.contexts,
+          origin: meta?.origin,
+          recoveryPolicy: meta?.recoveryPolicy,
+          pendingTasks: result.pendingTasks,
+          maxPendingTasks: result.maxPendingTasks,
+        },
+      });
+    }
+    return result;
   } catch (error) {
     syncObservability.logger.error('Failed to queue task', error);
     recordOperationalTelemetry({
@@ -209,6 +233,12 @@ export const queueSyncTask = async (
         recoveryPolicy: meta?.recoveryPolicy,
       },
     });
+    return {
+      accepted: false,
+      mode: 'enqueue_failed',
+      pendingTasks: 0,
+      maxPendingTasks: SYNC_QUEUE_MAX_PENDING_TASKS,
+    };
   }
 };
 
@@ -276,4 +306,9 @@ export const ensureSyncQueueOnlineListener = (): void => {
 
 ensureSyncQueueOnlineListener();
 
-export type { SyncQueueDomainMetrics, SyncQueueOperationSnapshot, SyncQueueTelemetry };
+export type {
+  SyncQueueDomainMetrics,
+  SyncQueueEnqueueResult,
+  SyncQueueOperationSnapshot,
+  SyncQueueTelemetry,
+};

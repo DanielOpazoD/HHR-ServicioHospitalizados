@@ -37,6 +37,7 @@ vi.mock('@/services/auth/authPolicy', () => ({
 
 vi.mock('@/services/auth/authClaimSyncService', () => ({
   ensureUserRoleClaim: vi.fn().mockResolvedValue(undefined),
+  resetAuthClaimSyncSnapshot: vi.fn(),
 }));
 
 vi.mock('@/services/auth/authAccessResolution', () => ({

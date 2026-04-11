@@ -21,6 +21,7 @@ export {
 
 export type {
   SyncQueueDomainMetrics,
+  SyncQueueEnqueueResult,
   SyncQueueOperationSnapshot,
   SyncQueueTelemetry,
 } from '@/services/storage/sync/publicSyncQueue';

@@ -9,6 +9,10 @@ import {
   type AuthBootstrapBudgetProfile,
 } from '@/services/auth/authBootstrapBudgets';
 import type { OperationalRuntimeState } from '@/services/observability/operationalRuntimeState';
+import {
+  getAuthClaimSyncSnapshot,
+  type AuthClaimSyncStatus,
+} from '@/services/auth/authClaimSyncService';
 
 export type AuthRuntimeState = 'ok' | OperationalRuntimeState;
 
@@ -23,6 +27,8 @@ export interface AuthRuntimeSnapshot {
   timeoutMs: number;
   runtimeState: AuthRuntimeState;
   issues: string[];
+  claimSyncStatus?: AuthClaimSyncStatus;
+  claimSyncIssue?: string;
 }
 
 export interface BuildAuthRuntimeSnapshotInput {
@@ -42,6 +48,7 @@ export const buildAuthRuntimeSnapshot = (
     isOnline: input.isOnline,
     hasPendingRedirect: bootstrapPending,
   });
+  const claimSync = getAuthClaimSyncSnapshot();
 
   let runtimeState: AuthRuntimeState = 'ok';
   if (input.sessionState.status === 'unauthorized') {
@@ -56,6 +63,8 @@ export const buildAuthRuntimeSnapshot = (
     !input.isOnline
   ) {
     runtimeState = 'degraded';
+  } else if (input.sessionState.status === 'authorized' && claimSync.status === 'failed') {
+    runtimeState = 'degraded';
   }
 
   const issues = [
@@ -67,6 +76,13 @@ export const buildAuthRuntimeSnapshot = (
       : []),
     ...(input.sessionState.status === 'auth_error'
       ? [input.sessionState.error.message || 'La autenticacion encontro un error operativo.']
+      : []),
+    ...(input.sessionState.status === 'authorized' && claimSync.status === 'failed'
+      ? [
+          claimSync.lastErrorMessage
+            ? `El claim de rol no se pudo sincronizar: ${claimSync.lastErrorMessage}`
+            : 'El claim de rol no se pudo sincronizar y la sesión quedó degradada.',
+        ]
       : []),
     ...(!input.isOnline && !input.isFirebaseConnected
       ? ['Firebase no esta conectado mientras el cliente permanece sin red.']
@@ -84,5 +100,7 @@ export const buildAuthRuntimeSnapshot = (
     timeoutMs: budget.timeoutMs,
     runtimeState,
     issues,
+    claimSyncStatus: claimSync.status,
+    claimSyncIssue: claimSync.lastErrorMessage,
   };
 };

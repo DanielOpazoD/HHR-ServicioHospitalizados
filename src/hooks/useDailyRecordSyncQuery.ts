@@ -235,22 +235,47 @@ export const useDailyRecordSyncQuery = (
   const refresh = useCallback(() => {
     const requestId = ++refreshRequestIdRef.current;
 
-    void runRemoteSync(currentDateString).then(outcome => {
-      if (!isMountedRef.current || requestId !== refreshRequestIdRef.current) {
-        return;
-      }
+    void runRemoteSync(currentDateString)
+      .then(outcome => {
+        if (!isMountedRef.current || requestId !== refreshRequestIdRef.current) {
+          return;
+        }
 
-      dailyRecordObservability.recordOutcome('refresh_daily_record', outcome, {
-        date: currentDateString,
+        dailyRecordObservability.recordOutcome('refresh_daily_record', outcome, {
+          date: currentDateString,
+        });
+        const notice = presentDailyRecordRefreshOutcome(outcome);
+        if (notice.channel === 'warning') {
+          warning(notice.title || 'Sincronización', notice.message);
+        } else if (notice.channel === 'error') {
+          notifyError(notice.title || 'Sincronización', notice.message);
+        }
+        void refetch();
+      })
+      .catch(error => {
+        if (!isMountedRef.current || requestId !== refreshRequestIdRef.current) {
+          return;
+        }
+
+        dailyRecordObservability.recordError(
+          'refresh_daily_record',
+          error,
+          {
+            code: 'daily_record_refresh_failed',
+            message: 'No fue posible completar la sincronización remota del registro del día.',
+            severity: 'warning',
+            userSafeMessage:
+              'No fue posible completar la sincronización remota. Se mantuvo la copia local actual.',
+          },
+          {
+            date: currentDateString,
+          }
+        );
+        warning(
+          'Sincronización',
+          'No fue posible completar la sincronización remota. Se mantuvo la copia local actual.'
+        );
       });
-      const notice = presentDailyRecordRefreshOutcome(outcome);
-      if (notice.channel === 'warning') {
-        warning(notice.title || 'Sincronización', notice.message);
-      } else if (notice.channel === 'error') {
-        notifyError(notice.title || 'Sincronización', notice.message);
-      }
-      void refetch();
-    });
   }, [currentDateString, notifyError, refetch, runRemoteSync, warning]);
 
   const createDay = useCallback(

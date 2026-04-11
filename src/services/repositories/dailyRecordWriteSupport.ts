@@ -2,7 +2,7 @@ import { CURRENT_SCHEMA_VERSION } from '@/constants/version';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { DailyRecordPatch } from '@/types/domain/dailyRecordPatch';
 import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
-import { isRetryableSyncError, queueSyncTask } from '@/services/storage/sync/publicSyncQueue';
+import { isRetryableSyncError, queueSyncTask } from '@/services/storage/sync';
 import { saveRecord as saveToIndexedDB } from '@/services/storage/indexeddb/indexedDbRecordService';
 import { normalizeDailyRecordInvariants } from '@/utils/recordInvariants';
 import { validateAndSalvageRecord } from '@/services/repositories/helpers/validationHelper';
@@ -51,6 +51,17 @@ export interface RemoteWriteRecoveryResult {
 
 const isConcurrencyError = (error: unknown): boolean =>
   error instanceof Error && error.name === 'ConcurrencyError';
+
+const buildQueueBackpressureMessage = () =>
+  'Los cambios se guardaron localmente, pero la cola de sincronización alcanzó su límite operativo. Reintenta cuando la conectividad se estabilice o revisa el estado de sincronización.';
+
+const queueRecoveryTask = async (
+  record: DailyRecord,
+  meta: NonNullable<Parameters<typeof queueSyncTask>[2]>
+): Promise<boolean> => {
+  const result = await queueSyncTask('UPDATE_DAILY_RECORD', record, meta);
+  return result.accepted;
+};
 
 export const prepareDailyRecordForPersistence = (
   record: DailyRecord,
@@ -137,11 +148,10 @@ export const assertRemoteSaveCompatibility = async (
 };
 
 export const queueRetryForRecord = async (record: DailyRecord): Promise<boolean> => {
-  await queueSyncTask('UPDATE_DAILY_RECORD', record, {
+  return queueRecoveryTask(record, {
     contexts: ['clinical', 'staffing', 'movements', 'handoff', 'metadata'],
     origin: 'full_save_retry',
   });
-  return true;
 };
 
 const buildRecoveryTaskMeta = (
@@ -180,11 +190,13 @@ export const attemptConflictAutoMergeRecovery = async (
     );
 
     await saveToIndexedDB(merged);
-    await queueSyncTask(
-      'UPDATE_DAILY_RECORD',
+    const queued = await queueRecoveryTask(
       merged,
       buildRecoveryTaskMeta(changedPaths, 'conflict_auto_merge')
     );
+    if (!queued) {
+      return { status: 'not_possible' };
+    }
     try {
       await logRepositoryConflictAutoMerged(date, auditDetails);
     } catch (auditError) {
@@ -272,8 +284,7 @@ export const resolveRemoteWriteRecovery = async (
   }
 
   if (shouldQueueRetryableError(error)) {
-    await queueSyncTask(
-      'UPDATE_DAILY_RECORD',
+    const queued = await queueRecoveryTask(
       record,
       buildRecoveryTaskMeta(
         changedPaths,
@@ -282,6 +293,21 @@ export const resolveRemoteWriteRecovery = async (
           : 'partial_update_retry'
       )
     );
+    if (!queued) {
+      return {
+        status: 'unrecoverable',
+        queuedForRetry: false,
+        autoMerged: false,
+        decision: createUnrecoverableDecision(
+          conflictSummary(
+            'remote_unavailable',
+            'La cola de sincronización alcanzó su límite operativo antes de programar el reintento.'
+          ),
+          ['daily_record', 'write', 'queue_backpressure'],
+          buildQueueBackpressureMessage()
+        ),
+      };
+    }
     return {
       status: 'queued_for_retry',
       queuedForRetry: true,

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { queryKeys } from '../config/queryClient';
 import { CatalogRepository } from '@/services/repositories/CatalogRepository';
 import { useAuth } from '@/context/AuthContext';
@@ -10,6 +10,8 @@ const useCatalogRealtimeReady = (): boolean => {
   return remoteSyncStatus === 'ready';
 };
 
+const STAFF_CATALOG_STALE_TIME_MS = 30_000;
+
 /**
  * Hook to manage the list of nurses.
  * Integrates with CatalogRepository and provides real-time updates.
@@ -17,14 +19,26 @@ const useCatalogRealtimeReady = (): boolean => {
 export const useNursesQuery = () => {
   const queryClient = useQueryClient();
   const isCatalogRealtimeReady = useCatalogRealtimeReady();
+  const previousRealtimeReadyRef = useRef(isCatalogRealtimeReady);
 
   const query = useQuery({
     queryKey: [...queryKeys.staff.all, 'nurses'],
     queryFn: async () => {
       return await CatalogRepository.getNurses();
     },
-    staleTime: Infinity,
+    staleTime: STAFF_CATALOG_STALE_TIME_MS,
   });
+
+  useEffect(() => {
+    const didBecomeRealtimeReady = !previousRealtimeReadyRef.current && isCatalogRealtimeReady;
+    previousRealtimeReadyRef.current = isCatalogRealtimeReady;
+
+    if (!didBecomeRealtimeReady) {
+      return;
+    }
+
+    void query.refetch();
+  }, [isCatalogRealtimeReady, query]);
 
   useEffect(() => {
     if (!isCatalogRealtimeReady) return;
@@ -46,14 +60,26 @@ export const useNursesQuery = () => {
 export const useTensQuery = () => {
   const queryClient = useQueryClient();
   const isCatalogRealtimeReady = useCatalogRealtimeReady();
+  const previousRealtimeReadyRef = useRef(isCatalogRealtimeReady);
 
   const query = useQuery({
     queryKey: [...queryKeys.staff.all, 'tens'],
     queryFn: async () => {
       return await CatalogRepository.getTens();
     },
-    staleTime: Infinity,
+    staleTime: STAFF_CATALOG_STALE_TIME_MS,
   });
+
+  useEffect(() => {
+    const didBecomeRealtimeReady = !previousRealtimeReadyRef.current && isCatalogRealtimeReady;
+    previousRealtimeReadyRef.current = isCatalogRealtimeReady;
+
+    if (!didBecomeRealtimeReady) {
+      return;
+    }
+
+    void query.refetch();
+  }, [isCatalogRealtimeReady, query]);
 
   useEffect(() => {
     if (!isCatalogRealtimeReady) return;
@@ -74,14 +100,26 @@ export const useTensQuery = () => {
 export const useProfessionalsQuery = () => {
   const queryClient = useQueryClient();
   const isCatalogRealtimeReady = useCatalogRealtimeReady();
+  const previousRealtimeReadyRef = useRef(isCatalogRealtimeReady);
 
   const query = useQuery({
     queryKey: [...queryKeys.staff.all, 'professionals'],
     queryFn: async () => {
       return await CatalogRepository.getProfessionals();
     },
-    staleTime: Infinity,
+    staleTime: STAFF_CATALOG_STALE_TIME_MS,
   });
+
+  useEffect(() => {
+    const didBecomeRealtimeReady = !previousRealtimeReadyRef.current && isCatalogRealtimeReady;
+    previousRealtimeReadyRef.current = isCatalogRealtimeReady;
+
+    if (!didBecomeRealtimeReady) {
+      return;
+    }
+
+    void query.refetch();
+  }, [isCatalogRealtimeReady, query]);
 
   useEffect(() => {
     if (!isCatalogRealtimeReady) return;

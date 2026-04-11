@@ -109,6 +109,30 @@ describe('storage/sync public entrypoint', () => {
     expect(telemetry.runtimeState).toBe('degraded');
   });
 
+  it('rejects new unique tasks when the queue reaches the hard pending cap but still reuses existing keys', async () => {
+    for (let i = 0; i < 192; i++) {
+      await queueSyncTask(
+        'UPDATE_DAILY_RECORD',
+        makeRecord(`2025-02-${String(i).padStart(2, '0')}`, `v${i}`)
+      );
+    }
+
+    const rejected = await queueSyncTask(
+      'UPDATE_DAILY_RECORD',
+      makeRecord('2025-09-01', 'overflow')
+    );
+    expect(rejected).toMatchObject({
+      accepted: false,
+      mode: 'rejected_backpressure',
+      pendingTasks: 192,
+      maxPendingTasks: 192,
+    });
+
+    const reused = await queueSyncTask('UPDATE_DAILY_RECORD', makeRecord('2025-02-00', 'v-reused'));
+    expect(reused.accepted).toBe(true);
+    expect(reused.mode).toBe('reused');
+  });
+
   it('marks telemetry as blocked when a pending task exceeds the critical queue age budget', async () => {
     await queueSyncTask('UPDATE_DAILY_RECORD', makeRecord('2025-01-11', 'v1'));
     await hospitalDB.syncQueue

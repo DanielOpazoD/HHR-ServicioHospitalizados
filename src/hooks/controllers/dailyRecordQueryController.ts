@@ -123,6 +123,7 @@ export const createDailyRecordSubscription = (
   date: string,
   queryClient: QueryClient
 ) => {
+  let isSubscriptionActive = true;
   if (!dailyRecord.subscribe) {
     if (!dailyRecord.subscribeDetailed) {
       return null;
@@ -155,6 +156,9 @@ export const createDailyRecordSubscription = (
 
     void read
       .then(reconciledResult => {
+        if (!isSubscriptionActive) {
+          return;
+        }
         const recovered = createDailyRecordQueryResult(
           reconciledResult.record,
           createRuntimeFromReadResult(reconciledResult)
@@ -195,6 +199,9 @@ export const createDailyRecordSubscription = (
         applyResolvedQueryResult(recovered);
       })
       .catch(error => {
+        if (!isSubscriptionActive) {
+          return;
+        }
         dailyRecordObservability.recordError(
           'reconcile_null_realtime_record',
           error,
@@ -240,15 +247,25 @@ export const createDailyRecordSubscription = (
   };
 
   if (typeof dailyRecord.subscribeDetailed === 'function') {
-    return dailyRecord.subscribeDetailed(date, (result, hasPendingWrites) => {
+    const stop = dailyRecord.subscribeDetailed(date, (result, hasPendingWrites) => {
+      if (!isSubscriptionActive) {
+        return;
+      }
       handleResolvedRealtimeResult(
         createDailyRecordQueryResult(result.record, createRuntimeFromSyncResult(date, result)),
         hasPendingWrites
       );
     });
+    return () => {
+      isSubscriptionActive = false;
+      stop();
+    };
   }
 
-  return dailyRecord.subscribe!(date, (record, hasPendingWrites) => {
+  const stop = dailyRecord.subscribe!(date, (record, hasPendingWrites) => {
+    if (!isSubscriptionActive) {
+      return;
+    }
     if (hasPendingWrites) {
       return;
     }
@@ -263,6 +280,10 @@ export const createDailyRecordSubscription = (
 
     reconcileNullRealtimeRecord(previousResult);
   });
+  return () => {
+    isSubscriptionActive = false;
+    stop();
+  };
 };
 
 export const buildPreviousDayDate = (date: string) => {

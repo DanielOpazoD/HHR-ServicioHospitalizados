@@ -126,6 +126,43 @@ describe('useStaffQuery Hooks', () => {
 
       expect(subscribeMock).not.toHaveBeenCalled();
     });
+
+    it('refetches nurses when catalog realtime transitions from bootstrapping to ready', async () => {
+      const mockGetNurses = vi
+        .mocked(CatalogRepository.getNurses)
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce(['Nurse 1']);
+
+      vi.mocked(CatalogRepository.subscribeNurses).mockImplementation(
+        vi.fn(() => vi.fn()) as unknown as SubscribeNursesFn
+      );
+
+      const { result, rerender } = renderHook(
+        ({ remoteSyncStatus }: { remoteSyncStatus: 'bootstrapping' | 'ready' }) => {
+          vi.mocked(useAuth).mockReturnValue({
+            remoteSyncStatus,
+          } as AuthContextValue);
+
+          return useNursesQuery();
+        },
+        {
+          initialProps: { remoteSyncStatus: 'bootstrapping' as 'bootstrapping' | 'ready' },
+          wrapper: createWrapper(),
+        }
+      );
+
+      await waitFor(() => {
+        expect(result.current.data).toEqual([]);
+      });
+
+      rerender({ remoteSyncStatus: 'ready' });
+
+      await waitFor(() => {
+        expect(result.current.data).toEqual(['Nurse 1']);
+      });
+
+      expect(mockGetNurses).toHaveBeenCalledTimes(2);
+    });
   });
 
   describe('Mutations', () => {

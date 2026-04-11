@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { QueryClient } from '@tanstack/react-query';
 import { DataFactory } from '@/tests/factories/DataFactory';
 import { setFirestoreSyncState } from '@/services/repositories/repositoryConfig';
+import type { DailyRecord } from '@/application/shared/dailyRecordCoreContracts';
 import {
   applyOptimisticDailyRecordPatch,
   buildPreviousDayDate,
@@ -158,6 +159,53 @@ describe('dailyRecordQueryController', () => {
       runtime: {
         availabilityState: 'recoverable_local',
       },
+    });
+  });
+
+  it('ignores stale null reconciliation after the subscription is cleaned up', async () => {
+    const queryClient = new QueryClient();
+    const previousRecord = DataFactory.createMockDailyRecord('2025-01-08');
+    const deferred = Promise.withResolvers<DailyRecord | null>();
+
+    queryClient.setQueryData(getDailyRecordQueryKey('2025-01-08'), {
+      record: previousRecord,
+      runtime: {
+        date: '2025-01-08',
+        availabilityState: 'resolved',
+        consistencyState: 'local_only',
+        sourceOfTruth: 'local',
+        retryability: 'not_applicable',
+        recoveryAction: 'none',
+        conflictSummary: null,
+        observabilityTags: ['daily_record', 'read'],
+        repairApplied: false,
+      },
+    });
+
+    const stop = vi.fn();
+    const subscribe = vi.fn((_date, callback) => {
+      void callback(null, false);
+      return stop;
+    });
+
+    const unsubscribe = createDailyRecordSubscription(
+      { getForDate: vi.fn().mockReturnValue(deferred.promise), subscribe },
+      '2025-01-08',
+      queryClient
+    );
+
+    unsubscribe?.();
+    deferred.resolve({
+      ...previousRecord,
+      lastUpdated: '2025-01-08T11:00:00.000Z',
+    });
+
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(stop).toHaveBeenCalledTimes(1);
+    expect(queryClient.getQueryData(getDailyRecordQueryKey('2025-01-08'))).toMatchObject({
+      record: previousRecord,
     });
   });
 

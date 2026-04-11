@@ -8,8 +8,11 @@ vi.mock('@/services/storage/indexeddb/indexedDbRecordService', () => ({
   saveRecord: vi.fn(),
 }));
 
-vi.mock('@/services/storage/firestore', () => ({
+vi.mock('@/services/storage/firestore/firestoreRecordQueries', () => ({
   getRecordFromFirestore: vi.fn(),
+}));
+
+vi.mock('@/services/storage/firestore/firestoreRecordWrites', () => ({
   saveRecordToFirestore: vi.fn(),
   updateRecordPartial: vi.fn(),
 }));
@@ -55,11 +58,11 @@ import {
   getRecordForDate as getRecordFromIndexedDB,
   saveRecord as saveToIndexedDB,
 } from '@/services/storage/indexeddb/indexedDbRecordService';
+import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
 import {
-  getRecordFromFirestore,
   saveRecordToFirestore,
   updateRecordPartial as updateRecordPartialToFirestore,
-} from '@/services/storage/firestore';
+} from '@/services/storage/firestore/firestoreRecordWrites';
 import { isRetryableSyncError, queueSyncTask } from '@/services/storage/sync';
 import { logRepositoryConflictAutoMerged } from '@/services/repositories/ports/repositoryAuditPort';
 
@@ -95,6 +98,12 @@ const buildPatient = (bedId: string, patientName: string): PatientData => ({
 describe('dailyRecordRepositoryWriteService outbox fallback', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(queueSyncTask).mockResolvedValue({
+      accepted: true,
+      mode: 'created',
+      pendingTasks: 1,
+      maxPendingTasks: 192,
+    });
   });
 
   it('queues full record when save to Firestore fails with retryable error', async () => {
@@ -123,6 +132,24 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
 
     expect(result.outcome).toBe('queued');
     expect(result.queuedForRetry).toBe(true);
+  });
+
+  it('surfaces sync queue saturation as unrecoverable instead of pretending the retry was queued', async () => {
+    vi.mocked(saveRecordToFirestore).mockRejectedValueOnce(new Error('Network timeout'));
+    vi.mocked(isRetryableSyncError).mockReturnValue(true);
+    vi.mocked(queueSyncTask).mockResolvedValueOnce({
+      accepted: false,
+      mode: 'rejected_backpressure',
+      pendingTasks: 192,
+      maxPendingTasks: 192,
+    });
+
+    const result = await saveDetailed(buildRecord('2026-02-20'));
+
+    expect(result.outcome).toBe('unrecoverable');
+    expect(result.queuedForRetry).toBe(false);
+    expect(result.consistencyState).toBe('unrecoverable');
+    expect(result.userSafeMessage).toContain('cola de sincronización alcanzó su límite');
   });
 
   it('blocks full save when admissionDate falls outside the first-seen window', async () => {

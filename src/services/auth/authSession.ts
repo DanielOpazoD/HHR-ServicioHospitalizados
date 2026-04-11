@@ -4,7 +4,10 @@ import { clearRoleCacheForEmail } from '@/services/auth/authPolicy';
 import { resolveFirebaseUserRole } from '@/services/auth/authAccessResolution';
 import { resolveAuthSessionState } from '@/services/auth/authSessionController';
 import { recordAuthOperationalError } from '@/services/auth/authOperationalTelemetry';
-import { ensureUserRoleClaim } from '@/services/auth/authClaimSyncService';
+import {
+  ensureUserRoleClaim,
+  resetAuthClaimSyncSnapshot,
+} from '@/services/auth/authClaimSyncService';
 import {
   createAuthErrorSessionState,
   createUnauthenticatedAuthSessionState,
@@ -24,6 +27,7 @@ export const signOut = async (options?: AuthRuntimeOptions): Promise<void> => {
   const authRuntime = resolveAuthRuntime(options);
   await authRuntime.ready;
   const userEmail = authRuntime.getCurrentUser()?.email;
+  resetAuthClaimSyncSnapshot();
   await firebaseSignOut(authRuntime.auth);
 
   if (userEmail) {
@@ -59,11 +63,13 @@ export const onAuthSessionStateChange = (
 
       unsubscribeAuth = onAuthStateChanged(authRuntime.auth, async (firebaseUser: User | null) => {
         if (!firebaseUser) {
+          resetAuthClaimSyncSnapshot();
           await callback(createUnauthenticatedAuthSessionState());
           return;
         }
 
         if (firebaseUser.isAnonymous) {
+          resetAuthClaimSyncSnapshot();
           await callback(
             toAnonymousSignatureAuthSessionState({
               uid: firebaseUser.uid,
@@ -80,11 +86,15 @@ export const onAuthSessionStateChange = (
             signOutUnauthorizedUser: () => firebaseSignOut(authRuntime.auth),
             resolveFirebaseUserRole,
           });
+          if (sessionState.status !== 'authorized') {
+            resetAuthClaimSyncSnapshot();
+          }
           await callback(sessionState);
           if (sessionState.status === 'authorized' && sessionState.user.role) {
             void ensureUserRoleClaim(firebaseUser, sessionState.user.role);
           }
         } catch (error) {
+          resetAuthClaimSyncSnapshot();
           const operationalError = recordAuthOperationalError(
             'on_auth_session_state_change',
             error,
@@ -109,6 +119,7 @@ export const onAuthSessionStateChange = (
       });
     })
     .catch(async error => {
+      resetAuthClaimSyncSnapshot();
       const operationalError = recordAuthOperationalError('on_auth_session_state_change', error, {
         code: 'auth_session_state_resolution_failed',
         message: 'Failed to initialize authentication session observer.',
@@ -143,10 +154,12 @@ export const resolveCurrentAuthSessionState = async (
   const firebaseUser = authRuntime.getCurrentUser();
 
   if (!firebaseUser) {
+    resetAuthClaimSyncSnapshot();
     return createUnauthenticatedAuthSessionState();
   }
 
   if (firebaseUser.isAnonymous) {
+    resetAuthClaimSyncSnapshot();
     return toAnonymousSignatureAuthSessionState({
       uid: firebaseUser.uid,
       email: null,
@@ -160,11 +173,15 @@ export const resolveCurrentAuthSessionState = async (
       signOutUnauthorizedUser: () => firebaseSignOut(authRuntime.auth),
       resolveFirebaseUserRole,
     });
+    if (sessionState.status !== 'authorized') {
+      resetAuthClaimSyncSnapshot();
+    }
     if (sessionState.status === 'authorized' && sessionState.user.role) {
       void ensureUserRoleClaim(firebaseUser, sessionState.user.role);
     }
     return sessionState;
   } catch (error) {
+    resetAuthClaimSyncSnapshot();
     const operationalError = recordAuthOperationalError(
       'resolve_current_auth_session_state',
       error,

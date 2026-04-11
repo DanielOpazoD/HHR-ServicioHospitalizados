@@ -6,11 +6,16 @@ vi.mock('firebase/functions', () => ({
   httpsCallable: vi.fn(() => callableMock),
 }));
 
-import { createAuthClaimSyncService } from '@/services/auth/authClaimSyncService';
+import {
+  createAuthClaimSyncService,
+  getAuthClaimSyncSnapshot,
+  resetAuthClaimSyncSnapshot,
+} from '@/services/auth/authClaimSyncService';
 
 describe('authClaimSyncService runtime injection', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resetAuthClaimSyncSnapshot();
     callableMock.mockResolvedValue({
       data: {
         role: 'admin',
@@ -26,5 +31,9 @@ describe('authClaimSyncService runtime injection', () => {
     await expect(service.syncCurrentUserRoleClaim()).resolves.toEqual({
       role: 'admin',
     });
+  });
+
+  it('resets the shared claim sync snapshot helper', () => {
+    expect(getAuthClaimSyncSnapshot().status).toBe('idle');
   });
 });

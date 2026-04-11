@@ -13,12 +13,12 @@ describe('syncQueueOperationalBudgets', () => {
   });
 
   it('escalates runtime state based on oldest pending age and retry counts', () => {
-    expect(resolveSyncQueueRuntimeState(0, 0)).toBe('ok');
+    expect(resolveSyncQueueRuntimeState(0, 0, 0)).toBe('ok');
     expect(
-      resolveSyncQueueRuntimeState(SYNC_QUEUE_RUNTIME_THRESHOLDS.warningOldestPendingAgeMs, 0)
+      resolveSyncQueueRuntimeState(0, SYNC_QUEUE_RUNTIME_THRESHOLDS.warningOldestPendingAgeMs, 0)
     ).toBe('degraded');
     expect(
-      resolveSyncQueueRuntimeState(0, SYNC_QUEUE_RUNTIME_THRESHOLDS.criticalRetryingSyncTasks)
+      resolveSyncQueueRuntimeState(0, 0, SYNC_QUEUE_RUNTIME_THRESHOLDS.criticalRetryingSyncTasks)
     ).toBe('blocked');
   });
 });

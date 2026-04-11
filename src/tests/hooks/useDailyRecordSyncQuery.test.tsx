@@ -290,13 +290,13 @@ describe('useDailyRecordSyncQuery', () => {
       data: { date: mockDate, outcome: 'clean', record: mockRecord },
     });
 
-    let refetchCallsAfterNewestRefresh = 0;
     await waitFor(() => {
-      refetchCallsAfterNewestRefresh = vi.mocked(
-        defaultDailyRecordRepositoryPort.getForDateWithMeta
-      ).mock.calls.length;
-      expect(refetchCallsAfterNewestRefresh).toBeGreaterThan(0);
+      expect(defaultDailyRecordRepositoryPort.getForDateWithMeta).toHaveBeenCalled();
     });
+    await Promise.resolve();
+    const refetchCallsAfterNewestRefresh = vi.mocked(
+      defaultDailyRecordRepositoryPort.getForDateWithMeta
+    ).mock.calls.length;
 
     firstRefresh.resolve({
       success: true,
@@ -308,6 +308,38 @@ describe('useDailyRecordSyncQuery', () => {
         refetchCallsAfterNewestRefresh
       );
     });
+  });
+
+  it('ignores a refresh resolution after the hook unmounts', async () => {
+    vi.mocked(defaultDailyRecordRepositoryPort.getForDateWithMeta).mockResolvedValue(
+      buildReadResult(mockRecord)
+    );
+
+    const deferredRefresh = createDeferred<{ success: boolean; data: unknown }>();
+    mockExecuteSyncDailyRecord.mockImplementationOnce(() => deferredRefresh.promise);
+
+    const { result, unmount } = renderHook(
+      () => useDailyRecordSyncQuery(mockDate, false, 'ready'),
+      {
+        wrapper: createWrapper(),
+      }
+    );
+
+    await waitFor(() => expect(result.current.record).not.toBeNull());
+    vi.mocked(defaultDailyRecordRepositoryPort.getForDateWithMeta).mockClear();
+
+    result.current.refresh();
+    unmount();
+
+    deferredRefresh.resolve({
+      success: true,
+      data: { date: mockDate, outcome: 'clean', record: mockRecord },
+    });
+
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(defaultDailyRecordRepositoryPort.getForDateWithMeta).not.toHaveBeenCalled();
   });
 
   it('forces a recovery sync once when today loads as empty', async () => {

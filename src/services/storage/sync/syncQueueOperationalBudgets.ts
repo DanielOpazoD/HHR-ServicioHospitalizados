@@ -2,8 +2,11 @@ export const SYNC_QUEUE_BATCH_SIZE = 25;
 export const MAX_RETRIES = 5;
 export const BASE_RETRY_DELAY_MS = 1_000;
 export const MAX_RETRY_DELAY_MS = 30_000;
+export const SYNC_QUEUE_MAX_PENDING_TASKS = 192;
 
 export const SYNC_QUEUE_RUNTIME_THRESHOLDS = {
+  warningPendingTasks: 128,
+  criticalPendingTasks: SYNC_QUEUE_MAX_PENDING_TASKS,
   warningOldestPendingAgeMs: 300_000,
   criticalOldestPendingAgeMs: 900_000,
   warningRetryingSyncTasks: 1,
@@ -24,9 +27,15 @@ export const resolveSyncQueueBudgetState = (
 };
 
 export const resolveSyncQueueRuntimeState = (
+  pending: number,
   oldestPendingAgeMs: number,
   retrying: number
 ): SyncQueueRuntimeState => {
+  const pendingState = resolveSyncQueueBudgetState(
+    pending,
+    SYNC_QUEUE_RUNTIME_THRESHOLDS.warningPendingTasks,
+    SYNC_QUEUE_RUNTIME_THRESHOLDS.criticalPendingTasks
+  );
   const oldestPendingState = resolveSyncQueueBudgetState(
     oldestPendingAgeMs,
     SYNC_QUEUE_RUNTIME_THRESHOLDS.warningOldestPendingAgeMs,
@@ -38,11 +47,19 @@ export const resolveSyncQueueRuntimeState = (
     SYNC_QUEUE_RUNTIME_THRESHOLDS.criticalRetryingSyncTasks
   );
 
-  if (oldestPendingState === 'critical' || retryingState === 'critical') {
+  if (
+    pendingState === 'critical' ||
+    oldestPendingState === 'critical' ||
+    retryingState === 'critical'
+  ) {
     return 'blocked';
   }
 
-  if (oldestPendingState === 'warning' || retryingState === 'warning') {
+  if (
+    pendingState === 'warning' ||
+    oldestPendingState === 'warning' ||
+    retryingState === 'warning'
+  ) {
     return 'degraded';
   }
 

@@ -42,9 +42,17 @@ interface CreateSyncQueueEngineOptions {
   runtime: SyncRuntimePort;
   transport: SyncTransportPort;
   batchSize: number;
+  maxPendingTasks: number;
   maxRetries: number;
   baseRetryDelayMs: number;
   maxRetryDelayMs: number;
+}
+
+export interface SyncQueueEnqueueResult {
+  accepted: boolean;
+  mode: 'created' | 'reused' | 'rejected_backpressure' | 'enqueue_failed';
+  pendingTasks: number;
+  maxPendingTasks: number;
 }
 
 const clearTaskErrorState = () => ({
@@ -72,6 +80,7 @@ export const createSyncQueueEngine = ({
   runtime,
   transport,
   batchSize,
+  maxPendingTasks,
   maxRetries,
   baseRetryDelayMs,
   maxRetryDelayMs,
@@ -144,7 +153,7 @@ export const createSyncQueueEngine = ({
     type: SyncTask['type'],
     payload: unknown,
     meta?: Pick<SyncTask, 'contexts' | 'origin' | 'recoveryPolicy'>
-  ): Promise<void> => {
+  ): Promise<SyncQueueEnqueueResult> => {
     const key = getTaskKey(type, payload);
     const ownerKey = runtime.getOwnerKey();
     const taskOwnerKey = ownerKey ?? undefined;
@@ -169,8 +178,28 @@ export const createSyncQueueEngine = ({
           ...clearTaskErrorState(),
         });
         triggerProcessing();
-        return;
+        const pendingTasks = (await store.listAll(ownerKey)).filter(
+          task => task.status === 'PENDING' || task.status === 'PROCESSING'
+        ).length;
+        return {
+          accepted: true,
+          mode: 'reused',
+          pendingTasks,
+          maxPendingTasks,
+        };
       }
+    }
+
+    const pendingTasks = (await store.listAll(ownerKey)).filter(
+      task => task.status === 'PENDING' || task.status === 'PROCESSING'
+    ).length;
+    if (pendingTasks >= maxPendingTasks) {
+      return {
+        accepted: false,
+        mode: 'rejected_backpressure',
+        pendingTasks,
+        maxPendingTasks,
+      };
     }
 
     await store.add({
@@ -187,6 +216,12 @@ export const createSyncQueueEngine = ({
       ...clearTaskErrorState(),
     });
     triggerProcessing();
+    return {
+      accepted: true,
+      mode: 'created',
+      pendingTasks: pendingTasks + 1,
+      maxPendingTasks,
+    };
   };
 
   const getTelemetry = async (): Promise<SyncQueueTelemetry> => {

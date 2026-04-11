@@ -131,19 +131,43 @@ export const useTodayEmptyDailyRecordRecovery = ({
 
     let cancelled = false;
 
-    void runRemoteSync(currentDateString).then(outcome => {
-      if (cancelled) {
-        return;
-      }
+    void runRemoteSync(currentDateString)
+      .then(outcome => {
+        if (cancelled) {
+          return;
+        }
 
-      dailyRecordObservability.recordOutcome('recover_today_empty_daily_record', outcome, {
-        date: currentDateString,
-        context: {
-          source: 'useDailyRecordSyncQuery',
-        },
+        dailyRecordObservability.recordOutcome('recover_today_empty_daily_record', outcome, {
+          date: currentDateString,
+          context: {
+            source: 'useDailyRecordSyncQuery',
+          },
+        });
+        void refetch();
+      })
+      .catch(error => {
+        if (cancelled) {
+          return;
+        }
+
+        dailyRecordObservability.recordError(
+          'recover_today_empty_daily_record',
+          error,
+          {
+            code: 'daily_record_today_empty_recovery_failed',
+            message: 'No fue posible recuperar el registro del día desde la ruta remota diferida.',
+            severity: 'warning',
+            userSafeMessage:
+              'Se mantuvo la copia local mientras se reintenta la recuperación remota del día.',
+          },
+          {
+            date: currentDateString,
+            context: {
+              source: 'useDailyRecordSyncQuery',
+            },
+          }
+        );
       });
-      void refetch();
-    });
 
     return () => {
       cancelled = true;

@@ -17,6 +17,11 @@ export const buildSyncQueueTelemetryFromRows = (
   batchSize: number
 ): SyncQueueTelemetry => {
   const pendingRows = rows.filter(row => row.status === 'PENDING');
+  const pendingBudgetState = resolveSyncQueueBudgetState(
+    pendingRows.length,
+    SYNC_QUEUE_RUNTIME_THRESHOLDS.warningPendingTasks,
+    SYNC_QUEUE_RUNTIME_THRESHOLDS.criticalPendingTasks
+  );
   const oldestTimestamp = pendingRows.reduce<number>(
     (acc, row) => (row.timestamp < acc ? row.timestamp : acc),
     Number.POSITIVE_INFINITY
@@ -44,9 +49,10 @@ export const buildSyncQueueTelemetryFromRows = (
     retrying,
     oldestPendingAgeMs,
     batchSize,
+    pendingBudgetState,
     oldestPendingBudgetState,
     retryingBudgetState,
-    runtimeState: resolveSyncQueueRuntimeState(oldestPendingAgeMs, retrying),
+    runtimeState: resolveSyncQueueRuntimeState(pendingRows.length, oldestPendingAgeMs, retrying),
   };
 };
 
@@ -134,6 +140,7 @@ export const recordSyncQueueBudgetTelemetry = (
       retrying: telemetry.retrying,
       failed: telemetry.failed,
       conflict: telemetry.conflict,
+      pendingBudgetState: telemetry.pendingBudgetState,
       oldestPendingAgeMs: telemetry.oldestPendingAgeMs,
       oldestPendingBudgetState: telemetry.oldestPendingBudgetState,
       retryingBudgetState: telemetry.retryingBudgetState,
