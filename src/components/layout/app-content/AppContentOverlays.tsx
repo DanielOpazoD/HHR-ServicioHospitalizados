@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { lazyWithRetry } from '@/utils/lazyWithRetry';
 import { SyncWatcher } from '@/components/shared/SyncWatcher';
 import StorageStatusBadge from '@/components/layout/StorageStatusBadge';
@@ -16,6 +16,11 @@ const TestAgent = lazyWithRetry(() =>
 const ReminderModal = lazyWithRetry(() =>
   import('@/components/reminders/ReminderModal').then(m => ({ default: m.ReminderModal }))
 );
+const GlobalPatientSearchModal = lazyWithRetry(() =>
+  import('@/features/census/components/global-search/GlobalPatientSearchModal').then(m => ({
+    default: m.GlobalPatientSearchModal,
+  }))
+);
 
 export interface AppContentOverlaysProps {
   ui: UseUIStateReturn;
@@ -29,6 +34,18 @@ export const AppContentOverlays: React.FC<AppContentOverlaysProps> = ({ ui, runt
     nurseSignature,
     record,
   } = runtime;
+
+  // Global keyboard shortcut: Ctrl+K / Cmd+K opens patient search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        ui.patientSearchModal.toggle();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [ui.patientSearchModal]);
 
   return (
     <>
@@ -78,6 +95,13 @@ export const AppContentOverlays: React.FC<AppContentOverlaysProps> = ({ ui, runt
           isRunning={ui.isTestAgentRunning}
           onComplete={() => ui.setIsTestAgentRunning(false)}
           currentRecord={record}
+        />
+      </React.Suspense>
+
+      <React.Suspense fallback={null}>
+        <GlobalPatientSearchModal
+          isOpen={ui.patientSearchModal.isOpen}
+          onClose={ui.patientSearchModal.close}
         />
       </React.Suspense>
 

@@ -160,6 +160,7 @@ export const AppContentChrome: React.FC<AppContentChromeProps> = ({
           accessProfile={runtime.censusAccessProfile}
           medicalIndicationsPatients={medicalIndicationsPatients}
           renderFeatureQuickActions={renderFeatureQuickActions}
+          onOpenPatientSearch={ui.patientSearchModal.open}
         />
       )}
 

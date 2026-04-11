@@ -4,6 +4,7 @@
  */
 
 import React, { useRef } from 'react';
+import { Search } from 'lucide-react';
 import { PdfButtons, SaveDropdown, HandoffSaveDropdown, EmailDropdown } from './DateStripActions';
 import { resolveShiftedMonthYear } from '@/components/layout/date-strip/dateStripNavigationController';
 import { DateStripDayButtons } from '@/components/layout/date-strip/DateStripDayButtons';
@@ -70,6 +71,7 @@ export interface DateStripProps
   accessProfile?: CensusAccessProfile;
   medicalIndicationsPatients?: MedicalIndicationsPatientOption[];
   renderFeatureQuickActions?: (patients: MedicalIndicationsPatientOption[]) => React.ReactNode;
+  onOpenPatientSearch?: () => void;
 }
 
 export const DateStrip: React.FC<DateStripProps> = ({
@@ -104,6 +106,7 @@ export const DateStrip: React.FC<DateStripProps> = ({
   accessProfile = 'default',
   medicalIndicationsPatients = [],
   renderFeatureQuickActions,
+  onOpenPatientSearch,
 }) => {
   const daysContainerRef = useRef<HTMLDivElement>(null);
 
@@ -213,6 +216,17 @@ export const DateStrip: React.FC<DateStripProps> = ({
           </div>
 
           <div className="h-4 w-px bg-slate-200/70" />
+
+          {onOpenPatientSearch && (
+            <button
+              onClick={onOpenPatientSearch}
+              className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-700 rounded-lg border border-slate-200 transition-colors text-[11px] font-semibold"
+              title="Buscar paciente (Ctrl+K)"
+            >
+              <Search size={14} />
+              <span className="hidden sm:inline">Buscar</span>
+            </button>
+          )}
 
           <DateStripQuickActions
             onOpenBedManager={specialistCensusAccess ? undefined : onOpenBedManager}

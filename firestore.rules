@@ -51,9 +51,10 @@ service cloud.firestore {
 	    }
 
 	    function getEffectiveRole() {
-	      return getClaimRole() != null
-	        ? getClaimRole()
-	        : getConfiguredRole();
+	      let configuredRole = getConfiguredRole();
+	      return configuredRole != null
+	        ? configuredRole
+	        : getClaimRole();
 	    }
 	    
 	    function isAdmin() {

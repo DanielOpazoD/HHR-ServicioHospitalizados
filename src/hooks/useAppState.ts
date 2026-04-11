@@ -92,6 +92,7 @@ export interface UseAppStateReturn {
   // Modal states (using useModal)
   settingsModal: UseModalReturn;
   bedManagerModal: UseModalReturn;
+  patientSearchModal: UseModalReturn;
 
   // Feature flags
   isTestAgentRunning: boolean;
@@ -131,6 +132,7 @@ export function useAppState(options: UseAppStateOptions = {}): UseAppStateReturn
   // Modal states using the new useModal hook
   const settingsModal = useModal();
   const bedManagerModal = useModal();
+  const patientSearchModal = useModal();
 
   // Feature flags
   const [isTestAgentRunning, setIsTestAgentRunning] = useState(false);
@@ -169,6 +171,7 @@ export function useAppState(options: UseAppStateOptions = {}): UseAppStateReturn
     // Modals
     settingsModal,
     bedManagerModal,
+    patientSearchModal,
 
     // Feature flags
     isTestAgentRunning,

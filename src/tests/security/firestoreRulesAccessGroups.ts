@@ -11,6 +11,7 @@ export function registerFirestoreRulesAccessGroups({
   doctor,
   specialist,
   specialistWithoutClaim,
+  firestoreForUser,
   unauthorizedAuthed,
   NOW_MS,
   THREE_DAYS_MS,
@@ -265,6 +266,70 @@ export function registerFirestoreRulesAccessGroups({
                 uid: 'user_specialist',
                 email: 'specialist@example.com',
                 displayName: 'Especialista',
+                role: 'doctor_specialist',
+              },
+              version: 2,
+              dailyContinuity: {
+                [CURRENT_RECORD_DATE]: {
+                  status: 'updated_by_specialist',
+                },
+              },
+            },
+            lastUpdated: NOW_MS,
+          })
+      );
+    });
+
+    it('Structured specialist handoff trusts config/roles over a stale token claim', async () => {
+      await setupDoc(admin(), recordPath, {
+        date: CURRENT_RECORD_DATE,
+        dateTimestamp: NOW_MS,
+        medicalHandoffNovedades: '',
+        medicalHandoffBySpecialty: {
+          cirugia: {
+            note: 'Nota previa',
+            createdAt: new Date(NOW_MS - 86400000).toISOString(),
+            updatedAt: new Date(NOW_MS - 86400000).toISOString(),
+            author: {
+              uid: 'doctor-previo',
+              email: 'previo@example.com',
+              displayName: 'Especialista previo',
+              role: 'doctor_specialist',
+            },
+            lastEditor: {
+              uid: 'doctor-previo',
+              email: 'previo@example.com',
+              displayName: 'Especialista previo',
+              role: 'doctor_specialist',
+            },
+            version: 1,
+            dailyContinuity: {},
+          },
+        },
+      });
+
+      await assertSucceeds(
+        firestoreForUser('user_specialist_claim_drift', {
+          email: 'specialist@example.com',
+          role: 'viewer',
+        })
+          .doc(recordPath)
+          .update({
+            medicalHandoffNovedades: 'Cirugía\nEvolución con claim desactualizado',
+            'medicalHandoffBySpecialty.cirugia': {
+              note: 'Evolución con claim desactualizado',
+              createdAt: new Date(NOW_MS - 86400000).toISOString(),
+              updatedAt: new Date(NOW_MS).toISOString(),
+              author: {
+                uid: 'doctor-previo',
+                email: 'previo@example.com',
+                displayName: 'Especialista previo',
+                role: 'doctor_specialist',
+              },
+              lastEditor: {
+                uid: 'user_specialist_claim_drift',
+                email: 'specialist@example.com',
+                displayName: 'Especialista con claim viejo',
                 role: 'doctor_specialist',
               },
               version: 2,

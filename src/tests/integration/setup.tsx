@@ -238,6 +238,7 @@ export const createMockUIState = (overrides: Partial<UseUIStateReturn> = {}): Us
   setCensusViewMode: vi.fn(),
   settingsModal: createMockModal(),
   bedManagerModal: createMockModal(),
+  patientSearchModal: createMockModal(),
   isTestAgentRunning: false,
   setIsTestAgentRunning: vi.fn(),
   selectedShift: 'day',

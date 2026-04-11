@@ -17,7 +17,15 @@ export const sanitizePatientQueryLimit = (limitCount?: number): number => {
   return normalized;
 };
 
-export const normalizePatientSearchTerm = (term: string): string => term.trim();
+/**
+ * Normalizes search term for patient queries.
+ * Converts to title case to match Firestore stored format (case-sensitive prefix queries).
+ */
+export const normalizePatientSearchTerm = (term: string): string => {
+  const trimmed = term.trim();
+  if (!trimmed) return '';
+  return trimmed.toLowerCase().replace(/(?:^|\s)\S/g, char => char.toUpperCase());
+};
 
 export const createUpsertPatientCommand = (
   patient: Partial<MasterPatient> & { rut: string }
