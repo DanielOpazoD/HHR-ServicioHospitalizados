@@ -6,7 +6,8 @@ import path from 'node:path';
 const ROOT = process.cwd();
 const TARGET_FILES = [
   'src/tests/types/core.test.ts',
-  'src/tests/schemas/zodSchemas.test.ts',
+  'src/tests/schemas/zodEntitySchemas.test.ts',
+  'src/tests/schemas/zodDailyRecordSchemas.test.ts',
   'src/tests/services/featureFlags.test.ts',
 ];
 

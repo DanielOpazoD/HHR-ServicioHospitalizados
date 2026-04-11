@@ -29,7 +29,7 @@
 ## Señal actual
 
 - `Deprecated shim imports in source`: `0`
-- `Megatests >500 lines`: `3`
+- `Megatests >500 lines`: `0`
 - `Folder dependency debt`: `0`
 - `Release confidence`: `ok`
 - `Raw console warn/error outside structured sink`: `0`
@@ -38,5 +38,5 @@
 ## Siguiente paso recomendado
 
 1. Mantener la siguiente ola como mantenimiento normal y no como reconstrucción estructural.
-2. Tocar `useHandoffLogic.test.ts` solo si vuelve a haber fricción de edición real.
+2. Mantener la reducción de megatests como disciplina, sin partir suites pequeñas por deporte.
 3. Sostener los checks de ownership y boundaries para evitar reapertura de drift.

@@ -1,6 +1,6 @@
 # Test Megatest Backlog
 
-Última actualización: 2026-04-05
+Última actualización: 2026-04-10
 
 ## Objetivo
 
@@ -43,6 +43,14 @@ Identificar tests grandes con mayor costo de mantenimiento para partirlos sin pe
 - `src/tests/components/PatientRow.test.tsx`
   ahora se reparte entre `PatientRow.layout-and-actions.test.tsx` y
   `PatientRow.crib-and-demographics.test.tsx`.
+- `src/tests/hooks/useHandoffLogic.test.ts`
+  ahora se reparte entre `useHandoffLogic.nursing-and-events.test.ts`,
+  `useHandoffLogic.medical-handoff.test.ts` y `useHandoffLogic.test-support.ts`.
+- `src/tests/schemas/zodSchemas.test.ts`
+  ahora se reparte entre `zodEntitySchemas.test.ts` y `zodDailyRecordSchemas.test.ts`.
+- `src/tests/services/repositories/DailyRecordRepository.lifecycle.test.ts`
+  ahora se reparte entre `DailyRecordRepository.persistence-and-copy.test.ts`,
+  `DailyRecordRepository.initialization-and-bootstrap.test.ts` y `DailyRecordRepository.lifecycle-support.ts`.
 
 ## Criterio de priorización
 
@@ -53,11 +61,10 @@ Identificar tests grandes con mayor costo de mantenimiento para partirlos sin pe
 
 ## Candidatos prioritarios
 
-| Prioridad | Archivo                                                                   | Líneas | Riesgo dominante                                      | Estrategia de partición                                                            |
-| --------- | ------------------------------------------------------------------------- | -----: | ----------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `P3`      | `src/tests/hooks/useHandoffLogic.test.ts`                                 |  `580` | Mezcla eventos clínicos, notas y persistencia médica  | Partir por nursing handoff, medical handoff y clinical events si el módulo se toca |
-| `P3`      | `src/tests/schemas/zodSchemas.test.ts`                                    |  `701` | Alto tamaño, pero fuerte valor de contrato integrado  | Mantener integrada salvo que cambie con frecuencia o empiece a bloquear edición    |
-| `P3`      | `src/tests/services/repositories/DailyRecordRepository.lifecycle.test.ts` |  `539` | Aún mezcla lifecycle e inicialización del repositorio | Partir solo si vuelve a crecer o aparece fricción de edición concreta              |
+| Prioridad | Archivo | Líneas | Riesgo dominante | Estrategia de partición |
+| --------- | ------- | -----: | ---------------- | ----------------------- |
+
+No quedan suites `>500` líneas en el backlog prioritario tras la ola actual.
 
 ## Segunda ola sugerida
 
@@ -76,6 +83,6 @@ Identificar tests grandes con mayor costo de mantenimiento para partirlos sin pe
 
 ## Siguiente acción recomendada
 
-1. Tratar `useHandoffLogic.test.ts` como siguiente candidato solo si vuelve a tocarse el módulo y el costo de edición reaparece.
-2. Mantener `zodSchemas.test.ts` integrado mientras siga actuando como contrato transversal útil.
-3. Medir si la baja de `megatests >500` a `3` reduce realmente tiempo de diagnóstico y costo de cambio.
+1. Medir si la baja de `megatests >500` a `0` reduce realmente tiempo de diagnóstico y costo de cambio.
+2. Mantener futuras particiones orientadas a seams concretos y no a tamaño por sí solo.
+3. Revisar la segunda ola solo cuando reaparezca fricción real de edición o lectura.

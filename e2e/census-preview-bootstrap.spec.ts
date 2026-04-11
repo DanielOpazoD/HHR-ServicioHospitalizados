@@ -12,6 +12,16 @@ type FirebasePreviewConfig = {
   appId: string;
 };
 
+type PreviewRuntimeFailure = {
+  source: 'console' | 'pageerror';
+  message: string;
+};
+
+const isFatalPreviewConsoleError = (message: string): boolean =>
+  /(uncaught|referenceerror|typeerror|syntaxerror|chunkloaderror|failed to fetch dynamically imported module|cannot access '.+' before initialization|createcontext)/i.test(
+    message
+  );
+
 const PREVIEW_BOOTSTRAP_DATE = process.env.E2E_FIXED_DATE ?? '2026-04-03';
 const SEEDED_PATIENT_NAME = 'PACIENTE VALIDACION PREVIEW';
 
@@ -138,6 +148,7 @@ const collectPreviewDiagnostics = async (page: Page, date: string) =>
     const runtimeWindow = window as Window & { __HHR_E2E_OVERRIDE__?: Record<string, unknown> };
     const persistedRecords = JSON.parse(localStorage.getItem('hanga_roa_hospital_data') || '{}');
     const telemetry = JSON.parse(localStorage.getItem('operationalTelemetryEvents') || '[]');
+    const rootElement = document.getElementById('root');
 
     return {
       href: window.location.href,
@@ -155,9 +166,49 @@ const collectPreviewDiagnostics = async (page: Page, date: string) =>
             event?.category === 'auth'
         )
         .slice(-20),
+      rootChildCount: rootElement?.childElementCount || 0,
+      rootHtmlLength: rootElement?.innerHTML.length || 0,
       pageTextSnippet: document.body.innerText.slice(0, 800),
     };
   }, date);
+
+const createPreviewRuntimeFailureCollector = (page: Page) => {
+  const failures: PreviewRuntimeFailure[] = [];
+
+  const consoleHandler = (msg: { type(): string; text(): string }) => {
+    if (msg.type() !== 'error') {
+      return;
+    }
+
+    const message = msg.text();
+    if (!isFatalPreviewConsoleError(message)) {
+      return;
+    }
+
+    failures.push({
+      source: 'console',
+      message,
+    });
+  };
+
+  const pageErrorHandler = (error: Error) => {
+    failures.push({
+      source: 'pageerror',
+      message: error.message,
+    });
+  };
+
+  page.on('console', consoleHandler);
+  page.on('pageerror', pageErrorHandler);
+
+  return {
+    failures,
+    detach: () => {
+      page.off('console', consoleHandler);
+      page.off('pageerror', pageErrorHandler);
+    },
+  };
+};
 
 const expectSeededPatientVisible = async (page: Page) => {
   const seededPatientInput = page.locator(
@@ -179,30 +230,75 @@ const expectSeededPatientVisible = async (page: Page) => {
   }
 };
 
+const assertPreviewBootCompleted = async (page: Page, runtimeFailures: PreviewRuntimeFailure[]) => {
+  const diagnostics = await collectPreviewDiagnostics(page, PREVIEW_BOOTSTRAP_DATE);
+  await expect(page.getByTestId('view-loader')).toBeHidden({ timeout: 5000 });
+  await page.waitForFunction(() => {
+    const rootElement = document.getElementById('root');
+    return Boolean(rootElement && rootElement.childElementCount > 0);
+  });
+
+  if (runtimeFailures.length > 0) {
+    test.info().attach('preview-runtime-failures', {
+      body: JSON.stringify(runtimeFailures, null, 2),
+      contentType: 'application/json',
+    });
+    test.info().attach('preview-bootstrap-diagnostics', {
+      body: JSON.stringify(diagnostics, null, 2),
+      contentType: 'application/json',
+    });
+    throw new Error(
+      `Preview bootstrap produced runtime failures:\n${JSON.stringify(runtimeFailures, null, 2)}`
+    );
+  }
+
+  expect(diagnostics.rootChildCount).toBeGreaterThan(0);
+  expect(diagnostics.rootHtmlLength).toBeGreaterThan(0);
+};
+
 test.describe('Production Preview Bootstrap', () => {
   test('loads persisted census state without falling into empty state after initial bootstrap', async ({
     page,
   }) => {
+    const runtimeCollector = createPreviewRuntimeFailureCollector(page);
     await seedPersistedSessionAndRecord(page);
 
     await page.goto(`/?date=${PREVIEW_BOOTSTRAP_DATE}`);
 
     await expectSeededPatientVisible(page);
-    await expect(page.getByTestId('view-loader')).toBeHidden({ timeout: 5000 });
+    await assertPreviewBootCompleted(page, runtimeCollector.failures);
     await expect(page.getByTestId('empty-day-prompt')).toHaveCount(0);
+    runtimeCollector.detach();
   });
 
-  test('keeps the census record visible after a full reload with persisted client state', async ({
+  test('keeps the census record visible across a second visit with persisted client state', async ({
     page,
   }) => {
+    const runtimeCollector = createPreviewRuntimeFailureCollector(page);
     await seedPersistedSessionAndRecord(page);
 
     await page.goto(`/?date=${PREVIEW_BOOTSTRAP_DATE}`);
     await expectSeededPatientVisible(page);
+    await assertPreviewBootCompleted(page, runtimeCollector.failures);
 
-    await page.reload();
+    await page.goto(`/?date=${PREVIEW_BOOTSTRAP_DATE}`);
 
     await expectSeededPatientVisible(page);
+    await assertPreviewBootCompleted(page, runtimeCollector.failures);
     await expect(page.getByTestId('empty-day-prompt')).toHaveCount(0);
+    runtimeCollector.detach();
+  });
+
+  test('does not surface runtime bootstrap errors before the preview app mounts', async ({
+    page,
+  }) => {
+    const runtimeCollector = createPreviewRuntimeFailureCollector(page);
+    await seedPersistedSessionAndRecord(page);
+
+    await page.goto(`/?date=${PREVIEW_BOOTSTRAP_DATE}`);
+
+    await expectSeededPatientVisible(page);
+    await assertPreviewBootCompleted(page, runtimeCollector.failures);
+    runtimeCollector.detach();
   });
 });
