@@ -7,6 +7,7 @@
 import React from 'react';
 import { User, Calendar, Activity } from 'lucide-react';
 import type { MasterPatient } from '@/types/domain/patientMaster';
+import { formatDateToCL } from '@/utils/clinicalUtils';
 
 interface PatientSearchResultItemProps {
   patient: MasterPatient;
@@ -33,13 +34,6 @@ const highlightMatch = (text: string, query: string): React.ReactNode => {
       {text.slice(idx + lowerQuery.length)}
     </>
   );
-};
-
-const formatDate = (iso: string | undefined): string => {
-  if (!iso) return '';
-  const parts = iso.split('-');
-  if (parts.length !== 3) return iso;
-  return `${parts[2]}/${parts[1]}/${parts[0]}`;
 };
 
 export const PatientSearchResultItem: React.FC<PatientSearchResultItemProps> = ({
@@ -77,7 +71,7 @@ export const PatientSearchResultItem: React.FC<PatientSearchResultItemProps> = (
           {patient.lastAdmission && (
             <span className="flex items-center gap-1 text-[10px] text-slate-400">
               <Calendar size={10} />
-              {formatDate(patient.lastAdmission)}
+              {formatDateToCL(patient.lastAdmission)}
             </span>
           )}
         </div>

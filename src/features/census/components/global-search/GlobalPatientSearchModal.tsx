@@ -8,7 +8,7 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, X, Loader2, Users } from 'lucide-react';
-import { useGlobalPatientSearch } from '@/hooks/useGlobalPatientSearch';
+import { useGlobalPatientSearch } from '@/features/census/components/global-search/useGlobalPatientSearch';
 import { PatientSearchResultItem } from '@/features/census/components/global-search/PatientSearchResultItem';
 import { PatientEpisodeTimeline } from '@/features/census/components/global-search/PatientEpisodeTimeline';
 
@@ -31,17 +31,20 @@ export const GlobalPatientSearchModal: React.FC<GlobalPatientSearchModalProps> =
 }) => {
   const search = useGlobalPatientSearch();
   const inputRef = useRef<HTMLInputElement>(null);
+  const resetRef = useRef(search.reset);
 
-  // ---- Focus input on open ----
+  useEffect(() => {
+    resetRef.current = search.reset;
+  }, [search.reset]);
+
+  // Focus input on open, reset state on close
   useEffect(() => {
     if (isOpen) {
-      // Small delay for animation frame
       const raf = requestAnimationFrame(() => inputRef.current?.focus());
       return () => cancelAnimationFrame(raf);
     }
-    // Reset on close
-    search.reset();
-  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+    resetRef.current();
+  }, [isOpen]);
 
   // ---- Keyboard navigation ----
   const handleKeyDown = useCallback(
