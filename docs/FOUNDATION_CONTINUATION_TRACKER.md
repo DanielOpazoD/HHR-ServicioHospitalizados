@@ -1,6 +1,6 @@
 # Foundation Continuation Tracker
 
-Última actualización: 2026-04-09
+Última actualización: 2026-04-11
 
 ## Resumen
 
@@ -63,11 +63,14 @@
 - `check:quality`: `ok`
 - `check:critical-coverage`: `ok`
 - `check:flow-performance-budget`: `ok`
+- `check:repo-hygiene`: `ok`
+- `check:legacy-permissions-boundary`: `ok`
 - `system-confidence`: `ok`
 - `quality-metrics`: `featureBoundaryViolations=0`, `dailyRecordBoundaryViolations=0`
-- focos activos: ninguno; sostener mantenimiento normal
+- focos activos: `foundations` y `permissions` como deuda viva de mantenimiento; sin drift nuevo detectado
 
 ## Siguiente paso recomendado
 
 1. Sostener la regeneración de `reports/*` al final de cada lote que toque guardrails o budgets
 2. Mantener `BaseModal` como candidato de mantenimiento si vuelve a aparecer como cuello real de cambio
+3. Repetir la validación de `check:repo-hygiene` y `check:legacy-permissions-boundary` en la primera iteración disponible de cada ciclo
