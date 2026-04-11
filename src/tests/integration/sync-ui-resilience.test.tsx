@@ -154,6 +154,10 @@ describe('Sync UI Resilience Integration', () => {
       expect(result.current.record?.beds.R1.patientName).toBe('Paciente Local');
     });
 
+    await waitFor(() => {
+      expect(mockSubscribe).toHaveBeenCalledWith(date, expect.any(Function));
+    });
+
     const subscribeCallback = mockSubscribe.mock.calls[0][1];
 
     await act(async () => {

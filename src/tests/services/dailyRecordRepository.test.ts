@@ -89,6 +89,7 @@ vi.mock('@/services/storage/firestore', () => ({
 
 vi.mock('@/services/storage/firestore/firestoreRecordQueries', () => ({
   getRecordFromFirestore: firestoreMock.getRecordFromFirestore,
+  getRecordFromFirestoreDetailed: firestoreMock.getRecordFromFirestoreDetailed,
   getAvailableDatesFromFirestore: firestoreMock.getAvailableDatesFromFirestore,
   subscribeToRecord: firestoreMock.subscribeToRecord,
   getAllRecordsFromFirestore: vi.fn().mockResolvedValue({}),
@@ -252,7 +253,7 @@ describe('DailyRecordRepository (Expanded)', () => {
       const initialized = await initializeDay('2024-12-28');
 
       expect(initialized.lastUpdated).toBe(remote.lastUpdated);
-      expect(firestoreMock.getRecordFromFirestore).toHaveBeenCalledWith('2024-12-28');
+      expect(firestoreMock.getRecordFromFirestoreDetailed).toHaveBeenCalledWith('2024-12-28');
     });
   });
 
@@ -402,6 +403,7 @@ describe('DailyRecordRepository (Expanded)', () => {
 
       const result = await syncWithFirestore('2024-12-28');
       expect(result).toMatchObject(remote);
+      expect(firestoreMock.getRecordFromFirestoreDetailed).toHaveBeenCalledWith('2024-12-28');
 
       const savedLocal = await getForDate('2024-12-28');
       expect(savedLocal?.date).toEqual(remote.date);

@@ -62,7 +62,7 @@ describe('DischargeRowView', () => {
     originalData: { specialty: 'Psiquiatría' } as never,
   };
 
-  it('shows fuga action only for fuga discharges and opens the modal', () => {
+  it('shows fuga action only for fuga discharges and opens the modal', async () => {
     render(
       <table>
         <tbody>
@@ -76,6 +76,6 @@ describe('DischargeRowView', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: /fuga/i }));
-    expect(screen.getByText('Fuga Notification Modal')).toBeInTheDocument();
+    expect(await screen.findByText('Fuga Notification Modal')).toBeInTheDocument();
   });
 });

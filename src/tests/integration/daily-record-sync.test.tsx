@@ -179,16 +179,18 @@ describe('DailyRecord Sync Integration', () => {
     });
     expect(mockDailyRecordRepositoryPort.getForDateWithMeta).toHaveBeenCalledWith(
       '2024-12-28',
-      true
+      false
     );
   });
 
-  it('should subscribe to remote changes on mount', async () => {
+  it('should subscribe to remote changes after deferred hydration becomes ready', async () => {
     renderHook(() => useDailyRecordSyncQuery('2024-12-28', false, 'ready'), {
       wrapper: createWrapper(),
     });
 
-    expect(mockSubscribe).toHaveBeenCalledWith('2024-12-28', expect.any(Function));
+    await waitFor(() => {
+      expect(mockSubscribe).toHaveBeenCalledWith('2024-12-28', expect.any(Function));
+    });
   });
 
   it('should update record when remote change is received (no local pending)', async () => {
@@ -202,7 +204,10 @@ describe('DailyRecord Sync Integration', () => {
     // WAITING FOR INITIAL FETCH TO COMPLETE (avoids race condition with setQueryData)
     await waitFor(() => expect(result.current.syncStatus).toBe('idle'));
 
-    // Trigger the callback passed to mockSubscribe
+    await waitFor(() => {
+      expect(mockSubscribe).toHaveBeenCalledWith('2024-12-28', expect.any(Function));
+    });
+
     const subscribeCallback = mockSubscribe.mock.calls[0][1];
 
     // Update mock to return the remote record on next fetch (if invalidation happens)
@@ -245,6 +250,10 @@ describe('DailyRecord Sync Integration', () => {
     });
 
     await waitFor(() => expect(result.current.record).toEqual(localRecord));
+
+    await waitFor(() => {
+      expect(mockSubscribe).toHaveBeenCalledWith('2024-12-28', expect.any(Function));
+    });
 
     const subscribeCallback = mockSubscribe.mock.calls[0][1];
 
