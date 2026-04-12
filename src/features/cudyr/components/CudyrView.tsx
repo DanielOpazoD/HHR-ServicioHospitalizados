@@ -21,7 +21,7 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
     handleToggleLock,
     handleScoreChange,
     handleCribScoreChange,
-    wasAdmittedAfterLock,
+    resolveCudyrEligibility,
   } = useCudyrLogic(readOnly);
 
   if (!record) {
@@ -173,43 +173,31 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
             <tbody>
               {visibleBeds.map(bed => {
                 const patient = record.beds[bed.id];
-                const shouldHidePatient =
-                  record.cudyrLocked &&
-                  wasAdmittedAfterLock(
-                    patient?.admissionDate,
-                    patient?.admissionTime,
-                    record.cudyrLockedAt,
-                    patient?.patientName
-                  );
-                const displayPatient = shouldHidePatient ? undefined : patient;
-                const hasCrib = !!displayPatient?.clinicalCrib?.patientName;
-                const cribPatient = displayPatient?.clinicalCrib;
-                const shouldHideCrib =
-                  record.cudyrLocked &&
-                  hasCrib &&
-                  wasAdmittedAfterLock(
-                    displayPatient?.clinicalCrib?.admissionDate,
-                    displayPatient?.clinicalCrib?.admissionTime,
-                    record.cudyrLockedAt,
-                    displayPatient?.clinicalCrib?.patientName
-                  );
+                const patientEligibility = resolveCudyrEligibility(patient);
+                const hasCrib = !!patient?.clinicalCrib?.patientName;
+                const cribPatient = patient?.clinicalCrib;
+                const cribEligibility = resolveCudyrEligibility(cribPatient);
 
                 return (
                   <React.Fragment key={bed.id}>
                     <CudyrRow
                       bed={bed}
-                      patient={displayPatient}
+                      patient={patient}
                       onScoreChange={handleScoreChange}
-                      readOnly={isEditingLocked}
+                      readOnly={isEditingLocked || patientEligibility.isBlocked}
+                      eligibilityBlocked={patientEligibility.isBlocked}
+                      eligibilityBlockedReason={patientEligibility.blockedReason}
                     />
-                    {hasCrib && !shouldHideCrib && cribPatient && (
+                    {hasCrib && cribPatient && (
                       <CudyrRow
                         bed={{ ...bed, id: `${bed.id}-crib`, name: `${bed.name} (CC)` }}
                         patient={cribPatient}
                         onScoreChange={(_, field, value) =>
                           handleCribScoreChange(bed.id, field, value)
                         }
-                        readOnly={isEditingLocked}
+                        readOnly={isEditingLocked || cribEligibility.isBlocked}
+                        eligibilityBlocked={cribEligibility.isBlocked}
+                        eligibilityBlockedReason={cribEligibility.blockedReason}
                         isCrib={true}
                       />
                     )}

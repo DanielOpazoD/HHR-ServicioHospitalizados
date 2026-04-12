@@ -18,6 +18,14 @@ Feature de categorización CUDYR para enfermería, con vista web, exportación y
 - El PDF de entrega de turno nocturno debe usar la misma regla.
 - El formateo horario compartido se resuelve vía `formatTimeHHMM` en `src/utils/dateUtils.ts`.
 
+## Regla de elegibilidad nocturna
+
+- El instrumento nocturno usa como referencia fija las `01:00` del día siguiente al `record.date`.
+- Solo se categoriza a pacientes con al menos `8` horas de hospitalización a ese corte.
+- Ingresos del mismo `record.date` sin `admissionTime` se consideran elegibles por supuesto clínico conservador.
+- Ingresos del día siguiente (`X + 1`) se bloquean para CUDYR aunque no exista `admissionTime`.
+- Pacientes excluidos siguen visibles en la tabla, pero con nombre bloqueado y puntajes de solo lectura.
+
 ## Visor del instrumento
 
 - `Ver Instrumento CUDYR` abre el PDF dentro de un visor modal interno.

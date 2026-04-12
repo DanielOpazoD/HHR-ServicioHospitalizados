@@ -264,9 +264,27 @@ describe('CudyrScoreUtils', () => {
 
 describe('cudyrSummary', () => {
   // Use real bed IDs from the BEDS constant so the functions can find them
+  const withEligibleAdmission = (patient: Record<string, unknown>) => ({
+    admissionDate: '2026-03-14',
+    admissionTime: '18:00',
+    ...patient,
+    clinicalCrib: patient.clinicalCrib
+      ? {
+          admissionDate: '2026-03-14',
+          admissionTime: '18:00',
+          ...(patient.clinicalCrib as Record<string, unknown>),
+        }
+      : undefined,
+  });
+
   const buildMinimalRecord = (bedsData: Record<string, unknown> = {}) => ({
     date: '2026-03-15',
-    beds: bedsData as Record<string, unknown>,
+    beds: Object.fromEntries(
+      Object.entries(bedsData).map(([bedId, patient]) => [
+        bedId,
+        withEligibleAdmission(patient as Record<string, unknown>),
+      ])
+    ) as Record<string, unknown>,
     activeExtraBeds: [] as string[],
   });
 

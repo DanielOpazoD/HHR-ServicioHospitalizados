@@ -11,6 +11,8 @@ interface CudyrRowProps {
   onScoreChange: (bedId: string, field: keyof CudyrScore, value: number) => void;
   readOnly?: boolean;
   isCrib?: boolean;
+  eligibilityBlocked?: boolean;
+  eligibilityBlockedReason?: string;
 }
 
 // Reusable Header Cell for Vertical Text
@@ -74,12 +76,17 @@ export const CudyrRow: React.FC<CudyrRowProps> = ({
   onScoreChange,
   readOnly = false,
   isCrib = false,
+  eligibilityBlocked = false,
+  eligibilityBlockedReason,
 }) => {
   const isOccupied = !!patient?.patientName;
   const isUTI = bed.type === 'UTI';
-  const cudyrScores = patient?.cudyr;
+  const cudyrScores = eligibilityBlocked ? undefined : patient?.cudyr;
+  const rowReadOnly = readOnly || eligibilityBlocked;
 
-  const { finalCat, depScore, riskScore, badgeColor } = getCategorization(patient?.cudyr);
+  const { finalCat, depScore, riskScore, badgeColor } = getCategorization(cudyrScores);
+  const displayedDepScore = eligibilityBlocked ? '' : depScore;
+  const displayedRiskScore = eligibilityBlocked ? '' : riskScore;
 
   // Background color based on bed type and crib status
   const rowBgClass = isCrib ? 'bg-purple-50/60' : isUTI ? 'bg-yellow-50/60' : 'bg-white';
@@ -120,11 +127,21 @@ export const CudyrRow: React.FC<CudyrRowProps> = ({
         {bed.name}
       </td>
       <td
-        className="border-r border-slate-300 p-1 truncate font-medium text-slate-700 w-[100px] max-w-[100px] print:w-[88px] print:max-w-[88px] print:whitespace-nowrap print:overflow-visible"
-        title={patient.patientName}
+        className={clsx(
+          'border-r border-slate-300 p-1 truncate font-medium w-[100px] max-w-[100px] print:w-[88px] print:max-w-[88px] print:whitespace-nowrap print:overflow-visible',
+          eligibilityBlocked ? 'text-amber-700 bg-amber-50/60' : 'text-slate-700'
+        )}
+        title={eligibilityBlockedReason ?? patient.patientName}
       >
         {/* Show name on screen, RUT when printing */}
-        <span className="print:hidden">{patient.patientName}</span>
+        <span className={clsx('print:hidden', eligibilityBlocked && 'font-semibold')}>
+          {patient.patientName}
+        </span>
+        {eligibilityBlocked && (
+          <span className="print:hidden block text-[9px] font-semibold uppercase tracking-wide text-amber-700">
+            Bloqueado CUDYR
+          </span>
+        )}
         <span className="hidden print:inline text-[10px]">{patient.rut || '-'}</span>
       </td>
 
@@ -135,7 +152,7 @@ export const CudyrRow: React.FC<CudyrRowProps> = ({
           field="changeClothes"
           value={cudyrScores?.changeClothes}
           onScoreChange={onScoreChange}
-          readOnly={readOnly}
+          readOnly={rowReadOnly}
         />
       </td>
       <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-blue-50">
@@ -144,7 +161,7 @@ export const CudyrRow: React.FC<CudyrRowProps> = ({
           field="mobilization"
           value={cudyrScores?.mobilization}
           onScoreChange={onScoreChange}
-          readOnly={readOnly}
+          readOnly={rowReadOnly}
         />
       </td>
       <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-blue-50">
@@ -153,7 +170,7 @@ export const CudyrRow: React.FC<CudyrRowProps> = ({
           field="feeding"
           value={cudyrScores?.feeding}
           onScoreChange={onScoreChange}
-          readOnly={readOnly}
+          readOnly={rowReadOnly}
         />
       </td>
       <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-blue-50">
@@ -162,7 +179,7 @@ export const CudyrRow: React.FC<CudyrRowProps> = ({
           field="elimination"
           value={cudyrScores?.elimination}
           onScoreChange={onScoreChange}
-          readOnly={readOnly}
+          readOnly={rowReadOnly}
         />
       </td>
       <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-blue-50">
@@ -171,7 +188,7 @@ export const CudyrRow: React.FC<CudyrRowProps> = ({
           field="psychosocial"
           value={cudyrScores?.psychosocial}
           onScoreChange={onScoreChange}
-          readOnly={readOnly}
+          readOnly={rowReadOnly}
         />
       </td>
       <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-blue-50">
@@ -180,7 +197,7 @@ export const CudyrRow: React.FC<CudyrRowProps> = ({
           field="surveillance"
           value={cudyrScores?.surveillance}
           onScoreChange={onScoreChange}
-          readOnly={readOnly}
+          readOnly={rowReadOnly}
         />
       </td>
 
@@ -191,7 +208,7 @@ export const CudyrRow: React.FC<CudyrRowProps> = ({
           field="vitalSigns"
           value={cudyrScores?.vitalSigns}
           onScoreChange={onScoreChange}
-          readOnly={readOnly}
+          readOnly={rowReadOnly}
         />
       </td>
       <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-red-50">
@@ -200,7 +217,7 @@ export const CudyrRow: React.FC<CudyrRowProps> = ({
           field="fluidBalance"
           value={cudyrScores?.fluidBalance}
           onScoreChange={onScoreChange}
-          readOnly={readOnly}
+          readOnly={rowReadOnly}
         />
       </td>
       <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-red-50">
@@ -209,7 +226,7 @@ export const CudyrRow: React.FC<CudyrRowProps> = ({
           field="oxygenTherapy"
           value={cudyrScores?.oxygenTherapy}
           onScoreChange={onScoreChange}
-          readOnly={readOnly}
+          readOnly={rowReadOnly}
         />
       </td>
       <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-red-50">
@@ -218,7 +235,7 @@ export const CudyrRow: React.FC<CudyrRowProps> = ({
           field="airway"
           value={cudyrScores?.airway}
           onScoreChange={onScoreChange}
-          readOnly={readOnly}
+          readOnly={rowReadOnly}
         />
       </td>
       <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-red-50">
@@ -227,7 +244,7 @@ export const CudyrRow: React.FC<CudyrRowProps> = ({
           field="proInterventions"
           value={cudyrScores?.proInterventions}
           onScoreChange={onScoreChange}
-          readOnly={readOnly}
+          readOnly={rowReadOnly}
         />
       </td>
       <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-red-50">
@@ -236,7 +253,7 @@ export const CudyrRow: React.FC<CudyrRowProps> = ({
           field="skinCare"
           value={cudyrScores?.skinCare}
           onScoreChange={onScoreChange}
-          readOnly={readOnly}
+          readOnly={rowReadOnly}
         />
       </td>
       <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-red-50">
@@ -245,7 +262,7 @@ export const CudyrRow: React.FC<CudyrRowProps> = ({
           field="pharmacology"
           value={cudyrScores?.pharmacology}
           onScoreChange={onScoreChange}
-          readOnly={readOnly}
+          readOnly={rowReadOnly}
         />
       </td>
       <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-red-50">
@@ -254,16 +271,16 @@ export const CudyrRow: React.FC<CudyrRowProps> = ({
           field="invasiveElements"
           value={cudyrScores?.invasiveElements}
           onScoreChange={onScoreChange}
-          readOnly={readOnly}
+          readOnly={rowReadOnly}
         />
       </td>
 
       {/* Results - P.DEP and P.RIES first (hidden on print), then CAT */}
       <td className="border-r border-slate-300 p-1 text-center text-xs text-blue-800 font-bold bg-blue-50/30 print:hidden">
-        {depScore}
+        {displayedDepScore}
       </td>
       <td className="border-r border-slate-300 p-1 text-center text-xs text-red-800 font-bold bg-red-50/30 print:hidden">
-        {riskScore}
+        {displayedRiskScore}
       </td>
       <td className="p-1 text-center print:p-0.5">
         <span

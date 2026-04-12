@@ -10,6 +10,7 @@ import { BedType } from '@/types/domain/beds';
 import type { DailyRecordCudyrState } from '@/services/contracts/dailyRecordServiceContracts';
 import { BEDS } from '@/constants/beds';
 import { getCategorization } from './CudyrScoreUtils';
+import { isCudyrPatientEligible } from '@/features/cudyr/controllers/cudyrEligibilityController';
 
 // ============================================================================
 // Type Definitions
@@ -113,7 +114,7 @@ export const collectDailyCudyrPatients = (record: DailyRecordCudyrState): Catego
     if (!patient) return;
 
     // Process main patient
-    if (patient.patientName && !patient.isBlocked) {
+    if (isCudyrPatientEligible(record.date, patient)) {
       const { finalCat, isCategorized } = getCategorization(patient.cudyr);
       if (isCategorized) {
         patients.push({
@@ -129,15 +130,16 @@ export const collectDailyCudyrPatients = (record: DailyRecordCudyrState): Catego
     }
 
     // Process clinical crib
-    if (patient.clinicalCrib?.patientName) {
-      const { finalCat, isCategorized } = getCategorization(patient.clinicalCrib.cudyr);
+    const clinicalCrib = patient.clinicalCrib;
+    if (clinicalCrib && isCudyrPatientEligible(record.date, clinicalCrib)) {
+      const { finalCat, isCategorized } = getCategorization(clinicalCrib.cudyr);
       if (isCategorized) {
         patients.push({
           bedId: `${bed.id}-crib`,
           bedName: `${bed.name} (CC)`,
           bedType: bed.type,
-          patientName: patient.clinicalCrib.patientName,
-          rut: patient.clinicalCrib.rut || '',
+          patientName: clinicalCrib.patientName,
+          rut: clinicalCrib.rut || '',
           category: finalCat as CudyrCategory,
           isCrib: true,
         });
@@ -173,7 +175,7 @@ export const buildDailyCudyrSummary = (record: DailyRecordCudyrState): CudyrDail
     if (!patient) return;
 
     const processPatient = (p: PatientData, bedType: BedType) => {
-      if (!p.patientName || p.isBlocked) return;
+      if (!isCudyrPatientEligible(record.date, p)) return;
       occupiedCount++;
 
       const { finalCat, isCategorized } = getCategorization(p.cudyr);

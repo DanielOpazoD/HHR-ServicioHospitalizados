@@ -13,29 +13,7 @@ import { buildDailyCudyrSummary } from '../services/cudyrSummary';
 import { getAttributedAuthors } from '@/services/admin/attributionService';
 import { defaultDailyRecordWritePort } from '@/application/ports/dailyRecordPort';
 import { createScopedLogger } from '@/services/utils/loggerScope';
-
-/**
- * Helper: Check if a patient was admitted after CUDYR was locked.
- */
-const wasAdmittedAfterLock = (
-  admissionDate?: string,
-  admissionTime?: string,
-  lockedAt?: string,
-  patientName?: string
-): boolean => {
-  if (!lockedAt) return false;
-  if (!patientName) return false;
-  if (!admissionDate) return true;
-
-  const admissionDateTime = admissionTime
-    ? `${admissionDate}T${admissionTime}:00`
-    : `${admissionDate}T00:00:00`;
-
-  const admissionTs = new Date(admissionDateTime).getTime();
-  const lockTs = new Date(lockedAt).getTime();
-
-  return admissionTs > lockTs;
-};
+import { resolveCudyrEligibility } from '@/features/cudyr/controllers/cudyrEligibilityController';
 
 const cudyrLogicLogger = createScopedLogger('CudyrLogic');
 
@@ -96,6 +74,17 @@ export const useCudyrLogic = (readOnly: boolean) => {
     [updateClinicalCribCudyr]
   );
 
+  const resolvePatientCudyrEligibility = useCallback(
+    (patient?: { patientName?: string; admissionDate?: string; admissionTime?: string }) =>
+      resolveCudyrEligibility({
+        recordDate: record?.date || '',
+        patientName: patient?.patientName,
+        admissionDate: patient?.admissionDate,
+        admissionTime: patient?.admissionTime,
+      }),
+    [record?.date]
+  );
+
   // Logging
   useEffect(() => {
     if (record && record.date) {
@@ -127,12 +116,24 @@ export const useCudyrLogic = (readOnly: boolean) => {
     visibleBeds.forEach(b => {
       const p = record.beds[b.id];
       if (!p) return;
-      if (p.patientName && !p.isBlocked) {
+      const patientEligibility = resolveCudyrEligibility({
+        recordDate: record.date,
+        patientName: p.patientName,
+        admissionDate: p.admissionDate,
+        admissionTime: p.admissionTime,
+      });
+      if (p.patientName && !p.isBlocked && patientEligibility.isEligible) {
         occupiedCount++;
         const { isCategorized } = getCategorization(p.cudyr);
         if (isCategorized) categorizedCount++;
       }
-      if (p.clinicalCrib?.patientName) {
+      const cribEligibility = resolveCudyrEligibility({
+        recordDate: record.date,
+        patientName: p.clinicalCrib?.patientName,
+        admissionDate: p.clinicalCrib?.admissionDate,
+        admissionTime: p.clinicalCrib?.admissionTime,
+      });
+      if (p.clinicalCrib?.patientName && cribEligibility.isEligible) {
         occupiedCount++;
         const { isCategorized } = getCategorization(p.clinicalCrib.cudyr);
         if (isCategorized) categorizedCount++;
@@ -158,6 +159,6 @@ export const useCudyrLogic = (readOnly: boolean) => {
     handleToggleLock,
     handleScoreChange,
     handleCribScoreChange,
-    wasAdmittedAfterLock,
+    resolveCudyrEligibility: resolvePatientCudyrEligibility,
   };
 };

@@ -35,6 +35,8 @@ describe('cudyrSummary', () => {
         patientName: 'Patient 1',
         rut: '12345678-9',
         isBlocked: false,
+        admissionDate: '2024-12-31',
+        admissionTime: '18:00',
         cudyr: { changeClothes: 1 } as unknown as CudyrType,
       },
       M1: {
@@ -42,12 +44,16 @@ describe('cudyrSummary', () => {
         patientName: 'Patient 2',
         rut: '98765432-1',
         isBlocked: false,
+        admissionDate: '2024-12-31',
+        admissionTime: '18:00',
         cudyr: { changeClothes: 2 } as unknown as CudyrType,
         clinicalCrib: {
           bedId: 'M1-crib',
           patientName: 'Baby 1',
           rut: 'RN',
           isBlocked: false,
+          admissionDate: '2024-12-31',
+          admissionTime: '18:00',
           cudyr: { changeClothes: 0 } as unknown as CudyrType,
         } as unknown as BedValue,
       },
@@ -93,12 +99,35 @@ describe('cudyrSummary', () => {
             bedId: 'EX1',
             patientName: 'Extra',
             isBlocked: false,
+            admissionDate: '2024-12-31',
+            admissionTime: '18:00',
             cudyr: {} as CudyrType,
           } as unknown as BedValue,
         },
       };
       const patients = collectDailyCudyrPatients(recordWithExtra);
       expect(patients.some(p => p.bedId === 'EX1')).toBe(true);
+    });
+
+    it('should skip ineligible patients even if they contain historical CUDYR scores', () => {
+      const ineligibleRecord: DailyRecord = {
+        ...mockRecord,
+        date: '2025-01-01',
+        beds: {
+          R1: {
+            bedId: 'R1',
+            patientName: 'Ingreso tardio',
+            rut: '11111111-1',
+            isBlocked: false,
+            admissionDate: '2025-01-01',
+            admissionTime: '23:30',
+            cudyr: { changeClothes: 3, vitalSigns: 3 } as unknown as CudyrType,
+          } as unknown as BedValue,
+        } as unknown as DailyRecord['beds'],
+      };
+
+      const patients = collectDailyCudyrPatients(ineligibleRecord);
+      expect(patients).toHaveLength(0);
     });
   });
 
@@ -118,6 +147,29 @@ describe('cudyrSummary', () => {
       const summary = buildDailyCudyrSummary(mockRecord);
       // M1 patient + M1 crib = at least 2 categorized in MEDIA
       expect(summary.mediaTotal).toBeGreaterThanOrEqual(1);
+    });
+
+    it('should exclude ineligible historical CUDYR scores from occupied and categorized counts', () => {
+      const ineligibleRecord: DailyRecord = {
+        ...mockRecord,
+        date: '2025-01-01',
+        beds: {
+          R1: {
+            bedId: 'R1',
+            patientName: 'Ingreso tardio',
+            rut: '11111111-1',
+            isBlocked: false,
+            admissionDate: '2025-01-01',
+            admissionTime: '23:30',
+            cudyr: { changeClothes: 3, vitalSigns: 3 } as unknown as CudyrType,
+          } as unknown as BedValue,
+        } as unknown as DailyRecord['beds'],
+      };
+
+      const summary = buildDailyCudyrSummary(ineligibleRecord);
+      expect(summary.occupiedCount).toBe(0);
+      expect(summary.categorizedCount).toBe(0);
+      expect(summary.utiTotal).toBe(0);
     });
   });
 

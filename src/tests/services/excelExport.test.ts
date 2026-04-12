@@ -6,6 +6,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { beforeEach, describe, it, expect, vi } from 'vitest';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
+import { DataFactory } from '@/tests/factories/DataFactory';
 
 const FIXED_ISO_TIMESTAMP = '2026-01-15T10:30:00.000Z';
 
@@ -361,5 +362,83 @@ describe('reportWorkbookBuilders', () => {
 
     expect(rawWorkbook?.worksheets[0]?.name).toBe('Censo Bruto del Rango');
     expect(formattedWorkbook?.worksheets[0]?.name).toBe('Censo Formateado del Rango');
+  });
+
+  it('skips ineligible historical CUDYR scores from the daily Excel and exports real categorization fields', async () => {
+    const { buildCudyrDailyWorkbookOrNull } =
+      await import('@/services/exporters/reportWorkbookBuilders');
+    const dailyRecordRepository =
+      await import('@/services/repositories/dailyRecordRepositoryReadService');
+
+    vi.mocked(dailyRecordRepository.getForDate).mockResolvedValue(
+      toDailyRecord({
+        date: '2026-04-12',
+        beds: {
+          R1: DataFactory.createMockPatient('R1', {
+            patientName: 'Elegible',
+            rut: '1-9',
+            admissionDate: '2026-04-11',
+            admissionTime: '18:00',
+            isBlocked: false,
+            cudyr: {
+              changeClothes: 3,
+              mobilization: 3,
+              feeding: 3,
+              elimination: 3,
+              psychosocial: 1,
+              surveillance: 0,
+              vitalSigns: 3,
+              fluidBalance: 3,
+              oxygenTherapy: 3,
+              airway: 3,
+              proInterventions: 3,
+              skinCare: 2,
+              pharmacology: 1,
+              invasiveElements: 1,
+            },
+          }),
+          R2: DataFactory.createMockPatient('R2', {
+            patientName: 'Bloqueado por 8h',
+            rut: '2-7',
+            admissionDate: '2026-04-12',
+            admissionTime: '23:30',
+            isBlocked: false,
+            cudyr: {
+              changeClothes: 3,
+              mobilization: 3,
+              feeding: 3,
+              elimination: 3,
+              psychosocial: 3,
+              surveillance: 3,
+              vitalSigns: 3,
+              fluidBalance: 3,
+              oxygenTherapy: 3,
+              airway: 3,
+              proInterventions: 3,
+              skinCare: 3,
+              pharmacology: 3,
+              invasiveElements: 3,
+            },
+          }),
+        },
+        discharges: [],
+        transfers: [],
+        cma: [],
+        nurses: [],
+        activeExtraBeds: [],
+        lastUpdated: FIXED_ISO_TIMESTAMP,
+      })
+    );
+
+    const workbook = await buildCudyrDailyWorkbookOrNull('2026-04-12');
+    const worksheet = workbook?.getWorksheet('CUDYR Diario del Registro');
+
+    expect(worksheet).toBeDefined();
+    expect(worksheet?.actualRowCount).toBe(2);
+    expect(worksheet?.getRow(2).getCell(3).value).toBe('Elegible');
+    expect(worksheet?.getRow(2).getCell(5).value).toBe(32);
+    expect(worksheet?.getRow(2).getCell(6).value).toBe('A1');
+    expect(worksheet?.getRow(2).getCell(7).value).toBe(13);
+    expect(worksheet?.getRow(2).getCell(8).value).toBe(19);
   });
 });

@@ -53,7 +53,11 @@ const createMockCudyrLogicReturn = (record: DailyRecord | null, overrides = {}) 
   handleToggleLock: vi.fn(),
   handleScoreChange: vi.fn(),
   handleCribScoreChange: vi.fn(),
-  wasAdmittedAfterLock: vi.fn().mockReturnValue(false),
+  resolveCudyrEligibility: vi.fn().mockReturnValue({
+    isEligible: true,
+    isBlocked: false,
+    blockedReason: undefined,
+  }),
   ...overrides,
 });
 
@@ -187,5 +191,53 @@ describe('CudyrView Component', () => {
     const header = screen.getByRole('banner');
     expect(within(header).getByText(/Ocupadas:/i).parentElement).toHaveTextContent(/2/);
     expect(within(header).getByText(/Categ:/i).parentElement).toHaveTextContent(/1/);
+  });
+
+  it('shows blocked CUDYR rows instead of hiding patients excluded by the night-shift rule', () => {
+    const record = DataFactory.createMockDailyRecord('2024-12-11');
+    record.beds['R1'] = DataFactory.createMockPatient('R1', {
+      patientName: 'PACIENTE BLOQUEADO',
+      admissionDate: '2024-12-11',
+      admissionTime: '23:30',
+      cudyr: {
+        changeClothes: 3,
+        mobilization: 3,
+        feeding: 3,
+        elimination: 3,
+        psychosocial: 3,
+        surveillance: 3,
+        vitalSigns: 3,
+        fluidBalance: 3,
+        oxygenTherapy: 3,
+        airway: 3,
+        proInterventions: 3,
+        skinCare: 3,
+        pharmacology: 3,
+        invasiveElements: 3,
+      },
+    });
+
+    mockUseCudyrLogic.mockReturnValue(
+      createMockCudyrLogicReturn(record, {
+        stats: { total: 1, occupiedCount: 0, categorizedCount: 0 },
+        resolveCudyrEligibility: vi.fn().mockReturnValue({
+          isEligible: false,
+          isBlocked: true,
+          blockedReason: 'Ingreso menor a 8 h al corte fijo 01:00.',
+        }),
+      })
+    );
+
+    render(<CudyrView />);
+
+    const blockedRow = screen.getByText('PACIENTE BLOQUEADO').closest('tr');
+    expect(screen.getByText('PACIENTE BLOQUEADO')).toBeInTheDocument();
+    expect(screen.getByText(/Bloqueado CUDYR/i)).toBeInTheDocument();
+    expect(blockedRow).not.toBeNull();
+    expect(within(blockedRow as HTMLTableRowElement).queryByText(/^A1$/)).not.toBeInTheDocument();
+    expect(screen.getAllByRole('spinbutton').every(input => input.hasAttribute('disabled'))).toBe(
+      true
+    );
+    expect((screen.getAllByRole('spinbutton')[0] as HTMLInputElement).value).toBe('');
   });
 });
