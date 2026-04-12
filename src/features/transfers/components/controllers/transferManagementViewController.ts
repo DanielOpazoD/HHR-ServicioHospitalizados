@@ -42,6 +42,7 @@ interface TransferTableActionBindings {
   archiveTransfer: (transfer: TransferRequest) => Promise<void>;
   deleteHistoryEntry: (transfer: TransferRequest, historyIndex: number) => Promise<void>;
   deleteTransfer: (transferId: string) => Promise<void>;
+  deleteFinalizedTransfer: (transferId: string) => Promise<void>;
 }
 
 interface TransferTableHandlerBindings {
@@ -172,7 +173,10 @@ export const buildTransferTableBindings = ({
   onViewDocs: handlers.handleViewDocs,
   onUndo: actions.undoTransfer,
   onArchive: actions.archiveTransfer,
-  onDelete: transfer => actions.deleteTransfer(transfer.id),
+  onDelete: transfer =>
+    mode === 'finalized'
+      ? actions.deleteFinalizedTransfer(transfer.id)
+      : actions.deleteTransfer(transfer.id),
   onDeleteHistoryEntry: actions.deleteHistoryEntry,
   onUpdateTransfer: actions.updateTransfer,
 });

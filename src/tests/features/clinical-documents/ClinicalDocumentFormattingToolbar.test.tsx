@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 
+import type { ClinicalDocumentFormattingToolbarProps } from '@/features/clinical-documents/components/ClinicalDocumentFormattingToolbar';
 import { ClinicalDocumentFormattingToolbar } from '@/features/clinical-documents/components/ClinicalDocumentFormattingToolbar';
 import { createClinicalDocumentDraft } from '@/features/clinical-documents/domain/factories';
 
@@ -22,6 +23,26 @@ const selectedDocument = createClinicalDocumentDraft({
   especialidad: 'Medicina',
 });
 
+/** Builds default props for the toolbar, allowing partial overrides. */
+const buildProps = (
+  overrides: Partial<ClinicalDocumentFormattingToolbarProps> = {}
+): ClinicalDocumentFormattingToolbarProps => ({
+  selectedDocument,
+  canEdit: true,
+  formattingDisabled: false,
+  isFormattingOpen: false,
+  canUndo: false,
+  canRedo: false,
+  onPrint: vi.fn(),
+  onRestoreTemplate: vi.fn(),
+  onToggleFormatting: vi.fn(),
+  onApplyFormatting: vi.fn(),
+  zoom: 100,
+  onZoomIn: vi.fn(),
+  onZoomOut: vi.fn(),
+  ...overrides,
+});
+
 describe('ClinicalDocumentFormattingToolbar', () => {
   it('renders formatting actions and delegates commands when formatting is open', () => {
     const onPrint = vi.fn();
@@ -31,17 +52,13 @@ describe('ClinicalDocumentFormattingToolbar', () => {
 
     render(
       <ClinicalDocumentFormattingToolbar
-        selectedDocument={selectedDocument}
-        canEdit={true}
-        formattingDisabled={false}
-        isFormattingOpen={true}
-        onPrint={onPrint}
-        onRestoreTemplate={onRestoreTemplate}
-        onToggleFormatting={onToggleFormatting}
-        onApplyFormatting={onApplyFormatting}
-        zoom={100}
-        onZoomIn={vi.fn()}
-        onZoomOut={vi.fn()}
+        {...buildProps({
+          isFormattingOpen: true,
+          onPrint,
+          onRestoreTemplate,
+          onToggleFormatting,
+          onApplyFormatting,
+        })}
       />
     );
 
@@ -58,25 +75,69 @@ describe('ClinicalDocumentFormattingToolbar', () => {
     expect(onApplyFormatting).toHaveBeenCalledWith('removeFormat');
   });
 
+  // -----------------------------------------------------------------------
+  // Undo / Redo
+  // -----------------------------------------------------------------------
+
+  it('dispatches undo/redo commands when buttons are clicked', () => {
+    const onApplyFormatting = vi.fn();
+
+    render(
+      <ClinicalDocumentFormattingToolbar
+        {...buildProps({ canUndo: true, canRedo: true, onApplyFormatting })}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Deshacer' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Rehacer' }));
+
+    expect(onApplyFormatting).toHaveBeenCalledWith('undo');
+    expect(onApplyFormatting).toHaveBeenCalledWith('redo');
+  });
+
+  it('disables undo when canUndo is false', () => {
+    render(
+      <ClinicalDocumentFormattingToolbar {...buildProps({ canUndo: false, canRedo: true })} />
+    );
+
+    expect(screen.getByRole('button', { name: 'Deshacer' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Rehacer' })).not.toBeDisabled();
+  });
+
+  it('disables redo when canRedo is false', () => {
+    render(
+      <ClinicalDocumentFormattingToolbar {...buildProps({ canUndo: true, canRedo: false })} />
+    );
+
+    expect(screen.getByRole('button', { name: 'Deshacer' })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Rehacer' })).toBeDisabled();
+  });
+
+  it('disables undo/redo when document is locked', () => {
+    render(
+      <ClinicalDocumentFormattingToolbar
+        {...buildProps({
+          selectedDocument: { ...selectedDocument, isLocked: true },
+          canEdit: false,
+          canUndo: true,
+          canRedo: true,
+        })}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: 'Deshacer' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Rehacer' })).toBeDisabled();
+  });
+
+  // -----------------------------------------------------------------------
+  // Zoom
+  // -----------------------------------------------------------------------
+
   it('delegates zoom controls', () => {
     const onZoomIn = vi.fn();
     const onZoomOut = vi.fn();
 
-    render(
-      <ClinicalDocumentFormattingToolbar
-        selectedDocument={selectedDocument}
-        canEdit={true}
-        formattingDisabled={false}
-        isFormattingOpen={false}
-        onPrint={vi.fn()}
-        onRestoreTemplate={vi.fn()}
-        onToggleFormatting={vi.fn()}
-        onApplyFormatting={vi.fn()}
-        zoom={100}
-        onZoomIn={onZoomIn}
-        onZoomOut={onZoomOut}
-      />
-    );
+    render(<ClinicalDocumentFormattingToolbar {...buildProps({ onZoomIn, onZoomOut })} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Aumentar zoom' }));
     fireEvent.click(screen.getByRole('button', { name: 'Reducir zoom' }));
@@ -87,60 +148,34 @@ describe('ClinicalDocumentFormattingToolbar', () => {
 
   it('disables zoom out at minimum and zoom in at maximum', () => {
     const { rerender } = render(
-      <ClinicalDocumentFormattingToolbar
-        selectedDocument={selectedDocument}
-        canEdit={true}
-        formattingDisabled={false}
-        isFormattingOpen={false}
-        onPrint={vi.fn()}
-        onRestoreTemplate={vi.fn()}
-        onToggleFormatting={vi.fn()}
-        onApplyFormatting={vi.fn()}
-        zoom={60}
-        onZoomIn={vi.fn()}
-        onZoomOut={vi.fn()}
-      />
+      <ClinicalDocumentFormattingToolbar {...buildProps({ zoom: 60 })} />
     );
 
     expect(screen.getByRole('button', { name: 'Reducir zoom' })).toBeDisabled();
 
-    rerender(
-      <ClinicalDocumentFormattingToolbar
-        selectedDocument={selectedDocument}
-        canEdit={true}
-        formattingDisabled={false}
-        isFormattingOpen={false}
-        onPrint={vi.fn()}
-        onRestoreTemplate={vi.fn()}
-        onToggleFormatting={vi.fn()}
-        onApplyFormatting={vi.fn()}
-        zoom={150}
-        onZoomIn={vi.fn()}
-        onZoomOut={vi.fn()}
-      />
-    );
+    rerender(<ClinicalDocumentFormattingToolbar {...buildProps({ zoom: 150 })} />);
 
     expect(screen.getByRole('button', { name: 'Aumentar zoom' })).toBeDisabled();
   });
 
+  // -----------------------------------------------------------------------
+  // Disabled state
+  // -----------------------------------------------------------------------
+
   it('disables controls when editing is unavailable', () => {
     render(
       <ClinicalDocumentFormattingToolbar
-        selectedDocument={{ ...selectedDocument, isLocked: true }}
-        canEdit={false}
-        formattingDisabled={true}
-        isFormattingOpen={false}
-        onPrint={vi.fn()}
-        onRestoreTemplate={vi.fn()}
-        onToggleFormatting={vi.fn()}
-        onApplyFormatting={vi.fn()}
-        zoom={100}
-        onZoomIn={vi.fn()}
-        onZoomOut={vi.fn()}
+        {...buildProps({
+          selectedDocument: { ...selectedDocument, isLocked: true },
+          canEdit: false,
+          formattingDisabled: true,
+        })}
       />
     );
 
     expect(screen.getByRole('button', { name: 'Restablecer plantilla' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Formato' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Deshacer' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Rehacer' })).toBeDisabled();
   });
 });

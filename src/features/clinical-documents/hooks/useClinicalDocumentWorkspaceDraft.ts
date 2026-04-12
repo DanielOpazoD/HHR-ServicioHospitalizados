@@ -65,6 +65,7 @@ export interface ClinicalDocumentWorkspaceDraftState {
   restoreTemplateContent: () => void;
   addClinicalUpdate: () => void;
   patchAnnexContent: (content: string) => void;
+  clearAnnexContent: () => void;
   patchUpdateDate: (sectionId: string, date: string) => void;
   patchUpdateTime: (sectionId: string, time: string) => void;
 }
@@ -199,6 +200,7 @@ export const useClinicalDocumentWorkspaceDraft = ({
     restoreTemplateContent: () => dispatch({ type: 'RESTORE_TEMPLATE_CONTENT' }),
     addClinicalUpdate: () => dispatch({ type: 'ADD_CLINICAL_UPDATE' }),
     patchAnnexContent: (content: string) => dispatch({ type: 'PATCH_ANNEX_CONTENT', content }),
+    clearAnnexContent: () => dispatch({ type: 'CLEAR_ANNEX_CONTENT' }),
     patchUpdateDate: (sectionId: string, date: string) =>
       dispatch({ type: 'PATCH_UPDATE_DATE', sectionId, date }),
     patchUpdateTime: (sectionId: string, time: string) =>

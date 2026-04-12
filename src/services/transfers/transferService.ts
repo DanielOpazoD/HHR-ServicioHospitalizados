@@ -13,6 +13,7 @@ export { completeTransferMutation as completeTransfer } from '@/services/transfe
 export { completeTransferMutationWithResult as completeTransferWithResult } from '@/services/transfers/transferMutationsService';
 export { deleteTransferRequestMutation as deleteTransferRequest } from '@/services/transfers/transferMutationsService';
 export { deleteTransferRequestMutationWithResult as deleteTransferRequestWithResult } from '@/services/transfers/transferMutationsService';
+export { deleteFinalizedTransferMutationWithResult as deleteFinalizedTransferWithResult } from '@/services/transfers/transferMutationsService';
 export { deleteStatusHistoryEntryMutation as deleteStatusHistoryEntry } from '@/services/transfers/transferMutationsService';
 export { deleteStatusHistoryEntryMutationWithResult as deleteStatusHistoryEntryWithResult } from '@/services/transfers/transferMutationsService';
 export { getActiveTransfersQuery as getActiveTransfers } from '@/services/transfers/transferQueriesService';

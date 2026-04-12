@@ -26,6 +26,7 @@ interface TransferTableRowProps {
   onMarkTransferred: (transfer: TransferRequest) => void;
   onUndo: (transfer: TransferRequest) => void;
   onArchive: (transfer: TransferRequest) => void;
+  onDeleteFinalized: (transfer: TransferRequest) => void;
   onUpdateTransfer: (transferId: string, data: Partial<TransferFormData>) => Promise<void>;
   onOpenCloseMenu: (event: React.MouseEvent<HTMLButtonElement>) => void;
 }
@@ -42,6 +43,7 @@ export const TransferTableRow: React.FC<TransferTableRowProps> = ({
   onMarkTransferred,
   onUndo,
   onArchive,
+  onDeleteFinalized,
   onUpdateTransfer,
   onOpenCloseMenu,
 }) => {
@@ -125,6 +127,7 @@ export const TransferTableRow: React.FC<TransferTableRowProps> = ({
           onMarkTransferred={onMarkTransferred}
           onUndo={onUndo}
           onArchive={onArchive}
+          onDeleteFinalized={onDeleteFinalized}
           onOpenCloseMenu={onOpenCloseMenu}
         />
       </td>

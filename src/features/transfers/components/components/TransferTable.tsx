@@ -36,12 +36,12 @@ interface TransferActionsMenuState {
 }
 
 const TABLE_COLUMNS = [
-  { key: 'status', label: 'Estado', className: 'w-[14%]' },
-  { key: 'patient', label: 'Paciente', className: 'w-[21%]' },
+  { key: 'status', label: 'Estado', className: 'w-[12%]' },
+  { key: 'patient', label: 'Paciente', className: 'w-[19%]' },
   { key: 'destination', label: 'Hospital Destino', className: 'w-[13%]' },
   { key: 'requestDate', label: 'Fecha Solicitud', className: 'w-[10%]' },
-  { key: 'notes', label: 'Notas', className: 'w-[27%]' },
-  { key: 'actions', label: 'Acciones', className: 'w-[15%]' },
+  { key: 'notes', label: 'Notas', className: 'w-[22%]' },
+  { key: 'actions', label: 'Acciones', className: 'w-[24%]' },
 ] as const;
 
 export const TransferTable: React.FC<TransferTableProps> = ({
@@ -151,6 +151,7 @@ export const TransferTable: React.FC<TransferTableProps> = ({
               onMarkTransferred={onMarkTransferred}
               onUndo={onUndo}
               onArchive={onArchive}
+              onDeleteFinalized={setPendingDeleteTransfer}
               onUpdateTransfer={onUpdateTransfer}
               onOpenCloseMenu={event => handleOpenActionsMenu(event, transfer)}
             />

@@ -106,6 +106,7 @@ const defaultHandlers = {
   importIndicationsCatalog: vi.fn(async () => true),
   addClinicalUpdate: vi.fn(),
   patchAnnexContent: vi.fn(),
+  clearAnnexContent: vi.fn(),
   patchUpdateDate: vi.fn(),
   patchUpdateTime: vi.fn(),
 };

@@ -40,6 +40,8 @@ export const ALLOWED_TAGS = new Set([
   'CAPTION',
   // Media
   'IMG',
+  // Links
+  'A',
 ]);
 
 // ---------------------------------------------------------------------------
@@ -65,6 +67,12 @@ export const IMAGE_ALLOWED_STYLE_KEYS = new Set([
   'object-fit',
 ]);
 
+/**
+ * Extended style properties allowed on A (anchor) elements.
+ * Supports inline link styling (color, underline).
+ */
+export const LINK_ALLOWED_STYLE_KEYS = new Set([...ALLOWED_STYLE_KEYS, 'text-decoration']);
+
 // ---------------------------------------------------------------------------
 // Style sanitization
 // ---------------------------------------------------------------------------
@@ -83,7 +91,12 @@ export const sanitizeElementStyle = (element: HTMLElement, tagName?: string): st
     return '';
   }
 
-  const allowedKeys = tagName === 'IMG' ? IMAGE_ALLOWED_STYLE_KEYS : ALLOWED_STYLE_KEYS;
+  const allowedKeys =
+    tagName === 'IMG'
+      ? IMAGE_ALLOWED_STYLE_KEYS
+      : tagName === 'A'
+        ? LINK_ALLOWED_STYLE_KEYS
+        : ALLOWED_STYLE_KEYS;
 
   return rawStyle
     .split(';')
@@ -126,4 +139,26 @@ export const preserveElementAttributes = (
     if (colspan) clone.setAttribute('colspan', colspan);
     if (rowspan) clone.setAttribute('rowspan', rowspan);
   }
+  if (tagName === 'A') {
+    const href = source.getAttribute('href');
+    const target = source.getAttribute('target');
+    const rel = source.getAttribute('rel');
+    if (href) clone.setAttribute('href', href);
+    if (target) clone.setAttribute('target', target);
+    if (rel) clone.setAttribute('rel', rel);
+  }
 };
+
+// ---------------------------------------------------------------------------
+// Text escaping
+// ---------------------------------------------------------------------------
+
+/**
+ * Escapes HTML special characters in plain text.
+ * Use when embedding user-provided text inside HTML markup.
+ *
+ * @param str - Raw text string.
+ * @returns String with `&`, `<`, `>`, and `"` replaced by HTML entities.
+ */
+export const escapeHtml = (str: string): string =>
+  str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');

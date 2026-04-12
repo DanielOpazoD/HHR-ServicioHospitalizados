@@ -67,10 +67,13 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
       canEdit={sheetProps.canEdit}
       formattingDisabled={sheetState.formattingDisabled || !sheetProps.canEdit}
       isFormattingOpen={sheetState.isFormattingOpen}
+      canUndo={sheetState.activeEditorHistoryState.canUndo}
+      canRedo={sheetState.activeEditorHistoryState.canRedo}
       onPrint={sheetProps.onPrint}
       onRestoreTemplate={sheetProps.onRestoreTemplate}
       onToggleFormatting={() => sheetState.setIsFormattingOpen(prev => !prev)}
       onApplyFormatting={sheetState.applyFormatting}
+      onInsertHtml={sheetState.insertHtml}
       zoom={zoom}
       onZoomIn={() => setZoom(z => Math.min(ZOOM_MAX, z + ZOOM_STEP))}
       onZoomOut={() => setZoom(z => Math.max(ZOOM_MIN, z - ZOOM_STEP))}

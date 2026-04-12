@@ -1,6 +1,6 @@
 import React from 'react';
 import clsx from 'clsx';
-import { Archive, CheckCircle, Eye, FileDown, Undo2, XCircle } from 'lucide-react';
+import { Archive, CheckCircle, Eye, FileDown, Trash2, Undo2, XCircle } from 'lucide-react';
 import type { TransferRequest } from '@/types/transfers';
 import type { TransferRowActionState } from '../controllers/transferTableController';
 
@@ -20,6 +20,7 @@ interface TransferTableRowActionsProps {
   onMarkTransferred: (transfer: TransferRequest) => void;
   onUndo: (transfer: TransferRequest) => void;
   onArchive: (transfer: TransferRequest) => void;
+  onDeleteFinalized: (transfer: TransferRequest) => void;
   onOpenCloseMenu: (event: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
@@ -32,9 +33,10 @@ export const TransferTableRowActions: React.FC<TransferTableRowActionsProps> = (
   onMarkTransferred,
   onUndo,
   onArchive,
+  onDeleteFinalized,
   onOpenCloseMenu,
 }) => (
-  <div className="flex items-center gap-1.5 whitespace-nowrap overflow-hidden">
+  <div className="flex flex-wrap items-center gap-1.5">
     {SHOW_PREPARE_TRANSFER_DOCS_ACTION && actionState.canPrepareDocuments && (
       <button
         onClick={() => onGenerateDocs(transfer)}
@@ -106,6 +108,16 @@ export const TransferTableRowActions: React.FC<TransferTableRowActionsProps> = (
         title="Archivar (quitar de la lista)"
       >
         <Archive size={14} /> Archivar
+      </button>
+    )}
+
+    {actionState.canDeleteFinalizedTransfer && (
+      <button
+        onClick={() => onDeleteFinalized(transfer)}
+        className="flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2 py-1.5 text-[11px] font-semibold text-red-600 transition-all hover:bg-red-100"
+        title="Eliminar registro permanentemente"
+      >
+        <Trash2 size={14} /> Eliminar
       </button>
     )}
 

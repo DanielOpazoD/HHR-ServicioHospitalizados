@@ -31,6 +31,8 @@ export interface TransferRowActionState {
   canMarkTransferred: boolean;
   canUndoTransfer: boolean;
   canArchiveTransfer: boolean;
+  /** Permanently delete a finalized transfer (test data cleanup). */
+  canDeleteFinalizedTransfer: boolean;
   canCancelTransfer: boolean;
   canDeleteTransfer: boolean;
 }
@@ -42,6 +44,7 @@ export const getTransferRowActionState = (
   role?: UserRole
 ): TransferRowActionState => {
   const isActiveRow = mode === 'active' && isTransferActiveStatus(transfer.status);
+  const isFinalizedRow = mode === 'finalized' && isFinalizedTransferStatus(transfer.status);
   const isFinalizedTransferredRow = mode === 'finalized' && isTransferredStatus(transfer.status);
   const canAccessDocuments = canOpenTransferDocuments(role);
 
@@ -53,6 +56,7 @@ export const getTransferRowActionState = (
     canMarkTransferred: isActiveRow && isAcceptedSubState(transfer.status),
     canUndoTransfer: isFinalizedTransferredRow,
     canArchiveTransfer: isFinalizedTransferredRow,
+    canDeleteFinalizedTransfer: isFinalizedRow,
     canCancelTransfer: isActiveRow,
     canDeleteTransfer: isActiveRow,
   };

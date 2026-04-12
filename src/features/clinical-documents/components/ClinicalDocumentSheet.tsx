@@ -47,6 +47,7 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
   deleteIndication,
   importIndicationsCatalog,
   patchAnnexContent,
+  clearAnnexContent,
   patchUpdateDate,
   patchUpdateTime,
 }) => {
@@ -174,6 +175,7 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
             canEdit={canEdit}
             isLocked={selectedDocument.isLocked}
             onChange={patchAnnexContent}
+            onClear={clearAnnexContent}
             onEditorActivate={onEditorActivate}
             onEditorDeactivate={onEditorDeactivate}
           />

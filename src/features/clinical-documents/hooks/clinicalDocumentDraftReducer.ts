@@ -55,6 +55,7 @@ export type ClinicalDocumentDraftAction =
     }
   | { type: 'ADD_CLINICAL_UPDATE' }
   | { type: 'PATCH_ANNEX_CONTENT'; content: string }
+  | { type: 'CLEAR_ANNEX_CONTENT' }
   | { type: 'PATCH_UPDATE_DATE'; sectionId: string; date: string }
   | { type: 'PATCH_UPDATE_TIME'; sectionId: string; time: string }
   | { type: 'APPLY_TEMPLATE'; templateId: string }
@@ -279,6 +280,11 @@ export const clinicalDocumentDraftReducer = (
         ...draft,
         annexContent: action.content,
       }));
+    case 'CLEAR_ANNEX_CONTENT':
+      return patchDraft(state, draft => {
+        const { annexContent: _, ...rest } = draft;
+        return rest as typeof draft;
+      });
     case 'PATCH_UPDATE_DATE':
       return patchDraft(state, draft => ({
         ...draft,

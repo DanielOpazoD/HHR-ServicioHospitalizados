@@ -51,6 +51,7 @@ export const TransferManagementView: React.FC = () => {
     archiveTransfer,
     deleteHistoryEntry,
     deleteTransfer,
+    deleteFinalizedTransfer,
     getHospitalizedPatients,
   } = transferManagement;
   const { modals, selectedTransfer, isGenerating, generatedDocs, patientDataForDocs, handlers } =
@@ -63,6 +64,7 @@ export const TransferManagementView: React.FC = () => {
     archiveTransfer,
     deleteHistoryEntry,
     deleteTransfer,
+    deleteFinalizedTransfer,
   };
   const activeTableBindings = buildTransferTableBindings({
     transfers: activeTransfers,

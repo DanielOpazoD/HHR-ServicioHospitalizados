@@ -4,10 +4,13 @@
  * Annexes section rendered inside the clinical document sheet.
  * Uses CSS page-break-before so it prints as a separate page.
  * Supports images, tables, and rich text via the standard editor.
+ *
+ * Double-click on the title to reveal a delete button that removes
+ * the entire annex section from the document.
  */
 
-import React from 'react';
-import { Paperclip } from 'lucide-react';
+import React, { useCallback, useState } from 'react';
+import { Paperclip, Trash2, X } from 'lucide-react';
 import { ClinicalDocumentRichTextEditor } from '@/features/clinical-documents/components/ClinicalDocumentRichTextEditor';
 import type { ClinicalDocumentRichTextEditorActivationApi } from '@/features/clinical-documents/hooks/useClinicalDocumentRichTextEditorController';
 
@@ -16,6 +19,7 @@ interface ClinicalDocumentAnnexPageProps {
   canEdit: boolean;
   isLocked: boolean;
   onChange: (content: string) => void;
+  onClear: () => void;
   onEditorActivate?: (
     sectionId: string,
     editor: ClinicalDocumentRichTextEditorActivationApi
@@ -28,30 +32,111 @@ export const ClinicalDocumentAnnexPage: React.FC<ClinicalDocumentAnnexPageProps>
   canEdit,
   isLocked,
   onChange,
+  onClear,
   onEditorActivate,
   onEditorDeactivate,
-}) => (
-  <div
-    className="clinical-document-annex-page"
-    style={{
-      pageBreakBefore: 'always',
-      marginTop: '24px',
-      paddingTop: '16px',
-      borderTop: '2px solid #e2e8f0',
-    }}
-  >
-    <div className="flex items-center gap-2 mb-3">
-      <Paperclip size={16} className="text-slate-400 print:hidden" />
-      <h2 className="text-base font-bold text-slate-700">Anexos</h2>
+}) => {
+  const [showDelete, setShowDelete] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const handleTitleDoubleClick = useCallback(() => {
+    if (canEdit && !isLocked) {
+      setShowDelete(true);
+      setConfirmDelete(false);
+    }
+  }, [canEdit, isLocked]);
+
+  const handleDeleteClick = useCallback(() => {
+    setConfirmDelete(true);
+  }, []);
+
+  const handleConfirmDelete = useCallback(() => {
+    onClear();
+    setShowDelete(false);
+    setConfirmDelete(false);
+  }, [onClear]);
+
+  const handleCancelDelete = useCallback(() => {
+    setShowDelete(false);
+    setConfirmDelete(false);
+  }, []);
+
+  return (
+    <div
+      className="clinical-document-annex-page"
+      style={{
+        pageBreakBefore: 'always',
+        marginTop: '24px',
+        paddingTop: '16px',
+        borderTop: '2px solid #e2e8f0',
+      }}
+    >
+      {/* Header with double-click to show delete */}
+      <div className="flex items-center gap-2 mb-3 group print:!block">
+        <div
+          className="flex items-center gap-2 cursor-default select-none"
+          onDoubleClick={handleTitleDoubleClick}
+          title={canEdit && !isLocked ? 'Doble clic para opciones' : undefined}
+        >
+          <Paperclip size={16} className="text-slate-400 print:hidden" />
+          <h2 className="text-base font-bold text-slate-700">Anexos</h2>
+        </div>
+
+        {/* Delete controls (shown on double-click, hidden on print) */}
+        {showDelete && canEdit && !isLocked && (
+          <div className="flex items-center gap-1.5 ml-2 print:hidden animate-in fade-in duration-150">
+            {!confirmDelete ? (
+              <>
+                <button
+                  type="button"
+                  onClick={handleDeleteClick}
+                  className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600 hover:bg-red-100 transition-colors"
+                  title="Eliminar sección de anexos"
+                >
+                  <Trash2 size={12} />
+                  Eliminar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancelDelete}
+                  className="inline-flex items-center rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-xs text-slate-500 hover:bg-slate-50 transition-colors"
+                  title="Cancelar"
+                >
+                  <X size={12} />
+                </button>
+              </>
+            ) : (
+              <div className="flex items-center gap-1.5 rounded-md border border-red-300 bg-red-50 px-2 py-1">
+                <span className="text-xs text-red-700">¿Eliminar anexos?</span>
+                <button
+                  type="button"
+                  onClick={handleConfirmDelete}
+                  className="rounded bg-red-600 px-2 py-0.5 text-xs font-medium text-white hover:bg-red-700 transition-colors"
+                >
+                  Sí, eliminar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancelDelete}
+                  className="rounded border border-red-200 bg-white px-2 py-0.5 text-xs text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  No
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <ClinicalDocumentRichTextEditor
+        sectionId="annexes"
+        sectionTitle="Anexos"
+        value={content}
+        disabled={!canEdit || isLocked}
+        onChange={onChange}
+        onActivate={onEditorActivate}
+        onDeactivate={onEditorDeactivate}
+      />
     </div>
-    <ClinicalDocumentRichTextEditor
-      sectionId="annexes"
-      sectionTitle="Anexos"
-      value={content}
-      disabled={!canEdit || isLocked}
-      onChange={onChange}
-      onActivate={onEditorActivate}
-      onDeactivate={onEditorDeactivate}
-    />
-  </div>
-);
+  );
+};

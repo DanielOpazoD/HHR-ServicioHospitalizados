@@ -1,3 +1,15 @@
+/**
+ * useClinicalDocumentSheetState
+ *
+ * Local UI state for the clinical document sheet: active title editing,
+ * formatting panel, section drag-and-drop, indications panel, plan
+ * sub-section focus, and active rich-text editor tracking (including
+ * undo/redo history state and raw HTML insertion).
+ *
+ * State is scoped per-document via a signature key so switching
+ * documents resets transient UI without unmounting.
+ */
+
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { Dispatch, DragEvent, SetStateAction } from 'react';
 
@@ -10,18 +22,37 @@ import type {
 } from '@/features/clinical-documents/components/clinicalDocumentSheetShared';
 import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
 
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+/** Default specialty for the indications panel when no document context. */
 const DEFAULT_ACTIVE_SPECIALTY_ID: ClinicalDocumentIndicationSpecialtyId = 'tmt';
 
+/** Default plan sub-section focus when opening a new document. */
+const DEFAULT_PLAN_SUBSECTION_ID: ClinicalDocumentPlanSubsectionId = 'generales';
+
+// ---------------------------------------------------------------------------
+// Document-scoped state
+// ---------------------------------------------------------------------------
+
+/** Transient UI state that resets when switching to a different document. */
 interface DocumentScopedSheetState {
+  /** Unique key combining document id + specialty to detect switches. */
   documentSignature: string;
+  /** Whether the indications side-panel is visible. */
   isIndicationsPanelOpen: boolean;
+  /** Active specialty tab inside the indications panel. */
   activeIndicationsSpecialtyId: ClinicalDocumentIndicationSpecialtyId;
+  /** Active sub-section inside the plan section. */
   activePlanSubsectionId: ClinicalDocumentPlanSubsectionId;
 }
 
+/** Builds a unique signature for a document to detect selection changes. */
 const getDocumentSignature = (selectedDocument: ClinicalDocumentRecord | null) =>
   selectedDocument ? `${selectedDocument.id}:${selectedDocument.especialidad}` : 'none';
 
+/** Creates a fresh document-scoped state for the given document. */
 const createDocumentScopedSheetState = (
   selectedDocument: ClinicalDocumentRecord | null
 ): DocumentScopedSheetState => ({
@@ -30,9 +61,15 @@ const createDocumentScopedSheetState = (
   activeIndicationsSpecialtyId: selectedDocument
     ? resolveClinicalDocumentIndicationSpecialty(selectedDocument.especialidad)
     : DEFAULT_ACTIVE_SPECIALTY_ID,
-  activePlanSubsectionId: 'generales',
+  activePlanSubsectionId: DEFAULT_PLAN_SUBSECTION_ID,
 });
 
+/**
+ * Manages the local UI state of the clinical document sheet.
+ *
+ * @param selectedDocument - The currently selected document (null when none).
+ * @returns Sheet state values and mutation callbacks for the workspace.
+ */
 export const useClinicalDocumentSheetState = (selectedDocument: ClinicalDocumentRecord | null) => {
   const [activeTitleTarget, setActiveTitleTarget] = useState<string | null>(null);
   const [isFormattingOpen, setIsFormattingOpen] = useState(false);
@@ -159,6 +196,14 @@ export const useClinicalDocumentSheetState = (selectedDocument: ClinicalDocument
     [formattingDisabled]
   );
 
+  /** Inserts raw HTML at the cursor of the active (or last-active) editor. */
+  const insertHtml = useCallback((html: string) => {
+    const targetApi = activeEditorApiRef.current || lastActiveEditorApiRef.current;
+    if (!targetApi?.element) return;
+    targetApi.element.focus();
+    document.execCommand('insertHTML', false, html);
+  }, []);
+
   const sectionDragHandlers = useMemo(
     () => ({
       onDragStart: (event: DragEvent<HTMLButtonElement>, sectionId: string) => {
@@ -205,6 +250,7 @@ export const useClinicalDocumentSheetState = (selectedDocument: ClinicalDocument
     activeEditorHistoryState,
     formattingDisabled,
     applyFormatting,
+    insertHtml,
     handleEditorActivate,
     handleEditorDeactivate,
     sectionDragHandlers,

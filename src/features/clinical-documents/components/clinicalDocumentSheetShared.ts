@@ -90,6 +90,7 @@ export interface ClinicalDocumentSheetProps {
   onRestoreTemplate: () => void;
   addClinicalUpdate: () => void;
   patchAnnexContent: (content: string) => void;
+  clearAnnexContent: () => void;
   patchUpdateDate: (sectionId: string, date: string) => void;
   patchUpdateTime: (sectionId: string, time: string) => void;
 }

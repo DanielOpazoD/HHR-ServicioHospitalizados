@@ -51,6 +51,45 @@ export const resolveImageAlignmentStyles = (alignment: ImageAlignment): ImageAli
 };
 
 // ---------------------------------------------------------------------------
+// Toolbar positioning
+// ---------------------------------------------------------------------------
+
+/** Height of the toolbar including padding/border (~36px). */
+const TOOLBAR_HEIGHT_PX = 40;
+/** Minimum gap from viewport edge. */
+const VIEWPORT_PADDING_PX = 8;
+
+export interface ImageToolbarPosition {
+  /** CSS `left` value in px (center of toolbar). */
+  left: number;
+  /** CSS `top` value in px. */
+  top: number;
+  /** Whether the toolbar is rendered below the image instead of above. */
+  isBelow: boolean;
+}
+
+/**
+ * Calculates the optimal toolbar position relative to the viewport.
+ *
+ * Prefers placing the toolbar above the image. Falls back to below
+ * if there isn't enough space above (image near top of viewport).
+ *
+ * @param imageRect - The image's current bounding client rect.
+ * @returns Position and placement direction.
+ */
+export const resolveImageToolbarPosition = (imageRect: DOMRect): ImageToolbarPosition => {
+  const centerX = imageRect.left + imageRect.width / 2;
+  const spaceAbove = imageRect.top;
+  const isBelow = spaceAbove < TOOLBAR_HEIGHT_PX + VIEWPORT_PADDING_PX;
+
+  return {
+    left: centerX,
+    top: isBelow ? imageRect.bottom + VIEWPORT_PADDING_PX : imageRect.top - TOOLBAR_HEIGHT_PX,
+    isBelow,
+  };
+};
+
+// ---------------------------------------------------------------------------
 // Resize
 // ---------------------------------------------------------------------------
 

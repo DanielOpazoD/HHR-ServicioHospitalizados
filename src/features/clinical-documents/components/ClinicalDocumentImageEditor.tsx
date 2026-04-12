@@ -12,6 +12,7 @@ import { createPortal } from 'react-dom';
 import { AlignLeft, AlignCenter, AlignRight, Maximize2, Trash2 } from 'lucide-react';
 import {
   resolveImageAlignmentStyles,
+  resolveImageToolbarPosition,
   calculateResizedWidth,
   type ImageAlignment,
 } from '@/features/clinical-documents/controllers/clinicalDocumentImageEditorController';
@@ -66,6 +67,10 @@ const applyAlignmentToElement = (img: HTMLImageElement, alignment: ImageAlignmen
 // Component
 // ---------------------------------------------------------------------------
 
+/**
+ * Portal-rendered overlay for inline image editing (resize + alignment).
+ * Toolbar position adapts: above the image when space allows, below otherwise.
+ */
 export const ClinicalDocumentImageEditor: React.FC<ClinicalDocumentImageEditorProps> = ({
   imageElement,
   onUpdate,
@@ -144,13 +149,15 @@ export const ClinicalDocumentImageEditor: React.FC<ClinicalDocumentImageEditorPr
     [onClose, onUpdate]
   );
 
+  const toolbarPos = resolveImageToolbarPosition(rect);
+
   return createPortal(
     <>
       <div
         className="fixed z-[10001] flex items-center gap-0.5 rounded-lg bg-white border border-slate-200 shadow-lg px-1 py-0.5"
         style={{
-          left: `${rect.left + rect.width / 2}px`,
-          top: `${rect.top - 40}px`,
+          left: `${toolbarPos.left}px`,
+          top: `${toolbarPos.top}px`,
           transform: 'translateX(-50%)',
         }}
       >

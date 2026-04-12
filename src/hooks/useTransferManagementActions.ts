@@ -4,6 +4,7 @@ import {
   changeTransferStatusWithResult,
   completeTransferWithResult,
   createTransferRequestWithResult,
+  deleteFinalizedTransferWithResult,
   deleteStatusHistoryEntryWithResult,
   deleteTransferRequestWithResult,
   updateTransferRequestWithResult,
@@ -218,6 +219,15 @@ export const useTransferManagementActions = ({
     [runTransferAction]
   );
 
+  const deleteFinalizedTransfer = useCallback(
+    async (id: string) => {
+      await runTransferAction('delete', async () => {
+        return deleteFinalizedTransferWithResult(id);
+      });
+    },
+    [runTransferAction]
+  );
+
   const deleteHistoryEntry = useCallback(
     async (transfer: TransferRequest, historyIndex: number) => {
       await runTransferAction('delete_history', async () => {
@@ -235,6 +245,7 @@ export const useTransferManagementActions = ({
     markAsTransferred,
     cancelTransfer,
     deleteTransfer,
+    deleteFinalizedTransfer,
     undoTransfer,
     archiveTransfer,
     deleteHistoryEntry,

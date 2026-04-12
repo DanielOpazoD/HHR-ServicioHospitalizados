@@ -33,6 +33,7 @@ interface UseTransferManagementReturn {
   markAsTransferred: (transfer: TransferRequest, transferMethod: string) => Promise<void>;
   cancelTransfer: (transfer: TransferRequest, reason: string) => Promise<void>;
   deleteTransfer: (id: string) => Promise<void>;
+  deleteFinalizedTransfer: (id: string) => Promise<void>;
   undoTransfer: (transfer: TransferRequest) => Promise<void>;
   archiveTransfer: (transfer: TransferRequest) => Promise<void>;
   deleteHistoryEntry: (transfer: TransferRequest, historyIndex: number) => Promise<void>;
@@ -62,6 +63,7 @@ export const useTransferManagement = (): UseTransferManagementReturn => {
     markAsTransferred,
     cancelTransfer,
     deleteTransfer,
+    deleteFinalizedTransfer,
     undoTransfer,
     archiveTransfer,
     deleteHistoryEntry,
@@ -88,6 +90,7 @@ export const useTransferManagement = (): UseTransferManagementReturn => {
     markAsTransferred,
     cancelTransfer,
     deleteTransfer,
+    deleteFinalizedTransfer,
     undoTransfer,
     archiveTransfer,
     deleteHistoryEntry,

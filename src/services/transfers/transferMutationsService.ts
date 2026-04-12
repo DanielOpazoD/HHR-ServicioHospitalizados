@@ -182,6 +182,26 @@ export const createTransferMutationsService = (
     if (result.status !== 'success') throw result.error;
   };
 
+  /** Permanently removes a finalized transfer from the history collection. */
+  const deleteFinalizedTransferWithResult = async (id: string): Promise<TransferMutationResult> => {
+    try {
+      return await runWithFirestoreRuntime(runtime, async () => {
+        const docRef = createTransferHistoryDocumentRef(runtime, id);
+        await deleteDoc(docRef);
+        transferMutationsLogger.info('Deleted finalized transfer from history', {
+          transferId: id,
+        });
+        return { status: 'success', data: null };
+      });
+    } catch (error) {
+      transferMutationsLogger.error('Error deleting finalized transfer', error);
+      return buildTransferFailureResult(
+        error,
+        'No se pudo eliminar el registro de traslado finalizado.'
+      );
+    }
+  };
+
   const deleteStatusHistoryEntryWithResult = async (
     id: string,
     historyIndex: number
@@ -222,6 +242,7 @@ export const createTransferMutationsService = (
     completeTransferWithResult,
     deleteTransferRequest,
     deleteTransferRequestWithResult,
+    deleteFinalizedTransferWithResult,
     deleteStatusHistoryEntry,
     deleteStatusHistoryEntryWithResult,
   };
@@ -298,6 +319,12 @@ export const deleteTransferRequestMutationWithResult = async (
   runtime: FirestoreServiceRuntimePort = defaultFirestoreServiceRuntime
 ): Promise<TransferMutationResult> =>
   resolveTransferMutationsService(runtime).deleteTransferRequestWithResult(id);
+
+export const deleteFinalizedTransferMutationWithResult = async (
+  id: string,
+  runtime: FirestoreServiceRuntimePort = defaultFirestoreServiceRuntime
+): Promise<TransferMutationResult> =>
+  resolveTransferMutationsService(runtime).deleteFinalizedTransferWithResult(id);
 
 export const deleteStatusHistoryEntryMutation = async (
   id: string,

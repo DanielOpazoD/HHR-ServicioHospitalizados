@@ -73,6 +73,7 @@ describe('transferManagementViewController', () => {
       handleViewDocs: vi.fn(),
     };
 
+    const deleteFinalizedTransfer = vi.fn<(id: string) => Promise<void>>();
     const activeBindings = buildTransferTableBindings({
       transfers: [transfer],
       handlers,
@@ -83,6 +84,7 @@ describe('transferManagementViewController', () => {
         archiveTransfer,
         deleteHistoryEntry,
         deleteTransfer,
+        deleteFinalizedTransfer,
       },
     });
     const finalizedBindings = buildTransferTableBindings({
@@ -96,6 +98,7 @@ describe('transferManagementViewController', () => {
         archiveTransfer,
         deleteHistoryEntry,
         deleteTransfer,
+        deleteFinalizedTransfer,
       },
     });
 

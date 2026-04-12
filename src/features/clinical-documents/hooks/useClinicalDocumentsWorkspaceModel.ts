@@ -112,6 +112,7 @@ export const useClinicalDocumentsWorkspaceModel = ({
     restoreTemplateContent,
     addClinicalUpdate,
     patchAnnexContent,
+    clearAnnexContent,
     patchUpdateDate,
     patchUpdateTime,
   } = useClinicalDocumentWorkspaceDraft({
@@ -262,6 +263,7 @@ export const useClinicalDocumentsWorkspaceModel = ({
       importIndicationsCatalog: importCatalog,
       addClinicalUpdate,
       patchAnnexContent,
+      clearAnnexContent,
       patchUpdateDate,
       patchUpdateTime,
     },
