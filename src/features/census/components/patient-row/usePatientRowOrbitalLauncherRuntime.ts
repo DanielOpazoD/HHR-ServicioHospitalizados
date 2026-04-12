@@ -95,6 +95,26 @@ export const usePatientRowOrbitalLauncherRuntime = ({
     }
   }, []);
 
+  const claimLauncherOwnership = React.useCallback(
+    (nextRowId: string | null) => {
+      clearHoverExitTimer();
+      setIsHoverGraceActive(true);
+      if (nextRowId) {
+        dispatchLauncherOwnerChange(nextRowId);
+      }
+    },
+    [clearHoverExitTimer]
+  );
+
+  const activateHoveredRow = React.useCallback(
+    (nextRowId: string | null, syncPosition: () => void) => {
+      claimLauncherOwnership(nextRowId);
+      setIsRowHovered(true);
+      syncPosition();
+    },
+    [claimLauncherOwnership]
+  );
+
   /**
    * Starts the hover-exit grace period. After `HOVER_EXIT_GRACE_MS` the
    * timer checks whether the pointer truly left (via refs to avoid stale
@@ -200,13 +220,7 @@ export const usePatientRowOrbitalLauncherRuntime = ({
      */
     const activateRowHover = () => {
       if (!isRowHoveredRef.current) {
-        clearHoverExitTimer();
-        setIsHoverGraceActive(true);
-        setIsRowHovered(true);
-        if (resolvedRowId) {
-          dispatchLauncherOwnerChange(resolvedRowId);
-        }
-        syncPosition();
+        activateHoveredRow(resolvedRowId, syncPosition);
       }
     };
 
@@ -247,13 +261,7 @@ export const usePatientRowOrbitalLauncherRuntime = ({
     };
 
     const handleFocusIn = () => {
-      clearHoverExitTimer();
-      setIsHoverGraceActive(true);
-      setIsRowHovered(true);
-      if (resolvedRowId) {
-        dispatchLauncherOwnerChange(resolvedRowId);
-      }
-      syncPosition();
+      activateHoveredRow(resolvedRowId, syncPosition);
     };
 
     const handleFocusOut = (event: FocusEvent) => {
@@ -292,6 +300,7 @@ export const usePatientRowOrbitalLauncherRuntime = ({
       clearHoverExitTimer();
     };
   }, [
+    activateHoveredRow,
     armHoverGrace,
     clearHoverExitTimer,
     launcherOffset,
@@ -367,12 +376,8 @@ export const usePatientRowOrbitalLauncherRuntime = ({
     showTrigger,
     supportsHoverFine,
     handleLauncherMouseEnter: () => {
-      clearHoverExitTimer();
-      setIsHoverGraceActive(true);
+      claimLauncherOwnership(rowId);
       setIsLauncherHovered(true);
-      if (rowId) {
-        dispatchLauncherOwnerChange(rowId);
-      }
     },
     handleLauncherMouseLeave: () => {
       setIsLauncherHovered(false);

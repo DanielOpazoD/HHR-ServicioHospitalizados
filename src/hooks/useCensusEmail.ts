@@ -62,6 +62,39 @@ export interface UseCensusEmailReturn {
   isAdminUser: boolean;
 }
 
+const resolveCensusEmailAccess = (
+  role: string,
+  user: UseCensusEmailParams['user'],
+  showEmailConfig: boolean
+) => {
+  const isAdminUser = canUseAdminMaintenanceActions(role);
+  const canManageGlobalRecipientLists = canManageGlobalCensusEmailRecipients({
+    role,
+    userId: user?.uid || user?.email || null,
+  });
+
+  return {
+    isAdminUser,
+    canManageGlobalRecipientLists,
+    areGlobalRecipientListsEnabled: canManageGlobalRecipientLists && showEmailConfig,
+  };
+};
+
+const useAdminGuardedState = <T>(initialValue: T, enabled: boolean) => {
+  const [state, setState] = useState(initialValue);
+
+  const setGuardedState = useCallback(
+    (value: T) => {
+      if (enabled) {
+        setState(value);
+      }
+    },
+    [enabled]
+  );
+
+  return [enabled ? state : initialValue, setGuardedState] as const;
+};
+
 /**
  * Hook to manage census email configuration and sending.
  * Extracts email handling logic from App.tsx for cleaner separation of concerns.
@@ -77,14 +110,10 @@ export const useCensusEmail = ({
   role,
 }: UseCensusEmailParams): UseCensusEmailReturn => {
   const { confirm, alert } = useConfirmDialog();
-  const isAdminUser = canUseAdminMaintenanceActions(role);
   const browserRuntime = defaultCensusEmailBrowserRuntime;
   const [showEmailConfig, setShowEmailConfig] = useState(false);
-  const canManageGlobalRecipientLists = canManageGlobalCensusEmailRecipients({
-    role,
-    userId: user?.uid || user?.email || null,
-  });
-  const areGlobalRecipientListsEnabled = canManageGlobalRecipientLists && showEmailConfig;
+  const { isAdminUser, canManageGlobalRecipientLists, areGlobalRecipientListsEnabled } =
+    resolveCensusEmailAccess(role, user, showEmailConfig);
 
   // ========== RECIPIENTS STATE ==========
   const {
@@ -115,26 +144,8 @@ export const useCensusEmail = ({
   );
 
   // ========== TEST MODE (ADMIN) ==========
-  const [testModeEnabledState, setTestModeEnabledState] = useState(false);
-  const [testRecipientState, setTestRecipientState] = useState('');
-  const testModeEnabled = isAdminUser ? testModeEnabledState : false;
-  const testRecipient = isAdminUser ? testRecipientState : '';
-  const setTestModeEnabled = useCallback(
-    (value: boolean) => {
-      if (isAdminUser) {
-        setTestModeEnabledState(value);
-      }
-    },
-    [isAdminUser]
-  );
-  const setTestRecipient = useCallback(
-    (value: string) => {
-      if (isAdminUser) {
-        setTestRecipientState(value);
-      }
-    },
-    [isAdminUser]
-  );
+  const [testModeEnabled, setTestModeEnabled] = useAdminGuardedState(false, isAdminUser);
+  const [testRecipient, setTestRecipient] = useAdminGuardedState('', isAdminUser);
 
   // ========== UI STATE ==========
   const { status, error, setStatus, setError, resetStatus } =

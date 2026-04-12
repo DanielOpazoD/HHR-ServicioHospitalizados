@@ -1,10 +1,10 @@
 import { useCallback } from 'react';
 import type { DailyRecord } from '@/application/shared/dailyRecordCoreContracts';
 import { PatientData } from '@/hooks/contracts/patientHookContracts';
-import { resolveUndoPatientMovement } from '@/hooks/controllers/patientMovementUndoController';
-import { UndoMovementKind } from '@/hooks/controllers/patientMovementUndoErrorPresentation';
-import { UndoPatientMovementErrorCode } from '@/hooks/controllers/patientMovementUndoController';
-import { UndoMovementDescriptor } from '@/hooks/controllers/patientMovementSelectionController';
+import { resolveUndoPatientMovement } from '@/features/census/controllers/patientMovementUndoController';
+import { UndoMovementKind } from '@/features/census/controllers/patientMovementUndoErrorPresentation';
+import { UndoPatientMovementErrorCode } from '@/features/census/controllers/patientMovementUndoController';
+import { UndoMovementDescriptor } from '@/features/census/controllers/patientMovementSelectionController';
 
 interface UndoApplyParams {
   record: DailyRecord;

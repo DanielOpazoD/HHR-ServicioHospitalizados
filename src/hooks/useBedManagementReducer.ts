@@ -46,6 +46,123 @@ const shouldAnchorFirstSeenDate = ({
   return !hadIdentity && hasIdentityNow;
 };
 
+const buildPatientFieldPatches = ({
+  bedId,
+  currentPatient,
+  updates,
+  recordDate,
+}: {
+  bedId: string;
+  currentPatient: PatientData;
+  updates: Partial<PatientData>;
+  recordDate: string;
+}): Record<string, unknown> => {
+  const patches: Record<string, unknown> = {};
+  let hasIdentityChange = false;
+  const updatesSpecialty = Object.prototype.hasOwnProperty.call(updates, 'specialty');
+  const updatesGinecobstetriciaType = Object.prototype.hasOwnProperty.call(
+    updates,
+    'ginecobstetriciaType'
+  );
+  const updatesDeliveryRoute = Object.prototype.hasOwnProperty.call(updates, 'deliveryRoute');
+
+  Object.entries(updates).forEach(([key, value]) => {
+    patches[`beds.${bedId}.${key}`] =
+      key === 'isUPC' ? resolveNormalizedUpcFlag(bedId, Boolean(value)) : value;
+
+    if (
+      (key === 'rut' || key === 'patientName') &&
+      value !== currentPatient[key as keyof PatientData]
+    ) {
+      hasIdentityChange = true;
+    }
+  });
+
+  const nextPatientName = String(updates.patientName ?? currentPatient.patientName ?? '');
+  const nextRut = String(updates.rut ?? currentPatient.rut ?? '');
+
+  if (hasIdentityChange) {
+    Object.assign(patches, getClearClinicalDataPatches(bedId));
+  }
+
+  if (
+    shouldAnchorFirstSeenDate({
+      currentPatientName: currentPatient.patientName,
+      currentRut: currentPatient.rut,
+      nextPatientName,
+      nextRut,
+      currentFirstSeenDate: currentPatient.firstSeenDate,
+    })
+  ) {
+    patches[`beds.${bedId}.firstSeenDate`] = recordDate;
+  }
+
+  const nextSpecialty = String(updates.specialty ?? currentPatient.specialty ?? '');
+  const nextGinecobstetriciaType =
+    updates.ginecobstetriciaType ?? currentPatient.ginecobstetriciaType;
+  const nextDeliveryRoute = updates.deliveryRoute ?? currentPatient.deliveryRoute;
+
+  if (updatesSpecialty && !isGinecobstetriciaSpecialty(nextSpecialty)) {
+    Object.entries(clearGinecobstetriciaFields()).forEach(([key, value]) => {
+      patches[`beds.${bedId}.${key}`] = value;
+    });
+  } else if (
+    updatesGinecobstetriciaType &&
+    !isObstetricGinecobstetricia(nextGinecobstetriciaType)
+  ) {
+    Object.entries(clearDeliveryRouteFields()).forEach(([key, value]) => {
+      patches[`beds.${bedId}.${key}`] = value;
+    });
+  } else if (updatesDeliveryRoute && nextDeliveryRoute !== 'Cesárea') {
+    patches[`beds.${bedId}.deliveryCesareanLabor`] = undefined;
+  }
+
+  return patches;
+};
+
+const buildTargetBedPatient = ({
+  patient,
+  targetBedId,
+  targetLocation,
+}: {
+  patient: PatientData;
+  targetBedId: string;
+  targetLocation: PatientData['location'];
+}): PatientData =>
+  normalizePatientUpcForBed(
+    {
+      ...patient,
+      bedId: targetBedId,
+      location: targetLocation,
+    },
+    targetBedId
+  );
+
+const buildClearedBedPatient = ({
+  bedId,
+  location,
+}: {
+  bedId: string;
+  location: PatientData['location'];
+}): PatientData => {
+  const cleanPatient = createEmptyPatient(bedId);
+  cleanPatient.location = location;
+  return cleanPatient;
+};
+
+const buildClinicalCribDraft = (bedId: string, parentPatient: PatientData): PatientData => {
+  const clinicalCrib = createEmptyPatient(bedId);
+  clinicalCrib.bedMode = 'Cuna';
+  clinicalCrib.identityStatus = 'provisional';
+  clinicalCrib.patientName = `RN de ${resolveMotherLabel(parentPatient)}`;
+  clinicalCrib.firstName = '';
+  clinicalCrib.lastName = '';
+  clinicalCrib.secondLastName = '';
+  clinicalCrib.rut = '';
+  clinicalCrib.documentType = 'RUT';
+  return clinicalCrib;
+};
+
 // ============================================================================
 // Actions
 // ============================================================================
@@ -91,54 +208,16 @@ export const bedManagementReducer = (
     case 'UPDATE_PATIENT': {
       const { bedId, field, value } = action;
       const oldPatient = state.beds[bedId];
-      const patches: Record<string, unknown> = {
-        [`beds.${bedId}.${field}`]:
-          field === 'isUPC' ? resolveNormalizedUpcFlag(bedId, Boolean(value)) : value,
-      };
-
-      // Identity logic side-effects
-      const isIdentityChange =
-        (field === 'rut' || field === 'patientName') && value !== oldPatient[field];
-
-      if (isIdentityChange) {
-        Object.assign(patches, getClearClinicalDataPatches(bedId));
-      }
-
-      const nextPatientName =
-        field === 'patientName' ? String(value ?? '') : String(oldPatient.patientName ?? '');
-      const nextRut = field === 'rut' ? String(value ?? '') : String(oldPatient.rut ?? '');
-
-      if (
-        shouldAnchorFirstSeenDate({
-          currentPatientName: oldPatient.patientName,
-          currentRut: oldPatient.rut,
-          nextPatientName,
-          nextRut,
-          currentFirstSeenDate: oldPatient.firstSeenDate,
-        })
-      ) {
-        patches[`beds.${bedId}.firstSeenDate`] = state.date;
-      }
+      const patches = buildPatientFieldPatches({
+        bedId,
+        currentPatient: oldPatient,
+        updates: { [field]: value } as Partial<PatientData>,
+        recordDate: state.date,
+      });
 
       if (field === 'pathology' && value !== oldPatient.pathology) {
         patches[`beds.${bedId}.cie10Code`] = undefined;
         patches[`beds.${bedId}.cie10Description`] = undefined;
-      }
-
-      if (field === 'specialty' && !isGinecobstetriciaSpecialty(String(value ?? ''))) {
-        Object.entries(clearGinecobstetriciaFields()).forEach(([key, fieldValue]) => {
-          patches[`beds.${bedId}.${key}`] = fieldValue;
-        });
-      }
-
-      if (field === 'ginecobstetriciaType' && !isObstetricGinecobstetricia(value as never)) {
-        Object.entries(clearDeliveryRouteFields()).forEach(([key, fieldValue]) => {
-          patches[`beds.${bedId}.${key}`] = fieldValue;
-        });
-      }
-
-      if (field === 'deliveryRoute' && value !== 'Cesárea') {
-        patches[`beds.${bedId}.deliveryCesareanLabor`] = undefined;
       }
 
       return patches as DailyRecordPatch;
@@ -146,67 +225,13 @@ export const bedManagementReducer = (
 
     case 'UPDATE_PATIENT_MULTIPLE': {
       const { bedId, fields } = action;
-      const patches: Record<string, unknown> = {};
       const oldPatient = state.beds[bedId];
-      let hasIdentityChange = false;
-      const updatesSpecialty = Object.prototype.hasOwnProperty.call(fields, 'specialty');
-      const updatesGinecobstetriciaType = Object.prototype.hasOwnProperty.call(
-        fields,
-        'ginecobstetriciaType'
-      );
-      const updatesDeliveryRoute = Object.prototype.hasOwnProperty.call(fields, 'deliveryRoute');
-
-      Object.entries(fields).forEach(([key, value]) => {
-        patches[`beds.${bedId}.${key}`] =
-          key === 'isUPC' ? resolveNormalizedUpcFlag(bedId, Boolean(value)) : value;
-        if (
-          (key === 'rut' || key === 'patientName') &&
-          value !== oldPatient[key as keyof PatientData]
-        ) {
-          hasIdentityChange = true;
-        }
-      });
-
-      const nextPatientName = String(fields.patientName ?? oldPatient.patientName ?? '');
-      const nextRut = String(fields.rut ?? oldPatient.rut ?? '');
-
-      if (hasIdentityChange) {
-        Object.assign(patches, getClearClinicalDataPatches(bedId));
-      }
-
-      if (
-        shouldAnchorFirstSeenDate({
-          currentPatientName: oldPatient.patientName,
-          currentRut: oldPatient.rut,
-          nextPatientName,
-          nextRut,
-          currentFirstSeenDate: oldPatient.firstSeenDate,
-        })
-      ) {
-        patches[`beds.${bedId}.firstSeenDate`] = state.date;
-      }
-
-      const nextSpecialty = String(fields.specialty ?? oldPatient.specialty ?? '');
-      const nextGinecobstetriciaType =
-        fields.ginecobstetriciaType ?? oldPatient.ginecobstetriciaType;
-      const nextDeliveryRoute = fields.deliveryRoute ?? oldPatient.deliveryRoute;
-
-      if (updatesSpecialty && !isGinecobstetriciaSpecialty(nextSpecialty)) {
-        Object.entries(clearGinecobstetriciaFields()).forEach(([key, value]) => {
-          patches[`beds.${bedId}.${key}`] = value;
-        });
-      } else if (
-        updatesGinecobstetriciaType &&
-        !isObstetricGinecobstetricia(nextGinecobstetriciaType)
-      ) {
-        Object.entries(clearDeliveryRouteFields()).forEach(([key, value]) => {
-          patches[`beds.${bedId}.${key}`] = value;
-        });
-      } else if (updatesDeliveryRoute && nextDeliveryRoute !== 'Cesárea') {
-        patches[`beds.${bedId}.deliveryCesareanLabor`] = undefined;
-      }
-
-      return patches as DailyRecordPatch;
+      return buildPatientFieldPatches({
+        bedId,
+        currentPatient: oldPatient,
+        updates: fields,
+        recordDate: state.date,
+      }) as DailyRecordPatch;
     }
 
     case 'UPDATE_CUDYR': {
@@ -219,10 +244,11 @@ export const bedManagementReducer = (
 
     case 'CLEAR_PATIENT': {
       const { bedId } = action;
-      const cleanPatient = createEmptyPatient(bedId);
-      cleanPatient.location = state.beds[bedId].location;
       return {
-        [`beds.${bedId}`]: cleanPatient,
+        [`beds.${bedId}`]: buildClearedBedPatient({
+          bedId,
+          location: state.beds[bedId].location,
+        }),
       } as DailyRecordPatch;
     }
 
@@ -230,9 +256,10 @@ export const bedManagementReducer = (
       const patches: Record<string, unknown> = {};
       // Iterate over all beds in current state and clear them
       Object.keys(state.beds).forEach(bedId => {
-        const cleanPatient = createEmptyPatient(bedId);
-        cleanPatient.location = state.beds[bedId].location;
-        patches[`beds.${bedId}`] = cleanPatient;
+        patches[`beds.${bedId}`] = buildClearedBedPatient({
+          bedId,
+          location: state.beds[bedId].location,
+        });
       });
       return patches as DailyRecordPatch;
     }
@@ -241,35 +268,29 @@ export const bedManagementReducer = (
       const { sourceBedId, targetBedId } = action;
       const sourceData = state.beds[sourceBedId];
 
-      const targetPatient = {
-        ...sourceData,
-        bedId: targetBedId,
-        location: state.beds[targetBedId].location,
-      };
-      const normalizedTargetPatient = normalizePatientUpcForBed(targetPatient, targetBedId);
-      const cleanSource = createEmptyPatient(sourceBedId);
-      cleanSource.location = state.beds[sourceBedId].location;
-
       return {
-        [`beds.${targetBedId}`]: normalizedTargetPatient,
-        [`beds.${sourceBedId}`]: cleanSource,
+        [`beds.${targetBedId}`]: buildTargetBedPatient({
+          patient: sourceData,
+          targetBedId,
+          targetLocation: state.beds[targetBedId].location,
+        }),
+        [`beds.${sourceBedId}`]: buildClearedBedPatient({
+          bedId: sourceBedId,
+          location: state.beds[sourceBedId].location,
+        }),
       } as DailyRecordPatch;
     }
 
     case 'COPY_PATIENT': {
       const { sourceBedId, targetBedId } = action;
       const sourceData = state.beds[sourceBedId];
-      const targetPatient = normalizePatientUpcForBed(
-        {
-          ...deepClone(sourceData),
-          bedId: targetBedId,
-          location: state.beds[targetBedId].location,
-        },
-        targetBedId
-      );
 
       return {
-        [`beds.${targetBedId}`]: targetPatient,
+        [`beds.${targetBedId}`]: buildTargetBedPatient({
+          patient: deepClone(sourceData),
+          targetBedId,
+          targetLocation: state.beds[targetBedId].location,
+        }),
       } as DailyRecordPatch;
     }
 
@@ -303,18 +324,8 @@ export const bedManagementReducer = (
 
     case 'CREATE_CLINICAL_CRIB': {
       const { bedId } = action;
-      const parentPatient = state.beds[bedId];
-      const newCrib = createEmptyPatient(bedId);
-      newCrib.bedMode = 'Cuna';
-      newCrib.identityStatus = 'provisional';
-      newCrib.patientName = `RN de ${resolveMotherLabel(parentPatient)}`;
-      newCrib.firstName = '';
-      newCrib.lastName = '';
-      newCrib.secondLastName = '';
-      newCrib.rut = '';
-      newCrib.documentType = 'RUT';
       return {
-        [`beds.${bedId}.clinicalCrib`]: newCrib,
+        [`beds.${bedId}.clinicalCrib`]: buildClinicalCribDraft(bedId, state.beds[bedId]),
         [`beds.${bedId}.hasCompanionCrib`]: false,
       } as DailyRecordPatch;
     }

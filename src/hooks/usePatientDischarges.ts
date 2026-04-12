@@ -4,21 +4,21 @@ import { createEmptyPatient } from '@/services/factories/patientFactory';
 import { BEDS } from '@/constants/beds';
 import { useLatestRef } from '@/hooks/useLatestRef';
 import type { DischargeTarget } from '@/types/movements';
-import { resolveAddDischargeMovement } from '@/hooks/controllers/patientMovementCreationController';
+import { resolveAddDischargeMovement } from '@/features/census/controllers/patientMovementCreationController';
 import {
   buildAddDischargeInput,
   buildDischargeAddCommandPayload,
-} from '@/hooks/controllers/patientMovementCreationInputController';
+} from '@/features/census/controllers/patientMovementCreationInputController';
 import {
   resolveDeleteDischargeMovement,
   resolveUpdateDischargeMovement,
-} from '@/hooks/controllers/patientMovementMutationController';
-import { resolveApplyUndoDischargeRecord } from '@/hooks/controllers/patientMovementUndoMutationController';
+} from '@/features/census/controllers/patientMovementMutationController';
+import { resolveApplyUndoDischargeRecord } from '@/features/census/controllers/patientMovementUndoMutationController';
 import {
   PatientMovementRuntime,
   patientMovementBrowserRuntime,
-} from '@/hooks/controllers/patientMovementRuntimeController';
-import { selectDischargeUndoMovement } from '@/hooks/controllers/patientMovementSelectionController';
+} from '@/features/census/controllers/patientMovementRuntimeController';
+import { selectDischargeUndoMovement } from '@/features/census/controllers/patientMovementSelectionController';
 import { usePatientMovementFeedback } from '@/hooks/usePatientMovementFeedback';
 import { usePatientMovementAudit } from '@/hooks/usePatientMovementAudit';
 import { usePatientMovementCreationExecutor } from '@/hooks/usePatientMovementCreationExecutor';

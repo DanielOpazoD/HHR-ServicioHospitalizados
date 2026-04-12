@@ -13,20 +13,29 @@ interface AppContentProps {
   renderFeatureQuickActions?: (patients: MedicalIndicationsPatientOption[]) => React.ReactNode;
 }
 
+const resolveCensusDateSelection = (isoDate: string) => {
+  const datePart = isoDate.split('T')[0];
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+    return null;
+  }
+
+  const [year, month, day] = datePart.split('-').map(Number);
+  return { year, month: month - 1, day };
+};
+
 export const AppContent: React.FC<AppContentProps> = ({ ui, renderFeatureQuickActions }) => {
   const runtime = useAppContentRuntime({ ui });
   const { auth, dailyRecordHook, dateNav } = runtime;
 
   const openCensusDate = React.useCallback(
     (isoDate: string) => {
-      const datePart = isoDate.split('T')[0];
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return;
-      const [year, month, day] = datePart.split('-').map(Number);
+      const selection = resolveCensusDateSelection(isoDate);
+      if (!selection) return;
       ui.setCurrentModule('CENSUS');
       ui.setCensusViewMode('REGISTER');
-      dateNav.setSelectedYear(year);
-      dateNav.setSelectedMonth(month - 1);
-      dateNav.setSelectedDay(day);
+      dateNav.setSelectedYear(selection.year);
+      dateNav.setSelectedMonth(selection.month);
+      dateNav.setSelectedDay(selection.day);
     },
     [dateNav, ui]
   );

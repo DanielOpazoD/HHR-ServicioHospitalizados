@@ -42,6 +42,38 @@ interface UseAppContentRuntimeParams {
   ui: UseUIStateReturn;
 }
 
+const resolveAppContentAccess = (role: AuthContextType['role'], currentModule: string) => {
+  const censusAccessProfile = resolveSpecialistCensusAccessProfile(role);
+  return {
+    specialistCapabilities: resolveSpecialistCapabilities(role),
+    censusAccessProfile,
+    canUseCensusExports: canTriggerCensusExports({
+      role,
+      accessProfile: censusAccessProfile,
+    }),
+    canVerifyArchiveStatus: canVerifyPassiveBackupForRole(role, currentModule),
+  };
+};
+
+const resolveExportManagerParams = (
+  dateNav: CensusContextType['dateNav'],
+  ui: UseUIStateReturn,
+  record: CensusContextType['dailyRecord']['record'],
+  canVerifyArchiveStatus: boolean
+) => ({
+  currentDateString: dateNav.currentDateString,
+  selectedYear: dateNav.selectedYear,
+  selectedMonth: dateNav.selectedMonth,
+  selectedDay: dateNav.selectedDay,
+  record,
+  currentModule: ui.currentModule,
+  selectedShift: ui.selectedShift,
+  canVerifyArchiveStatus,
+});
+
+const resolveExcelExportDateArgs = (dateNav: CensusContextType['dateNav']) =>
+  [dateNav.selectedYear, dateNav.selectedMonth, dateNav.selectedDay] as const;
+
 export const useAppContentRuntime = ({ ui }: UseAppContentRuntimeParams): AppContentRuntime => {
   const {
     dailyRecord: dailyRecordHook,
@@ -54,45 +86,26 @@ export const useAppContentRuntime = ({ ui }: UseAppContentRuntimeParams): AppCon
   const { record, syncStatus, lastSyncTime } = dailyRecordHook;
   const { currentDateString } = dateNav;
 
-  const specialistCapabilities = React.useMemo(
-    () => resolveSpecialistCapabilities(auth.role),
-    [auth.role]
-  );
-  const censusAccessProfile = React.useMemo(
-    () => resolveSpecialistCensusAccessProfile(auth.role),
-    [auth.role]
-  );
-  const canUseCensusExports = React.useMemo(
-    () =>
-      canTriggerCensusExports({
-        role: auth.role,
-        accessProfile: censusAccessProfile,
-      }),
-    [auth.role, censusAccessProfile]
-  );
-  const canVerifyArchiveStatus = React.useMemo(
-    () => canVerifyPassiveBackupForRole(auth.role, ui.currentModule),
+  const {
+    specialistCapabilities,
+    censusAccessProfile,
+    canUseCensusExports,
+    canVerifyArchiveStatus,
+  } = React.useMemo(
+    () => resolveAppContentAccess(auth.role, ui.currentModule),
     [auth.role, ui.currentModule]
   );
 
-  const exportManager = useExportManager({
-    currentDateString,
-    selectedYear: dateNav.selectedYear,
-    selectedMonth: dateNav.selectedMonth,
-    selectedDay: dateNav.selectedDay,
-    record,
-    currentModule: ui.currentModule,
-    selectedShift: ui.selectedShift,
-    canVerifyArchiveStatus,
-  });
+  const exportManager = useExportManager(
+    React.useMemo(
+      () => resolveExportManagerParams(dateNav, ui, record, canVerifyArchiveStatus),
+      [canVerifyArchiveStatus, dateNav, record, ui]
+    )
+  );
 
   const handleExportExcel = React.useCallback(async () => {
     const generateCensusMasterExcel = await loadCensusMasterExcelExporter();
-    await generateCensusMasterExcel(
-      dateNav.selectedYear,
-      dateNav.selectedMonth,
-      dateNav.selectedDay
-    );
+    await generateCensusMasterExcel(...resolveExcelExportDateArgs(dateNav));
   }, [dateNav.selectedDay, dateNav.selectedMonth, dateNav.selectedYear]);
 
   return React.useMemo(

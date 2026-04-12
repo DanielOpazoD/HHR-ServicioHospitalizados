@@ -3,8 +3,8 @@ import type { DailyRecord } from '@/application/shared/dailyRecordCoreContracts'
 import {
   MovementCreationError,
   MovementCreationErrorCode,
-} from '@/hooks/controllers/patientMovementCreationController';
-import { MovementKind } from '@/hooks/controllers/patientMovementCreationErrorPresentation';
+} from '@/features/census/controllers/patientMovementCreationController';
+import { MovementKind } from '@/features/census/controllers/patientMovementCreationErrorPresentation';
 import { ControllerResult } from '@/shared/contracts/controllerResult';
 
 type MovementCreationResolution<TValue extends { updatedRecord: DailyRecord }> = ControllerResult<

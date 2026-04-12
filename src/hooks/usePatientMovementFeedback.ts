@@ -1,15 +1,15 @@
 import { useCallback, useMemo } from 'react';
-import { MovementCreationErrorCode } from '@/hooks/controllers/patientMovementCreationController';
+import { MovementCreationErrorCode } from '@/features/census/controllers/patientMovementCreationController';
 import {
   getMovementCreationWarningMessage,
   MovementKind,
-} from '@/hooks/controllers/patientMovementCreationErrorPresentation';
-import { PatientMovementRuntime } from '@/hooks/controllers/patientMovementRuntimeController';
-import { UndoPatientMovementErrorCode } from '@/hooks/controllers/patientMovementUndoController';
+} from '@/features/census/controllers/patientMovementCreationErrorPresentation';
+import { PatientMovementRuntime } from '@/features/census/controllers/patientMovementRuntimeController';
+import { UndoPatientMovementErrorCode } from '@/features/census/controllers/patientMovementUndoController';
 import {
   getUndoMovementErrorMessage,
   UndoMovementKind,
-} from '@/hooks/controllers/patientMovementUndoErrorPresentation';
+} from '@/features/census/controllers/patientMovementUndoErrorPresentation';
 import { patientMovementRuntimeLogger } from '@/hooks/controllers/hookControllerLoggers';
 
 interface UndoDescriptor {

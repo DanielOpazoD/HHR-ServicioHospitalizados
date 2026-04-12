@@ -10,31 +10,42 @@ interface UseAppContentEventBridgeParams {
 
 const isShiftType = (value: unknown): value is ShiftType => value === 'day' || value === 'night';
 
+const useWindowEvent = <T>(
+  eventName: string,
+  handleDetail: (detail: T | undefined) => void,
+  dependency: unknown
+) => {
+  useEffect(() => {
+    const handler = (event: Event) => {
+      handleDetail((event as CustomEvent<T | undefined>).detail);
+    };
+
+    window.addEventListener(eventName, handler);
+    return () => window.removeEventListener(eventName, handler);
+  }, [dependency, eventName, handleDetail]);
+};
+
 export const useAppContentEventBridge = ({
   setCurrentModule,
   setSelectedShift,
 }: UseAppContentEventBridgeParams): void => {
-  useEffect(() => {
-    const handleNavigateModule = (event: Event) => {
-      const detail = (event as CustomEvent<ModuleType | undefined>).detail;
+  useWindowEvent<ModuleType>(
+    'navigate-module',
+    detail => {
       if (detail) {
         setCurrentModule(detail);
       }
-    };
+    },
+    setCurrentModule
+  );
 
-    window.addEventListener('navigate-module', handleNavigateModule);
-    return () => window.removeEventListener('navigate-module', handleNavigateModule);
-  }, [setCurrentModule]);
-
-  useEffect(() => {
-    const handleSetShift = (event: Event) => {
-      const detail = (event as CustomEvent<ShiftType | undefined>).detail;
+  useWindowEvent<ShiftType>(
+    'set-shift',
+    detail => {
       if (isShiftType(detail)) {
         setSelectedShift(detail);
       }
-    };
-
-    window.addEventListener('set-shift', handleSetShift);
-    return () => window.removeEventListener('set-shift', handleSetShift);
-  }, [setSelectedShift]);
+    },
+    setSelectedShift
+  );
 };

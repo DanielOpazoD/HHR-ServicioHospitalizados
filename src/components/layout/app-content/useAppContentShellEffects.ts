@@ -13,6 +13,19 @@ interface UseAppContentShellEffectsParams {
   setSelectedShift: UseUIStateReturn['setSelectedShift'];
 }
 
+const buildAppShellReadyTelemetry = (
+  role: AuthContextType['role'],
+  currentModule: UseUIStateReturn['currentModule']
+) => ({
+  category: 'daily_record' as const,
+  operation: 'app_shell_ready' as const,
+  status: 'success' as const,
+  context: {
+    module: currentModule,
+    role: role || 'viewer',
+  },
+});
+
 export const useAppContentShellEffects = ({
   role,
   currentModule,
@@ -39,18 +52,9 @@ export const useAppContentShellEffects = ({
       return;
     }
 
-    recordOperationalTelemetry(
-      {
-        category: 'daily_record',
-        operation: 'app_shell_ready',
-        status: 'success',
-        context: {
-          module: currentModule,
-          role: role || 'viewer',
-        },
-      },
-      { allowSuccess: true }
-    );
+    recordOperationalTelemetry(buildAppShellReadyTelemetry(role, currentModule), {
+      allowSuccess: true,
+    });
     appShellTelemetryRecordedRef.current = true;
   }, [currentModule, isSignatureMode, role]);
 };

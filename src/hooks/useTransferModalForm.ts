@@ -7,7 +7,7 @@ import {
   resolveTransferInitialTime,
   resolveTransferMethodChangeEffects,
   type TransferModalFieldErrors,
-} from '@/hooks/controllers/transferModalController';
+} from '@/features/census/controllers/transferModalController';
 import { resolveMovementDateTimeBounds } from '@/hooks/controllers/clinicalShiftCalendarController';
 import { useLatestRef } from '@/hooks/useLatestRef';
 import type { TransferModalConfirmPayload } from '@/types/movements';
@@ -50,6 +50,22 @@ interface TransferModalLocalFormState {
   transferDate: string;
   transferTime: string;
 }
+
+const useTransferModalFieldUpdater = (
+  onUpdate: UseTransferModalFormParams['onUpdate'],
+  clearErrors: (fields: readonly (keyof TransferModalFieldErrors)[]) => void
+) =>
+  useCallback(
+    (
+      field: TransferUpdateField,
+      errorKeys: Array<keyof TransferModalFieldErrors>,
+      value: string
+    ) => {
+      onUpdate(field, value);
+      clearErrors(errorKeys);
+    },
+    [clearErrors, onUpdate]
+  );
 
 export const useTransferModalForm = ({
   isOpen,
@@ -109,6 +125,8 @@ export const useTransferModalForm = ({
     onConfirm,
   });
 
+  const updateTransferField = useTransferModalFieldUpdater(onUpdate, clearErrors);
+
   const setTransferDate = useCallback(
     (nextDate: string) => {
       setFormField('transferDate', nextDate, ['dateTime']);
@@ -125,26 +143,23 @@ export const useTransferModalForm = ({
 
   const setReceivingCenterOther = useCallback(
     (value: string) => {
-      onUpdate('receivingCenterOther', value);
-      clearErrors(['otherCenter']);
+      updateTransferField('receivingCenterOther', ['otherCenter'], value);
     },
-    [clearErrors, onUpdate]
+    [updateTransferField]
   );
 
   const setEvacuationMethodOther = useCallback(
     (value: string) => {
-      onUpdate('evacuationMethodOther', value);
-      clearErrors(['otherEvacuation']);
+      updateTransferField('evacuationMethodOther', ['otherEvacuation'], value);
     },
-    [clearErrors, onUpdate]
+    [updateTransferField]
   );
 
   const setTransferEscortValue = useCallback(
     (value: string) => {
-      onUpdate('transferEscort', value);
-      clearErrors(['escort']);
+      updateTransferField('transferEscort', ['escort'], value);
     },
-    [clearErrors, onUpdate]
+    [updateTransferField]
   );
 
   const handleEscortChange = useCallback(

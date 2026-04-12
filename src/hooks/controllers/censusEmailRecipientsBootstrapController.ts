@@ -4,7 +4,7 @@ import type { CensusEmailBrowserRuntime } from '@/hooks/controllers/censusEmailB
 import {
   resolveLegacyRecipients,
   resolveStoredRecipients,
-} from '@/hooks/controllers/censusEmailRecipientsController';
+} from '@/features/census/controllers/censusEmailRecipientsController';
 import {
   CENSUS_GLOBAL_EMAIL_RECIPIENT_LIST,
   ensureGlobalEmailRecipientList,
