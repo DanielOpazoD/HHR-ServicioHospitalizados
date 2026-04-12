@@ -104,6 +104,10 @@ const defaultHandlers = {
   updateIndication: vi.fn(async () => true),
   deleteIndication: vi.fn(async () => true),
   importIndicationsCatalog: vi.fn(async () => true),
+  addClinicalUpdate: vi.fn(),
+  patchAnnexContent: vi.fn(),
+  patchUpdateDate: vi.fn(),
+  patchUpdateTime: vi.fn(),
 };
 
 describe('ClinicalDocumentSheet', () => {

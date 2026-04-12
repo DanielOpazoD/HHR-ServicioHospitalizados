@@ -63,6 +63,10 @@ export interface ClinicalDocumentWorkspaceDraftState {
   ) => void;
   applyTemplate: (templateId: string) => void;
   restoreTemplateContent: () => void;
+  addClinicalUpdate: () => void;
+  patchAnnexContent: (content: string) => void;
+  patchUpdateDate: (sectionId: string, date: string) => void;
+  patchUpdateTime: (sectionId: string, time: string) => void;
 }
 
 const hydrateIncomingDocument = (
@@ -193,5 +197,11 @@ export const useClinicalDocumentWorkspaceDraft = ({
     patchDocumentMeta: patch => dispatch({ type: 'PATCH_DOCUMENT_META', patch }),
     applyTemplate: templateId => dispatch({ type: 'APPLY_TEMPLATE', templateId }),
     restoreTemplateContent: () => dispatch({ type: 'RESTORE_TEMPLATE_CONTENT' }),
+    addClinicalUpdate: () => dispatch({ type: 'ADD_CLINICAL_UPDATE' }),
+    patchAnnexContent: (content: string) => dispatch({ type: 'PATCH_ANNEX_CONTENT', content }),
+    patchUpdateDate: (sectionId: string, date: string) =>
+      dispatch({ type: 'PATCH_UPDATE_DATE', sectionId, date }),
+    patchUpdateTime: (sectionId: string, time: string) =>
+      dispatch({ type: 'PATCH_UPDATE_TIME', sectionId, time }),
   };
 };

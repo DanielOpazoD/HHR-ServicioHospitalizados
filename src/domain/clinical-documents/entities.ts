@@ -101,6 +101,8 @@ export interface ClinicalDocumentRecord {
   pdf?: ClinicalDocumentPdfMeta;
   renderedText?: string;
   integrityHash?: string;
+  /** Rich text content for the annexes page (printed as a separate page). */
+  annexContent?: string;
 }
 
 export interface ClinicalDocumentPatientFieldTemplate {

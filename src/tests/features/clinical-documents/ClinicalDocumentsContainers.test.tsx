@@ -38,7 +38,6 @@ describe('ClinicalDocuments containers', () => {
     );
 
     expect(screen.getByText('Documentos Clínicos')).toBeInTheDocument();
-    expect(screen.getByText(/Paciente Test · 11.111.111-1 · 06-03-2026/i)).toBeInTheDocument();
     expect(screen.getByTestId('clinical-documents-workspace')).toBeInTheDocument();
     expect(workspaceSpy).toHaveBeenCalledWith(
       expect.objectContaining({

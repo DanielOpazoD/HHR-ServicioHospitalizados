@@ -99,7 +99,17 @@ const generateStructuredClinicalDocumentPdfBlob = async (
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(11);
       ensureSpace(lineHeight + 2);
-      pdf.text(section.title, marginX, cursorY);
+      const formatPdfDate = (iso?: string): string => {
+        if (!iso) return '';
+        const p = iso.split('-');
+        return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : iso;
+      };
+      const dateTimeSuffix =
+        section.kind === 'clinical-update' && (section.updateDate || section.updateTime)
+          ? `  ${formatPdfDate(section.updateDate)}${section.updateDate && section.updateTime ? ', ' : ''}${section.updateTime || ''}`
+          : '';
+      const sectionHeader = `${section.title}${dateTimeSuffix}`.trim();
+      pdf.text(sectionHeader, marginX, cursorY);
       cursorY += lineHeight + 1;
       addWrappedText(
         stripClinicalDocumentHtml(section.content) || 'Sin contenido registrado.',
@@ -127,6 +137,17 @@ const generateStructuredClinicalDocumentPdfBlob = async (
     contentWidth / 2 - 2
   );
   cursorY = Math.max(cursorY, savedY) + 2;
+
+  // Annexes page (if present)
+  if (record.annexContent?.trim()) {
+    pdf.addPage();
+    cursorY = marginY;
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(14);
+    pdf.text('Anexos', marginX, cursorY);
+    cursorY += 8;
+    addWrappedText(stripClinicalDocumentHtml(record.annexContent), marginX, contentWidth);
+  }
 
   return pdf.output('blob');
 };

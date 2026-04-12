@@ -1,6 +1,7 @@
 import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
 import { normalizeClinicalDocumentContentForStorage } from '@/features/clinical-documents/controllers/clinicalDocumentRichTextController';
 import { restoreClinicalDocumentDraftTemplate } from '@/features/clinical-documents/domain/factories';
+import { createClinicalUpdateSection } from '@/features/clinical-documents/controllers/clinicalDocumentUpdateController';
 import {
   insertClinicalDocumentSection,
   moveClinicalDocumentVisibleSection,
@@ -52,6 +53,10 @@ export type ClinicalDocumentDraftAction =
       type: 'PATCH_DOCUMENT_META';
       patch: Partial<Pick<ClinicalDocumentRecord, 'medico' | 'especialidad'>>;
     }
+  | { type: 'ADD_CLINICAL_UPDATE' }
+  | { type: 'PATCH_ANNEX_CONTENT'; content: string }
+  | { type: 'PATCH_UPDATE_DATE'; sectionId: string; date: string }
+  | { type: 'PATCH_UPDATE_TIME'; sectionId: string; time: string }
   | { type: 'APPLY_TEMPLATE'; templateId: string }
   | { type: 'RESTORE_TEMPLATE_CONTENT' }
   | { type: 'AUTOSAVE_REQUESTED' }
@@ -263,6 +268,30 @@ export const clinicalDocumentDraftReducer = (
       return patchDraft(state, draft => ({
         ...draft,
         ...action.patch,
+      }));
+    case 'ADD_CLINICAL_UPDATE':
+      return patchDraft(state, draft => ({
+        ...draft,
+        sections: [...draft.sections, createClinicalUpdateSection(draft.sections)],
+      }));
+    case 'PATCH_ANNEX_CONTENT':
+      return patchDraft(state, draft => ({
+        ...draft,
+        annexContent: action.content,
+      }));
+    case 'PATCH_UPDATE_DATE':
+      return patchDraft(state, draft => ({
+        ...draft,
+        sections: draft.sections.map(s =>
+          s.id === action.sectionId ? { ...s, updateDate: action.date } : s
+        ),
+      }));
+    case 'PATCH_UPDATE_TIME':
+      return patchDraft(state, draft => ({
+        ...draft,
+        sections: draft.sections.map(s =>
+          s.id === action.sectionId ? { ...s, updateTime: action.time } : s
+        ),
       }));
     case 'APPLY_TEMPLATE':
       return patchDraft(state, draft =>

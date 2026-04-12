@@ -257,7 +257,7 @@ describe('ClinicalDocumentsWorkspace', () => {
       expect(clinicalDocumentUseCases.executeCreateClinicalDocumentDraft).toHaveBeenCalled();
     });
 
-    fireEvent.click(screen.getAllByRole('button', { name: /epicrisis médica/i })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: /epicrisis/i })[0]);
     fireEvent.click(screen.getByRole('button', { name: /pdf/i }));
 
     await waitFor(() => {

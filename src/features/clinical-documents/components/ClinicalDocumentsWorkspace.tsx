@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import '@/features/clinical-documents/styles/clinicalDocumentSheet.css';
 import type { PatientData } from '@/features/clinical-documents/contracts/clinicalDocumentsPatientContract';
 import { ClinicalDocumentFormattingToolbar } from '@/features/clinical-documents/components/ClinicalDocumentFormattingToolbar';
+import { ClinicalDocumentStatusBar } from '@/features/clinical-documents/components/ClinicalDocumentStatusBar';
 import { ClinicalDocumentsSidebar } from '@/features/clinical-documents/components/ClinicalDocumentsSidebar';
 import { ClinicalDocumentSheet } from '@/features/clinical-documents/components/ClinicalDocumentSheet';
 import { useClinicalDocumentsWorkspaceModel } from '@/features/clinical-documents/hooks/useClinicalDocumentsWorkspaceModel';
@@ -32,7 +33,6 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
   });
   const sheetState = useClinicalDocumentSheetState(sheetProps.selectedDocument);
 
-  // Insert lab summary text into the first visible section of the document
   const handleInsertLabText = useCallback(
     (text: string) => {
       const doc = sheetProps.selectedDocument;
@@ -52,18 +52,25 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
     );
   }
 
+  // Status bar (autosave + Drive) → portaled to modal header
+  const statusNode = sheetProps.selectedDocument ? (
+    <ClinicalDocumentStatusBar
+      isSaving={sheetProps.isSaving}
+      lastSavedAt={sheetProps.lastSavedAt}
+      isUploadingPdf={sheetProps.isUploadingPdf}
+      driveExported={sheetProps.selectedDocument.pdf?.exportStatus === 'exported'}
+      onUploadPdf={sheetProps.onUploadPdf}
+    />
+  ) : null;
+
+  // Editing toolbar (lab, PDF, format, restore)
   const toolbarNode = sheetProps.selectedDocument ? (
     <ClinicalDocumentFormattingToolbar
       selectedDocument={sheetProps.selectedDocument}
       canEdit={sheetProps.canEdit}
-      isSaving={sheetProps.isSaving}
-      lastSavedAt={sheetProps.lastSavedAt}
-      isUploadingPdf={sheetProps.isUploadingPdf}
       formattingDisabled={sheetState.formattingDisabled || !sheetProps.canEdit}
       isFormattingOpen={sheetState.isFormattingOpen}
-      activeEditorHistoryState={sheetState.activeEditorHistoryState}
       onPrint={sheetProps.onPrint}
-      onUploadPdf={sheetProps.onUploadPdf}
       onRestoreTemplate={sheetProps.onRestoreTemplate}
       onToggleFormatting={() => sheetState.setIsFormattingOpen(prev => !prev)}
       onApplyFormatting={sheetState.applyFormatting}
@@ -76,20 +83,29 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
     ? document.getElementById(headerActionsContainerId)
     : null;
 
+  const headerContent =
+    statusNode || toolbarNode ? (
+      <div className="flex items-center gap-3">
+        {statusNode}
+        {statusNode && toolbarNode && <div className="h-4 w-px bg-slate-200/70" />}
+        {toolbarNode}
+      </div>
+    ) : null;
+
   return (
     <div
       className="grid h-[82vh] min-h-[82vh] grid-cols-[260px_minmax(0,1fr)]"
       data-testid="clinical-documents-workspace"
     >
-      {toolbarNode && headerActionsContainer
-        ? createPortal(toolbarNode, headerActionsContainer)
+      {headerContent && headerActionsContainer
+        ? createPortal(headerContent, headerActionsContainer)
         : null}
       <ClinicalDocumentsSidebar {...sidebarProps} />
 
       <section className="relative overflow-y-auto overflow-x-hidden bg-[#f3f4f6] p-3">
         <ClinicalDocumentSheet
           {...sheetProps}
-          toolbar={toolbarNode && !headerActionsContainer ? toolbarNode : null}
+          toolbar={headerContent && !headerActionsContainer ? headerContent : null}
           activeTitleTarget={sheetState.activeTitleTarget}
           onSetActiveTitleTarget={sheetState.setActiveTitleTarget}
           draggedSectionId={sheetState.draggedSectionId}

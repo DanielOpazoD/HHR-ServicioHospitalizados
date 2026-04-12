@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FilePlus2, History, Trash2 } from 'lucide-react';
+import { FilePlus2, History, Paperclip, PenLine, Trash2 } from 'lucide-react';
 import clsx from 'clsx';
 
 import { getClinicalDocumentTypeLabel } from '@/features/clinical-documents/controllers/clinicalDocumentTemplateController';
@@ -54,9 +54,25 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
   selectedDocumentId,
   onSelectDocument,
   onDeleteDocument,
+  onAddClinicalUpdate,
+  onToggleAnnex,
+  hasAnnex,
+  patientRut,
 }) => {
   return (
     <aside className="space-y-2.5 border-r border-slate-200 bg-slate-50/70 p-2.5">
+      {/* Patient context */}
+      {patientName && (
+        <div className="rounded-lg border border-slate-200 bg-white px-2.5 py-2">
+          <p className="text-[12px] font-bold text-slate-800 leading-tight truncate">
+            {patientName}
+          </p>
+          {patientRut && (
+            <p className="text-[10px] font-mono text-slate-400 mt-0.5">{patientRut}</p>
+          )}
+        </div>
+      )}
+
       <div className="space-y-1.5">
         {readOnlyMessage && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
@@ -94,6 +110,35 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
             <FilePlus2 size={12} className="inline mr-1.5" />
             Crear
           </button>
+          {selectedDocumentId && canEdit && (
+            <div className="flex gap-1.5 mt-1">
+              {onAddClinicalUpdate && (
+                <button
+                  type="button"
+                  onClick={onAddClinicalUpdate}
+                  className="flex-1 rounded-lg border border-violet-200 bg-violet-50 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-violet-700 hover:bg-violet-100 transition-colors"
+                >
+                  <PenLine size={10} className="inline mr-1" />
+                  Actualización
+                </button>
+              )}
+              {onToggleAnnex && (
+                <button
+                  type="button"
+                  onClick={onToggleAnnex}
+                  className={clsx(
+                    'flex-1 rounded-lg border px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] transition-colors',
+                    hasAnnex
+                      ? 'border-medical-300 bg-medical-50 text-medical-700'
+                      : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                  )}
+                >
+                  <Paperclip size={10} className="inline mr-1" />
+                  Anexo
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

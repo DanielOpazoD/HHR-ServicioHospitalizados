@@ -91,7 +91,6 @@ export const useClinicalDocumentsWorkspaceModel = ({
     draft,
     setDraft,
     isSaving,
-    hasLocalDraftChanges,
     lastSavedAt,
     validationIssues,
     lastPersistedSnapshotRef,
@@ -111,6 +110,10 @@ export const useClinicalDocumentsWorkspaceModel = ({
     patchDocumentMeta,
     applyTemplate,
     restoreTemplateContent,
+    addClinicalUpdate,
+    patchAnnexContent,
+    patchUpdateDate,
+    patchUpdateTime,
   } = useClinicalDocumentWorkspaceDraft({
     documents,
     selectedDocumentId,
@@ -200,6 +203,7 @@ export const useClinicalDocumentsWorkspaceModel = ({
       canDelete,
       readOnlyMessage,
       patientName: patient.patientName,
+      patientRut: patient.rut,
       templates,
       selectedTemplateId,
       onSelectTemplate: handleSelectTemplate,
@@ -208,12 +212,27 @@ export const useClinicalDocumentsWorkspaceModel = ({
       selectedDocumentId,
       onSelectDocument: setSelectedDocumentId,
       onDeleteDocument: document => void handleDeleteDocument(document),
+      onAddClinicalUpdate: canEdit ? addClinicalUpdate : undefined,
+      onToggleAnnex: canEdit
+        ? () => {
+            const doc = draft;
+            if (!doc) return;
+            if (doc.annexContent == null) {
+              patchAnnexContent('<br>');
+            }
+            setTimeout(() => {
+              document
+                .querySelector('.clinical-document-annex-page')
+                ?.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+          }
+        : undefined,
+      hasAnnex: draft?.annexContent != null,
     },
     sheetProps: {
       selectedDocument,
       canEdit,
       isSaving,
-      isDirty: hasLocalDraftChanges,
       lastSavedAt,
       isUploadingPdf,
       validationIssues,
@@ -241,6 +260,10 @@ export const useClinicalDocumentsWorkspaceModel = ({
       updateIndication,
       deleteIndication,
       importIndicationsCatalog: importCatalog,
+      addClinicalUpdate,
+      patchAnnexContent,
+      patchUpdateDate,
+      patchUpdateTime,
     },
   };
 };

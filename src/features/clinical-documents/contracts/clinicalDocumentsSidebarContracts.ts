@@ -10,6 +10,7 @@ export interface ClinicalDocumentsSidebarProps {
   canDelete: boolean;
   readOnlyMessage?: string | null;
   patientName?: string;
+  patientRut?: string;
   templates: ClinicalDocumentsSidebarTemplateOption[];
   selectedTemplateId: string;
   onSelectTemplate: (templateId: string) => void;
@@ -18,4 +19,7 @@ export interface ClinicalDocumentsSidebarProps {
   selectedDocumentId: string | null;
   onSelectDocument: (documentId: string) => void;
   onDeleteDocument: (document: ClinicalDocumentRecord) => void;
+  onAddClinicalUpdate?: () => void;
+  onToggleAnnex?: () => void;
+  hasAnnex?: boolean;
 }

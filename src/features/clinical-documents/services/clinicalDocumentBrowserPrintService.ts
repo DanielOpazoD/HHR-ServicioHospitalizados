@@ -32,7 +32,9 @@ export const openClinicalDocumentBrowserPrintPreview = async (
   await sanitizeClinicalDocumentSheetClone(sheet, sheetClone);
 
   const printOptions = getClinicalDocumentDefinition(documentType).printOptions;
-  const includePatientSignature = DOCUMENT_TYPES_WITH_PATIENT_SIGNATURE.has(documentType);
+  const hasAnnex = sheetClone.querySelector('.clinical-document-annex-page') != null;
+  const includePatientSignature =
+    DOCUMENT_TYPES_WITH_PATIENT_SIGNATURE.has(documentType) && !hasAnnex;
   const printRoot = document.createElement('div');
   printRoot.id = CLINICAL_DOCUMENT_INLINE_PRINT_ROOT_ID;
   printRoot.innerHTML = includePatientSignature

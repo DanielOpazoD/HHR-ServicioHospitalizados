@@ -5,6 +5,7 @@ import { ClinicalDocumentFooterSection } from '@/features/clinical-documents/com
 import { ClinicalDocumentPatientInfoSection } from '@/features/clinical-documents/components/ClinicalDocumentPatientInfoSection';
 import { ClinicalDocumentSectionList } from '@/features/clinical-documents/components/ClinicalDocumentSectionList';
 import { ClinicalDocumentSheetHeader } from '@/features/clinical-documents/components/ClinicalDocumentSheetHeader';
+import { ClinicalDocumentAnnexPage } from '@/features/clinical-documents/components/ClinicalDocumentAnnexPage';
 import type { ClinicalDocumentSheetProps } from '@/features/clinical-documents/components/clinicalDocumentSheetShared';
 
 export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
@@ -45,6 +46,9 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
   updateIndication,
   deleteIndication,
   importIndicationsCatalog,
+  patchAnnexContent,
+  patchUpdateDate,
+  patchUpdateTime,
 }) => {
   if (!selectedDocument) {
     return (
@@ -63,7 +67,9 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
   const visibleSections = selectedDocument.sections
     .filter(section => section.visible !== false)
     .sort((left, right) => left.order - right.order);
-  const hiddenSections = selectedDocument.sections.filter(section => section.visible === false);
+  const hiddenSections = selectedDocument.sections.filter(
+    section => section.visible === false && section.kind !== 'clinical-update'
+  );
 
   return (
     <div className="mx-auto max-w-6xl space-y-3">
@@ -148,6 +154,8 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
           onUpdateIndication={updateIndication}
           onDeleteIndication={deleteIndication}
           onImportIndicationsCatalog={importIndicationsCatalog}
+          onPatchUpdateDate={patchUpdateDate}
+          onPatchUpdateTime={patchUpdateTime}
           dragHandlers={dragHandlers}
         />
 
@@ -158,6 +166,18 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
           onPatchDocumentMeta={patchDocumentMeta}
           onClearActiveTitleTarget={() => onSetActiveTitleTarget(null)}
         />
+
+        {/* Annex page (printed as next page via CSS page-break) */}
+        {selectedDocument.annexContent != null && (
+          <ClinicalDocumentAnnexPage
+            content={selectedDocument.annexContent}
+            canEdit={canEdit}
+            isLocked={selectedDocument.isLocked}
+            onChange={patchAnnexContent}
+            onEditorActivate={onEditorActivate}
+            onEditorDeactivate={onEditorDeactivate}
+          />
+        )}
       </div>
     </div>
   );

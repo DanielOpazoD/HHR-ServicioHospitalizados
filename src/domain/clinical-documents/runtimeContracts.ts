@@ -104,6 +104,7 @@ export const clinicalDocumentRecordSchema = z.object({
   pdf: pdfMetaSchema.optional(),
   renderedText: z.string().optional(),
   integrityHash: z.string().optional(),
+  annexContent: z.string().optional(),
 });
 
 export const clinicalDocumentTemplateSchema = z.object({

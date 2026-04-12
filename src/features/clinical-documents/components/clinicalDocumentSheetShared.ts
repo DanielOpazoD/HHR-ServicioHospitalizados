@@ -27,7 +27,6 @@ export interface ClinicalDocumentSheetProps {
   selectedDocument: ClinicalDocumentRecord | null;
   canEdit: boolean;
   isSaving: boolean;
-  isDirty?: boolean;
   lastSavedAt?: string;
   isUploadingPdf: boolean;
   toolbar?: ReactNode;
@@ -89,6 +88,10 @@ export interface ClinicalDocumentSheetProps {
   ) => Promise<boolean>;
   importIndicationsCatalog: (catalog: unknown) => Promise<boolean>;
   onRestoreTemplate: () => void;
+  addClinicalUpdate: () => void;
+  patchAnnexContent: (content: string) => void;
+  patchUpdateDate: (sectionId: string, date: string) => void;
+  patchUpdateTime: (sectionId: string, time: string) => void;
 }
 
 export interface ClinicalDocumentSpecialSectionRendererProps {
