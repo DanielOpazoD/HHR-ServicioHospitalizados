@@ -96,6 +96,10 @@ vi.mock('@/views/LazyViews', () => ({
   CensusEmailConfigModal: () => <div data-testid="email-modal">EmailModal</div>,
 }));
 
+vi.mock('@/features/census/components/global-search/GlobalPatientSearchModal', () => ({
+  GlobalPatientSearchModal: () => <div data-testid="patient-search-modal">PatientSearchModal</div>,
+}));
+
 vi.mock('@/components/reminders/ReminderModal', () => ({
   ReminderModal: () => <div data-testid="reminder-modal">ReminderModal</div>,
 }));
@@ -121,13 +125,21 @@ describe('AppContent', () => {
   type AuthValue = ReturnType<typeof useAuth>;
   type ExportManagerValue = ReturnType<typeof useExportManager>;
 
+  const createModalMock = () => ({
+    isOpen: false,
+    open: vi.fn(),
+    close: vi.fn(),
+    toggle: vi.fn(),
+  });
+
   const mockUI = {
     currentModule: 'CENSUS' as const,
     setCurrentModule: vi.fn(),
     censusViewMode: 'REGISTER' as const,
     setCensusViewMode: vi.fn(),
-    bedManagerModal: { isOpen: false, open: vi.fn(), close: vi.fn() },
-    settingsModal: { isOpen: false, open: vi.fn(), close: vi.fn() },
+    bedManagerModal: createModalMock(),
+    settingsModal: createModalMock(),
+    patientSearchModal: createModalMock(),
     showPrintButton: true,
     showBookmarksBar: true,
     setShowBookmarksBar: vi.fn(),
@@ -302,7 +314,9 @@ describe('AppContent', () => {
 
   it('hides DateStrip for non-clinical modules', () => {
     render(
-      <AppContent ui={{ ...mockUI, currentModule: 'TRANSFERS' } as unknown as AppContentUi} />
+      <AppContent
+        ui={{ ...mockUI, currentModule: 'TRANSFER_MANAGEMENT' } as unknown as AppContentUi}
+      />
     );
     expect(screen.queryByTestId('datestrip')).not.toBeInTheDocument();
   });
@@ -362,7 +376,7 @@ describe('AppContent', () => {
   it('shows and hides global modals/panels based on UI state', () => {
     const uiWithModals = {
       ...mockUI,
-      settingsModal: { isOpen: true, close: vi.fn(), open: vi.fn() },
+      settingsModal: { isOpen: true, close: vi.fn(), open: vi.fn(), toggle: vi.fn() },
       isTestAgentRunning: true,
     };
 

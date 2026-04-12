@@ -62,12 +62,17 @@ vi.mock('@/views/LazyViews', () => ({
   CensusEmailConfigModal: () => <div data-testid="email-modal">EmailModal</div>,
 }));
 
+vi.mock('@/features/census/components/global-search/GlobalPatientSearchModal', () => ({
+  GlobalPatientSearchModal: () => <div data-testid="patient-search-modal">PatientSearchModal</div>,
+}));
+
 // Flush lazy component resolutions before any test renders.
 beforeAll(() => Promise.all(_lazyPending));
 
 describe('AppContentOverlays', () => {
   const ui = {
     settingsModal: { isOpen: true, open: vi.fn(), close: vi.fn() },
+    patientSearchModal: { isOpen: false, open: vi.fn(), close: vi.fn(), toggle: vi.fn() },
     isTestAgentRunning: true,
     setIsTestAgentRunning: vi.fn(),
   } as const;

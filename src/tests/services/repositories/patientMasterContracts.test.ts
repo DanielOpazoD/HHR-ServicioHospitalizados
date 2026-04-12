@@ -46,7 +46,7 @@ describe('patientMasterContracts', () => {
     expect(result[0].rut).toBe('12.345.678-5');
   });
 
-  it('trims search term', () => {
-    expect(normalizePatientSearchTerm('  ana  ')).toBe('ana');
+  it('normalizes search term to title case after trimming', () => {
+    expect(normalizePatientSearchTerm('  ana  ')).toBe('Ana');
   });
 });

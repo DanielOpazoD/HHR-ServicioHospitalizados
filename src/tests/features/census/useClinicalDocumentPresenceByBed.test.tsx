@@ -56,7 +56,10 @@ describe('useClinicalDocumentPresenceByBed', () => {
       { wrapper }
     );
 
-    expect(result.current).toEqual({});
+    expect(result.current).toEqual({
+      byBedId: {},
+      infoByBedId: {},
+    });
     expect(executeListClinicalDocumentsByEpisodeKeys).not.toHaveBeenCalled();
   });
 
@@ -78,7 +81,12 @@ describe('useClinicalDocumentPresenceByBed', () => {
       expect(executeListClinicalDocumentsByEpisodeKeys).toHaveBeenCalledTimes(1);
     });
     await waitFor(() => {
-      expect(result.current).toEqual({ R1: false });
+      expect(result.current).toEqual({
+        byBedId: { R1: false },
+        infoByBedId: {
+          R1: { present: false, totalCount: 0, draftCount: 0 },
+        },
+      });
     });
 
     expect(warnMock).toHaveBeenCalled();

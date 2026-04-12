@@ -29,8 +29,14 @@ describe('useCensusTableBindingsModel', () => {
     vi.mocked(useCensusTableViewModel).mockReturnValue(
       asHookValue<ReturnType<typeof useCensusTableViewModel>>({
         beds: null,
+        unifiedRows: [],
+        role: 'viewer',
       })
     );
+    vi.mocked(useClinicalDocumentPresenceByBed).mockReturnValue({
+      byBedId: {},
+      infoByBedId: {},
+    });
 
     const { result } = renderHook(() =>
       useCensusTableBindingsModel({
@@ -95,5 +101,8 @@ describe('useCensusTableBindingsModel', () => {
     );
     expect(result.current.isReady).toBe(true);
     expect(result.current.bindings).toBe(layoutBindings);
+    expect(result.current.clinicalDocumentInfoByBedId).toEqual({
+      R1: { present: true, totalCount: 1, draftCount: 0 },
+    });
   });
 });

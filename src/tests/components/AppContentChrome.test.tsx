@@ -62,6 +62,10 @@ vi.mock('@/components/AppRouter', () => ({
   AppRouter: () => <div data-testid="app-router">AppRouter</div>,
 }));
 
+vi.mock('@/features/census/components/global-search/GlobalPatientSearchModal', () => ({
+  GlobalPatientSearchModal: () => <div data-testid="patient-search-modal">PatientSearchModal</div>,
+}));
+
 // Flush lazy component resolutions before any test renders.
 beforeAll(() => Promise.all(_lazyPending));
 
@@ -73,6 +77,7 @@ describe('AppContentChrome', () => {
     setCensusViewMode: vi.fn(),
     bedManagerModal: { isOpen: false, open: vi.fn(), close: vi.fn() },
     settingsModal: { isOpen: false, open: vi.fn(), close: vi.fn() },
+    patientSearchModal: { isOpen: false, open: vi.fn(), close: vi.fn(), toggle: vi.fn() },
     showPrintButton: true,
     showBookmarksBar: true,
     setShowBookmarksBar: vi.fn(),

@@ -3,7 +3,8 @@ import { CensusTableHeader } from '@/features/census/components/CensusTableHeade
 import { CensusTableBody } from '@/features/census/components/CensusTableBody';
 import { useCensusTableBindingsModel } from '@/features/census/hooks/useCensusTableBindingsModel';
 import { useCensusTableDragDrop, DragDropConfirmation } from '@/features/census/drag-drop';
-import { useDailyRecordBedActions, useDailyRecordBeds } from '@/context/DailyRecordContext';
+import { useDailyRecordBeds } from '@/context/DailyRecordContext';
+import { useDailyRecordBedActions } from '@/context/useDailyRecordScopedActions';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 export type { DiagnosisMode } from '@/features/census/types/censusTableTypes';
 
