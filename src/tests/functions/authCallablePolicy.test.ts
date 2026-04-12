@@ -44,4 +44,14 @@ describe('functions authCallablePolicy', () => {
 
     expect(() => assertAssignableRole('user@example.com', 'not-a-role')).toThrow(/Invalid role/);
   });
+
+  it('rejects role mutation when caller is neither admin claim nor bootstrap admin', () => {
+    expect(() =>
+      assertRoleMutationAccess({
+        context: { auth: { token: { email: 'viewer@example.com', role: 'viewer' } } },
+        callerEmail: 'viewer@example.com',
+        adminEmails: ['admin@example.com'],
+      })
+    ).toThrow(/Only admins can set roles/);
+  });
 });

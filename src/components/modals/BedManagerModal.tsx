@@ -10,7 +10,7 @@ import { ExtraBedsGrid } from '@/components/modals/ExtraBedsGrid';
 import {
   resolveBlockedBedsGridItems,
   resolveExtraBedsGridItems,
-} from '@/hooks/controllers/bedManagerGridItemsController';
+} from '@/features/census/controllers/bedManagerGridItemsController';
 import { useBedManagerModalModel } from '@/hooks/useBedManagerModalModel';
 
 interface BedManagerModalProps {

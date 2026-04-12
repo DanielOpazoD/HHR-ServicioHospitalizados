@@ -64,6 +64,14 @@ const queueRecoveryTask = async (
   return result.accepted;
 };
 
+const resolveEffectiveChangedPaths = (changedPaths: string[]): string[] =>
+  changedPaths.length > 0 ? changedPaths : ['*'];
+
+const resolveRetryOrigin = (changedPaths: string[]): 'full_save_retry' | 'partial_update_retry' =>
+  resolveEffectiveChangedPaths(changedPaths).includes('*')
+    ? 'full_save_retry'
+    : 'partial_update_retry';
+
 export const prepareDailyRecordForPersistence = (
   record: DailyRecord,
   date: string,
@@ -165,7 +173,7 @@ const buildRecoveryTaskMeta = (
   changedPaths: string[],
   origin: 'full_save_retry' | 'partial_update_retry' | 'conflict_auto_merge'
 ) => ({
-  contexts: classifyConflictChangedContexts(changedPaths.length > 0 ? changedPaths : ['*']),
+  contexts: classifyConflictChangedContexts(resolveEffectiveChangedPaths(changedPaths)),
   origin,
 });
 
@@ -176,6 +184,8 @@ export const attemptConflictAutoMergeRecovery = async (
   localRecord: DailyRecord,
   changedPaths: string[]
 ): Promise<ConflictAutoMergeRecoveryResult> => {
+  const effectiveChangedPaths = resolveEffectiveChangedPaths(changedPaths);
+
   try {
     const remoteRecord = await getRecordFromFirestore(date);
     if (!remoteRecord) {
@@ -186,12 +196,12 @@ export const attemptConflictAutoMergeRecovery = async (
       remoteRecord,
       localRecord,
       {
-        changedPaths: changedPaths.length > 0 ? changedPaths : ['*'],
+        changedPaths: effectiveChangedPaths,
       }
     );
 
     const auditDetails = buildConflictAuditSummary(
-      changedPaths.length > 0 ? changedPaths : ['*'],
+      effectiveChangedPaths,
       trace.policyVersion,
       trace.entries
     );
@@ -222,6 +232,8 @@ export const resolveRemoteWriteRecovery = async (
   changedPaths: string[],
   error: unknown
 ): Promise<RemoteWriteRecoveryResult> => {
+  const effectiveChangedPaths = resolveEffectiveChangedPaths(changedPaths);
+
   const conflictSummary = (
     kind: DailyRecordConflictSummary['kind'],
     message: string
@@ -229,7 +241,7 @@ export const resolveRemoteWriteRecovery = async (
     kind,
     sourceOfTruth: kind === 'concurrency' ? 'local' : 'none',
     localTimestamp: record.lastUpdated,
-    changedPaths,
+    changedPaths: effectiveChangedPaths,
     message,
   });
 
@@ -293,12 +305,7 @@ export const resolveRemoteWriteRecovery = async (
   if (shouldQueueRetryableError(error)) {
     const queued = await queueRecoveryTask(
       record,
-      buildRecoveryTaskMeta(
-        changedPaths,
-        changedPaths.length === 0 || changedPaths.includes('*')
-          ? 'full_save_retry'
-          : 'partial_update_retry'
-      )
+      buildRecoveryTaskMeta(changedPaths, resolveRetryOrigin(changedPaths))
     );
     if (!queued) {
       return {

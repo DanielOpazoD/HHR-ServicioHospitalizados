@@ -70,6 +70,16 @@ export const HandoffRow: React.FC<HandoffRowProps> = ({
   }, [forcedExpand]);
 
   const hasEvents = (patient.clinicalEvents?.length || 0) > 0;
+  const hasMedicalMutationPaths = Boolean(
+    isMedical &&
+    (onNoteChange ||
+      medicalActions?.onCreatePrimaryEntry ||
+      medicalActions?.onEntryNoteChange ||
+      medicalActions?.onEntrySpecialtyChange ||
+      medicalActions?.onEntryAdd ||
+      medicalActions?.onEntryDelete ||
+      medicalActions?.onRefreshAsCurrent)
+  );
 
   // If bed is blocked (and not a sub-row), show blocked status
   if (!isSubRow && patient.isBlocked) {
@@ -96,7 +106,8 @@ export const HandoffRow: React.FC<HandoffRowProps> = ({
 
   const daysHospitalized = calculateHospitalizedDays(patient.admissionDate, reportDate);
   const noteValue = (patient[noteField] as string) || '';
-  const isFieldReadOnly = readOnly || !stabilityRules.canEditField(noteField as string);
+  const isFieldReadOnly =
+    readOnly || (!stabilityRules.canEditField(noteField as string) && !hasMedicalMutationPaths);
 
   return (
     <tr
@@ -130,6 +141,8 @@ export const HandoffRow: React.FC<HandoffRowProps> = ({
           patient={patient}
           reportDate={reportDate}
           isFieldReadOnly={isFieldReadOnly}
+          primaryNoteValue={noteValue}
+          onPrimaryNoteChange={onNoteChange}
           onCreatePrimaryEntry={medicalActions?.onCreatePrimaryEntry}
           onEntryNoteChange={
             medicalActions?.onEntryNoteChange ??

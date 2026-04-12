@@ -14,7 +14,7 @@ import type { DischargeTarget } from '@/types/movements';
 import {
   shouldShowBabyStatus,
   shouldShowMotherStatus,
-} from '@/hooks/controllers/dischargeModalController';
+} from '@/features/census/controllers/dischargeModalController';
 import { useDischargeModalForm } from '@/hooks/useDischargeModalForm';
 import type { DischargeModalProps } from '@/hooks/types/censusActionModalContracts';
 

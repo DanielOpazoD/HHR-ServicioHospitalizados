@@ -16,6 +16,7 @@ export type FirestoreRulesHarness = {
   doctor: () => FirestoreLike;
   specialist: () => FirestoreLike;
   specialistWithoutClaim: () => FirestoreLike;
+  bootstrapAdminWithoutClaim: () => FirestoreLike;
   doctorWithoutClaim: () => FirestoreLike;
   editor: () => FirestoreLike;
   unauthorizedAuthed: () => FirestoreLike;
@@ -87,6 +88,12 @@ export function registerFirestoreRulesSuite(
         testEnv
           .authenticatedContext('user_specialist_dynamic', {
             email: 'specialist.dynamic@example.com',
+          })
+          .firestore(),
+      bootstrapAdminWithoutClaim: () =>
+        testEnv
+          .authenticatedContext('user_bootstrap_admin', {
+            email: 'daniel.opazo@hospitalhangaroa.cl',
           })
           .firestore(),
       doctorWithoutClaim: () =>

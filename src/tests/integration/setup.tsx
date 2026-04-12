@@ -21,23 +21,63 @@ vi.mock('@/hooks/useStabilityRules', () => ({
   }),
 }));
 
-vi.mock('@/hooks/useAuthState', () => ({
-  useAuthState: () => ({
+export const mockUseAuthState: any = {
+  user: {
+    uid: 'test-user',
+    email: 'admin@hospitalhangaroa.cl',
+    displayName: 'Admin Test',
+    role: 'admin' as const,
+  },
+  currentUser: {
+    uid: 'test-user',
+    email: 'admin@hospitalhangaroa.cl',
+    displayName: 'Admin Test',
+    role: 'admin' as const,
+  },
+  authorizedUser: {
+    uid: 'test-user',
+    email: 'admin@hospitalhangaroa.cl',
+    displayName: 'Admin Test',
+    role: 'admin' as const,
+  },
+  sessionState: {
+    status: 'authorized' as const,
     user: {
       uid: 'test-user',
       email: 'admin@hospitalhangaroa.cl',
       displayName: 'Admin Test',
-      role: 'admin',
+      role: 'admin' as const,
     },
-    role: 'admin',
+  },
+  role: 'admin' as const,
+  authLoading: false,
+  isEditor: true,
+  isViewer: false,
+  canEdit: true,
+  isAuthenticated: true,
+  isFirebaseConnected: true,
+  remoteSyncStatus: 'enabled' as const,
+  remoteSyncState: {
+    mode: 'enabled' as const,
+    reason: 'ready' as const,
+  },
+  authRuntime: {
+    sessionStatus: 'authorized',
     authLoading: false,
-    isEditor: true,
-    isViewer: false,
-    canEdit: true,
-    isAuthenticated: true,
     isFirebaseConnected: true,
-    handleLogout: vi.fn(),
-  }),
+    isOnline: true,
+    bootstrapPending: false,
+    pendingAgeMs: 0,
+    budgetProfile: { label: 'ready' },
+    timeoutMs: 0,
+    runtimeState: 'ready',
+    issues: [],
+  },
+  handleLogout: vi.fn(),
+};
+
+vi.mock('@/hooks/useAuthState', () => ({
+  useAuthState: () => mockUseAuthState,
 }));
 
 // Types

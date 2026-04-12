@@ -21,6 +21,21 @@ No usar como referencia primaria:
 - comentarios legacy sobre `whitelist`;
 - claims históricos como evidencia suficiente de acceso.
 
+## Excepción conocida: bootstrap admin
+
+Existe una excepción mínima de bootstrap admin para recuperación técnica.
+
+Usarla solo cuando:
+
+- el flujo normal basado en `config/roles` no permita recuperar administración
+- se necesite restaurar acceso operativo o corregir `config/roles`
+
+No asumir:
+
+- que reemplaza el modelo canónico
+- que justifica agregar correos nuevos sin revisión
+- que un incidente de acceso general debe resolverse primero por esa vía
+
 ## Caso 1: el correo está en Gestión de Roles pero no puede entrar
 
 1. revisar `config/roles` y confirmar:

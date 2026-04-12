@@ -21,6 +21,7 @@ import { dailyRecordReadLogger } from '@/services/repositories/repositoryLoggers
 import { resolveDailyRecordReadConsistency } from '@/services/repositories/dailyRecordConsistencyPolicy';
 import { resolveDailyRecordPersistenceGoldenPath } from '@/services/repositories/dailyRecordPersistenceGoldenPath';
 import { AdmissionDatePolicyViolationError } from '@/application/patient-flow/admissionDatePolicy';
+import type { DailyRecordRemoteLoadResult } from '@/services/repositories/dailyRecordRemoteLoader';
 
 type FirestoreRecordQueriesModule =
   typeof import('@/services/storage/firestore/firestoreRecordQueries');
@@ -118,6 +119,53 @@ const createLocalRuntimeReadResult = (
   });
 };
 
+const createReadResultFromGoldenPath = (
+  date: string,
+  goldenPath: ReturnType<typeof resolveDailyRecordPersistenceGoldenPath>,
+  localCandidate: LocalRuntimeReadCandidate | null,
+  remoteReadResult?: DailyRecordRemoteLoadResult
+): DailyRecordReadResult => {
+  if (goldenPath.selectedStore === 'remote' && remoteReadResult?.record) {
+    return createDailyRecordReadResult(date, remoteReadResult.record, remoteReadResult.source, {
+      compatibilityTier: remoteReadResult.compatibilityTier,
+      compatibilityIntensity: remoteReadResult.compatibilityIntensity,
+      migrationRulesApplied: remoteReadResult.migrationRulesApplied,
+      consistencyState: goldenPath.consistencyState,
+      sourceOfTruth: goldenPath.sourceOfTruth,
+      retryability: goldenPath.retryability,
+      recoveryAction: goldenPath.recoveryAction,
+      conflictSummary: goldenPath.conflictSummary,
+      observabilityTags: goldenPath.observabilityTags,
+      userSafeMessage: goldenPath.userSafeMessage,
+      repairApplied: goldenPath.repairApplied,
+    });
+  }
+
+  if (goldenPath.selectedStore === 'local' && localCandidate) {
+    return createLocalRuntimeReadResult(date, localCandidate, 'indexeddb', {
+      consistencyState: goldenPath.consistencyState,
+      sourceOfTruth: goldenPath.sourceOfTruth,
+      retryability: goldenPath.retryability,
+      recoveryAction: goldenPath.recoveryAction,
+      conflictSummary: goldenPath.conflictSummary,
+      observabilityTags: goldenPath.observabilityTags,
+      userSafeMessage: goldenPath.userSafeMessage,
+      repairApplied: goldenPath.repairApplied,
+    });
+  }
+
+  return createDailyRecordReadResult(date, null, 'not_found', {
+    consistencyState: goldenPath.consistencyState,
+    sourceOfTruth: goldenPath.sourceOfTruth,
+    retryability: goldenPath.retryability,
+    recoveryAction: goldenPath.recoveryAction,
+    conflictSummary: goldenPath.conflictSummary,
+    observabilityTags: goldenPath.observabilityTags,
+    userSafeMessage: goldenPath.userSafeMessage,
+    repairApplied: goldenPath.repairApplied,
+  });
+};
+
 export const getForDate = async (
   date: string,
   syncFromRemote: boolean = true
@@ -189,49 +237,15 @@ export const getForDateWithMeta = async (
           }
 
           if (goldenPath.selectedStore === 'remote' && remoteReadResult.record) {
-            return createDailyRecordReadResult(
+            return createReadResultFromGoldenPath(
               query.date,
-              remoteReadResult.record,
-              remoteReadResult.source,
-              {
-                compatibilityTier: remoteReadResult.compatibilityTier,
-                compatibilityIntensity: remoteReadResult.compatibilityIntensity,
-                migrationRulesApplied: remoteReadResult.migrationRulesApplied,
-                consistencyState: goldenPath.consistencyState,
-                sourceOfTruth: goldenPath.sourceOfTruth,
-                retryability: goldenPath.retryability,
-                recoveryAction: goldenPath.recoveryAction,
-                conflictSummary: goldenPath.conflictSummary,
-                observabilityTags: goldenPath.observabilityTags,
-                userSafeMessage: goldenPath.userSafeMessage,
-                repairApplied: goldenPath.repairApplied,
-              }
+              goldenPath,
+              localCandidate,
+              remoteReadResult
             );
           }
 
-          if (goldenPath.selectedStore === 'local' && localCandidate) {
-            return createLocalRuntimeReadResult(query.date, localCandidate, 'indexeddb', {
-              consistencyState: goldenPath.consistencyState,
-              sourceOfTruth: goldenPath.sourceOfTruth,
-              retryability: goldenPath.retryability,
-              recoveryAction: goldenPath.recoveryAction,
-              conflictSummary: goldenPath.conflictSummary,
-              observabilityTags: goldenPath.observabilityTags,
-              userSafeMessage: goldenPath.userSafeMessage,
-              repairApplied: goldenPath.repairApplied,
-            });
-          }
-
-          return createDailyRecordReadResult(query.date, null, 'not_found', {
-            consistencyState: goldenPath.consistencyState,
-            sourceOfTruth: goldenPath.sourceOfTruth,
-            retryability: goldenPath.retryability,
-            recoveryAction: goldenPath.recoveryAction,
-            conflictSummary: goldenPath.conflictSummary,
-            observabilityTags: goldenPath.observabilityTags,
-            userSafeMessage: goldenPath.userSafeMessage,
-            repairApplied: goldenPath.repairApplied,
-          });
+          return createReadResultFromGoldenPath(query.date, goldenPath, localCandidate);
         } catch (err) {
           dailyRecordReadLogger.warn(`Remote fetch failed for ${query.date}`, err);
         }
@@ -243,29 +257,7 @@ export const getForDateWithMeta = async (
           localRepairApplied: localCandidate?.repairApplied || false,
         });
 
-        if (localCandidate) {
-          return createLocalRuntimeReadResult(query.date, localCandidate, 'indexeddb', {
-            consistencyState: fallbackGoldenPath.consistencyState,
-            sourceOfTruth: fallbackGoldenPath.sourceOfTruth,
-            retryability: fallbackGoldenPath.retryability,
-            recoveryAction: fallbackGoldenPath.recoveryAction,
-            conflictSummary: fallbackGoldenPath.conflictSummary,
-            observabilityTags: fallbackGoldenPath.observabilityTags,
-            userSafeMessage: fallbackGoldenPath.userSafeMessage,
-            repairApplied: fallbackGoldenPath.repairApplied,
-          });
-        }
-
-        return createDailyRecordReadResult(query.date, null, 'not_found', {
-          consistencyState: fallbackGoldenPath.consistencyState,
-          sourceOfTruth: fallbackGoldenPath.sourceOfTruth,
-          retryability: fallbackGoldenPath.retryability,
-          recoveryAction: fallbackGoldenPath.recoveryAction,
-          conflictSummary: fallbackGoldenPath.conflictSummary,
-          observabilityTags: fallbackGoldenPath.observabilityTags,
-          userSafeMessage: fallbackGoldenPath.userSafeMessage,
-          repairApplied: fallbackGoldenPath.repairApplied,
-        });
+        return createReadResultFromGoldenPath(query.date, fallbackGoldenPath, localCandidate);
       }
 
       if (localCandidate) {

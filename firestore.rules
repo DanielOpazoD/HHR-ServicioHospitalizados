@@ -25,6 +25,8 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.token.email != null;
     }
 
+    // Technical recovery allowlist. This is not the normal login/access source of truth.
+    // It exists only as a bootstrap admin exception while config/roles remains the canonical model.
     function isBootstrapAdmin() {
       return hasEmail() &&
              getUserEmail() in [
@@ -33,17 +35,17 @@ service cloud.firestore {
              ];
     }
 
+	    function normalizeRole(role) {
+	      return role == 'viewer_census'
+	        ? 'viewer'
+	        : role;
+	    }
+
 	    function getConfiguredRole() {
 	      return hasEmail() &&
 	             exists(/databases/$(database)/documents/config/roles)
 	        ? normalizeRole(get(/databases/$(database)/documents/config/roles).data[getUserEmail()])
 	        : null;
-	    }
-
-	    function normalizeRole(role) {
-	      return role == 'viewer_census'
-	        ? 'viewer'
-	        : role;
 	    }
 
 	    function getClaimRole() {
@@ -60,49 +62,46 @@ service cloud.firestore {
 	        ? configuredRole
 	        : getClaimRole();
 	    }
+
+	    function hasEffectiveRole(role) {
+	      return isAuthenticated() && getEffectiveRole() == role;
+	    }
+
+	    function hasAnyEffectiveRole(roles) {
+	      let effectiveRole = getEffectiveRole();
+	      return isAuthenticated() &&
+	             effectiveRole != null &&
+	             roles.hasAny([effectiveRole]);
+	    }
 	    
 	    function isAdmin() {
-	      return isAuthenticated() && (
-	        isBootstrapAdmin() ||
-	        getEffectiveRole() == 'admin'
-	      );
+	      return isBootstrapAdmin() || hasEffectiveRole('admin');
 	    }
 	    
 	    function isNurse() {
-	      return isAuthenticated() && (
-	        isAdmin() ||
-	        getEffectiveRole() == 'nurse_hospital'
-	      );
+	      return isAdmin() || hasEffectiveRole('nurse_hospital');
 	    }
 
 	    function isDoctor() {
-	      return isAuthenticated() && (
-	        isAdmin() ||
-	        getEffectiveRole() == 'doctor_urgency'
-	      );
+	      return isAdmin() || hasEffectiveRole('doctor_urgency');
 	    }
 
 	    function isDoctorSpecialist() {
-	      return isAuthenticated() && (
-	        isAdmin() ||
-	        getEffectiveRole() == 'doctor_specialist'
-	      );
+	      return isAdmin() || hasEffectiveRole('doctor_specialist');
 	    }
-    
-    // Check if user can edit (admin or nurse)
-    function canEdit() {
-      return isAdmin() || isNurse();
-    }
+	    
+	    // Check if user can edit (admin or nurse)
+	    function canEdit() {
+	      return isBootstrapAdmin() || hasAnyEffectiveRole(['admin', 'nurse_hospital']);
+	    }
 
-    function canReportSystemHealth() {
-      return isAdmin() || isNurse();
-    }
+	    function canReportSystemHealth() {
+	      return isBootstrapAdmin() || hasAnyEffectiveRole(['admin', 'nurse_hospital']);
+	    }
 
 	    function isEditorRole() {
-	      return isAuthenticated() && (
-	        getEffectiveRole() == 'editor'
-	      );
-	    }
+		      return hasEffectiveRole('editor');
+		    }
 
     function isValidSpecialistClinicalCribMedicalUpdate(beforeCrib, afterCrib) {
       return beforeCrib != null &&
@@ -115,23 +114,33 @@ service cloud.firestore {
              ]);
     }
 
-    function isValidSpecialistMedicalBedUpdate(bedId) {
-      let beforeBed = resource.data.beds[bedId];
-      let afterBed = request.resource.data.beds[bedId];
+    function isValidSpecialistMedicalBedRootUpdate(beforeBed, afterBed) {
       let affectedBedKeys = afterBed.diff(beforeBed).affectedKeys();
 
-      return beforeBed != null &&
-             afterBed != null &&
-             affectedBedKeys.hasOnly([
+      return affectedBedKeys.hasOnly([
                'medicalHandoffEntries',
                'medicalHandoffNote',
                'medicalHandoffAudit',
-               'clinicalEvents',
-               'clinicalCrib'
-             ]) &&
+               'clinicalEvents'
+             ]);
+    }
+
+    function isValidSpecialistMedicalBedClinicalCribUpdate(beforeBed, afterBed) {
+      let affectedBedKeys = afterBed.diff(beforeBed).affectedKeys();
+
+      return affectedBedKeys.hasOnly(['clinicalCrib']) &&
+             isValidSpecialistClinicalCribMedicalUpdate(beforeBed.clinicalCrib, afterBed.clinicalCrib);
+    }
+
+    function isValidSpecialistMedicalBedUpdate(bedId) {
+      let beforeBed = resource.data.beds[bedId];
+      let afterBed = request.resource.data.beds[bedId];
+
+      return beforeBed != null &&
+             afterBed != null &&
              (
-               !affectedBedKeys.hasAny(['clinicalCrib']) ||
-               isValidSpecialistClinicalCribMedicalUpdate(beforeBed.clinicalCrib, afterBed.clinicalCrib)
+               isValidSpecialistMedicalBedRootUpdate(beforeBed, afterBed) ||
+               isValidSpecialistMedicalBedClinicalCribUpdate(beforeBed, afterBed)
              );
     }
 
@@ -202,7 +211,7 @@ service cloud.firestore {
              );
     }
 
-    function isSpecialistMedicalHandoffUpdate() {
+    function isSpecialistMedicalHandoffPayload() {
       let affectedRecordKeys = request.resource.data.diff(resource.data).affectedKeys();
       let affectedBedIds = request.resource.data.beds.diff(resource.data.beds).affectedKeys();
       let now = request.time.toMillis();
@@ -219,8 +228,7 @@ service cloud.firestore {
         effectiveRecordTimestamp == null ||
         (now >= effectiveRecordTimestamp && now < (effectiveRecordTimestamp + 86400000));
 
-      return isDoctorSpecialist() &&
-             isWithinSpecialistWindow &&
+      return isWithinSpecialistWindow &&
              (
                affectedRecordKeys.hasOnly(['beds', 'lastUpdated', 'dateTimestamp']) ||
                affectedRecordKeys.hasOnly([
@@ -269,22 +277,25 @@ service cloud.firestore {
     }
 
 	    function isGeneralViewer() {
-	      return isAuthenticated() && getEffectiveRole() == 'viewer';
+	      return hasEffectiveRole('viewer');
 	    }
 
-    // Consolidated read access for clinical data
-    function canReadClinicalData() {
-      return isAdmin() ||
-             isNurse() ||
-             isDoctor() ||
-             isDoctorSpecialist() ||
-             isEditorRole() ||
-             isGeneralViewer();
-    }
+	    // Consolidated read access for clinical data
+	    function canReadClinicalData() {
+	      return isBootstrapAdmin() ||
+	             hasAnyEffectiveRole([
+	               'admin',
+	               'nurse_hospital',
+	               'doctor_urgency',
+	               'doctor_specialist',
+	               'editor',
+	               'viewer'
+	             ]);
+	    }
 
-    function canManageCensusAccess() {
-      return isAdmin() || isEditorRole();
-    }
+	    function canManageCensusAccess() {
+	      return isBootstrapAdmin() || hasAnyEffectiveRole(['admin', 'editor']);
+	    }
 
     function isInvitationOwner() {
       return hasEmail() &&
@@ -451,6 +462,25 @@ service cloud.firestore {
         'lastUpdated'
       ]);
     }
+
+    function canUpdatePersistedDailyRecord() {
+      let effectiveRole = getEffectiveRole();
+
+      return isBootstrapAdmin() ||
+             (
+               effectiveRole == 'admin'
+                 ? true
+                 : effectiveRole == 'nurse_hospital'
+                   ? request.resource.data.keys().hasAll(['dateTimestamp']) &&
+                     request.resource.data.dateTimestamp != null &&
+                     isWithinEditingWindow(request.resource.data.dateTimestamp)
+                   : effectiveRole == 'doctor_urgency'
+                     ? isMedicalUpdate()
+                     : effectiveRole == 'doctor_specialist'
+                       ? isSpecialistMedicalHandoffPayload()
+                       : false
+             );
+    }
     
     // ============================================
     // HOSPITALS COLLECTION (Main hierarchy)
@@ -468,10 +498,8 @@ service cloud.firestore {
         // Create: Admin or Nurse
         allow create: if canEdit();
         // Update: Admin siempre, Enfermero en ventana, o Médico solo campos de firma
-        allow update: if isAdmin() || 
-                        (isNurse() && isWithinEditingWindow(resource.data.dateTimestamp)) ||
-                        (isDoctor() && isMedicalUpdate()) ||
-                        isSpecialistMedicalHandoffUpdate();
+        allow update: if exists(/databases/$(database)/documents/hospitals/$(hospitalId)/dailyRecords/$(date)) &&
+                         canUpdatePersistedDailyRecord();
         // Delete: Admin only (nurses must not hard-delete census records)
         allow delete: if isAdmin();
         

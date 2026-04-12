@@ -10,6 +10,7 @@ import {
   createMockPatient,
   createMockDailyRecordContext,
   createMockUIState,
+  mockUseAuthState,
 } from '../../integration/setup';
 
 // Mock the hook directly because auth-triggered StaffContext is hard to stabilize in unit tests
@@ -31,6 +32,23 @@ describe('HandoffView Component', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useRealTimers();
+    mockUseAuthState.user = {
+      uid: 'test-user',
+      email: 'admin@hospitalhangaroa.cl',
+      displayName: 'Admin Test',
+      role: 'admin',
+    };
+    mockUseAuthState.currentUser = mockUseAuthState.user;
+    mockUseAuthState.authorizedUser = mockUseAuthState.user;
+    mockUseAuthState.sessionState = {
+      status: 'authorized',
+      user: mockUseAuthState.user,
+    };
+    mockUseAuthState.role = 'admin';
+    mockUseAuthState.isEditor = true;
+    mockUseAuthState.isViewer = false;
+    mockUseAuthState.canEdit = true;
   });
 
   it('renders empty message when no record is selected', () => {
@@ -199,6 +217,44 @@ describe('HandoffView Component', () => {
     expect(screen.getAllByText(/Especialidad/i).length).toBeGreaterThan(0);
     const specialtySelect = screen.getByRole('combobox');
     expect(within(specialtySelect).getByRole('option', { name: 'Cirugía' })).toBeInTheDocument();
+  });
+
+  it('keeps patient-level medical handoff creation enabled for doctor_specialist on the current day', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-04-12T12:00:00-06:00'));
+
+    const specialistUser = {
+      uid: 'specialist-1',
+      email: 'specialist@hospitalhangaroa.cl',
+      displayName: 'Dr. Specialist',
+      role: 'doctor_specialist' as const,
+    };
+    mockUseAuthState.user = specialistUser;
+    mockUseAuthState.currentUser = specialistUser;
+    mockUseAuthState.authorizedUser = specialistUser;
+    mockUseAuthState.sessionState = {
+      status: 'authorized',
+      user: specialistUser,
+    };
+    mockUseAuthState.role = 'doctor_specialist';
+    mockUseAuthState.isEditor = true;
+    mockUseAuthState.isViewer = false;
+    mockUseAuthState.canEdit = true;
+
+    const record = createMockRecord('2026-04-12');
+    record.beds['R1'] = createMockPatient({
+      bedId: 'R1',
+      patientName: 'PACIENTE ESPECIALISTA',
+      medicalHandoffNote: '',
+      medicalHandoffEntries: [],
+    });
+
+    render(<HandoffView type="medical" />, {
+      contextValue: createMockDailyRecordContext(record),
+    });
+
+    const mainTable = screen.getAllByRole('table')[0];
+    expect(within(mainTable).getByRole('button', { name: /crear entrega/i })).toBeInTheDocument();
   });
 
   it('shows clinical events controls in the medical diagnosis column', async () => {

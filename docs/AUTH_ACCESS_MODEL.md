@@ -20,6 +20,18 @@ Excepción mínima:
 
 - allowlist técnica de bootstrap admin para recuperación
 
+Inventario actual de esa excepción:
+
+- `firestore.rules`
+- `functions/lib/auth/authConfig.js`
+- `src/services/auth/authShared.ts`
+
+Alcance:
+
+- no reemplaza `config/roles` como fuente de verdad
+- no debe crecer con nuevos correos ni nuevos usos funcionales
+- existe solo para recuperación técnica y administración mínima cuando el flujo canónico no está disponible
+
 No forman parte del login general:
 
 - `allowedUsers`
@@ -129,7 +141,28 @@ Efecto esperado:
 - [functions/lib/auth/authHelpersFactory.js](../functions/lib/auth/authHelpersFactory.js)
 - [firestore.rules](../firestore.rules)
 
-## 12. Runbook de incidentes
+## 12. Bootstrap Admin Exception
+
+La excepción de bootstrap admin queda aceptada solo bajo estas condiciones:
+
+1. la fuente de verdad del login general sigue siendo `config/roles`
+2. la excepción se usa únicamente para recuperación técnica y mutación administrativa mínima
+3. las superficies que la usan están inventariadas y cubiertas por tests
+4. cualquier cambio en la lista o en su alcance requiere actualización documental y validación explícita
+
+Estado actual:
+
+- justificada: sí
+- eliminada: no
+- marcada para retiro: sí, cuando exista una vía de recuperación equivalente sin allowlist hardcodeada
+
+Criterio de retiro:
+
+- recovery admin viable sin correos hardcodeados en rules/functions/frontend
+- validación operativa del flujo canónico de roles sin dependencia de bootstrap allowlist
+- tests actualizados para el mecanismo sustituto
+
+## 13. Runbook de incidentes
 
 Para soporte operativo rápido:
 

@@ -18,6 +18,7 @@ vi.mock('@/firebaseConfig', () => ({
   get db() {
     return activeDb;
   },
+  auth: null,
 }));
 
 import {
@@ -132,6 +133,10 @@ describeEmulator('Firestore emulator sync concurrency flow', () => {
   it('rejects partial update on missing doc due security rules precondition', async () => {
     const date = CURRENT_RECORD_DATE;
 
+    // Known emulator limitation:
+    // Firestore still reports an evaluation error for this denied update against a missing document,
+    // even though the effective contract we care about remains stable: the write is rejected with
+    // permission-denied and no document is created. See docs/FIRESTORE_RULES_COMPLEXITY_AUDIT.md.
     await expect(
       updateRecordPartial(date, { 'beds.R1.patientName': 'Paciente Fallback' })
     ).rejects.toMatchObject({

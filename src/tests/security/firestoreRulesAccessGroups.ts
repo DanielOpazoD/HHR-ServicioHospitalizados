@@ -11,6 +11,7 @@ export function registerFirestoreRulesAccessGroups({
   doctor,
   specialist,
   specialistWithoutClaim,
+  bootstrapAdminWithoutClaim,
   firestoreForUser,
   unauthorizedAuthed,
   NOW_MS,
@@ -62,6 +63,11 @@ export function registerFirestoreRulesAccessGroups({
     it('Authenticated users without role cannot read daily records', async () => {
       await setupDoc(admin(), recordPath, { date: CURRENT_RECORD_DATE });
       await assertFails(unauthorizedAuthed().doc(recordPath).get());
+    });
+
+    it('Bootstrap admins can recover daily record access without depending on config/roles', async () => {
+      await setupDoc(admin(), recordPath, { date: CURRENT_RECORD_DATE });
+      await assertSucceeds(bootstrapAdminWithoutClaim().doc(recordPath).get());
     });
 
     it('Unauthenticated users cannot read daily records', async () => {
@@ -216,6 +222,102 @@ export function registerFirestoreRulesAccessGroups({
             },
             lastUpdated: NOW_MS,
           })
+      );
+    });
+
+    it('Specialists can update only medical handoff and clinical event fields for a clinical crib', async () => {
+      await setupDoc(admin(), recordPath, {
+        date: CURRENT_RECORD_DATE,
+        dateTimestamp: NOW_MS,
+        beds: {
+          R1: {
+            patientName: 'Paciente Test',
+            rut: '1-9',
+            pathology: 'Neumonia',
+            specialty: 'Med Interna',
+            medicalHandoffNote: '',
+            medicalHandoffEntries: [],
+            clinicalEvents: [],
+            clinicalCrib: {
+              patientName: 'RN Test',
+              rut: '11-1',
+              pathology: 'Observación',
+              specialty: 'Pediatría',
+              medicalHandoffNote: '',
+              medicalHandoffEntries: [],
+              clinicalEvents: [],
+            },
+          },
+        },
+      });
+
+      await assertSucceeds(
+        specialist()
+          .doc(recordPath)
+          .update({
+            'beds.R1.clinicalCrib.medicalHandoffNote': 'Evolución RN',
+            'beds.R1.clinicalCrib.medicalHandoffEntries': [
+              {
+                id: 'crib-entry',
+                specialty: 'Pediatría',
+                note: 'Evolución RN',
+              },
+            ],
+            'beds.R1.clinicalCrib.medicalHandoffAudit': {
+              lastSpecialistUpdateAt: new Date(NOW_MS).toISOString(),
+              lastSpecialistUpdateBy: {
+                uid: 'user_specialist',
+                email: 'specialist@example.com',
+                displayName: 'Especialista',
+                role: 'doctor_specialist',
+              },
+              currentStatus: 'updated_by_specialist',
+            },
+            'beds.R1.clinicalCrib.clinicalEvents': [
+              {
+                id: 'crib-event-1',
+                name: 'Control RN',
+                date: CURRENT_RECORD_DATE,
+                note: 'Seguimiento',
+                createdAt: new Date(NOW_MS).toISOString(),
+              },
+            ],
+            lastUpdated: NOW_MS,
+          })
+      );
+    });
+
+    it('Specialists cannot update unrelated clinical crib fields', async () => {
+      await setupDoc(admin(), recordPath, {
+        date: CURRENT_RECORD_DATE,
+        dateTimestamp: NOW_MS,
+        beds: {
+          R1: {
+            patientName: 'Paciente Test',
+            rut: '1-9',
+            pathology: 'Neumonia',
+            specialty: 'Med Interna',
+            medicalHandoffNote: '',
+            medicalHandoffEntries: [],
+            clinicalEvents: [],
+            clinicalCrib: {
+              patientName: 'RN Test',
+              rut: '11-1',
+              pathology: 'Observación',
+              specialty: 'Pediatría',
+              medicalHandoffNote: '',
+              medicalHandoffEntries: [],
+              clinicalEvents: [],
+            },
+          },
+        },
+      });
+
+      await assertFails(
+        specialist().doc(recordPath).update({
+          'beds.R1.clinicalCrib.patientName': 'RN Renombrado',
+          lastUpdated: NOW_MS,
+        })
       );
     });
 

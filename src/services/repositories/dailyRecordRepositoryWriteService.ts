@@ -74,6 +74,45 @@ const applyRemoteRecovery = async (
   return recovery.status === 'auto_merged' ? 'return' : 'continue';
 };
 
+const markRemoteWriteSucceeded = (state: RemoteWriteState): void => {
+  state.savedRemotely = true;
+  state.consistencyState = 'persisted_and_synced';
+  state.recoveryAction = 'none';
+  state.retryability = 'not_applicable';
+  state.observabilityTags = ['daily_record', 'write', 'persisted_and_synced'];
+};
+
+const persistLocalAndAttemptRemoteSync = async ({
+  date,
+  record,
+  changedPaths,
+  remoteState,
+  remoteWrite,
+  onRemoteFailure,
+}: {
+  date: string;
+  record: DailyRecord;
+  changedPaths: string[];
+  remoteState: RemoteWriteState;
+  remoteWrite: () => Promise<void>;
+  onRemoteFailure: (error: unknown) => void;
+}): Promise<'continue' | 'return'> => {
+  await saveToIndexedDB(record);
+
+  if (!isFirestoreEnabled()) {
+    return 'continue';
+  }
+
+  try {
+    await remoteWrite();
+    markRemoteWriteSucceeded(remoteState);
+    return 'continue';
+  } catch (err) {
+    onRemoteFailure(err);
+    return applyRemoteRecovery(date, record, changedPaths, err, remoteState);
+  }
+};
+
 export const saveDetailed = async (record: DailyRecord, expectedLastUpdated?: string) => {
   const command = createSaveDailyRecordCommand(record, expectedLastUpdated);
   const remoteState = createRemoteWriteState();
@@ -154,32 +193,21 @@ export const saveDetailed = async (record: DailyRecord, expectedLastUpdated?: st
     throw err;
   }
 
-  await saveToIndexedDB(validatedRecord);
-
-  if (isFirestoreEnabled()) {
-    try {
-      await saveRecordToFirestore(validatedRecord, command.expectedLastUpdated);
-      remoteState.savedRemotely = true;
-      remoteState.consistencyState = 'persisted_and_synced';
-      remoteState.recoveryAction = 'none';
-      remoteState.retryability = 'not_applicable';
-      remoteState.observabilityTags = ['daily_record', 'write', 'persisted_and_synced'];
-    } catch (err) {
+  const nextAction = await persistLocalAndAttemptRemoteSync({
+    date: command.date,
+    record: validatedRecord,
+    changedPaths: ['*'],
+    remoteState,
+    remoteWrite: () => saveRecordToFirestore(validatedRecord, command.expectedLastUpdated),
+    onRemoteFailure: err => {
       dailyRecordWriteLogger.warn(
         `Firestore sync failed for ${command.date}; data persisted in IndexedDB`,
         err
       );
-      const nextAction = await applyRemoteRecovery(
-        command.date,
-        validatedRecord,
-        ['*'],
-        err,
-        remoteState
-      );
-      if (nextAction === 'return') {
-        return buildSaveResult(command.date, remoteState);
-      }
-    }
+    },
+  });
+  if (nextAction === 'return') {
+    return buildSaveResult(command.date, remoteState);
   }
 
   syncPatientsToMasterInBackground(validatedRecord);
@@ -276,29 +304,19 @@ export const updatePartialDetailed = async (date: string, partialData: DailyReco
   }
   const patchedFields = Object.keys(mergedPatches).length;
 
-  await saveToIndexedDB(validatedRecord);
-
-  if (isFirestoreEnabled()) {
-    try {
-      await updateRecordPartialToFirestore(command.date, mergedPatches, current.lastUpdated);
-      remoteState.savedRemotely = true;
-      remoteState.consistencyState = 'persisted_and_synced';
-      remoteState.recoveryAction = 'none';
-      remoteState.retryability = 'not_applicable';
-      remoteState.observabilityTags = ['daily_record', 'write', 'persisted_and_synced'];
-    } catch (err) {
+  const nextAction = await persistLocalAndAttemptRemoteSync({
+    date: command.date,
+    record: validatedRecord,
+    changedPaths: Object.keys(mergedPatches),
+    remoteState,
+    remoteWrite: () =>
+      updateRecordPartialToFirestore(command.date, mergedPatches, current.lastUpdated),
+    onRemoteFailure: err => {
       dailyRecordWriteLogger.warn(`Firestore partial update failed for ${command.date}`, err);
-      const nextAction = await applyRemoteRecovery(
-        command.date,
-        validatedRecord,
-        Object.keys(mergedPatches),
-        err,
-        remoteState
-      );
-      if (nextAction === 'return') {
-        return buildPartialUpdateResult(command.date, remoteState, patchedFields);
-      }
-    }
+    },
+  });
+  if (nextAction === 'return') {
+    return buildPartialUpdateResult(command.date, remoteState, patchedFields);
   }
 
   return buildPartialUpdateResult(command.date, remoteState, patchedFields);

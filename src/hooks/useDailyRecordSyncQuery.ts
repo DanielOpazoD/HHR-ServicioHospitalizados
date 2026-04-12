@@ -44,6 +44,12 @@ import {
   useTodayEmptyDailyRecordRecovery,
 } from '@/hooks/useDailyRecordSyncQuerySupport';
 
+type ChannelNotice = {
+  channel: 'warning' | 'error' | null;
+  title?: string;
+  message: string;
+};
+
 export const useDailyRecordSyncQuery = (
   currentDateString: string,
   _isOfflineMode: boolean = false, // Handled implicitly by TanStack Query & Repository
@@ -167,19 +173,28 @@ export const useDailyRecordSyncQuery = (
 
   const { error: notifyError, success, warning } = useNotification();
 
+  const presentChannelNotice = useCallback(
+    (notice: ChannelNotice | null | undefined, fallbackTitle: string) => {
+      if (!notice || !notice.channel) {
+        return;
+      }
+
+      if (notice.channel === 'error') {
+        notifyError(notice.title || fallbackTitle, notice.message);
+        return;
+      }
+
+      warning(notice.title || fallbackTitle, notice.message);
+    },
+    [notifyError, warning]
+  );
+
   // 4. Compatibility handlers
   const saveAndUpdate = useCallback(
     async (updatedRecord: DailyRecord) => {
       try {
         const payload = await saveMutation.mutateAsync(updatedRecord);
-        const feedback = resolveSaveOutcomeFeedback(payload.result);
-        if (feedback) {
-          if (feedback.channel === 'error') {
-            notifyError(feedback.title, feedback.message);
-          } else {
-            warning(feedback.title, feedback.message);
-          }
-        }
+        presentChannelNotice(resolveSaveOutcomeFeedback(payload.result), 'Guardado');
       } catch (err) {
         const feedback = resolveSaveErrorFeedback(err);
         if (feedback) {
@@ -200,22 +215,15 @@ export const useDailyRecordSyncQuery = (
         throw err;
       }
     },
-    [saveMutation, notifyError, refetch, clearPendingRefetchTimeout, warning]
+    [saveMutation, notifyError, refetch, clearPendingRefetchTimeout, presentChannelNotice]
   );
 
   const patchRecord = useCallback(
     async (partial: DailyRecordPatch) => {
       const payload = await patchMutation.mutateAsync(partial);
-      const feedback = resolvePatchOutcomeFeedback(payload.result);
-      if (feedback) {
-        if (feedback.channel === 'error') {
-          notifyError(feedback.title, feedback.message);
-        } else {
-          warning(feedback.title, feedback.message);
-        }
-      }
+      presentChannelNotice(resolvePatchOutcomeFeedback(payload.result), 'Actualización');
     },
-    [patchMutation, warning, notifyError]
+    [patchMutation, presentChannelNotice]
   );
 
   const setRecord = useCallback(
@@ -244,12 +252,7 @@ export const useDailyRecordSyncQuery = (
         dailyRecordObservability.recordOutcome('refresh_daily_record', outcome, {
           date: currentDateString,
         });
-        const notice = presentDailyRecordRefreshOutcome(outcome);
-        if (notice.channel === 'warning') {
-          warning(notice.title || 'Sincronización', notice.message);
-        } else if (notice.channel === 'error') {
-          notifyError(notice.title || 'Sincronización', notice.message);
-        }
+        presentChannelNotice(presentDailyRecordRefreshOutcome(outcome), 'Sincronización');
         void refetch();
       })
       .catch(error => {
@@ -276,7 +279,7 @@ export const useDailyRecordSyncQuery = (
           'No fue posible completar la sincronización remota. Se mantuvo la copia local actual.'
         );
       });
-  }, [currentDateString, notifyError, refetch, runRemoteSync, warning]);
+  }, [currentDateString, refetch, runRemoteSync, warning, presentChannelNotice]);
 
   const createDay = useCallback(
     async (copyFromPrevious: boolean, specificDate?: string) => {

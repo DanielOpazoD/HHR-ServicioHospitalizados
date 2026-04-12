@@ -2,7 +2,6 @@ import type { MedicalHandoffEntry, PatientData } from '@/domain/handoff/patientC
 import {
   formatMedicalHandoffActorLabel,
   formatMedicalHandoffTimestamp,
-  getDisplayMedicalHandoffEntries,
   getPatientMedicalHandoffEntries,
 } from './patientEntries';
 
@@ -124,8 +123,8 @@ export const resolveMedicalEntryMetadataViewModel = (
 
 export const resolveMedicalObservationEntries = ({
   patient,
-  isFieldReadOnly,
-  hasCreatePrimaryEntryAction,
+  isFieldReadOnly: _isFieldReadOnly,
+  hasCreatePrimaryEntryAction: _hasCreatePrimaryEntryAction,
 }: {
   patient: PatientData;
   isFieldReadOnly: boolean;
@@ -134,10 +133,6 @@ export const resolveMedicalObservationEntries = ({
   const persistedEntries = getPatientMedicalHandoffEntries(patient);
   if (persistedEntries.length > 0) {
     return persistedEntries;
-  }
-
-  if (!isFieldReadOnly && !hasCreatePrimaryEntryAction) {
-    return getDisplayMedicalHandoffEntries(patient, true);
   }
 
   return [];

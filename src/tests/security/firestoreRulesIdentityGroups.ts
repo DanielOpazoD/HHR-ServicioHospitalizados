@@ -7,10 +7,36 @@ export function registerFirestoreRulesIdentityGroups({
   unauth,
   authed,
   admin,
+  bootstrapAdminWithoutClaim,
   firestoreForUser,
   NOW_MS,
   setupDoc,
 }: FirestoreRulesHarness): void {
+  describe('Role Config', () => {
+    const roleConfigPath = 'config/roles';
+
+    it('Bootstrap admins can recover role config access without an admin claim', async () => {
+      await setupDoc(admin(), roleConfigPath, {
+        'user@example.com': 'viewer',
+      });
+
+      await assertSucceeds(
+        bootstrapAdminWithoutClaim().doc(roleConfigPath).set({
+          'user@example.com': 'viewer',
+          'doctor@example.com': 'doctor_urgency',
+        })
+      );
+    });
+
+    it('Regular authenticated users cannot read role config directly', async () => {
+      await setupDoc(admin(), roleConfigPath, {
+        'user@example.com': 'viewer',
+      });
+
+      await assertFails(authed().doc(roleConfigPath).get());
+    });
+  });
+
   describe('Allowed Users (legacy retired)', () => {
     it('Users cannot read legacy authorization docs', async () => {
       await assertFails(authed().doc('allowedUsers/user_basic').get());

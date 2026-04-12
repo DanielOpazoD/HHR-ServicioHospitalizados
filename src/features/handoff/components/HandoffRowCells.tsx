@@ -1,6 +1,6 @@
 import React from 'react';
 import type { ClinicalEvent } from '@/types/domain/clinicalEvents';
-import { PatientData } from '@/domain/handoff/patientContracts';
+import type { MedicalHandoffEntry, PatientData } from '@/domain/handoff/patientContracts';
 import { Baby, ChevronDown, Clock } from 'lucide-react';
 import clsx from 'clsx';
 import { ClinicalEventsPanel } from './ClinicalEventsPanel';
@@ -12,7 +12,10 @@ import {
   resolveHandoffStatusVariant,
   shouldRenderClinicalEventsPanel,
 } from '@/features/handoff/controllers/handoffRowCellsController';
-import { getMedicalHandoffSpecialtyOptions } from '@/domain/handoff/patientEntries';
+import {
+  createMedicalHandoffEntry,
+  getMedicalHandoffSpecialtyOptions,
+} from '@/domain/handoff/patientEntries';
 import { resolveMedicalObservationEntries } from '@/domain/handoff/patientView';
 import { MedicalBadge } from '@/components/ui/base/MedicalBadge';
 import type { MedicalBadgeVariant } from '@/shared/ui/medicalBadgeContracts';
@@ -241,6 +244,8 @@ interface HandoffMedicalObservationsCellProps {
   patient: PatientData;
   reportDate: string;
   isFieldReadOnly: boolean;
+  primaryNoteValue: string;
+  onPrimaryNoteChange: (value: string) => void;
   onCreatePrimaryEntry?: () => void;
   onEntryNoteChange: (entryId: string, value: string) => void;
   onEntrySpecialtyChange?: (entryId: string, specialty: string) => void;
@@ -250,11 +255,19 @@ interface HandoffMedicalObservationsCellProps {
 }
 
 const specialtyOptions = getMedicalHandoffSpecialtyOptions();
+const MEDICAL_DRAFT_CONTINUITY_MS = 2500;
+
+interface PendingMedicalEntryDraft {
+  entry: MedicalHandoffEntry;
+  expiresAt: number;
+}
 
 export const HandoffMedicalObservationsCell: React.FC<HandoffMedicalObservationsCellProps> = ({
   patient,
   reportDate,
   isFieldReadOnly,
+  primaryNoteValue,
+  onPrimaryNoteChange,
   onCreatePrimaryEntry,
   onEntryNoteChange,
   onEntrySpecialtyChange,
@@ -267,11 +280,112 @@ export const HandoffMedicalObservationsCell: React.FC<HandoffMedicalObservations
     isFieldReadOnly,
     hasCreatePrimaryEntryAction: Boolean(onCreatePrimaryEntry),
   });
+  const [pendingEntryDrafts, setPendingEntryDrafts] = React.useState<
+    Record<string, PendingMedicalEntryDraft>
+  >({});
+
+  const prunePendingEntryDraft = React.useCallback((entryId: string, expiresAt: number) => {
+    window.setTimeout(() => {
+      setPendingEntryDrafts(current => {
+        const pendingDraft = current[entryId];
+        if (!pendingDraft || pendingDraft.expiresAt !== expiresAt) {
+          return current;
+        }
+
+        const next = { ...current };
+        delete next[entryId];
+        return next;
+      });
+    }, MEDICAL_DRAFT_CONTINUITY_MS);
+  }, []);
+
+  const registerPendingEntryDraft = React.useCallback(
+    (entryId: string, value: string) => {
+      const baseEntry =
+        entries.find(entry => entry.id === entryId) ||
+        pendingEntryDrafts[entryId]?.entry ||
+        createMedicalHandoffEntry(patient.specialty || specialtyOptions[0] || '', {
+          id: entryId,
+        });
+      const expiresAt = Date.now() + MEDICAL_DRAFT_CONTINUITY_MS;
+      const nextEntry: MedicalHandoffEntry = {
+        ...baseEntry,
+        id: entryId,
+        specialty: baseEntry.specialty || patient.specialty || specialtyOptions[0] || '',
+        note: value,
+      };
+
+      setPendingEntryDrafts(current => ({
+        ...current,
+        [entryId]: {
+          entry: nextEntry,
+          expiresAt,
+        },
+      }));
+      prunePendingEntryDraft(entryId, expiresAt);
+    },
+    [entries, patient.specialty, pendingEntryDrafts, prunePendingEntryDraft]
+  );
+
+  React.useEffect(() => {
+    if (Object.keys(pendingEntryDrafts).length === 0) {
+      return;
+    }
+
+    const now = Date.now();
+    setPendingEntryDrafts(current => {
+      let changed = false;
+      const next: Record<string, PendingMedicalEntryDraft> = {};
+
+      for (const [entryId, pendingDraft] of Object.entries(current)) {
+        const matchingEntry = entries.find(entry => entry.id === entryId);
+        const isResolved = matchingEntry?.note === pendingDraft.entry.note;
+        const isExpired = pendingDraft.expiresAt <= now;
+        if (isResolved || isExpired) {
+          changed = true;
+          continue;
+        }
+        next[entryId] = pendingDraft;
+      }
+
+      return changed ? next : current;
+    });
+  }, [entries, pendingEntryDrafts]);
+
+  const displayEntries = React.useMemo(() => {
+    const activePendingDrafts = Object.values(pendingEntryDrafts).filter(
+      pendingDraft => pendingDraft.expiresAt > Date.now()
+    );
+
+    if (entries.length === 0) {
+      return !isFieldReadOnly && activePendingDrafts.length > 0
+        ? activePendingDrafts.map(pendingDraft => pendingDraft.entry)
+        : entries;
+    }
+
+    const pendingById = new Map(
+      activePendingDrafts.map(pendingDraft => [pendingDraft.entry.id, pendingDraft.entry])
+    );
+
+    return entries.map(entry => {
+      const pendingDraft = pendingById.get(entry.id);
+      if (!pendingDraft || pendingDraft.note === entry.note) {
+        return entry;
+      }
+
+      return {
+        ...entry,
+        note: pendingDraft.note,
+      };
+    });
+  }, [entries, isFieldReadOnly, pendingEntryDrafts]);
+
+  const showPrimaryNoteFallback = entries.length === 0 && !isFieldReadOnly && !onCreatePrimaryEntry;
 
   return (
     <td className="p-1.5 w-full min-w-[280px] align-top print:w-auto print:min-w-0 print:text-[8px] print:p-0.5">
       <div className="space-y-2">
-        {entries.length === 0 ? (
+        {displayEntries.length === 0 ? (
           onCreatePrimaryEntry && !isFieldReadOnly ? (
             <button
               type="button"
@@ -280,13 +394,29 @@ export const HandoffMedicalObservationsCell: React.FC<HandoffMedicalObservations
             >
               + Crear entrega
             </button>
+          ) : showPrimaryNoteFallback ? (
+            <>
+              <div className="print:hidden">
+                <DebouncedTextarea
+                  value={primaryNoteValue}
+                  onChangeValue={onPrimaryNoteChange}
+                  className="w-full p-2 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-medical-500 focus:outline-none bg-white"
+                  minRows={2}
+                  debounceMs={1500}
+                  placeholder="Registrar entrega médica..."
+                />
+              </div>
+              <div className="hidden print:block w-full whitespace-pre-wrap break-words text-slate-800 print:text-[8px] print:leading-tight">
+                {primaryNoteValue}
+              </div>
+            </>
           ) : (
             <div className="text-sm text-slate-400 italic print:text-[8px]">
               Sin entrega registrada
             </div>
           )
         ) : (
-          entries.map((entry, index) => {
+          displayEntries.map((entry, index) => {
             return (
               <MedicalHandoffObservationEntry
                 key={entry.id}
@@ -294,11 +424,14 @@ export const HandoffMedicalObservationsCell: React.FC<HandoffMedicalObservations
                 patient={patient}
                 reportDate={reportDate}
                 index={index}
-                entriesCount={entries.length}
+                entriesCount={displayEntries.length}
                 isFieldReadOnly={isFieldReadOnly}
                 specialtyOptions={specialtyOptions}
                 canEditSpecialty={Boolean(onEntrySpecialtyChange)}
-                onEntryNoteChange={onEntryNoteChange}
+                onEntryNoteChange={(entryId, value) => {
+                  registerPendingEntryDraft(entryId, value);
+                  onEntryNoteChange(entryId, value);
+                }}
                 onEntrySpecialtyChange={onEntrySpecialtyChange}
                 onAddEntry={onAddEntry}
                 onDeleteEntry={onDeleteEntry}

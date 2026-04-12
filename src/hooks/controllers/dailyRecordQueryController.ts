@@ -287,27 +287,7 @@ export const createDailyRecordSubscription = (
     if (!isSubscriptionActive) {
       return;
     }
-    if (hasPendingWrites) {
-      return;
-    }
-    const result = createQueryResultFromRecord(date, record);
-    const previousResult =
-      queryClient.getQueryData<DailyRecordQueryResult>(getDailyRecordQueryKey(date)) ||
-      createQueryResultFromRecord(date, null);
-    if (record) {
-      if (shouldPreservePreviousRecord(previousResult, result)) {
-        return;
-      }
-      applyResolvedQueryResult(result);
-      return;
-    }
-
-    if (!previousResult.record) {
-      applyResolvedQueryResult(result);
-      return;
-    }
-
-    reconcileNullRealtimeRecord(previousResult);
+    handleResolvedRealtimeResult(createQueryResultFromRecord(date, record), hasPendingWrites);
   });
   return () => {
     isSubscriptionActive = false;
