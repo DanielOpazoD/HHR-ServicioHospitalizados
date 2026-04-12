@@ -28,6 +28,11 @@ const resolveClinicalDocumentsEpisodeClosureKind = (
   return undefined;
 };
 
+/**
+ * Determines whether the patient's clinical episode is closed and why.
+ * @param patient - Patient data including transfer/discharge dates
+ * @returns Closure state with kind and date when applicable
+ */
 export const resolveClinicalDocumentsEpisodeClosure = (
   patient: PatientData
 ): ClinicalDocumentEpisodeClosureState => {
@@ -41,6 +46,12 @@ export const resolveClinicalDocumentsEpisodeClosure = (
   };
 };
 
+/**
+ * Returns whether the current user can create or edit documents in this episode.
+ * Open episodes allow all roles; closed episodes are restricted to admin.
+ * @param patient - Patient data used to derive closure state
+ * @param role - Current user's role
+ */
 export const canMutateClinicalDocumentsEpisode = (
   patient: PatientData,
   role: UserRole | undefined
@@ -53,6 +64,13 @@ export const canMutateClinicalDocumentsEpisode = (
   return role === 'admin';
 };
 
+/**
+ * Builds the user-facing read-only banner message, or null if editing is allowed.
+ * @param patient - Patient data for episode closure check
+ * @param role - Current user's role
+ * @param canEditByRole - Whether the user's role permits editing in general
+ * @returns Spanish-language message string, or null when no restriction applies
+ */
 export const buildClinicalDocumentsReadOnlyMessage = (
   patient: PatientData,
   role: UserRole | undefined,
@@ -71,6 +89,12 @@ export const buildClinicalDocumentsReadOnlyMessage = (
   return `Episodio cerrado por ${episodeLabel}: solo ADMIN puede crear, editar o eliminar documentos.`;
 };
 
+/**
+ * Resolves the persistence reason tag for audit logging.
+ * Returns 'admin_fix' when an admin saves in a closed episode, otherwise 'autosave'.
+ * @param patient - Patient data for episode closure check
+ * @param role - Current user's role
+ */
 export const resolveClinicalDocumentPersistReason = (
   patient: PatientData,
   role: UserRole | undefined

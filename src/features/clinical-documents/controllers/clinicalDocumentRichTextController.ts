@@ -47,6 +47,7 @@ const normalizeWhitespaceHtml = (value: string): string =>
     .replace(/(<br>\s*){3,}/gi, '<br><br>')
     .trim();
 
+/** Converts plain text to sanitized HTML suitable for clinical document storage. */
 export const convertPlainTextToClinicalDocumentHtml = (value: string): string => {
   const normalized = decodeHtmlEntities(value).trim();
   if (!normalized) {
@@ -56,6 +57,11 @@ export const convertPlainTextToClinicalDocumentHtml = (value: string): string =>
   return normalizeWhitespaceHtml(escapeHtml(normalized).replace(/\n/g, '<br>'));
 };
 
+/**
+ * Recursively sanitizes HTML, keeping only whitelisted tags and safe styles.
+ * @param value - Raw HTML string to sanitize
+ * @returns Sanitized HTML with normalized whitespace
+ */
 export const sanitizeClinicalDocumentHtml = (value: string): string => {
   if (!value.trim()) {
     return '';
@@ -108,6 +114,11 @@ export const sanitizeClinicalDocumentHtml = (value: string): string => {
 
 const HTML_TAG_PATTERN = /<\/?[a-z][\s\S]*>/i;
 
+/**
+ * Normalizes content for Firestore storage, auto-detecting HTML vs plain text.
+ * @param value - Raw editor content (HTML or plain text)
+ * @returns Sanitized HTML ready for persistence
+ */
 export const normalizeClinicalDocumentContentForStorage = (value: string): string => {
   if (!value.trim()) {
     return '';
@@ -118,6 +129,11 @@ export const normalizeClinicalDocumentContentForStorage = (value: string): strin
     : convertPlainTextToClinicalDocumentHtml(value);
 };
 
+/**
+ * Strips HTML to produce readable plain text, preserving list markers and line breaks.
+ * @param value - HTML content from a clinical document section
+ * @returns Plain text representation
+ */
 export const stripClinicalDocumentHtml = (value: string): string => {
   const normalized = normalizeClinicalDocumentContentForStorage(value);
   if (!normalized) {
@@ -269,6 +285,12 @@ export const sanitizePastedHtml = (html: string): string => {
   return normalizeWhitespaceHtml(container.innerHTML);
 };
 
+/**
+ * Executes a `document.execCommand` formatting command on the active selection.
+ * @param command - The editing command (e.g. 'bold', 'insertUnorderedList')
+ * @param value - Optional command value (e.g. color hex for 'foreColor')
+ * @returns Whether the command was executed successfully
+ */
 export const applyClinicalDocumentEditorCommand = (
   command:
     | 'bold'

@@ -3,6 +3,12 @@ import type {
   ClinicalDocumentValidationIssue,
 } from '@/features/clinical-documents/domain/entities';
 
+/**
+ * Validates a clinical document for completeness before signing or exporting.
+ * Checks required patient fields, required sections, medico, and especialidad.
+ * @param record - The document record to validate
+ * @returns Array of validation issues (empty if the document is valid)
+ */
 export const validateClinicalDocument = (
   record: ClinicalDocumentRecord
 ): ClinicalDocumentValidationIssue[] => {

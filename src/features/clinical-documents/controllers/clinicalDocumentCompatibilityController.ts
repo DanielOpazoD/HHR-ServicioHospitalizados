@@ -5,6 +5,12 @@ import {
   LEGACY_CLINICAL_DOCUMENT_SCHEMA_VERSION,
 } from '@/features/clinical-documents/domain/schema';
 
+/**
+ * Extracts and normalizes the schema version from a clinical document record.
+ * Falls back to the legacy version for missing or invalid values.
+ * @param record - Partial or nullable clinical document record
+ * @returns Resolved integer schema version, never below legacy
+ */
 export const resolveClinicalDocumentSchemaVersion = (
   record: Partial<ClinicalDocumentRecord> | null | undefined
 ): number => {
@@ -46,10 +52,21 @@ const applyClinicalDocumentDefinitionDefaults = (
   };
 };
 
+/**
+ * Migrates a v1 clinical document to the current schema by applying definition defaults.
+ * @param record - The v1 clinical document record
+ * @returns Record hydrated to the current schema version
+ */
 export const hydrateClinicalDocumentV1ToCurrent = (
   record: ClinicalDocumentRecord
 ): ClinicalDocumentRecord => applyClinicalDocumentDefinitionDefaults(record);
 
+/**
+ * Hydrates a clinical document of any legacy schema version to the current format.
+ * Routes through version-specific migration when needed.
+ * @param record - The persisted clinical document record
+ * @returns Fully migrated record compatible with the current schema
+ */
 export const hydrateLegacyClinicalDocument = (
   record: ClinicalDocumentRecord
 ): ClinicalDocumentRecord => {
@@ -62,6 +79,12 @@ export const hydrateLegacyClinicalDocument = (
   return applyClinicalDocumentDefinitionDefaults(record);
 };
 
+/**
+ * Normalizes a clinical document before writing it to the persistence layer.
+ * Ensures all definition-level defaults and section normalizers are applied.
+ * @param record - The clinical document to persist
+ * @returns Normalized record ready for storage
+ */
 export const normalizeClinicalDocumentForPersistence = (
   record: ClinicalDocumentRecord
 ): ClinicalDocumentRecord => applyClinicalDocumentDefinitionDefaults(record);

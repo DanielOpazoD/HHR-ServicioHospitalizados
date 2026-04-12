@@ -1,5 +1,13 @@
 import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
 
+/**
+ * Moves a visible section to the position of another via drag-and-drop reorder.
+ * Hidden sections retain their relative order after the visible ones.
+ * @param sections - Current sections array
+ * @param sourceSectionId - ID of the section being moved
+ * @param targetSectionId - ID of the section to insert before/at
+ * @returns New sections array with updated order values
+ */
 export const reorderClinicalDocumentVisibleSections = (
   sections: ClinicalDocumentRecord['sections'],
   sourceSectionId: string,
@@ -40,6 +48,13 @@ export const reorderClinicalDocumentVisibleSections = (
     .sort((left, right) => left.order - right.order);
 };
 
+/**
+ * Inserts a new blank section above or below a reference section.
+ * @param sections - Current sections array
+ * @param referenceSectionId - ID of the section to insert relative to
+ * @param position - Whether to insert 'above' or 'below' the reference
+ * @returns Updated sections array including the new section
+ */
 export const insertClinicalDocumentSection = (
   sections: ClinicalDocumentRecord['sections'],
   referenceSectionId: string,
@@ -73,6 +88,13 @@ export const insertClinicalDocumentSection = (
   return [...reorderedVisible, ...reorderedHidden];
 };
 
+/**
+ * Moves a visible section one position up or down among visible sections.
+ * @param sections - Current sections array
+ * @param sectionId - ID of the section to move
+ * @param direction - 'up' or 'down'
+ * @returns Reordered sections array, or the original if the move is out of bounds
+ */
 export const moveClinicalDocumentVisibleSection = (
   sections: ClinicalDocumentRecord['sections'],
   sectionId: string,

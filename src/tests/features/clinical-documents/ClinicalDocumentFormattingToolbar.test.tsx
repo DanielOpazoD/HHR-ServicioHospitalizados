@@ -39,11 +39,14 @@ describe('ClinicalDocumentFormattingToolbar', () => {
         onRestoreTemplate={onRestoreTemplate}
         onToggleFormatting={onToggleFormatting}
         onApplyFormatting={onApplyFormatting}
+        zoom={100}
+        onZoomIn={vi.fn()}
+        onZoomOut={vi.fn()}
       />
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Formato' }));
-    fireEvent.click(screen.getByRole('button', { name: 'PDF' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Imprimir PDF' }));
     fireEvent.click(screen.getByRole('button', { name: 'Restablecer plantilla' }));
     fireEvent.click(screen.getByRole('button', { name: 'Negrita' }));
     fireEvent.click(screen.getByRole('button', { name: 'Quitar formato' }));
@@ -53,6 +56,71 @@ describe('ClinicalDocumentFormattingToolbar', () => {
     expect(onRestoreTemplate).toHaveBeenCalledTimes(1);
     expect(onApplyFormatting).toHaveBeenCalledWith('bold');
     expect(onApplyFormatting).toHaveBeenCalledWith('removeFormat');
+  });
+
+  it('delegates zoom controls', () => {
+    const onZoomIn = vi.fn();
+    const onZoomOut = vi.fn();
+
+    render(
+      <ClinicalDocumentFormattingToolbar
+        selectedDocument={selectedDocument}
+        canEdit={true}
+        formattingDisabled={false}
+        isFormattingOpen={false}
+        onPrint={vi.fn()}
+        onRestoreTemplate={vi.fn()}
+        onToggleFormatting={vi.fn()}
+        onApplyFormatting={vi.fn()}
+        zoom={100}
+        onZoomIn={onZoomIn}
+        onZoomOut={onZoomOut}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Aumentar zoom' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reducir zoom' }));
+
+    expect(onZoomIn).toHaveBeenCalledTimes(1);
+    expect(onZoomOut).toHaveBeenCalledTimes(1);
+  });
+
+  it('disables zoom out at minimum and zoom in at maximum', () => {
+    const { rerender } = render(
+      <ClinicalDocumentFormattingToolbar
+        selectedDocument={selectedDocument}
+        canEdit={true}
+        formattingDisabled={false}
+        isFormattingOpen={false}
+        onPrint={vi.fn()}
+        onRestoreTemplate={vi.fn()}
+        onToggleFormatting={vi.fn()}
+        onApplyFormatting={vi.fn()}
+        zoom={60}
+        onZoomIn={vi.fn()}
+        onZoomOut={vi.fn()}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: 'Reducir zoom' })).toBeDisabled();
+
+    rerender(
+      <ClinicalDocumentFormattingToolbar
+        selectedDocument={selectedDocument}
+        canEdit={true}
+        formattingDisabled={false}
+        isFormattingOpen={false}
+        onPrint={vi.fn()}
+        onRestoreTemplate={vi.fn()}
+        onToggleFormatting={vi.fn()}
+        onApplyFormatting={vi.fn()}
+        zoom={150}
+        onZoomIn={vi.fn()}
+        onZoomOut={vi.fn()}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: 'Aumentar zoom' })).toBeDisabled();
   });
 
   it('disables controls when editing is unavailable', () => {
@@ -66,6 +134,9 @@ describe('ClinicalDocumentFormattingToolbar', () => {
         onRestoreTemplate={vi.fn()}
         onToggleFormatting={vi.fn()}
         onApplyFormatting={vi.fn()}
+        zoom={100}
+        onZoomIn={vi.fn()}
+        onZoomOut={vi.fn()}
       />
     );
 

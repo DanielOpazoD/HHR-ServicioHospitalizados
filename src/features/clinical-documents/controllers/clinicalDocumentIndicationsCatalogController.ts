@@ -77,12 +77,21 @@ const LEGACY_SHARED_DEFAULT_TEXT_KEYS = new Set(
   ].map(normalizeClinicalDocumentIndicationTextKey)
 );
 
+/**
+ * Builds a deterministic ID for a catalog item from its specialty and text.
+ * @param specialtyId - The specialty the item belongs to.
+ * @param text - The indication text.
+ */
 export const buildClinicalDocumentIndicationCatalogItemId = (
   specialtyId: ClinicalDocumentIndicationSpecialtyId,
   text: string
 ): string =>
   `${specialtyId}-${normalizeClinicalDocumentIndicationTextKey(text).replace(/[^a-z0-9]+/g, '-')}`;
 
+/**
+ * Returns the built-in default indication items for a specialty.
+ * @param specialtyId - The specialty whose defaults to build.
+ */
 export const buildDefaultClinicalDocumentIndicationItems = (
   specialtyId: ClinicalDocumentIndicationSpecialtyId
 ): ClinicalDocumentIndicationCatalogItem[] =>
@@ -169,6 +178,10 @@ const normalizeItems = (
   return mergedItems;
 };
 
+/**
+ * Creates a fresh catalog populated with built-in defaults for every specialty.
+ * @param now - Optional ISO timestamp; defaults to the current time.
+ */
 export const getDefaultClinicalDocumentIndicationsCatalog = (
   now: string = new Date().toISOString()
 ): ClinicalDocumentIndicationsCatalog => ({
@@ -191,6 +204,11 @@ export const getDefaultClinicalDocumentIndicationsCatalog = (
   ),
 });
 
+/**
+ * Normalizes a raw/untrusted catalog from Firestore into a fully typed catalog, merging defaults and handling legacy `cirugia_tmt` keys.
+ * @param rawCatalog - The raw catalog value (may be null/undefined/partial).
+ * @returns A complete, normalized catalog.
+ */
 export const normalizeClinicalDocumentIndicationsCatalog = (
   rawCatalog: RawClinicalDocumentIndicationsCatalog
 ): ClinicalDocumentIndicationsCatalog => {

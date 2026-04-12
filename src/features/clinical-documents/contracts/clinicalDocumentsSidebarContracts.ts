@@ -22,4 +22,5 @@ export interface ClinicalDocumentsSidebarProps {
   onAddClinicalUpdate?: () => void;
   onToggleAnnex?: () => void;
   hasAnnex?: boolean;
+  onOpenLabDialog?: () => void;
 }

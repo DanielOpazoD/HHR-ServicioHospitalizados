@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import '@/features/clinical-documents/styles/clinicalDocumentSheet.css';
@@ -7,8 +7,14 @@ import { ClinicalDocumentFormattingToolbar } from '@/features/clinical-documents
 import { ClinicalDocumentStatusBar } from '@/features/clinical-documents/components/ClinicalDocumentStatusBar';
 import { ClinicalDocumentsSidebar } from '@/features/clinical-documents/components/ClinicalDocumentsSidebar';
 import { ClinicalDocumentSheet } from '@/features/clinical-documents/components/ClinicalDocumentSheet';
+import { ClinicalDocumentLabInsertDialog } from '@/features/clinical-documents/components/ClinicalDocumentLabInsertDialog';
 import { useClinicalDocumentsWorkspaceModel } from '@/features/clinical-documents/hooks/useClinicalDocumentsWorkspaceModel';
 import { useClinicalDocumentSheetState } from '@/features/clinical-documents/hooks/useClinicalDocumentSheetState';
+
+const ZOOM_STEP = 10;
+const ZOOM_MIN = 60;
+const ZOOM_MAX = 150;
+const ZOOM_DEFAULT = 100;
 
 interface ClinicalDocumentsWorkspaceProps {
   patient: PatientData;
@@ -32,6 +38,8 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
     isActive,
   });
   const sheetState = useClinicalDocumentSheetState(sheetProps.selectedDocument);
+  const [zoom, setZoom] = useState(ZOOM_DEFAULT);
+  const [showLabDialog, setShowLabDialog] = useState(false);
 
   const handleInsertLabText = useCallback(
     (text: string) => {
@@ -42,6 +50,7 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
       const existing = firstSection.content || '';
       const separator = existing.trim() ? '<br>' : '';
       sheetProps.patchSection(firstSection.id, existing + separator + text);
+      setShowLabDialog(false);
     },
     [sheetProps]
   );
@@ -52,18 +61,6 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
     );
   }
 
-  // Status bar (autosave + Drive) → portaled to modal header
-  const statusNode = sheetProps.selectedDocument ? (
-    <ClinicalDocumentStatusBar
-      isSaving={sheetProps.isSaving}
-      lastSavedAt={sheetProps.lastSavedAt}
-      isUploadingPdf={sheetProps.isUploadingPdf}
-      driveExported={sheetProps.selectedDocument.pdf?.exportStatus === 'exported'}
-      onUploadPdf={sheetProps.onUploadPdf}
-    />
-  ) : null;
-
-  // Editing toolbar (lab, PDF, format, restore)
   const toolbarNode = sheetProps.selectedDocument ? (
     <ClinicalDocumentFormattingToolbar
       selectedDocument={sheetProps.selectedDocument}
@@ -74,8 +71,19 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
       onRestoreTemplate={sheetProps.onRestoreTemplate}
       onToggleFormatting={() => sheetState.setIsFormattingOpen(prev => !prev)}
       onApplyFormatting={sheetState.applyFormatting}
-      patientRut={patient.rut}
-      onInsertLabText={sheetProps.canEdit ? handleInsertLabText : undefined}
+      zoom={zoom}
+      onZoomIn={() => setZoom(z => Math.min(ZOOM_MAX, z + ZOOM_STEP))}
+      onZoomOut={() => setZoom(z => Math.max(ZOOM_MIN, z - ZOOM_STEP))}
+    />
+  ) : null;
+
+  const statusNode = sheetProps.selectedDocument ? (
+    <ClinicalDocumentStatusBar
+      isSaving={sheetProps.isSaving}
+      lastSavedAt={sheetProps.lastSavedAt}
+      isUploadingPdf={sheetProps.isUploadingPdf}
+      driveExported={sheetProps.selectedDocument.pdf?.exportStatus === 'exported'}
+      onUploadPdf={sheetProps.onUploadPdf}
     />
   ) : null;
 
@@ -83,13 +91,18 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
     ? document.getElementById(headerActionsContainerId)
     : null;
 
+  // Toolbar uses fixed centering over the full modal width.
+  // Status stays in normal flow (right-aligned in headerActions).
   const headerContent =
-    statusNode || toolbarNode ? (
-      <div className="flex items-center gap-3">
-        {statusNode}
-        {statusNode && toolbarNode && <div className="h-4 w-px bg-slate-200/70" />}
-        {toolbarNode}
-      </div>
+    toolbarNode || statusNode ? (
+      <>
+        {toolbarNode && (
+          <div className="fixed left-1/2 -translate-x-1/2 z-20 flex items-center">
+            {toolbarNode}
+          </div>
+        )}
+        {statusNode && <div className="flex items-center">{statusNode}</div>}
+      </>
     ) : null;
 
   return (
@@ -100,27 +113,44 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
       {headerContent && headerActionsContainer
         ? createPortal(headerContent, headerActionsContainer)
         : null}
-      <ClinicalDocumentsSidebar {...sidebarProps} />
+      <ClinicalDocumentsSidebar
+        {...sidebarProps}
+        onOpenLabDialog={
+          patient.rut && sheetProps.canEdit && sheetProps.selectedDocument
+            ? () => setShowLabDialog(true)
+            : undefined
+        }
+      />
 
       <section className="relative overflow-y-auto overflow-x-hidden bg-[#f3f4f6] p-3">
-        <ClinicalDocumentSheet
-          {...sheetProps}
-          toolbar={headerContent && !headerActionsContainer ? headerContent : null}
-          activeTitleTarget={sheetState.activeTitleTarget}
-          onSetActiveTitleTarget={sheetState.setActiveTitleTarget}
-          draggedSectionId={sheetState.draggedSectionId}
-          dragOverSectionId={sheetState.dragOverSectionId}
-          activePlanSubsectionId={sheetState.activePlanSubsectionId}
-          activeIndicationsSpecialtyId={sheetState.activeIndicationsSpecialtyId}
-          isIndicationsPanelOpen={sheetState.isIndicationsPanelOpen}
-          onSetActivePlanSubsectionId={sheetState.setActivePlanSubsectionId}
-          onSetActiveIndicationsSpecialtyId={sheetState.setActiveIndicationsSpecialtyId}
-          onToggleIndicationsPanel={() => sheetState.setIsIndicationsPanelOpen(prev => !prev)}
-          onEditorActivate={sheetState.handleEditorActivate}
-          onEditorDeactivate={sheetState.handleEditorDeactivate}
-          dragHandlers={sheetState.sectionDragHandlers}
-        />
+        <div style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top center' }}>
+          <ClinicalDocumentSheet
+            {...sheetProps}
+            toolbar={headerContent && !headerActionsContainer ? headerContent : null}
+            activeTitleTarget={sheetState.activeTitleTarget}
+            onSetActiveTitleTarget={sheetState.setActiveTitleTarget}
+            draggedSectionId={sheetState.draggedSectionId}
+            dragOverSectionId={sheetState.dragOverSectionId}
+            activePlanSubsectionId={sheetState.activePlanSubsectionId}
+            activeIndicationsSpecialtyId={sheetState.activeIndicationsSpecialtyId}
+            isIndicationsPanelOpen={sheetState.isIndicationsPanelOpen}
+            onSetActivePlanSubsectionId={sheetState.setActivePlanSubsectionId}
+            onSetActiveIndicationsSpecialtyId={sheetState.setActiveIndicationsSpecialtyId}
+            onToggleIndicationsPanel={() => sheetState.setIsIndicationsPanelOpen(prev => !prev)}
+            onEditorActivate={sheetState.handleEditorActivate}
+            onEditorDeactivate={sheetState.handleEditorDeactivate}
+            dragHandlers={sheetState.sectionDragHandlers}
+          />
+        </div>
       </section>
+
+      {showLabDialog && patient.rut && (
+        <ClinicalDocumentLabInsertDialog
+          patientRut={patient.rut}
+          onInsert={handleInsertLabText}
+          onClose={() => setShowLabDialog(false)}
+        />
+      )}
     </div>
   );
 };

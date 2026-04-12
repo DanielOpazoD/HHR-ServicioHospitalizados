@@ -7,18 +7,33 @@ import {
 } from '@/application/patient-flow/clinicalEpisode';
 import { calculateAge } from '@/utils/clinicalUtils';
 
+/**
+ * Builds a composite key that uniquely identifies a clinical episode.
+ * @param patientRut - Patient national identifier (RUT)
+ * @param admissionDate - Optional admission date to disambiguate episodes
+ * @returns Deterministic episode key string
+ */
 export const buildClinicalEpisodeKey = (patientRut: string, admissionDate?: string): string =>
   buildClinicalEpisodeKeyFromApplication(patientRut, admissionDate);
 
 const padTime = (value: number): string => value.toString().padStart(2, '0');
 
+/** Returns today's date as an ISO date string (YYYY-MM-DD). */
 export const getCurrentDateValue = (): string => new Date().toISOString().slice(0, 10);
 
+/** Returns the current local time as an HH:MM string. */
 export const getCurrentTimeValue = (): string => {
   const date = new Date();
   return `${padTime(date.getHours())}:${padTime(date.getMinutes())}`;
 };
 
+/**
+ * Resolves the full episode context for a clinical document.
+ * @param patient - Patient demographic and admission data
+ * @param sourceDailyRecordDate - Date of the originating daily record
+ * @param sourceBedId - Bed identifier from the daily record
+ * @returns Episode context used to scope the document
+ */
 export const buildClinicalDocumentEpisodeContext = (
   patient: PatientData,
   sourceDailyRecordDate: string,
@@ -29,6 +44,11 @@ export const buildClinicalDocumentEpisodeContext = (
     sourceBedId,
   });
 
+/**
+ * Derives the patient field values used to populate document header placeholders.
+ * @param patient - Patient demographic data
+ * @returns Map of field names to display values (nombre, rut, edad, etc.)
+ */
 export const buildClinicalDocumentPatientFieldValues = (
   patient: PatientData
 ): Record<string, string> => ({

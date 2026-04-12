@@ -11,6 +11,7 @@ export type ClinicalDocumentIndicationSpecialtyId =
   | 'ginecobstetricia'
   | 'pediatria';
 
+/** Short display labels for each indication specialty (e.g. "TMT", "Cir"). */
 export const CLINICAL_DOCUMENT_INDICATION_SPECIALTY_LABELS: Record<
   ClinicalDocumentIndicationSpecialtyId,
   string
@@ -31,6 +32,12 @@ const normalizeSearchValue = (value: string): string =>
     .replace(/\s+/g, ' ')
     .trim();
 
+/**
+ * Appends an indication text block to existing rich-text content.
+ * @param currentContent - The current HTML content of the indications section.
+ * @param indicationText - Plain text to append.
+ * @returns The merged HTML content normalized for storage.
+ */
 export const appendClinicalDocumentIndicationText = (
   currentContent: string,
   indicationText: string
@@ -50,6 +57,11 @@ export const appendClinicalDocumentIndicationText = (
   return normalizeClinicalDocumentContentForStorage(`${normalizedCurrent}<br>${nextBlock}`);
 };
 
+/**
+ * Resolves a free-text specialty label to a known specialty ID using fuzzy matching.
+ * @param specialtyLabel - Raw specialty name (may be null/undefined). Falls back to "cirugia".
+ * @returns The matched {@link ClinicalDocumentIndicationSpecialtyId}.
+ */
 export const resolveClinicalDocumentIndicationSpecialty = (
   specialtyLabel: string | null | undefined
 ): ClinicalDocumentIndicationSpecialtyId => {
@@ -86,5 +98,6 @@ export const resolveClinicalDocumentIndicationSpecialty = (
   return 'cirugia';
 };
 
+/** Normalizes an indication text into a lowercase, accent-stripped key for deduplication. */
 export const normalizeClinicalDocumentIndicationTextKey = (value: string): string =>
   normalizeSearchValue(value);

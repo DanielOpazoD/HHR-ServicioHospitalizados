@@ -9,6 +9,7 @@ const sanitizeText = (value: string, fallback: string): string => {
   return next.length > 0 ? next : fallback;
 };
 
+/** Creates a new blank section template at the given order position. */
 export const createTemplateSection = (order: number): ClinicalDocumentSectionTemplate => ({
   id: `section-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
   title: 'Nueva sección',
@@ -17,6 +18,7 @@ export const createTemplateSection = (order: number): ClinicalDocumentSectionTem
   visible: true,
 });
 
+/** Creates a new blank patient field template with default values. */
 export const createTemplatePatientField = (): ClinicalDocumentPatientFieldTemplate => ({
   id: `field-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
   label: 'Nuevo campo',
@@ -25,6 +27,11 @@ export const createTemplatePatientField = (): ClinicalDocumentPatientFieldTempla
   readonly: false,
 });
 
+/**
+ * Normalizes a template before persisting: re-indexes sections, sanitizes empty text fields, and ensures boolean defaults.
+ * @param template - The raw template to normalize.
+ * @returns A clean copy ready for storage.
+ */
 export const normalizeTemplateForSave = (
   template: ClinicalDocumentTemplate
 ): ClinicalDocumentTemplate => {

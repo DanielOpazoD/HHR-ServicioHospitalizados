@@ -15,6 +15,7 @@ export interface ClinicalDocumentPlanSubsection {
   title: string;
 }
 
+/** Ordered list of plan subsections (generales, farmacologicas, control clinico). */
 export const CLINICAL_DOCUMENT_PLAN_SUBSECTIONS: readonly ClinicalDocumentPlanSubsection[] = [
   { id: 'generales', title: 'Indicaciones generales' },
   { id: 'farmacologicas', title: 'Indicaciones farmacológicas' },
@@ -123,6 +124,11 @@ const appendClinicalDocumentPlanIndicationLine = (
   return normalizeSubsectionContent(sanitizeClinicalDocumentHtml(container.innerHTML));
 };
 
+/**
+ * Parses HTML content of a plan section into per-subsection content by detecting heading markers.
+ * @param value - The raw HTML content of the plan section.
+ * @returns A record mapping each subsection ID to its HTML content.
+ */
 export const parseClinicalDocumentPlanSectionContent = (
   value: string
 ): Record<ClinicalDocumentPlanSubsectionId, string> => {
@@ -177,6 +183,11 @@ export const parseClinicalDocumentPlanSectionContent = (
   return parsed;
 };
 
+/**
+ * Determines whether a plan section should render as "unified" or "structured" layout.
+ * @param section - Section with content and optional layout override.
+ * @returns The resolved layout mode.
+ */
 export const resolveClinicalDocumentPlanSectionLayout = (
   section: Pick<ClinicalDocumentSection, 'content' | 'layout'>
 ): ClinicalDocumentSectionLayout =>
@@ -194,6 +205,11 @@ const nodeToHtml = (node: ChildNode): string => {
 
 const buildHeadingHtml = (title: string): string => `<div><strong>${title}</strong></div>`;
 
+/**
+ * Assembles per-subsection HTML content into a single plan section HTML string with headings.
+ * @param subsections - A record mapping each subsection ID to its HTML content.
+ * @returns The combined HTML, or an empty string if all subsections are empty.
+ */
 export const buildClinicalDocumentPlanSectionContent = (
   subsections: Record<ClinicalDocumentPlanSubsectionId, string>
 ): string => {
@@ -217,6 +233,12 @@ export const buildClinicalDocumentPlanSectionContent = (
   return sanitizeClinicalDocumentHtml(html);
 };
 
+/**
+ * Replaces a single subsection's content within the full plan section HTML and rebuilds the output.
+ * @param value - The current full plan section HTML.
+ * @param subsectionId - Which subsection to update.
+ * @param nextSubsectionContent - The new HTML content for the subsection.
+ */
 export const updateClinicalDocumentPlanSubsectionContent = (
   value: string,
   subsectionId: ClinicalDocumentPlanSubsectionId,
@@ -227,6 +249,10 @@ export const updateClinicalDocumentPlanSubsectionContent = (
     [subsectionId]: nextSubsectionContent,
   });
 
+/**
+ * Converts structured plan content (with headings) into unified flat HTML by stripping subsection headings.
+ * @param value - The current plan section HTML (may already be unified).
+ */
 export const buildUnifiedClinicalDocumentPlanSectionContent = (value: string): string => {
   const normalized = normalizeClinicalDocumentContentForStorage(value);
   if (!normalized) {
@@ -245,6 +271,10 @@ export const buildUnifiedClinicalDocumentPlanSectionContent = (value: string): s
   return normalizeSubsectionContent(sanitizeClinicalDocumentHtml(mergedContent));
 };
 
+/**
+ * Converts unified plan content into structured format with subsection headings. Already-structured content is re-normalized.
+ * @param value - The current plan section HTML (may already be structured).
+ */
 export const buildStructuredClinicalDocumentPlanSectionContent = (value: string): string => {
   const normalized = normalizeClinicalDocumentContentForStorage(value);
   if (!normalized) {
@@ -264,6 +294,12 @@ export const buildStructuredClinicalDocumentPlanSectionContent = (value: string)
   });
 };
 
+/**
+ * Appends a plain-text indication line to a specific subsection within the plan section HTML.
+ * @param value - The current full plan section HTML.
+ * @param subsectionId - The target subsection.
+ * @param text - Plain text to append.
+ */
 export const appendClinicalDocumentPlanSubsectionText = (
   value: string,
   subsectionId: ClinicalDocumentPlanSubsectionId,
@@ -276,6 +312,7 @@ export const appendClinicalDocumentPlanSubsectionText = (
   });
 };
 
+/** Returns the display title for a plan subsection (e.g. "Indicaciones generales"). */
 export const getClinicalDocumentPlanSubsectionTitle = (
   subsectionId: ClinicalDocumentPlanSubsectionId
 ): string => PLAN_TITLE_BY_ID[subsectionId];

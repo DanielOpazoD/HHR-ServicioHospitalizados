@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FilePlus2, History, Paperclip, PenLine, Trash2 } from 'lucide-react';
+import { FilePlus2, FlaskConical, History, Paperclip, PenLine, Trash2 } from 'lucide-react';
 import clsx from 'clsx';
 
 import { getClinicalDocumentTypeLabel } from '@/features/clinical-documents/controllers/clinicalDocumentTemplateController';
@@ -58,17 +58,31 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
   onToggleAnnex,
   hasAnnex,
   patientRut,
+  onOpenLabDialog,
 }) => {
   return (
     <aside className="space-y-2.5 border-r border-slate-200 bg-slate-50/70 p-2.5">
-      {/* Patient context */}
+      {/* Patient context + LAB shortcut */}
       {patientName && (
-        <div className="rounded-lg border border-slate-200 bg-white px-2.5 py-2">
-          <p className="text-[12px] font-bold text-slate-800 leading-tight truncate">
-            {patientName}
-          </p>
-          {patientRut && (
-            <p className="text-[10px] font-mono text-slate-400 mt-0.5">{patientRut}</p>
+        <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-2">
+          <div className="flex-1 min-w-0">
+            <p className="text-[12px] font-bold text-slate-800 leading-tight truncate">
+              {patientName}
+            </p>
+            {patientRut && (
+              <p className="text-[10px] font-mono text-slate-400 mt-0.5">{patientRut}</p>
+            )}
+          </div>
+          {onOpenLabDialog && (
+            <button
+              type="button"
+              onClick={onOpenLabDialog}
+              className="shrink-0 inline-flex h-7 items-center rounded-md border border-emerald-200 px-2 text-[9px] font-bold uppercase tracking-[0.12em] text-emerald-700 hover:bg-emerald-50 transition-colors"
+              title="Insertar resumen de laboratorio"
+            >
+              <FlaskConical size={11} className="mr-1" />
+              Lab
+            </button>
           )}
         </div>
       )}

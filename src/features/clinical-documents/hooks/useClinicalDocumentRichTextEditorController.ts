@@ -3,9 +3,13 @@ import type { ClipboardEvent, KeyboardEvent, MutableRefObject } from 'react';
 
 import type { ClinicalDocumentFormattingCommand } from '@/features/clinical-documents/components/clinicalDocumentSheetShared';
 import {
+  buildPastedImageHtml,
+  classifyPasteContent,
+  readFileAsDataUrl,
+} from '@/features/clinical-documents/controllers/clinicalDocumentPasteController';
+import {
   applyClinicalDocumentEditorCommand,
   normalizeClinicalDocumentContentForStorage,
-  sanitizePastedHtml,
 } from '@/features/clinical-documents/controllers/clinicalDocumentRichTextController';
 import {
   detectSlashCommand,
@@ -263,6 +267,9 @@ export const useClinicalDocumentRichTextEditorController = ({
   /**
    * Intercepts paste to strip inline styles, colors, and backgrounds
    * while preserving images, tables, and structural formatting.
+   *
+   * Uses {@link classifyPasteContent} to determine content kind, then
+   * performs the appropriate DOM insertion.
    */
   const handlePaste = useCallback(
     (event: ClipboardEvent<HTMLDivElement>) => {
@@ -270,35 +277,27 @@ export const useClinicalDocumentRichTextEditorController = ({
       const editor = editorRef.current;
       if (!editor) return;
 
-      // 1. Check for image files in clipboard (screenshots, copied images)
-      const imageFile = Array.from(event.clipboardData.files).find(f =>
-        f.type.startsWith('image/')
-      );
-      if (imageFile) {
-        const reader = new FileReader();
-        reader.onload = () => {
-          if (typeof reader.result !== 'string' || !editorRef.current) return;
-          const imgHtml = `<img src="${reader.result}" alt="Imagen pegada" style="max-width:100%">`;
+      const descriptor = classifyPasteContent(event.clipboardData);
+
+      if (descriptor.kind === 'empty') return;
+
+      if (descriptor.kind === 'image-file') {
+        void readFileAsDataUrl(descriptor.file).then(dataUrl => {
+          if (!editorRef.current) return;
           editorRef.current.focus();
-          document.execCommand('insertHTML', false, imgHtml);
+          document.execCommand('insertHTML', false, buildPastedImageHtml(dataUrl));
           const html = normalizeClinicalDocumentContentForStorage(editorRef.current.innerHTML);
           lastLocalNormalizedValueRef.current = html;
           pushHistorySnapshot(html);
           onChange(html);
-        };
-        reader.readAsDataURL(imageFile);
+        });
         return;
       }
 
-      // 2. Check for HTML content (tables, formatted text with inline images)
-      const rawHtml = event.clipboardData.getData('text/html');
-      const plainText = event.clipboardData.getData('text/plain');
-
-      if (rawHtml) {
-        const clean = sanitizePastedHtml(rawHtml);
-        document.execCommand('insertHTML', false, clean);
-      } else if (plainText) {
-        document.execCommand('insertText', false, plainText);
+      if (descriptor.kind === 'html') {
+        document.execCommand('insertHTML', false, descriptor.sanitizedHtml);
+      } else {
+        document.execCommand('insertText', false, descriptor.text);
       }
 
       const html = normalizeClinicalDocumentContentForStorage(editor.innerHTML);

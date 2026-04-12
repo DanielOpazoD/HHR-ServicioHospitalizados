@@ -1,20 +1,14 @@
 /**
  * ClinicalDocumentFormattingToolbar
  *
- * Editing tools for the clinical document:
- * - Inserción: Lab summary
- * - Exportar: PDF print
- * - Edición: formatting toggle, restore template
- *
- * Status (autosave, Drive) is in ClinicalDocumentStatusBar.
- * Content actions (update, annex) are in the sidebar.
+ * Centered editing tools: Print, Format, Restore (icon), Zoom +/-
+ * LAB moved to sidebar. Status (autosave, Drive) in header right side.
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Bold,
   Eraser,
-  FlaskConical,
   IndentDecrease,
   IndentIncrease,
   Italic,
@@ -23,8 +17,9 @@ import {
   Printer,
   RotateCcw,
   Underline,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react';
-import { ClinicalDocumentLabInsertDialog } from './ClinicalDocumentLabInsertDialog';
 
 import type {
   ClinicalDocumentFormattingCommand,
@@ -40,8 +35,9 @@ interface ClinicalDocumentFormattingToolbarProps {
   onRestoreTemplate: () => void;
   onToggleFormatting: () => void;
   onApplyFormatting: (command: ClinicalDocumentFormattingCommand) => void;
-  patientRut?: string;
-  onInsertLabText?: (text: string) => void;
+  zoom: number;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
 }
 
 const formattingActions = [
@@ -57,8 +53,8 @@ const formattingActions = [
 
 const Divider = () => <div className="h-4 w-px bg-slate-200/70 shrink-0" />;
 
-const btnBase =
-  'inline-flex h-7 items-center rounded-md border px-2 text-[9px] font-bold uppercase tracking-[0.12em] transition-colors disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300';
+const iconBtn =
+  'inline-flex h-8 w-8 items-center justify-center rounded-lg border transition-colors disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300';
 
 export const ClinicalDocumentFormattingToolbar: React.FC<
   ClinicalDocumentFormattingToolbarProps
@@ -71,86 +67,84 @@ export const ClinicalDocumentFormattingToolbar: React.FC<
   onRestoreTemplate,
   onToggleFormatting,
   onApplyFormatting,
-  patientRut,
-  onInsertLabText,
+  zoom,
+  onZoomIn,
+  onZoomOut,
 }) => {
-  const [showLabDialog, setShowLabDialog] = useState(false);
   const formattingReady = canEdit && !selectedDocument.isLocked && !formattingDisabled;
   const editEnabled = canEdit && !selectedDocument.isLocked;
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5 bg-transparent px-0 py-0">
-      {/* ── Inserción ── */}
-      {patientRut && onInsertLabText && (
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setShowLabDialog(prev => !prev)}
-            className={`${btnBase} border-emerald-200 text-emerald-700 hover:bg-emerald-50`}
-            title="Insertar resumen de laboratorio"
-          >
-            <FlaskConical size={11} className="mr-1 inline" />
-            Lab
-          </button>
-          {showLabDialog && (
-            <ClinicalDocumentLabInsertDialog
-              patientRut={patientRut}
-              onInsert={text => {
-                onInsertLabText(text);
-                setShowLabDialog(false);
-              }}
-              onClose={() => setShowLabDialog(false)}
-            />
-          )}
-        </div>
-      )}
-
-      <Divider />
-
-      {/* ── Exportar ── */}
+    <div className="flex items-center gap-1.5 bg-transparent">
+      {/* Print */}
       <button
         type="button"
         onClick={onPrint}
-        className={`${btnBase} border-slate-200 text-slate-700 hover:bg-slate-50`}
+        className={`${iconBtn} border-slate-200 text-slate-600 hover:bg-slate-50`}
+        aria-label="Imprimir PDF"
+        title="Imprimir PDF"
       >
-        <Printer size={11} className="mr-1 inline" />
-        PDF
+        <Printer size={17} />
       </button>
 
       <Divider />
 
-      {/* ── Edición ── */}
+      {/* Formatting toggle */}
       <button
         type="button"
         onClick={onToggleFormatting}
         disabled={!editEnabled}
         aria-pressed={isFormattingOpen}
         aria-label="Formato"
-        title="Formato"
-        className={`relative inline-flex h-7 w-7 items-center justify-center rounded-md border transition-colors disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300 ${
+        title="Formato avanzado"
+        className={`relative ${iconBtn} ${
           formattingReady
             ? 'border-sky-200 bg-sky-50 text-sky-800 hover:bg-sky-100'
-            : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+            : 'border-slate-200 text-slate-600 hover:bg-slate-50'
         }`}
       >
-        <span
-          aria-hidden="true"
-          className={`absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full ${
-            formattingReady ? 'bg-sky-500' : 'bg-transparent'
-          }`}
-        />
-        <Bold size={12} />
+        {formattingReady && (
+          <span
+            aria-hidden="true"
+            className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-sky-500"
+          />
+        )}
+        <Bold size={17} />
       </button>
+
+      {/* Restore (icon only) */}
       <button
         type="button"
         onClick={onRestoreTemplate}
         disabled={!editEnabled}
         aria-label="Restablecer plantilla"
         title="Restablecer plantilla"
-        className={`${btnBase} border-amber-200 text-amber-700 hover:bg-amber-50`}
+        className={`${iconBtn} border-amber-200 text-amber-600 hover:bg-amber-50`}
       >
-        <RotateCcw size={11} className="mr-1 inline" />
-        Restablecer
+        <RotateCcw size={17} />
+      </button>
+
+      <Divider />
+
+      {/* Zoom */}
+      <button
+        type="button"
+        onClick={onZoomOut}
+        disabled={zoom <= 60}
+        className={`${iconBtn} border-slate-200 text-slate-600 hover:bg-slate-50`}
+        title="Reducir zoom"
+      >
+        <ZoomOut size={17} />
+      </button>
+      <span className="text-[9px] font-mono text-slate-400 w-7 text-center shrink-0">{zoom}%</span>
+      <button
+        type="button"
+        onClick={onZoomIn}
+        disabled={zoom >= 150}
+        className={`${iconBtn} border-slate-200 text-slate-600 hover:bg-slate-50`}
+        title="Aumentar zoom"
+      >
+        <ZoomIn size={17} />
       </button>
 
       {/* Formatting panel */}
