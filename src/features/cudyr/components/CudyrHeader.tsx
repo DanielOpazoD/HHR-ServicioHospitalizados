@@ -1,14 +1,5 @@
 import React, { useState } from 'react';
-import {
-  BarChart3,
-  Calculator,
-  FileSpreadsheet,
-  FileText,
-  Loader2,
-  Lock,
-  Unlock,
-  ArrowLeft,
-} from 'lucide-react';
+import { BarChart3, Calculator, FileSpreadsheet, FileText, Loader2, ArrowLeft } from 'lucide-react';
 import clsx from 'clsx';
 import { PdfViewerModal } from '@/components/shared/PdfViewerModal';
 import { formatTimeHHMM } from '@/utils/dateFormattingUtils';
@@ -21,24 +12,14 @@ interface CudyrHeaderProps {
   occupiedCount: number;
   categorizedCount: number;
   currentDate?: string; // YYYY-MM-DD format
-  isLocked?: boolean;
-  lockedAt?: string;
-  lockedBy?: string;
   updatedAt?: string;
-  onToggleLock?: () => void;
-  canToggle?: boolean;
 }
 
 export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
   occupiedCount,
   categorizedCount,
   currentDate,
-  isLocked = false,
-  lockedAt,
-  lockedBy,
   updatedAt,
-  onToggleLock,
-  canToggle = false,
 }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [isInstrumentOpen, setIsInstrumentOpen] = useState(false);
@@ -64,7 +45,6 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
     }
   };
 
-  // Format lock timestamp for tooltip
   const formatLockTime = (isoString?: string) => {
     if (!isoString) return '';
     const date = new Date(isoString);
@@ -77,11 +57,6 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
     });
   };
 
-  const lockTooltip =
-    isLocked && lockedAt
-      ? `Bloqueado el ${formatLockTime(lockedAt)}${lockedBy ? ` por ${lockedBy}` : ''}`
-      : 'Click para bloquear edición CUDYR';
-
   const formatHeaderDate = (dateString?: string) => {
     if (!dateString) return '';
     const [year, month, day] = dateString.split('-');
@@ -89,12 +64,10 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
     return `${day}-${month}-${year}`;
   };
 
-  const lastCudyrTimestamp = updatedAt ?? lockedAt;
-
   return (
     <>
       <header className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        {/* Left: Back Button + Title + Lock */}
+        {/* Left: Back Button + Title */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Back to Night Handoff Button */}
           <button
@@ -117,12 +90,12 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
             {`Instrumento CUDYR ${formatHeaderDate(currentDate)}`.trim()}
           </h2>
 
-          {lastCudyrTimestamp && (
+          {updatedAt && (
             <span
               className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500"
-              title={`Última modificación CUDYR: ${formatLockTime(lastCudyrTimestamp)}`}
+              title={`Última modificación CUDYR: ${formatLockTime(updatedAt)}`}
             >
-              Últ. mod. {formatTimeHHMM(lastCudyrTimestamp)}
+              Últ. mod. {formatTimeHHMM(updatedAt)}
             </span>
           )}
 
@@ -135,23 +108,6 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
             <FileText size={12} />
             <span>Ver Instrumento CUDYR</span>
           </button>
-
-          {/* Lock Button */}
-          {canToggle && onToggleLock && (
-            <button
-              onClick={onToggleLock}
-              className={clsx(
-                'flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold transition-all border',
-                isLocked
-                  ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
-                  : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-              )}
-              title={lockTooltip}
-            >
-              {isLocked ? <Lock size={12} /> : <Unlock size={12} />}
-              {isLocked ? 'Bloqueado' : 'Desbloqueado'}
-            </button>
-          )}
         </div>
 
         {/* Right: Stats + Legend + Excel Button */}

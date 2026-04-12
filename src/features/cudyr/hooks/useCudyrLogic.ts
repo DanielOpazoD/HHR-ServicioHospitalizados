@@ -1,63 +1,20 @@
 import { useMemo, useEffect, useCallback } from 'react';
 import { useDailyRecordData } from '@/context/DailyRecordContext';
-import {
-  useDailyRecordCudyrActions,
-  useDailyRecordDayActions,
-} from '@/context/useDailyRecordScopedActions';
+import { useDailyRecordCudyrActions } from '@/context/useDailyRecordScopedActions';
 import { BEDS } from '@/constants/beds';
 import type { CudyrScore } from '@/types/domain/cudyr';
 import { useAuditContext } from '@/context/AuditContext';
 import { useAuth } from '@/context/AuthContext';
 import { buildDailyCudyrSummary } from '../services/cudyrSummary';
 import { getAttributedAuthors } from '@/services/admin/attributionService';
-import { defaultDailyRecordWritePort } from '@/application/ports/dailyRecordPort';
-import { createScopedLogger } from '@/services/utils/loggerScope';
 import { resolveCudyrEligibility } from '@/features/cudyr/controllers/cudyrEligibilityController';
-
-const cudyrLogicLogger = createScopedLogger('CudyrLogic');
+import { canEditCudyrRecord } from '@/features/cudyr/controllers/cudyrEditAccessController';
 
 export const useCudyrLogic = (readOnly: boolean) => {
   const { record } = useDailyRecordData();
   const { updateCudyr, updateClinicalCribCudyr } = useDailyRecordCudyrActions();
-  const { refresh } = useDailyRecordDayActions();
   const { logEvent, userId } = useAuditContext();
-  const { currentUser, isEditor, role } = useAuth();
-
-  // Permission check
-  const canToggleLock = useMemo(() => {
-    if (!currentUser) return false;
-    if (role === 'admin' || isEditor) {
-      const hospitalizedEmails = [
-        'hospitalizados@hospitalhangaroa.cl',
-        'enfermeria.hospitalizados@hospitalhangaroa.cl',
-      ];
-      const isHospitalizedNurse = hospitalizedEmails.includes(
-        currentUser.email?.toLowerCase() || ''
-      );
-      return role === 'admin' || isHospitalizedNurse;
-    }
-    return false;
-  }, [currentUser, role, isEditor]);
-
-  // Actions
-  const handleToggleLock = useCallback(async () => {
-    if (!record || !canToggleLock) return;
-
-    const newLockedState = !record.cudyrLocked;
-    const now = new Date().toISOString();
-
-    try {
-      await defaultDailyRecordWritePort.updatePartial(record.date, {
-        cudyrLocked: newLockedState,
-        cudyrLockedAt: newLockedState ? now : undefined,
-        cudyrLockedBy: newLockedState ? currentUser?.email || userId : undefined,
-        cudyrUpdatedAt: newLockedState ? now : record.cudyrUpdatedAt,
-      });
-      refresh();
-    } catch (error) {
-      cudyrLogicLogger.error('Error toggling CUDYR lock', error);
-    }
-  }, [record, canToggleLock, currentUser, userId, refresh]);
+  const { role } = useAuth();
 
   const handleScoreChange = useCallback(
     (bedId: string, field: keyof CudyrScore, value: number) => {
@@ -120,16 +77,24 @@ export const useCudyrLogic = (readOnly: boolean) => {
     [cudyrSummary]
   );
 
-  const isEditingLocked = record?.cudyrLocked || readOnly;
+  const canEditRecord = useMemo(
+    () =>
+      canEditCudyrRecord({
+        role,
+        readOnly,
+        recordDate: record?.date,
+      }),
+    [role, readOnly, record?.date]
+  );
+
+  const isEditingLocked = !canEditRecord;
 
   return {
     record,
     visibleBeds,
     stats,
     cudyrSummary,
-    canToggleLock,
     isEditingLocked,
-    handleToggleLock,
     handleScoreChange,
     handleCribScoreChange,
     resolveCudyrEligibility: resolvePatientCudyrEligibility,

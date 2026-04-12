@@ -45,4 +45,55 @@ describe('patientRowActionSectionBindingsController', () => {
     expect(binding.hasClinicalDocument).toBe(true);
     expect(binding.showCmaAction).toBe(false);
   });
+
+  it('builds medical indications patient only when the row has a named patient', () => {
+    const baseParams = {
+      isBlocked: false,
+      readOnly: false,
+      actionMenuAlign: 'top',
+      currentDateString: '2026-03-05',
+      indicators: {
+        hasClinicalDocument: false,
+        isNewAdmission: true,
+      },
+      mainRowViewState: {
+        canToggleBedType: true,
+        rowClassName: 'row',
+        rowActionsAvailability: {
+          canOpenClinicalDocuments: true,
+          canOpenExamRequest: true,
+          canOpenImagingRequest: true,
+          canOpenHistory: true,
+          canShowClinicalDocumentIndicator: true,
+        },
+        showBlockedContent: false,
+      },
+      onAction: vi.fn(),
+      onOpenDemographics: vi.fn(),
+      onOpenClinicalDocuments: vi.fn(),
+      onOpenExamRequest: vi.fn(),
+      onOpenImagingRequest: vi.fn(),
+      onOpenHistory: vi.fn(),
+    } as const;
+
+    const namedBinding = buildPatientActionSectionBinding({
+      ...baseParams,
+      data: DataFactory.createMockPatient('R1', {
+        patientName: 'Paciente Uno',
+        admissionDate: '2026-03-05',
+      }),
+    });
+
+    expect(namedBinding.medicalIndicationsPatient?.label).toContain('Paciente Uno');
+
+    const unnamedBinding = buildPatientActionSectionBinding({
+      ...baseParams,
+      data: DataFactory.createMockPatient('R2', {
+        patientName: '',
+        admissionDate: '2026-03-05',
+      }),
+    });
+
+    expect(unnamedBinding.medicalIndicationsPatient).toBeUndefined();
+  });
 });

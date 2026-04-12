@@ -24,6 +24,11 @@ export interface PatientRowCapabilities {
   canShowClinicalDocumentIndicator: boolean;
 }
 
+const resolvePatientIdentityFlags = (patient: ResolvePatientRowCapabilitiesParams['patient']) => ({
+  hasPatientName: Boolean(patient?.patientName?.trim()),
+  hasRut: Boolean(patient?.rut?.trim()),
+});
+
 export const resolvePatientRowCapabilities = ({
   role,
   patient,
@@ -31,8 +36,7 @@ export const resolvePatientRowCapabilities = ({
   isEmpty,
   accessProfile = 'default',
 }: ResolvePatientRowCapabilitiesParams): PatientRowCapabilities => {
-  const hasPatientName = Boolean(patient?.patientName?.trim());
-  const hasRut = Boolean(patient?.rut?.trim());
+  const { hasPatientName, hasRut } = resolvePatientIdentityFlags(patient);
   const canReadClinical = canOpenClinicalDocumentsFromCensus({
     role,
     isBlocked,

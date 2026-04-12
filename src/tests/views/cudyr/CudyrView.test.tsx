@@ -48,9 +48,7 @@ const createMockCudyrLogicReturn = (record: DailyRecord | null, overrides = {}) 
     avgDep: 0,
     avgRisk: 0,
   },
-  canToggleLock: true,
   isEditingLocked: false,
-  handleToggleLock: vi.fn(),
   handleScoreChange: vi.fn(),
   handleCribScoreChange: vi.fn(),
   resolveCudyrEligibility: vi.fn().mockReturnValue({
@@ -239,5 +237,25 @@ describe('CudyrView Component', () => {
       true
     );
     expect((screen.getAllByRole('spinbutton')[0] as HTMLInputElement).value).toBe('');
+  });
+
+  it('leaves the table read-only when the record is outside the editable window', () => {
+    const record = DataFactory.createMockDailyRecord('2024-12-09');
+    record.beds['R1'] = DataFactory.createMockPatient('R1', {
+      patientName: 'PACIENTE ANTIGUO',
+    });
+
+    mockUseCudyrLogic.mockReturnValue(
+      createMockCudyrLogicReturn(record, {
+        isEditingLocked: true,
+        stats: { total: 1, occupiedCount: 1, categorizedCount: 0 },
+      })
+    );
+
+    render(<CudyrView />);
+
+    expect(screen.getAllByRole('spinbutton').every(input => input.hasAttribute('disabled'))).toBe(
+      true
+    );
   });
 });

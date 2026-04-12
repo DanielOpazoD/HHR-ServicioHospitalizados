@@ -56,7 +56,7 @@ describe('handoffPdfCudyrSection', () => {
     );
   });
 
-  it('renders the last CUDYR modification time with lock fallback in the PDF header', () => {
+  it('renders the fixed night-shift application timestamp in the PDF header', () => {
     const doc = createDocMock();
     const autoTable = vi.fn();
     const record = {
@@ -72,13 +72,13 @@ describe('handoffPdfCudyrSection', () => {
     addCudyrTable(doc, record, 10, autoTable as never);
 
     expect(doc.text).toHaveBeenCalledWith(
-      expect.stringContaining('Últ. mod. CUDYR: 21:45'),
+      expect.stringContaining('Fecha y hora aplicación instrumento CUDYR: 08-03-2026, 1:00 AM'),
       expect.any(Number),
       expect.any(Number)
     );
   });
 
-  it('falls back to cudyrLockedAt when cudyrUpdatedAt is missing', () => {
+  it('keeps the same fixed application timestamp even if only cudyrLockedAt exists', () => {
     const doc = createDocMock();
     const autoTable = vi.fn();
     const record = {
@@ -94,7 +94,7 @@ describe('handoffPdfCudyrSection', () => {
     addCudyrTable(doc, record, 10, autoTable as never);
 
     expect(doc.text).toHaveBeenCalledWith(
-      expect.stringContaining('Últ. mod. CUDYR: 18:20'),
+      expect.stringContaining('Fecha y hora aplicación instrumento CUDYR: 08-03-2026, 1:00 AM'),
       expect.any(Number),
       expect.any(Number)
     );

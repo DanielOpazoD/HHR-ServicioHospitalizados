@@ -28,6 +28,14 @@ export const isVisibleCensusColumn = (
   !isSpecialistCensusAccessProfile(accessProfile) ||
   !SPECIALIST_HIDDEN_CENSUS_COLUMNS.includes(column);
 
+export const resolveVisibleCensusColumnKeys = (
+  columns: TableColumnConfig,
+  accessProfile: CensusAccessProfile = 'default'
+): Array<keyof TableColumnConfig> =>
+  (Object.keys(columns) as Array<keyof TableColumnConfig>).filter(column =>
+    isVisibleCensusColumn(column, accessProfile)
+  );
+
 export const resolveVisibleCensusColumns = (
   columns: TableColumnConfig,
   accessProfile: CensusAccessProfile = 'default'
@@ -66,10 +74,7 @@ export const resolveVisibleCensusColumns = (
 export const resolveVisibleCensusColumnCount = (
   columns: TableColumnConfig,
   accessProfile: CensusAccessProfile = 'default'
-): number =>
-  (Object.keys(columns) as Array<keyof TableColumnConfig>).filter(column =>
-    isVisibleCensusColumn(column, accessProfile)
-  ).length;
+): number => resolveVisibleCensusColumnKeys(columns, accessProfile).length;
 
 export const resolveVisibleCensusTotalWidth = (
   columns: TableColumnConfig,

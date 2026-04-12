@@ -33,6 +33,22 @@ interface BuildOccupiedPatientRowIndicatorsParams {
   hasClinicalDocument: boolean;
 }
 
+const buildMainRowIndicators = ({
+  currentDateString,
+  firstSeenDate,
+  admissionDate,
+  admissionTime,
+  hasClinicalDocument,
+}: Omit<BuildOccupiedPatientRowIndicatorsParams, 'isSubRow'>): PatientRowResolvedIndicators => ({
+  hasClinicalDocument,
+  isNewAdmission: resolveIsNewAdmissionForRecord({
+    recordDate: currentDateString,
+    firstSeenDate,
+    admissionDate,
+    admissionTime,
+  }),
+});
+
 export const buildOccupiedPatientRowIndicators = ({
   isSubRow,
   currentDateString,
@@ -45,13 +61,11 @@ export const buildOccupiedPatientRowIndicators = ({
     return EMPTY_PATIENT_ROW_INDICATORS;
   }
 
-  return {
+  return buildMainRowIndicators({
+    currentDateString,
+    firstSeenDate,
+    admissionDate,
+    admissionTime,
     hasClinicalDocument,
-    isNewAdmission: resolveIsNewAdmissionForRecord({
-      recordDate: currentDateString,
-      firstSeenDate,
-      admissionDate,
-      admissionTime,
-    }),
-  };
+  });
 };

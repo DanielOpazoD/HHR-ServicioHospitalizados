@@ -1,15 +1,15 @@
 import React from 'react';
 import { ClipboardList } from 'lucide-react';
-import { formatTimeHHMM } from '@/utils/dateFormattingUtils';
+import { CUDYR_NIGHT_REFERENCE_TIME_LABEL } from '@/features/cudyr/controllers/cudyrEligibilityController';
 
 export const HandoffCudyrPrintHeader: React.FC<{
   categorized: number;
   index: number;
   occupied: number;
   printDate: string;
-  lastCudyrTimestamp?: string;
+  applicationDate: string;
   responsibleNurses: string[];
-}> = ({ categorized, index, occupied, printDate, lastCudyrTimestamp, responsibleNurses }) => (
+}> = ({ categorized, index, occupied, printDate, applicationDate, responsibleNurses }) => (
   <div className="mb-3 border-b border-slate-300 pb-3">
     <div className="mb-1 flex items-center justify-between">
       <h2 className="flex items-center gap-2 text-lg font-bold text-slate-800">
@@ -43,15 +43,11 @@ export const HandoffCudyrPrintHeader: React.FC<{
     <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-700">
       <span className="font-semibold">Último registro disponible: {printDate}</span>
 
-      {lastCudyrTimestamp && (
-        <>
-          <span className="text-slate-400">|</span>
-          <span>
-            <span className="font-semibold">Últ. mod. CUDYR: </span>
-            {formatTimeHHMM(lastCudyrTimestamp)}
-          </span>
-        </>
-      )}
+      <span className="text-slate-400">|</span>
+      <span>
+        <span className="font-semibold">Fecha y hora aplicación instrumento CUDYR: </span>
+        {applicationDate}, {CUDYR_NIGHT_REFERENCE_TIME_LABEL}
+      </span>
 
       <span className="text-slate-400">|</span>
       <span>

@@ -16,9 +16,7 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
     visibleBeds,
     stats,
     cudyrSummary,
-    canToggleLock,
     isEditingLocked,
-    handleToggleLock,
     handleScoreChange,
     handleCribScoreChange,
     resolveCudyrEligibility,
@@ -96,12 +94,7 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
             occupiedCount={stats.occupiedCount}
             categorizedCount={stats.categorizedCount}
             currentDate={record.date}
-            isLocked={record.cudyrLocked}
-            lockedAt={record.cudyrLockedAt}
-            lockedBy={record.cudyrLockedBy}
             updatedAt={record.cudyrUpdatedAt}
-            onToggleLock={handleToggleLock}
-            canToggle={canToggleLock}
           />
         </div>
 

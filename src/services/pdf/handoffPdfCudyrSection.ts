@@ -2,11 +2,15 @@ import type { jsPDF } from 'jspdf';
 import { BEDS } from '@/constants/beds';
 import type { HandoffPdfRecord } from '@/services/pdf/contracts/handoffPdfContracts';
 import { resolveNightShiftNurses } from '@/services/staff/dailyRecordStaffing';
-import { formatDateDDMMYYYY, formatTimeHHMM } from '@/utils/dateFormattingUtils';
+import { formatDateDDMMYYYY } from '@/utils/dateFormattingUtils';
 import { AutoTableFunction, CellHookData, JsPDFWithAutoTable } from './handoffPdfTypes';
 import { getCategorization } from '@/services/cudyr/CudyrScoreUtils';
 import { buildDailyCudyrSummary } from '@/services/cudyr/cudyrSummary';
-import { isCudyrPatientEligible } from '@/features/cudyr/controllers/cudyrEligibilityController';
+import {
+  CUDYR_NIGHT_REFERENCE_TIME_LABEL,
+  isCudyrPatientEligible,
+  resolveCudyrNightApplicationDate,
+} from '@/features/cudyr/controllers/cudyrEligibilityController';
 
 const renderPdfCudyrScore = (value?: number) =>
   value === undefined || value === null ? '-' : value;
@@ -28,15 +32,16 @@ export const addCudyrTable = (
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
 
-  const cudyrTimestamp = record.cudyrUpdatedAt ?? record.cudyrLockedAt;
-  const cudyrTime = formatTimeHHMM(cudyrTimestamp);
   const nurses = resolveNightShiftNurses(record).filter(n => n && n.trim() !== '');
   const nursesStr = nurses.length > 0 ? nurses.join(', ') : 'No registrados';
+  const applicationDate = formatDateDDMMYYYY(resolveCudyrNightApplicationDate(record.date));
 
   doc.text(`Fecha: ${formatDateDDMMYYYY(record.date)}`, margin, currentY);
-  if (cudyrTimestamp) {
-    doc.text(` | Últ. mod. CUDYR: ${cudyrTime}`, margin + 35, currentY);
-  }
+  doc.text(
+    ` | Fecha y hora aplicación instrumento CUDYR: ${applicationDate}, ${CUDYR_NIGHT_REFERENCE_TIME_LABEL}`,
+    margin + 35,
+    currentY
+  );
 
   currentY += 5;
   doc.text(`Enfermeros/as (Noche): ${nursesStr}`, margin, currentY);

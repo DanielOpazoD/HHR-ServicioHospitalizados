@@ -33,13 +33,7 @@ export const resolvePatientMainRowClassName = ({
 
 export const resolvePatientMainRowActionsAvailability = (
   capabilities: PatientRowCapabilities
-): {
-  canOpenClinicalDocuments: boolean;
-  canOpenExamRequest: boolean;
-  canOpenImagingRequest: boolean;
-  canOpenHistory: boolean;
-  canShowClinicalDocumentIndicator: boolean;
-} => ({
+): PatientMainRowViewState['rowActionsAvailability'] => ({
   canOpenClinicalDocuments: capabilities.canOpenClinicalDocuments,
   canOpenExamRequest: capabilities.canOpenExamRequest,
   canOpenImagingRequest: capabilities.canOpenImagingRequest,
@@ -56,6 +50,23 @@ interface BuildPatientMainRowViewStateParams {
   isUpc?: boolean;
   patientName?: string;
 }
+
+const buildPatientMainRowPresentation = ({
+  bedId,
+  readOnly,
+  isEmpty,
+  isBlocked,
+  capabilities,
+  patientName,
+}: Pick<
+  BuildPatientMainRowViewStateParams,
+  'bedId' | 'readOnly' | 'isEmpty' | 'isBlocked' | 'capabilities' | 'patientName'
+>) => ({
+  canToggleBedType: shouldShowBedTypeToggle({ bedId, readOnly, isEmpty }),
+  rowClassName: resolvePatientMainRowClassName({ bedId, isBlocked, patientName }),
+  rowActionsAvailability: resolvePatientMainRowActionsAvailability(capabilities),
+  showBlockedContent: isBlocked,
+});
 
 export interface PatientMainRowViewState {
   canToggleBedType: boolean;
@@ -76,11 +87,13 @@ export const buildPatientMainRowViewState = ({
   isEmpty,
   isBlocked,
   capabilities,
-  isUpc,
   patientName,
-}: BuildPatientMainRowViewStateParams): PatientMainRowViewState => ({
-  canToggleBedType: shouldShowBedTypeToggle({ bedId, readOnly, isEmpty }),
-  rowClassName: resolvePatientMainRowClassName({ bedId, isBlocked, isUpc, patientName }),
-  rowActionsAvailability: resolvePatientMainRowActionsAvailability(capabilities),
-  showBlockedContent: isBlocked,
-});
+}: BuildPatientMainRowViewStateParams): PatientMainRowViewState =>
+  buildPatientMainRowPresentation({
+    bedId,
+    readOnly,
+    isEmpty,
+    isBlocked,
+    capabilities,
+    patientName,
+  });

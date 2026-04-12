@@ -5,6 +5,38 @@ import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medical
 
 export type PatientActionSectionBinding = PatientMainRowActionCellProps;
 
+const buildMedicalIndicationsPatientOption = ({
+  data,
+  currentDateString,
+}: Pick<
+  PatientMainRowViewProps,
+  'data' | 'currentDateString'
+>): MedicalIndicationsPatientOption => {
+  const daysHospitalized = calculateHospitalizedDays({
+    admissionDate: data.admissionDate,
+    currentDate: currentDateString,
+  });
+
+  return {
+    bedId: data.bedId,
+    label: `${data.bedId} - ${data.patientName || 'Paciente sin nombre'}`,
+    patientName: data.patientName || '',
+    rut: data.rut || '',
+    diagnosis: data.pathology || '',
+    age: data.age || '',
+    birthDate: data.birthDate || '',
+    allergies: '',
+    admissionDate: data.admissionDate || '',
+    daysOfStay: String(daysHospitalized ?? ''),
+    treatingDoctor: '',
+  };
+};
+
+const resolveRowActionCallback = <TAction extends (() => void) | undefined>(
+  canUseAction: boolean,
+  action: TAction
+): TAction | undefined => (canUseAction ? action : undefined);
+
 export const buildPatientActionSectionBinding = ({
   isBlocked,
   readOnly,
@@ -42,19 +74,10 @@ export const buildPatientActionSectionBinding = ({
     admissionDate: data.admissionDate,
     currentDate: currentDateString,
   });
-  const medicalIndicationsPatient: MedicalIndicationsPatientOption = {
-    bedId: data.bedId,
-    label: `${data.bedId} - ${data.patientName || 'Paciente sin nombre'}`,
-    patientName: data.patientName || '',
-    rut: data.rut || '',
-    diagnosis: data.pathology || '',
-    age: data.age || '',
-    birthDate: data.birthDate || '',
-    allergies: '',
-    admissionDate: data.admissionDate || '',
-    daysOfStay: String(daysHospitalized ?? ''),
-    treatingDoctor: '',
-  };
+  const medicalIndicationsPatient = buildMedicalIndicationsPatientOption({
+    data,
+    currentDateString,
+  });
 
   return {
     isBlocked,
@@ -66,19 +89,23 @@ export const buildPatientActionSectionBinding = ({
     isNewAdmission: indicators.isNewAdmission,
     onAction,
     onViewDemographics: onOpenDemographics,
-    onViewClinicalDocuments: mainRowViewState.rowActionsAvailability.canOpenClinicalDocuments
-      ? onOpenClinicalDocuments
-      : undefined,
-    onViewExamRequest: mainRowViewState.rowActionsAvailability.canOpenExamRequest
-      ? onOpenExamRequest
-      : undefined,
-    onViewImagingRequest: mainRowViewState.rowActionsAvailability.canOpenImagingRequest
-      ? onOpenImagingRequest
-      : undefined,
+    onViewClinicalDocuments: resolveRowActionCallback(
+      mainRowViewState.rowActionsAvailability.canOpenClinicalDocuments,
+      onOpenClinicalDocuments
+    ),
+    onViewExamRequest: resolveRowActionCallback(
+      mainRowViewState.rowActionsAvailability.canOpenExamRequest,
+      onOpenExamRequest
+    ),
+    onViewImagingRequest: resolveRowActionCallback(
+      mainRowViewState.rowActionsAvailability.canOpenImagingRequest,
+      onOpenImagingRequest
+    ),
     onViewMedicalIndications: data.patientName ? () => undefined : undefined,
-    onViewHistory: mainRowViewState.rowActionsAvailability.canOpenHistory
-      ? onOpenHistory
-      : undefined,
+    onViewHistory: resolveRowActionCallback(
+      mainRowViewState.rowActionsAvailability.canOpenHistory,
+      onOpenHistory
+    ),
     medicalIndicationsPatient: data.patientName ? medicalIndicationsPatient : undefined,
     clinicalDocumentCount,
   };

@@ -8,6 +8,7 @@ import {
   resolveResponsibleNightNurses,
   resolveVisibleCudyrBeds,
 } from './handoffCudyrPrintSupport';
+import { resolveCudyrNightApplicationDate } from '@/features/cudyr/controllers/cudyrEligibilityController';
 
 export const HandoffCudyrPrint: React.FC = () => {
   const { record } = useDailyRecordData();
@@ -18,8 +19,8 @@ export const HandoffCudyrPrint: React.FC = () => {
   if (!record) return null;
 
   const printDate = formatCudyrPrintDate(record.date);
+  const applicationDate = formatCudyrPrintDate(resolveCudyrNightApplicationDate(record.date));
   const responsibleNurses = resolveResponsibleNightNurses(record);
-  const lastCudyrTimestamp = record.cudyrUpdatedAt ?? record.cudyrLockedAt;
 
   return (
     <div className="handoff-cudyr-print list-none bg-white print:m-0 print:bg-white print:p-0">
@@ -28,7 +29,7 @@ export const HandoffCudyrPrint: React.FC = () => {
         categorized={metrics.categorized}
         index={metrics.index}
         printDate={printDate}
-        lastCudyrTimestamp={lastCudyrTimestamp}
+        applicationDate={applicationDate}
         responsibleNurses={responsibleNurses}
       />
       <HandoffCudyrPrintTable record={record} visibleBeds={visibleBeds} />

@@ -1,6 +1,7 @@
-import { normalizeDateOnly, parseTimeMinutes } from '@/utils/clinicalDayUtils';
+import { getNextDay, normalizeDateOnly, parseTimeMinutes } from '@/utils/clinicalDayUtils';
 
 export const CUDYR_NIGHT_REFERENCE_TIME = '01:00';
+export const CUDYR_NIGHT_REFERENCE_TIME_LABEL = '1:00 AM';
 export const CUDYR_MIN_HOSPITALIZATION_HOURS = 8;
 const CUDYR_SAME_DAY_CUTOFF_MINUTES = 17 * 60;
 
@@ -86,3 +87,6 @@ export const isCudyrPatientEligible = (
     admissionTime: patient.admissionTime,
   }).isEligible;
 };
+
+export const resolveCudyrNightApplicationDate = (recordDate: string): string =>
+  getNextDay(recordDate);

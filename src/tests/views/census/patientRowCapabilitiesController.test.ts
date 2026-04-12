@@ -75,4 +75,21 @@ describe('patientRowCapabilitiesController', () => {
       canOpenHistory: false,
     });
   });
+
+  it('treats blank patient identity fields as missing capabilities input', () => {
+    expect(
+      resolvePatientRowCapabilities({
+        role: 'doctor_urgency',
+        patient: { patientName: '   ', rut: '   ' },
+        isBlocked: false,
+        isEmpty: false,
+      })
+    ).toMatchObject({
+      canOpenClinicalDocuments: false,
+      canOpenExamRequest: false,
+      canOpenImagingRequest: false,
+      canOpenHistory: false,
+      canShowClinicalDocumentIndicator: false,
+    });
+  });
 });

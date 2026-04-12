@@ -9,22 +9,13 @@ vi.mock('lucide-react', () => ({
   FileSpreadsheet: () => <span>XLSX</span>,
   FileText: () => <span>PDF</span>,
   Loader2: () => <span>Loading</span>,
-  Lock: () => <span>Lock</span>,
-  Unlock: () => <span>Unlock</span>,
   ArrowLeft: () => <span>Back</span>,
   X: () => <span>Close</span>,
 }));
 
 describe('CudyrHeader', () => {
   it('uses explicit monthly export wording tied to the current cutoff date', () => {
-    render(
-      <CudyrHeader
-        occupiedCount={10}
-        categorizedCount={8}
-        currentDate="2026-03-07"
-        isLocked={false}
-      />
-    );
+    render(<CudyrHeader occupiedCount={10} categorizedCount={8} currentDate="2026-03-07" />);
 
     expect(screen.getByText('Instrumento CUDYR 07-03-2026')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /excel mensual/i })).toHaveAttribute(
@@ -34,14 +25,7 @@ describe('CudyrHeader', () => {
   });
 
   it('opens the instrument pdf from the CUDYR module header', () => {
-    render(
-      <CudyrHeader
-        occupiedCount={10}
-        categorizedCount={8}
-        currentDate="2026-03-07"
-        isLocked={false}
-      />
-    );
+    render(<CudyrHeader occupiedCount={10} categorizedCount={8} currentDate="2026-03-07" />);
 
     fireEvent.click(screen.getByRole('button', { name: /ver instrumento cudyr/i }));
 
@@ -63,5 +47,13 @@ describe('CudyrHeader', () => {
     );
 
     expect(screen.getByText(/últ\. mod\./i)).toHaveTextContent('Últ. mod. 14:35');
+  });
+
+  it('does not render the legacy manual lock toggle', () => {
+    render(<CudyrHeader occupiedCount={10} categorizedCount={8} currentDate="2026-03-07" />);
+
+    expect(
+      screen.queryByRole('button', { name: /bloqueado|desbloqueado/i })
+    ).not.toBeInTheDocument();
   });
 });
