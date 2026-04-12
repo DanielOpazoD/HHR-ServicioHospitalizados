@@ -213,10 +213,14 @@ service cloud.firestore {
           ? nextRecordTimestamp
           : currentRecordTimestamp;
 
+      // Grace mode for legacy records without dateTimestamp.
+      // Otherwise keep the normal 24h write window for specialist handoff.
+      let isWithinSpecialistWindow =
+        effectiveRecordTimestamp == null ||
+        (now >= effectiveRecordTimestamp && now < (effectiveRecordTimestamp + 86400000));
+
       return isDoctorSpecialist() &&
-             effectiveRecordTimestamp != null &&
-             now >= effectiveRecordTimestamp &&
-             now < (effectiveRecordTimestamp + 86400000) &&
+             isWithinSpecialistWindow &&
              (
                affectedRecordKeys.hasOnly(['beds', 'lastUpdated', 'dateTimestamp']) ||
                affectedRecordKeys.hasOnly([
@@ -225,10 +229,6 @@ service cloud.firestore {
                  'lastUpdated',
                  'dateTimestamp'
                ])
-             ) &&
-             (
-               currentRecordTimestamp != null ||
-               nextRecordTimestamp != null
              ) &&
              (
                isSpecialistStructuredMedicalHandoffUpdate() ||
