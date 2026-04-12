@@ -8,7 +8,6 @@ import { BEDS } from '@/constants/beds';
 import type { CudyrScore } from '@/types/domain/cudyr';
 import { useAuditContext } from '@/context/AuditContext';
 import { useAuth } from '@/context/AuthContext';
-import { getCategorization } from '../services/CudyrScoreUtils';
 import { buildDailyCudyrSummary } from '../services/cudyrSummary';
 import { getAttributedAuthors } from '@/services/admin/attributionService';
 import { defaultDailyRecordWritePort } from '@/application/ports/dailyRecordPort';
@@ -108,44 +107,18 @@ export const useCudyrLogic = (readOnly: boolean) => {
     return BEDS.filter(b => !b.isExtra || activeExtras.includes(b.id));
   }, [record]);
 
-  const stats = useMemo(() => {
-    if (!record) return { occupiedCount: 0, categorizedCount: 0 };
-    let occupiedCount = 0;
-    let categorizedCount = 0;
-
-    visibleBeds.forEach(b => {
-      const p = record.beds[b.id];
-      if (!p) return;
-      const patientEligibility = resolveCudyrEligibility({
-        recordDate: record.date,
-        patientName: p.patientName,
-        admissionDate: p.admissionDate,
-        admissionTime: p.admissionTime,
-      });
-      if (p.patientName && !p.isBlocked && patientEligibility.isEligible) {
-        occupiedCount++;
-        const { isCategorized } = getCategorization(p.cudyr);
-        if (isCategorized) categorizedCount++;
-      }
-      const cribEligibility = resolveCudyrEligibility({
-        recordDate: record.date,
-        patientName: p.clinicalCrib?.patientName,
-        admissionDate: p.clinicalCrib?.admissionDate,
-        admissionTime: p.clinicalCrib?.admissionTime,
-      });
-      if (p.clinicalCrib?.patientName && cribEligibility.isEligible) {
-        occupiedCount++;
-        const { isCategorized } = getCategorization(p.clinicalCrib.cudyr);
-        if (isCategorized) categorizedCount++;
-      }
-    });
-    return { occupiedCount, categorizedCount };
-  }, [visibleBeds, record]);
-
   const cudyrSummary = useMemo(() => {
     if (!record) return null;
     return buildDailyCudyrSummary(record);
   }, [record]);
+
+  const stats = useMemo(
+    () => ({
+      occupiedCount: cudyrSummary?.occupiedCount ?? 0,
+      categorizedCount: cudyrSummary?.categorizedCount ?? 0,
+    }),
+    [cudyrSummary]
+  );
 
   const isEditingLocked = record?.cudyrLocked || readOnly;
 

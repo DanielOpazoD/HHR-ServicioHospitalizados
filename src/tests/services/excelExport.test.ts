@@ -396,6 +396,29 @@ describe('reportWorkbookBuilders', () => {
               pharmacology: 1,
               invasiveElements: 1,
             },
+            clinicalCrib: DataFactory.createMockPatient('R1-crib', {
+              patientName: 'Cuna elegible',
+              rut: 'RN-1',
+              admissionDate: '2026-04-11',
+              admissionTime: '19:00',
+              isBlocked: false,
+              cudyr: {
+                changeClothes: 1,
+                mobilization: 0,
+                feeding: 0,
+                elimination: 0,
+                psychosocial: 0,
+                surveillance: 0,
+                vitalSigns: 1,
+                fluidBalance: 0,
+                oxygenTherapy: 0,
+                airway: 0,
+                proInterventions: 0,
+                skinCare: 0,
+                pharmacology: 0,
+                invasiveElements: 0,
+              },
+            }),
           }),
           R2: DataFactory.createMockPatient('R2', {
             patientName: 'Bloqueado por 8h',
@@ -434,11 +457,15 @@ describe('reportWorkbookBuilders', () => {
     const worksheet = workbook?.getWorksheet('CUDYR Diario del Registro');
 
     expect(worksheet).toBeDefined();
-    expect(worksheet?.actualRowCount).toBe(2);
+    expect(worksheet?.actualRowCount).toBe(3);
     expect(worksheet?.getRow(2).getCell(3).value).toBe('Elegible');
     expect(worksheet?.getRow(2).getCell(5).value).toBe(32);
     expect(worksheet?.getRow(2).getCell(6).value).toBe('A1');
     expect(worksheet?.getRow(2).getCell(7).value).toBe(13);
     expect(worksheet?.getRow(2).getCell(8).value).toBe(19);
+    expect(worksheet?.getRow(3).getCell(2).value).toBe('R1 (CC)');
+    expect(worksheet?.getRow(3).getCell(3).value).toBe('Cuna elegible');
+    expect(worksheet?.getRow(3).getCell(5).value).toBe(2);
+    expect(worksheet?.getRow(3).getCell(6).value).toBe('D3');
   });
 });

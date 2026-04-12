@@ -1,38 +1,15 @@
 import type { jsPDF } from 'jspdf';
 import { BEDS } from '@/constants/beds';
-import type { CudyrScore } from '@/types/domain/cudyr';
 import type { HandoffPdfRecord } from '@/services/pdf/contracts/handoffPdfContracts';
 import { resolveNightShiftNurses } from '@/services/staff/dailyRecordStaffing';
 import { formatDateDDMMYYYY, formatTimeHHMM } from '@/utils/dateFormattingUtils';
 import { AutoTableFunction, CellHookData, JsPDFWithAutoTable } from './handoffPdfTypes';
+import { getCategorization } from '@/services/cudyr/CudyrScoreUtils';
+import { buildDailyCudyrSummary } from '@/services/cudyr/cudyrSummary';
+import { isCudyrPatientEligible } from '@/features/cudyr/controllers/cudyrEligibilityController';
 
-const getCudyrScores = (score: CudyrScore) => {
-  const dependency =
-    (score.changeClothes || 0) +
-    (score.mobilization || 0) +
-    (score.feeding || 0) +
-    (score.elimination || 0) +
-    (score.psychosocial || 0) +
-    (score.surveillance || 0);
-  const risk =
-    (score.vitalSigns || 0) +
-    (score.fluidBalance || 0) +
-    (score.oxygenTherapy || 0) +
-    (score.airway || 0) +
-    (score.proInterventions || 0) +
-    (score.skinCare || 0) +
-    (score.pharmacology || 0) +
-    (score.invasiveElements || 0);
-
-  return { dependency, risk };
-};
-
-const getCudyrCategory = (dependency: number, risk: number): string => {
-  if (dependency <= 0 && risk <= 0) return '-';
-  const dependencyCategory = dependency >= 13 ? '1' : dependency >= 7 ? '2' : '3';
-  const riskCategory = risk >= 19 ? 'A' : risk >= 12 ? 'B' : risk >= 6 ? 'C' : 'D';
-  return `${riskCategory}${dependencyCategory}`;
-};
+const renderPdfCudyrScore = (value?: number) =>
+  value === undefined || value === null ? '-' : value;
 
 export const addCudyrTable = (
   doc: jsPDF,
@@ -65,18 +42,19 @@ export const addCudyrTable = (
   doc.text(`Enfermeros/as (Noche): ${nursesStr}`, margin, currentY);
   currentY += 8;
 
-  const summaryCounts: Record<string, number> = {};
-  let totalCategorized = 0;
-
-  BEDS.forEach(bedDef => {
-    const patient = record.beds[bedDef.id];
-    if (!patient?.patientName) return;
-    const { dependency, risk } = getCudyrScores((patient.cudyr || {}) as CudyrScore);
-    const category = getCudyrCategory(dependency, risk);
-    if (category === '-') return;
-    summaryCounts[category] = (summaryCounts[category] || 0) + 1;
-    totalCategorized++;
+  const summary = buildDailyCudyrSummary({
+    date: record.date,
+    beds: record.beds,
+    activeExtraBeds: [],
   });
+  const summaryCounts = Object.entries(summary.counts.media).reduce(
+    (acc, [category, count]) => {
+      acc[category] = (acc[category] || 0) + count;
+      return acc;
+    },
+    { ...summary.counts.uti } as Record<string, number>
+  );
+  const totalCategorized = summary.categorizedCount;
 
   if (totalCategorized > 0) {
     doc.setFontSize(8);
@@ -98,37 +76,43 @@ export const addCudyrTable = (
 
   BEDS.forEach(bedDef => {
     const patient = record.beds[bedDef.id];
-    if (!patient?.patientName) return;
+    const appendRow = (bedName: string, rowPatient?: typeof patient) => {
+      if (!rowPatient?.patientName) return;
 
-    const score = (patient.cudyr || {}) as CudyrScore;
-    const { dependency, risk } = getCudyrScores(score);
-    const category = getCudyrCategory(dependency, risk);
-    const nameParts = patient.patientName.split(' ');
-    const shortName =
-      nameParts.length > 1 ? `${nameParts[0]} ${nameParts[1].charAt(0)}.` : nameParts[0];
+      const isEligible = isCudyrPatientEligible(record.date, rowPatient);
+      const score = isEligible ? rowPatient.cudyr : undefined;
+      const { depScore, riskScore, finalCat } = getCategorization(score);
+      const nameParts = rowPatient.patientName.split(' ');
+      const shortNameBase =
+        nameParts.length > 1 ? `${nameParts[0]} ${nameParts[1].charAt(0)}.` : nameParts[0];
+      const shortName = isEligible ? shortNameBase : `${shortNameBase} (Bloq.)`;
 
-    body.push([
-      bedDef.name,
-      shortName,
-      patient.rut || '-',
-      score.changeClothes || 0,
-      score.mobilization || 0,
-      score.feeding || 0,
-      score.elimination || 0,
-      score.psychosocial || 0,
-      score.surveillance || 0,
-      score.vitalSigns || 0,
-      score.fluidBalance || 0,
-      score.oxygenTherapy || 0,
-      score.airway || 0,
-      score.proInterventions || 0,
-      score.skinCare || 0,
-      score.pharmacology || 0,
-      score.invasiveElements || 0,
-      dependency,
-      risk,
-      category,
-    ]);
+      body.push([
+        bedName,
+        shortName,
+        rowPatient.rut || '-',
+        renderPdfCudyrScore(score?.changeClothes),
+        renderPdfCudyrScore(score?.mobilization),
+        renderPdfCudyrScore(score?.feeding),
+        renderPdfCudyrScore(score?.elimination),
+        renderPdfCudyrScore(score?.psychosocial),
+        renderPdfCudyrScore(score?.surveillance),
+        renderPdfCudyrScore(score?.vitalSigns),
+        renderPdfCudyrScore(score?.fluidBalance),
+        renderPdfCudyrScore(score?.oxygenTherapy),
+        renderPdfCudyrScore(score?.airway),
+        renderPdfCudyrScore(score?.proInterventions),
+        renderPdfCudyrScore(score?.skinCare),
+        renderPdfCudyrScore(score?.pharmacology),
+        renderPdfCudyrScore(score?.invasiveElements),
+        isEligible ? depScore : '-',
+        isEligible ? riskScore : '-',
+        finalCat || '-',
+      ]);
+    };
+
+    appendRow(bedDef.name, patient);
+    appendRow(`${bedDef.name} (CC)`, patient?.clinicalCrib);
   });
 
   autoTable(doc, {

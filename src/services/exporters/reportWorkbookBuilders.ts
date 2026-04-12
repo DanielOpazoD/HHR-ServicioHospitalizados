@@ -11,6 +11,7 @@ import { BEDS } from '@/constants/beds';
 import { createWorkbook } from './excelUtils';
 import { getCategorization } from '@/services/cudyr/CudyrScoreUtils';
 import { isCudyrPatientEligible } from '@/features/cudyr/controllers/cudyrEligibilityController';
+import type { PatientData } from '@/types/domain/patient';
 
 const createRecordRangeSheet = async (
   sheetName: string,
@@ -124,6 +125,29 @@ export const buildCudyrDailyWorkbookOrNull = async (date: string) => {
   const workbook = await createWorkbook();
   const sheet = workbook.addWorksheet('CUDYR Diario del Registro');
 
+  const appendCudyrDailyRow = (bedName: string, patient?: PatientData) => {
+    if (!patient || !isCudyrPatientEligible(record.date, patient)) {
+      return;
+    }
+
+    const { depScore, riskScore, finalCat, isCategorized } = getCategorization(patient.cudyr);
+    if (!isCategorized) {
+      return;
+    }
+
+    const total = depScore + riskScore;
+    sheet.addRow([
+      date,
+      bedName,
+      patient.patientName,
+      patient.rut,
+      total,
+      finalCat,
+      depScore,
+      riskScore,
+    ]);
+  };
+
   sheet.addRow([
     'FECHA',
     'CAMA',
@@ -137,24 +161,8 @@ export const buildCudyrDailyWorkbookOrNull = async (date: string) => {
 
   BEDS.forEach(bed => {
     const patient = record.beds[bed.id];
-    if (patient && isCudyrPatientEligible(record.date, patient)) {
-      const { depScore, riskScore, finalCat, isCategorized } = getCategorization(patient.cudyr);
-      if (!isCategorized) {
-        return;
-      }
-
-      const total = depScore + riskScore;
-      sheet.addRow([
-        date,
-        bed.name,
-        patient.patientName,
-        patient.rut,
-        total,
-        finalCat,
-        depScore,
-        riskScore,
-      ]);
-    }
+    appendCudyrDailyRow(bed.name, patient);
+    appendCudyrDailyRow(`${bed.name} (CC)`, patient?.clinicalCrib);
   });
 
   return workbook;

@@ -99,4 +99,117 @@ describe('handoffPdfCudyrSection', () => {
       expect.any(Number)
     );
   });
+
+  it('does not categorize blocked night-shift admissions and still keeps them visible in the table', () => {
+    const doc = createDocMock();
+    const autoTable = vi.fn();
+    const record = {
+      date: '2026-04-12',
+      beds: {
+        R1: {
+          patientName: 'Paciente bloqueado',
+          rut: '1-9',
+          admissionDate: '2026-04-12',
+          admissionTime: '23:30',
+          cudyr: {
+            changeClothes: 3,
+            mobilization: 3,
+            feeding: 3,
+            elimination: 3,
+            psychosocial: 3,
+            surveillance: 3,
+            vitalSigns: 3,
+            fluidBalance: 3,
+            oxygenTherapy: 3,
+            airway: 3,
+            proInterventions: 3,
+            skinCare: 3,
+            pharmacology: 3,
+            invasiveElements: 3,
+          },
+        },
+      },
+      discharges: [],
+      transfers: [],
+      cma: [],
+      lastUpdated: '2026-04-12T10:00:00.000Z',
+    } as unknown as DailyRecord;
+
+    addCudyrTable(doc, record, 10, autoTable as never);
+
+    const tableConfig = vi.mocked(autoTable).mock.calls[0]?.[1];
+    expect(doc.text).not.toHaveBeenCalledWith(
+      expect.stringContaining('A1: 1'),
+      expect.any(Number),
+      expect.any(Number)
+    );
+    expect(tableConfig?.body[0]?.[1]).toContain('(Bloq.)');
+    expect(tableConfig?.body[0]?.[17]).toBe('-');
+    expect(tableConfig?.body[0]?.[19]).toBe('-');
+  });
+
+  it('includes eligible clinical crib rows in the PDF table', () => {
+    const doc = createDocMock();
+    const autoTable = vi.fn();
+    const record = {
+      date: '2026-04-12',
+      beds: {
+        R1: {
+          patientName: 'Madre',
+          rut: '1-9',
+          admissionDate: '2026-04-11',
+          admissionTime: '18:00',
+          cudyr: {
+            changeClothes: 1,
+            mobilization: 0,
+            feeding: 0,
+            elimination: 0,
+            psychosocial: 0,
+            surveillance: 0,
+            vitalSigns: 0,
+            fluidBalance: 0,
+            oxygenTherapy: 0,
+            airway: 0,
+            proInterventions: 0,
+            skinCare: 0,
+            pharmacology: 0,
+            invasiveElements: 0,
+          },
+          clinicalCrib: {
+            patientName: 'RN',
+            rut: 'RN-1',
+            admissionDate: '2026-04-11',
+            admissionTime: '19:00',
+            cudyr: {
+              changeClothes: 0,
+              mobilization: 0,
+              feeding: 0,
+              elimination: 0,
+              psychosocial: 0,
+              surveillance: 0,
+              vitalSigns: 2,
+              fluidBalance: 0,
+              oxygenTherapy: 0,
+              airway: 0,
+              proInterventions: 0,
+              skinCare: 0,
+              pharmacology: 0,
+              invasiveElements: 0,
+            },
+          },
+        },
+      },
+      discharges: [],
+      transfers: [],
+      cma: [],
+      lastUpdated: '2026-04-12T10:00:00.000Z',
+    } as unknown as DailyRecord;
+
+    addCudyrTable(doc, record, 10, autoTable as never);
+
+    const tableConfig = vi.mocked(autoTable).mock.calls[0]?.[1];
+    expect(tableConfig?.body).toHaveLength(2);
+    expect(tableConfig?.body[1]?.[0]).toBe('R1 (CC)');
+    expect(tableConfig?.body[1]?.[1]).toContain('RN');
+  });
 });

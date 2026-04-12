@@ -16,6 +16,7 @@ Feature de categorización CUDYR para enfermería, con vista web, exportación y
 - La web muestra `Últ. mod.` usando `cudyrUpdatedAt`.
 - Si `cudyrUpdatedAt` no existe, se usa `cudyrLockedAt` como fallback operativo.
 - El PDF de entrega de turno nocturno debe usar la misma regla.
+- La tabla CUDYR incluida al final de la entrega de turno nocturna debe respetar la misma elegibilidad clínica, excluir cálculos para filas bloqueadas y reflejar también cunas clínicas elegibles.
 - El formateo horario compartido se resuelve vía `formatTimeHHMM` en `src/utils/dateUtils.ts`.
 
 ## Regla de elegibilidad nocturna

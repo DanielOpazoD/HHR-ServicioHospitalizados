@@ -1,12 +1,11 @@
 import React from 'react';
 import clsx from 'clsx';
-import type { CudyrScore } from '@/types/domain/cudyr';
 import type { DailyRecord } from '@/application/shared/dailyRecordContracts';
 import {
   CUDYR_DEPENDENCY_COLUMNS,
   CUDYR_RISK_COLUMNS,
   renderCudyrScore,
-  resolveCategorizationDisplay,
+  resolveHandoffCudyrPrintDisplay,
 } from './handoffCudyrPrintSupport';
 
 const VerticalHeader = ({ text, colorClass }: { text: string; colorClass: string }) => (
@@ -80,113 +79,134 @@ export const HandoffCudyrPrintTable: React.FC<{
           </tr>
         </thead>
         <tbody>
-          {visibleBeds.map(bed => {
+          {visibleBeds.flatMap(bed => {
             const patient = record.beds[bed.id];
-            const cudyr: Partial<CudyrScore> = patient?.cudyr || {};
-            const { finalCat, badgeColor } = resolveCategorizationDisplay(cudyr);
             const isUTI = bed.type === 'UTI';
 
-            if (!patient?.patientName) {
+            const renderRow = (
+              rowKey: string,
+              rowBedName: string,
+              rowPatient?: typeof patient,
+              isCrib = false
+            ) => {
+              const display = resolveHandoffCudyrPrintDisplay(record.date, rowPatient);
+              const cudyr = display.visibleScores || {};
+              const rowName = display.isEligible
+                ? rowPatient?.patientName
+                : `${rowPatient?.patientName || ''} (Bloq. CUDYR)`;
+
+              if (!rowPatient?.patientName) {
+                return (
+                  <tr
+                    key={rowKey}
+                    className={clsx(
+                      'h-8 border-b border-slate-300 print:h-6',
+                      isUTI ? 'bg-yellow-50 print:bg-white' : 'bg-white'
+                    )}
+                  >
+                    <td className="border-r border-slate-300 p-1 text-center font-bold text-slate-700">
+                      {rowBedName}
+                    </td>
+                    <td
+                      colSpan={16}
+                      className="border-r border-slate-300 p-1 text-center text-[10px] italic text-slate-400 print:text-[8px]"
+                    >
+                      {isCrib ? 'Cuna clínica sin paciente' : 'Cama disponible'}
+                    </td>
+                    <td className="p-1 text-center font-semibold">-</td>
+                  </tr>
+                );
+              }
+
               return (
                 <tr
-                  key={bed.id}
+                  key={rowKey}
                   className={clsx(
                     'h-8 border-b border-slate-300 print:h-6',
                     isUTI ? 'bg-yellow-50 print:bg-white' : 'bg-white'
                   )}
                 >
                   <td className="border-r border-slate-300 p-1 text-center font-bold text-slate-700">
-                    {bed.name}
+                    {rowBedName}
                   </td>
                   <td
-                    colSpan={16}
-                    className="border-r border-slate-300 p-1 text-center text-[10px] italic text-slate-400 print:text-[8px]"
+                    className={clsx(
+                      'max-w-[120px] truncate border-r border-slate-300 p-1 text-[10px] font-medium',
+                      display.isEligible ? 'text-slate-700' : 'text-amber-700'
+                    )}
+                    title={rowName}
                   >
-                    Cama disponible
+                    {rowName}
                   </td>
-                  <td className="p-1 text-center font-semibold">-</td>
+                  <td className="whitespace-nowrap border-r border-slate-300 p-1 text-center text-[10px]">
+                    {rowPatient.rut || '-'}
+                  </td>
+
+                  <td className="border-r border-slate-300 p-1 text-center">
+                    {renderCudyrScore(cudyr.changeClothes)}
+                  </td>
+                  <td className="border-r border-slate-300 p-1 text-center">
+                    {renderCudyrScore(cudyr.mobilization)}
+                  </td>
+                  <td className="border-r border-slate-300 p-1 text-center">
+                    {renderCudyrScore(cudyr.feeding)}
+                  </td>
+                  <td className="border-r border-slate-300 p-1 text-center">
+                    {renderCudyrScore(cudyr.elimination)}
+                  </td>
+                  <td className="border-r border-slate-300 p-1 text-center">
+                    {renderCudyrScore(cudyr.psychosocial)}
+                  </td>
+                  <td className="border-r border-slate-300 p-1 text-center">
+                    {renderCudyrScore(cudyr.surveillance)}
+                  </td>
+
+                  <td className="border-r border-slate-300 p-1 text-center">
+                    {renderCudyrScore(cudyr.vitalSigns)}
+                  </td>
+                  <td className="border-r border-slate-300 p-1 text-center">
+                    {renderCudyrScore(cudyr.fluidBalance)}
+                  </td>
+                  <td className="border-r border-slate-300 p-1 text-center">
+                    {renderCudyrScore(cudyr.oxygenTherapy)}
+                  </td>
+                  <td className="border-r border-slate-300 p-1 text-center">
+                    {renderCudyrScore(cudyr.airway)}
+                  </td>
+                  <td className="border-r border-slate-300 p-1 text-center">
+                    {renderCudyrScore(cudyr.proInterventions)}
+                  </td>
+                  <td className="border-r border-slate-300 p-1 text-center">
+                    {renderCudyrScore(cudyr.skinCare)}
+                  </td>
+                  <td className="border-r border-slate-300 p-1 text-center">
+                    {renderCudyrScore(cudyr.pharmacology)}
+                  </td>
+                  <td className="border-r border-slate-300 p-1 text-center">
+                    {renderCudyrScore(cudyr.invasiveElements)}
+                  </td>
+
+                  <td className="p-1 text-center print:p-0.5">
+                    <span
+                      className={clsx(
+                        'block w-full rounded px-2 py-0.5 text-xs font-bold shadow-sm print:rounded-none print:border print:bg-transparent print:px-1 print:text-[10px] print:shadow-none',
+                        display.categorization.badgeColor,
+                        'print:!border-black print:!bg-white print:!text-black'
+                      )}
+                    >
+                      {display.categorization.finalCat || '-'}
+                    </span>
+                  </td>
                 </tr>
               );
-            }
+            };
 
-            return (
-              <tr
-                key={bed.id}
-                className={clsx(
-                  'h-8 border-b border-slate-300 print:h-6',
-                  isUTI ? 'bg-yellow-50 print:bg-white' : 'bg-white'
-                )}
-              >
-                <td className="border-r border-slate-300 p-1 text-center font-bold text-slate-700">
-                  {bed.name}
-                </td>
-                <td
-                  className="max-w-[120px] truncate border-r border-slate-300 p-1 text-[10px] font-medium text-slate-700"
-                  title={patient.patientName}
-                >
-                  {patient.patientName}
-                </td>
-                <td className="whitespace-nowrap border-r border-slate-300 p-1 text-center text-[10px]">
-                  {patient.rut || '-'}
-                </td>
-
-                <td className="border-r border-slate-300 p-1 text-center">
-                  {renderCudyrScore(cudyr.changeClothes)}
-                </td>
-                <td className="border-r border-slate-300 p-1 text-center">
-                  {renderCudyrScore(cudyr.mobilization)}
-                </td>
-                <td className="border-r border-slate-300 p-1 text-center">
-                  {renderCudyrScore(cudyr.feeding)}
-                </td>
-                <td className="border-r border-slate-300 p-1 text-center">
-                  {renderCudyrScore(cudyr.elimination)}
-                </td>
-                <td className="border-r border-slate-300 p-1 text-center">
-                  {renderCudyrScore(cudyr.psychosocial)}
-                </td>
-                <td className="border-r border-slate-300 p-1 text-center">
-                  {renderCudyrScore(cudyr.surveillance)}
-                </td>
-
-                <td className="border-r border-slate-300 p-1 text-center">
-                  {renderCudyrScore(cudyr.vitalSigns)}
-                </td>
-                <td className="border-r border-slate-300 p-1 text-center">
-                  {renderCudyrScore(cudyr.fluidBalance)}
-                </td>
-                <td className="border-r border-slate-300 p-1 text-center">
-                  {renderCudyrScore(cudyr.oxygenTherapy)}
-                </td>
-                <td className="border-r border-slate-300 p-1 text-center">
-                  {renderCudyrScore(cudyr.airway)}
-                </td>
-                <td className="border-r border-slate-300 p-1 text-center">
-                  {renderCudyrScore(cudyr.proInterventions)}
-                </td>
-                <td className="border-r border-slate-300 p-1 text-center">
-                  {renderCudyrScore(cudyr.skinCare)}
-                </td>
-                <td className="border-r border-slate-300 p-1 text-center">
-                  {renderCudyrScore(cudyr.pharmacology)}
-                </td>
-                <td className="border-r border-slate-300 p-1 text-center">
-                  {renderCudyrScore(cudyr.invasiveElements)}
-                </td>
-
-                <td className="p-1 text-center print:p-0.5">
-                  <span
-                    className={clsx(
-                      'block w-full rounded px-2 py-0.5 text-xs font-bold shadow-sm print:rounded-none print:border print:bg-transparent print:px-1 print:text-[10px] print:shadow-none',
-                      badgeColor,
-                      'print:!border-black print:!bg-white print:!text-black'
-                    )}
-                  >
-                    {finalCat}
-                  </span>
-                </td>
-              </tr>
-            );
+            return [
+              renderRow(bed.id, bed.name, patient),
+              patient?.clinicalCrib
+                ? renderRow(`${bed.id}-crib`, `${bed.name} (CC)`, patient.clinicalCrib, true)
+                : null,
+            ];
           })}
         </tbody>
       </table>
