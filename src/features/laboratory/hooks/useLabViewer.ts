@@ -16,14 +16,20 @@ import type {
   AnalysisViewTab,
 } from '@/types/domain/laboratory';
 import type { ProgressState } from '../types/labViewerTypes';
-import {
-  SEARCH_STEPS,
-  ANALYSIS_STEPS,
-  STEP_INTERVAL_MS,
-  EXAM_FILTER_CATEGORIES,
-} from '../constants/labConstants';
-import { bedSortKey } from '../controllers/labFormattingController';
+import { SEARCH_STEPS, ANALYSIS_STEPS, STEP_INTERVAL_MS } from '../constants/labConstants';
 import { buildAnalysisData } from '../controllers/labAnalyticsController';
+import {
+  buildUniqueLabPatients,
+  filterLabExamsByCategory,
+  resolveInitialLabViewerRut,
+  resolveLabExamFilterCategories,
+  resolveLabExamIdsByDateRange,
+  resolveLabExamIdsByDays,
+  resolveLabViewerAnalysisErrorMessage,
+  resolveLabViewerSearchErrorMessage,
+  resolveSelectableLabExamIds,
+  resolveSelectedLabAnalysisLinks,
+} from '../controllers/labViewerController';
 import { saveLabResults } from '../services/labFirestoreService';
 
 /* ------------------------------------------------------------------ */
@@ -71,7 +77,9 @@ export const useLabViewer = (
   initialPatientRut?: string
 ): UseLabViewerReturn => {
   const queryClient = useQueryClient();
-  const [selectedRut, setSelectedRut] = useState(initialPatientRut || patients[0]?.rut || '');
+  const [selectedRut, setSelectedRut] = useState(
+    resolveInitialLabViewerRut(patients, initialPatientRut)
+  );
   const [searchEnabled, setSearchEnabled] = useState(false);
   const [pdfExam, setPdfExam] = useState<SyslabExamItem | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -101,13 +109,12 @@ export const useLabViewer = (
 
   // Sync query errors to local error state
   useEffect(() => {
-    if (examQuery.error) {
-      setError(
-        examQuery.error instanceof Error ? examQuery.error.message : 'Error al buscar exámenes.'
-      );
-    } else if (examQuery.data && !examQuery.data.success) {
-      setError(examQuery.data.error || 'No se pudieron obtener los resultados.');
-    }
+    setError(
+      resolveLabViewerSearchErrorMessage({
+        queryError: examQuery.error,
+        queryData: examQuery.data,
+      })
+    );
   }, [examQuery.error, examQuery.data]);
 
   const mountedRef = useRef(true);
@@ -120,38 +127,17 @@ export const useLabViewer = (
 
   // Deduplicate patients by RUT and sort by bed order
   const uniquePatients = useMemo(() => {
-    const seen = new Set<string>();
-    return patients
-      .filter(p => {
-        if (!p.rut || seen.has(p.rut)) return false;
-        seen.add(p.rut);
-        return true;
-      })
-      .sort((a, b) => bedSortKey(a.bedId) - bedSortKey(b.bedId));
+    return buildUniqueLabPatients(patients);
   }, [patients]);
 
   // Derive filter categories from exam list
-  const examFilterCategories = useMemo(() => {
-    const cats = new Set<string>();
-    for (const exam of examList) {
-      for (const examName of exam.exams) {
-        const upper = examName.toUpperCase();
-        const match = EXAM_FILTER_CATEGORIES.find(c => c.patterns.some(p => upper.includes(p)));
-        cats.add(match?.label || 'Otros');
-      }
-    }
-    return Array.from(cats);
-  }, [examList]);
+  const examFilterCategories = useMemo(() => resolveLabExamFilterCategories(examList), [examList]);
 
   // Filter exam list by active category
-  const filteredExamList = useMemo(() => {
-    if (!activeExamFilter) return examList;
-    const category = EXAM_FILTER_CATEGORIES.find(c => c.label === activeExamFilter);
-    if (!category) return examList;
-    return examList.filter(exam =>
-      exam.exams.some(name => category.patterns.some(p => name.toUpperCase().includes(p)))
-    );
-  }, [examList, activeExamFilter]);
+  const filteredExamList = useMemo(
+    () => filterLabExamsByCategory(examList, activeExamFilter),
+    [examList, activeExamFilter]
+  );
 
   const setExamFilter = useCallback((cat: string | null) => setActiveExamFilter(cat), []);
 
@@ -223,7 +209,7 @@ export const useLabViewer = (
   const closePdf = useCallback(() => setPdfExam(null), []);
   const reset = useCallback(() => {
     resetState();
-    setSelectedRut(initialPatientRut || patients[0]?.rut || '');
+    setSelectedRut(resolveInitialLabViewerRut(patients, initialPatientRut));
   }, [initialPatientRut, patients, resetState]);
 
   // Selection
@@ -240,7 +226,7 @@ export const useLabViewer = (
   }, []);
 
   const selectAllExams = useCallback(() => {
-    const allIds = examList.filter(e => e.link).map(e => e.id);
+    const allIds = resolveSelectableLabExamIds(examList);
     setSelectedExamIds(prev => (allIds.every(id => prev.has(id)) ? new Set() : new Set(allIds)));
   }, [examList]);
 
@@ -248,41 +234,21 @@ export const useLabViewer = (
 
   const selectByDays = useCallback(
     (days: number) => {
-      const cutoff = new Date();
-      cutoff.setDate(cutoff.getDate() - days);
-      cutoff.setHours(0, 0, 0, 0);
-      const ids = examList
-        .filter(e => {
-          if (!e.link) return false;
-          const m = e.date.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-          if (!m) return false;
-          return new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1])) >= cutoff;
-        })
-        .map(e => e.id);
-      setSelectedExamIds(new Set(ids));
+      setSelectedExamIds(new Set(resolveLabExamIdsByDays({ examList, days })));
     },
     [examList]
   );
 
   const selectByDateRange = useCallback(
     (from: Date, to: Date) => {
-      const ids = examList
-        .filter(e => {
-          if (!e.link) return false;
-          const m = e.date.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-          if (!m) return false;
-          const examDate = new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1]));
-          return examDate >= from && examDate <= to;
-        })
-        .map(e => e.id);
-      setSelectedExamIds(new Set(ids));
+      setSelectedExamIds(new Set(resolveLabExamIdsByDateRange({ examList, from, to })));
     },
     [examList]
   );
 
   // Analysis
   const analyzeSelected = useCallback(async () => {
-    const links = examList.filter(e => selectedExamIds.has(e.id) && e.link).map(e => e.link!);
+    const links = resolveSelectedLabAnalysisLinks({ examList, selectedExamIds });
     if (links.length === 0) return;
     setIsAnalyzing(true);
     setAnalysisData(null);
@@ -301,11 +267,7 @@ export const useLabViewer = (
       }
     } catch (err) {
       if (!mountedRef.current) return;
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Error al analizar exámenes. Verifica que el servidor Syslab esté activo.'
-      );
+      setError(resolveLabViewerAnalysisErrorMessage(err));
     } finally {
       if (mountedRef.current) setIsAnalyzing(false);
     }

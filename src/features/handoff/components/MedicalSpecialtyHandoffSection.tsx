@@ -9,21 +9,21 @@ import type {
 } from '@/domain/handoff/recordContracts';
 import { DebouncedTextarea } from '@/components/ui/DebouncedTextarea';
 import {
+  buildMedicalSpecialtyTabState,
   buildMedicalSpecialtyActor,
   buildPrintableMedicalSpecialtyBlocks,
-  canConfirmMedicalSpecialtyNoChanges,
   DEFAULT_NO_CHANGES_COMMENT,
   getMedicalSpecialtyLabel,
   getMedicalSpecialtyNote,
   hasMedicalSpecialtyStructuredData,
   MEDICAL_SPECIALTY_ORDER,
   resolveActiveMedicalSpecialty,
+  resolveMedicalSpecialtyContinuityEditorState,
   resolveMedicalSpecialtyContinuityDraft,
   resolveMedicalSpecialtyDailyStatus,
 } from '@/features/handoff/controllers/medicalSpecialtyHandoffController';
 import {
   formatHandoffDateTime,
-  getMedicalSpecialtyContinuityHint,
   getMedicalSpecialtyStatusLabel,
 } from '@/shared/handoff/handoffPresentation';
 
@@ -86,7 +86,6 @@ export const MedicalSpecialtyHandoffSection: React.FC<MedicalSpecialtyHandoffSec
   });
 
   const actor = useMemo(() => buildMedicalSpecialtyActor(user, role), [role, user]);
-  const canConfirmToday = canConfirmMedicalSpecialtyNoChanges(role) && !readOnly;
 
   const activeNote = getMedicalSpecialtyNote(record, resolvedActiveSpecialty);
   const activeStatus = resolveMedicalSpecialtyDailyStatus(activeNote, record.date);
@@ -102,6 +101,11 @@ export const MedicalSpecialtyHandoffSection: React.FC<MedicalSpecialtyHandoffSec
   });
   const hasSpecialtyData = hasMedicalSpecialtyStructuredData(record);
   const printableBlocks = buildPrintableMedicalSpecialtyBlocks(record);
+  const continuityEditorState = resolveMedicalSpecialtyContinuityEditorState({
+    role,
+    readOnly,
+    activeStatus,
+  });
 
   return (
     <section className="space-y-3">
@@ -120,13 +124,16 @@ export const MedicalSpecialtyHandoffSection: React.FC<MedicalSpecialtyHandoffSec
         <div className="px-3 pt-3">
           <div className="flex flex-wrap gap-2">
             {MEDICAL_SPECIALTY_ORDER.map(specialty => {
-              const specialtyStatus = resolveMedicalSpecialtyDailyStatus(
-                getMedicalSpecialtyNote(record, specialty),
-                record.date
-              );
-              const specialtyMeta = STATUS_STYLES[specialtyStatus];
+              const specialtyTabState = buildMedicalSpecialtyTabState({
+                specialty,
+                record,
+                dateKey: record.date,
+                editableSpecialties,
+                readOnly,
+                activeSpecialty: resolvedActiveSpecialty,
+              });
+              const specialtyMeta = STATUS_STYLES[specialtyTabState.status];
               const SpecialtyStatusIcon = specialtyMeta.icon;
-              const isEditable = editableSpecialties.includes(specialty) && !readOnly;
 
               return (
                 <button
@@ -135,16 +142,18 @@ export const MedicalSpecialtyHandoffSection: React.FC<MedicalSpecialtyHandoffSec
                   onClick={() => setActiveSpecialty(specialty)}
                   className={clsx(
                     'rounded-lg border px-3 py-2 text-left transition-colors min-w-[160px]',
-                    resolvedActiveSpecialty === specialty
+                    specialtyTabState.isActive
                       ? 'border-sky-400 bg-sky-50'
                       : 'border-slate-200 bg-white hover:bg-slate-50'
                   )}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-semibold text-sm text-slate-800">
-                      {getMedicalSpecialtyLabel(specialty)}
+                      {specialtyTabState.label}
                     </span>
-                    {!isEditable && <LockKeyhole size={12} className="text-slate-400" />}
+                    {!specialtyTabState.isEditable && (
+                      <LockKeyhole size={12} className="text-slate-400" />
+                    )}
                   </div>
                   <div
                     className={clsx(
@@ -239,26 +248,17 @@ export const MedicalSpecialtyHandoffSection: React.FC<MedicalSpecialtyHandoffSec
                   [resolvedActiveSpecialty]: event.target.value,
                 }))
               }
-              disabled={!canConfirmToday || activeStatus === 'updated_by_specialist'}
+              disabled={continuityEditorState.isCommentDisabled}
               className={clsx(
                 'mt-3 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400',
-                (!canConfirmToday || activeStatus === 'updated_by_specialist') &&
-                  'bg-slate-100 text-slate-500'
+                continuityEditorState.isCommentDisabled && 'bg-slate-100 text-slate-500'
               )}
               rows={3}
             />
 
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-              <div className="text-xs text-slate-500">
-                {canConfirmToday
-                  ? activeStatus === 'pending'
-                    ? 'Usa este comentario cuando la condición permanezca sin cambios respecto a la última nota del especialista.'
-                    : getMedicalSpecialtyContinuityHint(activeStatus)
-                  : readOnly
-                    ? 'Solo lectura para este registro.'
-                    : 'Solo un usuario autorizado puede confirmar continuidad.'}
-              </div>
-              {canConfirmToday && (
+              <div className="text-xs text-slate-500">{continuityEditorState.helperText}</div>
+              {continuityEditorState.canConfirmToday && (
                 <button
                   type="button"
                   onClick={() =>
@@ -269,10 +269,10 @@ export const MedicalSpecialtyHandoffSection: React.FC<MedicalSpecialtyHandoffSec
                       dateKey: record.date,
                     })
                   }
-                  disabled={activeStatus === 'updated_by_specialist'}
+                  disabled={continuityEditorState.isCommentDisabled}
                   className={clsx(
                     'rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wide transition-colors',
-                    activeStatus === 'updated_by_specialist'
+                    continuityEditorState.isCommentDisabled
                       ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
                       : 'bg-amber-500 text-white hover:bg-amber-600'
                   )}

@@ -13,6 +13,8 @@ import type { AuditAction, AuditLogEntry } from '@/types/audit';
 import type { MedicalHandoffAuditActor, PatientData } from '@/hooks/contracts/patientHookContracts';
 import { canEditMedicalHandoffForDate } from '@/shared/access/operationalAccessPolicy';
 import {
+  createMedicalFieldsPersister,
+  isSuccessfulMedicalHandoffOutcome,
   resolveMedicalHandoffMutationContext,
   resolveRefreshableMedicalEntry,
   shouldLogMedicalHandoffOutcome,
@@ -86,6 +88,12 @@ export const useMedicalHandoffHandlers = ({
     []
   );
 
+  const resolveFieldsPersister = useCallback(
+    (bedId: string, isNested: boolean) =>
+      createMedicalFieldsPersister(persistMedicalFields, bedId, isNested),
+    [persistMedicalFields]
+  );
+
   const handleMedicalPrimaryNoteChange = useCallback(
     async (bedId: string, value: string, isNested: boolean = false) => {
       const context = resolveMutationContext(bedId, isNested);
@@ -95,12 +103,11 @@ export const useMedicalHandoffHandlers = ({
       const outcome = await executeUpdateMedicalPrimaryNote({
         medicalAuditActor,
         patient,
-        persistMedicalFields: (fields: MedicalPatientFields) =>
-          persistMedicalFields(bedId, fields, isNested),
+        persistMedicalFields: resolveFieldsPersister(bedId, isNested),
         recordDate,
         value,
       });
-      if (outcome.status !== 'success' || !outcome.data) {
+      if (!isSuccessfulMedicalHandoffOutcome(outcome)) {
         logUnexpectedOutcome('handleMedicalPrimaryNoteChange', outcome);
         return;
       }
@@ -144,12 +151,11 @@ export const useMedicalHandoffHandlers = ({
         entryId,
         medicalAuditActor,
         patient,
-        persistMedicalFields: (fields: MedicalPatientFields) =>
-          persistMedicalFields(bedId, fields, isNested),
+        persistMedicalFields: resolveFieldsPersister(bedId, isNested),
         recordDate,
         value,
       });
-      if (outcome.status !== 'success' || !outcome.data) {
+      if (!isSuccessfulMedicalHandoffOutcome(outcome)) {
         logUnexpectedOutcome('handleMedicalEntryNoteChange', outcome);
         return;
       }
@@ -193,15 +199,14 @@ export const useMedicalHandoffHandlers = ({
       const outcome = await executeUpdateMedicalEntrySpecialty({
         entryId,
         patient,
-        persistMedicalFields: (fields: MedicalPatientFields) =>
-          persistMedicalFields(bedId, fields, isNested),
+        persistMedicalFields: resolveFieldsPersister(bedId, isNested),
         specialty,
       });
-      if (outcome.status !== 'success' || !outcome.data) {
+      if (!isSuccessfulMedicalHandoffOutcome(outcome)) {
         logUnexpectedOutcome('handleMedicalEntrySpecialtyChange', outcome);
       }
     },
-    [logUnexpectedOutcome, persistMedicalFields, resolveMutationContext]
+    [logUnexpectedOutcome, resolveFieldsPersister, resolveMutationContext]
   );
 
   const handleMedicalEntryAdd = useCallback(
@@ -212,14 +217,13 @@ export const useMedicalHandoffHandlers = ({
       const { patient } = context;
       const outcome = await executeAddMedicalEntry({
         patient,
-        persistMedicalFields: (fields: MedicalPatientFields) =>
-          persistMedicalFields(bedId, fields, isNested),
+        persistMedicalFields: resolveFieldsPersister(bedId, isNested),
       });
-      if (outcome.status !== 'success' || !outcome.data) {
+      if (!isSuccessfulMedicalHandoffOutcome(outcome)) {
         logUnexpectedOutcome('handleMedicalEntryAdd', outcome);
       }
     },
-    [logUnexpectedOutcome, persistMedicalFields, resolveMutationContext]
+    [logUnexpectedOutcome, resolveFieldsPersister, resolveMutationContext]
   );
 
   const handleMedicalPrimaryEntryCreate = useCallback(
@@ -230,14 +234,13 @@ export const useMedicalHandoffHandlers = ({
       const { patient } = context;
       const outcome = await executeCreateMedicalPrimaryEntry({
         patient,
-        persistMedicalFields: (fields: MedicalPatientFields) =>
-          persistMedicalFields(bedId, fields, isNested),
+        persistMedicalFields: resolveFieldsPersister(bedId, isNested),
       });
-      if (outcome.status !== 'success' || !outcome.data) {
+      if (!isSuccessfulMedicalHandoffOutcome(outcome)) {
         logUnexpectedOutcome('handleMedicalPrimaryEntryCreate', outcome);
       }
     },
-    [logUnexpectedOutcome, persistMedicalFields, resolveMutationContext]
+    [logUnexpectedOutcome, resolveFieldsPersister, resolveMutationContext]
   );
 
   const handleMedicalEntryDelete = useCallback(
@@ -249,10 +252,9 @@ export const useMedicalHandoffHandlers = ({
       const outcome = await executeDeleteMedicalEntry({
         entryId,
         patient,
-        persistMedicalFields: (fields: MedicalPatientFields) =>
-          persistMedicalFields(bedId, fields, isNested),
+        persistMedicalFields: resolveFieldsPersister(bedId, isNested),
       });
-      if (outcome.status !== 'success' || !outcome.data) {
+      if (!isSuccessfulMedicalHandoffOutcome(outcome)) {
         logUnexpectedOutcome('handleMedicalEntryDelete', outcome);
         return;
       }
@@ -278,7 +280,7 @@ export const useMedicalHandoffHandlers = ({
         10000
       );
     },
-    [logDebouncedEvent, logUnexpectedOutcome, persistMedicalFields, resolveMutationContext]
+    [logDebouncedEvent, logUnexpectedOutcome, resolveFieldsPersister, resolveMutationContext]
   );
 
   const handleMedicalRefreshAsCurrent = useCallback(
@@ -295,11 +297,10 @@ export const useMedicalHandoffHandlers = ({
           entryId,
           medicalAuditActor,
           patient,
-          persistMedicalFields: (fields: MedicalPatientFields) =>
-            persistMedicalFields(bedId, fields, isNested),
+          persistMedicalFields: resolveFieldsPersister(bedId, isNested),
           recordDate,
         });
-        if (outcome.status !== 'success' || !outcome.data) {
+        if (!isSuccessfulMedicalHandoffOutcome(outcome)) {
           logUnexpectedOutcome('handleMedicalRefreshAsCurrent', outcome);
           return;
         }
@@ -330,7 +331,7 @@ export const useMedicalHandoffHandlers = ({
       logDebouncedEvent,
       logUnexpectedOutcome,
       medicalAuditActor,
-      persistMedicalFields,
+      resolveFieldsPersister,
       resolveMutationContext,
     ]
   );

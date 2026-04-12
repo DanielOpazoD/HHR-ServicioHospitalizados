@@ -1,7 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { PatientData } from '@/types/domain/patient';
 import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
 import {
+  createMedicalFieldsPersister,
+  isSuccessfulMedicalHandoffOutcome,
   resolveMedicalHandoffMutationContext,
   resolveRefreshableMedicalEntry,
   shouldLogMedicalHandoffOutcome,
@@ -117,5 +119,30 @@ describe('medicalHandoffHandlersController', () => {
       specialty: Specialty.MEDICINA,
       note: 'Paciente estable',
     });
+  });
+
+  it('wraps the bed and nested scope in a reusable medical fields persister', async () => {
+    const persistMedicalFields = vi.fn().mockResolvedValue(undefined);
+    const persister = createMedicalFieldsPersister(persistMedicalFields, '101', true);
+
+    await persister({ medicalHandoffNote: 'texto' });
+
+    expect(persistMedicalFields).toHaveBeenCalledWith('101', { medicalHandoffNote: 'texto' }, true);
+  });
+
+  it('recognizes only success outcomes with concrete data as successful medical outcomes', () => {
+    expect(
+      isSuccessfulMedicalHandoffOutcome({
+        status: 'success',
+        data: { entry: { id: 'entry-1' } },
+      } as never)
+    ).toBe(true);
+
+    expect(
+      isSuccessfulMedicalHandoffOutcome({
+        status: 'success',
+        data: null,
+      } as never)
+    ).toBe(false);
   });
 });

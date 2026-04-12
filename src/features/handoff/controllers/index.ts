@@ -13,6 +13,7 @@ export {
 } from './handoffViewController';
 export {
   buildMedicalSpecialtyActor,
+  buildMedicalSpecialtyTabState,
   buildMedicalHandoffSummary,
   buildPrintableMedicalSpecialtyBlocks,
   canConfirmMedicalSpecialtyNoChanges,
@@ -22,6 +23,7 @@ export {
   hasMedicalSpecialtyStructuredData,
   MEDICAL_SPECIALTY_ORDER,
   resolveActiveMedicalSpecialty,
+  resolveMedicalSpecialtyContinuityEditorState,
   resolveEditableMedicalSpecialties,
   resolveMedicalSpecialtyContinuityDraft,
   resolveMedicalSpecialtyDailyStatus,
@@ -29,9 +31,13 @@ export {
 export type { MedicalSpecialtyDailyStatus } from './medicalSpecialtyHandoffController';
 export { resolveMedicalHandoffCapabilities } from './medicalHandoffAccessController';
 export {
+  buildPendingMedicalEntryDraft,
   canToggleClinicalEvents,
+  pruneResolvedPendingMedicalEntryDrafts,
+  resolveDisplayMedicalObservationEntries,
   resolveHandoffStatusVariant,
   resolveMedicalObservationEntries,
+  shouldShowMedicalPrimaryNoteFallback,
   shouldRenderClinicalEventsPanel,
 } from './handoffRowCellsController';
 export {

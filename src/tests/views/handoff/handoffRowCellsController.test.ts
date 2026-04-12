@@ -2,9 +2,13 @@ import { describe, expect, it } from 'vitest';
 import type { PatientData } from '@/domain/handoff/patientContracts';
 import { PatientStatus, Specialty } from '@/domain/handoff/patientContracts';
 import {
+  buildPendingMedicalEntryDraft,
   canToggleClinicalEvents,
+  pruneResolvedPendingMedicalEntryDrafts,
+  resolveDisplayMedicalObservationEntries,
   resolveHandoffStatusVariant,
   resolveMedicalObservationEntries,
+  shouldShowMedicalPrimaryNoteFallback,
   shouldRenderClinicalEventsPanel,
 } from '@/features/handoff/controllers/handoffRowCellsController';
 
@@ -97,5 +101,83 @@ describe('handoffRowCellsController', () => {
         }),
       ])
     );
+  });
+
+  it('keeps only pending drafts that are still active and unresolved', () => {
+    expect(
+      pruneResolvedPendingMedicalEntryDrafts({
+        entries: [{ id: 'entry-1', specialty: Specialty.MEDICINA, note: 'Persistida' }],
+        pendingEntryDrafts: {
+          'entry-1': {
+            entry: { id: 'entry-1', specialty: Specialty.MEDICINA, note: 'Persistida' },
+            expiresAt: 1000,
+          },
+          'entry-2': {
+            entry: { id: 'entry-2', specialty: Specialty.MEDICINA, note: 'Borrador' },
+            expiresAt: 2000,
+          },
+        },
+        now: 1500,
+      })
+    ).toEqual({
+      'entry-2': {
+        entry: { id: 'entry-2', specialty: Specialty.MEDICINA, note: 'Borrador' },
+        expiresAt: 2000,
+      },
+    });
+  });
+
+  it('projects persisted entries with the latest active pending note', () => {
+    expect(
+      resolveDisplayMedicalObservationEntries({
+        entries: [{ id: 'entry-1', specialty: Specialty.MEDICINA, note: 'Persistida' }],
+        isFieldReadOnly: false,
+        pendingEntryDrafts: {
+          'entry-1': {
+            entry: { id: 'entry-1', specialty: Specialty.MEDICINA, note: 'Borrador' },
+            expiresAt: 2000,
+          },
+        },
+        now: 1500,
+      })
+    ).toEqual([{ id: 'entry-1', specialty: Specialty.MEDICINA, note: 'Borrador' }]);
+  });
+
+  it('shows the primary note fallback only when there are no entries and no create action', () => {
+    expect(
+      shouldShowMedicalPrimaryNoteFallback({
+        entriesCount: 0,
+        isFieldReadOnly: false,
+        hasCreatePrimaryEntryAction: false,
+      })
+    ).toBe(true);
+    expect(
+      shouldShowMedicalPrimaryNoteFallback({
+        entriesCount: 1,
+        isFieldReadOnly: false,
+        hasCreatePrimaryEntryAction: false,
+      })
+    ).toBe(false);
+  });
+
+  it('builds a pending draft entry from patient/default specialty data', () => {
+    expect(
+      buildPendingMedicalEntryDraft({
+        entryId: 'entry-new',
+        value: 'Nota temporal',
+        entries: [],
+        pendingEntryDrafts: {},
+        patient: buildPatient(),
+        specialtyOptions: ['medicinaInterna'],
+        expiresAt: 3000,
+      })
+    ).toEqual({
+      expiresAt: 3000,
+      entry: expect.objectContaining({
+        id: 'entry-new',
+        specialty: Specialty.MEDICINA,
+        note: 'Nota temporal',
+      }),
+    });
   });
 });

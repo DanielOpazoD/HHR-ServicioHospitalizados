@@ -9,6 +9,7 @@ import {
   canEditMedicalHandoffForDate,
   canManageAllMedicalSpecialties,
 } from '@/shared/access/operationalAccessPolicy';
+import { getMedicalSpecialtyContinuityHint } from '@/shared/handoff/handoffPresentation';
 
 export const MEDICAL_SPECIALTY_ORDER: readonly MedicalSpecialty[] = [
   'cirugia',
@@ -35,6 +36,14 @@ export type MedicalSpecialtyDailyStatus =
   | 'updated_by_specialist'
   | 'confirmed_no_changes'
   | 'pending';
+
+export interface MedicalSpecialtyTabState {
+  specialty: MedicalSpecialty;
+  label: string;
+  status: MedicalSpecialtyDailyStatus;
+  isEditable: boolean;
+  isActive: boolean;
+}
 
 export const getMedicalSpecialtyLabel = (specialty: MedicalSpecialty): string =>
   MEDICAL_SPECIALTY_LABELS[specialty];
@@ -125,6 +134,56 @@ export const resolveMedicalSpecialtyContinuityDraft = ({
   dateKey: string;
 }): string =>
   drafts[specialty] || note?.dailyContinuity?.[dateKey]?.comment || DEFAULT_NO_CHANGES_COMMENT;
+
+export const buildMedicalSpecialtyTabState = ({
+  specialty,
+  record,
+  dateKey,
+  editableSpecialties,
+  readOnly,
+  activeSpecialty,
+}: {
+  specialty: MedicalSpecialty;
+  record: Pick<DailyRecord, 'medicalHandoffBySpecialty'>;
+  dateKey: string;
+  editableSpecialties: MedicalSpecialty[];
+  readOnly: boolean;
+  activeSpecialty: MedicalSpecialty;
+}): MedicalSpecialtyTabState => ({
+  specialty,
+  label: getMedicalSpecialtyLabel(specialty),
+  status: resolveMedicalSpecialtyDailyStatus(getMedicalSpecialtyNote(record, specialty), dateKey),
+  isEditable: editableSpecialties.includes(specialty) && !readOnly,
+  isActive: activeSpecialty === specialty,
+});
+
+export const resolveMedicalSpecialtyContinuityEditorState = ({
+  role,
+  readOnly,
+  activeStatus,
+}: {
+  role?: string;
+  readOnly: boolean;
+  activeStatus: MedicalSpecialtyDailyStatus;
+}): {
+  canConfirmToday: boolean;
+  isCommentDisabled: boolean;
+  helperText: string;
+} => {
+  const canConfirmToday = canConfirmMedicalSpecialtyNoChanges(role) && !readOnly;
+
+  return {
+    canConfirmToday,
+    isCommentDisabled: !canConfirmToday || activeStatus === 'updated_by_specialist',
+    helperText: canConfirmToday
+      ? activeStatus === 'pending'
+        ? 'Usa este comentario cuando la condición permanezca sin cambios respecto a la última nota del especialista.'
+        : getMedicalSpecialtyContinuityHint(activeStatus)
+      : readOnly
+        ? 'Solo lectura para este registro.'
+        : 'Solo un usuario autorizado puede confirmar continuidad.',
+  };
+};
 
 export const hasMedicalSpecialtyStructuredData = (
   record: Pick<DailyRecord, 'medicalHandoffBySpecialty'>

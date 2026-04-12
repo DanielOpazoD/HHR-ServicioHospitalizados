@@ -13,6 +13,11 @@ import {
   HandoffMedicalObservationsCell,
   HandoffObservationsCell,
 } from './HandoffRowCells';
+import {
+  hasActiveMedicalMutationPaths,
+  resolveHandoffRowReadOnly,
+  resolveMedicalEntryNoteChangeHandler,
+} from '@/features/handoff/controllers/handoffRowController';
 
 // ============================================================================
 // HandoffRow Component
@@ -70,16 +75,11 @@ export const HandoffRow: React.FC<HandoffRowProps> = ({
   }, [forcedExpand]);
 
   const hasEvents = (patient.clinicalEvents?.length || 0) > 0;
-  const hasMedicalMutationPaths = Boolean(
-    isMedical &&
-    (onNoteChange ||
-      medicalActions?.onCreatePrimaryEntry ||
-      medicalActions?.onEntryNoteChange ||
-      medicalActions?.onEntrySpecialtyChange ||
-      medicalActions?.onEntryAdd ||
-      medicalActions?.onEntryDelete ||
-      medicalActions?.onRefreshAsCurrent)
-  );
+  const hasMedicalMutationPaths = hasActiveMedicalMutationPaths({
+    isMedical,
+    onNoteChange,
+    medicalActions,
+  });
 
   // If bed is blocked (and not a sub-row), show blocked status
   if (!isSubRow && patient.isBlocked) {
@@ -106,8 +106,12 @@ export const HandoffRow: React.FC<HandoffRowProps> = ({
 
   const daysHospitalized = calculateHospitalizedDays(patient.admissionDate, reportDate);
   const noteValue = (patient[noteField] as string) || '';
-  const isFieldReadOnly =
-    readOnly || (!stabilityRules.canEditField(noteField as string) && !hasMedicalMutationPaths);
+  const isFieldReadOnly = resolveHandoffRowReadOnly({
+    readOnly,
+    noteField,
+    canEditField: stabilityRules.canEditField,
+    hasMedicalMutationPaths,
+  });
 
   return (
     <tr
@@ -144,12 +148,9 @@ export const HandoffRow: React.FC<HandoffRowProps> = ({
           primaryNoteValue={noteValue}
           onPrimaryNoteChange={onNoteChange}
           onCreatePrimaryEntry={medicalActions?.onCreatePrimaryEntry}
-          onEntryNoteChange={
-            medicalActions?.onEntryNoteChange ??
-            (() => {
-              return undefined;
-            })
-          }
+          onEntryNoteChange={resolveMedicalEntryNoteChangeHandler(
+            medicalActions?.onEntryNoteChange
+          )}
           onEntrySpecialtyChange={medicalActions?.onEntrySpecialtyChange}
           onAddEntry={medicalActions?.onEntryAdd}
           onDeleteEntry={medicalActions?.onEntryDelete}

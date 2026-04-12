@@ -52,6 +52,20 @@ export const resolveMedicalHandoffMutationContext = ({
 export const shouldLogMedicalHandoffOutcome = <T>(outcome: ApplicationOutcome<T>): boolean =>
   !(outcome.reason && SILENT_MEDICAL_PATIENT_OUTCOME_REASONS.has(outcome.reason));
 
+export const isSuccessfulMedicalHandoffOutcome = <T>(
+  outcome: ApplicationOutcome<T>
+): outcome is ApplicationOutcome<NonNullable<T>> & { status: 'success'; data: NonNullable<T> } =>
+  outcome.status === 'success' && Boolean(outcome.data);
+
+export const createMedicalFieldsPersister =
+  <TFields>(
+    persistMedicalFields: (bedId: string, fields: TFields, isNested: boolean) => Promise<void>,
+    bedId: string,
+    isNested: boolean
+  ) =>
+  (fields: TFields) =>
+    persistMedicalFields(bedId, fields, isNested);
+
 export const resolveRefreshableMedicalEntry = (
   patient: PatientData | null | undefined,
   entryId: string

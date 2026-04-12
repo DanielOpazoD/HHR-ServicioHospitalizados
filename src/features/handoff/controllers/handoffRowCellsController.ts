@@ -1,6 +1,16 @@
 import { resolveMedicalObservationEntries } from '@/domain/handoff/patientView';
-import { PatientStatus } from '@/domain/handoff/patientContracts';
+import { createMedicalHandoffEntry } from '@/domain/handoff/patientEntries';
+import {
+  PatientStatus,
+  type MedicalHandoffEntry,
+  type PatientData,
+} from '@/domain/handoff/patientContracts';
 import type { MedicalBadgeVariant } from '@/shared/ui/medicalBadgeContracts';
+
+export interface PendingMedicalEntryDraft {
+  entry: MedicalHandoffEntry;
+  expiresAt: number;
+}
 
 export const resolveHandoffStatusVariant = (
   status: PatientStatus | string | undefined
@@ -28,5 +38,111 @@ export const shouldRenderClinicalEventsPanel = ({
   canUpdate: boolean;
   canDelete: boolean;
 }): boolean => showEvents && canAdd && canUpdate && canDelete;
+
+export const pruneResolvedPendingMedicalEntryDrafts = ({
+  entries,
+  pendingEntryDrafts,
+  now,
+}: {
+  entries: MedicalHandoffEntry[];
+  pendingEntryDrafts: Record<string, PendingMedicalEntryDraft>;
+  now: number;
+}): Record<string, PendingMedicalEntryDraft> => {
+  const next: Record<string, PendingMedicalEntryDraft> = {};
+
+  for (const [entryId, pendingDraft] of Object.entries(pendingEntryDrafts)) {
+    const matchingEntry = entries.find(entry => entry.id === entryId);
+    const isResolved = matchingEntry?.note === pendingDraft.entry.note;
+    const isExpired = pendingDraft.expiresAt <= now;
+    if (!isResolved && !isExpired) {
+      next[entryId] = pendingDraft;
+    }
+  }
+
+  return next;
+};
+
+export const resolveDisplayMedicalObservationEntries = ({
+  entries,
+  isFieldReadOnly,
+  pendingEntryDrafts,
+  now,
+}: {
+  entries: MedicalHandoffEntry[];
+  isFieldReadOnly: boolean;
+  pendingEntryDrafts: Record<string, PendingMedicalEntryDraft>;
+  now: number;
+}): MedicalHandoffEntry[] => {
+  const activePendingDrafts = Object.values(pendingEntryDrafts).filter(
+    pendingDraft => pendingDraft.expiresAt > now
+  );
+
+  if (entries.length === 0) {
+    return !isFieldReadOnly && activePendingDrafts.length > 0
+      ? activePendingDrafts.map(pendingDraft => pendingDraft.entry)
+      : entries;
+  }
+
+  const pendingById = new Map(
+    activePendingDrafts.map(pendingDraft => [pendingDraft.entry.id, pendingDraft.entry])
+  );
+
+  return entries.map(entry => {
+    const pendingDraft = pendingById.get(entry.id);
+    if (!pendingDraft || pendingDraft.note === entry.note) {
+      return entry;
+    }
+
+    return {
+      ...entry,
+      note: pendingDraft.note,
+    };
+  });
+};
+
+export const shouldShowMedicalPrimaryNoteFallback = ({
+  entriesCount,
+  isFieldReadOnly,
+  hasCreatePrimaryEntryAction,
+}: {
+  entriesCount: number;
+  isFieldReadOnly: boolean;
+  hasCreatePrimaryEntryAction: boolean;
+}): boolean => entriesCount === 0 && !isFieldReadOnly && !hasCreatePrimaryEntryAction;
+
+export const buildPendingMedicalEntryDraft = ({
+  entryId,
+  value,
+  entries,
+  pendingEntryDrafts,
+  patient,
+  specialtyOptions,
+  expiresAt,
+}: {
+  entryId: string;
+  value: string;
+  entries: MedicalHandoffEntry[];
+  pendingEntryDrafts: Record<string, PendingMedicalEntryDraft>;
+  patient: PatientData;
+  specialtyOptions: string[];
+  expiresAt: number;
+}): PendingMedicalEntryDraft => {
+  const baseEntry =
+    entries.find(entry => entry.id === entryId) ||
+    pendingEntryDrafts[entryId]?.entry ||
+    createMedicalHandoffEntry(patient.specialty || specialtyOptions[0] || '', {
+      id: entryId,
+    });
+
+  return {
+    expiresAt,
+    entry: {
+      ...baseEntry,
+      id: entryId,
+      specialty: baseEntry.specialty || patient.specialty || specialtyOptions[0] || '',
+      note: value,
+    },
+  };
+};
 
 export { resolveMedicalObservationEntries };

@@ -8,14 +8,16 @@ import { calculateDeviceDays } from '@/components/device-selector/DeviceDateConf
 import { DebouncedTextarea } from '@/components/ui/DebouncedTextarea';
 import { MedicalHandoffObservationEntry } from './MedicalHandoffObservationEntry';
 import {
+  buildPendingMedicalEntryDraft,
   canToggleClinicalEvents,
+  pruneResolvedPendingMedicalEntryDrafts,
+  type PendingMedicalEntryDraft,
+  resolveDisplayMedicalObservationEntries,
   resolveHandoffStatusVariant,
   shouldRenderClinicalEventsPanel,
+  shouldShowMedicalPrimaryNoteFallback,
 } from '@/features/handoff/controllers/handoffRowCellsController';
-import {
-  createMedicalHandoffEntry,
-  getMedicalHandoffSpecialtyOptions,
-} from '@/domain/handoff/patientEntries';
+import { getMedicalHandoffSpecialtyOptions } from '@/domain/handoff/patientEntries';
 import { resolveMedicalObservationEntries } from '@/domain/handoff/patientView';
 import { MedicalBadge } from '@/components/ui/base/MedicalBadge';
 import type { MedicalBadgeVariant } from '@/shared/ui/medicalBadgeContracts';
@@ -257,11 +259,6 @@ interface HandoffMedicalObservationsCellProps {
 const specialtyOptions = getMedicalHandoffSpecialtyOptions();
 const MEDICAL_DRAFT_CONTINUITY_MS = 2500;
 
-interface PendingMedicalEntryDraft {
-  entry: MedicalHandoffEntry;
-  expiresAt: number;
-}
-
 export const HandoffMedicalObservationsCell: React.FC<HandoffMedicalObservationsCellProps> = ({
   patient,
   reportDate,
@@ -301,26 +298,20 @@ export const HandoffMedicalObservationsCell: React.FC<HandoffMedicalObservations
 
   const registerPendingEntryDraft = React.useCallback(
     (entryId: string, value: string) => {
-      const baseEntry =
-        entries.find(entry => entry.id === entryId) ||
-        pendingEntryDrafts[entryId]?.entry ||
-        createMedicalHandoffEntry(patient.specialty || specialtyOptions[0] || '', {
-          id: entryId,
-        });
       const expiresAt = Date.now() + MEDICAL_DRAFT_CONTINUITY_MS;
-      const nextEntry: MedicalHandoffEntry = {
-        ...baseEntry,
-        id: entryId,
-        specialty: baseEntry.specialty || patient.specialty || specialtyOptions[0] || '',
-        note: value,
-      };
+      const nextDraft = buildPendingMedicalEntryDraft({
+        entryId,
+        value,
+        entries,
+        pendingEntryDrafts,
+        patient,
+        specialtyOptions,
+        expiresAt,
+      });
 
       setPendingEntryDrafts(current => ({
         ...current,
-        [entryId]: {
-          entry: nextEntry,
-          expiresAt,
-        },
+        [entryId]: nextDraft,
       }));
       prunePendingEntryDraft(entryId, expiresAt);
     },
@@ -334,53 +325,31 @@ export const HandoffMedicalObservationsCell: React.FC<HandoffMedicalObservations
 
     const now = Date.now();
     setPendingEntryDrafts(current => {
-      let changed = false;
-      const next: Record<string, PendingMedicalEntryDraft> = {};
-
-      for (const [entryId, pendingDraft] of Object.entries(current)) {
-        const matchingEntry = entries.find(entry => entry.id === entryId);
-        const isResolved = matchingEntry?.note === pendingDraft.entry.note;
-        const isExpired = pendingDraft.expiresAt <= now;
-        if (isResolved || isExpired) {
-          changed = true;
-          continue;
-        }
-        next[entryId] = pendingDraft;
-      }
-
-      return changed ? next : current;
+      const next = pruneResolvedPendingMedicalEntryDrafts({
+        entries,
+        pendingEntryDrafts: current,
+        now,
+      });
+      return Object.keys(next).length === Object.keys(current).length ? current : next;
     });
   }, [entries, pendingEntryDrafts]);
 
-  const displayEntries = React.useMemo(() => {
-    const activePendingDrafts = Object.values(pendingEntryDrafts).filter(
-      pendingDraft => pendingDraft.expiresAt > Date.now()
-    );
+  const displayEntries = React.useMemo(
+    () =>
+      resolveDisplayMedicalObservationEntries({
+        entries,
+        isFieldReadOnly,
+        pendingEntryDrafts,
+        now: Date.now(),
+      }),
+    [entries, isFieldReadOnly, pendingEntryDrafts]
+  );
 
-    if (entries.length === 0) {
-      return !isFieldReadOnly && activePendingDrafts.length > 0
-        ? activePendingDrafts.map(pendingDraft => pendingDraft.entry)
-        : entries;
-    }
-
-    const pendingById = new Map(
-      activePendingDrafts.map(pendingDraft => [pendingDraft.entry.id, pendingDraft.entry])
-    );
-
-    return entries.map(entry => {
-      const pendingDraft = pendingById.get(entry.id);
-      if (!pendingDraft || pendingDraft.note === entry.note) {
-        return entry;
-      }
-
-      return {
-        ...entry,
-        note: pendingDraft.note,
-      };
-    });
-  }, [entries, isFieldReadOnly, pendingEntryDrafts]);
-
-  const showPrimaryNoteFallback = entries.length === 0 && !isFieldReadOnly && !onCreatePrimaryEntry;
+  const showPrimaryNoteFallback = shouldShowMedicalPrimaryNoteFallback({
+    entriesCount: entries.length,
+    isFieldReadOnly,
+    hasCreatePrimaryEntryAction: Boolean(onCreatePrimaryEntry),
+  });
 
   return (
     <td className="p-1.5 w-full min-w-[280px] align-top print:w-auto print:min-w-0 print:text-[8px] print:p-0.5">

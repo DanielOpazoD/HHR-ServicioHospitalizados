@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import {
   buildMedicalSpecialtyActor,
+  buildMedicalSpecialtyTabState,
   buildMedicalHandoffSummary,
   buildPrintableMedicalSpecialtyBlocks,
   hasMedicalSpecialtyStructuredData,
   resolveActiveMedicalSpecialty,
+  resolveMedicalSpecialtyContinuityEditorState,
   resolveMedicalSpecialtyContinuityDraft,
   resolveMedicalSpecialtyDailyStatus,
 } from '@/features/handoff/controllers';
@@ -148,5 +150,51 @@ describe('medicalSpecialtyHandoffController', () => {
           'Condición actual sin cambios respecto a última entrega de especialista.',
       },
     ]);
+  });
+
+  it('builds tab state and continuity editor state from the same specialty policy', () => {
+    expect(
+      buildMedicalSpecialtyTabState({
+        specialty: 'cirugia',
+        record: {
+          medicalHandoffBySpecialty: {
+            cirugia: {
+              note: 'Paciente estable',
+              createdAt: '2026-03-02T08:00:00.000Z',
+              updatedAt: '2026-03-03T08:00:00.000Z',
+              author: {
+                uid: '1',
+                displayName: 'Dr. Cirugía',
+                email: 'cirugia@hospitalhangaroa.cl',
+              },
+              version: 1,
+            },
+          },
+        } as never,
+        dateKey: '2026-03-03',
+        editableSpecialties: ['cirugia'],
+        readOnly: false,
+        activeSpecialty: 'cirugia',
+      })
+    ).toEqual({
+      specialty: 'cirugia',
+      label: 'Cirugía',
+      status: 'updated_by_specialist',
+      isEditable: true,
+      isActive: true,
+    });
+
+    expect(
+      resolveMedicalSpecialtyContinuityEditorState({
+        role: 'nurse_hospital',
+        readOnly: false,
+        activeStatus: 'pending',
+      })
+    ).toEqual({
+      canConfirmToday: true,
+      isCommentDisabled: false,
+      helperText:
+        'Usa este comentario cuando la condición permanezca sin cambios respecto a la última nota del especialista.',
+    });
   });
 });
