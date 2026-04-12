@@ -1,9 +1,19 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  buildTransferCancelModalBindings,
+  buildTransferConfirmModalBindings,
+  buildTransferDocumentPackageModalBindings,
+  buildTransferFinalizedSectionModel,
   buildTransferManagementPeriodModel,
+  buildTransferMonthButtonModels,
+  buildTransferProcessingOverlayModel,
   buildTransferQuestionnairePatientData,
+  buildTransferQuestionnaireModalBindings,
+  buildTransferStatusModalBindings,
+  buildTransferTableActions,
   buildTransferTableBindings,
+  buildTransferYearButtonModels,
 } from '@/features/transfers/components/controllers/transferManagementViewController';
 import type { TransferFormData, TransferRequest, TransferStatus } from '@/types/transfers';
 
@@ -134,6 +144,170 @@ describe('transferManagementViewController', () => {
       bedType: 'Básica',
       isUPC: false,
       originHospital: 'Hospital Hanga Roa',
+    });
+  });
+
+  it('builds period selector and finalized section models for the view shell', () => {
+    expect(
+      buildTransferYearButtonModels({
+        availableYears: [2026, 2025],
+        selectedYear: 2026,
+      })
+    ).toEqual([
+      { key: 2026, value: 2026, label: '2026', isSelected: true },
+      { key: 2025, value: 2025, label: '2025', isSelected: false },
+    ]);
+
+    expect(
+      buildTransferMonthButtonModels({
+        monthLabels: ['Ene', 'Feb', 'Mar'],
+        selectedMonth: 2,
+      })
+    ).toEqual([
+      { key: 'Ene', value: 1, label: 'Ene', isSelected: false },
+      { key: 'Feb', value: 2, label: 'Feb', isSelected: true },
+      { key: 'Mar', value: 3, label: 'Mar', isSelected: false },
+    ]);
+
+    expect(
+      buildTransferFinalizedSectionModel({
+        finalizedTransfersCount: 4,
+        showFinalizedTransfers: true,
+      })
+    ).toEqual({
+      countLabel: '4',
+      shouldShowContent: true,
+    });
+  });
+
+  it('builds reusable table actions and modal bindings for transfer orchestration', () => {
+    const transfer = buildTransfer({
+      id: 'TR-MODAL',
+      bedId: 'BED_H4',
+      questionnaireResponses: [{ questionId: 'q1', answer: 'si' }] as never,
+      patientSnapshot: {
+        name: 'Paciente Demo',
+        rut: '12.345.678-9',
+        age: 34,
+        sex: 'M',
+        diagnosis: 'Neumonía',
+        admissionDate: '2026-03-02',
+      },
+    });
+    const actions = {
+      setTransferStatus: vi.fn(),
+      updateTransfer: vi.fn(),
+      undoTransfer: vi.fn(),
+      archiveTransfer: vi.fn(),
+      deleteHistoryEntry: vi.fn(),
+      deleteTransfer: vi.fn(),
+      deleteFinalizedTransfer: vi.fn(),
+    };
+
+    expect(buildTransferTableActions(actions)).toEqual(actions);
+
+    expect(
+      buildTransferStatusModalBindings({
+        selectedTransfer: transfer,
+        onClose: vi.fn(),
+        onConfirm: vi.fn(),
+      })
+    ).toEqual(
+      expect.objectContaining({
+        transfer,
+      })
+    );
+
+    expect(
+      buildTransferConfirmModalBindings({
+        selectedTransfer: transfer,
+        onClose: vi.fn(),
+        onConfirm: vi.fn(),
+      })
+    ).toEqual(
+      expect.objectContaining({
+        transfer,
+      })
+    );
+
+    expect(
+      buildTransferCancelModalBindings({
+        selectedTransfer: transfer,
+        onClose: vi.fn(),
+        onConfirm: vi.fn(),
+      })
+    ).toEqual(
+      expect.objectContaining({
+        transfer,
+      })
+    );
+
+    expect(
+      buildTransferQuestionnaireModalBindings({
+        isOpen: true,
+        selectedTransfer: transfer,
+        onClose: vi.fn(),
+        onComplete: vi.fn(),
+      })
+    ).toEqual(
+      expect.objectContaining({
+        isOpen: true,
+        initialResponses: transfer.questionnaireResponses,
+        patientData: expect.objectContaining({
+          patientName: 'Paciente Demo',
+        }),
+      })
+    );
+
+    expect(
+      buildTransferDocumentPackageModalBindings({
+        isOpen: true,
+        patientDataForDocs: {
+          patientName: 'Paciente Docs',
+          rut: '12.345.678-9',
+          bedName: 'H4',
+          bedType: 'Básica',
+          isUPC: false,
+          originHospital: 'Hospital Hanga Roa',
+        },
+        generatedDocs: [
+          {
+            templateId: 'epicrisis',
+            fileName: 'epicrisis.docx',
+            mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            blob: new Blob(['demo']),
+            generatedAt: '2026-03-10T12:00:00.000Z',
+          },
+        ],
+        onClose: vi.fn(),
+      })
+    ).toEqual({
+      isOpen: true,
+      patientData: {
+        patientName: 'Paciente Docs',
+        rut: '12.345.678-9',
+        bedName: 'H4',
+        bedType: 'Básica',
+        isUPC: false,
+        originHospital: 'Hospital Hanga Roa',
+      },
+      documents: [
+        {
+          templateId: 'epicrisis',
+          fileName: 'epicrisis.docx',
+          mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          blob: expect.any(Blob),
+          generatedAt: '2026-03-10T12:00:00.000Z',
+        },
+      ],
+      onClose: expect.any(Function),
+    });
+  });
+
+  it('builds form and processing overlay bindings with stable copy', () => {
+    expect(buildTransferProcessingOverlayModel()).toEqual({
+      title: 'Preparando documentos',
+      description: 'Esto puede tomar unos segundos',
     });
   });
 });

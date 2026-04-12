@@ -55,6 +55,10 @@ export const useClinicalDocumentRichTextEditorController = ({
   const isApplyingHistoryRef = useRef(false);
   const isActiveRef = useRef(false);
   const lastLocalNormalizedValueRef = useRef('');
+  /** Timer for debouncing history snapshots while typing. */
+  const historyDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Pending HTML to push into history when the debounce fires. */
+  const pendingHistoryHtmlRef = useRef<string | null>(null);
   const onActivateRef = useRef(onActivate);
   const onDeactivateRef = useRef(onDeactivate);
   const applyEditorCommandRef = useRef<
@@ -118,10 +122,49 @@ export const useClinicalDocumentRichTextEditorController = ({
     [updateHistoryState]
   );
 
+  /** Delay (ms) before a typing pause commits a history snapshot. */
+  const HISTORY_DEBOUNCE_MS = 500;
+
+  /** Flush any pending debounced snapshot immediately (e.g. before blur). */
+  const flushPendingHistorySnapshot = useCallback(() => {
+    if (historyDebounceTimerRef.current) {
+      clearTimeout(historyDebounceTimerRef.current);
+      historyDebounceTimerRef.current = null;
+    }
+    const pending = pendingHistoryHtmlRef.current;
+    if (pending !== null) {
+      pendingHistoryHtmlRef.current = null;
+      pushHistorySnapshot(pending);
+    }
+  }, [pushHistorySnapshot]);
+
+  /**
+   * Schedules a history snapshot after a typing pause.
+   * Consecutive keystrokes reset the timer so the user's typing
+   * is grouped into a single undoable action.
+   */
+  const debouncedPushHistorySnapshot = useCallback(
+    (html: string) => {
+      pendingHistoryHtmlRef.current = html;
+      if (historyDebounceTimerRef.current) {
+        clearTimeout(historyDebounceTimerRef.current);
+      }
+      historyDebounceTimerRef.current = setTimeout(() => {
+        historyDebounceTimerRef.current = null;
+        pendingHistoryHtmlRef.current = null;
+        pushHistorySnapshot(html);
+      }, HISTORY_DEBOUNCE_MS);
+    },
+    [pushHistorySnapshot]
+  );
+
   const applyEditorCommand = useCallback(
     (command: ClinicalDocumentRichTextEditorCommand, value?: string) => {
       const editor = editorRef.current;
       if (!editor || disabled) return;
+
+      // Commit any pending typing before undo/redo or formatting
+      flushPendingHistorySnapshot();
 
       if (command === 'undo') {
         if (historyIndexRef.current <= 0) return;
@@ -154,7 +197,14 @@ export const useClinicalDocumentRichTextEditorController = ({
       pushHistorySnapshot(html);
       onChange(html);
     },
-    [disabled, editorRef, onChange, pushHistorySnapshot, updateHistoryState]
+    [
+      disabled,
+      editorRef,
+      flushPendingHistorySnapshot,
+      onChange,
+      pushHistorySnapshot,
+      updateHistoryState,
+    ]
   );
 
   useEffect(() => {
@@ -214,18 +264,19 @@ export const useClinicalDocumentRichTextEditorController = ({
 
     const html = normalizeClinicalDocumentContentForStorage(editor.innerHTML);
     lastLocalNormalizedValueRef.current = html;
-    pushHistorySnapshot(html);
+    debouncedPushHistorySnapshot(html);
     onChange(html);
-  }, [editorRef, onChange, onSlashLab, pushHistorySnapshot]);
+  }, [editorRef, onChange, onSlashLab, debouncedPushHistorySnapshot]);
 
   const handleActivateInteraction = useCallback(() => {
     notifyActive();
   }, [notifyActive]);
 
   const handleBlur = useCallback(() => {
+    flushPendingHistorySnapshot();
     isActiveRef.current = false;
     onDeactivateRef.current?.(sectionId);
-  }, [sectionId]);
+  }, [flushPendingHistorySnapshot, sectionId]);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {

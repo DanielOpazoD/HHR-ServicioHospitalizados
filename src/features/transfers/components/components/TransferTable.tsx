@@ -9,6 +9,12 @@ import { TransferTableCloseActionsMenu } from './TransferTableCloseActionsMenu';
 import { TransferTableRow } from './TransferTableRow';
 import type { TransferTableMode } from '../controllers/transferTableController';
 import { getTransferRowActionState } from '../controllers/transferTableController';
+import {
+  buildTransferDeleteDialogModel,
+  resolveTransferActionsMenuState,
+  shouldCloseTransferActionsMenu,
+  type TransferActionsMenuState,
+} from '../controllers/transferTableViewController';
 import { useAuth } from '@/context/AuthContext';
 
 interface TransferTableProps {
@@ -27,12 +33,6 @@ interface TransferTableProps {
   onDelete: (transfer: TransferRequest) => Promise<void>;
   onDeleteHistoryEntry: (transfer: TransferRequest, historyIndex: number) => Promise<void>;
   onUpdateTransfer: (transferId: string, data: Partial<TransferFormData>) => Promise<void>;
-}
-
-interface TransferActionsMenuState {
-  transfer: TransferRequest;
-  top: number;
-  left: number;
 }
 
 const TABLE_COLUMNS = [
@@ -68,7 +68,7 @@ export const TransferTable: React.FC<TransferTableProps> = ({
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null;
-      if (!target?.closest('[data-transfer-actions-root="true"]')) {
+      if (shouldCloseTransferActionsMenu(target)) {
         setOpenActionsMenu(null);
       }
     };
@@ -94,22 +94,13 @@ export const TransferTable: React.FC<TransferTableProps> = ({
     event: React.MouseEvent<HTMLButtonElement>,
     transfer: TransferRequest
   ) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const menuWidth = 280;
-    const targetLeft = Math.max(
-      12,
-      Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 12)
-    );
-    const isSame = openActionsMenu?.transfer.id === transfer.id;
-
     setOpenActionsMenu(
-      isSame
-        ? null
-        : {
-            transfer,
-            top: rect.bottom + 8,
-            left: targetLeft,
-          }
+      resolveTransferActionsMenuState({
+        currentMenu: openActionsMenu,
+        transfer,
+        anchorRect: event.currentTarget.getBoundingClientRect(),
+        viewportWidth: window.innerWidth,
+      })
     );
   };
 
@@ -119,6 +110,9 @@ export const TransferTable: React.FC<TransferTableProps> = ({
 
   const openMenuActionState = openActionsMenu
     ? getTransferRowActionState(openActionsMenu.transfer, mode, true, role)
+    : null;
+  const deleteDialogModel = pendingDeleteTransfer
+    ? buildTransferDeleteDialogModel(pendingDeleteTransfer)
     : null;
 
   return (
@@ -171,13 +165,11 @@ export const TransferTable: React.FC<TransferTableProps> = ({
       {pendingDeleteTransfer && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-900/45 p-4">
           <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-2xl">
-            <h3 className="text-base font-bold text-slate-900">Eliminar solicitud</h3>
+            <h3 className="text-base font-bold text-slate-900">{deleteDialogModel?.title}</h3>
             <p className="mt-2 text-sm text-slate-600">
               ¿Eliminar definitivamente la solicitud de{' '}
-              <span className="font-semibold text-slate-800">
-                {pendingDeleteTransfer.patientSnapshot.name}
-              </span>
-              ? Esta acción no se puede deshacer.
+              <span className="font-semibold text-slate-800">{deleteDialogModel?.patientName}</span>
+              ? {deleteDialogModel?.description}
             </p>
             <div className="mt-5 flex items-center justify-end gap-2">
               <button

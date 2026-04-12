@@ -258,4 +258,68 @@ describe('useTransferViewStates document package', () => {
     expect(mockUpdateTransfer).not.toHaveBeenCalled();
     expect(result.current.modals.package).toBe(true);
   });
+
+  it('should clear generated package state when closing the package modal', async () => {
+    const generatedDocs = [
+      {
+        templateId: 'tapa-traslado',
+        fileName: 'traslado.docx',
+        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        blob: new Blob(['demo']),
+        generatedAt: '2026-03-01T00:00:00.000Z',
+      },
+    ];
+
+    vi.mocked(generateTransferDocuments).mockResolvedValue(generatedDocs);
+
+    const responses: QuestionnaireResponse = {
+      responses: [],
+      completedAt: '2026-02-20T00:00:00.000Z',
+      completedBy: 'test-user',
+    };
+
+    const mockTransfer = {
+      id: 'test-1',
+      bedId: 'R1',
+      patientSnapshot: {
+        name: 'Paciente',
+        rut: '1-9',
+        age: '20',
+        diagnosis: 'Dx',
+        admissionDate: '2024-12-27',
+      },
+      destinationHospital: 'Hospital Salvador',
+      customFields: {},
+      questionnaireResponses: responses,
+    } as unknown as TransferRequest;
+
+    const { result } = renderHook(() =>
+      useTransferViewStates(
+        {
+          date: '2024-12-28',
+          beds: { R1: { birthDate: '2000-01-01' } },
+        } as unknown as DailyRecord,
+        mockUpdateTransfer,
+        mockCreateTransfer,
+        mockAdvanceStatus,
+        mockMarkAsTransferred,
+        mockCancelTransfer
+      )
+    );
+
+    await act(async () => {
+      await result.current.handlers.handleViewDocs(mockTransfer);
+    });
+
+    expect(result.current.generatedDocs).toHaveLength(1);
+    expect(result.current.patientDataForDocs).not.toBeNull();
+
+    act(() => {
+      result.current.handlers.handleClosePackageModal();
+    });
+
+    expect(result.current.generatedDocs).toEqual([]);
+    expect(result.current.patientDataForDocs).toBeNull();
+    expect(result.current.modals.package).toBe(false);
+  });
 });

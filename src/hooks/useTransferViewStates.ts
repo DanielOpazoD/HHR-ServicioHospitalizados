@@ -5,7 +5,6 @@ import {
   TransferPatientData,
   GeneratedDocument,
 } from '@/types/transferDocuments';
-import { getHospitalConfigByDestinationName } from '@/constants/hospitalConfigs';
 import type { DailyRecord } from '@/application/shared/dailyRecordCoreContracts';
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
 import { createScopedLogger } from '@/services/utils/loggerScope';
@@ -13,6 +12,12 @@ import {
   prepareTransferDocumentPackage,
   type TransferDocumentPackageCacheEntry,
 } from '@/hooks/controllers/transferDocumentPackageController';
+import {
+  MISSING_TRANSFER_FORMS_MESSAGE,
+  resolveTransferDestinationHospitalId,
+  resolveTransferDocumentPackageMessage,
+  withSelectedTransfer,
+} from '@/hooks/controllers/transferViewStatesController';
 
 const transferViewStatesLogger = createScopedLogger('TransferViewStates');
 
@@ -40,6 +45,11 @@ export const useTransferViewStates = (
   const [patientDataForDocs, setPatientDataForDocs] = useState<TransferPatientData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const clearGeneratedDocumentPackage = useCallback(() => {
+    setGeneratedDocs([]);
+    setPatientDataForDocs(null);
+  }, []);
+
   const generateDocumentPackage = useCallback(
     async (
       transfer: TransferRequest,
@@ -60,19 +70,17 @@ export const useTransferViewStates = (
           persistResponses: options?.persistResponses,
         });
 
-        if (result.kind === 'empty') {
-          const message =
-            'No fue posible preparar los documentos en este momento. Verifique las plantillas o intente nuevamente en unos segundos.';
+        const message = resolveTransferDocumentPackageMessage(result);
+        if (message) {
+          if (result.kind === 'error') {
+            transferViewStatesLogger.error('Error generating transfer documents', result.error);
+          }
           setError(message);
           defaultBrowserWindowRuntime.alert(message);
           return;
         }
 
-        if (result.kind === 'error') {
-          const message = 'Error al generar documentos. Por favor intente nuevamente.';
-          transferViewStatesLogger.error('Error generating transfer documents', result.error);
-          setError(message);
-          defaultBrowserWindowRuntime.alert(message);
+        if (result.kind !== 'success' && result.kind !== 'cached') {
           return;
         }
 
@@ -121,11 +129,8 @@ export const useTransferViewStates = (
     setSelectedTransfer(null);
   }, []);
 
-  const handleConfirmStatusChange = async (_notes?: string) => {
-    if (selectedTransfer) {
-      await advanceStatus(selectedTransfer);
-    }
-  };
+  const handleConfirmStatusChange = async (_notes?: string) =>
+    withSelectedTransfer(selectedTransfer, transfer => advanceStatus(transfer));
 
   const handleMarkTransferred = useCallback((transfer: TransferRequest) => {
     setSelectedTransfer(transfer);
@@ -137,11 +142,8 @@ export const useTransferViewStates = (
     setSelectedTransfer(null);
   }, []);
 
-  const handleConfirmTransfer = async (transferMethod: string) => {
-    if (selectedTransfer) {
-      await markAsTransferred(selectedTransfer, transferMethod);
-    }
-  };
+  const handleConfirmTransfer = async (transferMethod: string) =>
+    withSelectedTransfer(selectedTransfer, transfer => markAsTransferred(transfer, transferMethod));
 
   const handleCancel = useCallback((transfer: TransferRequest) => {
     setSelectedTransfer(transfer);
@@ -153,24 +155,24 @@ export const useTransferViewStates = (
     setSelectedTransfer(null);
   }, []);
 
-  const handleConfirmCancel = async (reason: string) => {
-    if (selectedTransfer) {
-      await cancelTransfer(selectedTransfer, reason);
-    }
-  };
+  const handleConfirmCancel = async (reason: string) =>
+    withSelectedTransfer(selectedTransfer, transfer => cancelTransfer(transfer, reason));
 
-  const handleGenerateDocs = useCallback((transfer: TransferRequest) => {
-    const hospitalConfig = getHospitalConfigByDestinationName(transfer.destinationHospital);
-    if (!hospitalConfig) {
-      defaultBrowserWindowRuntime.alert(
-        'Este hospital todavía no tiene formularios de traslado configurados.'
-      );
-      return;
-    }
-    setSelectedTransfer(transfer);
-    setSelectedHospitalId(hospitalConfig.id);
-    setIsQuestionnaireOpen(true);
-  }, []);
+  const handleGenerateDocs = useCallback(
+    (transfer: TransferRequest) => {
+      const hospitalId = resolveTransferDestinationHospitalId(transfer.destinationHospital);
+      if (!hospitalId) {
+        defaultBrowserWindowRuntime.alert(MISSING_TRANSFER_FORMS_MESSAGE);
+        return;
+      }
+
+      clearGeneratedDocumentPackage();
+      setSelectedTransfer(transfer);
+      setSelectedHospitalId(hospitalId);
+      setIsQuestionnaireOpen(true);
+    },
+    [clearGeneratedDocumentPackage]
+  );
 
   const handleCloseQuestionnaire = useCallback(() => {
     setIsQuestionnaireOpen(false);
@@ -190,27 +192,26 @@ export const useTransferViewStates = (
   const handleViewDocs = useCallback(
     async (transfer: TransferRequest) => {
       if (!transfer.questionnaireResponses) return;
-      const hospitalConfig = getHospitalConfigByDestinationName(transfer.destinationHospital);
-      if (!hospitalConfig) {
-        defaultBrowserWindowRuntime.alert(
-          'Este hospital todavía no tiene formularios de traslado configurados.'
-        );
+      const hospitalId = resolveTransferDestinationHospitalId(transfer.destinationHospital);
+      if (!hospitalId) {
+        defaultBrowserWindowRuntime.alert(MISSING_TRANSFER_FORMS_MESSAGE);
         return;
       }
+      clearGeneratedDocumentPackage();
       setSelectedTransfer(transfer);
-      setSelectedHospitalId(hospitalConfig.id);
-      await generateDocumentPackage(transfer, hospitalConfig.id, transfer.questionnaireResponses, {
+      setSelectedHospitalId(hospitalId);
+      await generateDocumentPackage(transfer, hospitalId, transfer.questionnaireResponses, {
         persistResponses: false,
       });
     },
-    [generateDocumentPackage]
+    [clearGeneratedDocumentPackage, generateDocumentPackage]
   );
 
   const handleClosePackageModal = useCallback(() => {
     setIsPackageModalOpen(false);
     setSelectedTransfer(null);
-    setGeneratedDocs([]);
-  }, []);
+    clearGeneratedDocumentPackage();
+  }, [clearGeneratedDocumentPackage]);
 
   const clearError = useCallback(() => setError(null), []);
 

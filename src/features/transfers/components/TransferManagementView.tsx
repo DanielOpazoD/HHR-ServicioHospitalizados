@@ -12,8 +12,19 @@ import { ConfirmTransferModal } from './components/ConfirmTransferModal';
 import { CancelTransferModal } from './components/CancelTransferModal';
 import { useTransferManagementViewRuntime } from '../hooks/useTransferManagementViewRuntime';
 import {
+  buildTransferCancelModalBindings,
+  buildTransferConfirmModalBindings,
+  buildTransferDocumentPackageModalBindings,
+  buildTransferFinalizedSectionModel,
+  buildTransferFormModalBindings,
+  buildTransferMonthButtonModels,
+  buildTransferProcessingOverlayModel,
+  buildTransferStatusModalBindings,
+  buildTransferTableActions,
   buildTransferQuestionnairePatientData,
+  buildTransferQuestionnaireModalBindings,
   buildTransferTableBindings,
+  buildTransferYearButtonModels,
 } from './controllers/transferManagementViewController';
 
 const TransferQuestionnaireModal = React.lazy(() =>
@@ -57,7 +68,7 @@ export const TransferManagementView: React.FC = () => {
   const { modals, selectedTransfer, isGenerating, generatedDocs, patientDataForDocs, handlers } =
     viewStates;
   const { availableYears, filteredActiveCount, activeTransfers, finalizedTransfers } = periodModel;
-  const tableActions = {
+  const tableActions = buildTransferTableActions({
     setTransferStatus,
     updateTransfer,
     undoTransfer,
@@ -65,7 +76,7 @@ export const TransferManagementView: React.FC = () => {
     deleteHistoryEntry,
     deleteTransfer,
     deleteFinalizedTransfer,
-  };
+  });
   const activeTableBindings = buildTransferTableBindings({
     transfers: activeTransfers,
     handlers,
@@ -77,6 +88,19 @@ export const TransferManagementView: React.FC = () => {
     handlers,
     actions: tableActions,
   });
+  const yearButtonModels = buildTransferYearButtonModels({
+    availableYears,
+    selectedYear,
+  });
+  const monthButtonModels = buildTransferMonthButtonModels({
+    monthLabels,
+    selectedMonth,
+  });
+  const finalizedSectionModel = buildTransferFinalizedSectionModel({
+    finalizedTransfersCount: finalizedTransfers.length,
+    showFinalizedTransfers,
+  });
+  const processingOverlayModel = buildTransferProcessingOverlayModel();
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 animate-in fade-in duration-500">
@@ -114,17 +138,17 @@ export const TransferManagementView: React.FC = () => {
         <div className="flex items-center gap-4">
           {/* Year pills */}
           <div className="flex items-center gap-1">
-            {availableYears.map(year => (
+            {yearButtonModels.map(yearButton => (
               <button
-                key={year}
-                onClick={() => setSelectedYear(year)}
+                key={yearButton.key}
+                onClick={() => setSelectedYear(yearButton.value)}
                 className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all ${
-                  selectedYear === year
+                  yearButton.isSelected
                     ? 'bg-sky-600 text-white shadow-sm'
                     : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
                 }`}
               >
-                {year}
+                {yearButton.label}
               </button>
             ))}
           </div>
@@ -133,22 +157,19 @@ export const TransferManagementView: React.FC = () => {
 
           {/* Month pills — horizontal */}
           <div className="flex flex-1 items-center gap-1 overflow-x-auto">
-            {monthLabels.map((label, index) => {
-              const monthValue = index + 1;
-              return (
-                <button
-                  key={label}
-                  onClick={() => setSelectedMonth(monthValue)}
-                  className={`shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all ${
-                    selectedMonth === monthValue
-                      ? 'bg-slate-700 text-white shadow-sm'
-                      : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'
-                  }`}
-                >
-                  {label}
-                </button>
-              );
-            })}
+            {monthButtonModels.map(monthButton => (
+              <button
+                key={monthButton.key}
+                onClick={() => setSelectedMonth(monthButton.value)}
+                className={`shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all ${
+                  monthButton.isSelected
+                    ? 'bg-slate-700 text-white shadow-sm'
+                    : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'
+                }`}
+              >
+                {monthButton.label}
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -180,7 +201,7 @@ export const TransferManagementView: React.FC = () => {
           </div>
           <div className="flex items-center gap-2">
             <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-semibold text-slate-500">
-              {finalizedTransfers.length}
+              {finalizedSectionModel.countLabel}
             </span>
             {showFinalizedTransfers ? (
               <ChevronDown size={15} className="text-slate-400" />
@@ -190,7 +211,7 @@ export const TransferManagementView: React.FC = () => {
           </div>
         </button>
 
-        {showFinalizedTransfers && (
+        {finalizedSectionModel.shouldShowContent && (
           <div className="border-t border-slate-100">
             {isLoading ? (
               <div className="py-8 text-center text-[13px] text-slate-400">
@@ -206,46 +227,55 @@ export const TransferManagementView: React.FC = () => {
       {/* Modals Orchestration */}
       {modals.form && (
         <TransferFormModal
-          transfer={selectedTransfer}
+          {...buildTransferFormModalBindings({
+            selectedTransfer,
+            onClose: handlers.handleCloseFormModal,
+            onSave: handlers.handleSave,
+          })}
           patients={getHospitalizedPatients()}
-          onClose={handlers.handleCloseFormModal}
-          onSave={handlers.handleSave}
         />
       )}
 
       {modals.status && selectedTransfer && (
         <StatusChangeModal
-          transfer={selectedTransfer}
-          onClose={handlers.handleCloseStatusModal}
-          onConfirm={handlers.handleConfirmStatusChange}
+          {...buildTransferStatusModalBindings({
+            selectedTransfer,
+            onClose: handlers.handleCloseStatusModal,
+            onConfirm: handlers.handleConfirmStatusChange,
+          })}
         />
       )}
 
       {modals.transfer && selectedTransfer && (
         <ConfirmTransferModal
-          transfer={selectedTransfer}
-          onClose={handlers.handleCloseTransferModal}
-          onConfirm={handlers.handleConfirmTransfer}
+          {...buildTransferConfirmModalBindings({
+            selectedTransfer,
+            onClose: handlers.handleCloseTransferModal,
+            onConfirm: handlers.handleConfirmTransfer,
+          })}
         />
       )}
 
       {modals.cancel && selectedTransfer && (
         <CancelTransferModal
-          transfer={selectedTransfer}
-          onClose={handlers.handleCloseCancelModal}
-          onConfirm={handlers.handleConfirmCancel}
+          {...buildTransferCancelModalBindings({
+            selectedTransfer,
+            onClose: handlers.handleCloseCancelModal,
+            onConfirm: handlers.handleConfirmCancel,
+          })}
         />
       )}
 
       {modals.questionnaire && selectedTransfer && (
         <React.Suspense fallback={null}>
           <TransferQuestionnaireModal
-            isOpen={modals.questionnaire}
+            {...buildTransferQuestionnaireModalBindings({
+              isOpen: modals.questionnaire,
+              selectedTransfer,
+              onClose: handlers.handleCloseQuestionnaire,
+              onComplete: handlers.handleQuestionnaireComplete,
+            })}
             hospital={selectedHospital!}
-            patientData={buildTransferQuestionnairePatientData(selectedTransfer)}
-            onClose={handlers.handleCloseQuestionnaire}
-            initialResponses={selectedTransfer.questionnaireResponses}
-            onComplete={handlers.handleQuestionnaireComplete}
           />
         </React.Suspense>
       )}
@@ -253,11 +283,13 @@ export const TransferManagementView: React.FC = () => {
       {modals.package && selectedTransfer && patientDataForDocs && (
         <React.Suspense fallback={null}>
           <TransferDocumentPackageModal
-            isOpen={modals.package}
+            {...buildTransferDocumentPackageModalBindings({
+              isOpen: modals.package,
+              patientDataForDocs,
+              generatedDocs,
+              onClose: handlers.handleClosePackageModal,
+            })}
             hospital={selectedHospital!}
-            patientData={patientDataForDocs}
-            documents={generatedDocs}
-            onClose={handlers.handleClosePackageModal}
           />
         </React.Suspense>
       )}
@@ -269,9 +301,11 @@ export const TransferManagementView: React.FC = () => {
             <div className="h-10 w-10 rounded-full border-[3px] border-sky-500 border-t-transparent animate-spin" />
             <div className="text-center">
               <p className="font-bold text-slate-800 text-[15px] tracking-tight">
-                Preparando documentos
+                {processingOverlayModel.title}
               </p>
-              <p className="text-[12px] text-slate-400 mt-0.5">Esto puede tomar unos segundos</p>
+              <p className="text-[12px] text-slate-400 mt-0.5">
+                {processingOverlayModel.description}
+              </p>
             </div>
           </div>
         </div>
