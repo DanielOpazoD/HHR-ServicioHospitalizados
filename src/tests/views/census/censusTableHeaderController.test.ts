@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildCensusHeaderCellModels } from '@/features/census/controllers/censusTableHeaderController';
+import {
+  buildCensusHeaderCellModels,
+  resolveVisibleHeaderColumns,
+} from '@/features/census/controllers/censusTableHeaderController';
 
 describe('censusTableHeaderController', () => {
   it('keeps all census columns in default access profile', () => {
@@ -23,5 +26,12 @@ describe('censusTableHeaderController', () => {
     expect(keys).not.toContain('upc');
     expect(keys).toContain('diagnosis');
     expect(keys).toContain('specialty');
+  });
+
+  it('exposes visible header column definitions before projecting cells', () => {
+    const columns = resolveVisibleHeaderColumns(undefined, 'specialist');
+
+    expect(columns.map(column => column.key)).not.toContain('status');
+    expect(columns.map(column => column.key)).toContain('diagnosis');
   });
 });

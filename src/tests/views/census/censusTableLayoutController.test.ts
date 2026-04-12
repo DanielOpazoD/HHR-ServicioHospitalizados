@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { DataFactory } from '@/tests/factories/DataFactory';
 import {
   buildCensusTableLayoutBindings,
+  resolveCensusTableProjection,
   resolveCensusTableStyle,
 } from '@/features/census/controllers/censusTableLayoutController';
 import { BedType } from '@/types/domain/beds';
@@ -115,5 +116,30 @@ describe('censusTableLayoutController', () => {
       width: '980px',
       minWidth: '100%',
     });
+  });
+
+  it('resolves projected columns and width as a single projection step', () => {
+    const projection = resolveCensusTableProjection(
+      {
+        actions: 50,
+        bed: 80,
+        type: 60,
+        name: 200,
+        rut: 100,
+        age: 50,
+        diagnosis: 200,
+        specialty: 80,
+        status: 100,
+        admission: 100,
+        dmi: 60,
+        cqx: 60,
+        upc: 60,
+      },
+      'specialist'
+    );
+
+    expect(projection.visibleColumnCount).toBeLessThan(12);
+    expect(projection.visibleTotalWidth).toBeGreaterThan(0);
+    expect(projection.projectedColumns.status).toBe(0);
   });
 });

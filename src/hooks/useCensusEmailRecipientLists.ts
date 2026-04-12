@@ -42,7 +42,7 @@ interface UseCensusEmailRecipientListsReturn {
   recipientsSyncError: string | null;
 }
 
-const resolveStoredRecipientSelection = (
+export const resolveStoredRecipientSelection = (
   storedRecipients: string[] | null,
   storedActiveListId?: string | null
 ) => {
@@ -83,6 +83,27 @@ export const useCensusEmailRecipientLists = ({
   const setRecipients = useCallback((nextRecipients: string[]) => {
     setRecipientsState(nextRecipients);
   }, []);
+
+  const restoreStoredRecipientSelection = useCallback(
+    (
+      storedRecipients: string[] | null,
+      storedActiveListId?: string | null,
+      syncError: string | null = null
+    ) => {
+      const restoredSelection = resolveStoredRecipientSelection(
+        storedRecipients,
+        storedActiveListId
+      );
+
+      activeRecipientListIdRef.current = restoredSelection.activeRecipientListId;
+      setActiveRecipientListIdState(restoredSelection.activeRecipientListId);
+      setRecipientsState(restoredSelection.recipients);
+      setRecipientsSource(restoredSelection.recipientsSource);
+      setRecipientsSyncError(syncError);
+      recipientsReadyRef.current = true;
+    },
+    []
+  );
 
   const applyActiveRecipientList = useCallback(
     (list: GlobalEmailRecipientList) => {
@@ -178,18 +199,7 @@ export const useCensusEmailRecipientLists = ({
         if (!isActive) {
           return;
         }
-
-        const restoredSelection = resolveStoredRecipientSelection(
-          storedRecipients,
-          storedActiveListId
-        );
-
-        activeRecipientListIdRef.current = restoredSelection.activeRecipientListId;
-        setActiveRecipientListIdState(restoredSelection.activeRecipientListId);
-        setRecipientsState(restoredSelection.recipients);
-        setRecipientsSource(restoredSelection.recipientsSource);
-        setRecipientsSyncError(null);
-        recipientsReadyRef.current = true;
+        restoreStoredRecipientSelection(storedRecipients, storedActiveListId);
         return;
       }
 
@@ -223,18 +233,14 @@ export const useCensusEmailRecipientLists = ({
       if (!isActive) {
         return;
       }
-
-      const restoredSelection = resolveStoredRecipientSelection(stored);
-
-      setRecipientsState(restoredSelection.recipients);
-      setRecipientsSource(restoredSelection.recipientsSource);
-      setRecipientsSyncError(
+      restoreStoredRecipientSelection(
+        stored,
+        null,
         resolveApplicationOutcomeMessage(
           bootstrapResult,
           'No se pudo cargar la lista global en Firebase. Se usara la copia local.'
         )
       );
-      recipientsReadyRef.current = true;
     };
 
     void loadRecipients();
@@ -242,7 +248,14 @@ export const useCensusEmailRecipientLists = ({
     return () => {
       isActive = false;
     };
-  }, [applyActiveRecipientList, browserRuntime, canManageGlobalRecipientLists, enabled, user]);
+  }, [
+    applyActiveRecipientList,
+    browserRuntime,
+    canManageGlobalRecipientLists,
+    enabled,
+    restoreStoredRecipientSelection,
+    user,
+  ]);
 
   useEffect(() => {
     if (!recipientsReadyRef.current) {

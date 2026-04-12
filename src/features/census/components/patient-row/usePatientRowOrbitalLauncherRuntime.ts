@@ -143,6 +143,16 @@ export const usePatientRowOrbitalLauncherRuntime = ({
     }, HOVER_EXIT_GRACE_MS);
   }, [clearHoverExitTimer]);
 
+  const deactivateHoveredRow = React.useCallback(() => {
+    setIsRowHovered(false);
+    armHoverGrace();
+  }, [armHoverGrace]);
+
+  const releaseLauncherHover = React.useCallback(() => {
+    setIsLauncherHovered(false);
+    armHoverGrace();
+  }, [armHoverGrace]);
+
   // === VISIBILITY & MEDIA QUERY ===
 
   // --- visibilitychange: flush hover state when the tab goes to background ---
@@ -226,8 +236,7 @@ export const usePatientRowOrbitalLauncherRuntime = ({
 
     const deactivateRowHover = () => {
       if (isRowHoveredRef.current) {
-        setIsRowHovered(false);
-        armHoverGrace();
+        deactivateHoveredRow();
       }
     };
 
@@ -268,8 +277,7 @@ export const usePatientRowOrbitalLauncherRuntime = ({
       if (event.relatedTarget instanceof Node && row.contains(event.relatedTarget)) {
         return;
       }
-      setIsRowHovered(false);
-      armHoverGrace();
+      deactivateHoveredRow();
     };
 
     syncPosition();
@@ -301,6 +309,7 @@ export const usePatientRowOrbitalLauncherRuntime = ({
     };
   }, [
     activateHoveredRow,
+    deactivateHoveredRow,
     armHoverGrace,
     clearHoverExitTimer,
     launcherOffset,
@@ -379,9 +388,6 @@ export const usePatientRowOrbitalLauncherRuntime = ({
       claimLauncherOwnership(rowId);
       setIsLauncherHovered(true);
     },
-    handleLauncherMouseLeave: () => {
-      setIsLauncherHovered(false);
-      armHoverGrace();
-    },
+    handleLauncherMouseLeave: releaseLauncherHover,
   };
 };

@@ -34,17 +34,24 @@ export const CENSUS_HEADER_COLUMNS: readonly CensusHeaderColumnDefinition[] = [
   { key: 'upc', label: 'UPC', className: 'border-r-0' },
 ] as const;
 
+export const resolveVisibleHeaderColumns = (
+  columns: readonly CensusHeaderColumnDefinition[] = CENSUS_HEADER_COLUMNS,
+  accessProfile: CensusAccessProfile = 'default'
+): CensusHeaderColumnDefinition[] =>
+  columns.filter(column => isVisibleCensusColumn(column.key, accessProfile));
+
+const buildCensusHeaderCellModel = (
+  column: CensusHeaderColumnDefinition
+): CensusHeaderCellModel => ({
+  key: column.key,
+  kind: column.key === 'diagnosis' ? 'diagnosis' : 'standard',
+  label: column.label,
+  title: column.title,
+  className: column.className,
+});
+
 export const buildCensusHeaderCellModels = (
   columns: readonly CensusHeaderColumnDefinition[] = CENSUS_HEADER_COLUMNS,
   accessProfile: CensusAccessProfile = 'default'
-): CensusHeaderCellModel[] => {
-  const visibleColumns = columns.filter(column => isVisibleCensusColumn(column.key, accessProfile));
-
-  return visibleColumns.map(column => ({
-    key: column.key,
-    kind: column.key === 'diagnosis' ? 'diagnosis' : 'standard',
-    label: column.label,
-    title: column.title,
-    className: column.className,
-  }));
-};
+): CensusHeaderCellModel[] =>
+  resolveVisibleHeaderColumns(columns, accessProfile).map(buildCensusHeaderCellModel);

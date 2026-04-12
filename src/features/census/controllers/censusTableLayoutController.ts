@@ -46,17 +46,33 @@ export interface CensusTableLayoutBindings {
   tableStyle: CSSProperties;
 }
 
+interface CensusTableProjection {
+  projectedColumns: ReturnType<typeof resolveVisibleCensusColumns>;
+  visibleColumnCount: number;
+  visibleTotalWidth: number;
+}
+
 export const resolveCensusTableStyle = (totalWidth: number): CSSProperties => ({
   width: `${totalWidth}px`,
   minWidth: '100%',
 });
 
+export const resolveCensusTableProjection = (
+  columns: TableColumnConfig,
+  accessProfile?: CensusAccessProfile
+): CensusTableProjection => ({
+  projectedColumns: resolveVisibleCensusColumns(columns, accessProfile),
+  visibleColumnCount: resolveVisibleCensusColumnCount(columns, accessProfile),
+  visibleTotalWidth: resolveVisibleCensusTotalWidth(columns, accessProfile),
+});
+
 export const buildCensusTableLayoutBindings = (
   params: CensusTableLayoutParams
 ): CensusTableLayoutBindings => {
-  const projectedColumns = resolveVisibleCensusColumns(params.columns, params.accessProfile);
-  const visibleColumnCount = resolveVisibleCensusColumnCount(params.columns, params.accessProfile);
-  const visibleTotalWidth = resolveVisibleCensusTotalWidth(params.columns, params.accessProfile);
+  const { projectedColumns, visibleColumnCount, visibleTotalWidth } = resolveCensusTableProjection(
+    params.columns,
+    params.accessProfile
+  );
 
   return {
     headerProps: {

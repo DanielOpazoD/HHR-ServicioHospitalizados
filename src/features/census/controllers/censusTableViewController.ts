@@ -24,6 +24,33 @@ interface ResolveBedTypesParams {
 const isAllowedBedTypeOverride = (value: string | undefined): value is BedType =>
   value === BedType.UTI || value === BedType.UCI || value === BedType.MEDIA;
 
+const hasVisibleBedOccupant = (bedData: PatientData | null | undefined): bedData is PatientData =>
+  Boolean(bedData && (bedData.patientName || bedData.isBlocked));
+
+const buildOccupiedBedRows = (bed: BedDefinition, bedData: PatientData): UnifiedBedRow[] => {
+  const occupiedRows: UnifiedBedRow[] = [
+    {
+      kind: 'occupied',
+      id: bed.id,
+      bed,
+      data: bedData,
+      isSubRow: false,
+    },
+  ];
+
+  if (bedData.clinicalCrib && !bedData.isBlocked) {
+    occupiedRows.push({
+      kind: 'occupied',
+      id: `${bed.id}-cuna`,
+      bed,
+      data: bedData.clinicalCrib,
+      isSubRow: true,
+    });
+  }
+
+  return occupiedRows;
+};
+
 export const buildVisibleBeds = ({
   allBeds,
   activeExtraBeds,
@@ -37,31 +64,13 @@ export const buildCensusBedRows = ({ visibleBeds, beds }: BuildBedRowsParams): C
 
   visibleBeds.forEach(bed => {
     const bedData = beds?.[bed.id];
-    const hasPatient = Boolean(bedData?.patientName || bedData?.isBlocked);
-
-    if (!hasPatient || !bedData) {
+    if (!hasVisibleBedOccupant(bedData)) {
       unifiedRows.push({ kind: 'empty', id: bed.id, bed });
       emptyBedCount++;
       return;
     }
 
-    unifiedRows.push({
-      kind: 'occupied',
-      id: bed.id,
-      bed,
-      data: bedData,
-      isSubRow: false,
-    });
-
-    if (bedData.clinicalCrib && !bedData.isBlocked) {
-      unifiedRows.push({
-        kind: 'occupied',
-        id: `${bed.id}-cuna`,
-        bed,
-        data: bedData.clinicalCrib,
-        isSubRow: true,
-      });
-    }
+    unifiedRows.push(...buildOccupiedBedRows(bed, bedData));
   });
 
   return {
