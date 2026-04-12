@@ -2,7 +2,6 @@ import React from 'react';
 import { BarChart3 } from 'lucide-react';
 import { CudyrHeader } from './CudyrHeader';
 import { CudyrRow, VerticalHeader } from './CudyrRow';
-import { CudyrSummaryTable } from './CudyrSummaryTable';
 import { useCudyrLogic } from '../hooks/useCudyrLogic';
 import { resolveNightShiftNurses } from '@/services/staff/dailyRecordStaffing';
 
@@ -30,7 +29,6 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
     );
   }
 
-  // Format date for print header
   const formatPrintDate = () => {
     const [year, month, day] = record.date.split('-');
     return `${day}-${month}-${year}`;
@@ -39,7 +37,7 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
   const responsibleNurses = resolveNightShiftNurses(record).filter(n => n && n.trim() !== '');
 
   return (
-    <div className="space-y-6 animate-fade-in pb-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 print:max-w-none print:px-0 print:space-y-2 print:pb-0 print:break-inside-avoid">
+    <div className="space-y-4 animate-fade-in pb-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 print:max-w-none print:px-0 print:space-y-2 print:pb-0 print:break-inside-avoid">
       {/* Print-only Header */}
       <div className="hidden print:block mb-2 pb-2 border-b border-slate-300">
         <h1 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-1">
@@ -79,15 +77,7 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
         </div>
       </div>
 
-      {/* Category Summary Tables (Screen only) */}
-      {cudyrSummary && (
-        <CudyrSummaryTable
-          counts={cudyrSummary.counts}
-          utiTotal={cudyrSummary.utiTotal}
-          mediaTotal={cudyrSummary.mediaTotal}
-        />
-      )}
-
+      {/* Screen header — title, stats bar, actions (replaces old separate summary) */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 overflow-hidden print:shadow-none print:border-none print:p-0 print:break-inside-avoid">
         <div className="print:hidden">
           <CudyrHeader
@@ -95,6 +85,7 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
             categorizedCount={stats.categorizedCount}
             currentDate={record.date}
             updatedAt={record.cudyrUpdatedAt}
+            categoryCounts={cudyrSummary?.counts}
           />
         </div>
 
