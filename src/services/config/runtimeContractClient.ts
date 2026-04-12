@@ -24,6 +24,9 @@ export interface RemoteRuntimeContractAssessment {
 const isFiniteNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
 
+const isJsonContentType = (contentType: string | null): boolean =>
+  typeof contentType === 'string' && contentType.toLowerCase().includes('application/json');
+
 export const assessRemoteRuntimeContract = (
   contract: RemoteRuntimeContract
 ): RemoteRuntimeContractAssessment => {
@@ -62,10 +65,28 @@ export const fetchRemoteRuntimeContract = async (): Promise<RemoteRuntimeContrac
   });
 
   if (!response.ok) {
+    if (response.status === 404) {
+      return null;
+    }
+
     throw new Error(`Runtime contract request failed (${response.status})`);
   }
 
-  const payload = (await response.json()) as Partial<RemoteRuntimeContract>;
+  const contentType = response.headers.get('content-type');
+  if (!isJsonContentType(contentType)) {
+    return null;
+  }
+
+  let payload: Partial<RemoteRuntimeContract>;
+  try {
+    payload = (await response.json()) as Partial<RemoteRuntimeContract>;
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      return null;
+    }
+    throw error;
+  }
+
   if (
     !isFiniteNumber(payload.backendRuntimeContractVersion) ||
     !isFiniteNumber(payload.minSupportedClientRuntimeContractVersion) ||

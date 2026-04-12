@@ -16,6 +16,7 @@ import {
 } from '@/services/repositories/repositoryConfig';
 import { dailyRecordObservability } from '@/services/repositories/dailyRecordOperationalTelemetry';
 import type { SyncDailyRecordResult } from '@/services/repositories/contracts/dailyRecordResults';
+import { toRecordTimestamp } from '@/services/repositories/dailyRecordConsistencyPolicy';
 
 interface DailyRecordReader {
   getForDate: (date: string) => Promise<DailyRecord | null>;
@@ -134,6 +135,20 @@ export const createDailyRecordSubscription = (
     queryClient.setQueryData(getDailyRecordQueryKey(date), result);
   };
 
+  const shouldPreservePreviousRecord = (
+    previousResult: DailyRecordQueryResult | undefined,
+    incomingResult: DailyRecordQueryResult
+  ): boolean => {
+    if (!previousResult?.record || !incomingResult.record) {
+      return false;
+    }
+
+    return (
+      toRecordTimestamp(previousResult.record.lastUpdated) >
+      toRecordTimestamp(incomingResult.record.lastUpdated)
+    );
+  };
+
   const reconcileNullRealtimeRecord = (previousResult: DailyRecordQueryResult) => {
     const read =
       typeof dailyRecord.getForDateWithMeta === 'function'
@@ -230,20 +245,25 @@ export const createDailyRecordSubscription = (
       return;
     }
 
+    const previousResult = queryClient.getQueryData<DailyRecordQueryResult>(
+      getDailyRecordQueryKey(date)
+    );
+
     if (result.record) {
+      if (shouldPreservePreviousRecord(previousResult, result)) {
+        return;
+      }
       applyResolvedQueryResult(result);
       return;
     }
 
-    const previousResult =
-      queryClient.getQueryData<DailyRecordQueryResult>(getDailyRecordQueryKey(date)) ||
-      createQueryResultFromRecord(date, null, result.runtime);
-    if (!previousResult.record) {
+    const existingResult = previousResult || createQueryResultFromRecord(date, null, result.runtime);
+    if (!existingResult.record) {
       applyResolvedQueryResult(result);
       return;
     }
 
-    reconcileNullRealtimeRecord(previousResult);
+    reconcileNullRealtimeRecord(existingResult);
   };
 
   if (typeof dailyRecord.subscribeDetailed === 'function') {
@@ -273,7 +293,15 @@ export const createDailyRecordSubscription = (
     const previousResult =
       queryClient.getQueryData<DailyRecordQueryResult>(getDailyRecordQueryKey(date)) ||
       createQueryResultFromRecord(date, null);
-    if (record || !previousResult.record) {
+    if (record) {
+      if (shouldPreservePreviousRecord(previousResult, result)) {
+        return;
+      }
+      applyResolvedQueryResult(result);
+      return;
+    }
+
+    if (!previousResult.record) {
       applyResolvedQueryResult(result);
       return;
     }

@@ -162,6 +162,58 @@ describe('dailyRecordQueryController', () => {
     });
   });
 
+  it('preserves a newer cached record when realtime emits an older snapshot', () => {
+    const queryClient = new QueryClient();
+    const previousRecord = {
+      ...DataFactory.createMockDailyRecord('2025-01-08'),
+      lastUpdated: '2025-01-08T12:00:00.000Z',
+      beds: {
+        ...DataFactory.createMockDailyRecord('2025-01-08').beds,
+        R1: {
+          ...DataFactory.createMockDailyRecord('2025-01-08').beds.R1,
+          medicalHandoffNote: 'Nota nueva',
+        },
+      },
+    };
+    const staleRealtimeRecord = {
+      ...previousRecord,
+      lastUpdated: '2025-01-08T11:59:58.000Z',
+      beds: {
+        ...previousRecord.beds,
+        R1: {
+          ...previousRecord.beds.R1,
+          medicalHandoffNote: 'Nota vieja',
+        },
+      },
+    };
+
+    queryClient.setQueryData(getDailyRecordQueryKey('2025-01-08'), {
+      record: previousRecord,
+      runtime: {
+        date: '2025-01-08',
+        availabilityState: 'resolved',
+        consistencyState: 'local_only',
+        sourceOfTruth: 'local',
+        retryability: 'not_applicable',
+        recoveryAction: 'none',
+        conflictSummary: null,
+        observabilityTags: ['daily_record', 'read'],
+        repairApplied: false,
+      },
+    });
+
+    const subscribe = vi.fn((_date, callback) => {
+      callback(staleRealtimeRecord, false);
+      return vi.fn();
+    });
+
+    createDailyRecordSubscription({ getForDate: vi.fn(), subscribe }, '2025-01-08', queryClient);
+
+    expect(queryClient.getQueryData(getDailyRecordQueryKey('2025-01-08'))).toMatchObject({
+      record: previousRecord,
+    });
+  });
+
   it('ignores stale null reconciliation after the subscription is cleaned up', async () => {
     const queryClient = new QueryClient();
     const previousRecord = DataFactory.createMockDailyRecord('2025-01-08');

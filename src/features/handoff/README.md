@@ -8,6 +8,7 @@ Entrega de turno de enfermeria y medicos, con flujos de gestion, delivery y hand
 
 - Superficies runtime y puntos de cambio seguros: [docs/ADR_HANDOFF_RUNTIME_SURFACES.md](../../../docs/ADR_HANDOFF_RUNTIME_SURFACES.md)
 - Checklist transversal de cambio seguro: [docs/SAFE_CHANGE_CHECKLIST.md](../../../docs/SAFE_CHANGE_CHECKLIST.md)
+- Ruta productiva del write medico de especialista: [docs/HANDOFF_SPECIALIST_MEDICAL_WRITE_PATH.md](../../../docs/HANDOFF_SPECIALIST_MEDICAL_WRITE_PATH.md)
 
 ## Estructura
 
@@ -42,6 +43,23 @@ Entrega de turno de enfermeria y medicos, con flujos de gestion, delivery y hand
   o actualizacion del especialista.
 - `doctor_specialist` puede editar solo la entrega del dia actual; dias previos deben quedar en solo lectura
   tanto en la UI como en la capa de mutacion.
+- El handoff medico por paciente/cama del especialista ya no depende de un write directo a
+  Firestore Rules; usa una callable backend acotada y validada por rol.
+
+## Ruta especialista
+
+Cuando el usuario actual es `doctor_specialist` y el patch toca solo una cama con campos medicos
+permitidos, el flujo productivo esperado es:
+
+1. optimistic update local en cache/query;
+2. dispatch del patch acotado desde `useHandoffLogic`;
+3. deteccion de patch especialista en `firestoreRecordWrites.ts`;
+4. llamada a `updateSpecialistMedicalHandoff`;
+5. reconciliacion realtime que no debe reemplazar el cache local con snapshots mas viejos.
+
+Detalles, limites y errores historicos documentados en:
+
+- [docs/HANDOFF_SPECIALIST_MEDICAL_WRITE_PATH.md](../../../docs/HANDOFF_SPECIALIST_MEDICAL_WRITE_PATH.md)
 
 ## Entry points recomendados
 

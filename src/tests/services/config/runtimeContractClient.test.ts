@@ -60,6 +60,9 @@ describe('runtimeContractClient', () => {
   it('fetches and validates the remote runtime contract payload', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
+      headers: {
+        get: vi.fn().mockReturnValue('application/json; charset=utf-8'),
+      },
       json: async () => ({
         backendRuntimeContractVersion: BACKEND_RUNTIME_CONTRACT_VERSION,
         minSupportedClientRuntimeContractVersion: CLIENT_RUNTIME_CONTRACT_VERSION,
@@ -84,6 +87,9 @@ describe('runtimeContractClient', () => {
       'fetch',
       vi.fn().mockResolvedValue({
         ok: true,
+        headers: {
+          get: vi.fn().mockReturnValue('application/json'),
+        },
         json: async () => ({
           backendRuntimeContractVersion: BACKEND_RUNTIME_CONTRACT_VERSION,
         }),
@@ -93,5 +99,37 @@ describe('runtimeContractClient', () => {
     await expect(fetchRemoteRuntimeContract()).rejects.toThrow(
       'Runtime contract response is incomplete'
     );
+  });
+
+  it('returns null when the runtime contract endpoint responds with HTML', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        headers: {
+          get: vi.fn().mockReturnValue('text/html; charset=utf-8'),
+        },
+        json: async () => {
+          throw new SyntaxError('Unexpected token <');
+        },
+      })
+    );
+
+    await expect(fetchRemoteRuntimeContract()).resolves.toBeNull();
+  });
+
+  it('returns null when the runtime contract endpoint is unavailable', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        headers: {
+          get: vi.fn().mockReturnValue(null),
+        },
+      })
+    );
+
+    await expect(fetchRemoteRuntimeContract()).resolves.toBeNull();
   });
 });

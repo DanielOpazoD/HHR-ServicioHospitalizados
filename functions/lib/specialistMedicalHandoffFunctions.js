@@ -3,6 +3,23 @@ const { HOSPITAL_ID } = require('./runtime/runtimeConfig');
 const { requireAuthenticatedEmail } = require('./auth/authPolicies');
 const { sanitizeLogValue } = require('./logging/redaction');
 
+/**
+ * Productive write path for specialist medical handoff notes.
+ *
+ * Why this exists:
+ * - direct Firestore writes for `doctor_specialist` proved fragile under the restrictive
+ *   rules branch even when the visible payload was correct;
+ * - this callable keeps the mutation server-side, with a single role resolution source
+ *   (`config/roles`) and a narrow whitelist.
+ *
+ * Important invariants:
+ * - exactly one bed per request;
+ * - only medical handoff fields are accepted;
+ * - existing beds only; this callable must not create structural beds;
+ * - `lastUpdated` is owned by the server;
+ * - the client may still use optimistic cache updates, so this callable must stay focused
+ *   and deterministic.
+ */
 const ALLOWED_SPECIALIST_BED_IDS = new Set([
   'R1',
   'R2',

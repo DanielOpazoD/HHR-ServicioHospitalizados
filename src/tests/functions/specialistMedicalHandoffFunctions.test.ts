@@ -148,4 +148,161 @@ describe('functions specialistMedicalHandoffFunctions', () => {
       code: 'permission-denied',
     });
   });
+
+  it('rejects writes for callers without specialist access', async () => {
+    const get = vi.fn();
+    const update = vi.fn();
+    const functionsApi = createSpecialistMedicalHandoffFunctions({
+      admin: {
+        firestore: Object.assign(
+          () => ({
+            collection: () => ({
+              doc: () => ({
+                collection: () => ({
+                  doc: () => ({
+                    get,
+                    update,
+                  }),
+                }),
+              }),
+            }),
+          }),
+          {
+            Timestamp: {
+              now: vi.fn(() => ({ seconds: 1, nanoseconds: 0 })),
+            },
+          }
+        ),
+      },
+      resolveRoleForEmail: vi.fn().mockResolvedValue('viewer'),
+    });
+
+    await expect(
+      functionsApi.updateSpecialistMedicalHandoff.run(
+        {
+          date: '2026-04-11',
+          patch: {
+            'beds.R4.medicalHandoffNote': 'No deberia pasar',
+          },
+        },
+        {
+          auth: {
+            token: {
+              email: 'viewer@example.com',
+            },
+          },
+        }
+      )
+    ).rejects.toMatchObject({
+      code: 'permission-denied',
+    });
+
+    expect(get).not.toHaveBeenCalled();
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('rejects writes that try to touch more than one bed', async () => {
+    const functionsApi = createSpecialistMedicalHandoffFunctions({
+      admin: {
+        firestore: Object.assign(
+          () => ({
+            collection: () => ({
+              doc: () => ({
+                collection: () => ({
+                  doc: () => ({
+                    get: vi.fn(),
+                    update: vi.fn(),
+                  }),
+                }),
+              }),
+            }),
+          }),
+          {
+            Timestamp: {
+              now: vi.fn(() => ({ seconds: 1, nanoseconds: 0 })),
+            },
+          }
+        ),
+      },
+      resolveRoleForEmail: vi.fn().mockResolvedValue('doctor_specialist'),
+    });
+
+    await expect(
+      functionsApi.updateSpecialistMedicalHandoff.run(
+        {
+          date: '2026-04-11',
+          patch: {
+            'beds.R4.medicalHandoffNote': 'R4',
+            'beds.R3.medicalHandoffNote': 'R3',
+          },
+        },
+        {
+          auth: {
+            token: {
+              email: 'specialist@example.com',
+            },
+          },
+        }
+      )
+    ).rejects.toMatchObject({
+      code: 'invalid-argument',
+    });
+  });
+
+  it('rejects writes when the target bed is missing in the remote record', async () => {
+    const update = vi.fn();
+    const get = vi.fn().mockResolvedValue({
+      exists: true,
+      data: () => ({
+        beds: {},
+      }),
+    });
+
+    const functionsApi = createSpecialistMedicalHandoffFunctions({
+      admin: {
+        firestore: Object.assign(
+          () => ({
+            collection: () => ({
+              doc: () => ({
+                collection: () => ({
+                  doc: () => ({
+                    get,
+                    update,
+                  }),
+                }),
+              }),
+            }),
+          }),
+          {
+            Timestamp: {
+              now: vi.fn(() => ({ seconds: 1, nanoseconds: 0 })),
+            },
+          }
+        ),
+      },
+      resolveRoleForEmail: vi.fn().mockResolvedValue('doctor_specialist'),
+    });
+
+    await expect(
+      functionsApi.updateSpecialistMedicalHandoff.run(
+        {
+          date: '2026-04-11',
+          patch: {
+            'beds.R4.medicalHandoffNote': 'Sin cama remota',
+          },
+        },
+        {
+          auth: {
+            token: {
+              email: 'specialist@example.com',
+            },
+          },
+        }
+      )
+    ).rejects.toMatchObject({
+      code: 'failed-precondition',
+    });
+
+    expect(update).not.toHaveBeenCalled();
+  });
 });

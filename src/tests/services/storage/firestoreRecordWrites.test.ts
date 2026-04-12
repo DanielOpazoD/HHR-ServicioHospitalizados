@@ -206,6 +206,26 @@ describe('firestoreRecordWrites', () => {
     expect(updateDoc).not.toHaveBeenCalled();
   });
 
+  it('keeps direct Firestore writes for the same scoped patch when the user is not doctor_specialist', async () => {
+    const currentUser = {
+      uid: 'admin-1',
+      email: 'admin@example.com',
+      isAnonymous: false,
+    };
+    mockGetCurrentUser.mockReturnValue(currentUser);
+    mockResolveFirebaseUserRole.mockResolvedValue('admin');
+
+    await updateRecordPartial('2026-03-21', {
+      'beds.R4.medicalHandoffEntries': [{ id: 'entry-1', note: 'Seguimiento admin' }],
+      'beds.R4.medicalHandoffNote': 'Seguimiento admin',
+      'beds.R4.medicalHandoffAudit': { currentStatus: 'updated_by_specialist' },
+    } as never);
+
+    expect(mockGetFunctions).not.toHaveBeenCalled();
+    expect(mockSpecialistCallable).not.toHaveBeenCalled();
+    expect(updateDoc).toHaveBeenCalledTimes(1);
+  });
+
   it('rethrows write failures that are not recoverable', async () => {
     vi.mocked(updateDoc).mockRejectedValueOnce(new Error('boom'));
     await expect(updateRecordPartial('2026-03-16', { status: 'broken' } as never)).rejects.toThrow(

@@ -202,13 +202,6 @@ export const updateRecordPartial = async (
       lastUpdated: Timestamp.now(),
     }) as Record<string, unknown>;
 
-    firestoreWriteLogger.warn('DEBUG partialUpdate', {
-      date,
-      skipFlatten: specialistScopedPatch,
-      keyCount: Object.keys(sanitizedData).length,
-      keys: Object.keys(sanitizedData).join(' | '),
-    });
-
     try {
       const persist = async () => {
         if (specialistScopedPatch && (await shouldRouteSpecialistPatchViaCallable())) {
