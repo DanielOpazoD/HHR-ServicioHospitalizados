@@ -21,6 +21,13 @@ import {
 } from '@/services/observability/operationalTelemetryService';
 import { resolveAuthBootstrapBudget } from '@/services/auth/authBootstrapBudgets';
 import { hasPersistedFirebaseAuthHint } from '@/services/auth/authStorageHints';
+import {
+  buildBootstrapTimeoutIssue,
+  shouldAttemptAuthTimeoutRecovery,
+  shouldDeferUnauthenticatedSessionState,
+  shouldIgnoreTransientUnauthenticatedBootstrapEvent,
+  shouldLogSessionLogin,
+} from '@/hooks/controllers/authBootstrapController';
 export {
   createHandleLogout,
   getAuthBootstrapTimeoutMs,
@@ -42,16 +49,20 @@ const applyResolvedBootstrapSessionState = ({
   if (isAuthBootstrapPending()) {
     restoreAuthBootstrapReturnTo();
   }
-  if (isAuthenticatedAuthSessionState(sessionState)) {
+  if (
+    isAuthenticatedAuthSessionState(sessionState) &&
+    shouldLogSessionLogin({
+      sessionState,
+      hasLoggedThisSession:
+        typeof sessionStorage !== 'undefined' &&
+        Boolean(sessionStorage.getItem('hhr_logged_this_session')),
+    })
+  ) {
     clearRecentManualLogout();
-    if (
-      sessionState.user.email &&
-      typeof sessionStorage !== 'undefined' &&
-      !sessionStorage.getItem('hhr_logged_this_session')
-    ) {
-      void defaultAuditPort.logUserLogin(sessionState.user.email);
-      sessionStorage.setItem('hhr_logged_this_session', 'true');
-    }
+    void defaultAuditPort.logUserLogin(sessionState.user.email as string);
+    sessionStorage.setItem('hhr_logged_this_session', 'true');
+  } else if (isAuthenticatedAuthSessionState(sessionState)) {
+    clearRecentManualLogout();
   }
   setSessionState(sessionState);
   setAuthLoading(false);
@@ -136,25 +147,21 @@ export const subscribeToResolvedAuthState = async ({
     );
 
     if (isAuthenticatedAuthSessionState(sessionState)) {
-      if (isAuthBootstrapPending()) {
-        restoreAuthBootstrapReturnTo();
-      }
-      clearRecentManualLogout();
-      if (
-        sessionState.user.email &&
-        typeof sessionStorage !== 'undefined' &&
-        !sessionStorage.getItem('hhr_logged_this_session')
-      ) {
-        void defaultAuditPort.logUserLogin(sessionState.user.email);
-        sessionStorage.setItem('hhr_logged_this_session', 'true');
-      }
-      setSessionState(sessionState);
+      applyResolvedBootstrapSessionState({
+        sessionState,
+        setSessionState,
+        setAuthLoading,
+      });
+      isBootstrapLoading = false;
+      return;
     } else {
       if (
-        isBootstrapLoading &&
-        sessionState.status === 'unauthenticated' &&
-        !hasRecentManualLogout() &&
-        hasPersistedFirebaseAuthHint()
+        shouldIgnoreTransientUnauthenticatedBootstrapEvent({
+          isBootstrapLoading,
+          sessionState,
+          hasRecentManualLogout: hasRecentManualLogout(),
+          hasPersistedFirebaseAuthHint: hasPersistedFirebaseAuthHint(),
+        })
       ) {
         authStateLogger.warn(
           'Ignoring transient unauthenticated auth event while persistence rehydrates'
@@ -170,7 +177,12 @@ export const subscribeToResolvedAuthState = async ({
         isBootstrapLoading = false;
         return;
       }
-      if (isAuthBootstrapPending() && sessionState.status === 'unauthenticated') {
+      if (
+        shouldDeferUnauthenticatedSessionState({
+          sessionState,
+          isAuthBootstrapPending: isAuthBootstrapPending(),
+        })
+      ) {
         return;
       }
       setSessionState(sessionState);
@@ -238,10 +250,15 @@ export const useResolvedAuthBootstrap = ({
           isOnline: window.navigator.onLine,
           authBootstrapPending: isAuthBootstrapPending(),
         },
-        issues: ['La inicializacion de autenticacion excedio el tiempo esperado.'],
+        issues: [buildBootstrapTimeoutIssue()],
       });
 
-      if (!hasRecentManualLogout() && hasPersistedFirebaseAuthHint()) {
+      if (
+        shouldAttemptAuthTimeoutRecovery({
+          hasRecentManualLogout: hasRecentManualLogout(),
+          hasPersistedFirebaseAuthHint: hasPersistedFirebaseAuthHint(),
+        })
+      ) {
         void resolveCurrentAuthSessionOutcome()
           .then(timeoutRecoveryOutcome => {
             recordOperationalOutcome(

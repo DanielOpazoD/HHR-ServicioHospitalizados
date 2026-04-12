@@ -109,12 +109,21 @@ export const useClinicalDocumentSheetState = (selectedDocument: ClinicalDocument
     [selectedDocument]
   );
 
+  /**
+   * Clears the active editor reference on blur. Intentionally preserves
+   * `activeEditorHistoryState` so undo/redo buttons stay enabled based
+   * on the last known state — `applyFormatting` uses `lastActiveEditorApiRef`
+   * to execute undo/redo even after the editor loses focus.
+   */
   const clearActiveEditor = useCallback((sectionId: string) => {
     setActiveEditorSectionId(current => (current === sectionId ? null : current));
     if (activeEditorSectionIdRef.current === sectionId) {
       activeEditorApiRef.current = null;
       activeEditorSectionIdRef.current = null;
-      setActiveEditorHistoryState({ canUndo: false, canRedo: false });
+      // NOTE: do NOT reset activeEditorHistoryState here.
+      // The last known canUndo/canRedo must persist so the toolbar
+      // buttons remain enabled after blur — applyFormatting already
+      // falls back to lastActiveEditorApiRef for undo/redo.
     }
   }, []);
 

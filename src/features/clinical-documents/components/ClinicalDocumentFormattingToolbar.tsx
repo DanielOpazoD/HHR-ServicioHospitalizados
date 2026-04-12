@@ -119,9 +119,10 @@ export const ClinicalDocumentFormattingToolbar: React.FC<
 
   return (
     <div className="flex items-center gap-1.5 bg-transparent">
-      {/* Undo / Redo */}
+      {/* Undo / Redo — onMouseDown prevents editor blur so canUndo/canRedo stay accurate */}
       <button
         type="button"
+        onMouseDown={e => e.preventDefault()}
         onClick={() => onApplyFormatting('undo')}
         disabled={!editEnabled || !canUndo}
         className={defaultIconBtn}
@@ -132,6 +133,7 @@ export const ClinicalDocumentFormattingToolbar: React.FC<
       </button>
       <button
         type="button"
+        onMouseDown={e => e.preventDefault()}
         onClick={() => onApplyFormatting('redo')}
         disabled={!editEnabled || !canRedo}
         className={defaultIconBtn}

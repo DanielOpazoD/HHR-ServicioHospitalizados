@@ -1,0 +1,100 @@
+import { describe, expect, it } from 'vitest';
+import {
+  buildBootstrapTimeoutIssue,
+  shouldAttemptAuthTimeoutRecovery,
+  shouldDeferUnauthenticatedSessionState,
+  shouldIgnoreTransientUnauthenticatedBootstrapEvent,
+  shouldLogSessionLogin,
+} from '@/hooks/controllers/authBootstrapController';
+import type { AuthSessionState } from '@/types/auth';
+
+describe('authBootstrapController', () => {
+  const unauthenticatedSession: AuthSessionState = {
+    status: 'unauthenticated',
+    user: null,
+  };
+
+  const authorizedSession: AuthSessionState = {
+    status: 'authorized',
+    user: {
+      uid: 'user-1',
+      email: 'auth@test.cl',
+      displayName: 'Auth Test',
+      role: 'admin',
+    },
+  };
+
+  it('ignores only transient unauthenticated events while bootstrap is still rehydrating', () => {
+    expect(
+      shouldIgnoreTransientUnauthenticatedBootstrapEvent({
+        isBootstrapLoading: true,
+        sessionState: unauthenticatedSession,
+        hasRecentManualLogout: false,
+        hasPersistedFirebaseAuthHint: true,
+      })
+    ).toBe(true);
+
+    expect(
+      shouldIgnoreTransientUnauthenticatedBootstrapEvent({
+        isBootstrapLoading: false,
+        sessionState: unauthenticatedSession,
+        hasRecentManualLogout: false,
+        hasPersistedFirebaseAuthHint: true,
+      })
+    ).toBe(false);
+  });
+
+  it('defers unauthenticated state only while bootstrap redirect is pending', () => {
+    expect(
+      shouldDeferUnauthenticatedSessionState({
+        sessionState: unauthenticatedSession,
+        isAuthBootstrapPending: true,
+      })
+    ).toBe(true);
+
+    expect(
+      shouldDeferUnauthenticatedSessionState({
+        sessionState: authorizedSession,
+        isAuthBootstrapPending: true,
+      })
+    ).toBe(false);
+  });
+
+  it('attempts timeout recovery only when there is persisted auth and no recent manual logout', () => {
+    expect(
+      shouldAttemptAuthTimeoutRecovery({
+        hasRecentManualLogout: false,
+        hasPersistedFirebaseAuthHint: true,
+      })
+    ).toBe(true);
+
+    expect(
+      shouldAttemptAuthTimeoutRecovery({
+        hasRecentManualLogout: true,
+        hasPersistedFirebaseAuthHint: true,
+      })
+    ).toBe(false);
+  });
+
+  it('logs session login only for authorized sessions with email that were not logged yet', () => {
+    expect(
+      shouldLogSessionLogin({
+        sessionState: authorizedSession,
+        hasLoggedThisSession: false,
+      })
+    ).toBe(true);
+
+    expect(
+      shouldLogSessionLogin({
+        sessionState: authorizedSession,
+        hasLoggedThisSession: true,
+      })
+    ).toBe(false);
+  });
+
+  it('keeps the timeout issue string centralized', () => {
+    expect(buildBootstrapTimeoutIssue()).toBe(
+      'La inicializacion de autenticacion excedio el tiempo esperado.'
+    );
+  });
+});
