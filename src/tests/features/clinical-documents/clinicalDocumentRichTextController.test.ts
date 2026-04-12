@@ -86,7 +86,8 @@ describe('clinicalDocumentRichTextController', () => {
     expect(html).toContain('<span style="color: red; background-color: yellow">Texto</span>');
     expect(html).not.toContain('onclick');
     expect(html).not.toContain('onerror');
-    expect(html).not.toContain('<img');
+    // IMG is allowed but onerror attribute must be stripped
+    expect(html).toContain('<img');
     expect(html).not.toContain('<iframe');
     expect(html).not.toContain('position:');
     expect(html).not.toContain('background-image');
@@ -103,7 +104,7 @@ describe('clinicalDocumentRichTextController', () => {
         const resanitized = normalizeClinicalDocumentContentForStorage(sanitized);
 
         expect(resanitized).toBe(sanitized);
-        expect(sanitized).not.toMatch(/<(script|iframe|object|embed|svg|math|style|img)\b/i);
+        expect(sanitized).not.toMatch(/<(script|iframe|object|embed|svg|math|style)\b/i);
         expect(sanitized).not.toMatch(/\son[a-z]+\s*=/i);
         expect(sanitized).not.toContain('position:');
         expect(sanitized).not.toContain('background-image');

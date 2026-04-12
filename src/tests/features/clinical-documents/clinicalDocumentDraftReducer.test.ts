@@ -286,7 +286,14 @@ describe('clinicalDocumentDraftReducer', () => {
     expect(switched.draft?.templateId).toBe('evolucion');
     expect(switched.draft?.documentType).toBe('evolucion');
     expect(switched.draft?.title).toMatch(/evoluci/i);
-    expect(switched.draft?.sections.every(section => section.content === '')).toBe(true);
+    // Sections with matching IDs preserve content across template change
+    const antecedentes = switched.draft?.sections.find(s => s.id === 'antecedentes');
+    if (antecedentes) {
+      expect(antecedentes.content).toBe('<p>Texto previo</p>');
+    }
+    // Sections without matching IDs start empty
+    const newSections = switched.draft?.sections.filter(s => s.id !== 'antecedentes') ?? [];
+    expect(newSections.every(s => s.content === '')).toBe(true);
     expect(switched.draft?.patientFields.find(field => field.id === 'nombre')?.value).toBe(
       'Paciente Test'
     );

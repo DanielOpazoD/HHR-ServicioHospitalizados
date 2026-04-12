@@ -1,5 +1,5 @@
-import React from 'react';
-import { FilePlus2, Trash2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { FilePlus2, History, Trash2 } from 'lucide-react';
 import clsx from 'clsx';
 
 import { getClinicalDocumentTypeLabel } from '@/features/clinical-documents/controllers/clinicalDocumentTemplateController';
@@ -8,14 +8,37 @@ import {
   formatClinicalDocumentDateTime,
 } from '@/features/clinical-documents/controllers/clinicalDocumentWorkspaceController';
 import type { ClinicalDocumentsSidebarProps } from '@/features/clinical-documents/contracts/clinicalDocumentsSidebarContracts';
+import type { ClinicalDocumentVersionMeta } from '@/features/clinical-documents/domain/entities';
+import { ClinicalDocumentVersionHistory } from '@/features/clinical-documents/components/ClinicalDocumentVersionHistory';
 
-const formatSidebarDocumentTitle = (value: string): string => {
-  const normalized = value.trim().toLocaleLowerCase('es-CL');
-  if (!normalized) {
-    return '';
-  }
+const VersionBadge: React.FC<{
+  currentVersion: number;
+  versionHistory: ClinicalDocumentVersionMeta[];
+}> = ({ currentVersion, versionHistory }) => {
+  const [showHistory, setShowHistory] = useState(false);
 
-  return normalized.charAt(0).toLocaleUpperCase('es-CL') + normalized.slice(1);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={e => {
+          e.stopPropagation();
+          setShowHistory(true);
+        }}
+        className="flex items-center gap-0.5 text-[9px] font-mono text-slate-400 hover:text-medical-600 transition-colors"
+        title="Ver historial de versiones"
+      >
+        <History size={9} />v{currentVersion}
+      </button>
+      {showHistory && (
+        <ClinicalDocumentVersionHistory
+          versions={versionHistory}
+          currentVersion={currentVersion}
+          onClose={() => setShowHistory(false)}
+        />
+      )}
+    </>
+  );
 };
 
 export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> = ({
@@ -88,7 +111,7 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
               <div
                 key={document.id}
                 className={clsx(
-                  'rounded-lg border bg-white px-2 py-1.5 transition-all',
+                  'group/doc rounded-lg border bg-white px-2 py-1.5 transition-all',
                   selectedDocumentId === document.id
                     ? 'border-medical-300 bg-medical-50'
                     : 'border-slate-200 hover:border-slate-300'
@@ -100,28 +123,33 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
                     onClick={() => onSelectDocument(document.id)}
                     className="flex-1 text-left"
                   >
-                    <span className="text-[12px] font-bold leading-tight text-slate-800">
-                      {formatSidebarDocumentTitle(document.title)}
-                    </span>
-                    <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                    <span className="text-[11px] font-semibold leading-tight text-slate-700">
                       {getClinicalDocumentTypeLabel(document.documentType)}
-                    </p>
+                    </span>
                   </button>
                   {canDelete && (
                     <button
                       type="button"
                       onClick={() => onDeleteDocument(document)}
-                      className="rounded-md border border-red-200 p-[3px] text-red-600 hover:bg-red-50"
+                      className="rounded-md p-[3px] text-slate-300 opacity-0 transition-all group-hover/doc:opacity-100 hover:text-red-500 hover:bg-red-50"
                       title="Eliminar documento"
                     >
                       <Trash2 size={11} />
                     </button>
                   )}
                 </div>
-                <p className="mt-0.5 text-[9px] text-slate-500">
-                  {formatClinicalDocumentAuthorName(document.audit.updatedBy.displayName)} ·{' '}
-                  {formatClinicalDocumentDateTime(document.audit.updatedAt)}
-                </p>
+                <div className="mt-0.5 flex items-center justify-between">
+                  <p className="text-[9px] text-slate-500">
+                    {formatClinicalDocumentAuthorName(document.audit.updatedBy.displayName)} ·{' '}
+                    {formatClinicalDocumentDateTime(document.audit.updatedAt)}
+                  </p>
+                  {document.versionHistory && document.versionHistory.length > 0 && (
+                    <VersionBadge
+                      currentVersion={document.currentVersion}
+                      versionHistory={document.versionHistory}
+                    />
+                  )}
+                </div>
               </div>
             ))}
           </div>

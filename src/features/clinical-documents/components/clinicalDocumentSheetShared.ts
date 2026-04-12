@@ -27,6 +27,8 @@ export interface ClinicalDocumentSheetProps {
   selectedDocument: ClinicalDocumentRecord | null;
   canEdit: boolean;
   isSaving: boolean;
+  isDirty?: boolean;
+  lastSavedAt?: string;
   isUploadingPdf: boolean;
   toolbar?: ReactNode;
   activeTitleTarget: string | null;

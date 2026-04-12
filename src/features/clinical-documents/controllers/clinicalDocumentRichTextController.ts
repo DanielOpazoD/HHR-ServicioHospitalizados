@@ -1,20 +1,17 @@
-const RICH_TEXT_TAGS = new Set([
-  'B',
-  'STRONG',
-  'I',
-  'EM',
-  'U',
-  'UL',
-  'OL',
-  'LI',
-  'BR',
-  'P',
-  'DIV',
-  'BLOCKQUOTE',
-  'SPAN',
-]);
+/**
+ * Clinical Document Rich Text Controller
+ *
+ * HTML normalization, sanitization, paste handling, and command
+ * execution for clinical document contentEditable editors.
+ *
+ * Tag and style whitelists are defined in clinicalDocumentHtmlSanitizer.ts.
+ */
 
-const ALLOWED_STYLE_KEYS = new Set(['color', 'background-color']);
+import {
+  ALLOWED_TAGS,
+  sanitizeElementStyle,
+  preserveElementAttributes,
+} from '@/features/clinical-documents/controllers/clinicalDocumentHtmlSanitizer';
 
 const escapeHtml = (value: string): string =>
   value
@@ -84,16 +81,17 @@ export const sanitizeClinicalDocumentHtml = (value: string): string => {
     const tagName = element.tagName.toUpperCase();
     const sanitizedChildren = Array.from(element.childNodes).flatMap(child => sanitizeNode(child));
 
-    if (!RICH_TEXT_TAGS.has(tagName)) {
+    if (!ALLOWED_TAGS.has(tagName)) {
       return sanitizedChildren;
     }
 
     const normalizedTagName = tagName === 'BLOCKQUOTE' ? 'div' : tagName.toLowerCase();
     const clone = document.createElement(normalizedTagName);
-    const safeStyle = sanitizeElementStyle(element);
+    const safeStyle = sanitizeElementStyle(element, tagName);
     if (safeStyle) {
       clone.setAttribute('style', safeStyle);
     }
+    preserveElementAttributes(element, clone, tagName);
     sanitizedChildren.forEach(child => clone.appendChild(child));
     return [clone];
   };
@@ -222,6 +220,55 @@ export const stripClinicalDocumentHtml = (value: string): string => {
     .trim();
 };
 
+/**
+ * Sanitizes pasted HTML: strips all inline styles, classes, and
+ * non-structural attributes while preserving images, tables, and
+ * basic formatting tags. Falls back to plain text if no HTML is available.
+ */
+export const sanitizePastedHtml = (html: string): string => {
+  if (typeof document === 'undefined') {
+    return html.replace(/<[^>]+>/g, '').trim();
+  }
+
+  const template = document.createElement('template');
+  template.innerHTML = html;
+
+  const sanitizeNode = (node: Node): Node[] => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      return [document.createTextNode(node.textContent || '')];
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+      return [];
+    }
+
+    const element = node as HTMLElement;
+    const tagName = element.tagName.toUpperCase();
+    const children = Array.from(element.childNodes).flatMap(c => sanitizeNode(c));
+
+    if (!ALLOWED_TAGS.has(tagName)) {
+      return children;
+    }
+
+    const clone = document.createElement(tagName.toLowerCase());
+    const safeStyle = sanitizeElementStyle(element, tagName);
+    if (safeStyle) {
+      clone.setAttribute('style', safeStyle);
+    }
+    preserveElementAttributes(element, clone, tagName);
+    children.forEach(c => clone.appendChild(c));
+    return [clone];
+  };
+
+  const fragment = document.createDocumentFragment();
+  Array.from(template.content.childNodes)
+    .flatMap(c => sanitizeNode(c))
+    .forEach(c => fragment.appendChild(c));
+
+  const container = document.createElement('div');
+  container.appendChild(fragment);
+  return normalizeWhitespaceHtml(container.innerHTML);
+};
+
 export const applyClinicalDocumentEditorCommand = (
   command:
     | 'bold'
@@ -243,25 +290,4 @@ export const applyClinicalDocumentEditorCommand = (
   }
 
   return document.execCommand(command, false, value);
-};
-const sanitizeElementStyle = (element: HTMLElement): string => {
-  const rawStyle = element.getAttribute('style');
-  if (!rawStyle) {
-    return '';
-  }
-
-  return rawStyle
-    .split(';')
-    .map(entry => entry.trim())
-    .filter(Boolean)
-    .map(entry => {
-      const separatorIndex = entry.indexOf(':');
-      if (separatorIndex === -1) return null;
-      const property = entry.slice(0, separatorIndex).trim().toLowerCase();
-      const value = entry.slice(separatorIndex + 1).trim();
-      if (!ALLOWED_STYLE_KEYS.has(property) || !value) return null;
-      return `${property}: ${value}`;
-    })
-    .filter((entry): entry is string => Boolean(entry))
-    .join('; ');
 };

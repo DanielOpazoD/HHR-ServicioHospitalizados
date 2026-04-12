@@ -57,6 +57,7 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
       selectedDocument={sheetProps.selectedDocument}
       canEdit={sheetProps.canEdit}
       isSaving={sheetProps.isSaving}
+      lastSavedAt={sheetProps.lastSavedAt}
       isUploadingPdf={sheetProps.isUploadingPdf}
       formattingDisabled={sheetState.formattingDisabled || !sheetProps.canEdit}
       isFormattingOpen={sheetState.isFormattingOpen}

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Bold,
+  Check,
   CheckCircle2,
   Eraser,
   FlaskConical,
@@ -9,6 +10,7 @@ import {
   Italic,
   List,
   ListOrdered,
+  Loader2,
   Printer,
   RotateCcw,
   Underline,
@@ -20,11 +22,13 @@ import type {
   ClinicalDocumentFormattingCommand,
   ClinicalDocumentSheetProps,
 } from '@/features/clinical-documents/components/clinicalDocumentSheetShared';
+import { resolveAutosaveIndicatorState } from '@/features/clinical-documents/controllers/clinicalDocumentAutosaveIndicatorController';
 
 interface ClinicalDocumentFormattingToolbarProps {
   selectedDocument: NonNullable<ClinicalDocumentSheetProps['selectedDocument']>;
   canEdit: boolean;
   isSaving: boolean;
+  lastSavedAt?: string;
   isUploadingPdf: boolean;
   formattingDisabled: boolean;
   isFormattingOpen: boolean;
@@ -55,6 +59,7 @@ export const ClinicalDocumentFormattingToolbar: React.FC<
   selectedDocument,
   canEdit,
   isSaving,
+  lastSavedAt,
   isUploadingPdf,
   formattingDisabled,
   isFormattingOpen,
@@ -73,15 +78,31 @@ export const ClinicalDocumentFormattingToolbar: React.FC<
   const iconButtonClass =
     'relative inline-flex h-8 w-8 items-center justify-center rounded-lg border transition-colors disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300';
 
+  const autosaveState = useMemo(
+    () => resolveAutosaveIndicatorState(isSaving, false, lastSavedAt),
+    [isSaving, lastSavedAt]
+  );
+
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 bg-transparent px-0 py-0">
       <span
-        className={`min-w-[84px] text-[10px] font-bold uppercase tracking-[0.16em] ${
-          isSaving ? 'text-slate-400' : 'text-transparent select-none'
-        }`}
+        className="flex items-center gap-1.5 min-w-[100px] text-[10px] font-semibold tracking-wide"
         aria-live="polite"
       >
-        Guardando...
+        {autosaveState.phase === 'saving' && (
+          <>
+            <Loader2 size={11} className="animate-spin text-slate-400" />
+            <span className="text-slate-400">Guardando...</span>
+          </>
+        )}
+        {autosaveState.phase === 'saved' && (
+          <>
+            <Check size={11} className="text-emerald-500" />
+            <span className="text-emerald-500">
+              Guardado{autosaveState.savedAtLabel ? ` ${autosaveState.savedAtLabel}` : ''}
+            </span>
+          </>
+        )}
       </span>
       <div className="relative flex flex-wrap items-center justify-end gap-1.5 shrink-0">
         <button

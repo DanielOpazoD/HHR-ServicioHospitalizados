@@ -1,11 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { KeyboardEvent, MutableRefObject } from 'react';
+import type { ClipboardEvent, KeyboardEvent, MutableRefObject } from 'react';
 
 import type { ClinicalDocumentFormattingCommand } from '@/features/clinical-documents/components/clinicalDocumentSheetShared';
 import {
   applyClinicalDocumentEditorCommand,
   normalizeClinicalDocumentContentForStorage,
+  sanitizePastedHtml,
 } from '@/features/clinical-documents/controllers/clinicalDocumentRichTextController';
+import {
+  detectSlashCommand,
+  removeSlashCommandFromHtml,
+} from '@/features/clinical-documents/controllers/clinicalDocumentSlashCommandController';
 
 export type ClinicalDocumentRichTextEditorCommand =
   | ClinicalDocumentFormattingCommand
@@ -27,6 +32,8 @@ interface UseClinicalDocumentRichTextEditorControllerParams {
   onChange: (value: string) => void;
   onActivate?: (sectionId: string, editor: ClinicalDocumentRichTextEditorActivationApi) => void;
   onDeactivate?: (sectionId: string) => void;
+  /** Called when `/lab` command is detected. Should return formatted lab text. */
+  onSlashLab?: () => Promise<string | null>;
 }
 
 export const useClinicalDocumentRichTextEditorController = ({
@@ -37,6 +44,7 @@ export const useClinicalDocumentRichTextEditorController = ({
   onChange,
   onActivate,
   onDeactivate,
+  onSlashLab,
 }: UseClinicalDocumentRichTextEditorControllerParams) => {
   const historyRef = useRef<string[]>([]);
   const historyIndexRef = useRef(-1);
@@ -179,11 +187,32 @@ export const useClinicalDocumentRichTextEditorController = ({
     const editor = editorRef.current;
     if (!editor) return;
 
+    // Detect /lab slash command before normalizing
+    const textContent = editor.textContent || '';
+    const command = detectSlashCommand(textContent);
+
+    if (command === 'lab' && onSlashLab) {
+      // Remove the command text immediately
+      editor.innerHTML = removeSlashCommandFromHtml(editor.innerHTML);
+
+      // Async: fetch and insert lab summary
+      void onSlashLab().then(labText => {
+        if (!labText || !editorRef.current) return;
+        editorRef.current.focus();
+        document.execCommand('insertText', false, labText);
+        const updatedHtml = normalizeClinicalDocumentContentForStorage(editorRef.current.innerHTML);
+        lastLocalNormalizedValueRef.current = updatedHtml;
+        pushHistorySnapshot(updatedHtml);
+        onChange(updatedHtml);
+      });
+      return;
+    }
+
     const html = normalizeClinicalDocumentContentForStorage(editor.innerHTML);
     lastLocalNormalizedValueRef.current = html;
     pushHistorySnapshot(html);
     onChange(html);
-  }, [editorRef, onChange, pushHistorySnapshot]);
+  }, [editorRef, onChange, onSlashLab, pushHistorySnapshot]);
 
   const handleActivateInteraction = useCallback(() => {
     notifyActive();
@@ -231,10 +260,60 @@ export const useClinicalDocumentRichTextEditorController = ({
     [applyEditorCommand, disabled, editorRef]
   );
 
+  /**
+   * Intercepts paste to strip inline styles, colors, and backgrounds
+   * while preserving images, tables, and structural formatting.
+   */
+  const handlePaste = useCallback(
+    (event: ClipboardEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      const editor = editorRef.current;
+      if (!editor) return;
+
+      // 1. Check for image files in clipboard (screenshots, copied images)
+      const imageFile = Array.from(event.clipboardData.files).find(f =>
+        f.type.startsWith('image/')
+      );
+      if (imageFile) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result !== 'string' || !editorRef.current) return;
+          const imgHtml = `<img src="${reader.result}" alt="Imagen pegada" style="max-width:100%">`;
+          editorRef.current.focus();
+          document.execCommand('insertHTML', false, imgHtml);
+          const html = normalizeClinicalDocumentContentForStorage(editorRef.current.innerHTML);
+          lastLocalNormalizedValueRef.current = html;
+          pushHistorySnapshot(html);
+          onChange(html);
+        };
+        reader.readAsDataURL(imageFile);
+        return;
+      }
+
+      // 2. Check for HTML content (tables, formatted text with inline images)
+      const rawHtml = event.clipboardData.getData('text/html');
+      const plainText = event.clipboardData.getData('text/plain');
+
+      if (rawHtml) {
+        const clean = sanitizePastedHtml(rawHtml);
+        document.execCommand('insertHTML', false, clean);
+      } else if (plainText) {
+        document.execCommand('insertText', false, plainText);
+      }
+
+      const html = normalizeClinicalDocumentContentForStorage(editor.innerHTML);
+      lastLocalNormalizedValueRef.current = html;
+      pushHistorySnapshot(html);
+      onChange(html);
+    },
+    [editorRef, onChange, pushHistorySnapshot]
+  );
+
   return {
     handleActivateInteraction,
     handleBlur,
     handleInput,
     handleKeyDown,
+    handlePaste,
   };
 };

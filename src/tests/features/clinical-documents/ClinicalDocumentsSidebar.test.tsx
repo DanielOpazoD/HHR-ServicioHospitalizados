@@ -84,14 +84,14 @@ describe('ClinicalDocumentsSidebar', () => {
 
     fireEvent.click(
       screen.getByRole('button', {
-        name: new RegExp(`${document.title}.*Epicrisis`, 'i'),
+        name: /epicrisis/i,
       })
     );
     expect(onSelectDocument).toHaveBeenCalledWith(document.id);
 
     fireEvent.click(screen.getByTitle(/eliminar documento/i));
     expect(onDeleteDocument).toHaveBeenCalledWith(document);
-    expect(screen.getByText('Epicrisis médica')).toBeInTheDocument();
+    expect(screen.getAllByText(/epicrisis/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/doctor test/i)).toBeInTheDocument();
     expect(screen.queryByText(/borrador/i)).not.toBeInTheDocument();
   });

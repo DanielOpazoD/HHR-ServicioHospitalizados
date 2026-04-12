@@ -266,7 +266,7 @@ export const clinicalDocumentDraftReducer = (
       }));
     case 'APPLY_TEMPLATE':
       return patchDraft(state, draft =>
-        restoreClinicalDocumentDraftTemplate(draft, action.templateId)
+        restoreClinicalDocumentDraftTemplate(draft, action.templateId, true)
       );
     case 'RESTORE_TEMPLATE_CONTENT':
       return patchDraft(state, draft => restoreClinicalDocumentDraftTemplate(draft));

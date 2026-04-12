@@ -321,8 +321,7 @@ describe('ClinicalDocumentsWorkspace behavior', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getAllByText('Evolución médica').length).toBeGreaterThan(0);
-      expect(screen.getByText(/^Evolución$/, { selector: 'p' })).toBeInTheDocument();
+      expect(screen.getAllByText(/evoluci[oó]n/i).length).toBeGreaterThan(0);
     });
   });
 

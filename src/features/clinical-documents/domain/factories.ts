@@ -39,14 +39,30 @@ export const getClinicalDocumentTemplate = (templateId?: string): ClinicalDocume
   CLINICAL_DOCUMENT_TEMPLATES[templateId || DEFAULT_CLINICAL_DOCUMENT_TEMPLATE_ID] ||
   CLINICAL_DOCUMENT_TEMPLATES[DEFAULT_CLINICAL_DOCUMENT_TEMPLATE_ID];
 
+/**
+ * Restores a draft document to match a template structure.
+ *
+ * When `preserveContent` is true (default for template type changes),
+ * sections are matched by ID and their content is kept if the new
+ * template has a section with the same ID.
+ *
+ * When `preserveContent` is false (used by "Restablecer" button),
+ * all section content is cleared to empty strings.
+ *
+ * Patient field values are always preserved regardless of the flag.
+ */
 export const restoreClinicalDocumentDraftTemplate = (
   record: ClinicalDocumentRecord,
-  templateId = record.templateId
+  templateId = record.templateId,
+  preserveContent = false
 ): ClinicalDocumentRecord => {
   const template = getClinicalDocumentTemplate(templateId);
   const patientFieldValues = Object.fromEntries(
     record.patientFields.map(field => [field.id, field.value])
   );
+  const existingSectionContent = preserveContent
+    ? new Map(record.sections.map(s => [s.id, s.content]))
+    : new Map<string, string>();
   const restoredRecord: ClinicalDocumentRecord = {
     ...record,
     documentType: template.documentType,
@@ -57,7 +73,15 @@ export const restoreClinicalDocumentDraftTemplate = (
     footerMedicoLabel: template.defaultFooterMedicoLabel,
     footerEspecialidadLabel: template.defaultFooterEspecialidadLabel,
     patientFields: clonePatientFields(template, patientFieldValues),
-    sections: cloneSections(template),
+    sections: template.sections.map(section => ({
+      id: section.id,
+      title: section.title,
+      content: existingSectionContent.get(section.id) || '',
+      order: section.order,
+      kind: section.kind,
+      required: section.required,
+      visible: section.visible ?? true,
+    })),
     pdf: undefined,
   };
   const renderedText = buildClinicalDocumentRenderedText(restoredRecord);
