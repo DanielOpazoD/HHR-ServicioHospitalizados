@@ -183,9 +183,6 @@ export const MedicalSignatureView: React.FC = () => {
                       {isSigning ? 'Firmando...' : 'Firmar y Recibir'}
                     </button>
                   </div>
-                  <p className="mt-1 text-xs text-slate-400">
-                    Al firmar, certifica que ha leído y recibido la entrega de turno conforme.
-                  </p>
                   {signError instanceof Error && (
                     <p className="mt-1 text-xs text-rose-600">{signError.message}</p>
                   )}
