@@ -122,47 +122,57 @@ Desde `2026-04-11`, el especialista usa una ruta server-side acotada via callabl
 ### 1. Confiar en Firestore Rules para el write directo del especialista
 
 Problema observado:
+
 - el especialista tenia UI habilitada;
 - el payload visible era correcto;
 - Firestore respondia `Missing or insufficient permissions`.
 
 Leccion:
+
 - no volver a mover este flujo a write directo sin una razon fuerte y pruebas de regresion sobre
   la rama real de reglas.
 
 ### 2. Flatten accidental de paths medicos
 
 Problema observado:
+
 - `flattenObject(...)` expandia objetos como `medicalHandoffAudit` a subpaths;
 - la diff de reglas cambiaba de forma y el write era rechazado.
 
 Leccion:
+
 - los patches medicos acotados deben mantenerse en dot-notation estable.
 
 ### 3. Side effects que ensucian el patch
 
 Problema observado:
+
 - reglas o reducers agregaban campos ajenos al handoff medico;
 - el especialista terminaba intentando modificar mas de lo permitido.
 
 Leccion:
+
 - no meter normalizaciones amplias, FHIR ni side effects de otra area en este write path.
 
 ### 4. Reemplazar optimistic update con snapshot remoto atrasado
 
 Problema observado:
+
 - la nota se guardaba;
 - al salir del textarea desaparecia un instante y luego volvia.
 
 Leccion:
+
 - la suscripcion realtime debe ignorar snapshots con `lastUpdated` mas antiguo que el cache local.
 
 ### 5. Dejar logs de depuracion permanentes
 
 Problema observado:
+
 - `DEBUG partialUpdate` y warnings de runtime escondian la señal real.
 
 Leccion:
+
 - los logs de depuracion para incidentes deben retirarse cuando el fix queda estable.
 
 ## Checks y tests minimos antes de tocar este flujo

@@ -257,7 +257,8 @@ export const createDailyRecordSubscription = (
       return;
     }
 
-    const existingResult = previousResult || createQueryResultFromRecord(date, null, result.runtime);
+    const existingResult =
+      previousResult || createQueryResultFromRecord(date, null, result.runtime);
     if (!existingResult.record) {
       applyResolvedQueryResult(result);
       return;
