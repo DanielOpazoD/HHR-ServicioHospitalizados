@@ -25,6 +25,7 @@ import { usePatientMovementCreationExecutor } from '@/hooks/usePatientMovementCr
 import { usePatientMovementUndoExecutor } from '@/hooks/usePatientMovementUndoExecutor';
 import { usePatientMovementCurrentRecord } from '@/hooks/usePatientMovementCurrentRecord';
 import { usePatientMovementMutationExecutor } from '@/hooks/usePatientMovementMutationExecutor';
+import { usePatientMovementMutationByIdExecutor } from '@/hooks/usePatientMovementMutationByIdExecutor';
 import type {
   AddDischargeAction,
   DeleteDischargeAction,
@@ -54,6 +55,10 @@ export const usePatientDischarges = (
     createEmptyPatient,
     saveAndUpdate,
     notifyUndoError,
+  });
+
+  const executeDischargeMutation = usePatientMovementMutationByIdExecutor({
+    executeMovementMutation,
   });
 
   const addDischarge: AddDischargeAction = useCallback(
@@ -101,32 +106,36 @@ export const usePatientDischarges = (
 
   const updateDischarge: UpdateDischargeAction = useCallback(
     (id, status, dischargeType, dischargeTypeOther, time, movementDate, ieehData) => {
-      executeMovementMutation(record =>
-        resolveUpdateDischargeMovement({
-          record,
-          id,
-          status,
-          dischargeType,
-          dischargeTypeOther,
-          time,
-          movementDate,
-          ieehData,
-        })
+      executeDischargeMutation(
+        (record, movementId) =>
+          resolveUpdateDischargeMovement({
+            record,
+            id: movementId,
+            status,
+            dischargeType,
+            dischargeTypeOther,
+            time,
+            movementDate,
+            ieehData,
+          }),
+        id
       );
     },
-    [executeMovementMutation]
+    [executeDischargeMutation]
   );
 
   const deleteDischarge: DeleteDischargeAction = useCallback(
     id => {
-      executeMovementMutation(record =>
-        resolveDeleteDischargeMovement({
-          record,
-          id,
-        })
+      executeDischargeMutation(
+        (record, movementId) =>
+          resolveDeleteDischargeMovement({
+            record,
+            id: movementId,
+          }),
+        id
       );
     },
-    [executeMovementMutation]
+    [executeDischargeMutation]
   );
 
   const undoDischarge: UndoDischargeAction = useCallback(

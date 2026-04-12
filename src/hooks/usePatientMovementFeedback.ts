@@ -17,15 +17,19 @@ interface UndoDescriptor {
   bedName: string;
 }
 
+const presentMovementWarning = (runtime: PatientMovementRuntime, warningMessage: string) => {
+  if (runtime.warn) {
+    runtime.warn(warningMessage);
+    return;
+  }
+
+  patientMovementRuntimeLogger.warn(warningMessage);
+};
+
 export const usePatientMovementFeedback = (runtime: PatientMovementRuntime) => {
   const notifyCreationError = useCallback(
     (kind: MovementKind, code: MovementCreationErrorCode, bedId: string) => {
-      const warningMessage = getMovementCreationWarningMessage(kind, code, bedId);
-      if (runtime.warn) {
-        runtime.warn(warningMessage);
-        return;
-      }
-      patientMovementRuntimeLogger.warn(warningMessage);
+      presentMovementWarning(runtime, getMovementCreationWarningMessage(kind, code, bedId));
     },
     [runtime]
   );

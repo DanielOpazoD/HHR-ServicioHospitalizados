@@ -22,6 +22,49 @@ const GlobalPatientSearchModal = lazyWithRetry(() =>
   }))
 );
 
+const usePatientSearchShortcut = (togglePatientSearch: () => void) => {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        togglePatientSearch();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [togglePatientSearch]);
+};
+
+const buildCensusEmailConfigModalProps = (
+  censusEmail: AppContentRuntime['censusEmail'],
+  currentDateString: string,
+  nurseSignature: string
+) => ({
+  isOpen: true,
+  onClose: () => censusEmail.setShowEmailConfig(false),
+  recipients: censusEmail.recipients,
+  onRecipientsChange: censusEmail.setRecipients,
+  recipientLists: censusEmail.recipientLists,
+  activeRecipientListId: censusEmail.activeRecipientListId,
+  onActiveRecipientListChange: censusEmail.setActiveRecipientListId,
+  onCreateRecipientList: censusEmail.createRecipientList,
+  onRenameRecipientList: censusEmail.renameActiveRecipientList,
+  onDeleteRecipientList: censusEmail.deleteRecipientList,
+  recipientsSource: censusEmail.recipientsSource,
+  isRecipientsSyncing: censusEmail.isRecipientsSyncing,
+  recipientsSyncError: censusEmail.recipientsSyncError,
+  message: censusEmail.message,
+  onMessageChange: censusEmail.onMessageChange,
+  onResetMessage: censusEmail.onResetMessage,
+  date: currentDateString,
+  nursesSignature: nurseSignature,
+  isAdminUser: censusEmail.isAdminUser,
+  testModeEnabled: censusEmail.testModeEnabled,
+  onTestModeChange: censusEmail.setTestModeEnabled,
+  testRecipient: censusEmail.testRecipient,
+  onTestRecipientChange: censusEmail.setTestRecipient,
+});
+
 export interface AppContentOverlaysProps {
   ui: UseUIStateReturn;
   runtime: AppContentRuntime;
@@ -39,18 +82,13 @@ export const AppContentOverlays: React.FC<AppContentOverlaysProps> = ({
     nurseSignature,
     record,
   } = runtime;
+  const censusEmailModalProps = buildCensusEmailConfigModalProps(
+    censusEmail,
+    currentDateString,
+    nurseSignature
+  );
 
-  // Global keyboard shortcut: Ctrl+K / Cmd+K opens patient search
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        ui.patientSearchModal.toggle();
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [ui.patientSearchModal]);
+  usePatientSearchShortcut(ui.patientSearchModal.toggle);
 
   return (
     <>
@@ -67,31 +105,7 @@ export const AppContentOverlays: React.FC<AppContentOverlaysProps> = ({
 
       {censusEmail.showEmailConfig && (
         <React.Suspense fallback={null}>
-          <CensusEmailConfigModal
-            isOpen={true}
-            onClose={() => censusEmail.setShowEmailConfig(false)}
-            recipients={censusEmail.recipients}
-            onRecipientsChange={censusEmail.setRecipients}
-            recipientLists={censusEmail.recipientLists}
-            activeRecipientListId={censusEmail.activeRecipientListId}
-            onActiveRecipientListChange={censusEmail.setActiveRecipientListId}
-            onCreateRecipientList={censusEmail.createRecipientList}
-            onRenameRecipientList={censusEmail.renameActiveRecipientList}
-            onDeleteRecipientList={censusEmail.deleteRecipientList}
-            recipientsSource={censusEmail.recipientsSource}
-            isRecipientsSyncing={censusEmail.isRecipientsSyncing}
-            recipientsSyncError={censusEmail.recipientsSyncError}
-            message={censusEmail.message}
-            onMessageChange={censusEmail.onMessageChange}
-            onResetMessage={censusEmail.onResetMessage}
-            date={currentDateString}
-            nursesSignature={nurseSignature}
-            isAdminUser={censusEmail.isAdminUser}
-            testModeEnabled={censusEmail.testModeEnabled}
-            onTestModeChange={censusEmail.setTestModeEnabled}
-            testRecipient={censusEmail.testRecipient}
-            onTestRecipientChange={censusEmail.setTestRecipient}
-          />
+          <CensusEmailConfigModal {...censusEmailModalProps} />
         </React.Suspense>
       )}
 

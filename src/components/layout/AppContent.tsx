@@ -6,22 +6,13 @@ import { AppContentChrome } from '@/components/layout/app-content/AppContentChro
 import { AppContentOverlays } from '@/components/layout/app-content/AppContentOverlays';
 import { useAppContentRuntime } from '@/components/layout/app-content/useAppContentRuntime';
 import { useAppContentShellEffects } from '@/components/layout/app-content/useAppContentShellEffects';
+import { resolveCensusDateSelection } from '@/components/layout/app-content/appContentCensusDateController';
 import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medicalIndications';
 
 interface AppContentProps {
   ui: UseUIStateReturn;
   renderFeatureQuickActions?: (patients: MedicalIndicationsPatientOption[]) => React.ReactNode;
 }
-
-const resolveCensusDateSelection = (isoDate: string) => {
-  const datePart = isoDate.split('T')[0];
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
-    return null;
-  }
-
-  const [year, month, day] = datePart.split('-').map(Number);
-  return { year, month: month - 1, day };
-};
 
 export const AppContent: React.FC<AppContentProps> = ({ ui, renderFeatureQuickActions }) => {
   const runtime = useAppContentRuntime({ ui });

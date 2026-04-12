@@ -12,6 +12,7 @@ import {
   shouldRenderBookmarkBar,
   shouldRenderDateStrip,
 } from '@/components/layout/app-content/appContentVisibilityController';
+import { resolveCensusDateSelection } from '@/components/layout/app-content/appContentCensusDateController';
 import type { UseUIStateReturn } from '@/hooks/useUIState';
 import type { AppContentRuntime } from '@/components/layout/app-content/useAppContentRuntime';
 import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medicalIndications';
@@ -32,6 +33,55 @@ const calculateDaysOfStay = (admissionDate?: string): string => {
   return String(Math.max(days, 1));
 };
 
+const buildMedicalIndicationsPatientOptions = (
+  record: AppContentRuntime['record']
+): MedicalIndicationsPatientOption[] => {
+  const bedsById = new Map(BEDS.map(bed => [bed.id, bed]));
+
+  return Object.entries(record?.beds || {})
+    .filter(([, patient]) => Boolean(patient.patientName?.trim()))
+    .map(([bedId, patient]) => ({
+      bedId,
+      label: `${bedsById.get(bedId)?.name || bedId} · ${patient.patientName}`,
+      patientName: patient.patientName || '',
+      rut: patient.rut || '',
+      diagnosis: patient.cie10Description || patient.pathology || '',
+      age: patient.age || '',
+      birthDate: formatDateToCL(patient.birthDate || ''),
+      allergies: '',
+      admissionDate: formatDateToCL(patient.admissionDate || ''),
+      daysOfStay: calculateDaysOfStay(patient.admissionDate),
+      treatingDoctor: '',
+    }));
+};
+
+const canUseCensusDateStripActions = (
+  currentModule: UseUIStateReturn['currentModule'],
+  canUseCensusExports: boolean
+) => currentModule === 'CENSUS' && canUseCensusExports;
+
+const resolveDateStripCensusActions = ({
+  canUseCensusActions,
+  censusEmail,
+  exportManager,
+  handleExportExcel,
+}: {
+  canUseCensusActions: boolean;
+  censusEmail: AppContentRuntime['censusEmail'];
+  exportManager: AppContentRuntime['exportManager'];
+  handleExportExcel: AppContentRuntime['handleExportExcel'];
+}) => ({
+  onExportExcel: canUseCensusActions ? handleExportExcel : undefined,
+  onConfigureEmail: canUseCensusActions ? () => censusEmail.setShowEmailConfig(true) : undefined,
+  onSendEmail: canUseCensusActions
+    ? async () => {
+        await exportManager.handleBackupExcel();
+        await censusEmail.sendEmail();
+      }
+    : undefined,
+  onBackupExcel: canUseCensusActions ? exportManager.handleBackupExcel : undefined,
+});
+
 export const AppContentChrome: React.FC<AppContentChromeProps> = ({
   ui,
   runtime,
@@ -41,48 +91,32 @@ export const AppContentChrome: React.FC<AppContentChromeProps> = ({
   const { isSignatureMode, currentDateString } = dateNav;
 
   const medicalIndicationsPatients = React.useMemo<MedicalIndicationsPatientOption[]>(() => {
-    const bedsById = new Map(BEDS.map(bed => [bed.id, bed]));
-
-    return Object.entries(runtime.record?.beds || {})
-      .filter(([, patient]) => Boolean(patient.patientName?.trim()))
-      .map(([bedId, patient]) => ({
-        bedId,
-        label: `${bedsById.get(bedId)?.name || bedId} · ${patient.patientName}`,
-        patientName: patient.patientName || '',
-        rut: patient.rut || '',
-        diagnosis: patient.cie10Description || patient.pathology || '',
-        age: patient.age || '',
-        birthDate: formatDateToCL(patient.birthDate || ''),
-        allergies: '',
-        admissionDate: formatDateToCL(patient.admissionDate || ''),
-        daysOfStay: calculateDaysOfStay(patient.admissionDate),
-        treatingDoctor: '',
-      }));
+    return buildMedicalIndicationsPatientOptions(runtime.record);
   }, [runtime.record]);
+
+  const canUseCensusActions = canUseCensusDateStripActions(
+    ui.currentModule,
+    runtime.canUseCensusExports
+  );
+  const dateStripCensusActions = resolveDateStripCensusActions({
+    canUseCensusActions,
+    censusEmail,
+    exportManager,
+    handleExportExcel: runtime.handleExportExcel,
+  });
 
   const openCensusDate = React.useCallback(
     (isoDate: string) => {
-      const datePart = isoDate.split('T')[0];
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
-        return;
-      }
-
-      const [year, month, day] = datePart.split('-').map(Number);
-      const parsed = new Date(year, month - 1, day, 12, 0, 0, 0);
-      if (
-        Number.isNaN(parsed.getTime()) ||
-        parsed.getFullYear() !== year ||
-        parsed.getMonth() !== month - 1 ||
-        parsed.getDate() !== day
-      ) {
+      const selection = resolveCensusDateSelection(isoDate);
+      if (!selection) {
         return;
       }
 
       ui.setCurrentModule('CENSUS');
       ui.setCensusViewMode('REGISTER');
-      dateNav.setSelectedYear(year);
-      dateNav.setSelectedMonth(month - 1);
-      dateNav.setSelectedDay(day);
+      dateNav.setSelectedYear(selection.year);
+      dateNav.setSelectedMonth(selection.month);
+      dateNav.setSelectedDay(selection.day);
     },
     [dateNav, ui]
   );
@@ -122,29 +156,10 @@ export const AppContentChrome: React.FC<AppContentChromeProps> = ({
           existingDaysInMonth={dateNav.existingDaysInMonth}
           onExportPDF={ui.showPrintButton ? exportManager.handleExportPDF : undefined}
           onOpenBedManager={ui.currentModule === 'CENSUS' ? ui.bedManagerModal.open : undefined}
-          onExportExcel={
-            ui.currentModule === 'CENSUS' && runtime.canUseCensusExports
-              ? runtime.handleExportExcel
-              : undefined
-          }
-          onConfigureEmail={
-            ui.currentModule === 'CENSUS' && runtime.canUseCensusExports
-              ? () => censusEmail.setShowEmailConfig(true)
-              : undefined
-          }
-          onSendEmail={
-            ui.currentModule === 'CENSUS' && runtime.canUseCensusExports
-              ? async () => {
-                  await exportManager.handleBackupExcel();
-                  await censusEmail.sendEmail();
-                }
-              : undefined
-          }
-          onBackupExcel={
-            ui.currentModule === 'CENSUS' && runtime.canUseCensusExports
-              ? exportManager.handleBackupExcel
-              : undefined
-          }
+          onExportExcel={dateStripCensusActions.onExportExcel}
+          onConfigureEmail={dateStripCensusActions.onConfigureEmail}
+          onSendEmail={dateStripCensusActions.onSendEmail}
+          onBackupExcel={dateStripCensusActions.onBackupExcel}
           isArchived={exportManager.isArchived}
           isBackingUp={exportManager.isBackingUp}
           currentModule={ui.currentModule}

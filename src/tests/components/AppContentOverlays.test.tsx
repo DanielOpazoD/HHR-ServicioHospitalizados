@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi, beforeAll } from 'vitest';
 
 type LazyBypassProps = Record<string, unknown>;
@@ -134,5 +134,13 @@ describe('AppContentOverlays', () => {
     );
 
     expect(screen.queryByTestId('email-modal')).not.toBeInTheDocument();
+  });
+
+  it('opens patient search with the global Ctrl/Cmd+K shortcut', () => {
+    render(<AppContentOverlays ui={ui as never} runtime={runtime as never} />);
+
+    fireEvent.keyDown(document, { key: 'k', ctrlKey: true });
+
+    expect(ui.patientSearchModal.toggle).toHaveBeenCalledTimes(1);
   });
 });

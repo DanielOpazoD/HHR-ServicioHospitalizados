@@ -15,9 +15,15 @@ interface TransferAuditEntry {
   receivingCenter: string;
 }
 
+const logLegacyMovementEntries = <T>(entries: readonly T[], logEntry: (entry: T) => void) => {
+  for (const entry of entries) {
+    logEntry(entry);
+  }
+};
+
 export const usePatientMovementAudit = () => {
   const logDischargeEntries = useCallback((entries: DischargeAuditEntry[], recordDate: string) => {
-    for (const entry of entries) {
+    logLegacyMovementEntries(entries, entry => {
       void auditServiceLegacy.logPatientDischarge?.(
         entry.bedId,
         entry.patientName,
@@ -25,7 +31,7 @@ export const usePatientMovementAudit = () => {
         entry.status,
         recordDate
       );
-    }
+    });
   }, []);
 
   const logTransferEntry = useCallback((entry: TransferAuditEntry, recordDate: string) => {

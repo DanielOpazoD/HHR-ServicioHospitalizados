@@ -24,6 +24,7 @@ import { usePatientMovementCreationExecutor } from '@/hooks/usePatientMovementCr
 import { usePatientMovementUndoExecutor } from '@/hooks/usePatientMovementUndoExecutor';
 import { usePatientMovementCurrentRecord } from '@/hooks/usePatientMovementCurrentRecord';
 import { usePatientMovementMutationExecutor } from '@/hooks/usePatientMovementMutationExecutor';
+import { usePatientMovementMutationByIdExecutor } from '@/hooks/usePatientMovementMutationByIdExecutor';
 import type {
   AddTransferAction,
   DeleteTransferAction,
@@ -53,6 +54,10 @@ export const usePatientTransfers = (
     createEmptyPatient,
     saveAndUpdate,
     notifyUndoError,
+  });
+
+  const executeTransferMutation = usePatientMovementMutationByIdExecutor({
+    executeMovementMutation,
   });
 
   const addTransfer: AddTransferAction = useCallback(
@@ -90,27 +95,31 @@ export const usePatientTransfers = (
 
   const updateTransfer: UpdateTransferAction = useCallback(
     (id, updates) => {
-      executeMovementMutation(record =>
-        resolveUpdateTransferMovement({
-          record,
-          id,
-          updates,
-        })
+      executeTransferMutation(
+        (record, movementId) =>
+          resolveUpdateTransferMovement({
+            record,
+            id: movementId,
+            updates,
+          }),
+        id
       );
     },
-    [executeMovementMutation]
+    [executeTransferMutation]
   );
 
   const deleteTransfer: DeleteTransferAction = useCallback(
     id => {
-      executeMovementMutation(record =>
-        resolveDeleteTransferMovement({
-          record,
-          id,
-        })
+      executeTransferMutation(
+        (record, movementId) =>
+          resolveDeleteTransferMovement({
+            record,
+            id: movementId,
+          }),
+        id
       );
     },
-    [executeMovementMutation]
+    [executeTransferMutation]
   );
 
   const undoTransfer: UndoTransferAction = useCallback(
