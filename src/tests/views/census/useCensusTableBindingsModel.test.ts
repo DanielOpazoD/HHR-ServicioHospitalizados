@@ -69,7 +69,10 @@ describe('useCensusTableBindingsModel', () => {
         role: 'doctor_urgency',
       })
     );
-    vi.mocked(useClinicalDocumentPresenceByBed).mockReturnValue({ R1: true });
+    vi.mocked(useClinicalDocumentPresenceByBed).mockReturnValue({
+      byBedId: { R1: true },
+      infoByBedId: { R1: { present: true, totalCount: 1, draftCount: 0 } },
+    });
     vi.mocked(buildCensusTableLayoutBindings).mockReturnValue(layoutBindings as never);
 
     const { result } = renderHook(() =>

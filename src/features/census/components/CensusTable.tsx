@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { CensusTableHeader } from '@/features/census/components/CensusTableHeader';
 import { CensusTableBody } from '@/features/census/components/CensusTableBody';
 import { useCensusTableBindingsModel } from '@/features/census/hooks/useCensusTableBindingsModel';
+import { useCensusTableDragDrop, DragDropConfirmation } from '@/features/census/drag-drop';
+import { useDailyRecordBedActions, useDailyRecordBeds } from '@/context/DailyRecordContext';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 export type { DiagnosisMode } from '@/features/census/types/censusTableTypes';
 
@@ -16,11 +18,23 @@ export const CensusTable: React.FC<CensusTableProps> = ({
   readOnly = false,
   accessProfile = 'default',
 }) => {
-  const { isReady, bindings } = useCensusTableBindingsModel({
+  const { isReady, bindings, clinicalDocumentInfoByBedId } = useCensusTableBindingsModel({
     currentDateString,
     readOnly,
     accessProfile,
   });
+
+  const { moveOrCopyPatient } = useDailyRecordBedActions();
+  const beds = useDailyRecordBeds();
+
+  const handleMoveToBed = useCallback(
+    (sourceBedId: string, targetBedId: string) => {
+      moveOrCopyPatient('move', sourceBedId, targetBedId);
+    },
+    [moveOrCopyPatient]
+  );
+
+  const dragDrop = useCensusTableDragDrop(handleMoveToBed, beds ?? {});
 
   if (!isReady || !bindings) return null;
 
@@ -35,9 +49,21 @@ export const CensusTable: React.FC<CensusTableProps> = ({
           style={tableStyle}
         >
           <CensusTableHeader {...headerProps} />
-          <CensusTableBody {...bodyProps} />
+          <CensusTableBody
+            {...bodyProps}
+            dragDrop={readOnly ? undefined : dragDrop}
+            clinicalDocumentInfoByBedId={clinicalDocumentInfoByBedId}
+          />
         </table>
       </div>
+
+      {dragDrop.state.pendingMove && (
+        <DragDropConfirmation
+          move={dragDrop.state.pendingMove}
+          onConfirm={dragDrop.confirmationHandlers.onConfirm}
+          onCancel={dragDrop.confirmationHandlers.onCancel}
+        />
+      )}
     </div>
   );
 };

@@ -36,6 +36,11 @@ export const PatientMainRowView: React.FC<PatientMainRowViewProps> = ({
   onToggleBedType,
   onUpdateClinicalCrib,
   onChange,
+  draggable,
+  isDragging,
+  onDragStart,
+  onDragEnd,
+  clinicalDocumentCount,
 }) => {
   const sections = usePatientMainRowSectionsModel({
     bed,
@@ -66,14 +71,18 @@ export const PatientMainRowView: React.FC<PatientMainRowViewProps> = ({
     onToggleBedType,
     onUpdateClinicalCrib,
     onChange,
+    clinicalDocumentCount,
   });
 
   return (
     <tr
-      className={`${mainRowViewState.rowClassName} group/patient-row`}
+      className={`${mainRowViewState.rowClassName} group/patient-row ${isDragging ? 'opacity-40' : ''} ${draggable ? 'cursor-grab active:cursor-grabbing' : ''}`}
       style={style}
       data-testid="patient-row"
       data-bed-id={bed.id}
+      draggable={draggable}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
     >
       <PatientMainRowActionCell {...sections.action} />
 

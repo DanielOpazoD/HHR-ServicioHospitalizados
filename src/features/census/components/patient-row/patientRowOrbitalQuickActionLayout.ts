@@ -55,14 +55,14 @@ export const ACTION_STACK_HORIZONTAL_SHIFT = 40;
  *
  * - **idle**: nearly invisible -- transparent ring, no shadow.
  * - **armed**: subtle white background with a light ring (hover preview).
- * - **open**: teal tint with a prominent ring and shadow (active state).
+ * - **open**: medical blue tint with a prominent ring and shadow (active state).
  * - **closing**: faded version of the armed state to signal dismissal.
  */
 export const resolveTriggerButtonStateClassName = (
   phase: 'idle' | 'armed' | 'open' | 'closing'
 ): string => {
   if (phase === 'open') {
-    return 'bg-teal-50/95 ring-2 ring-teal-300 shadow-md';
+    return 'bg-medical-50/95 ring-2 ring-medical-400 shadow-md';
   }
 
   if (phase === 'armed') {

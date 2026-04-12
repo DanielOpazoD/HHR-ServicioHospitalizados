@@ -30,6 +30,8 @@ interface PatientActionMenuProps extends PatientActionMenuCallbacks, PatientActi
   showCmaAction?: boolean;
   accessProfile?: CensusAccessProfile;
   medicalIndicationsPatient?: MedicalIndicationsPatientOption;
+  /** Number of active clinical documents for this patient episode. */
+  clinicalDocumentCount?: number;
 }
 
 const PatientActionPrimaryIcon: React.FC<{
@@ -70,6 +72,7 @@ export const PatientActionMenu: React.FC<PatientActionMenuProps> = ({
   showCmaAction = true,
   accessProfile = 'default',
   medicalIndicationsPatient,
+  clinicalDocumentCount,
 }) => {
   const [isMedicalIndicationsOpen, setIsMedicalIndicationsOpen] = React.useState(false);
   const isSpecialistAccess = accessProfile === 'specialist';
@@ -118,6 +121,9 @@ export const PatientActionMenu: React.FC<PatientActionMenuProps> = ({
           handleViewMedicalIndications();
           setIsMedicalIndicationsOpen(true);
         }}
+        badges={
+          clinicalDocumentCount && clinicalDocumentCount > 0 ? { clinicalDocumentCount } : undefined
+        }
       />
 
       {binding.availability.showDemographicsAction && (

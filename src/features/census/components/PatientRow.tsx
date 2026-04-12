@@ -43,6 +43,11 @@ const PatientRowComponent: React.FC<PatientRowProps> = ({
   accessProfile = 'default',
   indicators,
   style,
+  draggable,
+  isDragging,
+  onDragStart,
+  onDragEnd,
+  clinicalDocumentCount,
 }) => {
   const bindings = usePatientRowBindingsModel({
     bed,
@@ -70,7 +75,14 @@ const PatientRowComponent: React.FC<PatientRowProps> = ({
       {isSubRow ? (
         <PatientSubRowView {...bindings.subRowProps} />
       ) : (
-        <PatientMainRowView {...bindings.mainRowProps} />
+        <PatientMainRowView
+          {...bindings.mainRowProps}
+          draggable={draggable}
+          isDragging={isDragging}
+          onDragStart={onDragStart}
+          onDragEnd={onDragEnd}
+          clinicalDocumentCount={clinicalDocumentCount}
+        />
       )}
 
       {shouldRenderModals ? (

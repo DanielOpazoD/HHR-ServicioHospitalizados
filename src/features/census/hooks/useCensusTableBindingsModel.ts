@@ -19,11 +19,12 @@ export const useCensusTableBindingsModel = ({
 }: UseCensusTableBindingsModelParams) => {
   const tableViewModel = useCensusTableViewModel({ currentDateString });
   const canReadClinical = canReadClinicalDocuments(tableViewModel.role);
-  const clinicalDocumentPresenceByBedId = useClinicalDocumentPresenceByBed({
+  const clinicalDocumentPresence = useClinicalDocumentPresenceByBed({
     unifiedRows: tableViewModel.unifiedRows,
     currentDateString,
     enabled: canReadClinical,
   });
+  const clinicalDocumentPresenceByBedId = clinicalDocumentPresence.byBedId;
 
   const bindings = useMemo(() => {
     if (!tableViewModel.beds) {
@@ -75,5 +76,6 @@ export const useCensusTableBindingsModel = ({
   return {
     isReady: Boolean(tableViewModel.beds) && Boolean(bindings),
     bindings,
+    clinicalDocumentInfoByBedId: clinicalDocumentPresence.infoByBedId,
   };
 };

@@ -5,6 +5,8 @@ import {
   buildActiveClinicalDocumentEpisodeKeys,
   buildBedEpisodeBindings,
   buildClinicalDocumentPresenceByBed,
+  buildClinicalDocumentPresenceInfoByBed,
+  type ClinicalDocumentPresenceInfo,
 } from '@/features/census/controllers/clinicalDocumentPresenceController';
 import { resolveApplicationOutcomeMessage } from '@/shared/contracts/applicationOutcomeMessage';
 import { clinicalDocumentPresenceLogger } from '@/features/census/hooks/censusHookLoggers';
@@ -28,11 +30,16 @@ const loadClinicalDocumentUseCases = async () => {
   return clinicalDocumentUseCasesPromise;
 };
 
+export interface ClinicalDocumentPresenceResult {
+  byBedId: Record<string, boolean>;
+  infoByBedId: Record<string, ClinicalDocumentPresenceInfo>;
+}
+
 export const useClinicalDocumentPresenceByBed = ({
   unifiedRows,
   currentDateString,
   enabled,
-}: UseClinicalDocumentPresenceByBedParams): Record<string, boolean> => {
+}: UseClinicalDocumentPresenceByBedParams): ClinicalDocumentPresenceResult => {
   const bindings = useMemo(() => buildBedEpisodeBindings(unifiedRows), [unifiedRows]);
   const episodeKeys = useMemo(
     () => Array.from(new Set(bindings.map(binding => binding.episodeKey))).sort(),
@@ -67,13 +74,16 @@ export const useClinicalDocumentPresenceByBed = ({
     retry: false,
   });
 
-  return useMemo(() => {
+  return useMemo((): ClinicalDocumentPresenceResult => {
     if (!enabled || bindings.length === 0) {
-      return {};
+      return { byBedId: {}, infoByBedId: {} };
     }
 
     const activeEpisodeKeys = buildActiveClinicalDocumentEpisodeKeys(query.data);
 
-    return buildClinicalDocumentPresenceByBed(bindings, activeEpisodeKeys);
+    return {
+      byBedId: buildClinicalDocumentPresenceByBed(bindings, activeEpisodeKeys),
+      infoByBedId: buildClinicalDocumentPresenceInfoByBed(bindings, query.data),
+    };
   }, [bindings, enabled, query.data]);
 };

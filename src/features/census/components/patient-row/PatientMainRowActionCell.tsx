@@ -18,6 +18,7 @@ export const PatientMainRowActionCell: React.FC<PatientMainRowActionCellProps> =
   onViewMedicalIndications,
   onViewHistory,
   medicalIndicationsPatient,
+  clinicalDocumentCount,
 }) => (
   <td className="p-0 text-center border-r border-slate-200 relative w-10 overflow-visible print:hidden">
     <PatientActionMenu
@@ -36,6 +37,7 @@ export const PatientMainRowActionCell: React.FC<PatientMainRowActionCellProps> =
       hasClinicalDocument={hasClinicalDocument}
       isNewAdmission={isNewAdmission}
       medicalIndicationsPatient={medicalIndicationsPatient}
+      clinicalDocumentCount={clinicalDocumentCount}
     />
   </td>
 );

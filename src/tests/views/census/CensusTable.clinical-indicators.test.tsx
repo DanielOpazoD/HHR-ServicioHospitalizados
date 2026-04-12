@@ -62,7 +62,7 @@ vi.mock('@/context/useDailyRecordScopedActions', () => ({
 }));
 
 vi.mock('@/features/census/hooks/useClinicalDocumentPresenceByBed', () => ({
-  useClinicalDocumentPresenceByBed: vi.fn(() => ({})),
+  useClinicalDocumentPresenceByBed: vi.fn(() => ({ byBedId: {}, infoByBedId: {} })),
 }));
 
 vi.mock('@/context/AuthContext', () => ({
@@ -293,7 +293,8 @@ describe('CensusTable clinical indicators', () => {
       })
     );
     vi.mocked(useClinicalDocumentPresenceByBed).mockReturnValue({
-      R1: true,
+      byBedId: { R1: true },
+      infoByBedId: { R1: { present: true, totalCount: 1, draftCount: 0 } },
     });
 
     render(<CensusTable currentDateString="2025-01-08" />);

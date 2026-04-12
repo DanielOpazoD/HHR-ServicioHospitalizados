@@ -3,8 +3,20 @@ import { EmptyBedRow } from '@/features/census/components/EmptyBedRow';
 import { PatientRow } from '@/features/census/components/PatientRow';
 import { buildResolvedOccupiedRows } from '@/features/census/controllers/censusTableBodyController';
 import type { CensusTableBodyProps } from '@/features/census/types/censusTableComponentContracts';
+import type { CensusTableDragDropBundle } from '@/features/census/drag-drop';
+import type { ClinicalDocumentPresenceInfo } from '@/features/census/controllers/clinicalDocumentPresenceController';
 
-export const CensusTableBody: React.FC<CensusTableBodyProps> = ({
+export interface CensusTableBodyDragDropProps {
+  dragDrop?: CensusTableDragDropBundle;
+}
+
+export interface CensusTableBodyBadgeProps {
+  clinicalDocumentInfoByBedId?: Record<string, ClinicalDocumentPresenceInfo>;
+}
+
+export const CensusTableBody: React.FC<
+  CensusTableBodyProps & CensusTableBodyDragDropProps & CensusTableBodyBadgeProps
+> = ({
   unifiedRows,
   currentDateString,
   readOnly,
@@ -17,6 +29,8 @@ export const CensusTableBody: React.FC<CensusTableBodyProps> = ({
   clinicalDocumentPresenceByBedId,
   onAction,
   onActivateEmptyBed,
+  dragDrop,
+  clinicalDocumentInfoByBedId,
 }) => {
   const resolvedOccupiedMap = React.useMemo(() => {
     const resolved = buildResolvedOccupiedRows({
@@ -41,6 +55,11 @@ export const CensusTableBody: React.FC<CensusTableBodyProps> = ({
               visibleColumnCount={visibleColumnCount}
               readOnly={readOnly}
               onClick={() => onActivateEmptyBed(row.bed.id)}
+              isDragOver={dragDrop?.state.dragOverBedId === row.bed.id}
+              onDragOver={dragDrop?.emptyBedHandlers.onDragOver(row.bed.id)}
+              onDragEnter={dragDrop?.emptyBedHandlers.onDragEnter(row.bed.id)}
+              onDragLeave={dragDrop?.emptyBedHandlers.onDragLeave}
+              onDrop={dragDrop?.emptyBedHandlers.onDrop(row.bed.id)}
             />
           );
         }
@@ -63,6 +82,11 @@ export const CensusTableBody: React.FC<CensusTableBodyProps> = ({
             role={role}
             accessProfile={accessProfile}
             indicators={resolved.indicators}
+            draggable={!readOnly && !row.isSubRow && !!dragDrop}
+            isDragging={dragDrop?.state.dragSourceBedId === row.bed.id}
+            onDragStart={dragDrop?.patientHandlers.onDragStart(row.bed.id)}
+            onDragEnd={dragDrop?.patientHandlers.onDragEnd}
+            clinicalDocumentCount={clinicalDocumentInfoByBedId?.[row.bed.id]?.totalCount}
           />
         );
       })}

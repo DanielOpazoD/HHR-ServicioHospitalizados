@@ -20,6 +20,7 @@ export const buildPatientActionSectionBinding = ({
   onOpenExamRequest,
   onOpenImagingRequest,
   onOpenHistory,
+  clinicalDocumentCount,
 }: Pick<
   PatientMainRowViewProps,
   | 'isBlocked'
@@ -36,7 +37,7 @@ export const buildPatientActionSectionBinding = ({
   | 'onOpenExamRequest'
   | 'onOpenImagingRequest'
   | 'onOpenHistory'
->): PatientActionSectionBinding => {
+> & { clinicalDocumentCount?: number }): PatientActionSectionBinding => {
   const daysHospitalized = calculateHospitalizedDays({
     admissionDate: data.admissionDate,
     currentDate: currentDateString,
@@ -79,5 +80,6 @@ export const buildPatientActionSectionBinding = ({
       ? onOpenHistory
       : undefined,
     medicalIndicationsPatient: data.patientName ? medicalIndicationsPatient : undefined,
+    clinicalDocumentCount,
   };
 };

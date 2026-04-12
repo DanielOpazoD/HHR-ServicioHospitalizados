@@ -175,7 +175,7 @@ export const PatientRowOrbitalQuickActionsPortal: React.FC<
                     >
                       <span
                         className={clsx(
-                          'flex shrink-0 items-center justify-center rounded-full border-2 border-white shadow-md',
+                          'relative flex shrink-0 items-center justify-center rounded-full border-2 border-white shadow-md',
                           item.buttonClassName
                         )}
                         style={{
@@ -190,6 +190,11 @@ export const PatientRowOrbitalQuickActionsPortal: React.FC<
                           draggable={false}
                           className="h-7 w-7 object-contain"
                         />
+                        {item.badge != null && item.badge > 0 && (
+                          <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-medical-600 px-1 text-[9px] font-bold text-white shadow-sm">
+                            {item.badge}
+                          </span>
+                        )}
                       </span>
                       <span className="flex-1 text-[10px] font-medium leading-tight text-slate-700/90">
                         {item.label}

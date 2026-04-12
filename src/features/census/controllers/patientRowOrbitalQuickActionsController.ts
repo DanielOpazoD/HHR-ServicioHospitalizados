@@ -1,3 +1,16 @@
+/**
+ * Patient Row Orbital Quick Actions Controller
+ *
+ * Builds the list of quick-action items shown in the orbital launcher
+ * beside each patient row. Controls visibility per action and assigns
+ * badge counts (e.g., clinical document count) to each item.
+ */
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+/** Which orbital actions are visible for the current patient/context. */
 export interface PatientRowOrbitalQuickActionsAvailability {
   showClinicalDocumentsAction: boolean;
   showExamRequestAction: boolean;
@@ -5,25 +18,42 @@ export interface PatientRowOrbitalQuickActionsAvailability {
   showMedicalIndicationsAction?: boolean;
 }
 
+/** Icon asset identifiers used by the orbital action items. */
 export type PatientRowOrbitalQuickActionAsset =
   | 'rongorongo'
   | 'mangai'
   | 'ahutepitokura'
   | 'manutara';
 
+/**
+ * Badge counts passed from the census table to the orbital launcher.
+ * Each field corresponds to a specific action item.
+ */
+export interface PatientRowOrbitalQuickActionBadges {
+  /** Number of active clinical documents for the patient's current episode. */
+  clinicalDocumentCount?: number;
+}
+
+/** A single action item rendered in the orbital launcher. */
 export interface PatientRowOrbitalQuickActionItem {
   id: 'clinical-documents' | 'exam-request' | 'imaging-request' | 'medical-indications';
   label: string;
   tooltip: string;
   iconAsset: PatientRowOrbitalQuickActionAsset;
   buttonClassName: string;
+  /** Count displayed as a badge over the action icon. Undefined means no badge. */
+  badge?: number;
 }
 
-const ORBITAL_ACTION_DEFINITIONS: Array<
-  PatientRowOrbitalQuickActionItem & {
-    visible: keyof PatientRowOrbitalQuickActionsAvailability;
-  }
-> = [
+// ---------------------------------------------------------------------------
+// Definitions
+// ---------------------------------------------------------------------------
+
+type OrbitalActionDefinition = PatientRowOrbitalQuickActionItem & {
+  visible: keyof PatientRowOrbitalQuickActionsAvailability;
+};
+
+const ORBITAL_ACTION_DEFINITIONS: OrbitalActionDefinition[] = [
   {
     id: 'clinical-documents',
     label: 'Documentos',
@@ -58,13 +88,49 @@ const ORBITAL_ACTION_DEFINITIONS: Array<
   },
 ];
 
+// ---------------------------------------------------------------------------
+// Badge resolution
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolves the badge value for a given action item based on its ID.
+ * Only `clinical-documents` currently supports badges.
+ */
+const resolveActionBadge = (
+  actionId: PatientRowOrbitalQuickActionItem['id'],
+  badges?: PatientRowOrbitalQuickActionBadges
+): number | undefined => {
+  if (actionId === 'clinical-documents' && badges?.clinicalDocumentCount) {
+    return badges.clinicalDocumentCount;
+  }
+  return undefined;
+};
+
+// ---------------------------------------------------------------------------
+// Builders
+// ---------------------------------------------------------------------------
+
+/**
+ * Builds the list of visible orbital action items with badge values.
+ *
+ * @param availability - Which actions are visible
+ * @param badges - Optional badge counts per action type
+ * @returns Ordered list of action items for the orbital launcher
+ */
 export const buildPatientRowOrbitalQuickActionItems = (
-  availability: PatientRowOrbitalQuickActionsAvailability
+  availability: PatientRowOrbitalQuickActionsAvailability,
+  badges?: PatientRowOrbitalQuickActionBadges
 ): PatientRowOrbitalQuickActionItem[] =>
-  ORBITAL_ACTION_DEFINITIONS.filter(definition => availability[definition.visible]).map(
-    ({ visible: _visible, ...item }) => item
+  ORBITAL_ACTION_DEFINITIONS.filter(def => availability[def.visible]).map(
+    ({ visible: _visible, ...item }) => ({
+      ...item,
+      badge: resolveActionBadge(item.id, badges),
+    })
   );
 
+/**
+ * Returns true if at least one orbital quick action is available.
+ */
 export const hasPatientRowOrbitalQuickActions = (
   availability: PatientRowOrbitalQuickActionsAvailability
 ): boolean =>

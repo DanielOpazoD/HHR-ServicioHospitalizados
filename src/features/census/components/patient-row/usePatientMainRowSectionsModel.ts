@@ -21,6 +21,7 @@ export const usePatientMainRowSectionsModel = (props: PatientMainRowViewProps) =
         onOpenExamRequest: props.onOpenExamRequest,
         onOpenImagingRequest: props.onOpenImagingRequest,
         onOpenHistory: props.onOpenHistory,
+        clinicalDocumentCount: props.clinicalDocumentCount,
       }),
     [
       props.accessProfile,

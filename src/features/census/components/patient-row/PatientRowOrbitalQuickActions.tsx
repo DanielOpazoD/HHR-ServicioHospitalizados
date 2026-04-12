@@ -4,6 +4,7 @@ import {
   buildPatientRowOrbitalQuickActionItems,
   hasPatientRowOrbitalQuickActions,
   type PatientRowOrbitalQuickActionsAvailability,
+  type PatientRowOrbitalQuickActionBadges,
 } from '@/features/census/controllers/patientRowOrbitalQuickActionsController';
 import {
   ACTION_ROW_HEIGHT,
@@ -29,6 +30,7 @@ interface PatientRowOrbitalQuickActionsProps extends PatientRowOrbitalQuickActio
   onViewExamRequest?: () => void;
   onViewImagingRequest?: () => void;
   onViewMedicalIndications?: () => void;
+  badges?: PatientRowOrbitalQuickActionBadges;
 }
 
 export const PatientRowOrbitalQuickActions: React.FC<PatientRowOrbitalQuickActionsProps> = ({
@@ -40,6 +42,7 @@ export const PatientRowOrbitalQuickActions: React.FC<PatientRowOrbitalQuickActio
   onViewExamRequest,
   onViewImagingRequest,
   onViewMedicalIndications,
+  badges,
 }) => {
   const { isOpen, menuRef, setIsOpen, toggle, close } = useDropdownMenu();
   const triggerRef = React.useRef<HTMLButtonElement | null>(null);
@@ -62,8 +65,8 @@ export const PatientRowOrbitalQuickActions: React.FC<PatientRowOrbitalQuickActio
   );
 
   const orbitalItems = React.useMemo(
-    () => buildPatientRowOrbitalQuickActionItems(availability),
-    [availability]
+    () => buildPatientRowOrbitalQuickActionItems(availability, badges),
+    [availability, badges]
   );
 
   const hasQuickActions = hasPatientRowOrbitalQuickActions(availability);

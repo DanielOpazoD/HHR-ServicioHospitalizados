@@ -68,6 +68,8 @@ export interface PatientMainRowActionCellProps
   showCmaAction?: boolean;
   accessProfile?: CensusAccessProfile;
   medicalIndicationsPatient?: MedicalIndicationsPatientOption;
+  /** Number of active clinical documents for this patient episode. */
+  clinicalDocumentCount?: number;
 }
 
 export interface PatientMainRowViewProps
@@ -100,6 +102,13 @@ export interface PatientMainRowViewProps
   onOpenHistory: () => void;
   onToggleBedType: () => void;
   onChange: MainPatientInputChangeHandlers;
+  /** HTML5 drag & drop */
+  draggable?: boolean;
+  isDragging?: boolean;
+  onDragStart?: (e: import('react').DragEvent) => void;
+  onDragEnd?: () => void;
+  /** Number of active clinical documents for orbital badge */
+  clinicalDocumentCount?: number;
 }
 
 export interface PatientSubRowViewProps {
@@ -150,4 +159,11 @@ export interface PatientRowProps {
   accessProfile?: CensusAccessProfile;
   indicators?: PatientActionMenuIndicators;
   style?: CSSProperties;
+  /** HTML5 drag & drop */
+  draggable?: boolean;
+  isDragging?: boolean;
+  onDragStart?: (e: import('react').DragEvent) => void;
+  onDragEnd?: () => void;
+  /** Number of active clinical documents for orbital badge */
+  clinicalDocumentCount?: number;
 }

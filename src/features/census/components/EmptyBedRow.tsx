@@ -1,4 +1,5 @@
 import React from 'react';
+import type { DragEvent } from 'react';
 import { BedDefinition } from '@/features/census/contracts/censusBedContracts';
 import { Plus } from 'lucide-react';
 import { MedicalBadge } from '@/components/ui/base/MedicalBadge';
@@ -10,6 +11,11 @@ interface EmptyBedRowProps {
   visibleColumnCount: number;
   onClick: () => void;
   readOnly?: boolean;
+  isDragOver?: boolean;
+  onDragOver?: (e: DragEvent) => void;
+  onDragEnter?: (e: DragEvent) => void;
+  onDragLeave?: () => void;
+  onDrop?: (e: DragEvent) => void;
 }
 
 export const EmptyBedRow: React.FC<EmptyBedRowProps> = ({
@@ -18,6 +24,11 @@ export const EmptyBedRow: React.FC<EmptyBedRowProps> = ({
   visibleColumnCount,
   onClick,
   readOnly = false,
+  isDragOver = false,
+  onDragOver,
+  onDragEnter,
+  onDragLeave,
+  onDrop,
 }) => {
   const totalWidth = Object.values(columns).reduce((sum, width) => sum + width, 0);
   const fixedColumnsWidth = columns.actions + columns.bed + columns.type;
@@ -25,8 +36,14 @@ export const EmptyBedRow: React.FC<EmptyBedRowProps> = ({
 
   return (
     <tr
-      className="border-b border-slate-100/60 hover:bg-slate-50/50 transition-colors cursor-pointer group h-7"
+      className={`border-b border-slate-100/60 hover:bg-slate-50/50 transition-colors cursor-pointer group h-7 ${
+        isDragOver ? 'bg-medical-50 ring-2 ring-inset ring-medical-300 ring-dashed' : ''
+      }`}
       onClick={!readOnly ? onClick : undefined}
+      onDragOver={onDragOver}
+      onDragEnter={onDragEnter}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
     >
       <td
         style={{ width: columns.actions }}
