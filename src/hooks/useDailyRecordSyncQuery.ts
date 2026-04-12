@@ -47,7 +47,7 @@ import {
 type ChannelNotice = {
   channel: 'warning' | 'error' | null;
   title?: string;
-  message: string;
+  message?: string;
 };
 
 export const useDailyRecordSyncQuery = (
@@ -175,7 +175,7 @@ export const useDailyRecordSyncQuery = (
 
   const presentChannelNotice = useCallback(
     (notice: ChannelNotice | null | undefined, fallbackTitle: string) => {
-      if (!notice || !notice.channel) {
+      if (!notice || !notice.channel || !notice.message) {
         return;
       }
 
