@@ -7,6 +7,9 @@ import {
 const buildPrivateKeyFixture = () =>
   ['-----BEGIN ', 'PRIVATE KEY-----\\nabc\\n-----END ', 'PRIVATE KEY-----\\n'].join('');
 
+/** Build a fake Firebase API key by concatenating fragments so Netlify secrets scanning won't flag the test file itself. */
+const buildFakeApiKey = () => ['AIza', 'SyB0MKYu-efNbYEZnyTy7KHqWVQvBVwozwM'].join('');
+
 describe('secretLeakChecks', () => {
   it('flags forbidden tracked credential filenames', () => {
     expect(findForbiddenTrackedPaths(['functions/llave-beta.json'])).toEqual([
@@ -58,7 +61,7 @@ describe('secretLeakChecks', () => {
       file: 'src/services/storage/legacyfirebase/legacyFirebaseCore.ts',
       content: [
         'const config = {',
-        "  apiKey: 'AIzaSyB0MKYu-efNbYEZnyTy7KHqWVQvBVwozwM',",
+        `  apiKey: '${buildFakeApiKey()}',`,
         "  projectId: 'hospital-hanga-roa',",
         "  appId: '1:955583524000:web:78384874fe6c4a08d82dc5',",
         '};',
