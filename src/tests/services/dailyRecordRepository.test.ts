@@ -205,6 +205,7 @@ describe('DailyRecordRepository (Expanded)', () => {
       const prev = createMockRecord('2024-12-27');
       prev.nursesDayShift = ['Nurse Day 1', 'Nurse Day 2'];
       prev.nursesNightShift = ['Nurse Night 1', 'Nurse Night 2'];
+      prev.handoffNightReceives = ['Nurse Receive 1', 'Nurse Receive 2'];
       prev.tensNightShift = ['Tens N1', 'Tens N2', 'Tens N3'];
       prev.beds = {
         R1: createValidPatient('R1', {
@@ -220,7 +221,7 @@ describe('DailyRecordRepository (Expanded)', () => {
       const initialized = await initializeDay('2024-12-28', '2024-12-27');
 
       // Inheritance verification
-      expect(initialized.nursesDayShift).toEqual(['Nurse Night 1', 'Nurse Night 2']);
+      expect(initialized.nursesDayShift).toEqual(['Nurse Receive 1', 'Nurse Receive 2']);
       expect(initialized.tensDayShift).toEqual(['Tens N1', 'Tens N2', 'Tens N3']);
       expect(initialized.beds['R1'].handoffNoteDayShift).toBe('Night report');
       expect(initialized.beds['R1'].handoffNoteNightShift).toBe('Night report');

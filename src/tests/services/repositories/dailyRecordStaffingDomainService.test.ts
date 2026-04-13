@@ -33,6 +33,16 @@ describe('dailyRecordStaffingDomainService', () => {
     expect(result.tensNight).toEqual(['', '', '']);
   });
 
+  it('prefers previous night receivers when carrying nurses into the next day', () => {
+    const previous = buildRecord('2026-02-18');
+    previous.nursesNightShift = ['Entrega 1', 'Entrega 2'];
+    previous.handoffNightReceives = ['Recibe 1', 'Recibe 2'];
+
+    const result = resolveInheritedDailyRecordStaffing(previous);
+
+    expect(result.nursesDay).toEqual(['Recibe 1', 'Recibe 2']);
+  });
+
   it('falls back to compatible day shift nurses when night shift is empty', () => {
     const previous = buildRecord('2026-02-18');
     previous.nurses = ['Legacy A', 'Legacy B'];

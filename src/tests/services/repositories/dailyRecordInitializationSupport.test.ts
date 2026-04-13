@@ -128,13 +128,14 @@ describe('dailyRecordInitializationSupport', () => {
   it('builds a new day with inherited staffing from previous night shift', () => {
     const previous = buildRecord('2026-02-18');
     previous.nursesNightShift = ['N1', 'N2'];
+    previous.handoffNightReceives = ['R1', 'R2'];
     previous.tensNightShift = ['T1', 'T2', 'T3'];
     previous.handoffNovedadesNightShift = 'Novedades noche';
 
     const result = buildInitializedDayRecord('2026-02-19', previous);
 
     expect(result.dateTimestamp).toBe(Date.parse('2026-02-19T00:00:00'));
-    expect(result.nursesDayShift).toEqual(['N1', 'N2']);
+    expect(result.nursesDayShift).toEqual(['R1', 'R2']);
     expect(result.tensDayShift).toEqual(['T1', 'T2', 'T3']);
     expect(result.handoffNovedadesDayShift).toBe('Novedades noche');
   });

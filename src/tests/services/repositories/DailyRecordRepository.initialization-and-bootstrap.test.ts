@@ -31,6 +31,7 @@ describe('DailyRecordRepository initialization and bootstrap flows', () => {
       ...mockRecord,
       date: '2024-12-31',
       nursesNightShift: ['Nurse A', 'Nurse B'],
+      handoffNightReceives: ['Receiver A', 'Receiver B'],
       beds: { R1: buildPatient({ patientName: 'Patient X' }) },
     };
 
@@ -42,7 +43,7 @@ describe('DailyRecordRepository initialization and bootstrap flows', () => {
     const result = await Repository.initializeDay(mockDate, '2024-12-31');
 
     expect(result.date).toBe(mockDate);
-    expect(result.nursesDayShift).toEqual(['Nurse A', 'Nurse B']);
+    expect(result.nursesDayShift).toEqual(['Receiver A', 'Receiver B']);
     expect(result.beds.R1.patientName).toBe('Patient X');
   });
 

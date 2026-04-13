@@ -9,6 +9,17 @@ export interface InheritedDailyRecordStaffing {
   tensNight: string[];
 }
 
+const normalizeInheritedStaff = (
+  staff: string[] | null | undefined,
+  minLength: number
+): string[] => {
+  const normalized = Array.isArray(staff)
+    ? staff.map(value => value?.trim() || '').filter(Boolean)
+    : [];
+  while (normalized.length < minLength) normalized.push('');
+  return normalized.slice(0, minLength);
+};
+
 export const resolveInheritedDailyRecordStaffing = (
   prevRecord: DailyRecordStaffingState | null
 ): InheritedDailyRecordStaffing => {
@@ -23,12 +34,16 @@ export const resolveInheritedDailyRecordStaffing = (
 
   const compatibleDayShiftNurses = resolveDayShiftNurses(prevRecord);
   const nightShiftNurses = resolveNightShiftNurses(prevRecord);
+  const nightShiftReceives = normalizeInheritedStaff(prevRecord.handoffNightReceives, 2);
   const isNightShiftEmpty = nightShiftNurses.every(n => !n);
-  const prevNurses = !isNightShiftEmpty
-    ? nightShiftNurses
-    : compatibleDayShiftNurses.length > 0
-      ? compatibleDayShiftNurses
-      : ['', ''];
+  const hasNightShiftReceives = nightShiftReceives.some(Boolean);
+  const prevNurses = hasNightShiftReceives
+    ? nightShiftReceives
+    : !isNightShiftEmpty
+      ? nightShiftNurses
+      : compatibleDayShiftNurses.length > 0
+        ? compatibleDayShiftNurses
+        : ['', ''];
   const nursesDay = [...(prevNurses || ['', ''])];
   while (nursesDay.length < 2) nursesDay.push('');
 
