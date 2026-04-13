@@ -56,7 +56,6 @@ export const addMovementsSummary = (
 ) => {
   let currentY = startY;
   const pageHeight = doc.internal.pageSize.height;
-  const pageWidth = doc.internal.pageSize.width;
   const movementTables = buildMovementsSummaryTables(record);
 
   if (currentY + 40 > pageHeight) {
@@ -94,10 +93,7 @@ export const addMovementsSummary = (
     }
 
     if (index < movementTables.length - 1) {
-      doc.setDrawColor(220, 226, 235);
-      doc.setLineWidth(0.25);
-      doc.line(margin, currentY, pageWidth - margin, currentY);
-      currentY += 5;
+      currentY += 3;
     }
   });
 

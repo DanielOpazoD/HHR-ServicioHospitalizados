@@ -17,7 +17,7 @@ const createDocMock = () =>
   }) as never;
 
 describe('handoffPdfMovementsSummarySection', () => {
-  it('draws separators between altas, traslados and hospitalización diurna blocks', () => {
+  it('keeps only spacing between altas, traslados and hospitalización diurna blocks', () => {
     const doc = createDocMock();
     const autoTable = vi.fn(() => {
       (doc as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY += 12;
@@ -53,6 +53,6 @@ describe('handoffPdfMovementsSummarySection', () => {
 
     addMovementsSummary(doc, record, 14, 100, autoTable as never);
 
-    expect((doc as { line: ReturnType<typeof vi.fn> }).line).toHaveBeenCalledTimes(2);
+    expect((doc as { line: ReturnType<typeof vi.fn> }).line).not.toHaveBeenCalled();
   });
 });
