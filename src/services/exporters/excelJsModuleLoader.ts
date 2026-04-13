@@ -12,6 +12,14 @@ declare const __ENABLE_NODE_EXCEL_LOADER__: boolean;
 const EXCELJS_RUNTIME_SRC = '/vendor/exceljs.min.js';
 let browserExcelModulePromise: Promise<ExcelJSModuleType> | null = null;
 
+const shouldUseNodeExcelLoader = (): boolean => {
+  if (typeof __ENABLE_NODE_EXCEL_LOADER__ !== 'undefined') {
+    return __ENABLE_NODE_EXCEL_LOADER__;
+  }
+
+  return typeof window === 'undefined' || typeof document === 'undefined';
+};
+
 declare global {
   interface Window {
     ExcelJS?: ExcelJSModuleType;
@@ -72,7 +80,7 @@ const loadExcelJsFromRuntimeAsset = async (): Promise<ExcelJSModuleType> => {
   return browserExcelModulePromise;
 };
 export const loadExcelJSModule = async (): Promise<ExcelJSModuleType> => {
-  if (__ENABLE_NODE_EXCEL_LOADER__) {
+  if (shouldUseNodeExcelLoader()) {
     const nodeLoader = await loadNodeExcelLoader();
     return nodeLoader.loadExcelJSModule();
   }

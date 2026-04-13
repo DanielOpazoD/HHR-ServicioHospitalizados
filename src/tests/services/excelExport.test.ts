@@ -43,6 +43,9 @@ describe('Excel Export Configuration', () => {
       );
       const excelUtilsSource = readSource('src/services/exporters/excelUtils.ts');
       expect(excelModuleLoaderSource).toContain('/vendor/exceljs.min.js');
+      expect(excelModuleLoaderSource).toContain(
+        "typeof __ENABLE_NODE_EXCEL_LOADER__ !== 'undefined'"
+      );
       expect(excelModuleLoaderSource).not.toContain("await import('exceljs')");
       expect(nodeExcelModuleLoaderSource).toContain("await import('exceljs')");
       expect(excelUtilsSource).toContain('loadExcelJSModule');
