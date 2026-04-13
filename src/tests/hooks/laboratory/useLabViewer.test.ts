@@ -15,6 +15,7 @@ vi.unmock('@/features/laboratory/constants/labConstants');
 
 const mockSearchSyslabExams = vi.fn();
 const mockFetchSyslabExamDetails = vi.fn();
+const mockEnrichMicrobiologyDetailsFromPdf = vi.fn();
 
 vi.mock('@/services/laboratory/syslabService', () => ({
   searchSyslabExams: (...args: unknown[]) => mockSearchSyslabExams(...args),
@@ -35,6 +36,11 @@ vi.mock('@/services/utils/loggerScope', () => ({
 vi.mock('@/features/laboratory/services/labFirestoreService', () => ({
   saveLabResults: vi.fn(),
   getLabResults: vi.fn().mockResolvedValue(null),
+}));
+
+vi.mock('@/features/laboratory/services/labMicrobiologyPdfService', () => ({
+  enrichMicrobiologyDetailsFromPdf: (...args: unknown[]) =>
+    mockEnrichMicrobiologyDetailsFromPdf(...args),
 }));
 
 vi.mock('@/config/queryClient', () => ({
@@ -79,6 +85,7 @@ const PATIENTS: LabPatient[] = [
     label: 'R1 · Juan Pérez',
     patientName: 'Juan Pérez',
     rut: '12345678-9',
+    birthDate: '1980-04-12',
     diagnosis: 'Neumonía',
   },
   {
@@ -86,6 +93,7 @@ const PATIENTS: LabPatient[] = [
     label: 'R2 · María López',
     patientName: 'María López',
     rut: '98765432-1',
+    birthDate: '1979-11-02',
     diagnosis: 'Fractura',
   },
   {
@@ -93,6 +101,7 @@ const PATIENTS: LabPatient[] = [
     label: 'R3 · Juan Pérez',
     patientName: 'Juan Pérez',
     rut: '12345678-9',
+    birthDate: '1980-04-12',
     diagnosis: 'Neumonía',
   },
 ];
@@ -244,6 +253,140 @@ describe('buildAnalysisData', () => {
     expect(hbGroup!.variables['HEMOGLOBINA'][0].refMin).toBe(12);
     expect(hbGroup!.variables['HEMOGLOBINA'][0].refMax).toBe(16);
   });
+
+  it('builds microbiology entries from qualitative culture-style findings', () => {
+    const microExam: SyslabExamItem = {
+      ...MOCK_EXAM,
+      id: '999',
+      date: '08/04/2026',
+      time: '16:00:00',
+      link: 'http://10.4.69.90/syslab/detalleexamenes.php?id=999',
+      exams: ['CULTIVO CORRIENTE 1.', 'ANTIBIOGRAMA EXTENDIDO 1.', 'PCR PANEL RESPIRATORIO #2.'],
+    };
+
+    const result = buildAnalysisData(
+      [
+        ...details,
+        {
+          url: microExam.link!,
+          findings: [
+            {
+              section: 'MICROBIOLOGIA',
+              analysis: 'Cultivo',
+              result: 'Desarrollo de E. coli',
+              unit: '',
+              refValue: '',
+              qualitative: true,
+            },
+            {
+              section: 'MICROBIOLOGIA',
+              analysis: 'Ceftazidima',
+              result: 'Susceptible',
+              unit: '',
+              refValue: '',
+              qualitative: true,
+            },
+            {
+              section: 'MICROBIOLOGIA',
+              analysis: 'Rhinovirus',
+              result: 'NEGATIVO',
+              unit: '',
+              refValue: '',
+              qualitative: true,
+            },
+            {
+              section: 'MICROBIOLOGIA',
+              analysis: 'Influenza A',
+              result: 'NEGATIVO',
+              unit: '',
+              refValue: '',
+              qualitative: true,
+            },
+          ],
+        },
+      ],
+      [...examList, microExam]
+    );
+
+    expect(result.microbiologyEntries).toHaveLength(2);
+    expect(result.microbiologyEntries.map(entry => entry.examLabel)).toEqual(
+      expect.arrayContaining(['Cultivo corriente / Antibiograma', 'PCR panel respiratorio'])
+    );
+    expect(
+      result.microbiologyEntries.find(
+        entry => entry.examLabel === 'Cultivo corriente / Antibiograma'
+      )?.findings
+    ).toEqual([
+      { analysis: 'Cultivo', result: 'Desarrollo de E. coli' },
+      { analysis: 'Ceftazidima', result: 'Susceptible' },
+    ]);
+    expect(
+      result.microbiologyEntries.find(entry => entry.examLabel === 'PCR panel respiratorio')
+        ?.findings
+    ).toEqual([
+      { analysis: 'Rhinovirus', result: 'NEGATIVO' },
+      { analysis: 'Influenza A', result: 'NEGATIVO' },
+    ]);
+  });
+
+  it('keeps microbiology exam cards visible even when the parser only extracts one subsection', () => {
+    const combinedExam: SyslabExamItem = {
+      ...MOCK_EXAM,
+      id: '43091284',
+      date: '06/04/2026',
+      time: '11:40:30',
+      link: 'http://10.4.69.90/syslab/detalleexamenes.php?id=43091284',
+      exams: [
+        'CULTIVO CORRIENTE 1.',
+        'ATB BACILOS GRAM (-) 1.',
+        'ANTIBIOGRAMA EXTENDIDO 1.',
+        'PCR PANEL RESPIRATORIO #2.',
+      ],
+    };
+
+    const result = buildAnalysisData(
+      [
+        {
+          url: combinedExam.link!,
+          findings: [
+            {
+              section: 'GENERAL',
+              analysis: 'Influenza A',
+              result: 'NEGATIVO',
+              unit: '',
+              refValue: '',
+              qualitative: true,
+            },
+            {
+              section: 'GENERAL',
+              analysis: 'Rhinovirus',
+              result: 'NEGATIVO',
+              unit: '',
+              refValue: '',
+              qualitative: true,
+            },
+          ],
+        },
+      ],
+      [combinedExam]
+    );
+
+    expect(result.microbiologyEntries.map(entry => entry.examLabel)).toEqual(
+      expect.arrayContaining(['Cultivo corriente / Antibiograma', 'PCR panel respiratorio'])
+    );
+    expect(
+      result.microbiologyEntries.find(
+        entry => entry.examLabel === 'Cultivo corriente / Antibiograma'
+      )?.findings
+    ).toEqual([]);
+    expect(
+      result.microbiologyEntries.find(entry => entry.examLabel === 'PCR panel respiratorio')
+        ?.findings
+    ).toEqual([
+      { analysis: 'Influenza A', result: 'NEGATIVO' },
+      { analysis: 'Rhinovirus', result: 'NEGATIVO' },
+    ]);
+  });
 });
 
 /* ================================================================== */
@@ -253,11 +396,24 @@ describe('buildAnalysisData', () => {
 describe('useLabViewer', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockEnrichMicrobiologyDetailsFromPdf.mockImplementation(
+      async (details: SyslabExamDetail[]) => details
+    );
   });
 
   it('deduplicates patients by RUT', () => {
     const { result } = renderHook(() => useLabViewer(PATIENTS), { wrapper: createWrapper() });
     expect(result.current.uniquePatients).toHaveLength(2);
+  });
+
+  it('exposes the selected patient metadata', () => {
+    const { result } = renderHook(() => useLabViewer(PATIENTS), { wrapper: createWrapper() });
+    expect(result.current.selectedPatient).toEqual(
+      expect.objectContaining({
+        rut: '12345678-9',
+        birthDate: '1980-04-12',
+      })
+    );
   });
 
   it('selects first patient by default', () => {

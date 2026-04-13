@@ -87,7 +87,13 @@ import type { LabPatient, SyslabExamItem, LabAnalysisData } from '@/types/domain
 /* ------------------------------------------------------------------ */
 
 const PATIENTS: LabPatient[] = [
-  { bedId: 'R1', label: 'R1 · Juan', patientName: 'Juan', rut: '12345678-9' },
+  {
+    bedId: 'R1',
+    label: 'R1 · Juan',
+    patientName: 'Juan',
+    rut: '12345678-9',
+    birthDate: '1980-04-12',
+  },
   { bedId: 'R2', label: 'R2 · María', patientName: 'María', rut: '98765432-1' },
 ];
 
@@ -128,6 +134,24 @@ const MOCK_ANALYSIS: LabAnalysisData = {
     },
   ],
   examDates: ['01/03/2026', '06/04/2026'],
+  microbiologyEntries: [
+    {
+      category: 'sedimento_urocultivo',
+      date: '06/04/2026 13:08',
+      examLabel: 'UROCULTIVO',
+      findings: [{ analysis: 'Cultivo', result: 'Desarrollo de E. coli' }],
+      hasAlertFinding: true,
+      sourceExam: MOCK_EXAM,
+    },
+    {
+      category: 'cultivo_corriente',
+      date: '06/04/2026 13:08',
+      examLabel: 'Cultivo corriente / Antibiograma',
+      findings: [],
+      hasAlertFinding: false,
+      sourceExam: MOCK_EXAM,
+    },
+  ],
   comparison: {
     Hemoglobina: {
       '01/03/2026': {
@@ -150,6 +174,7 @@ const MOCK_ANALYSIS: LabAnalysisData = {
 
 const DEFAULT_HOOK_STATE = {
   uniquePatients: PATIENTS,
+  selectedPatient: PATIENTS[0],
   selectedRut: '12345678-9',
   isLoading: false,
   examList: [] as SyslabExamItem[],
@@ -241,6 +266,18 @@ describe('LabResultsViewerModal', () => {
     expect(screen.getByTitle('PDF Examen 43091284')).toBeInTheDocument();
   });
 
+  it('prioritizes PDF viewer over analysis when both states exist', () => {
+    mockUseLabViewer.mockReturnValue({
+      ...DEFAULT_HOOK_STATE,
+      pdfExam: MOCK_EXAM,
+      analysisData: MOCK_ANALYSIS,
+      analysisView: 'microbiology',
+    });
+    render(<LabResultsViewerModal isOpen={true} onClose={vi.fn()} patients={PATIENTS} />);
+    expect(screen.getByTitle('PDF Examen 43091284')).toBeInTheDocument();
+    expect(screen.queryByText('Resultados cualitativos relevantes')).not.toBeInTheDocument();
+  });
+
   it('shows analysis view with tabs', () => {
     mockUseLabViewer.mockReturnValue({
       ...DEFAULT_HOOK_STATE,
@@ -250,6 +287,7 @@ describe('LabResultsViewerModal', () => {
     // Controls hidden during analysis (no Buscar button) and empty state is gone
     expect(screen.queryByText('Buscar')).toBeNull();
     expect(screen.queryByText('Selecciona un paciente y busca')).toBeNull();
+    expect(screen.getByText('Microbiología')).toBeInTheDocument();
   });
 
   it('trends tab shows grouped charts', () => {
@@ -272,6 +310,20 @@ describe('LabResultsViewerModal', () => {
     expect(screen.getByText('01/03/2026')).toBeInTheDocument();
     expect(screen.getByText('06/04/2026')).toBeInTheDocument();
     expect(screen.getByText('13.2')).toBeInTheDocument();
+  });
+
+  it('microbiology tab shows separated microbiology content', () => {
+    mockUseLabViewer.mockReturnValue({
+      ...DEFAULT_HOOK_STATE,
+      analysisData: MOCK_ANALYSIS,
+      analysisView: 'microbiology',
+    });
+    render(<LabResultsViewerModal isOpen={true} onClose={vi.fn()} patients={PATIENTS} />);
+    expect(screen.getByText('Resultados cualitativos relevantes')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /ver pdf original de urocultivo/i })
+    ).toBeInTheDocument();
+    expect(screen.getByText('Resultado disponible en PDF original.')).toBeInTheDocument();
   });
 
   it('calls analyzeSelected when Analizar button is clicked', async () => {

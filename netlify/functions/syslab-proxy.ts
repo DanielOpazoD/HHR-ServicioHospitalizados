@@ -9,6 +9,10 @@
  *   SYSLAB_PROXY_URL — Public URL of the Express proxy
  *                       (e.g. "https://lab-hhr.example.com")
  *
+ * Local fallback:
+ *   VITE_SYSLAB_API_URL — Used by `netlify dev` when serving the built app locally
+ *                         and no public proxy URL is configured.
+ *
  * Supported actions (via `action` query parameter):
  *   - search:  GET  /api/exams?rut=<rut>
  *   - details: POST /api/exams/details  (body: { links: string[] })
@@ -28,7 +32,10 @@ import {
 
 const TIMEOUT_MS = 60_000; // 60s — PDF parsing can be slow
 
-const getProxyUrl = (): string | null => process.env.SYSLAB_PROXY_URL?.replace(/\/+$/, '') || null;
+const getProxyUrl = (): string | null =>
+  process.env.SYSLAB_PROXY_URL?.replace(/\/+$/, '') ||
+  process.env.VITE_SYSLAB_API_URL?.replace(/\/+$/, '') ||
+  null;
 
 const proxyFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
   const controller = new AbortController();
@@ -144,7 +151,7 @@ export const handler = async (event: NetlifyEventLike) => {
         success: false,
         error:
           'El servicio de laboratorio no está configurado. ' +
-          'Configure la variable SYSLAB_PROXY_URL en Netlify.',
+          'Configure la variable SYSLAB_PROXY_URL o VITE_SYSLAB_API_URL.',
       },
       { requestOrigin }
     );

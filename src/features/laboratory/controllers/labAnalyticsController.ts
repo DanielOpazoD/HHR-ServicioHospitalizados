@@ -12,8 +12,15 @@ import type {
   LabTrendPoint,
   LabTrendGroup,
   LabResultRow,
+  LabMicrobiologyEntry,
+  LabMicrobiologyCategory,
 } from '@/types/domain/laboratory';
-import { TREND_GROUPS, COMPARISON_EXCLUDE, COMPARISON_ORDER } from '../constants/labConstants';
+import {
+  TREND_GROUPS,
+  COMPARISON_EXCLUDE,
+  COMPARISON_ORDER,
+  MICROBIOLOGY_PATTERNS,
+} from '../constants/labConstants';
 import { parseRefRange, parseDateDDMMYYYY, normalizeAnalysisName } from './labFormattingController';
 
 /* ------------------------------------------------------------------ */
@@ -98,7 +105,162 @@ interface ProcessedFindings {
   trendMap: Record<string, LabTrendPoint[]>;
   columnKeys: string[];
   bilirubinByCol: Record<string, { total?: string; directa?: string; indirecta?: string }>;
+  microbiologyEntries: LabMicrobiologyEntry[];
 }
+
+const hasMicrobiologyPattern = (value: string): boolean => {
+  const upper = value.toUpperCase();
+  return MICROBIOLOGY_PATTERNS.some(pattern => upper.includes(pattern));
+};
+
+const hasAlertMicrobiologyResult = (result: string): boolean =>
+  /(positivo|reactivo|detectado|aislado|presente|desarrollo|resistente|sensible)/i.test(result);
+
+const getMicrobiologyCategoryMatchScore = (
+  category: LabMicrobiologyCategory,
+  finding: LabResultRow
+): number => {
+  const signature = `${finding.analysis} ${finding.result}`.toUpperCase();
+
+  switch (category) {
+    case 'clostridium_difficile':
+      if (
+        signature.includes('CLOSTRIDIUM') ||
+        signature.includes('TOXINA') ||
+        signature.includes('PRESENCIA DEL AG')
+      ) {
+        return 3;
+      }
+      return 0;
+    case 'coprocultivo':
+      if (
+        signature.includes('COPROCULTIVO') ||
+        signature.includes('SALMONELLA') ||
+        signature.includes('SHIGELLA')
+      ) {
+        return 3;
+      }
+      if (signature.includes('LEUCOCITOS FECALES')) return 2;
+      return 0;
+    case 'pcr_panel_respiratorio':
+      if (
+        signature.includes('INFLUENZA') ||
+        signature.includes('PARAINFLUENZA') ||
+        signature.includes('METAPNEUMOVIRUS') ||
+        signature.includes('RHINOVIRUS') ||
+        signature.includes('RINOVIRUS') ||
+        signature.includes('SINCICIAL') ||
+        signature.includes('ADENOVIRUS') ||
+        signature.includes('SARS') ||
+        signature.includes('CORONAVIRUS') ||
+        signature.includes('COVID') ||
+        signature.includes('PANEL RESPIRATORIO')
+      ) {
+        return 3;
+      }
+      return 0;
+    case 'sedimento_urocultivo':
+      if (signature.includes('UROCULTIVO') || signature.includes('SEDIMENTO')) return 3;
+      if (
+        signature.includes('ORINA') ||
+        signature.includes('NITRIT') ||
+        signature.includes('BACTER') ||
+        signature.includes('LEUCOCIT') ||
+        signature.includes('HEMATI')
+      ) {
+        return 2;
+      }
+      return 0;
+    case 'cultivo_corriente':
+      if (
+        signature.includes('CULTIVO') ||
+        signature.includes('ANTIBIOGRAMA') ||
+        signature.includes('ATB') ||
+        signature.includes('BACILO')
+      ) {
+        return 3;
+      }
+      if (
+        signature.includes('DESARROLLO') ||
+        signature.includes('SUSCEPTIBLE') ||
+        signature.includes('SUCEPTIBLE') ||
+        signature.includes('SENSIBLE') ||
+        signature.includes('RESISTENTE') ||
+        signature.includes('AISLADO')
+      ) {
+        return 2;
+      }
+      return 0;
+  }
+};
+
+const getMicrobiologyCategoryForExamName = (examName: string): LabMicrobiologyCategory | null => {
+  const upper = examName.toUpperCase();
+  if (upper.includes('CLOSTRIDIUM DIFFICILE')) return 'clostridium_difficile';
+  if (upper.includes('COPROCULTIVO')) return 'coprocultivo';
+  if (
+    upper.includes('PCR PANEL') ||
+    upper.includes('PANEL RESPIRATORIO') ||
+    upper.includes('PANEL VIRAL')
+  )
+    return 'pcr_panel_respiratorio';
+  if (upper.includes('UROCULTIVO') || upper.includes('SEDIMENTO')) return 'sedimento_urocultivo';
+  if (
+    upper.includes('CULTIVO CORRIENTE') ||
+    upper.includes('ANTIBIOGRAMA') ||
+    upper.includes('ATB ') ||
+    upper.includes('BACILOS')
+  )
+    return 'cultivo_corriente';
+  return null;
+};
+
+const getMicrobiologyCategoryForFinding = (
+  finding: LabResultRow,
+  availableCategories: LabMicrobiologyCategory[]
+): LabMicrobiologyCategory | null => {
+  const scoredCategories = availableCategories
+    .map(category => ({
+      category,
+      score: getMicrobiologyCategoryMatchScore(category, finding),
+    }))
+    .filter(entry => entry.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  if (scoredCategories.length > 0) {
+    return scoredCategories[0].category;
+  }
+
+  if (availableCategories.length === 1) {
+    return availableCategories[0];
+  }
+
+  return null;
+};
+
+const resolveMicrobiologyEntryLabel = (
+  category: LabMicrobiologyCategory,
+  examNames: string[]
+): string => {
+  switch (category) {
+    case 'clostridium_difficile':
+      return 'Clostridium difficile';
+    case 'coprocultivo':
+      return 'Coprocultivo';
+    case 'cultivo_corriente':
+      return 'Cultivo corriente / Antibiograma';
+    case 'pcr_panel_respiratorio':
+      return 'PCR panel respiratorio';
+    case 'sedimento_urocultivo': {
+      const upperNames = examNames.map(name => name.toUpperCase());
+      const hasUrocultivo = upperNames.some(name => name.includes('UROCULTIVO'));
+      const hasSedimento = upperNames.some(name => name.includes('SEDIMENTO'));
+      if (hasUrocultivo && hasSedimento) return 'Sedimento de orina + Urocultivo';
+      if (hasUrocultivo) return 'Urocultivo';
+      return 'Sedimento de orina';
+    }
+  }
+};
 
 /** Process all exam details into intermediate data structures. */
 const processFindings = (
@@ -112,6 +274,7 @@ const processFindings = (
   const seenComparison = new Set<string>();
   const bilirubinByCol: Record<string, { total?: string; directa?: string; indirecta?: string }> =
     {};
+  const microbiologyEntries: LabMicrobiologyEntry[] = [];
 
   for (const detail of details) {
     const exam = examList.find(e => e.link === detail.url);
@@ -119,10 +282,40 @@ const processFindings = (
     const isoDate = parseDateDDMMYYYY(examDate);
     const colKey = buildExamColumnKey(exam, examDate);
     columnKeySet.add(colKey);
+    const microbiologyCategories = Array.from(
+      new Set((exam?.exams || []).map(getMicrobiologyCategoryForExamName).filter(Boolean))
+    ) as LabMicrobiologyCategory[];
+    const examIsMicrobiology = microbiologyCategories.length > 0;
+    const microbiologyFindingsByCategory = new Map<
+      LabMicrobiologyCategory,
+      Array<{ analysis: string; result: string }>
+    >();
 
     for (const rawFinding of detail.findings) {
       const finding = { ...rawFinding, analysis: normalizeAnalysisName(rawFinding.analysis) };
       const lowerAnalysis = finding.analysis.toLowerCase();
+
+      if (
+        finding.qualitative ||
+        examIsMicrobiology ||
+        hasMicrobiologyPattern(finding.analysis) ||
+        hasMicrobiologyPattern(finding.result)
+      ) {
+        const category = getMicrobiologyCategoryForFinding(finding, microbiologyCategories);
+        if (category) {
+          const summaryEntry = { analysis: finding.analysis, result: finding.result };
+          const categoryFindings = microbiologyFindingsByCategory.get(category) || [];
+          if (
+            !categoryFindings.some(
+              entry =>
+                entry.analysis === summaryEntry.analysis && entry.result === summaryEntry.result
+            )
+          ) {
+            categoryFindings.push(summaryEntry);
+            microbiologyFindingsByCategory.set(category, categoryFindings);
+          }
+        }
+      }
 
       // Bilirrubina collection
       if (lowerAnalysis.includes('bilirrubina')) {
@@ -164,6 +357,19 @@ const processFindings = (
         }
       }
     }
+
+    for (const category of microbiologyCategories) {
+      if (!exam) continue;
+      const findings = microbiologyFindingsByCategory.get(category) || [];
+      microbiologyEntries.push({
+        category,
+        date: colKey,
+        examLabel: resolveMicrobiologyEntryLabel(category, exam.exams),
+        findings,
+        hasAlertFinding: findings.some(entry => hasAlertMicrobiologyResult(entry.result)),
+        sourceExam: exam,
+      });
+    }
   }
 
   return {
@@ -171,6 +377,7 @@ const processFindings = (
     trendMap,
     columnKeys: Array.from(columnKeySet),
     bilirubinByCol,
+    microbiologyEntries,
   };
 };
 
@@ -236,6 +443,14 @@ const sortColumnKeys = (columnKeys: string[]): string[] =>
     return a.localeCompare(b);
   });
 
+const sortMicrobiologyEntries = (entries: LabMicrobiologyEntry[]): LabMicrobiologyEntry[] =>
+  [...entries].sort((a, b) => {
+    const isoA = parseDateDDMMYYYY(a.date.substring(0, 10));
+    const isoB = parseDateDDMMYYYY(b.date.substring(0, 10));
+    if (isoA !== isoB) return isoB.localeCompare(isoA);
+    return b.date.localeCompare(a.date);
+  });
+
 /* ------------------------------------------------------------------ */
 /*  Main orchestrator                                                  */
 /* ------------------------------------------------------------------ */
@@ -248,12 +463,20 @@ export const buildAnalysisData = (
   details: SyslabExamDetail[],
   examList: SyslabExamItem[]
 ): LabAnalysisData => {
-  const { comparison, trendMap, columnKeys, bilirubinByCol } = processFindings(details, examList);
+  const { comparison, trendMap, columnKeys, bilirubinByCol, microbiologyEntries } = processFindings(
+    details,
+    examList
+  );
 
   mergeBilirrubinas(comparison, bilirubinByCol);
   const trendGroups = buildTrendGroups(trendMap);
   const examDates = sortColumnKeys(columnKeys);
   const sortedComparison = sortComparison(comparison);
 
-  return { trendGroups, examDates, comparison: sortedComparison };
+  return {
+    trendGroups,
+    examDates,
+    comparison: sortedComparison,
+    microbiologyEntries: sortMicrobiologyEntries(microbiologyEntries),
+  };
 };

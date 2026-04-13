@@ -83,17 +83,17 @@ export const LabResultsViewerModal: React.FC<LabResultsViewerModalProps> = ({
         </div>
       )}
 
-      {isViewingAnalysis && !lab.isAnalyzing && (
+      {isViewingPdf && <LabViewerPdf exam={lab.pdfExam!} onBack={lab.closePdf} />}
+
+      {!isViewingPdf && isViewingAnalysis && !lab.isAnalyzing && (
         <LabViewerAnalysis
           data={lab.analysisData!}
+          patient={lab.selectedPatient}
           activeTab={lab.analysisView}
           onTabChange={lab.setAnalysisView}
           onBack={lab.closeAnalysis}
+          onOpenPdf={lab.openPdf}
         />
-      )}
-
-      {isViewingPdf && !isViewingAnalysis && (
-        <LabViewerPdf exam={lab.pdfExam!} onBack={lab.closePdf} />
       )}
 
       {!isViewingPdf && !isViewingAnalysis && lab.examList.length > 0 && !lab.isLoading && (

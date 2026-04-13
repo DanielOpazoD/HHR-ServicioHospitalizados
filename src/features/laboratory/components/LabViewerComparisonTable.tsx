@@ -7,17 +7,13 @@
 import React from 'react';
 import clsx from 'clsx';
 import { FileText, Search } from 'lucide-react';
-import { useVirtualizer } from '@tanstack/react-virtual';
-import type { LabAnalysisData } from '@/types/domain/laboratory';
+import type { LabAnalysisData, LabPatient } from '@/types/domain/laboratory';
 import type { ExportConfig } from '../types/labViewerTypes';
 import { isOutOfRange, formatLabResult } from '../controllers/labFormattingController';
 import { LabExportConfigDialog } from './LabExportConfigDialog';
 
 const loadLabExcelExporter = async () =>
   import('../services/labExcelService').then(module => module.exportComparisonToExcel);
-
-const ROW_HEIGHT = 28;
-const VIRTUALIZATION_THRESHOLD = 20;
 
 const ComparisonRow: React.FC<{
   name: string;
@@ -78,27 +74,18 @@ const ComparisonRow: React.FC<{
   </tr>
 );
 
-export const LabViewerComparisonTable: React.FC<{ data: LabAnalysisData }> = ({ data }) => {
+export const LabViewerComparisonTable: React.FC<{
+  data: LabAnalysisData;
+  patient: LabPatient | null;
+}> = ({ data, patient }) => {
   const allVariableNames = Object.keys(data.comparison);
   const { examDates } = data;
   const [showExportConfig, setShowExportConfig] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
-  const scrollRef = React.useRef<HTMLDivElement>(null);
 
   const variableNames = searchQuery
     ? allVariableNames.filter(n => n.toLowerCase().includes(searchQuery.toLowerCase()))
     : allVariableNames;
-
-  const useVirtual = variableNames.length > VIRTUALIZATION_THRESHOLD;
-
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const virtualizer = useVirtualizer({
-    count: variableNames.length,
-    getScrollElement: () => scrollRef.current,
-    estimateSize: () => ROW_HEIGHT,
-    overscan: 10,
-    enabled: useVirtual,
-  });
 
   if (allVariableNames.length === 0) {
     return (
@@ -108,6 +95,16 @@ export const LabViewerComparisonTable: React.FC<{ data: LabAnalysisData }> = ({ 
 
   return (
     <div className="space-y-3">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-600">
+            Comparación
+          </p>
+          <h3 className="mt-1 text-[16px] font-bold text-slate-800">Tabla resumida por fechas</h3>
+          <p className="mt-1 text-[12px] text-slate-500">Visualiza cambios por variable.</p>
+        </div>
+      </div>
+
       {/* Search + Export */}
       <div className="flex items-center justify-between gap-2">
         <div className="relative flex-1 max-w-xs">
@@ -137,7 +134,7 @@ export const LabViewerComparisonTable: React.FC<{ data: LabAnalysisData }> = ({ 
           variables={variableNames}
           onExport={async (config: ExportConfig) => {
             const exportComparisonToExcel = await loadLabExcelExporter();
-            await exportComparisonToExcel(data, config);
+            await exportComparisonToExcel(data, config, patient);
             setShowExportConfig(false);
           }}
           onCancel={() => setShowExportConfig(false)}
@@ -145,11 +142,7 @@ export const LabViewerComparisonTable: React.FC<{ data: LabAnalysisData }> = ({ 
       )}
 
       {/* Table — virtualized when >20 rows */}
-      <div
-        ref={scrollRef}
-        className="overflow-auto rounded-xl border border-slate-200/80"
-        style={useVirtual ? { maxHeight: '60vh' } : undefined}
-      >
+      <div className="rounded-2xl border border-slate-200/80 bg-white shadow-sm">
         <table className="w-full border-collapse table-fixed">
           <colgroup>
             <col style={{ width: '140px', minWidth: '140px' }} />
@@ -173,57 +166,9 @@ export const LabViewerComparisonTable: React.FC<{ data: LabAnalysisData }> = ({ 
             </tr>
           </thead>
           <tbody>
-            {useVirtual
-              ? (() => {
-                  const items = virtualizer.getVirtualItems();
-                  return (
-                    <>
-                      {/* Top spacer row to push visible rows into position */}
-                      {items.length > 0 && (
-                        <tr>
-                          <td
-                            colSpan={examDates.length + 1}
-                            style={{ height: `${items[0].start}px`, padding: 0, border: 'none' }}
-                          />
-                        </tr>
-                      )}
-                      {items.map(virtualRow => {
-                        const name = variableNames[virtualRow.index];
-                        return (
-                          <ComparisonRow
-                            key={name}
-                            name={name}
-                            examDates={examDates}
-                            data={data}
-                            index={virtualRow.index}
-                          />
-                        );
-                      })}
-                      {/* Bottom spacer row */}
-                      {items.length > 0 && (
-                        <tr>
-                          <td
-                            colSpan={examDates.length + 1}
-                            style={{
-                              height: `${virtualizer.getTotalSize() - items[items.length - 1].end}px`,
-                              padding: 0,
-                              border: 'none',
-                            }}
-                          />
-                        </tr>
-                      )}
-                    </>
-                  );
-                })()
-              : variableNames.map((name, i) => (
-                  <ComparisonRow
-                    key={name}
-                    name={name}
-                    examDates={examDates}
-                    data={data}
-                    index={i}
-                  />
-                ))}
+            {variableNames.map((name, i) => (
+              <ComparisonRow key={name} name={name} examDates={examDates} data={data} index={i} />
+            ))}
           </tbody>
         </table>
       </div>

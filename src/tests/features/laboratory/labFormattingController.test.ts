@@ -102,6 +102,12 @@ describe('normalizeAnalysisName', () => {
   it('passes through unmatched names', () => {
     expect(normalizeAnalysisName('Hemoglobina')).toBe('Hemoglobina');
   });
+
+  it('normalizes common aliases to unified clinical labels', () => {
+    expect(normalizeAnalysisName(' Leucocitos ')).toBe('Recuento Leucocitos');
+    expect(normalizeAnalysisName('Plaquetas')).toBe('Recuento de Plaquetas');
+    expect(normalizeAnalysisName('PCR')).toBe('Proteina C Reactiva');
+  });
 });
 
 /* ================================================================== */

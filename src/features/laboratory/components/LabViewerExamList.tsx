@@ -48,9 +48,12 @@ export const LabViewerExamList: React.FC<LabViewerExamListProps> = ({
     <div className="space-y-3">
       <div className="flex items-center justify-between flex-wrap gap-1">
         <div className="flex items-center gap-2 flex-wrap">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-slate-400">
-            {exams.length} examenes
-          </p>
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-600">
+              Ordenes disponibles
+            </p>
+            <p className="text-[12px] font-bold text-slate-700">{exams.length} examenes</p>
+          </div>
           <div className="h-3 w-px bg-slate-200" />
           <button
             type="button"

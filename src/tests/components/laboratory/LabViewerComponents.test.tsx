@@ -70,6 +70,7 @@ import { LabViewerComparisonTable } from '@/features/laboratory/components/LabVi
 import { LabExportConfigDialog } from '@/features/laboratory/components/LabExportConfigDialog';
 import { LabChartErrorBoundary } from '@/features/laboratory/components/LabChartErrorBoundary';
 import type { LabPatient, SyslabExamItem, LabAnalysisData } from '@/types/domain/laboratory';
+import { exportComparisonToExcel } from '@/features/laboratory/services/labExcelService';
 
 /* ------------------------------------------------------------------ */
 /*  Shared test data                                                   */
@@ -80,6 +81,7 @@ const MOCK_PATIENT: LabPatient = {
   label: 'R1 \u00b7 Test',
   patientName: 'Test',
   rut: '12345678-9',
+  birthDate: '1980-04-12',
 };
 
 const MOCK_EXAM: SyslabExamItem = {
@@ -95,6 +97,7 @@ const MOCK_EXAM: SyslabExamItem = {
 const MOCK_ANALYSIS: LabAnalysisData = {
   trendGroups: [],
   examDates: ['08/04/2026 14:00'],
+  microbiologyEntries: [],
   comparison: {
     Hemoglobina: {
       '08/04/2026 14:00': {
@@ -148,6 +151,27 @@ describe('LabViewerControls', () => {
     render(<LabViewerControls {...defaultProps} uniquePatients={patients} />);
     await userEvent.selectOptions(screen.getByRole('combobox'), '99999999-0');
     expect(defaultProps.onPatientChange).toHaveBeenCalledWith('99999999-0');
+  });
+});
+
+describe('LabViewerComparisonTable', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('passes patient context to the Excel exporter', async () => {
+    const user = userEvent.setup();
+    render(<LabViewerComparisonTable data={MOCK_ANALYSIS} patient={MOCK_PATIENT} />);
+
+    await user.click(screen.getByText('Exportar Excel'));
+    await user.click(screen.getAllByText('Exportar Excel')[1]);
+
+    expect(exportComparisonToExcel).toHaveBeenCalledWith(
+      MOCK_ANALYSIS,
+      expect.objectContaining({
+        selectedDates: expect.any(Set),
+        selectedVars: expect.any(Set),
+      }),
+      MOCK_PATIENT
+    );
   });
 });
 
@@ -344,17 +368,17 @@ describe('LabViewerExamList', () => {
 
 describe('LabViewerComparisonTable', () => {
   it('renders variable names as rows', () => {
-    render(<LabViewerComparisonTable data={MOCK_ANALYSIS} />);
+    render(<LabViewerComparisonTable data={MOCK_ANALYSIS} patient={MOCK_PATIENT} />);
     expect(screen.getByText('Hemoglobina')).toBeInTheDocument();
   });
 
   it('renders date columns', () => {
-    render(<LabViewerComparisonTable data={MOCK_ANALYSIS} />);
+    render(<LabViewerComparisonTable data={MOCK_ANALYSIS} patient={MOCK_PATIENT} />);
     expect(screen.getByText('08/04/2026 14:00')).toBeInTheDocument();
   });
 
   it('renders search input', () => {
-    render(<LabViewerComparisonTable data={MOCK_ANALYSIS} />);
+    render(<LabViewerComparisonTable data={MOCK_ANALYSIS} patient={MOCK_PATIENT} />);
     expect(screen.getByPlaceholderText('Buscar variable...')).toBeInTheDocument();
   });
 
@@ -374,7 +398,7 @@ describe('LabViewerComparisonTable', () => {
         },
       },
     };
-    render(<LabViewerComparisonTable data={multiVarData} />);
+    render(<LabViewerComparisonTable data={multiVarData} patient={MOCK_PATIENT} />);
     // Both visible initially
     expect(screen.getByText('Hemoglobina')).toBeInTheDocument();
     expect(screen.getByText('Glucosa')).toBeInTheDocument();
@@ -385,8 +409,13 @@ describe('LabViewerComparisonTable', () => {
   });
 
   it('renders Exportar Excel button', () => {
-    render(<LabViewerComparisonTable data={MOCK_ANALYSIS} />);
+    render(<LabViewerComparisonTable data={MOCK_ANALYSIS} patient={MOCK_PATIENT} />);
     expect(screen.getByText('Exportar Excel')).toBeInTheDocument();
+  });
+
+  it('does not render summarized copy button anymore', () => {
+    render(<LabViewerComparisonTable data={MOCK_ANALYSIS} patient={MOCK_PATIENT} />);
+    expect(screen.queryByText('Copiar tabla resumida')).not.toBeInTheDocument();
   });
 });
 

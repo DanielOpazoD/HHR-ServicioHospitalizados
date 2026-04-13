@@ -199,9 +199,39 @@ export const EXAM_FILTER_CATEGORIES: { label: string; patterns: string[] }[] = [
   { label: 'Perfil Lipídico', patterns: ['LIPID', 'COLESTEROL'] },
   { label: 'Coagulación', patterns: ['PROTROMBINA', 'TTPK', 'INR', 'COAGUL'] },
   { label: 'Función Renal', patterns: ['CREA', 'UREMIA', 'VFG', 'BUN'] },
-  { label: 'Cultivos', patterns: ['CULTIVO', 'COPROCULTIVO', 'UROCULTIVO'] },
-  { label: 'PCR Panel', patterns: ['PCR PANEL'] },
+  {
+    label: 'Cultivos',
+    patterns: [
+      'CULTIVO',
+      'COPROCULTIVO',
+      'UROCULTIVO',
+      'HEMOCULTIVO',
+      'ANTIBIOGRAMA',
+      'MICROBIOLOG',
+    ],
+  },
+  { label: 'PCR Panel', patterns: ['PCR PANEL', 'PANEL RESPIRATORIO', 'PANEL VIRAL'] },
   { label: 'Orina', patterns: ['ORINA', 'SEDIMENTO'] },
+];
+
+/** Exam/finding patterns that should surface in the microbiology summary panel. */
+export const MICROBIOLOGY_PATTERNS: string[] = [
+  'CULTIVO',
+  'COPROCULTIVO',
+  'UROCULTIVO',
+  'HEMOCULTIVO',
+  'MICROBIOLOG',
+  'ANTIBIOGRAMA',
+  'PCR PANEL',
+  'PANEL RESPIRATORIO',
+  'VIRUS',
+  'INFLUENZA',
+  'COVID',
+  'SARS',
+  'BACTER',
+  'HONGO',
+  'LEVADUR',
+  'PARASITO',
 ];
 
 /** Analysis name normalization rules (regex → replacement). */
@@ -209,6 +239,16 @@ export const ANALYSIS_NAME_REPLACEMENTS: [RegExp, string][] = [
   [/HCO3\s*ACTUAL/i, 'HCO3'],
   [/Hb\.\s*Corp\.\s*Media\s*-\s*HCM/i, 'HCM'],
   [/Vol\.\s*Corp\.\s*Medio\s*VCM/i, 'VCM'],
+  [/^\s*Leucocitos(?:\s+totales)?\s*$/i, 'Recuento Leucocitos'],
+  [/^\s*Rcto\.?\s*Leucocitos\s*$/i, 'Recuento Leucocitos'],
+  [/^\s*Plaquetas\s*$/i, 'Recuento de Plaquetas'],
+  [/^\s*Neutr[oó]filos(?:\s+segmentados)?\s*$/i, 'Segmentados'],
+  [/^\s*Creatinina(?:\s+s[eé]rica)?\s*$/i, 'Creatinina'],
+  [/^\s*PCR\s*$/i, 'Proteina C Reactiva'],
+  [/^\s*Prot\.?\s*C\.?\s*Reactiva\s*$/i, 'Proteina C Reactiva'],
+  [/^\s*Bilirrubina\s+T\.?\s*$/i, 'Bilirrubina Total'],
+  [/^\s*Bilirrubina\s+D\.?\s*$/i, 'Bilirrubina Directa'],
+  [/^\s*Bilirrubina\s+I\.?\s*$/i, 'Bilirrubina Indirecta'],
 ];
 
 /* ================================================================== */

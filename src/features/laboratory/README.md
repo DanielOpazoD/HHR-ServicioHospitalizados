@@ -11,6 +11,7 @@ features/laboratory/
 ├── controllers/
 │   ├── labFormattingController.ts  # Puro: parsing, formateo, validación, utilidades compartidas
 │   ├── labAnalyticsController.ts   # Puro: buildAnalysisData + helpers
+│   ├── labComparisonController.ts  # Puro: texto compacto de comparación para clipboard
 │   └── labSummaryController.ts     # Puro: resumen con siglas clínicas para documentos
 ├── components/               # Componentes React + helpers locales de charts
 │   ├── LabResultsViewerModal.tsx
@@ -19,6 +20,7 @@ features/laboratory/
 │   ├── LabViewerAnalyzeBar.tsx
 │   ├── LabViewerPdf.tsx
 │   ├── LabViewerAnalysis.tsx
+│   ├── LabViewerMicrobiologyPanel.tsx
 │   ├── LabViewerTrendCharts.tsx
 │   ├── LabTrendGroupCard.tsx
 │   ├── LabTrendChartHelpers.ts
@@ -31,7 +33,7 @@ features/laboratory/
 │   └── LabChartErrorBoundary.tsx
 ├── hooks/useLabViewer.ts     # Estado React + orquestación + TanStack Query cache
 ├── services/
-│   ├── labExcelService.ts    # Exportación Excel
+│   ├── labExcelService.ts    # Exportación Excel con resumen + datos de identificación
 │   └── labFirestoreService.ts # Persistencia Firestore
 └── types/labViewerTypes.ts   # Tipos internos UI
 ```
@@ -48,6 +50,22 @@ Laboratorio (08/04/2026 14:00): Hb 13 HTO 40% RGB 7.000 PMN 70% Creat 1 ...
 ```
 
 Archivos: `ClinicalDocumentLabInsertDialog.tsx`, `ClinicalDocumentFormattingToolbar.tsx`
+
+## Exportación Excel
+
+La exportación de comparación genera una hoja `Comparación Lab` con:
+
+- título `Resumen de laboratorio`
+- nombre del paciente
+- RUT
+- fecha de nacimiento
+- tabla comparativa de variables por fecha
+
+## Mejoras clínicas actuales
+
+- normalización de alias frecuentes (`Leucocitos`, `Plaquetas`, `PCR`, etc.) para evitar duplicados
+- panel `Microbiología / Cultivos` con resultados cualitativos relevantes por examen
+- botón `Copiar tabla resumida` en la vista de comparación para evolución rápida
 
 ## Flujo de datos
 

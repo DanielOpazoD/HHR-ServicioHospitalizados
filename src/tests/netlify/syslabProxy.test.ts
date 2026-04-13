@@ -41,6 +41,7 @@ describe('syslab-proxy', () => {
 
   it('returns 503 when SYSLAB_PROXY_URL is not configured', async () => {
     delete process.env.SYSLAB_PROXY_URL;
+    delete process.env.VITE_SYSLAB_API_URL;
 
     const response = await handler({
       httpMethod: 'GET',
@@ -50,7 +51,27 @@ describe('syslab-proxy', () => {
     });
 
     expect(response.statusCode).toBe(503);
-    expect(response.body).toContain('SYSLAB_PROXY_URL');
+    expect(response.body).toContain('VITE_SYSLAB_API_URL');
+  });
+
+  it('uses VITE_SYSLAB_API_URL as fallback when SYSLAB_PROXY_URL is missing', async () => {
+    delete process.env.SYSLAB_PROXY_URL;
+    process.env.VITE_SYSLAB_API_URL = 'http://localhost:3000';
+    fetchMock.mockResolvedValue({
+      status: 200,
+      json: vi.fn().mockResolvedValue({ exams: [] }),
+    });
+
+    const response = await handler({
+      httpMethod: 'GET',
+      headers: {},
+      body: null,
+      rawQuery: 'action=search&rut=12345678-9',
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe('http://localhost:3000/api/exams?rut=12345678-9');
+    expect(response.statusCode).toBe(200);
   });
 
   it('returns 400 for an invalid action', async () => {

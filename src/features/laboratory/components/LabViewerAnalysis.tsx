@@ -5,31 +5,42 @@
 
 import React from 'react';
 import clsx from 'clsx';
-import { ArrowLeft, BarChart3, Check, Clipboard, TrendingUp } from 'lucide-react';
+import { ArrowLeft, BarChart3, Check, Clipboard, FlaskConical, TrendingUp } from 'lucide-react';
 import { writeClipboardText } from '@/shared/runtime/browserWindowRuntime';
-import type { LabAnalysisData, AnalysisViewTab } from '@/types/domain/laboratory';
+import type {
+  LabAnalysisData,
+  AnalysisViewTab,
+  LabPatient,
+  SyslabExamItem,
+} from '@/types/domain/laboratory';
 import { buildLabSummaryText } from '../controllers/labSummaryController';
 import { LabViewerTrendCharts } from './LabViewerTrendCharts';
 import { LabViewerComparisonTable } from './LabViewerComparisonTable';
+import { LabViewerMicrobiologyPanel } from './LabViewerMicrobiologyPanel';
 
 interface LabViewerAnalysisProps {
   data: LabAnalysisData;
+  patient: LabPatient | null;
   activeTab: AnalysisViewTab;
   onTabChange: (tab: AnalysisViewTab) => void;
   onBack: () => void;
+  onOpenPdf: (exam: SyslabExamItem) => void;
 }
 
 // TAB_CONFIG stays in this component (not in labConstants) because it contains JSX icon elements.
 const TAB_CONFIG: { key: AnalysisViewTab; label: string; icon: React.ReactNode }[] = [
   { key: 'trends', label: 'Tendencias', icon: <TrendingUp size={13} /> },
   { key: 'comparison', label: 'Comparacion', icon: <BarChart3 size={13} /> },
+  { key: 'microbiology', label: 'Microbiología', icon: <FlaskConical size={13} /> },
 ];
 
 export const LabViewerAnalysis: React.FC<LabViewerAnalysisProps> = ({
   data,
+  patient,
   activeTab,
   onTabChange,
   onBack,
+  onOpenPdf,
 }) => {
   const [copied, setCopied] = React.useState(false);
 
@@ -55,14 +66,28 @@ export const LabViewerAnalysis: React.FC<LabViewerAnalysisProps> = ({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex items-center gap-1.5 text-[12px] font-medium text-emerald-600 hover:text-emerald-700"
-        >
-          <ArrowLeft size={14} />
-          Volver a lista de examenes
-        </button>
+        <div>
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex items-center gap-1.5 text-[12px] font-medium text-emerald-600 hover:text-emerald-700"
+          >
+            <ArrowLeft size={14} />
+            Volver a lista de examenes
+          </button>
+          <div className="mt-2">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-600">
+              Análisis clínico
+            </p>
+            <h2 className="mt-1 text-[18px] font-bold text-slate-800">
+              {patient?.patientName || 'Paciente seleccionado'}
+            </h2>
+            <p className="mt-1 text-[12px] text-slate-500">
+              {data.examDates.length} examenes comparables · {Object.keys(data.comparison).length}{' '}
+              variables únicas
+            </p>
+          </div>
+        </div>
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -79,7 +104,9 @@ export const LabViewerAnalysis: React.FC<LabViewerAnalysisProps> = ({
       </div>
 
       <div className="flex items-center gap-1 border-b border-slate-200 pb-0">
-        {TAB_CONFIG.map(tab => (
+        {TAB_CONFIG.filter(
+          tab => tab.key !== 'microbiology' || data.microbiologyEntries.length > 0
+        ).map(tab => (
           <button
             key={tab.key}
             type="button"
@@ -98,7 +125,10 @@ export const LabViewerAnalysis: React.FC<LabViewerAnalysisProps> = ({
       </div>
 
       {activeTab === 'trends' && <LabViewerTrendCharts data={data} />}
-      {activeTab === 'comparison' && <LabViewerComparisonTable data={data} />}
+      {activeTab === 'comparison' && <LabViewerComparisonTable data={data} patient={patient} />}
+      {activeTab === 'microbiology' && (
+        <LabViewerMicrobiologyPanel entries={data.microbiologyEntries} onOpenPdf={onOpenPdf} />
+      )}
     </div>
   );
 };

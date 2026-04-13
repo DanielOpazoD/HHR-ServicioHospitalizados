@@ -75,7 +75,7 @@ export const isOutOfRange = (result: string, refValue: string): boolean | null =
  * @example normalizeAnalysisName("Vol. Corp. Medio VCM") // "VCM"
  */
 export const normalizeAnalysisName = (name: string): string => {
-  let result = name;
+  let result = name.trim().replace(/\s+/g, ' ');
   for (const [pattern, replacement] of ANALYSIS_NAME_REPLACEMENTS) {
     result = result.replace(pattern, replacement);
   }

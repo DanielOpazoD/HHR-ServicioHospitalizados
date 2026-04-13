@@ -32,6 +32,13 @@ export interface SyslabExamItem {
   exams: string[];
 }
 
+export type LabMicrobiologyCategory =
+  | 'clostridium_difficile'
+  | 'coprocultivo'
+  | 'cultivo_corriente'
+  | 'pcr_panel_respiratorio'
+  | 'sedimento_urocultivo';
+
 /* ------------------------------------------------------------------ */
 /*  Parsed lab results (from PDF extraction)                           */
 /* ------------------------------------------------------------------ */
@@ -108,6 +115,16 @@ export interface LabTrendGroup {
   variables: Record<string, LabTrendPoint[]>;
 }
 
+/** Qualitative microbiology/culture result summarized per exam. */
+export interface LabMicrobiologyEntry {
+  category: LabMicrobiologyCategory;
+  date: string;
+  examLabel: string;
+  findings: Array<{ analysis: string; result: string }>;
+  hasAlertFinding: boolean;
+  sourceExam: SyslabExamItem;
+}
+
 /** Processed analytics data built from multiple exam details. */
 export interface LabAnalysisData {
   /** Trend data grouped by clinical category. */
@@ -116,6 +133,8 @@ export interface LabAnalysisData {
   examDates: string[];
   /** Comparison grid: analysis name → date → LabResultRow. */
   comparison: Record<string, Record<string, LabResultRow>>;
+  /** Qualitative microbiology/culture-style findings grouped by exam. */
+  microbiologyEntries: LabMicrobiologyEntry[];
 }
 
 /* ------------------------------------------------------------------ */
@@ -128,8 +147,9 @@ export interface LabPatient {
   label: string;
   patientName: string;
   rut: string;
+  birthDate?: string;
   diagnosis?: string;
 }
 
 /** Active tab in the analysis view. */
-export type AnalysisViewTab = 'trends' | 'comparison';
+export type AnalysisViewTab = 'trends' | 'comparison' | 'microbiology';

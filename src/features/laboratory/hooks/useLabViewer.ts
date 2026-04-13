@@ -31,6 +31,7 @@ import {
   resolveSelectedLabAnalysisLinks,
 } from '../controllers/labViewerController';
 import { saveLabResults } from '../services/labFirestoreService';
+import { enrichMicrobiologyDetailsFromPdf } from '../services/labMicrobiologyPdfService';
 
 /* ------------------------------------------------------------------ */
 /*  Return type                                                        */
@@ -38,6 +39,7 @@ import { saveLabResults } from '../services/labFirestoreService';
 
 export interface UseLabViewerReturn {
   uniquePatients: LabPatient[];
+  selectedPatient: LabPatient | null;
   selectedRut: string;
   isLoading: boolean;
   examList: SyslabExamItem[];
@@ -129,6 +131,11 @@ export const useLabViewer = (
   const uniquePatients = useMemo(() => {
     return buildUniqueLabPatients(patients);
   }, [patients]);
+
+  const selectedPatient = useMemo(
+    () => uniquePatients.find(patient => patient.rut === selectedRut) ?? null,
+    [selectedRut, uniquePatients]
+  );
 
   // Derive filter categories from exam list
   const examFilterCategories = useMemo(() => resolveLabExamFilterCategories(examList), [examList]);
@@ -257,11 +264,13 @@ export const useLabViewer = (
       const data = await fetchSyslabExamDetails(links);
       if (!mountedRef.current) return;
       if (data.success) {
-        setAnalysisData(buildAnalysisData(data.data, examList));
+        const enrichedDetails = await enrichMicrobiologyDetailsFromPdf(data.data, examList);
+        if (!mountedRef.current) return;
+        setAnalysisData(buildAnalysisData(enrichedDetails, examList));
         setAnalysisView('trends');
         // Persist to Firestore in background (non-blocking)
         const patientName = examList[0]?.patientName || '';
-        saveLabResults(selectedRut, patientName, data.data, examList);
+        saveLabResults(selectedRut, patientName, enrichedDetails, examList);
       } else {
         setError(data.error || 'No se pudieron obtener los detalles de los exámenes.');
       }
@@ -280,6 +289,7 @@ export const useLabViewer = (
 
   return {
     uniquePatients,
+    selectedPatient,
     selectedRut,
     isLoading,
     examList,
