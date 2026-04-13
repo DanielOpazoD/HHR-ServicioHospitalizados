@@ -85,6 +85,7 @@ export const PatientEpisodeTimeline: React.FC<PatientEpisodeTimelineProps> = ({
             key={episode.id}
             episode={episode}
             rut={patient.rut}
+            lastSeenDate={history?.lastSeen}
             episodeDocuments={episodeDocuments}
             onLoadDocuments={onLoadDocuments}
             onDownloadPdf={onDownloadPdf}

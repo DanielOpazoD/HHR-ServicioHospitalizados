@@ -7,7 +7,10 @@
 
 import { describe, it, expect } from 'vitest';
 import type { HospitalizationEvent } from '@/types/domain/patientMaster';
-import { groupEpisodesAsBlocks } from '@/features/census/components/global-search/episodeGroupingController';
+import {
+  groupEpisodesAsBlocks,
+  resolveEpisodeCensusTargetDate,
+} from '@/features/census/components/global-search/episodeGroupingController';
 
 const createEvent = (
   overrides: Partial<HospitalizationEvent> & { type: HospitalizationEvent['type']; date: string }
@@ -171,5 +174,30 @@ describe('groupEpisodesAsBlocks', () => {
 
     const result = groupEpisodesAsBlocks(events);
     expect(result[0].daysOfStay).toBe(0);
+  });
+
+  it('resolves census target date to the discharge date for closed episodes', () => {
+    const episode = groupEpisodesAsBlocks([
+      createEvent({ type: 'Ingreso', date: '2026-01-10' }),
+      createEvent({ type: 'Traslado', date: '2026-01-15' }),
+    ])[0];
+
+    expect(resolveEpisodeCensusTargetDate(episode, '2026-01-20')).toBe('2026-01-15');
+  });
+
+  it('resolves census target date to lastSeen for open episodes', () => {
+    const episode = groupEpisodesAsBlocks([
+      createEvent({ type: 'Ingreso', date: '2026-04-01' }),
+    ])[0];
+
+    expect(resolveEpisodeCensusTargetDate(episode, '2026-04-12')).toBe('2026-04-12');
+  });
+
+  it('falls back to admission date for open episodes without lastSeen', () => {
+    const episode = groupEpisodesAsBlocks([
+      createEvent({ type: 'Ingreso', date: '2026-04-01' }),
+    ])[0];
+
+    expect(resolveEpisodeCensusTargetDate(episode)).toBe('2026-04-01');
   });
 });

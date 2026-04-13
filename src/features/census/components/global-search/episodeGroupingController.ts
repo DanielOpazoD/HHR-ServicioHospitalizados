@@ -94,3 +94,26 @@ export const groupEpisodesAsBlocks = (events: HospitalizationEvent[]): GroupedEp
 
   return grouped.reverse();
 };
+
+/**
+ * Resolve the census date that best represents the last day of hospitalization
+ * for a grouped episode.
+ *
+ * Closed episodes navigate to the closing event date. Open episodes use the
+ * provided `openEpisodeLastSeenDate` when available; otherwise they fall back
+ * to the admission date.
+ */
+export const resolveEpisodeCensusTargetDate = (
+  episode: GroupedEpisode,
+  openEpisodeLastSeenDate?: string | null
+): string => {
+  if (episode.discharge?.date) {
+    return episode.discharge.date;
+  }
+
+  if (openEpisodeLastSeenDate) {
+    return openEpisodeLastSeenDate;
+  }
+
+  return episode.admission.date;
+};

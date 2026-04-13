@@ -22,6 +22,7 @@ import {
 import type { HospitalizationEvent } from '@/types/domain/patientMaster';
 import type { EpisodeDocuments } from '@/features/census/components/global-search/globalSearchContracts';
 import type { GroupedEpisode } from '@/features/census/components/global-search/globalSearchContracts';
+import { resolveEpisodeCensusTargetDate } from '@/features/census/components/global-search/episodeGroupingController';
 import { DocRow } from '@/features/census/components/global-search/DocRow';
 import { formatDateToCL } from '@/utils/clinicalUtils';
 
@@ -32,6 +33,7 @@ import { formatDateToCL } from '@/utils/clinicalUtils';
 interface EpisodeBlockCardProps {
   episode: GroupedEpisode;
   rut: string;
+  lastSeenDate?: string | null;
   episodeDocuments: Record<string, EpisodeDocuments>;
   onLoadDocuments: (key: string) => void;
   onDownloadPdf: (docId: string, docType: string) => Promise<void>;
@@ -76,6 +78,7 @@ const dischargeLabel = (event: HospitalizationEvent): string => {
 export const EpisodeBlockCard: React.FC<EpisodeBlockCardProps> = ({
   episode,
   rut,
+  lastSeenDate,
   episodeDocuments,
   onLoadDocuments,
   onDownloadPdf,
@@ -88,6 +91,7 @@ export const EpisodeBlockCard: React.FC<EpisodeBlockCardProps> = ({
 
   const docsState = episodeKey ? episodeDocuments[episodeKey] : undefined;
   const isCurrentlyAdmitted = episode.admission.type === 'Ingreso' && !episode.discharge;
+  const censusTargetDate = resolveEpisodeCensusTargetDate(episode, lastSeenDate);
 
   const handleToggleDocs = useCallback(() => {
     if (!episodeKey) return;
@@ -139,9 +143,9 @@ export const EpisodeBlockCard: React.FC<EpisodeBlockCardProps> = ({
             {onNavigateToDate && (
               <button
                 type="button"
-                onClick={() => onNavigateToDate(episode.admission.date)}
+                onClick={() => onNavigateToDate(censusTargetDate)}
                 className="flex items-center gap-1 text-[10px] font-medium text-medical-600 hover:text-medical-800 bg-medical-50 hover:bg-medical-100 rounded px-1.5 py-0.5 transition-colors"
-                title="Ir al censo de este dia"
+                title="Ir al último censo en que estuvo hospitalizado"
               >
                 <ExternalLink size={10} />
                 Ir al censo
