@@ -137,11 +137,26 @@ describe('mmrad-search', () => {
           <tr>
             <td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td>
             <td>01/01/2026</td><td>02/01/2026</td><td>8</td><td>9</td>
-            <td>RX Torax</td><td>CR</td><td>12</td><td>Informado</td>
+            <td>TC Torax</td><td>CT</td><td>12</td><td>Informado</td>
             <td>Acciones</td>
             <td><a href="/informePDF/123">PDF</a></td>
+            <td><a href="javascript:window.open('/ingrad-ris-informehtml/UtilServlet?a=1&id=123');void(0);">HTML</a></td>
           </tr>
         </table></body></html>`
+      ),
+    });
+
+    fetchMock.mockResolvedValueOnce({
+      status: 200,
+      headers: new Headers(),
+      text: vi.fn().mockResolvedValue(
+        `<html><body>
+          <h1>TOMOGRAFÍA SIMPLE DE TÓRAX</h1>
+          <p><strong>HALLAZGOS:</strong></p>
+          <p>Parénquima pulmonar sin consolidaciones.</p>
+          <p><strong>IMPRESION:</strong></p>
+          <p>Cardiomegalia.</p>
+        </body></html>`
       ),
     });
 
@@ -156,8 +171,94 @@ describe('mmrad-search', () => {
     const body = JSON.parse(response.body);
     expect(body.rut).toBe('12345678-9');
     expect(body.examenes).toBeInstanceOf(Array);
+    expect(body.examenes[0].informe_html_url).toContain('/ingrad-ris-informehtml/UtilServlet?a=1');
+    expect(body.examenes[0].report.findings).toContain('Parénquima pulmonar');
+    expect(body.examenes[0].report.impression).toContain('Cardiomegalia');
     expect(body._debug.login).toBeInstanceOf(Array);
     expect(body._debug.searchUrl).toBeDefined();
+  });
+
+  it('normalizes javascript report URLs returned inline by MMRAD', async () => {
+    const loginActionUrl =
+      'https://ris.mmrad.cl/c/portal/login%2Flogin;jsessionid=abc123?p_l_id=123';
+    const dashboardUrl = '/group/hhangaroa';
+    const searchActionUrl = 'https://ris.mmrad.cl/examenportlet_WAR_portlet/search?p_l_id=456';
+
+    fetchMock.mockResolvedValueOnce({
+      status: 200,
+      headers: new Headers(),
+      text: vi
+        .fn()
+        .mockResolvedValue(
+          `<html><form action="${loginActionUrl}" method="post"><input name="_58_login"/></form></html>`
+        ),
+    });
+    fetchMock.mockResolvedValueOnce({
+      status: 302,
+      headers: new Headers({ location: '/c/portal/redirect' }),
+      text: vi.fn().mockResolvedValue(''),
+    });
+    fetchMock.mockResolvedValueOnce({
+      status: 302,
+      headers: new Headers({ location: dashboardUrl }),
+      text: vi.fn().mockResolvedValue(''),
+    });
+    fetchMock.mockResolvedValueOnce({
+      status: 200,
+      headers: new Headers(),
+      text: vi.fn().mockResolvedValue(
+        `<html><body>
+          <form action="${searchActionUrl}" method="post">
+            <input name="idpaciente" />
+          </form>
+        </body></html>`
+      ),
+    });
+    fetchMock.mockResolvedValueOnce({
+      status: 200,
+      headers: new Headers(),
+      text: vi.fn().mockResolvedValue(
+        `<html><body><table>
+          <tr>
+            <td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td>
+            <td>01/01/2026</td><td>02/01/2026</td><td>8</td><td>9</td>
+            <td>TC Torax</td><td>CT</td><td>12</td><td>Informado</td>
+            <td>Acciones</td>
+            <td>
+              <a href="javascript:window.open('/ingrad-ris-informehtml/UtilServlet?a=1&u=269958&idexamen=1459869&idprestacion=202609');void(0);">HTML</a>
+            </td>
+          </tr>
+        </table></body></html>`
+      ),
+    });
+    fetchMock.mockResolvedValueOnce({
+      status: 200,
+      headers: new Headers(),
+      text: vi.fn().mockResolvedValue(
+        `<html><body>
+          <h1>TOMOGRAFÍA SIMPLE DE TÓRAX</h1>
+          <p><strong>HALLAZGOS:</strong></p>
+          <p>Hallazgos de prueba.</p>
+          <p><strong>IMPRESION:</strong></p>
+          <p>Impresión de prueba.</p>
+        </body></html>`
+      ),
+    });
+
+    const response = await handler({
+      httpMethod: 'GET',
+      headers: {},
+      body: null,
+      rawQuery: 'rut=12.345.678-9',
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = JSON.parse(response.body);
+    expect(body.examenes[0].informe_html_url).toBe(
+      'https://ris.mmrad.cl/ingrad-ris-informehtml/UtilServlet?a=1&u=269958&idexamen=1459869&idprestacion=202609'
+    );
+    expect(body.examenes[0].report.findings).toContain('Hallazgos de prueba');
+    expect(body.examenes[0].report.impression).toContain('Impresión de prueba');
   });
 
   it('returns 500 when MMRAD credentials are not configured', async () => {

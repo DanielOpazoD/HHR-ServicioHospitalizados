@@ -4,6 +4,7 @@
  */
 
 import { createScopedLogger } from '@/services/utils/loggerScope';
+import type { MMRADReportSections } from '@/services/radiology/mmradReportSupport';
 
 const mmradLogger = createScopedLogger('mmradService');
 
@@ -16,6 +17,7 @@ export interface MMRADExam {
   pdf_url: string | null;
   dicom_url: string | null;
   informe_html_url: string | null;
+  report: MMRADReportSections | null;
 }
 
 export interface MMRADSearchResult {

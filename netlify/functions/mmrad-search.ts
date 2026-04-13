@@ -21,6 +21,7 @@ import {
   isRateLimited,
   type NetlifyEventLike,
 } from './lib/http';
+import { parseMMRADReportSections } from '../../src/services/radiology/mmradReportSupport';
 
 const MMRAD_BASE_URL = 'https://ris.mmrad.cl';
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
@@ -34,6 +35,7 @@ interface MMRADExam {
   pdf_url: string | null;
   dicom_url: string | null;
   informe_html_url: string | null;
+  report: ReturnType<typeof parseMMRADReportSections>;
 }
 
 /** Convert ISO date (YYYY-MM-DD) to RIS format (DD/MM/YYYY). */
@@ -116,6 +118,35 @@ const fetchWithHeaders = (url: string, options: RequestInit = {}) =>
     ...options,
     headers: { 'User-Agent': USER_AGENT, ...(options.headers as Record<string, string>) },
   });
+
+const decodeResponseHtml = async (
+  response: Response,
+  encoding: string = 'utf-8'
+): Promise<string> => {
+  const dynamicResponse = response as unknown as {
+    arrayBuffer?: () => Promise<ArrayBuffer>;
+    text: () => Promise<string>;
+  };
+
+  if (typeof dynamicResponse.arrayBuffer === 'function') {
+    const buffer = await dynamicResponse.arrayBuffer();
+    return new TextDecoder(encoding).decode(buffer);
+  }
+
+  return dynamicResponse.text();
+};
+
+const normalizeMmradUrl = (rawUrl: string | null | undefined): string | null => {
+  if (!rawUrl) return null;
+
+  let normalized = rawUrl.trim();
+  const javascriptWindowOpenMatch = normalized.match(/window\.open\('([^']+)'/i);
+  if (javascriptWindowOpenMatch?.[1]) {
+    normalized = javascriptWindowOpenMatch[1];
+  }
+
+  return normalized.startsWith('/') ? `${MMRAD_BASE_URL}${normalized}` : normalized;
+};
 
 interface LoginResult {
   cookies: string;
@@ -213,7 +244,55 @@ const searchExams = async (
   });
 
   const html = await response.text();
-  return parseExamsFromHTML(html);
+  const exams = parseExamsFromHTML(html);
+  return hydrateStructuredCtReports(exams, cookies);
+};
+
+const fetchReportSections = async (
+  reportUrl: string,
+  cookies: string
+): Promise<ReturnType<typeof parseMMRADReportSections>> => {
+  const response = await fetchWithHeaders(reportUrl, {
+    headers: {
+      Cookie: cookies,
+      Referer: `${MMRAD_BASE_URL}/group/hhangaroa`,
+    },
+  });
+
+  const isSuccessful =
+    typeof response.ok === 'boolean'
+      ? response.ok
+      : response.status >= 200 && response.status < 400;
+
+  if (!isSuccessful) {
+    return null;
+  }
+
+  const html = await decodeResponseHtml(response, 'latin1');
+  return parseMMRADReportSections(html);
+};
+
+const hydrateStructuredCtReports = async (
+  exams: MMRADExam[],
+  cookies: string
+): Promise<MMRADExam[]> => {
+  const hydrated = await Promise.all(
+    exams.map(async exam => {
+      const modality = (exam.mod || '').trim().toUpperCase();
+      if (modality !== 'CT' || !exam.informe_html_url) {
+        return exam;
+      }
+
+      try {
+        const report = await fetchReportSections(exam.informe_html_url, cookies);
+        return { ...exam, report };
+      } catch {
+        return exam;
+      }
+    })
+  );
+
+  return hydrated;
 };
 
 const parseExamsFromHTML = (html: string): MMRADExam[] => {
@@ -256,6 +335,29 @@ const parseExamsFromHTML = (html: string): MMRADExam[] => {
       dicomUrl = `${MMRAD_BASE_URL}${dicomMatch[1]}`;
     }
 
+    let informeHtmlUrl: string | null = null;
+    const reportUrlPatterns = [
+      /href="([^"]*(?:informehtml|UtilServlet\?a=1)[^"]*)"/i,
+      /window\.open\('([^']*(?:informehtml|UtilServlet\?a=1)[^']*)'/i,
+    ];
+
+    for (const pattern of reportUrlPatterns) {
+      const match = rowHtml.match(pattern);
+      if (match?.[1]) {
+        informeHtmlUrl = normalizeMmradUrl(match[1]);
+        break;
+      }
+    }
+
+    if (!informeHtmlUrl) {
+      const javascriptMatch = rowHtml.match(
+        /javascript:window\.open\('([^']*(?:informehtml|UtilServlet\?a=1)[^']*)'\);?/i
+      );
+      if (javascriptMatch?.[1]) {
+        informeHtmlUrl = normalizeMmradUrl(javascriptMatch[1]);
+      }
+    }
+
     exams.push({
       nombre_examen: tds[10] || '',
       fecha_examen: tds[7] || '',
@@ -264,7 +366,8 @@ const parseExamsFromHTML = (html: string): MMRADExam[] => {
       estado: tds[13] || '',
       pdf_url: pdfUrl,
       dicom_url: dicomUrl,
-      informe_html_url: null,
+      informe_html_url: informeHtmlUrl,
+      report: null,
     });
   }
 

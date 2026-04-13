@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { Radio } from 'lucide-react';
 import { BaseModal } from '@/components/shared/BaseModal';
 import {
@@ -6,6 +6,10 @@ import {
   type MMRADExam,
   type MMRADSearchResult,
 } from '@/services/radiology/mmradService';
+import {
+  buildMMRADReportClipboardText,
+  buildMMRADReportPrintHtml,
+} from '@/services/radiology/mmradReportSupport';
 import {
   RadiologyViewerControls,
   RadiologyViewerEmptyState,
@@ -58,6 +62,8 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [activeModTab, setActiveModTab] = useState<string | null>(null);
+  const [copiedReportExamKey, setCopiedReportExamKey] = useState<string | null>(null);
+  const copiedReportResetTimeoutRef = useRef<number | null>(null);
 
   // Deduplicate patients by RUT, sorted by hospital bed order (R1-R4, NEO, H1C1…H6C2)
   const uniquePatients = useMemo(() => {
@@ -169,6 +175,44 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
     }
   }, [selectedRut, dateFrom, dateTo]);
 
+  const handleCopyReport = useCallback(async (exam: MMRADExam) => {
+    const reportText = exam.report ? buildMMRADReportClipboardText(exam.report) : null;
+    if (!reportText) {
+      return;
+    }
+
+    await navigator.clipboard.writeText(reportText);
+    const examKey =
+      exam.informe_html_url || exam.pdf_url || `${exam.nombre_examen}-${exam.fecha_examen}`;
+    setCopiedReportExamKey(examKey);
+    if (copiedReportResetTimeoutRef.current) {
+      window.clearTimeout(copiedReportResetTimeoutRef.current);
+    }
+    copiedReportResetTimeoutRef.current = window.setTimeout(() => {
+      setCopiedReportExamKey(currentKey => (currentKey === examKey ? null : currentKey));
+      copiedReportResetTimeoutRef.current = null;
+    }, 1800);
+  }, []);
+
+  const handlePrintReport = useCallback((exam: MMRADExam) => {
+    if (!exam.report) {
+      return;
+    }
+
+    const printWindow = window.open('', '_blank', 'width=900,height=700');
+    if (!printWindow) {
+      return;
+    }
+
+    printWindow.document.open();
+    printWindow.document.write(
+      buildMMRADReportPrintHtml(exam.nombre_examen, exam.fecha_examen, exam.report)
+    );
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+  }, []);
+
   const setDatePreset = (preset: 'last-month' | 'last-year' | 'last-5-years') => {
     const today = new Date();
     const to = today.toISOString().split('T')[0];
@@ -187,6 +231,14 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
       setError(null);
     }
   }, [isOpen, initialPatientRut]);
+
+  React.useEffect(() => {
+    return () => {
+      if (copiedReportResetTimeoutRef.current) {
+        window.clearTimeout(copiedReportResetTimeoutRef.current);
+      }
+    };
+  }, []);
 
   if (!isOpen) return null;
 
@@ -247,6 +299,9 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
           activeModTab={activeModTab}
           filteredExams={filteredExams}
           onTabChange={setActiveModTab}
+          onCopyReport={handleCopyReport}
+          onPrintReport={handlePrintReport}
+          copiedReportExamKey={copiedReportExamKey}
         />
 
         {!result && !isLoading && !error && <RadiologyViewerEmptyState />}

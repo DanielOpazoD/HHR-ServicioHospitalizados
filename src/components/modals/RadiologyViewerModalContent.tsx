@@ -1,6 +1,16 @@
 import React from 'react';
 import clsx from 'clsx';
-import { Calendar, FileText, Loader2, Monitor, Radio, Search } from 'lucide-react';
+import {
+  Calendar,
+  Check,
+  ClipboardCopy,
+  FileText,
+  Loader2,
+  Monitor,
+  Printer,
+  Radio,
+  Search,
+} from 'lucide-react';
 import type { MMRADExam, MMRADSearchResult } from '@/services/radiology/mmradService';
 
 interface RadiologyPatient {
@@ -193,9 +203,23 @@ const RadiologyViewerResultsHeader = ({
   </>
 );
 
-const RadiologyExamCard = ({ exam, index }: { exam: MMRADExam; index: number }) => {
+const RadiologyExamCard = ({
+  exam,
+  index,
+  onCopyReport,
+  onPrintReport,
+  isCopyConfirmed,
+}: {
+  exam: MMRADExam;
+  index: number;
+  onCopyReport: (exam: MMRADExam) => void;
+  onPrintReport: (exam: MMRADExam) => void;
+  isCopyConfirmed: boolean;
+}) => {
   const modUpper = (exam.mod || '').trim().toUpperCase();
   const hideStatusBadge = modUpper === 'CR' || modUpper === 'US';
+  const hasStructuredReport =
+    modUpper === 'CT' && Boolean(exam.report?.findings || exam.report?.impression);
 
   return (
     <div
@@ -251,6 +275,31 @@ const RadiologyExamCard = ({ exam, index }: { exam: MMRADExam; index: number }) 
             Visualizador DICOM HTML5
           </a>
         )}
+        {hasStructuredReport && (
+          <>
+            <button
+              type="button"
+              onClick={() => onCopyReport(exam)}
+              className={clsx(
+                'inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[11px] font-medium transition-all',
+                isCopyConfirmed
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm'
+                  : 'border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100'
+              )}
+            >
+              {isCopyConfirmed ? <Check size={12} /> : <ClipboardCopy size={12} />}
+              {isCopyConfirmed ? 'Copiado' : 'Copiar Hallazgos + Impresión'}
+            </button>
+            <button
+              type="button"
+              onClick={() => onPrintReport(exam)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-medium text-slate-700 transition-colors hover:bg-slate-100"
+            >
+              <Printer size={12} />
+              Imprimir informe
+            </button>
+          </>
+        )}
         {!exam.pdf_url && !exam.dicom_url && (
           <span className="text-[11px] italic text-slate-400">Sin acciones disponibles</span>
         )}
@@ -266,6 +315,9 @@ export const RadiologyViewerResults = ({
   activeModTab,
   filteredExams,
   onTabChange,
+  onCopyReport,
+  onPrintReport,
+  copiedReportExamKey,
 }: {
   result: MMRADSearchResult | null;
   isLoading: boolean;
@@ -273,6 +325,9 @@ export const RadiologyViewerResults = ({
   activeModTab: string | null;
   filteredExams: MMRADExam[];
   onTabChange: (modality: string | null) => void;
+  onCopyReport: (exam: MMRADExam) => void;
+  onPrintReport: (exam: MMRADExam) => void;
+  copiedReportExamKey: string | null;
 }) => {
   if (!result || isLoading) return null;
 
@@ -296,7 +351,19 @@ export const RadiologyViewerResults = ({
         </div>
       ) : (
         filteredExams.map((exam, index) => (
-          <RadiologyExamCard key={index} exam={exam} index={index} />
+          <RadiologyExamCard
+            key={index}
+            exam={exam}
+            index={index}
+            onCopyReport={onCopyReport}
+            onPrintReport={onPrintReport}
+            isCopyConfirmed={
+              copiedReportExamKey ===
+              (exam.informe_html_url ||
+                exam.pdf_url ||
+                `${exam.nombre_examen}-${exam.fecha_examen}`)
+            }
+          />
         ))
       )}
     </div>
