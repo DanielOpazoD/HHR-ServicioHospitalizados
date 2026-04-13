@@ -31,6 +31,13 @@ describe('patientRowNewAdmissionIndicatorController', () => {
         admissionDate: '2026-03-06',
       })
     ).toBe(true);
+
+    expect(
+      resolveIsNewAdmissionForRecord({
+        recordDate: '2026-03-06',
+        admissionDate: '2026-03-06',
+      })
+    ).toBe(false);
   });
 
   it('does not mark next-day admissions at or after night-end', () => {
@@ -79,5 +86,25 @@ describe('patientRowNewAdmissionIndicatorController', () => {
         admissionTime: '11:00',
       })
     ).toBe(true);
+  });
+
+  it('does not move a madrugada admission into the next calendar day when firstSeenDate was recorded late', () => {
+    expect(
+      resolveIsNewAdmissionForRecord({
+        recordDate,
+        firstSeenDate: '2026-03-06',
+        admissionDate: '2026-03-06',
+        admissionTime: '02:00',
+      })
+    ).toBe(true);
+
+    expect(
+      resolveIsNewAdmissionForRecord({
+        recordDate: '2026-03-06',
+        firstSeenDate: '2026-03-06',
+        admissionDate: '2026-03-06',
+        admissionTime: '02:00',
+      })
+    ).toBe(false);
   });
 });

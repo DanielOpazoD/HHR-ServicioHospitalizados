@@ -1,5 +1,9 @@
 import type { PatientEpisodeContract } from '@/application/patient-flow/clinicalEpisodeContracts';
-import { isNewAdmissionForClinicalDay, normalizeDateOnly } from '@/utils/clinicalDayUtils';
+import {
+  isNewAdmissionForClinicalDay,
+  normalizeDateOnly,
+  resolveClinicalDayForDateTime,
+} from '@/utils/clinicalDayUtils';
 
 export interface ClinicalEpisode {
   patientRut: string;
@@ -84,10 +88,21 @@ export const classifyPatientMovementForRecord = (
 ): PatientMovementClassification => {
   const normalizedRecordDate = normalizeDateOnly(recordDate);
   const normalizedFirstSeenDate = normalizeDateOnly(patient.firstSeenDate);
+  const normalizedAdmissionDate = normalizeDateOnly(patient.admissionDate);
+  const shouldResolveAdmissionAnchor =
+    Boolean(normalizedFirstSeenDate) || Boolean(patient.admissionTime);
+  const resolvedClinicalAdmissionDate =
+    normalizedAdmissionDate && shouldResolveAdmissionAnchor
+      ? resolveClinicalEpisodeAdmissionAnchorDate({
+          firstSeenDate: normalizedFirstSeenDate,
+          admissionDate: normalizedAdmissionDate,
+          admissionTime: patient.admissionTime,
+        })
+      : normalizedFirstSeenDate;
 
-  if (normalizedRecordDate && normalizedFirstSeenDate) {
+  if (normalizedRecordDate && resolvedClinicalAdmissionDate) {
     return {
-      isNewAdmission: normalizedRecordDate === normalizedFirstSeenDate,
+      isNewAdmission: normalizedRecordDate === resolvedClinicalAdmissionDate,
     };
   }
 
@@ -98,4 +113,38 @@ export const classifyPatientMovementForRecord = (
       patient.admissionTime
     ),
   };
+};
+
+const resolveClinicalEpisodeAdmissionAnchorDate = ({
+  firstSeenDate,
+  admissionDate,
+  admissionTime,
+}: {
+  firstSeenDate?: string;
+  admissionDate: string;
+  admissionTime?: string;
+}): string => {
+  const clinicalAdmissionDate =
+    resolveClinicalDayForAdmission(admissionDate, admissionTime) ?? admissionDate;
+
+  if (!firstSeenDate) {
+    return clinicalAdmissionDate;
+  }
+
+  return firstSeenDate < clinicalAdmissionDate ? firstSeenDate : clinicalAdmissionDate;
+};
+
+const resolveClinicalDayForAdmission = (
+  admissionDate?: string,
+  admissionTime?: string
+): string | undefined => {
+  if (!admissionDate) {
+    return undefined;
+  }
+
+  if (!admissionTime) {
+    return admissionDate;
+  }
+
+  return resolveClinicalDayForDateTime(admissionDate, admissionTime);
 };

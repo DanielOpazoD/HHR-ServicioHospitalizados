@@ -66,6 +66,31 @@ describe('clinicalEpisode application model', () => {
     expect(classifyPatientMovementForRecord('2026-03-06', patient).isNewAdmission).toBe(false);
   });
 
+  it('uses firstSeenDate to preserve same-day ingreso when admission time is missing', () => {
+    const patient = {
+      rut: '11.111.111-1',
+      patientName: 'Paciente',
+      admissionDate: '2026-03-05',
+      firstSeenDate: '2026-03-05',
+    };
+
+    expect(classifyPatientMovementForRecord('2026-03-05', patient).isNewAdmission).toBe(true);
+    expect(classifyPatientMovementForRecord('2026-03-06', patient).isNewAdmission).toBe(false);
+  });
+
+  it('prioritizes the earlier clinical-turn day over a later firstSeenDate for madrugada admissions', () => {
+    const patient = {
+      rut: '11.111.111-1',
+      patientName: 'Paciente',
+      admissionDate: '2026-03-06',
+      firstSeenDate: '2026-03-06',
+      admissionTime: '02:00',
+    };
+
+    expect(classifyPatientMovementForRecord('2026-03-05', patient).isNewAdmission).toBe(true);
+    expect(classifyPatientMovementForRecord('2026-03-06', patient).isNewAdmission).toBe(false);
+  });
+
   it('prefers the first observed census day for active episode anchors', () => {
     expect(
       resolveClinicalEpisodeAdmissionDate({

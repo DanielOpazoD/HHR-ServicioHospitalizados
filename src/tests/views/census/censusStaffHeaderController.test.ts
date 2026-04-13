@@ -162,6 +162,31 @@ describe('censusStaffHeaderController', () => {
     expect(admissionsCount).toBe(1);
   });
 
+  it('counts madrugada admissions under the owning night shift even when firstSeenDate was anchored on the next calendar day', () => {
+    const beds = {
+      R1: DataFactory.createMockPatient('R1', {
+        patientName: 'Ingreso madrugada',
+        firstSeenDate: '2026-03-06',
+        admissionDate: '2026-03-06',
+        admissionTime: '02:00',
+      }),
+    };
+
+    expect(
+      resolveAdmissionsCountForRecord({
+        beds,
+        recordDate: '2026-03-05',
+      })
+    ).toBe(1);
+
+    expect(
+      resolveAdmissionsCountForRecord({
+        beds,
+        recordDate: '2026-03-06',
+      })
+    ).toBe(0);
+  });
+
   it('returns read-only class name only when readOnly is true', () => {
     expect(resolveStaffSelectorsClassName(true)).toBe('pointer-events-none opacity-80');
     expect(resolveStaffSelectorsClassName(false)).toBe('');

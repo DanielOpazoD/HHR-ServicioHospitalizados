@@ -154,10 +154,6 @@ export const isNewAdmissionForClinicalDay = (
   }
 
   if (parseTimeMinutes(admissionTime) === null) {
-    if (normalizedAdmissionDate === normalizedRecordDate) {
-      return true;
-    }
-
     const { nextDay } = resolveClinicalDayBounds(normalizedRecordDate);
     return normalizedAdmissionDate === nextDay;
   }

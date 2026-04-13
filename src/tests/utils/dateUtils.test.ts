@@ -201,7 +201,6 @@ describe('dateUtils', () => {
   describe('isNewAdmissionForClinicalDay', () => {
     it('treats admissions on the same record date as new admissions', () => {
       expect(isNewAdmissionForClinicalDay('2026-03-05', '2026-03-05', '14:30')).toBe(true);
-      expect(isNewAdmissionForClinicalDay('2026-03-05', '2026-03-05')).toBe(true);
     });
 
     it('treats madrugada admissions before the weekday cutoff as new admissions for the previous clinical day', () => {
@@ -219,8 +218,9 @@ describe('dateUtils', () => {
       expect(isNewAdmissionForClinicalDay('2024-12-27', '2024-12-28', '09:00')).toBe(false);
     });
 
-    it('keeps next-day admissions with missing time visible to avoid false negatives', () => {
+    it('assigns next-day admissions without time only to the owning previous night shift', () => {
       expect(isNewAdmissionForClinicalDay('2026-03-05', '2026-03-06')).toBe(true);
+      expect(isNewAdmissionForClinicalDay('2026-03-06', '2026-03-06')).toBe(false);
     });
 
     it('rejects previous or distant future dates as new admissions for the record day', () => {
