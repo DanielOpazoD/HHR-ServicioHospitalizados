@@ -81,7 +81,7 @@ export const HandoffChecklistNight: React.FC<HandoffChecklistNightProps> = ({
   readOnly = false,
 }) => {
   return (
-    <div className="flex items-center gap-3 print:gap-3 print:bg-transparent print:border-none print:p-0">
+    <div className="-mt-px flex items-center gap-3 print:mt-0 print:gap-3 print:bg-transparent print:border-none print:p-0">
       <div className="flex items-center gap-2 text-slate-700 shrink-0">
         <ClipboardList size={14} className="print:w-3 print:h-3" />
         <span className="text-[10px] font-bold uppercase print:text-black print:text-[9px]">
@@ -135,7 +135,7 @@ export const HandoffChecklistNight: React.FC<HandoffChecklistNightProps> = ({
             type="date"
             value={data.conteoNoControladosProximaFecha || ''}
             onChange={e => onUpdate('conteoNoControladosProximaFecha', e.target.value)}
-            className="text-xs p-1 border border-slate-200 rounded text-slate-700 focus:ring-1 focus:ring-slate-400 focus:outline-none w-24 print:hidden"
+            className="h-8 w-24 rounded border border-slate-200 px-2 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-slate-400 print:hidden"
             disabled={readOnly}
           />
           {/* Print-only: show date as text without calendar icon */}
