@@ -81,7 +81,9 @@ describe('handoffPdfCudyrSection', () => {
       expect.any(Number)
     );
     expect(doc.text).toHaveBeenCalledWith(
-      expect.stringContaining('Fecha y hora aplicación instrumento CUDYR: 08-03-2026, 1:00 AM'),
+      expect.stringContaining(
+        'Por fecha y hora de corte aplicación instrumento: 08-03-2026, 1:00 AM'
+      ),
       expect.any(Number),
       expect.any(Number)
     );
@@ -103,7 +105,9 @@ describe('handoffPdfCudyrSection', () => {
     addCudyrTable(doc, record, 10, autoTable as never);
 
     expect(doc.text).toHaveBeenCalledWith(
-      expect.stringContaining('Fecha y hora aplicación instrumento CUDYR: 08-03-2026, 1:00 AM'),
+      expect.stringContaining(
+        'Por fecha y hora de corte aplicación instrumento: 08-03-2026, 1:00 AM'
+      ),
       expect.any(Number),
       expect.any(Number)
     );

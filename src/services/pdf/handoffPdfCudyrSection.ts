@@ -38,7 +38,7 @@ export const addCudyrTable = (
 
   doc.text(`Turno ${formatDateDDMMYYYY(record.date)}.`, margin, currentY);
   doc.text(
-    ` | Fecha y hora aplicación instrumento CUDYR: ${applicationDate}, ${CUDYR_NIGHT_REFERENCE_TIME_LABEL}`,
+    ` | Por fecha y hora de corte aplicación instrumento: ${applicationDate}, ${CUDYR_NIGHT_REFERENCE_TIME_LABEL}`,
     margin + 28,
     currentY
   );

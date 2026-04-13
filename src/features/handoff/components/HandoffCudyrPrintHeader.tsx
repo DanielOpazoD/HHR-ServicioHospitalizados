@@ -45,7 +45,7 @@ export const HandoffCudyrPrintHeader: React.FC<{
 
       <span className="text-slate-400">|</span>
       <span>
-        <span className="font-semibold">Fecha y hora aplicación instrumento CUDYR: </span>
+        <span className="font-semibold">Por fecha y hora de corte aplicación instrumento: </span>
         {applicationDate}, {CUDYR_NIGHT_REFERENCE_TIME_LABEL}
       </span>
 
