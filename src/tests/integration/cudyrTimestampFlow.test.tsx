@@ -54,8 +54,6 @@ describe('CUDYR timestamp flow', () => {
 
     expect(updatedRecord.cudyrUpdatedAt).toBe('2026-03-23T10:15:00.000Z');
     expect(screen.getByText(/Últ\. mod\./i)).toBeInTheDocument();
-    expect(container).toHaveTextContent(
-      'Por fecha y hora de corte aplicación instrumento: 24-03-2026, 1:00 AM'
-    );
+    expect(container).toHaveTextContent('Fecha y hora de corte de aplicación: 24-03-2026, 1:00 AM');
   });
 });
