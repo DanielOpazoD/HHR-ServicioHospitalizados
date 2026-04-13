@@ -38,6 +38,49 @@ interface MMRADExam {
   report: ReturnType<typeof parseMMRADReportSections>;
 }
 
+const buildPdfProxyResponse = async (pdfUrl: string, cookies: string, requestOrigin?: string) => {
+  const response = await fetchWithHeaders(pdfUrl, {
+    headers: {
+      Cookie: cookies,
+      Referer: `${MMRAD_BASE_URL}/group/hhangaroa`,
+    },
+  });
+
+  const isSuccessful =
+    typeof response.ok === 'boolean'
+      ? response.ok
+      : response.status >= 200 && response.status < 400;
+
+  if (!isSuccessful) {
+    return buildJsonResponse(
+      502,
+      { error: 'Error al obtener el PDF desde MMRAD' },
+      { requestOrigin }
+    );
+  }
+
+  const buffer = await response.arrayBuffer();
+  const base64 = Buffer.from(buffer).toString('base64');
+
+  return {
+    statusCode: 200,
+    headers: {
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'inline; filename="mmrad-report.pdf"',
+      'Cache-Control': 'private, max-age=300',
+      ...(requestOrigin
+        ? {
+            'Access-Control-Allow-Origin': requestOrigin,
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Allow-Methods': 'GET,OPTIONS',
+          }
+        : {}),
+    },
+    body: base64,
+    isBase64Encoded: true,
+  };
+};
+
 /** Convert ISO date (YYYY-MM-DD) to RIS format (DD/MM/YYYY). */
 const isoToRisDate = (isoDate: string): string => {
   const [y, m, d] = isoDate.split('-');
@@ -392,6 +435,23 @@ export const handler = async (event: NetlifyEventLike) => {
   }
 
   const queryParams = new URLSearchParams(event.rawQuery || '');
+  const action = queryParams.get('action');
+
+  if (action === 'pdf') {
+    const pdfUrl = normalizeMmradUrl(queryParams.get('link'));
+    if (!pdfUrl) {
+      return buildJsonResponse(400, { error: 'link es requerido' }, { requestOrigin });
+    }
+
+    try {
+      const { cookies } = await loginToMMRAD();
+      return await buildPdfProxyResponse(pdfUrl, cookies, requestOrigin);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error desconocido';
+      return buildJsonResponse(500, { error: message }, { requestOrigin });
+    }
+  }
+
   const rut = queryParams.get('rut');
   if (!rut) {
     return buildJsonResponse(400, { error: 'RUT es requerido' }, { requestOrigin });

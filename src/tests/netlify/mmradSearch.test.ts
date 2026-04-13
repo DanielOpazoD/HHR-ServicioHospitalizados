@@ -276,6 +276,61 @@ describe('mmrad-search', () => {
     expect(response.body).toContain('MMRAD_USERNAME');
   });
 
+  it('proxies PDFs inline for preview/print when action=pdf is requested', async () => {
+    const loginActionUrl =
+      'https://ris.mmrad.cl/c/portal/login%2Flogin;jsessionid=abc123?p_l_id=123';
+    const dashboardUrl = '/group/hhangaroa';
+
+    fetchMock.mockResolvedValueOnce({
+      status: 200,
+      headers: new Headers(),
+      text: vi
+        .fn()
+        .mockResolvedValue(
+          `<html><form action="${loginActionUrl}" method="post"><input name="_58_login"/></form></html>`
+        ),
+    });
+    fetchMock.mockResolvedValueOnce({
+      status: 302,
+      headers: new Headers({ location: '/c/portal/redirect' }),
+      text: vi.fn().mockResolvedValue(''),
+    });
+    fetchMock.mockResolvedValueOnce({
+      status: 302,
+      headers: new Headers({ location: dashboardUrl }),
+      text: vi.fn().mockResolvedValue(''),
+    });
+    fetchMock.mockResolvedValueOnce({
+      status: 200,
+      headers: new Headers(),
+      text: vi.fn().mockResolvedValue('<html><body>dashboard</body></html>'),
+    });
+    fetchMock.mockResolvedValueOnce({
+      status: 200,
+      headers: new Headers({ 'Content-Type': 'application/pdf' }),
+      arrayBuffer: vi.fn().mockResolvedValue(new Uint8Array([1, 2, 3, 4]).buffer),
+    });
+
+    const response = await handler({
+      httpMethod: 'GET',
+      headers: { origin: 'https://app.example.com' },
+      body: null,
+      rawQuery:
+        'action=pdf&link=' +
+        encodeURIComponent('https://ris.mmrad.cl/informePDF?id=1459869&idprestacion=202609'),
+    });
+
+    const pdfResponse = response as typeof response & { isBase64Encoded?: boolean };
+
+    expect(pdfResponse.statusCode).toBe(200);
+    expect((pdfResponse.headers as Record<string, string>)['Content-Type']).toBe('application/pdf');
+    expect((pdfResponse.headers as Record<string, string>)['Content-Disposition']).toContain(
+      'inline'
+    );
+    expect(pdfResponse.isBase64Encoded).toBe(true);
+    expect(pdfResponse.body).toBe(Buffer.from([1, 2, 3, 4]).toString('base64'));
+  });
+
   it('returns 500 on fetch error', async () => {
     fetchMock.mockRejectedValue(new Error('Network error'));
 

@@ -47,6 +47,18 @@
 - Las secciones especiales no deben agregarse con `if` en la hoja; deben registrarse en la definición del documento.
 - La integridad del registry debe validarse con tests dedicados.
 
+## Integraciones rápidas del sidebar
+
+- El sidebar del workspace puede exponer atajos clínicos contextuales junto al nombre del paciente.
+- `LAB` mantiene el flujo de inserción resumida hacia el documento activo.
+- El atajo con icono de rayo (`MMRAD`) abre un mini-dialog para estudios `CT` de los últimos 30 días.
+- Ese mini-dialog solo aparece cuando existe documento activo editable y usa el mismo backend MMRAD del modal principal.
+- El texto copiado de MMRAD debe seguir este formato:
+  - `TAC de <zona anatómica> (DD-MM-YYYY).`
+  - `Hallazgos: ...`
+  - `Impresión: ...`
+- El parser de MMRAD debe limpiar firma, footer y scripts antes de exponer `Hallazgos` / `Impresión`.
+
 ## Impresión y exportación
 
 - `clinicalDocumentPrintDomSanitizer`: limpia la hoja para impresión.

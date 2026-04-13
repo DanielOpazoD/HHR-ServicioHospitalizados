@@ -8,13 +8,14 @@ import { ClinicalDocumentStatusBar } from '@/features/clinical-documents/compone
 import { ClinicalDocumentsSidebar } from '@/features/clinical-documents/components/ClinicalDocumentsSidebar';
 import { ClinicalDocumentSheet } from '@/features/clinical-documents/components/ClinicalDocumentSheet';
 import { ClinicalDocumentLabInsertDialog } from '@/features/clinical-documents/components/ClinicalDocumentLabInsertDialog';
+import { ClinicalDocumentMMRADCopyDialog } from '@/features/clinical-documents/components/ClinicalDocumentMMRADCopyDialog';
 import { useClinicalDocumentsWorkspaceModel } from '@/features/clinical-documents/hooks/useClinicalDocumentsWorkspaceModel';
 import { useClinicalDocumentSheetState } from '@/features/clinical-documents/hooks/useClinicalDocumentSheetState';
 
 const ZOOM_STEP = 10;
 const ZOOM_MIN = 60;
 const ZOOM_MAX = 150;
-const ZOOM_DEFAULT = 100;
+const ZOOM_DEFAULT = 110;
 
 interface ClinicalDocumentsWorkspaceProps {
   patient: PatientData;
@@ -40,6 +41,7 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
   const sheetState = useClinicalDocumentSheetState(sheetProps.selectedDocument);
   const [zoom, setZoom] = useState(ZOOM_DEFAULT);
   const [showLabDialog, setShowLabDialog] = useState(false);
+  const [showMMRADDialog, setShowMMRADDialog] = useState(false);
 
   const handleInsertLabText = useCallback(
     (text: string) => {
@@ -110,7 +112,7 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
 
   return (
     <div
-      className="grid h-[82vh] min-h-[82vh] grid-cols-[260px_minmax(0,1fr)]"
+      className="relative grid h-[86vh] min-h-[86vh] grid-cols-[260px_minmax(0,1fr)]"
       data-testid="clinical-documents-workspace"
     >
       {headerContent && headerActionsContainer
@@ -120,7 +122,18 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
         {...sidebarProps}
         onOpenLabDialog={
           patient.rut && sheetProps.canEdit && sheetProps.selectedDocument
-            ? () => setShowLabDialog(true)
+            ? () => {
+                setShowMMRADDialog(false);
+                setShowLabDialog(true);
+              }
+            : undefined
+        }
+        onOpenMMRADDialog={
+          patient.rut && sheetProps.canEdit && sheetProps.selectedDocument
+            ? () => {
+                setShowLabDialog(false);
+                setShowMMRADDialog(true);
+              }
             : undefined
         }
       />
@@ -152,6 +165,12 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
           patientRut={patient.rut}
           onInsert={handleInsertLabText}
           onClose={() => setShowLabDialog(false)}
+        />
+      )}
+      {showMMRADDialog && patient.rut && (
+        <ClinicalDocumentMMRADCopyDialog
+          patientRut={patient.rut}
+          onClose={() => setShowMMRADDialog(false)}
         />
       )}
     </div>

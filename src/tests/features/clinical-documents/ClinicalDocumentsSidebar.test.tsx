@@ -120,4 +120,35 @@ describe('ClinicalDocumentsSidebar', () => {
     expect(screen.getByRole('button', { name: /^crear$/i })).toBeDisabled();
     expect(screen.queryByTitle(/eliminar documento/i)).not.toBeInTheDocument();
   });
+
+  it('renders LAB and MMRAD shortcuts when callbacks are provided', () => {
+    const onOpenLabDialog = vi.fn();
+    const onOpenMMRADDialog = vi.fn();
+
+    render(
+      <ClinicalDocumentsSidebar
+        canEdit={true}
+        canDelete={false}
+        readOnlyMessage={null}
+        patientName="Paciente Test"
+        patientRut="11.111.111-1"
+        templates={[{ id: 'epicrisis', name: 'Epicrisis' }]}
+        selectedTemplateId="epicrisis"
+        onSelectTemplate={() => {}}
+        onCreateDocument={() => {}}
+        documents={[]}
+        selectedDocumentId={null}
+        onSelectDocument={() => {}}
+        onDeleteDocument={() => {}}
+        onOpenLabDialog={onOpenLabDialog}
+        onOpenMMRADDialog={onOpenMMRADDialog}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /lab/i }));
+    fireEvent.click(screen.getByRole('button', { name: /abrir mmrad/i }));
+
+    expect(onOpenLabDialog).toHaveBeenCalledTimes(1);
+    expect(onOpenMMRADDialog).toHaveBeenCalledTimes(1);
+  });
 });

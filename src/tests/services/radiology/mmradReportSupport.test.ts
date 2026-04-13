@@ -36,11 +36,16 @@ describe('mmradReportSupport', () => {
 
   it('builds clipboard text with findings and impression only', () => {
     const text = buildMMRADReportClipboardText({
+      examName: 'TC TORAX',
+      examDate: '12/04/2026 11:47',
+      title: 'TOMOGRAFÍA SIMPLE DE TÓRAX',
       findings: 'Hallazgo A\nHallazgo B',
       impression: 'Impresión B\nImpresión C',
     });
 
-    expect(text).toBe('HALLAZGOS:\nHallazgo A Hallazgo B\n\nIMPRESION:\nImpresión B Impresión C');
+    expect(text).toBe(
+      'TAC de Tórax (12-04-2026).\n\nHallazgos: Hallazgo A Hallazgo B\n\nImpresión: Impresión B Impresión C'
+    );
   });
 
   it('builds printable report html with title and sections', () => {

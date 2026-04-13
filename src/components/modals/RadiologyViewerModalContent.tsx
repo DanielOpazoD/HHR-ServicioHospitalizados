@@ -7,7 +7,6 @@ import {
   FileText,
   Loader2,
   Monitor,
-  Printer,
   Radio,
   Search,
 } from 'lucide-react';
@@ -206,14 +205,14 @@ const RadiologyViewerResultsHeader = ({
 const RadiologyExamCard = ({
   exam,
   index,
+  onOpenPdf,
   onCopyReport,
-  onPrintReport,
   isCopyConfirmed,
 }: {
   exam: MMRADExam;
   index: number;
+  onOpenPdf: (exam: MMRADExam) => void;
   onCopyReport: (exam: MMRADExam) => void;
-  onPrintReport: (exam: MMRADExam) => void;
   isCopyConfirmed: boolean;
 }) => {
   const modUpper = (exam.mod || '').trim().toUpperCase();
@@ -254,15 +253,14 @@ const RadiologyExamCard = ({
       </div>
       <div className="flex flex-wrap gap-2">
         {exam.pdf_url && (
-          <a
-            href={exam.pdf_url}
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            type="button"
+            onClick={() => onOpenPdf(exam)}
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-800"
           >
             <FileText size={12} />
             Ver PDF
-          </a>
+          </button>
         )}
         {exam.dicom_url && (
           <a
@@ -288,15 +286,7 @@ const RadiologyExamCard = ({
               )}
             >
               {isCopyConfirmed ? <Check size={12} /> : <ClipboardCopy size={12} />}
-              {isCopyConfirmed ? 'Copiado' : 'Copiar Hallazgos + Impresión'}
-            </button>
-            <button
-              type="button"
-              onClick={() => onPrintReport(exam)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-medium text-slate-700 transition-colors hover:bg-slate-100"
-            >
-              <Printer size={12} />
-              Imprimir informe
+              {isCopyConfirmed ? 'Copiado' : 'Copiar informe'}
             </button>
           </>
         )}
@@ -315,8 +305,8 @@ export const RadiologyViewerResults = ({
   activeModTab,
   filteredExams,
   onTabChange,
+  onOpenPdf,
   onCopyReport,
-  onPrintReport,
   copiedReportExamKey,
 }: {
   result: MMRADSearchResult | null;
@@ -325,8 +315,8 @@ export const RadiologyViewerResults = ({
   activeModTab: string | null;
   filteredExams: MMRADExam[];
   onTabChange: (modality: string | null) => void;
+  onOpenPdf: (exam: MMRADExam) => void;
   onCopyReport: (exam: MMRADExam) => void;
-  onPrintReport: (exam: MMRADExam) => void;
   copiedReportExamKey: string | null;
 }) => {
   if (!result || isLoading) return null;
@@ -355,8 +345,8 @@ export const RadiologyViewerResults = ({
             key={index}
             exam={exam}
             index={index}
+            onOpenPdf={onOpenPdf}
             onCopyReport={onCopyReport}
-            onPrintReport={onPrintReport}
             isCopyConfirmed={
               copiedReportExamKey ===
               (exam.informe_html_url ||

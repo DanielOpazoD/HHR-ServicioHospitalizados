@@ -6,6 +6,14 @@ export interface MMRADReportSections {
   impression: string | null;
 }
 
+interface MMRADClipboardPayload extends Pick<
+  MMRADReportSections,
+  'title' | 'findings' | 'impression'
+> {
+  examName?: string | null;
+  examDate?: string | null;
+}
+
 const REPORT_STOP_PATTERNS = [
   /^SALUDA ATENTAMENTE$/i,
   /^IMPRIMIR$/i,
@@ -99,14 +107,57 @@ export const parseMMRADReportSections = (html: string): MMRADReportSections | nu
   };
 };
 
-export const buildMMRADReportClipboardText = (
-  report: Pick<MMRADReportSections, 'findings' | 'impression'>
+const toTitleCase = (value: string): string =>
+  value.replace(/\S+/g, token => {
+    const lower = token.toLocaleLowerCase('es-CL');
+    return lower.charAt(0).toLocaleUpperCase('es-CL') + lower.slice(1);
+  });
+
+const formatMmradExamLabel = (
+  examName?: string | null,
+  reportTitle?: string | null
 ): string | null => {
+  const source = (reportTitle || examName || '').replace(/\s+/g, ' ').trim();
+  if (!source) return null;
+
+  const lower = source.toLocaleLowerCase('es-CL');
+  const tomografiaBody = lower.replace(
+    /^tomograf(?:ia|ía)(?:\s+computada)?(?:\s+simple)?(?:\s+de)?\s+/i,
+    ''
+  );
+  if (tomografiaBody !== lower && tomografiaBody.trim()) {
+    return `TAC de ${toTitleCase(tomografiaBody.trim())}`;
+  }
+
+  const tcBody = lower.replace(/^(?:tc|tac)(?:\s+de)?\s+/i, '');
+  if (tcBody !== lower && tcBody.trim()) {
+    return `TAC de ${toTitleCase(tcBody.trim())}`;
+  }
+
+  return toTitleCase(source);
+};
+
+const formatMmradExamDate = (examDate?: string | null): string | null => {
+  if (!examDate) return null;
+  const match = examDate.match(/(\d{2})[\/.-](\d{2})[\/.-](\d{4})/);
+  return match ? `${match[1]}-${match[2]}-${match[3]}` : null;
+};
+
+export const buildMMRADReportClipboardText = ({
+  examName,
+  examDate,
+  title,
+  findings,
+  impression,
+}: MMRADClipboardPayload): string | null => {
   const toContinuousParagraph = (value: string): string => value.replace(/\s*\n\s*/g, ' ').trim();
+  const examLabel = formatMmradExamLabel(examName, title);
+  const formattedDate = formatMmradExamDate(examDate);
 
   const sections = [
-    report.findings ? `HALLAZGOS:\n${toContinuousParagraph(report.findings)}` : null,
-    report.impression ? `IMPRESION:\n${toContinuousParagraph(report.impression)}` : null,
+    examLabel ? `${examLabel}${formattedDate ? ` (${formattedDate})` : ''}.` : null,
+    findings ? `Hallazgos: ${toContinuousParagraph(findings)}` : null,
+    impression ? `Impresión: ${toContinuousParagraph(impression)}` : null,
   ].filter(Boolean);
 
   return sections.length > 0 ? sections.join('\n\n') : null;

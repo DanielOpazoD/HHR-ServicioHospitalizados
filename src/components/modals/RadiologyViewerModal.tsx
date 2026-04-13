@@ -2,14 +2,12 @@ import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { Radio } from 'lucide-react';
 import { BaseModal } from '@/components/shared/BaseModal';
 import {
+  buildMMRADPdfUrl,
   searchMMRADExams,
   type MMRADExam,
   type MMRADSearchResult,
 } from '@/services/radiology/mmradService';
-import {
-  buildMMRADReportClipboardText,
-  buildMMRADReportPrintHtml,
-} from '@/services/radiology/mmradReportSupport';
+import { buildMMRADReportClipboardText } from '@/services/radiology/mmradReportSupport';
 import {
   RadiologyViewerControls,
   RadiologyViewerEmptyState,
@@ -176,7 +174,15 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
   }, [selectedRut, dateFrom, dateTo]);
 
   const handleCopyReport = useCallback(async (exam: MMRADExam) => {
-    const reportText = exam.report ? buildMMRADReportClipboardText(exam.report) : null;
+    const reportText = exam.report
+      ? buildMMRADReportClipboardText({
+          examName: exam.nombre_examen,
+          examDate: exam.fecha_examen,
+          title: exam.report.title,
+          findings: exam.report.findings,
+          impression: exam.report.impression,
+        })
+      : null;
     if (!reportText) {
       return;
     }
@@ -194,23 +200,30 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
     }, 1800);
   }, []);
 
-  const handlePrintReport = useCallback((exam: MMRADExam) => {
-    if (!exam.report) {
+  const handleOpenPdf = useCallback((exam: MMRADExam) => {
+    if (!exam.pdf_url) {
       return;
     }
 
-    const printWindow = window.open('', '_blank', 'width=900,height=700');
-    if (!printWindow) {
-      return;
-    }
-
-    printWindow.document.open();
-    printWindow.document.write(
-      buildMMRADReportPrintHtml(exam.nombre_examen, exam.fecha_examen, exam.report)
+    const pdfUrl = buildMMRADPdfUrl(exam.pdf_url);
+    const popupWindow = window.open(
+      pdfUrl,
+      '_blank',
+      'popup=yes,width=1100,height=800,noopener,noreferrer'
     );
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
+    if (!popupWindow) {
+      return;
+    }
+
+    popupWindow.focus();
+    window.setTimeout(() => {
+      try {
+        popupWindow.focus();
+        popupWindow.print();
+      } catch {
+        // Ignore popup cross-origin print limitations.
+      }
+    }, 1500);
   }, []);
 
   const setDatePreset = (preset: 'last-month' | 'last-year' | 'last-5-years') => {
@@ -299,8 +312,8 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
           activeModTab={activeModTab}
           filteredExams={filteredExams}
           onTabChange={setActiveModTab}
+          onOpenPdf={handleOpenPdf}
           onCopyReport={handleCopyReport}
-          onPrintReport={handlePrintReport}
           copiedReportExamKey={copiedReportExamKey}
         />
 

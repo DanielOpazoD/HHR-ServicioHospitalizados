@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FilePlus2, FlaskConical, History, Paperclip, PenLine, Trash2 } from 'lucide-react';
+import { FilePlus2, FlaskConical, History, Paperclip, PenLine, Trash2, Zap } from 'lucide-react';
 import clsx from 'clsx';
 
 import { getClinicalDocumentTypeLabel } from '@/features/clinical-documents/controllers/clinicalDocumentTemplateController';
@@ -59,10 +59,11 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
   hasAnnex,
   patientRut,
   onOpenLabDialog,
+  onOpenMMRADDialog,
 }) => {
   return (
     <aside className="space-y-2.5 border-r border-slate-200 bg-slate-50/70 p-2.5">
-      {/* Patient context + LAB shortcut */}
+      {/* Patient context + quick shortcuts */}
       {patientName && (
         <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-2">
           <div className="flex-1 min-w-0">
@@ -73,17 +74,30 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
               <p className="text-[10px] font-mono text-slate-400 mt-0.5">{patientRut}</p>
             )}
           </div>
-          {onOpenLabDialog && (
-            <button
-              type="button"
-              onClick={onOpenLabDialog}
-              className="shrink-0 inline-flex h-7 items-center rounded-md border border-emerald-200 px-2 text-[9px] font-bold uppercase tracking-[0.12em] text-emerald-700 hover:bg-emerald-50 transition-colors"
-              title="Insertar resumen de laboratorio"
-            >
-              <FlaskConical size={11} className="mr-1" />
-              Lab
-            </button>
-          )}
+          <div className="flex shrink-0 items-center gap-1">
+            {onOpenLabDialog && (
+              <button
+                type="button"
+                onClick={onOpenLabDialog}
+                className="inline-flex h-7 items-center rounded-md border border-emerald-200 px-2 text-[9px] font-bold uppercase tracking-[0.12em] text-emerald-700 hover:bg-emerald-50 transition-colors"
+                title="Insertar resumen de laboratorio"
+              >
+                <FlaskConical size={11} className="mr-1" />
+                Lab
+              </button>
+            )}
+            {onOpenMMRADDialog && (
+              <button
+                type="button"
+                onClick={onOpenMMRADDialog}
+                aria-label="Abrir MMRAD"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-violet-200 text-violet-700 hover:bg-violet-50 transition-colors"
+                title="Copiar informe radiológico MMRAD"
+              >
+                <Zap size={12} />
+              </button>
+            )}
+          </div>
         </div>
       )}
 

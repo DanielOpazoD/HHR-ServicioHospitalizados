@@ -33,6 +33,9 @@ export interface MMRADSearchParams {
   dateTo?: string;
 }
 
+export const buildMMRADPdfUrl = (pdfLink: string): string =>
+  `/.netlify/functions/mmrad-search?action=pdf&link=${encodeURIComponent(pdfLink)}`;
+
 export const searchMMRADExams = async ({
   rut,
   dateFrom,
