@@ -11,6 +11,7 @@ import { BEDS } from '@/constants/beds';
 import {
   shouldRenderBookmarkBar,
   shouldRenderDateStrip,
+  shouldShowBookmarkToggle,
 } from '@/components/layout/app-content/appContentVisibilityController';
 import { resolveCensusDateSelection } from '@/components/layout/app-content/appContentCensusDateController';
 import type { UseUIStateReturn } from '@/hooks/useUIState';
@@ -167,7 +168,15 @@ export const AppContentChrome: React.FC<AppContentChromeProps> = ({
           emailErrorMessage={censusEmail.error}
           syncStatus={syncStatus}
           lastSyncTime={lastSyncTime}
-          onToggleBookmarks={() => ui.setShowBookmarksBar(!ui.showBookmarksBar)}
+          onToggleBookmarks={
+            shouldShowBookmarkToggle({
+              currentModule: ui.currentModule,
+              censusViewMode: ui.censusViewMode,
+              role: auth.role,
+            })
+              ? () => ui.setShowBookmarksBar(!ui.showBookmarksBar)
+              : undefined
+          }
           showBookmarks={ui.showBookmarksBar}
           role={auth.role}
           onBackupPDF={exportManager.handleBackupHandoff}

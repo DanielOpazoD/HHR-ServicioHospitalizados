@@ -45,6 +45,9 @@ interface ResolveBookmarkBarVisibilityParams {
 
 const BOOKMARK_ALLOWED_ROLES = new Set(['admin', 'nurse_hospital']);
 
+/**
+ * Whether the BookmarkBar itself should render (bar is open and conditions met).
+ */
 export const shouldRenderBookmarkBar = ({
   currentModule,
   censusViewMode,
@@ -56,9 +59,35 @@ export const shouldRenderBookmarkBar = ({
     return false;
   }
 
+  return canAccessBookmarks({ currentModule, censusViewMode, role });
+};
+
+/**
+ * Whether the toggle arrow in the DateStrip should be visible.
+ * Only admin and nurse_hospital in CENSUS → REGISTER can see it.
+ */
+export const shouldShowBookmarkToggle = ({
+  currentModule,
+  censusViewMode,
+  role,
+}: {
+  currentModule: ModuleType;
+  censusViewMode: CensusViewMode;
+  role?: string | null;
+}): boolean => canAccessBookmarks({ currentModule, censusViewMode, role });
+
+/** Shared predicate for bookmark access (role + module + view). */
+const canAccessBookmarks = ({
+  currentModule,
+  censusViewMode,
+  role,
+}: {
+  currentModule: ModuleType;
+  censusViewMode: CensusViewMode;
+  role?: string | null;
+}): boolean => {
   if (currentModule !== 'CENSUS' || censusViewMode !== 'REGISTER') {
     return false;
   }
-
   return role !== null && role !== undefined && BOOKMARK_ALLOWED_ROLES.has(role);
 };
