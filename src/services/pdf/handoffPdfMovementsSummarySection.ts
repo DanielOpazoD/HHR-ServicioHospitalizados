@@ -56,6 +56,8 @@ export const addMovementsSummary = (
 ) => {
   let currentY = startY;
   const pageHeight = doc.internal.pageSize.height;
+  const pageWidth = doc.internal.pageSize.width;
+  const movementTables = buildMovementsSummaryTables(record);
 
   if (currentY + 40 > pageHeight) {
     doc.addPage();
@@ -69,7 +71,7 @@ export const addMovementsSummary = (
   doc.text('RESUMEN DE MOVIMIENTOS', margin, currentY);
   currentY += 6;
 
-  buildMovementsSummaryTables(record).forEach(summaryTable => {
+  movementTables.forEach((summaryTable, index) => {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
     doc.text(summaryTable.title, margin, currentY);
@@ -85,12 +87,18 @@ export const addMovementsSummary = (
         headStyles: { fillColor: [240, 240, 240], textColor: 0, fontStyle: 'bold' },
       });
       currentY = (doc as JsPDFWithAutoTable).lastAutoTable.finalY + 4;
-      return;
+    } else {
+      doc.setFont('helvetica', 'italic');
+      doc.text(summaryTable.emptyLabel, margin + summaryTable.emptyOffsetX, currentY);
+      currentY += 5;
     }
 
-    doc.setFont('helvetica', 'italic');
-    doc.text(summaryTable.emptyLabel, margin + summaryTable.emptyOffsetX, currentY);
-    currentY += 5;
+    if (index < movementTables.length - 1) {
+      doc.setDrawColor(220, 226, 235);
+      doc.setLineWidth(0.25);
+      doc.line(margin, currentY, pageWidth - margin, currentY);
+      currentY += 5;
+    }
   });
 
   return currentY;

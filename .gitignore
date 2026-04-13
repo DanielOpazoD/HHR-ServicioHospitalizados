@@ -70,3 +70,6 @@ functions/llave-beta.json
 # Local agent / worktree artifacts
 .claude/
 .agent/
+
+# Local Netlify folder
+.netlify

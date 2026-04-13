@@ -8,6 +8,10 @@ const createDocMock = () =>
     setFont: vi.fn(),
     setFontSize: vi.fn(),
     text: vi.fn(),
+    setDrawColor: vi.fn(),
+    setLineWidth: vi.fn(),
+    line: vi.fn(),
+    internal: { pageSize: { height: 297, width: 210 } },
     lastAutoTable: { finalY: 100 },
   }) as unknown as Parameters<typeof addCudyrTable>[0];
 
@@ -72,6 +76,11 @@ describe('handoffPdfCudyrSection', () => {
     addCudyrTable(doc, record, 10, autoTable as never);
 
     expect(doc.text).toHaveBeenCalledWith(
+      expect.stringContaining('Turno 07-03-2026.'),
+      expect.any(Number),
+      expect.any(Number)
+    );
+    expect(doc.text).toHaveBeenCalledWith(
       expect.stringContaining('Fecha y hora aplicación instrumento CUDYR: 08-03-2026, 1:00 AM'),
       expect.any(Number),
       expect.any(Number)
@@ -95,6 +104,59 @@ describe('handoffPdfCudyrSection', () => {
 
     expect(doc.text).toHaveBeenCalledWith(
       expect.stringContaining('Fecha y hora aplicación instrumento CUDYR: 08-03-2026, 1:00 AM'),
+      expect.any(Number),
+      expect.any(Number)
+    );
+  });
+
+  it('renders the summary headline with categorizable beds, categorized beds and index', () => {
+    const doc = createDocMock();
+    const autoTable = vi.fn();
+    const record = {
+      date: '2026-04-12',
+      beds: {
+        R1: {
+          patientName: 'Paciente categorizado',
+          rut: '1-9',
+          admissionDate: '2026-04-11',
+          admissionTime: '18:00',
+          cudyr: {
+            changeClothes: 1,
+            mobilization: 1,
+            feeding: 0,
+            elimination: 0,
+            psychosocial: 0,
+            surveillance: 0,
+            vitalSigns: 0,
+            fluidBalance: 0,
+            oxygenTherapy: 0,
+            airway: 0,
+            proInterventions: 0,
+            skinCare: 0,
+            pharmacology: 0,
+            invasiveElements: 0,
+          },
+        },
+        R2: {
+          patientName: 'Paciente sin categorizar',
+          rut: '2-7',
+          admissionDate: '2026-04-11',
+          admissionTime: '19:00',
+          cudyr: undefined,
+        },
+      },
+      discharges: [],
+      transfers: [],
+      cma: [],
+      lastUpdated: '2026-04-12T10:00:00.000Z',
+    } as unknown as DailyRecord;
+
+    addCudyrTable(doc, record, 10, autoTable as never);
+
+    expect(doc.text).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'Camas categorizables = 2  |  Camas categorizadas = 1  |  Indice categorización = 50%'
+      ),
       expect.any(Number),
       expect.any(Number)
     );

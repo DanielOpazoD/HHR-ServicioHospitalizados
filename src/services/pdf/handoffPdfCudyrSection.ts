@@ -36,10 +36,10 @@ export const addCudyrTable = (
   const nursesStr = nurses.length > 0 ? nurses.join(', ') : 'No registrados';
   const applicationDate = formatDateDDMMYYYY(resolveCudyrNightApplicationDate(record.date));
 
-  doc.text(`Fecha: ${formatDateDDMMYYYY(record.date)}`, margin, currentY);
+  doc.text(`Turno ${formatDateDDMMYYYY(record.date)}.`, margin, currentY);
   doc.text(
     ` | Fecha y hora aplicación instrumento CUDYR: ${applicationDate}, ${CUDYR_NIGHT_REFERENCE_TIME_LABEL}`,
-    margin + 35,
+    margin + 28,
     currentY
   );
 
@@ -52,6 +52,10 @@ export const addCudyrTable = (
     beds: record.beds,
     activeExtraBeds: [],
   });
+  const categorizationIndex =
+    summary.occupiedCount > 0
+      ? Math.round((summary.categorizedCount / summary.occupiedCount) * 100)
+      : 0;
   const summaryCounts = Object.entries(summary.counts.media).reduce(
     (acc, [category, count]) => {
       acc[category] = (acc[category] || 0) + count;
@@ -67,12 +71,20 @@ export const addCudyrTable = (
     doc.text('Resumen Estadistico:', margin, currentY);
     currentY += 4;
 
+    const headlineSummary =
+      `Camas categorizables = ${summary.occupiedCount}  |  ` +
+      `Camas categorizadas = ${summary.categorizedCount}  |  ` +
+      `Indice categorización = ${categorizationIndex}%`;
+
+    doc.setFont('helvetica', 'normal');
+    doc.text(headlineSummary, margin, currentY);
+    currentY += 4;
+
     const summaryText = Object.entries(summaryCounts)
       .sort(([left], [right]) => left.localeCompare(right))
       .map(([category, count]) => `${category}: ${count}`)
       .join('  |  ');
 
-    doc.setFont('helvetica', 'normal');
     doc.text(`${summaryText}  (Total: ${totalCategorized})`, margin, currentY);
     currentY += 6;
   }
