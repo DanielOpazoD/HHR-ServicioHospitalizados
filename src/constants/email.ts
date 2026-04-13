@@ -12,7 +12,7 @@
  * Junto con saludar, envío adjunto planilla estadística de pacientes
  * hospitalizados correspondiente al día X de [mes] de [año].
  *
- * Clave Excel: XXXXXX (6-digit numeric PIN)
+ * Clave Excel: XXXX (4-digit monthly PIN)
  *
  * Saludos cordiales
  *
@@ -24,7 +24,7 @@
  * ```
  *
  * **Important:**
- * - PIN is a 6-digit number generated deterministically from the date
+ * - PIN is a 4-digit number generated deterministically from the month
  * - Nurse signature comes from `nursesSignature` parameter (typically from Census)
  * - Plain text format ensures compatibility with all email clients
  */

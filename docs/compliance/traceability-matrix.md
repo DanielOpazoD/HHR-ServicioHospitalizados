@@ -12,12 +12,12 @@ Este documento vincula los requerimientos legales de salud en Chile con las impl
 
 ## 2. Privacidad y Confidencialidad (Ley 19.628 / Res. Exenta 146)
 
-| Requerimiento Legal             | Implementación Técnica                 | Ubicación en el Código                        |
-| :------------------------------ | :------------------------------------- | :-------------------------------------------- |
-| Acceso restringido por rol      | RBAC (Role Based Access Control)       | `hooks/useAuthState.ts:L263`                  |
-| Bloqueo por inactividad         | Auto-logout con `SESSION_TIMEOUT_MS`   | `hooks/useAuthState.ts:L109`                  |
-| Encriptación de datos sensibles | Clave PIN de 6 dígitos en Excel        | `services/exporters/exportPasswordService.ts` |
-| Protección en tránsito          | Pasaporte de Acceso Island (Encrypted) | `services/auth/passportService.ts`            |
+| Requerimiento Legal             | Implementación Técnica                  | Ubicación en el Código                        |
+| :------------------------------ | :-------------------------------------- | :-------------------------------------------- |
+| Acceso restringido por rol      | RBAC (Role Based Access Control)        | `hooks/useAuthState.ts:L263`                  |
+| Bloqueo por inactividad         | Auto-logout con `SESSION_TIMEOUT_MS`    | `hooks/useAuthState.ts:L109`                  |
+| Encriptación de datos sensibles | Clave PIN mensual de 4 dígitos en Excel | `services/exporters/exportPasswordService.ts` |
+| Protección en tránsito          | Pasaporte de Acceso Island (Encrypted)  | `services/auth/passportService.ts`            |
 
 ## 3. Trazabilidad e Historial (Circular N°23 MINSAL)
 
