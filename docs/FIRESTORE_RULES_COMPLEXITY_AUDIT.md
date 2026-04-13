@@ -186,3 +186,17 @@ Seguimiento:
 1. Pasar a `P1-03`: revisar bootstrap admins y excepciones legacy de seguridad.
 2. Abrir `P1-04`: reducir complejidad del write path de `dailyRecord`.
 3. Abrir `P1-05`: consolidar golden path de lectura/sync.
+
+## Iteración 7 ejecutada
+
+Se abrió un frente nuevo y de bajo riesgo sobre el guard de `systemHealth`:
+
+- se agregaron helpers reutilizables `isOptionalString(...)`, `isOptionalBool(...)`, `isOptionalBoundedInt(...)` e `isOptionalEnum(...)`
+- `isValidSystemHealthWrite(userId)` pasó a reutilizar esos helpers para validar escalares opcionales, contadores acotados y enums operativos
+- no se cambiaron keys permitidas, rangos ni semántica de permisos; el recorte fue estructural y orientado a bajar repetición/costo de mantenimiento
+
+## Resultado de la validación de la iteración 7
+
+- `bash scripts/run-firestore-rules-ci.sh`: verde (`81` tests).
+
+Conclusión: el archivo sigue siendo grande, pero `systemHealth` ya dejó de ser un bloque de validación repetitivo difícil de extender. Este frente tiene buen retorno estructural y riesgo funcional bajo.

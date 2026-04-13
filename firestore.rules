@@ -342,6 +342,26 @@ service cloud.firestore {
              payload.timestamp is int;
     }
 
+    function isOptionalString(payload, key) {
+      return !(key in payload) || payload[key] == null || payload[key] is string;
+    }
+
+    function isOptionalBool(payload, key) {
+      return !(key in payload) || payload[key] == null || payload[key] is bool;
+    }
+
+    function isOptionalBoundedInt(payload, key, maxValue) {
+      return !(key in payload) ||
+             payload[key] == null ||
+             (payload[key] is int && payload[key] >= 0 && payload[key] <= maxValue);
+    }
+
+    function isOptionalEnum(payload, key, allowedValues) {
+      return !(key in payload) ||
+             payload[key] == null ||
+             allowedValues.hasAny([payload[key]]);
+    }
+
     // System health payload guard:
     // - caller can only write own doc
     // - schema is constrained
@@ -399,41 +419,37 @@ service cloud.firestore {
                'userAgent'
              ]) &&
              payload.uid == request.auth.uid &&
-             (!('email' in payload) || payload.email == null || payload.email is string) &&
-             (!('displayName' in payload) || payload.displayName == null || payload.displayName is string) &&
-             (!('lastSeen' in payload) || payload.lastSeen == null || payload.lastSeen is string) &&
-             (!('isOnline' in payload) || payload.isOnline == null || payload.isOnline is bool) &&
-             (!('isOutdated' in payload) || payload.isOutdated == null || payload.isOutdated is bool) &&
-             (!('pendingMutations' in payload) || payload.pendingMutations == null || (payload.pendingMutations is int && payload.pendingMutations >= 0 && payload.pendingMutations <= 10000)) &&
-             (!('pendingSyncTasks' in payload) || payload.pendingSyncTasks == null || (payload.pendingSyncTasks is int && payload.pendingSyncTasks >= 0 && payload.pendingSyncTasks <= 10000)) &&
-             (!('failedSyncTasks' in payload) || payload.failedSyncTasks == null || (payload.failedSyncTasks is int && payload.failedSyncTasks >= 0 && payload.failedSyncTasks <= 10000)) &&
-             (!('conflictSyncTasks' in payload) || payload.conflictSyncTasks == null || (payload.conflictSyncTasks is int && payload.conflictSyncTasks >= 0 && payload.conflictSyncTasks <= 10000)) &&
-             (!('retryingSyncTasks' in payload) || payload.retryingSyncTasks == null || (payload.retryingSyncTasks is int && payload.retryingSyncTasks >= 0 && payload.retryingSyncTasks <= 10000)) &&
-             (!('syncOrphanedTasks' in payload) || payload.syncOrphanedTasks == null || (payload.syncOrphanedTasks is int && payload.syncOrphanedTasks >= 0 && payload.syncOrphanedTasks <= 10000)) &&
-             (!('oldestPendingAgeMs' in payload) || payload.oldestPendingAgeMs == null || (payload.oldestPendingAgeMs is int && payload.oldestPendingAgeMs >= 0 && payload.oldestPendingAgeMs <= 864000000)) &&
-             (!('remoteSyncReason' in payload) || payload.remoteSyncReason == null || (
-               payload.remoteSyncReason in [
-                 'ready',
-                 'auth_loading',
-                 'auth_connecting',
-                 'auth_unavailable',
-                 'manual_override',
-                 'offline',
-                 'runtime_unavailable'
-               ]
-             )) &&
-             (!('versionUpdateReason' in payload) || payload.versionUpdateReason == null || (
-               payload.versionUpdateReason in [
-                 'current',
-                 'new_build_available',
-                 'runtime_contract_mismatch',
-                 'schema_ahead_of_client'
-               ]
-             )) &&
-             (!('localErrorCount' in payload) || payload.localErrorCount == null || (payload.localErrorCount is int && payload.localErrorCount >= 0 && payload.localErrorCount <= 10000)) &&
-             (!('degradedLocalPersistence' in payload) || payload.degradedLocalPersistence == null || payload.degradedLocalPersistence is bool) &&
-             (!('repositoryWarningCount' in payload) || payload.repositoryWarningCount == null || (payload.repositoryWarningCount is int && payload.repositoryWarningCount >= 0 && payload.repositoryWarningCount <= 10000)) &&
-             (!('slowestRepositoryOperationMs' in payload) || payload.slowestRepositoryOperationMs == null || (payload.slowestRepositoryOperationMs is int && payload.slowestRepositoryOperationMs >= 0 && payload.slowestRepositoryOperationMs <= 864000000));
+             isOptionalString(payload, 'email') &&
+             isOptionalString(payload, 'displayName') &&
+             isOptionalString(payload, 'lastSeen') &&
+             isOptionalBool(payload, 'isOnline') &&
+             isOptionalBool(payload, 'isOutdated') &&
+             isOptionalBoundedInt(payload, 'pendingMutations', 10000) &&
+             isOptionalBoundedInt(payload, 'pendingSyncTasks', 10000) &&
+             isOptionalBoundedInt(payload, 'failedSyncTasks', 10000) &&
+             isOptionalBoundedInt(payload, 'conflictSyncTasks', 10000) &&
+             isOptionalBoundedInt(payload, 'retryingSyncTasks', 10000) &&
+             isOptionalBoundedInt(payload, 'syncOrphanedTasks', 10000) &&
+             isOptionalBoundedInt(payload, 'oldestPendingAgeMs', 864000000) &&
+             isOptionalEnum(payload, 'remoteSyncReason', [
+               'ready',
+               'auth_loading',
+               'auth_connecting',
+               'auth_unavailable',
+               'manual_override',
+               'offline',
+               'runtime_unavailable'
+             ]) &&
+             isOptionalEnum(payload, 'versionUpdateReason', [
+               'current',
+               'new_build_available',
+               'runtime_contract_mismatch',
+               'schema_ahead_of_client'
+             ]) &&
+             isOptionalBoundedInt(payload, 'localErrorCount', 10000) &&
+             isOptionalBool(payload, 'degradedLocalPersistence') &&
+             isOptionalBoundedInt(payload, 'repositoryWarningCount', 10000) &&
+             isOptionalBoundedInt(payload, 'slowestRepositoryOperationMs', 864000000);
     }
     
     // Check if a date (ms timestamp) is within the editing window (+/- 1 day)
