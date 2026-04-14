@@ -179,13 +179,40 @@ export const registerAdmissionPresence = ({
 export const registerDischargeEvent = (
   accumulator: AnalysisAccumulator,
   date: string,
-  discharge: NonNullable<PatientAnalysisRecordContract['discharges']>[number]
+  discharge: NonNullable<PatientAnalysisRecordContract['discharges']>[number],
+  now: number = Date.now()
 ) => {
   if (!discharge.rut || !isValidRut(discharge.rut)) return;
 
   const normalizedRut = normalizeAnalysisRut(discharge.rut);
-  const master = accumulator.patientsMap.get(normalizedRut);
-  if (!master) return;
+  let master = accumulator.patientsMap.get(normalizedRut);
+
+  // Create patient + admission if not yet indexed (same-day discharge edge case)
+  if (!master) {
+    master = ensureMasterPatient(
+      accumulator,
+      normalizedRut,
+      {
+        rut: discharge.rut,
+        patientName: discharge.patientName,
+        admissionDate: discharge.admissionDate || date,
+        birthDate: undefined,
+        insurance: discharge.insurance,
+        biologicalSex: undefined,
+        pathology: discharge.diagnosis,
+      },
+      date,
+      now
+    );
+    master.hospitalizations?.push({
+      id: `${discharge.admissionDate || date}-ingreso-auto`,
+      type: 'Ingreso',
+      date: discharge.admissionDate || date,
+      diagnosis: discharge.diagnosis || 'Ingreso detectado desde egreso',
+      bedName: discharge.bedName,
+    });
+    master.lastAdmission = discharge.admissionDate || date;
+  }
 
   master.hospitalizations?.push({
     id: `${date}-egreso`,
@@ -213,13 +240,40 @@ export const registerDischargeEvent = (
 export const registerTransferEvent = (
   accumulator: AnalysisAccumulator,
   date: string,
-  transfer: NonNullable<PatientAnalysisRecordContract['transfers']>[number]
+  transfer: NonNullable<PatientAnalysisRecordContract['transfers']>[number],
+  now: number = Date.now()
 ) => {
   if (!transfer.rut || !isValidRut(transfer.rut)) return;
 
   const normalizedRut = normalizeAnalysisRut(transfer.rut);
-  const master = accumulator.patientsMap.get(normalizedRut);
-  if (!master) return;
+  let master = accumulator.patientsMap.get(normalizedRut);
+
+  // Create patient + admission if not yet indexed (same-day transfer edge case)
+  if (!master) {
+    master = ensureMasterPatient(
+      accumulator,
+      normalizedRut,
+      {
+        rut: transfer.rut,
+        patientName: transfer.patientName,
+        admissionDate: transfer.admissionDate || date,
+        birthDate: undefined,
+        insurance: undefined,
+        biologicalSex: undefined,
+        pathology: transfer.diagnosis,
+      },
+      date,
+      now
+    );
+    master.hospitalizations?.push({
+      id: `${transfer.admissionDate || date}-ingreso-auto`,
+      type: 'Ingreso',
+      date: transfer.admissionDate || date,
+      diagnosis: transfer.diagnosis || 'Ingreso detectado desde traslado',
+      bedName: transfer.bedName,
+    });
+    master.lastAdmission = transfer.admissionDate || date;
+  }
 
   master.hospitalizations?.push({
     id: `${date}-traslado`,

@@ -78,12 +78,13 @@ export const buildPatientAnalysis = async (
       rutsInCensusToday.add(normalizedRut);
     }
 
+    const currentNow = now();
     for (const discharge of record.discharges || []) {
-      registerDischargeEvent(accumulator, date, discharge);
+      registerDischargeEvent(accumulator, date, discharge, currentNow);
     }
 
     for (const transfer of record.transfers || []) {
-      registerTransferEvent(accumulator, date, transfer);
+      registerTransferEvent(accumulator, date, transfer, currentNow);
     }
 
     closePatientsMissingFromCensus(accumulator, rutsInCensusToday);
