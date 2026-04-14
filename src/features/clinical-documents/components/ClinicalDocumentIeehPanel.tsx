@@ -94,9 +94,9 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
   const blurTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Sync from external draft when it changes (e.g. autosave round-trip)
+  // Sync from external draft when it changes (e.g. autosave round-trip or clear)
   useEffect(() => {
-    if (draft) setLocalDraft(draft);
+    setLocalDraft(draft ?? createEmptyIeehDraft());
   }, [draft]);
 
   // Cleanup timers and abort controllers on unmount
@@ -510,15 +510,13 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
               {isPrinting ? <Loader2 size={13} className="animate-spin" /> : <Printer size={13} />}
               Imprimir IEEH
             </button>
-            {localDraft.cie10Code && (
-              <button
-                type="button"
-                onClick={handleRemovePanel}
-                className="text-[10px] text-red-500 hover:text-red-700 transition-colors"
-              >
-                Eliminar egreso estadístico
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={handleRemovePanel}
+              className="text-[10px] text-red-500 hover:text-red-700 transition-colors"
+            >
+              Eliminar egreso estadístico
+            </button>
           </div>
         </div>
       )}
