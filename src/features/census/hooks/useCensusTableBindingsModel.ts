@@ -4,6 +4,7 @@ import { buildCensusTableLayoutBindings } from '@/features/census/controllers/ce
 import { useClinicalDocumentPresenceByBed } from '@/features/census/hooks/useClinicalDocumentPresenceByBed';
 import { useCensusTableViewModel } from '@/features/census/hooks/useCensusTableViewModel';
 import { canReadClinicalDocuments } from '@/application/clinical-documents/clinicalDocumentAccessPolicy';
+import { useDailyRecordMovements } from '@/context/DailyRecordContext';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 
 interface UseCensusTableBindingsModelParams {
@@ -11,6 +12,21 @@ interface UseCensusTableBindingsModelParams {
   readOnly?: boolean;
   accessProfile?: CensusAccessProfile;
 }
+
+/**
+ * Builds a set of RUTs that were discharged on this census day.
+ * Used to detect same-day readmissions for the new-admission badge.
+ */
+const buildDischargedRuts = (
+  discharges: Array<{ rut?: string }> | undefined
+): ReadonlySet<string> => {
+  if (!discharges || discharges.length === 0) return new Set();
+  const ruts = new Set<string>();
+  for (const d of discharges) {
+    if (d.rut) ruts.add(d.rut);
+  }
+  return ruts;
+};
 
 export const useCensusTableBindingsModel = ({
   currentDateString,
@@ -28,6 +44,12 @@ export const useCensusTableBindingsModel = ({
     infoByBedId: {},
   };
   const clinicalDocumentPresenceByBedId = clinicalDocumentPresence.byBedId ?? {};
+
+  const movements = useDailyRecordMovements();
+  const dischargedRuts = useMemo(
+    () => buildDischargedRuts(movements?.discharges),
+    [movements?.discharges]
+  );
 
   const bindings = useMemo(() => {
     if (!tableViewModel.beds) {
@@ -50,6 +72,7 @@ export const useCensusTableBindingsModel = ({
       bedTypes: tableViewModel.bedTypes,
       role: tableViewModel.role,
       clinicalDocumentPresenceByBedId,
+      dischargedRuts,
       onAction: tableViewModel.handleRowAction,
       onActivateEmptyBed: tableViewModel.activateEmptyBed,
       totalWidth: tableViewModel.totalWidth,
@@ -57,6 +80,7 @@ export const useCensusTableBindingsModel = ({
   }, [
     clinicalDocumentPresenceByBedId,
     currentDateString,
+    dischargedRuts,
     readOnly,
     accessProfile,
     tableViewModel.activateEmptyBed,

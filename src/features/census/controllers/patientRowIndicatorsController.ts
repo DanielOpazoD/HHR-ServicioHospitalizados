@@ -31,6 +31,12 @@ interface BuildOccupiedPatientRowIndicatorsParams {
   admissionDate?: string;
   admissionTime?: string;
   hasClinicalDocument: boolean;
+  /**
+   * Whether this patient was discharged earlier on the same census day.
+   * When true, the patient is a same-day readmission and the new-admission
+   * badge is forced on regardless of the clinical day calculation.
+   */
+  wasDischargedSameDay?: boolean;
 }
 
 const buildMainRowIndicators = ({
@@ -39,14 +45,17 @@ const buildMainRowIndicators = ({
   admissionDate,
   admissionTime,
   hasClinicalDocument,
+  wasDischargedSameDay,
 }: Omit<BuildOccupiedPatientRowIndicatorsParams, 'isSubRow'>): PatientRowResolvedIndicators => ({
   hasClinicalDocument,
-  isNewAdmission: resolveIsNewAdmissionForRecord({
-    recordDate: currentDateString,
-    firstSeenDate,
-    admissionDate,
-    admissionTime,
-  }),
+  isNewAdmission:
+    wasDischargedSameDay ||
+    resolveIsNewAdmissionForRecord({
+      recordDate: currentDateString,
+      firstSeenDate,
+      admissionDate,
+      admissionTime,
+    }),
 });
 
 export const buildOccupiedPatientRowIndicators = ({
@@ -56,6 +65,7 @@ export const buildOccupiedPatientRowIndicators = ({
   admissionDate,
   admissionTime,
   hasClinicalDocument,
+  wasDischargedSameDay,
 }: BuildOccupiedPatientRowIndicatorsParams): PatientRowResolvedIndicators => {
   if (isSubRow) {
     return EMPTY_PATIENT_ROW_INDICATORS;
@@ -67,5 +77,6 @@ export const buildOccupiedPatientRowIndicators = ({
     admissionDate,
     admissionTime,
     hasClinicalDocument,
+    wasDischargedSameDay,
   });
 };

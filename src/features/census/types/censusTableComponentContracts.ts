@@ -35,6 +35,8 @@ export interface CensusTableBodyProps {
   role?: UserRole;
   accessProfile?: CensusAccessProfile;
   clinicalDocumentPresenceByBedId: Record<string, boolean>;
+  /** RUTs discharged on this census day (for same-day readmission badge). */
+  dischargedRuts?: ReadonlySet<string>;
   onAction: (action: PatientRowAction, bedId: string, patient: PatientData) => void;
   onActivateEmptyBed: (bedId: string) => void;
 }

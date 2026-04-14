@@ -27,6 +27,7 @@ export const CensusTableBody: React.FC<
   role,
   accessProfile,
   clinicalDocumentPresenceByBedId,
+  dischargedRuts,
   onAction,
   onActivateEmptyBed,
   dragDrop,
@@ -37,11 +38,12 @@ export const CensusTableBody: React.FC<
       unifiedRows,
       currentDateString,
       clinicalDocumentPresenceByBedId,
+      dischargedRuts,
     });
     const map = new Map<string, (typeof resolved)[number]>();
     resolved.forEach(entry => map.set(entry.row.id, entry));
     return map;
-  }, [unifiedRows, currentDateString, clinicalDocumentPresenceByBedId]);
+  }, [unifiedRows, currentDateString, clinicalDocumentPresenceByBedId, dischargedRuts]);
 
   return (
     <tbody>

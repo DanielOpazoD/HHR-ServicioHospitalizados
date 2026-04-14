@@ -35,6 +35,7 @@ export interface CensusTableLayoutParams {
   bedTypes: BedTypesById;
   role?: UserRole;
   clinicalDocumentPresenceByBedId: Record<string, boolean>;
+  dischargedRuts?: ReadonlySet<string>;
   onAction: (action: PatientRowAction, bedId: string, patient: PatientData) => void;
   onActivateEmptyBed: (bedId: string) => void;
   totalWidth: number;
@@ -98,6 +99,7 @@ export const buildCensusTableLayoutBindings = (
       role: params.role,
       accessProfile: params.accessProfile,
       clinicalDocumentPresenceByBedId: params.clinicalDocumentPresenceByBedId,
+      dischargedRuts: params.dischargedRuts,
       onAction: params.onAction,
       onActivateEmptyBed: params.onActivateEmptyBed,
     },

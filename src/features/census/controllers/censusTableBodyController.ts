@@ -14,7 +14,8 @@ const buildResolvedOccupiedRow = (
   index: number,
   totalRows: number,
   currentDateString: string,
-  clinicalDocumentPresenceByBedId: Record<string, boolean>
+  clinicalDocumentPresenceByBedId: Record<string, boolean>,
+  dischargedRuts: ReadonlySet<string>
 ): CensusTableResolvedOccupiedRow => ({
   row,
   actionMenuAlign: resolvePatientRowMenuAlign(index, totalRows),
@@ -25,6 +26,7 @@ const buildResolvedOccupiedRow = (
     admissionDate: row.data.admissionDate,
     admissionTime: row.data.admissionTime,
     hasClinicalDocument: Boolean(clinicalDocumentPresenceByBedId[row.bed.id]),
+    wasDischargedSameDay: Boolean(row.data.rut && dischargedRuts.has(row.data.rut)),
   }),
 });
 
@@ -36,12 +38,18 @@ interface BuildResolvedOccupiedRowsParams {
   unifiedRows: UnifiedBedRow[];
   currentDateString: string;
   clinicalDocumentPresenceByBedId: Record<string, boolean>;
+  /**
+   * Set of patient RUTs that were discharged on this census day.
+   * Used to detect same-day readmissions for the new-admission badge.
+   */
+  dischargedRuts?: ReadonlySet<string>;
 }
 
 export const buildResolvedOccupiedRows = ({
   unifiedRows,
   currentDateString,
   clinicalDocumentPresenceByBedId,
+  dischargedRuts = new Set(),
 }: BuildResolvedOccupiedRowsParams): CensusTableResolvedOccupiedRow[] => {
   const occupiedRows = unifiedRows.filter(isOccupiedUnifiedBedRow);
 
@@ -51,7 +59,8 @@ export const buildResolvedOccupiedRows = ({
       index,
       occupiedRows.length,
       currentDateString,
-      clinicalDocumentPresenceByBedId
+      clinicalDocumentPresenceByBedId,
+      dischargedRuts
     )
   );
 };
