@@ -20,6 +20,7 @@ import {
   resolveRecipientListForSelection,
   resolveRecipientListsAfterDelete,
 } from '@/hooks/controllers/censusEmailRecipientMutationController';
+import { upsertRecipientListState } from '@/hooks/controllers/censusEmailRecipientListStateController';
 import { shouldSkipRecipientSync } from '@/hooks/controllers/censusEmailRecipientSyncController';
 
 const RECIPIENT_LIST_KEY = 'censusEmailActiveRecipientListId';
@@ -125,16 +126,7 @@ export const useCensusEmailRecipientLists = ({
   );
 
   const upsertRecipientList = useCallback((nextList: GlobalEmailRecipientList) => {
-    setRecipientLists(previousLists => {
-      const existingIndex = previousLists.findIndex(list => list.id === nextList.id);
-      if (existingIndex === -1) {
-        return [nextList, ...previousLists];
-      }
-
-      const updatedLists = [...previousLists];
-      updatedLists[existingIndex] = nextList;
-      return updatedLists;
-    });
+    setRecipientLists(previousLists => upsertRecipientListState(previousLists, nextList));
   }, []);
 
   const selectActiveRecipientList = useCallback(

@@ -33,10 +33,12 @@ Referencias:
 - `Microbiología` se presenta como pestaña separada del visor.
 - `Clostridium difficile`, `Coprocultivo`, `Cultivo corriente / Antibiograma`, `PCR panel respiratorio` y `Sedimento/Urocultivo` son exámenes distintos.
 - Si Syslab no entrega el detalle microbiológico completo en `details`, el visor debe completar la tarjeta desde el PDF original antes de degradar a “resultado disponible en PDF”.
+- La clasificación microbiológica debe resolverse en un controller propio, separado de comparación y tendencias, para evitar mezclar panel viral con cultivo al crecer el análisis.
 
 Referencias:
 
 - `src/features/laboratory/controllers/labAnalyticsController.ts`
+- `src/features/laboratory/controllers/labMicrobiologyAnalyticsController.ts`
 - `src/features/laboratory/services/labMicrobiologyPdfService.ts`
 - `src/features/laboratory/hooks/useLabViewer.ts`
 
@@ -54,13 +56,20 @@ Referencias:
 ## DailyRecord write path
 
 - El write path de `dailyRecord` debe mantener separadas las decisiones puras de recovery (`changed paths`, `retry origin`, `conflict summary`) del flujo de persistencia real.
-- El sync en background hacia `PatientMaster` debe reutilizar builders pequeños para seeds, eventos y patches derivados, en lugar de recomponer esos payloads inline por cada rama.
+- El sync en background hacia `PatientMaster` debe reutilizar builders pequeños para seeds, eventos, patches y payloads de append, en lugar de recomponer esos datos inline por cada rama.
+
+## Listas globales de correo del censo
+
+- El hook `useCensusEmailRecipientLists` debe quedar como orquestador: bootstrap, selección activa, mutaciones y fallbacks deben resolverse en controllers puros o casos de uso.
+- Los casos de uso de listas de correo deben traducir validación, fallos de servicio y errores desconocidos con helpers compartidos de outcome, para no duplicar `createApplicationFailed(...)`.
 
 Referencias:
 
 - `src/services/repositories/dailyRecordWriteSupport.ts`
 - `src/services/repositories/dailyRecordWriteRecoveryController.ts`
 - `src/services/repositories/dailyRecordMasterSyncController.ts`
+- `src/application/census-email/censusRecipientListUseCases.ts`
+- `src/application/census-email/censusRecipientListOutcomeController.ts`
 
 ## Scorecard de deuda viva
 

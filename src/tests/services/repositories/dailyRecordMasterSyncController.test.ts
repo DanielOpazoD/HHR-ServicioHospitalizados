@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildAdmissionHospitalizationAppendPayload,
   buildAdmissionPatientMasterPatch,
+  buildDischargeHospitalizationAppendPayload,
   buildDischargePatientMasterPatch,
   buildEgresoRealtimeEvent,
   buildIngresoRealtimeEvent,
   buildPatientMasterSeed,
+  buildTransferHospitalizationAppendPayload,
   buildTrasladoRealtimeEvent,
 } from '@/services/repositories/dailyRecordMasterSyncController';
 
@@ -73,6 +76,97 @@ describe('dailyRecordMasterSyncController', () => {
     expect(buildDischargePatientMasterPatch({ date: '2026-04-14', status: 'Fallecido' })).toEqual({
       lastDischarge: '2026-04-14',
       vitalStatus: 'Fallecido',
+    });
+  });
+
+  it('builds append payloads for admission, discharge, and transfer syncs', () => {
+    expect(
+      buildAdmissionHospitalizationAppendPayload({
+        rut: '1-9',
+        fullName: 'Paciente',
+        birthDate: null,
+        forecast: 'FONASA',
+        gender: 'F',
+        date: '2026-04-14',
+        diagnosis: 'Dx',
+        bedName: 'R1',
+      })
+    ).toEqual({
+      patient: {
+        rut: '1-9',
+        fullName: 'Paciente',
+        birthDate: undefined,
+        forecast: 'FONASA',
+        gender: 'F',
+      },
+      event: {
+        id: '2026-04-14-ingreso-rt',
+        type: 'Ingreso',
+        date: '2026-04-14',
+        diagnosis: 'Dx',
+        bedName: 'R1',
+      },
+      extra: {
+        lastAdmission: '2026-04-14',
+      },
+    });
+
+    expect(
+      buildDischargeHospitalizationAppendPayload({
+        rut: '1-9',
+        fullName: 'Paciente',
+        forecast: 'FONASA',
+        date: '2026-04-14',
+        diagnosis: 'Dx',
+        bedName: 'R1',
+        status: 'Fallecido',
+      })
+    ).toEqual({
+      patient: {
+        rut: '1-9',
+        fullName: 'Paciente',
+        birthDate: undefined,
+        forecast: 'FONASA',
+        gender: undefined,
+      },
+      event: {
+        id: '2026-04-14-egreso-rt',
+        type: 'Egreso',
+        date: '2026-04-14',
+        diagnosis: 'Dx',
+        bedName: 'R1',
+      },
+      extra: {
+        lastDischarge: '2026-04-14',
+        vitalStatus: 'Fallecido',
+      },
+    });
+
+    expect(
+      buildTransferHospitalizationAppendPayload({
+        rut: '1-9',
+        fullName: 'Paciente',
+        date: '2026-04-14',
+        diagnosis: 'Dx',
+        bedName: 'R1',
+        receivingCenter: 'Base',
+      })
+    ).toEqual({
+      patient: {
+        rut: '1-9',
+        fullName: 'Paciente',
+        birthDate: undefined,
+        forecast: undefined,
+        gender: undefined,
+      },
+      event: {
+        id: '2026-04-14-traslado-rt',
+        type: 'Traslado',
+        date: '2026-04-14',
+        diagnosis: 'Dx',
+        bedName: 'R1',
+        receivingCenter: 'Base',
+      },
     });
   });
 });

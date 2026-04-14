@@ -73,4 +73,10 @@ describe('resolveEpisodeCensusTargetDate contract', () => {
       )
     ).toBe('2026-04-14');
   });
+
+  it('uses the provided last hospitalization day for open episodes', () => {
+    expect(resolveEpisodeCensusTargetDate(buildEpisode({ discharge: null }), '2026-04-16')).toBe(
+      '2026-04-16'
+    );
+  });
 });

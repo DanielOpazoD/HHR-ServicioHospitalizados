@@ -20,10 +20,14 @@ import {
   shouldSkipRecipientSync,
 } from '@/hooks/controllers/censusEmailRecipientSyncController';
 import {
-  createApplicationFailed,
   createApplicationSuccess,
   type ApplicationOutcome,
 } from '@/shared/contracts/applicationOutcome';
+import {
+  buildRecipientListServiceFailure,
+  buildRecipientListUnknownFailure,
+  buildRecipientListValidationFailure,
+} from '@/application/census-email/censusRecipientListOutcomeController';
 
 interface RecipientListActor {
   uid?: string;
@@ -44,15 +48,11 @@ export const executeBootstrapCensusRecipientLists = async (
     const bootstrap = await resolveCensusRecipientsBootstrap(input);
     return createApplicationSuccess(bootstrap);
   } catch (error) {
-    return createApplicationFailed(null, [
-      {
-        kind: 'unknown',
-        message:
-          error instanceof Error
-            ? error.message
-            : 'No se pudieron cargar las listas de destinatarios del censo.',
-      },
-    ]);
+    return buildRecipientListUnknownFailure(
+      null,
+      error,
+      'No se pudieron cargar las listas de destinatarios del censo.'
+    );
   }
 };
 
@@ -94,19 +94,16 @@ export const executeSyncCensusRecipientList = async (
       })
     );
     if (saveResult.status !== 'success') {
-      return createApplicationFailed({ skipped: false }, saveResult.issues, {
-        userSafeMessage: saveResult.userSafeMessage,
-      });
+      return buildRecipientListServiceFailure({ skipped: false }, saveResult);
     }
 
     return createApplicationSuccess({ skipped: false });
   } catch (error) {
-    return createApplicationFailed({ skipped: false }, [
-      {
-        kind: 'unknown',
-        message: error instanceof Error ? error.message : 'No se pudo sincronizar la lista global.',
-      },
-    ]);
+    return buildRecipientListUnknownFailure(
+      { skipped: false },
+      error,
+      'No se pudo sincronizar la lista global.'
+    );
   }
 };
 
@@ -126,7 +123,7 @@ export const executeCreateCensusRecipientList = async (
     input.name
   );
   if (validationError) {
-    return createApplicationFailed(null, [{ kind: 'validation', message: validationError }]);
+    return buildRecipientListValidationFailure(null, validationError);
   }
 
   try {
@@ -147,19 +144,12 @@ export const executeCreateCensusRecipientList = async (
       })
     );
     if (saveResult.status !== 'success') {
-      return createApplicationFailed(null, saveResult.issues, {
-        userSafeMessage: saveResult.userSafeMessage,
-      });
+      return buildRecipientListServiceFailure(null, saveResult);
     }
 
     return createApplicationSuccess(createdList);
   } catch (error) {
-    return createApplicationFailed(null, [
-      {
-        kind: 'unknown',
-        message: error instanceof Error ? error.message : 'No se pudo crear la lista global.',
-      },
-    ]);
+    return buildRecipientListUnknownFailure(null, error, 'No se pudo crear la lista global.');
   }
 };
 
@@ -180,9 +170,7 @@ export const executeRenameCensusRecipientList = async (
     input.name
   );
   if (validationError || !input.activeList) {
-    return createApplicationFailed(null, [
-      { kind: 'validation', message: validationError || 'Lista no encontrada.' },
-    ]);
+    return buildRecipientListValidationFailure(null, validationError || 'Lista no encontrada.');
   }
 
   try {
@@ -197,9 +185,7 @@ export const executeRenameCensusRecipientList = async (
       })
     );
     if (saveResult.status !== 'success') {
-      return createApplicationFailed(null, saveResult.issues, {
-        userSafeMessage: saveResult.userSafeMessage,
-      });
+      return buildRecipientListServiceFailure(null, saveResult);
     }
 
     return createApplicationSuccess({
@@ -211,15 +197,11 @@ export const executeRenameCensusRecipientList = async (
       updatedByEmail: input.actor?.email ?? null,
     });
   } catch (error) {
-    return createApplicationFailed(null, [
-      {
-        kind: 'unknown',
-        message:
-          error instanceof Error
-            ? error.message
-            : 'No se pudo actualizar el nombre de la lista global.',
-      },
-    ]);
+    return buildRecipientListUnknownFailure(
+      null,
+      error,
+      'No se pudo actualizar el nombre de la lista global.'
+    );
   }
 };
 
@@ -239,25 +221,23 @@ export const executeDeleteCensusRecipientList = async (
   );
   const fallbackList = resolveRecipientListFallback(input.recipientLists, input.listId);
   if (validationError || !fallbackList) {
-    return createApplicationFailed({ fallbackList: null }, [
-      { kind: 'validation', message: validationError || 'No se encontró lista alternativa.' },
-    ]);
+    return buildRecipientListValidationFailure(
+      { fallbackList: null },
+      validationError || 'No se encontró lista alternativa.'
+    );
   }
 
   try {
     const deleteResult = await deleteGlobalEmailRecipientListWithResult(input.listId);
     if (deleteResult.status !== 'success') {
-      return createApplicationFailed({ fallbackList }, deleteResult.issues, {
-        userSafeMessage: deleteResult.userSafeMessage,
-      });
+      return buildRecipientListServiceFailure({ fallbackList }, deleteResult);
     }
     return createApplicationSuccess({ fallbackList });
   } catch (error) {
-    return createApplicationFailed({ fallbackList }, [
-      {
-        kind: 'unknown',
-        message: error instanceof Error ? error.message : 'No se pudo eliminar la lista global.',
-      },
-    ]);
+    return buildRecipientListUnknownFailure(
+      { fallbackList },
+      error,
+      'No se pudo eliminar la lista global.'
+    );
   }
 };

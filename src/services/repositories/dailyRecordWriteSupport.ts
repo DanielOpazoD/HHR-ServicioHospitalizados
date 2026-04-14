@@ -18,13 +18,7 @@ import { PatientMasterRepository } from '@/services/repositories/PatientMasterRe
 import { resolveDailyRecordConflictWithTrace } from '@/services/repositories/conflictResolutionMatrix';
 import { buildConflictAuditSummary } from '@/services/repositories/conflictResolutionAuditSummary';
 import { logRepositoryConflictAutoMerged } from '@/services/repositories/ports/repositoryAuditPort';
-import {
-  createAutoMergeDecision,
-  createBlockedDecision,
-  createQueuedRetryDecision,
-  createUnrecoverableDecision,
-  type DailyRecordRecoveryDecision,
-} from '@/services/repositories/dailyRecordRecoveryPolicy';
+import { type DailyRecordRecoveryDecision } from '@/services/repositories/dailyRecordRecoveryPolicy';
 import type { DailyRecordConflictSummary } from '@/services/repositories/contracts/dailyRecordConsistency';
 import {
   addClinicalFhirPatchesForTouchedBeds,
@@ -43,13 +37,18 @@ import {
   resolveRetryOrigin,
 } from '@/services/repositories/dailyRecordWriteRecoveryController';
 import {
-  buildAdmissionPatientMasterPatch,
-  buildDischargePatientMasterPatch,
-  buildEgresoRealtimeEvent,
-  buildIngresoRealtimeEvent,
+  buildAdmissionHospitalizationAppendPayload,
+  buildDischargeHospitalizationAppendPayload,
   buildPatientMasterSeed,
-  buildTrasladoRealtimeEvent,
+  buildTransferHospitalizationAppendPayload,
 } from '@/services/repositories/dailyRecordMasterSyncController';
+import {
+  buildAutoMergedRecoveryResult,
+  buildBlockedRecoveryResult,
+  buildQueuedRetryRecoveryResult,
+  buildThrowUnrecoverableRecoveryResult,
+  buildUnrecoverableRecoveryResult,
+} from '@/services/repositories/dailyRecordWriteRecoveryResultController';
 
 export interface ConflictAutoMergeRecoveryResult {
   status: 'auto_merged' | 'not_possible';
@@ -235,59 +234,44 @@ export const resolveRemoteWriteRecovery = async (
 
   if (error instanceof DataRegressionError || error instanceof VersionMismatchError) {
     const blockingReason = error instanceof DataRegressionError ? 'regression' : 'version_mismatch';
-    return {
-      status: 'throw',
-      queuedForRetry: false,
-      autoMerged: false,
+    return buildBlockedRecoveryResult({
       error,
-      decision: createBlockedDecision(
-        blockingReason,
-        conflictSummary(
-          blockingReason === 'regression' ? 'regression_blocked' : 'version_mismatch',
-          error.message
-        ),
-        [
-          'daily_record',
-          'write',
-          blockingReason === 'regression' ? 'regression_blocked' : 'version_mismatch',
-        ],
+      blockingReason,
+      conflictSummary: conflictSummary(
+        blockingReason === 'regression' ? 'regression_blocked' : 'version_mismatch',
         error.message
       ),
-    };
+      observabilityTags: [
+        'daily_record',
+        'write',
+        blockingReason === 'regression' ? 'regression_blocked' : 'version_mismatch',
+      ],
+      userSafeMessage: error.message,
+    });
   }
 
   if (isConcurrencyError(error)) {
     const mergeResult = await attemptConflictAutoMergeRecovery(date, record, changedPaths);
     if (mergeResult.status === 'auto_merged') {
-      return {
-        status: 'auto_merged',
-        queuedForRetry: true,
-        autoMerged: true,
-        decision: createAutoMergeDecision(
-          conflictSummary(
-            'concurrency',
-            'Se resolvió un conflicto remoto mediante fusión automática.'
-          ),
-          ['daily_record', 'write', 'auto_merged'],
-          'Se resolvió un conflicto remoto mediante fusión automática.'
-        ),
-      };
-    }
-
-    return {
-      status: 'throw',
-      queuedForRetry: false,
-      autoMerged: false,
-      error,
-      decision: createUnrecoverableDecision(
+      return buildAutoMergedRecoveryResult(
         conflictSummary(
           'concurrency',
-          'Se detectó un conflicto remoto que no pudo resolverse automáticamente.'
+          'Se resolvió un conflicto remoto mediante fusión automática.'
         ),
-        ['daily_record', 'write', 'conflict_unrecoverable'],
-        'Se detectó un conflicto remoto que requiere revisión manual.'
+        'Se resolvió un conflicto remoto mediante fusión automática.',
+        ['daily_record', 'write', 'auto_merged']
+      );
+    }
+
+    return buildThrowUnrecoverableRecoveryResult({
+      error,
+      conflictSummary: conflictSummary(
+        'concurrency',
+        'Se detectó un conflicto remoto que no pudo resolverse automáticamente.'
       ),
-    };
+      observabilityTags: ['daily_record', 'write', 'conflict_unrecoverable'],
+      userSafeMessage: 'Se detectó un conflicto remoto que requiere revisión manual.',
+    });
   }
 
   if (shouldQueueRetryableError(error)) {
@@ -296,48 +280,33 @@ export const resolveRemoteWriteRecovery = async (
       buildRecoveryTaskMeta(changedPaths, resolveRetryOrigin(changedPaths))
     );
     if (!queued) {
-      return {
-        status: 'unrecoverable',
-        queuedForRetry: false,
-        autoMerged: false,
-        decision: createUnrecoverableDecision(
-          conflictSummary(
-            'remote_unavailable',
-            'La cola de sincronización alcanzó su límite operativo antes de programar el reintento.'
-          ),
-          ['daily_record', 'write', 'queue_backpressure'],
-          buildQueueBackpressureMessage()
-        ),
-      };
-    }
-    return {
-      status: 'queued_for_retry',
-      queuedForRetry: true,
-      autoMerged: false,
-      decision: createQueuedRetryDecision(
+      return buildUnrecoverableRecoveryResult(
         conflictSummary(
           'remote_unavailable',
-          'El guardado remoto falló y se programó un reintento automático.'
+          'La cola de sincronización alcanzó su límite operativo antes de programar el reintento.'
         ),
-        ['daily_record', 'write', 'queued_for_retry'],
-        'Los cambios se guardaron localmente y quedaron pendientes de sincronización.'
-      ),
-    };
-  }
-
-  return {
-    status: 'unrecoverable',
-    queuedForRetry: false,
-    autoMerged: false,
-    decision: createUnrecoverableDecision(
+        buildQueueBackpressureMessage(),
+        ['daily_record', 'write', 'queue_backpressure']
+      );
+    }
+    return buildQueuedRetryRecoveryResult(
       conflictSummary(
         'remote_unavailable',
-        'El guardado remoto falló sin una ruta segura de recuperación automática.'
+        'El guardado remoto falló y se programó un reintento automático.'
       ),
-      ['daily_record', 'write', 'unrecoverable'],
-      'Los cambios se guardaron localmente, pero la sincronización remota requiere revisión manual.'
+      'Los cambios se guardaron localmente y quedaron pendientes de sincronización.',
+      ['daily_record', 'write', 'queued_for_retry']
+    );
+  }
+
+  return buildUnrecoverableRecoveryResult(
+    conflictSummary(
+      'remote_unavailable',
+      'El guardado remoto falló sin una ruta segura de recuperación automática.'
     ),
-  };
+    'Los cambios se guardaron localmente, pero la sincronización remota requiere revisión manual.',
+    ['daily_record', 'write', 'unrecoverable']
+  );
 };
 
 type MasterSyncDailyRecordPatient = ReturnType<
@@ -360,17 +329,17 @@ const appendRealtimeAdmissionIfMissing = async (
     return;
   }
 
+  const appendPayload = buildAdmissionHospitalizationAppendPayload({
+    rut: input.rut,
+    fullName: input.patientName,
+    date: input.admissionDate,
+    diagnosis: input.diagnosis,
+    bedName: input.bedName,
+  });
   await PatientMasterRepository.appendHospitalizationEvent(
-    buildPatientMasterSeed({
-      rut: input.rut,
-      fullName: input.patientName,
-    }),
-    buildIngresoRealtimeEvent({
-      date: input.admissionDate,
-      diagnosis: input.diagnosis,
-      bedName: input.bedName,
-    }),
-    buildAdmissionPatientMasterPatch(input.admissionDate)
+    appendPayload.patient,
+    appendPayload.event,
+    appendPayload.extra
   );
 };
 
@@ -391,20 +360,20 @@ const syncBedPatientsToMaster = async (patientsToSync: MasterSyncDailyRecordPati
 
   for (const patient of patientsToSync) {
     if (!patient.rut || !patient.admissionDate) continue;
+    const appendPayload = buildAdmissionHospitalizationAppendPayload({
+      rut: patient.rut,
+      fullName: patient.patientName || '',
+      birthDate: patient.birthDate,
+      forecast: patient.insurance,
+      gender: patient.biologicalSex,
+      date: patient.admissionDate,
+      diagnosis: patient.pathology,
+      bedName: patient.bedId,
+    });
     await PatientMasterRepository.appendHospitalizationEvent(
-      buildPatientMasterSeed({
-        rut: patient.rut,
-        fullName: patient.patientName || '',
-        birthDate: patient.birthDate,
-        forecast: patient.insurance,
-        gender: patient.biologicalSex,
-      }),
-      buildIngresoRealtimeEvent({
-        date: patient.admissionDate,
-        diagnosis: patient.pathology,
-        bedName: patient.bedId,
-      }),
-      buildAdmissionPatientMasterPatch(patient.admissionDate)
+      appendPayload.patient,
+      appendPayload.event,
+      appendPayload.extra
     );
   }
 };
@@ -416,21 +385,19 @@ const syncDischargesToMaster = async (
 ) => {
   for (const discharge of discharges) {
     if (!discharge.rut) continue;
+    const appendPayload = buildDischargeHospitalizationAppendPayload({
+      rut: discharge.rut,
+      fullName: discharge.patientName,
+      forecast: discharge.insurance,
+      date: record.date,
+      diagnosis: discharge.diagnosis,
+      bedName: discharge.bedName,
+      status: discharge.status,
+    });
     await PatientMasterRepository.appendHospitalizationEvent(
-      buildPatientMasterSeed({
-        rut: discharge.rut,
-        fullName: discharge.patientName,
-        forecast: discharge.insurance,
-      }),
-      buildEgresoRealtimeEvent({
-        date: record.date,
-        diagnosis: discharge.diagnosis,
-        bedName: discharge.bedName,
-      }),
-      buildDischargePatientMasterPatch({
-        date: record.date,
-        status: discharge.status,
-      })
+      appendPayload.patient,
+      appendPayload.event,
+      appendPayload.extra
     );
 
     await appendRealtimeAdmissionIfMissing(existingBedPatientRuts, {
@@ -450,17 +417,17 @@ const syncTransfersToMaster = async (
 ) => {
   for (const transfer of transfers) {
     if (!transfer.rut) continue;
+    const appendPayload = buildTransferHospitalizationAppendPayload({
+      rut: transfer.rut,
+      fullName: transfer.patientName,
+      date: record.date,
+      diagnosis: transfer.diagnosis,
+      bedName: transfer.bedName,
+      receivingCenter: transfer.receivingCenter,
+    });
     await PatientMasterRepository.appendHospitalizationEvent(
-      buildPatientMasterSeed({
-        rut: transfer.rut,
-        fullName: transfer.patientName,
-      }),
-      buildTrasladoRealtimeEvent({
-        date: record.date,
-        diagnosis: transfer.diagnosis,
-        bedName: transfer.bedName,
-        receivingCenter: transfer.receivingCenter,
-      })
+      appendPayload.patient,
+      appendPayload.event
     );
 
     await appendRealtimeAdmissionIfMissing(existingBedPatientRuts, {

@@ -60,3 +60,73 @@ export const buildDischargePatientMasterPatch = (input: {
 
 export const buildAdmissionPatientMasterPatch = (date?: string | null) =>
   date ? { lastAdmission: date } : {};
+
+export const buildAdmissionHospitalizationAppendPayload = (input: {
+  rut: string;
+  fullName: string;
+  birthDate?: string | null;
+  forecast?: string | null;
+  gender?: string | null;
+  date: string;
+  diagnosis?: string | null;
+  bedName?: string | null;
+}) => ({
+  patient: buildPatientMasterSeed({
+    rut: input.rut,
+    fullName: input.fullName,
+    birthDate: input.birthDate,
+    forecast: input.forecast,
+    gender: input.gender,
+  }),
+  event: buildIngresoRealtimeEvent({
+    date: input.date,
+    diagnosis: input.diagnosis,
+    bedName: input.bedName,
+  }),
+  extra: buildAdmissionPatientMasterPatch(input.date),
+});
+
+export const buildDischargeHospitalizationAppendPayload = (input: {
+  rut: string;
+  fullName: string;
+  forecast?: string | null;
+  date: string;
+  diagnosis?: string | null;
+  bedName?: string | null;
+  status?: string | null;
+}) => ({
+  patient: buildPatientMasterSeed({
+    rut: input.rut,
+    fullName: input.fullName,
+    forecast: input.forecast,
+  }),
+  event: buildEgresoRealtimeEvent({
+    date: input.date,
+    diagnosis: input.diagnosis,
+    bedName: input.bedName,
+  }),
+  extra: buildDischargePatientMasterPatch({
+    date: input.date,
+    status: input.status,
+  }),
+});
+
+export const buildTransferHospitalizationAppendPayload = (input: {
+  rut: string;
+  fullName: string;
+  date: string;
+  diagnosis?: string | null;
+  bedName?: string | null;
+  receivingCenter?: string | null;
+}) => ({
+  patient: buildPatientMasterSeed({
+    rut: input.rut,
+    fullName: input.fullName,
+  }),
+  event: buildTrasladoRealtimeEvent({
+    date: input.date,
+    diagnosis: input.diagnosis,
+    bedName: input.bedName,
+    receivingCenter: input.receivingCenter,
+  }),
+});
