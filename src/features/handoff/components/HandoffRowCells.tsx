@@ -14,6 +14,7 @@ import {
   type PendingMedicalEntryDraft,
   resolveDisplayMedicalObservationEntries,
   resolveHandoffStatusVariant,
+  resolveMedicalObservationEmptyState,
   shouldRenderClinicalEventsPanel,
   shouldShowMedicalPrimaryNoteFallback,
 } from '@/features/handoff/controllers/handoffRowCellsController';
@@ -350,12 +351,17 @@ export const HandoffMedicalObservationsCell: React.FC<HandoffMedicalObservations
     isFieldReadOnly,
     hasCreatePrimaryEntryAction: Boolean(onCreatePrimaryEntry),
   });
+  const emptyState = resolveMedicalObservationEmptyState({
+    displayEntriesCount: displayEntries.length,
+    isFieldReadOnly,
+    hasCreatePrimaryEntryAction: Boolean(onCreatePrimaryEntry),
+  });
 
   return (
     <td className="p-1.5 w-full min-w-[280px] align-top print:w-auto print:min-w-0 print:text-[8px] print:p-0.5">
       <div className="space-y-2">
         {displayEntries.length === 0 ? (
-          onCreatePrimaryEntry && !isFieldReadOnly ? (
+          emptyState === 'create-entry' && onCreatePrimaryEntry ? (
             <button
               type="button"
               onClick={onCreatePrimaryEntry}
@@ -363,7 +369,7 @@ export const HandoffMedicalObservationsCell: React.FC<HandoffMedicalObservations
             >
               + Crear entrega
             </button>
-          ) : showPrimaryNoteFallback ? (
+          ) : emptyState === 'primary-note' && showPrimaryNoteFallback ? (
             <>
               <div className="print:hidden">
                 <DebouncedTextarea

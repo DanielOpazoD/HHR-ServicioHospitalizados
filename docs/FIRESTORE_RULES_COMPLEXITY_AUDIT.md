@@ -200,3 +200,17 @@ Se abrió un frente nuevo y de bajo riesgo sobre el guard de `systemHealth`:
 - `bash scripts/run-firestore-rules-ci.sh`: verde (`81` tests).
 
 Conclusión: el archivo sigue siendo grande, pero `systemHealth` ya dejó de ser un bloque de validación repetitivo difícil de extender. Este frente tiene buen retorno estructural y riesgo funcional bajo.
+
+## Iteración 8 ejecutada
+
+Se hizo otro recorte quirúrgico sobre el handoff estructurado de especialista:
+
+- se agregó `hasOnlySpecialistStructuredRecordKeys(...)` para centralizar la lista de keys permitidas en el payload estructurado
+- se agregó `isOnlyAffectedSpecialistStructuredSpecialty(...)` para evitar repetir `size == 1 + hasOnly + isValid...` por cada especialidad
+- `isSpecialistStructuredMedicalHandoffUpdate()` quedó más corto y con menos duplicación visible, sin cambiar permisos ni el contrato del path especialista
+
+## Resultado de la validación de la iteración 8
+
+- `bash scripts/run-firestore-rules-ci.sh`: verde (`81` tests).
+
+Conclusión: `firestore.rules` sigue siendo un boundary grande, pero el subpath estructurado del especialista quedó más fácil de auditar y menos propenso a volver a crecer con ORs repetidos.

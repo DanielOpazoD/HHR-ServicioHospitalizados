@@ -130,6 +130,7 @@
     "report:sustainable-change-policy": "node scripts/report-sustainable-change-policy.mjs",
     "report:technical-ownership-map": "node scripts/report-technical-ownership-map.mjs",
     "report:flow-performance-budget": "node scripts/report-flow-performance-budget.mjs",
+    "report:maintenance-debt-scorecard": "node scripts/report-maintenance-debt-scorecard.mjs",
     "report:schema-evolution": "node scripts/report-schema-evolution.mjs",
     "report:governance-snapshots": "npm run report:release-readiness-scorecard && npm run report:runtime-contracts && npm run report:serverless-runtime-governance && npm run report:serverless-sensitive-coverage && npm run report:sustainable-change-policy",
     "check:quality": "node scripts/check-quality-aggregate.mjs",

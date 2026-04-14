@@ -352,6 +352,161 @@ export const resolveRemoteWriteRecovery = async (
   };
 };
 
+type MasterSyncDailyRecordPatient = ReturnType<
+  typeof collectDailyRecordPatientsForMasterSync
+>[number];
+type DailyRecordDischarge = NonNullable<DailyRecord['discharges']>[number];
+type DailyRecordTransfer = NonNullable<DailyRecord['transfers']>[number];
+
+const buildPatientMasterSeed = (input: {
+  rut: string;
+  fullName: string;
+  birthDate?: string | null;
+  forecast?: string | null;
+  gender?: string | null;
+}) => ({
+  rut: input.rut,
+  fullName: input.fullName,
+  birthDate: input.birthDate ?? undefined,
+  forecast: input.forecast ?? undefined,
+  gender: input.gender ?? undefined,
+});
+
+const appendRealtimeAdmissionIfMissing = async (
+  existingBedPatientRuts: Set<string>,
+  input: {
+    rut?: string | null;
+    patientName: string;
+    admissionDate?: string | null;
+    diagnosis?: string | null;
+    bedName?: string | null;
+  }
+) => {
+  if (!input.rut || existingBedPatientRuts.has(input.rut) || !input.admissionDate) {
+    return;
+  }
+
+  await PatientMasterRepository.appendHospitalizationEvent(
+    buildPatientMasterSeed({
+      rut: input.rut,
+      fullName: input.patientName,
+    }),
+    {
+      id: `${input.admissionDate}-ingreso-rt`,
+      type: 'Ingreso',
+      date: input.admissionDate,
+      diagnosis: input.diagnosis || 'S/D',
+      bedName: input.bedName ?? undefined,
+    },
+    { lastAdmission: input.admissionDate }
+  );
+};
+
+const syncBedPatientsToMaster = async (patientsToSync: MasterSyncDailyRecordPatient[]) => {
+  await Promise.all(
+    patientsToSync.map(patient =>
+      PatientMasterRepository.upsertPatient(
+        buildPatientMasterSeed({
+          rut: patient.rut!,
+          fullName: patient.patientName!,
+          birthDate: patient.birthDate,
+          forecast: patient.insurance,
+          gender: patient.biologicalSex,
+        })
+      )
+    )
+  );
+
+  for (const patient of patientsToSync) {
+    if (!patient.rut || !patient.admissionDate) continue;
+    await PatientMasterRepository.appendHospitalizationEvent(
+      buildPatientMasterSeed({
+        rut: patient.rut,
+        fullName: patient.patientName || '',
+        birthDate: patient.birthDate,
+        forecast: patient.insurance,
+        gender: patient.biologicalSex,
+      }),
+      {
+        id: `${patient.admissionDate}-ingreso-rt`,
+        type: 'Ingreso',
+        date: patient.admissionDate,
+        diagnosis: patient.pathology || 'S/D',
+        bedName: patient.bedId,
+      },
+      { lastAdmission: patient.admissionDate }
+    );
+  }
+};
+
+const syncDischargesToMaster = async (
+  record: DailyRecord,
+  existingBedPatientRuts: Set<string>,
+  discharges: DailyRecordDischarge[]
+) => {
+  for (const discharge of discharges) {
+    if (!discharge.rut) continue;
+    await PatientMasterRepository.appendHospitalizationEvent(
+      buildPatientMasterSeed({
+        rut: discharge.rut,
+        fullName: discharge.patientName,
+        forecast: discharge.insurance,
+      }),
+      {
+        id: `${record.date}-egreso-rt`,
+        type: 'Egreso',
+        date: record.date,
+        diagnosis: discharge.diagnosis || 'S/D',
+        bedName: discharge.bedName,
+      },
+      {
+        lastDischarge: record.date,
+        ...(discharge.status === 'Fallecido' ? { vitalStatus: 'Fallecido' as const } : {}),
+      }
+    );
+
+    await appendRealtimeAdmissionIfMissing(existingBedPatientRuts, {
+      rut: discharge.rut,
+      patientName: discharge.patientName,
+      admissionDate: discharge.admissionDate,
+      diagnosis: discharge.diagnosis,
+      bedName: discharge.bedName,
+    });
+  }
+};
+
+const syncTransfersToMaster = async (
+  record: DailyRecord,
+  existingBedPatientRuts: Set<string>,
+  transfers: DailyRecordTransfer[]
+) => {
+  for (const transfer of transfers) {
+    if (!transfer.rut) continue;
+    await PatientMasterRepository.appendHospitalizationEvent(
+      buildPatientMasterSeed({
+        rut: transfer.rut,
+        fullName: transfer.patientName,
+      }),
+      {
+        id: `${record.date}-traslado-rt`,
+        type: 'Traslado',
+        date: record.date,
+        diagnosis: transfer.diagnosis || 'S/D',
+        bedName: transfer.bedName,
+        receivingCenter: transfer.receivingCenter,
+      }
+    );
+
+    await appendRealtimeAdmissionIfMissing(existingBedPatientRuts, {
+      rut: transfer.rut,
+      patientName: transfer.patientName,
+      admissionDate: transfer.admissionDate,
+      diagnosis: transfer.diagnosis,
+      bedName: transfer.bedName,
+    });
+  }
+};
+
 /**
  * Real-time sync of patient master index when a daily record is saved.
  *
@@ -371,112 +526,11 @@ export const resolveRemoteWriteRecovery = async (
 export const syncPatientsToMasterInBackground = (record: DailyRecord): void => {
   setTimeout(async () => {
     try {
-      // 1. Sync patients currently in beds (demographics)
       const patientsToSync = collectDailyRecordPatientsForMasterSync(record);
       const bedPatientRuts = new Set(patientsToSync.map(p => p.rut));
-
-      await Promise.all(
-        patientsToSync.map(patient =>
-          PatientMasterRepository.upsertPatient({
-            rut: patient.rut!,
-            fullName: patient.patientName!,
-            birthDate: patient.birthDate,
-            forecast: patient.insurance,
-            gender: patient.biologicalSex,
-          })
-        )
-      );
-
-      // 2. Sync admission events for patients in beds (first appearance)
-      for (const patient of patientsToSync) {
-        if (!patient.rut || !patient.admissionDate) continue;
-        await PatientMasterRepository.appendHospitalizationEvent(
-          {
-            rut: patient.rut,
-            fullName: patient.patientName || '',
-            birthDate: patient.birthDate,
-            forecast: patient.insurance,
-            gender: patient.biologicalSex,
-          },
-          {
-            id: `${patient.admissionDate}-ingreso-rt`,
-            type: 'Ingreso',
-            date: patient.admissionDate,
-            diagnosis: patient.pathology || 'S/D',
-            bedName: patient.bedId,
-          },
-          { lastAdmission: patient.admissionDate }
-        );
-      }
-
-      // 3. Sync discharge events (including patients NOT in beds)
-      for (const discharge of record.discharges || []) {
-        if (!discharge.rut) continue;
-        await PatientMasterRepository.appendHospitalizationEvent(
-          {
-            rut: discharge.rut,
-            fullName: discharge.patientName,
-            forecast: discharge.insurance,
-          },
-          {
-            id: `${record.date}-egreso-rt`,
-            type: 'Egreso',
-            date: record.date,
-            diagnosis: discharge.diagnosis || 'S/D',
-            bedName: discharge.bedName,
-          },
-          {
-            lastDischarge: record.date,
-            ...(discharge.status === 'Fallecido' ? { vitalStatus: 'Fallecido' as const } : {}),
-          }
-        );
-
-        // Also ensure admission exists if patient wasn't in beds
-        if (!bedPatientRuts.has(discharge.rut) && discharge.admissionDate) {
-          await PatientMasterRepository.appendHospitalizationEvent(
-            { rut: discharge.rut, fullName: discharge.patientName },
-            {
-              id: `${discharge.admissionDate}-ingreso-rt`,
-              type: 'Ingreso',
-              date: discharge.admissionDate,
-              diagnosis: discharge.diagnosis || 'S/D',
-              bedName: discharge.bedName,
-            },
-            { lastAdmission: discharge.admissionDate }
-          );
-        }
-      }
-
-      // 4. Sync transfer events (including patients NOT in beds)
-      for (const transfer of record.transfers || []) {
-        if (!transfer.rut) continue;
-        await PatientMasterRepository.appendHospitalizationEvent(
-          { rut: transfer.rut, fullName: transfer.patientName },
-          {
-            id: `${record.date}-traslado-rt`,
-            type: 'Traslado',
-            date: record.date,
-            diagnosis: transfer.diagnosis || 'S/D',
-            bedName: transfer.bedName,
-            receivingCenter: transfer.receivingCenter,
-          }
-        );
-
-        // Also ensure admission exists if patient wasn't in beds
-        if (!bedPatientRuts.has(transfer.rut) && transfer.admissionDate) {
-          await PatientMasterRepository.appendHospitalizationEvent(
-            { rut: transfer.rut, fullName: transfer.patientName },
-            {
-              id: `${transfer.admissionDate}-ingreso-rt`,
-              type: 'Ingreso',
-              date: transfer.admissionDate,
-              diagnosis: transfer.diagnosis || 'S/D',
-              bedName: transfer.bedName,
-            },
-            { lastAdmission: transfer.admissionDate }
-          );
-        }
-      }
+      await syncBedPatientsToMaster(patientsToSync);
+      await syncDischargesToMaster(record, bedPatientRuts, record.discharges || []);
+      await syncTransfersToMaster(record, bedPatientRuts, record.transfers || []);
     } catch {
       // intentionally ignored (non-critical background sync)
     }

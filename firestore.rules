@@ -162,6 +162,21 @@ service cloud.firestore {
         : request.resource.data.medicalHandoffBySpecialty;
     }
 
+    function hasOnlySpecialistStructuredRecordKeys(affectedRecordKeys) {
+      return affectedRecordKeys.hasOnly([
+        'medicalHandoffBySpecialty',
+        'medicalHandoffNovedades',
+        'lastUpdated',
+        'dateTimestamp'
+      ]);
+    }
+
+    function isOnlyAffectedSpecialistStructuredSpecialty(affectedSpecialties, specialty) {
+      return affectedSpecialties.size() == 1 &&
+             affectedSpecialties.hasOnly([specialty]) &&
+             isValidSpecialistStructuredMedicalSpecialtyEntry(specialty);
+    }
+
     function isValidSpecialistStructuredMedicalSpecialtyEntry(specialty) {
       let beforeEntry = getSpecialistStructuredBeforeBySpecialty()[specialty];
       let afterEntry = getSpecialistStructuredAfterBySpecialty()[specialty];
@@ -188,26 +203,14 @@ service cloud.firestore {
           .diff(getSpecialistStructuredBeforeBySpecialty())
           .affectedKeys();
 
-      return affectedRecordKeys.hasOnly([
-               'medicalHandoffBySpecialty',
-               'medicalHandoffNovedades',
-               'lastUpdated',
-               'dateTimestamp'
-             ]) &&
-             affectedSpecialties.size() == 1 &&
+      return hasOnlySpecialistStructuredRecordKeys(affectedRecordKeys) &&
              (
-               affectedSpecialties.hasOnly(['cirugia']) &&
-               isValidSpecialistStructuredMedicalSpecialtyEntry('cirugia') ||
-               affectedSpecialties.hasOnly(['traumatologia']) &&
-               isValidSpecialistStructuredMedicalSpecialtyEntry('traumatologia') ||
-               affectedSpecialties.hasOnly(['ginecobstetricia']) &&
-               isValidSpecialistStructuredMedicalSpecialtyEntry('ginecobstetricia') ||
-               affectedSpecialties.hasOnly(['pediatria']) &&
-               isValidSpecialistStructuredMedicalSpecialtyEntry('pediatria') ||
-               affectedSpecialties.hasOnly(['psiquiatria']) &&
-               isValidSpecialistStructuredMedicalSpecialtyEntry('psiquiatria') ||
-               affectedSpecialties.hasOnly(['medicinaInterna']) &&
-               isValidSpecialistStructuredMedicalSpecialtyEntry('medicinaInterna')
+               isOnlyAffectedSpecialistStructuredSpecialty(affectedSpecialties, 'cirugia') ||
+               isOnlyAffectedSpecialistStructuredSpecialty(affectedSpecialties, 'traumatologia') ||
+               isOnlyAffectedSpecialistStructuredSpecialty(affectedSpecialties, 'ginecobstetricia') ||
+               isOnlyAffectedSpecialistStructuredSpecialty(affectedSpecialties, 'pediatria') ||
+               isOnlyAffectedSpecialistStructuredSpecialty(affectedSpecialties, 'psiquiatria') ||
+               isOnlyAffectedSpecialistStructuredSpecialty(affectedSpecialties, 'medicinaInterna')
              );
     }
 

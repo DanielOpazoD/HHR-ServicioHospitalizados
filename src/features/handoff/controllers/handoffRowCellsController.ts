@@ -110,6 +110,34 @@ export const shouldShowMedicalPrimaryNoteFallback = ({
   hasCreatePrimaryEntryAction: boolean;
 }): boolean => entriesCount === 0 && !isFieldReadOnly && !hasCreatePrimaryEntryAction;
 
+export type MedicalObservationEmptyState = 'create-entry' | 'primary-note' | 'empty';
+
+export const resolveMedicalObservationEmptyState = ({
+  displayEntriesCount,
+  isFieldReadOnly,
+  hasCreatePrimaryEntryAction,
+}: {
+  displayEntriesCount: number;
+  isFieldReadOnly: boolean;
+  hasCreatePrimaryEntryAction: boolean;
+}): MedicalObservationEmptyState => {
+  if (displayEntriesCount > 0) {
+    return 'empty';
+  }
+
+  if (!isFieldReadOnly && hasCreatePrimaryEntryAction) {
+    return 'create-entry';
+  }
+
+  return shouldShowMedicalPrimaryNoteFallback({
+    entriesCount: displayEntriesCount,
+    isFieldReadOnly,
+    hasCreatePrimaryEntryAction,
+  })
+    ? 'primary-note'
+    : 'empty';
+};
+
 export const buildPendingMedicalEntryDraft = ({
   entryId,
   value,

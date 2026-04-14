@@ -64,8 +64,8 @@ La exportación de comparación genera una hoja `Comparación Lab` con:
 ## Mejoras clínicas actuales
 
 - normalización de alias frecuentes (`Leucocitos`, `Plaquetas`, `PCR`, etc.) para evitar duplicados
-- panel `Microbiología / Cultivos` con resultados cualitativos relevantes por examen
-- botón `Copiar tabla resumida` en la vista de comparación para evolución rápida
+- panel `Microbiología / Cultivos` como pestaña separada del visor
+- fallback desde el PDF original para completar `Cultivo corriente / Antibiograma` cuando Syslab `details` no trae todas las subsecciones
 
 ## Flujo de datos
 

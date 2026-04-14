@@ -7,6 +7,7 @@ import {
   pruneResolvedPendingMedicalEntryDrafts,
   resolveDisplayMedicalObservationEntries,
   resolveHandoffStatusVariant,
+  resolveMedicalObservationEmptyState,
   resolveMedicalObservationEntries,
   shouldShowMedicalPrimaryNoteFallback,
   shouldRenderClinicalEventsPanel,
@@ -158,6 +159,42 @@ describe('handoffRowCellsController', () => {
         hasCreatePrimaryEntryAction: false,
       })
     ).toBe(false);
+  });
+
+  it('resolves the empty medical observation state for create-entry and primary-note flows', () => {
+    expect(
+      resolveMedicalObservationEmptyState({
+        displayEntriesCount: 0,
+        isFieldReadOnly: false,
+        hasCreatePrimaryEntryAction: true,
+      })
+    ).toBe('create-entry');
+
+    expect(
+      resolveMedicalObservationEmptyState({
+        displayEntriesCount: 0,
+        isFieldReadOnly: false,
+        hasCreatePrimaryEntryAction: false,
+      })
+    ).toBe('primary-note');
+  });
+
+  it('keeps the empty state neutral when entries already exist or the field is read-only', () => {
+    expect(
+      resolveMedicalObservationEmptyState({
+        displayEntriesCount: 1,
+        isFieldReadOnly: false,
+        hasCreatePrimaryEntryAction: true,
+      })
+    ).toBe('empty');
+
+    expect(
+      resolveMedicalObservationEmptyState({
+        displayEntriesCount: 0,
+        isFieldReadOnly: true,
+        hasCreatePrimaryEntryAction: false,
+      })
+    ).toBe('empty');
   });
 
   it('builds a pending draft entry from patient/default specialty data', () => {

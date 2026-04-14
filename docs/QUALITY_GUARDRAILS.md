@@ -55,6 +55,7 @@ Evitar que la deuda estructural vuelva a crecer después de las fases de estabil
 - `npm run check:test-failure-catalog`
 - `npm run check:hotspot-growth`
 - `npm run report:quality-metrics`
+- `npm run report:maintenance-debt-scorecard`
 - `npm run report:operational-health`
 - `npm run report:system-confidence`
 - `npm run report:release-readiness-scorecard`

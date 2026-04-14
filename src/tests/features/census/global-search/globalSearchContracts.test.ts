@@ -4,6 +4,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { resolveEpisodeCensusTargetDate } from '@/features/census/components/global-search/episodeGroupingController';
+import type { GroupedEpisode } from '@/features/census/components/global-search/globalSearchContracts';
 
 // We test the parseCompositeEpisodeKey logic indirectly through the hook's
 // internal behavior. Here we test the normalizePatientSearchTerm from
@@ -42,5 +44,33 @@ describe('normalizePatientSearchTerm (case-insensitive search)', () => {
 
   it('preserves single character words', () => {
     expect(normalizePatientSearchTerm('a b c')).toBe('A B C');
+  });
+});
+
+describe('resolveEpisodeCensusTargetDate contract', () => {
+  const buildEpisode = (overrides: Partial<GroupedEpisode>): GroupedEpisode =>
+    ({
+      id: 'episode-1',
+      admission: { id: 'ing', type: 'Ingreso', date: '2026-04-10' },
+      discharge: null,
+      diagnosis: '',
+      bedName: '',
+      daysOfStay: null,
+      ...overrides,
+    }) as GroupedEpisode;
+
+  it('uses the closing event date when the episode is already closed', () => {
+    expect(
+      resolveEpisodeCensusTargetDate(
+        buildEpisode({
+          discharge: {
+            id: 'eg',
+            type: 'Egreso',
+            date: '2026-04-14',
+          } as GroupedEpisode['discharge'],
+        }),
+        '2026-04-15'
+      )
+    ).toBe('2026-04-14');
   });
 });

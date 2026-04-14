@@ -7,7 +7,11 @@ import {
   type GlobalEmailRecipientList,
 } from '@/services/email/emailRecipientListService';
 import type { CensusEmailBrowserRuntime } from '@/hooks/controllers/censusEmailBrowserRuntimeController';
-import { resolveStoredRecipients } from '@/features/census/controllers/censusEmailRecipientsController';
+import {
+  resolveBootstrapRecipientSelection,
+  resolveStoredRecipientSelection,
+} from '@/hooks/controllers/censusEmailRecipientSelectionController';
+import { shouldSkipRecipientSync } from '@/hooks/controllers/censusEmailRecipientSyncController';
 import { resolveApplicationOutcomeMessage } from '@/shared/contracts/applicationOutcomeMessage';
 
 const RECIPIENT_LIST_KEY = 'censusEmailActiveRecipientListId';
@@ -42,17 +46,7 @@ interface UseCensusEmailRecipientListsReturn {
   recipientsSyncError: string | null;
 }
 
-export const resolveStoredRecipientSelection = (
-  storedRecipients: string[] | null,
-  storedActiveListId?: string | null
-) => {
-  const resolvedStoredRecipients = resolveStoredRecipients(storedRecipients);
-  return {
-    recipients: resolvedStoredRecipients ?? CENSUS_DEFAULT_RECIPIENTS,
-    recipientsSource: resolvedStoredRecipients ? 'local' : 'default',
-    activeRecipientListId: storedActiveListId ?? CENSUS_GLOBAL_EMAIL_RECIPIENT_LIST.id,
-  } as const;
-};
+export { resolveStoredRecipientSelection } from '@/hooks/controllers/censusEmailRecipientSelectionController';
 
 export const useCensusEmailRecipientLists = ({
   canManageGlobalRecipientLists,
@@ -216,15 +210,14 @@ export const useCensusEmailRecipientLists = ({
       }
 
       if (bootstrapResult.status === 'success' && bootstrapResult.data) {
-        const bootstrap = bootstrapResult.data;
-        setRecipientLists(bootstrap.recipientLists);
-        if (bootstrap.activeRecipientList) {
-          applyActiveRecipientList(bootstrap.activeRecipientList);
-        } else {
-          setRecipientsState(bootstrap.recipients);
-          setRecipientsSource(bootstrap.recipientsSource);
-          setRecipientsSyncError(bootstrap.syncError);
-        }
+        const bootstrapSelection = resolveBootstrapRecipientSelection(bootstrapResult.data);
+        setRecipientLists(bootstrapSelection.recipientLists);
+        activeRecipientListIdRef.current = bootstrapSelection.activeRecipientListId;
+        setActiveRecipientListIdState(bootstrapSelection.activeRecipientListId);
+        setRecipientsState(bootstrapSelection.recipients);
+        setRecipientsSource(bootstrapSelection.recipientsSource);
+        setRecipientsSyncError(bootstrapResult.data.syncError);
+        lastRemoteRecipientsRef.current = bootstrapSelection.lastRemoteRecipients;
         recipientsReadyRef.current = true;
         return;
       }
@@ -272,6 +265,17 @@ export const useCensusEmailRecipientLists = ({
 
     let cancelled = false;
     const timeoutId = window.setTimeout(() => {
+      if (
+        shouldSkipRecipientSync({
+          canManageGlobalRecipientLists,
+          recipientsReady: recipientsReadyRef.current,
+          recipients,
+          lastRemoteRecipients: lastRemoteRecipientsRef.current,
+        })
+      ) {
+        return;
+      }
+
       setIsRecipientsSyncing(true);
       setRecipientsSyncError(null);
 
