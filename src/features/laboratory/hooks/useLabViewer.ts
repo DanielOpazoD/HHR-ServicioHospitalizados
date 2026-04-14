@@ -132,10 +132,56 @@ export const useLabViewer = (
     return buildUniqueLabPatients(patients);
   }, [patients]);
 
-  const selectedPatient = useMemo(
-    () => uniquePatients.find(patient => patient.rut === selectedRut) ?? null,
-    [selectedRut, uniquePatients]
-  );
+  // For manual RUT searches, try to enrich from patientMaster (birthDate, etc.)
+  const [manualPatientExtra, setManualPatientExtra] = useState<{
+    fullName?: string;
+    birthDate?: string;
+  } | null>(null);
+
+  // Fetch master data when manual RUT returns results
+  useEffect(() => {
+    if (!selectedRut || uniquePatients.some(p => p.rut === selectedRut)) {
+      setManualPatientExtra(null);
+      return;
+    }
+    if (examList.length === 0) return;
+
+    let cancelled = false;
+    import('@/services/repositories/PatientMasterRepository').then(({ getPatientByRut }) => {
+      getPatientByRut(selectedRut).then(master => {
+        if (!cancelled && master) {
+          setManualPatientExtra({
+            fullName: master.fullName,
+            birthDate: master.birthDate,
+          });
+        }
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedRut, examList.length, uniquePatients]);
+
+  const selectedPatient = useMemo(() => {
+    // 1. Try to find from census bed patients
+    const fromBed = uniquePatients.find(patient => patient.rut === selectedRut);
+    if (fromBed) return fromBed;
+
+    // 2. Fallback for manual RUT search: build a synthetic patient
+    //    using Syslab name + patientMaster enrichment (birthDate)
+    if (selectedRut && examList.length > 0) {
+      const syslabName = examList[0]?.patientName;
+      return {
+        bedId: '',
+        label: manualPatientExtra?.fullName || syslabName || selectedRut,
+        patientName: manualPatientExtra?.fullName || syslabName || '',
+        rut: selectedRut,
+        birthDate: manualPatientExtra?.birthDate,
+      } satisfies LabPatient;
+    }
+
+    return null;
+  }, [selectedRut, uniquePatients, examList, manualPatientExtra]);
 
   // Derive filter categories from exam list
   const examFilterCategories = useMemo(() => resolveLabExamFilterCategories(examList), [examList]);
