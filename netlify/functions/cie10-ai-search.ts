@@ -113,7 +113,7 @@ const handler = async (event: NetlifyEventLike) => {
       );
     }
 
-    const { query } = request.data;
+    const { query, prompt: customPrompt } = request.data;
 
     if (!query || query.length < 2) {
       return buildJsonResponse(
@@ -123,7 +123,11 @@ const handler = async (event: NetlifyEventLike) => {
       );
     }
 
-    const prompt = `
+    // Use custom prompt when provided (e.g. FONASA search),
+    // otherwise wrap query in the default CIE-10 template.
+    const prompt =
+      customPrompt ||
+      `
 Eres un experto en codificación CIE-10 (Clasificación Internacional de Enfermedades, 10a revisión) en español.
 
 El usuario busca: "${query}"

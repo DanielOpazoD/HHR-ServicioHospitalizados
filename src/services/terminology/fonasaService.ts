@@ -273,13 +273,17 @@ export const searchFonasaAI = async (
     if (rawText) return parseAIRawText(rawText);
   }
 
-  // 2. Fallback: serverless endpoint
+  // 2. Fallback: serverless endpoint (sends custom prompt via `prompt` field
+  //    so the serverless function uses it directly instead of wrapping in CIE-10 template)
   try {
     const authHeaders = await resolveCurrentUserAuthHeaders();
     const response = await fetch('/.netlify/functions/cie10-ai-search', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders },
-      body: JSON.stringify({ query: buildFonasaAIPrompt(catalog, query) }),
+      body: JSON.stringify({
+        query,
+        prompt: buildFonasaAIPrompt(catalog, query),
+      }),
     });
     if (!response.ok) return [];
 

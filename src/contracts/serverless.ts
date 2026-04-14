@@ -16,6 +16,10 @@ export const Cie10SearchResultSchema = z.object({
 
 export const Cie10SearchRequestSchema = z.object({
   query: z.string(),
+  /** When provided, the serverless function uses this as the full AI prompt
+   *  instead of wrapping query in the default CIE-10 template.
+   *  Used by FONASA search to send its own specialized prompt. */
+  prompt: z.string().optional(),
 });
 
 export type Cie10SearchRequest = z.infer<typeof Cie10SearchRequestSchema>;
