@@ -215,6 +215,33 @@ const getMicrobiologyCategoryForExamName = (examName: string): LabMicrobiologyCa
   return null;
 };
 
+const resolveMicrobiologyCategoriesForExam = (
+  exam: SyslabExamItem | undefined
+): LabMicrobiologyCategory[] =>
+  exam
+    ? (Array.from(
+        new Set((exam.exams || []).map(getMicrobiologyCategoryForExamName).filter(Boolean))
+      ) as LabMicrobiologyCategory[])
+    : [];
+
+const appendMicrobiologyFinding = (
+  findingsByCategory: Map<LabMicrobiologyCategory, Array<{ analysis: string; result: string }>>,
+  category: LabMicrobiologyCategory,
+  finding: LabResultRow
+) => {
+  const summaryEntry = { analysis: finding.analysis, result: finding.result };
+  const categoryFindings = findingsByCategory.get(category) || [];
+  if (
+    categoryFindings.some(
+      entry => entry.analysis === summaryEntry.analysis && entry.result === summaryEntry.result
+    )
+  ) {
+    return;
+  }
+
+  findingsByCategory.set(category, [...categoryFindings, summaryEntry]);
+};
+
 const getMicrobiologyCategoryForFinding = (
   finding: LabResultRow,
   availableCategories: LabMicrobiologyCategory[]
@@ -236,6 +263,31 @@ const getMicrobiologyCategoryForFinding = (
   }
 
   return null;
+};
+
+const buildMicrobiologyEntriesForExam = (input: {
+  exam: SyslabExamItem | undefined;
+  date: string;
+  categories: LabMicrobiologyCategory[];
+  findingsByCategory: Map<LabMicrobiologyCategory, Array<{ analysis: string; result: string }>>;
+}): LabMicrobiologyEntry[] => {
+  if (!input.exam) {
+    return [];
+  }
+
+  const exam = input.exam;
+
+  return input.categories.map(category => {
+    const findings = input.findingsByCategory.get(category) || [];
+    return {
+      category,
+      date: input.date,
+      examLabel: resolveMicrobiologyEntryLabel(category, exam.exams),
+      findings,
+      hasAlertFinding: findings.some(entry => hasAlertMicrobiologyResult(entry.result)),
+      sourceExam: exam,
+    };
+  });
 };
 
 const resolveMicrobiologyEntryLabel = (
@@ -282,9 +334,7 @@ const processFindings = (
     const isoDate = parseDateDDMMYYYY(examDate);
     const colKey = buildExamColumnKey(exam, examDate);
     columnKeySet.add(colKey);
-    const microbiologyCategories = Array.from(
-      new Set((exam?.exams || []).map(getMicrobiologyCategoryForExamName).filter(Boolean))
-    ) as LabMicrobiologyCategory[];
+    const microbiologyCategories = resolveMicrobiologyCategoriesForExam(exam);
     const examIsMicrobiology = microbiologyCategories.length > 0;
     const microbiologyFindingsByCategory = new Map<
       LabMicrobiologyCategory,
@@ -303,17 +353,7 @@ const processFindings = (
       ) {
         const category = getMicrobiologyCategoryForFinding(finding, microbiologyCategories);
         if (category) {
-          const summaryEntry = { analysis: finding.analysis, result: finding.result };
-          const categoryFindings = microbiologyFindingsByCategory.get(category) || [];
-          if (
-            !categoryFindings.some(
-              entry =>
-                entry.analysis === summaryEntry.analysis && entry.result === summaryEntry.result
-            )
-          ) {
-            categoryFindings.push(summaryEntry);
-            microbiologyFindingsByCategory.set(category, categoryFindings);
-          }
+          appendMicrobiologyFinding(microbiologyFindingsByCategory, category, finding);
         }
       }
 
@@ -358,18 +398,14 @@ const processFindings = (
       }
     }
 
-    for (const category of microbiologyCategories) {
-      if (!exam) continue;
-      const findings = microbiologyFindingsByCategory.get(category) || [];
-      microbiologyEntries.push({
-        category,
+    microbiologyEntries.push(
+      ...buildMicrobiologyEntriesForExam({
+        exam,
         date: colKey,
-        examLabel: resolveMicrobiologyEntryLabel(category, exam.exams),
-        findings,
-        hasAlertFinding: findings.some(entry => hasAlertMicrobiologyResult(entry.result)),
-        sourceExam: exam,
-      });
-    }
+        categories: microbiologyCategories,
+        findingsByCategory: microbiologyFindingsByCategory,
+      })
+    );
   }
 
   return {

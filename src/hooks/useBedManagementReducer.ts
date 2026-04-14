@@ -163,6 +163,61 @@ const buildClinicalCribDraft = (bedId: string, parentPatient: PatientData): Pati
   return clinicalCrib;
 };
 
+const buildClearAllBedsPatches = (state: DailyRecord): DailyRecordPatch => {
+  const patches: Record<string, unknown> = {};
+  Object.keys(state.beds).forEach(bedId => {
+    patches[`beds.${bedId}`] = buildClearedBedPatient({
+      bedId,
+      location: state.beds[bedId].location,
+    });
+  });
+  return patches as DailyRecordPatch;
+};
+
+const buildMovePatientPatches = (
+  state: DailyRecord,
+  sourceBedId: string,
+  targetBedId: string
+): DailyRecordPatch => {
+  const sourceData = state.beds[sourceBedId];
+
+  return {
+    [`beds.${targetBedId}`]: buildTargetBedPatient({
+      patient: sourceData,
+      targetBedId,
+      targetLocation: state.beds[targetBedId].location,
+    }),
+    [`beds.${sourceBedId}`]: buildClearedBedPatient({
+      bedId: sourceBedId,
+      location: state.beds[sourceBedId].location,
+    }),
+  } as DailyRecordPatch;
+};
+
+const buildCopyPatientPatches = (
+  state: DailyRecord,
+  sourceBedId: string,
+  targetBedId: string
+): DailyRecordPatch =>
+  ({
+    [`beds.${targetBedId}`]: buildTargetBedPatient({
+      patient: deepClone(state.beds[sourceBedId]),
+      targetBedId,
+      targetLocation: state.beds[targetBedId].location,
+    }),
+  }) as DailyRecordPatch;
+
+const buildClinicalCribMultipleFieldPatches = (
+  bedId: string,
+  fields: Partial<PatientData>
+): DailyRecordPatch => {
+  const patches: Record<string, unknown> = {};
+  Object.entries(fields).forEach(([key, value]) => {
+    patches[`beds.${bedId}.clinicalCrib.${key}`] = value;
+  });
+  return patches as DailyRecordPatch;
+};
+
 // ============================================================================
 // Actions
 // ============================================================================
@@ -253,45 +308,17 @@ export const bedManagementReducer = (
     }
 
     case 'CLEAR_ALL_BEDS': {
-      const patches: Record<string, unknown> = {};
-      // Iterate over all beds in current state and clear them
-      Object.keys(state.beds).forEach(bedId => {
-        patches[`beds.${bedId}`] = buildClearedBedPatient({
-          bedId,
-          location: state.beds[bedId].location,
-        });
-      });
-      return patches as DailyRecordPatch;
+      return buildClearAllBedsPatches(state);
     }
 
     case 'MOVE_PATIENT': {
       const { sourceBedId, targetBedId } = action;
-      const sourceData = state.beds[sourceBedId];
-
-      return {
-        [`beds.${targetBedId}`]: buildTargetBedPatient({
-          patient: sourceData,
-          targetBedId,
-          targetLocation: state.beds[targetBedId].location,
-        }),
-        [`beds.${sourceBedId}`]: buildClearedBedPatient({
-          bedId: sourceBedId,
-          location: state.beds[sourceBedId].location,
-        }),
-      } as DailyRecordPatch;
+      return buildMovePatientPatches(state, sourceBedId, targetBedId);
     }
 
     case 'COPY_PATIENT': {
       const { sourceBedId, targetBedId } = action;
-      const sourceData = state.beds[sourceBedId];
-
-      return {
-        [`beds.${targetBedId}`]: buildTargetBedPatient({
-          patient: deepClone(sourceData),
-          targetBedId,
-          targetLocation: state.beds[targetBedId].location,
-        }),
-      } as DailyRecordPatch;
+      return buildCopyPatientPatches(state, sourceBedId, targetBedId);
     }
 
     case 'TOGGLE_BLOCK_BED': {
@@ -346,11 +373,7 @@ export const bedManagementReducer = (
 
     case 'UPDATE_CLINICAL_CRIB_MULTIPLE': {
       const { bedId, fields } = action;
-      const patches: Record<string, unknown> = {};
-      Object.entries(fields).forEach(([key, value]) => {
-        patches[`beds.${bedId}.clinicalCrib.${key}`] = value;
-      });
-      return patches as DailyRecordPatch;
+      return buildClinicalCribMultipleFieldPatches(bedId, fields);
     }
 
     case 'UPDATE_CLINICAL_CRIB_CUDYR': {

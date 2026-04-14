@@ -173,4 +173,33 @@ export const buildPendingMedicalEntryDraft = ({
   };
 };
 
+export const resolveNextPendingMedicalEntryDrafts = ({
+  currentDrafts,
+  entryId,
+  value,
+  entries,
+  patient,
+  specialtyOptions,
+  expiresAt,
+}: {
+  currentDrafts: Record<string, PendingMedicalEntryDraft>;
+  entryId: string;
+  value: string;
+  entries: MedicalHandoffEntry[];
+  patient: PatientData;
+  specialtyOptions: string[];
+  expiresAt: number;
+}): Record<string, PendingMedicalEntryDraft> => ({
+  ...currentDrafts,
+  [entryId]: buildPendingMedicalEntryDraft({
+    entryId,
+    value,
+    entries,
+    pendingEntryDrafts: currentDrafts,
+    patient,
+    specialtyOptions,
+    expiresAt,
+  }),
+});
+
 export { resolveMedicalObservationEntries };

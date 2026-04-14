@@ -8,6 +8,7 @@ import {
   resolveDisplayMedicalObservationEntries,
   resolveHandoffStatusVariant,
   resolveMedicalObservationEmptyState,
+  resolveNextPendingMedicalEntryDrafts,
   resolveMedicalObservationEntries,
   shouldShowMedicalPrimaryNoteFallback,
   shouldRenderClinicalEventsPanel,
@@ -215,6 +216,40 @@ describe('handoffRowCellsController', () => {
         specialty: Specialty.MEDICINA,
         note: 'Nota temporal',
       }),
+    });
+  });
+
+  it('builds the next pending draft map without losing existing drafts', () => {
+    const patient = buildPatient();
+
+    expect(
+      resolveNextPendingMedicalEntryDrafts({
+        currentDrafts: {
+          'entry-prev': {
+            entry: { id: 'entry-prev', specialty: Specialty.MEDICINA, note: 'Previo' },
+            expiresAt: 1000,
+          },
+        },
+        entryId: 'entry-new',
+        value: 'Nuevo borrador',
+        entries: [],
+        patient,
+        specialtyOptions: ['medicinaInterna'],
+        expiresAt: 2000,
+      })
+    ).toEqual({
+      'entry-prev': {
+        entry: { id: 'entry-prev', specialty: Specialty.MEDICINA, note: 'Previo' },
+        expiresAt: 1000,
+      },
+      'entry-new': {
+        entry: expect.objectContaining({
+          id: 'entry-new',
+          specialty: Specialty.MEDICINA,
+          note: 'Nuevo borrador',
+        }),
+        expiresAt: 2000,
+      },
     });
   });
 });

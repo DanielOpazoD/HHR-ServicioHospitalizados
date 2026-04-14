@@ -8,13 +8,13 @@ import { calculateDeviceDays } from '@/components/device-selector/DeviceDateConf
 import { DebouncedTextarea } from '@/components/ui/DebouncedTextarea';
 import { MedicalHandoffObservationEntry } from './MedicalHandoffObservationEntry';
 import {
-  buildPendingMedicalEntryDraft,
   canToggleClinicalEvents,
   pruneResolvedPendingMedicalEntryDrafts,
   type PendingMedicalEntryDraft,
   resolveDisplayMedicalObservationEntries,
   resolveHandoffStatusVariant,
   resolveMedicalObservationEmptyState,
+  resolveNextPendingMedicalEntryDrafts,
   shouldRenderClinicalEventsPanel,
   shouldShowMedicalPrimaryNoteFallback,
 } from '@/features/handoff/controllers/handoffRowCellsController';
@@ -300,23 +300,20 @@ export const HandoffMedicalObservationsCell: React.FC<HandoffMedicalObservations
   const registerPendingEntryDraft = React.useCallback(
     (entryId: string, value: string) => {
       const expiresAt = Date.now() + MEDICAL_DRAFT_CONTINUITY_MS;
-      const nextDraft = buildPendingMedicalEntryDraft({
-        entryId,
-        value,
-        entries,
-        pendingEntryDrafts,
-        patient,
-        specialtyOptions,
-        expiresAt,
-      });
-
-      setPendingEntryDrafts(current => ({
-        ...current,
-        [entryId]: nextDraft,
-      }));
+      setPendingEntryDrafts(current =>
+        resolveNextPendingMedicalEntryDrafts({
+          currentDrafts: current,
+          entryId,
+          value,
+          entries,
+          patient,
+          specialtyOptions,
+          expiresAt,
+        })
+      );
       prunePendingEntryDraft(entryId, expiresAt);
     },
-    [entries, patient.specialty, pendingEntryDrafts, prunePendingEntryDraft]
+    [entries, patient, prunePendingEntryDraft]
   );
 
   React.useEffect(() => {

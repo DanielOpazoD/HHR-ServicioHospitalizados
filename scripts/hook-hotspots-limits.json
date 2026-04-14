@@ -4,7 +4,8 @@
     "src/hooks/useTransferManagement.ts": 360,
     "src/hooks/useBedManagement.ts": 360,
     "src/hooks/useExportManager.ts": 280,
-    "src/hooks/useBackupFileBrowser.ts": 320
+    "src/hooks/useBackupFileBrowser.ts": 320,
+    "src/hooks/useCensusEmailRecipientLists.ts": 460
   },
   "backlog": {
     "src/hooks/useCensusEmail.ts": {
@@ -36,6 +37,12 @@
       "reason": "Hook de exploración de respaldos todavía mezcla queries, filtro y runtime de navegación.",
       "owner": "backup",
       "status": "active"
+    },
+    "src/hooks/useCensusEmailRecipientLists.ts": {
+      "limit": 460,
+      "reason": "Todavía orquesta bootstrap, selección activa, sync global y fallback local de destinatarios del censo.",
+      "owner": "census-email",
+      "status": "shrinking"
     }
   }
 }

@@ -232,4 +232,40 @@ describe('bedManagementReducer firstSeenDate anchoring', () => {
       'beds.R1.hasCompanionCrib': false,
     });
   });
+
+  it('updates multiple clinical crib fields in a single patch', () => {
+    const record = DataFactory.createMockDailyRecord('2026-04-12');
+
+    const patch = bedManagementReducer(record, {
+      type: 'UPDATE_CLINICAL_CRIB_MULTIPLE',
+      bedId: 'R1',
+      fields: {
+        patientName: 'RN Temporal',
+        pathology: 'Observación',
+      },
+    });
+
+    expect(patch).toEqual({
+      'beds.R1.clinicalCrib.patientName': 'RN Temporal',
+      'beds.R1.clinicalCrib.pathology': 'Observación',
+    });
+  });
+
+  it('toggles extra beds by adding and removing the same bed id predictably', () => {
+    const record = DataFactory.createMockDailyRecord('2026-04-12');
+    record.activeExtraBeds = ['H1C1'];
+
+    const removePatch = bedManagementReducer(record, {
+      type: 'TOGGLE_EXTRA_BED',
+      bedId: 'H1C1',
+    });
+
+    const addPatch = bedManagementReducer(record, {
+      type: 'TOGGLE_EXTRA_BED',
+      bedId: 'H2C1',
+    });
+
+    expect(removePatch).toEqual({ activeExtraBeds: [] });
+    expect(addPatch).toEqual({ activeExtraBeds: ['H1C1', 'H2C1'] });
+  });
 });

@@ -275,4 +275,74 @@ describe('buildAnalysisData', () => {
     expect(result.examDates).toEqual([]);
     expect(result.comparison).toEqual({});
   });
+
+  it('separates microbiology categories from one combined exam without mixing culture and PCR rows', () => {
+    const combinedExam: SyslabExamItem = {
+      id: '43091284',
+      link: 'http://example.com/43091284',
+      date: '06/04/2026',
+      time: '11:40:00',
+      patientName: 'TEST',
+      origin: 'HOSP',
+      exams: [
+        'CULTIVO CORRIENTE 1',
+        'ATB BACILOS GRAM (-) 1',
+        'ANTIBIOGRAMA EXTENDIDO 1',
+        'PCR PANEL RESPIRATORIO #2',
+      ],
+    };
+
+    const details: SyslabExamDetail[] = [
+      {
+        url: 'http://example.com/43091284',
+        findings: [
+          {
+            section: 'MICRO',
+            analysis: 'Cultivo',
+            result: 'Bacilos Gram (-) No Fermentador',
+            unit: '',
+            refValue: '',
+            qualitative: true,
+          },
+          {
+            section: 'MICRO',
+            analysis: 'Ceftazidima',
+            result: 'Susceptible',
+            unit: '',
+            refValue: '',
+            qualitative: true,
+          },
+          {
+            section: 'MICRO',
+            analysis: 'Rhinovirus',
+            result: 'NEGATIVO',
+            unit: '',
+            refValue: '',
+            qualitative: true,
+          },
+        ],
+      },
+    ];
+
+    const result = buildAnalysisData(details, [combinedExam]);
+    const cultivo = result.microbiologyEntries.find(
+      entry => entry.examLabel === 'Cultivo corriente / Antibiograma'
+    );
+    const pcr = result.microbiologyEntries.find(
+      entry => entry.examLabel === 'PCR panel respiratorio'
+    );
+
+    expect(cultivo?.findings).toEqual(
+      expect.arrayContaining([
+        { analysis: 'Cultivo', result: 'Bacilos Gram (-) No Fermentador' },
+        { analysis: 'Ceftazidima', result: 'Susceptible' },
+      ])
+    );
+    expect(cultivo?.findings).not.toEqual(
+      expect.arrayContaining([{ analysis: 'Rhinovirus', result: 'NEGATIVO' }])
+    );
+    expect(pcr?.findings).toEqual(
+      expect.arrayContaining([{ analysis: 'Rhinovirus', result: 'NEGATIVO' }])
+    );
+  });
 });
