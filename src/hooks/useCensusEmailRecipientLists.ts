@@ -11,8 +11,12 @@ import {
   resolveBootstrapRecipientSelection,
   resolveStoredRecipientSelection,
 } from '@/hooks/controllers/censusEmailRecipientSelectionController';
+import {
+  resolveBootstrapRecipientFallbackMessage,
+  resolveRecipientMutationFailureMessage,
+  resolveRecipientSyncState,
+} from '@/hooks/controllers/censusEmailRecipientRuntimeController';
 import { shouldSkipRecipientSync } from '@/hooks/controllers/censusEmailRecipientSyncController';
-import { resolveApplicationOutcomeMessage } from '@/shared/contracts/applicationOutcomeMessage';
 
 const RECIPIENT_LIST_KEY = 'censusEmailActiveRecipientListId';
 let censusRecipientListUseCasesPromise: Promise<
@@ -172,7 +176,7 @@ export const useCensusEmailRecipientLists = ({
           return;
         }
 
-        setRecipientsSyncError(resolveApplicationOutcomeMessage(result, fallbackMessage));
+        setRecipientsSyncError(resolveRecipientMutationFailureMessage(result, fallbackMessage));
       } finally {
         setIsRecipientsSyncing(false);
       }
@@ -229,10 +233,7 @@ export const useCensusEmailRecipientLists = ({
       restoreStoredRecipientSelection(
         stored,
         null,
-        resolveApplicationOutcomeMessage(
-          bootstrapResult,
-          'No se pudo cargar la lista global en Firebase. Se usara la copia local.'
-        )
+        resolveBootstrapRecipientFallbackMessage(bootstrapResult)
       );
     };
 
@@ -295,20 +296,14 @@ export const useCensusEmailRecipientLists = ({
           if (cancelled) {
             return;
           }
-          if (result.status === 'success') {
-            if (!result.data.skipped) {
-              lastRemoteRecipientsRef.current = recipients;
-              setRecipientsSource('firebase');
-            }
-            return;
+          const nextState = resolveRecipientSyncState(result, recipients);
+          if (nextState.recipientsSource) {
+            setRecipientsSource(nextState.recipientsSource);
           }
-
-          setRecipientsSyncError(
-            resolveApplicationOutcomeMessage(
-              result,
-              'No se pudo sincronizar la lista global en Firebase. Se mantiene la copia local.'
-            )
-          );
+          if (nextState.lastRemoteRecipients) {
+            lastRemoteRecipientsRef.current = nextState.lastRemoteRecipients;
+          }
+          setRecipientsSyncError(nextState.recipientsSyncError);
         })
         .finally(() => {
           if (!cancelled) {

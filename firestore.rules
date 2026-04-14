@@ -171,9 +171,21 @@ service cloud.firestore {
       ]);
     }
 
+    function isAllowedSpecialistStructuredSpecialty(specialty) {
+      return [
+        'cirugia',
+        'traumatologia',
+        'ginecobstetricia',
+        'pediatria',
+        'psiquiatria',
+        'medicinaInterna'
+      ].hasAny([specialty]);
+    }
+
     function isOnlyAffectedSpecialistStructuredSpecialty(affectedSpecialties, specialty) {
       return affectedSpecialties.size() == 1 &&
              affectedSpecialties.hasOnly([specialty]) &&
+             isAllowedSpecialistStructuredSpecialty(specialty) &&
              isValidSpecialistStructuredMedicalSpecialtyEntry(specialty);
     }
 

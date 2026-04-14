@@ -214,3 +214,17 @@ Se hizo otro recorte quirúrgico sobre el handoff estructurado de especialista:
 - `bash scripts/run-firestore-rules-ci.sh`: verde (`81` tests).
 
 Conclusión: `firestore.rules` sigue siendo un boundary grande, pero el subpath estructurado del especialista quedó más fácil de auditar y menos propenso a volver a crecer con ORs repetidos.
+
+## Iteración 9 ejecutada
+
+Se hizo un recorte adicional sobre el path estructurado de especialista:
+
+- se agregó `isAllowedSpecialistStructuredSpecialty(...)` para centralizar el allowlist de especialidades válidas
+- `isOnlyAffectedSpecialistStructuredSpecialty(...)` ahora reutiliza ese allowlist
+- `isSpecialistStructuredMedicalHandoffUpdate()` mantiene el OR por especialidad permitida, pero deja el allowlist centralizado en un helper para evitar que la validación profunda vuelva a crecer con strings duplicados fuera de un solo punto
+
+## Resultado de la validación de la iteración 9
+
+- `bash scripts/run-firestore-rules-ci.sh`: verde (`81` tests).
+
+Conclusión: el path estructurado del especialista sigue mejorando con cortes pequeños y auditables, sin reabrir una reescritura del archivo completo.

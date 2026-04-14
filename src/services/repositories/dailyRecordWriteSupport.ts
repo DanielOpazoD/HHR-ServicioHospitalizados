@@ -17,7 +17,6 @@ import { logError } from '@/services/utils/errorService';
 import { PatientMasterRepository } from '@/services/repositories/PatientMasterRepository';
 import { resolveDailyRecordConflictWithTrace } from '@/services/repositories/conflictResolutionMatrix';
 import { buildConflictAuditSummary } from '@/services/repositories/conflictResolutionAuditSummary';
-import { classifyConflictChangedContexts } from '@/services/repositories/conflictResolutionDomainPolicy';
 import { logRepositoryConflictAutoMerged } from '@/services/repositories/ports/repositoryAuditPort';
 import {
   createAutoMergeDecision,
@@ -37,6 +36,12 @@ import {
 } from '@/services/repositories/dailyRecordDomainServices';
 import { dailyRecordWriteSupportLogger } from '@/services/repositories/repositoryLoggers';
 import { assertAdmissionDatePersistencePolicy } from '@/services/repositories/dailyRecordAdmissionDateWritePolicy';
+import {
+  buildDailyRecordConflictSummary,
+  buildRecoveryTaskMeta,
+  resolveEffectiveChangedPaths,
+  resolveRetryOrigin,
+} from '@/services/repositories/dailyRecordWriteRecoveryController';
 
 export interface ConflictAutoMergeRecoveryResult {
   status: 'auto_merged' | 'not_possible';
@@ -63,14 +68,6 @@ const queueRecoveryTask = async (
   const result = await queueSyncTask('UPDATE_DAILY_RECORD', record, meta);
   return result.accepted;
 };
-
-const resolveEffectiveChangedPaths = (changedPaths: string[]): string[] =>
-  changedPaths.length > 0 ? changedPaths : ['*'];
-
-const resolveRetryOrigin = (changedPaths: string[]): 'full_save_retry' | 'partial_update_retry' =>
-  resolveEffectiveChangedPaths(changedPaths).includes('*')
-    ? 'full_save_retry'
-    : 'partial_update_retry';
 
 export const prepareDailyRecordForPersistence = (
   record: DailyRecord,
@@ -169,14 +166,6 @@ export const queueRetryForRecord = async (record: DailyRecord): Promise<boolean>
   });
 };
 
-const buildRecoveryTaskMeta = (
-  changedPaths: string[],
-  origin: 'full_save_retry' | 'partial_update_retry' | 'conflict_auto_merge'
-) => ({
-  contexts: classifyConflictChangedContexts(resolveEffectiveChangedPaths(changedPaths)),
-  origin,
-});
-
 export const shouldQueueRetryableError = (error: unknown): boolean => isRetryableSyncError(error);
 
 export const attemptConflictAutoMergeRecovery = async (
@@ -233,17 +222,8 @@ export const resolveRemoteWriteRecovery = async (
   error: unknown
 ): Promise<RemoteWriteRecoveryResult> => {
   const effectiveChangedPaths = resolveEffectiveChangedPaths(changedPaths);
-
-  const conflictSummary = (
-    kind: DailyRecordConflictSummary['kind'],
-    message: string
-  ): DailyRecordConflictSummary => ({
-    kind,
-    sourceOfTruth: kind === 'concurrency' ? 'local' : 'none',
-    localTimestamp: record.lastUpdated,
-    changedPaths: effectiveChangedPaths,
-    message,
-  });
+  const conflictSummary = (kind: DailyRecordConflictSummary['kind'], message: string) =>
+    buildDailyRecordConflictSummary(record.lastUpdated, effectiveChangedPaths, kind, message);
 
   if (error instanceof DataRegressionError || error instanceof VersionMismatchError) {
     const blockingReason = error instanceof DataRegressionError ? 'regression' : 'version_mismatch';
