@@ -355,8 +355,9 @@ export const resolveRemoteWriteRecovery = async (
 export const syncPatientsToMasterInBackground = (record: DailyRecord): void => {
   setTimeout(async () => {
     try {
+      // 1. Sync patients currently in beds (demographics)
       const patientsToSync = collectDailyRecordPatientsForMasterSync(record);
-      if (patientsToSync.length === 0) return;
+      const bedPatientRuts = new Set(patientsToSync.map(p => p.rut));
 
       await Promise.all(
         patientsToSync.map(patient =>
@@ -369,6 +370,97 @@ export const syncPatientsToMasterInBackground = (record: DailyRecord): void => {
           })
         )
       );
+
+      // 2. Sync admission events for patients in beds (first appearance)
+      for (const patient of patientsToSync) {
+        if (!patient.rut || !patient.admissionDate) continue;
+        await PatientMasterRepository.appendHospitalizationEvent(
+          {
+            rut: patient.rut,
+            fullName: patient.patientName || '',
+            birthDate: patient.birthDate,
+            forecast: patient.insurance,
+            gender: patient.biologicalSex,
+          },
+          {
+            id: `${patient.admissionDate}-ingreso-rt`,
+            type: 'Ingreso',
+            date: patient.admissionDate,
+            diagnosis: patient.pathology || 'S/D',
+            bedName: patient.bedId,
+          },
+          { lastAdmission: patient.admissionDate }
+        );
+      }
+
+      // 3. Sync discharge events (including patients NOT in beds)
+      for (const discharge of record.discharges || []) {
+        if (!discharge.rut) continue;
+        await PatientMasterRepository.appendHospitalizationEvent(
+          {
+            rut: discharge.rut,
+            fullName: discharge.patientName,
+            forecast: discharge.insurance,
+          },
+          {
+            id: `${record.date}-egreso-rt`,
+            type: 'Egreso',
+            date: record.date,
+            diagnosis: discharge.diagnosis || 'S/D',
+            bedName: discharge.bedName,
+          },
+          {
+            lastDischarge: record.date,
+            ...(discharge.status === 'Fallecido' ? { vitalStatus: 'Fallecido' as const } : {}),
+          }
+        );
+
+        // Also ensure admission exists if patient wasn't in beds
+        if (!bedPatientRuts.has(discharge.rut) && discharge.admissionDate) {
+          await PatientMasterRepository.appendHospitalizationEvent(
+            { rut: discharge.rut, fullName: discharge.patientName },
+            {
+              id: `${discharge.admissionDate}-ingreso-rt`,
+              type: 'Ingreso',
+              date: discharge.admissionDate,
+              diagnosis: discharge.diagnosis || 'S/D',
+              bedName: discharge.bedName,
+            },
+            { lastAdmission: discharge.admissionDate }
+          );
+        }
+      }
+
+      // 4. Sync transfer events (including patients NOT in beds)
+      for (const transfer of record.transfers || []) {
+        if (!transfer.rut) continue;
+        await PatientMasterRepository.appendHospitalizationEvent(
+          { rut: transfer.rut, fullName: transfer.patientName },
+          {
+            id: `${record.date}-traslado-rt`,
+            type: 'Traslado',
+            date: record.date,
+            diagnosis: transfer.diagnosis || 'S/D',
+            bedName: transfer.bedName,
+            receivingCenter: transfer.receivingCenter,
+          }
+        );
+
+        // Also ensure admission exists if patient wasn't in beds
+        if (!bedPatientRuts.has(transfer.rut) && transfer.admissionDate) {
+          await PatientMasterRepository.appendHospitalizationEvent(
+            { rut: transfer.rut, fullName: transfer.patientName },
+            {
+              id: `${transfer.admissionDate}-ingreso-rt`,
+              type: 'Ingreso',
+              date: transfer.admissionDate,
+              diagnosis: transfer.diagnosis || 'S/D',
+              bedName: transfer.bedName,
+            },
+            { lastAdmission: transfer.admissionDate }
+          );
+        }
+      }
     } catch {
       // intentionally ignored (non-critical background sync)
     }

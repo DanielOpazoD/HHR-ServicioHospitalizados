@@ -2,6 +2,7 @@ import {
   doc,
   getDoc,
   setDoc,
+  updateDoc,
   writeBatch,
   collection,
   query,
@@ -10,6 +11,7 @@ import {
   startAfter,
   getDocs,
   where,
+  arrayUnion,
   QueryDocumentSnapshot,
   DocumentData,
 } from 'firebase/firestore';
@@ -186,9 +188,68 @@ export const createPatientMasterRepository = (
     }
   };
 
+  /**
+   * Appends a hospitalization event to a patient's `hospitalizations` array
+   * using Firestore `arrayUnion` (no duplicates, no overwrite).
+   *
+   * Also upserts basic patient data if the document doesn't exist yet,
+   * so patients appearing only in discharges/transfers are indexed.
+   */
+  const appendHospitalizationEvent = async (
+    patient: {
+      rut: string;
+      fullName: string;
+      birthDate?: string;
+      forecast?: string;
+      gender?: string;
+    },
+    event: import('@/types/domain/patientMaster').HospitalizationEvent,
+    extra?: {
+      lastAdmission?: string;
+      lastDischarge?: string;
+      vitalStatus?: 'Vivo' | 'Fallecido';
+    }
+  ): Promise<void> => {
+    const command = createUpsertPatientCommand({ rut: patient.rut, fullName: patient.fullName });
+    if (!command) return;
+
+    const path = getCollectionPath();
+    const docRef = doc(getDb(), path, command.rut);
+
+    try {
+      // Ensure the document exists with basic data first
+      await setDoc(
+        docRef,
+        {
+          rut: command.rut,
+          fullName: command.fullName,
+          ...(patient.birthDate ? { birthDate: patient.birthDate } : {}),
+          ...(patient.forecast ? { forecast: patient.forecast } : {}),
+          ...(patient.gender ? { gender: patient.gender } : {}),
+          ...(extra?.lastAdmission ? { lastAdmission: extra.lastAdmission } : {}),
+          ...(extra?.lastDischarge ? { lastDischarge: extra.lastDischarge } : {}),
+          ...(extra?.vitalStatus ? { vitalStatus: extra.vitalStatus } : {}),
+          updatedAt: Date.now(),
+        },
+        { merge: true }
+      );
+
+      // Append the event atomically (arrayUnion prevents duplicates)
+      await updateDoc(docRef, {
+        hospitalizations: arrayUnion(event),
+      });
+    } catch (err) {
+      patientMasterRepositoryLogger.error(
+        `Error appending hospitalization event for ${command.rut}`,
+        err
+      );
+    }
+  };
+
   return {
     getPatientByRut,
     upsertPatient,
+    appendHospitalizationEvent,
     bulkUpsertPatients,
     getAllPatients,
     getPatientsPaginated,
@@ -200,6 +261,7 @@ export const PatientMasterRepository = createPatientMasterRepository();
 export const {
   getPatientByRut,
   upsertPatient,
+  appendHospitalizationEvent,
   bulkUpsertPatients,
   getAllPatients,
   getPatientsPaginated,
