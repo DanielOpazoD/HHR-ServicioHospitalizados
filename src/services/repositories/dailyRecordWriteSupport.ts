@@ -42,6 +42,14 @@ import {
   resolveEffectiveChangedPaths,
   resolveRetryOrigin,
 } from '@/services/repositories/dailyRecordWriteRecoveryController';
+import {
+  buildAdmissionPatientMasterPatch,
+  buildDischargePatientMasterPatch,
+  buildEgresoRealtimeEvent,
+  buildIngresoRealtimeEvent,
+  buildPatientMasterSeed,
+  buildTrasladoRealtimeEvent,
+} from '@/services/repositories/dailyRecordMasterSyncController';
 
 export interface ConflictAutoMergeRecoveryResult {
   status: 'auto_merged' | 'not_possible';
@@ -338,20 +346,6 @@ type MasterSyncDailyRecordPatient = ReturnType<
 type DailyRecordDischarge = NonNullable<DailyRecord['discharges']>[number];
 type DailyRecordTransfer = NonNullable<DailyRecord['transfers']>[number];
 
-const buildPatientMasterSeed = (input: {
-  rut: string;
-  fullName: string;
-  birthDate?: string | null;
-  forecast?: string | null;
-  gender?: string | null;
-}) => ({
-  rut: input.rut,
-  fullName: input.fullName,
-  birthDate: input.birthDate ?? undefined,
-  forecast: input.forecast ?? undefined,
-  gender: input.gender ?? undefined,
-});
-
 const appendRealtimeAdmissionIfMissing = async (
   existingBedPatientRuts: Set<string>,
   input: {
@@ -371,14 +365,12 @@ const appendRealtimeAdmissionIfMissing = async (
       rut: input.rut,
       fullName: input.patientName,
     }),
-    {
-      id: `${input.admissionDate}-ingreso-rt`,
-      type: 'Ingreso',
+    buildIngresoRealtimeEvent({
       date: input.admissionDate,
-      diagnosis: input.diagnosis || 'S/D',
-      bedName: input.bedName ?? undefined,
-    },
-    { lastAdmission: input.admissionDate }
+      diagnosis: input.diagnosis,
+      bedName: input.bedName,
+    }),
+    buildAdmissionPatientMasterPatch(input.admissionDate)
   );
 };
 
@@ -407,14 +399,12 @@ const syncBedPatientsToMaster = async (patientsToSync: MasterSyncDailyRecordPati
         forecast: patient.insurance,
         gender: patient.biologicalSex,
       }),
-      {
-        id: `${patient.admissionDate}-ingreso-rt`,
-        type: 'Ingreso',
+      buildIngresoRealtimeEvent({
         date: patient.admissionDate,
-        diagnosis: patient.pathology || 'S/D',
+        diagnosis: patient.pathology,
         bedName: patient.bedId,
-      },
-      { lastAdmission: patient.admissionDate }
+      }),
+      buildAdmissionPatientMasterPatch(patient.admissionDate)
     );
   }
 };
@@ -432,17 +422,15 @@ const syncDischargesToMaster = async (
         fullName: discharge.patientName,
         forecast: discharge.insurance,
       }),
-      {
-        id: `${record.date}-egreso-rt`,
-        type: 'Egreso',
+      buildEgresoRealtimeEvent({
         date: record.date,
-        diagnosis: discharge.diagnosis || 'S/D',
+        diagnosis: discharge.diagnosis,
         bedName: discharge.bedName,
-      },
-      {
-        lastDischarge: record.date,
-        ...(discharge.status === 'Fallecido' ? { vitalStatus: 'Fallecido' as const } : {}),
-      }
+      }),
+      buildDischargePatientMasterPatch({
+        date: record.date,
+        status: discharge.status,
+      })
     );
 
     await appendRealtimeAdmissionIfMissing(existingBedPatientRuts, {
@@ -467,14 +455,12 @@ const syncTransfersToMaster = async (
         rut: transfer.rut,
         fullName: transfer.patientName,
       }),
-      {
-        id: `${record.date}-traslado-rt`,
-        type: 'Traslado',
+      buildTrasladoRealtimeEvent({
         date: record.date,
-        diagnosis: transfer.diagnosis || 'S/D',
+        diagnosis: transfer.diagnosis,
         bedName: transfer.bedName,
         receivingCenter: transfer.receivingCenter,
-      }
+      })
     );
 
     await appendRealtimeAdmissionIfMissing(existingBedPatientRuts, {

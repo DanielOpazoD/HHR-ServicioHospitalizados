@@ -48,6 +48,20 @@ describe('mmradReportSupport', () => {
     );
   });
 
+  it('normalizes multiline sections into continuous paragraphs while preserving the study heading', () => {
+    const text = buildMMRADReportClipboardText({
+      examName: 'TC TORAX',
+      examDate: '09/04/2026 13:05',
+      title: 'TOMOGRAFÍA SIMPLE DE TÓRAX',
+      findings: 'Parénquima pulmonar.\nTráquea central.',
+      impression: 'Cardiomegalia.\nAteromatosis.',
+    });
+
+    expect(text).toBe(
+      'TAC de Tórax (09-04-2026).\n\nHallazgos: Parénquima pulmonar. Tráquea central.\n\nImpresión: Cardiomegalia. Ateromatosis.'
+    );
+  });
+
   it('builds printable report html with title and sections', () => {
     const html = buildMMRADReportPrintHtml('TC Torax', '12/04/2026', {
       title: 'TOMOGRAFÍA SIMPLE DE TÓRAX',

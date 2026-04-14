@@ -108,6 +108,17 @@ interface ProcessedFindings {
   microbiologyEntries: LabMicrobiologyEntry[];
 }
 
+interface ProcessExamFindingsContext {
+  exam: SyslabExamItem | undefined;
+  examDate: string;
+  colKey: string;
+  comparison: Record<string, Record<string, LabResultRow>>;
+  trendMap: Record<string, LabTrendPoint[]>;
+  seenTrend: Set<string>;
+  seenComparison: Set<string>;
+  bilirubinByCol: Record<string, { total?: string; directa?: string; indirecta?: string }>;
+}
+
 const hasMicrobiologyPattern = (value: string): boolean => {
   const upper = value.toUpperCase();
   return MICROBIOLOGY_PATTERNS.some(pattern => upper.includes(pattern));
@@ -290,6 +301,115 @@ const buildMicrobiologyEntriesForExam = (input: {
   });
 };
 
+const collectBilirubinFinding = (
+  bilirubinByCol: Record<string, { total?: string; directa?: string; indirecta?: string }>,
+  colKey: string,
+  lowerAnalysis: string,
+  result: string
+) => {
+  if (!lowerAnalysis.includes('bilirrubina')) {
+    return;
+  }
+
+  if (!bilirubinByCol[colKey]) bilirubinByCol[colKey] = {};
+  if (lowerAnalysis.includes('total')) bilirubinByCol[colKey].total = result;
+  else if (lowerAnalysis.includes('directa')) bilirubinByCol[colKey].directa = result;
+  else if (lowerAnalysis.includes('indirecta')) bilirubinByCol[colKey].indirecta = result;
+};
+
+const collectComparisonFinding = (
+  comparison: Record<string, Record<string, LabResultRow>>,
+  seenComparison: Set<string>,
+  colKey: string,
+  finding: LabResultRow,
+  lowerAnalysis: string
+) => {
+  if (isExcludedFromComparison(finding.analysis) || lowerAnalysis.includes('bilirrubina')) {
+    return;
+  }
+
+  const compKey = `${finding.analysis}::${colKey}`;
+  if (seenComparison.has(compKey)) {
+    return;
+  }
+
+  seenComparison.add(compKey);
+  if (!comparison[finding.analysis]) comparison[finding.analysis] = {};
+  comparison[finding.analysis][colKey] = finding;
+};
+
+const collectTrendFinding = (
+  trendMap: Record<string, LabTrendPoint[]>,
+  seenTrend: Set<string>,
+  colKey: string,
+  isoDate: string,
+  finding: LabResultRow
+) => {
+  if (!isTrendVariable(finding.analysis) || finding.qualitative) {
+    return;
+  }
+
+  const trendKey = `${finding.analysis}::${colKey}`;
+  if (seenTrend.has(trendKey)) {
+    return;
+  }
+
+  seenTrend.add(trendKey);
+  const numValue = parseFloat(finding.result.replace(',', '.'));
+  if (isNaN(numValue)) {
+    return;
+  }
+
+  if (!trendMap[finding.analysis]) trendMap[finding.analysis] = [];
+  const range = parseRefRange(finding.refValue);
+  trendMap[finding.analysis].push({
+    date: colKey,
+    isoDate,
+    value: numValue,
+    unit: finding.unit,
+    refMin: range?.min,
+    refMax: range?.max,
+  });
+};
+
+const processExamFinding = (
+  rawFinding: LabResultRow,
+  input: ProcessExamFindingsContext & {
+    isoDate: string;
+    microbiologyCategories: LabMicrobiologyCategory[];
+    microbiologyFindingsByCategory: Map<
+      LabMicrobiologyCategory,
+      Array<{ analysis: string; result: string }>
+    >;
+  }
+) => {
+  const finding = { ...rawFinding, analysis: normalizeAnalysisName(rawFinding.analysis) };
+  const lowerAnalysis = finding.analysis.toLowerCase();
+  const examIsMicrobiology = input.microbiologyCategories.length > 0;
+
+  if (
+    finding.qualitative ||
+    examIsMicrobiology ||
+    hasMicrobiologyPattern(finding.analysis) ||
+    hasMicrobiologyPattern(finding.result)
+  ) {
+    const category = getMicrobiologyCategoryForFinding(finding, input.microbiologyCategories);
+    if (category) {
+      appendMicrobiologyFinding(input.microbiologyFindingsByCategory, category, finding);
+    }
+  }
+
+  collectBilirubinFinding(input.bilirubinByCol, input.colKey, lowerAnalysis, finding.result);
+  collectComparisonFinding(
+    input.comparison,
+    input.seenComparison,
+    input.colKey,
+    finding,
+    lowerAnalysis
+  );
+  collectTrendFinding(input.trendMap, input.seenTrend, input.colKey, input.isoDate, finding);
+};
+
 const resolveMicrobiologyEntryLabel = (
   category: LabMicrobiologyCategory,
   examNames: string[]
@@ -335,67 +455,25 @@ const processFindings = (
     const colKey = buildExamColumnKey(exam, examDate);
     columnKeySet.add(colKey);
     const microbiologyCategories = resolveMicrobiologyCategoriesForExam(exam);
-    const examIsMicrobiology = microbiologyCategories.length > 0;
     const microbiologyFindingsByCategory = new Map<
       LabMicrobiologyCategory,
       Array<{ analysis: string; result: string }>
     >();
 
     for (const rawFinding of detail.findings) {
-      const finding = { ...rawFinding, analysis: normalizeAnalysisName(rawFinding.analysis) };
-      const lowerAnalysis = finding.analysis.toLowerCase();
-
-      if (
-        finding.qualitative ||
-        examIsMicrobiology ||
-        hasMicrobiologyPattern(finding.analysis) ||
-        hasMicrobiologyPattern(finding.result)
-      ) {
-        const category = getMicrobiologyCategoryForFinding(finding, microbiologyCategories);
-        if (category) {
-          appendMicrobiologyFinding(microbiologyFindingsByCategory, category, finding);
-        }
-      }
-
-      // Bilirrubina collection
-      if (lowerAnalysis.includes('bilirrubina')) {
-        if (!bilirubinByCol[colKey]) bilirubinByCol[colKey] = {};
-        if (lowerAnalysis.includes('total')) bilirubinByCol[colKey].total = finding.result;
-        else if (lowerAnalysis.includes('directa')) bilirubinByCol[colKey].directa = finding.result;
-        else if (lowerAnalysis.includes('indirecta'))
-          bilirubinByCol[colKey].indirecta = finding.result;
-      }
-
-      // Comparison grid
-      if (!isExcludedFromComparison(finding.analysis) && !lowerAnalysis.includes('bilirrubina')) {
-        const compKey = `${finding.analysis}::${colKey}`;
-        if (!seenComparison.has(compKey)) {
-          seenComparison.add(compKey);
-          if (!comparison[finding.analysis]) comparison[finding.analysis] = {};
-          comparison[finding.analysis][colKey] = finding;
-        }
-      }
-
-      // Trends (skip qualitative results — not graphable)
-      if (isTrendVariable(finding.analysis) && !finding.qualitative) {
-        const trendKey = `${finding.analysis}::${colKey}`;
-        if (!seenTrend.has(trendKey)) {
-          seenTrend.add(trendKey);
-          const numValue = parseFloat(finding.result.replace(',', '.'));
-          if (!isNaN(numValue)) {
-            if (!trendMap[finding.analysis]) trendMap[finding.analysis] = [];
-            const range = parseRefRange(finding.refValue);
-            trendMap[finding.analysis].push({
-              date: colKey,
-              isoDate,
-              value: numValue,
-              unit: finding.unit,
-              refMin: range?.min,
-              refMax: range?.max,
-            });
-          }
-        }
-      }
+      processExamFinding(rawFinding, {
+        exam,
+        examDate,
+        colKey,
+        comparison,
+        trendMap,
+        seenTrend,
+        seenComparison,
+        bilirubinByCol,
+        isoDate,
+        microbiologyCategories,
+        microbiologyFindingsByCategory,
+      });
     }
 
     microbiologyEntries.push(

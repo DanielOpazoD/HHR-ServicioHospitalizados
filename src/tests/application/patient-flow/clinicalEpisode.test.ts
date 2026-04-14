@@ -91,6 +91,18 @@ describe('clinicalEpisode application model', () => {
     expect(classifyPatientMovementForRecord('2026-03-06', patient).isNewAdmission).toBe(false);
   });
 
+  it('assigns a madrugada X+1 admission without hour only to the previous night shift when first seen on X', () => {
+    const patient = {
+      rut: '11.111.111-1',
+      patientName: 'Paciente',
+      admissionDate: '2026-03-06',
+      firstSeenDate: '2026-03-05',
+    };
+
+    expect(classifyPatientMovementForRecord('2026-03-05', patient).isNewAdmission).toBe(true);
+    expect(classifyPatientMovementForRecord('2026-03-06', patient).isNewAdmission).toBe(false);
+  });
+
   it('prefers the first observed census day for active episode anchors', () => {
     expect(
       resolveClinicalEpisodeAdmissionDate({

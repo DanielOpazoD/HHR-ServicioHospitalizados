@@ -51,6 +51,17 @@ Referencias:
 - `src/components/modals/RadiologyViewerModal.tsx`
 - `src/features/clinical-documents/components/ClinicalDocumentMMRADCopyDialog.tsx`
 
+## DailyRecord write path
+
+- El write path de `dailyRecord` debe mantener separadas las decisiones puras de recovery (`changed paths`, `retry origin`, `conflict summary`) del flujo de persistencia real.
+- El sync en background hacia `PatientMaster` debe reutilizar builders pequeños para seeds, eventos y patches derivados, en lugar de recomponer esos payloads inline por cada rama.
+
+Referencias:
+
+- `src/services/repositories/dailyRecordWriteSupport.ts`
+- `src/services/repositories/dailyRecordWriteRecoveryController.ts`
+- `src/services/repositories/dailyRecordMasterSyncController.ts`
+
 ## Scorecard de deuda viva
 
 Para regenerar un snapshot mínimo de hotspots, estabilidad de tests, crecimiento de `firestore.rules` y churn reciente:

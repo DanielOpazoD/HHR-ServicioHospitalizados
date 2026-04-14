@@ -16,6 +16,10 @@ import {
   resolveRecipientMutationFailureMessage,
   resolveRecipientSyncState,
 } from '@/hooks/controllers/censusEmailRecipientRuntimeController';
+import {
+  resolveRecipientListForSelection,
+  resolveRecipientListsAfterDelete,
+} from '@/hooks/controllers/censusEmailRecipientMutationController';
 import { shouldSkipRecipientSync } from '@/hooks/controllers/censusEmailRecipientSyncController';
 
 const RECIPIENT_LIST_KEY = 'censusEmailActiveRecipientListId';
@@ -135,7 +139,7 @@ export const useCensusEmailRecipientLists = ({
 
   const selectActiveRecipientList = useCallback(
     (listId: string) => {
-      const activeList = recipientLists.find(list => list.id === listId);
+      const activeList = resolveRecipientListForSelection(recipientLists, listId);
       if (!activeList || !canManageGlobalRecipientLists) {
         setActiveRecipientListId(listId);
         return;
@@ -366,7 +370,7 @@ export const useCensusEmailRecipientLists = ({
           const { executeRenameCensusRecipientList } = await loadCensusRecipientListUseCases();
           return executeRenameCensusRecipientList({
             canManageGlobalRecipientLists,
-            activeList: recipientLists.find(list => list.id === activeRecipientListId),
+            activeList: resolveRecipientListForSelection(recipientLists, activeRecipientListId),
             name,
             recipients,
             actor: user,
@@ -405,7 +409,9 @@ export const useCensusEmailRecipientLists = ({
         {
           onSuccess: result => {
             const fallbackList = result.fallbackList;
-            setRecipientLists(previousLists => previousLists.filter(list => list.id !== listId));
+            setRecipientLists(previousLists =>
+              resolveRecipientListsAfterDelete(previousLists, listId)
+            );
             if (fallbackList) {
               setActiveRecipientListId(fallbackList.id);
             }
