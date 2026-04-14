@@ -113,7 +113,16 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
   };
 
   return (
-    <td className="py-0.5 px-1 border-r border-slate-200 w-32">
+    <td
+      className="py-0.5 px-1 border-r border-slate-200 w-32"
+      title={
+        !showEditButton && !isCriticalEmpty
+          ? data.admissionTime
+            ? `Hora de ingreso: ${data.admissionTime}`
+            : 'Hora de ingreso: no registrada'
+          : undefined
+      }
+    >
       <div
         className="w-full relative"
         onFocusCapture={() => {
@@ -136,7 +145,7 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
               aria-expanded={isEditorOpen}
               onClick={() => setIsEditorOpen(current => !current)}
               className={clsx(
-                'w-full h-7 border rounded text-[11px] leading-none flex items-center bg-white px-1.5 text-left relative',
+                'w-full h-7 border rounded text-[11px] leading-none flex items-center bg-white px-1.5 text-left relative cursor-default',
                 isCriticalEmpty
                   ? 'border-red-400 border-2 bg-red-50'
                   : isAdmissionDateSuspicious
@@ -163,7 +172,7 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
               <div
                 role="dialog"
                 aria-label="Configurar fecha y hora de ingreso"
-                className="absolute left-0 top-full mt-1 min-w-[10rem] rounded-xl border border-slate-200 bg-white p-2 shadow-xl z-30"
+                className="absolute left-0 top-full mt-1 min-w-[10rem] rounded-xl border border-slate-200 bg-white p-2 shadow-xl z-[100]"
               >
                 <div className="space-y-1">
                   {admissionDateOptions.length === 0 ? (
@@ -210,7 +219,7 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
         ) : (
           <div
             className={clsx(
-              'w-full h-7 border rounded text-[11px] leading-none flex items-center bg-white px-1.5',
+              'w-full h-7 border rounded text-[11px] leading-none flex items-center bg-white px-1.5 cursor-default',
               isCriticalEmpty
                 ? 'border-red-400 border-2 bg-red-50'
                 : isAdmissionDateSuspicious
@@ -221,7 +230,9 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
             title={
               isCriticalEmpty
                 ? 'Campo crítico requerido para entrega'
-                : 'Solo editable durante el primer día observado del episodio'
+                : data.admissionTime
+                  ? `Hora de ingreso: ${data.admissionTime}`
+                  : 'Hora de ingreso: no registrada'
             }
           >
             <span className="truncate">{selectedAdmissionLabel}</span>
