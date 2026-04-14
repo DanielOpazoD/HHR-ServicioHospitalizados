@@ -5,6 +5,7 @@ import {
   resolveAdmissionDateMax,
   resolveAdmissionDateOptions,
   resolveAdmissionDateIsEditable,
+  resolveAdmissionTooltip,
   resolveIsCriticalAdmissionEmpty,
 } from '@/features/census/controllers/admissionInputController';
 
@@ -180,6 +181,28 @@ describe('admissionInputController', () => {
           isNewAdmission: true,
         })
       ).toBe(true);
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // Admission tooltip
+  // -----------------------------------------------------------------------
+
+  describe('resolveAdmissionTooltip', () => {
+    it('shows admission time when available', () => {
+      expect(resolveAdmissionTooltip('14:30')).toBe('Hora de ingreso: 14:30');
+    });
+
+    it('shows "no registrada" when time is undefined', () => {
+      expect(resolveAdmissionTooltip(undefined)).toBe('Hora de ingreso: no registrada');
+    });
+
+    it('shows "no registrada" when time is empty string', () => {
+      expect(resolveAdmissionTooltip('')).toBe('Hora de ingreso: no registrada');
+    });
+
+    it('preserves full time format including minutes', () => {
+      expect(resolveAdmissionTooltip('08:05')).toBe('Hora de ingreso: 08:05');
     });
   });
 });

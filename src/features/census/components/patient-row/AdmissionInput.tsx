@@ -1,5 +1,16 @@
 /**
- * AdmissionInput - Admission date/time input (critical field)
+ * AdmissionInput — Admission date/time input cell for the census table.
+ *
+ * Behaviour summary:
+ *  - **Editable** on the patient's first observed day (`firstSeenDate`)
+ *    or when `admissionDate` matches `recordDate` (legacy fallback).
+ *  - **Read-only** on all subsequent days.
+ *  - **Tooltip** on hover shows the admission time (e.g. "Hora de ingreso: 14:30")
+ *    or "Hora de ingreso: no registrada" if the time was never set.
+ *  - **Popover editor** (when editable) renders above table rows via z-[100]
+ *    and the census table uses `overflow-y-visible` to prevent clipping.
+ *  - Uses `cursor-default` to override the drag-and-drop grab cursor,
+ *    ensuring the native tooltip is visible on hover.
  */
 
 import React, { useState } from 'react';
@@ -14,6 +25,7 @@ import {
   resolveAdmissionDateAudit,
   resolveAdmissionDateOptions,
   resolveAdmissionDateIsEditable,
+  resolveAdmissionTooltip,
   resolveIsCriticalAdmissionEmpty,
 } from '@/features/census/controllers/admissionInputController';
 
@@ -117,9 +129,7 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
       className="py-0.5 px-1 border-r border-slate-200 w-32"
       title={
         !showEditButton && !isCriticalEmpty
-          ? data.admissionTime
-            ? `Hora de ingreso: ${data.admissionTime}`
-            : 'Hora de ingreso: no registrada'
+          ? resolveAdmissionTooltip(data.admissionTime)
           : undefined
       }
     >
@@ -158,9 +168,7 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
                   ? 'Campo crítico requerido para entrega'
                   : isAdmissionDateSuspicious
                     ? `${audit.message || 'Fecha sospechosa'}${audit.suggestedAdmissionDate ? ` Sugerida: ${audit.suggestedAdmissionDate}` : ''}`
-                    : data.admissionTime
-                      ? `Hora de ingreso: ${data.admissionTime}`
-                      : 'Hora de ingreso: no registrada'
+                    : resolveAdmissionTooltip(data.admissionTime)
               }
             >
               <span className="truncate block w-full pr-4">{selectedAdmissionLabel}</span>
@@ -230,9 +238,7 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
             title={
               isCriticalEmpty
                 ? 'Campo crítico requerido para entrega'
-                : data.admissionTime
-                  ? `Hora de ingreso: ${data.admissionTime}`
-                  : 'Hora de ingreso: no registrada'
+                : resolveAdmissionTooltip(data.admissionTime)
             }
           >
             <span className="truncate">{selectedAdmissionLabel}</span>

@@ -1,6 +1,16 @@
 /**
- * @module LabViewerControls
- * @description Patient selector dropdown, manual RUT input, and search button for the lab viewer.
+ * LabViewerControls
+ *
+ * Patient selector and search controls for the laboratory results viewer.
+ *
+ * Two search modes:
+ *  1. **Bed selector** (default) — dropdown of patients currently in census beds,
+ *     deduplicated by RUT. Selecting a patient sets the RUT for the search.
+ *  2. **Manual RUT** — toggled via "Buscar por RUT externo". Free-text input
+ *     for searching lab results of patients not in census (discharged, external).
+ *     Supports Enter key and a dedicated "Buscar RUT" button.
+ *
+ * Selecting from the bed dropdown automatically exits manual mode.
  */
 
 import React, { useCallback, useState } from 'react';

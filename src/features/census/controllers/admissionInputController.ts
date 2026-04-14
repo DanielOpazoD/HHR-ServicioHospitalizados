@@ -65,6 +65,15 @@ export const resolveAdmissionDateOptions = (
   return options;
 };
 
+/**
+ * Resolves the tooltip text for the admission date cell.
+ *
+ * @param admissionTime - HH:MM string or undefined.
+ * @returns Human-readable tooltip (e.g. "Hora de ingreso: 14:30").
+ */
+export const resolveAdmissionTooltip = (admissionTime?: string): string =>
+  admissionTime ? `Hora de ingreso: ${admissionTime}` : 'Hora de ingreso: no registrada';
+
 export const resolveIsCriticalAdmissionEmpty = (
   patientName?: string,
   admissionDate?: string
