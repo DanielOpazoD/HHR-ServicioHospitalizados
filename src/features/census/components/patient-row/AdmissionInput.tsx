@@ -149,7 +149,9 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
                   ? 'Campo crítico requerido para entrega'
                   : isAdmissionDateSuspicious
                     ? `${audit.message || 'Fecha sospechosa'}${audit.suggestedAdmissionDate ? ` Sugerida: ${audit.suggestedAdmissionDate}` : ''}`
-                    : 'Configurar fecha y hora de ingreso'
+                    : data.admissionTime
+                      ? `Hora de ingreso: ${data.admissionTime}`
+                      : 'Hora de ingreso: no registrada'
               }
             >
               <span className="truncate block w-full pr-4">{selectedAdmissionLabel}</span>
