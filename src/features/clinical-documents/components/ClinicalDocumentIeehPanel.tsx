@@ -28,10 +28,9 @@ import {
   buildIeehDischargeFromEpicrisis,
   type IeehPatientSnapshot,
 } from '@/features/clinical-documents/controllers/clinicalDocumentIeehPrintController';
+import { FonasaSearchInput } from '@/features/clinical-documents/components/FonasaSearchInput';
 import type { TerminologyConcept } from '@/services/terminology/terminologyService';
 import { searchDiagnoses, forceAISearch } from '@/services/terminology/terminologyService';
-import type { FonasaEntry, FonasaCatalog } from '@/services/terminology/fonasaService';
-import { searchFonasa } from '@/services/terminology/fonasaService';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -66,132 +65,6 @@ interface ClinicalDocumentIeehPanelProps {
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// FonasaSearchInput — inline searchable input for FONASA codes
-// ---------------------------------------------------------------------------
-
-/** Props for the inline FONASA code search input. */
-interface FonasaSearchInputProps {
-  catalog: FonasaCatalog;
-  code: string;
-  description: string;
-  onSelect: (entry: FonasaEntry) => void;
-  onClear: () => void;
-  placeholder?: string;
-}
-
-/** Inline search input for FONASA intervention/procedure codes. */
-const FonasaSearchInput: React.FC<FonasaSearchInputProps> = ({
-  catalog,
-  code,
-  description,
-  onSelect,
-  onClear,
-  placeholder = 'Buscar por nombre o código FONASA...',
-}) => {
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState<FonasaEntry[]>([]);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [searching, setSearching] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, []);
-
-  const handleChange = useCallback(
-    (value: string) => {
-      setQuery(value);
-      if (timerRef.current) clearTimeout(timerRef.current);
-      if (value.length < 2) {
-        setResults([]);
-        setShowDropdown(false);
-        return;
-      }
-      setShowDropdown(true);
-      timerRef.current = setTimeout(async () => {
-        setSearching(true);
-        try {
-          const res = await searchFonasa(catalog, value);
-          setResults(res);
-        } catch {
-          setResults([]);
-        } finally {
-          setSearching(false);
-        }
-      }, 250);
-    },
-    [catalog]
-  );
-
-  if (code) {
-    return (
-      <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-2 py-1.5">
-        <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-600">
-          {code}
-        </span>
-        <span className="flex-1 text-xs text-slate-700 truncate">{description}</span>
-        <button
-          type="button"
-          onClick={onClear}
-          className="p-0.5 rounded text-slate-400 hover:text-red-500 hover:bg-red-50"
-          title="Cambiar"
-        >
-          <X size={12} />
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative">
-      <div className="relative">
-        <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input
-          type="text"
-          value={query}
-          onChange={e => handleChange(e.target.value)}
-          onFocus={() => results.length > 0 && setShowDropdown(true)}
-          onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
-          placeholder={placeholder}
-          className="w-full rounded-md border border-slate-200 py-1.5 pl-7 pr-2 text-xs text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
-        />
-        {searching && (
-          <Loader2
-            size={13}
-            className="absolute right-2 top-1/2 -translate-y-1/2 animate-spin text-slate-400"
-          />
-        )}
-      </div>
-      {showDropdown && results.length > 0 && (
-        <div className="absolute z-30 mt-1 max-h-40 w-full overflow-y-auto rounded-md border border-slate-200 bg-white shadow-lg">
-          {results.map(entry => (
-            <button
-              key={entry.code}
-              type="button"
-              onMouseDown={e => e.preventDefault()}
-              onClick={() => {
-                onSelect(entry);
-                setQuery('');
-                setShowDropdown(false);
-                setResults([]);
-              }}
-              className="flex w-full items-start gap-2 px-2.5 py-1.5 text-left hover:bg-emerald-50 transition-colors"
-            >
-              <span className="shrink-0 rounded bg-slate-100 px-1 py-0.5 text-[10px] font-mono font-bold text-slate-600">
-                {entry.code}
-              </span>
-              <span className="text-xs text-slate-700 leading-snug">{entry.description}</span>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
 
 // ---------------------------------------------------------------------------
 // Main component
@@ -398,6 +271,7 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
                   type="button"
                   onClick={handleClearDiagnosis}
                   className="p-0.5 rounded text-slate-400 hover:text-red-500 hover:bg-red-50"
+                  aria-label="Cambiar diagnóstico CIE-10"
                   title="Cambiar diagnóstico"
                 >
                   <X size={12} />
@@ -432,6 +306,7 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
                     onClick={handleAiSearch}
                     disabled={searchQuery.length < 2 || isAiSearching}
                     className="flex items-center gap-1 rounded-md border border-violet-200 bg-violet-50 px-2 py-1.5 text-[10px] font-semibold text-violet-700 hover:bg-violet-100 disabled:opacity-40 transition-colors"
+                    aria-label="Buscar diagnóstico con inteligencia artificial"
                     title="Buscar con IA"
                   >
                     {isAiSearching ? (
@@ -530,6 +405,13 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
                       intervencionQuirurgDescrip: entry.description,
                     })
                   }
+                  onManualChange={text =>
+                    commitDraft({
+                      ...localDraft,
+                      intervencionCodigo: undefined,
+                      intervencionQuirurgDescrip: text,
+                    })
+                  }
                   onClear={() =>
                     commitDraft({
                       ...localDraft,
@@ -581,6 +463,13 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
                       procedimientoDescrip: entry.description,
                     })
                   }
+                  onManualChange={text =>
+                    commitDraft({
+                      ...localDraft,
+                      procedimientoCodigo: undefined,
+                      procedimientoDescrip: text,
+                    })
+                  }
                   onClear={() =>
                     commitDraft({
                       ...localDraft,
@@ -607,22 +496,21 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
             />
           </div>
 
-          {/* ---- Actions ---- */}
-          {localDraft.cie10Code && (
-            <div className="flex items-center justify-between pt-2 border-t border-emerald-100">
-              <button
-                type="button"
-                onClick={handlePrintIeeh}
-                disabled={isPrinting}
-                className="flex items-center gap-1.5 rounded-md border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50 transition-colors"
-              >
-                {isPrinting ? (
-                  <Loader2 size={13} className="animate-spin" />
-                ) : (
-                  <Printer size={13} />
-                )}
-                Imprimir IEEH
-              </button>
+          {/* ---- Actions (always visible when panel is open) ---- */}
+          <div className="flex items-center justify-between pt-2 border-t border-emerald-100">
+            <button
+              type="button"
+              onClick={handlePrintIeeh}
+              disabled={isPrinting || !localDraft.cie10Code}
+              className="flex items-center gap-1.5 rounded-md border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              title={
+                localDraft.cie10Code ? 'Imprimir IEEH' : 'Seleccione un diagnóstico CIE-10 primero'
+              }
+            >
+              {isPrinting ? <Loader2 size={13} className="animate-spin" /> : <Printer size={13} />}
+              Imprimir IEEH
+            </button>
+            {localDraft.cie10Code && (
               <button
                 type="button"
                 onClick={handleRemovePanel}
@@ -630,8 +518,8 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
               >
                 Eliminar egreso estadístico
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
     </div>

@@ -10,8 +10,10 @@ export interface DischargeFormData {
   condicionEgreso?: string;
   intervencionQuirurgica?: string;
   intervencionQuirurgDescrip?: string;
+  intervencionCodigo?: string;
   procedimiento?: string;
   procedimientoDescrip?: string;
+  procedimientoCodigo?: string;
   tratanteApellido1?: string;
   tratanteApellido2?: string;
   tratanteNombre?: string;

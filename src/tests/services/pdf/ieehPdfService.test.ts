@@ -38,6 +38,7 @@ const collectDrawnText = (): string =>
 
 // Mock fetch
 global.fetch = vi.fn().mockResolvedValue({
+  ok: true,
   arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8)),
 });
 

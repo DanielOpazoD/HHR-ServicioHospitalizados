@@ -76,6 +76,11 @@ export const fillIEEHForm = async (
 
   // 1. Load the template PDF
   const templateResponse = await fetch(TEMPLATE_PATH);
+  if (!templateResponse.ok) {
+    throw new Error(
+      `No se pudo cargar la plantilla IEEH (${templateResponse.status}). Verifique que el archivo ${TEMPLATE_PATH} exista.`
+    );
+  }
   const templateBytes = await templateResponse.arrayBuffer();
   const pdfDoc = await PDFDocument.load(templateBytes);
   const textColor = rgb(0, 0, 0);
@@ -91,14 +96,14 @@ export const fillIEEHForm = async (
   const drawText = (
     text: string,
     coords: { x: number; y: number; maxWidth: number },
-    options: { fontSize?: number; bold?: boolean } = {}
+    options: { fontSize?: number; bold?: boolean; preserveCase?: boolean } = {}
   ) => {
     if (!text) return;
     const fontSize = options.fontSize ?? FONT_SIZE;
     const f: PDFFont = options.bold ? fontBold : font;
 
-    // Force uppercase for all form text
-    const displayText = text.toUpperCase();
+    // Uppercase by default, preserve case when explicitly requested
+    const displayText = options.preserveCase ? text : text.toUpperCase();
 
     // Draw each character individually with extra spacing for legibility
     let xOffset = coords.x;
@@ -117,19 +122,32 @@ export const fillIEEHForm = async (
   const drawMultilineText = (
     text: string,
     coords: { x: number; y: number; maxWidth: number },
-    options: { fontSize?: number; bold?: boolean; lineHeight?: number; maxLines?: number } = {}
+    options: {
+      fontSize?: number;
+      bold?: boolean;
+      lineHeight?: number;
+      maxLines?: number;
+      preserveCase?: boolean;
+    } = {}
   ) => {
     if (!text) return;
     const fontSize = options.fontSize ?? FONT_SIZE;
     const f: PDFFont = options.bold ? fontBold : font;
     const lineHeight = options.lineHeight ?? fontSize + 2;
     const maxLines = options.maxLines ?? 3;
-    const displayText = text.toUpperCase();
+    const displayText = options.preserveCase ? text : text.toUpperCase();
     const wrapped = wrapTextByWidth(displayText, coords.maxWidth, f, fontSize);
     const linesToDraw = wrapped.slice(0, maxLines);
 
     linesToDraw.forEach((line, lineIndex) => {
-      drawText(line, { ...coords, y: coords.y - lineIndex * lineHeight }, options);
+      drawText(
+        line,
+        { ...coords, y: coords.y - lineIndex * lineHeight },
+        {
+          ...options,
+          preserveCase: true, // already handled above
+        }
+      );
     });
   };
 
@@ -231,15 +249,35 @@ export const fillIEEHForm = async (
 
   // #39: INTERVENCIÓN QUIRÚRGICA
   drawOptionalText(drawText, discharge.intervencionQuirurgica, FIELD_COORDS.intervencionQuirurgica);
-  drawOptionalText(
-    drawText,
-    discharge.intervencionQuirurgDescrip,
-    FIELD_COORDS.intervencionQuirurgDescrip
-  );
+  if (discharge.intervencionQuirurgDescrip) {
+    drawMultilineText(
+      discharge.intervencionQuirurgDescrip,
+      FIELD_COORDS.intervencionQuirurgDescrip,
+      {
+        fontSize: 8,
+        preserveCase: true,
+        maxLines: 3,
+        lineHeight: 9,
+      }
+    );
+  }
+  if (discharge.intervencionCodigo) {
+    drawText(discharge.intervencionCodigo, FIELD_COORDS.intervencionCodigo, { fontSize: 9 });
+  }
 
   // #42: PROCEDIMIENTO
   drawOptionalText(drawText, discharge.procedimiento, FIELD_COORDS.procedimiento);
-  drawOptionalText(drawText, discharge.procedimientoDescrip, FIELD_COORDS.procedimientoDescrip);
+  if (discharge.procedimientoDescrip) {
+    drawMultilineText(discharge.procedimientoDescrip, FIELD_COORDS.procedimientoDescrip, {
+      fontSize: 8,
+      preserveCase: true,
+      maxLines: 3,
+      lineHeight: 9,
+    });
+  }
+  if (discharge.procedimientoCodigo) {
+    drawText(discharge.procedimientoCodigo, FIELD_COORDS.procedimientoCodigo, { fontSize: 9 });
+  }
 
   // #49: MÉDICO TRATANTE
   drawOptionalText(drawText, discharge.tratanteApellido1, FIELD_COORDS.tratanteApellido1);

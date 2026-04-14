@@ -60,10 +60,12 @@ export const FIELD_COORDS = {
   // ── #39: INTERVENCIÓN QUIRÚRGICA ──
   intervencionQuirurgica: { x: 150.08, y: 158.67, maxWidth: 11.19 },
   intervencionQuirurgDescrip: { x: 186.41, y: 148.64, maxWidth: 178.06 },
+  intervencionCodigo: { x: 380, y: 158.67, maxWidth: 80 },
 
   // ── #42: PROCEDIMIENTO ──
   procedimiento: { x: 59.68, y: 100.83, maxWidth: 13.17 },
   procedimientoDescrip: { x: 234.27, y: 116.67, maxWidth: 128.83 },
+  procedimientoCodigo: { x: 380, y: 100.83, maxWidth: 80 },
 
   // ── #49: MÉDICO TRATANTE ──
   tratanteApellido1: { x: 29.99, y: 57.34, maxWidth: 104.05 },
