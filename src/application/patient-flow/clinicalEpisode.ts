@@ -98,7 +98,9 @@ export const classifyPatientMovementForRecord = (
           admissionDate: normalizedAdmissionDate,
           admissionTime: patient.admissionTime,
         })
-      : normalizedFirstSeenDate;
+      : // Legacy fallback: use admissionDate as anchor when firstSeenDate
+        // was never set (patients created before the feature existed).
+        normalizedFirstSeenDate || normalizedAdmissionDate;
 
   if (normalizedRecordDate && resolvedClinicalAdmissionDate) {
     return {

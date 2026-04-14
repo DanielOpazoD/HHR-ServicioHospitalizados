@@ -47,6 +47,7 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
     resolveAdmissionDateIsEditable({
       recordDate: currentDateString,
       firstSeenDate: data.firstSeenDate,
+      admissionDate: data.admissionDate,
       hasPatient: Boolean(data.patientName?.trim()),
       isNewAdmission,
     });

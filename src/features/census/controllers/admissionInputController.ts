@@ -73,11 +73,14 @@ export const resolveIsCriticalAdmissionEmpty = (
 export const resolveAdmissionDateIsEditable = ({
   recordDate,
   firstSeenDate,
+  admissionDate,
   hasPatient,
   isNewAdmission,
 }: {
   recordDate: string;
   firstSeenDate?: string;
+  /** Fallback when firstSeenDate is not set (legacy patients). */
+  admissionDate?: string;
   hasPatient?: boolean;
   isNewAdmission: boolean;
 }): boolean => {
@@ -90,6 +93,13 @@ export const resolveAdmissionDateIsEditable = ({
 
   if (normalizedRecordDate && normalizedFirstSeenDate) {
     return normalizedRecordDate === normalizedFirstSeenDate;
+  }
+
+  // Legacy fallback: if firstSeenDate is not set but admissionDate matches
+  // the record date, the patient was admitted on this day and should be editable.
+  const normalizedAdmissionDate = normalizeDateOnly(admissionDate);
+  if (normalizedRecordDate && normalizedAdmissionDate) {
+    return normalizedRecordDate === normalizedAdmissionDate;
   }
 
   return isNewAdmission;
