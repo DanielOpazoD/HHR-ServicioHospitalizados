@@ -267,14 +267,19 @@ export const searchFonasaAI = async (
 ): Promise<FonasaEntry[]> => {
   if (!query || query.length < 2) return [];
 
-  // 1. Try local AI provider (dev mode)
+  // 1. Try local AI provider (dev mode: Gemini/OpenAI/Anthropic)
   if (isLocalAIAvailable()) {
-    const rawText = await callLocalAI(buildFonasaAIPrompt(catalog, query));
-    if (rawText) return parseAIRawText(rawText);
+    try {
+      const rawText = await callLocalAI(buildFonasaAIPrompt(catalog, query));
+      if (rawText) return parseAIRawText(rawText);
+    } catch {
+      // Local AI failed — fall through to serverless
+    }
   }
 
-  // 2. Fallback: serverless endpoint (sends custom prompt via `prompt` field
-  //    so the serverless function uses it directly instead of wrapping in CIE-10 template)
+  // 2. Fallback: serverless endpoint (production only — not available on localhost)
+  if (import.meta.env.DEV) return [];
+
   try {
     const authHeaders = await resolveCurrentUserAuthHeaders();
     const response = await fetch('/.netlify/functions/cie10-ai-search', {

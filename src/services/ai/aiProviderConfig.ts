@@ -65,7 +65,7 @@ export const callLocalAI = async (prompt: string): Promise<string> => {
       const { GoogleGenAI } = await import('@google/genai');
       const ai = new GoogleGenAI({ apiKey: config.apiKey });
       const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash',
+        model: 'gemini-3-flash-preview',
         contents: prompt,
       });
       return response.text?.trim() ?? '';
