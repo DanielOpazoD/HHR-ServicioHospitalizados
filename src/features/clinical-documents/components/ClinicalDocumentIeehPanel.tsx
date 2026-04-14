@@ -39,9 +39,6 @@ import { searchDiagnoses, forceAISearch } from '@/services/terminology/terminolo
 /** Delay before triggering CIE-10 search after typing stops. */
 const SEARCH_DEBOUNCE_MS = 350;
 
-/** Delay before hiding dropdown after input blur (allows click on results). */
-const BLUR_HIDE_DELAY_MS = 200;
-
 // ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
@@ -91,8 +88,8 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
   const [isAiSearching, setIsAiSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const blurTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const cie10ContainerRef = useRef<HTMLDivElement>(null);
 
   // Sync from external draft when it changes (e.g. autosave round-trip or clear)
   useEffect(() => {
@@ -103,10 +100,21 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
   useEffect(() => {
     return () => {
       if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
-      if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
       abortRef.current?.abort();
     };
   }, []);
+
+  // Close CIE-10 dropdown when clicking outside
+  useEffect(() => {
+    if (!showResults) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (cie10ContainerRef.current && !cie10ContainerRef.current.contains(e.target as Node)) {
+        setShowResults(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showResults]);
 
   /** Persist local changes to parent via reducer dispatch. */
   const commitDraft = useCallback(
@@ -223,11 +231,6 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
     setIsOpen(false);
   }, [onClearDraft]);
 
-  /** Delayed hide of search results dropdown (allows click on results). */
-  const handleSearchBlur = useCallback(() => {
-    blurTimerRef.current = setTimeout(() => setShowResults(false), BLUR_HIDE_DELAY_MS);
-  }, []);
-
   return (
     <div className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50/40 print:hidden">
       {/* Collapse header */}
@@ -278,7 +281,7 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
                 </button>
               </div>
             ) : (
-              <div className="relative">
+              <div className="relative" ref={cie10ContainerRef}>
                 <div className="flex items-center gap-1">
                   <div className="relative flex-1">
                     <Search
@@ -290,7 +293,6 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
                       value={searchQuery}
                       onChange={e => handleSearchChange(e.target.value)}
                       onFocus={() => searchResults.length > 0 && setShowResults(true)}
-                      onBlur={handleSearchBlur}
                       placeholder="Buscar diagnóstico CIE-10..."
                       className="w-full rounded-md border border-slate-200 py-1.5 pl-7 pr-2 text-xs text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
                     />

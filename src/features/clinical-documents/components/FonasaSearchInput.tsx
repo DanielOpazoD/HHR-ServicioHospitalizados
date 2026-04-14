@@ -71,13 +71,37 @@ export const FonasaSearchInput: React.FC<FonasaSearchInputProps> = ({
   const [searching, setSearching] = useState(false);
   const [aiSearching, setAiSearching] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const aiAvailable = isFonasaAIAvailable();
 
+  // Reset internal state when props are cleared externally (e.g. "Eliminar egreso")
+  useEffect(() => {
+    if (!code && !description) {
+      setMode('catalog');
+      setQuery('');
+      setResults([]);
+      setShowDropdown(false);
+    }
+  }, [code, description]);
+
+  // Cleanup timers on unmount
   useEffect(() => {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
+
+  // Close dropdown when clicking outside the component
+  useEffect(() => {
+    if (!showDropdown) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showDropdown]);
 
   /** Debounced catalog search using abbreviation expansion. */
   const handleCatalogSearch = useCallback(
@@ -190,7 +214,7 @@ export const FonasaSearchInput: React.FC<FonasaSearchInputProps> = ({
 
   // --- Catalog search mode ---
   return (
-    <div>
+    <div ref={containerRef}>
       <div className="relative">
         <div className="flex items-center gap-1">
           <div className="relative flex-1">
@@ -200,7 +224,6 @@ export const FonasaSearchInput: React.FC<FonasaSearchInputProps> = ({
               value={query}
               onChange={e => handleCatalogSearch(e.target.value)}
               onFocus={() => results.length > 0 && setShowDropdown(true)}
-              onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
               placeholder={placeholder}
               className="w-full rounded-md border border-slate-200 py-1.5 pl-7 pr-2 text-xs text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
             />
