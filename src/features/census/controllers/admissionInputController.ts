@@ -70,6 +70,36 @@ export const resolveIsCriticalAdmissionEmpty = (
   admissionDate?: string
 ): boolean => Boolean(patientName) && !admissionDate;
 
+/**
+ * Determines whether the admission date input is editable on a given census day.
+ *
+ * Editability rules (in priority order):
+ *  1. No patient in bed → **not editable**
+ *  2. `firstSeenDate` matches `recordDate` → **editable** (modern patients)
+ *  3. `firstSeenDate` set but doesn't match → **not editable** (past admission)
+ *  4. No `firstSeenDate` but `admissionDate` matches `recordDate` → **editable**
+ *     (legacy fallback — patients created before `firstSeenDate` existed)
+ *  5. None of the above → falls back to `isNewAdmission` flag
+ *
+ * @example
+ * // Modern patient on admission day
+ * resolveAdmissionDateIsEditable({
+ *   recordDate: '2026-04-10', firstSeenDate: '2026-04-10',
+ *   hasPatient: true, isNewAdmission: true
+ * }); // → true
+ *
+ * // Legacy patient on admission day (no firstSeenDate)
+ * resolveAdmissionDateIsEditable({
+ *   recordDate: '2026-04-10', admissionDate: '2026-04-10',
+ *   hasPatient: true, isNewAdmission: false
+ * }); // → true (admissionDate fallback)
+ *
+ * // Any patient on day after admission
+ * resolveAdmissionDateIsEditable({
+ *   recordDate: '2026-04-11', firstSeenDate: '2026-04-10',
+ *   hasPatient: true, isNewAdmission: false
+ * }); // → false
+ */
 export const resolveAdmissionDateIsEditable = ({
   recordDate,
   firstSeenDate,

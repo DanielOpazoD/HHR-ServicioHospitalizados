@@ -118,4 +118,61 @@ describe('clinicalEpisode application model', () => {
       episodeKey: '22.222.222-2__2026-03-07',
     });
   });
+
+  // -----------------------------------------------------------------------
+  // Legacy patients (no firstSeenDate)
+  // -----------------------------------------------------------------------
+
+  describe('legacy patients without firstSeenDate', () => {
+    it('uses admissionDate as fallback anchor on admission day', () => {
+      const patient = {
+        rut: '11.111.111-1',
+        patientName: 'Paciente Legacy',
+        admissionDate: '2026-04-10',
+        // no firstSeenDate — legacy patient
+      };
+
+      expect(classifyPatientMovementForRecord('2026-04-10', patient).isNewAdmission).toBe(true);
+    });
+
+    it('does not show as new admission on subsequent days', () => {
+      const patient = {
+        admissionDate: '2026-04-10',
+      };
+
+      expect(classifyPatientMovementForRecord('2026-04-11', patient).isNewAdmission).toBe(false);
+      expect(classifyPatientMovementForRecord('2026-04-12', patient).isNewAdmission).toBe(false);
+    });
+
+    it('handles legacy patient whose name was changed on X+1', () => {
+      // Patient admitted day X, name changed day X+1 — still no firstSeenDate
+      const patient = {
+        admissionDate: '2026-04-10',
+        // firstSeenDate was never set because patient had identity before feature existed
+      };
+
+      // Day X: should be new
+      expect(classifyPatientMovementForRecord('2026-04-10', patient).isNewAdmission).toBe(true);
+      // Day X+1: NOT new (even after name change)
+      expect(classifyPatientMovementForRecord('2026-04-11', patient).isNewAdmission).toBe(false);
+    });
+
+    it('falls back to clinical day logic when neither firstSeenDate nor admissionDate exist', () => {
+      const patient = {
+        // completely empty — edge case
+      };
+
+      expect(classifyPatientMovementForRecord('2026-04-10', patient).isNewAdmission).toBe(false);
+    });
+
+    it('uses admissionDate for same-day readmission without firstSeenDate', () => {
+      const patient = {
+        admissionDate: '2026-04-10',
+        admissionTime: '14:00',
+        // no firstSeenDate
+      };
+
+      expect(classifyPatientMovementForRecord('2026-04-10', patient).isNewAdmission).toBe(true);
+    });
+  });
 });

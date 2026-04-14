@@ -121,4 +121,65 @@ describe('admissionInputController', () => {
       { value: '2026-03-11', label: '11/03/2026' },
     ]);
   });
+
+  // -----------------------------------------------------------------------
+  // Legacy patients (admissionDate fallback)
+  // -----------------------------------------------------------------------
+
+  describe('resolveAdmissionDateIsEditable — legacy patients', () => {
+    it('is editable on admission day via admissionDate fallback when firstSeenDate is missing', () => {
+      expect(
+        resolveAdmissionDateIsEditable({
+          recordDate: '2026-04-10',
+          admissionDate: '2026-04-10',
+          hasPatient: true,
+          isNewAdmission: false,
+        })
+      ).toBe(true);
+    });
+
+    it('is NOT editable on day after admission via admissionDate fallback', () => {
+      expect(
+        resolveAdmissionDateIsEditable({
+          recordDate: '2026-04-11',
+          admissionDate: '2026-04-10',
+          hasPatient: true,
+          isNewAdmission: false,
+        })
+      ).toBe(false);
+    });
+
+    it('firstSeenDate takes priority over admissionDate when both exist', () => {
+      // firstSeenDate doesn't match recordDate, admissionDate does
+      expect(
+        resolveAdmissionDateIsEditable({
+          recordDate: '2026-04-10',
+          firstSeenDate: '2026-04-09',
+          admissionDate: '2026-04-10',
+          hasPatient: true,
+          isNewAdmission: false,
+        })
+      ).toBe(false); // firstSeenDate wins (09 ≠ 10)
+    });
+
+    it('handles completely empty patient (no dates at all)', () => {
+      expect(
+        resolveAdmissionDateIsEditable({
+          recordDate: '2026-04-10',
+          hasPatient: true,
+          isNewAdmission: false,
+        })
+      ).toBe(false);
+    });
+
+    it('allows editing when isNewAdmission fallback is true and no dates set', () => {
+      expect(
+        resolveAdmissionDateIsEditable({
+          recordDate: '2026-04-10',
+          hasPatient: true,
+          isNewAdmission: true,
+        })
+      ).toBe(true);
+    });
+  });
 });

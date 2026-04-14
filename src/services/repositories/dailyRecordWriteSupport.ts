@@ -352,6 +352,22 @@ export const resolveRemoteWriteRecovery = async (
   };
 };
 
+/**
+ * Real-time sync of patient master index when a daily record is saved.
+ *
+ * Runs in the background (non-blocking, fire-and-forget) and syncs:
+ *  1. **Demographics** for patients currently in beds (name, RUT, birthDate, etc.)
+ *  2. **Ingreso events** for patients in beds (via their admissionDate)
+ *  3. **Egreso events** from the `discharges[]` array — also creates the
+ *     patient + Ingreso if they weren't in beds (same-day discharge edge case)
+ *  4. **Traslado events** from the `transfers[]` array — same creation logic
+ *
+ * Uses `arrayUnion` for hospitalization events, so running multiple times
+ * is idempotent (no duplicate events).
+ *
+ * This eliminates the need for manual "Análisis Retroactivo" for new data.
+ * Historical data still requires the manual sync in the admin panel.
+ */
 export const syncPatientsToMasterInBackground = (record: DailyRecord): void => {
   setTimeout(async () => {
     try {

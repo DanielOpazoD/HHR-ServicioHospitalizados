@@ -78,6 +78,36 @@ export const buildPatientPresenceSnapshot = (
   };
 };
 
+/**
+ * Determines whether a patient is a **new admission** on a given census day.
+ *
+ * Resolution priority:
+ *  1. If `firstSeenDate` is set → compare with `recordDate` (modern patients).
+ *  2. If `firstSeenDate` is missing but `admissionDate` exists → use
+ *     `admissionDate` as anchor (**legacy fallback** for patients created
+ *     before `firstSeenDate` was introduced).
+ *  3. If neither is set → fall back to `isNewAdmissionForClinicalDay()`
+ *     which applies clinical-day shift logic (night shift = next calendar day).
+ *
+ * A patient is "new" when `recordDate` matches the resolved anchor date.
+ * On subsequent days the comparison fails and the badge disappears.
+ *
+ * @example
+ * // Modern patient (firstSeenDate set)
+ * classifyPatientMovementForRecord('2026-04-10', {
+ *   firstSeenDate: '2026-04-10', admissionDate: '2026-04-10'
+ * }); // → { isNewAdmission: true }
+ *
+ * // Legacy patient (no firstSeenDate)
+ * classifyPatientMovementForRecord('2026-04-10', {
+ *   admissionDate: '2026-04-10'
+ * }); // → { isNewAdmission: true }  (admissionDate fallback)
+ *
+ * // Next day — no longer new
+ * classifyPatientMovementForRecord('2026-04-11', {
+ *   firstSeenDate: '2026-04-10', admissionDate: '2026-04-10'
+ * }); // → { isNewAdmission: false }
+ */
 export const classifyPatientMovementForRecord = (
   recordDate: string,
   patient: {
