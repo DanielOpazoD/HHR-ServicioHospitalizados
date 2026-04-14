@@ -13,6 +13,44 @@ import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domai
 import type { DischargeFormData } from '@/services/pdf/ieehPdfContracts';
 
 // ---------------------------------------------------------------------------
+// Doctor name parsing
+// ---------------------------------------------------------------------------
+
+export interface ParsedDoctorName {
+  apellido1: string;
+  apellido2: string;
+  nombre: string;
+}
+
+/**
+ * Splits a doctor's full name string into surname and name parts.
+ *
+ * Expected format: "Apellido1 Apellido2 Nombre(s)"
+ *  - 1 part  → apellido1 only
+ *  - 2 parts → apellido1 + nombre (no second surname)
+ *  - 3+ parts → apellido1 + apellido2 + remaining as nombre
+ *
+ * @param fullName - Doctor's full name as stored in `doc.medico`.
+ */
+export const parseDoctorName = (fullName: string): ParsedDoctorName => {
+  const parts = (fullName || '').trim().split(/\s+/);
+  if (parts.length === 0 || (parts.length === 1 && !parts[0])) {
+    return { apellido1: '', apellido2: '', nombre: '' };
+  }
+  if (parts.length === 1) {
+    return { apellido1: parts[0], apellido2: '', nombre: '' };
+  }
+  if (parts.length === 2) {
+    return { apellido1: parts[0], apellido2: '', nombre: parts[1] };
+  }
+  return {
+    apellido1: parts[0],
+    apellido2: parts[1],
+    nombre: parts.slice(2).join(' '),
+  };
+};
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
@@ -93,12 +131,7 @@ export const buildIeehDischargeFromEpicrisis = (doc: ClinicalDocumentRecord): Di
   const draft = doc.ieehDraft;
   if (!draft) return {};
 
-  // Split doc.medico ("Apellido1 Apellido2 Nombre(s)") into name parts.
-  const nameParts = (doc.medico || '').trim().split(/\s+/);
-  const tratanteApellido1 = nameParts[0] ?? '';
-  const tratanteApellido2 = nameParts.length >= 3 ? nameParts[1] : '';
-  const tratanteNombre =
-    nameParts.length >= 3 ? nameParts.slice(2).join(' ') : (nameParts[1] ?? '');
+  const doctorName = parseDoctorName(doc.medico);
 
   return {
     diagnosticoPrincipal: draft.diagnosticoPrincipal,
@@ -108,9 +141,9 @@ export const buildIeehDischargeFromEpicrisis = (doc: ClinicalDocumentRecord): Di
     intervencionQuirurgDescrip: draft.intervencionQuirurgDescrip,
     procedimiento: draft.procedimiento,
     procedimientoDescrip: draft.procedimientoDescrip,
-    tratanteApellido1,
-    tratanteApellido2,
-    tratanteNombre,
+    tratanteApellido1: doctorName.apellido1,
+    tratanteApellido2: doctorName.apellido2,
+    tratanteNombre: doctorName.nombre,
     tratanteRut: draft.tratanteRut,
     // Discharge date = epicrisis source date (day the doctor writes it)
     dischargeDate: doc.sourceDailyRecordDate,

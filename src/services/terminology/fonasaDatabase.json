@@ -1,0 +1,3852 @@
+{
+  "interventions": [
+    {
+      "code": "1103001",
+      "description": "Malformaciones vasculares del cuero cabelludo incluye aneurisma cirsoideo"
+    },
+    { "code": "1103002", "description": "Sinus pericrani, trat. quir." },
+    { "code": "1103003", "description": "Hundimiento simple, reparación de" },
+    { "code": "1103004", "description": "Craneoplastía con autoinjerto" },
+    {
+      "code": "1103005",
+      "description": "Craneoplastía con prótesis (no incluye valor de la prótesis)"
+    },
+    { "code": "1103006", "description": "Tumores de calota, extirp. de" },
+    { "code": "1103007", "description": "Osteomielitis, limpieza quirúrgica" },
+    { "code": "1103008", "description": "Craniectomías descompresivas" },
+    { "code": "1103009", "description": "Reparación de fractura crecedora" },
+    { "code": "1103010", "description": "Craneotomías lineales" },
+    { "code": "1103011", "description": "Craniectomías c/s remodelación ósea" },
+    { "code": "1103014", "description": "Hematoma o absceso extradural, vaciamiento de" },
+    { "code": "1103015", "description": "Reparación de fístula de LCR" },
+    { "code": "1103016", "description": "Hematoma, empiema o colección subdural, vaciamiento de" },
+    {
+      "code": "1103017",
+      "description": "Quistes aracnoidales encefálicos, trat. quir. (suprasellares, temporales, cerebelosos, etc.)"
+    },
+    {
+      "code": "1103018",
+      "description": "Ventriculostomía o instalación de derivativa ventricular externa o instalación de captor para medición de pic o punción biopsia o reservorio para administración de medicamentos"
+    },
+    { "code": "1103019", "description": "Absceso cerebral, trat. quir." },
+    {
+      "code": "1103020",
+      "description": "Herida por bala craneoencefálica y/o extirpación de cuerpo extraño"
+    },
+    { "code": "1103021", "description": "Hundimiento expuesto, repar. de" },
+    { "code": "1103022", "description": "Lobectomías por contusión cerebral" },
+    { "code": "1103023", "description": "Hematoma intracerebral, vaciamiento de" },
+    {
+      "code": "1103024",
+      "description": "Extirpación de tumores y/o quistes y/o cavernoma de base de cráneo"
+    },
+    {
+      "code": "1103025",
+      "description": "Extirpación de tumores y/o quistes y/o cavernoma  Intraorbitarios"
+    },
+    {
+      "code": "1103026",
+      "description": "Extirpación de tumores y/o quistes y/o cavernoma encefálicos y de hipófisis"
+    },
+    {
+      "code": "1103027",
+      "description": "Aneurismas, malformaciones arteriovenosas encefálicas u orbitarias, fístulas durales"
+    },
+    { "code": "1103028", "description": "Fístula carótido cavernosa tratamiento endovascular" },
+    { "code": "1103029", "description": "Fístula carótido cavernosa, trat. quir." },
+    {
+      "code": "1103030",
+      "description": "Anastomosis y revascularización cerebral endodurosinangiosis"
+    },
+    {
+      "code": "1103031",
+      "description": "Anastomosis y revascularización cerebral extra-intracraneana (cirugía de carótida: ver Cirugía Vascular Periférica)"
+    },
+    {
+      "code": "1103032",
+      "description": "Instalación de derivativas de LCR (no incluye valor de la válvula)"
+    },
+    {
+      "code": "1103132",
+      "description": "Instalación de derivativas de LCR (incluye valor de la válvula)"
+    },
+    { "code": "1103033", "description": "Revisión o exteriorización de derivativa" },
+    { "code": "1103034", "description": "Ventriculocisternostomía" },
+    {
+      "code": "1103035",
+      "description": "Fenestración, septostomía o coagulación plexos coroídeos (trat. endoscópico)"
+    },
+    {
+      "code": "1103036",
+      "description": "Cirugía descompresiva de fosa posterior u occipito-vertebral en Arnol Chiari, siringomielia"
+    },
+    { "code": "1103037", "description": "Meningo y meningoencefalocele occipital, repar. de" },
+    { "code": "1103038", "description": "Cirugía descompresiva neurovascular" },
+    { "code": "1103039", "description": "Neurotomías" },
+    { "code": "1103040", "description": "Neurolisis o microcompresión percutánea" },
+    { "code": "1103041", "description": "Cirugía de la epilepsia (cualquier técnica)" },
+    {
+      "code": "1103042",
+      "description": "Biopsia estereotáxica cerebral con marco de estereotaxia o neuronavegador"
+    },
+    {
+      "code": "1103043",
+      "description": "Termocoagulación de zonas cerebrales con radiofrecuencia o ultrasonido focalizado con técnica estereotáxica para el tratamiento de enfermedad de parkinson, temblor esencial, psicocirugía y otros"
+    },
+    { "code": "1103045", "description": "Implantación de estimuladores intracraneanos" },
+    { "code": "1103046", "description": "Instalación de estimuladores medulares" },
+    {
+      "code": "1103047",
+      "description": "Disrafias espinales: meningocele, mielomeningocele, diastematomielia, lipoma, lipomeningocele, médula anclada, etc."
+    },
+    { "code": "1103048", "description": "Infiltracion facetaria columna y radicular" },
+    {
+      "code": "1103049",
+      "description": "Hernia núcleo pulposo, estenorraquis, aracnoiditis, fibrosis perirradicular cervical, dorsal o lumbar, trat. quir."
+    },
+    { "code": "1103050", "description": "Laminectomía descompresiva" },
+    {
+      "code": "1103069",
+      "description": "Fijación de columna (cervical – dorsal – lumbar) cualquier vía abordaje, c/s osteosíntesis"
+    },
+    { "code": "1103051", "description": "Heridas raquimedulares, trat. quir." },
+    { "code": "1103052", "description": "Tumor vertebral, trat. quir." },
+    { "code": "1103053", "description": "Tumor o quiste medular o intrarraquídeo, trat. quir." },
+    {
+      "code": "1103054",
+      "description": "Malformación arteriovenosa o fístula dural medular, trat. quir."
+    },
+    { "code": "1103055", "description": "Cordotomía percutánea" },
+    { "code": "1103056", "description": "Mielotomía, DREZtomía" },
+    { "code": "1103057", "description": "Rizotomía (cualquier técnica)" },
+    { "code": "1103058", "description": "Tumor de nervio periférico, extirp. de" },
+    {
+      "code": "1103059",
+      "description": "Reparación de plexos c/s neurotización con técnica microquirúrgica o injertos interfasciculares"
+    },
+    { "code": "1103060", "description": "Sección de nervio, reparación con injerto" },
+    { "code": "1103061", "description": "Sección de nervio, reparación sin injerto" },
+    {
+      "code": "1103068",
+      "description": "Neurectomía, cualquier localización, cada zona quirúrgica"
+    },
+    { "code": "1103062", "description": "Neurolisis con técnica microquirúrgica" },
+    { "code": "1103063", "description": "Neurolisis externa" },
+    { "code": "1103064", "description": "Síndrome del escaleno, trat. quir." },
+    { "code": "1103065", "description": "Síndrome de costilla cervical, trat. quir." },
+    {
+      "code": "1103066",
+      "description": "Síndrome del túnel del carpo o del tarso u otro, trat. quir."
+    },
+    { "code": "1103067", "description": "Transposición cubital, repar. de" },
+    { "code": "1103070", "description": "Biopsia de nervio periférico" },
+    {
+      "code": "1103071",
+      "description": "Retiro de material de osteosíntesis o distractores en cirugía de craneosinostosis"
+    },
+    { "code": "1103072", "description": "Denervación facetaria o ramo medial columna" },
+    { "code": "1103073", "description": "Artroplastia de columna" },
+    { "code": "1103074", "description": "Aseo quirúrgico de columna vertebral" },
+    { "code": "1103075", "description": "Laminoplastía cervical" },
+    {
+      "code": "1103076",
+      "description": "Guía estereotáxica para realización de cirugía o procedimiento neuroquirúrgico intracranéano"
+    },
+    {
+      "code": "1103077",
+      "description": "Neurotomía periférica selectiva para tratamiento de espasticidad"
+    },
+    {
+      "code": "1103083",
+      "description": "Liberación quirúrgica de nervio periférico en el Síndrome del Túnel Carpiano téc. WALANT (anestesia local sin torniquete)"
+    },
+    {
+      "code": "1103078",
+      "description": "Cementación vertebral cervical, dorsal o lumbar hasta 3 niveles"
+    },
+    {
+      "code": "1103079",
+      "description": "Cementación vertebral cervical, dorsal o lumbar mas de 3 niveles"
+    },
+    { "code": "1103080", "description": "Fusión intersomatica cervical" },
+    { "code": "1103081", "description": "Fusión intersomática dorsal y lumbar corta" },
+    { "code": "1103082", "description": "Fusión intersomática dorsal y lumbar larga" },
+    { "code": "1202001", "description": "Intubación vía lagrimal" },
+    { "code": "1202002", "description": "Puntos lagrimales, plastía de" },
+    { "code": "1202003", "description": "Reconstitución de canalículos" },
+    { "code": "1202004", "description": "Absceso, vaciamiento y/o drenaje de" },
+    { "code": "1202005", "description": "Dacriocistorrinostomía" },
+    { "code": "1202006", "description": "Extirpación de saco y/o glándula lagrimal" },
+    { "code": "1202007", "description": "Reconstitución vía lagrimal en ausencia del saco" },
+    { "code": "1202008", "description": "Tumor de glándula lagrimal, trat. quir. completo" },
+    { "code": "1202009", "description": "Tumor maligno  del saco, trat. quir. completo" },
+    { "code": "1202010", "description": "Absceso, trat. quir. párpado o ceja" },
+    { "code": "1202011", "description": "Biopsia de párpado y/o anexos (proc. aut.)" },
+    { "code": "1202012", "description": "Blefarochalasis, plastía de" },
+    { "code": "1202013", "description": "Blefarofimosis, plastía de" },
+    { "code": "1202014", "description": "Blefarorrafia con blefarotomía posterior" },
+    { "code": "1202015", "description": "Cantoplastía" },
+    {
+      "code": "1202016",
+      "description": "Chalazión y otros tumores benignos (uno o más, unilateral), trat. quir. Completo"
+    },
+    { "code": "1202017", "description": "Plastía de Coloboma" },
+    { "code": "1202018", "description": "Plastía de Ectropión" },
+    { "code": "1202019", "description": "Plastía de Entropión" },
+    { "code": "1202020", "description": "Plastía de Epicanto" },
+    { "code": "1202021", "description": "Ptosis, trat. quir." },
+    { "code": "1202022", "description": "Quiste dermoide de la cola de la ceja, resec. plástica" },
+    { "code": "1202023", "description": "Tumor maligno de párpado o ceja, trat. quir. Completo" },
+    { "code": "1202024", "description": "Xantelasma, trat. quir." },
+    { "code": "1202071", "description": "Herida o dehiscencia de sutura de párpado, reparación" },
+    {
+      "code": "1202025",
+      "description": "Herida o dehiscencia de la conjuntiva, sutura de (proc. aut.)"
+    },
+    {
+      "code": "1202026",
+      "description": "Pterigión y/o pseudopterigión o su recidiva, extirpación"
+    },
+    { "code": "1202027", "description": "Simbléfaron, resección de adherencias y plastía de" },
+    { "code": "1202028", "description": "Extirpación de tumor benigno de la conjuntiva" },
+    { "code": "1202029", "description": "Absceso orbitario, trat. quir." },
+    { "code": "1202030", "description": "Corrección de cavidad anoftálmica trat. completo" },
+    { "code": "1202031", "description": "Cuerpo extraño orbitario (con orbitotomía)" },
+    {
+      "code": "1202032",
+      "description": "Exanteración orbitaria o tumor orbitario, trat. quirúrgico completo"
+    },
+    { "code": "1202033", "description": "Orbitotomía anterior" },
+    { "code": "1202034", "description": "Orbitotomía lateral descompresiva" },
+    { "code": "1202072", "description": "Reconstrucción de piso orbitario" },
+    { "code": "1202035", "description": "Biopsia de globo ocular (proc. aut.)" },
+    { "code": "1202036", "description": "Enucleación o implante de prótesis ocular (proc. aut.)" },
+    { "code": "1202037", "description": "Enucleación con implante" },
+    {
+      "code": "1202038",
+      "description": "Tratamiento quirúrgico completo del estrabismo unilateral o bilateral"
+    },
+    { "code": "1202039", "description": "Exanteración ocular (proc. aut.)" },
+    {
+      "code": "1202040",
+      "description": "Sutura de lesión traumática de globo o musculos oculares (proc. aut.)"
+    },
+    {
+      "code": "1202041",
+      "description": "Cirugía refractiva, queratotomía radial o similar con bisturí de diamante"
+    },
+    { "code": "1202042", "description": "Crioterapia y recesión conjuntival" },
+    {
+      "code": "1202044",
+      "description": "Extracción quir. de cuerpo extraño en cornea y/o esclera"
+    },
+    { "code": "1202045", "description": "Glaucoma, trat. quir. por cualquier técnica" },
+    {
+      "code": "1202046",
+      "description": "Herida corneal o corneo-escleral o dehiscencia de sutura"
+    },
+    { "code": "1202047", "description": "Queratectomía laminar" },
+    {
+      "code": "1202048",
+      "description": "Queratoplastía. Injerto lamelar o penetrante trat. quir. Completo"
+    },
+    {
+      "code": "1202049",
+      "description": "Queratoprótesis, implantación de (no incluye el valor de la prótesis)"
+    },
+    { "code": "1202050", "description": "Recubrimiento conjuntival" },
+    {
+      "code": "1202051",
+      "description": "Rehabilitación superficie ocular (con injerto de mucosa)"
+    },
+    { "code": "1202070", "description": "Sinequiotomía (proc. aut.)" },
+    {
+      "code": "1202073",
+      "description": "Operación triple (injerto, facoéresis e implante de lente intraocular) (no incluye valor de la prótesis)"
+    },
+    {
+      "code": "1202173",
+      "description": "Operación triple (injerto, facoéresis e implante de lente intraocular) (incluye valor de la prótesis)"
+    },
+    { "code": "1202053", "description": "Iridectomía periférica y/u óptica, (proc. aut.)" },
+    {
+      "code": "1202054",
+      "description": "Tratamiento quirúrgico de lesión tumoral del iris o cuerpo ciliar"
+    },
+    { "code": "1202074", "description": "Hernia de iris y/o fístulas, reparación de" },
+    {
+      "code": "1202055",
+      "description": "Desgarro sin desprendimiento, diatermo y/o crío y/o fotocoagulación"
+    },
+    {
+      "code": "1202056",
+      "description": "Desprendimiento retinal, cirugía convencional (exoimplantes)"
+    },
+    {
+      "code": "1202058",
+      "description": "Tumor retinal o coroidal, diatermo y/o crio y/o fotocoagulación de"
+    },
+    {
+      "code": "1202059",
+      "description": "Vasculopatía retinal (excepto retinopatía proliferativa) diatermo y/o crío y/o fotocoagulación"
+    },
+    {
+      "code": "1202060",
+      "description": "Vitrectomía c/retinotomía (c/s inyección de gas o silicona)"
+    },
+    { "code": "1202061", "description": "Vitrectomía con inyección de gas o silicona" },
+    { "code": "1202062", "description": "Vitrectomía con vitreófago (proc. aut)" },
+    { "code": "1202075", "description": "Retinopexia neumática" },
+    {
+      "code": "1202077",
+      "description": "Desprendimiento coroídeo o hemorragia coroídea, trat. quir."
+    },
+    {
+      "code": "1202063",
+      "description": "Facoéresis intracapsular o catarata secundaria o discisión y aspiración de masas"
+    },
+    {
+      "code": "1202064",
+      "description": "Facoéresis extracapsular con implante de lente intraocular (no incluye el valor de la prótesis)"
+    },
+    {
+      "code": "1202164",
+      "description": "Facoéresis extracapsular con implante de lente intraocular (incluye el valor de la prótesis)"
+    },
+    { "code": "1202065", "description": "Implante secundario de lente intraocular" },
+    { "code": "1202066", "description": "Aspiración esferular c/s capsulotomía" },
+    {
+      "code": "1202076",
+      "description": "Extracción o corrección de desplazamiento de lente intraocular"
+    },
+    {
+      "code": "1202057",
+      "description": "Retinopatía proliferativa, (diabética, hipertensiva, Eales y otras) panfotocoagulación (trat. completo)"
+    },
+    { "code": "1202067", "description": "Discisión de cápsula posterior" },
+    { "code": "1202068", "description": "Iridotomía" },
+    { "code": "1202069", "description": "Trabeculoplastía o iridoplastía" },
+    {
+      "code": "1202078",
+      "description": "Cirugía fotorrefractiva o fototerapéutica de córnea, cualquier técnica"
+    },
+    { "code": "1202079", "description": "Facoemulsificación" },
+    { "code": "1202080", "description": "Tratamiento quirúrgico ptosis de la ceja" },
+    { "code": "1202081", "description": "Evisceración del globo ocular" },
+    { "code": "1202083", "description": "Tratamiento Trasplante de Córnea" },
+    { "code": "1302001", "description": "Absceso y/o hematomas oído externo, trat. quir." },
+    {
+      "code": "1302002",
+      "description": "Cuerpo extraño en conducto auditivo externo, extracción de, por vía retroauricular"
+    },
+    { "code": "1302003", "description": "Fístula preauricular complicada, trat. quir." },
+    { "code": "1302004", "description": "Extirpación de tumor de conducto auditivo externo" },
+    { "code": "1302005", "description": "Tumor maligno oído externo, trat. quir." },
+    { "code": "1302006", "description": "Estapedectomía" },
+    { "code": "1302007", "description": "Mastoidectomía c/s sección cuerda del tímpano" },
+    {
+      "code": "1302008",
+      "description": "Mucositis timpánica o mixiosis uni o bilateral, trat. quir."
+    },
+    { "code": "1302009", "description": "Operación radical de oído" },
+    { "code": "1302011", "description": "Reconstitución funcional de oído radicalizado" },
+    {
+      "code": "1302012",
+      "description": "Timpanoplastía funcional (cualquier tipo) c/s mastoidectomía"
+    },
+    { "code": "1302013", "description": "Agenesia o estenosis, reconstitución plástica" },
+    {
+      "code": "1302014",
+      "description": "Exostosis u osteoma oído medio o externo, resección por cualquier vía"
+    },
+    { "code": "1302015", "description": "Neurectomía de Jacobson" },
+    {
+      "code": "1302016",
+      "description": "Reconstitución de conducto auditivo externo, c/s tímpanoplastía (incluye revisión de cadena osicular)"
+    },
+    { "code": "1302017", "description": "Tratamiento quirúrgico de tumor glómico timpánico" },
+    { "code": "1302018", "description": "Laberintectomía" },
+    {
+      "code": "1302019",
+      "description": "Neurinoma del acústico, trat. quir. vía translaberíntica y/o fosa media"
+    },
+    { "code": "1302020", "description": "Descompresión intraósea nervio facial c/s plastía" },
+    {
+      "code": "1302021",
+      "description": "Lesiones a nivel del conducto auditivo interno, trat. quir."
+    },
+    { "code": "1302022", "description": "Biopsia buco-faríngea (proc. aut.)" },
+    { "code": "1302023", "description": "Sección simple y/o resección frenillo sublingual" },
+    { "code": "1302024", "description": "Drenaje de absceso o flegmón de piso de boca" },
+    { "code": "1302025", "description": "Drenaje de absceso o flegmón periamigdaliano" },
+    {
+      "code": "1302026",
+      "description": "Drenaje de absceso o flegmón retrofaríngeo o faringolaríngeo"
+    },
+    { "code": "1302027", "description": "Drenaje de absceso o flegmón de vestíbulo bucal" },
+    { "code": "1302028", "description": "Adenoidectomía (proc. aut.)" },
+    { "code": "1302029", "description": "Amigdalectomía c/s adenoidectomía, uni o bilateral" },
+    { "code": "1302030", "description": "Cálculos salivales, trat. quir." },
+    {
+      "code": "1302031",
+      "description": "Tumor benigno de la mucosa bucal,  extirp. c/s  biopsia bucofaríngea"
+    },
+    { "code": "1302032", "description": "Tumor maligno de las amígdalas, trat. quir." },
+    { "code": "1302033", "description": "Extirpacion de  tumor benigno de la base de la lengua" },
+    { "code": "1302034", "description": "Extirpación tumor maligno de base de lengua" },
+    {
+      "code": "1302035",
+      "description": "Faringoplastía (cualq. técn.), c/s desplazamiento de colgajos"
+    },
+    { "code": "1302036", "description": "Fibroangioma del rinofarinx, trat. quir." },
+    { "code": "1302037", "description": "Glosectomía total" },
+    { "code": "1302038", "description": "Abscesos y hematoma del tabique nasal, trat. quir." },
+    { "code": "1302039", "description": "Arteria esfenopalatina, cauterización por vía nasal" },
+    {
+      "code": "1302040",
+      "description": "Arteria maxilar interna, ligadura de (por vía transmaxilar)"
+    },
+    { "code": "1302041", "description": "Ligadura de arterias etmoidales anteriores" },
+    { "code": "1302042", "description": "Turbinectomía o electrocauterización de cornetes" },
+    {
+      "code": "1302043",
+      "description": "Conducto y/o seno lagrimal, obstrucción del, trat. quir. por vía nasal"
+    },
+    { "code": "1302044", "description": "Etmoidectomía endo o exonasal" },
+    { "code": "1302045", "description": "Fístula buco-sinusal, trat. quir." },
+    {
+      "code": "1302046",
+      "description": "Fract. Nasal reciente, cerrada o expuesta, reducc. c/s yeso"
+    },
+    { "code": "1302047", "description": "Nervio vidiano, sección del (por cualquier vía)" },
+    { "code": "1302048", "description": "Perforación del tabique, trat. quir." },
+    { "code": "1302049", "description": "Tratamiento quirúrgico pólipo nasal" },
+    {
+      "code": "1302050",
+      "description": "Rinitis atrófica, trat. por inclusión submucosa, con cualquier material, uni o bilateral"
+    },
+    { "code": "1302051", "description": "Rinofima, trat. quir." },
+    { "code": "1302052", "description": "Rinoplastía y/o septoplastía, cualquier técnica" },
+    {
+      "code": "1302053",
+      "description": "Seno esfenoidal, abertura (vía transetmoidal o transeptal)"
+    },
+    { "code": "1302054", "description": "Seno frontal, trat. quir. c/s vaciamiento etmoidal" },
+    {
+      "code": "1302055",
+      "description": "Seno maxilar, antrostomía c/s etmoidectomía ( operación  de Cadwell Luc y sim.)"
+    },
+    { "code": "1302056", "description": "Sinequia nasal, trat. quir." },
+    { "code": "1302057", "description": "Tumor nasal, extirp. por rinotomía lateral" },
+    { "code": "1302058", "description": "Vaciamiento etmoidal por vía nasal c/s polipectomía" },
+    { "code": "1302059", "description": "Aritenoidectomía vía endoscópica" },
+    { "code": "1302060", "description": "Aritenoidectomía vía externa" },
+    { "code": "1302061", "description": "Decorticación de cuerdas vocales c/microscopio" },
+    {
+      "code": "1302062",
+      "description": "Cuerdas vocales, tumores benignos, trat. quir.- Por laringotomía"
+    },
+    {
+      "code": "1302063",
+      "description": "Cuerdas vocales, tumores benignos, trat. quir.- Por vía endoscópica"
+    },
+    {
+      "code": "1302064",
+      "description": "Cordectomía, resección de sinequia y otras malformaciones, trat. quirúrgico por vía externa"
+    },
+    { "code": "1302065", "description": "Estenosis laringotraqueales y/o faríngeas, trat. quir." },
+    { "code": "1302066", "description": "Laringectomía parcial o subtotal (cualquier técnica)" },
+    { "code": "1302067", "description": "Laringectomía total más faringectomía parcial" },
+    {
+      "code": "1302068",
+      "description": "Laringectomía total más faringectomía total y/o esofagectomía cervical"
+    },
+    { "code": "1302069", "description": "Laringocele, trat. quir." },
+    { "code": "1302070", "description": "Papilomas laríngeos, trat. quir. (por sesión)" },
+    {
+      "code": "1302071",
+      "description": "Parálisis de cuerdas vocales, trat. quir. cualquier técnica"
+    },
+    { "code": "1302072", "description": "Traqueostomía (proc. aut.)" },
+    {
+      "code": "1302073",
+      "description": "Estenosis laringotraqueales y faríngeas, trat. quir. por vía endoscópica (incluye laser)"
+    },
+    { "code": "1302074", "description": "Intervención quirúrgica implante coclear" },
+    { "code": "1302075", "description": "Fractura laríngea, reducción abierta c/s microplacas" },
+    { "code": "1302076", "description": "Punción timpánica para inyección de medicamentos" },
+    { "code": "1302077", "description": "Implante activo de oído medio" },
+    {
+      "code": "1302078",
+      "description": "Tumor de conducto auditivo externo, extirpación con reparación (injerto) del conducto"
+    },
+    { "code": "1302079", "description": "Aticotomía (excluye timpanoplastia funcional)" },
+    {
+      "code": "1302080",
+      "description": "Plastía o dilatación por vía endoscópica trompa de Eustaquio"
+    },
+    { "code": "1302081", "description": "Meatoplastía en oído radicalizado" },
+    {
+      "code": "1302082",
+      "description": "Reparación de brecha osteomeníngea por vía transtemporal"
+    },
+    {
+      "code": "1302083",
+      "description": "Resección subtotal del hueso temporal (incluye tegmen, laberinto y punta de peñasco)"
+    },
+    {
+      "code": "1302084",
+      "description": "Resección total del hueso temporal (abordaje combinado orl y neurocirujano)"
+    },
+    { "code": "1302085", "description": "Timpanectomía con o sin tubos de ventilación" },
+    {
+      "code": "1302086",
+      "description": "Timpanoplastía funcional con reconstrucción de cadena osicular (excluye miringoplastía)"
+    },
+    { "code": "1302087", "description": "Timpanotomía exploradora" },
+    { "code": "1302088", "description": "Tiroplastia 1-4" },
+    { "code": "1302089", "description": "Toma de injerto cartilago tragal" },
+    { "code": "1302090", "description": "Toma de injerto fascia temporal" },
+    {
+      "code": "1302091",
+      "description": "Tumor glómico petro-tímpano-mástoídeo, tratamiento quirúrgico"
+    },
+    { "code": "1302092", "description": "Cirugía de fosa pterigo palatina" },
+    { "code": "1302093", "description": "Reparación de válvula nasal" },
+    {
+      "code": "1302094",
+      "description": "Resección de tumor de base de cráneo anterior con reparación de duramadre (colgajo pediculado de haddad o similar)"
+    },
+    {
+      "code": "1302095",
+      "description": "Resección lateral del hueso temporal (incluye mástoides y conducto auditivo externo en forma circular)"
+    },
+    {
+      "code": "1302096",
+      "description": "Tumor benigno nasosinusal y/o rinofaríngeo, resección por vía endoscópica (excluye fibroangioma nasofaríngeo)"
+    },
+    { "code": "1302097", "description": "Tumor de espacio parafaríngeo, extirpación" },
+    {
+      "code": "1302098",
+      "description": "Tumor maligno nasosinusal y/o rinofaríngeo, tratamiento quirúrgico por vía endoscópica"
+    },
+    {
+      "code": "1302099",
+      "description": "Sinuplastía seno frontal con balón por endoscopía u otra técnica"
+    },
+    {
+      "code": "1302100",
+      "description": "Sinuplastía seno maxilar con balón por endoscopía u otra técnica"
+    },
+    {
+      "code": "1302101",
+      "description": "Sinuplastía seno esfenoidal con balón por endoscopia u otra técnica"
+    },
+    { "code": "1302102", "description": "Dacriocistocele reseccion vía nasal" },
+    { "code": "1302103", "description": "Abducción de aritenoides, aritenoidopexia" },
+    {
+      "code": "1302104",
+      "description": "Cordectomía, sinequia y otras malformaciones, tratatamiento quirúrgico por endoscópica (incluye laser)"
+    },
+    { "code": "1302105", "description": "Subluxación articulación cricotiroídea" },
+    {
+      "code": "1302106",
+      "description": "Laringectomía parcial endoscópica con láser, incluye cordectomía ampliada (carcinoma supraglótico)"
+    },
+    { "code": "1302107", "description": "Laringoplastía por laringomalacia" },
+    { "code": "1302108", "description": "Inyección de cuerda vocal vía endoscópica" },
+    { "code": "1302109", "description": "Inyección de cuerda vocal vía externa" },
+    { "code": "1402001", "description": "Tiroidectomía bilateral total" },
+    { "code": "1402002", "description": "Tiroidectomía bilateral subtotal" },
+    { "code": "1402003", "description": "Bocio intratorácico, trat. quir. por esternotomía" },
+    { "code": "1402004", "description": "Extirpación de Tiroides lingual" },
+    { "code": "1402005", "description": "Lobectomía con o sin istmectomía o resección parcial" },
+    {
+      "code": "1402006",
+      "description": "Tiroidectomía total ampliada (incluye extirpación de estructuras anatómicas vecinas)"
+    },
+    {
+      "code": "1402007",
+      "description": "Adenoma y/o hiperplasia, trat. quir.- Autoinjerto de paratiroides (operación asociada a algunas de las prestaciones posteriores)"
+    },
+    {
+      "code": "1402008",
+      "description": "Adenoma y/o hiperplasia, trat. quir.- Explor. cervical mas esternotomía por hiperparatiroidismo"
+    },
+    {
+      "code": "1402009",
+      "description": "Adenoma y/o hiperplasia, trat. quir.- Exploración cervical por hiperparatiroidismo"
+    },
+    {
+      "code": "1402010",
+      "description": "Adenoma y/o hiperplasia, trat. quir.- Reintervención por hiperparatiroidismo"
+    },
+    {
+      "code": "1402011",
+      "description": "Parotidectomía suprafacial con disección y preservación del nervio facial"
+    },
+    {
+      "code": "1402012",
+      "description": "Parotidectomía total, con disección y preservación del nervio facial."
+    },
+    {
+      "code": "1402013",
+      "description": "Parotidectomía total ampliada (incluye músculos, ganglios, articulaciones y rama vertical de la mandíbula)"
+    },
+    {
+      "code": "1402014",
+      "description": "Totalización de parotidectomía previa o parotidectomía del lóbulo profundo"
+    },
+    {
+      "code": "1402015",
+      "description": "Extirpación submandibular ampliada (incluye piso de boca, arco mandibular, músculos y articulaciones)"
+    },
+    { "code": "1402016", "description": "Extirpación de glándula salival submandibular" },
+    { "code": "1402017", "description": "Extirpación glándula salival sublingual" },
+    {
+      "code": "1402018",
+      "description": "Extirpación sublingual ampliada (incluye piso de boca, arco mandibular, músculos, ganglios y articulaciones)"
+    },
+    {
+      "code": "1402019",
+      "description": "Absceso parotídeo, sub-maxilar y/o cervical profundo, trat. quir."
+    },
+    {
+      "code": "1402020",
+      "description": "Conductos salivales de excreción, reimplantación oro-faríngea"
+    },
+    {
+      "code": "1402021",
+      "description": "Cierre de fístula salival: reparación del conducto de excreción"
+    },
+    { "code": "1402022", "description": "Mucocele o quiste labial, trat. quir." },
+    { "code": "1402023", "description": "Tortícolis congénita, trat. quir." },
+    {
+      "code": "1402024",
+      "description": "Quistes y/o fístulas del conducto tirogloso, y/o branquial, y/o higroma, y/o fístula preauricular complicada, y/u otros quistes y/o tumores benignos, trat. quir."
+    },
+    {
+      "code": "1402025",
+      "description": "Tumores del cuerpo carotídeo, trat. quir. (incl. proc. vascular)"
+    },
+    { "code": "1402026", "description": "Biopsia quir., mucosa oronasofaríngea (proc. aut.)" },
+    { "code": "1402027", "description": "Biopsia quir., piel  y mucosa cara (proc. aut.)" },
+    {
+      "code": "1402028",
+      "description": "Resección cutánea ampliada (incluye musculatura, ganglios y huesos subyacentes; desplazamiento de colgajos)"
+    },
+    { "code": "1402029", "description": "Resección cutánea simple (sutura primaria)" },
+    {
+      "code": "1402030",
+      "description": "Tumor maligno de labio superior o inferior, resección total del labio y cirugía reparadora"
+    },
+    {
+      "code": "1402031",
+      "description": "Tumor maligno de labio superior o inferior, resección parcial del labio y cirugía reparadora"
+    },
+    { "code": "1402032", "description": "Resección parcial y cirugía reparadora nariz" },
+    { "code": "1402033", "description": "Resección total y cirugía reparadora nariz" },
+    { "code": "1402034", "description": "Resección fronto-naso-etmoidiana" },
+    {
+      "code": "1402035",
+      "description": "Exanteración orbitaria ampliada (incluye etmoides, hueso frontal, base de cráneo anterior y región máxilo-malar)"
+    },
+    { "code": "1402036", "description": "Extirpacion total ampliada del hueso temporal" },
+    { "code": "1402037", "description": "Maxilectomia parcial y reparación protésica" },
+    {
+      "code": "1402038",
+      "description": "Maxilectomía parcial (incluye paladar óseo; reparación con colgajo)"
+    },
+    {
+      "code": "1402039",
+      "description": "Maxilectomía radical ampliada (incluye exanteración orbitaria y de fosa craneal anterior o media)"
+    },
+    {
+      "code": "1402040",
+      "description": "Maxilectomía radical clásica (incluye exanteración orbitaria y reparación con colgajo)"
+    },
+    {
+      "code": "1402041",
+      "description": "Maxilectomía radical clásica (incluye exanteración orbitaria y reparación protésica)"
+    },
+    { "code": "1402042", "description": "Glosectomía parcial, reparación primaria" },
+    {
+      "code": "1402043",
+      "description": "Resección amplia de tumor maligno cavidad oral y orofaringea y disección ganglionar cervical"
+    },
+    { "code": "1402044", "description": "Hemimandibulectomía" },
+    { "code": "1402045", "description": "Mandibulectomía total" },
+    {
+      "code": "1402046",
+      "description": "Operación \"\"comando\"\" (incluye extirp. del tumor, hemimandibulectomía y disección ganglionar radical de cuello)"
+    },
+    { "code": "1402047", "description": "Resección parcial de mandibula" },
+    { "code": "1402048", "description": "Resección tridimensional intra-oral o faríngea ampliada" },
+    { "code": "1402050", "description": "Faringectomía parcial" },
+    { "code": "1402051", "description": "Genioplastía" },
+    { "code": "1402052", "description": "Osteotomias segmentarias del maxilar o mandíbula" },
+    {
+      "code": "1402053",
+      "description": "Osteotomias totales del maxilar o mandibula (tipo Le Fort I o sagital de rama)"
+    },
+    { "code": "1402054", "description": "Reducción cerrada de fracturas maxilofaciales" },
+    {
+      "code": "1402055",
+      "description": "Reduccion abierta de fracturas maxilofaciales y estabilizacion con elementos de osteosintesis,"
+    },
+    {
+      "code": "1402056",
+      "description": "Reducción abierta de fracturas maxilofaciales con osteosintesis única,"
+    },
+    {
+      "code": "1402057",
+      "description": "Reconstrucciones complejas de la cara simultáneas con proc. neuroquirúrgico (craneotomías más abordajes y trat. facial), tiempo facial"
+    },
+    {
+      "code": "1402058",
+      "description": "Reconstrucciones de partes duras y blandas de la cara, mediante abordajes múltiples y hemicoronal o coronal"
+    },
+    { "code": "1402059", "description": "Remoción de arcos dentarios o ligaduras de alambre" },
+    { "code": "1402060", "description": "Reducción simple fractura maxilo facial (proc. aut.)" },
+    {
+      "code": "1502001",
+      "description": "Heridas de la cara Complicadas: 1 o varias de más de 5 cms. y/o ubicadas en bordes de párpados, labios o ala nasal y/o que comprometen músculos, conductos, vasos o nervios"
+    },
+    {
+      "code": "1502002",
+      "description": "Heridas de la cara- Simples: 1 o varias de hasta 5 cms. que sólo comprometen piel"
+    },
+    { "code": "1502003", "description": "Implante de silicona facial (cualquier zona o zonas)" },
+    {
+      "code": "1502004",
+      "description": "Resección plástica de hasta 2 cicatrices (cualquier localización o tamaño)"
+    },
+    {
+      "code": "1502005",
+      "description": "Cicatrices (cualquier localización o tamaño), resecc. plástica de (proc. aut.)- 3 y más"
+    },
+    { "code": "1502006", "description": "Injertos hasta 1% superficie corporal receptora" },
+    {
+      "code": "1502007",
+      "description": "Injertos piel parcial y/o mucosa- Hasta 5% superficie corporal receptora"
+    },
+    { "code": "1502008", "description": "Injertos hasta 10% superficie corporal receptora" },
+    {
+      "code": "1502009",
+      "description": "Injertos piel parcial y/o mucosa- Por cada 10% (o su fracción) adicional hasta 50%"
+    },
+    {
+      "code": "1502010",
+      "description": "Injertos piel parcial y/o mucosa- 51% y más de superficie corporal receptora"
+    },
+    {
+      "code": "1502011",
+      "description": "Piel total, cualquier tamaño (incluye tratamiento zona dadora y receptora)"
+    },
+    {
+      "code": "1502012",
+      "description": "Toma de injertos- Cartílago (auricular, costal o similares) c/u"
+    },
+    {
+      "code": "1502013",
+      "description": "Toma de injertos- Oseo (costal, ilíaco, tibial o similares) c/u"
+    },
+    { "code": "1502014", "description": "Plastías en Z- Hasta 3" },
+    { "code": "1502015", "description": "Plastías en Z- 4 y más" },
+    {
+      "code": "1502016",
+      "description": "Colgajos complejos (Abbe, Mustarda, Converse, Juri, Bakamjian o similar)"
+    },
+    {
+      "code": "1502017",
+      "description": "Colgajos libres con microanastomosis (incluye toma del colgajo y las suturas neurovasculares)"
+    },
+    { "code": "1502018", "description": "Colgajos musculares o musculocutáneos" },
+    { "code": "1502019", "description": "Colgajos osteomusculocutáneos" },
+    { "code": "1502020", "description": "Colgajos simples dos o más" },
+    { "code": "1502021", "description": "Colgajo simple único" },
+    { "code": "1502022", "description": "Parálisis facial, trasplantes musculares" },
+    { "code": "1502023", "description": "Ridectomía- Cérvico-facial, un lado" },
+    { "code": "1502024", "description": "Ridectomía- Frontal" },
+    { "code": "1502025", "description": "Aladas o en asa, corrección plástica" },
+    {
+      "code": "1502026",
+      "description": "Lóbulo auricular partido, corrección plástica (proc. aut)"
+    },
+    {
+      "code": "1502027",
+      "description": "Malformación congénita compleja, cada plastía o plastías en tiempos diferentes"
+    },
+    {
+      "code": "1502028",
+      "description": "Corrección nasal parcial (alares, alargamiento columela o similar)"
+    },
+    { "code": "1502029", "description": "Blefaroplastia párpados inferiores, uni o bilateral" },
+    { "code": "1502030", "description": "Blefaroplastia párpados superiores, uni o bilateral" },
+    { "code": "1502031", "description": "Corrección quirúrgica secundaria de queiloplastía" },
+    {
+      "code": "1502032",
+      "description": "Queiloplastía primaria, un lado (proc. quir. completo por cualquier técnica)"
+    },
+    {
+      "code": "1502033",
+      "description": "Cierre de paladar duro y/o cierre de comunicación oro-nasal"
+    },
+    { "code": "1502034", "description": "Cierre mucoso vestíbulo oral" },
+    { "code": "1502035", "description": "Plastía de velo (cualquier técnica)" },
+    { "code": "1502036", "description": "Cierre de macrostomía, unilateral" },
+    { "code": "1502037", "description": "Tratamiento quirurgico de anomalías cráneo faciales" },
+    {
+      "code": "1502038",
+      "description": "Reconst. Osteopl.reborde alveolar- Bilateral en un tiempo"
+    },
+    { "code": "1502039", "description": "Reconst. Osteopl.reborde alveolar - Unilateral" },
+    {
+      "code": "1502040",
+      "description": "Distoplasias orbitarias: movilización unilateral o vertical tiempo facial"
+    },
+    { "code": "1502041", "description": "Expansión o reconstrucción de un micro-orbitismo" },
+    {
+      "code": "1502042",
+      "description": "Síndrome de Apert Crouzon o similar: avance fronto-órbito-maxilar vía intracraneana, tiempo facial"
+    },
+    {
+      "code": "1502043",
+      "description": "Síndrome de Apert Crouzon o similar: osteotomía tipo Le Fort III o similar"
+    },
+    { "code": "1502044", "description": "Corrección telecanto" },
+    { "code": "1502045", "description": "Movilización orbitaria extracraneana" },
+    { "code": "1502046", "description": "Movilización orbitaria intracraneana, tiempo facial" },
+    { "code": "1502047", "description": "Ginecomastía, corrección plástica" },
+    { "code": "1502048", "description": "Mamoplastía de aumento" },
+    { "code": "1502049", "description": "Mamoplastía de reducción" },
+    {
+      "code": "1502050",
+      "description": "Mastopexia c/s implante de prótesis (no incluye valor de la prótesis)"
+    },
+    {
+      "code": "1502051",
+      "description": "Reconstrucción areola y/o pezón c/s plastía (proc. aut.)"
+    },
+    { "code": "1502052", "description": "Reconstrucción mamaria" },
+    { "code": "1502053", "description": "Abdominoplastia" },
+    { "code": "1502054", "description": "Escarectomía con resección ósea c/s colgajo de rotación" },
+    {
+      "code": "1502055",
+      "description": "Tratamiento de escaras de decubito, con resección ósea y colgajos musculares o musculocutáneos"
+    },
+    { "code": "1502056", "description": "Sindactilia, trat. quir. cada espacio- con injerto" },
+    { "code": "1502057", "description": "Sindactilia, trat. quir. cada espacio- Sin injerto" },
+    { "code": "1502058", "description": "Polidactilia, extirpación y plastía unilateral" },
+    { "code": "1502059", "description": "Lipectomía glútea, unilateral" },
+    { "code": "1502060", "description": "Lipectomía trocantérea, unilateral" },
+    { "code": "1502061", "description": "Escarotomía- Hasta 10 % superficie corporal" },
+    { "code": "1502062", "description": "Escarotomía- Por cada 10 % adicional (o su fracción)" },
+    { "code": "1502063", "description": "Escarectomía- Hasta 1 % superficie corporal" },
+    { "code": "1502064", "description": "Escarectomía- Hasta 5 % superficie corporal" },
+    { "code": "1502065", "description": "Escarectomía- Hasta 10% superficie corporal" },
+    { "code": "1502066", "description": "Escarectomía- Por cada 10% adicional (o su fracción)" },
+    { "code": "1502067", "description": "Toma de injerto de cuero cabelludo" },
+    { "code": "1502068", "description": "Expansor de piel (dos o más) primer tiempo" },
+    { "code": "1502069", "description": "Expansor de piel (dos o más) segundo tiempo retiro" },
+    { "code": "1502070", "description": "Expansor de piel (único) primer tiempo" },
+    { "code": "1502071", "description": "Expansor de piel (único) segundo tiempo o retiro" },
+    {
+      "code": "1602201",
+      "description": "Biopsia de piel y/o mucosa por curetaje o sección tangencial c/s electro por 1 lesión"
+    },
+    {
+      "code": "1602202",
+      "description": "Extirpacion de, reparacion o biopsia total o parcial, de lesiones benignas cutáneas por excision cabeza, cuello, genitales, hasta 3 lesiones"
+    },
+    {
+      "code": "1602203",
+      "description": "Extirpacion de, reparacion o biopsia total o parcial, de lesiones benignas cutáneas por excision resto de cuerpo hasta 3 lesiones"
+    },
+    {
+      "code": "1602204",
+      "description": "Extirpacion de, reparacion o biopsia total o parcial, de lesiones benignas cutáneas por excision cabeza, cuello, genitales, desde 4 hasta 6 lesiones"
+    },
+    {
+      "code": "1602205",
+      "description": "Extirpacion de, reparacion o biopsia total o parcial, de lesiones benignas cutáneas por excision resto de cuerpo desde 4 hasta 6 lesiones"
+    },
+    {
+      "code": "1602206",
+      "description": "Extirpacion de lesiones benignas por sec tangencial ,curetaje,y/o fulguracion hasta 15 lesiones"
+    },
+    {
+      "code": "1602207",
+      "description": "Tratamiento por electro de hemangiomas o telangectasias hasta 15 lesiones"
+    },
+    {
+      "code": "1602211",
+      "description": "Tumor maligno por excision total o parcial, con o sin sutura, por cada lesion cabeza, cuello, genitales"
+    },
+    {
+      "code": "1602212",
+      "description": "Tumor maligno por excision total o parcial, con o sin sutura, por cada lesion resto del cuerpo"
+    },
+    {
+      "code": "1602213",
+      "description": "Ampliacion de margenes quirurgicos de tumor maligno extirpado previamente cabeza, cuello, genitales o melanoma cualquier ubicación"
+    },
+    {
+      "code": "1602214",
+      "description": "Ampliacion de margenes quirurgicos de tumor maligno extirpado previamente resto del cuerpo"
+    },
+    { "code": "1602215", "description": "Tumores vasculares profundos cabeza, cuello, genitales" },
+    { "code": "1602216", "description": "Tumores vasculares profundos resto del cuerpo" },
+    {
+      "code": "1602221",
+      "description": "Herida cortante o contusa complicada, reparacion y sutura (una o multiples de mas de 5 cms de largo total y/o que comprometa músculos y/o conductos y/o vasos o  similares"
+    },
+    {
+      "code": "1602222",
+      "description": "Herida cortante o contusa NO complicada, reparacion y sutura (una o multiples de mas de 5 cms de largo total y/o que comprometa solo piel)"
+    },
+    {
+      "code": "1602223",
+      "description": "Extirpacion de lesión benigna subepidemica, incluye tumor solido, quiste epidemico y lipoma por lesion cara, cuello cabelludo. Cuello, genitales."
+    },
+    {
+      "code": "1602224",
+      "description": "Extirpacion de lesión benigna subepidemica, incluye tumor solido, quiste epidemico y lipoma por lesion  resto del cuerpo"
+    },
+    {
+      "code": "1602225",
+      "description": "Vaciamiento y curetaje quirurgico de lesiones quistica o abscesos"
+    },
+    { "code": "1602231", "description": "Onisectomia total o parcial simple" },
+    { "code": "1602232", "description": "Cirugia reparadora ungueal por proceso inflamatorio" },
+    {
+      "code": "1602233",
+      "description": "Correccion quirurgica de defecto congenito o por tumor ungueal"
+    },
+    {
+      "code": "1602240",
+      "description": "Curacion por medico, quemadura o similar menor al 5% superficie corporal en pabellon"
+    },
+    {
+      "code": "1602241",
+      "description": "Curacion por medico, quemadura o similar  5 a 10% superficie corporal en pabellon"
+    },
+    {
+      "code": "1602242",
+      "description": "Curacion por medico, quemadura o similar  mayor  al 10% superficie corporal en pabellon"
+    },
+    {
+      "code": "1703001",
+      "description": "Embolectomía y/o trombectomía, unilateral, miembro superior o inferior (proc. aut.)"
+    },
+    {
+      "code": "1703002",
+      "description": "Fístula arteriovenosa congénita o traumática, repar. quir."
+    },
+    { "code": "1703003", "description": "Fístula arteriovenosa (de Brescia o similar)" },
+    {
+      "code": "1703005",
+      "description": "Reparación quirúrgica de vasos arteriales y/o venosos intra-abdominales o intra-torácicos c/s injerto (biológicos o sintéticos)"
+    },
+    {
+      "code": "1703006",
+      "description": "Reparación quirúrgica de vasos arteriales y/o venosos periféricos c/s injerto (biológicos o sintéticos)"
+    },
+    { "code": "1703007", "description": "Aneurisma aórtico-abdominal trat. quir." },
+    { "code": "1703008", "description": "Aneurismas periféricos, trat. quir." },
+    { "code": "1703009", "description": "Aneurisma tóraco-abdominal trat. quir." },
+    {
+      "code": "1703010",
+      "description": "Puentes aorto bifemoral puentes de troncos supra-aórticos"
+    },
+    { "code": "1703011", "description": "Puente aorto-unifemoral" },
+    {
+      "code": "1703012",
+      "description": "Puentes aorto aorto visceral (renal, mesentérico o similar)"
+    },
+    { "code": "1703013", "description": "Puente aorto-ilíaco" },
+    {
+      "code": "1703014",
+      "description": "Endarterectomía carotídea, subclavia, vertebral, femoral, o similar  c/s injerto (proc. aut.)"
+    },
+    {
+      "code": "1703015",
+      "description": "Endarterectomía femoral común, superficial o profunda, poplítea u otras c/s injerto (proc. aut.)"
+    },
+    { "code": "1703016", "description": "Endarterectomía renal, c/s injerto (proc. aut.)" },
+    { "code": "1703017", "description": "Puente fémoro-tibial o distales" },
+    { "code": "1703018", "description": "Puente fémoro-poplíteo" },
+    { "code": "1703019", "description": "Ligadura troncos arteriales, (proc. aut.)" },
+    {
+      "code": "1703020",
+      "description": "Otras derivaciones: fémoro–femoral, axilo-humeral, axilo-femoral, carótidosubclavio, axilo-axilar o similares; c/u"
+    },
+    { "code": "1703021", "description": "Anastomosis portocava u otras portosistémicas" },
+    { "code": "1703022", "description": "Anastomosis venosas intraabdominales" },
+    { "code": "1703023", "description": "Denudación venosa (proc. aut.)" },
+    { "code": "1703024", "description": "Derivaciones venosas de extremidades puentes venosos" },
+    { "code": "1703025", "description": "Implante filtros venosos" },
+    { "code": "1703026", "description": "Ligadura cayado safena interna, unilateral" },
+    {
+      "code": "1703027",
+      "description": "Ligadura otros troncos venosos (poplíteo, femoral, ilíacas, humeral, axilar, otros); ligadura de venas comunicantes y/o perforantes, y/o resección de paquetes varicosos, cualquier técnica (una extremidad);c/u"
+    },
+    { "code": "1703028", "description": "Ligadura vena cava inferior" },
+    {
+      "code": "1703029",
+      "description": "Resección cutáneo-aponeurótica unilateral (incluye fasciotomía interna o posterior)"
+    },
+    {
+      "code": "1703030",
+      "description": "Safenectomía interna y/o externa, unilateral o endoablación por láser"
+    },
+    { "code": "1703031", "description": "Trombectomía de venas profundas" },
+    { "code": "1703032", "description": "Anastomosis linfovenosas" },
+    { "code": "1703033", "description": "Linfedema, trat. quir. una extremidad" },
+    { "code": "1703034", "description": "Drenaje quirúrgico adenitis" },
+    {
+      "code": "1703035",
+      "description": "Biopsia quir. ganglionar (cualquier región periférica superficial o profunda) (proc. aut.)"
+    },
+    {
+      "code": "1703036",
+      "description": "Disección y extirpación ganglionar regional: axilo-supraclavicular"
+    },
+    {
+      "code": "1703037",
+      "description": "Disección y extirpación ganglionar regional: cérvico-torácica"
+    },
+    {
+      "code": "1703038",
+      "description": "Disección y extirpación ganglionar regional: ileoinguinal"
+    },
+    {
+      "code": "1703039",
+      "description": "Disección y extirpación ganglionar regional: inguinoescrotales"
+    },
+    {
+      "code": "1703040",
+      "description": "Disección y extirpación ganglionar regional: lumbo-aórticos"
+    },
+    { "code": "1703042", "description": "Disección y extirpación ganglionar regional: poplíteos" },
+    {
+      "code": "1703043",
+      "description": "Disección y extirpación  ganglionar regional: radical clásica o modificada de cuello"
+    },
+    {
+      "code": "1703044",
+      "description": "Disección y extirpación ganglionar regional: yugular simple"
+    },
+    { "code": "1703045", "description": "Simpatectomía cérvico-torácica" },
+    { "code": "1703046", "description": "Simpatectomía lumbar" },
+    {
+      "code": "1703047",
+      "description": "Anastomosis vasculares sistémicopulmonares (Blalock-Pott-Glenn o similares)"
+    },
+    {
+      "code": "1703048",
+      "description": "Cambio de generador de marcapaso, sin cambio de electrodo (no incluye el valor de la prótesis)"
+    },
+    {
+      "code": "1703148",
+      "description": "Cambio de generador de marcapaso (incluye el valor de la prótesis)"
+    },
+    { "code": "1703049", "description": "Coartación aórtica infantil (preductal) trat. quir." },
+    { "code": "1703050", "description": "Coartación aórtica, trat. quir." },
+    { "code": "1703051", "description": "Conducto arterioso persistente, trat. quir." },
+    { "code": "1703052", "description": "Fístula coronaria, trat. quir." },
+    {
+      "code": "1703053",
+      "description": "Implantación de marcapaso c/electrod. intraven. o epicárdico (no incluye el valor de la prótesis)"
+    },
+    {
+      "code": "1703153",
+      "description": "Implantación de marcapaso c/electrod. intraven. o epicárdico (incluye el valor de la prótesis)"
+    },
+    { "code": "1703054", "description": "Operación sobre anillos valvulares o vasculares" },
+    {
+      "code": "1703055",
+      "description": "Operaciones sobre arteria pulmonar, constricción por cinta"
+    },
+    { "code": "1703056", "description": "Pericardiectomía y/o extirp. de quistes y/o tumores" },
+    {
+      "code": "1703057",
+      "description": "Pericardiorrafia o míopericardiorrafia en heridas penetrante"
+    },
+    { "code": "1703058", "description": "Pericardiotomía" },
+    {
+      "code": "1703061",
+      "description": "De complejidad mayor: incluye reemplazo valvular múltiple, tres o más puentes aortocoronarios y/o anastomosis con arteria mamaria, corrección de cardiopatías congénitas complejas (por ejemplo: Fallot; atresia tricuspídea; doble salida del ventrículo derecho; transposición grandes vasos; ventrículo único o similares), aneurisma aórtico torácico, trasplante cardíaco y cualquier operación cardíaca en lactantes"
+    },
+    {
+      "code": "1703062",
+      "description": "De complejidad mediana: incluye comunicación interventricular, reemplazo univalvular, uno o dos puentes aortocoronarios; aneurisma ventricular, corrección de Wolf-Parkinson White y otras arritmias"
+    },
+    {
+      "code": "1703063",
+      "description": "De complejidad menor: incluye comunicación interauricular simple, estenosis pulmonar valvular, estenosis mitral o similar"
+    },
+    { "code": "1703064", "description": "Implante de prótesis para hemodiálisis" },
+    { "code": "1703065", "description": "Transposición basílica o similar" },
+    {
+      "code": "1703066",
+      "description": "Instalación de catéter venoso de larga duración tunelizado (incluye cateter)"
+    },
+    { "code": "1703067", "description": "Simpatectomía cervico-torácica toracoscopia" },
+    { "code": "1703068", "description": "Resección ganglios mediastínicos por toracotomía" },
+    {
+      "code": "1703069",
+      "description": "Resección ganglios mediastínicos por vía videotoracoscopica"
+    },
+    { "code": "1703070", "description": "Vaciamiento mediastínico ántero-superior" },
+    {
+      "code": "1703071",
+      "description": "Aneurisma torácico con compromiso de arco aórtico tratamiento endovascular"
+    },
+    {
+      "code": "1703072",
+      "description": "Implante de desfribilador con resincronizador VVI (incluye dispositivo)"
+    },
+    {
+      "code": "1703073",
+      "description": "Implante de desfribilador con resincronizador DDD  (incluye dispositivo)"
+    },
+    { "code": "1703074", "description": "Retiro de catéter venoso de larga duración tunelizado" },
+    { "code": "1703075", "description": "Fístula Arteriovenosa Protésica" },
+    { "code": "1703076", "description": "Transposición de vena basílica para hemodiálisis" },
+    {
+      "code": "1703077",
+      "description": "Extracción de electrodo endocavitario, con o sin extracción de generador de marcapaso o desfibrilador"
+    },
+    {
+      "code": "1703080",
+      "description": "Implante y retiro de implante venoso (filtro de vena cava) por vía endovascular"
+    },
+    {
+      "code": "1703081",
+      "description": "Ablación troncos venosos con técnica térmica (laser, radiofrecuencia u otras)"
+    },
+    {
+      "code": "1703082",
+      "description": "Ablación troncos venosos con técnica no térmica no tumescente (cianocrilato, fármaco, mecánico u otras)"
+    },
+    {
+      "code": "1704002",
+      "description": "Cirugía tórax abierto traumático y/o fijación tórax volante, osteosíntesis costales múltiples y de esternón (no incluye el valor de la prótesis)"
+    },
+    { "code": "1704003", "description": "Fenestración o toracoplastía" },
+    { "code": "1704004", "description": "Reparación pectum excavatum o carinatum, (proc. aut.)" },
+    {
+      "code": "1704005",
+      "description": "Resección de costillas y/o pared costal y/o cartílago y/o esternón s/plastía (proc. aut.)"
+    },
+    {
+      "code": "1704006",
+      "description": "Resección de pared costal c/plastía (toracoplastía osteoplástica de York o similar)"
+    },
+    {
+      "code": "1704007",
+      "description": "Toracofrenolaparatomía exploradora c/s reparación vísceras torácicas y abdominales"
+    },
+    { "code": "1704008", "description": "Toracofrenotomía exploradora" },
+    {
+      "code": "1704009",
+      "description": "Toracotomía exploradora, c/s biopsia, c/s debridación, c/s drenaje"
+    },
+    {
+      "code": "1704010",
+      "description": "Toracotomía mínima c/s resección costal, c/s biopsia, c/s drenaje"
+    },
+    {
+      "code": "1704011",
+      "description": "Mediastinotomía exploradora ant. o post. c/s biopsia proc. aut"
+    },
+    { "code": "1704012", "description": "Drenaje quirúrgico de mediastino, vía cervical" },
+    { "code": "1704013", "description": "Drenaje quirúrgico de mediastino, vía torácica" },
+    { "code": "1704014", "description": "Timectomía vía cervical" },
+    { "code": "1704015", "description": "Timectomía vía torácica medioesternal" },
+    { "code": "1704016", "description": "Conducto torácico, ligadura quirúrgica" },
+    {
+      "code": "1704017",
+      "description": "Tumores o quistes de mediastino (anterior o posterior) trat. quir. c/s disección ganglionar"
+    },
+    {
+      "code": "1704018",
+      "description": "Cirugía del diafragma con cirugía de vísceras abdominales o torácicas"
+    },
+    { "code": "1704064", "description": "Frenoparálisis trat. quir." },
+    { "code": "1704019", "description": "Heridas traumáticas del diafragma, trat. quir." },
+    {
+      "code": "1704020",
+      "description": "Hernioplastía diafragmática por vía torácica c/ prótesis (no incluye valor de la prótesis)"
+    },
+    {
+      "code": "1704021",
+      "description": "Hernioplastía diafragmática por vía torácica, sin prótesis"
+    },
+    {
+      "code": "1704022",
+      "description": "Tumores, malformaciones o quistes del diafragma (no incluye valor de la prótesis) trat. quir."
+    },
+    { "code": "1704023", "description": "Cuerpo extraño pleural, extrac. quir." },
+    {
+      "code": "1704024",
+      "description": "Decorticación pleuropulmonar (pleurectomía parcial o total)"
+    },
+    { "code": "1704025", "description": "Pleurodesis por pleurotomía" },
+    { "code": "1704026", "description": "Pleurodesis por toracotomía" },
+    { "code": "1704027", "description": "Pleurotomía única o doble" },
+    { "code": "1704028", "description": "Tratamiento resectivo de tumores pleurales" },
+    {
+      "code": "1704029",
+      "description": "Broncotomía o traqueobroncotomía exploradora o terapéutica por toracotomía (proc. aut.)"
+    },
+    {
+      "code": "1704030",
+      "description": "Cirugía ruptura traqueobronquial o tratamiento quirúrgico fístula postneumonectomía por esternotomía media"
+    },
+    {
+      "code": "1704031",
+      "description": "Plastía de tráquea y/o bronquios c/s resección, c/s prótesis (no incluye el valor de la prótesis)"
+    },
+    {
+      "code": "1704032",
+      "description": "Tratamiento quirúrgico fístula bronquial por toracotomía"
+    },
+    { "code": "1704033", "description": "Tumores traqueales, extirpación" },
+    { "code": "1704034", "description": "Absceso pulmonar, drenaje por toracotomía" },
+    { "code": "1704035", "description": "Biopsia pulmonar por toracotomía" },
+    { "code": "1704036", "description": "Bulas, trat. quir." },
+    { "code": "1704037", "description": "Cirugía de quiste hidatídico sin resección pulmonar" },
+    { "code": "1704038", "description": "Cuerpo extraño intrapulmonar, extirp. quir." },
+    { "code": "1704039", "description": "Heridas de pulmón, trat. quir. (proc. aut.)" },
+    { "code": "1704040", "description": "Lobectomía o bilobectomía" },
+    { "code": "1704041", "description": "Metástasis bilateral, trat. quir. por esternotomía" },
+    { "code": "1704042", "description": "Metástasis unilateral" },
+    { "code": "1704043", "description": "Neumonectomía c/s resección de pared costal" },
+    { "code": "1704045", "description": "Quistectomía simple" },
+    { "code": "1704046", "description": "Resecciones segmentarias anatómicas de pulmón" },
+    { "code": "1704047", "description": "Extracción cuerpo extraño esofágico por vía cervical" },
+    {
+      "code": "1704048",
+      "description": "Cuerpo extraño esofágico, extracción por esofagotomía, vía torácica"
+    },
+    { "code": "1704049", "description": "Esofagostomía cervical (proc. aut.)" },
+    { "code": "1704050", "description": "Tumores benignos y/o quistes. trat. quir.- Vía cervical" },
+    {
+      "code": "1704051",
+      "description": "Tratamiento quirúrgico de tumores esofagicos benignos y/o quistes vía torácica"
+    },
+    { "code": "1704052", "description": "Divertículos esofágicos, trat. quir., vía cervical" },
+    { "code": "1704053", "description": "Divertículos esofágicos, trat. quir., vía torácica" },
+    { "code": "1704054", "description": "Achalasia, trat. quir." },
+    { "code": "1704055", "description": "Atresia esofágica, trat. quir." },
+    {
+      "code": "1704056",
+      "description": "Esofagectomía con restitución del tránsito mediante estómago o intestino; parcial o total"
+    },
+    {
+      "code": "1704057",
+      "description": "Esofagectomía total con esofagostomía, gastrostomía y yeyunostomía"
+    },
+    { "code": "1704058", "description": "Esofagogastrectomía proximal" },
+    {
+      "code": "1704059",
+      "description": "Prótesis o tubo endoesofágico, colocación de (proc. aut.)"
+    },
+    {
+      "code": "1704060",
+      "description": "Reconstitución de tránsito en segundo tiempo (estómago o intestino) de operación"
+    },
+    { "code": "1704061", "description": "Sutura herida o perforación esófago cervical" },
+    { "code": "1704062", "description": "Sutura herida o perforación esófago torácico" },
+    { "code": "1704063", "description": "Várices esofágicos, ligadura directa" },
+    { "code": "1704065", "description": "Mediastinoscopía y/o videomediastinoscopía c/s biopsia" },
+    {
+      "code": "1704066",
+      "description": "Tumores o quistes de mediastino (anterior o posterior) tratamiento quirúrgico c/s disección ganglionar por videotoracoscopia"
+    },
+    {
+      "code": "1704067",
+      "description": "Cirugía del diafragma con cirugía de vísceras abdominales o torácicas por vía toracoscopia"
+    },
+    {
+      "code": "1704068",
+      "description": "Heridas traumáticas, trat. quir. por vía videotoracoscopia"
+    },
+    {
+      "code": "1704069",
+      "description": "Cirugía de tumores o malformaciones diafragmaticos por videotoracoscopia"
+    },
+    { "code": "1704070", "description": "Biopsia pleural por videotoracoscopia" },
+    { "code": "1704071", "description": "Cuerpo extraño pleural, por videotoracoscopia" },
+    {
+      "code": "1704072",
+      "description": "Decorticación pleuropulmonar (pleurectomía parcial o total) por videotoracoscopia"
+    },
+    { "code": "1704073", "description": "Absceso pulmonar, drenaje por videotoracoscopia" },
+    {
+      "code": "1704074",
+      "description": "Cirugía de quiste hidatídico c/s resección pulmonar por vía videotoracoscopia"
+    },
+    {
+      "code": "1704075",
+      "description": "Metástasis unilateral, trat. quir. por videotoracoscopia"
+    },
+    {
+      "code": "1704076",
+      "description": "Atresia esofágica con fístula traqueoesofágica por toracoscopia"
+    },
+    {
+      "code": "1704077",
+      "description": "Atresia esofágica sin fístula traqueoesofágica por toracoscopia"
+    },
+    {
+      "code": "1704078",
+      "description": "Atresia esofágica sin fístula traqueoesofágica. Anastomosis"
+    },
+    {
+      "code": "1704079",
+      "description": "Cirugía del opérculo torácico por vía videotoracoscopica"
+    },
+    { "code": "1704080", "description": "Videotoracoscopía exploradora" },
+    { "code": "1704081", "description": "Conducto torácico, ligadura por vía videotoracoscopica" },
+    { "code": "1704082", "description": "Frenoparalisis tratatamiento quirúrgico laparoscópico" },
+    {
+      "code": "1704083",
+      "description": "Frenoparalisis tratamiento quirúrgico por vía videotoracoscopica"
+    },
+    {
+      "code": "1704084",
+      "description": "Hernioplastía diafragmática por vía torácica c/s prótesis por vía videotoracoscopica"
+    },
+    { "code": "1704085", "description": "Pleurodesis por vía videotoracoscopica" },
+    { "code": "1704086", "description": "Tumores pleurales, por vía videotoracoscopica" },
+    { "code": "1704087", "description": "Cirugía del mesotelioma maligno" },
+    { "code": "1704088", "description": "Fibrinolisis pleural por pleurotomía" },
+    {
+      "code": "1704089",
+      "description": "Resección segmentaria atipica por vía videotoracoscopica"
+    },
+    {
+      "code": "1704090",
+      "description": "Heridas de pulmón, trat. quir. por vía videotoracoscopica"
+    },
+    { "code": "1704091", "description": "Lobectomía o bilobectomía por vía videotoracoscopica" },
+    { "code": "1704092", "description": "Neumonectomía por vía videotoracoscopica" },
+    {
+      "code": "1704093",
+      "description": "Resecciones segmentarias anatómica por vía videotoracoscopica"
+    },
+    {
+      "code": "1704094",
+      "description": "Extracción cuerpo extraño esofágico por vía videotoracoscopica"
+    },
+    {
+      "code": "1704095",
+      "description": "Resección de tumor esofagico benignos por vía videotoracoscopica"
+    },
+    {
+      "code": "1704096",
+      "description": "Resección de diverticulos esofágicos por vía videotoracoscopica"
+    },
+    {
+      "code": "1704097",
+      "description": "Sutura herida o perforación esófago torácico por vía videotoracoscopica"
+    },
+    {
+      "code": "1802001",
+      "description": "Diafragmática por vía abdominal o cualquiera otra hernia con uso de prótesis (no incluye el valor de la prótesis)"
+    },
+    {
+      "code": "1802101",
+      "description": "Diafragmática por vía abdominal o cualquiera otra hernia con uso de prótesis (incluye el valor de la prótesis)"
+    },
+    {
+      "code": "1802004",
+      "description": "Laparotomía exploradora, c/s liberación de adherencias, c/s drenaje, c/s biopsias como proc. aut. o como resultado de una herida penetrante abdominal no complicada o de un hemoperitoneo postoperatorio ..."
+    },
+    { "code": "1802005", "description": "Onfalocele (hasta 5 cms.); trat. quir." },
+    { "code": "1802006", "description": "Onfalocele (mas de 5 cms.); trat. quir." },
+    { "code": "1802013", "description": "Gastrosquisis" },
+    { "code": "1802007", "description": "Peritonitis difusa aguda, trat. quir. (proc. aut.)" },
+    { "code": "1802008", "description": "Tumor y/o quiste peritoneal (parietal)" },
+    { "code": "1802009", "description": "Tumor y/o quiste retroperitoneal" },
+    {
+      "code": "1802010",
+      "description": "Antrectomía y vagotomía troncular o selectiva (proc. aut.)"
+    },
+    { "code": "1802011", "description": "Desgastrectomía y neoanastomosis, c/s vaguectomía" },
+    {
+      "code": "1802012",
+      "description": "Gastroenteroanastomosis, cualquier técnica. (proc. aut.)"
+    },
+    { "code": "1802014", "description": "Gastrotomía y/o gastrostomía (proc. aut.)" },
+    { "code": "1802015", "description": "Perforación gástrica aguda, trat. quir. (proc. aut.)" },
+    { "code": "1802016", "description": "Piloroplastía (proc. aut.)" },
+    { "code": "1802017", "description": "Gastrectomía sub-total distal: Con disección ganglionar" },
+    { "code": "1802018", "description": "Gastrectomía sub-total distal: Sin disección ganglionar" },
+    { "code": "1802019", "description": "Dumping y/o síndrome asa aferente, trat. quir." },
+    {
+      "code": "1802021",
+      "description": "Gastrectomía sub-total proximal con esófago-gastro-anastomosis u otra derivación"
+    },
+    { "code": "1802022", "description": "Gastrectomía total" },
+    {
+      "code": "1802023",
+      "description": "Gastrectomía total o sub-total ampliada (incluye esplenectomía y pancreatectomía corporocaudal y disección ganglionar)"
+    },
+    {
+      "code": "1802024",
+      "description": "Gastropexia y/u otra cirugía antirreflujo, c/s vagotomía"
+    },
+    {
+      "code": "1802025",
+      "description": "Vagotomía selectiva y superselectiva c/s dren. gástrico, c/s piloroplastía (proc. aut.)"
+    },
+    { "code": "1802079", "description": "Gastrectomía total con ostomías proximal y distal" },
+    {
+      "code": "1802080",
+      "description": "Reconstitución  de tránsito en 2° tiempo de operación código 18-02-079"
+    },
+    { "code": "1802026", "description": "Drenaje de colecciones líquidas hepáticas" },
+    { "code": "1802027", "description": "Colangioenteroanastomosis intrahepática" },
+    { "code": "1802028", "description": "Colecistectomía c/s colangiografía operatoria" },
+    { "code": "1802081", "description": "Colecistectomía por videolaparoscopía, proc. completo" },
+    {
+      "code": "1802029",
+      "description": "Colecistectomía y coledocostomía (sonda T y colangiografía postoperatoria) c/s colangiografía operatoria"
+    },
+    { "code": "1802030", "description": "Colecistogastroanastomosis o colecistoenteroanastomosis" },
+    { "code": "1802031", "description": "Colecistostomía (proc. aut.)" },
+    { "code": "1802032", "description": "Colédoco o hepatoenteroanastomosis" },
+    {
+      "code": "1802033",
+      "description": "Coledocostomía supraduodenal o hepaticostomía (proc. aut.)"
+    },
+    {
+      "code": "1802034",
+      "description": "Colocación de válvula peritoneoyugular derivativa de ascitis"
+    },
+    { "code": "1802035", "description": "Desconexión acigoportal con transección esofágica" },
+    { "code": "1802036", "description": "Desconexión ácigoportal sin transección esofágica" },
+    { "code": "1802037", "description": "Drenaje vía biliar transhepático" },
+    { "code": "1802038", "description": "Esfinteroplastía transduodenal, (proc. aut.)" },
+    { "code": "1802039", "description": "Hepatectomía segmentaria (proc. aut.)" },
+    { "code": "1802040", "description": "Herida traumática de hígado y/o vía biliar, trat. quir." },
+    { "code": "1802041", "description": "Lobectomía hepática (proc. aut.)" },
+    {
+      "code": "1802042",
+      "description": "Quiste hidatídico, único o múltiple, y/o cistoyeyunoanastomosis, trat. quir."
+    },
+    { "code": "1802100", "description": "Trasplante hepático" },
+    {
+      "code": "1802043",
+      "description": "Abscesos, quistes, pseudoquistes o similares, trat. quir."
+    },
+    { "code": "1802044", "description": "Heridas, traumatismos, trat. quir." },
+    { "code": "1802045", "description": "Pancreatectomía parcial" },
+    { "code": "1802046", "description": "Pancreatectomía total c/s esplenectomía" },
+    { "code": "1802047", "description": "Pancreatoduodenectomía" },
+    { "code": "1802048", "description": "Secuestrectomía en pancreatitis aguda" },
+    { "code": "1802148", "description": "Yeyunopancreatostomía" },
+    { "code": "1802049", "description": "Autoimplante de bazo (incluye esplenectomía)" },
+    { "code": "1802050", "description": "Esplenectomía total o parcial (proc. aut.)" },
+    {
+      "code": "1802051",
+      "description": "Operación de etapificación (incluye esplenectomía, biopsias hepáticas, de ganglios abdominales y de cresta ilíaca)"
+    },
+    { "code": "1802052", "description": "Sutura esplénica (proc. aut.)" },
+    {
+      "code": "1802053",
+      "description": "Apendicectomía y/o dren. absceso apendicular (proc. aut.)"
+    },
+    { "code": "1802054", "description": "Cierre de colostomía (proc. aut.)" },
+    { "code": "1802055", "description": "Colostomía (proc. aut.)" },
+    { "code": "1802056", "description": "Colostomía, complicaciones tardías, trat. quir." },
+    { "code": "1802057", "description": "Divertículo de Meckel, trat. quir." },
+    {
+      "code": "1802058",
+      "description": "Entero-enteroanastomosis o enterocoloanastomosis (proc. aut.)"
+    },
+    {
+      "code": "1802059",
+      "description": "Enterotomía o enterostomía (yeyunostomía u otra) (proc. aut.)"
+    },
+    { "code": "1802060", "description": "Ileostomía terminal o en asa (proc. aut.)" },
+    { "code": "1802061", "description": "Invaginación intestinal, trat. quir." },
+    { "code": "1802062", "description": "Persistencia conducto onfalomesentérico, trat. quir." },
+    { "code": "1802063", "description": "Quiste uraco, trat. quir." },
+    { "code": "1802065", "description": "Oclusión intestinal, trat. quir.:- Con resección" },
+    { "code": "1802066", "description": "Oclusión intestinal, trat. quir.:- Sin resección" },
+    { "code": "1802067", "description": "Colectomía parcial o hemicolectomía" },
+    { "code": "1802068", "description": "Colectomía total abdominal" },
+    {
+      "code": "1802069",
+      "description": "Descenso de colon c/conservación del esfínter, incluye resección de colon"
+    },
+    { "code": "1802070", "description": "Hartmann, operación de (o similar)" },
+    {
+      "code": "1802071",
+      "description": "Perforación y/o herida de intestino, única o múltiple, trat. quir. (proc. aut.)"
+    },
+    {
+      "code": "1802072",
+      "description": "Quiste y/o tumor del mesenterio y/o epiplones, único y/o múltiple, trat. quir."
+    },
+    {
+      "code": "1802073",
+      "description": "Reconstitución  tránsito post operación de Hartmann o sim."
+    },
+    { "code": "1802074", "description": "Resección de intestino y enteroanastomosis (proc. aut.)" },
+    { "code": "1802082", "description": "Resección intestinal con ostomías proximal y distal" },
+    {
+      "code": "1802075",
+      "description": "Resección intestinal masiva por trombosis mesentérica u otra etiología"
+    },
+    { "code": "1802076", "description": "Duplicación intestinal, trat. quir." },
+    { "code": "1802077", "description": "Mal rotación intestinal, trat. quir." },
+    {
+      "code": "1802083",
+      "description": "Cirugía de la estenosis hipertrófica del píloro. Abierta"
+    },
+    {
+      "code": "1802084",
+      "description": "Cirugía de la estenosis hipertrófica del píloro. Laparoscopia"
+    },
+    {
+      "code": "1802085",
+      "description": "Laparotomía exploradora, instalación de VAC (por procedimiento)"
+    },
+    { "code": "1802086", "description": "Cirugía antirreflujo más gastrostomía" },
+    { "code": "1802087", "description": "Cirugía antirreflujo más gastrostomia vía laparoscopia" },
+    { "code": "1802158", "description": "Cirugía bariátrica By Pass Gástrico por laparoscopia" },
+    { "code": "1802159", "description": "Cirugía bariátrica Manga Gástrica por laparoscopia" },
+    { "code": "1802088", "description": "Cirugía de la atresia de vía biliar" },
+    {
+      "code": "1802089",
+      "description": "Cirugía de la atresia de vía biliar por vía laparoscopia"
+    },
+    {
+      "code": "1802090",
+      "description": "Atresia o estenosis duodenal, páncreas anular, reparación quirúrgica. Abierta"
+    },
+    {
+      "code": "1802091",
+      "description": "Atresia o estenosis duodenal, páncreas anular, reparación quirúrgica laparoscopia"
+    },
+    { "code": "1802092", "description": "Esplenectomía por vía laparoscopia" },
+    {
+      "code": "1802093",
+      "description": "Cirugía de la enterocolitis neonatal con resección intestinal"
+    },
+    {
+      "code": "1802094",
+      "description": "Cirugía de la enterocolitis neonatal con resección intestinal laparoscopia"
+    },
+    {
+      "code": "1802095",
+      "description": "Cirugía de la enterocolitis neonatal con resección múltiple"
+    },
+    {
+      "code": "1802096",
+      "description": "Cirugía de la enterocolitis neonatal con resección múltiple laparoscopia"
+    },
+    {
+      "code": "1802097",
+      "description": "Cirugía de la enterocolitis neonatal sin resección intestinal"
+    },
+    {
+      "code": "1802098",
+      "description": "Cirugía de la enterocolitis neonatal sin resección intestinal laparoscopia"
+    },
+    {
+      "code": "1802099",
+      "description": "Reconstitución de transito post enterocolitis neonatal con una entero-entero anastomosis"
+    },
+    {
+      "code": "1802106",
+      "description": "Reconstitución de transito post enterocolitis neonatal con múltiples entero-entero anastomosis"
+    },
+    {
+      "code": "1802102",
+      "description": "Atresia o estenosis yeyuno-ileal, reparación primaria abierta"
+    },
+    {
+      "code": "1802103",
+      "description": "Atresia o estenosis yeyuno-ileal, reparación primaria laparoscopia"
+    },
+    {
+      "code": "1802104",
+      "description": "Atresia o estenosis yeyuno-ileal, resección y ostomías abierta"
+    },
+    {
+      "code": "1802105",
+      "description": "Atresia o estenosis yeyuno-ileal, resección y ostomías laparoscopia"
+    },
+    { "code": "1802149", "description": "By pass gástrico por cirugía abierta" },
+    { "code": "1802150", "description": "By pass gástrico por laparoscopía" },
+    { "code": "1802151", "description": "Cirugía del quiste de colédoco" },
+    { "code": "1802152", "description": "Cirugía del quiste de colédoco laparoscópico" },
+    { "code": "1802154", "description": "Hernia con malla preperitoneal, acceso mininvasivo." },
+    {
+      "code": "1802155",
+      "description": "Hernia con malla retromuscular, hernia diafragmática por vía abdominal, hernia hiatal, acceso mininvasivo."
+    },
+    { "code": "1803001", "description": "Absceso ano rectal complejo, tratamiento quirúrgico" },
+    { "code": "1803002", "description": "Absceso anorrectal simple, trat. quir." },
+    { "code": "1803003", "description": "Absceso sacrocoxígeo, drenaje" },
+    { "code": "1803004", "description": "Biopsia quirúrgica rectal (proc. aut.)" },
+    { "code": "1803006", "description": "Cuerpo extraño rectal, extracción por vía abdominal" },
+    { "code": "1803007", "description": "Cuerpo extraño rectal, extracción por vía anal" },
+    {
+      "code": "1803008",
+      "description": "Desgarros y heridas anorrectales, trat. quir- Con compromiso del esfínter"
+    },
+    {
+      "code": "1803009",
+      "description": "Desgarros y heridas anorrectales, trat. quir- Sin compromiso del esfínter"
+    },
+    { "code": "1803010", "description": "Esfinterotomía (proc. aut.)" },
+    { "code": "1803011", "description": "Estenosis anal, plastía" },
+    { "code": "1803012", "description": "Estenosis rectal, plastía" },
+    { "code": "1803013", "description": "Fecaloma, trat. quir." },
+    { "code": "1803014", "description": "Fístula trat. quir. de:- Rectovesical" },
+    {
+      "code": "1803015",
+      "description": "Fístula trat. quir. de:- Rectovaginal, rectouretral o uretrovaginal"
+    },
+    { "code": "1803016", "description": "Fístula trat. quir. de:- Anorrectal, de cualquier tipo" },
+    { "code": "1803017", "description": "Fisura anal, repar. quir." },
+    {
+      "code": "1803018",
+      "description": "Hemorroidectomía (incluye otras operaciones complementarias en canal anal)"
+    },
+    { "code": "1803019", "description": "Hemorroides, trombectomía (proc. aut.)" },
+    {
+      "code": "1803020",
+      "description": "Imperforación anal, reconstitución tránsito por vía abdómino-perineal"
+    },
+    {
+      "code": "1803021",
+      "description": "Imperforación anal, reconstitución tránsito por vía perineal"
+    },
+    { "code": "1803023", "description": "Incontinencia anal, trat.quir. con cerclaje" },
+    { "code": "1803024", "description": "Incontinencia anal, trat.quir. con plastía muscular" },
+    { "code": "1803025", "description": "Pólipo rectal, trat.quir. por vía abdominal" },
+    { "code": "1803026", "description": "Pólipo rectal, trat.quir. por vía anal" },
+    { "code": "1803027", "description": "Prolapso rectal, trat.quir. por vía abdominal" },
+    { "code": "1803028", "description": "Prolapso rectal, trat.quir. por vía anal" },
+    { "code": "1803029", "description": "Panproctocolectomía (2 equipos)" },
+    { "code": "1803030", "description": "Prurito anal, trat. quir. por denervación" },
+    { "code": "1803031", "description": "Quiste sacrocoxígeo, trat. quir." },
+    { "code": "1803032", "description": "Resección abdómino-perineal de ano y recto (2 equipos)" },
+    {
+      "code": "1803033",
+      "description": "Resección abdómino-perineal de ano y recto ampliada (2 equipos) (incluye genitales femeninos)"
+    },
+    { "code": "1803034", "description": "Resección anterior de recto" },
+    { "code": "1803035", "description": "Resección perineal de ano y recto" },
+    { "code": "1803038", "description": "Condilomas anales, trat. Quirúrgico" },
+    { "code": "1803039", "description": "Cirugía de la cloaca, primer tiempo de derivación" },
+    { "code": "1803040", "description": "Cirugía de la cloaca, reparación definitiva" },
+    {
+      "code": "1803041",
+      "description": "Cirugía reparadora en Enfermedad de Hirschsprung vía abdomino-perineal"
+    },
+    {
+      "code": "1803042",
+      "description": "Cirugía reparadora en Enfermedad de Hirschsprung vía endoanal"
+    },
+    { "code": "1902002", "description": "Arterias renales, operaciones sobre (proc. aut.)" },
+    { "code": "1902003", "description": "Auto o heterotrasplante riñón" },
+    {
+      "code": "1902004",
+      "description": "Cirugía de banco, (proc. completo) (micro-extracorpórea), autotrasplante"
+    },
+    {
+      "code": "1902005",
+      "description": "Litiasis renal, trat. quir. percutáneo c/s ultrasonido (incluye todo el procedimiento)"
+    },
+    {
+      "code": "1902090",
+      "description": "Litiasis renal trat. por onda de choque (litotripsia extracorpórea)"
+    },
+    {
+      "code": "1902006",
+      "description": "Litiasis renal, trat. quir. por nefrotomía anatrófica o bivalva"
+    },
+    {
+      "code": "1902008",
+      "description": "Lumbotomía exploradora c/s dren., c/s biopsia (proc. aut.)"
+    },
+    {
+      "code": "1902009",
+      "description": "Nefrectomía parcial cualquier vía y técnica. Incluye disección ganglionar etapificadora o reductiva"
+    },
+    { "code": "1902010", "description": "Nefrectomía radical ampliada (incluye ganglios)" },
+    { "code": "1902011", "description": "Nefrectomía total" },
+    {
+      "code": "1902012",
+      "description": "Nefrostomía, nefropexia y/o nefrotomía por litiasis, biopsias u otras"
+    },
+    {
+      "code": "1902013",
+      "description": "Pielotomía exploradora y/o terapéutica (incluye la  pielostomía y/o pieloplastía)"
+    },
+    { "code": "1902015", "description": "Suprarrenalectomía unilateral" },
+    { "code": "1902016", "description": "Anastomosis de los uréteres" },
+    { "code": "1902017", "description": "Fístula urétero-vaginal, trat. quir." },
+    { "code": "1902018", "description": "Nefroureterectomía" },
+    { "code": "1902019", "description": "Ureterectomía" },
+    { "code": "1902020", "description": "Urétero-litotomía abierta" },
+    {
+      "code": "1902021",
+      "description": "Urétero o negro-litotomía endoscópica c/ureteroscopía rigida o flexible, con o sin fragmentación."
+    },
+    { "code": "1902022", "description": "Ureteroplastías, proc. completo" },
+    { "code": "1902023", "description": "Uréterorrafia y/o uréterolisis c/u" },
+    { "code": "1902024", "description": "Ureterostomía bilateral: vesical, cutánea o intestinal" },
+    { "code": "1902025", "description": "Ureterostomía unilateral: vesical, cutánea o intestinal" },
+    {
+      "code": "1902093",
+      "description": "Ureterostomía unilateral: vesical, cutáneo o intestinal por vía de abordaje laparoscopia"
+    },
+    {
+      "code": "1902027",
+      "description": "Cistectomía parcial y/o trat. quir. de divertículo vesical"
+    },
+    { "code": "1902028", "description": "Cistectomía radical, proc. completo" },
+    { "code": "1902029", "description": "Cistoplastía, proc. completo" },
+    { "code": "1902030", "description": "Cistorrafia, proc. completo" },
+    {
+      "code": "1902031",
+      "description": "Cistostomía, extracción de litiasis o cuerpo extraño, instalación de catéter suprapúbico, por vía abierta o endoscopica, c/s láser"
+    },
+    { "code": "1902032", "description": "Extrofia vesical, proc. completo" },
+    {
+      "code": "1902033",
+      "description": "Fístula vésico-cutánea, y/o vaginal, y/o intest., trat. quir."
+    },
+    { "code": "1902034", "description": "Lesiones del cuello vesical, trat. quir." },
+    { "code": "1902035", "description": "Ligadura de arterias hipogástricas (proc. aut.)" },
+    { "code": "1902036", "description": "Operación de Bricker" },
+    { "code": "1902037", "description": "Resección endoscópica de cáncer vesical" },
+    { "code": "1902038", "description": "Reservorio continente intestinal externo o interno" },
+    {
+      "code": "1902040",
+      "description": "Diverticulectomía por vía vaginal, perineal, penoescrotal o quistectomía uretral"
+    },
+    { "code": "1902041", "description": "Flegmón urinoso, drenaje y cistostomía" },
+    { "code": "1902043", "description": "Hipospadia distal o plastía de uretra (cada tiempo)" },
+    { "code": "1902044", "description": "Hipospadia proximal, trat. quir. en un tiempo" },
+    {
+      "code": "1902045",
+      "description": "Incontinencia urinaria, trat. quir. por vía abdominal, suprapúbica o combinada (proc. aut.)"
+    },
+    {
+      "code": "1902047",
+      "description": "Meatotomía quirúrgica c/s resección de pólipo o carúncula"
+    },
+    {
+      "code": "1902049",
+      "description": "Uretrectomía y/o plastía abierta de la uretra en cualquiera de sus porciones, por trauma, o estenosis o cualquier etiología"
+    },
+    { "code": "1902050", "description": "Plastía de uretra o trat. de fístulas residuales" },
+    { "code": "1902051", "description": "Uretrostomía" },
+    { "code": "1902052", "description": "Uretrotomía externa (proc. aut.)" },
+    { "code": "1902053", "description": "Uretrotomía interna y/o uretrolitotomía (proc. aut.)" },
+    {
+      "code": "1902054",
+      "description": "Tratamiento quirúrgico de absceso prostático y/o vesículas seminales, cualquier vía o técnica"
+    },
+    { "code": "1902055", "description": "Adenoma o cáncer prostático, resección endoscópica" },
+    {
+      "code": "1902056",
+      "description": "Adenoma prostático, trat. quir. cualquier vía o técnica abierta"
+    },
+    {
+      "code": "1902057",
+      "description": "Prostatectomía radical por cáncer prostático, vía abierta, laparoscópica o robótica, incluye linfadenectomía si corresponde"
+    },
+    {
+      "code": "1902059",
+      "description": "Biopsia quirúrgica de testículo y/o aspiración epididimaria."
+    },
+    { "code": "1902060", "description": "Descenso testículo abdominal c/s hernioplastía" },
+    { "code": "1902061", "description": "Descenso testículo inguinal c/s hernioplastía" },
+    { "code": "1902062", "description": "Escroto, plastía de, proc. completo" },
+    {
+      "code": "1902063",
+      "description": "Hidatidectomía unilat. c/s eversión de la vaginal (proc. aut.)"
+    },
+    { "code": "1902064", "description": "Hidrocele y/o hematocele, trat. quir." },
+    { "code": "1902065", "description": "Orquidectomía unilateral" },
+    { "code": "1902066", "description": "Orquidopexia unilateral" },
+    { "code": "1902067", "description": "Prótesis testicular, (proc. aut.)" },
+    { "code": "1902068", "description": "Orquidectomía ampliada por cáncer testicular" },
+    {
+      "code": "1902069",
+      "description": "Tumores malignos del testículo, orquidectomía ampliada con vaciamiento lumbo-aórtico"
+    },
+    { "code": "1902070", "description": "Anastomosis de los deferentes" },
+    { "code": "1902071", "description": "Epididimectomía parcial o total, un lado" },
+    {
+      "code": "1902072",
+      "description": "Plastía epidídimo-deferente (operación de Martín o sim.)"
+    },
+    {
+      "code": "1902073",
+      "description": "Quistes del cordón, y/o epidídimo, extirpación; epididimotomía diagnóstica y/o terapéutica (proc. aut.)"
+    },
+    {
+      "code": "1902074",
+      "description": "Torsión del cordón, trat. quir. (incluye la fijación del otro testículo)"
+    },
+    { "code": "1902075", "description": "Varicocele unilateral, trat. quir." },
+    {
+      "code": "1902076",
+      "description": "Vasectomía bilateral, (proc. aut.) (la vasectomía como tiempo previo a una resección de próstata esta incluida en la prostatectomía)"
+    },
+    { "code": "1902078", "description": "Amputación parcial del pene (proc. aut.)" },
+    { "code": "1902079", "description": "Amputación total del pene, proc. completo" },
+    { "code": "1902080", "description": "Biopsia de pene (proc. aut.)" },
+    {
+      "code": "1902081",
+      "description": "Cavernosostomía y/o caverno-espongiostomía y/o shunt safenocavernoso"
+    },
+    {
+      "code": "1902082",
+      "description": "Circuncisión (incluye sección de frenillo, y/o de sinequias bálano-prepuciales, y/o incisión dorsal c/s meatotomía)"
+    },
+    { "code": "1902083", "description": "Lesiones del cuerpo cavernoso, trat. quir." },
+    {
+      "code": "1902084",
+      "description": "Meatotomía hombre y/o sección frenillo y/o incisión dorsal, (proc. aut.)"
+    },
+    {
+      "code": "1902085",
+      "description": "Plastía de pene, proc. completo (no incluye valor de la prótesis)"
+    },
+    {
+      "code": "1902091",
+      "description": "Reparación vesical por trauma o daño de cualquier tipo. Por vía de abordaje laparoscópica"
+    },
+    {
+      "code": "1902092",
+      "description": "Inyección ureteral o vesical de medicamentos o sustancias vía endoscópica (no incluye fármaco)"
+    },
+    { "code": "2002001", "description": "Absceso y/o hematoma, trat. quir." },
+    {
+      "code": "2002002",
+      "description": "Mastectomía parcial (cuadrantectomía o similar) o total s/vaciamiento ganglionar"
+    },
+    {
+      "code": "2002003",
+      "description": "Mastectomía radical o tumorectomía c/vaciamiento ganglionar o mastectomía total c/vaciamiento ganglionar"
+    },
+    {
+      "code": "2002005",
+      "description": "Tumor benigno y/o quiste y/o mama supernumeraria y/o aberrante o politelia, o biopsia quirúrgica extemporánea, trat. quir. (proc. aut)"
+    },
+    { "code": "2002006", "description": "Biopsia linfonodo centinela" },
+    { "code": "2003042", "description": "Linfadenectomía pélvica bilateral laparoscopia" },
+    { "code": "2003043", "description": "Traquelectomía radical" },
+    {
+      "code": "2004013",
+      "description": "Cirugía quiste o tumor benigno del ovario abierta, neonatal"
+    },
+    {
+      "code": "2004014",
+      "description": "Cirugía quiste o tumor benigno del ovario laparoscópico, neonatal"
+    },
+    {
+      "code": "2004015",
+      "description": "Tratamiento quirúrgico abierto del quiste paraovárico o del ligamento ancho, neonatal"
+    },
+    {
+      "code": "2004016",
+      "description": "Tratamiento quirúrgico laparoscópico del quiste paraovárico o del ligamento ancho, laparoscópico, neonatal"
+    },
+    {
+      "code": "2004017",
+      "description": "Tratamiento quirúrgico de himen imperforado, paciente pediátrico"
+    },
+    {
+      "code": "2003031",
+      "description": "Videolaparoscopía ginecológica exploradora (incluye toma de muestras para biopsias, punción de quistes y liberación de adherencias) (proc. aut.)"
+    },
+    {
+      "code": "2003001",
+      "description": "Ooforectomía parcial o total, uni o bilateral (proc. aut.)"
+    },
+    {
+      "code": "2003002",
+      "description": "Anexectomía y/o vac. de absceso tubo-ovárico, uni o bilateral."
+    },
+    { "code": "2003003", "description": "Embarazo tubario, trat. quir." },
+    {
+      "code": "2003004",
+      "description": "Ligadura o sección uni o bilateral de las trompas (Madlener, Pomeroy, o similares) (proc. aut.)"
+    },
+    { "code": "2003005", "description": "Salpingectomía uni o bilateral" },
+    {
+      "code": "2003006",
+      "description": "Esterilidad tubaria, operación plástica, uni o bilateral- Con microcirugía"
+    },
+    {
+      "code": "2003007",
+      "description": "Esterilidad tubaria, operación plástica, uni o bilateral- Sin microcirugía"
+    },
+    { "code": "2003008", "description": "Miomectomía" },
+    { "code": "2003041", "description": "Extracción de DIU incrustado, por vía abdominal" },
+    { "code": "2003009", "description": "Histerectomía subtotal por vía abdominal" },
+    { "code": "2003010", "description": "Histerectomía total o ampliada por vía abdominal" },
+    {
+      "code": "2003011",
+      "description": "Ligamento ancho: abscesos y/o hematomas y/o flegmones y/o quistomas y/o várices u otros, trat. quir. (proc. aut.)"
+    },
+    {
+      "code": "2003012",
+      "description": "Conización y/o amputación del cuello uterino, diagnóstica y/o terapéutica  c/s biopsia"
+    },
+    { "code": "2003013", "description": "Exanteración pelviana anterior y/o posterior" },
+    { "code": "2003014", "description": "Histerectomía por vía vaginal" },
+    {
+      "code": "2003015",
+      "description": "Histerectomía radical con disección pelviana completa de territorios ganglionares, incluye ganglios lumboaórticos (operación de Wertheim o similares)"
+    },
+    {
+      "code": "2003016",
+      "description": "Histerectomía total c/intervención incontinencia urinaria, cualquier técnica"
+    },
+    { "code": "2003017", "description": "Histeropexia" },
+    { "code": "2003018", "description": "Plastía uterina (operación de Strassman o similares)" },
+    { "code": "2003019", "description": "Polipectomía (uno o más) (proc. aut.)" },
+    { "code": "2003020", "description": "Sinequia y/o estenosis cervical, trat. quir." },
+    { "code": "2003030", "description": "Desgarro cervical trat. quir." },
+    { "code": "2003040", "description": "Incompetencia cervical trat. quir." },
+    { "code": "2003021", "description": "Colpoceliotomía" },
+    {
+      "code": "2003022",
+      "description": "Incontinencia urinaria de esfuerzo, trat. quir. por vía vaginal (proc. aut.)"
+    },
+    {
+      "code": "2003023",
+      "description": "Prolapso anterior y/o posterior con repar., incontinencia urinaria por vía extravaginal o combinada"
+    },
+    {
+      "code": "2003024",
+      "description": "Prolapso anterior y/o posterior c/s trat. de incontinencia urinaria por vía vaginal, trat. quir."
+    },
+    { "code": "2003025", "description": "Quiste y/o desgarro y/o tabique vaginal, trat. quir." },
+    { "code": "2003026", "description": "Bartolinitis, vaciamiento y drenaje (proc. aut.)" },
+    { "code": "2003027", "description": "Bartolinocistoneostomía o extirp. de la glándula" },
+    { "code": "2003028", "description": "Vulvectomía radical" },
+    { "code": "2003029", "description": "Vulvectomía simple" },
+    { "code": "2003044", "description": "Linfadenectomía pelvica bilateral abierta" },
+    { "code": "2003045", "description": "Traquelectomía radical laparoscópica" },
+    { "code": "2003046", "description": "Traquelectomía simple por vía vaginal" },
+    {
+      "code": "2104001",
+      "description": "Artroscopía diagnóstica c/s biopsia, c/s sección de bridas, extracción de cuerpo extraño"
+    },
+    { "code": "2104002", "description": "Exostosis u osteocondroma, trat. quir." },
+    { "code": "2104003", "description": "Quistes sinoviales de vainas flexoras, bursas" },
+    { "code": "2104004", "description": "Tracción halocraneana o estribo-craneana (proc. aut.)" },
+    { "code": "2104005", "description": "Tracción halocráneo-femoral" },
+    {
+      "code": "2104006",
+      "description": "Tracción transesquelética o de partes blandas en adultos o en niños (proc. aut.)"
+    },
+    { "code": "2104007", "description": "Artrodesis codo o muñeca, c/u" },
+    {
+      "code": "2104008",
+      "description": "Artrodesis hombro, cadera, rodilla, tobillo o sacroilíaca, c/u"
+    },
+    { "code": "2104009", "description": "Artrodesis mano o pie c/u" },
+    {
+      "code": "2104010",
+      "description": "Tratamiento completo de fracturas expuestas de brazo, antebrazo, muslo y pierna, c/u"
+    },
+    {
+      "code": "2104011",
+      "description": "Tratamiento completo de fracturas expuestas de mano o pie, c/u"
+    },
+    { "code": "2104012", "description": "Osteítis, raspado, c/s secuestrectomía" },
+    {
+      "code": "2104013",
+      "description": "Osteomielitis aguda hematógena, drenaje quirúrgico, c/s dispositivos de osteoclisis"
+    },
+    {
+      "code": "2104014",
+      "description": "Osteomielitis crónica huesos largos, legrado óseo,  c/s osteosíntesis o aparato de yeso"
+    },
+    { "code": "2104015", "description": "Artrotomía hombro o cadera c/u" },
+    { "code": "2104016", "description": "Artrotomía otras articulaciones, c/u" },
+    {
+      "code": "2104017",
+      "description": "Pseudoartrosis  infectada huesos largos, trat. quir. cualquier técnica, c/s dispositivo de osteoclisis, c/s osteosíntesis o aparato de yeso"
+    },
+    { "code": "2104018", "description": "Autotrasplante óseo microquirúrgico" },
+    { "code": "2104019", "description": "Injerto esponjoso metafisiario" },
+    {
+      "code": "2104020",
+      "description": "Injertos esponjosos o córtico-esponjosos de cresta ilíaca"
+    },
+    { "code": "2104021", "description": "Trasplante óseo (auto u homotrasplante)" },
+    {
+      "code": "2104022",
+      "description": "Lesiones quísticas con fractura patológica: legrado óseo, c/s relleno injerto esponjoso, c/s osteosíntesis y/o aparato de inmovilización postoperatoria"
+    },
+    {
+      "code": "2104023",
+      "description": "Lesiones quísticas: legrado óseo, c/s relleno de injertos esponjosos"
+    },
+    {
+      "code": "2104024",
+      "description": "Metástasis ósea c/s fractura patológica, legrado tumoral, relleno cemento quirúrgico y osteosíntesis"
+    },
+    {
+      "code": "2104025",
+      "description": "Tumor óseo, resección en bloque, c/s osteosíntesis y/o aparato inmovilización postoperatorio"
+    },
+    {
+      "code": "2104026",
+      "description": "Tumores o quistes o lesiones pseudoquísticas o musculares y/o tendíneas, trat. quir.-TMP"
+    },
+    {
+      "code": "2104027",
+      "description": "Tumores óseos: resección en bloque, epifisiaria c/artrodesis o diafisiaria-TMP"
+    },
+    {
+      "code": "2104028",
+      "description": "Tumores primarios o metastásicos vertebrales: corporectomía, reemplazo por cemento quir. o injerto óseo, c/s osteosíntesis-TMP"
+    },
+    { "code": "2104029", "description": "Codo o muñeca o metacarpofalángicas, c/u" },
+    { "code": "2104030", "description": "Rodilla o cadera u hombro, c/u-TMP" },
+    {
+      "code": "2104031",
+      "description": "Epineurorrafia microquirúrgica con magnificación cualquier tronco nervioso (con excepción nervios digitales)"
+    },
+    { "code": "2104033", "description": "Biopsia ósea por punción" },
+    { "code": "2104034", "description": "Biopsia ósea quirúrgica" },
+    { "code": "2104035", "description": "Biopsia sinovial o muscular por punción" },
+    { "code": "2104036", "description": "Biopsia sinovial o muscular quirúrgica" },
+    { "code": "2104037", "description": "Biopsia vertebral por punción" },
+    { "code": "2104038", "description": "Regularización de Muñón de Amputación" },
+    { "code": "2104039", "description": "Osteocondrosis o epifisitis, trat. quir." },
+    { "code": "2104040", "description": "Amputación interescápulo-torácica" },
+    { "code": "2104041", "description": "Desarticulación escápulo-humeral" },
+    { "code": "2104042", "description": "Endoprótesis total de hombro, cualquier técnica" },
+    { "code": "2104044", "description": "Fractura cuello humeral, trat. quir." },
+    { "code": "2104045", "description": "Fractura de clavícula, osteosíntesis" },
+    { "code": "2104046", "description": "Fractura escápula, osteosíntesis" },
+    {
+      "code": "2104047",
+      "description": "Luxación acromio-clavicular o esterno-clavicular, reducción o plastía cápsuloligamentosa y osteosíntesis"
+    },
+    { "code": "2104048", "description": "Luxación recidivante de hombro, trat. quir." },
+    { "code": "2104049", "description": "Luxación traumática de hombro, reducción cruenta" },
+    { "code": "2104050", "description": "Luxofractura, reducción y osteosíntesis hombro" },
+    {
+      "code": "2104051",
+      "description": "Ruptura manguito rotadores, trat. quir. c/s acromiectomía"
+    },
+    { "code": "2104052", "description": "Transposiciones musculares" },
+    { "code": "2104053", "description": "Amputación brazo" },
+    {
+      "code": "2104054",
+      "description": "Fractura supracondílea niño; tracción esquelética, c/s osteosíntesis y aparato de yeso"
+    },
+    { "code": "2104055", "description": "Osteosíntesis diafisiaria de húmero (cualquier técnica)" },
+    { "code": "2104056", "description": "Osteosíntesis supra o intercondílea (cualquier técnica)" },
+    { "code": "2104057", "description": "Osteotomía húmero (cualquier técnica)" },
+    { "code": "2104058", "description": "Pseudoartrosis c/s osteosíntesis c/s yeso húmero" },
+    { "code": "2104059", "description": "Artroplastía con fascia codo" },
+    { "code": "2104060", "description": "Cúpula radial, resección" },
+    {
+      "code": "2104061",
+      "description": "Cúpula radial, resección con implante de silastic o similar"
+    },
+    { "code": "2104062", "description": "Endoprótesis total de codo, (cualquier técnica)" },
+    { "code": "2104063", "description": "Epicondilitis, trat. quir. (cualquier técnica)" },
+    { "code": "2104064", "description": "Luxación de codo, reducción cruenta" },
+    {
+      "code": "2104065",
+      "description": "Luxofractura de codo, reducción cruenta c/s resección cúpula radial"
+    },
+    { "code": "2104066", "description": "Osteosíntesis epitroclea-epicóndilo (cualquier técnica)" },
+    {
+      "code": "2104067",
+      "description": "Osteosíntesis olécranon u osteosíntesis de cúpula radial (proc. aut.) (cualquier técnica)"
+    },
+    { "code": "2104068", "description": "Traslocación nervio cubital (proc. aut.)" },
+    { "code": "2104069", "description": "Operación de salvataje radio-procúbito" },
+    { "code": "2104070", "description": "Amputación antebrazo" },
+    {
+      "code": "2104071",
+      "description": "Extirpación metáfisis distal del cúbito y artrodesis radiocubital inferior"
+    },
+    {
+      "code": "2104072",
+      "description": "Luxofracturas (Monteggia-Galeazzi), reducc. y osteosíntesis"
+    },
+    {
+      "code": "2104073",
+      "description": "Osteosíntesis, fract. cerrada cubito y/o radio (cualq. técn.)"
+    },
+    {
+      "code": "2104074",
+      "description": "Osteotomía uno o ambos huesos, c/s ostesíntesis c/s yeso o trat. quir. Enf. de Kienbock"
+    },
+    {
+      "code": "2104075",
+      "description": "Pseudoartrosis  cúbito y/o radio c/s osteosíntesis c/s yeso"
+    },
+    { "code": "2104076", "description": "Sinostosis radio-cubital, trat. quir., c/s injerto" },
+    { "code": "2104077", "description": "Trasplantes músculo-tendinosos antebrazo" },
+    {
+      "code": "2104078",
+      "description": "Contractura isquem. de Volkmann: descenso muscular, neurolisis"
+    },
+    { "code": "2104079", "description": "Endoprótesis total de muñeca, (cualquier técnica)" },
+    { "code": "2104080", "description": "Estiloides cubital, radial, resección de." },
+    {
+      "code": "2104081",
+      "description": "Fractura o pseudoartrosis escafoides, trat. quir. cualq. técn."
+    },
+    { "code": "2104083", "description": "Luxación radiocarpiana, trat. quir." },
+    {
+      "code": "2104084",
+      "description": "Luxación semilunar ,escafoidea, reducción y osteosíntesis semicruenta o cruenta"
+    },
+    { "code": "2104085", "description": "Osteosíntesis radio, (cualquier técnica)" },
+    { "code": "2104086", "description": "Tendovaginosis de De Quervain, trat. quir." },
+    { "code": "2104087", "description": "Amputación dedos (tres o más)" },
+    { "code": "2104088", "description": "Amputación dedos (uno o dos)" },
+    { "code": "2104089", "description": "Amputación mano o del pulgar" },
+    { "code": "2104090", "description": "Amputación pulpejos (plastía Kutler o similares)" },
+    { "code": "2104091", "description": "Contractura Dupuytren, trat. quir., cada tiempo" },
+    {
+      "code": "2104092",
+      "description": "Contusión-compresión grave mano, trat. quir. incluye incisiones liberadoras y/o fasciotomía y/o escarectomía y/o injertos piel inmediatos y síntesis percutánea"
+    },
+    { "code": "2104093", "description": "Dedos en gatillo, trat. quir., cualquier número" },
+    { "code": "2104094", "description": "Flegmón mano, trat. quir." },
+    {
+      "code": "2104095",
+      "description": "Luxofractura metacarpofalángica o interfalángica, trat. quir."
+    },
+    {
+      "code": "2104096",
+      "description": "Mano reumática en ráfaga: traslocaciones tendinosas, plastías capsulares, tenotomías, inmovilización postoperatoria"
+    },
+    {
+      "code": "2104097",
+      "description": "Mano reumática: implant. silastic, cualq. número (proc. aut.)"
+    },
+    {
+      "code": "2104098",
+      "description": "Mutilación grave mano, aseo. quir. completo c/s osteosíntesis, c/s injertos"
+    },
+    {
+      "code": "2104099",
+      "description": "Osteosíntesis metacarpianas o de falanges, cualquier técnica"
+    },
+    { "code": "2104100", "description": "Panadizo, trat. quir." },
+    { "code": "2104101", "description": "Pulgarización dedo (índice o anular)" },
+    { "code": "2104102", "description": "Reimplante mano o dedo(s)" },
+    { "code": "2104103", "description": "Reparación flexores: primer tiempo espaciador silastic" },
+    {
+      "code": "2104104",
+      "description": "Reparación nervio digital con injerto interfascicular: cualquier número"
+    },
+    {
+      "code": "2104105",
+      "description": "Rupturas cerradas cápsulo-ligament. o tendinosas, trat. quir. mano"
+    },
+    { "code": "2104106", "description": "Sutura nervio(s) digital(es); microcirugía" },
+    { "code": "2104107", "description": "Tenorrafia extensores mano" },
+    { "code": "2104108", "description": "Tenorrafia o injertos flexores mano" },
+    { "code": "2104109", "description": "Tenosinovitis séptica, trat. quir. mano" },
+    { "code": "2104110", "description": "Trasplante microquirúrgico para pulgar" },
+    { "code": "2104111", "description": "Transposiciones tendinosas flexoras o extensoras mano" },
+    {
+      "code": "2104203",
+      "description": "Tratamiento quir., dedos en gatillo, cualquier número téc. WALANT (anestesia local sin torniquete)"
+    },
+    { "code": "2104112", "description": "Diastematomielia, resección espolón c/s instrumentación" },
+    {
+      "code": "2104113",
+      "description": "Escoliosis, trat. quir., cualquier vía de abordaje, e instrumentación de Harrington,  Luque, Dwyer o similares (no inclute material de fijación de columna)"
+    },
+    {
+      "code": "2104213",
+      "description": "Escoliosis, trat. quir., cualquier vía de abordaje, con instrumentación (incluye elementos de osteosíntesis)"
+    },
+    {
+      "code": "2104116",
+      "description": "Luxaciones, luxofracturas vertebrales (cervical, dorsal, lumbar), reducción cruenta, cualquier vía de abordaje, cualquier número"
+    },
+    {
+      "code": "2104117",
+      "description": "Osteotomías vertebrales correctoras, c/s instrumentación, c/s injertos óseos, c/s artrodesis"
+    },
+    { "code": "2104118", "description": "Plastías costales, cualquier número" },
+    {
+      "code": "2104119",
+      "description": "Reemplazo cuerpo vertebral con artrodesis c/s osteosíntesis c/s instrumentación"
+    },
+    { "code": "2104121", "description": "Resección del coxis" },
+    { "code": "2104122", "description": "Diástasis pubiana, trat. quir." },
+    { "code": "2104123", "description": "Fractura de pelvis, osteosíntesis quir." },
+    { "code": "2104124", "description": "Osteotomía pelviana (Salter, Chiari o similares)" },
+    { "code": "2104125", "description": "Triple osteotomía de pelvis" },
+    { "code": "2104126", "description": "Amputación inter-ilio abdominal" },
+    { "code": "2104127", "description": "Desarticulación cadera" },
+    {
+      "code": "2104128",
+      "description": "Endoprótesis parcial de cadera c/s cementación (cualquier técnica) (no incluye prótesis)"
+    },
+    {
+      "code": "2104228",
+      "description": "Endoprótesis parcial de cadera c/s cementación (cualquier técnica) (incluye prótesis)"
+    },
+    { "code": "2104129", "description": "Endoprótesis total de cadera  (no incluye prótesis)" },
+    { "code": "2104229", "description": "Endoprótesis total de cadera (incluye prótesis)" },
+    { "code": "2104130", "description": "Epifisiolisis lenta o aguda, trat. quir." },
+    {
+      "code": "2104131",
+      "description": "Fractura de cuello de fémur, osteosíntesis, cualquier técnica (no incluye elementos de osteosíntesis)"
+    },
+    {
+      "code": "2104231",
+      "description": "Fractura de cuello de fémur, osteosíntesis, cualquier técnica (incluye elementos de osteosíntesis)"
+    },
+    { "code": "2104132", "description": "Fractura de cuello de fémur, resección epífisis femoral" },
+    { "code": "2104133", "description": "Luxación traumática de cadera, reducción cruenta" },
+    { "code": "2104134", "description": "Luxofractura acetabular, trat. quir." },
+    { "code": "2104135", "description": "Operación de salvataje cadera, columna o similares" },
+    { "code": "2104136", "description": "Osteotomías femorales" },
+    {
+      "code": "2104137",
+      "description": "Reducción cruenta en luxación congénita o traumática de cadera"
+    },
+    {
+      "code": "2104138",
+      "description": "Reducción cruenta y acetabuloplastía femoral c/s osteotomía femoral"
+    },
+    { "code": "2104139", "description": "Reducción cruenta y osteotomía femoral" },
+    { "code": "2104140", "description": "Tenotomía aductores c/s botas, con yugo (proc. aut.)" },
+    { "code": "2104141", "description": "Trocanteroplastías" },
+    { "code": "2104142", "description": "Amputación muslo" },
+    { "code": "2104143", "description": "Epifisiodesis (fémur y/o tibia)" },
+    {
+      "code": "2104144",
+      "description": "Osteosíntesis diafisiaria o metafisiaria muslo (cualquier técnica)"
+    },
+    { "code": "2104145", "description": "Osteotomía correctora muslo" },
+    {
+      "code": "2104146",
+      "description": "Osteotomía de alargamiento o acortamiento con osteosíntesis inmediata o distracción instrumental progresiva muslo"
+    },
+    {
+      "code": "2104147",
+      "description": "Osteotomía en rosario con enclavijamiento clavo telescópico"
+    },
+    { "code": "2104148", "description": "Pseudoartrosis, trat. quir. (cualquier técnica) muslo" },
+    { "code": "2104149", "description": "Ruptura y/o hernia muscular, trat. quir. muslo" },
+    {
+      "code": "2104150",
+      "description": "Artrotomía por cuerpos libres, osteocondritis rodilla (proc. aut)"
+    },
+    { "code": "2104151", "description": "Desarticulación rodilla" },
+    {
+      "code": "2104152",
+      "description": "Disfunción patelo-femoral, realineamiento (cualquier técnica)"
+    },
+    { "code": "2104153", "description": "Endoprótesis total de rodilla, (cualquier técnica)" },
+    {
+      "code": "2104154",
+      "description": "Fractura rótula: osteosíntesis o patelectomía parc. o total"
+    },
+    {
+      "code": "2104155",
+      "description": "Fracturas condíleas o de platillos tibiales, reducción, osteosíntesis  (cualquier técnica)"
+    },
+    {
+      "code": "2104156",
+      "description": "Inestabilidad crónica de rodilla, reconstrucción cápsuloligamentosa (cualquier técnica)"
+    },
+    {
+      "code": "2104157",
+      "description": "Luxación o rotura ligamentos, trat. quir. cápsulo-ligamentoso"
+    },
+    { "code": "2104158", "description": "Meniscectomía quirúrgica, interna y/o externa" },
+    {
+      "code": "2104159",
+      "description": "Meniscectomía u otras intervenciones por vía artroscópica (incluye artroscopía diagnóstica)"
+    },
+    { "code": "2104160", "description": "Quiste poplíteo, trat. quir." },
+    { "code": "2104161", "description": "Reconstrucción aparato extensor de rodilla" },
+    {
+      "code": "2104162",
+      "description": "Reparación quirúrgica ligamentos colaterales y/o cruzados de rodilla"
+    },
+    {
+      "code": "2104163",
+      "description": "Traslocaciones músculo-tendinosas en rodilla paralítica o espástica"
+    },
+    { "code": "2104164", "description": "Amputación pierna" },
+    { "code": "2104165", "description": "Colgajo cruzado de pierna, trat. quir. completo" },
+    { "code": "2104166", "description": "Fasciotomía por síndrome compartamental" },
+    { "code": "2104167", "description": "Osteosíntesis tibio-peroné  (cualquier técnica)" },
+    {
+      "code": "2104168",
+      "description": "Osteotomía correctora de ejes  (cualquier técnica) pierna"
+    },
+    {
+      "code": "2104169",
+      "description": "Osteotomía de alargamiento o acortamiento con osteosíntesis inmediata o distracción instrumental progresiva pierna"
+    },
+    { "code": "2104170", "description": "Osteotomía del peroné" },
+    { "code": "2104171", "description": "Peroné protibia" },
+    {
+      "code": "2104172",
+      "description": "Pseudoartrosis, c/s osteosíntesis  (cualquier técnica) pierna"
+    },
+    { "code": "2104173", "description": "Desarticulación tobillo" },
+    { "code": "2104174", "description": "Endoprótesis total tobillo, (cualquier técnica)" },
+    {
+      "code": "2104175",
+      "description": "Esguince grave de tobillo, trat. quir. cápsulo-ligamentoso"
+    },
+    {
+      "code": "2104176",
+      "description": "Fractura astrágalo y/o calcáneo, osteosíntesis (cualq. técn.)"
+    },
+    {
+      "code": "2104177",
+      "description": "Huesos supernumerarios, extirpación, uno o más, unilateral"
+    },
+    {
+      "code": "2104178",
+      "description": "Luxación tibio-astrág.-calcán., reducc. cruenta y osteosínt."
+    },
+    {
+      "code": "2104179",
+      "description": "Luxofractura tobillo, cualquier tipo, osteosíntesis y reparación cápsulo-ligamentosa"
+    },
+    { "code": "2104180", "description": "Osteoplastía tibio-calcánea" },
+    {
+      "code": "2104181",
+      "description": "Ruptura tendón de Aquiles o tibial posterior, tenorrafia primaria y/o transposiciones tendinosas"
+    },
+    { "code": "2104182", "description": "Ruptura tibial anterior u otros, tenorrafia" },
+    {
+      "code": "2104183",
+      "description": "Tenorrafia extensores o tenotomía de alargamiento de tendón de Aquiles"
+    },
+    { "code": "2104184", "description": "Traslocación tendinosa tobillo" },
+    { "code": "2104185", "description": "Amputación transmetatarsiana" },
+    { "code": "2104186", "description": "Astrágalo vertical, trat. quir." },
+    { "code": "2104187", "description": "Espolón calcáneo, trat. quir." },
+    {
+      "code": "2104188",
+      "description": "Exostosis 5° metatarsiano, (\"\"juanetillo\"\")  trat. quir."
+    },
+    { "code": "2104189", "description": "Fasciotomía plantar (proc. aut.)" },
+    {
+      "code": "2104190",
+      "description": "Hallux valgus o rígidus, trat.quir. completo (cualquier téc.)"
+    },
+    {
+      "code": "2104191",
+      "description": "Luxaciones, luxofracturas, fracturas, reducción cruenta pie"
+    },
+    { "code": "2104192", "description": "Mal perforante plantar, trat. quir." },
+    { "code": "2104193", "description": "Neuroma de Morton, trat. quir." },
+    {
+      "code": "2104194",
+      "description": "Ortejos en garra, trat. quir., cualq. número (cualq. técnica)"
+    },
+    { "code": "2104195", "description": "Ortejos, amputación, uno o más, unilateral" },
+    {
+      "code": "2104196",
+      "description": "Pie bot u otras malformaciones congénitas, trat. quir. (cualquier técnica)"
+    },
+    { "code": "2104197", "description": "Pie cavo, trat. quir. (cualquier técnica)" },
+    { "code": "2104198", "description": "Pie plano, trat. quir. (cualquier técnica)" },
+    {
+      "code": "2104199",
+      "description": "Pie reumatoídeo, trat. quir. completo (cualquier técnica)"
+    },
+    { "code": "2104200", "description": "Sesamoídeos, extirpación de uno o más, unilateral" },
+    { "code": "2104201", "description": "Tenorrafia extensores pie" },
+    { "code": "2104202", "description": "Transplantes tendinosos pie (cualquier técnica)" },
+    { "code": "2104205", "description": "Recambio prótesis de cadera. Incluye prótesis" },
+    { "code": "2104204", "description": "Recambio prótesis de rodilla. Incluye prótesis" },
+    { "code": "2104232", "description": "Punción discal diagnóstica o terapéutica" },
+    { "code": "2104233", "description": "Biopsia vertebral abierta" },
+    { "code": "2104234", "description": "Resección parcial de sacro distal y coxis" },
+    { "code": "2104235", "description": "Resección parcial de sacro proximal" },
+    { "code": "2104236", "description": "Teratoma sacrococcigeo" },
+    { "code": "2104237", "description": "Teratoma sacrococcigeo intra y extrapelviano" },
+    {
+      "code": "2106001",
+      "description": "Retiro de endoprótesis u osteosíntesis internas articulares o de columna vertebral"
+    },
+    { "code": "2106002", "description": "Retiro de placas rectas o anguladas" },
+    {
+      "code": "2106003",
+      "description": "Retiro de tornillos, clavos, agujas de osteosíntesis o similares"
+    },
+    { "code": "2705002", "description": "Cirugía de enfermedad periodontal (por grupo)" },
+    { "code": "2705003", "description": "Corticotomía" },
+    { "code": "2705004", "description": "Disyunción palatina quirúrgica" },
+    { "code": "2705005", "description": "Extirpación de pseudoquistes, quistes y tumores" },
+    { "code": "2705006", "description": "Glosectomías" },
+    { "code": "2705007", "description": "Implante endodóntico intraóseo" },
+    { "code": "2705008", "description": "Implantes subperiósticos" },
+    { "code": "2705009", "description": "Exodoncia de dientes retenidos" },
+    { "code": "2705011", "description": "Injertos en boca" },
+    { "code": "2705012", "description": "Elevación de piso del seno maxilar" },
+    { "code": "2705013", "description": "Plastía de fístula salival" },
+    {
+      "code": "2705014",
+      "description": "Preparación quirúrgica de los maxilares con fines protésicos"
+    },
+    {
+      "code": "2705015",
+      "description": "Profundización de vestíbulo o reconstrucción de rebordes, con o sin injerto"
+    },
+    { "code": "2705016", "description": "Reimplante y trasplante dentario" },
+    { "code": "2705017", "description": "Remoción de cuerpo extraño y secuestrectomía" },
+    { "code": "2705018", "description": "Sutura completa de herida mayor" },
+    { "code": "2705019", "description": "Sutura completa de herida menor" },
+    { "code": "2705020", "description": "Sutura simple de herida" },
+    { "code": "2705021", "description": "Tratamiento quirúrgico fracturas maxilar superior" },
+    { "code": "2705022", "description": "Tratamiento quirúrgico de fracturas en maxilar inferior" },
+    { "code": "2705023", "description": "Tratamiento de traumatismo dento alveolar simple" },
+    { "code": "2705024", "description": "Tratamiento de traumatismo dento alveolar complejo" },
+    { "code": "2705025", "description": "Implante oseointegrado" },
+    { "code": "2705026", "description": "Pilar Protésico sobre Implantes" },
+    { "code": "2004006", "description": "Cesárea c/s salpingoligadura o salpingectomía" },
+    { "code": "2004005", "description": "Cesárea con histerectomía" },
+    {
+      "code": "1802254",
+      "description": "Hernia Abdominal por acceso miniinvasivo (Incluye malla)"
+    },
+    {
+      "code": "1802255",
+      "description": "Hernia diafragmática, hernia hiatal, hernia ventral con abordaje retromuscular, cualquier vía (incluye malla retromuscular)"
+    }
+  ],
+  "procedures": [
+    { "code": "0401010", "description": "Mamografía bilateral" },
+    { "code": "0401110", "description": "Mamografía unilateral" },
+    { "code": "0401130", "description": "Mamografía proyección complementaria  (axilar u otras)" },
+    { "code": "0401011", "description": "Marcación preoperatoria de lesiones de la mama" },
+    { "code": "0401012", "description": "Radiografía de mama, pieza operatoria" },
+    { "code": "0401013", "description": "Radiografía de Abdomen Simple" },
+    {
+      "code": "0401014",
+      "description": "Radiografía de abdomen simple, proyección complementaria (lateral y/o oblicua)"
+    },
+    {
+      "code": "0401015",
+      "description": "Colangiografía intra o postoperatoria (por sonda T, o similar)"
+    },
+    {
+      "code": "0401018",
+      "description": "Enema baritado del colon (incluye llene y control post-vaciamiento)"
+    },
+    {
+      "code": "0401019",
+      "description": "Enema baritado del colon o intestino delgado, doble contraste"
+    },
+    {
+      "code": "0401020",
+      "description": "Esofagograma  (incluye pesquisa de cuerpo extraño) (proc.aut.)"
+    },
+    {
+      "code": "0401021",
+      "description": "Radiografía de esófago, estómago y duodeno, relleno y/o doble contraste"
+    },
+    { "code": "0401022", "description": "Estudio radiológico de deglución faríngea" },
+    { "code": "0401023", "description": "Estudio radiológico del intestino delgado" },
+    {
+      "code": "0401024",
+      "description": "Radiografía de esófago, estómago y duodeno, simple en niños"
+    },
+    {
+      "code": "0401027",
+      "description": "Pielografía de eliminación o descendente: incluye renal y vesical simples previas, 3 placas post inyección de medio de contraste, controles de pie y cistografía pre y post miccional."
+    },
+    {
+      "code": "0401060",
+      "description": "Radiografía de hombro, fémur, rodilla, pierna, costilla o esternón Frontal y Lateral"
+    },
+    {
+      "code": "0401062",
+      "description": "Radiografía de Proyecciones especiales oblicuas u otras en hombro, brazo, codo, rodilla, rótulas, sesamoideos, axial de ambas rótulas o similares"
+    },
+    { "code": "0401063", "description": "Radiografía de túnel intercondíleo o radio-carpiano" },
+    {
+      "code": "0401064",
+      "description": "Apoyo fluoroscópico a procedimientos intraoperatorios y/o biopsia (no incluye el proc.)"
+    },
+    { "code": "0401071", "description": "Mamografía bilateral digital 3D con tomosíntesis" },
+    { "code": "0401072", "description": "Mamografía unilateral digital 3D con tomosíntesis" },
+    { "code": "0401073", "description": "Videofluoroscopia para estudio de deglución" },
+    { "code": "0401074", "description": "Tránsito colónico con marcadores" },
+    {
+      "code": "0401075",
+      "description": "Radiografía de tórax frontal y lateral con equipo móvil fuera del departamento de rayos"
+    },
+    { "code": "0402001", "description": "Vía lagrimal unilateral" },
+    { "code": "0402005", "description": "Galactografía, unilateral" },
+    { "code": "0402008", "description": "Colangiopancreatografía endoscópica (5-7 exp)" },
+    { "code": "0402009", "description": "Fistulografía  (3 exp.)" },
+    {
+      "code": "0402011",
+      "description": "Histerosalpingografía (a.c. 20-01-013) (4 exp.; incluye prueba de Cotte tardía)"
+    },
+    { "code": "0402012", "description": "Pielografía ascendente (3 exp.)" },
+    {
+      "code": "0402014",
+      "description": "Uretro y/o cistouretrografía miccional retrógrada  (5 exp.)"
+    },
+    { "code": "0402015", "description": "Artrografía facetaria" },
+    { "code": "0402019", "description": "Angiografía selectiva de carótida externa o interna" },
+    { "code": "0402020", "description": "Angiografía selectiva medular" },
+    { "code": "0402024", "description": "Aortografía con AOT o cineangiografía" },
+    {
+      "code": "0402025",
+      "description": "Arteriografía de miembros superiores o inferiores unilateral"
+    },
+    {
+      "code": "0402027",
+      "description": "Arteriografía selectiva con AOT o cineangiografía (pulmonar, renal, tronco celíaco o similar) c/u"
+    },
+    {
+      "code": "0402029",
+      "description": "Arteriografía de vasos del cuello (carótidas y vertebrales)"
+    },
+    {
+      "code": "0402031",
+      "description": "Embolización o balonización (a.c. de la angiografía correspondiente) (incluye control radiológico inmediato)"
+    },
+    {
+      "code": "0402032",
+      "description": "Instalación de catéter o sonda intracardíaca, control por radiólogo"
+    },
+    { "code": "0402035", "description": "Cavografía" },
+    {
+      "code": "0402038",
+      "description": "Flebografía extremidad inferior o superior, unilateral cada extremidad."
+    },
+    { "code": "0402040", "description": "Flebografía orbitaria o yugular" },
+    {
+      "code": "0402041",
+      "description": "Flebografía selectiva de venas hepáticas, renales, gonadales, pélvicas."
+    },
+    {
+      "code": "0402050",
+      "description": "Mielografía por punción lumbar con contraste hidrosoluble"
+    },
+    { "code": "0403001", "description": "Tomografía Computarizada de cráneo encefálica" },
+    { "code": "0403002", "description": "Tomografía Computarizada de hipotálamo-hipófisis" },
+    { "code": "0403003", "description": "Tomografía Computarizada de fosa posterior" },
+    { "code": "0403006", "description": "Tomografía Computarizada de temporal-oído" },
+    { "code": "0403007", "description": "Tomografía Computarizada de órbitas maxilofacial" },
+    { "code": "0403008", "description": "Tomografía Computarizada de columna cervical" },
+    {
+      "code": "0403018",
+      "description": "Tomografía Computarizada de Columna Dorsal. Incluye mínimo 6 espacios"
+    },
+    { "code": "0403019", "description": "Tomografía Computarizada de Columna Lumbar" },
+    { "code": "0403012", "description": "Tomografía Computarizada de cuello, partes blandas" },
+    {
+      "code": "0403013",
+      "description": "Tomografía Computarizada de Tórax. Incluye además: Esternón, Clavículas,Articulación Acromioclavicular, Escápula, Costillas, Articulación Esternoclavicular. Incluye todo el Tórax o cada segmento o articulación.Incluye bilateralidad"
+    },
+    {
+      "code": "0403014",
+      "description": "Tomografía Computarizada de abdomen (hígado, vías y vesícula biliar, páncreas, bazo, suprarrenales y riñones)"
+    },
+    { "code": "0403020", "description": "Tomografía Computarizada de Abdomen y Pelvis" },
+    { "code": "0403021", "description": "Tomografía Computarizada Pielografía" },
+    { "code": "0403022", "description": "Tomografía Computarizada Urografía" },
+    {
+      "code": "0403023",
+      "description": "Tomografía Computarizada de Colonoscopía Virtual. No incluye instalación de sonda"
+    },
+    { "code": "0403024", "description": "Tomografía Computarizada Planificación Radioterapia" },
+    { "code": "0403025", "description": "Tomografía Computarizada de Calcio Coronario" },
+    { "code": "0403104", "description": "Tomografia Computarizada Angio de Cuello" },
+    { "code": "0403105", "description": "Tomografía Computarizada Angio de Pelvis" },
+    {
+      "code": "0403106",
+      "description": "Tomografía Computarizada de Angio Cardíaco. Mínimo 64 cortes"
+    },
+    {
+      "code": "0403016",
+      "description": "Tomografía Computarizada de Pelvis (Además incluye Sacro, Coxis, Caderas, Huesos Pélvicos, Articulaciones Sacro Ilíacas). Bilateral"
+    },
+    {
+      "code": "0403017",
+      "description": "Tomografía Computarizada Musculoesquelética por zona anatómica. Por cada segmento o articulación: muslo, pierna, rodillas, antebrazo, codo, muñeca, mano, hombro, pie, tobillo u otros. Bilateral sólo para rodillas"
+    },
+    { "code": "0403101", "description": "Tomografía Computarizada angio  de encéfalo" },
+    { "code": "0403102", "description": "Tomografía Computarizada angio de tórax" },
+    { "code": "0403103", "description": "Tomografía Computarizada angio de abdomen" },
+    {
+      "code": "0403107",
+      "description": "Tomografía computarizada angio de extremidades inferiores (bilateral)"
+    },
+    {
+      "code": "0403108",
+      "description": "Tomografía computarizada angio de extremidad superior (unilateral)"
+    },
+    { "code": "0403026", "description": "Tomografía computarizada de enterografía" },
+    { "code": "0404002", "description": "Ecografía obstétrica" },
+    {
+      "code": "0404003",
+      "description": "Ecografía abdominal (incluye hígado, vía biliar, vesícula, páncreas, riñones, bazo, retroperitoneo y grandes vasos)"
+    },
+    {
+      "code": "0404004",
+      "description": "Ecografía como apoyo a cirugía, o a procedimiento (de tórax, muscular, partes blandas, etc.)"
+    },
+    { "code": "0404005", "description": "Ecografía transvaginal o transrectal" },
+    {
+      "code": "0404006",
+      "description": "Ecografía ginecológica, pelviana femenina u obstétrica con estudio fetal"
+    },
+    {
+      "code": "0404007",
+      "description": "Ecografía transvaginal para seguimiento de ovulación, procedimiento completo (6-8 sesiones )"
+    },
+    {
+      "code": "0404008",
+      "description": "Ecografía para seguimiento de ovulación, procedimiento completo (6 a 8 sesiones)"
+    },
+    { "code": "0404009", "description": "Ecografía pélvica masculina (incluye vejiga y próstata)" },
+    { "code": "0404010", "description": "Ecografía renal (bilateral), o de bazo" },
+    { "code": "0404011", "description": "Ecografía encefálica (RN o lactante)" },
+    { "code": "0404012", "description": "Ecografía mamaria bilateral (incluye Doppler)" },
+    { "code": "0404013", "description": "Ecografía ocular, unilateral o bilateral." },
+    {
+      "code": "0404014",
+      "description": "Ecografía testicular (unilateral o bilateral) (Incluye Doppler)"
+    },
+    { "code": "0404015", "description": "Ecografía tiroidea (Incluye Doppler)" },
+    {
+      "code": "0404016",
+      "description": "Ecografía Partes Blandas o Musculoesquelética (cada zona anatómica)"
+    },
+    { "code": "0404017", "description": "Ecografía axilar" },
+    { "code": "0404018", "description": "Elastografía hepática" },
+    { "code": "0404019", "description": "Ecografía espinal" },
+    {
+      "code": "0404118",
+      "description": "Ecografía vascular (arterial y venosa) periférica (bilateral)"
+    },
+    { "code": "0404119", "description": "Ecografía doppler de vasos del cuello" },
+    { "code": "0404120", "description": "Ecografía transcraneana" },
+    { "code": "0404121", "description": "Ecografía abdominal o de vasos testiculares" },
+    { "code": "0404122", "description": "Ecografía doppler de vasos placentarios" },
+    {
+      "code": "0405001",
+      "description": "Resonancia Magnética Cráneo Encefálica u Oídos, bilateral"
+    },
+    { "code": "0405002", "description": "Resonancia Magnética de hipotálamo - hipófisis" },
+    { "code": "0405003", "description": "Resonancia Magnética  de órbitas" },
+    {
+      "code": "0405004",
+      "description": "Resonancia Magnética de articulaciones temporomandibulares"
+    },
+    { "code": "0405005", "description": "Resonancia Magnética  de columna cervical" },
+    { "code": "0405006", "description": "Resonancia Magnética de columna dorsal" },
+    { "code": "0405007", "description": "Resonancia Magnética de columna lumbar" },
+    { "code": "0405017", "description": "Resonancia Magnética Angiografía de Encéfalo" },
+    { "code": "0405018", "description": "Resonancia Magnética Angiografía de Cuello" },
+    { "code": "0405019", "description": "Resonancia Magnética Angiografía de Tórax" },
+    { "code": "0405020", "description": "Resonancia Magnética Angiografía de Abdomen" },
+    { "code": "0405021", "description": "Resonancia Magnética Angiografía de Pelvis" },
+    {
+      "code": "0405022",
+      "description": "Resonancia Magnética  Angiografía de Extremidad Superior Unilateral"
+    },
+    {
+      "code": "0405023",
+      "description": "Resonancia Magnética  Angiografia de Extremidad Inferior Unilateral"
+    },
+    {
+      "code": "0405009",
+      "description": "Resonancia Magnética de Tórax.( corazón, esternón, clavículas, articulación acromioclavicular, escápula, costillas o articulación esternoclavicular). Toda la pared torácicao cada segmento o articulación.Bilateral"
+    },
+    { "code": "0405010", "description": "Resonancia Magnética de abdomen" },
+    {
+      "code": "0405011",
+      "description": "Resonancia Magnética de Pelvis. Incluye: osteoarticular de sacroiliacas u osteoarticular de sacrocoxis u osteoarticular de huesos pélvicos u órganos pelvianos (incluye genitales internos y gastrointestinal)"
+    },
+    { "code": "0405012", "description": "Resonancia Magnética de abdomen y pelvis" },
+    { "code": "0405013", "description": "Resonancia Magnética de rodilla" },
+    { "code": "0405024", "description": "Resonancia Magnética de Mano o Muñeca" },
+    { "code": "0405025", "description": "Resonancia Magnética de Antebrazo o Brazo" },
+    { "code": "0405026", "description": "Resonancia Magnética de Codo" },
+    { "code": "0405027", "description": "Resonancia Magnética de Hombro" },
+    { "code": "0405028", "description": "Resonancia Magnética de Pie, Antepie o Tobillo" },
+    { "code": "0405029", "description": "Resonancia Magnética de Pierna" },
+    { "code": "0405030", "description": "Resonancia Magnética de Muslo o Cadera. Unilateral" },
+    { "code": "0405031", "description": "Resonancia Magnética de Mama (bilateral)" },
+    { "code": "0405032", "description": "Resonancia Magnética Fetal" },
+    {
+      "code": "0405033",
+      "description": "Resonancia magnética para planificación de tratamiento con radioterapia"
+    },
+    { "code": "0405034", "description": "Resonancia magnética estudio funcional de encéfalo" },
+    { "code": "0405035", "description": "Resonancia magnética tractografía" },
+    { "code": "0405036", "description": "Resonancia magnética espectroscopía encefálica" },
+    {
+      "code": "0405037",
+      "description": "Resonancia magnética de cara, macizo facial y/o cavidades paranasales"
+    },
+    { "code": "0405038", "description": "Resonancia magnética perfusión cerebral" },
+    { "code": "0405039", "description": "Resonancia magnética estudio de líquido cerebroespinal" },
+    {
+      "code": "0405040",
+      "description": "Resonancia magnética estudio de piso pélvico por defecografía"
+    },
+    { "code": "0405041", "description": "Resonancia Magnética Screening óseo o muscular" },
+    { "code": "0405016", "description": "Resonancia Columna Total (cervical, dorsal, lumbar)" },
+    { "code": "0405098", "description": "Colangioresonancia" },
+    { "code": "0501117", "description": "Cintigrafía renal con D.M.S.A." },
+    { "code": "0501118", "description": "Estudio dinámico renal con Tc 99 - DTPA" },
+    { "code": "0501119", "description": "Estudio dinámico renal con Tc 99 - MAG 3 o EC" },
+    { "code": "0501120", "description": "Cistografía isotópica indirecta" },
+    {
+      "code": "0501121",
+      "description": "Cistografía isotópica directa (no incluye procedimiento)"
+    },
+    { "code": "0501100", "description": "Captación I-131 a las 2 y/o 24 horas" },
+    { "code": "0501101", "description": "Cintigrafía tiroidea, cualquier radioisótopo" },
+    { "code": "0501102", "description": "Cintigrafía  glándulas paratiroides (no incluye MIBI)" },
+    {
+      "code": "0501103",
+      "description": "Cintigrafía ósea completa planar o médula ósea (a.c. 0501133, cuando corresponda)"
+    },
+    {
+      "code": "0501104",
+      "description": "Cintigrafía ósea trifásica (incluye mediciones fase precoz y tardía)"
+    },
+    { "code": "0501105", "description": "Spect de perfusión miocárdica estrés y reposo" },
+    {
+      "code": "0501106",
+      "description": "Ventriculografía cardiaca isotópica de equilibrio con glóbulos rojos"
+    },
+    { "code": "0501107", "description": "Pool sanguíneo, arteriografia isotópica c/u" },
+    { "code": "0501108", "description": "Linfocintigrafía isotópica (no incluye procedimiento)" },
+    { "code": "0501109", "description": "Pool sanguíneo spect" },
+    { "code": "0501110", "description": "Cintigrafía glándulas salivales o dacriocintigrafía" },
+    { "code": "0501111", "description": "Estudio motilidad esofágica y/o reflujo gastroesofágico" },
+    { "code": "0501112", "description": "Vaciamiento gástrico líquido o sólido" },
+    { "code": "0501113", "description": "Cintigrafía vesícula y vía biliar" },
+    {
+      "code": "0501114",
+      "description": "Detección de sitio de sangramiento digestivo con glóbulos rojos marcados"
+    },
+    { "code": "0501115", "description": "Detección divertículo Meckel" },
+    {
+      "code": "0501116",
+      "description": "Spect hepatoesplénico, evaluación hemangioma o hiperplasia (incluye mediciones fase precoz y tardía)"
+    },
+    {
+      "code": "0501122",
+      "description": "Cintigrafía pulmonar perfusión o ventilación o difusión, c/u"
+    },
+    { "code": "0501123", "description": "Cintigrafía y estudio aspiración pulmonar" },
+    { "code": "0501124", "description": "Spect cerebral de perfusión (no incluye radiofármaco)" },
+    {
+      "code": "0501125",
+      "description": "Estudio dinámico sistema nervioso (radiocisternografia, fístula L.C.R, radioventriculografía, control válvula derivatíva, sub-durografía isotópica), c/u (no incluye procedimiento)."
+    },
+    {
+      "code": "0501126",
+      "description": "Cintigrafía evaluación infecciones (leucocitos, infecton, granulocitos u otros) (no incluye radiofármaco ni procedimiento)."
+    },
+    {
+      "code": "0501127",
+      "description": "Cintigrafía con galio-67 planar infección (no incluye radioisótopo) (a.c. 0501133, cuando corresponda)"
+    },
+    {
+      "code": "0501128",
+      "description": "Detección y/o marcación de ganglio centinela, no incluye, punción ni detección con gammaprobe"
+    },
+    {
+      "code": "0501129",
+      "description": "Cintigrafía con galio-67 planar y Spect, para estudio de tumores (no incluye radioisótopo)"
+    },
+    {
+      "code": "0501130",
+      "description": "Exploración sistémica con I-131 (incluye mediciones fase precoz y tardía)"
+    },
+    {
+      "code": "0501131",
+      "description": "Estudio glándulas mamarias (mamocintigrafia) (no incluye MIBI)"
+    },
+    {
+      "code": "0501132",
+      "description": "Estudio de tumores (anticuerpos monoclonales, octreoscan, DMSA pentavalente, prostacint u otros) (no incluye radioisótopo)"
+    },
+    {
+      "code": "0501133",
+      "description": "Spect - Tomografía por emisión foton único, cualquier órgano (no incluye radioisótopo)"
+    },
+    {
+      "code": "0501134",
+      "description": "Densitometría ósea a fotón doble, columna y cadera (unilateral o bilateral) o cuerpo entero"
+    },
+    { "code": "0501140", "description": "Cintigrafía Spect glándulas paratiroides con sestamibi" },
+    {
+      "code": "0501141",
+      "description": "Cintigrafía Spect-ct glándulas paratiroides con sestamibi"
+    },
+    { "code": "0501142", "description": "Cintigrama óseo de cuerpo entero con Spect" },
+    { "code": "0501143", "description": "Cintigrama óseo de cuerpo entero con Spect-CT" },
+    { "code": "0501144", "description": "Cintigrama óseo Spect ATM" },
+    { "code": "0501145", "description": "Ventriculografía cardíaca isotópica de primer paso" },
+    { "code": "0501146", "description": "Ventriculografía cardíaca isotópica spect" },
+    { "code": "0502001", "description": "Dosis terapéuticas con I-131 hasta 30 mCi." },
+    { "code": "0502002", "description": "Dosis terapéuticas con I-131 entre 31 a 100 mCi." },
+    { "code": "0502003", "description": "Dosis terapéuticas con I-131 entre 101 a 200 mCi." },
+    { "code": "0502004", "description": "Dosis terapéuticas con I-131 entre 201 a 300 mCi." },
+    {
+      "code": "0502005",
+      "description": "Terapia paliativa del dolor con radioisótopos (no incluye radiofármaco)"
+    },
+    {
+      "code": "0901002",
+      "description": "Desintoxicación o deshabituación en pacientes hospitalizados (incluye tratamiento de la intoxicación, del síndrome de privación y de las complicaciones médicas); por día ( máximo 15 )"
+    },
+    {
+      "code": "0901003",
+      "description": "Electroshocks e insulino-terapia (efectuada y controlada por el médico psiquiatra, incluye trat. de las complicaciones médicas, c/s miorrelajantes); cada sesión (máx.6)"
+    },
+    {
+      "code": "0901005",
+      "description": "Atención psiquiátrica o psicoterapia de familia, individual, de relajación o de manejo (con familia u otros);(cada sesión mínimo 45')"
+    },
+    { "code": "0901006", "description": "Terapia aversiva con fármacos, c/sesión (máx. 15)" },
+    { "code": "0901010", "description": "Psicoterapia de pareja (por cada miembro de la pareja)" },
+    { "code": "0902001", "description": "Consulta Psicólogo clínico (sesiones 45')" },
+    { "code": "0902002", "description": "Sesión de Psicoterapia individual" },
+    { "code": "0902003", "description": "Sesión de psicoterapia de pareja (con ambos miembros)" },
+    { "code": "0902010", "description": "Test de Rorschach" },
+    { "code": "0902011", "description": "Test de relaciones objetales" },
+    {
+      "code": "0902012",
+      "description": "Test de Apercepción Temática, T.A.T., C.A.T.-H o C.A.T.-A."
+    },
+    { "code": "0902013", "description": "Test de Edwards" },
+    { "code": "0902014", "description": "Test de M.M.P.I." },
+    { "code": "0902015", "description": "Test de Weschler, WAIS, WISC ó WPPSI" },
+    { "code": "0902016", "description": "Test de Dominó o Test de Raven" },
+    { "code": "0902017", "description": "Test de Bender" },
+    { "code": "0902018", "description": "Bender Bip" },
+    { "code": "0902019", "description": "Test de Goldstein" },
+    { "code": "0902020", "description": "Test de Luria-Nebraska" },
+    { "code": "1101004", "description": "E.E.G. de 16 o más canales (incluye el cód. 11-01-006)" },
+    {
+      "code": "1101006",
+      "description": "Electroencefalograma (E.E.G.) standard y/o activado \"\"sin privación de sueño\"\" (incluye mono y bipolares, hiperventilación, c/s reactividad auditiva, visual, lumínica, por drogas u otras). Equipo de 8 canales"
+    },
+    {
+      "code": "1101113",
+      "description": "Angiografía cerebral digital por cateterización (incluye proc. radiológico,  medio de contraste e insumos)"
+    },
+    {
+      "code": "1101140",
+      "description": "Esclerosis Múltiple Remitente Recurrente,  Tratamiento médico farmacológico  Anual (incluye inmunomoduladores)"
+    },
+    {
+      "code": "1101141",
+      "description": "Esclerosis Múltiple Remitente Recurrente, Tratamiento rehabilitación"
+    },
+    {
+      "code": "1101142",
+      "description": "Esclerosis Múltiple Remitente Recurrente,  Tratamiento Brote"
+    },
+    {
+      "code": "1101001",
+      "description": "Intraventricular por fontanela, cisternal o latero-cervical alta o de hematoma intracraneal"
+    },
+    {
+      "code": "1101002",
+      "description": "Intraventricular por fontanela, cisternal o latero-cervical alta o de hematoma subdural"
+    },
+    { "code": "1101003", "description": "Punción Lumbar c/s manometría c/s Queckensted" },
+    { "code": "1101005", "description": "Electrocorticografia" },
+    {
+      "code": "1101007",
+      "description": "Estereo-electroencefalografia (incluye uno o mas electrodos"
+    },
+    { "code": "1101008", "description": "Monitoreo e.e.g. (electrodos implantados) por sesion." },
+    {
+      "code": "1101040",
+      "description": "E.E.G. Post-privacion de sueno (incluye codigo 11-01-006). Equipo de 8 canales"
+    },
+    {
+      "code": "1101041",
+      "description": "E.E.G. Post-privacion de sueno (incluye codigo 11-01-004) equipo de 16 o mas canales"
+    },
+    { "code": "1101042", "description": "E.E.G. Digital (con activaciones) 20 canales" },
+    { "code": "1101043", "description": "E.E.G. Digital (con activaciones) 32 canales" },
+    {
+      "code": "1101046",
+      "description": "Electroencefalograma digital de 32 canales con \"\"mapeo"
+    },
+    { "code": "1101044", "description": "Monitoreo e.e.g. Continuo de 24 hrs." },
+    { "code": "1101047", "description": "Cateterismo selectivo de senos petrosos" },
+    { "code": "1101048", "description": "Neuromonitoreo intraoperatorio" },
+    { "code": "1101009", "description": "Electromiografia de fibra unica" },
+    {
+      "code": "1101010",
+      "description": "Electromiografias cualquier region, por ej.: musculos faciales, faringe, paravertebrales, vejiga y perone, test de miastenia (incluye el estudio clinico y muestreo suficiente para diagnosticar naturaleza del trastorno y estado evolutivo), c/u"
+    },
+    {
+      "code": "1101011",
+      "description": "Potenciales evocados en corteza ( por ej.: auditivo, ocular"
+    },
+    {
+      "code": "1101012",
+      "description": "Velocidad de conduccion (incluye reflejo h, onda f y otros)"
+    },
+    {
+      "code": "1101013",
+      "description": "Carotida-vertebral por cateterizacion de la subclavia, axilar, humeral o femoral (a.c 04-02-029)"
+    },
+    {
+      "code": "1101025",
+      "description": "Por puncion lumbar, con medio de contraste gaseoso o hidrosoluble (A.C. 04-02-049 O 04-02-050 S/corresp.)"
+    },
+    {
+      "code": "1101026",
+      "description": "Infiltraciones de nervios perifericos intramuscular (de punto motor)"
+    },
+    { "code": "1101027", "description": "Infiltraciones de nervios perifericos troncular" },
+    {
+      "code": "1101028",
+      "description": "Infiltración o bloqueo de ramas del trigémino o del facial"
+    },
+    { "code": "1101029", "description": "Infiltración o bloqueo del ganglio estrellado" },
+    {
+      "code": "1101030",
+      "description": "Infiltración o bloqueo epidural, cervical, lumbar o similares, cada sesión"
+    },
+    { "code": "1101031", "description": "Infiltración o bloqueo intercostales (cualquier número)" },
+    { "code": "1101032", "description": "Rizotomia quimica por medio de inyeccion intratecal." },
+    {
+      "code": "1101033",
+      "description": "Infiltración o bloqueo suboccipital u otros nervios cervicales"
+    },
+    {
+      "code": "1101034",
+      "description": "Alcoholización o fenolización de nervios periféricos intramuscular"
+    },
+    {
+      "code": "1101035",
+      "description": "Alcoholización o fenolización de nervios periféricos intratecal"
+    },
+    {
+      "code": "1101036",
+      "description": "Alcoholización o fenolización de nervios periféricos troncular"
+    },
+    { "code": "1201001", "description": "Campimetría de proyección, unilateral (proc.aut.)" },
+    { "code": "1201042", "description": "Campimetría computarizada, unilateral" },
+    { "code": "1201002", "description": "Coordimetría, test de Hess u otro, unilateral" },
+    {
+      "code": "1201003",
+      "description": "Cuantificación de lagrimación (test de Schirmer), uni o bilateral"
+    },
+    { "code": "1201004", "description": "Curva de tensión aplanática (por cada día), unilateral" },
+    { "code": "1201005", "description": "Diploscopia cuantitativa, bilateral" },
+    { "code": "1201006", "description": "Electromiografía músculos oculares adultos, unilateral" },
+    { "code": "1201007", "description": "Electromiografía músculos oculares niños, unilateral" },
+    { "code": "1201008", "description": "Electrooculografía, bilateral" },
+    {
+      "code": "1201009",
+      "description": "Exploración sensoriomotora: estrabismo, estudio completo, bilateral"
+    },
+    { "code": "1201010", "description": "Perimetría de Goldman o perimetría cinética, unilateral" },
+    {
+      "code": "1201011",
+      "description": "Pruebas de provocación para glaucoma (prueba de oscuridad u otras), uni o bilateral"
+    },
+    { "code": "1201012", "description": "Retinografía, bilateral" },
+    { "code": "1201014", "description": "Tonometría aplanática unilateral" },
+    {
+      "code": "1201015",
+      "description": "Tratamiento ortóptico y/o pleóptico (por sesión), bilateral"
+    },
+    {
+      "code": "1201016",
+      "description": "Angiografía de retina o de iris, (con fluoresceína o sim.), unilateral"
+    },
+    {
+      "code": "1201017",
+      "description": "Angioscopia retinal y/o iris (con fluoresceína o similar), unilateral (proc.aut.)"
+    },
+    { "code": "1201018", "description": "Electrorretinografía, unilateral" },
+    { "code": "1201019", "description": "Exploracion vitreorretinal, ambos ojos" },
+    {
+      "code": "1201020",
+      "description": "Ecobiometría con cálculo de lente intraocular, bilateral"
+    },
+    { "code": "1201023", "description": "Potencial visual evocado en adultos, bilateral" },
+    { "code": "1201024", "description": "Potencial visual evocado en niños, bilateral" },
+    { "code": "1201027", "description": "Examen Optométrico c/s Prescripción de Lentes" },
+    { "code": "1201043", "description": "Topografía corneal computarizada, unilateral" },
+    { "code": "1201029", "description": "Cuerpo extrano conjuntival y/o corneal en adultos" },
+    { "code": "1201030", "description": "Cuerpo extrano conjuntival y/o corneal en ninos" },
+    { "code": "1201031", "description": "Via lagrimal,cateterismo o sondaje en adultos" },
+    { "code": "1201032", "description": "Via lagrimal, cateterismo o sondaje en lactantes" },
+    { "code": "1201033", "description": "Via lagrimal, cateterismo o sondaje en ninos" },
+    {
+      "code": "1201034",
+      "description": "Tocacion corneal c/yodo y/o eter u otros, en ninos o adultos"
+    },
+    {
+      "code": "1201035",
+      "description": "Criocoagulacion conjuntival, corneal o palpebral en adultos"
+    },
+    {
+      "code": "1201036",
+      "description": "Criocoagulacion conjuntival, corneal o palpebral en ninos"
+    },
+    { "code": "1201037", "description": "Glaucoma, ciclodiatermia y/o ciclocrioterapia" },
+    { "code": "1201038", "description": "Inyeccion retrobulbar" },
+    {
+      "code": "1201039",
+      "description": "Pestanas, extirp. Por electrocoagulacion (cualquier numero)"
+    },
+    { "code": "1201040", "description": "Puntos lagrimales; electrotermocoagulacion" },
+    { "code": "1201041", "description": "Sondaje vía lagrimal en niños (bajo anestesia general)" },
+    { "code": "1201045", "description": "Paquimetría" },
+    { "code": "1201044", "description": "Tomografía coherencia óptica, c/ ojo" },
+    { "code": "1301001", "description": "Electrogustometria" },
+    { "code": "1301002", "description": "Rinomanometria c/s vasocontrictor" },
+    { "code": "1301003", "description": "Nasofaringolaringofibroscopia" },
+    {
+      "code": "1301005",
+      "description": "Sinusoscopia de cada seno maxilar por puncion, c/s biopsia,"
+    },
+    {
+      "code": "1301006",
+      "description": "Laringoscopia y/o traqueoscopia directa c/s toma de muestra, c/s biopsia con microscopio"
+    },
+    {
+      "code": "1301007",
+      "description": "Laringoscopia y/o traqueoscopia directa c/s toma de muestra, c/s biopsia sin microscopio"
+    },
+    { "code": "1301021", "description": "Audiometría adultos" },
+    { "code": "1301008", "description": "Audiometría niños" },
+    { "code": "1301009", "description": "Impedanciometría" },
+    { "code": "1301010", "description": "Calibración de audífonos o implantes" },
+    { "code": "1301011", "description": "Potenciales evocados auditivos" },
+    { "code": "1301012", "description": "Cócleovestibular con electronistagmografía" },
+    {
+      "code": "1301015",
+      "description": "Electronistagmografía o Videoelectronistagmografía c/s nistag.de posición"
+    },
+    { "code": "1301016", "description": "Función tubaria" },
+    { "code": "1301017", "description": "Prueba calórica o prueba calórica mínima (proc.aut.)" },
+    { "code": "1301019", "description": "Test de glicerol (con 3 audiometrías)" },
+    { "code": "1301020", "description": "Examen funcional de VIII par" },
+    {
+      "code": "1301024",
+      "description": "Senos perinasales, puncion evacuadora c/s toma de muestras,"
+    },
+    { "code": "1301025", "description": "Taponamiento nasal anterior (proc. aut.)" },
+    { "code": "1301026", "description": "Taponamiento nasal posterior" },
+    {
+      "code": "1301027",
+      "description": "Vaciamiento cavid. Perinasales (proetz y sim.) (10 sesiones)"
+    },
+    {
+      "code": "1301028",
+      "description": "Cauterización uni o bilateral de vasos en fosa nasal anterior"
+    },
+    { "code": "1301029", "description": "Cuerpo extraño en fosas nasales, extraccion en adultos" },
+    { "code": "1301030", "description": "Cuerpo extraño en fosas nasales, extraccion en niños" },
+    {
+      "code": "1301035",
+      "description": "Cuerpo extraño en laringe y/o traquea, extraccion de (incluyela endoscopia con tubo rigido): En adultos"
+    },
+    {
+      "code": "1301036",
+      "description": "Cuerpo extraño en laringe y/o traquea, extraccion de (incluyela endoscopia con tubo rigido): En ninos"
+    },
+    { "code": "1301037", "description": "Dilatacion esofagica por sesion" },
+    { "code": "1301038", "description": "Dilatacion esofagica por sesion en ninos" },
+    { "code": "1301039", "description": "Dilatacion esofagica por sesion en adultos" },
+    {
+      "code": "1301040",
+      "description": "Lesiones del oido externo y/o medio, curacion bajo micros"
+    },
+    {
+      "code": "1301041",
+      "description": "Trompa de eustaquio, insuflacion instrumental (proc. Aut.)"
+    },
+    {
+      "code": "1301042",
+      "description": "Cuerpo extraño en oído, extracción de (incluye tapón de cerumen) (proc. aut.) - En adultos"
+    },
+    {
+      "code": "1301043",
+      "description": "Cuerpo extraño en oído, extracción de (incluye tapón de cerumen) (proc. aut.) - En niños"
+    },
+    { "code": "1301044", "description": "Biopsia oido (proc. Aut.)" },
+    { "code": "1301045", "description": "Emisiones Otoacústicas" },
+    {
+      "code": "1301046",
+      "description": "Potenciales evocados auditivos de tronco cerebral acortados"
+    },
+    { "code": "1301047", "description": "Nasofibroscopía de la deglución" },
+    {
+      "code": "1301048",
+      "description": "Prueba de impulso cefálico con videooculografía o similar (VHIT)"
+    },
+    { "code": "1301049", "description": "Pruebas rotatorias" },
+    { "code": "1301050", "description": "Audiometría campo libre. Niños y adultos" },
+    {
+      "code": "1301051",
+      "description": "Retiro de tubos de ventilación timpánica, uni o bilateral"
+    },
+    {
+      "code": "1301052",
+      "description": "Potenciales electromiogénicos vestibulares cervicales u oculares"
+    },
+    { "code": "1303010", "description": "Evaluación Integral de Fonoaudiólogo" },
+    { "code": "1303011", "description": "Rehabilitación Integral de Fonoaudiólogo" },
+    {
+      "code": "1308010",
+      "description": "Telerehabilitación: Evaluación Integral de Fonoaudiólogo"
+    },
+    {
+      "code": "1308011",
+      "description": "Telerehabilitación: Rehabilitación Integral de Fonoaudiólogo"
+    },
+    { "code": "1401001", "description": "Punción aspirativa con aguja fina de nódulo tiroideo" },
+    {
+      "code": "1601110",
+      "description": "Curetaje de lesiones virales o similares hasta 10 lesiones"
+    },
+    {
+      "code": "1601111",
+      "description": "Aplicación de inmunomodulares, quimicos y similares hasta 10 lesiones"
+    },
+    { "code": "1601112", "description": "Fototerapia UVB, UVA localizada, por sesion" },
+    {
+      "code": "1601113",
+      "description": "Fototerapia UVB, banda angosta y UVA por sesion  en cabina"
+    },
+    { "code": "1601115", "description": "Implantes Subcutáneos, instalación o retiro" },
+    { "code": "1601116", "description": "Crioterapia hasta 5 lesiones" },
+    { "code": "1601117", "description": "Crioterapia 6 a 10 lesiones" },
+    {
+      "code": "1601118",
+      "description": "Tumor maligno por criocirugía (por cada lesión) por sesión"
+    },
+    { "code": "1601119", "description": "Inyeccion intracutanea en areas hasta 9 cms2" },
+    { "code": "1601120", "description": "Tratamiento abrasivo cutaneo mecanico" },
+    { "code": "1601121", "description": "Tratamiento abrasivo cutaneo  quimico" },
+    { "code": "1601122", "description": "Tricograma" },
+    {
+      "code": "1601124",
+      "description": "Tratamiento por laser, IPL o similar por area hasta 16 cm2"
+    },
+    { "code": "1601125", "description": "Terapia fotodinamica ( no incluye medicamento)" },
+    {
+      "code": "1601126",
+      "description": "Dermatoscopia digital con registro graficos hasta 5 lesiones"
+    },
+    { "code": "1701004", "description": "Electrocardiograma de esfuerzo en adultos o ninos" },
+    { "code": "1701055", "description": "Ecocardiagrama doppler color transesofagico" },
+    { "code": "1701009", "description": "Monitoreo continuo de presion arterial" },
+    { "code": "1701013", "description": "Cateterismo en recien nacido por arteria umbilical" },
+    {
+      "code": "1701014",
+      "description": "Instalacion de cateter swan-ganz o similar, en adultos o ninos"
+    },
+    { "code": "1701015", "description": "Doppler con ergometria (por sesion)" },
+    { "code": "1701016", "description": "Doppler simple de vasos perifericos (por sesion)" },
+    { "code": "1701017", "description": "Pletismografia en reposo, esfuerzo c/u (por sesion)" },
+    {
+      "code": "1701018",
+      "description": "Registro ecoarterial o ecovenoso periferico c/u (por sesion)"
+    },
+    { "code": "1701025", "description": "Cavografia (a.c. 04-02-035)" },
+    { "code": "1701026", "description": "Flebografia de cada extremidad (a.c.04-02-038)" },
+    {
+      "code": "1701027",
+      "description": "Flebografia yugular, suprarrenal, portografia transhepaticas, lumbar, espermatica o similar c/u (a.c. 04-02-041)"
+    },
+    {
+      "code": "1701030",
+      "description": "Punción evacuadora de pericardio, c/s toma de muestra c/s inyección de medicamento"
+    },
+    {
+      "code": "1701031",
+      "description": "Angioplastia intraluminal coronaria proc.cardiológico (a.c.04-02-022)"
+    },
+    {
+      "code": "1701032",
+      "description": "Angioplastia intraluminal periférica proc.cardiológico (a.c.04-02-023)"
+    },
+    { "code": "1701034", "description": "Cardioversion" },
+    { "code": "1701037", "description": "Puncion subclavia o yugular con colocacion de cateter" },
+    { "code": "1701039", "description": "Trombolisis arterial periferica" },
+    { "code": "1701040", "description": "Trombolisis intracoronaria" },
+    { "code": "1701041", "description": "Valvuloplastia mitral (a.c. 04-02-033)" },
+    {
+      "code": "1701042",
+      "description": "Valvuloplastia aortica y/o pulmonar,c/u (a.c. 04-02-033)"
+    },
+    {
+      "code": "1701046",
+      "description": "Estudio electrofisiologico endocardiaco de las arritmias"
+    },
+    {
+      "code": "1701050",
+      "description": "Ablacion con corriente continua o radiofrecuencia de nodulo"
+    },
+    {
+      "code": "1701051",
+      "description": "Ablacion con corriente continua o con radiofrecuencia de vias accesorias y otros"
+    },
+    { "code": "1701056", "description": "Ecocardiograma Fetal" },
+    { "code": "1701057", "description": "Ecocardiograma de estrés (incluye medicamento)" },
+    {
+      "code": "1701058",
+      "description": "Test de esfuerzo con consumo de oxígeno (adultos y niños)"
+    },
+    { "code": "1701059", "description": "Tilt test o prueba de inclinación" },
+    {
+      "code": "1701060",
+      "description": "Revisión (re-implante) electrodo desfibrilador automático transvenoso"
+    },
+    {
+      "code": "1701061",
+      "description": "Arteriografía selectiva o superselectiva pulmonar en adultos o niños (incl. proc. rad.)"
+    },
+    {
+      "code": "1701062",
+      "description": "Arteriografía selectiva o superselectiva renal en adultos o niños (incl. proc. rad.)"
+    },
+    {
+      "code": "1701063",
+      "description": "Arteriografía selectiva o superselectiva tronco celíaco en adultos o niños (incl. proc. rad.)"
+    },
+    {
+      "code": "1701064",
+      "description": "Arteriografía selectiva o superselectiva arteria glútea en adultos o niños (incl. proc. rad.)"
+    },
+    {
+      "code": "1701065",
+      "description": "Arteriografía selectiva o superselectiva hipogástrica en adultos o niños (incl. proc. rad.)"
+    },
+    {
+      "code": "1701066",
+      "description": "Arteriografía selectiva o superselectiva hepática en adultos o niños (incl. proc. rad.)"
+    },
+    {
+      "code": "1701067",
+      "description": "Arteriografía selectiva o superselectiva mesentérica en adultos o niños (incl. proc. rad.)"
+    },
+    {
+      "code": "1701068",
+      "description": "Arteriografía selectiva o superselectiva arteria lumbar en adultos o niños (incl. proc. rad.)"
+    },
+    {
+      "code": "1701069",
+      "description": "Arteriografía selectiva o superselectiva arteria vesical en adultos o niños (incl. proc. rad.)"
+    },
+    {
+      "code": "1701078",
+      "description": "Instalación de reservorio subcutáneo (catéter de quimioterapia)"
+    },
+    {
+      "code": "1701079",
+      "description": "Retiro de reservorio subcutáneo (catéter de quimioterapia)"
+    },
+    { "code": "1707001", "description": "Espirometría Basal" },
+    { "code": "1707002", "description": "Espirometria basal y con broncodilatador" },
+    { "code": "1707003", "description": "Provocacion con antigeno (incluye el antigeno)" },
+    { "code": "1707004", "description": "Test de provocacion con ejercicio" },
+    {
+      "code": "1707005",
+      "description": "Provocacion con histamina (pd 20),test de, (incluye la espirometría basal y el tratamiento de los efectos advesos de la histamina)"
+    },
+    { "code": "1707051", "description": "Curva dosis respuesta a broncodilatadores." },
+    { "code": "1707007", "description": "Analisis de gas espirado" },
+    { "code": "1707008", "description": "Capacidad de difusion, estudio de" },
+    { "code": "1707009", "description": "Capacidad fisica del trabajo" },
+    { "code": "1707010", "description": "Curva de lavado de nitrogeno (n)" },
+    { "code": "1707011", "description": "Curva de relajacion flujovolumen basal" },
+    {
+      "code": "1707012",
+      "description": "Distensibilidad pulmonar, (\"\"compliance\"\"), estudio de"
+    },
+    { "code": "1707013", "description": "Medicion de presion de oclusion" },
+    { "code": "1707014", "description": "Medicion de presion inspiratoria maxima (proc. Aut.)" },
+    { "code": "1707015", "description": "Medicion de presion trans-diafragmatica" },
+    { "code": "1707016", "description": "Registro flujometrico, por semana" },
+    { "code": "1707017", "description": "Respuesta respiratoria al co2" },
+    { "code": "1707018", "description": "Tiempo de tolerancia a la fatiga respiratoria" },
+    {
+      "code": "1707019",
+      "description": "Ventilacion alveolar, estudio de (incluye ventilacion minuto"
+    },
+    { "code": "1707020", "description": "Volúmenes pulmonares por lavado de nitrógeno" },
+    { "code": "1707021", "description": "Laringotraqueobroncoscopia con fibroscopio" },
+    { "code": "1707022", "description": "Larigotraqueoscopia con tubo rigido" },
+    { "code": "1707024", "description": "Pleuroscopia (toracoscopia) c/s biopsia" },
+    {
+      "code": "1707025",
+      "description": "Procedimiento para determinar gasometria arterial en  reposo"
+    },
+    {
+      "code": "1707026",
+      "description": "Procedimiento para determinar gasometria arterial respirando"
+    },
+    { "code": "1707054", "description": "Saturacion de O2 en reposo y/o ejercicio (con oximetro)" },
+    {
+      "code": "1707055",
+      "description": "Saturacion de O2 en reposo y/o ejercicio y/o O2 100% (con  oximetro)"
+    },
+    {
+      "code": "1707027",
+      "description": "Broncoaspiración, c/s lavado y/o colocación de medicamentos por sonda traqueobronquial (proc. aut.)"
+    },
+    { "code": "1707029", "description": "Toracocentesis evacuadora,c/s toma de muestras" },
+    {
+      "code": "1707030",
+      "description": "Aerosolterapia con aire comprimido y oxigeno (en atencion cerrada, incluida en valor dia cama)"
+    },
+    { "code": "1707032", "description": "Biopsia pleural (con aguja)" },
+    { "code": "1707033", "description": "Biopsia pulmonar (con aguja) no incluye la radiologia" },
+    { "code": "1707034", "description": "Cuerpo extrano de bronquio, extraccion por via" },
+    { "code": "1707035", "description": "Inmunoterapia por bcg" },
+    { "code": "1707036", "description": "Inmunoterapia por sesion (incluye el tratamiento de" },
+    { "code": "1707037", "description": "Intubacion traqueal (proc. Aut.)" },
+    { "code": "1707038", "description": "Monitoreo o estudio de apnea durante el sueño" },
+    { "code": "1707052", "description": "Monitorizacion saturacion de O2 durante el sueño" },
+    {
+      "code": "1707053",
+      "description": "Monitorizacion saturacion de O2 durante el sueño con presion positiva continua nasal"
+    },
+    { "code": "1707057", "description": "Determinación de umbral tusígeno" },
+    {
+      "code": "1707058",
+      "description": "Volúmenes pulmonares por pletismografía corporal. Estudio basal"
+    },
+    {
+      "code": "1707059",
+      "description": "Volúmenes pulmonares por pletismografía corporal. Estudio basal y post broncodilatador"
+    },
+    { "code": "1707060", "description": "Colocación de stent endobronquial por broncoscopía" },
+    { "code": "1707061", "description": "Fibrobroncoscopía con biopsia transbronquial" },
+    { "code": "1707062", "description": "Selle endoscópico de fístula bronco-pleural" },
+    {
+      "code": "1701001",
+      "description": "E.C.G. de reposo (incluye mínimo 12 derivaciones y 4 complejos por derivación)"
+    },
+    {
+      "code": "1701003",
+      "description": "Ergometría (incluye E.C.G. antes, durante y después del ejercicio con monitoreo continuo y medición de la intensidad del esfuerzo)"
+    },
+    {
+      "code": "1701006",
+      "description": "E.C.G. continuo (test Holter o similares, por ej. variabilidad de la frecuencia cardíaca y/o alta resolución del ST y/o depolarización tardía); 20 a 24 horas de registro"
+    },
+    {
+      "code": "1701007",
+      "description": "Ecocardiograma Doppler, con registro (incluye cód. 17.01.008)"
+    },
+    { "code": "1701045", "description": "Ecocardiograma Doppler color" },
+    {
+      "code": "1701008",
+      "description": "Ecocardiograma bidimensional (incluye registro modo M, papel fotosensible y fotografía), en adultos o niños (proc. aut.)"
+    },
+    {
+      "code": "1701010",
+      "description": "Sondeo cardíaco derecho c/s termodilución, en adultos o niños"
+    },
+    { "code": "1701011", "description": "Sondeo cardíaco izquierdo y derecho, en adultos o niños" },
+    { "code": "1701012", "description": "Sondeo cardíaco izquierdo, en adultos o niños" },
+    {
+      "code": "1701019",
+      "description": "Cinecoronariografía derecha y/o izquierda (incluye sondeo cardíaco izquierdo  y ventriculografía izquierda)"
+    },
+    {
+      "code": "1701020",
+      "description": "Ventriculografía derecha, en adultos o niños (incl. proc. rad., y sondeo cardíaco derecho)"
+    },
+    {
+      "code": "1701021",
+      "description": "Ventriculografía izquierda, en adultos o niños (incl. proc. rad., y sondeo cardíaco izquierdo)"
+    },
+    { "code": "1701022", "description": "Aortografía, en adultos o niños (Incluye proc. rad.)" },
+    {
+      "code": "1701023",
+      "description": "Arteriografía de extremidades, en adultos o niños (incluye proc. rad.)"
+    },
+    {
+      "code": "1701131",
+      "description": "Angioplastía Intraluminal coronaria uno o multiples vasos (incl. proc. rad; balón, rotablator, Stent o similar)"
+    },
+    {
+      "code": "1701132",
+      "description": "Angioplastía Intraluminal periférica (incluye proc. rad., balón, Stent o similar)"
+    },
+    {
+      "code": "1701043",
+      "description": "Angioplastía de coartación aórtica (incl. proc. rad.) (proc. completo)"
+    },
+    {
+      "code": "1701144",
+      "description": "Angioplastía de arteria pulmonar o vena cava en niños (incluye proc. rad., balón, Stent o similar)"
+    },
+    { "code": "1701033", "description": "Biopsia endomiocárdica (proc. completo)" },
+    { "code": "1701038", "description": "Septostomía de Rashkind" },
+    {
+      "code": "1701035",
+      "description": "Colocación de sonda marcapaso transitorio (proc. completo)"
+    },
+    {
+      "code": "1701141",
+      "description": "Valvuloplastía mitral o tricúspide (incl. proc. radiológico,  incluye balón)"
+    },
+    {
+      "code": "1701142",
+      "description": "Valvuloplastía aórtica y/o pulmonar c/u (incl. proc. radiológico,  incluye balón)"
+    },
+    { "code": "1707056", "description": "Endosonografía bronquial (EBUS)" },
+    { "code": "1801037", "description": "Test Ureasa (para Helicobacter pylori) en gastroscopía" },
+    { "code": "1801002", "description": "Esofagoscopia" },
+    { "code": "1801004", "description": "Ano-recto-sigmoidoscopia en adultos" },
+    {
+      "code": "1801005",
+      "description": "Ano-recto-sigmoidescopia en niños (además anestesia cód. 22-01-001 si corresponde)"
+    },
+    {
+      "code": "1801007",
+      "description": "Sigmoidoscopia y colonoscopia izquierda con tubo flexible"
+    },
+    {
+      "code": "1801008",
+      "description": "Coledocoscopia intraoperatoria c/s extraccion de calculos"
+    },
+    {
+      "code": "1801009",
+      "description": "Peritoneoscopia transparietal (incluye el neumoperitoneo)"
+    },
+    { "code": "1801011", "description": "Manometria esofagica" },
+    { "code": "1801012", "description": "Reflujo acido, test de (grossman o similar) o reflujo" },
+    {
+      "code": "1801015",
+      "description": "Biopsia de intestino delgado, por capsula (de rubin,crosby o sim)"
+    },
+    {
+      "code": "1801016",
+      "description": "Puncion biopsia transparietal de organos abdominales c/u"
+    },
+    {
+      "code": "1801018",
+      "description": "Colangiopancreatografia retrograda, por intubacion endoscopica con la ampolla de vater (incluye endoscopia) (a.c 04-02-009)"
+    },
+    {
+      "code": "1801019",
+      "description": "Drenaje de la via biliar transhepatica y/o percutaneo (a.c."
+    },
+    { "code": "1801021", "description": "Neumoperitoneo por puncion transparietal" },
+    { "code": "1801022", "description": "Instalación sonda de Sengstaken" },
+    { "code": "1801023", "description": "Intubacion con sonda gastrica" },
+    { "code": "1801024", "description": "Intubacion con sonda de miller-abbot o de alimentacion" },
+    {
+      "code": "1801025",
+      "description": "Dilatacion essofagica por balon neumatico (de mosher o similar)"
+    },
+    { "code": "1801026", "description": "Dilatacion esofagica por bujia de hg (hurst o similar)" },
+    {
+      "code": "1801027",
+      "description": "Colocacion endoscopica de tubo  transtumoral en via biliar"
+    },
+    { "code": "1801028", "description": "Cuerpo extrano de esofago y/o estomago, extraccion" },
+    {
+      "code": "1801029",
+      "description": "Devolvulacion del sigmoides por endoscopia (incluye ano-recto-sigmoidoscopia) (proc. Aut)"
+    },
+    { "code": "1801030", "description": "Dilatacion ano-rectal, por sesion" },
+    { "code": "1801031", "description": "Polipos de esofago y/o estomago o intestino delgado," },
+    {
+      "code": "1801045",
+      "description": "Polipos rectales, rectosigmoideos o de colon trat. Completo"
+    },
+    {
+      "code": "1801032",
+      "description": "Escleroterapia de hemorroides, cualquier numero (incluye cod. 18-01-004 al 18-01-007 según corresp)"
+    },
+    {
+      "code": "1801033",
+      "description": "Escleroterapia o hemostasia de varices esofagicas y/o ulcera"
+    },
+    { "code": "1801035", "description": "Ligadura hemorroides" },
+    { "code": "1801036", "description": "Papilotomia endoscopica c/s extraccion de calculos, c/s" },
+    {
+      "code": "1801038",
+      "description": "Puncion evacuadora de absceso intraabdominales (hepatico u otros), c/s toma de muestra, c/s inyeccion de medicamentos"
+    },
+    {
+      "code": "1801041",
+      "description": "Puncion evacuadora de liquido ascitico, con colocacion de expansores de plasma, c/s tomada de muestra, c/s inyeccion de medicamentos (no incluye el valor de los expansores ni otros medicamentos)"
+    },
+    { "code": "1801042", "description": "Vaciamiento manual de fecaloma" },
+    { "code": "1801043", "description": "Manometria anorrectal convencional" },
+    { "code": "1801044", "description": "Test respiratorios de lactosa" },
+    { "code": "1801046", "description": "Hemorroidopexia grapada" },
+    { "code": "1801047", "description": "Ligadura hemorroidaria con doppler" },
+    { "code": "1801048", "description": "Punción evacuadora de líquido ascítico" },
+    { "code": "1801049", "description": "Manometría anorrectal alta resolución" },
+    { "code": "1801050", "description": "Endosonografía digestiva alta" },
+    { "code": "1801051", "description": "Endosonografía digestiva baja" },
+    { "code": "1801052", "description": "Punción guiada con endosonografía digestiva" },
+    { "code": "1801053", "description": "Drenaje guiado con endosonografía digestiva" },
+    { "code": "1801054", "description": "Endosonografía ano-rectal" },
+    { "code": "1801055", "description": "Septotomía endoscópica (divertículo de zenker y otros)" },
+    { "code": "1801056", "description": "Dilatación de acalasia" },
+    {
+      "code": "1801057",
+      "description": "Instalación de prótesis autoexpandibles en tracto digestivo"
+    },
+    { "code": "1801058", "description": "Instalación de prótesis en vía biliar" },
+    { "code": "1801059", "description": "Test de hidrógeno en aire espirado" },
+    { "code": "1801060", "description": "Test de carbono en aire espirado" },
+    { "code": "1801001", "description": "Gastroduodenoscopía (incluye esofagoscopía)" },
+    { "code": "1801003", "description": "Enteroscopía" },
+    {
+      "code": "1801006",
+      "description": "Colonoscopía larga (incluye sigmoidoscopía y colonoscopía izquierda)"
+    },
+    {
+      "code": "1901001",
+      "description": "Exploracion de uretra antero-posterior con bujia y/o explo -"
+    },
+    { "code": "1901002", "description": "Cistoscopia con sondeo de uno o ambos ureteres" },
+    { "code": "1901003", "description": "Cistoscopia y/o uretrocistoscopia y/o uretroscopia" },
+    { "code": "1901004", "description": "Ureteronefroscopia" },
+    {
+      "code": "1901005",
+      "description": "Prostatica transparietal o transrectal (ademas anestesia"
+    },
+    { "code": "1901006", "description": "Biopsia renal transparietal" },
+    { "code": "1901007", "description": "Cistometria (proc.aut.)" },
+    {
+      "code": "1901009",
+      "description": "Electromiografia perineal y del esfinter uretral en ninos"
+    },
+    { "code": "1901010", "description": "Perfil uretral (proc.aut.)" },
+    { "code": "1901011", "description": "Uroflujometria (proc.aut.)" },
+    {
+      "code": "1901030",
+      "description": "Estudio urodinamico (incluye cistometria, emg perineal y del"
+    },
+    { "code": "1901012", "description": "Cistografia por sonda (de relleno) o por puncion  hipo-" },
+    { "code": "1901013", "description": "Inyeccion de medio de contraste en cuerpo cavernoso" },
+    { "code": "1901015", "description": "Ureteropielografia ascendente (directa) por cateterismo" },
+    { "code": "1901016", "description": "Uretrografia retrograda o cistouretrografia (miccional)" },
+    {
+      "code": "1901018",
+      "description": "Dilatacion uretra c/s masaje, c/s instilacion o inyeccion de"
+    },
+    {
+      "code": "1901019",
+      "description": "Instilacion vesical (incluye colocacion de sonda) proc. Aut."
+    },
+    {
+      "code": "1901036",
+      "description": "Instilación vesical (incluye colocación de sonda y Micobacterium Bovis para instilación intravesical proc. aut.)"
+    },
+    { "code": "1901020", "description": "Inyeccion de medicamentos en el pene" },
+    { "code": "1901022", "description": "Vac. Vesical por sonda uretral, (proc. Aut.)" },
+    { "code": "1901025", "description": "Peritoneodiálisis  (incluye insumos)" },
+    {
+      "code": "1901026",
+      "description": "Peritoneodiálisis continua en paciente crónico (adulto o niños) (tratamiento mensual)"
+    },
+    { "code": "1901126", "description": "Instalación de cateter para peritoneodiális" },
+    {
+      "code": "1901028",
+      "description": "Hemodiálisis con bicarbonato con insumos (por sesión, incluye traslado paciente)"
+    },
+    {
+      "code": "1901128",
+      "description": "Hemodiálisis con bicarbonato con insumos (por sesión, sin traslado paciente)"
+    },
+    {
+      "code": "1901029",
+      "description": "Hemodiálisis con bicarbonato con insumos (tratamiento mensual)"
+    },
+    {
+      "code": "1901031",
+      "description": "Instalación de catéter de peritoneodiálisis laparoscopia"
+    },
+    { "code": "1901032", "description": "Retiro de catéter de peritoneodiálisis" },
+    { "code": "1901033", "description": "Revisión de catéter de peritoneodiálisis laparoscopia" },
+    { "code": "1901035", "description": "Biopsia estereotáxica digital de próstata" },
+    { "code": "2001002", "description": "Colposcopía" },
+    { "code": "2001005", "description": "Histeroscopía diagnostica o terapéutica (proc. aut.)" },
+    { "code": "2001006", "description": "Amniocentesis" },
+    { "code": "2001007", "description": "Culdocentesis (punción del Douglas)" },
+    { "code": "2001009", "description": "Monitoreo basal con informe" },
+    {
+      "code": "2001010",
+      "description": "Monitoreo fetal estresante, con control permanente del especialista y tratamiento de las posibles complicaciones"
+    },
+    { "code": "2001021", "description": "Cordocentesis" },
+    { "code": "2001012", "description": "Galactografía (a.c.  04-02-005)" },
+    { "code": "2001013", "description": "Histerosalpingografía (a.c. 04-02-011)" },
+    {
+      "code": "2001014",
+      "description": "Biopsia endometrio, vulva, vagina, cuello, c/u (proc. aut.)"
+    },
+    {
+      "code": "2001015",
+      "description": "Colocación o extracción de dispositivo intrauterino (no incluye el valor del dispositivo)"
+    },
+    {
+      "code": "2001016",
+      "description": "Electrodiatermo o criocoagulación de lesiones del cuello"
+    },
+    { "code": "2001020", "description": "Test postcoital" },
+    {
+      "code": "2001022",
+      "description": "Punción evacuadora de quistes mamarios, c/s toma de muestras, c/s inyección de medicamentos"
+    },
+    { "code": "2001023", "description": "Biopsia estereotaxíca digital de mama" },
+    { "code": "2001024", "description": "Biopsia corial" },
+    {
+      "code": "2001025",
+      "description": "Toma de biopsia con aguja bajo visión ecográfica de la Mama (Biopsia Core)"
+    },
+    {
+      "code": "2003047",
+      "description": "Prueba de neuromodulación sacra básica: Evaluación periférica de raíces sacras"
+    },
+    {
+      "code": "2003048",
+      "description": "Implante conjunto de neuroelectrodo sacro cuadripolar y generador de pulso implantable de neuromodulación sacra"
+    },
+    {
+      "code": "2003049",
+      "description": "Prueba avanzada de neuromodulación sacra: Implante o revisión de neuroelectrodo sacro cuadripolar"
+    },
+    {
+      "code": "2003050",
+      "description": "Implante de generador de pulso implantable de neuromodulación sacra"
+    },
+    {
+      "code": "2003051",
+      "description": "Explante de neuroelectrodo sacro cuadripolar espiculado o revisión de bolsillo glúteo"
+    },
+    {
+      "code": "2004001",
+      "description": "Aborto retenido, vaciamiento de (incluye la inducción en los casos que corresponda)"
+    },
+    {
+      "code": "2004002",
+      "description": "Raspado uterino diagnóstico o terapéutico por metrorragia o por restos de aborto"
+    },
+    {
+      "code": "2004003",
+      "description": "Parto presentación cefálica o podálica, c/s episiotomía, c/s sutura, c/s fórceps, c/s inducción, c/s versión interna, c/s revisión, c/s extracción manual de placenta, c/s monitorización. (Unico o Múltiple)"
+    },
+    { "code": "2004103", "description": "Parto normal" },
+    { "code": "2004113", "description": "Parto distósico vaginal" },
+    { "code": "2004007", "description": "Aspiración manual endouterina (AMEU)" },
+    {
+      "code": "2004008",
+      "description": "Tratamiento Farmacológico Ley IVE (incluye consulta especialidad en obstetricia y ginecología y fármacos)"
+    },
+    { "code": "2004009", "description": "Fototerapia a recién nacidos" },
+    {
+      "code": "2101001",
+      "description": "Infiltracion local medicamentos (bursas, tendones, yuxtaarticulares y/o intraarticulares"
+    },
+    {
+      "code": "2101002",
+      "description": "Procedimiento para exploraciones radiologicas (incluye maniobra e inyeccion del medio de contraste)  BM18A  Revisar en BM Colocación valva"
+    },
+    { "code": "2101003", "description": "Movilizacion articular bajo anestesia general." },
+    { "code": "2105001", "description": "Calzon corto de yeso" },
+    { "code": "2105004", "description": "Rodillera, bota larga o corta de yeso" },
+    { "code": "2105005", "description": "Velpeau" },
+    { "code": "2105006", "description": "Yeso antebraquial c/s ferula digital" },
+    { "code": "2105007", "description": "Yeso braquicarpiano" },
+    { "code": "2105008", "description": "Yeso pelvipedio bilateral" },
+    { "code": "2105009", "description": "Yeso pelvipedio unilateral" },
+    { "code": "2105010", "description": "Yeso toracobraquial" },
+    {
+      "code": "2105011",
+      "description": "Corsets de milwaukee o similares (incluye la toma de molde )"
+    },
+    {
+      "code": "2107001",
+      "description": "Luxaciones de articulaciones medianas (hombro, codo, rodilla, tobillo, muñeca, tarso y esternoclavicular)"
+    },
+    {
+      "code": "2107002",
+      "description": "Luxaciones de articulaciones  mayores (columna, cadera, pelvis)"
+    },
+    { "code": "2107003", "description": "Luxaciones de articulaciones menores (el resto)" },
+    {
+      "code": "2107004",
+      "description": "Fracturas mayores (columna, pelvis, supracondílea, codo, epífisis femorales)"
+    },
+    {
+      "code": "2107005",
+      "description": "Fracturas medianas (diáfisis humeral, radial, cubital, diáfisis femoral, tibial, peroneal, clavicular, platillos tibiales)"
+    },
+    { "code": "2107006", "description": "Fracturas menores (el resto)" },
+    { "code": "2107010", "description": "Pie bot, unilateral, hasta 10 cambios de yeso" },
+    { "code": "2301002", "description": "Ortesis cervicales (collares blandos y duros)" },
+    { "code": "2301008", "description": "Braguero (Hernia Umbilical o Inguinal)" },
+    {
+      "code": "2301011",
+      "description": "Faja Ortopédica (Contensión de Abdomen o Columna Dorsolumbar)"
+    },
+    { "code": "2301020", "description": "Ortesis Muslo-Pie o Isquiopedio" },
+    { "code": "2301021", "description": "Arnés de Prótesis (Extremidad Superior)" },
+    { "code": "2301022", "description": "Bastón canadiense o trípode, c/u" },
+    { "code": "2301024", "description": "Rodillera" },
+    { "code": "2301029", "description": "Cojín de abducción o Paulik" },
+    { "code": "2301030", "description": "Correa de ortesis" },
+    { "code": "2301031", "description": "Correa de Muley (Prótesis bajo rodilla)" },
+    { "code": "2301032", "description": "Ortesis de columna (Milwaukee, Taylor o similares)" },
+    { "code": "2301033", "description": "Ortesis lumbosacra (Corset de Knight)" },
+    { "code": "2301034", "description": "Ortesis palmar activa (UCLA)" },
+    { "code": "2301035", "description": "Ortesis radial de posición" },
+    { "code": "2301036", "description": "Ortesis corta de posición (digitales) c/u" },
+    { "code": "2301037", "description": "Ortesis de uso nocturno de miembro inferior" },
+    { "code": "2301038", "description": "Ortesis Larga de Posición (Extremidad Superior)" },
+    { "code": "2301040", "description": "Muletas (par)" },
+    {
+      "code": "2301041",
+      "description": "Ortesis Larga bilateral con cinturón pélvico (Extremidades Inferiores)"
+    },
+    { "code": "2301042", "description": "Ortesis Larga unilateral (Extremidad Inferior)" },
+    { "code": "2301043", "description": "Ortesis mano-muñeca pasiva" },
+    { "code": "2301044", "description": "Ortesis para rodilla" },
+    { "code": "2301045", "description": "Ortesis tobillo-pie" },
+    { "code": "2301067", "description": "Talonera goma (par)" },
+    { "code": "2201102", "description": "Anestesia peridural o epidural  continua para partos" },
+    {
+      "code": "2201001",
+      "description": "Anestesia general o regional otorgada por médico diferente al primer cirujano (en intervenciones o procedimientos diagnósticos o terapéuticos)"
+    },
+    { "code": "2201002", "description": "Anestesia peridural continua, proc. aut." },
+    { "code": "2703101", "description": "Aplicación de sellantes" },
+    { "code": "2703102", "description": "Desgastes selectivos" },
+    { "code": "2703103", "description": "Destartraje y pulido coronario" },
+    { "code": "2703104", "description": "Mantenedores de espacio" },
+    { "code": "2703105", "description": "Pulpotomía" },
+    { "code": "2703107", "description": "Exodoncia simple diente permanente" },
+    { "code": "2703108", "description": "Exodoncia diente primario" },
+    { "code": "2703109", "description": "Obturación amalgama" },
+    { "code": "2703110", "description": "Obturación composite" },
+    { "code": "2703111", "description": "Obturación Vidrio Ionómero" },
+    { "code": "2703106", "description": "Aplicación tópica de fluoruros" },
+    { "code": "2705001", "description": "Cirugía bucal" },
+    {
+      "code": "2704001",
+      "description": "Obturación Inlay metal (incluye materiales no preciosos, no incluye oro)"
+    },
+    { "code": "2704002", "description": "Plano alivio oclusal" },
+    { "code": "2704003", "description": "Prótesis de restitución (fase clínica)" },
+    { "code": "2704004", "description": "Prótesis metálica" },
+    { "code": "2702105", "description": "Radiografía extraoral (por placa)" },
+    { "code": "2702106", "description": "Radiografía oclusal (por placa)" },
+    { "code": "2704005", "description": "Prótesis de restitución (fase laboratorio)" },
+    { "code": "2704006", "description": "Reparación compuesta de prótesis" },
+    { "code": "2704007", "description": "Reparación corona" },
+    { "code": "2704008", "description": "Reparación o reajuste prótesis" },
+    { "code": "2704009", "description": "Restitución por corona (combinada)" },
+    { "code": "2704010", "description": "Restitución por corona provisoria" },
+    { "code": "2702107", "description": "Sialografía (cada lado) (incluye el proc.)" },
+    {
+      "code": "2704011",
+      "description": "Tratamiento ortodoncia con aparatología removible  (incluye aparato)(año 1)"
+    },
+    {
+      "code": "2704012",
+      "description": "Tratamiento ortodoncia con aparatologia fija (incluye aparato) (año 1)"
+    },
+    {
+      "code": "2704013",
+      "description": "Tratamiento ortodoncia con aparatologia fija (incluye aparato) (año 2)"
+    },
+    { "code": "2704014", "description": "Endodoncia Multirradicular" },
+    { "code": "2704015", "description": "Endodoncia birradicular" },
+    { "code": "2704016", "description": "Endodoncia unirradicular" },
+    { "code": "2702108", "description": "Telerradiografia" },
+    { "code": "2702109", "description": "Radiografía Panoramica (por placa)" },
+    {
+      "code": "2901001",
+      "description": "Tratamiento integral de braquiterapia endocavitaria o intersticial (por sesión)"
+    },
+    {
+      "code": "2901002",
+      "description": "Tratamiento integral de braquiterapia de implante permanente, no incluye implante (por sesión)"
+    },
+    {
+      "code": "2901003",
+      "description": "Tratamiento Integral braquiterapia alta o mediana dosis, HDR (por sesión)"
+    },
+    {
+      "code": "2902001",
+      "description": "Tratamiento integral de radioterapia altamente compleja con Linac"
+    },
+    { "code": "2902002", "description": "Tratamiento integral de radioterapia compleja con Linac" },
+    { "code": "2902003", "description": "Tratamiento integral de radioterapia estándar con Linac" },
+    {
+      "code": "2902004",
+      "description": "Tratamiento integral de radioterapia convencional con Linac"
+    },
+    {
+      "code": "2902009",
+      "description": "Tratamiento integral de radioterapia altamente compleja con cobalto"
+    },
+    {
+      "code": "2902010",
+      "description": "Tratamiento integral de radioterapia compleja con cobalto"
+    },
+    {
+      "code": "2902011",
+      "description": "Tratamiento integral de radioterapia estándar con cobalto"
+    },
+    {
+      "code": "2902012",
+      "description": "Tratamiento integral de radioterapia convencional con cobalto (paliativa)"
+    },
+    { "code": "2903001", "description": "Radiocirugía" },
+    { "code": "2904019", "description": "Quimioterapia alto riesgo 3 (por ciclo)" },
+    {
+      "code": "2001026",
+      "description": "Instalación o retiro dispositivo subdérmico anticonceptivo"
+    }
+  ]
+}

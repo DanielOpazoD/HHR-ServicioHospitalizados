@@ -108,11 +108,13 @@ export interface ClinicalDocumentRecord {
     cie10Code: string;
     cie10Description: string;
     diagnosticoPrincipal: string;
-    condicionEgreso: string;
-    intervencionQuirurgica: string;
+    condicionEgreso: '1' | '2' | '3' | '4' | '5' | '6' | '7';
+    intervencionQuirurgica: '1' | '2';
     intervencionQuirurgDescrip?: string;
-    procedimiento: string;
+    procedimiento: '1' | '2';
     procedimientoDescrip?: string;
+    procedimientoCodigo?: string;
+    intervencionCodigo?: string;
     tratanteRut?: string;
   };
 }

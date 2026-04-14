@@ -17,6 +17,7 @@ import clsx from 'clsx';
 import type {
   ClinicalDocumentIeehDraft,
   ClinicalDocumentRecord,
+  IeehDischargeConditionCode,
 } from '@/features/clinical-documents/domain/entities';
 import {
   createEmptyIeehDraft,
@@ -25,29 +26,40 @@ import {
 import {
   buildIeehPatientFromEpicrisis,
   buildIeehDischargeFromEpicrisis,
+  type IeehPatientSnapshot,
 } from '@/features/clinical-documents/controllers/clinicalDocumentIeehPrintController';
 import type { TerminologyConcept } from '@/services/terminology/terminologyService';
 import { searchDiagnoses, forceAISearch } from '@/services/terminology/terminologyService';
+import type { FonasaEntry, FonasaCatalog } from '@/services/terminology/fonasaService';
+import { searchFonasa } from '@/services/terminology/fonasaService';
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
+/** Delay before triggering CIE-10 search after typing stops. */
 const SEARCH_DEBOUNCE_MS = 350;
+
+/** Delay before hiding dropdown after input blur (allows click on results). */
+const BLUR_HIDE_DELAY_MS = 200;
 
 // ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
 
+/** Props for {@link ClinicalDocumentIeehPanel}. */
 interface ClinicalDocumentIeehPanelProps {
   /** The parent epicrisis document (needed for patient data when printing). */
   document: ClinicalDocumentRecord;
   /** Workspace patient data (provides birthDate for IEEH PDF). */
   workspacePatient?: { birthDate?: string };
-  /** Current saved draft (undefined when not yet opened). */
+  /** Current saved draft (undefined when panel not yet opened). */
   draft: ClinicalDocumentIeehDraft | undefined;
+  /** Whether the user can modify the draft. */
   canEdit: boolean;
+  /** Callback to persist changes to the draft. */
   onPatchDraft: (draft: ClinicalDocumentIeehDraft) => void;
+  /** Callback to remove the entire draft from the document. */
   onClearDraft: () => void;
 }
 
@@ -55,6 +67,137 @@ interface ClinicalDocumentIeehPanelProps {
 // Component
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// FonasaSearchInput — inline searchable input for FONASA codes
+// ---------------------------------------------------------------------------
+
+/** Props for the inline FONASA code search input. */
+interface FonasaSearchInputProps {
+  catalog: FonasaCatalog;
+  code: string;
+  description: string;
+  onSelect: (entry: FonasaEntry) => void;
+  onClear: () => void;
+  placeholder?: string;
+}
+
+/** Inline search input for FONASA intervention/procedure codes. */
+const FonasaSearchInput: React.FC<FonasaSearchInputProps> = ({
+  catalog,
+  code,
+  description,
+  onSelect,
+  onClear,
+  placeholder = 'Buscar por nombre o código FONASA...',
+}) => {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<FonasaEntry[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  const handleChange = useCallback(
+    (value: string) => {
+      setQuery(value);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      if (value.length < 2) {
+        setResults([]);
+        setShowDropdown(false);
+        return;
+      }
+      setShowDropdown(true);
+      timerRef.current = setTimeout(async () => {
+        setSearching(true);
+        try {
+          const res = await searchFonasa(catalog, value);
+          setResults(res);
+        } catch {
+          setResults([]);
+        } finally {
+          setSearching(false);
+        }
+      }, 250);
+    },
+    [catalog]
+  );
+
+  if (code) {
+    return (
+      <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-2 py-1.5">
+        <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-600">
+          {code}
+        </span>
+        <span className="flex-1 text-xs text-slate-700 truncate">{description}</span>
+        <button
+          type="button"
+          onClick={onClear}
+          className="p-0.5 rounded text-slate-400 hover:text-red-500 hover:bg-red-50"
+          title="Cambiar"
+        >
+          <X size={12} />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative">
+      <div className="relative">
+        <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
+        <input
+          type="text"
+          value={query}
+          onChange={e => handleChange(e.target.value)}
+          onFocus={() => results.length > 0 && setShowDropdown(true)}
+          onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+          placeholder={placeholder}
+          className="w-full rounded-md border border-slate-200 py-1.5 pl-7 pr-2 text-xs text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
+        />
+        {searching && (
+          <Loader2
+            size={13}
+            className="absolute right-2 top-1/2 -translate-y-1/2 animate-spin text-slate-400"
+          />
+        )}
+      </div>
+      {showDropdown && results.length > 0 && (
+        <div className="absolute z-30 mt-1 max-h-40 w-full overflow-y-auto rounded-md border border-slate-200 bg-white shadow-lg">
+          {results.map(entry => (
+            <button
+              key={entry.code}
+              type="button"
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => {
+                onSelect(entry);
+                setQuery('');
+                setShowDropdown(false);
+                setResults([]);
+              }}
+              className="flex w-full items-start gap-2 px-2.5 py-1.5 text-left hover:bg-emerald-50 transition-colors"
+            >
+              <span className="shrink-0 rounded bg-slate-100 px-1 py-0.5 text-[10px] font-mono font-bold text-slate-600">
+                {entry.code}
+              </span>
+              <span className="text-xs text-slate-700 leading-snug">{entry.description}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
+
+/** Collapsible IEEH panel for epicrisis documents. */
 export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps> = ({
   document: epicrisisDoc,
   workspacePatient,
@@ -75,6 +218,7 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
   const [isAiSearching, setIsAiSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const blurTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   // Sync from external draft when it changes (e.g. autosave round-trip)
@@ -82,7 +226,16 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
     if (draft) setLocalDraft(draft);
   }, [draft]);
 
-  // Persist local changes to parent
+  // Cleanup timers and abort controllers on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+      if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
+      abortRef.current?.abort();
+    };
+  }, []);
+
+  /** Persist local changes to parent via reducer dispatch. */
   const commitDraft = useCallback(
     (next: ClinicalDocumentIeehDraft) => {
       setLocalDraft(next);
@@ -91,19 +244,20 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
     [onPatchDraft]
   );
 
-  // Debounced CIE-10 search
+  /** Debounced CIE-10 search using the terminology service. */
   const handleSearchChange = useCallback((query: string) => {
     setSearchQuery(query);
-    setShowResults(true);
 
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
     abortRef.current?.abort();
 
     if (query.length < 2) {
       setSearchResults([]);
+      setShowResults(false);
       return;
     }
 
+    setShowResults(true);
     searchTimerRef.current = setTimeout(async () => {
       const controller = new AbortController();
       abortRef.current = controller;
@@ -111,12 +265,16 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
       try {
         const results = await searchDiagnoses(query, controller.signal);
         if (!controller.signal.aborted) setSearchResults(results);
+      } catch {
+        // Network or abort error — reset to empty
+        if (!controller.signal.aborted) setSearchResults([]);
       } finally {
         if (!controller.signal.aborted) setIsSearching(false);
       }
     }, SEARCH_DEBOUNCE_MS);
   }, []);
 
+  /** Force AI-powered search via Gemini. */
   const handleAiSearch = useCallback(async () => {
     if (searchQuery.length < 2 || isAiSearching) return;
     setIsAiSearching(true);
@@ -124,11 +282,14 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
       const results = await forceAISearch(searchQuery);
       setSearchResults(results);
       setShowResults(true);
+    } catch {
+      // AI search failed — keep existing results
     } finally {
       setIsAiSearching(false);
     }
   }, [searchQuery, isAiSearching]);
 
+  /** Select a CIE-10 concept from search results. */
   const handleSelectDiagnosis = useCallback(
     (concept: TerminologyConcept) => {
       commitDraft({
@@ -144,10 +305,12 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
     [localDraft, commitDraft]
   );
 
+  /** Clear the selected CIE-10 code. */
   const handleClearDiagnosis = useCallback(() => {
     commitDraft({ ...localDraft, cie10Code: '', cie10Description: '', diagnosticoPrincipal: '' });
   }, [localDraft, commitDraft]);
 
+  /** Type-safe generic field updater for the draft. */
   const patchField = useCallback(
     <K extends keyof ClinicalDocumentIeehDraft>(field: K, value: ClinicalDocumentIeehDraft[K]) => {
       commitDraft({ ...localDraft, [field]: value });
@@ -157,6 +320,7 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
 
   const [isPrinting, setIsPrinting] = useState(false);
 
+  /** Print the IEEH PDF using the official MINSAL template. */
   const handlePrintIeeh = useCallback(async () => {
     if (isPrinting || !localDraft.cie10Code) return;
     setIsPrinting(true);
@@ -167,17 +331,29 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
         ...epicrisisDoc,
         ieehDraft: localDraft,
       });
-      await printIEEHForm(patient as never, discharge);
+      // IeehPatientSnapshot is a subset of PatientData — the PDF service
+      // only reads the fields we provide; missing census-only fields
+      // (bedId, isBlocked, etc.) are not used by fillIEEHForm.
+      await printIEEHForm(patient as Parameters<typeof printIEEHForm>[0], discharge);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('[IEEH] Error printing from epicrisis:', error);
     } finally {
       setIsPrinting(false);
     }
-  }, [isPrinting, localDraft, epicrisisDoc]);
+  }, [isPrinting, localDraft, epicrisisDoc, workspacePatient]);
 
+  /** Remove the entire IEEH draft from the document. */
   const handleRemovePanel = useCallback(() => {
     onClearDraft();
     setLocalDraft(createEmptyIeehDraft());
     setIsOpen(false);
   }, [onClearDraft]);
+
+  /** Delayed hide of search results dropdown (allows click on results). */
+  const handleSearchBlur = useCallback(() => {
+    blurTimerRef.current = setTimeout(() => setShowResults(false), BLUR_HIDE_DELAY_MS);
+  }, []);
 
   return (
     <div className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50/40 print:hidden">
@@ -240,7 +416,7 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
                       value={searchQuery}
                       onChange={e => handleSearchChange(e.target.value)}
                       onFocus={() => searchResults.length > 0 && setShowResults(true)}
-                      onBlur={() => setTimeout(() => setShowResults(false), 200)}
+                      onBlur={handleSearchBlur}
                       placeholder="Buscar diagnóstico CIE-10..."
                       className="w-full rounded-md border border-slate-200 py-1.5 pl-7 pr-2 text-xs text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
                     />
@@ -302,7 +478,9 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
             </label>
             <select
               value={localDraft.condicionEgreso}
-              onChange={e => patchField('condicionEgreso', e.target.value)}
+              onChange={e =>
+                patchField('condicionEgreso', e.target.value as IeehDischargeConditionCode)
+              }
               className="w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
             >
               {IEEH_DISCHARGE_CONDITIONS.map(opt => (
@@ -339,13 +517,28 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
               </label>
             </div>
             {localDraft.intervencionQuirurgica === '1' && (
-              <input
-                type="text"
-                value={localDraft.intervencionQuirurgDescrip ?? ''}
-                onChange={e => patchField('intervencionQuirurgDescrip', e.target.value)}
-                placeholder="Descripción de la intervención"
-                className="mt-1 w-full rounded-md border border-slate-200 px-2 py-1.5 text-xs text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none"
-              />
+              <div className="mt-1">
+                <FonasaSearchInput
+                  catalog="interventions"
+                  code={localDraft.intervencionCodigo ?? ''}
+                  description={localDraft.intervencionQuirurgDescrip ?? ''}
+                  placeholder="Buscar intervención quirúrgica FONASA..."
+                  onSelect={entry =>
+                    commitDraft({
+                      ...localDraft,
+                      intervencionCodigo: entry.code,
+                      intervencionQuirurgDescrip: entry.description,
+                    })
+                  }
+                  onClear={() =>
+                    commitDraft({
+                      ...localDraft,
+                      intervencionCodigo: undefined,
+                      intervencionQuirurgDescrip: undefined,
+                    })
+                  }
+                />
+              </div>
             )}
           </div>
 
@@ -375,13 +568,28 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
               </label>
             </div>
             {localDraft.procedimiento === '1' && (
-              <input
-                type="text"
-                value={localDraft.procedimientoDescrip ?? ''}
-                onChange={e => patchField('procedimientoDescrip', e.target.value)}
-                placeholder="Descripción del procedimiento"
-                className="mt-1 w-full rounded-md border border-slate-200 px-2 py-1.5 text-xs text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none"
-              />
+              <div className="mt-1">
+                <FonasaSearchInput
+                  catalog="procedures"
+                  code={localDraft.procedimientoCodigo ?? ''}
+                  description={localDraft.procedimientoDescrip ?? ''}
+                  placeholder="Buscar procedimiento FONASA..."
+                  onSelect={entry =>
+                    commitDraft({
+                      ...localDraft,
+                      procedimientoCodigo: entry.code,
+                      procedimientoDescrip: entry.description,
+                    })
+                  }
+                  onClear={() =>
+                    commitDraft({
+                      ...localDraft,
+                      procedimientoCodigo: undefined,
+                      procedimientoDescrip: undefined,
+                    })
+                  }
+                />
+              </div>
             )}
           </div>
 
