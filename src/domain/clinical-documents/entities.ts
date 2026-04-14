@@ -103,6 +103,18 @@ export interface ClinicalDocumentRecord {
   integrityHash?: string;
   /** Rich text content for the annexes page (printed as a separate page). */
   annexContent?: string;
+  /** Statistical discharge draft filled from epicrisis (optional). */
+  ieehDraft?: {
+    cie10Code: string;
+    cie10Description: string;
+    diagnosticoPrincipal: string;
+    condicionEgreso: string;
+    intervencionQuirurgica: string;
+    intervencionQuirurgDescrip?: string;
+    procedimiento: string;
+    procedimientoDescrip?: string;
+    tratanteRut?: string;
+  };
 }
 
 export interface ClinicalDocumentPatientFieldTemplate {

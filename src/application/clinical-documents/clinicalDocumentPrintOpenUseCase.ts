@@ -5,4 +5,5 @@ import {
 
 export const executeOpenClinicalDocumentPrint = (
   record: ClinicalDocumentRecord
-): Promise<boolean> => openClinicalDocumentBrowserPrintPreview(record.title, record.documentType);
+): Promise<boolean> =>
+  openClinicalDocumentBrowserPrintPreview(record.title, record.documentType, record.ieehDraft);

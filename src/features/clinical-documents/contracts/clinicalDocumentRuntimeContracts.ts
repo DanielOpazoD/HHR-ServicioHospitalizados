@@ -113,6 +113,19 @@ export const clinicalDocumentRecordSchema = z.object({
   renderedText: z.string().optional(),
   integrityHash: z.string().optional(),
   annexContent: z.string().optional(),
+  ieehDraft: z
+    .object({
+      cie10Code: z.string(),
+      cie10Description: z.string(),
+      diagnosticoPrincipal: z.string(),
+      condicionEgreso: z.string(),
+      intervencionQuirurgica: z.string(),
+      intervencionQuirurgDescrip: z.string().optional(),
+      procedimiento: z.string(),
+      procedimientoDescrip: z.string().optional(),
+      tratanteRut: z.string().optional(),
+    })
+    .optional(),
 });
 
 export const clinicalDocumentTemplateSchema = z.object({

@@ -1,5 +1,6 @@
 import type { PatientData } from '@/features/census/controllers/censusActionPatientContracts';
 import type { IeehData } from '@/features/census/contracts/censusMovementContracts';
+import type { ClinicalDocumentIeehDraft } from '@/features/clinical-documents/domain/entities';
 import type { DischargeFormData } from '@/services/pdf/ieehPdfService';
 
 export interface IeehFormDraftValues {
@@ -17,10 +18,18 @@ export interface IeehFormDraftValues {
   tratanteRut: string;
 }
 
+/**
+ * Builds initial IEEH form values. Priority:
+ *  1. Previously saved IEEH data (from the discharge record)
+ *  2. IEEH draft from the epicrisis (pre-filled by the doctor)
+ *  3. Patient data fallback (CIE-10 from admission, if available)
+ */
 export const buildIeehInitialDraftValues = (
   patient: PatientData,
-  savedIeehData?: IeehData
+  savedIeehData?: IeehData,
+  epicrisisDraft?: ClinicalDocumentIeehDraft
 ): IeehFormDraftValues => {
+  // 1. Highest priority: previously saved IEEH data
   if (savedIeehData) {
     return {
       diagnosticoPrincipal: savedIeehData.diagnosticoPrincipal || '',
@@ -38,6 +47,25 @@ export const buildIeehInitialDraftValues = (
     };
   }
 
+  // 2. Pre-fill from epicrisis IEEH draft (doctor already selected CIE-10)
+  if (epicrisisDraft?.cie10Code) {
+    return {
+      diagnosticoPrincipal: epicrisisDraft.diagnosticoPrincipal || '',
+      cie10Code: epicrisisDraft.cie10Code,
+      cie10Display: epicrisisDraft.cie10Description || '',
+      condicionEgreso: epicrisisDraft.condicionEgreso || '1',
+      tieneIntervencion: epicrisisDraft.intervencionQuirurgica === '1',
+      intervencionDescrip: epicrisisDraft.intervencionQuirurgDescrip || '',
+      tieneProcedimiento: epicrisisDraft.procedimiento === '1',
+      procedimientoDescrip: epicrisisDraft.procedimientoDescrip || '',
+      tratanteApellido1: '',
+      tratanteApellido2: '',
+      tratanteNombre: '',
+      tratanteRut: '',
+    };
+  }
+
+  // 3. Fallback: patient admission data
   return {
     diagnosticoPrincipal: patient.cie10Description || patient.pathology || '',
     cie10Code: patient.cie10Code || '',

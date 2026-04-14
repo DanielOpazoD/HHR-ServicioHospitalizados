@@ -56,6 +56,11 @@ export type ClinicalDocumentDraftAction =
   | { type: 'ADD_CLINICAL_UPDATE' }
   | { type: 'PATCH_ANNEX_CONTENT'; content: string }
   | { type: 'CLEAR_ANNEX_CONTENT' }
+  | {
+      type: 'PATCH_IEEH_DRAFT';
+      draft: import('@/features/clinical-documents/domain/entities').ClinicalDocumentIeehDraft;
+    }
+  | { type: 'CLEAR_IEEH_DRAFT' }
   | { type: 'PATCH_UPDATE_DATE'; sectionId: string; date: string }
   | { type: 'PATCH_UPDATE_TIME'; sectionId: string; time: string }
   | { type: 'APPLY_TEMPLATE'; templateId: string }
@@ -283,6 +288,16 @@ export const clinicalDocumentDraftReducer = (
     case 'CLEAR_ANNEX_CONTENT':
       return patchDraft(state, draft => {
         const { annexContent: _, ...rest } = draft;
+        return rest as typeof draft;
+      });
+    case 'PATCH_IEEH_DRAFT':
+      return patchDraft(state, draft => ({
+        ...draft,
+        ieehDraft: action.draft,
+      }));
+    case 'CLEAR_IEEH_DRAFT':
+      return patchDraft(state, draft => {
+        const { ieehDraft: _, ...rest } = draft;
         return rest as typeof draft;
       });
     case 'PATCH_UPDATE_DATE':

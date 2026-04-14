@@ -107,6 +107,8 @@ const defaultHandlers = {
   addClinicalUpdate: vi.fn(),
   patchAnnexContent: vi.fn(),
   clearAnnexContent: vi.fn(),
+  patchIeehDraft: vi.fn(),
+  clearIeehDraft: vi.fn(),
   patchUpdateDate: vi.fn(),
   patchUpdateTime: vi.fn(),
 };

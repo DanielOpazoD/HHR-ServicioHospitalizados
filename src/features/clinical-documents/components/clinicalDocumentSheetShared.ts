@@ -91,6 +91,12 @@ export interface ClinicalDocumentSheetProps {
   addClinicalUpdate: () => void;
   patchAnnexContent: (content: string) => void;
   clearAnnexContent: () => void;
+  patchIeehDraft: (
+    draft: import('@/features/clinical-documents/domain/entities').ClinicalDocumentIeehDraft
+  ) => void;
+  clearIeehDraft: () => void;
+  /** Workspace patient data (provides birthDate for IEEH printing). */
+  workspacePatient?: { birthDate?: string };
   patchUpdateDate: (sectionId: string, date: string) => void;
   patchUpdateTime: (sectionId: string, time: string) => void;
 }

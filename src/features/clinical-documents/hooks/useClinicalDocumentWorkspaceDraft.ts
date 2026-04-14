@@ -66,6 +66,10 @@ export interface ClinicalDocumentWorkspaceDraftState {
   addClinicalUpdate: () => void;
   patchAnnexContent: (content: string) => void;
   clearAnnexContent: () => void;
+  patchIeehDraft: (
+    draft: import('@/features/clinical-documents/domain/entities').ClinicalDocumentIeehDraft
+  ) => void;
+  clearIeehDraft: () => void;
   patchUpdateDate: (sectionId: string, date: string) => void;
   patchUpdateTime: (sectionId: string, time: string) => void;
 }
@@ -201,6 +205,8 @@ export const useClinicalDocumentWorkspaceDraft = ({
     addClinicalUpdate: () => dispatch({ type: 'ADD_CLINICAL_UPDATE' }),
     patchAnnexContent: (content: string) => dispatch({ type: 'PATCH_ANNEX_CONTENT', content }),
     clearAnnexContent: () => dispatch({ type: 'CLEAR_ANNEX_CONTENT' }),
+    patchIeehDraft: draft => dispatch({ type: 'PATCH_IEEH_DRAFT', draft }),
+    clearIeehDraft: () => dispatch({ type: 'CLEAR_IEEH_DRAFT' }),
     patchUpdateDate: (sectionId: string, date: string) =>
       dispatch({ type: 'PATCH_UPDATE_DATE', sectionId, date }),
     patchUpdateTime: (sectionId: string, time: string) =>

@@ -105,6 +105,35 @@ export interface ClinicalDocumentRecord {
   integrityHash?: string;
   /** Rich text content for the annexes page (printed as a separate page). */
   annexContent?: string;
+  /** Statistical discharge draft filled from epicrisis (optional). */
+  ieehDraft?: ClinicalDocumentIeehDraft;
+}
+
+/**
+ * Draft of the IEEH (Informe Estadístico de Egreso Hospitalario)
+ * captured while writing an epicrisis. The discharge time is left blank
+ * because the patient hasn't physically left yet — that step belongs
+ * to the nurse at the census.
+ */
+export interface ClinicalDocumentIeehDraft {
+  /** ICD-10 / CIE-10 code (e.g. "E11.5"). */
+  cie10Code: string;
+  /** Official CIE-10 description in Spanish. */
+  cie10Description: string;
+  /** Free-text principal diagnosis. */
+  diagnosticoPrincipal: string;
+  /** Discharge condition code ('1'-'7' per MINSAL). */
+  condicionEgreso: string;
+  /** Surgical intervention flag: '1' = Sí, '2' = No. */
+  intervencionQuirurgica: string;
+  /** Surgical intervention description (when applicable). */
+  intervencionQuirurgDescrip?: string;
+  /** Procedure flag: '1' = Sí, '2' = No. */
+  procedimiento: string;
+  /** Procedure description (when applicable). */
+  procedimientoDescrip?: string;
+  /** Treating doctor RUT (optional, for PDF field #49). */
+  tratanteRut?: string;
 }
 
 export interface ClinicalDocumentPatientFieldTemplate {

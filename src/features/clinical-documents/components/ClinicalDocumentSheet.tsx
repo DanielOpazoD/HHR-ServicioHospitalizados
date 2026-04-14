@@ -48,6 +48,9 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
   importIndicationsCatalog,
   patchAnnexContent,
   clearAnnexContent,
+  patchIeehDraft,
+  clearIeehDraft,
+  workspacePatient,
   patchUpdateDate,
   patchUpdateTime,
 }) => {
@@ -155,6 +158,9 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
           onUpdateIndication={updateIndication}
           onDeleteIndication={deleteIndication}
           onImportIndicationsCatalog={importIndicationsCatalog}
+          onPatchIeehDraft={patchIeehDraft}
+          onClearIeehDraft={clearIeehDraft}
+          workspacePatient={workspacePatient}
           onPatchUpdateDate={patchUpdateDate}
           onPatchUpdateTime={patchUpdateTime}
           dragHandlers={dragHandlers}

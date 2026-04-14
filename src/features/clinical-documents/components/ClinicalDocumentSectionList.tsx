@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import type { DragEvent } from 'react';
 import {
   AlignJustify,
@@ -11,6 +11,13 @@ import {
 } from 'lucide-react';
 
 import { ClinicalDocumentIndicationsPanel } from '@/features/clinical-documents/components/ClinicalDocumentIndicationsPanel';
+import type { ClinicalDocumentIeehDraft } from '@/features/clinical-documents/domain/entities';
+
+const ClinicalDocumentIeehPanel = lazy(() =>
+  import('@/features/clinical-documents/components/ClinicalDocumentIeehPanel').then(m => ({
+    default: m.ClinicalDocumentIeehPanel,
+  }))
+);
 import { ClinicalUpdateDateTimeHeader } from '@/features/clinical-documents/components/ClinicalUpdateDateTimeHeader';
 import { InlineEditableTitle } from '@/features/clinical-documents/components/InlineEditableTitle';
 import { renderClinicalDocumentSectionContent } from '@/features/clinical-documents/components/clinicalDocumentSectionRendererRegistry';
@@ -51,6 +58,10 @@ interface ClinicalDocumentSectionListProps {
   onAddSection: (referenceSectionId: string, position: 'above' | 'below') => void;
   onEditorActivate: (activeSectionId: string, editorApi: ClinicalDocumentSheetEditorApi) => void;
   onEditorDeactivate: (sectionId: string) => void;
+  onPatchIeehDraft: (draft: ClinicalDocumentIeehDraft) => void;
+  onClearIeehDraft: () => void;
+  /** Workspace patient data (provides birthDate for IEEH printing). */
+  workspacePatient?: { birthDate?: string };
   onSetActivePlanSubsectionId: (subsectionId: ClinicalDocumentPlanSubsectionId) => void;
   onSetActiveIndicationsSpecialtyId: (specialtyId: ClinicalDocumentIndicationSpecialtyId) => void;
   onToggleIndicationsPanel: () => void;
@@ -91,6 +102,9 @@ export const ClinicalDocumentSectionList: React.FC<ClinicalDocumentSectionListPr
   onAddSection,
   onEditorActivate,
   onEditorDeactivate,
+  onPatchIeehDraft,
+  onClearIeehDraft,
+  workspacePatient,
   onSetActivePlanSubsectionId,
   onSetActiveIndicationsSpecialtyId,
   onToggleIndicationsPanel,
@@ -325,6 +339,20 @@ export const ClinicalDocumentSectionList: React.FC<ClinicalDocumentSectionListPr
                   deleteIndication: onDeleteIndication,
                   importIndicationsCatalog: onImportIndicationsCatalog,
                 })}
+
+                {/* IEEH panel: only for epicrisis, below "diagnósticos" section */}
+                {section.id === 'diagnosticos' && document.documentType === 'epicrisis' && (
+                  <Suspense fallback={null}>
+                    <ClinicalDocumentIeehPanel
+                      document={document}
+                      workspacePatient={workspacePatient}
+                      draft={document.ieehDraft}
+                      canEdit={canEdit && !document.isLocked}
+                      onPatchDraft={onPatchIeehDraft}
+                      onClearDraft={onClearIeehDraft}
+                    />
+                  </Suspense>
+                )}
               </div>
             </div>
           </div>

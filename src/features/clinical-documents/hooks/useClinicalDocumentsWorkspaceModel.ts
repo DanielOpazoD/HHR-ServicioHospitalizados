@@ -113,6 +113,8 @@ export const useClinicalDocumentsWorkspaceModel = ({
     addClinicalUpdate,
     patchAnnexContent,
     clearAnnexContent,
+    patchIeehDraft,
+    clearIeehDraft,
     patchUpdateDate,
     patchUpdateTime,
   } = useClinicalDocumentWorkspaceDraft({
@@ -264,6 +266,9 @@ export const useClinicalDocumentsWorkspaceModel = ({
       addClinicalUpdate,
       patchAnnexContent,
       clearAnnexContent,
+      patchIeehDraft,
+      clearIeehDraft,
+      workspacePatient: patient,
       patchUpdateDate,
       patchUpdateTime,
     },

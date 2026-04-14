@@ -1,4 +1,7 @@
-import type { ClinicalDocumentType } from '@/features/clinical-documents/domain/entities';
+import type {
+  ClinicalDocumentIeehDraft,
+  ClinicalDocumentType,
+} from '@/features/clinical-documents/domain/entities';
 import { getClinicalDocumentDefinition } from '@/features/clinical-documents/domain/definitions';
 import {
   CLINICAL_DOCUMENT_INLINE_PRINT_ROOT_ID,
@@ -12,9 +15,30 @@ const DOCUMENT_TYPES_WITH_PATIENT_SIGNATURE = new Set<ClinicalDocumentType>([
   'epicrisis_traslado',
 ]);
 
+/**
+ * Injects a CIE-10 block after the diagnósticos section in the print clone.
+ * Only called when the epicrisis has an ieehDraft with a code selected.
+ */
+const injectCie10PrintBlock = (
+  sheetClone: HTMLElement,
+  ieehDraft: ClinicalDocumentIeehDraft
+): void => {
+  const diagEditor = sheetClone.querySelector('[data-section-editor="diagnosticos"]');
+  const container =
+    diagEditor?.closest('.clinical-document-section-wrapper') ?? diagEditor?.parentElement;
+  if (!container) return;
+
+  const block = document.createElement('div');
+  block.style.cssText =
+    'margin-top:8px;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;background:#f0fdf4;font-size:11px;color:#15803d';
+  block.innerHTML = `<strong>CIE-10:</strong> ${ieehDraft.cie10Code} — ${ieehDraft.cie10Description}`;
+  container.appendChild(block);
+};
+
 export const openClinicalDocumentBrowserPrintPreview = async (
   pageTitle: string,
-  documentType: ClinicalDocumentType = 'epicrisis'
+  documentType: ClinicalDocumentType = 'epicrisis',
+  ieehDraft?: ClinicalDocumentIeehDraft
 ): Promise<boolean> => {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return false;
@@ -30,6 +54,11 @@ export const openClinicalDocumentBrowserPrintPreview = async (
 
   const sheetClone = sheet.cloneNode(true) as HTMLElement;
   await sanitizeClinicalDocumentSheetClone(sheet, sheetClone);
+
+  // Inject CIE-10 block when printing an epicrisis with IEEH data
+  if (ieehDraft?.cie10Code) {
+    injectCie10PrintBlock(sheetClone, ieehDraft);
+  }
 
   const printOptions = getClinicalDocumentDefinition(documentType).printOptions;
   const hasAnnex = sheetClone.querySelector('.clinical-document-annex-page') != null;
