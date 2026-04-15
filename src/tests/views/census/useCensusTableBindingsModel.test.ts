@@ -1,6 +1,9 @@
+import React from 'react';
 import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { DailyRecordProvider } from '@/context/DailyRecordContext';
+import type { DailyRecordContextType } from '@/context/dailyRecordContextContracts';
 import { useCensusTableBindingsModel } from '@/features/census/hooks/useCensusTableBindingsModel';
 import { useCensusTableViewModel } from '@/features/census/hooks/useCensusTableViewModel';
 import { useClinicalDocumentPresenceByBed } from '@/features/census/hooks/useClinicalDocumentPresenceByBed';
@@ -20,6 +23,56 @@ vi.mock('@/features/census/controllers/censusTableLayoutController', () => ({
 
 const asHookValue = <T>(value: Partial<T>): T => value as T;
 
+const createDailyRecordContextValue = (
+  discharges: Array<{ rut?: string }> = []
+): DailyRecordContextType =>
+  ({
+    record: {
+      date: '2026-03-10',
+      lastUpdated: new Date().toISOString(),
+      beds: {},
+      discharges,
+      transfers: [],
+      cma: [],
+      nursesDayShift: [],
+      nursesNightShift: [],
+      tensDayShift: [],
+      tensNightShift: [],
+      activeExtraBeds: [],
+      handoffDayChecklist: {},
+      handoffNightChecklist: {},
+      handoffNovedadesDayShift: '',
+      handoffNovedadesNightShift: '',
+      medicalHandoffNovedades: '',
+      medicalHandoffDoctor: '',
+    },
+    syncStatus: 'idle',
+    lastSyncTime: null,
+    bootstrapPhase: 'record_ready',
+    inventory: {
+      occupiedCount: 0,
+      blockedCount: 0,
+      availableCount: 0,
+      occupancyRate: 0,
+      occupiedBeds: [],
+      freeBeds: [],
+      blockedBeds: [],
+      isFull: false,
+    },
+    stabilityRules: {
+      isDateLocked: false,
+      isDayShiftLocked: false,
+      isNightShiftLocked: false,
+      canEditField: () => true,
+      canPerformActions: true,
+    },
+  }) as unknown as DailyRecordContextType;
+
+const createDailyRecordWrapper = (contextValue = createDailyRecordContextValue()) => {
+  return ({ children }: { children: React.ReactNode }) =>
+    React.createElement(DailyRecordProvider, { value: contextValue, children });
+};
+
 describe('useCensusTableBindingsModel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -38,10 +91,12 @@ describe('useCensusTableBindingsModel', () => {
       infoByBedId: {},
     });
 
-    const { result } = renderHook(() =>
-      useCensusTableBindingsModel({
-        currentDateString: '2026-03-10',
-      })
+    const { result } = renderHook(
+      () =>
+        useCensusTableBindingsModel({
+          currentDateString: '2026-03-10',
+        }),
+      { wrapper: createDailyRecordWrapper() }
     );
 
     expect(result.current.isReady).toBe(false);
@@ -81,10 +136,14 @@ describe('useCensusTableBindingsModel', () => {
     });
     vi.mocked(buildCensusTableLayoutBindings).mockReturnValue(layoutBindings as never);
 
-    const { result } = renderHook(() =>
-      useCensusTableBindingsModel({
-        currentDateString: '2026-03-10',
-      })
+    const { result } = renderHook(
+      () =>
+        useCensusTableBindingsModel({
+          currentDateString: '2026-03-10',
+        }),
+      {
+        wrapper: createDailyRecordWrapper(createDailyRecordContextValue([{ rut: '11.111.111-1' }])),
+      }
     );
 
     expect(useClinicalDocumentPresenceByBed).toHaveBeenCalledWith({
@@ -96,6 +155,7 @@ describe('useCensusTableBindingsModel', () => {
       expect.objectContaining({
         currentDateString: '2026-03-10',
         clinicalDocumentPresenceByBedId: { R1: true },
+        dischargedRuts: new Set(['11.111.111-1']),
         totalWidth: 1200,
       })
     );
