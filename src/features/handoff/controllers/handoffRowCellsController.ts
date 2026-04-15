@@ -62,6 +62,10 @@ export const pruneResolvedPendingMedicalEntryDrafts = ({
   return next;
 };
 
+export const shouldAttemptPendingMedicalDraftPrune = (
+  pendingEntryDrafts: Record<string, PendingMedicalEntryDraft>
+): boolean => Object.keys(pendingEntryDrafts).length > 0;
+
 export const resolveDisplayMedicalObservationEntries = ({
   entries,
   isFieldReadOnly,

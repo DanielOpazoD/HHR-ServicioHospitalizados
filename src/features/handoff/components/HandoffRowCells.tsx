@@ -14,6 +14,7 @@ import {
   resolveMedicalObservationCellState,
   resolveHandoffStatusVariant,
   resolveNextPendingMedicalEntryDrafts,
+  shouldAttemptPendingMedicalDraftPrune,
   shouldRenderClinicalEventsPanel,
 } from '@/features/handoff/controllers/handoffRowCellsController';
 import { getMedicalHandoffSpecialtyOptions } from '@/domain/handoff/patientEntries';
@@ -315,7 +316,7 @@ export const HandoffMedicalObservationsCell: React.FC<HandoffMedicalObservations
   );
 
   React.useEffect(() => {
-    if (Object.keys(pendingEntryDrafts).length === 0) {
+    if (!shouldAttemptPendingMedicalDraftPrune(pendingEntryDrafts)) {
       return;
     }
 

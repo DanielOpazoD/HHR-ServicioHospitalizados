@@ -79,4 +79,10 @@ describe('resolveEpisodeCensusTargetDate contract', () => {
       '2026-04-16'
     );
   });
+
+  it('falls back to admission date when an open episode is missing the last hospitalization day', () => {
+    expect(resolveEpisodeCensusTargetDate(buildEpisode({ discharge: null }), null)).toBe(
+      '2026-04-10'
+    );
+  });
 });

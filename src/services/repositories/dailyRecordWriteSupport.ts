@@ -357,6 +357,15 @@ const appendHospitalizationSyncPlan = async (syncPlan: HospitalizationSyncPlan |
   }
 };
 
+const syncHospitalizationPlansToMaster = async <T>(
+  items: T[],
+  buildSyncPlan: (item: T) => HospitalizationSyncPlan | null
+) => {
+  for (const item of items) {
+    await appendHospitalizationSyncPlan(buildSyncPlan(item));
+  }
+};
+
 const syncBedPatientsToMaster = async (patientsToSync: MasterSyncDailyRecordPatient[]) => {
   await Promise.all(
     patientsToSync.map(patient =>
@@ -372,9 +381,9 @@ const syncBedPatientsToMaster = async (patientsToSync: MasterSyncDailyRecordPati
     )
   );
 
-  for (const patient of patientsToSync) {
-    await appendHospitalizationSyncPlan(buildAdmissionHospitalizationSyncPlan(patient));
-  }
+  await syncHospitalizationPlansToMaster(patientsToSync, patient =>
+    buildAdmissionHospitalizationSyncPlan(patient)
+  );
 };
 
 const syncDischargesToMaster = async (
@@ -382,15 +391,13 @@ const syncDischargesToMaster = async (
   existingBedPatientRuts: Set<string>,
   discharges: DailyRecordDischarge[]
 ) => {
-  for (const discharge of discharges) {
-    await appendHospitalizationSyncPlan(
-      buildDischargeHospitalizationSyncPlan({
-        existingBedPatientRuts,
-        recordDate: record.date,
-        discharge,
-      })
-    );
-  }
+  await syncHospitalizationPlansToMaster(discharges, discharge =>
+    buildDischargeHospitalizationSyncPlan({
+      existingBedPatientRuts,
+      recordDate: record.date,
+      discharge,
+    })
+  );
 };
 
 const syncTransfersToMaster = async (
@@ -398,15 +405,13 @@ const syncTransfersToMaster = async (
   existingBedPatientRuts: Set<string>,
   transfers: DailyRecordTransfer[]
 ) => {
-  for (const transfer of transfers) {
-    await appendHospitalizationSyncPlan(
-      buildTransferHospitalizationSyncPlan({
-        existingBedPatientRuts,
-        recordDate: record.date,
-        transfer,
-      })
-    );
-  }
+  await syncHospitalizationPlansToMaster(transfers, transfer =>
+    buildTransferHospitalizationSyncPlan({
+      existingBedPatientRuts,
+      recordDate: record.date,
+      transfer,
+    })
+  );
 };
 
 /**

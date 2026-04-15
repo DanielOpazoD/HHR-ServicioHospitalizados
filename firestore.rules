@@ -235,6 +235,14 @@ service cloud.firestore {
              (now >= effectiveRecordTimestamp && now < (effectiveRecordTimestamp + 86400000));
     }
 
+    function resolveSpecialistMedicalHandoffRecordTimestamp() {
+      let currentRecordTimestamp = resource.data.dateTimestamp;
+      let nextRecordTimestamp = request.resource.data.dateTimestamp;
+      return nextRecordTimestamp != null
+        ? nextRecordTimestamp
+        : currentRecordTimestamp;
+    }
+
     function isValidSpecialistStructuredMedicalSpecialtyEntry(specialty) {
       let beforeEntry = getSpecialistStructuredBeforeBySpecialty()[specialty];
       let afterEntry = getSpecialistStructuredAfterBySpecialty()[specialty];
@@ -268,12 +276,7 @@ service cloud.firestore {
     function isSpecialistMedicalHandoffPayload() {
       let affectedRecordKeys = request.resource.data.diff(resource.data).affectedKeys();
       let affectedBedIds = request.resource.data.beds.diff(resource.data.beds).affectedKeys();
-      let currentRecordTimestamp = resource.data.dateTimestamp;
-      let nextRecordTimestamp = request.resource.data.dateTimestamp;
-      let effectiveRecordTimestamp =
-        nextRecordTimestamp != null
-          ? nextRecordTimestamp
-          : currentRecordTimestamp;
+      let effectiveRecordTimestamp = resolveSpecialistMedicalHandoffRecordTimestamp();
 
       return isWithinSpecialistMedicalHandoffWindow(effectiveRecordTimestamp) &&
              hasOnlySpecialistMedicalHandoffRecordKeys(affectedRecordKeys) &&

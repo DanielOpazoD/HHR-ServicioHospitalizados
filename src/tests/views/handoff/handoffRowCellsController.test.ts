@@ -11,6 +11,7 @@ import {
   resolveMedicalObservationEmptyState,
   resolveNextPendingMedicalEntryDrafts,
   resolveMedicalObservationEntries,
+  shouldAttemptPendingMedicalDraftPrune,
   shouldShowMedicalPrimaryNoteFallback,
   shouldRenderClinicalEventsPanel,
 } from '@/features/handoff/controllers/handoffRowCellsController';
@@ -287,5 +288,17 @@ describe('handoffRowCellsController', () => {
         expiresAt: 2000,
       },
     });
+  });
+
+  it('only attempts pending draft prune work when drafts actually exist', () => {
+    expect(shouldAttemptPendingMedicalDraftPrune({})).toBe(false);
+    expect(
+      shouldAttemptPendingMedicalDraftPrune({
+        'entry-1': {
+          entry: { id: 'entry-1', specialty: Specialty.MEDICINA, note: 'Borrador' },
+          expiresAt: 2000,
+        },
+      })
+    ).toBe(true);
   });
 });

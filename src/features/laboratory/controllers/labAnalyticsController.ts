@@ -120,6 +120,15 @@ interface ProcessExamFindingsContext {
   bilirubinByCol: Record<string, { total?: string; directa?: string; indirecta?: string }>;
 }
 
+interface DetailProcessingContext extends ProcessExamFindingsContext {
+  isoDate: string;
+  microbiologyCategories: LabMicrobiologyCategory[];
+  microbiologyFindingsByCategory: Map<
+    LabMicrobiologyCategory,
+    Array<{ analysis: string; result: string }>
+  >;
+}
+
 const collectBilirubinFinding = (
   bilirubinByCol: Record<string, { total?: string; directa?: string; indirecta?: string }>,
   colKey: string,
@@ -191,17 +200,7 @@ const collectTrendFinding = (
   });
 };
 
-const processExamFinding = (
-  rawFinding: LabResultRow,
-  input: ProcessExamFindingsContext & {
-    isoDate: string;
-    microbiologyCategories: LabMicrobiologyCategory[];
-    microbiologyFindingsByCategory: Map<
-      LabMicrobiologyCategory,
-      Array<{ analysis: string; result: string }>
-    >;
-  }
-) => {
+const processExamFinding = (rawFinding: LabResultRow, input: DetailProcessingContext) => {
   const finding = { ...rawFinding, analysis: normalizeAnalysisName(rawFinding.analysis) };
   const lowerAnalysis = finding.analysis.toLowerCase();
   const examIsMicrobiology = input.microbiologyCategories.length > 0;
@@ -230,6 +229,48 @@ const processExamFinding = (
   collectTrendFinding(input.trendMap, input.seenTrend, input.colKey, input.isoDate, finding);
 };
 
+const buildDetailProcessingContext = (
+  detail: SyslabExamDetail,
+  examList: SyslabExamItem[],
+  state: Omit<ProcessedFindings, 'columnKeys' | 'microbiologyEntries'> & {
+    seenTrend: Set<string>;
+    seenComparison: Set<string>;
+  }
+): DetailProcessingContext => {
+  const exam = examList.find(e => e.link === detail.url);
+  const examDate = exam?.date || 'Desconocido';
+  const colKey = buildExamColumnKey(exam, examDate);
+  const microbiologyCategories = resolveMicrobiologyCategoriesForExam(exam);
+
+  return {
+    exam,
+    examDate,
+    colKey,
+    comparison: state.comparison,
+    trendMap: state.trendMap,
+    seenTrend: state.seenTrend,
+    seenComparison: state.seenComparison,
+    bilirubinByCol: state.bilirubinByCol,
+    isoDate: parseDateDDMMYYYY(examDate),
+    microbiologyCategories,
+    microbiologyFindingsByCategory: new Map(),
+  };
+};
+
+const appendMicrobiologyEntriesForDetail = (
+  detailContext: DetailProcessingContext,
+  microbiologyEntries: LabMicrobiologyEntry[]
+) => {
+  microbiologyEntries.push(
+    ...buildMicrobiologyEntriesForExam({
+      exam: detailContext.exam,
+      date: detailContext.colKey,
+      categories: detailContext.microbiologyCategories,
+      findingsByCategory: detailContext.microbiologyFindingsByCategory,
+    })
+  );
+};
+
 /** Process all exam details into intermediate data structures. */
 const processFindings = (
   details: SyslabExamDetail[],
@@ -245,41 +286,20 @@ const processFindings = (
   const microbiologyEntries: LabMicrobiologyEntry[] = [];
 
   for (const detail of details) {
-    const exam = examList.find(e => e.link === detail.url);
-    const examDate = exam?.date || 'Desconocido';
-    const isoDate = parseDateDDMMYYYY(examDate);
-    const colKey = buildExamColumnKey(exam, examDate);
-    columnKeySet.add(colKey);
-    const microbiologyCategories = resolveMicrobiologyCategoriesForExam(exam);
-    const microbiologyFindingsByCategory = new Map<
-      LabMicrobiologyCategory,
-      Array<{ analysis: string; result: string }>
-    >();
+    const detailContext = buildDetailProcessingContext(detail, examList, {
+      comparison,
+      trendMap,
+      seenTrend,
+      seenComparison,
+      bilirubinByCol,
+    });
+    columnKeySet.add(detailContext.colKey);
 
     for (const rawFinding of detail.findings) {
-      processExamFinding(rawFinding, {
-        exam,
-        examDate,
-        colKey,
-        comparison,
-        trendMap,
-        seenTrend,
-        seenComparison,
-        bilirubinByCol,
-        isoDate,
-        microbiologyCategories,
-        microbiologyFindingsByCategory,
-      });
+      processExamFinding(rawFinding, detailContext);
     }
 
-    microbiologyEntries.push(
-      ...buildMicrobiologyEntriesForExam({
-        exam,
-        date: colKey,
-        categories: microbiologyCategories,
-        findingsByCategory: microbiologyFindingsByCategory,
-      })
-    );
+    appendMicrobiologyEntriesForDetail(detailContext, microbiologyEntries);
   }
 
   return {

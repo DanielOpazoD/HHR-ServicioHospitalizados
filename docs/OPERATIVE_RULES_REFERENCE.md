@@ -34,6 +34,7 @@ Referencias:
 - `Clostridium difficile`, `Coprocultivo`, `Cultivo corriente / Antibiograma`, `PCR panel respiratorio` y `Sedimento/Urocultivo` son exámenes distintos.
 - Si Syslab no entrega el detalle microbiológico completo en `details`, el visor debe completar la tarjeta desde el PDF original antes de degradar a “resultado disponible en PDF”.
 - La clasificación microbiológica debe resolverse en un controller propio, separado de comparación y tendencias, para evitar mezclar panel viral con cultivo al crecer el análisis.
+- Aunque una tarjeta microbiológica todavía no tenga findings hidratados, el controller debe conservar la separación por examen y el `sourceExam` necesario para el fallback posterior desde PDF.
 
 Referencias:
 
@@ -58,11 +59,21 @@ Referencias:
 - El write path de `dailyRecord` debe mantener separadas las decisiones puras de recovery (`changed paths`, `retry origin`, `conflict summary`) del flujo de persistencia real.
 - El sync en background hacia `PatientMaster` debe reutilizar builders pequeños para seeds, eventos, patches y payloads de append, en lugar de recomponer esos datos inline por cada rama.
 - Los append de ingreso/egreso/traslado y el backfill de ingreso faltante deben resolverse como planes o payloads puros antes de ejecutar efectos, para que el servicio principal solo orqueste llamadas al repositorio.
+- La ejecución de esos append debe converger en un helper compartido, para que ingreso, egreso y traslado no vuelvan a divergir en llamadas al repositorio por diferencias accidentales de wiring.
 
 ## Reducer de camas
 
 - `useBedManagementReducer` debe seguir siendo un patch reducer: builders puros para mutaciones repetidas y un switch orquestador corto, en vez de recomponer patches inline por cada acción.
 - Las reglas sensibles como `firstSeenDate`, limpieza clínica al cambiar identidad, UPC y toggles de bloque/cama extra/tipo deben quedar protegidas con tests directos del reducer.
+
+## Handoff médico
+
+- `HandoffRowCells` debe delegar al controller el estado visible de observaciones médicas, incluyendo drafts pendientes y criterios de poda, para que el JSX no reintroduzca lógica de continuidad o vacíos operativos.
+
+Referencias:
+
+- `src/features/handoff/components/HandoffRowCells.tsx`
+- `src/features/handoff/controllers/handoffRowCellsController.ts`
 
 ## Listas globales de correo del censo
 
