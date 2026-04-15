@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { GlobalEmailRecipientList } from '@/services/email/emailRecipientListService';
 import {
+  resolveRecipientListsAfterCreate,
   resolveRecipientListForSelection,
   resolveRecipientListsAfterDelete,
+  resolveRecipientListsAfterRename,
+  resolveRecipientSelectionAfterDelete,
 } from '@/hooks/controllers/censusEmailRecipientMutationController';
 
 describe('censusEmailRecipientMutationController', () => {
@@ -50,5 +53,51 @@ describe('censusEmailRecipientMutationController', () => {
         updatedByEmail: 'a@example.com',
       },
     ]);
+  });
+
+  it('adds a created list and marks it as the next active list', () => {
+    const created = {
+      id: 'new-list',
+      name: 'Nueva',
+      description: '',
+      recipients: ['c@example.com'],
+      scope: 'global',
+      updatedAt: '2026-04-14T00:00:00.000Z',
+      updatedByUid: 'u3',
+      updatedByEmail: 'c@example.com',
+    } satisfies GlobalEmailRecipientList;
+
+    expect(resolveRecipientListsAfterCreate(lists, created)).toEqual({
+      recipientLists: [created, ...lists],
+      activeRecipientList: created,
+    });
+  });
+
+  it('upserts the renamed list without changing the rest of the collection', () => {
+    expect(
+      resolveRecipientListsAfterRename(lists, {
+        ...lists[1],
+        name: 'Renombrada',
+      })
+    ).toEqual([
+      lists[0],
+      {
+        ...lists[1],
+        name: 'Renombrada',
+      },
+    ]);
+  });
+
+  it('resolves the next active list after deleting the current global list', () => {
+    expect(
+      resolveRecipientSelectionAfterDelete({
+        recipientLists: lists,
+        listId: 'custom',
+        fallbackList: lists[0],
+      })
+    ).toEqual({
+      recipientLists: [lists[0]],
+      activeRecipientListId: 'default',
+    });
   });
 });

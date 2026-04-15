@@ -17,10 +17,11 @@ import {
   resolveRecipientSyncState,
 } from '@/hooks/controllers/censusEmailRecipientRuntimeController';
 import {
+  resolveRecipientListsAfterCreate,
   resolveRecipientListForSelection,
-  resolveRecipientListsAfterDelete,
+  resolveRecipientListsAfterRename,
+  resolveRecipientSelectionAfterDelete,
 } from '@/hooks/controllers/censusEmailRecipientMutationController';
-import { upsertRecipientListState } from '@/hooks/controllers/censusEmailRecipientListStateController';
 import { shouldSkipRecipientSync } from '@/hooks/controllers/censusEmailRecipientSyncController';
 
 const RECIPIENT_LIST_KEY = 'censusEmailActiveRecipientListId';
@@ -124,10 +125,6 @@ export const useCensusEmailRecipientLists = ({
     },
     [setActiveRecipientListId]
   );
-
-  const upsertRecipientList = useCallback((nextList: GlobalEmailRecipientList) => {
-    setRecipientLists(previousLists => upsertRecipientListState(previousLists, nextList));
-  }, []);
 
   const selectActiveRecipientList = useCallback(
     (listId: string) => {
@@ -337,8 +334,9 @@ export const useCensusEmailRecipientLists = ({
         },
         {
           onSuccess: result => {
-            upsertRecipientList(result);
-            applyActiveRecipientList(result);
+            const nextState = resolveRecipientListsAfterCreate(recipientLists, result);
+            setRecipientLists(nextState.recipientLists);
+            applyActiveRecipientList(nextState.activeRecipientList);
           },
           fallbackMessage: 'No se pudo crear la nueva lista global.',
         }
@@ -350,7 +348,6 @@ export const useCensusEmailRecipientLists = ({
       recipientLists,
       recipients,
       runRecipientListMutation,
-      upsertRecipientList,
       user,
     ]
   );
@@ -370,7 +367,9 @@ export const useCensusEmailRecipientLists = ({
         },
         {
           onSuccess: result => {
-            upsertRecipientList(result);
+            setRecipientLists(previousLists =>
+              resolveRecipientListsAfterRename(previousLists, result)
+            );
           },
           fallbackMessage: 'No se pudo actualizar el nombre de la lista global.',
         }
@@ -382,7 +381,6 @@ export const useCensusEmailRecipientLists = ({
       recipientLists,
       recipients,
       runRecipientListMutation,
-      upsertRecipientList,
       user,
     ]
   );
@@ -400,12 +398,14 @@ export const useCensusEmailRecipientLists = ({
         },
         {
           onSuccess: result => {
-            const fallbackList = result.fallbackList;
-            setRecipientLists(previousLists =>
-              resolveRecipientListsAfterDelete(previousLists, listId)
-            );
-            if (fallbackList) {
-              setActiveRecipientListId(fallbackList.id);
+            const nextState = resolveRecipientSelectionAfterDelete({
+              recipientLists,
+              listId,
+              fallbackList: result.fallbackList,
+            });
+            setRecipientLists(nextState.recipientLists);
+            if (nextState.activeRecipientListId) {
+              setActiveRecipientListId(nextState.activeRecipientListId);
             }
           },
           fallbackMessage: 'No se pudo eliminar la lista global seleccionada.',
