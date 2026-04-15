@@ -5,6 +5,7 @@ import {
   buildPendingMedicalEntryDraft,
   canToggleClinicalEvents,
   pruneResolvedPendingMedicalEntryDrafts,
+  resolveMedicalObservationCellState,
   resolveDisplayMedicalObservationEntries,
   resolveHandoffStatusVariant,
   resolveMedicalObservationEmptyState,
@@ -143,6 +144,41 @@ describe('handoffRowCellsController', () => {
         now: 1500,
       })
     ).toEqual([{ id: 'entry-1', specialty: Specialty.MEDICINA, note: 'Borrador' }]);
+  });
+
+  it('resolves the medical observation cell state from entries, drafts, and create-entry actions', () => {
+    expect(
+      resolveMedicalObservationCellState({
+        entries: [],
+        isFieldReadOnly: false,
+        pendingEntryDrafts: {},
+        hasCreatePrimaryEntryAction: true,
+        now: 1000,
+      })
+    ).toEqual({
+      displayEntries: [],
+      emptyState: 'create-entry',
+      showPrimaryNoteFallback: false,
+    });
+
+    expect(
+      resolveMedicalObservationCellState({
+        entries: [{ id: 'entry-1', specialty: Specialty.MEDICINA, note: 'Persistida' }],
+        isFieldReadOnly: false,
+        pendingEntryDrafts: {
+          'entry-1': {
+            entry: { id: 'entry-1', specialty: Specialty.MEDICINA, note: 'Borrador' },
+            expiresAt: 2000,
+          },
+        },
+        hasCreatePrimaryEntryAction: false,
+        now: 1500,
+      })
+    ).toEqual({
+      displayEntries: [{ id: 'entry-1', specialty: Specialty.MEDICINA, note: 'Borrador' }],
+      emptyState: 'empty',
+      showPrimaryNoteFallback: false,
+    });
   });
 
   it('shows the primary note fallback only when there are no entries and no create action', () => {

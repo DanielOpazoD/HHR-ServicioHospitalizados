@@ -112,6 +112,12 @@ export const shouldShowMedicalPrimaryNoteFallback = ({
 
 export type MedicalObservationEmptyState = 'create-entry' | 'primary-note' | 'empty';
 
+export interface MedicalObservationCellState {
+  displayEntries: MedicalHandoffEntry[];
+  emptyState: MedicalObservationEmptyState;
+  showPrimaryNoteFallback: boolean;
+}
+
 export const resolveMedicalObservationEmptyState = ({
   displayEntriesCount,
   isFieldReadOnly,
@@ -136,6 +142,38 @@ export const resolveMedicalObservationEmptyState = ({
   })
     ? 'primary-note'
     : 'empty';
+};
+
+export const resolveMedicalObservationCellState = ({
+  entries,
+  isFieldReadOnly,
+  pendingEntryDrafts,
+  hasCreatePrimaryEntryAction,
+  now,
+}: {
+  entries: MedicalHandoffEntry[];
+  isFieldReadOnly: boolean;
+  pendingEntryDrafts: Record<string, PendingMedicalEntryDraft>;
+  hasCreatePrimaryEntryAction: boolean;
+  now: number;
+}): MedicalObservationCellState => {
+  const displayEntries = resolveDisplayMedicalObservationEntries({
+    entries,
+    isFieldReadOnly,
+    pendingEntryDrafts,
+    now,
+  });
+  const emptyState = resolveMedicalObservationEmptyState({
+    displayEntriesCount: displayEntries.length,
+    isFieldReadOnly,
+    hasCreatePrimaryEntryAction,
+  });
+
+  return {
+    displayEntries,
+    emptyState,
+    showPrimaryNoteFallback: emptyState === 'primary-note',
+  };
 };
 
 export const buildPendingMedicalEntryDraft = ({

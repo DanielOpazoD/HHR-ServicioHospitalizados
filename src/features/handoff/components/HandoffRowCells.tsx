@@ -11,12 +11,10 @@ import {
   canToggleClinicalEvents,
   pruneResolvedPendingMedicalEntryDrafts,
   type PendingMedicalEntryDraft,
-  resolveDisplayMedicalObservationEntries,
+  resolveMedicalObservationCellState,
   resolveHandoffStatusVariant,
-  resolveMedicalObservationEmptyState,
   resolveNextPendingMedicalEntryDrafts,
   shouldRenderClinicalEventsPanel,
-  shouldShowMedicalPrimaryNoteFallback,
 } from '@/features/handoff/controllers/handoffRowCellsController';
 import { getMedicalHandoffSpecialtyOptions } from '@/domain/handoff/patientEntries';
 import { resolveMedicalObservationEntries } from '@/domain/handoff/patientView';
@@ -332,27 +330,18 @@ export const HandoffMedicalObservationsCell: React.FC<HandoffMedicalObservations
     });
   }, [entries, pendingEntryDrafts]);
 
-  const displayEntries = React.useMemo(
+  const medicalObservationCellState = React.useMemo(
     () =>
-      resolveDisplayMedicalObservationEntries({
+      resolveMedicalObservationCellState({
         entries,
         isFieldReadOnly,
         pendingEntryDrafts,
+        hasCreatePrimaryEntryAction: Boolean(onCreatePrimaryEntry),
         now: Date.now(),
       }),
-    [entries, isFieldReadOnly, pendingEntryDrafts]
+    [entries, isFieldReadOnly, onCreatePrimaryEntry, pendingEntryDrafts]
   );
-
-  const showPrimaryNoteFallback = shouldShowMedicalPrimaryNoteFallback({
-    entriesCount: entries.length,
-    isFieldReadOnly,
-    hasCreatePrimaryEntryAction: Boolean(onCreatePrimaryEntry),
-  });
-  const emptyState = resolveMedicalObservationEmptyState({
-    displayEntriesCount: displayEntries.length,
-    isFieldReadOnly,
-    hasCreatePrimaryEntryAction: Boolean(onCreatePrimaryEntry),
-  });
+  const { displayEntries, emptyState, showPrimaryNoteFallback } = medicalObservationCellState;
 
   return (
     <td className="p-1.5 w-full min-w-[280px] align-top print:w-auto print:min-w-0 print:text-[8px] print:p-0.5">

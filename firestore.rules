@@ -189,6 +189,15 @@ service cloud.firestore {
              isValidSpecialistStructuredMedicalSpecialtyEntry(specialty);
     }
 
+    function isAnyAllowedSpecialistStructuredSpecialtyAffected(affectedSpecialties) {
+      return isOnlyAffectedSpecialistStructuredSpecialty(affectedSpecialties, 'cirugia') ||
+             isOnlyAffectedSpecialistStructuredSpecialty(affectedSpecialties, 'traumatologia') ||
+             isOnlyAffectedSpecialistStructuredSpecialty(affectedSpecialties, 'ginecobstetricia') ||
+             isOnlyAffectedSpecialistStructuredSpecialty(affectedSpecialties, 'pediatria') ||
+             isOnlyAffectedSpecialistStructuredSpecialty(affectedSpecialties, 'psiquiatria') ||
+             isOnlyAffectedSpecialistStructuredSpecialty(affectedSpecialties, 'medicinaInterna');
+    }
+
     function isValidSpecialistStructuredMedicalSpecialtyEntry(specialty) {
       let beforeEntry = getSpecialistStructuredBeforeBySpecialty()[specialty];
       let afterEntry = getSpecialistStructuredAfterBySpecialty()[specialty];
@@ -216,14 +225,7 @@ service cloud.firestore {
           .affectedKeys();
 
       return hasOnlySpecialistStructuredRecordKeys(affectedRecordKeys) &&
-             (
-               isOnlyAffectedSpecialistStructuredSpecialty(affectedSpecialties, 'cirugia') ||
-               isOnlyAffectedSpecialistStructuredSpecialty(affectedSpecialties, 'traumatologia') ||
-               isOnlyAffectedSpecialistStructuredSpecialty(affectedSpecialties, 'ginecobstetricia') ||
-               isOnlyAffectedSpecialistStructuredSpecialty(affectedSpecialties, 'pediatria') ||
-               isOnlyAffectedSpecialistStructuredSpecialty(affectedSpecialties, 'psiquiatria') ||
-               isOnlyAffectedSpecialistStructuredSpecialty(affectedSpecialties, 'medicinaInterna')
-             );
+             isAnyAllowedSpecialistStructuredSpecialtyAffected(affectedSpecialties);
     }
 
     function isSpecialistMedicalHandoffPayload() {
