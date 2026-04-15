@@ -7,6 +7,7 @@ import { AppContentOverlays } from '@/components/layout/app-content/AppContentOv
 import { useAppContentRuntime } from '@/components/layout/app-content/useAppContentRuntime';
 import { useAppContentShellEffects } from '@/components/layout/app-content/useAppContentShellEffects';
 import { resolveCensusDateSelection } from '@/components/layout/app-content/appContentCensusDateController';
+import { resolveModuleTheme } from '@/components/layout/app-content/moduleThemeController';
 import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medicalIndications';
 
 interface AppContentProps {
@@ -42,7 +43,10 @@ export const AppContent: React.FC<AppContentProps> = ({ ui, renderFeatureQuickAc
   return (
     <AppProviders dailyRecordHook={dailyRecordHook}>
       <ReminderCenterProvider>
-        <div className="min-h-screen bg-slate-100 font-sans flex flex-col print:bg-white print:p-0">
+        <div
+          data-module={resolveModuleTheme(ui.currentModule)}
+          className="min-h-screen bg-slate-100 font-sans flex flex-col print:bg-white print:p-0"
+        >
           <AppContentChrome
             ui={ui}
             runtime={runtime}

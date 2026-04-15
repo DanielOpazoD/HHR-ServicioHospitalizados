@@ -62,7 +62,7 @@ export interface BaseModalProps {
   closeOnBackdrop?: boolean;
   /** Whether to show the close button in header (default: true) */
   showCloseButton?: boolean;
-  /** Custom header color class (default: 'text-medical-600') */
+  /** Custom header color class (default: 'text-accent-600') */
   headerIconColor?: string;
   /** Background variant (default: 'glass') */
   variant?: 'glass' | 'white';
@@ -76,6 +76,8 @@ export interface BaseModalProps {
   bodyClassName?: string;
   /** Whether the modal body should have internal scroll */
   scrollableBody?: boolean;
+  /** Module theme identifier for accent color system (applied as data-module attribute) */
+  dataModule?: string;
 }
 
 /**
@@ -94,13 +96,14 @@ export const BaseModal: React.FC<BaseModalProps> = ({
   className,
   closeOnBackdrop = true,
   showCloseButton = true,
-  headerIconColor = 'text-medical-600',
+  headerIconColor = 'text-accent-600',
   variant = 'glass',
   printable = false,
   initialFocusRef,
   headerActions,
   bodyClassName,
   scrollableBody = true,
+  dataModule,
 }) => {
   // Refs for focus management
   const modalRef = React.useRef<HTMLDivElement>(null);
@@ -198,6 +201,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
     >
       <div
         ref={modalRef}
+        data-module={dataModule}
         className={clsx(
           'rounded-2xl shadow-2xl w-full animate-scale-in overflow-hidden',
           !scrollableBody && 'mx-auto my-4',

@@ -62,13 +62,13 @@ export const Navbar: React.FC<NavbarProps> = ({
       case 'ANALYTICS':
         return 'bg-gradient-to-r from-sky-800 via-sky-700 to-cyan-700';
       case 'NURSING_HANDOFF':
-        return 'bg-gradient-to-r from-sky-700 via-sky-600 to-sky-700';
+        return 'bg-gradient-to-r from-[#0369a1] via-[#0284c7] to-[#0369a1]';
       case 'MEDICAL_HANDOFF':
-        return 'bg-gradient-to-r from-sky-700 via-sky-600 to-sky-700';
+        return 'bg-gradient-to-r from-teal-800 via-teal-700 to-teal-800';
       case 'AUDIT':
         return 'bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800';
       case 'TRANSFER_MANAGEMENT':
-        return 'bg-gradient-to-r from-sky-800 via-sky-700 to-sky-800';
+        return 'bg-gradient-to-r from-slate-700 via-slate-600 to-slate-700';
       case 'BACKUP_FILES':
         return 'bg-gradient-to-r from-slate-700 via-slate-600 to-slate-700';
       case 'PATIENT_MASTER_INDEX':

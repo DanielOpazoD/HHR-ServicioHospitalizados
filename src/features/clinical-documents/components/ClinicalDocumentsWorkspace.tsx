@@ -114,6 +114,7 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
     <div
       className="relative grid h-[86vh] min-h-[86vh] grid-cols-[260px_minmax(0,1fr)]"
       data-testid="clinical-documents-workspace"
+      data-module="clinical-documents"
     >
       {headerContent && headerActionsContainer
         ? createPortal(headerContent, headerActionsContainer)

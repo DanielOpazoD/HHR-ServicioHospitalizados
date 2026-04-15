@@ -56,7 +56,7 @@ const DropdownItem: React.FC<DropdownItemProps> = ({
       disabled
         ? 'text-slate-400 cursor-not-allowed'
         : isActive
-          ? 'text-medical-600 bg-medical-50'
+          ? 'text-accent-600 bg-accent-50'
           : 'text-slate-700 hover:bg-slate-50'
     )}
   >

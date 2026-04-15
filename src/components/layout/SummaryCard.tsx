@@ -33,15 +33,15 @@ const BaseSummaryCard: React.FC<{
 export const BedSummaryCard: React.FC<{ stats: Statistics }> = ({ stats }) => {
   const capacidadServicio = stats.serviceCapacity - stats.blockedBeds;
   return (
-    <BaseSummaryCard title="Censo Camas" icon={<Bed size={12} className="text-medical-500" />}>
+    <BaseSummaryCard title="Censo Camas" icon={<Bed size={12} className="text-accent-500" />}>
       <div className="grid grid-cols-2 gap-x-2 gap-y-1">
         <div className="flex justify-between items-center bg-slate-50/80 rounded px-1.5 py-0.5 border border-slate-100/50">
           <span className="text-slate-500 text-[10px]">Ocu.</span>
-          <span className="font-bold text-medical-900 text-[11px]">{stats.occupiedBeds}</span>
+          <span className="font-bold text-accent-900 text-[11px]">{stats.occupiedBeds}</span>
         </div>
-        <div className="flex justify-between items-center bg-medical-50 rounded px-1.5 py-0.5 border border-medical-100/50">
-          <span className="text-medical-700 font-bold text-[10px]">Cap:</span>
-          <span className="font-bold text-medical-900 text-[11px]">{capacidadServicio}</span>
+        <div className="flex justify-between items-center bg-accent-50 rounded px-1.5 py-0.5 border border-accent-100/50">
+          <span className="text-accent-700 font-bold text-[10px]">Cap:</span>
+          <span className="font-bold text-accent-900 text-[11px]">{capacidadServicio}</span>
         </div>
         <div className="flex justify-between items-center px-1.5">
           <span className="text-red-500 font-medium text-[10px]">Bloq.</span>
@@ -57,19 +57,19 @@ export const BedSummaryCard: React.FC<{ stats: Statistics }> = ({ stats }) => {
 };
 
 export const CribSummaryCard: React.FC<{ stats: Statistics }> = ({ stats }) => (
-  <BaseSummaryCard title="Recursos Cuna" icon={<Baby size={12} className="text-medical-500" />}>
+  <BaseSummaryCard title="Recursos Cuna" icon={<Baby size={12} className="text-accent-500" />}>
     <div className="space-y-1">
       <div className="flex justify-between items-center px-1">
         <span className="text-slate-500 text-[10px]">Clínicas</span>
-        <span className="font-bold text-medical-600 text-[11px]">{stats.clinicalCribsCount}</span>
+        <span className="font-bold text-accent-600 text-[11px]">{stats.clinicalCribsCount}</span>
       </div>
       <div className="flex justify-between items-center px-1">
         <span className="text-slate-500 text-[10px]">RN Sano</span>
         <span className="font-bold text-green-600 text-[11px]">{stats.companionCribs}</span>
       </div>
       <div className="flex justify-between items-center mt-1 px-1 pt-1 border-t border-slate-200/50 border-dashed">
-        <span className="text-medical-900 font-bold text-[10px]">Total Uso</span>
-        <span className="font-bold text-medical-800 text-[11px] leading-none">
+        <span className="text-accent-900 font-bold text-[10px]">Total Uso</span>
+        <span className="font-bold text-accent-800 text-[11px] leading-none">
           {stats.totalCribsUsed}
         </span>
       </div>
@@ -86,7 +86,7 @@ export const MovementSummaryCard: React.FC<{
   const summary = buildMovementSummaryModel(discharges, transfers, cmaCount, newAdmissions);
 
   return (
-    <BaseSummaryCard title="Movimientos" icon={<Activity size={12} className="text-medical-500" />}>
+    <BaseSummaryCard title="Movimientos" icon={<Activity size={12} className="text-accent-500" />}>
       <div className="flex flex-col gap-1 px-1">
         <div className="flex justify-between items-center text-[10px]">
           <span className="text-slate-500 font-medium">Altas</span>
@@ -154,7 +154,7 @@ export const CombinedSummaryCard: React.FC<SummaryCardProps> = ({
       {/* Section 1: Censo Camas */}
       <div className="pr-3 flex flex-col gap-0.5">
         <div className="flex items-center gap-1 pb-0.5 border-b border-slate-100">
-          <Bed size={11} className="text-medical-500" />
+          <Bed size={11} className="text-accent-500" />
           <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-[0.08em]">
             Censo Camas
           </span>
@@ -163,11 +163,11 @@ export const CombinedSummaryCard: React.FC<SummaryCardProps> = ({
         <div className="flex items-center gap-2 mt-0.5">
           <div className="flex items-center gap-1 bg-slate-50/80 rounded px-1.5 py-0.5 border border-slate-100/50">
             <span className="text-slate-500 text-[9px]">Ocu.</span>
-            <span className="font-bold text-medical-900 text-[10px]">{stats.occupiedBeds}</span>
+            <span className="font-bold text-accent-900 text-[10px]">{stats.occupiedBeds}</span>
           </div>
-          <div className="flex items-center gap-1 bg-medical-50 rounded px-1.5 py-0.5 border border-medical-100/50">
-            <span className="text-medical-700 font-bold text-[9px]">Cap:</span>
-            <span className="font-bold text-medical-900 text-[10px]">{capacidadServicio}</span>
+          <div className="flex items-center gap-1 bg-accent-50 rounded px-1.5 py-0.5 border border-accent-100/50">
+            <span className="text-accent-700 font-bold text-[9px]">Cap:</span>
+            <span className="font-bold text-accent-900 text-[10px]">{capacidadServicio}</span>
           </div>
         </div>
         {/* Row 2: Bloq + Lib */}
@@ -189,7 +189,7 @@ export const CombinedSummaryCard: React.FC<SummaryCardProps> = ({
       {/* Section 2: Recursos Cuna */}
       <div className="px-3 flex flex-col gap-0.5">
         <div className="flex items-center gap-1 pb-0.5 border-b border-slate-100">
-          <Baby size={11} className="text-medical-500" />
+          <Baby size={11} className="text-accent-500" />
           <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-[0.08em]">
             Recursos Cuna
           </span>
@@ -198,7 +198,7 @@ export const CombinedSummaryCard: React.FC<SummaryCardProps> = ({
         <div className="flex items-center gap-3 mt-0.5">
           <div className="flex items-center gap-1">
             <span className="text-slate-500 text-[9px]">Clínicas</span>
-            <span className="font-bold text-medical-600 text-[10px]">
+            <span className="font-bold text-accent-600 text-[10px]">
               {stats.clinicalCribsCount}
             </span>
           </div>
@@ -209,8 +209,8 @@ export const CombinedSummaryCard: React.FC<SummaryCardProps> = ({
         </div>
         {/* Row 2: Total */}
         <div className="flex items-center gap-1">
-          <span className="text-medical-900 font-bold text-[9px]">Total Uso</span>
-          <span className="font-bold text-medical-800 text-[10px]">{stats.totalCribsUsed}</span>
+          <span className="text-accent-900 font-bold text-[9px]">Total Uso</span>
+          <span className="font-bold text-accent-800 text-[10px]">{stats.totalCribsUsed}</span>
         </div>
       </div>
 
@@ -220,7 +220,7 @@ export const CombinedSummaryCard: React.FC<SummaryCardProps> = ({
       {/* Section 3: Movimientos */}
       <div className="pl-3 flex flex-col gap-0.5">
         <div className="flex items-center gap-1 pb-0.5 border-b border-slate-100">
-          <Activity size={11} className="text-medical-500" />
+          <Activity size={11} className="text-accent-500" />
           <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-[0.08em]">
             Movimientos
           </span>
