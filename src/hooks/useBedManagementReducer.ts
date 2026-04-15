@@ -266,6 +266,41 @@ const buildToggleBedTypePatches = (state: DailyRecord, bedId: string): DailyReco
   } as DailyRecordPatch;
 };
 
+const buildUpdateBlockedReasonPatches = (bedId: string, reason: string): DailyRecordPatch =>
+  ({
+    [`beds.${bedId}.blockedReason`]: reason,
+  }) as DailyRecordPatch;
+
+const buildCreateClinicalCribPatches = (state: DailyRecord, bedId: string): DailyRecordPatch =>
+  ({
+    [`beds.${bedId}.clinicalCrib`]: buildClinicalCribDraft(bedId, state.beds[bedId]),
+    [`beds.${bedId}.hasCompanionCrib`]: false,
+  }) as DailyRecordPatch;
+
+const buildRemoveClinicalCribPatches = (bedId: string): DailyRecordPatch =>
+  ({
+    [`beds.${bedId}.clinicalCrib`]: null,
+  }) as DailyRecordPatch;
+
+const buildUpdateClinicalCribPatches = (
+  bedId: string,
+  field: keyof PatientData,
+  value: PatientFieldValue
+): DailyRecordPatch =>
+  ({
+    [`beds.${bedId}.clinicalCrib.${field}`]: value,
+  }) as DailyRecordPatch;
+
+const buildUpdateClinicalCribCudyrPatches = (
+  bedId: string,
+  field: keyof CudyrScore,
+  value: number
+): DailyRecordPatch =>
+  ({
+    [`beds.${bedId}.clinicalCrib.cudyr.${field}`]: value,
+    ...getCudyrTimestampPatch(),
+  }) as DailyRecordPatch;
+
 // ============================================================================
 // Actions
 // ============================================================================
@@ -366,9 +401,7 @@ export const bedManagementReducer = (
 
     case 'UPDATE_BLOCKED_REASON': {
       const { bedId, reason } = action;
-      return {
-        [`beds.${bedId}.blockedReason`]: reason,
-      } as DailyRecordPatch;
+      return buildUpdateBlockedReasonPatches(bedId, reason);
     }
 
     case 'TOGGLE_EXTRA_BED': {
@@ -378,24 +411,17 @@ export const bedManagementReducer = (
 
     case 'CREATE_CLINICAL_CRIB': {
       const { bedId } = action;
-      return {
-        [`beds.${bedId}.clinicalCrib`]: buildClinicalCribDraft(bedId, state.beds[bedId]),
-        [`beds.${bedId}.hasCompanionCrib`]: false,
-      } as DailyRecordPatch;
+      return buildCreateClinicalCribPatches(state, bedId);
     }
 
     case 'REMOVE_CLINICAL_CRIB': {
       const { bedId } = action;
-      return {
-        [`beds.${bedId}.clinicalCrib`]: null,
-      } as DailyRecordPatch;
+      return buildRemoveClinicalCribPatches(bedId);
     }
 
     case 'UPDATE_CLINICAL_CRIB': {
       const { bedId, field, value } = action;
-      return {
-        [`beds.${bedId}.clinicalCrib.${field}`]: value,
-      } as DailyRecordPatch;
+      return buildUpdateClinicalCribPatches(bedId, field, value);
     }
 
     case 'UPDATE_CLINICAL_CRIB_MULTIPLE': {
@@ -405,10 +431,7 @@ export const bedManagementReducer = (
 
     case 'UPDATE_CLINICAL_CRIB_CUDYR': {
       const { bedId, field, value } = action;
-      return {
-        [`beds.${bedId}.clinicalCrib.cudyr.${field}`]: value,
-        ...getCudyrTimestampPatch(),
-      } as DailyRecordPatch;
+      return buildUpdateClinicalCribCudyrPatches(bedId, field, value);
     }
 
     case 'TOGGLE_BED_TYPE': {

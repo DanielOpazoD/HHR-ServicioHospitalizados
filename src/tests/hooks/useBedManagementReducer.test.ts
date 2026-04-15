@@ -291,6 +291,45 @@ describe('bedManagementReducer firstSeenDate anchoring', () => {
     });
   });
 
+  it('updates blocked reason and single clinical crib fields through dedicated patches', () => {
+    const record = DataFactory.createMockDailyRecord('2026-04-12');
+
+    const blockedReasonPatch = bedManagementReducer(record, {
+      type: 'UPDATE_BLOCKED_REASON',
+      bedId: 'R1',
+      reason: 'Mantenimiento',
+    });
+    const cribFieldPatch = bedManagementReducer(record, {
+      type: 'UPDATE_CLINICAL_CRIB',
+      bedId: 'R1',
+      field: 'patientName',
+      value: 'RN Ajustado',
+    });
+
+    expect(blockedReasonPatch).toEqual({
+      'beds.R1.blockedReason': 'Mantenimiento',
+    });
+    expect(cribFieldPatch).toEqual({
+      'beds.R1.clinicalCrib.patientName': 'RN Ajustado',
+    });
+  });
+
+  it('updates clinical crib CUDYR fields while refreshing the shared timestamp', () => {
+    const record = DataFactory.createMockDailyRecord('2026-04-12');
+
+    const patch = bedManagementReducer(record, {
+      type: 'UPDATE_CLINICAL_CRIB_CUDYR',
+      bedId: 'R1',
+      field: 'changeClothes',
+      value: 2,
+    });
+
+    expect(patch).toMatchObject({
+      'beds.R1.clinicalCrib.cudyr.changeClothes': 2,
+    });
+    expect(patch).toHaveProperty('cudyrUpdatedAt');
+  });
+
   it('toggles extra beds by adding and removing the same bed id predictably', () => {
     const record = DataFactory.createMockDailyRecord('2026-04-12');
     record.activeExtraBeds = ['H1C1'];
