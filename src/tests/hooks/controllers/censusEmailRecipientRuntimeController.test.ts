@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  resolveActiveRecipientRuntimeState,
   resolveBootstrapRecipientFallbackMessage,
   resolveBootstrapRecipientRuntimeState,
   resolveRecipientMutationFailureMessage,
+  resolveRecipientSelectionRuntimeState,
   resolveRecipientSyncState,
   resolveStoredRecipientRuntimeState,
 } from '@/hooks/controllers/censusEmailRecipientRuntimeController';
@@ -126,6 +128,106 @@ describe('censusEmailRecipientRuntimeController', () => {
       activeRecipientListId: 'census-default',
       recipientsSyncError: 'bootstrap warning',
       lastRemoteRecipients: ['uno@example.com'],
+    });
+  });
+
+  it('builds the active recipient runtime state from a selected remote list', () => {
+    expect(
+      resolveActiveRecipientRuntimeState(
+        [
+          {
+            id: 'census-default',
+            name: 'Censo',
+            description: 'desc',
+            recipients: ['uno@example.com'],
+            scope: 'global',
+            updatedAt: '2026-04-14T10:00:00.000Z',
+            updatedByUid: null,
+            updatedByEmail: null,
+          },
+        ],
+        {
+          id: 'census-default',
+          name: 'Censo',
+          description: 'desc',
+          recipients: ['uno@example.com'],
+          scope: 'global',
+          updatedAt: '2026-04-14T10:00:00.000Z',
+          updatedByUid: null,
+          updatedByEmail: null,
+        }
+      )
+    ).toEqual({
+      recipientLists: [
+        {
+          id: 'census-default',
+          name: 'Censo',
+          description: 'desc',
+          recipients: ['uno@example.com'],
+          scope: 'global',
+          updatedAt: '2026-04-14T10:00:00.000Z',
+          updatedByUid: null,
+          updatedByEmail: null,
+        },
+      ],
+      recipients: ['uno@example.com'],
+      recipientsSource: 'firebase',
+      activeRecipientListId: 'census-default',
+      recipientsSyncError: null,
+      lastRemoteRecipients: ['uno@example.com'],
+    });
+  });
+
+  it('resolves selection runtime state depending on permissions and existing lists', () => {
+    expect(
+      resolveRecipientSelectionRuntimeState({
+        canManageGlobalRecipientLists: false,
+        recipientLists: [],
+        listId: 'custom',
+      })
+    ).toEqual({
+      shouldApplyActiveList: false,
+      activeRecipientListId: 'custom',
+    });
+
+    expect(
+      resolveRecipientSelectionRuntimeState({
+        canManageGlobalRecipientLists: true,
+        recipientLists: [
+          {
+            id: 'census-default',
+            name: 'Censo',
+            description: 'desc',
+            recipients: ['uno@example.com'],
+            scope: 'global',
+            updatedAt: '2026-04-14T10:00:00.000Z',
+            updatedByUid: null,
+            updatedByEmail: null,
+          },
+        ],
+        listId: 'census-default',
+      })
+    ).toEqual({
+      shouldApplyActiveList: true,
+      runtimeState: {
+        recipientLists: [
+          {
+            id: 'census-default',
+            name: 'Censo',
+            description: 'desc',
+            recipients: ['uno@example.com'],
+            scope: 'global',
+            updatedAt: '2026-04-14T10:00:00.000Z',
+            updatedByUid: null,
+            updatedByEmail: null,
+          },
+        ],
+        recipients: ['uno@example.com'],
+        recipientsSource: 'firebase',
+        activeRecipientListId: 'census-default',
+        recipientsSyncError: null,
+        lastRemoteRecipients: ['uno@example.com'],
+      },
     });
   });
 });

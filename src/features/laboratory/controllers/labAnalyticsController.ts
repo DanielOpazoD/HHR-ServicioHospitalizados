@@ -8,12 +8,10 @@
 import type {
   SyslabExamItem,
   SyslabExamDetail,
+  LabResultRow,
   LabAnalysisData,
   LabTrendPoint,
-  LabTrendGroup,
-  LabResultRow,
   LabMicrobiologyEntry,
-  LabMicrobiologyCategory,
 } from '@/types/domain/laboratory';
 import { TREND_GROUPS, COMPARISON_EXCLUDE, COMPARISON_ORDER } from '../constants/labConstants';
 import { parseRefRange, parseDateDDMMYYYY, normalizeAnalysisName } from './labFormattingController';
@@ -24,6 +22,7 @@ import {
   resolveMicrobiologyCategoriesForExam,
 } from './labMicrobiologyAnalyticsController';
 import type { DetailProcessingContext, ProcessedFindings } from './labAnalyticsContracts';
+import { buildAnalysisDataResult, mergeBilirrubinas } from './labAnalysisResultController';
 
 /* ------------------------------------------------------------------ */
 /*  Trend helpers                                                      */
@@ -283,83 +282,6 @@ const processFindings = (
     microbiologyEntries,
   };
 };
-
-/** Merge bilirrubina Total/Directa/Indirecta into a single comparison row. */
-const mergeBilirrubinas = (
-  comparison: Record<string, Record<string, LabResultRow>>,
-  bilirubinByCol: Record<string, { total?: string; directa?: string; indirecta?: string }>
-): void => {
-  const cols = Object.keys(bilirubinByCol);
-  if (cols.length === 0) return;
-
-  comparison['Bilirrubinas (T/D/I)'] = {};
-  for (const col of cols) {
-    const b = bilirubinByCol[col];
-    const merged = [b.total || '-', b.directa || '-', b.indirecta || '-'].join(' / ');
-    comparison['Bilirrubinas (T/D/I)'][col] = {
-      section: 'PERFIL HEPATICO',
-      analysis: 'Bilirrubinas (T/D/I)',
-      result: merged,
-      unit: 'mg/dL',
-      refValue: '',
-    };
-  }
-};
-
-/** Build trend groups from the raw trend map. Only groups with 2+ data points. */
-const buildTrendGroups = (trendMap: Record<string, LabTrendPoint[]>): LabTrendGroup[] => {
-  const trendGroups: LabTrendGroup[] = [];
-  for (const groupDef of TREND_GROUPS) {
-    const variables: Record<string, LabTrendPoint[]> = {};
-    for (const [name, points] of Object.entries(trendMap)) {
-      if (findTrendGroup(name) === groupDef.label && points.length >= 2) {
-        variables[name] = points.sort((a, b) => a.isoDate.localeCompare(b.isoDate));
-      }
-    }
-    if (Object.keys(variables).length > 0) {
-      trendGroups.push({ label: groupDef.label, variables });
-    }
-  }
-  return trendGroups;
-};
-
-/** Sort comparison keys by clinical priority order. */
-const sortComparison = (
-  comparison: Record<string, Record<string, LabResultRow>>
-): Record<string, Record<string, LabResultRow>> => {
-  const sorted: Record<string, Record<string, LabResultRow>> = {};
-  const sortedKeys = Object.keys(comparison).sort(
-    (a, b) => comparisonSortIndex(a) - comparisonSortIndex(b)
-  );
-  for (const key of sortedKeys) {
-    sorted[key] = comparison[key];
-  }
-  return sorted;
-};
-
-/** Sort column keys chronologically. */
-const sortColumnKeys = (columnKeys: string[]): string[] =>
-  columnKeys.sort((a, b) => {
-    const isoA = parseDateDDMMYYYY(a.substring(0, 10));
-    const isoB = parseDateDDMMYYYY(b.substring(0, 10));
-    if (isoA !== isoB) return isoA.localeCompare(isoB);
-    return a.localeCompare(b);
-  });
-
-const sortMicrobiologyEntries = (entries: LabMicrobiologyEntry[]): LabMicrobiologyEntry[] =>
-  [...entries].sort((a, b) => {
-    const isoA = parseDateDDMMYYYY(a.date.substring(0, 10));
-    const isoB = parseDateDDMMYYYY(b.date.substring(0, 10));
-    if (isoA !== isoB) return isoB.localeCompare(isoA);
-    return b.date.localeCompare(a.date);
-  });
-
-const buildAnalysisDataResult = (processed: ProcessedFindings): LabAnalysisData => ({
-  trendGroups: buildTrendGroups(processed.trendMap),
-  examDates: sortColumnKeys(processed.columnKeys),
-  comparison: sortComparison(processed.comparison),
-  microbiologyEntries: sortMicrobiologyEntries(processed.microbiologyEntries),
-});
 
 /* ------------------------------------------------------------------ */
 /*  Main orchestrator                                                  */

@@ -85,17 +85,21 @@ service cloud.firestore {
 	    function isAdmin() {
 	      return hasBootstrapOrEffectiveRole('admin');
 	    }
+
+	    function hasAdminOrEffectiveRole(role) {
+	      return isAdmin() || hasEffectiveRole(role);
+	    }
 	    
 	    function isNurse() {
-	      return isAdmin() || hasEffectiveRole('nurse_hospital');
+	      return hasAdminOrEffectiveRole('nurse_hospital');
 	    }
 
 	    function isDoctor() {
-	      return isAdmin() || hasEffectiveRole('doctor_urgency');
+	      return hasAdminOrEffectiveRole('doctor_urgency');
 	    }
 
 	    function isDoctorSpecialist() {
-	      return isAdmin() || hasEffectiveRole('doctor_specialist');
+	      return hasAdminOrEffectiveRole('doctor_specialist');
 	    }
 	    
 	    // Check if user can edit (admin or nurse)
@@ -104,7 +108,7 @@ service cloud.firestore {
 	    }
 
 	    function canReportSystemHealth() {
-	      return hasBootstrapOrAnyEffectiveRole(['admin', 'nurse_hospital']);
+	      return canEdit();
 	    }
 
 	    function isEditorRole() {
@@ -389,15 +393,8 @@ service cloud.firestore {
              allowedValues.hasAny([payload[key]]);
     }
 
-    // System health payload guard:
-    // - caller can only write own doc
-    // - schema is constrained
-    // - numeric counters are bounded to non-negative values
-    function isValidSystemHealthWrite(userId) {
-      let payload = request.resource.data;
-      return isAuthenticated() &&
-             request.auth.uid == userId &&
-             payload.keys().hasOnly([
+    function hasOnlySystemHealthKeys(payload) {
+      return payload.keys().hasOnly([
                'uid',
                'email',
                'displayName',
@@ -444,7 +441,18 @@ service cloud.firestore {
                'appVersion',
                'platform',
                'userAgent'
-             ]) &&
+             ]);
+    }
+
+    // System health payload guard:
+    // - caller can only write own doc
+    // - schema is constrained
+    // - numeric counters are bounded to non-negative values
+    function isValidSystemHealthWrite(userId) {
+      let payload = request.resource.data;
+      return isAuthenticated() &&
+             request.auth.uid == userId &&
+             hasOnlySystemHealthKeys(payload) &&
              payload.uid == request.auth.uid &&
              isOptionalString(payload, 'email') &&
              isOptionalString(payload, 'displayName') &&

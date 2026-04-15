@@ -6,6 +6,7 @@ import {
 } from '@/hooks/controllers/censusEmailRecipientSelectionController';
 import { resolveApplicationOutcomeMessage } from '@/shared/contracts/applicationOutcomeMessage';
 import type { GlobalEmailRecipientList } from '@/services/email/emailRecipientListService';
+import { resolveRecipientListForSelection } from '@/hooks/controllers/censusEmailRecipientMutationController';
 
 interface ApplicationOutcomeLike<TData = unknown> {
   status: string;
@@ -19,6 +20,43 @@ export interface RecipientRuntimeState extends CensusRecipientSelectionState {
   recipientsSyncError: string | null;
   lastRemoteRecipients: string[] | null;
 }
+
+export const resolveActiveRecipientRuntimeState = (
+  recipientLists: GlobalEmailRecipientList[],
+  list: GlobalEmailRecipientList
+): RecipientRuntimeState => ({
+  recipientLists,
+  recipients: list.recipients,
+  recipientsSource: 'firebase',
+  activeRecipientListId: list.id,
+  recipientsSyncError: null,
+  lastRemoteRecipients: list.recipients,
+});
+
+export const resolveRecipientSelectionRuntimeState = ({
+  canManageGlobalRecipientLists,
+  recipientLists,
+  listId,
+}: {
+  canManageGlobalRecipientLists: boolean;
+  recipientLists: GlobalEmailRecipientList[];
+  listId: string;
+}):
+  | { shouldApplyActiveList: false; activeRecipientListId: string }
+  | { shouldApplyActiveList: true; runtimeState: RecipientRuntimeState } => {
+  const activeList = resolveRecipientListForSelection(recipientLists, listId);
+  if (!activeList || !canManageGlobalRecipientLists) {
+    return {
+      shouldApplyActiveList: false,
+      activeRecipientListId: listId,
+    };
+  }
+
+  return {
+    shouldApplyActiveList: true,
+    runtimeState: resolveActiveRecipientRuntimeState(recipientLists, activeList),
+  };
+};
 
 export const resolveStoredRecipientRuntimeState = (
   storedRecipients: string[] | null,
