@@ -74,7 +74,11 @@ export const UpcChecklistPanel: React.FC<UpcChecklistPanelProps> = ({
   const classLabel = resolveUpcClassificationLabel(draftClassification);
 
   return (
-    <div className="w-[380px] rounded-xl border border-slate-200 bg-white shadow-xl">
+    <div
+      className="w-[380px] rounded-xl border border-slate-200 bg-white shadow-xl"
+      role="dialog"
+      aria-label="Checklist de clasificación UPC"
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100">
         <div className="flex items-center gap-2">
@@ -82,18 +86,17 @@ export const UpcChecklistPanel: React.FC<UpcChecklistPanelProps> = ({
           <span className="text-[12px] font-bold text-slate-700 tracking-tight">
             Clasificación UPC
           </span>
-          {draftClassification && (
-            <span
-              className={clsx(
-                'px-1.5 py-0.5 rounded text-[10px] font-bold border',
-                badgeColors.text,
-                badgeColors.bg,
-                badgeColors.border
-              )}
-            >
-              {classLabel}
-            </span>
-          )}
+          <span
+            aria-live="polite"
+            className={clsx(
+              'px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors',
+              draftClassification
+                ? clsx(badgeColors.text, badgeColors.bg, badgeColors.border)
+                : 'text-slate-400 bg-transparent border-transparent'
+            )}
+          >
+            {classLabel || 'No UPC'}
+          </span>
         </div>
         <button
           onClick={onClose}

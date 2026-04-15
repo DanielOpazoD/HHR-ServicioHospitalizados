@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import { ShieldCheck } from 'lucide-react';
 import { useUpcChecklistController } from './useUpcChecklistController';
-import type { UpcChecklistActor } from './useUpcChecklistController';
+import type { UpcChecklistAuditActor } from './useUpcChecklistController';
 import { UpcChecklistPanel } from './UpcChecklistPanel';
 import {
   resolveUpcClassificationLabel,
@@ -21,7 +21,7 @@ interface UpcChecklistPopoverProps extends BaseCellProps {
   checklist: UpcChecklistRecord | undefined;
   onSave: (record: UpcChecklistRecord) => void;
   eligible: boolean;
-  actor: UpcChecklistActor | null;
+  actor: UpcChecklistAuditActor | null;
 }
 
 export const UpcChecklistPopover: React.FC<UpcChecklistPopoverProps> = ({

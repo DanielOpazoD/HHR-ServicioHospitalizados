@@ -135,10 +135,14 @@ export const PatientInputFlagsSection: React.FC<PatientInputFlagsSectionBindings
     : null;
 
   const handleUpcSave = (record: UpcChecklistRecord) => {
-    onChange.multiple?.({
-      upcChecklist: record,
-      isUPC: record.classification !== null,
-    });
+    try {
+      onChange.multiple?.({
+        upcChecklist: record,
+        isUPC: record.classification !== null,
+      });
+    } catch (err) {
+      console.error('[UPC] Failed to save checklist:', err);
+    }
   };
 
   return (

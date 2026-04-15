@@ -1,22 +1,19 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+/**
+ * useUpcChecklistController — Orchestrates state + portal positioning.
+ *
+ * Follows the 3-layer pattern (like DeliveryRoutePopover):
+ *  1. useUpcChecklistState   — draft state, toggles, save/clear
+ *  2. this controller        — open/close, popover position, wiring
+ *  3. UpcChecklistPopover    — React component with portal
+ */
+
+import { useCallback, useRef, useState } from 'react';
 import { usePortalPopoverRuntime } from '@/hooks/usePortalPopoverRuntime';
-import { resolveUpcClassification } from '@/domain/upc/upcClassification';
-import type { UpcClassification } from '@/domain/upc/upcClassification';
-import type { UpcChecklistRecord } from '@/features/census/contracts/censusUpcContracts';
-import {
-  sanitizeCriterionIds,
-  isValidUciCriterionId,
-  isValidUtiCriterionId,
-} from '@/domain/upc/upcCriteria';
+import { useUpcChecklistState } from './useUpcChecklistState';
+import { resolveUpcChecklistPopoverPosition } from '@/features/census/controllers/upcChecklistPopoverController';
+import type { UpcChecklistRecord, UpcChecklistAuditActor } from '@/domain/upc/upcContracts';
 
-const PANEL_WIDTH = 380;
-const MIN_POPOVER_HEIGHT = 400;
-const VIEWPORT_PADDING = 8;
-
-export interface UpcChecklistActor {
-  readonly uid: string;
-  readonly displayName: string;
-}
+export type { UpcChecklistAuditActor } from '@/domain/upc/upcContracts';
 
 interface UseUpcChecklistControllerParams {
   checklist: UpcChecklistRecord | undefined;
@@ -25,7 +22,7 @@ interface UseUpcChecklistControllerParams {
   /** Whether UCI criteria are allowed for this bed (false for Neo1/Neo2). */
   uciAllowed: boolean;
   /** Authenticated user for audit trail. */
-  actor: UpcChecklistActor | null;
+  actor: UpcChecklistAuditActor | null;
 }
 
 export const useUpcChecklistController = ({
@@ -39,35 +36,17 @@ export const useUpcChecklistController = ({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
-  // Draft state — local until save
-  const [draftUci, setDraftUci] = useState<Set<string>>(new Set());
-  const [draftUti, setDraftUti] = useState<Set<string>>(new Set());
-
-  // Sanitize persisted IDs before hydrating draft state
-  const resetFromPersisted = useCallback(() => {
-    const safeUci = uciAllowed
-      ? sanitizeCriterionIds(checklist?.uciCriteria, isValidUciCriterionId)
-      : [];
-    const safeUti = sanitizeCriterionIds(checklist?.utiCriteria, isValidUtiCriterionId);
-    setDraftUci(new Set(safeUci));
-    setDraftUti(new Set(safeUti));
-  }, [checklist, uciAllowed]);
+  const state = useUpcChecklistState({ checklist, onSave, uciAllowed, actor });
 
   const closePopover = useCallback(() => setIsOpen(false), []);
 
-  const resolvePopoverPosition = useCallback(() => {
+  const resolvePosition = useCallback(() => {
     if (!buttonRef.current) return null;
-    const rect = buttonRef.current.getBoundingClientRect();
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const top =
-      spaceBelow > MIN_POPOVER_HEIGHT
-        ? rect.bottom + 4
-        : Math.max(VIEWPORT_PADDING, rect.top - MIN_POPOVER_HEIGHT);
-    const left = Math.max(
-      VIEWPORT_PADDING,
-      Math.min(rect.left, window.innerWidth - PANEL_WIDTH - VIEWPORT_PADDING)
-    );
-    return { top, left };
+    return resolveUpcChecklistPopoverPosition({
+      buttonRect: buttonRef.current.getBoundingClientRect(),
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+    });
   }, []);
 
   const { position: popoverPos, updatePosition } = usePortalPopoverRuntime({
@@ -75,7 +54,7 @@ export const useUpcChecklistController = ({
     anchorRef: buttonRef,
     popoverRef,
     initialPosition: { top: 0, left: 0 },
-    resolvePosition: resolvePopoverPosition,
+    resolvePosition,
     onClose: closePopover,
     closeOnScroll: true,
     closeOnOutsideClick: true,
@@ -88,65 +67,13 @@ export const useUpcChecklistController = ({
       e.preventDefault();
       if (disabled) return;
       if (!isOpen) {
-        resetFromPersisted();
+        state.resetFromPersisted();
         updatePosition();
       }
       setIsOpen(prev => !prev);
     },
-    [disabled, isOpen, resetFromPersisted, updatePosition]
+    [disabled, isOpen, state, updatePosition]
   );
-
-  const toggleUciCriterion = useCallback((id: string) => {
-    setDraftUci(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
-
-  const toggleUtiCriterion = useCallback((id: string) => {
-    setDraftUti(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
-
-  const draftClassification: UpcClassification = useMemo(
-    () => resolveUpcClassification({ uciCriteria: draftUci, utiCriteria: draftUti }),
-    [draftUci, draftUti]
-  );
-
-  const hasDraftCriteria = useMemo(
-    () => draftUci.size > 0 || draftUti.size > 0,
-    [draftUci, draftUti]
-  );
-
-  const saveAndClose = useCallback(() => {
-    onSave({
-      uciCriteria: Array.from(draftUci),
-      utiCriteria: Array.from(draftUti),
-      classification: draftClassification,
-      evaluatedAt: new Date().toISOString(),
-      ...(actor ? { evaluatedBy: { uid: actor.uid, displayName: actor.displayName } } : {}),
-    } as UpcChecklistRecord);
-    setIsOpen(false);
-  }, [actor, draftClassification, draftUci, draftUti, onSave]);
-
-  const clearAndClose = useCallback(() => {
-    onSave({
-      uciCriteria: [],
-      utiCriteria: [],
-      classification: null,
-      evaluatedAt: new Date().toISOString(),
-      ...(actor ? { evaluatedBy: { uid: actor.uid, displayName: actor.displayName } } : {}),
-    } as UpcChecklistRecord);
-    setDraftUci(new Set());
-    setDraftUti(new Set());
-    setIsOpen(false);
-  }, [actor, onSave]);
 
   return {
     isOpen,
@@ -154,15 +81,16 @@ export const useUpcChecklistController = ({
     popoverRef,
     popoverPos,
     togglePopover,
-    draftUci,
-    draftUti,
-    draftClassification,
-    hasDraftCriteria,
-    uciAllowed,
-    toggleUciCriterion,
-    toggleUtiCriterion,
-    saveAndClose,
-    clearAndClose,
     closePopover,
+    uciAllowed,
+    // Delegated from state hook
+    draftUci: state.draftUci,
+    draftUti: state.draftUti,
+    draftClassification: state.draftClassification,
+    hasDraftCriteria: state.hasDraftCriteria,
+    toggleUciCriterion: state.toggleUciCriterion,
+    toggleUtiCriterion: state.toggleUtiCriterion,
+    saveAndClose: useCallback(() => state.saveAndClose(closePopover), [state, closePopover]),
+    clearAndClose: useCallback(() => state.clearAndClose(closePopover), [state, closePopover]),
   };
 };
