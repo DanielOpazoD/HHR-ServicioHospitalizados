@@ -45,6 +45,7 @@ export const useClinicalDocumentDraftAutosave = ({
   lastPersistedSnapshotRef,
 }: UseClinicalDocumentDraftAutosaveParams) => {
   const autosaveTimerRef = useRef<number | null>(null);
+  const latestAutosaveRequestIdRef = useRef(0);
 
   useEffect(() => {
     if (!draft || !canEdit || draft.isLocked || !isActive || !user) {
@@ -62,6 +63,8 @@ export const useClinicalDocumentDraftAutosave = ({
 
     autosaveTimerRef.current = window.setTimeout(async () => {
       const requestedSnapshot = draftSnapshot;
+      latestAutosaveRequestIdRef.current += 1;
+      const requestId = latestAutosaveRequestIdRef.current;
       dispatch({ type: 'AUTOSAVE_REQUESTED' });
 
       try {
@@ -77,6 +80,10 @@ export const useClinicalDocumentDraftAutosave = ({
           date: draft.sourceDailyRecordDate,
           context: { documentId: draft.id },
         });
+
+        if (requestId !== latestAutosaveRequestIdRef.current) {
+          return;
+        }
 
         if (result.status === 'success' && result.data) {
           const savedSnapshot = serializeClinicalDocument(result.data);
@@ -113,6 +120,10 @@ export const useClinicalDocumentDraftAutosave = ({
         });
         dispatch({ type: 'AUTOSAVE_FAILED' });
       } catch (error) {
+        if (requestId !== latestAutosaveRequestIdRef.current) {
+          return;
+        }
+
         recordOperationalTelemetry({
           category: 'clinical_document',
           status: 'failed',

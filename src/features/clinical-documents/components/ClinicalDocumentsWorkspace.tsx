@@ -145,6 +145,7 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
             {...sheetProps}
             toolbar={headerContent && !headerActionsContainer ? headerContent : null}
             activeTitleTarget={sheetState.activeTitleTarget}
+            activeEditorSectionId={sheetState.activeEditorSectionId}
             onSetActiveTitleTarget={sheetState.setActiveTitleTarget}
             draggedSectionId={sheetState.draggedSectionId}
             dragOverSectionId={sheetState.dragOverSectionId}

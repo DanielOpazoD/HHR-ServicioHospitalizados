@@ -147,10 +147,21 @@ export const useClinicalDocumentWorkspaceDraft = ({
           ? nextDraftOrUpdater(draftRef.current)
           : nextDraftOrUpdater;
       const hydratedDraft = hydrateIncomingDocument(nextDraft);
+      const nextSnapshot = serializeClinicalDocument(hydratedDraft);
+      const currentDraft = draftRef.current;
+      const currentSnapshot = serializeClinicalDocument(currentDraft);
+
+      if (
+        (hydratedDraft?.id ?? null) === (currentDraft?.id ?? null) &&
+        nextSnapshot === currentSnapshot
+      ) {
+        return;
+      }
+
       dispatch({
         type: 'LOAD_DOCUMENT',
         document: hydratedDraft,
-        snapshot: serializeClinicalDocument(hydratedDraft),
+        snapshot: nextSnapshot,
       });
     },
     []

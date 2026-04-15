@@ -69,6 +69,7 @@ const defaultHandlers = {
   onUploadPdf: vi.fn(),
   onRestoreTemplate: vi.fn(),
   activeTitleTarget: null,
+  activeEditorSectionId: null,
   onSetActiveTitleTarget: vi.fn(),
   draggedSectionId: null,
   dragOverSectionId: null,
@@ -216,6 +217,31 @@ describe('ClinicalDocumentSheet', () => {
     expect(screen.getByRole('button', { name: /^formato$/i })).toHaveAttribute(
       'aria-pressed',
       'true'
+    );
+  });
+
+  it('marks the active section and annex with stronger visual state', () => {
+    const clinicalDocument = buildDocument();
+    clinicalDocument.annexContent = '<p>Anexo activo</p>';
+
+    render(
+      <ClinicalDocumentSheet
+        selectedDocument={clinicalDocument}
+        canEdit={true}
+        isSaving={false}
+        isUploadingPdf={false}
+        validationIssues={[]}
+        indicationsCatalog={getDefaultClinicalDocumentIndicationsCatalog()}
+        isSavingCustomIndication={false}
+        customIndicationError={null}
+        {...defaultHandlers}
+        activeEditorSectionId="annexes"
+        toolbar={buildToolbar(defaultHandlers)}
+      />
+    );
+
+    expect(globalThis.document.querySelector('[data-clinical-section-id="annexes"]')).toHaveClass(
+      'is-editor-active'
     );
   });
 

@@ -71,6 +71,23 @@ describe('classifyPasteContent', () => {
     }
   });
 
+  it('strips Word and Outlook clipboard wrappers before sanitising HTML', () => {
+    const dt = buildMockDataTransfer({
+      htmlData: '<!--StartFragment--><p class="MsoNormal">Informe<o:p></o:p></p><!--EndFragment-->',
+      textData: 'Informe',
+    });
+
+    const result = classifyPasteContent(dt);
+
+    expect(result.kind).toBe('html');
+    if (result.kind === 'html') {
+      expect(result.sanitizedHtml).toContain('Informe');
+      expect(result.sanitizedHtml).not.toContain('StartFragment');
+      expect(result.sanitizedHtml).not.toContain('MsoNormal');
+      expect(result.sanitizedHtml).not.toContain('o:p');
+    }
+  });
+
   it('returns plain-text when only text is available', () => {
     const dt = buildMockDataTransfer({ textData: 'hello world' });
 
@@ -79,6 +96,35 @@ describe('classifyPasteContent', () => {
     expect(result.kind).toBe('plain-text');
     if (result.kind === 'plain-text') {
       expect(result.text).toBe('hello world');
+    }
+  });
+
+  it('normalises pasted plain text from PDF or email soft wraps', () => {
+    const dt = buildMockDataTransfer({
+      textData:
+        'Hallazgos radiológicos\ndescritos en detalle.\n\nCONCLUSIÓN:\nSin derrame pleural.',
+    });
+
+    const result = classifyPasteContent(dt);
+
+    expect(result.kind).toBe('plain-text');
+    if (result.kind === 'plain-text') {
+      expect(result.text).toBe(
+        'Hallazgos radiológicos descritos en detalle.\n\nCONCLUSIÓN:\nSin derrame pleural.'
+      );
+    }
+  });
+
+  it('collapses noisy blank lines from Syslab or MMRAD plain text pastes', () => {
+    const dt = buildMockDataTransfer({
+      textData: 'Cultivo corriente\n\n\nBacilos Gram (-)\n\n\nResistente',
+    });
+
+    const result = classifyPasteContent(dt);
+
+    expect(result.kind).toBe('plain-text');
+    if (result.kind === 'plain-text') {
+      expect(result.text).toBe('Cultivo corriente\n\nBacilos Gram (-)\n\nResistente');
     }
   });
 

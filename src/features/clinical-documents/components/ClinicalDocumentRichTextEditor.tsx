@@ -3,7 +3,6 @@ import clsx from 'clsx';
 
 import type { ClinicalDocumentRichTextEditorActivationApi } from '@/features/clinical-documents/hooks/useClinicalDocumentRichTextEditorController';
 import { useClinicalDocumentRichTextEditorController } from '@/features/clinical-documents/hooks/useClinicalDocumentRichTextEditorController';
-import { normalizeClinicalDocumentContentForStorage } from '@/features/clinical-documents/controllers/clinicalDocumentRichTextController';
 import { ClinicalDocumentImageEditor } from '@/features/clinical-documents/components/ClinicalDocumentImageEditor';
 
 interface ClinicalDocumentRichTextEditorProps {
@@ -31,17 +30,23 @@ export const ClinicalDocumentRichTextEditor: React.FC<ClinicalDocumentRichTextEd
   const editorRef = useRef<HTMLDivElement | null>(null);
   const [selectedImage, setSelectedImage] = useState<HTMLImageElement | null>(null);
 
-  const { handleActivateInteraction, handleBlur, handleInput, handleKeyDown, handlePaste } =
-    useClinicalDocumentRichTextEditorController({
-      sectionId,
-      value,
-      disabled,
-      editorRef,
-      onChange,
-      onActivate,
-      onDeactivate,
-      onSlashLab,
-    });
+  const {
+    commitEditorDomMutation,
+    handleActivateInteraction,
+    handleBlur,
+    handleInput,
+    handleKeyDown,
+    handlePaste,
+  } = useClinicalDocumentRichTextEditorController({
+    sectionId,
+    value,
+    disabled,
+    editorRef,
+    onChange,
+    onActivate,
+    onDeactivate,
+    onSlashLab,
+  });
 
   // Detect click on an image inside the editor
   const handleClick = useCallback(
@@ -59,11 +64,8 @@ export const ClinicalDocumentRichTextEditor: React.FC<ClinicalDocumentRichTextEd
 
   // When image is modified via the editor overlay, sync back to onChange
   const handleImageUpdate = useCallback(() => {
-    const editor = editorRef.current;
-    if (!editor) return;
-    const html = normalizeClinicalDocumentContentForStorage(editor.innerHTML);
-    onChange(html);
-  }, [editorRef, onChange]);
+    commitEditorDomMutation();
+  }, [commitEditorDomMutation]);
 
   const handleImageEditorClose = useCallback(() => {
     setSelectedImage(null);

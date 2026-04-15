@@ -13,8 +13,11 @@ import { useClinicalDocumentWorkspaceDraft } from '@/features/clinical-documents
 import { useClinicalDocumentWorkspaceDocumentActions } from '@/features/clinical-documents/hooks/useClinicalDocumentWorkspaceDocumentActions';
 import { useClinicalDocumentWorkspaceExportActions } from '@/features/clinical-documents/hooks/useClinicalDocumentWorkspaceExportActions';
 import {
-  buildRestoreClinicalDocumentTemplateConfirmOptions,
-  canApplyClinicalDocumentTemplateSelection,
+  executeClinicalDocumentTemplateRestore,
+  handleClinicalDocumentTemplateSelection,
+  toggleClinicalDocumentAnnex,
+} from '@/features/clinical-documents/controllers/clinicalDocumentsWorkspaceActionController';
+import {
   mergeDraftIntoClinicalDocumentsSidebar,
   resolveClinicalDocumentsWorkspaceAccessState,
 } from './clinicalDocumentsWorkspaceModelSupport';
@@ -30,6 +33,7 @@ type ClinicalDocumentsWorkspaceSheetProps = Omit<
   ClinicalDocumentSheetProps,
   | 'toolbar'
   | 'activeTitleTarget'
+  | 'activeEditorSectionId'
   | 'onSetActiveTitleTarget'
   | 'draggedSectionId'
   | 'dragOverSectionId'
@@ -173,31 +177,31 @@ export const useClinicalDocumentsWorkspaceModel = ({
       setDraft,
     });
 
-  const handleSelectTemplate = (templateId: string) => {
-    setSelectedTemplateId(templateId);
-    if (!canApplyClinicalDocumentTemplateSelection({ draft, canEdit })) {
-      return;
-    }
-    applyTemplate(templateId);
+  const scrollToAnnex = () => {
+    window.setTimeout(() => {
+      document
+        .querySelector('.clinical-document-annex-page')
+        ?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   };
 
-  const handleRestoreTemplate = async () => {
-    if (!canApplyClinicalDocumentTemplateSelection({ draft, canEdit })) {
-      return;
-    }
+  const handleSelectTemplate = (templateId: string) =>
+    handleClinicalDocumentTemplateSelection({
+      templateId,
+      draft,
+      canEdit,
+      setSelectedTemplateId,
+      applyTemplate,
+    });
 
-    const confirmed = await confirm(buildRestoreClinicalDocumentTemplateConfirmOptions());
-
-    if (!confirmed) {
-      return;
-    }
-
-    restoreTemplateContent();
-    info(
-      'Plantilla reestablecida',
-      'El documento volvió a su estructura base y quedó listo para seguir editando.'
-    );
-  };
+  const handleRestoreTemplate = async () =>
+    executeClinicalDocumentTemplateRestore({
+      draft,
+      canEdit,
+      confirm,
+      restoreTemplateContent,
+      info,
+    });
 
   return {
     canRead,
@@ -217,18 +221,13 @@ export const useClinicalDocumentsWorkspaceModel = ({
       onDeleteDocument: document => void handleDeleteDocument(document),
       onAddClinicalUpdate: canEdit ? addClinicalUpdate : undefined,
       onToggleAnnex: canEdit
-        ? () => {
-            const doc = draft;
-            if (!doc) return;
-            if (doc.annexContent == null) {
-              patchAnnexContent('<br>');
-            }
-            setTimeout(() => {
-              document
-                .querySelector('.clinical-document-annex-page')
-                ?.scrollIntoView({ behavior: 'smooth' });
-            }, 100);
-          }
+        ? () =>
+            toggleClinicalDocumentAnnex({
+              draft,
+              canEdit,
+              patchAnnexContent,
+              scrollToAnnex,
+            })
         : undefined,
       hasAnnex: draft?.annexContent != null,
     },

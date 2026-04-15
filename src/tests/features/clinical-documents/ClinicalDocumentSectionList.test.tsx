@@ -109,6 +109,7 @@ describe('ClinicalDocumentSectionList', () => {
         visibleSections={document.sections}
         canEdit={true}
         activeTitleTarget="section:plan"
+        activeEditorSectionId={null}
         draggedSectionId={null}
         dragOverSectionId={null}
         activePlanSubsectionId="generales"

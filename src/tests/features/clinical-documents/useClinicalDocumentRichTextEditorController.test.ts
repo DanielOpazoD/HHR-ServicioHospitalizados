@@ -150,4 +150,75 @@ describe('useClinicalDocumentRichTextEditorController', () => {
 
     activeElementSpy.mockRestore();
   });
+
+  it('routes insertHtml through the editor activation api and commits a normalized change', () => {
+    const editorRef = createRef<HTMLDivElement>() as MutableRefObject<HTMLDivElement | null>;
+    const editor = document.createElement('div');
+    editor.innerHTML = 'Inicial';
+    editorRef.current = editor;
+    const onChange = vi.fn();
+    const onActivate = vi.fn();
+
+    Object.defineProperty(globalThis.document, 'execCommand', {
+      value: vi.fn((command: string, _showUi: boolean, value?: string) => {
+        if (command === 'insertHTML') {
+          editor.innerHTML = `${editor.innerHTML}${value ?? ''}`;
+        }
+        return true;
+      }),
+      configurable: true,
+    });
+
+    const { result } = renderHook(() =>
+      useClinicalDocumentRichTextEditorController({
+        sectionId: 'section-1',
+        value: 'Inicial',
+        disabled: false,
+        editorRef,
+        onChange,
+        onActivate,
+      })
+    );
+
+    act(() => {
+      result.current.handleActivateInteraction();
+    });
+
+    const activationApi = onActivate.mock.calls.at(-1)?.[1];
+    expect(activationApi).toBeTruthy();
+
+    act(() => {
+      activationApi.insertHtml('<strong> Nuevo</strong>');
+    });
+
+    expect(editor.innerHTML).toBe('Inicial<strong> Nuevo</strong>');
+    expect(onChange).toHaveBeenLastCalledWith('Inicial<strong> Nuevo</strong>');
+  });
+
+  it('commits direct editor DOM mutations through the shared normalization pipeline', () => {
+    const editorRef = createRef<HTMLDivElement>() as MutableRefObject<HTMLDivElement | null>;
+    const editor = document.createElement('div');
+    editor.innerHTML = 'Inicial';
+    editorRef.current = editor;
+    const onChange = vi.fn();
+
+    const { result } = renderHook(() =>
+      useClinicalDocumentRichTextEditorController({
+        sectionId: 'section-1',
+        value: 'Inicial',
+        disabled: false,
+        editorRef,
+        onChange,
+      })
+    );
+
+    editor.innerHTML = '  <img src="x"> Actualizado ';
+
+    act(() => {
+      result.current.commitEditorDomMutation();
+    });
+
+    expect(normalizeContentMock).toHaveBeenCalledWith('  <img src="x"> Actualizado ');
+    expect(onChange).toHaveBeenLastCalledWith('<img src="x"> Actualizado');
+  });
 });

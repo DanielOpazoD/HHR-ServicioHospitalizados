@@ -18,6 +18,7 @@ interface ClinicalDocumentAnnexPageProps {
   content: string;
   canEdit: boolean;
   isLocked: boolean;
+  isEditorActive?: boolean;
   onChange: (content: string) => void;
   onClear: () => void;
   onEditorActivate?: (
@@ -31,6 +32,7 @@ export const ClinicalDocumentAnnexPage: React.FC<ClinicalDocumentAnnexPageProps>
   content,
   canEdit,
   isLocked,
+  isEditorActive = false,
   onChange,
   onClear,
   onEditorActivate,
@@ -63,23 +65,29 @@ export const ClinicalDocumentAnnexPage: React.FC<ClinicalDocumentAnnexPageProps>
 
   return (
     <div
-      className="clinical-document-annex-page"
+      className={`clinical-document-annex-page${isEditorActive ? ' is-editor-active' : ''}`}
+      data-clinical-section-id="annexes"
       style={{
         pageBreakBefore: 'always',
         marginTop: '24px',
         paddingTop: '16px',
-        borderTop: '2px solid #e2e8f0',
       }}
     >
-      {/* Header with double-click to show delete */}
-      <div className="flex items-center gap-2 mb-3 group print:!block">
+      <div className="clinical-document-annex-header print:!block">
         <div
-          className="flex items-center gap-2 cursor-default select-none"
+          className="clinical-document-annex-heading cursor-default select-none"
           onDoubleClick={handleTitleDoubleClick}
           title={canEdit && !isLocked ? 'Doble clic para opciones' : undefined}
         >
-          <Paperclip size={16} className="text-slate-400 print:hidden" />
-          <h2 className="text-base font-bold text-slate-700">Anexos</h2>
+          <p className="clinical-document-annex-eyebrow">Apéndice clínico</p>
+          <div className="clinical-document-annex-title-row">
+            <Paperclip size={16} className="text-slate-500 print:hidden" />
+            <h2 className="clinical-document-annex-title">Anexos</h2>
+            <span className="clinical-document-annex-badge">Adjunto</span>
+          </div>
+          <p className="clinical-document-annex-caption">
+            Resultados, imágenes y material complementario del documento principal.
+          </p>
         </div>
 
         {/* Delete controls (shown on double-click, hidden on print) */}
@@ -128,15 +136,17 @@ export const ClinicalDocumentAnnexPage: React.FC<ClinicalDocumentAnnexPageProps>
         )}
       </div>
 
-      <ClinicalDocumentRichTextEditor
-        sectionId="annexes"
-        sectionTitle="Anexos"
-        value={content}
-        disabled={!canEdit || isLocked}
-        onChange={onChange}
-        onActivate={onEditorActivate}
-        onDeactivate={onEditorDeactivate}
-      />
+      <div className="clinical-document-annex-editor-shell">
+        <ClinicalDocumentRichTextEditor
+          sectionId="annexes"
+          sectionTitle="Anexos"
+          value={content}
+          disabled={!canEdit || isLocked}
+          onChange={onChange}
+          onActivate={onEditorActivate}
+          onDeactivate={onEditorDeactivate}
+        />
+      </div>
     </div>
   );
 };

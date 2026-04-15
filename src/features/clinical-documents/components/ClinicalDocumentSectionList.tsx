@@ -40,6 +40,7 @@ interface ClinicalDocumentSectionListProps {
   visibleSections: ClinicalDocumentRecord['sections'];
   canEdit: boolean;
   activeTitleTarget: string | null;
+  activeEditorSectionId: string | null;
   draggedSectionId: string | null;
   dragOverSectionId: string | null;
   activePlanSubsectionId: ClinicalDocumentPlanSubsectionId;
@@ -84,6 +85,7 @@ export const ClinicalDocumentSectionList: React.FC<ClinicalDocumentSectionListPr
   visibleSections,
   canEdit,
   activeTitleTarget,
+  activeEditorSectionId,
   draggedSectionId,
   dragOverSectionId,
   activePlanSubsectionId,
@@ -126,9 +128,12 @@ export const ClinicalDocumentSectionList: React.FC<ClinicalDocumentSectionListPr
         return (
           <div
             key={section.id}
+            data-clinical-section-id={section.id}
             className={`block clinical-document-section-block${
               dragOverSectionId === section.id ? ' is-drag-over' : ''
-            }${activeTitleTarget === `section:${section.id}` ? ' is-title-active' : ''}`}
+            }${activeTitleTarget === `section:${section.id}` ? ' is-title-active' : ''}${
+              activeEditorSectionId === section.id ? ' is-editor-active' : ''
+            }`}
             onDragOver={event =>
               dragHandlers.onDragOver(event, section.id, canEdit && !document.isLocked)
             }

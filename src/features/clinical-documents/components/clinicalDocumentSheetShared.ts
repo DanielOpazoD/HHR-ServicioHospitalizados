@@ -21,6 +21,7 @@ export interface ClinicalDocumentSheetEditorApi {
   canUndo: boolean;
   canRedo: boolean;
   applyCommand: (command: ClinicalDocumentFormattingCommand, value?: string) => void;
+  insertHtml: (html: string) => void;
 }
 
 export interface ClinicalDocumentSheetProps {
@@ -31,6 +32,7 @@ export interface ClinicalDocumentSheetProps {
   isUploadingPdf: boolean;
   toolbar?: ReactNode;
   activeTitleTarget: string | null;
+  activeEditorSectionId: string | null;
   onSetActiveTitleTarget: React.Dispatch<SetStateAction<string | null>>;
   draggedSectionId: string | null;
   dragOverSectionId: string | null;

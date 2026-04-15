@@ -1,4 +1,5 @@
-const INDENT_STEP_PX = 24;
+import { CLINICAL_DOCUMENT_INDENT_STEP_PX } from '@/features/clinical-documents/controllers/clinicalDocumentFormattingContract';
+
 const INDENTABLE_BLOCK_TAGS = new Set(['DIV', 'P', 'BLOCKQUOTE']);
 const LIST_CONTEXT_TAGS = new Set(['UL', 'OL', 'LI']);
 
@@ -137,8 +138,8 @@ export const applyClinicalDocumentIndentationCommand = (command: 'indent' | 'out
     const safeCurrentIndent = Number.isFinite(currentIndent) ? Math.max(0, currentIndent) : 0;
     const nextIndent =
       command === 'indent'
-        ? safeCurrentIndent + INDENT_STEP_PX
-        : Math.max(0, safeCurrentIndent - INDENT_STEP_PX);
+        ? safeCurrentIndent + CLINICAL_DOCUMENT_INDENT_STEP_PX
+        : Math.max(0, safeCurrentIndent - CLINICAL_DOCUMENT_INDENT_STEP_PX);
 
     if (nextIndent === 0) {
       block.style.removeProperty('margin-left');

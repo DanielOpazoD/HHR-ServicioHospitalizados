@@ -45,6 +45,72 @@ export type PasteContentDescriptor =
   | PasteContentPlainText
   | PasteContentEmpty;
 
+const normalizeClipboardHtml = (html: string): string =>
+  html
+    .replace(/<!--StartFragment-->|<!--EndFragment-->/gi, '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<(meta|link)\b[^>]*>/gi, '')
+    .replace(/<style\b[\s\S]*?<\/style>/gi, '')
+    .replace(/<xml\b[\s\S]*?<\/xml>/gi, '')
+    .replace(/<\/?o:p\b[^>]*>/gi, '')
+    .replace(/<\/?(?:w|v|o|m):[^>]*>/gi, '')
+    .replace(/&nbsp;/gi, ' ')
+    .trim();
+
+const looksLikeSoftWrapContinuation = (previousLine: string, currentLine: string): boolean => {
+  if (!previousLine || !currentLine) {
+    return false;
+  }
+
+  if (/[.:;!?)]$/.test(previousLine.trim())) {
+    return false;
+  }
+
+  if (/^[-*•]\s/.test(currentLine) || /^\d+[.)]\s/.test(currentLine)) {
+    return false;
+  }
+
+  if (/^[A-ZÁÉÍÓÚÑ0-9\s/-]{4,}:?$/.test(previousLine.trim())) {
+    return false;
+  }
+
+  return /^[a-záéíóúñ(]/.test(currentLine.trim());
+};
+
+const normalizeClipboardPlainText = (text: string): string => {
+  const normalizedLines = text
+    .replace(/\r\n/g, '\n')
+    .replace(/\u00a0/g, ' ')
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .replace(/\t/g, ' ')
+    .split('\n')
+    .map(line => line.replace(/\s+/g, ' ').trim());
+
+  const mergedLines: string[] = [];
+
+  normalizedLines.forEach(line => {
+    if (!line) {
+      if (mergedLines[mergedLines.length - 1] !== '') {
+        mergedLines.push('');
+      }
+      return;
+    }
+
+    const previousLine = mergedLines[mergedLines.length - 1];
+    if (previousLine && previousLine !== '' && looksLikeSoftWrapContinuation(previousLine, line)) {
+      mergedLines[mergedLines.length - 1] = `${previousLine} ${line}`;
+      return;
+    }
+
+    mergedLines.push(line);
+  });
+
+  return mergedLines
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+};
+
 // ---------------------------------------------------------------------------
 // Classification
 // ---------------------------------------------------------------------------
@@ -72,12 +138,15 @@ export const classifyPasteContent = (clipboardData: DataTransfer): PasteContentD
   const plainText = clipboardData.getData('text/plain');
 
   if (rawHtml) {
-    return { kind: 'html', sanitizedHtml: sanitizePastedHtml(rawHtml) };
+    return {
+      kind: 'html',
+      sanitizedHtml: sanitizePastedHtml(normalizeClipboardHtml(rawHtml)),
+    };
   }
 
   // 3. Plain text
   if (plainText) {
-    return { kind: 'plain-text', text: plainText };
+    return { kind: 'plain-text', text: normalizeClipboardPlainText(plainText) };
   }
 
   return { kind: 'empty' };

@@ -120,11 +120,37 @@
   padding-right: 0;
   transition:
     background-color 120ms ease,
-    outline-color 120ms ease;
+    outline-color 120ms ease,
+    box-shadow 120ms ease,
+    border-color 120ms ease;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 4px 8px 8px;
 }
 
 .clinical-document-section-block:hover {
   background: rgba(248, 250, 252, 0.9);
+}
+
+.clinical-document-section-block.is-editor-active {
+  background: linear-gradient(180deg, rgba(239, 246, 255, 0.92) 0%, rgba(248, 250, 252, 0.94) 100%);
+  border-color: rgba(125, 211, 252, 0.95);
+  box-shadow: 0 0 0 3px rgba(186, 230, 253, 0.65);
+}
+
+.clinical-document-section-block.is-editor-active::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: -1px;
+  width: 4px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #0284c7 0%, #38bdf8 100%);
+}
+
+.clinical-document-section-block.is-editor-active .clinical-document-section-title {
+  color: #0f4c81;
 }
 
 .clinical-document-section-layout {
@@ -529,6 +555,65 @@
   padding: 10px;
 }
 
+.clinical-document-toolbar-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid #dbe2ea;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+}
+
+.clinical-document-toolbar-cluster-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.clinical-document-toolbar-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.clinical-document-toolbar-panel-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.clinical-document-toolbar-panel-title {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.clinical-document-toolbar-panel-note {
+  display: grid;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.clinical-document-toolbar-panel-note-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #475569;
+}
+
 .clinical-document-global-toolbar-caption {
   margin: 0 0 8px;
   font-size: 11px;
@@ -695,6 +780,90 @@
   margin: 0;
   padding-left: 12px;
   border-left: 3px solid #cbd5e1;
+}
+
+.clinical-document-annex-page {
+  position: relative;
+  border-top: 2px solid #dbe4ee;
+  border-radius: 18px 18px 12px 12px;
+  background:
+    linear-gradient(180deg, rgba(248, 250, 252, 0.92) 0%, rgba(255, 255, 255, 1) 26%), #ffffff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    0 12px 28px rgba(15, 23, 42, 0.05);
+  padding: 18px 18px 16px;
+}
+
+.clinical-document-annex-page.is-editor-active {
+  border-top-color: #38bdf8;
+  box-shadow:
+    0 0 0 3px rgba(186, 230, 253, 0.75),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    0 14px 30px rgba(14, 116, 144, 0.08);
+}
+
+.clinical-document-annex-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.clinical-document-annex-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.clinical-document-annex-eyebrow {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.clinical-document-annex-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.clinical-document-annex-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.clinical-document-annex-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  font-size: 10px;
+  font-weight: 700;
+  color: #1d4ed8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.clinical-document-annex-caption {
+  margin: 0;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.clinical-document-annex-editor-shell {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 10px;
 }
 
 .clinical-document-rich-text-editor.is-readonly {

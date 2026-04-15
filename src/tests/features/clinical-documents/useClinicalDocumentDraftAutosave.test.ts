@@ -1,0 +1,171 @@
+import { renderHook } from '@testing-library/react';
+import { act } from 'react';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+
+import { createClinicalDocumentDraft } from '@/features/clinical-documents/domain/factories';
+import { useClinicalDocumentDraftAutosave } from '@/features/clinical-documents/hooks/useClinicalDocumentDraftAutosave';
+import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
+
+const executePersistClinicalDocumentEditorDraft = vi.fn();
+const resolveClinicalDocumentAutosaveCommit = vi.fn();
+const recordOperationalOutcome = vi.fn();
+const recordOperationalTelemetry = vi.fn();
+
+vi.mock('@/application/clinical-documents/clinicalDocumentEditorUseCases', () => ({
+  executePersistClinicalDocumentEditorDraft: (...args: unknown[]) =>
+    executePersistClinicalDocumentEditorDraft(...args),
+  resolveClinicalDocumentAutosaveCommit: (...args: unknown[]) =>
+    resolveClinicalDocumentAutosaveCommit(...args),
+}));
+
+vi.mock('@/services/observability/operationalTelemetryService', () => ({
+  recordOperationalOutcome: (...args: unknown[]) => recordOperationalOutcome(...args),
+  recordOperationalTelemetry: (...args: unknown[]) => recordOperationalTelemetry(...args),
+}));
+
+const buildDraft = (content: string): ClinicalDocumentRecord => {
+  const draft = createClinicalDocumentDraft({
+    templateId: 'epicrisis',
+    hospitalId: 'hhr',
+    actor: {
+      uid: 'u1',
+      email: 'doctor@test.com',
+      displayName: 'Doctor Test',
+      role: 'doctor_urgency',
+    },
+    episode: {
+      patientRut: '11.111.111-1',
+      patientName: 'Paciente Test',
+      episodeKey: '11.111.111-1__2026-03-06',
+      admissionDate: '2026-03-06',
+      sourceDailyRecordDate: '2026-03-06',
+      sourceBedId: 'R1',
+      specialty: 'Cirugía',
+    },
+    patientFieldValues: {
+      nombre: 'Paciente Test',
+      rut: '11.111.111-1',
+      edad: '40a',
+      fecnac: '1986-01-01',
+      fing: '2026-03-06',
+      finf: '2026-03-06',
+      hinf: '10:30',
+    },
+    medico: 'Doctor Test',
+    especialidad: 'Cirugía',
+  });
+
+  draft.sections = draft.sections.map(section =>
+    section.id === 'antecedentes' ? { ...section, content } : section
+  );
+
+  return draft;
+};
+
+const createDeferred = <T>() => {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+};
+
+describe('useClinicalDocumentDraftAutosave', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.clearAllMocks();
+    resolveClinicalDocumentAutosaveCommit.mockReturnValue('mark_clean');
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('ignores stale autosave responses when a newer save is already in flight', async () => {
+    const firstDeferred = createDeferred<{
+      status: 'success';
+      data: ClinicalDocumentRecord;
+      issues: [];
+    }>();
+    const secondDeferred = createDeferred<{
+      status: 'success';
+      data: ClinicalDocumentRecord;
+      issues: [];
+    }>();
+
+    const firstDraft = buildDraft('<p>Primera versión</p>');
+    const secondDraft = buildDraft('<p>Segunda versión</p>');
+    const dispatch = vi.fn();
+    const draftRef = { current: firstDraft };
+    const lastPersistedSnapshotRef = { current: '' };
+
+    executePersistClinicalDocumentEditorDraft
+      .mockReturnValueOnce(firstDeferred.promise)
+      .mockReturnValueOnce(secondDeferred.promise);
+
+    const { rerender } = renderHook(
+      ({ draft }) =>
+        useClinicalDocumentDraftAutosave({
+          draft,
+          canEdit: true,
+          isActive: true,
+          hospitalId: 'hhr',
+          role: 'doctor_urgency',
+          persistReason: 'autosave',
+          user: {
+            uid: 'u1',
+            email: 'doctor@test.com',
+            displayName: 'Doctor Test',
+          },
+          dispatch,
+          draftRef,
+          lastPersistedSnapshotRef,
+        }),
+      { initialProps: { draft: firstDraft } }
+    );
+
+    await act(async () => {
+      vi.advanceTimersByTime(900);
+    });
+
+    draftRef.current = secondDraft;
+    rerender({ draft: secondDraft });
+
+    await act(async () => {
+      vi.advanceTimersByTime(900);
+    });
+
+    await act(async () => {
+      secondDeferred.resolve({
+        status: 'success',
+        data: secondDraft,
+        issues: [],
+      });
+      await secondDeferred.promise;
+    });
+
+    await act(async () => {
+      firstDeferred.resolve({
+        status: 'success',
+        data: firstDraft,
+        issues: [],
+      });
+      await firstDeferred.promise;
+    });
+
+    expect(dispatch).toHaveBeenCalledWith({ type: 'AUTOSAVE_REQUESTED' });
+    expect(dispatch).toHaveBeenCalledWith({
+      type: 'AUTOSAVE_MARK_CLEAN',
+      document: secondDraft,
+      snapshot: expect.any(String),
+    });
+
+    expect(dispatch).not.toHaveBeenCalledWith({
+      type: 'AUTOSAVE_MARK_CLEAN',
+      document: firstDraft,
+      snapshot: expect.any(String),
+    });
+  });
+});

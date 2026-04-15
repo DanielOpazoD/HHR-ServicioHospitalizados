@@ -10,12 +10,14 @@ import React, { useState } from 'react';
 import {
   Bold,
   Eraser,
+  ImagePlus,
   IndentDecrease,
   IndentIncrease,
   Italic,
   Link2,
   List,
   ListOrdered,
+  Paperclip,
   Printer,
   Redo2,
   RotateCcw,
@@ -62,15 +64,18 @@ export interface ClinicalDocumentFormattingToolbarProps {
 // Formatting sub-panel actions
 // ---------------------------------------------------------------------------
 
-const formattingActions = [
+const textFormattingActions = [
   { command: 'bold' as const, label: 'Negrita', icon: Bold },
   { command: 'italic' as const, label: 'Cursiva', icon: Italic },
   { command: 'underline' as const, label: 'Subrayado', icon: Underline },
+  { command: 'removeFormat' as const, label: 'Quitar formato', icon: Eraser },
+];
+
+const listFormattingActions = [
   { command: 'insertUnorderedList' as const, label: 'Viñetas', icon: List },
   { command: 'insertOrderedList' as const, label: 'Lista numerada', icon: ListOrdered },
   { command: 'indent' as const, label: 'Aumentar sangría', icon: IndentIncrease },
   { command: 'outdent' as const, label: 'Disminuir sangría', icon: IndentDecrease },
-  { command: 'removeFormat' as const, label: 'Quitar formato', icon: Eraser },
 ];
 
 // ---------------------------------------------------------------------------
@@ -89,6 +94,45 @@ const iconBtn =
   'inline-flex h-8 w-8 items-center justify-center rounded-lg border transition-colors disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300';
 
 const defaultIconBtn = `${iconBtn} border-slate-200 text-slate-600 hover:bg-slate-50`;
+
+const ToolbarCluster: React.FC<{
+  label: string;
+  children: React.ReactNode;
+}> = ({ label, children }) => (
+  <div className="clinical-document-toolbar-cluster" role="group" aria-label={label}>
+    <span className="clinical-document-toolbar-cluster-label">{label}</span>
+    <div className="flex items-center gap-1">{children}</div>
+  </div>
+);
+
+type ToolbarAction = {
+  command: ClinicalDocumentFormattingCommand;
+  label: string;
+  icon: React.ComponentType<{ size?: number }>;
+};
+
+const renderToolbarButtons = (
+  actions: ToolbarAction[],
+  onApplyFormatting: (command: ClinicalDocumentFormattingCommand) => void,
+  formattingDisabled: boolean
+) =>
+  actions.map(action => {
+    const Icon = action.icon;
+    return (
+      <button
+        key={action.command}
+        type="button"
+        className="clinical-document-toolbar-button"
+        onMouseDown={event => event.preventDefault()}
+        onClick={() => onApplyFormatting(action.command)}
+        disabled={formattingDisabled}
+        aria-label={action.label}
+        title={action.label}
+      >
+        <Icon size={FORMATTING_ICON_SIZE} />
+      </button>
+    );
+  });
 
 // ---------------------------------------------------------------------------
 // Component
@@ -118,153 +162,152 @@ export const ClinicalDocumentFormattingToolbar: React.FC<
   const [showLinkDialog, setShowLinkDialog] = useState(false);
 
   return (
-    <div className="flex items-center gap-1.5 bg-transparent">
-      {/* Undo / Redo — onMouseDown prevents editor blur so canUndo/canRedo stay accurate */}
-      <button
-        type="button"
-        onMouseDown={e => e.preventDefault()}
-        onClick={() => onApplyFormatting('undo')}
-        disabled={!editEnabled || !canUndo}
-        className={defaultIconBtn}
-        aria-label="Deshacer"
-        title="Deshacer (Ctrl+Z)"
-      >
-        <Undo2 size={TOOLBAR_ICON_SIZE} />
-      </button>
-      <button
-        type="button"
-        onMouseDown={e => e.preventDefault()}
-        onClick={() => onApplyFormatting('redo')}
-        disabled={!editEnabled || !canRedo}
-        className={defaultIconBtn}
-        aria-label="Rehacer"
-        title="Rehacer (Ctrl+Shift+Z)"
-      >
-        <Redo2 size={TOOLBAR_ICON_SIZE} />
-      </button>
+    <div className="flex flex-wrap items-start gap-2 bg-transparent">
+      <ToolbarCluster label="Historial">
+        <button
+          type="button"
+          onMouseDown={e => e.preventDefault()}
+          onClick={() => onApplyFormatting('undo')}
+          disabled={!editEnabled || !canUndo}
+          className={defaultIconBtn}
+          aria-label="Deshacer"
+          title="Deshacer (Ctrl+Z)"
+        >
+          <Undo2 size={TOOLBAR_ICON_SIZE} />
+        </button>
+        <button
+          type="button"
+          onMouseDown={e => e.preventDefault()}
+          onClick={() => onApplyFormatting('redo')}
+          disabled={!editEnabled || !canRedo}
+          className={defaultIconBtn}
+          aria-label="Rehacer"
+          title="Rehacer (Ctrl+Shift+Z)"
+        >
+          <Redo2 size={TOOLBAR_ICON_SIZE} />
+        </button>
+      </ToolbarCluster>
 
-      <Divider />
+      <ToolbarCluster label="Formato">
+        <button
+          type="button"
+          onClick={onToggleFormatting}
+          disabled={!editEnabled}
+          aria-pressed={isFormattingOpen}
+          aria-label="Formato"
+          title="Formato avanzado"
+          className={`relative ${iconBtn} ${
+            formattingReady
+              ? 'border-sky-200 bg-sky-50 text-sky-800 hover:bg-sky-100'
+              : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+          }`}
+        >
+          {formattingReady && (
+            <span
+              aria-hidden="true"
+              className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-sky-500"
+            />
+          )}
+          <Bold size={TOOLBAR_ICON_SIZE} />
+        </button>
+      </ToolbarCluster>
 
-      {/* Print */}
-      <button
-        type="button"
-        onClick={onPrint}
-        className={defaultIconBtn}
-        aria-label="Imprimir PDF"
-        title="Imprimir PDF"
-      >
-        <Printer size={TOOLBAR_ICON_SIZE} />
-      </button>
-
-      <Divider />
-
-      {/* Formatting toggle */}
-      <button
-        type="button"
-        onClick={onToggleFormatting}
-        disabled={!editEnabled}
-        aria-pressed={isFormattingOpen}
-        aria-label="Formato"
-        title="Formato avanzado"
-        className={`relative ${iconBtn} ${
-          formattingReady
-            ? 'border-sky-200 bg-sky-50 text-sky-800 hover:bg-sky-100'
-            : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-        }`}
-      >
-        {formattingReady && (
-          <span
-            aria-hidden="true"
-            className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-sky-500"
-          />
+      <ToolbarCluster label="Tablas y enlaces">
+        {onInsertHtml && (
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowTableDialog(prev => !prev)}
+              disabled={!editEnabled}
+              aria-label="Insertar tabla"
+              title="Insertar tabla"
+              className={defaultIconBtn}
+            >
+              <Table2 size={TOOLBAR_ICON_SIZE} />
+            </button>
+            {showTableDialog && editEnabled && (
+              <ClinicalDocumentTableDialog
+                onInsert={html => {
+                  onInsertHtml(html);
+                  setShowTableDialog(false);
+                }}
+                onClose={() => setShowTableDialog(false)}
+              />
+            )}
+          </div>
         )}
-        <Bold size={TOOLBAR_ICON_SIZE} />
-      </button>
+        {onInsertHtml && (
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowLinkDialog(prev => !prev)}
+              disabled={!editEnabled}
+              aria-label="Insertar enlace"
+              title="Insertar enlace"
+              className={defaultIconBtn}
+            >
+              <Link2 size={TOOLBAR_ICON_SIZE} />
+            </button>
+            {showLinkDialog && editEnabled && (
+              <ClinicalDocumentLinkDialog
+                onInsert={html => {
+                  onInsertHtml(html);
+                  setShowLinkDialog(false);
+                }}
+                onClose={() => setShowLinkDialog(false)}
+              />
+            )}
+          </div>
+        )}
+      </ToolbarCluster>
 
-      {/* Table insertion */}
-      {onInsertHtml && (
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setShowTableDialog(prev => !prev)}
-            disabled={!editEnabled}
-            aria-label="Insertar tabla"
-            title="Insertar tabla"
-            className={defaultIconBtn}
-          >
-            <Table2 size={TOOLBAR_ICON_SIZE} />
-          </button>
-          {showTableDialog && editEnabled && (
-            <ClinicalDocumentTableDialog
-              onInsert={html => {
-                onInsertHtml(html);
-                setShowTableDialog(false);
-              }}
-              onClose={() => setShowTableDialog(false)}
-            />
-          )}
-        </div>
-      )}
+      <ToolbarCluster label="Documento">
+        <button
+          type="button"
+          onClick={onPrint}
+          className={defaultIconBtn}
+          aria-label="Imprimir PDF"
+          title="Imprimir PDF"
+        >
+          <Printer size={TOOLBAR_ICON_SIZE} />
+        </button>
+        <button
+          type="button"
+          onClick={onRestoreTemplate}
+          disabled={!editEnabled}
+          aria-label="Restablecer plantilla"
+          title="Restablecer plantilla"
+          className={`${iconBtn} border-amber-200 text-amber-600 hover:bg-amber-50`}
+        >
+          <RotateCcw size={TOOLBAR_ICON_SIZE} />
+        </button>
+      </ToolbarCluster>
 
-      {/* Link insertion */}
-      {onInsertHtml && (
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setShowLinkDialog(prev => !prev)}
-            disabled={!editEnabled}
-            aria-label="Insertar enlace"
-            title="Insertar enlace"
-            className={defaultIconBtn}
-          >
-            <Link2 size={TOOLBAR_ICON_SIZE} />
-          </button>
-          {showLinkDialog && editEnabled && (
-            <ClinicalDocumentLinkDialog
-              onInsert={html => {
-                onInsertHtml(html);
-                setShowLinkDialog(false);
-              }}
-              onClose={() => setShowLinkDialog(false)}
-            />
-          )}
-        </div>
-      )}
-
-      {/* Restore (icon only) */}
-      <button
-        type="button"
-        onClick={onRestoreTemplate}
-        disabled={!editEnabled}
-        aria-label="Restablecer plantilla"
-        title="Restablecer plantilla"
-        className={`${iconBtn} border-amber-200 text-amber-600 hover:bg-amber-50`}
-      >
-        <RotateCcw size={TOOLBAR_ICON_SIZE} />
-      </button>
-
-      <Divider />
-
-      {/* Zoom */}
-      <button
-        type="button"
-        onClick={onZoomOut}
-        disabled={zoom <= 60}
-        className={defaultIconBtn}
-        title="Reducir zoom"
-      >
-        <ZoomOut size={TOOLBAR_ICON_SIZE} />
-      </button>
-      <span className="text-[9px] font-mono text-slate-400 w-7 text-center shrink-0">{zoom}%</span>
-      <button
-        type="button"
-        onClick={onZoomIn}
-        disabled={zoom >= 150}
-        className={defaultIconBtn}
-        title="Aumentar zoom"
-      >
-        <ZoomIn size={TOOLBAR_ICON_SIZE} />
-      </button>
+      <ToolbarCluster label="Vista">
+        <button
+          type="button"
+          onClick={onZoomOut}
+          disabled={zoom <= 60}
+          className={defaultIconBtn}
+          aria-label="Reducir zoom"
+          title="Reducir zoom"
+        >
+          <ZoomOut size={TOOLBAR_ICON_SIZE} />
+        </button>
+        <span className="text-[9px] font-mono text-slate-400 w-7 text-center shrink-0">
+          {zoom}%
+        </span>
+        <button
+          type="button"
+          onClick={onZoomIn}
+          disabled={zoom >= 150}
+          className={defaultIconBtn}
+          aria-label="Aumentar zoom"
+          title="Aumentar zoom"
+        >
+          <ZoomIn size={TOOLBAR_ICON_SIZE} />
+        </button>
+      </ToolbarCluster>
 
       {/* Formatting panel */}
       {isFormattingOpen && (
@@ -273,28 +316,81 @@ export const ClinicalDocumentFormattingToolbar: React.FC<
             formattingReady ? 'clinical-document-global-toolbar-modal--ready' : ''
           }`}
         >
-          <div
-            className="clinical-document-toolbar"
-            role="toolbar"
-            aria-label="Formato global del documento"
-          >
-            {formattingActions.map(action => {
-              const Icon = action.icon;
-              return (
-                <button
-                  key={action.command}
-                  type="button"
-                  className="clinical-document-toolbar-button"
-                  onMouseDown={event => event.preventDefault()}
-                  onClick={() => onApplyFormatting(action.command)}
-                  disabled={formattingDisabled}
-                  aria-label={action.label}
-                  title={action.label}
-                >
-                  <Icon size={FORMATTING_ICON_SIZE} />
-                </button>
-              );
-            })}
+          <div className="clinical-document-toolbar-panel">
+            <section className="clinical-document-toolbar-panel-section">
+              <p className="clinical-document-toolbar-panel-title">Formato de texto</p>
+              <div
+                className="clinical-document-toolbar"
+                role="toolbar"
+                aria-label="Formato global del documento"
+              >
+                {renderToolbarButtons(textFormattingActions, onApplyFormatting, formattingDisabled)}
+              </div>
+            </section>
+
+            <section className="clinical-document-toolbar-panel-section">
+              <p className="clinical-document-toolbar-panel-title">Listas y sangría</p>
+              <div
+                className="clinical-document-toolbar"
+                role="toolbar"
+                aria-label="Listas y sangría del documento"
+              >
+                {renderToolbarButtons(listFormattingActions, onApplyFormatting, formattingDisabled)}
+              </div>
+            </section>
+
+            <section className="clinical-document-toolbar-panel-section">
+              <p className="clinical-document-toolbar-panel-title">Tablas y enlaces</p>
+              <div
+                className="clinical-document-toolbar"
+                role="toolbar"
+                aria-label="Tablas y enlaces"
+              >
+                {onInsertHtml && (
+                  <>
+                    <button
+                      type="button"
+                      className="clinical-document-toolbar-button"
+                      onMouseDown={event => event.preventDefault()}
+                      onClick={() => setShowTableDialog(true)}
+                      disabled={!editEnabled}
+                      aria-label="Insertar tabla"
+                      title="Insertar tabla"
+                    >
+                      <Table2 size={FORMATTING_ICON_SIZE} />
+                    </button>
+                    <button
+                      type="button"
+                      className="clinical-document-toolbar-button"
+                      onMouseDown={event => event.preventDefault()}
+                      onClick={() => setShowLinkDialog(true)}
+                      disabled={!editEnabled}
+                      aria-label="Insertar enlace"
+                      title="Insertar enlace"
+                    >
+                      <Link2 size={FORMATTING_ICON_SIZE} />
+                    </button>
+                  </>
+                )}
+              </div>
+            </section>
+
+            <section className="clinical-document-toolbar-panel-section">
+              <p className="clinical-document-toolbar-panel-title">Imágenes y anexos</p>
+              <div
+                className="clinical-document-toolbar-panel-note"
+                aria-label="Guía de imágenes y anexos"
+              >
+                <span className="clinical-document-toolbar-panel-note-item">
+                  <ImagePlus size={13} />
+                  Pega capturas, Word, PDF o correo en la sección activa.
+                </span>
+                <span className="clinical-document-toolbar-panel-note-item">
+                  <Paperclip size={13} />
+                  Usa Anexos para adjuntos, resultados y evidencia complementaria.
+                </span>
+              </div>
+            </section>
           </div>
         </div>
       )}

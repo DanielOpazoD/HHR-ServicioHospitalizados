@@ -109,6 +109,39 @@ describe('clinicalDocumentEditorUseCases', () => {
     expect(resolution.kind).toBe('preserve');
   });
 
+  it('preserves local draft changes when the selected remote document is unchanged', () => {
+    const current = buildRecord();
+    const remote = {
+      ...buildRecord(),
+      id: current.id,
+      audit: {
+        ...current.audit,
+        updatedAt: current.audit.updatedAt,
+      },
+    };
+
+    const resolution = resolveClinicalDocumentDraftLoad({
+      documents: [remote],
+      selectedDocumentId: current.id,
+      currentDraft: {
+        ...current,
+        sections: current.sections.map(section =>
+          section.id === 'historia_actual'
+            ? { ...section, content: 'Cambio local pendiente' }
+            : section
+        ),
+      },
+      baseState: {
+        document: current,
+        snapshot: JSON.stringify(current),
+        updatedAt: current.audit.updatedAt,
+      },
+      hasLocalDraftChanges: true,
+    });
+
+    expect(resolution.kind).toBe('preserve');
+  });
+
   it('marks autosave as clean only when the current draft still matches the requested snapshot', () => {
     expect(
       resolveClinicalDocumentAutosaveCommit({

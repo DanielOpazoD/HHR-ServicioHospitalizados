@@ -13,6 +13,7 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
   canEdit,
   toolbar,
   activeTitleTarget,
+  activeEditorSectionId,
   onSetActiveTitleTarget,
   draggedSectionId,
   dragOverSectionId,
@@ -133,6 +134,7 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
           visibleSections={visibleSections}
           canEdit={canEdit}
           activeTitleTarget={activeTitleTarget}
+          activeEditorSectionId={activeEditorSectionId}
           draggedSectionId={draggedSectionId}
           dragOverSectionId={dragOverSectionId}
           activePlanSubsectionId={activePlanSubsectionId}
@@ -180,6 +182,7 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
             content={selectedDocument.annexContent}
             canEdit={canEdit}
             isLocked={selectedDocument.isLocked}
+            isEditorActive={activeEditorSectionId === 'annexes'}
             onChange={patchAnnexContent}
             onClear={clearAnnexContent}
             onEditorActivate={onEditorActivate}

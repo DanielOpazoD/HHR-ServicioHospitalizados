@@ -63,6 +63,8 @@ export const resolveClinicalDocumentDraftLoad = ({
         snapshot,
       };
     }
+
+    return { kind: 'preserve' };
   }
 
   return {

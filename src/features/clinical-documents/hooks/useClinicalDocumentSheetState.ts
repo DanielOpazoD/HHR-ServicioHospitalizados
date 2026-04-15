@@ -210,7 +210,7 @@ export const useClinicalDocumentSheetState = (selectedDocument: ClinicalDocument
     const targetApi = activeEditorApiRef.current || lastActiveEditorApiRef.current;
     if (!targetApi?.element) return;
     targetApi.element.focus();
-    document.execCommand('insertHTML', false, html);
+    targetApi.insertHtml(html);
   }, []);
 
   const sectionDragHandlers = useMemo(
@@ -244,6 +244,7 @@ export const useClinicalDocumentSheetState = (selectedDocument: ClinicalDocument
   return {
     activeTitleTarget,
     setActiveTitleTarget,
+    activeEditorSectionId,
     isFormattingOpen,
     setIsFormattingOpen,
     draggedSectionId,

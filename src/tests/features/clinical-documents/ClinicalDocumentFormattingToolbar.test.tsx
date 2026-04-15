@@ -68,6 +68,10 @@ describe('ClinicalDocumentFormattingToolbar', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Negrita' }));
     fireEvent.click(screen.getByRole('button', { name: 'Quitar formato' }));
 
+    expect(screen.getByText('Formato de texto')).toBeInTheDocument();
+    expect(screen.getByText('Listas y sangría')).toBeInTheDocument();
+    expect(screen.getAllByText('Tablas y enlaces')).toHaveLength(2);
+    expect(screen.getByText('Imágenes y anexos')).toBeInTheDocument();
     expect(onToggleFormatting).toHaveBeenCalledTimes(1);
     expect(onPrint).toHaveBeenCalledTimes(1);
     expect(onRestoreTemplate).toHaveBeenCalledTimes(1);

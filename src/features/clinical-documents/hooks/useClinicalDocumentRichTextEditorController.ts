@@ -11,6 +11,7 @@ import {
   applyClinicalDocumentEditorCommand,
   normalizeClinicalDocumentContentForStorage,
 } from '@/features/clinical-documents/controllers/clinicalDocumentRichTextController';
+import { resolveClinicalDocumentKeyboardShortcut } from '@/features/clinical-documents/controllers/clinicalDocumentRichTextKeyboardController';
 import {
   detectSlashCommand,
   removeSlashCommandFromHtml,
@@ -26,6 +27,7 @@ export interface ClinicalDocumentRichTextEditorActivationApi {
   canUndo: boolean;
   canRedo: boolean;
   applyCommand: (command: ClinicalDocumentRichTextEditorCommand, value?: string) => void;
+  insertHtml: (html: string) => void;
 }
 
 interface UseClinicalDocumentRichTextEditorControllerParams {
@@ -66,6 +68,7 @@ export const useClinicalDocumentRichTextEditorController = ({
   const applyEditorCommandRef = useRef<
     ((command: ClinicalDocumentRichTextEditorCommand, value?: string) => void) | null
   >(null);
+  const insertHtmlRef = useRef<((html: string) => void) | null>(null);
   const normalizedValue = useMemo(() => normalizeClinicalDocumentContentForStorage(value), [value]);
   const [historyState, setHistoryState] = useState({ canUndo: false, canRedo: false });
 
@@ -215,9 +218,41 @@ export const useClinicalDocumentRichTextEditorController = ({
     ]
   );
 
+  const commitEditorDomMutation = useCallback(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const html = normalizeClinicalDocumentContentForStorage(editor.innerHTML);
+    pendingExternalNormalizedValueRef.current = null;
+    lastLocalNormalizedValueRef.current = html;
+    pushHistorySnapshot(html);
+    onChange(html);
+  }, [editorRef, onChange, pushHistorySnapshot]);
+
+  const insertHtml = useCallback(
+    (html: string) => {
+      const editor = editorRef.current;
+      if (!editor || disabled) return;
+
+      flushPendingHistorySnapshot();
+      editor.focus();
+      pendingExternalNormalizedValueRef.current = null;
+
+      if (typeof document.execCommand === 'function') {
+        document.execCommand('insertHTML', false, html);
+      } else {
+        editor.innerHTML = `${editor.innerHTML}${html}`;
+      }
+
+      commitEditorDomMutation();
+    },
+    [commitEditorDomMutation, disabled, editorRef, flushPendingHistorySnapshot]
+  );
+
   useEffect(() => {
     applyEditorCommandRef.current = applyEditorCommand;
-  }, [applyEditorCommand]);
+    insertHtmlRef.current = insertHtml;
+  }, [applyEditorCommand, insertHtml]);
 
   const buildActivationApi = useCallback(
     (nextHistory = historyState): ClinicalDocumentRichTextEditorActivationApi => ({
@@ -225,6 +260,7 @@ export const useClinicalDocumentRichTextEditorController = ({
       canUndo: nextHistory.canUndo,
       canRedo: nextHistory.canRedo,
       applyCommand: (command, value) => applyEditorCommandRef.current?.(command, value),
+      insertHtml: html => insertHtmlRef.current?.(html),
     }),
     [editorRef, historyState]
   );
@@ -263,10 +299,7 @@ export const useClinicalDocumentRichTextEditorController = ({
         editorRef.current.focus();
         pendingExternalNormalizedValueRef.current = null;
         document.execCommand('insertText', false, labText);
-        const updatedHtml = normalizeClinicalDocumentContentForStorage(editorRef.current.innerHTML);
-        lastLocalNormalizedValueRef.current = updatedHtml;
-        pushHistorySnapshot(updatedHtml);
-        onChange(updatedHtml);
+        commitEditorDomMutation();
       });
       return;
     }
@@ -304,35 +337,10 @@ export const useClinicalDocumentRichTextEditorController = ({
   const handleKeyDown = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
       if (!editorRef.current || disabled) return;
-
-      const isPrimaryModifier = event.metaKey || event.ctrlKey;
-
-      if (isPrimaryModifier && event.key.toLowerCase() === 'b') {
+      const command = resolveClinicalDocumentKeyboardShortcut(event);
+      if (command) {
         event.preventDefault();
-        applyEditorCommand('bold');
-      }
-      if (isPrimaryModifier && event.key.toLowerCase() === 'i') {
-        event.preventDefault();
-        applyEditorCommand('italic');
-      }
-      if (isPrimaryModifier && event.key.toLowerCase() === 'u') {
-        event.preventDefault();
-        applyEditorCommand('underline');
-      }
-      if (isPrimaryModifier && event.shiftKey && event.key.toLowerCase() === '7') {
-        event.preventDefault();
-        applyEditorCommand('insertOrderedList');
-      }
-      if (isPrimaryModifier && event.key.toLowerCase() === 'z' && event.shiftKey) {
-        event.preventDefault();
-        applyEditorCommand('redo');
-      } else if (isPrimaryModifier && event.key.toLowerCase() === 'z') {
-        event.preventDefault();
-        applyEditorCommand('undo');
-      }
-      if (event.key === 'Tab') {
-        event.preventDefault();
-        applyEditorCommand(event.shiftKey ? 'outdent' : 'indent');
+        applyEditorCommand(command);
       }
     },
     [applyEditorCommand, disabled, editorRef]
@@ -361,10 +369,7 @@ export const useClinicalDocumentRichTextEditorController = ({
           editorRef.current.focus();
           pendingExternalNormalizedValueRef.current = null;
           document.execCommand('insertHTML', false, buildPastedImageHtml(dataUrl));
-          const html = normalizeClinicalDocumentContentForStorage(editorRef.current.innerHTML);
-          lastLocalNormalizedValueRef.current = html;
-          pushHistorySnapshot(html);
-          onChange(html);
+          commitEditorDomMutation();
         });
         return;
       }
@@ -377,15 +382,13 @@ export const useClinicalDocumentRichTextEditorController = ({
         document.execCommand('insertText', false, descriptor.text);
       }
 
-      const html = normalizeClinicalDocumentContentForStorage(editor.innerHTML);
-      lastLocalNormalizedValueRef.current = html;
-      pushHistorySnapshot(html);
-      onChange(html);
+      commitEditorDomMutation();
     },
-    [editorRef, onChange, pushHistorySnapshot]
+    [commitEditorDomMutation, editorRef]
   );
 
   return {
+    commitEditorDomMutation,
     handleActivateInteraction,
     handleBlur,
     handleInput,

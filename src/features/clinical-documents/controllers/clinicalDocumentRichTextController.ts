@@ -12,9 +12,8 @@ import {
   sanitizeElementStyle,
   preserveElementAttributes,
 } from '@/features/clinical-documents/controllers/clinicalDocumentHtmlSanitizer';
+import { CLINICAL_DOCUMENT_INDENT_STEP_PX } from '@/features/clinical-documents/controllers/clinicalDocumentFormattingContract';
 import { applyClinicalDocumentIndentationCommand } from '@/features/clinical-documents/controllers/clinicalDocumentIndentationController';
-
-const INDENT_STEP_PX = 24;
 
 const escapeHtml = (value: string): string =>
   value
@@ -153,7 +152,7 @@ export const stripClinicalDocumentHtml = (value: string): string => {
       return 0;
     }
 
-    return Math.max(0, Math.round(parsed / INDENT_STEP_PX));
+    return Math.max(0, Math.round(parsed / CLINICAL_DOCUMENT_INDENT_STEP_PX));
   };
 
   const indentMultilineText = (value: string, depth: number): string => {
