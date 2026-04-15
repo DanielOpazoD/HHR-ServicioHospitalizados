@@ -22,8 +22,8 @@ import {
   resolveRemoteWriteRecovery,
   prepareDailyRecordForPersistence,
   preparePatchedRecordForPersistence,
-  syncPatientsToMasterInBackground,
 } from '@/services/repositories/dailyRecordWriteSupport';
+import { syncPatientsToMasterInBackground } from '@/services/repositories/dailyRecordBackgroundMasterSyncController';
 import {
   applyRecoveryDecisionToState,
   buildPartialUpdateResult,

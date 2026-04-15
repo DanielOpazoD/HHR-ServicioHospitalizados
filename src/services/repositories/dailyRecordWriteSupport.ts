@@ -1,7 +1,6 @@
 import { CURRENT_SCHEMA_VERSION } from '@/constants/version';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { DailyRecordPatch } from '@/types/domain/dailyRecordPatch';
-import type { HospitalizationEvent } from '@/types/domain/patientMaster';
 import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
 import { isRetryableSyncError, queueSyncTask } from '@/services/storage/sync';
 import { saveRecord as saveToIndexedDB } from '@/services/storage/indexeddb/indexedDbRecordService';
@@ -15,7 +14,6 @@ import {
   VersionMismatchError,
 } from '@/utils/integrityGuard';
 import { logError } from '@/services/utils/errorService';
-import { PatientMasterRepository } from '@/services/repositories/PatientMasterRepository';
 import { resolveDailyRecordConflictWithTrace } from '@/services/repositories/conflictResolutionMatrix';
 import { buildConflictAuditSummary } from '@/services/repositories/conflictResolutionAuditSummary';
 import { logRepositoryConflictAutoMerged } from '@/services/repositories/ports/repositoryAuditPort';
@@ -26,7 +24,6 @@ import type {
 } from '@/services/repositories/contracts/dailyRecordWriteRecoveryResult';
 import {
   addClinicalFhirPatchesForTouchedBeds,
-  collectDailyRecordPatientsForMasterSync,
   ensureDailyRecordDateTimestamp,
   isSpecialistScopedDailyRecordPatch,
   syncDailyRecordClinicalResources,
@@ -40,13 +37,7 @@ import {
   resolveEffectiveChangedPaths,
   resolveRetryOrigin,
 } from '@/services/repositories/dailyRecordWriteRecoveryController';
-import {
-  buildAdmissionHospitalizationSyncPlan,
-  buildAdmissionHospitalizationAppendPayload,
-  buildDischargeHospitalizationSyncPlan,
-  buildPatientMasterSeed,
-  buildTransferHospitalizationSyncPlan,
-} from '@/services/repositories/dailyRecordMasterSyncController';
+import { syncPatientsToMasterInBackground } from '@/services/repositories/dailyRecordBackgroundMasterSyncController';
 import {
   buildAutoMergedRecoveryResult,
   buildBlockedRecoveryResult,
@@ -300,137 +291,4 @@ export const resolveRemoteWriteRecovery = async (
     'Los cambios se guardaron localmente, pero la sincronización remota requiere revisión manual.',
     ['daily_record', 'write', 'unrecoverable']
   );
-};
-
-type MasterSyncDailyRecordPatient = ReturnType<
-  typeof collectDailyRecordPatientsForMasterSync
->[number];
-type DailyRecordDischarge = NonNullable<DailyRecord['discharges']>[number];
-type DailyRecordTransfer = NonNullable<DailyRecord['transfers']>[number];
-
-type HospitalizationAppendPayload = {
-  patient: {
-    rut: string;
-    fullName: string;
-    birthDate?: string;
-    forecast?: string;
-    gender?: string;
-  };
-  event: HospitalizationEvent;
-  extra?: {
-    lastAdmission?: string;
-    lastDischarge?: string;
-    vitalStatus?: 'Vivo' | 'Fallecido';
-  };
-};
-type HospitalizationSyncPlan = {
-  appendPayload: HospitalizationAppendPayload;
-  admissionBackfillPayload?: HospitalizationAppendPayload | null;
-};
-
-const appendHospitalizationPayload = async (payload: HospitalizationAppendPayload) => {
-  await PatientMasterRepository.appendHospitalizationEvent(
-    payload.patient,
-    payload.event,
-    payload.extra
-  );
-};
-
-const appendHospitalizationSyncPlan = async (syncPlan: HospitalizationSyncPlan | null) => {
-  if (!syncPlan) {
-    return;
-  }
-
-  await appendHospitalizationPayload(syncPlan.appendPayload);
-
-  if (syncPlan.admissionBackfillPayload) {
-    await appendHospitalizationPayload(syncPlan.admissionBackfillPayload);
-  }
-};
-
-const syncHospitalizationPlansToMaster = async <T>(
-  items: T[],
-  buildSyncPlan: (item: T) => HospitalizationSyncPlan | null
-) => {
-  for (const item of items) {
-    await appendHospitalizationSyncPlan(buildSyncPlan(item));
-  }
-};
-
-const syncBedPatientsToMaster = async (patientsToSync: MasterSyncDailyRecordPatient[]) => {
-  await Promise.all(
-    patientsToSync.map(patient =>
-      PatientMasterRepository.upsertPatient(
-        buildPatientMasterSeed({
-          rut: patient.rut!,
-          fullName: patient.patientName!,
-          birthDate: patient.birthDate,
-          forecast: patient.insurance,
-          gender: patient.biologicalSex,
-        })
-      )
-    )
-  );
-
-  await syncHospitalizationPlansToMaster(patientsToSync, patient =>
-    buildAdmissionHospitalizationSyncPlan(patient)
-  );
-};
-
-const syncDischargesToMaster = async (
-  record: DailyRecord,
-  existingBedPatientRuts: Set<string>,
-  discharges: DailyRecordDischarge[]
-) => {
-  await syncHospitalizationPlansToMaster(discharges, discharge =>
-    buildDischargeHospitalizationSyncPlan({
-      existingBedPatientRuts,
-      recordDate: record.date,
-      discharge,
-    })
-  );
-};
-
-const syncTransfersToMaster = async (
-  record: DailyRecord,
-  existingBedPatientRuts: Set<string>,
-  transfers: DailyRecordTransfer[]
-) => {
-  await syncHospitalizationPlansToMaster(transfers, transfer =>
-    buildTransferHospitalizationSyncPlan({
-      existingBedPatientRuts,
-      recordDate: record.date,
-      transfer,
-    })
-  );
-};
-
-/**
- * Real-time sync of patient master index when a daily record is saved.
- *
- * Runs in the background (non-blocking, fire-and-forget) and syncs:
- *  1. **Demographics** for patients currently in beds (name, RUT, birthDate, etc.)
- *  2. **Ingreso events** for patients in beds (via their admissionDate)
- *  3. **Egreso events** from the `discharges[]` array — also creates the
- *     patient + Ingreso if they weren't in beds (same-day discharge edge case)
- *  4. **Traslado events** from the `transfers[]` array — same creation logic
- *
- * Uses `arrayUnion` for hospitalization events, so running multiple times
- * is idempotent (no duplicate events).
- *
- * This eliminates the need for manual "Análisis Retroactivo" for new data.
- * Historical data still requires the manual sync in the admin panel.
- */
-export const syncPatientsToMasterInBackground = (record: DailyRecord): void => {
-  setTimeout(async () => {
-    try {
-      const patientsToSync = collectDailyRecordPatientsForMasterSync(record);
-      const bedPatientRuts = new Set(patientsToSync.map(p => p.rut));
-      await syncBedPatientsToMaster(patientsToSync);
-      await syncDischargesToMaster(record, bedPatientRuts, record.discharges || []);
-      await syncTransfersToMaster(record, bedPatientRuts, record.transfers || []);
-    } catch {
-      // intentionally ignored (non-critical background sync)
-    }
-  }, 1000);
 };
