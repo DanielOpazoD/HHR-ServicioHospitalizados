@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   resolveRecipientListsAfterRenameRuntime,
   resolveRecipientRuntimeAfterCreate,
+  resolveRecipientRuntimeAfterDelete,
 } from '@/hooks/controllers/censusEmailRecipientMutationRuntimeController';
 import type { GlobalEmailRecipientList } from '@/services/email/emailRecipientListService';
 
@@ -38,5 +39,21 @@ describe('censusEmailRecipientMutationRuntimeController', () => {
     const renamed = buildList({ name: 'Renombrada' });
 
     expect(resolveRecipientListsAfterRenameRuntime([current], renamed)).toEqual([renamed]);
+  });
+
+  it('falls back to the provided list after delete flows', () => {
+    const current = buildList();
+    const other = buildList({ id: 'otra', name: 'Otra' });
+
+    expect(
+      resolveRecipientRuntimeAfterDelete({
+        recipientLists: [current, other],
+        listId: 'otra',
+        fallbackList: current,
+      })
+    ).toEqual({
+      recipientLists: [current],
+      activeRecipientListId: 'census-default',
+    });
   });
 });

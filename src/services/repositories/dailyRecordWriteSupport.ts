@@ -41,16 +41,15 @@ import { syncPatientsToMasterInBackground } from '@/services/repositories/dailyR
 import {
   buildAutoMergedRecoveryResult,
   buildBlockedRecoveryResult,
-  buildQueuedRetryRecoveryResult,
   buildThrowUnrecoverableRecoveryResult,
-  buildUnrecoverableRecoveryResult,
 } from '@/services/repositories/dailyRecordWriteRecoveryResultController';
+import {
+  resolveQueuedRetryRecoveryResult,
+  resolveRemoteUnavailableRecoveryResult,
+} from '@/services/repositories/dailyRecordRemoteRecoveryController';
 
 const isConcurrencyError = (error: unknown): boolean =>
   error instanceof Error && error.name === 'ConcurrencyError';
-
-const buildQueueBackpressureMessage = () =>
-  'Los cambios se guardaron localmente, pero la cola de sincronización alcanzó su límite operativo. Reintenta cuando la conectividad se estabilice o revisa el estado de sincronización.';
 
 const queueRecoveryTask = async (
   record: DailyRecord,
@@ -263,32 +262,21 @@ export const resolveRemoteWriteRecovery = async (
       record,
       buildRecoveryTaskMeta(changedPaths, resolveRetryOrigin(changedPaths))
     );
-    if (!queued) {
-      return buildUnrecoverableRecoveryResult(
-        conflictSummary(
-          'remote_unavailable',
-          'La cola de sincronización alcanzó su límite operativo antes de programar el reintento.'
-        ),
-        buildQueueBackpressureMessage(),
-        ['daily_record', 'write', 'queue_backpressure']
-      );
-    }
-    return buildQueuedRetryRecoveryResult(
+    return resolveQueuedRetryRecoveryResult(
+      queued,
       conflictSummary(
         'remote_unavailable',
-        'El guardado remoto falló y se programó un reintento automático.'
-      ),
-      'Los cambios se guardaron localmente y quedaron pendientes de sincronización.',
-      ['daily_record', 'write', 'queued_for_retry']
+        queued
+          ? 'El guardado remoto falló y se programó un reintento automático.'
+          : 'La cola de sincronización alcanzó su límite operativo antes de programar el reintento.'
+      )
     );
   }
 
-  return buildUnrecoverableRecoveryResult(
+  return resolveRemoteUnavailableRecoveryResult(
     conflictSummary(
       'remote_unavailable',
       'El guardado remoto falló sin una ruta segura de recuperación automática.'
-    ),
-    'Los cambios se guardaron localmente, pero la sincronización remota requiere revisión manual.',
-    ['daily_record', 'write', 'unrecoverable']
+    )
   );
 };

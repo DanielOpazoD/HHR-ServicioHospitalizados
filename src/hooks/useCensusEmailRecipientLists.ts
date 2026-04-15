@@ -12,13 +12,11 @@ import {
   resolveRecipientSelectionRuntimeState,
   resolveRecipientSyncState,
 } from '@/hooks/controllers/censusEmailRecipientRuntimeController';
-import {
-  resolveRecipientListForSelection,
-  resolveRecipientSelectionAfterDelete,
-} from '@/hooks/controllers/censusEmailRecipientMutationController';
+import { resolveRecipientListForSelection } from '@/hooks/controllers/censusEmailRecipientMutationController';
 import {
   resolveRecipientListsAfterRenameRuntime,
   resolveRecipientRuntimeAfterCreate,
+  resolveRecipientRuntimeAfterDelete,
 } from '@/hooks/controllers/censusEmailRecipientMutationRuntimeController';
 import { resolveDeferredRecipientSyncInput } from '@/hooks/controllers/censusEmailRecipientSyncController';
 
@@ -343,7 +341,7 @@ export const useCensusEmailRecipientLists = ({
         },
         {
           onSuccess: result => {
-            const nextState = resolveRecipientSelectionAfterDelete({
+            const nextState = resolveRecipientRuntimeAfterDelete({
               recipientLists,
               listId,
               fallbackList: result.fallbackList,

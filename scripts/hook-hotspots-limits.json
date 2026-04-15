@@ -40,9 +40,9 @@
     },
     "src/hooks/useCensusEmailRecipientLists.ts": {
       "limit": 460,
-      "reason": "Todavía orquesta bootstrap, selección activa, sync global y fallback local de destinatarios del censo.",
+      "reason": "Hook ya bajó bajo el guardrail global de módulos; se mantiene solo en watchlist por convergencia cualitativa del runtime de destinatarios.",
       "owner": "census-email",
-      "status": "shrinking"
+      "status": "watch"
     }
   }
 }

@@ -101,3 +101,6 @@ Para regenerar un snapshot mínimo de hotspots, estabilidad de tests, crecimient
 ```bash
 npm run report:maintenance-debt-scorecard
 ```
+
+- `pendingHotspots` debe reflejar solo excedentes reales contra guardrails activos.
+- `watchlist` sigue mostrando archivos densos o de alto churn que conviene seguir iterando aunque ya no estén incumpliendo un límite.

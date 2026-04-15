@@ -308,6 +308,14 @@ service cloud.firestore {
              );
     }
 
+    function canWriteClinicalDocument() {
+      return isAdmin() || isDoctor() || isSpecialistClinicalDocumentDraftWrite();
+    }
+
+    function canDeleteClinicalDocument() {
+      return canWriteClinicalDocument() || isNurse() || isEditorRole();
+    }
+
 	    function isGeneralViewer() {
 	      return hasEffectiveRole('viewer');
 	    }
@@ -572,9 +580,9 @@ service cloud.firestore {
       // ----------------------------------------
       match /clinicalDocuments/{documentId} {
         allow read: if canReadClinicalData();
-        allow create: if isAdmin() || isDoctor() || isSpecialistClinicalDocumentDraftWrite();
-        allow update: if isAdmin() || isDoctor() || isSpecialistClinicalDocumentDraftWrite();
-        allow delete: if isAdmin() || isDoctor() || isNurse() || isEditorRole();
+        allow create: if canWriteClinicalDocument();
+        allow update: if canWriteClinicalDocument();
+        allow delete: if canDeleteClinicalDocument();
       }
 
       // ----------------------------------------

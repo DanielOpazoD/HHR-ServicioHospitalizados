@@ -2,6 +2,7 @@ import type { GlobalEmailRecipientList } from '@/services/email/emailRecipientLi
 import {
   resolveRecipientListsAfterCreate,
   resolveRecipientListsAfterRename,
+  resolveRecipientSelectionAfterDelete,
 } from './censusEmailRecipientMutationController';
 import {
   resolveActiveRecipientRuntimeState,
@@ -23,3 +24,14 @@ export const resolveRecipientListsAfterRenameRuntime = (
   recipientLists: GlobalEmailRecipientList[],
   nextList: GlobalEmailRecipientList
 ): GlobalEmailRecipientList[] => resolveRecipientListsAfterRename(recipientLists, nextList);
+
+export const resolveRecipientRuntimeAfterDelete = (input: {
+  recipientLists: GlobalEmailRecipientList[];
+  listId: string;
+  fallbackList: GlobalEmailRecipientList | null;
+}) =>
+  resolveRecipientSelectionAfterDelete({
+    recipientLists: input.recipientLists,
+    listId: input.listId,
+    fallbackList: input.fallbackList,
+  });
