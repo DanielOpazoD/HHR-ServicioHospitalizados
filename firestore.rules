@@ -73,9 +73,17 @@ service cloud.firestore {
 	             effectiveRole != null &&
 	             roles.hasAny([effectiveRole]);
 	    }
+
+	    function hasBootstrapOrEffectiveRole(role) {
+	      return isBootstrapAdmin() || hasEffectiveRole(role);
+	    }
+
+	    function hasBootstrapOrAnyEffectiveRole(roles) {
+	      return isBootstrapAdmin() || hasAnyEffectiveRole(roles);
+	    }
 	    
 	    function isAdmin() {
-	      return isBootstrapAdmin() || hasEffectiveRole('admin');
+	      return hasBootstrapOrEffectiveRole('admin');
 	    }
 	    
 	    function isNurse() {
@@ -92,11 +100,11 @@ service cloud.firestore {
 	    
 	    // Check if user can edit (admin or nurse)
 	    function canEdit() {
-	      return isBootstrapAdmin() || hasAnyEffectiveRole(['admin', 'nurse_hospital']);
+	      return hasBootstrapOrAnyEffectiveRole(['admin', 'nurse_hospital']);
 	    }
 
 	    function canReportSystemHealth() {
-	      return isBootstrapAdmin() || hasAnyEffectiveRole(['admin', 'nurse_hospital']);
+	      return hasBootstrapOrAnyEffectiveRole(['admin', 'nurse_hospital']);
 	    }
 
 	    function isEditorRole() {
@@ -302,8 +310,7 @@ service cloud.firestore {
 
 	    // Consolidated read access for clinical data
 	    function canReadClinicalData() {
-	      return isBootstrapAdmin() ||
-	             hasAnyEffectiveRole([
+	      return hasBootstrapOrAnyEffectiveRole([
 	               'admin',
 	               'nurse_hospital',
 	               'doctor_urgency',
@@ -314,7 +321,7 @@ service cloud.firestore {
 	    }
 
 	    function canManageCensusAccess() {
-	      return isBootstrapAdmin() || hasAnyEffectiveRole(['admin', 'editor']);
+	      return hasBootstrapOrAnyEffectiveRole(['admin', 'editor']);
 	    }
 
     function isInvitationOwner() {
