@@ -198,6 +198,32 @@ service cloud.firestore {
              isOnlyAffectedSpecialistStructuredSpecialty(affectedSpecialties, 'medicinaInterna');
     }
 
+    function isAnySpecialistAffectedBed(affectedBedIds) {
+      return isOnlySpecialistAffectedBed(affectedBedIds, 'R1') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'R2') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'R3') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'R4') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'NEO1') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'NEO2') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'H1C1') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'H1C2') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'H2C1') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'H2C2') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'H3C1') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'H3C2') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'H4C1') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'H4C2') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'H5C1') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'H5C2') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'H6C1') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'H6C2') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'E1') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'E2') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'E3') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'E4') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'E5');
+    }
+
     function isValidSpecialistStructuredMedicalSpecialtyEntry(specialty) {
       let beforeEntry = getSpecialistStructuredBeforeBySpecialty()[specialty];
       let afterEntry = getSpecialistStructuredAfterBySpecialty()[specialty];
@@ -257,29 +283,7 @@ service cloud.firestore {
              ) &&
              (
                isSpecialistStructuredMedicalHandoffUpdate() ||
-               isOnlySpecialistAffectedBed(affectedBedIds, 'R1') ||
-               isOnlySpecialistAffectedBed(affectedBedIds, 'R2') ||
-               isOnlySpecialistAffectedBed(affectedBedIds, 'R3') ||
-               isOnlySpecialistAffectedBed(affectedBedIds, 'R4') ||
-               isOnlySpecialistAffectedBed(affectedBedIds, 'NEO1') ||
-               isOnlySpecialistAffectedBed(affectedBedIds, 'NEO2') ||
-               isOnlySpecialistAffectedBed(affectedBedIds, 'H1C1') ||
-               isOnlySpecialistAffectedBed(affectedBedIds, 'H1C2') ||
-               isOnlySpecialistAffectedBed(affectedBedIds, 'H2C1') ||
-               isOnlySpecialistAffectedBed(affectedBedIds, 'H2C2') ||
-               isOnlySpecialistAffectedBed(affectedBedIds, 'H3C1') ||
-               isOnlySpecialistAffectedBed(affectedBedIds, 'H3C2') ||
-               isOnlySpecialistAffectedBed(affectedBedIds, 'H4C1') ||
-               isOnlySpecialistAffectedBed(affectedBedIds, 'H4C2') ||
-               isOnlySpecialistAffectedBed(affectedBedIds, 'H5C1') ||
-               isOnlySpecialistAffectedBed(affectedBedIds, 'H5C2') ||
-               isOnlySpecialistAffectedBed(affectedBedIds, 'H6C1') ||
-               isOnlySpecialistAffectedBed(affectedBedIds, 'H6C2') ||
-               isOnlySpecialistAffectedBed(affectedBedIds, 'E1') ||
-               isOnlySpecialistAffectedBed(affectedBedIds, 'E2') ||
-               isOnlySpecialistAffectedBed(affectedBedIds, 'E3') ||
-               isOnlySpecialistAffectedBed(affectedBedIds, 'E4') ||
-               isOnlySpecialistAffectedBed(affectedBedIds, 'E5')
+               isAnySpecialistAffectedBed(affectedBedIds)
              );
     }
 

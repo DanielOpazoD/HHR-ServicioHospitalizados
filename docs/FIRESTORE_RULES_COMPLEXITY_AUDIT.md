@@ -241,3 +241,16 @@ Se hizo un recorte adicional sobre el mismo path estructurado de especialista:
 - `bash scripts/run-firestore-rules-ci.sh`: verde (`81` tests).
 
 Conclusión: la validación estructurada de especialista sigue convergiendo hacia helpers auditables sin alterar permisos ni forzar una reescritura de `firestore.rules`.
+
+## Iteración 11 ejecutada
+
+Se hizo otro recorte pequeño en el mismo boundary de especialista:
+
+- se agregó `isAnySpecialistAffectedBed(...)` para concentrar en un único helper el OR largo de camas permitidas para edición especialista
+- `isSpecialistMedicalHandoffPayload()` ahora delega esa comprobación, dejando el guard principal más corto y más fácil de auditar
+
+## Resultado de la validación de la iteración 11
+
+- `bash scripts/run-firestore-rules-ci.sh`: verde (`81` tests).
+
+Conclusión: el path de especialista sigue bajando duplicación visible con helpers locales y verificables, sin mover lógica fuera de `firestore.rules` ni alterar la semántica del permiso.
