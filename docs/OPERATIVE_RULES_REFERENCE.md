@@ -36,10 +36,13 @@ Referencias:
 - La clasificación microbiológica debe resolverse en un controller propio, separado de comparación y tendencias, para evitar mezclar panel viral con cultivo al crecer el análisis.
 - Aunque una tarjeta microbiológica todavía no tenga findings hidratados, el controller debe conservar la separación por examen y el `sourceExam` necesario para el fallback posterior desde PDF.
 - El post-procesado de resultados de laboratorio (`merge` de bilirrubinas, orden clínico de comparación, orden cronológico de columnas y orden final de microbiología) debe vivir separado del loop principal de findings, para que `labAnalyticsController` siga concentrado en iterar detalles y no vuelva a mezclar ingestión con presentación derivada.
+- La recolección de findings (comparación, tendencias, bilirrubinas y ruteo microbiológico) debe vivir en un controller aparte del orquestador principal, para que `labAnalyticsController` pueda mantenerse como ensamblador corto del pipeline.
 
 Referencias:
 
 - `src/features/laboratory/controllers/labAnalyticsController.ts`
+- `src/features/laboratory/controllers/labAnalyticsVariableController.ts`
+- `src/features/laboratory/controllers/labFindingCollectionController.ts`
 - `src/features/laboratory/controllers/labAnalysisResultController.ts`
 - `src/features/laboratory/controllers/labMicrobiologyAnalyticsController.ts`
 - `src/features/laboratory/services/labMicrobiologyPdfService.ts`
@@ -83,7 +86,7 @@ Referencias:
 - La política de sync diferido no debe vivir inline en el hook: primero se resuelve si corresponde sincronizar y con qué input, y luego el hook solo dispara el caso de uso con ese plan.
 - La restauración de estado bootstrap/local debe resolverse como runtime state puro antes de tocar `setState`, para que el hook aplique una sola transición y no repita wiring local por cada rama.
 - Los casos de uso de listas de correo deben traducir validación, fallos de servicio y errores desconocidos con helpers compartidos de outcome, para no duplicar `createApplicationFailed(...)`.
-- Los éxitos de mutaciones (`create`, `rename`) deben converger también a controllers de runtime pequeños, para que el hook no vuelva a recomponer inline cómo queda la lista activa ni qué estado debe persistirse en `app settings`.
+- Los éxitos de mutaciones (`create`, `rename`, `delete`) deben converger también a controllers de runtime pequeños, para que el hook no vuelva a recomponer inline cómo queda la lista activa ni qué estado debe persistirse en `app settings`.
 
 Referencias:
 
