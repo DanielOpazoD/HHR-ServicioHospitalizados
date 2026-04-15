@@ -5,6 +5,7 @@ import {
   buildPendingMedicalEntryDraft,
   canToggleClinicalEvents,
   pruneResolvedPendingMedicalEntryDrafts,
+  resolveClinicalEventsCellState,
   resolveMedicalObservationCellState,
   resolveDisplayMedicalObservationEntries,
   resolveHandoffStatusVariant,
@@ -69,6 +70,44 @@ describe('handoffRowCellsController', () => {
         canDelete: true,
       })
     ).toBe(false);
+  });
+
+  it('resolves the diagnosis/events cell state from row and permission context', () => {
+    expect(
+      resolveClinicalEventsCellState({
+        patientStatus: PatientStatus.DE_CUIDADO,
+        isSubRow: false,
+        hasEvents: true,
+        canAdd: true,
+        canUpdate: true,
+        canDelete: true,
+        showEvents: false,
+        isMedical: false,
+      })
+    ).toEqual({
+      statusVariant: 'orange',
+      canToggleEvents: true,
+      shouldRenderEventsPanel: false,
+      showStatusBadge: true,
+    });
+
+    expect(
+      resolveClinicalEventsCellState({
+        patientStatus: PatientStatus.ESTABLE,
+        isSubRow: true,
+        hasEvents: true,
+        canAdd: true,
+        canUpdate: true,
+        canDelete: true,
+        showEvents: true,
+        isMedical: true,
+      })
+    ).toEqual({
+      statusVariant: 'green',
+      canToggleEvents: false,
+      shouldRenderEventsPanel: true,
+      showStatusBadge: false,
+    });
   });
 
   it('prefers persisted medical observation entries and otherwise derives draft display entries', () => {

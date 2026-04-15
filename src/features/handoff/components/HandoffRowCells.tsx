@@ -8,19 +8,16 @@ import { calculateDeviceDays } from '@/components/device-selector/DeviceDateConf
 import { DebouncedTextarea } from '@/components/ui/DebouncedTextarea';
 import { MedicalHandoffObservationEntry } from './MedicalHandoffObservationEntry';
 import {
-  canToggleClinicalEvents,
   pruneResolvedPendingMedicalEntryDrafts,
   type PendingMedicalEntryDraft,
+  resolveClinicalEventsCellState,
   resolveMedicalObservationCellState,
-  resolveHandoffStatusVariant,
   resolveNextPendingMedicalEntryDrafts,
   shouldAttemptPendingMedicalDraftPrune,
-  shouldRenderClinicalEventsPanel,
 } from '@/features/handoff/controllers/handoffRowCellsController';
 import { getMedicalHandoffSpecialtyOptions } from '@/domain/handoff/patientEntries';
 import { resolveMedicalObservationEntries } from '@/domain/handoff/patientView';
 import { MedicalBadge } from '@/components/ui/base/MedicalBadge';
-import type { MedicalBadgeVariant } from '@/shared/ui/medicalBadgeContracts';
 
 interface HandoffBedCellProps {
   bedName: string;
@@ -105,20 +102,20 @@ export const HandoffDiagnosisCell: React.FC<HandoffDiagnosisCellProps> = ({
   onClinicalEventUpdate,
   onClinicalEventDelete,
 }) => {
-  const statusVariant: MedicalBadgeVariant = resolveHandoffStatusVariant(patient.status);
   const canManageEvents =
     Boolean(onClinicalEventAdd) && Boolean(onClinicalEventUpdate) && Boolean(onClinicalEventDelete);
-  const canToggleEvents = canToggleClinicalEvents({
+  const clinicalEventsCellState = resolveClinicalEventsCellState({
+    patientStatus: patient.status,
     isSubRow,
     hasEvents,
-    canEditEvents: Boolean(onClinicalEventAdd),
-  });
-  const shouldRenderEventsPanel = shouldRenderClinicalEventsPanel({
-    showEvents,
     canAdd: Boolean(onClinicalEventAdd),
     canUpdate: Boolean(onClinicalEventUpdate),
     canDelete: Boolean(onClinicalEventDelete),
+    showEvents,
+    isMedical,
   });
+  const { canToggleEvents, shouldRenderEventsPanel, showStatusBadge, statusVariant } =
+    clinicalEventsCellState;
 
   return (
     <td className="p-1.5 border-r border-slate-200/60 w-[220px] text-slate-700 align-top relative print:w-20 print:text-[10px] print:leading-tight print:p-1">
@@ -144,7 +141,7 @@ export const HandoffDiagnosisCell: React.FC<HandoffDiagnosisCellProps> = ({
           )}
         </div>
 
-        {!showEvents && !isMedical && (
+        {showStatusBadge && (
           <div className="animate-in fade-in slide-in-from-top-1 duration-200 flex justify-start">
             <MedicalBadge variant={statusVariant} className="text-center">
               {patient.status}

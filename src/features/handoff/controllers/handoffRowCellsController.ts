@@ -39,6 +39,52 @@ export const shouldRenderClinicalEventsPanel = ({
   canDelete: boolean;
 }): boolean => showEvents && canAdd && canUpdate && canDelete;
 
+export interface ClinicalEventsCellState {
+  statusVariant: MedicalBadgeVariant;
+  canToggleEvents: boolean;
+  shouldRenderEventsPanel: boolean;
+  showStatusBadge: boolean;
+}
+
+export const resolveClinicalEventsCellState = ({
+  patientStatus,
+  isSubRow,
+  hasEvents,
+  canAdd,
+  canUpdate,
+  canDelete,
+  showEvents,
+  isMedical,
+}: {
+  patientStatus: PatientStatus | string | undefined;
+  isSubRow: boolean;
+  hasEvents: boolean;
+  canAdd: boolean;
+  canUpdate: boolean;
+  canDelete: boolean;
+  showEvents: boolean;
+  isMedical: boolean;
+}): ClinicalEventsCellState => {
+  const canToggleEvents = canToggleClinicalEvents({
+    isSubRow,
+    hasEvents,
+    canEditEvents: canAdd,
+  });
+  const shouldRenderEventsPanel = shouldRenderClinicalEventsPanel({
+    showEvents,
+    canAdd,
+    canUpdate,
+    canDelete,
+  });
+
+  return {
+    statusVariant: resolveHandoffStatusVariant(patientStatus),
+    canToggleEvents,
+    shouldRenderEventsPanel,
+    showStatusBadge: !showEvents && !isMedical,
+  };
+};
+
 export const pruneResolvedPendingMedicalEntryDrafts = ({
   entries,
   pendingEntryDrafts,
