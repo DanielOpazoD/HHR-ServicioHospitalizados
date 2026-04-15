@@ -58,6 +58,11 @@ Referencias:
 - El write path de `dailyRecord` debe mantener separadas las decisiones puras de recovery (`changed paths`, `retry origin`, `conflict summary`) del flujo de persistencia real.
 - El sync en background hacia `PatientMaster` debe reutilizar builders pequeños para seeds, eventos, patches y payloads de append, en lugar de recomponer esos datos inline por cada rama.
 
+## Reducer de camas
+
+- `useBedManagementReducer` debe seguir siendo un patch reducer: builders puros para mutaciones repetidas y un switch orquestador corto, en vez de recomponer patches inline por cada acción.
+- Las reglas sensibles como `firstSeenDate`, limpieza clínica al cambiar identidad, UPC y toggles de bloque/cama extra/tipo deben quedar protegidas con tests directos del reducer.
+
 ## Listas globales de correo del censo
 
 - El hook `useCensusEmailRecipientLists` debe quedar como orquestador: bootstrap, selección activa, mutaciones y fallbacks deben resolverse en controllers puros o casos de uso.

@@ -218,6 +218,54 @@ const buildClinicalCribMultipleFieldPatches = (
   return patches as DailyRecordPatch;
 };
 
+const buildUpdatePatientPatches = (
+  state: DailyRecord,
+  bedId: string,
+  fields: Partial<PatientData>
+): DailyRecordPatch => {
+  const oldPatient = state.beds[bedId];
+  return buildPatientFieldPatches({
+    bedId,
+    currentPatient: oldPatient,
+    updates: fields,
+    recordDate: state.date,
+  }) as DailyRecordPatch;
+};
+
+const buildToggleBlockedBedPatches = (
+  state: DailyRecord,
+  bedId: string,
+  reason?: string
+): DailyRecordPatch => {
+  const newIsBlocked = !state.beds[bedId].isBlocked;
+  return {
+    [`beds.${bedId}.isBlocked`]: newIsBlocked,
+    [`beds.${bedId}.blockedReason`]: newIsBlocked ? reason || '' : '',
+  } as DailyRecordPatch;
+};
+
+const buildToggleExtraBedPatches = (state: DailyRecord, bedId: string): DailyRecordPatch => {
+  const currentExtras = state.activeExtraBeds || [];
+  const isActive = !currentExtras.includes(bedId);
+  const newExtras = isActive ? [...currentExtras, bedId] : currentExtras.filter(id => id !== bedId);
+  return {
+    activeExtraBeds: newExtras,
+  } as DailyRecordPatch;
+};
+
+const buildToggleBedTypePatches = (state: DailyRecord, bedId: string): DailyRecordPatch | null => {
+  const bedDef = BEDS.find(b => b.id === bedId);
+  if (!bedDef) return null;
+
+  const currentType = getBedTypeForRecord(bedDef, state);
+  const nextType = currentType === BedType.UTI ? BedType.UCI : BedType.UTI;
+  const patchValue = nextType === bedDef.type ? undefined : nextType;
+
+  return {
+    [`bedTypeOverrides.${bedId}`]: patchValue,
+  } as DailyRecordPatch;
+};
+
 // ============================================================================
 // Actions
 // ============================================================================
@@ -262,15 +310,11 @@ export const bedManagementReducer = (
   switch (action.type) {
     case 'UPDATE_PATIENT': {
       const { bedId, field, value } = action;
-      const oldPatient = state.beds[bedId];
-      const patches = buildPatientFieldPatches({
-        bedId,
-        currentPatient: oldPatient,
-        updates: { [field]: value } as Partial<PatientData>,
-        recordDate: state.date,
-      });
+      const patches = buildUpdatePatientPatches(state, bedId, {
+        [field]: value,
+      } as Partial<PatientData>);
 
-      if (field === 'pathology' && value !== oldPatient.pathology) {
+      if (field === 'pathology' && value !== state.beds[bedId].pathology) {
         patches[`beds.${bedId}.cie10Code`] = undefined;
         patches[`beds.${bedId}.cie10Description`] = undefined;
       }
@@ -280,13 +324,7 @@ export const bedManagementReducer = (
 
     case 'UPDATE_PATIENT_MULTIPLE': {
       const { bedId, fields } = action;
-      const oldPatient = state.beds[bedId];
-      return buildPatientFieldPatches({
-        bedId,
-        currentPatient: oldPatient,
-        updates: fields,
-        recordDate: state.date,
-      }) as DailyRecordPatch;
+      return buildUpdatePatientPatches(state, bedId, fields);
     }
 
     case 'UPDATE_CUDYR': {
@@ -323,11 +361,7 @@ export const bedManagementReducer = (
 
     case 'TOGGLE_BLOCK_BED': {
       const { bedId, reason } = action;
-      const newIsBlocked = !state.beds[bedId].isBlocked;
-      return {
-        [`beds.${bedId}.isBlocked`]: newIsBlocked,
-        [`beds.${bedId}.blockedReason`]: newIsBlocked ? reason || '' : '',
-      } as DailyRecordPatch;
+      return buildToggleBlockedBedPatches(state, bedId, reason);
     }
 
     case 'UPDATE_BLOCKED_REASON': {
@@ -339,14 +373,7 @@ export const bedManagementReducer = (
 
     case 'TOGGLE_EXTRA_BED': {
       const { bedId } = action;
-      const currentExtras = state.activeExtraBeds || [];
-      const isActive = !currentExtras.includes(bedId);
-      const newExtras = isActive
-        ? [...currentExtras, bedId]
-        : currentExtras.filter(id => id !== bedId);
-      return {
-        activeExtraBeds: newExtras,
-      } as DailyRecordPatch;
+      return buildToggleExtraBedPatches(state, bedId);
     }
 
     case 'CREATE_CLINICAL_CRIB': {
@@ -386,22 +413,7 @@ export const bedManagementReducer = (
 
     case 'TOGGLE_BED_TYPE': {
       const { bedId } = action;
-      const bedDef = BEDS.find(b => b.id === bedId);
-      if (!bedDef) return null;
-
-      // Current type with overrides
-      const currentType = getBedTypeForRecord(bedDef, state);
-
-      // Cycle between UTI and UCI
-      const nextType = currentType === BedType.UTI ? BedType.UCI : BedType.UTI;
-
-      // If next type is same as base type, we set to undefined
-      // so applyPatches/Firestore removes/nulls the specific override
-      const patchValue = nextType === bedDef.type ? undefined : nextType;
-
-      return {
-        [`bedTypeOverrides.${bedId}`]: patchValue,
-      } as DailyRecordPatch;
+      return buildToggleBedTypePatches(state, bedId);
     }
 
     default:

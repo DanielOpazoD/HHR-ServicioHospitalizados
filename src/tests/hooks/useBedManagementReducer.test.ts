@@ -233,6 +233,46 @@ describe('bedManagementReducer firstSeenDate anchoring', () => {
     });
   });
 
+  it('toggles blocked bed state preserving the provided reason only while blocked', () => {
+    const record = DataFactory.createMockDailyRecord('2026-04-12');
+
+    const blockedPatch = bedManagementReducer(record, {
+      type: 'TOGGLE_BLOCK_BED',
+      bedId: 'R1',
+      reason: 'Aislamiento',
+    });
+
+    expect(blockedPatch).toMatchObject({
+      'beds.R1.isBlocked': true,
+      'beds.R1.blockedReason': 'Aislamiento',
+    });
+  });
+
+  it('toggles active extra beds without duplicating existing entries', () => {
+    const record = DataFactory.createMockDailyRecord('2026-04-12');
+    record.activeExtraBeds = ['R1'];
+
+    const patch = bedManagementReducer(record, {
+      type: 'TOGGLE_EXTRA_BED',
+      bedId: 'R2',
+    });
+
+    expect(patch).toMatchObject({
+      activeExtraBeds: ['R1', 'R2'],
+    });
+  });
+
+  it('toggles bed type overrides between UTI and UCI', () => {
+    const record = DataFactory.createMockDailyRecord('2026-04-12');
+
+    const patch = bedManagementReducer(record, {
+      type: 'TOGGLE_BED_TYPE',
+      bedId: 'R1',
+    });
+
+    expect(patch).toHaveProperty('bedTypeOverrides.R1');
+  });
+
   it('updates multiple clinical crib fields in a single patch', () => {
     const record = DataFactory.createMockDailyRecord('2026-04-12');
 
