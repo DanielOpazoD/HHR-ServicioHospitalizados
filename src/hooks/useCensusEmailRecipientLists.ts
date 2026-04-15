@@ -22,7 +22,7 @@ import {
   resolveRecipientListsAfterRename,
   resolveRecipientSelectionAfterDelete,
 } from '@/hooks/controllers/censusEmailRecipientMutationController';
-import { shouldSkipRecipientSync } from '@/hooks/controllers/censusEmailRecipientSyncController';
+import { resolveDeferredRecipientSyncInput } from '@/hooks/controllers/censusEmailRecipientSyncController';
 
 const RECIPIENT_LIST_KEY = 'censusEmailActiveRecipientListId';
 let censusRecipientListUseCasesPromise: Promise<
@@ -259,14 +259,16 @@ export const useCensusEmailRecipientLists = ({
 
     let cancelled = false;
     const timeoutId = window.setTimeout(() => {
-      if (
-        shouldSkipRecipientSync({
-          canManageGlobalRecipientLists,
-          recipientsReady: recipientsReadyRef.current,
-          recipients,
-          lastRemoteRecipients: lastRemoteRecipientsRef.current,
-        })
-      ) {
+      const syncInput = resolveDeferredRecipientSyncInput({
+        canManageGlobalRecipientLists,
+        recipientsReady: recipientsReadyRef.current,
+        recipients,
+        lastRemoteRecipients: lastRemoteRecipientsRef.current,
+        recipientLists,
+        activeRecipientListId: activeRecipientListIdRef.current,
+        actor: user,
+      });
+      if (!syncInput) {
         return;
       }
 
@@ -274,17 +276,7 @@ export const useCensusEmailRecipientLists = ({
       setRecipientsSyncError(null);
 
       void loadCensusRecipientListUseCases()
-        .then(({ executeSyncCensusRecipientList }) =>
-          executeSyncCensusRecipientList({
-            canManageGlobalRecipientLists,
-            recipientsReady: recipientsReadyRef.current,
-            recipients,
-            lastRemoteRecipients: lastRemoteRecipientsRef.current,
-            recipientLists,
-            activeRecipientListId: activeRecipientListIdRef.current,
-            actor: user,
-          })
-        )
+        .then(({ executeSyncCensusRecipientList }) => executeSyncCensusRecipientList(syncInput))
         .then(result => {
           if (cancelled) {
             return;

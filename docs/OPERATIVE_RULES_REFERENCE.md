@@ -66,6 +66,7 @@ Referencias:
 ## Listas globales de correo del censo
 
 - El hook `useCensusEmailRecipientLists` debe quedar como orquestador: bootstrap, selección activa, mutaciones y fallbacks deben resolverse en controllers puros o casos de uso.
+- La política de sync diferido no debe vivir inline en el hook: primero se resuelve si corresponde sincronizar y con qué input, y luego el hook solo dispara el caso de uso con ese plan.
 - Los casos de uso de listas de correo deben traducir validación, fallos de servicio y errores desconocidos con helpers compartidos de outcome, para no duplicar `createApplicationFailed(...)`.
 
 Referencias:
@@ -75,6 +76,7 @@ Referencias:
 - `src/services/repositories/dailyRecordMasterSyncController.ts`
 - `src/application/census-email/censusRecipientListUseCases.ts`
 - `src/application/census-email/censusRecipientListOutcomeController.ts`
+- `src/hooks/controllers/censusEmailRecipientSyncController.ts`
 
 ## Scorecard de deuda viva
 

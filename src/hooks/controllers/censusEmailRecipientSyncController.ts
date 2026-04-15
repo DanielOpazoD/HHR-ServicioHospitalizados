@@ -6,8 +6,18 @@ import {
 import { buildRecipientListSavePayload } from '@/hooks/controllers/censusEmailRecipientListController';
 
 interface RecipientSyncActor {
-  uid?: string | null;
+  uid?: string;
   email?: string | null;
+}
+
+export interface DeferredRecipientSyncInput {
+  canManageGlobalRecipientLists: boolean;
+  recipientsReady: boolean;
+  recipients: string[];
+  lastRemoteRecipients: string[] | null;
+  recipientLists: GlobalEmailRecipientList[];
+  activeRecipientListId: string;
+  actor: RecipientSyncActor | null;
 }
 
 export const shouldSkipRecipientSync = (input: {
@@ -40,3 +50,15 @@ export const buildRecipientSyncPayload = (input: {
     recipients: input.recipients,
     actor: input.actor,
   });
+
+export const resolveDeferredRecipientSyncInput = (
+  input: DeferredRecipientSyncInput
+): DeferredRecipientSyncInput | null =>
+  shouldSkipRecipientSync({
+    canManageGlobalRecipientLists: input.canManageGlobalRecipientLists,
+    recipientsReady: input.recipientsReady,
+    recipients: input.recipients,
+    lastRemoteRecipients: input.lastRemoteRecipients,
+  })
+    ? null
+    : input;
