@@ -7,10 +7,7 @@ import { BaseModal, ModalSection } from '@/components/shared/BaseModal';
 import { BedReasonDialog } from '@/components/modals/BedReasonDialog';
 import { BlockedBedsGrid } from '@/components/modals/BlockedBedsGrid';
 import { ExtraBedsGrid } from '@/components/modals/ExtraBedsGrid';
-import {
-  resolveBlockedBedsGridItems,
-  resolveExtraBedsGridItems,
-} from '@/features/census/controllers/bedManagerGridItemsController';
+import { resolveBlockedBedsGridItems, resolveExtraBedsGridItems } from '@/features/census';
 import { useBedManagerModalModel } from '@/hooks/useBedManagerModalModel';
 
 interface BedManagerModalProps {

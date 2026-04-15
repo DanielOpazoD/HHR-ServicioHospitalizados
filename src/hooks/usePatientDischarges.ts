@@ -4,21 +4,17 @@ import { createEmptyPatient } from '@/services/factories/patientFactory';
 import { BEDS } from '@/constants/beds';
 import { useLatestRef } from '@/hooks/useLatestRef';
 import type { DischargeTarget } from '@/types/movements';
-import { resolveAddDischargeMovement } from '@/features/census/controllers/patientMovementCreationController';
 import {
+  resolveAddDischargeMovement,
   buildAddDischargeInput,
   buildDischargeAddCommandPayload,
-} from '@/features/census/controllers/patientMovementCreationInputController';
-import {
   resolveDeleteDischargeMovement,
   resolveUpdateDischargeMovement,
-} from '@/features/census/controllers/patientMovementMutationController';
-import { resolveApplyUndoDischargeRecord } from '@/features/census/controllers/patientMovementUndoMutationController';
-import {
+  resolveApplyUndoDischargeRecord,
   PatientMovementRuntime,
   patientMovementBrowserRuntime,
-} from '@/features/census/controllers/patientMovementRuntimeController';
-import { selectDischargeUndoMovement } from '@/features/census/controllers/patientMovementSelectionController';
+  selectDischargeUndoMovement,
+} from '@/features/census';
 import { usePatientMovementFeedback } from '@/hooks/usePatientMovementFeedback';
 import { usePatientMovementAudit } from '@/hooks/usePatientMovementAudit';
 import { usePatientMovementCreationExecutor } from '@/hooks/usePatientMovementCreationExecutor';

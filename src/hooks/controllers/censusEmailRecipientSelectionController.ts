@@ -3,7 +3,7 @@ import {
   CENSUS_GLOBAL_EMAIL_RECIPIENT_LIST,
   type GlobalEmailRecipientList,
 } from '@/services/email/emailRecipientListService';
-import { resolveStoredRecipients } from '@/features/census/controllers/censusEmailRecipientsController';
+import { resolveStoredRecipients } from '@/features/census';
 
 export type CensusRecipientSelectionSource = 'firebase' | 'local' | 'default';
 

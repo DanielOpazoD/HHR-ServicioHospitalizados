@@ -8,7 +8,7 @@ import {
   resolveResponsibleNightNurses,
   resolveVisibleCudyrBeds,
 } from './handoffCudyrPrintSupport';
-import { resolveCudyrNightApplicationDate } from '@/features/cudyr/controllers/cudyrEligibilityController';
+import { resolveCudyrNightApplicationDate } from '@/features/cudyr/public';
 
 export const HandoffCudyrPrint: React.FC = () => {
   const { record } = useDailyRecordData();

@@ -10,7 +10,7 @@ import { BedType } from '@/types/domain/beds';
 import type { DailyRecordCudyrState } from '@/services/contracts/dailyRecordServiceContracts';
 import { BEDS } from '@/constants/beds';
 import { getCategorization } from './CudyrScoreUtils';
-import { isCudyrPatientEligible } from '@/features/cudyr/controllers/cudyrEligibilityController';
+import { isCudyrPatientEligible } from '@/features/cudyr/public';
 
 // ============================================================================
 // Type Definitions

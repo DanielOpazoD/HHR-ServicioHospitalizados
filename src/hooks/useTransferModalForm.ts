@@ -7,7 +7,7 @@ import {
   resolveTransferInitialTime,
   resolveTransferMethodChangeEffects,
   type TransferModalFieldErrors,
-} from '@/features/census/controllers/transferModalController';
+} from '@/features/census';
 import { resolveMovementDateTimeBounds } from '@/hooks/controllers/clinicalShiftCalendarController';
 import { useLatestRef } from '@/hooks/useLatestRef';
 import type { TransferModalConfirmPayload } from '@/types/movements';

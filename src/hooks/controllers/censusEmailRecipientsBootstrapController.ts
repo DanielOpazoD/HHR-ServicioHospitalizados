@@ -1,10 +1,7 @@
 import { CENSUS_DEFAULT_RECIPIENTS } from '@/constants/email';
 import { resolveFailedApplicationOutcomeMessage } from '@/shared/contracts/applicationOutcomeMessage';
 import type { CensusEmailBrowserRuntime } from '@/hooks/controllers/censusEmailBrowserRuntimeController';
-import {
-  resolveLegacyRecipients,
-  resolveStoredRecipients,
-} from '@/features/census/controllers/censusEmailRecipientsController';
+import { resolveLegacyRecipients, resolveStoredRecipients } from '@/features/census';
 import {
   CENSUS_GLOBAL_EMAIL_RECIPIENT_LIST,
   ensureGlobalEmailRecipientList,

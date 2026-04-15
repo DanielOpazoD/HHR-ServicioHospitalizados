@@ -6,7 +6,7 @@ import {
   buildInitialDischargeFormState,
   mapDischargeValidationErrors,
   type DischargeModalFieldErrors,
-} from '@/features/census/controllers/dischargeModalController';
+} from '@/features/census';
 import {
   resolveMovementDateTimeValidationError,
   resolveMovementDateTimeBounds,

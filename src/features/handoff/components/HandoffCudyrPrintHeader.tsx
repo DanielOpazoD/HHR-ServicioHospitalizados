@@ -1,6 +1,6 @@
 import React from 'react';
 import { ClipboardList } from 'lucide-react';
-import { CUDYR_NIGHT_REFERENCE_TIME_LABEL } from '@/features/cudyr/controllers/cudyrEligibilityController';
+import { CUDYR_NIGHT_REFERENCE_TIME_LABEL } from '@/features/cudyr/public';
 
 export const HandoffCudyrPrintHeader: React.FC<{
   categorized: number;

@@ -4,7 +4,7 @@ import { buildDailyCudyrSummary } from '@/services/cudyr/cudyrSummary';
 import type { DailyRecord } from '@/application/shared/dailyRecordContracts';
 import type { CudyrScore } from '@/types/domain/cudyr';
 import { resolveNightShiftNurses } from '@/services/staff/dailyRecordStaffing';
-import { isCudyrPatientEligible } from '@/features/cudyr/controllers/cudyrEligibilityController';
+import { isCudyrPatientEligible } from '@/features/cudyr/public';
 
 export const CUDYR_DEPENDENCY_COLUMNS = [
   'Cuidados Cambio Ropa',

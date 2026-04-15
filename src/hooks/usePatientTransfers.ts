@@ -3,21 +3,17 @@ import type { DailyRecord } from '@/application/shared/dailyRecordCoreContracts'
 import { createEmptyPatient } from '@/services/factories/patientFactory';
 import { BEDS } from '@/constants/beds';
 import { useLatestRef } from '@/hooks/useLatestRef';
-import { resolveAddTransferMovement } from '@/features/census/controllers/patientMovementCreationController';
 import {
+  resolveAddTransferMovement,
   buildAddTransferInput,
   buildTransferCommandPayload,
-} from '@/features/census/controllers/patientMovementCreationInputController';
-import {
   resolveDeleteTransferMovement,
   resolveUpdateTransferMovement,
-} from '@/features/census/controllers/patientMovementMutationController';
-import { resolveApplyUndoTransferRecord } from '@/features/census/controllers/patientMovementUndoMutationController';
-import {
+  resolveApplyUndoTransferRecord,
   PatientMovementRuntime,
   patientMovementBrowserRuntime,
-} from '@/features/census/controllers/patientMovementRuntimeController';
-import { selectTransferUndoMovement } from '@/features/census/controllers/patientMovementSelectionController';
+  selectTransferUndoMovement,
+} from '@/features/census';
 import { usePatientMovementFeedback } from '@/hooks/usePatientMovementFeedback';
 import { usePatientMovementAudit } from '@/hooks/usePatientMovementAudit';
 import { usePatientMovementCreationExecutor } from '@/hooks/usePatientMovementCreationExecutor';
