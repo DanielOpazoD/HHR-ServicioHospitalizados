@@ -13,6 +13,7 @@ import type {
   ClinicalDocSummary,
 } from '@/features/census/components/global-search/globalSearchContracts';
 import { globalPatientSearchLogger } from '@/hooks/hookLoggers';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
 
 // ---------------------------------------------------------------------------
 // Lazy loaders
@@ -27,9 +28,7 @@ let clinicalDocRepoPromise: Promise<
 let clinicalEpisodePromise: Promise<
   typeof import('@/application/patient-flow/clinicalEpisode')
 > | null = null;
-let clinicalDocPdfPromise: Promise<
-  typeof import('@/features/clinical-documents/services/clinicalDocumentPdfService')
-> | null = null;
+let clinicalDocPdfPromise: Promise<typeof import('@/features/clinical-documents')> | null = null;
 
 const loadPatientHistory = () => {
   patientHistoryPromise ??= import('@/services/patient/patientHistoryService');
@@ -44,8 +43,7 @@ const loadClinicalEpisode = () => {
   return clinicalEpisodePromise;
 };
 const loadClinicalDocPdf = () => {
-  clinicalDocPdfPromise ??=
-    import('@/features/clinical-documents/services/clinicalDocumentPdfService');
+  clinicalDocPdfPromise ??= import('@/features/clinical-documents');
   return clinicalDocPdfPromise;
 };
 
@@ -173,7 +171,7 @@ export function usePatientSelection(): UsePatientSelectionReturn {
 
       const blob = await pdfMod.generateClinicalDocumentPdfBlob(record);
       const url = URL.createObjectURL(blob);
-      window.open(url, '_blank');
+      defaultBrowserWindowRuntime.open(url, '_blank');
     } catch (err) {
       globalPatientSearchLogger.error(`PDF preview failed for document ${docId}`, err);
       throw err;

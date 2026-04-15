@@ -1,6 +1,6 @@
 import type { PatientData } from '@/features/census/controllers/censusActionPatientContracts';
 import type { IeehData } from '@/features/census/contracts/censusMovementContracts';
-import type { ClinicalDocumentIeehDraft } from '@/features/clinical-documents/domain/entities';
+import type { ClinicalDocumentIeehDraft } from '@/application/shared/ieehContracts';
 import type { DischargeFormData } from '@/services/pdf/ieehPdfService';
 
 export interface IeehFormDraftValues {
