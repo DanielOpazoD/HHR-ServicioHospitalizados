@@ -8,6 +8,7 @@ import {
 import type { CensusEmailBrowserRuntime } from '@/hooks/controllers/censusEmailBrowserRuntimeController';
 import { resolveStoredRecipientSelection } from '@/hooks/controllers/censusEmailRecipientSelectionController';
 import {
+  type RecipientRuntimeState,
   resolveRecipientMutationFailureMessage,
   resolveRecipientSelectionRuntimeState,
   resolveRecipientSyncState,
@@ -15,22 +16,18 @@ import {
 import { resolveRecipientListForSelection } from '@/hooks/controllers/censusEmailRecipientMutationController';
 import {
   resolveRecipientRuntimeAfterCreate,
+  resolveRecipientRuntimeAfterDeleteOutcome,
   resolveRecipientRuntimeAfterRename,
-  resolveRecipientRuntimeAfterDelete,
 } from '@/hooks/controllers/censusEmailRecipientMutationRuntimeController';
 import { resolveDeferredRecipientSyncInput } from '@/hooks/controllers/censusEmailRecipientSyncController';
+import {
+  type CensusRecipientListUseCasesModule,
+  type RecipientUseCaseResult,
+  withRecipientListUseCases,
+} from '@/hooks/controllers/censusEmailRecipientUseCaseLoader';
 
 const RECIPIENT_LIST_KEY = 'censusEmailActiveRecipientListId';
 const RECIPIENTS_STORAGE_KEY = 'censusEmailRecipients';
-let censusRecipientListUseCasesPromise: Promise<
-  typeof import('@/application/census-email/censusRecipientListUseCases')
-> | null = null;
-
-const loadCensusRecipientListUseCases = async () => {
-  censusRecipientListUseCasesPromise ??=
-    import('@/application/census-email/censusRecipientListUseCases');
-  return censusRecipientListUseCasesPromise;
-};
 
 interface UseCensusEmailRecipientListsParams {
   canManageGlobalRecipientLists: boolean;
@@ -85,41 +82,37 @@ export const useCensusEmailRecipientLists = ({
     setRecipientsState(nextRecipients);
   }, []);
 
-  const applyRecipientRuntimeState = useCallback(
-    (nextState: {
-      recipientLists: GlobalEmailRecipientList[];
-      activeRecipientListId: string;
-      recipients: string[];
-      recipientsSource: 'firebase' | 'local' | 'default';
-      recipientsSyncError: string | null;
-      lastRemoteRecipients: string[] | null;
-    }) => {
-      setRecipientLists(nextState.recipientLists);
-      activeRecipientListIdRef.current = nextState.activeRecipientListId;
-      setActiveRecipientListIdState(nextState.activeRecipientListId);
-      setRecipientsState(nextState.recipients);
-      setRecipientsSource(nextState.recipientsSource);
-      setRecipientsSyncError(nextState.recipientsSyncError);
-      lastRemoteRecipientsRef.current = nextState.lastRemoteRecipients;
-      recipientsReadyRef.current = true;
-    },
-    []
-  );
+  const applyRecipientRuntimeState = useCallback((nextState: RecipientRuntimeState) => {
+    setRecipientLists(nextState.recipientLists);
+    activeRecipientListIdRef.current = nextState.activeRecipientListId;
+    setActiveRecipientListIdState(nextState.activeRecipientListId);
+    setRecipientsState(nextState.recipients);
+    setRecipientsSource(nextState.recipientsSource);
+    setRecipientsSyncError(nextState.recipientsSyncError);
+    lastRemoteRecipientsRef.current = nextState.lastRemoteRecipients;
+    recipientsReadyRef.current = true;
+  }, []);
 
   const applyRecipientRuntimeStateWithPersistence = useCallback(
-    (nextState: {
-      recipientLists: GlobalEmailRecipientList[];
-      activeRecipientListId: string;
-      recipients: string[];
-      recipientsSource: 'firebase' | 'local' | 'default';
-      recipientsSyncError: string | null;
-      lastRemoteRecipients: string[] | null;
-    }) => {
+    (nextState: RecipientRuntimeState) => {
       applyRecipientRuntimeState(nextState);
       void saveAppSetting(RECIPIENTS_STORAGE_KEY, nextState.recipients);
       void saveAppSetting(RECIPIENT_LIST_KEY, nextState.activeRecipientListId);
     },
     [applyRecipientRuntimeState]
+  );
+
+  const applyRecipientSyncState = useCallback(
+    (nextState: ReturnType<typeof resolveRecipientSyncState>) => {
+      if (nextState.recipientsSource) {
+        setRecipientsSource(nextState.recipientsSource);
+      }
+      if (nextState.lastRemoteRecipients) {
+        lastRemoteRecipientsRef.current = nextState.lastRemoteRecipients;
+      }
+      setRecipientsSyncError(nextState.recipientsSyncError);
+    },
+    []
   );
 
   const selectActiveRecipientList = useCallback(
@@ -177,19 +170,65 @@ export const useCensusEmailRecipientLists = ({
     []
   );
 
+  const runRecipientRuntimeMutation = useCallback(
+    async <T>(
+      execute: () => Promise<{
+        status: string;
+        data?: T;
+        issues?: Array<{ message?: string; userSafeMessage?: string }>;
+        userSafeMessage?: string;
+      }>,
+      {
+        resolveRuntimeState,
+        fallbackMessage,
+      }: {
+        resolveRuntimeState: (data: NonNullable<T>) => RecipientRuntimeState | null;
+        fallbackMessage: string;
+      }
+    ) => {
+      await runRecipientListMutation(execute, {
+        onSuccess: result => {
+          const nextState = resolveRuntimeState(result);
+          if (nextState) {
+            applyRecipientRuntimeStateWithPersistence(nextState);
+          }
+        },
+        fallbackMessage,
+      });
+    },
+    [applyRecipientRuntimeStateWithPersistence, runRecipientListMutation]
+  );
+
+  const executeRecipientRuntimeMutation = useCallback(
+    async <T>(
+      runUseCase: (
+        useCases: CensusRecipientListUseCasesModule
+      ) => Promise<RecipientUseCaseResult<T>>,
+      options: {
+        resolveRuntimeState: (data: NonNullable<T>) => RecipientRuntimeState | null;
+        fallbackMessage: string;
+      }
+    ) => {
+      await runRecipientRuntimeMutation(() => withRecipientListUseCases(runUseCase), options);
+    },
+    [runRecipientRuntimeMutation]
+  );
+
   useEffect(() => {
     let isActive = true;
 
     const loadRecipients = async () => {
-      const { executeLoadCensusRecipientRuntimeState } = await loadCensusRecipientListUseCases();
-      const runtimeResult = await executeLoadCensusRecipientRuntimeState({
-        canManageGlobalRecipientLists,
-        browserRuntime,
-        enabled,
-        activeListStorageKey: RECIPIENT_LIST_KEY,
-        recipientsStorageKey: RECIPIENTS_STORAGE_KEY,
-        user,
-      });
+      const runtimeResult = await withRecipientListUseCases(
+        ({ executeLoadCensusRecipientRuntimeState }) =>
+          executeLoadCensusRecipientRuntimeState({
+            canManageGlobalRecipientLists,
+            browserRuntime,
+            enabled,
+            activeListStorageKey: RECIPIENT_LIST_KEY,
+            recipientsStorageKey: RECIPIENTS_STORAGE_KEY,
+            user,
+          })
+      );
 
       if (!isActive) return;
 
@@ -231,17 +270,12 @@ export const useCensusEmailRecipientLists = ({
       setIsRecipientsSyncing(true);
       setRecipientsSyncError(null);
 
-      void loadCensusRecipientListUseCases()
-        .then(({ executeSyncCensusRecipientList }) => executeSyncCensusRecipientList(syncInput))
+      void withRecipientListUseCases(({ executeSyncCensusRecipientList }) =>
+        executeSyncCensusRecipientList(syncInput)
+      )
         .then(result => {
           if (cancelled) return;
-          const nextState = resolveRecipientSyncState(result, recipients);
-          if (nextState.recipientsSource) {
-            setRecipientsSource(nextState.recipientsSource);
-          }
-          if (nextState.lastRemoteRecipients)
-            lastRemoteRecipientsRef.current = nextState.lastRemoteRecipients;
-          setRecipientsSyncError(nextState.recipientsSyncError);
+          applyRecipientSyncState(resolveRecipientSyncState(result, recipients));
         })
         .finally(() => {
           if (!cancelled) setIsRecipientsSyncing(false);
@@ -260,109 +294,83 @@ export const useCensusEmailRecipientLists = ({
     recipientLists,
     recipients,
     user,
+    applyRecipientSyncState,
   ]);
 
   const createRecipientList = useCallback(
     async (name: string) => {
-      await runRecipientListMutation(
-        async () => {
-          const { executeCreateCensusRecipientList } = await loadCensusRecipientListUseCases();
-          return executeCreateCensusRecipientList({
+      await executeRecipientRuntimeMutation(
+        ({ executeCreateCensusRecipientList }) =>
+          executeCreateCensusRecipientList({
             canManageGlobalRecipientLists,
             name,
             recipients,
             recipientLists,
             actor: user,
-          });
-        },
+          }),
         {
-          onSuccess: result => {
-            applyRecipientRuntimeStateWithPersistence(
-              resolveRecipientRuntimeAfterCreate(recipientLists, result)
-            );
-          },
+          resolveRuntimeState: result => resolveRecipientRuntimeAfterCreate(recipientLists, result),
           fallbackMessage: 'No se pudo crear la nueva lista global.',
         }
       );
     },
     [
-      applyRecipientRuntimeStateWithPersistence,
       canManageGlobalRecipientLists,
+      executeRecipientRuntimeMutation,
       recipientLists,
       recipients,
-      runRecipientListMutation,
       user,
     ]
   );
 
   const renameActiveRecipientList = useCallback(
     async (name: string) => {
-      await runRecipientListMutation(
-        async () => {
-          const { executeRenameCensusRecipientList } = await loadCensusRecipientListUseCases();
-          return executeRenameCensusRecipientList({
+      await executeRecipientRuntimeMutation(
+        ({ executeRenameCensusRecipientList }) =>
+          executeRenameCensusRecipientList({
             canManageGlobalRecipientLists,
             activeList: resolveRecipientListForSelection(recipientLists, activeRecipientListId),
             name,
             recipients,
             actor: user,
-          });
-        },
+          }),
         {
-          onSuccess: result => {
-            applyRecipientRuntimeStateWithPersistence(
-              resolveRecipientRuntimeAfterRename(recipientLists, result)
-            );
-          },
+          resolveRuntimeState: result => resolveRecipientRuntimeAfterRename(recipientLists, result),
           fallbackMessage: 'No se pudo actualizar el nombre de la lista global.',
         }
       );
     },
     [
       activeRecipientListId,
-      applyRecipientRuntimeStateWithPersistence,
       canManageGlobalRecipientLists,
+      executeRecipientRuntimeMutation,
       recipientLists,
       recipients,
-      runRecipientListMutation,
       user,
     ]
   );
 
   const deleteRecipientList = useCallback(
     async (listId: string) => {
-      await runRecipientListMutation(
-        async () => {
-          const { executeDeleteCensusRecipientList } = await loadCensusRecipientListUseCases();
-          return executeDeleteCensusRecipientList({
+      await executeRecipientRuntimeMutation(
+        ({ executeDeleteCensusRecipientList }) =>
+          executeDeleteCensusRecipientList({
             canManageGlobalRecipientLists,
             recipientLists,
             listId,
-          });
-        },
+          }),
         {
-          onSuccess: result => {
-            if (!result.fallbackList) {
-              return;
-            }
-            applyRecipientRuntimeStateWithPersistence(
-              resolveRecipientRuntimeAfterDelete({
-                recipientLists,
-                listId,
-                fallbackList: result.fallbackList,
-              })
-            );
-          },
+          resolveRuntimeState: result =>
+            resolveRecipientRuntimeAfterDeleteOutcome({
+              recipientLists,
+              listId,
+              fallbackList: result.fallbackList,
+            }),
           fallbackMessage: 'No se pudo eliminar la lista global seleccionada.',
         }
       );
     },
-    [
-      applyRecipientRuntimeStateWithPersistence,
-      canManageGlobalRecipientLists,
-      recipientLists,
-      runRecipientListMutation,
-    ]
+    [canManageGlobalRecipientLists, executeRecipientRuntimeMutation, recipientLists]
   );
 
   return {

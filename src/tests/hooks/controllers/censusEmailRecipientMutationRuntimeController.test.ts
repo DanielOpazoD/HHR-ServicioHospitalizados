@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   resolveRecipientRuntimeAfterCreate,
+  resolveRecipientRuntimeAfterDeleteOutcome,
   resolveRecipientRuntimeAfterRename,
   resolveRecipientRuntimeAfterDelete,
 } from '@/hooks/controllers/censusEmailRecipientMutationRuntimeController';
@@ -66,5 +67,15 @@ describe('censusEmailRecipientMutationRuntimeController', () => {
       recipientsSyncError: null,
       lastRemoteRecipients: ['uno@example.com'],
     });
+  });
+
+  it('returns null when delete outcomes do not include a fallback list', () => {
+    expect(
+      resolveRecipientRuntimeAfterDeleteOutcome({
+        recipientLists: [buildList()],
+        listId: 'missing',
+        fallbackList: null,
+      })
+    ).toBeNull();
   });
 });

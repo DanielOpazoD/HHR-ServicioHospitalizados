@@ -45,3 +45,19 @@ export const resolveRecipientRuntimeAfterDelete = (input: {
   });
   return resolveActiveRecipientRuntimeState(nextState.recipientLists, input.fallbackList);
 };
+
+export const resolveRecipientRuntimeAfterDeleteOutcome = (input: {
+  recipientLists: GlobalEmailRecipientList[];
+  listId: string;
+  fallbackList?: GlobalEmailRecipientList | null;
+}): RecipientRuntimeState | null => {
+  if (!input.fallbackList) {
+    return null;
+  }
+
+  return resolveRecipientRuntimeAfterDelete({
+    recipientLists: input.recipientLists,
+    listId: input.listId,
+    fallbackList: input.fallbackList,
+  });
+};

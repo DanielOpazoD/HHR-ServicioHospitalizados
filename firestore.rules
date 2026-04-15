@@ -290,12 +290,19 @@ service cloud.firestore {
       let affectedBedIds = request.resource.data.beds.diff(resource.data.beds).affectedKeys();
       let effectiveRecordTimestamp = resolveSpecialistMedicalHandoffRecordTimestamp();
 
-      return isWithinSpecialistMedicalHandoffWindow(effectiveRecordTimestamp) &&
-             hasOnlySpecialistMedicalHandoffRecordKeys(affectedRecordKeys) &&
+      return isValidSpecialistMedicalHandoffBoundary(
+               effectiveRecordTimestamp,
+               affectedRecordKeys
+             ) &&
              (
                isSpecialistStructuredMedicalHandoffUpdate() ||
                isAnySpecialistAffectedBed(affectedBedIds)
              );
+    }
+
+    function isValidSpecialistMedicalHandoffBoundary(effectiveRecordTimestamp, affectedRecordKeys) {
+      return isWithinSpecialistMedicalHandoffWindow(effectiveRecordTimestamp) &&
+             hasOnlySpecialistMedicalHandoffRecordKeys(affectedRecordKeys);
     }
 
     function isSpecialistClinicalDocumentDraftWrite() {
@@ -540,17 +547,31 @@ service cloud.firestore {
       let effectiveRole = getEffectiveRole();
 
       return isBootstrapAdmin() ||
-             (
-               effectiveRole == 'admin'
-                 ? true
-                 : effectiveRole == 'nurse_hospital'
-                   ? canNurseUpdatePersistedDailyRecord()
-                   : effectiveRole == 'doctor_urgency'
-                     ? canDoctorUpdatePersistedDailyRecord()
-                     : effectiveRole == 'doctor_specialist'
-                       ? canSpecialistUpdatePersistedDailyRecord()
-                       : false
-             );
+             canRoleUpdatePersistedDailyRecord(effectiveRole);
+    }
+
+    function canRoleUpdatePersistedDailyRecord(effectiveRole) {
+      return effectiveRole == 'admin'
+        ? true
+        : effectiveRole == 'nurse_hospital'
+          ? canNurseUpdatePersistedDailyRecord()
+          : effectiveRole == 'doctor_urgency'
+            ? canDoctorUpdatePersistedDailyRecord()
+            : effectiveRole == 'doctor_specialist'
+              ? canSpecialistUpdatePersistedDailyRecord()
+              : false;
+    }
+
+    function canAdminMaintainHospitalDocument() {
+      return isAdmin();
+    }
+
+    function canCreateEditableHospitalDocument() {
+      return canEdit();
+    }
+
+    function canCreateReadableClinicalDocument() {
+      return canReadClinicalData();
     }
     
     // ============================================
@@ -577,8 +598,8 @@ service cloud.firestore {
         // History subcollection
         match /history/{historyId} {
           allow read: if canReadClinicalData();
-          allow create: if canEdit();
-          allow update, delete: if isAdmin();
+          allow create: if canCreateEditableHospitalDocument();
+          allow update, delete: if canAdminMaintainHospitalDocument();
         }
       }
 
@@ -592,8 +613,7 @@ service cloud.firestore {
       // ----------------------------------------
       match /clinicalDocuments/{documentId} {
         allow read: if canReadClinicalData();
-        allow create: if canWriteClinicalDocument();
-        allow update: if canWriteClinicalDocument();
+        allow create, update: if canWriteClinicalDocument();
         allow delete: if canDeleteClinicalDocument();
       }
 
@@ -649,9 +669,9 @@ service cloud.firestore {
       // ----------------------------------------
       match /auditLogs/{logId} {
         allow read: if isAdmin();
-        allow create: if canReadClinicalData();
+        allow create: if canCreateReadableClinicalDocument();
         // Allow admins to update or delete during consolidation/maintenance
-        allow update, delete: if isAdmin();
+        allow update, delete: if canAdminMaintainHospitalDocument();
       }
       
       // ----------------------------------------
@@ -659,8 +679,7 @@ service cloud.firestore {
       // ----------------------------------------
       match /transferRequests/{transferId} {
         allow read: if canReadClinicalData();
-        allow create: if canEdit();
-        allow update: if canEdit();
+        allow create, update: if canEdit();
         allow delete: if isAdmin();
       }
       
@@ -669,8 +688,8 @@ service cloud.firestore {
       // ----------------------------------------
       match /transferHistory/{transferId} {
         allow read: if canReadClinicalData();
-        allow create: if canEdit();
-        allow update, delete: if isAdmin();
+        allow create: if canCreateEditableHospitalDocument();
+        allow update, delete: if canAdminMaintainHospitalDocument();
       }
       
       // ----------------------------------------
@@ -684,9 +703,8 @@ service cloud.firestore {
       // ----------------------------------------
       match /backupFiles/{fileId} {
         allow read: if canReadClinicalData();
-        allow create: if canEdit();
-        allow update: if isAdmin();
-        allow delete: if isAdmin();
+        allow create: if canCreateEditableHospitalDocument();
+        allow update, delete: if canAdminMaintainHospitalDocument();
       }
 
       // ----------------------------------------
@@ -703,9 +721,9 @@ service cloud.firestore {
     // ============================================
     match /auditLogs/{logId} {
       allow read: if isAdmin();
-      allow create: if canReadClinicalData();
+      allow create: if canCreateReadableClinicalDocument();
       // Allow admins to update or delete during consolidation/maintenance
-      allow update, delete: if isAdmin();
+      allow update, delete: if canAdminMaintainHospitalDocument();
     }
     
     // ============================================
@@ -741,7 +759,7 @@ service cloud.firestore {
     
     match /whatsappLogs/{logId} {
       allow read: if isAdmin();
-      allow create: if canReadClinicalData();
+      allow create: if canCreateReadableClinicalDocument();
       allow update, delete: if false;
     }
     

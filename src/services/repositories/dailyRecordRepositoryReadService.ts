@@ -7,9 +7,7 @@ import {
 import { logLegacyInfo } from '@/services/storage/legacyfirebase/legacyFirebaseLogger';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import { bridgeLegacyRecord } from '@/services/repositories/legacyRecordBridgeService';
-import { persistHydratedRecordToLocalCache } from '@/services/repositories/dailyRecordLocalCachePersistence';
 import {
-  createDailyRecordReadResult,
   DailyRecordReadResult,
   createGetDailyRecordQuery,
   createGetPreviousDayQuery,
@@ -25,8 +23,7 @@ import {
   createLocalRuntimeReadResult,
   createNotFoundDailyRecordReadResult,
 } from '@/services/repositories/dailyRecordReadResultController';
-import { AdmissionDatePolicyViolationError } from '@/application/patient-flow/admissionDatePolicy';
-import type { DailyRecordRemoteLoadResult } from '@/services/repositories/dailyRecordRemoteLoader';
+import { resolveRemoteGoldenPathReadResult } from '@/services/repositories/dailyRecordRemoteReadController';
 
 type FirestoreRecordQueriesModule =
   typeof import('@/services/storage/firestore/firestoreRecordQueries');
@@ -105,45 +102,11 @@ export const getForDateWithMeta = async (
             },
             { thresholdMs: 250, context: date }
           );
-          const goldenPath = resolveDailyRecordPersistenceGoldenPath({
-            localRecord: localCandidate?.record || null,
-            remoteRecord: remoteReadResult.record,
-            remoteAvailability: remoteReadResult.record ? 'resolved' : 'missing',
-            localRepairApplied: localCandidate?.repairApplied || false,
-            remoteRepairApplied:
-              remoteReadResult.compatibilityIntensity !== 'none' ||
-              remoteReadResult.migrationRulesApplied.length > 0,
+          return resolveRemoteGoldenPathReadResult({
+            date: query.date,
+            localCandidate,
+            remoteReadResult,
           });
-
-          if (goldenPath.shouldHydrateLocal && remoteReadResult.record) {
-            try {
-              await persistHydratedRecordToLocalCache(
-                remoteReadResult.record,
-                query.date,
-                localCandidate?.record || null
-              );
-            } catch (error) {
-              if (error instanceof AdmissionDatePolicyViolationError) {
-                dailyRecordReadLogger.warn(
-                  `Skipped local hydration for ${query.date} due to admissionDate validation`,
-                  error
-                );
-              } else {
-                throw error;
-              }
-            }
-          }
-
-          if (goldenPath.selectedStore === 'remote' && remoteReadResult.record) {
-            return createGoldenPathReadResult(
-              query.date,
-              goldenPath,
-              localCandidate,
-              remoteReadResult
-            );
-          }
-
-          return createGoldenPathReadResult(query.date, goldenPath, localCandidate);
         } catch (err) {
           dailyRecordReadLogger.warn(`Remote fetch failed for ${query.date}`, err);
         }

@@ -31,15 +31,11 @@ import {
 } from '@/services/repositories/dailyRecordWriteRecoveryController';
 import { syncPatientsToMasterInBackground } from '@/services/repositories/dailyRecordBackgroundMasterSyncController';
 import {
-  buildAutoMergedRecoveryResult,
-  buildThrowUnrecoverableRecoveryResult,
-} from '@/services/repositories/dailyRecordWriteRecoveryResultController';
-import {
   resolveQueuedRetryRecoveryResult,
   resolveRemoteUnavailableRecoveryResult,
 } from '@/services/repositories/dailyRecordRemoteRecoveryController';
-import { attemptConflictAutoMergeRecovery } from '@/services/repositories/dailyRecordConflictAutoMergeController';
 import { resolveBlockedRemoteWriteRecovery } from '@/services/repositories/dailyRecordWriteBlockingRecoveryController';
+import { resolveConcurrencyRemoteWriteRecovery } from '@/services/repositories/dailyRecordWriteConcurrencyRecoveryController';
 
 const isConcurrencyError = (error: unknown): boolean =>
   error instanceof Error && error.name === 'ConcurrencyError';
@@ -167,27 +163,13 @@ export const resolveRemoteWriteRecovery = async (
   }
 
   if (isConcurrencyError(error)) {
-    const mergeResult = await attemptConflictAutoMergeRecovery(date, record, changedPaths);
-    if (mergeResult.status === 'auto_merged') {
-      return buildAutoMergedRecoveryResult(
-        conflictSummary(
-          'concurrency',
-          'Se resolvió un conflicto remoto mediante fusión automática.'
-        ),
-        'Se resolvió un conflicto remoto mediante fusión automática.',
-        ['daily_record', 'write', 'auto_merged']
-      );
-    }
-
-    return buildThrowUnrecoverableRecoveryResult({
+    return resolveConcurrencyRemoteWriteRecovery(
+      date,
+      record,
+      changedPaths,
       error,
-      conflictSummary: conflictSummary(
-        'concurrency',
-        'Se detectó un conflicto remoto que no pudo resolverse automáticamente.'
-      ),
-      observabilityTags: ['daily_record', 'write', 'conflict_unrecoverable'],
-      userSafeMessage: 'Se detectó un conflicto remoto que requiere revisión manual.',
-    });
+      conflictSummary
+    );
   }
 
   if (shouldQueueRetryableError(error)) {
