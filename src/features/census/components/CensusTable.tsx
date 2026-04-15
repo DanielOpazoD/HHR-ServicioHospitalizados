@@ -43,7 +43,7 @@ export const CensusTable: React.FC<CensusTableProps> = ({
 
   return (
     <div className="card print:border-none print:shadow-none !overflow-visible">
-      <div className="relative overflow-x-auto overflow-y-visible">
+      <div className="relative overflow-visible">
         <table
           data-testid="census-table"
           className="text-left border-collapse print:text-xs relative text-[12px] leading-tight table-fixed"

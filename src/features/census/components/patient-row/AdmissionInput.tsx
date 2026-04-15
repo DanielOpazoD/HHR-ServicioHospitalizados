@@ -7,19 +7,21 @@
  *  - **Read-only** on all subsequent days.
  *  - **Tooltip** on hover shows the admission time (e.g. "Hora de ingreso: 14:30")
  *    or "Hora de ingreso: no registrada" if the time was never set.
- *  - **Popover editor** (when editable) renders above table rows via z-[100]
- *    and the census table uses `overflow-y-visible` to prevent clipping.
+ *  - **Popover editor** (when editable) renders via React Portal to
+ *    `document.body`, escaping the table's overflow container entirely.
  *  - Uses `cursor-default` to override the drag-and-drop grab cursor,
  *    ensuring the native tooltip is visible on hover.
  */
 
-import React, { useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import { AlertCircle, Clock3, Pencil } from 'lucide-react';
 import { DebouncedInput } from '@/components/ui/DebouncedInput';
 import type { PatientData } from '@/features/census/components/patient-row/patientRowDataContracts';
 import { BaseCellProps, DebouncedTextHandler } from './inputCellTypes';
 import { PatientEmptyCell } from './PatientEmptyCell';
+import { usePortalPopoverRuntime } from '@/hooks/usePortalPopoverRuntime';
 import {
   resolveAdmissionDateChange,
   resolveAdmissionDateAudit,
@@ -47,6 +49,34 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
   onMultipleUpdate,
 }) => {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  const POPOVER_WIDTH = 180;
+
+  const closeEditor = useCallback(() => setIsEditorOpen(false), []);
+
+  const resolvePopoverPosition = useCallback(() => {
+    if (!buttonRef.current) return null;
+    const rect = buttonRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const top = spaceBelow > 220 ? rect.bottom + 4 : rect.top - 220;
+    const left = Math.min(rect.left, window.innerWidth - POPOVER_WIDTH - 8);
+    return { top, left };
+  }, []);
+
+  const { position: popoverPos, updatePosition } = usePortalPopoverRuntime({
+    isOpen: isEditorOpen,
+    anchorRef: buttonRef,
+    popoverRef,
+    initialPosition: { top: 0, left: 0 },
+    resolvePosition: resolvePopoverPosition,
+    onClose: closeEditor,
+    closeOnScroll: true,
+    closeOnOutsideClick: true,
+    closeOnEscape: true,
+  });
+
   const isCriticalEmpty = resolveIsCriticalAdmissionEmpty(data.patientName, data.admissionDate);
   const audit = resolveAdmissionDateAudit({
     recordDate: currentDateString,
@@ -133,27 +163,20 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
           : undefined
       }
     >
-      <div
-        className="w-full relative"
-        onFocusCapture={() => {
-          if (showEditButton) {
-            setIsEditorOpen(true);
-          }
-        }}
-        onBlur={event => {
-          const next = event.relatedTarget as HTMLElement | null;
-          if (next && event.currentTarget.contains(next)) return;
-          setIsEditorOpen(false);
-        }}
-      >
+      <div className="w-full relative">
         {showEditButton ? (
-          <div className="relative">
+          <>
             <button
+              ref={buttonRef}
               type="button"
               aria-label="Editar fecha y hora de ingreso"
               aria-haspopup="dialog"
               aria-expanded={isEditorOpen}
-              onClick={() => setIsEditorOpen(current => !current)}
+              onClick={e => {
+                e.stopPropagation();
+                if (!isEditorOpen) updatePosition();
+                setIsEditorOpen(current => !current);
+              }}
               className={clsx(
                 'w-full h-7 border rounded text-[11px] leading-none flex items-center bg-white px-1.5 text-left relative cursor-default',
                 isCriticalEmpty
@@ -176,54 +199,61 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
                 <Pencil size={9} />
               </span>
             </button>
-            {isEditorOpen && (
-              <div
-                role="dialog"
-                aria-label="Configurar fecha y hora de ingreso"
-                className="absolute left-0 top-full mt-1 min-w-[10rem] rounded-xl border border-slate-200 bg-white p-2 shadow-xl z-[100]"
-              >
-                <div className="space-y-1">
-                  {admissionDateOptions.length === 0 ? (
-                    <div className="px-2 py-1.5 text-xs text-slate-500">Sin fechas disponibles</div>
-                  ) : (
-                    admissionDateOptions.map(option => {
-                      const isSelected = option.value === (data.admissionDate || '');
+            {isEditorOpen &&
+              createPortal(
+                <div
+                  ref={popoverRef}
+                  role="dialog"
+                  aria-label="Configurar fecha y hora de ingreso"
+                  className="fixed z-[10000] min-w-[11rem] rounded-xl border border-slate-200 bg-white p-2 shadow-xl"
+                  style={{ top: popoverPos.top, left: popoverPos.left }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <div className="space-y-1">
+                    {admissionDateOptions.length === 0 ? (
+                      <div className="px-2 py-1.5 text-xs text-slate-500">
+                        Sin fechas disponibles
+                      </div>
+                    ) : (
+                      admissionDateOptions.map(option => {
+                        const isSelected = option.value === (data.admissionDate || '');
 
-                      return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          onClick={() => handleDateChange(option.value)}
-                          className={clsx(
-                            'w-full rounded-lg px-2 py-1.5 text-left text-sm transition-colors',
-                            isSelected
-                              ? 'bg-blue-500 text-white'
-                              : 'text-slate-800 hover:bg-slate-100'
-                          )}
-                        >
-                          {option.label}
-                        </button>
-                      );
-                    })
-                  )}
-                </div>
-                <div className="mt-2 border-t border-slate-200 pt-2">
-                  <label className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">
-                    <Clock3 size={10} />
-                    Hora de ingreso
-                  </label>
-                  <DebouncedInput
-                    type="time"
-                    step={300}
-                    className="mt-1 w-full h-8 rounded-md border border-slate-300 bg-white px-2 text-xs focus:ring-2 focus:ring-medical-500 focus:outline-none"
-                    value={data.admissionTime || ''}
-                    onChange={onChange('admissionTime')}
-                    disabled={readOnly}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => handleDateChange(option.value)}
+                            className={clsx(
+                              'w-full rounded-lg px-2 py-1.5 text-left text-sm transition-colors',
+                              isSelected
+                                ? 'bg-blue-500 text-white'
+                                : 'text-slate-800 hover:bg-slate-100'
+                            )}
+                          >
+                            {option.label}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                  <div className="mt-2 border-t border-slate-200 pt-2">
+                    <label className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                      <Clock3 size={10} />
+                      Hora de ingreso
+                    </label>
+                    <DebouncedInput
+                      type="time"
+                      step={300}
+                      className="mt-1 w-full h-8 rounded-md border border-slate-300 bg-white px-2 text-xs focus:ring-2 focus:ring-medical-500 focus:outline-none"
+                      value={data.admissionTime || ''}
+                      onChange={onChange('admissionTime')}
+                      disabled={readOnly}
+                    />
+                  </div>
+                </div>,
+                document.body
+              )}
+          </>
         ) : (
           <div
             className={clsx(
@@ -259,7 +289,6 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
             <AlertCircle size={8} className="text-white" />
           </button>
         )}
-        {/* Critical field warning icon */}
         {isCriticalEmpty && (
           <div
             className="absolute -right-1 -top-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center z-20"
