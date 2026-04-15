@@ -40,6 +40,7 @@ import {
   buildAdmissionHospitalizationAppendPayload,
   buildDischargeHospitalizationAppendPayload,
   buildPatientMasterSeed,
+  resolveAdmissionBackfillAppendPayload,
   buildTransferHospitalizationAppendPayload,
 } from '@/services/repositories/dailyRecordMasterSyncController';
 import {
@@ -325,17 +326,17 @@ const appendRealtimeAdmissionIfMissing = async (
     bedName?: string | null;
   }
 ) => {
-  if (!input.rut || existingBedPatientRuts.has(input.rut) || !input.admissionDate) {
-    return;
-  }
-
-  const appendPayload = buildAdmissionHospitalizationAppendPayload({
+  const appendPayload = resolveAdmissionBackfillAppendPayload({
+    existingBedPatientRuts,
     rut: input.rut,
     fullName: input.patientName,
-    date: input.admissionDate,
+    admissionDate: input.admissionDate,
     diagnosis: input.diagnosis,
     bedName: input.bedName,
   });
+  if (!appendPayload) {
+    return;
+  }
   await PatientMasterRepository.appendHospitalizationEvent(
     appendPayload.patient,
     appendPayload.event,

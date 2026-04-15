@@ -7,6 +7,7 @@ import {
   buildEgresoRealtimeEvent,
   buildIngresoRealtimeEvent,
   buildPatientMasterSeed,
+  resolveAdmissionBackfillAppendPayload,
   buildTransferHospitalizationAppendPayload,
   buildTrasladoRealtimeEvent,
 } from '@/services/repositories/dailyRecordMasterSyncController';
@@ -166,6 +167,48 @@ describe('dailyRecordMasterSyncController', () => {
         diagnosis: 'Dx',
         bedName: 'R1',
         receivingCenter: 'Base',
+      },
+    });
+  });
+
+  it('resolves realtime admission backfill payloads only when the patient is missing from current beds', () => {
+    expect(
+      resolveAdmissionBackfillAppendPayload({
+        existingBedPatientRuts: new Set(['1-9']),
+        rut: '1-9',
+        fullName: 'Paciente',
+        admissionDate: '2026-04-14',
+        diagnosis: 'Dx',
+        bedName: 'R1',
+      })
+    ).toBeNull();
+
+    expect(
+      resolveAdmissionBackfillAppendPayload({
+        existingBedPatientRuts: new Set(),
+        rut: '1-9',
+        fullName: 'Paciente',
+        admissionDate: '2026-04-14',
+        diagnosis: 'Dx',
+        bedName: 'R1',
+      })
+    ).toEqual({
+      patient: {
+        rut: '1-9',
+        fullName: 'Paciente',
+        birthDate: undefined,
+        forecast: undefined,
+        gender: undefined,
+      },
+      event: {
+        id: '2026-04-14-ingreso-rt',
+        type: 'Ingreso',
+        date: '2026-04-14',
+        diagnosis: 'Dx',
+        bedName: 'R1',
+      },
+      extra: {
+        lastAdmission: '2026-04-14',
       },
     });
   });

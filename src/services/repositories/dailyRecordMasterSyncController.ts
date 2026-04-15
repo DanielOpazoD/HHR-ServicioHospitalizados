@@ -130,3 +130,31 @@ export const buildTransferHospitalizationAppendPayload = (input: {
     receivingCenter: input.receivingCenter,
   }),
 });
+
+export const resolveAdmissionBackfillAppendPayload = ({
+  existingBedPatientRuts,
+  rut,
+  fullName,
+  admissionDate,
+  diagnosis,
+  bedName,
+}: {
+  existingBedPatientRuts: Set<string>;
+  rut?: string | null;
+  fullName: string;
+  admissionDate?: string | null;
+  diagnosis?: string | null;
+  bedName?: string | null;
+}) => {
+  if (!rut || existingBedPatientRuts.has(rut) || !admissionDate) {
+    return null;
+  }
+
+  return buildAdmissionHospitalizationAppendPayload({
+    rut,
+    fullName,
+    date: admissionDate,
+    diagnosis,
+    bedName,
+  });
+};
