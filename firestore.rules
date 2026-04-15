@@ -229,6 +229,12 @@ service cloud.firestore {
              isOnlySpecialistAffectedBed(affectedBedIds, 'E5');
     }
 
+    function isWithinSpecialistMedicalHandoffWindow(effectiveRecordTimestamp) {
+      let now = request.time.toMillis();
+      return effectiveRecordTimestamp == null ||
+             (now >= effectiveRecordTimestamp && now < (effectiveRecordTimestamp + 86400000));
+    }
+
     function isValidSpecialistStructuredMedicalSpecialtyEntry(specialty) {
       let beforeEntry = getSpecialistStructuredBeforeBySpecialty()[specialty];
       let afterEntry = getSpecialistStructuredAfterBySpecialty()[specialty];
@@ -262,7 +268,6 @@ service cloud.firestore {
     function isSpecialistMedicalHandoffPayload() {
       let affectedRecordKeys = request.resource.data.diff(resource.data).affectedKeys();
       let affectedBedIds = request.resource.data.beds.diff(resource.data.beds).affectedKeys();
-      let now = request.time.toMillis();
       let currentRecordTimestamp = resource.data.dateTimestamp;
       let nextRecordTimestamp = request.resource.data.dateTimestamp;
       let effectiveRecordTimestamp =
@@ -270,13 +275,7 @@ service cloud.firestore {
           ? nextRecordTimestamp
           : currentRecordTimestamp;
 
-      // Grace mode for legacy records without dateTimestamp.
-      // Otherwise keep the normal 24h write window for specialist handoff.
-      let isWithinSpecialistWindow =
-        effectiveRecordTimestamp == null ||
-        (now >= effectiveRecordTimestamp && now < (effectiveRecordTimestamp + 86400000));
-
-      return isWithinSpecialistWindow &&
+      return isWithinSpecialistMedicalHandoffWindow(effectiveRecordTimestamp) &&
              hasOnlySpecialistMedicalHandoffRecordKeys(affectedRecordKeys) &&
              (
                isSpecialistStructuredMedicalHandoffUpdate() ||

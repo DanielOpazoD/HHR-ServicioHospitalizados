@@ -267,3 +267,16 @@ Se compactó otro guard pequeño del payload especialista:
 - `bash scripts/run-firestore-rules-ci.sh`: verde (`81` tests).
 
 Conclusión: sigue bajando la repetición del boundary de especialista con cortes locales y verificables, manteniendo intacta la semántica de acceso.
+
+## Iteración 13 ejecutada
+
+Se aisló otro guard temporal del mismo boundary:
+
+- se agregó `isWithinSpecialistMedicalHandoffWindow(...)` para encapsular la ventana de escritura de 24 horas del handoff especialista
+- `isSpecialistMedicalHandoffPayload()` ya no recompone inline la lógica temporal y mantiene el resto del guard principal más concentrado
+
+## Resultado de la validación de la iteración 13
+
+- `bash scripts/run-firestore-rules-ci.sh`: verde (`81` tests).
+
+Conclusión: el boundary especialista sigue ganando legibilidad local con helpers de una sola responsabilidad, sin alterar permisos ni abrir una reescritura riesgosa.

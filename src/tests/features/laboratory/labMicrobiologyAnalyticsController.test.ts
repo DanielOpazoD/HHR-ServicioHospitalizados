@@ -99,4 +99,20 @@ describe('labMicrobiologyAnalyticsController', () => {
       expect.arrayContaining([{ analysis: 'Rhinovirus', result: 'NEGATIVO' }])
     );
   });
+
+  it('keeps separated microbiology cards visible even before PDF fallback enriches findings', () => {
+    const entries = buildMicrobiologyEntriesForExam({
+      exam: combinedExam,
+      date: '06/04/2026 11:40',
+      categories: resolveMicrobiologyCategoriesForExam(combinedExam),
+      findingsByCategory: new Map(),
+    });
+
+    expect(entries.map(entry => entry.examLabel)).toEqual([
+      'Cultivo corriente / Antibiograma',
+      'PCR panel respiratorio',
+    ]);
+    expect(entries.every(entry => entry.findings)).toBe(true);
+    expect(entries.every(entry => entry.sourceExam.id === '43091284')).toBe(true);
+  });
 });
