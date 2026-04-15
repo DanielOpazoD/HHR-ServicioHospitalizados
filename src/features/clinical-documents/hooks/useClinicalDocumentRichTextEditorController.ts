@@ -59,6 +59,8 @@ export const useClinicalDocumentRichTextEditorController = ({
   const historyDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** Pending HTML to push into history when the debounce fires. */
   const pendingHistoryHtmlRef = useRef<string | null>(null);
+  /** External normalized value received while the editor is focused. */
+  const pendingExternalNormalizedValueRef = useRef<string | null>(null);
   const onActivateRef = useRef(onActivate);
   const onDeactivateRef = useRef(onDeactivate);
   const applyEditorCommandRef = useRef<
@@ -90,11 +92,16 @@ export const useClinicalDocumentRichTextEditorController = ({
     const isFocused = typeof document !== 'undefined' && document.activeElement === editor;
     const isLocalEcho = normalizedValue === lastLocalNormalizedValueRef.current;
 
-    if (currentNormalizedHtml !== normalizedValue && (!isFocused || !isLocalEcho)) {
-      editor.innerHTML = normalizedValue;
+    if (currentNormalizedHtml !== normalizedValue && !isLocalEcho) {
+      if (isFocused) {
+        pendingExternalNormalizedValueRef.current = normalizedValue;
+      } else {
+        editor.innerHTML = normalizedValue;
+        pendingExternalNormalizedValueRef.current = null;
+      }
     }
 
-    if (!isApplyingHistoryRef.current && (!isFocused || !isLocalEcho)) {
+    if (!isApplyingHistoryRef.current && !isFocused && !isLocalEcho) {
       historyRef.current = [normalizedValue];
       historyIndexRef.current = 0;
       updateHistoryState(0, historyRef.current);
@@ -191,6 +198,7 @@ export const useClinicalDocumentRichTextEditorController = ({
       }
 
       editor.focus();
+      pendingExternalNormalizedValueRef.current = null;
       applyClinicalDocumentEditorCommand(command, value);
       const html = normalizeClinicalDocumentContentForStorage(editor.innerHTML);
       lastLocalNormalizedValueRef.current = html;
@@ -253,6 +261,7 @@ export const useClinicalDocumentRichTextEditorController = ({
       void onSlashLab().then(labText => {
         if (!labText || !editorRef.current) return;
         editorRef.current.focus();
+        pendingExternalNormalizedValueRef.current = null;
         document.execCommand('insertText', false, labText);
         const updatedHtml = normalizeClinicalDocumentContentForStorage(editorRef.current.innerHTML);
         lastLocalNormalizedValueRef.current = updatedHtml;
@@ -263,6 +272,7 @@ export const useClinicalDocumentRichTextEditorController = ({
     }
 
     const html = normalizeClinicalDocumentContentForStorage(editor.innerHTML);
+    pendingExternalNormalizedValueRef.current = null;
     lastLocalNormalizedValueRef.current = html;
     debouncedPushHistorySnapshot(html);
     onChange(html);
@@ -273,10 +283,23 @@ export const useClinicalDocumentRichTextEditorController = ({
   }, [notifyActive]);
 
   const handleBlur = useCallback(() => {
+    const editor = editorRef.current;
     flushPendingHistorySnapshot();
+    if (editor && pendingExternalNormalizedValueRef.current != null) {
+      const nextNormalizedValue = pendingExternalNormalizedValueRef.current;
+      const currentNormalizedValue = normalizeClinicalDocumentContentForStorage(editor.innerHTML);
+      if (currentNormalizedValue !== nextNormalizedValue) {
+        editor.innerHTML = nextNormalizedValue;
+      }
+      lastLocalNormalizedValueRef.current = nextNormalizedValue;
+      historyRef.current = [nextNormalizedValue];
+      historyIndexRef.current = 0;
+      updateHistoryState(0, historyRef.current);
+      pendingExternalNormalizedValueRef.current = null;
+    }
     isActiveRef.current = false;
     onDeactivateRef.current?.(sectionId);
-  }, [flushPendingHistorySnapshot, sectionId]);
+  }, [editorRef, flushPendingHistorySnapshot, sectionId, updateHistoryState]);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
@@ -336,6 +359,7 @@ export const useClinicalDocumentRichTextEditorController = ({
         void readFileAsDataUrl(descriptor.file).then(dataUrl => {
           if (!editorRef.current) return;
           editorRef.current.focus();
+          pendingExternalNormalizedValueRef.current = null;
           document.execCommand('insertHTML', false, buildPastedImageHtml(dataUrl));
           const html = normalizeClinicalDocumentContentForStorage(editorRef.current.innerHTML);
           lastLocalNormalizedValueRef.current = html;
@@ -346,8 +370,10 @@ export const useClinicalDocumentRichTextEditorController = ({
       }
 
       if (descriptor.kind === 'html') {
+        pendingExternalNormalizedValueRef.current = null;
         document.execCommand('insertHTML', false, descriptor.sanitizedHtml);
       } else {
+        pendingExternalNormalizedValueRef.current = null;
         document.execCommand('insertText', false, descriptor.text);
       }
 

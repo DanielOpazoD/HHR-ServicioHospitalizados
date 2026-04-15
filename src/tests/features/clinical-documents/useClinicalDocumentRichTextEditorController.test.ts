@@ -114,4 +114,40 @@ describe('useClinicalDocumentRichTextEditorController', () => {
 
     expect(applyEditorCommandMock).toHaveBeenCalledTimes(2);
   });
+
+  it('defers external content sync while focused and applies it on blur', () => {
+    const editorRef = createRef<HTMLDivElement>() as MutableRefObject<HTMLDivElement | null>;
+    const editor = document.createElement('div');
+    editor.innerHTML = 'Inicial';
+    editorRef.current = editor;
+    const onChange = vi.fn();
+
+    const activeElementSpy = vi.spyOn(document, 'activeElement', 'get');
+
+    const { result, rerender } = renderHook(
+      ({ value }) =>
+        useClinicalDocumentRichTextEditorController({
+          sectionId: 'section-1',
+          value,
+          disabled: false,
+          editorRef,
+          onChange,
+        }),
+      { initialProps: { value: 'Inicial' } }
+    );
+
+    activeElementSpy.mockReturnValue(editor);
+    rerender({ value: 'Actualizado externamente' });
+
+    expect(editor.innerHTML).toBe('Inicial');
+
+    activeElementSpy.mockReturnValue(document.body);
+    act(() => {
+      result.current.handleBlur();
+    });
+
+    expect(editor.innerHTML).toBe('Actualizado externamente');
+
+    activeElementSpy.mockRestore();
+  });
 });

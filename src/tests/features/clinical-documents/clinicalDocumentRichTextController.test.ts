@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  applyClinicalDocumentEditorCommand,
   normalizeClinicalDocumentContentForStorage,
   stripClinicalDocumentHtml,
 } from '@/features/clinical-documents/controllers/clinicalDocumentRichTextController';
@@ -47,14 +48,23 @@ describe('clinicalDocumentRichTextController', () => {
     expect(stripClinicalDocumentHtml(html)).toContain('• Control');
   });
 
-  it('normalizes blockquote indent markup to plain div containers', () => {
+  it('preserves blockquote markup used for indentation', () => {
     const html = normalizeClinicalDocumentContentForStorage(
       '<blockquote><div>- Prerrenal</div><blockquote><div>- Renal</div></blockquote></blockquote>'
     );
 
-    expect(html).not.toContain('<blockquote');
+    expect(html).toContain('<blockquote>');
     expect(html).toContain('<div>- Prerrenal</div>');
     expect(html).toContain('<div>- Renal</div>');
+  });
+
+  it('preserves inline indentation styles on block elements', () => {
+    const html = normalizeClinicalDocumentContentForStorage(
+      '<div style="margin-left: 24px; color: red">Texto</div>'
+    );
+
+    expect(html).toContain('margin-left: 24px');
+    expect(html).toContain('color: red');
   });
 
   it('keeps ordered list numbering when extracting plain text for exports', () => {
@@ -112,5 +122,33 @@ describe('clinicalDocumentRichTextController', () => {
         expect(() => stripClinicalDocumentHtml(sanitized)).not.toThrow();
       }
     }
+  });
+
+  it('applies indent and outdent to the selected block without relying on native execCommand', () => {
+    const editor = document.createElement('div');
+    editor.className = 'clinical-document-rich-text-editor';
+    editor.contentEditable = 'true';
+
+    const block = document.createElement('div');
+    block.textContent = 'Linea clínica';
+    editor.appendChild(block);
+    document.body.appendChild(editor);
+
+    const textNode = block.firstChild;
+    const range = document.createRange();
+    range.setStart(textNode!, 0);
+    range.setEnd(textNode!, 5);
+
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+
+    expect(applyClinicalDocumentEditorCommand('indent')).toBe(true);
+    expect(block.style.marginLeft).toBe('24px');
+
+    expect(applyClinicalDocumentEditorCommand('outdent')).toBe(true);
+    expect(block.style.marginLeft).toBe('');
+
+    editor.remove();
   });
 });

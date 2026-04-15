@@ -12,6 +12,9 @@ import {
   sanitizeElementStyle,
   preserveElementAttributes,
 } from '@/features/clinical-documents/controllers/clinicalDocumentHtmlSanitizer';
+import { applyClinicalDocumentIndentationCommand } from '@/features/clinical-documents/controllers/clinicalDocumentIndentationController';
+
+const INDENT_STEP_PX = 24;
 
 const escapeHtml = (value: string): string =>
   value
@@ -91,8 +94,7 @@ export const sanitizeClinicalDocumentHtml = (value: string): string => {
       return sanitizedChildren;
     }
 
-    const normalizedTagName = tagName === 'BLOCKQUOTE' ? 'div' : tagName.toLowerCase();
-    const clone = document.createElement(normalizedTagName);
+    const clone = document.createElement(tagName.toLowerCase());
     const safeStyle = sanitizeElementStyle(element, tagName);
     if (safeStyle) {
       clone.setAttribute('style', safeStyle);
@@ -140,6 +142,32 @@ export const stripClinicalDocumentHtml = (value: string): string => {
     return '';
   }
 
+  const resolveInlineIndentDepth = (element: HTMLElement): number => {
+    const marginLeft = element.style.marginLeft;
+    if (!marginLeft) {
+      return 0;
+    }
+
+    const parsed = Number.parseInt(marginLeft, 10);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return 0;
+    }
+
+    return Math.max(0, Math.round(parsed / INDENT_STEP_PX));
+  };
+
+  const indentMultilineText = (value: string, depth: number): string => {
+    if (depth <= 0 || !value.trim()) {
+      return value;
+    }
+
+    const prefix = '  '.repeat(depth);
+    return value
+      .split('\n')
+      .map(line => (line.trim() ? `${prefix}${line}` : line))
+      .join('\n');
+  };
+
   const serializeNodesToText = (nodes: NodeListOf<ChildNode> | ChildNode[], depth = 0): string => {
     const chunks: string[] = [];
 
@@ -179,7 +207,12 @@ export const stripClinicalDocumentHtml = (value: string): string => {
         return;
       }
 
-      const text = serializeNodesToText(element.childNodes, depth);
+      const nextDepth =
+        depth + resolveInlineIndentDepth(element) + (tagName === 'BLOCKQUOTE' ? 1 : 0);
+      const text = indentMultilineText(
+        serializeNodesToText(element.childNodes, nextDepth),
+        nextDepth
+      );
       chunks.push(text);
       if (['P', 'DIV', 'BLOCKQUOTE', 'LI'].includes(tagName)) {
         chunks.push('\n');
@@ -307,8 +340,12 @@ export const applyClinicalDocumentEditorCommand = (
     | 'outdent',
   value?: string
 ): boolean => {
-  if (typeof document === 'undefined' || typeof document.execCommand !== 'function') {
+  if (typeof document === 'undefined') {
     return false;
+  }
+
+  if (command === 'indent' || command === 'outdent') {
+    return applyClinicalDocumentIndentationCommand(command);
   }
 
   return document.execCommand(command, false, value);

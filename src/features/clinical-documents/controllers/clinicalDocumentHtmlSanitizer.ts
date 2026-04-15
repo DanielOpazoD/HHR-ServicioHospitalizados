@@ -51,6 +51,9 @@ export const ALLOWED_TAGS = new Set([
 /** Style properties allowed on all elements. */
 export const ALLOWED_STYLE_KEYS = new Set(['color', 'background-color']);
 
+/** Block-level indentation styles preserved for rich-text paragraphs. */
+export const BLOCK_ALLOWED_STYLE_KEYS = new Set([...ALLOWED_STYLE_KEYS, 'margin-left']);
+
 /**
  * Extended style properties allowed specifically on IMG elements.
  * Supports inline resize and alignment applied by the image editor.
@@ -96,7 +99,9 @@ export const sanitizeElementStyle = (element: HTMLElement, tagName?: string): st
       ? IMAGE_ALLOWED_STYLE_KEYS
       : tagName === 'A'
         ? LINK_ALLOWED_STYLE_KEYS
-        : ALLOWED_STYLE_KEYS;
+        : tagName === 'DIV' || tagName === 'P' || tagName === 'BLOCKQUOTE'
+          ? BLOCK_ALLOWED_STYLE_KEYS
+          : ALLOWED_STYLE_KEYS;
 
   return rawStyle
     .split(';')
