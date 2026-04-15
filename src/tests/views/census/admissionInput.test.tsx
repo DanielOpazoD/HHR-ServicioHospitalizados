@@ -42,6 +42,7 @@ describe('AdmissionInput', () => {
       admissionDate: '2024-01-01',
       admissionTime: '',
       patientName: 'Paciente Prueba',
+      firstSeenDate: '2026-03-10',
     });
 
     const onChange = vi.fn((_: string) => vi.fn());
@@ -71,13 +72,12 @@ describe('AdmissionInput', () => {
     expect(onMultipleUpdate).toHaveBeenCalledWith({
       admissionDate: '2026-03-10',
       admissionTime: expect.any(String),
-      firstSeenDate: '2026-03-10',
     });
   });
 
   it('anchors firstSeenDate when editing admission date on the first observed day', () => {
     const data = DataFactory.createMockPatient('R1', {
-      admissionDate: '2026-03-11',
+      admissionDate: '2026-03-10',
       admissionTime: '08:30',
       patientName: 'Paciente Prueba',
       firstSeenDate: undefined,

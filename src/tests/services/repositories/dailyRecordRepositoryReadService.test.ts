@@ -125,6 +125,24 @@ describe('dailyRecordRepositoryReadService', () => {
     expect(result.retryability).toBe('automatic_retry');
   });
 
+  it('returns an explicit missing result when neither local nor remote has the record', async () => {
+    vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(null);
+    vi.mocked(loadRemoteRecordWithFallback).mockResolvedValueOnce({
+      record: null,
+      source: 'not_found',
+      compatibilityTier: 'none',
+      compatibilityIntensity: 'none',
+      migrationRulesApplied: [],
+      cachedLocally: false,
+    });
+
+    const result = await getForDateWithMeta('2026-03-19');
+
+    expect(result.source).toBe('not_found');
+    expect(result.consistencyState).toBe('missing');
+    expect(result.userSafeMessage).toBe('No hay registro disponible para este día.');
+  });
+
   it('delegates month record loading to firestore queries when remote sync is enabled', async () => {
     vi.mocked(getMonthRecordsFromFirestore).mockResolvedValueOnce([
       { date: '2026-03-19' },

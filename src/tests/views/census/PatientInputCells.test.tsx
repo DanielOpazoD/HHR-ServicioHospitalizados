@@ -45,7 +45,7 @@ describe('PatientInputCells', () => {
     );
 
     expect(screen.getByTitle('Comp. Qx')).toBeInTheDocument();
-    expect(screen.getByTitle('UPC')).toBeInTheDocument();
+    expect(screen.getByTitle(/Sin clasificación UPC/i)).toBeInTheDocument();
   });
 
   it('hides specialist-restricted cells in specialist census access', () => {
@@ -85,7 +85,7 @@ describe('PatientInputCells', () => {
     );
 
     expect(screen.queryByTitle('Comp. Qx')).not.toBeInTheDocument();
-    expect(screen.queryByTitle('UPC')).not.toBeInTheDocument();
+    expect(screen.queryByTitle(/Sin clasificación UPC/i)).not.toBeInTheDocument();
     expect(screen.queryByDisplayValue(/DE|ES|CU/)).not.toBeInTheDocument();
   });
 });

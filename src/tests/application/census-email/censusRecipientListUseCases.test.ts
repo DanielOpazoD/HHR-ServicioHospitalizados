@@ -120,6 +120,29 @@ describe('censusRecipientListUseCases', () => {
     expect(result.data?.recipientsSyncError).toBe('bootstrap failed');
   });
 
+  it('keeps the stored runtime state when the UI is disabled even if management is allowed', async () => {
+    vi.mocked(settingsService.getAppSetting)
+      .mockResolvedValueOnce(['stored@test.com'])
+      .mockResolvedValueOnce('custom-list');
+
+    const result = await executeLoadCensusRecipientRuntimeState({
+      canManageGlobalRecipientLists: true,
+      browserRuntime,
+      enabled: false,
+      activeListStorageKey: 'active-key',
+      recipientsStorageKey: 'recipients-key',
+      user: null,
+    });
+
+    expect(bootstrapController.resolveCensusRecipientsBootstrap).not.toHaveBeenCalled();
+    expect(result.status).toBe('success');
+    expect(result.data).toMatchObject({
+      recipients: ['stored@test.com'],
+      activeRecipientListId: 'custom-list',
+      recipientsSource: 'local',
+    });
+  });
+
   it('creates a list through the application layer', async () => {
     vi.mocked(
       emailRecipientListService.saveGlobalEmailRecipientListWithResult

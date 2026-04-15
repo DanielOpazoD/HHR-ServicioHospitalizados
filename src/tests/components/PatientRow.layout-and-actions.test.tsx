@@ -92,8 +92,8 @@ describe('PatientRow layout and actions', () => {
     expect(screen.getByText('R1')).toBeInTheDocument();
   });
 
-  it('toggles UPC status when clicked', () => {
-    const { mockContext } = render(
+  it('opens the UPC checklist when the classification button is clicked', async () => {
+    render(
       <table>
         <tbody>
           <PatientRow
@@ -107,12 +107,14 @@ describe('PatientRow layout and actions', () => {
       </table>
     );
 
-    fireEvent.click(screen.getByTitle('UPC'));
+    fireEvent.click(screen.getByTitle(/Sin clasificación UPC/i));
 
-    expect(mockContext.updatePatient).toHaveBeenCalledWith('R1', 'isUPC', true);
+    expect(
+      await screen.findByRole('dialog', { name: /checklist de clasificación upc/i })
+    ).toBeInTheDocument();
   });
 
-  it('disables and clears UPC checkbox on non-eligible beds', () => {
+  it('renders a passive UPC placeholder on non-eligible beds', () => {
     const hBedDef = {
       id: 'H1C1',
       name: 'H1C1',
@@ -138,9 +140,8 @@ describe('PatientRow layout and actions', () => {
       </table>
     );
 
-    const upcCheckbox = screen.getByTitle('UPC disponible solo en R1-R4, NEO 1 y NEO 2');
-    expect(upcCheckbox).toBeDisabled();
-    expect(upcCheckbox).not.toBeChecked();
+    expect(screen.getByTitle('UPC disponible solo en R1-R4, Neo 1-2')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /upc/i })).not.toBeInTheDocument();
   });
 
   it('calls updatePatient when status changes', () => {

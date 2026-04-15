@@ -32,7 +32,6 @@ import {
 import { syncPatientsToMasterInBackground } from '@/services/repositories/dailyRecordBackgroundMasterSyncController';
 import {
   buildAutoMergedRecoveryResult,
-  buildBlockedRecoveryResult,
   buildThrowUnrecoverableRecoveryResult,
 } from '@/services/repositories/dailyRecordWriteRecoveryResultController';
 import {
@@ -40,6 +39,7 @@ import {
   resolveRemoteUnavailableRecoveryResult,
 } from '@/services/repositories/dailyRecordRemoteRecoveryController';
 import { attemptConflictAutoMergeRecovery } from '@/services/repositories/dailyRecordConflictAutoMergeController';
+import { resolveBlockedRemoteWriteRecovery } from '@/services/repositories/dailyRecordWriteBlockingRecoveryController';
 
 const isConcurrencyError = (error: unknown): boolean =>
   error instanceof Error && error.name === 'ConcurrencyError';
@@ -161,22 +161,9 @@ export const resolveRemoteWriteRecovery = async (
   const conflictSummary = (kind: DailyRecordConflictSummary['kind'], message: string) =>
     buildDailyRecordConflictSummary(record.lastUpdated, effectiveChangedPaths, kind, message);
 
-  if (error instanceof DataRegressionError || error instanceof VersionMismatchError) {
-    const blockingReason = error instanceof DataRegressionError ? 'regression' : 'version_mismatch';
-    return buildBlockedRecoveryResult({
-      error,
-      blockingReason,
-      conflictSummary: conflictSummary(
-        blockingReason === 'regression' ? 'regression_blocked' : 'version_mismatch',
-        error.message
-      ),
-      observabilityTags: [
-        'daily_record',
-        'write',
-        blockingReason === 'regression' ? 'regression_blocked' : 'version_mismatch',
-      ],
-      userSafeMessage: error.message,
-    });
+  const blockedRecovery = resolveBlockedRemoteWriteRecovery(error, conflictSummary);
+  if (blockedRecovery) {
+    return blockedRecovery;
   }
 
   if (isConcurrencyError(error)) {

@@ -123,9 +123,8 @@ describe('CudyrView Component', () => {
 
     render(<CudyrView />);
 
-    const header = screen.getByRole('banner');
-    expect(within(header).getByText(/Ocupadas:/i).parentElement).toHaveTextContent(/2/);
-    expect(within(header).getByText(/Categ:/i).parentElement).toHaveTextContent(/1/);
+    expect(screen.getAllByText(/Ocupadas/i).at(-1)?.parentElement).toHaveTextContent(/2/);
+    expect(screen.getAllByText(/Categorizadas/i).at(-1)?.parentElement).toHaveTextContent(/1/);
   });
 
   it('updates CUDYR field when a radio button is clicked', () => {
@@ -186,9 +185,8 @@ describe('CudyrView Component', () => {
     expect(screen.getByText('R1')).toBeInTheDocument();
     expect(screen.getByText('R1 (CC)')).toBeInTheDocument();
 
-    const header = screen.getByRole('banner');
-    expect(within(header).getByText(/Ocupadas:/i).parentElement).toHaveTextContent(/2/);
-    expect(within(header).getByText(/Categ:/i).parentElement).toHaveTextContent(/1/);
+    expect(screen.getAllByText(/Ocupadas/i).at(-1)?.parentElement).toHaveTextContent(/2/);
+    expect(screen.getAllByText(/Categorizadas/i).at(-1)?.parentElement).toHaveTextContent(/1/);
   });
 
   it('shows blocked CUDYR rows instead of hiding patients excluded by the night-shift rule', () => {

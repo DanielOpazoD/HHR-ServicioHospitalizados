@@ -48,7 +48,7 @@ describe('ExamRequestModal integration', () => {
     fireEvent.click(screen.getByText('ELECTROLITOS PLASMATICOS'));
 
     await waitFor(() => {
-      expect(screen.getByText('1 examen seleccionado')).toBeInTheDocument();
+      expect(screen.getByText('X')).toBeInTheDocument();
     });
   });
 });

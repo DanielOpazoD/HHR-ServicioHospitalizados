@@ -522,6 +522,20 @@ service cloud.firestore {
       ]);
     }
 
+    function canNurseUpdatePersistedDailyRecord() {
+      return request.resource.data.keys().hasAll(['dateTimestamp']) &&
+             request.resource.data.dateTimestamp != null &&
+             isWithinEditingWindow(request.resource.data.dateTimestamp);
+    }
+
+    function canDoctorUpdatePersistedDailyRecord() {
+      return isMedicalUpdate();
+    }
+
+    function canSpecialistUpdatePersistedDailyRecord() {
+      return isSpecialistMedicalHandoffPayload();
+    }
+
     function canUpdatePersistedDailyRecord() {
       let effectiveRole = getEffectiveRole();
 
@@ -530,13 +544,11 @@ service cloud.firestore {
                effectiveRole == 'admin'
                  ? true
                  : effectiveRole == 'nurse_hospital'
-                   ? request.resource.data.keys().hasAll(['dateTimestamp']) &&
-                     request.resource.data.dateTimestamp != null &&
-                     isWithinEditingWindow(request.resource.data.dateTimestamp)
+                   ? canNurseUpdatePersistedDailyRecord()
                    : effectiveRole == 'doctor_urgency'
-                     ? isMedicalUpdate()
+                     ? canDoctorUpdatePersistedDailyRecord()
                      : effectiveRole == 'doctor_specialist'
-                       ? isSpecialistMedicalHandoffPayload()
+                       ? canSpecialistUpdatePersistedDailyRecord()
                        : false
              );
     }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  resolveRecipientListsAfterRenameRuntime,
   resolveRecipientRuntimeAfterCreate,
+  resolveRecipientRuntimeAfterRename,
   resolveRecipientRuntimeAfterDelete,
 } from '@/hooks/controllers/censusEmailRecipientMutationRuntimeController';
 import type { GlobalEmailRecipientList } from '@/services/email/emailRecipientListService';
@@ -34,16 +34,23 @@ describe('censusEmailRecipientMutationRuntimeController', () => {
     });
   });
 
-  it('updates an existing list in place during rename flows', () => {
+  it('keeps the renamed active list as the next runtime state', () => {
     const current = buildList();
-    const renamed = buildList({ name: 'Renombrada' });
+    const renamed = buildList({ name: 'Renombrada', recipients: ['renombrada@example.com'] });
 
-    expect(resolveRecipientListsAfterRenameRuntime([current], renamed)).toEqual([renamed]);
+    expect(resolveRecipientRuntimeAfterRename([current], renamed)).toEqual({
+      recipientLists: [renamed],
+      recipients: ['renombrada@example.com'],
+      recipientsSource: 'firebase',
+      activeRecipientListId: 'census-default',
+      recipientsSyncError: null,
+      lastRemoteRecipients: ['renombrada@example.com'],
+    });
   });
 
   it('falls back to the provided list after delete flows', () => {
     const current = buildList();
-    const other = buildList({ id: 'otra', name: 'Otra' });
+    const other = buildList({ id: 'otra', name: 'Otra', recipients: ['otra@example.com'] });
 
     expect(
       resolveRecipientRuntimeAfterDelete({
@@ -53,7 +60,11 @@ describe('censusEmailRecipientMutationRuntimeController', () => {
       })
     ).toEqual({
       recipientLists: [current],
+      recipients: ['uno@example.com'],
+      recipientsSource: 'firebase',
       activeRecipientListId: 'census-default',
+      recipientsSyncError: null,
+      lastRemoteRecipients: ['uno@example.com'],
     });
   });
 });

@@ -1,1 +1,1 @@
-export * from '@/features/census';
+export * from '@/features/census/public';

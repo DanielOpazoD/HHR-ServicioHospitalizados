@@ -25,13 +25,23 @@ export const resolveRecipientListsAfterRenameRuntime = (
   nextList: GlobalEmailRecipientList
 ): GlobalEmailRecipientList[] => resolveRecipientListsAfterRename(recipientLists, nextList);
 
+export const resolveRecipientRuntimeAfterRename = (
+  recipientLists: GlobalEmailRecipientList[],
+  nextList: GlobalEmailRecipientList
+): RecipientRuntimeState => {
+  const nextRecipientLists = resolveRecipientListsAfterRename(recipientLists, nextList);
+  return resolveActiveRecipientRuntimeState(nextRecipientLists, nextList);
+};
+
 export const resolveRecipientRuntimeAfterDelete = (input: {
   recipientLists: GlobalEmailRecipientList[];
   listId: string;
-  fallbackList: GlobalEmailRecipientList | null;
-}) =>
-  resolveRecipientSelectionAfterDelete({
+  fallbackList: GlobalEmailRecipientList;
+}): RecipientRuntimeState => {
+  const nextState = resolveRecipientSelectionAfterDelete({
     recipientLists: input.recipientLists,
     listId: input.listId,
     fallbackList: input.fallbackList,
   });
+  return resolveActiveRecipientRuntimeState(nextState.recipientLists, input.fallbackList);
+};

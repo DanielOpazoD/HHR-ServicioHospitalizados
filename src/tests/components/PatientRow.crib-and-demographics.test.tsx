@@ -253,7 +253,7 @@ describe('PatientRow crib and demographics', () => {
       </table>
     );
 
-    expect(screen.getByTitle('UPC')).toBeEnabled();
+    expect(screen.getByTitle(/Sin clasificación UPC/i)).toBeEnabled();
   });
 
   it('renders sub-row when clinicalCrib exists', () => {

@@ -14,8 +14,8 @@ import {
 } from '@/hooks/controllers/censusEmailRecipientRuntimeController';
 import { resolveRecipientListForSelection } from '@/hooks/controllers/censusEmailRecipientMutationController';
 import {
-  resolveRecipientListsAfterRenameRuntime,
   resolveRecipientRuntimeAfterCreate,
+  resolveRecipientRuntimeAfterRename,
   resolveRecipientRuntimeAfterDelete,
 } from '@/hooks/controllers/censusEmailRecipientMutationRuntimeController';
 import { resolveDeferredRecipientSyncInput } from '@/hooks/controllers/censusEmailRecipientSyncController';
@@ -310,8 +310,8 @@ export const useCensusEmailRecipientLists = ({
         },
         {
           onSuccess: result => {
-            setRecipientLists(previousLists =>
-              resolveRecipientListsAfterRenameRuntime(previousLists, result)
+            applyRecipientRuntimeStateWithPersistence(
+              resolveRecipientRuntimeAfterRename(recipientLists, result)
             );
           },
           fallbackMessage: 'No se pudo actualizar el nombre de la lista global.',
@@ -320,6 +320,7 @@ export const useCensusEmailRecipientLists = ({
     },
     [
       activeRecipientListId,
+      applyRecipientRuntimeStateWithPersistence,
       canManageGlobalRecipientLists,
       recipientLists,
       recipients,
@@ -341,25 +342,26 @@ export const useCensusEmailRecipientLists = ({
         },
         {
           onSuccess: result => {
-            const nextState = resolveRecipientRuntimeAfterDelete({
-              recipientLists,
-              listId,
-              fallbackList: result.fallbackList,
-            });
-            setRecipientLists(nextState.recipientLists);
-            if (nextState.activeRecipientListId) {
-              setActiveRecipientListId(nextState.activeRecipientListId);
+            if (!result.fallbackList) {
+              return;
             }
+            applyRecipientRuntimeStateWithPersistence(
+              resolveRecipientRuntimeAfterDelete({
+                recipientLists,
+                listId,
+                fallbackList: result.fallbackList,
+              })
+            );
           },
           fallbackMessage: 'No se pudo eliminar la lista global seleccionada.',
         }
       );
     },
     [
+      applyRecipientRuntimeStateWithPersistence,
       canManageGlobalRecipientLists,
       recipientLists,
       runRecipientListMutation,
-      setActiveRecipientListId,
     ]
   );
 

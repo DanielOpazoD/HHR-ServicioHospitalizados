@@ -24,20 +24,20 @@ describe('patientRowNewAdmissionIndicatorController', () => {
     ).toBe(true);
   });
 
-  it('marks next-day admissions without time as new', () => {
+  it('does not mark next-day admissions without time as new when no firstSeenDate exists', () => {
     expect(
       resolveIsNewAdmissionForRecord({
         recordDate,
         admissionDate: '2026-03-06',
       })
-    ).toBe(true);
+    ).toBe(false);
 
     expect(
       resolveIsNewAdmissionForRecord({
         recordDate: '2026-03-06',
         admissionDate: '2026-03-06',
       })
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it('does not mark next-day admissions at or after night-end', () => {

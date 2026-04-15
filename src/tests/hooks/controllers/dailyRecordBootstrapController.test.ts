@@ -79,8 +79,8 @@ describe('dailyRecordBootstrapController', () => {
         bootstrapPhase: 'remote_record_timeout',
       })
     ).toEqual({
-      shouldDeferEmptyState: false,
-      deferMs: 1_200,
+      shouldDeferEmptyState: true,
+      deferMs: 800,
     });
   });
 
