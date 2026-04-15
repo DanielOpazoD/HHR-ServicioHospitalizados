@@ -42,7 +42,7 @@ describe('useUpcChecklistState', () => {
   // ── resetFromPersisted ─────────────────────────────────────────
 
   it('hydrates draft from persisted checklist', () => {
-    const checklist = makeChecklist(['uci_vmi'], ['uti_sepsis'], 'UPC_UCI');
+    const checklist = makeChecklist(['uci_vmi'], ['uti_mon_cardiaca'], 'UPC_UCI');
     const { result } = renderHook(() =>
       useUpcChecklistState({ checklist, onSave, uciAllowed: true, actor: ACTOR })
     );
@@ -50,7 +50,7 @@ describe('useUpcChecklistState', () => {
     act(() => result.current.resetFromPersisted());
 
     expect(result.current.draftUci.has('uci_vmi')).toBe(true);
-    expect(result.current.draftUti.has('uti_sepsis')).toBe(true);
+    expect(result.current.draftUti.has('uti_mon_cardiaca')).toBe(true);
     expect(result.current.draftClassification).toBe('UPC_UCI');
   });
 
@@ -68,7 +68,7 @@ describe('useUpcChecklistState', () => {
   });
 
   it('clears UCI criteria when uciAllowed is false (Neo beds)', () => {
-    const checklist = makeChecklist(['uci_vmi'], ['uti_sepsis'], 'UPC_UCI');
+    const checklist = makeChecklist(['uci_vmi'], ['uti_mon_cardiaca'], 'UPC_UCI');
     const { result } = renderHook(() =>
       useUpcChecklistState({ checklist, onSave, uciAllowed: false, actor: ACTOR })
     );
@@ -76,7 +76,7 @@ describe('useUpcChecklistState', () => {
     act(() => result.current.resetFromPersisted());
 
     expect(result.current.draftUci.size).toBe(0);
-    expect(result.current.draftUti.has('uti_sepsis')).toBe(true);
+    expect(result.current.draftUti.has('uti_mon_cardiaca')).toBe(true);
     expect(result.current.draftClassification).toBe('UPC_UTI');
   });
 
@@ -112,7 +112,7 @@ describe('useUpcChecklistState', () => {
     );
 
     act(() => {
-      result.current.toggleUtiCriterion('uti_sepsis');
+      result.current.toggleUtiCriterion('uti_mon_cardiaca');
       result.current.toggleUciCriterion('uci_vasoactivos');
     });
 
@@ -126,14 +126,14 @@ describe('useUpcChecklistState', () => {
       useUpcChecklistState({ checklist: undefined, onSave, uciAllowed: true, actor: ACTOR })
     );
 
-    act(() => result.current.toggleUtiCriterion('uti_hemorragia'));
+    act(() => result.current.toggleUtiCriterion('uti_materno_fetal'));
 
     const closeFn = vi.fn();
     act(() => result.current.saveAndClose(closeFn));
 
     expect(onSave).toHaveBeenCalledTimes(1);
     const saved = onSave.mock.calls[0][0] as UpcChecklistRecord;
-    expect(saved.utiCriteria).toEqual(['uti_hemorragia']);
+    expect(saved.utiCriteria).toEqual(['uti_materno_fetal']);
     expect(saved.uciCriteria).toEqual([]);
     expect(saved.classification).toBe('UPC_UTI');
     expect(saved.evaluatedAt).toBeTruthy();
@@ -164,7 +164,7 @@ describe('useUpcChecklistState', () => {
 
     act(() => {
       result.current.toggleUciCriterion('uci_vmi');
-      result.current.toggleUtiCriterion('uti_sepsis');
+      result.current.toggleUtiCriterion('uti_mon_cardiaca');
     });
 
     const closeFn = vi.fn();
@@ -189,7 +189,7 @@ describe('useUpcChecklistState', () => {
 
     act(() => {
       result.current.toggleUciCriterion('uci_vmi');
-      result.current.toggleUtiCriterion('uti_sepsis');
+      result.current.toggleUtiCriterion('uti_mon_cardiaca');
       result.current.toggleUciCriterion('uci_vmi'); // untoggle
     });
 

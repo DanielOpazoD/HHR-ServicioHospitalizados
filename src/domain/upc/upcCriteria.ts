@@ -25,28 +25,35 @@ export const UPC_UCI_CRITERIA: readonly UpcCriterion[] = [
 // ── UTI criteria (at least 1, without UCI → UPC-UTI) ────────────
 
 export const UPC_UTI_CRITERIA: readonly UpcCriterion[] = [
-  { id: 'uti_mon_cardiaca', label: 'Monitorización cardíaca continua' },
+  {
+    id: 'uti_mon_cardiaca',
+    label:
+      'Monitorización cardíaca continua por riesgo arrítmico, inestabilidad eléctrica o hemodinámica',
+  },
   {
     id: 'uti_mon_respiratoria',
-    label: 'Monitorización respiratoria continua / soporte no invasivo (VMNI, CNAF, FiO₂ >40%)',
+    label:
+      'Monitorización respiratoria continua o soporte no invasivo hospitalario (VMNI, CNAF, FiO₂ >40%)',
   },
-  { id: 'uti_mon_neurologica', label: 'Monitorización neurológica seriada (≥c/4h)' },
-  { id: 'uti_controles_frecuentes', label: 'Controles hemodinámicos frecuentes (≥c/1-2h)' },
+  {
+    id: 'uti_mon_neurologica',
+    label:
+      'Monitorización neurológica seriada (≥c/4h) por condición neurológica aguda con riesgo de deterioro',
+  },
+  {
+    id: 'uti_controles_frecuentes',
+    label:
+      'Controles clínicos o hemodinámicos frecuentes (c/1-3h) por inestabilidad activa o riesgo de deterioro',
+  },
   {
     id: 'uti_infusion_alto_riesgo',
-    label: 'Infusión EV continua de fármacos de alto riesgo con titulación',
-  },
-  { id: 'uti_intoxicacion', label: 'Intoxicación aguda con riesgo vital' },
-  { id: 'uti_metabolico', label: 'Trastorno metabólico / ácido-base / endocrino agudo grave' },
-  { id: 'uti_sepsis', label: 'Sepsis sin vasoactivos con riesgo de progresión a shock' },
-  { id: 'uti_hemorragia', label: 'Hemorragia aguda con riesgo de descompensación' },
-  {
-    id: 'uti_post_procedimiento',
-    label: 'Vigilancia post-procedimiento con riesgo de complicación',
+    label:
+      'Infusión EV continua de fármacos de alto riesgo con titulación activa o vigilancia estrecha',
   },
   {
     id: 'uti_materno_fetal',
-    label: 'Monitorización materno-fetal continua por patología obstétrica aguda',
+    label:
+      'Monitorización materno-fetal continua por patología obstétrica aguda con riesgo de deterioro materno y/o fetal',
   },
 ] as const;
 

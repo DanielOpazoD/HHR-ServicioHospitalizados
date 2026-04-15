@@ -22,10 +22,10 @@ describe('UpcChecklistPanel', () => {
     expect(screen.getByText(/UTI — Monitorización y soporte no invasivo/)).toBeTruthy();
   });
 
-  it('renders 3 UCI checkboxes and 11 UTI checkboxes', () => {
+  it('renders 3 UCI checkboxes and 6 UTI checkboxes', () => {
     render(<UpcChecklistPanel {...defaults} />);
     const checkboxes = screen.getAllByRole('checkbox');
-    expect(checkboxes).toHaveLength(14); // 3 + 11
+    expect(checkboxes).toHaveLength(9); // 3 + 6
   });
 
   it('shows "No UPC" badge when no criteria selected', () => {
@@ -49,7 +49,7 @@ describe('UpcChecklistPanel', () => {
     render(
       <UpcChecklistPanel
         {...defaults}
-        draftUti={new Set(['uti_sepsis'])}
+        draftUti={new Set(['uti_mon_cardiaca'])}
         draftClassification="UPC_UTI"
         hasDraftCriteria={true}
       />
@@ -61,7 +61,7 @@ describe('UpcChecklistPanel', () => {
     render(
       <UpcChecklistPanel
         {...defaults}
-        draftUti={new Set(['uti_sepsis', 'uti_hemorragia'])}
+        draftUti={new Set(['uti_mon_cardiaca', 'uti_materno_fetal'])}
         hasDraftCriteria={true}
       />
     );

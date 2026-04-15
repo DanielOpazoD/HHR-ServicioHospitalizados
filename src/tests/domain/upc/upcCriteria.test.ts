@@ -12,8 +12,8 @@ describe('UPC criteria constants', () => {
     expect(UPC_UCI_CRITERIA).toHaveLength(3);
   });
 
-  it('defines exactly 11 UTI criteria', () => {
-    expect(UPC_UTI_CRITERIA).toHaveLength(11);
+  it('defines exactly 6 UTI criteria', () => {
+    expect(UPC_UTI_CRITERIA).toHaveLength(6);
   });
 
   it('has unique IDs across all criteria', () => {
@@ -38,7 +38,7 @@ describe('isValidUciCriterionId', () => {
   });
 
   it('rejects UTI IDs', () => {
-    expect(isValidUciCriterionId('uti_sepsis')).toBe(false);
+    expect(isValidUciCriterionId('uti_mon_cardiaca')).toBe(false);
   });
 
   it('rejects arbitrary strings', () => {
@@ -51,7 +51,7 @@ describe('isValidUciCriterionId', () => {
 describe('isValidUtiCriterionId', () => {
   it('accepts valid UTI IDs', () => {
     expect(isValidUtiCriterionId('uti_mon_cardiaca')).toBe(true);
-    expect(isValidUtiCriterionId('uti_sepsis')).toBe(true);
+    expect(isValidUtiCriterionId('uti_infusion_alto_riesgo')).toBe(true);
     expect(isValidUtiCriterionId('uti_materno_fetal')).toBe(true);
   });
 
@@ -84,7 +84,7 @@ describe('sanitizeCriterionIds', () => {
   });
 
   it('passes through all valid IDs unchanged', () => {
-    const validIds = ['uti_sepsis', 'uti_hemorragia'];
+    const validIds = ['uti_mon_cardiaca', 'uti_materno_fetal'];
     expect(sanitizeCriterionIds(validIds, isValidUtiCriterionId)).toEqual(validIds);
   });
 });

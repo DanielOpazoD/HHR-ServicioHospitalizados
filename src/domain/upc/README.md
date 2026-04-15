@@ -5,7 +5,7 @@ Pure business logic for classifying hospitalized patients as **UPC-UTI** or **UP
 ## Protocol summary
 
 - **UCI** = at least 1 of: VMI, vasoactivos, inotrópicos (soporte vital avanzado).
-- **UTI** = at least 1 of 11 criteria (monitoring/support) without meeting UCI.
+- **UTI** = at least 1 of 6 criteria (monitoring/support) without meeting UCI.
 - **No UPC** = implicit default for all patients; not stored explicitly.
 
 ## Bed eligibility
@@ -20,7 +20,7 @@ Pure business logic for classifying hospitalized patients as **UPC-UTI** or **UP
 
 | File                   | Purpose                                                       |
 | ---------------------- | ------------------------------------------------------------- |
-| `upcCriteria.ts`       | Criterion constants (3 UCI + 11 UTI), validators, sanitizer   |
+| `upcCriteria.ts`       | Criterion constants (3 UCI + 6 UTI), validators, sanitizer    |
 | `upcClassification.ts` | `resolveUpcClassification()` — pure function, no side effects |
 | `upcContracts.ts`      | `UpcChecklistRecord` — Firestore persistence shape            |
 

@@ -25,7 +25,7 @@ describe('resolveUpcClassification', () => {
     expect(
       resolveUpcClassification({
         uciCriteria: ['uci_vasoactivos'],
-        utiCriteria: ['uti_sepsis', 'uti_hemorragia'],
+        utiCriteria: ['uti_mon_cardiaca', 'uti_materno_fetal'],
       })
     ).toBe('UPC_UCI');
   });
@@ -34,7 +34,7 @@ describe('resolveUpcClassification', () => {
     expect(
       resolveUpcClassification({
         uciCriteria: new Set<string>(),
-        utiCriteria: new Set(['uti_intoxicacion']),
+        utiCriteria: new Set(['uti_infusion_alto_riesgo']),
       })
     ).toBe('UPC_UTI');
   });
@@ -43,7 +43,7 @@ describe('resolveUpcClassification', () => {
     expect(
       resolveUpcClassification({
         uciCriteria: [],
-        utiCriteria: ['uti_mon_cardiaca', 'uti_sepsis', 'uti_hemorragia'],
+        utiCriteria: ['uti_mon_cardiaca', 'uti_mon_cardiaca', 'uti_materno_fetal'],
       })
     ).toBe('UPC_UTI');
   });

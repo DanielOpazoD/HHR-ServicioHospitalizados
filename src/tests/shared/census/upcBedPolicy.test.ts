@@ -103,7 +103,7 @@ describe('resolveIsUpcFromChecklist', () => {
     expect(
       resolveIsUpcFromChecklist({
         uciCriteria: [],
-        utiCriteria: ['uti_sepsis'],
+        utiCriteria: ['uti_mon_cardiaca'],
         classification: 'UPC_UTI',
         evaluatedAt: '2026-04-14T00:00:00Z',
       })
