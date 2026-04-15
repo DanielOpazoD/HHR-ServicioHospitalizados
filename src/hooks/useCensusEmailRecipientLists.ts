@@ -13,8 +13,10 @@ import {
 } from '@/hooks/controllers/censusEmailRecipientSelectionController';
 import {
   resolveBootstrapRecipientFallbackMessage,
+  resolveBootstrapRecipientRuntimeState,
   resolveRecipientMutationFailureMessage,
   resolveRecipientSyncState,
+  resolveStoredRecipientRuntimeState,
 } from '@/hooks/controllers/censusEmailRecipientRuntimeController';
 import {
   resolveRecipientListsAfterCreate,
@@ -88,22 +90,22 @@ export const useCensusEmailRecipientLists = ({
     setRecipientsState(nextRecipients);
   }, []);
 
-  const restoreStoredRecipientSelection = useCallback(
-    (
-      storedRecipients: string[] | null,
-      storedActiveListId?: string | null,
-      syncError: string | null = null
-    ) => {
-      const restoredSelection = resolveStoredRecipientSelection(
-        storedRecipients,
-        storedActiveListId
-      );
-
-      activeRecipientListIdRef.current = restoredSelection.activeRecipientListId;
-      setActiveRecipientListIdState(restoredSelection.activeRecipientListId);
-      setRecipientsState(restoredSelection.recipients);
-      setRecipientsSource(restoredSelection.recipientsSource);
-      setRecipientsSyncError(syncError);
+  const applyRecipientRuntimeState = useCallback(
+    (nextState: {
+      recipientLists: GlobalEmailRecipientList[];
+      activeRecipientListId: string;
+      recipients: string[];
+      recipientsSource: 'firebase' | 'local' | 'default';
+      recipientsSyncError: string | null;
+      lastRemoteRecipients: string[] | null;
+    }) => {
+      setRecipientLists(nextState.recipientLists);
+      activeRecipientListIdRef.current = nextState.activeRecipientListId;
+      setActiveRecipientListIdState(nextState.activeRecipientListId);
+      setRecipientsState(nextState.recipients);
+      setRecipientsSource(nextState.recipientsSource);
+      setRecipientsSyncError(nextState.recipientsSyncError);
+      lastRemoteRecipientsRef.current = nextState.lastRemoteRecipients;
       recipientsReadyRef.current = true;
     },
     []
@@ -190,7 +192,9 @@ export const useCensusEmailRecipientLists = ({
         if (!isActive) {
           return;
         }
-        restoreStoredRecipientSelection(storedRecipients, storedActiveListId);
+        applyRecipientRuntimeState(
+          resolveStoredRecipientRuntimeState(storedRecipients, storedActiveListId)
+        );
         return;
       }
 
@@ -207,15 +211,12 @@ export const useCensusEmailRecipientLists = ({
       }
 
       if (bootstrapResult.status === 'success' && bootstrapResult.data) {
-        const bootstrapSelection = resolveBootstrapRecipientSelection(bootstrapResult.data);
-        setRecipientLists(bootstrapSelection.recipientLists);
-        activeRecipientListIdRef.current = bootstrapSelection.activeRecipientListId;
-        setActiveRecipientListIdState(bootstrapSelection.activeRecipientListId);
-        setRecipientsState(bootstrapSelection.recipients);
-        setRecipientsSource(bootstrapSelection.recipientsSource);
-        setRecipientsSyncError(bootstrapResult.data.syncError);
-        lastRemoteRecipientsRef.current = bootstrapSelection.lastRemoteRecipients;
-        recipientsReadyRef.current = true;
+        applyRecipientRuntimeState(
+          resolveBootstrapRecipientRuntimeState({
+            ...resolveBootstrapRecipientSelection(bootstrapResult.data),
+            syncError: bootstrapResult.data.syncError,
+          })
+        );
         return;
       }
 
@@ -223,10 +224,12 @@ export const useCensusEmailRecipientLists = ({
       if (!isActive) {
         return;
       }
-      restoreStoredRecipientSelection(
-        stored,
-        null,
-        resolveBootstrapRecipientFallbackMessage(bootstrapResult)
+      applyRecipientRuntimeState(
+        resolveStoredRecipientRuntimeState(
+          stored,
+          null,
+          resolveBootstrapRecipientFallbackMessage(bootstrapResult)
+        )
       );
     };
 
@@ -240,7 +243,7 @@ export const useCensusEmailRecipientLists = ({
     browserRuntime,
     canManageGlobalRecipientLists,
     enabled,
-    restoreStoredRecipientSelection,
+    applyRecipientRuntimeState,
     user,
   ]);
 

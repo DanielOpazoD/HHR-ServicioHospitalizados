@@ -254,3 +254,16 @@ Se hizo otro recorte pequeño en el mismo boundary de especialista:
 - `bash scripts/run-firestore-rules-ci.sh`: verde (`81` tests).
 
 Conclusión: el path de especialista sigue bajando duplicación visible con helpers locales y verificables, sin mover lógica fuera de `firestore.rules` ni alterar la semántica del permiso.
+
+## Iteración 12 ejecutada
+
+Se compactó otro guard pequeño del payload especialista:
+
+- se agregó `hasOnlySpecialistMedicalHandoffRecordKeys(...)` para encapsular en un helper la combinación entre keys de camas y keys estructuradas del handoff especialista
+- `isSpecialistMedicalHandoffPayload()` ahora delega ese allowlist de keys y deja el guard principal un poco más legible
+
+## Resultado de la validación de la iteración 12
+
+- `bash scripts/run-firestore-rules-ci.sh`: verde (`81` tests).
+
+Conclusión: sigue bajando la repetición del boundary de especialista con cortes locales y verificables, manteniendo intacta la semántica de acceso.

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildAdmissionHospitalizationAppendPayload,
+  buildAdmissionHospitalizationSyncPlan,
   buildAdmissionPatientMasterPatch,
   buildDischargeHospitalizationAppendPayload,
   buildDischargeHospitalizationSyncPlan,
@@ -171,6 +172,49 @@ describe('dailyRecordMasterSyncController', () => {
         receivingCenter: 'Base',
       },
     });
+  });
+
+  it('builds an admission sync plan only when bed patients carry rut and admission date', () => {
+    expect(
+      buildAdmissionHospitalizationSyncPlan({
+        rut: '1-9',
+        patientName: 'Paciente',
+        birthDate: null,
+        insurance: 'FONASA',
+        biologicalSex: 'F',
+        admissionDate: '2026-04-14',
+        pathology: 'Dx',
+        bedId: 'R1',
+      })
+    ).toEqual({
+      appendPayload: {
+        patient: {
+          rut: '1-9',
+          fullName: 'Paciente',
+          birthDate: undefined,
+          forecast: 'FONASA',
+          gender: 'F',
+        },
+        event: {
+          id: '2026-04-14-ingreso-rt',
+          type: 'Ingreso',
+          date: '2026-04-14',
+          diagnosis: 'Dx',
+          bedName: 'R1',
+        },
+        extra: {
+          lastAdmission: '2026-04-14',
+        },
+      },
+    });
+
+    expect(
+      buildAdmissionHospitalizationSyncPlan({
+        rut: '1-9',
+        patientName: 'Paciente',
+        admissionDate: null,
+      })
+    ).toBeNull();
   });
 
   it('resolves realtime admission backfill payloads only when the patient is missing from current beds', () => {

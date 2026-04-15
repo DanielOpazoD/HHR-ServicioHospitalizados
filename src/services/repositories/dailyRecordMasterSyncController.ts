@@ -86,6 +86,34 @@ export const buildAdmissionHospitalizationAppendPayload = (input: {
   extra: buildAdmissionPatientMasterPatch(input.date),
 });
 
+export const buildAdmissionHospitalizationSyncPlan = (patient: {
+  rut?: string | null;
+  patientName?: string | null;
+  birthDate?: string | null;
+  insurance?: string | null;
+  biologicalSex?: string | null;
+  admissionDate?: string | null;
+  pathology?: string | null;
+  bedId?: string | null;
+}) => {
+  if (!patient.rut || !patient.admissionDate) {
+    return null;
+  }
+
+  return {
+    appendPayload: buildAdmissionHospitalizationAppendPayload({
+      rut: patient.rut,
+      fullName: patient.patientName || '',
+      birthDate: patient.birthDate,
+      forecast: patient.insurance,
+      gender: patient.biologicalSex,
+      date: patient.admissionDate,
+      diagnosis: patient.pathology,
+      bedName: patient.bedId,
+    }),
+  };
+};
+
 export const buildDischargeHospitalizationAppendPayload = (input: {
   rut: string;
   fullName: string;

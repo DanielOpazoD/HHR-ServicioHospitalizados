@@ -171,6 +171,11 @@ service cloud.firestore {
       ]);
     }
 
+    function hasOnlySpecialistMedicalHandoffRecordKeys(affectedRecordKeys) {
+      return affectedRecordKeys.hasOnly(['beds', 'lastUpdated', 'dateTimestamp']) ||
+             hasOnlySpecialistStructuredRecordKeys(affectedRecordKeys);
+    }
+
     function isAllowedSpecialistStructuredSpecialty(specialty) {
       return [
         'cirugia',
@@ -272,15 +277,7 @@ service cloud.firestore {
         (now >= effectiveRecordTimestamp && now < (effectiveRecordTimestamp + 86400000));
 
       return isWithinSpecialistWindow &&
-             (
-               affectedRecordKeys.hasOnly(['beds', 'lastUpdated', 'dateTimestamp']) ||
-               affectedRecordKeys.hasOnly([
-                 'medicalHandoffBySpecialty',
-                 'medicalHandoffNovedades',
-                 'lastUpdated',
-                 'dateTimestamp'
-               ])
-             ) &&
+             hasOnlySpecialistMedicalHandoffRecordKeys(affectedRecordKeys) &&
              (
                isSpecialistStructuredMedicalHandoffUpdate() ||
                isAnySpecialistAffectedBed(affectedBedIds)

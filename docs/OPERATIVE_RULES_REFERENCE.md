@@ -57,7 +57,7 @@ Referencias:
 
 - El write path de `dailyRecord` debe mantener separadas las decisiones puras de recovery (`changed paths`, `retry origin`, `conflict summary`) del flujo de persistencia real.
 - El sync en background hacia `PatientMaster` debe reutilizar builders pequeños para seeds, eventos, patches y payloads de append, en lugar de recomponer esos datos inline por cada rama.
-- Los append de egreso/traslado y el backfill de ingreso faltante deben resolverse como planes puros antes de ejecutar efectos, para que el servicio principal solo orqueste llamadas al repositorio.
+- Los append de ingreso/egreso/traslado y el backfill de ingreso faltante deben resolverse como planes o payloads puros antes de ejecutar efectos, para que el servicio principal solo orqueste llamadas al repositorio.
 
 ## Reducer de camas
 
@@ -68,6 +68,7 @@ Referencias:
 
 - El hook `useCensusEmailRecipientLists` debe quedar como orquestador: bootstrap, selección activa, mutaciones y fallbacks deben resolverse en controllers puros o casos de uso.
 - La política de sync diferido no debe vivir inline en el hook: primero se resuelve si corresponde sincronizar y con qué input, y luego el hook solo dispara el caso de uso con ese plan.
+- La restauración de estado bootstrap/local debe resolverse como runtime state puro antes de tocar `setState`, para que el hook aplique una sola transición y no repita wiring local por cada rama.
 - Los casos de uso de listas de correo deben traducir validación, fallos de servicio y errores desconocidos con helpers compartidos de outcome, para no duplicar `createApplicationFailed(...)`.
 
 Referencias:

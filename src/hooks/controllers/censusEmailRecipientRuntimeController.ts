@@ -1,5 +1,11 @@
-import type { CensusRecipientSelectionSource } from '@/hooks/controllers/censusEmailRecipientSelectionController';
+import {
+  resolveStoredRecipientSelection,
+  type BootstrapRecipientSelectionState,
+  type CensusRecipientSelectionSource,
+  type CensusRecipientSelectionState,
+} from '@/hooks/controllers/censusEmailRecipientSelectionController';
 import { resolveApplicationOutcomeMessage } from '@/shared/contracts/applicationOutcomeMessage';
+import type { GlobalEmailRecipientList } from '@/services/email/emailRecipientListService';
 
 interface ApplicationOutcomeLike<TData = unknown> {
   status: string;
@@ -7,6 +13,36 @@ interface ApplicationOutcomeLike<TData = unknown> {
   issues?: Array<{ message?: string; userSafeMessage?: string }>;
   userSafeMessage?: string;
 }
+
+export interface RecipientRuntimeState extends CensusRecipientSelectionState {
+  recipientLists: GlobalEmailRecipientList[];
+  recipientsSyncError: string | null;
+  lastRemoteRecipients: string[] | null;
+}
+
+export const resolveStoredRecipientRuntimeState = (
+  storedRecipients: string[] | null,
+  storedActiveListId?: string | null,
+  syncError: string | null = null
+): RecipientRuntimeState => ({
+  ...resolveStoredRecipientSelection(storedRecipients, storedActiveListId),
+  recipientLists: [],
+  recipientsSyncError: syncError,
+  lastRemoteRecipients: null,
+});
+
+export const resolveBootstrapRecipientRuntimeState = (
+  input: BootstrapRecipientSelectionState & {
+    syncError: string | null;
+  }
+): RecipientRuntimeState => ({
+  recipientLists: input.recipientLists,
+  recipients: input.recipients,
+  recipientsSource: input.recipientsSource,
+  activeRecipientListId: input.activeRecipientListId,
+  recipientsSyncError: input.syncError,
+  lastRemoteRecipients: input.lastRemoteRecipients,
+});
 
 export const resolveBootstrapRecipientFallbackMessage = (result: ApplicationOutcomeLike): string =>
   resolveApplicationOutcomeMessage(

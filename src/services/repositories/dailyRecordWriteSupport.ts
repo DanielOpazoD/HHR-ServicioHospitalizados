@@ -1,6 +1,7 @@
 import { CURRENT_SCHEMA_VERSION } from '@/constants/version';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { DailyRecordPatch } from '@/types/domain/dailyRecordPatch';
+import type { HospitalizationEvent } from '@/types/domain/patientMaster';
 import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
 import { isRetryableSyncError, queueSyncTask } from '@/services/storage/sync';
 import { saveRecord as saveToIndexedDB } from '@/services/storage/indexeddb/indexedDbRecordService';
@@ -37,6 +38,7 @@ import {
   resolveRetryOrigin,
 } from '@/services/repositories/dailyRecordWriteRecoveryController';
 import {
+  buildAdmissionHospitalizationSyncPlan,
   buildAdmissionHospitalizationAppendPayload,
   buildDischargeHospitalizationSyncPlan,
   buildPatientMasterSeed,
@@ -315,6 +317,46 @@ type MasterSyncDailyRecordPatient = ReturnType<
 type DailyRecordDischarge = NonNullable<DailyRecord['discharges']>[number];
 type DailyRecordTransfer = NonNullable<DailyRecord['transfers']>[number];
 
+type HospitalizationAppendPayload = {
+  patient: {
+    rut: string;
+    fullName: string;
+    birthDate?: string;
+    forecast?: string;
+    gender?: string;
+  };
+  event: HospitalizationEvent;
+  extra?: {
+    lastAdmission?: string;
+    lastDischarge?: string;
+    vitalStatus?: 'Vivo' | 'Fallecido';
+  };
+};
+type HospitalizationSyncPlan = {
+  appendPayload: HospitalizationAppendPayload;
+  admissionBackfillPayload?: HospitalizationAppendPayload | null;
+};
+
+const appendHospitalizationPayload = async (payload: HospitalizationAppendPayload) => {
+  await PatientMasterRepository.appendHospitalizationEvent(
+    payload.patient,
+    payload.event,
+    payload.extra
+  );
+};
+
+const appendHospitalizationSyncPlan = async (syncPlan: HospitalizationSyncPlan | null) => {
+  if (!syncPlan) {
+    return;
+  }
+
+  await appendHospitalizationPayload(syncPlan.appendPayload);
+
+  if (syncPlan.admissionBackfillPayload) {
+    await appendHospitalizationPayload(syncPlan.admissionBackfillPayload);
+  }
+};
+
 const syncBedPatientsToMaster = async (patientsToSync: MasterSyncDailyRecordPatient[]) => {
   await Promise.all(
     patientsToSync.map(patient =>
@@ -331,22 +373,7 @@ const syncBedPatientsToMaster = async (patientsToSync: MasterSyncDailyRecordPati
   );
 
   for (const patient of patientsToSync) {
-    if (!patient.rut || !patient.admissionDate) continue;
-    const appendPayload = buildAdmissionHospitalizationAppendPayload({
-      rut: patient.rut,
-      fullName: patient.patientName || '',
-      birthDate: patient.birthDate,
-      forecast: patient.insurance,
-      gender: patient.biologicalSex,
-      date: patient.admissionDate,
-      diagnosis: patient.pathology,
-      bedName: patient.bedId,
-    });
-    await PatientMasterRepository.appendHospitalizationEvent(
-      appendPayload.patient,
-      appendPayload.event,
-      appendPayload.extra
-    );
+    await appendHospitalizationSyncPlan(buildAdmissionHospitalizationSyncPlan(patient));
   }
 };
 
@@ -356,25 +383,13 @@ const syncDischargesToMaster = async (
   discharges: DailyRecordDischarge[]
 ) => {
   for (const discharge of discharges) {
-    const syncPlan = buildDischargeHospitalizationSyncPlan({
-      existingBedPatientRuts,
-      recordDate: record.date,
-      discharge,
-    });
-    if (!syncPlan) continue;
-    await PatientMasterRepository.appendHospitalizationEvent(
-      syncPlan.appendPayload.patient,
-      syncPlan.appendPayload.event,
-      syncPlan.appendPayload.extra
+    await appendHospitalizationSyncPlan(
+      buildDischargeHospitalizationSyncPlan({
+        existingBedPatientRuts,
+        recordDate: record.date,
+        discharge,
+      })
     );
-
-    if (syncPlan.admissionBackfillPayload) {
-      await PatientMasterRepository.appendHospitalizationEvent(
-        syncPlan.admissionBackfillPayload.patient,
-        syncPlan.admissionBackfillPayload.event,
-        syncPlan.admissionBackfillPayload.extra
-      );
-    }
   }
 };
 
@@ -384,24 +399,13 @@ const syncTransfersToMaster = async (
   transfers: DailyRecordTransfer[]
 ) => {
   for (const transfer of transfers) {
-    const syncPlan = buildTransferHospitalizationSyncPlan({
-      existingBedPatientRuts,
-      recordDate: record.date,
-      transfer,
-    });
-    if (!syncPlan) continue;
-    await PatientMasterRepository.appendHospitalizationEvent(
-      syncPlan.appendPayload.patient,
-      syncPlan.appendPayload.event
+    await appendHospitalizationSyncPlan(
+      buildTransferHospitalizationSyncPlan({
+        existingBedPatientRuts,
+        recordDate: record.date,
+        transfer,
+      })
     );
-
-    if (syncPlan.admissionBackfillPayload) {
-      await PatientMasterRepository.appendHospitalizationEvent(
-        syncPlan.admissionBackfillPayload.patient,
-        syncPlan.admissionBackfillPayload.event,
-        syncPlan.admissionBackfillPayload.extra
-      );
-    }
   }
 };
 

@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   resolveBootstrapRecipientFallbackMessage,
+  resolveBootstrapRecipientRuntimeState,
   resolveRecipientMutationFailureMessage,
   resolveRecipientSyncState,
+  resolveStoredRecipientRuntimeState,
 } from '@/hooks/controllers/censusEmailRecipientRuntimeController';
 
 describe('censusEmailRecipientRuntimeController', () => {
@@ -70,5 +72,60 @@ describe('censusEmailRecipientRuntimeController', () => {
         'fallback'
       )
     ).toBe('Mutation custom failed');
+  });
+
+  it('builds a stored runtime state with sync metadata reset', () => {
+    expect(
+      resolveStoredRecipientRuntimeState(['Local@Test.com'], 'custom-list', 'sync failed')
+    ).toEqual({
+      recipientLists: [],
+      recipients: ['local@test.com'],
+      recipientsSource: 'local',
+      activeRecipientListId: 'custom-list',
+      recipientsSyncError: 'sync failed',
+      lastRemoteRecipients: null,
+    });
+  });
+
+  it('builds a bootstrap runtime state preserving remote recipients and sync error', () => {
+    expect(
+      resolveBootstrapRecipientRuntimeState({
+        recipientLists: [
+          {
+            id: 'census-default',
+            name: 'Censo',
+            description: 'desc',
+            recipients: ['uno@example.com'],
+            scope: 'global',
+            updatedAt: '2026-04-14T10:00:00.000Z',
+            updatedByUid: null,
+            updatedByEmail: null,
+          },
+        ],
+        recipients: ['uno@example.com'],
+        recipientsSource: 'firebase',
+        activeRecipientListId: 'census-default',
+        lastRemoteRecipients: ['uno@example.com'],
+        syncError: 'bootstrap warning',
+      })
+    ).toEqual({
+      recipientLists: [
+        {
+          id: 'census-default',
+          name: 'Censo',
+          description: 'desc',
+          recipients: ['uno@example.com'],
+          scope: 'global',
+          updatedAt: '2026-04-14T10:00:00.000Z',
+          updatedByUid: null,
+          updatedByEmail: null,
+        },
+      ],
+      recipients: ['uno@example.com'],
+      recipientsSource: 'firebase',
+      activeRecipientListId: 'census-default',
+      recipientsSyncError: 'bootstrap warning',
+      lastRemoteRecipients: ['uno@example.com'],
+    });
   });
 });
