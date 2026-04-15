@@ -7,6 +7,7 @@ import {
   createEmptyIeehDraft,
   isIeehDraftFilled,
   IEEH_DISCHARGE_CONDITIONS,
+  resolveClinicalDocumentIeehPanelState,
 } from '@/features/clinical-documents/controllers/clinicalDocumentIeehController';
 
 describe('createEmptyIeehDraft', () => {
@@ -51,5 +52,54 @@ describe('IEEH_DISCHARGE_CONDITIONS', () => {
 
   it('first option is Domicilio', () => {
     expect(IEEH_DISCHARGE_CONDITIONS[0].label).toBe('Domicilio');
+  });
+});
+
+describe('resolveClinicalDocumentIeehPanelState', () => {
+  it('enables diagnosis-driven actions only when the draft is populated', () => {
+    expect(
+      resolveClinicalDocumentIeehPanelState({
+        draft: createEmptyIeehDraft(),
+        searchQuery: 'neo',
+        searchResultsCount: 2,
+        showResults: true,
+        isAiSearching: false,
+        isPrinting: false,
+      })
+    ).toEqual({
+      hasSelectedDiagnosis: false,
+      shouldShowDiagnosisResults: true,
+      canRunAiSearch: true,
+      shouldShowInterventionSelector: false,
+      shouldShowProcedureSelector: false,
+      canPrintIeeh: false,
+      printButtonTitle: 'Seleccione un diagnóstico CIE-10 primero',
+    });
+  });
+
+  it('reflects filled draft selectors and disables printing while busy', () => {
+    expect(
+      resolveClinicalDocumentIeehPanelState({
+        draft: {
+          ...createEmptyIeehDraft(),
+          cie10Code: 'E11.5',
+          intervencionQuirurgica: '1',
+          procedimiento: '1',
+        },
+        searchQuery: 'n',
+        searchResultsCount: 0,
+        showResults: true,
+        isAiSearching: true,
+        isPrinting: true,
+      })
+    ).toEqual({
+      hasSelectedDiagnosis: true,
+      shouldShowDiagnosisResults: false,
+      canRunAiSearch: false,
+      shouldShowInterventionSelector: true,
+      shouldShowProcedureSelector: true,
+      canPrintIeeh: false,
+      printButtonTitle: 'Imprimir IEEH',
+    });
   });
 });

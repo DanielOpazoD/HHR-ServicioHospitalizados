@@ -22,6 +22,7 @@ import type {
 import {
   createEmptyIeehDraft,
   IEEH_DISCHARGE_CONDITIONS,
+  resolveClinicalDocumentIeehPanelState,
 } from '@/features/clinical-documents/controllers/clinicalDocumentIeehController';
 import {
   buildIeehPatientFromEpicrisis,
@@ -200,10 +201,27 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
   );
 
   const [isPrinting, setIsPrinting] = useState(false);
+  const panelState = resolveClinicalDocumentIeehPanelState({
+    draft: localDraft,
+    searchQuery,
+    searchResultsCount: searchResults.length,
+    showResults,
+    isAiSearching,
+    isPrinting,
+  });
+  const {
+    hasSelectedDiagnosis,
+    shouldShowDiagnosisResults,
+    canRunAiSearch,
+    shouldShowInterventionSelector,
+    shouldShowProcedureSelector,
+    canPrintIeeh,
+    printButtonTitle,
+  } = panelState;
 
   /** Print the IEEH PDF using the official MINSAL template. */
   const handlePrintIeeh = useCallback(async () => {
-    if (isPrinting || !localDraft.cie10Code) return;
+    if (!canPrintIeeh) return;
     setIsPrinting(true);
     try {
       const { printIEEHForm } = await import('@/services/pdf/ieehPdfService');
@@ -222,7 +240,7 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
     } finally {
       setIsPrinting(false);
     }
-  }, [isPrinting, localDraft, epicrisisDoc, workspacePatient]);
+  }, [canPrintIeeh, localDraft, epicrisisDoc, workspacePatient]);
 
   /** Remove the entire IEEH draft from the document. */
   const handleRemovePanel = useCallback(() => {
@@ -242,7 +260,7 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
         <ClipboardList size={14} />
         Egreso Estadístico
         <span className="text-[10px] font-normal text-emerald-600">(opcional)</span>
-        {localDraft.cie10Code && (
+        {hasSelectedDiagnosis && (
           <span className="ml-1 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">
             {localDraft.cie10Code}
           </span>
@@ -262,7 +280,7 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
               Diagnóstico principal (CIE-10)
             </label>
 
-            {localDraft.cie10Code ? (
+            {hasSelectedDiagnosis ? (
               <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-white px-2.5 py-1.5">
                 <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[11px] font-bold text-emerald-700">
                   {localDraft.cie10Code}
@@ -306,7 +324,7 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
                   <button
                     type="button"
                     onClick={handleAiSearch}
-                    disabled={searchQuery.length < 2 || isAiSearching}
+                    disabled={!canRunAiSearch}
                     className="flex items-center gap-1 rounded-md border border-violet-200 bg-violet-50 px-2 py-1.5 text-[10px] font-semibold text-violet-700 hover:bg-violet-100 disabled:opacity-40 transition-colors"
                     aria-label="Buscar diagnóstico con inteligencia artificial"
                     title="Buscar con IA"
@@ -321,7 +339,7 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
                 </div>
 
                 {/* Search results dropdown */}
-                {showResults && searchResults.length > 0 && (
+                {shouldShowDiagnosisResults && (
                   <div className="absolute z-30 mt-1 max-h-48 w-full overflow-y-auto rounded-md border border-slate-200 bg-white shadow-lg">
                     {searchResults.map(concept => (
                       <button
@@ -393,7 +411,7 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
                 No
               </label>
             </div>
-            {localDraft.intervencionQuirurgica === '1' && (
+            {shouldShowInterventionSelector && (
               <div className="mt-1">
                 <FonasaSearchInput
                   catalog="interventions"
@@ -451,7 +469,7 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
                 No
               </label>
             </div>
-            {localDraft.procedimiento === '1' && (
+            {shouldShowProcedureSelector && (
               <div className="mt-1">
                 <FonasaSearchInput
                   catalog="procedures"
@@ -503,11 +521,9 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
             <button
               type="button"
               onClick={handlePrintIeeh}
-              disabled={isPrinting || !localDraft.cie10Code}
+              disabled={!canPrintIeeh}
               className="flex items-center gap-1.5 rounded-md border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              title={
-                localDraft.cie10Code ? 'Imprimir IEEH' : 'Seleccione un diagnóstico CIE-10 primero'
-              }
+              title={printButtonTitle}
             >
               {isPrinting ? <Loader2 size={13} className="animate-spin" /> : <Printer size={13} />}
               Imprimir IEEH

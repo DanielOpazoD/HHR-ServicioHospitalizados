@@ -44,3 +44,44 @@ export const createEmptyIeehDraft = (): ClinicalDocumentIeehDraft => ({
 /** Whether the draft has a CIE-10 code selected (minimum viable data). */
 export const isIeehDraftFilled = (draft: ClinicalDocumentIeehDraft | undefined): boolean =>
   !!draft?.cie10Code;
+
+export interface ClinicalDocumentIeehPanelState {
+  hasSelectedDiagnosis: boolean;
+  shouldShowDiagnosisResults: boolean;
+  canRunAiSearch: boolean;
+  shouldShowInterventionSelector: boolean;
+  shouldShowProcedureSelector: boolean;
+  canPrintIeeh: boolean;
+  printButtonTitle: string;
+}
+
+export const resolveClinicalDocumentIeehPanelState = ({
+  draft,
+  searchQuery,
+  searchResultsCount,
+  showResults,
+  isAiSearching,
+  isPrinting,
+}: {
+  draft: ClinicalDocumentIeehDraft;
+  searchQuery: string;
+  searchResultsCount: number;
+  showResults: boolean;
+  isAiSearching: boolean;
+  isPrinting: boolean;
+}): ClinicalDocumentIeehPanelState => {
+  const hasSelectedDiagnosis = isIeehDraftFilled(draft);
+  const canPrintIeeh = !isPrinting && hasSelectedDiagnosis;
+
+  return {
+    hasSelectedDiagnosis,
+    shouldShowDiagnosisResults: showResults && searchResultsCount > 0,
+    canRunAiSearch: searchQuery.length >= 2 && !isAiSearching,
+    shouldShowInterventionSelector: draft.intervencionQuirurgica === '1',
+    shouldShowProcedureSelector: draft.procedimiento === '1',
+    canPrintIeeh,
+    printButtonTitle: hasSelectedDiagnosis
+      ? 'Imprimir IEEH'
+      : 'Seleccione un diagnóstico CIE-10 primero',
+  };
+};
