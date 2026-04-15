@@ -3,6 +3,7 @@ import { Check, ClipboardCopy, Loader2, Radio, X } from 'lucide-react';
 
 import { searchMMRADExams, type MMRADExam } from '@/services/radiology/mmradService';
 import { buildMMRADReportClipboardText } from '@/services/radiology/mmradReportSupport';
+import { writeClipboardText } from '@/shared/runtime/browserWindowRuntime';
 
 interface ClinicalDocumentMMRADCopyDialogProps {
   patientRut: string;
@@ -91,7 +92,7 @@ export const ClinicalDocumentMMRADCopyDialog: React.FC<ClinicalDocumentMMRADCopy
 
     if (!text) return;
 
-    await navigator.clipboard.writeText(text);
+    await writeClipboardText(text);
     const examKey = buildExamKey(exam);
     setCopiedExamKey(examKey);
     window.setTimeout(() => {

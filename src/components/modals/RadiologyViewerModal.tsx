@@ -15,6 +15,10 @@ import {
   RadiologyViewerResults,
 } from '@/components/modals/RadiologyViewerModalContent';
 import { BEDS } from '@/constants/beds';
+import {
+  defaultBrowserWindowRuntime,
+  writeClipboardText,
+} from '@/shared/runtime/browserWindowRuntime';
 
 interface RadiologyPatient {
   bedId: string;
@@ -187,7 +191,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
       return;
     }
 
-    await navigator.clipboard.writeText(reportText);
+    await writeClipboardText(reportText);
     const examKey =
       exam.informe_html_url || exam.pdf_url || `${exam.nombre_examen}-${exam.fecha_examen}`;
     setCopiedReportExamKey(examKey);
@@ -206,11 +210,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
     }
 
     const pdfUrl = buildMMRADPdfUrl(exam.pdf_url);
-    const popupWindow = window.open(
-      pdfUrl,
-      '_blank',
-      'popup=yes,width=1100,height=800,noopener,noreferrer'
-    );
+    const popupWindow = defaultBrowserWindowRuntime.open(pdfUrl, '_blank');
     if (!popupWindow) {
       return;
     }
