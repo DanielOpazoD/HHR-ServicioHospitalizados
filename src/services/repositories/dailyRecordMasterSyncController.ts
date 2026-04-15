@@ -158,3 +158,85 @@ export const resolveAdmissionBackfillAppendPayload = ({
     bedName,
   });
 };
+
+export const buildDischargeHospitalizationSyncPlan = ({
+  existingBedPatientRuts,
+  recordDate,
+  discharge,
+}: {
+  existingBedPatientRuts: Set<string>;
+  recordDate: string;
+  discharge: {
+    rut?: string | null;
+    patientName: string;
+    insurance?: string | null;
+    diagnosis?: string | null;
+    bedName?: string | null;
+    status?: string | null;
+    admissionDate?: string | null;
+  };
+}) => {
+  if (!discharge.rut) {
+    return null;
+  }
+
+  return {
+    appendPayload: buildDischargeHospitalizationAppendPayload({
+      rut: discharge.rut,
+      fullName: discharge.patientName,
+      forecast: discharge.insurance,
+      date: recordDate,
+      diagnosis: discharge.diagnosis,
+      bedName: discharge.bedName,
+      status: discharge.status,
+    }),
+    admissionBackfillPayload: resolveAdmissionBackfillAppendPayload({
+      existingBedPatientRuts,
+      rut: discharge.rut,
+      fullName: discharge.patientName,
+      admissionDate: discharge.admissionDate,
+      diagnosis: discharge.diagnosis,
+      bedName: discharge.bedName,
+    }),
+  };
+};
+
+export const buildTransferHospitalizationSyncPlan = ({
+  existingBedPatientRuts,
+  recordDate,
+  transfer,
+}: {
+  existingBedPatientRuts: Set<string>;
+  recordDate: string;
+  transfer: {
+    rut?: string | null;
+    patientName: string;
+    diagnosis?: string | null;
+    bedName?: string | null;
+    receivingCenter?: string | null;
+    admissionDate?: string | null;
+  };
+}) => {
+  if (!transfer.rut) {
+    return null;
+  }
+
+  return {
+    appendPayload: buildTransferHospitalizationAppendPayload({
+      rut: transfer.rut,
+      fullName: transfer.patientName,
+      date: recordDate,
+      diagnosis: transfer.diagnosis,
+      bedName: transfer.bedName,
+      receivingCenter: transfer.receivingCenter,
+    }),
+    admissionBackfillPayload: resolveAdmissionBackfillAppendPayload({
+      existingBedPatientRuts,
+      rut: transfer.rut,
+      fullName: transfer.patientName,
+      admissionDate: transfer.admissionDate,
+      diagnosis: transfer.diagnosis,
+      bedName: transfer.bedName,
+    }),
+  };
+};

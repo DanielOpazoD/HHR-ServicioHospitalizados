@@ -57,6 +57,7 @@ Referencias:
 
 - El write path de `dailyRecord` debe mantener separadas las decisiones puras de recovery (`changed paths`, `retry origin`, `conflict summary`) del flujo de persistencia real.
 - El sync en background hacia `PatientMaster` debe reutilizar builders pequeños para seeds, eventos, patches y payloads de append, en lugar de recomponer esos datos inline por cada rama.
+- Los append de egreso/traslado y el backfill de ingreso faltante deben resolverse como planes puros antes de ejecutar efectos, para que el servicio principal solo orqueste llamadas al repositorio.
 
 ## Reducer de camas
 

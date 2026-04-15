@@ -3,11 +3,13 @@ import {
   buildAdmissionHospitalizationAppendPayload,
   buildAdmissionPatientMasterPatch,
   buildDischargeHospitalizationAppendPayload,
+  buildDischargeHospitalizationSyncPlan,
   buildDischargePatientMasterPatch,
   buildEgresoRealtimeEvent,
   buildIngresoRealtimeEvent,
   buildPatientMasterSeed,
   resolveAdmissionBackfillAppendPayload,
+  buildTransferHospitalizationSyncPlan,
   buildTransferHospitalizationAppendPayload,
   buildTrasladoRealtimeEvent,
 } from '@/services/repositories/dailyRecordMasterSyncController';
@@ -210,6 +212,98 @@ describe('dailyRecordMasterSyncController', () => {
       extra: {
         lastAdmission: '2026-04-14',
       },
+    });
+  });
+
+  it('builds discharge and transfer sync plans with optional admission backfill payloads', () => {
+    expect(
+      buildDischargeHospitalizationSyncPlan({
+        existingBedPatientRuts: new Set(),
+        recordDate: '2026-04-14',
+        discharge: {
+          rut: '1-9',
+          patientName: 'Paciente',
+          insurance: 'FONASA',
+          diagnosis: 'Dx',
+          bedName: 'R1',
+          status: 'Fallecido',
+          admissionDate: '2026-04-10',
+        },
+      })
+    ).toEqual({
+      appendPayload: {
+        patient: {
+          rut: '1-9',
+          fullName: 'Paciente',
+          birthDate: undefined,
+          forecast: 'FONASA',
+          gender: undefined,
+        },
+        event: {
+          id: '2026-04-14-egreso-rt',
+          type: 'Egreso',
+          date: '2026-04-14',
+          diagnosis: 'Dx',
+          bedName: 'R1',
+        },
+        extra: {
+          lastDischarge: '2026-04-14',
+          vitalStatus: 'Fallecido',
+        },
+      },
+      admissionBackfillPayload: {
+        patient: {
+          rut: '1-9',
+          fullName: 'Paciente',
+          birthDate: undefined,
+          forecast: undefined,
+          gender: undefined,
+        },
+        event: {
+          id: '2026-04-10-ingreso-rt',
+          type: 'Ingreso',
+          date: '2026-04-10',
+          diagnosis: 'Dx',
+          bedName: 'R1',
+        },
+        extra: {
+          lastAdmission: '2026-04-10',
+        },
+      },
+    });
+
+    expect(
+      buildTransferHospitalizationSyncPlan({
+        existingBedPatientRuts: new Set(['1-9']),
+        recordDate: '2026-04-14',
+        transfer: {
+          rut: '1-9',
+          patientName: 'Paciente',
+          diagnosis: 'Dx',
+          bedName: 'R1',
+          receivingCenter: 'Base',
+          admissionDate: '2026-04-10',
+        },
+      })
+    ).toEqual({
+      appendPayload: {
+        patient: {
+          rut: '1-9',
+          fullName: 'Paciente',
+          birthDate: undefined,
+          forecast: undefined,
+          gender: undefined,
+        },
+        event: {
+          id: '2026-04-14-traslado-rt',
+          type: 'Traslado',
+          date: '2026-04-14',
+          diagnosis: 'Dx',
+          bedName: 'R1',
+          receivingCenter: 'Base',
+        },
+      },
+      admissionBackfillPayload: null,
     });
   });
 });

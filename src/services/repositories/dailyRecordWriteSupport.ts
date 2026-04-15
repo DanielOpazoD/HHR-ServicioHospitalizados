@@ -38,10 +38,9 @@ import {
 } from '@/services/repositories/dailyRecordWriteRecoveryController';
 import {
   buildAdmissionHospitalizationAppendPayload,
-  buildDischargeHospitalizationAppendPayload,
+  buildDischargeHospitalizationSyncPlan,
   buildPatientMasterSeed,
-  resolveAdmissionBackfillAppendPayload,
-  buildTransferHospitalizationAppendPayload,
+  buildTransferHospitalizationSyncPlan,
 } from '@/services/repositories/dailyRecordMasterSyncController';
 import {
   buildAutoMergedRecoveryResult,
@@ -316,34 +315,6 @@ type MasterSyncDailyRecordPatient = ReturnType<
 type DailyRecordDischarge = NonNullable<DailyRecord['discharges']>[number];
 type DailyRecordTransfer = NonNullable<DailyRecord['transfers']>[number];
 
-const appendRealtimeAdmissionIfMissing = async (
-  existingBedPatientRuts: Set<string>,
-  input: {
-    rut?: string | null;
-    patientName: string;
-    admissionDate?: string | null;
-    diagnosis?: string | null;
-    bedName?: string | null;
-  }
-) => {
-  const appendPayload = resolveAdmissionBackfillAppendPayload({
-    existingBedPatientRuts,
-    rut: input.rut,
-    fullName: input.patientName,
-    admissionDate: input.admissionDate,
-    diagnosis: input.diagnosis,
-    bedName: input.bedName,
-  });
-  if (!appendPayload) {
-    return;
-  }
-  await PatientMasterRepository.appendHospitalizationEvent(
-    appendPayload.patient,
-    appendPayload.event,
-    appendPayload.extra
-  );
-};
-
 const syncBedPatientsToMaster = async (patientsToSync: MasterSyncDailyRecordPatient[]) => {
   await Promise.all(
     patientsToSync.map(patient =>
@@ -385,29 +356,25 @@ const syncDischargesToMaster = async (
   discharges: DailyRecordDischarge[]
 ) => {
   for (const discharge of discharges) {
-    if (!discharge.rut) continue;
-    const appendPayload = buildDischargeHospitalizationAppendPayload({
-      rut: discharge.rut,
-      fullName: discharge.patientName,
-      forecast: discharge.insurance,
-      date: record.date,
-      diagnosis: discharge.diagnosis,
-      bedName: discharge.bedName,
-      status: discharge.status,
+    const syncPlan = buildDischargeHospitalizationSyncPlan({
+      existingBedPatientRuts,
+      recordDate: record.date,
+      discharge,
     });
+    if (!syncPlan) continue;
     await PatientMasterRepository.appendHospitalizationEvent(
-      appendPayload.patient,
-      appendPayload.event,
-      appendPayload.extra
+      syncPlan.appendPayload.patient,
+      syncPlan.appendPayload.event,
+      syncPlan.appendPayload.extra
     );
 
-    await appendRealtimeAdmissionIfMissing(existingBedPatientRuts, {
-      rut: discharge.rut,
-      patientName: discharge.patientName,
-      admissionDate: discharge.admissionDate,
-      diagnosis: discharge.diagnosis,
-      bedName: discharge.bedName,
-    });
+    if (syncPlan.admissionBackfillPayload) {
+      await PatientMasterRepository.appendHospitalizationEvent(
+        syncPlan.admissionBackfillPayload.patient,
+        syncPlan.admissionBackfillPayload.event,
+        syncPlan.admissionBackfillPayload.extra
+      );
+    }
   }
 };
 
@@ -417,27 +384,24 @@ const syncTransfersToMaster = async (
   transfers: DailyRecordTransfer[]
 ) => {
   for (const transfer of transfers) {
-    if (!transfer.rut) continue;
-    const appendPayload = buildTransferHospitalizationAppendPayload({
-      rut: transfer.rut,
-      fullName: transfer.patientName,
-      date: record.date,
-      diagnosis: transfer.diagnosis,
-      bedName: transfer.bedName,
-      receivingCenter: transfer.receivingCenter,
+    const syncPlan = buildTransferHospitalizationSyncPlan({
+      existingBedPatientRuts,
+      recordDate: record.date,
+      transfer,
     });
+    if (!syncPlan) continue;
     await PatientMasterRepository.appendHospitalizationEvent(
-      appendPayload.patient,
-      appendPayload.event
+      syncPlan.appendPayload.patient,
+      syncPlan.appendPayload.event
     );
 
-    await appendRealtimeAdmissionIfMissing(existingBedPatientRuts, {
-      rut: transfer.rut,
-      patientName: transfer.patientName,
-      admissionDate: transfer.admissionDate,
-      diagnosis: transfer.diagnosis,
-      bedName: transfer.bedName,
-    });
+    if (syncPlan.admissionBackfillPayload) {
+      await PatientMasterRepository.appendHospitalizationEvent(
+        syncPlan.admissionBackfillPayload.patient,
+        syncPlan.admissionBackfillPayload.event,
+        syncPlan.admissionBackfillPayload.extra
+      );
+    }
   }
 };
 
