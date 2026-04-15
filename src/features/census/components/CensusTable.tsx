@@ -5,6 +5,7 @@ import { useCensusTableBindingsModel } from '@/features/census/hooks/useCensusTa
 import { useCensusTableDragDrop, DragDropConfirmation } from '@/features/census/drag-drop';
 import { useDailyRecordBeds } from '@/context/DailyRecordContext';
 import { useDailyRecordBedActions } from '@/context/useDailyRecordScopedActions';
+import { ViewLoader } from '@/components/ui/ViewLoader';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 export type { DiagnosisMode } from '@/features/census/types/censusTableTypes';
 
@@ -37,7 +38,7 @@ export const CensusTable: React.FC<CensusTableProps> = ({
 
   const dragDrop = useCensusTableDragDrop(handleMoveToBed, beds ?? {});
 
-  if (!isReady || !bindings) return null;
+  if (!isReady || !bindings) return <ViewLoader />;
 
   const { headerProps, bodyProps, tableStyle } = bindings;
 

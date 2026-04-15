@@ -1,14 +1,16 @@
 /**
  * ViewLoader
- * Loading fallback component for lazy-loaded views
+ * Loading fallback component for lazy-loaded views.
+ * Minimal spinner with subtle text.
  */
 import React from 'react';
+import { Loader2 } from 'lucide-react';
 
 export const ViewLoader: React.FC = () => (
-    <div className="flex items-center justify-center min-h-[400px] py-20">
-        <div className="flex flex-col items-center gap-3">
-            <div className="w-12 h-12 border-4 border-medical-200 border-t-medical-600 rounded-full animate-spin" />
-            <span className="text-slate-500 text-sm font-medium">Cargando módulo...</span>
-        </div>
+  <div className="flex items-center justify-center min-h-[300px] py-16 print:hidden">
+    <div className="flex flex-col items-center gap-2.5">
+      <Loader2 size={28} className="animate-spin text-accent-500" />
+      <span className="text-slate-400 text-xs font-medium tracking-wide">Cargando...</span>
     </div>
+  </div>
 );

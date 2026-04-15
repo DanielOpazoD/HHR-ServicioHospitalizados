@@ -81,10 +81,14 @@ export const resolveCensusEmptyStatePolicy = ({
   const isToday = currentDateString === todayDateString;
   const shouldDeferRemoteBootstrap =
     isAuthenticated && isDailyRecordBootstrapPending(bootstrapPhase);
+  const isConfirmedEmpty = bootstrapPhase === 'confirmed_empty';
 
+  // Always defer briefly so Firestore has time to resolve the record
+  // before showing the empty-day prompt. Skip only when the repository
+  // has explicitly confirmed the date has no data.
   return {
-    shouldDeferEmptyState: isToday || shouldDeferRemoteBootstrap,
-    deferMs: shouldDeferRemoteBootstrap ? 15_000 : 1_200,
+    shouldDeferEmptyState: !isConfirmedEmpty,
+    deferMs: shouldDeferRemoteBootstrap ? 15_000 : isToday ? 1_200 : 800,
   };
 };
 

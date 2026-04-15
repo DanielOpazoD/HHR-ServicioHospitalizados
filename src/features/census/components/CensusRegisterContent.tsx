@@ -56,7 +56,7 @@ export const CensusRegisterContent: React.FC<CensusRegisterContentProps> = ({
         />
 
         {shouldRenderSections ? (
-          <Suspense fallback={null}>
+          <Suspense fallback={<div className="h-20 animate-pulse rounded-xl bg-slate-100" />}>
             <LazyCensusRegisterSections
               readOnly={readOnly}
               showBedManagerModal={showBedManagerModal}

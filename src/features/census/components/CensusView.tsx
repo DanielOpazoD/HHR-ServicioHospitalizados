@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { ViewLoader } from '@/components/ui/ViewLoader';
 import { useCensusViewScreenModel } from '@/features/census/hooks/useCensusViewScreenModel';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
@@ -55,8 +55,35 @@ const CensusViewContent: React.FC<CensusViewProps> = ({
     accessProfile,
   });
 
+  // Show loader briefly on every date change so the empty-day prompt
+  // never flashes before Firestore has a chance to deliver the record.
+  const [settledDate, setSettledDate] = useState('');
+  const prevDateRef = useRef(currentDateString);
+  useEffect(() => {
+    if (prevDateRef.current !== currentDateString) {
+      setSettledDate('');
+      prevDateRef.current = currentDateString;
+    }
+  }, [currentDateString]);
+
+  useEffect(() => {
+    if (branch === 'register') {
+      // Data arrived — settle immediately.
+      setSettledDate(currentDateString);
+      return;
+    }
+    // For empty branch, wait a grace period before committing.
+    const id = window.setTimeout(() => setSettledDate(currentDateString), 800);
+    return () => window.clearTimeout(id);
+  }, [branch, currentDateString]);
+
+  const isDateSettled = settledDate === currentDateString;
+
   if (branch === 'empty') {
-    if (shouldDeferTodayEmptyState && resolvedTodayEmptyDate !== currentDateString) {
+    if (
+      !isDateSettled ||
+      (shouldDeferTodayEmptyState && resolvedTodayEmptyDate !== currentDateString)
+    ) {
       return <ViewLoader />;
     }
 
