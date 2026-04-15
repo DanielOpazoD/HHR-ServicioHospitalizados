@@ -1,17 +1,17 @@
 /**
  * useGlobalPatientSearch — Re-export from feature module.
  *
- * The canonical implementation lives in the census feature module:
- * @see {@link @/features/census}
+ * The canonical implementation lives in the census feature application facade:
+ * @see {@link @/application/census/public}
  *
  * This file exists for backward compatibility. New consumers should
- * import from '@/features/census' directly.
+ * import from '@/application/census/public' directly.
  */
 
-export { useGlobalPatientSearch } from '@/features/census';
+export { useGlobalPatientSearch } from '@/application/census/public';
 export type {
   ClinicalDocSummary,
   SelectedPatientDetail,
   EpisodeDocuments,
   UseGlobalPatientSearchReturn,
-} from '@/features/census';
+} from '@/application/census/public';

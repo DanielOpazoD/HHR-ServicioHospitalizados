@@ -69,7 +69,7 @@ export const DEFAULT_COLUMN_WIDTHS: TableColumnConfig = {
   admission: 58,
   dmi: 76,
   cqx: 24,
-  upc: 24,
+  upc: 48,
 };
 
 export const DEFAULT_PAGE_MARGIN = 16; // px (corresponds to p-4)

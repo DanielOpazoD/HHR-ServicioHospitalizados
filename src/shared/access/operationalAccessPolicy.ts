@@ -18,6 +18,7 @@ import {
   resolvePassiveBackupEditableModule,
 } from '@/shared/access/operationalAccessPolicySupport';
 import { canEditSpecialistTodayBoundRecord } from '@/shared/access/specialistAccessPolicy';
+import { getPreviousDay, normalizeDateOnly } from '@/utils/clinicalDayUtils';
 
 type SupportedRole = UserRole | string | undefined;
 
@@ -127,6 +128,41 @@ export const canEditMedicalHandoffForDate = ({
     recordDate,
     todayISO,
   });
+
+export const canEditCudyrForDate = ({
+  role,
+  readOnly,
+  recordDate,
+  todayISO,
+}: {
+  role: SupportedRole;
+  readOnly: boolean;
+  recordDate?: string;
+  todayISO?: string;
+}): boolean => {
+  if (readOnly) {
+    return false;
+  }
+
+  if (role === 'admin') {
+    return true;
+  }
+
+  if (!canDoAction(role, ACTIONS.CUDYR_EDIT)) {
+    return false;
+  }
+
+  const normalizedRecordDate = normalizeDateOnly(recordDate);
+  const normalizedTodayISO = normalizeDateOnly(todayISO);
+  if (!normalizedRecordDate || !normalizedTodayISO) {
+    return false;
+  }
+
+  return (
+    normalizedRecordDate === normalizedTodayISO ||
+    normalizedRecordDate === getPreviousDay(normalizedTodayISO)
+  );
+};
 
 export const canOpenClinicalDocumentsFromCensus = ({
   role,

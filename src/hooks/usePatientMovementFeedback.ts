@@ -7,7 +7,7 @@ import {
   UndoPatientMovementErrorCode,
   getUndoMovementErrorMessage,
   UndoMovementKind,
-} from '@/features/census';
+} from '@/application/census/public';
 import { patientMovementRuntimeLogger } from '@/hooks/controllers/hookControllerLoggers';
 
 interface UndoDescriptor {

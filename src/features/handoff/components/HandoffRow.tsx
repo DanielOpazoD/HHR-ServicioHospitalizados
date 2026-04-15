@@ -10,9 +10,9 @@ import {
   HandoffPatientCell,
   HandoffDiagnosisCell,
   HandoffDevicesCell,
-  HandoffMedicalObservationsCell,
   HandoffObservationsCell,
 } from './HandoffRowCells';
+import { HandoffMedicalObservationsCell } from './HandoffMedicalObservationsCell';
 import {
   hasActiveMedicalMutationPaths,
   resolveHandoffRowReadOnly,

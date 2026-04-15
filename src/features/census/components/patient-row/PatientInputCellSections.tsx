@@ -8,6 +8,7 @@ import { StatusSelect } from './StatusSelect';
 import { AdmissionInput } from './AdmissionInput';
 import { DevicesCell } from './DevicesCell';
 import { CheckboxCell } from './CheckboxCell';
+import { UpcChecklistPopover } from './UpcChecklistPopover';
 import type {
   PatientInputClinicalSectionBindings,
   PatientInputFlagsSectionBindings,
@@ -16,7 +17,9 @@ import type {
 } from '@/features/census/components/patient-row/patientInputSectionContracts';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 import { isSpecialistCensusAccessProfile } from '@/features/census/types/censusAccessProfile';
-import { isUpcEligibleBedId, resolveNormalizedUpcFlag } from '@/shared/census/upcBedPolicy';
+import { isUpcEligibleBedId } from '@/shared/census/upcBedPolicy';
+import { useAuth } from '@/context/AuthContext';
+import type { UpcChecklistRecord } from '@/features/census/contracts/censusUpcContracts';
 
 export const PatientInputIdentitySection: React.FC<PatientInputIdentitySectionBindings> = ({
   shared,
@@ -126,7 +129,17 @@ export const PatientInputFlagsSection: React.FC<PatientInputFlagsSectionBindings
   onChange,
 }) => {
   const upcEligible = isUpcEligibleBedId(shared.data.bedId);
-  const normalizedIsUpc = resolveNormalizedUpcFlag(shared.data.bedId, shared.data.isUPC);
+  const { currentUser } = useAuth();
+  const upcActor = currentUser
+    ? { uid: currentUser.uid, displayName: currentUser.displayName || currentUser.email || '' }
+    : null;
+
+  const handleUpcSave = (record: UpcChecklistRecord) => {
+    onChange.multiple?.({
+      upcChecklist: record,
+      isUPC: record.classification !== null,
+    });
+  };
 
   return (
     <>
@@ -140,18 +153,15 @@ export const PatientInputFlagsSection: React.FC<PatientInputFlagsSectionBindings
         title="Comp. Qx"
         colorClass="text-red-600"
       />
-      <CheckboxCell
+      <UpcChecklistPopover
         data={shared.data}
         isSubRow={shared.isSubRow}
         isEmpty={shared.isEmpty}
         readOnly={shared.isLocked}
-        field="isUPC"
-        onChange={onChange.check}
-        title={upcEligible ? 'UPC' : 'UPC disponible solo en R1-R4, NEO 1 y NEO 2'}
-        colorClass={upcEligible ? 'text-purple-600' : 'text-slate-300'}
-        checked={normalizedIsUpc}
-        disabled={!upcEligible}
-        isLastColumn
+        checklist={shared.data.upcChecklist}
+        onSave={handleUpcSave}
+        eligible={upcEligible}
+        actor={upcActor}
       />
     </>
   );

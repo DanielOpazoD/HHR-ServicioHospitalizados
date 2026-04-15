@@ -10,7 +10,7 @@ import {
   type BedManagerBedClickInput,
   type BedManagerModalState,
   validateBedManagerReason,
-} from '@/features/census';
+} from '@/application/census/public';
 
 interface UseBedManagerModalModelParams {
   toggleBlockBed: (bedId: string, reason?: string) => void;

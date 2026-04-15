@@ -11,7 +11,7 @@ import {
   DischargeTypeSelector,
 } from '@/components/modals/actions/discharge';
 import type { DischargeTarget } from '@/types/movements';
-import { shouldShowBabyStatus, shouldShowMotherStatus } from '@/features/census';
+import { shouldShowBabyStatus, shouldShowMotherStatus } from '@/application/census/public';
 import { useDischargeModalForm } from '@/hooks/useDischargeModalForm';
 import type { DischargeModalProps } from '@/hooks/types/censusActionModalContracts';
 

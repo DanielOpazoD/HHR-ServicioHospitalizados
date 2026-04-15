@@ -23,6 +23,7 @@ import {
   hasMicrobiologyPattern,
   resolveMicrobiologyCategoriesForExam,
 } from './labMicrobiologyAnalyticsController';
+import type { DetailProcessingContext, ProcessedFindings } from './labAnalyticsContracts';
 
 /* ------------------------------------------------------------------ */
 /*  Trend helpers                                                      */
@@ -100,34 +101,6 @@ export const buildExamColumnKey = (
 /* ------------------------------------------------------------------ */
 /*  Sub-builders                                                       */
 /* ------------------------------------------------------------------ */
-
-interface ProcessedFindings {
-  comparison: Record<string, Record<string, LabResultRow>>;
-  trendMap: Record<string, LabTrendPoint[]>;
-  columnKeys: string[];
-  bilirubinByCol: Record<string, { total?: string; directa?: string; indirecta?: string }>;
-  microbiologyEntries: LabMicrobiologyEntry[];
-}
-
-interface ProcessExamFindingsContext {
-  exam: SyslabExamItem | undefined;
-  examDate: string;
-  colKey: string;
-  comparison: Record<string, Record<string, LabResultRow>>;
-  trendMap: Record<string, LabTrendPoint[]>;
-  seenTrend: Set<string>;
-  seenComparison: Set<string>;
-  bilirubinByCol: Record<string, { total?: string; directa?: string; indirecta?: string }>;
-}
-
-interface DetailProcessingContext extends ProcessExamFindingsContext {
-  isoDate: string;
-  microbiologyCategories: LabMicrobiologyCategory[];
-  microbiologyFindingsByCategory: Map<
-    LabMicrobiologyCategory,
-    Array<{ analysis: string; result: string }>
-  >;
-}
 
 const collectBilirubinFinding = (
   bilirubinByCol: Record<string, { total?: string; directa?: string; indirecta?: string }>,

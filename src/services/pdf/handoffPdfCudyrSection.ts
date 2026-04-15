@@ -10,7 +10,7 @@ import {
   CUDYR_NIGHT_REFERENCE_TIME_LABEL,
   isCudyrPatientEligible,
   resolveCudyrNightApplicationDate,
-} from '@/features/cudyr/public';
+} from '@/application/cudyr/public';
 
 const renderPdfCudyrScore = (value?: number) =>
   value === undefined || value === null ? '-' : value;

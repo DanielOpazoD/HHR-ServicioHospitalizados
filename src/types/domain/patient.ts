@@ -4,6 +4,7 @@ import type { ClinicalEvent } from './clinicalEvents';
 import type { CudyrScore } from './cudyr';
 import type { DeviceInstance, DeviceDetails } from './devices';
 import type { FhirResource } from './fhir';
+import type { UpcChecklistRecord } from '@/domain/upc/upcContracts';
 
 export interface MedicalHandoffAuditActor {
   uid: string;
@@ -91,6 +92,8 @@ export interface PatientData {
   deviceDetails?: DeviceDetails; // Dates/notas for tracked devices (CUP, CVC, VMI, VVP)
   surgicalComplication: boolean;
   isUPC: boolean;
+  /** Structured UPC checklist with UCI/UTI criteria and derived classification. */
+  upcChecklist?: UpcChecklistRecord;
   location?: string;
   /** Optional first day the patient was observed in census; used for admission audits. */
   firstSeenDate?: string;

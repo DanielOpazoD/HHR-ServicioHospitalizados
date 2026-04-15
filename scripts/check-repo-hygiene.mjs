@@ -15,6 +15,7 @@ const FEATURE_PUBLIC_BOUNDARIES = [
     description:
       'Code outside src/features/census must import census only from "@/features/census"; internal subpaths are reserved for the feature itself.',
     allowBypass: file =>
+      file === 'src/application/census/public.ts' ||
       file.startsWith('src/features/census/') ||
       file.startsWith('src/tests/') ||
       file.startsWith('src/hooks/controllers/'),

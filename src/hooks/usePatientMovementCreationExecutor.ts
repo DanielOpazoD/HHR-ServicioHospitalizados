@@ -1,6 +1,10 @@
 import { useCallback } from 'react';
 import type { DailyRecord } from '@/application/shared/dailyRecordCoreContracts';
-import { MovementCreationError, MovementCreationErrorCode, MovementKind } from '@/features/census';
+import {
+  MovementCreationError,
+  MovementCreationErrorCode,
+  MovementKind,
+} from '@/application/census/public';
 import { ControllerResult } from '@/shared/contracts/controllerResult';
 
 type MovementCreationResolution<TValue extends { updatedRecord: DailyRecord }> = ControllerResult<

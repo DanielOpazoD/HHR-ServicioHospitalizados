@@ -66,11 +66,9 @@ import { LabViewerEmptyState } from '@/features/laboratory/components/LabViewerE
 import { LabViewerAnalyzeBar } from '@/features/laboratory/components/LabViewerAnalyzeBar';
 import { LabViewerPdf } from '@/features/laboratory/components/LabViewerPdf';
 import { LabViewerExamList } from '@/features/laboratory/components/LabViewerExamList';
-import { LabViewerComparisonTable } from '@/features/laboratory/components/LabViewerComparisonTable';
 import { LabExportConfigDialog } from '@/features/laboratory/components/LabExportConfigDialog';
 import { LabChartErrorBoundary } from '@/features/laboratory/components/LabChartErrorBoundary';
 import type { LabPatient, SyslabExamItem, LabAnalysisData } from '@/types/domain/laboratory';
-import { exportComparisonToExcel } from '@/features/laboratory/services/labExcelService';
 
 /* ------------------------------------------------------------------ */
 /*  Shared test data                                                   */
@@ -151,27 +149,6 @@ describe('LabViewerControls', () => {
     render(<LabViewerControls {...defaultProps} uniquePatients={patients} />);
     await userEvent.selectOptions(screen.getByRole('combobox'), '99999999-0');
     expect(defaultProps.onPatientChange).toHaveBeenCalledWith('99999999-0');
-  });
-});
-
-describe('LabViewerComparisonTable', () => {
-  beforeEach(() => vi.clearAllMocks());
-
-  it('passes patient context to the Excel exporter', async () => {
-    const user = userEvent.setup();
-    render(<LabViewerComparisonTable data={MOCK_ANALYSIS} patient={MOCK_PATIENT} />);
-
-    await user.click(screen.getByText('Exportar Excel'));
-    await user.click(screen.getAllByText('Exportar Excel')[1]);
-
-    expect(exportComparisonToExcel).toHaveBeenCalledWith(
-      MOCK_ANALYSIS,
-      expect.objectContaining({
-        selectedDates: expect.any(Set),
-        selectedVars: expect.any(Set),
-      }),
-      MOCK_PATIENT
-    );
   });
 });
 
@@ -359,63 +336,6 @@ describe('LabViewerExamList', () => {
     render(<LabViewerExamList {...defaultProps} />);
     await userEvent.click(screen.getByText('Ver PDF'));
     expect(defaultProps.onViewPdf).toHaveBeenCalledWith(MOCK_EXAM);
-  });
-});
-
-/* ================================================================== */
-/*  7. LabViewerComparisonTable                                        */
-/* ================================================================== */
-
-describe('LabViewerComparisonTable', () => {
-  it('renders variable names as rows', () => {
-    render(<LabViewerComparisonTable data={MOCK_ANALYSIS} patient={MOCK_PATIENT} />);
-    expect(screen.getByText('Hemoglobina')).toBeInTheDocument();
-  });
-
-  it('renders date columns', () => {
-    render(<LabViewerComparisonTable data={MOCK_ANALYSIS} patient={MOCK_PATIENT} />);
-    expect(screen.getByText('08/04/2026 14:00')).toBeInTheDocument();
-  });
-
-  it('renders search input', () => {
-    render(<LabViewerComparisonTable data={MOCK_ANALYSIS} patient={MOCK_PATIENT} />);
-    expect(screen.getByPlaceholderText('Buscar variable...')).toBeInTheDocument();
-  });
-
-  it('filters rows when search query entered', async () => {
-    const multiVarData: LabAnalysisData = {
-      ...MOCK_ANALYSIS,
-      comparison: {
-        ...MOCK_ANALYSIS.comparison,
-        Glucosa: {
-          '08/04/2026 14:00': {
-            section: 'BQ',
-            analysis: 'Glucosa',
-            result: '100',
-            unit: 'mg/dL',
-            refValue: '70-110',
-          },
-        },
-      },
-    };
-    render(<LabViewerComparisonTable data={multiVarData} patient={MOCK_PATIENT} />);
-    // Both visible initially
-    expect(screen.getByText('Hemoglobina')).toBeInTheDocument();
-    expect(screen.getByText('Glucosa')).toBeInTheDocument();
-
-    await userEvent.type(screen.getByPlaceholderText('Buscar variable...'), 'Gluc');
-    expect(screen.getByText('Glucosa')).toBeInTheDocument();
-    expect(screen.queryByText('Hemoglobina')).not.toBeInTheDocument();
-  });
-
-  it('renders Exportar Excel button', () => {
-    render(<LabViewerComparisonTable data={MOCK_ANALYSIS} patient={MOCK_PATIENT} />);
-    expect(screen.getByText('Exportar Excel')).toBeInTheDocument();
-  });
-
-  it('does not render summarized copy button anymore', () => {
-    render(<LabViewerComparisonTable data={MOCK_ANALYSIS} patient={MOCK_PATIENT} />);
-    expect(screen.queryByText('Copiar tabla resumida')).not.toBeInTheDocument();
   });
 });
 

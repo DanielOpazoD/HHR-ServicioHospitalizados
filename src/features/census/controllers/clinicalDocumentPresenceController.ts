@@ -1,9 +1,9 @@
 /**
  * Clinical Document Presence Controller
  *
- * Pure logic that maps clinical document records to per-bed presence
+ * Pure logic that maps clinical-document records to per-bed presence
  * indicators. Used by the census table to show which patients have
- * active documents and to display document count badges in the
+ * active records and to display count badges in the
  * orbital quick-action launcher.
  *
  * Data flow:
@@ -20,7 +20,7 @@ import type { UnifiedBedRow } from '@/features/census/types/censusTableTypes';
 // Types
 // ---------------------------------------------------------------------------
 
-/** Lightweight projection of a clinical document for presence checks. */
+/** Lightweight projection of a clinical-document record for presence checks. */
 type ClinicalDocumentPresenceRecord = {
   status: string;
   episodeKey: string;
@@ -32,9 +32,9 @@ export interface BedEpisodeBinding {
   episodeKey: string;
 }
 
-/** Per-bed document presence with counts for badge display. */
+/** Per-bed record presence with counts for badge display. */
 export interface ClinicalDocumentPresenceInfo {
-  /** Whether the patient has at least one active (non-archived) document. */
+  /** Whether the patient has at least one active (non-archived) record. */
   present: boolean;
   /** Total number of active (non-archived) documents. */
   totalCount: number;
@@ -72,7 +72,7 @@ export const buildBedEpisodeBindings = (unifiedRows: UnifiedBedRow[]): BedEpisod
 
 /**
  * Returns the set of episode keys that have at least one active
- * (non-archived) clinical document.
+ * (non-archived) clinical-document record.
  */
 export const buildActiveClinicalDocumentEpisodeKeys = (
   records: ClinicalDocumentPresenceRecord[] | undefined
@@ -83,7 +83,7 @@ export const buildActiveClinicalDocumentEpisodeKeys = (
 
 /**
  * Maps each bed to a boolean indicating whether its patient has
- * at least one active clinical document.
+ * at least one active clinical-document record.
  */
 export const buildClinicalDocumentPresenceByBed = (
   bindings: BedEpisodeBinding[],

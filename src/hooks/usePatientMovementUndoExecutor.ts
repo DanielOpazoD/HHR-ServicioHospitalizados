@@ -6,7 +6,7 @@ import {
   UndoMovementKind,
   UndoPatientMovementErrorCode,
   UndoMovementDescriptor,
-} from '@/features/census';
+} from '@/application/census/public';
 
 interface UndoApplyParams {
   record: DailyRecord;

@@ -14,7 +14,7 @@ import {
   PatientMovementRuntime,
   patientMovementBrowserRuntime,
   selectDischargeUndoMovement,
-} from '@/features/census';
+} from '@/application/census/public';
 import { usePatientMovementFeedback } from '@/hooks/usePatientMovementFeedback';
 import { usePatientMovementAudit } from '@/hooks/usePatientMovementAudit';
 import { usePatientMovementCreationExecutor } from '@/hooks/usePatientMovementCreationExecutor';

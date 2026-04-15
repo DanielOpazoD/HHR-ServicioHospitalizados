@@ -11,27 +11,24 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronDown, ClipboardList, Loader2, Printer, Search, Sparkles, X } from 'lucide-react';
+import { ChevronDown, ClipboardList, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
 
 import type {
   ClinicalDocumentIeehDraft,
   ClinicalDocumentRecord,
-  IeehDischargeConditionCode,
 } from '@/features/clinical-documents/domain/entities';
 import {
   createEmptyIeehDraft,
-  IEEH_DISCHARGE_CONDITIONS,
   resolveClinicalDocumentIeehPanelState,
 } from '@/features/clinical-documents/controllers/clinicalDocumentIeehController';
 import {
   buildIeehPatientFromEpicrisis,
   buildIeehDischargeFromEpicrisis,
-  type IeehPatientSnapshot,
 } from '@/features/clinical-documents/controllers/clinicalDocumentIeehPrintController';
-import { FonasaSearchInput } from '@/features/clinical-documents/components/FonasaSearchInput';
 import type { TerminologyConcept } from '@/services/terminology/terminologyService';
 import { searchDiagnoses, forceAISearch } from '@/services/terminology/terminologyService';
+import { ClinicalDocumentIeehFormBody } from '@/features/clinical-documents/components/ClinicalDocumentIeehFormBody';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -273,270 +270,31 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
 
       {/* Panel body */}
       {isOpen && canEdit && (
-        <div className="space-y-3 px-3 pb-3">
-          {/* ---- CIE-10 Search ---- */}
-          <div>
-            <label className="block text-[10px] font-semibold text-slate-500 uppercase mb-1">
-              Diagnóstico principal (CIE-10)
-            </label>
-
-            {hasSelectedDiagnosis ? (
-              <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-white px-2.5 py-1.5">
-                <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[11px] font-bold text-emerald-700">
-                  {localDraft.cie10Code}
-                </span>
-                <span className="flex-1 text-xs text-slate-700 truncate">
-                  {localDraft.cie10Description}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleClearDiagnosis}
-                  className="p-0.5 rounded text-slate-400 hover:text-red-500 hover:bg-red-50"
-                  aria-label="Cambiar diagnóstico CIE-10"
-                  title="Cambiar diagnóstico"
-                >
-                  <X size={12} />
-                </button>
-              </div>
-            ) : (
-              <div className="relative" ref={cie10ContainerRef}>
-                <div className="flex items-center gap-1">
-                  <div className="relative flex-1">
-                    <Search
-                      size={13}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400"
-                    />
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={e => handleSearchChange(e.target.value)}
-                      onFocus={() => searchResults.length > 0 && setShowResults(true)}
-                      placeholder="Buscar diagnóstico CIE-10..."
-                      className="w-full rounded-md border border-slate-200 py-1.5 pl-7 pr-2 text-xs text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
-                    />
-                    {isSearching && (
-                      <Loader2
-                        size={13}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 animate-spin text-slate-400"
-                      />
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleAiSearch}
-                    disabled={!canRunAiSearch}
-                    className="flex items-center gap-1 rounded-md border border-violet-200 bg-violet-50 px-2 py-1.5 text-[10px] font-semibold text-violet-700 hover:bg-violet-100 disabled:opacity-40 transition-colors"
-                    aria-label="Buscar diagnóstico con inteligencia artificial"
-                    title="Buscar con IA"
-                  >
-                    {isAiSearching ? (
-                      <Loader2 size={12} className="animate-spin" />
-                    ) : (
-                      <Sparkles size={12} />
-                    )}
-                    IA
-                  </button>
-                </div>
-
-                {/* Search results dropdown */}
-                {shouldShowDiagnosisResults && (
-                  <div className="absolute z-30 mt-1 max-h-48 w-full overflow-y-auto rounded-md border border-slate-200 bg-white shadow-lg">
-                    {searchResults.map(concept => (
-                      <button
-                        key={concept.code}
-                        type="button"
-                        onMouseDown={e => e.preventDefault()}
-                        onClick={() => handleSelectDiagnosis(concept)}
-                        className="flex w-full items-start gap-2 px-2.5 py-1.5 text-left hover:bg-emerald-50 transition-colors"
-                      >
-                        <span className="shrink-0 rounded bg-slate-100 px-1 py-0.5 text-[10px] font-mono font-bold text-slate-600">
-                          {concept.code}
-                        </span>
-                        <span className="text-xs text-slate-700 leading-snug">
-                          {concept.display}
-                          {concept.fromAI && (
-                            <span className="ml-1 text-violet-500 text-[9px]">⚡ IA</span>
-                          )}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* ---- Condición de egreso ---- */}
-          <div>
-            <label className="block text-[10px] font-semibold text-slate-500 uppercase mb-1">
-              Condición al egreso
-            </label>
-            <select
-              value={localDraft.condicionEgreso}
-              onChange={e =>
-                patchField('condicionEgreso', e.target.value as IeehDischargeConditionCode)
-              }
-              className="w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
-            >
-              {IEEH_DISCHARGE_CONDITIONS.map(opt => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.value}. {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* ---- Intervención quirúrgica ---- */}
-          <div>
-            <label className="block text-[10px] font-semibold text-slate-500 uppercase mb-1">
-              Intervención quirúrgica
-            </label>
-            <div className="flex items-center gap-4 text-xs text-slate-700">
-              <label className="flex items-center gap-1 cursor-pointer">
-                <input
-                  type="radio"
-                  checked={localDraft.intervencionQuirurgica === '1'}
-                  onChange={() => patchField('intervencionQuirurgica', '1')}
-                  className="h-3 w-3 text-emerald-600"
-                />
-                Sí
-              </label>
-              <label className="flex items-center gap-1 cursor-pointer">
-                <input
-                  type="radio"
-                  checked={localDraft.intervencionQuirurgica === '2'}
-                  onChange={() => patchField('intervencionQuirurgica', '2')}
-                  className="h-3 w-3 text-emerald-600"
-                />
-                No
-              </label>
-            </div>
-            {shouldShowInterventionSelector && (
-              <div className="mt-1">
-                <FonasaSearchInput
-                  catalog="interventions"
-                  code={localDraft.intervencionCodigo ?? ''}
-                  description={localDraft.intervencionQuirurgDescrip ?? ''}
-                  placeholder="Buscar intervención quirúrgica FONASA..."
-                  onSelect={entry =>
-                    commitDraft({
-                      ...localDraft,
-                      intervencionCodigo: entry.code,
-                      intervencionQuirurgDescrip: entry.description,
-                    })
-                  }
-                  onManualChange={text =>
-                    commitDraft({
-                      ...localDraft,
-                      intervencionCodigo: undefined,
-                      intervencionQuirurgDescrip: text,
-                    })
-                  }
-                  onClear={() =>
-                    commitDraft({
-                      ...localDraft,
-                      intervencionCodigo: undefined,
-                      intervencionQuirurgDescrip: undefined,
-                    })
-                  }
-                />
-              </div>
-            )}
-          </div>
-
-          {/* ---- Procedimiento ---- */}
-          <div>
-            <label className="block text-[10px] font-semibold text-slate-500 uppercase mb-1">
-              Procedimiento
-            </label>
-            <div className="flex items-center gap-4 text-xs text-slate-700">
-              <label className="flex items-center gap-1 cursor-pointer">
-                <input
-                  type="radio"
-                  checked={localDraft.procedimiento === '1'}
-                  onChange={() => patchField('procedimiento', '1')}
-                  className="h-3 w-3 text-emerald-600"
-                />
-                Sí
-              </label>
-              <label className="flex items-center gap-1 cursor-pointer">
-                <input
-                  type="radio"
-                  checked={localDraft.procedimiento === '2'}
-                  onChange={() => patchField('procedimiento', '2')}
-                  className="h-3 w-3 text-emerald-600"
-                />
-                No
-              </label>
-            </div>
-            {shouldShowProcedureSelector && (
-              <div className="mt-1">
-                <FonasaSearchInput
-                  catalog="procedures"
-                  code={localDraft.procedimientoCodigo ?? ''}
-                  description={localDraft.procedimientoDescrip ?? ''}
-                  placeholder="Buscar procedimiento FONASA..."
-                  onSelect={entry =>
-                    commitDraft({
-                      ...localDraft,
-                      procedimientoCodigo: entry.code,
-                      procedimientoDescrip: entry.description,
-                    })
-                  }
-                  onManualChange={text =>
-                    commitDraft({
-                      ...localDraft,
-                      procedimientoCodigo: undefined,
-                      procedimientoDescrip: text,
-                    })
-                  }
-                  onClear={() =>
-                    commitDraft({
-                      ...localDraft,
-                      procedimientoCodigo: undefined,
-                      procedimientoDescrip: undefined,
-                    })
-                  }
-                />
-              </div>
-            )}
-          </div>
-
-          {/* ---- Médico tratante RUT ---- */}
-          <div>
-            <label className="block text-[10px] font-semibold text-slate-500 uppercase mb-1">
-              RUT Médico Tratante <span className="font-normal text-slate-400">(opcional)</span>
-            </label>
-            <input
-              type="text"
-              value={localDraft.tratanteRut ?? ''}
-              onChange={e => patchField('tratanteRut', e.target.value)}
-              placeholder="12.345.678-9"
-              className="w-48 rounded-md border border-slate-200 px-2 py-1.5 text-xs text-slate-700 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none"
-            />
-          </div>
-
-          {/* ---- Actions (always visible when panel is open) ---- */}
-          <div className="flex items-center justify-between pt-2 border-t border-emerald-100">
-            <button
-              type="button"
-              onClick={handlePrintIeeh}
-              disabled={!canPrintIeeh}
-              className="flex items-center gap-1.5 rounded-md border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              title={printButtonTitle}
-            >
-              {isPrinting ? <Loader2 size={13} className="animate-spin" /> : <Printer size={13} />}
-              Imprimir IEEH
-            </button>
-            <button
-              type="button"
-              onClick={handleRemovePanel}
-              className="text-[10px] text-red-500 hover:text-red-700 transition-colors"
-            >
-              Eliminar egreso estadístico
-            </button>
-          </div>
-        </div>
+        <ClinicalDocumentIeehFormBody
+          localDraft={localDraft}
+          searchQuery={searchQuery}
+          searchResults={searchResults}
+          isSearching={isSearching}
+          isAiSearching={isAiSearching}
+          hasSelectedDiagnosis={hasSelectedDiagnosis}
+          shouldShowDiagnosisResults={shouldShowDiagnosisResults}
+          canRunAiSearch={canRunAiSearch}
+          shouldShowInterventionSelector={shouldShowInterventionSelector}
+          shouldShowProcedureSelector={shouldShowProcedureSelector}
+          canPrintIeeh={canPrintIeeh}
+          printButtonTitle={printButtonTitle}
+          isPrinting={isPrinting}
+          cie10ContainerRef={cie10ContainerRef}
+          onSearchChange={handleSearchChange}
+          onOpenSearchResults={() => searchResults.length > 0 && setShowResults(true)}
+          onAiSearch={handleAiSearch}
+          onSelectDiagnosis={handleSelectDiagnosis}
+          onClearDiagnosis={handleClearDiagnosis}
+          onPatchField={patchField}
+          onCommitDraft={commitDraft}
+          onPrintIeeh={handlePrintIeeh}
+          onRemovePanel={handleRemovePanel}
+        />
       )}
     </div>
   );
