@@ -269,29 +269,6 @@ export const ExamRequestModal: React.FC<ExamRequestModalProps> = ({ isOpen, onCl
         </div>
       </div>
 
-      {/* Premium footer with actions */}
-      <div className="mt-5 flex items-center justify-between print:hidden">
-        <p className="text-[11px] text-slate-300">
-          {selectedExams.size > 0 &&
-            `${selectedExams.size} examen${selectedExams.size === 1 ? '' : 'es'} seleccionado${selectedExams.size === 1 ? '' : 's'}`}
-        </p>
-        <div className="flex gap-2">
-          <button
-            onClick={onClose}
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-[13px] font-medium text-slate-500 shadow-sm transition-all hover:border-slate-300 hover:text-slate-700 active:scale-[0.98]"
-          >
-            Cerrar
-          </button>
-          <button
-            onClick={handlePrint}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-emerald-500 to-emerald-600 px-5 py-2 text-[13px] font-semibold text-white shadow-md shadow-emerald-600/25 transition-all hover:from-emerald-600 hover:to-emerald-700 hover:shadow-lg hover:shadow-emerald-600/30 active:scale-[0.98]"
-          >
-            <Printer size={14} />
-            Imprimir Solicitud
-          </button>
-        </div>
-      </div>
-
       <style dangerouslySetInnerHTML={{ __html: EXAM_REQUEST_PRINT_STYLES }} />
     </BaseModal>
   );
