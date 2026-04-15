@@ -3,8 +3,10 @@ import {
   saveGlobalEmailRecipientListWithResult,
   type GlobalEmailRecipientList,
 } from '@/services/email/emailRecipientListService';
+import { getAppSetting } from '@/services/settingsService';
 import type { CensusEmailBrowserRuntime } from '@/hooks/controllers/censusEmailBrowserRuntimeController';
 import { resolveCensusRecipientsBootstrap } from '@/hooks/controllers/censusEmailRecipientsBootstrapController';
+import { resolveBootstrapRecipientSelection } from '@/hooks/controllers/censusEmailRecipientSelectionController';
 import {
   buildCreatedRecipientList,
   buildRecipientListSavePayload,
@@ -19,6 +21,11 @@ import {
   resolveActiveRecipientListForSync,
   shouldSkipRecipientSync,
 } from '@/hooks/controllers/censusEmailRecipientSyncController';
+import {
+  resolveBootstrapRecipientFallbackMessage,
+  resolveBootstrapRecipientRuntimeState,
+  resolveStoredRecipientRuntimeState,
+} from '@/hooks/controllers/censusEmailRecipientRuntimeController';
 import {
   createApplicationSuccess,
   type ApplicationOutcome,
@@ -41,6 +48,13 @@ export interface BootstrapCensusRecipientListsInput {
   user: RecipientListActor | null;
 }
 
+export interface LoadCensusRecipientRuntimeInput extends BootstrapCensusRecipientListsInput {
+  enabled: boolean;
+  recipientsStorageKey: string;
+}
+
+export type CensusRecipientRuntimeState = ReturnType<typeof resolveStoredRecipientRuntimeState>;
+
 export const executeBootstrapCensusRecipientLists = async (
   input: BootstrapCensusRecipientListsInput
 ) => {
@@ -54,6 +68,40 @@ export const executeBootstrapCensusRecipientLists = async (
       'No se pudieron cargar las listas de destinatarios del censo.'
     );
   }
+};
+
+export const executeLoadCensusRecipientRuntimeState = async (
+  input: LoadCensusRecipientRuntimeInput
+): Promise<ApplicationOutcome<CensusRecipientRuntimeState>> => {
+  if (!input.canManageGlobalRecipientLists || !input.enabled) {
+    const [storedRecipients, storedActiveListId] = await Promise.all([
+      getAppSetting<string[] | null>(input.recipientsStorageKey, null),
+      getAppSetting<string | null>(input.activeListStorageKey, null),
+    ]);
+
+    return createApplicationSuccess(
+      resolveStoredRecipientRuntimeState(storedRecipients, storedActiveListId)
+    );
+  }
+
+  const bootstrapResult = await executeBootstrapCensusRecipientLists(input);
+  if (bootstrapResult.status === 'success' && bootstrapResult.data) {
+    return createApplicationSuccess(
+      resolveBootstrapRecipientRuntimeState({
+        ...resolveBootstrapRecipientSelection(bootstrapResult.data),
+        syncError: bootstrapResult.data.syncError,
+      })
+    );
+  }
+
+  const storedRecipients = await getAppSetting<string[] | null>(input.recipientsStorageKey, null);
+  return createApplicationSuccess(
+    resolveStoredRecipientRuntimeState(
+      storedRecipients,
+      null,
+      resolveBootstrapRecipientFallbackMessage(bootstrapResult)
+    )
+  );
 };
 
 export interface SyncCensusRecipientListInput {

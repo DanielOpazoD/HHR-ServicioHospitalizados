@@ -3,10 +3,12 @@ import {
   executeBootstrapCensusRecipientLists,
   executeCreateCensusRecipientList,
   executeDeleteCensusRecipientList,
+  executeLoadCensusRecipientRuntimeState,
   executeRenameCensusRecipientList,
   executeSyncCensusRecipientList,
 } from '@/application/census-email/censusRecipientListUseCases';
 import * as emailRecipientListService from '@/services/email/emailRecipientListService';
+import * as settingsService from '@/services/settingsService';
 import * as bootstrapController from '@/hooks/controllers/censusEmailRecipientsBootstrapController';
 import type { CensusEmailBrowserRuntime } from '@/hooks/controllers/censusEmailBrowserRuntimeController';
 
@@ -35,6 +37,10 @@ vi.mock('@/services/email/emailRecipientListService', () => ({
 
 vi.mock('@/hooks/controllers/censusEmailRecipientsBootstrapController', () => ({
   resolveCensusRecipientsBootstrap: vi.fn(),
+}));
+
+vi.mock('@/services/settingsService', () => ({
+  getAppSetting: vi.fn(),
 }));
 
 describe('censusRecipientListUseCases', () => {
@@ -66,6 +72,52 @@ describe('censusRecipientListUseCases', () => {
 
     expect(result.status).toBe('success');
     expect(result.data?.recipients).toEqual(['a@test.com']);
+  });
+
+  it('loads stored runtime state when global management is disabled', async () => {
+    vi.mocked(settingsService.getAppSetting)
+      .mockResolvedValueOnce(['stored@test.com'])
+      .mockResolvedValueOnce('custom-list');
+
+    const result = await executeLoadCensusRecipientRuntimeState({
+      canManageGlobalRecipientLists: false,
+      browserRuntime,
+      enabled: true,
+      activeListStorageKey: 'active-key',
+      recipientsStorageKey: 'recipients-key',
+      user: null,
+    });
+
+    expect(result.status).toBe('success');
+    expect(result.data).toMatchObject({
+      recipients: ['stored@test.com'],
+      activeRecipientListId: 'custom-list',
+      recipientsSource: 'local',
+    });
+  });
+
+  it('falls back to stored runtime state when bootstrap fails', async () => {
+    vi.mocked(bootstrapController.resolveCensusRecipientsBootstrap).mockRejectedValueOnce(
+      new Error('bootstrap failed')
+    );
+    vi.mocked(settingsService.getAppSetting).mockResolvedValueOnce(['fallback@test.com']);
+
+    const result = await executeLoadCensusRecipientRuntimeState({
+      canManageGlobalRecipientLists: true,
+      browserRuntime,
+      enabled: true,
+      activeListStorageKey: 'active-key',
+      recipientsStorageKey: 'recipients-key',
+      user: null,
+    });
+
+    expect(result.status).toBe('success');
+    expect(result.data).toMatchObject({
+      recipients: ['fallback@test.com'],
+      activeRecipientListId: 'census-default',
+      recipientsSource: 'local',
+    });
+    expect(result.data?.recipientsSyncError).toBe('bootstrap failed');
   });
 
   it('creates a list through the application layer', async () => {

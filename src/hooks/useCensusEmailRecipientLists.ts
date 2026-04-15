@@ -1,22 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CENSUS_DEFAULT_RECIPIENTS } from '@/constants/email';
-import { getAppSetting, saveAppSetting } from '@/services/settingsService';
+import { saveAppSetting } from '@/services/settingsService';
 import {
   areGlobalEmailRecipientsEqual,
   CENSUS_GLOBAL_EMAIL_RECIPIENT_LIST,
   type GlobalEmailRecipientList,
 } from '@/services/email/emailRecipientListService';
 import type { CensusEmailBrowserRuntime } from '@/hooks/controllers/censusEmailBrowserRuntimeController';
+import { resolveStoredRecipientSelection } from '@/hooks/controllers/censusEmailRecipientSelectionController';
 import {
-  resolveBootstrapRecipientSelection,
-  resolveStoredRecipientSelection,
-} from '@/hooks/controllers/censusEmailRecipientSelectionController';
-import {
-  resolveBootstrapRecipientFallbackMessage,
-  resolveBootstrapRecipientRuntimeState,
   resolveRecipientMutationFailureMessage,
   resolveRecipientSyncState,
-  resolveStoredRecipientRuntimeState,
 } from '@/hooks/controllers/censusEmailRecipientRuntimeController';
 import {
   resolveRecipientListsAfterCreate,
@@ -27,6 +21,7 @@ import {
 import { resolveDeferredRecipientSyncInput } from '@/hooks/controllers/censusEmailRecipientSyncController';
 
 const RECIPIENT_LIST_KEY = 'censusEmailActiveRecipientListId';
+const RECIPIENTS_STORAGE_KEY = 'censusEmailRecipients';
 let censusRecipientListUseCasesPromise: Promise<
   typeof import('@/application/census-email/censusRecipientListUseCases')
 > | null = null;
@@ -123,7 +118,7 @@ export const useCensusEmailRecipientLists = ({
           ? currentRecipients
           : list.recipients
       );
-      void saveAppSetting('censusEmailRecipients', list.recipients);
+      void saveAppSetting(RECIPIENTS_STORAGE_KEY, list.recipients);
     },
     [setActiveRecipientListId]
   );
@@ -183,26 +178,13 @@ export const useCensusEmailRecipientLists = ({
     let isActive = true;
 
     const loadRecipients = async () => {
-      if (!canManageGlobalRecipientLists || !enabled) {
-        const [storedRecipients, storedActiveListId] = await Promise.all([
-          getAppSetting<string[] | null>('censusEmailRecipients', null),
-          getAppSetting<string | null>(RECIPIENT_LIST_KEY, null),
-        ]);
-
-        if (!isActive) {
-          return;
-        }
-        applyRecipientRuntimeState(
-          resolveStoredRecipientRuntimeState(storedRecipients, storedActiveListId)
-        );
-        return;
-      }
-
-      const { executeBootstrapCensusRecipientLists } = await loadCensusRecipientListUseCases();
-      const bootstrapResult = await executeBootstrapCensusRecipientLists({
+      const { executeLoadCensusRecipientRuntimeState } = await loadCensusRecipientListUseCases();
+      const runtimeResult = await executeLoadCensusRecipientRuntimeState({
         canManageGlobalRecipientLists,
         browserRuntime,
+        enabled,
         activeListStorageKey: RECIPIENT_LIST_KEY,
+        recipientsStorageKey: RECIPIENTS_STORAGE_KEY,
         user,
       });
 
@@ -210,27 +192,9 @@ export const useCensusEmailRecipientLists = ({
         return;
       }
 
-      if (bootstrapResult.status === 'success' && bootstrapResult.data) {
-        applyRecipientRuntimeState(
-          resolveBootstrapRecipientRuntimeState({
-            ...resolveBootstrapRecipientSelection(bootstrapResult.data),
-            syncError: bootstrapResult.data.syncError,
-          })
-        );
-        return;
+      if (runtimeResult.status === 'success' && runtimeResult.data) {
+        applyRecipientRuntimeState(runtimeResult.data);
       }
-
-      const stored = await getAppSetting<string[] | null>('censusEmailRecipients', null);
-      if (!isActive) {
-        return;
-      }
-      applyRecipientRuntimeState(
-        resolveStoredRecipientRuntimeState(
-          stored,
-          null,
-          resolveBootstrapRecipientFallbackMessage(bootstrapResult)
-        )
-      );
     };
 
     void loadRecipients();
@@ -252,7 +216,7 @@ export const useCensusEmailRecipientLists = ({
       return;
     }
 
-    void saveAppSetting('censusEmailRecipients', recipients);
+    void saveAppSetting(RECIPIENTS_STORAGE_KEY, recipients);
   }, [recipients]);
 
   useEffect(() => {
