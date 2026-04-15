@@ -5,7 +5,7 @@ import {
   createUnrecoverableDecision,
 } from '@/services/repositories/dailyRecordRecoveryPolicy';
 import type { DailyRecordConflictSummary } from '@/services/repositories/contracts/dailyRecordConsistency';
-import type { RemoteWriteRecoveryResult } from '@/services/repositories/dailyRecordWriteSupport';
+import type { RemoteWriteRecoveryResult } from '@/services/repositories/contracts/dailyRecordWriteRecoveryResult';
 
 export const buildBlockedRecoveryResult = (input: {
   error: unknown;

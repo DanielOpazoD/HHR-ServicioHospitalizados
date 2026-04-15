@@ -19,8 +19,11 @@ import { PatientMasterRepository } from '@/services/repositories/PatientMasterRe
 import { resolveDailyRecordConflictWithTrace } from '@/services/repositories/conflictResolutionMatrix';
 import { buildConflictAuditSummary } from '@/services/repositories/conflictResolutionAuditSummary';
 import { logRepositoryConflictAutoMerged } from '@/services/repositories/ports/repositoryAuditPort';
-import { type DailyRecordRecoveryDecision } from '@/services/repositories/dailyRecordRecoveryPolicy';
 import type { DailyRecordConflictSummary } from '@/services/repositories/contracts/dailyRecordConsistency';
+import type {
+  ConflictAutoMergeRecoveryResult,
+  RemoteWriteRecoveryResult,
+} from '@/services/repositories/contracts/dailyRecordWriteRecoveryResult';
 import {
   addClinicalFhirPatchesForTouchedBeds,
   collectDailyRecordPatientsForMasterSync,
@@ -51,18 +54,6 @@ import {
   buildThrowUnrecoverableRecoveryResult,
   buildUnrecoverableRecoveryResult,
 } from '@/services/repositories/dailyRecordWriteRecoveryResultController';
-
-export interface ConflictAutoMergeRecoveryResult {
-  status: 'auto_merged' | 'not_possible';
-}
-
-export interface RemoteWriteRecoveryResult {
-  status: 'auto_merged' | 'queued_for_retry' | 'unrecoverable' | 'throw';
-  queuedForRetry: boolean;
-  autoMerged: boolean;
-  error?: unknown;
-  decision: DailyRecordRecoveryDecision;
-}
 
 const isConcurrencyError = (error: unknown): boolean =>
   error instanceof Error && error.name === 'ConcurrencyError';
