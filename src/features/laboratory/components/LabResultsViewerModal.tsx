@@ -8,6 +8,7 @@ import { FlaskConical } from 'lucide-react';
 import { BaseModal } from '@/components/shared/BaseModal';
 import { useLabViewer } from '../hooks/useLabViewer';
 import type { LabPatient } from '@/types/domain/laboratory';
+import { buildLabViewerModalShellModel } from '../controllers/labViewerController';
 import { LabViewerControls } from './LabViewerControls';
 import { LabViewerProgress } from './LabViewerProgress';
 import { LabViewerExamList } from './LabViewerExamList';
@@ -42,16 +43,21 @@ export const LabResultsViewerModal: React.FC<LabResultsViewerModalProps> = ({
 
   if (!isOpen) return null;
 
-  const isViewingPdf = lab.pdfExam !== null;
-  const isViewingAnalysis = lab.analysisData !== null;
-  const modalSize = isViewingAnalysis ? 'full' : isViewingPdf ? '5xl' : '3xl';
+  const shellModel = buildLabViewerModalShellModel({
+    pdfExam: lab.pdfExam,
+    analysisData: lab.analysisData,
+    examList: lab.examList,
+    isLoading: lab.isLoading,
+    isAnalyzing: lab.isAnalyzing,
+    error: lab.error,
+  });
 
   return (
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
       variant="white"
-      size={modalSize}
+      size={shellModel.modalSize}
       dataModule="laboratory"
       className="!rounded-2xl ring-1 ring-black/[0.03]"
       bodyClassName="max-h-[90vh] overflow-y-auto px-5 py-4"
@@ -66,7 +72,7 @@ export const LabResultsViewerModal: React.FC<LabResultsViewerModalProps> = ({
         </span>
       }
     >
-      {!isViewingAnalysis && (
+      {shellModel.shouldShowControls && (
         <LabViewerControls
           uniquePatients={lab.uniquePatients}
           selectedRut={lab.selectedRut}
@@ -84,9 +90,9 @@ export const LabResultsViewerModal: React.FC<LabResultsViewerModalProps> = ({
         </div>
       )}
 
-      {isViewingPdf && <LabViewerPdf exam={lab.pdfExam!} onBack={lab.closePdf} />}
+      {shellModel.shouldShowPdf && <LabViewerPdf exam={lab.pdfExam!} onBack={lab.closePdf} />}
 
-      {!isViewingPdf && isViewingAnalysis && !lab.isAnalyzing && (
+      {shellModel.shouldShowAnalysis && (
         <LabViewerAnalysis
           data={lab.analysisData!}
           patient={lab.selectedPatient}
@@ -97,7 +103,7 @@ export const LabResultsViewerModal: React.FC<LabResultsViewerModalProps> = ({
         />
       )}
 
-      {!isViewingPdf && !isViewingAnalysis && lab.examList.length > 0 && !lab.isLoading && (
+      {shellModel.shouldShowExamList && (
         <>
           <LabViewerExamList
             exams={lab.filteredExamList}
@@ -120,12 +126,7 @@ export const LabResultsViewerModal: React.FC<LabResultsViewerModalProps> = ({
         </>
       )}
 
-      {!isViewingPdf &&
-        !isViewingAnalysis &&
-        lab.examList.length === 0 &&
-        !lab.isLoading &&
-        !lab.isAnalyzing &&
-        !lab.error && <LabViewerEmptyState />}
+      {shellModel.shouldShowEmptyState && <LabViewerEmptyState />}
     </BaseModal>
   );
 };

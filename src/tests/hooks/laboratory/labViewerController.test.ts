@@ -1,16 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import type { LabPatient, SyslabExamItem } from '@/types/domain/laboratory';
 import {
+  buildLabViewerModalShellModel,
   buildUniqueLabPatients,
   filterLabExamsByCategory,
   resolveInitialLabViewerRut,
   resolveLabExamFilterCategories,
   resolveLabExamIdsByDateRange,
   resolveLabExamIdsByDays,
+  resolveLabExamSelectionByDateRange,
+  resolveLabExamSelectionByDays,
   resolveLabViewerAnalysisErrorMessage,
   resolveLabViewerSearchErrorMessage,
+  resolveSelectAllLabExamSelection,
   resolveSelectableLabExamIds,
   resolveSelectedLabAnalysisLinks,
+  toggleLabExamSelection,
 } from '@/features/laboratory/controllers/labViewerController';
 
 const patients: LabPatient[] = [
@@ -114,6 +119,49 @@ describe('labViewerController', () => {
         now: new Date(2026, 3, 12, 12, 0, 0),
       })
     ).toEqual([]);
+
+    expect(
+      Array.from(
+        resolveLabExamSelectionByDateRange({
+          examList,
+          from: new Date(2026, 3, 1),
+          to: new Date(2026, 3, 30),
+        })
+      )
+    ).toEqual(['1']);
+
+    expect(
+      Array.from(
+        resolveLabExamSelectionByDays({
+          examList,
+          days: 3,
+          now: new Date(2026, 3, 12, 12, 0, 0),
+        })
+      )
+    ).toEqual([]);
+  });
+
+  it('toggles and bulk-selects exam ids using linked exams only', () => {
+    expect(Array.from(toggleLabExamSelection(new Set(), '1'))).toEqual(['1']);
+    expect(Array.from(toggleLabExamSelection(new Set(['1']), '1'))).toEqual([]);
+
+    expect(
+      Array.from(
+        resolveSelectAllLabExamSelection({
+          examList,
+          selectedExamIds: new Set(),
+        })
+      )
+    ).toEqual(['1', '2']);
+
+    expect(
+      Array.from(
+        resolveSelectAllLabExamSelection({
+          examList,
+          selectedExamIds: new Set(['1', '2']),
+        })
+      )
+    ).toEqual([]);
   });
 
   it('normalizes search and analysis error messages', () => {
@@ -133,6 +181,62 @@ describe('labViewerController', () => {
 
     expect(resolveLabViewerAnalysisErrorMessage(new Error('Falló análisis'))).toBe(
       'Falló análisis'
+    );
+  });
+
+  it('builds the viewer modal shell state for list, analysis and pdf modes', () => {
+    expect(
+      buildLabViewerModalShellModel({
+        pdfExam: null,
+        analysisData: null,
+        examList,
+        isLoading: false,
+        isAnalyzing: false,
+        error: null,
+      })
+    ).toEqual({
+      modalSize: '3xl',
+      isViewingPdf: false,
+      isViewingAnalysis: false,
+      shouldShowControls: true,
+      shouldShowPdf: false,
+      shouldShowAnalysis: false,
+      shouldShowExamList: true,
+      shouldShowEmptyState: false,
+    });
+
+    expect(
+      buildLabViewerModalShellModel({
+        pdfExam: examList[0],
+        analysisData: null,
+        examList,
+        isLoading: false,
+        isAnalyzing: false,
+        error: null,
+      }).modalSize
+    ).toBe('5xl');
+
+    expect(
+      buildLabViewerModalShellModel({
+        pdfExam: null,
+        analysisData: {
+          trendGroups: [],
+          examDates: [],
+          microbiologyEntries: [],
+          comparison: {},
+        },
+        examList,
+        isLoading: false,
+        isAnalyzing: false,
+        error: null,
+      })
+    ).toEqual(
+      expect.objectContaining({
+        modalSize: 'full',
+        shouldShowControls: false,
+        shouldShowAnalysis: true,
+        shouldShowExamList: false,
+      })
     );
   });
 });

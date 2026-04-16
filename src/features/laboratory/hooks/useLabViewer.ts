@@ -22,13 +22,14 @@ import {
   buildUniqueLabPatients,
   filterLabExamsByCategory,
   resolveInitialLabViewerRut,
+  resolveLabExamSelectionByDateRange,
+  resolveLabExamSelectionByDays,
   resolveLabExamFilterCategories,
-  resolveLabExamIdsByDateRange,
-  resolveLabExamIdsByDays,
   resolveLabViewerAnalysisErrorMessage,
   resolveLabViewerSearchErrorMessage,
-  resolveSelectableLabExamIds,
+  resolveSelectAllLabExamSelection,
   resolveSelectedLabAnalysisLinks,
+  toggleLabExamSelection,
 } from '../controllers/labViewerController';
 import { saveLabResults } from '../services/labFirestoreService';
 import { enrichMicrobiologyDetailsFromPdf } from '../services/labMicrobiologyPdfService';
@@ -267,34 +268,41 @@ export const useLabViewer = (
 
   // Selection
   const toggleExamSelection = useCallback((id: string) => {
-    setSelectedExamIds(prev => {
-      const n = new Set(prev);
-      if (n.has(id)) {
-        n.delete(id);
-      } else {
-        n.add(id);
-      }
-      return n;
-    });
+    setSelectedExamIds(prev => toggleLabExamSelection(prev, id));
   }, []);
 
   const selectAllExams = useCallback(() => {
-    const allIds = resolveSelectableLabExamIds(examList);
-    setSelectedExamIds(prev => (allIds.every(id => prev.has(id)) ? new Set() : new Set(allIds)));
+    setSelectedExamIds(prev =>
+      resolveSelectAllLabExamSelection({
+        examList,
+        selectedExamIds: prev,
+      })
+    );
   }, [examList]);
 
   const clearSelection = useCallback(() => setSelectedExamIds(new Set()), []);
 
   const selectByDays = useCallback(
     (days: number) => {
-      setSelectedExamIds(new Set(resolveLabExamIdsByDays({ examList, days })));
+      setSelectedExamIds(
+        resolveLabExamSelectionByDays({
+          examList,
+          days,
+        })
+      );
     },
     [examList]
   );
 
   const selectByDateRange = useCallback(
     (from: Date, to: Date) => {
-      setSelectedExamIds(new Set(resolveLabExamIdsByDateRange({ examList, from, to })));
+      setSelectedExamIds(
+        resolveLabExamSelectionByDateRange({
+          examList,
+          from,
+          to,
+        })
+      );
     },
     [examList]
   );

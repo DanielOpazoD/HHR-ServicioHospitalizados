@@ -1,4 +1,4 @@
-import type { LabPatient, SyslabExamItem } from '@/types/domain/laboratory';
+import type { LabAnalysisData, LabPatient, SyslabExamItem } from '@/types/domain/laboratory';
 import { EXAM_FILTER_CATEGORIES } from '../constants/labConstants';
 import { bedSortKey } from './labFormattingController';
 
@@ -59,6 +59,47 @@ export const filterLabExamsByCategory = (
 
 export const resolveSelectableLabExamIds = (examList: SyslabExamItem[]): string[] =>
   examList.filter(exam => Boolean(exam.link)).map(exam => exam.id);
+
+export const toggleLabExamSelection = (selectedExamIds: Set<string>, id: string): Set<string> => {
+  const next = new Set(selectedExamIds);
+  if (next.has(id)) {
+    next.delete(id);
+  } else {
+    next.add(id);
+  }
+  return next;
+};
+
+export const resolveSelectAllLabExamSelection = ({
+  examList,
+  selectedExamIds,
+}: {
+  examList: SyslabExamItem[];
+  selectedExamIds: Set<string>;
+}): Set<string> => {
+  const allIds = resolveSelectableLabExamIds(examList);
+  return allIds.every(id => selectedExamIds.has(id)) ? new Set() : new Set(allIds);
+};
+
+export const resolveLabExamSelectionByDateRange = ({
+  examList,
+  from,
+  to,
+}: {
+  examList: SyslabExamItem[];
+  from: Date;
+  to: Date;
+}): Set<string> => new Set(resolveLabExamIdsByDateRange({ examList, from, to }));
+
+export const resolveLabExamSelectionByDays = ({
+  examList,
+  days,
+  now,
+}: {
+  examList: SyslabExamItem[];
+  days: number;
+  now?: Date;
+}): Set<string> => new Set(resolveLabExamIdsByDays({ examList, days, now }));
 
 const parseLabExamCalendarDate = (value: string): Date | null => {
   const match = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
@@ -142,3 +183,50 @@ export const resolveLabViewerAnalysisErrorMessage = (error: unknown): string =>
   error instanceof Error
     ? error.message
     : 'Error al analizar exámenes. Verifica que el servidor Syslab esté activo.';
+
+export interface LabViewerModalShellModel {
+  modalSize: '3xl' | '5xl' | 'full';
+  isViewingPdf: boolean;
+  isViewingAnalysis: boolean;
+  shouldShowControls: boolean;
+  shouldShowPdf: boolean;
+  shouldShowAnalysis: boolean;
+  shouldShowExamList: boolean;
+  shouldShowEmptyState: boolean;
+}
+
+export const buildLabViewerModalShellModel = ({
+  pdfExam,
+  analysisData,
+  examList,
+  isLoading,
+  isAnalyzing,
+  error,
+}: {
+  pdfExam: SyslabExamItem | null;
+  analysisData: LabAnalysisData | null;
+  examList: SyslabExamItem[];
+  isLoading: boolean;
+  isAnalyzing: boolean;
+  error: string | null;
+}): LabViewerModalShellModel => {
+  const isViewingPdf = pdfExam !== null;
+  const isViewingAnalysis = analysisData !== null;
+
+  return {
+    modalSize: isViewingAnalysis ? 'full' : isViewingPdf ? '5xl' : '3xl',
+    isViewingPdf,
+    isViewingAnalysis,
+    shouldShowControls: !isViewingAnalysis,
+    shouldShowPdf: isViewingPdf,
+    shouldShowAnalysis: !isViewingPdf && isViewingAnalysis && !isAnalyzing,
+    shouldShowExamList: !isViewingPdf && !isViewingAnalysis && examList.length > 0 && !isLoading,
+    shouldShowEmptyState:
+      !isViewingPdf &&
+      !isViewingAnalysis &&
+      examList.length === 0 &&
+      !isLoading &&
+      !isAnalyzing &&
+      !error,
+  };
+};

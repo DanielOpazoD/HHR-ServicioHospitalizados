@@ -11,10 +11,15 @@
 import React from 'react';
 import { Printer, FlaskConical, UserRound } from 'lucide-react';
 import { BaseModal } from '@/components/shared/BaseModal';
-import { getExamCategoryById } from '@/constants/examCategories';
 import { useExamRequest } from '@/hooks/useExamRequest';
 import type { PatientData } from '@/types/domain/patient';
 import { EXAM_REQUEST_PRINT_STYLES } from '@/components/modals/examRequestPrintStyles';
+import {
+  buildExamRequestFooterFields,
+  buildExamRequestFooterSection,
+  buildExamRequestFormColumns,
+  buildExamRequestModalShellModel,
+} from '@/components/modals/controllers/examRequestModalController';
 import {
   ExamCheckbox,
   ExamFormHeader,
@@ -28,18 +33,11 @@ interface ExamRequestModalProps {
   patient: PatientData;
 }
 
-export const ExamRequestModal: React.FC<ExamRequestModalProps> = ({ isOpen, onClose, patient }) => {
-  const bioquimica = getExamCategoryById('bioquimica');
-  const hematologia = getExamCategoryById('hematologia');
-  const coagulacion = getExamCategoryById('coagulacion');
-  const hormonas = getExamCategoryById('hormonas');
-  const microbiologicos = getExamCategoryById('microbiologicos');
-  const orina = getExamCategoryById('orina');
-  const parasitologia = getExamCategoryById('parasitologia');
-  const virologia = getExamCategoryById('virologia');
-  const inmunologia = getExamCategoryById('inmunologia');
-  const otros = getExamCategoryById('otros');
+const examRequestColumns = buildExamRequestFormColumns();
+const examRequestFooterSection = buildExamRequestFooterSection();
+const examRequestFooterFields = buildExamRequestFooterFields();
 
+export const ExamRequestModal: React.FC<ExamRequestModalProps> = ({ isOpen, onClose, patient }) => {
   const {
     selectedExams,
     procedencia,
@@ -49,6 +47,7 @@ export const ExamRequestModal: React.FC<ExamRequestModalProps> = ({ isOpen, onCl
     toggleExam,
     handlePrint,
   } = useExamRequest({ patient, isOpen });
+  const shellModel = buildExamRequestModalShellModel(patient);
 
   const renderExamItem = (exam: string, categoryTitle: string) => (
     <ExamCheckbox
@@ -58,6 +57,52 @@ export const ExamRequestModal: React.FC<ExamRequestModalProps> = ({ isOpen, onCl
       isSelected={selectedExams.has(`${categoryTitle}|${exam}`)}
       onToggle={toggleExam}
     />
+  );
+
+  const renderSection = (
+    title: string,
+    exams: string[],
+    options?: {
+      tube?: string;
+      columns?: 1 | 2;
+      muted?: boolean;
+      withTopBorder?: boolean;
+      withBottomBorder?: boolean;
+    }
+  ) => (
+    <React.Fragment key={title}>
+      <div
+        className={[
+          'bg-white text-slate-900 py-0.5 text-center flex flex-col items-center',
+          options?.withTopBorder ? 'border-t-2 border-slate-900' : '',
+          'border-b-2 border-slate-900',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
+        <span className="text-[9px] font-black tracking-widest uppercase">{title}</span>
+        {options?.tube ? (
+          <span className="text-[6px] text-slate-500 font-bold">({options.tube})</span>
+        ) : null}
+      </div>
+      <div
+        className={[
+          'p-2 flex flex-col gap-0.5',
+          options?.muted ? 'bg-slate-50/50 flex-1' : '',
+          options?.withBottomBorder ? 'border-b border-slate-200' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
+        {options?.columns === 2 ? (
+          <div className="grid grid-cols-2 gap-x-2">
+            {exams.map(exam => renderExamItem(exam, title))}
+          </div>
+        ) : (
+          exams.map(exam => renderExamItem(exam, title))
+        )}
+      </div>
+    </React.Fragment>
   );
 
   return (
@@ -72,9 +117,9 @@ export const ExamRequestModal: React.FC<ExamRequestModalProps> = ({ isOpen, onCl
           </span>
           <span className="flex flex-col leading-tight">
             <span className="text-[15px] font-bold tracking-tight text-slate-800">
-              Solicitud de Laboratorio
+              {shellModel.title}
             </span>
-            <span className="text-[11px] font-medium text-slate-400">{patient.patientName}</span>
+            <span className="text-[11px] font-medium text-slate-400">{shellModel.subtitle}</span>
           </span>
         </span>
       }
@@ -98,24 +143,27 @@ export const ExamRequestModal: React.FC<ExamRequestModalProps> = ({ isOpen, onCl
           <UserRound size={16} />
         </div>
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-1 text-[12px]">
-          <span className="font-semibold text-slate-700">{patient.patientName}</span>
-          {patient.rut && (
+          <span className="font-semibold text-slate-700">{shellModel.patientName}</span>
+          {shellModel.patientRut && (
             <>
               <span className="text-slate-400">|</span>
-              <span className="text-slate-500">{patient.rut}</span>
+              <span className="text-slate-500">{shellModel.patientRut}</span>
             </>
           )}
-          {patient.pathology && (
+          {shellModel.patientPathology && (
             <>
               <span className="text-slate-400">|</span>
-              <span className="max-w-[260px] truncate text-slate-500" title={patient.pathology}>
-                {patient.pathology}
+              <span
+                className="max-w-[260px] truncate text-slate-500"
+                title={shellModel.patientPathology}
+              >
+                {shellModel.patientPathology}
               </span>
             </>
           )}
-          {patient.bedName && (
+          {shellModel.patientBedName && (
             <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-emerald-100/80 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700">
-              {patient.bedName}
+              {shellModel.patientBedName}
             </span>
           )}
         </div>
@@ -138,132 +186,63 @@ export const ExamRequestModal: React.FC<ExamRequestModalProps> = ({ isOpen, onCl
 
           {/* Exams Grid */}
           <div className="grid grid-cols-12 border-2 border-slate-900 rounded-lg overflow-hidden min-h-[480px]">
-            {/* Column 1: Bioquimica */}
-            <div className="col-span-4 border-r-2 border-slate-900 flex flex-col">
-              <div className="bg-white border-b-2 border-slate-900 text-slate-900 py-0.5 text-center flex flex-col items-center">
-                <span className="text-[9px] font-black tracking-widest uppercase">
-                  {bioquimica.name}
-                </span>
-                <span className="text-[6px] text-slate-500 font-bold">({bioquimica.tube})</span>
+            {examRequestColumns.map((column, columnIndex) => (
+              <div
+                key={`column-${columnIndex}`}
+                className={[
+                  'col-span-4 flex flex-col',
+                  columnIndex < examRequestColumns.length - 1 ? 'border-r-2 border-slate-900' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+              >
+                {column.sections.map((section, sectionIndex) =>
+                  renderSection(section.title, section.exams, {
+                    tube: section.tube,
+                    columns: section.columns,
+                    muted: section.muted,
+                    withTopBorder: sectionIndex > 0,
+                    withBottomBorder:
+                      columnIndex === examRequestColumns.length - 1 &&
+                      sectionIndex < column.sections.length - 1,
+                  })
+                )}
+                {column.footerLabel && column.footerExams ? (
+                  <div className="bg-white border-t border-slate-300 p-2">
+                    <span className="text-[8px] font-black text-slate-400 uppercase block mb-1 underline">
+                      {column.footerLabel}
+                    </span>
+                    {column.footerExams.map(exam => renderExamItem(exam, column.footerLabel!))}
+                  </div>
+                ) : null}
               </div>
-              <div className="p-2 flex flex-col gap-0.5 flex-1">
-                {bioquimica.exams.map(exam => renderExamItem(exam, bioquimica.name))}
-              </div>
-              <div className="bg-white border-t border-slate-300 p-2">
-                <span className="text-[8px] font-black text-slate-400 uppercase block mb-1 underline">
-                  TUBO VERDE
-                </span>
-                {renderExamItem('ELECTROLITOS PLASMATICOS', 'TUBO VERDE')}
-                {renderExamItem('LACTATO', 'TUBO VERDE')}
-              </div>
-            </div>
-
-            {/* Column 2: Hematologia, Coagulacion, Microbiologicos */}
-            <div className="col-span-4 border-r-2 border-slate-900 flex flex-col">
-              <div className="bg-white border-b-2 border-slate-900 text-slate-900 py-0.5 text-center flex flex-col items-center">
-                <span className="text-[9px] font-black tracking-widest uppercase">
-                  {hematologia.name}
-                </span>
-                <span className="text-[6px] text-slate-500 font-bold">({hematologia.tube})</span>
-              </div>
-              <div className="p-1 flex flex-col gap-0.5">
-                <div className="grid grid-cols-2 gap-x-2">
-                  {hematologia.exams.map(exam => renderExamItem(exam, hematologia.name))}
-                </div>
-              </div>
-
-              <div className="bg-white border-b-2 border-t-2 border-slate-900 text-slate-900 py-0.5 text-center flex flex-col items-center">
-                <span className="text-[9px] font-black tracking-widest uppercase">
-                  {coagulacion.name}
-                </span>
-                <span className="text-[6px] text-slate-500 font-bold">({coagulacion.tube})</span>
-              </div>
-              <div className="p-2 flex flex-col gap-0.5">
-                {coagulacion.exams.map(exam => renderExamItem(exam, coagulacion.name))}
-              </div>
-
-              <div className="bg-white border-t-2 border-b-2 border-slate-900 text-slate-900 p-1 text-center">
-                <span className="text-[10px] font-black tracking-widest uppercase">
-                  {microbiologicos.name}
-                </span>
-              </div>
-              <div className="p-2 flex flex-col gap-0.5 flex-1 bg-slate-50/50">
-                {microbiologicos.exams.map(exam => renderExamItem(exam, microbiologicos.name))}
-              </div>
-            </div>
-
-            {/* Column 3: Hormonas, Orina, Virologia */}
-            <div className="col-span-4 flex flex-col">
-              <div className="bg-white border-b-2 border-slate-900 text-slate-900 py-0.5 text-center flex flex-col items-center">
-                <span className="text-[9px] font-black tracking-widest uppercase">
-                  {hormonas.name}
-                </span>
-                <span className="text-[6px] text-slate-500 font-bold">({hormonas.tube})</span>
-              </div>
-              <div className="p-1 flex flex-col gap-0.5 border-b border-slate-200">
-                {hormonas.exams.map(exam => renderExamItem(exam, hormonas.name))}
-              </div>
-
-              <div className="bg-white border-t-2 border-b-2 border-slate-900 text-slate-900 py-0.5 text-center">
-                <span className="text-[9px] font-black tracking-widest uppercase">
-                  Orina / Parásitos
-                </span>
-              </div>
-              <div className="p-2 flex flex-col gap-0.5 border-b border-slate-200">
-                {orina.exams.map(exam => renderExamItem(exam, orina.name))}
-                <div className="h-px bg-slate-200 my-1"></div>
-                {parasitologia.exams.map(exam => renderExamItem(exam, parasitologia.name))}
-              </div>
-
-              <div className="bg-white border-t-2 border-b-2 border-slate-900 text-slate-900 py-0.5 text-center">
-                <span className="text-[9px] font-black tracking-widest uppercase">
-                  Virología / Otros
-                </span>
-              </div>
-              <div className="p-2 flex flex-col gap-0.5 flex-1">
-                {virologia.exams.map(exam => renderExamItem(exam, virologia.name))}
-                <div className="h-px bg-slate-200 my-1"></div>
-                {otros.exams.map(exam => renderExamItem(exam, otros.name))}
-              </div>
-            </div>
+            ))}
           </div>
 
           {/* Footer Section */}
           <div className="grid grid-cols-12 border-2 border-slate-900 rounded-lg mt-0.5 overflow-hidden">
             <div className="col-span-4 border-r-2 border-slate-900 flex flex-col">
-              <div className="bg-white border-b-2 border-slate-900 text-slate-900 py-0.5 text-center flex flex-col items-center">
-                <span className="text-[9px] font-black tracking-widest uppercase">
-                  {inmunologia.name}
-                </span>
-                <span className="text-[6px] text-slate-500 font-bold">({inmunologia.tube})</span>
-              </div>
-              <div className="p-1 flex flex-col gap-0.5">
-                {inmunologia.exams.map(exam => renderExamItem(exam, inmunologia.name))}
-              </div>
+              {renderSection(examRequestFooterSection.title, examRequestFooterSection.exams, {
+                tube: examRequestFooterSection.tube,
+              })}
             </div>
 
             <div className="col-span-8 p-2 flex flex-col gap-4 justify-center">
-              <div className="flex items-center gap-2">
-                <span className="text-[9px] font-black text-slate-900 uppercase whitespace-nowrap">
-                  OTROS:
-                </span>
-                <div className="flex-1 flex flex-col gap-3">
-                  <div className="border-b border-slate-900 h-0.5 w-full"></div>
-                  <div className="border-b border-slate-900 h-0.5 w-full"></div>
+              {examRequestFooterFields.map(field => (
+                <div key={field.label} className="flex items-center gap-2">
+                  <span className="text-[9px] font-black text-slate-900 uppercase whitespace-nowrap">
+                    {field.label}:
+                  </span>
+                  {field.lines === 2 ? (
+                    <div className="flex-1 flex flex-col gap-3">
+                      <div className="border-b border-slate-900 h-0.5 w-full"></div>
+                      <div className="border-b border-slate-900 h-0.5 w-full"></div>
+                    </div>
+                  ) : (
+                    <div className="border-b border-slate-900 flex-1 h-0.5 mt-1"></div>
+                  )}
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[9px] font-black text-slate-900 uppercase whitespace-nowrap">
-                  MEDICO TRATANTE:
-                </span>
-                <div className="border-b border-slate-900 flex-1 h-0.5 mt-1"></div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[9px] font-black text-slate-900 uppercase whitespace-nowrap">
-                  FIRMA:
-                </span>
-                <div className="border-b border-slate-900 flex-1 h-0.5 mt-1"></div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
