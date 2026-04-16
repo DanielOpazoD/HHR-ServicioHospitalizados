@@ -54,7 +54,6 @@ export const usePatientRowUiState = (): PatientRowUiState => {
     () => setActiveModal(current => (current === 'history' ? null : current)),
     []
   );
-
   return {
     showDemographics: activeModal === 'demographics',
     showClinicalDocuments: activeModal === 'clinicalDocuments',

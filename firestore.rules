@@ -714,6 +714,24 @@ service cloud.firestore {
         allow read: if canReadClinicalData();
         allow write: if canEdit();
       }
+
+      // ----------------------------------------
+      // WOUND CARE: INFORMED CONSENTS
+      // ----------------------------------------
+      match /woundCareConsents/{consentId} {
+        allow read: if canReadClinicalData();
+        allow create, update: if canEdit();
+        allow delete: if isAdmin();
+      }
+
+      // ----------------------------------------
+      // WOUND CARE: PHOTO METADATA
+      // ----------------------------------------
+      match /woundCarePhotos/{photoId} {
+        allow read: if canReadClinicalData();
+        allow create, update: if canEdit();
+        allow delete: if isAdmin();
+      }
     }
     
     // ============================================
