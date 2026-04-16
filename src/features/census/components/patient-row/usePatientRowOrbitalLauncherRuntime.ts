@@ -8,8 +8,10 @@ import {
   dispatchLauncherOpenChange,
   dispatchLauncherOwnerChange,
   isPointerInActivationZone,
-  isPointerInExternalLeftActivationBand,
+  resolveRowHoverActionFromGlobalPointer,
+  resolveRowHoverActionFromRowPointer,
   resolveLauncherTriggerVisibility,
+  resolveVisibilityHiddenLauncherState,
   shouldReleaseLauncherOwnership,
   resolveLauncherPosition,
   resolveRowElement,
@@ -22,24 +24,6 @@ import {
 } from '@/features/census/components/patient-row/patientRowOrbitalLauncherRuntimeSupport';
 
 export { HOVER_EXIT_GRACE_MS };
-
-/* ================================================================
- * SECTION INDEX
- * 1. Hook State & Refs            (line ~37)
- * 2. Ref Synchronization          (line ~56)
- * 3. Hover Grace Timer            (line ~72)
- * 4. Visibility & Media Query     (line ~108)
- * 5. Row Event Listeners          (line ~150)
- * 6. Global Ownership Events      (line ~281)
- * 7. Trigger Visibility Logic     (line ~316)
- * 8. Return Value                 (line ~348)
- * ================================================================ */
-
-// ---------------------------------------------------------------------------
-// Hook
-// ---------------------------------------------------------------------------
-
-// === HOOK STATE & REFS ===
 
 export const usePatientRowOrbitalLauncherRuntime = ({
   hasQuickActions,
@@ -62,32 +46,20 @@ export const usePatientRowOrbitalLauncherRuntime = ({
   const ownerLauncherRowIdRef = React.useRef<string | null>(null);
   const hoverExitTimerRef = React.useRef<number | null>(null);
 
-  // === REF SYNCHRONIZATION ===
-
-  // Refs mirror the latest state values so timer callbacks avoid stale closures.
   const isOpenRef = React.useRef(isOpen);
   const isLauncherHoveredRef = React.useRef(isLauncherHovered);
   const isRowHoveredRef = React.useRef(isRowHovered);
   const rowIdRef = React.useRef(rowId);
 
-  // Keep refs in sync with their corresponding state values.
   React.useEffect(() => {
     isOpenRef.current = isOpen;
-  }, [isOpen]);
-  React.useEffect(() => {
     isLauncherHoveredRef.current = isLauncherHovered;
-  }, [isLauncherHovered]);
-  React.useEffect(() => {
     isRowHoveredRef.current = isRowHovered;
-  }, [isRowHovered]);
-  React.useEffect(() => {
     rowIdRef.current = rowId;
-  }, [rowId]);
+  }, [isLauncherHovered, isOpen, isRowHovered, rowId]);
   React.useEffect(() => {
     ownerLauncherRowIdRef.current = ownerLauncherRowId;
   }, [ownerLauncherRowId]);
-
-  // === HOVER GRACE TIMER ===
 
   const clearHoverExitTimer = React.useCallback(() => {
     if (hoverExitTimerRef.current !== null && typeof window !== 'undefined') {
@@ -157,6 +129,12 @@ export const usePatientRowOrbitalLauncherRuntime = ({
     armHoverGrace();
   }, [armHoverGrace]);
 
+  const resetHoverState = React.useCallback(() => {
+    setIsRowHovered(false);
+    setIsLauncherHovered(false);
+    setIsHoverGraceActive(false);
+  }, []);
+
   // === VISIBILITY & MEDIA QUERY ===
 
   // --- visibilitychange: flush hover state when the tab goes to background ---
@@ -167,11 +145,15 @@ export const usePatientRowOrbitalLauncherRuntime = ({
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
+        const hiddenState = resolveVisibilityHiddenLauncherState({
+          ownerLauncherRowId: ownerLauncherRowIdRef.current,
+          rowId: rowIdRef.current,
+        });
         clearHoverExitTimer();
-        setIsRowHovered(false);
-        setIsLauncherHovered(false);
-        setIsHoverGraceActive(false);
-        if (ownerLauncherRowIdRef.current === rowIdRef.current) {
+        if (hiddenState.shouldResetHoverState) {
+          resetHoverState();
+        }
+        if (hiddenState.shouldClearOwnership) {
           dispatchLauncherOwnerChange(null);
         }
       }
@@ -181,7 +163,7 @@ export const usePatientRowOrbitalLauncherRuntime = ({
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [clearHoverExitTimer]);
+  }, [clearHoverExitTimer, resetHoverState]);
 
   // --- Media-query listener: track hover+fine capability changes ---
   React.useEffect(() => {
@@ -245,9 +227,7 @@ export const usePatientRowOrbitalLauncherRuntime = ({
     };
 
     const handleRowMouseMove = (event: MouseEvent) => {
-      const inZone = isPointerInActivationZone(event.clientX, row);
-
-      if (inZone) {
+      if (resolveRowHoverActionFromRowPointer(event.clientX, row) === 'activate') {
         activateRowHover();
       } else {
         deactivateRowHover();
@@ -255,16 +235,17 @@ export const usePatientRowOrbitalLauncherRuntime = ({
     };
 
     const handleGlobalMouseMove = (event: MouseEvent) => {
-      const inExternalLeftBand = isPointerInExternalLeftActivationBand(
-        event.clientX,
-        event.clientY,
-        row
-      );
       const targetInsideRow = event.target instanceof Node && row.contains(event.target);
+      const hoverAction = resolveRowHoverActionFromGlobalPointer({
+        pointerX: event.clientX,
+        pointerY: event.clientY,
+        row,
+        targetInsideRow,
+      });
 
-      if (inExternalLeftBand) {
+      if (hoverAction === 'activate') {
         activateRowHover();
-      } else if (!targetInsideRow) {
+      } else if (hoverAction === 'deactivate') {
         deactivateRowHover();
       }
     };

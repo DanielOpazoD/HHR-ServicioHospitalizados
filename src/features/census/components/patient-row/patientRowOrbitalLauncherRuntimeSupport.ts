@@ -56,6 +56,8 @@ export interface ResolveLauncherOwnershipReleaseInput {
   isRowHovered: boolean;
 }
 
+export type LauncherRowHoverAction = 'activate' | 'deactivate' | 'preserve';
+
 export const resolveLauncherTriggerVisibility = ({
   hasQuickActions,
   supportsHoverFine,
@@ -98,6 +100,19 @@ export const shouldReleaseLauncherOwnership = ({
   isRowHovered,
 }: ResolveLauncherOwnershipReleaseInput): boolean =>
   ownerLauncherRowId === rowId && !isOpen && !isLauncherHovered && !isRowHovered;
+
+interface ResolveVisibilityHiddenLauncherStateInput {
+  ownerLauncherRowId: string | null;
+  rowId: string | null;
+}
+
+export const resolveVisibilityHiddenLauncherState = ({
+  ownerLauncherRowId,
+  rowId,
+}: ResolveVisibilityHiddenLauncherStateInput) => ({
+  shouldResetHoverState: true,
+  shouldClearOwnership: ownerLauncherRowId === rowId,
+});
 
 export const dispatchLauncherOpenChange = (rowId: string | null): void => {
   if (typeof window === 'undefined') {
@@ -167,6 +182,35 @@ export const isPointerInExternalLeftActivationBand = (
 ): boolean => {
   const rect = row.getBoundingClientRect();
   return pointerX <= rect.left && isPointerWithinRowBand(pointerY, row);
+};
+
+export const resolveRowHoverActionFromRowPointer = (
+  pointerX: number,
+  row: HTMLTableRowElement
+): LauncherRowHoverAction => (isPointerInActivationZone(pointerX, row) ? 'activate' : 'deactivate');
+
+interface ResolveRowHoverActionFromGlobalPointerParams {
+  pointerX: number;
+  pointerY: number;
+  row: HTMLTableRowElement;
+  targetInsideRow: boolean;
+}
+
+export const resolveRowHoverActionFromGlobalPointer = ({
+  pointerX,
+  pointerY,
+  row,
+  targetInsideRow,
+}: ResolveRowHoverActionFromGlobalPointerParams): LauncherRowHoverAction => {
+  if (isPointerInExternalLeftActivationBand(pointerX, pointerY, row)) {
+    return 'activate';
+  }
+
+  if (!targetInsideRow) {
+    return 'deactivate';
+  }
+
+  return 'preserve';
 };
 
 export const resolveLauncherPosition = (

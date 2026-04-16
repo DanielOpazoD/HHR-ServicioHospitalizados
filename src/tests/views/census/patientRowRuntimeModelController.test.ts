@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   buildPatientRowEditingRuntimeParams,
+  buildPatientRowRuntimeHookParams,
   buildPatientRowInteractionRuntimeParams,
 } from '@/features/census/controllers/patientRowRuntimeModelController';
 import { DataFactory } from '@/tests/factories/DataFactory';
@@ -71,5 +72,64 @@ describe('patientRowRuntimeModelController', () => {
     expect(result.toggleBedType).toBe(toggleBedType);
     expect(result.confirm).toBe(confirm);
     expect(result.alert).toBe(alert);
+  });
+
+  it('builds the composite runtime hook params from one dependency bundle', () => {
+    const updatePatient = vi.fn();
+    const updatePatientMultiple = vi.fn();
+    const updateClinicalCrib = vi.fn();
+    const updateClinicalCribMultiple = vi.fn();
+    const toggleBedType = vi.fn();
+    const confirm = vi.fn();
+    const alert = vi.fn();
+    const patient = DataFactory.createMockPatient('R1', { documentType: 'RUT' });
+    const onAction = vi.fn();
+
+    const result = buildPatientRowRuntimeHookParams({
+      bed: { id: 'R1' },
+      data: patient,
+      currentDateString: '2026-01-03',
+      onAction,
+      rowState: {
+        isCunaMode: false,
+        hasCompanion: true,
+        hasClinicalCrib: false,
+      },
+      dependencies: {
+        updatePatient,
+        updatePatientMultiple,
+        updateClinicalCrib,
+        updateClinicalCribMultiple,
+        toggleBedType,
+        confirm,
+        alert,
+      },
+    });
+
+    expect(result.editingRuntimeParams).toEqual({
+      bedId: 'R1',
+      currentDateString: '2026-01-03',
+      data: patient,
+      documentType: 'RUT',
+      updatePatient,
+      updatePatientMultiple,
+      updateClinicalCrib,
+      updateClinicalCribMultiple,
+    });
+    expect(result.interactionRuntimeParams).toEqual({
+      bedId: 'R1',
+      data: patient,
+      onAction,
+      rowState: {
+        isCunaMode: false,
+        hasCompanion: true,
+        hasClinicalCrib: false,
+      },
+      updatePatient,
+      updateClinicalCrib,
+      toggleBedType,
+      confirm,
+      alert,
+    });
   });
 });

@@ -16,8 +16,8 @@
 
 ## 1. Nota global
 
-- **Nota global (1 a 7):** `6.5 / 7`
-- **Resumen ejecutivo breve:** módulo muy potente, muy cubierto y con arquitectura bastante seria. Sigue siendo el frente con más churn, más volumen y más sensibilidad operativa del sistema, pero el baseline de tests está verde y `PatientRow` viene perdiendo wiring incidental de forma sostenida, lo que mejora bastante la foto de estabilidad y evolución.
+- **Nota global (1 a 7):** `6.8 / 7`
+- **Resumen ejecutivo breve:** módulo muy potente, muy cubierto y con arquitectura bastante seria. Sigue siendo el frente con más churn, más volumen y más sensibilidad operativa del sistema, pero el baseline de tests está verde y `PatientRow` viene perdiendo wiring incidental de forma sostenida, lo que mejora de forma tangible la foto de estabilidad y evolución.
 
 ---
 
@@ -25,14 +25,14 @@
 
 | Dimensión                        | Nota | Comentario                                                                                               |
 | -------------------------------- | ---: | -------------------------------------------------------------------------------------------------------- |
-| Calidad general                  |  6.4 | Muy buen nivel para un módulo tan grande, con menos fricción incidental que al inicio de la ronda.       |
+| Calidad general                  |  6.7 | Muy buen nivel para un módulo tan grande, con menos fricción incidental que al inicio de la ronda.       |
 | Estructura                       |  6.6 | La separación `components / hooks / controllers / domain / context / validation` está bien pensada.      |
-| Organización                     |  6.4 | Hay mucha organización y ownership explícito; sigue pesado, pero más ordenado en el frente `PatientRow`. |
-| Buenas prácticas de codificación |  6.6 | Hay bastante controller puro, command/runtime y boundaries bien marcados.                                |
+| Organización                     |  6.5 | Hay mucha organización y ownership explícito; sigue pesado, pero más ordenado en el frente `PatientRow`. |
+| Buenas prácticas de codificación |  6.7 | Hay bastante controller puro, command/runtime y boundaries bien marcados.                                |
 | Coherencia funcional             |  6.4 | La coherencia clínica es buena y el wiring principal viene convergiendo mejor.                           |
 | Separación y límites             |  6.6 | Muy buena gobernanza de feature boundaries y ownership de controllers.                                   |
-| Estabilidad                      |  6.3 | La suite focalizada volvió a verde completo y el baseline de `PatientRow` hoy se ve bastante más firme.  |
-| Escalabilidad                    |  6.2 | Puede crecer, pero conviene por bloques; el costo cognitivo y de churn sigue siendo alto.                |
+| Estabilidad                      |  6.6 | La suite focalizada volvió a verde completo y el baseline de `PatientRow` hoy se ve bastante más firme.  |
+| Escalabilidad                    |  6.4 | Puede crecer, pero conviene por bloques; el costo cognitivo y de churn sigue siendo alto.                |
 | Documentación                    |  6.6 | El README del feature y los invariantes están bien explicitados.                                         |
 | Tests                            |  6.5 | Cobertura enorme y muy útil, con baseline focalizado actualmente verde en `PatientRow`.                  |
 
@@ -62,7 +62,7 @@
 - Es uno de los módulos más grandes y complejos del sistema, y eso se nota en navegación, churn y sensibilidad de cambios.
 - La estructura está bien, pero el costo cognitivo sigue siendo alto, especialmente en `PatientRow`, movimientos, acciones de tabla y wiring del runtime.
 - Aunque el scorecard hoy no lo marca como hotspot rojo, el módulo sigue siendo el frente con más churn reciente del repo.
-- La suite focalizada es enorme y cubre bastante bien el frente `PatientRow`; el baseline volvió a verde completo y ya hubo varias pasadas para converger wiring duplicado de modales, secciones, launcher orbital, menú de acciones e inputs clínicos.
+- La suite focalizada es enorme y cubre bastante bien el frente `PatientRow`; el baseline volvió a verde completo y ya hubo varias pasadas para converger wiring duplicado de modales, secciones, launcher orbital, menú de acciones, inputs clínicos, hooks operativos asociados y estados UI pequeños del árbol de fila.
 
 ---
 

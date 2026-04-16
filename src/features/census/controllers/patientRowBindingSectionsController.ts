@@ -18,6 +18,22 @@ export interface PatientRowViewContext {
   indicators: PatientRowResolvedIndicators;
 }
 
+const buildPatientRowModalOpenBindings = (runtime: PatientRowRuntime) => ({
+  onOpenDemographics: runtime.uiState.openDemographics,
+  onOpenClinicalDocuments: runtime.uiState.openClinicalDocuments,
+  onOpenExamRequest: runtime.uiState.openExamRequest,
+  onOpenImagingRequest: runtime.uiState.openImagingRequest,
+  onOpenHistory: runtime.uiState.openHistory,
+});
+
+const buildPatientRowModalCloseBindings = (runtime: PatientRowRuntime) => ({
+  onCloseDemographics: runtime.uiState.closeDemographics,
+  onCloseClinicalDocuments: runtime.uiState.closeClinicalDocuments,
+  onCloseExamRequest: runtime.uiState.closeExamRequest,
+  onCloseImagingRequest: runtime.uiState.closeImagingRequest,
+  onCloseHistory: runtime.uiState.closeHistory,
+});
+
 interface BuildMainSectionBindingsParams {
   bed: BedDefinition;
   bedType: BedType;
@@ -73,11 +89,7 @@ export const buildPatientMainSectionBindings = ({
     indicators: viewContext.indicators,
     mainRowViewState,
     onAction: runtime.handleAction,
-    onOpenDemographics: runtime.uiState.openDemographics,
-    onOpenClinicalDocuments: runtime.uiState.openClinicalDocuments,
-    onOpenExamRequest: runtime.uiState.openExamRequest,
-    onOpenImagingRequest: runtime.uiState.openImagingRequest,
-    onOpenHistory: runtime.uiState.openHistory,
+    ...buildPatientRowModalOpenBindings(runtime),
     onToggleMode: runtime.bedConfigActions.toggleBedMode,
     onToggleCompanion: runtime.bedConfigActions.toggleCompanionCrib,
     onToggleClinicalCrib: runtime.bedConfigActions.toggleClinicalCrib,
@@ -112,7 +124,7 @@ export const buildPatientSubSectionBindings = ({
   diagnosisMode,
   accessProfile,
   style,
-  onOpenDemographics: runtime.uiState.openDemographics,
+  onOpenDemographics: buildPatientRowModalOpenBindings(runtime).onOpenDemographics,
   onChange: runtime.handlers.cribInputChangeHandlers,
 });
 
@@ -146,11 +158,7 @@ export const buildPatientModalSectionBindings = ({
   canOpenImagingRequest: viewContext.capabilities.canOpenImagingRequest,
   showHistory: runtime.uiState.showHistory,
   canOpenHistory: viewContext.capabilities.canOpenHistory,
-  onCloseDemographics: runtime.uiState.closeDemographics,
-  onCloseClinicalDocuments: runtime.uiState.closeClinicalDocuments,
-  onCloseExamRequest: runtime.uiState.closeExamRequest,
-  onCloseImagingRequest: runtime.uiState.closeImagingRequest,
-  onCloseHistory: runtime.uiState.closeHistory,
+  ...buildPatientRowModalCloseBindings(runtime),
   onSaveDemographics: runtime.modalSavers.onSaveDemographics,
   onSaveCribDemographics: runtime.modalSavers.onSaveCribDemographics,
 });

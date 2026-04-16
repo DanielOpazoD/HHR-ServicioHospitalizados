@@ -3,6 +3,7 @@ import type {
   MedicalHandoffActor as RootMedicalHandoffActor,
   MedicalSpecialty as RootMedicalSpecialty,
   MedicalHandoffBySpecialty,
+  MedicalHandoffDailyContinuityEntry as RootMedicalHandoffDailyContinuityEntry,
   MedicalSpecialtyHandoffNote as RootMedicalSpecialtyHandoffNote,
 } from '@/types/domain/dailyRecordMedicalHandoff';
 import type { DischargeData, TransferData, CMAData } from '@/types/domain/movements';
@@ -13,6 +14,7 @@ export type MedicalHandoffActor = RootMedicalHandoffActor;
 export type MedicalSpecialty = RootMedicalSpecialty;
 export type DailyRecordPatch = RootDailyRecordPatch;
 export type MedicalSpecialtyHandoffNote = RootMedicalSpecialtyHandoffNote;
+export type MedicalHandoffDailyContinuityEntry = RootMedicalHandoffDailyContinuityEntry;
 
 export interface HandoffDailyRecordContract {
   date: string;

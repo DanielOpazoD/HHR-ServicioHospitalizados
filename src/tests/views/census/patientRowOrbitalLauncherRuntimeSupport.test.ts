@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  resolveRowHoverActionFromGlobalPointer,
+  resolveRowHoverActionFromRowPointer,
   resolveLauncherTriggerVisibility,
+  resolveVisibilityHiddenLauncherState,
   shouldReleaseLauncherOwnership,
 } from '@/features/census/components/patient-row/patientRowOrbitalLauncherRuntimeSupport';
 
@@ -81,5 +84,90 @@ describe('shouldReleaseLauncherOwnership', () => {
         isRowHovered: false,
       })
     ).toBe(false);
+  });
+});
+
+describe('resolveVisibilityHiddenLauncherState', () => {
+  it('always resets hover state and only clears ownership for the current row', () => {
+    expect(
+      resolveVisibilityHiddenLauncherState({
+        ownerLauncherRowId: 'R1',
+        rowId: 'R1',
+      })
+    ).toEqual({
+      shouldResetHoverState: true,
+      shouldClearOwnership: true,
+    });
+
+    expect(
+      resolveVisibilityHiddenLauncherState({
+        ownerLauncherRowId: 'R2',
+        rowId: 'R1',
+      })
+    ).toEqual({
+      shouldResetHoverState: true,
+      shouldClearOwnership: false,
+    });
+  });
+});
+
+describe('row hover actions', () => {
+  const rowRect = {
+    left: 100,
+    right: 300,
+    top: 20,
+    bottom: 60,
+  };
+
+  const createRow = (): HTMLTableRowElement => {
+    const row = document.createElement('tr');
+    Object.defineProperty(row, 'getBoundingClientRect', {
+      value: () => rowRect,
+    });
+    const rutCell = document.createElement('td');
+    rutCell.className = 'group/rut';
+    Object.defineProperty(rutCell, 'getBoundingClientRect', {
+      value: () => ({ ...rowRect, right: 180 }),
+    });
+    row.appendChild(rutCell);
+    return row as HTMLTableRowElement;
+  };
+
+  it('activates or deactivates row hover from row-local pointer movement', () => {
+    const row = createRow();
+
+    expect(resolveRowHoverActionFromRowPointer(150, row)).toBe('activate');
+    expect(resolveRowHoverActionFromRowPointer(220, row)).toBe('deactivate');
+  });
+
+  it('activates from the external left band, deactivates outside, and preserves inside-row movement', () => {
+    const row = createRow();
+
+    expect(
+      resolveRowHoverActionFromGlobalPointer({
+        pointerX: 90,
+        pointerY: 40,
+        row,
+        targetInsideRow: false,
+      })
+    ).toBe('activate');
+
+    expect(
+      resolveRowHoverActionFromGlobalPointer({
+        pointerX: 250,
+        pointerY: 90,
+        row,
+        targetInsideRow: false,
+      })
+    ).toBe('deactivate');
+
+    expect(
+      resolveRowHoverActionFromGlobalPointer({
+        pointerX: 250,
+        pointerY: 40,
+        row,
+        targetInsideRow: true,
+      })
+    ).toBe('preserve');
   });
 });

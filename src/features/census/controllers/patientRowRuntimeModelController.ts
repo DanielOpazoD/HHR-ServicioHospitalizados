@@ -41,6 +41,24 @@ interface BuildPatientRowInteractionRuntimeParamsInput {
   >;
 }
 
+interface BuildPatientRowRuntimeHookParamsInput {
+  bed: Pick<BedDefinition, 'id'>;
+  data: PatientData;
+  currentDateString: string;
+  onAction: (action: PatientRowAction, bedId: string, patient: PatientData) => void;
+  rowState: Pick<PatientRowDerivedState, 'isCunaMode' | 'hasCompanion' | 'hasClinicalCrib'>;
+  dependencies: Pick<
+    PatientRowDependencies,
+    | 'updatePatient'
+    | 'updatePatientMultiple'
+    | 'updateClinicalCrib'
+    | 'updateClinicalCribMultiple'
+    | 'toggleBedType'
+    | 'confirm'
+    | 'alert'
+  >;
+}
+
 export const buildPatientRowInteractionRuntimeParams = ({
   bed,
   data,
@@ -57,4 +75,27 @@ export const buildPatientRowInteractionRuntimeParams = ({
   toggleBedType: dependencies.toggleBedType,
   confirm: dependencies.confirm,
   alert: dependencies.alert,
+});
+
+export const buildPatientRowRuntimeHookParams = ({
+  bed,
+  data,
+  currentDateString,
+  onAction,
+  rowState,
+  dependencies,
+}: BuildPatientRowRuntimeHookParamsInput) => ({
+  editingRuntimeParams: buildPatientRowEditingRuntimeParams({
+    bed,
+    data,
+    currentDateString,
+    dependencies,
+  }),
+  interactionRuntimeParams: buildPatientRowInteractionRuntimeParams({
+    bed,
+    data,
+    onAction,
+    rowState,
+    dependencies,
+  }),
 });

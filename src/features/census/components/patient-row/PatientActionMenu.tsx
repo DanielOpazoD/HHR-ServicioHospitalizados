@@ -10,6 +10,7 @@ import type {
 import type { RowMenuAlign } from './patientRowUiContracts';
 import { usePatientActionMenu } from './usePatientActionMenu';
 import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medicalIndications';
+import { resolvePatientActionMenuDemographicsInteraction } from '@/features/census/controllers/patientActionMenuController';
 
 const LazyPatientActionMenuPanel = lazy(() =>
   import('@/features/census/components/patient-row/PatientActionMenuPanel').then(module => ({
@@ -74,7 +75,6 @@ export const PatientActionMenu: React.FC<PatientActionMenuProps> = ({
   medicalIndicationsPatient,
   clinicalDocumentCount,
 }) => {
-  const isSpecialistAccess = accessProfile === 'specialist';
   const {
     isOpen,
     isMedicalIndicationsOpen,
@@ -108,6 +108,11 @@ export const PatientActionMenu: React.FC<PatientActionMenuProps> = ({
     onViewMedicalIndications,
   });
 
+  const handleViewDemographics = resolvePatientActionMenuDemographicsInteraction({
+    accessProfile,
+    onViewDemographics,
+  });
+
   return (
     <div className="flex flex-col items-center gap-0.5 relative py-0.5" ref={menuRef}>
       <PatientRowOrbitalQuickActions
@@ -127,7 +132,7 @@ export const PatientActionMenu: React.FC<PatientActionMenuProps> = ({
       {binding.availability.showDemographicsAction && (
         <div className="flex items-center gap-0.5">
           <MedicalButton
-            onClick={isSpecialistAccess ? undefined : onViewDemographics}
+            onClick={handleViewDemographics}
             variant="ghost"
             size="xs"
             className="!px-1.5 !py-0.5 rounded-md text-medical-500 hover:text-medical-700"

@@ -13,12 +13,9 @@ import {
   buildHandoffActionBundles,
   resolveHandoffMedicalBindings,
 } from '@/features/handoff/controllers/handoffViewBindingsController';
-import { resolveMedicalHandoffCapabilities } from '@/features/handoff/controllers/medicalHandoffAccessController';
 import {
-  resolveHandoffAuditDescriptor,
-  resolveHandoffScreenFrame,
-  resolveInitialMedicalScopeFromLocation,
-  resolveInitialMedicalSpecialtyFromLocation,
+  buildHandoffScreenShellModel,
+  resolveInitialMedicalFiltersFromLocation,
 } from '@/features/handoff/controllers/handoffViewController';
 import type { Specialty } from '@/domain/handoff/patientContracts';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
@@ -40,21 +37,14 @@ export const useHandoffViewScreenModel = ({
   ui,
   medicalScope,
 }: UseHandoffViewScreenModelParams) => {
-  const initialMedicalSpecialtyFromUrl = useMemo(
+  const { initialMedicalSpecialty, initialMedicalScope } = useMemo(
     () =>
-      resolveInitialMedicalSpecialtyFromLocation(
+      resolveInitialMedicalFiltersFromLocation(
         typeof window === 'undefined' ? undefined : window.location.search
       ),
     []
   );
-  const initialMedicalScopeFromUrl = useMemo(
-    () =>
-      resolveInitialMedicalScopeFromLocation(
-        typeof window === 'undefined' ? undefined : window.location.search
-      ),
-    []
-  );
-  const effectiveMedicalScope = medicalScope ?? initialMedicalScopeFromUrl;
+  const effectiveMedicalScope = medicalScope ?? initialMedicalScope;
   const { record } = useDailyRecordData();
   const {
     updateHandoffChecklist,
@@ -71,7 +61,7 @@ export const useHandoffViewScreenModel = ({
   const logEventRef = useRef(logEvent);
   const recordRef = useRef(record);
   const [selectedMedicalSpecialty, setSelectedMedicalSpecialty] = useState<Specialty | 'all'>(
-    initialMedicalSpecialtyFromUrl
+    initialMedicalSpecialty
   );
 
   useEffect(() => void (logEventRef.current = logEvent), [logEvent]);
@@ -131,9 +121,9 @@ export const useHandoffViewScreenModel = ({
   );
 
   const recordDate = record?.date;
-  const screenFrame = useMemo(
+  const handoffScreenShell = useMemo(
     () =>
-      resolveHandoffScreenFrame({
+      buildHandoffScreenShellModel({
         isMedical,
         selectedShift,
         role,
@@ -142,14 +132,7 @@ export const useHandoffViewScreenModel = ({
       }),
     [isMedical, readOnly, recordDate, role, selectedShift]
   );
-  const auditDescriptor = useMemo(
-    () =>
-      resolveHandoffAuditDescriptor({
-        isMedical,
-        selectedShift,
-      }),
-    [isMedical, selectedShift]
-  );
+  const { screenFrame, auditDescriptor, medicalCapabilities } = handoffScreenShell;
 
   useEffect(() => {
     if (!recordDate) {
@@ -187,16 +170,6 @@ export const useHandoffViewScreenModel = ({
     document.title = nextTitle;
     return () => void (document.title = 'Hospital Hanga Roa');
   }, [screenFrame.documentTitle]);
-
-  const medicalCapabilities = useMemo(
-    () =>
-      resolveMedicalHandoffCapabilities({
-        role,
-        readOnly: screenFrame.effectiveReadOnly,
-        recordDate,
-      }),
-    [recordDate, role, screenFrame.effectiveReadOnly]
-  );
 
   const {
     medicalActions,

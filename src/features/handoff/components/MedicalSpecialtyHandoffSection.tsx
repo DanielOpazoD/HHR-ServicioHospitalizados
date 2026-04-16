@@ -9,18 +9,11 @@ import type {
 } from '@/domain/handoff/recordContracts';
 import { DebouncedTextarea } from '@/components/ui/DebouncedTextarea';
 import {
-  buildMedicalSpecialtyTabState,
+  buildMedicalSpecialtySectionViewModel,
   buildMedicalSpecialtyActor,
-  buildPrintableMedicalSpecialtyBlocks,
   DEFAULT_NO_CHANGES_COMMENT,
   getMedicalSpecialtyLabel,
-  getMedicalSpecialtyNote,
-  hasMedicalSpecialtyStructuredData,
   MEDICAL_SPECIALTY_ORDER,
-  resolveActiveMedicalSpecialty,
-  resolveMedicalSpecialtyContinuityEditorState,
-  resolveMedicalSpecialtyContinuityDraft,
-  resolveMedicalSpecialtyDailyStatus,
 } from '@/features/handoff/controllers/medicalSpecialtyHandoffController';
 import {
   formatHandoffDateTime,
@@ -80,32 +73,32 @@ export const MedicalSpecialtyHandoffSection: React.FC<MedicalSpecialtyHandoffSec
     Partial<Record<MedicalSpecialty, string>>
   >({});
 
-  const resolvedActiveSpecialty = resolveActiveMedicalSpecialty({
-    activeSpecialty,
-    editableSpecialties,
-  });
-
   const actor = useMemo(() => buildMedicalSpecialtyActor(user, role), [role, user]);
-
-  const activeNote = getMedicalSpecialtyNote(record, resolvedActiveSpecialty);
-  const activeStatus = resolveMedicalSpecialtyDailyStatus(activeNote, record.date);
-  const activeContinuity = activeNote?.dailyContinuity?.[record.date];
-  const canEditActiveSpecialty = !readOnly && editableSpecialties.includes(resolvedActiveSpecialty);
+  const {
+    tabStates,
+    resolvedActiveSpecialty,
+    activeNote,
+    activeStatus,
+    activeContinuity,
+    canEditActiveSpecialty,
+    activeContinuityDraft,
+    hasSpecialtyData,
+    printableBlocks,
+    continuityEditorState,
+  } = useMemo(
+    () =>
+      buildMedicalSpecialtySectionViewModel({
+        record,
+        role,
+        readOnly,
+        activeSpecialty,
+        editableSpecialties,
+        continuityDrafts,
+      }),
+    [activeSpecialty, continuityDrafts, editableSpecialties, readOnly, record, role]
+  );
   const activeStatusMeta = STATUS_STYLES[activeStatus];
   const ActiveStatusIcon = activeStatusMeta.icon;
-  const activeContinuityDraft = resolveMedicalSpecialtyContinuityDraft({
-    drafts: continuityDrafts,
-    specialty: resolvedActiveSpecialty,
-    note: activeNote,
-    dateKey: record.date,
-  });
-  const hasSpecialtyData = hasMedicalSpecialtyStructuredData(record);
-  const printableBlocks = buildPrintableMedicalSpecialtyBlocks(record);
-  const continuityEditorState = resolveMedicalSpecialtyContinuityEditorState({
-    role,
-    readOnly,
-    activeStatus,
-  });
 
   return (
     <section className="space-y-3">
@@ -123,23 +116,15 @@ export const MedicalSpecialtyHandoffSection: React.FC<MedicalSpecialtyHandoffSec
 
         <div className="px-3 pt-3">
           <div className="flex flex-wrap gap-2">
-            {MEDICAL_SPECIALTY_ORDER.map(specialty => {
-              const specialtyTabState = buildMedicalSpecialtyTabState({
-                specialty,
-                record,
-                dateKey: record.date,
-                editableSpecialties,
-                readOnly,
-                activeSpecialty: resolvedActiveSpecialty,
-              });
+            {tabStates.map(specialtyTabState => {
               const specialtyMeta = STATUS_STYLES[specialtyTabState.status];
               const SpecialtyStatusIcon = specialtyMeta.icon;
 
               return (
                 <button
-                  key={specialty}
+                  key={specialtyTabState.specialty}
                   type="button"
-                  onClick={() => setActiveSpecialty(specialty)}
+                  onClick={() => setActiveSpecialty(specialtyTabState.specialty)}
                   className={clsx(
                     'rounded-lg border px-3 py-2 text-left transition-colors min-w-[160px]',
                     specialtyTabState.isActive

@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   buildPatientActionMenuModel,
   resolvePatientActionMenuCallbackAvailability,
+  resolvePatientActionMenuDemographicsInteraction,
 } from '@/features/census/controllers/patientActionMenuController';
 
 describe('patientActionMenuController', () => {
@@ -21,6 +22,24 @@ describe('patientActionMenuController', () => {
       hasImagingRequestAction: false,
       hasMedicalIndicationsAction: false,
     });
+  });
+
+  it('disables demographics opening for specialist access while preserving it for default access', () => {
+    const onViewDemographics = vi.fn();
+
+    expect(
+      resolvePatientActionMenuDemographicsInteraction({
+        accessProfile: 'specialist',
+        onViewDemographics,
+      })
+    ).toBeUndefined();
+
+    expect(
+      resolvePatientActionMenuDemographicsInteraction({
+        accessProfile: 'default',
+        onViewDemographics,
+      })
+    ).toBe(onViewDemographics);
   });
 
   it('builds a full action-menu model from row state and callback availability', () => {

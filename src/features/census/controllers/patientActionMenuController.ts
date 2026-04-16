@@ -27,6 +27,17 @@ interface ResolvePatientActionMenuCallbackAvailabilityParams {
   onViewMedicalIndications?: () => void;
 }
 
+interface ResolvePatientActionMenuDemographicsInteractionParams {
+  accessProfile?: CensusAccessProfile;
+  onViewDemographics: () => void;
+}
+
+export const resolvePatientActionMenuDemographicsInteraction = ({
+  accessProfile = 'default',
+  onViewDemographics,
+}: ResolvePatientActionMenuDemographicsInteractionParams): (() => void) | undefined =>
+  accessProfile === 'specialist' ? undefined : onViewDemographics;
+
 export const resolvePatientActionMenuCallbackAvailability = ({
   onViewHistory,
   onViewClinicalDocuments,

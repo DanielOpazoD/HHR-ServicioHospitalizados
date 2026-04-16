@@ -17,6 +17,10 @@ import { canEditMedicalHandoffForDate } from '@/shared/access/operationalAccessP
 import { MessageSquare, Stethoscope } from 'lucide-react';
 import type { UserRole } from '@/types/auth';
 import type { AuditAction } from '@/types/audit';
+import {
+  resolveMedicalHandoffCapabilities,
+  type MedicalHandoffCapabilities,
+} from './medicalHandoffAccessController';
 
 interface HandoffTitleParams {
   isMedical: boolean;
@@ -109,6 +113,16 @@ export const resolveInitialMedicalScopeFromLocation = (
   return resolveInitialMedicalScopeFromSearch(search);
 };
 
+export const resolveInitialMedicalFiltersFromLocation = (
+  search: string | undefined
+): {
+  initialMedicalSpecialty: Specialty | 'all';
+  initialMedicalScope: MedicalHandoffScope;
+} => ({
+  initialMedicalSpecialty: resolveInitialMedicalSpecialtyFromLocation(search),
+  initialMedicalScope: resolveInitialMedicalScopeFromLocation(search),
+});
+
 interface ResolveHandoffScreenFrameParams extends HandoffTitleParams {
   role?: UserRole;
   readOnly: boolean;
@@ -159,6 +173,48 @@ export const resolveHandoffAuditDescriptor = ({
     shift: selectedShift,
   },
 });
+
+export interface HandoffScreenShellModel {
+  screenFrame: ReturnType<typeof resolveHandoffScreenFrame>;
+  auditDescriptor: ReturnType<typeof resolveHandoffAuditDescriptor>;
+  medicalCapabilities: MedicalHandoffCapabilities;
+}
+
+interface BuildHandoffScreenShellModelParams extends ResolveHandoffScreenFrameParams {
+  selectedShift: ShiftType;
+}
+
+export const buildHandoffScreenShellModel = ({
+  isMedical,
+  selectedShift,
+  role,
+  readOnly,
+  recordDate,
+  todayISO,
+}: BuildHandoffScreenShellModelParams): HandoffScreenShellModel => {
+  const screenFrame = resolveHandoffScreenFrame({
+    isMedical,
+    selectedShift,
+    role,
+    readOnly,
+    recordDate,
+    todayISO,
+  });
+
+  return {
+    screenFrame,
+    auditDescriptor: resolveHandoffAuditDescriptor({
+      isMedical,
+      selectedShift,
+    }),
+    medicalCapabilities: resolveMedicalHandoffCapabilities({
+      role,
+      readOnly: screenFrame.effectiveReadOnly,
+      recordDate,
+      todayISO,
+    }),
+  };
+};
 
 export interface HandoffHeaderBindings {
   isMedical: boolean;

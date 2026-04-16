@@ -12,6 +12,7 @@ interface ResolvePatientActionMenuPanelModelParams {
 }
 
 export interface PatientActionMenuPanelModel {
+  shouldRender: boolean;
   showHistoryAction: boolean;
   showUtilityActions: boolean;
   utilityActions: UtilityActionConfig[];
@@ -22,11 +23,17 @@ export const resolvePatientActionMenuPanelModel = ({
   viewState,
   utilityActions,
   showCmaAction = true,
-}: ResolvePatientActionMenuPanelModelParams): PatientActionMenuPanelModel => ({
-  showHistoryAction: viewState.showHistoryAction,
-  showUtilityActions: viewState.showUtilityActions,
-  utilityActions,
-  clinicalActions: viewState.showBuiltInClinicalActions
+}: ResolvePatientActionMenuPanelModelParams): PatientActionMenuPanelModel => {
+  const clinicalActions = viewState.showBuiltInClinicalActions
     ? CLINICAL_ACTIONS.filter(action => action.action !== 'cma' || showCmaAction)
-    : [],
-});
+    : [];
+
+  return {
+    shouldRender:
+      viewState.showHistoryAction || viewState.showUtilityActions || clinicalActions.length > 0,
+    showHistoryAction: viewState.showHistoryAction,
+    showUtilityActions: viewState.showUtilityActions,
+    utilityActions,
+    clinicalActions,
+  };
+};

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  buildHandoffScreenShellModel,
   buildHandoffHeaderBindings,
   buildMedicalHandoffContentBindings,
   buildNursingHandoffContentBindings,
@@ -11,6 +12,7 @@ import {
   resolveHandoffNovedadesValue,
   resolveHandoffTableHeaderClass,
   resolveHandoffTitle,
+  resolveInitialMedicalFiltersFromLocation,
   shouldShowNightCudyrActions,
 } from '@/features/handoff/controllers/handoffViewController';
 
@@ -194,6 +196,12 @@ describe('handoffViewController', () => {
     expect(resolveInitialMedicalScopeFromLocation(undefined)).toBe('all');
     expect(resolveInitialMedicalSpecialtyFromLocation('?specialty=Cirugia')).toBe('Cirugia');
     expect(resolveInitialMedicalScopeFromLocation('?scope=upc')).toBe('upc');
+    expect(
+      resolveInitialMedicalFiltersFromLocation('?specialty=Traumatologia&scope=no-upc')
+    ).toEqual({
+      initialMedicalSpecialty: 'Traumatologia',
+      initialMedicalScope: 'no-upc',
+    });
   });
 
   it('builds a consistent screen frame and audit descriptor', () => {
@@ -221,5 +229,26 @@ describe('handoffViewController', () => {
         shift: 'night',
       },
     });
+  });
+
+  it('builds a shell model that keeps frame, audit descriptor and capabilities aligned', () => {
+    const shell = buildHandoffScreenShellModel({
+      isMedical: true,
+      selectedShift: 'day',
+      role: 'doctor_specialist',
+      readOnly: false,
+      recordDate: '2026-03-26',
+      todayISO: '2026-03-26',
+    });
+
+    expect(shell.screenFrame.title).toBe('Entrega Turno Médicos');
+    expect(shell.auditDescriptor).toEqual({
+      action: 'VIEW_MEDICAL_HANDOFF',
+      details: {
+        view: 'medical_handoff',
+        shift: 'day',
+      },
+    });
+    expect(shell.medicalCapabilities.canEditClinicalEvents).toBe(true);
   });
 });

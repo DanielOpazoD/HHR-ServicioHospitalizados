@@ -105,11 +105,14 @@ describe('patientRowBindingSectionsController', () => {
 
     expect(main.indicators.hasClinicalDocument).toBe(true);
     expect(main.onOpenHistory).toBe(runtime.uiState.openHistory);
+    expect(main.onOpenDemographics).toBe(runtime.uiState.openDemographics);
     expect(sub.onChange).toBe(runtime.handlers.cribInputChangeHandlers);
+    expect(sub.onOpenDemographics).toBe(runtime.uiState.openDemographics);
     expect(modals.canOpenClinicalDocuments).toBe(true);
     expect(modals.canOpenExamRequest).toBe(true);
     expect(modals.canOpenImagingRequest).toBe(true);
     expect(modals.canOpenHistory).toBe(true);
     expect(modals.showHistory).toBe(true);
+    expect(modals.onCloseHistory).toBe(runtime.uiState.closeHistory);
   });
 });

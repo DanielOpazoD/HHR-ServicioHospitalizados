@@ -7,10 +7,7 @@ import type { PatientRowRuntime } from './patientRowRuntimeContracts';
 import { usePatientRowEditingRuntime } from './usePatientRowEditingRuntime';
 import { usePatientRowInteractionRuntime } from './usePatientRowInteractionRuntime';
 import { buildPatientRowRuntime } from '../../controllers/patientRowRuntimeController';
-import {
-  buildPatientRowEditingRuntimeParams,
-  buildPatientRowInteractionRuntimeParams,
-} from '../../controllers/patientRowRuntimeModelController';
+import { buildPatientRowRuntimeHookParams } from '../../controllers/patientRowRuntimeModelController';
 
 interface UsePatientRowRuntimeParams {
   bed: BedDefinition;
@@ -35,34 +32,26 @@ export const usePatientRowRuntime = ({
     alert,
   } = usePatientRowDependencies();
   const rowState = derivePatientRowState(data);
-  const editingRuntime = usePatientRowEditingRuntime({
-    ...buildPatientRowEditingRuntimeParams({
-      bed,
-      data,
-      currentDateString,
-      dependencies: {
-        updatePatient,
-        updatePatientMultiple,
-        updateClinicalCrib,
-        updateClinicalCribMultiple,
-      },
-    }),
+  const runtimeHookParams = buildPatientRowRuntimeHookParams({
+    bed,
+    data,
+    currentDateString,
+    onAction,
+    rowState,
+    dependencies: {
+      updatePatient,
+      updatePatientMultiple,
+      updateClinicalCrib,
+      updateClinicalCribMultiple,
+      toggleBedType,
+      confirm,
+      alert,
+    },
   });
-  const interactionRuntime = usePatientRowInteractionRuntime({
-    ...buildPatientRowInteractionRuntimeParams({
-      bed,
-      data,
-      onAction,
-      rowState,
-      dependencies: {
-        updatePatient,
-        updateClinicalCrib,
-        toggleBedType,
-        confirm,
-        alert,
-      },
-    }),
-  });
+  const editingRuntime = usePatientRowEditingRuntime(runtimeHookParams.editingRuntimeParams);
+  const interactionRuntime = usePatientRowInteractionRuntime(
+    runtimeHookParams.interactionRuntimeParams
+  );
 
   return buildPatientRowRuntime({
     rowState,

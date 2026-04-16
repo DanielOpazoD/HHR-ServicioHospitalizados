@@ -12,8 +12,10 @@ export {
   shouldShowNightCudyrActions,
 } from './handoffViewController';
 export {
+  buildMedicalSpecialtySectionViewModel,
   buildMedicalSpecialtyActor,
   buildMedicalSpecialtyTabState,
+  buildMedicalSpecialtyTabsState,
   buildMedicalHandoffSummary,
   buildPrintableMedicalSpecialtyBlocks,
   canConfirmMedicalSpecialtyNoChanges,

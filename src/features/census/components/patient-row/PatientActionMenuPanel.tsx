@@ -37,7 +37,7 @@ export const PatientActionMenuPanel: React.FC<PatientActionMenuPanelProps> = ({
     showCmaAction: binding.showCmaAction,
   });
 
-  if (!model.showHistoryAction && !model.showUtilityActions && model.clinicalActions.length === 0) {
+  if (!model.shouldRender) {
     return null;
   }
 
