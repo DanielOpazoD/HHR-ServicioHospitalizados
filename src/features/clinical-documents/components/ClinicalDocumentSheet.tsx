@@ -1,5 +1,6 @@
 import React from 'react';
 import { Eye } from 'lucide-react';
+import { formatDateDDMMYYYY, getTodayISO } from '@/utils/dateFormattingUtils';
 
 import { ClinicalDocumentFooterSection } from '@/features/clinical-documents/components/ClinicalDocumentFooterSection';
 import { ClinicalDocumentPatientInfoSection } from '@/features/clinical-documents/components/ClinicalDocumentPatientInfoSection';
@@ -48,7 +49,9 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
   deleteIndication,
   importIndicationsCatalog,
   patchAnnexContent,
+  setAnnexIncludedInPrint,
   clearAnnexContent,
+  onPrintAnnex,
   patchIeehDraft,
   clearIeehDraft,
   workspacePatient,
@@ -182,8 +185,13 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
             content={selectedDocument.annexContent}
             canEdit={canEdit}
             isLocked={selectedDocument.isLocked}
+            patientName={selectedDocument.patientName}
+            currentDateLabel={formatDateDDMMYYYY(getTodayISO())}
+            includedInGlobalPrint={selectedDocument.annexIncludedInPrint ?? true}
             isEditorActive={activeEditorSectionId === 'annexes'}
             onChange={patchAnnexContent}
+            onToggleIncludedInGlobalPrint={setAnnexIncludedInPrint}
+            onPrintAnnex={onPrintAnnex}
             onClear={clearAnnexContent}
             onEditorActivate={onEditorActivate}
             onEditorDeactivate={onEditorDeactivate}

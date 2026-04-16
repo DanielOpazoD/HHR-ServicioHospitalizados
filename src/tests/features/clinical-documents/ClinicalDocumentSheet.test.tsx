@@ -107,7 +107,9 @@ const defaultHandlers = {
   importIndicationsCatalog: vi.fn(async () => true),
   addClinicalUpdate: vi.fn(),
   patchAnnexContent: vi.fn(),
+  setAnnexIncludedInPrint: vi.fn(),
   clearAnnexContent: vi.fn(),
+  onPrintAnnex: vi.fn(),
   patchIeehDraft: vi.fn(),
   clearIeehDraft: vi.fn(),
   patchUpdateDate: vi.fn(),
@@ -243,6 +245,34 @@ describe('ClinicalDocumentSheet', () => {
     expect(globalThis.document.querySelector('[data-clinical-section-id="annexes"]')).toHaveClass(
       'is-editor-active'
     );
+    expect(screen.getByText(/paciente:/i)).toBeInTheDocument();
+    expect(screen.getByRole('checkbox')).toBeChecked();
+  });
+
+  it('allows toggling annex global print and printing only the annex', () => {
+    const clinicalDocument = buildDocument();
+    clinicalDocument.annexContent = '<p>Anexo activo</p>';
+
+    render(
+      <ClinicalDocumentSheet
+        selectedDocument={clinicalDocument}
+        canEdit={true}
+        isSaving={false}
+        isUploadingPdf={false}
+        validationIssues={[]}
+        indicationsCatalog={getDefaultClinicalDocumentIndicationsCatalog()}
+        isSavingCustomIndication={false}
+        customIndicationError={null}
+        {...defaultHandlers}
+        toolbar={buildToolbar(defaultHandlers)}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button', { name: /imprimir solo anexo/i }));
+
+    expect(defaultHandlers.setAnnexIncludedInPrint).toHaveBeenCalledWith(false);
+    expect(defaultHandlers.onPrintAnnex).toHaveBeenCalledTimes(1);
   });
 
   it('shows drive link and saved state when the PDF is exported to institutional drive', () => {

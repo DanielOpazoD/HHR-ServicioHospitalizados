@@ -10,16 +10,22 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import { Paperclip, Trash2, X } from 'lucide-react';
+import { Paperclip, Printer, SquareCheckBig, Trash2, X } from 'lucide-react';
 import { ClinicalDocumentRichTextEditor } from '@/features/clinical-documents/components/ClinicalDocumentRichTextEditor';
 import type { ClinicalDocumentRichTextEditorActivationApi } from '@/features/clinical-documents/hooks/useClinicalDocumentRichTextEditorController';
+import { formatDateForDisplay } from '@/utils/dateFormattingUtils';
 
 interface ClinicalDocumentAnnexPageProps {
   content: string;
   canEdit: boolean;
   isLocked: boolean;
+  patientName: string;
+  currentDateLabel?: string;
+  includedInGlobalPrint: boolean;
   isEditorActive?: boolean;
   onChange: (content: string) => void;
+  onToggleIncludedInGlobalPrint: (included: boolean) => void;
+  onPrintAnnex: () => void;
   onClear: () => void;
   onEditorActivate?: (
     sectionId: string,
@@ -32,8 +38,13 @@ export const ClinicalDocumentAnnexPage: React.FC<ClinicalDocumentAnnexPageProps>
   content,
   canEdit,
   isLocked,
+  patientName,
+  currentDateLabel,
+  includedInGlobalPrint,
   isEditorActive = false,
   onChange,
+  onToggleIncludedInGlobalPrint,
+  onPrintAnnex,
   onClear,
   onEditorActivate,
   onEditorDeactivate,
@@ -63,6 +74,10 @@ export const ClinicalDocumentAnnexPage: React.FC<ClinicalDocumentAnnexPageProps>
     setConfirmDelete(false);
   }, []);
 
+  const resolvedCurrentDateLabel =
+    currentDateLabel?.trim() ||
+    formatDateForDisplay(new Date()).replace(/^\w/, char => char.toUpperCase());
+
   return (
     <div
       className={`clinical-document-annex-page${isEditorActive ? ' is-editor-active' : ''}`}
@@ -82,12 +97,43 @@ export const ClinicalDocumentAnnexPage: React.FC<ClinicalDocumentAnnexPageProps>
           <p className="clinical-document-annex-eyebrow">Apéndice clínico</p>
           <div className="clinical-document-annex-title-row">
             <Paperclip size={16} className="text-slate-500 print:hidden" />
-            <h2 className="clinical-document-annex-title">Anexos</h2>
+            <h2 className="clinical-document-annex-title">Anexos clínicos</h2>
             <span className="clinical-document-annex-badge">Adjunto</span>
+          </div>
+          <div className="clinical-document-annex-meta">
+            <span className="clinical-document-annex-meta-item">
+              Paciente: <strong>{patientName || 'Paciente'}</strong>
+            </span>
+            <span className="clinical-document-annex-meta-item">
+              Fecha: <strong>{resolvedCurrentDateLabel}</strong>
+            </span>
           </div>
           <p className="clinical-document-annex-caption">
             Resultados, imágenes y material complementario del documento principal.
           </p>
+        </div>
+
+        <div className="clinical-document-annex-actions print:hidden">
+          <label className="clinical-document-annex-print-toggle">
+            <input
+              type="checkbox"
+              checked={includedInGlobalPrint}
+              onChange={event => onToggleIncludedInGlobalPrint(event.target.checked)}
+              disabled={!canEdit || isLocked}
+            />
+            <span className="clinical-document-annex-print-toggle-copy">
+              <SquareCheckBig size={14} />
+              Incluir al imprimir global
+            </span>
+          </label>
+          <button
+            type="button"
+            onClick={onPrintAnnex}
+            className="clinical-document-annex-print-button"
+          >
+            <Printer size={14} />
+            Imprimir solo anexo
+          </button>
         </div>
 
         {/* Delete controls (shown on double-click, hidden on print) */}

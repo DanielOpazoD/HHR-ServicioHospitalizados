@@ -81,4 +81,61 @@ describe('clinicalDocumentBrowserPrintService', () => {
     window.dispatchEvent(new Event('afterprint'));
     vi.useRealTimers();
   });
+
+  it('can exclude the annex from the global print clone', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(window, 'print').mockImplementation(() => {});
+    document.body.innerHTML = `
+      <section id="${CLINICAL_DOCUMENT_SHEET_ID}">
+        <div>Contenido principal</div>
+        <div class="clinical-document-annex-page">Anexo</div>
+      </section>
+    `;
+
+    const opened = await openClinicalDocumentBrowserPrintPreview(
+      'Epicrisis médica',
+      'epicrisis',
+      undefined,
+      {
+        annexMode: 'exclude',
+      }
+    );
+
+    expect(opened).toBe(true);
+    const printRoot = document.getElementById(CLINICAL_DOCUMENT_INLINE_PRINT_ROOT_ID);
+    expect(printRoot?.innerHTML).toContain('Contenido principal');
+    expect(printRoot?.innerHTML).not.toContain('Anexo</div>');
+
+    window.dispatchEvent(new Event('afterprint'));
+    vi.useRealTimers();
+  });
+
+  it('can print only the annex page', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(window, 'print').mockImplementation(() => {});
+    document.body.innerHTML = `
+      <section id="${CLINICAL_DOCUMENT_SHEET_ID}">
+        <div>Contenido principal</div>
+        <div class="clinical-document-annex-page">Anexo</div>
+      </section>
+    `;
+
+    const opened = await openClinicalDocumentBrowserPrintPreview(
+      'Anexo clínico',
+      'epicrisis',
+      undefined,
+      {
+        annexMode: 'annex_only',
+      }
+    );
+
+    expect(opened).toBe(true);
+    const printRoot = document.getElementById(CLINICAL_DOCUMENT_INLINE_PRINT_ROOT_ID);
+    expect(printRoot?.innerHTML).toContain('Anexo');
+    expect(printRoot?.innerHTML).not.toContain('Contenido principal');
+    expect(printRoot?.innerHTML).not.toContain('Firma paciente/familiar responsable');
+
+    window.dispatchEvent(new Event('afterprint'));
+    vi.useRealTimers();
+  });
 });

@@ -6,6 +6,7 @@ import { buildClinicalDocumentPdfFileName } from '@/features/clinical-documents/
 import type { ExportClinicalDocumentPdfOutput } from '@/application/clinical-documents/clinicalDocumentPdfExportUseCase';
 import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcome';
 import { resolveFailedApplicationOutcomeMessage } from '@/shared/contracts/applicationOutcomeMessage';
+import type { ClinicalDocumentAnnexPrintMode } from '@/features/clinical-documents/services/clinicalDocumentPrintSupport';
 import {
   recordOperationalOutcome,
   recordOperationalTelemetry,
@@ -35,6 +36,8 @@ interface UploadPdfOptions {
   notifySuccess?: boolean;
   successTitle?: string;
   successMessage?: string;
+  recordOverride?: ClinicalDocumentRecord;
+  annexMode?: ClinicalDocumentAnnexPrintMode;
 }
 
 const loadClinicalDocumentPdfExportUseCase = async () =>
@@ -61,18 +64,20 @@ export const useClinicalDocumentWorkspaceExportActions = ({
         return;
       }
 
+      const recordToExport = options.recordOverride || selectedDocument;
       setIsUploadingPdf(true);
       try {
         const executeExportClinicalDocumentPdf = await loadClinicalDocumentPdfExportUseCase();
         const result: ApplicationOutcome<ExportClinicalDocumentPdfOutput | null> =
           await executeExportClinicalDocumentPdf({
-            record: selectedDocument,
+            record: recordToExport,
             hospitalId,
-            fileName: buildClinicalDocumentPdfFileName(selectedDocument),
+            fileName: buildClinicalDocumentPdfFileName(recordToExport),
+            annexMode: options.annexMode,
           });
         recordOperationalOutcome('export', 'export_clinical_document_pdf', result, {
-          date: selectedDocument.sourceDailyRecordDate,
-          context: { documentId: selectedDocument.id },
+          date: recordToExport.sourceDailyRecordDate,
+          context: { documentId: recordToExport.id },
           allowSuccess: true,
         });
         const outcomeError = resolveFailedApplicationOutcomeMessage(
@@ -84,9 +89,9 @@ export const useClinicalDocumentWorkspaceExportActions = ({
             category: 'export',
             status: 'failed',
             operation: 'export_clinical_document_pdf',
-            date: selectedDocument.sourceDailyRecordDate,
+            date: recordToExport.sourceDailyRecordDate,
             issues: [outcomeError || 'No se pudo exportar el PDF clínico.'],
-            context: { documentId: selectedDocument.id },
+            context: { documentId: recordToExport.id },
           });
           setDraft(prev =>
             updateClinicalDocumentPdfFailure(
@@ -115,9 +120,9 @@ export const useClinicalDocumentWorkspaceExportActions = ({
           category: 'export',
           status: 'failed',
           operation: 'export_clinical_document_pdf',
-          date: selectedDocument?.sourceDailyRecordDate,
+          date: recordToExport.sourceDailyRecordDate,
           issues: [errorMessage],
-          context: { documentId: selectedDocument?.id },
+          context: { documentId: recordToExport.id },
         });
         setDraft(prev => updateClinicalDocumentPdfFailure(prev, errorMessage));
         notify.error('Falló la exportación', errorMessage);
@@ -131,7 +136,11 @@ export const useClinicalDocumentWorkspaceExportActions = ({
   const handlePrint = useCallback(async () => {
     if (!selectedDocument) return;
     const executeOpenClinicalDocumentPrint = await loadClinicalDocumentPrintUseCase();
-    const opened = await executeOpenClinicalDocumentPrint(selectedDocument);
+    const annexMode: ClinicalDocumentAnnexPrintMode =
+      selectedDocument.annexContent?.trim() && selectedDocument.annexIncludedInPrint === false
+        ? 'exclude'
+        : 'include';
+    const opened = await executeOpenClinicalDocumentPrint(selectedDocument, { annexMode });
     if (!opened) {
       recordOperationalTelemetry({
         category: 'export',
@@ -157,11 +166,32 @@ export const useClinicalDocumentWorkspaceExportActions = ({
       },
       { allowSuccess: true }
     );
-    await handleUploadPdf({ notifySuccess: false });
+    await handleUploadPdf({ notifySuccess: false, annexMode });
   }, [handleUploadPdf, notify, selectedDocument]);
+
+  const handlePrintAnnex = useCallback(async () => {
+    if (!selectedDocument?.annexContent?.trim()) {
+      notify.info('Sin anexo para imprimir', 'Agrega contenido al anexo clínico primero.');
+      return;
+    }
+
+    const executeOpenClinicalDocumentPrint = await loadClinicalDocumentPrintUseCase();
+    const pageTitle = `Anexo clínico - ${selectedDocument.patientName || selectedDocument.title}`;
+    const opened = await executeOpenClinicalDocumentPrint(
+      {
+        ...selectedDocument,
+        title: pageTitle,
+      },
+      { annexMode: 'annex_only' }
+    );
+    if (!opened) {
+      notify.warning('No se pudo imprimir el anexo', 'Recarga la página e inténtalo nuevamente.');
+    }
+  }, [notify, selectedDocument]);
 
   return {
     handlePrint,
+    handlePrintAnnex,
     handleUploadPdf,
     isUploadingPdf,
   };

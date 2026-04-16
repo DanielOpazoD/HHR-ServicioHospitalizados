@@ -3,6 +3,8 @@ import { formatDateToCL } from '@/utils/clinicalUtils';
 import { generateClinicalDocumentPrintStyledPdfBlob } from '@/features/clinical-documents/services/clinicalDocumentPrintPdfService';
 import { stripClinicalDocumentHtml } from '@/features/clinical-documents/controllers/clinicalDocumentRichTextController';
 import { clinicalDocumentPdfLogger } from '@/features/clinical-documents/services/clinicalDocumentLoggers';
+import type { ClinicalDocumentAnnexPrintMode } from '@/features/clinical-documents/services/clinicalDocumentPrintSupport';
+import { formatDateDDMMYYYY, getTodayISO } from '@/utils/dateFormattingUtils';
 
 type JsPdfModule = typeof import('jspdf');
 
@@ -40,7 +42,8 @@ const getPatientFieldLabelForPdf = (
 };
 
 const generateStructuredClinicalDocumentPdfBlob = async (
-  record: ClinicalDocumentRecord
+  record: ClinicalDocumentRecord,
+  options: { annexMode?: ClinicalDocumentAnnexPrintMode } = {}
 ): Promise<Blob> => {
   const JsPdf = await loadJsPdf();
   const pdf = new JsPdf({ orientation: 'portrait', unit: 'mm', format: 'letter' });
@@ -69,6 +72,32 @@ const generateStructuredClinicalDocumentPdfBlob = async (
       cursorY += lineHeight;
     });
   };
+  const annexMode = options.annexMode ?? 'include';
+  const shouldIncludeAnnex = annexMode === 'include' && Boolean(record.annexContent?.trim());
+  const shouldPrintOnlyAnnex = annexMode === 'annex_only';
+  const currentPrintDate = formatDateDDMMYYYY(getTodayISO());
+  const annexPatientName =
+    record.patientFields.find(field => field.id === 'nombre')?.value?.trim() ||
+    record.patientName ||
+    'Paciente';
+  const renderAnnexHeader = () => {
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(14);
+    pdf.text('Anexos clínicos', marginX, cursorY);
+    cursorY += 7;
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(10.5);
+    pdf.text(`Paciente: ${annexPatientName}`, marginX, cursorY);
+    cursorY += 5.5;
+    pdf.text(`Fecha: ${currentPrintDate}`, marginX, cursorY);
+    cursorY += 7;
+  };
+
+  if (shouldPrintOnlyAnnex) {
+    renderAnnexHeader();
+    addWrappedText(stripClinicalDocumentHtml(record.annexContent || ''), marginX, contentWidth);
+    return pdf.output('blob');
+  }
 
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(14);
@@ -139,24 +168,22 @@ const generateStructuredClinicalDocumentPdfBlob = async (
   cursorY = Math.max(cursorY, savedY) + 2;
 
   // Annexes page (if present)
-  if (record.annexContent?.trim()) {
+  if (shouldIncludeAnnex) {
     pdf.addPage();
     cursorY = marginY;
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(14);
-    pdf.text('Anexos', marginX, cursorY);
-    cursorY += 8;
-    addWrappedText(stripClinicalDocumentHtml(record.annexContent), marginX, contentWidth);
+    renderAnnexHeader();
+    addWrappedText(stripClinicalDocumentHtml(record.annexContent || ''), marginX, contentWidth);
   }
 
   return pdf.output('blob');
 };
 
 export const generateClinicalDocumentPdfBlob = async (
-  record: ClinicalDocumentRecord
+  record: ClinicalDocumentRecord,
+  options: { annexMode?: ClinicalDocumentAnnexPrintMode } = {}
 ): Promise<Blob> => {
   try {
-    const printStyled = await generateClinicalDocumentPrintStyledPdfBlob(record);
+    const printStyled = await generateClinicalDocumentPrintStyledPdfBlob(record, options);
     if (printStyled) {
       return printStyled;
     }
@@ -167,5 +194,5 @@ export const generateClinicalDocumentPdfBlob = async (
     );
   }
 
-  return generateStructuredClinicalDocumentPdfBlob(record);
+  return generateStructuredClinicalDocumentPdfBlob(record, options);
 };

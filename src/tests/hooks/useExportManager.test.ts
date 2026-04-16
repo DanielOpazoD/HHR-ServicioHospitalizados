@@ -171,7 +171,7 @@ describe('useExportManager', () => {
     expect(result.current.handleExportPDF).toBeDefined();
   });
 
-  it('surfaces degraded lookup as warning on mount', async () => {
+  it('keeps degraded timeout lookup silent on mount', async () => {
     const degradedLookup: ApplicationOutcome<LookupBackupArchiveStatusOutput> = {
       status: 'degraded',
       data: { exists: false, lookup: { exists: false, status: 'timeout' } },
@@ -185,7 +185,30 @@ describe('useExportManager', () => {
 
     await waitFor(() => {
       expect(backupExportUseCases.executeLookupBackupArchiveStatus).toHaveBeenCalled();
-      expect(notificationApi.warning).toHaveBeenCalled();
+    });
+
+    expect(notificationApi.warning).not.toHaveBeenCalled();
+    expect(notificationApi.error).not.toHaveBeenCalled();
+  });
+
+  it('still surfaces blocking lookup failures on mount', async () => {
+    const failedLookup: ApplicationOutcome<LookupBackupArchiveStatusOutput> = {
+      status: 'failed',
+      data: { exists: false, lookup: { exists: false, status: 'error' } },
+      userSafeMessage: 'La verificación remota no está disponible por ahora.',
+      issues: [{ kind: 'unknown', message: 'lookup failed' }],
+    };
+    vi.mocked(backupExportUseCases.executeLookupBackupArchiveStatus).mockResolvedValueOnce(
+      failedLookup
+    );
+
+    renderHook(() => useExportManager(defaultProps));
+
+    await waitFor(() => {
+      expect(notificationApi.error).toHaveBeenCalledWith(
+        'Verificación de respaldo fallida',
+        'La verificación remota no está disponible por ahora.'
+      );
     });
   });
 

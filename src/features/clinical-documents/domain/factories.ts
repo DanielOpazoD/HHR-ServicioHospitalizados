@@ -200,6 +200,7 @@ export const createClinicalDocumentDraft = ({
       updatedAt: now,
       updatedBy: actor,
     },
+    annexIncludedInPrint: true,
     renderedText: '',
     integrityHash: '',
   };

@@ -56,6 +56,7 @@ export type ClinicalDocumentDraftAction =
     }
   | { type: 'ADD_CLINICAL_UPDATE' }
   | { type: 'PATCH_ANNEX_CONTENT'; content: string }
+  | { type: 'PATCH_ANNEX_INCLUDED_IN_PRINT'; included: boolean }
   | { type: 'CLEAR_ANNEX_CONTENT' }
   | {
       type: 'PATCH_IEEH_DRAFT';
@@ -291,9 +292,14 @@ export const clinicalDocumentDraftReducer = (
         ...draft,
         annexContent: action.content,
       }));
+    case 'PATCH_ANNEX_INCLUDED_IN_PRINT':
+      return patchDraft(state, draft => ({
+        ...draft,
+        annexIncludedInPrint: action.included,
+      }));
     case 'CLEAR_ANNEX_CONTENT':
       return patchDraft(state, draft => {
-        const { annexContent: _, ...rest } = draft;
+        const { annexContent: _, annexIncludedInPrint: __, ...rest } = draft;
         return rest as typeof draft;
       });
     case 'PATCH_IEEH_DRAFT':

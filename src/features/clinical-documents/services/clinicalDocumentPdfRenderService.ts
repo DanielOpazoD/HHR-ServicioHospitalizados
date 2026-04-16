@@ -5,6 +5,7 @@ import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domai
 import { buildClinicalDocumentPrintHtml } from '@/features/clinical-documents/services/clinicalDocumentPrintHtmlBuilder';
 import {
   CLINICAL_DOCUMENT_SHEET_ID,
+  type ClinicalDocumentAnnexPrintMode,
   waitForClinicalDocumentSheetAssets,
 } from '@/features/clinical-documents/services/clinicalDocumentPrintSupport';
 import { defaultFunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
@@ -192,12 +193,14 @@ export const createClinicalDocumentPdfRenderService = (
 
   return {
     generateClinicalDocumentPrintStyledPdfBlob: async (
-      record?: ClinicalDocumentRecord
+      record?: ClinicalDocumentRecord,
+      options: { annexMode?: ClinicalDocumentAnnexPrintMode } = {}
     ): Promise<Blob | null> => {
       const html = await buildClinicalDocumentPrintHtml({
         includeAppStyles: true,
         documentType: record?.documentType,
         pageTitle: record?.title,
+        annexMode: options.annexMode,
       });
       if (!html) {
         return null;

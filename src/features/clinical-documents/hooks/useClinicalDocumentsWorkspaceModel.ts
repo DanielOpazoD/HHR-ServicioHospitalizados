@@ -115,6 +115,7 @@ export const useClinicalDocumentsWorkspaceModel = ({
     restoreTemplateContent,
     addClinicalUpdate,
     patchAnnexContent,
+    setAnnexIncludedInPrint,
     clearAnnexContent,
     patchIeehDraft,
     clearIeehDraft,
@@ -169,7 +170,7 @@ export const useClinicalDocumentsWorkspaceModel = ({
       lastPersistedSnapshotRef,
     });
 
-  const { handlePrint, handleUploadPdf, isUploadingPdf } =
+  const { handlePrint, handlePrintAnnex, handleUploadPdf, isUploadingPdf } =
     useClinicalDocumentWorkspaceExportActions({
       selectedDocument,
       hospitalId,
@@ -262,7 +263,9 @@ export const useClinicalDocumentsWorkspaceModel = ({
       importIndicationsCatalog: importCatalog,
       addClinicalUpdate,
       patchAnnexContent,
+      setAnnexIncludedInPrint,
       clearAnnexContent,
+      onPrintAnnex: handlePrintAnnex,
       patchIeehDraft,
       clearIeehDraft,
       workspacePatient: patient,

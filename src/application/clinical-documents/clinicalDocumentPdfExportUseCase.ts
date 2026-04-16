@@ -4,6 +4,7 @@ import {
   type ClinicalDocumentPdfMeta,
   type ClinicalDocumentRecord,
 } from '@/features/clinical-documents/internal';
+import type { ClinicalDocumentAnnexPrintMode } from '@/features/clinical-documents/services/clinicalDocumentPrintSupport';
 import {
   createApplicationFailed,
   createApplicationSuccess,
@@ -24,6 +25,7 @@ export interface ExportClinicalDocumentPdfInput {
   fileName: string;
   targetFolderId?: string;
   targetFolderPath?: string;
+  annexMode?: ClinicalDocumentAnnexPrintMode;
 }
 
 export interface ExportClinicalDocumentPdfOutput {
@@ -37,6 +39,7 @@ export const executeExportClinicalDocumentPdf = async (
     fileName,
     targetFolderId,
     targetFolderPath,
+    annexMode,
   }: ExportClinicalDocumentPdfInput,
   dependencies: ClinicalDocumentPdfExportDependencies = {}
 ): Promise<ApplicationOutcome<ExportClinicalDocumentPdfOutput | null>> => {
@@ -44,7 +47,7 @@ export const executeExportClinicalDocumentPdf = async (
   void targetFolderPath;
   const clinicalDocumentPort = dependencies.clinicalDocumentPort || defaultClinicalDocumentPort;
   try {
-    const pdfBlob = await generateClinicalDocumentPdfBlob(record);
+    const pdfBlob = await generateClinicalDocumentPdfBlob(record, { annexMode });
     const result = await exportClinicalDocumentPdfViaBackend({
       documentId: record.id,
       fileName,

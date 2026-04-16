@@ -5,9 +5,11 @@ import type {
 import { getClinicalDocumentDefinition } from '@/features/clinical-documents/domain/definitions';
 import { escapeHtml } from '@/features/clinical-documents/controllers/clinicalDocumentHtmlSanitizer';
 import {
+  applyClinicalDocumentAnnexPrintMode,
   CLINICAL_DOCUMENT_INLINE_PRINT_ROOT_ID,
   CLINICAL_DOCUMENT_INLINE_PRINT_STYLE_ID,
   CLINICAL_DOCUMENT_SHEET_ID,
+  type ClinicalDocumentAnnexPrintMode,
   sanitizeClinicalDocumentSheetClone,
 } from '@/features/clinical-documents/services/clinicalDocumentPrintSupport';
 
@@ -62,7 +64,10 @@ const injectCie10PrintBlock = (
 export const openClinicalDocumentBrowserPrintPreview = async (
   pageTitle: string,
   documentType: ClinicalDocumentType = 'epicrisis',
-  ieehDraft?: ClinicalDocumentIeehDraft
+  ieehDraft?: ClinicalDocumentIeehDraft,
+  options: {
+    annexMode?: ClinicalDocumentAnnexPrintMode;
+  } = {}
 ): Promise<boolean> => {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return false;
@@ -78,27 +83,33 @@ export const openClinicalDocumentBrowserPrintPreview = async (
 
   const sheetClone = sheet.cloneNode(true) as HTMLElement;
   await sanitizeClinicalDocumentSheetClone(sheet, sheetClone);
+  const printableRoot = applyClinicalDocumentAnnexPrintMode(sheetClone, options.annexMode);
+  if (!(printableRoot instanceof HTMLElement)) {
+    return false;
+  }
 
   // Inject CIE-10 block when printing an epicrisis with IEEH data
-  if (ieehDraft?.cie10Code) {
-    injectCie10PrintBlock(sheetClone, ieehDraft);
+  if (ieehDraft?.cie10Code && options.annexMode !== 'annex_only') {
+    injectCie10PrintBlock(printableRoot, ieehDraft);
   }
 
   const printOptions = getClinicalDocumentDefinition(documentType).printOptions;
-  const hasAnnex = sheetClone.querySelector('.clinical-document-annex-page') != null;
+  const hasAnnex = printableRoot.querySelector('.clinical-document-annex-page') != null;
   const includePatientSignature =
-    DOCUMENT_TYPES_WITH_PATIENT_SIGNATURE.has(documentType) && !hasAnnex;
+    DOCUMENT_TYPES_WITH_PATIENT_SIGNATURE.has(documentType) &&
+    !hasAnnex &&
+    options.annexMode !== 'annex_only';
   const printRoot = document.createElement('div');
   printRoot.id = CLINICAL_DOCUMENT_INLINE_PRINT_ROOT_ID;
   printRoot.innerHTML = includePatientSignature
     ? [
-        sheetClone.outerHTML,
+        printableRoot.outerHTML,
         '<div class="clinical-document-print-signature-block" aria-hidden="true">',
         '  <div class="clinical-document-patient-signature-line"></div>',
         '  <div class="clinical-document-patient-signature-label">Firma paciente/familiar responsable</div>',
         '</div>',
       ].join('')
-    : sheetClone.outerHTML;
+    : printableRoot.outerHTML;
 
   const printStyle = document.createElement('style');
   printStyle.id = CLINICAL_DOCUMENT_INLINE_PRINT_STYLE_ID;

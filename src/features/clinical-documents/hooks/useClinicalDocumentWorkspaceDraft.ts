@@ -65,6 +65,7 @@ export interface ClinicalDocumentWorkspaceDraftState {
   restoreTemplateContent: () => void;
   addClinicalUpdate: () => void;
   patchAnnexContent: (content: string) => void;
+  setAnnexIncludedInPrint: (included: boolean) => void;
   clearAnnexContent: () => void;
   patchIeehDraft: (
     draft: import('@/features/clinical-documents/domain/entities').ClinicalDocumentIeehDraft
@@ -215,6 +216,8 @@ export const useClinicalDocumentWorkspaceDraft = ({
     restoreTemplateContent: () => dispatch({ type: 'RESTORE_TEMPLATE_CONTENT' }),
     addClinicalUpdate: () => dispatch({ type: 'ADD_CLINICAL_UPDATE' }),
     patchAnnexContent: (content: string) => dispatch({ type: 'PATCH_ANNEX_CONTENT', content }),
+    setAnnexIncludedInPrint: (included: boolean) =>
+      dispatch({ type: 'PATCH_ANNEX_INCLUDED_IN_PRINT', included }),
     clearAnnexContent: () => dispatch({ type: 'CLEAR_ANNEX_CONTENT' }),
     patchIeehDraft: draft => dispatch({ type: 'PATCH_IEEH_DRAFT', draft }),
     clearIeehDraft: () => dispatch({ type: 'CLEAR_IEEH_DRAFT' }),

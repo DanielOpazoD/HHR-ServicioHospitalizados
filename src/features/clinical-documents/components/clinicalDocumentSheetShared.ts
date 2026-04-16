@@ -92,7 +92,9 @@ export interface ClinicalDocumentSheetProps {
   onRestoreTemplate: () => void;
   addClinicalUpdate: () => void;
   patchAnnexContent: (content: string) => void;
+  setAnnexIncludedInPrint: (included: boolean) => void;
   clearAnnexContent: () => void;
+  onPrintAnnex: () => void;
   patchIeehDraft: (
     draft: import('@/features/clinical-documents/domain/entities').ClinicalDocumentIeehDraft
   ) => void;

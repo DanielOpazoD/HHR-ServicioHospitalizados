@@ -207,14 +207,72 @@ describe('useClinicalDocumentWorkspaceExportActions', () => {
       await result.current.handlePrint();
     });
 
-    expect(printOpenUseCase.executeOpenClinicalDocumentPrint).toHaveBeenCalledWith(document);
+    expect(printOpenUseCase.executeOpenClinicalDocumentPrint).toHaveBeenCalledWith(document, {
+      annexMode: 'include',
+    });
     expect(pdfExportUseCase.executeExportClinicalDocumentPdf).toHaveBeenCalledWith(
       expect.objectContaining({
         record: expect.objectContaining({ id: document.id }),
         hospitalId: 'hhr',
         fileName: expect.any(String),
+        annexMode: 'include',
       })
     );
     expect(notify.success).not.toHaveBeenCalled();
+  });
+
+  it('excludes the annex from global print when the selector is off', async () => {
+    const document = buildRecord();
+    document.annexContent = '<p>Anexo</p>';
+    document.annexIncludedInPrint = false;
+
+    const { result } = renderHook(() =>
+      useClinicalDocumentWorkspaceExportActions({
+        selectedDocument: document,
+        hospitalId: 'hhr',
+        notify,
+        setDraft,
+      })
+    );
+
+    await act(async () => {
+      await result.current.handlePrint();
+    });
+
+    expect(printOpenUseCase.executeOpenClinicalDocumentPrint).toHaveBeenCalledWith(document, {
+      annexMode: 'exclude',
+    });
+    expect(pdfExportUseCase.executeExportClinicalDocumentPdf).toHaveBeenCalledWith(
+      expect.objectContaining({
+        annexMode: 'exclude',
+      })
+    );
+  });
+
+  it('prints only the annex on demand', async () => {
+    const document = buildRecord();
+    document.annexContent = '<p>Anexo</p>';
+
+    const { result } = renderHook(() =>
+      useClinicalDocumentWorkspaceExportActions({
+        selectedDocument: document,
+        hospitalId: 'hhr',
+        notify,
+        setDraft,
+      })
+    );
+
+    await act(async () => {
+      await result.current.handlePrintAnnex();
+    });
+
+    expect(printOpenUseCase.executeOpenClinicalDocumentPrint).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: document.id,
+        title: expect.stringContaining('Anexo clínico'),
+      }),
+      { annexMode: 'annex_only' }
+    );
+    expect(pdfExportUseCase.executeExportClinicalDocumentPdf).not.toHaveBeenCalled();
   });
 });

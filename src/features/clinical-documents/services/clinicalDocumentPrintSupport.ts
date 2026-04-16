@@ -3,7 +3,9 @@ import { CLINICAL_DOCUMENT_BRANDING } from '@/features/clinical-documents/domain
 export const CLINICAL_DOCUMENT_SHEET_ID = 'clinical-document-sheet';
 export const CLINICAL_DOCUMENT_INLINE_PRINT_ROOT_ID = 'clinical-document-inline-print-root';
 export const CLINICAL_DOCUMENT_INLINE_PRINT_STYLE_ID = 'clinical-document-inline-print-style';
+export type ClinicalDocumentAnnexPrintMode = 'include' | 'exclude' | 'annex_only';
 const ASSET_LOAD_TIMEOUT_MS = 4_000;
+const CLINICAL_DOCUMENT_ANNEX_SELECTOR = '.clinical-document-annex-page';
 
 const readBlobAsDataUrl = (blob: Blob): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -149,6 +151,28 @@ export const sanitizeClinicalDocumentSheetClone = async (
     }
   });
   removeEmptyPrintableSections(sheetClone);
+};
+
+export const applyClinicalDocumentAnnexPrintMode = (
+  sheetClone: HTMLElement,
+  annexMode: ClinicalDocumentAnnexPrintMode = 'include'
+): HTMLElement | null => {
+  const annexNode = sheetClone.querySelector(CLINICAL_DOCUMENT_ANNEX_SELECTOR);
+
+  if (annexMode === 'include') {
+    return sheetClone;
+  }
+
+  if (annexMode === 'exclude') {
+    annexNode?.remove();
+    return sheetClone;
+  }
+
+  if (!(annexNode instanceof HTMLElement)) {
+    return null;
+  }
+
+  return annexNode;
 };
 
 const waitForImageReady = async (image: HTMLImageElement, ownerWindow: Window): Promise<void> => {

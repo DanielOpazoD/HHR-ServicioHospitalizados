@@ -90,4 +90,14 @@ describe('clinicalDocumentCompatibilityController', () => {
     ]);
     expect(hydrated.sections[2]?.title).toBe('Diagnósticos actuales');
   });
+
+  it('defaults legacy annex print inclusion to true', () => {
+    const document = buildDocument();
+    document.annexContent = '<p>Anexo</p>';
+    delete document.annexIncludedInPrint;
+
+    const hydrated = hydrateLegacyClinicalDocument(document);
+
+    expect(hydrated.annexIncludedInPrint).toBe(true);
+  });
 });

@@ -53,7 +53,9 @@ export const useBackupArchiveStatus = ({
         });
         setIsArchived(buildArchiveStatusState(outcome.data.lookup));
         const notice = presentBackupLookupOutcome(outcome);
-        if (notice?.channel === 'warning') {
+        // Background archive verification is opportunistic. Timeouts should stay silent and rely on
+        // telemetry instead of interrupting the user when the main data flow is already healthy.
+        if (notice?.channel === 'warning' && notice.state !== 'retrying') {
           warning(notice.title || 'Respaldo', notice.message);
         } else if (notice?.channel === 'error') {
           error(notice.title || 'Respaldo', notice.message);

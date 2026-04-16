@@ -113,6 +113,7 @@ export const clinicalDocumentRecordSchema = z.object({
   renderedText: z.string().optional(),
   integrityHash: z.string().optional(),
   annexContent: z.string().optional(),
+  annexIncludedInPrint: z.boolean().optional(),
   ieehDraft: z
     .object({
       cie10Code: z.string(),

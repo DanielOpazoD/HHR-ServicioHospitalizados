@@ -2,11 +2,13 @@ import type { ClinicalDocumentType } from '@/features/clinical-documents/domain/
 import { getClinicalDocumentDefinition } from '@/features/clinical-documents/domain/definitions';
 import clinicalDocumentSheetStyles from '@/features/clinical-documents/styles/clinicalDocumentSheet.css?raw';
 import {
+  applyClinicalDocumentAnnexPrintMode,
   CLINICAL_DOCUMENT_SHEET_ID,
   escapeHtmlAttr,
   escapeHtmlText,
   escapeStyleText,
   sanitizeClinicalDocumentSheetClone,
+  type ClinicalDocumentAnnexPrintMode,
 } from '@/features/clinical-documents/services/clinicalDocumentPrintSupport';
 
 interface PrintHtmlOptions {
@@ -15,6 +17,7 @@ interface PrintHtmlOptions {
   includeAppStyles?: boolean;
   bodyFontFamily?: string;
   documentType?: ClinicalDocumentType;
+  annexMode?: ClinicalDocumentAnnexPrintMode;
 }
 
 const DOCUMENT_TYPES_WITH_PATIENT_SIGNATURE = new Set<ClinicalDocumentType>([
@@ -54,6 +57,10 @@ export const buildClinicalDocumentPrintHtml = async (
 
   const sheetClone = sheet.cloneNode(true) as HTMLElement;
   await sanitizeClinicalDocumentSheetClone(sheet, sheetClone);
+  const printableRoot = applyClinicalDocumentAnnexPrintMode(sheetClone, options.annexMode);
+  if (!(printableRoot instanceof HTMLElement)) {
+    return null;
+  }
 
   const baseHref = escapeHtmlAttr(`${window.location.origin}/`);
   const pageTitle = escapeHtmlText(options.pageTitle?.trim() || 'Epicrisis médica');
@@ -66,16 +73,17 @@ export const buildClinicalDocumentPrintHtml = async (
       window.getComputedStyle(document.body).fontFamily ||
       "Inter, 'Segoe UI', Roboto, Arial, sans-serif"
   );
-  const patientSignatureMarkup = shouldRenderPatientSignature(options.documentType)
-    ? [
-        '<div class="clinical-document-print-bottom-bar" aria-hidden="true">',
-        '  <div class="clinical-document-print-footer-left">',
-        '    <div class="clinical-document-patient-signature-line"></div>',
-        '    <div class="clinical-document-patient-signature-label">Firma paciente/familiar responsable</div>',
-        '  </div>',
-        '</div>',
-      ].join('\n')
-    : '';
+  const patientSignatureMarkup =
+    shouldRenderPatientSignature(options.documentType) && options.annexMode !== 'annex_only'
+      ? [
+          '<div class="clinical-document-print-bottom-bar" aria-hidden="true">',
+          '  <div class="clinical-document-print-footer-left">',
+          '    <div class="clinical-document-patient-signature-line"></div>',
+          '    <div class="clinical-document-patient-signature-label">Firma paciente/familiar responsable</div>',
+          '  </div>',
+          '</div>',
+        ].join('\n')
+      : '';
 
   return [
     '<!doctype html>',
@@ -91,7 +99,7 @@ export const buildClinicalDocumentPrintHtml = async (
     `<style id="clinical-document-page-style">${buildPageStyleRule(options.documentType)}</style>`,
     '</head>',
     '<body class="clinical-documents-print">',
-    sheetClone.outerHTML,
+    printableRoot.outerHTML,
     patientSignatureMarkup,
     '</body>',
     '</html>',

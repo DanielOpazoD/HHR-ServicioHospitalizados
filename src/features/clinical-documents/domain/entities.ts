@@ -111,6 +111,8 @@ export interface ClinicalDocumentRecord {
   integrityHash?: string;
   /** Rich text content for the annexes page (printed as a separate page). */
   annexContent?: string;
+  /** Whether the annex page should be included in global print/export flows. */
+  annexIncludedInPrint?: boolean;
   /** Statistical discharge draft filled from epicrisis (optional). */
   ieehDraft?: ClinicalDocumentIeehDraft;
 }
