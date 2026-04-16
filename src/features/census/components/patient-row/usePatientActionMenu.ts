@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useDropdownMenu } from '@/hooks/useDropdownMenu';
 import type { UtilityActionConfig } from '@/features/census/components/patient-row/patientActionMenuConfig';
 import {
@@ -31,11 +31,14 @@ interface UsePatientActionMenuParams {
 
 interface UsePatientActionMenuResult {
   isOpen: boolean;
+  isMedicalIndicationsOpen: boolean;
   menuRef: ReturnType<typeof useDropdownMenu>['menuRef'];
   binding: PatientActionMenuBinding;
   utilityActions: UtilityActionConfig[];
   toggle: () => void;
   close: () => void;
+  openMedicalIndicationsDialog: () => void;
+  closeMedicalIndicationsDialog: () => void;
   handleAction: (action: PatientRowAction) => void;
   handleViewHistory: () => void;
   handleViewClinicalDocuments: () => void;
@@ -59,6 +62,7 @@ export const usePatientActionMenu = ({
   onViewMedicalIndications,
 }: UsePatientActionMenuParams): UsePatientActionMenuResult => {
   const { isOpen, menuRef, toggle, close } = useDropdownMenu();
+  const [isMedicalIndicationsOpen, setIsMedicalIndicationsOpen] = useState(false);
 
   const menuModel = useMemo(
     () =>
@@ -114,13 +118,25 @@ export const usePatientActionMenu = ({
     ]
   );
 
+  const openMedicalIndicationsDialog = useCallback(() => {
+    interactions.handleViewMedicalIndications();
+    setIsMedicalIndicationsOpen(true);
+  }, [interactions]);
+
+  const closeMedicalIndicationsDialog = useCallback(() => {
+    setIsMedicalIndicationsOpen(false);
+  }, []);
+
   return {
     isOpen,
+    isMedicalIndicationsOpen,
     menuRef,
     binding: menuModel.binding,
     utilityActions: menuModel.utilityActions,
     toggle,
     close,
+    openMedicalIndicationsDialog,
+    closeMedicalIndicationsDialog,
     ...interactions,
   };
 };

@@ -4,10 +4,10 @@
 
 - **Módulo:** Censo diario
 - **Ruta(s) principal(es):**
-  - [src/features/census](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/census)
-  - [src/application/census](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/application/census)
-  - [src/application/daily-record](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/application/daily-record)
-  - [src/application/patient-flow](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/application/patient-flow)
+  - [src/features/census](../src/features/census)
+  - [src/application/census](../src/application/census)
+  - [src/application/daily-record](../src/application/daily-record)
+  - [src/application/patient-flow](../src/application/patient-flow)
 - **Fecha de evaluación:** 2026-04-15
 - **Evaluador:** Codex
 - **Estado general:** verde
@@ -16,25 +16,25 @@
 
 ## 1. Nota global
 
-- **Nota global (1 a 7):** `6.3 / 7`
-- **Resumen ejecutivo breve:** módulo muy potente, muy cubierto y con arquitectura bastante seria. Sigue siendo el frente con más churn, más volumen y más sensibilidad operativa del sistema, pero el baseline de tests volvió a verde completo y eso mejora la foto de estabilidad inmediata.
+- **Nota global (1 a 7):** `6.5 / 7`
+- **Resumen ejecutivo breve:** módulo muy potente, muy cubierto y con arquitectura bastante seria. Sigue siendo el frente con más churn, más volumen y más sensibilidad operativa del sistema, pero el baseline de tests está verde y `PatientRow` viene perdiendo wiring incidental de forma sostenida, lo que mejora bastante la foto de estabilidad y evolución.
 
 ---
 
 ## 2. Evaluación multiparamétrica
 
-| Dimensión                        | Nota | Comentario                                                                                                   |
-| -------------------------------- | ---: | ------------------------------------------------------------------------------------------------------------ |
-| Calidad general                  |  6.2 | Muy buen nivel para un módulo tan grande, pero con fricción real todavía.                                    |
-| Estructura                       |  6.5 | La separación `components / hooks / controllers / domain / context / validation` está bien pensada.          |
-| Organización                     |  6.2 | Hay mucha organización y ownership explícito, pero el tamaño total ya pesa.                                  |
-| Buenas prácticas de codificación |  6.4 | Hay bastante controller puro, command/runtime y boundaries bien marcados.                                    |
-| Coherencia funcional             |  6.2 | La coherencia clínica es buena, pero el módulo combina demasiados flujos delicados.                          |
-| Separación y límites             |  6.5 | Muy buena gobernanza de feature boundaries y ownership de controllers.                                       |
-| Estabilidad                      |  6.0 | La suite focalizada volvió a verde completo, aunque el módulo sigue siendo sensible por tamaño y criticidad. |
-| Escalabilidad                    |  6.0 | Puede crecer, pero conviene por bloques; el costo cognitivo y de churn ya es alto.                           |
-| Documentación                    |  6.6 | El README del feature y los invariantes están bien explicitados.                                             |
-| Tests                            |  6.5 | Cobertura enorme y muy útil, con baseline focalizado actualmente verde en `PatientRow`.                      |
+| Dimensión                        | Nota | Comentario                                                                                               |
+| -------------------------------- | ---: | -------------------------------------------------------------------------------------------------------- |
+| Calidad general                  |  6.4 | Muy buen nivel para un módulo tan grande, con menos fricción incidental que al inicio de la ronda.       |
+| Estructura                       |  6.6 | La separación `components / hooks / controllers / domain / context / validation` está bien pensada.      |
+| Organización                     |  6.4 | Hay mucha organización y ownership explícito; sigue pesado, pero más ordenado en el frente `PatientRow`. |
+| Buenas prácticas de codificación |  6.6 | Hay bastante controller puro, command/runtime y boundaries bien marcados.                                |
+| Coherencia funcional             |  6.4 | La coherencia clínica es buena y el wiring principal viene convergiendo mejor.                           |
+| Separación y límites             |  6.6 | Muy buena gobernanza de feature boundaries y ownership de controllers.                                   |
+| Estabilidad                      |  6.3 | La suite focalizada volvió a verde completo y el baseline de `PatientRow` hoy se ve bastante más firme.  |
+| Escalabilidad                    |  6.2 | Puede crecer, pero conviene por bloques; el costo cognitivo y de churn sigue siendo alto.                |
+| Documentación                    |  6.6 | El README del feature y los invariantes están bien explicitados.                                         |
+| Tests                            |  6.5 | Cobertura enorme y muy útil, con baseline focalizado actualmente verde en `PatientRow`.                  |
 
 ---
 
@@ -42,8 +42,8 @@
 
 - Tiene una arquitectura interna muy trabajada y explícita, especialmente para un módulo tan grande y central.
 - La documentación del feature es fuerte:
-  - [src/features/census/README.md](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/census/README.md)
-  - [src/application/patient-flow/README.md](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/application/patient-flow/README.md)
+  - [src/features/census/README.md](../src/features/census/README.md)
+  - [src/application/patient-flow/README.md](../src/application/patient-flow/README.md)
 - Hay muchos invariantes clínico-operativos bien formulados:
   - fecha / turno
   - nuevo ingreso
@@ -62,7 +62,7 @@
 - Es uno de los módulos más grandes y complejos del sistema, y eso se nota en navegación, churn y sensibilidad de cambios.
 - La estructura está bien, pero el costo cognitivo sigue siendo alto, especialmente en `PatientRow`, movimientos, acciones de tabla y wiring del runtime.
 - Aunque el scorecard hoy no lo marca como hotspot rojo, el módulo sigue siendo el frente con más churn reciente del repo.
-- La suite focalizada es enorme y cubre bastante bien el frente `PatientRow`; el baseline volvió a verde completo y ya hubo una pasada para converger parte del wiring duplicado de modales/secciones.
+- La suite focalizada es enorme y cubre bastante bien el frente `PatientRow`; el baseline volvió a verde completo y ya hubo varias pasadas para converger wiring duplicado de modales, secciones, launcher orbital, menú de acciones e inputs clínicos.
 
 ---
 
@@ -87,13 +87,13 @@
 
 ## 6. Hotspots y archivos clave
 
-| Archivo                                                                                                                                                                                                              | Rol                            | Riesgo / observación                                                                 |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------ |
-| [src/hooks/useCensusEmailRecipientLists.ts](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/hooks/useCensusEmailRecipientLists.ts)                                                           | Flujo sensible ligado al censo | `390` líneas; no es la tabla en sí, pero sí un frente operativo asociado importante. |
-| [src/hooks/useBedManagementReducer.ts](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/hooks/useBedManagementReducer.ts)                                                                     | Estado/patches de camas        | `156` líneas; ya mucho mejor, pero sensible.                                         |
-| [src/features/census/controllers/patientRowBindingsController.ts](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/census/controllers/patientRowBindingsController.ts)               | Wiring de fila                 | `282` líneas; punto central del costo cognitivo de `PatientRow`.                     |
-| [src/features/census/controllers/patientRowBindingSectionsController.ts](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/census/controllers/patientRowBindingSectionsController.ts) | Secciones de binding por fila  | `156` líneas; importante para mantener separación.                                   |
-| [src/hooks/useCensusLogic.ts](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/hooks/useCensusLogic.ts)                                                                                       | Orquestación general del censo | Relativamente chico (`64` líneas), pero representa el punto de entrada del módulo.   |
+| Archivo                                                                                                                                             | Rol                            | Riesgo / observación                                                                 |
+| --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------ |
+| [src/hooks/useCensusEmailRecipientLists.ts](../src/hooks/useCensusEmailRecipientLists.ts)                                                           | Flujo sensible ligado al censo | `390` líneas; no es la tabla en sí, pero sí un frente operativo asociado importante. |
+| [src/hooks/useBedManagementReducer.ts](../src/hooks/useBedManagementReducer.ts)                                                                     | Estado/patches de camas        | `156` líneas; ya mucho mejor, pero sensible.                                         |
+| [src/features/census/controllers/patientRowBindingsController.ts](../src/features/census/controllers/patientRowBindingsController.ts)               | Wiring de fila                 | `282` líneas; punto central del costo cognitivo de `PatientRow`.                     |
+| [src/features/census/controllers/patientRowBindingSectionsController.ts](../src/features/census/controllers/patientRowBindingSectionsController.ts) | Secciones de binding por fila  | `156` líneas; importante para mantener separación.                                   |
+| [src/hooks/useCensusLogic.ts](../src/hooks/useCensusLogic.ts)                                                                                       | Orquestación general del censo | Relativamente chico (`64` líneas), pero representa el punto de entrada del módulo.   |
 
 Además, el scorecard marca:
 
@@ -123,6 +123,7 @@ Resultado actual:
 
 - Mantener baseline completamente verde del frente `PatientRow`.
 - Seguir convergiendo el wiring de fila para que actions/modals/demographics no dependan de acoplamientos UI frágiles.
+- Mantener el frente `PatientRow` en cortes chicos y verificables, evitando que el churn reciente vuelva a densificar componentes centrales.
 
 ### P2
 
@@ -142,9 +143,9 @@ Resultado actual:
 
 - **Objetivo:** mantener el baseline de `PatientRow` totalmente verde.
 - **Cambio esperado:** seguir evitando fragilidad por imports lazy, modales y menús de acciones.
-- **Archivos probables:**
-  - [src/tests/components/PatientRow.crib-and-demographics.test.tsx](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/tests/components/PatientRow.crib-and-demographics.test.tsx)
-  - [src/tests/components/PatientRow.layout-and-actions.test.tsx](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/tests/components/PatientRow.layout-and-actions.test.tsx)
+  - **Archivos probables:**
+  - [src/tests/components/PatientRow.crib-and-demographics.test.tsx](../src/tests/components/PatientRow.crib-and-demographics.test.tsx)
+  - [src/tests/components/PatientRow.layout-and-actions.test.tsx](../src/tests/components/PatientRow.layout-and-actions.test.tsx)
   - runtime/bindings asociados
 - **Tests / checks requeridos:** suite focalizada de censo
 - **Criterio de cierre:** conservar `240/240` archivos verdes en la batería focalizada.
@@ -153,12 +154,12 @@ Resultado actual:
 
 - **Objetivo:** seguir domesticando el frente `PatientRow`.
 - **Cambio esperado:** mover más wiring de fila a controllers/view-models puros y reducir acoplamiento entre UI y acciones.
-- **Archivos probables:**
-  - [patientRowBindingsController.ts](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/census/controllers/patientRowBindingsController.ts)
-  - [patientRowBindingSectionsController.ts](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/census/controllers/patientRowBindingSectionsController.ts)
-  - [patientRowMainViewController.ts](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/census/controllers/patientRowMainViewController.ts)
+  - **Archivos probables:**
+  - [patientRowBindingsController.ts](../src/features/census/controllers/patientRowBindingsController.ts)
+  - [patientRowBindingSectionsController.ts](../src/features/census/controllers/patientRowBindingSectionsController.ts)
+  - [patientRowMainViewController.ts](../src/features/census/controllers/patientRowMainViewController.ts)
 - **Tests / checks requeridos:** tests de `PatientRow` + tabla
-- **Criterio de cierre:** menos branching visible y menos fragilidad de acciones/modales. Primera convergencia ya aplicada: `buildPatientRowModalsBindings(...)` reutiliza el mismo builder de secciones que usa el resto del wiring.
+- **Criterio de cierre:** menos branching visible y menos fragilidad de acciones/modales. Convergencias ya aplicadas: `buildPatientRowModalsBindings(...)` reutiliza el mismo builder de secciones que usa el resto del wiring, el diálogo de indicaciones médicas salió del componente del menú y el estado de modales de fila ahora comparte helpers puros de visibilidad/cierre.
 
 ### Bloque 3
 

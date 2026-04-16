@@ -1,12 +1,9 @@
-import { useCallback, useState } from 'react';
-
-type PatientRowModalKind =
-  | 'demographics'
-  | 'clinicalDocuments'
-  | 'examRequest'
-  | 'imagingRequest'
-  | 'history'
-  | null;
+import { useCallback, useMemo, useState } from 'react';
+import {
+  buildPatientRowUiStateVisibility,
+  resolvePatientRowModalCloseState,
+  type PatientRowModalKind,
+} from '@/features/census/controllers/patientRowUiStateController';
 
 export interface PatientRowUiState {
   showDemographics: boolean;
@@ -29,47 +26,27 @@ export interface PatientRowUiState {
 export const usePatientRowUiState = (): PatientRowUiState => {
   const [activeModal, setActiveModal] = useState<PatientRowModalKind>(null);
 
-  const openDemographics = useCallback(() => setActiveModal('demographics'), []);
-  const closeDemographics = useCallback(
-    () => setActiveModal(current => (current === 'demographics' ? null : current)),
-    []
-  );
-  const openClinicalDocuments = useCallback(() => setActiveModal('clinicalDocuments'), []);
-  const closeClinicalDocuments = useCallback(
-    () => setActiveModal(current => (current === 'clinicalDocuments' ? null : current)),
-    []
-  );
-  const openExamRequest = useCallback(() => setActiveModal('examRequest'), []);
-  const closeExamRequest = useCallback(
-    () => setActiveModal(current => (current === 'examRequest' ? null : current)),
-    []
-  );
-  const openImagingRequest = useCallback(() => setActiveModal('imagingRequest'), []);
-  const closeImagingRequest = useCallback(
-    () => setActiveModal(current => (current === 'imagingRequest' ? null : current)),
-    []
-  );
-  const openHistory = useCallback(() => setActiveModal('history'), []);
-  const closeHistory = useCallback(
-    () => setActiveModal(current => (current === 'history' ? null : current)),
-    []
-  );
+  const openModal = useCallback((modal: Exclude<PatientRowModalKind, null>) => {
+    setActiveModal(modal);
+  }, []);
+
+  const closeModal = useCallback((modal: Exclude<PatientRowModalKind, null>) => {
+    setActiveModal(current => resolvePatientRowModalCloseState(current, modal));
+  }, []);
+
+  const visibility = useMemo(() => buildPatientRowUiStateVisibility(activeModal), [activeModal]);
 
   return {
-    showDemographics: activeModal === 'demographics',
-    showClinicalDocuments: activeModal === 'clinicalDocuments',
-    showExamRequest: activeModal === 'examRequest',
-    showImagingRequest: activeModal === 'imagingRequest',
-    showHistory: activeModal === 'history',
-    openDemographics,
-    closeDemographics,
-    openClinicalDocuments,
-    closeClinicalDocuments,
-    openExamRequest,
-    closeExamRequest,
-    openImagingRequest,
-    closeImagingRequest,
-    openHistory,
-    closeHistory,
+    ...visibility,
+    openDemographics: () => openModal('demographics'),
+    closeDemographics: () => closeModal('demographics'),
+    openClinicalDocuments: () => openModal('clinicalDocuments'),
+    closeClinicalDocuments: () => closeModal('clinicalDocuments'),
+    openExamRequest: () => openModal('examRequest'),
+    closeExamRequest: () => closeModal('examRequest'),
+    openImagingRequest: () => openModal('imagingRequest'),
+    closeImagingRequest: () => closeModal('imagingRequest'),
+    openHistory: () => openModal('history'),
+    closeHistory: () => closeModal('history'),
   };
 };

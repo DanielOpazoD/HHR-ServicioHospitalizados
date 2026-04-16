@@ -4,8 +4,8 @@
 
 - **Módulo:** Documentos clínicos
 - **Ruta(s) principal(es):**
-  - [src/features/clinical-documents](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/clinical-documents)
-  - [src/application/clinical-documents](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/application/clinical-documents)
+  - [src/features/clinical-documents](../src/features/clinical-documents)
+  - [src/application/clinical-documents](../src/application/clinical-documents)
 - **Fecha de evaluación:** 2026-04-15
 - **Evaluador:** Codex
 - **Estado general:** verde
@@ -41,9 +41,9 @@
 - Tiene una arquitectura interna clara y explícita, con separación fuerte entre UI, hooks, controllers, domain y servicios.
 - La cobertura del módulo es muy sólida: `62` archivos de test verdes y `326` tests pasando en la suite propia.
 - La feature está bien documentada con:
-  - [README.md](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/clinical-documents/README.md)
-  - [CLINICAL_DOCUMENT_EDITOR_RUNTIME.md](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/docs/CLINICAL_DOCUMENT_EDITOR_RUNTIME.md)
-  - [ADR_CLINICAL_DOCUMENT_WORKSPACE_CONTRACT.md](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/docs/ADR_CLINICAL_DOCUMENT_WORKSPACE_CONTRACT.md)
+  - [README.md](../src/features/clinical-documents/README.md)
+  - [CLINICAL_DOCUMENT_EDITOR_RUNTIME.md](./CLINICAL_DOCUMENT_EDITOR_RUNTIME.md)
+  - [ADR_CLINICAL_DOCUMENT_WORKSPACE_CONTRACT.md](./ADR_CLINICAL_DOCUMENT_WORKSPACE_CONTRACT.md)
 - La extensibilidad por `documentType` quedó bastante bien orientada por definiciones y normalizadores, en vez de meter `if` ad hoc en la hoja.
 - Se saneó bien el frente más delicado del editor:
   - cursor / foco
@@ -78,14 +78,14 @@
 
 ## 6. Hotspots y archivos clave
 
-| Archivo                                                                                                                                                                                                    | Rol                                | Riesgo / observación                                                   |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ---------------------------------------------------------------------- |
-| [useClinicalDocumentRichTextEditorController.ts](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/clinical-documents/hooks/useClinicalDocumentRichTextEditorController.ts) | Orquestación central del editor    | `399` líneas; sigue siendo el frente más delicado del módulo.          |
-| [clinicalDocumentRichTextController.ts](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/clinical-documents/controllers/clinicalDocumentRichTextController.ts)             | Sanitización y transformación HTML | `351` líneas; mucha responsabilidad técnica concentrada.               |
-| [useClinicalDocumentsWorkspaceModel.ts](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/clinical-documents/hooks/useClinicalDocumentsWorkspaceModel.ts)                   | Wiring principal del workspace     | `273` líneas; ya está mejor, pero sigue siendo orquestador importante. |
-| [useClinicalDocumentSheetState.ts](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/clinical-documents/hooks/useClinicalDocumentSheetState.ts)                             | Estado efímero de la hoja          | `268` líneas; sensible por mezclar editor y shell visual.              |
-| [useClinicalDocumentDraftAutosave.ts](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/clinical-documents/hooks/useClinicalDocumentDraftAutosave.ts)                       | Autosave del draft                 | `234` líneas; ya saneado, pero es zona crítica.                        |
-| [useClinicalDocumentDraftRemoteSync.ts](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/clinical-documents/hooks/useClinicalDocumentDraftRemoteSync.ts)                   | Sync remoto del draft              | `81` líneas; chico, pero muy sensible por dominio.                     |
+| Archivo                                                                                                                                   | Rol                                | Riesgo / observación                                                   |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ---------------------------------------------------------------------- |
+| [useClinicalDocumentRichTextEditorController.ts](../src/features/clinical-documents/hooks/useClinicalDocumentRichTextEditorController.ts) | Orquestación central del editor    | `399` líneas; sigue siendo el frente más delicado del módulo.          |
+| [clinicalDocumentRichTextController.ts](../src/features/clinical-documents/controllers/clinicalDocumentRichTextController.ts)             | Sanitización y transformación HTML | `351` líneas; mucha responsabilidad técnica concentrada.               |
+| [useClinicalDocumentsWorkspaceModel.ts](../src/features/clinical-documents/hooks/useClinicalDocumentsWorkspaceModel.ts)                   | Wiring principal del workspace     | `273` líneas; ya está mejor, pero sigue siendo orquestador importante. |
+| [useClinicalDocumentSheetState.ts](../src/features/clinical-documents/hooks/useClinicalDocumentSheetState.ts)                             | Estado efímero de la hoja          | `268` líneas; sensible por mezclar editor y shell visual.              |
+| [useClinicalDocumentDraftAutosave.ts](../src/features/clinical-documents/hooks/useClinicalDocumentDraftAutosave.ts)                       | Autosave del draft                 | `234` líneas; ya saneado, pero es zona crítica.                        |
+| [useClinicalDocumentDraftRemoteSync.ts](../src/features/clinical-documents/hooks/useClinicalDocumentDraftRemoteSync.ts)                   | Sync remoto del draft              | `81` líneas; chico, pero muy sensible por dominio.                     |
 
 ---
 
@@ -130,9 +130,9 @@ Resultado actual:
 
 - **Objetivo:** seguir consolidando el editor como pipeline único.
 - **Cambio esperado:** ningún camino nuevo de inserción/edición debería saltarse controller + normalización + snapshot.
-- **Archivos probables:**
-  - [useClinicalDocumentRichTextEditorController.ts](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/clinical-documents/hooks/useClinicalDocumentRichTextEditorController.ts)
-  - [clinicalDocumentRichTextController.ts](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/clinical-documents/controllers/clinicalDocumentRichTextController.ts)
+  - **Archivos probables:**
+  - [useClinicalDocumentRichTextEditorController.ts](../src/features/clinical-documents/hooks/useClinicalDocumentRichTextEditorController.ts)
+  - [clinicalDocumentRichTextController.ts](../src/features/clinical-documents/controllers/clinicalDocumentRichTextController.ts)
 - **Tests / checks requeridos:** `test:clinical-documents`, `typecheck`, `check:quality`
 - **Criterio de cierre:** no quedan bypasses obvios nuevos; cobertura DOM/controller suficiente.
 
@@ -140,9 +140,9 @@ Resultado actual:
 
 - **Objetivo:** bajar más complejidad del workspace sin cambiar UX.
 - **Cambio esperado:** más comandos puros fuera de `useClinicalDocumentsWorkspaceModel` y `useClinicalDocumentSheetState`.
-- **Archivos probables:**
-  - [useClinicalDocumentsWorkspaceModel.ts](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/clinical-documents/hooks/useClinicalDocumentsWorkspaceModel.ts)
-  - [useClinicalDocumentSheetState.ts](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/clinical-documents/hooks/useClinicalDocumentSheetState.ts)
+  - **Archivos probables:**
+  - [useClinicalDocumentsWorkspaceModel.ts](../src/features/clinical-documents/hooks/useClinicalDocumentsWorkspaceModel.ts)
+  - [useClinicalDocumentSheetState.ts](../src/features/clinical-documents/hooks/useClinicalDocumentSheetState.ts)
 - **Tests / checks requeridos:** suite focalizada del workspace
 - **Criterio de cierre:** menos wiring inline y menor costo de lectura.
 
@@ -155,9 +155,9 @@ Resultado actual:
   - cambiar plantilla
   - restaurar template
   - recibir remoto staged
-- **Archivos probables:**
-  - [useClinicalDocumentDraftAutosave.ts](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/clinical-documents/hooks/useClinicalDocumentDraftAutosave.ts)
-  - [useClinicalDocumentWorkspaceDraft.ts](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/clinical-documents/hooks/useClinicalDocumentWorkspaceDraft.ts)
+  - **Archivos probables:**
+  - [useClinicalDocumentDraftAutosave.ts](../src/features/clinical-documents/hooks/useClinicalDocumentDraftAutosave.ts)
+  - [useClinicalDocumentWorkspaceDraft.ts](../src/features/clinical-documents/hooks/useClinicalDocumentWorkspaceDraft.ts)
   - tests asociados
 - **Tests / checks requeridos:** focalizados del draft/autosave/workspace
 - **Criterio de cierre:** menor riesgo de pérdida/intermitencia de contenido.

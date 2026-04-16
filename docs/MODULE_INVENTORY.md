@@ -18,8 +18,8 @@ Estos son los módulos que más sentido tiene evaluar uno por uno primero.
 
 ### 1. Documentos clínicos
 
-- **Feature principal:** [src/features/clinical-documents](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/clinical-documents)
-- **Application:** [src/application/clinical-documents](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/application/clinical-documents)
+- **Feature principal:** [src/features/clinical-documents](../src/features/clinical-documents)
+- **Application:** [src/application/clinical-documents](../src/application/clinical-documents)
 - Incluye:
   - editor rico
   - plantillas
@@ -31,8 +31,8 @@ Estos son los módulos que más sentido tiene evaluar uno por uno primero.
 
 ### 2. Censo diario
 
-- **Feature principal:** [src/features/census](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/census)
-- **Application relacionada:** [src/application/census](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/application/census), [src/application/daily-record](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/application/daily-record), [src/application/patient-flow](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/application/patient-flow)
+- **Feature principal:** [src/features/census](../src/features/census)
+- **Application relacionada:** [src/application/census](../src/application/census), [src/application/daily-record](../src/application/daily-record), [src/application/patient-flow](../src/application/patient-flow)
 - Incluye:
   - tabla principal
   - ingreso / traslado / egreso
@@ -43,8 +43,8 @@ Estos son los módulos que más sentido tiene evaluar uno por uno primero.
 
 ### 3. Entrega de turno médico
 
-- **Feature principal:** [src/features/handoff](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/handoff)
-- **Application relacionada:** [src/application/handoff](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/application/handoff)
+- **Feature principal:** [src/features/handoff](../src/features/handoff)
+- **Application relacionada:** [src/application/handoff](../src/application/handoff)
 - Incluye:
   - handoff médico general
   - observaciones médicas
@@ -54,7 +54,7 @@ Estos son los módulos que más sentido tiene evaluar uno por uno primero.
 
 ### 4. Entrega de turno enfermería
 
-- **Feature principal:** [src/features/handoff](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/handoff)
+- **Feature principal:** [src/features/handoff](../src/features/handoff)
 - Submódulo hermano del handoff médico.
 - Incluye:
   - checklist de turno
@@ -63,7 +63,7 @@ Estos son los módulos que más sentido tiene evaluar uno por uno primero.
 
 ### 5. Gestión de traslados
 
-- **Feature principal:** [src/features/transfers](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/transfers)
+- **Feature principal:** [src/features/transfers](../src/features/transfers)
 - **Hooks y soporte también en census**
 - Incluye:
   - solicitudes
@@ -75,7 +75,7 @@ Estos son los módulos que más sentido tiene evaluar uno por uno primero.
 
 - Parte importante del frente de laboratorio.
 - Zonas probables:
-  - [src/features/laboratory](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/laboratory)
+  - [src/features/laboratory](../src/features/laboratory)
   - hooks y componentes de request modal
   - integración desde documentos clínicos y/o censo
 
@@ -89,7 +89,7 @@ Estos son los módulos que más sentido tiene evaluar uno por uno primero.
 
 ### 8. Visualizador de exámenes de laboratorio
 
-- **Feature principal:** [src/features/laboratory](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/laboratory)
+- **Feature principal:** [src/features/laboratory](../src/features/laboratory)
 - Incluye:
   - comparación
   - tendencias
@@ -103,8 +103,8 @@ Estos son los módulos que más sentido tiene evaluar uno por uno primero.
 
 ### 10. Auditoría
 
-- **Feature principal:** [src/features/admin](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/admin)
-- **Application:** [src/application/audit](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/application/audit)
+- **Feature principal:** [src/features/admin](../src/features/admin)
+- **Application:** [src/application/audit](../src/application/audit)
 - **Hooks relacionadas:** `useAudit*`
 - Incluye:
   - lectura de eventos
@@ -118,8 +118,8 @@ Estos son los módulos que más sentido tiene evaluar uno por uno primero.
 
 ### 12. CUDYR
 
-- **Feature principal:** [src/features/cudyr](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/cudyr)
-- **Application:** [src/application/cudyr](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/application/cudyr)
+- **Feature principal:** [src/features/cudyr](../src/features/cudyr)
+- **Application:** [src/application/cudyr](../src/application/cudyr)
 - Módulo suficientemente grande e importante para evaluarse por separado.
 
 ---
@@ -130,27 +130,27 @@ Estos tal vez no ameriten evaluación independiente al principio, pero sí deben
 
 ### 13. Correo de censo
 
-- **Application:** [src/application/census-email](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/application/census-email)
+- **Application:** [src/application/census-email](../src/application/census-email)
 - **Hooks:** `useCensusEmail*`
 
 ### 14. Copias, backups y archivos compartidos
 
-- **Feature:** [src/features/backup](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/backup)
-- **Application:** [src/application/backup-export](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/application/backup-export)
+- **Feature:** [src/features/backup](../src/features/backup)
+- **Application:** [src/application/backup-export](../src/application/backup-export)
 
 ### 15. Recordatorios
 
-- **Feature:** [src/features/reminders](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/reminders)
-- **Application:** [src/application/reminders](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/application/reminders)
+- **Feature:** [src/features/reminders](../src/features/reminders)
+- **Application:** [src/application/reminders](../src/application/reminders)
 
 ### 16. WhatsApp / compartir
 
-- **Feature:** [src/features/whatsapp](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/whatsapp)
+- **Feature:** [src/features/whatsapp](../src/features/whatsapp)
 - También se cruza con handoff y entrega de información.
 
 ### 17. Analítica y paneles administrativos
 
-- **Feature:** [src/features/analytics](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/analytics)
+- **Feature:** [src/features/analytics](../src/features/analytics)
 - Complementa auditoría y monitoreo.
 
 ---
@@ -161,17 +161,17 @@ Estos no son “módulos de negocio” en sentido estricto, pero sí conviene ev
 
 ### 18. Autenticación y sesión
 
-- **Feature:** [src/features/auth](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/features/auth)
-- **Application:** [src/application/auth](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/application/auth)
+- **Feature:** [src/features/auth](../src/features/auth)
+- **Application:** [src/application/auth](../src/application/auth)
 
 ### 19. Firestore / persistencia / reglas
 
-- Repositorios, ports, adapters y [firestore.rules](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/firestore.rules)
+- Repositorios, ports, adapters y [firestore.rules](../firestore.rules)
 - No es un módulo funcional visible, pero sí un frente crítico transversal.
 
 ### 20. Patient flow / episodio clínico
 
-- **Application:** [src/application/patient-flow](/Users/daniel/Documents/HHR%202026%20tracker%20versión%20MacBookAir/src/application/patient-flow)
+- **Application:** [src/application/patient-flow](../src/application/patient-flow)
 - Base conceptual para censo, búsqueda, traslados y continuidad clínica.
 
 ---

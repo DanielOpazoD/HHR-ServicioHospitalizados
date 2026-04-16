@@ -7,6 +7,10 @@ import {
   resolveUpdateRecipient,
   resolveVisibleRecipients,
 } from '@/features/census/controllers/censusEmailRecipientsController';
+import {
+  buildCensusEmailRecipientsBulkEditorState,
+  buildCensusEmailRecipientsEditorResetState,
+} from '@/features/census/controllers/censusEmailRecipientsEditorStateController';
 
 const MAX_VISIBLE_RECIPIENTS = 9;
 
@@ -62,15 +66,15 @@ export const useCensusEmailRecipientsEditor = ({
     const wasOpen = wasOpenRef.current;
 
     if (isOpen && !wasOpen) {
-      const nextBulkRecipients = safeRecipients.join('\n');
+      const resetState = buildCensusEmailRecipientsEditorResetState(safeRecipients);
       queueMicrotask(() => {
-        setError(null);
-        setNewRecipient('');
-        setShowBulkEditor(false);
-        setBulkRecipients(nextBulkRecipients);
-        setEditingIndex(null);
-        setEditingValue('');
-        setShowAllRecipients(false);
+        setError(resetState.error);
+        setNewRecipient(resetState.newRecipient);
+        setShowBulkEditor(resetState.showBulkEditor);
+        setBulkRecipients(resetState.bulkRecipients);
+        setEditingIndex(resetState.editingIndex);
+        setEditingValue(resetState.editingValue);
+        setShowAllRecipients(resetState.showAllRecipients);
       });
     }
 
@@ -98,9 +102,12 @@ export const useCensusEmailRecipientsEditor = ({
   }, [newRecipient, onRecipientsChange, safeRecipients]);
 
   const toggleBulkEditor = useCallback(() => {
-    setShowBulkEditor(previous => !previous);
-    setBulkRecipients(safeRecipients.join('\n'));
-    setError(null);
+    setShowBulkEditor(previous => {
+      const nextState = buildCensusEmailRecipientsBulkEditorState(safeRecipients, !previous);
+      setBulkRecipients(nextState.bulkRecipients);
+      setError(nextState.error);
+      return nextState.showBulkEditor;
+    });
   }, [safeRecipients]);
 
   const saveBulkRecipients = useCallback(() => {
@@ -119,9 +126,10 @@ export const useCensusEmailRecipientsEditor = ({
   }, [bulkRecipients, onRecipientsChange]);
 
   const cancelBulkEdit = useCallback(() => {
-    setBulkRecipients(safeRecipients.join('\n'));
-    setShowBulkEditor(false);
-    setError(null);
+    const nextState = buildCensusEmailRecipientsBulkEditorState(safeRecipients, false);
+    setBulkRecipients(nextState.bulkRecipients);
+    setShowBulkEditor(nextState.showBulkEditor);
+    setError(nextState.error);
   }, [safeRecipients]);
 
   const startEditRecipient = useCallback(

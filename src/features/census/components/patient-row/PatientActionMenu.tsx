@@ -74,21 +74,22 @@ export const PatientActionMenu: React.FC<PatientActionMenuProps> = ({
   medicalIndicationsPatient,
   clinicalDocumentCount,
 }) => {
-  const [isMedicalIndicationsOpen, setIsMedicalIndicationsOpen] = React.useState(false);
   const isSpecialistAccess = accessProfile === 'specialist';
   const {
     isOpen,
+    isMedicalIndicationsOpen,
     menuRef,
     binding,
     utilityActions,
     toggle,
     close,
+    openMedicalIndicationsDialog,
+    closeMedicalIndicationsDialog,
     handleAction,
     handleViewHistory,
     handleViewClinicalDocuments,
     handleViewExamRequest,
     handleViewImagingRequest,
-    handleViewMedicalIndications,
   } = usePatientActionMenu({
     isBlocked,
     readOnly,
@@ -117,10 +118,7 @@ export const PatientActionMenu: React.FC<PatientActionMenuProps> = ({
         onViewClinicalDocuments={handleViewClinicalDocuments}
         onViewExamRequest={handleViewExamRequest}
         onViewImagingRequest={handleViewImagingRequest}
-        onViewMedicalIndications={() => {
-          handleViewMedicalIndications();
-          setIsMedicalIndicationsOpen(true);
-        }}
+        onViewMedicalIndications={openMedicalIndicationsDialog}
         badges={
           clinicalDocumentCount && clinicalDocumentCount > 0 ? { clinicalDocumentCount } : undefined
         }
@@ -165,7 +163,7 @@ export const PatientActionMenu: React.FC<PatientActionMenuProps> = ({
         <Suspense fallback={null}>
           <LazyMedicalIndicationsDialog
             isOpen={isMedicalIndicationsOpen}
-            onClose={() => setIsMedicalIndicationsOpen(false)}
+            onClose={closeMedicalIndicationsDialog}
             patients={medicalIndicationsPatient ? [medicalIndicationsPatient] : []}
           />
         </Suspense>

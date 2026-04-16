@@ -73,4 +73,24 @@ describe('useCensusEmailRecipientsEditor', () => {
       expect(result.current.bulkRecipients).toContain('a@mail.com');
     });
   });
+
+  it('restores bulk editor text from safe recipients when cancelling', () => {
+    const { result } = renderHook(() =>
+      useCensusEmailRecipientsEditor({
+        isOpen: true,
+        recipients: ['a@mail.com', 'b@mail.com'],
+        onRecipientsChange: vi.fn(),
+      })
+    );
+
+    act(() => {
+      result.current.toggleBulkEditor();
+      result.current.setBulkRecipients('manual\nedit');
+      result.current.cancelBulkEdit();
+    });
+
+    expect(result.current.showBulkEditor).toBe(false);
+    expect(result.current.bulkRecipients).toBe('a@mail.com\nb@mail.com');
+    expect(result.current.error).toBeNull();
+  });
 });
