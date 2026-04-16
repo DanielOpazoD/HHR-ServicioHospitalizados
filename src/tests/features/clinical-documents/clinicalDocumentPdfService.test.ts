@@ -109,4 +109,28 @@ describe('clinicalDocumentPdfService', () => {
     expect(pdfTextCalls).toContain('Resumen');
     expect(pdfTextCalls.some(text => text.includes('Alta'))).toBe(true);
   });
+
+  it('renders only the annex header and content for annex-only structured PDFs', async () => {
+    generatePrintStyledPdfBlobMock.mockResolvedValueOnce(null);
+    const record = buildRecord();
+    record.annexContent = '<p>Anexo de evolución</p>';
+
+    await generateClinicalDocumentPdfBlob(record, { annexMode: 'annex_only' });
+
+    expect(pdfTextCalls).toContain('Anexos clínicos');
+    expect(pdfTextCalls.some(text => text.includes('Paciente: Paciente Test'))).toBe(true);
+    expect(pdfTextCalls.some(text => text.includes('Anexo de evolución'))).toBe(true);
+    expect(pdfTextCalls).not.toContain(record.title);
+  });
+
+  it('omits annex content from structured PDFs when annexMode is exclude', async () => {
+    generatePrintStyledPdfBlobMock.mockResolvedValueOnce(null);
+    const record = buildRecord();
+    record.annexContent = '<p>Anexo omitido</p>';
+
+    await generateClinicalDocumentPdfBlob(record, { annexMode: 'exclude' });
+
+    expect(pdfTextCalls).not.toContain('Anexos clínicos');
+    expect(pdfTextCalls.some(text => text.includes('Anexo omitido'))).toBe(false);
+  });
 });

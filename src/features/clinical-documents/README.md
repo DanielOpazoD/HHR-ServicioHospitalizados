@@ -64,7 +64,9 @@
 - `clinicalDocumentPrintDomSanitizer`: limpia la hoja para impresión.
 - `clinicalDocumentPrintHtmlBuilder`: construye el HTML imprimible.
 - `clinicalDocumentBrowserPrintService`: abre impresión desde la misma página.
-- `clinicalDocumentPdfRenderService`: intenta backend render y luego fallback snapshot.
+- `clinicalDocumentPdfRenderService`: orquesta render backend y fallback snapshot.
+- `clinicalDocumentPdfSnapshotSupport`: encapsula el frame aislado y el snapshot DOM->PDF.
+- `clinicalDocumentPdfBinarySupport`: concentra conversión `Blob <-> base64/pdf`.
 - `clinicalDocumentDriveService`: debe exponer variantes con resultado tipado para uploads/listados
   en Drive; la UI no debe interpretar errores remotos parseando excepciones inline.
 - Los resultados esperados de exportación/impresión deben resolverse con outcomes tipados y
@@ -89,10 +91,11 @@
 
 ## Runtime boundaries
 
-- El consumo externo a la feature debe entrar por `@/features/clinical-documents`. `index.ts`
-  reexporta `public.ts` y es la única superficie soportada para `application`, `shared` y otros
-  módulos que necesiten tipos, helpers del workspace o servicios documentales sin entrar por
-  internals.
+- El consumo externo UI debe entrar por `@/features/clinical-documents` o `@/features/clinical-documents/public`.
+- `application` y `shared` pueden usar `@/features/clinical-documents/internal` cuando necesiten
+  contratos o helpers del feature sin reingresar por componentes UI.
+- Los deep imports hacia `components/`, `services/`, `hooks/` o `controllers/` desde fuera de la
+  feature están prohibidos y quedan cubiertos por tests de gobernanza estática.
 - La hoja principal no debe recuperar `if` especiales por `documentType`; la extensibilidad entra por definiciones/section renderers.
 - Todo documento/template leído o persistido debe pasar por contratos runtime antes de salir del repositorio.
 - La impresión/exportación debe reportar fallos por telemetría operativa y no depender de logs sueltos.

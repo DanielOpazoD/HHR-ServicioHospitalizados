@@ -28,3 +28,4 @@ export {
 export { exportClinicalDocumentPdfViaBackend } from './services/clinicalDocumentBackendExportService';
 export { generateClinicalDocumentPdfBlob } from './services/clinicalDocumentPdfService';
 export { openClinicalDocumentBrowserPrintPreview } from './services/clinicalDocumentPrintPdfService';
+export type { ClinicalDocumentAnnexPrintMode } from './services/clinicalDocumentPrintSupport';

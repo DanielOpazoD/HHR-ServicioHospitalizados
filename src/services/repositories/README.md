@@ -4,6 +4,23 @@
 
 Implementar Repository Pattern para ocultar detalles de almacenamiento/sincronización.
 
+## Flujo principal de `dailyRecord`
+
+1. `dailyRecordRepositoryReadService.ts` resuelve lectura local/remota y consistencia visible.
+2. `dailyRecordRepositoryWriteService.ts` valida, guarda local y decide recovery remoto.
+3. `dailyRecordRepositorySyncService.ts` sincroniza o subscribe usando el mismo golden path.
+4. `dailyRecordPersistenceGoldenPath.ts` decide cuándo manda remoto o local.
+5. `dailyRecordConsistencyPolicy.ts` traduce esa decisión a `consistencyState`, `sourceOfTruth`,
+   `retryability` y `recoveryAction`.
+
+## Puntos de falla que revisar primero
+
+- remoto más viejo que local: debe mantenerse `local_authoritative` o `local_kept`
+- remoto ausente: debe salir `missing_remote`, no “éxito vacío”
+- remoto caído: debe degradar a fallback local con `defer_remote_sync`
+- conflictos de escritura: recovery explícito (`queue_retry`, `auto_merge_and_queue`, `block_and_surface`)
+- hidratación local desde remoto: debe respetar las mismas invariantes y policy de `admissionDate`
+
 ## Mapa
 
 | Archivo                                                          | Rol                                                                                                       |
@@ -42,6 +59,7 @@ const unsubscribe = subscribe(date, callback);
 
 - Runtime path y precedence de `daily-record`: [docs/ADR_DAILY_RECORD_RUNTIME_PATH.md](../../../docs/ADR_DAILY_RECORD_RUNTIME_PATH.md)
 - Outcome policy de sync: [docs/ADR_SYNC_OUTCOME_POLICY.md](../../../docs/ADR_SYNC_OUTCOME_POLICY.md)
+- Runbook operativo de sync: [docs/RUNBOOK_SYNC_RESILIENCE.md](../../../docs/RUNBOOK_SYNC_RESILIENCE.md)
 
 ## Regla
 
@@ -191,3 +209,9 @@ dejar el runtime por defecto solo como composición. El repositorio no debe depe
   `docs/ADR_DAILY_RECORD_RUNTIME_PATH.md`.
 - Si cambia la clasificación o remediación de conflictos por contexto, debe actualizarse también
   `docs/RUNBOOK_OPERATIONAL_BUDGETS.md`.
+
+## Checks recomendados
+
+- `npm run typecheck`
+- `npx vitest run src/tests/services/repositories/dailyRecordRepositoryReadService.test.ts src/tests/services/repositories/dailyRecordRepositoryWriteService.test.ts src/tests/services/repositories/dailyRecordRepositorySyncService.test.ts`
+- `npx vitest run src/tests/security/dailyRecordRootImportGovernanceStatic.test.ts src/tests/security/dailyRecordContractsImportGovernanceStatic.test.ts`

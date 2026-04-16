@@ -1,6 +1,6 @@
 # Documentation Map
 
-Última actualización: 2026-04-10
+Última actualización: 2026-04-16
 
 ## Lectura recomendada
 
@@ -9,6 +9,14 @@
 3. [docs/FOUNDATION_TRACKER.md](FOUNDATION_TRACKER.md)
 4. [PROJECT_STATUS.md](../PROJECT_STATUS.md)
 5. README del módulo que vas a tocar en `src/features/*/README.md` o `src/*/README.md`
+
+## Módulos canónicos por área
+
+- Auth y acceso: [src/services/auth/README.md](../src/services/auth/README.md)
+- Firebase runtime: [src/services/firebase-runtime/README.md](../src/services/firebase-runtime/README.md)
+- Repositorios y `dailyRecord`: [src/services/repositories/README.md](../src/services/repositories/README.md)
+- Clinical documents: [src/features/clinical-documents/README.md](../src/features/clinical-documents/README.md)
+- Laboratory: [src/features/laboratory/README.md](../src/features/laboratory/README.md)
 
 ## Categorías
 
@@ -36,6 +44,18 @@ Documentos que ayudan a ejecutar trabajo, validar cambios o entender un área co
 - [docs/DEVELOPER_COMMANDS.md](DEVELOPER_COMMANDS.md)
 - [docs/TEST_MEGATEST_BACKLOG.md](TEST_MEGATEST_BACKLOG.md)
 
+### Histórica o de trabajo
+
+Documentos útiles para contexto, pero no fuente primaria de reglas activas.
+
+- `docs/*PHASE*_README.md`
+- `docs/*EXECUTION*.md`
+- `docs/*TRACKER*.md`
+- `docs/MODULE_EVALUATION_*.md`
+- `docs/FOUNDATION_IMPROVEMENT_PLAN.md`
+- `docs/FOUNDATION_CONTINUATION_TRACKER.md`
+- `docs/MAINTENANCE_ITERATION_LOG.md`
+
 ### Generada
 
 Artefactos producidos por tooling o reportes automáticos. Son útiles para consulta, pero no son la fuente primaria de diseño.
@@ -50,6 +70,7 @@ Artefactos producidos por tooling o reportes automáticos. Son útiles para cons
 - Si un archivo se regenera desde scripts o CI, debe tratarse como generado aunque esté versionado.
 - No duplicar decisiones arquitectónicas entre documentos generados y canónicos.
 - Si un documento canónico cambia una regla, el tracker y el README correspondiente deben quedar alineados en la misma iteración.
+- Si una decisión ya quedó resumida en un README de módulo, los planes, trackers y phase notes deben enlazarlo en vez de repetir la regla completa.
 - Las rutas internas de documentación deben ser relativas al repo. No agregar rutas absolutas locales ni URLs de archivo local.
 - Las compatibilidades legacy de roles/auth/rules se documentan como protección de migración hasta que la app sea oficial; no deben crecer con consumidores nuevos.
 

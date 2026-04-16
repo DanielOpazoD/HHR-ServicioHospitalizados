@@ -7,6 +7,7 @@ import {
   resolveClinicalDocumentDraftLoad,
 } from '@/application/clinical-documents/clinicalDocumentEditorUseCases';
 import { executeOpenClinicalDocumentPrint } from '@/application/clinical-documents/clinicalDocumentPrintOpenUseCase';
+import { openClinicalDocumentBrowserPrintPreview } from '@/features/clinical-documents/services/clinicalDocumentPrintPdfService';
 
 vi.mock('@/features/clinical-documents/services/clinicalDocumentPrintPdfService', () => ({
   openClinicalDocumentBrowserPrintPreview: vi.fn(async () => true),
@@ -162,5 +163,22 @@ describe('clinicalDocumentEditorUseCases', () => {
     const record = buildRecord();
 
     await expect(executeOpenClinicalDocumentPrint(record)).resolves.toBe(true);
+  });
+
+  it('forwards annex-only print requests through the print use case contract', async () => {
+    const record = buildRecord();
+
+    await expect(
+      executeOpenClinicalDocumentPrint(record, { annexMode: 'annex_only' })
+    ).resolves.toBe(true);
+
+    expect(openClinicalDocumentBrowserPrintPreview).toHaveBeenCalledWith(
+      record.title,
+      record.documentType,
+      record.ieehDraft,
+      {
+        annexMode: 'annex_only',
+      }
+    );
   });
 });

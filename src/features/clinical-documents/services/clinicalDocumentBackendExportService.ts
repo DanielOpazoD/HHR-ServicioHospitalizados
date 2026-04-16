@@ -3,6 +3,7 @@ import type { ClinicalDocumentType } from '@/features/clinical-documents/domain/
 import { z } from 'zod';
 import { defaultFunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
 import type { FunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
+import { blobToBase64 } from '@/features/clinical-documents/services/clinicalDocumentPdfBinarySupport';
 
 interface ExportClinicalDocumentPdfPayload {
   documentId: string;
@@ -28,30 +29,6 @@ const exportClinicalDocumentPdfResultSchema = z.object({
   folderPath: z.string(),
   usedBackend: z.boolean(),
 });
-
-const blobToBase64 = async (blob: Blob): Promise<string> => {
-  const arrayBuffer = await blob.arrayBuffer();
-  const runtimeBuffer = (
-    globalThis as unknown as {
-      Buffer?: { from: (data: ArrayBuffer) => { toString: (encoding: string) => string } };
-    }
-  ).Buffer;
-
-  if (runtimeBuffer) {
-    return runtimeBuffer.from(arrayBuffer).toString('base64');
-  }
-
-  const bytes = new Uint8Array(arrayBuffer);
-  const chunkSize = 0x8000;
-  let binary = '';
-
-  for (let index = 0; index < bytes.length; index += chunkSize) {
-    const chunk = bytes.subarray(index, index + chunkSize);
-    binary += String.fromCharCode(...chunk);
-  }
-
-  return btoa(binary);
-};
 
 export const createClinicalDocumentBackendExportService = (
   functionsRuntime: Pick<FunctionsRuntime, 'getFunctions'> = defaultFunctionsRuntime

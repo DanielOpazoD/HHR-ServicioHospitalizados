@@ -15,6 +15,14 @@ Resolver autenticacion, bootstrap de sesion, claims, roles y degradacion operati
 - `useAuthState.ts` expone `remoteSyncStatus` como contrato canonico para consumers que necesitan decidir si el runtime remoto esta `ready`, `bootstrapping` o `local_only`.
   Ese estado debe seguir siendo una derivacion liviana del bootstrap de auth, no una segunda FSM con timers y overrides implícitos.
 
+## Flujo principal
+
+1. `useAuthState` resuelve bootstrap, redirect result y sesion actual.
+2. `authAccessResolution` valida acceso productivo y rol canonico.
+3. `authRuntimeSnapshot` normaliza el estado operativo para UI/reporters.
+4. La UI consume `sessionState` y `remoteSyncStatus`; no recompone auth desde flags sueltos.
+5. Errores recuperables de popup, claims o runtime degradan a estado controlado antes de mostrarse.
+
 ## Decision Guide
 
 - Runtime y recovery de auth: [docs/ADR_AUTH_RUNTIME_RECOVERY.md](../../../docs/ADR_AUTH_RUNTIME_RECOVERY.md)
@@ -47,6 +55,14 @@ Resolver autenticacion, bootstrap de sesion, claims, roles y degradacion operati
 - La sincronizacion de custom claims no debe bloquear la entrega inicial de una sesion autorizada.
 - Los warnings benignos de bootstrap o configuracion incompleta deben resolverse mediante
   `operationalNoticePolicy`; auth no debe inventar severidades o copy inline por pantalla.
+
+## Puntos de falla frecuentes
+
+- popup Google bloqueado o degradado por COOP: debe sugerir o disparar redirect, no romper la app.
+- rol no resuelto o claims desactualizados: la sesion puede estar autenticada pero no autorizada.
+- Firebase disponible en forma parcial: `remoteSyncStatus` puede quedar `bootstrapping` o `local_only`.
+- hints de sesion persistida sin runtime listo: el bootstrap debe agotar su ventana de rehidratacion
+  antes de degradar a `unauthenticated`.
 
 ## Legacy activo
 

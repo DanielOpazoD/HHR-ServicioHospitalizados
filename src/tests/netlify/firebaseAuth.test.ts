@@ -93,6 +93,9 @@ describe('firebase-auth netlify helper', () => {
   it('extracts bearer tokens from the authorization header', () => {
     expect(extractBearerToken('Bearer abc.123')).toBe('abc.123');
     expect(() => extractBearerToken(undefined)).toThrow('Missing Authorization bearer token');
+    expect(() => extractBearerToken('Basic abc.123')).toThrow(
+      'Authorization header must use Bearer token'
+    );
   });
 
   it('verifies Firebase ID tokens against project, issuer and signature', async () => {
@@ -112,6 +115,27 @@ describe('firebase-auth netlify helper', () => {
         })
       )
     ).rejects.toThrow('Invalid Firebase token audience');
+  });
+
+  it('rejects expired Firebase ID tokens', async () => {
+    await expect(
+      verifyFirebaseIdToken(
+        createToken({
+          iat: Math.floor(Date.now() / 1000) - 7200,
+          exp: Math.floor(Date.now() / 1000) - 3600,
+        })
+      )
+    ).rejects.toThrow('Expired Firebase token');
+  });
+
+  it('rejects tokens with an unexpected issuer', async () => {
+    await expect(
+      verifyFirebaseIdToken(
+        createToken({
+          iss: 'https://securetoken.google.com/otro-proyecto',
+        })
+      )
+    ).rejects.toThrow('Invalid Firebase token issuer');
   });
 
   it('authorizes allowed roles resolved from config/roles', async () => {

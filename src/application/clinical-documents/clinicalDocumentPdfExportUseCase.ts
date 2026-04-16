@@ -1,10 +1,10 @@
 import {
   exportClinicalDocumentPdfViaBackend,
   generateClinicalDocumentPdfBlob,
+  type ClinicalDocumentAnnexPrintMode,
   type ClinicalDocumentPdfMeta,
   type ClinicalDocumentRecord,
 } from '@/features/clinical-documents/internal';
-import type { ClinicalDocumentAnnexPrintMode } from '@/features/clinical-documents/services/clinicalDocumentPrintSupport';
 import {
   createApplicationFailed,
   createApplicationSuccess,

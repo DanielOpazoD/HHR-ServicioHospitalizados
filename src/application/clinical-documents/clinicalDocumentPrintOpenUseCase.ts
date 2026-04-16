@@ -1,8 +1,8 @@
 import {
   openClinicalDocumentBrowserPrintPreview,
+  type ClinicalDocumentAnnexPrintMode,
   type ClinicalDocumentRecord,
 } from '@/features/clinical-documents/internal';
-import type { ClinicalDocumentAnnexPrintMode } from '@/features/clinical-documents/services/clinicalDocumentPrintSupport';
 
 export const executeOpenClinicalDocumentPrint = (
   record: ClinicalDocumentRecord,

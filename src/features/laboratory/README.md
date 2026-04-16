@@ -96,6 +96,13 @@ import {
 } from '@/features/laboratory/public';
 ```
 
+## Boundary de imports
+
+- El consumo externo debe entrar por `@/features/laboratory` o `@/features/laboratory/public`.
+- Los deep imports hacia `components/`, `controllers/`, `hooks/`, `services/` o `types/` desde
+  fuera de la feature están prohibidos.
+- La gobernanza estática del repo bloquea nuevos accesos laterales a internals del módulo.
+
 ## Configuración
 
 - `VITE_SYSLAB_API_URL` — URL del servidor Express proxy (default: `http://localhost:3000`)

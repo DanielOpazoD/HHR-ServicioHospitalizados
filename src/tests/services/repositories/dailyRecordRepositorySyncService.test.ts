@@ -87,6 +87,92 @@ describe('dailyRecordRepositorySyncService', () => {
     expect(saveToIndexedDB).not.toHaveBeenCalled();
   });
 
+  it('applies the remote record and hydrates IndexedDB when the remote copy is newer', async () => {
+    const localRecord = {
+      date: '2026-03-03',
+      beds: { R1: { patientName: 'Paciente Local' } },
+      lastUpdated: '2026-03-03T08:00:00.000Z',
+    } as unknown as DailyRecord;
+    const remoteRecord = {
+      date: '2026-03-03',
+      beds: { R1: { patientName: 'Paciente Remoto' } },
+      lastUpdated: '2026-03-03T12:00:00.000Z',
+    } as unknown as DailyRecord;
+
+    vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(localRecord);
+    vi.mocked(loadRemoteRecordWithFallback).mockResolvedValueOnce({
+      record: remoteRecord,
+    } as Awaited<ReturnType<typeof loadRemoteRecordWithFallback>>);
+
+    const result = await syncWithFirestoreDetailed('2026-03-03');
+
+    expect(result).toMatchObject({
+      date: '2026-03-03',
+      outcome: 'clean',
+      record: expect.objectContaining({
+        lastUpdated: '2026-03-03T12:00:00.000Z',
+      }),
+      consistencyState: 'remote_applied',
+      sourceOfTruth: 'remote',
+      recoveryAction: 'none',
+    });
+    expect(saveToIndexedDB).toHaveBeenCalledWith(
+      expect.objectContaining({
+        date: '2026-03-03',
+        lastUpdated: '2026-03-03T12:00:00.000Z',
+      })
+    );
+  });
+
+  it('returns missing_remote when the local record exists but no remote record was found', async () => {
+    const localRecord = {
+      date: '2026-03-03',
+      beds: { R1: { patientName: 'Paciente Local' } },
+      lastUpdated: '2026-03-03T12:00:00.000Z',
+    } as unknown as DailyRecord;
+
+    vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(localRecord);
+    vi.mocked(loadRemoteRecordWithFallback).mockResolvedValueOnce({
+      record: null,
+    } as Awaited<ReturnType<typeof loadRemoteRecordWithFallback>>);
+
+    const result = await syncWithFirestoreDetailed('2026-03-03');
+
+    expect(result).toMatchObject({
+      date: '2026-03-03',
+      outcome: 'missing',
+      record: localRecord,
+      consistencyState: 'missing_remote',
+      sourceOfTruth: 'local',
+      recoveryAction: 'defer_remote_sync',
+      retryability: 'manual_retry',
+    });
+    expect(saveToIndexedDB).not.toHaveBeenCalled();
+  });
+
+  it('keeps the local record as blocked fallback when the remote sync throws', async () => {
+    const localRecord = {
+      date: '2026-03-03',
+      beds: { R1: { patientName: 'Paciente Local' } },
+      lastUpdated: '2026-03-03T12:00:00.000Z',
+    } as unknown as DailyRecord;
+
+    vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(localRecord);
+    vi.mocked(loadRemoteRecordWithFallback).mockRejectedValueOnce(new Error('remote down'));
+
+    const result = await syncWithFirestoreDetailed('2026-03-03');
+
+    expect(result).toMatchObject({
+      date: '2026-03-03',
+      outcome: 'blocked',
+      record: localRecord,
+      consistencyState: 'blocked',
+      sourceOfTruth: 'local',
+      recoveryAction: 'defer_remote_sync',
+      retryability: 'automatic_retry',
+    });
+  });
+
   it('keeps the local record during subscription when Firestore emits a missing document', async () => {
     const localRecord = {
       date: '2026-03-03',
