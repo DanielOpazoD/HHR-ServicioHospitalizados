@@ -14,10 +14,7 @@ import React, { useMemo } from 'react';
 import { UserMinus, ArrowRightLeft, Sun } from 'lucide-react';
 import type { DailyRecord } from '@/domain/handoff/recordContracts';
 import {
-  filterCmaByShift,
-  filterDischargesByShift,
-  filterTransfersByShift,
-  resolveMovementEmptyMessage,
+  buildMovementsSummaryViewModel,
   resolveTransferDestinationLabel,
   resolveTransferEscortLabel,
 } from '@/features/handoff/controllers/movementsSummaryController';
@@ -31,18 +28,11 @@ export const MovementsSummary: React.FC<MovementsSummaryProps> = ({
   record,
   selectedShift = 'day',
 }) => {
-  const filteredDischarges = useMemo(
-    () => filterDischargesByShift(record.discharges, selectedShift),
-    [record.discharges, selectedShift]
+  const movementsSummaryViewModel = useMemo(
+    () => buildMovementsSummaryViewModel({ record, selectedShift }),
+    [record, selectedShift]
   );
-  const filteredTransfers = useMemo(
-    () => filterTransfersByShift(record.transfers, selectedShift),
-    [record.transfers, selectedShift]
-  );
-  const filteredCMA = useMemo(
-    () => filterCmaByShift(record.cma, selectedShift),
-    [record.cma, selectedShift]
-  );
+  const { discharges, transfers, cma } = movementsSummaryViewModel;
 
   return (
     <div className="space-y-4 print:space-y-2 print:text-[11px] print:leading-tight">
@@ -52,9 +42,9 @@ export const MovementsSummary: React.FC<MovementsSummaryProps> = ({
           <UserMinus size={20} className="text-red-500 print:w-4 print:h-4" />
           Altas
         </h3>
-        {filteredDischarges.length === 0 ? (
+        {discharges.items.length === 0 ? (
           <p className="text-slate-400 italic text-sm print:text-[10px]">
-            {resolveMovementEmptyMessage('discharges', selectedShift)}
+            {discharges.emptyMessage}
           </p>
         ) : (
           <table className="w-full text-left text-sm print:text-[10px] border-collapse print:[&_th]:p-1 print:[&_td]:p-1 print:table-fixed">
@@ -69,7 +59,7 @@ export const MovementsSummary: React.FC<MovementsSummaryProps> = ({
               </tr>
             </thead>
             <tbody>
-              {filteredDischarges.map(d => (
+              {discharges.items.map(d => (
                 <tr
                   key={d.id}
                   className="border-b border-slate-100 print:border-slate-300 print:text-[10px]"
@@ -100,9 +90,9 @@ export const MovementsSummary: React.FC<MovementsSummaryProps> = ({
           <ArrowRightLeft size={20} className="text-blue-500 print:w-4 print:h-4" />
           Traslados
         </h3>
-        {filteredTransfers.length === 0 ? (
+        {transfers.items.length === 0 ? (
           <p className="text-slate-400 italic text-sm print:text-[10px]">
-            {resolveMovementEmptyMessage('transfers', selectedShift)}
+            {transfers.emptyMessage}
           </p>
         ) : (
           <table className="w-full text-left text-sm print:text-[10px] border-collapse print:[&_th]:p-1 print:[&_td]:p-1 print:table-fixed">
@@ -118,7 +108,7 @@ export const MovementsSummary: React.FC<MovementsSummaryProps> = ({
               </tr>
             </thead>
             <tbody>
-              {filteredTransfers.map(t => (
+              {transfers.items.map(t => (
                 <tr
                   key={t.id}
                   className="border-b border-slate-100 print:border-slate-300 print:text-[10px]"
@@ -152,10 +142,8 @@ export const MovementsSummary: React.FC<MovementsSummaryProps> = ({
           <Sun size={20} className="text-orange-500 print:w-4 print:h-4" />
           Hospitalización Diurna / CMA
         </h3>
-        {filteredCMA.length === 0 ? (
-          <p className="text-slate-400 italic text-sm print:text-[10px]">
-            {resolveMovementEmptyMessage('cma', selectedShift)}
-          </p>
+        {cma.items.length === 0 ? (
+          <p className="text-slate-400 italic text-sm print:text-[10px]">{cma.emptyMessage}</p>
         ) : (
           <table className="w-full text-left text-sm print:text-[10px] border-collapse print:[&_th]:p-1 print:[&_td]:p-1 print:table-fixed">
             <thead>
@@ -167,7 +155,7 @@ export const MovementsSummary: React.FC<MovementsSummaryProps> = ({
               </tr>
             </thead>
             <tbody>
-              {filteredCMA.map(c => (
+              {cma.items.map(c => (
                 <tr
                   key={c.id}
                   className="border-b border-slate-100 print:border-slate-300 print:text-[10px]"

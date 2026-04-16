@@ -42,6 +42,7 @@ import { useHandoffCommunication } from './useHandoffCommunication';
 import { useMedicalHandoffHandlers } from './useMedicalHandoffHandlers';
 import { useNursingHandoffHandlers } from './useNursingHandoffHandlers';
 import { useClinicalEventHandlers } from './useClinicalEventHandlers';
+import { buildHandoffLogicViewState } from '@/hooks/controllers/handoffLogicViewStateController';
 
 interface UseHandoffLogicParams {
   type: 'nursing' | 'medical';
@@ -164,6 +165,16 @@ export const useHandoffLogic = ({
     return `${day}-${month}-${year}`;
   }, [record]);
 
+  const handoffLogicViewState = buildHandoffLogicViewState({
+    isMedical,
+    visibleBeds: visibility.visibleBeds,
+    hasAnyPatients: visibility.hasAnyPatients,
+    noteField,
+    deliversList: staff.deliversList,
+    receivesList: staff.receivesList,
+    tensList: staff.tensList,
+  });
+
   return {
     // Shared State
     selectedShift,
@@ -174,14 +185,8 @@ export const useHandoffLogic = ({
     whatsappSent: comms.whatsappSent,
 
     // Computed
-    isMedical,
-    visibleBeds: visibility.visibleBeds,
-    hasAnyPatients: visibility.hasAnyPatients,
+    ...handoffLogicViewState,
     schedule,
-    noteField,
-    deliversList: staff.deliversList,
-    receivesList: staff.receivesList,
-    tensList: staff.tensList,
 
     // Handlers
     shouldShowPatient: visibility.shouldShowPatient,

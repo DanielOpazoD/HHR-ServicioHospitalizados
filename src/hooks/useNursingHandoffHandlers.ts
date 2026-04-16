@@ -3,6 +3,7 @@ import type { AuditAction, AuditLogEntry } from '@/types/audit';
 import type { PatientData } from '@/hooks/contracts/patientHookContracts';
 import type { PatientFieldValue } from '@/types/valueTypes';
 import type { NursingShift } from './useHandoffVisibility';
+import { buildNursingNoteChangePlan } from '@/hooks/controllers/handoffNursingNoteController';
 
 interface UseNursingHandoffHandlersParams {
   isMedical: boolean;
@@ -43,27 +44,16 @@ export const useNursingHandoffHandlers = ({
       if (!record || isMedical) return;
 
       const bed = record.beds[bedId];
-      const oldNote =
-        selectedShift === 'day'
-          ? isNested
-            ? bed?.clinicalCrib?.handoffNoteDayShift
-            : bed?.handoffNoteDayShift
-          : isNested
-            ? bed?.clinicalCrib?.handoffNoteNightShift
-            : bed?.handoffNoteNightShift;
+      const nursingNoteChangePlan = buildNursingNoteChangePlan({
+        selectedShift,
+        isNested,
+        bed,
+      });
+      const noteFields = Object.fromEntries(
+        Object.keys(nursingNoteChangePlan.noteFields).map(key => [key, value])
+      ) as Partial<PatientData>;
 
-      const noteKey = selectedShift === 'day' ? 'handoffNoteDayShift' : 'handoffNoteNightShift';
-      const noteFields =
-        selectedShift === 'day'
-          ? {
-              handoffNoteDayShift: value,
-              handoffNoteNightShift: value,
-            }
-          : {
-              handoffNoteNightShift: value,
-            };
-
-      if (selectedShift === 'day') {
+      if (nursingNoteChangePlan.usesMultipleUpdate) {
         if (isNested) {
           updateClinicalCribMultiple(bedId, noteFields);
         } else {
@@ -86,7 +76,12 @@ export const useNursingHandoffHandlers = ({
           patientName: patient.patientName || (isNested ? 'Cuna' : 'ANONYMOUS'),
           shift: selectedShift,
           note: value,
-          changes: { [noteKey]: { old: oldNote || '', new: value } },
+          changes: {
+            [nursingNoteChangePlan.noteKey]: {
+              old: nursingNoteChangePlan.oldNote,
+              new: value,
+            },
+          },
         },
         patient.rut,
         record.date,

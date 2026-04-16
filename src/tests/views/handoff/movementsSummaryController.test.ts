@@ -1,52 +1,82 @@
 import { describe, expect, it } from 'vitest';
-import type { CMAData, DischargeData, TransferData } from '@/types/domain/movements';
-import {
-  filterCmaByShift,
-  filterDischargesByShift,
-  filterTransfersByShift,
-  isMovementInSelectedShift,
-} from '@/features/handoff/controllers/movementsSummaryController';
+import type { DailyRecord } from '@/domain/handoff/recordContracts';
+import { buildMovementsSummaryViewModel } from '@/features/handoff/controllers/movementsSummaryController';
+
+const buildRecord = (): DailyRecord =>
+  ({
+    date: '2026-03-29',
+    beds: {},
+    discharges: [
+      {
+        id: 'd1',
+        bedName: 'H1C1',
+        patientName: 'Paciente Día',
+        rut: '1-9',
+        diagnosis: 'Dx 1',
+        dischargeType: 'Domicilio',
+        status: 'Vivo',
+        time: '10:00',
+      },
+      {
+        id: 'd2',
+        bedName: 'H1C2',
+        patientName: 'Paciente Noche',
+        rut: '2-7',
+        diagnosis: 'Dx 2',
+        dischargeType: 'Domicilio',
+        status: 'Vivo',
+        time: '22:00',
+      },
+    ],
+    transfers: [
+      {
+        id: 't1',
+        bedName: 'H2C1',
+        patientName: 'Traslado Día',
+        rut: '3-5',
+        diagnosis: 'Dx 3',
+        evacuationMethod: 'Ambulancia',
+        receivingCenter: 'Hospital',
+        transferEscort: 'TENS',
+        time: '11:30',
+      },
+    ],
+    cma: [
+      {
+        id: 'c1',
+        bedName: 'CMA1',
+        patientName: 'Paciente CMA',
+        rut: '4-4',
+        diagnosis: 'Dx CMA',
+        interventionType: 'Control',
+      },
+    ],
+  }) as unknown as DailyRecord;
 
 describe('movementsSummaryController', () => {
-  it('classifies movement times by selected shift', () => {
-    expect(isMovementInSelectedShift({ time: '10:00' }, 'day')).toBe(true);
-    expect(isMovementInSelectedShift({ time: '10:00' }, 'night')).toBe(false);
-    expect(isMovementInSelectedShift({ time: '02:00' }, 'day')).toBe(false);
-    expect(isMovementInSelectedShift({ time: '02:00' }, 'night')).toBe(true);
+  it('builds a day-shift view model with filtered items and empty messages', () => {
+    const viewModel = buildMovementsSummaryViewModel({
+      record: buildRecord(),
+      selectedShift: 'day',
+    });
+
+    expect(viewModel.discharges.items).toHaveLength(1);
+    expect(viewModel.discharges.items[0]?.patientName).toBe('Paciente Día');
+    expect(viewModel.transfers.items).toHaveLength(1);
+    expect(viewModel.cma.items).toHaveLength(1);
+    expect(viewModel.cma.emptyMessage).toBe('No hay pacientes de CMA hoy.');
   });
 
-  it('keeps legacy time-less movements in day shift only', () => {
-    expect(isMovementInSelectedShift({ time: '' }, 'day')).toBe(true);
-    expect(isMovementInSelectedShift({ time: '' }, 'night')).toBe(false);
-    expect(isMovementInSelectedShift({}, 'day')).toBe(true);
-    expect(isMovementInSelectedShift({}, 'night')).toBe(false);
-  });
+  it('builds a night-shift view model that hides CMA and filters movements by time', () => {
+    const viewModel = buildMovementsSummaryViewModel({
+      record: buildRecord(),
+      selectedShift: 'night',
+    });
 
-  it('filters discharges by shift preserving night records', () => {
-    const discharges = [
-      { id: 'd1', time: '10:00' },
-      { id: 'd2', time: '22:00' },
-      { id: 'd3', time: '' },
-    ] as unknown as DischargeData[];
-
-    expect(filterDischargesByShift(discharges, 'day').map(d => d.id)).toEqual(['d1', 'd3']);
-    expect(filterDischargesByShift(discharges, 'night').map(d => d.id)).toEqual(['d2']);
-  });
-
-  it('filters transfers by shift preserving night records', () => {
-    const transfers = [
-      { id: 't1', time: '14:00' },
-      { id: 't2', time: '02:00' },
-    ] as unknown as TransferData[];
-
-    expect(filterTransfersByShift(transfers, 'day').map(t => t.id)).toEqual(['t1']);
-    expect(filterTransfersByShift(transfers, 'night').map(t => t.id)).toEqual(['t2']);
-  });
-
-  it('returns CMA entries only for day shift', () => {
-    const cma = [{ id: 'c1' }, { id: 'c2' }] as unknown as CMAData[];
-
-    expect(filterCmaByShift(cma, 'day')).toHaveLength(2);
-    expect(filterCmaByShift(cma, 'night')).toHaveLength(0);
+    expect(viewModel.discharges.items).toHaveLength(1);
+    expect(viewModel.discharges.items[0]?.patientName).toBe('Paciente Noche');
+    expect(viewModel.transfers.items).toHaveLength(0);
+    expect(viewModel.cma.items).toEqual([]);
+    expect(viewModel.cma.emptyMessage).toBe('CMA solo aplica para turno de día.');
   });
 });

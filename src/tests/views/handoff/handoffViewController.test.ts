@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  buildHandoffChecklistSectionViewModel,
+  buildHandoffNovedadesBindings,
   buildHandoffScreenShellModel,
   buildHandoffHeaderBindings,
   buildMedicalHandoffContentBindings,
@@ -139,6 +141,52 @@ describe('handoffViewController', () => {
     expect(bindings.showNightCudyrAction).toBe(true);
     expect(bindings.setSelectedShift).toBe(setSelectedShift);
     expect(bindings.onSendWhatsApp).toBe(onSendWhatsApp);
+  });
+
+  it('builds checklist section state for nursing and hides it for medical', () => {
+    expect(
+      buildHandoffChecklistSectionViewModel({
+        isMedical: false,
+        selectedShift: 'night',
+        readOnly: false,
+        hasShiftSwitcher: true,
+      })
+    ).toEqual({
+      shouldRender: true,
+      showShiftSwitcher: true,
+      isReceivesEditable: true,
+      activeChecklistShift: 'night',
+    });
+
+    expect(
+      buildHandoffChecklistSectionViewModel({
+        isMedical: true,
+        selectedShift: 'day',
+        readOnly: false,
+        hasShiftSwitcher: false,
+      }).shouldRender
+    ).toBe(false);
+  });
+
+  it('builds nursing novedades bindings from the shared handoff policy', () => {
+    const onUpdateHandoffNovedades = vi.fn();
+    const bindings = buildHandoffNovedadesBindings({
+      isMedical: false,
+      selectedShift: 'night',
+      record: {
+        date: '2026-03-26',
+        handoffNovedadesDayShift: 'Turno día',
+        handoffNovedadesNightShift: 'Turno noche',
+      } as never,
+      readOnly: true,
+      onUpdateHandoffNovedades,
+    });
+
+    expect(bindings.value).toBe('Turno noche');
+    expect(bindings.readOnly).toBe(true);
+
+    bindings.onChange('Nueva novedad');
+    expect(onUpdateHandoffNovedades).toHaveBeenCalledWith('night', 'Nueva novedad');
   });
 
   it('returns passthrough bindings for medical and nursing content slices', () => {

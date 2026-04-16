@@ -5,6 +5,7 @@ import { HandoffStaffDisplay } from './HandoffStaffDisplay';
 import { HandoffChecklistDay } from './HandoffChecklistDay';
 import { HandoffChecklistNight } from './HandoffChecklistNight';
 import { HandoffShiftSwitcher } from './HandoffShiftSwitcher';
+import { buildHandoffChecklistSectionViewModel } from '@/features/handoff/controllers/handoffViewController';
 
 interface HandoffChecklistSectionProps {
   isMedical: boolean;
@@ -38,15 +39,22 @@ export const HandoffChecklistSection: React.FC<HandoffChecklistSectionProps> = (
   onUpdateChecklist,
   extraAction,
 }) => {
-  if (isMedical) return null;
+  const checklistSectionViewModel = buildHandoffChecklistSectionViewModel({
+    isMedical,
+    selectedShift,
+    readOnly,
+    hasShiftSwitcher: Boolean(setSelectedShift),
+  });
+  const { shouldRender, showShiftSwitcher, isReceivesEditable, activeChecklistShift } =
+    checklistSectionViewModel;
 
-  const isReceivesEditable = !readOnly && selectedShift === 'night';
+  if (!shouldRender) return null;
 
   return (
     <div className="bg-white rounded-xl border border-slate-200/80 p-3 print:hidden ring-1 ring-black/[0.02]">
       {/* Row 1: Shift tabs + CUDYR action (same line) */}
       <div className="flex items-center gap-3 mb-2.5 pb-2.5 border-b border-slate-100/80">
-        {setSelectedShift && (
+        {showShiftSwitcher && setSelectedShift && (
           <HandoffShiftSwitcher selectedShift={selectedShift} setSelectedShift={setSelectedShift} />
         )}
         <div className="flex-1" />
@@ -77,7 +85,7 @@ export const HandoffChecklistSection: React.FC<HandoffChecklistSectionProps> = (
 
       {/* Row 3: Checklist — min-h ensures consistent height between day/night */}
       <div className="min-h-[28px]">
-        {selectedShift === 'day' ? (
+        {activeChecklistShift === 'day' ? (
           <HandoffChecklistDay
             data={record.handoffDayChecklist}
             onUpdate={(field, val) => onUpdateChecklist('day', field, val)}

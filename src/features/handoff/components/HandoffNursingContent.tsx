@@ -5,7 +5,7 @@ import { HandoffPatientTable } from './HandoffPatientTable';
 import { MovementsSummary } from './MovementsSummary';
 import { HandoffNovedades } from './HandoffNovedades';
 import type { HandoffClinicalEventActions, HandoffMedicalActions } from './handoffRowContracts';
-import { resolveHandoffNovedadesValue } from '@/features/handoff/controllers/handoffViewController';
+import { buildHandoffNovedadesBindings } from '@/features/handoff/controllers/handoffViewController';
 
 interface HandoffNursingContentProps {
   visibleBeds: BedDefinition[];
@@ -35,30 +35,40 @@ export const HandoffNursingContent: React.FC<HandoffNursingContentProps> = ({
   clinicalEventActions,
   selectedShift,
   updateHandoffNovedades,
-}) => (
-  <>
-    <HandoffPatientTable
-      visibleBeds={visibleBeds}
-      record={record}
-      noteField={noteField}
-      onNoteChange={onNoteChange}
-      medicalActions={medicalActions}
-      tableHeaderClass={tableHeaderClass}
-      readOnly={readOnly}
-      isMedical={false}
-      hasAnyPatients={hasAnyPatients}
-      shouldShowPatient={shouldShowPatient}
-      clinicalEventActions={clinicalEventActions}
-    />
+}) => {
+  const handoffNovedadesBindings = buildHandoffNovedadesBindings({
+    isMedical: false,
+    selectedShift,
+    record,
+    readOnly,
+    onUpdateHandoffNovedades: updateHandoffNovedades,
+  });
 
-    <div className="hidden print:block print:h-4" aria-hidden="true" />
+  return (
+    <>
+      <HandoffPatientTable
+        visibleBeds={visibleBeds}
+        record={record}
+        noteField={noteField}
+        onNoteChange={onNoteChange}
+        medicalActions={medicalActions}
+        tableHeaderClass={tableHeaderClass}
+        readOnly={readOnly}
+        isMedical={false}
+        hasAnyPatients={hasAnyPatients}
+        shouldShowPatient={shouldShowPatient}
+        clinicalEventActions={clinicalEventActions}
+      />
 
-    <MovementsSummary record={record} selectedShift={selectedShift} />
+      <div className="hidden print:block print:h-4" aria-hidden="true" />
 
-    <HandoffNovedades
-      value={resolveHandoffNovedadesValue({ isMedical: false, selectedShift, record })}
-      onChange={val => updateHandoffNovedades(selectedShift, val)}
-      readOnly={readOnly}
-    />
-  </>
-);
+      <MovementsSummary record={record} selectedShift={selectedShift} />
+
+      <HandoffNovedades
+        value={handoffNovedadesBindings.value}
+        onChange={handoffNovedadesBindings.onChange}
+        readOnly={handoffNovedadesBindings.readOnly}
+      />
+    </>
+  );
+};

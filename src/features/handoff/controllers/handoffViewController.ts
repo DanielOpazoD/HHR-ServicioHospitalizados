@@ -232,6 +232,65 @@ export interface HandoffHeaderBindings {
   showNightCudyrAction: boolean;
 }
 
+export interface HandoffChecklistSectionViewModel {
+  shouldRender: boolean;
+  showShiftSwitcher: boolean;
+  isReceivesEditable: boolean;
+  activeChecklistShift: ShiftType;
+}
+
+export const buildHandoffChecklistSectionViewModel = ({
+  isMedical,
+  selectedShift,
+  readOnly,
+  hasShiftSwitcher,
+}: {
+  isMedical: boolean;
+  selectedShift: ShiftType;
+  readOnly: boolean;
+  hasShiftSwitcher: boolean;
+}): HandoffChecklistSectionViewModel => ({
+  shouldRender: !isMedical,
+  showShiftSwitcher: hasShiftSwitcher,
+  isReceivesEditable: !readOnly && selectedShift === 'night',
+  activeChecklistShift: selectedShift,
+});
+
+export interface HandoffNovedadesBindings {
+  value: string;
+  readOnly: boolean;
+  onChange: (value: string) => void;
+}
+
+export const buildHandoffNovedadesBindings = ({
+  isMedical,
+  selectedShift,
+  record,
+  readOnly,
+  onUpdateHandoffNovedades,
+}: {
+  isMedical: boolean;
+  selectedShift: ShiftType;
+  record: Pick<
+    DailyRecord,
+    | 'date'
+    | 'medicalHandoffNovedades'
+    | 'medicalHandoffBySpecialty'
+    | 'handoffNovedadesDayShift'
+    | 'handoffNovedadesNightShift'
+  >;
+  readOnly: boolean;
+  onUpdateHandoffNovedades: (shift: 'day' | 'night' | 'medical', value: string) => void;
+}): HandoffNovedadesBindings => ({
+  value: resolveHandoffNovedadesValue({
+    isMedical,
+    selectedShift,
+    record,
+  }),
+  readOnly,
+  onChange: value => onUpdateHandoffNovedades(isMedical ? 'medical' : selectedShift, value),
+});
+
 interface BuildHandoffHeaderBindingsParams {
   isMedical: boolean;
   selectedShift: ShiftType;

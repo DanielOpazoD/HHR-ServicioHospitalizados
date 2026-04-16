@@ -1,6 +1,7 @@
 import type { CMAData, DischargeData, TransferData } from '@/types/domain/movements';
 import type { ShiftType } from '@/types/domain/shift';
 import { isWithinDayShift } from '@/utils/shiftTimeUtils';
+import type { DailyRecord } from '@/domain/handoff/recordContracts';
 
 interface ShiftMovement {
   time?: string;
@@ -67,3 +68,35 @@ export const resolveTransferDestinationLabel = (
 export const resolveTransferEscortLabel = (
   transfer: Pick<TransferData, 'evacuationMethod' | 'transferEscort'>
 ): string => (transfer.evacuationMethod === 'Aerocardal' ? '-' : transfer.transferEscort || '-');
+
+export interface MovementSectionViewModel<TItem> {
+  items: TItem[];
+  emptyMessage: string;
+}
+
+export interface MovementsSummaryViewModel {
+  discharges: MovementSectionViewModel<DischargeData>;
+  transfers: MovementSectionViewModel<TransferData>;
+  cma: MovementSectionViewModel<CMAData>;
+}
+
+export const buildMovementsSummaryViewModel = ({
+  record,
+  selectedShift,
+}: {
+  record: Pick<DailyRecord, 'discharges' | 'transfers' | 'cma'>;
+  selectedShift: ShiftType;
+}): MovementsSummaryViewModel => ({
+  discharges: {
+    items: filterDischargesByShift(record.discharges, selectedShift),
+    emptyMessage: resolveMovementEmptyMessage('discharges', selectedShift),
+  },
+  transfers: {
+    items: filterTransfersByShift(record.transfers, selectedShift),
+    emptyMessage: resolveMovementEmptyMessage('transfers', selectedShift),
+  },
+  cma: {
+    items: filterCmaByShift(record.cma, selectedShift),
+    emptyMessage: resolveMovementEmptyMessage('cma', selectedShift),
+  },
+});
