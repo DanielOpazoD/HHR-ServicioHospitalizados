@@ -1,4 +1,12 @@
-import type { AuditStats } from '@/types/audit';
+import type {
+  AuditAction,
+  AuditLogEntry,
+  AuditSection,
+  GroupedAuditLogEntry,
+  WorkerFilterParams,
+  AuditStats,
+} from '@/types/audit';
+import type { AuditSectionConfig } from '@/services/admin/auditViewConfig';
 
 export const buildDefaultAuditStats = (): AuditStats => ({
   todayCount: 0,
@@ -33,3 +41,45 @@ export const shouldResetAuditPagination = (params: {
     params.endDate ||
     params.groupedView
   );
+
+export const buildAuditSectionActionsMap = (
+  sections: Record<AuditSection, AuditSectionConfig>
+): Record<string, string[] | undefined> =>
+  Object.fromEntries(Object.entries(sections).map(([key, config]) => [key, config.actions]));
+
+export const buildAuditWorkerFilterParams = (params: {
+  searchTerm: string;
+  filterAction: AuditAction | 'ALL';
+  startDate: string;
+  endDate: string;
+  activeSection: AuditSection;
+  sectionActions: Record<string, string[] | undefined>;
+  groupedView: boolean;
+}): WorkerFilterParams => ({
+  searchTerm: params.searchTerm,
+  filterAction: params.filterAction,
+  startDate: params.startDate,
+  endDate: params.endDate,
+  activeSection: params.activeSection,
+  sectionActions: params.sectionActions,
+  groupedView: params.groupedView,
+});
+
+export const paginateAuditDisplayLogs = (
+  displayLogs: (AuditLogEntry | GroupedAuditLogEntry)[],
+  currentPage: number,
+  itemsPerPage: number
+): (AuditLogEntry | GroupedAuditLogEntry)[] => {
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  return displayLogs.slice(startIndex, startIndex + itemsPerPage);
+};
+
+export const toggleAuditRowState = (current: Set<string>, id: string): Set<string> => {
+  const next = new Set(current);
+  if (next.has(id)) {
+    next.delete(id);
+  } else {
+    next.add(id);
+  }
+  return next;
+};

@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 /* ------------------------------------------------------------------ */
@@ -14,6 +14,7 @@ import userEvent from '@testing-library/user-event';
 vi.mock('@/services/laboratory/syslabService', () => ({
   buildSyslabPdfUrl: (link: string) =>
     `http://localhost:3000/api/exams/pdf?link=${encodeURIComponent(link)}`,
+  fetchSyslabPdfBlobUrl: vi.fn(async () => 'blob:syslab-test'),
 }));
 
 vi.mock('@/features/laboratory/controllers/labFormattingController', () => ({
@@ -251,24 +252,46 @@ describe('LabViewerPdf', () => {
 
   beforeEach(() => vi.clearAllMocks());
 
-  it('renders iframe with correct title', () => {
+  it('renders iframe with correct title', async () => {
     render(<LabViewerPdf {...defaultProps} />);
-    expect(screen.getByTitle('PDF Examen 123')).toBeInTheDocument();
+    const iframe = screen.getByTitle('PDF Examen 123');
+    expect(iframe).toBeInTheDocument();
+    await waitFor(() => {
+      expect(iframe).toHaveAttribute('src', 'blob:syslab-test#navpanes=0&scrollbar=1&zoom=110');
+    });
   });
 
-  it('renders back button', () => {
+  it('renders back button', async () => {
     render(<LabViewerPdf {...defaultProps} />);
     expect(screen.getByText('Volver a lista de examenes')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTitle('PDF Examen 123')).toHaveAttribute(
+        'src',
+        'blob:syslab-test#navpanes=0&scrollbar=1&zoom=110'
+      );
+    });
   });
 
-  it('renders date and exam ID', () => {
+  it('renders date and exam ID', async () => {
     render(<LabViewerPdf {...defaultProps} />);
     expect(screen.getByText(/08\/04\/2026/)).toBeInTheDocument();
     expect(screen.getByText('#123')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTitle('PDF Examen 123')).toHaveAttribute(
+        'src',
+        'blob:syslab-test#navpanes=0&scrollbar=1&zoom=110'
+      );
+    });
   });
 
   it('calls onBack when back button clicked', async () => {
     render(<LabViewerPdf {...defaultProps} />);
+    await waitFor(() => {
+      expect(screen.getByTitle('PDF Examen 123')).toHaveAttribute(
+        'src',
+        'blob:syslab-test#navpanes=0&scrollbar=1&zoom=110'
+      );
+    });
     await userEvent.click(screen.getByText('Volver a lista de examenes'));
     expect(defaultProps.onBack).toHaveBeenCalledTimes(1);
   });

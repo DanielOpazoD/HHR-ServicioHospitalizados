@@ -1,4 +1,4 @@
-import { buildSyslabPdfUrl } from '@/services/laboratory/syslabService';
+import { fetchSyslabPdfArrayBuffer } from '@/services/laboratory/syslabService';
 import type { LabResultRow, SyslabExamDetail, SyslabExamItem } from '@/types/domain/laboratory';
 
 const CULTURE_PATTERN = /(CULTIVO CORRIENTE|ATB BACILOS|ANTIBIOGRAMA)/i;
@@ -229,9 +229,7 @@ export const enrichMicrobiologyDetailsFromPdf = async (
       }
 
       try {
-        const response = await fetch(buildSyslabPdfUrl(exam.link!));
-        if (!response.ok) return detail;
-        const buffer = await response.arrayBuffer();
+        const buffer = await fetchSyslabPdfArrayBuffer(exam.link!);
         const text = await extractPdfText(buffer);
         const fallbackFindings = parseMicrobiologyFindingsFromPdfText(text);
         if (fallbackFindings.length === 0) return detail;

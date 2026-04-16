@@ -6,7 +6,6 @@ const { createAuthHelpers } = require('../../../functions/lib/auth/authHelpersFa
 
 const createAdminStub = (options: { dynamicRoles?: Record<string, string> }) => {
   const dynamicRoles = options.dynamicRoles ?? null;
-  const setRoleDoc = vi.fn().mockResolvedValue(undefined);
 
   return {
     admin: {
@@ -22,7 +21,6 @@ const createAdminStub = (options: { dynamicRoles?: Record<string, string> }) => 
               }
               return { exists: false, data: () => ({}) };
             },
-            set: setRoleDoc,
           }),
         }),
       }),
@@ -30,19 +28,17 @@ const createAdminStub = (options: { dynamicRoles?: Record<string, string> }) => 
         setCustomUserClaims: vi.fn().mockResolvedValue(undefined),
       }),
     },
-    setRoleDoc,
   };
 };
 
 describe('functions authHelpersFactory', () => {
-  it('resolves dynamic roles before static allowlists and writes back canonical aliases', async () => {
-    const { admin, setRoleDoc } = createAdminStub({
+  it('resolves dynamic roles before static allowlists without mutating config/roles', async () => {
+    const { admin } = createAdminStub({
       dynamicRoles: { 'custom@example.com': 'viewer_census' },
     });
     const helpers = createAuthHelpers(admin);
 
     await expect(helpers.resolveRoleForEmail('custom@example.com')).resolves.toBe('viewer');
-    expect(setRoleDoc).toHaveBeenCalledWith({ 'custom@example.com': 'viewer' });
   });
 
   it('treats doctor_specialist as valid general login access in callable helpers', async () => {
@@ -63,7 +59,7 @@ describe('functions authHelpersFactory', () => {
   });
 
   it('normalizes viewer_census to viewer for callable helpers', async () => {
-    const { admin, setRoleDoc } = createAdminStub({
+    const { admin } = createAdminStub({
       dynamicRoles: { 'shared@example.com': 'viewer_census' },
     });
     const helpers = createAuthHelpers(admin);
@@ -77,6 +73,5 @@ describe('functions authHelpersFactory', () => {
         },
       })
     ).resolves.toBe(true);
-    expect(setRoleDoc).toHaveBeenCalledWith({ 'shared@example.com': 'viewer' });
   });
 });

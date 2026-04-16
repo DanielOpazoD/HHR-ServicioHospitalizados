@@ -17,12 +17,19 @@ vi.mock('@/services/utils/loggerScope', () => ({
   }),
 }));
 
+vi.mock('@/services/auth/authRequestHeaders', () => ({
+  resolveCurrentUserAuthHeaders: vi.fn().mockResolvedValue({
+    Authorization: 'Bearer token-123',
+  }),
+}));
+
 import {
   cleanRutForSyslab,
   getSyslabBaseUrl,
   searchSyslabExams,
   fetchSyslabExamDetails,
   buildSyslabPdfUrl,
+  fetchSyslabPdfBlobUrl,
 } from '@/services/laboratory/syslabService';
 
 /* ------------------------------------------------------------------ */
@@ -86,6 +93,42 @@ describe('buildSyslabPdfUrl', () => {
 
     expect(result).not.toContain('&b=');
     expect(result).toContain(encodeURIComponent('&b=2'));
+  });
+});
+
+describe('fetchSyslabPdfBlobUrl', () => {
+  const mockFetch = vi.fn();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    global.fetch = mockFetch;
+    vi.stubGlobal('URL', {
+      createObjectURL: vi.fn(() => 'blob:syslab-pdf'),
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('requests the proxied PDF with auth headers and returns a blob URL', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      arrayBuffer: () => Promise.resolve(new Uint8Array([1, 2, 3]).buffer),
+    });
+
+    const result = await fetchSyslabPdfBlobUrl('http://example.com/pdf?id=1');
+
+    expect(result).toBe('blob:syslab-pdf');
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/exams/pdf?link='),
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: 'Bearer token-123',
+        }),
+      })
+    );
   });
 });
 

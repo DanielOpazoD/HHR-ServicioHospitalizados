@@ -19,6 +19,7 @@
  * ```
  */
 
+import { resolveCurrentUserAuthHeaders } from '@/services/auth/authRequestHeaders';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 import type { SyslabSearchResponse, SyslabDetailsResponse } from '@/types/domain/laboratory';
 
@@ -36,6 +37,8 @@ const isProduction = (): boolean => import.meta.env.PROD;
 /** Return the Syslab Express server base URL from env or default. */
 export const getSyslabBaseUrl = (): string =>
   import.meta.env.VITE_SYSLAB_API_URL || 'http://localhost:3000';
+
+const buildSyslabProxyUrl = (query: string): string => `/.netlify/functions/syslab-proxy${query}`;
 
 /**
  * Strip a Chilean RUT to its numeric body only (no dots, dash, or check digit).
@@ -104,13 +107,14 @@ const fetchWithRetry = async (
  */
 export const searchSyslabExams = async (rut: string): Promise<SyslabSearchResponse> => {
   const cleanRut = cleanRutForSyslab(rut);
+  const authHeaders = await resolveCurrentUserAuthHeaders();
 
   const url = isProduction()
-    ? `/.netlify/functions/syslab-proxy?action=search&rut=${encodeURIComponent(cleanRut)}`
+    ? buildSyslabProxyUrl(`?action=search&rut=${encodeURIComponent(cleanRut)}`)
     : `${getSyslabBaseUrl()}/api/exams?rut=${encodeURIComponent(cleanRut)}`;
 
   try {
-    const response = await fetchWithRetry(url);
+    const response = await fetchWithRetry(url, { headers: authHeaders });
     return await response.json();
   } catch (error) {
     syslabLogger.error('Syslab exam search failed', error);
@@ -125,8 +129,9 @@ export const searchSyslabExams = async (rut: string): Promise<SyslabSearchRespon
  * In development, calls the Express proxy directly.
  */
 export const fetchSyslabExamDetails = async (links: string[]): Promise<SyslabDetailsResponse> => {
+  const authHeaders = await resolveCurrentUserAuthHeaders();
   const url = isProduction()
-    ? '/.netlify/functions/syslab-proxy?action=details'
+    ? buildSyslabProxyUrl('?action=details')
     : `${getSyslabBaseUrl()}/api/exams/details`;
 
   try {
@@ -134,7 +139,7 @@ export const fetchSyslabExamDetails = async (links: string[]): Promise<SyslabDet
       url,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({ links }),
       },
       60_000 // 60s timeout for PDF parsing
@@ -154,5 +159,26 @@ export const fetchSyslabExamDetails = async (links: string[]): Promise<SyslabDet
  */
 export const buildSyslabPdfUrl = (examLink: string): string =>
   isProduction()
-    ? `/.netlify/functions/syslab-proxy?action=pdf&link=${encodeURIComponent(examLink)}`
+    ? buildSyslabProxyUrl(`?action=pdf&link=${encodeURIComponent(examLink)}`)
     : `${getSyslabBaseUrl()}/api/exams/pdf?link=${encodeURIComponent(examLink)}`;
+
+const buildSyslabPdfBlob = async (examLink: string): Promise<Blob> => {
+  const authHeaders = await resolveCurrentUserAuthHeaders();
+  const response = await fetchWithRetry(
+    buildSyslabPdfUrl(examLink),
+    { headers: authHeaders },
+    60_000
+  );
+  const buffer = await response.arrayBuffer();
+  return new Blob([buffer], { type: 'application/pdf' });
+};
+
+export const fetchSyslabPdfArrayBuffer = async (examLink: string): Promise<ArrayBuffer> => {
+  const pdfBlob = await buildSyslabPdfBlob(examLink);
+  return pdfBlob.arrayBuffer();
+};
+
+export const fetchSyslabPdfBlobUrl = async (examLink: string): Promise<string> => {
+  const pdfBlob = await buildSyslabPdfBlob(examLink);
+  return URL.createObjectURL(pdfBlob);
+};

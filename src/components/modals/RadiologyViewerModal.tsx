@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { Radio } from 'lucide-react';
 import { BaseModal } from '@/components/shared/BaseModal';
 import {
-  buildMMRADPdfUrl,
+  fetchMMRADPdfBlobUrl,
   searchMMRADExams,
   type MMRADExam,
   type MMRADSearchResult,
@@ -162,26 +162,33 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
     }, 1800);
   }, []);
 
-  const handleOpenPdf = useCallback((exam: MMRADExam) => {
+  const handleOpenPdf = useCallback(async (exam: MMRADExam) => {
     if (!exam.pdf_url) {
       return;
     }
 
-    const pdfUrl = buildMMRADPdfUrl(exam.pdf_url);
-    const popupWindow = defaultBrowserWindowRuntime.open(pdfUrl, '_blank');
+    const popupWindow = defaultBrowserWindowRuntime.open('', '_blank');
     if (!popupWindow) {
       return;
     }
 
-    popupWindow.focus();
-    window.setTimeout(() => {
-      try {
-        popupWindow.focus();
-        popupWindow.print();
-      } catch {
-        // Ignore popup cross-origin print limitations.
-      }
-    }, 1500);
+    try {
+      const pdfUrl = await fetchMMRADPdfBlobUrl(exam.pdf_url);
+      popupWindow.location.href = pdfUrl;
+      popupWindow.focus();
+      window.setTimeout(() => {
+        try {
+          popupWindow.focus();
+          popupWindow.print();
+        } catch {
+          // Ignore popup cross-origin print limitations.
+        }
+      }, 1500);
+      window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 60_000);
+    } catch (error) {
+      popupWindow.close();
+      setError(error instanceof Error ? error.message : 'Error al abrir el PDF.');
+    }
   }, []);
 
   const setDatePreset = (preset: 'last-month' | 'last-year' | 'last-5-years') => {

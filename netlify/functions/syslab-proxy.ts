@@ -19,18 +19,34 @@
  *   - pdf:     GET  /api/exams/pdf?link=<url>  (returns raw PDF bytes)
  */
 
+import { getFirebaseServer } from './lib/firebase-server';
+import { authorizeRoleRequest, extractBearerToken } from './lib/firebase-auth';
 import {
   buildJsonResponse,
   buildTextResponse,
   buildTooManyRequestsResponse,
   getClientIp,
   getRequestOrigin,
+  isOriginAllowed,
   isRateLimited,
   parseJsonBody,
   type NetlifyEventLike,
 } from './lib/http';
 
 const TIMEOUT_MS = 60_000; // 60s — PDF parsing can be slow
+const SYSLAB_ALLOWED_ROLES = new Set([
+  'admin',
+  'nurse_hospital',
+  'doctor_urgency',
+  'doctor_specialist',
+  'editor',
+]);
+
+interface SyslabProxyDependencies {
+  getFirebaseServer: typeof getFirebaseServer;
+  authorizeRoleRequest: typeof authorizeRoleRequest;
+  extractBearerToken: typeof extractBearerToken;
+}
 
 const getProxyUrl = (): string | null =>
   process.env.SYSLAB_PROXY_URL?.replace(/\/+$/, '') ||
@@ -130,61 +146,104 @@ const handlePdf = async (proxyUrl: string, params: URLSearchParams, requestOrigi
 
 /* ── Handler ─────────────────────────────────────────────────────────── */
 
-export const handler = async (event: NetlifyEventLike) => {
-  const requestOrigin = getRequestOrigin(event);
-
-  if (event.httpMethod === 'OPTIONS') {
-    return buildJsonResponse(200, {}, { requestOrigin });
+export const createSyslabProxyHandler = (
+  dependencies: SyslabProxyDependencies = {
+    getFirebaseServer,
+    authorizeRoleRequest,
+    extractBearerToken,
   }
+) => {
+  return async (event: NetlifyEventLike) => {
+    const requestOrigin = getRequestOrigin(event);
 
-  // Rate limit only the actual request, not the CORS preflight.
-  const clientIp = getClientIp(event);
-  if (isRateLimited(clientIp, { maxPerWindow: 20, windowMs: 60_000 })) {
-    return buildTooManyRequestsResponse(requestOrigin);
-  }
-
-  const proxyUrl = getProxyUrl();
-  if (!proxyUrl) {
-    return buildJsonResponse(
-      503,
-      {
-        success: false,
-        error:
-          'El servicio de laboratorio no está configurado. ' +
-          'Configure la variable SYSLAB_PROXY_URL o VITE_SYSLAB_API_URL.',
-      },
-      { requestOrigin }
-    );
-  }
-
-  const params = new URLSearchParams(event.rawQuery || '');
-  const action = params.get('action');
-
-  try {
-    switch (action) {
-      case 'search':
-        return await handleSearch(proxyUrl, params, requestOrigin);
-      case 'details':
-        return await handleDetails(proxyUrl, event.body, requestOrigin);
-      case 'pdf':
-        return await handlePdf(proxyUrl, params, requestOrigin);
-      default:
-        return buildJsonResponse(
-          400,
-          { error: 'Acción no válida. Use: search, details, pdf' },
-          { requestOrigin }
-        );
+    if (!isOriginAllowed(requestOrigin)) {
+      return buildJsonResponse(403, { error: 'Origin not allowed' }, { requestOrigin });
     }
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Error de conexión con el laboratorio';
-    const isTimeout = error instanceof Error && error.name === 'AbortError';
-    return buildJsonResponse(
-      isTimeout ? 504 : 502,
-      {
-        success: false,
-        error: isTimeout ? 'Timeout: el servidor de laboratorio no respondió a tiempo' : message,
-      },
-      { requestOrigin }
-    );
-  }
+
+    if (event.httpMethod === 'OPTIONS') {
+      return buildJsonResponse(200, {}, { requestOrigin });
+    }
+
+    // Rate limit only the actual request, not the CORS preflight.
+    const clientIp = getClientIp(event);
+    if (isRateLimited(clientIp, { maxPerWindow: 20, windowMs: 60_000 })) {
+      return buildTooManyRequestsResponse(requestOrigin);
+    }
+
+    const authorizationHeader =
+      typeof event.headers?.authorization === 'string'
+        ? event.headers.authorization
+        : typeof event.headers?.Authorization === 'string'
+          ? event.headers.Authorization
+          : undefined;
+
+    try {
+      dependencies.extractBearerToken(authorizationHeader);
+    } catch (error) {
+      return buildJsonResponse(
+        401,
+        { error: error instanceof Error ? error.message : 'Authentication required.' },
+        { requestOrigin }
+      );
+    }
+
+    try {
+      const { db } = dependencies.getFirebaseServer();
+      await dependencies.authorizeRoleRequest(db, authorizationHeader, SYSLAB_ALLOWED_ROLES);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'No autorizado para consultar laboratorio.';
+      const statusCode =
+        message.includes('Access denied') || message.includes('no email claim') ? 403 : 401;
+      return buildJsonResponse(statusCode, { error: message }, { requestOrigin });
+    }
+
+    const proxyUrl = getProxyUrl();
+    if (!proxyUrl) {
+      return buildJsonResponse(
+        503,
+        {
+          success: false,
+          error:
+            'El servicio de laboratorio no está configurado. ' +
+            'Configure la variable SYSLAB_PROXY_URL o VITE_SYSLAB_API_URL.',
+        },
+        { requestOrigin }
+      );
+    }
+
+    const params = new URLSearchParams(event.rawQuery || '');
+    const action = params.get('action');
+
+    try {
+      switch (action) {
+        case 'search':
+          return await handleSearch(proxyUrl, params, requestOrigin);
+        case 'details':
+          return await handleDetails(proxyUrl, event.body, requestOrigin);
+        case 'pdf':
+          return await handlePdf(proxyUrl, params, requestOrigin);
+        default:
+          return buildJsonResponse(
+            400,
+            { error: 'Acción no válida. Use: search, details, pdf' },
+            { requestOrigin }
+          );
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Error de conexión con el laboratorio';
+      const isTimeout = error instanceof Error && error.name === 'AbortError';
+      return buildJsonResponse(
+        isTimeout ? 504 : 502,
+        {
+          success: false,
+          error: isTimeout ? 'Timeout: el servidor de laboratorio no respondió a tiempo' : message,
+        },
+        { requestOrigin }
+      );
+    }
+  };
 };
+
+export const handler = createSyslabProxyHandler();

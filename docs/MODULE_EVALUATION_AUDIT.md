@@ -19,25 +19,25 @@
 
 ## 1. Nota global
 
-- **Nota global (1 a 7):** `6.6 / 7`
-- **Resumen ejecutivo breve:** módulo fuerte, bastante bien cubierto por tests y mejor organizado de lo que suele parecer en una primera lectura. Su principal límite hoy no es estabilidad ni reglas de acceso, sino la densidad operativa del runtime de datos (`useAuditData`, `useAudit`) y del frente de consolidación/exportación dentro del shell administrativo.
+- **Nota global (1 a 7):** `6.7 / 7`
+- **Resumen ejecutivo breve:** módulo fuerte, bastante bien cubierto por tests y mejor organizado de lo que suele parecer en una primera lectura. Tras esta ronda, el runtime de datos y el frente de consolidación quedaron más declarativos; su principal límite ya no es tanto el shell inmediato, sino la densidad residual de los hooks centrales si el módulo sigue creciendo.
 
 ---
 
 ## 2. Evaluación multiparamétrica
 
-| Dimensión                        | Nota | Comentario                                                                                      |
-| -------------------------------- | ---: | ----------------------------------------------------------------------------------------------- |
-| Calidad general                  |  6.6 | Frente serio, con una base técnica buena y señal de tests muy por encima del promedio.          |
-| Estructura                       |  6.6 | La separación `application / hooks / services / components` está bien planteada.                |
-| Organización                     |  6.5 | Hay bastante material repartido, pero el submódulo sigue siendo navegable.                      |
-| Buenas prácticas de codificación |  6.6 | Usa workers, policies, access control y use cases con buena disciplina.                         |
-| Coherencia funcional             |  6.7 | Auditoría, stats, filtros y consolidación conviven razonablemente bien.                         |
-| Separación y límites             |  6.5 | `useAuditData.ts` y `useAudit.ts` concentran más coordinación de la ideal.                      |
-| Estabilidad                      |  6.7 | La batería focalizada amplia y el flujo de integración están verdes.                            |
-| Escalabilidad                    |  6.4 | Puede crecer, pero no conviene seguir cargando más responsabilidades sobre los hooks centrales. |
-| Documentación                    |  6.4 | Hay documentación implícita en tests y contracts, pero no tanto README/guía del módulo.         |
-| Tests                            |  6.9 | Muy buena señal objetiva: hooks, services, components, runtime e integración cubiertos.         |
+| Dimensión                        | Nota | Comentario                                                                                               |
+| -------------------------------- | ---: | -------------------------------------------------------------------------------------------------------- |
+| Calidad general                  |  6.7 | Frente serio, con una base técnica buena y señal de tests muy por encima del promedio.                   |
+| Estructura                       |  6.7 | La separación `application / hooks / services / components` está bien planteada.                         |
+| Organización                     |  6.5 | Hay bastante material repartido, pero el submódulo sigue siendo navegable.                               |
+| Buenas prácticas de codificación |  6.7 | Usa workers, policies, access control y use cases con buena disciplina.                                  |
+| Coherencia funcional             |  6.7 | Auditoría, stats, filtros y consolidación conviven razonablemente bien.                                  |
+| Separación y límites             |  6.6 | `useAuditData.ts` y la consolidación quedaron más lineales, aunque el frente central sigue siendo denso. |
+| Estabilidad                      |  6.7 | La batería focalizada amplia y el flujo de integración están verdes.                                     |
+| Escalabilidad                    |  6.5 | Puede crecer, pero no conviene seguir cargando más responsabilidades sobre los hooks centrales.          |
+| Documentación                    |  6.4 | Hay documentación implícita en tests y contracts, pero no tanto README/guía del módulo.                  |
+| Tests                            |  6.9 | Muy buena señal objetiva: hooks, services, components, runtime e integración cubiertos.                  |
 
 ---
 
@@ -61,12 +61,12 @@
 ## 4. Hallazgos principales
 
 - El módulo no está “desordenado”; su principal fricción es **densidad**, no falta de estructura.
-- Los hotspots más claros están en:
+- Los hotspots más claros siguen estando en:
   - [useAuditData.ts](../src/hooks/useAuditData.ts)
   - [useAudit.ts](../src/hooks/useAudit.ts)
   - [ConsolidationManager.tsx](../src/features/admin/components/components/audit/ConsolidationManager.tsx)
-- El shell de [AuditView.tsx](../src/features/admin/components/AuditView.tsx) está razonablemente limpio, pero depende de hooks que ya cargan bastante coordinación.
-- La consolidación/exportación sigue siendo el frente con más sensibilidad operativa.
+- El shell de [AuditView.tsx](../src/features/admin/components/AuditView.tsx) está razonablemente limpio, y ahora además depende de una consolidación algo más declarativa.
+- La consolidación/exportación sigue siendo el frente con más sensibilidad operativa, aunque ya con mejor separación de shell/view-state.
 
 ---
 
@@ -86,14 +86,15 @@
 
 ## 6. Hotspots y archivos clave
 
-| Archivo                                                                                                                                               | Rol                                | Riesgo / observación                                                               |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ---------------------------------------------------------------------------------- |
-| [src/hooks/useAuditData.ts](../src/hooks/useAuditData.ts)                                                                                             | runtime de datos principal         | `254` líneas; concentra fetch, filtros, paginación, estado y worker orchestration. |
-| [src/hooks/useAudit.ts](../src/hooks/useAudit.ts)                                                                                                     | facade/hook principal de auditoría | `260` líneas; sigue siendo uno de los puntos más densos del frente.                |
-| [src/services/admin/auditWorkerLogic.ts](../src/services/admin/auditWorkerLogic.ts)                                                                   | runtime puro del worker            | `209` líneas; fuerte y bien ubicado, pero ya es un core importante.                |
-| [src/features/admin/components/components/audit/ConsolidationManager.tsx](../src/features/admin/components/components/audit/ConsolidationManager.tsx) | consolidación operativa            | `218` líneas; área sensible por impacto operativo.                                 |
-| [src/features/admin/components/AuditView.tsx](../src/features/admin/components/AuditView.tsx)                                                         | shell del módulo                   | `157` líneas; bastante razonable, pero dependiente de hooks densos.                |
-| [src/features/admin/components/components/audit/AuditStatsDashboard.tsx](../src/features/admin/components/components/audit/AuditStatsDashboard.tsx)   | resumen visual                     | `159` líneas; aceptable, con buena cobertura.                                      |
+| Archivo                                                                                                                                                                 | Rol                                | Riesgo / observación                                                             |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | -------------------------------------------------------------------------------- |
+| [src/hooks/useAuditData.ts](../src/hooks/useAuditData.ts)                                                                                                               | runtime de datos principal         | `254` líneas; sigue siendo denso, pero ya con menos composición repetida inline. |
+| [src/hooks/useAudit.ts](../src/hooks/useAudit.ts)                                                                                                                       | facade/hook principal de auditoría | `260` líneas; sigue siendo uno de los puntos más densos del frente.              |
+| [src/services/admin/auditWorkerLogic.ts](../src/services/admin/auditWorkerLogic.ts)                                                                                     | runtime puro del worker            | `209` líneas; fuerte y bien ubicado, pero ya es un core importante.              |
+| [src/features/admin/components/components/audit/ConsolidationManager.tsx](../src/features/admin/components/components/audit/ConsolidationManager.tsx)                   | consolidación operativa            | `218` líneas; área sensible por impacto operativo, ahora con mejor shell state.  |
+| [src/features/admin/components/components/audit/consolidationManagerController.ts](../src/features/admin/components/components/audit/consolidationManagerController.ts) | shell/view-state puro              | seam nuevo y útil para botones, ramas de shell y preview rows.                   |
+| [src/features/admin/components/AuditView.tsx](../src/features/admin/components/AuditView.tsx)                                                                           | shell del módulo                   | `157` líneas; bastante razonable, pero dependiente de hooks densos.              |
+| [src/features/admin/components/components/audit/AuditStatsDashboard.tsx](../src/features/admin/components/components/audit/AuditStatsDashboard.tsx)                     | resumen visual                     | `159` líneas; aceptable, con buena cobertura.                                    |
 
 ---
 
@@ -105,9 +106,9 @@
 
 Resultado actual:
 
-- **Typecheck:** no corrido en esta evaluación específica, pero el repo venía verde en la ronda anterior
-- **Quality:** no corrido en esta evaluación específica, pero el repo venía verde en la ronda anterior
-- **Tests focalizados:** `17/17` archivos verdes, `115/115` tests OK
+- **Typecheck:** OK
+- **Quality:** OK
+- **Tests focalizados:** `17/17` archivos verdes, `115/115` tests OK, más `4/4` archivos verdes y `25/25` tests de la ronda actual
 - **Otros checks:** el módulo descansa también sobre cobertura de seguridad y reglas en otros frentes (acceso a audit logs, integración, flows)
 
 ---
@@ -134,26 +135,28 @@ Resultado actual:
 ### Bloque 1
 
 - **Objetivo:** bajar densidad del runtime principal de datos.
-- **Cambio esperado:** sacar una pequeña policy de `useAuditData.ts` relacionada con shell state, paginación o filtros derivados.
-- **Archivos probables:**
+- **Cambio ejecutado:** sacar composición de section-actions, params del worker, paginación y toggle de sets a `auditDataPolicyController.ts`.
+- **Archivos tocados:**
   - [src/hooks/useAuditData.ts](../src/hooks/useAuditData.ts)
   - [src/hooks/controllers/auditDataPolicyController.ts](../src/hooks/controllers/auditDataPolicyController.ts)
-- **Tests / checks requeridos:**
+- **Tests / checks ejecutados:**
   - [src/tests/hooks/useAuditData.test.ts](../src/tests/hooks/useAuditData.test.ts)
+  - [src/tests/hooks/controllers/auditDataPolicyController.test.ts](../src/tests/hooks/controllers/auditDataPolicyController.test.ts)
   - `npm run typecheck`
-- **Criterio de cierre:** hook más lineal sin introducir capas innecesarias.
+- **Criterio de cierre:** logrado; el hook quedó más lineal sin introducir capas innecesarias.
 
 ### Bloque 2
 
 - **Objetivo:** domesticar un poco el frente de consolidación.
-- **Cambio esperado:** sacar alguna decisión operativa pequeña de `ConsolidationManager.tsx` hacia controller/helper puro.
-- **Archivos probables:**
+- **Cambio ejecutado:** sacar estado de acciones, ramas de shell y preview rows de `ConsolidationManager.tsx` a `consolidationManagerController.ts`.
+- **Archivos tocados:**
   - [src/features/admin/components/components/audit/ConsolidationManager.tsx](../src/features/admin/components/components/audit/ConsolidationManager.tsx)
-  - [src/services/admin/auditConsolidationService.ts](../src/services/admin/auditConsolidationService.ts)
-- **Tests / checks requeridos:**
+  - [src/features/admin/components/components/audit/consolidationManagerController.ts](../src/features/admin/components/components/audit/consolidationManagerController.ts)
+- **Tests / checks ejecutados:**
   - [src/tests/views/admin/components/audit/ConsolidationManager.test.tsx](../src/tests/views/admin/components/audit/ConsolidationManager.test.tsx)
-  - [src/tests/services/admin/auditConsolidationService.test.ts](../src/tests/services/admin/auditConsolidationService.test.ts)
-- **Criterio de cierre:** menos lógica operativa visible en el componente.
+  - [src/tests/views/admin/components/audit/consolidationManagerController.test.ts](../src/tests/views/admin/components/audit/consolidationManagerController.test.ts)
+  - `npm run typecheck`
+- **Criterio de cierre:** logrado; menos lógica operativa visible en el componente.
 
 ### Bloque 3
 

@@ -1,5 +1,5 @@
 import { createVerify } from 'node:crypto';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import type { Firestore } from 'firebase/firestore';
 
 import authConfigModule from '../../../functions/lib/auth/authConfig.js';
@@ -223,8 +223,6 @@ export const resolveRoleForEmail = async (
       const rolesMap = (roleDoc.data() || {}) as Record<string, unknown>;
       const resolvedRole = rolesMap[cleanEmail];
       if (resolvedRole === 'viewer_census') {
-        const nextRolesMap = { ...rolesMap, [cleanEmail]: 'viewer' };
-        await setDoc(doc(db, 'config', 'roles'), nextRolesMap);
         return 'viewer';
       }
 

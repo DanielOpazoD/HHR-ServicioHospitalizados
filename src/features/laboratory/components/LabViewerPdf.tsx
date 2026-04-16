@@ -6,7 +6,7 @@
 import React from 'react';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import type { SyslabExamItem } from '@/types/domain/laboratory';
-import { buildSyslabPdfUrl } from '@/services/laboratory/syslabService';
+import { fetchSyslabPdfBlobUrl } from '@/services/laboratory/syslabService';
 
 interface LabViewerPdfProps {
   exam: SyslabExamItem;
@@ -15,7 +15,52 @@ interface LabViewerPdfProps {
 
 export const LabViewerPdf: React.FC<LabViewerPdfProps> = ({ exam, onBack }) => {
   const [isLoading, setIsLoading] = React.useState(true);
-  const pdfUrl = exam.link ? `${buildSyslabPdfUrl(exam.link)}#navpanes=0&scrollbar=1&zoom=110` : '';
+  const [pdfUrl, setPdfUrl] = React.useState<string | null>(null);
+  const [loadError, setLoadError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    let objectUrl: string | null = null;
+
+    const loadPdf = async () => {
+      if (!exam.link) {
+        setPdfUrl(null);
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      setLoadError(null);
+
+      try {
+        objectUrl = await fetchSyslabPdfBlobUrl(exam.link);
+        if (cancelled) {
+          if (objectUrl) {
+            URL.revokeObjectURL(objectUrl);
+          }
+          return;
+        }
+        setPdfUrl(`${objectUrl}#navpanes=0&scrollbar=1&zoom=110`);
+      } catch (error) {
+        if (!cancelled) {
+          setPdfUrl(null);
+          setIsLoading(false);
+          setLoadError(
+            error instanceof Error ? error.message : 'No se pudo cargar el PDF desde Syslab.'
+          );
+        }
+      }
+    };
+
+    void loadPdf();
+
+    return () => {
+      cancelled = true;
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [exam.link]);
 
   return (
     <div className="space-y-2">
@@ -46,13 +91,19 @@ export const LabViewerPdf: React.FC<LabViewerPdfProps> = ({ exam, onBack }) => {
             <p className="text-[10px] text-slate-300 mt-1">Esto puede tardar unos segundos</p>
           </div>
         )}
-        <iframe
-          src={pdfUrl}
-          title={`PDF Examen ${exam.id}`}
-          className="w-full border-0"
-          style={{ height: '80vh' }}
-          onLoad={() => setIsLoading(false)}
-        />
+        {loadError ? (
+          <div className="flex min-h-[240px] items-center justify-center px-4 py-8 text-center text-[12px] text-rose-600">
+            {loadError}
+          </div>
+        ) : (
+          <iframe
+            src={pdfUrl ?? undefined}
+            title={`PDF Examen ${exam.id}`}
+            className="w-full border-0"
+            style={{ height: '80vh' }}
+            onLoad={() => setIsLoading(false)}
+          />
+        )}
       </div>
     </div>
   );

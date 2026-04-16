@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 vi.unmock('@/features/laboratory/components/LabResultsViewerModal');
@@ -77,6 +77,7 @@ vi.mock('@/features/laboratory/services/labExcelService', () => ({
 vi.mock('@/services/laboratory/syslabService', () => ({
   buildSyslabPdfUrl: (link: string) =>
     `http://localhost:3000/api/exams/pdf?link=${encodeURIComponent(link)}`,
+  fetchSyslabPdfBlobUrl: vi.fn(async () => 'blob:syslab-test'),
 }));
 
 import { LabResultsViewerModal } from '@/features/laboratory';
@@ -260,13 +261,17 @@ describe('LabResultsViewerModal', () => {
     expect(screen.getByText('Server down')).toBeInTheDocument();
   });
 
-  it('shows PDF viewer when pdfExam is set', () => {
+  it('shows PDF viewer when pdfExam is set', async () => {
     mockUseLabViewer.mockReturnValue({ ...DEFAULT_HOOK_STATE, pdfExam: MOCK_EXAM });
     render(<LabResultsViewerModal isOpen={true} onClose={vi.fn()} patients={PATIENTS} />);
-    expect(screen.getByTitle('PDF Examen 43091284')).toBeInTheDocument();
+    const iframe = screen.getByTitle('PDF Examen 43091284');
+    expect(iframe).toBeInTheDocument();
+    await waitFor(() => {
+      expect(iframe).toHaveAttribute('src', 'blob:syslab-test#navpanes=0&scrollbar=1&zoom=110');
+    });
   });
 
-  it('prioritizes PDF viewer over analysis when both states exist', () => {
+  it('prioritizes PDF viewer over analysis when both states exist', async () => {
     mockUseLabViewer.mockReturnValue({
       ...DEFAULT_HOOK_STATE,
       pdfExam: MOCK_EXAM,
@@ -274,7 +279,11 @@ describe('LabResultsViewerModal', () => {
       analysisView: 'microbiology',
     });
     render(<LabResultsViewerModal isOpen={true} onClose={vi.fn()} patients={PATIENTS} />);
-    expect(screen.getByTitle('PDF Examen 43091284')).toBeInTheDocument();
+    const iframe = screen.getByTitle('PDF Examen 43091284');
+    expect(iframe).toBeInTheDocument();
+    await waitFor(() => {
+      expect(iframe).toHaveAttribute('src', 'blob:syslab-test#navpanes=0&scrollbar=1&zoom=110');
+    });
     expect(screen.queryByText('Resultados cualitativos relevantes')).not.toBeInTheDocument();
   });
 

@@ -13,11 +13,15 @@
  *   5. POST patient RUT to the search form → HTML with exam results
  */
 
+import { getFirebaseServer } from './lib/firebase-server';
+import { authorizeRoleRequest, extractBearerToken } from './lib/firebase-auth';
 import {
+  buildCorsHeaders,
   buildJsonResponse,
   buildTooManyRequestsResponse,
   getClientIp,
   getRequestOrigin,
+  isOriginAllowed,
   isRateLimited,
   type NetlifyEventLike,
 } from './lib/http';
@@ -25,6 +29,19 @@ import { parseMMRADReportSections } from '../../src/services/radiology/mmradRepo
 
 const MMRAD_BASE_URL = 'https://ris.mmrad.cl';
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
+const MMRAD_ALLOWED_ROLES = new Set([
+  'admin',
+  'nurse_hospital',
+  'doctor_urgency',
+  'doctor_specialist',
+  'editor',
+]);
+
+interface MMRADSearchDependencies {
+  getFirebaseServer: typeof getFirebaseServer;
+  authorizeRoleRequest: typeof authorizeRoleRequest;
+  extractBearerToken: typeof extractBearerToken;
+}
 
 interface MMRADExam {
   nombre_examen: string;
@@ -65,16 +82,13 @@ const buildPdfProxyResponse = async (pdfUrl: string, cookies: string, requestOri
   return {
     statusCode: 200,
     headers: {
+      ...buildCorsHeaders(requestOrigin, {
+        allowedHeaders: 'Content-Type, Authorization, Accept',
+        allowedMethods: 'GET,OPTIONS',
+      }),
       'Content-Type': 'application/pdf',
       'Content-Disposition': 'inline; filename="mmrad-report.pdf"',
       'Cache-Control': 'private, max-age=300',
-      ...(requestOrigin
-        ? {
-            'Access-Control-Allow-Origin': requestOrigin,
-            'Access-Control-Allow-Headers': 'Content-Type',
-            'Access-Control-Allow-Methods': 'GET,OPTIONS',
-          }
-        : {}),
     },
     body: base64,
     isBase64Encoded: true,
@@ -194,12 +208,10 @@ const normalizeMmradUrl = (rawUrl: string | null | undefined): string | null => 
 interface LoginResult {
   cookies: string;
   searchActionUrl: string | null;
-  debug: string[];
 }
 
 const loginToMMRAD = async (): Promise<LoginResult> => {
   const { username, password } = getCredentials();
-  const debug: string[] = [];
   let cookies = '';
 
   // Step 1: GET home page → extract login form action + initial cookies
@@ -207,11 +219,9 @@ const loginToMMRAD = async (): Promise<LoginResult> => {
   cookies = mergeCookies(cookies, collectSetCookies(step1));
   const step1Html = await step1.text();
   const loginActionUrl = extractLoginActionUrl(step1Html);
-  debug.push(`Step1: status=${step1.status}, hasLoginForm=${!!loginActionUrl}`);
 
   if (!loginActionUrl) {
-    debug.push('FAILED: Could not find login form action URL');
-    return { cookies, searchActionUrl: null, debug };
+    return { cookies, searchActionUrl: null };
   }
 
   // Step 2: POST login credentials
@@ -228,7 +238,6 @@ const loginToMMRAD = async (): Promise<LoginResult> => {
   });
   cookies = mergeCookies(cookies, collectSetCookies(step2));
   const redirect1 = step2.headers.get('location') || '';
-  debug.push(`Step2: status=${step2.status}, redirect=${redirect1.substring(0, 60)}`);
 
   // Step 3: Follow first redirect
   if (redirect1) {
@@ -239,7 +248,6 @@ const loginToMMRAD = async (): Promise<LoginResult> => {
     });
     cookies = mergeCookies(cookies, collectSetCookies(step3));
     const redirect2 = step3.headers.get('location') || '';
-    debug.push(`Step3: status=${step3.status}, redirect=${redirect2.substring(0, 60)}`);
 
     // Step 4: Follow second redirect (typically /group/hhangaroa)
     if (redirect2) {
@@ -248,15 +256,11 @@ const loginToMMRAD = async (): Promise<LoginResult> => {
       cookies = mergeCookies(cookies, collectSetCookies(step4));
       const dashboardHtml = await step4.text();
       const searchActionUrl = extractSearchActionUrl(dashboardHtml);
-      const hasSearchInput = dashboardHtml.includes('idpaciente');
-      debug.push(
-        `Step4: status=${step4.status}, hasSearch=${hasSearchInput}, hasAction=${!!searchActionUrl}`
-      );
-      return { cookies, searchActionUrl, debug };
+      return { cookies, searchActionUrl };
     }
   }
 
-  return { cookies, searchActionUrl: null, debug };
+  return { cookies, searchActionUrl: null };
 };
 
 const searchExams = async (
@@ -417,82 +421,122 @@ const parseExamsFromHTML = (html: string): MMRADExam[] => {
   return exams;
 };
 
-export const handler = async (event: NetlifyEventLike) => {
-  const requestOrigin = getRequestOrigin(event);
-
-  if (event.httpMethod === 'OPTIONS') {
-    return buildJsonResponse(200, {}, { requestOrigin });
+export const createMMRADSearchHandler = (
+  dependencies: MMRADSearchDependencies = {
+    getFirebaseServer,
+    authorizeRoleRequest,
+    extractBearerToken,
   }
+) => {
+  return async (event: NetlifyEventLike) => {
+    const requestOrigin = getRequestOrigin(event);
 
-  // Rate limit only the actual request, not the CORS preflight.
-  const clientIp = getClientIp(event);
-  if (isRateLimited(clientIp, { maxPerWindow: 10, windowMs: 60_000 })) {
-    return buildTooManyRequestsResponse(requestOrigin);
-  }
-
-  if (event.httpMethod !== 'GET') {
-    return buildJsonResponse(405, { error: 'Method not allowed' }, { requestOrigin });
-  }
-
-  const queryParams = new URLSearchParams(event.rawQuery || '');
-  const action = queryParams.get('action');
-
-  if (action === 'pdf') {
-    const pdfUrl = normalizeMmradUrl(queryParams.get('link'));
-    if (!pdfUrl) {
-      return buildJsonResponse(400, { error: 'link es requerido' }, { requestOrigin });
+    if (!isOriginAllowed(requestOrigin)) {
+      return buildJsonResponse(403, { error: 'Origin not allowed' }, { requestOrigin });
     }
+
+    if (event.httpMethod === 'OPTIONS') {
+      return buildJsonResponse(200, {}, { requestOrigin });
+    }
+
+    // Rate limit only the actual request, not the CORS preflight.
+    const clientIp = getClientIp(event);
+    if (isRateLimited(clientIp, { maxPerWindow: 10, windowMs: 60_000 })) {
+      return buildTooManyRequestsResponse(requestOrigin);
+    }
+
+    if (event.httpMethod !== 'GET') {
+      return buildJsonResponse(405, { error: 'Method not allowed' }, { requestOrigin });
+    }
+
+    const authorizationHeader =
+      typeof event.headers?.authorization === 'string'
+        ? event.headers.authorization
+        : typeof event.headers?.Authorization === 'string'
+          ? event.headers.Authorization
+          : undefined;
 
     try {
-      const { cookies } = await loginToMMRAD();
-      return await buildPdfProxyResponse(pdfUrl, cookies, requestOrigin);
+      dependencies.extractBearerToken(authorizationHeader);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Error desconocido';
-      return buildJsonResponse(500, { error: message }, { requestOrigin });
-    }
-  }
-
-  const rut = queryParams.get('rut');
-  if (!rut) {
-    return buildJsonResponse(400, { error: 'RUT es requerido' }, { requestOrigin });
-  }
-
-  const cleanRut = rut.replace(/\./g, '').trim();
-
-  try {
-    const { cookies, searchActionUrl, debug: loginDebug } = await loginToMMRAD();
-
-    if (!searchActionUrl) {
       return buildJsonResponse(
-        200,
-        {
-          rut: cleanRut,
-          examenes: [],
-          _debug: { login: loginDebug, error: 'Login failed: no search form found' },
-        },
+        401,
+        { error: error instanceof Error ? error.message : 'Authentication required.' },
         { requestOrigin }
       );
     }
 
-    const examenes = await searchExams(
-      cleanRut,
-      cookies,
-      searchActionUrl,
-      queryParams.get('from') || undefined,
-      queryParams.get('to') || undefined
-    );
+    try {
+      const { db } = dependencies.getFirebaseServer();
+      await dependencies.authorizeRoleRequest(db, authorizationHeader, MMRAD_ALLOWED_ROLES);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'No autorizado para consultar radiología.';
+      const statusCode =
+        message.includes('Access denied') || message.includes('no email claim') ? 403 : 401;
+      return buildJsonResponse(statusCode, { error: message }, { requestOrigin });
+    }
 
-    return buildJsonResponse(
-      200,
-      {
-        rut: cleanRut,
-        examenes,
-        _debug: { login: loginDebug, searchUrl: searchActionUrl.substring(0, 80) },
-      },
-      { requestOrigin }
-    );
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Error desconocido';
-    return buildJsonResponse(500, { error: message }, { requestOrigin });
-  }
+    const queryParams = new URLSearchParams(event.rawQuery || '');
+    const action = queryParams.get('action');
+
+    if (action === 'pdf') {
+      const pdfUrl = normalizeMmradUrl(queryParams.get('link'));
+      if (!pdfUrl) {
+        return buildJsonResponse(400, { error: 'link es requerido' }, { requestOrigin });
+      }
+
+      try {
+        const { cookies } = await loginToMMRAD();
+        return await buildPdfProxyResponse(pdfUrl, cookies, requestOrigin);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Error desconocido';
+        return buildJsonResponse(500, { error: message }, { requestOrigin });
+      }
+    }
+
+    const rut = queryParams.get('rut');
+    if (!rut) {
+      return buildJsonResponse(400, { error: 'RUT es requerido' }, { requestOrigin });
+    }
+
+    const cleanRut = rut.replace(/\./g, '').trim();
+
+    try {
+      const { cookies, searchActionUrl } = await loginToMMRAD();
+
+      if (!searchActionUrl) {
+        return buildJsonResponse(
+          200,
+          {
+            rut: cleanRut,
+            examenes: [],
+          },
+          { requestOrigin }
+        );
+      }
+
+      const examenes = await searchExams(
+        cleanRut,
+        cookies,
+        searchActionUrl,
+        queryParams.get('from') || undefined,
+        queryParams.get('to') || undefined
+      );
+
+      return buildJsonResponse(
+        200,
+        {
+          rut: cleanRut,
+          examenes,
+        },
+        { requestOrigin }
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error desconocido';
+      return buildJsonResponse(500, { error: message }, { requestOrigin });
+    }
+  };
 };
+
+export const handler = createMMRADSearchHandler();

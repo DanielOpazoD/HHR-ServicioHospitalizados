@@ -3,6 +3,7 @@
  * Fetches radiology exam data from the MMRAD RIS system via Netlify Function.
  */
 
+import { resolveCurrentUserAuthHeaders } from '@/services/auth/authRequestHeaders';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 import type { MMRADReportSections } from '@/services/radiology/mmradReportSupport';
 
@@ -33,8 +34,28 @@ export interface MMRADSearchParams {
   dateTo?: string;
 }
 
+const buildMMRADProxyUrl = (query: string): string => `/.netlify/functions/mmrad-search${query}`;
+
 export const buildMMRADPdfUrl = (pdfLink: string): string =>
-  `/.netlify/functions/mmrad-search?action=pdf&link=${encodeURIComponent(pdfLink)}`;
+  buildMMRADProxyUrl(`?action=pdf&link=${encodeURIComponent(pdfLink)}`);
+
+export const fetchMMRADPdfBlobUrl = async (pdfLink: string): Promise<string> => {
+  const authHeaders = await resolveCurrentUserAuthHeaders();
+  const response = await fetch(buildMMRADPdfUrl(pdfLink), {
+    headers: authHeaders,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(error => {
+      mmradLogger.warn('Failed to parse MMRAD PDF error response body', error);
+      return { error: 'Error de conexión' };
+    });
+    throw new Error(errorData.error || `Error ${response.status}`);
+  }
+
+  const pdfBlob = await response.blob();
+  return URL.createObjectURL(pdfBlob);
+};
 
 export const searchMMRADExams = async ({
   rut,
@@ -42,13 +63,16 @@ export const searchMMRADExams = async ({
   dateTo,
 }: MMRADSearchParams): Promise<MMRADSearchResult> => {
   const cleanRut = rut.replace(/\./g, '').trim();
+  const authHeaders = await resolveCurrentUserAuthHeaders();
 
-  let url = `/.netlify/functions/mmrad-search?rut=${encodeURIComponent(cleanRut)}`;
+  let url = buildMMRADProxyUrl(`?rut=${encodeURIComponent(cleanRut)}`);
   if (dateFrom) url += `&from=${encodeURIComponent(dateFrom)}`;
   if (dateTo) url += `&to=${encodeURIComponent(dateTo)}`;
 
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: authHeaders,
+    });
 
     // Detect when Vite dev server returns HTML instead of JSON (Netlify Functions not available)
     const contentType = response.headers.get('content-type') || '';

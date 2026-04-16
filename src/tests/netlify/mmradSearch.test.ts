@@ -1,10 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { handler } from '../../../netlify/functions/mmrad-search';
-
 describe('mmrad-search', () => {
   const originalEnv = { ...process.env };
   const fetchMock = vi.fn();
+  const getFirebaseServerMock = vi.fn();
+  const authorizeRoleRequestMock = vi.fn();
+  const extractBearerTokenMock = vi.fn();
+  const loadHandler = async () => {
+    const { createMMRADSearchHandler } = await import('../../../netlify/functions/mmrad-search');
+    return createMMRADSearchHandler({
+      getFirebaseServer: getFirebaseServerMock as typeof getFirebaseServerMock,
+      authorizeRoleRequest: authorizeRoleRequestMock as typeof authorizeRoleRequestMock,
+      extractBearerToken: extractBearerTokenMock as typeof extractBearerTokenMock,
+    });
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -19,6 +28,12 @@ describe('mmrad-search', () => {
       MMRAD_PASSWORD: 'testpass',
     };
     vi.stubGlobal('fetch', fetchMock);
+    getFirebaseServerMock.mockReturnValue({ db: { kind: 'firestore' } });
+    authorizeRoleRequestMock.mockResolvedValue({
+      email: 'doctor@hospital.cl',
+      role: 'doctor_urgency',
+    });
+    extractBearerTokenMock.mockReturnValue('token-123');
   });
 
   afterEach(() => {
@@ -27,6 +42,7 @@ describe('mmrad-search', () => {
   });
 
   it('returns 200 with CORS headers on OPTIONS', async () => {
+    const handler = await loadHandler();
     const response = await handler({
       httpMethod: 'OPTIONS',
       headers: { origin: 'https://app.example.com' },
@@ -40,9 +56,10 @@ describe('mmrad-search', () => {
   });
 
   it('returns 405 for non-GET methods', async () => {
+    const handler = await loadHandler();
     const response = await handler({
       httpMethod: 'POST',
-      headers: {},
+      headers: { authorization: 'Bearer token-123' },
       body: null,
       rawQuery: 'rut=12345678-9',
     });
@@ -52,9 +69,10 @@ describe('mmrad-search', () => {
   });
 
   it('returns 400 when rut is missing', async () => {
+    const handler = await loadHandler();
     const response = await handler({
       httpMethod: 'GET',
-      headers: {},
+      headers: { authorization: 'Bearer token-123' },
       body: null,
       rawQuery: '',
     });
@@ -64,6 +82,7 @@ describe('mmrad-search', () => {
   });
 
   it('handles login failure gracefully (no search form found)', async () => {
+    const handler = await loadHandler();
     // Step 1: GET home page — no login form in HTML
     fetchMock.mockResolvedValueOnce({
       status: 200,
@@ -73,7 +92,7 @@ describe('mmrad-search', () => {
 
     const response = await handler({
       httpMethod: 'GET',
-      headers: {},
+      headers: { authorization: 'Bearer token-123' },
       body: null,
       rawQuery: 'rut=12345678-9',
     });
@@ -81,10 +100,11 @@ describe('mmrad-search', () => {
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.body);
     expect(body.examenes).toEqual([]);
-    expect(body._debug.error).toContain('Login failed');
+    expect(body._debug).toBeUndefined();
   });
 
   it('handles successful search flow with exam results', async () => {
+    const handler = await loadHandler();
     const loginActionUrl =
       'https://ris.mmrad.cl/c/portal/login%2Flogin;jsessionid=abc123?p_l_id=123';
     const dashboardUrl = '/group/hhangaroa';
@@ -162,7 +182,7 @@ describe('mmrad-search', () => {
 
     const response = await handler({
       httpMethod: 'GET',
-      headers: {},
+      headers: { authorization: 'Bearer token-123' },
       body: null,
       rawQuery: 'rut=12.345.678-9',
     });
@@ -174,11 +194,11 @@ describe('mmrad-search', () => {
     expect(body.examenes[0].informe_html_url).toContain('/ingrad-ris-informehtml/UtilServlet?a=1');
     expect(body.examenes[0].report.findings).toContain('Parénquima pulmonar');
     expect(body.examenes[0].report.impression).toContain('Cardiomegalia');
-    expect(body._debug.login).toBeInstanceOf(Array);
-    expect(body._debug.searchUrl).toBeDefined();
+    expect(body._debug).toBeUndefined();
   });
 
   it('normalizes javascript report URLs returned inline by MMRAD', async () => {
+    const handler = await loadHandler();
     const loginActionUrl =
       'https://ris.mmrad.cl/c/portal/login%2Flogin;jsessionid=abc123?p_l_id=123';
     const dashboardUrl = '/group/hhangaroa';
@@ -247,7 +267,7 @@ describe('mmrad-search', () => {
 
     const response = await handler({
       httpMethod: 'GET',
-      headers: {},
+      headers: { authorization: 'Bearer token-123' },
       body: null,
       rawQuery: 'rut=12.345.678-9',
     });
@@ -262,12 +282,13 @@ describe('mmrad-search', () => {
   });
 
   it('returns 500 when MMRAD credentials are not configured', async () => {
+    const handler = await loadHandler();
     delete process.env.MMRAD_USERNAME;
     delete process.env.MMRAD_PASSWORD;
 
     const response = await handler({
       httpMethod: 'GET',
-      headers: {},
+      headers: { authorization: 'Bearer token-123' },
       body: null,
       rawQuery: 'rut=12345678-9',
     });
@@ -277,6 +298,7 @@ describe('mmrad-search', () => {
   });
 
   it('proxies PDFs inline for preview/print when action=pdf is requested', async () => {
+    const handler = await loadHandler();
     const loginActionUrl =
       'https://ris.mmrad.cl/c/portal/login%2Flogin;jsessionid=abc123?p_l_id=123';
     const dashboardUrl = '/group/hhangaroa';
@@ -332,7 +354,25 @@ describe('mmrad-search', () => {
   });
 
   it('returns 500 on fetch error', async () => {
+    const handler = await loadHandler();
     fetchMock.mockRejectedValue(new Error('Network error'));
+
+    const response = await handler({
+      httpMethod: 'GET',
+      headers: { authorization: 'Bearer token-123' },
+      body: null,
+      rawQuery: 'rut=12345678-9',
+    });
+
+    expect(response.statusCode).toBe(500);
+    expect(response.body).toContain('Network error');
+  });
+
+  it('rejects unauthenticated requests before reaching MMRAD', async () => {
+    const handler = await loadHandler();
+    extractBearerTokenMock.mockImplementation(() => {
+      throw new Error('Missing Authorization bearer token.');
+    });
 
     const response = await handler({
       httpMethod: 'GET',
@@ -341,7 +381,22 @@ describe('mmrad-search', () => {
       rawQuery: 'rut=12345678-9',
     });
 
-    expect(response.statusCode).toBe(500);
-    expect(response.body).toContain('Network error');
+    expect(response.statusCode).toBe(401);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects unauthorized roles before reaching MMRAD', async () => {
+    const handler = await loadHandler();
+    authorizeRoleRequestMock.mockRejectedValue(new Error("Access denied for role 'viewer'."));
+
+    const response = await handler({
+      httpMethod: 'GET',
+      headers: { authorization: 'Bearer token-123' },
+      body: null,
+      rawQuery: 'rut=12345678-9',
+    });
+
+    expect(response.statusCode).toBe(403);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

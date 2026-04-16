@@ -7,12 +7,30 @@ import {
   ConsolidationResult,
 } from '@/services/admin/auditConsolidationService';
 import { auditConsolidationLogger } from '@/services/admin/adminLoggers';
+import {
+  buildConsolidationManagerActionState,
+  buildConsolidationManagerShellState,
+  buildConsolidationPreviewRows,
+} from './consolidationManagerController';
 
 export const ConsolidationManager: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<ConsolidationPreview | null>(null);
   const [result, setResult] = useState<ConsolidationResult | null>(null);
   const [progress, setProgress] = useState('');
+  const actionState = buildConsolidationManagerActionState({
+    loading,
+    progress,
+    preview,
+    result,
+  });
+  const shellState = buildConsolidationManagerShellState({
+    loading,
+    progress,
+    preview,
+    result,
+  });
+  const previewRows = preview ? buildConsolidationPreviewRows(preview) : [];
 
   const handlePreview = async () => {
     setLoading(true);
@@ -66,10 +84,10 @@ export const ConsolidationManager: React.FC = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={handlePreview}
-            disabled={loading}
+            disabled={!actionState.canPreview}
             className="px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-50"
           >
-            {loading && !progress ? (
+            {actionState.isPreviewLoading ? (
               <Loader2 size={16} className="animate-spin" />
             ) : (
               'Previsualizar'
@@ -77,10 +95,10 @@ export const ConsolidationManager: React.FC = () => {
           </button>
           <button
             onClick={handleExecute}
-            disabled={loading || (!preview && !result)}
+            disabled={!actionState.canExecute}
             className="px-4 py-2 text-sm font-bold bg-amber-500 text-white rounded-xl shadow-sm hover:bg-amber-600 transition-colors disabled:opacity-50 flex items-center gap-2"
           >
-            {loading && progress ? (
+            {actionState.isExecutionLoading ? (
               <Loader2 size={16} className="animate-spin" />
             ) : (
               <Trash2 size={16} />
@@ -91,14 +109,14 @@ export const ConsolidationManager: React.FC = () => {
       </div>
 
       <div className="p-6">
-        {loading && progress && (
+        {shellState.showProgress && (
           <div className="flex flex-col items-center justify-center py-8">
             <Loader2 className="animate-spin text-amber-500 mb-4" size={32} />
             <p className="text-sm font-bold text-slate-600">{progress}</p>
           </div>
         )}
 
-        {!loading && !preview && !result && (
+        {shellState.showEmptyState && (
           <div className="text-center py-8">
             <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
               <BarChart3 size={32} className="text-slate-300" />
@@ -110,7 +128,7 @@ export const ConsolidationManager: React.FC = () => {
           </div>
         )}
 
-        {preview && (
+        {shellState.showPreview && preview && (
           <div className="space-y-4 animate-in fade-in duration-300">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl">
@@ -147,22 +165,17 @@ export const ConsolidationManager: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                    {preview.duplicateGroups.slice(0, 10).map((g, i) => (
+                    {previewRows.map((row, i) => (
                       <tr key={i}>
-                        <td className="px-4 py-2 font-bold text-slate-700">{g.action}</td>
-                        <td className="px-4 py-2 text-slate-500 font-mono">{g.entityId}</td>
+                        <td className="px-4 py-2 font-bold text-slate-700">{row.action}</td>
+                        <td className="px-4 py-2 text-slate-500 font-mono">{row.entityId}</td>
                         <td className="px-4 py-2 text-center">
                           <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold">
-                            {g.count}
+                            {row.count}
                           </span>
                         </td>
                         <td className="px-4 py-2 text-right text-slate-400">
-                          {Math.round(
-                            (new Date(g.lastTimestamp).getTime() -
-                              new Date(g.firstTimestamp).getTime()) /
-                              1000
-                          )}{' '}
-                          segs
+                          {row.timeWindowSeconds} segs
                         </td>
                       </tr>
                     ))}
@@ -179,7 +192,7 @@ export const ConsolidationManager: React.FC = () => {
           </div>
         )}
 
-        {result && (
+        {shellState.showResult && result && (
           <div className="bg-emerald-50 border border-emerald-100 p-6 rounded-2xl animate-in zoom-in duration-300 text-center">
             <CheckCircle2 className="text-emerald-500 mx-auto mb-3" size={48} />
             <h4 className="text-lg font-bold text-emerald-800 mb-2">¡Consolidación Exitosa!</h4>

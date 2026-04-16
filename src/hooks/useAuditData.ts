@@ -19,8 +19,12 @@ import { AUDIT_ACTION_LABELS, CRITICAL_ACTIONS } from '@/services/admin/auditCon
 import { executeFetchAuditLogs } from '@/application/audit/fetchAuditLogsUseCase';
 import {
   buildDefaultAuditStats,
+  buildAuditSectionActionsMap,
+  buildAuditWorkerFilterParams,
+  paginateAuditDisplayLogs,
   resolveAuditLogsFallback,
   shouldResetAuditPagination,
+  toggleAuditRowState,
 } from '@/hooks/controllers/auditDataPolicyController';
 import {
   AUDIT_ITEMS_PER_PAGE,
@@ -134,41 +138,26 @@ export function useAuditData(): UseAuditDataReturn {
 
   // Process data whenever logs or filters change
   useEffect(() => {
-    const sectionActions: Record<string, string[] | undefined> = {};
-    Object.entries(AUDIT_SECTIONS).forEach(([key, config]) => {
-      sectionActions[key] = config.actions;
-    });
-
-    const params: WorkerFilterParams = {
+    const params: WorkerFilterParams = buildAuditWorkerFilterParams({
       searchTerm,
       filterAction,
       startDate,
       endDate,
       activeSection,
-      sectionActions,
+      sectionActions: buildAuditSectionActionsMap(AUDIT_SECTIONS),
       groupedView,
-    };
+    });
 
     processData(logs, params, AUDIT_ACTION_LABELS, CRITICAL_ACTIONS);
   }, [logs, searchTerm, filterAction, activeSection, startDate, endDate, groupedView, processData]);
 
   // Row toggle handlers
   const toggleRow = useCallback((id: string) => {
-    setExpandedRows(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) newSet.delete(id);
-      else newSet.add(id);
-      return newSet;
-    });
+    setExpandedRows(prev => toggleAuditRowState(prev, id));
   }, []);
 
   const toggleMetadata = useCallback((id: string) => {
-    setShowMetadata(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) newSet.delete(id);
-      else newSet.add(id);
-      return newSet;
-    });
+    setShowMetadata(prev => toggleAuditRowState(prev, id));
   }, []);
 
   const { filteredLogs, displayLogs, stats: workerStats } = results;
@@ -177,8 +166,7 @@ export function useAuditData(): UseAuditDataReturn {
   const totalPages = Math.ceil(displayLogs.length / ITEMS_PER_PAGE);
 
   const paginatedLogs = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return displayLogs.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    return paginateAuditDisplayLogs(displayLogs, currentPage, ITEMS_PER_PAGE);
   }, [displayLogs, currentPage, ITEMS_PER_PAGE]);
 
   // Reset page when filters change

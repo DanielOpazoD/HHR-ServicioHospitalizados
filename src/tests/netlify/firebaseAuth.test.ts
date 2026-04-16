@@ -3,12 +3,9 @@ import { createSign, generateKeyPairSync } from 'node:crypto';
 
 const docMock = vi.fn();
 const getDocMock = vi.fn();
-const setDocMock = vi.fn();
-
 vi.mock('firebase/firestore', () => ({
   doc: (...args: unknown[]) => docMock(...args),
   getDoc: (...args: unknown[]) => getDocMock(...args),
-  setDoc: (...args: unknown[]) => setDocMock(...args),
 }));
 
 import {
@@ -56,7 +53,6 @@ describe('firebase-auth netlify helper', () => {
         'doctor@hospital.cl': 'doctor_urgency',
       }),
     });
-    setDocMock.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -134,7 +130,7 @@ describe('firebase-auth netlify helper', () => {
     );
   });
 
-  it('self-heals legacy role aliases before authorizing Netlify requests', async () => {
+  it('normalizes legacy role aliases without mutating config/roles during authorization', async () => {
     getDocMock.mockResolvedValue({
       exists: () => true,
       data: () => ({
@@ -145,10 +141,6 @@ describe('firebase-auth netlify helper', () => {
     await expect(
       resolveRoleForEmail({ kind: 'firestore' } as never, 'doctor@hospital.cl')
     ).resolves.toBe('viewer');
-    expect(setDocMock).toHaveBeenCalledWith(
-      { id: 'config-roles-ref' },
-      { 'doctor@hospital.cl': 'viewer' }
-    );
   });
 
   it('rejects authenticated users with roles outside the allowed set', async () => {

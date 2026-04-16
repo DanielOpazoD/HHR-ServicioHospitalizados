@@ -3,11 +3,6 @@ const { normalizeEmail } = require('./authEmailUtils');
 const { sanitizeLogValue } = require('../logging/redaction');
 
 const createAuthHelpers = admin => {
-  const persistCanonicalRoleAlias = async (rolesMap, cleanEmail, canonicalRole) => {
-    const nextRolesMap = { ...rolesMap, [cleanEmail]: canonicalRole };
-    await admin.firestore().collection('config').doc('roles').set(nextRolesMap);
-  };
-
   const resolveRoleForEmail = async email => {
     const cleanEmail = normalizeEmail(email);
     if (!cleanEmail) return 'unauthorized';
@@ -18,7 +13,6 @@ const createAuthHelpers = admin => {
         const rolesMap = roleDoc.data() || {};
         const resolvedRole = rolesMap[cleanEmail];
         if (resolvedRole === 'viewer_census') {
-          await persistCanonicalRoleAlias(rolesMap, cleanEmail, 'viewer');
           return 'viewer';
         }
 
