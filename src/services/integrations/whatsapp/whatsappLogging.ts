@@ -16,7 +16,7 @@ export const createWhatsAppLoggingStore = (
         timestamp: Timestamp.now(),
       });
     } catch (_error) {
-      whatsappLoggingLogger.error('Error logging WhatsApp operation', _error);
+      whatsappLoggingLogger.info('Error logging WhatsApp operation', _error);
     }
   };
 

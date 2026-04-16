@@ -24,9 +24,60 @@ const LEVEL_PRIORITY: Record<LogLevel, number> = {
   none: 4,
 };
 
-const isLocalDevelopmentHost = (): boolean =>
-  typeof window !== 'undefined' &&
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+const DIAGNOSTIC_LOG_LEVEL_STORAGE_KEY = 'hhr_log_level';
+const DIAGNOSTIC_LOG_LEVEL_QUERY_KEYS = ['logLevel', 'hhr-log-level'] as const;
+
+const normalizeLogLevel = (value: string | null | undefined): LogLevel | null => {
+  switch (
+    String(value || '')
+      .trim()
+      .toLowerCase()
+  ) {
+    case 'debug':
+    case 'info':
+    case 'warn':
+    case 'error':
+    case 'none':
+      return String(value).trim().toLowerCase() as LogLevel;
+    case 'verbose':
+      return 'debug';
+    default:
+      return null;
+  }
+};
+
+const readBrowserDiagnosticLogLevel = (): LogLevel | null => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    const query = new URLSearchParams(window.location.search);
+    for (const key of DIAGNOSTIC_LOG_LEVEL_QUERY_KEYS) {
+      const queryLevel = normalizeLogLevel(query.get(key));
+      if (queryLevel) {
+        return queryLevel;
+      }
+    }
+  } catch {
+    // Ignore malformed URL state and fall back to storage/defaults.
+  }
+
+  try {
+    const storedLevel = normalizeLogLevel(
+      window.localStorage?.getItem(DIAGNOSTIC_LOG_LEVEL_STORAGE_KEY)
+    );
+    if (storedLevel) {
+      return storedLevel;
+    }
+  } catch {
+    // Ignore unavailable storage and fall back to defaults.
+  }
+
+  return null;
+};
+
+const resolveInitialLogLevel = (): LogLevel => readBrowserDiagnosticLogLevel() ?? 'warn';
 
 const getPerformanceNow = (): number =>
   typeof performance !== 'undefined' && typeof performance.now === 'function'
@@ -43,9 +94,9 @@ class LoggerService {
   private entries: LogEntry[] = [];
 
   private constructor() {
-    // Default config based on environment
+    // Keep runtime quiet by default; detailed diagnostics are opt-in via query/storage.
     this.config = {
-      minLevel: isLocalDevelopmentHost() ? 'debug' : 'warn',
+      minLevel: resolveInitialLogLevel(),
       enableTimestamps: true,
       enableContext: true,
       maxStoredEntries: 100,

@@ -67,7 +67,7 @@ export const createWhatsAppTemplatesStore = (
 
       return getDefaultTemplates();
     } catch (_error) {
-      whatsappTemplatesLogger.error('Error getting templates', _error);
+      whatsappTemplatesLogger.info('Error getting templates', _error);
       return getDefaultTemplates();
     }
   };
@@ -77,7 +77,7 @@ export const createWhatsAppTemplatesStore = (
       await setDoc(getTemplatesDocRef(), { templates }, { merge: true });
       return true;
     } catch (_error) {
-      whatsappTemplatesLogger.error('Error saving templates', _error);
+      whatsappTemplatesLogger.info('Error saving templates', _error);
       return false;
     }
   };

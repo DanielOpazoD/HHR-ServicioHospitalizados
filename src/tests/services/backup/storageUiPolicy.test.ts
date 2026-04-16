@@ -12,14 +12,8 @@ describe('storageUiPolicy', () => {
     });
   });
 
-  it('returns timeout lookup warning', () => {
-    expect(getStorageLookupNotice({ exists: false, status: 'timeout' }, 'PDF')).toEqual({
-      channel: 'warning',
-      title: 'Verificacion incompleta',
-      message: 'La verificacion del respaldo de PDF excedio el tiempo esperado.',
-      state: 'retrying',
-      actionRequired: false,
-    });
+  it('silences passive timeout lookup notices', () => {
+    expect(getStorageLookupNotice({ exists: false, status: 'timeout' }, 'PDF')).toBeNull();
   });
 
   it('returns list warning for timeout first', () => {

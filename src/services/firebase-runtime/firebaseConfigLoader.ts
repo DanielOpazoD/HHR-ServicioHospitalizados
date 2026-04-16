@@ -20,7 +20,7 @@ const saveCachedConfig = (config: FirebaseOptions) => {
     if (typeof localStorage === 'undefined') return;
     localStorage.setItem(CACHED_CONFIG_KEY, JSON.stringify(config));
   } catch (error) {
-    firebaseConfigLoaderLogger.warn('[FirebaseConfig] Failed to cache Firebase config:', error);
+    firebaseConfigLoaderLogger.info('[FirebaseConfig] Failed to cache Firebase config:', error);
   }
 };
 
@@ -36,7 +36,7 @@ const getCachedConfig = (): FirebaseOptions | null => {
     localStorage.removeItem(CACHED_CONFIG_KEY);
     return null;
   } catch (error) {
-    firebaseConfigLoaderLogger.warn(
+    firebaseConfigLoaderLogger.info(
       '[FirebaseConfig] Failed to read cached Firebase config:',
       error
     );
@@ -104,7 +104,7 @@ const revalidateConfigInBackground = (): void => {
       saveCachedConfig(fresh);
     })
     .catch(error => {
-      firebaseConfigLoaderLogger.warn(
+      firebaseConfigLoaderLogger.info(
         '[FirebaseConfig] Background config revalidation failed (non-blocking)',
         error
       );

@@ -25,14 +25,14 @@ export const warnOnFirebaseAuthConfig = (config: FirebaseOptions) => {
   const authConfigStatus = getFirebaseAuthConfigStatus(config.authDomain);
 
   if (!authConfigStatus.hasAuthDomain) {
-    firebaseStartupDiagnosticsLogger.warn(
+    firebaseStartupDiagnosticsLogger.info(
       `[FirebaseConfig] ⚠️ ${authConfigStatus.supportSummary} ${authConfigStatus.supportAction}`
     );
     return;
   }
 
   if (!authConfigStatus.usesFirebaseHostedAuthDomain) {
-    firebaseStartupDiagnosticsLogger.warn(
+    firebaseStartupDiagnosticsLogger.info(
       `[FirebaseConfig] ⚠️ ${authConfigStatus.supportSummary} ${authConfigStatus.supportAction}`
     );
   }

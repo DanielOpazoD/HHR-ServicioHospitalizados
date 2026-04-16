@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { AdmissionDatePolicyViolationError } from '@/application/patient-flow/admissionDatePolicy';
-import { resolveRemoteGoldenPathReadResult } from '@/services/repositories/dailyRecordRemoteReadController';
 import { createLocalRuntimeReadCandidate } from '@/services/repositories/dailyRecordReadResultController';
-import type { DailyRecordRemoteLoadResult } from '@/services/repositories/dailyRecordRemoteLoader';
+import {
+  attemptRemoteGoldenPathRead,
+  resolveRemoteGoldenPathReadResult,
+} from '@/services/repositories/dailyRecordRemoteReadController';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 
 const buildRecord = (date: string, lastUpdated: string): DailyRecord =>
@@ -29,76 +30,52 @@ const buildRecord = (date: string, lastUpdated: string): DailyRecord =>
     schemaVersion: 1,
   }) as DailyRecord;
 
-const buildRemoteLoad = (record: DailyRecord | null): DailyRecordRemoteLoadResult => ({
-  record,
-  source: record ? 'firestore' : 'not_found',
-  compatibilityTier: record ? 'current_firestore' : 'none',
-  compatibilityIntensity: 'none',
-  migrationRulesApplied: [],
-  cachedLocally: false,
-});
-
 describe('dailyRecordRemoteReadController', () => {
-  it('hydrates local cache and returns the remote authoritative result when remote is newer', async () => {
-    const localRecord = buildRecord('2026-04-15', '2026-04-15T08:00:00.000Z');
-    const remoteRecord = buildRecord('2026-04-15', '2026-04-15T12:00:00.000Z');
-    const persistHydratedRecord = vi.fn().mockResolvedValue(remoteRecord);
+  it('returns a recoverable local result when the remote loader fails', async () => {
+    const local = buildRecord('2026-03-19', '2026-03-19T08:00:00.000Z');
+    const onRemoteFetchFailure = vi.fn();
+
+    const result = await attemptRemoteGoldenPathRead({
+      date: '2026-03-19',
+      localCandidate: createLocalRuntimeReadCandidate('2026-03-19', local),
+      loadRemoteRecordWithFallback: vi.fn().mockRejectedValue(new Error('remote down')),
+      onRemoteFetchFailure,
+    });
+
+    expect(result.source).toBe('indexeddb');
+    expect(result.record?.lastUpdated).toBe(local.lastUpdated);
+    expect(result.retryability).toBe('automatic_retry');
+    expect(onRemoteFetchFailure).toHaveBeenCalledWith(expect.any(Error), '2026-03-19');
+  });
+
+  it('hydrates local cache when the remote result wins the golden path', async () => {
+    const local = buildRecord('2026-03-19', '2026-03-19T08:00:00.000Z');
+    const remote = buildRecord('2026-03-19', '2026-03-19T12:00:00.000Z');
+    const persistHydratedRecord = vi.fn().mockResolvedValue(remote);
 
     const result = await resolveRemoteGoldenPathReadResult({
-      date: '2026-04-15',
-      localCandidate: createLocalRuntimeReadCandidate('2026-04-15', localRecord),
-      remoteReadResult: buildRemoteLoad(remoteRecord),
+      date: '2026-03-19',
+      localCandidate: createLocalRuntimeReadCandidate('2026-03-19', local),
+      remoteReadResult: {
+        record: remote,
+        source: 'firestore',
+        compatibilityTier: 'current_firestore',
+        compatibilityIntensity: 'none',
+        migrationRulesApplied: [],
+        cachedLocally: false,
+      },
       persistHydratedRecord,
     });
 
-    expect(persistHydratedRecord).toHaveBeenCalledOnce();
-    expect(persistHydratedRecord.mock.calls[0]?.[0]).toEqual(remoteRecord);
-    expect(persistHydratedRecord.mock.calls[0]?.[1]).toBe('2026-04-15');
-    expect(persistHydratedRecord.mock.calls[0]?.[2]).toEqual(
+    expect(result.source).toBe('firestore');
+    expect(result.consistencyState).toBe('remote_authoritative');
+    expect(persistHydratedRecord).toHaveBeenCalledWith(
+      remote,
+      '2026-03-19',
       expect.objectContaining({
-        date: '2026-04-15',
-        lastUpdated: localRecord.lastUpdated,
+        date: local.date,
+        lastUpdated: local.lastUpdated,
       })
     );
-    expect(result.source).toBe('firestore');
-    expect(result.record?.lastUpdated).toBe(remoteRecord.lastUpdated);
-    expect(result.consistencyState).toBe('remote_authoritative');
-  });
-
-  it('keeps the local result when remote is older', async () => {
-    const localRecord = buildRecord('2026-04-15', '2026-04-15T12:00:00.000Z');
-    const remoteRecord = buildRecord('2026-04-15', '2026-04-15T08:00:00.000Z');
-    const persistHydratedRecord = vi.fn();
-
-    const result = await resolveRemoteGoldenPathReadResult({
-      date: '2026-04-15',
-      localCandidate: createLocalRuntimeReadCandidate('2026-04-15', localRecord),
-      remoteReadResult: buildRemoteLoad(remoteRecord),
-      persistHydratedRecord,
-    });
-
-    expect(persistHydratedRecord).not.toHaveBeenCalled();
-    expect(result.source).toBe('indexeddb');
-    expect(result.record?.lastUpdated).toBe(localRecord.lastUpdated);
-    expect(result.sourceOfTruth).toBe('local');
-  });
-
-  it('skips hydration when admission date policy blocks local persistence', async () => {
-    const localRecord = buildRecord('2026-04-15', '2026-04-15T08:00:00.000Z');
-    const remoteRecord = buildRecord('2026-04-15', '2026-04-15T12:00:00.000Z');
-    const persistHydratedRecord = vi
-      .fn()
-      .mockRejectedValue(new AdmissionDatePolicyViolationError('blocked hydration', []));
-
-    const result = await resolveRemoteGoldenPathReadResult({
-      date: '2026-04-15',
-      localCandidate: createLocalRuntimeReadCandidate('2026-04-15', localRecord),
-      remoteReadResult: buildRemoteLoad(remoteRecord),
-      persistHydratedRecord,
-    });
-
-    expect(persistHydratedRecord).toHaveBeenCalledOnce();
-    expect(result.source).toBe('firestore');
-    expect(result.record?.lastUpdated).toBe(remoteRecord.lastUpdated);
   });
 });

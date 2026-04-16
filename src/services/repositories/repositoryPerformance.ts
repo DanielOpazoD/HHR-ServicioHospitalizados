@@ -1,6 +1,6 @@
 import { repositoryPerformanceLogger } from '@/services/repositories/repositoryLoggers';
 
-type RepositoryMetricLevel = 'silent' | 'warn';
+type RepositoryMetricLevel = 'silent' | 'telemetry' | 'warn';
 
 const MAX_RECORDED_METRICS = 100;
 const MAX_REPORTED_WARNINGS = 5;
@@ -57,7 +57,7 @@ const logRepositoryMetric = (
     recordedMetrics.shift();
   }
 
-  if (level === 'silent') {
+  if (level === 'silent' || level === 'telemetry') {
     return;
   }
 
@@ -69,6 +69,7 @@ const logRepositoryMetric = (
 
 interface MeasureRepositoryOperationOptions {
   thresholdMs?: number;
+  consoleWarningThresholdMs?: number;
   context?: string;
 }
 
@@ -83,8 +84,17 @@ export const measureRepositoryOperation = async <T>(
     return await work();
   } finally {
     const elapsedMs = now() - start;
-    const thresholdMs = options.thresholdMs ?? 200;
-    const level: RepositoryMetricLevel = elapsedMs >= thresholdMs ? 'warn' : 'silent';
+    const thresholdMs = options.thresholdMs ?? 1_500;
+    const consoleWarningThresholdMs = Math.max(
+      options.consoleWarningThresholdMs ?? 3_000,
+      thresholdMs
+    );
+    const level: RepositoryMetricLevel =
+      elapsedMs >= consoleWarningThresholdMs
+        ? 'warn'
+        : elapsedMs >= thresholdMs
+          ? 'telemetry'
+          : 'silent';
     logRepositoryMetric(operation, elapsedMs, level, thresholdMs, options.context);
   }
 };
@@ -98,7 +108,7 @@ export const clearRepositoryPerformanceMetrics = (): void => {
 };
 
 export const getRepositoryPerformanceSummary = (): RepositoryPerformanceSummary => {
-  const warningMetrics = recordedMetrics.filter(metric => metric.level === 'warn');
+  const warningMetrics = recordedMetrics.filter(metric => metric.level !== 'silent');
   const slowestMetric = recordedMetrics.reduce<RepositoryPerformanceMetric | null>(
     (slowest, metric) => {
       if (!slowest || metric.elapsedMs > slowest.elapsedMs) {

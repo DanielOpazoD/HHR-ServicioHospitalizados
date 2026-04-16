@@ -17,10 +17,7 @@ export const getStorageLookupNotice = (
   }
 
   if (result.status === 'timeout') {
-    return createRetryingNotice(
-      'Verificacion incompleta',
-      `La verificacion del respaldo de ${artifactLabel} excedio el tiempo esperado.`
-    );
+    return null;
   }
 
   return null;

@@ -13,10 +13,7 @@ import {
   createPartialUpdateDailyRecordCommand,
   createSaveDailyRecordCommand,
 } from '@/services/repositories/contracts/dailyRecordCommands';
-import {
-  createSaveDailyRecordResult,
-  createUpdatePartialDailyRecordResult,
-} from '@/services/repositories/contracts/dailyRecordResults';
+import { createUpdatePartialDailyRecordResult } from '@/services/repositories/contracts/dailyRecordResults';
 import {
   assertRemoteSaveCompatibility,
   resolveRemoteWriteRecovery,
@@ -26,6 +23,8 @@ import {
 import { syncPatientsToMasterInBackground } from '@/services/repositories/dailyRecordBackgroundMasterSyncController';
 import {
   applyRecoveryDecisionToState,
+  buildBlockedPartialUpdateResult,
+  buildBlockedSaveResult,
   buildPartialUpdateResult,
   buildSaveResult,
   createRemoteWriteState,
@@ -171,24 +170,7 @@ export const saveDetailed = async (record: DailyRecord, expectedLastUpdated?: st
         },
         err
       );
-      return createSaveDailyRecordResult({
-        date: command.date,
-        outcome: 'blocked',
-        savedLocally: false,
-        savedRemotely: false,
-        queuedForRetry: false,
-        autoMerged: false,
-        consistencyState: remoteState.consistencyState,
-        sourceOfTruth: 'none',
-        retryability: remoteState.retryability,
-        recoveryAction: remoteState.recoveryAction,
-        conflictSummary: remoteState.conflictSummary,
-        observabilityTags: remoteState.observabilityTags,
-        userSafeMessage: remoteState.userSafeMessage,
-        blockingReason: remoteState.blockingReason,
-        repairApplied: false,
-        blockingError: remoteState.blockingError,
-      });
+      return buildBlockedSaveResult(command.date, remoteState);
     }
     throw err;
   }
@@ -280,25 +262,11 @@ export const updatePartialDetailed = async (date: string, partialData: DailyReco
         },
         err
       );
-      return createUpdatePartialDailyRecordResult({
-        date: command.date,
-        outcome: 'blocked',
-        savedLocally: false,
-        updatedRemotely: false,
-        queuedForRetry: false,
-        autoMerged: false,
-        patchedFields: Object.keys(command.patch).length,
-        consistencyState: remoteState.consistencyState,
-        sourceOfTruth: 'none',
-        retryability: remoteState.retryability,
-        recoveryAction: remoteState.recoveryAction,
-        conflictSummary: remoteState.conflictSummary,
-        observabilityTags: remoteState.observabilityTags,
-        userSafeMessage: remoteState.userSafeMessage,
-        blockingReason: remoteState.blockingReason,
-        repairApplied: false,
-        blockingError: remoteState.blockingError,
-      });
+      return buildBlockedPartialUpdateResult(
+        command.date,
+        remoteState,
+        Object.keys(command.patch).length
+      );
     }
     throw err;
   }

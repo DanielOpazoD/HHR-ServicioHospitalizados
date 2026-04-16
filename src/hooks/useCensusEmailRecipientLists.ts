@@ -13,6 +13,7 @@ import {
   resolveRecipientSelectionRuntimeState,
   resolveRecipientSyncState,
 } from '@/hooks/controllers/censusEmailRecipientRuntimeController';
+import { scheduleDeferredRecipientSync } from '@/hooks/controllers/censusEmailRecipientDeferredSyncController';
 import { resolveRecipientListForSelection } from '@/hooks/controllers/censusEmailRecipientMutationController';
 import {
   resolveRecipientRuntimeAfterCreate,
@@ -254,39 +255,35 @@ export const useCensusEmailRecipientLists = ({
       return;
     }
 
-    let cancelled = false;
-    const timeoutId = window.setTimeout(() => {
-      const syncInput = resolveDeferredRecipientSyncInput({
-        canManageGlobalRecipientLists,
-        recipientsReady: recipientsReadyRef.current,
-        recipients,
-        lastRemoteRecipients: lastRemoteRecipientsRef.current,
-        recipientLists,
-        activeRecipientListId: activeRecipientListIdRef.current,
-        actor: user,
-      });
-      if (!syncInput) return;
+    const syncInput = resolveDeferredRecipientSyncInput({
+      canManageGlobalRecipientLists,
+      recipientsReady: recipientsReadyRef.current,
+      recipients,
+      lastRemoteRecipients: lastRemoteRecipientsRef.current,
+      recipientLists,
+      activeRecipientListId: activeRecipientListIdRef.current,
+      actor: user,
+    });
+    if (!syncInput) {
+      return;
+    }
 
-      setIsRecipientsSyncing(true);
-      setRecipientsSyncError(null);
-
-      void withRecipientListUseCases(({ executeSyncCensusRecipientList }) =>
-        executeSyncCensusRecipientList(syncInput)
-      )
-        .then(result => {
-          if (cancelled) return;
-          applyRecipientSyncState(resolveRecipientSyncState(result, recipients));
-        })
-        .finally(() => {
-          if (!cancelled) setIsRecipientsSyncing(false);
-        });
-    }, 250);
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timeoutId);
-      setIsRecipientsSyncing(false);
-    };
+    return scheduleDeferredRecipientSync({
+      syncInput,
+      recipients,
+      executeSync: input =>
+        withRecipientListUseCases(({ executeSyncCensusRecipientList }) =>
+          executeSyncCensusRecipientList(input)
+        ),
+      onSyncStart: () => {
+        setIsRecipientsSyncing(true);
+        setRecipientsSyncError(null);
+      },
+      onSyncState: applyRecipientSyncState,
+      onSyncComplete: () => {
+        setIsRecipientsSyncing(false);
+      },
+    });
   }, [
     activeRecipientListId,
     canManageGlobalRecipientLists,

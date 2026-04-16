@@ -50,13 +50,13 @@ export const createWhatsAppShiftStore = (
       const lowerMessage = messageText.toLowerCase();
       const hasShiftKeyword = TURNO_KEYWORDS.some(keyword => lowerMessage.includes(keyword));
       if (!hasShiftKeyword) {
-        whatsappShiftLogger.warn('No se encontró palabra clave de turno');
+        whatsappShiftLogger.info('No se encontró palabra clave de turno');
         return { success: false, error: 'El mensaje no parece ser un turno de pabellón' };
       }
 
       const parsedDates = parseShiftDates(messageText);
       if (!parsedDates) {
-        whatsappShiftLogger.warn('No se encontraron fechas en el mensaje de turno');
+        whatsappShiftLogger.info('No se encontraron fechas en el mensaje de turno');
         return {
           success: false,
           error:
@@ -75,7 +75,7 @@ export const createWhatsAppShiftStore = (
       await setDoc(doc(getShiftsCollection(), shift.startDate), shift);
       return { success: true };
     } catch (error: unknown) {
-      whatsappShiftLogger.error('Error saving manual shift', error);
+      whatsappShiftLogger.info('Error saving manual shift', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Error al guardar el turno',

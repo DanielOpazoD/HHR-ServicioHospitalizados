@@ -21,6 +21,14 @@ interface ResolveRemoteGoldenPathReadResultInput {
   ) => Promise<DailyRecord>;
 }
 
+interface AttemptRemoteGoldenPathReadInput {
+  date: string;
+  localCandidate: LocalRuntimeReadCandidate | null;
+  loadRemoteRecordWithFallback: (date: string) => Promise<DailyRecordRemoteLoadResult>;
+  logRemoteFetchAttempt?: (date: string) => void;
+  onRemoteFetchFailure?: (error: unknown, date: string) => void;
+}
+
 export const resolveRemoteGoldenPathReadResult = async ({
   date,
   localCandidate,
@@ -53,4 +61,33 @@ export const resolveRemoteGoldenPathReadResult = async ({
   }
 
   return createGoldenPathReadResult(date, goldenPath, localCandidate, remoteReadResult);
+};
+
+export const attemptRemoteGoldenPathRead = async ({
+  date,
+  localCandidate,
+  loadRemoteRecordWithFallback,
+  logRemoteFetchAttempt,
+  onRemoteFetchFailure,
+}: AttemptRemoteGoldenPathReadInput): Promise<DailyRecordReadResult> => {
+  try {
+    logRemoteFetchAttempt?.(date);
+    const remoteReadResult = await loadRemoteRecordWithFallback(date);
+    return resolveRemoteGoldenPathReadResult({
+      date,
+      localCandidate,
+      remoteReadResult,
+    });
+  } catch (error) {
+    onRemoteFetchFailure?.(error, date);
+
+    const fallbackGoldenPath = resolveDailyRecordPersistenceGoldenPath({
+      localRecord: localCandidate?.record || null,
+      remoteRecord: null,
+      remoteAvailability: 'unavailable',
+      localRepairApplied: localCandidate?.repairApplied || false,
+    });
+
+    return createGoldenPathReadResult(date, fallbackGoldenPath, localCandidate);
+  }
 };

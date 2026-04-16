@@ -25,7 +25,7 @@ describe('repositoryPerformance', () => {
         await new Promise(resolve => setTimeout(resolve, 5));
         return 'ok';
       },
-      { thresholdMs: 0, context: 'daily-record' }
+      { thresholdMs: 0, consoleWarningThresholdMs: 0, context: 'daily-record' }
     );
     await vi.advanceTimersByTimeAsync(5);
     await slowOperation;
@@ -40,6 +40,31 @@ describe('repositoryPerformance', () => {
       context: 'daily-record',
     });
     expect(warnSpy).toHaveBeenCalled();
+
+    warnSpy.mockRestore();
+  });
+
+  it('keeps moderate slow operations in telemetry without warning the console', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const slowOperation = measureRepositoryOperation(
+      'moderate-op',
+      async () => {
+        await new Promise(resolve => setTimeout(resolve, 5));
+        return 'ok';
+      },
+      { thresholdMs: 0, consoleWarningThresholdMs: 10, context: 'daily-record' }
+    );
+    await vi.advanceTimersByTimeAsync(5);
+    await slowOperation;
+
+    const summary = getRepositoryPerformanceSummary();
+    expect(summary.warningCount).toBe(1);
+    expect(summary.recentWarningOperations[0]).toMatchObject({
+      operation: 'moderate-op',
+      context: 'daily-record',
+    });
+    expect(warnSpy).not.toHaveBeenCalled();
 
     warnSpy.mockRestore();
   });

@@ -59,7 +59,7 @@ const startAuthPersistenceConfiguration = (
     let didTimeout = false;
     const timeoutId = setTimeout(() => {
       didTimeout = true;
-      firebaseBootstrapLogger.warn(
+      firebaseBootstrapLogger.info(
         `[FirebaseConfig] ⚠️ Auth persistence (${candidate.mode}) failed`,
         {
           message: `Auth persistence (${candidate.mode}) timed out after ${timeoutMs}ms`,
@@ -79,7 +79,7 @@ const startAuthPersistenceConfiguration = (
       })
       .catch(error => {
         clearTimeout(timeoutId);
-        firebaseBootstrapLogger.warn(
+        firebaseBootstrapLogger.info(
           `[FirebaseConfig] ⚠️ Auth persistence (${candidate.mode}) failed`,
           {
             message: getErrorMessage(error),
@@ -133,7 +133,7 @@ export const initializeFirestoreService = async (
       persistenceRequested: true,
     });
   } catch (fsErr) {
-    firebaseBootstrapLogger.warn(
+    firebaseBootstrapLogger.info(
       '[FirebaseConfig] ⚠️ Firestore persistence failed at init:',
       fsErr
     );

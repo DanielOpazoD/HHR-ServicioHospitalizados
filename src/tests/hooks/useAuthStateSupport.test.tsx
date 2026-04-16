@@ -5,6 +5,7 @@ import type { AuthSessionState } from '@/types/auth';
 import { useResolvedAuthBootstrap } from '@/hooks/useAuthStateSupport';
 
 const mockWarn = vi.fn();
+const mockInfo = vi.fn();
 const mockIsAuthBootstrapPending = vi.fn();
 const mockGetAuthBootstrapPendingAgeMs = vi.fn();
 const mockClearAuthBootstrapPending = vi.fn();
@@ -19,6 +20,7 @@ vi.mock('@/services/utils/loggerService', () => ({
   logger: {
     child: () => ({
       warn: (...args: unknown[]) => mockWarn(...args),
+      info: (...args: unknown[]) => mockInfo(...args),
     }),
   },
 }));
@@ -161,7 +163,7 @@ describe('useResolvedAuthBootstrap', () => {
     });
 
     expect(result.current.authLoading).toBe(false);
-    expect(mockWarn).toHaveBeenCalledWith(
+    expect(mockInfo).toHaveBeenCalledWith(
       expect.stringContaining('Auth initialization timed out'),
       expect.anything()
     );

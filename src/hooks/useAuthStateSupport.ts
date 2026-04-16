@@ -114,7 +114,7 @@ export const subscribeToResolvedAuthState = async ({
       }
     }
   } catch (error) {
-    authStateLogger.warn('Redirect result check error', error);
+    authStateLogger.info('Redirect result check error', error);
     recordOperationalTelemetry({
       category: 'auth',
       operation: 'redirect_resolution_failure',
@@ -163,7 +163,7 @@ export const subscribeToResolvedAuthState = async ({
           hasPersistedFirebaseAuthHint: hasPersistedFirebaseAuthHint(),
         })
       ) {
-        authStateLogger.warn(
+        authStateLogger.info(
           'Ignoring transient unauthenticated auth event while persistence rehydrates'
         );
         return;
@@ -231,7 +231,7 @@ export const useResolvedAuthBootstrap = ({
         return;
       }
 
-      authStateLogger.warn(
+      authStateLogger.info(
         `Auth initialization timed out (${timeoutMs}ms) - forcing load completion`,
         {
           isOnline: window.navigator.onLine,

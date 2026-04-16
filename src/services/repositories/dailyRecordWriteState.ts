@@ -124,3 +124,48 @@ export const buildPartialUpdateResult = (
     repairApplied: false,
     blockingError: state.blockingError,
   });
+
+export const buildBlockedSaveResult = (date: string, state: RemoteWriteState) =>
+  createSaveDailyRecordResult({
+    date,
+    outcome: 'blocked',
+    savedLocally: false,
+    savedRemotely: false,
+    queuedForRetry: false,
+    autoMerged: false,
+    consistencyState: state.consistencyState,
+    sourceOfTruth: 'none',
+    retryability: state.retryability,
+    recoveryAction: state.recoveryAction,
+    conflictSummary: state.conflictSummary,
+    observabilityTags: state.observabilityTags,
+    userSafeMessage: state.userSafeMessage,
+    blockingReason: state.blockingReason,
+    repairApplied: false,
+    blockingError: state.blockingError,
+  });
+
+export const buildBlockedPartialUpdateResult = (
+  date: string,
+  state: RemoteWriteState,
+  patchedFields: number
+) =>
+  createUpdatePartialDailyRecordResult({
+    date,
+    outcome: 'blocked',
+    savedLocally: false,
+    updatedRemotely: false,
+    queuedForRetry: false,
+    autoMerged: false,
+    patchedFields,
+    consistencyState: state.consistencyState,
+    sourceOfTruth: 'none',
+    retryability: state.retryability,
+    recoveryAction: state.recoveryAction,
+    conflictSummary: state.conflictSummary,
+    observabilityTags: state.observabilityTags,
+    userSafeMessage: state.userSafeMessage,
+    blockingReason: state.blockingReason,
+    repairApplied: false,
+    blockingError: state.blockingError,
+  });

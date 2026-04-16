@@ -141,7 +141,7 @@ export async function getWhatsAppGroups(): Promise<Array<{ id: string; name: str
 
     return payload.data;
   } catch (error) {
-    whatsappServiceLogger.error('Failed to fetch WhatsApp groups', error);
+    whatsappServiceLogger.info('Failed to fetch WhatsApp groups', error);
     return [];
   }
 }

@@ -15,15 +15,13 @@ import {
 import { mergeAvailableDates } from '@/services/repositories/dailyRecordSyncCompatibility';
 import { measureRepositoryOperation } from '@/services/repositories/repositoryPerformance';
 import { dailyRecordReadLogger } from '@/services/repositories/repositoryLoggers';
-import { resolveDailyRecordPersistenceGoldenPath } from '@/services/repositories/dailyRecordPersistenceGoldenPath';
 import {
   createBridgedDailyRecordReadResult,
-  createGoldenPathReadResult,
   createLocalRuntimeReadCandidate,
   createLocalRuntimeReadResult,
   createNotFoundDailyRecordReadResult,
 } from '@/services/repositories/dailyRecordReadResultController';
-import { resolveRemoteGoldenPathReadResult } from '@/services/repositories/dailyRecordRemoteReadController';
+import { attemptRemoteGoldenPathRead } from '@/services/repositories/dailyRecordRemoteReadController';
 
 type FirestoreRecordQueriesModule =
   typeof import('@/services/storage/firestore/firestoreRecordQueries');
@@ -92,33 +90,16 @@ export const getForDateWithMeta = async (
         ? createLocalRuntimeReadCandidate(query.date, localRecord)
         : null;
       if (query.syncFromRemote && isFirestoreEnabled()) {
-        try {
-          const remoteReadResult = await measureRepositoryOperation(
-            'dailyRecord.getForDate.remote',
-            async () => {
-              logRemoteFetchAttempt(query.date);
-              const { loadRemoteRecordWithFallback } = await loadDailyRecordRemoteLoader();
-              return loadRemoteRecordWithFallback(query.date);
-            },
-            { thresholdMs: 250, context: date }
-          );
-          return resolveRemoteGoldenPathReadResult({
-            date: query.date,
-            localCandidate,
-            remoteReadResult,
-          });
-        } catch (err) {
-          dailyRecordReadLogger.warn(`Remote fetch failed for ${query.date}`, err);
-        }
-
-        const fallbackGoldenPath = resolveDailyRecordPersistenceGoldenPath({
-          localRecord: localCandidate?.record || null,
-          remoteRecord: null,
-          remoteAvailability: 'unavailable',
-          localRepairApplied: localCandidate?.repairApplied || false,
+        const { loadRemoteRecordWithFallback } = await loadDailyRecordRemoteLoader();
+        return attemptRemoteGoldenPathRead({
+          date: query.date,
+          localCandidate,
+          loadRemoteRecordWithFallback,
+          logRemoteFetchAttempt,
+          onRemoteFetchFailure: (err, failedDate) => {
+            dailyRecordReadLogger.warn(`Remote fetch failed for ${failedDate}`, err);
+          },
         });
-
-        return createGoldenPathReadResult(query.date, fallbackGoldenPath, localCandidate);
       }
 
       if (localCandidate) {

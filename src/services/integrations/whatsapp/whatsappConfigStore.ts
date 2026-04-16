@@ -33,7 +33,7 @@ export const createWhatsAppConfigStore = (
 
       return getDefaultWhatsAppConfig();
     } catch (_error) {
-      whatsappConfigLogger.error('Failed to get WhatsApp config', _error);
+      whatsappConfigLogger.info('Failed to get WhatsApp config', _error);
       return null;
     }
   };
@@ -43,7 +43,7 @@ export const createWhatsAppConfigStore = (
       await setDoc(getConfigDocRef(), config, { merge: true });
       return true;
     } catch (_error) {
-      whatsappConfigLogger.error('Failed to update WhatsApp config', _error);
+      whatsappConfigLogger.info('Failed to update WhatsApp config', _error);
       return false;
     }
   };

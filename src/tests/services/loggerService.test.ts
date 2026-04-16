@@ -8,6 +8,9 @@ import { createScopedLogger } from '@/services/utils/loggerScope';
 // We need to test the logger functions
 describe('LoggerService', () => {
   beforeEach(() => {
+    vi.resetModules();
+    window.localStorage.clear();
+    window.history.replaceState({}, '', '/');
     vi.spyOn(console, 'debug').mockImplementation(() => {});
     vi.spyOn(console, 'info').mockImplementation(() => {});
     vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -43,6 +46,17 @@ describe('LoggerService', () => {
     expect(logger.getLevel()).toBe('warn');
 
     logger.setLevel('debug');
+    expect(logger.getLevel()).toBe('debug');
+  });
+
+  it('should default to warn unless diagnostics were explicitly enabled', async () => {
+    const { logger } = await import('@/services/utils/loggerService');
+    expect(logger.getLevel()).toBe('warn');
+  });
+
+  it('should honor an explicit diagnostics log level from localStorage', async () => {
+    window.localStorage.setItem('hhr_log_level', 'debug');
+    const { logger } = await import('@/services/utils/loggerService');
     expect(logger.getLevel()).toBe('debug');
   });
 

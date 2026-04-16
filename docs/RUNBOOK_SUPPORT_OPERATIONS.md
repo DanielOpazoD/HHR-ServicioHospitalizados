@@ -149,6 +149,15 @@ Criterio de cierre:
 - `E2E_CRITICAL_BROWSERS`:
   - Define navegadores del gate E2E crítico (`chromium` por defecto).
   - En CI se recomienda `chromium,firefox` para cubrir compatibilidad multi-browser sin duplicar suites.
+- Diagnóstico local de consola del runtime:
+  - Por defecto la app mantiene la consola en modo silencioso (`warn`/`error`).
+  - Para una sesión puntual de soporte se puede subir el detalle con `?logLevel=debug` o `?logLevel=info` en la URL.
+  - Alternativamente, en DevTools:
+    - `localStorage.setItem('hhr_log_level', 'debug')`
+    - recargar la app
+    - al terminar: `localStorage.removeItem('hhr_log_level')`
+  - Niveles válidos: `debug`, `info`, `warn`, `error`, `none`.
+  - Usar este modo solo mientras se diagnostica; no dejarlo persistido para operación normal.
 - Reporte operativo E2E en CI:
   - Se genera `reports/e2e/critical-operational-metrics.json` y `reports/e2e/critical-operational-summary.md`.
   - Revisar `flaky`, `retriesUsed` y `durationMs` antes de aprobar release si hubo incidentes de estabilidad.
