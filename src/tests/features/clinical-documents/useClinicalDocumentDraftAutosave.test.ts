@@ -2,6 +2,7 @@ import { renderHook } from '@testing-library/react';
 import { act } from 'react';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 
+import { serializeClinicalDocument } from '@/features/clinical-documents/controllers/clinicalDocumentWorkspaceController';
 import { createClinicalDocumentDraft } from '@/features/clinical-documents/domain/factories';
 import { useClinicalDocumentDraftAutosave } from '@/features/clinical-documents/hooks/useClinicalDocumentDraftAutosave';
 import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
@@ -167,5 +168,135 @@ describe('useClinicalDocumentDraftAutosave', () => {
       document: firstDraft,
       snapshot: expect.any(String),
     });
+  });
+
+  it('flushes a pending autosave immediately when the workspace becomes inactive', async () => {
+    const draft = buildDraft('<p style="margin-left: 24px;">Texto con sangría</p>');
+    const dispatch = vi.fn();
+    const draftRef = { current: draft };
+    const lastPersistedSnapshotRef = { current: '' };
+
+    executePersistClinicalDocumentEditorDraft.mockResolvedValue({
+      status: 'success',
+      data: draft,
+      issues: [],
+    });
+
+    const { rerender } = renderHook(
+      ({ isActive }) =>
+        useClinicalDocumentDraftAutosave({
+          draft,
+          canEdit: true,
+          isActive,
+          hospitalId: 'hhr',
+          role: 'doctor_urgency',
+          persistReason: 'autosave',
+          user: {
+            uid: 'u1',
+            email: 'doctor@test.com',
+            displayName: 'Doctor Test',
+          },
+          dispatch,
+          draftRef,
+          lastPersistedSnapshotRef,
+        }),
+      { initialProps: { isActive: true } }
+    );
+
+    expect(executePersistClinicalDocumentEditorDraft).not.toHaveBeenCalled();
+
+    await act(async () => {
+      rerender({ isActive: false });
+      await Promise.resolve();
+    });
+
+    expect(executePersistClinicalDocumentEditorDraft).toHaveBeenCalledTimes(1);
+    expect(executePersistClinicalDocumentEditorDraft).toHaveBeenCalledWith(
+      expect.objectContaining({
+        record: draft,
+        reason: 'autosave',
+      })
+    );
+  });
+
+  it('does not flush on deactivation when the draft already matches the last persisted snapshot', async () => {
+    const draft = buildDraft('<p>Sin cambios pendientes</p>');
+    const dispatch = vi.fn();
+    const draftRef = { current: draft };
+    const lastPersistedSnapshotRef = { current: serializeClinicalDocument(draft) };
+
+    renderHook(() =>
+      useClinicalDocumentDraftAutosave({
+        draft,
+        canEdit: true,
+        isActive: false,
+        hospitalId: 'hhr',
+        role: 'doctor_urgency',
+        persistReason: 'autosave',
+        user: {
+          uid: 'u1',
+          email: 'doctor@test.com',
+          displayName: 'Doctor Test',
+        },
+        dispatch,
+        draftRef,
+        lastPersistedSnapshotRef,
+      })
+    );
+
+    expect(executePersistClinicalDocumentEditorDraft).not.toHaveBeenCalled();
+    expect(dispatch).not.toHaveBeenCalledWith({ type: 'AUTOSAVE_REQUESTED' });
+  });
+
+  it('flushes a pending autosave when switching to another document before the debounce fires', async () => {
+    const firstDraft = buildDraft('<p style="margin-left: 24px;">Primer documento</p>');
+    const secondDraft = {
+      ...buildDraft('<p>Segundo documento</p>'),
+      id: 'doc-2',
+    };
+    const dispatch = vi.fn();
+    const draftRef = { current: firstDraft };
+    const lastPersistedSnapshotRef = { current: '' };
+
+    executePersistClinicalDocumentEditorDraft.mockResolvedValue({
+      status: 'success',
+      data: firstDraft,
+      issues: [],
+    });
+
+    const { rerender } = renderHook(
+      ({ draft }) =>
+        useClinicalDocumentDraftAutosave({
+          draft,
+          canEdit: true,
+          isActive: true,
+          hospitalId: 'hhr',
+          role: 'doctor_urgency',
+          persistReason: 'autosave',
+          user: {
+            uid: 'u1',
+            email: 'doctor@test.com',
+            displayName: 'Doctor Test',
+          },
+          dispatch,
+          draftRef,
+          lastPersistedSnapshotRef,
+        }),
+      { initialProps: { draft: firstDraft } }
+    );
+
+    draftRef.current = secondDraft;
+
+    await act(async () => {
+      rerender({ draft: secondDraft });
+      await Promise.resolve();
+    });
+
+    expect(executePersistClinicalDocumentEditorDraft).toHaveBeenCalledTimes(1);
+    expect(executePersistClinicalDocumentEditorDraft).toHaveBeenCalledWith(
+      expect.objectContaining({
+        record: firstDraft,
+      })
+    );
   });
 });

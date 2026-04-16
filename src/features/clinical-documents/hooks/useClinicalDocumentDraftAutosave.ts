@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { Dispatch, MutableRefObject } from 'react';
 
 import {
@@ -46,30 +46,31 @@ export const useClinicalDocumentDraftAutosave = ({
 }: UseClinicalDocumentDraftAutosaveParams) => {
   const autosaveTimerRef = useRef<number | null>(null);
   const latestAutosaveRequestIdRef = useRef(0);
+  const scheduledDraftIdRef = useRef<string | null>(null);
+  const pendingAutosaveRef = useRef<{
+    draft: ClinicalDocumentRecord;
+    requestedSnapshot: string;
+  } | null>(null);
 
-  useEffect(() => {
-    if (!draft || !canEdit || draft.isLocked || !isActive || !user) {
-      return;
-    }
+  const performAutosave = useCallback(
+    async ({
+      record,
+      requestedSnapshot,
+    }: {
+      record: ClinicalDocumentRecord;
+      requestedSnapshot: string;
+    }) => {
+      if (!user) {
+        return;
+      }
 
-    const draftSnapshot = serializeClinicalDocument(draft);
-    if (draftSnapshot === lastPersistedSnapshotRef.current) {
-      return;
-    }
-
-    if (autosaveTimerRef.current) {
-      window.clearTimeout(autosaveTimerRef.current);
-    }
-
-    autosaveTimerRef.current = window.setTimeout(async () => {
-      const requestedSnapshot = draftSnapshot;
       latestAutosaveRequestIdRef.current += 1;
       const requestId = latestAutosaveRequestIdRef.current;
       dispatch({ type: 'AUTOSAVE_REQUESTED' });
 
       try {
         const result = await executePersistClinicalDocumentEditorDraft({
-          record: draft,
+          record,
           hospitalId,
           role,
           user,
@@ -77,8 +78,8 @@ export const useClinicalDocumentDraftAutosave = ({
         });
 
         recordOperationalOutcome('clinical_document', 'autosave_clinical_document', result, {
-          date: draft.sourceDailyRecordDate,
-          context: { documentId: draft.id },
+          date: record.sourceDailyRecordDate,
+          context: { documentId: record.id },
         });
 
         if (requestId !== latestAutosaveRequestIdRef.current) {
@@ -114,9 +115,9 @@ export const useClinicalDocumentDraftAutosave = ({
           category: 'clinical_document',
           status: 'failed',
           operation: 'autosave_clinical_document_rejected',
-          date: draft.sourceDailyRecordDate,
+          date: record.sourceDailyRecordDate,
           issues: [result.issues[0]?.message || 'Autosave rejected'],
-          context: { documentId: draft.id },
+          context: { documentId: record.id },
         });
         dispatch({ type: 'AUTOSAVE_FAILED' });
       } catch (error) {
@@ -128,12 +129,64 @@ export const useClinicalDocumentDraftAutosave = ({
           category: 'clinical_document',
           status: 'failed',
           operation: 'autosave_clinical_document',
-          date: draft.sourceDailyRecordDate,
+          date: record.sourceDailyRecordDate,
           issues: [error instanceof Error ? error.message : 'Autosave failed'],
-          context: { documentId: draft.id },
+          context: { documentId: record.id },
         });
         dispatch({ type: 'AUTOSAVE_FAILED' });
       }
+    },
+    [dispatch, draftRef, hospitalId, lastPersistedSnapshotRef, persistReason, role, user]
+  );
+
+  useEffect(() => {
+    const pendingAutosave = pendingAutosaveRef.current;
+    if (
+      pendingAutosave &&
+      scheduledDraftIdRef.current &&
+      (draft?.id ?? null) !== scheduledDraftIdRef.current
+    ) {
+      if (autosaveTimerRef.current) {
+        window.clearTimeout(autosaveTimerRef.current);
+        autosaveTimerRef.current = null;
+      }
+
+      pendingAutosaveRef.current = null;
+      scheduledDraftIdRef.current = null;
+      void performAutosave({
+        record: pendingAutosave.draft,
+        requestedSnapshot: pendingAutosave.requestedSnapshot,
+      });
+    }
+
+    if (!draft || !canEdit || draft.isLocked || !isActive || !user) {
+      return;
+    }
+
+    const draftSnapshot = serializeClinicalDocument(draft);
+    if (draftSnapshot === lastPersistedSnapshotRef.current) {
+      pendingAutosaveRef.current = null;
+      return;
+    }
+
+    if (autosaveTimerRef.current) {
+      window.clearTimeout(autosaveTimerRef.current);
+    }
+
+    pendingAutosaveRef.current = {
+      draft,
+      requestedSnapshot: draftSnapshot,
+    };
+    scheduledDraftIdRef.current = draft.id;
+
+    autosaveTimerRef.current = window.setTimeout(async () => {
+      autosaveTimerRef.current = null;
+      pendingAutosaveRef.current = null;
+      scheduledDraftIdRef.current = null;
+      await performAutosave({
+        record: draft,
+        requestedSnapshot: draftSnapshot,
+      });
     }, AUTOSAVE_DELAY_MS);
 
     return () => {
@@ -150,8 +203,32 @@ export const useClinicalDocumentDraftAutosave = ({
     hospitalId,
     isActive,
     lastPersistedSnapshotRef,
+    performAutosave,
     role,
     persistReason,
     user,
   ]);
+
+  useEffect(() => {
+    if (isActive) {
+      return;
+    }
+
+    if (autosaveTimerRef.current) {
+      window.clearTimeout(autosaveTimerRef.current);
+      autosaveTimerRef.current = null;
+    }
+
+    const pendingAutosave = pendingAutosaveRef.current;
+    if (!pendingAutosave) {
+      return;
+    }
+
+    pendingAutosaveRef.current = null;
+    scheduledDraftIdRef.current = null;
+    void performAutosave({
+      record: pendingAutosave.draft,
+      requestedSnapshot: pendingAutosave.requestedSnapshot,
+    });
+  }, [isActive, performAutosave]);
 };

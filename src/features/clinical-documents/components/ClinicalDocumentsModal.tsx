@@ -37,7 +37,12 @@ export const ClinicalDocumentsModal: React.FC<ClinicalDocumentsModalProps> = ({
       variant="white"
       bodyClassName="p-0"
       scrollableBody={false}
-      headerActions={<div id={headerActionsId} className="flex-1 flex items-center" />}
+      headerActions={
+        <div
+          id={headerActionsId}
+          className="flex min-h-[60px] flex-1 items-center justify-center overflow-visible"
+        />
+      }
     >
       <ClinicalDocumentsWorkspace
         patient={patient}

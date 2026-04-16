@@ -182,4 +182,35 @@ describe('ClinicalDocumentFormattingToolbar', () => {
     expect(screen.getByRole('button', { name: 'Deshacer' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Rehacer' })).toBeDisabled();
   });
+
+  it('inserts a table through the toolbar dialog', () => {
+    const onInsertHtml = vi.fn();
+
+    render(<ClinicalDocumentFormattingToolbar {...buildProps({ onInsertHtml })} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Insertar tabla' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Insertar' }));
+
+    expect(onInsertHtml).toHaveBeenCalledTimes(1);
+    expect(onInsertHtml.mock.calls[0]?.[0]).toContain('<table');
+  });
+
+  it('inserts a link through the toolbar dialog', () => {
+    const onInsertHtml = vi.fn();
+
+    render(<ClinicalDocumentFormattingToolbar {...buildProps({ onInsertHtml })} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Insertar enlace' }));
+    fireEvent.change(screen.getByLabelText('URL'), {
+      target: { value: 'https://hospital.test/protocolo' },
+    });
+    fireEvent.change(screen.getByLabelText(/Texto visible/i), {
+      target: { value: 'Protocolo local' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Insertar' }));
+
+    expect(onInsertHtml).toHaveBeenCalledTimes(1);
+    expect(onInsertHtml.mock.calls[0]?.[0]).toContain('href="https://hospital.test/protocolo"');
+    expect(onInsertHtml.mock.calls[0]?.[0]).toContain('Protocolo local');
+  });
 });

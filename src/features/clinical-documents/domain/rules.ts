@@ -49,7 +49,14 @@ export const CLINICAL_DOCUMENT_EVOLUTION_SECTIONS: ClinicalDocumentSectionTempla
     required: true,
     visible: true,
   },
-  { id: 'plan', title: 'Plan', order: 2, required: true, visible: true },
+  {
+    id: 'diagnosticos',
+    title: 'Diagnósticos actuales',
+    order: 2,
+    required: false,
+    visible: true,
+  },
+  { id: 'plan', title: 'Plan', order: 3, required: true, visible: true },
 ] as const;
 
 export const CLINICAL_DOCUMENT_MEDICAL_REPORT_SECTIONS: ClinicalDocumentSectionTemplate[] = [
@@ -114,22 +121,6 @@ export const CLINICAL_DOCUMENT_TEMPLATES: Record<string, ClinicalDocumentTemplat
     documentType: 'informe_medico',
     name: 'Informe médico',
     title: 'Informe médico',
-    defaultPatientInfoTitle: 'Información del Paciente',
-    defaultFooterMedicoLabel: 'Médico',
-    defaultFooterEspecialidadLabel: 'Especialidad',
-    version: 1,
-    patientFields: [...CLINICAL_DOCUMENT_PATIENT_FIELDS],
-    sections: [...CLINICAL_DOCUMENT_MEDICAL_REPORT_SECTIONS],
-    allowCustomTitle: false,
-    allowAddSection: false,
-    allowClinicalUpdateSections: false,
-    status: 'active',
-  },
-  epicrisis_traslado: {
-    id: 'epicrisis_traslado',
-    documentType: 'epicrisis_traslado',
-    name: 'Epicrisis médica de traslado',
-    title: 'Epicrisis médica de traslado',
     defaultPatientInfoTitle: 'Información del Paciente',
     defaultFooterMedicoLabel: 'Médico',
     defaultFooterEspecialidadLabel: 'Especialidad',

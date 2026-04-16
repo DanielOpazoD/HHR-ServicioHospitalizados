@@ -1,5 +1,6 @@
 import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
 import { normalizeClinicalDocumentContentForStorage } from '@/features/clinical-documents/controllers/clinicalDocumentRichTextController';
+import { normalizeClinicalDocumentSectionTitle } from '@/features/clinical-documents/controllers/clinicalDocumentSectionTitleController';
 import { restoreClinicalDocumentDraftTemplate } from '@/features/clinical-documents/domain/factories';
 import { createClinicalUpdateSection } from '@/features/clinical-documents/controllers/clinicalDocumentUpdateController';
 import {
@@ -210,7 +211,12 @@ export const clinicalDocumentDraftReducer = (
       return patchDraft(state, draft => ({
         ...draft,
         sections: draft.sections.map(section =>
-          section.id === action.sectionId ? { ...section, title: action.title } : section
+          section.id === action.sectionId
+            ? {
+                ...section,
+                title: normalizeClinicalDocumentSectionTitle(action.title, section.title),
+              }
+            : section
         ),
       }));
     case 'PATCH_SECTION_LAYOUT':

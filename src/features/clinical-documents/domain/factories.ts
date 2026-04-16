@@ -140,6 +140,9 @@ interface CreateClinicalDocumentDraftParams {
   especialidad: string;
 }
 
+const buildDuplicateClinicalDocumentTitle = (title: string): string =>
+  /\(copia\)$/i.test(title.trim()) ? title.trim() : `${title.trim()} (copia)`;
+
 export const createClinicalDocumentDraft = ({
   templateId,
   hospitalId,
@@ -204,6 +207,49 @@ export const createClinicalDocumentDraft = ({
   const renderedText = buildClinicalDocumentRenderedText(draft);
   return {
     ...draft,
+    renderedText,
+    integrityHash: createHash(renderedText),
+  };
+};
+
+export const duplicateClinicalDocumentDraft = (
+  record: ClinicalDocumentRecord,
+  actor: ClinicalDocumentAuditActor
+): ClinicalDocumentRecord => {
+  const id =
+    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `clinical-document-${Date.now()}`;
+  const now = new Date().toISOString();
+
+  const duplicatedRecord: ClinicalDocumentRecord = {
+    ...structuredClone(record),
+    id,
+    title: buildDuplicateClinicalDocumentTitle(record.title),
+    status: 'draft',
+    isLocked: false,
+    isActiveEpisodeDocument: true,
+    currentVersion: 1,
+    versionHistory: [
+      {
+        version: 1,
+        savedAt: now,
+        savedBy: actor,
+        reason: 'manual',
+      },
+    ],
+    audit: {
+      createdAt: now,
+      createdBy: actor,
+      updatedAt: now,
+      updatedBy: actor,
+    },
+    pdf: undefined,
+  };
+
+  const renderedText = buildClinicalDocumentRenderedText(duplicatedRecord);
+  return {
+    ...duplicatedRecord,
     renderedText,
     integrityHash: createHash(renderedText),
   };

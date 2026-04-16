@@ -6,6 +6,10 @@ import {
   type ClinicalDocumentDraftLoadResolution,
 } from '@/application/clinical-documents/clinicalDocumentEditorUseCases';
 import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
+import {
+  resolveClinicalDocumentDraftLoadAction,
+  shouldApplyClinicalDocumentPendingRemoteUpdate,
+} from '@/features/clinical-documents/controllers/clinicalDocumentDraftRemoteSyncController';
 import type {
   ClinicalDocumentDraftAction,
   ClinicalDocumentDraftBaseState,
@@ -26,29 +30,11 @@ const applyDraftLoadResolution = (
   resolution: ClinicalDocumentDraftLoadResolution,
   dispatch: Dispatch<ClinicalDocumentDraftAction>
 ) => {
-  if (resolution.kind === 'clear') {
-    dispatch({ type: 'LOAD_DOCUMENT', document: null, snapshot: '' });
+  const syncAction = resolveClinicalDocumentDraftLoadAction(resolution);
+  if (syncAction.kind === 'noop') {
     return;
   }
-
-  if (resolution.kind === 'preserve') {
-    return;
-  }
-
-  if (resolution.kind === 'stage_remote') {
-    dispatch({
-      type: 'REMOTE_UPDATE_RECEIVED',
-      document: resolution.document,
-      snapshot: resolution.snapshot,
-    });
-    return;
-  }
-
-  dispatch({
-    type: 'LOAD_DOCUMENT',
-    document: resolution.document,
-    snapshot: resolution.snapshot,
-  });
+  dispatch(syncAction.action);
 };
 
 export const useClinicalDocumentDraftRemoteSync = ({
@@ -74,11 +60,13 @@ export const useClinicalDocumentDraftRemoteSync = ({
   }, [baseStateRef, dispatch, documents, draftDirtyRef, draftRef, selectedDocumentId]);
 
   useEffect(() => {
-    if (!hasPendingRemoteUpdate || draftDirtyRef.current) {
-      return;
-    }
-
-    if (!pendingRemoteState.document || !pendingRemoteState.snapshot) {
+    if (
+      !shouldApplyClinicalDocumentPendingRemoteUpdate({
+        hasPendingRemoteUpdate,
+        hasLocalDraftChanges: draftDirtyRef.current,
+        pendingRemoteState,
+      })
+    ) {
       return;
     }
 

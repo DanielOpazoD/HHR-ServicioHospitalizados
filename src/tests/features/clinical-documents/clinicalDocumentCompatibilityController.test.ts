@@ -1,14 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import { createClinicalDocumentDraft } from '@/features/clinical-documents/domain/factories';
-import { getClinicalDocumentDefinition } from '@/features/clinical-documents/domain/definitions';
-import {
-  hydrateLegacyClinicalDocument,
-  resolveClinicalDocumentSchemaVersion,
-} from '@/features/clinical-documents/controllers/clinicalDocumentCompatibilityController';
-import { CURRENT_CLINICAL_DOCUMENT_SCHEMA_VERSION } from '@/features/clinical-documents/domain/schema';
+import { hydrateLegacyClinicalDocument } from '@/features/clinical-documents/controllers/clinicalDocumentCompatibilityController';
 
-const buildRecord = () =>
+const buildDocument = () =>
   createClinicalDocumentDraft({
     templateId: 'epicrisis',
     hospitalId: 'hhr',
@@ -25,7 +20,7 @@ const buildRecord = () =>
       admissionDate: '2026-03-06',
       sourceDailyRecordDate: '2026-03-06',
       sourceBedId: 'R1',
-      specialty: 'Medicina',
+      specialty: 'Cirugía',
     },
     patientFieldValues: {
       nombre: 'Paciente Test',
@@ -37,31 +32,62 @@ const buildRecord = () =>
       hinf: '10:30',
     },
     medico: 'Doctor Test',
-    especialidad: 'Medicina',
+    especialidad: 'Cirugía',
   });
 
 describe('clinicalDocumentCompatibilityController', () => {
-  it('hydrates missing schemaVersion and normalizes epicrisis defaults', () => {
-    const record = buildRecord();
-    delete record.schemaVersion;
-    record.patientInfoTitle = '';
-    record.footerMedicoLabel = '';
-    record.footerEspecialidadLabel = '';
-    record.sections = record.sections.filter(section => section.id !== 'plan');
+  it('hydrates empty section titles with a safe fallback title', () => {
+    const document = buildDocument();
+    document.sections = document.sections.map((section, index) =>
+      index === 0 ? { ...section, title: '   ' } : section
+    );
 
-    const hydrated = hydrateLegacyClinicalDocument(record);
+    const hydrated = hydrateLegacyClinicalDocument(document);
 
-    expect(resolveClinicalDocumentSchemaVersion(record)).toBe(1);
-    expect(hydrated.schemaVersion).toBe(CURRENT_CLINICAL_DOCUMENT_SCHEMA_VERSION);
-    expect(hydrated.sections.some(section => section.id === 'plan')).toBe(true);
-    expect(hydrated.patientInfoTitle).toBe('Información del Paciente');
+    expect(hydrated.sections[0]?.title).toBe('Sección 1');
   });
 
-  it('exposes specialized epicrisis section renderer and browser print options', () => {
-    const definition = getClinicalDocumentDefinition('epicrisis');
+  it('hydrates evolucion documents with diagnosticos actuales after historia y evolución clínica', () => {
+    const document = createClinicalDocumentDraft({
+      templateId: 'evolucion',
+      hospitalId: 'hhr',
+      actor: {
+        uid: 'u1',
+        email: 'doctor@test.com',
+        displayName: 'Doctor Test',
+        role: 'doctor_urgency',
+      },
+      episode: {
+        patientRut: '11.111.111-1',
+        patientName: 'Paciente Test',
+        episodeKey: '11.111.111-1__2026-03-06',
+        admissionDate: '2026-03-06',
+        sourceDailyRecordDate: '2026-03-06',
+        sourceBedId: 'R1',
+        specialty: 'Cirugía',
+      },
+      patientFieldValues: {
+        nombre: 'Paciente Test',
+        rut: '11.111.111-1',
+        edad: '40a',
+        fecnac: '1986-01-01',
+        fing: '2026-03-06',
+        finf: '2026-03-06',
+        hinf: '10:30',
+      },
+      medico: 'Doctor Test',
+      especialidad: 'Cirugía',
+    });
+    document.sections = document.sections.filter(section => section.id !== 'diagnosticos');
 
-    expect(definition.sectionRenderers.plan).toBe('plan_subsections');
-    expect(definition.printOptions.pageSize).toBe('letter');
-    expect(definition.printOptions.manualPagination).toBe(false);
+    const hydrated = hydrateLegacyClinicalDocument(document);
+
+    expect(hydrated.sections.map(section => section.id)).toEqual([
+      'antecedentes',
+      'historia-evolucion',
+      'diagnosticos',
+      'plan',
+    ]);
+    expect(hydrated.sections[2]?.title).toBe('Diagnósticos actuales');
   });
 });

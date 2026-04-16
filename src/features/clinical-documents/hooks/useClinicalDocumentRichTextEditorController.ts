@@ -8,6 +8,10 @@ import {
   readFileAsDataUrl,
 } from '@/features/clinical-documents/controllers/clinicalDocumentPasteController';
 import {
+  insertClinicalDocumentHtmlAtCursor,
+  insertClinicalDocumentPlainTextAtCursor,
+} from '@/features/clinical-documents/controllers/clinicalDocumentEditorInsertionController';
+import {
   applyClinicalDocumentEditorCommand,
   normalizeClinicalDocumentContentForStorage,
 } from '@/features/clinical-documents/controllers/clinicalDocumentRichTextController';
@@ -237,13 +241,21 @@ export const useClinicalDocumentRichTextEditorController = ({
       flushPendingHistorySnapshot();
       editor.focus();
       pendingExternalNormalizedValueRef.current = null;
+      insertClinicalDocumentHtmlAtCursor(editor, html);
+      commitEditorDomMutation();
+    },
+    [commitEditorDomMutation, disabled, editorRef, flushPendingHistorySnapshot]
+  );
 
-      if (typeof document.execCommand === 'function') {
-        document.execCommand('insertHTML', false, html);
-      } else {
-        editor.innerHTML = `${editor.innerHTML}${html}`;
-      }
+  const insertPlainText = useCallback(
+    (text: string) => {
+      const editor = editorRef.current;
+      if (!editor || disabled) return;
 
+      flushPendingHistorySnapshot();
+      editor.focus();
+      pendingExternalNormalizedValueRef.current = null;
+      insertClinicalDocumentPlainTextAtCursor(editor, text);
       commitEditorDomMutation();
     },
     [commitEditorDomMutation, disabled, editorRef, flushPendingHistorySnapshot]
@@ -295,11 +307,8 @@ export const useClinicalDocumentRichTextEditorController = ({
 
       // Async: fetch and insert lab summary
       void onSlashLab().then(labText => {
-        if (!labText || !editorRef.current) return;
-        editorRef.current.focus();
-        pendingExternalNormalizedValueRef.current = null;
-        document.execCommand('insertText', false, labText);
-        commitEditorDomMutation();
+        if (!labText) return;
+        insertPlainText(labText);
       });
       return;
     }
@@ -309,7 +318,7 @@ export const useClinicalDocumentRichTextEditorController = ({
     lastLocalNormalizedValueRef.current = html;
     debouncedPushHistorySnapshot(html);
     onChange(html);
-  }, [editorRef, onChange, onSlashLab, debouncedPushHistorySnapshot]);
+  }, [debouncedPushHistorySnapshot, editorRef, insertPlainText, onChange, onSlashLab]);
 
   const handleActivateInteraction = useCallback(() => {
     notifyActive();
@@ -365,26 +374,18 @@ export const useClinicalDocumentRichTextEditorController = ({
 
       if (descriptor.kind === 'image-file') {
         void readFileAsDataUrl(descriptor.file).then(dataUrl => {
-          if (!editorRef.current) return;
-          editorRef.current.focus();
-          pendingExternalNormalizedValueRef.current = null;
-          document.execCommand('insertHTML', false, buildPastedImageHtml(dataUrl));
-          commitEditorDomMutation();
+          insertHtml(buildPastedImageHtml(dataUrl));
         });
         return;
       }
 
       if (descriptor.kind === 'html') {
-        pendingExternalNormalizedValueRef.current = null;
-        document.execCommand('insertHTML', false, descriptor.sanitizedHtml);
+        insertHtml(descriptor.sanitizedHtml);
       } else {
-        pendingExternalNormalizedValueRef.current = null;
-        document.execCommand('insertText', false, descriptor.text);
+        insertPlainText(descriptor.text);
       }
-
-      commitEditorDomMutation();
     },
-    [commitEditorDomMutation, editorRef]
+    [editorRef, insertHtml, insertPlainText]
   );
 
   return {

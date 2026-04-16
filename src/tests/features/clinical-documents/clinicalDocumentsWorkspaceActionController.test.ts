@@ -40,31 +40,22 @@ const buildDraft = (annexContent: string | null = null) =>
   });
 
 describe('clinicalDocumentsWorkspaceActionController', () => {
-  it('always updates template selection, but only applies template when the draft is editable', () => {
+  it('updates template selection without mutating the open draft', () => {
     const setSelectedTemplateId = vi.fn();
-    const applyTemplate = vi.fn();
 
     handleClinicalDocumentTemplateSelection({
       templateId: 'evolucion',
-      draft: buildDraft(),
-      canEdit: true,
       setSelectedTemplateId,
-      applyTemplate,
     });
 
     expect(setSelectedTemplateId).toHaveBeenCalledWith('evolucion');
-    expect(applyTemplate).toHaveBeenCalledWith('evolucion');
 
     handleClinicalDocumentTemplateSelection({
       templateId: 'epicrisis',
-      draft: null,
-      canEdit: true,
       setSelectedTemplateId,
-      applyTemplate,
     });
 
     expect(setSelectedTemplateId).toHaveBeenLastCalledWith('epicrisis');
-    expect(applyTemplate).toHaveBeenCalledTimes(1);
   });
 
   it('restores the template only after confirmation', async () => {

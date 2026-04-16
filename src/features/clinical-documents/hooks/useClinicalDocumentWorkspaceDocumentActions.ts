@@ -6,7 +6,10 @@ import type {
   ClinicalDocumentEpisodeContext,
   ClinicalDocumentRecord,
 } from '@/features/clinical-documents/domain/entities';
-import { createClinicalDocumentDraft } from '@/features/clinical-documents/domain/factories';
+import {
+  createClinicalDocumentDraft,
+  duplicateClinicalDocumentDraft,
+} from '@/features/clinical-documents/domain/factories';
 import { buildClinicalDocumentPatientFieldValues } from '@/features/clinical-documents/controllers/clinicalDocumentEpisodeController';
 import {
   buildClinicalDocumentActor,
@@ -225,8 +228,84 @@ export const useClinicalDocumentWorkspaceDocumentActions = ({
     ]
   );
 
+  const handleDuplicateDocument = useCallback(
+    async (document: ClinicalDocumentRecord) => {
+      if (!canEdit || !user) {
+        notify.warning(
+          'Permiso insuficiente',
+          'No tienes permisos para duplicar documentos clínicos.'
+        );
+        return;
+      }
+
+      try {
+        const actor = buildClinicalDocumentActor(user, role);
+        const duplicatedRecord = duplicateClinicalDocumentDraft(document, actor);
+        const result = await executeCreateClinicalDocumentDraft(duplicatedRecord, hospitalId);
+        recordOperationalOutcome('clinical_document', 'duplicate_clinical_document', result, {
+          date: document.sourceDailyRecordDate,
+          context: { sourceDocumentId: document.id, duplicatedDocumentId: duplicatedRecord.id },
+          allowSuccess: true,
+        });
+
+        const outcomeError = resolveClinicalDocumentOutcomeError(
+          result,
+          'No se pudo duplicar el documento.'
+        );
+        if (outcomeError || !result.data) {
+          recordOperationalTelemetry({
+            category: 'clinical_document',
+            status: 'failed',
+            operation: 'duplicate_clinical_document',
+            date: document.sourceDailyRecordDate,
+            issues: [outcomeError || 'No se pudo duplicar el documento clínico.'],
+            context: { sourceDocumentId: document.id },
+          });
+          notify.error(
+            'No se pudo duplicar el documento',
+            outcomeError || 'Ocurrió un error al duplicar el documento clínico.'
+          );
+          return;
+        }
+
+        lastPersistedSnapshotRef.current = serializeClinicalDocument(result.data);
+        setSelectedDocumentId(result.data.id);
+        setDraft(result.data);
+        notify.success(
+          'Documento duplicado',
+          `${document.title} se copió como ${result.data.title}.`
+        );
+      } catch (error) {
+        const errorMessage = resolveClinicalDocumentExceptionMessage(
+          error,
+          'No se pudo duplicar el documento clínico.'
+        );
+        recordOperationalTelemetry({
+          category: 'clinical_document',
+          status: 'failed',
+          operation: 'duplicate_clinical_document',
+          date: document.sourceDailyRecordDate,
+          issues: [errorMessage],
+          context: { sourceDocumentId: document.id },
+        });
+        notify.error('No se pudo duplicar el documento', errorMessage);
+      }
+    },
+    [
+      canEdit,
+      hospitalId,
+      lastPersistedSnapshotRef,
+      notify,
+      role,
+      setDraft,
+      setSelectedDocumentId,
+      user,
+    ]
+  );
+
   return {
     createDocument,
+    handleDuplicateDocument,
     handleDeleteDocument,
   };
 };

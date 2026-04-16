@@ -118,11 +118,6 @@
 .clinical-document-section-block {
   position: relative;
   padding-right: 0;
-  transition:
-    background-color 120ms ease,
-    outline-color 120ms ease,
-    box-shadow 120ms ease,
-    border-color 120ms ease;
   border: 1px solid transparent;
   border-radius: 12px;
   padding: 4px 8px 8px;
@@ -133,24 +128,17 @@
 }
 
 .clinical-document-section-block.is-editor-active {
-  background: linear-gradient(180deg, rgba(239, 246, 255, 0.92) 0%, rgba(248, 250, 252, 0.94) 100%);
-  border-color: rgba(125, 211, 252, 0.95);
-  box-shadow: 0 0 0 3px rgba(186, 230, 253, 0.65);
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
 }
 
 .clinical-document-section-block.is-editor-active::before {
-  content: '';
-  position: absolute;
-  top: 10px;
-  bottom: 10px;
-  left: -1px;
-  width: 4px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #0284c7 0%, #38bdf8 100%);
+  content: none;
 }
 
 .clinical-document-section-block.is-editor-active .clinical-document-section-title {
-  color: #0f4c81;
+  color: inherit;
 }
 
 .clinical-document-section-layout {
@@ -558,16 +546,16 @@
 .clinical-document-toolbar-cluster {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
+  gap: 6px;
+  padding: 4px 6px;
   border: 1px solid #dbe2ea;
-  border-radius: 14px;
+  border-radius: 12px;
   background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
 }
 
 .clinical-document-toolbar-cluster-label {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -736,10 +724,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border: 1px solid #cbd5e1;
-  border-radius: 8px;
+  border-radius: 7px;
   background: #ffffff;
   color: #475569;
 }
@@ -792,14 +780,14 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.85),
     0 12px 28px rgba(15, 23, 42, 0.05);
   padding: 18px 18px 16px;
+  transition: none;
 }
 
 .clinical-document-annex-page.is-editor-active {
-  border-top-color: #38bdf8;
+  border-top-color: #dbe4ee;
   box-shadow:
-    0 0 0 3px rgba(186, 230, 253, 0.75),
     inset 0 1px 0 rgba(255, 255, 255, 0.85),
-    0 14px 30px rgba(14, 116, 144, 0.08);
+    0 12px 28px rgba(15, 23, 42, 0.05);
 }
 
 .clinical-document-annex-header {

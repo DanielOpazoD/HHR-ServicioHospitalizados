@@ -87,4 +87,74 @@ describe('ClinicalDocumentRichTextEditor', () => {
       expect(onChange).toHaveBeenCalledWith(expect.stringContaining('margin-left: 24px'));
     });
   });
+
+  it('normalises pasted Word-like HTML through the shared editor pipeline', async () => {
+    const onChange = vi.fn();
+    render(
+      <ClinicalDocumentRichTextEditor
+        sectionId="analisis"
+        sectionTitle="Análisis"
+        value=""
+        onChange={onChange}
+      />
+    );
+
+    const editor = screen.getByRole('textbox', { name: /contenido análisis/i });
+    editor.focus();
+
+    fireEvent.paste(editor, {
+      clipboardData: {
+        files: [],
+        getData: (type: string) => {
+          if (type === 'text/html') {
+            return '<!--StartFragment--><p class="MsoNormal">Informe<o:p></o:p></p><!--EndFragment-->';
+          }
+          if (type === 'text/plain') {
+            return 'Informe';
+          }
+          return '';
+        },
+      },
+    });
+
+    await waitFor(() => {
+      expect(onChange).toHaveBeenCalledWith(expect.stringContaining('Informe'));
+    });
+
+    expect(editor.innerHTML).not.toContain('MsoNormal');
+    expect(editor.innerHTML).not.toContain('o:p');
+  });
+
+  it('merges soft-wrapped PDF text and keeps report headings separated on paste', async () => {
+    const onChange = vi.fn();
+    render(
+      <ClinicalDocumentRichTextEditor
+        sectionId="analisis"
+        sectionTitle="Análisis"
+        value=""
+        onChange={onChange}
+      />
+    );
+
+    const editor = screen.getByRole('textbox', { name: /contenido análisis/i });
+    editor.focus();
+
+    fireEvent.paste(editor, {
+      clipboardData: {
+        files: [],
+        getData: (type: string) => {
+          if (type === 'text/plain') {
+            return 'Hallazgos radiológicos\ndescritos en detalle.\n\nCONCLUSIÓN:\nSin derrame pleural.';
+          }
+          return '';
+        },
+      },
+    });
+
+    await waitFor(() => {
+      expect(onChange).toHaveBeenCalledWith(
+        'Hallazgos radiológicos descritos en detalle.<br><br>CONCLUSIÓN:<br>Sin derrame pleural.'
+      );
+    });
+  });
 });

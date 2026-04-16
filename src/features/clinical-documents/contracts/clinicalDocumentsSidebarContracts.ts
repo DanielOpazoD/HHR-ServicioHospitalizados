@@ -18,6 +18,7 @@ export interface ClinicalDocumentsSidebarProps {
   documents: ClinicalDocumentRecord[];
   selectedDocumentId: string | null;
   onSelectDocument: (documentId: string) => void;
+  onDuplicateDocument: (document: ClinicalDocumentRecord) => void;
   onDeleteDocument: (document: ClinicalDocumentRecord) => void;
   onAddClinicalUpdate?: () => void;
   onToggleAnnex?: () => void;

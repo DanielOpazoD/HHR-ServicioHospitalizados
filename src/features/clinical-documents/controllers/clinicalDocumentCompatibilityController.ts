@@ -1,5 +1,6 @@
 import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
 import { getClinicalDocumentDefinition } from '@/features/clinical-documents/domain/definitions';
+import { normalizeClinicalDocumentSectionTitle } from '@/features/clinical-documents/controllers/clinicalDocumentSectionTitleController';
 import {
   CURRENT_CLINICAL_DOCUMENT_SCHEMA_VERSION,
   LEGACY_CLINICAL_DOCUMENT_SCHEMA_VERSION,
@@ -39,7 +40,10 @@ const applyClinicalDocumentDefinitionDefaults = (
         ? 'draft'
         : record.status,
     isLocked: false,
-    sections: normalizedSections,
+    sections: normalizedSections.map((section, index) => ({
+      ...section,
+      title: normalizeClinicalDocumentSectionTitle(section.title, `Sección ${index + 1}`),
+    })),
     patientInfoTitle: record.patientInfoTitle || 'Información del Paciente',
     footerMedicoLabel: record.footerMedicoLabel || 'Médico',
     footerEspecialidadLabel: record.footerEspecialidadLabel || 'Especialidad',

@@ -9,14 +9,9 @@ describe('clinicalDocumentTemplateController', () => {
   it('lists the active templates required by the Diario-aligned clinical editor', () => {
     const templates = listActiveClinicalDocumentTemplates();
     expect(templates.map(template => template.id)).toEqual(
-      expect.arrayContaining([
-        'epicrisis',
-        'evolucion',
-        'informe_medico',
-        'epicrisis_traslado',
-        'otro',
-      ])
+      expect.arrayContaining(['epicrisis', 'evolucion', 'informe_medico', 'otro'])
     );
+    expect(templates.map(template => template.id)).not.toContain('epicrisis_traslado');
   });
 
   it('maps document types to compact labels', () => {

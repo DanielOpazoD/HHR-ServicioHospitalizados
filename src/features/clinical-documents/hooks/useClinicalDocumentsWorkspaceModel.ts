@@ -112,7 +112,6 @@ export const useClinicalDocumentsWorkspaceModel = ({
     patchPatientInfoTitle,
     patchFooterLabel,
     patchDocumentMeta,
-    applyTemplate,
     restoreTemplateContent,
     addClinicalUpdate,
     patchAnnexContent,
@@ -152,22 +151,23 @@ export const useClinicalDocumentsWorkspaceModel = ({
     canEdit,
   });
 
-  const { createDocument, handleDeleteDocument } = useClinicalDocumentWorkspaceDocumentActions({
-    patient,
-    role,
-    user,
-    hospitalId,
-    episode,
-    selectedTemplateId,
-    templates,
-    selectedDocumentId,
-    canEdit,
-    canDelete,
-    notify: notifyPort,
-    setSelectedDocumentId,
-    setDraft,
-    lastPersistedSnapshotRef,
-  });
+  const { createDocument, handleDeleteDocument, handleDuplicateDocument } =
+    useClinicalDocumentWorkspaceDocumentActions({
+      patient,
+      role,
+      user,
+      hospitalId,
+      episode,
+      selectedTemplateId,
+      templates,
+      selectedDocumentId,
+      canEdit,
+      canDelete,
+      notify: notifyPort,
+      setSelectedDocumentId,
+      setDraft,
+      lastPersistedSnapshotRef,
+    });
 
   const { handlePrint, handleUploadPdf, isUploadingPdf } =
     useClinicalDocumentWorkspaceExportActions({
@@ -188,10 +188,7 @@ export const useClinicalDocumentsWorkspaceModel = ({
   const handleSelectTemplate = (templateId: string) =>
     handleClinicalDocumentTemplateSelection({
       templateId,
-      draft,
-      canEdit,
       setSelectedTemplateId,
-      applyTemplate,
     });
 
   const handleRestoreTemplate = async () =>
@@ -218,6 +215,7 @@ export const useClinicalDocumentsWorkspaceModel = ({
       documents: sidebarDocuments,
       selectedDocumentId,
       onSelectDocument: setSelectedDocumentId,
+      onDuplicateDocument: document => void handleDuplicateDocument(document),
       onDeleteDocument: document => void handleDeleteDocument(document),
       onAddClinicalUpdate: canEdit ? addClinicalUpdate : undefined,
       onToggleAnnex: canEdit

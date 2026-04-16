@@ -6,25 +6,14 @@ import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domai
 
 interface HandleClinicalDocumentTemplateSelectionParams {
   templateId: string;
-  draft: ClinicalDocumentRecord | null;
-  canEdit: boolean;
   setSelectedTemplateId: (templateId: string) => void;
-  applyTemplate: (templateId: string) => void;
 }
 
 export const handleClinicalDocumentTemplateSelection = ({
   templateId,
-  draft,
-  canEdit,
   setSelectedTemplateId,
-  applyTemplate,
 }: HandleClinicalDocumentTemplateSelectionParams): void => {
   setSelectedTemplateId(templateId);
-  if (!canApplyClinicalDocumentTemplateSelection({ draft, canEdit })) {
-    return;
-  }
-
-  applyTemplate(templateId);
 };
 
 interface ExecuteClinicalDocumentTemplateRestoreParams {

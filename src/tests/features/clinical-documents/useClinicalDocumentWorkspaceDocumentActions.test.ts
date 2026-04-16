@@ -158,6 +158,56 @@ describe('useClinicalDocumentWorkspaceDocumentActions', () => {
     expect(lastPersistedSnapshotRef.current).not.toBe('');
   });
 
+  it('duplicates a document and selects the copied draft on success', async () => {
+    const selectedDocument = buildRecord();
+    const duplicatedDocument = { ...selectedDocument, id: 'duplicated-document-id' };
+    vi.mocked(clinicalDocumentUseCases.executeCreateClinicalDocumentDraft).mockResolvedValue({
+      status: 'success',
+      data: duplicatedDocument,
+      issues: [],
+    });
+
+    const { result } = renderHook(() =>
+      useClinicalDocumentWorkspaceDocumentActions({
+        patient: patient as never,
+        role: 'doctor_urgency',
+        user: { uid: 'u1', email: 'doctor@test.com', displayName: 'Doctor Test' },
+        hospitalId: 'hhr',
+        episode: selectedDocument,
+        selectedTemplateId: 'epicrisis',
+        templates,
+        selectedDocumentId: selectedDocument.id,
+        canEdit: true,
+        canDelete: true,
+        notify,
+        setSelectedDocumentId,
+        setDraft,
+        lastPersistedSnapshotRef,
+      })
+    );
+
+    await act(async () => {
+      await result.current.handleDuplicateDocument(selectedDocument);
+    });
+
+    expect(clinicalDocumentUseCases.executeCreateClinicalDocumentDraft).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: expect.any(String),
+        title: `${selectedDocument.title} (copia)`,
+        status: 'draft',
+        isLocked: false,
+        currentVersion: 1,
+      }),
+      'hhr'
+    );
+    expect(setSelectedDocumentId).toHaveBeenCalledWith('duplicated-document-id');
+    expect(setDraft).toHaveBeenCalledWith(duplicatedDocument);
+    expect(notify.success).toHaveBeenCalledWith(
+      'Documento duplicado',
+      `${selectedDocument.title} se copió como ${duplicatedDocument.title}.`
+    );
+  });
+
   it('clears selected state after deleting the active document', async () => {
     const selectedDocument = buildRecord();
     vi.mocked(clinicalDocumentUseCases.executeDeleteClinicalDocument).mockResolvedValue({

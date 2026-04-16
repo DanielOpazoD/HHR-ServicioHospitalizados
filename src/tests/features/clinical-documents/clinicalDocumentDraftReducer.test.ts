@@ -67,6 +67,25 @@ describe('clinicalDocumentDraftReducer', () => {
     ).toBe('<p>Nuevo contenido</p>');
   });
 
+  it('keeps section titles non-empty when a blank title is submitted', () => {
+    const document = buildDocument();
+    const loaded = clinicalDocumentDraftReducer(createClinicalDocumentDraftReducerInitialState(), {
+      type: 'LOAD_DOCUMENT',
+      document,
+      snapshot: JSON.stringify(document),
+    });
+
+    const patched = clinicalDocumentDraftReducer(loaded, {
+      type: 'PATCH_SECTION_TITLE',
+      sectionId: 'antecedentes',
+      title: '   ',
+    });
+
+    expect(patched.draft?.sections.find(section => section.id === 'antecedentes')?.title).toBe(
+      'Antecedentes'
+    );
+  });
+
   it('stages remote updates and applies them explicitly', () => {
     const document = buildDocument();
     const remote = {
@@ -269,7 +288,11 @@ describe('clinicalDocumentDraftReducer', () => {
   it('applies a new template to the current draft when the document type changes', () => {
     const document = buildDocument();
     document.sections = document.sections.map(section =>
-      section.id === 'antecedentes' ? { ...section, content: '<p>Texto previo</p>' } : section
+      section.id === 'antecedentes'
+        ? { ...section, content: '<p>Texto previo</p>' }
+        : section.id === 'diagnosticos'
+          ? { ...section, content: '<p>Diagnóstico al egreso</p>' }
+          : section
     );
 
     const loaded = clinicalDocumentDraftReducer(createClinicalDocumentDraftReducerInitialState(), {
@@ -291,11 +314,68 @@ describe('clinicalDocumentDraftReducer', () => {
     if (antecedentes) {
       expect(antecedentes.content).toBe('<p>Texto previo</p>');
     }
+    const diagnosticosActuales = switched.draft?.sections.find(s => s.id === 'diagnosticos');
+    expect(diagnosticosActuales?.title).toBe('Diagnósticos actuales');
+    expect(diagnosticosActuales?.content).toBe('<p>Diagnóstico al egreso</p>');
     // Sections without matching IDs start empty
-    const newSections = switched.draft?.sections.filter(s => s.id !== 'antecedentes') ?? [];
+    const newSections =
+      switched.draft?.sections.filter(s => !['antecedentes', 'diagnosticos'].includes(s.id)) ?? [];
     expect(newSections.every(s => s.content === '')).toBe(true);
     expect(switched.draft?.patientFields.find(field => field.id === 'nombre')?.value).toBe(
       'Paciente Test'
     );
+  });
+
+  it('moves diagnosticos actuales into diagnosticos de egreso when switching from evolucion to epicrisis', () => {
+    const evolutionDocument = createClinicalDocumentDraft({
+      templateId: 'evolucion',
+      hospitalId: 'hhr',
+      actor: {
+        uid: 'u1',
+        email: 'doctor@test.com',
+        displayName: 'Doctor Test',
+        role: 'doctor_urgency',
+      },
+      episode: {
+        patientRut: '11.111.111-1',
+        patientName: 'Paciente Test',
+        episodeKey: '11.111.111-1__2026-03-06',
+        admissionDate: '2026-03-06',
+        sourceDailyRecordDate: '2026-03-06',
+        sourceBedId: 'R1',
+        specialty: 'Cirugía',
+      },
+      patientFieldValues: {
+        nombre: 'Paciente Test',
+        rut: '11.111.111-1',
+        edad: '40a',
+        fecnac: '1986-01-01',
+        fing: '2026-03-06',
+        finf: '2026-03-06',
+        hinf: '10:30',
+      },
+      medico: 'Doctor Test',
+      especialidad: 'Cirugía',
+    });
+    evolutionDocument.sections = evolutionDocument.sections.map(section =>
+      section.id === 'diagnosticos'
+        ? { ...section, content: '<p>Diagnóstico actual vigente</p>' }
+        : section
+    );
+
+    const loaded = clinicalDocumentDraftReducer(createClinicalDocumentDraftReducerInitialState(), {
+      type: 'LOAD_DOCUMENT',
+      document: evolutionDocument,
+      snapshot: JSON.stringify(evolutionDocument),
+    });
+
+    const switched = clinicalDocumentDraftReducer(loaded, {
+      type: 'APPLY_TEMPLATE',
+      templateId: 'epicrisis',
+    });
+
+    const diagnosticosEgreso = switched.draft?.sections.find(s => s.id === 'diagnosticos');
+    expect(diagnosticosEgreso?.title).toBe('Diagnósticos de egreso');
+    expect(diagnosticosEgreso?.content).toBe('<p>Diagnóstico actual vigente</p>');
   });
 });

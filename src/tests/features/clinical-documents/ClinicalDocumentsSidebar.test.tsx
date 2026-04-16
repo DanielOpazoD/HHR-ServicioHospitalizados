@@ -51,6 +51,7 @@ describe('ClinicalDocumentsSidebar', () => {
         documents={[]}
         selectedDocumentId={null}
         onSelectDocument={() => {}}
+        onDuplicateDocument={() => {}}
         onDeleteDocument={() => {}}
       />
     );
@@ -63,6 +64,7 @@ describe('ClinicalDocumentsSidebar', () => {
   it('renders documents and delegates selection and deletion', () => {
     const document = buildDocument();
     const onSelectDocument = vi.fn();
+    const onDuplicateDocument = vi.fn();
     const onDeleteDocument = vi.fn();
 
     render(
@@ -78,6 +80,7 @@ describe('ClinicalDocumentsSidebar', () => {
         documents={[document]}
         selectedDocumentId={document.id}
         onSelectDocument={onSelectDocument}
+        onDuplicateDocument={onDuplicateDocument}
         onDeleteDocument={onDeleteDocument}
       />
     );
@@ -88,6 +91,9 @@ describe('ClinicalDocumentsSidebar', () => {
       })
     );
     expect(onSelectDocument).toHaveBeenCalledWith(document.id);
+
+    fireEvent.click(screen.getByTitle(/duplicar documento/i));
+    expect(onDuplicateDocument).toHaveBeenCalledWith(document);
 
     fireEvent.click(screen.getByTitle(/eliminar documento/i));
     expect(onDeleteDocument).toHaveBeenCalledWith(document);
@@ -112,6 +118,7 @@ describe('ClinicalDocumentsSidebar', () => {
         documents={[document]}
         selectedDocumentId={document.id}
         onSelectDocument={() => {}}
+        onDuplicateDocument={() => {}}
         onDeleteDocument={() => {}}
       />
     );
@@ -139,6 +146,7 @@ describe('ClinicalDocumentsSidebar', () => {
         documents={[]}
         selectedDocumentId={null}
         onSelectDocument={() => {}}
+        onDuplicateDocument={() => {}}
         onDeleteDocument={() => {}}
         onOpenLabDialog={onOpenLabDialog}
         onOpenMMRADDialog={onOpenMMRADDialog}

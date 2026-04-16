@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { FilePlus2, FlaskConical, History, Paperclip, PenLine, Trash2, Zap } from 'lucide-react';
+import {
+  Copy,
+  FilePlus2,
+  FlaskConical,
+  History,
+  Paperclip,
+  PenLine,
+  Trash2,
+  Zap,
+} from 'lucide-react';
 import clsx from 'clsx';
 
 import { getClinicalDocumentTypeLabel } from '@/features/clinical-documents/controllers/clinicalDocumentTemplateController';
@@ -53,6 +62,7 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
   documents,
   selectedDocumentId,
   onSelectDocument,
+  onDuplicateDocument,
   onDeleteDocument,
   onAddClinicalUpdate,
   onToggleAnnex,
@@ -200,16 +210,28 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
                       {getClinicalDocumentTypeLabel(document.documentType)}
                     </span>
                   </button>
-                  {canDelete && (
-                    <button
-                      type="button"
-                      onClick={() => onDeleteDocument(document)}
-                      className="rounded-md p-[3px] text-slate-300 opacity-0 transition-all group-hover/doc:opacity-100 hover:text-red-500 hover:bg-red-50"
-                      title="Eliminar documento"
-                    >
-                      <Trash2 size={11} />
-                    </button>
-                  )}
+                  <div className="flex items-center gap-1">
+                    {canEdit && (
+                      <button
+                        type="button"
+                        onClick={() => onDuplicateDocument(document)}
+                        className="rounded-md p-[3px] text-slate-300 opacity-0 transition-all group-hover/doc:opacity-100 hover:text-medical-600 hover:bg-medical-50"
+                        title="Duplicar documento"
+                      >
+                        <Copy size={11} />
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button
+                        type="button"
+                        onClick={() => onDeleteDocument(document)}
+                        className="rounded-md p-[3px] text-slate-300 opacity-0 transition-all group-hover/doc:opacity-100 hover:text-red-500 hover:bg-red-50"
+                        title="Eliminar documento"
+                      >
+                        <Trash2 size={11} />
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="mt-0.5 flex items-center justify-between">
                   <p className="text-[9px] text-slate-500">
