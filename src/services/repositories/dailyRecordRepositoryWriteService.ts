@@ -15,11 +15,13 @@ import {
 } from '@/services/repositories/contracts/dailyRecordCommands';
 import { createUpdatePartialDailyRecordResult } from '@/services/repositories/contracts/dailyRecordResults';
 import {
-  assertRemoteSaveCompatibility,
-  resolveRemoteWriteRecovery,
   prepareDailyRecordForPersistence,
   preparePatchedRecordForPersistence,
 } from '@/services/repositories/dailyRecordWriteSupport';
+import {
+  assertRemoteSaveCompatibility,
+  resolveRemoteWriteRecovery,
+} from '@/services/repositories/dailyRecordRemoteWriteController';
 import { syncPatientsToMasterInBackground } from '@/services/repositories/dailyRecordBackgroundMasterSyncController';
 import {
   applyRecoveryDecisionToState,

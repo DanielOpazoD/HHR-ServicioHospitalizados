@@ -339,9 +339,13 @@ service cloud.firestore {
 	             ]);
 	    }
 
-	    function canManageCensusAccess() {
-	      return hasBootstrapOrAnyEffectiveRole(['admin', 'editor']);
-	    }
+    function canManageCensusAccess() {
+      return hasBootstrapOrAnyEffectiveRole(['admin', 'editor']);
+    }
+
+    function isCurrentUser(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
 
     function isInvitationOwner() {
       return hasEmail() &&
@@ -373,7 +377,7 @@ service cloud.firestore {
     }
 
     function canReadCensusAccessLog(logOwnerId) {
-      return isAdmin() || (isAuthenticated() && request.auth.uid == logOwnerId);
+      return isAdmin() || isCurrentUser(logOwnerId);
     }
 
     function isValidOwnCensusAccessLog() {
@@ -386,6 +390,23 @@ service cloud.firestore {
              payload.email == getUserEmail() &&
              payload.action is string &&
              payload.timestamp is int;
+    }
+
+    function canReadReminderReceipt() {
+      return isAdmin() ||
+             (resource != null &&
+              resource.data != null &&
+              isCurrentUser(resource.data.userId));
+    }
+
+    function isValidOwnReminderReceiptWrite() {
+      let payload = request.resource.data;
+
+      return isCurrentUser(payload.userId) &&
+             payload.userName is string &&
+             payload.readAt is string &&
+             payload.shift in ['day', 'night'] &&
+             payload.dateKey is string;
     }
 
     function isOptionalString(payload, key) {
@@ -642,16 +663,8 @@ service cloud.firestore {
         allow create, update, delete: if isAdmin();
 
 	        match /readReceipts/{receiptId} {
-	          allow read: if isAdmin() ||
-	                       (isAuthenticated() && resource.data.userId == request.auth.uid);
-	          allow create, update: if isAdmin() || (
-	                                isAuthenticated() &&
-	                                request.resource.data.userId == request.auth.uid &&
-	                                request.resource.data.userName is string &&
-	                                request.resource.data.readAt is string &&
-	                                request.resource.data.shift in ['day', 'night'] &&
-	                                request.resource.data.dateKey is string
-	                              );
+	          allow read: if canReadReminderReceipt();
+	          allow create, update: if isAdmin() || isValidOwnReminderReceiptWrite();
 	          allow delete: if isAdmin();
 	        }
       }
@@ -745,8 +758,8 @@ service cloud.firestore {
     // USER SETTINGS
     // ============================================
     match /userSettings/{userId} {
-      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
-      allow write: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow read: if isAdmin() || isCurrentUser(userId);
+      allow write: if isAdmin() || isCurrentUser(userId);
     }
     
     // ============================================

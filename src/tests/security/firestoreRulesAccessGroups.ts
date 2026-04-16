@@ -838,6 +838,20 @@ export function registerFirestoreRulesAccessGroups({
       );
     });
 
+    it('blocks users from creating read receipts with invalid shift payload', async () => {
+      await assertFails(
+        nurse()
+          .doc(receiptPath)
+          .set({
+            userId: 'user_nurse',
+            userName: 'Nurse',
+            readAt: new Date(NOW_MS).toISOString(),
+            shift: 'late',
+            dateKey: CURRENT_RECORD_DATE,
+          })
+      );
+    });
+
     it('allows users to read their own receipt but blocks other users', async () => {
       await setupDoc(admin(), receiptPath, {
         userId: 'user_nurse',

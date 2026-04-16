@@ -1,6 +1,6 @@
 # Foundation Continuation Tracker
 
-Última actualización: 2026-04-11
+Última actualización: 2026-04-16
 
 ## Resumen
 
@@ -69,8 +69,35 @@
 - `quality-metrics`: `featureBoundaryViolations=0`, `dailyRecordBoundaryViolations=0`
 - focos activos: `foundations` y `permissions` como deuda viva de mantenimiento; sin drift nuevo detectado
 
+## Nota de consolidación 2026-04-16
+
+- `Bloque 1` quedó reforzado en runtime/bordes críticos:
+  - funciones Netlify sensibles (`syslab`, `mmrad`, `whatsapp`) alineadas en `origin + bearer + role`
+  - logging y warnings recuperables rebajados a diagnóstico interno cuando no bloquean uso real
+  - runtime/auth/bootstrap más silencioso por defecto
+- `Bloque 2` quedó avanzado sobre hotspots reales:
+  - `useCensusEmailRecipientLists` movió la mecánica de sync diferido a un controller dedicado
+  - `dailyRecord` compactó lectura remota/fallback y composición de resultados bloqueados en write
+- `Bloque 3` quedó blindado en `clinical-documents` y `laboratory`:
+  - superficies públicas/internas más explícitas
+  - tests estáticos nuevos contra deep imports externos
+- `Bloque 4` quedó reforzado con contratos críticos:
+  - impresión/exportación clínica con `annexMode`
+  - auth serverless con rechazo explícito de bearer inválido, issuer inválido y token expirado
+  - sync de `dailyRecord` con contratos directos de `sourceOfTruth`, `consistencyState` y fallback local
+- `Bloque 5` quedó razonablemente cerrado:
+  - documentación canónica nueva en `auth`, `repositories` y `firebase-runtime`
+  - borde PDF de `clinical-documents` separado en soporte binario, snapshot DOM y orquestación
+
+## Pendientes reales de mayor retorno
+
+1. `firestore.rules` sigue siendo el hotspot más grande y merece una iteración pequeña de compactación sin tocar semántica.
+2. `src/hooks/useCensusEmailRecipientLists.ts` ya bajó complejidad incidental, pero sigue en watchlist por tamaño y churn.
+3. `src/services/repositories/dailyRecordWriteSupport.ts` quedó mucho mejor que antes, pero todavía es buen candidato para otra extracción acotada de recovery/remediación.
+4. Regenerar scorecards/reportes cuando se abra el próximo lote para que la documentación y métricas vuelvan a quedar sincronizadas con este ciclo.
+
 ## Siguiente paso recomendado
 
-1. Sostener la regeneración de `reports/*` al final de cada lote que toque guardrails o budgets
-2. Mantener `BaseModal` como candidato de mantenimiento si vuelve a aparecer como cuello real de cambio
-3. Repetir la validación de `check:repo-hygiene` y `check:legacy-permissions-boundary` en la primera iteración disponible de cada ciclo
+1. Abrir `Bloque 6` solo como watchlist cualitativa, sin inventar un plan nuevo grande.
+2. Priorizar una iteración corta en `firestore.rules` o `dailyRecordWriteSupport`, no en ambos a la vez.
+3. Regenerar `reports/*` y repetir `check:repo-hygiene` / `check:legacy-permissions-boundary` al cierre del próximo lote.
