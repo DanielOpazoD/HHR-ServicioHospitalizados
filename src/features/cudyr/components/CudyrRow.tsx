@@ -2,8 +2,8 @@ import React from 'react';
 import type { CudyrScore } from '@/types/domain/cudyr';
 import { PatientData } from '@/features/cudyr/contracts/cudyrPatientContracts';
 import { BedDefinition } from '@/types/domain/beds';
-import { getCategorization } from '../services/CudyrScoreUtils';
 import clsx from 'clsx';
+import { buildCudyrRowViewModel } from '@/features/cudyr/controllers/cudyrRowViewController';
 
 interface CudyrRowProps {
   bed: BedDefinition;
@@ -79,49 +79,51 @@ export const CudyrRow: React.FC<CudyrRowProps> = ({
   eligibilityBlocked = false,
   eligibilityBlockedReason,
 }) => {
-  const isOccupied = !!patient?.patientName;
-  const isUTI = bed.type === 'UTI';
-  const cudyrScores = eligibilityBlocked ? undefined : patient?.cudyr;
-  const rowReadOnly = readOnly || eligibilityBlocked;
+  const viewModel = buildCudyrRowViewModel({
+    bed,
+    patient,
+    readOnly,
+    isCrib,
+    eligibilityBlocked,
+    eligibilityBlockedReason,
+  });
 
-  const { finalCat, depScore, riskScore, badgeColor } = getCategorization(cudyrScores);
-  const displayedDepScore = eligibilityBlocked ? '' : depScore;
-  const displayedRiskScore = eligibilityBlocked ? '' : riskScore;
-
-  // Background color based on bed type and crib status
-  const rowBgClass = isCrib ? 'bg-purple-50/60' : isUTI ? 'bg-yellow-50/60' : 'bg-white';
-
-  if (!isOccupied) {
+  if (!viewModel.isOccupied) {
     return (
       <tr
         className={clsx(
           'border-b border-slate-300 hover:bg-slate-100 transition-colors',
-          rowBgClass
+          viewModel.rowBgClass
         )}
       >
         <td
           className={clsx(
             'border-r border-slate-300 p-1 text-center font-bold',
-            isCrib ? 'text-purple-700' : 'text-slate-700'
+            viewModel.bedTextClass
           )}
         >
           {bed.name}
         </td>
         <td colSpan={17} className="p-2 text-center text-slate-400 italic text-[10px]">
-          {isCrib ? 'Cuna clínica sin paciente' : 'Cama disponible'}
+          {viewModel.emptyStateLabel}
         </td>
       </tr>
     );
   }
 
+  const occupiedPatient = patient!;
+
   return (
     <tr
-      className={clsx('border-b border-slate-300 hover:bg-slate-100 transition-colors', rowBgClass)}
+      className={clsx(
+        'border-b border-slate-300 hover:bg-slate-100 transition-colors',
+        viewModel.rowBgClass
+      )}
     >
       <td
         className={clsx(
           'border-r border-slate-300 p-1 text-center font-bold',
-          isCrib ? 'text-purple-700' : 'text-slate-700'
+          viewModel.bedTextClass
         )}
       >
         {bed.name}
@@ -129,20 +131,20 @@ export const CudyrRow: React.FC<CudyrRowProps> = ({
       <td
         className={clsx(
           'border-r border-slate-300 p-1 truncate font-medium w-[100px] max-w-[100px] print:w-[88px] print:max-w-[88px] print:whitespace-nowrap print:overflow-visible',
-          eligibilityBlocked ? 'text-amber-700 bg-amber-50/60' : 'text-slate-700'
+          viewModel.patientCellClass
         )}
-        title={eligibilityBlockedReason ?? patient.patientName}
+        title={viewModel.patientTitle}
       >
         {/* Show name on screen, RUT when printing */}
-        <span className={clsx('print:hidden', eligibilityBlocked && 'font-semibold')}>
-          {patient.patientName}
+        <span className={clsx('print:hidden', viewModel.showBlockedLabel && 'font-semibold')}>
+          {occupiedPatient.patientName}
         </span>
-        {eligibilityBlocked && (
+        {viewModel.showBlockedLabel && (
           <span className="print:hidden block text-[9px] font-semibold uppercase tracking-wide text-amber-700">
-            Bloqueado CUDYR
+            {viewModel.blockedLabel}
           </span>
         )}
-        <span className="hidden print:inline text-[10px]">{patient.rut || '-'}</span>
+        <span className="hidden print:inline text-[10px]">{occupiedPatient.rut || '-'}</span>
       </td>
 
       {/* Dependency Inputs */}
@@ -150,54 +152,54 @@ export const CudyrRow: React.FC<CudyrRowProps> = ({
         <ScoreInput
           bedId={bed.id}
           field="changeClothes"
-          value={cudyrScores?.changeClothes}
+          value={viewModel.scores?.changeClothes}
           onScoreChange={onScoreChange}
-          readOnly={rowReadOnly}
+          readOnly={viewModel.rowReadOnly}
         />
       </td>
       <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-blue-50">
         <ScoreInput
           bedId={bed.id}
           field="mobilization"
-          value={cudyrScores?.mobilization}
+          value={viewModel.scores?.mobilization}
           onScoreChange={onScoreChange}
-          readOnly={rowReadOnly}
+          readOnly={viewModel.rowReadOnly}
         />
       </td>
       <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-blue-50">
         <ScoreInput
           bedId={bed.id}
           field="feeding"
-          value={cudyrScores?.feeding}
+          value={viewModel.scores?.feeding}
           onScoreChange={onScoreChange}
-          readOnly={rowReadOnly}
+          readOnly={viewModel.rowReadOnly}
         />
       </td>
       <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-blue-50">
         <ScoreInput
           bedId={bed.id}
           field="elimination"
-          value={cudyrScores?.elimination}
+          value={viewModel.scores?.elimination}
           onScoreChange={onScoreChange}
-          readOnly={rowReadOnly}
+          readOnly={viewModel.rowReadOnly}
         />
       </td>
       <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-blue-50">
         <ScoreInput
           bedId={bed.id}
           field="psychosocial"
-          value={cudyrScores?.psychosocial}
+          value={viewModel.scores?.psychosocial}
           onScoreChange={onScoreChange}
-          readOnly={rowReadOnly}
+          readOnly={viewModel.rowReadOnly}
         />
       </td>
       <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-blue-50">
         <ScoreInput
           bedId={bed.id}
           field="surveillance"
-          value={cudyrScores?.surveillance}
+          value={viewModel.scores?.surveillance}
           onScoreChange={onScoreChange}
-          readOnly={rowReadOnly}
+          readOnly={viewModel.rowReadOnly}
         />
       </td>
 
@@ -206,90 +208,90 @@ export const CudyrRow: React.FC<CudyrRowProps> = ({
         <ScoreInput
           bedId={bed.id}
           field="vitalSigns"
-          value={cudyrScores?.vitalSigns}
+          value={viewModel.scores?.vitalSigns}
           onScoreChange={onScoreChange}
-          readOnly={rowReadOnly}
+          readOnly={viewModel.rowReadOnly}
         />
       </td>
       <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-red-50">
         <ScoreInput
           bedId={bed.id}
           field="fluidBalance"
-          value={cudyrScores?.fluidBalance}
+          value={viewModel.scores?.fluidBalance}
           onScoreChange={onScoreChange}
-          readOnly={rowReadOnly}
+          readOnly={viewModel.rowReadOnly}
         />
       </td>
       <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-red-50">
         <ScoreInput
           bedId={bed.id}
           field="oxygenTherapy"
-          value={cudyrScores?.oxygenTherapy}
+          value={viewModel.scores?.oxygenTherapy}
           onScoreChange={onScoreChange}
-          readOnly={rowReadOnly}
+          readOnly={viewModel.rowReadOnly}
         />
       </td>
       <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-red-50">
         <ScoreInput
           bedId={bed.id}
           field="airway"
-          value={cudyrScores?.airway}
+          value={viewModel.scores?.airway}
           onScoreChange={onScoreChange}
-          readOnly={rowReadOnly}
+          readOnly={viewModel.rowReadOnly}
         />
       </td>
       <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-red-50">
         <ScoreInput
           bedId={bed.id}
           field="proInterventions"
-          value={cudyrScores?.proInterventions}
+          value={viewModel.scores?.proInterventions}
           onScoreChange={onScoreChange}
-          readOnly={rowReadOnly}
+          readOnly={viewModel.rowReadOnly}
         />
       </td>
       <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-red-50">
         <ScoreInput
           bedId={bed.id}
           field="skinCare"
-          value={cudyrScores?.skinCare}
+          value={viewModel.scores?.skinCare}
           onScoreChange={onScoreChange}
-          readOnly={rowReadOnly}
+          readOnly={viewModel.rowReadOnly}
         />
       </td>
       <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-red-50">
         <ScoreInput
           bedId={bed.id}
           field="pharmacology"
-          value={cudyrScores?.pharmacology}
+          value={viewModel.scores?.pharmacology}
           onScoreChange={onScoreChange}
-          readOnly={rowReadOnly}
+          readOnly={viewModel.rowReadOnly}
         />
       </td>
       <td className="border-r border-slate-300 p-0 text-center bg-white hover:bg-red-50">
         <ScoreInput
           bedId={bed.id}
           field="invasiveElements"
-          value={cudyrScores?.invasiveElements}
+          value={viewModel.scores?.invasiveElements}
           onScoreChange={onScoreChange}
-          readOnly={rowReadOnly}
+          readOnly={viewModel.rowReadOnly}
         />
       </td>
 
       {/* Results - P.DEP and P.RIES first (hidden on print), then CAT */}
       <td className="border-r border-slate-300 p-1 text-center text-xs text-blue-800 font-bold bg-blue-50/30 print:hidden">
-        {displayedDepScore}
+        {viewModel.displayedDepScore}
       </td>
       <td className="border-r border-slate-300 p-1 text-center text-xs text-red-800 font-bold bg-red-50/30 print:hidden">
-        {displayedRiskScore}
+        {viewModel.displayedRiskScore}
       </td>
       <td className="p-1 text-center print:p-0.5">
         <span
           className={clsx(
             'px-2 py-0.5 rounded font-bold text-xs block w-full shadow-sm print:px-1 print:text-[10px]',
-            badgeColor
+            viewModel.badgeColor
           )}
         >
-          {finalCat}
+          {viewModel.finalCat}
         </span>
       </td>
     </tr>

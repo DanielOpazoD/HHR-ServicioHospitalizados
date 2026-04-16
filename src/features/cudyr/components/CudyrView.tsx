@@ -4,6 +4,7 @@ import { CudyrHeader } from './CudyrHeader';
 import { CudyrRow, VerticalHeader } from './CudyrRow';
 import { useCudyrLogic } from '../hooks/useCudyrLogic';
 import { resolveNightShiftNurses } from '@/services/staff/dailyRecordStaffing';
+import { buildCudyrViewShellModel } from '@/features/cudyr/controllers/cudyrViewController';
 
 interface CudyrViewProps {
   readOnly?: boolean;
@@ -29,12 +30,13 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
     );
   }
 
-  const formatPrintDate = () => {
-    const [year, month, day] = record.date.split('-');
-    return `${day}-${month}-${year}`;
-  };
-
   const responsibleNurses = resolveNightShiftNurses(record).filter(n => n && n.trim() !== '');
+  const shellModel = buildCudyrViewShellModel({
+    recordDate: record.date,
+    responsibleNurses,
+    occupiedCount: stats.occupiedCount,
+    categorizedCount: stats.categorizedCount,
+  });
 
   return (
     <div className="space-y-4 animate-fade-in pb-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 print:max-w-none print:px-0 print:space-y-2 print:pb-0 print:break-inside-avoid">
@@ -45,12 +47,12 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
           Instrumento CUDYR del último registro disponible
         </h1>
         <div className="flex items-center gap-4 text-sm text-slate-700">
-          <span className="font-semibold">Fecha: {formatPrintDate()}</span>
+          <span className="font-semibold">Fecha: {shellModel.formattedPrintDate}</span>
           <span className="text-slate-400">|</span>
           <span>
             <span className="font-semibold">Enfermeros/as: </span>
-            {responsibleNurses.length > 0 ? (
-              responsibleNurses.join(', ')
+            {shellModel.hasResponsibleNurses ? (
+              shellModel.responsibleNursesLabel
             ) : (
               <span className="italic text-slate-400">No registrados</span>
             )}
@@ -66,13 +68,7 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
           </span>
           <span className="text-slate-400">|</span>
           <span>
-            Índice:{' '}
-            <strong>
-              {stats.occupiedCount > 0
-                ? Math.round((stats.categorizedCount / stats.occupiedCount) * 100)
-                : 0}
-              %
-            </strong>
+            Índice: <strong>{shellModel.categorizationIndex}%</strong>
           </span>
         </div>
       </div>
