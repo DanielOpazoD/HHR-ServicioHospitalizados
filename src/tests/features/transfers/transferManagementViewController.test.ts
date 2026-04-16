@@ -6,12 +6,14 @@ import {
   buildTransferDocumentPackageModalBindings,
   buildTransferFinalizedSectionModel,
   buildTransferManagementPeriodModel,
+  buildTransferHeaderModel,
   buildTransferMonthButtonModels,
   buildTransferProcessingOverlayModel,
   buildTransferQuestionnairePatientData,
   buildTransferQuestionnaireModalBindings,
   buildTransferStatusModalBindings,
   buildTransferTableActions,
+  buildTransferTableSectionModel,
   buildTransferTableBindings,
   buildTransferYearButtonModels,
 } from '@/features/transfers/components/controllers/transferManagementViewController';
@@ -149,6 +151,16 @@ describe('transferManagementViewController', () => {
 
   it('builds period selector and finalized section models for the view shell', () => {
     expect(
+      buildTransferHeaderModel({
+        filteredActiveCount: 3,
+      })
+    ).toEqual({
+      title: 'Gestión de Traslados',
+      activeCountLabel: '3 solicitudes activas',
+      newRequestLabel: 'Nueva Solicitud',
+    });
+
+    expect(
       buildTransferYearButtonModels({
         availableYears: [2026, 2025],
         selectedYear: 2026,
@@ -173,10 +185,26 @@ describe('transferManagementViewController', () => {
       buildTransferFinalizedSectionModel({
         finalizedTransfersCount: 4,
         showFinalizedTransfers: true,
+        isLoading: false,
       })
     ).toEqual({
+      title: 'Traslados Finalizados',
+      description: 'Efectivos y cancelados del mes seleccionado',
       countLabel: '4',
       shouldShowContent: true,
+      toggleIcon: 'down',
+      shouldShowLoadingState: false,
+      loadingMessage: 'Cargando traslados finalizados...',
+    });
+
+    expect(
+      buildTransferTableSectionModel({
+        isLoading: true,
+        loadingMessage: 'Cargando solicitudes...',
+      })
+    ).toEqual({
+      shouldShowLoadingState: true,
+      loadingMessage: 'Cargando solicitudes...',
     });
   });
 

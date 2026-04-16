@@ -51,8 +51,24 @@ export interface TransferPeriodButtonModel<TValue> {
 }
 
 export interface TransferFinalizedSectionModel {
+  title: string;
+  description: string;
   countLabel: string;
   shouldShowContent: boolean;
+  toggleIcon: 'down' | 'right';
+  shouldShowLoadingState: boolean;
+  loadingMessage: string;
+}
+
+export interface TransferHeaderModel {
+  title: string;
+  activeCountLabel: string;
+  newRequestLabel: string;
+}
+
+export interface TransferTableSectionModel {
+  shouldShowLoadingState: boolean;
+  loadingMessage: string;
 }
 
 export interface TransferFormModalBindings {

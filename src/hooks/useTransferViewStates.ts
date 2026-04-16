@@ -13,9 +13,8 @@ import {
   type TransferDocumentPackageCacheEntry,
 } from '@/hooks/controllers/transferDocumentPackageController';
 import {
-  MISSING_TRANSFER_FORMS_MESSAGE,
-  resolveTransferDestinationHospitalId,
-  resolveTransferDocumentPackageMessage,
+  resolveTransferDocumentPackageApplyPlan,
+  resolveTransferDocumentWorkflowPlan,
   withSelectedTransfer,
 } from '@/hooks/controllers/transferViewStatesController';
 
@@ -70,22 +69,22 @@ export const useTransferViewStates = (
           persistResponses: options?.persistResponses,
         });
 
-        const message = resolveTransferDocumentPackageMessage(result);
-        if (message) {
-          if (result.kind === 'error') {
+        const applyPlan = resolveTransferDocumentPackageApplyPlan(result);
+        if (applyPlan.kind === 'message') {
+          if (applyPlan.shouldLogError && result.kind === 'error') {
             transferViewStatesLogger.error('Error generating transfer documents', result.error);
           }
-          setError(message);
-          defaultBrowserWindowRuntime.alert(message);
+          setError(applyPlan.message);
+          defaultBrowserWindowRuntime.alert(applyPlan.message);
           return;
         }
 
-        if (result.kind !== 'success' && result.kind !== 'cached') {
+        if (applyPlan.kind !== 'open-package') {
           return;
         }
 
-        setGeneratedDocs(result.documents);
-        setPatientDataForDocs(result.patientData);
+        setGeneratedDocs(applyPlan.documents);
+        setPatientDataForDocs(applyPlan.patientData);
         setIsQuestionnaireOpen(false);
         setIsPackageModalOpen(true);
       } finally {
@@ -160,15 +159,23 @@ export const useTransferViewStates = (
 
   const handleGenerateDocs = useCallback(
     (transfer: TransferRequest) => {
-      const hospitalId = resolveTransferDestinationHospitalId(transfer.destinationHospital);
-      if (!hospitalId) {
-        defaultBrowserWindowRuntime.alert(MISSING_TRANSFER_FORMS_MESSAGE);
+      const workflowPlan = resolveTransferDocumentWorkflowPlan({
+        transfer,
+        mode: 'prepare',
+      });
+
+      if (workflowPlan.kind === 'blocked') {
+        defaultBrowserWindowRuntime.alert(workflowPlan.message);
+        return;
+      }
+
+      if (workflowPlan.kind !== 'open-questionnaire') {
         return;
       }
 
       clearGeneratedDocumentPackage();
       setSelectedTransfer(transfer);
-      setSelectedHospitalId(hospitalId);
+      setSelectedHospitalId(workflowPlan.hospitalId);
       setIsQuestionnaireOpen(true);
     },
     [clearGeneratedDocumentPackage]
@@ -191,16 +198,24 @@ export const useTransferViewStates = (
 
   const handleViewDocs = useCallback(
     async (transfer: TransferRequest) => {
-      if (!transfer.questionnaireResponses) return;
-      const hospitalId = resolveTransferDestinationHospitalId(transfer.destinationHospital);
-      if (!hospitalId) {
-        defaultBrowserWindowRuntime.alert(MISSING_TRANSFER_FORMS_MESSAGE);
+      const workflowPlan = resolveTransferDocumentWorkflowPlan({
+        transfer,
+        mode: 'view',
+      });
+
+      if (workflowPlan.kind === 'blocked') {
+        defaultBrowserWindowRuntime.alert(workflowPlan.message);
         return;
       }
+
+      if (workflowPlan.kind !== 'open-package') {
+        return;
+      }
+
       clearGeneratedDocumentPackage();
       setSelectedTransfer(transfer);
-      setSelectedHospitalId(hospitalId);
-      await generateDocumentPackage(transfer, hospitalId, transfer.questionnaireResponses, {
+      setSelectedHospitalId(workflowPlan.hospitalId);
+      await generateDocumentPackage(transfer, workflowPlan.hospitalId, workflowPlan.responses, {
         persistResponses: false,
       });
     },

@@ -17,10 +17,12 @@ import {
   buildTransferDocumentPackageModalBindings,
   buildTransferFinalizedSectionModel,
   buildTransferFormModalBindings,
+  buildTransferHeaderModel,
   buildTransferMonthButtonModels,
   buildTransferProcessingOverlayModel,
   buildTransferStatusModalBindings,
   buildTransferTableActions,
+  buildTransferTableSectionModel,
   buildTransferQuestionnairePatientData,
   buildTransferQuestionnaireModalBindings,
   buildTransferTableBindings,
@@ -92,13 +94,21 @@ export const TransferManagementView: React.FC = () => {
     availableYears,
     selectedYear,
   });
+  const headerModel = buildTransferHeaderModel({
+    filteredActiveCount,
+  });
   const monthButtonModels = buildTransferMonthButtonModels({
     monthLabels,
     selectedMonth,
   });
+  const activeSectionModel = buildTransferTableSectionModel({
+    isLoading,
+    loadingMessage: 'Cargando solicitudes...',
+  });
   const finalizedSectionModel = buildTransferFinalizedSectionModel({
     finalizedTransfersCount: finalizedTransfers.length,
     showFinalizedTransfers,
+    isLoading,
   });
   const processingOverlayModel = buildTransferProcessingOverlayModel();
 
@@ -111,10 +121,8 @@ export const TransferManagementView: React.FC = () => {
             <ArrowRightLeft size={18} />
           </span>
           <div>
-            <h1 className="text-lg font-bold text-slate-800 tracking-tight">
-              Gestión de Traslados
-            </h1>
-            <p className="text-[11px] text-slate-400">{filteredActiveCount} solicitudes activas</p>
+            <h1 className="text-lg font-bold text-slate-800 tracking-tight">{headerModel.title}</h1>
+            <p className="text-[11px] text-slate-400">{headerModel.activeCountLabel}</p>
           </div>
         </div>
         <button
@@ -122,7 +130,7 @@ export const TransferManagementView: React.FC = () => {
           className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-b from-sky-500 to-sky-600 px-4 py-2 text-[13px] font-semibold text-white shadow-md shadow-sky-600/25 transition-all hover:from-sky-600 hover:to-sky-700 hover:shadow-lg active:scale-[0.98]"
         >
           <Plus size={15} />
-          Nueva Solicitud
+          {headerModel.newRequestLabel}
         </button>
       </div>
 
@@ -176,10 +184,12 @@ export const TransferManagementView: React.FC = () => {
 
       {/* Active Transfers Table */}
       <div className="rounded-2xl border border-slate-200/80 bg-white shadow-sm ring-1 ring-black/[0.02] overflow-visible">
-        {isLoading ? (
+        {activeSectionModel.shouldShowLoadingState ? (
           <div className="flex flex-col items-center justify-center py-16">
             <div className="h-8 w-8 rounded-full border-[3px] border-sky-500 border-t-transparent animate-spin" />
-            <p className="mt-3 text-[13px] text-slate-400 font-medium">Cargando solicitudes...</p>
+            <p className="mt-3 text-[13px] text-slate-400 font-medium">
+              {activeSectionModel.loadingMessage}
+            </p>
           </div>
         ) : (
           <TransferTable {...activeTableBindings} />
@@ -194,16 +204,14 @@ export const TransferManagementView: React.FC = () => {
           className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-slate-50/60"
         >
           <div>
-            <h2 className="text-[14px] font-bold text-slate-700">Traslados Finalizados</h2>
-            <p className="text-[11px] text-slate-400">
-              Efectivos y cancelados del mes seleccionado
-            </p>
+            <h2 className="text-[14px] font-bold text-slate-700">{finalizedSectionModel.title}</h2>
+            <p className="text-[11px] text-slate-400">{finalizedSectionModel.description}</p>
           </div>
           <div className="flex items-center gap-2">
             <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-semibold text-slate-500">
               {finalizedSectionModel.countLabel}
             </span>
-            {showFinalizedTransfers ? (
+            {finalizedSectionModel.toggleIcon === 'down' ? (
               <ChevronDown size={15} className="text-slate-400" />
             ) : (
               <ChevronRight size={15} className="text-slate-400" />
@@ -213,9 +221,9 @@ export const TransferManagementView: React.FC = () => {
 
         {finalizedSectionModel.shouldShowContent && (
           <div className="border-t border-slate-100">
-            {isLoading ? (
+            {finalizedSectionModel.shouldShowLoadingState ? (
               <div className="py-8 text-center text-[13px] text-slate-400">
-                Cargando traslados finalizados...
+                {finalizedSectionModel.loadingMessage}
               </div>
             ) : (
               <TransferTable {...finalizedTableBindings} />

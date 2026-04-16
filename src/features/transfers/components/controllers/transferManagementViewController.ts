@@ -14,12 +14,14 @@ import type {
   TransferDocumentPackageModalBindings,
   TransferFinalizedSectionModel,
   TransferFormModalBindings,
+  TransferHeaderModel,
   TransferManagementPeriodModel,
   TransferPeriodButtonModel,
   TransferProcessingOverlayModel,
   TransferQuestionnaireModalBindings,
   TransferStatusModalBindings,
   TransferTableActions,
+  TransferTableSectionModel,
   TransferTableViewBindings,
 } from './transferManagementViewContracts';
 
@@ -167,15 +169,43 @@ export const buildTransferMonthButtonModels = ({
     isSelected: selectedMonth === index + 1,
   }));
 
+export const buildTransferHeaderModel = ({
+  filteredActiveCount,
+}: {
+  filteredActiveCount: number;
+}): TransferHeaderModel => ({
+  title: 'Gestión de Traslados',
+  activeCountLabel: `${filteredActiveCount} solicitudes activas`,
+  newRequestLabel: 'Nueva Solicitud',
+});
+
+export const buildTransferTableSectionModel = ({
+  isLoading,
+  loadingMessage,
+}: {
+  isLoading: boolean;
+  loadingMessage: string;
+}): TransferTableSectionModel => ({
+  shouldShowLoadingState: isLoading,
+  loadingMessage,
+});
+
 export const buildTransferFinalizedSectionModel = ({
   finalizedTransfersCount,
   showFinalizedTransfers,
+  isLoading,
 }: {
   finalizedTransfersCount: number;
   showFinalizedTransfers: boolean;
+  isLoading: boolean;
 }): TransferFinalizedSectionModel => ({
+  title: 'Traslados Finalizados',
+  description: 'Efectivos y cancelados del mes seleccionado',
   countLabel: String(finalizedTransfersCount),
   shouldShowContent: showFinalizedTransfers,
+  toggleIcon: showFinalizedTransfers ? 'down' : 'right',
+  shouldShowLoadingState: isLoading,
+  loadingMessage: 'Cargando traslados finalizados...',
 });
 
 export const buildTransferTableBindings = ({
