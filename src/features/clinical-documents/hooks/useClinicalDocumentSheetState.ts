@@ -10,7 +10,7 @@
  * documents resets transient UI without unmounting.
  */
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, DragEvent, SetStateAction } from 'react';
 
 import type { ClinicalDocumentIndicationSpecialtyId } from '@/features/clinical-documents/controllers/clinicalDocumentIndicationsController';
@@ -31,6 +31,14 @@ const DEFAULT_ACTIVE_SPECIALTY_ID: ClinicalDocumentIndicationSpecialtyId = 'tmt'
 
 /** Default plan sub-section focus when opening a new document. */
 const DEFAULT_PLAN_SUBSECTION_ID: ClinicalDocumentPlanSubsectionId = 'generales';
+const FORMATTING_KEEP_OPEN_SELECTOR = [
+  '.clinical-document-rich-text-editor',
+  '.clinical-document-input',
+  '.clinical-document-textarea',
+  '.clinical-document-global-toolbar-modal',
+  '.clinical-document-toolbar-cluster',
+  '[role="dialog"]',
+].join(', ');
 
 // ---------------------------------------------------------------------------
 // Document-scoped state
@@ -240,6 +248,31 @@ export const useClinicalDocumentSheetState = (selectedDocument: ClinicalDocument
     }),
     [dragOverSectionId, draggedSectionId]
   );
+
+  useEffect(() => {
+    if (!isFormattingOpen || typeof document === 'undefined') {
+      return;
+    }
+
+    const handleDocumentDoubleClick = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        setIsFormattingOpen(false);
+        return;
+      }
+
+      if (target.closest(FORMATTING_KEEP_OPEN_SELECTOR)) {
+        return;
+      }
+
+      setIsFormattingOpen(false);
+    };
+
+    document.addEventListener('dblclick', handleDocumentDoubleClick);
+    return () => {
+      document.removeEventListener('dblclick', handleDocumentDoubleClick);
+    };
+  }, [isFormattingOpen]);
 
   return {
     activeTitleTarget,

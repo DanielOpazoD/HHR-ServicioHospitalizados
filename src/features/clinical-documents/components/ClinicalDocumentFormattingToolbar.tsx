@@ -10,14 +10,12 @@ import React, { useState } from 'react';
 import {
   Bold,
   Eraser,
-  ImagePlus,
   IndentDecrease,
   IndentIncrease,
   Italic,
   Link2,
   List,
   ListOrdered,
-  Paperclip,
   Printer,
   Redo2,
   RotateCcw,
@@ -162,7 +160,14 @@ export const ClinicalDocumentFormattingToolbar: React.FC<
   const [showLinkDialog, setShowLinkDialog] = useState(false);
 
   return (
-    <div className="flex flex-wrap items-start gap-2 bg-transparent">
+    <div
+      data-formatting-open={isFormattingOpen ? 'true' : 'false'}
+      className={`flex flex-wrap items-start gap-2 rounded-2xl transition-all ${
+        isFormattingOpen
+          ? 'bg-white/80 px-1.5 py-1 shadow-[0_8px_24px_rgba(14,165,233,0.08)] ring-1 ring-sky-100/90 backdrop-blur-sm'
+          : 'bg-transparent'
+      }`}
+    >
       <ToolbarCluster label="Historial">
         <button
           type="button"
@@ -197,9 +202,11 @@ export const ClinicalDocumentFormattingToolbar: React.FC<
           aria-label="Formato"
           title="Formato avanzado"
           className={`relative ${iconBtn} ${
-            formattingReady
-              ? 'border-sky-200 bg-sky-50 text-sky-800 hover:bg-sky-100'
-              : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+            isFormattingOpen
+              ? 'border-sky-300 bg-sky-100 text-sky-900 hover:bg-sky-100'
+              : formattingReady
+                ? 'border-sky-200 bg-sky-50 text-sky-800 hover:bg-sky-100'
+                : 'border-slate-200 text-slate-600 hover:bg-slate-50'
           }`}
         >
           {formattingReady && (
@@ -210,55 +217,6 @@ export const ClinicalDocumentFormattingToolbar: React.FC<
           )}
           <Bold size={TOOLBAR_ICON_SIZE} />
         </button>
-      </ToolbarCluster>
-
-      <ToolbarCluster label="Tablas y enlaces">
-        {onInsertHtml && (
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setShowTableDialog(prev => !prev)}
-              disabled={!editEnabled}
-              aria-label="Insertar tabla"
-              title="Insertar tabla"
-              className={defaultIconBtn}
-            >
-              <Table2 size={TOOLBAR_ICON_SIZE} />
-            </button>
-            {showTableDialog && editEnabled && (
-              <ClinicalDocumentTableDialog
-                onInsert={html => {
-                  onInsertHtml(html);
-                  setShowTableDialog(false);
-                }}
-                onClose={() => setShowTableDialog(false)}
-              />
-            )}
-          </div>
-        )}
-        {onInsertHtml && (
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setShowLinkDialog(prev => !prev)}
-              disabled={!editEnabled}
-              aria-label="Insertar enlace"
-              title="Insertar enlace"
-              className={defaultIconBtn}
-            >
-              <Link2 size={TOOLBAR_ICON_SIZE} />
-            </button>
-            {showLinkDialog && editEnabled && (
-              <ClinicalDocumentLinkDialog
-                onInsert={html => {
-                  onInsertHtml(html);
-                  setShowLinkDialog(false);
-                }}
-                onClose={() => setShowLinkDialog(false)}
-              />
-            )}
-          </div>
-        )}
       </ToolbarCluster>
 
       <ToolbarCluster label="Documento">
@@ -374,24 +332,21 @@ export const ClinicalDocumentFormattingToolbar: React.FC<
                 )}
               </div>
             </section>
-
-            <section className="clinical-document-toolbar-panel-section">
-              <p className="clinical-document-toolbar-panel-title">Imágenes y anexos</p>
-              <div
-                className="clinical-document-toolbar-panel-note"
-                aria-label="Guía de imágenes y anexos"
-              >
-                <span className="clinical-document-toolbar-panel-note-item">
-                  <ImagePlus size={13} />
-                  Pega capturas, Word, PDF o correo en la sección activa.
-                </span>
-                <span className="clinical-document-toolbar-panel-note-item">
-                  <Paperclip size={13} />
-                  Usa Anexos para adjuntos, resultados y evidencia complementaria.
-                </span>
-              </div>
-            </section>
           </div>
+
+          {showTableDialog && onInsertHtml ? (
+            <ClinicalDocumentTableDialog
+              onInsert={html => onInsertHtml(html)}
+              onClose={() => setShowTableDialog(false)}
+            />
+          ) : null}
+
+          {showLinkDialog && onInsertHtml ? (
+            <ClinicalDocumentLinkDialog
+              onInsert={html => onInsertHtml(html)}
+              onClose={() => setShowLinkDialog(false)}
+            />
+          ) : null}
         </div>
       )}
     </div>

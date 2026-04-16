@@ -535,21 +535,21 @@
   top: calc(100% + 8px);
   right: 0;
   z-index: 30;
-  min-width: 260px;
+  min-width: 220px;
   border: 1px solid #dbe2ea;
   border-radius: 12px;
   background: #ffffff;
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
-  padding: 10px;
+  padding: 8px;
 }
 
 .clinical-document-toolbar-cluster {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 6px;
+  gap: 5px;
+  padding: 3px 5px;
   border: 1px solid #dbe2ea;
-  border-radius: 12px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
 }
@@ -566,40 +566,22 @@
 .clinical-document-toolbar-panel {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .clinical-document-toolbar-panel-section {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .clinical-document-toolbar-panel-title {
   margin: 0;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: #64748b;
-}
-
-.clinical-document-toolbar-panel-note {
-  display: grid;
-  gap: 6px;
-  padding: 8px 10px;
-  border: 1px dashed #cbd5e1;
-  border-radius: 10px;
-  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-}
-
-.clinical-document-toolbar-panel-note-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  font-weight: 500;
-  color: #475569;
 }
 
 .clinical-document-global-toolbar-caption {
@@ -801,7 +783,7 @@
 .clinical-document-annex-heading {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 
 .clinical-document-annex-meta {
@@ -814,15 +796,6 @@
 .clinical-document-annex-meta-item {
   font-size: 11px;
   color: #334155;
-}
-
-.clinical-document-annex-eyebrow {
-  margin: 0;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #64748b;
 }
 
 .clinical-document-annex-title-row {
@@ -853,24 +826,18 @@
   letter-spacing: 0.05em;
 }
 
-.clinical-document-annex-caption {
-  margin: 0;
-  font-size: 11px;
-  color: #64748b;
-}
-
 .clinical-document-annex-actions {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 8px;
-  min-width: 220px;
+  gap: 6px;
+  min-width: 160px;
 }
 
 .clinical-document-annex-print-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   font-size: 11px;
   color: #334155;
 }
@@ -884,19 +851,17 @@
 .clinical-document-annex-print-toggle-copy {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
 }
 
 .clinical-document-annex-print-button {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
   border: 1px solid #cbd5e1;
-  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
   background: #ffffff;
-  padding: 6px 10px;
-  font-size: 11px;
-  font-weight: 700;
   color: #0f172a;
   transition: background 0.15s ease;
 }
@@ -1061,6 +1026,13 @@ body.clinical-documents-print .clinical-document-rich-text-editor {
   background: #ffffff !important;
   color: #1f2937 !important;
   border: 1px solid #cbd5e1 !important;
+  box-shadow: none !important;
+}
+
+body.clinical-documents-print .clinical-document-annex-page,
+body.clinical-documents-print .clinical-document-annex-editor-shell {
+  background: #ffffff !important;
+  border-radius: 0 !important;
   box-shadow: none !important;
 }
 
@@ -1231,6 +1203,13 @@ body.clinical-documents-print .clinical-document-indications-panel {
     background: #ffffff !important;
     color: #1f2937 !important;
     border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+  }
+
+  body.clinical-document-inline-print-mode .clinical-document-annex-page,
+  body.clinical-document-inline-print-mode .clinical-document-annex-editor-shell {
+    background: #ffffff !important;
+    border-radius: 0 !important;
     box-shadow: none !important;
   }
 

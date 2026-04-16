@@ -10,7 +10,7 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import { Paperclip, Printer, SquareCheckBig, Trash2, X } from 'lucide-react';
+import { Paperclip, Printer, Trash2, X } from 'lucide-react';
 import { ClinicalDocumentRichTextEditor } from '@/features/clinical-documents/components/ClinicalDocumentRichTextEditor';
 import type { ClinicalDocumentRichTextEditorActivationApi } from '@/features/clinical-documents/hooks/useClinicalDocumentRichTextEditorController';
 import { formatDateForDisplay } from '@/utils/dateFormattingUtils';
@@ -94,7 +94,6 @@ export const ClinicalDocumentAnnexPage: React.FC<ClinicalDocumentAnnexPageProps>
           onDoubleClick={handleTitleDoubleClick}
           title={canEdit && !isLocked ? 'Doble clic para opciones' : undefined}
         >
-          <p className="clinical-document-annex-eyebrow">Apéndice clínico</p>
           <div className="clinical-document-annex-title-row">
             <Paperclip size={16} className="text-slate-500 print:hidden" />
             <h2 className="clinical-document-annex-title">Anexos clínicos</h2>
@@ -108,9 +107,6 @@ export const ClinicalDocumentAnnexPage: React.FC<ClinicalDocumentAnnexPageProps>
               Fecha: <strong>{resolvedCurrentDateLabel}</strong>
             </span>
           </div>
-          <p className="clinical-document-annex-caption">
-            Resultados, imágenes y material complementario del documento principal.
-          </p>
         </div>
 
         <div className="clinical-document-annex-actions print:hidden">
@@ -122,7 +118,6 @@ export const ClinicalDocumentAnnexPage: React.FC<ClinicalDocumentAnnexPageProps>
               disabled={!canEdit || isLocked}
             />
             <span className="clinical-document-annex-print-toggle-copy">
-              <SquareCheckBig size={14} />
               Incluir al imprimir global
             </span>
           </label>
@@ -130,9 +125,10 @@ export const ClinicalDocumentAnnexPage: React.FC<ClinicalDocumentAnnexPageProps>
             type="button"
             onClick={onPrintAnnex}
             className="clinical-document-annex-print-button"
+            aria-label="Imprimir solo anexo"
+            title="Imprimir solo anexo"
           >
             <Printer size={14} />
-            Imprimir solo anexo
           </button>
         </div>
 

@@ -332,4 +332,27 @@ describe('ClinicalDocumentsWorkspace', () => {
       screen.getByRole('button', { name: /eliminar sección antecedentes/i })
     ).toBeInTheDocument();
   });
+
+  it('closes advanced formatting on double click outside editable fields', async () => {
+    render(
+      <ClinicalDocumentsWorkspace
+        patient={workspacePatient}
+        currentDateString="2026-03-06"
+        bedId="R1"
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Formato' })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Formato' }));
+    expect(screen.getByText('Formato de texto')).toBeInTheDocument();
+
+    fireEvent.doubleClick(screen.getByTestId('clinical-documents-workspace'));
+
+    await waitFor(() => {
+      expect(screen.queryByText('Formato de texto')).not.toBeInTheDocument();
+    });
+  });
 });

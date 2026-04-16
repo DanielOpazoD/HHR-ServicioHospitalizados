@@ -74,7 +74,7 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
   onPatchDraft,
   onClearDraft,
 }) => {
-  const [isOpen, setIsOpen] = useState(!!draft?.cie10Code);
+  const [isOpen, setIsOpen] = useState(false);
   const [localDraft, setLocalDraft] = useState<ClinicalDocumentIeehDraft>(
     () => draft ?? createEmptyIeehDraft()
   );

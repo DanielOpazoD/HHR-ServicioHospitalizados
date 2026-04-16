@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import type { ClinicalDocumentFormattingToolbarProps } from '@/features/clinical-documents/components/ClinicalDocumentFormattingToolbar';
 import { ClinicalDocumentFormattingToolbar } from '@/features/clinical-documents/components/ClinicalDocumentFormattingToolbar';
@@ -70,8 +70,11 @@ describe('ClinicalDocumentFormattingToolbar', () => {
 
     expect(screen.getByText('Formato de texto')).toBeInTheDocument();
     expect(screen.getByText('Listas y sangría')).toBeInTheDocument();
-    expect(screen.getAllByText('Tablas y enlaces')).toHaveLength(2);
-    expect(screen.getByText('Imágenes y anexos')).toBeInTheDocument();
+    expect(screen.getAllByText('Tablas y enlaces')).toHaveLength(1);
+    expect(screen.queryByText('Imágenes y anexos')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Formato' }).closest('[data-formatting-open]')
+    ).toHaveAttribute('data-formatting-open', 'true');
     expect(onToggleFormatting).toHaveBeenCalledTimes(1);
     expect(onPrint).toHaveBeenCalledTimes(1);
     expect(onRestoreTemplate).toHaveBeenCalledTimes(1);
@@ -183,25 +186,35 @@ describe('ClinicalDocumentFormattingToolbar', () => {
     expect(screen.getByRole('button', { name: 'Rehacer' })).toBeDisabled();
   });
 
-  it('inserts a table through the toolbar dialog', () => {
+  it('inserts a table through the toolbar dialog', async () => {
     const onInsertHtml = vi.fn();
 
-    render(<ClinicalDocumentFormattingToolbar {...buildProps({ onInsertHtml })} />);
+    render(
+      <ClinicalDocumentFormattingToolbar
+        {...buildProps({ onInsertHtml, isFormattingOpen: true })}
+      />
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Insertar tabla' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Insertar' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Insertar' }));
 
-    expect(onInsertHtml).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(onInsertHtml).toHaveBeenCalledTimes(1);
+    });
     expect(onInsertHtml.mock.calls[0]?.[0]).toContain('<table');
   });
 
-  it('inserts a link through the toolbar dialog', () => {
+  it('inserts a link through the toolbar dialog', async () => {
     const onInsertHtml = vi.fn();
 
-    render(<ClinicalDocumentFormattingToolbar {...buildProps({ onInsertHtml })} />);
+    render(
+      <ClinicalDocumentFormattingToolbar
+        {...buildProps({ onInsertHtml, isFormattingOpen: true })}
+      />
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Insertar enlace' }));
-    fireEvent.change(screen.getByLabelText('URL'), {
+    fireEvent.change(await screen.findByLabelText('URL'), {
       target: { value: 'https://hospital.test/protocolo' },
     });
     fireEvent.change(screen.getByLabelText(/Texto visible/i), {
@@ -209,7 +222,9 @@ describe('ClinicalDocumentFormattingToolbar', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Insertar' }));
 
-    expect(onInsertHtml).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(onInsertHtml).toHaveBeenCalledTimes(1);
+    });
     expect(onInsertHtml.mock.calls[0]?.[0]).toContain('href="https://hospital.test/protocolo"');
     expect(onInsertHtml.mock.calls[0]?.[0]).toContain('Protocolo local');
   });
