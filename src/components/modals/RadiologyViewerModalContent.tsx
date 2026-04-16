@@ -11,6 +11,13 @@ import {
   Search,
 } from 'lucide-react';
 import type { MMRADExam, MMRADSearchResult } from '@/services/radiology/mmradService';
+import { buildMMRADExamKey } from '@/components/modals/controllers/radiologyViewerModalController';
+import {
+  buildRadiologyResultsEmptyMessage,
+  countMMRADExamsForModality,
+  hasMMRADStructuredReport,
+  shouldHideMMRADStatusBadge,
+} from '@/components/modals/controllers/radiologyViewerContentController';
 
 interface RadiologyPatient {
   bedId: string;
@@ -173,9 +180,7 @@ const RadiologyViewerResultsHeader = ({
           Todos ({result.examenes.length})
         </button>
         {modalities.map(modality => {
-          const count = result.examenes.filter(
-            exam => (exam.mod || '').trim().toUpperCase() === modality
-          ).length;
+          const count = countMMRADExamsForModality(result, modality);
           return (
             <button
               key={modality}
@@ -215,10 +220,8 @@ const RadiologyExamCard = ({
   onCopyReport: (exam: MMRADExam) => void;
   isCopyConfirmed: boolean;
 }) => {
-  const modUpper = (exam.mod || '').trim().toUpperCase();
-  const hideStatusBadge = modUpper === 'CR' || modUpper === 'US';
-  const hasStructuredReport =
-    modUpper === 'CT' && Boolean(exam.report?.findings || exam.report?.impression);
+  const hideStatusBadge = shouldHideMMRADStatusBadge(exam);
+  const hasStructuredReport = hasMMRADStructuredReport(exam);
 
   return (
     <div
@@ -335,8 +338,7 @@ export const RadiologyViewerResults = ({
         <div className="flex flex-col items-center justify-center py-10 text-center">
           <Radio size={28} className="mb-2 text-slate-200" />
           <p className="text-[13px] text-slate-400">
-            No se encontraron exámenes
-            {activeModTab ? ` de tipo ${activeModTab}` : ''}
+            {buildRadiologyResultsEmptyMessage(activeModTab)}
           </p>
         </div>
       ) : (
@@ -347,12 +349,7 @@ export const RadiologyViewerResults = ({
             index={index}
             onOpenPdf={onOpenPdf}
             onCopyReport={onCopyReport}
-            isCopyConfirmed={
-              copiedReportExamKey ===
-              (exam.informe_html_url ||
-                exam.pdf_url ||
-                `${exam.nombre_examen}-${exam.fecha_examen}`)
-            }
+            isCopyConfirmed={copiedReportExamKey === buildMMRADExamKey(exam)}
           />
         ))
       )}

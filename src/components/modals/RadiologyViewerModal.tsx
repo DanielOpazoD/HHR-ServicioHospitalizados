@@ -14,19 +14,18 @@ import {
   RadiologyViewerProgress,
   RadiologyViewerResults,
 } from '@/components/modals/RadiologyViewerModalContent';
-import { BEDS } from '@/constants/beds';
 import {
   defaultBrowserWindowRuntime,
   writeClipboardText,
 } from '@/shared/runtime/browserWindowRuntime';
-
-interface RadiologyPatient {
-  bedId: string;
-  label: string;
-  patientName: string;
-  rut: string;
-  diagnosis?: string;
-}
+import {
+  buildFilteredMMRADExams,
+  buildMMRADExamKey,
+  buildUniqueRadiologyPatients,
+  extractMMRADModalities,
+  resolveInitialMMRADModalityTab,
+  resolveMMRADDatePresetRange,
+} from '@/components/modals/controllers/radiologyViewerModalController';
 
 interface RadiologyViewerModalProps {
   isOpen: boolean;
@@ -35,20 +34,13 @@ interface RadiologyViewerModalProps {
   initialPatientRut?: string;
 }
 
-/** Extract unique modality codes from exams, sorted with CT first. */
-const extractModalities = (exams: MMRADExam[]): string[] => {
-  const mods = new Set<string>();
-  for (const exam of exams) {
-    const mod = (exam.mod || '').trim().toUpperCase();
-    if (mod) mods.add(mod);
-  }
-  const sorted = Array.from(mods).sort((a, b) => {
-    if (a === 'CT') return -1;
-    if (b === 'CT') return 1;
-    return a.localeCompare(b);
-  });
-  return sorted;
-};
+interface RadiologyPatient {
+  bedId: string;
+  label: string;
+  patientName: string;
+  rut: string;
+  diagnosis?: string;
+}
 
 export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
   isOpen,
@@ -67,53 +59,20 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
   const [copiedReportExamKey, setCopiedReportExamKey] = useState<string | null>(null);
   const copiedReportResetTimeoutRef = useRef<number | null>(null);
 
-  // Deduplicate patients by RUT, sorted by hospital bed order (R1-R4, NEO, H1C1…H6C2)
-  const uniquePatients = useMemo(() => {
-    const bedOrder = new Map(BEDS.map((bed, idx) => [bed.id, idx]));
-    const seen = new Set<string>();
-    return patients
-      .filter(p => {
-        if (!p.rut || seen.has(p.rut)) return false;
-        seen.add(p.rut);
-        return true;
-      })
-      .sort((a, b) => (bedOrder.get(a.bedId) ?? 999) - (bedOrder.get(b.bedId) ?? 999));
-  }, [patients]);
+  const uniquePatients = useMemo(() => buildUniqueRadiologyPatients(patients), [patients]);
 
-  // Modality tabs from results
-  const modalities = useMemo(() => (result ? extractModalities(result.examenes) : []), [result]);
+  const modalities = useMemo(
+    () => (result ? extractMMRADModalities(result.examenes) : []),
+    [result]
+  );
 
-  // Filtered exams by active tab, sorted most-recent first
-  const filteredExams = useMemo(() => {
-    if (!result) return [];
-    const exams = activeModTab
-      ? result.examenes.filter(e => (e.mod || '').trim().toUpperCase() === activeModTab)
-      : [...result.examenes];
-    exams.sort((a, b) => {
-      const toTimestamp = (raw: string): number => {
-        if (!raw) return 0;
-        // Try DD/MM/YYYY or DD-MM-YYYY (common RIS format)
-        const parts = raw.split(/[/.-]/);
-        if (parts.length === 3 && parts[0].length <= 2) {
-          const [dd, mm, yyyy] = parts;
-          return new Date(`${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`).getTime() || 0;
-        }
-        // Fallback: try direct parse (handles ISO or other formats)
-        return new Date(raw).getTime() || 0;
-      };
-      return toTimestamp(b.fecha_examen) - toTimestamp(a.fecha_examen);
-    });
-    return exams;
-  }, [result, activeModTab]);
+  const filteredExams = useMemo(
+    () => buildFilteredMMRADExams(result, activeModTab),
+    [result, activeModTab]
+  );
 
-  // Reset tab when results change
   React.useEffect(() => {
-    if (result && modalities.length > 0) {
-      // Default to CT if available, otherwise first modality
-      setActiveModTab(modalities.includes('CT') ? 'CT' : null);
-    } else {
-      setActiveModTab(null);
-    }
+    setActiveModTab(resolveInitialMMRADModalityTab(modalities));
   }, [result, modalities]);
 
   /**
@@ -192,8 +151,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
     }
 
     await writeClipboardText(reportText);
-    const examKey =
-      exam.informe_html_url || exam.pdf_url || `${exam.nombre_examen}-${exam.fecha_examen}`;
+    const examKey = buildMMRADExamKey(exam);
     setCopiedReportExamKey(examKey);
     if (copiedReportResetTimeoutRef.current) {
       window.clearTimeout(copiedReportResetTimeoutRef.current);
@@ -227,14 +185,9 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
   }, []);
 
   const setDatePreset = (preset: 'last-month' | 'last-year' | 'last-5-years') => {
-    const today = new Date();
-    const to = today.toISOString().split('T')[0];
-    const from = new Date(today);
-    if (preset === 'last-month') from.setMonth(from.getMonth() - 1);
-    else if (preset === 'last-year') from.setFullYear(from.getFullYear() - 1);
-    else from.setFullYear(from.getFullYear() - 5);
-    setDateFrom(from.toISOString().split('T')[0]);
-    setDateTo(to);
+    const range = resolveMMRADDatePresetRange(preset);
+    setDateFrom(range.from);
+    setDateTo(range.to);
   };
 
   React.useEffect(() => {
