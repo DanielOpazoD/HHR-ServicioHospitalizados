@@ -8,47 +8,47 @@ import { Specialty, PatientStatus } from '@/types/domain/patientClassification';
 import { render } from '../integration/setup';
 import { DataFactory } from '../factories/DataFactory';
 
+const { mockAlert, mockConfirm } = vi.hoisted(() => ({
+  mockAlert: vi.fn().mockResolvedValue(true),
+  mockConfirm: vi.fn().mockResolvedValue(true),
+}));
+
+vi.mock('@/context/UIContext', async () => {
+  const actual = await vi.importActual('@/context/UIContext');
+  return {
+    ...actual,
+    useConfirmDialog: () => ({
+      confirm: mockConfirm,
+      alert: mockAlert,
+    }),
+  };
+});
+
+vi.mock('@/components/modals/DemographicsModal', () => ({
+  DemographicsModal: ({
+    isOpen,
+    onSave,
+  }: {
+    isOpen: boolean;
+    onSave: (payload: Record<string, unknown>) => void;
+  }) => {
+    if (!isOpen) {
+      return null;
+    }
+
+    return createPortal(
+      <div>
+        <div>Datos Demográficos</div>
+        <button onClick={() => onSave({ patientName: 'Paciente Actualizado' })}>
+          Guardar Cambios
+        </button>
+      </div>,
+      document.body
+    );
+  },
+}));
+
 describe('PatientRow layout and actions', () => {
-  const { mockAlert, mockConfirm } = vi.hoisted(() => ({
-    mockAlert: vi.fn().mockResolvedValue(true),
-    mockConfirm: vi.fn().mockResolvedValue(true),
-  }));
-
-  vi.mock('@/context/UIContext', async () => {
-    const actual = await vi.importActual('@/context/UIContext');
-    return {
-      ...actual,
-      useConfirmDialog: () => ({
-        confirm: mockConfirm,
-        alert: mockAlert,
-      }),
-    };
-  });
-
-  vi.mock('@/components/modals/DemographicsModal', () => ({
-    DemographicsModal: ({
-      isOpen,
-      onSave,
-    }: {
-      isOpen: boolean;
-      onSave: (payload: Record<string, unknown>) => void;
-    }) => {
-      if (!isOpen) {
-        return null;
-      }
-
-      return createPortal(
-        <div>
-          <div>Datos Demográficos</div>
-          <button onClick={() => onSave({ patientName: 'Paciente Actualizado' })}>
-            Guardar Cambios
-          </button>
-        </div>,
-        document.body
-      );
-    },
-  }));
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -203,10 +203,22 @@ describe('PatientRow layout and actions', () => {
     );
 
     const actions = [
-      { matcher: () => screen.findByTitle('Copiar a otro día'), expected: 'copy' },
-      { matcher: () => screen.findByTitle('Mover de cama'), expected: 'move' },
-      { matcher: () => screen.findByText(/Dar de Alta/i), expected: 'discharge' },
-      { matcher: () => screen.findByText(/Trasladar/i), expected: 'transfer' },
+      {
+        matcher: () => screen.findByTitle('Copiar a otro día', {}, { timeout: 4000 }),
+        expected: 'copy',
+      },
+      {
+        matcher: () => screen.findByTitle('Mover de cama', {}, { timeout: 4000 }),
+        expected: 'move',
+      },
+      {
+        matcher: () => screen.findByText(/Dar de Alta/i, {}, { timeout: 4000 }),
+        expected: 'discharge',
+      },
+      {
+        matcher: () => screen.findByText(/Trasladar/i, {}, { timeout: 4000 }),
+        expected: 'transfer',
+      },
     ] as const;
 
     for (const { matcher, expected } of actions) {

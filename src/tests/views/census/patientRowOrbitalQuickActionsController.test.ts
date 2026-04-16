@@ -4,9 +4,10 @@
  * Validates action visibility, display order, and badge assignment.
  */
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   buildPatientRowOrbitalQuickActionItems,
+  dispatchPatientRowOrbitalQuickAction,
   hasPatientRowOrbitalQuickActions,
 } from '@/features/census/controllers/patientRowOrbitalQuickActionsController';
 
@@ -171,6 +172,33 @@ describe('patientRowOrbitalQuickActionsController', () => {
           showMedicalIndicationsAction: true,
         })
       ).toBe(true);
+    });
+  });
+
+  describe('dispatchPatientRowOrbitalQuickAction', () => {
+    it('dispatches to the matching callback for each action id', () => {
+      const onViewClinicalDocuments = vi.fn();
+      const onViewExamRequest = vi.fn();
+      const onViewImagingRequest = vi.fn();
+      const onViewMedicalIndications = vi.fn();
+
+      dispatchPatientRowOrbitalQuickAction('clinical-documents', { onViewClinicalDocuments });
+      dispatchPatientRowOrbitalQuickAction('exam-request', { onViewExamRequest });
+      dispatchPatientRowOrbitalQuickAction('imaging-request', { onViewImagingRequest });
+      dispatchPatientRowOrbitalQuickAction('medical-indications', { onViewMedicalIndications });
+
+      expect(onViewClinicalDocuments).toHaveBeenCalledTimes(1);
+      expect(onViewExamRequest).toHaveBeenCalledTimes(1);
+      expect(onViewImagingRequest).toHaveBeenCalledTimes(1);
+      expect(onViewMedicalIndications).toHaveBeenCalledTimes(1);
+    });
+
+    it('is a safe no-op when the matching callback is absent', () => {
+      expect(() =>
+        dispatchPatientRowOrbitalQuickAction('medical-indications', {
+          onViewClinicalDocuments: vi.fn(),
+        })
+      ).not.toThrow();
     });
   });
 });

@@ -48,6 +48,14 @@ export interface ResolveLauncherTriggerVisibilityInput {
   ownerLauncherRowId: string | null;
 }
 
+export interface ResolveLauncherOwnershipReleaseInput {
+  ownerLauncherRowId: string | null;
+  rowId: string | null;
+  isOpen: boolean;
+  isLauncherHovered: boolean;
+  isRowHovered: boolean;
+}
+
 export const resolveLauncherTriggerVisibility = ({
   hasQuickActions,
   supportsHoverFine,
@@ -81,6 +89,15 @@ export const resolveLauncherTriggerVisibility = ({
     rowCanClaimOrKeepOwnership
   );
 };
+
+export const shouldReleaseLauncherOwnership = ({
+  ownerLauncherRowId,
+  rowId,
+  isOpen,
+  isLauncherHovered,
+  isRowHovered,
+}: ResolveLauncherOwnershipReleaseInput): boolean =>
+  ownerLauncherRowId === rowId && !isOpen && !isLauncherHovered && !isRowHovered;
 
 export const dispatchLauncherOpenChange = (rowId: string | null): void => {
   if (typeof window === 'undefined') {

@@ -10,6 +10,7 @@ import {
   isPointerInActivationZone,
   isPointerInExternalLeftActivationBand,
   resolveLauncherTriggerVisibility,
+  shouldReleaseLauncherOwnership,
   resolveLauncherPosition,
   resolveRowElement,
   resolveRowId,
@@ -132,10 +133,13 @@ export const usePatientRowOrbitalLauncherRuntime = ({
       // Read current values from refs -- the closure captures the ref
       // objects (stable) not the state values (potentially stale).
       if (
-        ownerLauncherRowIdRef.current === rowIdRef.current &&
-        !isOpenRef.current &&
-        !isLauncherHoveredRef.current &&
-        !isRowHoveredRef.current
+        shouldReleaseLauncherOwnership({
+          ownerLauncherRowId: ownerLauncherRowIdRef.current,
+          rowId: rowIdRef.current,
+          isOpen: isOpenRef.current,
+          isLauncherHovered: isLauncherHoveredRef.current,
+          isRowHovered: isRowHoveredRef.current,
+        })
       ) {
         dispatchLauncherOwnerChange(null);
       }

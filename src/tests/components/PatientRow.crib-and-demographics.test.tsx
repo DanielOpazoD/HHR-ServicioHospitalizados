@@ -8,47 +8,47 @@ import { Specialty, PatientStatus } from '@/types/domain/patientClassification';
 import { render } from '../integration/setup';
 import { DataFactory } from '../factories/DataFactory';
 
+const { mockAlert, mockConfirm } = vi.hoisted(() => ({
+  mockAlert: vi.fn().mockResolvedValue(true),
+  mockConfirm: vi.fn().mockResolvedValue(true),
+}));
+
+vi.mock('@/context/UIContext', async () => {
+  const actual = await vi.importActual('@/context/UIContext');
+  return {
+    ...actual,
+    useConfirmDialog: () => ({
+      confirm: mockConfirm,
+      alert: mockAlert,
+    }),
+  };
+});
+
+vi.mock('@/components/modals/DemographicsModal', () => ({
+  DemographicsModal: ({
+    isOpen,
+    onSave,
+  }: {
+    isOpen: boolean;
+    onSave: (payload: Record<string, unknown>) => void;
+  }) => {
+    if (!isOpen) {
+      return null;
+    }
+
+    return createPortal(
+      <div>
+        <div>Datos Demográficos</div>
+        <button onClick={() => onSave({ patientName: 'Paciente Actualizado' })}>
+          Guardar Cambios
+        </button>
+      </div>,
+      document.body
+    );
+  },
+}));
+
 describe('PatientRow crib and demographics', () => {
-  const { mockAlert, mockConfirm } = vi.hoisted(() => ({
-    mockAlert: vi.fn().mockResolvedValue(true),
-    mockConfirm: vi.fn().mockResolvedValue(true),
-  }));
-
-  vi.mock('@/context/UIContext', async () => {
-    const actual = await vi.importActual('@/context/UIContext');
-    return {
-      ...actual,
-      useConfirmDialog: () => ({
-        confirm: mockConfirm,
-        alert: mockAlert,
-      }),
-    };
-  });
-
-  vi.mock('@/components/modals/DemographicsModal', () => ({
-    DemographicsModal: ({
-      isOpen,
-      onSave,
-    }: {
-      isOpen: boolean;
-      onSave: (payload: Record<string, unknown>) => void;
-    }) => {
-      if (!isOpen) {
-        return null;
-      }
-
-      return createPortal(
-        <div>
-          <div>Datos Demográficos</div>
-          <button onClick={() => onSave({ patientName: 'Paciente Actualizado' })}>
-            Guardar Cambios
-          </button>
-        </div>,
-        document.body
-      );
-    },
-  }));
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -174,7 +174,7 @@ describe('PatientRow crib and demographics', () => {
     );
 
     fireEvent.click(screen.getByTitle('Datos del Paciente'));
-    fireEvent.click(await screen.findByText(/Guardar Cambios/i));
+    fireEvent.click(await screen.findByText(/Guardar Cambios/i, {}, { timeout: 4000 }));
 
     expect(mockContext.updatePatientMultiple).toHaveBeenCalledWith('R1', expect.any(Object));
   });

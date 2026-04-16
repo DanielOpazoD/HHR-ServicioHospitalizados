@@ -5,6 +5,7 @@ import type { PatientRowModalsProps } from '@/features/census/components/patient
 export interface PatientRowModalRenderModel {
   demographicsBinding: ReturnType<typeof resolvePatientRowDemographicsBinding>;
   visibilityState: ReturnType<typeof resolvePatientRowModalVisibilityState>;
+  shouldRenderAnyModal: boolean;
   demographicsKey: string;
   historyPatientRut: string;
   historyPatientName: string;
@@ -27,6 +28,51 @@ type PatientRowModalRenderInput = Pick<
   | 'onSaveDemographics'
   | 'onSaveCribDemographics'
 >;
+
+export const resolvePatientRowModalMountState = ({
+  showDemographics,
+  showClinicalDocuments,
+  canOpenClinicalDocuments,
+  showExamRequest,
+  canOpenExamRequest,
+  showImagingRequest,
+  canOpenImagingRequest,
+  showHistory,
+  canOpenHistory,
+}: Pick<
+  PatientRowModalsProps,
+  | 'showDemographics'
+  | 'showClinicalDocuments'
+  | 'canOpenClinicalDocuments'
+  | 'showExamRequest'
+  | 'canOpenExamRequest'
+  | 'showImagingRequest'
+  | 'canOpenImagingRequest'
+  | 'showHistory'
+  | 'canOpenHistory'
+>) => {
+  const visibilityState = resolvePatientRowModalVisibilityState({
+    showDemographics,
+    showClinicalDocuments,
+    canOpenClinicalDocuments,
+    showExamRequest,
+    canOpenExamRequest,
+    showImagingRequest,
+    canOpenImagingRequest,
+    showHistory,
+    canOpenHistory,
+  });
+
+  return {
+    visibilityState,
+    shouldRenderAnyModal:
+      visibilityState.shouldRenderDemographics ||
+      visibilityState.shouldRenderClinicalDocuments ||
+      visibilityState.shouldRenderExamRequest ||
+      visibilityState.shouldRenderImagingRequest ||
+      visibilityState.shouldRenderHistory,
+  };
+};
 
 export const buildPatientRowModalRenderModel = ({
   bedId,
@@ -51,7 +97,7 @@ export const buildPatientRowModalRenderModel = ({
     onSaveDemographics,
     onSaveCribDemographics,
   });
-  const visibilityState = resolvePatientRowModalVisibilityState({
+  const { visibilityState, shouldRenderAnyModal } = resolvePatientRowModalMountState({
     showDemographics,
     showClinicalDocuments,
     canOpenClinicalDocuments,
@@ -66,6 +112,7 @@ export const buildPatientRowModalRenderModel = ({
   return {
     demographicsBinding,
     visibilityState,
+    shouldRenderAnyModal,
     demographicsKey: `demographics-${demographicsBinding.targetBedId}-${showDemographics ? 'open' : 'closed'}-${data.patientName}-${data.rut}-${data.identityStatus || 'na'}`,
     historyPatientRut: data.rut || '',
     historyPatientName: data.patientName,

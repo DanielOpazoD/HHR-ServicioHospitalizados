@@ -5,6 +5,7 @@ import {
   resolveAdmissionDateMax,
   resolveAdmissionDateOptions,
   resolveAdmissionDateIsEditable,
+  resolveAdmissionDateUpdatePlan,
   resolveAdmissionTooltip,
   resolveIsCriticalAdmissionEmpty,
 } from '@/features/census/controllers/admissionInputController';
@@ -38,6 +39,58 @@ describe('admissionInputController', () => {
     expect(resolution.shouldPatchMultiple).toBe(false);
     expect(resolution.admissionDate).toBe('2026-02-15');
     expect(resolution.admissionTime).toBeUndefined();
+  });
+
+  it('builds a multiple-update plan when time is missing or firstSeenDate must be anchored', () => {
+    expect(
+      resolveAdmissionDateUpdatePlan({
+        nextDate: '2026-02-15',
+        currentAdmissionTime: '',
+        currentDateString: '2026-02-15',
+        firstSeenDate: undefined,
+        now: new Date('2026-02-15T06:42:00'),
+      })
+    ).toEqual({
+      nextPatch: {
+        admissionDate: '2026-02-15',
+        admissionTime: '06:42',
+        firstSeenDate: '2026-02-15',
+      },
+      shouldUseMultipleUpdate: true,
+    });
+
+    expect(
+      resolveAdmissionDateUpdatePlan({
+        nextDate: '2026-02-15',
+        currentAdmissionTime: '05:30',
+        currentDateString: '2026-02-15',
+        firstSeenDate: undefined,
+        now: new Date('2026-02-15T06:42:00'),
+      })
+    ).toEqual({
+      nextPatch: {
+        admissionDate: '2026-02-15',
+        firstSeenDate: '2026-02-15',
+      },
+      shouldUseMultipleUpdate: true,
+    });
+  });
+
+  it('builds a single-field update plan when time exists and firstSeenDate is already set', () => {
+    expect(
+      resolveAdmissionDateUpdatePlan({
+        nextDate: '2026-02-15',
+        currentAdmissionTime: '05:30',
+        currentDateString: '2026-02-15',
+        firstSeenDate: '2026-02-14',
+        now: new Date('2026-02-15T06:42:00'),
+      })
+    ).toEqual({
+      nextPatch: {
+        admissionDate: '2026-02-15',
+      },
+      shouldUseMultipleUpdate: false,
+    });
   });
 
   it('returns provided max date fallback', () => {

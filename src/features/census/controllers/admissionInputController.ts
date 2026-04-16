@@ -11,6 +11,15 @@ export interface AdmissionDateChangeResolution {
   shouldPatchMultiple: boolean;
 }
 
+export interface AdmissionDateUpdatePlan {
+  nextPatch: {
+    admissionDate: string;
+    admissionTime?: string;
+    firstSeenDate?: string;
+  };
+  shouldUseMultipleUpdate: boolean;
+}
+
 export interface AdmissionDateOption {
   value: string;
   label: string;
@@ -164,6 +173,36 @@ export const resolveAdmissionDateChange = ({
   return {
     admissionDate: nextDate,
     shouldPatchMultiple: false,
+  };
+};
+
+export const resolveAdmissionDateUpdatePlan = ({
+  nextDate,
+  currentAdmissionTime,
+  currentDateString,
+  firstSeenDate,
+  now = new Date(),
+}: {
+  nextDate: string;
+  currentAdmissionTime?: string;
+  currentDateString: string;
+  firstSeenDate?: string;
+  now?: Date;
+}): AdmissionDateUpdatePlan => {
+  const resolution = resolveAdmissionDateChange({
+    nextDate,
+    currentAdmissionTime,
+    now,
+  });
+  const shouldAnchorFirstSeenDate = !firstSeenDate;
+
+  return {
+    nextPatch: {
+      admissionDate: resolution.admissionDate,
+      ...(resolution.shouldPatchMultiple ? { admissionTime: resolution.admissionTime } : {}),
+      ...(shouldAnchorFirstSeenDate ? { firstSeenDate: currentDateString } : {}),
+    },
+    shouldUseMultipleUpdate: resolution.shouldPatchMultiple || shouldAnchorFirstSeenDate,
   };
 };
 

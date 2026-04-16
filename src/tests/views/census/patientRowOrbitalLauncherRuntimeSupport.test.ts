@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveLauncherTriggerVisibility } from '@/features/census/components/patient-row/patientRowOrbitalLauncherRuntimeSupport';
+import {
+  resolveLauncherTriggerVisibility,
+  shouldReleaseLauncherOwnership,
+} from '@/features/census/components/patient-row/patientRowOrbitalLauncherRuntimeSupport';
 
 const baseInput = {
   hasQuickActions: true,
@@ -40,6 +43,42 @@ describe('resolveLauncherTriggerVisibility', () => {
         ...baseInput,
         isRowHovered: true,
         ownerLauncherRowId: 'R2',
+      })
+    ).toBe(false);
+  });
+});
+
+describe('shouldReleaseLauncherOwnership', () => {
+  it('releases ownership only when the current row owns the launcher and nothing is active', () => {
+    expect(
+      shouldReleaseLauncherOwnership({
+        ownerLauncherRowId: 'R1',
+        rowId: 'R1',
+        isOpen: false,
+        isLauncherHovered: false,
+        isRowHovered: false,
+      })
+    ).toBe(true);
+  });
+
+  it('keeps ownership when another row owns it or interaction is still active', () => {
+    expect(
+      shouldReleaseLauncherOwnership({
+        ownerLauncherRowId: 'R2',
+        rowId: 'R1',
+        isOpen: false,
+        isLauncherHovered: false,
+        isRowHovered: false,
+      })
+    ).toBe(false);
+
+    expect(
+      shouldReleaseLauncherOwnership({
+        ownerLauncherRowId: 'R1',
+        rowId: 'R1',
+        isOpen: true,
+        isLauncherHovered: false,
+        isRowHovered: false,
       })
     ).toBe(false);
   });

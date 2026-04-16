@@ -96,4 +96,42 @@ describe('patientRowActionSectionBindingsController', () => {
 
     expect(unnamedBinding.medicalIndicationsPatient).toBeUndefined();
   });
+
+  it('forwards the current clinical document count to the action cell binding', () => {
+    const binding = buildPatientActionSectionBinding({
+      isBlocked: false,
+      readOnly: false,
+      actionMenuAlign: 'top',
+      data: DataFactory.createMockPatient('R3', {
+        patientName: 'Paciente Tres',
+        admissionDate: '2026-03-05',
+      }),
+      currentDateString: '2026-03-05',
+      indicators: {
+        hasClinicalDocument: true,
+        isNewAdmission: false,
+      },
+      mainRowViewState: {
+        canToggleBedType: true,
+        rowClassName: 'row',
+        rowActionsAvailability: {
+          canOpenClinicalDocuments: true,
+          canOpenExamRequest: true,
+          canOpenImagingRequest: true,
+          canOpenHistory: true,
+          canShowClinicalDocumentIndicator: true,
+        },
+        showBlockedContent: false,
+      },
+      onAction: vi.fn(),
+      onOpenDemographics: vi.fn(),
+      onOpenClinicalDocuments: vi.fn(),
+      onOpenExamRequest: vi.fn(),
+      onOpenImagingRequest: vi.fn(),
+      onOpenHistory: vi.fn(),
+      clinicalDocumentCount: 3,
+    });
+
+    expect(binding.clinicalDocumentCount).toBe(3);
+  });
 });

@@ -45,6 +45,13 @@ export interface PatientRowOrbitalQuickActionItem {
   badge?: number;
 }
 
+export interface PatientRowOrbitalQuickActionCallbacks {
+  onViewClinicalDocuments?: () => void;
+  onViewExamRequest?: () => void;
+  onViewImagingRequest?: () => void;
+  onViewMedicalIndications?: () => void;
+}
+
 // ---------------------------------------------------------------------------
 // Definitions
 // ---------------------------------------------------------------------------
@@ -138,3 +145,25 @@ export const hasPatientRowOrbitalQuickActions = (
   availability.showExamRequestAction ||
   availability.showImagingRequestAction ||
   Boolean(availability.showMedicalIndicationsAction);
+
+export const dispatchPatientRowOrbitalQuickAction = (
+  itemId: PatientRowOrbitalQuickActionItem['id'],
+  callbacks: PatientRowOrbitalQuickActionCallbacks
+): void => {
+  if (itemId === 'clinical-documents') {
+    callbacks.onViewClinicalDocuments?.();
+    return;
+  }
+
+  if (itemId === 'exam-request') {
+    callbacks.onViewExamRequest?.();
+    return;
+  }
+
+  if (itemId === 'imaging-request') {
+    callbacks.onViewImagingRequest?.();
+    return;
+  }
+
+  callbacks.onViewMedicalIndications?.();
+};

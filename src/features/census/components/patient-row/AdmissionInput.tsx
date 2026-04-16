@@ -23,10 +23,10 @@ import { BaseCellProps, DebouncedTextHandler } from './inputCellTypes';
 import { PatientEmptyCell } from './PatientEmptyCell';
 import { usePortalPopoverRuntime } from '@/hooks/usePortalPopoverRuntime';
 import {
-  resolveAdmissionDateChange,
   resolveAdmissionDateAudit,
   resolveAdmissionDateOptions,
   resolveAdmissionDateIsEditable,
+  resolveAdmissionDateUpdatePlan,
   resolveAdmissionTooltip,
   resolveIsCriticalAdmissionEmpty,
 } from '@/features/census/controllers/admissionInputController';
@@ -111,23 +111,19 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
       return;
     }
 
-    const resolution = resolveAdmissionDateChange({
+    const plan = resolveAdmissionDateUpdatePlan({
       nextDate: val,
       currentAdmissionTime: data.admissionTime,
+      currentDateString,
+      firstSeenDate: data.firstSeenDate,
     });
-    const shouldAnchorFirstSeenDate = !data.firstSeenDate;
-    const nextPatch = {
-      admissionDate: resolution.admissionDate,
-      ...(resolution.shouldPatchMultiple ? { admissionTime: resolution.admissionTime } : {}),
-      ...(shouldAnchorFirstSeenDate ? { firstSeenDate: currentDateString } : {}),
-    };
 
-    if ((resolution.shouldPatchMultiple || shouldAnchorFirstSeenDate) && onMultipleUpdate) {
-      onMultipleUpdate(nextPatch);
+    if (plan.shouldUseMultipleUpdate && onMultipleUpdate) {
+      onMultipleUpdate(plan.nextPatch);
       return;
     }
 
-    onChange('admissionDate')(resolution.admissionDate);
+    onChange('admissionDate')(plan.nextPatch.admissionDate);
   };
 
   const handleApplySuggestedDate = () => {
@@ -135,23 +131,19 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
       return;
     }
 
-    const resolution = resolveAdmissionDateChange({
+    const plan = resolveAdmissionDateUpdatePlan({
       nextDate: audit.suggestedAdmissionDate,
       currentAdmissionTime: data.admissionTime,
+      currentDateString,
+      firstSeenDate: data.firstSeenDate,
     });
-    const shouldAnchorFirstSeenDate = !data.firstSeenDate;
-    const nextPatch = {
-      admissionDate: resolution.admissionDate,
-      ...(resolution.shouldPatchMultiple ? { admissionTime: resolution.admissionTime } : {}),
-      ...(shouldAnchorFirstSeenDate ? { firstSeenDate: currentDateString } : {}),
-    };
 
-    if ((resolution.shouldPatchMultiple || shouldAnchorFirstSeenDate) && onMultipleUpdate) {
-      onMultipleUpdate(nextPatch);
+    if (plan.shouldUseMultipleUpdate && onMultipleUpdate) {
+      onMultipleUpdate(plan.nextPatch);
       return;
     }
 
-    onChange('admissionDate')(resolution.admissionDate);
+    onChange('admissionDate')(plan.nextPatch.admissionDate);
   };
 
   return (

@@ -26,6 +26,7 @@ export const usePatientMainRowSectionsModel = (props: PatientMainRowViewProps) =
     [
       props.accessProfile,
       props.actionMenuAlign,
+      props.clinicalDocumentCount,
       props.currentDateString,
       props.data,
       props.indicators,
@@ -41,14 +42,5 @@ export const usePatientMainRowSectionsModel = (props: PatientMainRowViewProps) =
     ]
   );
 
-  return useMemo(
-    () =>
-      buildPatientMainRowSections(
-        {
-          ...props,
-        },
-        actionSectionBinding
-      ),
-    [actionSectionBinding, props]
-  );
+  return buildPatientMainRowSections(props, actionSectionBinding);
 };

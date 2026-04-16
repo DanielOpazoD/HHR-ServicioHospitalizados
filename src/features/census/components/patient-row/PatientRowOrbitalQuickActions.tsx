@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { useDropdownMenu } from '@/hooks/useDropdownMenu';
 import {
   buildPatientRowOrbitalQuickActionItems,
+  dispatchPatientRowOrbitalQuickAction,
   hasPatientRowOrbitalQuickActions,
   type PatientRowOrbitalQuickActionsAvailability,
   type PatientRowOrbitalQuickActionBadges,
@@ -127,15 +128,12 @@ export const PatientRowOrbitalQuickActions: React.FC<PatientRowOrbitalQuickActio
   );
 
   const handleItemClick = (itemId: (typeof orbitalItems)[number]['id']) => {
-    if (itemId === 'clinical-documents') {
-      onViewClinicalDocuments?.();
-    } else if (itemId === 'exam-request') {
-      onViewExamRequest?.();
-    } else if (itemId === 'imaging-request') {
-      onViewImagingRequest?.();
-    } else {
-      onViewMedicalIndications?.();
-    }
+    dispatchPatientRowOrbitalQuickAction(itemId, {
+      onViewClinicalDocuments,
+      onViewExamRequest,
+      onViewImagingRequest,
+      onViewMedicalIndications,
+    });
     close();
   };
 

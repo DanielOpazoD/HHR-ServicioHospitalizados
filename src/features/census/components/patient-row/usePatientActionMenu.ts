@@ -1,10 +1,11 @@
-import { useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useDropdownMenu } from '@/hooks/useDropdownMenu';
 import type { UtilityActionConfig } from '@/features/census/components/patient-row/patientActionMenuConfig';
 import {
   buildPatientActionMenuModel,
   resolvePatientActionMenuCallbackAvailability,
 } from '@/features/census/controllers/patientActionMenuController';
+import { buildPatientActionMenuInteractionHandlers } from '@/features/census/controllers/patientActionMenuInteractionController';
 import type { PatientRowAction } from '@/features/census/types/patientRowActionTypes';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 import type {
@@ -91,38 +92,27 @@ export const usePatientActionMenu = ({
     ]
   );
 
-  const handleAction = useCallback(
-    (action: PatientRowAction) => {
-      onAction(action);
-      close();
-    },
-    [close, onAction]
+  const interactions = useMemo(
+    () =>
+      buildPatientActionMenuInteractionHandlers({
+        onAction,
+        onViewHistory,
+        onViewClinicalDocuments,
+        onViewExamRequest,
+        onViewImagingRequest,
+        onViewMedicalIndications,
+        close,
+      }),
+    [
+      close,
+      onAction,
+      onViewClinicalDocuments,
+      onViewExamRequest,
+      onViewHistory,
+      onViewImagingRequest,
+      onViewMedicalIndications,
+    ]
   );
-
-  const handleViewHistory = useCallback(() => {
-    onViewHistory?.();
-    close();
-  }, [close, onViewHistory]);
-
-  const handleViewClinicalDocuments = useCallback(() => {
-    onViewClinicalDocuments?.();
-    close();
-  }, [close, onViewClinicalDocuments]);
-
-  const handleViewExamRequest = useCallback(() => {
-    onViewExamRequest?.();
-    close();
-  }, [close, onViewExamRequest]);
-
-  const handleViewImagingRequest = useCallback(() => {
-    onViewImagingRequest?.();
-    close();
-  }, [close, onViewImagingRequest]);
-
-  const handleViewMedicalIndications = useCallback(() => {
-    onViewMedicalIndications?.();
-    close();
-  }, [close, onViewMedicalIndications]);
 
   return {
     isOpen,
@@ -131,11 +121,6 @@ export const usePatientActionMenu = ({
     utilityActions: menuModel.utilityActions,
     toggle,
     close,
-    handleAction,
-    handleViewHistory,
-    handleViewClinicalDocuments,
-    handleViewExamRequest,
-    handleViewImagingRequest,
-    handleViewMedicalIndications,
+    ...interactions,
   };
 };

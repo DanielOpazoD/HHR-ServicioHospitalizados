@@ -189,4 +189,76 @@ describe('patientRowBindingsController', () => {
     expect(modals.canOpenHistory).toBe(true);
     expect(modals.showHistory).toBe(true);
   });
+
+  it('builds modal bindings from section builder when capabilities are overridden', () => {
+    const bed = { id: 'R2', name: 'R2', type: BedType.MEDIA, isCuna: false };
+    const data = DataFactory.createMockPatient('R2');
+    const runtime = asRuntime({
+      rowState: {
+        isBlocked: false,
+        isEmpty: false,
+        hasCompanion: false,
+        hasClinicalCrib: false,
+        isCunaMode: false,
+      },
+      uiState: {
+        showDemographics: false,
+        showClinicalDocuments: true,
+        showExamRequest: true,
+        showHistory: true,
+        openDemographics: vi.fn(),
+        closeDemographics: vi.fn(),
+        openClinicalDocuments: vi.fn(),
+        closeClinicalDocuments: vi.fn(),
+        openExamRequest: vi.fn(),
+        closeExamRequest: vi.fn(),
+        showImagingRequest: true,
+        openImagingRequest: vi.fn(),
+        closeImagingRequest: vi.fn(),
+        openHistory: vi.fn(),
+        closeHistory: vi.fn(),
+      },
+      handlers: {
+        mainInputChangeHandlers:
+          {} as unknown as PatientRowRuntime['handlers']['mainInputChangeHandlers'],
+        cribInputChangeHandlers:
+          {} as unknown as PatientRowRuntime['handlers']['cribInputChangeHandlers'],
+      },
+      modalSavers: {
+        onSaveDemographics: vi.fn(),
+        onSaveCribDemographics: vi.fn(),
+      },
+      bedConfigActions: {
+        toggleBedMode: vi.fn(),
+        toggleCompanionCrib: vi.fn(),
+        toggleClinicalCrib: vi.fn(),
+      },
+      handleAction: vi.fn(),
+    });
+
+    const modals = buildPatientRowModalsBindings({
+      bed,
+      data,
+      currentDateString: '2026-02-15',
+      isSubRow: false,
+      role: 'viewer',
+      capabilitiesOverride: {
+        canOpenClinicalDocuments: false,
+        canOpenExamRequest: false,
+        canOpenImagingRequest: false,
+        canOpenHistory: false,
+        canShowClinicalDocumentIndicator: false,
+      },
+      runtime,
+    });
+
+    expect(modals.showClinicalDocuments).toBe(true);
+    expect(modals.showExamRequest).toBe(true);
+    expect(modals.showImagingRequest).toBe(true);
+    expect(modals.showHistory).toBe(true);
+    expect(modals.canOpenClinicalDocuments).toBe(false);
+    expect(modals.canOpenExamRequest).toBe(false);
+    expect(modals.canOpenImagingRequest).toBe(false);
+    expect(modals.canOpenHistory).toBe(false);
+  });
 });
