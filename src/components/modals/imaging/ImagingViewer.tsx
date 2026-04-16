@@ -1,15 +1,10 @@
 import React from 'react';
-import { DocumentOption, DocumentTypeOption, ActiveTextMark } from './types';
+import { DocumentOption, ActiveTextMark } from './types';
 import type { CustomMark } from '@/services/pdf/imagingRequestPdfService';
 import type { PatientData } from '@/types/domain/patient';
-import {
-  splitPatientName,
-  calculateAge,
-  formatDateToCL as formatDate,
-} from '@/utils/clinicalUtils';
+import { buildImagingViewerDocumentModel } from '../controllers/imagingViewerController';
 
 interface ImagingViewerProps {
-  currentDocObj: DocumentTypeOption | undefined;
   selectedDoc: DocumentOption;
   patient: PatientData;
   debouncedPhysician: string;
@@ -30,20 +25,7 @@ export const ImagingViewer: React.FC<ImagingViewerProps> = ({
   activeText,
   setActiveText,
 }) => {
-  const [nombres, primerApellido, segundoApellido] = splitPatientName(patient.patientName);
-
-  const getTodayFormatted = (): string => {
-    const d = new Date();
-    const dd = String(d.getDate()).padStart(2, '0');
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const yyyy = d.getFullYear();
-    return `${dd}-${mm}-${yyyy}`;
-  };
-
-  const todayStr = getTodayFormatted();
-  const ageStr = calculateAge(patient.birthDate);
-  const birthStr = formatDate(patient.birthDate);
-  const diagValue = patient.pathology || patient.cie10Description || '';
+  const viewerModel = buildImagingViewerDocumentModel(selectedDoc, patient, debouncedPhysician);
 
   return (
     <div className="flex-1 bg-slate-100 rounded-xl border border-slate-200 overflow-hidden flex flex-col">
@@ -53,191 +35,30 @@ export const ImagingViewer: React.FC<ImagingViewerProps> = ({
             className="relative w-full max-w-[720px] mx-auto bg-white shadow-xl rounded-sm overflow-hidden cursor-crosshair select-none"
             onClick={handleCanvasClick}
             style={{
-              aspectRatio:
-                selectedDoc === 'solicitud'
-                  ? '612 / 936'
-                  : selectedDoc === 'consentimiento'
-                    ? '612 / 842'
-                    : '612 / 792',
+              aspectRatio: viewerModel.aspectRatio,
             }}
           >
             <img
-              src={
-                selectedDoc === 'solicitud'
-                  ? '/docs/solicitud_imagenologia.png'
-                  : selectedDoc === 'encuesta'
-                    ? '/docs/encuesta_imagenologia.png'
-                    : '/docs/consentimiento.png'
-              }
+              src={viewerModel.imageSrc}
               alt="Base del Formulario"
               className="w-full h-full object-contain pointer-events-none"
               draggable={false}
             />
 
-            {selectedDoc === 'solicitud' && (
-              <>
-                <div
-                  className="absolute font-sans text-xs sm:text-sm text-black pointer-events-none"
-                  style={{ left: '19.21%', top: '16.87%' }}
-                >
-                  {nombres}
-                </div>
-                <div
-                  className="absolute font-sans text-xs sm:text-sm text-black pointer-events-none"
-                  style={{ left: '32.86%', top: '16.87%' }}
-                >
-                  {primerApellido}
-                </div>
-                <div
-                  className="absolute font-sans text-xs sm:text-sm text-black pointer-events-none"
-                  style={{ left: '45.01%', top: '16.87%' }}
-                >
-                  {segundoApellido}
-                </div>
-                <div
-                  className="absolute font-sans text-xs sm:text-sm text-black pointer-events-none"
-                  style={{ left: '9.88%', top: '18.38%' }}
-                >
-                  {patient.rut}
-                </div>
-                <div
-                  className="absolute font-sans text-xs sm:text-sm text-black pointer-events-none"
-                  style={{ left: '37.54%', top: '18.38%' }}
-                >
-                  {ageStr}
-                </div>
-                <div
-                  className="absolute font-sans text-xs sm:text-sm text-black pointer-events-none"
-                  style={{ left: '77.28%', top: '18.38%' }}
-                >
-                  {birthStr}
-                </div>
-                <div
-                  className="absolute font-sans text-xs sm:text-sm text-black pointer-events-none font-medium whitespace-nowrap"
-                  style={{ left: '21.51%', top: '20.24%' }}
-                >
-                  {diagValue}
-                </div>
-                <div
-                  className="absolute font-sans text-xs sm:text-sm text-black pointer-events-none"
-                  style={{ left: '22.72%', top: '14.71%' }}
-                >
-                  {todayStr}
-                </div>
-                <div
-                  className="absolute font-sans text-xs sm:text-sm text-black pointer-events-none font-bold"
-                  style={{ left: '51.47%', top: '85.61%' }}
-                >
-                  {debouncedPhysician}
-                </div>
-              </>
-            )}
-
-            {selectedDoc === 'encuesta' && (
-              <>
-                <div
-                  className="absolute font-sans text-xs sm:text-sm text-black pointer-events-none"
-                  style={{ left: '16.27%', top: '17.12%' }}
-                >
-                  {nombres}
-                </div>
-                <div
-                  className="absolute font-sans text-xs sm:text-sm text-black pointer-events-none"
-                  style={{ left: '27.20%', top: '17.12%' }}
-                >
-                  {primerApellido}
-                </div>
-                <div
-                  className="absolute font-sans text-xs sm:text-sm text-black pointer-events-none"
-                  style={{ left: '41.74%', top: '17.12%' }}
-                >
-                  {segundoApellido}
-                </div>
-                <div
-                  className="absolute font-sans text-xs sm:text-sm text-black pointer-events-none"
-                  style={{ left: '69.14%', top: '17.12%' }}
-                >
-                  {patient.rut}
-                </div>
-                <div
-                  className="absolute font-sans text-xs sm:text-sm text-black pointer-events-none"
-                  style={{ left: '58.67%', top: '17.12%' }}
-                >
-                  {ageStr}
-                </div>
-                <div
-                  className="absolute font-sans text-xs sm:text-sm text-black pointer-events-none"
-                  style={{ left: '26.95%', top: '24.52%' }}
-                >
-                  {birthStr}
-                </div>
-                <div
-                  className="absolute font-sans text-xs sm:text-sm text-black pointer-events-none font-medium whitespace-nowrap"
-                  style={{ left: '18.35%', top: '37.24%' }}
-                >
-                  {diagValue}
-                </div>
-                <div
-                  className="absolute font-sans text-xs sm:text-sm text-black pointer-events-none font-bold"
-                  style={{ left: '66.83%', top: '20.80%' }}
-                >
-                  {debouncedPhysician}
-                </div>
-              </>
-            )}
-
-            {selectedDoc === 'consentimiento' && (
-              <>
-                <div
-                  className="absolute font-sans text-xs sm:text-[10px] text-black pointer-events-none"
-                  style={{ left: '31.65%', top: '21.7%' }}
-                >
-                  {nombres}
-                </div>
-                <div
-                  className="absolute font-sans text-xs sm:text-[10px] text-black pointer-events-none"
-                  style={{ left: '48.67%', top: '21.7%' }}
-                >
-                  {primerApellido}
-                </div>
-                <div
-                  className="absolute font-sans text-xs sm:text-[10px] text-black pointer-events-none"
-                  style={{ left: '62.72%', top: '21.7%' }}
-                >
-                  {segundoApellido}
-                </div>
-                <div
-                  className="absolute font-sans text-xs sm:text-[10px] text-black pointer-events-none"
-                  style={{ left: '21.99%', top: '24.4%' }}
-                >
-                  {patient.rut}
-                </div>
-                <div
-                  className="absolute font-sans text-xs sm:text-[10px] text-black pointer-events-none"
-                  style={{ left: '52.79%', top: '24.4%' }}
-                >
-                  {ageStr}
-                </div>
-                <div
-                  className="absolute font-sans text-xs sm:text-[10px] text-black pointer-events-none font-medium whitespace-nowrap"
-                  style={{ left: '23.98%', top: '27.92%' }}
-                >
-                  {diagValue}
-                </div>
-                <div
-                  className="absolute font-sans text-xs sm:text-[10px] text-black pointer-events-none"
-                  style={{ left: '69.81%', top: '16.76%' }}
-                >
-                  {todayStr}
-                </div>
-                <div
-                  className="absolute font-sans text-xs sm:text-[10px] text-black pointer-events-none font-bold"
-                  style={{ left: '24.45%', top: '80.07%' }}
-                >
-                  {debouncedPhysician}
-                </div>
-              </>
-            )}
+            {viewerModel.overlays.map((overlay, index) => (
+              <div
+                key={`${selectedDoc}-overlay-${index}`}
+                className={[
+                  'absolute font-sans text-xs sm:text-sm text-black pointer-events-none',
+                  overlay.className || '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                style={{ left: overlay.left, top: overlay.top }}
+              >
+                {overlay.text}
+              </div>
+            ))}
 
             {/* Active Text Input */}
             {activeText && (

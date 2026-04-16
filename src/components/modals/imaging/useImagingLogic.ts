@@ -3,6 +3,11 @@ import type { PatientData } from '@/types/domain/patient';
 import type { CustomMark } from '@/services/pdf/imagingRequestPdfService';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 import { DocumentOption, ActiveTextMark } from './types';
+import {
+  buildImagingClosedState,
+  resolveImagingCanvasIntent,
+  runImagingPrintAction,
+} from '../controllers/imagingRequestDialogController';
 
 interface UseImagingLogicProps {
   isOpen: boolean;
@@ -39,10 +44,11 @@ export const useImagingLogic = ({ isOpen, patient }: UseImagingLogicProps) => {
   // Cleanup when closing
   useEffect(() => {
     if (!isOpen) {
-      setMarks([]);
-      setIsPrinting(false);
-      setToolMode('cross');
-      setActiveText(null);
+      const closedState = buildImagingClosedState();
+      setMarks(closedState.marks);
+      setIsPrinting(closedState.isPrinting);
+      setToolMode(closedState.toolMode);
+      setActiveText(closedState.activeText);
     }
   }, [isOpen]);
 
@@ -50,14 +56,13 @@ export const useImagingLogic = ({ isOpen, patient }: UseImagingLogicProps) => {
     setIsPrinting(true);
     try {
       const imagingPdfService = await loadImagingPdfService();
-
-      if (selectedDoc === 'solicitud') {
-        await imagingPdfService.printImagingRequestForm(patient, debouncedPhysician, marks);
-      } else if (selectedDoc === 'encuesta') {
-        await imagingPdfService.printImagingEncuestaForm(patient, debouncedPhysician, marks);
-      } else if (selectedDoc === 'consentimiento') {
-        await imagingPdfService.printConsentimientoForm(patient, debouncedPhysician, marks);
-      }
+      await runImagingPrintAction(
+        imagingPdfService,
+        selectedDoc,
+        patient,
+        debouncedPhysician,
+        marks
+      );
     } catch (err) {
       imagingDialogLogger.error('Error printing imaging document', err);
     } finally {
@@ -77,14 +82,12 @@ export const useImagingLogic = ({ isOpen, patient }: UseImagingLogicProps) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
+    const canvasIntent = resolveImagingCanvasIntent(selectedDoc, toolMode, { x, y });
 
-    if (toolMode === 'cross') {
-      setMarks(prev => [...prev, { x, y }]);
-      setActiveText(null); // Clear any active text if they switch mode or click away
-    } else {
-      // Text mode adds a temporary input field
-      setActiveText({ x, y, text: '' });
+    if (canvasIntent.nextMark) {
+      setMarks(prev => [...prev, canvasIntent.nextMark!]);
     }
+    setActiveText(canvasIntent.nextActiveText);
   };
 
   const handleUndoMark = () => {

@@ -1,10 +1,14 @@
 import React from 'react';
-import { FileText, ClipboardList, Printer, ShieldCheck, UserRound } from 'lucide-react';
+import { FileText, Printer, UserRound } from 'lucide-react';
 import { BaseModal } from '@/components/shared/BaseModal';
-import { ImagingRequestDialogProps, DocumentTypeOption } from './imaging/types';
+import { ImagingRequestDialogProps } from './imaging/types';
 import { useImagingLogic } from './imaging/useImagingLogic';
 import { ImagingSidebar } from './imaging/ImagingSidebar';
 import { ImagingViewer } from './imaging/ImagingViewer';
+import {
+  buildImagingDialogShellModel,
+  IMAGING_DOCUMENT_OPTIONS,
+} from './controllers/imagingRequestDialogController';
 
 export const ImagingRequestDialog: React.FC<ImagingRequestDialogProps> = ({
   isOpen,
@@ -28,34 +32,9 @@ export const ImagingRequestDialog: React.FC<ImagingRequestDialogProps> = ({
     handleCanvasClick,
     handleUndoMark,
   } = useImagingLogic({ isOpen, patient });
+  const shellModel = buildImagingDialogShellModel(patient);
 
   if (!isOpen) return null;
-
-  const documents: DocumentTypeOption[] = [
-    {
-      id: 'solicitud',
-      title: 'Formulario Solicitud',
-      subtitle: 'Con autocompletado y marcado interactivo',
-      icon: FileText,
-      disabled: false,
-    },
-    {
-      id: 'encuesta',
-      title: 'Encuesta Medio Contraste',
-      subtitle: 'Con autocompletado y marcado interactivo',
-      icon: ClipboardList,
-      disabled: false,
-    },
-    {
-      id: 'consentimiento',
-      title: 'Consentimiento Informado',
-      subtitle: 'Documento legal para procedimientos',
-      icon: ShieldCheck,
-      disabled: false,
-    },
-  ];
-
-  const currentDocObj = documents.find(d => d.id === selectedDoc);
 
   return (
     <BaseModal
@@ -72,10 +51,10 @@ export const ImagingRequestDialog: React.FC<ImagingRequestDialogProps> = ({
           </span>
           <span className="flex flex-col leading-tight">
             <span className="text-[15px] font-bold tracking-tight text-slate-800">
-              Solicitud de Imágenes
+              {shellModel.title}
             </span>
-            {patient.patientName && (
-              <span className="text-[11px] font-medium text-slate-400">{patient.patientName}</span>
+            {shellModel.subtitle && (
+              <span className="text-[11px] font-medium text-slate-400">{shellModel.subtitle}</span>
             )}
           </span>
         </span>
@@ -101,18 +80,21 @@ export const ImagingRequestDialog: React.FC<ImagingRequestDialogProps> = ({
           <UserRound size={14} />
         </div>
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-1 text-[12px]">
-          <span className="font-semibold text-slate-700">{patient.patientName}</span>
-          {patient.rut && (
+          <span className="font-semibold text-slate-700">{shellModel.patientName}</span>
+          {shellModel.patientRut && (
             <>
               <span className="text-slate-300">|</span>
-              <span className="text-slate-500">{patient.rut}</span>
+              <span className="text-slate-500">{shellModel.patientRut}</span>
             </>
           )}
-          {patient.pathology && (
+          {shellModel.patientPathology && (
             <>
               <span className="text-slate-300">|</span>
-              <span className="max-w-[200px] truncate text-slate-500" title={patient.pathology}>
-                {patient.pathology}
+              <span
+                className="max-w-[200px] truncate text-slate-500"
+                title={shellModel.patientPathology}
+              >
+                {shellModel.patientPathology}
               </span>
             </>
           )}
@@ -122,7 +104,7 @@ export const ImagingRequestDialog: React.FC<ImagingRequestDialogProps> = ({
       {/* Main content */}
       <div className="flex h-[calc(100vh-180px)] w-full gap-3 pb-2">
         <ImagingSidebar
-          documents={documents}
+          documents={IMAGING_DOCUMENT_OPTIONS}
           selectedDoc={selectedDoc}
           setSelectedDoc={setSelectedDoc}
           requestingPhysician={requestingPhysician}
@@ -133,7 +115,6 @@ export const ImagingRequestDialog: React.FC<ImagingRequestDialogProps> = ({
           handleUndoMark={handleUndoMark}
         />
         <ImagingViewer
-          currentDocObj={currentDocObj}
           selectedDoc={selectedDoc}
           patient={patient}
           debouncedPhysician={debouncedPhysician}

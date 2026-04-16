@@ -94,6 +94,58 @@ const fillPhysicianAndDiagnosis = ({
   }
 };
 
+const fillImagingTemplate = async ({
+  templatePath,
+  coords,
+  patient,
+  requestingPhysician,
+  marks,
+  includeBirthDate,
+  includeDateField,
+}: {
+  templatePath: string;
+  coords: Record<string, { x: number; y: number; maxWidth: number }>;
+  patient: PatientData;
+  requestingPhysician: string;
+  marks: CustomMark[];
+  includeBirthDate?: boolean;
+  includeDateField?: string;
+}): Promise<Uint8Array> => {
+  const pdfDoc = await loadPdfTemplate(templatePath);
+  const font = await embedHelvetica(pdfDoc);
+  const page = pdfDoc.getPage(0);
+  const drawText = createUppercaseTextDrawer({ page, font, fontSize: FONT_SIZE });
+
+  fillImagingPatientIdentity({
+    drawText,
+    patient,
+    coords,
+    includeBirthDate,
+  });
+  fillPhysicianAndDiagnosis({
+    drawText,
+    patient,
+    requestingPhysician,
+    coords,
+    includeDateField,
+  });
+  drawCustomMarks({ page, font, marks, fontSize: FONT_SIZE });
+
+  const pdfBytes = await pdfDoc.save();
+  return pdfBytes as unknown as Uint8Array;
+};
+
+const printFilledImagingDocument = async (
+  filledBytes: Uint8Array,
+  prefix: string,
+  patientName: string
+): Promise<void> => {
+  await injectPrintScriptAndOpen({
+    filledBytes,
+    fileName: `IMPRIMIR_${prefix}_${patientName}.pdf`,
+  });
+};
+
 /**
  * Fill the imaging request form with patient data
  */
@@ -102,28 +154,15 @@ export const fillImagingRequestForm = async (
   requestingPhysician: string = '',
   marks: CustomMark[] = []
 ): Promise<Uint8Array> => {
-  const pdfDoc = await loadPdfTemplate(SOLICITUD_TEMPLATE_PATH);
-  const font = await embedHelvetica(pdfDoc);
-  const page = pdfDoc.getPage(0);
-  const drawText = createUppercaseTextDrawer({ page, font, fontSize: FONT_SIZE });
-
-  fillImagingPatientIdentity({
-    drawText,
-    patient,
+  return fillImagingTemplate({
+    templatePath: SOLICITUD_TEMPLATE_PATH,
     coords: SOLICITUD_FIELD_COORDS,
-    includeBirthDate: true,
-  });
-  fillPhysicianAndDiagnosis({
-    drawText,
     patient,
     requestingPhysician,
-    coords: SOLICITUD_FIELD_COORDS,
+    marks,
+    includeBirthDate: true,
     includeDateField: 'fechaSolicitud',
   });
-  drawCustomMarks({ page, font, marks, fontSize: FONT_SIZE });
-
-  const pdfBytes = await pdfDoc.save();
-  return pdfBytes as unknown as Uint8Array;
 };
 
 /**
@@ -134,27 +173,14 @@ export const fillConsentimientoForm = async (
   requestingPhysician: string = '',
   marks: CustomMark[] = []
 ): Promise<Uint8Array> => {
-  const pdfDoc = await loadPdfTemplate(CONSENTIMIENTO_TEMPLATE_PATH);
-  const font = await embedHelvetica(pdfDoc);
-  const page = pdfDoc.getPage(0);
-  const drawText = createUppercaseTextDrawer({ page, font, fontSize: FONT_SIZE });
-
-  fillImagingPatientIdentity({
-    drawText,
-    patient,
+  return fillImagingTemplate({
+    templatePath: CONSENTIMIENTO_TEMPLATE_PATH,
     coords: CONSENTIMIENTO_FIELD_COORDS,
-  });
-  fillPhysicianAndDiagnosis({
-    drawText,
     patient,
     requestingPhysician,
-    coords: CONSENTIMIENTO_FIELD_COORDS,
+    marks,
     includeDateField: 'fecha',
   });
-  drawCustomMarks({ page, font, marks, fontSize: FONT_SIZE });
-
-  const pdfBytes = await pdfDoc.save();
-  return pdfBytes as unknown as Uint8Array;
 };
 
 /**
@@ -194,10 +220,7 @@ export const printImagingRequestForm = async (
   marks: CustomMark[] = []
 ): Promise<void> => {
   const filledBytes = await fillImagingRequestForm(patient, requestingPhysician, marks);
-  await injectPrintScriptAndOpen({
-    filledBytes,
-    fileName: `IMPRIMIR_Solicitud_${patient.patientName}.pdf`,
-  });
+  await printFilledImagingDocument(filledBytes, 'Solicitud', patient.patientName);
 };
 
 /**
@@ -209,10 +232,7 @@ export const printConsentimientoForm = async (
   marks: CustomMark[] = []
 ): Promise<void> => {
   const filledBytes = await fillConsentimientoForm(patient, requestingPhysician, marks);
-  await injectPrintScriptAndOpen({
-    filledBytes,
-    fileName: `IMPRIMIR_Consentimiento_${patient.patientName}.pdf`,
-  });
+  await printFilledImagingDocument(filledBytes, 'Consentimiento', patient.patientName);
 };
 
 /**
@@ -223,27 +243,14 @@ export const fillImagingEncuestaForm = async (
   requestingPhysician: string = '',
   marks: CustomMark[] = []
 ): Promise<Uint8Array> => {
-  const pdfDoc = await loadPdfTemplate(ENCUESTA_TEMPLATE_PATH);
-  const font = await embedHelvetica(pdfDoc);
-  const page = pdfDoc.getPage(0);
-  const drawText = createUppercaseTextDrawer({ page, font, fontSize: FONT_SIZE });
-
-  fillImagingPatientIdentity({
-    drawText,
-    patient,
+  return fillImagingTemplate({
+    templatePath: ENCUESTA_TEMPLATE_PATH,
     coords: ENCUESTA_FIELD_COORDS,
-    includeBirthDate: true,
-  });
-  fillPhysicianAndDiagnosis({
-    drawText,
     patient,
     requestingPhysician,
-    coords: ENCUESTA_FIELD_COORDS,
+    marks,
+    includeBirthDate: true,
   });
-  drawCustomMarks({ page, font, marks, fontSize: FONT_SIZE });
-
-  const pdfBytes = await pdfDoc.save();
-  return pdfBytes as unknown as Uint8Array;
 };
 
 /**
@@ -255,8 +262,5 @@ export const printImagingEncuestaForm = async (
   marks: CustomMark[] = []
 ): Promise<void> => {
   const filledBytes = await fillImagingEncuestaForm(patient, requestingPhysician, marks);
-  await injectPrintScriptAndOpen({
-    filledBytes,
-    fileName: `IMPRIMIR_Encuesta_${patient.patientName}.pdf`,
-  });
+  await printFilledImagingDocument(filledBytes, 'Encuesta', patient.patientName);
 };
