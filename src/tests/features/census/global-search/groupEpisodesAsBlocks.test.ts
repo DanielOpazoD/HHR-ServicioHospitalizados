@@ -9,8 +9,10 @@ import { describe, it, expect } from 'vitest';
 import type { HospitalizationEvent } from '@/types/domain/patientMaster';
 import {
   groupEpisodesAsBlocks,
+  reconcileGroupedEpisodesWithHistory,
   resolveEpisodeCensusTargetDate,
 } from '@/features/census/components/global-search/episodeGroupingController';
+import type { PatientHistoryResult } from '@/services/patient/patientHistoryService';
 
 const createEvent = (
   overrides: Partial<HospitalizationEvent> & { type: HospitalizationEvent['type']; date: string }
@@ -199,5 +201,147 @@ describe('groupEpisodesAsBlocks', () => {
     ])[0];
 
     expect(resolveEpisodeCensusTargetDate(episode)).toBe('2026-04-01');
+  });
+
+  it('closes a stale open episode when history already shows a discharge', () => {
+    const episodes = groupEpisodesAsBlocks([
+      createEvent({ type: 'Ingreso', date: '2026-04-07', diagnosis: 'ICC', bedName: 'H1C1' }),
+    ]);
+    const history: PatientHistoryResult = {
+      patientName: 'Ines',
+      rut: '8.932.066-6',
+      totalDays: 8,
+      firstSeen: '2026-04-07',
+      lastSeen: '2026-04-15',
+      movements: [
+        {
+          date: '2026-04-07',
+          bedId: 'H1C1',
+          bedName: 'H1C1',
+          bedType: 'MEDIA',
+          type: 'admission',
+        },
+        {
+          date: '2026-04-15',
+          bedId: 'H1C1',
+          bedName: 'H1C1',
+          bedType: 'MEDIA',
+          type: 'discharge',
+          details: 'Domicilio (Habitual)',
+        },
+      ],
+    };
+
+    const reconciled = reconcileGroupedEpisodesWithHistory(episodes, history);
+
+    expect(reconciled).toHaveLength(1);
+    expect(reconciled[0].discharge?.type).toBe('Egreso');
+    expect(reconciled[0].discharge?.date).toBe('2026-04-15');
+    expect(reconciled[0].daysOfStay).toBe(8);
+  });
+
+  it('closes a stale open episode as transfer when history already shows a transfer', () => {
+    const episodes = groupEpisodesAsBlocks([
+      createEvent({ type: 'Ingreso', date: '2026-04-07', diagnosis: 'ICC', bedName: 'H1C1' }),
+    ]);
+    const history: PatientHistoryResult = {
+      patientName: 'Ines',
+      rut: '8.932.066-6',
+      totalDays: 3,
+      firstSeen: '2026-04-07',
+      lastSeen: '2026-04-10',
+      movements: [
+        {
+          date: '2026-04-07',
+          bedId: 'H1C1',
+          bedName: 'H1C1',
+          bedType: 'MEDIA',
+          type: 'admission',
+        },
+        {
+          date: '2026-04-10',
+          bedId: 'H1C1',
+          bedName: 'H1C1',
+          bedType: 'MEDIA',
+          type: 'transfer',
+          details: 'SAMU aéreo → Hospital Base Valdivia',
+        },
+      ],
+    };
+
+    const reconciled = reconcileGroupedEpisodesWithHistory(episodes, history);
+
+    expect(reconciled[0].discharge?.type).toBe('Traslado');
+    expect(reconciled[0].discharge?.date).toBe('2026-04-10');
+    expect(reconciled[0].daysOfStay).toBe(3);
+  });
+
+  it('closes a stale open episode as death when history marks fallecimiento', () => {
+    const episodes = groupEpisodesAsBlocks([
+      createEvent({ type: 'Ingreso', date: '2026-04-07', diagnosis: 'Sepsis', bedName: 'H1C1' }),
+    ]);
+    const history: PatientHistoryResult = {
+      patientName: 'Ines',
+      rut: '8.932.066-6',
+      totalDays: 5,
+      firstSeen: '2026-04-07',
+      lastSeen: '2026-04-12',
+      movements: [
+        {
+          date: '2026-04-07',
+          bedId: 'H1C1',
+          bedName: 'H1C1',
+          bedType: 'MEDIA',
+          type: 'admission',
+        },
+        {
+          date: '2026-04-12',
+          bedId: 'H1C1',
+          bedName: 'H1C1',
+          bedType: 'MEDIA',
+          type: 'discharge',
+          details: 'Fallecimiento',
+        },
+      ],
+    };
+
+    const reconciled = reconcileGroupedEpisodesWithHistory(episodes, history);
+
+    expect(reconciled[0].discharge?.type).toBe('Fallecimiento');
+    expect(reconciled[0].discharge?.date).toBe('2026-04-12');
+    expect(reconciled[0].daysOfStay).toBe(5);
+  });
+
+  it('keeps an episode open when history still has no closing movement', () => {
+    const episodes = groupEpisodesAsBlocks([
+      createEvent({ type: 'Ingreso', date: '2026-04-07', diagnosis: 'ICC', bedName: 'H1C1' }),
+    ]);
+    const history: PatientHistoryResult = {
+      patientName: 'Ines',
+      rut: '8.932.066-6',
+      totalDays: 4,
+      firstSeen: '2026-04-07',
+      lastSeen: '2026-04-11',
+      movements: [
+        {
+          date: '2026-04-07',
+          bedId: 'H1C1',
+          bedName: 'H1C1',
+          bedType: 'MEDIA',
+          type: 'admission',
+        },
+        {
+          date: '2026-04-11',
+          bedId: 'H1C1',
+          bedName: 'H1C1',
+          bedType: 'MEDIA',
+          type: 'stay',
+        },
+      ],
+    };
+
+    const reconciled = reconcileGroupedEpisodesWithHistory(episodes, history);
+
+    expect(reconciled[0].discharge).toBeNull();
   });
 });

@@ -10,6 +10,10 @@
 
 import type { HospitalizationEvent } from '@/types/domain/patientMaster';
 import type { GroupedEpisode } from '@/features/census/components/global-search/globalSearchContracts';
+import type {
+  PatientHistoryResult,
+  PatientMovement,
+} from '@/services/patient/patientHistoryService';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -116,4 +120,75 @@ export const resolveEpisodeCensusTargetDate = (
   }
 
   return episode.admission.date;
+};
+
+const mapMovementToClosingEventType = (
+  movement: PatientMovement
+): HospitalizationEvent['type'] | null => {
+  if (movement.type === 'transfer') return 'Traslado';
+  if (movement.type === 'discharge') {
+    return movement.details === 'Fallecimiento' ? 'Fallecimiento' : 'Egreso';
+  }
+  return null;
+};
+
+const buildClosingEventFromHistory = (
+  episode: GroupedEpisode,
+  history: PatientHistoryResult
+): HospitalizationEvent | null => {
+  const closingMovements = history.movements
+    .filter(
+      movement =>
+        movement.date >= episode.admission.date &&
+        (movement.type === 'discharge' || movement.type === 'transfer')
+    )
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  const closingMovement = closingMovements[closingMovements.length - 1];
+  if (!closingMovement) {
+    return null;
+  }
+
+  const closingType = mapMovementToClosingEventType(closingMovement);
+  if (!closingType) {
+    return null;
+  }
+
+  return {
+    id: `${episode.id}__history_close__${closingMovement.date}`,
+    type: closingType,
+    date: closingMovement.date,
+    diagnosis: episode.diagnosis,
+    bedName: closingMovement.bedName || episode.bedName,
+    ...(closingType === 'Traslado' && closingMovement.details
+      ? { receivingCenter: closingMovement.details }
+      : {}),
+  };
+};
+
+/**
+ * Reconciles grouped episodes from PatientMaster with the concrete movement
+ * history loaded from daily records. This closes stale "open" episodes when
+ * the history already shows a discharge/transfer for the same admission.
+ */
+export const reconcileGroupedEpisodesWithHistory = (
+  episodes: GroupedEpisode[],
+  history: PatientHistoryResult | null
+): GroupedEpisode[] => {
+  if (!history || episodes.length === 0) {
+    return episodes;
+  }
+
+  return episodes.map(episode => {
+    if (episode.discharge || episode.admission.type !== 'Ingreso') {
+      return episode;
+    }
+
+    const historyClosingEvent = buildClosingEventFromHistory(episode, history);
+    if (!historyClosingEvent) {
+      return episode;
+    }
+
+    return buildClosedEpisode(episode.admission, historyClosingEvent);
+  });
 };

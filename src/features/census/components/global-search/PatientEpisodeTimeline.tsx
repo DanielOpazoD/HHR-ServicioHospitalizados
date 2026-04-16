@@ -10,7 +10,7 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 import type { MasterPatient } from '@/types/domain/patientMaster';
 import type { PatientHistoryResult } from '@/services/patient/patientHistoryService';
 import type { EpisodeDocuments } from '@/features/census/components/global-search/globalSearchContracts';
-import { groupEpisodesAsBlocks } from '@/features/census/components/global-search/episodeGroupingController';
+import { buildPatientEpisodeTimelineState } from '@/features/census/components/global-search/patientEpisodeTimelineController';
 import { DemographicsCard } from '@/features/census/components/global-search/DemographicsCard';
 import { MovementTimeline } from '@/features/census/components/global-search/MovementTimeline';
 import { EpisodeBlockCard } from '@/features/census/components/global-search/EpisodeBlockCard';
@@ -44,9 +44,9 @@ export const PatientEpisodeTimeline: React.FC<PatientEpisodeTimelineProps> = ({
   onNavigateToDate,
   onBack,
 }) => {
-  const groupedEpisodes = useMemo(
-    () => groupEpisodesAsBlocks(patient.hospitalizations ?? []),
-    [patient.hospitalizations]
+  const timelineState = useMemo(
+    () => buildPatientEpisodeTimelineState(patient, history),
+    [patient, history]
   );
 
   return (
@@ -72,15 +72,15 @@ export const PatientEpisodeTimeline: React.FC<PatientEpisodeTimelineProps> = ({
       {history && <MovementTimeline movements={history.movements} />}
 
       <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-        Episodios de hospitalizacion ({groupedEpisodes.length})
+        Episodios de hospitalizacion ({timelineState.episodeCount})
       </h4>
 
-      {groupedEpisodes.length === 0 && (
+      {!timelineState.hasEpisodes && (
         <p className="text-xs text-slate-400 py-4 text-center">Sin episodios registrados</p>
       )}
 
       <div className="relative border-l-2 border-medical-200 ml-1.5 overflow-y-auto flex-1">
-        {groupedEpisodes.map(episode => (
+        {timelineState.groupedEpisodes.map(episode => (
           <EpisodeBlockCard
             key={episode.id}
             episode={episode}
