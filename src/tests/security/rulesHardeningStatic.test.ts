@@ -55,4 +55,27 @@ describe('Security hardening static guards', () => {
     expect(dailyRecordsBlock).toMatch(/allow delete:\s*if isAdmin\(\);/m);
     expect(dailyRecordsBlock).not.toMatch(/allow delete:\s*if [^;]*isNurse\(/m);
   });
+
+  // Regression guard: the bootstrap admin allowlist is a technical recovery path.
+  // Any change (addition, removal, reorder, rename) must be an explicit PR that updates
+  // this test — it forces human review of who holds recovery access.
+  // If you need to change it, update both firestore.rules and EXPECTED_BOOTSTRAP_ADMINS below.
+  it('freezes the bootstrap admin allowlist', () => {
+    const EXPECTED_BOOTSTRAP_ADMINS = [
+      'daniel.opazo@hospitalhangaroa.cl',
+      'd.opazo.damiani@gmail.com',
+    ];
+
+    const rules = readProjectFile('firestore.rules');
+    const fnMatch = rules.match(
+      /function isBootstrapAdmin\(\)\s*\{[\s\S]*?getUserEmail\(\) in \[([\s\S]*?)\]/m
+    );
+
+    expect(fnMatch, 'isBootstrapAdmin() must exist with an inline allowlist').not.toBeNull();
+
+    const listBody = fnMatch?.[1] ?? '';
+    const foundEmails = Array.from(listBody.matchAll(/'([^']+)'/g)).map(m => m[1]);
+
+    expect(foundEmails).toEqual(EXPECTED_BOOTSTRAP_ADMINS);
+  });
 });

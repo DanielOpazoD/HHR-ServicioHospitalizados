@@ -178,6 +178,7 @@ import { useDailyRecord } from '@/hooks/useDailyRecord';
 - [Runbook de sync y resiliencia](docs/RUNBOOK_SYNC_RESILIENCE.md)
 - [Checklist diario admin (1 pagina)](docs/RUNBOOK_DAILY_ADMIN_CHECKLIST.md)
 - [Runbook técnico de soporte](docs/RUNBOOK_SUPPORT_OPERATIONS.md)
+- [Runbook de rotación de secretos](docs/RUNBOOK_SECRET_ROTATION.md)
 - [Guardrails de calidad](docs/QUALITY_GUARDRAILS.md)
 - [Gates de CI y runbooks de falla](docs/CI_GATES_AND_FAILURE_RUNBOOKS.md)
 - [Scorecard de release readiness](reports/release-readiness-scorecard.md)
