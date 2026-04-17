@@ -28,12 +28,17 @@ export interface CompressionOptions {
 // Constants
 // ============================================================================
 
-import {
-  PHOTO_MAX_DIMENSION,
-  THUMBNAIL_MAX_DIMENSION,
-  PHOTO_QUALITY,
-  THUMBNAIL_QUALITY,
-} from '@/features/wound-care/constants';
+/** Max dimension for compressed photos (pixels). */
+const PHOTO_MAX_DIMENSION = 1920;
+
+/** Max dimension for thumbnails (pixels). */
+const THUMBNAIL_MAX_DIMENSION = 200;
+
+/** Compression quality for photos (0-1). */
+const PHOTO_QUALITY = 0.8;
+
+/** Compression quality for thumbnails (0-1). */
+const THUMBNAIL_QUALITY = 0.6;
 
 const PHOTO_DEFAULTS: Required<CompressionOptions> = {
   maxWidth: PHOTO_MAX_DIMENSION,
