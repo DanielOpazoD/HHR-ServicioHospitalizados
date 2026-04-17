@@ -16,17 +16,18 @@ Controladores puros consumidos por hooks para separar:
 
 ## Mapa
 
-| Archivo                                       | Propósito                                                                      |
-| --------------------------------------------- | ------------------------------------------------------------------------------ |
-| `dailyRecordSyncNotificationController.ts`    | Traducción de errores de sync a feedback UX                                    |
-| `dailyRecordSyncStatusController.ts`          | Estado de sync derivado de mutaciones                                          |
-| `censusEmailRecipientsController.ts`          | Parse/normalización de destinatarios email                                     |
-| `censusEmailRecipientsBootstrapController.ts` | Bootstrap de destinatarios globales/locales sin exponer excepciones esperadas  |
-| `censusEmailSendController.ts`                | Reglas de envío de email de censo                                              |
-| `censusEmailBrowserRuntimeController.ts`      | Runtime del flujo email desacoplado del browser global                         |
-| `handoffManagementMutationController.ts`      | Runner común para mutaciones de handoff con errores y auditoría consistentes   |
-| `handoffShareLinkController.ts`               | Política pura para decidir copia real, fallback E2E o mensaje de error         |
-| `medicalHandoffHandlersController.ts`         | Guardas, target patient y filtros de outcome para mutaciones de handoff médico |
+| Archivo                                           | Propósito                                                                          |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `dailyRecordSyncNotificationController.ts`        | Traducción de errores de sync a feedback UX                                        |
+| `dailyRecordSyncStatusController.ts`              | Estado de sync derivado de mutaciones                                              |
+| `censusEmailRecipientsController.ts`              | Parse/normalización de destinatarios email                                         |
+| `censusEmailRecipientsBootstrapController.ts`     | Bootstrap de destinatarios globales/locales sin exponer excepciones esperadas      |
+| `censusEmailRecipientMutationActionController.ts` | Especificaciones declarativas para create/rename/delete de listas de destinatarios |
+| `censusEmailSendController.ts`                    | Reglas de envío de email de censo                                                  |
+| `censusEmailBrowserRuntimeController.ts`          | Runtime del flujo email desacoplado del browser global                             |
+| `handoffManagementMutationController.ts`          | Runner común para mutaciones de handoff con errores y auditoría consistentes       |
+| `handoffShareLinkController.ts`                   | Política pura para decidir copia real, fallback E2E o mensaje de error             |
+| `medicalHandoffHandlersController.ts`             | Guardas, target patient y filtros de outcome para mutaciones de handoff médico     |
 
 ## Patrón
 

@@ -20,6 +20,9 @@ import { isSpecialistCensusAccessProfile } from '@/features/census/types/censusA
 import { isUpcEligibleBedId } from '@/shared/census/upcBedPolicy';
 import { useAuth } from '@/context/AuthContext';
 import type { UpcChecklistRecord } from '@/features/census/contracts/censusUpcContracts';
+import { logger } from '@/services/utils/loggerService';
+
+const patientInputFlagsLogger = logger.child('PatientInputFlagsSection');
 
 export const PatientInputIdentitySection: React.FC<PatientInputIdentitySectionBindings> = ({
   shared,
@@ -141,7 +144,7 @@ export const PatientInputFlagsSection: React.FC<PatientInputFlagsSectionBindings
         isUPC: record.classification !== null,
       });
     } catch (err) {
-      console.error('[UPC] Failed to save checklist:', err);
+      patientInputFlagsLogger.error('Failed to save UPC checklist', err);
     }
   };
 

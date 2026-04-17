@@ -61,13 +61,14 @@
 ## Señal actual
 
 - `check:quality`: `ok`
-- `check:critical-coverage`: `ok`
+- `check:critical-coverage`: `degraded`
 - `check:flow-performance-budget`: `ok`
 - `check:repo-hygiene`: `ok`
 - `check:legacy-permissions-boundary`: `ok`
-- `system-confidence`: `ok`
-- `quality-metrics`: `featureBoundaryViolations=0`, `dailyRecordBoundaryViolations=0`
-- focos activos: `foundations` y `permissions` como deuda viva de mantenimiento; sin drift nuevo detectado
+- `check:report-freshness`: `ok`
+- `system-confidence`: `degraded`
+- `quality-metrics`: `featureBoundaryViolations=0`, `dailyRecordBoundaryViolations=0`, `rawConsoleWarnErrorOutsideStructuredSink=0`
+- focos activos: `foundations`, `permissions` y `bundle/readiness`; sin drift documental de reportes
 
 ## Nota de consolidación 2026-04-16
 
@@ -89,15 +90,26 @@
   - documentación canónica nueva en `auth`, `repositories` y `firebase-runtime`
   - borde PDF de `clinical-documents` separado en soporte binario, snapshot DOM y orquestación
 
+## Nota de reportes 2026-04-16
+
+- Se regeneraron `quality-metrics`, `maintenance-debt-scorecard`, `serverless-sensitive-coverage`, `serverless-runtime-governance`, `system-confidence`, `operational-health` y `release-readiness-scorecard`.
+- `check:report-freshness` volvió a verde y ya no queda drift entre artefactos y `HEAD`.
+- La convergencia estructural volvió a quedar limpia tras el lote:
+  - `featureBoundaryViolations=0`
+  - `rawConsoleWarnErrorOutsideStructuredSink=0`
+- La señal ejecutiva dejó de verse “totalmente verde” y ahora refleja dos residuos reales:
+  - `system-confidence` degradado por `critical_coverage`
+  - `release-readiness` degradado por hotspot de bundle en `app-authenticated-shell`
+
 ## Pendientes reales de mayor retorno
 
-1. `firestore.rules` sigue siendo el hotspot más grande y merece una iteración pequeña de compactación sin tocar semántica.
+1. `firestore.rules` sigue siendo el hotspot más grande del watchlist y merece nuevas iteraciones pequeñas sin tocar semántica.
 2. `src/hooks/useCensusEmailRecipientLists.ts` ya bajó complejidad incidental, pero sigue en watchlist por tamaño y churn.
-3. `src/services/repositories/dailyRecordWriteSupport.ts` quedó mucho mejor que antes, pero todavía es buen candidato para otra extracción acotada de recovery/remediación.
-4. Regenerar scorecards/reportes cuando se abra el próximo lote para que la documentación y métricas vuelvan a quedar sincronizadas con este ciclo.
+3. `critical-coverage` y `system-confidence` siguen degradados; el siguiente retorno real está en esa señal, no en más documentación.
+4. `release-readiness-scorecard` sigue degradado por el peso de `app-authenticated-shell`; el próximo retorno real está en bundle/entry, no en más tracker.
 
 ## Siguiente paso recomendado
 
 1. Abrir `Bloque 6` solo como watchlist cualitativa, sin inventar un plan nuevo grande.
-2. Priorizar una iteración corta en `firestore.rules` o `dailyRecordWriteSupport`, no en ambos a la vez.
-3. Regenerar `reports/*` y repetir `check:repo-hygiene` / `check:legacy-permissions-boundary` al cierre del próximo lote.
+2. Priorizar una iteración corta en `firestore.rules` o en el hotspot de bundle `app-authenticated-shell`, no en ambos a la vez.
+3. Mantener `reports/*` sincronizados al cierre de cada lote y volver a correr `check:report-freshness`.

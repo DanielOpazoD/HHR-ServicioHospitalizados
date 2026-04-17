@@ -14,12 +14,12 @@ import {
   resolveRecipientSyncState,
 } from '@/hooks/controllers/censusEmailRecipientRuntimeController';
 import { scheduleDeferredRecipientSync } from '@/hooks/controllers/censusEmailRecipientDeferredSyncController';
-import { resolveRecipientListForSelection } from '@/hooks/controllers/censusEmailRecipientMutationController';
 import {
-  resolveRecipientRuntimeAfterCreate,
-  resolveRecipientRuntimeAfterDeleteOutcome,
-  resolveRecipientRuntimeAfterRename,
-} from '@/hooks/controllers/censusEmailRecipientMutationRuntimeController';
+  buildCreateRecipientListMutationSpec,
+  buildDeleteRecipientListMutationSpec,
+  buildRenameRecipientListMutationSpec,
+  type RecipientRuntimeMutationSpec,
+} from '@/hooks/controllers/censusEmailRecipientMutationActionController';
 import { resolveDeferredRecipientSyncInput } from '@/hooks/controllers/censusEmailRecipientSyncController';
 import {
   type CensusRecipientListUseCasesModule,
@@ -201,16 +201,11 @@ export const useCensusEmailRecipientLists = ({
   );
 
   const executeRecipientRuntimeMutation = useCallback(
-    async <T>(
-      runUseCase: (
-        useCases: CensusRecipientListUseCasesModule
-      ) => Promise<RecipientUseCaseResult<T>>,
-      options: {
-        resolveRuntimeState: (data: NonNullable<T>) => RecipientRuntimeState | null;
-        fallbackMessage: string;
-      }
-    ) => {
-      await runRecipientRuntimeMutation(() => withRecipientListUseCases(runUseCase), options);
+    async <T>(spec: RecipientRuntimeMutationSpec<T>) => {
+      await runRecipientRuntimeMutation(
+        () => withRecipientListUseCases(useCases => spec.execute(useCases)),
+        spec
+      );
     },
     [runRecipientRuntimeMutation]
   );
@@ -297,18 +292,13 @@ export const useCensusEmailRecipientLists = ({
   const createRecipientList = useCallback(
     async (name: string) => {
       await executeRecipientRuntimeMutation(
-        ({ executeCreateCensusRecipientList }) =>
-          executeCreateCensusRecipientList({
-            canManageGlobalRecipientLists,
-            name,
-            recipients,
-            recipientLists,
-            actor: user,
-          }),
-        {
-          resolveRuntimeState: result => resolveRecipientRuntimeAfterCreate(recipientLists, result),
-          fallbackMessage: 'No se pudo crear la nueva lista global.',
-        }
+        buildCreateRecipientListMutationSpec({
+          canManageGlobalRecipientLists,
+          name,
+          recipients,
+          recipientLists,
+          actor: user,
+        })
       );
     },
     [
@@ -323,18 +313,14 @@ export const useCensusEmailRecipientLists = ({
   const renameActiveRecipientList = useCallback(
     async (name: string) => {
       await executeRecipientRuntimeMutation(
-        ({ executeRenameCensusRecipientList }) =>
-          executeRenameCensusRecipientList({
-            canManageGlobalRecipientLists,
-            activeList: resolveRecipientListForSelection(recipientLists, activeRecipientListId),
-            name,
-            recipients,
-            actor: user,
-          }),
-        {
-          resolveRuntimeState: result => resolveRecipientRuntimeAfterRename(recipientLists, result),
-          fallbackMessage: 'No se pudo actualizar el nombre de la lista global.',
-        }
+        buildRenameRecipientListMutationSpec({
+          canManageGlobalRecipientLists,
+          activeRecipientListId,
+          name,
+          recipients,
+          recipientLists,
+          actor: user,
+        })
       );
     },
     [
@@ -350,21 +336,11 @@ export const useCensusEmailRecipientLists = ({
   const deleteRecipientList = useCallback(
     async (listId: string) => {
       await executeRecipientRuntimeMutation(
-        ({ executeDeleteCensusRecipientList }) =>
-          executeDeleteCensusRecipientList({
-            canManageGlobalRecipientLists,
-            recipientLists,
-            listId,
-          }),
-        {
-          resolveRuntimeState: result =>
-            resolveRecipientRuntimeAfterDeleteOutcome({
-              recipientLists,
-              listId,
-              fallbackList: result.fallbackList,
-            }),
-          fallbackMessage: 'No se pudo eliminar la lista global seleccionada.',
-        }
+        buildDeleteRecipientListMutationSpec({
+          canManageGlobalRecipientLists,
+          recipientLists,
+          listId,
+        })
       );
     },
     [canManageGlobalRecipientLists, executeRecipientRuntimeMutation, recipientLists]

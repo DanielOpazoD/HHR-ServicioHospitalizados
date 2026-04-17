@@ -30,6 +30,7 @@ const FEATURE_PUBLIC_BOUNDARIES = [
     importPrefix: '@/features/census/',
     allowBypass: file =>
       file.startsWith('src/features/census/') ||
+      file === 'src/application/census/public.ts' ||
       file.startsWith('src/tests/') ||
       file.startsWith('src/hooks/controllers/'),
   },

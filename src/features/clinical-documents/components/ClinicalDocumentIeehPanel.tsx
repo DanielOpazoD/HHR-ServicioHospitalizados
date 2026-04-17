@@ -28,6 +28,7 @@ import {
 } from '@/features/clinical-documents/controllers/clinicalDocumentIeehPrintController';
 import type { TerminologyConcept } from '@/services/terminology/terminologyService';
 import { searchDiagnoses, forceAISearch } from '@/services/terminology/terminologyService';
+import { logger } from '@/services/utils/loggerService';
 import { ClinicalDocumentIeehFormBody } from '@/features/clinical-documents/components/ClinicalDocumentIeehFormBody';
 
 // ---------------------------------------------------------------------------
@@ -36,6 +37,7 @@ import { ClinicalDocumentIeehFormBody } from '@/features/clinical-documents/comp
 
 /** Delay before triggering CIE-10 search after typing stops. */
 const SEARCH_DEBOUNCE_MS = 350;
+const ieehPanelLogger = logger.child('ClinicalDocumentIeehPanel');
 
 // ---------------------------------------------------------------------------
 // Props
@@ -232,8 +234,7 @@ export const ClinicalDocumentIeehPanel: React.FC<ClinicalDocumentIeehPanelProps>
       // (bedId, isBlocked, etc.) are not used by fillIEEHForm.
       await printIEEHForm(patient as Parameters<typeof printIEEHForm>[0], discharge);
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('[IEEH] Error printing from epicrisis:', error);
+      ieehPanelLogger.error('Failed to print IEEH form from epicrisis', error);
     } finally {
       setIsPrinting(false);
     }
