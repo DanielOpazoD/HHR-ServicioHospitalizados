@@ -26,7 +26,20 @@ if (!quarantined) {
   fail('Expected { "quarantined": [] }');
 }
 
+// Policy caps (see docs/TEST_FLAKY_QUARANTINE_POLICY.md).
+// Keep quarantine small and short-lived on purpose.
+const MAX_ACTIVE_ENTRIES = 5;
+const MAX_SLA_DAYS = 30;
+
+if (quarantined.length > MAX_ACTIVE_ENTRIES) {
+  fail(
+    `Too many quarantined tests (${quarantined.length} > ${MAX_ACTIVE_ENTRIES}). ` +
+      `Resolve existing entries before adding more. See docs/TEST_FLAKY_QUARANTINE_POLICY.md.`
+  );
+}
+
 const now = new Date();
+const maxSlaMs = MAX_SLA_DAYS * 24 * 60 * 60 * 1000;
 const errors = [];
 
 for (const [index, entry] of quarantined.entries()) {
@@ -54,6 +67,10 @@ for (const [index, entry] of quarantined.entries()) {
       errors.push(`${label}: invalid sla date: ${sla}`);
     } else if (slaDate.getTime() < now.getTime()) {
       errors.push(`${label}: SLA expired (${sla}) for ${file || 'unknown file'}`);
+    } else if (slaDate.getTime() - now.getTime() > maxSlaMs) {
+      errors.push(
+        `${label}: SLA ${sla} exceeds ${MAX_SLA_DAYS}-day cap for ${file || 'unknown file'}`
+      );
     }
   }
 }
