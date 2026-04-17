@@ -17,7 +17,9 @@ const ReminderModal = lazyWithRetry(() =>
   import('@/components/reminders/ReminderModal').then(m => ({ default: m.ReminderModal }))
 );
 const GlobalPatientSearchModal = lazyWithRetry(() =>
-  import('@/application/census/public').then(m => ({ default: m.GlobalPatientSearchModal }))
+  import('@/features/census/public-components').then(m => ({
+    default: m.GlobalPatientSearchModal,
+  }))
 );
 
 const usePatientSearchShortcut = (togglePatientSearch: () => void) => {

@@ -18,5 +18,9 @@ const isGovernedCensusControllerShim = ({ importerPath, importPath, source }) =>
 runFeatureBoundaryCheck({
   feature: 'census',
   label: 'Census',
+  // Heavy-component entrypoint, split out from public.ts so external static
+  // importers do not pull CensusView into their chunks. Callers must use a
+  // dynamic import() for this module (enforced by convention, not by lint).
+  extraPublicModules: ['@/features/census/public-components'],
   allowException: isGovernedCensusControllerShim,
 });

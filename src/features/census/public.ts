@@ -1,7 +1,9 @@
 // Public API for code outside the census feature. Internal consumers should import local modules directly.
-export { CensusView } from './components/CensusView';
-export { CensusEmailConfigModal } from './components/CensusEmailConfigModal';
-export { GlobalPatientSearchModal } from './components/global-search/GlobalPatientSearchModal';
+//
+// Heavy components (CensusView, CensusEmailConfigModal, GlobalPatientSearchModal)
+// intentionally live in ./public-components so this barrel can be imported
+// statically without pulling the component tree into the authenticated-shell
+// chunk. Load those components via a dynamic import of './public-components'.
 export { useGlobalPatientSearch } from './components/global-search/useGlobalPatientSearch';
 export type { CensusAccessProfile } from './types/censusAccessProfile';
 export { isSpecialistCensusAccessProfile } from './types/censusAccessProfile';

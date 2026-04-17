@@ -4,15 +4,17 @@
  */
 import { lazyWithRetry } from '@/utils/lazyWithRetry';
 
-// Census module (prefetch for faster navigation)
+// Census module heavy components (prefetch for faster navigation).
+// Load from public-components so the app-authenticated-shell chunk does
+// not pull in the CensusView tree through the light controller barrel.
 export const CensusView = lazyWithRetry(() =>
-  import(/* webpackPrefetch: true */ '@/features/census').then(module => ({
+  import(/* webpackPrefetch: true */ '@/features/census/public-components').then(module => ({
     default: module.CensusView,
   }))
 );
 
 export const CensusEmailConfigModal = lazyWithRetry(() =>
-  import('@/features/census').then(module => ({
+  import('@/features/census/public-components').then(module => ({
     default: module.CensusEmailConfigModal,
   }))
 );

@@ -19,6 +19,18 @@ const FEATURE_PUBLIC_BOUNDARIES = [
       file.startsWith('src/features/census/') ||
       file.startsWith('src/tests/') ||
       file.startsWith('src/hooks/controllers/'),
+    // Sanctioned heavy-component barrel, kept separate from @/features/census
+    // so the authenticated-shell chunk does not pull CensusView through the
+    // light public surface. Listed callers must load it via dynamic import.
+    allowedSubpathImports: [
+      {
+        importPath: '@/features/census/public-components',
+        callers: new Set([
+          'src/views/LazyViews.ts',
+          'src/components/layout/app-content/AppContentOverlays.tsx',
+        ]),
+      },
+    ],
   },
   {
     featurePath: 'src/features/handoff/',
@@ -190,6 +202,18 @@ for (const file of trackedFiles) {
   const source = fs.readFileSync(absolutePath, 'utf8');
   for (const boundary of FEATURE_PUBLIC_BOUNDARIES) {
     if (boundary.allowBypass(file) || !source.includes(boundary.importPrefix)) {
+      continue;
+    }
+
+    // Strip occurrences of explicitly-sanctioned subpath imports for this
+    // file before deciding whether a forbidden subpath remains.
+    let residualSource = source;
+    for (const allowance of boundary.allowedSubpathImports ?? []) {
+      if (allowance.callers.has(file)) {
+        residualSource = residualSource.split(allowance.importPath).join('');
+      }
+    }
+    if (!residualSource.includes(boundary.importPrefix)) {
       continue;
     }
 
