@@ -6,7 +6,13 @@ import { isAuthBootstrapPending } from '@/services/auth/authBootstrapState';
 import { getCurrentAuthSessionState } from '@/services/auth/authSession';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 
-type BackgroundMode = 'auto' | 'day' | 'night';
+type BackgroundMode = 'day' | 'night';
+
+const resolveInitialBackgroundMode = (): BackgroundMode => {
+  // Auto-pick based on local time of day; user can still toggle afterwards.
+  const currentHour = new Date().getHours();
+  return currentHour >= 8 && currentHour < 20 ? 'day' : 'night';
+};
 const POPUP_RECOVERY_GRACE_MS = 4000;
 const POPUP_RECOVERY_POLL_MS = 200;
 const loginPageLogger = createScopedLogger('LoginPage');
@@ -45,7 +51,9 @@ export const useLoginPageController = (onLoginSuccess: () => void): LoginPageCon
   const [error, setError] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [backgroundMode, setBackgroundMode] = useState<BackgroundMode>('auto');
+  const [backgroundMode, setBackgroundMode] = useState<BackgroundMode>(
+    resolveInitialBackgroundMode
+  );
 
   const handleGoogleSignIn = async () => {
     setError(null);
@@ -105,16 +113,10 @@ export const useLoginPageController = (onLoginSuccess: () => void): LoginPageCon
   };
 
   const toggleBackgroundMode = () => {
-    setBackgroundMode(prev => {
-      if (prev === 'auto') return 'day';
-      if (prev === 'day') return 'night';
-      return 'auto';
-    });
+    setBackgroundMode(prev => (prev === 'day' ? 'night' : 'day'));
   };
 
-  const currentHour = new Date().getHours();
-  const isAutoDayWindow = currentHour >= 8 && currentHour < 20;
-  const isDayGradient = backgroundMode === 'auto' ? isAutoDayWindow : backgroundMode === 'day';
+  const isDayGradient = backgroundMode === 'day';
 
   return {
     error,

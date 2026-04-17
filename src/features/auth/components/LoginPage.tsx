@@ -1,5 +1,5 @@
 import React from 'react';
-import { Monitor, MoonStar, SunMedium } from 'lucide-react';
+import { MoonStar, SunMedium } from 'lucide-react';
 import { LoginPageCard } from './LoginPageCard';
 import { LoginPageFooter } from './LoginPageFooter';
 import { LoginPageHeader } from './LoginPageHeader';
@@ -16,7 +16,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     isGoogleLoading,
     isAnyLoading,
     isDayGradient,
-    backgroundMode,
     canRetryGoogleSignIn,
     handleGoogleSignIn,
     toggleBackgroundMode,
@@ -24,9 +23,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const backgroundImage = isDayGradient
     ? '/images/login/hhr-login-day.png'
     : '/images/login/hhr-login-night.png';
-  const BackgroundModeIcon =
-    backgroundMode === 'auto' ? Monitor : isDayGradient ? SunMedium : MoonStar;
-  const backgroundModeLabel = backgroundMode === 'auto' ? 'Auto' : isDayGradient ? 'Día' : 'Noche';
+  const BackgroundModeIcon = isDayGradient ? SunMedium : MoonStar;
+  const backgroundModeLabel = isDayGradient ? 'Día' : 'Noche';
 
   return (
     <div

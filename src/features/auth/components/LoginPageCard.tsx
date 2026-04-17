@@ -64,12 +64,21 @@ export const LoginPageCard: React.FC<LoginPageCardProps> = ({
     }
   };
 
+  // Glassmorphism: the card is a frosted panel (low opacity + strong blur)
+  // so the background image shows through; interactive elements inside stay
+  // opaque for brand clarity (Google icon) and accessibility contrast.
+  const glassCardClass = isDayGradient
+    ? 'bg-white/5 border-white/25 ring-1 ring-inset ring-white/10'
+    : 'bg-slate-950/10 border-white/12 ring-1 ring-inset ring-white/5';
+
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-white/40 bg-white/84 p-8 shadow-[0_24px_60px_-30px_rgba(15,23,42,0.55)] backdrop-blur-md animate-login-reveal animate-login-reveal-delay-2 sm:p-10">
+    <div
+      className={`relative overflow-hidden rounded-3xl border p-8 shadow-[0_32px_70px_-28px_rgba(2,6,23,0.70)] backdrop-blur-2xl backdrop-saturate-150 animate-login-reveal animate-login-reveal-delay-2 sm:p-10 ${glassCardClass}`}
+    >
       <div className={`absolute inset-x-0 top-0 h-1.5 ${accentBarClass}`} />
 
       <div className="relative">
-        <h2 className="text-center text-xl font-bold text-slate-800 text-balance">
+        <h2 className="text-center text-xl font-bold text-white text-balance drop-shadow-[0_1px_2px_rgba(2,6,23,0.45)]">
           Acceso al Sistema
         </h2>
         <div className="mb-8" />
@@ -80,7 +89,7 @@ export const LoginPageCard: React.FC<LoginPageCardProps> = ({
             onClick={onGoogleSignIn}
             disabled={isAnyLoading}
             data-testid="login-google-button"
-            className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-slate-200 bg-white px-4 py-4 font-bold text-slate-700 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-medical-300 hover:bg-slate-50 hover:shadow-lg active:scale-[0.99] disabled:bg-slate-100"
+            className="flex w-full items-center justify-center gap-3 rounded-2xl border border-white/60 bg-white/95 px-4 py-4 font-bold text-slate-700 shadow-lg shadow-slate-950/20 transition-all duration-300 hover:-translate-y-0.5 hover:border-white hover:bg-white hover:shadow-xl active:scale-[0.99] disabled:bg-white/70"
           >
             {isGoogleLoading ? (
               <>
@@ -101,7 +110,7 @@ export const LoginPageCard: React.FC<LoginPageCardProps> = ({
               onClick={() => void handleResetLocalSession()}
               disabled={isAnyLoading}
               data-testid="login-reset-local-button"
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50/70 px-2.5 py-1.5 text-[11px] font-medium text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 disabled:text-slate-300"
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-white/20 bg-white/5 px-2.5 py-1.5 text-[11px] font-medium text-white/70 backdrop-blur-sm transition hover:bg-white/15 hover:text-white disabled:text-white/40"
             >
               <RotateCcw className="h-3 w-3" />
               {AUTH_UI_COPY.resetStorageAction}
@@ -112,12 +121,10 @@ export const LoginPageCard: React.FC<LoginPageCardProps> = ({
         {isGoogleLoading && (
           <div
             data-testid="login-google-pending"
-            className="mt-5 rounded-2xl border border-medical-100 bg-medical-50/90 px-4 py-3 text-center"
+            className="mt-5 rounded-2xl border border-white/25 bg-white/10 px-4 py-3 text-center backdrop-blur-md"
           >
-            <p className="text-sm font-semibold text-medical-800">
-              {AUTH_UI_COPY.popupPendingTitle}
-            </p>
-            <p className="mt-1 text-xs text-medical-700 text-balance">
+            <p className="text-sm font-semibold text-white">{AUTH_UI_COPY.popupPendingTitle}</p>
+            <p className="mt-1 text-xs text-white/80 text-balance">
               {AUTH_UI_COPY.popupPendingHint}
             </p>
           </div>
@@ -128,20 +135,20 @@ export const LoginPageCard: React.FC<LoginPageCardProps> = ({
             <div
               data-testid="login-error-alert"
               data-auth-error-code={errorCode || undefined}
-              className="flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 p-3 text-sm text-red-700 text-balance"
+              className="flex items-center gap-2 rounded-xl border border-red-300/50 bg-red-500/20 p-3 text-sm text-red-50 text-balance backdrop-blur-md"
             >
               <AlertCircle className="h-5 w-5 flex-shrink-0" />
               <span>{error}</span>
             </div>
             {canRetryGoogleSignIn && (
-              <div className="mt-3 rounded-2xl border border-amber-100 bg-amber-50/85 px-4 py-3 text-center">
-                <p className="text-xs text-amber-800 text-balance">
+              <div className="mt-3 rounded-2xl border border-amber-300/40 bg-amber-500/15 px-4 py-3 text-center backdrop-blur-md">
+                <p className="text-xs text-amber-50 text-balance">
                   {AUTH_UI_COPY.roleValidationRetryHint}
                 </p>
                 <button
                   type="button"
                   onClick={() => void onGoogleSignIn()}
-                  className="mt-3 inline-flex items-center justify-center rounded-xl bg-amber-500 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white transition hover:bg-amber-600"
+                  className="mt-3 inline-flex items-center justify-center rounded-xl bg-amber-500 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white shadow-lg shadow-amber-900/40 transition hover:bg-amber-400"
                   data-testid="login-retry-button"
                 >
                   {AUTH_UI_COPY.roleValidationRetryAction}
