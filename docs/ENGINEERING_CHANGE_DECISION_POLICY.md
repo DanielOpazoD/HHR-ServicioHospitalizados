@@ -104,6 +104,31 @@ Si esas respuestas no son claras, el cambio no debe avanzar.
 - Introducir una nueva capa solo para renombrar tipos existentes.
 - Refactorizar módulos estables solo para “alinearlos” con una arquitectura ideal.
 
+## Política de adopción de versiones mayores de dependencias
+
+Este repositorio lo mantiene una sola persona y usa versiones nuevas de librerías
+centrales (React 19.x, Vite 6.x, Vitest 4.x, Tailwind 4.x, Firebase 12.x).
+Cuando Dependabot abre un PR con un bump **mayor** (`X.0.0 → X+1.0.0`):
+
+- **No se mergea en los primeros 60 días** desde la publicación, aunque CI esté verde.
+  Dejar que otros proyectos encuentren los bugs primero. La ventana de 60 días se
+  cuenta contra la fecha de release en el registry, no contra la fecha del PR.
+- **No se mergea en viernes, vísperas de turnos clínicos largos, ni al inicio de
+  vacaciones del mantenedor.** El bump mayor debe poder revertirse cómodamente
+  dentro de las 48 h siguientes si algo falla en producción.
+- **No se mergea antes de leer el CHANGELOG completo** del release mayor y
+  buscar issues abiertos con la etiqueta `regression` o `breaking`.
+- Si el bump mayor toca **React**, **Firebase** o **Vite**, correr
+  `npm run ci:release-gate` local y abrir una ventana de soak de 1 semana en
+  preview antes de promover a producción.
+
+Minors y patches siguen el flujo estándar de Dependabot: revisión rápida del
+changelog, merge cuando CI es verde.
+
+Excepción explícita: **parches de seguridad críticos** (CVE high/critical en
+deps directas, marcadas como tales por `npm audit` o GitHub Security) pueden
+acortar la ventana a 7 días si no hay workaround disponible.
+
 ## Cómo usar esta política junto con otras guías
 
 - Esta política decide si una mejora merece hacerse.
