@@ -1,5 +1,7 @@
 # ADR: Fachada Canónica de Acceso App Shell
 
+**Estado:** Vigente
+
 ## Decisión
 
 La navegación del app shell consume una fachada única en `shared/access/operationalAccessPolicy.ts` para visibilidad de módulos, edición y saneamiento de rutas.

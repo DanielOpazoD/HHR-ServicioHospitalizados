@@ -1,5 +1,7 @@
 # ADR: Clinical Document Workspace Contract
 
+**Estado:** Vigente
+
 ## Decision
 
 The clinical documents workspace must remain definition-driven and contract-validated:

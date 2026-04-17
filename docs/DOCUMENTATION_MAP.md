@@ -2,6 +2,10 @@
 
 Última actualización: 2026-04-16
 
+> Índice único del repositorio. Si un documento nuevo no aparece aquí, o queda
+> sin categoría, debe añadirse en el mismo PR que lo crea. `check:docs-drift`
+> ayuda a detectar referencias rotas, no ausencias.
+
 ## Lectura recomendada
 
 1. [README.md](../README.md)
@@ -31,6 +35,37 @@ Documentos que gobiernan decisiones activas y estructura actual del repo.
 - [docs/FOUNDATION_TRACKER.md](FOUNDATION_TRACKER.md)
 - [docs/QUALITY_GUARDRAILS.md](QUALITY_GUARDRAILS.md)
 - [docs/SAFE_CHANGE_CHECKLIST.md](SAFE_CHANGE_CHECKLIST.md)
+
+#### ADRs
+
+Cada ADR declara su `**Estado:**` en la primera línea después del título:
+`Vigente`, `Superseded by <X>` o `Histórico`. Si se marca superseded, el PR debe
+actualizar el `Estado` y apuntar al ADR reemplazante.
+
+- [ADR_ACCESS_POLICY_FACADE](ADR_ACCESS_POLICY_FACADE.md) — Vigente
+- [ADR_APPLICATION_BOUNDARY_ENFORCEMENT](ADR_APPLICATION_BOUNDARY_ENFORCEMENT.md) — Vigente
+- [ADR_APPLICATION_USE_CASES](ADR_APPLICATION_USE_CASES.md) — Vigente
+- [ADR_AUTH_RUNTIME_RECOVERY](ADR_AUTH_RUNTIME_RECOVERY.md) — Vigente
+- [ADR_CENSUS_WORKBOOK_PROTECTION](ADR_CENSUS_WORKBOOK_PROTECTION.md) — Aprobado
+- [ADR_CLINICAL_DOCUMENT_WORKSPACE_CONTRACT](ADR_CLINICAL_DOCUMENT_WORKSPACE_CONTRACT.md) — Vigente
+- [ADR_CLINICAL_EPISODE_MODEL](ADR_CLINICAL_EPISODE_MODEL.md) — Vigente
+- [ADR_DAILY_RECORD_RUNTIME_PATH](ADR_DAILY_RECORD_RUNTIME_PATH.md) — Vigente
+- [ADR_HANDOFF_RUNTIME_SURFACES](ADR_HANDOFF_RUNTIME_SURFACES.md) — Vigente
+- [ADR_REPOSITORY_PROVIDER_REQUIRED](ADR_REPOSITORY_PROVIDER_REQUIRED.md) — Vigente
+- [ADR_SYNC_OUTCOME_POLICY](ADR_SYNC_OUTCOME_POLICY.md) — Vigente
+
+#### Runbooks
+
+- [RUNBOOK_AUTH_ACCESS_INCIDENTS](RUNBOOK_AUTH_ACCESS_INCIDENTS.md) — incidentes de acceso de usuario
+- [RUNBOOK_SECRET_ROTATION](RUNBOOK_SECRET_ROTATION.md) — inventario único y rotación de credenciales
+- [RUNBOOK_SYNC_RESILIENCE](RUNBOOK_SYNC_RESILIENCE.md) — sync, cola y recuperación offline
+- [RUNBOOK_SUPPORT_OPERATIONS](RUNBOOK_SUPPORT_OPERATIONS.md) — soporte técnico general
+- [RUNBOOK_DAILY_ADMIN_CHECKLIST](RUNBOOK_DAILY_ADMIN_CHECKLIST.md) — checklist diario 1 página
+- [RUNBOOK_AI_PROVIDER_OPERATIONS](RUNBOOK_AI_PROVIDER_OPERATIONS.md) — providers AI (Gemini/OpenAI/Anthropic)
+- [RUNBOOK_OPERATIONAL_BUDGETS](RUNBOOK_OPERATIONAL_BUDGETS.md) — presupuestos operacionales
+- [RUNBOOK_NETLIFY_SERVERLESS_DEPLOY](RUNBOOK_NETLIFY_SERVERLESS_DEPLOY.md) — deploy serverless
+- [CI_GATES_AND_FAILURE_RUNBOOKS](CI_GATES_AND_FAILURE_RUNBOOKS.md) — gates de CI y recuperación
+- [TEST_FLAKY_QUARANTINE_POLICY](TEST_FLAKY_QUARANTINE_POLICY.md) — cuarentena de tests flaky
 
 ### Operativa
 

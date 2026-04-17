@@ -1,5 +1,7 @@
 # ADR: Clinical Episode Model
 
+**Estado:** Vigente
+
 ## Decisión
 
 El identificador y contexto de episodio clínico pasan a resolverse desde un modelo compartido en `src/application/patient-flow/clinicalEpisode.ts`.

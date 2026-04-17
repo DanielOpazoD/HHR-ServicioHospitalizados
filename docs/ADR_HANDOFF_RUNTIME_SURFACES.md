@@ -1,5 +1,7 @@
 # ADR: Handoff Runtime Surfaces
 
+**Estado:** Vigente
+
 ## Decision
 
 `handoff` must be changed through stable runtime surfaces:

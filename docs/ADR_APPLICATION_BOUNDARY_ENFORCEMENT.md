@@ -1,5 +1,7 @@
 # ADR: Boundary de Application como Contrato Preferente
 
+**Estado:** Vigente
+
 ## Decisión
 
 Los flujos críticos de UI deben preferir casos de uso/fachadas de `src/application/*` y outcomes homogéneos antes que acceso directo a servicios remotos o repositorios concretos.

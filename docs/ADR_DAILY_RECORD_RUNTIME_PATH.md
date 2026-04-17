@@ -1,5 +1,7 @@
 # ADR: Daily Record Runtime Path
 
+**Estado:** Vigente
+
 ## Decision
 
 `DailyRecord` must resolve through one canonical path:

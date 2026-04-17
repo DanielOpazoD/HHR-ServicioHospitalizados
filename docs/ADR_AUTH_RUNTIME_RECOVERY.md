@@ -1,5 +1,7 @@
 # ADR: Auth Runtime Recovery
 
+**Estado:** Vigente
+
 ## Decision
 
 Auth must expose session and runtime state through explicit snapshots and outcomes instead of ad hoc `user/null/loading` interpretation.

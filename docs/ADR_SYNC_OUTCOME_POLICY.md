@@ -1,5 +1,7 @@
 # ADR: Sync Outcome Policy
 
+**Estado:** Vigente
+
 ## Decisión
 
 Las operaciones remotas críticas deben exponer outcomes de aplicación homogéneos (`success | partial | degraded | failed`) antes de llegar a la UI.

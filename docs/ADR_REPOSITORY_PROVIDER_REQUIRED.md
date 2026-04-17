@@ -1,5 +1,7 @@
 # ADR: Repository Provider Obligatorio
 
+**Estado:** Vigente
+
 ## Decisión
 
 `RepositoryProvider` pasa a ser obligatorio en runtime y en tests. `useRepositories()` ya no cae a implementaciones concretas por omisión.

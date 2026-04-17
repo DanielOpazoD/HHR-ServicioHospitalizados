@@ -1,5 +1,7 @@
 # ADR: Application Use Cases
 
+**Estado:** Vigente
+
 ## Decisión
 
 Se introduce `src/application/` como capa explícita para operaciones críticas que coordinan repositorios, clasificación de errores y outcomes homogéneos.
