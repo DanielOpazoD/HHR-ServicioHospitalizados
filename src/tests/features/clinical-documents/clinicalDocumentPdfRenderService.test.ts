@@ -1,3 +1,4 @@
+// @flake-safe -- setTimeout appears only inside mock contentWindow stubs that synchronously invoke their callback; no real timers.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const callableMock = vi.fn();

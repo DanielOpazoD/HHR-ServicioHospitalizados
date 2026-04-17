@@ -29,7 +29,7 @@ const createDailyRecordContextValue = (
   ({
     record: {
       date: '2026-03-10',
-      lastUpdated: new Date().toISOString(),
+      lastUpdated: '2026-03-10T12:00:00.000Z',
       beds: {},
       discharges,
       transfers: [],
