@@ -47,10 +47,6 @@ vi.mock('@/services/pdf/handoffPdfUtils', () => ({
   getBase64ImageFromURL: vi.fn().mockResolvedValue('data:image/png;base64,test'),
 }));
 
-// Mock window.open
-const mockWindowOpen = vi.fn();
-vi.stubGlobal('open', mockWindowOpen);
-
 import { generateConsentPdf } from '@/features/wound-care/services/consentPdfGenerator';
 import { getBase64ImageFromURL } from '@/services/pdf/handoffPdfUtils';
 
@@ -78,10 +74,10 @@ describe('consentPdfGenerator', () => {
     expect(textCalls).toContain('HOSPITAL HANGA ROA');
   });
 
-  it('opens PDF in new window', async () => {
-    await generateConsentPdf({ patientName: 'Test', patientRut: '1-1' });
+  it('returns the blob URL so callers can open it via the runtime adapter', async () => {
+    const url = await generateConsentPdf({ patientName: 'Test', patientRut: '1-1' });
 
-    expect(mockWindowOpen).toHaveBeenCalledWith('blob:test', '_blank');
+    expect(url).toBe('blob:test');
   });
 
   it('calls autoPrint', async () => {
@@ -93,13 +89,10 @@ describe('consentPdfGenerator', () => {
   it('handles logo loading failure gracefully', async () => {
     vi.mocked(getBase64ImageFromURL).mockRejectedValueOnce(new Error('Network error'));
 
-    // Should not throw even when logo fails
-    await expect(
-      generateConsentPdf({ patientName: 'Test', patientRut: '1-1' })
-    ).resolves.toBeUndefined();
-
-    // PDF should still be generated and opened
-    expect(mockWindowOpen).toHaveBeenCalledWith('blob:test', '_blank');
+    // Should not throw even when logo fails; still resolves to a blob URL
+    await expect(generateConsentPdf({ patientName: 'Test', patientRut: '1-1' })).resolves.toBe(
+      'blob:test'
+    );
 
     // addImage should NOT have been called since the logo failed
     expect(mockDoc.addImage).not.toHaveBeenCalled();

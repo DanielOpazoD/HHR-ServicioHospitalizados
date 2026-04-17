@@ -37,7 +37,7 @@ const todayFormatted = (): string => {
   return `${dd}/${mm}/${yyyy}`;
 };
 
-export const generateConsentPdf = async (input: ConsentPdfInput): Promise<void> => {
+export const generateConsentPdf = async (input: ConsentPdfInput): Promise<string> => {
   const [{ default: jsPDF }] = await Promise.all([import('jspdf')]);
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
@@ -199,7 +199,9 @@ export const generateConsentPdf = async (input: ConsentPdfInput): Promise<void> 
     { align: 'center' }
   );
 
-  // Open print dialog
+  // Queue auto-print and return the blob URL so the caller can open it
+  // through the browser window runtime adapter (keeps `window.open` out of
+  // feature services — see scripts/check-runtime-adapter-boundary.mjs).
   doc.autoPrint();
-  window.open(doc.output('bloburl'), '_blank');
+  return doc.output('bloburl') as unknown as string;
 };

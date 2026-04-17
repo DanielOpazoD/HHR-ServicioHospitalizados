@@ -9,6 +9,7 @@ import { ConsentUploadModal } from './ConsentUploadModal';
 import { PhotoUploadButton } from './PhotoUploadButton';
 import { PhotoUploadModal } from './PhotoUploadModal';
 import { generateConsentPdf } from '../services/consentPdfGenerator';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
 import { WoundCareToast } from './WoundCareToast';
 import { PhotoGallery } from './PhotoGallery';
 import { WoundCareErrorBoundary } from './WoundCareErrorBoundary';
@@ -186,9 +187,10 @@ export const WoundCareModal: React.FC<WoundCareModalProps> = ({
 
   const currentConsent = episodes.find(e => e.isCurrent)?.consent ?? null;
 
-  const handlePrintConsent = () => {
+  const handlePrintConsent = async () => {
     const admissionDate = episodeContext.episodeKey.split('__')[1];
-    generateConsentPdf({ patientName, patientRut, admissionDate });
+    const blobUrl = await generateConsentPdf({ patientName, patientRut, admissionDate });
+    defaultBrowserWindowRuntime.open(blobUrl);
   };
 
   return (
