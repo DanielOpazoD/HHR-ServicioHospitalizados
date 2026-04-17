@@ -1,7 +1,3 @@
-/* eslint-disable react-hooks/refs -- This component accesses the popover controller's refs (.current,
-   .popoverRef) during render. The pattern predates the React Compiler lint rules; a proper fix
-   requires restructuring useUpcChecklistController to expose primitives instead of refs. Tracked
-   for follow-up; every access here is behind stable state and does not cause render loops. */
 import React, { useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
@@ -40,7 +36,23 @@ export const UpcChecklistPopover: React.FC<UpcChecklistPopoverProps> = ({
 }) => {
   const uciAllowed = isUciEligibleBedId(data.bedId);
 
-  const controller = useUpcChecklistController({
+  const {
+    buttonRef,
+    popoverRef,
+    isOpen,
+    popoverPos,
+    togglePopover,
+    closePopover,
+    draftUci,
+    draftUti,
+    draftClassification,
+    hasDraftCriteria,
+    uciAllowed: controllerUciAllowed,
+    toggleUciCriterion,
+    toggleUtiCriterion,
+    saveAndClose,
+    clearAndClose,
+  } = useUpcChecklistController({
     checklist,
     onSave,
     disabled: readOnly || !eligible,
@@ -71,9 +83,9 @@ export const UpcChecklistPopover: React.FC<UpcChecklistPopoverProps> = ({
   return (
     <td className="p-0.5 text-center w-14">
       <button
-        ref={controller.buttonRef}
+        ref={buttonRef}
         type="button"
-        onClick={controller.togglePopover}
+        onClick={togglePopover}
         disabled={readOnly}
         className={clsx(
           'inline-flex items-center justify-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-bold transition-all min-w-[36px] min-h-[20px]',
@@ -94,25 +106,25 @@ export const UpcChecklistPopover: React.FC<UpcChecklistPopoverProps> = ({
         {label ? label : <ShieldCheck size={11} className="text-slate-300" />}
       </button>
 
-      {controller.isOpen &&
+      {isOpen &&
         createPortal(
           <div
-            ref={controller.popoverRef}
+            ref={popoverRef}
             className="fixed z-[10000]"
-            style={{ top: controller.popoverPos.top, left: controller.popoverPos.left }}
+            style={{ top: popoverPos.top, left: popoverPos.left }}
             onClick={e => e.stopPropagation()}
           >
             <UpcChecklistPanel
-              draftUci={controller.draftUci}
-              draftUti={controller.draftUti}
-              draftClassification={controller.draftClassification}
-              hasDraftCriteria={controller.hasDraftCriteria}
-              uciAllowed={controller.uciAllowed}
-              onToggleUci={controller.toggleUciCriterion}
-              onToggleUti={controller.toggleUtiCriterion}
-              onSave={controller.saveAndClose}
-              onClear={controller.clearAndClose}
-              onClose={controller.closePopover}
+              draftUci={draftUci}
+              draftUti={draftUti}
+              draftClassification={draftClassification}
+              hasDraftCriteria={hasDraftCriteria}
+              uciAllowed={controllerUciAllowed}
+              onToggleUci={toggleUciCriterion}
+              onToggleUti={toggleUtiCriterion}
+              onSave={saveAndClose}
+              onClear={clearAndClose}
+              onClose={closePopover}
             />
           </div>,
           document.body
