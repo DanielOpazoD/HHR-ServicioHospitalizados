@@ -6,6 +6,7 @@ import { AUTH_UI_COPY } from '@/services/auth/authUiCopy';
 import { resetLocalAppStorage } from '@/services/storage/core';
 
 interface LoginPageCardProps {
+  isDayGradient: boolean;
   isAnyLoading: boolean;
   isGoogleLoading: boolean;
   error: string | null;
@@ -36,6 +37,7 @@ const GoogleIcon: React.FC<{ className?: string }> = ({ className }) => (
 );
 
 export const LoginPageCard: React.FC<LoginPageCardProps> = ({
+  isDayGradient,
   isAnyLoading,
   isGoogleLoading,
   error,
@@ -44,6 +46,9 @@ export const LoginPageCard: React.FC<LoginPageCardProps> = ({
   onGoogleSignIn,
 }) => {
   const { confirm } = useConfirmDialog();
+  const accentBarClass = isDayGradient
+    ? 'bg-gradient-to-r from-sky-300 via-medical-500 to-cyan-600'
+    : 'bg-gradient-to-r from-slate-500 via-sky-700 to-slate-900';
 
   const handleResetLocalSession = async () => {
     const confirmed = await confirm({
@@ -60,86 +65,92 @@ export const LoginPageCard: React.FC<LoginPageCardProps> = ({
   };
 
   return (
-    <div className="bg-white/85 backdrop-blur-md border border-white/40 rounded-3xl shadow-[0_24px_60px_-30px_rgba(15,23,42,0.45)] p-10 relative overflow-hidden animate-login-reveal animate-login-reveal-delay-2">
-      <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-medical-400 to-medical-600"></div>
+    <div className="relative overflow-hidden rounded-3xl border border-white/40 bg-white/84 p-8 shadow-[0_24px_60px_-30px_rgba(15,23,42,0.55)] backdrop-blur-md animate-login-reveal animate-login-reveal-delay-2 sm:p-10">
+      <div className={`absolute inset-x-0 top-0 h-1.5 ${accentBarClass}`} />
 
-      <h2 className="text-xl font-bold text-slate-800 mb-2 text-center text-balance">
-        Acceso al Sistema
-      </h2>
-      <div className="mb-8" />
+      <div className="relative">
+        <h2 className="text-center text-xl font-bold text-slate-800 text-balance">
+          Acceso al Sistema
+        </h2>
+        <div className="mb-8" />
 
-      <button
-        type="button"
-        onClick={onGoogleSignIn}
-        disabled={isAnyLoading}
-        data-testid="login-google-button"
-        className="w-full bg-white hover:bg-slate-50 disabled:bg-slate-100 border-2 border-slate-200 text-slate-700 font-bold py-4 px-4 rounded-2xl transition-all duration-300 flex items-center justify-center gap-3 shadow-sm hover:shadow-lg hover:border-medical-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99]"
-      >
-        {isGoogleLoading ? (
-          <>
-            <Loader2 className="w-6 h-6 animate-spin text-medical-600" />
-            Conectando con Google...
-          </>
-        ) : (
-          <>
-            <GoogleIcon className="w-6 h-6" />
-            Ingresar con Google
-          </>
-        )}
-      </button>
-
-      <div className="mt-3 flex justify-center">
-        <button
-          type="button"
-          onClick={() => void handleResetLocalSession()}
-          disabled={isAnyLoading}
-          data-testid="login-reset-local-button"
-          className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50/70 px-2.5 py-1.5 text-[11px] font-medium text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 disabled:text-slate-300"
-        >
-          <RotateCcw className="h-3 w-3" />
-          {AUTH_UI_COPY.resetStorageAction}
-        </button>
-      </div>
-
-      {isGoogleLoading && (
-        <div
-          data-testid="login-google-pending"
-          className="mt-4 rounded-2xl border border-medical-100 bg-medical-50/80 px-4 py-3 text-center"
-        >
-          <p className="text-sm font-semibold text-medical-800">{AUTH_UI_COPY.popupPendingTitle}</p>
-          <p className="mt-1 text-xs text-medical-700 text-balance">
-            {AUTH_UI_COPY.popupPendingHint}
-          </p>
-        </div>
-      )}
-
-      {error && (
-        <div className="mt-6 animate-fade-in">
-          <div
-            data-testid="login-error-alert"
-            data-auth-error-code={errorCode || undefined}
-            className="flex items-center gap-2 p-3 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm text-balance"
+        <div className="space-y-3">
+          <button
+            type="button"
+            onClick={onGoogleSignIn}
+            disabled={isAnyLoading}
+            data-testid="login-google-button"
+            className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-slate-200 bg-white px-4 py-4 font-bold text-slate-700 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-medical-300 hover:bg-slate-50 hover:shadow-lg active:scale-[0.99] disabled:bg-slate-100"
           >
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
-            <span>{error}</span>
+            {isGoogleLoading ? (
+              <>
+                <Loader2 className="h-6 w-6 animate-spin text-medical-600" />
+                Conectando con Google...
+              </>
+            ) : (
+              <>
+                <GoogleIcon className="h-6 w-6" />
+                Ingresar con Google
+              </>
+            )}
+          </button>
+
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={() => void handleResetLocalSession()}
+              disabled={isAnyLoading}
+              data-testid="login-reset-local-button"
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50/70 px-2.5 py-1.5 text-[11px] font-medium text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 disabled:text-slate-300"
+            >
+              <RotateCcw className="h-3 w-3" />
+              {AUTH_UI_COPY.resetStorageAction}
+            </button>
           </div>
-          {canRetryGoogleSignIn && (
-            <div className="mt-3 rounded-2xl border border-amber-100 bg-amber-50/80 px-4 py-3 text-center">
-              <p className="text-xs text-amber-800 text-balance">
-                {AUTH_UI_COPY.roleValidationRetryHint}
-              </p>
-              <button
-                type="button"
-                onClick={() => void onGoogleSignIn()}
-                className="mt-3 inline-flex items-center justify-center rounded-xl bg-amber-500 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white transition hover:bg-amber-600"
-                data-testid="login-retry-button"
-              >
-                {AUTH_UI_COPY.roleValidationRetryAction}
-              </button>
-            </div>
-          )}
         </div>
-      )}
+
+        {isGoogleLoading && (
+          <div
+            data-testid="login-google-pending"
+            className="mt-5 rounded-2xl border border-medical-100 bg-medical-50/90 px-4 py-3 text-center"
+          >
+            <p className="text-sm font-semibold text-medical-800">
+              {AUTH_UI_COPY.popupPendingTitle}
+            </p>
+            <p className="mt-1 text-xs text-medical-700 text-balance">
+              {AUTH_UI_COPY.popupPendingHint}
+            </p>
+          </div>
+        )}
+
+        {error && (
+          <div className="mt-6 animate-fade-in">
+            <div
+              data-testid="login-error-alert"
+              data-auth-error-code={errorCode || undefined}
+              className="flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 p-3 text-sm text-red-700 text-balance"
+            >
+              <AlertCircle className="h-5 w-5 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+            {canRetryGoogleSignIn && (
+              <div className="mt-3 rounded-2xl border border-amber-100 bg-amber-50/85 px-4 py-3 text-center">
+                <p className="text-xs text-amber-800 text-balance">
+                  {AUTH_UI_COPY.roleValidationRetryHint}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void onGoogleSignIn()}
+                  className="mt-3 inline-flex items-center justify-center rounded-xl bg-amber-500 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white transition hover:bg-amber-600"
+                  data-testid="login-retry-button"
+                >
+                  {AUTH_UI_COPY.roleValidationRetryAction}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

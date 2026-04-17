@@ -23,6 +23,7 @@ describe('LoginPageCard', () => {
 
     render(
       <LoginPageCard
+        isDayGradient
         isAnyLoading={false}
         isGoogleLoading={false}
         error={null}
@@ -50,6 +51,7 @@ describe('LoginPageCard', () => {
   it('shows an explicit pending state while Google popup login is in progress', () => {
     render(
       <LoginPageCard
+        isDayGradient
         isAnyLoading
         isGoogleLoading
         error={null}
@@ -71,6 +73,7 @@ describe('LoginPageCard', () => {
 
     render(
       <LoginPageCard
+        isDayGradient
         isAnyLoading={false}
         isGoogleLoading={false}
         error="No se pudo validar tu acceso en este momento. Intenta nuevamente en unos segundos."

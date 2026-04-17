@@ -1,13 +1,11 @@
 import React from 'react';
 import { render, screen, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SecurityProvider, useSecurity } from '@/context/SecurityContext';
-import { useIdle } from 'react-use';
-
-// Mock react-use useIdle
-vi.mock('react-use', () => ({
-  useIdle: vi.fn(() => false),
-}));
+import {
+  SecurityProvider,
+  resolveSecurityIdleTimeoutMs,
+  useSecurity,
+} from '@/context/SecurityContext';
 
 const TestComponent = () => {
   const { config, isLocked, setPin, unlock, lock, hasPin } = useSecurity();
@@ -38,7 +36,6 @@ describe('SecurityContext', () => {
 
     expect(screen.getByTestId('is-locked').textContent).toBe('false');
     expect(screen.getByTestId('has-pin').textContent).toBe('false');
-    expect(vi.mocked(useIdle)).toHaveBeenCalledWith(2147483647);
   });
 
   it('should initialize from localStorage if available', async () => {
@@ -143,21 +140,6 @@ describe('SecurityContext', () => {
   });
 
   it('should clamp huge inactivity timeout to avoid timer overflow', async () => {
-    localStorage.setItem(
-      'hhr_security_config',
-      JSON.stringify({
-        pin: '1234',
-        lockOnStartup: false,
-        inactivityTimeoutMinutes: 99_999_999,
-      })
-    );
-
-    render(
-      <SecurityProvider>
-        <TestComponent />
-      </SecurityProvider>
-    );
-
-    expect(vi.mocked(useIdle)).toHaveBeenCalledWith(2147483647);
+    expect(resolveSecurityIdleTimeoutMs(99_999_999)).toBe(2147483647);
   });
 });

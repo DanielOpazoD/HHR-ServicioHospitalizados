@@ -176,10 +176,21 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': path.resolve(__dirname, 'src'),
       },
+      dedupe: ['react', 'react-dom'],
     },
     // Optimize dependencies - pre-bundle CommonJS packages for ESM compatibility
     optimizeDeps: {
-      include: ['react', 'react-dom', 'firebase/app', 'firebase/auth', 'firebase/firestore'],
+      include: [
+        'react',
+        'react-dom',
+        'react/jsx-runtime',
+        'react/jsx-dev-runtime',
+        'motion/react',
+        'react-use',
+        'firebase/app',
+        'firebase/auth',
+        'firebase/firestore',
+      ],
     },
     test: {
       environment: 'jsdom',

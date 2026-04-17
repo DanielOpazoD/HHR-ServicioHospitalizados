@@ -35,6 +35,7 @@ export interface LoginPageControllerState {
   isGoogleLoading: boolean;
   isAnyLoading: boolean;
   isDayGradient: boolean;
+  backgroundMode: BackgroundMode;
   canRetryGoogleSignIn: boolean;
   handleGoogleSignIn: () => Promise<void>;
   toggleBackgroundMode: () => void;
@@ -121,6 +122,7 @@ export const useLoginPageController = (onLoginSuccess: () => void): LoginPageCon
     isGoogleLoading,
     isAnyLoading: isGoogleLoading,
     isDayGradient,
+    backgroundMode,
     canRetryGoogleSignIn: errorCode === 'auth/role-validation-unavailable' && !isGoogleLoading,
     handleGoogleSignIn,
     toggleBackgroundMode,
