@@ -1,0 +1,72 @@
+# Dependabot configuration
+# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+#
+# Policy:
+# - Weekly cadence on Mondays to align with the start-of-week review window.
+# - Separate ecosystems per package.json (root + functions).
+# - github-actions kept on its own schedule; CI workflows change less often.
+# - Group non-breaking updates (patch + minor) to reduce PR noise. Majors ship
+#   individually so they can be reviewed and regression-tested on their own.
+
+version: 2
+updates:
+  # Root workspace (Vite app + test tooling)
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/Santiago
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - root
+    reviewers:
+      - d-opazo
+    groups:
+      dev-dependencies-minor:
+        dependency-type: development
+        update-types:
+          - patch
+          - minor
+      production-dependencies-minor:
+        dependency-type: production
+        update-types:
+          - patch
+          - minor
+
+  # Firebase Cloud Functions (Node.js 20 runtime, separate npm workspace)
+  - package-ecosystem: npm
+    directory: "/functions"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/Santiago
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - functions
+    reviewers:
+      - d-opazo
+    groups:
+      functions-minor:
+        update-types:
+          - patch
+          - minor
+
+  # GitHub Actions used in .github/workflows
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+      day: monday
+      time: "09:00"
+      timezone: America/Santiago
+    open-pull-requests-limit: 2
+    labels:
+      - dependencies
+      - github-actions
+    reviewers:
+      - d-opazo
