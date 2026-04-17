@@ -1,0 +1,31 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "woundCarePhotos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "episodeKey", "order": "ASCENDING" },
+        { "fieldPath": "isDeleted", "order": "ASCENDING" },
+        { "fieldPath": "uploadedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "woundCarePhotos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "patientRut", "order": "ASCENDING" },
+        { "fieldPath": "isDeleted", "order": "ASCENDING" },
+        { "fieldPath": "uploadedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "woundCareConsents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "episodeKey", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

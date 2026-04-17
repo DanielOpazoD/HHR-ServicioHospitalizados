@@ -1,10 +1,13 @@
-import React from 'react';
-import type { MedicalHandoffEntry, PatientData } from '@/domain/handoff/patientContracts';
-import { Baby, Clock } from 'lucide-react';
+import React, { useState } from 'react';
+import type { PatientData } from '@/domain/handoff/patientContracts';
+import { Baby, Camera, Clock } from 'lucide-react';
 import { calculateDeviceDays } from '@/components/device-selector/DeviceDateConfigModal';
 import { DebouncedTextarea } from '@/components/ui/DebouncedTextarea';
-import { HandoffMedicalObservationsCell } from './HandoffMedicalObservationsCell';
 import { MedicalBadge } from '@/components/ui/base/MedicalBadge';
+import { buildClinicalEpisodeKey } from '@/application/patient-flow/clinicalEpisode';
+import { WoundCareModal } from '@/features/wound-care/components/WoundCareModal';
+import { WoundCareErrorBoundary } from '@/features/wound-care/components/WoundCareErrorBoundary';
+import { useWoundCarePhotoCount } from '@/features/wound-care/hooks/useWoundCarePhotoCount';
 export { HandoffDiagnosisCell } from './HandoffDiagnosisCell';
 
 interface HandoffBedCellProps {
@@ -44,26 +47,68 @@ interface HandoffPatientCellProps {
   isSubRow?: boolean;
 }
 
-export const HandoffPatientCell: React.FC<HandoffPatientCellProps> = ({ patient, isSubRow }) => (
-  <td className="p-2 border-r border-slate-200/60 min-w-[150px] align-middle print:min-w-0 print:w-auto print:text-[10px] print:p-1">
-    <div className="font-medium text-slate-800 flex flex-col gap-0.5 leading-snug print:leading-none">
-      <div className="flex items-center gap-1 flex-wrap">
-        {isSubRow && <Baby size={14} className="text-pink-400 print:hidden" />}
-        {isSubRow && (
-          <span className="hidden print:inline text-[8px] text-pink-600 font-bold">(RN)</span>
-        )}
-        <span className="font-bold text-slate-900">{patient.patientName}</span>
-      </div>
-      <div className="font-mono text-[10px] text-slate-500 leading-none mt-1">{patient.rut}</div>
-      {patient.age && (
-        <div className="text-slate-400 font-normal text-[10px] print:text-[8px] mt-0.5">
-          ({patient.age})
+export const HandoffPatientCell: React.FC<HandoffPatientCellProps> = ({ patient, isSubRow }) => {
+  const [showWoundCare, setShowWoundCare] = useState(false);
+
+  const hasValidEpisode = Boolean(patient.rut?.trim()) && Boolean(patient.admissionDate?.trim());
+  const episodeKey = hasValidEpisode
+    ? buildClinicalEpisodeKey(patient.rut, patient.admissionDate)
+    : '';
+  const photoCount = useWoundCarePhotoCount(hasValidEpisode && !isSubRow ? episodeKey : undefined);
+  const hasPhotos = photoCount > 0;
+
+  return (
+    <td className="p-2 border-r border-slate-200/60 min-w-[150px] align-middle print:min-w-0 print:w-auto print:text-[10px] print:p-1">
+      <div className="font-medium text-slate-800 flex flex-col gap-0.5 leading-snug print:leading-none">
+        <div className="flex items-center gap-1 flex-wrap">
+          {isSubRow && <Baby size={14} className="text-pink-400 print:hidden" />}
+          {isSubRow && (
+            <span className="hidden print:inline text-[8px] text-pink-600 font-bold">(RN)</span>
+          )}
+          <span className="font-bold text-slate-900">{patient.patientName}</span>
+          {hasValidEpisode && !isSubRow && (
+            <button
+              type="button"
+              onClick={() => setShowWoundCare(true)}
+              className={`transition-colors print:hidden ${
+                hasPhotos ? 'text-sky-500 hover:text-sky-600' : 'text-slate-300 hover:text-sky-500'
+              }`}
+              title={
+                hasPhotos
+                  ? `Curaciones (${photoCount} foto${photoCount > 1 ? 's' : ''})`
+                  : 'Registro fotográfico de curaciones'
+              }
+            >
+              <Camera size={14} />
+            </button>
+          )}
         </div>
+        <div className="font-mono text-[10px] text-slate-500 leading-none mt-1">{patient.rut}</div>
+        {patient.age && (
+          <div className="text-slate-400 font-normal text-[10px] print:text-[8px] mt-0.5">
+            ({patient.age})
+          </div>
+        )}
+      </div>
+
+      {showWoundCare && hasValidEpisode && (
+        <WoundCareErrorBoundary patientName={patient.patientName}>
+          <WoundCareModal
+            isOpen
+            onClose={() => setShowWoundCare(false)}
+            patientName={patient.patientName}
+            patientRut={patient.rut}
+            episodeContext={{
+              episodeKey,
+              patientRut: patient.rut,
+              patientName: patient.patientName,
+            }}
+          />
+        </WoundCareErrorBoundary>
       )}
-      {/* Admission date hidden — available in census, not needed in handoff */}
-    </div>
-  </td>
-);
+    </td>
+  );
+};
 
 interface HandoffDevicesCellProps {
   patient: PatientData;

@@ -61,6 +61,10 @@ export const HOSPITAL_COLLECTIONS = {
   REMINDERS: 'reminders',
   /** Laboratory results parsed from Syslab */
   LAB_RESULTS: 'labResults',
+  /** Wound care informed consent records */
+  WOUND_CARE_CONSENTS: 'woundCareConsents',
+  /** Wound care photo metadata records */
+  WOUND_CARE_PHOTOS: 'woundCarePhotos',
 } as const;
 
 // ============================================================================
@@ -122,6 +126,18 @@ export const getExportPasswordsPath = (hospitalId: string = getActiveHospitalId(
  */
 export const getLabResultsPath = (hospitalId: string = getActiveHospitalId()) =>
   `${COLLECTIONS.HOSPITALS}/${hospitalId}/${HOSPITAL_COLLECTIONS.LAB_RESULTS}` as const;
+
+/**
+ * Build path to wound care consents collection
+ */
+export const getWoundCareConsentsPath = (hospitalId: string = getActiveHospitalId()) =>
+  `${COLLECTIONS.HOSPITALS}/${hospitalId}/${HOSPITAL_COLLECTIONS.WOUND_CARE_CONSENTS}` as const;
+
+/**
+ * Build path to wound care photos collection
+ */
+export const getWoundCarePhotosPath = (hospitalId: string = getActiveHospitalId()) =>
+  `${COLLECTIONS.HOSPITALS}/${hospitalId}/${HOSPITAL_COLLECTIONS.WOUND_CARE_PHOTOS}` as const;
 
 // ============================================================================
 // Type Exports

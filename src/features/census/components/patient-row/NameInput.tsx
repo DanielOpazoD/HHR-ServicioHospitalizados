@@ -2,13 +2,20 @@
  * NameInput - Patient name input cell
  */
 
-import React from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import clsx from 'clsx';
-import { ArrowRight, Baby } from 'lucide-react';
+import { ArrowRight, Baby, Camera } from 'lucide-react';
 import { DebouncedInput } from '@/components/ui/DebouncedInput';
 import { PatientInputSchema } from '@/schemas/inputSchemas';
 import { BaseCellProps, DebouncedTextHandler } from './inputCellTypes';
 import { resolveNameInputState } from './nameInputController';
+import { buildClinicalEpisodeKey } from '@/application/patient-flow/clinicalEpisode';
+
+const LazyWoundCareModal = lazy(() =>
+  import('@/features/wound-care/components/WoundCareModal').then(m => ({
+    default: m.WoundCareModal,
+  }))
+);
 
 interface NameInputProps extends BaseCellProps {
   onChange: DebouncedTextHandler;
@@ -32,6 +39,9 @@ export const NameInput: React.FC<NameInputProps> = ({
   const hasValidationError =
     !PatientInputSchema.pick({ patientName: true }).safeParse({ patientName: fullName }).success &&
     !!fullName;
+
+  const [showWoundCare, setShowWoundCare] = useState(false);
+  const hasValidEpisode = Boolean(data.rut?.trim()) && Boolean(data.admissionDate?.trim());
 
   return (
     <td className="py-0.5 px-1 border-r border-slate-200 w-[180px]">
@@ -63,7 +73,34 @@ export const NameInput: React.FC<NameInputProps> = ({
             <Baby size={12} />
           </span>
         )}
+        {!isSubRow && !isEmpty && hasValidEpisode && (
+          <button
+            type="button"
+            onClick={() => setShowWoundCare(true)}
+            className="absolute right-1 top-1.5 text-slate-300 hover:text-sky-500 transition-colors print:hidden"
+            title="Registro fotográfico de curaciones"
+            aria-label="Registro fotográfico de curaciones"
+          >
+            <Camera size={13} />
+          </button>
+        )}
       </div>
+
+      {showWoundCare && hasValidEpisode && (
+        <Suspense fallback={null}>
+          <LazyWoundCareModal
+            isOpen
+            onClose={() => setShowWoundCare(false)}
+            patientName={data.patientName || ''}
+            patientRut={data.rut || ''}
+            episodeContext={{
+              episodeKey: buildClinicalEpisodeKey(data.rut || '', data.admissionDate || ''),
+              patientRut: data.rut || '',
+              patientName: data.patientName || '',
+            }}
+          />
+        </Suspense>
+      )}
     </td>
   );
 };
