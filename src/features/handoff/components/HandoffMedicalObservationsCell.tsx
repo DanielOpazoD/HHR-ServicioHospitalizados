@@ -101,6 +101,20 @@ export const HandoffMedicalObservationsCell: React.FC<HandoffMedicalObservations
     });
   }, [entries, pendingEntryDrafts]);
 
+  // `now` as state (not Date.now() inside useMemo) keeps the memo pure for
+  // React Compiler and lets the display re-evaluate draft expirations on a
+  // predictable tick. The interval only runs while there are pending drafts
+  // to avoid idle re-renders.
+  const [now, setNow] = React.useState(0);
+  React.useEffect(() => {
+    setNow(Date.now());
+    if (!shouldAttemptPendingMedicalDraftPrune(pendingEntryDrafts)) {
+      return;
+    }
+    const interval = window.setInterval(() => setNow(Date.now()), 500);
+    return () => window.clearInterval(interval);
+  }, [pendingEntryDrafts]);
+
   const medicalObservationCellState = React.useMemo(
     () =>
       resolveMedicalObservationCellState({
@@ -108,10 +122,9 @@ export const HandoffMedicalObservationsCell: React.FC<HandoffMedicalObservations
         isFieldReadOnly,
         pendingEntryDrafts,
         hasCreatePrimaryEntryAction: Boolean(onCreatePrimaryEntry),
-        // eslint-disable-next-line react-hooks/purity -- Date.now() is called once per memo computation; the derived state only affects display freshness and does not drive effects
-        now: Date.now(),
+        now,
       }),
-    [entries, isFieldReadOnly, onCreatePrimaryEntry, pendingEntryDrafts]
+    [entries, isFieldReadOnly, onCreatePrimaryEntry, pendingEntryDrafts, now]
   );
   const { displayEntries, emptyState, showPrimaryNoteFallback } = medicalObservationCellState;
 
