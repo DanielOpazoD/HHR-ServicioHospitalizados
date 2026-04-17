@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { useIdle } from 'react-use';
 
 interface SecurityConfig {
   pin: string | null;
@@ -21,12 +20,24 @@ interface SecurityContextType {
 const STORAGE_KEY = 'hhr_security_config';
 const MINUTE_IN_MS = 60 * 1000;
 const MAX_TIMEOUT_MS = 2_147_483_647;
+const WINDOW_IDLE_ACTIVITY_EVENTS = [
+  'mousedown',
+  'mousemove',
+  'keydown',
+  'scroll',
+  'touchstart',
+] as const;
 
 const DEFAULT_CONFIG: SecurityConfig = {
   pin: null,
   lockOnStartup: false,
   inactivityTimeoutMinutes: 0,
 };
+
+export const resolveSecurityIdleTimeoutMs = (inactivityTimeoutMinutes: number): number =>
+  inactivityTimeoutMinutes > 0
+    ? Math.min(inactivityTimeoutMinutes * MINUTE_IN_MS, MAX_TIMEOUT_MS)
+    : MAX_TIMEOUT_MS;
 
 const SecurityContext = createContext<SecurityContextType | undefined>(undefined);
 
@@ -53,12 +64,7 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newConfig));
   }, []);
 
-  // Keep timeout in the safe range for setTimeout to avoid overflow warnings.
-  const idleTimeoutMs =
-    config.inactivityTimeoutMinutes > 0
-      ? Math.min(config.inactivityTimeoutMinutes * MINUTE_IN_MS, MAX_TIMEOUT_MS)
-      : MAX_TIMEOUT_MS;
-  const isIdle = useIdle(idleTimeoutMs);
+  const idleTimeoutMs = resolveSecurityIdleTimeoutMs(config.inactivityTimeoutMinutes);
 
   const setPin = useCallback(
     (pin: string) => {
@@ -99,14 +105,52 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [config.pin]);
 
   useEffect(() => {
-    if (!isLocked && isIdle && config.pin && config.inactivityTimeoutMinutes > 0) {
-      const lockTimer = window.setTimeout(() => {
-        lock();
-      }, 0);
-      return () => window.clearTimeout(lockTimer);
+    if (
+      typeof window === 'undefined' ||
+      isLocked ||
+      !config.pin ||
+      config.inactivityTimeoutMinutes <= 0
+    ) {
+      return undefined;
     }
-    return undefined;
-  }, [isIdle, config.inactivityTimeoutMinutes, config.pin, isLocked, lock]);
+
+    let idleTimer: number | null = null;
+
+    const clearIdleTimer = () => {
+      if (idleTimer !== null) {
+        window.clearTimeout(idleTimer);
+        idleTimer = null;
+      }
+    };
+
+    const scheduleIdleLock = () => {
+      clearIdleTimer();
+      idleTimer = window.setTimeout(() => {
+        lock();
+      }, idleTimeoutMs);
+    };
+
+    const handleActivity = () => {
+      if (document.visibilityState === 'hidden') {
+        return;
+      }
+      scheduleIdleLock();
+    };
+
+    scheduleIdleLock();
+    WINDOW_IDLE_ACTIVITY_EVENTS.forEach(eventName => {
+      window.addEventListener(eventName, handleActivity, { passive: true });
+    });
+    document.addEventListener('visibilitychange', handleActivity);
+
+    return () => {
+      clearIdleTimer();
+      WINDOW_IDLE_ACTIVITY_EVENTS.forEach(eventName => {
+        window.removeEventListener(eventName, handleActivity);
+      });
+      document.removeEventListener('visibilitychange', handleActivity);
+    };
+  }, [config.inactivityTimeoutMinutes, config.pin, idleTimeoutMs, isLocked, lock]);
 
   const contextValue = useMemo(
     () => ({

@@ -26,7 +26,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
-import { AnimatePresence, motion } from 'motion/react';
 import type { PatientRowOrbitalQuickActionItem } from '@/features/census/controllers/patientRowOrbitalQuickActionsController';
 import {
   PATIENT_ROW_ORBITAL_ICON_SRC,
@@ -103,11 +102,7 @@ export const PatientRowOrbitalQuickActionsPortal: React.FC<
   return createPortal(
     <>
       {/* Backdrop: transparent click-catcher that closes the action stack */}
-      <AnimatePresence>
-        {isOpen ? (
-          <div className="fixed inset-0 z-[60]" aria-hidden="true" onClick={close} />
-        ) : null}
-      </AnimatePresence>
+      {isOpen ? <div className="fixed inset-0 z-[60]" aria-hidden="true" onClick={close} /> : null}
 
       {/* Launcher wrapper: pointer-events-none shell positioned over the row */}
       <div
@@ -122,92 +117,74 @@ export const PatientRowOrbitalQuickActionsPortal: React.FC<
       >
         <div className="pointer-events-none relative h-full w-full overflow-visible">
           {/* Action stack: pointer-events-auto so items receive clicks */}
-          <AnimatePresence>
-            {isOpen ? (
-              <motion.div
-                className="pointer-events-auto absolute left-1/2 top-0 z-[80] flex -translate-x-1/2 flex-col"
-                style={{
-                  top: `${ACTION_STACK_TOP}px`,
-                  width: `${ACTION_ROW_WIDTH}px`,
-                  gap: `${ACTION_STACK_GAP}px`,
-                  marginLeft: `-${ACTION_STACK_HORIZONTAL_SHIFT}px`,
-                  padding: '2px 0',
-                }}
-                onMouseEnter={handleLauncherMouseEnter}
-                onMouseLeave={handleLauncherMouseLeave}
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.1, ease: 'easeOut' }}
-              >
-                {orbitalItems.map((item, index) => (
-                  <motion.div
-                    key={item.id}
-                    initial={{ opacity: 0, x: -6 }}
-                    animate={{
-                      opacity: 1,
-                      x: 0,
-                      transition: { duration: 0.1, delay: 0, ease: 'easeOut' },
+          {isOpen ? (
+            <div
+              className="pointer-events-auto absolute left-1/2 top-0 z-[80] flex -translate-x-1/2 flex-col"
+              style={{
+                top: `${ACTION_STACK_TOP}px`,
+                width: `${ACTION_ROW_WIDTH}px`,
+                gap: `${ACTION_STACK_GAP}px`,
+                marginLeft: `-${ACTION_STACK_HORIZONTAL_SHIFT}px`,
+                padding: '2px 0',
+              }}
+              onMouseEnter={handleLauncherMouseEnter}
+              onMouseLeave={handleLauncherMouseLeave}
+              data-state="open"
+            >
+              {orbitalItems.map((item, index) => (
+                <div key={item.id}>
+                  <button
+                    type="button"
+                    onClick={() => handleItemClick(item.id)}
+                    onKeyDown={event => handleActionKeyDown(index, event)}
+                    aria-label={item.tooltip}
+                    title={item.tooltip}
+                    tabIndex={index === activeActionIndex ? 0 : -1}
+                    ref={node => {
+                      actionButtonRefs.current[index] = node;
                     }}
-                    exit={{
-                      opacity: 0,
-                      x: -4,
-                      transition: { duration: 0.06, delay: 0 },
-                    }}
+                    className={clsx(
+                      'flex w-full cursor-pointer items-center gap-2.5 rounded-2xl px-2.5 transition-colors duration-100',
+                      'bg-white/70 hover:bg-white hover:shadow-sm',
+                      'focus-visible:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300',
+                      'active:scale-[0.97]'
+                    )}
+                    style={{ minHeight: `${ACTION_ROW_HEIGHT}px` }}
                   >
-                    <button
-                      type="button"
-                      onClick={() => handleItemClick(item.id)}
-                      onKeyDown={event => handleActionKeyDown(index, event)}
-                      aria-label={item.tooltip}
-                      title={item.tooltip}
-                      tabIndex={index === activeActionIndex ? 0 : -1}
-                      ref={node => {
-                        actionButtonRefs.current[index] = node;
-                      }}
+                    <span
                       className={clsx(
-                        'flex w-full cursor-pointer items-center gap-2.5 rounded-2xl px-2.5 transition-colors duration-100',
-                        'bg-white/70 hover:bg-white hover:shadow-sm',
-                        'focus-visible:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300',
-                        'active:scale-[0.97]'
+                        'relative flex shrink-0 items-center justify-center rounded-full border-2 border-white shadow-md',
+                        item.buttonClassName
                       )}
-                      style={{ minHeight: `${ACTION_ROW_HEIGHT}px` }}
+                      style={{
+                        width: `${ACTION_ICON_SIZE}px`,
+                        height: `${ACTION_ICON_SIZE}px`,
+                      }}
                     >
-                      <span
-                        className={clsx(
-                          'relative flex shrink-0 items-center justify-center rounded-full border-2 border-white shadow-md',
-                          item.buttonClassName
-                        )}
-                        style={{
-                          width: `${ACTION_ICON_SIZE}px`,
-                          height: `${ACTION_ICON_SIZE}px`,
-                        }}
-                      >
-                        <img
-                          src={PATIENT_ROW_ORBITAL_ICON_SRC[item.iconAsset]}
-                          alt=""
-                          aria-hidden="true"
-                          draggable={false}
-                          className="h-7 w-7 object-contain"
-                        />
-                        {item.badge != null && item.badge > 0 && (
-                          <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-medical-600 px-1 text-[9px] font-bold text-white shadow-sm">
-                            {item.badge}
-                          </span>
-                        )}
-                      </span>
-                      <span className="flex-1 text-[10px] font-medium leading-tight text-slate-700/90">
-                        {item.label}
-                      </span>
-                    </button>
-                  </motion.div>
-                ))}
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
+                      <img
+                        src={PATIENT_ROW_ORBITAL_ICON_SRC[item.iconAsset]}
+                        alt=""
+                        aria-hidden="true"
+                        draggable={false}
+                        className="h-7 w-7 object-contain"
+                      />
+                      {item.badge != null && item.badge > 0 && (
+                        <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-medical-600 px-1 text-[9px] font-bold text-white shadow-sm">
+                          {item.badge}
+                        </span>
+                      )}
+                    </span>
+                    <span className="flex-1 text-[10px] font-medium leading-tight text-slate-700/90">
+                      {item.label}
+                    </span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : null}
 
           {/* Trigger button: pointer-events-auto when visible, none when hidden */}
-          <motion.button
+          <button
             type="button"
             onClick={toggle}
             onKeyDown={handleTriggerKeyDown}
@@ -216,14 +193,8 @@ export const PatientRowOrbitalQuickActionsPortal: React.FC<
             aria-label="Acciones clínicas rápidas"
             aria-expanded={isOpen}
             ref={triggerRef}
-            whileTap={{ scale: 0.95 }}
-            animate={{
-              rotate: isOpen ? 20 : 0,
-              scale: isOpen ? 1.04 : 1,
-            }}
-            transition={{ type: 'tween', duration: 0.12, ease: 'easeOut' }}
             className={clsx(
-              'absolute z-10 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center transition-[opacity,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300',
+              'absolute z-10 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center transition-[opacity,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 active:scale-95',
               showTrigger
                 ? 'pointer-events-auto opacity-100'
                 : 'pointer-events-none opacity-0 shadow-none',
@@ -244,6 +215,7 @@ export const PatientRowOrbitalQuickActionsPortal: React.FC<
               style={{
                 width: `${TRIGGER_VISUAL_SIZE}px`,
                 height: `${TRIGGER_VISUAL_SIZE}px`,
+                transform: `rotate(${isOpen ? 20 : 0}deg) scale(${isOpen ? 1.04 : 1})`,
               }}
             >
               <img
@@ -258,7 +230,7 @@ export const PatientRowOrbitalQuickActionsPortal: React.FC<
                 }}
               />
             </span>
-          </motion.button>
+          </button>
         </div>
       </div>
     </>,
