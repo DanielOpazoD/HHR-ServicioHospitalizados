@@ -4,14 +4,15 @@
     "analytics": [],
     "auth": [],
     "backup": [],
-    "census": ["analytics", "clinical-documents"],
+    "census": ["analytics", "clinical-documents", "wound-care"],
     "clinical-documents": ["laboratory"],
     "cudyr": [],
-    "handoff": ["cudyr"],
+    "handoff": ["cudyr", "wound-care"],
     "laboratory": [],
     "reminders": [],
     "transfers": [],
-    "whatsapp": []
+    "whatsapp": [],
+    "wound-care": []
   },
   "publicImportPatterns": [
     "@/features/{feature}",

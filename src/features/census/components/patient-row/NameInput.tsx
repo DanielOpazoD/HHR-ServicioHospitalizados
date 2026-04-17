@@ -12,7 +12,7 @@ import { resolveNameInputState } from './nameInputController';
 import { buildClinicalEpisodeKey } from '@/application/patient-flow/clinicalEpisode';
 
 const LazyWoundCareModal = lazy(() =>
-  import('@/features/wound-care/components/WoundCareModal').then(m => ({
+  import('@/features/wound-care/public').then(m => ({
     default: m.WoundCareModal,
   }))
 );

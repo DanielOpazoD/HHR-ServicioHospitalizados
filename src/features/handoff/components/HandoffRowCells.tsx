@@ -5,9 +5,11 @@ import { calculateDeviceDays } from '@/components/device-selector/DeviceDateConf
 import { DebouncedTextarea } from '@/components/ui/DebouncedTextarea';
 import { MedicalBadge } from '@/components/ui/base/MedicalBadge';
 import { buildClinicalEpisodeKey } from '@/application/patient-flow/clinicalEpisode';
-import { WoundCareModal } from '@/features/wound-care/components/WoundCareModal';
-import { WoundCareErrorBoundary } from '@/features/wound-care/components/WoundCareErrorBoundary';
-import { useWoundCarePhotoCount } from '@/features/wound-care/hooks/useWoundCarePhotoCount';
+import {
+  WoundCareModal,
+  WoundCareErrorBoundary,
+  useWoundCarePhotoCount,
+} from '@/features/wound-care/public';
 export { HandoffDiagnosisCell } from './HandoffDiagnosisCell';
 
 interface HandoffBedCellProps {
