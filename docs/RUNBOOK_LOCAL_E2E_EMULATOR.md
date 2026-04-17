@@ -47,7 +47,9 @@ Correr `npm run dev -- --host 127.0.0.1 --port 3000` una vez manualmente y matar
 
 ## Correr sólo el flow-performance spec
 
-Más rápido (~30 s–1 min) cuando sólo interesa regenerar el artefacto de presupuestos de arranque para el scorecard.
+Más rápido cuando sólo interesa regenerar el artefacto de presupuestos de arranque para el scorecard.
+
+**El script `test:e2e:flow-performance` corre contra la build de producción (`npm run build && npm run preview`)**, no contra el dev server. Eso significa que las medidas reflejan lo que vería un usuario real en Netlify — dev server queda como comodidad de desarrollo, no como medida de performance.
 
 ```bash
 export JAVA_HOME=/opt/homebrew/opt/openjdk@21
@@ -56,18 +58,33 @@ export PATH="$JAVA_HOME/bin:$PATH"
   "npm run test:e2e:flow-performance"
 ```
 
-Output esperado:
+Total con build fresco: ~60-90 s. Output esperado (spec en sí ~5 s):
 
 ```
 ✔  firestore: Firestore Emulator UI websocket is running on 9150.
 [1/1] [chromium] › e2e/startup-performance-budget.spec.ts:… › Startup performance budget › meets login, auth, censo, clinical documents, and backup visibility budgets
-  1 passed (6.3s)
+  1 passed (4.9s)
 ```
+
+Para iteración rápida con `dist/` ya generado por un build previo:
+
+```bash
+./node_modules/.bin/firebase emulators:exec --only firestore \
+  "npm run test:e2e:flow-performance:built"
+```
+
+`test:e2e:flow-performance:built` añade `PLAYWRIGHT_SKIP_PREVIEW_BUILD=1` — cae al segundo build y arranca preview directo sobre `dist/`. Si cambiaste código desde el último build, corre primero `npm run build` o usa el script sin `:built`.
 
 El artefacto se escribe en:
 
 - `reports/e2e/flow-performance-budget.json` (medidas crudas).
 - Después corre `node scripts/report-flow-performance-budget.mjs` para derivar `reports/e2e/flow-performance-budget-summary.{json,md}`.
+
+### ¿Por qué preview y no dev?
+
+En dev server Vite transforma módulos bajo demanda y no minifica: métricas como `loginVisibleMs` se inflan 3-4× vs. producción. La primera vez que corrimos esto las medidas indicaban que el censo tardaba 1942 ms — en realidad en producción son 2103 ms. El target violation en `censoVisibleMs` es **real, no un artefacto de herramienta**.
+
+Otros specs del mismo config (critical-emulator, auth resilience, etc.) siguen usando dev por default porque miden comportamiento funcional, no performance. El flag `PLAYWRIGHT_USE_PREVIEW=1` selecciona preview sólo para los specs que lo necesitan.
 
 ## Regenerar el scorecard tras correr el flow
 

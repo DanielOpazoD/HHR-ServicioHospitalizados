@@ -4,6 +4,19 @@ const webServerHost = '127.0.0.1';
 const webServerPort = Number.parseInt(process.env.PLAYWRIGHT_WEB_SERVER_PORT || '3000', 10);
 const webServerOrigin = `http://${webServerHost}:${webServerPort}`;
 
+// Default: vite dev. For release-accurate measurements (flow-performance
+// spec), set PLAYWRIGHT_USE_PREVIEW=1 to use the production build served
+// by vite preview. PLAYWRIGHT_SKIP_PREVIEW_BUILD=1 reuses an existing
+// dist/ directory — cuts ~45 s off re-runs.
+const usePreviewMode = process.env.PLAYWRIGHT_USE_PREVIEW === '1';
+const skipPreviewBuild = process.env.PLAYWRIGHT_SKIP_PREVIEW_BUILD === '1';
+const previewCommand = skipPreviewBuild
+  ? `npm run preview -- --host ${webServerHost} --port ${webServerPort}`
+  : `npm run build && npm run preview -- --host ${webServerHost} --port ${webServerPort}`;
+const webServerCommand = usePreviewMode
+  ? previewCommand
+  : `npm run dev -- --host ${webServerHost} --port ${webServerPort}`;
+
 const baseEnv = {
   VITE_E2E_MODE: 'true',
   VITE_FIREBASE_API_KEY: process.env.VITE_FIREBASE_API_KEY || 'demo-api-key',
@@ -74,10 +87,12 @@ export default defineConfig({
   })(),
 
   webServer: {
-    command: `npm run dev -- --host ${webServerHost} --port ${webServerPort}`,
+    command: webServerCommand,
     url: webServerOrigin,
     reuseExistingServer: !process.env.CI,
     env: baseEnv,
-    timeout: 120_000,
+    // Preview mode needs extra headroom for the vite build step before
+    // the server starts accepting connections.
+    timeout: usePreviewMode && !skipPreviewBuild ? 240_000 : 120_000,
   },
 });
