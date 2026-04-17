@@ -11,7 +11,8 @@
     {
       "label": "firebase-core",
       "pattern": "^vendor-firebase-core-.*\\.js$",
-      "maxBytes": 320000,
+      "_comment": "Raised from 320000 to 350000. The chunk sat at 91% of the older ceiling with Firebase SDK 12; minor Firebase patch releases were landing on the edge of the budget. Upstream-controlled size, so give explicit headroom. Revisit if utilization exceeds 93%.",
+      "maxBytes": 350000,
       "severity": "error"
     },
     {
@@ -25,7 +26,8 @@
   "chunkPatternBudgets": [
     {
       "pattern": "^vendor-firebase-core-.*\\.js$",
-      "maxBytes": 320000
+      "_comment": "Kept in sync with the firebase-core startup budget above.",
+      "maxBytes": 350000
     },
     {
       "pattern": "^vendor-firebase-firestore-.*\\.js$",
