@@ -21,6 +21,7 @@ vi.mock('@/hooks/useStabilityRules', () => ({
   }),
 }));
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- test fixture: loose shape matches the many hook-specific projections
 export const mockUseAuthState: any = {
   user: {
     uid: 'test-user',

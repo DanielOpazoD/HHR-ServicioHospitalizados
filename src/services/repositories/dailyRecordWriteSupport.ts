@@ -13,7 +13,6 @@ import {
   touchDailyRecordLastUpdated,
 } from '@/services/repositories/dailyRecordDomainServices';
 import { assertAdmissionDatePersistencePolicy } from '@/services/repositories/dailyRecordAdmissionDateWritePolicy';
-import { syncPatientsToMasterInBackground } from '@/services/repositories/dailyRecordBackgroundMasterSyncController';
 
 export const prepareDailyRecordForPersistence = (
   record: DailyRecord,

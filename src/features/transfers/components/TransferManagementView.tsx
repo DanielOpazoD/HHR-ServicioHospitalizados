@@ -23,7 +23,6 @@ import {
   buildTransferStatusModalBindings,
   buildTransferTableActions,
   buildTransferTableSectionModel,
-  buildTransferQuestionnairePatientData,
   buildTransferQuestionnaireModalBindings,
   buildTransferTableBindings,
   buildTransferYearButtonModels,

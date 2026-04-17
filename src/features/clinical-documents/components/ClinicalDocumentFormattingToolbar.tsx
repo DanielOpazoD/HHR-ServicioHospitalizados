@@ -86,8 +86,6 @@ const TOOLBAR_ICON_SIZE = 15;
 /** Icon size (px) for the expanded formatting sub-panel. */
 const FORMATTING_ICON_SIZE = 14;
 
-const Divider = () => <div className="h-4 w-px bg-slate-200/70 shrink-0" />;
-
 const iconBtn =
   'inline-flex h-7 w-7 items-center justify-center rounded-lg border transition-colors disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300';
 

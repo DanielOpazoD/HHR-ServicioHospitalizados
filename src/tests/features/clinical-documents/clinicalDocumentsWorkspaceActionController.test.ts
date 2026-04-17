@@ -7,7 +7,7 @@ import {
   toggleClinicalDocumentAnnex,
 } from '@/features/clinical-documents/controllers/clinicalDocumentsWorkspaceActionController';
 
-const buildDraft = (annexContent: string | null = null) =>
+const buildDraft = (_annexContent: string | null = null) =>
   createClinicalDocumentDraft({
     templateId: 'epicrisis',
     hospitalId: 'hhr',

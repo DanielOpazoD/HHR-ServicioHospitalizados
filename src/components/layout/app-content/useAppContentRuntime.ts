@@ -84,7 +84,7 @@ export const useAppContentRuntime = ({ ui }: UseAppContentRuntimeParams): AppCon
   } = useCensusContext();
   const auth = useAuth();
   const { record, syncStatus, lastSyncTime } = dailyRecordHook;
-  const { currentDateString } = dateNav;
+  const { currentDateString: _currentDateString } = dateNav;
 
   const {
     specialistCapabilities,
@@ -106,6 +106,7 @@ export const useAppContentRuntime = ({ ui }: UseAppContentRuntimeParams): AppCon
   const handleExportExcel = React.useCallback(async () => {
     const generateCensusMasterExcel = await loadCensusMasterExcelExporter();
     await generateCensusMasterExcel(...resolveExcelExportDateArgs(dateNav));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- dateNav is an unstable context object; tracking only its date parts keeps the callback stable
   }, [dateNav.selectedDay, dateNav.selectedMonth, dateNav.selectedYear]);
 
   return React.useMemo(

@@ -6,7 +6,6 @@ import {
   type GlobalEmailRecipientList,
 } from '@/services/email/emailRecipientListService';
 import type { CensusEmailBrowserRuntime } from '@/hooks/controllers/censusEmailBrowserRuntimeController';
-import { resolveStoredRecipientSelection } from '@/hooks/controllers/censusEmailRecipientSelectionController';
 import {
   type RecipientRuntimeState,
   resolveRecipientMutationFailureMessage,
@@ -21,11 +20,7 @@ import {
   type RecipientRuntimeMutationSpec,
 } from '@/hooks/controllers/censusEmailRecipientMutationActionController';
 import { resolveDeferredRecipientSyncInput } from '@/hooks/controllers/censusEmailRecipientSyncController';
-import {
-  type CensusRecipientListUseCasesModule,
-  type RecipientUseCaseResult,
-  withRecipientListUseCases,
-} from '@/hooks/controllers/censusEmailRecipientUseCaseLoader';
+import { withRecipientListUseCases } from '@/hooks/controllers/censusEmailRecipientUseCaseLoader';
 
 const RECIPIENT_LIST_KEY = 'censusEmailActiveRecipientListId';
 const RECIPIENTS_STORAGE_KEY = 'censusEmailRecipients';

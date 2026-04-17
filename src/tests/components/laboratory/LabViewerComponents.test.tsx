@@ -69,7 +69,7 @@ import { LabViewerPdf } from '@/features/laboratory/components/LabViewerPdf';
 import { LabViewerExamList } from '@/features/laboratory/components/LabViewerExamList';
 import { LabExportConfigDialog } from '@/features/laboratory/components/LabExportConfigDialog';
 import { LabChartErrorBoundary } from '@/features/laboratory/components/LabChartErrorBoundary';
-import type { LabPatient, SyslabExamItem, LabAnalysisData } from '@/types/domain/laboratory';
+import type { LabPatient, SyslabExamItem } from '@/types/domain/laboratory';
 
 /* ------------------------------------------------------------------ */
 /*  Shared test data                                                   */
@@ -91,23 +91,6 @@ const MOCK_EXAM: SyslabExamItem = {
   patientName: 'Test',
   origin: 'HOSP',
   exams: ['HEMOGRAMA'],
-};
-
-const MOCK_ANALYSIS: LabAnalysisData = {
-  trendGroups: [],
-  examDates: ['08/04/2026 14:00'],
-  microbiologyEntries: [],
-  comparison: {
-    Hemoglobina: {
-      '08/04/2026 14:00': {
-        section: 'HG',
-        analysis: 'Hemoglobina',
-        result: '13',
-        unit: 'g/dL',
-        refValue: '12-16',
-      },
-    },
-  },
 };
 
 /* ================================================================== */

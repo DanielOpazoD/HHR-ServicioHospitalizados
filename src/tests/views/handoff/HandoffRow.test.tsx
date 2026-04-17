@@ -1,16 +1,11 @@
 /** @vitest-environment jsdom */
 import '../../setup';
 import { describe, it, expect, vi } from 'vitest';
-import { fireEvent, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import React from 'react';
 import { HandoffRow } from '@/features/handoff/components/HandoffRow';
-import {
-  render,
-  createMockDailyRecordContext,
-  createMockPatient,
-  createMockRecord,
-} from '../../integration/setup';
-import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
+import { render, createMockPatient } from '../../integration/setup';
+import { PatientStatus } from '@/types/domain/patientClassification';
 
 describe('HandoffRow', () => {
   const mockPatient = createMockPatient({

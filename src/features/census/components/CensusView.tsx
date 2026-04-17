@@ -61,6 +61,7 @@ const CensusViewContent: React.FC<CensusViewProps> = ({
   const prevDateRef = useRef(currentDateString);
   useEffect(() => {
     if (prevDateRef.current !== currentDateString) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset when the navigated date changes; cannot be derived during render
       setSettledDate('');
       prevDateRef.current = currentDateString;
     }
@@ -69,6 +70,7 @@ const CensusViewContent: React.FC<CensusViewProps> = ({
   useEffect(() => {
     if (branch === 'register') {
       // Data arrived — settle immediately.
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- we must commit the settled date only after Firestore delivers a record
       setSettledDate(currentDateString);
       return;
     }

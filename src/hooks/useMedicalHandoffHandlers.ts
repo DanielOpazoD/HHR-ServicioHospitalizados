@@ -132,6 +132,7 @@ export const useMedicalHandoffHandlers = ({
         30000
       );
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- resolveFieldsPersister is a stable selector over persistMedicalFields; adding it would cause needless recreations
     [
       logDebouncedEvent,
       logUnexpectedOutcome,
@@ -181,6 +182,7 @@ export const useMedicalHandoffHandlers = ({
         30000
       );
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- resolveFieldsPersister is a stable selector over persistMedicalFields; adding it would cause needless recreations
     [
       logDebouncedEvent,
       logUnexpectedOutcome,

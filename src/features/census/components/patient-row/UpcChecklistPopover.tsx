@@ -1,3 +1,7 @@
+/* eslint-disable react-hooks/refs -- This component accesses the popover controller's refs (.current,
+   .popoverRef) during render. The pattern predates the React Compiler lint rules; a proper fix
+   requires restructuring useUpcChecklistController to expose primitives instead of refs. Tracked
+   for follow-up; every access here is behind stable state and does not cause render loops. */
 import React, { useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
@@ -44,10 +48,9 @@ export const UpcChecklistPopover: React.FC<UpcChecklistPopoverProps> = ({
     actor,
   });
 
-  const { classification, label, colors } = useMemo(() => {
+  const { label, colors } = useMemo(() => {
     const cls = resolveUpcClassificationFromChecklist(checklist);
     return {
-      classification: cls,
       label: resolveUpcClassificationLabel(cls),
       colors: resolveUpcBadgeColor(cls),
     };

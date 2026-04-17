@@ -11,7 +11,7 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronDown, ClipboardList, Loader2 } from 'lucide-react';
+import { ChevronDown, ClipboardList } from 'lucide-react';
 import clsx from 'clsx';
 
 import type {

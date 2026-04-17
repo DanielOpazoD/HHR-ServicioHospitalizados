@@ -23,7 +23,7 @@ const buildLastThirtyDaysRange = (): { dateFrom: string; dateTo: string } => {
 };
 
 const toExamTimestamp = (raw: string): number => {
-  const match = raw.match(/(\d{2})[\/.-](\d{2})[\/.-](\d{4})(?:\s+(\d{2}):(\d{2}))?/);
+  const match = raw.match(/(\d{2})[/.-](\d{2})[/.-](\d{4})(?:\s+(\d{2}):(\d{2}))?/);
   if (!match) return 0;
   const [, dd, mm, yyyy, hh = '00', min = '00'] = match;
   return new Date(`${yyyy}-${mm}-${dd}T${hh}:${min}:00`).getTime() || 0;

@@ -69,8 +69,14 @@ const createDailyRecordContextValue = (
   }) as unknown as DailyRecordContextType;
 
 const createDailyRecordWrapper = (contextValue = createDailyRecordContextValue()) => {
-  return ({ children }: { children: React.ReactNode }) =>
+  const DailyRecordWrapper = ({ children }: { children: React.ReactNode }) =>
+    // DailyRecordProvider types children as required on its props, so it cannot be passed as the
+    // third React.createElement argument without tripping the TypeScript overload. Passing it as a
+    // prop is the only typesafe path for this .test.ts file (no JSX).
+    // eslint-disable-next-line react/no-children-prop
     React.createElement(DailyRecordProvider, { value: contextValue, children });
+  DailyRecordWrapper.displayName = 'DailyRecordWrapper';
+  return DailyRecordWrapper;
 };
 
 describe('useCensusTableBindingsModel', () => {

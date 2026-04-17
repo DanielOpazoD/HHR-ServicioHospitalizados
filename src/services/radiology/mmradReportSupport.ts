@@ -139,7 +139,7 @@ const formatMmradExamLabel = (
 
 const formatMmradExamDate = (examDate?: string | null): string | null => {
   if (!examDate) return null;
-  const match = examDate.match(/(\d{2})[\/.-](\d{2})[\/.-](\d{4})/);
+  const match = examDate.match(/(\d{2})[/.-](\d{2})[/.-](\d{4})/);
   return match ? `${match[1]}-${match[2]}-${match[3]}` : null;
 };
 

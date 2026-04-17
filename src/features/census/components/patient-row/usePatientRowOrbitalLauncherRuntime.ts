@@ -7,7 +7,6 @@ import {
   LAUNCHER_OWNER_EVENT,
   dispatchLauncherOpenChange,
   dispatchLauncherOwnerChange,
-  isPointerInActivationZone,
   resolveRowHoverActionFromGlobalPointer,
   resolveRowHoverActionFromRowPointer,
   resolveLauncherTriggerVisibility,

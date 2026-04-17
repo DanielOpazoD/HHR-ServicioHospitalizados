@@ -43,6 +43,7 @@ export const useCensusTableBindingsModel = ({
     byBedId: {},
     infoByBedId: {},
   };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `?? {}` produces a stable reference across renders when byBedId is defined; memoizing it here would only add ceremony
   const clinicalDocumentPresenceByBedId = clinicalDocumentPresence.byBedId ?? {};
 
   const movements = useDailyRecordMovements();

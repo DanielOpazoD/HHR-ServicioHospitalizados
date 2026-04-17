@@ -71,6 +71,7 @@ export const useClinicalDocumentDraftRemoteSync = ({
     }
 
     dispatch({ type: 'APPLY_REMOTE_UPDATE' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- tracking the two sub-fields of pendingRemoteState keeps the effect from firing on unrelated state reshapes
   }, [
     dispatch,
     draftDirtyRef,

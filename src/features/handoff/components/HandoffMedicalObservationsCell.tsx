@@ -108,6 +108,7 @@ export const HandoffMedicalObservationsCell: React.FC<HandoffMedicalObservations
         isFieldReadOnly,
         pendingEntryDrafts,
         hasCreatePrimaryEntryAction: Boolean(onCreatePrimaryEntry),
+        // eslint-disable-next-line react-hooks/purity -- Date.now() is called once per memo computation; the derived state only affects display freshness and does not drive effects
         now: Date.now(),
       }),
     [entries, isFieldReadOnly, onCreatePrimaryEntry, pendingEntryDrafts]
