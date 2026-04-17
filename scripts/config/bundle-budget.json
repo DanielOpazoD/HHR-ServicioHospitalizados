@@ -17,7 +17,8 @@
     {
       "label": "app-authenticated-shell",
       "pattern": "^app-authenticated-shell-.*\\.js$",
-      "maxBytes": 525000,
+      "_comment": "Raised from 525000 to 560000 after the census public-split fix brought the chunk to ~483 KB. The 560 KB ceiling gives ~14% headroom for incremental post-merge growth (wound-care, new shell context providers) without another same-week refactor. Revisit if utilization exceeds 93%.",
+      "maxBytes": 560000,
       "severity": "error"
     }
   ],
