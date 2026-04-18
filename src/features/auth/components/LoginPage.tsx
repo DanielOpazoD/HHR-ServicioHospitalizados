@@ -20,9 +20,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     handleGoogleSignIn,
     toggleBackgroundMode,
   } = useLoginPageController(onLoginSuccess);
-  const backgroundImage = isDayGradient
-    ? '/images/login/hhr-login-day.png'
-    : '/images/login/hhr-login-night.png';
   const BackgroundModeIcon = isDayGradient ? SunMedium : MoonStar;
   const backgroundModeLabel = isDayGradient ? 'Día' : 'Noche';
 
@@ -32,9 +29,21 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       data-auth-state={isGoogleLoading ? 'google-loading' : 'idle'}
       className="relative min-h-screen overflow-hidden bg-slate-950"
     >
+      {/* Both background images stay mounted and crossfade via opacity so the
+          day ↔ night toggle feels continuous instead of a hard cut. Preloads
+          both images on first paint (minor cost, big perceptual win). */}
       <div
-        className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
-        style={{ backgroundImage: `url(${backgroundImage})` }}
+        className={`absolute inset-0 bg-cover bg-center transition-opacity duration-700 ease-out ${
+          isDayGradient ? 'opacity-100' : 'opacity-0'
+        }`}
+        style={{ backgroundImage: `url('/images/login/hhr-login-day.png')` }}
+        aria-hidden="true"
+      />
+      <div
+        className={`absolute inset-0 bg-cover bg-center transition-opacity duration-700 ease-out ${
+          isDayGradient ? 'opacity-0' : 'opacity-100'
+        }`}
+        style={{ backgroundImage: `url('/images/login/hhr-login-night.png')` }}
         aria-hidden="true"
       />
       <div

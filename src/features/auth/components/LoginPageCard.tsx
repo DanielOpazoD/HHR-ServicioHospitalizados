@@ -75,7 +75,14 @@ export const LoginPageCard: React.FC<LoginPageCardProps> = ({
     <div
       className={`relative overflow-hidden rounded-3xl border p-8 shadow-[0_32px_70px_-28px_rgba(2,6,23,0.70)] backdrop-blur-2xl backdrop-saturate-150 animate-login-reveal animate-login-reveal-delay-2 sm:p-10 ${glassCardClass}`}
     >
+      {/* Accent gradient bar */}
       <div className={`absolute inset-x-0 top-0 h-1.5 ${accentBarClass}`} />
+      {/* Top-edge inner highlight: 1px brighter line just below the accent bar,
+          simulating how light catches the upper rim of a glass surface. */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-4 top-1.5 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"
+      />
 
       <div className="relative">
         <h2 className="text-center text-xl font-bold text-white text-balance drop-shadow-[0_1px_2px_rgba(2,6,23,0.45)]">
