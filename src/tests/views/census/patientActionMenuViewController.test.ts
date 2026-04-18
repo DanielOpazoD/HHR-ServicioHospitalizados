@@ -79,6 +79,7 @@ describe('patientActionMenuViewController', () => {
       isBlocked: false,
       readOnly: true,
       accessProfile: 'specialist',
+      hasPatientIdentity: true,
       hasHistoryAction: true,
       hasClinicalDocumentsAction: true,
       hasExamRequestAction: true,
@@ -97,6 +98,21 @@ describe('patientActionMenuViewController', () => {
       showImagingRequestAction: true,
       showMedicalIndicationsAction: false,
     });
+  });
+
+  it('hides the quick actions trigger when the row has neither patient name nor rut', () => {
+    const view = resolvePatientActionMenuViewState({
+      isBlocked: false,
+      readOnly: false,
+      accessProfile: 'default',
+      hasPatientIdentity: false,
+      hasHistoryAction: false,
+      hasClinicalDocumentsAction: false,
+      hasExamRequestAction: false,
+      hasImagingRequestAction: false,
+    });
+
+    expect(view.showMenuTrigger).toBe(false);
   });
 
   it('resolves panel anchor class from row menu alignment', () => {

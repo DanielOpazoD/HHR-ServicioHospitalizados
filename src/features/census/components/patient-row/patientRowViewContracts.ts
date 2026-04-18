@@ -67,6 +67,7 @@ export interface PatientMainRowActionCellProps
   align: RowMenuAlign;
   showCmaAction?: boolean;
   accessProfile?: CensusAccessProfile;
+  hasPatientIdentity?: boolean;
   medicalIndicationsPatient?: MedicalIndicationsPatientOption;
   /** Number of active clinical documents for this patient episode. */
   clinicalDocumentCount?: number;

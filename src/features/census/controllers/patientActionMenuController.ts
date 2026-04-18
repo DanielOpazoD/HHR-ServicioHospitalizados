@@ -57,6 +57,7 @@ interface BuildPatientActionMenuModelParams {
   isBlocked: boolean;
   readOnly: boolean;
   accessProfile?: CensusAccessProfile;
+  hasPatientIdentity?: boolean;
   showCmaAction?: boolean;
   indicators?: Required<PatientActionMenuIndicators>;
   callbackAvailability: PatientActionMenuCallbackAvailability;
@@ -72,6 +73,7 @@ export const buildPatientActionMenuModel = ({
   isBlocked,
   readOnly,
   accessProfile = 'default',
+  hasPatientIdentity = true,
   showCmaAction,
   indicators,
   callbackAvailability,
@@ -82,6 +84,7 @@ export const buildPatientActionMenuModel = ({
     isBlocked,
     readOnly,
     accessProfile,
+    hasPatientIdentity,
     indicators,
     ...callbackAvailability,
   }),

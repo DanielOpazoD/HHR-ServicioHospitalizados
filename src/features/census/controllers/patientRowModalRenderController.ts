@@ -113,7 +113,10 @@ export const buildPatientRowModalRenderModel = ({
     demographicsBinding,
     visibilityState,
     shouldRenderAnyModal,
-    demographicsKey: `demographics-${demographicsBinding.targetBedId}-${showDemographics ? 'open' : 'closed'}-${data.patientName}-${data.rut}-${data.identityStatus || 'na'}`,
+    // Keep the modal instance stable while the same bed/context is open.
+    // Identity fields can change during the initial activation flow and
+    // should not remount the modal unexpectedly.
+    demographicsKey: `demographics-${demographicsBinding.targetBedId}-${showDemographics ? 'open' : 'closed'}-${demographicsBinding.isRnIdentityContext ? 'rn' : 'standard'}`,
     historyPatientRut: data.rut || '',
     historyPatientName: data.patientName,
   };

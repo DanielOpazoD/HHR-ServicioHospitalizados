@@ -8,6 +8,7 @@ export const PatientMainRowActionCell: React.FC<PatientMainRowActionCellProps> =
   align,
   showCmaAction = true,
   accessProfile = 'default',
+  hasPatientIdentity = true,
   hasClinicalDocument,
   isNewAdmission,
   onAction,
@@ -32,6 +33,7 @@ export const PatientMainRowActionCell: React.FC<PatientMainRowActionCellProps> =
       onViewHistory={onViewHistory}
       readOnly={readOnly}
       accessProfile={accessProfile}
+      hasPatientIdentity={hasPatientIdentity}
       align={align}
       showCmaAction={showCmaAction}
       hasClinicalDocument={hasClinicalDocument}

@@ -51,6 +51,15 @@ vi.mock('@/components/modals/DemographicsModal', () => ({
 describe('PatientRow layout and actions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: vi.fn().mockImplementation(() => ({
+        matches: false,
+        media: '(hover: hover) and (pointer: fine)',
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    });
   });
 
   const mockPatient = DataFactory.createMockPatient('R1', {
@@ -90,6 +99,29 @@ describe('PatientRow layout and actions', () => {
 
     expect(screen.getByDisplayValue(/Juan Pérez/)).toBeInTheDocument();
     expect(screen.getByText('R1')).toBeInTheDocument();
+  });
+
+  it('does not render the orbital quick actions launcher for a row without name and rut', () => {
+    render(
+      <table>
+        <tbody>
+          <PatientRow
+            data={DataFactory.createMockPatient('R1', {
+              patientName: '',
+              rut: '',
+            })}
+            bed={mockBedDef}
+            currentDateString="2023-01-01"
+            onAction={mockOnAction}
+            bedType={BedType.UTI}
+          />
+        </tbody>
+      </table>
+    );
+
+    expect(
+      screen.queryByRole('button', { name: /acciones clínicas rápidas/i })
+    ).not.toBeInTheDocument();
   });
 
   it('opens the UPC checklist when the classification button is clicked', async () => {

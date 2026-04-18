@@ -2,6 +2,7 @@ export interface ResolvePatientActionMenuViewParams {
   isBlocked: boolean;
   readOnly: boolean;
   accessProfile?: 'default' | 'specialist';
+  hasPatientIdentity?: boolean;
   hasHistoryAction: boolean;
   hasClinicalDocumentsAction: boolean;
   hasExamRequestAction: boolean;
@@ -26,6 +27,7 @@ export const resolvePatientActionMenuViewState = ({
   isBlocked,
   readOnly,
   accessProfile = 'default',
+  hasPatientIdentity = true,
   hasHistoryAction,
   hasClinicalDocumentsAction,
   hasExamRequestAction,
@@ -55,7 +57,7 @@ export const resolvePatientActionMenuViewState = ({
   }
 
   const showUtilityActions = !readOnly;
-  const showMenuTrigger = !readOnly || hasHistoryAction;
+  const showMenuTrigger = hasPatientIdentity && (!readOnly || hasHistoryAction);
   const showDemographicsAction = !isBlocked && !readOnly;
   const showClinicalSection = !isBlocked && (!readOnly || hasClinicalDocumentsAction);
   const showHistoryAction = !readOnly && hasHistoryAction;

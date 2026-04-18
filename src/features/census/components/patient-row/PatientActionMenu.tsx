@@ -30,6 +30,7 @@ interface PatientActionMenuProps extends PatientActionMenuCallbacks, PatientActi
   align?: RowMenuAlign;
   showCmaAction?: boolean;
   accessProfile?: CensusAccessProfile;
+  hasPatientIdentity?: boolean;
   medicalIndicationsPatient?: MedicalIndicationsPatientOption;
   /** Number of active clinical documents for this patient episode. */
   clinicalDocumentCount?: number;
@@ -72,6 +73,7 @@ export const PatientActionMenu: React.FC<PatientActionMenuProps> = ({
   align = 'top',
   showCmaAction = true,
   accessProfile = 'default',
+  hasPatientIdentity = true,
   medicalIndicationsPatient,
   clinicalDocumentCount,
 }) => {
@@ -94,6 +96,7 @@ export const PatientActionMenu: React.FC<PatientActionMenuProps> = ({
     isBlocked,
     readOnly,
     accessProfile,
+    hasPatientIdentity,
     align,
     showCmaAction,
     indicators: {
@@ -115,19 +118,23 @@ export const PatientActionMenu: React.FC<PatientActionMenuProps> = ({
 
   return (
     <div className="flex flex-col items-center gap-0.5 relative py-0.5" ref={menuRef}>
-      <PatientRowOrbitalQuickActions
-        showClinicalDocumentsAction={binding.availability.showClinicalDocumentsAction}
-        showExamRequestAction={binding.availability.showExamRequestAction}
-        showImagingRequestAction={binding.availability.showImagingRequestAction}
-        showMedicalIndicationsAction={binding.availability.showMedicalIndicationsAction}
-        onViewClinicalDocuments={handleViewClinicalDocuments}
-        onViewExamRequest={handleViewExamRequest}
-        onViewImagingRequest={handleViewImagingRequest}
-        onViewMedicalIndications={openMedicalIndicationsDialog}
-        badges={
-          clinicalDocumentCount && clinicalDocumentCount > 0 ? { clinicalDocumentCount } : undefined
-        }
-      />
+      {hasPatientIdentity ? (
+        <PatientRowOrbitalQuickActions
+          showClinicalDocumentsAction={binding.availability.showClinicalDocumentsAction}
+          showExamRequestAction={binding.availability.showExamRequestAction}
+          showImagingRequestAction={binding.availability.showImagingRequestAction}
+          showMedicalIndicationsAction={binding.availability.showMedicalIndicationsAction}
+          onViewClinicalDocuments={handleViewClinicalDocuments}
+          onViewExamRequest={handleViewExamRequest}
+          onViewImagingRequest={handleViewImagingRequest}
+          onViewMedicalIndications={openMedicalIndicationsDialog}
+          badges={
+            clinicalDocumentCount && clinicalDocumentCount > 0
+              ? { clinicalDocumentCount }
+              : undefined
+          }
+        />
+      ) : null}
 
       {binding.availability.showDemographicsAction && (
         <div className="flex items-center gap-0.5">

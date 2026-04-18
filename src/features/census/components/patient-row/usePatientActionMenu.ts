@@ -18,6 +18,7 @@ interface UsePatientActionMenuParams {
   isBlocked: boolean;
   readOnly: boolean;
   accessProfile?: CensusAccessProfile;
+  hasPatientIdentity?: boolean;
   align?: RowMenuAlign;
   showCmaAction?: boolean;
   indicators?: Required<PatientActionMenuIndicators>;
@@ -51,6 +52,7 @@ export const usePatientActionMenu = ({
   isBlocked,
   readOnly,
   accessProfile = 'default',
+  hasPatientIdentity = true,
   align,
   showCmaAction,
   indicators,
@@ -72,6 +74,7 @@ export const usePatientActionMenu = ({
         isBlocked,
         readOnly,
         accessProfile,
+        hasPatientIdentity,
         indicators,
         callbackAvailability: resolvePatientActionMenuCallbackAvailability({
           onViewHistory,
@@ -91,6 +94,7 @@ export const usePatientActionMenu = ({
       onViewMedicalIndications,
       onViewHistory,
       accessProfile,
+      hasPatientIdentity,
       readOnly,
       showCmaAction,
     ]

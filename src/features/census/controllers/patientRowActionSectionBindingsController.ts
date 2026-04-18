@@ -37,6 +37,9 @@ const resolveRowActionCallback = <TAction extends (() => void) | undefined>(
   action: TAction
 ): TAction | undefined => (canUseAction ? action : undefined);
 
+const resolveHasPatientIdentity = (data: PatientMainRowViewProps['data']): boolean =>
+  Boolean(data.patientName?.trim() || data.rut?.trim());
+
 export const buildPatientActionSectionBinding = ({
   isBlocked,
   readOnly,
@@ -85,6 +88,7 @@ export const buildPatientActionSectionBinding = ({
     align: actionMenuAlign,
     showCmaAction: daysHospitalized === null || daysHospitalized <= 1,
     accessProfile,
+    hasPatientIdentity: resolveHasPatientIdentity(data),
     hasClinicalDocument: indicators.hasClinicalDocument,
     isNewAdmission: indicators.isNewAdmission,
     onAction,
