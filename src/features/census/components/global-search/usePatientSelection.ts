@@ -83,7 +83,11 @@ export function usePatientSelection(): UsePatientSelectionReturn {
 
     try {
       const historyModule = await loadPatientHistory();
-      const history = await historyModule.getPatientMovementHistory(patient.rut);
+      const history = await historyModule.getPatientMovementHistory(patient.rut, {
+        hospitalizationHints: patient.hospitalizations ?? [],
+        lastAdmission: patient.lastAdmission,
+        lastDischarge: patient.lastDischarge,
+      });
       setSelectedPatient(prev =>
         prev && prev.master.rut === patient.rut
           ? { ...prev, history, isLoadingHistory: false }

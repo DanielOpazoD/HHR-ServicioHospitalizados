@@ -5,8 +5,14 @@
  * Searches by RUT to find all beds, discharges, and transfers.
  */
 
-import type { DailyRecordPatientHistoryState } from '@/services/contracts/dailyRecordServiceContracts';
-import { getAllRecords } from '@/services/storage/records';
+import type {
+  DailyRecord,
+  DailyRecordPatientHistoryState,
+} from '@/services/contracts/dailyRecordServiceContracts';
+import { getAllRecords, saveRecords } from '@/services/storage/records';
+import { getRecordsRangeFromFirestore } from '@/services/storage/firestore';
+import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
+import type { HospitalizationEvent } from '@/types/domain/patientMaster';
 import { BEDS } from '@/constants/beds';
 
 // ============================================================================
@@ -32,6 +38,12 @@ export interface PatientHistoryResult {
   totalDays: number;
   firstSeen: string;
   lastSeen: string;
+}
+
+export interface PatientHistoryLoadOptions {
+  hospitalizationHints?: HospitalizationEvent[];
+  lastAdmission?: string;
+  lastDischarge?: string;
 }
 
 // ============================================================================
@@ -65,6 +77,79 @@ function normalizeRut(rut: string): string {
     .replace(/^0+/, '');
 }
 
+const resolveLatestAdmissionDateHint = (options?: PatientHistoryLoadOptions): string | null => {
+  const admissionHint = (options?.hospitalizationHints ?? [])
+    .filter(event => event.type === 'Ingreso')
+    .map(event => event.date)
+    .sort()
+    .at(-1);
+
+  return admissionHint || options?.lastAdmission || null;
+};
+
+const resolveRemoteHistoryRange = (
+  options?: PatientHistoryLoadOptions
+): { startDate: string; endDate: string } | null => {
+  const startDate = resolveLatestAdmissionDateHint(options);
+  if (!startDate) {
+    return null;
+  }
+
+  const latestKnownCloseDate = [options?.lastDischarge]
+    .filter((value): value is string => Boolean(value))
+    .sort()
+    .at(-1);
+  const today = new Date().toISOString().slice(0, 10);
+  const endDate = latestKnownCloseDate || today;
+
+  return {
+    startDate,
+    endDate: endDate >= startDate ? endDate : startDate,
+  };
+};
+
+const mergeRecords = (
+  localRecords: Record<string, DailyRecordPatientHistoryState>,
+  remoteRecords: DailyRecordPatientHistoryState[]
+): Record<string, DailyRecordPatientHistoryState> => {
+  const merged = { ...localRecords };
+
+  remoteRecords.forEach(record => {
+    merged[record.date] = record;
+  });
+
+  return merged;
+};
+
+const loadPatientHistoryRecords = async (
+  options?: PatientHistoryLoadOptions
+): Promise<Record<string, DailyRecordPatientHistoryState>> => {
+  const localRecords = (await getAllRecords()) as Record<string, DailyRecordPatientHistoryState>;
+  if (!isFirestoreEnabled()) {
+    return localRecords;
+  }
+
+  const remoteRange = resolveRemoteHistoryRange(options);
+  if (!remoteRange) {
+    return localRecords;
+  }
+
+  try {
+    const remoteRecords = (await getRecordsRangeFromFirestore(
+      remoteRange.startDate,
+      remoteRange.endDate
+    )) as DailyRecordPatientHistoryState[];
+
+    if (remoteRecords.length > 0) {
+      await saveRecords(remoteRecords as unknown as DailyRecord[]);
+    }
+
+    return mergeRecords(localRecords, remoteRecords);
+  } catch {
+    return localRecords;
+  }
+};
+
 // ============================================================================
 // Main Service Function
 // ============================================================================
@@ -75,11 +160,14 @@ function normalizeRut(rut: string): string {
  * @param rut - Patient's RUT to search for
  * @returns PatientHistoryResult with all movements, or null if not found
  */
-export async function getPatientMovementHistory(rut: string): Promise<PatientHistoryResult | null> {
+export async function getPatientMovementHistory(
+  rut: string,
+  options?: PatientHistoryLoadOptions
+): Promise<PatientHistoryResult | null> {
   if (!rut || rut.trim().length < 3) return null;
 
   const normalizedRut = normalizeRut(rut);
-  const allRecords = await getAllRecords();
+  const allRecords = await loadPatientHistoryRecords(options);
 
   // Sort records by date (oldest first for timeline)
   const sortedDates = Object.keys(allRecords).sort();
