@@ -10,6 +10,7 @@ describe('patientRowRuntimeModelController', () => {
   it('builds editing runtime params from row dependencies', () => {
     const updatePatient = vi.fn();
     const updatePatientMultiple = vi.fn();
+    const clearPatient = vi.fn();
     const updateClinicalCrib = vi.fn();
     const updateClinicalCribMultiple = vi.fn();
 
@@ -20,6 +21,7 @@ describe('patientRowRuntimeModelController', () => {
       dependencies: {
         updatePatient,
         updatePatientMultiple,
+        clearPatient,
         updateClinicalCrib,
         updateClinicalCribMultiple,
       },
@@ -32,6 +34,7 @@ describe('patientRowRuntimeModelController', () => {
       documentType: 'RUT',
       updatePatient,
       updatePatientMultiple,
+      clearPatient,
       updateClinicalCrib,
       updateClinicalCribMultiple,
     });
@@ -77,6 +80,7 @@ describe('patientRowRuntimeModelController', () => {
   it('builds the composite runtime hook params from one dependency bundle', () => {
     const updatePatient = vi.fn();
     const updatePatientMultiple = vi.fn();
+    const clearPatient = vi.fn();
     const updateClinicalCrib = vi.fn();
     const updateClinicalCribMultiple = vi.fn();
     const toggleBedType = vi.fn();
@@ -98,6 +102,7 @@ describe('patientRowRuntimeModelController', () => {
       dependencies: {
         updatePatient,
         updatePatientMultiple,
+        clearPatient,
         updateClinicalCrib,
         updateClinicalCribMultiple,
         toggleBedType,
@@ -113,6 +118,7 @@ describe('patientRowRuntimeModelController', () => {
       documentType: 'RUT',
       updatePatient,
       updatePatientMultiple,
+      clearPatient,
       updateClinicalCrib,
       updateClinicalCribMultiple,
     });

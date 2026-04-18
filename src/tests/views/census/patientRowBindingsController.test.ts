@@ -55,6 +55,7 @@ describe('patientRowBindingsController', () => {
       modalSavers: {
         onSaveDemographics: vi.fn(),
         onSaveCribDemographics: vi.fn(),
+        onRevertEmptyDemographics: vi.fn(),
       },
       bedConfigActions: {
         toggleBedMode: vi.fn(),
@@ -138,6 +139,7 @@ describe('patientRowBindingsController', () => {
       modalSavers: {
         onSaveDemographics: vi.fn(),
         onSaveCribDemographics: vi.fn(),
+        onRevertEmptyDemographics: vi.fn(),
       },
       bedConfigActions: {
         toggleBedMode: vi.fn(),
@@ -227,6 +229,7 @@ describe('patientRowBindingsController', () => {
       modalSavers: {
         onSaveDemographics: vi.fn(),
         onSaveCribDemographics: vi.fn(),
+        onRevertEmptyDemographics: vi.fn(),
       },
       bedConfigActions: {
         toggleBedMode: vi.fn(),

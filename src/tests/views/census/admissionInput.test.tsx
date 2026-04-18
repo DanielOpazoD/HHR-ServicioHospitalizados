@@ -34,7 +34,87 @@ describe('AdmissionInput', () => {
     expect(
       screen.getByRole('dialog', { name: 'Configurar fecha y hora de ingreso' })
     ).toBeInTheDocument();
-    expect(screen.getByDisplayValue('10:00')).toBeInTheDocument();
+    expect(screen.getByLabelText('Hora de ingreso - horas')).toBeInTheDocument();
+    expect(screen.getByLabelText('Hora de ingreso - minutos')).toBeInTheDocument();
+  });
+
+  it('keeps the next clinical day available for night-shift admissions', () => {
+    const data = DataFactory.createMockPatient('R1', {
+      admissionDate: '2026-03-11',
+      admissionTime: '02:15',
+      patientName: 'Paciente Madrugada',
+      firstSeenDate: '2026-03-10',
+    });
+
+    const onChange = vi.fn((_: string) => vi.fn());
+
+    render(
+      <table>
+        <tbody>
+          <tr>
+            <AdmissionInput
+              data={data}
+              currentDateString="2026-03-10"
+              isNewAdmission
+              onChange={onChange}
+            />
+          </tr>
+        </tbody>
+      </table>
+    );
+
+    fireEvent.click(screen.getByLabelText('Editar fecha y hora de ingreso'));
+
+    expect(screen.getByRole('button', { name: '11/03/2026' })).toBeInTheDocument();
+  });
+
+  it('orders the custom time selector from the current clock backwards', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-10T17:36:00'));
+
+    const data = DataFactory.createMockPatient('R1', {
+      admissionDate: '2026-03-10',
+      admissionTime: '',
+      patientName: 'Paciente Prueba',
+      firstSeenDate: '2026-03-10',
+    });
+
+    const onChange = vi.fn((_: string) => vi.fn());
+
+    render(
+      <table>
+        <tbody>
+          <tr>
+            <AdmissionInput
+              data={data}
+              currentDateString="2026-03-10"
+              isNewAdmission
+              onChange={onChange}
+            />
+          </tr>
+        </tbody>
+      </table>
+    );
+
+    fireEvent.click(screen.getByLabelText('Editar fecha y hora de ingreso'));
+
+    const hourOptions = screen.getByLabelText('Hora de ingreso - horas').querySelectorAll('option');
+    const minuteOptions = screen
+      .getByLabelText('Hora de ingreso - minutos')
+      .querySelectorAll('option');
+
+    expect(
+      Array.from(hourOptions)
+        .slice(0, 4)
+        .map(option => option.textContent)
+    ).toEqual(['17', '16', '15', '14']);
+    expect(
+      Array.from(minuteOptions)
+        .slice(0, 4)
+        .map(option => option.textContent)
+    ).toEqual(['36', '35', '34', '33']);
+
+    vi.useRealTimers();
   });
 
   it('shows a correction hint for suspicious admission dates and applies the suggestion', () => {

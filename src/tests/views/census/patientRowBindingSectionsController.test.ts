@@ -54,6 +54,7 @@ describe('patientRowBindingSectionsController', () => {
       modalSavers: {
         onSaveDemographics: vi.fn(),
         onSaveCribDemographics: vi.fn(),
+        onRevertEmptyDemographics: vi.fn(),
       },
       bedConfigActions: {
         toggleBedMode: vi.fn(),
@@ -114,5 +115,6 @@ describe('patientRowBindingSectionsController', () => {
     expect(modals.canOpenHistory).toBe(true);
     expect(modals.showHistory).toBe(true);
     expect(modals.onCloseHistory).toBe(runtime.uiState.closeHistory);
+    expect(modals.onRevertEmptyDemographics).toBe(runtime.modalSavers.onRevertEmptyDemographics);
   });
 });

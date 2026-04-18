@@ -1,6 +1,7 @@
 import React, { lazy, Suspense } from 'react';
 import { buildPatientRowModalRenderModel } from '@/features/census/controllers/patientRowModalRenderController';
 import type { PatientRowModalsProps } from '@/features/census/components/patient-row/patientRowViewContracts';
+import { hasMeaningfulDemographicSubset } from '@/components/modals/demographics/utils';
 
 const LazyDemographicsModal = lazy(() =>
   import('@/components/modals/DemographicsModal').then(module => ({
@@ -53,6 +54,7 @@ export const PatientRowModals: React.FC<PatientRowModalsProps> = ({
   onCloseHistory,
   onSaveDemographics,
   onSaveCribDemographics,
+  onRevertEmptyDemographics,
 }) => {
   const {
     demographicsBinding,
@@ -77,6 +79,14 @@ export const PatientRowModals: React.FC<PatientRowModalsProps> = ({
     onSaveCribDemographics,
   });
 
+  const maybeRevertEmptyDemographics = React.useCallback(() => {
+    if (isSubRow || hasMeaningfulDemographicSubset(data)) {
+      return;
+    }
+
+    onRevertEmptyDemographics();
+  }, [data, isSubRow, onRevertEmptyDemographics]);
+
   return (
     <>
       {visibilityState.shouldRenderDemographics ? (
@@ -85,6 +95,8 @@ export const PatientRowModals: React.FC<PatientRowModalsProps> = ({
             key={demographicsKey}
             isOpen={showDemographics}
             onClose={onCloseDemographics}
+            onCancel={maybeRevertEmptyDemographics}
+            onEmptySave={maybeRevertEmptyDemographics}
             data={data}
             onSave={demographicsBinding.onSave}
             bedId={demographicsBinding.targetBedId}

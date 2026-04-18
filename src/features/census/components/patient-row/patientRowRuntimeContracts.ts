@@ -18,6 +18,7 @@ export interface PatientRowBedTypeToggleHandlers {
 export interface PatientRowModalSavers {
   readonly onSaveDemographics: (fields: Partial<PatientData>) => void;
   readonly onSaveCribDemographics: (fields: Partial<PatientData>) => void;
+  readonly onRevertEmptyDemographics: () => void;
 }
 
 export interface PatientRowRuntime {

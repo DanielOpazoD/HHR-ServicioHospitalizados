@@ -14,6 +14,7 @@ interface UsePatientRowEditingRuntimeParams {
   documentType?: PatientRowPatientDocumentType;
   updatePatient: (bedId: string, field: PatientRowPatientField, value: PatientFieldValue) => void;
   updatePatientMultiple: (bedId: string, fields: PatientRowPatientPatch) => void;
+  clearPatient: (bedId: string) => void;
   updateClinicalCrib: (
     bedId: string,
     field: PatientRowPatientField,
@@ -29,6 +30,7 @@ export const usePatientRowEditingRuntime = ({
   documentType,
   updatePatient,
   updatePatientMultiple,
+  clearPatient,
   updateClinicalCrib,
   updateClinicalCribMultiple,
 }: UsePatientRowEditingRuntimeParams) =>
@@ -39,6 +41,7 @@ export const usePatientRowEditingRuntime = ({
     documentType,
     updatePatient,
     updatePatientMultiple,
+    clearPatient,
     updateClinicalCrib,
     updateClinicalCribMultiple,
   });

@@ -29,6 +29,8 @@ export type DemographicSubset = Pick<
 export interface DemographicsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onCancel?: () => void;
+  onEmptySave?: () => void;
   data: DemographicSubset;
   onSave: (updatedFields: Partial<PatientData>) => void;
   bedId: string;

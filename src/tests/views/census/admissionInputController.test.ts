@@ -5,7 +5,9 @@ import {
   resolveAdmissionDateMax,
   resolveAdmissionDateOptions,
   resolveAdmissionDateIsEditable,
+  resolveAdmissionTimePickerModel,
   resolveAdmissionDateUpdatePlan,
+  resolveAdmissionTimeValue,
   resolveAdmissionTooltip,
   resolveIsCriticalAdmissionEmpty,
 } from '@/features/census/controllers/admissionInputController';
@@ -174,6 +176,27 @@ describe('admissionInputController', () => {
       { value: '2026-03-10', label: '10/03/2026' },
       { value: '2026-03-11', label: '11/03/2026' },
     ]);
+  });
+
+  it('orders time picker options from the current time backwards', () => {
+    const model = resolveAdmissionTimePickerModel({
+      admissionTime: '03:07',
+      now: new Date('2026-03-10T17:36:00'),
+    });
+
+    expect(model.selectedHour).toBe('03');
+    expect(model.selectedMinute).toBe('07');
+    expect(model.hourOptions.slice(0, 5)).toEqual(['17', '16', '15', '14', '13']);
+    expect(model.minuteOptions.slice(0, 5)).toEqual(['36', '35', '34', '33', '32']);
+  });
+
+  it('composes a time value from hour and minute selections', () => {
+    expect(
+      resolveAdmissionTimeValue({
+        hour: '02',
+        minute: '15',
+      })
+    ).toBe('02:15');
   });
 
   // -----------------------------------------------------------------------

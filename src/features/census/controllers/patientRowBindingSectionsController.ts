@@ -161,4 +161,5 @@ export const buildPatientModalSectionBindings = ({
   ...buildPatientRowModalCloseBindings(runtime),
   onSaveDemographics: runtime.modalSavers.onSaveDemographics,
   onSaveCribDemographics: runtime.modalSavers.onSaveCribDemographics,
+  onRevertEmptyDemographics: runtime.modalSavers.onRevertEmptyDemographics,
 });

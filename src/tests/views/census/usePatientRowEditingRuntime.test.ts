@@ -19,12 +19,14 @@ describe('usePatientRowEditingRuntime', () => {
       modalSavers: {
         onSaveDemographics: vi.fn(),
         onSaveCribDemographics: vi.fn(),
+        onRevertEmptyDemographics: vi.fn(),
       },
     };
     vi.mocked(usePatientRowHandlersModel).mockReturnValue(composed);
 
     const updatePatient = vi.fn();
     const updatePatientMultiple = vi.fn();
+    const clearPatient = vi.fn();
     const updateClinicalCrib = vi.fn();
     const updateClinicalCribMultiple = vi.fn();
 
@@ -36,6 +38,7 @@ describe('usePatientRowEditingRuntime', () => {
         documentType: 'RUT',
         updatePatient,
         updatePatientMultiple,
+        clearPatient,
         updateClinicalCrib,
         updateClinicalCribMultiple,
       })
@@ -48,6 +51,7 @@ describe('usePatientRowEditingRuntime', () => {
       documentType: 'RUT',
       updatePatient,
       updatePatientMultiple,
+      clearPatient,
       updateClinicalCrib,
       updateClinicalCribMultiple,
     });

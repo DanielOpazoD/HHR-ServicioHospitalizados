@@ -22,6 +22,7 @@ describe('usePatientRowHandlersModel', () => {
   it('composes runtime handlers and modal savers from main/crib hooks', () => {
     const mainSave = vi.fn();
     const cribSave = vi.fn();
+    const clearPatient = vi.fn();
 
     vi.mocked(usePatientRowMainInputHandlers).mockReturnValue({
       handleTextChange: vi.fn(),
@@ -57,6 +58,7 @@ describe('usePatientRowHandlersModel', () => {
         documentType: 'RUT',
         updatePatient: vi.fn(),
         updatePatientMultiple: vi.fn(),
+        clearPatient,
         updateClinicalCrib: vi.fn(),
         updateClinicalCribMultiple: vi.fn(),
       })
@@ -65,5 +67,7 @@ describe('usePatientRowHandlersModel', () => {
     expect(result.current.handlers).toBe(composedHandlers);
     expect(result.current.modalSavers.onSaveDemographics).toBe(mainSave);
     expect(result.current.modalSavers.onSaveCribDemographics).toBe(cribSave);
+    result.current.modalSavers.onRevertEmptyDemographics();
+    expect(clearPatient).toHaveBeenCalledWith('R1');
   });
 });

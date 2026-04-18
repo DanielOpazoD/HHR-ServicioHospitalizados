@@ -102,6 +102,40 @@ export const buildLocalData = (
   };
 };
 
+export const hasMeaningfulDemographicSubset = (data: DemographicSubset): boolean =>
+  Boolean(
+    normalizeNamePart(data.patientName || '') ||
+    normalizeNamePart(data.firstName || '') ||
+    normalizeNamePart(data.lastName || '') ||
+    normalizeNamePart(data.secondLastName || '') ||
+    (data.rut || '').trim() ||
+    (data.birthDate || '').trim() ||
+    (data.admissionOrigin || '').trim() ||
+    normalizeNamePart(data.admissionOriginDetails || '') ||
+    data.isRapanui ||
+    (data.biologicalSex && data.biologicalSex !== 'Indeterminado') ||
+    (data.insurance && data.insurance !== 'Fonasa') ||
+    (data.origin && data.origin !== 'Residente') ||
+    (data.documentType && data.documentType !== 'RUT')
+  );
+
+export const hasMeaningfulLocalDemographics = (localData: LocalDemographicsState): boolean =>
+  Boolean(
+    normalizeNamePart(localData.provisionalName) ||
+    normalizeNamePart(localData.firstName) ||
+    normalizeNamePart(localData.lastName) ||
+    normalizeNamePart(localData.secondLastName) ||
+    localData.rut.trim() ||
+    localData.birthDate.trim() ||
+    localData.admissionOrigin ||
+    normalizeNamePart(localData.admissionOriginDetails) ||
+    localData.isRapanui ||
+    localData.biologicalSex !== 'Indeterminado' ||
+    localData.insurance !== 'Fonasa' ||
+    localData.origin !== 'Residente' ||
+    localData.documentType !== 'RUT'
+  );
+
 export const calculateFormattedAge = (dob: string) => {
   if (!dob) return '';
   const birth = new Date(dob);

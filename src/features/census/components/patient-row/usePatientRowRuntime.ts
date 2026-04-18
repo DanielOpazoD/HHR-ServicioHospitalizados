@@ -25,6 +25,7 @@ export const usePatientRowRuntime = ({
   const {
     updatePatient,
     updatePatientMultiple,
+    clearPatient,
     updateClinicalCrib,
     updateClinicalCribMultiple,
     toggleBedType,
@@ -41,6 +42,7 @@ export const usePatientRowRuntime = ({
     dependencies: {
       updatePatient,
       updatePatientMultiple,
+      clearPatient,
       updateClinicalCrib,
       updateClinicalCribMultiple,
       toggleBedType,

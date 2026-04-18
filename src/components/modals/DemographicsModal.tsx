@@ -12,6 +12,8 @@ export type { DemographicSubset } from './demographics/types';
 export const DemographicsModal: React.FC<DemographicsModalProps> = ({
   isOpen,
   onClose,
+  onCancel,
+  onEmptySave,
   data,
   onSave,
   bedId,
@@ -35,12 +37,18 @@ export const DemographicsModal: React.FC<DemographicsModalProps> = ({
     recordDate,
     onSave,
     onClose,
+    onEmptySave,
   });
+
+  const handleCancel = React.useCallback(() => {
+    onCancel?.();
+    onClose();
+  }, [onCancel, onClose]);
 
   return (
     <BaseModal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleCancel}
       title="Datos Demográficos"
       icon={<User size={18} />}
       size="2xl"
@@ -71,7 +79,7 @@ export const DemographicsModal: React.FC<DemographicsModalProps> = ({
 
         <div className="sticky bottom-0 bg-white/95 backdrop-blur pt-2 mt-1 flex justify-end items-center gap-3 border-t border-slate-100">
           <button
-            onClick={onClose}
+            onClick={handleCancel}
             className="text-slate-400 hover:text-slate-600 text-[13px] font-bold transition-colors px-2"
           >
             Cancelar

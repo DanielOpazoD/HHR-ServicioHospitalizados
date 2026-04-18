@@ -94,6 +94,7 @@ describe('patientRowRuntimeController', () => {
         modalSavers: {
           onSaveDemographics: vi.fn(),
           onSaveCribDemographics: vi.fn(),
+          onRevertEmptyDemographics: vi.fn(),
         },
       },
     });

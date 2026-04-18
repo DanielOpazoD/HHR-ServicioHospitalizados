@@ -4,6 +4,7 @@ import { useConfirmDialog } from '@/context/UIContext';
 export interface PatientRowDependencies {
   updatePatient: ReturnType<typeof useDailyRecordBedActions>['updatePatient'];
   updatePatientMultiple: ReturnType<typeof useDailyRecordBedActions>['updatePatientMultiple'];
+  clearPatient: ReturnType<typeof useDailyRecordBedActions>['clearPatient'];
   updateClinicalCrib: ReturnType<typeof useDailyRecordBedActions>['updateClinicalCrib'];
   updateClinicalCribMultiple: ReturnType<
     typeof useDailyRecordBedActions
@@ -17,6 +18,7 @@ export const usePatientRowDependencies = (): PatientRowDependencies => {
   const {
     updatePatient,
     updatePatientMultiple,
+    clearPatient,
     updateClinicalCrib,
     updateClinicalCribMultiple,
     toggleBedType,
@@ -26,6 +28,7 @@ export const usePatientRowDependencies = (): PatientRowDependencies => {
   return {
     updatePatient,
     updatePatientMultiple,
+    clearPatient,
     updateClinicalCrib,
     updateClinicalCribMultiple,
     toggleBedType,

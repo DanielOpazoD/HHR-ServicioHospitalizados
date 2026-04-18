@@ -9,7 +9,13 @@ import {
   Origin,
   BiologicalSex,
 } from './types';
-import { buildLocalData, normalizeNamePart, composeFullName, calculateFormattedAge } from './utils';
+import {
+  buildLocalData,
+  normalizeNamePart,
+  composeFullName,
+  calculateFormattedAge,
+  hasMeaningfulLocalDemographics,
+} from './utils';
 import type { PatientData } from '@/types/domain/patient';
 
 interface UseDemographicsLogicProps {
@@ -20,6 +26,7 @@ interface UseDemographicsLogicProps {
   recordDate: string;
   onSave: (updatedFields: Partial<PatientData>) => void;
   onClose: () => void;
+  onEmptySave?: () => void;
 }
 
 export const useDemographicsLogic = ({
@@ -30,6 +37,7 @@ export const useDemographicsLogic = ({
   recordDate,
   onSave,
   onClose,
+  onEmptySave,
 }: UseDemographicsLogicProps) => {
   const { logPatientView } = useAuditContext();
   const [localData, setLocalData] = useState<LocalDemographicsState>(() =>
@@ -68,6 +76,12 @@ export const useDemographicsLogic = ({
     : localData.rut || 'RUT No especificado';
 
   const handleSave = () => {
+    if (!hasMeaningfulLocalDemographics(localData)) {
+      onEmptySave?.();
+      onClose();
+      return;
+    }
+
     if (localData.birthDate) {
       const birthDateValidation = PatientInputSchema.pick({ birthDate: true }).safeParse({
         birthDate: localData.birthDate,

@@ -144,6 +144,7 @@ export interface PatientRowModalsProps {
   onCloseHistory: () => void;
   onSaveDemographics: (fields: Partial<PatientData>) => void;
   onSaveCribDemographics: (fields: Partial<PatientData>) => void;
+  onRevertEmptyDemographics: () => void;
 }
 
 export interface PatientRowProps {

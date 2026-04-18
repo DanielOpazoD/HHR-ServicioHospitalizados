@@ -10,7 +10,11 @@ interface BuildPatientRowEditingRuntimeParamsInput {
   currentDateString: string;
   dependencies: Pick<
     PatientRowDependencies,
-    'updatePatient' | 'updatePatientMultiple' | 'updateClinicalCrib' | 'updateClinicalCribMultiple'
+    | 'updatePatient'
+    | 'updatePatientMultiple'
+    | 'clearPatient'
+    | 'updateClinicalCrib'
+    | 'updateClinicalCribMultiple'
   >;
 }
 
@@ -26,6 +30,7 @@ export const buildPatientRowEditingRuntimeParams = ({
   documentType: data.documentType,
   updatePatient: dependencies.updatePatient,
   updatePatientMultiple: dependencies.updatePatientMultiple,
+  clearPatient: dependencies.clearPatient,
   updateClinicalCrib: dependencies.updateClinicalCrib,
   updateClinicalCribMultiple: dependencies.updateClinicalCribMultiple,
 });
@@ -51,6 +56,7 @@ interface BuildPatientRowRuntimeHookParamsInput {
     PatientRowDependencies,
     | 'updatePatient'
     | 'updatePatientMultiple'
+    | 'clearPatient'
     | 'updateClinicalCrib'
     | 'updateClinicalCribMultiple'
     | 'toggleBedType'

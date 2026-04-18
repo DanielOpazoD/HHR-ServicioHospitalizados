@@ -62,6 +62,7 @@ describe('usePatientRowRuntime', () => {
       asHookValue<ReturnType<typeof usePatientRowDependencies>>({
         updatePatient: vi.fn(),
         updatePatientMultiple: vi.fn(),
+        clearPatient: vi.fn(),
         updateClinicalCrib,
         updateClinicalCribMultiple: vi.fn(),
         toggleBedType,
@@ -90,6 +91,7 @@ describe('usePatientRowRuntime', () => {
         modalSavers: {
           onSaveDemographics: vi.fn(),
           onSaveCribDemographics: vi.fn(),
+          onRevertEmptyDemographics: vi.fn(),
         },
       })
     );

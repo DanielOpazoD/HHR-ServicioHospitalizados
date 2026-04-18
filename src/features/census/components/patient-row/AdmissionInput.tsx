@@ -13,11 +13,10 @@
  *    ensuring the native tooltip is visible on hover.
  */
 
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import { AlertCircle, Clock3, Pencil } from 'lucide-react';
-import { DebouncedInput } from '@/components/ui/DebouncedInput';
 import type { PatientData } from '@/features/census/components/patient-row/patientRowDataContracts';
 import { BaseCellProps, DebouncedTextHandler } from './inputCellTypes';
 import { PatientEmptyCell } from './PatientEmptyCell';
@@ -26,6 +25,8 @@ import {
   resolveAdmissionDateAudit,
   resolveAdmissionDateOptions,
   resolveAdmissionDateIsEditable,
+  resolveAdmissionTimePickerModel,
+  resolveAdmissionTimeValue,
   resolveAdmissionDateUpdatePlan,
   resolveAdmissionTooltip,
   resolveIsCriticalAdmissionEmpty,
@@ -49,6 +50,7 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
   onMultipleUpdate,
 }) => {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editorOpenedAt, setEditorOpenedAt] = useState(() => new Date());
   const buttonRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
@@ -96,6 +98,11 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
   const admissionDateOptions = React.useMemo(
     () => resolveAdmissionDateOptions(currentDateString, data.admissionDate),
     [currentDateString, data.admissionDate]
+  );
+  const timePickerModel = useMemo(
+    () =>
+      resolveAdmissionTimePickerModel({ admissionTime: data.admissionTime, now: editorOpenedAt }),
+    [data.admissionTime, editorOpenedAt]
   );
   const isAdmissionDateSuspicious = isNewAdmission && audit.isSuspicious && !isCriticalEmpty;
   const showEditButton = !readOnly && isAdmissionDateEditable;
@@ -146,6 +153,18 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
     onChange('admissionDate')(plan.nextPatch.admissionDate);
   };
 
+  const handleTimePartChange =
+    (part: 'hour' | 'minute') => (event: React.ChangeEvent<HTMLSelectElement>) => {
+      const nextHour = part === 'hour' ? event.target.value : timePickerModel.selectedHour;
+      const nextMinute = part === 'minute' ? event.target.value : timePickerModel.selectedMinute;
+      onChange('admissionTime')(
+        resolveAdmissionTimeValue({
+          hour: nextHour,
+          minute: nextMinute,
+        })
+      );
+    };
+
   return (
     <td
       className="py-0.5 px-1 border-r border-slate-200 w-32"
@@ -166,7 +185,10 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
               aria-expanded={isEditorOpen}
               onClick={e => {
                 e.stopPropagation();
-                if (!isEditorOpen) updatePosition();
+                if (!isEditorOpen) {
+                  setEditorOpenedAt(new Date());
+                  updatePosition();
+                }
                 setIsEditorOpen(current => !current);
               }}
               className={clsx(
@@ -233,14 +255,34 @@ export const AdmissionInput: React.FC<AdmissionInputProps> = ({
                       <Clock3 size={10} />
                       Hora de ingreso
                     </label>
-                    <DebouncedInput
-                      type="time"
-                      step={300}
-                      className="mt-1 w-full h-8 rounded-md border border-slate-300 bg-white px-2 text-xs focus:ring-2 focus:ring-medical-500 focus:outline-none"
-                      value={data.admissionTime || ''}
-                      onChange={onChange('admissionTime')}
-                      disabled={readOnly}
-                    />
+                    <div className="mt-1 grid grid-cols-2 gap-2">
+                      <select
+                        aria-label="Hora de ingreso - horas"
+                        className="h-8 rounded-md border border-slate-300 bg-white px-2 text-xs focus:ring-2 focus:ring-medical-500 focus:outline-none"
+                        value={timePickerModel.selectedHour}
+                        onChange={handleTimePartChange('hour')}
+                        disabled={readOnly}
+                      >
+                        {timePickerModel.hourOptions.map(hour => (
+                          <option key={hour} value={hour}>
+                            {hour}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        aria-label="Hora de ingreso - minutos"
+                        className="h-8 rounded-md border border-slate-300 bg-white px-2 text-xs focus:ring-2 focus:ring-medical-500 focus:outline-none"
+                        value={timePickerModel.selectedMinute}
+                        onChange={handleTimePartChange('minute')}
+                        disabled={readOnly}
+                      >
+                        {timePickerModel.minuteOptions.map(minute => (
+                          <option key={minute} value={minute}>
+                            {minute}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>,
                 document.body

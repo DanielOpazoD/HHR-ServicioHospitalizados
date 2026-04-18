@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { PatientRowModals } from '@/features/census/components/patient-row/PatientRowModals';
@@ -8,10 +8,20 @@ vi.mock('@/components/modals/DemographicsModal', () => ({
   DemographicsModal: ({
     bedId,
     isClinicalCribPatient,
+    onCancel,
+    onEmptySave,
   }: {
     bedId: string;
     isClinicalCribPatient?: boolean;
-  }) => <div data-rn-context={String(Boolean(isClinicalCribPatient))}>Demographics {bedId}</div>,
+    onCancel?: () => void;
+    onEmptySave?: () => void;
+  }) => (
+    <div data-rn-context={String(Boolean(isClinicalCribPatient))}>
+      <span>Demographics {bedId}</span>
+      <button onClick={onCancel}>Cancelar Demographics</button>
+      <button onClick={onEmptySave}>Guardar Vacío</button>
+    </div>
+  ),
 }));
 
 vi.mock('@/components/modals/ExamRequestModal', () => ({
@@ -56,6 +66,7 @@ describe('PatientRowModals', () => {
     onCloseHistory: vi.fn(),
     onSaveDemographics: vi.fn(),
     onSaveCribDemographics: vi.fn(),
+    onRevertEmptyDemographics: vi.fn(),
   } as const;
 
   it('mounts only active modals', async () => {
@@ -69,8 +80,9 @@ describe('PatientRowModals', () => {
       />
     );
 
-    expect(await screen.findByText('Demographics R1')).toBeInTheDocument();
-    expect(await screen.findByText('Demographics R1')).toHaveAttribute('data-rn-context', 'false');
+    const demographics = await screen.findByText('Demographics R1');
+    expect(demographics).toBeInTheDocument();
+    expect(demographics.closest('div')).toHaveAttribute('data-rn-context', 'false');
     expect(await screen.findByText('Exam Request')).toBeInTheDocument();
     expect(await screen.findByText('Imaging Request')).toBeInTheDocument();
     expect(await screen.findByText('Patient History')).toBeInTheDocument();
@@ -122,6 +134,81 @@ describe('PatientRowModals', () => {
       />
     );
 
-    expect(await screen.findByText('Demographics R1')).toHaveAttribute('data-rn-context', 'true');
+    expect((await screen.findByText('Demographics R1')).closest('div')).toHaveAttribute(
+      'data-rn-context',
+      'true'
+    );
+  });
+
+  it('reverts a newly activated empty bed when demographics are cancelled', async () => {
+    const onRevertEmptyDemographics = vi.fn();
+
+    render(
+      <PatientRowModals
+        {...baseProps}
+        showDemographics
+        onRevertEmptyDemographics={onRevertEmptyDemographics}
+        data={DataFactory.createMockPatient('R1', {
+          patientName: ' ',
+          rut: '',
+          firstName: '',
+          lastName: '',
+          secondLastName: '',
+          birthDate: '',
+          insurance: undefined,
+          origin: undefined,
+          admissionOrigin: undefined,
+          biologicalSex: 'Indeterminado',
+        })}
+      />
+    );
+
+    fireEvent.click(await screen.findByText('Cancelar Demographics'));
+
+    expect(onRevertEmptyDemographics).toHaveBeenCalledTimes(1);
+  });
+
+  it('reverts a newly activated empty bed when the demographics modal saves empty data', async () => {
+    const onRevertEmptyDemographics = vi.fn();
+
+    render(
+      <PatientRowModals
+        {...baseProps}
+        showDemographics
+        onRevertEmptyDemographics={onRevertEmptyDemographics}
+        data={DataFactory.createMockPatient('R1', {
+          patientName: ' ',
+          rut: '',
+          firstName: '',
+          lastName: '',
+          secondLastName: '',
+          birthDate: '',
+          insurance: undefined,
+          origin: undefined,
+          admissionOrigin: undefined,
+          biologicalSex: 'Indeterminado',
+        })}
+      />
+    );
+
+    fireEvent.click(await screen.findByText('Guardar Vacío'));
+
+    expect(onRevertEmptyDemographics).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not revert an existing patient when demographics are cancelled', async () => {
+    const onRevertEmptyDemographics = vi.fn();
+
+    render(
+      <PatientRowModals
+        {...baseProps}
+        showDemographics
+        onRevertEmptyDemographics={onRevertEmptyDemographics}
+      />
+    );
+
+    fireEvent.click(await screen.findByText('Cancelar Demographics'));
+
+    expect(onRevertEmptyDemographics).not.toHaveBeenCalled();
   });
 });
