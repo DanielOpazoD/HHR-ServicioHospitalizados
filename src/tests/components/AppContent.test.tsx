@@ -39,7 +39,6 @@ import { useExportManager } from '@/hooks/useExportManager';
 
 export const mockDateStrip = vi.fn();
 export const mockNavbar = vi.fn();
-export const mockSettingsModal = vi.fn();
 
 vi.mock('@/components/layout/Navbar', () => ({
   Navbar: (props: unknown) => {
@@ -52,13 +51,6 @@ vi.mock('@/components/layout/DateStrip', () => ({
   DateStrip: (props: unknown) => {
     mockDateStrip(props);
     return <div data-testid="datestrip">DateStrip</div>;
-  },
-}));
-
-vi.mock('@/components/modals/SettingsModal', () => ({
-  SettingsModal: (props: unknown) => {
-    mockSettingsModal(props);
-    return <div data-testid="settings-modal">SettingsModal</div>;
   },
 }));
 
@@ -96,7 +88,7 @@ vi.mock('@/views/LazyViews', () => ({
   CensusEmailConfigModal: () => <div data-testid="email-modal">EmailModal</div>,
 }));
 
-vi.mock('@/features/census/components/global-search/GlobalPatientSearchModal', () => ({
+vi.mock('@/features/census/public-components', () => ({
   GlobalPatientSearchModal: () => <div data-testid="patient-search-modal">PatientSearchModal</div>,
 }));
 
@@ -376,14 +368,15 @@ describe('AppContent', () => {
   it('shows and hides global modals/panels based on UI state', () => {
     const uiWithModals = {
       ...mockUI,
-      settingsModal: { isOpen: true, close: vi.fn(), open: vi.fn(), toggle: vi.fn() },
       isTestAgentRunning: true,
     };
 
     render(<AppContent ui={uiWithModals as unknown as AppContentUi} />);
 
-    expect(screen.getByTestId('settings-modal')).toBeInTheDocument();
+    expect(screen.getByTestId('reminder-modal')).toBeInTheDocument();
     expect(screen.getByTestId('test-agent')).toBeInTheDocument();
+    expect(screen.getByTestId('storage-badge')).toBeInTheDocument();
+    expect(screen.getByTestId('pin-lock')).toBeInTheDocument();
   });
 
   it('keeps SyncWatcher mounted in the main application shell', () => {

@@ -34,10 +34,6 @@ vi.mock('@/utils/lazyWithRetry', () => {
 
 import { AppContentOverlays } from '@/components/layout/app-content/AppContentOverlays';
 
-vi.mock('@/components/modals/SettingsModal', () => ({
-  SettingsModal: () => <div data-testid="settings-modal">SettingsModal</div>,
-}));
-
 vi.mock('@/components/reminders/ReminderModal', () => ({
   ReminderModal: () => <div data-testid="reminder-modal">ReminderModal</div>,
 }));
@@ -62,7 +58,7 @@ vi.mock('@/views/LazyViews', () => ({
   CensusEmailConfigModal: () => <div data-testid="email-modal">EmailModal</div>,
 }));
 
-vi.mock('@/features/census/components/global-search/GlobalPatientSearchModal', () => ({
+vi.mock('@/features/census/public-components', () => ({
   GlobalPatientSearchModal: () => <div data-testid="patient-search-modal">PatientSearchModal</div>,
 }));
 
@@ -111,9 +107,9 @@ describe('AppContentOverlays', () => {
   it('mounts shell overlays and global status components', () => {
     render(<AppContentOverlays ui={ui as never} runtime={runtime as never} />);
 
-    expect(screen.getByTestId('settings-modal')).toBeInTheDocument();
     expect(screen.getByTestId('reminder-modal')).toBeInTheDocument();
     expect(screen.getByTestId('test-agent')).toBeInTheDocument();
+    expect(screen.getByTestId('patient-search-modal')).toBeInTheDocument();
     expect(screen.getByTestId('sync-watcher')).toBeInTheDocument();
     expect(screen.getByTestId('pin-lock')).toBeInTheDocument();
     expect(screen.getByTestId('storage-badge')).toBeInTheDocument();

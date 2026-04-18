@@ -24,21 +24,20 @@ describe('NavbarMenu', () => {
     currentModule: 'CENSUS' as const,
     setModule: vi.fn(),
     censusViewMode: 'REGISTER' as const,
-    onOpenSettings: vi.fn(),
     visibleModules: [
       'CENSUS',
-      'CUDYR',
-      'NURSING_HANDOFF',
-      'MEDICAL_HANDOFF',
-      'AUDIT',
+      'DATA',
+      'CONFIGURATION',
       'DIAGNOSTICS',
+      'COMMUNICATIONS',
       'DATA_MAINTENANCE',
       'PATIENT_MASTER_INDEX',
-      'ROLE_MANAGEMENT',
-      'REMINDERS',
-      'ERRORS',
-      'WHATSAPP',
+      'BACKUP_FILES',
     ] as const,
+  };
+
+  const openMenu = () => {
+    fireEvent.click(screen.getByRole('button', { name: /hospital hanga roa/i }));
   };
 
   beforeEach(() => {
@@ -55,11 +54,7 @@ describe('NavbarMenu', () => {
 
   it('opens menu when brand button is clicked', () => {
     render(<NavbarMenu {...defaultProps} />);
-
-    const brandButton = screen
-      .queryByRole('heading', { name: /Hospital Hanga Roa/i })
-      ?.closest('button');
-    if (brandButton) fireEvent.click(brandButton);
+    openMenu();
 
     expect(screen.getByText('Configuración')).toBeInTheDocument();
   });
@@ -67,33 +62,27 @@ describe('NavbarMenu', () => {
   it('shows admin-only items for admin users', () => {
     mockRole = 'admin';
     render(<NavbarMenu {...defaultProps} />);
-    const brandButton = screen
-      .queryByRole('heading', { name: /Hospital Hanga Roa/i })
-      ?.closest('button');
-    if (brandButton) fireEvent.click(brandButton);
+    openMenu();
 
+    expect(screen.getByText('Datos')).toBeInTheDocument();
     expect(screen.getByText('Configuración')).toBeInTheDocument();
-    expect(screen.getByText('Auditoría')).toBeInTheDocument();
+    expect(screen.getByText('Observabilidad')).toBeInTheDocument();
+    expect(screen.getByText('Comunicación')).toBeInTheDocument();
   });
 
   it('hides admin items for non-admin users', () => {
     mockRole = 'viewer';
     render(<NavbarMenu {...defaultProps} />);
-    const brandButton = screen
-      .queryByRole('heading', { name: /Hospital Hanga Roa/i })
-      ?.closest('button');
-    if (brandButton) fireEvent.click(brandButton);
+    openMenu();
 
+    expect(screen.queryByText('Datos')).not.toBeInTheDocument();
     expect(screen.queryByText('Configuración')).not.toBeInTheDocument();
-    expect(screen.queryByText('Auditoría')).not.toBeInTheDocument();
+    expect(screen.queryByText('Observabilidad')).not.toBeInTheDocument();
   });
 
   it('closes menu when backdrop is clicked', () => {
     render(<NavbarMenu {...defaultProps} />);
-    const brandButton = screen
-      .queryByRole('heading', { name: /Hospital Hanga Roa/i })
-      ?.closest('button');
-    if (brandButton) fireEvent.click(brandButton);
+    openMenu();
 
     // Click on backdrop (fixed inset element)
     const backdrop = document.querySelector('.fixed.inset-0');
@@ -106,37 +95,26 @@ describe('NavbarMenu', () => {
   it('shows System Diagnostics (Monitor de Errores) for admin users', () => {
     mockRole = 'admin';
     render(<NavbarMenu {...defaultProps} />);
-    const brandButton = screen
-      .queryByRole('heading', { name: /Hospital Hanga Roa/i })
-      ?.closest('button');
-    if (brandButton) fireEvent.click(brandButton);
+    openMenu();
 
-    expect(screen.getByText('Diagnóstico del Sistema')).toBeInTheDocument();
+    expect(screen.getByText('Observabilidad')).toBeInTheDocument();
   });
 
   it('changes module when clicking a system module entry', () => {
     render(<NavbarMenu {...defaultProps} />);
-    const brandButton = screen
-      .queryByRole('heading', { name: /Hospital Hanga Roa/i })
-      ?.closest('button');
-    if (brandButton) fireEvent.click(brandButton);
+    openMenu();
 
-    fireEvent.click(screen.getByText('Auditoría'));
+    fireEvent.click(screen.getByText('Comunicación'));
 
-    expect(defaultProps.setModule).toHaveBeenCalledWith('AUDIT');
-    expect(defaultProps.onOpenSettings).not.toHaveBeenCalled();
+    expect(defaultProps.setModule).toHaveBeenCalledWith('COMMUNICATIONS');
   });
 
-  it('opens settings when clicking the settings entry', () => {
+  it('changes module when clicking the settings entry', () => {
     render(<NavbarMenu {...defaultProps} />);
-    const brandButton = screen
-      .queryByRole('heading', { name: /Hospital Hanga Roa/i })
-      ?.closest('button');
-    if (brandButton) fireEvent.click(brandButton);
+    openMenu();
 
     fireEvent.click(screen.getByText('Configuración'));
 
-    expect(defaultProps.onOpenSettings).toHaveBeenCalledTimes(1);
-    expect(defaultProps.setModule).not.toHaveBeenCalled();
+    expect(defaultProps.setModule).toHaveBeenCalledWith('CONFIGURATION');
   });
 });

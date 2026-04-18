@@ -1,6 +1,6 @@
 {
   "features": {
-    "admin": ["clinical-documents", "handoff"],
+    "admin": ["backup", "clinical-documents", "handoff", "reminders", "whatsapp"],
     "analytics": [],
     "auth": [],
     "backup": [],

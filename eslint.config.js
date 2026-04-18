@@ -9,6 +9,7 @@ export default tseslint.config(
   {
     ignores: [
       '.agent',
+      '.netlify',
       '.claude',
       'coverage',
       'dev-dist',

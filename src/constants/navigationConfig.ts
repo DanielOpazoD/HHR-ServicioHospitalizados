@@ -6,11 +6,8 @@ import {
   FolderArchive,
   BarChart3,
   Settings,
-  ShieldCheck,
   Activity,
   Database,
-  BellRing,
-  Users,
   LucideIcon,
 } from 'lucide-react';
 

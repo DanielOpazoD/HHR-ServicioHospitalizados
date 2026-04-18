@@ -9,7 +9,7 @@ describe('invokeWithTelemetry', () => {
 
   it('skips telemetry sink writes when firestore mocks omit addDoc', async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const stdoutWrite = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
 
     vi.doMock('firebase/firestore', () => ({
       collection: vi.fn(() => ({ path: 'hospitals/test/functionsTelemetry' })),
@@ -28,7 +28,7 @@ describe('invokeWithTelemetry', () => {
       })
     ).resolves.toBe('ok');
 
-    expect(consoleLog).toHaveBeenCalled();
+    expect(stdoutWrite).toHaveBeenCalled();
     expect(consoleError).not.toHaveBeenCalled();
   });
 });

@@ -59,6 +59,9 @@ feature/
 ### `admin/`
 
 - Herramientas operativas: roles, mantenimiento, auditoría, diagnósticos.
+- Puede agregar vistas operativas de otros módulos solo cuando la dependencia esté declarada en
+  `scripts/feature-dependency-matrix.json` y el consumo entre por el entrypoint público del feature
+  (`@/features/<feature>` o `public.ts`), nunca por subrutas internas.
 
 ## Reglas de arquitectura
 

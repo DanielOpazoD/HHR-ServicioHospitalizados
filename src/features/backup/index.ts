@@ -1,1 +1,1 @@
-export { BackupFilesView } from './components/BackupFilesView';
+export { BackupFilesView } from './public';

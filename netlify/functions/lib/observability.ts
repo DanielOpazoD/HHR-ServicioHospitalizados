@@ -141,7 +141,9 @@ export const invokeWithTelemetry = async <T>(options: InvokeOptions<T>): Promise
         status: 'success',
         context,
       };
-      console.log(JSON.stringify({ level: 'info', kind: 'function_invocation', ...entry }));
+      process.stdout.write(
+        `${JSON.stringify({ level: 'info', kind: 'function_invocation', ...entry })}\n`
+      );
       if (db && hospitalId) void writeTelemetrySink(db, hospitalId, entry);
       return result;
     } catch (error) {

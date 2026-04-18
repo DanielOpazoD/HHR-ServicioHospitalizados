@@ -1,1 +1,1 @@
-export { WhatsAppIntegrationView } from './components/WhatsAppIntegrationView';
+export { WhatsAppIntegrationView } from './public';
