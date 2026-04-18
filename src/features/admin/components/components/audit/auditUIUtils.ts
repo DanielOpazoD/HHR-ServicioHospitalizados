@@ -73,6 +73,10 @@ export const actionIcons: Record<AuditAction, React.ReactNode> = {
   PATIENT_HARMONIZED: React.createElement(Activity, { size: 14 }),
   CONFLICT_AUTO_MERGED: React.createElement(GitBranch, { size: 14 }),
   DATA_ADMISSION_DATES_BACKFILLED: React.createElement(Search, { size: 14 }),
+  PATIENT_SPECIALTY_CHANGED: React.createElement(Stethoscope, { size: 14 }),
+  CLINICAL_DOCUMENT_CREATED: React.createElement(FileText, { size: 14 }),
+  CLINICAL_DOCUMENT_DELETED: React.createElement(Trash2, { size: 14 }),
+  CLINICAL_DOCUMENT_EDITED: React.createElement(Activity, { size: 14 }),
   SYSTEM_ERROR: React.createElement(AlertCircle, { size: 14 }),
 };
 
@@ -110,6 +114,10 @@ export const actionColors: Record<AuditAction, string> = {
   PATIENT_HARMONIZED: 'bg-violet-50 text-violet-700 border-violet-100',
   CONFLICT_AUTO_MERGED: 'bg-cyan-50 text-cyan-700 border-cyan-100',
   DATA_ADMISSION_DATES_BACKFILLED: 'bg-amber-50 text-amber-700 border-amber-100',
+  PATIENT_SPECIALTY_CHANGED: 'bg-indigo-50 text-indigo-700 border-indigo-100',
+  CLINICAL_DOCUMENT_CREATED: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+  CLINICAL_DOCUMENT_DELETED: 'bg-rose-50 text-rose-700 border-rose-100',
+  CLINICAL_DOCUMENT_EDITED: 'bg-amber-50 text-amber-700 border-amber-100',
   SYSTEM_ERROR: 'bg-red-50 text-red-700 border-red-100',
 };
 
@@ -164,6 +172,21 @@ export const renderHumanDetails = (log: AuditLogEntry) => {
       return `Se aplicó auto-merge de conflicto para ${log.entityId} con política ${details.policyVersion || 'N/A'}.`;
     case 'DATA_ADMISSION_DATES_BACKFILLED':
       return `Se corrigieron ${details.correctionCount || 0} fechas de ingreso históricas.`;
+    case 'PATIENT_SPECIALTY_CHANGED': {
+      const fieldLabel =
+        details.field === 'secondarySpecialty' ? 'especialidad secundaria' : 'especialidad';
+      const changes = details.changes as Record<string, { old: unknown; new: unknown }> | undefined;
+      const key = (details.field as string) || 'specialty';
+      const oldVal = changes?.[key]?.old || '—';
+      const newVal = changes?.[key]?.new || '—';
+      return `Se reasignó la ${fieldLabel} de ${details.patientName || 'paciente'}: "${oldVal}" → "${newVal}".`;
+    }
+    case 'CLINICAL_DOCUMENT_CREATED':
+      return `Se creó el documento clínico "${details.documentTitle || log.entityId}".`;
+    case 'CLINICAL_DOCUMENT_DELETED':
+      return `Se eliminó el documento clínico "${details.documentTitle || log.entityId}".`;
+    case 'CLINICAL_DOCUMENT_EDITED':
+      return `Se editó el documento clínico "${details.documentTitle || log.entityId}".`;
     default:
       return typeof details === 'string' ? details : JSON.stringify(details).slice(0, 100) + '...';
   }

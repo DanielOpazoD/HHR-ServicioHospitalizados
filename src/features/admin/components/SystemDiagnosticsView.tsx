@@ -1,55 +1,44 @@
-import React, { Suspense, lazy, useState } from 'react';
-import { Activity, Bug, FileText, Terminal, ShieldCheck } from 'lucide-react';
-import { ErrorDashboard } from './ErrorDashboard';
-import { DevDashboard } from './DevDashboard';
-import { SystemHealthDashboard } from './SystemHealthDashboard';
+import React, { useState } from 'react';
+import { Activity, AlertTriangle, BarChart3, Radar, ShieldCheck } from 'lucide-react';
 import clsx from 'clsx';
+import { AuditView } from './AuditView';
+import { FunctionsTelemetryView } from './FunctionsTelemetryView';
+import { ErrorDashboard } from './ErrorDashboard';
+import { SystemHealthDashboard } from './SystemHealthDashboard';
 
-const LazyClinicalDocumentTemplatesManager = lazy(() =>
-  import('./ClinicalDocumentTemplatesManager').then(module => ({
-    default: module.ClinicalDocumentTemplatesManager,
-  }))
-);
+type ObservabilityTab = 'AUDIT' | 'SERVICES' | 'ERRORS' | 'USERS_HEALTH';
 
-type DiagnosticTab = 'TELEMETRY' | 'ERRORS' | 'ENGINEERING' | 'CLINICAL_TEMPLATES';
-
+// Observability view — unifies what used to be split across:
+//   - "Auditoría" (audit logs)
+//   - "Telemetría de Servicios" (functions telemetry)
+//   - "Panel de Errores" (client error logs)
+//   - "Diagnóstico del Sistema > Telemetría de Red" (user health)
+// The module slot is still named DIAGNOSTICS in the router to preserve deep links.
 export const SystemDiagnosticsView: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<DiagnosticTab>('TELEMETRY');
+  const [activeTab, setActiveTab] = useState<ObservabilityTab>('AUDIT');
 
-  const tabs = [
-    { id: 'TELEMETRY', label: 'Telemetría de Red', icon: Activity, color: 'text-emerald-500' },
-    { id: 'ERRORS', label: 'Monitor de Errores', icon: Bug, color: 'text-red-500' },
-    { id: 'ENGINEERING', label: 'Dev & Engineering', icon: Terminal, color: 'text-indigo-500' },
-    {
-      id: 'CLINICAL_TEMPLATES',
-      label: 'Plantillas Clínicas',
-      icon: FileText,
-      color: 'text-medical-500',
-    },
-  ] as const;
+  const tabs: Array<{
+    id: ObservabilityTab;
+    label: string;
+    icon: typeof Activity;
+    color: string;
+  }> = [
+    { id: 'AUDIT', label: 'Auditoría clínica', icon: ShieldCheck, color: 'text-emerald-400' },
+    { id: 'SERVICES', label: 'Servicios externos', icon: Radar, color: 'text-indigo-400' },
+    { id: 'ERRORS', label: 'Errores del cliente', icon: AlertTriangle, color: 'text-rose-400' },
+    { id: 'USERS_HEALTH', label: 'Salud de usuarios', icon: BarChart3, color: 'text-sky-400' },
+  ];
 
   return (
-    <div className="max-w-[1200px] mx-auto p-4 animate-fade-in font-sans pb-16">
-      {/* Unified Header - Compact */}
-      <div className="bg-slate-900 rounded-2xl p-5 mb-6 text-white relative overflow-hidden shadow-xl">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-medical-500/10 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-inner">
-              <ShieldCheck size={24} className="text-medical-400" />
-            </div>
-            <div>
-              <h1 className="text-xl font-black tracking-tight leading-none mb-1">
-                Diagnóstico del Sistema
-              </h1>
-              <p className="text-[11px] text-slate-400 font-medium">
-                Monitoreo técnico centralizado
-              </p>
-            </div>
+    <div className="animate-fade-in font-sans pb-16">
+      <div className="bg-white border-b border-slate-200 px-6 py-3 shadow-sm sticky top-0 z-10">
+        <div className="max-w-[1400px] mx-auto flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-2 pr-4 border-r border-slate-200">
+            <Activity size={16} className="text-slate-500" />
+            <h1 className="text-sm font-bold text-slate-800">Observabilidad</h1>
           </div>
 
-          <div className="flex gap-1 p-1 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm self-start lg:self-center">
+          <div className="flex gap-1 flex-wrap">
             {tabs.map(tab => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -58,13 +47,13 @@ export const SystemDiagnosticsView: React.FC = () => {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={clsx(
-                    'px-4 py-1.5 rounded-lg font-bold text-xs transition-all flex items-center gap-2',
+                    'px-3 py-1.5 rounded-lg font-semibold text-xs transition-all flex items-center gap-1.5',
                     isActive
-                      ? 'bg-white text-slate-900 shadow-lg'
-                      : 'text-slate-400 hover:text-white hover:bg-white/5'
+                      ? 'bg-slate-900 text-white shadow-sm'
+                      : 'text-slate-600 hover:bg-slate-100'
                   )}
                 >
-                  <Icon size={14} className={isActive ? tab.color : ''} />
+                  <Icon size={13} className={isActive ? '' : tab.color} />
                   {tab.label}
                 </button>
               );
@@ -73,22 +62,11 @@ export const SystemDiagnosticsView: React.FC = () => {
         </div>
       </div>
 
-      {/* Tab Content Rendering */}
       <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-        {activeTab === 'TELEMETRY' && <SystemHealthDashboard />}
+        {activeTab === 'AUDIT' && <AuditView />}
+        {activeTab === 'SERVICES' && <FunctionsTelemetryView />}
         {activeTab === 'ERRORS' && <ErrorDashboard />}
-        {activeTab === 'ENGINEERING' && <DevDashboard />}
-        {activeTab === 'CLINICAL_TEMPLATES' && (
-          <Suspense
-            fallback={
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-500">
-                Cargando plantillas clínicas...
-              </div>
-            }
-          >
-            <LazyClinicalDocumentTemplatesManager />
-          </Suspense>
-        )}
+        {activeTab === 'USERS_HEALTH' && <SystemHealthDashboard />}
       </div>
     </div>
   );

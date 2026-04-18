@@ -7,9 +7,6 @@ import { CensusEmailConfigModal } from '@/views/LazyViews';
 import type { UseUIStateReturn } from '@/hooks/useUIState';
 import type { AppContentRuntime } from '@/components/layout/app-content/useAppContentRuntime';
 
-const SettingsModal = lazyWithRetry(() =>
-  import('@/components/modals/SettingsModal').then(m => ({ default: m.SettingsModal }))
-);
 const TestAgent = lazyWithRetry(() =>
   import('@/components/debug/TestAgent').then(m => ({ default: m.TestAgent }))
 );
@@ -92,13 +89,6 @@ export const AppContentOverlays: React.FC<AppContentOverlaysProps> = ({
 
   return (
     <>
-      <React.Suspense fallback={null}>
-        <SettingsModal
-          isOpen={ui.settingsModal.isOpen}
-          onClose={ui.settingsModal.close}
-          onRunTest={() => ui.setIsTestAgentRunning(true)}
-        />
-      </React.Suspense>
       <React.Suspense fallback={null}>
         <ReminderModal />
       </React.Suspense>

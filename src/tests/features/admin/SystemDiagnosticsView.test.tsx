@@ -5,6 +5,14 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { SystemDiagnosticsView } from '@/features/admin/components/SystemDiagnosticsView';
 
+vi.mock('@/features/admin/components/AuditView', () => ({
+  AuditView: () => <div>Audit View</div>,
+}));
+
+vi.mock('@/features/admin/components/FunctionsTelemetryView', () => ({
+  FunctionsTelemetryView: () => <div>Functions Telemetry View</div>,
+}));
+
 vi.mock('@/features/admin/components/SystemHealthDashboard', () => ({
   SystemHealthDashboard: () => <div>System Health</div>,
 }));
@@ -13,24 +21,36 @@ vi.mock('@/features/admin/components/ErrorDashboard', () => ({
   ErrorDashboard: () => <div>Error Dashboard</div>,
 }));
 
-vi.mock('@/features/admin/components/DevDashboard', () => ({
-  DevDashboard: () => <div>Dev Dashboard</div>,
-}));
+describe('SystemDiagnosticsView (Observabilidad)', () => {
+  it('renders the audit tab by default', () => {
+    render(<SystemDiagnosticsView />);
+    expect(screen.getByText('Audit View')).toBeInTheDocument();
+  });
 
-vi.mock('@/features/admin/components/ClinicalDocumentTemplatesManager', () => ({
-  ClinicalDocumentTemplatesManager: () => <div>Clinical Templates Manager</div>,
-}));
-
-describe('SystemDiagnosticsView', () => {
-  it('lazy-loads the clinical templates manager only when the tab is opened', async () => {
+  it('switches to the services telemetry tab on click', async () => {
     const user = userEvent.setup();
-
     render(<SystemDiagnosticsView />);
 
-    expect(screen.queryByText('Clinical Templates Manager')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /servicios externos/i }));
 
-    await user.click(screen.getByRole('button', { name: /plantillas clínicas/i }));
+    expect(screen.getByText('Functions Telemetry View')).toBeInTheDocument();
+  });
 
-    expect(await screen.findByText('Clinical Templates Manager')).toBeInTheDocument();
+  it('switches to the errors tab on click', async () => {
+    const user = userEvent.setup();
+    render(<SystemDiagnosticsView />);
+
+    await user.click(screen.getByRole('button', { name: /errores del cliente/i }));
+
+    expect(screen.getByText('Error Dashboard')).toBeInTheDocument();
+  });
+
+  it('switches to the user health tab on click', async () => {
+    const user = userEvent.setup();
+    render(<SystemDiagnosticsView />);
+
+    await user.click(screen.getByRole('button', { name: /salud de usuarios/i }));
+
+    expect(screen.getByText('System Health')).toBeInTheDocument();
   });
 });

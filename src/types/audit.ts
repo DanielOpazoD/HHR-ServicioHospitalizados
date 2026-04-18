@@ -36,6 +36,10 @@ export type AuditAction =
   | 'PATIENT_HARMONIZED'
   | 'CONFLICT_AUTO_MERGED'
   | 'DATA_ADMISSION_DATES_BACKFILLED'
+  | 'PATIENT_SPECIALTY_CHANGED'
+  | 'CLINICAL_DOCUMENT_CREATED'
+  | 'CLINICAL_DOCUMENT_DELETED'
+  | 'CLINICAL_DOCUMENT_EDITED'
   | 'SYSTEM_ERROR';
 
 // Specific detail interfaces for different actions
@@ -113,7 +117,14 @@ export interface AuditLogEntry {
 
   // Action details
   action: AuditAction; // tipo de acción
-  entityType: 'patient' | 'discharge' | 'transfer' | 'dailyRecord' | 'user' | 'system';
+  entityType:
+    | 'patient'
+    | 'discharge'
+    | 'transfer'
+    | 'dailyRecord'
+    | 'user'
+    | 'system'
+    | 'clinicalDocument';
   entityId: string; // bedId, recordId, etc.
 
   // Human-readable summary

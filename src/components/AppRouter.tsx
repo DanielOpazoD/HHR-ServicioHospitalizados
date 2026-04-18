@@ -19,6 +19,10 @@ import {
   CudyrView,
   HandoffView,
   AuditView,
+  CommunicationsView,
+  ConfigurationView,
+  DataView,
+  FunctionsTelemetryView,
   MedicalSignatureView,
   ErrorDashboard,
   WhatsAppIntegrationView,
@@ -145,6 +149,30 @@ export const AppRouter: React.FC<AppRouterProps> = ({
               canAccessAppModuleRoute({ role, module: 'AUDIT', visibleModules }) && (
                 <SectionErrorBoundary sectionName="Auditoría">
                   <AuditView />
+                </SectionErrorBoundary>
+              )}
+            {currentModule === 'FUNCTIONS_TELEMETRY' &&
+              canAccessAppModuleRoute({ role, module: 'FUNCTIONS_TELEMETRY', visibleModules }) && (
+                <SectionErrorBoundary sectionName="Telemetría de Servicios">
+                  <FunctionsTelemetryView />
+                </SectionErrorBoundary>
+              )}
+            {currentModule === 'CONFIGURATION' &&
+              canAccessAppModuleRoute({ role, module: 'CONFIGURATION', visibleModules }) && (
+                <SectionErrorBoundary sectionName="Configuración">
+                  <ConfigurationView />
+                </SectionErrorBoundary>
+              )}
+            {currentModule === 'DATA' &&
+              canAccessAppModuleRoute({ role, module: 'DATA', visibleModules }) && (
+                <SectionErrorBoundary sectionName="Datos">
+                  <DataView />
+                </SectionErrorBoundary>
+              )}
+            {currentModule === 'COMMUNICATIONS' &&
+              canAccessAppModuleRoute({ role, module: 'COMMUNICATIONS', visibleModules }) && (
+                <SectionErrorBoundary sectionName="Comunicación">
+                  <CommunicationsView />
                 </SectionErrorBoundary>
               )}
             {currentModule === 'WHATSAPP' && (

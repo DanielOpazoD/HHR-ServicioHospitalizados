@@ -44,10 +44,16 @@ export function registerFirestoreRulesAccessGroups({
       await assertFails(db.doc('hospitals/H1/auditLogs/log1').delete());
     });
 
-    it('Admins CAN delete audit logs (for Consolidation)', async () => {
+    it('Admins CANNOT delete audit logs (append-only policy)', async () => {
       const db = admin();
       await setupDoc(db, 'hospitals/H1/auditLogs/log1', { action: 'TEST' });
-      await assertSucceeds(db.doc('hospitals/H1/auditLogs/log1').delete());
+      await assertFails(db.doc('hospitals/H1/auditLogs/log1').delete());
+    });
+
+    it('Admins CANNOT update audit logs (append-only policy)', async () => {
+      const db = admin();
+      await setupDoc(db, 'hospitals/H1/auditLogs/log1', { action: 'TEST' });
+      await assertFails(db.doc('hospitals/H1/auditLogs/log1').update({ action: 'TAMPERED' }));
     });
   });
 

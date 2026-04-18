@@ -18,6 +18,7 @@ import {
   type NetlifyEventLike,
 } from './lib/http';
 import { authorizeRoleRequest, extractBearerToken } from './lib/firebase-auth';
+import { invokeWithTelemetry } from './lib/observability';
 
 const hospitalId = 'hanga_roa'; // Could be dynamic via headers in future
 const FHIR_ALLOWED_ROLES = new Set([
@@ -147,11 +148,29 @@ export const createFhirApiHandler =
       }
 
       if (resourceType === 'Patient') {
-        return await handlePatientRead(dependencies, db, resourceId, requestOrigin);
+        return await invokeWithTelemetry({
+          service: 'fhir',
+          operation: 'read_patient',
+          timeoutMs: 10_000,
+          maxAttempts: 3,
+          db,
+          hospitalId,
+          context: { resourceId: resourceId || '' },
+          fn: () => handlePatientRead(dependencies, db, resourceId, requestOrigin),
+        });
       }
 
       if (resourceType === 'Encounter') {
-        return await handleEncounterRead(dependencies, db, resourceId, requestOrigin);
+        return await invokeWithTelemetry({
+          service: 'fhir',
+          operation: 'read_encounter',
+          timeoutMs: 10_000,
+          maxAttempts: 3,
+          db,
+          hospitalId,
+          context: { resourceId: resourceId || '' },
+          fn: () => handleEncounterRead(dependencies, db, resourceId, requestOrigin),
+        });
       }
 
       if (resourceType === 'metadata' || !resourceType) {

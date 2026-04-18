@@ -32,8 +32,6 @@ interface NavbarMenuProps {
   currentModule: ModuleType;
   setModule: (mod: ModuleType) => void;
   censusViewMode: 'REGISTER' | 'ANALYTICS';
-  // File actions
-  onOpenSettings: () => void;
   visibleModules: readonly ModuleType[];
 }
 
@@ -41,7 +39,6 @@ export const NavbarMenu: React.FC<NavbarMenuProps> = ({
   currentModule,
   setModule,
   censusViewMode,
-  onOpenSettings,
   visibleModules,
 }) => {
   const { isOpen, menuRef, toggle, close } = useDropdownMenu();
@@ -53,10 +50,6 @@ export const NavbarMenu: React.FC<NavbarMenuProps> = ({
 
     if (actionResolution.moduleToChange) {
       setModule(actionResolution.moduleToChange);
-    }
-
-    if (actionResolution.shouldOpenSettings) {
-      onOpenSettings();
     }
 
     close();

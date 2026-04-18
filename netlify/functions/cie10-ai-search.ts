@@ -1,6 +1,7 @@
 import { getFirebaseServer } from './lib/firebase-server';
 import { authorizeRoleRequest, extractBearerToken } from './lib/firebase-auth';
 import { generateClinicalAIText, resolveClinicalAIProviderConfig } from './lib/ai-provider';
+import { invokeWithTelemetry } from './lib/observability';
 import {
   Cie10SearchRequestSchema,
   Cie10SearchResponseSchema,
@@ -144,11 +145,26 @@ Ejemplo de formato de respuesta (solo el JSON, sin texto adicional):
 IMPORTANTE: Responde SOLO con el JSON, sin explicaciones ni markdown.
 `;
 
-    const text = await generateClinicalAIText({
-      config: providerConfig,
-      systemPrompt:
-        'Eres un experto en codificación CIE-10 en español. Debes responder solo con JSON válido.',
-      userPrompt: prompt,
+    const text = await invokeWithTelemetry({
+      service: 'clinical_ai',
+      operation: 'cie10_search',
+      timeoutMs: 30_000,
+      maxAttempts: 2,
+      db,
+      hospitalId: process.env.ACTIVE_HOSPITAL_ID || 'hanga_roa',
+      context: {
+        provider: providerConfig.provider,
+        model: providerConfig.model,
+        queryLength: query.length,
+        hasCustomPrompt: Boolean(customPrompt),
+      },
+      fn: () =>
+        generateClinicalAIText({
+          config: providerConfig,
+          systemPrompt:
+            'Eres un experto en codificación CIE-10 en español. Debes responder solo con JSON válido.',
+          userPrompt: prompt,
+        }),
     });
 
     // Parse JSON from response

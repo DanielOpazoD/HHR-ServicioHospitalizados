@@ -18,19 +18,14 @@ describe('resolveNavbarMenuAction', () => {
       item: createItem({ module: 'AUDIT', actionType: 'MODULE_CHANGE' }),
     });
 
-    expect(resolution).toEqual({
-      moduleToChange: 'AUDIT',
-      shouldOpenSettings: false,
-    });
+    expect(resolution).toEqual({ moduleToChange: 'AUDIT' });
   });
 
-  it('returns settings action for SETTINGS items', () => {
+  it('returns empty resolution for items without an actionType match', () => {
     const resolution = resolveNavbarMenuAction({
-      item: createItem({ actionType: 'SETTINGS' }),
+      item: { ...createItem({}), actionType: 'UNKNOWN' as never } as NavItemConfig,
     });
 
-    expect(resolution).toEqual({
-      shouldOpenSettings: true,
-    });
+    expect(resolution).toEqual({});
   });
 });

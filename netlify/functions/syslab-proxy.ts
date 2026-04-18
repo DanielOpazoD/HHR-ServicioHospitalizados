@@ -21,6 +21,7 @@
 
 import { getFirebaseServer } from './lib/firebase-server';
 import { authorizeRoleRequest, extractBearerToken } from './lib/firebase-auth';
+import { invokeWithTelemetry } from './lib/observability';
 import {
   buildJsonResponse,
   buildTextResponse,
@@ -187,8 +188,8 @@ export const createSyslabProxyHandler = (
       );
     }
 
+    const { db } = dependencies.getFirebaseServer();
     try {
-      const { db } = dependencies.getFirebaseServer();
       await dependencies.authorizeRoleRequest(db, authorizationHeader, SYSLAB_ALLOWED_ROLES);
     } catch (error) {
       const message =
@@ -216,20 +217,29 @@ export const createSyslabProxyHandler = (
     const action = params.get('action');
 
     try {
-      switch (action) {
-        case 'search':
-          return await handleSearch(proxyUrl, params, requestOrigin);
-        case 'details':
-          return await handleDetails(proxyUrl, event.body, requestOrigin);
-        case 'pdf':
-          return await handlePdf(proxyUrl, params, requestOrigin);
-        default:
-          return buildJsonResponse(
-            400,
-            { error: 'Acción no válida. Use: search, details, pdf' },
-            { requestOrigin }
-          );
+      if (action !== 'search' && action !== 'details' && action !== 'pdf') {
+        return buildJsonResponse(
+          400,
+          { error: 'Acción no válida. Use: search, details, pdf' },
+          { requestOrigin }
+        );
       }
+
+      return await invokeWithTelemetry({
+        service: 'syslab',
+        operation: action,
+        timeoutMs: 15_000,
+        // search/pdf are idempotent GETs, details posts links but parsing is deterministic
+        maxAttempts: action === 'details' ? 2 : 3,
+        db,
+        hospitalId: process.env.ACTIVE_HOSPITAL_ID || 'hanga_roa',
+        context: { action },
+        fn: () => {
+          if (action === 'search') return handleSearch(proxyUrl, params, requestOrigin);
+          if (action === 'details') return handleDetails(proxyUrl, event.body, requestOrigin);
+          return handlePdf(proxyUrl, params, requestOrigin);
+        },
+      });
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Error de conexión con el laboratorio';

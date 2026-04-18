@@ -40,7 +40,6 @@ export { BedManagerModal } from './modals/BedManagerModal';
 export { DemographicsModal } from './modals/DemographicsModal';
 export { NurseManagerModal } from './modals/NurseManagerModal';
 export { TensManagerModal } from './modals/TensManagerModal';
-export { SettingsModal } from './modals/SettingsModal';
 
 // ============================================================
 // UI PRIMITIVES

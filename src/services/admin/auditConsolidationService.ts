@@ -4,7 +4,7 @@
  * for the same patient/entity within a configurable time window.
  */
 
-import { collection, doc, getDocs, limit, orderBy, query, writeBatch } from 'firebase/firestore';
+import { collection, getDocs, limit, orderBy, query } from 'firebase/firestore';
 import { getActiveHospitalId } from '@/constants/firestorePaths';
 import { defaultFirestoreServiceRuntime } from '@/services/storage/firestore/firestoreServiceRuntime';
 import type { FirestoreServiceRuntimePort } from '@/services/storage/firestore/ports/firestoreServiceRuntimePort';
@@ -20,11 +20,9 @@ import {
   mergeDetails,
   prepareConsolidationGroups,
 } from './auditConsolidationPolicy';
-import { auditConsolidationLogger } from '@/services/admin/adminLoggers';
 
 const getAuditCollectionPath = () => `hospitals/${getActiveHospitalId()}/auditLogs`;
 const DEFAULT_WINDOW_MINUTES = 5;
-const MAX_BATCH_OPERATIONS = 500;
 
 export interface ConsolidationResult {
   success: boolean;
@@ -87,30 +85,6 @@ export const createAuditConsolidationService = (
     );
   };
 
-  const applyConsolidationBatch = async (
-    groups: PreparedConsolidationGroup[],
-    result: ConsolidationResult
-  ) => {
-    const batch = writeBatch(runtime.getDb());
-
-    for (const group of groups) {
-      const keepRef = doc(runtime.getDb(), getAuditCollectionPath(), group.keepId);
-      batch.update(keepRef, {
-        details: group.merged,
-        consolidatedCount: group.logs.length,
-        lastTimestamp: group.logs[group.logs.length - 1].timestamp,
-      });
-      result.logsConsolidated += 1;
-
-      for (const deleteId of group.deleteIds) {
-        batch.delete(doc(runtime.getDb(), getAuditCollectionPath(), deleteId));
-        result.logsDeleted += 1;
-      }
-    }
-
-    await batch.commit();
-  };
-
   const previewConsolidation = async (
     windowMinutes: number = DEFAULT_WINDOW_MINUTES,
     actionFilter?: string
@@ -120,56 +94,25 @@ export const createAuditConsolidationService = (
     return buildPreview(duplicateGroups, logs.length);
   };
 
+  // Deprecated: auditLogs are append-only in Firestore rules (deny update/delete).
+  // Preserved as a no-op to avoid breaking imports. Duplicate suppression now
+  // happens at source via per-session throttling in auditDomainLoggers.
   const executeConsolidation = async (
-    windowMinutes: number = DEFAULT_WINDOW_MINUTES,
-    actionFilter?: string,
+    _windowMinutes: number = DEFAULT_WINDOW_MINUTES,
+    _actionFilter?: string,
     onProgress?: (message: string) => void
   ): Promise<ConsolidationResult> => {
-    const result: ConsolidationResult = {
-      success: false,
+    onProgress?.('Consolidación deshabilitada: el registro es append-only.');
+    return {
+      success: true,
       totalLogs: 0,
       groupsFound: 0,
       logsConsolidated: 0,
       logsDeleted: 0,
-      errors: [],
+      errors: [
+        'Consolidación deshabilitada: auditLogs es append-only. La agrupación de duplicados ahora es read-time.',
+      ],
     };
-
-    try {
-      onProgress?.('Cargando logs de auditoría...');
-
-      const logs = await fetchAuditLogs();
-      result.totalLogs = logs.length;
-
-      const filteredLogs = filterLogsByAction(logs, actionFilter);
-      onProgress?.(`Analizando ${filteredLogs.length} logs...`);
-
-      const duplicateGroups = selectDuplicateGroups(filteredLogs, windowMinutes);
-      result.groupsFound = duplicateGroups.length;
-
-      if (duplicateGroups.length === 0) {
-        onProgress?.('No se encontraron duplicados');
-        result.success = true;
-        return result;
-      }
-
-      onProgress?.(`Consolidando ${duplicateGroups.length} grupos...`);
-
-      const preparedGroups = prepareConsolidationGroups(duplicateGroups);
-      const batches = createConsolidationBatches(preparedGroups, MAX_BATCH_OPERATIONS);
-
-      for (let index = 0; index < batches.length; index += 1) {
-        await applyConsolidationBatch(batches[index], result);
-        onProgress?.(`Procesado batch ${index + 1}/${batches.length}...`);
-      }
-
-      result.success = true;
-      onProgress?.('Consolidación completada!');
-    } catch (error) {
-      auditConsolidationLogger.error('Consolidation failed', error);
-      result.errors.push(error instanceof Error ? error.message : 'Error desconocido');
-    }
-
-    return result;
   };
 
   return {

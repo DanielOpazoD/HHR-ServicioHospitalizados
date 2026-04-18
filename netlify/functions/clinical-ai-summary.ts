@@ -2,6 +2,7 @@ import { getFirebaseServer } from './lib/firebase-server';
 import { authorizeRoleRequest, extractBearerToken } from './lib/firebase-auth';
 import { loadClinicalAIContextFromFirestore } from './lib/clinical-ai-context';
 import { generateClinicalAIText, resolveClinicalAIProviderConfig } from './lib/ai-provider';
+import { invokeWithTelemetry } from './lib/observability';
 import { buildClinicalAISummaryPrompt } from '../../src/application/ai/clinicalSummaryContextUseCase';
 import {
   ClinicalSummaryRequestSchema,
@@ -145,10 +146,25 @@ export const createClinicalAISummaryHandler = (
         context,
         instruction: request.data.instruction,
       });
-      const summary = await dependencies.generateClinicalAIText({
-        config: providerConfig,
-        systemPrompt: prompt.systemPrompt,
-        userPrompt: prompt.userPrompt,
+      const summary = await invokeWithTelemetry({
+        service: 'clinical_ai',
+        operation: 'summary',
+        timeoutMs: 45_000,
+        maxAttempts: 2,
+        db,
+        hospitalId: process.env.ACTIVE_HOSPITAL_ID || 'hanga_roa',
+        context: {
+          provider: providerConfig.provider,
+          model: providerConfig.model,
+          recordDate,
+          bedId,
+        },
+        fn: () =>
+          dependencies.generateClinicalAIText({
+            config: providerConfig,
+            systemPrompt: prompt.systemPrompt,
+            userPrompt: prompt.userPrompt,
+          }),
       });
 
       return buildJsonResponse(

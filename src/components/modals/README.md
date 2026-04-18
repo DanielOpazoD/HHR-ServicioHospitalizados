@@ -17,7 +17,7 @@ Modales transversales de la aplicación (acciones clínicas, configuración, man
 | `StaffCatalogManagerModal.tsx`                   | Modal reutilizable para gestión de catálogos de staff              |
 | `NurseManagerModal.tsx` / `TensManagerModal.tsx` | Wrappers por tipo de staff (hooks de persistencia)                 |
 | `PatientHistoryModal.tsx`                        | Historial paciente                                                 |
-| `SettingsModal.tsx` / `SecuritySettings.tsx`     | Configuración global y seguridad                                   |
+| `SecuritySettings.tsx`                           | Sub-componente de seguridad embebido en Configuración              |
 | `actions/`                                       | Submódulo de modales de acciones (alta/traslado/move-copy)         |
 
 ## Patrón

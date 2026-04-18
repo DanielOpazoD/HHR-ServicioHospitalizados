@@ -24,6 +24,10 @@ import {
   recordOperationalTelemetry,
 } from '@/services/observability/operationalTelemetryService';
 import {
+  logClinicalDocumentCreated,
+  logClinicalDocumentDeleted,
+} from '@/services/admin/auditDomainLoggers';
+import {
   resolveClinicalDocumentExceptionMessage,
   resolveClinicalDocumentOutcomeError,
   shouldClearSelectedClinicalDocument,
@@ -120,6 +124,13 @@ export const useClinicalDocumentWorkspaceDocumentActions = ({
       lastPersistedSnapshotRef.current = serializeClinicalDocument(result.data);
       setSelectedDocumentId(result.data.id);
       setDraft(result.data);
+      void logClinicalDocumentCreated(
+        result.data.id,
+        templateId,
+        result.data.title,
+        patient.rut,
+        episode.sourceDailyRecordDate
+      );
       notify.success(`${result.data.title} creada`, 'Se generó el borrador inicial del documento.');
     } catch (error) {
       const errorMessage = resolveClinicalDocumentExceptionMessage(
@@ -200,6 +211,13 @@ export const useClinicalDocumentWorkspaceDocumentActions = ({
           setDraft(null);
           lastPersistedSnapshotRef.current = '';
         }
+        void logClinicalDocumentDeleted(
+          document.id,
+          document.templateId,
+          document.title,
+          patient.rut,
+          document.sourceDailyRecordDate
+        );
         notify.success('Documento eliminado', `${document.title} fue eliminado correctamente.`);
       } catch (error) {
         const errorMessage = resolveClinicalDocumentExceptionMessage(
@@ -222,6 +240,7 @@ export const useClinicalDocumentWorkspaceDocumentActions = ({
       hospitalId,
       lastPersistedSnapshotRef,
       notify,
+      patient,
       selectedDocumentId,
       setDraft,
       setSelectedDocumentId,
@@ -271,6 +290,13 @@ export const useClinicalDocumentWorkspaceDocumentActions = ({
         lastPersistedSnapshotRef.current = serializeClinicalDocument(result.data);
         setSelectedDocumentId(result.data.id);
         setDraft(result.data);
+        void logClinicalDocumentCreated(
+          result.data.id,
+          result.data.templateId,
+          result.data.title,
+          patient.rut,
+          result.data.sourceDailyRecordDate
+        );
         notify.success(
           'Documento duplicado',
           `${document.title} se copió como ${result.data.title}.`
@@ -296,6 +322,7 @@ export const useClinicalDocumentWorkspaceDocumentActions = ({
       hospitalId,
       lastPersistedSnapshotRef,
       notify,
+      patient,
       role,
       setDraft,
       setSelectedDocumentId,

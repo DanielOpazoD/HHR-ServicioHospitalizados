@@ -1,11 +1,26 @@
 # HHR Hospital Tracker - Estado del Proyecto
 
-> **Última actualización:** 2026-04-10
-> **Evaluación técnica de referencia:** 6.4 / 7.0
+> **Última actualización:** 2026-04-17
+
+## Métricas objetivas
+
+Cifras verificables en el repo a la fecha de actualización. No se incluye una nota global auto-asignada: la evaluación técnica debe derivarse de estas métricas, no de un número resumen.
+
+| Métrica                             | Valor           | Fuente                                                          |
+| ----------------------------------- | --------------- | --------------------------------------------------------------- |
+| Archivos `.ts`/`.tsx` en `src/`     | 2.858           | `find src -type f \( -name "*.ts" -o -name "*.tsx" \) \| wc -l` |
+| Archivos de test (unit/integration) | 1.003           | `find src -name "*.test.*" -o -name "*.spec.*" \| wc -l`        |
+| Specs E2E Playwright                | ver `e2e/`      | `ls e2e/*.spec.ts`                                              |
+| `TODO`/`FIXME`/`HACK` en `src/`     | 3               | `grep -rE "TODO\|FIXME\|HACK" src`                              |
+| Vulnerabilidades npm (runtime)      | 0               | `npm audit --omit=dev`                                          |
+| Vulnerabilidades npm (dev-only)     | ver `npm audit` | transitivas en tooling                                          |
+| Features activas                    | 13              | `ls src/features/`                                              |
+
+Cobertura de tests, presupuesto de bundle y checks de arquitectura viven en CI (`ci-cd.yml`). Si se necesita una nota ejecutiva, debe venir de una auditoría externa fechada, no de una autoevaluación sin evidencia.
 
 ## Resumen
 
-El proyecto se encuentra en un estado **bueno y operable**, con una base técnica robusta para un sistema clínico: tipado estricto en código fuente, checks de arquitectura, suite amplia de tests y cobertura de flujos críticos con emuladores y E2E.
+El proyecto es **operable y robusto para uso clínico**: tipado estricto, checks de arquitectura automatizados, suite amplia de tests y cobertura de flujos críticos con emuladores y E2E. Riesgos residuales conocidos en la sección "Deuda técnica principal".
 
 Las mejoras recientes se han concentrado en:
 
@@ -46,5 +61,5 @@ El seguimiento persistente del roadmap estructural vive en:
 
 ## Fuente de verdad
 
-- Métricas actuales: [reports/quality-metrics.md](reports/quality-metrics.md)
 - Pipeline activa: [ci-cd.yml](.github/workflows/ci-cd.yml)
+- Reportes generados: [reports/](reports/) (runtime-contracts, legacy-bridge-governance)

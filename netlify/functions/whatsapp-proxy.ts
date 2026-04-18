@@ -11,6 +11,7 @@ import {
 } from './lib/http';
 import { getFirebaseServer } from './lib/firebase-server';
 import { authorizeRoleRequest, extractBearerToken } from './lib/firebase-auth';
+import { invokeWithTelemetry } from './lib/observability';
 
 const PROXY_ROUTE_PREFIX = '/.netlify/functions/whatsapp-proxy';
 const WHATSAPP_ALLOWED_ROLES = new Set(['admin', 'nurse_hospital']);
@@ -101,8 +102,8 @@ export const createWhatsAppProxyHandler =
         );
       }
 
+      const { db } = dependencies.getFirebaseServer();
       try {
-        const { db } = dependencies.getFirebaseServer();
         await dependencies.authorizeRoleRequest(db, authorizationHeader, WHATSAPP_ALLOWED_ROLES);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'WhatsApp authorization failed.';
@@ -131,7 +132,19 @@ export const createWhatsAppProxyHandler =
         init.body = event.isBase64Encoded ? Buffer.from(event.body, 'base64') : event.body;
       }
 
-      const response = await dependencies.fetch(targetUrl, init);
+      const response = await invokeWithTelemetry({
+        service: 'whatsapp',
+        operation: `${event.httpMethod} ${targetPath}`,
+        timeoutMs: 8_000,
+        maxAttempts: 1,
+        db,
+        hospitalId: process.env.ACTIVE_HOSPITAL_ID || 'hanga_roa',
+        context: {
+          method: event.httpMethod,
+          path: targetPath,
+        },
+        fn: () => dependencies.fetch(targetUrl, init),
+      });
       const text = await response.text();
       const responseContentType = response.headers.get('content-type') || 'application/json';
 

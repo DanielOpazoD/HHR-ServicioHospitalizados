@@ -14,6 +14,7 @@ import {
   type NetlifyEventLike,
 } from './lib/http';
 import { authorizeRoleRequest, extractBearerToken } from './lib/firebase-auth';
+import { invokeWithTelemetry } from './lib/observability';
 import { formatDateDDMMYYYY } from '../../src/utils/dateUtils';
 import {
   buildFugaNotificationBody,
@@ -148,11 +149,25 @@ export const handler = async (event: NetlifyEventLike) => {
     const subject = `Notificación de fuga paciente ${payload.patientName} - ${formatDateDDMMYYYY(payload.recordDate)}`;
     const body = buildFugaNotificationBody(payload);
 
-    const gmailResponse = await sendCensusEmail({
-      date: payload.recordDate,
-      recipients: resolvedRecipients.recipients,
-      subject,
-      body,
+    const gmailResponse = await invokeWithTelemetry({
+      service: 'gmail',
+      operation: 'send_fuga_notification',
+      timeoutMs: 15_000,
+      maxAttempts: 1, // no retry: duplicate fuga notification is worse than missed delivery
+      db,
+      hospitalId: process.env.ACTIVE_HOSPITAL_ID || 'hanga_roa',
+      context: {
+        recordDate: payload.recordDate,
+        recipientCount: resolvedRecipients.recipients.length,
+        testMode: Boolean(payload.testMode),
+      },
+      fn: () =>
+        sendCensusEmail({
+          date: payload.recordDate,
+          recipients: resolvedRecipients.recipients,
+          subject,
+          body,
+        }),
     });
 
     return buildJsonResponse(

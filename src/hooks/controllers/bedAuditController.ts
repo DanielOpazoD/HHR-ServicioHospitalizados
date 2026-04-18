@@ -8,6 +8,7 @@ const CRITICAL_PATIENT_FIELDS: (keyof PatientData)[] = [
   'pathology',
   'age',
   'specialty',
+  'secondarySpecialty',
   'status',
   'biologicalSex',
   'insurance',
@@ -30,9 +31,19 @@ export interface PatientModifiedAuditDecision {
   patientRut?: string;
 }
 
+export interface PatientSpecialtyChangedAuditDecision {
+  kind: 'specialty_changed';
+  field: 'specialty' | 'secondarySpecialty';
+  oldSpecialty: string;
+  newSpecialty: string;
+  patientName: string;
+  patientRut?: string;
+}
+
 export type PatientChangeAuditDecision =
   | PatientAdmissionAuditDecision
-  | PatientModifiedAuditDecision;
+  | PatientModifiedAuditDecision
+  | PatientSpecialtyChangedAuditDecision;
 
 export const resolvePatientChangeAudit = (
   field: keyof PatientData,
@@ -100,6 +111,17 @@ export const resolvePatientChangeAudit = (
 
   if (oldValue === newValue || !CRITICAL_PATIENT_FIELDS.includes(field)) {
     return null;
+  }
+
+  if (field === 'specialty' || field === 'secondarySpecialty') {
+    return {
+      kind: 'specialty_changed',
+      field,
+      oldSpecialty: (oldValue ?? '') as string,
+      newSpecialty: (newValue ?? '') as string,
+      patientName: oldPatient.patientName,
+      patientRut: oldPatient.rut,
+    };
   }
 
   return {

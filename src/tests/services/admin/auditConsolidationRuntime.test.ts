@@ -63,7 +63,7 @@ describe('auditConsolidationService runtime injection', () => {
     expect(collectionMock).toHaveBeenCalledWith(customDb, expect.stringContaining('hospitals/'));
   });
 
-  it('writes consolidation batches through the injected Firestore runtime', async () => {
+  it('executeConsolidation is a no-op after append-only policy (no writes, no deletes)', async () => {
     const customDb = { name: 'custom-audit-db' } as never;
     const update = vi.fn();
     const remove = vi.fn();
@@ -73,46 +73,15 @@ describe('auditConsolidationService runtime injection', () => {
       ready: Promise.resolve(),
     });
 
-    getDocsMock.mockResolvedValue({
-      docs: [
-        {
-          id: 'audit-1',
-          data: () => ({
-            action: 'PATIENT_MODIFIED',
-            entityId: 'bed-1',
-            entityType: 'patient',
-            timestamp: '2026-03-26T10:00:00.000Z',
-            userId: 'user-1',
-            userDisplayName: 'Test User',
-            details: { fieldA: 'old' },
-          }),
-        },
-        {
-          id: 'audit-2',
-          data: () => ({
-            action: 'PATIENT_MODIFIED',
-            entityId: 'bed-1',
-            entityType: 'patient',
-            timestamp: '2026-03-26T10:02:00.000Z',
-            userId: 'user-1',
-            userDisplayName: 'Test User',
-            details: { fieldA: 'new' },
-          }),
-        },
-      ],
-    });
-    writeBatchMock.mockReturnValue({
-      update,
-      delete: remove,
-      commit,
-    });
+    writeBatchMock.mockReturnValue({ update, delete: remove, commit });
 
     const result = await service.executeConsolidation();
 
-    expect(writeBatchMock).toHaveBeenCalledWith(customDb);
-    expect(update).toHaveBeenCalled();
-    expect(remove).toHaveBeenCalled();
-    expect(result.success).toBe(true);
-    expect(result.logsDeleted).toBe(1);
+    expect(writeBatchMock).not.toHaveBeenCalled();
+    expect(update).not.toHaveBeenCalled();
+    expect(remove).not.toHaveBeenCalled();
+    expect(result.logsDeleted).toBe(0);
+    expect(result.logsConsolidated).toBe(0);
+    expect(result.errors[0]).toMatch(/append-only/i);
   });
 });

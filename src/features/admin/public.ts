@@ -11,6 +11,10 @@
 
 // ── View components ─────────────────────────────────────────────────────────
 export { AuditView } from './components/AuditView';
+export { CommunicationsView } from './components/CommunicationsView';
+export { ConfigurationView } from './components/ConfigurationView';
+export { DataView } from './components/DataView';
+export { FunctionsTelemetryView } from './components/FunctionsTelemetryView';
 export { MedicalSignatureView } from './components/MedicalSignatureView';
 export { ErrorDashboard } from './components/ErrorDashboard';
 export { SystemDiagnosticsView } from './components/SystemDiagnosticsView';

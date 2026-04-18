@@ -10,6 +10,7 @@ import {
   Activity,
   Database,
   BellRing,
+  Users,
   LucideIcon,
 } from 'lucide-react';
 
@@ -26,11 +27,15 @@ export type ModuleType =
   | 'PATIENT_MASTER_INDEX'
   | 'DATA_MAINTENANCE'
   | 'DIAGNOSTICS'
+  | 'FUNCTIONS_TELEMETRY'
+  | 'CONFIGURATION'
+  | 'DATA'
+  | 'COMMUNICATIONS'
   | 'ROLE_MANAGEMENT'
   | 'REMINDERS'
   | 'ERRORS';
 
-export type NavActionType = 'MODULE_CHANGE' | 'SETTINGS';
+export type NavActionType = 'MODULE_CHANGE';
 
 export interface NavItemConfig {
   id: string;
@@ -107,43 +112,26 @@ export const NAVIGATION_CONFIG: NavItemConfig[] = [
 
   // --- System / Brand Menu Items (NavbarMenu) ---
   {
-    id: 'data-maintenance',
-    label: 'Mantenimiento de Datos',
+    id: 'data',
+    label: 'Datos',
     icon: Database,
-    module: 'DATA_MAINTENANCE',
+    module: 'DATA',
     actionType: 'MODULE_CHANGE',
     isSystem: true,
     adminOnly: true,
   },
   {
-    id: 'settings',
+    id: 'configuration',
     label: 'Configuración',
     icon: Settings,
-    actionType: 'SETTINGS',
-    isSystem: true,
-    adminOnly: true,
-  },
-  {
-    id: 'audit',
-    label: 'Auditoría',
-    icon: ShieldCheck,
-    module: 'AUDIT',
-    actionType: 'MODULE_CHANGE',
-    isSystem: true,
-    adminOnly: true,
-  },
-  {
-    id: 'whatsapp',
-    label: 'WhatsApp',
-    icon: MessageSquare,
-    module: 'WHATSAPP',
+    module: 'CONFIGURATION',
     actionType: 'MODULE_CHANGE',
     isSystem: true,
     adminOnly: true,
   },
   {
     id: 'diagnostics',
-    label: 'Diagnóstico del Sistema',
+    label: 'Observabilidad',
     icon: Activity,
     module: 'DIAGNOSTICS',
     actionType: 'MODULE_CHANGE',
@@ -151,37 +139,10 @@ export const NAVIGATION_CONFIG: NavItemConfig[] = [
     adminOnly: true,
   },
   {
-    id: 'patient-master',
-    label: 'Base de Pacientes',
-    icon: Database,
-    module: 'PATIENT_MASTER_INDEX',
-    actionType: 'MODULE_CHANGE',
-    isSystem: true,
-    adminOnly: true,
-  },
-  {
-    id: 'role-management',
-    label: 'Gestión de Roles',
-    icon: ShieldCheck,
-    module: 'ROLE_MANAGEMENT',
-    actionType: 'MODULE_CHANGE',
-    isSystem: true,
-    adminOnly: true,
-  },
-  {
-    id: 'reminders',
-    label: 'Avisos al Personal',
-    icon: BellRing,
-    module: 'REMINDERS',
-    actionType: 'MODULE_CHANGE',
-    isSystem: true,
-    adminOnly: true,
-  },
-  {
-    id: 'errors',
-    label: 'Panel de Errores',
-    icon: Activity,
-    module: 'ERRORS',
+    id: 'communications',
+    label: 'Comunicación',
+    icon: MessageSquare,
+    module: 'COMMUNICATIONS',
     actionType: 'MODULE_CHANGE',
     isSystem: true,
     adminOnly: true,

@@ -113,35 +113,6 @@ describe('useAppState', () => {
   });
 
   describe('Modal States', () => {
-    it('should have settingsModal with isOpen false initially', () => {
-      const { result } = renderHook(() => useAppState());
-      expect(result.current.settingsModal.isOpen).toBe(false);
-    });
-
-    it('should open settings modal', () => {
-      const { result } = renderHook(() => useAppState());
-
-      act(() => {
-        result.current.settingsModal.open();
-      });
-
-      expect(result.current.settingsModal.isOpen).toBe(true);
-    });
-
-    it('should close settings modal', () => {
-      const { result } = renderHook(() => useAppState());
-
-      act(() => {
-        result.current.settingsModal.open();
-      });
-      expect(result.current.settingsModal.isOpen).toBe(true);
-
-      act(() => {
-        result.current.settingsModal.close();
-      });
-      expect(result.current.settingsModal.isOpen).toBe(false);
-    });
-
     it('should have bedManagerModal functional', () => {
       const { result } = renderHook(() => useAppState());
       expect(result.current.bedManagerModal.isOpen).toBe(false);

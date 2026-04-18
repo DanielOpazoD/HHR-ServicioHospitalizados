@@ -48,7 +48,7 @@ export const ConsolidationManager: React.FC = () => {
   const handleExecute = async () => {
     if (
       !confirm(
-        '¿Estás seguro de que deseas consolidar los logs? Esta acción eliminará los registros duplicados de forma permanente.'
+        'La consolidación está deshabilitada: auditLogs es append-only (política de inmutabilidad). Esta acción no modifica ni elimina registros. ¿Continuar?'
       )
     )
       return;
@@ -77,7 +77,8 @@ export const ConsolidationManager: React.FC = () => {
           <div>
             <h3 className="text-lg font-bold text-slate-800">Mantenimiento de Auditoría</h3>
             <p className="text-xs text-slate-500">
-              Consolidación de registros duplicados en Firestore
+              Consolidación deshabilitada: auditLogs es append-only. La agrupación de duplicados
+              ahora es read-time.
             </p>
           </div>
         </div>

@@ -10,6 +10,7 @@ import {
   buildCudyrAuditDetails,
   resolvePatientChangeAudit,
 } from '@/hooks/controllers/bedAuditController';
+import { logPatientSpecialtyChanged } from '@/services/admin/auditDomainLoggers';
 
 /**
  * useBedAudit Hook
@@ -43,6 +44,19 @@ export const useBedAudit = (record: DailyRecord | null) => {
 
       if (decision.kind === 'admission') {
         logPatientAdmission(bedId, decision.patientName, decision.rut || '', currentRecord.date);
+        return;
+      }
+
+      if (decision.kind === 'specialty_changed') {
+        logPatientSpecialtyChanged(
+          bedId,
+          decision.patientName,
+          decision.patientRut || '',
+          decision.field,
+          decision.oldSpecialty,
+          decision.newSpecialty,
+          currentRecord.date
+        );
         return;
       }
 

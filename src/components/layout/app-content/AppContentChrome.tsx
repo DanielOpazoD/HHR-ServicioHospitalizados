@@ -133,7 +133,6 @@ export const AppContentChrome: React.FC<AppContentChromeProps> = ({
           onOpenBedManager={ui.bedManagerModal.open}
           onExportCSV={fileOps.handleExportCSV}
           onImportJSON={fileOps.handleImportJSON}
-          onOpenSettings={ui.settingsModal.open}
           userEmail={auth.currentUser?.email}
           onLogout={auth.signOut}
           isFirebaseConnected={auth.isFirebaseConnected}

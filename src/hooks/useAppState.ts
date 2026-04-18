@@ -8,7 +8,6 @@
  * ```tsx
  * const appState = useAppState();
  * <Navbar currentModule={appState.currentModule} setModule={appState.setCurrentModule} />
- * <SettingsModal isOpen={appState.settingsModal.isOpen} onClose={appState.settingsModal.close} />
  * ```
  */
 
@@ -29,6 +28,10 @@ const MODULES_FROM_URL: readonly ModuleType[] = [
   'PATIENT_MASTER_INDEX',
   'DATA_MAINTENANCE',
   'DIAGNOSTICS',
+  'FUNCTIONS_TELEMETRY',
+  'CONFIGURATION',
+  'DATA',
+  'COMMUNICATIONS',
   'ROLE_MANAGEMENT',
   'REMINDERS',
   'ERRORS',
@@ -47,6 +50,10 @@ const MODULE_PATH_SEGMENTS: Record<ModuleType, string> = {
   PATIENT_MASTER_INDEX: 'patient-master-index',
   DATA_MAINTENANCE: 'data-maintenance',
   DIAGNOSTICS: 'diagnostics',
+  FUNCTIONS_TELEMETRY: 'functions-telemetry',
+  CONFIGURATION: 'configuration',
+  DATA: 'data',
+  COMMUNICATIONS: 'communications',
   ROLE_MANAGEMENT: 'role-management',
   REMINDERS: 'reminders',
   ERRORS: 'errors',
@@ -90,7 +97,6 @@ export interface UseAppStateReturn {
   setCensusViewMode: (m: 'REGISTER' | 'ANALYTICS') => void;
 
   // Modal states (using useModal)
-  settingsModal: UseModalReturn;
   bedManagerModal: UseModalReturn;
   patientSearchModal: UseModalReturn;
 
@@ -130,7 +136,6 @@ export function useAppState(options: UseAppStateOptions = {}): UseAppStateReturn
   const [censusViewMode, setCensusViewMode] = useState<'REGISTER' | 'ANALYTICS'>('REGISTER');
 
   // Modal states using the new useModal hook
-  const settingsModal = useModal();
   const bedManagerModal = useModal();
   const patientSearchModal = useModal();
 
@@ -169,7 +174,6 @@ export function useAppState(options: UseAppStateOptions = {}): UseAppStateReturn
     setCensusViewMode,
 
     // Modals
-    settingsModal,
     bedManagerModal,
     patientSearchModal,
 

@@ -26,6 +26,7 @@ import {
   type NetlifyEventLike,
 } from './lib/http';
 import { authorizeRoleRequest, extractBearerToken } from './lib/firebase-auth';
+import { invokeWithTelemetry } from './lib/observability';
 import {
   CensusEmailRequestPayloadSchema,
   CensusEmailResponseSchema,
@@ -207,14 +208,28 @@ export const handler = async (event: NetlifyEventLike) => {
     const resolvedRecipients: string[] =
       Array.isArray(recipients) && recipients.length > 0 ? recipients : CENSUS_DEFAULT_RECIPIENTS;
 
-    const gmailResponse = await sendCensusEmail({
-      date,
-      recipients: resolvedRecipients,
-      attachmentBuffer: encryptedAttachmentBuffer,
-      attachmentName,
-      nursesSignature,
-      body: finalBody,
-      encryptionPin: password || undefined,
+    const gmailResponse = await invokeWithTelemetry({
+      service: 'gmail',
+      operation: 'send_census_email',
+      timeoutMs: 15_000,
+      maxAttempts: 3,
+      db,
+      hospitalId: process.env.ACTIVE_HOSPITAL_ID || 'hanga_roa',
+      context: {
+        date,
+        recipientCount: resolvedRecipients.length,
+        attachmentBytes: encryptedAttachmentBuffer.length,
+      },
+      fn: () =>
+        sendCensusEmail({
+          date,
+          recipients: resolvedRecipients,
+          attachmentBuffer: encryptedAttachmentBuffer,
+          attachmentName,
+          nursesSignature,
+          body: finalBody,
+          encryptionPin: password || undefined,
+        }),
     });
 
     return buildJsonResponse(

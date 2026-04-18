@@ -10,6 +10,7 @@ import {
   recordOperationalOutcome,
   recordOperationalTelemetry,
 } from '@/services/observability/operationalTelemetryService';
+import { logClinicalDocumentEdited } from '@/services/admin/auditDomainLoggers';
 import { serializeClinicalDocument } from '@/features/clinical-documents/controllers/clinicalDocumentWorkspaceController';
 import type { ClinicalDocumentDraftAction } from '@/features/clinical-documents/hooks/clinicalDocumentDraftReducer';
 
@@ -87,6 +88,15 @@ export const useClinicalDocumentDraftAutosave = ({
         }
 
         if (result.status === 'success' && result.data) {
+          if (persistReason !== 'admin_fix') {
+            void logClinicalDocumentEdited(
+              result.data.id,
+              result.data.templateId,
+              result.data.title,
+              undefined,
+              result.data.sourceDailyRecordDate
+            );
+          }
           const savedSnapshot = serializeClinicalDocument(result.data);
           const currentDraftSnapshot = serializeClinicalDocument(draftRef.current);
           const commitMode = resolveClinicalDocumentAutosaveCommit({

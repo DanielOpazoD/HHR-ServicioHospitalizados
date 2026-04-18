@@ -25,7 +25,6 @@ interface NavbarProps {
   onOpenBedManager: () => void;
   onExportCSV: () => void;
   onImportJSON: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onOpenSettings: () => void;
   userEmail?: string | null;
   onLogout?: () => void;
   isFirebaseConnected?: boolean;
@@ -37,7 +36,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   censusViewMode,
   setCensusViewMode,
   onImportJSON,
-  onOpenSettings,
   userEmail,
   onLogout,
   isFirebaseConnected,
@@ -102,7 +100,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           currentModule={currentModule}
           setModule={setModule}
           censusViewMode={censusViewMode}
-          onOpenSettings={onOpenSettings}
           visibleModules={visibleModules}
         />
         <input

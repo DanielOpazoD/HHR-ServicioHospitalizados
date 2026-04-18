@@ -15,6 +15,7 @@
 
 import { getFirebaseServer } from './lib/firebase-server';
 import { authorizeRoleRequest, extractBearerToken } from './lib/firebase-auth';
+import { invokeWithTelemetry } from './lib/observability';
 import {
   buildCorsHeaders,
   buildJsonResponse,
@@ -466,8 +467,8 @@ export const createMMRADSearchHandler = (
       );
     }
 
+    const { db } = dependencies.getFirebaseServer();
     try {
-      const { db } = dependencies.getFirebaseServer();
       await dependencies.authorizeRoleRequest(db, authorizationHeader, MMRAD_ALLOWED_ROLES);
     } catch (error) {
       const message =
@@ -487,8 +488,19 @@ export const createMMRADSearchHandler = (
       }
 
       try {
-        const { cookies } = await loginToMMRAD();
-        return await buildPdfProxyResponse(pdfUrl, cookies, requestOrigin);
+        return await invokeWithTelemetry({
+          service: 'mmrad',
+          operation: 'pdf_proxy',
+          timeoutMs: 20_000,
+          maxAttempts: 2,
+          db,
+          hospitalId: process.env.ACTIVE_HOSPITAL_ID || 'hanga_roa',
+          context: { action: 'pdf' },
+          fn: async () => {
+            const { cookies } = await loginToMMRAD();
+            return buildPdfProxyResponse(pdfUrl, cookies, requestOrigin);
+          },
+        });
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Error desconocido';
         return buildJsonResponse(500, { error: message }, { requestOrigin });
@@ -503,35 +515,50 @@ export const createMMRADSearchHandler = (
     const cleanRut = rut.replace(/\./g, '').trim();
 
     try {
-      const { cookies, searchActionUrl } = await loginToMMRAD();
-
-      if (!searchActionUrl) {
-        return buildJsonResponse(
-          200,
-          {
-            rut: cleanRut,
-            examenes: [],
-          },
-          { requestOrigin }
-        );
-      }
-
-      const examenes = await searchExams(
-        cleanRut,
-        cookies,
-        searchActionUrl,
-        queryParams.get('from') || undefined,
-        queryParams.get('to') || undefined
-      );
-
-      return buildJsonResponse(
-        200,
-        {
-          rut: cleanRut,
-          examenes,
+      return await invokeWithTelemetry({
+        service: 'mmrad',
+        operation: 'search_exams',
+        timeoutMs: 20_000,
+        maxAttempts: 2,
+        db,
+        hospitalId: process.env.ACTIVE_HOSPITAL_ID || 'hanga_roa',
+        context: {
+          action: 'search',
+          hasFromFilter: Boolean(queryParams.get('from')),
+          hasToFilter: Boolean(queryParams.get('to')),
         },
-        { requestOrigin }
-      );
+        fn: async () => {
+          const { cookies, searchActionUrl } = await loginToMMRAD();
+
+          if (!searchActionUrl) {
+            return buildJsonResponse(
+              200,
+              {
+                rut: cleanRut,
+                examenes: [],
+              },
+              { requestOrigin }
+            );
+          }
+
+          const examenes = await searchExams(
+            cleanRut,
+            cookies,
+            searchActionUrl,
+            queryParams.get('from') || undefined,
+            queryParams.get('to') || undefined
+          );
+
+          return buildJsonResponse(
+            200,
+            {
+              rut: cleanRut,
+              examenes,
+            },
+            { requestOrigin }
+          );
+        },
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error desconocido';
       return buildJsonResponse(500, { error: message }, { requestOrigin });

@@ -46,6 +46,30 @@ export const AuditView = lazyWithRetry(() =>
   }))
 );
 
+export const FunctionsTelemetryView = lazyWithRetry(() =>
+  import(/* webpackChunkName: "functions-telemetry" */ '@/features/admin').then(module => ({
+    default: module.FunctionsTelemetryView,
+  }))
+);
+
+export const ConfigurationView = lazyWithRetry(() =>
+  import(/* webpackChunkName: "configuration" */ '@/features/admin').then(module => ({
+    default: module.ConfigurationView,
+  }))
+);
+
+export const DataView = lazyWithRetry(() =>
+  import(/* webpackChunkName: "data" */ '@/features/admin').then(module => ({
+    default: module.DataView,
+  }))
+);
+
+export const CommunicationsView = lazyWithRetry(() =>
+  import(/* webpackChunkName: "communications" */ '@/features/admin').then(module => ({
+    default: module.CommunicationsView,
+  }))
+);
+
 export const MedicalSignatureView = lazyWithRetry(() =>
   import(/* webpackChunkName: "signature" */ '@/features/admin').then(module => ({
     default: module.MedicalSignatureView,
