@@ -112,7 +112,10 @@ export const signInWithGoogle = async (options?: AuthRuntimeOptions): Promise<Au
         });
 
         try {
-          await signInWithGoogleRedirect({ authRuntime });
+          await signInWithGoogleRedirect({
+            authRuntime,
+            allowLocalhostFallback: true,
+          });
         } catch (redirectError) {
           recordAuthOperationalError('sign_in_google_redirect_fallback', redirectError, {
             code: mappedError.code,

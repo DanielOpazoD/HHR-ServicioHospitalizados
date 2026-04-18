@@ -214,6 +214,32 @@ describe('auth public entrypoints', () => {
       });
     });
 
+    it('should start redirect fallback on localhost after a recoverable popup failure', async () => {
+      vi.spyOn(authRedirectRuntime, 'getAuthRedirectRuntimeSupport').mockReturnValue({
+        ...defaultRedirectRuntimeSupport,
+        isLocalhostRuntime: true,
+        canUseRedirectAuth: false,
+        supportLevel: 'disabled',
+        redirectDisabledReason:
+          'En este equipo el acceso alternativo está desactivado para evitar bucles de acceso en el navegador.',
+        supportSummary:
+          'En localhost el sistema prefiere la ventana normal de Google y evita cambiar de pestaña automáticamente.',
+        supportAction:
+          'Si la ventana no aparece, usa el botón principal otra vez o revisa si el navegador bloqueó ventanas emergentes.',
+        recommendedFlowLabel: 'Ventana de Google',
+      });
+      vi.mocked(firebaseAuth.signInWithPopup).mockRejectedValue({
+        code: 'auth/popup-blocked',
+        message: 'popup blocked',
+      });
+
+      await expect(signInWithGoogle()).rejects.toMatchObject({
+        code: 'auth/popup-blocked',
+      });
+
+      expect(firebaseAuth.signInWithRedirect).toHaveBeenCalled();
+    });
+
     it('should keep the popup flow pending when Google selection takes a long time', async () => {
       vi.useFakeTimers();
       vi.mocked(firebaseAuth.signInWithPopup).mockImplementation(

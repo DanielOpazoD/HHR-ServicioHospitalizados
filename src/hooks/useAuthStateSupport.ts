@@ -104,7 +104,7 @@ export const subscribeToResolvedAuthState = async ({
       recordOperationalOutcome('auth', 'current_session_resolution', currentSessionOutcome, {
         allowSuccess: true,
       });
-      if (currentSessionOutcome.status === 'success' && currentSessionOutcome.data) {
+      if (currentSessionOutcome.data) {
         applyResolvedBootstrapSessionState({
           sessionState: currentSessionOutcome.data,
           setSessionState,

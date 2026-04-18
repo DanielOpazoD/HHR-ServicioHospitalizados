@@ -24,6 +24,10 @@ interface AuthRuntimeOptions {
   authRuntime?: AuthRuntime;
 }
 
+interface GoogleRedirectOptions extends AuthRuntimeOptions {
+  allowLocalhostFallback?: boolean;
+}
+
 const resolveAuthRuntime = ({ authRuntime }: AuthRuntimeOptions = {}): AuthRuntime =>
   authRuntime ?? defaultAuthRuntime;
 
@@ -56,7 +60,7 @@ const runE2ERedirectMode = async (mode: 'success' | 'error' | 'timeout'): Promis
 export const hasActiveFirebaseSession = (options?: AuthRuntimeOptions): boolean =>
   resolveAuthRuntime(options).getCurrentUser() !== null;
 
-export const signInWithGoogleRedirect = async (options?: AuthRuntimeOptions): Promise<void> => {
+export const signInWithGoogleRedirect = async (options?: GoogleRedirectOptions): Promise<void> => {
   const authRuntime = resolveAuthRuntime(options);
   try {
     const e2eRedirectMode = readE2ERedirectMode();
@@ -67,7 +71,11 @@ export const signInWithGoogleRedirect = async (options?: AuthRuntimeOptions): Pr
 
     await authRuntime.ready;
     const redirectRuntimeSupport = getAuthRedirectRuntimeSupport();
-    if (!redirectRuntimeSupport.canUseRedirectAuth) {
+    const canBypassLocalhostRedirectBlock =
+      options?.allowLocalhostFallback === true &&
+      redirectRuntimeSupport.isLocalhostRuntime &&
+      redirectRuntimeSupport.authDomain.length > 0;
+    if (!redirectRuntimeSupport.canUseRedirectAuth && !canBypassLocalhostRedirectBlock) {
       throw createOperationalError({
         code: 'auth_redirect_unavailable',
         message: redirectRuntimeSupport.redirectDisabledReason || AUTH_UI_COPY.redirectUnavailable,

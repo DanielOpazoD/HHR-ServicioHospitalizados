@@ -304,6 +304,70 @@ describe('useResolvedAuthBootstrap', () => {
     );
   });
 
+  it('applies a failed current-session resolution immediately when it already includes an auth terminal state', async () => {
+    const onAuthSessionStateChange = vi.fn(() => () => {});
+    const resolveRedirectAuthSessionOutcome = vi
+      .fn()
+      .mockResolvedValue({ status: 'success', data: null, issues: [] });
+    const resolveCurrentAuthSessionOutcome = vi.fn().mockResolvedValue({
+      status: 'failed',
+      data: {
+        status: 'auth_error',
+        user: null,
+        error: {
+          code: 'auth_session_state_resolution_failed',
+          message: 'No se pudo resolver la sesion actual.',
+          userSafeMessage: 'No se pudo resolver la sesion actual.',
+          retryable: true,
+          severity: 'warning',
+        },
+      },
+      issues: [
+        {
+          kind: 'unknown',
+          code: 'auth_session_state_resolution_failed',
+          message: 'No se pudo resolver la sesion actual.',
+        },
+      ],
+      reason: 'auth_session_state_resolution_failed',
+      retryable: true,
+      severity: 'warning',
+    });
+
+    const { result } = renderHook(() => {
+      const [sessionState, setSessionState] = useState<AuthSessionState>({
+        status: 'authenticating',
+        user: null,
+      });
+      const [authLoading, setAuthLoading] = useState(true);
+
+      useResolvedAuthBootstrap({
+        e2eBootstrapUser: null,
+        resolveRedirectAuthSessionOutcome,
+        resolveCurrentAuthSessionOutcome,
+        onAuthSessionStateChange,
+        setSessionState,
+        setAuthLoading,
+      });
+
+      return { sessionState, authLoading };
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(result.current.authLoading).toBe(false);
+    expect(result.current.sessionState).toEqual(
+      expect.objectContaining({
+        status: 'auth_error',
+        error: expect.objectContaining({
+          code: 'auth_session_state_resolution_failed',
+        }),
+      })
+    );
+  });
+
   it('ignores a transient unauthenticated auth event while a persisted Firebase session still exists', async () => {
     window.localStorage.setItem('firebase:authUser:test:[DEFAULT]', '{"uid":"abc"}');
 
