@@ -22,7 +22,8 @@ import {
 interface StaffShiftDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  shift: DetailedStaffingShift;
+  role: DetailedStaffingRole;
+  initialShift?: DetailedStaffingShift;
   recordDate: string;
   detail: DailyRecordStaffingDetailsV1;
   nursesList: string[];
@@ -194,7 +195,8 @@ const StaffRoleSection: React.FC<{
 export const StaffShiftDetailsModal: React.FC<StaffShiftDetailsModalProps> = ({
   isOpen,
   onClose,
-  shift,
+  role,
+  initialShift = 'day',
   recordDate,
   detail,
   nursesList,
@@ -203,18 +205,22 @@ export const StaffShiftDetailsModal: React.FC<StaffShiftDetailsModalProps> = ({
 }) => {
   const [draft, setDraft] = React.useState(detail);
   const [isSaving, setIsSaving] = React.useState(false);
+  const [activeShift, setActiveShift] = React.useState<DetailedStaffingShift>(initialShift);
   const schedule = React.useMemo(() => getShiftSchedule(recordDate), [recordDate]);
   const scheduleText =
-    shift === 'day'
+    activeShift === 'day'
       ? `${schedule.dayStart} - ${schedule.dayEnd}`
       : `${schedule.nightStart} - ${schedule.nightEnd}`;
+  const roleLabel = ROLE_LABELS[role];
+  const activeCatalog = role === 'nurse' ? nursesList : tensList;
 
   React.useEffect(() => {
     if (isOpen) {
       setDraft(detail);
       setIsSaving(false);
+      setActiveShift(initialShift);
     }
-  }, [detail, isOpen]);
+  }, [detail, initialShift, isOpen]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -230,35 +236,54 @@ export const StaffShiftDetailsModal: React.FC<StaffShiftDetailsModalProps> = ({
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Configuración detallada ${SHIFT_LABELS[shift]}`}
+      title={`Configuración detallada ${roleLabel}`}
       icon={<Clock3 size={18} />}
       size="3xl"
       variant="white"
       bodyClassName="space-y-4 bg-slate-50 p-4"
     >
+      <section className="rounded-2xl border border-slate-200 bg-white p-2">
+        <div
+          className="inline-flex rounded-full bg-slate-100 p-1"
+          role="tablist"
+          aria-label={`Seleccionar turno de ${roleLabel}`}
+        >
+          {(['day', 'night'] as DetailedStaffingShift[]).map(shiftOption => {
+            const isActive = activeShift === shiftOption;
+            return (
+              <button
+                key={shiftOption}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setActiveShift(shiftOption)}
+                className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-white text-slate-800 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {SHIFT_LABELS[shiftOption]}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
       <section className="rounded-2xl border border-slate-200 bg-white p-4">
         <p className="text-sm font-semibold text-slate-800">Horario estándar</p>
         <p className="mt-1 text-sm text-slate-600">
-          {SHIFT_LABELS[shift]}: {scheduleText}
+          {SHIFT_LABELS[activeShift]}: {scheduleText}
         </p>
         <p className="mt-1 text-xs text-slate-500">{schedule.description}</p>
       </section>
 
       <StaffRoleSection
         draft={draft}
-        shift={shift}
-        role="nurse"
+        shift={activeShift}
+        role={role}
         recordDate={recordDate}
-        catalog={nursesList}
-        onChange={setDraft}
-      />
-
-      <StaffRoleSection
-        draft={draft}
-        shift={shift}
-        role="tens"
-        recordDate={recordDate}
-        catalog={tensList}
+        catalog={activeCatalog}
         onChange={setDraft}
       />
 

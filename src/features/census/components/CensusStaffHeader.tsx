@@ -14,6 +14,7 @@ import { useDailyRecordStaffActions } from '@/context/useDailyRecordScopedAction
 import { useStaffContext } from '@/context/StaffContext';
 import { buildCensusStaffHeaderReadModel } from '@/application/census/censusStaffHeaderReadModel';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
+import type { DetailedStaffingRole } from '@/types/domain/dailyRecordStaffingDetails';
 
 interface CensusStaffHeaderProps {
   readOnly?: boolean;
@@ -38,7 +39,9 @@ export const CensusStaffHeader: React.FC<CensusStaffHeaderProps> = ({
 
   const { updateNurse, updateTens, updateDetailedStaffing } = useDailyRecordStaffActions();
   const { nursesList, tensList } = useStaffContext();
-  const [activeShiftDetails, setActiveShiftDetails] = React.useState<'day' | 'night' | null>(null);
+  const [activeDetailedRole, setActiveDetailedRole] = React.useState<DetailedStaffingRole | null>(
+    null
+  );
   const readModel = buildCensusStaffHeaderReadModel({
     readOnly,
     stats,
@@ -59,7 +62,7 @@ export const CensusStaffHeader: React.FC<CensusStaffHeaderProps> = ({
           nursesList={nursesList}
           onUpdateNurse={updateNurse}
           shiftIndicators={readModel.staffIndicatorsState.nurses}
-          onOpenShiftDetails={readOnly ? undefined : shift => setActiveShiftDetails(shift)}
+          onOpenDetailedStaffing={readOnly ? undefined : () => setActiveDetailedRole('nurse')}
           className={readModel.selectorsClassName}
         />
       )}
@@ -71,7 +74,7 @@ export const CensusStaffHeader: React.FC<CensusStaffHeaderProps> = ({
           tensList={tensList}
           onUpdateTens={updateTens}
           shiftIndicators={readModel.staffIndicatorsState.tens}
-          onOpenShiftDetails={readOnly ? undefined : shift => setActiveShiftDetails(shift)}
+          onOpenDetailedStaffing={readOnly ? undefined : () => setActiveDetailedRole('tens')}
           className={readModel.selectorsClassName}
         />
       )}
@@ -87,11 +90,12 @@ export const CensusStaffHeader: React.FC<CensusStaffHeaderProps> = ({
         />
       )}
 
-      {activeShiftDetails && dailyRecordData.record?.date && readModel.staffDetailsState && (
+      {activeDetailedRole && dailyRecordData.record?.date && readModel.staffDetailsState && (
         <StaffShiftDetailsModal
           isOpen={true}
-          onClose={() => setActiveShiftDetails(null)}
-          shift={activeShiftDetails}
+          onClose={() => setActiveDetailedRole(null)}
+          role={activeDetailedRole}
+          initialShift="day"
           recordDate={dailyRecordData.record.date}
           detail={readModel.staffDetailsState}
           nursesList={nursesList}

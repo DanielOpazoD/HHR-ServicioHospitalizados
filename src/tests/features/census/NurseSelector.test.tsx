@@ -1,11 +1,13 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { NurseSelector } from '@/features/census/components/NurseSelector';
 import { VACANCY_LABEL } from '@/services/staff/staffSelectionPresentation';
 
+const setShowNurseManager = vi.fn();
+
 vi.mock('@/context/StaffContext', () => ({
   useStaffContext: () => ({
-    setShowNurseManager: vi.fn(),
+    setShowNurseManager,
   }),
 }));
 
@@ -24,7 +26,9 @@ describe('NurseSelector', () => {
     expect(screen.getAllByDisplayValue('Enfermera Claudia')).toHaveLength(1);
   });
 
-  it('shows subtle indicators when the shift has special schedules or extra staff', () => {
+  it('opens the catalog from the title area and shows a superscript marker only for adjusted shifts', () => {
+    const onOpenDetailedStaffing = vi.fn();
+
     render(
       <NurseSelector
         nursesDayShift={['Enfermera Claudia', '']}
@@ -35,15 +39,26 @@ describe('NurseSelector', () => {
           day: { hasSpecialSchedule: true, extraCount: 1 },
           night: { hasSpecialSchedule: false, extraCount: 0 },
         }}
-        onOpenShiftDetails={vi.fn()}
+        onOpenDetailedStaffing={onOpenDetailedStaffing}
       />
     );
 
-    expect(screen.getByText('+1')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir catálogo de Enfermería' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Abrir configuración detallada de Enfermería' })
+    );
+
+    expect(setShowNurseManager).toHaveBeenCalledWith(true);
+    expect(onOpenDetailedStaffing).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('*')).toBeInTheDocument();
+    expect(screen.queryByText('+1')).not.toBeInTheDocument();
+    expect(screen.queryByText('0')).not.toBeInTheDocument();
     expect(
-      screen.getByLabelText('Configurar detalle de Enfermería turno Largo')
-    ).toBeInTheDocument();
-    expect(screen.getByLabelText('Horario especial en Enfermería turno Largo')).toBeInTheDocument();
+      screen.queryByLabelText('Horario especial en Enfermería turno Largo')
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText('Configurar detalle de Enfermería turno Largo')
+    ).not.toBeInTheDocument();
   });
 
   it('shows an explicit vacancy option instead of legacy blank markers', () => {
