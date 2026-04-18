@@ -57,6 +57,11 @@ export const queryKeys = {
     byMonth: (year: number, month: number) => ['dailyRecord', 'month', year, month] as const,
     lists: () => ['dailyRecord', 'list'] as const,
   },
+  existingDays: {
+    all: ['existingDays'] as const,
+    byMonth: (year: number, monthZeroBased: number) =>
+      ['existingDays', year, monthZeroBased] as const,
+  },
   staff: {
     all: ['staff'] as const,
     catalog: () => ['staff', 'catalog'] as const,

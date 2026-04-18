@@ -5,6 +5,7 @@ import { recordOperationalErrorTelemetry } from '@/services/observability/operat
 import { isE2ERuntimeEnabled } from '@/shared/runtime/e2eRuntime';
 
 import { ensureDbReady, hospitalDB as db, isDatabaseInFallbackMode } from './indexedDbCore';
+import { dispatchDailyRecordStoreChanged } from './indexedDbRecordEvents';
 
 const toRecordMap = (records: DailyRecord[]): Record<string, DailyRecord> => {
   const result: Record<string, DailyRecord> = {};
@@ -128,10 +129,12 @@ export const saveRecord = async (record: DailyRecord): Promise<void> => {
     if (isDatabaseInFallbackMode()) {
       localPersistence.records.save(record);
       syncE2ERuntimeRecordMirror(record);
+      dispatchDailyRecordStoreChanged({ operation: 'save', dates: [record.date] });
       return;
     }
     await db.dailyRecords.put(record);
     syncE2ERuntimeRecordMirror(record);
+    dispatchDailyRecordStoreChanged({ operation: 'save', dates: [record.date] });
   } catch (error) {
     recordOperationalErrorTelemetry('indexeddb', 'indexeddb_save_record', error, {
       code: 'indexeddb_save_record_failed',
@@ -155,11 +158,19 @@ export const saveRecords = async (records: DailyRecord[]): Promise<void> => {
         localPersistence.records.save(record);
         syncE2ERuntimeRecordMirror(record);
       });
+      dispatchDailyRecordStoreChanged({
+        operation: 'save',
+        dates: records.map(record => record.date),
+      });
       return;
     }
 
     await db.dailyRecords.bulkPut(records);
     records.forEach(syncE2ERuntimeRecordMirror);
+    dispatchDailyRecordStoreChanged({
+      operation: 'save',
+      dates: records.map(record => record.date),
+    });
   } catch (error) {
     recordOperationalErrorTelemetry('indexeddb', 'indexeddb_save_records', error, {
       code: 'indexeddb_save_records_failed',
@@ -176,9 +187,11 @@ export const deleteRecord = async (date: string): Promise<void> => {
     await ensureDbReady();
     if (isDatabaseInFallbackMode()) {
       localPersistence.records.deleteForDate(date);
+      dispatchDailyRecordStoreChanged({ operation: 'delete', dates: [date] });
       return;
     }
     await db.dailyRecords.delete(date);
+    dispatchDailyRecordStoreChanged({ operation: 'delete', dates: [date] });
   } catch (error) {
     recordOperationalErrorTelemetry('indexeddb', 'indexeddb_delete_record', error, {
       code: 'indexeddb_delete_record_failed',
@@ -253,9 +266,11 @@ export const clearAllRecords = async (): Promise<void> => {
     await ensureDbReady();
     if (isDatabaseInFallbackMode()) {
       localPersistence.records.clear();
+      dispatchDailyRecordStoreChanged({ operation: 'clear' });
       return;
     }
     await db.dailyRecords.clear();
+    dispatchDailyRecordStoreChanged({ operation: 'clear' });
   } catch (error) {
     recordOperationalErrorTelemetry('indexeddb', 'indexeddb_clear_all_records', error, {
       code: 'indexeddb_clear_all_records_failed',
