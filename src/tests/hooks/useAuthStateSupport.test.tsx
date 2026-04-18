@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useState } from 'react';
 import type { AuthSessionState } from '@/types/auth';
 import { useResolvedAuthBootstrap } from '@/hooks/useAuthStateSupport';
+import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcome';
 
 const mockWarn = vi.fn();
 const mockInfo = vi.fn();
@@ -12,6 +13,7 @@ const mockClearAuthBootstrapPending = vi.fn();
 const mockRestoreAuthBootstrapReturnTo = vi.fn();
 const mockClearRecentManualLogout = vi.fn();
 const mockHasRecentManualLogout = vi.fn();
+const mockHasActiveFirebaseSession = vi.fn();
 const mockLogUserLogin = vi.fn();
 const mockRecordOperationalOutcome = vi.fn();
 const mockRecordOperationalTelemetry = vi.fn();
@@ -38,6 +40,10 @@ vi.mock('@/services/auth/authLogoutState', () => ({
   markRecentManualLogout: vi.fn(),
 }));
 
+vi.mock('@/services/auth/authFallback', () => ({
+  hasActiveFirebaseSession: () => mockHasActiveFirebaseSession(),
+}));
+
 vi.mock('@/application/ports/auditPort', () => ({
   defaultAuditPort: {
     logUserLogin: (...args: unknown[]) => mockLogUserLogin(...args),
@@ -57,6 +63,7 @@ describe('useResolvedAuthBootstrap', () => {
     mockIsAuthBootstrapPending.mockReturnValue(false);
     mockGetAuthBootstrapPendingAgeMs.mockReturnValue(0);
     mockHasRecentManualLogout.mockReturnValue(false);
+    mockHasActiveFirebaseSession.mockReturnValue(false);
     Object.defineProperty(window.navigator, 'onLine', {
       configurable: true,
       get: () => true,
@@ -302,6 +309,54 @@ describe('useResolvedAuthBootstrap', () => {
       expect.objectContaining({ status: 'success' }),
       expect.objectContaining({ allowSuccess: true })
     );
+  });
+
+  it('resolves immediately to unauthenticated when no persisted session hints exist', async () => {
+    const onAuthSessionStateChange = vi.fn(() => () => {});
+    const resolveRedirectAuthSessionOutcome = vi
+      .fn<() => Promise<ApplicationOutcome<AuthSessionState | null>>>()
+      .mockResolvedValue({
+        status: 'success',
+        data: null,
+        issues: [],
+      });
+    const resolveCurrentAuthSessionOutcome = vi
+      .fn<() => Promise<ApplicationOutcome<AuthSessionState | null>>>()
+      .mockResolvedValue({
+        status: 'success',
+        data: null,
+        issues: [],
+      });
+
+    const { result } = renderHook(() => {
+      const [sessionState, setSessionState] = useState<AuthSessionState>({
+        status: 'authenticating',
+        user: null,
+      });
+      const [authLoading, setAuthLoading] = useState(true);
+
+      useResolvedAuthBootstrap({
+        e2eBootstrapUser: null,
+        resolveRedirectAuthSessionOutcome,
+        resolveCurrentAuthSessionOutcome,
+        onAuthSessionStateChange,
+        setSessionState,
+        setAuthLoading,
+      });
+
+      return { sessionState, authLoading };
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(result.current.authLoading).toBe(false);
+    expect(result.current.sessionState).toEqual({
+      status: 'unauthenticated',
+      user: null,
+    });
+    expect(mockClearAuthBootstrapPending).toHaveBeenCalled();
   });
 
   it('applies a failed current-session resolution immediately when it already includes an auth terminal state', async () => {

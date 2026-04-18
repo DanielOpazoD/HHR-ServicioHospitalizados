@@ -32,6 +32,16 @@ export const shouldAttemptAuthTimeoutRecovery = ({
   hasPersistedFirebaseAuthHint: boolean;
 }): boolean => !hasRecentManualLogout && hasPersistedFirebaseAuthHint;
 
+export const shouldResolveAuthBootstrapImmediatelyAsUnauthenticated = ({
+  hasPendingRedirect,
+  hasPersistedFirebaseAuthHint,
+  hasActiveFirebaseSession,
+}: {
+  hasPendingRedirect: boolean;
+  hasPersistedFirebaseAuthHint: boolean;
+  hasActiveFirebaseSession: boolean;
+}): boolean => !hasPendingRedirect && !hasPersistedFirebaseAuthHint && !hasActiveFirebaseSession;
+
 export const shouldLogSessionLogin = ({
   sessionState,
   hasLoggedThisSession,

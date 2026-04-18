@@ -20,12 +20,14 @@ import {
   recordOperationalTelemetry,
 } from '@/services/observability/operationalTelemetryService';
 import { resolveAuthBootstrapBudget } from '@/services/auth/authBootstrapBudgets';
+import { hasActiveFirebaseSession } from '@/services/auth/authFallback';
 import { hasPersistedFirebaseAuthHint } from '@/services/auth/authStorageHints';
 import {
   buildBootstrapTimeoutIssue,
   shouldAttemptAuthTimeoutRecovery,
   shouldDeferUnauthenticatedSessionState,
   shouldIgnoreTransientUnauthenticatedBootstrapEvent,
+  shouldResolveAuthBootstrapImmediatelyAsUnauthenticated,
   shouldLogSessionLogin,
 } from '@/hooks/controllers/authBootstrapController';
 export {
@@ -219,13 +221,31 @@ export const useResolvedAuthBootstrap = ({
     }
 
     let unsubscribe: (() => void) | undefined;
+    const hasPendingRedirect = isAuthBootstrapPending();
+    const canResolveImmediatelyAsUnauthenticated =
+      shouldResolveAuthBootstrapImmediatelyAsUnauthenticated({
+        hasPendingRedirect,
+        hasPersistedFirebaseAuthHint: hasPersistedFirebaseAuthHint(),
+        hasActiveFirebaseSession: hasActiveFirebaseSession(),
+      });
+
+    // Critical fast-path: if the browser no longer has any persisted auth hints
+    // and Firebase also has no active user, there is nothing useful to "wait
+    // for". Resolving immediately prevents long blank-screen bootstrap delays
+    // after site data was manually cleared.
+    if (canResolveImmediatelyAsUnauthenticated) {
+      clearAuthBootstrapPending();
+      setSessionState(createUnauthenticatedAuthSessionState());
+      setAuthLoading(false);
+    }
+
     const bootstrapBudget = resolveAuthBootstrapBudget({
       hasRecentManualLogout: hasRecentManualLogout(),
       isOnline: window.navigator.onLine,
-      hasPendingRedirect: isAuthBootstrapPending(),
+      hasPendingRedirect,
     });
     const timeoutMs = bootstrapBudget.timeoutMs;
-    let isBootstrapResolved = false;
+    let isBootstrapResolved = canResolveImmediatelyAsUnauthenticated;
     const safetyTimeout: ReturnType<typeof setTimeout> = setTimeout(() => {
       if (isBootstrapResolved) {
         return;

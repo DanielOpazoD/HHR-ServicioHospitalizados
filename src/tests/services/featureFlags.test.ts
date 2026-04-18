@@ -2,10 +2,11 @@
  * Tests for FeatureFlags Service
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 describe('FeatureFlags', () => {
   beforeEach(() => {
+    vi.resetModules();
     // Clear localStorage before each test
     localStorage.clear();
   });
@@ -83,5 +84,20 @@ describe('FeatureFlags', () => {
     featureFlags.resetAll();
 
     expect(featureFlags.getAll()).toEqual(FEATURE_FLAGS);
+  });
+
+  it('hydrates persisted overrides from localStorage without IndexedDB bootstrap', async () => {
+    localStorage.setItem(
+      'hhr_feature_flags',
+      JSON.stringify({
+        ENABLE_ANALYTICS_VIEW: false,
+        SHOW_DEBUG_PANEL: true,
+      })
+    );
+
+    const { featureFlags } = await import('@/services/utils/featureFlags');
+
+    expect(featureFlags.isEnabled('ENABLE_ANALYTICS_VIEW')).toBe(false);
+    expect(featureFlags.isEnabled('SHOW_DEBUG_PANEL')).toBe(true);
   });
 });

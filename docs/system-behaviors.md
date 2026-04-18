@@ -187,6 +187,39 @@ Usuarios con "passport" pueden trabajar sin conexión a internet.
 - `src/tests/components/InitialLoadingScreen.test.tsx`
 - `src/tests/components/AppLoadingBehavior.test.tsx`
 
+### Recuperación tras borrar datos locales del navegador
+
+#### Problema histórico
+
+- Si el usuario borraba los datos locales del sitio y luego recargaba con `F5`, la app podía quedar varios segundos en pantalla blanca antes de mostrar login.
+- El síntoma típico era un stack de `Dexie`/`IndexedDB` en consola durante bootstrap.
+- La percepción era que el cliente "seguía intentando" validar una sesión ya inexistente antes de aceptar que debía volver a inicio de sesión.
+
+#### Causa técnica
+
+- El bootstrap de auth esperaba el flujo completo de rehidratación incluso cuando ya no quedaban pistas reales de sesión local.
+- En paralelo, el singleton de feature flags intentaba leer overrides desde IndexedDB apenas se importaba.
+- Si el navegador acababa de perder su backing store local, `ensureDbReady()` entraba en la política de recuperación de IndexedDB y consumía los delays de retry (`500ms`, `1500ms`, `4000ms`) antes de caer a fallback.
+
+#### Comportamiento esperado actual
+
+1. Si no hay redirect pendiente, no hay hint persistido de Firebase y tampoco hay usuario Firebase activo, auth debe resolver `unauthenticated` de forma inmediata.
+2. Los feature flags no deben participar del bootstrap crítico de login vía IndexedDB.
+3. Borrar datos locales y recargar debe devolver rápidamente a la pantalla de login, sin una pausa larga en blanco.
+
+#### Decisión de diseño
+
+- La persistencia de feature flags quedó en `localStorage`, no en IndexedDB.
+- Auth conserva el observer continuo para futuros cambios de sesión, pero el estado inicial ya no espera innecesariamente cuando no hay evidencia de sesión vigente.
+
+#### Archivos Relacionados
+
+- `src/hooks/useAuthStateSupport.ts`
+- `src/hooks/controllers/authBootstrapController.ts`
+- `src/services/utils/featureFlags.ts`
+- `src/tests/hooks/useAuthStateSupport.test.tsx`
+- `src/tests/services/featureFlags.test.ts`
+
 ## 4.2. Bloqueo rápido local (PIN)
 
 ### Descripción

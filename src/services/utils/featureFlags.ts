@@ -42,9 +42,45 @@ export type FeatureFlag = keyof typeof FEATURE_FLAGS;
 // Feature Flags Service
 // ============================================================================
 
-import { getSetting, saveSetting } from '@/services/storage/indexeddb/indexedDbSettingsService';
-
 const STORAGE_KEY = 'hhr_feature_flags';
+
+const hasWindowLocalStorage = (): boolean =>
+  typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+
+// Feature flags are read during early bootstrap paths. Keeping them in
+// localStorage avoids waking IndexedDB/Dexie before auth decides whether the
+// app should land in login or continue into the authenticated shell.
+const loadFeatureFlagOverrides = (): Partial<Record<FeatureFlag, boolean>> => {
+  if (!hasWindowLocalStorage()) {
+    return {};
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(STORAGE_KEY);
+    if (!rawValue) {
+      return {};
+    }
+
+    const parsedValue = JSON.parse(rawValue);
+    return parsedValue && typeof parsedValue === 'object'
+      ? (parsedValue as Partial<Record<FeatureFlag, boolean>>)
+      : {};
+  } catch {
+    return {};
+  }
+};
+
+const persistFeatureFlagOverrides = (overrides: Partial<Record<FeatureFlag, boolean>>): void => {
+  if (!hasWindowLocalStorage()) {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides));
+  } catch {
+    // Ignore storage errors
+  }
+};
 
 class FeatureFlagsService {
   private static instance: FeatureFlagsService;
@@ -68,23 +104,15 @@ class FeatureFlagsService {
   // Initialization
   // ========================================================================
 
-  private async loadFromStorage(): Promise<void> {
-    try {
-      const stored = await getSetting<Partial<Record<FeatureFlag, boolean>>>(STORAGE_KEY, {});
-      if (stored) {
-        this.overrides = { ...this.overrides, ...stored };
-      }
-    } catch {
-      // Ignore storage errors
-    }
+  private loadFromStorage(): void {
+    this.overrides = {
+      ...this.overrides,
+      ...loadFeatureFlagOverrides(),
+    };
   }
 
-  private async saveToStorage(): Promise<void> {
-    try {
-      await saveSetting(STORAGE_KEY, this.overrides);
-    } catch {
-      // Ignore storage errors
-    }
+  private saveToStorage(): void {
+    persistFeatureFlagOverrides(this.overrides);
   }
 
   private applyEnvironmentOverrides(): void {
