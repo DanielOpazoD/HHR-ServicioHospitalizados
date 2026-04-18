@@ -54,6 +54,23 @@ describe('App loading behavior', () => {
     expect(screen.getByTestId('login-loading-shell')).toBeInTheDocument();
   });
 
+  it('avoids the login loading shell while an authenticated session is still rehydrating on the root route', () => {
+    mockUseAppBootstrapState.mockReturnValue({
+      status: 'loading',
+      auth: {
+        sessionState: {
+          status: 'authenticating',
+          user: null,
+        },
+      },
+    });
+
+    render(<App />);
+
+    expect(screen.getByTestId('default-loading-screen')).toBeInTheDocument();
+    expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
+  });
+
   it('skips the initial loading screen while bootstrap is loading on the census route', () => {
     Object.defineProperty(window, 'location', {
       configurable: true,

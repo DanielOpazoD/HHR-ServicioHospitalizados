@@ -2,17 +2,22 @@ import React from 'react';
 import { Cross, Loader2, Orbit } from 'lucide-react';
 
 export type InitialLoadingScreenVariant = 'default' | 'login-shell';
+interface InitialLoadingScreenVariantOptions {
+  preferLoginShell?: boolean;
+}
 
 const normalizePathname = (pathname: string) => pathname.replace(/^\/+|\/+$/g, '');
 
 export const resolveInitialLoadingScreenVariant = (
-  pathname: string | undefined
+  pathname: string | undefined,
+  options: InitialLoadingScreenVariantOptions = {}
 ): InitialLoadingScreenVariant => {
   const normalizedPath = normalizePathname(pathname ?? '/');
+  const { preferLoginShell = true } = options;
 
   // Root/login keep a branded pre-auth shell so refreshes preserve the
   // recognizable login atmosphere before Firebase resolves the session.
-  if (normalizedPath === '' || normalizedPath === 'login') {
+  if (preferLoginShell && (normalizedPath === '' || normalizedPath === 'login')) {
     return 'login-shell';
   }
 
@@ -88,10 +93,16 @@ const DefaultLoadingScreen = () => (
 
 interface InitialLoadingScreenProps {
   pathname?: string;
+  preferLoginShell?: boolean;
 }
 
-export const InitialLoadingScreen: React.FC<InitialLoadingScreenProps> = ({ pathname }) => {
-  const variant = resolveInitialLoadingScreenVariant(pathname ?? resolveCurrentPathname());
+export const InitialLoadingScreen: React.FC<InitialLoadingScreenProps> = ({
+  pathname,
+  preferLoginShell,
+}) => {
+  const variant = resolveInitialLoadingScreenVariant(pathname ?? resolveCurrentPathname(), {
+    preferLoginShell,
+  });
 
   if (variant === 'login-shell') {
     return <LoginShellLoadingScreen />;

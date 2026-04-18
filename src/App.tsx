@@ -52,11 +52,9 @@ function App() {
       return null;
     }
 
-    return (
-      <InitialLoadingScreen
-        pathname={bootstrapState.auth.sessionState.status === 'unauthenticated' ? '/' : pathname}
-      />
-    );
+    const preferLoginShell = bootstrapState.auth.sessionState.status === 'unauthenticated';
+
+    return <InitialLoadingScreen pathname={pathname} preferLoginShell={preferLoginShell} />;
   }
 
   if (bootstrapState.status === 'unauthenticated') {
