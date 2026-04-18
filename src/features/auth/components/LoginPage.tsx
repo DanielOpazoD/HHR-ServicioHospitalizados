@@ -33,14 +33,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           day ↔ night toggle feels continuous instead of a hard cut. Preloads
           both images on first paint (minor cost, big perceptual win). */}
       <div
-        className={`absolute inset-0 bg-cover bg-center transition-opacity duration-700 ease-out ${
+        className={`absolute inset-0 bg-contain bg-center bg-no-repeat transition-opacity duration-700 ease-out ${
           isDayGradient ? 'opacity-100' : 'opacity-0'
         }`}
         style={{ backgroundImage: `url('/images/login/hhr-login-day.png')` }}
         aria-hidden="true"
       />
       <div
-        className={`absolute inset-0 bg-cover bg-center transition-opacity duration-700 ease-out ${
+        className={`absolute inset-0 bg-contain bg-center bg-no-repeat transition-opacity duration-700 ease-out ${
           isDayGradient ? 'opacity-0' : 'opacity-100'
         }`}
         style={{ backgroundImage: `url('/images/login/hhr-login-night.png')` }}
