@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Settings, Sun, Moon } from 'lucide-react';
+import { Users, Settings, Sun, Moon, ChevronDown } from 'lucide-react';
 import { useStaffContext } from '@/context/StaffContext';
 
 interface TensSelectorProps {
@@ -28,6 +28,8 @@ export const TensSelector: React.FC<TensSelectorProps> = ({
   className,
 }) => {
   const { setShowTensManager } = useStaffContext();
+  const selectClassName =
+    'py-0 pl-1 pr-4 border border-slate-200 rounded text-[10px] focus:ring-1 focus:outline-none bg-transparent text-slate-700 h-[20px] w-[60px] appearance-none';
   const resolvedTensOptions = React.useMemo(
     () => buildResolvedStaffOptions(tensList, [...tensDayShift, ...tensNightShift]),
     [tensList, tensDayShift, tensNightShift]
@@ -54,19 +56,24 @@ export const TensSelector: React.FC<TensSelectorProps> = ({
         <Sun size={10} className="text-amber-500" />
         <span className="text-[9px] font-bold text-slate-500 uppercase w-[34px]">Largo</span>
         {[0, 1, 2].map(idx => (
-          <select
-            key={`day-${idx}`}
-            className="py-0 px-1 border border-slate-200 rounded text-[10px] focus:ring-1 focus:ring-teal-500 focus:outline-none w-[60px] bg-teal-50/50 text-slate-700 h-[20px]"
-            value={tensDayShift[idx] || ''}
-            onChange={e => onUpdateTens('day', idx, e.target.value)}
-          >
-            <option value="">--</option>
-            {resolvedTensOptions.map(n => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
+          <div key={`day-${idx}`} className="relative">
+            <select
+              className={`${selectClassName} focus:ring-teal-500 bg-teal-50/50`}
+              value={tensDayShift[idx] || ''}
+              onChange={e => onUpdateTens('day', idx, e.target.value)}
+            >
+              <option value="">--</option>
+              {resolvedTensOptions.map(n => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              size={10}
+              className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 text-slate-400"
+            />
+          </div>
         ))}
       </div>
 
@@ -75,19 +82,24 @@ export const TensSelector: React.FC<TensSelectorProps> = ({
         <Moon size={10} className="text-slate-500" />
         <span className="text-[9px] font-bold text-slate-500 uppercase w-[34px]">Noche</span>
         {[0, 1, 2].map(idx => (
-          <select
-            key={`night-${idx}`}
-            className="py-0 px-1 border border-slate-200 rounded text-[10px] focus:ring-1 focus:ring-slate-500 focus:outline-none w-[60px] bg-slate-100/50 text-slate-700 h-[20px]"
-            value={tensNightShift[idx] || ''}
-            onChange={e => onUpdateTens('night', idx, e.target.value)}
-          >
-            <option value="">--</option>
-            {resolvedTensOptions.map(n => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
+          <div key={`night-${idx}`} className="relative">
+            <select
+              className={`${selectClassName} focus:ring-slate-500 bg-slate-100/50`}
+              value={tensNightShift[idx] || ''}
+              onChange={e => onUpdateTens('night', idx, e.target.value)}
+            >
+              <option value="">--</option>
+              {resolvedTensOptions.map(n => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              size={10}
+              className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 text-slate-400"
+            />
+          </div>
         ))}
       </div>
     </div>
