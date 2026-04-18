@@ -2,7 +2,11 @@ import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRe
 import { useBedManagement } from '@/hooks/useBedManagement';
 import { usePatientDischarges } from '@/hooks/usePatientDischarges';
 import { usePatientTransfers } from '@/hooks/usePatientTransfers';
-import { useNurseManagement, useTensManagement } from '@/hooks/useNurseManagement';
+import {
+  useDetailedStaffingManagement,
+  useNurseManagement,
+  useTensManagement,
+} from '@/hooks/useNurseManagement';
 import { useCMA } from '@/hooks/useCMA';
 import { useHandoffManagement } from '@/hooks/useHandoffManagement';
 import { useInventory } from '@/hooks/useInventory';
@@ -22,6 +26,7 @@ export const useDailyRecordDomainModules = (
   const transferManagement = usePatientTransfers(record, saveAndUpdate);
   const nurseManagement = useNurseManagement(record, patchRecord);
   const tensManagement = useTensManagement(record, patchRecord);
+  const staffingManagement = useDetailedStaffingManagement(record, patchRecord);
   const cmaManagement = useCMA(record, saveAndUpdate);
   const handoffManagement = useHandoffManagement(record, saveAndUpdate, patchRecord);
 
@@ -34,6 +39,7 @@ export const useDailyRecordDomainModules = (
     transferManagement,
     nurseManagement,
     tensManagement,
+    staffingManagement,
     cmaManagement,
     handoffManagement,
   };

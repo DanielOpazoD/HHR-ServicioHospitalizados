@@ -21,6 +21,7 @@ interface UseExportManagerProps {
   currentModule: string;
   selectedShift: 'day' | 'night';
   canVerifyArchiveStatus?: boolean;
+  flushBeforeExport?: () => Promise<void>;
 }
 
 export interface UseExportManagerReturn {
@@ -40,6 +41,7 @@ export const useExportManager = ({
   currentModule,
   selectedShift,
   canVerifyArchiveStatus = false,
+  flushBeforeExport,
 }: UseExportManagerProps): UseExportManagerReturn => {
   const { success, error: notifyError, warning } = useNotification();
   const { confirm } = useConfirmDialog();
@@ -55,6 +57,8 @@ export const useExportManager = ({
   });
 
   const handleExportPDF = useCallback(async () => {
+    await flushBeforeExport?.();
+
     const outcome = await executeExportHandoffPdf({
       record,
       selectedShift,
@@ -76,7 +80,7 @@ export const useExportManager = ({
       fallbackErrorMessage: 'Error al abrir la impresión. Por favor intente nuevamente.',
     });
     dispatchExportManagerNotice(notice, { success, warning, error: notifyError });
-  }, [currentModule, notifyError, record, selectedShift, success, warning]);
+  }, [currentModule, flushBeforeExport, notifyError, record, selectedShift, success, warning]);
 
   const handleBackupExcel = useCallback(async () => {
     setIsBackingUp(true);

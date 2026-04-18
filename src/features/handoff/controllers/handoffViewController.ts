@@ -4,6 +4,7 @@ import type { BedDefinition } from '@/types/domain/beds';
 import type { ShiftType } from '@/types/domain/shift';
 import { buildMedicalHandoffSummary } from './medicalSpecialtyHandoffController';
 import { resolveHandoffDocumentTitleLabel } from '@/shared/handoff/handoffPresentation';
+import { resolveNursingHandoffNovedadesText } from '@/shared/handoff/handoffNovedades';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 import type {
   HandoffClinicalEventActions,
@@ -83,9 +84,11 @@ export const resolveHandoffNovedadesValue = ({
 }: ResolveHandoffNovedadesValueParams): string => {
   if (isMedical) return buildMedicalHandoffSummary(record);
 
-  if (selectedShift === 'day') return record.handoffNovedadesDayShift || '';
-
-  return record.handoffNovedadesNightShift || record.handoffNovedadesDayShift || '';
+  return resolveNursingHandoffNovedadesText({
+    selectedShift,
+    handoffNovedadesDayShift: record.handoffNovedadesDayShift,
+    handoffNovedadesNightShift: record.handoffNovedadesNightShift,
+  });
 };
 
 export const shouldShowNightCudyrActions = ({

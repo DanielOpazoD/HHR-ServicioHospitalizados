@@ -94,10 +94,12 @@ describe('useExportManager', () => {
   });
 
   it('exports nursing handoff PDFs in print-preview mode', async () => {
+    const flushBeforeExport = vi.fn().mockResolvedValue(undefined);
     const { result } = renderHook(() =>
       useExportManager({
         ...defaultProps,
         currentModule: 'NURSING_HANDOFF',
+        flushBeforeExport,
       })
     );
 
@@ -110,6 +112,7 @@ describe('useExportManager', () => {
       selectedShift: 'day',
       isMedical: false,
     });
+    expect(flushBeforeExport).toHaveBeenCalledTimes(1);
   });
 
   it('exports medical handoff PDFs as local downloads', async () => {

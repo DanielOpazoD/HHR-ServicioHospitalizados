@@ -112,8 +112,9 @@ export const useDailyRecordStaffActions = (): DailyRecordStaffActions => {
     () => ({
       updateNurse: actions.updateNurse,
       updateTens: actions.updateTens,
+      updateDetailedStaffing: actions.updateDetailedStaffing,
     }),
-    [actions.updateNurse, actions.updateTens]
+    [actions.updateDetailedStaffing, actions.updateNurse, actions.updateTens]
   );
 };
 

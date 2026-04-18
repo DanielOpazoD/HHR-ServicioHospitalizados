@@ -12,6 +12,7 @@ import type {
   DailyRecordHandoffDayChecklist,
   DailyRecordHandoffNightChecklist,
 } from './dailyRecordNursingHandoff';
+import type { DailyRecordStaffingDetailsV1 } from './dailyRecordStaffingDetails';
 export type {
   MedicalHandoffActor,
   MedicalHandoffBySpecialty,
@@ -49,6 +50,7 @@ export interface DailyRecord {
   nursesNightShift?: string[]; // Turno Noche nurses
   tensDayShift?: string[]; // Turno Largo TENS (max 3)
   tensNightShift?: string[]; // Turno Noche TENS (max 3)
+  staffingDetailsV1?: DailyRecordStaffingDetailsV1;
   activeExtraBeds: string[];
 
   // ===== Handoff Checklist - Day Shift (Turno Largo) =====

@@ -4,6 +4,8 @@ import {
   type CensusAccessProfile,
   isSpecialistCensusAccessProfile,
   resolveAdmissionsCountForRecord,
+  resolveStaffDetailsState,
+  resolveStaffIndicatorsState,
   resolveMovementSummaryState,
   resolveStaffSelectorsClassName,
   resolveStaffSelectorsState,
@@ -41,6 +43,8 @@ export const buildCensusStaffHeaderReadModel = ({
   movementsData?: CensusMovementsData | null;
 }) => {
   const staffSelectorsState = resolveStaffSelectorsState(staffData);
+  const staffIndicatorsState = resolveStaffIndicatorsState(staffData);
+  const staffDetailsState = resolveStaffDetailsState(staffData);
   const admissionsCount = resolveAdmissionsCountForRecord({
     beds,
     recordDate,
@@ -54,6 +58,8 @@ export const buildCensusStaffHeaderReadModel = ({
   return {
     specialistAccess,
     staffSelectorsState,
+    staffIndicatorsState,
+    staffDetailsState,
     movementSummaryState,
     selectorsClassName: resolveStaffSelectorsClassName(readOnly),
     showSummary: Boolean(stats) && !specialistAccess,

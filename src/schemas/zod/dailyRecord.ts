@@ -30,6 +30,27 @@ const MedicalSpecialtyHandoffNoteSchema = z.object({
   dailyContinuity: nullableOptional(z.record(z.string(), MedicalHandoffDailyContinuityEntrySchema)),
 });
 
+const DetailedStaffAssignmentSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  role: z.enum(['nurse', 'tens']),
+  slotType: z.enum(['standard', 'extra']),
+  standardSlotIndex: nullableOptional(z.number()),
+  startTime: z.string(),
+  endTime: z.string(),
+});
+
+const DailyRecordStaffingDetailsSchema = z.object({
+  day: z.object({
+    nurses: z.array(DetailedStaffAssignmentSchema).default([]),
+    tens: z.array(DetailedStaffAssignmentSchema).default([]),
+  }),
+  night: z.object({
+    nurses: z.array(DetailedStaffAssignmentSchema).default([]),
+    tens: z.array(DetailedStaffAssignmentSchema).default([]),
+  }),
+});
+
 export const DailyRecordSchema: z.ZodType<DailyRecord, z.ZodTypeDef, unknown> = z.preprocess(
   input => {
     if (!input || typeof input !== 'object' || Array.isArray(input)) {
@@ -70,6 +91,7 @@ export const DailyRecordSchema: z.ZodType<DailyRecord, z.ZodTypeDef, unknown> = 
       nursesNightShift: nullishDefault(z.array(z.string()), () => ['', '']),
       tensDayShift: nullishDefault(z.array(z.string()), () => ['', '', '']),
       tensNightShift: nullishDefault(z.array(z.string()), () => ['', '', '']),
+      staffingDetailsV1: nullableOptional(DailyRecordStaffingDetailsSchema),
       activeExtraBeds: nullishDefault(z.array(z.string()), () => []),
       handoffDayChecklist: z
         .object({

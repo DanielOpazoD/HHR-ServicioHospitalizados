@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { HandoffSaveDropdown } from '@/components/layout/date-strip/actions/HandoffSaveDropdown';
 
 describe('HandoffSaveDropdown', () => {
-  it('runs local export first and then triggers firebase backup when clicking "Descarga local"', () => {
+  it('runs local export first and then triggers firebase backup when clicking "Descarga local"', async () => {
     const onExportPDF = vi.fn();
     const onBackupPDF = vi.fn().mockResolvedValue(undefined);
 
@@ -20,9 +20,11 @@ describe('HandoffSaveDropdown', () => {
     fireEvent.click(screen.getByTitle('Opciones de guardado (PDF/Nube)'));
     fireEvent.click(screen.getByText('Descarga local'));
 
-    expect(onExportPDF).toHaveBeenCalledTimes(1);
-    expect(onBackupPDF).toHaveBeenCalledTimes(1);
-    expect(onBackupPDF).toHaveBeenCalledWith(true);
+    await waitFor(() => {
+      expect(onExportPDF).toHaveBeenCalledTimes(1);
+      expect(onBackupPDF).toHaveBeenCalledTimes(1);
+      expect(onBackupPDF).toHaveBeenCalledWith(true);
+    });
     expect(onExportPDF.mock.invocationCallOrder[0]).toBeLessThan(
       onBackupPDF.mock.invocationCallOrder[0]
     );

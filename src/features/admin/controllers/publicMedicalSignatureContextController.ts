@@ -63,6 +63,7 @@ export const createPublicMedicalSignatureContextValue = ({
   copyPatientToDate: asyncNoop,
   updateNurse: noop,
   updateTens: noop,
+  updateDetailedStaffing: noop,
   addDischarge: noop,
   updateDischarge: noop,
   deleteDischarge: noop,

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { generateHandoffPdf } from '@/services/pdf/handoffPdfGenerator';
 import { openPdfPrintDialog } from '@/services/pdf/pdfBase';
+import { addNovedadesSection } from '@/services/pdf/handoffPdfSections';
 
 const docMock = {
   output: vi.fn(() => new ArrayBuffer(8)),
@@ -104,6 +105,56 @@ describe('handoffPdfGenerator', () => {
     expect(openPdfPrintDialog).toHaveBeenCalledWith(
       expect.any(Uint8Array),
       '03-01-2026 - Turno Largo.pdf'
+    );
+  });
+
+  it('passes night novedades into the PDF layout for nocturnal exports', async () => {
+    await generateHandoffPdf(
+      {
+        date: '2026-01-03',
+        handoffNovedadesDayShift: 'Dia',
+        handoffNovedadesNightShift: 'Noche con novedades',
+      } as never,
+      false,
+      'night',
+      {
+        dayStart: '08:00',
+        dayEnd: '20:00',
+        nightStart: '20:00',
+        nightEnd: '08:00',
+      }
+    );
+
+    expect(addNovedadesSection).toHaveBeenCalledWith(
+      expect.anything(),
+      'Noche con novedades',
+      expect.any(Number),
+      expect.any(Number)
+    );
+  });
+
+  it('falls back to day novedades for nocturnal exports when night text is empty', async () => {
+    await generateHandoffPdf(
+      {
+        date: '2026-01-03',
+        handoffNovedadesDayShift: 'Texto heredado del turno largo',
+        handoffNovedadesNightShift: '',
+      } as never,
+      false,
+      'night',
+      {
+        dayStart: '08:00',
+        dayEnd: '20:00',
+        nightStart: '20:00',
+        nightEnd: '08:00',
+      }
+    );
+
+    expect(addNovedadesSection).toHaveBeenCalledWith(
+      expect.anything(),
+      'Texto heredado del turno largo',
+      expect.any(Number),
+      expect.any(Number)
     );
   });
 });

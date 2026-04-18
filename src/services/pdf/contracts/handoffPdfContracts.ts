@@ -4,12 +4,14 @@ export type HandoffPdfRecord = DailyRecordHandoffPdfState;
 
 export type HandoffPdfStaffingRecord = Pick<
   HandoffPdfRecord,
+  | 'date'
   | 'nurses'
   | 'nurseName'
   | 'nursesDayShift'
   | 'nursesNightShift'
   | 'tensDayShift'
   | 'tensNightShift'
+  | 'staffingDetailsV1'
   | 'handoffNightReceives'
 >;
 

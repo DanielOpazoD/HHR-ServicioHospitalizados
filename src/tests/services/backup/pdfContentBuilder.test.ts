@@ -154,4 +154,50 @@ describe('pdfContentBuilder', () => {
     const tableBody = mockAutoTable.mock.calls[0][1].body;
     expect(tableBody[0][0].content).toBe('No hay pacientes registrados.');
   });
+
+  it('renders night novedades even when the table already reached the bottom of the page', async () => {
+    mockDoc.lastAutoTable = { finalY: 280 };
+    mockDoc.addPage = vi.fn();
+
+    await buildHandoffPdfContent(
+      mockDoc,
+      {
+        ...mockRecord,
+        handoffNovedadesNightShift: 'Novedades noche importantes',
+      } as unknown as HandoffRecord,
+      'night',
+      {},
+      mockAutoTable as unknown as AutoTableFn
+    );
+
+    expect(mockDoc.addPage).toHaveBeenCalled();
+    expect(mockDoc.text).toHaveBeenCalledWith(
+      'NOVEDADES DEL TURNO',
+      expect.any(Number),
+      expect.any(Number)
+    );
+    expect(mockDoc.splitTextToSize).toHaveBeenCalledWith(
+      'Novedades noche importantes',
+      expect.any(Number)
+    );
+  });
+
+  it('uses day novedades as fallback in night backup PDFs when the night field is empty', async () => {
+    await buildHandoffPdfContent(
+      mockDoc,
+      {
+        ...mockRecord,
+        handoffNovedadesDayShift: 'Texto visible por defecto en noche',
+        handoffNovedadesNightShift: '',
+      } as unknown as HandoffRecord,
+      'night',
+      {},
+      mockAutoTable as unknown as AutoTableFn
+    );
+
+    expect(mockDoc.splitTextToSize).toHaveBeenCalledWith(
+      'Texto visible por defecto en noche',
+      expect.any(Number)
+    );
+  });
 });

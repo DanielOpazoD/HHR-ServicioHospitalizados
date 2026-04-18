@@ -116,6 +116,7 @@ describe('useAppContentRuntime', () => {
         currentModule: 'CENSUS',
         selectedShift: 'day',
         canVerifyArchiveStatus: true,
+        flushBeforeExport: expect.any(Function),
       })
     );
   });

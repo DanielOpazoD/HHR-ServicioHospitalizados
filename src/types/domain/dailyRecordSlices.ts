@@ -36,6 +36,8 @@ export type DailyRecordStaffingState = Pick<
   | 'nursesNightShift'
   | 'tensDayShift'
   | 'tensNightShift'
+  | 'staffingDetailsV1'
+  | 'date'
   | 'handoffNightReceives'
 >;
 
@@ -97,6 +99,7 @@ export type DailyRecordHandoffPdfState = Pick<
   | 'nursesNightShift'
   | 'tensDayShift'
   | 'tensNightShift'
+  | 'staffingDetailsV1'
   | 'handoffNightReceives'
 >;
 

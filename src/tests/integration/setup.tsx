@@ -218,6 +218,7 @@ export const createMockDailyRecordContext = (
   // Nurse/TENS Management
   updateNurse: vi.fn(),
   updateTens: vi.fn(),
+  updateDetailedStaffing: vi.fn(),
 
   // Discharges
   addDischarge: vi.fn(),

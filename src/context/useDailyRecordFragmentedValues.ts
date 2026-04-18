@@ -26,10 +26,12 @@ interface UseDailyRecordFragmentedValuesResult {
   stabilityValue: StabilityRules | null;
   inventoryValue: InventoryStats | null;
   staffValue: {
+    date?: string;
     nursesDayShift: string[];
     nursesNightShift: string[];
     tensDayShift: string[];
     tensNightShift: string[];
+    staffingDetailsV1: NonNullable<DailyRecordContextType['record']>['staffingDetailsV1'];
     activeExtraBeds: string[];
   } | null;
   overridesValue: Record<string, string>;
@@ -86,10 +88,12 @@ export const useDailyRecordFragmentedValues = (
   const staffValue = useMemo(() => {
     if (!record) return null;
     return {
+      date: record.date,
       nursesDayShift: record.nursesDayShift || ['', ''],
       nursesNightShift: record.nursesNightShift || ['', ''],
       tensDayShift: record.tensDayShift || ['', '', ''],
       tensNightShift: record.tensNightShift || ['', '', ''],
+      staffingDetailsV1: record.staffingDetailsV1,
       activeExtraBeds: record.activeExtraBeds || [],
     };
   }, [record]);
@@ -144,6 +148,7 @@ export const useDailyRecordFragmentedValues = (
         toggleBedType: value?.toggleBedType,
         updateNurse: value?.updateNurse,
         updateTens: value?.updateTens,
+        updateDetailedStaffing: value?.updateDetailedStaffing,
         addDischarge: value?.addDischarge,
         updateDischarge: value?.updateDischarge,
         deleteDischarge: value?.deleteDischarge,
@@ -192,6 +197,7 @@ export const useDailyRecordFragmentedValues = (
       value?.toggleBedType,
       value?.updateNurse,
       value?.updateTens,
+      value?.updateDetailedStaffing,
       value?.addDischarge,
       value?.updateDischarge,
       value?.deleteDischarge,

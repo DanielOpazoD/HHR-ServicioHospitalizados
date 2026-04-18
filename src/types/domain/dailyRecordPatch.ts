@@ -13,6 +13,7 @@ import type {
   MedicalSignatureScope,
   MedicalSignatureTimestampByScope,
 } from './dailyRecordMedicalHandoff';
+import type { DailyRecordStaffingDetailsV1 } from './dailyRecordStaffingDetails';
 
 type PatientFieldPath = `beds.${string}.${keyof PatientData}`;
 type PatientCudyrPath = `beds.${string}.cudyr.${keyof CudyrScore}`;
@@ -28,6 +29,7 @@ type TopLevelValueMap = {
   nursesNightShift: string[] | undefined;
   tensDayShift: string[] | undefined;
   tensNightShift: string[] | undefined;
+  staffingDetailsV1: DailyRecordStaffingDetailsV1 | undefined;
   activeExtraBeds: string[];
   discharges: DischargeData[];
   transfers: TransferData[];

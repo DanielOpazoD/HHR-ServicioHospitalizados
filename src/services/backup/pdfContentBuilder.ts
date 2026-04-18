@@ -12,9 +12,11 @@ import type { ShiftType } from '@/types/domain/shift';
 import type { DeviceDetails } from '@/types/domain/devices';
 import { BEDS } from '@/constants/beds';
 import { formatDateDDMMYYYY } from '@/utils/dateFormattingUtils';
-import { resolveHandoffShiftStaff } from '@/services/staff/dailyRecordStaffing';
 import type { HandoffPdfRecord } from '@/services/pdf/contracts/handoffPdfContracts';
 import { pdfContentBuilderLogger } from '@/services/backup/backupLoggers';
+import { addNovedadesSection } from '@/services/pdf/handoffPdfLayoutSections';
+import { getHandoffStaffInfo } from '@/services/pdf/handoffPdfUtils';
+import { resolveNursingHandoffNovedadesText } from '@/shared/handoff/handoffNovedades';
 
 // Logo path
 const LOGO_PATH = '/images/logos/logo_HHR.svg';
@@ -125,8 +127,7 @@ export const buildHandoffPdfContent = async (
   // Nurse/Staff Info
   let currentY = margin + 18;
 
-  const { delivers, receives } = resolveHandoffShiftStaff(record, shiftType);
-  const tens = shiftType === 'day' ? record.tensDayShift || [] : record.tensNightShift || [];
+  const { delivers, receives, tens } = getHandoffStaffInfo(record, shiftType);
 
   doc.setFontSize(8);
   doc.setFont('helvetica', 'bolditalic');
@@ -316,18 +317,12 @@ export const buildHandoffPdfContent = async (
 
   // 4. NOVEDADES
   const finalY = doc.lastAutoTable?.finalY || currentY + 20;
-  const novedades =
-    shiftType === 'day' ? record.handoffNovedadesDayShift : record.handoffNovedadesNightShift;
-
-  if (novedades && finalY < 260) {
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.text('NOVEDADES DEL TURNO:', margin, finalY + 8);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    const splitText = doc.splitTextToSize(novedades, pageWidth - 2 * margin);
-    doc.text(splitText, margin, finalY + 13);
-  }
+  const novedades = resolveNursingHandoffNovedadesText({
+    selectedShift: shiftType,
+    handoffNovedadesDayShift: record.handoffNovedadesDayShift,
+    handoffNovedadesNightShift: record.handoffNovedadesNightShift,
+  });
+  addNovedadesSection(doc, novedades, margin, finalY + 8);
 
   // Page numbering
   const totalPages = doc.getNumberOfPages();

@@ -4,12 +4,27 @@ import type {
 } from '@/features/census/contracts/censusMovementContracts';
 import type { CensusHeaderPatientContract } from '@/application/census/censusStaffHeaderContracts';
 import { classifyPatientMovementForRecord } from '@/application/patient-flow/clinicalEpisode';
+import {
+  resolveDetailedStaffingState,
+  resolveShiftRoleStaffingMeta,
+} from '@/services/staff/dailyRecordDetailedStaffing';
+import type { DailyRecordStaffingDetailsV1 } from '@/types/domain/dailyRecordStaffingDetails';
 
 export interface StaffSelectorsState {
   nursesDayShift: string[];
   nursesNightShift: string[];
   tensDayShift: string[];
   tensNightShift: string[];
+}
+
+export interface ShiftIndicatorState {
+  extraCount: number;
+  hasSpecialSchedule: boolean;
+}
+
+export interface StaffIndicatorsState {
+  nurses: Record<'day' | 'night', ShiftIndicatorState>;
+  tens: Record<'day' | 'night', ShiftIndicatorState>;
 }
 
 export interface MovementSummaryState {
@@ -20,10 +35,12 @@ export interface MovementSummaryState {
 }
 
 interface StaffInput {
+  date?: string;
   nursesDayShift?: string[] | null;
   nursesNightShift?: string[] | null;
   tensDayShift?: string[] | null;
   tensNightShift?: string[] | null;
+  staffingDetailsV1?: DailyRecordStaffingDetailsV1;
 }
 
 interface MovementsInput {
@@ -47,6 +64,49 @@ export const resolveStaffSelectorsState = (input?: StaffInput | null): StaffSele
   tensDayShift: ensureStringArray(input?.tensDayShift),
   tensNightShift: ensureStringArray(input?.tensNightShift),
 });
+
+const EMPTY_SHIFT_INDICATOR: ShiftIndicatorState = {
+  extraCount: 0,
+  hasSpecialSchedule: false,
+};
+
+export const resolveStaffIndicatorsState = (input?: StaffInput | null): StaffIndicatorsState => {
+  if (!input?.date) {
+    return {
+      nurses: {
+        day: EMPTY_SHIFT_INDICATOR,
+        night: EMPTY_SHIFT_INDICATOR,
+      },
+      tens: {
+        day: EMPTY_SHIFT_INDICATOR,
+        night: EMPTY_SHIFT_INDICATOR,
+      },
+    };
+  }
+
+  const detail = resolveDetailedStaffingState(input, input.date);
+
+  return {
+    nurses: {
+      day: resolveShiftRoleStaffingMeta(detail, 'day', 'nurse'),
+      night: resolveShiftRoleStaffingMeta(detail, 'night', 'nurse'),
+    },
+    tens: {
+      day: resolveShiftRoleStaffingMeta(detail, 'day', 'tens'),
+      night: resolveShiftRoleStaffingMeta(detail, 'night', 'tens'),
+    },
+  };
+};
+
+export const resolveStaffDetailsState = (
+  input?: StaffInput | null
+): DailyRecordStaffingDetailsV1 | null => {
+  if (!input?.date) {
+    return null;
+  }
+
+  return resolveDetailedStaffingState(input, input.date);
+};
 
 export const resolveMovementSummaryState = (
   input?: MovementsInput | null

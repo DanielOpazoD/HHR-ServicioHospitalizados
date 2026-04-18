@@ -38,6 +38,8 @@ export interface AppContentRuntime {
   handleExportExcel: () => Promise<void>;
 }
 
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 interface UseAppContentRuntimeParams {
   ui: UseUIStateReturn;
 }
@@ -84,7 +86,12 @@ export const useAppContentRuntime = ({ ui }: UseAppContentRuntimeParams): AppCon
   } = useCensusContext();
   const auth = useAuth();
   const { record, syncStatus, lastSyncTime } = dailyRecordHook;
+  const syncStatusRef = React.useRef(syncStatus);
   const { currentDateString: _currentDateString } = dateNav;
+
+  React.useEffect(() => {
+    syncStatusRef.current = syncStatus;
+  }, [syncStatus]);
 
   const {
     specialistCapabilities,
@@ -96,10 +103,40 @@ export const useAppContentRuntime = ({ ui }: UseAppContentRuntimeParams): AppCon
     [auth.role, ui.currentModule]
   );
 
+  const flushBeforeExport = React.useCallback(async () => {
+    const activeElement = document.activeElement;
+    if (activeElement instanceof HTMLElement) {
+      activeElement.blur();
+    }
+
+    const startedAt = Date.now();
+    let observedSaving = syncStatusRef.current === 'saving';
+
+    while (Date.now() - startedAt < 2500) {
+      const currentStatus = syncStatusRef.current;
+      if (currentStatus === 'saving') {
+        observedSaving = true;
+      }
+
+      if (observedSaving && currentStatus !== 'saving') {
+        break;
+      }
+
+      if (!observedSaving && currentStatus !== 'saving' && Date.now() - startedAt > 150) {
+        break;
+      }
+
+      await wait(50);
+    }
+  }, []);
+
   const exportManager = useExportManager(
     React.useMemo(
-      () => resolveExportManagerParams(dateNav, ui, record, canVerifyArchiveStatus),
-      [canVerifyArchiveStatus, dateNav, record, ui]
+      () => ({
+        ...resolveExportManagerParams(dateNav, ui, record, canVerifyArchiveStatus),
+        flushBeforeExport,
+      }),
+      [canVerifyArchiveStatus, dateNav, flushBeforeExport, record, ui]
     )
   );
 

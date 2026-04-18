@@ -2,6 +2,7 @@ import React from 'react';
 import type { Statistics } from '@/types/domain/statistics';
 import { NurseSelector } from './NurseSelector';
 import { TensSelector } from './TensSelector';
+import { StaffShiftDetailsModal } from './StaffShiftDetailsModal';
 import { CombinedSummaryCard } from '@/components/layout/SummaryCard';
 import {
   useDailyRecordData,
@@ -35,8 +36,9 @@ export const CensusStaffHeader: React.FC<CensusStaffHeaderProps> = ({
   const staffData = useDailyRecordStaff();
   const movementsData = useDailyRecordMovements();
 
-  const { updateNurse, updateTens } = useDailyRecordStaffActions();
+  const { updateNurse, updateTens, updateDetailedStaffing } = useDailyRecordStaffActions();
   const { nursesList, tensList } = useStaffContext();
+  const [activeShiftDetails, setActiveShiftDetails] = React.useState<'day' | 'night' | null>(null);
   const readModel = buildCensusStaffHeaderReadModel({
     readOnly,
     stats,
@@ -56,6 +58,8 @@ export const CensusStaffHeader: React.FC<CensusStaffHeaderProps> = ({
           nursesNightShift={readModel.staffSelectorsState.nursesNightShift}
           nursesList={nursesList}
           onUpdateNurse={updateNurse}
+          shiftIndicators={readModel.staffIndicatorsState.nurses}
+          onOpenShiftDetails={readOnly ? undefined : shift => setActiveShiftDetails(shift)}
           className={readModel.selectorsClassName}
         />
       )}
@@ -66,6 +70,8 @@ export const CensusStaffHeader: React.FC<CensusStaffHeaderProps> = ({
           tensNightShift={readModel.staffSelectorsState.tensNightShift}
           tensList={tensList}
           onUpdateTens={updateTens}
+          shiftIndicators={readModel.staffIndicatorsState.tens}
+          onOpenShiftDetails={readOnly ? undefined : shift => setActiveShiftDetails(shift)}
           className={readModel.selectorsClassName}
         />
       )}
@@ -78,6 +84,19 @@ export const CensusStaffHeader: React.FC<CensusStaffHeaderProps> = ({
           transfers={readModel.movementSummaryState.transfers}
           cmaCount={readModel.movementSummaryState.cmaCount}
           newAdmissions={readModel.movementSummaryState.admissionsCount}
+        />
+      )}
+
+      {activeShiftDetails && dailyRecordData.record?.date && readModel.staffDetailsState && (
+        <StaffShiftDetailsModal
+          isOpen={true}
+          onClose={() => setActiveShiftDetails(null)}
+          shift={activeShiftDetails}
+          recordDate={dailyRecordData.record.date}
+          detail={readModel.staffDetailsState}
+          nursesList={nursesList}
+          tensList={tensList}
+          onSave={updateDetailedStaffing}
         />
       )}
     </div>

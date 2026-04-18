@@ -81,6 +81,7 @@ describe('DailyRecordContext', () => {
     updateCMA: vi.fn(),
     updateNurse: vi.fn(),
     updateTens: vi.fn(),
+    updateDetailedStaffing: vi.fn(),
     updateHandoffChecklist: vi.fn(),
     updateHandoffNovedades: vi.fn(),
     updateMedicalSpecialtyNote: vi.fn(),

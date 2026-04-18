@@ -62,6 +62,7 @@ export const useDailyRecord = (
     transferManagement,
     nurseManagement,
     tensManagement,
+    staffingManagement,
     cmaManagement,
     handoffManagement,
   } = useDailyRecordDomainModules(record, saveAndUpdate, patchRecord);
@@ -109,6 +110,7 @@ export const useDailyRecord = (
         toggleBedType: bedManagement.toggleBedType,
         updateNurse: nurseManagement.updateNurse,
         updateTens: tensManagement.updateTens,
+        updateDetailedStaffing: staffingManagement.updateDetailedStaffing,
         addDischarge: dischargeManagement.addDischarge,
         updateDischarge: dischargeManagement.updateDischarge,
         deleteDischarge: dischargeManagement.deleteDischarge,
@@ -149,6 +151,7 @@ export const useDailyRecord = (
       bedManagement,
       nurseManagement,
       tensManagement,
+      staffingManagement,
       dischargeManagement,
       transferManagement,
       cmaManagement,

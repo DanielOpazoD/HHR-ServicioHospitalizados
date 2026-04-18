@@ -15,6 +15,8 @@ export type {
 } from './components/global-search/globalSearchContracts';
 export {
   resolveAdmissionsCountForRecord,
+  resolveStaffDetailsState,
+  resolveStaffIndicatorsState,
   resolveMovementSummaryState,
   resolveStaffSelectorsClassName,
   resolveStaffSelectorsState,

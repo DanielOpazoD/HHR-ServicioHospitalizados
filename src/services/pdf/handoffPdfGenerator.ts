@@ -3,6 +3,7 @@ import type { ShiftType } from '@/types/domain/shift';
 import type { HandoffPdfRecord } from '@/services/pdf/contracts/handoffPdfContracts';
 import { Schedule } from './handoffPdfUtils';
 import { openPdfPrintDialog } from './pdfBase';
+import { resolveNursingHandoffNovedadesText } from '@/shared/handoff/handoffNovedades';
 import {
   addPatientTable,
   addMovementsSummary,
@@ -68,9 +69,11 @@ export const generateHandoffPdf = async (
   // 5. NOVEDADES
   const novedadesText = isMedical
     ? ''
-    : selectedShift === 'day'
-      ? record.handoffNovedadesDayShift
-      : record.handoffNovedadesNightShift;
+    : resolveNursingHandoffNovedadesText({
+        selectedShift,
+        handoffNovedadesDayShift: record.handoffNovedadesDayShift,
+        handoffNovedadesNightShift: record.handoffNovedadesNightShift,
+      });
 
   addNovedadesSection(doc, novedadesText, margin, currentY);
 

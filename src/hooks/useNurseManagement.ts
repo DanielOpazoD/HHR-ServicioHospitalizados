@@ -1,10 +1,16 @@
 import { useMemo, useCallback } from 'react';
-import type { DailyRecordStaffingState } from '@/application/shared/dailyRecordStaffContracts';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { DailyRecordPatch } from '@/context/dailyRecordContextContracts';
 import { useLatestRef } from '@/hooks/useLatestRef';
+import type { DailyRecordStaffingDetailsV1 } from '@/types/domain/dailyRecordStaffingDetails';
+import {
+  buildDetailedStaffingPatch,
+  resolveDetailedStaffingState,
+  updateDetailedStaffingStandardSlot,
+} from '@/services/staff/dailyRecordDetailedStaffing';
 
 export const useNurseManagement = (
-  record: DailyRecordStaffingState | null,
+  record: DailyRecord | null,
   patchRecord: (partial: DailyRecordPatch) => Promise<void>
 ) => {
   const recordRef = useLatestRef(record);
@@ -14,17 +20,9 @@ export const useNurseManagement = (
       const currentRecord = recordRef.current;
       if (!currentRecord) return;
 
-      const field = shift === 'day' ? 'nursesDayShift' : 'nursesNightShift';
-      const currentArray = [...(currentRecord[field] || ['', ''])];
-
-      while (currentArray.length <= index) {
-        currentArray.push('');
-      }
-      currentArray[index] = name;
-
-      const patch: DailyRecordPatch = {};
-      patch[field] = currentArray;
-      await patchRecord(patch);
+      const detail = resolveDetailedStaffingState(currentRecord, currentRecord.date);
+      const updatedDetail = updateDetailedStaffingStandardSlot(detail, shift, 'nurse', index, name);
+      await patchRecord(buildDetailedStaffingPatch(updatedDetail));
     },
     [patchRecord, recordRef]
   );
@@ -38,7 +36,7 @@ export const useNurseManagement = (
 };
 
 export const useTensManagement = (
-  record: DailyRecordStaffingState | null,
+  record: DailyRecord | null,
   patchRecord: (partial: DailyRecordPatch) => Promise<void>
 ) => {
   const recordRef = useLatestRef(record);
@@ -48,17 +46,9 @@ export const useTensManagement = (
       const currentRecord = recordRef.current;
       if (!currentRecord) return;
 
-      const field = shift === 'day' ? 'tensDayShift' : 'tensNightShift';
-      const currentArray = [...(currentRecord[field] || ['', '', ''])];
-
-      while (currentArray.length <= index) {
-        currentArray.push('');
-      }
-      currentArray[index] = name;
-
-      const patch: DailyRecordPatch = {};
-      patch[field] = currentArray;
-      await patchRecord(patch);
+      const detail = resolveDetailedStaffingState(currentRecord, currentRecord.date);
+      const updatedDetail = updateDetailedStaffingStandardSlot(detail, shift, 'tens', index, name);
+      await patchRecord(buildDetailedStaffingPatch(updatedDetail));
     },
     [patchRecord, recordRef]
   );
@@ -68,5 +58,27 @@ export const useTensManagement = (
       updateTens,
     }),
     [updateTens]
+  );
+};
+
+export const useDetailedStaffingManagement = (
+  record: DailyRecord | null,
+  patchRecord: (partial: DailyRecordPatch) => Promise<void>
+) => {
+  const recordRef = useLatestRef(record);
+
+  const updateDetailedStaffing = useCallback(
+    async (detail: DailyRecordStaffingDetailsV1) => {
+      if (!recordRef.current) return;
+      await patchRecord(buildDetailedStaffingPatch(detail));
+    },
+    [patchRecord, recordRef]
+  );
+
+  return useMemo(
+    () => ({
+      updateDetailedStaffing,
+    }),
+    [updateDetailedStaffing]
   );
 };

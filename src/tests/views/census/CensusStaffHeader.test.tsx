@@ -76,6 +76,7 @@ describe('CensusStaffHeader', () => {
     mockedUseDailyRecordStaffActions.mockReturnValue({
       updateNurse: vi.fn(),
       updateTens: vi.fn(),
+      updateDetailedStaffing: vi.fn(),
     });
     mockedUseDailyRecordStaff.mockReturnValue({
       nursesDayShift: ['Nurse A', 'Nurse B'],

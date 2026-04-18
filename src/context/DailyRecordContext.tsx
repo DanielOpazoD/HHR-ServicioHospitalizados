@@ -51,10 +51,12 @@ const DailyRecordStabilityContext = createContext<StabilityRules | null | undefi
 const DailyRecordInventoryContext = createContext<InventoryStats | null | undefined>(undefined);
 const DailyRecordStaffContext = createContext<
   | {
+      date?: string;
       nursesDayShift: string[];
       nursesNightShift: string[];
       tensDayShift: string[];
       tensNightShift: string[];
+      staffingDetailsV1?: import('@/types/domain/dailyRecordStaffingDetails').DailyRecordStaffingDetailsV1;
       activeExtraBeds: string[];
     }
   | null

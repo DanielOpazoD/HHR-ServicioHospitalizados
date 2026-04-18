@@ -12,6 +12,7 @@ import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcome';
 import type { DailyRecordBootstrapPhase } from '@/hooks/controllers/dailyRecordBootstrapController';
 import type { StabilityRules } from '@/hooks/useStabilityRules';
+import type { DailyRecordStaffingDetailsV1 } from '@/types/domain/dailyRecordStaffingDetails';
 
 export type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
 
@@ -109,6 +110,7 @@ export interface DailyRecordBedActions {
 export interface DailyRecordStaffActions {
   updateNurse: (shift: 'day' | 'night', index: number, name: string) => void;
   updateTens: (shift: 'day' | 'night', index: number, name: string) => void;
+  updateDetailedStaffing: (detail: DailyRecordStaffingDetailsV1) => void;
 }
 
 export interface DailyRecordMovementActions extends PatientMovementActions {
