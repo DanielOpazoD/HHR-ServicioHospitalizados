@@ -9,27 +9,19 @@ import { LoginPage } from '@/features/auth';
 import { GlobalErrorBoundary } from '@/components/shared/GlobalErrorBoundary';
 import { VersionProvider } from '@/context/VersionContext';
 import { VersionMismatchOverlay } from '@/components/shared/VersionMismatchOverlay';
+import {
+  InitialLoadingScreen,
+  shouldRenderInitialLoadingScreen,
+} from '@/components/ui/InitialLoadingScreen';
 import { ViewLoader } from '@/components/ui/ViewLoader';
 import { MedicalSignatureView } from '@/views/LazyViews';
-import { lazyWithRetry } from '@/utils/lazyWithRetry';
+import { AuthenticatedAppShell } from '@/app-shell/runtime/AuthenticatedAppShell';
 import { AuditProvider, AuthProvider, UIProvider } from './context';
 import { HospitalProvider } from './context/HospitalContext';
 import { DefaultRepositoryProvider } from '@/services/RepositoryContext';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/config/queryClient';
 import { useAppBootstrapState } from '@/app-shell/bootstrap/useAppBootstrapState';
-
-const AuthenticatedAppShell = lazyWithRetry(() =>
-  import('@/app-shell/runtime/AuthenticatedAppShell').then(module => ({
-    default: module.AuthenticatedAppShell,
-  }))
-);
-
-const AppLoadingScreen = () => (
-  <div className="min-h-screen bg-slate-100 flex items-center justify-center">
-    <div className="animate-pulse text-medical-600 text-xl font-bold">Cargando...</div>
-  </div>
-);
 
 const VersionedAppShell = ({ children }: { children: React.ReactNode }) => (
   <VersionProvider>
@@ -40,6 +32,7 @@ const VersionedAppShell = ({ children }: { children: React.ReactNode }) => (
 
 function App() {
   const bootstrapState = useAppBootstrapState();
+  const pathname = typeof window !== 'undefined' ? window.location.pathname : '/';
 
   if (bootstrapState.status === 'signature_mode') {
     return (
@@ -52,7 +45,18 @@ function App() {
   }
 
   if (bootstrapState.status === 'loading') {
-    return <AppLoadingScreen />;
+    // `/census` skips the pre-shell loader on purpose. Returning `null` here
+    // lets the route wait quietly until the authenticated census shell can
+    // render its own in-context loader with the preserved chrome titles.
+    if (!shouldRenderInitialLoadingScreen(pathname)) {
+      return null;
+    }
+
+    return (
+      <InitialLoadingScreen
+        pathname={bootstrapState.auth.sessionState.status === 'unauthenticated' ? '/' : pathname}
+      />
+    );
   }
 
   if (bootstrapState.status === 'unauthenticated') {
@@ -61,9 +65,7 @@ function App() {
 
   return (
     <VersionedAppShell>
-      <React.Suspense fallback={<ViewLoader />}>
-        <AuthenticatedAppShell auth={bootstrapState.auth} dateNav={bootstrapState.dateNav} />
-      </React.Suspense>
+      <AuthenticatedAppShell auth={bootstrapState.auth} dateNav={bootstrapState.dateNav} />
     </VersionedAppShell>
   );
 }

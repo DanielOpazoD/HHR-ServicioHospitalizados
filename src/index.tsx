@@ -10,6 +10,10 @@ import {
   getFirebaseStartupFailureMessage,
   type FirebaseStartupWarningCopy,
 } from '@/services/auth/firebaseStartupUiPolicy';
+import {
+  InitialLoadingScreen,
+  shouldRenderInitialLoadingScreen,
+} from '@/components/ui/InitialLoadingScreen';
 import { mountFirebaseConfigWarning } from '@/services/firebase-runtime/firebaseStartupDiagnostics';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 
@@ -48,11 +52,13 @@ const isAppShellLoadFailure = (error: unknown): boolean => {
 };
 
 const renderBootstrapLoadingScreen = () => {
+  if (!shouldRenderInitialLoadingScreen(window.location.pathname)) {
+    return;
+  }
+
   root.render(
     <React.StrictMode>
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
-        <div className="animate-pulse text-medical-600 text-xl font-bold">Cargando...</div>
-      </div>
+      <InitialLoadingScreen />
     </React.StrictMode>
   );
 };

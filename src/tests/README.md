@@ -33,6 +33,7 @@ npm run test
 npm run test:watch
 npm run test:coverage
 npx vitest run src/tests/views/census
+npx vitest run src/tests/components/InitialLoadingScreen.test.tsx src/tests/components/AppLoadingBehavior.test.tsx
 ```
 
 ## Convenciones

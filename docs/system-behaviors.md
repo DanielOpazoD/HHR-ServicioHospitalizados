@@ -159,6 +159,34 @@ Usuarios con "passport" pueden trabajar sin conexión a internet.
 - `src/hooks/useAuthState.ts`
 - `src/context/VersionContext.tsx`
 
+### Comportamiento Esperado de loaders iniciales por ruta
+
+- `"/"` y `"/login"`:
+  - muestran una pantalla inicial propia del login;
+  - conservan el fondo visual del módulo de inicio;
+  - y usan un ícono clínico especial mientras auth/bootstrap todavía no resuelven sesión.
+- `"/census"`:
+  - no debe mostrar un loader inicial full-screen previo;
+  - el primer estado de carga visible debe ser el loader interno del shell de censo;
+  - ese loader es el que conserva barra superior, títulos y contexto visual del módulo.
+- rutas distintas de login/censo:
+  - pueden usar un loader inicial genérico mientras el runtime termina de materializarse.
+
+### Intención de diseño
+
+- Evitar dos transiciones full-screen consecutivas al recargar `censo diario`.
+- Mantener continuidad visual del login durante bootstrap previo a autenticación.
+- Dejar el shell autenticado de censo sin `lazy-loading` extra para que no reaparezca un fallback intermedio antes del loader correcto del módulo.
+
+### Archivos Relacionados
+
+- `src/index.tsx`
+- `src/App.tsx`
+- `src/components/ui/InitialLoadingScreen.tsx`
+- `src/app-shell/runtime/AuthenticatedAppShell.tsx`
+- `src/tests/components/InitialLoadingScreen.test.tsx`
+- `src/tests/components/AppLoadingBehavior.test.tsx`
+
 ## 4.2. Bloqueo rápido local (PIN)
 
 ### Descripción
