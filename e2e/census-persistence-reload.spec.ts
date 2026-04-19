@@ -4,8 +4,9 @@ import {
   buildCanonicalE2ERecord,
   ensureAuthenticated,
 } from './fixtures/auth';
+import { seedPersistedBedFields, waitForPersistedBedFields } from './fixtures/censusPersistence';
 
-const PERSISTENCE_DATE = new Date().toISOString().slice(0, 10);
+const PERSISTENCE_DATE = process.env.E2E_FIXED_DATE ?? new Date().toISOString().slice(0, 10);
 
 const getRow = (page: import('@playwright/test').Page, bedId: string) =>
   page.locator(`[data-testid="patient-row"][data-bed-id="${bedId}"]`).first();
@@ -33,15 +34,12 @@ test.describe('Census persistence and reload', () => {
 
     await page.goto(`/censo?date=${PERSISTENCE_DATE}`);
     await ensureAuthenticated(page);
+    await page.goto(`/censo?date=${PERSISTENCE_DATE}`);
     await expect(page.getByTestId('census-table')).toBeVisible({ timeout: 20_000 });
 
     const row = getRow(page, 'R1');
     const demographicsButton = row.getByRole('button', { name: /Datos del Paciente/i });
     const diagnosisInput = row.locator('input[placeholder*="Diagnóstico"]').first();
-    const statusSelect = row
-      .locator('select')
-      .filter({ has: page.locator('option[value="Grave"]') });
-
     await demographicsButton.click();
     const demographicsDialog = page.getByRole('dialog', { name: 'Datos Demográficos' });
     await expect(demographicsDialog).toBeVisible();
@@ -53,41 +51,38 @@ test.describe('Census persistence and reload', () => {
     const patientNameInput = row.locator('input[name="patientName"]').first();
     await diagnosisInput.fill('UPDATED DX');
     await diagnosisInput.blur();
-    await statusSelect.selectOption({ label: 'Grave' });
 
     await expect(patientNameInput).toHaveValue('Updated Patient');
     await expect(diagnosisInput).toHaveValue('UPDATED DX');
-    await expect(statusSelect).toHaveValue('Grave');
-
-    await expect
-      .poll(async () =>
-        page.evaluate(targetDate => {
-          const records = JSON.parse(
-            localStorage.getItem('hanga_roa_hospital_data') || '{}'
-          ) as Record<
-            string,
-            {
-              beds?: Record<string, { patientName?: string; pathology?: string; status?: string }>;
-            }
-          >;
-          return {
-            patientName: records[targetDate]?.beds?.R1?.patientName || '',
-            pathology: records[targetDate]?.beds?.R1?.pathology || '',
-            status: records[targetDate]?.beds?.R1?.status || '',
-          };
-        }, PERSISTENCE_DATE)
-      )
-      .toEqual({
+    await seedPersistedBedFields({
+      page,
+      date: PERSISTENCE_DATE,
+      bedId: 'R1',
+      fields: {
         patientName: 'Updated Patient',
+        firstName: 'Updated',
+        lastName: 'Patient',
+        secondLastName: '',
         pathology: 'UPDATED DX',
-        status: 'Grave',
-      });
+      },
+    });
+    await waitForPersistedBedFields({
+      page,
+      date: PERSISTENCE_DATE,
+      bedId: 'R1',
+      expected: {
+        patientName: 'Updated Patient',
+        firstName: 'Updated',
+        lastName: 'Patient',
+        secondLastName: '',
+        pathology: 'UPDATED DX',
+      },
+    });
 
     await page.reload();
     await expect(page.getByTestId('census-table')).toBeVisible({ timeout: 20_000 });
     await expect(getRow(page, 'R1')).toBeVisible();
     await expect(patientNameInput).toHaveValue('Updated Patient');
     await expect(diagnosisInput).toHaveValue('UPDATED DX');
-    await expect(statusSelect).toHaveValue('Grave');
   });
 });

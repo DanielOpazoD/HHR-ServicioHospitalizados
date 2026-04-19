@@ -75,6 +75,9 @@ const resolveInitialModule = (): ModuleType => {
   return MODULES_FROM_URL.includes(rawModule as ModuleType) ? (rawModule as ModuleType) : 'CENSUS';
 };
 
+const shouldPreserveDateParamForModule = (module: ModuleType, url: URL): boolean =>
+  module === 'CENSUS' && url.searchParams.has('date');
+
 const syncModuleToUrl = (module: ModuleType): void => {
   if (typeof window === 'undefined') {
     return;
@@ -83,7 +86,9 @@ const syncModuleToUrl = (module: ModuleType): void => {
   const url = new URL(window.location.href);
   url.pathname = `/${MODULE_PATH_SEGMENTS[module]}`;
   url.searchParams.delete('module');
-  url.searchParams.delete('date');
+  if (!shouldPreserveDateParamForModule(module, url)) {
+    url.searchParams.delete('date');
+  }
   window.history.replaceState(window.history.state, '', url);
 };
 

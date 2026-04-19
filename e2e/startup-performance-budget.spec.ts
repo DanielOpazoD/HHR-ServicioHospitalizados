@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 import { ensureRecordExists } from './fixtures/auth';
+import { installPreviewFirebaseRuntime } from './fixtures/previewFirebase';
 
 const FLOW_BUDGETS_PATH = path.join(
   process.cwd(),
@@ -106,6 +107,7 @@ const getEnforcedBudget = (browserName: string, key: keyof typeof BUDGETS): numb
 };
 
 const CURRENT_DATE = '2026-02-20';
+const usePreviewMode = process.env.PLAYWRIGHT_USE_PREVIEW === '1';
 const flowMetrics: Record<string, number> = {};
 const censoBreakdown: Record<string, number> = {};
 const clinicalDocumentsBreakdown: Record<string, number> = {};
@@ -251,6 +253,10 @@ test.describe('Startup performance budget', () => {
     page,
     browserName,
   }) => {
+    if (usePreviewMode) {
+      await installPreviewFirebaseRuntime(page);
+    }
+
     const startLogin = performance.now();
     await page.goto('/');
     const loginButton = page.getByTestId('login-google-button');

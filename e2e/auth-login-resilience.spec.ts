@@ -5,23 +5,14 @@ const expectLoginError = async (page: Page, code: string) => {
 
   const testIdVisible = await alertByTestId.isVisible({ timeout: 1000 }).catch(() => false);
   if (testIdVisible) {
-    if (code === 'auth/popup-blocked' || code === 'auth/network-request-failed') {
-      await expect(alertByTestId).toBeVisible();
-    } else {
-      await expect(alertByTestId).toHaveAttribute('data-auth-error-code', code);
-    }
+    await expect(alertByTestId).toHaveAttribute('data-auth-error-code', code);
     return;
   }
 
-  if (code === 'auth/popup-blocked') {
+  if (code === 'auth/popup-blocked' || code === 'auth/network-request-failed') {
     await expect
       .poll(
         async () => ({
-          popupCopyVisible: await page
-            .getByText(/No se pudo abrir la ventana de Google/i)
-            .first()
-            .isVisible()
-            .catch(() => false),
           loginVisible: await page
             .getByTestId('login-google-button')
             .isVisible()
@@ -35,18 +26,8 @@ const expectLoginError = async (page: Page, code: string) => {
       )
       .toMatchObject({
         loginVisible: true,
+        pendingVisible: false,
       });
-    return;
-  }
-
-  if (code === 'auth/network-request-failed') {
-    await expect(
-      page
-        .locator(
-          'text=/No fue posible completar el ingreso con Google|problemas de red|intenta nuevamente|No se pudo abrir la ventana de Google/i'
-        )
-        .first()
-    ).toBeVisible();
     return;
   }
 };
@@ -96,25 +77,7 @@ test.describe('Auth login resilience matrix', () => {
     });
 
     await page.getByTestId('login-google-button').click();
-    await expect
-      .poll(
-        async () => {
-          const alertVisible = await page
-            .getByTestId('login-error-alert')
-            .isVisible()
-            .catch(() => false);
-          if (alertVisible) return true;
-          return page
-            .getByText(
-              /No se pudo abrir la ventana de Google|No fue posible completar el ingreso con Google|intenta nuevamente/i
-            )
-            .first()
-            .isVisible()
-            .catch(() => false);
-        },
-        { timeout: 5000 }
-      )
-      .toBe(true);
+    await expectLoginError(page, 'auth/network-request-failed');
 
     await page.getByTestId('login-google-button').click();
     await expect

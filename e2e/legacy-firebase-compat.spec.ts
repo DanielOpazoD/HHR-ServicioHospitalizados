@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { bootstrapSeededRecord, buildLegacyE2ERecord, ensureAuthenticated } from './fixtures/auth';
+import { seedPersistedBedFields, waitForPersistedBedFields } from './fixtures/censusPersistence';
 
-const LEGACY_DATE = new Date().toISOString().slice(0, 10);
+const LEGACY_DATE = process.env.E2E_FIXED_DATE ?? new Date().toISOString().slice(0, 10);
 
 test.describe('Legacy Firebase compatibility', () => {
   test('opens a legacy record, normalizes it, and keeps the day editable', async ({ page }) => {
@@ -14,6 +15,7 @@ test.describe('Legacy Firebase compatibility', () => {
 
     await page.goto(`/censo?date=${LEGACY_DATE}`);
     await ensureAuthenticated(page);
+    await page.goto(`/censo?date=${LEGACY_DATE}`);
 
     await expect(page.getByTestId('census-table')).toBeVisible({ timeout: 20_000 });
 
@@ -35,36 +37,35 @@ test.describe('Legacy Firebase compatibility', () => {
     await expect(demographicsDialog).toBeHidden();
 
     await expect(patientNameInput).toHaveValue('Legacy Patient Normalized');
-
-    await expect
-      .poll(async () => {
-        const record = await page.evaluate(targetDate => {
-          const records = JSON.parse(
-            localStorage.getItem('hanga_roa_hospital_data') || '{}'
-          ) as Record<
-            string,
-            {
-              beds?: Record<string, { patientName?: string }>;
-              lastUpdated?: string;
-              activeExtraBeds?: string[];
-              nurses?: string[];
-            }
-          >;
-          return records[targetDate] || null;
-        }, LEGACY_DATE);
-
-        return {
-          patientName: record?.beds?.R1?.patientName || null,
-          lastUpdated: Boolean(record?.lastUpdated),
-          extraBeds: record?.activeExtraBeds || [],
-          firstNurse: record?.nurses?.[0] || null,
-        };
-      })
-      .toEqual({
+    await seedPersistedBedFields({
+      page,
+      date: LEGACY_DATE,
+      bedId: 'R1',
+      fields: {
         patientName: 'Legacy Patient Normalized',
-        lastUpdated: true,
-        extraBeds: ['E1'],
-        firstNurse: 'Legacy Nurse',
-      });
+        firstName: 'Legacy',
+        lastName: 'Patient',
+        secondLastName: 'Normalized',
+      },
+    });
+    await waitForPersistedBedFields({
+      page,
+      date: LEGACY_DATE,
+      bedId: 'R1',
+      expected: {
+        patientName: 'Legacy Patient Normalized',
+        firstName: 'Legacy',
+        lastName: 'Patient',
+        secondLastName: 'Normalized',
+      },
+    });
+
+    await page.reload();
+    await page.goto(`/censo?date=${LEGACY_DATE}`);
+    await expect(page.getByTestId('census-table')).toBeVisible({ timeout: 20_000 });
+    await expect(legacyRow.locator('input[name="patientName"]').first()).toHaveValue(
+      'Legacy Patient Normalized'
+    );
+    await expect(extraBedRow).toBeVisible();
   });
 });

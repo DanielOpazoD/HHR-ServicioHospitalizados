@@ -26,7 +26,7 @@ export type Cie10SearchRequest = z.infer<typeof Cie10SearchRequestSchema>;
 
 export const Cie10SearchResponseSchema = z.object({
   available: z.boolean(),
-  results: z.array(Cie10SearchResultSchema),
+  results: z.array(Cie10SearchResultSchema).optional(),
   message: z.string().optional(),
   error: z.string().optional(),
 });

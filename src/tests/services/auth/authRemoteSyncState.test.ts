@@ -2,6 +2,32 @@ import { describe, expect, it } from 'vitest';
 import { buildAuthRemoteSyncState } from '@/services/auth/authRemoteSyncState';
 
 describe('authRemoteSyncState', () => {
+  it('forces local_only when the E2E runtime requests local sync only', () => {
+    localStorage.setItem('hhr_e2e_force_local_only_sync', 'true');
+
+    expect(
+      buildAuthRemoteSyncState({
+        sessionState: {
+          status: 'authorized',
+          user: {
+            uid: 'u1',
+            email: 'admin@hhr.cl',
+            displayName: 'Admin',
+            role: 'admin',
+          },
+        },
+        authLoading: false,
+        isFirebaseConnected: true,
+        isOnline: true,
+      })
+    ).toEqual({
+      mode: 'local_only',
+      reason: 'manual_override',
+    });
+
+    localStorage.removeItem('hhr_e2e_force_local_only_sync');
+  });
+
   it('returns auth_loading while bootstrap is still resolving', () => {
     expect(
       buildAuthRemoteSyncState({

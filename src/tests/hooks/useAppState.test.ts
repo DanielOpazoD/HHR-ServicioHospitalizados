@@ -38,6 +38,15 @@ describe('useAppState', () => {
       expect(result.current.currentModule).toBe('ANALYTICS');
     });
 
+    it('should preserve the census date query while normalizing the census path', () => {
+      window.history.replaceState({}, '', '/censo?date=2026-03-14');
+
+      renderHook(() => useAppState());
+
+      expect(window.location.pathname).toBe('/census');
+      expect(window.location.search).toBe('?date=2026-03-14');
+    });
+
     it('should update current module', () => {
       const { result } = renderHook(() => useAppState());
 

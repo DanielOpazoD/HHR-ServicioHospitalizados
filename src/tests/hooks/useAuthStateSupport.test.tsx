@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useState } from 'react';
 import type { AuthSessionState } from '@/types/auth';
 import { useResolvedAuthBootstrap } from '@/hooks/useAuthStateSupport';
@@ -57,6 +57,13 @@ vi.mock('@/services/observability/operationalTelemetryService', () => ({
 }));
 
 describe('useResolvedAuthBootstrap', () => {
+  const flushBootstrapSetup = async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+    await vi.advanceTimersByTimeAsync(0);
+    await Promise.resolve();
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
@@ -70,6 +77,12 @@ describe('useResolvedAuthBootstrap', () => {
     });
     localStorage.clear();
     sessionStorage.clear();
+  });
+
+  afterEach(() => {
+    vi.runOnlyPendingTimers();
+    vi.clearAllTimers();
+    vi.useRealTimers();
   });
 
   it('cancels the safety timeout once auth state resolves', async () => {
@@ -95,6 +108,9 @@ describe('useResolvedAuthBootstrap', () => {
     const resolveRedirectAuthSessionOutcome = vi
       .fn()
       .mockResolvedValue({ status: 'success', data: null, issues: [] });
+    const resolveCurrentAuthSessionOutcome = vi
+      .fn()
+      .mockResolvedValue({ status: 'success', data: null, issues: [] });
 
     const { result } = renderHook(() => {
       const [sessionState, setSessionState] = useState<AuthSessionState>({
@@ -106,9 +122,7 @@ describe('useResolvedAuthBootstrap', () => {
       useResolvedAuthBootstrap({
         e2eBootstrapUser: null,
         resolveRedirectAuthSessionOutcome,
-        resolveCurrentAuthSessionOutcome: vi
-          .fn()
-          .mockResolvedValue({ status: 'success', data: null, issues: [] }),
+        resolveCurrentAuthSessionOutcome,
         onAuthSessionStateChange,
         setSessionState,
         setAuthLoading,
@@ -118,8 +132,7 @@ describe('useResolvedAuthBootstrap', () => {
     });
 
     await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
+      await flushBootstrapSetup();
       await vi.advanceTimersByTimeAsync(200);
     });
 
@@ -127,6 +140,7 @@ describe('useResolvedAuthBootstrap', () => {
     expect(result.current.sessionState.status).toBe('authorized');
 
     await act(async () => {
+      await flushBootstrapSetup();
       await vi.advanceTimersByTimeAsync(16000);
     });
 
@@ -144,6 +158,7 @@ describe('useResolvedAuthBootstrap', () => {
 
   it('forces auth loading completion on bootstrap timeout', async () => {
     window.localStorage.setItem('firebase:authUser:test:[DEFAULT]', '{"uid":"persisted"}');
+    mockHasActiveFirebaseSession.mockReturnValue(true);
 
     const onAuthSessionStateChange = vi.fn(() => () => {});
     const resolveRedirectAuthSessionOutcome = vi
@@ -197,6 +212,7 @@ describe('useResolvedAuthBootstrap', () => {
 
   it('revalidates the current session on timeout before falling back to unauthenticated', async () => {
     window.localStorage.setItem('firebase:authUser:test:[DEFAULT]', '{"uid":"persisted"}');
+    mockHasActiveFirebaseSession.mockReturnValue(true);
 
     const onAuthSessionStateChange = vi.fn(() => () => {});
     const resolveRedirectAuthSessionOutcome = vi
@@ -239,6 +255,7 @@ describe('useResolvedAuthBootstrap', () => {
     });
 
     await act(async () => {
+      await flushBootstrapSetup();
       await vi.advanceTimersByTimeAsync(16000);
       await Promise.resolve();
     });
@@ -457,6 +474,12 @@ describe('useResolvedAuthBootstrap', () => {
         return () => {};
       }
     );
+    const resolveRedirectAuthSessionOutcome = vi
+      .fn()
+      .mockResolvedValue({ status: 'success', data: null, issues: [] });
+    const resolveCurrentAuthSessionOutcome = vi
+      .fn()
+      .mockResolvedValue({ status: 'success', data: null, issues: [] });
 
     const { result } = renderHook(() => {
       const [sessionState, setSessionState] = useState<AuthSessionState>({
@@ -467,12 +490,8 @@ describe('useResolvedAuthBootstrap', () => {
 
       useResolvedAuthBootstrap({
         e2eBootstrapUser: null,
-        resolveRedirectAuthSessionOutcome: vi
-          .fn()
-          .mockResolvedValue({ status: 'success', data: null, issues: [] }),
-        resolveCurrentAuthSessionOutcome: vi
-          .fn()
-          .mockResolvedValue({ status: 'success', data: null, issues: [] }),
+        resolveRedirectAuthSessionOutcome,
+        resolveCurrentAuthSessionOutcome,
         onAuthSessionStateChange,
         setSessionState,
         setAuthLoading,
@@ -482,6 +501,7 @@ describe('useResolvedAuthBootstrap', () => {
     });
 
     await act(async () => {
+      await flushBootstrapSetup();
       await vi.advanceTimersByTimeAsync(150);
     });
 

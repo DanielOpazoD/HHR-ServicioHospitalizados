@@ -1,8 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const webServerHost = '127.0.0.1';
-const webServerPort = Number.parseInt(process.env.PLAYWRIGHT_WEB_SERVER_PORT || '3000', 10);
-const webServerOrigin = `http://${webServerHost}:${webServerPort}`;
+process.env.E2E_FIXED_DATE ||= '2026-02-20';
 
 // Default: vite dev. For release-accurate measurements (flow-performance
 // spec), set PLAYWRIGHT_USE_PREVIEW=1 to use the production build served
@@ -10,15 +8,23 @@ const webServerOrigin = `http://${webServerHost}:${webServerPort}`;
 // dist/ directory — cuts ~45 s off re-runs.
 const usePreviewMode = process.env.PLAYWRIGHT_USE_PREVIEW === '1';
 const skipPreviewBuild = process.env.PLAYWRIGHT_SKIP_PREVIEW_BUILD === '1';
+const webServerHost = '127.0.0.1';
+const defaultWebServerPort = usePreviewMode ? '4173' : '3100';
+const webServerPort = Number.parseInt(
+  process.env.PLAYWRIGHT_WEB_SERVER_PORT || defaultWebServerPort,
+  10
+);
+const webServerOrigin = `http://${webServerHost}:${webServerPort}`;
 const previewCommand = skipPreviewBuild
-  ? `npm run preview -- --host ${webServerHost} --port ${webServerPort}`
-  : `npm run build && npm run preview -- --host ${webServerHost} --port ${webServerPort}`;
+  ? `npm run preview -- --host ${webServerHost} --port ${webServerPort} --strictPort`
+  : `npm run build && npm run preview -- --host ${webServerHost} --port ${webServerPort} --strictPort`;
 const webServerCommand = usePreviewMode
   ? previewCommand
-  : `npm run dev -- --host ${webServerHost} --port ${webServerPort}`;
+  : `npm run dev -- --host ${webServerHost} --port ${webServerPort} --strictPort`;
 
 const baseEnv = {
   VITE_E2E_MODE: 'true',
+  E2E_FIXED_DATE: process.env.E2E_FIXED_DATE,
   VITE_FIREBASE_API_KEY: process.env.VITE_FIREBASE_API_KEY || 'demo-api-key',
   VITE_FIREBASE_AUTH_DOMAIN: process.env.VITE_FIREBASE_AUTH_DOMAIN || 'demo-hhr.firebaseapp.com',
   VITE_FIREBASE_PROJECT_ID: process.env.VITE_FIREBASE_PROJECT_ID || 'demo-hhr-e2e',
