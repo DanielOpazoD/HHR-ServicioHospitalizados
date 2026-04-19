@@ -5,7 +5,7 @@ import { BEDS } from '@/constants/beds';
 import type { CudyrScore } from '@/types/domain/cudyr';
 import { useAuditContext } from '@/context/AuditContext';
 import { useAuth } from '@/context/AuthContext';
-import { buildDailyCudyrSummary } from '../services/cudyrSummary';
+import { buildDailyCudyrSummary } from '@/services/cudyr/cudyrSummary';
 import { getAttributedAuthors } from '@/services/admin/attributionService';
 import { resolveCudyrEligibility } from '@/features/cudyr/controllers/cudyrEligibilityController';
 import { canEditCudyrRecord } from '@/features/cudyr/controllers/cudyrEditAccessController';
