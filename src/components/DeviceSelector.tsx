@@ -9,12 +9,10 @@ import { Plus } from 'lucide-react';
 import type { DeviceDetails, DeviceInfo } from '@/types/domain/devices';
 import { useLatestRef } from '@/hooks/useLatestRef';
 import { usePortalPopoverRuntime } from '@/hooks/usePortalPopoverRuntime';
-import {
-  DeviceDateConfigModal,
-  DeviceBadge,
-  DeviceMenu,
-  DeviceRetireModal,
-} from './device-selector';
+import { DeviceDateConfigModal } from './device-selector/DeviceDateConfigModal';
+import { DeviceBadge } from './device-selector/DeviceBadge';
+import { DeviceMenu } from './device-selector/DeviceMenu';
+import { DeviceRetireModal } from './device-selector/DeviceRetireModal';
 import {
   resolveDeviceMenuPosition,
   type DeviceMenuPosition,

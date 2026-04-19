@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act } from '@testing-library/react';
-import { DEFAULT_NO_CHANGES_COMMENT } from '@/features/handoff/controllers';
+import { DEFAULT_NO_CHANGES_COMMENT } from '@/features/handoff/controllers/medicalSpecialtyHandoffController';
 import { Specialty } from '@/types/domain/patientClassification';
 import {
   BedActionsMock,

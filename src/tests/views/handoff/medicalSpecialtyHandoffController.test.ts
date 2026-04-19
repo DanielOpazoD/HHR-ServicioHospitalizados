@@ -7,12 +7,13 @@ import {
   buildMedicalSpecialtyTabState,
   buildMedicalHandoffSummary,
   buildPrintableMedicalSpecialtyBlocks,
+  DEFAULT_NO_CHANGES_COMMENT,
   hasMedicalSpecialtyStructuredData,
   resolveActiveMedicalSpecialty,
   resolveMedicalSpecialtyContinuityEditorState,
   resolveMedicalSpecialtyContinuityDraft,
   resolveMedicalSpecialtyDailyStatus,
-} from '@/features/handoff/controllers';
+} from '@/features/handoff/controllers/medicalSpecialtyHandoffController';
 
 describe('medicalSpecialtyHandoffController', () => {
   it('resolves specialty status from same-day update', () => {
