@@ -1,4 +1,4 @@
-export { getCategorization } from './services/CudyrScoreUtils';
+export { getCategorization } from '@/services/cudyr/CudyrScoreUtils';
 export {
   CUDYR_NIGHT_REFERENCE_TIME_LABEL,
   isCudyrPatientEligible,

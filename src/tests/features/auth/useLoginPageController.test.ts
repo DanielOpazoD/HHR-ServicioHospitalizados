@@ -5,7 +5,7 @@ import { AUTH_UI_COPY } from '@/services/auth/authUiCopy';
 import {
   createApplicationFailed,
   createApplicationSuccess,
-} from '@/application/shared/applicationOutcome';
+} from '@/shared/contracts/applicationOutcome';
 import type { AuthSessionState } from '@/types/auth';
 
 const mockExecuteGoogleSignIn = vi.fn();

@@ -4,7 +4,7 @@ import {
   createApplicationFailed,
   createApplicationPartial,
   createApplicationSuccess,
-} from '@/application/shared/applicationOutcome';
+} from '@/shared/contracts/applicationOutcome';
 import { presentBackupExportOutcome } from '@/hooks/controllers/backupExportOutcomeController';
 
 describe('backupExportOutcomeController', () => {

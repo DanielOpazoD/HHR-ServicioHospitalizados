@@ -5,7 +5,7 @@ import {
   resolveApplicationOutcomeMessage,
   resolveFailedApplicationOutcomeMessage,
   resolvePrimaryApplicationIssueMessage,
-} from '@/application/shared/applicationOutcomeMessage';
+} from '@/shared/contracts/applicationOutcomeMessage';
 
 describe('applicationOutcomeMessage', () => {
   it('prefers userSafeMessage over issue messages', () => {

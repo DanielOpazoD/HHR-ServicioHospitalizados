@@ -1,7 +1,7 @@
 import type { CudyrScore } from '@/types/domain/cudyr';
 import type { BedDefinition } from '@/types/domain/beds';
 import type { PatientData } from '@/features/cudyr/contracts/cudyrPatientContracts';
-import { getCategorization } from '@/features/cudyr/services/CudyrScoreUtils';
+import { getCategorization } from '@/services/cudyr/CudyrScoreUtils';
 
 export interface CudyrRowViewModel {
   isOccupied: boolean;
