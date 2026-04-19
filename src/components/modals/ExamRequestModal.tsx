@@ -20,12 +20,10 @@ import {
   buildExamRequestFormColumns,
   buildExamRequestModalShellModel,
 } from '@/components/modals/controllers/examRequestModalController';
-import {
-  ExamCheckbox,
-  ExamFormHeader,
-  ExamPatientInfo,
-  ExamMetadata,
-} from '@/components/exam-request';
+import { ExamCheckbox } from '@/components/exam-request/ExamCheckbox';
+import { ExamFormHeader } from '@/components/exam-request/ExamFormHeader';
+import { ExamPatientInfo } from '@/components/exam-request/ExamPatientInfo';
+import { ExamMetadata } from '@/components/exam-request/ExamMetadata';
 
 interface ExamRequestModalProps {
   isOpen: boolean;

@@ -6,7 +6,7 @@ import {
   buildReminderFromDraft,
   validateReminderDraft,
   type ReminderDraftInput,
-} from '@/domain/reminders';
+} from '@/domain/reminders/reminderValidation';
 import { resolveReminderAdminErrorMessage } from '@/services/reminders';
 import type { Reminder, ReminderReadReceipt } from '@/types/reminders';
 

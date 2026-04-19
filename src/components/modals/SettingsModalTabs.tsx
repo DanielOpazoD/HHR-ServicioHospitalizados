@@ -13,7 +13,8 @@ import {
   Type,
   Upload,
 } from 'lucide-react';
-import { Button, ModalSection } from '@/core/ui';
+import { Button } from '@/core/ui/Button';
+import { ModalSection } from '@/components/shared/BaseModal';
 import { SecuritySettings } from './SecuritySettings';
 
 export type SettingsTabId = 'visual' | 'table' | 'security' | 'diagnostics';
