@@ -6,7 +6,44 @@ describe('LoggerService', () => {
   beforeEach(() => {
     logger.clearEntries();
     logger.setLevel('debug');
+    window.localStorage.clear();
+    window.history.replaceState({}, '', '/');
     vi.restoreAllMocks();
+  });
+
+  it('exports logger and log shorthands', async () => {
+    vi.resetModules();
+
+    const runtimeLoggerModule = await import('@/services/utils/loggerService');
+
+    expect(runtimeLoggerModule.logger).toBeDefined();
+    expect(typeof runtimeLoggerModule.logger.debug).toBe('function');
+    expect(typeof runtimeLoggerModule.logger.info).toBe('function');
+    expect(typeof runtimeLoggerModule.logger.warn).toBe('function');
+    expect(typeof runtimeLoggerModule.logger.error).toBe('function');
+    expect(runtimeLoggerModule.log).toBeDefined();
+    expect(typeof runtimeLoggerModule.log.debug).toBe('function');
+    expect(typeof runtimeLoggerModule.log.info).toBe('function');
+    expect(typeof runtimeLoggerModule.log.warn).toBe('function');
+    expect(typeof runtimeLoggerModule.log.error).toBe('function');
+  });
+
+  it('defaults to warn unless diagnostics were explicitly enabled', async () => {
+    vi.resetModules();
+    window.localStorage.clear();
+
+    const runtimeLoggerModule = await import('@/services/utils/loggerService');
+
+    expect(runtimeLoggerModule.logger.getLevel()).toBe('warn');
+  });
+
+  it('honors an explicit diagnostics log level from localStorage', async () => {
+    vi.resetModules();
+    window.localStorage.setItem('hhr_log_level', 'debug');
+
+    const runtimeLoggerModule = await import('@/services/utils/loggerService');
+
+    expect(runtimeLoggerModule.logger.getLevel()).toBe('debug');
   });
 
   it('should configure and get levels', () => {
