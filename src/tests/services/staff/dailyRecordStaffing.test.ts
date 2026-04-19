@@ -73,6 +73,48 @@ describe('dailyRecordStaffing', () => {
     expect(resolveDayShiftNurses(record)).toEqual(['Enfermera Legacy']);
   });
 
+  it('normalizes vacancy markers in exportable staffing text for legacy and detailed staffing', () => {
+    const legacyRecord = buildRecord({
+      nursesDayShift: [' Ana ', '--'],
+    });
+    const detailedRecord = buildRecord({
+      date: '2026-04-18',
+      nursesDayShift: ['Ana', 'Legacy Slot'],
+      staffingDetailsV1: {
+        day: {
+          nurses: [
+            {
+              id: 'day-nurse-standard-0',
+              name: 'Ana',
+              role: 'nurse',
+              slotType: 'standard',
+              standardSlotIndex: 0,
+              startTime: '09:00',
+              endTime: '20:00',
+            },
+            {
+              id: 'day-nurse-standard-1',
+              name: '--',
+              role: 'nurse',
+              slotType: 'standard',
+              standardSlotIndex: 1,
+              startTime: '09:00',
+              endTime: '20:00',
+            },
+          ],
+          tens: [],
+        },
+        night: {
+          nurses: [],
+          tens: [],
+        },
+      },
+    });
+
+    expect(resolveExportableNursesText(legacyRecord)).toBe('Ana & Vacante');
+    expect(resolveExportableNursesText(detailedRecord)).toBe('Ana & Vacante');
+  });
+
   it('normalizes unknown storage payloads into canonical staffing with legacy compatibility', () => {
     const normalized = normalizeUnknownDailyRecordStaffing(
       {
