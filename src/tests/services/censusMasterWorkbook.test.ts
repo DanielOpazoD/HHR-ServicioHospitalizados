@@ -76,8 +76,8 @@ describe('census master workbook builder', () => {
     ]);
     expect(workbook.views[0]).toEqual(
       expect.objectContaining({
-        firstSheet: 3,
-        activeTab: 3,
+        firstSheet: 4,
+        activeTab: 4,
         visibility: 'visible',
       })
     );

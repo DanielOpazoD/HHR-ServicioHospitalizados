@@ -36,18 +36,22 @@ export const buildCensusMasterWorkbook = async (
     createCensusWorkbookDaySheet(workbook, record, resolvedSheetName, descriptor.snapshotLabel);
   });
 
-  const firstVisibleSheetIndex = workbook.worksheets.findIndex(sheet => sheet.state !== 'hidden');
-  if (firstVisibleSheetIndex >= 0) {
+  const visibleSheetIndexes = workbook.worksheets
+    .map((sheet, index) => (sheet.state !== 'hidden' ? index : -1))
+    .filter(index => index >= 0);
+  const lastVisibleSheetIndex = visibleSheetIndexes.at(-1) ?? -1;
+  if (lastVisibleSheetIndex >= 0) {
     // Excel opens the workbook on the active tab. Hidden support sheets are inserted first,
-    // so we explicitly point the workbook view at the first visible day sheet.
+    // so we explicitly point the workbook view at the last visible day sheet, which is the
+    // most recent census snapshot the user just generated.
     workbook.views = [
       {
         x: 0,
         y: 0,
         width: 10000,
         height: 20000,
-        firstSheet: firstVisibleSheetIndex,
-        activeTab: firstVisibleSheetIndex,
+        firstSheet: lastVisibleSheetIndex,
+        activeTab: lastVisibleSheetIndex,
         visibility: 'visible',
       },
     ];

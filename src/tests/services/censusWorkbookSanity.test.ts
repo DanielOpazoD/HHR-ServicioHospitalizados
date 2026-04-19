@@ -80,8 +80,8 @@ describe('census workbook sanity', () => {
         /<workbookProtection[^>]*lockStructure="1"[^>]*workbookPassword="[0-9A-F]{4}"/.test(
           workbookXml
         ),
-      firstSheetVisible: workbookXml.includes('firstSheet="3"'),
-      activeTabVisible: workbookXml.includes('activeTab="3"'),
+      firstSheetVisible: workbookXml.includes('firstSheet="4"'),
+      activeTabVisible: workbookXml.includes('activeTab="4"'),
       byteLengthValid: binary.byteLength > 5000,
     };
 
