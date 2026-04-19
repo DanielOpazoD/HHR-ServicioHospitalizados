@@ -28,6 +28,14 @@ vi.mock('@/services/admin/utils/auditUtils', () => ({
   getCurrentUserEmail: vi.fn().mockReturnValue('test@test.com'),
 }));
 
+const createDeferred = <T>() => {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>(res => {
+    resolve = res;
+  });
+  return { promise, resolve };
+};
+
 describe('usePatientAnalysis — detection & event tracking', () => {
   const asRepoRecord = <T>(value: T) =>
     value as unknown as Awaited<ReturnType<typeof defaultDailyRecordReadPort.getForDate>>;
@@ -149,6 +157,113 @@ describe('usePatientAnalysis — detection & event tracking', () => {
 
     expect(result.current.isStale).toBe(false);
     expect(result.current.analysis?.uniquePatients).toBe(2);
+  });
+
+  it('keeps analysis stale when the store changes during an in-flight rerun', async () => {
+    const initialRecord = {
+      date: '2025-01-01',
+      beds: { B1: { rut: '11.111.111-1', patientName: 'John Doe' } },
+    };
+    const deferredDates = createDeferred<string[]>();
+
+    dailyRecordReadPort.getAvailableDates
+      .mockResolvedValueOnce(['2025-01-01'])
+      .mockImplementationOnce(() => deferredDates.promise);
+    dailyRecordReadPort.getForDate
+      .mockResolvedValueOnce(asRepoRecord(initialRecord))
+      .mockResolvedValueOnce(asRepoRecord(initialRecord));
+
+    const { result } = renderHook(() => usePatientAnalysis());
+
+    await act(async () => {
+      await result.current.runAnalysis();
+    });
+
+    expect(result.current.isStale).toBe(false);
+
+    let rerunPromise: Promise<void> | undefined;
+    act(() => {
+      rerunPromise = result.current.runAnalysis();
+    });
+
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent(DAILY_RECORD_STORE_CHANGED_EVENT, {
+          detail: { operation: 'save', dates: ['2025-01-02'] },
+        })
+      );
+    });
+
+    await act(async () => {
+      deferredDates.resolve(['2025-01-01']);
+      await rerunPromise;
+    });
+
+    expect(result.current.analysis).not.toBeNull();
+    expect(result.current.isStale).toBe(true);
+  });
+
+  it('marks analysis stale when the store changes during an in-flight analysis rerun', async () => {
+    let resolveDates: ((dates: string[]) => void) | null = null;
+    const pendingDates = new Promise<string[]>(resolve => {
+      resolveDates = resolve;
+    });
+
+    dailyRecordReadPort.getAvailableDates
+      .mockResolvedValueOnce(['2025-01-01'])
+      .mockReturnValueOnce(pendingDates);
+    dailyRecordReadPort.getForDate
+      .mockResolvedValueOnce(
+        asRepoRecord({
+          date: '2025-01-01',
+          beds: { B1: { rut: '11.111.111-1', patientName: 'John Doe' } },
+        })
+      )
+      .mockResolvedValueOnce(
+        asRepoRecord({
+          date: '2025-01-01',
+          beds: { B1: { rut: '11.111.111-1', patientName: 'John Doe' } },
+        })
+      );
+
+    const { result } = renderHook(() => usePatientAnalysis());
+
+    await act(async () => {
+      await result.current.runAnalysis();
+    });
+
+    let rerunPromise: Promise<void> | undefined;
+    act(() => {
+      rerunPromise = result.current.runAnalysis();
+    });
+
+    expect(result.current.isAnalyzing).toBe(true);
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent(DAILY_RECORD_STORE_CHANGED_EVENT, {
+          detail: { operation: 'save', dates: ['2025-01-01'] },
+        })
+      );
+    });
+
+    if (!resolveDates || !rerunPromise) {
+      throw new Error('Expected deferred rerun to be initialized');
+    }
+
+    const finishPendingDates = resolveDates as (dates: string[]) => void;
+    finishPendingDates(['2025-01-01']);
+
+    await act(async () => {
+      await rerunPromise;
+    });
+
+    expect(result.current.analysis).not.toBeNull();
+    expect(result.current.isStale).toBe(true);
   });
 
   it('should detect name conflicts', async () => {

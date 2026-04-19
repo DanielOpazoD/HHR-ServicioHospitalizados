@@ -6,6 +6,7 @@ import {
   defaultDailyRecordWritePort,
 } from '@/application/ports/dailyRecordPort';
 import { defaultPatientMasterWritePort } from '@/application/ports/patientMasterPort';
+import { DAILY_RECORD_STORE_CHANGED_EVENT } from '@/services/storage/indexeddb/indexedDbRecordEvents';
 
 vi.mock('@/application/ports/dailyRecordPort', () => ({
   defaultDailyRecordReadPort: {
@@ -60,12 +61,27 @@ describe('usePatientAnalysis — conflict resolution, migration & errors', () =>
       await result.current.runAnalysis();
     });
 
+    dailyRecordWritePort.updatePartial.mockImplementation(async date => {
+      await Promise.resolve();
+
+      window.dispatchEvent(
+        new CustomEvent(DAILY_RECORD_STORE_CHANGED_EVENT, {
+          detail: { operation: 'save', dates: [date] },
+        })
+      );
+
+      return undefined as unknown as Awaited<
+        ReturnType<typeof defaultDailyRecordWritePort.updatePartial>
+      >;
+    });
+
     await act(async () => {
       await result.current.resolveConflict('11.111.111-1', 'John Doe', true);
     });
 
     expect(dailyRecordWritePort.updatePartial).toHaveBeenCalled();
     expect(result.current.analysis?.conflicts).toHaveLength(0);
+    expect(result.current.isStale).toBe(false);
   });
 
   it('should resolve conflict without harmonization', async () => {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getCurrentUserEmail } from '@/services/admin/utils/auditUtils';
 import {
   executeAnalyzePatients,
@@ -73,6 +73,14 @@ export const usePatientAnalysis = (dependencies?: Partial<PatientAnalysisDepende
     successes: number;
     errors: number;
   } | null>(null);
+  const analysisRef = useRef<AnalysisResult | null>(null);
+  const isAnalyzingRef = useRef(false);
+  const storeChangedDuringAnalysisRef = useRef(false);
+  const suppressStoreChangesRef = useRef(false);
+
+  useEffect(() => {
+    analysisRef.current = analysis;
+  }, [analysis]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -80,19 +88,29 @@ export const usePatientAnalysis = (dependencies?: Partial<PatientAnalysisDepende
     }
 
     const handleStoreChanged = () => {
-      if (analysis) {
+      if (suppressStoreChangesRef.current) {
+        return;
+      }
+
+      if (isAnalyzingRef.current) {
+        storeChangedDuringAnalysisRef.current = true;
+        return;
+      }
+
+      if (analysisRef.current) {
         setIsStale(true);
       }
     };
 
     window.addEventListener(DAILY_RECORD_STORE_CHANGED_EVENT, handleStoreChanged);
     return () => window.removeEventListener(DAILY_RECORD_STORE_CHANGED_EVENT, handleStoreChanged);
-  }, [analysis]);
+  }, []);
 
   const resolveConflict = useCallback(
     async (rut: string, correctName: string, harmonizeHistory: boolean = false) => {
       if (harmonizeHistory) {
         setIsHarmonizing(true);
+        suppressStoreChangesRef.current = true;
       }
 
       try {
@@ -108,11 +126,16 @@ export const usePatientAnalysis = (dependencies?: Partial<PatientAnalysisDepende
 
         if (outcome.data) {
           setAnalysis(outcome.data);
+          analysisRef.current = outcome.data;
+          if (harmonizeHistory) {
+            setIsStale(false);
+          }
         }
       } catch (error) {
         patientAnalysisLogger.error('Harmonization failed', error);
       } finally {
         if (harmonizeHistory) {
+          suppressStoreChangesRef.current = false;
           setIsHarmonizing(false);
         }
       }
@@ -122,7 +145,10 @@ export const usePatientAnalysis = (dependencies?: Partial<PatientAnalysisDepende
 
   const runAnalysis = useCallback(async () => {
     setIsAnalyzing(true);
+    isAnalyzingRef.current = true;
+    storeChangedDuringAnalysisRef.current = false;
     setAnalysis(null);
+    analysisRef.current = null;
     setMigrationResult(null);
 
     try {
@@ -135,10 +161,12 @@ export const usePatientAnalysis = (dependencies?: Partial<PatientAnalysisDepende
           new Error(resolveApplicationOutcomeMessage(outcome, 'Analysis failed'))
         );
       } else {
-        setIsStale(false);
+        setIsStale(storeChangedDuringAnalysisRef.current);
       }
       setAnalysis(outcome.data);
+      analysisRef.current = outcome.data;
     } finally {
+      isAnalyzingRef.current = false;
       setIsAnalyzing(false);
     }
   }, [resolvedDependencies]);
