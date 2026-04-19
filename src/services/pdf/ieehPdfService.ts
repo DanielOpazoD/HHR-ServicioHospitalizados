@@ -24,7 +24,7 @@
  *  #33 Diagnóstico principal + Código CIE-10
  *  Especialidad del médico tratante
  *
- * ÚLTIMA CALIBRACIÓN: 2026-02-23 (v5, 5 iteraciones visuales con verifyPdfCoords.cjs)
+ * ÚLTIMA CALIBRACIÓN: 2026-02-23 (v5, 5 iteraciones visuales)
  * TEST DE GOBERNANZA: src/tests/services/pdf/ieehPdfCoordinates.test.ts
  */
 
