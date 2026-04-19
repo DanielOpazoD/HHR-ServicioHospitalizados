@@ -3,7 +3,7 @@ import { EmptyBedRow } from '@/features/census/components/EmptyBedRow';
 import { PatientRow } from '@/features/census/components/PatientRow';
 import { buildResolvedOccupiedRows } from '@/features/census/controllers/censusTableBodyController';
 import type { CensusTableBodyProps } from '@/features/census/types/censusTableComponentContracts';
-import type { CensusTableDragDropBundle } from '@/features/census/drag-drop';
+import type { CensusTableDragDropBundle } from '@/features/census/drag-drop/dragDropContracts';
 import type { ClinicalDocumentPresenceInfo } from '@/features/census/controllers/clinicalDocumentPresenceController';
 
 export interface CensusTableBodyDragDropProps {
