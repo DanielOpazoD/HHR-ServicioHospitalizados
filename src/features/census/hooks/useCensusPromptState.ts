@@ -5,7 +5,11 @@ import {
   type CensusPromptState,
 } from '@/features/census/controllers/censusLogicController';
 import { defaultDailyRecordReadPort } from '@/application/ports/dailyRecordPort';
-import { DAILY_RECORD_STORE_CHANGED_EVENT } from '@/services/storage/indexeddb/indexedDbRecordEvents';
+import {
+  DAILY_RECORD_STORE_CHANGED_EVENT,
+  type DailyRecordStoreChangedEventDetail,
+  isDailyRecordStoreChangeRelevantToCensusPrompt,
+} from '@/services/storage/indexeddb/indexedDbRecordEvents';
 
 export const useCensusPromptState = (currentDateString: string): CensusPromptState => {
   const [promptState, setPromptState] = useState(INITIAL_CENSUS_PROMPT_STATE);
@@ -17,13 +21,18 @@ export const useCensusPromptState = (currentDateString: string): CensusPromptSta
       return;
     }
 
-    const handleStoreChanged = () => {
+    const handleStoreChanged = (event: Event) => {
+      const detail = (event as CustomEvent<DailyRecordStoreChangedEventDetail>).detail;
+      if (!isDailyRecordStoreChangeRelevantToCensusPrompt(detail, currentDateString)) {
+        return;
+      }
+
       setReloadVersion(currentVersion => currentVersion + 1);
     };
 
     window.addEventListener(DAILY_RECORD_STORE_CHANGED_EVENT, handleStoreChanged);
     return () => window.removeEventListener(DAILY_RECORD_STORE_CHANGED_EVENT, handleStoreChanged);
-  }, []);
+  }, [currentDateString]);
 
   useEffect(() => {
     const requestId = ++requestIdRef.current;

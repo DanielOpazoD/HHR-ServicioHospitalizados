@@ -38,3 +38,22 @@ export const isDailyRecordStoreChangeRelevantToMonth = (
   const monthPrefix = buildMonthPrefix(year, monthOneBased);
   return (detail.dates ?? []).some(date => date.startsWith(monthPrefix));
 };
+
+export const isDailyRecordStoreChangeRelevantToCensusPrompt = (
+  detail: DailyRecordStoreChangedEventDetail | undefined,
+  currentDateString: string
+): boolean => {
+  if (!detail) {
+    return true;
+  }
+
+  if (detail.operation === 'clear') {
+    return true;
+  }
+
+  if (!detail.dates || detail.dates.length === 0) {
+    return true;
+  }
+
+  return detail.dates.some(date => date !== currentDateString);
+};

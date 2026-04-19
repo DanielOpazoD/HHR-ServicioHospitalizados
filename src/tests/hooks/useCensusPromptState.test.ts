@@ -20,7 +20,41 @@ describe('root useCensusPromptState', () => {
     vi.clearAllMocks();
   });
 
-  it('reloads prompt state when the local daily-record store changes', async () => {
+  it('ignores current-day-only local store writes', async () => {
+    mockedExecuteLoadCensusPromptDataController.mockResolvedValueOnce({
+      previousRecordAvailable: false,
+      previousRecordDate: undefined,
+      availableDates: [],
+    });
+
+    const { result } = renderHook(() => useCensusPromptState('2026-02-15'));
+
+    await waitFor(() => {
+      expect(result.current).toEqual({
+        previousRecordAvailable: false,
+        previousRecordDate: undefined,
+        availableDates: [],
+      });
+    });
+
+    await act(async () => {
+      window.dispatchEvent(
+        new CustomEvent(DAILY_RECORD_STORE_CHANGED_EVENT, {
+          detail: { operation: 'save', dates: ['2026-02-15'] },
+        })
+      );
+      await Promise.resolve();
+    });
+
+    expect(result.current).toEqual({
+      previousRecordAvailable: false,
+      previousRecordDate: undefined,
+      availableDates: [],
+    });
+    expect(mockedExecuteLoadCensusPromptDataController).toHaveBeenCalledTimes(1);
+  });
+
+  it('reloads prompt state when another day changes in the local store', async () => {
     mockedExecuteLoadCensusPromptDataController
       .mockResolvedValueOnce({
         previousRecordAvailable: false,
