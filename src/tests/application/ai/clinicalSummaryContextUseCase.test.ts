@@ -169,4 +169,18 @@ describe('clinicalSummaryContextUseCase', () => {
     expect(prompt.userPrompt).toContain('Oxígeno a bajo flujo.');
     expect(prompt.userPrompt).toContain('Epicrisis');
   });
+
+  it('reuses day nursing novedades for night context when the night note is empty', () => {
+    const context = buildClinicalAISummaryContext({
+      record: {
+        ...record,
+        handoffNovedadesDayShift: 'Texto heredado desde turno largo',
+        handoffNovedadesNightShift: '',
+      },
+      bedId: 'R1',
+      documents,
+    });
+
+    expect(context.nursingHandoff.novedadesNightShift).toBe('Texto heredado desde turno largo');
+  });
 });

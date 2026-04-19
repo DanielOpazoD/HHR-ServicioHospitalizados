@@ -18,7 +18,16 @@ const BEDS: BedDefinition[] = [
 const RECORD = {
   date: '2026-03-03',
   beds: {
-    R1: { patientName: 'UPC', isUPC: true },
+    R1: {
+      patientName: 'UPC',
+      isUPC: true,
+      upcChecklist: {
+        uciCriteria: ['uci_vmi'],
+        utiCriteria: [],
+        classification: 'UPC_UCI',
+        evaluatedAt: '2026-04-18T10:00:00Z',
+      },
+    },
     H1C1: { patientName: 'Sala', isUPC: true },
   },
 } as unknown as DailyRecord;
@@ -94,5 +103,23 @@ describe('medicalHandoffTabsController', () => {
       hasPatients: true,
       patientCount: 1,
     });
+  });
+
+  it('uses checklist-backed UPC state when the boolean flag is stale', () => {
+    const staleRecord = {
+      ...RECORD,
+      beds: {
+        ...RECORD.beds,
+        R1: {
+          ...RECORD.beds.R1,
+          isUPC: false,
+        },
+      },
+    } as unknown as DailyRecord;
+
+    const { upcBeds, nonUpcBeds } = splitMedicalBedsByScope(BEDS, staleRecord);
+
+    expect(upcBeds.map(bed => bed.id)).toEqual(['R1']);
+    expect(nonUpcBeds.map(bed => bed.id)).toEqual(['H1C1']);
   });
 });

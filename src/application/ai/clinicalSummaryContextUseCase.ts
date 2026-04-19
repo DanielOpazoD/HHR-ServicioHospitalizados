@@ -1,6 +1,7 @@
 import { buildClinicalEpisodeKey } from '@/application/patient-flow/clinicalEpisode';
 import type { ClinicalAISummaryRecordContract } from '@/application/ai/clinicalSummaryContextContracts';
 import type { ClinicalDocumentRecord } from '@/domain/clinical-documents/entities';
+import { resolveNursingHandoffNovedadesText } from '@/shared/handoff/handoffNovedades';
 
 const MAX_DOCUMENT_TEXT_LENGTH = 4000;
 
@@ -131,7 +132,11 @@ export const buildClinicalAISummaryContext = ({
       tensDayShift: serializeEntries(record.tensDayShift),
       tensNightShift: serializeEntries(record.tensNightShift),
       novedadesDayShift: record.handoffNovedadesDayShift,
-      novedadesNightShift: record.handoffNovedadesNightShift,
+      novedadesNightShift: resolveNursingHandoffNovedadesText({
+        selectedShift: 'night',
+        handoffNovedadesDayShift: record.handoffNovedadesDayShift,
+        handoffNovedadesNightShift: record.handoffNovedadesNightShift,
+      }),
       dayChecklist: record.handoffDayChecklist,
       nightChecklist: record.handoffNightChecklist,
     },

@@ -40,6 +40,41 @@ export const resolveNormalizedUpcFlag = (
   isUPC: boolean | undefined | null
 ): boolean => isUpcEligibleBedId(bedId) && Boolean(isUPC);
 
+export interface EffectiveUpcState {
+  classification: UpcClassification;
+  isUpc: boolean;
+}
+
+export const resolveEffectiveUpcState = ({
+  bedId,
+  isUPC,
+  checklist,
+}: {
+  bedId: string | undefined | null;
+  isUPC: boolean | undefined | null;
+  checklist: UpcChecklistRecord | undefined | null;
+}): EffectiveUpcState => {
+  if (!isUpcEligibleBedId(bedId)) {
+    return {
+      classification: null,
+      isUpc: false,
+    };
+  }
+
+  const classification = resolveUpcClassificationFromChecklist(checklist);
+  if (classification) {
+    return {
+      classification,
+      isUpc: true,
+    };
+  }
+
+  return {
+    classification: null,
+    isUpc: Boolean(isUPC),
+  };
+};
+
 export const resolveUpcExportLabel = ({
   bedId,
   isUPC,
@@ -49,11 +84,8 @@ export const resolveUpcExportLabel = ({
   isUPC: boolean | undefined | null;
   checklist: UpcChecklistRecord | undefined | null;
 }): string => {
-  if (!isUpcEligibleBedId(bedId)) {
-    return 'No UPC';
-  }
-
-  const classification = resolveUpcClassificationFromChecklist(checklist);
+  const effectiveState = resolveEffectiveUpcState({ bedId, isUPC, checklist });
+  const { classification } = effectiveState;
   if (classification === 'UPC_UCI') {
     return 'UPC-UCI';
   }
@@ -61,7 +93,7 @@ export const resolveUpcExportLabel = ({
     return 'UPC-UTI';
   }
 
-  return Boolean(isUPC) ? 'UPC' : 'No UPC';
+  return effectiveState.isUpc ? 'UPC' : 'No UPC';
 };
 
 export const normalizePatientUpcForBed = <T extends { bedId?: string; isUPC?: boolean }>(

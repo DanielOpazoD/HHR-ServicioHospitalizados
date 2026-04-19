@@ -1,16 +1,26 @@
 import type { BedDefinition } from '@/types/domain/beds';
 import type { DailyRecord } from '@/domain/handoff/recordContracts';
-import { resolveNormalizedUpcFlag } from '@/shared/census/upcBedPolicy';
+import { resolveEffectiveUpcState } from '@/shared/census/upcBedPolicy';
 
 export type MedicalPrintMode = 'all' | 'upc' | 'no-upc';
 export type MedicalTabMode = 'all' | 'upc' | 'no-upc';
 
 export const splitMedicalBedsByScope = (visibleBeds: BedDefinition[], record: DailyRecord) => {
-  const upcBeds = visibleBeds.filter(bed =>
-    resolveNormalizedUpcFlag(bed.id, record.beds[bed.id]?.isUPC)
+  const upcBeds = visibleBeds.filter(
+    bed =>
+      resolveEffectiveUpcState({
+        bedId: bed.id,
+        isUPC: record.beds[bed.id]?.isUPC,
+        checklist: record.beds[bed.id]?.upcChecklist,
+      }).isUpc
   );
   const nonUpcBeds = visibleBeds.filter(
-    bed => !resolveNormalizedUpcFlag(bed.id, record.beds[bed.id]?.isUPC)
+    bed =>
+      !resolveEffectiveUpcState({
+        bedId: bed.id,
+        isUPC: record.beds[bed.id]?.isUPC,
+        checklist: record.beds[bed.id]?.upcChecklist,
+      }).isUpc
   );
   return { upcBeds, nonUpcBeds };
 };
