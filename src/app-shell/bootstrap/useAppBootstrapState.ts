@@ -5,6 +5,7 @@ import type { UseDateNavigationReturn } from '@/hooks/useDateNavigation';
 import { useStorageMigration } from '@/hooks/useStorageMigration';
 import { setFirestoreSyncState } from '@/services/repositories/repositoryConfig';
 import { defaultFirebaseConfigRuntimeAdapter } from '@/services/firebase-runtime/firebaseConfigRuntimeAdapter';
+import { hasRecentAuthenticatedSessionHint } from '@/services/auth/authStorageHints';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 import { useAuth, type AuthContextType } from '@/context';
 
@@ -49,6 +50,7 @@ interface BuildAppBootstrapStateParams {
   dateNav: UseDateNavigationReturn;
   isSignatureMode: boolean;
   currentDateString: string;
+  hasRecentAuthenticatedSessionHint?: boolean;
 }
 
 const isIgnorableWorkerShutdownImportError = (error: unknown): boolean => {
@@ -74,6 +76,16 @@ const resolveAppLoadingPhase = (auth: AuthContextType): 'bootstrapping' | 'rehyd
 
 const resolveAppUnauthenticatedPhase = (auth: AuthContextType): 'unauthenticated' | 'local_only' =>
   auth.remoteSyncState.mode === 'local_only' ? 'local_only' : 'unauthenticated';
+
+const shouldKeepSameTabRefreshRehydrating = ({
+  auth,
+  hasRecentAuthenticatedSessionHint,
+}: Pick<BuildAppBootstrapStateParams, 'auth' | 'hasRecentAuthenticatedSessionHint'>): boolean =>
+  !auth.isLoading &&
+  !auth.isAuthenticated &&
+  auth.sessionState.status === 'unauthenticated' &&
+  Boolean(hasRecentAuthenticatedSessionHint) &&
+  auth.authRuntime.bootstrapPending;
 
 const resolveSyncedFirestoreState = (
   remoteSyncState: AuthContextType['remoteSyncState'],
@@ -136,6 +148,7 @@ export const buildAppBootstrapState = ({
   dateNav,
   isSignatureMode,
   currentDateString,
+  hasRecentAuthenticatedSessionHint = false,
 }: BuildAppBootstrapStateParams): AppBootstrapState => {
   if (isSignatureMode) {
     return {
@@ -145,10 +158,16 @@ export const buildAppBootstrapState = ({
     };
   }
 
-  if (auth.isLoading) {
+  if (
+    auth.isLoading ||
+    shouldKeepSameTabRefreshRehydrating({
+      auth,
+      hasRecentAuthenticatedSessionHint,
+    })
+  ) {
     return {
       status: 'loading',
-      phase: resolveAppLoadingPhase(auth),
+      phase: auth.isLoading ? resolveAppLoadingPhase(auth) : 'rehydrating',
       auth,
     };
   }
@@ -175,6 +194,7 @@ export const buildAppBootstrapState = ({
 
 export const useAppBootstrapState = (): AppBootstrapState => {
   const auth = useAuth();
+  const recentAuthenticatedSessionHint = hasRecentAuthenticatedSessionHint();
 
   useStorageMigration({ enabled: !auth.isLoading && auth.isAuthenticated });
   useVersionCheck();
@@ -195,7 +215,8 @@ export const useAppBootstrapState = (): AppBootstrapState => {
         dateNav,
         isSignatureMode,
         currentDateString,
+        hasRecentAuthenticatedSessionHint: recentAuthenticatedSessionHint,
       }),
-    [auth, currentDateString, dateNav, isSignatureMode]
+    [auth, currentDateString, dateNav, isSignatureMode, recentAuthenticatedSessionHint]
   );
 };

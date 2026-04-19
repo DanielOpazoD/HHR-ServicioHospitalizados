@@ -75,7 +75,18 @@ const createAuthState = (overrides: Partial<AuthContextType> = {}): AuthContextT
 
   return {
     sessionState: { status: 'unauthenticated', user: null },
-    authRuntime: {} as never,
+    authRuntime: {
+      sessionStatus: 'unauthenticated',
+      authLoading: false,
+      isFirebaseConnected: false,
+      isOnline: true,
+      bootstrapPending: false,
+      pendingAgeMs: 0,
+      budgetProfile: 'default',
+      timeoutMs: 15_000,
+      runtimeState: 'ok',
+      issues: [],
+    },
     currentUser: null,
     authorizedUser: null,
     user: null,
@@ -113,6 +124,8 @@ const createDateNavigation = (
 describe('useAppBootstrapState', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.sessionStorage.clear();
+    window.localStorage.clear();
     mockGetOptionalDb.mockReturnValue(null);
     mockUseAuth.mockReturnValue(createAuthState());
     mockUseDateNavigation.mockReturnValue(createDateNavigation());
@@ -167,6 +180,34 @@ describe('useAppBootstrapState', () => {
         reason: 'auth_loading',
       })
     );
+  });
+
+  it('keeps a same-tab authenticated refresh in rehydrating while bootstrap is still pending', () => {
+    window.sessionStorage.setItem('hhr_logged_this_session', 'true');
+    mockUseAuth.mockReturnValue(
+      createAuthState({
+        sessionState: { status: 'unauthenticated', user: null },
+        isLoading: false,
+        isAuthenticated: false,
+        authRuntime: {
+          sessionStatus: 'unauthenticated',
+          authLoading: false,
+          isFirebaseConnected: false,
+          isOnline: true,
+          bootstrapPending: true,
+          pendingAgeMs: 1_200,
+          budgetProfile: 'default',
+          timeoutMs: 15_000,
+          runtimeState: 'recoverable',
+          issues: ['bootstrap pending'],
+        },
+      })
+    );
+
+    const { result } = renderHook(() => useAppBootstrapState());
+
+    expect(result.current.status).toBe('loading');
+    expect(result.current.phase).toBe('rehydrating');
   });
 
   it('prioritizes signature mode over loading and auth gating', () => {

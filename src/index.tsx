@@ -11,11 +11,6 @@ import {
   type FirebaseStartupWarningCopy,
 } from '@/services/auth/firebaseStartupUiPolicy';
 import { InitialLoadingScreen } from '@/components/ui/InitialLoadingScreen';
-import { hasActiveFirebaseSession } from '@/services/auth/authFallback';
-import {
-  hasPersistedFirebaseAuthHint,
-  hasRecentAuthenticatedSessionHint,
-} from '@/services/auth/authStorageHints';
 import { resolvePreMountLoadingScreenDecision } from '@/app-shell/bootstrap/appShellLoadingPolicy';
 import { mountFirebaseConfigWarning } from '@/services/firebase-runtime/firebaseStartupDiagnostics';
 import { createScopedLogger } from '@/services/utils/loggerScope';
@@ -57,9 +52,6 @@ const isAppShellLoadFailure = (error: unknown): boolean => {
 const renderBootstrapLoadingScreen = () => {
   const loadingScreenDecision = resolvePreMountLoadingScreenDecision({
     pathname: window.location.pathname,
-    hasRecentAuthenticatedSessionHint: hasRecentAuthenticatedSessionHint(),
-    hasPersistedFirebaseAuthHint: hasPersistedFirebaseAuthHint(),
-    hasActiveFirebaseSession: hasActiveFirebaseSession(),
   });
 
   if (!loadingScreenDecision.shouldRender) {

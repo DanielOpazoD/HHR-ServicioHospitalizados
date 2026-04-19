@@ -76,6 +76,7 @@ export const subscribeToResolvedAuthState = async ({
   resolveCurrentAuthSessionOutcome,
   onAuthSessionStateChange,
   resolveImmediatelyAsUnauthenticatedWhenDirectChecksAreEmpty,
+  hasAuthRehydrationHint,
   setSessionState,
   setAuthLoading,
 }: {
@@ -85,6 +86,7 @@ export const subscribeToResolvedAuthState = async ({
     callback: (sessionState: AuthSessionState) => void | Promise<void>
   ) => () => void;
   resolveImmediatelyAsUnauthenticatedWhenDirectChecksAreEmpty: boolean;
+  hasAuthRehydrationHint: boolean;
   setSessionState: (sessionState: AuthSessionState) => void;
   setAuthLoading: (value: boolean) => void;
 }): Promise<() => void> => {
@@ -115,7 +117,10 @@ export const subscribeToResolvedAuthState = async ({
           setAuthLoading,
         });
         isBootstrapLoading = false;
-      } else if (resolveImmediatelyAsUnauthenticatedWhenDirectChecksAreEmpty) {
+      } else if (
+        resolveImmediatelyAsUnauthenticatedWhenDirectChecksAreEmpty ||
+        (!isAuthBootstrapPending() && !hasActiveFirebaseSession())
+      ) {
         clearAuthBootstrapPending();
         setSessionState(createUnauthenticatedAuthSessionState());
         setAuthLoading(false);
@@ -169,7 +174,7 @@ export const subscribeToResolvedAuthState = async ({
           isBootstrapLoading,
           sessionState,
           hasRecentManualLogout: hasRecentManualLogout(),
-          hasAuthRehydrationHint: hasPersistedFirebaseAuthHint(),
+          hasAuthRehydrationHint,
         })
       ) {
         authStateLogger.info(
@@ -229,10 +234,11 @@ export const useResolvedAuthBootstrap = ({
 
     let unsubscribe: (() => void) | undefined;
     const hasPendingRedirect = isAuthBootstrapPending();
+    const hasPersistedAuthRehydrationHint = hasPersistedFirebaseAuthHint();
     const canResolveImmediatelyAsUnauthenticatedAfterDirectChecks =
       shouldResolveAuthBootstrapImmediatelyAsUnauthenticated({
         hasPendingRedirect,
-        hasAuthRehydrationHint: hasPersistedFirebaseAuthHint(),
+        hasAuthRehydrationHint: hasPersistedAuthRehydrationHint,
         hasActiveFirebaseSession: hasActiveFirebaseSession(),
       });
 
@@ -273,7 +279,7 @@ export const useResolvedAuthBootstrap = ({
       if (
         shouldAttemptAuthTimeoutRecovery({
           hasRecentManualLogout: hasRecentManualLogout(),
-          hasAuthRehydrationHint: hasPersistedFirebaseAuthHint(),
+          hasAuthRehydrationHint: hasPersistedAuthRehydrationHint,
         })
       ) {
         void resolveCurrentAuthSessionOutcome()
@@ -343,6 +349,7 @@ export const useResolvedAuthBootstrap = ({
       onAuthSessionStateChange,
       resolveImmediatelyAsUnauthenticatedWhenDirectChecksAreEmpty:
         canResolveImmediatelyAsUnauthenticatedAfterDirectChecks,
+      hasAuthRehydrationHint: hasPersistedAuthRehydrationHint,
       setSessionState,
       setAuthLoading: setResolvedAuthLoading,
     }).then(unsub => {

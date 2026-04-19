@@ -53,6 +53,8 @@ describe('useAuthState baseline', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     authSessionStateCallback = null;
+    window.sessionStorage.clear();
+    window.localStorage.clear();
     localStorage.removeItem(AUTH_BOOTSTRAP_PENDING_KEY);
     sessionStorage.removeItem(RECENT_MANUAL_LOGOUT_KEY);
 
@@ -391,6 +393,27 @@ describe('useAuthState baseline', () => {
 
     expect(result.current.user?.uid).toBe('current-1');
     expect(result.current.role).toBe('editor');
+  });
+
+  it('local purge resolves to login quickly when same-tab history is the only remaining auth signal', async () => {
+    vi.useFakeTimers();
+    window.sessionStorage.setItem('hhr_logged_this_session', 'true');
+    window.localStorage.setItem('firebase:authUser:test:[DEFAULT]', '{"uid":"stale-user"}');
+    vi.mocked(authFallback.hasActiveFirebaseSession).mockReturnValue(false);
+    vi.mocked(authSession.onAuthSessionStateChange).mockImplementation(() => () => {});
+
+    const { result } = renderHook(() => useAuthState());
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(result.current.authLoading).toBe(false);
+    expect(result.current.sessionState).toEqual({
+      status: 'unauthenticated',
+      user: null,
+    });
   });
 
   it('should keep anonymous signature-mode users when Firebase returns one', async () => {

@@ -5,9 +5,16 @@ import App from '@/App';
 
 const mockUseAppBootstrapState = vi.fn();
 
-vi.mock('@/app-shell/bootstrap/useAppBootstrapState', () => ({
-  useAppBootstrapState: () => mockUseAppBootstrapState(),
-}));
+vi.mock('@/app-shell/bootstrap/useAppBootstrapState', async () => {
+  const actual = await vi.importActual<typeof import('@/app-shell/bootstrap/useAppBootstrapState')>(
+    '@/app-shell/bootstrap/useAppBootstrapState'
+  );
+
+  return {
+    ...actual,
+    useAppBootstrapState: () => mockUseAppBootstrapState(actual.buildAppBootstrapState),
+  };
+});
 
 vi.mock('@/app-shell/runtime/AuthenticatedAppShell', () => ({
   AuthenticatedAppShell: () => <div data-testid="authenticated-shell">Authenticated Shell</div>,
@@ -21,11 +28,57 @@ vi.mock('@/views/LazyViews', () => ({
   MedicalSignatureView: () => <div data-testid="signature-view">Signature View</div>,
 }));
 
-const createAuth = (sessionStatus: 'unauthenticated' | 'authorized' = 'unauthenticated') => ({
+const createAuth = (
+  sessionStatus: 'unauthenticated' | 'authorized' = 'unauthenticated',
+  overrides: Record<string, unknown> = {}
+) => ({
+  authRuntime: {
+    sessionStatus,
+    authLoading: false,
+    isFirebaseConnected: sessionStatus === 'authorized',
+    isOnline: true,
+    bootstrapPending: false,
+    pendingAgeMs: 0,
+    budgetProfile: 'default',
+    timeoutMs: 15_000,
+    runtimeState: 'ok',
+    issues: [],
+  },
+  currentUser: sessionStatus === 'authorized' ? { uid: 'user-1' } : null,
+  authorizedUser: sessionStatus === 'authorized' ? { uid: 'user-1' } : null,
+  user: sessionStatus === 'authorized' ? { uid: 'user-1' } : null,
+  role: sessionStatus === 'authorized' ? 'admin' : 'viewer',
+  isLoading: false,
+  isAuthenticated: sessionStatus === 'authorized',
+  isAuthorizedSession: sessionStatus === 'authorized',
+  isAnonymousSignature: false,
+  isUnauthorized: false,
+  isEditor: sessionStatus === 'authorized',
+  isViewer: sessionStatus !== 'authorized',
+  isFirebaseConnected: sessionStatus === 'authorized',
+  remoteSyncStatus: sessionStatus === 'authorized' ? 'ready' : 'local_only',
+  remoteSyncState:
+    sessionStatus === 'authorized'
+      ? { mode: 'enabled', reason: 'ready' }
+      : { mode: 'local_only', reason: 'auth_unavailable' },
+  signOut: vi.fn(),
   sessionState: {
     status: sessionStatus,
     user: sessionStatus === 'authorized' ? { uid: 'user-1' } : null,
   },
+  ...overrides,
+});
+
+const createDateNav = () => ({
+  selectedYear: 2026,
+  setSelectedYear: vi.fn(),
+  selectedMonth: 4,
+  setSelectedMonth: vi.fn(),
+  selectedDay: 18,
+  setSelectedDay: vi.fn(),
+  daysInMonth: 30,
+  currentDateString: '2026-04-18',
+  navigateDays: vi.fn(),
 });
 
 describe('App loading behavior', () => {
@@ -76,7 +129,7 @@ describe('App loading behavior', () => {
     expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
   });
 
-  it('briefly suppresses the login page after a same-tab authenticated refresh falls into unauthenticated', async () => {
+  it('keeps login hidden during a same tab authenticated refresh while bootstrap remains pending', async () => {
     window.sessionStorage.setItem('hhr_logged_this_session', 'true');
     Object.defineProperty(window, 'location', {
       configurable: true,
@@ -88,10 +141,28 @@ describe('App loading behavior', () => {
       writable: true,
     });
 
-    mockUseAppBootstrapState.mockReturnValue({
-      status: 'unauthenticated',
-      auth: createAuth('unauthenticated'),
-    });
+    mockUseAppBootstrapState.mockImplementation(buildAppBootstrapState =>
+      buildAppBootstrapState({
+        auth: createAuth('unauthenticated', {
+          authRuntime: {
+            sessionStatus: 'unauthenticated',
+            authLoading: false,
+            isFirebaseConnected: false,
+            isOnline: true,
+            bootstrapPending: true,
+            pendingAgeMs: 1_200,
+            budgetProfile: 'default',
+            timeoutMs: 15_000,
+            runtimeState: 'recoverable',
+            issues: ['bootstrap pending'],
+          },
+        }),
+        dateNav: createDateNav(),
+        isSignatureMode: false,
+        currentDateString: '2026-04-18',
+        hasRecentAuthenticatedSessionHint: true,
+      })
+    );
 
     render(<App />);
 
@@ -106,8 +177,9 @@ describe('App loading behavior', () => {
       await vi.advanceTimersByTimeAsync(650);
     });
 
-    expect(screen.getByTestId('login-page')).toBeInTheDocument();
-    expect(window.sessionStorage.getItem('hhr_logged_this_session')).toBeNull();
+    expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('default-loading-screen')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('login-page')).not.toBeInTheDocument();
   });
 
   it('does not suppress the real login page on the root route after a stale same-tab hint', async () => {

@@ -1,5 +1,10 @@
 import type { AppBootstrapState } from '@/app-shell/bootstrap/useAppBootstrapState';
 import { shouldRenderInitialLoadingScreen } from '@/components/ui/InitialLoadingScreen';
+import { hasActiveFirebaseSession } from '@/services/auth/authFallback';
+import {
+  hasPersistedFirebaseAuthHint,
+  hasRecentAuthenticatedSessionHint,
+} from '@/services/auth/authStorageHints';
 
 export type AppShellLoadingScreenMode = 'silent' | 'default' | 'login-shell';
 
@@ -10,16 +15,22 @@ export interface PreMountLoadingScreenDecision {
 
 export const resolvePreMountLoadingScreenDecision = ({
   pathname,
-  hasRecentAuthenticatedSessionHint,
-  hasPersistedFirebaseAuthHint,
-  hasActiveFirebaseSession,
+  hasRecentAuthenticatedSessionHint: providedRecentAuthenticatedSessionHint,
+  hasPersistedFirebaseAuthHint: providedPersistedFirebaseAuthHint,
+  hasActiveFirebaseSession: providedActiveFirebaseSession,
 }: {
   pathname: string | undefined;
-  hasRecentAuthenticatedSessionHint: boolean;
-  hasPersistedFirebaseAuthHint: boolean;
-  hasActiveFirebaseSession: boolean;
+  hasRecentAuthenticatedSessionHint?: boolean;
+  hasPersistedFirebaseAuthHint?: boolean;
+  hasActiveFirebaseSession?: boolean;
 }): PreMountLoadingScreenDecision => {
-  if (!shouldRenderInitialLoadingScreen(pathname) || hasRecentAuthenticatedSessionHint) {
+  const recentAuthenticatedSessionHint =
+    providedRecentAuthenticatedSessionHint ?? hasRecentAuthenticatedSessionHint();
+  const persistedFirebaseAuthHint =
+    providedPersistedFirebaseAuthHint ?? hasPersistedFirebaseAuthHint();
+  const activeFirebaseSession = providedActiveFirebaseSession ?? hasActiveFirebaseSession();
+
+  if (!shouldRenderInitialLoadingScreen(pathname) || recentAuthenticatedSessionHint) {
     return {
       shouldRender: false,
       preferLoginShell: false,
@@ -28,27 +39,28 @@ export const resolvePreMountLoadingScreenDecision = ({
 
   return {
     shouldRender: true,
-    preferLoginShell: !hasPersistedFirebaseAuthHint && !hasActiveFirebaseSession,
+    preferLoginShell: !persistedFirebaseAuthHint && !activeFirebaseSession,
   };
 };
 
 export const resolveRuntimeLoadingScreenMode = ({
   pathname,
   bootstrapState,
-  hasRecentAuthenticatedSessionHint,
+  hasRecentAuthenticatedSessionHint: _hasRecentAuthenticatedSessionHint,
 }: {
   pathname: string | undefined;
   bootstrapState: Extract<AppBootstrapState, { status: 'loading' }>;
-  hasRecentAuthenticatedSessionHint: boolean;
+  hasRecentAuthenticatedSessionHint?: boolean;
 }): AppShellLoadingScreenMode => {
+  void _hasRecentAuthenticatedSessionHint;
+
   if (!shouldRenderInitialLoadingScreen(pathname)) {
     return 'silent';
   }
 
   if (
     bootstrapState.phase === 'bootstrapping' &&
-    bootstrapState.auth.sessionState.status === 'unauthenticated' &&
-    !hasRecentAuthenticatedSessionHint
+    bootstrapState.auth.sessionState.status === 'unauthenticated'
   ) {
     return 'login-shell';
   }
