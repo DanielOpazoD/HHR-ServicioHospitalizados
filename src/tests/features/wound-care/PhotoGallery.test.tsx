@@ -3,9 +3,20 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { PhotoGallery } from '@/features/wound-care/components/PhotoGallery';
 import type { WoundCarePhoto, WoundCareAuditActor } from '@/types/domain/woundCare';
 
+type MockPhotoLightboxProps = {
+  photos: WoundCarePhoto[];
+  currentIndex: number;
+  onClose: () => void;
+};
+
+type MockPhotoDeleteConfirmProps = {
+  onConfirm: () => void | Promise<void>;
+  onCancel: () => void;
+};
+
 // Mock the PhotoLightbox — renders via portal which is hard to test
 vi.mock('@/features/wound-care/components/PhotoLightbox', () => ({
-  PhotoLightbox: ({ photos, currentIndex, onClose }: any) => (
+  PhotoLightbox: ({ photos, currentIndex, onClose }: MockPhotoLightboxProps) => (
     <div data-testid="lightbox">
       <span data-testid="lightbox-index">{currentIndex}</span>
       <span data-testid="lightbox-total">{photos.length}</span>
@@ -15,7 +26,7 @@ vi.mock('@/features/wound-care/components/PhotoLightbox', () => ({
 }));
 
 vi.mock('@/features/wound-care/components/PhotoDeleteConfirm', () => ({
-  PhotoDeleteConfirm: ({ onConfirm, onCancel }: any) => (
+  PhotoDeleteConfirm: ({ onConfirm, onCancel }: MockPhotoDeleteConfirmProps) => (
     <div data-testid="delete-confirm">
       <button data-testid="confirm-delete" onClick={onConfirm}>
         confirm

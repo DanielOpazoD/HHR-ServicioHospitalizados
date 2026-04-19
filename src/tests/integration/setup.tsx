@@ -21,8 +21,11 @@ vi.mock('@/hooks/useStabilityRules', () => ({
   }),
 }));
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- test fixture: loose shape matches the many hook-specific projections
-export const mockUseAuthState: any = {
+type IntegrationAuthState = import('@/hooks/useAuthState').UseAuthStateReturn & {
+  isAuthenticated: boolean;
+};
+
+export const mockUseAuthState: IntegrationAuthState = {
   user: {
     uid: 'test-user',
     email: 'admin@hospitalhangaroa.cl',
@@ -57,7 +60,7 @@ export const mockUseAuthState: any = {
   canEdit: true,
   isAuthenticated: true,
   isFirebaseConnected: true,
-  remoteSyncStatus: 'enabled' as const,
+  remoteSyncStatus: 'ready',
   remoteSyncState: {
     mode: 'enabled' as const,
     reason: 'ready' as const,
@@ -69,9 +72,9 @@ export const mockUseAuthState: any = {
     isOnline: true,
     bootstrapPending: false,
     pendingAgeMs: 0,
-    budgetProfile: { label: 'ready' },
+    budgetProfile: 'default',
     timeoutMs: 0,
-    runtimeState: 'ready',
+    runtimeState: 'ok',
     issues: [],
   },
   handleLogout: vi.fn(),

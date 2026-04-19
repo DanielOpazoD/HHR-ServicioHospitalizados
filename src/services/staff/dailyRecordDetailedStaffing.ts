@@ -227,6 +227,18 @@ const cloneDetail = (detail: DailyRecordStaffingDetailsV1): DailyRecordStaffingD
   },
 });
 
+const withUpdatedShiftRoleAssignments = (
+  detail: DailyRecordStaffingDetailsV1,
+  shift: DetailedStaffingShift,
+  role: DetailedStaffingRole,
+  updater: (assignments: DetailedStaffAssignment[]) => DetailedStaffAssignment[]
+): DailyRecordStaffingDetailsV1 => {
+  const nextDetail = cloneDetail(detail);
+  const collectionKey = getRoleCollectionKey(role);
+  nextDetail[shift][collectionKey] = updater(nextDetail[shift][collectionKey]);
+  return nextDetail;
+};
+
 const resolveStandardNames = (
   detail: DailyRecordStaffingDetailsV1,
   shift: DetailedStaffingShift,
@@ -302,23 +314,19 @@ export const updateDetailedStaffingStandardSlot = (
   role: DetailedStaffingRole,
   index: number,
   name: string
-): DailyRecordStaffingDetailsV1 => {
-  const nextDetail = cloneDetail(detail);
-  const collectionKey = getRoleCollectionKey(role);
+): DailyRecordStaffingDetailsV1 =>
+  withUpdatedShiftRoleAssignments(detail, shift, role, assignments =>
+    assignments.map(assignment => {
+      if (assignment.slotType !== 'standard' || assignment.standardSlotIndex !== index) {
+        return assignment;
+      }
 
-  nextDetail[shift][collectionKey] = nextDetail[shift][collectionKey].map(assignment => {
-    if (assignment.slotType !== 'standard' || assignment.standardSlotIndex !== index) {
-      return assignment;
-    }
-
-    return {
-      ...assignment,
-      name,
-    };
-  });
-
-  return nextDetail;
-};
+      return {
+        ...assignment,
+        name,
+      };
+    })
+  );
 
 export const updateDetailedStaffingAssignment = (
   detail: DailyRecordStaffingDetailsV1,
@@ -326,16 +334,12 @@ export const updateDetailedStaffingAssignment = (
   role: DetailedStaffingRole,
   assignmentId: string,
   updates: Partial<Pick<DetailedStaffAssignment, 'name' | 'startTime' | 'endTime'>>
-): DailyRecordStaffingDetailsV1 => {
-  const nextDetail = cloneDetail(detail);
-  const collectionKey = getRoleCollectionKey(role);
-
-  nextDetail[shift][collectionKey] = nextDetail[shift][collectionKey].map(assignment =>
-    assignment.id === assignmentId ? { ...assignment, ...updates } : assignment
+): DailyRecordStaffingDetailsV1 =>
+  withUpdatedShiftRoleAssignments(detail, shift, role, assignments =>
+    assignments.map(assignment =>
+      assignment.id === assignmentId ? { ...assignment, ...updates } : assignment
+    )
   );
-
-  return nextDetail;
-};
 
 export const addDetailedStaffingExtra = (
   detail: DailyRecordStaffingDetailsV1,
@@ -343,20 +347,19 @@ export const addDetailedStaffingExtra = (
   shift: DetailedStaffingShift,
   role: DetailedStaffingRole
 ): DailyRecordStaffingDetailsV1 => {
-  const nextDetail = cloneDetail(detail);
-  const collectionKey = getRoleCollectionKey(role);
   const { startTime, endTime } = getStandardSchedule(date, shift);
 
-  nextDetail[shift][collectionKey].push({
-    id: `${shift}-${role}-extra-${Date.now()}`,
-    name: '',
-    role,
-    slotType: 'extra',
-    startTime,
-    endTime,
-  });
-
-  return nextDetail;
+  return withUpdatedShiftRoleAssignments(detail, shift, role, assignments => [
+    ...assignments,
+    {
+      id: `${shift}-${role}-extra-${Date.now()}`,
+      name: '',
+      role,
+      slotType: 'extra',
+      startTime,
+      endTime,
+    },
+  ]);
 };
 
 export const removeDetailedStaffingExtra = (
@@ -364,16 +367,10 @@ export const removeDetailedStaffingExtra = (
   shift: DetailedStaffingShift,
   role: DetailedStaffingRole,
   assignmentId: string
-): DailyRecordStaffingDetailsV1 => {
-  const nextDetail = cloneDetail(detail);
-  const collectionKey = getRoleCollectionKey(role);
-
-  nextDetail[shift][collectionKey] = nextDetail[shift][collectionKey].filter(
-    assignment => assignment.id !== assignmentId
+): DailyRecordStaffingDetailsV1 =>
+  withUpdatedShiftRoleAssignments(detail, shift, role, assignments =>
+    assignments.filter(assignment => assignment.id !== assignmentId)
   );
-
-  return nextDetail;
-};
 
 export const resetDetailedStaffingAssignmentToStandard = (
   detail: DailyRecordStaffingDetailsV1,
@@ -382,19 +379,17 @@ export const resetDetailedStaffingAssignmentToStandard = (
   role: DetailedStaffingRole,
   assignmentId: string
 ): DailyRecordStaffingDetailsV1 => {
-  const nextDetail = cloneDetail(detail);
-  const collectionKey = getRoleCollectionKey(role);
   const { startTime, endTime } = getStandardSchedule(date, shift);
 
-  nextDetail[shift][collectionKey] = nextDetail[shift][collectionKey].map(assignment =>
-    assignment.id === assignmentId
-      ? {
-          ...assignment,
-          startTime,
-          endTime,
-        }
-      : assignment
+  return withUpdatedShiftRoleAssignments(detail, shift, role, assignments =>
+    assignments.map(assignment =>
+      assignment.id === assignmentId
+        ? {
+            ...assignment,
+            startTime,
+            endTime,
+          }
+        : assignment
+    )
   );
-
-  return nextDetail;
 };

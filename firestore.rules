@@ -447,10 +447,17 @@ service cloud.firestore {
               isCurrentUser(resource.data.userId));
     }
 
+    function hasOnlyReminderReceiptKeys(payload) {
+      return payload.keys().hasOnly(['userId', 'userName', 'readAt', 'shift', 'dateKey']);
+    }
+
     function isValidOwnReminderReceiptWrite() {
       let payload = request.resource.data;
 
-      return isCurrentUser(payload.userId) &&
+      return isAuthenticated() &&
+             hasOnlyReminderReceiptKeys(payload) &&
+             payload.userId is string &&
+             isCurrentUser(payload.userId) &&
              payload.userName is string &&
              payload.readAt is string &&
              payload.shift in ['day', 'night'] &&

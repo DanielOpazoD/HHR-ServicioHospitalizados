@@ -858,6 +858,37 @@ export function registerFirestoreRulesAccessGroups({
       );
     });
 
+    it('blocks users from creating read receipts with unexpected fields', async () => {
+      await assertFails(
+        nurse()
+          .doc(receiptPath)
+          .set({
+            userId: 'user_nurse',
+            userName: 'Nurse',
+            readAt: new Date(NOW_MS).toISOString(),
+            shift: 'day',
+            dateKey: CURRENT_RECORD_DATE,
+            elevated: true,
+          })
+      );
+    });
+
+    it('blocks users from updating receipts with unexpected fields after creation', async () => {
+      await setupDoc(admin(), receiptPath, {
+        userId: 'user_nurse',
+        userName: 'Nurse',
+        readAt: new Date(NOW_MS).toISOString(),
+        shift: 'day',
+        dateKey: CURRENT_RECORD_DATE,
+      });
+
+      await assertFails(
+        nurse().doc(receiptPath).update({
+          elevated: true,
+        })
+      );
+    });
+
     it('allows users to read their own receipt but blocks other users', async () => {
       await setupDoc(admin(), receiptPath, {
         userId: 'user_nurse',

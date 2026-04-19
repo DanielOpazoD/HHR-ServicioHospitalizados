@@ -50,6 +50,8 @@ vi.mock('@/services/pdf/handoffPdfUtils', () => ({
 import { generateConsentPdf } from '@/features/wound-care/services/consentPdfGenerator';
 import { getBase64ImageFromURL } from '@/services/pdf/handoffPdfUtils';
 
+const getRenderedTextCalls = (): unknown[] => mockDoc.text.mock.calls.map(([text]) => text);
+
 // ============================================================================
 // Tests
 // ============================================================================
@@ -63,14 +65,14 @@ describe('consentPdfGenerator', () => {
     await generateConsentPdf({ patientName: 'Juan Perez', patientRut: '12345678-9' });
 
     // Patient name should appear in the document
-    const textCalls = mockDoc.text.mock.calls.map((call: any[]) => call[0]);
+    const textCalls = getRenderedTextCalls();
     expect(textCalls).toContain('Juan Perez');
   });
 
   it('includes hospital header', async () => {
     await generateConsentPdf({ patientName: 'Test', patientRut: '1-1' });
 
-    const textCalls = mockDoc.text.mock.calls.map((call: any[]) => call[0]);
+    const textCalls = getRenderedTextCalls();
     expect(textCalls).toContain('HOSPITAL HANGA ROA');
   });
 
@@ -106,7 +108,7 @@ describe('consentPdfGenerator', () => {
     });
 
     // formatDate converts 'yyyy-mm-dd' to 'dd/mm/yyyy'
-    const textCalls = mockDoc.text.mock.calls.map((call: any[]) => call[0]);
+    const textCalls = getRenderedTextCalls();
     expect(textCalls).toContain('15/04/2026');
   });
 });
