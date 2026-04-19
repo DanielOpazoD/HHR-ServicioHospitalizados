@@ -172,11 +172,30 @@ Usuarios con "passport" pueden trabajar sin conexión a internet.
 - rutas distintas de login/censo:
   - pueden usar un loader inicial genérico mientras el runtime termina de materializarse.
 
+### Contrato anti-regresión para `"/census"`
+
+`Censo diario` tiene una regla deliberadamente más estricta que el resto del sistema:
+
+1. Al recargar con `F5`, no debe aparecer ningún loader global full-screen antes del shell propio de censo.
+2. Tampoco debe aparecer un “loader de supresión” intermedio durante refreshes autenticados de la misma pestaña.
+3. Si auth cae brevemente a `unauthenticated` mientras una sesión reciente de la misma pestaña todavía se está rehidratando, en `"/census"` la UI debe quedar silenciosa (`null`) hasta que:
+   - vuelva el shell autenticado; o
+   - se confirme de verdad que debe mostrarse login.
+4. El único loader permitido en `"/census"` es el loader interno del shell del módulo.
+
+### Qué NO se debe hacer en `"/census"`
+
+- No renderizar `InitialLoadingScreen`.
+- No renderizar `DefaultLoadingScreen`.
+- No reutilizar suppressions visuales pensadas para login si introducen un spinner full-screen adicional.
+- No agregar nuevos `Suspense fallback` globales delante del shell autenticado del censo.
+
 ### Intención de diseño
 
 - Evitar dos transiciones full-screen consecutivas al recargar `censo diario`.
 - Mantener continuidad visual del login durante bootstrap previo a autenticación.
 - Dejar el shell autenticado de censo sin `lazy-loading` extra para que no reaparezca un fallback intermedio antes del loader correcto del módulo.
+- Tratar cualquier nuevo loader global visible en `"/census"` como regresión.
 
 ### Archivos Relacionados
 

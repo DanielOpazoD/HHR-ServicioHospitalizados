@@ -9,6 +9,7 @@ import type { DeviceDetails, DeviceInstance } from './domain/devices';
 import type { FhirResource } from './domain/fhir';
 import type { PatientData, MedicalHandoffAudit, MedicalHandoffEntry } from './domain/patient';
 import type { PatientStatus, Specialty } from './domain/patientClassification';
+import type { UpcChecklistRecord } from '@/domain/upc/upcContracts';
 import { LucideIcon } from 'lucide-react';
 
 // ============================================================================
@@ -33,6 +34,7 @@ export type PatientFieldValue =
   | DeviceInstance[]
   | MedicalHandoffAudit
   | MedicalHandoffEntry[]
+  | UpcChecklistRecord
   | FhirResource;
 
 /**
@@ -61,7 +63,12 @@ export type PatientArrayField = 'devices' | 'clinicalEvents' | 'medicalHandoffEn
 
 export type PatientEnumField = 'status' | 'specialty' | 'bedMode';
 
-export type PatientObjectField = 'clinicalCrib' | 'cudyr' | 'deviceDetails' | 'medicalHandoffAudit';
+export type PatientObjectField =
+  | 'clinicalCrib'
+  | 'cudyr'
+  | 'deviceDetails'
+  | 'medicalHandoffAudit'
+  | 'upcChecklist';
 
 // ============================================================================
 // Error Handling

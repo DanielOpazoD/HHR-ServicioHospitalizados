@@ -4,6 +4,7 @@ import {
   shouldAttemptAuthTimeoutRecovery,
   shouldDeferUnauthenticatedSessionState,
   shouldIgnoreTransientUnauthenticatedBootstrapEvent,
+  shouldResolveAuthBootstrapImmediatelyAsUnauthenticated,
   shouldLogSessionLogin,
 } from '@/hooks/controllers/authBootstrapController';
 import type { AuthSessionState } from '@/types/auth';
@@ -30,7 +31,7 @@ describe('authBootstrapController', () => {
         isBootstrapLoading: true,
         sessionState: unauthenticatedSession,
         hasRecentManualLogout: false,
-        hasPersistedFirebaseAuthHint: true,
+        hasAuthRehydrationHint: true,
       })
     ).toBe(true);
 
@@ -39,7 +40,7 @@ describe('authBootstrapController', () => {
         isBootstrapLoading: false,
         sessionState: unauthenticatedSession,
         hasRecentManualLogout: false,
-        hasPersistedFirebaseAuthHint: true,
+        hasAuthRehydrationHint: true,
       })
     ).toBe(false);
   });
@@ -64,14 +65,32 @@ describe('authBootstrapController', () => {
     expect(
       shouldAttemptAuthTimeoutRecovery({
         hasRecentManualLogout: false,
-        hasPersistedFirebaseAuthHint: true,
+        hasAuthRehydrationHint: true,
       })
     ).toBe(true);
 
     expect(
       shouldAttemptAuthTimeoutRecovery({
         hasRecentManualLogout: true,
-        hasPersistedFirebaseAuthHint: true,
+        hasAuthRehydrationHint: true,
+      })
+    ).toBe(false);
+  });
+
+  it('resolves immediately as unauthenticated only when no rehydration hint exists', () => {
+    expect(
+      shouldResolveAuthBootstrapImmediatelyAsUnauthenticated({
+        hasPendingRedirect: false,
+        hasAuthRehydrationHint: false,
+        hasActiveFirebaseSession: false,
+      })
+    ).toBe(true);
+
+    expect(
+      shouldResolveAuthBootstrapImmediatelyAsUnauthenticated({
+        hasPendingRedirect: false,
+        hasAuthRehydrationHint: true,
+        hasActiveFirebaseSession: false,
       })
     ).toBe(false);
   });

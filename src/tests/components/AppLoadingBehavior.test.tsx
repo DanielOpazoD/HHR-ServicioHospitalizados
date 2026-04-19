@@ -1,6 +1,6 @@
 import React from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, render, screen } from '@testing-library/react';
 import App from '@/App';
 
 const mockUseAppBootstrapState = vi.fn();
@@ -31,6 +31,8 @@ const createAuth = (sessionStatus: 'unauthenticated' | 'authorized' = 'unauthent
 describe('App loading behavior', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
+    window.sessionStorage.clear();
     const originalLocation = window.location;
     Object.defineProperty(window, 'location', {
       configurable: true,
@@ -43,6 +45,10 @@ describe('App loading behavior', () => {
     });
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('renders the login loading shell while bootstrap is loading on the root route', () => {
     mockUseAppBootstrapState.mockReturnValue({
       status: 'loading',
@@ -52,6 +58,72 @@ describe('App loading behavior', () => {
     render(<App />);
 
     expect(screen.getByTestId('login-loading-shell')).toBeInTheDocument();
+  });
+
+  it('avoids the login loading shell while a same-tab authenticated refresh is still bootstrapping', () => {
+    window.sessionStorage.setItem('hhr_logged_this_session', 'true');
+
+    mockUseAppBootstrapState.mockReturnValue({
+      status: 'loading',
+      auth: createAuth('unauthenticated'),
+    });
+
+    render(<App />);
+
+    expect(screen.getByTestId('default-loading-screen')).toBeInTheDocument();
+    expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
+  });
+
+  it('briefly suppresses the login page after a same-tab authenticated refresh falls into unauthenticated', async () => {
+    window.sessionStorage.setItem('hhr_logged_this_session', 'true');
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: {
+        ...window.location,
+        pathname: '/census',
+        search: '',
+      },
+      writable: true,
+    });
+
+    mockUseAppBootstrapState.mockReturnValue({
+      status: 'unauthenticated',
+      auth: createAuth('unauthenticated'),
+    });
+
+    render(<App />);
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(screen.queryByTestId('default-loading-screen')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('login-page')).not.toBeInTheDocument();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(650);
+    });
+
+    expect(screen.getByTestId('login-page')).toBeInTheDocument();
+    expect(window.sessionStorage.getItem('hhr_logged_this_session')).toBeNull();
+  });
+
+  it('does not suppress the real login page on the root route after a stale same-tab hint', async () => {
+    window.sessionStorage.setItem('hhr_logged_this_session', 'true');
+
+    mockUseAppBootstrapState.mockReturnValue({
+      status: 'unauthenticated',
+      auth: createAuth('unauthenticated'),
+    });
+
+    render(<App />);
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(screen.getByTestId('login-page')).toBeInTheDocument();
+    expect(screen.queryByTestId('default-loading-screen')).not.toBeInTheDocument();
   });
 
   it('avoids the login loading shell while an authenticated session is still rehydrating on the root route', () => {
@@ -91,6 +163,31 @@ describe('App loading behavior', () => {
 
     expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
     expect(screen.queryByTestId('default-loading-screen')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('authenticated-shell')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('login-page')).not.toBeInTheDocument();
+  });
+
+  it('stays visually silent on the census route while a same-tab refresh is still loading', () => {
+    window.sessionStorage.setItem('hhr_logged_this_session', 'true');
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: {
+        ...window.location,
+        pathname: '/census',
+        search: '',
+      },
+      writable: true,
+    });
+
+    mockUseAppBootstrapState.mockReturnValue({
+      status: 'loading',
+      auth: createAuth('unauthenticated'),
+    });
+
+    render(<App />);
+
+    expect(screen.queryByTestId('default-loading-screen')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
     expect(screen.queryByTestId('authenticated-shell')).not.toBeInTheDocument();
     expect(screen.queryByTestId('login-page')).not.toBeInTheDocument();
   });

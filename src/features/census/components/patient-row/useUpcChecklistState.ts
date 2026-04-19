@@ -5,7 +5,7 @@
  * toggle criteria, compute classification, save, clear, reset.
  */
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { resolveUpcClassification } from '@/domain/upc/upcClassification';
 import type { UpcClassification } from '@/domain/upc/upcClassification';
 import type { UpcChecklistRecord, UpcChecklistAuditActor } from '@/domain/upc/upcContracts';
@@ -49,15 +49,22 @@ export const useUpcChecklistState = ({
 }: UseUpcChecklistStateParams): UpcChecklistDraftState => {
   const [draftUci, setDraftUci] = useState<Set<string>>(new Set());
   const [draftUti, setDraftUti] = useState<Set<string>>(new Set());
+  const [persistedChecklist, setPersistedChecklist] = useState<UpcChecklistRecord | undefined>(
+    checklist
+  );
+
+  useEffect(() => {
+    setPersistedChecklist(checklist);
+  }, [checklist]);
 
   const resetFromPersisted = useCallback(() => {
     const safeUci = uciAllowed
-      ? sanitizeCriterionIds(checklist?.uciCriteria, isValidUciCriterionId)
+      ? sanitizeCriterionIds(persistedChecklist?.uciCriteria, isValidUciCriterionId)
       : [];
-    const safeUti = sanitizeCriterionIds(checklist?.utiCriteria, isValidUtiCriterionId);
+    const safeUti = sanitizeCriterionIds(persistedChecklist?.utiCriteria, isValidUtiCriterionId);
     setDraftUci(new Set(safeUci));
     setDraftUti(new Set(safeUti));
-  }, [checklist, uciAllowed]);
+  }, [persistedChecklist, uciAllowed]);
 
   const toggleUciCriterion = useCallback(
     (id: string) => setDraftUci(prev => toggleInSet(prev, id)),
@@ -95,7 +102,9 @@ export const useUpcChecklistState = ({
 
   const saveAndClose = useCallback(
     (close: () => void) => {
-      onSave(buildRecord(draftUci, draftUti, draftClassification));
+      const nextRecord = buildRecord(draftUci, draftUti, draftClassification);
+      setPersistedChecklist(nextRecord);
+      onSave(nextRecord);
       close();
     },
     [buildRecord, draftClassification, draftUci, draftUti, onSave]
@@ -103,7 +112,9 @@ export const useUpcChecklistState = ({
 
   const clearAndClose = useCallback(
     (close: () => void) => {
-      onSave(buildRecord(new Set(), new Set(), null));
+      const clearedRecord = buildRecord(new Set(), new Set(), null);
+      setPersistedChecklist(clearedRecord);
+      onSave(clearedRecord);
       setDraftUci(new Set());
       setDraftUti(new Set());
       close();

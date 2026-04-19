@@ -4,17 +4,17 @@ export const shouldIgnoreTransientUnauthenticatedBootstrapEvent = ({
   isBootstrapLoading,
   sessionState,
   hasRecentManualLogout,
-  hasPersistedFirebaseAuthHint,
+  hasAuthRehydrationHint,
 }: {
   isBootstrapLoading: boolean;
   sessionState: AuthSessionState;
   hasRecentManualLogout: boolean;
-  hasPersistedFirebaseAuthHint: boolean;
+  hasAuthRehydrationHint: boolean;
 }): boolean =>
   isBootstrapLoading &&
   sessionState.status === 'unauthenticated' &&
   !hasRecentManualLogout &&
-  hasPersistedFirebaseAuthHint;
+  hasAuthRehydrationHint;
 
 export const shouldDeferUnauthenticatedSessionState = ({
   sessionState,
@@ -26,21 +26,21 @@ export const shouldDeferUnauthenticatedSessionState = ({
 
 export const shouldAttemptAuthTimeoutRecovery = ({
   hasRecentManualLogout,
-  hasPersistedFirebaseAuthHint,
+  hasAuthRehydrationHint,
 }: {
   hasRecentManualLogout: boolean;
-  hasPersistedFirebaseAuthHint: boolean;
-}): boolean => !hasRecentManualLogout && hasPersistedFirebaseAuthHint;
+  hasAuthRehydrationHint: boolean;
+}): boolean => !hasRecentManualLogout && hasAuthRehydrationHint;
 
 export const shouldResolveAuthBootstrapImmediatelyAsUnauthenticated = ({
   hasPendingRedirect,
-  hasPersistedFirebaseAuthHint,
+  hasAuthRehydrationHint,
   hasActiveFirebaseSession,
 }: {
   hasPendingRedirect: boolean;
-  hasPersistedFirebaseAuthHint: boolean;
+  hasAuthRehydrationHint: boolean;
   hasActiveFirebaseSession: boolean;
-}): boolean => !hasPendingRedirect && !hasPersistedFirebaseAuthHint && !hasActiveFirebaseSession;
+}): boolean => !hasPendingRedirect && !hasAuthRehydrationHint && !hasActiveFirebaseSession;
 
 export const shouldLogSessionLogin = ({
   sessionState,

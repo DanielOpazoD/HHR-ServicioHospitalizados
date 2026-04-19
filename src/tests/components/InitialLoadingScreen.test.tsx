@@ -20,6 +20,10 @@ describe('InitialLoadingScreen', () => {
     expect(shouldRenderInitialLoadingScreen('/census')).toBe(false);
   });
 
+  it('does not render the initial loading screen for census routes with trailing slashes', () => {
+    expect(shouldRenderInitialLoadingScreen('/census/')).toBe(false);
+  });
+
   it('still renders the initial loading screen for non-census routes', () => {
     expect(shouldRenderInitialLoadingScreen('/whatsapp')).toBe(true);
   });

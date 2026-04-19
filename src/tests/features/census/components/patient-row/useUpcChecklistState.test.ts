@@ -141,6 +141,22 @@ describe('useUpcChecklistState', () => {
     expect(closeFn).toHaveBeenCalledTimes(1);
   });
 
+  it('reopens with the last saved draft even before the external checklist prop roundtrip completes', () => {
+    const { result } = renderHook(() =>
+      useUpcChecklistState({ checklist: undefined, onSave, uciAllowed: true, actor: ACTOR })
+    );
+
+    act(() => result.current.toggleUtiCriterion('uti_materno_fetal'));
+
+    const closeFn = vi.fn();
+    act(() => result.current.saveAndClose(closeFn));
+
+    act(() => result.current.resetFromPersisted());
+
+    expect(result.current.draftUti.has('uti_materno_fetal')).toBe(true);
+    expect(result.current.draftClassification).toBe('UPC_UTI');
+  });
+
   it('saves without evaluatedBy when actor is null', () => {
     const { result } = renderHook(() =>
       useUpcChecklistState({ checklist: undefined, onSave, uciAllowed: true, actor: null })

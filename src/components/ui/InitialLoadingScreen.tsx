@@ -30,6 +30,8 @@ export const shouldRenderInitialLoadingScreen = (pathname: string | undefined): 
   // Census intentionally skips the pre-shell loader. The first visible loading
   // state must be the in-shell census loader that already preserves the chrome
   // titles, avoiding a duplicate full-screen transition during F5 refreshes.
+  // Treat any future attempt to re-enable a full-screen startup loader for
+  // `/census` as a regression unless the shell loading model is redesigned.
   return normalizedPath !== 'census';
 };
 

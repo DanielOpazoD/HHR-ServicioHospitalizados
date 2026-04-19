@@ -162,7 +162,7 @@ export const subscribeToResolvedAuthState = async ({
           isBootstrapLoading,
           sessionState,
           hasRecentManualLogout: hasRecentManualLogout(),
-          hasPersistedFirebaseAuthHint: hasPersistedFirebaseAuthHint(),
+          hasAuthRehydrationHint: hasPersistedFirebaseAuthHint(),
         })
       ) {
         authStateLogger.info(
@@ -225,7 +225,7 @@ export const useResolvedAuthBootstrap = ({
     const canResolveImmediatelyAsUnauthenticated =
       shouldResolveAuthBootstrapImmediatelyAsUnauthenticated({
         hasPendingRedirect,
-        hasPersistedFirebaseAuthHint: hasPersistedFirebaseAuthHint(),
+        hasAuthRehydrationHint: hasPersistedFirebaseAuthHint(),
         hasActiveFirebaseSession: hasActiveFirebaseSession(),
       });
 
@@ -276,7 +276,7 @@ export const useResolvedAuthBootstrap = ({
       if (
         shouldAttemptAuthTimeoutRecovery({
           hasRecentManualLogout: hasRecentManualLogout(),
-          hasPersistedFirebaseAuthHint: hasPersistedFirebaseAuthHint(),
+          hasAuthRehydrationHint: hasPersistedFirebaseAuthHint(),
         })
       ) {
         void resolveCurrentAuthSessionOutcome()

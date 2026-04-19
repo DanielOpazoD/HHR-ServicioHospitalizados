@@ -15,7 +15,10 @@ import {
   shouldRenderInitialLoadingScreen,
 } from '@/components/ui/InitialLoadingScreen';
 import { hasActiveFirebaseSession } from '@/services/auth/authFallback';
-import { hasPersistedFirebaseAuthHint } from '@/services/auth/authStorageHints';
+import {
+  hasPersistedFirebaseAuthHint,
+  hasRecentAuthenticatedSessionHint,
+} from '@/services/auth/authStorageHints';
 import { mountFirebaseConfigWarning } from '@/services/firebase-runtime/firebaseStartupDiagnostics';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 
@@ -58,7 +61,14 @@ const renderBootstrapLoadingScreen = () => {
     return;
   }
 
-  const preferLoginShell = !hasPersistedFirebaseAuthHint() && !hasActiveFirebaseSession();
+  if (hasRecentAuthenticatedSessionHint()) {
+    return;
+  }
+
+  const preferLoginShell =
+    !hasPersistedFirebaseAuthHint() &&
+    !hasActiveFirebaseSession() &&
+    !hasRecentAuthenticatedSessionHint();
 
   root.render(
     <React.StrictMode>

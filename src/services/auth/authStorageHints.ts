@@ -1,4 +1,5 @@
 const FIREBASE_AUTH_STORAGE_PREFIX = 'firebase:authUser:';
+const AUTHENTICATED_SESSION_HINT_KEY = 'hhr_logged_this_session';
 
 const hasWindowStorage = (storage: Storage | undefined): storage is Storage =>
   typeof window !== 'undefined' && typeof storage !== 'undefined';
@@ -32,4 +33,28 @@ export const hasPersistedFirebaseAuthHint = (): boolean => {
     (hasWindowStorage(typeof sessionStorage === 'undefined' ? undefined : sessionStorage) &&
       storageContainsPrefix(sessionStorage, FIREBASE_AUTH_STORAGE_PREFIX))
   );
+};
+
+export const hasRecentAuthenticatedSessionHint = (): boolean => {
+  if (!hasWindowStorage(typeof sessionStorage === 'undefined' ? undefined : sessionStorage)) {
+    return false;
+  }
+
+  try {
+    return sessionStorage.getItem(AUTHENTICATED_SESSION_HINT_KEY) === 'true';
+  } catch {
+    return false;
+  }
+};
+
+export const clearRecentAuthenticatedSessionHint = (): void => {
+  if (!hasWindowStorage(typeof sessionStorage === 'undefined' ? undefined : sessionStorage)) {
+    return;
+  }
+
+  try {
+    sessionStorage.removeItem(AUTHENTICATED_SESSION_HINT_KEY);
+  } catch {
+    // Ignore storage errors
+  }
 };

@@ -34,7 +34,11 @@ import {
   getCachedRole,
   saveRoleToCache,
 } from '@/services/auth/authRoleCache';
-import { hasPersistedFirebaseAuthHint } from '@/services/auth/authStorageHints';
+import {
+  clearRecentAuthenticatedSessionHint,
+  hasPersistedFirebaseAuthHint,
+  hasRecentAuthenticatedSessionHint,
+} from '@/services/auth/authStorageHints';
 import { ROLE_CACHE_PREFIX, normalizeEmail } from '@/services/auth/authShared';
 
 describe('authRuntimeSupport', () => {
@@ -194,5 +198,15 @@ describe('authRuntimeSupport', () => {
     window.localStorage.removeItem('firebase:authUser:test:[DEFAULT]');
     window.sessionStorage.setItem('firebase:authUser:test:[DEFAULT]', '{"uid":"abc"}');
     expect(hasPersistedFirebaseAuthHint()).toBe(true);
+  });
+
+  it('detects the app session hint for authenticated same-tab refreshes', () => {
+    expect(hasRecentAuthenticatedSessionHint()).toBe(false);
+
+    window.sessionStorage.setItem('hhr_logged_this_session', 'true');
+    expect(hasRecentAuthenticatedSessionHint()).toBe(true);
+
+    clearRecentAuthenticatedSessionHint();
+    expect(hasRecentAuthenticatedSessionHint()).toBe(false);
   });
 });
