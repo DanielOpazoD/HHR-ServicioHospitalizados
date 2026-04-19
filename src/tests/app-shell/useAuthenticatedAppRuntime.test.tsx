@@ -1,4 +1,4 @@
-import { act, renderHook } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AuthContextType } from '@/context';
 import type { FirestoreSyncState } from '@/services/repositories/repositoryConfig';
@@ -10,7 +10,6 @@ const {
   mockUseDailyRecord,
   mockUseExistingDaysQuery,
   mockUseFileOperations,
-  mockUseSystemHealthReporter,
   mockResolveShiftNurseSignature,
 } = vi.hoisted(() => ({
   mockUseAppState: vi.fn(),
@@ -18,7 +17,6 @@ const {
   mockUseDailyRecord: vi.fn(),
   mockUseExistingDaysQuery: vi.fn(),
   mockUseFileOperations: vi.fn(),
-  mockUseSystemHealthReporter: vi.fn(),
   mockResolveShiftNurseSignature: vi.fn(),
 }));
 
@@ -28,10 +26,6 @@ vi.mock('@/hooks', () => ({
   useDailyRecord: (...args: unknown[]) => mockUseDailyRecord(...args),
   useExistingDaysQuery: (...args: unknown[]) => mockUseExistingDaysQuery(...args),
   useFileOperations: (...args: unknown[]) => mockUseFileOperations(...args),
-}));
-
-vi.mock('@/hooks/admin/useSystemHealthReporter', () => ({
-  useSystemHealthReporter: (...args: unknown[]) => mockUseSystemHealthReporter(...args),
 }));
 
 vi.mock('@/services/staff/dailyRecordStaffing', () => ({
@@ -115,8 +109,6 @@ describe('useAuthenticatedAppRuntime', () => {
 
     const { result } = renderHook(() => useAuthenticatedAppRuntime({ auth, dateNav }));
 
-    expect(mockUseSystemHealthReporter).toHaveBeenCalledTimes(1);
-    expect(mockUseSystemHealthReporter).toHaveBeenCalledWith(false);
     expect(mockUseDailyRecord).toHaveBeenCalledWith('2026-03-27', false, 'ready');
     expect(mockUseExistingDaysQuery).toHaveBeenCalledWith(2026, 2);
     expect(mockResolveShiftNurseSignature).toHaveBeenCalledWith(
@@ -141,22 +133,6 @@ describe('useAuthenticatedAppRuntime', () => {
     expect(result.current.nurseSignature).toBe('Night Nurse');
     expect(result.current.censusContextValue.dateNav.existingDaysInMonth).toEqual([1, 4, 8]);
     expect(result.current.censusContextValue.nurseSignature).toBe('Night Nurse');
-  });
-
-  it('enables system health reporting after the initial startup delay', async () => {
-    vi.useFakeTimers();
-
-    renderHook(() =>
-      useAuthenticatedAppRuntime({ auth: createAuthState(), dateNav: createDateNavigation() })
-    );
-
-    expect(mockUseSystemHealthReporter).toHaveBeenNthCalledWith(1, false);
-
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(1500);
-    });
-
-    expect(mockUseSystemHealthReporter).toHaveBeenLastCalledWith(true);
   });
 
   it('defaults existing days to an empty list when the query has not resolved yet', () => {

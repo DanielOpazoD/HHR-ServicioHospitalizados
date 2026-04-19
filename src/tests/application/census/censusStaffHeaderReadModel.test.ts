@@ -32,6 +32,10 @@ describe('buildCensusStaffHeaderReadModel', () => {
 
     expect(model.selectorsClassName).toContain('pointer-events-none');
     expect(model.staffSelectorsState.nursesDayShift).toEqual(['A']);
+    expect(model.staffIndicatorsState.nurseIndicators.day).toEqual({
+      extraCount: 0,
+      hasSpecialSchedule: false,
+    });
     expect(model.movementSummaryState.cmaCount).toBe(1);
     expect(model.showSummary).toBe(true);
   });

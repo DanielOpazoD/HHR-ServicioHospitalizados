@@ -61,7 +61,7 @@ export const CensusStaffHeader: React.FC<CensusStaffHeaderProps> = ({
           nursesNightShift={readModel.staffSelectorsState.nursesNightShift}
           nursesList={nursesList}
           onUpdateNurse={updateNurse}
-          shiftIndicators={readModel.staffIndicatorsState.nurses}
+          shiftIndicators={readModel.staffIndicatorsState.nurseIndicators}
           onOpenDetailedStaffing={readOnly ? undefined : () => setActiveDetailedRole('nurse')}
           className={readModel.selectorsClassName}
         />
@@ -73,7 +73,7 @@ export const CensusStaffHeader: React.FC<CensusStaffHeaderProps> = ({
           tensNightShift={readModel.staffSelectorsState.tensNightShift}
           tensList={tensList}
           onUpdateTens={updateTens}
-          shiftIndicators={readModel.staffIndicatorsState.tens}
+          shiftIndicators={readModel.staffIndicatorsState.tensIndicators}
           onOpenDetailedStaffing={readOnly ? undefined : () => setActiveDetailedRole('tens')}
           className={readModel.selectorsClassName}
         />

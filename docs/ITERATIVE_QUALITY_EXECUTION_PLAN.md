@@ -392,3 +392,21 @@ Subir la confianza operativa del repo sin re-arquitectura: cerrar el desalineami
 | 2026-04-09 | `R02` | completado | `report-quality-metrics` se alinea con la misma gobernanza que `check:repo-hygiene`; el residual de boundaries baja a `0`                                                                        |
 | 2026-04-09 | `R05` | completado | se extrajeron seams pequeñas en `patient-row` orbital runtime e `indexedDbCore`; `typecheck`, `lint`, tests focalizados y hook hotspots quedaron en verde                                        |
 | 2026-04-09 | `R06` | completado | `ci:pre-merge`, checks restantes de `ci:merge-gate`, `check:docs-drift` y reportes canónicos quedaron en verde; ciclo `R00-R06` cerrado                                                          |
+
+### Seguimiento post-cierre 2026-04-19
+
+- Se revalidó el cierre con evidencia fresca y artefactos regenerados:
+  - `npm run ci:pre-merge`
+  - `npm run ci:preview-gate`
+  - `npm run check:flow-performance-budget`
+  - `npm run report:governance-snapshots`
+  - `npm run report:maintenance-debt-scorecard`
+- `reports/system-confidence.json` volvió a `overallStatus=ok`.
+- `reports/release-readiness-scorecard.json` volvió a `overall=ok`.
+- `reports/operational-health.json` reporta:
+  - `flowPerformance.status=passing`
+  - `frontendStartup.status=ok`
+  - `frontendStartup.previewGate.status=ok`
+- El residual operativo queda fuera de gates y explícito como watchlist de mantenimiento:
+  - `firestore.rules`
+  - `src/hooks/useCensusEmailRecipientLists.ts`

@@ -23,8 +23,8 @@ export interface ShiftIndicatorState {
 }
 
 export interface StaffIndicatorsState {
-  nurses: Record<'day' | 'night', ShiftIndicatorState>;
-  tens: Record<'day' | 'night', ShiftIndicatorState>;
+  nurseIndicators: Record<'day' | 'night', ShiftIndicatorState>;
+  tensIndicators: Record<'day' | 'night', ShiftIndicatorState>;
 }
 
 export interface MovementSummaryState {
@@ -73,11 +73,11 @@ const EMPTY_SHIFT_INDICATOR: ShiftIndicatorState = {
 export const resolveStaffIndicatorsState = (input?: StaffInput | null): StaffIndicatorsState => {
   if (!input?.date) {
     return {
-      nurses: {
+      nurseIndicators: {
         day: EMPTY_SHIFT_INDICATOR,
         night: EMPTY_SHIFT_INDICATOR,
       },
-      tens: {
+      tensIndicators: {
         day: EMPTY_SHIFT_INDICATOR,
         night: EMPTY_SHIFT_INDICATOR,
       },
@@ -87,11 +87,11 @@ export const resolveStaffIndicatorsState = (input?: StaffInput | null): StaffInd
   const detail = resolveDetailedStaffingState(input, input.date);
 
   return {
-    nurses: {
+    nurseIndicators: {
       day: resolveShiftRoleStaffingMeta(detail, 'day', 'nurse'),
       night: resolveShiftRoleStaffingMeta(detail, 'night', 'nurse'),
     },
-    tens: {
+    tensIndicators: {
       day: resolveShiftRoleStaffingMeta(detail, 'day', 'tens'),
       night: resolveShiftRoleStaffingMeta(detail, 'night', 'tens'),
     },

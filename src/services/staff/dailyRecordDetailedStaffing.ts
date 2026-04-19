@@ -36,13 +36,20 @@ const ensureStringArray = (value?: string[] | null, expectedLength = 0): string[
 
 const getRoleCollectionKey = (role: DetailedStaffingRole): 'nurses' | 'tens' =>
   role === 'nurse' ? 'nurses' : 'tens';
-
-const getStandardSchedule = (date: string, shift: DetailedStaffingShift) => {
-  const schedule = getShiftSchedule(date);
-  return shift === 'day'
-    ? { startTime: schedule.dayStart, endTime: schedule.dayEnd }
-    : { startTime: schedule.nightStart, endTime: schedule.nightEnd };
-};
+const getShiftRoleAssignments = (
+  detail: DailyRecordStaffingDetailsV1,
+  shift: DetailedStaffingShift,
+  role: DetailedStaffingRole
+): DetailedStaffAssignment[] => detail[shift][getRoleCollectionKey(role)];
+const getExistingShiftRoleAssignments = (
+  detail: DailyRecordStaffingDetailsV1 | undefined,
+  shift: DetailedStaffingShift,
+  role: DetailedStaffingRole
+): DetailedStaffAssignment[] | undefined => detail?.[shift][getRoleCollectionKey(role)];
+const getStandardSchedule = (date: string, shift: DetailedStaffingShift) =>
+  shift === 'day'
+    ? { startTime: getShiftSchedule(date).dayStart, endTime: getShiftSchedule(date).dayEnd }
+    : { startTime: getShiftSchedule(date).nightStart, endTime: getShiftSchedule(date).nightEnd };
 
 const createStandardAssignment = (
   date: string,
@@ -51,7 +58,6 @@ const createStandardAssignment = (
   standardSlotIndex: number
 ): DetailedStaffAssignment => {
   const { startTime, endTime } = getStandardSchedule(date, shift);
-
   return {
     id: `${shift}-${role}-standard-${standardSlotIndex}`,
     name: '',
@@ -62,18 +68,15 @@ const createStandardAssignment = (
     endTime,
   };
 };
-
 const cloneAssignment = (assignment: DetailedStaffAssignment): DetailedStaffAssignment => ({
   ...assignment,
 });
-
 const sortAssignments = (assignments: DetailedStaffAssignment[]): DetailedStaffAssignment[] =>
   [...assignments].sort((left, right) => {
     const leftIndex = left.standardSlotIndex ?? Number.MAX_SAFE_INTEGER;
     const rightIndex = right.standardSlotIndex ?? Number.MAX_SAFE_INTEGER;
     return leftIndex - rightIndex;
   });
-
 const normalizeRoleAssignments = ({
   date,
   shift,
@@ -184,7 +187,7 @@ export const resolveDetailedStaffingState = (
         shift: 'day',
         role: 'nurse',
         legacyNames: ensureStringArray(record?.nursesDayShift, STANDARD_SLOT_COUNT.nurse),
-        assignments: record?.staffingDetailsV1?.day?.nurses,
+        assignments: getExistingShiftRoleAssignments(record?.staffingDetailsV1, 'day', 'nurse'),
       }),
       tens: normalizeRoleAssignments({
         date,
@@ -200,7 +203,7 @@ export const resolveDetailedStaffingState = (
         shift: 'night',
         role: 'nurse',
         legacyNames: ensureStringArray(record?.nursesNightShift, STANDARD_SLOT_COUNT.nurse),
-        assignments: record?.staffingDetailsV1?.night?.nurses,
+        assignments: getExistingShiftRoleAssignments(record?.staffingDetailsV1, 'night', 'nurse'),
       }),
       tens: normalizeRoleAssignments({
         date,
@@ -215,12 +218,12 @@ export const resolveDetailedStaffingState = (
 
 const cloneDetail = (detail: DailyRecordStaffingDetailsV1): DailyRecordStaffingDetailsV1 => ({
   day: {
-    nurses: detail.day.nurses.map(cloneAssignment),
-    tens: detail.day.tens.map(cloneAssignment),
+    nurses: getShiftRoleAssignments(detail, 'day', 'nurse').map(cloneAssignment),
+    tens: getShiftRoleAssignments(detail, 'day', 'tens').map(cloneAssignment),
   },
   night: {
-    nurses: detail.night.nurses.map(cloneAssignment),
-    tens: detail.night.tens.map(cloneAssignment),
+    nurses: getShiftRoleAssignments(detail, 'night', 'nurse').map(cloneAssignment),
+    tens: getShiftRoleAssignments(detail, 'night', 'tens').map(cloneAssignment),
   },
 });
 

@@ -110,9 +110,11 @@ if (!releaseConfidence) {
   if (!releaseConfidenceConfig || !Array.isArray(releaseConfidenceConfig.steps)) {
     issues.push('releaseConfidence: missing scripts/config/release-confidence-pack.json');
   } else {
-    const configuredScripts = releaseConfidenceConfig.steps
-      .map(step => String(step?.command || '').match(/^npm run ([A-Za-z0-9:_-]+)$/)?.[1])
-      .filter(Boolean);
+    const configuredScripts = [
+      ...new Set(
+        releaseConfidenceConfig.steps.flatMap(step => extractReferencedScripts(step?.command || ''))
+      ),
+    ];
 
     for (const requiredScript of requiredScripts) {
       if (!configuredScripts.includes(requiredScript)) {

@@ -9,11 +9,6 @@ import {
   normalizeStaffSelectionValue,
   shouldOmitExtraStaffSelection,
 } from '@/services/staff/staffSelectionPresentation';
-import type {
-  DetailedStaffAssignment,
-  DetailedStaffingRole,
-  DetailedStaffingShift,
-} from '@/services/contracts/dailyRecordServiceContracts';
 
 export interface Schedule {
   dayStart?: string;
@@ -54,8 +49,8 @@ const formatDetailedAssignmentsForPdf = ({
   role,
 }: {
   record: HandoffPdfStaffingRecord;
-  shift: DetailedStaffingShift;
-  role: DetailedStaffingRole;
+  shift: 'day' | 'night';
+  role: 'nurse' | 'tens';
 }): string[] => {
   if (!record.date) return [];
 
@@ -67,7 +62,7 @@ const formatDetailedAssignmentsForPdf = ({
       : { startTime: schedule.nightStart, endTime: schedule.nightEnd };
   const assignments = detail[shift][role === 'nurse' ? 'nurses' : 'tens'];
 
-  return assignments.flatMap((assignment: DetailedStaffAssignment) => {
+  return assignments.flatMap(assignment => {
     if (assignment.slotType === 'extra' && shouldOmitExtraStaffSelection(assignment.name)) {
       return [];
     }
