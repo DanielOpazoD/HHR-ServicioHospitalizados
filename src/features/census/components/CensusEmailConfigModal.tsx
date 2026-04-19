@@ -3,11 +3,9 @@ import { Mail } from 'lucide-react';
 import { buildCensusEmailBody } from '@/constants/email';
 import { BaseModal } from '@/components/shared/BaseModal';
 import { useCensusEmailRecipientsEditor } from '@/features/census/hooks/useCensusEmailRecipientsEditor';
-import {
-  CensusEmailMessageSection,
-  CensusEmailRecipientsSection,
-  CensusEmailTestModeSection,
-} from '@/features/census/components/email-config';
+import { CensusEmailRecipientsSection } from '@/features/census/components/email-config/CensusEmailRecipientsSection';
+import { CensusEmailMessageSection } from '@/features/census/components/email-config/CensusEmailMessageSection';
+import { CensusEmailTestModeSection } from '@/features/census/components/email-config/CensusEmailTestModeSection';
 import type { GlobalEmailRecipientList } from '@/services/email/emailRecipientListService';
 
 interface Props {
