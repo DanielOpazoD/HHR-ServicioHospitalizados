@@ -20,7 +20,6 @@ Controladores puros consumidos por hooks para separar:
 | ------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | `dailyRecordSyncNotificationController.ts`        | Traducción de errores de sync a feedback UX                                        |
 | `dailyRecordSyncStatusController.ts`              | Estado de sync derivado de mutaciones                                              |
-| `censusEmailRecipientsController.ts`              | Parse/normalización de destinatarios email                                         |
 | `censusEmailRecipientsBootstrapController.ts`     | Bootstrap de destinatarios globales/locales sin exponer excepciones esperadas      |
 | `censusEmailRecipientMutationActionController.ts` | Especificaciones declarativas para create/rename/delete de listas de destinatarios |
 | `censusEmailSendController.ts`                    | Reglas de envío de email de censo                                                  |
@@ -35,4 +34,4 @@ Hook -> controller -> hook.
 
 Esto permite tests unitarios directos de controller sin montar React.
 
-Para `census`, los imports legacy desde `src/hooks/controllers/*` siguen soportados, pero reexportan la implementación dueña de la feature.
+Para `census`, la implementación dueña vive en `src/features/census/controllers`. Los shims legacy en `src/hooks/controllers/*` solo deben existir cuando todavía haya consumidores reales.

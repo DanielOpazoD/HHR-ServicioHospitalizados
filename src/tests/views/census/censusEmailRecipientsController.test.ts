@@ -3,8 +3,11 @@ import {
   normalizeEmail,
   resolveAddRecipient,
   resolveBulkRecipients,
+  resolveLegacyRecipients,
   resolveRemoveRecipient,
   resolveSafeRecipients,
+  resolveSendingRecipients,
+  resolveStoredRecipients,
   resolveUpdateRecipient,
   resolveVisibleRecipients,
 } from '@/features/census/controllers/censusEmailRecipientsController';
@@ -17,6 +20,15 @@ describe('censusEmailRecipientsController', () => {
       'a@mail.com',
       'b@mail.com',
     ]);
+  });
+
+  it('resolves recipients from stored settings and legacy payloads safely', () => {
+    expect(resolveStoredRecipients(['a@test.com'])).toEqual(['a@test.com']);
+    expect(resolveStoredRecipients([])).toBeNull();
+    expect(resolveStoredRecipients(null)).toBeNull();
+
+    expect(resolveLegacyRecipients('["legacy@test.com"]')).toEqual(['legacy@test.com']);
+    expect(resolveLegacyRecipients('{bad json}')).toBeNull();
   });
 
   it('adds recipient only when valid and unique', () => {
@@ -100,5 +112,21 @@ describe('censusEmailRecipientsController', () => {
 
     expect(resolution.visibleRecipients).toEqual(['1@mail.com', '2@mail.com']);
     expect(resolution.hiddenCount).toBe(1);
+  });
+
+  it('validates test mode recipient and normalizes main recipients', () => {
+    const invalidTestMode = resolveSendingRecipients({
+      recipients: ['a@test.com'],
+      shouldUseTestMode: true,
+      testRecipient: 'bad-email',
+    });
+    expect(invalidTestMode.ok).toBe(false);
+
+    const normalMode = resolveSendingRecipients({
+      recipients: [' A@TEST.COM ', ''],
+      shouldUseTestMode: false,
+      testRecipient: '',
+    });
+    expect(normalMode).toEqual({ ok: true, recipients: ['a@test.com'] });
   });
 });
