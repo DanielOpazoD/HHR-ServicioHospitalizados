@@ -5,16 +5,9 @@ import App from '@/App';
 
 const mockUseAppBootstrapState = vi.fn();
 
-vi.mock('@/app-shell/bootstrap/useAppBootstrapState', async () => {
-  const actual = await vi.importActual<typeof import('@/app-shell/bootstrap/useAppBootstrapState')>(
-    '@/app-shell/bootstrap/useAppBootstrapState'
-  );
-
-  return {
-    ...actual,
-    useAppBootstrapState: () => mockUseAppBootstrapState(actual.buildAppBootstrapState),
-  };
-});
+vi.mock('@/app-shell/bootstrap/useAppBootstrapState', () => ({
+  useAppBootstrapState: () => mockUseAppBootstrapState(),
+}));
 
 vi.mock('@/app-shell/runtime/AuthenticatedAppShell', () => ({
   AuthenticatedAppShell: () => <div data-testid="authenticated-shell">Authenticated Shell</div>,
@@ -69,18 +62,6 @@ const createAuth = (
   ...overrides,
 });
 
-const createDateNav = () => ({
-  selectedYear: 2026,
-  setSelectedYear: vi.fn(),
-  selectedMonth: 4,
-  setSelectedMonth: vi.fn(),
-  selectedDay: 18,
-  setSelectedDay: vi.fn(),
-  daysInMonth: 30,
-  currentDateString: '2026-04-18',
-  navigateDays: vi.fn(),
-});
-
 describe('App loading behavior', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -129,7 +110,7 @@ describe('App loading behavior', () => {
     expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
   });
 
-  it('keeps login hidden during a same tab authenticated refresh while bootstrap remains pending', async () => {
+  it('keeps login hidden during a same tab authenticated refresh while bootstrap remains pending', () => {
     window.sessionStorage.setItem('hhr_logged_this_session', 'true');
     Object.defineProperty(window, 'location', {
       configurable: true,
@@ -141,44 +122,29 @@ describe('App loading behavior', () => {
       writable: true,
     });
 
-    mockUseAppBootstrapState.mockImplementation(buildAppBootstrapState =>
-      buildAppBootstrapState({
-        auth: createAuth('unauthenticated', {
-          authRuntime: {
-            sessionStatus: 'unauthenticated',
-            authLoading: false,
-            isFirebaseConnected: false,
-            isOnline: true,
-            bootstrapPending: true,
-            pendingAgeMs: 1_200,
-            budgetProfile: 'default',
-            timeoutMs: 15_000,
-            runtimeState: 'recoverable',
-            issues: ['bootstrap pending'],
-          },
-        }),
-        dateNav: createDateNav(),
-        isSignatureMode: false,
-        currentDateString: '2026-04-18',
-        hasRecentAuthenticatedSessionHint: true,
-      })
-    );
+    mockUseAppBootstrapState.mockReturnValue({
+      status: 'loading',
+      phase: 'rehydrating',
+      auth: createAuth('unauthenticated', {
+        authRuntime: {
+          sessionStatus: 'unauthenticated',
+          authLoading: false,
+          isFirebaseConnected: false,
+          isOnline: true,
+          bootstrapPending: true,
+          pendingAgeMs: 1_200,
+          budgetProfile: 'default',
+          timeoutMs: 15_000,
+          runtimeState: 'recoverable',
+          issues: ['bootstrap pending'],
+        },
+      }),
+    });
 
     render(<App />);
 
-    await act(async () => {
-      await Promise.resolve();
-    });
-
     expect(screen.queryByTestId('default-loading-screen')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('login-page')).not.toBeInTheDocument();
-
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(650);
-    });
-
     expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('default-loading-screen')).not.toBeInTheDocument();
     expect(screen.queryByTestId('login-page')).not.toBeInTheDocument();
   });
 

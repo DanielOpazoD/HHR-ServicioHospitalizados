@@ -46,14 +46,10 @@ export const resolvePreMountLoadingScreenDecision = ({
 export const resolveRuntimeLoadingScreenMode = ({
   pathname,
   bootstrapState,
-  hasRecentAuthenticatedSessionHint: _hasRecentAuthenticatedSessionHint,
 }: {
   pathname: string | undefined;
   bootstrapState: Extract<AppBootstrapState, { status: 'loading' }>;
-  hasRecentAuthenticatedSessionHint?: boolean;
 }): AppShellLoadingScreenMode => {
-  void _hasRecentAuthenticatedSessionHint;
-
   if (!shouldRenderInitialLoadingScreen(pathname)) {
     return 'silent';
   }
@@ -67,11 +63,3 @@ export const resolveRuntimeLoadingScreenMode = ({
 
   return 'default';
 };
-
-export const shouldSuppressUnauthenticatedAppRoute = ({
-  pathname,
-  hasRecentAuthenticatedSessionHint,
-}: {
-  pathname: string | undefined;
-  hasRecentAuthenticatedSessionHint: boolean;
-}): boolean => hasRecentAuthenticatedSessionHint && !shouldRenderInitialLoadingScreen(pathname);

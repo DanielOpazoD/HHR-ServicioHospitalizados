@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   resolvePreMountLoadingScreenDecision,
   resolveRuntimeLoadingScreenMode,
-  shouldSuppressUnauthenticatedAppRoute,
 } from '@/app-shell/bootstrap/appShellLoadingPolicy';
 import type { AppBootstrapState } from '@/app-shell/bootstrap/useAppBootstrapState';
 
@@ -52,7 +51,6 @@ describe('appShellLoadingPolicy', () => {
       resolveRuntimeLoadingScreenMode({
         pathname: '/census',
         bootstrapState: createLoadingBootstrapState('rehydrating'),
-        hasRecentAuthenticatedSessionHint: true,
       })
     ).toBe('silent');
   });
@@ -62,7 +60,6 @@ describe('appShellLoadingPolicy', () => {
       resolveRuntimeLoadingScreenMode({
         pathname: '/',
         bootstrapState: createLoadingBootstrapState('bootstrapping'),
-        hasRecentAuthenticatedSessionHint: false,
       })
     ).toBe('login-shell');
 
@@ -70,24 +67,7 @@ describe('appShellLoadingPolicy', () => {
       resolveRuntimeLoadingScreenMode({
         pathname: '/',
         bootstrapState: createLoadingBootstrapState('rehydrating'),
-        hasRecentAuthenticatedSessionHint: true,
       })
     ).toBe('default');
-  });
-
-  it('suppresses the login page only on app routes that skip the pre-shell loader', () => {
-    expect(
-      shouldSuppressUnauthenticatedAppRoute({
-        pathname: '/census',
-        hasRecentAuthenticatedSessionHint: true,
-      })
-    ).toBe(true);
-
-    expect(
-      shouldSuppressUnauthenticatedAppRoute({
-        pathname: '/',
-        hasRecentAuthenticatedSessionHint: true,
-      })
-    ).toBe(false);
   });
 });
