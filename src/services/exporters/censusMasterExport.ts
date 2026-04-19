@@ -9,7 +9,7 @@
 
 import type { CensusExportRecord } from '@/services/contracts/censusExportServiceContracts';
 import { MONTH_NAMES } from '@/constants/export';
-import { getRecordsForMonth } from '@/services/storage/records';
+import { getRecordsForMonth } from '@/services/storage/indexeddb/indexedDbRecordService';
 import { getMonthRecordsFromFirestore } from '../storage/firestore';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import { buildCensusMasterBinary, getCensusMasterFilename } from './censusMasterWorkbook';

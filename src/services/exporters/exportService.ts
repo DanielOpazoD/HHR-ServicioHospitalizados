@@ -1,4 +1,4 @@
-import { getAllRecords } from '@/services/storage/records';
+import { getAllRecords } from '@/services/storage/indexeddb/indexedDbRecordService';
 import { downloadBlob } from '@/services/exporters/exportDownload';
 import { buildDailyRecordCsv } from '@/services/exporters/exportCsvSerialization';
 import {

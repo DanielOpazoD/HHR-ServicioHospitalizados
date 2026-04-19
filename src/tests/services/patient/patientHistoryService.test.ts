@@ -11,7 +11,7 @@ const { getAllRecords, getRecordsRangeFromFirestore, saveRecords, isFirestoreEna
   })
 );
 
-vi.mock('@/services/storage/records', () => ({
+vi.mock('@/services/storage/indexeddb/indexedDbRecordService', () => ({
   getAllRecords,
   saveRecords,
 }));

@@ -9,7 +9,7 @@ import type {
   DailyRecord,
   DailyRecordPatientHistoryState,
 } from '@/services/contracts/dailyRecordServiceContracts';
-import { getAllRecords, saveRecords } from '@/services/storage/records';
+import { getAllRecords, saveRecords } from '@/services/storage/indexeddb/indexedDbRecordService';
 import { getRecordsRangeFromFirestore } from '@/services/storage/firestore';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import type { HospitalizationEvent } from '@/types/domain/patientMaster';

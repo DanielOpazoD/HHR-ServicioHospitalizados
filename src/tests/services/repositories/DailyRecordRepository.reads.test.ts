@@ -88,17 +88,6 @@ vi.mock('@/services/storage/indexeddb/indexedDbRecordService', () => ({
   getRecordsForMonth: indexedDbFacadeMock.getRecordsForMonth,
   saveRecords: indexedDbFacadeMock.saveRecords,
 }));
-vi.mock('@/services/storage/records', () => ({
-  getRecordForDate: indexedDbFacadeMock.getRecordForDate,
-  getPreviousDayRecord: indexedDbFacadeMock.getPreviousDayRecord,
-  saveRecord: indexedDbFacadeMock.saveRecord,
-  deleteRecord: indexedDbFacadeMock.deleteRecord,
-  getAllRecords: indexedDbFacadeMock.getAllRecords,
-  getAllDates: indexedDbFacadeMock.getAllDates,
-  getRecordsRange: indexedDbFacadeMock.getRecordsRange,
-  getRecordsForMonth: indexedDbFacadeMock.getRecordsForMonth,
-  saveRecords: indexedDbFacadeMock.saveRecords,
-}));
 vi.mock('@/services/storage/indexeddb/indexedDbCatalogService', () => ({
   saveCatalog: indexedDbFacadeMock.saveCatalog,
   getCatalog: indexedDbFacadeMock.getCatalog,

@@ -1,5 +1,5 @@
 import type { DailyRecord } from '@/services/contracts/dailyRecordServiceContracts';
-import { saveRecord } from '@/services/storage/records';
+import { saveRecord } from '@/services/storage/indexeddb/indexedDbRecordService';
 import { hasStructuralRepairs, parseDailyRecordWithDefaultsReport } from '@/schemas/zodSchemas';
 import { jsonImportLogger } from '@/services/exporters/exporterLoggers';
 

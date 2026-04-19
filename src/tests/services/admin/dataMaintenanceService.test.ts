@@ -27,7 +27,7 @@ import {
   importRecordsFromBackup,
 } from '@/services/admin/dataMaintenanceService';
 
-vi.mock('@/services/storage/records', () => ({
+vi.mock('@/services/storage/indexeddb/indexedDbRecordService', () => ({
   getRecordsRange: mockGetRecordsRange,
   saveRecords: mockSaveRecords,
 }));

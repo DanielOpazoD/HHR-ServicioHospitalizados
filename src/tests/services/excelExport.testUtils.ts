@@ -28,6 +28,6 @@ vi.mock('@/services/repositories/dailyRecordRepositoryReadService', () => ({
   getForDate: vi.fn(),
 }));
 
-vi.mock('@/services/storage/records', () => ({
+vi.mock('@/services/storage/indexeddb/indexedDbRecordService', () => ({
   getAllRecords: vi.fn(),
 }));

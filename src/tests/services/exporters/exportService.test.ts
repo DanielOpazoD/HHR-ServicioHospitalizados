@@ -10,14 +10,15 @@ import {
   importDataCSV,
   importDataCSVWithResult,
 } from '@/services/exporters/exportService';
-import * as recordStorage from '@/services/storage/records';
+import * as recordStorage from '@/services/storage/indexeddb/indexedDbRecordService';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { DischargeData, TransferData } from '@/types/domain/movements';
 import type { PatientData } from '@/types/domain/patient';
 
 // Mock dependencies
-vi.mock('@/services/storage/records', async importOriginal => {
-  const actual = await importOriginal<typeof import('@/services/storage/records')>();
+vi.mock('@/services/storage/indexeddb/indexedDbRecordService', async importOriginal => {
+  const actual =
+    await importOriginal<typeof import('@/services/storage/indexeddb/indexedDbRecordService')>();
   return {
     ...actual,
     getAllRecords: vi.fn(),

@@ -63,7 +63,7 @@ describe('reportService', () => {
     it('generates the formatted range report with available records', async () => {
       const { saveAs } = await import('file-saver');
       const { generateCensusRangeFormatted } = await import('@/services/exporters/reportService');
-      const recordsService = await import('@/services/storage/records');
+      const recordsService = await import('@/services/storage/indexeddb/indexedDbRecordService');
 
       vi.mocked(recordsService.getAllRecords).mockResolvedValue({
         '2025-12-24': toDailyRecord({
@@ -89,7 +89,7 @@ describe('reportService', () => {
     it('generates the raw range report with an explicit range filename', async () => {
       const { saveAs } = await import('file-saver');
       const { generateCensusRangeRaw } = await import('@/services/exporters/reportService');
-      const recordsService = await import('@/services/storage/records');
+      const recordsService = await import('@/services/storage/indexeddb/indexedDbRecordService');
 
       vi.mocked(recordsService.getAllRecords).mockResolvedValue({
         '2025-12-24': toDailyRecord({
@@ -169,7 +169,7 @@ describe('reportWorkbookBuilders', () => {
   it('uses explicit worksheet names for raw and formatted range reports', async () => {
     const { buildRangeRawWorkbookOrNull, buildRangeFormattedWorkbookOrNull } =
       await import('@/services/exporters/reportWorkbookBuilders');
-    const recordsService = await import('@/services/storage/records');
+    const recordsService = await import('@/services/storage/indexeddb/indexedDbRecordService');
 
     vi.mocked(recordsService.getAllRecords).mockResolvedValue({
       '2025-12-24': toDailyRecord({
