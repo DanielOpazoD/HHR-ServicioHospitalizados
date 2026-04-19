@@ -13,7 +13,12 @@ import {
   isGinecobstetriciaSpecialty,
   isObstetricGinecobstetricia,
 } from '@/shared/census/ginecobstetriciaClassification';
-import { normalizePatientUpcForBed, resolveNormalizedUpcFlag } from '@/shared/census/upcBedPolicy';
+import {
+  isUciEligibleBedId,
+  normalizePatientUpcForBed,
+  resolveNormalizedUpcFlag,
+  resolveUpcClassificationFromChecklist,
+} from '@/shared/census/upcBedPolicy';
 
 const getCudyrTimestampPatch = () => ({
   cudyrUpdatedAt: new Date().toISOString(),
@@ -93,6 +98,7 @@ const buildPatientFieldPatches = ({
     'ginecobstetriciaType'
   );
   const updatesDeliveryRoute = Object.prototype.hasOwnProperty.call(updates, 'deliveryRoute');
+  const updatesUpcChecklist = Object.prototype.hasOwnProperty.call(updates, 'upcChecklist');
 
   Object.entries(updates).forEach(([key, value]) => {
     patches[`beds.${bedId}.${key}`] =
@@ -129,6 +135,9 @@ const buildPatientFieldPatches = ({
   const nextGinecobstetriciaType =
     updates.ginecobstetriciaType ?? currentPatient.ginecobstetriciaType;
   const nextDeliveryRoute = updates.deliveryRoute ?? currentPatient.deliveryRoute;
+  const nextUpcClassification = resolveUpcClassificationFromChecklist(
+    updates.upcChecklist ?? currentPatient.upcChecklist
+  );
 
   if (updatesSpecialty && !isGinecobstetriciaSpecialty(nextSpecialty)) {
     Object.entries(clearGinecobstetriciaFields()).forEach(([key, value]) => {
@@ -143,6 +152,11 @@ const buildPatientFieldPatches = ({
     });
   } else if (updatesDeliveryRoute && nextDeliveryRoute !== 'Cesárea') {
     patches[`beds.${bedId}.deliveryCesareanLabor`] = undefined;
+  }
+
+  if (updatesUpcChecklist && isUciEligibleBedId(bedId)) {
+    patches[`bedTypeOverrides.${bedId}`] =
+      nextUpcClassification === 'UPC_UCI' ? BedType.UCI : undefined;
   }
 
   return patches;

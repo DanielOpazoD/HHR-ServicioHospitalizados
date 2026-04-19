@@ -23,6 +23,7 @@ interface UseUpcChecklistStateParams {
 }
 
 export interface UpcChecklistDraftState {
+  persistedChecklist: UpcChecklistRecord | undefined;
   draftUci: ReadonlySet<string>;
   draftUti: ReadonlySet<string>;
   draftClassification: UpcClassification;
@@ -30,8 +31,6 @@ export interface UpcChecklistDraftState {
   toggleUciCriterion: (id: string) => void;
   toggleUtiCriterion: (id: string) => void;
   resetFromPersisted: () => void;
-  saveAndClose: (close: () => void) => void;
-  clearAndClose: (close: () => void) => void;
 }
 
 const toggleInSet = (prev: Set<string>, id: string): Set<string> => {
@@ -66,15 +65,6 @@ export const useUpcChecklistState = ({
     setDraftUti(new Set(safeUti));
   }, [persistedChecklist, uciAllowed]);
 
-  const toggleUciCriterion = useCallback(
-    (id: string) => setDraftUci(prev => toggleInSet(prev, id)),
-    []
-  );
-  const toggleUtiCriterion = useCallback(
-    (id: string) => setDraftUti(prev => toggleInSet(prev, id)),
-    []
-  );
-
   const draftClassification = useMemo(
     () => resolveUpcClassification({ uciCriteria: draftUci, utiCriteria: draftUti }),
     [draftUci, draftUti]
@@ -100,29 +90,47 @@ export const useUpcChecklistState = ({
     [actor]
   );
 
-  const saveAndClose = useCallback(
-    (close: () => void) => {
-      const nextRecord = buildRecord(draftUci, draftUti, draftClassification);
+  const persistDraft = useCallback(
+    (nextUci: Set<string>, nextUti: Set<string>) => {
+      const nextClassification = resolveUpcClassification({
+        uciCriteria: nextUci,
+        utiCriteria: nextUti,
+      });
+      const nextRecord = buildRecord(nextUci, nextUti, nextClassification);
       setPersistedChecklist(nextRecord);
       onSave(nextRecord);
-      close();
-    },
-    [buildRecord, draftClassification, draftUci, draftUti, onSave]
-  );
-
-  const clearAndClose = useCallback(
-    (close: () => void) => {
-      const clearedRecord = buildRecord(new Set(), new Set(), null);
-      setPersistedChecklist(clearedRecord);
-      onSave(clearedRecord);
-      setDraftUci(new Set());
-      setDraftUti(new Set());
-      close();
     },
     [buildRecord, onSave]
   );
 
+  const toggleUciCriterion = useCallback(
+    (id: string) =>
+      setDraftUci(prev => {
+        const nextUci = toggleInSet(prev, id);
+        setDraftUti(currentUti => {
+          persistDraft(nextUci, currentUti);
+          return currentUti;
+        });
+        return nextUci;
+      }),
+    [persistDraft]
+  );
+
+  const toggleUtiCriterion = useCallback(
+    (id: string) =>
+      setDraftUti(prev => {
+        const nextUti = toggleInSet(prev, id);
+        setDraftUci(currentUci => {
+          persistDraft(currentUci, nextUti);
+          return currentUci;
+        });
+        return nextUti;
+      }),
+    [persistDraft]
+  );
+
   return {
+    persistedChecklist,
     draftUci,
     draftUti,
     draftClassification,
@@ -130,7 +138,5 @@ export const useUpcChecklistState = ({
     toggleUciCriterion,
     toggleUtiCriterion,
     resetFromPersisted,
-    saveAndClose,
-    clearAndClose,
   };
 };

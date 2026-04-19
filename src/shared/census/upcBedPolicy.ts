@@ -1,5 +1,5 @@
 import type { UpcChecklistRecord } from '@/domain/upc/upcContracts';
-import type { UpcClassification } from '@/domain/upc/upcClassification';
+import { resolveUpcClassification, type UpcClassification } from '@/domain/upc/upcClassification';
 
 const UPC_ELIGIBLE_BED_IDS = new Set(['R1', 'R2', 'R3', 'R4', 'NEO1', 'NEO2']);
 
@@ -17,17 +17,52 @@ export const isUciEligibleBedId = (bedId?: string | null): boolean =>
 /** Derive UPC classification from the structured checklist. */
 export const resolveUpcClassificationFromChecklist = (
   checklist: UpcChecklistRecord | undefined | null
-): UpcClassification => checklist?.classification ?? null;
+): UpcClassification => {
+  if (!checklist) {
+    return null;
+  }
+
+  const derived = resolveUpcClassification({
+    uciCriteria: checklist.uciCriteria ?? [],
+    utiCriteria: checklist.utiCriteria ?? [],
+  });
+
+  return derived ?? checklist.classification ?? null;
+};
 
 /** Backward-compat: derive boolean isUPC from checklist. */
 export const resolveIsUpcFromChecklist = (
   checklist: UpcChecklistRecord | undefined | null
-): boolean => checklist?.classification !== null && checklist?.classification !== undefined;
+): boolean => resolveUpcClassificationFromChecklist(checklist) !== null;
 
 export const resolveNormalizedUpcFlag = (
   bedId: string | undefined | null,
   isUPC: boolean | undefined | null
 ): boolean => isUpcEligibleBedId(bedId) && Boolean(isUPC);
+
+export const resolveUpcExportLabel = ({
+  bedId,
+  isUPC,
+  checklist,
+}: {
+  bedId: string | undefined | null;
+  isUPC: boolean | undefined | null;
+  checklist: UpcChecklistRecord | undefined | null;
+}): string => {
+  if (!isUpcEligibleBedId(bedId)) {
+    return 'No UPC';
+  }
+
+  const classification = resolveUpcClassificationFromChecklist(checklist);
+  if (classification === 'UPC_UCI') {
+    return 'UPC-UCI';
+  }
+  if (classification === 'UPC_UTI') {
+    return 'UPC-UTI';
+  }
+
+  return Boolean(isUPC) ? 'UPC' : 'No UPC';
+};
 
 export const normalizePatientUpcForBed = <T extends { bedId?: string; isUPC?: boolean }>(
   patient: T,

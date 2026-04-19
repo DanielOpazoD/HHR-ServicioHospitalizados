@@ -17,8 +17,6 @@ interface UpcChecklistPanelProps {
   uciAllowed: boolean;
   onToggleUci: (id: string) => void;
   onToggleUti: (id: string) => void;
-  onSave: () => void;
-  onClear: () => void;
   onClose: () => void;
 }
 
@@ -66,8 +64,6 @@ export const UpcChecklistPanel: React.FC<UpcChecklistPanelProps> = ({
   uciAllowed,
   onToggleUci,
   onToggleUti,
-  onSave,
-  onClear,
   onClose,
 }) => {
   const badgeColors = resolveUpcBadgeColor(draftClassification);
@@ -182,22 +178,7 @@ export const UpcChecklistPanel: React.FC<UpcChecklistPanelProps> = ({
             ? `${draftUci.size + draftUti.size} criterio${draftUci.size + draftUti.size === 1 ? '' : 's'}`
             : 'Sin criterios (No UPC)'}
         </span>
-        <div className="flex gap-1.5">
-          {hasDraftCriteria && (
-            <button
-              onClick={onClear}
-              className="px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-500 hover:bg-slate-200 transition-colors"
-            >
-              Limpiar
-            </button>
-          )}
-          <button
-            onClick={onSave}
-            className="px-3 py-1 rounded-lg text-[11px] font-semibold text-white bg-slate-700 hover:bg-slate-800 transition-colors"
-          >
-            Guardar
-          </button>
-        </div>
+        <span className="text-[10px] font-medium text-slate-500">Se guarda al seleccionar</span>
       </div>
     </div>
   );

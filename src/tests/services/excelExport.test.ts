@@ -7,12 +7,22 @@ import * as path from 'node:path';
 import { beforeEach, describe, it, expect, vi } from 'vitest';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { DataFactory } from '@/tests/factories/DataFactory';
+import type { UpcChecklistRecord } from '@/domain/upc/upcContracts';
 
 const FIXED_ISO_TIMESTAMP = '2026-01-15T10:30:00.000Z';
 
 const readSource = (relativePath: string): string =>
   fs.readFileSync(path.resolve(process.cwd(), relativePath), 'utf8');
 const toDailyRecord = (partial: Partial<DailyRecord>) => partial as unknown as DailyRecord;
+
+const buildUpcChecklist = (
+  classification: UpcChecklistRecord['classification']
+): UpcChecklistRecord => ({
+  classification,
+  uciCriteria: classification === 'UPC_UCI' ? ['uci_vmi'] : [],
+  utiCriteria: classification === 'UPC_UTI' ? ['uti_mon_cardiaca'] : [],
+  evaluatedAt: FIXED_ISO_TIMESTAMP,
+});
 
 // Mock file-saver
 vi.mock('file-saver', () => ({
@@ -180,6 +190,59 @@ describe('censusRawWorkbook', () => {
       expect(Array.isArray(rows)).toBe(true);
       // Note: extractRowsFromRecord iterates BEDS constant, not record.beds directly
       // So the result depends on BEDS matching the record bed IDs
+    });
+
+    it('exports detailed UPC classification in raw rows when checklist data exists', async () => {
+      const { extractRowsFromRecord } = await import('@/services/exporters/censusRawWorkbook');
+
+      const bedId = 'R1';
+      const mockRecord = {
+        date: '2025-12-25',
+        beds: {
+          [bedId]: DataFactory.createMockPatient(bedId, {
+            patientName: 'Paciente UPC',
+            rut: '12.345.678-9',
+            isUPC: true,
+            upcChecklist: buildUpcChecklist('UPC_UCI'),
+          }),
+        },
+        nurses: [],
+        lastUpdated: FIXED_ISO_TIMESTAMP,
+        activeExtraBeds: [],
+      } as unknown as DailyRecord;
+
+      const rows = extractRowsFromRecord(mockRecord);
+
+      expect(rows[0]?.[23]).toBe('UPC-UCI');
+    });
+
+    it('treats mixed UCI + UTI criteria as UPC-UCI in raw export even if the stored field is stale', async () => {
+      const { extractRowsFromRecord } = await import('@/services/exporters/censusRawWorkbook');
+
+      const bedId = 'R1';
+      const mockRecord = {
+        date: '2025-12-25',
+        beds: {
+          [bedId]: DataFactory.createMockPatient(bedId, {
+            patientName: 'Paciente Mixto',
+            rut: '12.345.678-9',
+            isUPC: true,
+            upcChecklist: {
+              classification: 'UPC_UTI',
+              uciCriteria: ['uci_vmi'],
+              utiCriteria: ['uti_mon_cardiaca'],
+              evaluatedAt: FIXED_ISO_TIMESTAMP,
+            },
+          }),
+        },
+        nurses: [],
+        lastUpdated: FIXED_ISO_TIMESTAMP,
+        activeExtraBeds: [],
+      } as unknown as DailyRecord;
+
+      const rows = extractRowsFromRecord(mockRecord);
+
+      expect(rows[0]?.[23]).toBe('UPC-UCI');
     });
   });
 });

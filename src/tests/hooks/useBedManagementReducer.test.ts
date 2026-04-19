@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { bedManagementReducer } from '@/hooks/useBedManagementReducer';
 import { DataFactory } from '@/tests/factories/DataFactory';
 import { Specialty } from '@/types/domain/patientClassification';
+import { BedType } from '@/types/domain/beds';
 
 describe('bedManagementReducer firstSeenDate anchoring', () => {
   it('anchors firstSeenDate when an empty bed receives its first real patient name', () => {
@@ -271,6 +272,67 @@ describe('bedManagementReducer firstSeenDate anchoring', () => {
     });
 
     expect(patch).toHaveProperty('bedTypeOverrides.R1');
+  });
+
+  it('forces the bed type to UCI when the patient is classified as UPC_UCI', () => {
+    const record = DataFactory.createMockDailyRecord('2026-04-12');
+
+    const patch = bedManagementReducer(record, {
+      type: 'UPDATE_PATIENT_MULTIPLE',
+      bedId: 'R1',
+      fields: {
+        isUPC: true,
+        upcChecklist: {
+          uciCriteria: ['uci_vmi'],
+          utiCriteria: ['uti_mon_cardiaca'],
+          classification: 'UPC_UCI',
+          evaluatedAt: '2026-04-18T00:00:00Z',
+        },
+      },
+    });
+
+    expect(patch).toMatchObject({
+      'beds.R1.isUPC': true,
+      'beds.R1.upcChecklist': expect.objectContaining({
+        classification: 'UPC_UCI',
+      }),
+      'bedTypeOverrides.R1': BedType.UCI,
+    });
+  });
+
+  it('returns the bed type override to default UTI when UCI criteria are removed', () => {
+    const record = DataFactory.createMockDailyRecord('2026-04-12');
+    record.bedTypeOverrides = { R1: BedType.UCI };
+    record.beds.R1 = DataFactory.createMockPatient('R1', {
+      isUPC: true,
+      upcChecklist: {
+        uciCriteria: ['uci_vmi'],
+        utiCriteria: ['uti_mon_cardiaca'],
+        classification: 'UPC_UCI',
+        evaluatedAt: '2026-04-18T00:00:00Z',
+      },
+    });
+
+    const patch = bedManagementReducer(record, {
+      type: 'UPDATE_PATIENT_MULTIPLE',
+      bedId: 'R1',
+      fields: {
+        isUPC: true,
+        upcChecklist: {
+          uciCriteria: [],
+          utiCriteria: ['uti_mon_cardiaca'],
+          classification: 'UPC_UTI',
+          evaluatedAt: '2026-04-18T00:05:00Z',
+        },
+      },
+    });
+
+    expect(patch).toMatchObject({
+      'beds.R1.upcChecklist': expect.objectContaining({
+        classification: 'UPC_UTI',
+      }),
+      'bedTypeOverrides.R1': undefined,
+    });
   });
 
   it('updates multiple clinical crib fields in a single patch', () => {

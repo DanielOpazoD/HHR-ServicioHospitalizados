@@ -83,6 +83,7 @@ export const useUpcChecklistController = ({
     togglePopover,
     closePopover,
     uciAllowed,
+    persistedChecklist: state.persistedChecklist,
     // Delegated from state hook
     draftUci: state.draftUci,
     draftUti: state.draftUti,
@@ -90,7 +91,5 @@ export const useUpcChecklistController = ({
     hasDraftCriteria: state.hasDraftCriteria,
     toggleUciCriterion: state.toggleUciCriterion,
     toggleUtiCriterion: state.toggleUtiCriterion,
-    saveAndClose: useCallback(() => state.saveAndClose(closePopover), [state, closePopover]),
-    clearAndClose: useCallback(() => state.clearAndClose(closePopover), [state, closePopover]),
   };
 };

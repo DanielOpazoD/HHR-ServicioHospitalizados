@@ -43,6 +43,7 @@ export const UpcChecklistPopover: React.FC<UpcChecklistPopoverProps> = ({
     popoverPos,
     togglePopover,
     closePopover,
+    persistedChecklist,
     draftUci,
     draftUti,
     draftClassification,
@@ -50,8 +51,6 @@ export const UpcChecklistPopover: React.FC<UpcChecklistPopoverProps> = ({
     uciAllowed: controllerUciAllowed,
     toggleUciCriterion,
     toggleUtiCriterion,
-    saveAndClose,
-    clearAndClose,
   } = useUpcChecklistController({
     checklist,
     onSave,
@@ -61,12 +60,12 @@ export const UpcChecklistPopover: React.FC<UpcChecklistPopoverProps> = ({
   });
 
   const { label, colors } = useMemo(() => {
-    const cls = resolveUpcClassificationFromChecklist(checklist);
+    const cls = resolveUpcClassificationFromChecklist(persistedChecklist);
     return {
       label: resolveUpcClassificationLabel(cls),
       colors: resolveUpcBadgeColor(cls),
     };
-  }, [checklist]);
+  }, [persistedChecklist]);
 
   if (isEmpty && !isSubRow) {
     return <PatientEmptyCell tdClassName="p-0.5 text-center w-14" />;
@@ -122,8 +121,6 @@ export const UpcChecklistPopover: React.FC<UpcChecklistPopoverProps> = ({
               uciAllowed={controllerUciAllowed}
               onToggleUci={toggleUciCriterion}
               onToggleUti={toggleUtiCriterion}
-              onSave={saveAndClose}
-              onClear={clearAndClose}
               onClose={closePopover}
             />
           </div>,

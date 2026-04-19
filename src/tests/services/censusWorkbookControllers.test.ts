@@ -10,6 +10,7 @@ import { createCensusWorkbookDaySheet } from '@/services/exporters/excel/censusW
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { PatientData } from '@/types/domain/patient';
 import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
+import type { UpcChecklistRecord } from '@/domain/upc/upcContracts';
 
 const buildPatient = (bedId: string, patientName: string): PatientData => ({
   bedId,
@@ -27,6 +28,15 @@ const buildPatient = (bedId: string, patientName: string): PatientData => ({
   devices: [],
   surgicalComplication: false,
   isUPC: false,
+});
+
+const buildUpcChecklist = (
+  classification: UpcChecklistRecord['classification']
+): UpcChecklistRecord => ({
+  classification,
+  uciCriteria: classification === 'UPC_UCI' ? ['uci_vmi'] : [],
+  utiCriteria: classification === 'UPC_UTI' ? ['uti_mon_cardiaca'] : [],
+  evaluatedAt: '2026-04-18T12:00:00.000Z',
 });
 
 const buildRecord = (date: string, patientName: string): DailyRecord => ({
@@ -122,6 +132,36 @@ describe('census workbook controllers', () => {
     });
 
     expect(patientRow).toBeGreaterThan(0);
-    expect(sheet?.getCell(`M${patientRow}`).value).toBe('No');
+    expect(sheet?.getCell(`M${patientRow}`).value).toBe('No UPC');
+  });
+
+  it('renders detailed UPC classification in the visible sheet when checklist data exists', () => {
+    const workbook = new ExcelJS.Workbook();
+    createCensusWorkbookDaySheet(
+      workbook,
+      {
+        ...buildRecord('2024-05-01', ''),
+        beds: {
+          [BEDS[0].id]: {
+            ...buildPatient(BEDS[0].id, 'Paciente UTI'),
+            isUPC: true,
+            upcChecklist: buildUpcChecklist('UPC_UTI'),
+          },
+        },
+      } as DailyRecord,
+      '01-05-2024'
+    );
+
+    const sheet = workbook.getWorksheet('01-05-2024');
+    let patientRow = -1;
+
+    sheet?.eachRow((row, rowNumber) => {
+      if (row.getCell(4).value === 'Paciente UTI') {
+        patientRow = rowNumber;
+      }
+    });
+
+    expect(patientRow).toBeGreaterThan(0);
+    expect(sheet?.getCell(`M${patientRow}`).value).toBe('UPC-UTI');
   });
 });

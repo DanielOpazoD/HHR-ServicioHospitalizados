@@ -119,17 +119,14 @@ describe('useUpcChecklistState', () => {
     expect(result.current.draftClassification).toBe('UPC_UCI');
   });
 
-  // ── Save ───────────────────────────────────────────────────────
+  // ── Auto-save ───────────────────────────────────────────────────
 
-  it('saves current draft with classification and actor', () => {
+  it('saves current draft with classification and actor on selection', () => {
     const { result } = renderHook(() =>
       useUpcChecklistState({ checklist: undefined, onSave, uciAllowed: true, actor: ACTOR })
     );
 
     act(() => result.current.toggleUtiCriterion('uti_materno_fetal'));
-
-    const closeFn = vi.fn();
-    act(() => result.current.saveAndClose(closeFn));
 
     expect(onSave).toHaveBeenCalledTimes(1);
     const saved = onSave.mock.calls[0][0] as UpcChecklistRecord;
@@ -138,7 +135,6 @@ describe('useUpcChecklistState', () => {
     expect(saved.classification).toBe('UPC_UTI');
     expect(saved.evaluatedAt).toBeTruthy();
     expect(saved.evaluatedBy).toEqual({ uid: 'u1', displayName: 'Dr. Test' });
-    expect(closeFn).toHaveBeenCalledTimes(1);
   });
 
   it('reopens with the last saved draft even before the external checklist prop roundtrip completes', () => {
@@ -147,9 +143,6 @@ describe('useUpcChecklistState', () => {
     );
 
     act(() => result.current.toggleUtiCriterion('uti_materno_fetal'));
-
-    const closeFn = vi.fn();
-    act(() => result.current.saveAndClose(closeFn));
 
     act(() => result.current.resetFromPersisted());
 
@@ -164,41 +157,29 @@ describe('useUpcChecklistState', () => {
 
     act(() => result.current.toggleUciCriterion('uci_vmi'));
 
-    const closeFn = vi.fn();
-    act(() => result.current.saveAndClose(closeFn));
-
     const saved = onSave.mock.calls[0][0] as UpcChecklistRecord;
     expect(saved.evaluatedBy).toBeUndefined();
   });
 
-  // ── Clear ──────────────────────────────────────────────────────
-
-  it('clears all criteria and saves null classification', () => {
+  it('saves a No UPC state when the last selected criterion is removed', () => {
+    const checklist = makeChecklist([], ['uti_mon_cardiaca'], 'UPC_UTI');
     const { result } = renderHook(() =>
-      useUpcChecklistState({ checklist: undefined, onSave, uciAllowed: true, actor: ACTOR })
+      useUpcChecklistState({ checklist, onSave, uciAllowed: true, actor: ACTOR })
     );
 
-    act(() => {
-      result.current.toggleUciCriterion('uci_vmi');
-      result.current.toggleUtiCriterion('uti_mon_cardiaca');
-    });
+    act(() => result.current.resetFromPersisted());
+    (onSave as unknown as { mockClear: () => void }).mockClear();
 
-    const closeFn = vi.fn();
-    act(() => result.current.clearAndClose(closeFn));
+    act(() => result.current.toggleUtiCriterion('uti_mon_cardiaca'));
 
-    expect(result.current.draftUci.size).toBe(0);
     expect(result.current.draftUti.size).toBe(0);
-
     const saved = onSave.mock.calls[0][0] as UpcChecklistRecord;
     expect(saved.classification).toBeNull();
     expect(saved.uciCriteria).toEqual([]);
     expect(saved.utiCriteria).toEqual([]);
-    expect(closeFn).toHaveBeenCalledTimes(1);
   });
 
-  // ── Draft isolation ────────────────────────────────────────────
-
-  it('draft changes do not call onSave until explicit save', () => {
+  it('persists each draft change immediately', () => {
     const { result } = renderHook(() =>
       useUpcChecklistState({ checklist: undefined, onSave, uciAllowed: true, actor: ACTOR })
     );
@@ -209,6 +190,6 @@ describe('useUpcChecklistState', () => {
       result.current.toggleUciCriterion('uci_vmi'); // untoggle
     });
 
-    expect(onSave).not.toHaveBeenCalled();
+    expect(onSave).toHaveBeenCalledTimes(3);
   });
 });

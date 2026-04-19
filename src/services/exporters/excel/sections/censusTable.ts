@@ -5,7 +5,7 @@ import { BEDS } from '@/constants/beds';
 import { getBedTypeForRecord } from '@/utils/bedTypeUtils';
 import { TITLE_STYLE, HEADER_FILL, BORDER_THIN, FREE_FILL, BLOCKED_FILL } from '../styles';
 import { mapBedType, formatAge, formatDateDDMMYYYY } from '../formatters';
-import { resolveNormalizedUpcFlag } from '@/shared/census/upcBedPolicy';
+import { resolveUpcExportLabel } from '@/shared/census/upcBedPolicy';
 
 export function addCensusTable(
   sheet: Worksheet,
@@ -102,7 +102,13 @@ function addCensusRow(
     isBlocked ? 'Bloqueada' : patient?.status || (isFree ? 'Libre' : ''),
     patient ? (patient.hasWristband ? 'Sí' : 'No') : 'No',
     patient ? (patient.surgicalComplication ? 'Sí' : 'No') : 'No',
-    patient ? (resolveNormalizedUpcFlag(bedId, patient.isUPC) ? 'Sí' : 'No') : 'No',
+    patient
+      ? resolveUpcExportLabel({
+          bedId,
+          isUPC: patient.isUPC,
+          checklist: patient.upcChecklist,
+        })
+      : 'No UPC',
     patient?.devices?.join(', ') || '',
   ];
 

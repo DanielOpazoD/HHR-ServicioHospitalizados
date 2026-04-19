@@ -10,8 +10,6 @@ const defaults = {
   uciAllowed: true,
   onToggleUci: vi.fn(),
   onToggleUti: vi.fn(),
-  onSave: vi.fn(),
-  onClear: vi.fn(),
   onClose: vi.fn(),
 };
 
@@ -104,19 +102,19 @@ describe('UpcChecklistPanel', () => {
     expect(onToggleUti).toHaveBeenCalledWith('uti_mon_cardiaca');
   });
 
-  it('calls onSave when Guardar clicked', () => {
-    const onSave = vi.fn();
-    render(<UpcChecklistPanel {...defaults} onSave={onSave} />);
-    fireEvent.click(screen.getByText('Guardar'));
-    expect(onSave).toHaveBeenCalledTimes(1);
+  it('shows that selections are saved immediately', () => {
+    render(<UpcChecklistPanel {...defaults} />);
+    expect(screen.getByText('Se guarda al seleccionar')).toBeTruthy();
   });
 
-  it('shows Limpiar button only when criteria are selected', () => {
+  it('does not render Guardar or Limpiar buttons', () => {
     const { rerender } = render(<UpcChecklistPanel {...defaults} />);
     expect(screen.queryByText('Limpiar')).toBeNull();
+    expect(screen.queryByText('Guardar')).toBeNull();
 
     rerender(<UpcChecklistPanel {...defaults} hasDraftCriteria={true} />);
-    expect(screen.getByText('Limpiar')).toBeTruthy();
+    expect(screen.queryByText('Limpiar')).toBeNull();
+    expect(screen.queryByText('Guardar')).toBeNull();
   });
 
   it('calls onClose when X button clicked', () => {
