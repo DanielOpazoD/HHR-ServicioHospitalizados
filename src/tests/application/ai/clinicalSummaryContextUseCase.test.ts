@@ -6,6 +6,8 @@ import {
   buildClinicalAISummaryContext,
   buildClinicalAISummaryPrompt,
 } from '@/application/ai/clinicalSummaryContextUseCase';
+import { createDailyRecordAggregate } from '@/services/repositories/dailyRecordAggregate';
+import { resolveInitialDayHandoff } from '@/services/repositories/dailyRecordHandoffDomainService';
 
 const record: DailyRecord = {
   date: '2026-03-25',
@@ -182,5 +184,25 @@ describe('clinicalSummaryContextUseCase', () => {
     });
 
     expect(context.nursingHandoff.novedadesNightShift).toBe('Texto heredado desde turno largo');
+  });
+
+  it('keeps downstream nursing handoff consumers aligned on the effective night fallback', () => {
+    const recordWithMissingNightNovedades: DailyRecord = {
+      ...record,
+      handoffNovedadesDayShift: 'Texto heredado desde turno largo',
+      handoffNovedadesNightShift: '',
+    };
+
+    const context = buildClinicalAISummaryContext({
+      record: recordWithMissingNightNovedades,
+      bedId: 'R1',
+      documents,
+    });
+    const aggregate = createDailyRecordAggregate(recordWithMissingNightNovedades);
+    const initialDayHandoff = resolveInitialDayHandoff(recordWithMissingNightNovedades);
+
+    expect(context.nursingHandoff.novedadesNightShift).toBe('Texto heredado desde turno largo');
+    expect(aggregate.handoff.nightNovedades).toBe('Texto heredado desde turno largo');
+    expect(initialDayHandoff).toBe('Texto heredado desde turno largo');
   });
 });
