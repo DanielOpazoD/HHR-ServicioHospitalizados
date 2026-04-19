@@ -78,10 +78,42 @@ vi.mock('@/features/census/components/PatientRow', () => ({
 
 vi.mock('@/features/census/components/EmptyBedRow', () => ({
   EmptyBedRow: ({ bed, onClick }: { bed: { id: string }; onClick: () => void }) => (
-    <tr data-testid="empty-bed-row" onClick={onClick}>
+    <tr data-testid="empty-bed-row">
       <td>{bed.id}</td>
+      <td>
+        <button type="button" data-testid={`empty-bed-button-${bed.id}`} onClick={onClick}>
+          Agregar paciente
+        </button>
+      </td>
     </tr>
   ),
+}));
+
+vi.mock('@/components/modals/DemographicsModal', () => ({
+  DemographicsModal: ({
+    isOpen,
+    onClose,
+    onEmptySave,
+    onSave,
+  }: {
+    isOpen: boolean;
+    onClose: () => void;
+    onEmptySave?: () => void;
+    onSave: (payload: Record<string, unknown>) => void;
+  }) =>
+    isOpen ? (
+      <div data-testid="empty-bed-demographics-modal">
+        <button type="button" onClick={onClose}>
+          Cancelar
+        </button>
+        <button type="button" onClick={() => onEmptySave?.()}>
+          Guardar Vacío
+        </button>
+        <button type="button" onClick={() => onSave({ patientName: 'Nuevo Paciente' })}>
+          Guardar Paciente
+        </button>
+      </div>
+    ) : null,
 }));
 
 vi.mock('@/components/ui/ResizableHeader', () => ({
@@ -118,6 +150,8 @@ describe('CensusTable layout and actions', () => {
   const mockHandleRowAction = vi.fn();
   const mockUpdateColumnWidth = vi.fn();
   const mockResetDay = vi.fn();
+  const mockUpdatePatientMultiple = vi.fn();
+  const mockMoveOrCopyPatient = vi.fn();
 
   const createUiMock = (): ReturnType<typeof useConfirmDialog> =>
     asContextReturn<ReturnType<typeof useConfirmDialog>>({
@@ -193,6 +227,8 @@ describe('CensusTable layout and actions', () => {
     vi.mocked(useDailyRecordBedActions).mockReturnValue(
       asContextReturn<ReturnType<typeof useDailyRecordBedActions>>({
         updatePatient: vi.fn(),
+        updatePatientMultiple: mockUpdatePatientMultiple,
+        moveOrCopyPatient: mockMoveOrCopyPatient,
       })
     );
 
@@ -306,16 +342,44 @@ describe('CensusTable layout and actions', () => {
     expect(mockUpdateColumnWidth).toHaveBeenCalledWith('bed', 120);
   });
 
-  it('should initialize empty bed on click', () => {
-    const updatePatientMock = vi.fn();
-    vi.mocked(useDailyRecordBedActions).mockReturnValue(
-      asContextReturn<ReturnType<typeof useDailyRecordBedActions>>({
-        updatePatient: updatePatientMock,
-      })
-    );
-
+  it('should open demographics modal from the empty-bed add button', async () => {
     render(<CensusTable currentDateString="2025-01-08" />);
-    fireEvent.click(screen.getByText('R2'));
-    expect(updatePatientMock).toHaveBeenCalledWith('R2', 'patientName', ' ');
+
+    fireEvent.click(screen.getByTestId('empty-bed-button-R2'));
+
+    expect(await screen.findByTestId('empty-bed-demographics-modal')).toBeInTheDocument();
+    expect(mockUpdatePatientMultiple).not.toHaveBeenCalled();
+  });
+
+  it('should close the empty-bed demographics modal on cancel without persisting data', async () => {
+    render(<CensusTable currentDateString="2025-01-08" />);
+
+    fireEvent.click(screen.getByTestId('empty-bed-button-R2'));
+    fireEvent.click(await screen.findByText('Cancelar'));
+
+    expect(screen.queryByTestId('empty-bed-demographics-modal')).not.toBeInTheDocument();
+    expect(mockUpdatePatientMultiple).not.toHaveBeenCalled();
+  });
+
+  it('should close the empty-bed demographics modal on empty save without persisting data', async () => {
+    render(<CensusTable currentDateString="2025-01-08" />);
+
+    fireEvent.click(screen.getByTestId('empty-bed-button-R2'));
+    fireEvent.click(await screen.findByText('Guardar Vacío'));
+
+    expect(screen.queryByTestId('empty-bed-demographics-modal')).not.toBeInTheDocument();
+    expect(mockUpdatePatientMultiple).not.toHaveBeenCalled();
+  });
+
+  it('should persist demographics only when the empty-bed modal saves meaningful identity data', async () => {
+    render(<CensusTable currentDateString="2025-01-08" />);
+
+    fireEvent.click(screen.getByTestId('empty-bed-button-R2'));
+    fireEvent.click(await screen.findByText('Guardar Paciente'));
+
+    expect(mockUpdatePatientMultiple).toHaveBeenCalledWith('R2', {
+      patientName: 'Nuevo Paciente',
+    });
+    expect(screen.queryByTestId('empty-bed-demographics-modal')).not.toBeInTheDocument();
   });
 });

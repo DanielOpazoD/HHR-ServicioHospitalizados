@@ -22,8 +22,17 @@ vi.mock('@/features/census/components/EmptyBedRow', () => ({
   EmptyBedRow: (props: { bed: BedDefinition; onClick: () => void }) => {
     emptyBedRowSpy(props);
     return (
-      <tr data-testid={`empty-bed-row-${props.bed.id}`} onClick={props.onClick}>
+      <tr data-testid={`empty-bed-row-${props.bed.id}`}>
         <td>{props.bed.id}</td>
+        <td>
+          <button
+            type="button"
+            data-testid={`empty-bed-button-${props.bed.id}`}
+            onClick={props.onClick}
+          >
+            Agregar paciente
+          </button>
+        </td>
       </tr>
     );
   },
@@ -250,7 +259,7 @@ describe('CensusTableBody', () => {
 
     expect(emptyBedRowSpy).toHaveBeenCalledTimes(2);
 
-    fireEvent.click(screen.getByTestId('empty-bed-row-R9'));
+    fireEvent.click(screen.getByTestId('empty-bed-button-R9'));
     expect(onActivateEmptyBed).toHaveBeenCalledWith('R9');
   });
 });

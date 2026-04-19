@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { Suspense, lazy, useCallback, useMemo, useState } from 'react';
 import { CensusTableHeader } from '@/features/census/components/CensusTableHeader';
 import { CensusTableBody } from '@/features/census/components/CensusTableBody';
 import { useCensusTableBindingsModel } from '@/features/census/hooks/useCensusTableBindingsModel';
@@ -8,7 +8,16 @@ import { useDailyRecordBeds } from '@/context/DailyRecordContext';
 import { useDailyRecordBedActions } from '@/context/useDailyRecordScopedActions';
 import { ViewLoader } from '@/components/ui/ViewLoader';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
+import { createEmptyPatient } from '@/services/factories/patientFactory';
+import { hasMeaningfulPatientIdentity } from '@/features/census/controllers/patientIdentityController';
+import type { PatientData } from '@/features/census/components/patient-row/patientRowDataContracts';
 export type { DiagnosisMode } from '@/features/census/types/censusTableTypes';
+
+const LazyDemographicsModal = lazy(() =>
+  import('@/components/modals/DemographicsModal').then(module => ({
+    default: module.DemographicsModal,
+  }))
+);
 
 interface CensusTableProps {
   currentDateString: string;
@@ -21,13 +30,14 @@ export const CensusTable: React.FC<CensusTableProps> = ({
   readOnly = false,
   accessProfile = 'default',
 }) => {
+  const [activeEmptyBedId, setActiveEmptyBedId] = useState<string | null>(null);
   const { isReady, bindings, clinicalDocumentInfoByBedId } = useCensusTableBindingsModel({
     currentDateString,
     readOnly,
     accessProfile,
   });
 
-  const { moveOrCopyPatient } = useDailyRecordBedActions();
+  const { moveOrCopyPatient, updatePatientMultiple } = useDailyRecordBedActions();
   const beds = useDailyRecordBeds();
 
   const handleMoveToBed = useCallback(
@@ -38,6 +48,36 @@ export const CensusTable: React.FC<CensusTableProps> = ({
   );
 
   const dragDrop = useCensusTableDragDrop(handleMoveToBed, beds ?? {});
+
+  const emptyBedData = useMemo(
+    () => (activeEmptyBedId ? createEmptyPatient(activeEmptyBedId) : null),
+    [activeEmptyBedId]
+  );
+
+  const closeEmptyBedDemographics = useCallback(() => {
+    setActiveEmptyBedId(null);
+  }, []);
+
+  const openEmptyBedDemographics = useCallback((bedId: string) => {
+    setActiveEmptyBedId(bedId);
+  }, []);
+
+  const saveEmptyBedDemographics = useCallback(
+    (updatedFields: Partial<PatientData>) => {
+      if (!activeEmptyBedId) {
+        return;
+      }
+
+      if (!hasMeaningfulPatientIdentity(updatedFields)) {
+        closeEmptyBedDemographics();
+        return;
+      }
+
+      updatePatientMultiple(activeEmptyBedId, updatedFields);
+      closeEmptyBedDemographics();
+    },
+    [activeEmptyBedId, closeEmptyBedDemographics, updatePatientMultiple]
+  );
 
   if (!isReady || !bindings) return <ViewLoader />;
 
@@ -54,6 +94,7 @@ export const CensusTable: React.FC<CensusTableProps> = ({
           <CensusTableHeader {...headerProps} />
           <CensusTableBody
             {...bodyProps}
+            onActivateEmptyBed={openEmptyBedDemographics}
             dragDrop={readOnly ? undefined : dragDrop}
             clinicalDocumentInfoByBedId={clinicalDocumentInfoByBedId}
           />
@@ -67,6 +108,21 @@ export const CensusTable: React.FC<CensusTableProps> = ({
           onCancel={dragDrop.confirmationHandlers.onCancel}
         />
       )}
+
+      {activeEmptyBedId && emptyBedData ? (
+        <Suspense fallback={null}>
+          <LazyDemographicsModal
+            isOpen
+            onClose={closeEmptyBedDemographics}
+            onCancel={closeEmptyBedDemographics}
+            onEmptySave={closeEmptyBedDemographics}
+            data={emptyBedData}
+            onSave={saveEmptyBedDemographics}
+            bedId={activeEmptyBedId}
+            recordDate={currentDateString}
+          />
+        </Suspense>
+      ) : null}
     </div>
   );
 };
