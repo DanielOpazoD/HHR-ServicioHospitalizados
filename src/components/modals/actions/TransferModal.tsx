@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Share2 } from 'lucide-react';
-import { getTimeRoundedToStep } from '@/utils';
+import { getTimeRoundedToStep } from '@/utils/dateUtils';
 import { BaseModal } from '@/components/shared/BaseModal';
 import { RECEIVING_CENTER_OTHER, isReceivingCenter } from '@/constants/clinical';
 import { TransferClinicalCribNotice } from '@/components/modals/actions/transfer/TransferClinicalCribNotice';

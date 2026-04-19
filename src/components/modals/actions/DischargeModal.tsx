@@ -1,6 +1,6 @@
 import React from 'react';
 import { LogOut } from 'lucide-react';
-import { getTimeRoundedToStep } from '@/utils';
+import { getTimeRoundedToStep } from '@/utils/dateUtils';
 import { BaseModal } from '@/components/shared/BaseModal';
 import { DischargeType } from '@/constants/clinical';
 import { ClinicalCribStatusSection } from '@/components/modals/actions/discharge/ClinicalCribStatusSection';
