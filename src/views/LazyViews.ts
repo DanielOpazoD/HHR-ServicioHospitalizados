@@ -28,7 +28,7 @@ export const AnalyticsView = lazyWithRetry(() =>
 
 // CUDYR module (prefetch)
 export const CudyrView = lazyWithRetry(() =>
-  import(/* webpackPrefetch: true */ '@/features/cudyr').then(module => ({
+  import(/* webpackPrefetch: true */ '@/application/cudyr/CudyrView').then(module => ({
     default: module.CudyrView,
   }))
 );
