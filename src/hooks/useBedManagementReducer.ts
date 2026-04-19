@@ -19,6 +19,7 @@ import {
   buildUpdateCudyrPatches,
   buildUpdatePatientPatches,
 } from '@/hooks/controllers/bedManagementPatchController';
+import { buildUpdatePatientActionPatch } from '@/hooks/controllers/bedManagementUpdatePatientController';
 
 // ============================================================================
 // Actions
@@ -63,17 +64,7 @@ export const bedManagementReducer = (
 
   switch (action.type) {
     case 'UPDATE_PATIENT': {
-      const { bedId, field, value } = action;
-      const patches = buildUpdatePatientPatches(state, bedId, {
-        [field]: value,
-      } as Partial<PatientData>);
-
-      if (field === 'pathology' && value !== state.beds[bedId].pathology) {
-        patches[`beds.${bedId}.cie10Code`] = undefined;
-        patches[`beds.${bedId}.cie10Description`] = undefined;
-      }
-
-      return patches as DailyRecordPatch;
+      return buildUpdatePatientActionPatch(state, action);
     }
 
     case 'UPDATE_PATIENT_MULTIPLE': {
