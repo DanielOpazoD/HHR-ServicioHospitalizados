@@ -4,6 +4,7 @@ import {
   resolveExportableNursesText,
   normalizeUnknownDailyRecordStaffing,
   resolveNightShiftNurses,
+  resolvePresentedNightShiftNurses,
   resolvePrimaryDayShiftNurse,
   resolveShiftNurseSignature,
 } from '@/services/staff/dailyRecordStaffing';
@@ -113,6 +114,48 @@ describe('dailyRecordStaffing', () => {
 
     expect(resolveExportableNursesText(legacyRecord)).toBe('Ana & Vacante');
     expect(resolveExportableNursesText(detailedRecord)).toBe('Ana & Vacante');
+  });
+
+  it('normalizes vacancy markers in presented night-shift staffing', () => {
+    const canonicalRecord = buildRecord({
+      nursesNightShift: [' Carla ', '--'],
+    });
+    const detailedRecord = buildRecord({
+      date: '2026-04-18',
+      nursesNightShift: ['Carla', '--'],
+      staffingDetailsV1: {
+        day: {
+          nurses: [],
+          tens: [],
+        },
+        night: {
+          nurses: [
+            {
+              id: 'night-nurse-standard-0',
+              name: 'Carla',
+              role: 'nurse',
+              slotType: 'standard',
+              standardSlotIndex: 0,
+              startTime: '20:00',
+              endTime: '09:00',
+            },
+            {
+              id: 'night-nurse-standard-1',
+              name: '',
+              role: 'nurse',
+              slotType: 'standard',
+              standardSlotIndex: 1,
+              startTime: '20:00',
+              endTime: '09:00',
+            },
+          ],
+          tens: [],
+        },
+      },
+    });
+
+    expect(resolvePresentedNightShiftNurses(canonicalRecord)).toEqual(['Carla', 'Vacante']);
+    expect(resolvePresentedNightShiftNurses(detailedRecord)).toEqual(['Carla', 'Vacante']);
   });
 
   it('normalizes unknown storage payloads into canonical staffing with legacy compatibility', () => {

@@ -244,6 +244,55 @@ describe('censusRawWorkbook', () => {
 
       expect(rows[0]?.[23]).toBe('UPC-UCI');
     });
+
+    it('exports canonical vacancy labels in the raw nurses column', async () => {
+      const { extractRowsFromRecord, getCensusRawHeader } =
+        await import('@/services/exporters/censusRawWorkbook');
+
+      const bedId = 'R1';
+      const mockRecord = {
+        date: '2025-12-25',
+        beds: {
+          [bedId]: DataFactory.createMockPatient(bedId, {
+            patientName: 'Paciente Turno',
+            rut: '12.345.678-9',
+          }),
+        },
+        nursesDayShift: ['Ana', '--'],
+        lastUpdated: FIXED_ISO_TIMESTAMP,
+        activeExtraBeds: [],
+      } as unknown as DailyRecord;
+
+      const rows = extractRowsFromRecord(mockRecord);
+      const nursesColumn = getCensusRawHeader().indexOf('ENFERMEROS');
+
+      expect(rows[0]?.[nursesColumn]).toBe('Ana & Vacante');
+    });
+  });
+
+  describe('headerSection', () => {
+    it('renders canonical vacancy labels in the night-shift header text', async () => {
+      const ExcelJS = (await import('exceljs')).default;
+      const { addHeaderSection } =
+        await import('@/services/exporters/excel/sections/headerSection');
+
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet('header');
+      const record = {
+        date: '2026-04-18',
+        beds: {},
+        discharges: [],
+        transfers: [],
+        cma: [],
+        activeExtraBeds: [],
+        lastUpdated: FIXED_ISO_TIMESTAMP,
+        nursesNightShift: [' -- ', ''],
+      } as unknown as DailyRecord;
+
+      addHeaderSection(sheet, record as never, 1);
+
+      expect(sheet.getRow(3).getCell(1).value).toBe('Enfermeros/as Turno Noche: Vacante, Vacante');
+    });
   });
 });
 

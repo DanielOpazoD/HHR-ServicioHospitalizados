@@ -66,13 +66,14 @@ const resolveLegacyDayShiftNurseSlots = (
   return record.nurseName?.trim() ? [record.nurseName.trim(), ''] : ['', ''];
 };
 
-const resolveDetailedDayShiftNurseSlots = (
-  record: DailyRecordExportPresentationShape | null | undefined
+const resolveDetailedShiftNurseSlots = (
+  record: DailyRecordExportPresentationShape | null | undefined,
+  shift: 'day' | 'night'
 ): string[] | null => {
   if (!record?.staffingDetailsV1 || !record.date) return null;
 
   return resolveDetailedStaffingState(record, record.date)
-    .day.nurses.slice(0, STANDARD_NURSE_SLOT_COUNT)
+    [shift].nurses.slice(0, STANDARD_NURSE_SLOT_COUNT)
     .map(assignment => assignment.name?.trim() || '');
 };
 
@@ -81,7 +82,7 @@ export const resolvePresentedDayShiftNurses = (
 ): string[] => {
   if (!record) return [];
 
-  const detailed = resolveDetailedDayShiftNurseSlots(record);
+  const detailed = resolveDetailedShiftNurseSlots(record, 'day');
   if (detailed) {
     return presentStaffSelectionsForExport(detailed);
   }
@@ -90,6 +91,21 @@ export const resolvePresentedDayShiftNurses = (
   return canonical.some(Boolean)
     ? presentStaffSelectionsForExport(canonical)
     : presentStaffSelectionsForExport(resolveLegacyDayShiftNurseSlots(record));
+};
+
+export const resolvePresentedNightShiftNurses = (
+  record: DailyRecordExportPresentationShape | null | undefined
+): string[] => {
+  if (!record) return [];
+
+  const detailed = resolveDetailedShiftNurseSlots(record, 'night');
+  if (detailed) {
+    return presentStaffSelectionsForExport(detailed);
+  }
+
+  return presentStaffSelectionsForExport(
+    normalizeStaffSlots(record.nursesNightShift, STANDARD_NURSE_SLOT_COUNT)
+  );
 };
 
 export const resolvePresentedNightHandoffReceives = (
