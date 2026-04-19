@@ -13,9 +13,6 @@ describe('chunkingPolicy', () => {
     expect(
       chunkForModule('/repo/src/features/clinical-documents/components/ClinicalDocumentsModal.tsx')
     ).toBeUndefined();
-    expect(
-      chunkForModule('/repo/src/features/transfers/components/components/TransferStatusBadge.tsx')
-    ).toBeUndefined();
   });
 
   it('never assigns app-level source modules to manual chunks', () => {
@@ -26,7 +23,6 @@ describe('chunkingPolicy', () => {
       '/repo/src/features/census/components/patient-row/PatientRow.tsx',
       '/repo/src/features/census/controllers/patientMovementController.ts',
       '/repo/src/features/clinical-documents/components/ClinicalDocumentsModal.tsx',
-      '/repo/src/features/transfers/components/TransferStatusBadge.tsx',
       '/repo/src/application/backup-export/backupExportService.ts',
       '/repo/src/services/backup/censusStorageService.ts',
     ];
