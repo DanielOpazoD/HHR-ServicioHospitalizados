@@ -3,11 +3,11 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { LoginPageCard } from '@/features/auth/components/LoginPageCard';
 import { AUTH_UI_COPY } from '@/services/auth/authUiCopy';
-import { resetLocalAppStorage } from '@/services/storage/core';
+import { resetLocalAppStorage } from '@/services/storage/indexeddb/indexedDbMaintenanceService';
 
 const mockConfirm = vi.fn();
 
-vi.mock('@/services/storage/core', () => ({
+vi.mock('@/services/storage/indexeddb/indexedDbMaintenanceService', () => ({
   resetLocalAppStorage: vi.fn(),
 }));
 

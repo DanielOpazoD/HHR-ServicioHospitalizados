@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 
-vi.mock('@/services/storage/core', () => ({
+vi.mock('@/services/storage/indexeddb/indexedDbCore', () => ({
   isDatabaseInFallbackMode: vi.fn(),
 }));
 
-import { isDatabaseInFallbackMode } from '@/services/storage/core';
+import { isDatabaseInFallbackMode } from '@/services/storage/indexeddb/indexedDbCore';
 import { useDatabaseFallbackStatus } from '@/hooks/useDatabaseFallbackStatus';
 
 describe('useDatabaseFallbackStatus', () => {

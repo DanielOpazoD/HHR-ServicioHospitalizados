@@ -7,7 +7,7 @@ import {
   type ClientBootstrapRecoveryResult,
 } from '@/services/config/clientBootstrapRecovery';
 import { shouldUseStickyIndexedDbFallback } from '@/services/storage/indexeddb/indexedDbRecoveryPolicy';
-import { performClientHardReset } from '@/services/storage/core';
+import { performClientHardReset } from '@/services/storage/indexeddb/indexedDbMaintenanceService';
 import { defaultFirebaseConfigRuntimeAdapter } from '@/services/firebase-runtime/firebaseConfigRuntimeAdapter';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 import type {

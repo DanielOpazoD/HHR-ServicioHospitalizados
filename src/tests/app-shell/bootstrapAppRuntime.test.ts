@@ -31,7 +31,7 @@ vi.mock('@/services/auth/firebaseStartupUiPolicy', () => ({
   getFirebaseStartupFailureMessage: (...args: unknown[]) => mockGetStartupFailureMessage(...args),
 }));
 
-vi.mock('@/services/storage/core', () => ({
+vi.mock('@/services/storage/indexeddb/indexedDbMaintenanceService', () => ({
   performClientHardReset: (...args: unknown[]) => mockPerformClientHardReset(...args),
 }));
 

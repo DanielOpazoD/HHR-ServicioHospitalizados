@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
-import { getLocalPersistenceRuntimeSnapshot } from '@/services/storage/core';
+import { getLocalPersistenceRuntimeSnapshot } from '@/services/storage/indexeddb/indexedDbCore';
 
 describe('localPersistenceRuntimeSnapshot contract', () => {
   it('exposes the snapshot through the canonical storage/core entrypoint', () => {

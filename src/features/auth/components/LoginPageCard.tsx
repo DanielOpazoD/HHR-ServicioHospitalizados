@@ -3,7 +3,7 @@ import { AlertCircle, Loader2, RotateCcw } from 'lucide-react';
 
 import { useConfirmDialog } from '@/context';
 import { AUTH_UI_COPY } from '@/services/auth/authUiCopy';
-import { resetLocalAppStorage } from '@/services/storage/core';
+import { resetLocalAppStorage } from '@/services/storage/indexeddb/indexedDbMaintenanceService';
 
 interface LoginPageCardProps {
   isDayGradient: boolean;

@@ -1,12 +1,19 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useStorageMigration } from '@/hooks/useStorageMigration';
-import * as storageCore from '@/services/storage/core';
+import * as storageCore from '@/services/storage/indexeddb/indexedDbCore';
+import * as storageMigration from '@/services/storage/indexeddb/indexedDbMigrationService';
 import { restoreConsole, suppressConsole } from '@/tests/utils/consoleTestUtils';
 
-vi.mock('@/services/storage/core', () => ({
-  migrateFromLocalStorage: vi.fn(),
+vi.mock('@/services/storage/indexeddb/indexedDbCore', () => ({
   isIndexedDBAvailable: vi.fn(),
+  isDatabaseInFallbackMode: vi.fn(),
+  getLocalPersistenceRuntimeSnapshot: vi.fn(),
+  registerDatabaseRecreatedHandler: vi.fn(),
+}));
+
+vi.mock('@/services/storage/indexeddb/indexedDbMigrationService', () => ({
+  migrateFromLocalStorage: vi.fn(),
 }));
 
 const createDeferred = <T>() => {
@@ -33,7 +40,7 @@ describe('useStorageMigration', () => {
 
   it('should complete startup migration when enabled', async () => {
     vi.mocked(storageCore.isIndexedDBAvailable).mockReturnValue(true);
-    vi.mocked(storageCore.migrateFromLocalStorage).mockResolvedValue(false);
+    vi.mocked(storageMigration.migrateFromLocalStorage).mockResolvedValue(false);
 
     const { result } = renderHook(() => useStorageMigration());
 
@@ -52,12 +59,12 @@ describe('useStorageMigration', () => {
     expect(result.current.isComplete).toBe(true);
     expect(result.current.isMigrating).toBe(false);
     expect(result.current.didMigrate).toBe(false);
-    expect(storageCore.migrateFromLocalStorage).not.toHaveBeenCalled();
+    expect(storageMigration.migrateFromLocalStorage).not.toHaveBeenCalled();
   });
 
   it('should complete migration successfully when IndexedDB is available', async () => {
     vi.mocked(storageCore.isIndexedDBAvailable).mockReturnValue(true);
-    vi.mocked(storageCore.migrateFromLocalStorage).mockResolvedValue(true);
+    vi.mocked(storageMigration.migrateFromLocalStorage).mockResolvedValue(true);
 
     const { result } = renderHook(() => useStorageMigration());
 
@@ -81,12 +88,14 @@ describe('useStorageMigration', () => {
 
     expect(result.current.isMigrating).toBe(false);
     expect(result.current.didMigrate).toBe(false);
-    expect(storageCore.migrateFromLocalStorage).not.toHaveBeenCalled();
+    expect(storageMigration.migrateFromLocalStorage).not.toHaveBeenCalled();
   });
 
   it('should handle migration errors gracefully', async () => {
     vi.mocked(storageCore.isIndexedDBAvailable).mockReturnValue(true);
-    vi.mocked(storageCore.migrateFromLocalStorage).mockRejectedValue(new Error('Migration failed'));
+    vi.mocked(storageMigration.migrateFromLocalStorage).mockRejectedValue(
+      new Error('Migration failed')
+    );
 
     const { result } = renderHook(() => useStorageMigration());
 
@@ -101,7 +110,7 @@ describe('useStorageMigration', () => {
 
   it('should handle non-Error exceptions', async () => {
     vi.mocked(storageCore.isIndexedDBAvailable).mockReturnValue(true);
-    vi.mocked(storageCore.migrateFromLocalStorage).mockRejectedValue('String error');
+    vi.mocked(storageMigration.migrateFromLocalStorage).mockRejectedValue('String error');
 
     const { result } = renderHook(() => useStorageMigration());
 
@@ -118,7 +127,7 @@ describe('useStorageMigration', () => {
     const firstMigration = createDeferred<boolean>();
     const secondMigration = createDeferred<boolean>();
 
-    vi.mocked(storageCore.migrateFromLocalStorage)
+    vi.mocked(storageMigration.migrateFromLocalStorage)
       .mockImplementationOnce(() => firstMigration.promise)
       .mockImplementationOnce(() => secondMigration.promise);
 
@@ -137,7 +146,7 @@ describe('useStorageMigration', () => {
     rerender({ enabled: true });
 
     await waitFor(() => {
-      expect(storageCore.migrateFromLocalStorage).toHaveBeenCalledTimes(2);
+      expect(storageMigration.migrateFromLocalStorage).toHaveBeenCalledTimes(2);
     });
 
     secondMigration.resolve(false);
