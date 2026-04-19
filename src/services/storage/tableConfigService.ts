@@ -57,28 +57,95 @@ export const setFirestoreEnabled = (enabled: boolean): void => {
 // ============================================================================
 
 export const DEFAULT_COLUMN_WIDTHS: TableColumnConfig = {
-  actions: 24,
-  bed: 38,
-  type: 48,
-  name: 125,
-  rut: 66,
-  age: 27,
-  diagnosis: 140,
-  specialty: 51,
-  status: 57,
-  admission: 58,
-  dmi: 76,
-  cqx: 24,
-  upc: 48,
+  actions: 22,
+  bed: 34,
+  type: 30,
+  name: 110,
+  rut: 58,
+  age: 24,
+  diagnosis: 123,
+  specialty: 45,
+  status: 50,
+  admission: 51,
+  dmi: 67,
+  cqx: 21,
+  upc: 26,
 };
 
-export const DEFAULT_PAGE_MARGIN = 16; // px (corresponds to p-4)
+export const DEFAULT_PAGE_MARGIN = 12; // px (corresponds to p-3)
+export const CURRENT_TABLE_CONFIG_VERSION = 3;
+
+const COMPACT_COLUMN_MAX_WIDTHS: Readonly<TableColumnConfig> = {
+  actions: 22,
+  bed: 34,
+  type: 28,
+  name: 110,
+  rut: 58,
+  age: 24,
+  diagnosis: 123,
+  specialty: 45,
+  status: 50,
+  admission: 51,
+  dmi: 67,
+  cqx: 21,
+  upc: 22,
+};
+
+const compactColumns = (columns: Partial<TableColumnConfig>): TableColumnConfig => {
+  const merged = {
+    ...DEFAULT_COLUMN_WIDTHS,
+    ...columns,
+  } as TableColumnConfig;
+
+  return {
+    actions: Math.min(merged.actions, COMPACT_COLUMN_MAX_WIDTHS.actions),
+    bed: Math.min(merged.bed, COMPACT_COLUMN_MAX_WIDTHS.bed),
+    type: Math.min(merged.type, COMPACT_COLUMN_MAX_WIDTHS.type),
+    name: Math.min(merged.name, COMPACT_COLUMN_MAX_WIDTHS.name),
+    rut: Math.min(merged.rut, COMPACT_COLUMN_MAX_WIDTHS.rut),
+    age: Math.min(merged.age, COMPACT_COLUMN_MAX_WIDTHS.age),
+    diagnosis: Math.min(merged.diagnosis, COMPACT_COLUMN_MAX_WIDTHS.diagnosis),
+    specialty: Math.min(merged.specialty, COMPACT_COLUMN_MAX_WIDTHS.specialty),
+    status: Math.min(merged.status, COMPACT_COLUMN_MAX_WIDTHS.status),
+    admission: Math.min(merged.admission, COMPACT_COLUMN_MAX_WIDTHS.admission),
+    dmi: Math.min(merged.dmi, COMPACT_COLUMN_MAX_WIDTHS.dmi),
+    cqx: Math.min(merged.cqx, COMPACT_COLUMN_MAX_WIDTHS.cqx),
+    upc: Math.min(merged.upc, COMPACT_COLUMN_MAX_WIDTHS.upc),
+  };
+};
+
+const migrateTableConfig = (config: Partial<TableConfig>): TableConfig => {
+  const resolvedVersion = config.version ?? 0;
+  const baseConfig = getDefaultConfig();
+  const incomingColumns = config.columns ?? {};
+
+  if (resolvedVersion >= CURRENT_TABLE_CONFIG_VERSION) {
+    return {
+      ...baseConfig,
+      ...config,
+      columns: {
+        ...DEFAULT_COLUMN_WIDTHS,
+        ...config.columns,
+      },
+      pageMargin: config.pageMargin ?? DEFAULT_PAGE_MARGIN,
+      version: resolvedVersion,
+    };
+  }
+
+  return {
+    ...baseConfig,
+    ...config,
+    columns: compactColumns(incomingColumns),
+    pageMargin: config.pageMargin ?? DEFAULT_PAGE_MARGIN,
+    version: CURRENT_TABLE_CONFIG_VERSION,
+  };
+};
 
 export const getDefaultConfig = (): TableConfig => ({
   columns: { ...DEFAULT_COLUMN_WIDTHS },
   pageMargin: DEFAULT_PAGE_MARGIN,
   lastUpdated: new Date().toISOString(),
-  version: 1,
+  version: CURRENT_TABLE_CONFIG_VERSION,
 });
 
 // ============================================================================
@@ -88,15 +155,8 @@ export const getDefaultConfig = (): TableConfig => ({
 const getDocRef = (runtime: FirestoreServiceRuntimePort = defaultFirestoreServiceRuntime) =>
   doc(runtime.getDb(), getSettingsDocPath(SETTINGS_DOCS.TABLE_CONFIG));
 
-const mergeWithDefaultConfig = (config: Partial<TableConfig>): TableConfig => ({
-  ...getDefaultConfig(),
-  ...config,
-  columns: {
-    ...DEFAULT_COLUMN_WIDTHS,
-    ...config.columns,
-  },
-  pageMargin: config.pageMargin ?? DEFAULT_PAGE_MARGIN,
-});
+const mergeWithDefaultConfig = (config: Partial<TableConfig>): TableConfig =>
+  migrateTableConfig(config);
 
 export const createTableConfigService = (
   runtime: FirestoreServiceRuntimePort = defaultFirestoreServiceRuntime
@@ -205,15 +265,7 @@ export const importTableConfig = (file: File): Promise<TableConfig> => {
         }
 
         // Merge with defaults
-        const validConfig: TableConfig = {
-          ...getDefaultConfig(),
-          ...config,
-          columns: {
-            ...DEFAULT_COLUMN_WIDTHS,
-            ...config.columns,
-          },
-          pageMargin: config.pageMargin ?? DEFAULT_PAGE_MARGIN,
-        };
+        const validConfig: TableConfig = migrateTableConfig(config);
 
         resolve(validConfig);
       } catch {

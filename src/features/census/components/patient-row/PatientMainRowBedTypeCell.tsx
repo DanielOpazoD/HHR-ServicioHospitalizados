@@ -19,7 +19,7 @@ export const PatientMainRowBedTypeCell: React.FC<PatientMainRowBedTypeCellProps>
   const isAcceptedTransfer = activeTransfer?.status === 'ACCEPTED';
 
   return (
-    <td className="p-0 border-r border-slate-100 text-center w-16 relative overflow-hidden group/tipo-cell">
+    <td className="p-0 border-r border-slate-100 text-center w-[30px] relative overflow-hidden group/tipo-cell">
       {hasActiveTransfer && (
         <div
           className={

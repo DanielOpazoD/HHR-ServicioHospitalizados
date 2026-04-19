@@ -5,6 +5,7 @@ import {
   getDefaultConfig,
   DEFAULT_COLUMN_WIDTHS,
   DEFAULT_PAGE_MARGIN,
+  CURRENT_TABLE_CONFIG_VERSION,
 } from '@/services/storage/tableConfigService';
 import { getDoc, setDoc } from 'firebase/firestore';
 
@@ -33,7 +34,7 @@ describe('tableConfigService', () => {
       const config = getDefaultConfig();
       expect(config.columns).toEqual(DEFAULT_COLUMN_WIDTHS);
       expect(config.pageMargin).toBe(DEFAULT_PAGE_MARGIN);
-      expect(config.version).toBe(1);
+      expect(config.version).toBe(CURRENT_TABLE_CONFIG_VERSION);
     });
   });
 
@@ -50,7 +51,7 @@ describe('tableConfigService', () => {
 
     it('should return merged config if document exists', async () => {
       const mockData = {
-        columns: { bed: 100 },
+        columns: { bed: 100, type: 54, upc: 52 },
         pageMargin: 20,
         version: 1,
       };
@@ -61,9 +62,12 @@ describe('tableConfigService', () => {
       } as unknown as FirestoreDocResult);
 
       const config = await loadTableConfig();
-      expect(config.columns.bed).toBe(100);
+      expect(config.columns.bed).toBe(34);
       expect(config.columns.name).toBe(DEFAULT_COLUMN_WIDTHS.name); // from defaults
+      expect(config.columns.type).toBe(28);
+      expect(config.columns.upc).toBe(22);
       expect(config.pageMargin).toBe(20);
+      expect(config.version).toBe(CURRENT_TABLE_CONFIG_VERSION);
     });
 
     it('should handle errors by returning default config', async () => {

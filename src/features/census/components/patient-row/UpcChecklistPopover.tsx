@@ -68,19 +68,19 @@ export const UpcChecklistPopover: React.FC<UpcChecklistPopoverProps> = ({
   }, [persistedChecklist]);
 
   if (isEmpty && !isSubRow) {
-    return <PatientEmptyCell tdClassName="p-0.5 text-center w-14" />;
+    return <PatientEmptyCell tdClassName="p-0.5 text-center w-[26px]" />;
   }
 
   if (!eligible) {
     return (
-      <td className="p-0.5 text-center w-14" title="UPC disponible solo en R1-R4, Neo 1-2">
+      <td className="p-0.5 text-center w-[26px]" title="UPC disponible solo en R1-R4, Neo 1-2">
         <span className="text-slate-300 text-[9px]">—</span>
       </td>
     );
   }
 
   return (
-    <td className="p-0.5 text-center w-14">
+    <td className="p-0.5 text-center w-[26px]">
       <button
         ref={buttonRef}
         type="button"
