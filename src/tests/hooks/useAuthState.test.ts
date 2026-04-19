@@ -105,7 +105,7 @@ describe('useAuthState baseline', () => {
       });
     });
 
-    expect(result.current.user?.uid).toBe('u123');
+    await waitFor(() => expect(result.current.user?.uid).toBe('u123'));
     expect(result.current.isEditor).toBe(true);
     await waitFor(() =>
       expect(sessionScopedStorageService.reconcileAuthorizedSessionOwner).toHaveBeenCalledWith(
@@ -132,7 +132,7 @@ describe('useAuthState baseline', () => {
       });
     });
 
-    expect(result.current.user?.uid).toBe('specialist-1');
+    await waitFor(() => expect(result.current.user?.uid).toBe('specialist-1'));
     expect(result.current.role).toBe('doctor_specialist');
     expect(result.current.isEditor).toBe(true);
   });
@@ -157,11 +157,13 @@ describe('useAuthState baseline', () => {
       await result.current.handleLogout('manual');
     });
 
-    expect(result.current.user).toBe(null);
+    await waitFor(() => expect(result.current.user).toBe(null));
     expect(authSession.signOut).toHaveBeenCalled();
     expect(sessionStorage.getItem(RECENT_MANUAL_LOGOUT_KEY)).toBeTruthy();
-    expect(sessionScopedStorageService.clearSessionScopedClientState).toHaveBeenCalledWith(
-      'manual'
+    await waitFor(() =>
+      expect(sessionScopedStorageService.clearSessionScopedClientState).toHaveBeenCalledWith(
+        'manual'
+      )
     );
   });
 
@@ -175,7 +177,7 @@ describe('useAuthState baseline', () => {
 
     const { result } = renderHook(() => useAuthState());
 
-    expect(result.current.authLoading).toBe(false);
+    await waitFor(() => expect(result.current.authLoading).toBe(false));
   });
 
   it('should handle inactivity timeout', async () => {
@@ -346,6 +348,51 @@ describe('useAuthState baseline', () => {
     expect(result.current.role).toBe('admin');
   });
 
+  it('keeps auth loading active until direct current-session hydration resolves', async () => {
+    let resolveCurrentSession:
+      | ((
+          value: Awaited<ReturnType<typeof authUseCases.executeResolvedCurrentAuthSessionState>>
+        ) => void)
+      | null = null;
+
+    vi.mocked(authUseCases.executeResolvedCurrentAuthSessionState).mockImplementationOnce(
+      () =>
+        new Promise(resolve => {
+          resolveCurrentSession = resolve;
+        })
+    );
+    vi.mocked(authSession.onAuthSessionStateChange).mockImplementation(() => () => {});
+
+    const { result } = renderHook(() => useAuthState());
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(result.current.authLoading).toBe(true);
+
+    await act(async () => {
+      resolveCurrentSession?.({
+        status: 'success',
+        data: {
+          status: 'authorized',
+          user: {
+            uid: 'current-1',
+            email: 'current@hhr.cl',
+            role: 'editor',
+            displayName: 'Current User',
+          },
+        },
+        issues: [],
+      });
+    });
+
+    await waitFor(() => expect(result.current.authLoading).toBe(false));
+
+    expect(result.current.user?.uid).toBe('current-1');
+    expect(result.current.role).toBe('editor');
+  });
+
   it('should keep anonymous signature-mode users when Firebase returns one', async () => {
     const { result } = renderHook(() => useAuthState());
 
@@ -363,7 +410,7 @@ describe('useAuthState baseline', () => {
       });
     });
 
-    expect(result.current.user?.uid).toBe('anon-signature');
+    await waitFor(() => expect(result.current.user?.uid).toBe('anon-signature'));
     expect(result.current.role).toBe('viewer');
     expect(result.current.sessionState.status).toBe('anonymous_signature');
   });

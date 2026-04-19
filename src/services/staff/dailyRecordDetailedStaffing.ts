@@ -1,11 +1,11 @@
 import { getShiftSchedule } from '@/utils/clinicalDayUtils';
-import type { DailyRecordPatch } from '@/types/domain/dailyRecordPatch';
 import type {
+  DailyRecordPatch,
   DailyRecordStaffingDetailsV1,
   DetailedStaffAssignment,
   DetailedStaffingRole,
   DetailedStaffingShift,
-} from '@/types/domain/dailyRecordStaffingDetails';
+} from '@/services/contracts/dailyRecordServiceContracts';
 
 const STANDARD_SLOT_COUNT = {
   nurse: 2,

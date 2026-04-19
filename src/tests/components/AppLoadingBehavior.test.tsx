@@ -52,6 +52,7 @@ describe('App loading behavior', () => {
   it('renders the login loading shell while bootstrap is loading on the root route', () => {
     mockUseAppBootstrapState.mockReturnValue({
       status: 'loading',
+      phase: 'bootstrapping',
       auth: createAuth('unauthenticated'),
     });
 
@@ -65,6 +66,7 @@ describe('App loading behavior', () => {
 
     mockUseAppBootstrapState.mockReturnValue({
       status: 'loading',
+      phase: 'rehydrating',
       auth: createAuth('unauthenticated'),
     });
 
@@ -129,6 +131,7 @@ describe('App loading behavior', () => {
   it('avoids the login loading shell while an authenticated session is still rehydrating on the root route', () => {
     mockUseAppBootstrapState.mockReturnValue({
       status: 'loading',
+      phase: 'rehydrating',
       auth: {
         sessionState: {
           status: 'authenticating',
@@ -156,6 +159,7 @@ describe('App loading behavior', () => {
 
     mockUseAppBootstrapState.mockReturnValue({
       status: 'loading',
+      phase: 'rehydrating',
       auth: createAuth('authorized'),
     });
 
@@ -181,6 +185,7 @@ describe('App loading behavior', () => {
 
     mockUseAppBootstrapState.mockReturnValue({
       status: 'loading',
+      phase: 'rehydrating',
       auth: createAuth('unauthenticated'),
     });
 
@@ -205,6 +210,7 @@ describe('App loading behavior', () => {
 
     mockUseAppBootstrapState.mockReturnValue({
       status: 'authenticated',
+      phase: 'authenticated',
       auth: createAuth('authorized'),
       dateNav: {
         selectedYear: 2026,

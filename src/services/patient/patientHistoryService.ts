@@ -87,6 +87,19 @@ const resolveLatestAdmissionDateHint = (options?: PatientHistoryLoadOptions): st
   return admissionHint || options?.lastAdmission || null;
 };
 
+const resolveLatestCloseDateHint = (options?: PatientHistoryLoadOptions): string | null => {
+  const closeHint = (options?.hospitalizationHints ?? [])
+    .filter(
+      event =>
+        event.type === 'Egreso' || event.type === 'Traslado' || event.type === 'Fallecimiento'
+    )
+    .map(event => event.date)
+    .sort()
+    .at(-1);
+
+  return closeHint || options?.lastDischarge || null;
+};
+
 const resolveRemoteHistoryRange = (
   options?: PatientHistoryLoadOptions
 ): { startDate: string; endDate: string } | null => {
@@ -95,7 +108,7 @@ const resolveRemoteHistoryRange = (
     return null;
   }
 
-  const latestKnownCloseDate = [options?.lastDischarge]
+  const latestKnownCloseDate = [resolveLatestCloseDateHint(options)]
     .filter((value): value is string => Boolean(value))
     .sort()
     .at(-1);

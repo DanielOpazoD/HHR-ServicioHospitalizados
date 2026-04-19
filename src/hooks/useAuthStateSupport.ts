@@ -75,6 +75,7 @@ export const subscribeToResolvedAuthState = async ({
   resolveRedirectAuthSessionOutcome,
   resolveCurrentAuthSessionOutcome,
   onAuthSessionStateChange,
+  resolveImmediatelyAsUnauthenticatedWhenDirectChecksAreEmpty,
   setSessionState,
   setAuthLoading,
 }: {
@@ -83,6 +84,7 @@ export const subscribeToResolvedAuthState = async ({
   onAuthSessionStateChange: (
     callback: (sessionState: AuthSessionState) => void | Promise<void>
   ) => () => void;
+  resolveImmediatelyAsUnauthenticatedWhenDirectChecksAreEmpty: boolean;
   setSessionState: (sessionState: AuthSessionState) => void;
   setAuthLoading: (value: boolean) => void;
 }): Promise<() => void> => {
@@ -112,6 +114,11 @@ export const subscribeToResolvedAuthState = async ({
           setSessionState,
           setAuthLoading,
         });
+        isBootstrapLoading = false;
+      } else if (resolveImmediatelyAsUnauthenticatedWhenDirectChecksAreEmpty) {
+        clearAuthBootstrapPending();
+        setSessionState(createUnauthenticatedAuthSessionState());
+        setAuthLoading(false);
         isBootstrapLoading = false;
       }
     }
@@ -222,22 +229,12 @@ export const useResolvedAuthBootstrap = ({
 
     let unsubscribe: (() => void) | undefined;
     const hasPendingRedirect = isAuthBootstrapPending();
-    const canResolveImmediatelyAsUnauthenticated =
+    const canResolveImmediatelyAsUnauthenticatedAfterDirectChecks =
       shouldResolveAuthBootstrapImmediatelyAsUnauthenticated({
         hasPendingRedirect,
         hasAuthRehydrationHint: hasPersistedFirebaseAuthHint(),
         hasActiveFirebaseSession: hasActiveFirebaseSession(),
       });
-
-    // Critical fast-path: if the browser no longer has any persisted auth hints
-    // and Firebase also has no active user, there is nothing useful to "wait
-    // for". Resolving immediately prevents long blank-screen bootstrap delays
-    // after site data was manually cleared.
-    if (canResolveImmediatelyAsUnauthenticated) {
-      clearAuthBootstrapPending();
-      setSessionState(createUnauthenticatedAuthSessionState());
-      setAuthLoading(false);
-    }
 
     const bootstrapBudget = resolveAuthBootstrapBudget({
       hasRecentManualLogout: hasRecentManualLogout(),
@@ -245,7 +242,7 @@ export const useResolvedAuthBootstrap = ({
       hasPendingRedirect,
     });
     const timeoutMs = bootstrapBudget.timeoutMs;
-    let isBootstrapResolved = canResolveImmediatelyAsUnauthenticated;
+    let isBootstrapResolved = false;
     const safetyTimeout: ReturnType<typeof setTimeout> = setTimeout(() => {
       if (isBootstrapResolved) {
         return;
@@ -344,6 +341,8 @@ export const useResolvedAuthBootstrap = ({
       resolveRedirectAuthSessionOutcome,
       resolveCurrentAuthSessionOutcome,
       onAuthSessionStateChange,
+      resolveImmediatelyAsUnauthenticatedWhenDirectChecksAreEmpty:
+        canResolveImmediatelyAsUnauthenticatedAfterDirectChecks,
       setSessionState,
       setAuthLoading: setResolvedAuthLoading,
     }).then(unsub => {

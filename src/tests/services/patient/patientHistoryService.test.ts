@@ -119,4 +119,33 @@ describe('patientHistoryService', () => {
       })
     );
   });
+
+  it('uses closing hospitalization hints to cap the remote range without requiring lastDischarge', async () => {
+    const hospitalizationHints: HospitalizationEvent[] = [
+      {
+        id: 'ing-1',
+        type: 'Ingreso',
+        date: '2026-04-07',
+        diagnosis: 'Insuficiencia cardíaca',
+        bedName: 'H1C1',
+      },
+      {
+        id: 'eg-1',
+        type: 'Egreso',
+        date: '2026-04-15',
+        diagnosis: 'Insuficiencia cardíaca',
+        bedName: 'H1C1',
+      },
+    ];
+
+    getAllRecords.mockResolvedValue({});
+    getRecordsRangeFromFirestore.mockResolvedValue([]);
+
+    await getPatientMovementHistory('8.932.066-6', {
+      hospitalizationHints,
+      lastAdmission: '2026-04-07',
+    });
+
+    expect(getRecordsRangeFromFirestore).toHaveBeenCalledWith('2026-04-07', '2026-04-15');
+  });
 });

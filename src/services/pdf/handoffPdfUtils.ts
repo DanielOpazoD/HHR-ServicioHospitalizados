@@ -12,7 +12,7 @@ import type {
   DetailedStaffAssignment,
   DetailedStaffingRole,
   DetailedStaffingShift,
-} from '@/types/domain/dailyRecordStaffingDetails';
+} from '@/services/contracts/dailyRecordServiceContracts';
 
 export interface Schedule {
   dayStart?: string;

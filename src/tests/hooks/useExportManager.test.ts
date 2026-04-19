@@ -95,11 +95,14 @@ describe('useExportManager', () => {
 
   it('exports nursing handoff PDFs in print-preview mode', async () => {
     const flushBeforeExport = vi.fn().mockResolvedValue(undefined);
+    const exportedRecord = { ...mockRecord, date: '2024-12-29' } as DailyRecord;
+    const getStableRecordForExport = vi.fn().mockReturnValue(exportedRecord);
     const { result } = renderHook(() =>
       useExportManager({
         ...defaultProps,
         currentModule: 'NURSING_HANDOFF',
         flushBeforeExport,
+        getStableRecordForExport,
       })
     );
 
@@ -108,11 +111,12 @@ describe('useExportManager', () => {
     });
 
     expect(backupExportUseCases.executeExportHandoffPdf).toHaveBeenCalledWith({
-      record: mockRecord,
+      record: exportedRecord,
       selectedShift: 'day',
       isMedical: false,
     });
     expect(flushBeforeExport).toHaveBeenCalledTimes(1);
+    expect(getStableRecordForExport).toHaveBeenCalledTimes(1);
   });
 
   it('exports medical handoff PDFs as local downloads', async () => {
@@ -172,6 +176,33 @@ describe('useExportManager', () => {
     const { result } = renderHook(() => useExportManager(props));
 
     expect(result.current.handleExportPDF).toBeDefined();
+  });
+
+  it('backs up census excel from the resolved stable snapshot', async () => {
+    const flushBeforeExport = vi.fn().mockResolvedValue(undefined);
+    const exportedRecord = { ...mockRecord, date: '2024-12-30' } as DailyRecord;
+    const getStableRecordForExport = vi.fn().mockReturnValue(exportedRecord);
+    const { result } = renderHook(() =>
+      useExportManager({
+        ...defaultProps,
+        flushBeforeExport,
+        getStableRecordForExport,
+      })
+    );
+
+    await act(async () => {
+      await result.current.handleBackupExcel();
+    });
+
+    expect(flushBeforeExport).toHaveBeenCalledTimes(1);
+    expect(getStableRecordForExport).toHaveBeenCalledTimes(1);
+    expect(backupExportUseCases.executeBackupCensusExcel).toHaveBeenCalledWith({
+      selectedYear: 2024,
+      selectedMonth: 11,
+      selectedDay: 28,
+      currentDateString: '2024-12-28',
+      record: exportedRecord,
+    });
   });
 
   it('keeps degraded timeout lookup silent on mount', async () => {

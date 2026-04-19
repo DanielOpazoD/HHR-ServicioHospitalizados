@@ -13,21 +13,33 @@ export interface AppAuthenticatedDateNavigation extends UseDateNavigationReturn 
   currentDateString: string;
 }
 
+export type AppBootstrapPhase =
+  | 'bootstrapping'
+  | 'rehydrating'
+  | 'authenticated'
+  | 'unauthenticated'
+  | 'local_only'
+  | 'signature_mode';
+
 export type AppBootstrapState =
   | {
       status: 'loading';
+      phase: 'bootstrapping' | 'rehydrating';
       auth: AuthContextType;
     }
   | {
       status: 'signature_mode';
+      phase: 'signature_mode';
       auth: AuthContextType;
     }
   | {
       status: 'unauthenticated';
+      phase: 'unauthenticated' | 'local_only';
       auth: AuthContextType;
     }
   | {
       status: 'authenticated';
+      phase: 'authenticated';
       auth: AuthContextType;
       dateNav: AppAuthenticatedDateNavigation;
     };
@@ -47,6 +59,21 @@ const isIgnorableWorkerShutdownImportError = (error: unknown): boolean => {
 const appLogger = createScopedLogger('App');
 
 const FIRESTORE_RUNTIME_POLL_MS = 250;
+
+const resolveAppLoadingPhase = (auth: AuthContextType): 'bootstrapping' | 'rehydrating' => {
+  if (
+    auth.sessionState.status === 'authenticating' ||
+    auth.isFirebaseConnected ||
+    auth.remoteSyncState.reason === 'auth_connecting'
+  ) {
+    return 'rehydrating';
+  }
+
+  return 'bootstrapping';
+};
+
+const resolveAppUnauthenticatedPhase = (auth: AuthContextType): 'unauthenticated' | 'local_only' =>
+  auth.remoteSyncState.mode === 'local_only' ? 'local_only' : 'unauthenticated';
 
 const resolveSyncedFirestoreState = (
   remoteSyncState: AuthContextType['remoteSyncState'],
@@ -113,6 +140,7 @@ export const buildAppBootstrapState = ({
   if (isSignatureMode) {
     return {
       status: 'signature_mode',
+      phase: 'signature_mode',
       auth,
     };
   }
@@ -120,6 +148,7 @@ export const buildAppBootstrapState = ({
   if (auth.isLoading) {
     return {
       status: 'loading',
+      phase: resolveAppLoadingPhase(auth),
       auth,
     };
   }
@@ -127,12 +156,14 @@ export const buildAppBootstrapState = ({
   if (!auth.isAuthenticated) {
     return {
       status: 'unauthenticated',
+      phase: resolveAppUnauthenticatedPhase(auth),
       auth,
     };
   }
 
   return {
     status: 'authenticated',
+    phase: 'authenticated',
     auth,
     dateNav: {
       ...dateNav,

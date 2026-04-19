@@ -10,15 +10,13 @@ import {
   getFirebaseStartupFailureMessage,
   type FirebaseStartupWarningCopy,
 } from '@/services/auth/firebaseStartupUiPolicy';
-import {
-  InitialLoadingScreen,
-  shouldRenderInitialLoadingScreen,
-} from '@/components/ui/InitialLoadingScreen';
+import { InitialLoadingScreen } from '@/components/ui/InitialLoadingScreen';
 import { hasActiveFirebaseSession } from '@/services/auth/authFallback';
 import {
   hasPersistedFirebaseAuthHint,
   hasRecentAuthenticatedSessionHint,
 } from '@/services/auth/authStorageHints';
+import { resolvePreMountLoadingScreenDecision } from '@/app-shell/bootstrap/appShellLoadingPolicy';
 import { mountFirebaseConfigWarning } from '@/services/firebase-runtime/firebaseStartupDiagnostics';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 
@@ -57,22 +55,20 @@ const isAppShellLoadFailure = (error: unknown): boolean => {
 };
 
 const renderBootstrapLoadingScreen = () => {
-  if (!shouldRenderInitialLoadingScreen(window.location.pathname)) {
+  const loadingScreenDecision = resolvePreMountLoadingScreenDecision({
+    pathname: window.location.pathname,
+    hasRecentAuthenticatedSessionHint: hasRecentAuthenticatedSessionHint(),
+    hasPersistedFirebaseAuthHint: hasPersistedFirebaseAuthHint(),
+    hasActiveFirebaseSession: hasActiveFirebaseSession(),
+  });
+
+  if (!loadingScreenDecision.shouldRender) {
     return;
   }
-
-  if (hasRecentAuthenticatedSessionHint()) {
-    return;
-  }
-
-  const preferLoginShell =
-    !hasPersistedFirebaseAuthHint() &&
-    !hasActiveFirebaseSession() &&
-    !hasRecentAuthenticatedSessionHint();
 
   root.render(
     <React.StrictMode>
-      <InitialLoadingScreen preferLoginShell={preferLoginShell} />
+      <InitialLoadingScreen preferLoginShell={loadingScreenDecision.preferLoginShell} />
     </React.StrictMode>
   );
 };

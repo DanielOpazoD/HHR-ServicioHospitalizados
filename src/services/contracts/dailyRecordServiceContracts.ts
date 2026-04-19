@@ -21,6 +21,12 @@ import type {
   MedicalHandoffActor as RootMedicalHandoffActor,
   MedicalSpecialty as RootMedicalSpecialty,
 } from '@/types/domain/dailyRecordMedicalHandoff';
+import type {
+  DailyRecordStaffingDetailsV1 as RootDailyRecordStaffingDetailsV1,
+  DetailedStaffAssignment as RootDetailedStaffAssignment,
+  DetailedStaffingRole as RootDetailedStaffingRole,
+  DetailedStaffingShift as RootDetailedStaffingShift,
+} from '@/types/domain/dailyRecordStaffingDetails';
 
 /**
  * Service-layer daily record contracts.
@@ -48,3 +54,7 @@ export type DailyRecordCudyrExportState = RootDailyRecordCudyrExportState;
 export type DailyRecordCsvExportState = RootDailyRecordCsvExportState;
 export type DailyRecordRawExportState = RootDailyRecordRawExportState;
 export type DailyRecordHandoffPdfState = RootDailyRecordHandoffPdfState;
+export type DailyRecordStaffingDetailsV1 = RootDailyRecordStaffingDetailsV1;
+export type DetailedStaffAssignment = RootDetailedStaffAssignment;
+export type DetailedStaffingRole = RootDetailedStaffingRole;
+export type DetailedStaffingShift = RootDetailedStaffingShift;

@@ -9,10 +9,7 @@ import { LoginPage } from '@/features/auth';
 import { GlobalErrorBoundary } from '@/components/shared/GlobalErrorBoundary';
 import { VersionProvider } from '@/context/VersionContext';
 import { VersionMismatchOverlay } from '@/components/shared/VersionMismatchOverlay';
-import {
-  InitialLoadingScreen,
-  shouldRenderInitialLoadingScreen,
-} from '@/components/ui/InitialLoadingScreen';
+import { InitialLoadingScreen } from '@/components/ui/InitialLoadingScreen';
 import { ViewLoader } from '@/components/ui/ViewLoader';
 import { MedicalSignatureView } from '@/views/LazyViews';
 import { AuthenticatedAppShell } from '@/app-shell/runtime/AuthenticatedAppShell';
@@ -20,6 +17,10 @@ import {
   clearRecentAuthenticatedSessionHint,
   hasRecentAuthenticatedSessionHint,
 } from '@/services/auth/authStorageHints';
+import {
+  resolveRuntimeLoadingScreenMode,
+  shouldSuppressUnauthenticatedAppRoute,
+} from '@/app-shell/bootstrap/appShellLoadingPolicy';
 import { AuditProvider, AuthProvider, UIProvider } from './context';
 import { HospitalProvider } from './context/HospitalContext';
 import { DefaultRepositoryProvider } from '@/services/RepositoryContext';
@@ -72,26 +73,32 @@ function App() {
   }
 
   if (bootstrapState.status === 'loading') {
-    // `/census` skips the pre-shell loader on purpose. Returning `null` here
-    // lets the route wait quietly until the authenticated census shell can
-    // render its own in-context loader with the preserved chrome titles.
-    if (!shouldRenderInitialLoadingScreen(pathname)) {
+    const loadingScreenMode = resolveRuntimeLoadingScreenMode({
+      pathname,
+      bootstrapState,
+      hasRecentAuthenticatedSessionHint: hasRecentAuthenticatedSessionHint(),
+    });
+
+    if (loadingScreenMode === 'silent') {
       return null;
     }
 
-    const preferLoginShell =
-      bootstrapState.auth.sessionState.status === 'unauthenticated' &&
-      !hasRecentAuthenticatedSessionHint();
-
-    return <InitialLoadingScreen pathname={pathname} preferLoginShell={preferLoginShell} />;
+    return (
+      <InitialLoadingScreen
+        pathname={pathname}
+        preferLoginShell={loadingScreenMode === 'login-shell'}
+      />
+    );
   }
 
   if (bootstrapState.status === 'unauthenticated') {
-    // Same-tab authenticated refreshes can transiently dip into
-    // `unauthenticated` before Firebase finishes rehydrating. On `/census`
-    // we keep that interval visually silent so we don't introduce a second
-    // global loader before the module's own shell loader appears.
-    if (suppressLoginPage && !shouldRenderInitialLoadingScreen(pathname)) {
+    if (
+      suppressLoginPage &&
+      shouldSuppressUnauthenticatedAppRoute({
+        pathname,
+        hasRecentAuthenticatedSessionHint: true,
+      })
+    ) {
       return null;
     }
 

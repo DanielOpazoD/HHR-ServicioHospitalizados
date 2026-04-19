@@ -20,7 +20,11 @@
       "id": "census_runtime",
       "label": "Censo y shell inicial",
       "ownerAreaId": "census",
-      "criticalCoverageZones": ["src/features/census/controllers", "src/app-shell"],
+      "criticalCoverageZones": [
+        "src/features/census/controllers",
+        "src/app-shell",
+        "src/shared/census/upc-critical"
+      ],
       "blockingSteps": [
         "runtime_smoke",
         "critical_coverage",
@@ -62,6 +66,7 @@
       "id": "repositories",
       "label": "Repositorios y compatibilidad de datos",
       "ownerAreaId": "repositories",
+      "criticalCoverageZones": ["src/services/patient-history"],
       "blockingSteps": ["emulator_sync_ci", "critical_coverage"],
       "validationSuites": ["test:repository-compat", "test:emulator:sync:ci"]
     },
@@ -93,7 +98,7 @@
       "id": "export_and_backup",
       "ownerAreaId": "backup",
       "label": "Exportacion y respaldo",
-      "criticalCoverageZones": ["src/services/backup"],
+      "criticalCoverageZones": ["src/services/backup", "src/services/export-manager"],
       "blockingSteps": ["runtime_smoke", "flow_performance", "e2e_critical_ci"],
       "smokeScenarios": ["export"],
       "flowBudgets": ["backupFilesVisibleMs"],

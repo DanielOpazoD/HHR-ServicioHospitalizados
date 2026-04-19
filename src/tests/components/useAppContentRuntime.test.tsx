@@ -108,6 +108,25 @@ describe('useAppContentRuntime', () => {
     } as unknown as ExportManagerValue);
   });
 
+  it('flushes the active editor before exporting excel', async () => {
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    const blurSpy = vi.spyOn(input, 'blur');
+    input.focus();
+
+    const { result } = renderHook(() => useAppContentRuntime({ ui: ui as never }));
+
+    await act(async () => {
+      await result.current.handleExportExcel();
+    });
+
+    expect(blurSpy).toHaveBeenCalledTimes(1);
+    expect(mockGenerateCensusMasterExcel).toHaveBeenCalledWith(2026, 2, 27);
+
+    blurSpy.mockRestore();
+    document.body.removeChild(input);
+  });
+
   it('resolves export permissions and passes archive verification into useExportManager', () => {
     renderHook(() => useAppContentRuntime({ ui: ui as never }));
 
