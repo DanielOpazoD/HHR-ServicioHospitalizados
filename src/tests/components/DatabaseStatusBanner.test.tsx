@@ -4,12 +4,13 @@ import React from 'react';
 import {
   getStorageAutoRecoveryKey,
   getStoragePersistentFallbackCountKey,
-} from '@/services/storage/runtime';
+} from '@/services/storage/storageFallbackUiPolicy';
 
 const mockReload = vi.fn();
 
-vi.mock('@/services/storage/core', () => ({
+vi.mock('@/services/storage/indexeddb/indexedDbCore', () => ({
   isDatabaseInFallbackMode: vi.fn(),
+  registerDatabaseRecreatedHandler: vi.fn(),
 }));
 
 vi.mock('@/shared/runtime/browserWindowRuntime', () => ({
@@ -18,7 +19,7 @@ vi.mock('@/shared/runtime/browserWindowRuntime', () => ({
   },
 }));
 
-import { isDatabaseInFallbackMode } from '@/services/storage/core';
+import { isDatabaseInFallbackMode } from '@/services/storage/indexeddb/indexedDbCore';
 import { DatabaseStatusBanner } from '@/components/ui/DatabaseStatusBanner';
 
 describe('DatabaseStatusBanner', () => {

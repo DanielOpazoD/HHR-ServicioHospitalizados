@@ -5,7 +5,7 @@ import React from 'react';
 const mockReload = vi.fn();
 const mockUseDatabaseFallbackStatus = vi.fn();
 
-vi.mock('@/services/storage/core', () => ({
+vi.mock('@/services/storage/indexeddb/indexedDbMaintenanceService', () => ({
   resetLocalDatabase: vi.fn(),
 }));
 
@@ -19,12 +19,12 @@ vi.mock('@/shared/runtime/browserWindowRuntime', () => ({
   },
 }));
 
-import { resetLocalDatabase } from '@/services/storage/core';
+import { resetLocalDatabase } from '@/services/storage/indexeddb/indexedDbMaintenanceService';
 import StorageStatusBadge from '@/components/layout/StorageStatusBadge';
 import {
   getStorageAutoRecoveryKey,
   getStoragePersistentFallbackCountKey,
-} from '@/services/storage/runtime';
+} from '@/services/storage/storageFallbackUiPolicy';
 
 describe('StorageStatusBadge', () => {
   beforeEach(() => {

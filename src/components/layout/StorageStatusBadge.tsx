@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { AlertTriangle, ChevronDown, ChevronUp, Database, RefreshCw } from 'lucide-react';
-import { resetLocalDatabase } from '@/services/storage/core';
 import {
   getStorageFallbackNotice,
   getStorageFallbackUiDelayMs,
@@ -9,7 +8,8 @@ import {
   markStoragePersistentFallbackObserved,
   shouldAttemptStorageAutoRecovery,
   shouldShowStorageFallbackUi,
-} from '@/services/storage/runtime';
+} from '@/services/storage/storageFallbackUiPolicy';
+import { resetLocalDatabase } from '@/services/storage/indexeddb/indexedDbMaintenanceService';
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
 import { useDatabaseFallbackStatus } from '@/hooks/useDatabaseFallbackStatus';
 
