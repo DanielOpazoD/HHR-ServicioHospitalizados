@@ -299,4 +299,96 @@ describe('useExportManager', () => {
       expect(result.current.isArchived).toBe(true);
     });
   });
+
+  it('shows a warning notice when export PDF completes with a partial outcome', async () => {
+    vi.mocked(backupExportUseCases.executeExportHandoffPdf).mockResolvedValueOnce({
+      status: 'partial',
+      data: null,
+      userSafeMessage: 'Se abrió la vista previa con advertencias.',
+      issues: [{ kind: 'unknown', message: 'warning' }],
+    });
+
+    const { result } = renderHook(() => useExportManager(defaultProps));
+
+    await act(async () => {
+      await result.current.handleExportPDF();
+    });
+
+    expect(notificationApi.warning).toHaveBeenCalledWith(
+      'Impresión abierta con observaciones',
+      'warning'
+    );
+  });
+
+  it('marks census backup as archived after a partial backup outcome', async () => {
+    vi.mocked(backupExportUseCases.executeBackupCensusExcel).mockResolvedValueOnce({
+      status: 'partial',
+      data: { archivedDate: '2024-12-28', recordCount: 1 },
+      userSafeMessage: 'Guardado local con observaciones.',
+      issues: [{ kind: 'unknown', message: 'partial' }],
+    });
+
+    const { result } = renderHook(() => useExportManager(defaultProps));
+
+    await act(async () => {
+      await result.current.handleBackupExcel();
+    });
+
+    expect(result.current.isArchived).toBe(true);
+    expect(notificationApi.warning).toHaveBeenCalled();
+  });
+
+  it('skips handoff backup when there is no stable record to export', async () => {
+    const { result } = renderHook(() =>
+      useExportManager({
+        ...defaultProps,
+        record: null,
+        getStableRecordForExport: () => null,
+      })
+    );
+
+    await act(async () => {
+      await result.current.handleBackupHandoff(true);
+    });
+
+    expect(backupExportUseCases.executeBackupHandoffPdf).not.toHaveBeenCalled();
+  });
+
+  it('cancels handoff backup when the confirmation dialog is rejected', async () => {
+    confirmApi.confirm.mockResolvedValueOnce(false);
+    const { result } = renderHook(() => useExportManager(defaultProps));
+
+    await act(async () => {
+      await result.current.handleBackupHandoff();
+    });
+
+    expect(confirmApi.confirm).toHaveBeenCalledTimes(1);
+    expect(backupExportUseCases.executeBackupHandoffPdf).not.toHaveBeenCalled();
+  });
+
+  it('uses the night-shift success copy when handoff backup succeeds', async () => {
+    const nightOutcome: ApplicationOutcome<BackupHandoffPdfOutput> = {
+      status: 'success',
+      data: { shift: 'night', createdCudyrBackup: true },
+      issues: [],
+    };
+    vi.mocked(backupExportUseCases.executeBackupHandoffPdf).mockResolvedValueOnce(nightOutcome);
+
+    const { result } = renderHook(() =>
+      useExportManager({
+        ...defaultProps,
+        selectedShift: 'night',
+      })
+    );
+
+    await act(async () => {
+      await result.current.handleBackupHandoff(true);
+    });
+
+    expect(notificationApi.success).toHaveBeenCalledWith(
+      'Respaldos guardados',
+      'PDF + CUDYR mensual'
+    );
+    expect(result.current.isArchived).toBe(true);
+  });
 });

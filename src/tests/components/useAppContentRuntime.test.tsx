@@ -27,6 +27,7 @@ describe('useAppContentRuntime', () => {
   type CensusValue = ReturnType<typeof useCensusContext>;
   type AuthValue = ReturnType<typeof useAuth>;
   type ExportManagerValue = ReturnType<typeof useExportManager>;
+  let syncStatusValue: 'synced' | 'saving';
 
   const ui = {
     currentModule: 'CENSUS',
@@ -46,51 +47,59 @@ describe('useAppContentRuntime', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    syncStatusValue = 'synced';
 
-    vi.mocked(useCensusContext).mockReturnValue({
-      dailyRecord: { record: { date: '2026-03-27' }, syncStatus: 'synced', lastSyncTime: 'now' },
-      dateNav: {
-        isSignatureMode: false,
-        currentDateString: '2026-03-27',
-        selectedYear: 2026,
-        selectedMonth: 2,
-        selectedDay: 27,
-        setSelectedYear: vi.fn(),
-        setSelectedMonth: vi.fn(),
-        setSelectedDay: vi.fn(),
-        daysInMonth: 31,
-        existingDaysInMonth: [1, 4],
-        navigateDays: vi.fn(),
-      },
-      censusEmail: {
-        showEmailConfig: false,
-        setShowEmailConfig: vi.fn(),
-        sendEmail: vi.fn(),
-        status: 'idle',
-        error: null,
-        recipients: [],
-        setRecipients: vi.fn(),
-        recipientLists: [],
-        activeRecipientListId: null,
-        setActiveRecipientListId: vi.fn(),
-        createRecipientList: vi.fn(),
-        renameActiveRecipientList: vi.fn(),
-        deleteRecipientList: vi.fn(),
-        recipientsSource: 'local',
-        isRecipientsSyncing: false,
-        recipientsSyncError: null,
-        message: '',
-        onMessageChange: vi.fn(),
-        onResetMessage: vi.fn(),
-        isAdminUser: true,
-        testModeEnabled: false,
-        setTestModeEnabled: vi.fn(),
-        testRecipient: '',
-        setTestRecipient: vi.fn(),
-      },
-      fileOps: { handleExportCSV: vi.fn(), handleImportJSON: vi.fn() },
-      nurseSignature: 'Night Nurse',
-    } as unknown as CensusValue);
+    vi.mocked(useCensusContext).mockImplementation(
+      () =>
+        ({
+          dailyRecord: {
+            record: { date: '2026-03-27' },
+            syncStatus: syncStatusValue,
+            lastSyncTime: 'now',
+          },
+          dateNav: {
+            isSignatureMode: false,
+            currentDateString: '2026-03-27',
+            selectedYear: 2026,
+            selectedMonth: 2,
+            selectedDay: 27,
+            setSelectedYear: vi.fn(),
+            setSelectedMonth: vi.fn(),
+            setSelectedDay: vi.fn(),
+            daysInMonth: 31,
+            existingDaysInMonth: [1, 4],
+            navigateDays: vi.fn(),
+          },
+          censusEmail: {
+            showEmailConfig: false,
+            setShowEmailConfig: vi.fn(),
+            sendEmail: vi.fn(),
+            status: 'idle',
+            error: null,
+            recipients: [],
+            setRecipients: vi.fn(),
+            recipientLists: [],
+            activeRecipientListId: null,
+            setActiveRecipientListId: vi.fn(),
+            createRecipientList: vi.fn(),
+            renameActiveRecipientList: vi.fn(),
+            deleteRecipientList: vi.fn(),
+            recipientsSource: 'local',
+            isRecipientsSyncing: false,
+            recipientsSyncError: null,
+            message: '',
+            onMessageChange: vi.fn(),
+            onResetMessage: vi.fn(),
+            isAdminUser: true,
+            testModeEnabled: false,
+            setTestModeEnabled: vi.fn(),
+            testRecipient: '',
+            setTestRecipient: vi.fn(),
+          },
+          fileOps: { handleExportCSV: vi.fn(), handleImportJSON: vi.fn() },
+          nurseSignature: 'Night Nurse',
+        }) as unknown as CensusValue
+    );
 
     vi.mocked(useAuth).mockReturnValue({
       currentUser: { email: 'admin@hospital.cl' },
@@ -161,5 +170,45 @@ describe('useAppContentRuntime', () => {
     });
 
     expect(mockGenerateCensusMasterExcel).toHaveBeenCalledWith(2026, 2, 27);
+  });
+
+  it('exports excel even when the active element is not an HTMLElement', async () => {
+    const blurlessActiveElement = { id: 'virtual-editor' };
+    Object.defineProperty(document, 'activeElement', {
+      configurable: true,
+      get: () => blurlessActiveElement,
+    });
+
+    const { result } = renderHook(() => useAppContentRuntime({ ui: ui as never }));
+
+    await act(async () => {
+      await result.current.handleExportExcel();
+    });
+
+    expect(mockGenerateCensusMasterExcel).toHaveBeenCalledWith(2026, 2, 27);
+  });
+
+  it('waits for a saving census record to settle before exporting', async () => {
+    vi.useFakeTimers();
+    syncStatusValue = 'saving';
+    const { result, rerender } = renderHook(() => useAppContentRuntime({ ui: ui as never }));
+
+    const exportPromise = result.current.handleExportExcel();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(200);
+    });
+
+    syncStatusValue = 'synced';
+    rerender();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(100);
+    });
+
+    await exportPromise;
+
+    expect(mockGenerateCensusMasterExcel).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
   });
 });

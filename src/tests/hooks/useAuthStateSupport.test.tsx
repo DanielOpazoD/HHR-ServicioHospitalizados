@@ -68,10 +68,13 @@ describe('useResolvedAuthBootstrap', () => {
       configurable: true,
       get: () => true,
     });
+    localStorage.clear();
     sessionStorage.clear();
   });
 
   it('cancels the safety timeout once auth state resolves', async () => {
+    window.localStorage.setItem('firebase:authUser:test:[DEFAULT]', '{"uid":"persisted"}');
+
     const onAuthSessionStateChange = vi.fn(
       (callback: (sessionState: AuthSessionState) => void | Promise<void>) => {
         setTimeout(() => {
@@ -115,6 +118,8 @@ describe('useResolvedAuthBootstrap', () => {
     });
 
     await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
       await vi.advanceTimersByTimeAsync(200);
     });
 
@@ -138,6 +143,8 @@ describe('useResolvedAuthBootstrap', () => {
   });
 
   it('forces auth loading completion on bootstrap timeout', async () => {
+    window.localStorage.setItem('firebase:authUser:test:[DEFAULT]', '{"uid":"persisted"}');
+
     const onAuthSessionStateChange = vi.fn(() => () => {});
     const resolveRedirectAuthSessionOutcome = vi
       .fn()
@@ -351,10 +358,12 @@ describe('useResolvedAuthBootstrap', () => {
       await Promise.resolve();
     });
 
-    expect(result.current.authLoading).toBe(false);
-    expect(result.current.sessionState).toEqual({
-      status: 'unauthenticated',
-      user: null,
+    await vi.waitFor(() => {
+      expect(result.current.authLoading).toBe(false);
+      expect(result.current.sessionState).toEqual({
+        status: 'unauthenticated',
+        user: null,
+      });
     });
     expect(mockClearAuthBootstrapPending).toHaveBeenCalled();
   });

@@ -231,4 +231,18 @@ describe('App loading behavior', () => {
     expect(screen.getByTestId('authenticated-shell')).toBeInTheDocument();
     expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
   });
+
+  it('renders the signature view when bootstrap enters signature mode', () => {
+    mockUseAppBootstrapState.mockReturnValue({
+      status: 'signature_mode',
+      phase: 'signature_mode',
+      auth: createAuth('authorized'),
+    });
+
+    render(<App />);
+
+    expect(screen.getByTestId('signature-view')).toBeInTheDocument();
+    expect(screen.queryByTestId('authenticated-shell')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('login-page')).not.toBeInTheDocument();
+  });
 });
