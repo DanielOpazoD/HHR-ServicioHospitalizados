@@ -3,10 +3,8 @@ import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { DailyRecordPatch } from '@/types/domain/dailyRecordPatch';
 import { normalizeDailyRecordInvariants } from '@/utils/recordInvariants';
 import { validateAndSalvageRecord } from '@/services/repositories/helpers/validationHelper';
-import { applyPatches } from '@/utils/patchUtils';
 import { logError } from '@/services/utils/errorService';
 import {
-  addClinicalFhirPatchesForTouchedBeds,
   ensureDailyRecordDateTimestamp,
   syncDailyRecordClinicalResources,
 } from '@/services/repositories/dailyRecordDomainServices';

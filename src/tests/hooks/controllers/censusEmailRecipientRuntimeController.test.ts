@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  applyRecipientSyncRuntimeMetadata,
   resolveActiveRecipientRuntimeState,
   resolveBootstrapRecipientFallbackMessage,
+  resolveRecipientRuntimeMetadata,
   resolveBootstrapRecipientRuntimeState,
   resolveRecipientMutationFailureMessage,
   resolveRecipientSelectionRuntimeState,
@@ -175,6 +177,63 @@ describe('censusEmailRecipientRuntimeController', () => {
       activeRecipientListId: 'census-default',
       recipientsSyncError: null,
       lastRemoteRecipients: ['uno@example.com'],
+    });
+  });
+
+  it('projects runtime state into explicit metadata for render-safe consumers', () => {
+    expect(
+      resolveRecipientRuntimeMetadata({
+        recipientLists: [],
+        recipients: ['uno@example.com'],
+        recipientsSource: 'firebase',
+        activeRecipientListId: 'census-default',
+        recipientsSyncError: null,
+        lastRemoteRecipients: ['uno@example.com'],
+      })
+    ).toEqual({
+      recipientsReady: true,
+      activeRecipientListId: 'census-default',
+      lastRemoteRecipients: ['uno@example.com'],
+    });
+  });
+
+  it('merges sync updates without losing existing runtime metadata', () => {
+    expect(
+      applyRecipientSyncRuntimeMetadata(
+        {
+          recipientsReady: true,
+          activeRecipientListId: 'custom-list',
+          lastRemoteRecipients: ['anterior@example.com'],
+        },
+        {
+          recipientsSource: 'firebase',
+          recipientsSyncError: null,
+          lastRemoteRecipients: ['nuevo@example.com'],
+        }
+      )
+    ).toEqual({
+      recipientsReady: true,
+      activeRecipientListId: 'custom-list',
+      lastRemoteRecipients: ['nuevo@example.com'],
+    });
+
+    expect(
+      applyRecipientSyncRuntimeMetadata(
+        {
+          recipientsReady: true,
+          activeRecipientListId: 'custom-list',
+          lastRemoteRecipients: ['anterior@example.com'],
+        },
+        {
+          recipientsSource: null,
+          recipientsSyncError: 'sync failed',
+          lastRemoteRecipients: null,
+        }
+      )
+    ).toEqual({
+      recipientsReady: true,
+      activeRecipientListId: 'custom-list',
+      lastRemoteRecipients: ['anterior@example.com'],
     });
   });
 

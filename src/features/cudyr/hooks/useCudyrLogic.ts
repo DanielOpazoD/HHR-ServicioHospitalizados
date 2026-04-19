@@ -1,11 +1,10 @@
 import { useMemo, useEffect, useCallback } from 'react';
 import { useDailyRecordData } from '@/context/DailyRecordContext';
 import { useDailyRecordCudyrActions } from '@/context/useDailyRecordScopedActions';
-import { BEDS } from '@/constants/beds';
 import type { CudyrScore } from '@/types/domain/cudyr';
 import { useAuditContext } from '@/context/AuditContext';
 import { useAuth } from '@/context/AuthContext';
-import { buildDailyCudyrSummary } from '@/services/cudyr/cudyrSummary';
+import { buildDailyCudyrSummary, resolveVisibleCudyrBeds } from '@/services/cudyr/cudyrSummary';
 import { getAttributedAuthors } from '@/services/admin/attributionService';
 import { resolveCudyrEligibility } from '@/features/cudyr/controllers/cudyrEligibilityController';
 import { canEditCudyrRecord } from '@/features/cudyr/controllers/cudyrEditAccessController';
@@ -60,8 +59,7 @@ export const useCudyrLogic = (readOnly: boolean) => {
   // Calculated Data
   const visibleBeds = useMemo(() => {
     if (!record) return [];
-    const activeExtras = record.activeExtraBeds || [];
-    return BEDS.filter(b => !b.isExtra || activeExtras.includes(b.id));
+    return resolveVisibleCudyrBeds(record);
   }, [record]);
 
   const cudyrSummary = useMemo(() => {

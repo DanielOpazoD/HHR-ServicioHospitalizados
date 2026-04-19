@@ -71,4 +71,21 @@ describe('cudyrRowViewController', () => {
     expect(viewModel.displayedRiskScore).toBe(12);
     expect(viewModel.scores).toBeDefined();
   });
+
+  it('treats whitespace-only patient names as an empty CUDYR row', () => {
+    const bed = { id: 'R4', name: 'R4', type: 'BASICA', isCuna: false } as const as never;
+    const patient = DataFactory.createMockPatient('R4', {
+      patientName: '   ',
+      cudyr: DataFactory.createMockCudyr({ changeClothes: 3, vitalSigns: 3 }),
+    });
+
+    const viewModel = buildCudyrRowViewModel({
+      bed,
+      patient,
+    });
+
+    expect(viewModel.isOccupied).toBe(false);
+    expect(viewModel.scores).toBeDefined();
+    expect(viewModel.emptyStateLabel).toBe('Cama disponible');
+  });
 });

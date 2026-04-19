@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
+import { formatWorktreeState, getGitReportState } from './gitReportState.mjs';
 
 const ROOT = process.cwd();
 const REPORTS_DIR = path.join(ROOT, 'reports');
@@ -95,10 +96,11 @@ const qualityMetrics = readJson(QUALITY_METRICS_JSON);
 const pendingHotspots = buildPendingHotspotRows();
 const watchlist = buildWatchlistRows();
 const churn = buildRecentChurnRows();
+const gitState = getGitReportState(ROOT);
 
 const payload = {
   generatedAt: new Date().toISOString(),
-  gitSha: execSync('git rev-parse --short HEAD', { cwd: ROOT, encoding: 'utf8' }).trim(),
+  ...gitState,
   pendingHotspots,
   watchlist,
   tests: {
@@ -116,6 +118,7 @@ const markdown = `# Maintenance Debt Scorecard
 
 Generated at: ${payload.generatedAt}
 Commit: ${payload.gitSha}
+Worktree: ${formatWorktreeState(payload.gitDirty)}
 
 ## Pending Hotspots
 

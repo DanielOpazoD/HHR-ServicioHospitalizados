@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { getGitReportState } from './gitReportState.mjs';
 
 const ROOT = process.cwd();
 const trackedReports = [
@@ -41,6 +41,12 @@ const trackedReports = [
       'reports/compatibility-import-governance.json',
     ],
   },
+  {
+    file: 'reports/maintenance-debt-scorecard.json',
+    field: 'gitSha',
+    refreshScript: 'report:maintenance-debt-scorecard',
+    dependsOn: ['reports/quality-metrics.json'],
+  },
 ];
 
 const fail = issues => {
@@ -55,18 +61,11 @@ const fail = issues => {
   process.exit(1);
 };
 
-const getCurrentGitSha = () => {
-  try {
-    return execSync('git rev-parse --short HEAD', { cwd: ROOT, encoding: 'utf8' }).trim();
-  } catch {
-    return null;
-  }
-};
-
 const isSameCommit = (reportSha, currentSha) =>
   reportSha === currentSha || reportSha.startsWith(currentSha) || currentSha.startsWith(reportSha);
 
-const currentGitSha = getCurrentGitSha();
+const currentGitState = getGitReportState(ROOT);
+const currentGitSha = currentGitState.gitSha;
 if (!currentGitSha) {
   fail(['Could not resolve current git commit.']);
 }
@@ -101,6 +100,15 @@ for (const report of trackedReports) {
     issues.push(`${report.file} was generated for ${reportSha}, current HEAD is ${currentGitSha}.`);
   }
 
+  if (
+    typeof parsedReport?.gitDirty === 'boolean' &&
+    parsedReport.gitDirty !== currentGitState.gitDirty
+  ) {
+    issues.push(
+      `${report.file} recorded worktree=${parsedReport.gitDirty ? 'dirty' : 'clean'}, current worktree is ${currentGitState.gitDirty ? 'dirty' : 'clean'}.`
+    );
+  }
+
   const reportMtimeMs = fs.statSync(reportPath).mtimeMs;
   for (const dependencyFile of report.dependsOn || []) {
     const dependencyPath = path.join(ROOT, dependencyFile);
@@ -119,4 +127,6 @@ if (issues.length > 0) {
   fail(issues);
 }
 
-console.log(`[report-freshness] OK (${trackedReports.length} reports match ${currentGitSha})`);
+console.log(
+  `[report-freshness] OK (${trackedReports.length} reports match ${currentGitSha}, worktree=${currentGitState.gitDirty ? 'dirty' : 'clean'})`
+);

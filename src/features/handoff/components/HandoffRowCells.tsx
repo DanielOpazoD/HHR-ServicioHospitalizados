@@ -1,5 +1,4 @@
 import React from 'react';
-import type { PatientData } from '@/domain/handoff/patientContracts';
 import { Clock } from 'lucide-react';
 import { DebouncedTextarea } from '@/components/ui/DebouncedTextarea';
 export { HandoffPatientCell } from './HandoffPatientCell';

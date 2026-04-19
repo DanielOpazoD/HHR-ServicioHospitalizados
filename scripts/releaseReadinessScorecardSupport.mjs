@@ -315,6 +315,10 @@ export const formatReleaseReadinessScorecardMarkdown = report => {
     '# Release Readiness Scorecard',
     '',
     `Generated at: ${report.generatedAt}`,
+    ...(typeof report.gitSha === 'string' ? [`Commit: ${report.gitSha}`] : []),
+    ...(typeof report.gitDirty === 'boolean'
+      ? [`Worktree: ${report.gitDirty ? 'dirty' : 'clean'}`]
+      : []),
     `Overall: ${report.overallStatus}`,
     '',
     '## Indicators',

@@ -26,6 +26,10 @@ const getCudyrTimestampPatch = () => ({
 
 const hasMeaningfulIdentityValue = (value?: string): boolean => Boolean(value?.trim());
 
+const hasDisplayablePatientName = (
+  patient: Pick<PatientData, 'patientName'> | null | undefined
+): boolean => hasMeaningfulIdentityValue(patient?.patientName);
+
 const shouldAnchorFirstSeenDate = ({
   currentPatientName,
   currentRut,
@@ -273,14 +277,20 @@ export const buildUpdatePatientPatches = (
   }) as DailyRecordPatch;
 
 export const buildUpdateCudyrPatches = (
+  state: DailyRecord,
   bedId: string,
   field: keyof CudyrScore,
   value: number
-): DailyRecordPatch =>
-  ({
+): DailyRecordPatch | null => {
+  if (!hasDisplayablePatientName(state.beds[bedId])) {
+    return null;
+  }
+
+  return {
     [`beds.${bedId}.cudyr.${field}`]: value,
     ...getCudyrTimestampPatch(),
-  }) as DailyRecordPatch;
+  } as DailyRecordPatch;
+};
 
 export const buildClearPatientPatches = (state: DailyRecord, bedId: string): DailyRecordPatch =>
   ({
@@ -356,11 +366,17 @@ export const buildUpdateClinicalCribPatches = (
   }) as DailyRecordPatch;
 
 export const buildUpdateClinicalCribCudyrPatches = (
+  state: DailyRecord,
   bedId: string,
   field: keyof CudyrScore,
   value: number
-): DailyRecordPatch =>
-  ({
+): DailyRecordPatch | null => {
+  if (!hasDisplayablePatientName(state.beds[bedId].clinicalCrib)) {
+    return null;
+  }
+
+  return {
     [`beds.${bedId}.clinicalCrib.cudyr.${field}`]: value,
     ...getCudyrTimestampPatch(),
-  }) as DailyRecordPatch;
+  } as DailyRecordPatch;
+};

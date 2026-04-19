@@ -3,6 +3,7 @@ import {
   collectDailyCudyrPatients,
   buildDailyCudyrSummary,
   getCudyrMonthlyTotals,
+  resolveVisibleCudyrBeds,
 } from '@/services/cudyr/cudyrSummary';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 
@@ -66,10 +67,33 @@ describe('cudyrSummary', () => {
     cma: [],
   } as DailyRecord;
 
+  describe('resolveVisibleCudyrBeds', () => {
+    it('includes permanent beds and only active extra beds', () => {
+      expect(resolveVisibleCudyrBeds(mockRecord).map(bed => bed.id)).toEqual(['R1', 'M1']);
+
+      expect(
+        resolveVisibleCudyrBeds({
+          ...mockRecord,
+          activeExtraBeds: ['EX1'],
+        }).map(bed => bed.id)
+      ).toEqual(['R1', 'M1', 'EX1']);
+    });
+  });
+
   describe('collectDailyCudyrPatients', () => {
-    it('should collect patients with CUDYR scores', () => {
+    it('should collect patients with CUDYR scores and preserve the patient metadata', () => {
       const patients = collectDailyCudyrPatients(mockRecord);
-      expect(patients.length).toBeGreaterThan(0);
+      expect(patients).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            bedId: 'R1',
+            patientName: 'Patient 1',
+            rut: '12345678-9',
+            category: 'A1',
+            isCrib: false,
+          }),
+        ])
+      );
     });
 
     it('should include clinical cribs', () => {
@@ -132,6 +156,21 @@ describe('cudyrSummary', () => {
   });
 
   describe('buildDailyCudyrSummary', () => {
+    it('should return zero counts when the record has no eligible patients', () => {
+      const summary = buildDailyCudyrSummary({
+        ...mockRecord,
+        beds: {} as DailyRecord['beds'],
+      });
+
+      expect(summary).toMatchObject({
+        date: '2025-01-01',
+        occupiedCount: 0,
+        categorizedCount: 0,
+        utiTotal: 0,
+        mediaTotal: 0,
+      });
+    });
+
     it('should build summary with counts', () => {
       const summary = buildDailyCudyrSummary(mockRecord);
       expect(summary.date).toBe('2025-01-01');

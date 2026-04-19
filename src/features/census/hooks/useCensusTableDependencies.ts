@@ -3,10 +3,7 @@ import {
   useDailyRecordOverrides,
   useDailyRecordStaff,
 } from '@/context/DailyRecordContext';
-import {
-  useDailyRecordBedActions,
-  useDailyRecordDayActions,
-} from '@/context/useDailyRecordScopedActions';
+import { useDailyRecordDayActions } from '@/context/useDailyRecordScopedActions';
 import { useCensusActionCommands } from '@/features/census/context/censusActionContexts';
 import { useConfirmDialog, useNotification } from '@/context/UIContext';
 import { useAuth } from '@/context/AuthContext';
@@ -18,7 +15,6 @@ export interface CensusTableDependencies {
   staff: ReturnType<typeof useDailyRecordStaff>;
   overrides: ReturnType<typeof useDailyRecordOverrides>;
   resetDay: ReturnType<typeof useDailyRecordDayActions>['resetDay'];
-  updatePatient: ReturnType<typeof useDailyRecordBedActions>['updatePatient'];
   handleRowAction: ReturnType<typeof useCensusActionCommands>['handleRowAction'];
   confirm: ReturnType<typeof useConfirmDialog>['confirm'];
   warning: ReturnType<typeof useNotification>['warning'];
@@ -35,7 +31,6 @@ export const useCensusTableDependencies = (): CensusTableDependencies => {
   const staff = useDailyRecordStaff();
   const overrides = useDailyRecordOverrides();
   const { resetDay } = useDailyRecordDayActions();
-  const { updatePatient } = useDailyRecordBedActions();
   const { handleRowAction } = useCensusActionCommands();
   const { confirm } = useConfirmDialog();
   const { warning } = useNotification();
@@ -48,7 +43,6 @@ export const useCensusTableDependencies = (): CensusTableDependencies => {
     staff,
     overrides,
     resetDay,
-    updatePatient,
     handleRowAction,
     confirm,
     warning,

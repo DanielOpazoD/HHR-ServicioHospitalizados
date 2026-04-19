@@ -20,7 +20,6 @@ describe('censusEmptyBedActivationController', () => {
             <button title="Datos del Paciente">Abrir</button>
           </div>
         `;
-    const updatePatient = vi.fn();
     const clickSpy = vi.fn();
     document
       .querySelector('[data-bed-id="R2"] [title="Datos del Paciente"]')
@@ -29,7 +28,6 @@ describe('censusEmptyBedActivationController', () => {
     const result = executeActivateEmptyBedController({
       bedId: 'R2',
       runtime: {
-        updatePatient,
         requestFrame: callback => callback(),
         querySelector: selector => document.querySelector(selector),
       },
@@ -38,7 +36,6 @@ describe('censusEmptyBedActivationController', () => {
     const input = document.querySelector(
       '[data-bed-id="R2"] input[name="patientName"]'
     ) as HTMLInputElement;
-    expect(updatePatient).toHaveBeenCalledWith('R2', 'patientName', ' ');
     expect(result).toEqual({
       ok: true,
       value: {
@@ -54,7 +51,6 @@ describe('censusEmptyBedActivationController', () => {
     const result = executeActivateEmptyBedController({
       bedId: 'R9',
       runtime: {
-        updatePatient: vi.fn(),
         requestFrame: callback => callback(),
         querySelector: () => null,
       },
@@ -84,7 +80,6 @@ describe('censusEmptyBedActivationController', () => {
     const result = executeActivateEmptyBedController({
       bedId: 'R4',
       runtime: {
-        updatePatient: vi.fn(),
         requestFrame: () => {
           throw new Error('raf failed');
         },
@@ -100,14 +95,12 @@ describe('censusEmptyBedActivationController', () => {
   });
 
   it('retries across frames until the new row is mounted', () => {
-    const updatePatient = vi.fn();
     const clickSpy = vi.fn();
     let frameCount = 0;
 
     const result = executeActivateEmptyBedController({
       bedId: 'R7',
       runtime: {
-        updatePatient,
         requestFrame: callback => {
           frameCount += 1;
           if (frameCount === 2) {
@@ -127,7 +120,6 @@ describe('censusEmptyBedActivationController', () => {
       },
     });
 
-    expect(updatePatient).toHaveBeenCalledWith('R7', 'patientName', ' ');
     expect(frameCount).toBeGreaterThan(1);
     expect(result.ok).toBe(true);
     expect(clickSpy).toHaveBeenCalledTimes(1);

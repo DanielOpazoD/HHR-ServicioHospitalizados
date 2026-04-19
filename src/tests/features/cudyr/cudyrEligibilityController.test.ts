@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CUDYR_MIN_HOSPITALIZATION_HOURS,
   CUDYR_NIGHT_REFERENCE_TIME,
+  hasVisibleCudyrPatientName,
   resolveCudyrEligibility,
 } from '@/features/cudyr/controllers/cudyrEligibilityController';
 
@@ -88,5 +89,11 @@ describe('cudyrEligibilityController', () => {
       isBlocked: true,
       blockedReason: 'Sin fecha de ingreso para evaluar CUDYR.',
     });
+  });
+
+  it('detects whether a patient has a displayable CUDYR name', () => {
+    expect(hasVisibleCudyrPatientName('Paciente visible')).toBe(true);
+    expect(hasVisibleCudyrPatientName('   ')).toBe(false);
+    expect(hasVisibleCudyrPatientName(undefined)).toBe(false);
   });
 });

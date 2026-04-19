@@ -376,8 +376,26 @@ describe('bedManagementReducer firstSeenDate anchoring', () => {
     });
   });
 
+  it('ignores clinical crib CUDYR updates when the crib has not been created yet', () => {
+    const record = DataFactory.createMockDailyRecord('2026-04-12');
+
+    const patch = bedManagementReducer(record, {
+      type: 'UPDATE_CLINICAL_CRIB_CUDYR',
+      bedId: 'R1',
+      field: 'changeClothes',
+      value: 2,
+    });
+
+    expect(patch).toBeNull();
+  });
+
   it('updates clinical crib CUDYR fields while refreshing the shared timestamp', () => {
     const record = DataFactory.createMockDailyRecord('2026-04-12');
+    record.beds.R1 = DataFactory.createMockPatient('R1', {
+      clinicalCrib: DataFactory.createMockPatient('R1-crib', {
+        patientName: 'RN Temporal',
+      }),
+    });
 
     const patch = bedManagementReducer(record, {
       type: 'UPDATE_CLINICAL_CRIB_CUDYR',

@@ -31,13 +31,16 @@ const buildBlockedEligibility = (blockedReason: string): CudyrEligibilityResolut
   blockedReason,
 });
 
+export const hasVisibleCudyrPatientName = (patientName?: string | null): boolean =>
+  Boolean(patientName?.trim());
+
 export const resolveCudyrEligibility = ({
   recordDate,
   patientName,
   admissionDate,
   admissionTime,
 }: ResolveCudyrEligibilityParams): CudyrEligibilityResolution => {
-  if (!patientName?.trim()) {
+  if (!hasVisibleCudyrPatientName(patientName)) {
     return { isEligible: false, isBlocked: false };
   }
 
@@ -76,7 +79,7 @@ export const isCudyrPatientEligible = (
   recordDate: string,
   patient?: CudyrEligibilityPatientRef | null
 ): boolean => {
-  if (!patient?.patientName?.trim() || patient.isBlocked) {
+  if (!patient || !hasVisibleCudyrPatientName(patient.patientName) || patient.isBlocked) {
     return false;
   }
 

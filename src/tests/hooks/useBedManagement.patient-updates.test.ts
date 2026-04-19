@@ -290,6 +290,27 @@ describe('useBedManagement patient updates', () => {
         'Test Author'
       );
     });
+
+    it('ignores CUDYR updates for beds without a real patient name', () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-03-23T10:20:00.000Z'));
+      const patient = createMockPatient('R1', {
+        patientName: '   ',
+        rut: '',
+      });
+      const record = createMockRecord({ R1: patient });
+
+      const { result } = renderHook(() =>
+        useBedManagement(record, mockSaveAndUpdate, mockPatchRecord)
+      );
+
+      act(() => {
+        result.current.updateCudyr('R1', 'changeClothes', 3);
+      });
+
+      expect(mockPatchRecord).not.toHaveBeenCalled();
+      expect(mockAuditContextValue.logDebouncedEvent).not.toHaveBeenCalled();
+    });
   });
 
   describe('clinical crib helpers', () => {

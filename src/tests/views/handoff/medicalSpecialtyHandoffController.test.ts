@@ -7,7 +7,6 @@ import {
   buildMedicalSpecialtyTabState,
   buildMedicalHandoffSummary,
   buildPrintableMedicalSpecialtyBlocks,
-  DEFAULT_NO_CHANGES_COMMENT,
   hasMedicalSpecialtyStructuredData,
   resolveActiveMedicalSpecialty,
   resolveMedicalSpecialtyContinuityEditorState,

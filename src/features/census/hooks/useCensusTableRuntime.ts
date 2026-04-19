@@ -10,9 +10,7 @@ interface UseCensusTableRuntimeParams {
 export const useCensusTableRuntime = ({ currentDateString }: UseCensusTableRuntimeParams) => {
   const dependencies = useCensusTableDependencies();
   const { columns } = dependencies.config;
-  const { activateEmptyBed } = useEmptyBedActivation({
-    updatePatient: dependencies.updatePatient,
-  });
+  const { activateEmptyBed } = useEmptyBedActivation();
   const tableModel = useCensusTableModel({
     currentDateString,
     role: dependencies.role,

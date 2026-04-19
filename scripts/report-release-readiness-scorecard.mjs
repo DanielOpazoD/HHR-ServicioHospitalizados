@@ -1,29 +1,35 @@
 #!/usr/bin/env node
 
-import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
   buildReleaseReadinessScorecard,
   formatReleaseReadinessScorecardMarkdown,
 } from './releaseReadinessScorecardSupport.mjs';
+import { getGitReportState } from './gitReportState.mjs';
 
 const ROOT = process.cwd();
 const REPORTS_DIR = path.join(ROOT, 'reports');
 const JSON_OUTPUT = path.join(REPORTS_DIR, 'release-readiness-scorecard.json');
 const MD_OUTPUT = path.join(REPORTS_DIR, 'release-readiness-scorecard.md');
 
-const getGitSha = () => {
-  try {
-    return execSync('git rev-parse --short HEAD', { cwd: ROOT, encoding: 'utf8' }).trim();
-  } catch {
-    return 'unknown';
-  }
+const baseReport = buildReleaseReadinessScorecard(ROOT);
+const gitState = getGitReportState(ROOT);
+const worktreeIndicator = {
+  name: 'worktree_state',
+  status: gitState.gitDirty ? 'degraded' : 'ok',
+  summary: `status=${gitState.gitDirty ? 'dirty' : 'clean'}`,
 };
-
+const issues = [
+  ...(gitState.gitDirty ? [`${worktreeIndicator.name}: ${worktreeIndicator.summary}`] : []),
+  ...baseReport.issues,
+];
 const report = {
-  ...buildReleaseReadinessScorecard(ROOT),
-  gitSha: getGitSha(),
+  ...baseReport,
+  ...gitState,
+  indicators: [worktreeIndicator, ...baseReport.indicators],
+  overallStatus: issues.length === 0 ? 'ok' : 'degraded',
+  issues,
 };
 
 fs.mkdirSync(REPORTS_DIR, { recursive: true });

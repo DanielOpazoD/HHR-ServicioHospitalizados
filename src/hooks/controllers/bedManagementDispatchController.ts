@@ -135,16 +135,18 @@ export const executeBedManagementAction = ({
   }
 
   try {
-    auditActionIntent(validatedAction, currentRecord, bedAudit);
-  } catch (error) {
-    bedManagementDispatchLogger.error('Audit logging failed', error);
-  }
-
-  try {
     const patch = bedManagementReducer(currentRecord, validatedAction);
-    if (patch) {
-      void patchRecord(patch);
+    if (!patch) {
+      return;
     }
+
+    try {
+      auditActionIntent(validatedAction, currentRecord, bedAudit);
+    } catch (error) {
+      bedManagementDispatchLogger.error('Audit logging failed', error);
+    }
+
+    void patchRecord(patch);
   } catch (error) {
     bedManagementDispatchLogger.warn('Bed management action failed', error);
   }

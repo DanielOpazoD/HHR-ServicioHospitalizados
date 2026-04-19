@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useEmptyBedActivation } from '@/features/census/components/useEmptyBedActivation';
 
 describe('useEmptyBedActivation', () => {
-  const updatePatient = vi.fn();
   const focusSpy = vi.spyOn(HTMLInputElement.prototype, 'focus').mockImplementation(() => {});
 
   beforeEach(() => {
@@ -32,7 +31,7 @@ describe('useEmptyBedActivation', () => {
       .querySelector('[data-bed-id="R2"] [title="Datos del Paciente"]')
       ?.addEventListener('click', clickSpy);
 
-    const { result } = renderHook(() => useEmptyBedActivation({ updatePatient }));
+    const { result } = renderHook(() => useEmptyBedActivation());
 
     act(() => {
       result.current.activateEmptyBed('R2');
@@ -42,7 +41,6 @@ describe('useEmptyBedActivation', () => {
       '[data-bed-id="R2"] input[name="patientName"]'
     ) as HTMLInputElement;
 
-    expect(updatePatient).toHaveBeenCalledWith('R2', 'patientName', ' ');
     expect(input.value).toBe('');
     expect(focusSpy).toHaveBeenCalled();
     expect(clickSpy).toHaveBeenCalledTimes(1);
@@ -50,7 +48,7 @@ describe('useEmptyBedActivation', () => {
 
   it('does not throw when input is not present', () => {
     document.body.innerHTML = '';
-    const { result } = renderHook(() => useEmptyBedActivation({ updatePatient }));
+    const { result } = renderHook(() => useEmptyBedActivation());
 
     expect(() => {
       act(() => {
@@ -58,7 +56,7 @@ describe('useEmptyBedActivation', () => {
       });
     }).not.toThrow();
 
-    expect(updatePatient).toHaveBeenCalledWith('R9', 'patientName', ' ');
+    expect(focusSpy).not.toHaveBeenCalled();
   });
 
   it('falls back when requestAnimationFrame is unavailable', () => {
@@ -70,7 +68,7 @@ describe('useEmptyBedActivation', () => {
       .querySelector('[data-bed-id="R2"] [title="Datos del Paciente"]')
       ?.addEventListener('click', clickSpy);
 
-    const { result } = renderHook(() => useEmptyBedActivation({ updatePatient }));
+    const { result } = renderHook(() => useEmptyBedActivation());
     act(() => {
       result.current.activateEmptyBed('R2');
     });

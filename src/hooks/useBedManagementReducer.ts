@@ -74,7 +74,7 @@ export const bedManagementReducer = (
 
     case 'UPDATE_CUDYR': {
       const { bedId, field, value } = action;
-      return buildUpdateCudyrPatches(bedId, field, value);
+      return buildUpdateCudyrPatches(state, bedId, field, value);
     }
 
     case 'CLEAR_PATIENT': {
@@ -133,7 +133,7 @@ export const bedManagementReducer = (
 
     case 'UPDATE_CLINICAL_CRIB_CUDYR': {
       const { bedId, field, value } = action;
-      return buildUpdateClinicalCribCudyrPatches(bedId, field, value);
+      return buildUpdateClinicalCribCudyrPatches(state, bedId, field, value);
     }
 
     case 'TOGGLE_BED_TYPE': {

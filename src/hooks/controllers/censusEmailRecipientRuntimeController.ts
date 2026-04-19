@@ -21,6 +21,12 @@ export interface RecipientRuntimeState extends CensusRecipientSelectionState {
   lastRemoteRecipients: string[] | null;
 }
 
+export interface RecipientRuntimeMetadata {
+  recipientsReady: boolean;
+  activeRecipientListId: string;
+  lastRemoteRecipients: string[] | null;
+}
+
 export const resolveActiveRecipientRuntimeState = (
   recipientLists: GlobalEmailRecipientList[],
   list: GlobalEmailRecipientList
@@ -88,6 +94,14 @@ export const resolveBootstrapRecipientFallbackMessage = (result: ApplicationOutc
     'No se pudo cargar la lista global en Firebase. Se usara la copia local.'
   );
 
+export const resolveRecipientRuntimeMetadata = (
+  state: RecipientRuntimeState
+): RecipientRuntimeMetadata => ({
+  recipientsReady: true,
+  activeRecipientListId: state.activeRecipientListId,
+  lastRemoteRecipients: state.lastRemoteRecipients,
+});
+
 export const resolveRecipientSyncState = (
   result: ApplicationOutcomeLike<{ skipped?: boolean }>,
   recipients: string[]
@@ -121,6 +135,14 @@ export const resolveRecipientSyncState = (
     lastRemoteRecipients: null,
   };
 };
+
+export const applyRecipientSyncRuntimeMetadata = (
+  current: RecipientRuntimeMetadata,
+  syncState: ReturnType<typeof resolveRecipientSyncState>
+): RecipientRuntimeMetadata => ({
+  ...current,
+  lastRemoteRecipients: syncState.lastRemoteRecipients ?? current.lastRemoteRecipients,
+});
 
 export const resolveRecipientMutationFailureMessage = (
   result: ApplicationOutcomeLike,

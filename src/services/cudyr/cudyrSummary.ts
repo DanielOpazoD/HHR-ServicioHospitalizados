@@ -92,6 +92,10 @@ const createEmptyCounts = (): Record<CudyrCategory, number> => ({
 });
 
 /** Get bed definition by ID */
+export const resolveVisibleCudyrBeds = (record: Pick<DailyRecordCudyrState, 'activeExtraBeds'>) => {
+  const activeExtras = record.activeExtraBeds || [];
+  return BEDS.filter(bed => !bed.isExtra || activeExtras.includes(bed.id));
+};
 
 // ============================================================================
 // Main Functions
@@ -106,8 +110,7 @@ const createEmptyCounts = (): Record<CudyrCategory, number> => ({
  */
 export const collectDailyCudyrPatients = (record: DailyRecordCudyrState): CategorizedPatient[] => {
   const patients: CategorizedPatient[] = [];
-  const activeExtras = record.activeExtraBeds || [];
-  const visibleBeds = BEDS.filter(b => !b.isExtra || activeExtras.includes(b.id));
+  const visibleBeds = resolveVisibleCudyrBeds(record);
 
   visibleBeds.forEach(bed => {
     const patient = record.beds[bed.id];
@@ -167,8 +170,7 @@ export const buildDailyCudyrSummary = (record: DailyRecordCudyrState): CudyrDail
   let occupiedCount = 0;
   let categorizedCount = 0;
 
-  const activeExtras = record.activeExtraBeds || [];
-  const visibleBeds = BEDS.filter(b => !b.isExtra || activeExtras.includes(b.id));
+  const visibleBeds = resolveVisibleCudyrBeds(record);
 
   visibleBeds.forEach(bed => {
     const patient = record.beds[bed.id];

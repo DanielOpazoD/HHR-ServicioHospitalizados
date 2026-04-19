@@ -2,7 +2,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { execSync } from 'node:child_process';
+import { formatWorktreeState, getGitReportState } from './gitReportState.mjs';
 
 const ROOT = process.cwd();
 const REPORTS_DIR = path.join(ROOT, 'reports');
@@ -21,14 +21,6 @@ const readOptionalJson = relativePath => {
   return { data: readJson(relativePath), missing: false };
 };
 
-const getGitSha = () => {
-  try {
-    return execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
-  } catch {
-    return 'unknown';
-  }
-};
-
 const qualityMetrics = readJson('reports/quality-metrics.json');
 const operationalHealthReport = readOptionalJson('reports/operational-health.json');
 const criticalCoverageReport = readOptionalJson('reports/critical-coverage.json');
@@ -36,6 +28,7 @@ const failureCatalog = readJson('scripts/config/test-failure-catalog.json');
 const flakyQuarantine = readJson('scripts/config/flaky-quarantine.json');
 const operationalHealth = operationalHealthReport.data;
 const criticalCoverage = criticalCoverageReport.data;
+const gitState = getGitReportState(ROOT);
 
 const openFailureEntries = failureCatalog.entries.filter(entry => entry.status !== 'fixed');
 const failureCounts = openFailureEntries.reduce((accumulator, entry) => {
@@ -44,6 +37,11 @@ const failureCounts = openFailureEntries.reduce((accumulator, entry) => {
 }, {});
 
 const indicators = [
+  {
+    name: 'worktree_state',
+    status: gitState.gitDirty ? 'degraded' : 'ok',
+    summary: `status=${formatWorktreeState(gitState.gitDirty)}`,
+  },
   {
     name: 'structural_quality',
     status:
@@ -100,7 +98,7 @@ const overallStatus = indicators.every(indicator => indicator.status === 'ok') ?
 
 const report = {
   generatedAt: new Date().toISOString(),
-  gitSha: getGitSha(),
+  ...gitState,
   overallStatus,
   indicators,
   knownFailures: {
@@ -122,6 +120,7 @@ const markdown = [
   '',
   `- Generated: ${report.generatedAt}`,
   `- Commit: ${report.gitSha}`,
+  `- Worktree: ${formatWorktreeState(report.gitDirty)}`,
   `- Overall status: ${report.overallStatus}`,
   '',
   '## Indicators',

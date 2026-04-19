@@ -1,7 +1,6 @@
 import { ok, type ControllerResult } from '@/features/census/controllers/controllerResult';
 
 interface EmptyBedActivationRuntime {
-  updatePatient: (bedId: string, field: 'patientName', value: string) => void;
   requestFrame: (callback: () => void) => void;
   querySelector: (selector: string) => Element | null;
 }
@@ -63,8 +62,6 @@ export const executeActivateEmptyBedController = ({
   bedId: string;
   runtime: EmptyBedActivationRuntime;
 }): EmptyBedActivationResult => {
-  runtime.updatePatient(bedId, 'patientName', ' ');
-
   let outcome: EmptyBedActivationResult = ok({
     outcome: 'input_not_found',
     selector: buildPatientNameSelector(bedId),

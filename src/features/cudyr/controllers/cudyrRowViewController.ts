@@ -2,6 +2,7 @@ import type { CudyrScore } from '@/types/domain/cudyr';
 import type { BedDefinition } from '@/types/domain/beds';
 import type { PatientData } from '@/features/cudyr/contracts/cudyrPatientContracts';
 import { getCategorization } from '@/services/cudyr/CudyrScoreUtils';
+import { hasVisibleCudyrPatientName } from '@/features/cudyr/controllers/cudyrEligibilityController';
 
 export interface CudyrRowViewModel {
   isOccupied: boolean;
@@ -35,7 +36,7 @@ export const buildCudyrRowViewModel = ({
   eligibilityBlocked?: boolean;
   eligibilityBlockedReason?: string;
 }): CudyrRowViewModel => {
-  const isOccupied = !!patient?.patientName;
+  const isOccupied = hasVisibleCudyrPatientName(patient?.patientName);
   const isUTI = bed.type === 'UTI';
   const scores = eligibilityBlocked ? undefined : patient?.cudyr;
   const rowReadOnly = readOnly || eligibilityBlocked;
