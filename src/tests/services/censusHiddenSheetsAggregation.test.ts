@@ -189,4 +189,30 @@ describe('censusHiddenSheetsAggregation', () => {
 
     expect(patients).toHaveLength(0);
   });
+
+  it('includes eligible beds when the checklist says UPC but the legacy boolean is stale', () => {
+    const patients = buildUpcPatients(
+      buildLogicalSnapshotSheets([
+        buildSnapshotSheet(
+          buildRecord('2026-03-24', {
+            R1: buildPatient('R1', {
+              patientName: 'Paciente Checklist',
+              rut: '33.333.333-3',
+              isUPC: false,
+              upcChecklist: {
+                classification: 'UPC_UCI',
+                uciCriteria: ['uci_vmi'],
+                utiCriteria: [],
+                evaluatedAt: '2026-04-18T10:00:00Z',
+              },
+            }),
+          }),
+          '24-03-2026'
+        ),
+      ])
+    );
+
+    expect(patients).toHaveLength(1);
+    expect(patients[0].rut).toBe('33.333.333-3');
+  });
 });

@@ -26,10 +26,16 @@ for (const scenario of scenarios) {
   console.log(`- ${scenario.id}: ${scenario.label} -> ${scenario.file}`);
 }
 
-const result = spawnSync('npx', ['vitest', 'run', ...files], {
-  cwd: workspaceRoot,
-  stdio: 'inherit',
-  env: process.env,
-});
+for (const file of files) {
+  const result = spawnSync('npx', ['vitest', 'run', file], {
+    cwd: workspaceRoot,
+    stdio: 'inherit',
+    env: process.env,
+  });
 
-process.exit(result.status ?? 1);
+  if (result.status !== 0) {
+    process.exit(result.status ?? 1);
+  }
+}
+
+console.log('[critical-smoke-pack] All scenarios passed.');

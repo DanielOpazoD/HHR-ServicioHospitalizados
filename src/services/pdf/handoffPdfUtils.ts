@@ -1,10 +1,11 @@
 import type { ShiftType } from '@/types/domain/shift';
 import type { HandoffPdfStaffingRecord } from '@/services/pdf/contracts/handoffPdfContracts';
 import { calculateHospitalizedDays } from '@/utils/clinicalDayUtils';
-import { resolveHandoffShiftStaff } from '@/services/staff/dailyRecordStaffing';
+import { resolvePresentedNightHandoffReceives } from '@/services/staff/dailyRecordStaffing';
 import { getShiftSchedule } from '@/utils/clinicalDayUtils';
 import { resolveDetailedStaffingState } from '@/services/staff/dailyRecordDetailedStaffing';
 import {
+  VACANCY_LABEL,
   normalizeStaffSelectionValue,
   shouldOmitExtraStaffSelection,
 } from '@/services/staff/staffSelectionPresentation';
@@ -12,7 +13,7 @@ import type {
   DetailedStaffAssignment,
   DetailedStaffingRole,
   DetailedStaffingShift,
-} from '@/types/domain/dailyRecordStaffingDetails';
+} from '@/services/contracts/dailyRecordServiceContracts';
 
 export interface Schedule {
   dayStart?: string;
@@ -73,7 +74,7 @@ const formatDetailedAssignmentsForPdf = ({
 
     const displayName = normalizeStaffSelectionValue(assignment.name);
     const showSchedule =
-      displayName !== 'Vacante' &&
+      displayName !== VACANCY_LABEL &&
       (assignment.slotType === 'extra' ||
         assignment.startTime !== standardTimes.startTime ||
         assignment.endTime !== standardTimes.endTime);
@@ -88,7 +89,6 @@ const formatDetailedAssignmentsForPdf = ({
  * Get staff info for nursing handoff.
  */
 export const getHandoffStaffInfo = (record: HandoffPdfStaffingRecord, selectedShift: ShiftType) => {
-  const { receives } = resolveHandoffShiftStaff(record, selectedShift);
   const delivers = formatDetailedAssignmentsForPdf({
     record,
     shift: selectedShift,
@@ -106,7 +106,7 @@ export const getHandoffStaffInfo = (record: HandoffPdfStaffingRecord, selectedSh
           shift: 'night',
           role: 'nurse',
         })
-      : receives.map(name => normalizeStaffSelectionValue(name));
+      : resolvePresentedNightHandoffReceives(record);
 
   return { delivers, receives: detailedReceives, tens };
 };

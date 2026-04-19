@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   isUpcEligibleBedId,
   isUciEligibleBedId,
+  resolveEffectiveUpcState,
   resolveUpcClassificationFromChecklist,
   resolveIsUpcFromChecklist,
   resolveNormalizedUpcFlag,
@@ -129,5 +130,56 @@ describe('resolveNormalizedUpcFlag', () => {
     expect(resolveNormalizedUpcFlag(null, true)).toBe(false);
     expect(resolveNormalizedUpcFlag('R1', null)).toBe(false);
     expect(resolveNormalizedUpcFlag(undefined, undefined)).toBe(false);
+  });
+});
+
+describe('resolveEffectiveUpcState', () => {
+  it('prefers structured checklist data over a stale legacy boolean on eligible beds', () => {
+    expect(
+      resolveEffectiveUpcState({
+        bedId: 'R1',
+        isUPC: false,
+        checklist: {
+          uciCriteria: ['uci_vmi'],
+          utiCriteria: [],
+          classification: 'UPC_UCI',
+          evaluatedAt: '2026-04-18T10:00:00Z',
+        },
+      })
+    ).toEqual({
+      classification: 'UPC_UCI',
+      isUpc: true,
+    });
+  });
+
+  it('keeps legacy isUPC as fallback when checklist is absent', () => {
+    expect(
+      resolveEffectiveUpcState({
+        bedId: 'R2',
+        isUPC: true,
+        checklist: undefined,
+      })
+    ).toEqual({
+      classification: null,
+      isUpc: true,
+    });
+  });
+
+  it('returns no-upc on ineligible beds even with stale sources', () => {
+    expect(
+      resolveEffectiveUpcState({
+        bedId: 'H1C1',
+        isUPC: true,
+        checklist: {
+          uciCriteria: ['uci_vmi'],
+          utiCriteria: [],
+          classification: 'UPC_UCI',
+          evaluatedAt: '2026-04-18T10:00:00Z',
+        },
+      })
+    ).toEqual({
+      classification: null,
+      isUpc: false,
+    });
   });
 });

@@ -1,4 +1,5 @@
 import { BedDefinition, BedType } from '@/features/census/contracts/censusBedContracts';
+import { hasMeaningfulPatientIdentity } from '@/features/census/controllers/patientIdentityController';
 import type { PatientData } from '@/features/census/types/censusTablePatientContracts';
 import {
   BedTypesById,
@@ -25,7 +26,7 @@ const isAllowedBedTypeOverride = (value: string | undefined): value is BedType =
   value === BedType.UTI || value === BedType.UCI || value === BedType.MEDIA;
 
 const hasVisibleBedOccupant = (bedData: PatientData | null | undefined): bedData is PatientData =>
-  Boolean(bedData && (bedData.patientName || bedData.isBlocked));
+  Boolean(bedData && (bedData.isBlocked || hasMeaningfulPatientIdentity(bedData)));
 
 const buildOccupiedBedRows = (bed: BedDefinition, bedData: PatientData): UnifiedBedRow[] => {
   const occupiedRows: UnifiedBedRow[] = [

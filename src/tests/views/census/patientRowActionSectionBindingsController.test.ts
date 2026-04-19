@@ -46,7 +46,7 @@ describe('patientRowActionSectionBindingsController', () => {
     expect(binding.showCmaAction).toBe(false);
   });
 
-  it('builds medical indications patient only when the row has a named patient', () => {
+  it('builds medical indications patient only when the row has real identity data', () => {
     const baseParams = {
       isBlocked: false,
       readOnly: false,
@@ -90,11 +90,52 @@ describe('patientRowActionSectionBindingsController', () => {
       ...baseParams,
       data: DataFactory.createMockPatient('R2', {
         patientName: '',
+        rut: '',
         admissionDate: '2026-03-05',
       }),
     });
 
     expect(unnamedBinding.medicalIndicationsPatient).toBeUndefined();
+  });
+
+  it('does not expose identity-driven actions for whitespace-only activation placeholders', () => {
+    const binding = buildPatientActionSectionBinding({
+      isBlocked: false,
+      readOnly: false,
+      actionMenuAlign: 'top',
+      data: DataFactory.createMockPatient('R4', {
+        patientName: ' ',
+        rut: '',
+        admissionDate: '2026-03-05',
+      }),
+      currentDateString: '2026-03-05',
+      indicators: {
+        hasClinicalDocument: false,
+        isNewAdmission: true,
+      },
+      mainRowViewState: {
+        canToggleBedType: true,
+        rowClassName: 'row',
+        rowActionsAvailability: {
+          canOpenClinicalDocuments: true,
+          canOpenExamRequest: true,
+          canOpenImagingRequest: true,
+          canOpenHistory: true,
+          canShowClinicalDocumentIndicator: true,
+        },
+        showBlockedContent: false,
+      },
+      onAction: vi.fn(),
+      onOpenDemographics: vi.fn(),
+      onOpenClinicalDocuments: vi.fn(),
+      onOpenExamRequest: vi.fn(),
+      onOpenImagingRequest: vi.fn(),
+      onOpenHistory: vi.fn(),
+    });
+
+    expect(binding.hasPatientIdentity).toBe(false);
+    expect(binding.onViewMedicalIndications).toBeUndefined();
+    expect(binding.medicalIndicationsPatient).toBeUndefined();
   });
 
   it('forwards the current clinical document count to the action cell binding', () => {

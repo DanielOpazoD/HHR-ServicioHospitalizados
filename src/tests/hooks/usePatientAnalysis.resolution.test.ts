@@ -6,6 +6,7 @@ import {
   defaultDailyRecordWritePort,
 } from '@/application/ports/dailyRecordPort';
 import { defaultPatientMasterWritePort } from '@/application/ports/patientMasterPort';
+import { DAILY_RECORD_STORE_CHANGED_EVENT } from '@/services/storage/indexeddb/indexedDbRecordEvents';
 
 vi.mock('@/application/ports/dailyRecordPort', () => ({
   defaultDailyRecordReadPort: {
@@ -60,12 +61,123 @@ describe('usePatientAnalysis — conflict resolution, migration & errors', () =>
       await result.current.runAnalysis();
     });
 
+    dailyRecordWritePort.updatePartial.mockImplementation(async date => {
+      await Promise.resolve();
+
+      window.dispatchEvent(
+        new CustomEvent(DAILY_RECORD_STORE_CHANGED_EVENT, {
+          detail: { operation: 'save', dates: [date] },
+        })
+      );
+
+      return undefined as unknown as Awaited<
+        ReturnType<typeof defaultDailyRecordWritePort.updatePartial>
+      >;
+    });
+
     await act(async () => {
       await result.current.resolveConflict('11.111.111-1', 'John Doe', true);
     });
 
     expect(dailyRecordWritePort.updatePartial).toHaveBeenCalled();
     expect(result.current.analysis?.conflicts).toHaveLength(0);
+    expect(result.current.isStale).toBe(false);
+  });
+
+  it('marks analysis stale when an unrelated store change happens during harmonization', async () => {
+    const mockDates = ['2025-01-01', '2025-01-02'];
+    const record1 = {
+      date: '2025-01-01',
+      beds: { B1: { rut: '11.111.111-1', patientName: 'John Old' } },
+    };
+    const record2 = {
+      date: '2025-01-02',
+      beds: { B1: { rut: '11.111.111-1', patientName: 'John New' } },
+    };
+    dailyRecordReadPort.getAvailableDates.mockResolvedValue(mockDates);
+    dailyRecordReadPort.getForDate
+      .mockResolvedValueOnce(asRepoRecord(record1))
+      .mockResolvedValueOnce(asRepoRecord(record2));
+
+    const { result } = renderHook(() => usePatientAnalysis());
+
+    await act(async () => {
+      await result.current.runAnalysis();
+    });
+
+    dailyRecordWritePort.updatePartial.mockImplementation(async date => {
+      await Promise.resolve();
+
+      window.dispatchEvent(
+        new CustomEvent(DAILY_RECORD_STORE_CHANGED_EVENT, {
+          detail: { operation: 'save', dates: [date] },
+        })
+      );
+      window.dispatchEvent(
+        new CustomEvent(DAILY_RECORD_STORE_CHANGED_EVENT, {
+          detail: { operation: 'save', dates: ['2025-01-03'] },
+        })
+      );
+
+      return undefined as unknown as Awaited<
+        ReturnType<typeof defaultDailyRecordWritePort.updatePartial>
+      >;
+    });
+
+    await act(async () => {
+      await result.current.resolveConflict('11.111.111-1', 'John Doe', true);
+    });
+
+    expect(result.current.analysis?.conflicts).toHaveLength(0);
+    expect(result.current.isStale).toBe(true);
+  });
+
+  it('marks analysis stale when an extra same-date save happens during harmonization', async () => {
+    const mockDates = ['2025-01-01', '2025-01-02'];
+    const record1 = {
+      date: '2025-01-01',
+      beds: { B1: { rut: '11.111.111-1', patientName: 'John Old' } },
+    };
+    const record2 = {
+      date: '2025-01-02',
+      beds: { B1: { rut: '11.111.111-1', patientName: 'John New' } },
+    };
+    dailyRecordReadPort.getAvailableDates.mockResolvedValue(mockDates);
+    dailyRecordReadPort.getForDate
+      .mockResolvedValueOnce(asRepoRecord(record1))
+      .mockResolvedValueOnce(asRepoRecord(record2));
+
+    const { result } = renderHook(() => usePatientAnalysis());
+
+    await act(async () => {
+      await result.current.runAnalysis();
+    });
+
+    dailyRecordWritePort.updatePartial.mockImplementation(async date => {
+      await Promise.resolve();
+
+      window.dispatchEvent(
+        new CustomEvent(DAILY_RECORD_STORE_CHANGED_EVENT, {
+          detail: { operation: 'save', dates: [date] },
+        })
+      );
+      window.dispatchEvent(
+        new CustomEvent(DAILY_RECORD_STORE_CHANGED_EVENT, {
+          detail: { operation: 'save', dates: [date] },
+        })
+      );
+
+      return undefined as unknown as Awaited<
+        ReturnType<typeof defaultDailyRecordWritePort.updatePartial>
+      >;
+    });
+
+    await act(async () => {
+      await result.current.resolveConflict('11.111.111-1', 'John Doe', true);
+    });
+
+    expect(result.current.analysis?.conflicts).toHaveLength(0);
+    expect(result.current.isStale).toBe(true);
   });
 
   it('should resolve conflict without harmonization', async () => {

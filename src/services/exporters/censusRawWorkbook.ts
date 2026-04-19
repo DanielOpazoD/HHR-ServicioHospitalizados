@@ -4,7 +4,7 @@ import { BEDS } from '@/constants/beds';
 import { formatDateDDMMYYYY } from '@/utils/dateFormattingUtils';
 import { createWorkbook } from './excelUtils';
 import { getBedTypeForRecord } from '../../utils/bedTypeUtils';
-import { resolveDayShiftNurses } from '@/services/staff/dailyRecordStaffing';
+import { resolvePresentedDayShiftNurses } from '@/services/staff/dailyRecordStaffing';
 import { formatCensusDateTime } from '@/shared/census/censusPresentation';
 import type { DailyRecordRawExportState } from '@/services/contracts/dailyRecordServiceContracts';
 import { resolveUpcExportLabel } from '@/shared/census/upcBedPolicy';
@@ -86,7 +86,7 @@ type CensusRawRow = (string | boolean | number)[];
 
 export const extractRowsFromRecord = (record: DailyRecordRawExportState): CensusRawRow[] => {
   const rows: CensusRawRow[] = [];
-  const nurses = resolveDayShiftNurses(record);
+  const nurses = resolvePresentedDayShiftNurses(record);
   const date = record.date;
   const activeExtras = record.activeExtraBeds || [];
 

@@ -5,12 +5,14 @@
  * Shows demographics, movement history, and grouped hospitalization episodes.
  */
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import type { MasterPatient } from '@/types/domain/patientMaster';
 import type { PatientHistoryResult } from '@/services/patient/patientHistoryService';
-import type { EpisodeDocuments } from '@/features/census/components/global-search/globalSearchContracts';
-import { buildPatientEpisodeTimelineState } from '@/features/census/components/global-search/patientEpisodeTimelineController';
+import type {
+  EpisodeDocuments,
+  PatientEpisodeTimelineState,
+} from '@/features/census/components/global-search/globalSearchContracts';
 import { DemographicsCard } from '@/features/census/components/global-search/DemographicsCard';
 import { MovementTimeline } from '@/features/census/components/global-search/MovementTimeline';
 import { EpisodeBlockCard } from '@/features/census/components/global-search/EpisodeBlockCard';
@@ -23,6 +25,7 @@ interface PatientEpisodeTimelineProps {
   patient: MasterPatient;
   history: PatientHistoryResult | null;
   isLoadingHistory: boolean;
+  timelineState: PatientEpisodeTimelineState;
   episodeDocuments: Record<string, EpisodeDocuments>;
   onLoadDocuments: (episodeKey: string) => void;
   onDownloadPdf: (docId: string, docType: string) => Promise<void>;
@@ -38,17 +41,13 @@ export const PatientEpisodeTimeline: React.FC<PatientEpisodeTimelineProps> = ({
   patient,
   history,
   isLoadingHistory,
+  timelineState,
   episodeDocuments,
   onLoadDocuments,
   onDownloadPdf,
   onNavigateToDate,
   onBack,
 }) => {
-  const timelineState = useMemo(
-    () => buildPatientEpisodeTimelineState(patient, history),
-    [patient, history]
-  );
-
   return (
     <div className="flex flex-col h-full">
       <button

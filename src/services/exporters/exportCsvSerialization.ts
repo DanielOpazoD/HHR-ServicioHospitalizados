@@ -5,7 +5,7 @@ import { BEDS } from '@/constants/beds';
 import { CSV_HEADERS } from '@/constants/export';
 import { formatDateDDMMYYYY } from '@/utils/dateFormattingUtils';
 import { resolveExportableNursesText } from '@/services/staff/dailyRecordStaffing';
-import { resolveNormalizedUpcFlag } from '@/shared/census/upcBedPolicy';
+import { resolveEffectiveUpcState } from '@/shared/census/upcBedPolicy';
 
 const escapeCsvValue = (value: unknown): string => {
   if (value === null || value === undefined) return '';
@@ -63,7 +63,15 @@ const generatePatientRow = (
     escapeCsvValue(formatDateDDMMYYYY(patient.deviceDetails?.VMI?.installationDate)),
     escapeCsvValue(formatDateDDMMYYYY(patient.deviceDetails?.VMI?.removalDate)),
     escapeCsvValue(patient.surgicalComplication ? 'SI' : 'NO'),
-    escapeCsvValue(resolveNormalizedUpcFlag(bedId, patient.isUPC) ? 'SI' : 'NO'),
+    escapeCsvValue(
+      resolveEffectiveUpcState({
+        bedId,
+        isUPC: patient.isUPC,
+        checklist: patient.upcChecklist,
+      }).isUpc
+        ? 'SI'
+        : 'NO'
+    ),
     escapeCsvValue(patient.handoffNote || ''),
     escapeCsvValue(nurseField),
   ].join(',');

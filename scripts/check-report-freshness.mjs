@@ -15,7 +15,11 @@ const trackedReports = [
     file: 'reports/system-confidence.json',
     field: 'gitSha',
     refreshScript: 'report:system-confidence',
-    dependsOn: ['reports/operational-health.json', 'reports/quality-metrics.json'],
+    dependsOn: [
+      'reports/critical-coverage.json',
+      'reports/operational-health.json',
+      'reports/quality-metrics.json',
+    ],
   },
   {
     file: 'reports/operational-health.json',

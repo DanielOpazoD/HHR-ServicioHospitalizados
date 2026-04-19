@@ -122,4 +122,20 @@ describe('handoffPdfUtils', () => {
     expect(result.delivers).toContain('Enf Refuerzo (10:00-18:00)');
     expect(result.tens).toContain('Tens Refuerzo (12:00-20:00)');
   });
+
+  it('normalizes vacancy markers when night handoff receives come from legacy arrays', () => {
+    const result = getHandoffStaffInfo(
+      {
+        date: '2026-04-18',
+        nursesDayShift: ['Enf Día 1', 'Enf Día 2'],
+        nursesNightShift: ['Enf Noche 1', 'Enf Noche 2'],
+        tensDayShift: ['', '', ''],
+        tensNightShift: ['', '', ''],
+        handoffNightReceives: [' -- ', ''],
+      } as never,
+      'night'
+    );
+
+    expect(result.receives).toEqual(['Vacante', 'Vacante']);
+  });
 });

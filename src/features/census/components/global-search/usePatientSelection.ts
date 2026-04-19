@@ -12,6 +12,7 @@ import type {
   EpisodeDocuments,
   ClinicalDocSummary,
 } from '@/features/census/components/global-search/globalSearchContracts';
+import { buildPatientEpisodeTimelineState } from '@/features/census/components/global-search/patientEpisodeTimelineController';
 import { globalPatientSearchLogger } from '@/hooks/hookLoggers';
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
 
@@ -79,7 +80,12 @@ export function usePatientSelection(): UsePatientSelectionReturn {
   const [episodeDocuments, setEpisodeDocuments] = useState<Record<string, EpisodeDocuments>>({});
 
   const selectPatient = useCallback(async (patient: MasterPatient) => {
-    setSelectedPatient({ master: patient, history: null, isLoadingHistory: true });
+    setSelectedPatient({
+      master: patient,
+      history: null,
+      isLoadingHistory: true,
+      timelineState: buildPatientEpisodeTimelineState(patient, null),
+    });
 
     try {
       const historyModule = await loadPatientHistory();
@@ -90,13 +96,24 @@ export function usePatientSelection(): UsePatientSelectionReturn {
       });
       setSelectedPatient(prev =>
         prev && prev.master.rut === patient.rut
-          ? { ...prev, history, isLoadingHistory: false }
+          ? {
+              ...prev,
+              history,
+              isLoadingHistory: false,
+              timelineState: buildPatientEpisodeTimelineState(patient, history),
+            }
           : prev
       );
     } catch (err) {
       globalPatientSearchLogger.warn(`Failed to load history for ${patient.rut}`, err);
       setSelectedPatient(prev =>
-        prev && prev.master.rut === patient.rut ? { ...prev, isLoadingHistory: false } : prev
+        prev && prev.master.rut === patient.rut
+          ? {
+              ...prev,
+              isLoadingHistory: false,
+              timelineState: buildPatientEpisodeTimelineState(patient, null),
+            }
+          : prev
       );
     }
   }, []);

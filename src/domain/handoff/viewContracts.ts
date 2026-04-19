@@ -4,6 +4,7 @@ export interface HandoffMedicalPatientContract {
   patientName?: string;
   specialty?: string;
   isUPC?: boolean;
+  upcChecklist?: import('@/types/domain/patient').PatientData['upcChecklist'];
 }
 
 export interface HandoffMedicalRecordContract {

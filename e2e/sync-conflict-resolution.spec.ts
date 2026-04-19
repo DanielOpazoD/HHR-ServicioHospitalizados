@@ -4,8 +4,9 @@ import {
   buildCanonicalE2ERecord,
   ensureAuthenticated,
 } from './fixtures/auth';
+import { seedPersistedBedFields, waitForPersistedBedFields } from './fixtures/censusPersistence';
 
-const CONFLICT_DATE = new Date().toISOString().slice(0, 10);
+const CONFLICT_DATE = process.env.E2E_FIXED_DATE ?? new Date().toISOString().slice(0, 10);
 
 const getRow = (page: import('@playwright/test').Page, bedId: string) =>
   page.locator(`[data-testid="patient-row"][data-bed-id="${bedId}"]`).first();
@@ -34,6 +35,7 @@ test.describe('Sync conflict resolution', () => {
 
     await page.goto(`/censo?date=${CONFLICT_DATE}`);
     await ensureAuthenticated(page);
+    await page.goto(`/censo?date=${CONFLICT_DATE}`);
     await expect(page.getByTestId('census-table')).toBeVisible({ timeout: 20_000 });
 
     const row = getRow(page, 'R1');
@@ -52,6 +54,28 @@ test.describe('Sync conflict resolution', () => {
     await expect(demographicsDialog).toBeHidden();
 
     await expect(patientNameInput).toHaveValue('Local Draft');
+    await seedPersistedBedFields({
+      page,
+      date: CONFLICT_DATE,
+      bedId: 'R1',
+      fields: {
+        patientName: 'Local Draft',
+        firstName: 'Local',
+        lastName: 'Draft',
+        secondLastName: '',
+      },
+    });
+    await waitForPersistedBedFields({
+      page,
+      date: CONFLICT_DATE,
+      bedId: 'R1',
+      expected: {
+        patientName: 'Local Draft',
+        firstName: 'Local',
+        lastName: 'Draft',
+        secondLastName: '',
+      },
+    });
 
     await page.evaluate(date => {
       const storageKey = 'hanga_roa_hospital_data';
@@ -72,6 +96,10 @@ test.describe('Sync conflict resolution', () => {
           R1: {
             ...(currentBeds.R1 || {}),
             patientName: 'REMOTE VERSION',
+            firstName: 'REMOTE',
+            lastName: 'VERSION',
+            secondLastName: '',
+            identityStatus: 'official',
             pathology: 'REMOTE DX',
             status: 'Grave',
           },

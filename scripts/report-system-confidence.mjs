@@ -12,6 +12,15 @@ const MD_OUTPUT = path.join(REPORTS_DIR, 'system-confidence.md');
 const readJson = relativePath =>
   JSON.parse(fs.readFileSync(path.join(ROOT, relativePath), 'utf8'));
 
+const readOptionalJson = relativePath => {
+  const fullPath = path.join(ROOT, relativePath);
+  if (!fs.existsSync(fullPath)) {
+    return { data: null, missing: true };
+  }
+
+  return { data: readJson(relativePath), missing: false };
+};
+
 const getGitSha = () => {
   try {
     return execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
@@ -21,10 +30,12 @@ const getGitSha = () => {
 };
 
 const qualityMetrics = readJson('reports/quality-metrics.json');
-const operationalHealth = readJson('reports/operational-health.json');
-const criticalCoverage = readJson('reports/critical-coverage.json');
+const operationalHealthReport = readOptionalJson('reports/operational-health.json');
+const criticalCoverageReport = readOptionalJson('reports/critical-coverage.json');
 const failureCatalog = readJson('scripts/config/test-failure-catalog.json');
 const flakyQuarantine = readJson('scripts/config/flaky-quarantine.json');
+const operationalHealth = operationalHealthReport.data;
+const criticalCoverage = criticalCoverageReport.data;
 
 const openFailureEntries = failureCatalog.entries.filter(entry => entry.status !== 'fixed');
 const failureCounts = openFailureEntries.reduce((accumulator, entry) => {
@@ -60,22 +71,28 @@ const indicators = [
   },
   {
     name: 'critical_coverage',
-    status: criticalCoverage.status === 'passing' ? 'ok' : 'degraded',
-    summary: `status=${criticalCoverage.status}, zones=${Array.isArray(criticalCoverage.criticalZones) ? criticalCoverage.criticalZones.length : 0}`,
+    status: criticalCoverage?.status === 'passing' ? 'ok' : 'degraded',
+    summary: criticalCoverage
+      ? `status=${criticalCoverage.status}, zones=${Array.isArray(criticalCoverage.criticalZones) ? criticalCoverage.criticalZones.length : 0}`
+      : 'missing report: reports/critical-coverage.json',
   },
   {
     name: 'operational_budgets',
     status:
-      operationalHealth.flowPerformance?.status === 'passing' &&
-      operationalHealth.criticalCoverage?.status === 'passing'
+      operationalHealth?.flowPerformance?.status === 'passing' &&
+      operationalHealth?.criticalCoverage?.status === 'passing'
         ? 'ok'
         : 'degraded',
-    summary: `flow=${operationalHealth.flowPerformance?.status || 'unknown'}, coverage=${operationalHealth.criticalCoverage?.status || 'unknown'}`,
+    summary: operationalHealth
+      ? `flow=${operationalHealth.flowPerformance?.status || 'unknown'}, coverage=${operationalHealth.criticalCoverage?.status || 'unknown'}`
+      : 'missing report: reports/operational-health.json',
   },
   {
     name: 'frontend_startup',
-    status: operationalHealth.frontendStartup?.status === 'ok' ? 'ok' : 'degraded',
-    summary: `status=${operationalHealth.frontendStartup?.status || 'unknown'}, preview=${operationalHealth.frontendStartup?.previewGate?.status || 'unknown'}, issues=${operationalHealth.frontendStartup?.issues?.length || 0}`,
+    status: operationalHealth?.frontendStartup?.status === 'ok' ? 'ok' : 'degraded',
+    summary: operationalHealth
+      ? `status=${operationalHealth.frontendStartup?.status || 'unknown'}, preview=${operationalHealth.frontendStartup?.previewGate?.status || 'unknown'}, issues=${operationalHealth.frontendStartup?.issues?.length || 0}`
+      : 'missing report: reports/operational-health.json',
   },
 ];
 
@@ -91,6 +108,10 @@ const report = {
     byClassification: failureCounts,
     owners: [...new Set(openFailureEntries.map(entry => entry.owner))].sort(),
   },
+  missingPrerequisites: [
+    ...(operationalHealthReport.missing ? ['reports/operational-health.json'] : []),
+    ...(criticalCoverageReport.missing ? ['reports/critical-coverage.json'] : []),
+  ],
 };
 
 fs.mkdirSync(REPORTS_DIR, { recursive: true });
@@ -116,6 +137,7 @@ const markdown = [
   `- Open entries: ${report.knownFailures.openCount}`,
   `- Owners: ${report.knownFailures.owners.join(', ') || 'none'}`,
   `- By classification: ${JSON.stringify(report.knownFailures.byClassification)}`,
+  `- Missing prerequisites: ${report.missingPrerequisites.join(', ') || 'none'}`,
   '',
 ];
 

@@ -14,6 +14,9 @@ const readLocalStorageFlag = (key: string): boolean =>
 export const isE2EEditableRecordOverrideEnabled = (): boolean =>
   isE2ERuntimeEnabled() && readLocalStorageFlag('hhr_e2e_force_editable_record');
 
+export const isE2ELocalOnlySyncForced = (): boolean =>
+  isE2ERuntimeEnabled() && readLocalStorageFlag('hhr_e2e_force_local_only_sync');
+
 export const recordE2EClipboardText = (text: string): void => {
   if (!isE2ERuntimeEnabled() || !hasWindow()) {
     return;

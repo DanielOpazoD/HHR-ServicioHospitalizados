@@ -39,6 +39,7 @@ export interface SelectedPatientDetail {
   master: MasterPatient;
   history: PatientHistoryResult | null;
   isLoadingHistory: boolean;
+  timelineState: PatientEpisodeTimelineState;
 }
 
 // ---------------------------------------------------------------------------
@@ -52,6 +53,12 @@ export interface GroupedEpisode {
   diagnosis: string;
   bedName: string;
   daysOfStay: number | null;
+}
+
+export interface PatientEpisodeTimelineState {
+  groupedEpisodes: GroupedEpisode[];
+  episodeCount: number;
+  hasEpisodes: boolean;
 }
 
 // ---------------------------------------------------------------------------

@@ -151,6 +151,7 @@ export const GlobalPatientSearchModal: React.FC<GlobalPatientSearchModalProps> =
                 patient={search.selectedPatient.master}
                 history={search.selectedPatient.history}
                 isLoadingHistory={search.selectedPatient.isLoadingHistory}
+                timelineState={search.selectedPatient.timelineState}
                 episodeDocuments={search.episodeDocuments}
                 onLoadDocuments={search.loadEpisodeDocuments}
                 onDownloadPdf={search.downloadDocumentPdf}

@@ -1,4 +1,5 @@
 import type { PatientRowStateContract } from '@/features/census/components/patient-row/patientRowDataContracts';
+import { hasMeaningfulPatientIdentity } from '@/features/census/controllers/patientIdentityController';
 
 export interface PatientRowDerivedState {
   isCunaMode: boolean;
@@ -15,5 +16,5 @@ export const derivePatientRowState = (
   hasCompanion: data?.hasCompanionCrib || false,
   hasClinicalCrib: !!(data?.clinicalCrib && data.clinicalCrib.bedMode),
   isBlocked: data?.isBlocked || false,
-  isEmpty: !data?.patientName,
+  isEmpty: !hasMeaningfulPatientIdentity(data),
 });

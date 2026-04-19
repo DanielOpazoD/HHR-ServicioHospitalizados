@@ -38,7 +38,7 @@ describe('handoffPdfCudyrSection', () => {
     );
   });
 
-  it('falls back to "No registrados" when no canonical night-shift nurses exist', () => {
+  it('renders canonical vacancy labels when no night-shift nurses are assigned', () => {
     const doc = createDocMock();
     const autoTable = vi.fn();
     const record = {
@@ -54,7 +54,29 @@ describe('handoffPdfCudyrSection', () => {
     addCudyrTable(doc, record, 10, autoTable as never);
 
     expect(doc.text).toHaveBeenCalledWith(
-      expect.stringContaining('Enfermeros/as (Noche): No registrados'),
+      expect.stringContaining('Enfermeros/as (Noche): Vacante, Vacante'),
+      expect.any(Number),
+      expect.any(Number)
+    );
+  });
+
+  it('normalizes legacy vacancy markers in the CUDYR header', () => {
+    const doc = createDocMock();
+    const autoTable = vi.fn();
+    const record = {
+      date: '2026-03-07',
+      beds: {},
+      discharges: [],
+      transfers: [],
+      cma: [],
+      lastUpdated: '2026-03-07T10:00:00.000Z',
+      nursesNightShift: [' Carla ', '--'],
+    } as unknown as DailyRecord;
+
+    addCudyrTable(doc, record, 10, autoTable as never);
+
+    expect(doc.text).toHaveBeenCalledWith(
+      expect.stringContaining('Enfermeros/as (Noche): Carla, Vacante'),
       expect.any(Number),
       expect.any(Number)
     );

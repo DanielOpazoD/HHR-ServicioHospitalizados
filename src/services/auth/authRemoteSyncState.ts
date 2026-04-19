@@ -1,5 +1,6 @@
 import type { AuthSessionState } from '@/types/auth';
 import type { FirestoreSyncState } from '@/services/repositories/repositoryConfig';
+import { isE2ELocalOnlySyncForced } from '@/shared/runtime/e2eRuntime';
 
 interface BuildAuthRemoteSyncStateInput {
   sessionState: AuthSessionState;
@@ -14,6 +15,13 @@ export const buildAuthRemoteSyncState = ({
   isFirebaseConnected,
   isOnline,
 }: BuildAuthRemoteSyncStateInput): FirestoreSyncState => {
+  if (isE2ELocalOnlySyncForced()) {
+    return {
+      mode: 'local_only',
+      reason: 'manual_override',
+    };
+  }
+
   if (authLoading) {
     return {
       mode: 'bootstrapping',

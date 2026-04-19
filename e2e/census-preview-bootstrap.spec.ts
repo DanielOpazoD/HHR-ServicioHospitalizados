@@ -1,16 +1,9 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { test, expect, type Page, type Route } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { buildCanonicalE2ERecord, MOCK_USERS } from './fixtures/auth';
-
-type FirebasePreviewConfig = {
-  apiKey: string;
-  authDomain?: string;
-  projectId: string;
-  storageBucket?: string;
-  messagingSenderId?: string;
-  appId: string;
-};
+import {
+  installPreviewFirebaseRuntime,
+  type FirebasePreviewConfig,
+} from './fixtures/previewFirebase';
 
 type PreviewRuntimeFailure = {
   source: 'console' | 'pageerror';
@@ -25,66 +18,8 @@ const isFatalPreviewConsoleError = (message: string): boolean =>
 const PREVIEW_BOOTSTRAP_DATE = process.env.E2E_FIXED_DATE ?? '2026-04-03';
 const SEEDED_PATIENT_NAME = 'PACIENTE VALIDACION PREVIEW';
 
-const parseDotEnvFile = (filePath: string): Record<string, string> => {
-  if (!fs.existsSync(filePath)) {
-    return {};
-  }
-
-  return fs
-    .readFileSync(filePath, 'utf-8')
-    .split(/\r?\n/)
-    .reduce<Record<string, string>>((acc, rawLine) => {
-      const line = rawLine.trim();
-      if (!line || line.startsWith('#')) {
-        return acc;
-      }
-
-      const separatorIndex = line.indexOf('=');
-      if (separatorIndex === -1) {
-        return acc;
-      }
-
-      const key = line.slice(0, separatorIndex).trim();
-      const value = line.slice(separatorIndex + 1).trim();
-      acc[key] = value;
-      return acc;
-    }, {});
-};
-
-const loadPreviewFirebaseConfig = (): FirebasePreviewConfig => {
-  const envFiles = ['.env.production', '.env', '.env.local'].map(file =>
-    path.resolve(process.cwd(), file)
-  );
-  const mergedEnv = envFiles.reduce<Record<string, string>>(
-    (acc, filePath) => ({ ...acc, ...parseDotEnvFile(filePath) }),
-    {}
-  );
-
-  const apiKey = process.env.VITE_FIREBASE_API_KEY || mergedEnv.VITE_FIREBASE_API_KEY || '';
-  const projectId =
-    process.env.VITE_FIREBASE_PROJECT_ID || mergedEnv.VITE_FIREBASE_PROJECT_ID || '';
-  const appId = process.env.VITE_FIREBASE_APP_ID || mergedEnv.VITE_FIREBASE_APP_ID || '';
-
-  if (!apiKey || !projectId || !appId) {
-    throw new Error(
-      'Preview Firebase config is incomplete. Set VITE_FIREBASE_API_KEY, VITE_FIREBASE_PROJECT_ID and VITE_FIREBASE_APP_ID for the local validation.'
-    );
-  }
-
-  return {
-    apiKey,
-    authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || mergedEnv.VITE_FIREBASE_AUTH_DOMAIN,
-    projectId,
-    storageBucket:
-      process.env.VITE_FIREBASE_STORAGE_BUCKET || mergedEnv.VITE_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId:
-      process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || mergedEnv.VITE_FIREBASE_MESSAGING_SENDER_ID,
-    appId,
-  };
-};
-
 const seedPersistedSessionAndRecord = async (page: Page) => {
-  const firebaseConfig = loadPreviewFirebaseConfig();
+  const firebaseConfig = await installPreviewFirebaseRuntime(page);
   const baseRecord = buildCanonicalE2ERecord(PREVIEW_BOOTSTRAP_DATE) as Record<string, unknown>;
   const baseBeds = baseRecord.beds as Record<string, Record<string, unknown>>;
   const seededRecord = buildCanonicalE2ERecord(PREVIEW_BOOTSTRAP_DATE, {
@@ -98,14 +33,6 @@ const seedPersistedSessionAndRecord = async (page: Page) => {
         status: 'ESTABLE',
       },
     },
-  });
-
-  await page.route('**/.netlify/functions/firebase-config**', async (route: Route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(firebaseConfig),
-    });
   });
 
   await page.addInitScript(

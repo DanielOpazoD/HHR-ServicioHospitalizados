@@ -75,7 +75,18 @@ const createAuthState = (overrides: Partial<AuthContextType> = {}): AuthContextT
 
   return {
     sessionState: { status: 'unauthenticated', user: null },
-    authRuntime: {} as never,
+    authRuntime: {
+      sessionStatus: 'unauthenticated',
+      authLoading: false,
+      isFirebaseConnected: false,
+      isOnline: true,
+      bootstrapPending: false,
+      pendingAgeMs: 0,
+      budgetProfile: 'default',
+      timeoutMs: 15_000,
+      runtimeState: 'ok',
+      issues: [],
+    },
     currentUser: null,
     authorizedUser: null,
     user: null,
@@ -113,6 +124,8 @@ const createDateNavigation = (
 describe('useAppBootstrapState', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.sessionStorage.clear();
+    window.localStorage.clear();
     mockGetOptionalDb.mockReturnValue(null);
     mockUseAuth.mockReturnValue(createAuthState());
     mockUseDateNavigation.mockReturnValue(createDateNavigation());
@@ -135,6 +148,7 @@ describe('useAppBootstrapState', () => {
     const { result } = renderHook(() => useAppBootstrapState());
 
     expect(result.current.status).toBe('loading');
+    expect(result.current.phase).toBe('rehydrating');
     expect(mockUseStorageMigration).toHaveBeenCalledWith({ enabled: false });
     expect(mockUseVersionCheck).toHaveBeenCalledTimes(1);
     expect(mockUseSignatureMode).toHaveBeenCalledWith('2026-03-27', null, true);
@@ -168,6 +182,34 @@ describe('useAppBootstrapState', () => {
     );
   });
 
+  it('keeps a same-tab authenticated refresh in rehydrating while bootstrap is still pending', () => {
+    window.sessionStorage.setItem('hhr_logged_this_session', 'true');
+    mockUseAuth.mockReturnValue(
+      createAuthState({
+        sessionState: { status: 'unauthenticated', user: null },
+        isLoading: false,
+        isAuthenticated: false,
+        authRuntime: {
+          sessionStatus: 'unauthenticated',
+          authLoading: false,
+          isFirebaseConnected: false,
+          isOnline: true,
+          bootstrapPending: true,
+          pendingAgeMs: 1_200,
+          budgetProfile: 'default',
+          timeoutMs: 15_000,
+          runtimeState: 'recoverable',
+          issues: ['bootstrap pending'],
+        },
+      })
+    );
+
+    const { result } = renderHook(() => useAppBootstrapState());
+
+    expect(result.current.status).toBe('loading');
+    expect(result.current.phase).toBe('rehydrating');
+  });
+
   it('prioritizes signature mode over loading and auth gating', () => {
     mockUseAuth.mockReturnValue(
       createAuthState({
@@ -190,6 +232,7 @@ describe('useAppBootstrapState', () => {
     const { result } = renderHook(() => useAppBootstrapState());
 
     expect(result.current.status).toBe('unauthenticated');
+    expect(result.current.phase).toBe('local_only');
     expect(mockSetFirestoreSyncState).toHaveBeenCalledWith({
       mode: 'local_only',
       reason: 'auth_unavailable',
@@ -227,6 +270,7 @@ describe('useAppBootstrapState', () => {
     const { result } = renderHook(() => useAppBootstrapState());
 
     expect(result.current.status).toBe('authenticated');
+    expect(result.current.phase).toBe('authenticated');
     if (result.current.status === 'authenticated') {
       expect(result.current.dateNav.currentDateString).toBe('2026-03-31');
       expect(result.current.dateNav.isSignatureMode).toBe(false);
@@ -324,6 +368,7 @@ describe('useAppBootstrapState', () => {
     });
 
     expect(result.status).toBe('signature_mode');
+    expect(result.phase).toBe('signature_mode');
   });
 
   it('buildAppBootstrapState returns authenticated navigation wiring when access is ready', () => {
@@ -353,9 +398,33 @@ describe('useAppBootstrapState', () => {
     });
 
     expect(result.status).toBe('authenticated');
+    expect(result.phase).toBe('authenticated');
     if (result.status === 'authenticated') {
       expect(result.dateNav.currentDateString).toBe('2026-03-31');
       expect(result.dateNav.selectedDay).toBe(27);
     }
+  });
+
+  it('buildAppBootstrapState exposes bootstrapping while auth still loads without a rehydrating session', () => {
+    const auth = createAuthState({
+      isLoading: true,
+      sessionState: { status: 'unauthenticated', user: null },
+      remoteSyncStatus: 'bootstrapping',
+      remoteSyncState: {
+        mode: 'bootstrapping',
+        reason: 'auth_loading',
+      },
+    });
+    const dateNav = createDateNavigation();
+
+    const result = buildAppBootstrapState({
+      auth,
+      dateNav,
+      isSignatureMode: false,
+      currentDateString: '2026-03-27',
+    });
+
+    expect(result.status).toBe('loading');
+    expect(result.phase).toBe('bootstrapping');
   });
 });

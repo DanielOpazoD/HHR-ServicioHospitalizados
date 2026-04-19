@@ -4,6 +4,7 @@ import type {
   MedicalHandoffEntry,
   PatientData,
 } from '@/services/contracts/patientServiceContracts';
+import { resolveNursingHandoffNovedadesText } from '@/shared/handoff/handoffNovedades';
 
 export const inheritPatientHandoffNotes = (
   targetPatient: PatientData,
@@ -77,5 +78,9 @@ export const resolveInitialDayHandoff = (prevRecord: HandoffDailyRecordContract 
     return '';
   }
 
-  return prevRecord.handoffNovedadesNightShift || prevRecord.handoffNovedadesDayShift || '';
+  return resolveNursingHandoffNovedadesText({
+    selectedShift: 'night',
+    handoffNovedadesDayShift: prevRecord.handoffNovedadesDayShift,
+    handoffNovedadesNightShift: prevRecord.handoffNovedadesNightShift,
+  });
 };

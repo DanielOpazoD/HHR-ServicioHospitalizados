@@ -1,7 +1,7 @@
 import type { jsPDF } from 'jspdf';
 import { BEDS } from '@/constants/beds';
 import type { HandoffPdfRecord } from '@/services/pdf/contracts/handoffPdfContracts';
-import { resolveNightShiftNurses } from '@/services/staff/dailyRecordStaffing';
+import { resolvePresentedNightShiftNurses } from '@/services/staff/dailyRecordStaffing';
 import { formatDateDDMMYYYY } from '@/utils/dateFormattingUtils';
 import { AutoTableFunction, CellHookData, JsPDFWithAutoTable } from './handoffPdfTypes';
 import { getCategorization } from '@/services/cudyr/CudyrScoreUtils';
@@ -32,8 +32,7 @@ export const addCudyrTable = (
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
 
-  const nurses = resolveNightShiftNurses(record).filter(n => n && n.trim() !== '');
-  const nursesStr = nurses.length > 0 ? nurses.join(', ') : 'No registrados';
+  const nursesStr = resolvePresentedNightShiftNurses(record).join(', ');
   const applicationDate = formatDateDDMMYYYY(resolveCudyrNightApplicationDate(record.date));
 
   doc.text(`Turno ${formatDateDDMMYYYY(record.date)}.`, margin, currentY);

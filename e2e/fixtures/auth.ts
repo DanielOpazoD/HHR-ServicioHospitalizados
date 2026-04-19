@@ -187,6 +187,7 @@ export async function setupE2EContext(
     }) => {
       // Store auth
       localStorage.setItem('hhr_e2e_bootstrap_user', JSON.stringify(user));
+      localStorage.removeItem('hhr_e2e_force_local_only_sync');
 
       // Store Record Data
       const STORAGE_KEY = 'hanga_roa_hospital_data';
@@ -359,19 +360,13 @@ export async function bootstrapSeededRecord(
   await page.addInitScript(
     ({
       user,
-      dateStr,
-      seededRecord,
-      runtimeOverride,
       editableRecordOverride,
     }: {
       user: typeof mockUser;
-      dateStr: string;
-      seededRecord: Record<string, unknown>;
-      runtimeOverride: boolean;
       editableRecordOverride: boolean;
     }) => {
-      const STORAGE_KEY = 'hanga_roa_hospital_data';
       localStorage.setItem('hhr_e2e_bootstrap_user', JSON.stringify(user));
+      localStorage.setItem('hhr_e2e_force_local_only_sync', 'true');
       if (editableRecordOverride) {
         localStorage.setItem('hhr_e2e_force_editable_record', 'true');
       } else {
@@ -379,35 +374,83 @@ export async function bootstrapSeededRecord(
       }
       localStorage.setItem('hhr_db_initialized', 'true');
 
-      const records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-      if (!records[dateStr]) {
-        records[dateStr] = seededRecord;
-      }
+      const runtimeWindow = window as Window & {
+        __HHR_E2E_OVERRIDE__?: Record<string, unknown>;
+      };
+      // Keep the E2E runtime flag enabled for auth/bootstrap while forcing record
+      // reads through the persisted storage stack after the seeded reload.
+      runtimeWindow.__HHR_E2E_OVERRIDE__ = {};
+    },
+    {
+      user: mockUser,
+      editableRecordOverride: forceEditableRecord,
+    }
+  );
+
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+  await page.evaluate(
+    ({
+      dateStr,
+      seededRecord,
+      runtimeOverride,
+      editableRecordOverride,
+    }: {
+      dateStr: string;
+      seededRecord: Record<string, unknown>;
+      runtimeOverride: boolean;
+      editableRecordOverride: boolean;
+    }) => {
+      const STORAGE_KEY = 'hanga_roa_hospital_data';
+      const records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') as Record<
+        string,
+        Record<string, unknown>
+      >;
+
+      records[dateStr] = seededRecord;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+      localStorage.setItem('hhr_db_initialized', 'true');
+      localStorage.setItem('hhr_e2e_force_local_only_sync', 'true');
+      localStorage.removeItem('indexeddb_migration_complete');
+
+      if (editableRecordOverride) {
+        localStorage.setItem('hhr_e2e_force_editable_record', 'true');
+      } else {
+        localStorage.removeItem('hhr_e2e_force_editable_record');
+      }
 
       const runtimeWindow = window as Window & {
         __HHR_E2E_OVERRIDE__?: Record<string, unknown>;
       };
 
       if (runtimeOverride) {
-        const latestRecords = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
         runtimeWindow.__HHR_E2E_OVERRIDE__ = {
           ...(runtimeWindow.__HHR_E2E_OVERRIDE__ || {}),
-          [dateStr]: latestRecords[dateStr],
         };
       } else {
-        // Keep the E2E runtime flag enabled for auth/bootstrap while forcing reads through storage.
         runtimeWindow.__HHR_E2E_OVERRIDE__ = {};
       }
     },
     {
-      user: mockUser,
       dateStr: date,
       seededRecord: record,
       runtimeOverride: useRuntimeOverride,
       editableRecordOverride: forceEditableRecord,
     }
   );
+
+  try {
+    await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!message.includes('Frame load interrupted')) {
+      throw error;
+    }
+    await page.waitForLoadState('domcontentloaded', { timeout: 30000 }).catch(() => {});
+  }
+
+  await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
+  await page.waitForLoadState('domcontentloaded');
 }
 
 export async function ensureAuthenticated(page: Page) {
@@ -424,6 +467,14 @@ export async function ensureAuthenticated(page: Page) {
   await page.evaluate(() => {
     localStorage.removeItem('hhr_google_login_lock_v1');
     localStorage.setItem('hhr_e2e_force_popup', 'true');
+    localStorage.setItem(
+      'hhr_auth_bootstrap_pending_v1',
+      JSON.stringify({
+        startedAt: Date.now(),
+        mode: 'redirect',
+        returnTo: `${window.location.pathname}${window.location.search}${window.location.hash}`,
+      })
+    );
 
     const bootstrapUserRaw = localStorage.getItem('hhr_e2e_bootstrap_user');
     if (bootstrapUserRaw) {

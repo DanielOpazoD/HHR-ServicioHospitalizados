@@ -1,6 +1,7 @@
 import type { PatientMainRowViewProps } from '@/features/census/components/patient-row/patientRowViewContracts';
 import type { PatientMainRowActionCellProps } from '@/features/census/components/patient-row/patientRowViewContracts';
 import { calculateHospitalizedDays } from '@/features/census/controllers/patientBedConfigViewController';
+import { hasMeaningfulPatientIdentity } from '@/features/census/controllers/patientIdentityController';
 import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medicalIndications';
 
 export type PatientActionSectionBinding = PatientMainRowActionCellProps;
@@ -36,9 +37,6 @@ const resolveRowActionCallback = <TAction extends (() => void) | undefined>(
   canUseAction: boolean,
   action: TAction
 ): TAction | undefined => (canUseAction ? action : undefined);
-
-const resolveHasPatientIdentity = (data: PatientMainRowViewProps['data']): boolean =>
-  Boolean(data.patientName?.trim() || data.rut?.trim());
 
 export const buildPatientActionSectionBinding = ({
   isBlocked,
@@ -81,6 +79,7 @@ export const buildPatientActionSectionBinding = ({
     data,
     currentDateString,
   });
+  const hasPatientIdentity = hasMeaningfulPatientIdentity(data);
 
   return {
     isBlocked,
@@ -88,7 +87,7 @@ export const buildPatientActionSectionBinding = ({
     align: actionMenuAlign,
     showCmaAction: daysHospitalized === null || daysHospitalized <= 1,
     accessProfile,
-    hasPatientIdentity: resolveHasPatientIdentity(data),
+    hasPatientIdentity,
     hasClinicalDocument: indicators.hasClinicalDocument,
     isNewAdmission: indicators.isNewAdmission,
     onAction,
@@ -105,12 +104,12 @@ export const buildPatientActionSectionBinding = ({
       mainRowViewState.rowActionsAvailability.canOpenImagingRequest,
       onOpenImagingRequest
     ),
-    onViewMedicalIndications: data.patientName ? () => undefined : undefined,
+    onViewMedicalIndications: hasPatientIdentity ? () => undefined : undefined,
     onViewHistory: resolveRowActionCallback(
       mainRowViewState.rowActionsAvailability.canOpenHistory,
       onOpenHistory
     ),
-    medicalIndicationsPatient: data.patientName ? medicalIndicationsPatient : undefined,
+    medicalIndicationsPatient: hasPatientIdentity ? medicalIndicationsPatient : undefined,
     clinicalDocumentCount,
   };
 };

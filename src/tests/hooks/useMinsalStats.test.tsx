@@ -1,6 +1,7 @@
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
 import { useMinsalStats } from '@/hooks/useMinsalStats';
+import { DAILY_RECORD_STORE_CHANGED_EVENT } from '@/services/storage/indexeddb/indexedDbRecordEvents';
 import { createQueryClientTestWrapper } from '@/tests/utils/queryClientTestUtils';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { MinsalStatistics } from '@/types/minsalTypes';
@@ -74,7 +75,7 @@ describe('useMinsalStats', () => {
     }).wrapper;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     mockGetDateRangeFromPreset.mockReturnValue({
       startDate: '2026-03-01',
       endDate: '2026-03-31',
@@ -133,5 +134,82 @@ describe('useMinsalStats', () => {
     expect(result.current.stats?.tasaOcupacion).toBe(61.4);
     expect(result.current.stats?.pacientesActuales).toBe(11);
     expect(result.current.trendData).toEqual([]);
+  });
+
+  it('refreshes the active local range when a local record changes inside that range', async () => {
+    const initialRecords = [{ date: '2026-03-31' } as DailyRecord];
+    const refreshedRecords = [
+      { date: '2026-03-31' } as DailyRecord,
+      { date: '2026-03-14' } as DailyRecord,
+    ];
+
+    mockFetchRecordsRangeSorted
+      .mockResolvedValueOnce(initialRecords)
+      .mockResolvedValueOnce(refreshedRecords);
+    mockSyncRecordsRange.mockResolvedValue([]);
+    mockCalculateMinsalStats
+      .mockReturnValueOnce(buildStats({ pacientesActuales: 13 }))
+      .mockReturnValueOnce(buildStats({ pacientesActuales: 14 }));
+    mockCallable.mockResolvedValue({ data: buildStats({ tasaOcupacion: 30.1 }) });
+
+    const { result } = renderHook(() => useMinsalStats('lastMonth'), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.allRecords).toEqual(initialRecords);
+    });
+
+    await act(async () => {
+      window.dispatchEvent(
+        new CustomEvent(DAILY_RECORD_STORE_CHANGED_EVENT, {
+          detail: { operation: 'save', dates: ['2026-03-14'] },
+        })
+      );
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(result.current.allRecords).toEqual(refreshedRecords);
+    });
+
+    expect(result.current.stats?.pacientesActuales).toBe(14);
+    expect(mockFetchRecordsRangeSorted).toHaveBeenCalledTimes(2);
+    expect(mockFetchRecordsRangeSorted).toHaveBeenNthCalledWith(1, '2026-03-01', '2026-03-31');
+    expect(mockFetchRecordsRangeSorted).toHaveBeenNthCalledWith(2, '2026-03-01', '2026-03-31');
+    expect(mockCallable).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores local record changes outside the active range', async () => {
+    const initialRecords = [{ date: '2026-03-31' } as DailyRecord];
+
+    mockFetchRecordsRangeSorted.mockResolvedValue(initialRecords);
+    mockSyncRecordsRange.mockResolvedValue([]);
+    mockCalculateMinsalStats.mockReturnValue(buildStats({ pacientesActuales: 13 }));
+    mockCallable.mockResolvedValue({ data: buildStats({ tasaOcupacion: 30.1 }) });
+
+    const { result } = renderHook(() => useMinsalStats('lastMonth'), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.allRecords).toEqual(initialRecords);
+    });
+
+    await act(async () => {
+      window.dispatchEvent(
+        new CustomEvent(DAILY_RECORD_STORE_CHANGED_EVENT, {
+          detail: { operation: 'save', dates: ['2026-04-01'] },
+        })
+      );
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(result.current.allRecords).toEqual(initialRecords);
+    });
+
+    expect(mockFetchRecordsRangeSorted).toHaveBeenCalledTimes(1);
+    expect(mockCallable).toHaveBeenCalledTimes(1);
   });
 });

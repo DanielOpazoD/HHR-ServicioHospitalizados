@@ -21,11 +21,45 @@ vi.mock('@/views/LazyViews', () => ({
   MedicalSignatureView: () => <div data-testid="signature-view">Signature View</div>,
 }));
 
-const createAuth = (sessionStatus: 'unauthenticated' | 'authorized' = 'unauthenticated') => ({
+const createAuth = (
+  sessionStatus: 'unauthenticated' | 'authorized' = 'unauthenticated',
+  overrides: Record<string, unknown> = {}
+) => ({
+  authRuntime: {
+    sessionStatus,
+    authLoading: false,
+    isFirebaseConnected: sessionStatus === 'authorized',
+    isOnline: true,
+    bootstrapPending: false,
+    pendingAgeMs: 0,
+    budgetProfile: 'default',
+    timeoutMs: 15_000,
+    runtimeState: 'ok',
+    issues: [],
+  },
+  currentUser: sessionStatus === 'authorized' ? { uid: 'user-1' } : null,
+  authorizedUser: sessionStatus === 'authorized' ? { uid: 'user-1' } : null,
+  user: sessionStatus === 'authorized' ? { uid: 'user-1' } : null,
+  role: sessionStatus === 'authorized' ? 'admin' : 'viewer',
+  isLoading: false,
+  isAuthenticated: sessionStatus === 'authorized',
+  isAuthorizedSession: sessionStatus === 'authorized',
+  isAnonymousSignature: false,
+  isUnauthorized: false,
+  isEditor: sessionStatus === 'authorized',
+  isViewer: sessionStatus !== 'authorized',
+  isFirebaseConnected: sessionStatus === 'authorized',
+  remoteSyncStatus: sessionStatus === 'authorized' ? 'ready' : 'local_only',
+  remoteSyncState:
+    sessionStatus === 'authorized'
+      ? { mode: 'enabled', reason: 'ready' }
+      : { mode: 'local_only', reason: 'auth_unavailable' },
+  signOut: vi.fn(),
   sessionState: {
     status: sessionStatus,
     user: sessionStatus === 'authorized' ? { uid: 'user-1' } : null,
   },
+  ...overrides,
 });
 
 describe('App loading behavior', () => {
@@ -52,6 +86,7 @@ describe('App loading behavior', () => {
   it('renders the login loading shell while bootstrap is loading on the root route', () => {
     mockUseAppBootstrapState.mockReturnValue({
       status: 'loading',
+      phase: 'bootstrapping',
       auth: createAuth('unauthenticated'),
     });
 
@@ -65,6 +100,7 @@ describe('App loading behavior', () => {
 
     mockUseAppBootstrapState.mockReturnValue({
       status: 'loading',
+      phase: 'rehydrating',
       auth: createAuth('unauthenticated'),
     });
 
@@ -74,7 +110,7 @@ describe('App loading behavior', () => {
     expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
   });
 
-  it('briefly suppresses the login page after a same-tab authenticated refresh falls into unauthenticated', async () => {
+  it('keeps login hidden during a same tab authenticated refresh while bootstrap remains pending', () => {
     window.sessionStorage.setItem('hhr_logged_this_session', 'true');
     Object.defineProperty(window, 'location', {
       configurable: true,
@@ -87,25 +123,29 @@ describe('App loading behavior', () => {
     });
 
     mockUseAppBootstrapState.mockReturnValue({
-      status: 'unauthenticated',
-      auth: createAuth('unauthenticated'),
+      status: 'loading',
+      phase: 'rehydrating',
+      auth: createAuth('unauthenticated', {
+        authRuntime: {
+          sessionStatus: 'unauthenticated',
+          authLoading: false,
+          isFirebaseConnected: false,
+          isOnline: true,
+          bootstrapPending: true,
+          pendingAgeMs: 1_200,
+          budgetProfile: 'default',
+          timeoutMs: 15_000,
+          runtimeState: 'recoverable',
+          issues: ['bootstrap pending'],
+        },
+      }),
     });
 
     render(<App />);
 
-    await act(async () => {
-      await Promise.resolve();
-    });
-
     expect(screen.queryByTestId('default-loading-screen')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
     expect(screen.queryByTestId('login-page')).not.toBeInTheDocument();
-
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(650);
-    });
-
-    expect(screen.getByTestId('login-page')).toBeInTheDocument();
-    expect(window.sessionStorage.getItem('hhr_logged_this_session')).toBeNull();
   });
 
   it('does not suppress the real login page on the root route after a stale same-tab hint', async () => {
@@ -129,6 +169,7 @@ describe('App loading behavior', () => {
   it('avoids the login loading shell while an authenticated session is still rehydrating on the root route', () => {
     mockUseAppBootstrapState.mockReturnValue({
       status: 'loading',
+      phase: 'rehydrating',
       auth: {
         sessionState: {
           status: 'authenticating',
@@ -156,6 +197,7 @@ describe('App loading behavior', () => {
 
     mockUseAppBootstrapState.mockReturnValue({
       status: 'loading',
+      phase: 'rehydrating',
       auth: createAuth('authorized'),
     });
 
@@ -181,6 +223,7 @@ describe('App loading behavior', () => {
 
     mockUseAppBootstrapState.mockReturnValue({
       status: 'loading',
+      phase: 'rehydrating',
       auth: createAuth('unauthenticated'),
     });
 
@@ -205,6 +248,7 @@ describe('App loading behavior', () => {
 
     mockUseAppBootstrapState.mockReturnValue({
       status: 'authenticated',
+      phase: 'authenticated',
       auth: createAuth('authorized'),
       dateNav: {
         selectedYear: 2026,
@@ -224,5 +268,19 @@ describe('App loading behavior', () => {
 
     expect(screen.getByTestId('authenticated-shell')).toBeInTheDocument();
     expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
+  });
+
+  it('renders the signature view when bootstrap enters signature mode', () => {
+    mockUseAppBootstrapState.mockReturnValue({
+      status: 'signature_mode',
+      phase: 'signature_mode',
+      auth: createAuth('authorized'),
+    });
+
+    render(<App />);
+
+    expect(screen.getByTestId('signature-view')).toBeInTheDocument();
+    expect(screen.queryByTestId('authenticated-shell')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('login-page')).not.toBeInTheDocument();
   });
 });

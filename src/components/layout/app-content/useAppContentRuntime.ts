@@ -87,11 +87,16 @@ export const useAppContentRuntime = ({ ui }: UseAppContentRuntimeParams): AppCon
   const auth = useAuth();
   const { record, syncStatus, lastSyncTime } = dailyRecordHook;
   const syncStatusRef = React.useRef(syncStatus);
+  const recordRef = React.useRef(record);
   const { currentDateString: _currentDateString } = dateNav;
 
   React.useEffect(() => {
     syncStatusRef.current = syncStatus;
   }, [syncStatus]);
+
+  React.useEffect(() => {
+    recordRef.current = record;
+  }, [record]);
 
   const {
     specialistCapabilities,
@@ -135,16 +140,18 @@ export const useAppContentRuntime = ({ ui }: UseAppContentRuntimeParams): AppCon
       () => ({
         ...resolveExportManagerParams(dateNav, ui, record, canVerifyArchiveStatus),
         flushBeforeExport,
+        getStableRecordForExport: () => recordRef.current,
       }),
       [canVerifyArchiveStatus, dateNav, flushBeforeExport, record, ui]
     )
   );
 
   const handleExportExcel = React.useCallback(async () => {
+    await flushBeforeExport();
     const generateCensusMasterExcel = await loadCensusMasterExcelExporter();
     await generateCensusMasterExcel(...resolveExcelExportDateArgs(dateNav));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- dateNav is an unstable context object; tracking only its date parts keeps the callback stable
-  }, [dateNav.selectedDay, dateNav.selectedMonth, dateNav.selectedYear]);
+  }, [dateNav.selectedDay, dateNav.selectedMonth, dateNav.selectedYear, flushBeforeExport]);
 
   return React.useMemo(
     () => ({

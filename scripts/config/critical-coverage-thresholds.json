@@ -97,11 +97,16 @@
     "src/app-shell": {
       "label": "src/app-shell",
       "sources": [
+        "src/App.tsx",
+        "src/index.tsx",
+        "src/app-shell/bootstrap/appShellLoadingPolicy.ts",
+        "src/app-shell/bootstrap/useAppBootstrapState.ts",
         "src/components/layout/AppContent.tsx",
         "src/components/layout/NavbarMenu.tsx",
         "src/components/layout/NavbarTabs.tsx",
         "src/components/layout/StorageStatusBadge.tsx",
         "src/components/layout/app-content/useAppContentEventBridge.ts",
+        "src/components/layout/app-content/useAppContentRuntime.ts",
         "src/components/ui/DatabaseStatusBanner.tsx"
       ],
       "tests": "src/tests/components",
@@ -111,6 +116,52 @@
         "lines": 80.0,
         "functions": 70.0,
         "branches": 81.0
+      }
+    },
+    "src/services/patient-history": {
+      "label": "src/services/patient-history",
+      "sources": [
+        "src/services/patient/patientHistoryService.ts",
+        "src/features/census/components/global-search/patientEpisodeTimelineController.ts"
+      ],
+      "tests": "src/tests/services/patient",
+      "minTestFileCount": 1,
+      "minTestToSourceRatio": 0.5,
+      "coverageBaseline": {
+        "lines": 80.0,
+        "functions": 80.0,
+        "branches": 70.0
+      }
+    },
+    "src/services/export-manager": {
+      "label": "src/services/export-manager",
+      "sources": [
+        "src/hooks/useExportManager.ts",
+        "src/components/layout/app-content/useAppContentRuntime.ts"
+      ],
+      "tests": "src/tests",
+      "minTestFileCount": 4,
+      "minTestToSourceRatio": 1.0,
+      "coverageBaseline": {
+        "lines": 75.0,
+        "functions": 75.0,
+        "branches": 65.0
+      }
+    },
+    "src/shared/census/upc-critical": {
+      "label": "src/shared/census/upc-critical",
+      "sources": [
+        "src/shared/census/upcBedPolicy.ts",
+        "src/hooks/controllers/bedManagementPatchController.ts",
+        "src/features/census/components/patient-row/useUpcChecklistState.ts"
+      ],
+      "tests": "src/tests",
+      "minTestFileCount": 4,
+      "minTestToSourceRatio": 1.0,
+      "coverageBaseline": {
+        "lines": 80.0,
+        "functions": 80.0,
+        "branches": 70.0
       }
     },
     "src/services/storage/sync-critical": {

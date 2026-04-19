@@ -36,6 +36,7 @@ export interface HandoffPatientContract {
   deviceDetails?: DeviceDetails;
   surgicalComplication: boolean;
   isUPC: boolean;
+  upcChecklist?: RootPatientData['upcChecklist'];
   handoffNote?: string;
   handoffNoteDayShift?: string;
   handoffNoteNightShift?: string;

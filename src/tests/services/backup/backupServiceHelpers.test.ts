@@ -73,6 +73,32 @@ describe('backupServiceHelpers', () => {
     expect(docToBackupFile(snapshot as never).content).toEqual({ beds: {} });
   });
 
+  it('falls back to stringified timestamps and rejects empty firestore documents', () => {
+    const snapshotWithStringTimestamp = {
+      id: 'backup-2',
+      data: () => ({
+        type: 'NURSING_HANDOFF',
+        shiftType: 'night',
+        date: '2025-01-02',
+        title: 'Title 2',
+        createdAt: { toString: () => 'legacy-created-at' },
+        createdBy: { uid: 'u2', email: 'b@c.com', name: 'User 2' },
+        metadata: { patientCount: 0 },
+        content: { beds: {} },
+      }),
+    };
+    const emptySnapshot = {
+      id: 'backup-empty',
+      data: () => undefined,
+    };
+
+    expect(docToBackupPreview(snapshotWithStringTimestamp as never).createdAt).toBe(
+      'legacy-created-at'
+    );
+    expect(() => docToBackupPreview(emptySnapshot as never)).toThrow('Document data is undefined');
+    expect(() => docToBackupFile(emptySnapshot as never)).toThrow('Document data is undefined');
+  });
+
   it('formats backup title dates consistently', () => {
     expect(formatDateForBackupTitle('2025-01-01')).toBe('01-01-2025');
   });

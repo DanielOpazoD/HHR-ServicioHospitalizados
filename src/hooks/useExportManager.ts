@@ -22,6 +22,7 @@ interface UseExportManagerProps {
   selectedShift: 'day' | 'night';
   canVerifyArchiveStatus?: boolean;
   flushBeforeExport?: () => Promise<void>;
+  getStableRecordForExport?: () => DailyRecord | null;
 }
 
 export interface UseExportManagerReturn {
@@ -42,6 +43,7 @@ export const useExportManager = ({
   selectedShift,
   canVerifyArchiveStatus = false,
   flushBeforeExport,
+  getStableRecordForExport,
 }: UseExportManagerProps): UseExportManagerReturn => {
   const { success, error: notifyError, warning } = useNotification();
   const { confirm } = useConfirmDialog();
@@ -58,14 +60,15 @@ export const useExportManager = ({
 
   const handleExportPDF = useCallback(async () => {
     await flushBeforeExport?.();
+    const exportRecord = getStableRecordForExport?.() ?? record;
 
     const outcome = await executeExportHandoffPdf({
-      record,
+      record: exportRecord,
       selectedShift,
       isMedical: currentModule === 'MEDICAL_HANDOFF',
     });
     recordOperationalOutcome('export', 'export_handoff_pdf', outcome, {
-      date: record?.date,
+      date: exportRecord?.date,
       context: { shift: selectedShift, module: currentModule },
       allowSuccess: true,
     });
@@ -80,17 +83,28 @@ export const useExportManager = ({
       fallbackErrorMessage: 'Error al abrir la impresión. Por favor intente nuevamente.',
     });
     dispatchExportManagerNotice(notice, { success, warning, error: notifyError });
-  }, [currentModule, flushBeforeExport, notifyError, record, selectedShift, success, warning]);
+  }, [
+    currentModule,
+    flushBeforeExport,
+    getStableRecordForExport,
+    notifyError,
+    record,
+    selectedShift,
+    success,
+    warning,
+  ]);
 
   const handleBackupExcel = useCallback(async () => {
     setIsBackingUp(true);
     try {
+      await flushBeforeExport?.();
+      const exportRecord = getStableRecordForExport?.() ?? record;
       const outcome = await executeBackupCensusExcel({
         selectedYear,
         selectedMonth,
         selectedDay,
         currentDateString,
-        record,
+        record: exportRecord,
       });
       recordOperationalOutcome('backup', 'backup_census_excel', outcome, {
         date: currentDateString,
@@ -111,22 +125,25 @@ export const useExportManager = ({
       setIsBackingUp(false);
     }
   }, [
-    selectedYear,
-    selectedMonth,
-    selectedDay,
-    record,
     currentDateString,
+    flushBeforeExport,
+    getStableRecordForExport,
     setIsArchived,
+    selectedDay,
+    selectedMonth,
+    selectedYear,
     success,
     warning,
     notifyError,
+    record,
   ]);
 
   const handleBackupHandoff = useCallback(
     async (skipConfirmation = false) => {
-      if (!record) return;
+      const exportRecord = getStableRecordForExport?.() ?? record;
+      if (!exportRecord) return;
 
-      const [year, month, day] = record.date.split('-');
+      const [year, month, day] = exportRecord.date.split('-');
       const formattedDate = `${day}-${month}-${year}`;
       const shiftLabel = formatBackupShiftLabel(selectedShift);
       const actionLabel = isArchived ? 'Actualizar' : 'Guardar';
@@ -147,9 +164,14 @@ export const useExportManager = ({
 
       setIsBackingUp(true);
       try {
-        const outcome = await executeBackupHandoffPdf({ record, selectedShift });
+        await flushBeforeExport?.();
+        const stableRecord = getStableRecordForExport?.() ?? exportRecord;
+        const outcome = await executeBackupHandoffPdf({
+          record: stableRecord,
+          selectedShift,
+        });
         recordOperationalOutcome('backup', 'backup_handoff_pdf', outcome, {
-          date: record.date,
+          date: stableRecord?.date,
           context: { shift: selectedShift },
           allowSuccess: true,
         });
@@ -168,7 +190,18 @@ export const useExportManager = ({
         setIsBackingUp(false);
       }
     },
-    [confirm, isArchived, notifyError, record, selectedShift, setIsArchived, success, warning]
+    [
+      confirm,
+      flushBeforeExport,
+      getStableRecordForExport,
+      isArchived,
+      notifyError,
+      record,
+      selectedShift,
+      setIsArchived,
+      success,
+      warning,
+    ]
   );
 
   return {

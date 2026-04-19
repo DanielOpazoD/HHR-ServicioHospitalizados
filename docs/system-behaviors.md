@@ -172,6 +172,26 @@ Usuarios con "passport" pueden trabajar sin conexión a internet.
 - rutas distintas de login/censo:
   - pueden usar un loader inicial genérico mientras el runtime termina de materializarse.
 
+### Fases visibles del bootstrap de app
+
+El shell ya no debe tratar el bootstrap como una caja negra de solo `loading/no loading`.
+La fase visible esperada es:
+
+- `bootstrapping`:
+  - arranque pre-auth sin señales suficientes de sesión recuperable;
+  - puede usar shell visual de login en `"/"` y `"/login"`.
+- `rehydrating`:
+  - existe sesión/reconexión/auth runtime en materialización;
+  - no debe pintar login ni fondo de login en refreshes autenticados.
+- `authenticated`:
+  - shell autenticado listo.
+- `unauthenticated`:
+  - login real confirmado.
+- `local_only`:
+  - modo no autenticado o degradado sin runtime remoto utilizable.
+
+La UI no debe reinterpretar estos casos con heurísticas paralelas repartidas entre `index.tsx` y `App.tsx`; la política de presentación debe salir de helpers del app shell.
+
 ### Contrato anti-regresión para `"/census"`
 
 `Censo diario` tiene una regla deliberadamente más estricta que el resto del sistema:
@@ -218,6 +238,30 @@ Usuarios con "passport" pueden trabajar sin conexión a internet.
 
 - El bootstrap de auth esperaba el flujo completo de rehidratación incluso cuando ya no quedaban pistas reales de sesión local.
 - En paralelo, el singleton de feature flags intentaba leer overrides desde IndexedDB apenas se importaba.
+
+### Exportación desde snapshot persistido
+
+#### Contrato esperado
+
+- Exportar PDF, Excel o respaldo no debe leer estado visual transitorio.
+- Antes de exportar, el runtime debe:
+  1. forzar `blur` del editor activo;
+  2. esperar cualquier guardado pendiente;
+  3. resolver el registro estable más reciente;
+  4. recién entonces generar el documento.
+
+#### Consecuencia operativa
+
+- Si la pantalla muestra un cambio que ya disparó persistencia, el documento debe reflejarlo sin requerir una segunda edición “de confirmación”.
+- Queda prohibido que el exportador recomponga reglas clínicas por fuera de las policies compartidas del dominio.
+
+### Historial clínico reconciliado
+
+#### Contrato esperado
+
+- `patientHistoryService` es el dueño de la mezcla `IndexedDB + Firebase` para cierres de episodio.
+- El timeline del buscador no debe inventar cierres clínicos en JSX ni depender de interacción del usuario para que aparezca un egreso remoto.
+- Las pistas de hospitalización (`Ingreso`, `Egreso`, `Traslado`, `Fallecimiento`) deben servir para acotar el rango remoto relevante incluso si el cache local está incompleto.
 - Si el navegador acababa de perder su backing store local, `ensureDbReady()` entraba en la política de recuperación de IndexedDB y consumía los delays de retry (`500ms`, `1500ms`, `4000ms`) antes de caer a fallback.
 
 #### Comportamiento esperado actual

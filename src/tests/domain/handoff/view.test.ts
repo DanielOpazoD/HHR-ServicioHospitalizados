@@ -25,6 +25,12 @@ const RECORD = {
       patientName: 'Paciente UPC',
       specialty: Specialty.MEDICINA,
       isUPC: true,
+      upcChecklist: {
+        uciCriteria: ['uci_vmi'],
+        utiCriteria: [],
+        classification: 'UPC_UCI',
+        evaluatedAt: '2026-04-18T10:00:00Z',
+      },
     },
     H1C1: {
       patientName: 'Paciente Sala',
@@ -79,5 +85,25 @@ describe('handoff view domain', () => {
     ).toBe(
       'https://app.hospitalhangaroa.cl/handoff?module=MEDICAL_HANDOFF&date=2026-03-03&scope=upc&specialty=Cirug%C3%ADa'
     );
+  });
+
+  it('treats checklist-backed UPC beds as UPC even when the legacy boolean is stale', () => {
+    const staleRecord = {
+      ...RECORD,
+      beds: {
+        ...RECORD.beds,
+        R1: {
+          ...RECORD.beds.R1,
+          isUPC: false,
+        },
+      },
+    } as unknown as DailyRecord;
+
+    expect(filterBedsByMedicalScope(BEDS, staleRecord, true, 'upc').map(bed => bed.id)).toEqual([
+      'R1',
+    ]);
+    expect(filterBedsByMedicalScope(BEDS, staleRecord, true, 'no-upc').map(bed => bed.id)).toEqual([
+      'H1C1',
+    ]);
   });
 });

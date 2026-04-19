@@ -37,6 +37,11 @@ describe('useCensusTableModel', () => {
       }),
       R2: DataFactory.createMockPatient('R2', {
         patientName: '',
+        rut: '',
+      }),
+      E1: DataFactory.createMockPatient('E1', {
+        patientName: '',
+        rut: '12345678-9',
       }),
     };
 
@@ -60,6 +65,9 @@ describe('useCensusTableModel', () => {
     expect(
       result.current.unifiedRows.filter(row => row.kind === 'occupied').map(row => row.id)
     ).toContain('R1-cuna');
+    expect(
+      result.current.unifiedRows.filter(row => row.kind === 'occupied').map(row => row.id)
+    ).toContain('E1');
     expect(
       result.current.unifiedRows.filter(row => row.kind === 'empty').some(row => row.id === 'R2')
     ).toBe(true);
