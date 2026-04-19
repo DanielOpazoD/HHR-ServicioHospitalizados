@@ -5,8 +5,6 @@
 // statically without pulling the component tree into the authenticated-shell
 // chunk. Load those components via a dynamic import of './public-components'.
 export { useGlobalPatientSearch } from './components/global-search/useGlobalPatientSearch';
-export { useCensusPromptState } from './hooks/useCensusPromptState';
-export type { CensusPromptState } from './controllers/censusLogicController';
 export type { CensusAccessProfile } from './types/censusAccessProfile';
 export { isSpecialistCensusAccessProfile } from './types/censusAccessProfile';
 export type {
