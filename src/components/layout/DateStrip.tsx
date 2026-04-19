@@ -5,7 +5,10 @@
 
 import React, { useRef } from 'react';
 import { Search } from 'lucide-react';
-import { PdfButtons, SaveDropdown, HandoffSaveDropdown, EmailDropdown } from './DateStripActions';
+import { PdfButtons } from './date-strip/actions/PdfButtons';
+import { SaveDropdown } from './date-strip/actions/SaveDropdown';
+import { HandoffSaveDropdown } from './date-strip/actions/HandoffSaveDropdown';
+import { EmailDropdown } from './date-strip/actions/EmailDropdown';
 import { resolveShiftedMonthYear } from '@/components/layout/date-strip/dateStripNavigationController';
 import { DateStripDayButtons } from '@/components/layout/date-strip/DateStripDayButtons';
 import { DateStripQuickActions } from '@/components/layout/date-strip/DateStripQuickActions';

@@ -3,12 +3,10 @@ import { Share2 } from 'lucide-react';
 import { getTimeRoundedToStep } from '@/utils';
 import { BaseModal } from '@/components/shared/BaseModal';
 import { RECEIVING_CENTER_OTHER, isReceivingCenter } from '@/constants/clinical';
-import {
-  TransferClinicalCribNotice,
-  TransferEvacuationSection,
-  TransferReceivingSection,
-  TransferTimeField,
-} from '@/components/modals/actions/transfer';
+import { TransferClinicalCribNotice } from '@/components/modals/actions/transfer/TransferClinicalCribNotice';
+import { TransferEvacuationSection } from '@/components/modals/actions/transfer/TransferEvacuationSection';
+import { TransferReceivingSection } from '@/components/modals/actions/transfer/TransferReceivingSection';
+import { TransferTimeField } from '@/components/modals/actions/transfer/TransferTimeField';
 import { useTransferModalForm } from '@/hooks/useTransferModalForm';
 import type { TransferModalProps } from '@/hooks/types/censusActionModalContracts';
 import { getLatestOpenTransferRequestByBedId } from '@/services/transfers/transferService';

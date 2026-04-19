@@ -3,13 +3,11 @@ import { LogOut } from 'lucide-react';
 import { getTimeRoundedToStep } from '@/utils';
 import { BaseModal } from '@/components/shared/BaseModal';
 import { DischargeType } from '@/constants/clinical';
-import {
-  ClinicalCribStatusSection,
-  DischargeStatusRadioGroup,
-  DischargeTargetSelector,
-  DischargeTimeField,
-  DischargeTypeSelector,
-} from '@/components/modals/actions/discharge';
+import { ClinicalCribStatusSection } from '@/components/modals/actions/discharge/ClinicalCribStatusSection';
+import { DischargeStatusRadioGroup } from '@/components/modals/actions/discharge/DischargeStatusRadioGroup';
+import { DischargeTargetSelector } from '@/components/modals/actions/discharge/DischargeTargetSelector';
+import { DischargeTimeField } from '@/components/modals/actions/discharge/DischargeTimeField';
+import { DischargeTypeSelector } from '@/components/modals/actions/discharge/DischargeTypeSelector';
 import type { DischargeTarget } from '@/types/movements';
 import { shouldShowBabyStatus, shouldShowMotherStatus } from '@/application/census/public';
 import { useDischargeModalForm } from '@/hooks/useDischargeModalForm';
