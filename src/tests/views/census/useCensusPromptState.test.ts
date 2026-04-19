@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCensusPromptState } from '@/features/census/hooks/useCensusPromptState';
+import { DAILY_RECORD_STORE_CHANGED_EVENT } from '@/services/storage/indexeddb/indexedDbRecordEvents';
 
 const mockedExecuteLoadCensusPromptDataController = vi.fn();
 
@@ -91,5 +92,48 @@ describe('useCensusPromptState', () => {
 
     expect(result.current.previousRecordDate).toBe('2026-02-14');
     expect(result.current.previousRecordAvailable).toBe(true);
+  });
+
+  it('reloads prompt state when the local daily-record store changes', async () => {
+    mockedExecuteLoadCensusPromptDataController
+      .mockResolvedValueOnce({
+        previousRecordAvailable: false,
+        previousRecordDate: undefined,
+        availableDates: [],
+      })
+      .mockResolvedValueOnce({
+        previousRecordAvailable: true,
+        previousRecordDate: '2026-02-14',
+        availableDates: ['2026-02-14'],
+      });
+
+    const { result } = renderHook(() => useCensusPromptState('2026-02-15'));
+
+    await waitFor(() => {
+      expect(result.current).toEqual({
+        previousRecordAvailable: false,
+        previousRecordDate: undefined,
+        availableDates: [],
+      });
+    });
+
+    await act(async () => {
+      window.dispatchEvent(
+        new CustomEvent(DAILY_RECORD_STORE_CHANGED_EVENT, {
+          detail: { operation: 'save', dates: ['2026-02-14'] },
+        })
+      );
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(result.current).toEqual({
+        previousRecordAvailable: true,
+        previousRecordDate: '2026-02-14',
+        availableDates: ['2026-02-14'],
+      });
+    });
+
+    expect(mockedExecuteLoadCensusPromptDataController).toHaveBeenCalledTimes(2);
   });
 });
