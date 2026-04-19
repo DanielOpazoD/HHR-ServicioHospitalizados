@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getCurrentUserEmail } from '@/services/admin/utils/auditUtils';
 import {
   executeAnalyzePatients,
@@ -19,6 +19,7 @@ import {
 import { defaultAuditPort, type AuditPort } from '@/application/ports/auditPort';
 import { resolveApplicationOutcomeMessage } from '@/shared/contracts/applicationOutcomeMessage';
 import { patientAnalysisLogger } from '@/hooks/hookLoggers';
+import { DAILY_RECORD_STORE_CHANGED_EVENT } from '@/services/storage/indexeddb/indexedDbRecordEvents';
 
 export type { Conflict, AnalysisResult } from '@/application/patient-flow/patientAnalysisUseCase';
 
@@ -66,11 +67,27 @@ export const usePatientAnalysis = (dependencies?: Partial<PatientAnalysisDepende
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isMigrating, setIsMigrating] = useState(false);
   const [isHarmonizing, setIsHarmonizing] = useState(false);
+  const [isStale, setIsStale] = useState(false);
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [migrationResult, setMigrationResult] = useState<{
     successes: number;
     errors: number;
   } | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const handleStoreChanged = () => {
+      if (analysis) {
+        setIsStale(true);
+      }
+    };
+
+    window.addEventListener(DAILY_RECORD_STORE_CHANGED_EVENT, handleStoreChanged);
+    return () => window.removeEventListener(DAILY_RECORD_STORE_CHANGED_EVENT, handleStoreChanged);
+  }, [analysis]);
 
   const resolveConflict = useCallback(
     async (rut: string, correctName: string, harmonizeHistory: boolean = false) => {
@@ -117,6 +134,8 @@ export const usePatientAnalysis = (dependencies?: Partial<PatientAnalysisDepende
           'Analysis failed',
           new Error(resolveApplicationOutcomeMessage(outcome, 'Analysis failed'))
         );
+      } else {
+        setIsStale(false);
       }
       setAnalysis(outcome.data);
     } finally {
@@ -151,6 +170,7 @@ export const usePatientAnalysis = (dependencies?: Partial<PatientAnalysisDepende
     isAnalyzing,
     isMigrating,
     isHarmonizing,
+    isStale,
     analysis,
     migrationResult,
     runAnalysis,
