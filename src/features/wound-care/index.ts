@@ -1,1 +1,0 @@
-export { WoundCareModal } from './public';

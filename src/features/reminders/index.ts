@@ -1,1 +1,0 @@
-export { ReminderAdminView } from './public';

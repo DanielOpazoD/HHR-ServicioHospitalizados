@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { AccessRestricted } from './components/AccessRestricted';
 import { DataMaintenanceView } from './DataMaintenanceView';
 import { PatientMasterView } from './PatientMasterView';
-import { BackupFilesView } from '@/features/backup';
+import { BackupFilesView } from '@/features/backup/public';
 
 type DataTab = 'MAINTENANCE' | 'BACKUPS' | 'PATIENTS';
 

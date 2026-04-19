@@ -3,7 +3,7 @@ import { BellRing, MessageSquare } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '@/context/AuthContext';
 import { AccessRestricted } from './components/AccessRestricted';
-import { ReminderAdminView } from '@/features/reminders';
+import { ReminderAdminView } from '@/features/reminders/public';
 import { WhatsAppIntegrationView } from '@/features/whatsapp';
 
 type CommunicationsTab = 'REMINDERS' | 'WHATSAPP';

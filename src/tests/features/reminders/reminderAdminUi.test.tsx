@@ -35,7 +35,7 @@ vi.mock('@/features/reminders/hooks/useReminderAdmin', () => ({
 }));
 
 import { useAuth } from '@/context/AuthContext';
-import { ReminderAdminView } from '@/features/reminders';
+import { ReminderAdminView } from '@/features/reminders/public';
 import { ReminderFormModal } from '@/features/reminders/components/admin/ReminderFormModal';
 import { ReminderReadStatusTable } from '@/features/reminders/components/admin/ReminderReadStatusTable';
 import type { Reminder } from '@/types/reminders';

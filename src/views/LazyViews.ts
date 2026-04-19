@@ -21,7 +21,7 @@ export const CensusEmailConfigModal = lazyWithRetry(() =>
 );
 
 export const AnalyticsView = lazyWithRetry(() =>
-  import('@/features/analytics').then(module => ({
+  import('@/application/analytics/public').then(module => ({
     default: module.AnalyticsView,
   }))
 );
@@ -84,7 +84,7 @@ export const ErrorDashboard = lazyWithRetry(() =>
 );
 
 export const BackupFilesView = lazyWithRetry(() =>
-  import(/* webpackChunkName: "backup" */ '@/features/backup').then(module => ({
+  import(/* webpackChunkName: "backup" */ '@/application/backup/public').then(module => ({
     default: module.BackupFilesView,
   }))
 );
@@ -111,7 +111,7 @@ export const RoleManagementView = lazyWithRetry(() =>
   }))
 );
 export const ReminderAdminView = lazyWithRetry(() =>
-  import('@/features/reminders').then(module => ({
+  import('@/application/reminders/public').then(module => ({
     default: module.ReminderAdminView,
   }))
 );

@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { LoginPage } from '@/features/auth';
+import { LoginPage } from '@/features/auth/public';
 import { GlobalErrorBoundary } from '@/components/shared/GlobalErrorBoundary';
 import { VersionProvider } from '@/context/VersionContext';
 import { VersionMismatchOverlay } from '@/components/shared/VersionMismatchOverlay';
