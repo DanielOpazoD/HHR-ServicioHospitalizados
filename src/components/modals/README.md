@@ -8,7 +8,7 @@ Modales transversales de la aplicación (acciones clínicas, configuración, man
 
 | Archivo/Path                                     | Propósito                                                          |
 | ------------------------------------------------ | ------------------------------------------------------------------ |
-| `ActionModals.tsx`                               | Ensamble de modales clínicos principales                           |
+| `actions/*.tsx`                                  | Modales clínicos principales y sus entrypoints directos            |
 | `BedManagerModal.tsx`                            | Gestión de camas                                                   |
 | `BlockedBedsGrid.tsx` / `ExtraBedsGrid.tsx`      | Grillas presentacionales reutilizables para camas normales/extras  |
 | `BedReasonDialog.tsx`                            | Submodal reutilizable para edición/validación de motivo de bloqueo |

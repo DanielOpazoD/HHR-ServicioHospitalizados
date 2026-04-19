@@ -35,7 +35,9 @@ export { DeviceSelector } from './DeviceSelector';
 // ============================================================
 // MODALS
 // ============================================================
-export { MoveCopyModal, DischargeModal, TransferModal } from './modals/ActionModals';
+export { MoveCopyModal } from './modals/actions/MoveCopyModal';
+export { DischargeModal } from './modals/actions/DischargeModal';
+export { TransferModal } from './modals/actions/TransferModal';
 export { BedManagerModal } from './modals/BedManagerModal';
 export { DemographicsModal } from './modals/DemographicsModal';
 export { NurseManagerModal } from './modals/NurseManagerModal';

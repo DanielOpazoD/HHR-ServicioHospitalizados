@@ -11,7 +11,7 @@ import { PatientSelector } from './PatientSelector';
 import { BaseModal, ModalSection } from '@/components/shared/BaseModal';
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
 import { getDestinationHospitalCatalog } from '@/features/transfers/services/destinationHospitalCatalogService';
-import { getLocalDateInputValue } from '@/features/transfers/utils/localDate';
+import { getLocalDateInputValue } from '@/utils/localDate';
 import {
   buildTransferFormSubmission,
   resolveTransferFormState,

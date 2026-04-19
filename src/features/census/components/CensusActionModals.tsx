@@ -1,5 +1,7 @@
 import React from 'react';
-import { DischargeModal, MoveCopyModal, TransferModal } from '@/components/modals/ActionModals';
+import { MoveCopyModal } from '@/components/modals/actions/MoveCopyModal';
+import { DischargeModal } from '@/components/modals/actions/DischargeModal';
+import { TransferModal } from '@/components/modals/actions/TransferModal';
 import type { CensusActionModalPropsModel } from '@/features/census/hooks/useCensusActionModalProps';
 
 interface CensusActionModalsProps {
