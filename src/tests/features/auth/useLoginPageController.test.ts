@@ -14,7 +14,7 @@ const mockResolveAuthErrorCode = vi.fn();
 const mockIsAuthBootstrapPending = vi.fn();
 const mockGetCurrentAuthSessionState = vi.fn();
 
-vi.mock('@/application/auth', () => ({
+vi.mock('@/application/auth/authSessionUseCases', () => ({
   executeGoogleSignIn: (...args: unknown[]) => mockExecuteGoogleSignIn(...args),
 }));
 

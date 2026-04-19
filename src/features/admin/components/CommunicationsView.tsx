@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import { useAuth } from '@/context/AuthContext';
 import { AccessRestricted } from './components/AccessRestricted';
 import { ReminderAdminView } from '@/features/reminders/public';
-import { WhatsAppIntegrationView } from '@/features/whatsapp';
+import { WhatsAppIntegrationView } from '@/features/whatsapp/public';
 
 type CommunicationsTab = 'REMINDERS' | 'WHATSAPP';
 

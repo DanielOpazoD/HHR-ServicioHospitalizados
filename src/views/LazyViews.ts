@@ -118,7 +118,7 @@ export const ReminderAdminView = lazyWithRetry(() =>
 
 // WhatsApp module
 export const WhatsAppIntegrationView = lazyWithRetry(() =>
-  import(/* webpackChunkName: "whatsapp" */ '@/features/whatsapp').then(m => ({
+  import(/* webpackChunkName: "whatsapp" */ '@/application/whatsapp/public').then(m => ({
     default: m.WhatsAppIntegrationView,
   }))
 );

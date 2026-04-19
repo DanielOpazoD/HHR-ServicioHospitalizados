@@ -6,7 +6,7 @@ vi.unmock('@/hooks/useAuthState');
 import { useAuthState } from '@/hooks/useAuthState';
 import * as authSession from '@/services/auth/authSession';
 import * as authFallback from '@/services/auth/authFallback';
-import * as authUseCases from '@/application/auth';
+import * as authUseCases from '@/application/auth/authSessionUseCases';
 import * as auditService from '@/services/admin/auditService';
 import { setFirestoreSyncState } from '@/services/repositories/repositoryConfig';
 import type { AuthSessionState, AuthUser, UserRole } from '@/types/auth';
@@ -21,7 +21,7 @@ vi.mock('@/services/auth/authFallback', () => ({
   hasActiveFirebaseSession: vi.fn(),
 }));
 
-vi.mock('@/application/auth', () => ({
+vi.mock('@/application/auth/authSessionUseCases', () => ({
   executeRedirectAuthResolution: vi.fn(),
   executeResolvedCurrentAuthSessionState: vi.fn(),
 }));

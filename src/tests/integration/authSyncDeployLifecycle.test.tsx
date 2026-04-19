@@ -10,7 +10,7 @@ import { useVersionCheck } from '@/hooks/useVersionCheck';
 import type { AuthSessionState, AuthUser } from '@/types/auth';
 import * as authSession from '@/services/auth/authSession';
 import * as authFallback from '@/services/auth/authFallback';
-import * as authUseCases from '@/application/auth';
+import * as authUseCases from '@/application/auth/authSessionUseCases';
 import * as sessionScopedStorageService from '@/services/storage/sessionScopedStorageService';
 import * as bootstrapAppRuntime from '@/app-shell/bootstrap/bootstrapAppRuntime';
 
@@ -23,7 +23,7 @@ vi.mock('@/services/auth/authFallback', () => ({
   hasActiveFirebaseSession: vi.fn(),
 }));
 
-vi.mock('@/application/auth', () => ({
+vi.mock('@/application/auth/authSessionUseCases', () => ({
   executeRedirectAuthResolution: vi.fn(),
   executeResolvedCurrentAuthSessionState: vi.fn(),
 }));

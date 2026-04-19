@@ -4,7 +4,7 @@ import { hasActiveFirebaseSession } from '@/services/auth/authFallback';
 import {
   executeRedirectAuthResolution,
   executeResolvedCurrentAuthSessionState,
-} from '@/application/auth';
+} from '@/application/auth/authSessionUseCases';
 import { AuthSessionState, AuthUser, UserRole } from '@/types/auth';
 export type { AuthSessionState, UserRole };
 import {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { isPopupRecoverableAuthError, resolveAuthErrorCode } from '@/services/auth/authErrorPolicy';
 import { AUTH_UI_COPY } from '@/services/auth/authUiCopy';
-import { executeGoogleSignIn } from '@/application/auth';
+import { executeGoogleSignIn } from '@/application/auth/authSessionUseCases';
 import { isAuthBootstrapPending } from '@/services/auth/authBootstrapState';
 import { getCurrentAuthSessionState } from '@/services/auth/authSession';
 import { createScopedLogger } from '@/services/utils/loggerScope';

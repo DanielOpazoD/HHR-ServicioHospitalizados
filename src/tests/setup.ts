@@ -505,7 +505,7 @@ vi.mock('../services/auth/authSession', () => mockAuthSessionFactory());
 vi.mock('@/services/auth/authFallback', () => mockAuthFallbackFactory());
 vi.mock('../services/auth/authFallback', () => mockAuthFallbackFactory());
 
-vi.mock('@/application/auth', () => ({
+vi.mock('@/application/auth/authSessionUseCases', () => ({
   executeGoogleSignIn: vi.fn(),
   executeCredentialSignIn: vi.fn(),
   executeRedirectAuthResolution: vi.fn().mockResolvedValue({

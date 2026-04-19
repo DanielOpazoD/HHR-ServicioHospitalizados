@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.unmock('@/application/auth');
+vi.unmock('@/application/auth/authSessionUseCases');
 
 const mockSignIn = vi.fn();
 const mockSignInWithGoogle = vi.fn();
@@ -36,7 +36,7 @@ import {
   executeGoogleSignIn,
   executeResolvedCurrentAuthSessionState,
   executeRedirectAuthResolution,
-} from '@/application/auth';
+} from '@/application/auth/authSessionUseCases';
 
 describe('authSessionUseCases', () => {
   beforeEach(() => {
