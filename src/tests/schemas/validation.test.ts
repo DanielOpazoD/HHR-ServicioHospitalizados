@@ -8,7 +8,7 @@ import {
   validateCudyrScore,
   SpecialtySchema,
   parseDailyRecordWithDefaults,
-} from '@/schemas';
+} from '@/schemas/zodSchemas';
 import { Specialty } from '@/types/domain/patientClassification';
 
 describe('validation schema helpers', () => {

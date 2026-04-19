@@ -20,5 +20,5 @@ Definir validaciones estructurales y contratos de entrada con Zod.
 ## Ejemplo
 
 ```ts
-import { dailyRecordSchema } from '@/schemas';
+import { DailyRecordSchema } from '@/schemas/zodSchemas';
 ```
