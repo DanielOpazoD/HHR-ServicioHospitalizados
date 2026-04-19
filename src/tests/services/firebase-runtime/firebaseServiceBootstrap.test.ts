@@ -86,10 +86,12 @@ describe('firebaseServiceBootstrap', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
     Object.assign(import.meta.env, savedEnv);
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     setDevMode(true);
   });
 
@@ -158,6 +160,72 @@ describe('firebaseServiceBootstrap', () => {
       });
       // First attempt should be with browserLocalPersistence
       expect(setPersistenceMock).toHaveBeenCalledWith({ name: 'test-auth' }, { type: 'LOCAL' });
+    });
+
+    it('does not block bootstrap when local persistence stalls', async () => {
+      setPersistenceMock.mockImplementationOnce(() => new Promise(() => {}));
+
+      const services = await initializeFirebaseServices(TEST_CONFIG);
+
+      await vi.advanceTimersByTimeAsync(2_500);
+
+      expect(services).toEqual({
+        app: { name: 'test-app' },
+        auth: { name: 'test-auth' },
+        db: { name: 'test-db' },
+      });
+      expect(setPersistenceMock).toHaveBeenCalledTimes(1);
+      expect(setPersistenceMock.mock.calls[0]?.[1]).toEqual({ type: 'LOCAL' });
+    });
+
+    it('falls back to session persistence when local persistence rejects', async () => {
+      setPersistenceMock
+        .mockRejectedValueOnce(new Error('local broken'))
+        .mockResolvedValueOnce(undefined);
+
+      const services = await initializeFirebaseServices(TEST_CONFIG);
+
+      expect(services).toEqual({
+        app: { name: 'test-app' },
+        auth: { name: 'test-auth' },
+        db: { name: 'test-db' },
+      });
+      await vi.runAllTicks();
+      await Promise.resolve();
+
+      expect(setPersistenceMock).toHaveBeenCalledTimes(2);
+      expect(setPersistenceMock.mock.calls[0]?.[1]).toEqual({ type: 'LOCAL' });
+      expect(setPersistenceMock.mock.calls[1]?.[1]).toEqual({ type: 'SESSION' });
+    });
+
+    it('does not start fallback candidates on timeout before the previous attempt settles', async () => {
+      let rejectLocal: ((error: Error) => void) | undefined;
+      setPersistenceMock
+        .mockImplementationOnce(
+          () =>
+            new Promise((_, reject: (error: Error) => void) => {
+              rejectLocal = reject;
+            })
+        )
+        .mockResolvedValueOnce(undefined);
+
+      const services = await initializeFirebaseServices(TEST_CONFIG);
+
+      expect(services).toEqual({
+        app: { name: 'test-app' },
+        auth: { name: 'test-auth' },
+        db: { name: 'test-db' },
+      });
+
+      await vi.advanceTimersByTimeAsync(2_500);
+      expect(setPersistenceMock).toHaveBeenCalledTimes(1);
+
+      rejectLocal?.(new Error('late local failure'));
+      await vi.runAllTicks();
+      await Promise.resolve();
+
+      expect(setPersistenceMock).toHaveBeenCalledTimes(2);
+      expect(setPersistenceMock.mock.calls[1]?.[1]).toEqual({ type: 'SESSION' });
     });
   });
 

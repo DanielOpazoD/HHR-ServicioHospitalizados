@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { calculateStats } from '@/services/calculations/statsCalculator';
 import type { PatientData } from '@/types/domain/patient';
 import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
-import { HOSPITAL_CAPACITY } from '@/constants/beds';
+import { BEDS, HOSPITAL_CAPACITY } from '@/constants/beds';
 
 describe('statsCalculator', () => {
   type BedValue = PatientData;
@@ -14,6 +14,39 @@ describe('statsCalculator', () => {
     expect(stats.occupiedBeds).toBe(0);
     expect(stats.totalHospitalized).toBe(0);
     expect(stats.serviceCapacity).toBe(HOSPITAL_CAPACITY);
+    expect(stats.availableCapacity).toBe(HOSPITAL_CAPACITY);
+  });
+
+  it('should return zero stats for empty canonical bed map', () => {
+    const beds: Record<string, PatientData> = {};
+    BEDS.forEach(bed => {
+      beds[bed.id] = {
+        bedId: bed.id,
+        isBlocked: false,
+        bedMode: 'Cama',
+        hasCompanionCrib: false,
+        patientName: '',
+        rut: '',
+        age: '',
+        pathology: '',
+        specialty: Specialty.MEDICINA,
+        status: PatientStatus.ESTABLE,
+        admissionDate: '2025-01-01',
+        hasWristband: false,
+        devices: [],
+        surgicalComplication: false,
+        isUPC: false,
+      };
+    });
+
+    const stats = calculateStats(beds);
+
+    expect(stats.occupiedBeds).toBe(0);
+    expect(stats.occupiedCribs).toBe(0);
+    expect(stats.totalHospitalized).toBe(0);
+    expect(stats.blockedBeds).toBe(0);
+    expect(stats.companionCribs).toBe(0);
+    expect(stats.clinicalCribsCount).toBe(0);
   });
 
   it('should count occupied beds and blocked beds', () => {
