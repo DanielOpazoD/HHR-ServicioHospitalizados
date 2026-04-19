@@ -94,6 +94,7 @@ describe('censusTableViewController', () => {
     const bedsMap = {
       R1: DataFactory.createMockPatient('R1', {
         patientName: '',
+        rut: '',
         isBlocked: false,
         clinicalCrib: DataFactory.createMockPatient('R1-cuna', {
           patientName: 'RN huérfano',
@@ -111,6 +112,39 @@ describe('censusTableViewController', () => {
       'R1',
       'R2',
       'E1',
+    ]);
+  });
+
+  it('keeps activation placeholders empty while preserving blocked and RUT-only occupied rows', () => {
+    const bedsMap = {
+      R1: DataFactory.createMockPatient('R1', {
+        patientName: '   ',
+        rut: '',
+        isBlocked: false,
+      }),
+      R2: DataFactory.createMockPatient('R2', {
+        patientName: '',
+        rut: '',
+        isBlocked: true,
+      }),
+      E1: DataFactory.createMockPatient('E1', {
+        patientName: '',
+        rut: '12345678-9',
+        isBlocked: false,
+      }),
+    };
+
+    const result = buildCensusBedRows({
+      visibleBeds: TEST_BEDS,
+      beds: bedsMap,
+    });
+
+    expect(result.unifiedRows.filter(row => row.kind === 'occupied').map(row => row.id)).toEqual([
+      'R2',
+      'E1',
+    ]);
+    expect(result.unifiedRows.filter(row => row.kind === 'empty').map(row => row.id)).toEqual([
+      'R1',
     ]);
   });
 });
