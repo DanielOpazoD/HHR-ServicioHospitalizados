@@ -8,7 +8,6 @@ import {
 import type { CensusEmailBrowserRuntime } from '@/hooks/controllers/censusEmailBrowserRuntimeController';
 import {
   type RecipientRuntimeState,
-  resolveRecipientMutationFailureMessage,
   resolveRecipientSelectionRuntimeState,
   resolveRecipientSyncState,
 } from '@/hooks/controllers/censusEmailRecipientRuntimeController';
@@ -18,7 +17,7 @@ import {
   buildRenameRecipientListMutationSpec,
   type RecipientRuntimeMutationSpec,
 } from '@/hooks/controllers/censusEmailRecipientMutationActionController';
-import { withRecipientListUseCases } from '@/hooks/controllers/censusEmailRecipientUseCaseLoader';
+import { executeRecipientRuntimeMutationSpec } from '@/hooks/controllers/censusEmailRecipientMutationRunner';
 import { useCensusEmailRecipientBootstrapEffect } from '@/hooks/useCensusEmailRecipientBootstrapEffect';
 import { useCensusEmailRecipientDeferredSyncEffect } from '@/hooks/useCensusEmailRecipientDeferredSyncEffect';
 import { useCensusEmailRecipientPersistenceEffect } from '@/hooks/useCensusEmailRecipientPersistenceEffect';
@@ -134,76 +133,16 @@ export const useCensusEmailRecipientLists = ({
     ]
   );
 
-  const runRecipientListMutation = useCallback(
-    async <T>(
-      execute: () => Promise<{
-        status: string;
-        data?: T;
-        issues?: Array<{ message?: string; userSafeMessage?: string }>;
-        userSafeMessage?: string;
-      }>,
-      {
-        onSuccess,
-        fallbackMessage,
-      }: {
-        onSuccess: (data: NonNullable<T>) => void;
-        fallbackMessage: string;
-      }
-    ) => {
-      setIsRecipientsSyncing(true);
-      setRecipientsSyncError(null);
-      try {
-        const result = await execute();
-        if (result.status === 'success' && result.data != null) {
-          onSuccess(result.data as NonNullable<T>);
-          return;
-        }
-
-        setRecipientsSyncError(resolveRecipientMutationFailureMessage(result, fallbackMessage));
-      } finally {
-        setIsRecipientsSyncing(false);
-      }
-    },
-    []
-  );
-
-  const runRecipientRuntimeMutation = useCallback(
-    async <T>(
-      execute: () => Promise<{
-        status: string;
-        data?: T;
-        issues?: Array<{ message?: string; userSafeMessage?: string }>;
-        userSafeMessage?: string;
-      }>,
-      {
-        resolveRuntimeState,
-        fallbackMessage,
-      }: {
-        resolveRuntimeState: (data: NonNullable<T>) => RecipientRuntimeState | null;
-        fallbackMessage: string;
-      }
-    ) => {
-      await runRecipientListMutation(execute, {
-        onSuccess: result => {
-          const nextState = resolveRuntimeState(result);
-          if (nextState) {
-            applyRecipientRuntimeStateWithPersistence(nextState);
-          }
-        },
-        fallbackMessage,
-      });
-    },
-    [applyRecipientRuntimeStateWithPersistence, runRecipientListMutation]
-  );
-
   const executeRecipientRuntimeMutation = useCallback(
     async <T>(spec: RecipientRuntimeMutationSpec<T>) => {
-      await runRecipientRuntimeMutation(
-        () => withRecipientListUseCases(useCases => spec.execute(useCases)),
-        spec
-      );
+      await executeRecipientRuntimeMutationSpec(spec, {
+        applyRuntimeState: applyRecipientRuntimeStateWithPersistence,
+        resolveRuntimeState: spec.resolveRuntimeState,
+        setRecipientsSyncing: setIsRecipientsSyncing,
+        setRecipientsSyncError,
+      });
     },
-    [runRecipientRuntimeMutation]
+    [applyRecipientRuntimeStateWithPersistence]
   );
 
   useCensusEmailRecipientBootstrapEffect({

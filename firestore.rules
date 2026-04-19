@@ -71,89 +71,89 @@ service cloud.firestore {
     // 1.2 Role resolution (configured + claim + bootstrap)
     // ---------------------------------------------
 
-	    function normalizeRole(role) {
-	      return role == 'viewer_census'
-	        ? 'viewer'
-	        : role;
-	    }
+    function normalizeRole(role) {
+      return role == 'viewer_census'
+        ? 'viewer'
+        : role;
+    }
 
-	    function getConfiguredRole() {
-	      return hasEmail() &&
-	             exists(/databases/$(database)/documents/config/roles)
-	        ? normalizeRole(get(/databases/$(database)/documents/config/roles).data[getUserEmail()])
-	        : null;
-	    }
+    function getConfiguredRole() {
+      return hasEmail() &&
+             exists(/databases/$(database)/documents/config/roles)
+        ? normalizeRole(get(/databases/$(database)/documents/config/roles).data[getUserEmail()])
+        : null;
+    }
 
-	    function getClaimRole() {
-	      return isAuthenticated() &&
-	             request.auth.token.keys().hasAny(['role']) &&
-	             request.auth.token.role != null
-	        ? normalizeRole(request.auth.token.role)
-	        : null;
-	    }
+    function getClaimRole() {
+      return isAuthenticated() &&
+             request.auth.token.keys().hasAny(['role']) &&
+             request.auth.token.role != null
+        ? normalizeRole(request.auth.token.role)
+        : null;
+    }
 
-	    function getEffectiveRole() {
-	      let configuredRole = getConfiguredRole();
-	      return configuredRole != null
-	        ? configuredRole
-	        : getClaimRole();
-	    }
+    function getEffectiveRole() {
+      let configuredRole = getConfiguredRole();
+      return configuredRole != null
+        ? configuredRole
+        : getClaimRole();
+    }
 
-	    function hasEffectiveRole(role) {
-	      return isAuthenticated() && getEffectiveRole() == role;
-	    }
+    function hasEffectiveRole(role) {
+      return isAuthenticated() && getEffectiveRole() == role;
+    }
 
-	    function hasAnyEffectiveRole(roles) {
-	      let effectiveRole = getEffectiveRole();
-	      return isAuthenticated() &&
-	             effectiveRole != null &&
-	             roles.hasAny([effectiveRole]);
-	    }
+    function hasAnyEffectiveRole(roles) {
+      let effectiveRole = getEffectiveRole();
+      return isAuthenticated() &&
+             effectiveRole != null &&
+             roles.hasAny([effectiveRole]);
+    }
 
-	    function hasBootstrapOrEffectiveRole(role) {
-	      return isBootstrapAdmin() || hasEffectiveRole(role);
-	    }
+    function hasBootstrapOrEffectiveRole(role) {
+      return isBootstrapAdmin() || hasEffectiveRole(role);
+    }
 
-	    function hasBootstrapOrAnyEffectiveRole(roles) {
-	      return isBootstrapAdmin() || hasAnyEffectiveRole(roles);
-	    }
-	    
+    function hasBootstrapOrAnyEffectiveRole(roles) {
+      return isBootstrapAdmin() || hasAnyEffectiveRole(roles);
+    }
+
     //
     // 1.3 Role predicates (convenience wrappers)
     // ---------------------------------------------
 
-	    function isAdmin() {
-	      return hasBootstrapOrEffectiveRole('admin');
-	    }
+    function isAdmin() {
+      return hasBootstrapOrEffectiveRole('admin');
+    }
 
-	    function hasAdminOrEffectiveRole(role) {
-	      return isAdmin() || hasEffectiveRole(role);
-	    }
-	    
-	    function isNurse() {
-	      return hasAdminOrEffectiveRole('nurse_hospital');
-	    }
+    function hasAdminOrEffectiveRole(role) {
+      return isAdmin() || hasEffectiveRole(role);
+    }
 
-	    function isDoctor() {
-	      return hasAdminOrEffectiveRole('doctor_urgency');
-	    }
+    function isNurse() {
+      return hasAdminOrEffectiveRole('nurse_hospital');
+    }
 
-	    function isDoctorSpecialist() {
-	      return hasAdminOrEffectiveRole('doctor_specialist');
-	    }
-	    
-	    // Check if user can edit (admin or nurse)
-	    function canEdit() {
-	      return hasBootstrapOrAnyEffectiveRole(['admin', 'nurse_hospital']);
-	    }
+    function isDoctor() {
+      return hasAdminOrEffectiveRole('doctor_urgency');
+    }
 
-	    function canReportSystemHealth() {
-	      return canEdit();
-	    }
+    function isDoctorSpecialist() {
+      return hasAdminOrEffectiveRole('doctor_specialist');
+    }
 
-	    function isEditorRole() {
-		      return hasEffectiveRole('editor');
-		    }
+    // Check if user can edit (admin or nurse)
+    function canEdit() {
+      return hasBootstrapOrAnyEffectiveRole(['admin', 'nurse_hospital']);
+    }
+
+    function canReportSystemHealth() {
+      return canEdit();
+    }
+
+    function isEditorRole() {
+      return hasEffectiveRole('editor');
+    }
 
     //
     // 1.4 Specialist medical handoff validators
@@ -371,21 +371,33 @@ service cloud.firestore {
     // 1.5 Clinical read access, invitations & receipts
     // ---------------------------------------------
 
-	    function isGeneralViewer() {
-	      return hasEffectiveRole('viewer');
-	    }
+    function isGeneralViewer() {
+      return hasEffectiveRole('viewer');
+    }
 
-	    // Consolidated read access for clinical data
-	    function canReadClinicalData() {
-	      return hasBootstrapOrAnyEffectiveRole([
-	               'admin',
-	               'nurse_hospital',
-	               'doctor_urgency',
-	               'doctor_specialist',
-	               'editor',
-	               'viewer'
-	             ]);
-	    }
+    // Consolidated read access for clinical data
+    function canReadClinicalData() {
+      return hasBootstrapOrAnyEffectiveRole([
+               'admin',
+               'nurse_hospital',
+               'doctor_urgency',
+               'doctor_specialist',
+               'editor',
+               'viewer'
+             ]);
+    }
+
+    function canReadAppendOnlyOperationalLog() {
+      return isAdmin();
+    }
+
+    function canCreateAppendOnlyOperationalLogEntry() {
+      return canCreateReadableClinicalDocument();
+    }
+
+    function canWriteReminderReceipt() {
+      return isAdmin() || isValidOwnReminderReceiptWrite();
+    }
 
     function canManageCensusAccess() {
       return hasBootstrapOrAnyEffectiveRole(['admin', 'editor']);
@@ -731,11 +743,11 @@ service cloud.firestore {
         allow read: if canReadClinicalData();
         allow create, update, delete: if isAdmin();
 
-	        match /readReceipts/{receiptId} {
-	          allow read: if canReadReminderReceipt();
-	          allow create, update: if isAdmin() || isValidOwnReminderReceiptWrite();
-	          allow delete: if isAdmin();
-	        }
+        match /readReceipts/{receiptId} {
+          allow read: if canReadReminderReceipt();
+          allow create, update: if canWriteReminderReceipt();
+          allow delete: if isAdmin();
+        }
       }
       
       // ----------------------------------------
@@ -750,8 +762,8 @@ service cloud.firestore {
       // AUDIT LOGS (Hospital-level)
       // ----------------------------------------
       match /auditLogs/{logId} {
-        allow read: if isAdmin();
-        allow create: if canCreateReadableClinicalDocument();
+        allow read: if canReadAppendOnlyOperationalLog();
+        allow create: if canCreateAppendOnlyOperationalLogEntry();
         // Append-only: admin tampering prevention. Consolidation is read-time.
         allow update, delete: if false;
       }
@@ -821,8 +833,8 @@ service cloud.firestore {
       // Client rule mirrors auditLogs: admin read-only.
       // ----------------------------------------
       match /functionsTelemetry/{entryId} {
-        allow read: if isAdmin();
-        allow create: if canCreateReadableClinicalDocument();
+        allow read: if canReadAppendOnlyOperationalLog();
+        allow create: if canCreateAppendOnlyOperationalLogEntry();
         allow update, delete: if false;
       }
     }
@@ -831,8 +843,8 @@ service cloud.firestore {
     // 2.2 TOP-LEVEL AUDIT LOGS (Legacy/Fallback)
     // ============================================
     match /auditLogs/{logId} {
-      allow read: if isAdmin();
-      allow create: if canCreateReadableClinicalDocument();
+      allow read: if canReadAppendOnlyOperationalLog();
+      allow create: if canCreateAppendOnlyOperationalLogEntry();
       // Append-only: admin tampering prevention. Consolidation is read-time.
       allow update, delete: if false;
     }
@@ -869,8 +881,8 @@ service cloud.firestore {
     }
     
     match /whatsappLogs/{logId} {
-      allow read: if isAdmin();
-      allow create: if canCreateReadableClinicalDocument();
+      allow read: if canReadAppendOnlyOperationalLog();
+      allow create: if canCreateAppendOnlyOperationalLogEntry();
       allow update, delete: if false;
     }
     
