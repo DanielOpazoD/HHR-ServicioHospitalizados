@@ -5,16 +5,20 @@ import {
   type ApplicationIssue,
   type ApplicationOutcome,
 } from '@/shared/contracts/applicationOutcome';
+import { ReminderImageService } from '@/services/reminders/ReminderImageService';
 import {
-  ReminderImageService,
   ReminderReadService,
-  ReminderRepository,
-  resolveReminderAdminErrorMessage,
-  type ReminderOperationErrorKind,
   type ReminderReadReceiptsResult,
+} from '@/services/reminders/ReminderReadService';
+import {
+  ReminderRepository,
   type ReminderRepositoryListResult,
   type ReminderRepositoryMutationResult,
-} from '@/services/reminders';
+} from '@/services/reminders/ReminderRepository';
+import {
+  resolveReminderAdminErrorMessage,
+  type ReminderOperationErrorKind,
+} from '@/services/reminders/reminderErrorPolicy';
 import type { Reminder, ReminderReadReceipt, ReminderShift } from '@/types/reminders';
 
 interface ReminderUseCasesDependencies {

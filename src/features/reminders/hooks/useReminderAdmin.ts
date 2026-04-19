@@ -7,7 +7,7 @@ import {
   validateReminderDraft,
   type ReminderDraftInput,
 } from '@/domain/reminders/reminderValidation';
-import { resolveReminderAdminErrorMessage } from '@/services/reminders';
+import { resolveReminderAdminErrorMessage } from '@/services/reminders/reminderErrorPolicy';
 import type { Reminder, ReminderReadReceipt } from '@/types/reminders';
 
 const buildReminderId = (): string => {

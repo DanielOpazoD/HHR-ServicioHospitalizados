@@ -35,14 +35,20 @@ vi.mock('@/context/AuthContext', () => ({
   }),
 }));
 
-vi.mock('@/services/reminders', () => ({
+vi.mock('@/services/reminders/ReminderImageService', () => ({
   ReminderImageService: {
     uploadImage: vi.fn(),
     deleteImage: vi.fn(),
   },
+}));
+
+vi.mock('@/services/reminders/ReminderRepository', () => ({
   ReminderRepository: {
     subscribe: (...args: unknown[]) => subscribeMock(...args),
   },
+}));
+
+vi.mock('@/services/reminders/ReminderReadService', () => ({
   ReminderReadService: {
     getUserShiftReadState: (...args: unknown[]) => getUserShiftReadStateMock(...args),
     markAsReadWithResult: (...args: unknown[]) => markAsReadWithResultMock(...args),
@@ -54,6 +60,9 @@ vi.mock('@/services/reminders', () => ({
       readAt: '2026-03-15T12:00:00.000Z',
     })),
   },
+}));
+
+vi.mock('@/services/reminders/reminderErrorPolicy', () => ({
   resolveReminderAdminErrorMessage: vi.fn(() => 'No fue posible cargar avisos.'),
 }));
 
