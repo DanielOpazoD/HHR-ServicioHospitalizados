@@ -3,7 +3,7 @@
  * React hook for MINSAL/DEIS hospital statistics with range-based loading.
  */
 
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/config/queryClient';
@@ -24,6 +24,11 @@ import {
 } from '@/types/minsalTypes';
 import type { DailyRecord } from '@/application/shared/dailyRecordCoreContracts';
 import { defaultFunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
+import {
+  DAILY_RECORD_STORE_CHANGED_EVENT,
+  type DailyRecordStoreChangedEventDetail,
+  isDailyRecordStoreChangeRelevantToRange,
+} from '@/services/storage/indexeddb/indexedDbRecordEvents';
 
 interface UseMinsalStatsResult {
   stats: MinsalStatistics | null;
@@ -73,8 +78,34 @@ export function useMinsalStats(initialPreset: DateRangePreset = 'lastMonth'): Us
     }
   }, [dateRange]);
 
+  const localRecordsQueryKey = useMemo(
+    () => queryKeys.analytics.recordsRange(startDate, endDate),
+    [startDate, endDate]
+  );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const handleStoreChanged = (event: Event) => {
+      const detail = (event as CustomEvent<DailyRecordStoreChangedEventDetail>).detail;
+      if (!isDailyRecordStoreChangeRelevantToRange(detail, startDate, endDate)) {
+        return;
+      }
+
+      void queryClient.invalidateQueries({
+        queryKey: localRecordsQueryKey,
+        exact: true,
+      });
+    };
+
+    window.addEventListener(DAILY_RECORD_STORE_CHANGED_EVENT, handleStoreChanged);
+    return () => window.removeEventListener(DAILY_RECORD_STORE_CHANGED_EVENT, handleStoreChanged);
+  }, [queryClient, localRecordsQueryKey, startDate, endDate]);
+
   const recordsQuery = useQuery({
-    queryKey: queryKeys.analytics.recordsRange(startDate, endDate),
+    queryKey: localRecordsQueryKey,
     queryFn: async (): Promise<DailyRecord[]> => {
       const localRecords = await fetchRecordsRangeSorted(startDate, endDate);
       const expectedDays = getDaysInRange(startDate, endDate);
