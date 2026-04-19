@@ -2,19 +2,20 @@
  * Lazy-loaded view components
  * Loaded on-demand when the user navigates to them
  */
+import { loadCensusPublicComponents } from '@/application/census/public';
 import { lazyWithRetry } from '@/utils/lazyWithRetry';
 
 // Census module heavy components (prefetch for faster navigation).
 // Load from public-components so the app-authenticated-shell chunk does
 // not pull in the CensusView tree through the light controller barrel.
 export const CensusView = lazyWithRetry(() =>
-  import(/* webpackPrefetch: true */ '@/features/census/public-components').then(module => ({
+  loadCensusPublicComponents().then(module => ({
     default: module.CensusView,
   }))
 );
 
 export const CensusEmailConfigModal = lazyWithRetry(() =>
-  import('@/features/census/public-components').then(module => ({
+  loadCensusPublicComponents().then(module => ({
     default: module.CensusEmailConfigModal,
   }))
 );

@@ -13,6 +13,7 @@ import {
   type BackupStorageMutationResult,
 } from './backupStorageRuntimeSupport';
 import { assertStorageAvailable } from './storageAvailability';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
 // ============================================================================
 // Types
@@ -40,6 +41,8 @@ interface WoundCareStorageService {
 
 const resolveContentType = (metadata: Record<string, string>): string =>
   metadata.contentType || 'application/octet-stream';
+
+const woundCareStorageLogger = createScopedLogger('WoundCareStorage');
 
 // ============================================================================
 // Factory
@@ -103,9 +106,9 @@ export const createWoundCareStorageService = (
         const storage = await resolveBackupStorage(runtime);
         assertStorageAvailable(storage, 'WoundCareStorage', 'getDownloadUrl');
         const storageRef = ref(storage, storagePath);
-        return getDownloadURL(storageRef);
+        return await getDownloadURL(storageRef);
       } catch (error) {
-        console.error('[WoundCareStorage] Error getting download URL:', error);
+        woundCareStorageLogger.error('Error getting download URL', error);
         throw error;
       }
     },

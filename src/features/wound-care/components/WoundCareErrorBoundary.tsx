@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { Camera, RefreshCw } from 'lucide-react';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
 interface Props {
   children: React.ReactNode;
@@ -10,6 +11,8 @@ interface State {
   hasError: boolean;
   error: Error | null;
 }
+
+const woundCareErrorBoundaryLogger = createScopedLogger('WoundCareErrorBoundary');
 
 /**
  * Error boundary for the wound care module.
@@ -24,7 +27,11 @@ export class WoundCareErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.error('[WoundCare] Error boundary caught:', error, info.componentStack);
+    woundCareErrorBoundaryLogger.error('Error boundary caught', {
+      error,
+      componentStack: info.componentStack,
+      patientName: this.props.patientName,
+    });
   }
 
   handleRetry = () => {

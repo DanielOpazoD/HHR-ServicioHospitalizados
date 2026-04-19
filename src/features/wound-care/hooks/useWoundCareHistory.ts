@@ -14,6 +14,7 @@ import {
   type WoundCarePhotoPort,
   type WoundCareConsentPort,
 } from '@/application/ports/woundCarePort';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 
 /**
  * A group of wound care photos and their associated consent for a single
@@ -45,6 +46,8 @@ interface UseWoundCareHistoryReturn {
   isLoading: boolean;
   reload: () => void;
 }
+
+const woundCareHistoryLogger = createScopedLogger('WoundCareHistory');
 
 /**
  * Load wound care photo and consent history across all hospitalizations
@@ -90,7 +93,7 @@ export const useWoundCareHistory = ({
       })
       .catch(error => {
         if (cancelled) return;
-        console.error('[WoundCareHistory] Error cargando historial:', error);
+        woundCareHistoryLogger.error('Error loading wound care history', error);
         setIsLoading(false);
       });
 

@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { loadCensusPublicComponents } from '@/application/census/public';
 import { lazyWithRetry } from '@/utils/lazyWithRetry';
 import { SyncWatcher } from '@/components/shared/SyncWatcher';
 import StorageStatusBadge from '@/components/layout/StorageStatusBadge';
@@ -14,7 +15,7 @@ const ReminderModal = lazyWithRetry(() =>
   import('@/components/reminders/ReminderModal').then(m => ({ default: m.ReminderModal }))
 );
 const GlobalPatientSearchModal = lazyWithRetry(() =>
-  import('@/features/census/public-components').then(m => ({
+  loadCensusPublicComponents().then(m => ({
     default: m.GlobalPatientSearchModal,
   }))
 );

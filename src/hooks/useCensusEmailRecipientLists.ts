@@ -12,15 +12,16 @@ import {
   resolveRecipientSelectionRuntimeState,
   resolveRecipientSyncState,
 } from '@/hooks/controllers/censusEmailRecipientRuntimeController';
-import { scheduleDeferredRecipientSync } from '@/hooks/controllers/censusEmailRecipientDeferredSyncController';
 import {
   buildCreateRecipientListMutationSpec,
   buildDeleteRecipientListMutationSpec,
   buildRenameRecipientListMutationSpec,
   type RecipientRuntimeMutationSpec,
 } from '@/hooks/controllers/censusEmailRecipientMutationActionController';
-import { resolveDeferredRecipientSyncInput } from '@/hooks/controllers/censusEmailRecipientSyncController';
 import { withRecipientListUseCases } from '@/hooks/controllers/censusEmailRecipientUseCaseLoader';
+import { useCensusEmailRecipientBootstrapEffect } from '@/hooks/useCensusEmailRecipientBootstrapEffect';
+import { useCensusEmailRecipientDeferredSyncEffect } from '@/hooks/useCensusEmailRecipientDeferredSyncEffect';
+import { useCensusEmailRecipientPersistenceEffect } from '@/hooks/useCensusEmailRecipientPersistenceEffect';
 
 const RECIPIENT_LIST_KEY = 'censusEmailActiveRecipientListId';
 const RECIPIENTS_STORAGE_KEY = 'censusEmailRecipients';
@@ -205,84 +206,37 @@ export const useCensusEmailRecipientLists = ({
     [runRecipientRuntimeMutation]
   );
 
-  useEffect(() => {
-    let isActive = true;
-
-    const loadRecipients = async () => {
-      const runtimeResult = await withRecipientListUseCases(
-        ({ executeLoadCensusRecipientRuntimeState }) =>
-          executeLoadCensusRecipientRuntimeState({
-            canManageGlobalRecipientLists,
-            browserRuntime,
-            enabled,
-            activeListStorageKey: RECIPIENT_LIST_KEY,
-            recipientsStorageKey: RECIPIENTS_STORAGE_KEY,
-            user,
-          })
-      );
-
-      if (!isActive) return;
-
-      if (runtimeResult.status === 'success' && runtimeResult.data) {
-        applyRecipientRuntimeState(runtimeResult.data);
-      }
-    };
-
-    void loadRecipients();
-
-    return () => {
-      isActive = false;
-    };
-  }, [browserRuntime, canManageGlobalRecipientLists, enabled, applyRecipientRuntimeState, user]);
-
-  useEffect(() => {
-    if (!recipientsReadyRef.current) return;
-    void saveAppSetting(RECIPIENTS_STORAGE_KEY, recipients);
-  }, [recipients]);
-
-  useEffect(() => {
-    if (!enabled) {
-      return;
-    }
-
-    const syncInput = resolveDeferredRecipientSyncInput({
-      canManageGlobalRecipientLists,
-      recipientsReady: recipientsReadyRef.current,
-      recipients,
-      lastRemoteRecipients: lastRemoteRecipientsRef.current,
-      recipientLists,
-      activeRecipientListId: activeRecipientListIdRef.current,
-      actor: user,
-    });
-    if (!syncInput) {
-      return;
-    }
-
-    return scheduleDeferredRecipientSync({
-      syncInput,
-      recipients,
-      executeSync: input =>
-        withRecipientListUseCases(({ executeSyncCensusRecipientList }) =>
-          executeSyncCensusRecipientList(input)
-        ),
-      onSyncStart: () => {
-        setIsRecipientsSyncing(true);
-        setRecipientsSyncError(null);
-      },
-      onSyncState: applyRecipientSyncState,
-      onSyncComplete: () => {
-        setIsRecipientsSyncing(false);
-      },
-    });
-  }, [
-    activeRecipientListId,
+  useCensusEmailRecipientBootstrapEffect({
     canManageGlobalRecipientLists,
+    browserRuntime,
     enabled,
-    recipientLists,
-    recipients,
     user,
-    applyRecipientSyncState,
-  ]);
+    applyRecipientRuntimeState,
+  });
+
+  useCensusEmailRecipientPersistenceEffect({
+    recipientsReady: recipientsReadyRef.current,
+    recipients,
+  });
+
+  useCensusEmailRecipientDeferredSyncEffect({
+    enabled,
+    canManageGlobalRecipientLists,
+    recipientsReady: recipientsReadyRef.current,
+    recipients,
+    lastRemoteRecipients: lastRemoteRecipientsRef.current,
+    recipientLists,
+    activeRecipientListId: activeRecipientListIdRef.current,
+    user,
+    onSyncStart: () => {
+      setIsRecipientsSyncing(true);
+      setRecipientsSyncError(null);
+    },
+    onSyncState: applyRecipientSyncState,
+    onSyncComplete: () => {
+      setIsRecipientsSyncing(false);
+    },
+  });
 
   const createRecipientList = useCallback(
     async (name: string) => {

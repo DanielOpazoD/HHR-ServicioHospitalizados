@@ -34,6 +34,7 @@ vi.mock('@/services/firebase-runtime/backupRuntime', () => ({
 
 import { uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { createWoundCareStorageService } from '@/services/backup/woundCareStorageService';
+import { logger } from '@/services/utils/loggerService';
 
 // ============================================================================
 // Tests
@@ -44,6 +45,9 @@ describe('woundCareStorageService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    logger.setLevel('debug');
+    logger.clearEntries();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   // --------------------------------------------------------------------------
@@ -127,5 +131,23 @@ describe('woundCareStorageService', () => {
 
     expect(result.status).toBe('unknown');
     expect(result.data).toBeNull();
+  });
+
+  it('getDownloadUrl logs failures through the structured logger before rethrowing', async () => {
+    const downloadError = new Error('download-failed');
+    vi.mocked(getDownloadURL).mockRejectedValueOnce(downloadError);
+
+    await expect(service.getDownloadUrl('wound-care/photos/fail.webp')).rejects.toThrow(
+      'download-failed'
+    );
+
+    expect(logger.getEntries()).toContainEqual(
+      expect.objectContaining({
+        level: 'error',
+        context: 'WoundCareStorage',
+        message: 'Error getting download URL',
+        data: downloadError,
+      })
+    );
   });
 });
