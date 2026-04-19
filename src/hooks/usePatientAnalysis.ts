@@ -19,7 +19,10 @@ import {
 import { defaultAuditPort, type AuditPort } from '@/application/ports/auditPort';
 import { resolveApplicationOutcomeMessage } from '@/shared/contracts/applicationOutcomeMessage';
 import { patientAnalysisLogger } from '@/hooks/hookLoggers';
-import { DAILY_RECORD_STORE_CHANGED_EVENT } from '@/services/storage/indexeddb/indexedDbRecordEvents';
+import {
+  DAILY_RECORD_STORE_CHANGED_EVENT,
+  type DailyRecordStoreChangedEventDetail,
+} from '@/services/storage/indexeddb/indexedDbRecordEvents';
 
 export type { Conflict, AnalysisResult } from '@/application/patient-flow/patientAnalysisUseCase';
 
@@ -76,7 +79,7 @@ export const usePatientAnalysis = (dependencies?: Partial<PatientAnalysisDepende
   const analysisRef = useRef<AnalysisResult | null>(null);
   const isAnalyzingRef = useRef(false);
   const storeChangedDuringAnalysisRef = useRef(false);
-  const suppressStoreChangesRef = useRef(false);
+  const suppressedHarmonizationSaveDatesRef = useRef<string[]>([]);
 
   useEffect(() => {
     analysisRef.current = analysis;
@@ -87,8 +90,26 @@ export const usePatientAnalysis = (dependencies?: Partial<PatientAnalysisDepende
       return;
     }
 
-    const handleStoreChanged = () => {
-      if (suppressStoreChangesRef.current) {
+    const consumeSuppressedHarmonizationSave = (
+      detail: DailyRecordStoreChangedEventDetail | undefined
+    ): boolean => {
+      if (detail?.operation !== 'save' || !detail.dates || detail.dates.length !== 1) {
+        return false;
+      }
+
+      const suppressedIndex = suppressedHarmonizationSaveDatesRef.current.indexOf(detail.dates[0]);
+      if (suppressedIndex === -1) {
+        return false;
+      }
+
+      suppressedHarmonizationSaveDatesRef.current.splice(suppressedIndex, 1);
+      return true;
+    };
+
+    const handleStoreChanged = (event: Event) => {
+      const detail = (event as CustomEvent<DailyRecordStoreChangedEventDetail>).detail;
+
+      if (consumeSuppressedHarmonizationSave(detail)) {
         return;
       }
 
@@ -110,8 +131,28 @@ export const usePatientAnalysis = (dependencies?: Partial<PatientAnalysisDepende
     async (rut: string, correctName: string, harmonizeHistory: boolean = false) => {
       if (harmonizeHistory) {
         setIsHarmonizing(true);
-        suppressStoreChangesRef.current = true;
       }
+
+      const dailyRecordRepository = harmonizeHistory
+        ? {
+            ...resolvedDependencies.dailyRecordRepository,
+            updatePartial: async (
+              date: string,
+              patch: Parameters<DailyRecordWritePort['updatePartial']>[1]
+            ) => {
+              suppressedHarmonizationSaveDatesRef.current.push(date);
+
+              try {
+                return await resolvedDependencies.dailyRecordRepository.updatePartial(date, patch);
+              } finally {
+                const suppressedIndex = suppressedHarmonizationSaveDatesRef.current.indexOf(date);
+                if (suppressedIndex !== -1) {
+                  suppressedHarmonizationSaveDatesRef.current.splice(suppressedIndex, 1);
+                }
+              }
+            },
+          }
+        : resolvedDependencies.dailyRecordRepository;
 
       try {
         const outcome = await executeResolvePatientConflict({
@@ -119,7 +160,7 @@ export const usePatientAnalysis = (dependencies?: Partial<PatientAnalysisDepende
           rut,
           correctName,
           harmonizeHistory,
-          dailyRecordRepository: resolvedDependencies.dailyRecordRepository,
+          dailyRecordRepository,
           auditPort: resolvedDependencies.auditPort,
           currentUserEmail: resolvedDependencies.getCurrentUserEmail(),
         });
@@ -127,15 +168,11 @@ export const usePatientAnalysis = (dependencies?: Partial<PatientAnalysisDepende
         if (outcome.data) {
           setAnalysis(outcome.data);
           analysisRef.current = outcome.data;
-          if (harmonizeHistory) {
-            setIsStale(false);
-          }
         }
       } catch (error) {
         patientAnalysisLogger.error('Harmonization failed', error);
       } finally {
         if (harmonizeHistory) {
-          suppressStoreChangesRef.current = false;
           setIsHarmonizing(false);
         }
       }
