@@ -28,10 +28,6 @@ const hideSheetRowsAndColumns = (sheet: Worksheet): void => {
   for (let rowNumber = 1; rowNumber <= sheet.rowCount; rowNumber += 1) {
     sheet.getRow(rowNumber).hidden = true;
   }
-
-  for (let columnNumber = 1; columnNumber <= sheet.columnCount; columnNumber += 1) {
-    sheet.getColumn(columnNumber).hidden = true;
-  }
 };
 
 /**

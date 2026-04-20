@@ -3,8 +3,8 @@
 Este módulo construye el Excel maestro del censo diario y agrega tres hojas de soporte al inicio del workbook:
 
 - `RESUMEN [MES] [AÑO]`
-- `PACIENTES UPC [MES] [AÑO]`
-- `DETALLE DIARIO UPC`
+- `UPC PAC [MES] [AÑO]`
+- `UPC DET`
 
 ## Pipeline
 
@@ -21,9 +21,9 @@ Este módulo construye el Excel maestro del censo diario y agrega tres hojas de 
 ## Reglas E Invariantes
 
 - Las 3 hojas de soporte siempre van primero en el workbook.
-- Al abrir el archivo, la hoja activa sigue siendo la última hoja diaria visible.
+- Al abrir el archivo, el workbook aterriza sobre el bloque UPC y deja visibles juntas las pestañas `UPC PAC` y `UPC DET`.
 - La contraseña `HHR` protege la estructura del libro y las hojas UPC de bloqueo cosmético.
-- `PACIENTES UPC` y `DETALLE DIARIO UPC` permanecen visibles como pestañas, pero se renderizan con filas y columnas ocultas.
+- `UPC PAC` y `UPC DET` permanecen visibles como pestañas, pero se renderizan con filas ocultas para aparecer en blanco hasta desprotegerlas.
 - El correo puede cifrar la apertura del archivo completo; la descarga local no.
 - La agregación de hojas ocultas opera sobre un solo snapshot lógico por fecha calendario.
 
@@ -38,9 +38,9 @@ Este módulo construye el Excel maestro del censo diario y agrega tres hojas de 
 
 1. Exportar un censo diario mensual.
 2. Abrir el `.xlsx` y confirmar que la primera pestaña visible es la primera hoja diaria.
-3. Confirmar que `RESUMEN` sigue oculto por estructura, mientras `PACIENTES UPC` y `DETALLE DIARIO UPC` aparecen como pestañas visibles pero en blanco.
+3. Confirmar que `RESUMEN` sigue oculto por estructura, mientras `UPC PAC` y `UPC DET` aparecen como pestañas visibles y contiguas.
 4. En Excel, desproteger estructura con `HHR` y mostrar `RESUMEN` si se necesita.
-5. Para revisar `PACIENTES UPC` o `DETALLE DIARIO UPC`, desproteger la hoja y luego mostrar filas y columnas ocultas.
+5. Para revisar `UPC PAC` o `UPC DET`, desproteger la hoja y luego mostrar las filas ocultas.
 6. Revisar:
    - layout del resumen,
    - `% Ocup.` en rojo solo sobre el umbral,

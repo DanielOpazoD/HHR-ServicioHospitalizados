@@ -42,6 +42,6 @@ export const getSummarySheetName = (monthName: string, year: string) =>
   `RESUMEN ${monthName} ${year}`;
 
 export const getUpcPatientsSheetName = (monthName: string, year: string) =>
-  `PACIENTES UPC ${monthName} ${year}`;
+  `UPC PAC ${monthName} ${year}`;
 
-export const UPC_DAILY_DETAIL_SHEET_NAME = 'DETALLE DIARIO UPC';
+export const UPC_DAILY_DETAIL_SHEET_NAME = 'UPC DET';

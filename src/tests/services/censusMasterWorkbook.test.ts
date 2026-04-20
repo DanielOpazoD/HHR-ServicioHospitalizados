@@ -65,8 +65,8 @@ describe('census master workbook builder', () => {
     const workbook = await buildCensusMasterWorkbook(records);
     expect(workbook.worksheets.map(sheet => sheet.name)).toEqual([
       'RESUMEN MAYO 2024',
-      'PACIENTES UPC MAYO 2024',
-      'DETALLE DIARIO UPC',
+      'UPC PAC MAYO 2024',
+      'UPC DET',
       '01-05-2024',
       '02-05-2024',
     ]);
@@ -77,8 +77,8 @@ describe('census master workbook builder', () => {
     ]);
     expect(workbook.views[0]).toEqual(
       expect.objectContaining({
-        firstSheet: 4,
-        activeTab: 4,
+        firstSheet: 1,
+        activeTab: 2,
         visibility: 'visible',
       })
     );
@@ -167,8 +167,8 @@ describe('census master workbook builder', () => {
 
     expect(workbook.worksheets.map(sheet => sheet.name)).toEqual([
       'RESUMEN MAYO 2024',
-      'PACIENTES UPC MAYO 2024',
-      'DETALLE DIARIO UPC',
+      'UPC PAC MAYO 2024',
+      'UPC DET',
       '03-05-2024 23-59',
       '03-05-2024 01-10',
     ]);
@@ -183,7 +183,7 @@ describe('census master workbook builder', () => {
     expect(workbookXml).toContain('<workbookProtection');
     expect(workbookXml).toContain('lockStructure="1"');
     expect(workbookXml).toMatch(/workbookPassword="[0-9A-F]{4}"/);
-    expect(workbookXml).toContain('activeTab="3"');
-    expect(workbookXml).toContain('firstSheet="3"');
+    expect(workbookXml).toContain('activeTab="2"');
+    expect(workbookXml).toContain('firstSheet="1"');
   });
 });

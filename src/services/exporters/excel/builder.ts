@@ -36,22 +36,21 @@ export const buildCensusMasterWorkbook = async (
     createCensusWorkbookDaySheet(workbook, record, resolvedSheetName, descriptor.snapshotLabel);
   });
 
-  const visibleSheetIndexes = workbook.worksheets
-    .map((sheet, index) => (sheet.state !== 'hidden' ? index : -1))
-    .filter(index => index >= 0);
-  const lastVisibleSheetIndex = visibleSheetIndexes.at(-1) ?? -1;
-  if (lastVisibleSheetIndex >= 0) {
-    // Excel opens the workbook on the active tab. Hidden support sheets are inserted first,
-    // so we explicitly point the workbook view at the last visible day sheet, which is the
-    // most recent census snapshot the user just generated.
+  const upcPatientsSheetIndex = workbook.worksheets.findIndex(sheet =>
+    sheet.name.startsWith('UPC PAC ')
+  );
+  const upcDetailSheetIndex = workbook.worksheets.findIndex(sheet => sheet.name === 'UPC DET');
+  if (upcPatientsSheetIndex >= 0 && upcDetailSheetIndex >= 0) {
+    // Excel opens the workbook on the active tab. We keep the hidden summary first, but
+    // point the initial view at the visible UPC support block so the two tabs stay together.
     workbook.views = [
       {
         x: 0,
         y: 0,
         width: 10000,
         height: 20000,
-        firstSheet: lastVisibleSheetIndex,
-        activeTab: lastVisibleSheetIndex,
+        firstSheet: upcPatientsSheetIndex,
+        activeTab: upcDetailSheetIndex,
         visibility: 'visible',
       },
     ];

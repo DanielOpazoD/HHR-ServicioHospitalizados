@@ -187,9 +187,7 @@ const renderUpcDailyMatrixRow = (
 
   const historyCell = row.getCell(daysInMonth + 3);
   historyCell.value = patient.history;
-  historyCell.font = patient.changedBed
-    ? { name: 'Arial', size: 10, bold: true, color: { argb: toArgb('#C00000') } }
-    : { name: 'Arial', size: 10, color: { argb: toArgb('#333333') } };
+  historyCell.font = { name: 'Arial', size: 10, color: { argb: toArgb('#333333') } };
   historyCell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
   historyCell.border = THIN_BORDER;
 

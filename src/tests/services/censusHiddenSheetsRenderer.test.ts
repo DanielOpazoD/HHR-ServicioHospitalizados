@@ -98,8 +98,8 @@ describe('censusHiddenSheetsRenderer', () => {
 
   it('renders UPC sheets and applies cosmetic sheet protection metadata', async () => {
     const workbook = new ExcelJS.Workbook();
-    const upcSheet = workbook.addWorksheet('PACIENTES UPC MARZO 2026');
-    const matrixSheet = workbook.addWorksheet('DETALLE DIARIO UPC');
+    const upcSheet = workbook.addWorksheet('UPC PAC MARZO 2026');
+    const matrixSheet = workbook.addWorksheet('UPC DET');
     const patients = [buildUpcPatient()];
 
     renderUpcPatientsSheet({
@@ -130,6 +130,8 @@ describe('censusHiddenSheetsRenderer', () => {
     expect(matrixSheet.getCell('Z5').value).toBe('UCI');
     expect(getSolidFillArgb(matrixSheet, 'Z5')).toBe('FFC00000');
     expect(matrixSheet.getCell('AH5').value).toBe('R1 (24-03-2026) → R2 (25-03-2026)');
+    expect(matrixSheet.getCell('AH5').font?.bold).toBeFalsy();
+    expect(matrixSheet.getCell('AH5').font?.color?.argb).toBe('FF333333');
     expect(matrixSheet.views[0]).toEqual(
       expect.objectContaining({ state: 'frozen', xSplit: 1, ySplit: 4, topLeftCell: 'B5' })
     );
@@ -140,16 +142,14 @@ describe('censusHiddenSheetsRenderer', () => {
     expect(upcSheet.state).toBe('visible');
     expect(matrixSheet.state).toBe('visible');
     expect(upcSheet.getRow(5).hidden).toBe(true);
-    expect(upcSheet.getColumn(1).hidden).toBe(true);
     expect(matrixSheet.getRow(5).hidden).toBe(true);
-    expect(matrixSheet.getColumn(1).hidden).toBe(true);
+    expect(upcSheet.getColumn(1).hidden).toBe(false);
+    expect(matrixSheet.getColumn(1).hidden).toBe(false);
 
     const zip = new PizZip(await workbook.xlsx.writeBuffer());
     const upcSheetXml = zip.file('xl/worksheets/sheet1.xml')?.asText() ?? '';
     const matrixSheetXml = zip.file('xl/worksheets/sheet2.xml')?.asText() ?? '';
     expect(upcSheetXml).toContain('<sheetProtection');
-    expect(upcSheetXml).toContain('hidden="1"');
     expect(matrixSheetXml).toContain('<sheetProtection');
-    expect(matrixSheetXml).toContain('hidden="1"');
   });
 });

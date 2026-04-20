@@ -82,8 +82,8 @@ describe('census workbook sanity', () => {
       .map(sheet => sheet.name);
 
     const summarySheet = workbook.getWorksheet('RESUMEN MARZO 2026');
-    const upcSheet = workbook.getWorksheet('PACIENTES UPC MARZO 2026');
-    const matrixSheet = workbook.getWorksheet('DETALLE DIARIO UPC');
+    const upcSheet = workbook.getWorksheet('UPC PAC MARZO 2026');
+    const matrixSheet = workbook.getWorksheet('UPC DET');
 
     const structuralGolden = {
       sheetNames: workbook.worksheets.map(sheet => sheet.name),
@@ -99,21 +99,21 @@ describe('census workbook sanity', () => {
         /<workbookProtection[^>]*lockStructure="1"[^>]*workbookPassword="[0-9A-F]{4}"/.test(
           workbookXml
         ),
-      firstSheetVisible: workbookXml.includes('firstSheet="4"'),
-      activeTabVisible: workbookXml.includes('activeTab="4"'),
+      firstSheetVisible: workbookXml.includes('firstSheet="1"'),
+      activeTabVisible: workbookXml.includes('activeTab="2"'),
       byteLengthValid: binary.byteLength > 5000,
     };
 
     expect(structuralGolden).toEqual({
       sheetNames: [
         'RESUMEN MARZO 2026',
-        'PACIENTES UPC MARZO 2026',
-        'DETALLE DIARIO UPC',
+        'UPC PAC MARZO 2026',
+        'UPC DET',
         '24-03-2026',
         '25-03-2026',
       ],
       sheetStates: ['hidden', 'visible', 'visible', 'visible', 'visible'],
-      visibleNames: ['PACIENTES UPC MARZO 2026', 'DETALLE DIARIO UPC', '24-03-2026', '25-03-2026'],
+      visibleNames: ['UPC PAC MARZO 2026', 'UPC DET', '24-03-2026', '25-03-2026'],
       summaryTitle: 'RESUMEN CENSO DIARIO — HOSPITAL HANGA ROA — MARZO 2026',
       upcTitle: 'REGISTRO PACIENTES UPC — HOSPITAL HANGA ROA — MARZO 2026',
       upcSubtypeHeader: 'Clasif. período',
