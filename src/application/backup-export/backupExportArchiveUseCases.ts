@@ -16,6 +16,10 @@ import type { CensusExportRecord } from '@/services/contracts/censusExportServic
 import type { HandoffPdfRecord } from '@/services/pdf/contracts/handoffPdfContracts';
 import type { DailyRecordCriticalValidationState } from '@/application/shared/dailyRecordBedContracts';
 import type { DailyRecordCudyrExportState } from '@/application/shared/dailyRecordStaffContracts';
+import {
+  normalizeBackupCensusExcelInput,
+  validateBackupCensusExcelInput,
+} from './backupExportArchiveContracts';
 
 type HandoffBackupRecord = HandoffPdfRecord &
   DailyRecordCriticalValidationState &
@@ -37,19 +41,30 @@ export interface BackupCensusExcelOutput {
 export const executeBackupCensusExcel = async (
   input: BackupCensusExcelInput
 ): Promise<ApplicationOutcome<BackupCensusExcelOutput | null>> => {
+  const normalizedInput = normalizeBackupCensusExcelInput(input);
+  const inputIssues = validateBackupCensusExcelInput(normalizedInput);
+  if (inputIssues.length > 0) {
+    return createApplicationFailed(null, inputIssues, {
+      reason: 'backup_census_excel_invalid_input',
+      userSafeMessage: 'Revisa la fecha seleccionada antes de guardar el respaldo.',
+      retryable: false,
+      severity: 'info',
+    });
+  }
+
   try {
     const monthRecords = await defaultDailyRecordReadPort.getMonthRecords(
-      input.selectedYear,
-      input.selectedMonth
+      normalizedInput.selectedYear,
+      normalizedInput.selectedMonth
     );
-    const limitDate = `${input.selectedYear}-${String(input.selectedMonth + 1).padStart(2, '0')}-${String(
-      input.selectedDay
+    const limitDate = `${normalizedInput.selectedYear}-${String(normalizedInput.selectedMonth + 1).padStart(2, '0')}-${String(
+      normalizedInput.selectedDay
     ).padStart(2, '0')}`;
 
     const filteredRecords = mergeMonthlyRecordsForBackup(
       monthRecords,
-      input.record,
-      input.currentDateString,
+      normalizedInput.record,
+      normalizedInput.currentDateString,
       limitDate
     );
 
@@ -65,10 +80,10 @@ export const executeBackupCensusExcel = async (
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     });
 
-    await defaultCensusEmailDeliveryPort.uploadBackup(blob, input.currentDateString);
+    await defaultCensusEmailDeliveryPort.uploadBackup(blob, normalizedInput.currentDateString);
 
     return createApplicationSuccess({
-      archivedDate: input.currentDateString,
+      archivedDate: normalizedInput.currentDateString,
       recordCount: filteredRecords.length,
     });
   } catch (error) {

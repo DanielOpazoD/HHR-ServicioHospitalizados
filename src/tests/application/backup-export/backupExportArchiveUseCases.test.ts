@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { executeExportHandoffPdf } from '@/application/backup-export/backupExportArchiveUseCases';
+import {
+  executeBackupCensusExcel,
+  executeExportHandoffPdf,
+} from '@/application/backup-export/backupExportArchiveUseCases';
+import { defaultDailyRecordReadPort } from '@/application/ports/dailyRecordPort';
 
 const generateHandoffPdf = vi.fn();
 
@@ -40,5 +44,21 @@ describe('backupExportArchiveUseCases', () => {
     });
 
     expect(outcome.status).toBe('failed');
+  });
+
+  it('fails fast for invalid census backup input before reading month records', async () => {
+    const monthRecordsSpy = vi.spyOn(defaultDailyRecordReadPort, 'getMonthRecords');
+
+    const outcome = await executeBackupCensusExcel({
+      selectedYear: 2026,
+      selectedMonth: 12,
+      selectedDay: 20,
+      currentDateString: '2026-04-20',
+      record: null,
+    });
+
+    expect(outcome.status).toBe('failed');
+    expect(outcome.reason).toBe('backup_census_excel_invalid_input');
+    expect(monthRecordsSpy).not.toHaveBeenCalled();
   });
 });
