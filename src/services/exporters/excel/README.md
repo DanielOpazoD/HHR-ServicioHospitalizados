@@ -21,9 +21,9 @@ Este módulo construye el Excel maestro del censo diario y agrega tres hojas de 
 ## Reglas E Invariantes
 
 - Las 3 hojas de soporte siempre van primero en el workbook.
-- Al abrir el archivo, el workbook aterriza sobre el bloque UPC y deja visibles juntas las pestañas `UPC PAC` y `UPC DET`.
+- Al abrir el archivo, la hoja activa sigue siendo la última hoja diaria visible.
 - La contraseña `HHR` protege la estructura del libro y las hojas UPC de bloqueo cosmético.
-- `UPC PAC` y `UPC DET` permanecen visibles como pestañas, pero se renderizan con filas ocultas para aparecer en blanco hasta desprotegerlas.
+- `UPC PAC` y `UPC DET` permanecen visibles como pestañas y quedan desbloqueadas.
 - El correo puede cifrar la apertura del archivo completo; la descarga local no.
 - La agregación de hojas ocultas opera sobre un solo snapshot lógico por fecha calendario.
 
@@ -40,7 +40,7 @@ Este módulo construye el Excel maestro del censo diario y agrega tres hojas de 
 2. Abrir el `.xlsx` y confirmar que la primera pestaña visible es la primera hoja diaria.
 3. Confirmar que `RESUMEN` sigue oculto por estructura, mientras `UPC PAC` y `UPC DET` aparecen como pestañas visibles y contiguas.
 4. En Excel, desproteger estructura con `HHR` y mostrar `RESUMEN` si se necesita.
-5. Para revisar `UPC PAC` o `UPC DET`, desproteger la hoja y luego mostrar las filas ocultas.
+5. Para revisar `UPC PAC` o `UPC DET`, abrir la pestaña directamente sin desproteger nada.
 6. Revisar:
    - layout del resumen,
    - `% Ocup.` en rojo solo sobre el umbral,

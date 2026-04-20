@@ -6,7 +6,6 @@ import {
   renderSummarySheet,
   renderUpcDailyMatrixSheet,
   renderUpcPatientsSheet,
-  applyCosmeticSheetProtection,
 } from '@/services/exporters/excel/censusHiddenSheetsRenderer';
 import type {
   SummaryDayRow,
@@ -116,9 +115,7 @@ describe('censusHiddenSheetsRenderer', () => {
       daysInMonth: 31,
     });
 
-    expect(upcSheet.getCell('A1').value).toBe(
-      'REGISTRO PACIENTES UPC — HOSPITAL HANGA ROA — MARZO 2026'
-    );
+    expect(upcSheet.getCell('A1').value).toBe('UPC PAC');
     expect(upcSheet.getCell('G5').value).toBe('Mixto');
     expect(upcSheet.getCell('H5').value).toBe(1);
     expect(upcSheet.getCell('I5').value).toBe(1);
@@ -136,20 +133,54 @@ describe('censusHiddenSheetsRenderer', () => {
       expect.objectContaining({ state: 'frozen', xSplit: 1, ySplit: 4, topLeftCell: 'B5' })
     );
 
-    await applyCosmeticSheetProtection(upcSheet);
-    await applyCosmeticSheetProtection(matrixSheet);
-
     expect(upcSheet.state).toBe('visible');
     expect(matrixSheet.state).toBe('visible');
-    expect(upcSheet.getRow(5).hidden).toBe(true);
-    expect(matrixSheet.getRow(5).hidden).toBe(true);
+    expect(upcSheet.getRow(5).hidden).toBe(false);
+    expect(matrixSheet.getRow(5).hidden).toBe(false);
     expect(upcSheet.getColumn(1).hidden).toBe(false);
     expect(matrixSheet.getColumn(1).hidden).toBe(false);
 
     const zip = new PizZip(await workbook.xlsx.writeBuffer());
     const upcSheetXml = zip.file('xl/worksheets/sheet1.xml')?.asText() ?? '';
     const matrixSheetXml = zip.file('xl/worksheets/sheet2.xml')?.asText() ?? '';
-    expect(upcSheetXml).toContain('<sheetProtection');
-    expect(matrixSheetXml).toContain('<sheetProtection');
+    expect(upcSheetXml).not.toContain('<sheetProtection');
+    expect(matrixSheetXml).not.toContain('<sheetProtection');
+  });
+
+  it('expands UPC rows for wrapped content so text is not truncated', () => {
+    const workbook = new ExcelJS.Workbook();
+    const upcSheet = workbook.addWorksheet('UPC PAC MARZO 2026');
+    const matrixSheet = workbook.addWorksheet('UPC DET');
+    const longPatient = buildUpcPatient({
+      patientName: 'Paciente UPC con nombre extremadamente largo para forzar salto de línea',
+      diagnosis:
+        'Diagnóstico clínico muy extenso que necesita varias líneas para mostrarse completo en la hoja',
+      history: 'R1 (24-03-2026) → R2 (25-03-2026) → R3 (26-03-2026)',
+      daysDetail: '24-03-2026\n25-03-2026\n26-03-2026\n27-03-2026',
+    });
+
+    renderUpcPatientsSheet({
+      sheet: upcSheet,
+      patients: [longPatient],
+      monthName: 'MARZO',
+      year: '2026',
+    });
+    renderUpcDailyMatrixSheet({
+      sheet: matrixSheet,
+      patients: [longPatient],
+      monthName: 'MARZO',
+      year: '2026',
+      daysInMonth: 31,
+    });
+
+    expect(upcSheet.getRow(5).height).toBeGreaterThan(30);
+    expect(upcSheet.getCell('B5').alignment?.wrapText).toBe(true);
+    expect(upcSheet.getCell('E5').alignment?.wrapText).toBe(true);
+    expect(upcSheet.getCell('K5').alignment?.wrapText).toBe(true);
+    expect(upcSheet.getCell('M5').alignment?.wrapText).toBe(true);
+
+    expect(matrixSheet.getRow(5).height).toBeGreaterThan(22);
+    expect(matrixSheet.getCell('A5').alignment?.wrapText).toBe(true);
+    expect(matrixSheet.getCell('AH5').alignment?.wrapText).toBe(true);
   });
 });

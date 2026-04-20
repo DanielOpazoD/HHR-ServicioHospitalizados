@@ -77,8 +77,8 @@ describe('census master workbook builder', () => {
     ]);
     expect(workbook.views[0]).toEqual(
       expect.objectContaining({
-        firstSheet: 1,
-        activeTab: 2,
+        firstSheet: 4,
+        activeTab: 4,
         visibility: 'visible',
       })
     );
@@ -183,7 +183,7 @@ describe('census master workbook builder', () => {
     expect(workbookXml).toContain('<workbookProtection');
     expect(workbookXml).toContain('lockStructure="1"');
     expect(workbookXml).toMatch(/workbookPassword="[0-9A-F]{4}"/);
-    expect(workbookXml).toContain('activeTab="2"');
-    expect(workbookXml).toContain('firstSheet="1"');
+    expect(workbookXml).toContain('activeTab="3"');
+    expect(workbookXml).toContain('firstSheet="3"');
   });
 });

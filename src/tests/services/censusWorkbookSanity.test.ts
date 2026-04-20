@@ -99,8 +99,8 @@ describe('census workbook sanity', () => {
         /<workbookProtection[^>]*lockStructure="1"[^>]*workbookPassword="[0-9A-F]{4}"/.test(
           workbookXml
         ),
-      firstSheetVisible: workbookXml.includes('firstSheet="1"'),
-      activeTabVisible: workbookXml.includes('activeTab="2"'),
+      firstSheetVisible: workbookXml.includes('firstSheet="4"'),
+      activeTabVisible: workbookXml.includes('activeTab="4"'),
       byteLengthValid: binary.byteLength > 5000,
     };
 
@@ -115,7 +115,7 @@ describe('census workbook sanity', () => {
       sheetStates: ['hidden', 'visible', 'visible', 'visible', 'visible'],
       visibleNames: ['UPC PAC MARZO 2026', 'UPC DET', '24-03-2026', '25-03-2026'],
       summaryTitle: 'RESUMEN CENSO DIARIO — HOSPITAL HANGA ROA — MARZO 2026',
-      upcTitle: 'REGISTRO PACIENTES UPC — HOSPITAL HANGA ROA — MARZO 2026',
+      upcTitle: 'UPC PAC',
       upcSubtypeHeader: 'Clasif. período',
       upcSubtypeValue: 'Mixto',
       matrixHeader: 'Paciente',

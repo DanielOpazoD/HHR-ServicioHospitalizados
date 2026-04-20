@@ -14,7 +14,6 @@ import {
 import type { CensusWorkbookSnapshotSheet } from './censusHiddenSheetsContracts';
 import {
   applyHiddenSheetProtection,
-  applyCosmeticSheetProtection,
   renderSummarySheet,
   renderUpcDailyMatrixSheet,
   renderUpcPatientsSheet,
@@ -24,7 +23,7 @@ export type { CensusWorkbookSnapshotSheet } from './censusHiddenSheetsContracts'
 
 /**
  * Builds the census support sheets and inserts them at the beginning of the workbook.
- * The summary sheet stays structurally hidden; the UPC sheets remain visible but cosmetically locked.
+ * The summary sheet stays structurally hidden; the UPC sheets remain visible and unlocked.
  * Visible day sheets are rendered afterwards by the shared census workbook builder.
  */
 export const addCensusHiddenSheets = async (
@@ -70,6 +69,4 @@ export const addCensusHiddenSheets = async (
   });
 
   await applyHiddenSheetProtection(summarySheet);
-  await applyCosmeticSheetProtection(upcSheet);
-  await applyCosmeticSheetProtection(matrixSheet);
 };

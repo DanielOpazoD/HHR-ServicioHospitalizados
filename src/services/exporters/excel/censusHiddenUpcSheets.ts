@@ -50,6 +50,30 @@ const getUpcTotals = (patients: UpcPatientPresentation[]) =>
     { uciDays: 0, utiDays: 0, totalUpcDays: 0 }
   );
 
+const ESTIMATED_ROW_HEIGHT_PER_LINE = 15;
+
+const estimateWrappedLines = (value: unknown, columnWidth: number): number => {
+  const text = String(value ?? '').trimEnd();
+  if (!text) return 1;
+
+  const charsPerLine = Math.max(1, Math.floor(columnWidth * 1.05));
+  return text.split('\n').reduce((totalLines, line) => {
+    const normalized = line.trimEnd();
+    return totalLines + Math.max(1, Math.ceil(Math.max(normalized.length, 1) / charsPerLine));
+  }, 0);
+};
+
+const estimateRowHeight = (
+  entries: Array<{ value: unknown; width: number }>,
+  minimumHeight: number
+): number => {
+  const lines = Math.max(
+    1,
+    ...entries.map(entry => estimateWrappedLines(entry.value, entry.width))
+  );
+  return Math.max(minimumHeight, lines * ESTIMATED_ROW_HEIGHT_PER_LINE);
+};
+
 const renderUpcPatientRow = (sheet: Worksheet, patient: UpcPatientPresentation, index: number) => {
   const row = sheet.getRow(5 + index);
   row.values = [
@@ -77,7 +101,7 @@ const renderUpcPatientRow = (sheet: Worksheet, patient: UpcPatientPresentation, 
     cell.alignment = {
       horizontal: [2, 5, 6, 7, 11, 13].includes(colNumber) ? 'left' : 'center',
       vertical: 'middle',
-      wrapText: [5, 11, 13].includes(colNumber),
+      wrapText: [2, 5, 11, 13].includes(colNumber),
     };
   });
   row.getCell(2).font = { name: 'Arial', size: 10, bold: true };
@@ -92,6 +116,16 @@ const renderUpcPatientRow = (sheet: Worksheet, patient: UpcPatientPresentation, 
     row.getCell(7).font = alertFont;
     row.getCell(11).font = alertFont;
   }
+
+  row.height = estimateRowHeight(
+    [
+      { value: patient.patientName, width: 32 },
+      { value: patient.diagnosis, width: 38 },
+      { value: patient.history, width: 28 },
+      { value: patient.daysDetail, width: 22 },
+    ],
+    30
+  );
 };
 
 export const renderUpcPatientsSheet = ({
@@ -122,7 +156,7 @@ export const renderUpcPatientsSheet = ({
   setMergedTitle({
     sheet,
     range: 'A1:N1',
-    value: `REGISTRO PACIENTES UPC — HOSPITAL HANGA ROA — ${monthName} ${year}`,
+    value: 'UPC PAC',
     font: { name: 'Arial', size: 14, bold: true, color: { argb: 'FFFFFFFF' } },
     alignment: { horizontal: 'center', vertical: 'middle' },
     fill: solidFill('#7B2D26'),
@@ -131,7 +165,7 @@ export const renderUpcPatientsSheet = ({
   setMergedTitle({
     sheet,
     range: 'A2:N2',
-    value: `Pacientes UPC durante el período (pacientes únicos: ${patients.length} | UCI: ${totals.uciDays} | UTI: ${totals.utiDays} | Total UPC: ${totals.totalUpcDays})`,
+    value: `Pacientes UPC ${monthName} ${year} (pacientes únicos: ${patients.length} | UCI: ${totals.uciDays} | UTI: ${totals.utiDays} | Total UPC: ${totals.totalUpcDays})`,
     font: { name: 'Arial', size: 10, italic: true, color: { argb: toArgb('#C00000') } },
     alignment: { horizontal: 'center', vertical: 'middle' },
   });
@@ -157,7 +191,7 @@ const renderUpcDailyMatrixRow = (
 ) => {
   row.getCell(1).value = patient.patientName;
   row.getCell(1).font = { name: 'Arial', size: 10, bold: true };
-  row.getCell(1).alignment = { horizontal: 'left', vertical: 'middle' };
+  row.getCell(1).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
   row.getCell(1).border = THIN_BORDER;
 
   const classificationByDay = new Map(
@@ -191,7 +225,13 @@ const renderUpcDailyMatrixRow = (
   historyCell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
   historyCell.border = THIN_BORDER;
 
-  row.height = 22;
+  row.height = estimateRowHeight(
+    [
+      { value: patient.patientName, width: 30 },
+      { value: patient.history, width: 28 },
+    ],
+    22
+  );
 };
 
 export const renderUpcDailyMatrixSheet = ({
