@@ -123,4 +123,27 @@ describe('IEEHFormDialog Component', () => {
       })
     );
   });
+
+  it('uses a single blue focus treatment for the treating doctor inputs', () => {
+    render(
+      <IEEHFormDialog
+        isOpen={true}
+        onClose={vi.fn()}
+        patient={mockPatient}
+        baseDischargeData={baseDischargeData}
+      />
+    );
+
+    const doctorNameInput = screen.getByPlaceholderText('Nombre');
+
+    expect(doctorNameInput).toHaveClass(
+      'outline-none',
+      'focus:outline-none',
+      'border-slate-200',
+      'focus:ring-1',
+      'focus:ring-blue-500/20',
+      'focus:border-blue-400'
+    );
+    expect(doctorNameInput.className).not.toContain('rose-500');
+  });
 });

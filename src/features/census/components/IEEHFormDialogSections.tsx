@@ -204,27 +204,31 @@ export const MedicoTratanteSection: React.FC<{
 }) => (
   <fieldset className="space-y-2">
     <legend className="text-sm font-semibold text-slate-700">Médico Tratante</legend>
+    {/*
+      Keep the same blue focus treatment as the rest of the discharge modal.
+      The default browser outline combined with a custom ring was producing a double contour.
+    */}
     <div className="grid grid-cols-3 gap-2">
       <input
         type="text"
         value={tratanteNombre}
         onChange={e => setTratanteNombre(e.target.value)}
         placeholder="Nombre"
-        className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-rose-500"
+        className="px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:outline-none focus:ring-1 focus:ring-blue-500/20 focus:border-blue-400"
       />
       <input
         type="text"
         value={tratanteAp1}
         onChange={e => setTratanteAp1(e.target.value)}
         placeholder="Primer Apellido"
-        className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-rose-500"
+        className="px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:outline-none focus:ring-1 focus:ring-blue-500/20 focus:border-blue-400"
       />
       <input
         type="text"
         value={tratanteAp2}
         onChange={e => setTratanteAp2(e.target.value)}
         placeholder="Segundo Apellido"
-        className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-rose-500"
+        className="px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:outline-none focus:ring-1 focus:ring-blue-500/20 focus:border-blue-400"
       />
     </div>
     <input
@@ -232,7 +236,7 @@ export const MedicoTratanteSection: React.FC<{
       value={tratanteRut}
       onChange={e => setTratanteRut(e.target.value)}
       placeholder="RUT del médico (ej: 12.345.678-9)"
-      className="px-3 py-2 border border-slate-300 rounded-lg text-sm w-64 focus:ring-2 focus:ring-rose-500"
+      className="px-3 py-2 border border-slate-200 rounded-lg text-sm w-64 outline-none focus:outline-none focus:ring-1 focus:ring-blue-500/20 focus:border-blue-400"
     />
   </fieldset>
 );
