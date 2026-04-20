@@ -13,6 +13,56 @@ import {
 import { handleSignInRedirectResult } from '@/services/auth/authFallback';
 import { isPopupRecoverableAuthError, resolveAuthErrorCode } from '@/services/auth/authErrorPolicy';
 import { toResolvedAuthSessionState } from '@/services/auth/authSessionState';
+import {
+  normalizeCredentialSignInInput,
+  validateCredentialSignInInput,
+} from './authSessionContracts';
+
+type AuthErrorSessionState = Extract<AuthSessionState, { status: 'auth_error' }>;
+
+const resolveAuthIssueSeverity = (
+  severity: ApplicationIssue['severity'] | AuthErrorSessionState['error']['severity']
+): 'info' | 'warning' | 'error' => {
+  if (severity === 'info' || severity === 'warning') {
+    return severity;
+  }
+
+  return 'error';
+};
+
+const toAuthErrorMetadata = (issue: ApplicationIssue) => ({
+  reason: issue.code,
+  userSafeMessage: issue.userSafeMessage,
+  retryable: issue.retryable,
+  severity: resolveAuthIssueSeverity(issue.severity),
+  technicalContext: issue.technicalContext,
+  telemetryTags: issue.telemetryTags,
+});
+
+const toAuthErrorStateFromIssue = (issue: ApplicationIssue): AuthErrorSessionState => ({
+  status: 'auth_error',
+  user: null,
+  error: {
+    code: issue.code,
+    message: issue.message,
+    userSafeMessage: issue.userSafeMessage,
+    retryable: issue.retryable,
+    severity: resolveAuthIssueSeverity(issue.severity),
+    technicalContext: issue.technicalContext,
+    telemetryTags: issue.telemetryTags,
+  },
+});
+
+const toAuthIssueFromSessionState = (sessionState: AuthErrorSessionState): ApplicationIssue => ({
+  kind: 'unknown',
+  code: sessionState.error.code,
+  message: sessionState.error.message,
+  userSafeMessage: sessionState.error.userSafeMessage,
+  retryable: sessionState.error.retryable,
+  severity: resolveAuthIssueSeverity(sessionState.error.severity),
+  technicalContext: sessionState.error.technicalContext,
+  telemetryTags: sessionState.error.telemetryTags,
+});
 
 const buildAuthIssue = (
   error: unknown,
@@ -43,29 +93,32 @@ const buildAuthFailure = (
 ): ApplicationOutcome<AuthSessionState> => {
   const issue = buildAuthIssue(error, fallbackCode, fallbackMessage);
   return createApplicationFailed(
-    {
-      status: 'auth_error',
-      user: null,
-      error: {
-        code: issue.code,
-        message: issue.message,
-        userSafeMessage: issue.userSafeMessage,
-        retryable: issue.retryable,
-        severity: issue.severity === 'warning' ? 'warning' : 'error',
-        technicalContext: issue.technicalContext,
-        telemetryTags: issue.telemetryTags,
-      },
-    },
+    toAuthErrorStateFromIssue(issue),
     [issue],
-    {
-      reason: issue.code,
-      userSafeMessage: issue.userSafeMessage,
-      retryable: issue.retryable,
-      severity: issue.severity,
-      technicalContext: issue.technicalContext,
-      telemetryTags: issue.telemetryTags,
-    }
+    toAuthErrorMetadata(issue)
   );
+};
+
+const buildCredentialValidationFailure = (
+  issues: ApplicationIssue[]
+): ApplicationOutcome<AuthSessionState> => {
+  const [primaryIssue] = issues;
+  const issue =
+    primaryIssue ||
+    ({
+      kind: 'validation',
+      code: 'auth/credential-invalid-input',
+      message: 'Credential sign-in input is invalid.',
+      userSafeMessage: 'Revisa email y contraseña antes de continuar.',
+      retryable: true,
+      severity: 'info',
+    } satisfies ApplicationIssue);
+
+  return createApplicationFailed(toAuthErrorStateFromIssue(issue), issues, {
+    ...toAuthErrorMetadata(issue),
+    reason: issue.code || 'auth/credential-invalid-input',
+    severity: resolveAuthIssueSeverity(issue.severity),
+  });
 };
 
 export const executeGoogleSignIn = async (): Promise<ApplicationOutcome<AuthSessionState>> => {
@@ -85,8 +138,14 @@ export const executeCredentialSignIn = async (
   email: string,
   password: string
 ): Promise<ApplicationOutcome<AuthSessionState>> => {
+  const normalizedInput = normalizeCredentialSignInInput({ email, password });
+  const inputIssues = validateCredentialSignInInput(normalizedInput);
+  if (inputIssues.length > 0) {
+    return buildCredentialValidationFailure(inputIssues);
+  }
+
   try {
-    const user = await signIn(email, password);
+    const user = await signIn(normalizedInput.email, normalizedInput.password);
     return createApplicationSuccess(toResolvedAuthSessionState(user));
   } catch (error) {
     return buildAuthFailure(error, 'auth/credential-signin-failed', 'Error de autenticación');
@@ -102,29 +161,8 @@ export const executeRedirectAuthResolution = async (): Promise<
   }
 
   if (sessionState.status === 'auth_error') {
-    return createApplicationFailed(
-      sessionState,
-      [
-        {
-          kind: 'unknown',
-          code: sessionState.error.code,
-          message: sessionState.error.message,
-          userSafeMessage: sessionState.error.userSafeMessage,
-          retryable: sessionState.error.retryable,
-          severity: sessionState.error.severity === 'warning' ? 'warning' : 'error',
-          technicalContext: sessionState.error.technicalContext,
-          telemetryTags: sessionState.error.telemetryTags,
-        },
-      ],
-      {
-        reason: sessionState.error.code,
-        userSafeMessage: sessionState.error.userSafeMessage,
-        retryable: sessionState.error.retryable,
-        severity: sessionState.error.severity === 'warning' ? 'warning' : 'error',
-        technicalContext: sessionState.error.technicalContext,
-        telemetryTags: sessionState.error.telemetryTags,
-      }
-    );
+    const issue = toAuthIssueFromSessionState(sessionState);
+    return createApplicationFailed(sessionState, [issue], toAuthErrorMetadata(issue));
   }
 
   return createApplicationSuccess(sessionState);
@@ -142,29 +180,8 @@ export const executeResolvedCurrentAuthSessionState = async (): Promise<
   }
 
   if (sessionState.status === 'auth_error') {
-    return createApplicationFailed(
-      sessionState,
-      [
-        {
-          kind: 'unknown',
-          code: sessionState.error.code,
-          message: sessionState.error.message,
-          userSafeMessage: sessionState.error.userSafeMessage,
-          retryable: sessionState.error.retryable,
-          severity: sessionState.error.severity === 'warning' ? 'warning' : 'error',
-          technicalContext: sessionState.error.technicalContext,
-          telemetryTags: sessionState.error.telemetryTags,
-        },
-      ],
-      {
-        reason: sessionState.error.code,
-        userSafeMessage: sessionState.error.userSafeMessage,
-        retryable: sessionState.error.retryable,
-        severity: sessionState.error.severity === 'warning' ? 'warning' : 'error',
-        technicalContext: sessionState.error.technicalContext,
-        telemetryTags: sessionState.error.telemetryTags,
-      }
-    );
+    const issue = toAuthIssueFromSessionState(sessionState);
+    return createApplicationFailed(sessionState, [issue], toAuthErrorMetadata(issue));
   }
 
   return createApplicationSuccess(sessionState);

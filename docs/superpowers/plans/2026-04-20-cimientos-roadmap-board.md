@@ -21,7 +21,7 @@ Objetivo: elevar sostenibilidad y estabilidad sin sobreingenieria ni cambios rad
 
 ### Doing
 
-- T06 DTOs y validacion en borde (avance: census search + backup export archive)
+- T06 DTOs y validacion en borde (avance: census search + backup export archive + auth session + handoff export/backup)
 
 ### Review
 

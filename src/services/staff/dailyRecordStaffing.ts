@@ -72,8 +72,9 @@ const resolveDetailedShiftNurseSlots = (
 ): string[] | null => {
   if (!record?.staffingDetailsV1 || !record.date) return null;
 
-  return resolveDetailedStaffingState(record, record.date)
-    [shift].nurses.slice(0, STANDARD_NURSE_SLOT_COUNT)
+  const detailedStaffingState = resolveDetailedStaffingState(record, record.date);
+  return detailedStaffingState[shift].nurses
+    .slice(0, STANDARD_NURSE_SLOT_COUNT)
     .map(assignment => assignment.name?.trim() || '');
 };
 

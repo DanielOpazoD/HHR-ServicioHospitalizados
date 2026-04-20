@@ -1,14 +1,32 @@
 import type { ApplicationIssue } from '@/shared/contracts/applicationOutcome';
-import type { BackupCensusExcelInput } from './backupExportArchiveUseCases';
+import type {
+  BackupCensusExcelInput,
+  BackupHandoffPdfInput,
+  ExportHandoffPdfInput,
+} from './backupExportArchiveUseCases';
 
 const MIN_SUPPORTED_YEAR = 2000;
 const MAX_SUPPORTED_YEAR = 2100;
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const FALLBACK_HANDOFF_SHIFT = 'day' as const;
 
 const toSafeInteger = (value: number): number => {
   if (!Number.isFinite(value)) return 0;
   return Math.trunc(value);
 };
+
+const toSafeString = (value: unknown): string =>
+  typeof value === 'string' ? value : String(value ?? '');
+
+const normalizeHandoffShift = (value: unknown): 'day' | 'night' =>
+  value === 'night' || value === 'day' ? value : FALLBACK_HANDOFF_SHIFT;
+
+const normalizeRecordDate = <T extends { date?: unknown }>(record: T): T => ({
+  ...record,
+  date: toSafeString(record.date).trim(),
+});
+
+const hasIsoDateFormat = (value: string): boolean => ISO_DATE_PATTERN.test(value);
 
 export const normalizeBackupCensusExcelInput = (
   input: BackupCensusExcelInput
@@ -84,4 +102,69 @@ export const validateBackupCensusExcelInput = (
   }
 
   return issues;
+};
+
+export const normalizeExportHandoffPdfInput = (
+  input: ExportHandoffPdfInput
+): ExportHandoffPdfInput => ({
+  ...input,
+  selectedShift: normalizeHandoffShift(input.selectedShift),
+  isMedical: Boolean(input.isMedical),
+  record: input.record ? normalizeRecordDate(input.record) : null,
+});
+
+export const validateExportHandoffPdfInput = (input: ExportHandoffPdfInput): ApplicationIssue[] => {
+  if (!input.record) {
+    return [
+      {
+        kind: 'validation',
+        code: 'backup/handoff-export-missing-record',
+        message: 'No handoff record is available for PDF export.',
+      },
+    ];
+  }
+
+  if (!hasIsoDateFormat(toSafeString(input.record.date))) {
+    return [
+      {
+        kind: 'validation',
+        code: 'backup/handoff-export-invalid-date',
+        message: 'Handoff record date must follow ISO format YYYY-MM-DD.',
+      },
+    ];
+  }
+
+  return [];
+};
+
+export const normalizeBackupHandoffPdfInput = (
+  input: BackupHandoffPdfInput
+): BackupHandoffPdfInput => ({
+  ...input,
+  selectedShift: normalizeHandoffShift(input.selectedShift),
+  record: input.record ? normalizeRecordDate(input.record) : null,
+});
+
+export const validateBackupHandoffPdfInput = (input: BackupHandoffPdfInput): ApplicationIssue[] => {
+  if (!input.record) {
+    return [
+      {
+        kind: 'validation',
+        code: 'backup/handoff-backup-missing-record',
+        message: 'No handoff record is available for backup.',
+      },
+    ];
+  }
+
+  if (!hasIsoDateFormat(toSafeString(input.record.date))) {
+    return [
+      {
+        kind: 'validation',
+        code: 'backup/handoff-backup-invalid-date',
+        message: 'Handoff backup record date must follow ISO format YYYY-MM-DD.',
+      },
+    ];
+  }
+
+  return [];
 };

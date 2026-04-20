@@ -1,9 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  executeBackupHandoffPdf,
   executeBackupCensusExcel,
   executeExportHandoffPdf,
 } from '@/application/backup-export/backupExportArchiveUseCases';
 import { defaultDailyRecordReadPort } from '@/application/ports/dailyRecordPort';
+import * as exportManagerController from '@/hooks/controllers/exportManagerController';
+import * as criticalFieldsValidator from '@/services/validation/criticalFieldsValidator';
 
 const generateHandoffPdf = vi.fn();
 
@@ -44,6 +47,39 @@ describe('backupExportArchiveUseCases', () => {
     });
 
     expect(outcome.status).toBe('failed');
+    expect(outcome.reason).toBe('backup_export_handoff_pdf_invalid_input');
+    expect(generateHandoffPdf).not.toHaveBeenCalled();
+  });
+
+  it('fails fast for invalid handoff export date before generating pdf', async () => {
+    const outcome = await executeExportHandoffPdf({
+      record: {
+        date: '2026/03/29',
+        handoffNovedadesDayShift: '',
+        handoffNovedadesNightShift: '',
+      } as never,
+      selectedShift: 'night',
+      isMedical: false,
+    });
+
+    expect(outcome.status).toBe('failed');
+    expect(outcome.reason).toBe('backup_export_handoff_pdf_invalid_input');
+    expect(generateHandoffPdf).not.toHaveBeenCalled();
+  });
+
+  it('fails fast for invalid handoff backup input before resolving staff or validating fields', async () => {
+    const resolveStaffSpy = vi.spyOn(exportManagerController, 'resolveHandoffBackupStaff');
+    const validateCriticalFieldsSpy = vi.spyOn(criticalFieldsValidator, 'validateCriticalFields');
+
+    const outcome = await executeBackupHandoffPdf({
+      selectedShift: 'night',
+      record: { date: '2026/04/20' } as never,
+    });
+
+    expect(outcome.status).toBe('failed');
+    expect(outcome.reason).toBe('backup_handoff_pdf_invalid_input');
+    expect(resolveStaffSpy).not.toHaveBeenCalled();
+    expect(validateCriticalFieldsSpy).not.toHaveBeenCalled();
   });
 
   it('fails fast for invalid census backup input before reading month records', async () => {

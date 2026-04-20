@@ -17,8 +17,12 @@ import type { HandoffPdfRecord } from '@/services/pdf/contracts/handoffPdfContra
 import type { DailyRecordCriticalValidationState } from '@/application/shared/dailyRecordBedContracts';
 import type { DailyRecordCudyrExportState } from '@/application/shared/dailyRecordStaffContracts';
 import {
+  normalizeBackupHandoffPdfInput,
   normalizeBackupCensusExcelInput,
+  normalizeExportHandoffPdfInput,
+  validateBackupHandoffPdfInput,
   validateBackupCensusExcelInput,
+  validateExportHandoffPdfInput,
 } from './backupExportArchiveContracts';
 
 type HandoffBackupRecord = HandoffPdfRecord &
@@ -106,18 +110,46 @@ export interface ExportHandoffPdfInput {
 export const executeExportHandoffPdf = async (
   input: ExportHandoffPdfInput
 ): Promise<ApplicationOutcome<null>> => {
-  if (!input.record) {
-    return createApplicationFailed(null, [
-      { kind: 'validation', message: 'No hay registro para exportar.' },
-    ]);
+  const normalizedInput = normalizeExportHandoffPdfInput(input);
+  const inputIssues = validateExportHandoffPdfInput(normalizedInput);
+  if (inputIssues.length > 0) {
+    return createApplicationFailed(null, inputIssues, {
+      reason: 'backup_export_handoff_pdf_invalid_input',
+      userSafeMessage: 'Revisa el registro seleccionado antes de exportar el PDF.',
+      retryable: false,
+      severity: 'info',
+    });
+  }
+  if (!normalizedInput.record) {
+    return createApplicationFailed(
+      null,
+      [
+        {
+          kind: 'validation',
+          code: 'backup/handoff-export-missing-record',
+          message: 'No handoff record is available for PDF export.',
+        },
+      ],
+      {
+        reason: 'backup_export_handoff_pdf_invalid_input',
+        userSafeMessage: 'Revisa el registro seleccionado antes de exportar el PDF.',
+        retryable: false,
+        severity: 'info',
+      }
+    );
   }
 
   try {
     // Handoff local export must use the generated PDF pipeline instead of window.print()
     // so pagination stays stable ("Pagina X de Y") across localhost/Netlify/browser contexts.
     const { generateHandoffPdf } = await import('@/services/pdf/handoffPdfGenerator');
-    const schedule = getShiftSchedule(input.record.date);
-    await generateHandoffPdf(input.record, Boolean(input.isMedical), input.selectedShift, schedule);
+    const schedule = getShiftSchedule(normalizedInput.record.date);
+    await generateHandoffPdf(
+      normalizedInput.record,
+      Boolean(normalizedInput.isMedical),
+      normalizedInput.selectedShift,
+      schedule
+    );
     return createApplicationSuccess(null);
   } catch (error) {
     return createApplicationFailed(null, [
@@ -142,13 +174,39 @@ export interface BackupHandoffPdfOutput {
 export const executeBackupHandoffPdf = async (
   input: BackupHandoffPdfInput
 ): Promise<ApplicationOutcome<BackupHandoffPdfOutput | null>> => {
-  if (!input.record) {
-    return createApplicationFailed(null, [
-      { kind: 'validation', message: 'No hay registro para respaldar.' },
-    ]);
+  const normalizedInput = normalizeBackupHandoffPdfInput(input);
+  const inputIssues = validateBackupHandoffPdfInput(normalizedInput);
+  if (inputIssues.length > 0) {
+    return createApplicationFailed(null, inputIssues, {
+      reason: 'backup_handoff_pdf_invalid_input',
+      userSafeMessage: 'Revisa el registro y la fecha antes de guardar el respaldo.',
+      retryable: false,
+      severity: 'info',
+    });
+  }
+  if (!normalizedInput.record) {
+    return createApplicationFailed(
+      null,
+      [
+        {
+          kind: 'validation',
+          code: 'backup/handoff-backup-missing-record',
+          message: 'No handoff record is available for backup.',
+        },
+      ],
+      {
+        reason: 'backup_handoff_pdf_invalid_input',
+        userSafeMessage: 'Revisa el registro y la fecha antes de guardar el respaldo.',
+        retryable: false,
+        severity: 'info',
+      }
+    );
   }
 
-  const { delivers, receives } = resolveHandoffBackupStaff(input.record, input.selectedShift);
+  const { delivers, receives } = resolveHandoffBackupStaff(
+    normalizedInput.record,
+    normalizedInput.selectedShift
+  );
   if (delivers.length === 0 || receives.length === 0) {
     return createApplicationFailed(null, [
       {
@@ -158,7 +216,7 @@ export const executeBackupHandoffPdf = async (
     ]);
   }
 
-  const validation = validateCriticalFields(input.record);
+  const validation = validateCriticalFields(normalizedInput.record);
   if (!validation.isValid) {
     return createApplicationFailed(null, [
       {
@@ -177,15 +235,21 @@ export const executeBackupHandoffPdf = async (
         import('@/services/backup/pdfStorageService'),
       ]);
 
-    const schedule = getShiftSchedule(input.record.date);
+    const schedule = getShiftSchedule(normalizedInput.record.date);
     const doc = new jsPDF();
-    await buildHandoffPdfContent(doc, input.record, input.selectedShift, schedule, autoTable);
+    await buildHandoffPdfContent(
+      doc,
+      normalizedInput.record,
+      normalizedInput.selectedShift,
+      schedule,
+      autoTable
+    );
     const pdfBlob = doc.output('blob');
-    await uploadPdf(pdfBlob, input.record.date, input.selectedShift);
+    await uploadPdf(pdfBlob, normalizedInput.record.date, normalizedInput.selectedShift);
 
-    if (input.selectedShift !== 'night') {
+    if (normalizedInput.selectedShift !== 'night') {
       return createApplicationSuccess({
-        shift: input.selectedShift,
+        shift: normalizedInput.selectedShift,
         createdCudyrBackup: false,
       });
     }
@@ -193,22 +257,22 @@ export const executeBackupHandoffPdf = async (
     try {
       const { generateCudyrMonthlyExcelBlob } = await import('@/services/cudyr/cudyrExportService');
       const { uploadCudyrExcel } = await import('@/services/backup/cudyrStorageService');
-      const [year, month] = input.record.date.split('-').map(Number);
+      const [year, month] = normalizedInput.record.date.split('-').map(Number);
       const cudyrBlob = await generateCudyrMonthlyExcelBlob(
         year,
         month,
-        input.record.date,
-        input.record
+        normalizedInput.record.date,
+        normalizedInput.record
       );
-      await uploadCudyrExcel(cudyrBlob, input.record.date);
+      await uploadCudyrExcel(cudyrBlob, normalizedInput.record.date);
       return createApplicationSuccess({
-        shift: input.selectedShift,
+        shift: normalizedInput.selectedShift,
         createdCudyrBackup: true,
       });
     } catch (error) {
       return createApplicationPartial(
         {
-          shift: input.selectedShift,
+          shift: normalizedInput.selectedShift,
           createdCudyrBackup: false,
         },
         [

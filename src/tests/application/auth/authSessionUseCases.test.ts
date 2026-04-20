@@ -87,10 +87,29 @@ describe('authSessionUseCases', () => {
       role: 'admin',
     });
 
-    const outcome = await executeCredentialSignIn('admin@hospital.cl', 'secret');
+    const outcome = await executeCredentialSignIn('  Admin@Hospital.cl ', 'secret');
 
     expect(outcome.status).toBe('success');
     expect(outcome.data.status).toBe('authorized');
+    expect(mockSignIn).toHaveBeenCalledWith('admin@hospital.cl', 'secret');
+  });
+
+  it('returns failed outcome when credential sign-in email is invalid and avoids auth call', async () => {
+    const outcome = await executeCredentialSignIn('correo-invalido', 'secret');
+
+    expect(outcome.status).toBe('failed');
+    expect(outcome.reason).toBe('auth/credential-invalid-email');
+    expect(outcome.data.status).toBe('auth_error');
+    expect(mockSignIn).not.toHaveBeenCalled();
+  });
+
+  it('returns failed outcome when credential sign-in password is missing', async () => {
+    const outcome = await executeCredentialSignIn('admin@hospital.cl', '');
+
+    expect(outcome.status).toBe('failed');
+    expect(outcome.reason).toBe('auth/credential-missing-password');
+    expect(outcome.data.status).toBe('auth_error');
+    expect(mockSignIn).not.toHaveBeenCalled();
   });
 
   it('returns failed outcome when redirect resolution surfaces an auth error state', async () => {
