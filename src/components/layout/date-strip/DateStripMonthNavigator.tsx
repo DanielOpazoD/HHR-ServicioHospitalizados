@@ -30,7 +30,7 @@ export const DateStripMonthNavigator: React.FC<DateStripMonthNavigatorProps> = (
       </button>
       <button
         onClick={toggle}
-        className="mx-1 uppercase text-[12px] font-semibold text-slate-600 tracking-wide hover:text-slate-900 hover:bg-white rounded px-1.5 py-0.5 transition-colors min-w-[70px] text-center"
+        className="mx-1 uppercase text-[12px] font-semibold text-slate-600 tracking-wide hover:text-slate-900 hover:bg-white rounded px-1 py-0.5 transition-colors min-w-[54px] text-center"
       >
         {MONTH_NAMES[selectedMonth]}
       </button>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { FlaskConical } from 'lucide-react';
 import { AppContent } from '@/components/layout/AppContent';
 import { CensusProvider } from '@/context/CensusContext';
 import { type AuthContextType } from '@/context';
@@ -14,6 +15,20 @@ const LaboratoryQuickAction = lazyWithRetry(() =>
   }))
 );
 
+const LaboratoryQuickActionFallback = () => (
+  <button
+    type="button"
+    disabled
+    aria-disabled="true"
+    tabIndex={-1}
+    className="flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[11px] font-semibold text-emerald-700 opacity-50"
+    title="Laboratorio / Exámenes Syslab (cargando...)"
+  >
+    <FlaskConical size={14} />
+    <span className="hidden sm:inline">Lab</span>
+  </button>
+);
+
 interface AuthenticatedAppShellProps {
   auth: AuthContextType;
   dateNav: AppAuthenticatedDateNavigation;
@@ -23,7 +38,7 @@ export const AuthenticatedAppShell = ({ auth, dateNav }: AuthenticatedAppShellPr
   const { censusContextValue, ui } = useAuthenticatedAppRuntime({ auth, dateNav });
   const renderFeatureQuickActions = React.useCallback(
     (patients: MedicalIndicationsPatientOption[]) => (
-      <React.Suspense fallback={null}>
+      <React.Suspense fallback={<LaboratoryQuickActionFallback />}>
         <LaboratoryQuickAction patients={patients} />
       </React.Suspense>
     ),

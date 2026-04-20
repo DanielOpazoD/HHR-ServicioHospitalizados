@@ -147,6 +147,7 @@
   html {
     scroll-behavior: smooth;
     overscroll-behavior: none;
+    scrollbar-gutter: stable;
   }
 
   body {

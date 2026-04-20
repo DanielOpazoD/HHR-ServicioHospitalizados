@@ -25,7 +25,21 @@ export const useBackupArchiveStatus = ({
   warning,
   error,
 }: UseBackupArchiveStatusParams) => {
-  const [isArchived, setIsArchived] = useState(false);
+  const archiveStatusKey = `${currentDateString}|${currentModule}|${selectedShift}|${canVerifyArchiveStatus ? '1' : '0'}`;
+  const [archiveState, setArchiveState] = useState<{
+    key: string;
+    isArchived: boolean;
+  }>({
+    key: archiveStatusKey,
+    isArchived: false,
+  });
+  const isArchived = archiveState.key === archiveStatusKey ? archiveState.isArchived : false;
+  const setIsArchived = (nextIsArchived: boolean) => {
+    setArchiveState({
+      key: archiveStatusKey,
+      isArchived: nextIsArchived,
+    });
+  };
 
   useEffect(() => {
     if (!canVerifyArchiveStatus || !shouldCheckArchiveStatus(currentDateString, currentModule)) {
@@ -51,7 +65,10 @@ export const useBackupArchiveStatus = ({
           date: currentDateString,
           context: { backupType, shift: selectedShift },
         });
-        setIsArchived(buildArchiveStatusState(outcome.data.lookup));
+        setArchiveState({
+          key: archiveStatusKey,
+          isArchived: buildArchiveStatusState(outcome.data.lookup),
+        });
         const notice = presentBackupLookupOutcome(outcome);
         // Background archive verification is opportunistic. Timeouts should stay silent and rely on
         // telemetry instead of interrupting the user when the main data flow is already healthy.
@@ -95,7 +112,15 @@ export const useBackupArchiveStatus = ({
         browserWindow.cancelIdleCallback(idleCallbackId);
       }
     };
-  }, [canVerifyArchiveStatus, currentDateString, currentModule, error, selectedShift, warning]);
+  }, [
+    archiveStatusKey,
+    canVerifyArchiveStatus,
+    currentDateString,
+    currentModule,
+    error,
+    selectedShift,
+    warning,
+  ]);
 
   return {
     isArchived,

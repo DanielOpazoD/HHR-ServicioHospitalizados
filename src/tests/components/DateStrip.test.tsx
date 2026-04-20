@@ -46,7 +46,7 @@ describe('DateStrip', () => {
     expect(screen.getByText('2024')).toBeInTheDocument();
     // Check days strip
     expect(screen.getByText('1')).toBeInTheDocument();
-    expect(screen.getByText('13')).toBeInTheDocument(); // 13 is the default visible end day
+    expect(screen.getByText('9')).toBeInTheDocument(); // 9 is the compact desktop visible end day
   });
 
   it('renders clinical action buttons for admin in CENSUS module', () => {
@@ -54,6 +54,7 @@ describe('DateStrip', () => {
 
     expect(screen.getByTitle('Descargar PDF (rápido)')).toBeInTheDocument();
     expect(screen.getByTitle('Opciones de guardado')).toBeInTheDocument();
+    expect(screen.queryByText('Guardar')).not.toBeInTheDocument();
     expect(screen.getByTitle('Bloqueo de camas')).toBeInTheDocument();
     expect(screen.getByTitle('Enviar censo')).toBeInTheDocument();
   });
@@ -64,6 +65,9 @@ describe('DateStrip', () => {
     );
     expect(screen.queryByTitle('Bloqueo de camas')).not.toBeInTheDocument();
     expect(screen.queryByTitle('Exportar Excel')).not.toBeInTheDocument();
+    expect(screen.queryByTitle('Buscar paciente (Ctrl+K)')).not.toBeInTheDocument();
+    expect(screen.queryByTitle('Radiología / Imagenología')).not.toBeInTheDocument();
+    expect(screen.queryByTitle(/Lab/)).not.toBeInTheDocument();
   });
 
   it('shows email status indicators', () => {
@@ -78,10 +82,10 @@ describe('DateStrip', () => {
   it('shows sync status indicators in SaveDropdown', () => {
     // Sync status is actually reflected in SaveDropdown 'isArchived' and 'isBackingUp' props
     const { rerender } = render(<DateStrip {...defaultProps} isBackingUp={true} />);
-    expect(screen.getByText('Guardando...')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Guardando...' })).toBeInTheDocument();
 
     rerender(<DateStrip {...defaultProps} isArchived={true} />);
-    expect(screen.getByText('Sincronizado')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Sincronizado' })).toBeInTheDocument();
   });
 
   it('hides firebase backup option in census save menu', () => {

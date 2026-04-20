@@ -167,6 +167,35 @@ describe('useExportManager', () => {
     });
   });
 
+  it('resets the archived state when switching modules before the next lookup resolves', async () => {
+    vi.mocked(backupExportUseCases.executeLookupBackupArchiveStatus).mockResolvedValueOnce({
+      status: 'success',
+      data: { exists: true, lookup: { exists: true, status: 'available' } },
+      issues: [],
+    });
+
+    const { result, rerender } = renderHook(props => useExportManager(props), {
+      initialProps: defaultProps,
+    });
+
+    await waitFor(() => {
+      expect(result.current.isArchived).toBe(true);
+    });
+
+    vi.mocked(backupExportUseCases.executeLookupBackupArchiveStatus).mockImplementationOnce(
+      () => new Promise(() => {})
+    );
+
+    rerender({
+      ...defaultProps,
+      currentModule: 'NURSING_HANDOFF',
+    });
+
+    await waitFor(() => {
+      expect(result.current.isArchived).toBe(false);
+    });
+  });
+
   it('should handle null record', () => {
     const props = {
       ...defaultProps,

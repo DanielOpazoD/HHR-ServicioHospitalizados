@@ -19,6 +19,7 @@ import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medical
 import { useDateStripWheelNavigation } from '@/components/layout/date-strip/useDateStripWheelNavigation';
 import type { CensusAccessProfile } from '@/shared/access/censusAccessProfile';
 import { isSpecialistCensusAccessProfile } from '@/shared/access/censusAccessProfile';
+import type { ModuleType } from '@/constants/navigationConfig';
 
 export interface DateNavigationProps {
   selectedYear: number;
@@ -70,7 +71,7 @@ export interface DateStripProps
     SyncConfigProps,
     BookmarkConfigProps {
   isBackingUp: boolean;
-  currentModule: string;
+  currentModule: ModuleType;
   accessProfile?: CensusAccessProfile;
   medicalIndicationsPatients?: MedicalIndicationsPatientOption[];
   renderFeatureQuickActions?: (patients: MedicalIndicationsPatientOption[]) => React.ReactNode;
@@ -131,6 +132,8 @@ export const DateStrip: React.FC<DateStripProps> = ({
   const isCurrentMonth = today.getMonth() === selectedMonth && today.getFullYear() === selectedYear;
   const specialistCensusAccess =
     currentModule === 'CENSUS' && isSpecialistCensusAccessProfile(accessProfile);
+  const isHandoffModule =
+    currentModule === 'NURSING_HANDOFF' || currentModule === 'MEDICAL_HANDOFF';
 
   useDateStripWheelNavigation({ containerRef: daysContainerRef, navigateDays });
 
@@ -215,12 +218,13 @@ export const DateStrip: React.FC<DateStripProps> = ({
               selectedMonth={selectedMonth}
               isCurrentMonth={isCurrentMonth}
               today={today}
+              currentModule={currentModule}
             />
           </div>
 
           <div className="h-4 w-px bg-slate-200/70" />
 
-          {onOpenPatientSearch && (
+          {!isHandoffModule && onOpenPatientSearch && (
             <button
               onClick={onOpenPatientSearch}
               className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-700 rounded-lg border border-slate-200 transition-colors text-[11px] font-semibold"
@@ -234,6 +238,7 @@ export const DateStrip: React.FC<DateStripProps> = ({
           <DateStripQuickActions
             onOpenBedManager={specialistCensusAccess ? undefined : onOpenBedManager}
             renderFeatureQuickActions={renderFeatureQuickActions}
+            hideClinicalQuickActions={isHandoffModule}
             medicalIndicationsPatients={
               currentModule === 'CENSUS' ? medicalIndicationsPatients : []
             }

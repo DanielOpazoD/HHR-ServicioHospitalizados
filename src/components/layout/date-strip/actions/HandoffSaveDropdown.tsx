@@ -1,5 +1,5 @@
 import React from 'react';
-import { Printer, ChevronDown, Loader2, Save, CheckCircle } from 'lucide-react';
+import { Printer, Loader2, Save, CheckCircle } from 'lucide-react';
 import clsx from 'clsx';
 import { useDropdownMenu } from '@/hooks/useDropdownMenu';
 import { resolveSaveButtonUiState } from './dateStripActionStateController';
@@ -44,16 +44,15 @@ export const HandoffSaveDropdown: React.FC<HandoffSaveDropdownProps> = ({
         onClick={toggle}
         disabled={isBackingUp}
         className={clsx(
-          'btn !px-3 !py-1.5 text-[10px] flex items-center gap-1.5 transition-all',
+          'btn !px-2 !py-1.5 text-[10px] flex items-center justify-center transition-all',
           uiState.buttonClassName
         )}
         title="Opciones de guardado (PDF/Nube)"
+        aria-label={uiState.label}
       >
         {uiState.iconKind === 'loading' && <Loader2 size={14} className="animate-spin" />}
         {uiState.iconKind === 'archived' && <CheckCircle size={14} />}
         {uiState.iconKind === 'default' && <Save size={14} />}
-        <span className="font-bold uppercase tracking-tighter">{uiState.label}</span>
-        <ChevronDown size={14} className={clsx('transition-transform', isOpen && 'rotate-180')} />
       </button>
 
       {isOpen && (

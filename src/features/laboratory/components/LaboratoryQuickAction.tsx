@@ -25,25 +25,31 @@ export const LaboratoryQuickAction: React.FC<LaboratoryQuickActionProps> = ({ pa
     [patients]
   );
 
-  if (labPatients.length === 0) {
-    return null;
-  }
+  const isDisabled = labPatients.length === 0;
 
   return (
     <>
       <button
-        onClick={() => setIsLabOpen(true)}
-        className="flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[11px] font-semibold text-emerald-700 transition-colors hover:bg-emerald-100"
+        onClick={() => {
+          if (!isDisabled) {
+            setIsLabOpen(true);
+          }
+        }}
+        disabled={isDisabled}
+        className="flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[11px] font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 disabled:cursor-default disabled:opacity-50"
         title="Laboratorio / Exámenes Syslab"
+        aria-disabled={isDisabled}
       >
         <FlaskConical size={14} />
         <span className="hidden sm:inline">Lab</span>
       </button>
-      <LabResultsViewerModal
-        isOpen={isLabOpen}
-        onClose={() => setIsLabOpen(false)}
-        patients={labPatients}
-      />
+      {labPatients.length > 0 && (
+        <LabResultsViewerModal
+          isOpen={isLabOpen}
+          onClose={() => setIsLabOpen(false)}
+          patients={labPatients}
+        />
+      )}
     </>
   );
 };

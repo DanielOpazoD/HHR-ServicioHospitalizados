@@ -82,4 +82,22 @@ describe('DateStripQuickActions', () => {
     expect(renderFeatureQuickActions).toHaveBeenCalledWith(patients);
     expect(screen.getByText('Feature quick actions')).toBeInTheDocument();
   });
+
+  it('hides radiology and lab actions when clinical quick actions are disabled', () => {
+    const renderFeatureQuickActions = vi.fn(() => <div>Feature quick actions</div>);
+
+    render(
+      <DateStripQuickActions
+        onOpenBedManager={vi.fn()}
+        medicalIndicationsPatients={patients}
+        renderFeatureQuickActions={renderFeatureQuickActions}
+        hideClinicalQuickActions
+      />
+    );
+
+    expect(screen.getByTitle('Bloqueo de camas')).toBeInTheDocument();
+    expect(screen.queryByTitle('Radiología / Imagenología')).not.toBeInTheDocument();
+    expect(screen.queryByText('Feature quick actions')).not.toBeInTheDocument();
+    expect(renderFeatureQuickActions).not.toHaveBeenCalled();
+  });
 });

@@ -4,6 +4,7 @@ import {
   resolveDateStripDayWindow,
   resolveIsFutureDayBlocked,
 } from '@/components/layout/date-strip/dateStripDayWindowController';
+import type { ModuleType } from '@/constants/navigationConfig';
 
 interface DateStripDayButtonsProps {
   selectedDay: number;
@@ -14,6 +15,7 @@ interface DateStripDayButtonsProps {
   selectedMonth: number;
   isCurrentMonth: boolean;
   today: Date;
+  currentModule?: ModuleType;
 }
 
 export const DateStripDayButtons: React.FC<DateStripDayButtonsProps> = ({
@@ -25,6 +27,7 @@ export const DateStripDayButtons: React.FC<DateStripDayButtonsProps> = ({
   selectedMonth,
   isCurrentMonth,
   today,
+  currentModule,
 }) => {
   const [windowWidth, setWindowWidth] = React.useState(
     typeof window !== 'undefined' ? window.innerWidth : 1200
@@ -41,6 +44,7 @@ export const DateStripDayButtons: React.FC<DateStripDayButtonsProps> = ({
     selectedDay,
     daysInMonth,
     windowWidth,
+    currentModule,
   });
 
   const dayButtons = Array.from(

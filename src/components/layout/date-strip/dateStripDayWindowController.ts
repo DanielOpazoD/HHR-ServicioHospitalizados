@@ -1,9 +1,18 @@
+import type { ModuleType } from '@/constants/navigationConfig';
+
 export const DATE_STRIP_MOBILE_BREAKPOINT = 640;
 export const DATE_STRIP_TABLET_BREAKPOINT = 1024;
 
 const MOBILE_VISIBLE_DAYS = 5;
 const TABLET_VISIBLE_DAYS = 7;
 const DESKTOP_VISIBLE_DAYS = 13;
+const COMPACT_DESKTOP_VISIBLE_DAYS = 9;
+
+const COMPACT_DAY_STRIP_MODULES = new Set<ModuleType>([
+  'CENSUS',
+  'NURSING_HANDOFF',
+  'MEDICAL_HANDOFF',
+]);
 
 export interface DateStripDayWindow {
   startDay: number;
@@ -15,15 +24,23 @@ interface ResolveDateStripDayWindowParams {
   selectedDay: number;
   daysInMonth: number;
   windowWidth: number;
+  currentModule?: ModuleType;
 }
 
-export const resolveDateStripVisibleDays = (windowWidth: number): number => {
+export const resolveDateStripVisibleDays = (
+  windowWidth: number,
+  currentModule?: ModuleType
+): number => {
   if (windowWidth < DATE_STRIP_MOBILE_BREAKPOINT) {
     return MOBILE_VISIBLE_DAYS;
   }
 
   if (windowWidth < DATE_STRIP_TABLET_BREAKPOINT) {
     return TABLET_VISIBLE_DAYS;
+  }
+
+  if (currentModule && COMPACT_DAY_STRIP_MODULES.has(currentModule)) {
+    return COMPACT_DESKTOP_VISIBLE_DAYS;
   }
 
   return DESKTOP_VISIBLE_DAYS;
@@ -33,8 +50,9 @@ export const resolveDateStripDayWindow = ({
   selectedDay,
   daysInMonth,
   windowWidth,
+  currentModule,
 }: ResolveDateStripDayWindowParams): DateStripDayWindow => {
-  const visibleDays = resolveDateStripVisibleDays(windowWidth);
+  const visibleDays = resolveDateStripVisibleDays(windowWidth, currentModule);
   const offset = Math.floor(visibleDays / 2);
 
   let startDay = selectedDay - offset;
