@@ -53,9 +53,15 @@ export function usePatientSearchQuery(): UsePatientSearchQueryReturn {
 
     debounceRef.current = setTimeout(async () => {
       try {
-        const found = await searchMasterPatients(trimmed, SEARCH_LIMIT);
+        const outcome = await searchMasterPatients(trimmed, SEARCH_LIMIT);
         if (currentId !== searchIdRef.current) return;
-        setResults(found);
+        if (outcome.status === 'success') {
+          setResults(outcome.data);
+          return;
+        }
+
+        globalPatientSearchLogger.warn('Patient search failed', outcome);
+        setResults([]);
       } catch (err) {
         globalPatientSearchLogger.warn('Patient search failed', err);
         if (currentId === searchIdRef.current) setResults([]);

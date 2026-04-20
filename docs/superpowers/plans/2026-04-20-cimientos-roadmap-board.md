@@ -21,7 +21,7 @@ Objetivo: elevar sostenibilidad y estabilidad sin sobreingenieria ni cambios rad
 
 ### Doing
 
-- T05 Outcomes estables en capa aplicacion
+- T06 DTOs y validacion en borde
 
 ### Review
 
@@ -33,6 +33,7 @@ Objetivo: elevar sostenibilidad y estabilidad sin sobreingenieria ni cambios rad
 - T02 Guardrails ESLint de boundaries (enforcement incremental)
 - T03 API publica por feature (barrels consistentes)
 - T04 Desacople UI -> repo en busqueda de censo
+- T05 Outcomes estables en capa aplicacion
 
 ## Dependencias
 

@@ -1,4 +1,13 @@
 import type { MasterPatient } from '@/types/domain/patientMaster';
+import {
+  createApplicationFailed,
+  createApplicationSuccess,
+  type ApplicationOutcome,
+} from '@/shared/contracts/applicationOutcome';
+import {
+  isSearchMasterPatientsQueryTooLong,
+  normalizeSearchMasterPatientsInput,
+} from './searchMasterPatientsContracts';
 
 let patientMasterRepositoryPromise: Promise<
   Pick<typeof import('@/services/repositories/PatientMasterRepository'), 'searchPatients'>
@@ -12,10 +21,56 @@ const loadPatientMasterRepository = () => {
 export const searchMasterPatients = async (
   searchTerm: string,
   limitCount: number = 20
-): Promise<MasterPatient[]> => {
-  const trimmed = searchTerm.trim();
-  if (!trimmed) return [];
+): Promise<ApplicationOutcome<MasterPatient[]>> => {
+  const normalizedInput = normalizeSearchMasterPatientsInput({ searchTerm, limitCount });
+  if (!normalizedInput.searchTerm) return createApplicationSuccess([]);
 
-  const repository = await loadPatientMasterRepository();
-  return repository.searchPatients(trimmed, limitCount);
+  if (isSearchMasterPatientsQueryTooLong(normalizedInput.searchTerm)) {
+    return createApplicationFailed(
+      [],
+      [
+        {
+          kind: 'validation',
+          code: 'census/master-patient-search-invalid-query',
+          message: 'Search query exceeds maximum supported length.',
+          userSafeMessage: 'La búsqueda es demasiado larga. Intenta con menos texto.',
+          retryable: true,
+        },
+      ],
+      {
+        reason: 'census_master_patient_search_invalid_query',
+        userSafeMessage: 'La búsqueda es demasiado larga. Intenta con menos texto.',
+        retryable: true,
+        severity: 'info',
+      }
+    );
+  }
+
+  try {
+    const repository = await loadPatientMasterRepository();
+    const patients = await repository.searchPatients(
+      normalizedInput.searchTerm,
+      normalizedInput.limitCount
+    );
+    return createApplicationSuccess(patients);
+  } catch (error) {
+    return createApplicationFailed(
+      [],
+      [
+        {
+          kind: 'unknown',
+          code: 'census/master-patient-search-failed',
+          message: error instanceof Error ? error.message : 'Patient search failed',
+          userSafeMessage: 'No se pudo buscar pacientes en este momento. Intenta nuevamente.',
+          retryable: true,
+        },
+      ],
+      {
+        reason: 'census_master_patient_search_failed',
+        userSafeMessage: 'No se pudo buscar pacientes en este momento. Intenta nuevamente.',
+        retryable: true,
+        severity: 'warning',
+      }
+    );
+  }
 };
