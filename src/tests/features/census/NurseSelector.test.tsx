@@ -74,4 +74,24 @@ describe('NurseSelector', () => {
     expect(screen.getAllByRole('option', { name: VACANCY_LABEL }).length).toBeGreaterThan(0);
     expect(screen.getAllByDisplayValue(VACANCY_LABEL).length).toBeGreaterThan(0);
   });
+
+  it('renders vacancy selections with a muted disabled-like appearance', () => {
+    render(
+      <NurseSelector
+        nursesDayShift={[VACANCY_LABEL, '']}
+        nursesNightShift={['', '']}
+        nursesList={['Enfermera Claudia']}
+        onUpdateNurse={vi.fn()}
+      />
+    );
+
+    const vacancySelect = screen.getAllByDisplayValue(VACANCY_LABEL)[0];
+
+    expect(vacancySelect).toHaveClass(
+      'rounded-md',
+      'bg-slate-150',
+      'text-slate-600',
+      'border-slate-300'
+    );
+  });
 });

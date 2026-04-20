@@ -6,6 +6,7 @@ import {
   normalizeStaffSelectionValue,
   VACANCY_LABEL,
 } from '@/services/staff/staffSelectionPresentation';
+import { buildStaffSelectionSelectClassName } from './staffSelectionSelectStyles';
 
 interface TensSelectorProps {
   tensDayShift: string[];
@@ -42,7 +43,7 @@ export const TensSelector: React.FC<TensSelectorProps> = ({
 }) => {
   const { setShowTensManager } = useStaffContext();
   const selectClassName =
-    'py-0 pl-1 pr-4 border border-slate-200 rounded text-[10px] focus:ring-1 focus:outline-none bg-transparent text-slate-700 h-[20px] w-[60px] appearance-none';
+    'py-0 pl-1 pr-4 border border-slate-200 text-[10px] focus:ring-1 focus:outline-none text-slate-700 h-[20px] w-[60px] appearance-none transition-all';
   const resolvedTensOptions = React.useMemo(
     () => buildResolvedStaffOptions(tensList, [...tensDayShift, ...tensNightShift]),
     [tensList, tensDayShift, tensNightShift]
@@ -89,7 +90,11 @@ export const TensSelector: React.FC<TensSelectorProps> = ({
         {[0, 1, 2].map(idx => (
           <div key={`day-${idx}`} className="relative">
             <select
-              className={`${selectClassName} focus:ring-teal-500 bg-teal-50/50`}
+              className={buildStaffSelectionSelectClassName({
+                baseClassName: selectClassName,
+                selectionValue: tensDayShift[idx],
+                tone: 'day',
+              })}
               value={normalizeStaffSelectionValue(tensDayShift[idx])}
               onChange={e => onUpdateTens('day', idx, e.target.value)}
             >
@@ -119,7 +124,11 @@ export const TensSelector: React.FC<TensSelectorProps> = ({
         {[0, 1, 2].map(idx => (
           <div key={`night-${idx}`} className="relative">
             <select
-              className={`${selectClassName} focus:ring-slate-500 bg-slate-100/50`}
+              className={buildStaffSelectionSelectClassName({
+                baseClassName: selectClassName,
+                selectionValue: tensNightShift[idx],
+                tone: 'night',
+              })}
               value={normalizeStaffSelectionValue(tensNightShift[idx])}
               onChange={e => onUpdateTens('night', idx, e.target.value)}
             >

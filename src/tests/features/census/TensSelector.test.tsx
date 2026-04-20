@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { TensSelector } from '@/features/census/components/TensSelector';
+import { VACANCY_LABEL } from '@/services/staff/staffSelectionPresentation';
 
 const setShowTensManager = vi.fn();
 
@@ -53,5 +54,25 @@ describe('TensSelector', () => {
     expect(
       screen.queryByLabelText('Configurar detalle de TENS turno Largo')
     ).not.toBeInTheDocument();
+  });
+
+  it('renders vacancy selections with a muted disabled-like appearance', () => {
+    render(
+      <TensSelector
+        tensDayShift={[VACANCY_LABEL, '', '']}
+        tensNightShift={['', '', '']}
+        tensList={['Tens Paula']}
+        onUpdateTens={vi.fn()}
+      />
+    );
+
+    const vacancySelect = screen.getAllByDisplayValue(VACANCY_LABEL)[0];
+
+    expect(vacancySelect).toHaveClass(
+      'rounded-md',
+      'bg-slate-150',
+      'text-slate-600',
+      'border-slate-300'
+    );
   });
 });
