@@ -256,6 +256,14 @@ sequenceDiagram
 - Si una operación ya existe en `application/`, la UI debe consumir el use-case o un hook fachada, no el servicio remoto.
 - Este boundary se verifica automáticamente con `npm run check:application-port-boundary`.
 
+### Foundation boundaries por dominio (2026-04-20)
+
+- Referencia canónica: `docs/superpowers/specs/2026-04-20-domain-boundaries-foundation.md`.
+- Dominios incluidos en la primera ola de enforcement incremental:
+  - `src/features/cudyr/**/*`
+  - `src/features/handoff/**/*`
+  - `src/components/layout/**/*`
+
 ---
 
 ## ✅ Checklist de Consistencia (ARCHITECTURE vs docs/architecture)

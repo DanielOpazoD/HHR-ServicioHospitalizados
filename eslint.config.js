@@ -113,6 +113,31 @@ export default tseslint.config(
     },
   },
   {
+    files: [
+      'src/features/cudyr/**/*.{ts,tsx}',
+      'src/features/handoff/**/*.{ts,tsx}',
+      'src/components/layout/**/*.{ts,tsx}',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '@/services/repositories/*',
+                '@/services/RepositoryContext',
+                '@/services/infrastructure/*',
+              ],
+              message:
+                'Usa controllers/use-cases/ports para acceder a datos. No importes repositorios ni infraestructura directo desde UI/feature shell.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     extends: [js.configs.recommended],
     files: ['functions/**/*.js', 'netlify/functions/**/*.js'],
     languageOptions: {

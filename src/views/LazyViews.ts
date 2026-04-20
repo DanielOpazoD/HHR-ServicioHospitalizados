@@ -3,6 +3,7 @@
  * Loaded on-demand when the user navigates to them
  */
 import { loadCensusPublicComponents } from '@/application/census/public';
+import { loadCudyrPublicComponents } from '@/application/cudyr/public';
 import { lazyWithRetry } from '@/utils/lazyWithRetry';
 
 // Census module heavy components (prefetch for faster navigation).
@@ -28,14 +29,14 @@ export const AnalyticsView = lazyWithRetry(() =>
 
 // CUDYR module (prefetch)
 export const CudyrView = lazyWithRetry(() =>
-  import(/* webpackPrefetch: true */ '@/application/cudyr/CudyrView').then(module => ({
+  loadCudyrPublicComponents().then(module => ({
     default: module.CudyrView,
   }))
 );
 
 // Handoff module (prefetch)
 export const HandoffView = lazyWithRetry(() =>
-  import(/* webpackPrefetch: true */ '@/features/handoff').then(module => ({
+  import(/* webpackPrefetch: true */ '@/application/handoff/public').then(module => ({
     default: module.HandoffView,
   }))
 );
@@ -125,7 +126,7 @@ export const WhatsAppIntegrationView = lazyWithRetry(() =>
 
 // Transfer Management module
 export const TransferManagementView = lazyWithRetry(() =>
-  import('@/features/transfers').then(module => ({
+  import('@/application/transfers/public').then(module => ({
     default: module.TransferManagementView,
   }))
 );
