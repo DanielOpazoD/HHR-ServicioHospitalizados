@@ -73,10 +73,14 @@ export const generateConsentPdf = async (input: ConsentPdfInput): Promise<string
   // --- Title ---
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(13);
-  doc.text('CONSENTIMIENTO INFORMADO', pageWidth / 2, y, { align: 'center' });
+  doc.text('AUTORIZACIÓN PARA REGISTRO CLÍNICO AUDIOVISUAL', pageWidth / 2, y, {
+    align: 'center',
+  });
   y += 6;
   doc.setFontSize(11);
-  doc.text('Registro Fotográfico de Curaciones', pageWidth / 2, y, { align: 'center' });
+  doc.text('Lesiones cutáneas, heridas y otros hallazgos clínicos', pageWidth / 2, y, {
+    align: 'center',
+  });
   y += 10;
 
   // --- Patient data ---
@@ -114,15 +118,15 @@ export const generateConsentPdf = async (input: ConsentPdfInput): Promise<string
   const bodyText = [
     'Yo, el/la paciente abajo firmante (o su representante legal), declaro que he sido informado/a por el equipo de salud del Hospital Hanga Roa sobre lo siguiente:',
     '',
-    '1.  Durante mi hospitalización, el equipo de enfermería podría realizar un registro fotográfico de las curaciones efectuadas, con el fin de documentar la evolución clínica de las heridas o lesiones tratadas.',
+    '1.  Durante mi hospitalización, el equipo de salud podrá realizar registros audiovisuales de lesiones cutáneas, heridas, curaciones u otros hallazgos clínicos relevantes, con el fin de documentar mi evolución.',
     '',
-    '2.  Las fotografías serán utilizadas exclusivamente como parte de mi registro clínico y ficha de hospitalización, para facilitar el seguimiento y la continuidad del cuidado entre los distintos turnos del equipo de salud.',
+    '2.  Este material se utilizará únicamente como parte de mi registro clínico para facilitar el seguimiento, la continuidad del cuidado y la comunicación entre los distintos integrantes del equipo de salud.',
     '',
-    '3.  Las imágenes NO serán utilizadas con fines académicos, de investigación, publicación científica ni difusión de ningún tipo.',
+    '3.  Las imágenes y registros NO serán utilizados con fines académicos, de investigación, publicación científica ni difusión de ningún tipo, salvo autorización expresa y separada.',
     '',
-    '4.  Las fotografías serán almacenadas en un sistema digital seguro con acceso restringido únicamente al personal clínico autorizado del Hospital Hanga Roa.',
+    '4.  El material será almacenado en un sistema digital seguro, con acceso restringido únicamente al personal clínico autorizado del Hospital Hanga Roa.',
     '',
-    '5.  Puedo revocar este consentimiento en cualquier momento, informando al equipo de enfermería a cargo de mi atención.',
+    '5.  Puedo revocar esta autorización en cualquier momento, informando al equipo de salud a cargo de mi atención.',
   ];
 
   const lineHeight = 5;
@@ -141,26 +145,6 @@ export const generateConsentPdf = async (input: ConsentPdfInput): Promise<string
 
   y += 6;
 
-  // --- Highlighted box: key statement ---
-  doc.setFillColor(240, 248, 255);
-  doc.setDrawColor(0, 120, 200);
-  doc.setLineWidth(0.5);
-  doc.roundedRect(margin, y, contentWidth, 14, 2, 2, 'FD');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.text(
-    'Autorizo la toma de fotografías de mis curaciones con fines exclusivos de registro clínico.',
-    pageWidth / 2,
-    y + 6,
-    { align: 'center' }
-  );
-  doc.text('NO autorizo su uso con fines académicos ni de investigación.', pageWidth / 2, y + 11, {
-    align: 'center',
-  });
-
-  y += 22;
-
   // --- Signature area ---
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
@@ -174,30 +158,17 @@ export const generateConsentPdf = async (input: ConsentPdfInput): Promise<string
   doc.line(sigLeft, y + 15, sigLeft + sigLineWidth, y + 15);
   doc.setFontSize(9);
   doc.text('Firma del Paciente o Representante Legal', sigLeft, y + 20);
-  doc.text(`RUT: ${input.patientRut || '____________________'}`, sigLeft, y + 25);
 
   // Right: staff witness
   doc.line(sigRight, y + 15, sigRight + sigLineWidth, y + 15);
   doc.text('Firma del Profesional de Salud', sigRight, y + 20);
-  doc.text('Nombre: ____________________________', sigRight, y + 25);
+  doc.text('Nombre: ____________________________', sigRight, y + 28);
 
-  y += 35;
+  y += 40;
 
   // --- Date and place ---
   doc.setFontSize(9);
-  doc.text(`Fecha: ${todayFormatted()}`, margin, y);
-  doc.text('Lugar: Hospital Hanga Roa, Rapa Nui', margin + 60, y);
-
-  // --- Footer ---
-  const footerY = doc.internal.pageSize.getHeight() - 10;
-  doc.setFontSize(7);
-  doc.setTextColor(150, 150, 150);
-  doc.text(
-    'Hospital Hanga Roa — Sistema Estadístico de Hospitalizados — Documento generado automáticamente',
-    pageWidth / 2,
-    footerY,
-    { align: 'center' }
-  );
+  doc.text(`Fecha: ${todayFormatted()}`, pageWidth - margin, y, { align: 'right' });
 
   // Queue auto-print and return the blob URL so the caller can open it
   // through the browser window runtime adapter (keeps `window.open` out of
