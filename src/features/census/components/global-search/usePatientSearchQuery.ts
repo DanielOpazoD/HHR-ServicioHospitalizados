@@ -1,25 +1,17 @@
 /**
  * usePatientSearchQuery
  *
- * Handles the debounced search query against PatientMasterRepository.
+ * Handles the debounced search query against the census application layer.
  * Single responsibility: input → debounce → search → results.
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { searchMasterPatients } from '@/application/census/public';
 import type { MasterPatient } from '@/types/domain/patientMaster';
 import { globalPatientSearchLogger } from '@/hooks/hookLoggers';
 
 const DEBOUNCE_MS = 300;
 const SEARCH_LIMIT = 20;
-
-let patientMasterRepoPromise: Promise<
-  typeof import('@/services/repositories/PatientMasterRepository')
-> | null = null;
-
-const loadPatientMasterRepo = () => {
-  patientMasterRepoPromise ??= import('@/services/repositories/PatientMasterRepository');
-  return patientMasterRepoPromise;
-};
 
 export interface UsePatientSearchQueryReturn {
   query: string;
@@ -61,8 +53,7 @@ export function usePatientSearchQuery(): UsePatientSearchQueryReturn {
 
     debounceRef.current = setTimeout(async () => {
       try {
-        const repo = await loadPatientMasterRepo();
-        const found = await repo.searchPatients(trimmed, SEARCH_LIMIT);
+        const found = await searchMasterPatients(trimmed, SEARCH_LIMIT);
         if (currentId !== searchIdRef.current) return;
         setResults(found);
       } catch (err) {

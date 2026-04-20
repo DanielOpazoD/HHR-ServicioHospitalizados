@@ -3,6 +3,7 @@
 // eagerly pull the census component tree into the authenticated shell chunk.
 
 export * from '@/features/census/public';
+export { searchMasterPatients } from './searchMasterPatientsUseCase';
 
 export const loadCensusPublicComponents = () =>
   import(/* webpackPrefetch: true */ '@/features/census/public-components');

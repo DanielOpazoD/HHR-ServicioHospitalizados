@@ -8,7 +8,6 @@ Objetivo: elevar sostenibilidad y estabilidad sin sobreingenieria ni cambios rad
 ### Todo
 
 - T03 API publica por feature (barrels consistentes)
-- T04 Desacople UI -> repo en busqueda de censo
 - T05 Outcomes estables en capa aplicacion
 - T06 DTOs y validacion en borde
 - T07 Contrato unico de exportaciones (Excel/PDF)
@@ -22,7 +21,7 @@ Objetivo: elevar sostenibilidad y estabilidad sin sobreingenieria ni cambios rad
 
 ### Doing
 
-- T04 Desacople UI -> repo en busqueda de censo
+- T05 Outcomes estables en capa aplicacion
 
 ### Review
 
@@ -33,6 +32,7 @@ Objetivo: elevar sostenibilidad y estabilidad sin sobreingenieria ni cambios rad
 - T01 Fronteras por dominio (ADR base)
 - T02 Guardrails ESLint de boundaries (enforcement incremental)
 - T03 API publica por feature (barrels consistentes)
+- T04 Desacople UI -> repo en busqueda de censo
 
 ## Dependencias
 
