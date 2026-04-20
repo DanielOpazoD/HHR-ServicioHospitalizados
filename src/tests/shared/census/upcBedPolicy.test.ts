@@ -152,7 +152,7 @@ describe('resolveEffectiveUpcState', () => {
     });
   });
 
-  it('keeps legacy isUPC as fallback when checklist is absent', () => {
+  it('treats legacy isUPC as UTI when checklist is absent on eligible beds', () => {
     expect(
       resolveEffectiveUpcState({
         bedId: 'R2',
@@ -160,7 +160,7 @@ describe('resolveEffectiveUpcState', () => {
         checklist: undefined,
       })
     ).toEqual({
-      classification: null,
+      classification: 'UPC_UTI',
       isUpc: true,
     });
   });

@@ -6,7 +6,7 @@ import {
   renderSummarySheet,
   renderUpcDailyMatrixSheet,
   renderUpcPatientsSheet,
-  applyHiddenSheetProtection,
+  applyCosmeticSheetProtection,
 } from '@/services/exporters/excel/censusHiddenSheetsRenderer';
 import type {
   SummaryDayRow,
@@ -96,7 +96,7 @@ describe('censusHiddenSheetsRenderer', () => {
     expect(sheet.columns[0]?.width).toBe(14);
   });
 
-  it('renders UPC sheets and applies hidden sheet protection metadata', async () => {
+  it('renders UPC sheets and applies cosmetic sheet protection metadata', async () => {
     const workbook = new ExcelJS.Workbook();
     const upcSheet = workbook.addWorksheet('PACIENTES UPC MARZO 2026');
     const matrixSheet = workbook.addWorksheet('DETALLE DIARIO UPC');
@@ -134,11 +134,22 @@ describe('censusHiddenSheetsRenderer', () => {
       expect.objectContaining({ state: 'frozen', xSplit: 1, ySplit: 4, topLeftCell: 'B5' })
     );
 
-    await applyHiddenSheetProtection(upcSheet);
-    expect(upcSheet.state).toBe('hidden');
+    await applyCosmeticSheetProtection(upcSheet);
+    await applyCosmeticSheetProtection(matrixSheet);
+
+    expect(upcSheet.state).toBe('visible');
+    expect(matrixSheet.state).toBe('visible');
+    expect(upcSheet.getRow(5).hidden).toBe(true);
+    expect(upcSheet.getColumn(1).hidden).toBe(true);
+    expect(matrixSheet.getRow(5).hidden).toBe(true);
+    expect(matrixSheet.getColumn(1).hidden).toBe(true);
 
     const zip = new PizZip(await workbook.xlsx.writeBuffer());
     const upcSheetXml = zip.file('xl/worksheets/sheet1.xml')?.asText() ?? '';
+    const matrixSheetXml = zip.file('xl/worksheets/sheet2.xml')?.asText() ?? '';
     expect(upcSheetXml).toContain('<sheetProtection');
+    expect(upcSheetXml).toContain('hidden="1"');
+    expect(matrixSheetXml).toContain('<sheetProtection');
+    expect(matrixSheetXml).toContain('hidden="1"');
   });
 });

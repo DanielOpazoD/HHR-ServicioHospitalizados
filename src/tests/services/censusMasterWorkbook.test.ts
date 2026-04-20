@@ -15,6 +15,9 @@ import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
 const getVisibleSheets = (workbook: ExcelJS.Workbook) =>
   workbook.worksheets.filter(sheet => sheet.state !== 'hidden');
 
+const getVisibleDaySheets = (workbook: ExcelJS.Workbook) =>
+  getVisibleSheets(workbook).filter(sheet => /^\d{2}-\d{2}-\d{4}$/.test(sheet.name));
+
 const buildPatient = (bedId: string, patientName: string): PatientData => ({
   bedId,
   isBlocked: false,
@@ -60,8 +63,6 @@ describe('census master workbook builder', () => {
     ];
 
     const workbook = await buildCensusMasterWorkbook(records);
-    const visibleSheets = getVisibleSheets(workbook);
-
     expect(workbook.worksheets.map(sheet => sheet.name)).toEqual([
       'RESUMEN MAYO 2024',
       'PACIENTES UPC MAYO 2024',
@@ -71,8 +72,8 @@ describe('census master workbook builder', () => {
     ]);
     expect(workbook.worksheets.slice(0, 3).map(sheet => sheet.state)).toEqual([
       'hidden',
-      'hidden',
-      'hidden',
+      'visible',
+      'visible',
     ]);
     expect(workbook.views[0]).toEqual(
       expect.objectContaining({
@@ -82,14 +83,14 @@ describe('census master workbook builder', () => {
       })
     );
 
-    const firstSheet = visibleSheets[0];
+    const firstDaySheet = getVisibleDaySheets(workbook)[0];
 
     // Header Section
-    expect(firstSheet.getCell('A1').value).toBe('CENSO CAMAS DIARIO - HOSPITAL HANGA ROA');
+    expect(firstDaySheet?.getCell('A1').value).toBe('CENSO CAMAS DIARIO - HOSPITAL HANGA ROA');
 
     // Date Section
     let foundDate = false;
-    firstSheet.eachRow(row => {
+    firstDaySheet?.eachRow(row => {
       row.eachCell(cell => {
         if (typeof cell.value === 'string' && cell.value.includes('Fecha: 01-05-2024'))
           foundDate = true;
@@ -99,7 +100,7 @@ describe('census master workbook builder', () => {
 
     // Census Table - specifically look for identifying text before checking row
     let censusHeaderRow = -1;
-    firstSheet.eachRow((row, rowNumber) => {
+    firstDaySheet?.eachRow((row, rowNumber) => {
       if (row.getCell(1).value === 'TABLA DE PACIENTES HOSPITALIZADOS') {
         censusHeaderRow = rowNumber + 1; // Header is next row
       }
@@ -107,20 +108,20 @@ describe('census master workbook builder', () => {
     expect(censusHeaderRow).toBeGreaterThan(0);
 
     const censusFirstDataRow = censusHeaderRow + 1;
-    expect(firstSheet.getCell(`B${censusFirstDataRow}`).value).toBe(BEDS[0].id);
+    expect(firstDaySheet?.getCell(`B${censusFirstDataRow}`).value).toBe(BEDS[0].id);
 
-    const cellValueI = firstSheet.getCell(`I${censusFirstDataRow}`).value as string;
+    const cellValueI = firstDaySheet?.getCell(`I${censusFirstDataRow}`).value as string;
     expect(['01-05-2024', '30-04-2024']).toContain(cellValueI);
 
     // Discharges Section - Search for title
     let dischargeTitleRow = -1;
-    firstSheet.eachRow((row, rowNumber) => {
+    firstDaySheet?.eachRow((row, rowNumber) => {
       if (row.getCell(1).value === 'ALTAS DEL DÍA') dischargeTitleRow = rowNumber;
     });
     expect(dischargeTitleRow).toBeGreaterThan(0);
 
     const dischargeEmptyRow = dischargeTitleRow + 2;
-    expect(firstSheet.getCell(`A${dischargeEmptyRow}`).value).toBe('Sin altas registradas');
+    expect(firstDaySheet?.getCell(`A${dischargeEmptyRow}`).value).toBe('Sin altas registradas');
   });
 
   it('returns a Buffer that can be reopened as Excel and preserves sheet names', async () => {
@@ -133,11 +134,11 @@ describe('census master workbook builder', () => {
     const loadInput = buffer as unknown as Parameters<typeof workbook.xlsx.load>[0];
     await workbook.xlsx.load(loadInput);
 
-    expect(getVisibleSheets(workbook)[0]?.name).toBe('03-05-2024');
+    expect(getVisibleDaySheets(workbook)[0]?.name).toBe('03-05-2024');
     expect(workbook.worksheets.slice(0, 3).map(sheet => sheet.state)).toEqual([
       'hidden',
-      'hidden',
-      'hidden',
+      'visible',
+      'visible',
     ]);
   });
 

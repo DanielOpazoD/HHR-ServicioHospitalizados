@@ -9,10 +9,7 @@ import {
   resolveUpcClassificationLabel,
   resolveUpcBadgeColor,
 } from '@/domain/upc/upcClassification';
-import {
-  resolveUpcClassificationFromChecklist,
-  isUciEligibleBedId,
-} from '@/shared/census/upcBedPolicy';
+import { resolveEffectiveUpcState, isUciEligibleBedId } from '@/shared/census/upcBedPolicy';
 import type { UpcChecklistRecord } from '@/features/census/contracts/censusUpcContracts';
 import type { BaseCellProps } from './inputCellTypes';
 import { PatientEmptyCell } from './PatientEmptyCell';
@@ -60,12 +57,16 @@ export const UpcChecklistPopover: React.FC<UpcChecklistPopoverProps> = ({
   });
 
   const { label, colors } = useMemo(() => {
-    const cls = resolveUpcClassificationFromChecklist(persistedChecklist);
+    const cls = resolveEffectiveUpcState({
+      bedId: data.bedId,
+      isUPC: data.isUPC,
+      checklist: persistedChecklist,
+    }).classification;
     return {
       label: resolveUpcClassificationLabel(cls),
       colors: resolveUpcBadgeColor(cls),
     };
-  }, [persistedChecklist]);
+  }, [data.bedId, data.isUPC, persistedChecklist]);
 
   if (isEmpty && !isSubRow) {
     return <PatientEmptyCell tdClassName="p-0.5 text-center w-[26px]" />;

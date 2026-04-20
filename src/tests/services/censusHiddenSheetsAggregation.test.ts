@@ -228,4 +228,27 @@ describe('censusHiddenSheetsAggregation', () => {
     expect(patients).toHaveLength(1);
     expect(patients[0].rut).toBe('33.333.333-3');
   });
+
+  it('treats legacy UPC checkbox records as UTI on eligible beds', () => {
+    const patients = buildUpcPatients(
+      buildLogicalSnapshotSheets([
+        buildSnapshotSheet(
+          buildRecord('2026-03-24', {
+            R1: buildPatient('R1', {
+              patientName: 'Paciente Legado',
+              rut: '44.444.444-4',
+              isUPC: true,
+            }),
+          }),
+          '24-03-2026'
+        ),
+      ])
+    );
+
+    expect(patients).toHaveLength(1);
+    expect(patients[0].uciDays).toBe(0);
+    expect(patients[0].utiDays).toBe(1);
+    expect(patients[0].totalDays).toBe(1);
+    expect(patients[0].periodLabel).toBe('UTI');
+  });
 });

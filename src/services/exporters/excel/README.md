@@ -1,6 +1,6 @@
 # Censo Maestro Excel: Hojas Ocultas
 
-Este módulo construye el Excel maestro del censo diario y agrega tres hojas ocultas al inicio del workbook:
+Este módulo construye el Excel maestro del censo diario y agrega tres hojas de soporte al inicio del workbook:
 
 - `RESUMEN [MES] [AÑO]`
 - `PACIENTES UPC [MES] [AÑO]`
@@ -9,20 +9,21 @@ Este módulo construye el Excel maestro del censo diario y agrega tres hojas ocu
 ## Pipeline
 
 1. `builder.ts` crea el workbook y resuelve los nombres visibles por día.
-2. `censusHiddenSheetsBuilder.ts` agrega las hojas ocultas antes de renderizar las hojas diarias visibles.
+2. `censusHiddenSheetsBuilder.ts` agrega las hojas de soporte antes de renderizar las hojas diarias visibles.
 3. `censusHiddenSheetsAggregation.ts` transforma `DailyRecord[]` en view models puros:
    - snapshots lógicos por fecha,
    - filas de resumen,
    - pacientes UPC con historial de cama, conteo UCI/UTI y detalle diario por subtipo.
 4. `censusHiddenSheetsRenderer.ts` solo escribe celdas ExcelJS a partir de esos view models.
-5. `censusHiddenSheetsProtection.ts` aplica protección por hoja y estado `hidden`.
+5. `censusHiddenSheetsProtection.ts` aplica protección por hoja. `RESUMEN` queda oculto por estructura y las dos hojas UPC quedan visibles pero vacías hasta desprotegerlas.
 6. `censusWorkbookSerializer.ts` postprocesa `xl/workbook.xml` para aplicar `workbookProtection lockStructure`.
 
 ## Reglas E Invariantes
 
-- Las 3 hojas ocultas siempre van primero en el workbook.
-- La primera hoja visible al abrir el archivo debe ser la primera hoja diaria.
-- La contraseña `HHR` protege tanto las hojas ocultas como la estructura del libro.
+- Las 3 hojas de soporte siempre van primero en el workbook.
+- Al abrir el archivo, la hoja activa sigue siendo la última hoja diaria visible.
+- La contraseña `HHR` protege la estructura del libro y las hojas UPC de bloqueo cosmético.
+- `PACIENTES UPC` y `DETALLE DIARIO UPC` permanecen visibles como pestañas, pero se renderizan con filas y columnas ocultas.
 - El correo puede cifrar la apertura del archivo completo; la descarga local no.
 - La agregación de hojas ocultas opera sobre un solo snapshot lógico por fecha calendario.
 
@@ -37,9 +38,10 @@ Este módulo construye el Excel maestro del censo diario y agrega tres hojas ocu
 
 1. Exportar un censo diario mensual.
 2. Abrir el `.xlsx` y confirmar que la primera pestaña visible es la primera hoja diaria.
-3. Confirmar que `RESUMEN`, `PACIENTES UPC` y `DETALLE DIARIO UPC` no aparecen inicialmente.
-4. En Excel, desproteger estructura con `HHR` y mostrar las hojas ocultas.
-5. Revisar:
+3. Confirmar que `RESUMEN` sigue oculto por estructura, mientras `PACIENTES UPC` y `DETALLE DIARIO UPC` aparecen como pestañas visibles pero en blanco.
+4. En Excel, desproteger estructura con `HHR` y mostrar `RESUMEN` si se necesita.
+5. Para revisar `PACIENTES UPC` o `DETALLE DIARIO UPC`, desproteger la hoja y luego mostrar filas y columnas ocultas.
+6. Revisar:
    - layout del resumen,
    - `% Ocup.` en rojo solo sobre el umbral,
    - historial de camas UPC,

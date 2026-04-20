@@ -164,4 +164,33 @@ describe('census workbook controllers', () => {
     expect(patientRow).toBeGreaterThan(0);
     expect(sheet?.getCell(`M${patientRow}`).value).toBe('UPC-UTI');
   });
+
+  it('renders legacy UPC checkbox records as UTI in the visible sheet', () => {
+    const workbook = new ExcelJS.Workbook();
+    createCensusWorkbookDaySheet(
+      workbook,
+      {
+        ...buildRecord('2024-05-01', ''),
+        beds: {
+          [BEDS[0].id]: {
+            ...buildPatient(BEDS[0].id, 'Paciente Legado'),
+            isUPC: true,
+          },
+        },
+      } as DailyRecord,
+      '01-05-2024'
+    );
+
+    const sheet = workbook.getWorksheet('01-05-2024');
+    let patientRow = -1;
+
+    sheet?.eachRow((row, rowNumber) => {
+      if (row.getCell(4).value === 'Paciente Legado') {
+        patientRow = rowNumber;
+      }
+    });
+
+    expect(patientRow).toBeGreaterThan(0);
+    expect(sheet?.getCell(`M${patientRow}`).value).toBe('UPC-UTI');
+  });
 });

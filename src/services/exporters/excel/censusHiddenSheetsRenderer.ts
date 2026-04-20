@@ -5,4 +5,7 @@ export {
   type RenderUpcDailyMatrixSheetInput,
   type RenderUpcSheetInput,
 } from './censusHiddenUpcSheets';
-export { applyHiddenSheetProtection } from './censusHiddenSheetsProtection';
+export {
+  applyHiddenSheetProtection,
+  applyCosmeticSheetProtection,
+} from './censusHiddenSheetsProtection';

@@ -70,7 +70,7 @@ export const resolveEffectiveUpcState = ({
   }
 
   return {
-    classification: null,
+    classification: isUPC ? 'UPC_UTI' : null,
     isUpc: Boolean(isUPC),
   };
 };

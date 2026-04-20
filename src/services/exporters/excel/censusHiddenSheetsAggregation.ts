@@ -14,7 +14,7 @@ import type {
   UpcPatientPresentation,
 } from './censusHiddenSheetsContracts';
 import { SPECIALTY_COLUMNS } from './censusHiddenSheetsConfig';
-import { resolveUpcClassificationFromChecklist } from '@/shared/census/upcBedPolicy';
+import { resolveEffectiveUpcState } from '@/shared/census/upcBedPolicy';
 
 const normalizeText = (value?: string | null): string => (value || '').trim();
 
@@ -175,12 +175,16 @@ export const buildUpcPatients = (
 
   sheets.forEach(sheet => {
     collectRealPatients(sheet.record).forEach(({ patient, bedCode }) => {
-      const classification = resolveUpcClassificationFromChecklist(patient.upcChecklist);
-      if (!classification) {
+      const effectiveUpcState = resolveEffectiveUpcState({
+        bedId: patient.bedId,
+        isUPC: patient.isUPC,
+        checklist: patient.upcChecklist,
+      });
+      if (!effectiveUpcState.isUpc || !effectiveUpcState.classification) {
         return;
       }
 
-      const dailyClassification = classification === 'UPC_UCI' ? 'UCI' : 'UTI';
+      const dailyClassification = effectiveUpcState.classification === 'UPC_UCI' ? 'UCI' : 'UTI';
 
       const key = normalizePatientKey(patient);
       if (!key) return;

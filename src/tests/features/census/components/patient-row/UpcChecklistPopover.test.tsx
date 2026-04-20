@@ -46,4 +46,28 @@ describe('UpcChecklistPopover', () => {
       await screen.findByRole('checkbox', { name: /Monitorización cardíaca continua/i })
     ).toBeChecked();
   });
+
+  it('shows legacy UPC checkbox records as UTI in the row badge', () => {
+    render(
+      <table>
+        <tbody>
+          <tr>
+            <UpcChecklistPopover
+              data={DataFactory.createMockPatient('R1', {
+                patientName: 'Paciente Legado',
+                rut: '44.444.444-4',
+                isUPC: true,
+              })}
+              checklist={undefined}
+              onSave={vi.fn()}
+              eligible={true}
+              actor={{ uid: 'user-1', displayName: 'Test User' }}
+            />
+          </tr>
+        </tbody>
+      </table>
+    );
+
+    expect(screen.getByRole('button', { name: 'UTI' })).toBeInTheDocument();
+  });
 });
