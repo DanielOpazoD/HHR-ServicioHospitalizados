@@ -1,5 +1,6 @@
 import type { MasterPatient } from '@/types/domain/patientMaster';
 import { formatRut, isValidRut } from '@/utils/rutUtils';
+import { removeAccents } from '@/utils/stringUtils';
 
 const MAX_QUERY_LIMIT = 1000;
 const DEFAULT_QUERY_LIMIT = 20;
@@ -25,6 +26,25 @@ export const normalizePatientSearchTerm = (term: string): string => {
   const trimmed = term.trim();
   if (!trimmed) return '';
   return trimmed.toLowerCase().replace(/(?:^|\s)\S/g, char => char.toUpperCase());
+};
+
+export const normalizePatientSearchText = (term: string): string =>
+  removeAccents(term.trim().toLowerCase()).replace(/\s+/g, ' ');
+
+export const tokenizePatientSearchTerm = (term: string): string[] =>
+  normalizePatientSearchText(term)
+    .split(' ')
+    .map(token => token.trim())
+    .filter(Boolean);
+
+export const patientMatchesSearchTokens = (
+  patient: Pick<MasterPatient, 'fullName' | 'rut'>,
+  tokens: string[]
+): boolean => {
+  if (tokens.length === 0) return false;
+
+  const haystack = normalizePatientSearchText(`${patient.fullName} ${patient.rut}`);
+  return tokens.every(token => haystack.includes(token));
 };
 
 export const createUpsertPatientCommand = (

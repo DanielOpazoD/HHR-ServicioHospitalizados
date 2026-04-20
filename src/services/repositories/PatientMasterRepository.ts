@@ -22,7 +22,9 @@ import {
   createUpsertPatientCommand,
   normalizeMasterPatientRut,
   normalizePatientSearchTerm,
+  patientMatchesSearchTokens,
   sanitizePatientQueryLimit,
+  tokenizePatientSearchTerm,
 } from '@/services/repositories/contracts/patientMasterContracts';
 import { defaultRepositoryFirestoreRuntime } from '@/services/repositories/repositoryFirestoreRuntime';
 import type { RepositoryFirestoreRuntimePort } from '@/services/repositories/ports/repositoryFirestoreRuntimePort';
@@ -119,11 +121,23 @@ export const createPatientMasterRepository = (
   };
 
   const getAllPatients = async (): Promise<MasterPatient[]> => {
-    const path = getCollectionPath();
+    const collected: MasterPatient[] = [];
+    const pageSize = 250;
+    let lastDoc: QueryDocumentSnapshot<DocumentData> | null = null;
+
     try {
-      const q = query(collection(getDb(), path), orderBy('updatedAt', 'desc'), limit(1000));
-      const snap = await getDocs(q);
-      return snap.docs.map(snapshot => snapshot.data() as MasterPatient);
+      while (true) {
+        const page = await getPatientsPaginated(pageSize, lastDoc ?? undefined);
+        collected.push(...page.patients);
+
+        if (!page.lastDoc || page.patients.length < pageSize) {
+          break;
+        }
+
+        lastDoc = page.lastDoc;
+      }
+
+      return collected;
     } catch (err) {
       patientMasterRepositoryLogger.error('Error fetching all patients', err);
       return [];
@@ -162,8 +176,9 @@ export const createPatientMasterRepository = (
     limitCount: number = 20
   ): Promise<MasterPatient[]> => {
     const normalizedTerm = normalizePatientSearchTerm(searchTerm);
+    const searchTokens = tokenizePatientSearchTerm(searchTerm);
     const safeLimit = sanitizePatientQueryLimit(limitCount);
-    if (!normalizedTerm || normalizedTerm.length < 2) return [];
+    if (!normalizedTerm || searchTokens.length === 0) return [];
 
     const path = getCollectionPath();
     try {
@@ -172,16 +187,32 @@ export const createPatientMasterRepository = (
         return [patient];
       }
 
-      const q = query(
-        collection(getDb(), path),
-        orderBy('fullName'),
-        where('fullName', '>=', normalizedTerm),
-        where('fullName', '<=', normalizedTerm + '\uf8ff'),
-        limit(safeLimit)
-      );
+      if (searchTokens.length === 1) {
+        const q = query(
+          collection(getDb(), path),
+          orderBy('fullName'),
+          where('fullName', '>=', normalizedTerm),
+          where('fullName', '<=', normalizedTerm + '\uf8ff'),
+          limit(safeLimit)
+        );
 
-      const snap = await getDocs(q);
-      return snap.docs.map(snapshot => snapshot.data() as MasterPatient);
+        const snap = await getDocs(q);
+        const prefixMatches = snap.docs
+          .map(snapshot => snapshot.data() as MasterPatient)
+          .filter(patientEntry => patientMatchesSearchTokens(patientEntry, searchTokens));
+
+        if (prefixMatches.length > 0) {
+          return prefixMatches;
+        }
+      }
+
+      const allPatients = await getAllPatients();
+      return allPatients
+        .filter(patientEntry => patientMatchesSearchTokens(patientEntry, searchTokens))
+        .sort((left, right) =>
+          left.fullName.localeCompare(right.fullName, 'es', { sensitivity: 'base' })
+        )
+        .slice(0, safeLimit);
     } catch (err) {
       patientMasterRepositoryLogger.error(`Error searching patients for "${normalizedTerm}"`, err);
       return [];

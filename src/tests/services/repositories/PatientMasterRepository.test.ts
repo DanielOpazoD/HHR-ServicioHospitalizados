@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { MasterPatient } from '@/types/domain/patientMaster';
 
 vi.mock('@/firebaseConfig', () => ({
   db: {},
@@ -38,6 +39,20 @@ import {
 describe('PatientMasterRepository', () => {
   const runtime = { getDb: () => ({}) as never };
   const injectedRepository = createPatientMasterRepository(runtime);
+
+  const buildPatientDoc = (patient: MasterPatient) => ({
+    data: () => patient,
+  });
+
+  const buildPatientPage = (start: number, count: number, labelPrefix = 'Paciente') =>
+    Array.from({ length: count }, (_, index) =>
+      buildPatientDoc({
+        rut: `1.${String(start + index).padStart(3, '0')}.000-0`,
+        fullName: `${labelPrefix} ${start + index}`,
+        createdAt: 1,
+        updatedAt: 1,
+      })
+    );
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -92,10 +107,32 @@ describe('PatientMasterRepository', () => {
     expect(vi.mocked(firestore.limit)).toHaveBeenCalledWith(1000);
   });
 
-  it('searchPatients trims search term and returns empty for short input', async () => {
-    const result = await searchPatients('  a ');
+  it('searchPatients trims search term and returns empty for whitespace input', async () => {
+    const result = await searchPatients('   ');
     expect(result).toEqual([]);
     expect(vi.mocked(firestore.getDocs)).not.toHaveBeenCalled();
+  });
+
+  it('searchPatients keeps scanning past the first patient page for multi-word matches', async () => {
+    const targetPatient: MasterPatient = {
+      rut: '12.345.678-5',
+      fullName: 'Inés Riroroko Leiva',
+      createdAt: 1,
+      updatedAt: 1,
+    };
+
+    vi.mocked(firestore.getDocs)
+      .mockResolvedValueOnce({
+        docs: buildPatientPage(1, 250, 'Paciente'),
+      } as never)
+      .mockResolvedValueOnce({
+        docs: [buildPatientDoc(targetPatient)],
+      } as never);
+
+    const result = await searchPatients('Ines leiva');
+
+    expect(result).toEqual([targetPatient]);
+    expect(vi.mocked(firestore.getDocs)).toHaveBeenCalledTimes(2);
   });
 
   it('supports injected Firestore runtime for isolated repository composition', async () => {
