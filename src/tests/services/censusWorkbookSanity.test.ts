@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { BEDS } from '@/constants/beds';
 import { buildCensusMasterBinary } from '@/services/exporters/censusMasterWorkbook';
+import type { UpcChecklistRecord } from '@/domain/upc/upcContracts';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { PatientData } from '@/types/domain/patient';
 import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
@@ -27,6 +28,15 @@ const buildPatient = (bedId: string, overrides: Partial<PatientData> = {}): Pati
   ...overrides,
 });
 
+const buildUpcChecklist = (
+  classification: UpcChecklistRecord['classification']
+): UpcChecklistRecord => ({
+  classification,
+  uciCriteria: classification === 'UPC_UCI' ? ['uci_vmi'] : [],
+  utiCriteria: classification === 'UPC_UTI' ? ['uti_mon_cardiaca'] : [],
+  evaluatedAt: '2026-04-18T12:00:00Z',
+});
+
 const buildRecord = (date: string, patient: PatientData): DailyRecord => ({
   date,
   beds: {
@@ -46,11 +56,17 @@ describe('census workbook sanity', () => {
     const records = [
       buildRecord(
         '2026-03-24',
-        buildPatient(BEDS[0].id, { patientName: 'Paciente UPC', isUPC: true })
+        buildPatient(BEDS[0].id, {
+          patientName: 'Paciente UPC',
+          upcChecklist: buildUpcChecklist('UPC_UTI'),
+        })
       ),
       buildRecord(
         '2026-03-25',
-        buildPatient(BEDS[0].id, { patientName: 'Paciente UPC', isUPC: true })
+        buildPatient(BEDS[0].id, {
+          patientName: 'Paciente UPC',
+          upcChecklist: buildUpcChecklist('UPC_UCI'),
+        })
       ),
     ];
 
@@ -75,7 +91,10 @@ describe('census workbook sanity', () => {
       visibleNames,
       summaryTitle: summarySheet?.getCell('A1').value,
       upcTitle: upcSheet?.getCell('A1').value,
+      upcSubtypeHeader: upcSheet?.getCell('G4').value,
+      upcSubtypeValue: upcSheet?.getCell('G5').value,
       matrixHeader: matrixSheet?.getCell('A4').value,
+      matrixDayLabel: matrixSheet?.getCell('Y5').value,
       workbookProtection:
         /<workbookProtection[^>]*lockStructure="1"[^>]*workbookPassword="[0-9A-F]{4}"/.test(
           workbookXml
@@ -97,7 +116,10 @@ describe('census workbook sanity', () => {
       visibleNames: ['24-03-2026', '25-03-2026'],
       summaryTitle: 'RESUMEN CENSO DIARIO — HOSPITAL HANGA ROA — MARZO 2026',
       upcTitle: 'REGISTRO PACIENTES UPC — HOSPITAL HANGA ROA — MARZO 2026',
+      upcSubtypeHeader: 'Clasif. período',
+      upcSubtypeValue: 'Mixto',
       matrixHeader: 'Paciente',
+      matrixDayLabel: 'UTI',
       workbookProtection: true,
       firstSheetVisible: true,
       activeTabVisible: true,

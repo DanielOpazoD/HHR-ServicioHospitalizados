@@ -5,6 +5,7 @@ import {
   buildSummaryRows,
   buildUpcPatients,
 } from '@/services/exporters/excel/censusHiddenSheetsAggregation';
+import type { UpcChecklistRecord } from '@/domain/upc/upcContracts';
 import type { CensusWorkbookSnapshotSheet } from '@/services/exporters/excel/censusHiddenSheetsContracts';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { PatientData } from '@/types/domain/patient';
@@ -43,6 +44,15 @@ const buildRecord = (
   lastUpdated: `${date}T10:00:00.000Z`,
   activeExtraBeds: [],
   ...overrides,
+});
+
+const buildUpcChecklist = (
+  classification: UpcChecklistRecord['classification']
+): UpcChecklistRecord => ({
+  classification,
+  uciCriteria: classification === 'UPC_UCI' ? ['uci_vmi'] : [],
+  utiCriteria: classification === 'UPC_UTI' ? ['uti_mon_cardiaca'] : [],
+  evaluatedAt: '2026-04-18T10:00:00Z',
 });
 
 const buildSnapshotSheet = (
@@ -115,14 +125,14 @@ describe('censusHiddenSheetsAggregation', () => {
       R1: buildPatient('R1', {
         patientName: 'Paciente UPC',
         rut: '12.345.678-9',
-        isUPC: true,
+        upcChecklist: buildUpcChecklist('UPC_UTI'),
       }),
     });
     const secondDay = buildRecord('2026-03-25', {
       R2: buildPatient('R2', {
         patientName: 'Paciente UPC',
         rut: '12.345.678-9',
-        isUPC: true,
+        upcChecklist: buildUpcChecklist('UPC_UCI'),
       }),
     });
 
@@ -134,8 +144,11 @@ describe('censusHiddenSheetsAggregation', () => {
     );
 
     expect(patients).toHaveLength(1);
+    expect(patients[0].uciDays).toBe(1);
+    expect(patients[0].utiDays).toBe(1);
     expect(patients[0].totalDays).toBe(2);
     expect(patients[0].changedBed).toBe(true);
+    expect(patients[0].periodLabel).toBe('Mixto');
     expect(patients[0].history).toContain('R1');
     expect(patients[0].history).toContain('R2');
     expect(patients[0].daysDetail).toContain('24-03-2026');
@@ -147,14 +160,14 @@ describe('censusHiddenSheetsAggregation', () => {
       R1: buildPatient('R1', {
         patientName: 'Paciente Sin Rut',
         rut: '',
-        isUPC: true,
+        upcChecklist: buildUpcChecklist('UPC_UTI'),
       }),
     });
     const secondDay = buildRecord('2026-03-25', {
       R1: buildPatient('R1', {
         patientName: 'Paciente Sin Rut',
         rut: '',
-        isUPC: true,
+        upcChecklist: buildUpcChecklist('UPC_UTI'),
       }),
     });
 

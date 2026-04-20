@@ -13,7 +13,7 @@ Este módulo construye el Excel maestro del censo diario y agrega tres hojas ocu
 3. `censusHiddenSheetsAggregation.ts` transforma `DailyRecord[]` en view models puros:
    - snapshots lógicos por fecha,
    - filas de resumen,
-   - pacientes UPC con historial de cama.
+   - pacientes UPC con historial de cama, conteo UCI/UTI y detalle diario por subtipo.
 4. `censusHiddenSheetsRenderer.ts` solo escribe celdas ExcelJS a partir de esos view models.
 5. `censusHiddenSheetsProtection.ts` aplica protección por hoja y estado `hidden`.
 6. `censusWorkbookSerializer.ts` postprocesa `xl/workbook.xml` para aplicar `workbookProtection lockStructure`.
@@ -43,7 +43,8 @@ Este módulo construye el Excel maestro del censo diario y agrega tres hojas ocu
    - layout del resumen,
    - `% Ocup.` en rojo solo sobre el umbral,
    - historial de camas UPC,
-   - matriz diaria UPC,
+   - distribución UCI/UTI en la hoja de pacientes UPC,
+   - matriz diaria UPC con subtipo por día,
    - fórmulas de indicadores consolidados.
 
 ## Estrategia De Pruebas

@@ -40,7 +40,13 @@ export interface UpcPatientAggregate {
   specialty: string;
   admissionDate: string;
   firstSeenDate: string;
-  dailyBeds: Array<{ date: string; bedCode: string }>;
+  dailyRecords: Array<{
+    date: string;
+    bedCode: string;
+    classification: 'UCI' | 'UTI';
+  }>;
+  uciDays: number;
+  utiDays: number;
 }
 
 export interface UpcPatientPresentation extends UpcPatientAggregate {
@@ -48,6 +54,7 @@ export interface UpcPatientPresentation extends UpcPatientAggregate {
   daysDetail: string;
   history: string;
   changedBed: boolean;
+  periodLabel: 'UCI' | 'UTI' | 'Mixto';
 }
 
 export interface CensusHiddenSheetMonthContext {

@@ -29,12 +29,26 @@ const UPC_HEADERS: Array<string | number> = [
   'Edad',
   'Diagnóstico',
   'Especialidad',
+  'Clasif. período',
+  'Días UCI',
+  'Días UTI',
+  'Total UPC',
   'Cama / Historial',
   'F. Ingreso',
-  'Días UPC',
   'Detalle Días UPC',
   'Cambio Cama',
 ];
+
+const getUpcTotals = (patients: UpcPatientPresentation[]) =>
+  patients.reduce(
+    (acc, patient) => {
+      acc.uciDays += patient.uciDays;
+      acc.utiDays += patient.utiDays;
+      acc.totalUpcDays += patient.totalDays;
+      return acc;
+    },
+    { uciDays: 0, utiDays: 0, totalUpcDays: 0 }
+  );
 
 const renderUpcPatientRow = (sheet: Worksheet, patient: UpcPatientPresentation, index: number) => {
   const row = sheet.getRow(5 + index);
@@ -45,22 +59,25 @@ const renderUpcPatientRow = (sheet: Worksheet, patient: UpcPatientPresentation, 
     patient.age,
     patient.diagnosis,
     patient.specialty,
+    patient.periodLabel,
+    patient.uciDays,
+    patient.utiDays,
+    patient.totalDays,
     patient.history,
     formatDateDDMMYYYY(patient.admissionDate),
-    patient.totalDays,
     patient.daysDetail,
     patient.changedBed ? 'Sí' : 'No',
   ];
-  setRowFill(row, 1, 11, index % 2 === 0 ? '#FFF2CC' : '#FFFFFF');
+  setRowFill(row, 1, 14, index % 2 === 0 ? '#FFF2CC' : '#FFFFFF');
   row.height = Math.max(30, patient.totalDays * 15);
 
   row.eachCell((cell, colNumber) => {
     cell.border = THIN_BORDER;
     cell.font = { name: 'Arial', size: 10 };
     cell.alignment = {
-      horizontal: [2, 5, 7, 10].includes(colNumber) ? 'left' : 'center',
+      horizontal: [2, 5, 6, 7, 11, 13].includes(colNumber) ? 'left' : 'center',
       vertical: 'middle',
-      wrapText: [5, 7, 10].includes(colNumber),
+      wrapText: [5, 11, 13].includes(colNumber),
     };
   });
   row.getCell(2).font = { name: 'Arial', size: 10, bold: true };
@@ -90,16 +107,21 @@ export const renderUpcPatientsSheet = ({
     { width: 8 },
     { width: 38 },
     { width: 18 },
+    { width: 10 },
+    { width: 9 },
+    { width: 9 },
+    { width: 10 },
     { width: 28 },
     { width: 14 },
-    { width: 10 },
     { width: 22 },
     { width: 14 },
   ];
 
+  const totals = getUpcTotals(patients);
+
   setMergedTitle({
     sheet,
-    range: 'A1:K1',
+    range: 'A1:N1',
     value: `REGISTRO PACIENTES UPC — HOSPITAL HANGA ROA — ${monthName} ${year}`,
     font: { name: 'Arial', size: 14, bold: true, color: { argb: 'FFFFFFFF' } },
     alignment: { horizontal: 'center', vertical: 'middle' },
@@ -108,8 +130,8 @@ export const renderUpcPatientsSheet = ({
   });
   setMergedTitle({
     sheet,
-    range: 'A2:K2',
-    value: `Pacientes con indicación UPC durante el período (total: ${patients.length})`,
+    range: 'A2:N2',
+    value: `Pacientes UPC durante el período (pacientes únicos: ${patients.length} | UCI: ${totals.uciDays} | UTI: ${totals.utiDays} | Total UPC: ${totals.totalUpcDays})`,
     font: { name: 'Arial', size: 10, italic: true, color: { argb: toArgb('#C00000') } },
     alignment: { horizontal: 'center', vertical: 'middle' },
   });
@@ -138,19 +160,19 @@ const renderUpcDailyMatrixRow = (
   row.getCell(1).alignment = { horizontal: 'left', vertical: 'middle' };
   row.getCell(1).border = THIN_BORDER;
 
-  const bedByDay = new Map(
-    patient.dailyBeds.map(item => [Number(item.date.split('-')[2]), item.bedCode])
+  const classificationByDay = new Map(
+    patient.dailyRecords.map(item => [Number(item.date.split('-')[2]), item.classification])
   );
 
   for (let day = 1; day <= daysInMonth; day += 1) {
     const cell = row.getCell(day + 1);
-    const bedCode = bedByDay.get(day) || '';
-    cell.value = bedCode;
+    const classification = classificationByDay.get(day) || '';
+    cell.value = classification;
     cell.border = THIN_BORDER;
     cell.alignment = { horizontal: 'center', vertical: 'middle' };
-    if (bedCode) {
+    if (classification) {
       cell.font = { name: 'Arial', size: 8, bold: true, color: { argb: 'FFFFFFFF' } };
-      cell.fill = solidFill('#C00000');
+      cell.fill = classification === 'UCI' ? solidFill('#C00000') : solidFill('#D6B656');
     } else {
       cell.fill = solidFill('#F2F2F2');
     }
@@ -204,7 +226,7 @@ export const renderUpcDailyMatrixSheet = ({
     sheet,
     range: `A2:${lastColumnLetter}2`,
     value:
-      'Cada celda roja indica que el paciente estuvo catalogado como UPC ese día. La sigla indica la cama asignada.',
+      'Cada celda indica la clasificación diaria UPC del paciente (UCI o UTI). La columna final conserva el historial de camas.',
     font: { name: 'Arial', size: 9, italic: true, color: { argb: toArgb('#7B2D26') } },
     alignment: { horizontal: 'left', vertical: 'middle', wrapText: true },
   });

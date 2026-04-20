@@ -14,7 +14,7 @@ import type {
   UpcPatientPresentation,
 } from './censusHiddenSheetsContracts';
 import { SPECIALTY_COLUMNS } from './censusHiddenSheetsConfig';
-import { resolveEffectiveUpcState } from '@/shared/census/upcBedPolicy';
+import { resolveUpcClassificationFromChecklist } from '@/shared/census/upcBedPolicy';
 
 const normalizeText = (value?: string | null): string => (value || '').trim();
 
@@ -39,12 +39,12 @@ const formatSegment = (bedCode: string, startDate: string, endDate: string): str
   return start === end ? `${bedCode} (${start})` : `${bedCode} (${start} a ${end})`;
 };
 
-const buildBedHistory = (dailyBeds: Array<{ date: string; bedCode: string }>) => {
-  if (dailyBeds.length === 0) {
+const buildBedHistory = (dailyRecords: Array<{ date: string; bedCode: string }>) => {
+  if (dailyRecords.length === 0) {
     return { history: '', changedBed: false };
   }
 
-  const ordered = sortByDate(dailyBeds);
+  const ordered = sortByDate(dailyRecords);
   const segments: string[] = [];
   let currentBed = ordered[0].bedCode;
   let segmentStart = ordered[0].date;
@@ -69,6 +69,16 @@ const buildBedHistory = (dailyBeds: Array<{ date: string; bedCode: string }>) =>
     history: segments.join(' → '),
     changedBed: segments.length > 1,
   };
+};
+
+const resolvePeriodLabel = (uciDays: number, utiDays: number): 'UCI' | 'UTI' | 'Mixto' => {
+  if (uciDays > 0 && utiDays > 0) {
+    return 'Mixto';
+  }
+  if (uciDays > 0) {
+    return 'UCI';
+  }
+  return 'UTI';
 };
 
 /**
@@ -165,23 +175,24 @@ export const buildUpcPatients = (
 
   sheets.forEach(sheet => {
     collectRealPatients(sheet.record).forEach(({ patient, bedCode }) => {
-      if (
-        !resolveEffectiveUpcState({
-          bedId: patient.bedId,
-          isUPC: patient.isUPC,
-          checklist: patient.upcChecklist,
-        }).isUpc
-      ) {
+      const classification = resolveUpcClassificationFromChecklist(patient.upcChecklist);
+      if (!classification) {
         return;
       }
+
+      const dailyClassification = classification === 'UPC_UCI' ? 'UCI' : 'UTI';
 
       const key = normalizePatientKey(patient);
       if (!key) return;
 
       const current = patients.get(key);
-      const nextDailyBeds = current?.dailyBeds ? [...current.dailyBeds] : [];
-      if (!nextDailyBeds.some(entry => entry.date === sheet.record.date)) {
-        nextDailyBeds.push({ date: sheet.record.date, bedCode });
+      const nextDailyRecords = current?.dailyRecords ? [...current.dailyRecords] : [];
+      if (!nextDailyRecords.some(entry => entry.date === sheet.record.date)) {
+        nextDailyRecords.push({
+          date: sheet.record.date,
+          bedCode,
+          classification: dailyClassification,
+        });
       }
 
       if (!current) {
@@ -194,27 +205,32 @@ export const buildUpcPatients = (
           specialty: normalizeText(patient.specialty),
           admissionDate: normalizeText(patient.admissionDate),
           firstSeenDate: sheet.record.date,
-          dailyBeds: nextDailyBeds,
+          dailyRecords: nextDailyRecords,
+          uciDays: dailyClassification === 'UCI' ? 1 : 0,
+          utiDays: dailyClassification === 'UTI' ? 1 : 0,
         });
         return;
       }
 
-      current.dailyBeds = nextDailyBeds;
+      current.dailyRecords = nextDailyRecords;
+      current.uciDays += dailyClassification === 'UCI' ? 1 : 0;
+      current.utiDays += dailyClassification === 'UTI' ? 1 : 0;
     });
   });
 
   return [...patients.values()]
     .map(patient => {
-      const orderedBeds = sortByDate(patient.dailyBeds);
-      const { history, changedBed } = buildBedHistory(orderedBeds);
+      const orderedRecords = sortByDate(patient.dailyRecords);
+      const { history, changedBed } = buildBedHistory(orderedRecords);
 
       return {
         ...patient,
-        dailyBeds: orderedBeds,
-        totalDays: orderedBeds.length,
-        daysDetail: orderedBeds.map(entry => formatDateDDMMYYYY(entry.date)).join('\n'),
+        dailyRecords: orderedRecords,
+        totalDays: patient.uciDays + patient.utiDays,
+        daysDetail: orderedRecords.map(entry => formatDateDDMMYYYY(entry.date)).join('\n'),
         history,
         changedBed,
+        periodLabel: resolvePeriodLabel(patient.uciDays, patient.utiDays),
       };
     })
     .sort((a, b) =>

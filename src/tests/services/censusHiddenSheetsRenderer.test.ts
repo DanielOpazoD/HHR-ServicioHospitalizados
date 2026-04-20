@@ -24,14 +24,17 @@ const buildUpcPatient = (
   specialty: 'Med Interna',
   admissionDate: '2026-03-01',
   firstSeenDate: '2026-03-24',
-  dailyBeds: [
-    { date: '2026-03-24', bedCode: 'R1' },
-    { date: '2026-03-25', bedCode: 'R2' },
+  dailyRecords: [
+    { date: '2026-03-24', bedCode: 'R1', classification: 'UTI' },
+    { date: '2026-03-25', bedCode: 'R2', classification: 'UCI' },
   ],
   totalDays: 2,
   daysDetail: '24-03-2026\n25-03-2026',
   history: 'R1 (24-03-2026) → R2 (25-03-2026)',
   changedBed: true,
+  uciDays: 1,
+  utiDays: 1,
+  periodLabel: 'Mixto',
   ...overrides,
 });
 
@@ -116,10 +119,16 @@ describe('censusHiddenSheetsRenderer', () => {
     expect(upcSheet.getCell('A1').value).toBe(
       'REGISTRO PACIENTES UPC — HOSPITAL HANGA ROA — MARZO 2026'
     );
-    expect(upcSheet.getCell('G5').font?.color?.argb).toBe('FFC00000');
-    expect(upcSheet.getCell('K5').value).toBe('Sí');
-    expect(matrixSheet.getCell('Y5').value).toBe('R1');
-    expect(getSolidFillArgb(matrixSheet, 'Y5')).toBe('FFC00000');
+    expect(upcSheet.getCell('G5').value).toBe('Mixto');
+    expect(upcSheet.getCell('H5').value).toBe(1);
+    expect(upcSheet.getCell('I5').value).toBe(1);
+    expect(upcSheet.getCell('J5').value).toBe(2);
+    expect(upcSheet.getCell('K5').value).toBe('R1 (24-03-2026) → R2 (25-03-2026)');
+    expect(upcSheet.getCell('N5').value).toBe('Sí');
+    expect(matrixSheet.getCell('Y5').value).toBe('UTI');
+    expect(getSolidFillArgb(matrixSheet, 'Y5')).toBe('FFD6B656');
+    expect(matrixSheet.getCell('Z5').value).toBe('UCI');
+    expect(getSolidFillArgb(matrixSheet, 'Z5')).toBe('FFC00000');
     expect(matrixSheet.getCell('AH5').value).toBe('R1 (24-03-2026) → R2 (25-03-2026)');
     expect(matrixSheet.views[0]).toEqual(
       expect.objectContaining({ state: 'frozen', xSplit: 1, ySplit: 4, topLeftCell: 'B5' })
