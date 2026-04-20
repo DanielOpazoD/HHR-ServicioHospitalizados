@@ -8,6 +8,10 @@ import {
   ACTIVE_TRANSFER_STATUSES,
   FINALIZED_TRANSFER_STATUSES,
 } from '@/features/transfers/components/controllers/transferTableController';
+import {
+  collectTransferAvailableYears,
+  isTransferVisibleInSelectedPeriod,
+} from './transferPeriodSelection';
 import type {
   TransferCancelModalBindings,
   TransferConfirmModalBindings,
@@ -39,12 +43,6 @@ export const TRANSFER_MONTH_LABELS = [
   'Nov',
   'Dic',
 ] as const;
-
-const parseTransferDate = (value: string | undefined): Date | null => {
-  if (!value) return null;
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-};
 
 interface TransferTableActionBindings {
   setTransferStatus: (transfer: TransferRequest, newStatus: TransferStatus) => Promise<void>;
@@ -79,38 +77,17 @@ export const buildTransferManagementPeriodModel = ({
   const closedStatuses = new Set<TransferStatus>(FINALIZED_TRANSFER_STATUSES);
   const selectedPeriodStart = new Date(selectedYear, selectedMonth - 1, 1, 0, 0, 0, 0);
   const selectedPeriodEnd = new Date(selectedYear, selectedMonth, 0, 23, 59, 59, 999);
-  const availableYears = Array.from(
-    transfers.reduce((years, transfer) => {
-      years.add(currentYear);
-      const requestDate = parseTransferDate(transfer.requestDate);
-      if (requestDate) years.add(requestDate.getFullYear());
-      const latestStatusDate = parseTransferDate(transfer.statusHistory.at(-1)?.timestamp);
-      if (latestStatusDate) years.add(latestStatusDate.getFullYear());
-      return years;
-    }, new Set<number>())
-  ).sort((left, right) => right - left);
+  const availableYears = collectTransferAvailableYears({ transfers, currentYear });
 
   const filteredTransfers = transfers
-    .filter(transfer => {
-      const requestDate = parseTransferDate(transfer.requestDate);
-      if (!requestDate) {
-        return false;
-      }
-
-      const isClosed = closedStatuses.has(transfer.status);
-      if (!isClosed) {
-        return requestDate <= selectedPeriodEnd;
-      }
-
-      const requestInPeriod =
-        requestDate >= selectedPeriodStart && requestDate <= selectedPeriodEnd;
-      const latestStatusDate = parseTransferDate(transfer.statusHistory.at(-1)?.timestamp);
-      const closedInPeriod = latestStatusDate
-        ? latestStatusDate >= selectedPeriodStart && latestStatusDate <= selectedPeriodEnd
-        : false;
-
-      return requestInPeriod || closedInPeriod;
-    })
+    .filter(transfer =>
+      isTransferVisibleInSelectedPeriod({
+        transfer,
+        selectedPeriodStart,
+        selectedPeriodEnd,
+        closedStatuses,
+      })
+    )
     .sort((left, right) => right.requestDate.localeCompare(left.requestDate));
 
   return {

@@ -13,6 +13,12 @@ import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRunti
 import { getDestinationHospitalCatalog } from '@/features/transfers/services/destinationHospitalCatalogService';
 import { getLocalDateInputValue } from '@/utils/localDate';
 import {
+  TRANSFER_FORM_FIELD_BASE_CLASSNAME,
+  TRANSFER_FORM_FIELD_CLASSNAME,
+  TRANSFER_FORM_FIELD_NESTED_CLASSNAME,
+  buildTransferPatientSummaryClassName,
+} from '../transferFormStyles';
+import {
   buildTransferFormSubmission,
   resolveTransferFormState,
   type TransferFormPatientOption,
@@ -87,6 +93,8 @@ export const TransferFormModal: React.FC<TransferFormModalProps> = ({
 
   // Find selected patient
   const selectedPatient = patients.find(p => p.id === selectedPatientId);
+  const selectedPatientSummaryStyles = buildTransferPatientSummaryClassName('selected');
+  const existingPatientSummaryStyles = buildTransferPatientSummaryClassName('existing');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -144,24 +152,20 @@ export const TransferFormModal: React.FC<TransferFormModalProps> = ({
                 disabled={isSaving}
               />
               {selectedPatient && (
-                <div className="p-2.5 bg-blue-50 border border-blue-100 rounded-xl animate-fade-in">
-                  <p className="text-[11px] font-black text-blue-700 uppercase tracking-widest leading-none mb-1">
-                    Paciente Seleccionado
-                  </p>
+                <div className={selectedPatientSummaryStyles.card}>
+                  <p className={selectedPatientSummaryStyles.title}>Paciente Seleccionado</p>
                   <p className="text-sm font-medium text-slate-800">{selectedPatient.name}</p>
-                  <p className="text-sm text-slate-500 font-medium leading-snug">
+                  <p className={selectedPatientSummaryStyles.body}>
                     Cama {selectedPatient.bedId.replace('BED_', '')} • {selectedPatient.diagnosis}
                   </p>
                 </div>
               )}
             </div>
           ) : (
-            <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">
-                Paciente Hospitalizado
-              </p>
+            <div className={existingPatientSummaryStyles.card}>
+              <p className={existingPatientSummaryStyles.title}>Paciente Hospitalizado</p>
               <p className="text-sm font-medium text-slate-800">{transfer.patientSnapshot.name}</p>
-              <p className="text-sm text-slate-500 font-medium leading-snug">
+              <p className={existingPatientSummaryStyles.body}>
                 {transfer.patientSnapshot.rut} • Cama {transfer.bedId.replace('BED_', '')}
               </p>
             </div>
@@ -181,7 +185,7 @@ export const TransferFormModal: React.FC<TransferFormModalProps> = ({
               />
               <input
                 type="date"
-                className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-medium"
+                className={`w-full pl-11 ${TRANSFER_FORM_FIELD_BASE_CLASSNAME}`}
                 value={requestDate}
                 onChange={e => setRequestDate(e.target.value)}
                 disabled={isSaving}
@@ -195,7 +199,7 @@ export const TransferFormModal: React.FC<TransferFormModalProps> = ({
               Hospital Destino *
             </label>
             <select
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all cursor-pointer font-medium"
+              className={TRANSFER_FORM_FIELD_CLASSNAME}
               value={destinationHospital}
               onChange={e => setDestinationHospital(e.target.value)}
               disabled={isSaving}
@@ -210,7 +214,7 @@ export const TransferFormModal: React.FC<TransferFormModalProps> = ({
             </select>
             {destinationHospital === 'Otro' && (
               <input
-                className="mt-2 w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-medium"
+                className={TRANSFER_FORM_FIELD_NESTED_CLASSNAME}
                 value={destinationHospitalOther}
                 onChange={e => setDestinationHospitalOther(e.target.value)}
                 placeholder="Detallar hospital de destino"
@@ -224,7 +228,7 @@ export const TransferFormModal: React.FC<TransferFormModalProps> = ({
               Especialidad Requerida
             </label>
             <select
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all cursor-pointer font-medium"
+              className={TRANSFER_FORM_FIELD_CLASSNAME}
               value={requiredSpecialty}
               onChange={e => setRequiredSpecialty(e.target.value)}
               disabled={isSaving}
@@ -238,7 +242,7 @@ export const TransferFormModal: React.FC<TransferFormModalProps> = ({
             </select>
             {requiredSpecialty === 'Otra' && (
               <input
-                className="mt-2 w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-medium"
+                className={TRANSFER_FORM_FIELD_NESTED_CLASSNAME}
                 value={requiredSpecialtyOther}
                 onChange={e => setRequiredSpecialtyOther(e.target.value)}
                 placeholder="Detallar especialidad"
@@ -252,7 +256,7 @@ export const TransferFormModal: React.FC<TransferFormModalProps> = ({
               Cama Requerida
             </label>
             <select
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all cursor-pointer font-medium"
+              className={TRANSFER_FORM_FIELD_CLASSNAME}
               value={requiredBedType}
               onChange={e => setRequiredBedType(e.target.value)}
               disabled={isSaving}
@@ -266,7 +270,7 @@ export const TransferFormModal: React.FC<TransferFormModalProps> = ({
             </select>
             {requiredBedType === 'Otra' && (
               <input
-                className="mt-2 w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-medium"
+                className={TRANSFER_FORM_FIELD_NESTED_CLASSNAME}
                 value={requiredBedTypeOther}
                 onChange={e => setRequiredBedTypeOther(e.target.value)}
                 placeholder="Detallar cama requerida"

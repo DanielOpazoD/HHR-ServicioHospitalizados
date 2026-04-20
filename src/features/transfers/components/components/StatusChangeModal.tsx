@@ -9,6 +9,7 @@ import { BaseModal } from '@/components/shared/BaseModal';
 import { TransferRequest, TRANSFER_STATUS_CONFIG } from '@/types/transfers';
 import { getNextStatus } from '@/constants/transferConstants';
 import { formatTransferVerboseDateTime } from '@/shared/transfers/transferPresentation';
+import { TRANSFER_FORM_TEXTAREA_CLASSNAME } from '../transferFormStyles';
 
 interface StatusChangeModalProps {
   transfer: TransferRequest;
@@ -85,7 +86,7 @@ export const StatusChangeModal: React.FC<StatusChangeModalProps> = ({
             Notas (opcional)
           </label>
           <textarea
-            className="w-full px-3 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
+            className={TRANSFER_FORM_TEXTAREA_CLASSNAME}
             rows={2}
             placeholder="Agregar observación sobre el cambio de estado..."
             value={notes}

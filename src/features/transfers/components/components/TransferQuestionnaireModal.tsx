@@ -7,10 +7,14 @@ import {
   QuestionnaireResponse,
   TransferPatientData,
 } from '@/types/transferDocuments';
-import { questionGroups } from '@/constants/hospitalConfigs';
 import clsx from 'clsx';
 import { QuestionInput } from './QuestionInput';
 import { BaseModal, ModalSection } from '@/components/shared/BaseModal';
+import {
+  buildTransferQuestionnaireGroups,
+  resolveTransferQuestionnaireGroupLabel,
+} from '../transferQuestionnairePresentation';
+import { buildTransferQuestionnaireMetaInputClassName } from '../transferQuestionnaireStyles';
 
 interface TransferQuestionnaireModalProps {
   isOpen: boolean;
@@ -30,25 +34,7 @@ export const TransferQuestionnaireModal: React.FC<TransferQuestionnaireModalProp
   onComplete,
 }) => {
   // Group questions by category (templates)
-  const groupedQuestions = useMemo(() => {
-    const groups: Record<string, TransferQuestion[]> = {};
-
-    hospital.templates.forEach(t => {
-      if (t.enabled) {
-        groups[t.id] = [];
-      }
-    });
-
-    hospital.questions.forEach(q => {
-      const group = q.group || 'general';
-      if (!groups[group]) groups[group] = [];
-      groups[group].push(q);
-    });
-
-    return Object.fromEntries(
-      Object.entries(groups).filter(([key, qs]) => qs.length > 0 && key !== 'solicitud-ambulancia')
-    );
-  }, [hospital.questions, hospital.templates]);
+  const groupedQuestions = useMemo(() => buildTransferQuestionnaireGroups(hospital), [hospital]);
 
   const groupKeys = Object.keys(groupedQuestions);
   const [currentGroupIndex, setCurrentGroupIndex] = useState(0);
@@ -153,9 +139,8 @@ export const TransferQuestionnaireModal: React.FC<TransferQuestionnaireModalProp
               value={nurseName}
               onChange={e => setNurseName(e.target.value)}
               placeholder="Nombre completo..."
-              className={clsx(
-                'w-full rounded-lg border border-slate-200 bg-white font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none',
-                isIaasGroup ? 'px-3 py-1.5 text-[11px]' : 'px-3 py-2 text-xs'
+              className={buildTransferQuestionnaireMetaInputClassName(
+                isIaasGroup ? 'compact' : 'default'
               )}
             />
           </div>
@@ -168,9 +153,8 @@ export const TransferQuestionnaireModal: React.FC<TransferQuestionnaireModalProp
               value={attendingPhysician}
               onChange={e => setAttendingPhysician(e.target.value)}
               placeholder="Nombre del médico..."
-              className={clsx(
-                'w-full rounded-lg border border-slate-200 bg-white font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none',
-                isIaasGroup ? 'px-3 py-1.5 text-[11px]' : 'px-3 py-2 text-xs'
+              className={buildTransferQuestionnaireMetaInputClassName(
+                isIaasGroup ? 'compact' : 'default'
               )}
             />
           </div>
@@ -183,9 +167,8 @@ export const TransferQuestionnaireModal: React.FC<TransferQuestionnaireModalProp
               value={diagnosis}
               onChange={e => setDiagnosis(e.target.value)}
               placeholder="Confirmar diagnóstico..."
-              className={clsx(
-                'w-full rounded-lg border border-slate-200 bg-white font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none',
-                isIaasGroup ? 'px-3 py-1.5 text-[11px]' : 'px-3 py-2 text-xs'
+              className={buildTransferQuestionnaireMetaInputClassName(
+                isIaasGroup ? 'compact' : 'default'
               )}
             />
           </div>
@@ -199,7 +182,7 @@ export const TransferQuestionnaireModal: React.FC<TransferQuestionnaireModalProp
           )}
         >
           {groupKeys.map((group, index) => {
-            const info = questionGroups[group as keyof typeof questionGroups] || { label: group };
+            const info = { label: resolveTransferQuestionnaireGroupLabel(group) };
             const isActive = index === currentGroupIndex;
             return (
               <button
@@ -221,7 +204,7 @@ export const TransferQuestionnaireModal: React.FC<TransferQuestionnaireModalProp
 
         {/* Questions for current group */}
         <ModalSection
-          title={questionGroups[currentGroup as keyof typeof questionGroups]?.label || currentGroup}
+          title={resolveTransferQuestionnaireGroupLabel(currentGroup)}
           icon={<ShieldCheck size={16} />}
           variant="info"
           className={clsx(isIaasGroup && 'p-3')}

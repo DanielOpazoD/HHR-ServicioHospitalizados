@@ -3,8 +3,8 @@ import { Users, Settings, Sun, Moon, ChevronDown } from 'lucide-react';
 import { useStaffContext } from '@/context/StaffContext';
 import type { ShiftIndicatorState } from '@/features/census/controllers/censusStaffHeaderController';
 import {
+  buildResolvedStaffSelectionOptions,
   normalizeStaffSelectionValue,
-  VACANCY_LABEL,
 } from '@/services/staff/staffSelectionPresentation';
 import { buildStaffSelectionSelectClassName } from './staffSelectionSelectStyles';
 
@@ -17,20 +17,6 @@ interface NurseSelectorProps {
   onOpenDetailedStaffing?: () => void;
   className?: string;
 }
-
-const buildResolvedStaffOptions = (catalog: string[], selectedValues: string[]): string[] => {
-  const uniqueOptions = new Set<string>([VACANCY_LABEL]);
-
-  catalog.filter(Boolean).forEach(value => {
-    uniqueOptions.add(normalizeStaffSelectionValue(value));
-  });
-
-  selectedValues.forEach(value => {
-    uniqueOptions.add(normalizeStaffSelectionValue(value));
-  });
-
-  return Array.from(uniqueOptions);
-};
 
 export const NurseSelector: React.FC<NurseSelectorProps> = ({
   nursesDayShift,
@@ -45,7 +31,7 @@ export const NurseSelector: React.FC<NurseSelectorProps> = ({
   const selectClassName =
     'py-0 pl-1 pr-4 border border-slate-200 text-[10px] focus:ring-1 focus:outline-none text-slate-700 h-[20px] w-[75px] appearance-none transition-all';
   const resolvedNurseOptions = React.useMemo(
-    () => buildResolvedStaffOptions(nursesList, [...nursesDayShift, ...nursesNightShift]),
+    () => buildResolvedStaffSelectionOptions(nursesList, [...nursesDayShift, ...nursesNightShift]),
     [nursesList, nursesDayShift, nursesNightShift]
   );
   const hasDayAdjustments = Boolean(

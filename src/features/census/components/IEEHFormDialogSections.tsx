@@ -13,6 +13,22 @@ const dischargeConditionOptions = [
   '7. Hospitalización domiciliaria',
 ];
 
+const medicoTratanteInputClassName =
+  'px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:outline-none focus:ring-1 focus:ring-blue-500/20 focus:border-blue-400';
+
+const buildIEEHFieldClassName = (extraClasses = '') =>
+  ['w-full px-3 py-2 border border-slate-300 rounded-lg text-sm', extraClasses]
+    .filter(Boolean)
+    .join(' ');
+
+const buildIEEHReadOnlyFieldClassName = (extraClasses = '') =>
+  [
+    'px-2 py-1 border border-slate-300 rounded text-sm font-mono font-bold w-28 bg-slate-50 text-slate-500 cursor-not-allowed',
+    extraClasses,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
 export const IEEHDialogHeader: React.FC<{
   patientName: string;
   onClose: () => void;
@@ -64,7 +80,9 @@ export const DiagnosticoPrincipalSection: React.FC<{
         onChange={e => handleDiagnosticoChange(e.target.value)}
         onFocus={() => searchResults.length > 0 && setShowResults(true)}
         placeholder="Escriba el diagnóstico..."
-        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 pr-24"
+        className={buildIEEHFieldClassName(
+          'focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 pr-24'
+        )}
       />
       <div className="absolute right-1 top-1 flex gap-1">
         {isSearching && <Loader2 size={14} className="animate-spin text-slate-400 mt-1.5" />}
@@ -105,7 +123,7 @@ export const DiagnosticoPrincipalSection: React.FC<{
         value={cie10Code}
         readOnly
         placeholder=""
-        className="px-2 py-1 border border-slate-300 rounded text-sm font-mono font-bold w-28 bg-slate-50 text-slate-500 cursor-not-allowed"
+        className={buildIEEHReadOnlyFieldClassName()}
       />
       {cie10Display && cie10Display !== diagnostico && (
         <span className="text-xs text-slate-400 truncate">{cie10Display}</span>
@@ -123,7 +141,7 @@ export const CondicionEgresoSection: React.FC<{
     <select
       value={condicionEgreso}
       onChange={e => setCondicionEgreso(e.target.value)}
-      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-500 bg-white"
+      className={buildIEEHFieldClassName('focus:ring-2 focus:ring-slate-500 bg-white')}
     >
       {dischargeConditionOptions.map(option => {
         const [value] = option.split('.');
@@ -177,7 +195,7 @@ export const BinaryTextSection: React.FC<{
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+        className={buildIEEHFieldClassName('focus:ring-2 focus:ring-blue-500')}
       />
     )}
   </fieldset>
@@ -214,21 +232,21 @@ export const MedicoTratanteSection: React.FC<{
         value={tratanteNombre}
         onChange={e => setTratanteNombre(e.target.value)}
         placeholder="Nombre"
-        className="px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:outline-none focus:ring-1 focus:ring-blue-500/20 focus:border-blue-400"
+        className={medicoTratanteInputClassName}
       />
       <input
         type="text"
         value={tratanteAp1}
         onChange={e => setTratanteAp1(e.target.value)}
         placeholder="Primer Apellido"
-        className="px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:outline-none focus:ring-1 focus:ring-blue-500/20 focus:border-blue-400"
+        className={medicoTratanteInputClassName}
       />
       <input
         type="text"
         value={tratanteAp2}
         onChange={e => setTratanteAp2(e.target.value)}
         placeholder="Segundo Apellido"
-        className="px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:outline-none focus:ring-1 focus:ring-blue-500/20 focus:border-blue-400"
+        className={medicoTratanteInputClassName}
       />
     </div>
     <input
@@ -236,7 +254,7 @@ export const MedicoTratanteSection: React.FC<{
       value={tratanteRut}
       onChange={e => setTratanteRut(e.target.value)}
       placeholder="RUT del médico (ej: 12.345.678-9)"
-      className="px-3 py-2 border border-slate-200 rounded-lg text-sm w-64 outline-none focus:outline-none focus:ring-1 focus:ring-blue-500/20 focus:border-blue-400"
+      className={`${medicoTratanteInputClassName} w-64`}
     />
   </fieldset>
 );

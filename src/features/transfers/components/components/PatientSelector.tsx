@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { TRANSFER_FORM_FIELD_CLASSNAME } from '../transferFormStyles';
 
 interface Patient {
   id: string;
@@ -35,7 +36,7 @@ export const PatientSelector: React.FC<PatientSelectorProps> = ({
 
   return (
     <select
-      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all disabled:bg-slate-100"
+      className={`${TRANSFER_FORM_FIELD_CLASSNAME} font-medium text-slate-700 disabled:bg-slate-100`}
       value={selectedPatientId}
       onChange={e => onChange(e.target.value)}
       disabled={disabled}

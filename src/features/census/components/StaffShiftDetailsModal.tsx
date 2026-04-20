@@ -15,8 +15,8 @@ import {
   updateDetailedStaffingAssignment,
 } from '@/services/staff/dailyRecordDetailedStaffing';
 import {
+  buildResolvedStaffSelectionOptions,
   normalizeStaffSelectionValue,
-  VACANCY_LABEL,
 } from '@/services/staff/staffSelectionPresentation';
 
 interface StaffShiftDetailsModalProps {
@@ -41,22 +41,6 @@ const ROLE_LABELS: Record<DetailedStaffingRole, string> = {
   tens: 'TENS',
 };
 
-const buildResolvedStaffOptions = (catalog: string[], assignments: DetailedStaffAssignment[]) => {
-  const uniqueOptions = new Set<string>([VACANCY_LABEL]);
-
-  assignments.forEach(assignment => {
-    if (assignment.name) {
-      uniqueOptions.add(normalizeStaffSelectionValue(assignment.name));
-    }
-  });
-
-  catalog.filter(Boolean).forEach(option => {
-    uniqueOptions.add(normalizeStaffSelectionValue(option));
-  });
-
-  return Array.from(uniqueOptions);
-};
-
 const resolveAssignmentLabel = (assignment: DetailedStaffAssignment, extraIndex: number) => {
   if (assignment.slotType === 'standard') {
     return `Base ${(assignment.standardSlotIndex ?? 0) + 1}`;
@@ -75,7 +59,11 @@ const StaffRoleSection: React.FC<{
 }> = ({ draft, shift, role, recordDate, catalog, onChange }) => {
   const assignments = draft[shift][role === 'nurse' ? 'nurses' : 'tens'];
   const options = React.useMemo(
-    () => buildResolvedStaffOptions(catalog, assignments),
+    () =>
+      buildResolvedStaffSelectionOptions(
+        catalog,
+        assignments.map(assignment => assignment.name)
+      ),
     [assignments, catalog]
   );
   let extraIndex = 0;
