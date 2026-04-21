@@ -40,4 +40,3 @@
 - `observe`: Use only while hot path isolation or governance prerequisites are incomplete.
 - `restrict`: Default stage once bridge is explicit-only and auditable.
 - `retire_ready`: Allowed only when runtime mode is disabled and a release window passed without dependency.
-

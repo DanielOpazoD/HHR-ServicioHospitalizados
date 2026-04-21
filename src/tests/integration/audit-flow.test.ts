@@ -91,10 +91,10 @@ describe('Audit Flow Integration', () => {
     expect(call.details.status).toBe('Vivo');
   });
 
-  it('should NOT log patient view for admin users', async () => {
-    mockAuditState.email = 'daniel.opazo@hospitalhangaroa.cl';
+  it('should NOT log patient view for institutional shared accounts', async () => {
+    mockAuditState.email = 'hospitalizados@hospitalhangaroa.cl';
     authState.currentUser = {
-      email: 'daniel.opazo@hospitalhangaroa.cl', // Excluded user
+      email: 'hospitalizados@hospitalhangaroa.cl',
     } as User;
 
     await logPatientView('BED_01', 'Juan Pérez', '12345678-9', '2024-12-25');
