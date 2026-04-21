@@ -15,6 +15,7 @@ describe('useCensusEmailRecipientPersistenceEffect', () => {
   it('skips persistence until recipients are ready', () => {
     renderHook(() =>
       useCensusEmailRecipientPersistenceEffect({
+        activeRecipientListId: 'custom-list',
         recipientsReady: false,
         recipients: ['destino@test.com'],
       })
@@ -23,15 +24,25 @@ describe('useCensusEmailRecipientPersistenceEffect', () => {
     expect(saveAppSetting).not.toHaveBeenCalled();
   });
 
-  it('persists recipients once the runtime is ready', () => {
+  it('persists recipients and active list once the runtime is ready', () => {
     const { rerender } = renderHook(
-      ({ recipientsReady, recipients }: { recipientsReady: boolean; recipients: string[] }) =>
+      ({
+        activeRecipientListId,
+        recipientsReady,
+        recipients,
+      }: {
+        activeRecipientListId: string;
+        recipientsReady: boolean;
+        recipients: string[];
+      }) =>
         useCensusEmailRecipientPersistenceEffect({
+          activeRecipientListId,
           recipientsReady,
           recipients,
         }),
       {
         initialProps: {
+          activeRecipientListId: 'census-default',
           recipientsReady: false,
           recipients: ['destino@test.com'],
         },
@@ -39,10 +50,13 @@ describe('useCensusEmailRecipientPersistenceEffect', () => {
     );
 
     rerender({
+      activeRecipientListId: 'custom-list',
       recipientsReady: true,
       recipients: ['destino@test.com'],
     });
 
     expect(saveAppSetting).toHaveBeenCalledWith('censusEmailRecipients', ['destino@test.com']);
+    expect(saveAppSetting).toHaveBeenCalledWith('censusEmailActiveRecipientListId', 'custom-list');
+    expect(saveAppSetting).toHaveBeenCalledTimes(2);
   });
 });

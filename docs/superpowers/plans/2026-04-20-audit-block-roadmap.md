@@ -5,8 +5,8 @@ Objetivo: ejecutar mejoras de alto valor derivadas de la auditoría técnica sin
 
 ## Estado actual
 
-- Bloque actual en curso: `Bloque 5: Escalabilidad Técnica y Performance`
-- Siguiente bloque acordado después de este: `Bloque 6: Documentación y Operación`
+- Bloque actual en curso: `Bloque 6: Documentación y Operación`
+- Siguiente bloque acordado después de este: `sin bloque adicional acordado todavía`
 
 ## Bloques
 
@@ -109,11 +109,33 @@ Riesgo residual aceptado:
 
 ### Bloque 5: Escalabilidad Técnica y Performance
 
-Estado: `pendiente`
+Estado: `completado`
 
 Objetivo:
 
 - atacar hotspots de churn y deuda de performance sin abrir refactors masivos
+
+Resultado:
+
+- `useCensusEmailRecipientLists` dejó de mezclar orquestación con persistencia duplicada de settings
+- la persistencia de destinatarios y lista activa quedó centralizada en `useCensusEmailRecipientPersistenceEffect`
+- el hotspot principal de hooks bajó de `244` a `226` líneas en el scorecard actualizado
+- `check:bundle-budget` confirmó que `app-authenticated-shell` sigue bajo presupuesto (`491.5 KB / 546.9 KB`)
+- el scorecard de release ya no muestra deuda activa de bundle ni hotspots de chunk por encima del umbral
+
+Validación ejecutada:
+
+- `npx vitest run src/tests/hooks/useCensusEmailRecipientPersistenceEffect.test.tsx src/tests/hooks/useCensusEmail.test.ts`
+- `npm run typecheck`
+- `npm run check:quality`
+- `npm run check:bundle-budget`
+- `npm run report:maintenance-debt-scorecard`
+- `npm run report:flow-performance-budget`
+- `npm run report:release-readiness-scorecard`
+
+Riesgo residual aceptado:
+
+- `reports/system-confidence.md` y `reports/release-readiness-scorecard.md` siguen marcando `dirty worktree` porque fueron regenerados antes del commit de cierre; el degraded restante es de snapshot, no de guardrails fallando
 
 ### Bloque 6: Documentación y Operación
 
