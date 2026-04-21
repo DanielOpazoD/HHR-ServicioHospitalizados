@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { BellRing, MessageSquare } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '@/context/AuthContext';
-import { AccessRestricted } from './components/AccessRestricted';
+import { AccessRestricted } from './internal/AccessRestricted';
 import { ReminderAdminView } from '@/features/reminders/public';
 import { WhatsAppIntegrationView } from '@/features/whatsapp/public';
 

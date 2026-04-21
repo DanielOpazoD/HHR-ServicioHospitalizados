@@ -10,7 +10,7 @@ import {
 import { BEDS } from '@/constants/beds';
 import { createWorkbook } from './excelUtils';
 import { getCategorization } from '@/services/cudyr/CudyrScoreUtils';
-import { isCudyrPatientEligible } from '@/application/cudyr/public';
+import { isCudyrPatientEligible } from '@/domain/cudyr/cudyrEligibility';
 import type { PatientData } from '@/types/domain/patient';
 
 const createRecordRangeSheet = async (

@@ -25,7 +25,7 @@ Cambios ya ejecutados que cuentan como avance válido dentro de este V3:
 
 - poda low-risk de `src/`:
   - `src/utils/publicCensusToken.ts`
-  - `src/features/transfers/components/components/TransferStatusBadge.tsx`
+  - `src/features/transfers/components/internal/TransferStatusBadge.tsx`
   - `src/features/admin/components/AITelemetryPanel.tsx`
   - `src/features/admin/components/AuditPagination.tsx`
   - `src/features/admin/components/CensusAccessManager.tsx`

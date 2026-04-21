@@ -1,9 +1,31 @@
 import type { ApplicationIssue } from '@/shared/contracts/applicationOutcome';
-import type {
-  BackupCensusExcelInput,
-  BackupHandoffPdfInput,
-  ExportHandoffPdfInput,
-} from './backupExportArchiveUseCases';
+import type { CensusExportRecord } from '@/services/contracts/censusExportServiceContracts';
+import type { HandoffPdfRecord } from '@/services/pdf/contracts/handoffPdfContracts';
+import type { DailyRecordCriticalValidationState } from '@/application/shared/dailyRecordBedContracts';
+import type { DailyRecordCudyrExportState } from '@/application/shared/dailyRecordStaffContracts';
+
+type HandoffBackupRecord = HandoffPdfRecord &
+  DailyRecordCriticalValidationState &
+  DailyRecordCudyrExportState;
+
+export interface BackupCensusExcelInput {
+  selectedYear: number;
+  selectedMonth: number;
+  selectedDay: number;
+  currentDateString: string;
+  record: CensusExportRecord | null;
+}
+
+export interface ExportHandoffPdfInput {
+  record: HandoffPdfRecord | null;
+  selectedShift: 'day' | 'night';
+  isMedical?: boolean;
+}
+
+export interface BackupHandoffPdfInput {
+  record: HandoffBackupRecord | null;
+  selectedShift: 'day' | 'night';
+}
 
 const MIN_SUPPORTED_YEAR = 2000;
 const MAX_SUPPORTED_YEAR = 2100;

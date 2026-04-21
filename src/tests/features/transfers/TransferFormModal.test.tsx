@@ -1,7 +1,7 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { TransferFormModal } from '@/features/transfers/components/components/TransferFormModal';
+import { TransferFormModal } from '@/features/transfers/components/internal/TransferFormModal';
 
 const getDestinationHospitalCatalog = vi.fn();
 

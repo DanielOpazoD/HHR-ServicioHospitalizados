@@ -33,15 +33,43 @@ export interface ResolveRemoteSyncRuntimeStatusInput {
   firestoreSyncState?: FirestoreSyncState;
 }
 
-// ============================================================================
-// State
-// ============================================================================
+export interface RepositorySyncRuntimeSnapshot {
+  firestoreEnabled: boolean;
+  firestoreSyncState: FirestoreSyncState;
+}
 
-let firestoreEnabled = true;
-let firestoreSyncState: FirestoreSyncState = {
-  mode: 'enabled',
-  reason: 'ready',
+type RepositorySyncRuntimeListener = (snapshot: RepositorySyncRuntimeSnapshot) => void;
+
+const createRepositorySyncRuntimeStore = (initialSnapshot: RepositorySyncRuntimeSnapshot) => {
+  let snapshot = initialSnapshot;
+  const listeners = new Set<RepositorySyncRuntimeListener>();
+
+  const notify = () => {
+    listeners.forEach(listener => listener(snapshot));
+  };
+
+  return {
+    getSnapshot: (): RepositorySyncRuntimeSnapshot => snapshot,
+    setSnapshot(nextSnapshot: RepositorySyncRuntimeSnapshot) {
+      snapshot = nextSnapshot;
+      notify();
+    },
+    subscribe(listener: RepositorySyncRuntimeListener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+  };
 };
+
+const repositorySyncRuntimeStore = createRepositorySyncRuntimeStore({
+  firestoreEnabled: true,
+  firestoreSyncState: {
+    mode: 'enabled',
+    reason: 'ready',
+  },
+});
 
 // ============================================================================
 // API
@@ -52,29 +80,41 @@ let firestoreSyncState: FirestoreSyncState = {
  * When disabled, only local IndexedDB storage is used.
  */
 export const setFirestoreEnabled = (enabled: boolean): void => {
-  firestoreEnabled = enabled;
-  firestoreSyncState = enabled
-    ? {
-        mode: 'enabled',
-        reason: 'ready',
-      }
-    : {
-        mode: 'local_only',
-        reason: 'auth_unavailable',
-      };
+  repositorySyncRuntimeStore.setSnapshot({
+    firestoreEnabled: enabled,
+    firestoreSyncState: enabled
+      ? {
+          mode: 'enabled',
+          reason: 'ready',
+        }
+      : {
+          mode: 'local_only',
+          reason: 'auth_unavailable',
+        },
+  });
 };
 
 /**
  * Check if Firestore synchronization is enabled.
  */
-export const isFirestoreEnabled = (): boolean => firestoreEnabled;
+export const isFirestoreEnabled = (): boolean =>
+  repositorySyncRuntimeStore.getSnapshot().firestoreEnabled;
 
 export const setFirestoreSyncState = (state: FirestoreSyncState): void => {
-  firestoreSyncState = state;
-  firestoreEnabled = state.mode !== 'local_only';
+  repositorySyncRuntimeStore.setSnapshot({
+    firestoreEnabled: state.mode !== 'local_only',
+    firestoreSyncState: state,
+  });
 };
 
-export const getFirestoreSyncState = (): FirestoreSyncState => firestoreSyncState;
+export const getFirestoreSyncState = (): FirestoreSyncState =>
+  repositorySyncRuntimeStore.getSnapshot().firestoreSyncState;
+
+export const getRepositorySyncRuntimeSnapshot = (): RepositorySyncRuntimeSnapshot =>
+  repositorySyncRuntimeStore.getSnapshot();
+
+export const subscribeToRepositorySyncRuntime = (listener: RepositorySyncRuntimeListener) =>
+  repositorySyncRuntimeStore.subscribe(listener);
 
 export const resolveRemoteSyncRuntimeState = ({
   authLoading,

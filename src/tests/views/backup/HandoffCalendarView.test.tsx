@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { render, screen, fireEvent } from '@testing-library/react';
-import { HandoffCalendarView } from '@/features/backup/components/components/HandoffCalendarView';
+import { HandoffCalendarView } from '@/features/backup/components/internal/HandoffCalendarView';
 import type { StoredPdfFile } from '@/types/backupArtifacts';
 
 // Mock date utilities to be deterministic

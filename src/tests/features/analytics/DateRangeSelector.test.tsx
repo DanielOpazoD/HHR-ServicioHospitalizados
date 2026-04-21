@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { DateRangeSelector } from '@/features/analytics/components/components/DateRangeSelector';
+import { DateRangeSelector } from '@/features/analytics/components/internal/DateRangeSelector';
 
 describe('DateRangeSelector', () => {
   it('shows month selector when currentMonth preset is active', () => {

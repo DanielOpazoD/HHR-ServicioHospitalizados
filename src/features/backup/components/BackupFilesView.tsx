@@ -9,9 +9,9 @@ import React from 'react';
 import { Loader2 } from 'lucide-react';
 import { useBackupFileBrowser } from '@/hooks/useBackupFileBrowser';
 import type { BackupType } from '@/hooks/backupFileBrowserContracts';
-import { BackupFilesToolbar } from './components/BackupFilesToolbar';
-import { BackupFilesContent } from './components/BackupFilesContent';
-import { BackupFilesPreview } from './components/BackupFilesPreview';
+import { BackupFilesToolbar } from './internal/BackupFilesToolbar';
+import { BackupFilesContent } from './internal/BackupFilesContent';
+import { BackupFilesPreview } from './internal/BackupFilesPreview';
 
 interface BackupFilesViewProps {
   backupType?: BackupType;

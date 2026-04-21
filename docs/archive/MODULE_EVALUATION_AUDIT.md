@@ -64,7 +64,7 @@
 - Los hotspots más claros siguen estando en:
   - [useAuditData.ts](../src/hooks/useAuditData.ts)
   - [useAudit.ts](../src/hooks/useAudit.ts)
-  - [ConsolidationManager.tsx](../src/features/admin/components/components/audit/ConsolidationManager.tsx)
+  - [ConsolidationManager.tsx](../src/features/admin/components/internal/audit/ConsolidationManager.tsx)
 - El shell de [AuditView.tsx](../src/features/admin/components/AuditView.tsx) está razonablemente limpio, y ahora además depende de una consolidación algo más declarativa.
 - La consolidación/exportación sigue siendo el frente con más sensibilidad operativa, aunque ya con mejor separación de shell/view-state.
 
@@ -86,15 +86,15 @@
 
 ## 6. Hotspots y archivos clave
 
-| Archivo                                                                                                                                                                 | Rol                                | Riesgo / observación                                                             |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | -------------------------------------------------------------------------------- |
-| [src/hooks/useAuditData.ts](../src/hooks/useAuditData.ts)                                                                                                               | runtime de datos principal         | `254` líneas; sigue siendo denso, pero ya con menos composición repetida inline. |
-| [src/hooks/useAudit.ts](../src/hooks/useAudit.ts)                                                                                                                       | facade/hook principal de auditoría | `260` líneas; sigue siendo uno de los puntos más densos del frente.              |
-| [src/services/admin/auditWorkerLogic.ts](../src/services/admin/auditWorkerLogic.ts)                                                                                     | runtime puro del worker            | `209` líneas; fuerte y bien ubicado, pero ya es un core importante.              |
-| [src/features/admin/components/components/audit/ConsolidationManager.tsx](../src/features/admin/components/components/audit/ConsolidationManager.tsx)                   | consolidación operativa            | `218` líneas; área sensible por impacto operativo, ahora con mejor shell state.  |
-| [src/features/admin/components/components/audit/consolidationManagerController.ts](../src/features/admin/components/components/audit/consolidationManagerController.ts) | shell/view-state puro              | seam nuevo y útil para botones, ramas de shell y preview rows.                   |
-| [src/features/admin/components/AuditView.tsx](../src/features/admin/components/AuditView.tsx)                                                                           | shell del módulo                   | `157` líneas; bastante razonable, pero dependiente de hooks densos.              |
-| [src/features/admin/components/components/audit/AuditStatsDashboard.tsx](../src/features/admin/components/components/audit/AuditStatsDashboard.tsx)                     | resumen visual                     | `159` líneas; aceptable, con buena cobertura.                                    |
+| Archivo                                                                                                                                                             | Rol                                | Riesgo / observación                                                             |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | -------------------------------------------------------------------------------- |
+| [src/hooks/useAuditData.ts](../src/hooks/useAuditData.ts)                                                                                                           | runtime de datos principal         | `254` líneas; sigue siendo denso, pero ya con menos composición repetida inline. |
+| [src/hooks/useAudit.ts](../src/hooks/useAudit.ts)                                                                                                                   | facade/hook principal de auditoría | `260` líneas; sigue siendo uno de los puntos más densos del frente.              |
+| [src/services/admin/auditWorkerLogic.ts](../src/services/admin/auditWorkerLogic.ts)                                                                                 | runtime puro del worker            | `209` líneas; fuerte y bien ubicado, pero ya es un core importante.              |
+| [src/features/admin/components/internal/audit/ConsolidationManager.tsx](../src/features/admin/components/internal/audit/ConsolidationManager.tsx)                   | consolidación operativa            | `218` líneas; área sensible por impacto operativo, ahora con mejor shell state.  |
+| [src/features/admin/components/internal/audit/consolidationManagerController.ts](../src/features/admin/components/internal/audit/consolidationManagerController.ts) | shell/view-state puro              | seam nuevo y útil para botones, ramas de shell y preview rows.                   |
+| [src/features/admin/components/AuditView.tsx](../src/features/admin/components/AuditView.tsx)                                                                       | shell del módulo                   | `157` líneas; bastante razonable, pero dependiente de hooks densos.              |
+| [src/features/admin/components/internal/audit/AuditStatsDashboard.tsx](../src/features/admin/components/internal/audit/AuditStatsDashboard.tsx)                     | resumen visual                     | `159` líneas; aceptable, con buena cobertura.                                    |
 
 ---
 
@@ -150,8 +150,8 @@ Resultado actual:
 - **Objetivo:** domesticar un poco el frente de consolidación.
 - **Cambio ejecutado:** sacar estado de acciones, ramas de shell y preview rows de `ConsolidationManager.tsx` a `consolidationManagerController.ts`.
 - **Archivos tocados:**
-  - [src/features/admin/components/components/audit/ConsolidationManager.tsx](../src/features/admin/components/components/audit/ConsolidationManager.tsx)
-  - [src/features/admin/components/components/audit/consolidationManagerController.ts](../src/features/admin/components/components/audit/consolidationManagerController.ts)
+  - [src/features/admin/components/internal/audit/ConsolidationManager.tsx](../src/features/admin/components/internal/audit/ConsolidationManager.tsx)
+  - [src/features/admin/components/internal/audit/consolidationManagerController.ts](../src/features/admin/components/internal/audit/consolidationManagerController.ts)
 - **Tests / checks ejecutados:**
   - [src/tests/views/admin/components/audit/ConsolidationManager.test.tsx](../src/tests/views/admin/components/audit/ConsolidationManager.test.tsx)
   - [src/tests/views/admin/components/audit/consolidationManagerController.test.ts](../src/tests/views/admin/components/audit/consolidationManagerController.test.ts)
@@ -166,7 +166,7 @@ Resultado actual:
   - worker runtime
   - paneles sensibles y access policy
 - **Archivos probables:**
-  - `src/features/admin/components/components/audit/README.md` o `src/features/admin/README.md`
+  - `src/features/admin/components/internal/audit/README.md` o `src/features/admin/README.md`
 - **Tests / checks requeridos:**
   - `npm run check:quality`
 - **Criterio de cierre:** menor dependencia de conocimiento implícito.

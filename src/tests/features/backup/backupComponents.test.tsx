@@ -11,13 +11,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 
-import { BackupFilesToolbar } from '@/features/backup/components/components/BackupFilesToolbar';
-import { BackupFileCard } from '@/features/backup/components/components/BackupFileCard';
+import { BackupFilesToolbar } from '@/features/backup/components/internal/BackupFilesToolbar';
+import { BackupFileCard } from '@/features/backup/components/internal/BackupFileCard';
 import {
   FolderCard,
   FileCard,
   Breadcrumbs,
-} from '@/features/backup/components/components/BackupDriveItems';
+} from '@/features/backup/components/internal/BackupDriveItems';
 import { formatFileSize } from '@/types/backupArtifacts';
 import {
   formatBackupShiftLabel,

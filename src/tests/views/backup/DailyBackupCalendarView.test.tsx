@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { DailyBackupCalendarView } from '@/features/backup/components/components/DailyBackupCalendarView';
+import { DailyBackupCalendarView } from '@/features/backup/components/internal/DailyBackupCalendarView';
 import type { BaseStoredFile } from '@/types/backupArtifacts';
 
 vi.mock('@/utils/dateUtils', () => ({

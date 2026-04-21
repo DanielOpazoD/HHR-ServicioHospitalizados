@@ -5,11 +5,11 @@
 
 import React from 'react';
 import { ArrowRightLeft, ChevronDown, ChevronRight, Plus } from 'lucide-react';
-import { TransferTable } from './components/TransferTable';
-import { TransferFormModal } from './components/TransferFormModal';
-import { StatusChangeModal } from './components/StatusChangeModal';
-import { ConfirmTransferModal } from './components/ConfirmTransferModal';
-import { CancelTransferModal } from './components/CancelTransferModal';
+import { TransferTable } from './internal/TransferTable';
+import { TransferFormModal } from './internal/TransferFormModal';
+import { StatusChangeModal } from './internal/StatusChangeModal';
+import { ConfirmTransferModal } from './internal/ConfirmTransferModal';
+import { CancelTransferModal } from './internal/CancelTransferModal';
 import { useTransferManagementViewRuntime } from '../hooks/useTransferManagementViewRuntime';
 import {
   buildTransferCancelModalBindings,
@@ -29,13 +29,13 @@ import {
 } from './controllers/transferManagementViewController';
 
 const TransferQuestionnaireModal = React.lazy(() =>
-  import('./components/TransferQuestionnaireModal').then(module => ({
+  import('./internal/TransferQuestionnaireModal').then(module => ({
     default: module.TransferQuestionnaireModal,
   }))
 );
 
 const TransferDocumentPackageModal = React.lazy(() =>
-  import('./components/TransferDocumentPackageModal').then(module => ({
+  import('./internal/TransferDocumentPackageModal').then(module => ({
     default: module.TransferDocumentPackageModal,
   }))
 );

@@ -1,7 +1,7 @@
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { TransferDocumentPackageModal } from '@/features/transfers/components/components/TransferDocumentPackageModal';
+import { TransferDocumentPackageModal } from '@/features/transfers/components/internal/TransferDocumentPackageModal';
 
 const mockAlert = vi.fn();
 const mockOpen = vi.fn();

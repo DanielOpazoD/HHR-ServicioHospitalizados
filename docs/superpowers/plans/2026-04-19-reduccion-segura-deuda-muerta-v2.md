@@ -24,7 +24,7 @@ Cambios ya hechos y compatibles con este plan:
 
 - eliminados seams sin uso evidente:
   - `src/utils/publicCensusToken.ts`
-  - `src/features/transfers/components/components/TransferStatusBadge.tsx`
+  - `src/features/transfers/components/internal/TransferStatusBadge.tsx`
   - `src/features/admin/components/AITelemetryPanel.tsx`
   - `src/features/admin/components/AuditPagination.tsx`
   - `src/features/admin/components/CensusAccessManager.tsx`

@@ -58,18 +58,11 @@ vi.mock('@/views/LazyViews', () => ({
   CensusEmailConfigModal: () => <div data-testid="email-modal">EmailModal</div>,
 }));
 
-vi.mock('@/application/census/public', async importOriginal => {
-  const actual = await importOriginal<typeof import('@/application/census/public')>();
-  return {
-    ...actual,
-    loadCensusPublicComponents: () =>
-      Promise.resolve({
-        GlobalPatientSearchModal: () => (
-          <div data-testid="patient-search-modal">PatientSearchModal</div>
-        ),
-      }),
-  };
-});
+vi.mock('@/features/census/public-components', () => ({
+  GlobalPatientSearchModal: () => <div data-testid="patient-search-modal">PatientSearchModal</div>,
+  CensusView: () => <div data-testid="census-view">CensusView</div>,
+  CensusEmailConfigModal: () => <div data-testid="email-modal">EmailModal</div>,
+}));
 
 // Flush lazy component resolutions before any test renders.
 beforeAll(() => Promise.all(_lazyPending));

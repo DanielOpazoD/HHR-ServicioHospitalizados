@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { SpecialtyBreakdownTable } from '@/features/analytics/components/components/SpecialtyBreakdownTable';
+import { SpecialtyBreakdownTable } from '@/features/analytics/components/internal/SpecialtyBreakdownTable';
 import type { MinsalStatistics } from '@/types/minsalTypes';
 
 const summary: MinsalStatistics = {

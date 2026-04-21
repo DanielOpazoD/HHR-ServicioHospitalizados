@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useTableConfig } from '@/context/TableConfigContext';
 import { useUISettings } from '@/context/UISettingsContext';
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
-import { AccessRestricted } from './components/AccessRestricted';
+import { AccessRestricted } from './internal/AccessRestricted';
 import RoleManagementView from './RoleManagementView';
 import {
   SettingsVisualTab,

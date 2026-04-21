@@ -90,7 +90,7 @@ La policy de estados y acciones no vive aquí; se centraliza en:
 
 La gestión inline de notas se mantiene aislada en:
 
-- [TransferNotesCell.tsx](components/components/TransferNotesCell.tsx)
+- [TransferNotesCell.tsx](components/internal/TransferNotesCell.tsx)
 - [transferNotesController.ts](components/controllers/transferNotesController.ts)
 
 ### `TransferFormModal.tsx`
@@ -135,7 +135,7 @@ Si un hospital no tiene configuración documental:
 ### Modo oculto de paquete documental
 
 - El flujo de paquete documental sigue existiendo en el feature:
-  - [TransferDocumentPackageModal.tsx](components/components/TransferDocumentPackageModal.tsx)
+  - [TransferDocumentPackageModal.tsx](components/internal/TransferDocumentPackageModal.tsx)
   - `onGenerateDocs` / persistencia de `questionnaireResponses`
 - El botón de tabla `Preparar docs` está oculto intencionalmente del UI público.
 - Si se vuelve a habilitar, debe hacerse reusando la capacidad existente y no recreando otro modal o flujo paralelo.

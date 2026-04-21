@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MinsalKPICards } from '@/features/analytics/components/components/MinsalKPICards';
+import { MinsalKPICards } from '@/features/analytics/components/internal/MinsalKPICards';
 import type { MinsalStatistics } from '@/types/minsalTypes';
 
 const stats: MinsalStatistics = {

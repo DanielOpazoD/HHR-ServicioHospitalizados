@@ -6,17 +6,13 @@ import {
 } from '@/shared/contracts/applicationOutcome';
 import { defaultDailyRecordReadPort } from '@/application/ports/dailyRecordPort';
 import { defaultCensusEmailDeliveryPort } from '@/application/ports/censusEmailPort';
-import {
-  mergeMonthlyRecordsForBackup,
-  resolveHandoffBackupStaff,
-} from '@/hooks/controllers/exportManagerController';
+import { mergeMonthlyRecordsForBackup, resolveHandoffBackupStaff } from './backupExportSupport';
 import { getShiftSchedule } from '@/utils/clinicalDayUtils';
 import { validateCriticalFields } from '@/services/validation/criticalFieldsValidator';
-import type { CensusExportRecord } from '@/services/contracts/censusExportServiceContracts';
-import type { HandoffPdfRecord } from '@/services/pdf/contracts/handoffPdfContracts';
-import type { DailyRecordCriticalValidationState } from '@/application/shared/dailyRecordBedContracts';
-import type { DailyRecordCudyrExportState } from '@/application/shared/dailyRecordStaffContracts';
 import {
+  type BackupCensusExcelInput,
+  type BackupHandoffPdfInput,
+  type ExportHandoffPdfInput,
   normalizeBackupHandoffPdfInput,
   normalizeBackupCensusExcelInput,
   normalizeExportHandoffPdfInput,
@@ -24,18 +20,6 @@ import {
   validateBackupCensusExcelInput,
   validateExportHandoffPdfInput,
 } from './backupExportArchiveContracts';
-
-type HandoffBackupRecord = HandoffPdfRecord &
-  DailyRecordCriticalValidationState &
-  DailyRecordCudyrExportState;
-
-export interface BackupCensusExcelInput {
-  selectedYear: number;
-  selectedMonth: number;
-  selectedDay: number;
-  currentDateString: string;
-  record: CensusExportRecord | null;
-}
 
 export interface BackupCensusExcelOutput {
   archivedDate: string;
@@ -101,12 +85,6 @@ export const executeBackupCensusExcel = async (
   }
 };
 
-export interface ExportHandoffPdfInput {
-  record: HandoffPdfRecord | null;
-  selectedShift: 'day' | 'night';
-  isMedical?: boolean;
-}
-
 export const executeExportHandoffPdf = async (
   input: ExportHandoffPdfInput
 ): Promise<ApplicationOutcome<null>> => {
@@ -160,11 +138,6 @@ export const executeExportHandoffPdf = async (
     ]);
   }
 };
-
-export interface BackupHandoffPdfInput {
-  record: HandoffBackupRecord | null;
-  selectedShift: 'day' | 'night';
-}
 
 export interface BackupHandoffPdfOutput {
   shift: 'day' | 'night';

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Database, FolderArchive, Users } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '@/context/AuthContext';
-import { AccessRestricted } from './components/AccessRestricted';
+import { AccessRestricted } from './internal/AccessRestricted';
 import { DataMaintenanceView } from './DataMaintenanceView';
 import { PatientMasterView } from './PatientMasterView';
 import { BackupFilesView } from '@/features/backup/public';

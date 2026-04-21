@@ -3,7 +3,7 @@ import {
   buildConsolidationManagerActionState,
   buildConsolidationManagerShellState,
   buildConsolidationPreviewRows,
-} from '@/features/admin/components/components/audit/consolidationManagerController';
+} from '@/features/admin/components/internal/audit/consolidationManagerController';
 
 describe('consolidationManagerController', () => {
   it('builds action state for preview vs execution loading', () => {

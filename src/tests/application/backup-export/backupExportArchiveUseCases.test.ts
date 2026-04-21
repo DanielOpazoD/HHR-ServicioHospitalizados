@@ -4,8 +4,8 @@ import {
   executeBackupCensusExcel,
   executeExportHandoffPdf,
 } from '@/application/backup-export/backupExportArchiveUseCases';
+import * as backupExportSupport from '@/application/backup-export/backupExportSupport';
 import { defaultDailyRecordReadPort } from '@/application/ports/dailyRecordPort';
-import * as exportManagerController from '@/hooks/controllers/exportManagerController';
 import * as criticalFieldsValidator from '@/services/validation/criticalFieldsValidator';
 
 const generateHandoffPdf = vi.fn();
@@ -68,7 +68,7 @@ describe('backupExportArchiveUseCases', () => {
   });
 
   it('fails fast for invalid handoff backup input before resolving staff or validating fields', async () => {
-    const resolveStaffSpy = vi.spyOn(exportManagerController, 'resolveHandoffBackupStaff');
+    const resolveStaffSpy = vi.spyOn(backupExportSupport, 'resolveHandoffBackupStaff');
     const validateCriticalFieldsSpy = vi.spyOn(criticalFieldsValidator, 'validateCriticalFields');
 
     const outcome = await executeBackupHandoffPdf({

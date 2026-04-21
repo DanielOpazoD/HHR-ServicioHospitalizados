@@ -6,10 +6,10 @@
 import React from 'react';
 import { Loader2, Download, BarChart3, RefreshCw } from 'lucide-react';
 import { useMinsalStats } from '@/hooks/useMinsalStats';
-import { DateRangeSelector } from './components/DateRangeSelector';
-import { MinsalKPICards } from './components/MinsalKPICards';
-import { SpecialtyBreakdownTable } from './components/SpecialtyBreakdownTable';
-import { OccupancyTrendChart } from './components/OccupancyTrendChart';
+import { DateRangeSelector } from './internal/DateRangeSelector';
+import { MinsalKPICards } from './internal/MinsalKPICards';
+import { SpecialtyBreakdownTable } from './internal/SpecialtyBreakdownTable';
+import { OccupancyTrendChart } from './internal/OccupancyTrendChart';
 import { resolveAnalyticsPresentationCopy } from '@/features/analytics/controllers/minsalAnalyticsPresentationController';
 import { formatDateDDMMYYYY } from '@/utils/dateFormattingUtils';
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';

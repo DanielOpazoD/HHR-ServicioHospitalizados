@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+  getRepositorySyncRuntimeSnapshot,
+  isFirestoreEnabled,
   resolveRemoteSyncRuntimeState,
   resolveRemoteSyncRuntimeStatus,
+  setFirestoreEnabled,
+  setFirestoreSyncState,
+  subscribeToRepositorySyncRuntime,
   type FirestoreSyncState,
 } from '@/services/repositories/repositoryConfig';
 
@@ -60,5 +65,45 @@ describe('repositoryConfig', () => {
       status: 'local_only',
       reason: 'offline',
     });
+  });
+
+  it('keeps the shared runtime snapshot in sync with sync-state updates', () => {
+    setFirestoreSyncState({
+      mode: 'local_only',
+      reason: 'offline',
+    });
+
+    expect(isFirestoreEnabled()).toBe(false);
+    expect(getRepositorySyncRuntimeSnapshot()).toEqual({
+      firestoreEnabled: false,
+      firestoreSyncState: {
+        mode: 'local_only',
+        reason: 'offline',
+      },
+    });
+
+    setFirestoreEnabled(true);
+  });
+
+  it('notifies subscribers when the repository sync runtime changes', () => {
+    const snapshots: FirestoreSyncState[] = [];
+    const unsubscribe = subscribeToRepositorySyncRuntime(snapshot => {
+      snapshots.push(snapshot.firestoreSyncState);
+    });
+
+    setFirestoreSyncState({
+      mode: 'bootstrapping',
+      reason: 'auth_connecting',
+    });
+
+    unsubscribe();
+    setFirestoreEnabled(true);
+
+    expect(snapshots).toEqual([
+      {
+        mode: 'bootstrapping',
+        reason: 'auth_connecting',
+      },
+    ]);
   });
 });

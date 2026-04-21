@@ -2,21 +2,19 @@
  * Lazy-loaded view components
  * Loaded on-demand when the user navigates to them
  */
-import { loadCensusPublicComponents } from '@/application/census/public';
-import { loadCudyrPublicComponents } from '@/application/cudyr/public';
 import { lazyWithRetry } from '@/utils/lazyWithRetry';
 
 // Census module heavy components (prefetch for faster navigation).
 // Load from public-components so the app-authenticated-shell chunk does
 // not pull in the CensusView tree through the light controller barrel.
 export const CensusView = lazyWithRetry(() =>
-  loadCensusPublicComponents().then(module => ({
+  import('@/features/census/public-components').then(module => ({
     default: module.CensusView,
   }))
 );
 
 export const CensusEmailConfigModal = lazyWithRetry(() =>
-  loadCensusPublicComponents().then(module => ({
+  import('@/features/census/public-components').then(module => ({
     default: module.CensusEmailConfigModal,
   }))
 );
@@ -29,14 +27,14 @@ export const AnalyticsView = lazyWithRetry(() =>
 
 // CUDYR module (prefetch)
 export const CudyrView = lazyWithRetry(() =>
-  loadCudyrPublicComponents().then(module => ({
+  import('@/features/cudyr').then(module => ({
     default: module.CudyrView,
   }))
 );
 
 // Handoff module (prefetch)
 export const HandoffView = lazyWithRetry(() =>
-  import(/* webpackPrefetch: true */ '@/application/handoff/public').then(module => ({
+  import(/* webpackPrefetch: true */ '@/features/handoff').then(module => ({
     default: module.HandoffView,
   }))
 );
@@ -126,7 +124,7 @@ export const WhatsAppIntegrationView = lazyWithRetry(() =>
 
 // Transfer Management module
 export const TransferManagementView = lazyWithRetry(() =>
-  import('@/application/transfers/public').then(module => ({
+  import('@/features/transfers').then(module => ({
     default: module.TransferManagementView,
   }))
 );

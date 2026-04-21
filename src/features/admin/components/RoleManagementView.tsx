@@ -2,11 +2,11 @@ import React from 'react';
 import { X, CheckCircle2, AlertCircle, RefreshCw, ShieldAlert } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useRoleManagement } from '@/hooks/useRoleManagement';
-import { AccessRestricted } from './components/AccessRestricted';
-import { RoleAccessPreview } from './components/RoleAccessPreview';
-import { RoleForm } from './components/RoleForm';
-import { RoleTable } from './components/RoleTable';
-import { DeleteRoleModal } from './components/DeleteRoleModal';
+import { AccessRestricted } from './internal/AccessRestricted';
+import { RoleAccessPreview } from './internal/RoleAccessPreview';
+import { RoleForm } from './internal/RoleForm';
+import { RoleTable } from './internal/RoleTable';
+import { DeleteRoleModal } from './internal/DeleteRoleModal';
 
 const RoleManagementView: React.FC = () => {
   const { role: authRole } = useAuth();

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FileText } from 'lucide-react';
 
-import { ClinicalDocumentTemplateCard } from '@/features/admin/components/components/ClinicalDocumentTemplateCard';
+import { ClinicalDocumentTemplateCard } from '@/features/admin/components/internal/ClinicalDocumentTemplateCard';
 import {
   addClinicalDocumentTemplateField,
   addClinicalDocumentTemplateSection,

@@ -92,8 +92,8 @@ vi.mock('@/utils/dateFormattingUtils', () => ({
 import { useShiftPanel } from '@/hooks/useShiftPanel';
 import { WhatsAppIntegrationView } from '@/features/whatsapp/components/WhatsAppIntegrationView';
 import { ShiftPanelView } from '@/features/whatsapp/components/ShiftPanelView';
-import { ImportModal } from '@/features/whatsapp/components/components/ImportModal';
-import { StaffCard } from '@/features/whatsapp/components/components/StaffCard';
+import { ImportModal } from '@/features/whatsapp/components/internal/ImportModal';
+import { StaffCard } from '@/features/whatsapp/components/internal/StaffCard';
 
 describe('WhatsAppIntegrationView', () => {
   it('renders header and default shifts tab', () => {

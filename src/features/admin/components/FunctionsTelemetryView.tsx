@@ -3,10 +3,10 @@ import { Activity } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useFunctionsTelemetryData } from '@/hooks/useFunctionsTelemetryData';
 import { canAccessFunctionsTelemetryView } from '@/services/admin/functionsTelemetryAccessPolicy';
-import { AccessRestricted } from './components/AccessRestricted';
-import { FunctionsTelemetrySummaryCards } from './components/functionsTelemetry/FunctionsTelemetrySummaryCards';
-import { FunctionsTelemetryFilters } from './components/functionsTelemetry/FunctionsTelemetryFilters';
-import { FunctionsTelemetryTable } from './components/functionsTelemetry/FunctionsTelemetryTable';
+import { AccessRestricted } from './internal/AccessRestricted';
+import { FunctionsTelemetrySummaryCards } from './internal/functionsTelemetry/FunctionsTelemetrySummaryCards';
+import { FunctionsTelemetryFilters } from './internal/functionsTelemetry/FunctionsTelemetryFilters';
+import { FunctionsTelemetryTable } from './internal/functionsTelemetry/FunctionsTelemetryTable';
 
 export const FunctionsTelemetryView: React.FC = () => {
   const { role } = useAuth();

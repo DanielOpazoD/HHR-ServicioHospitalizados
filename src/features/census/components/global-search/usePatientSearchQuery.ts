@@ -6,7 +6,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { searchMasterPatients } from '@/application/census/public';
+import { searchMasterPatients } from '@/application/census/searchMasterPatientsUseCase';
 import type { MasterPatient } from '@/types/domain/patientMaster';
 import { globalPatientSearchLogger } from '@/hooks/hookLoggers';
 
