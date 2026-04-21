@@ -206,19 +206,16 @@ describe('buildAnalysisData', () => {
 
     expect(result.microbiologyEntries).toHaveLength(2);
     expect(result.microbiologyEntries.map(entry => entry.examLabel)).toEqual(
-      expect.arrayContaining(['Cultivo corriente / Antibiograma', 'PCR panel respiratorio'])
+      expect.arrayContaining(['Otros cultivos', 'PCR 8 virus'])
     );
     expect(
-      result.microbiologyEntries.find(
-        entry => entry.examLabel === 'Cultivo corriente / Antibiograma'
-      )?.findings
+      result.microbiologyEntries.find(entry => entry.examLabel === 'Otros cultivos')?.findings
     ).toEqual([
       { analysis: 'Cultivo', result: 'Desarrollo de E. coli' },
       { analysis: 'Ceftazidima', result: 'Susceptible' },
     ]);
     expect(
-      result.microbiologyEntries.find(entry => entry.examLabel === 'PCR panel respiratorio')
-        ?.findings
+      result.microbiologyEntries.find(entry => entry.examLabel === 'PCR 8 virus')?.findings
     ).toEqual([
       { analysis: 'Rhinovirus', result: 'NEGATIVO' },
       { analysis: 'Influenza A', result: 'NEGATIVO' },
@@ -268,16 +265,13 @@ describe('buildAnalysisData', () => {
     );
 
     expect(result.microbiologyEntries.map(entry => entry.examLabel)).toEqual(
-      expect.arrayContaining(['Cultivo corriente / Antibiograma', 'PCR panel respiratorio'])
+      expect.arrayContaining(['Otros cultivos', 'PCR 8 virus'])
     );
     expect(
-      result.microbiologyEntries.find(
-        entry => entry.examLabel === 'Cultivo corriente / Antibiograma'
-      )?.findings
+      result.microbiologyEntries.find(entry => entry.examLabel === 'Otros cultivos')?.findings
     ).toEqual([]);
     expect(
-      result.microbiologyEntries.find(entry => entry.examLabel === 'PCR panel respiratorio')
-        ?.findings
+      result.microbiologyEntries.find(entry => entry.examLabel === 'PCR 8 virus')?.findings
     ).toEqual([
       { analysis: 'Influenza A', result: 'NEGATIVO' },
       { analysis: 'Rhinovirus', result: 'NEGATIVO' },

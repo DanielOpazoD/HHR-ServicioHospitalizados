@@ -77,6 +77,10 @@ export const TREND_GROUPS: { label: string; patterns: string[] }[] = [
     label: 'Otros',
     patterns: ['Troponina', 'LDH', 'CK Total', 'Magnesio', 'Acido Urico', 'Albumina'],
   },
+  {
+    label: 'Orina / Proteinuria',
+    patterns: ['RPC', 'RAC', 'pH', 'Densidad'],
+  },
 ];
 
 /* ================================================================== */
@@ -135,11 +139,22 @@ export const COMPARISON_ORDER: string[] = [
   'VHS',
   // Función renal + ELP
   'Creatinina',
+  'RPC',
+  'RAC',
   'Nitrogeno Ureico',
   'Uremia',
   'Sodio',
   'Potasio',
   'Cloro',
+  'Cuerpos Cetónicos',
+  'Proteínas',
+  'Nitritos',
+  'Densidad',
+  'Leucocitos',
+  'Eritrocitos',
+  'Bacterias',
+  'Cilindros',
+  'Placas de pus',
   // Gases
   'pH',
   'pCO2',
@@ -210,7 +225,10 @@ export const EXAM_FILTER_CATEGORIES: { label: string; patterns: string[] }[] = [
       'MICROBIOLOG',
     ],
   },
-  { label: 'PCR Panel', patterns: ['PCR PANEL', 'PANEL RESPIRATORIO', 'PANEL VIRAL'] },
+  {
+    label: 'PCR Virales',
+    patterns: ['PCR PANEL', 'PANEL RESPIRATORIO', 'PANEL VIRAL', 'ARBOVIROSIS'],
+  },
   { label: 'Orina', patterns: ['ORINA', 'SEDIMENTO'] },
 ];
 
@@ -224,6 +242,10 @@ export const MICROBIOLOGY_PATTERNS: string[] = [
   'ANTIBIOGRAMA',
   'PCR PANEL',
   'PANEL RESPIRATORIO',
+  'ARBOVIROSIS',
+  'DENGUE',
+  'CHIKUNGUNYA',
+  'ZIKA',
   'VIRUS',
   'INFLUENZA',
   'COVID',
@@ -246,6 +268,9 @@ export const ANALYSIS_NAME_REPLACEMENTS: [RegExp, string][] = [
   [/^\s*Creatinina(?:\s+s[eé]rica)?\s*$/i, 'Creatinina'],
   [/^\s*PCR\s*$/i, 'Proteina C Reactiva'],
   [/^\s*Prot\.?\s*C\.?\s*Reactiva\s*$/i, 'Proteina C Reactiva'],
+  [/^\s*Rel\.?\s*Proteinuria\/Creatininuria\s*$/i, 'RPC'],
+  [/^\s*Relacion\s+Albumina\/Creatininuri[a]?\s*$/i, 'RAC'],
+  [/^\s*RELAC\.?\s*ALBUMINA\/CREATINURIA\s*$/i, 'RAC'],
   [/^\s*Bilirrubina\s+T\.?\s*$/i, 'Bilirrubina Total'],
   [/^\s*Bilirrubina\s+D\.?\s*$/i, 'Bilirrubina Directa'],
   [/^\s*Bilirrubina\s+I\.?\s*$/i, 'Bilirrubina Indirecta'],

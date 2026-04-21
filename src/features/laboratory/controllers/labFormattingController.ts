@@ -74,8 +74,53 @@ export const isOutOfRange = (result: string, refValue: string): boolean | null =
  * @example normalizeAnalysisName("HCO3 ACTUAL") // "HCO3"
  * @example normalizeAnalysisName("Vol. Corp. Medio VCM") // "VCM"
  */
-export const normalizeAnalysisName = (name: string): string => {
+const isUrineSection = (section: string | undefined): boolean => {
+  const upper = String(section || '').toUpperCase();
+  return (
+    upper.includes('ORINA') ||
+    upper.includes('SEDIMENTO') ||
+    upper.includes('QUIMICA/ORINA') ||
+    upper.includes('FISICO-QUIMICO')
+  );
+};
+
+const normalizeUrineAnalysisName = (name: string): string | null => {
+  const collapsed = name.trim().replace(/\s+/g, ' ');
+  const replacements: Array<[RegExp, string]> = [
+    [/^\s*Leucocitos\s*$/i, 'Leucocitos'],
+    [/^\s*Eritrocitos\s*$/i, 'Eritrocitos'],
+    [/^\s*Bacterias\s*$/i, 'Bacterias'],
+    [/^\s*Cilindros\s*$/i, 'Cilindros'],
+    [/^\s*Placas de pus\s*$/i, 'Placas de pus'],
+    [/^\s*Cuerpos\s+Cet[oó]nicos\s*$/i, 'Cuerpos Cetónicos'],
+    [/^\s*Proteinas\s*$/i, 'Proteínas'],
+    [/^\s*Nitritos\s*$/i, 'Nitritos'],
+    [/^\s*pH\s*$/i, 'pH'],
+    [/^\s*Densidad\s*$/i, 'Densidad'],
+    [/^\s*Creatininuria\s*$/i, 'Creatininuria'],
+    [/^\s*Proteinuria\s*$/i, 'Proteinuria'],
+    [/^\s*Microalbuminuria\s*$/i, 'Microalbuminuria'],
+  ];
+
+  for (const [pattern, replacement] of replacements) {
+    if (pattern.test(collapsed)) {
+      return replacement;
+    }
+  }
+
+  return null;
+};
+
+export const normalizeAnalysisName = (name: string, section?: string): string => {
   let result = name.trim().replace(/\s+/g, ' ');
+
+  if (isUrineSection(section)) {
+    const urineSpecific = normalizeUrineAnalysisName(result);
+    if (urineSpecific) {
+      return urineSpecific;
+    }
+  }
+
   for (const [pattern, replacement] of ANALYSIS_NAME_REPLACEMENTS) {
     result = result.replace(pattern, replacement);
   }

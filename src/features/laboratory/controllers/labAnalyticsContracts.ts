@@ -27,6 +27,7 @@ export interface ProcessExamFindingsContext {
 
 export interface DetailProcessingContext extends ProcessExamFindingsContext {
   isoDate: string;
+  suppressedAnalyses: Set<string>;
   microbiologyCategories: LabMicrobiologyCategory[];
   microbiologyFindingsByCategory: Map<
     LabMicrobiologyCategory,

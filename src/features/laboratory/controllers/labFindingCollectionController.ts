@@ -79,6 +79,10 @@ const collectTrendFinding = (
 };
 
 export const collectExamFinding = (finding: LabResultRow, input: DetailProcessingContext) => {
+  if (input.suppressedAnalyses.has(finding.analysis)) {
+    return;
+  }
+
   const lowerAnalysis = finding.analysis.toLowerCase();
   const examIsMicrobiology = input.microbiologyCategories.length > 0;
 

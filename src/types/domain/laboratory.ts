@@ -35,9 +35,11 @@ export interface SyslabExamItem {
 export type LabMicrobiologyCategory =
   | 'clostridium_difficile'
   | 'coprocultivo'
-  | 'cultivo_corriente'
-  | 'pcr_panel_respiratorio'
-  | 'sedimento_urocultivo';
+  | 'hemocultivo'
+  | 'urocultivo'
+  | 'otros_cultivos'
+  | 'pcr_8_virus'
+  | 'pcr_arbovirus';
 
 /* ------------------------------------------------------------------ */
 /*  Parsed lab results (from PDF extraction)                           */

@@ -137,7 +137,7 @@ const MOCK_ANALYSIS: LabAnalysisData = {
   examDates: ['01/03/2026', '06/04/2026'],
   microbiologyEntries: [
     {
-      category: 'sedimento_urocultivo',
+      category: 'urocultivo',
       date: '06/04/2026 13:08',
       examLabel: 'UROCULTIVO',
       findings: [{ analysis: 'Cultivo', result: 'Desarrollo de E. coli' }],
@@ -145,9 +145,9 @@ const MOCK_ANALYSIS: LabAnalysisData = {
       sourceExam: MOCK_EXAM,
     },
     {
-      category: 'cultivo_corriente',
+      category: 'otros_cultivos',
       date: '06/04/2026 13:08',
-      examLabel: 'Cultivo corriente / Antibiograma',
+      examLabel: 'Otros cultivos',
       findings: [],
       hasAlertFinding: false,
       sourceExam: MOCK_EXAM,
@@ -200,6 +200,7 @@ const DEFAULT_HOOK_STATE = {
   activeExamFilter: null,
   setExamFilter: vi.fn(),
   analyzeSelected: vi.fn(),
+  copyExamSummary: vi.fn(),
   closeAnalysis: vi.fn(),
   setAnalysisView: vi.fn(),
 };

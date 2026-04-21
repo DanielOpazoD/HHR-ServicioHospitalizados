@@ -40,7 +40,7 @@ const getMicrobiologyCategoryMatchScore = (
       }
       if (signature.includes('LEUCOCITOS FECALES')) return 2;
       return 0;
-    case 'pcr_panel_respiratorio':
+    case 'pcr_8_virus':
       if (
         signature.includes('INFLUENZA') ||
         signature.includes('PARAINFLUENZA') ||
@@ -57,19 +57,43 @@ const getMicrobiologyCategoryMatchScore = (
         return 3;
       }
       return 0;
-    case 'sedimento_urocultivo':
-      if (signature.includes('UROCULTIVO') || signature.includes('SEDIMENTO')) return 3;
+    case 'pcr_arbovirus':
       if (
-        signature.includes('ORINA') ||
-        signature.includes('NITRIT') ||
-        signature.includes('BACTER') ||
-        signature.includes('LEUCOCIT') ||
-        signature.includes('HEMATI')
+        signature.includes('ARBOVIROSIS') ||
+        signature.includes('DENGUE') ||
+        signature.includes('CHIKUNGUNYA') ||
+        signature.includes('ZIKA')
+      ) {
+        return 3;
+      }
+      return 0;
+    case 'urocultivo':
+      if (signature.includes('UROCULTIVO')) return 3;
+      if (
+        signature.includes('DESARROLLO') ||
+        signature.includes('SUSCEPTIBLE') ||
+        signature.includes('SUCEPTIBLE') ||
+        signature.includes('SENSIBLE') ||
+        signature.includes('RESISTENTE') ||
+        signature.includes('AISLADO')
       ) {
         return 2;
       }
       return 0;
-    case 'cultivo_corriente':
+    case 'hemocultivo':
+      if (signature.includes('HEMOCULTIVO')) return 3;
+      if (
+        signature.includes('DESARROLLO') ||
+        signature.includes('SUSCEPTIBLE') ||
+        signature.includes('SUCEPTIBLE') ||
+        signature.includes('SENSIBLE') ||
+        signature.includes('RESISTENTE') ||
+        signature.includes('AISLADO')
+      ) {
+        return 2;
+      }
+      return 0;
+    case 'otros_cultivos':
       if (
         signature.includes('CULTIVO') ||
         signature.includes('ANTIBIOGRAMA') ||
@@ -96,20 +120,22 @@ const getMicrobiologyCategoryForExamName = (examName: string): LabMicrobiologyCa
   const upper = examName.toUpperCase();
   if (upper.includes('CLOSTRIDIUM DIFFICILE')) return 'clostridium_difficile';
   if (upper.includes('COPROCULTIVO')) return 'coprocultivo';
+  if (upper.includes('PCR ARBOVIROSIS')) return 'pcr_arbovirus';
   if (
     upper.includes('PCR PANEL') ||
     upper.includes('PANEL RESPIRATORIO') ||
     upper.includes('PANEL VIRAL')
   )
-    return 'pcr_panel_respiratorio';
-  if (upper.includes('UROCULTIVO') || upper.includes('SEDIMENTO')) return 'sedimento_urocultivo';
+    return 'pcr_8_virus';
+  if (upper.includes('HEMOCULTIVO')) return 'hemocultivo';
+  if (upper.includes('UROCULTIVO')) return 'urocultivo';
   if (
     upper.includes('CULTIVO CORRIENTE') ||
     upper.includes('ANTIBIOGRAMA') ||
     upper.includes('ATB ') ||
     upper.includes('BACILOS')
   )
-    return 'cultivo_corriente';
+    return 'otros_cultivos';
   return null;
 };
 
@@ -183,18 +209,16 @@ const resolveMicrobiologyEntryLabel = (
       return 'Clostridium difficile';
     case 'coprocultivo':
       return 'Coprocultivo';
-    case 'cultivo_corriente':
-      return 'Cultivo corriente / Antibiograma';
-    case 'pcr_panel_respiratorio':
-      return 'PCR panel respiratorio';
-    case 'sedimento_urocultivo': {
-      const upperNames = examNames.map(name => name.toUpperCase());
-      const hasUrocultivo = upperNames.some(name => name.includes('UROCULTIVO'));
-      const hasSedimento = upperNames.some(name => name.includes('SEDIMENTO'));
-      if (hasUrocultivo && hasSedimento) return 'Sedimento de orina + Urocultivo';
-      if (hasUrocultivo) return 'Urocultivo';
-      return 'Sedimento de orina';
-    }
+    case 'hemocultivo':
+      return 'Hemocultivo';
+    case 'urocultivo':
+      return 'Urocultivo';
+    case 'otros_cultivos':
+      return 'Otros cultivos';
+    case 'pcr_8_virus':
+      return 'PCR 8 virus';
+    case 'pcr_arbovirus':
+      return 'PCR arbovirus';
   }
 };
 

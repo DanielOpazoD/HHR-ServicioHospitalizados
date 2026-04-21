@@ -2,6 +2,7 @@ import type {
   SyslabExamItem,
   SyslabExamDetail,
   LabMicrobiologyEntry,
+  LabResultRow,
 } from '@/types/domain/laboratory';
 import { parseDateDDMMYYYY, normalizeAnalysisName } from './labFormattingController';
 import {
@@ -11,6 +12,25 @@ import {
 import type { DetailProcessingContext, ProcessedFindings } from './labAnalyticsContracts';
 import { collectExamFinding } from './labFindingCollectionController';
 import { buildExamColumnKey } from './labAnalyticsVariableController';
+
+const buildSuppressedAnalysesForDetail = (findings: LabResultRow[]): Set<string> => {
+  const normalizedNames = new Set(
+    findings.map(finding => normalizeAnalysisName(finding.analysis, finding.section))
+  );
+  const suppressed = new Set<string>();
+
+  if (normalizedNames.has('RPC')) {
+    suppressed.add('Creatininuria');
+    suppressed.add('Proteinuria');
+  }
+
+  if (normalizedNames.has('RAC')) {
+    suppressed.add('Creatininuria');
+    suppressed.add('Microalbuminuria');
+  }
+
+  return suppressed;
+};
 
 const buildDetailProcessingContext = (
   detail: SyslabExamDetail,
@@ -24,6 +44,7 @@ const buildDetailProcessingContext = (
   const examDate = exam?.date || 'Desconocido';
   const colKey = buildExamColumnKey(exam, examDate);
   const microbiologyCategories = resolveMicrobiologyCategoriesForExam(exam);
+  const suppressedAnalyses = buildSuppressedAnalysesForDetail(detail.findings);
 
   return {
     exam,
@@ -35,6 +56,7 @@ const buildDetailProcessingContext = (
     seenComparison: state.seenComparison,
     bilirubinByCol: state.bilirubinByCol,
     isoDate: parseDateDDMMYYYY(examDate),
+    suppressedAnalyses,
     microbiologyCategories,
     microbiologyFindingsByCategory: new Map(),
   };
@@ -78,7 +100,10 @@ export const processLabExamDetails = (
 
     for (const rawFinding of detail.findings) {
       collectExamFinding(
-        { ...rawFinding, analysis: normalizeAnalysisName(rawFinding.analysis) },
+        {
+          ...rawFinding,
+          analysis: normalizeAnalysisName(rawFinding.analysis, rawFinding.section),
+        },
         detailContext
       );
     }

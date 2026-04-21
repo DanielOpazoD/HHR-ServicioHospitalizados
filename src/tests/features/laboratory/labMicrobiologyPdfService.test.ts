@@ -153,4 +153,41 @@ describe('labMicrobiologyPdfService', () => {
       },
     ]);
   });
+
+  it('parses arbovirus PCR sections without leaking MIDAS metadata', () => {
+    const text = `
+      PCR ARBOVIROSIS
+      N° de ingreso MIDAS: 26052943.
+      PCR virus Zika: Negativo
+      PCR CHIKUNGUNYA: Negativo
+      PCR DENGUE: Negativo
+    `;
+
+    expect(parseMicrobiologyFindingsFromPdfText(text)).toEqual([
+      {
+        section: 'MICROBIOLOGIA',
+        analysis: 'PCR virus Zika',
+        result: 'Negativo',
+        unit: '',
+        refValue: '',
+        qualitative: true,
+      },
+      {
+        section: 'MICROBIOLOGIA',
+        analysis: 'PCR CHIKUNGUNYA',
+        result: 'Negativo',
+        unit: '',
+        refValue: '',
+        qualitative: true,
+      },
+      {
+        section: 'MICROBIOLOGIA',
+        analysis: 'PCR DENGUE',
+        result: 'Negativo',
+        unit: '',
+        refValue: '',
+        qualitative: true,
+      },
+    ]);
+  });
 });

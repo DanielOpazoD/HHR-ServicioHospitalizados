@@ -73,9 +73,9 @@ describe('labAnalysisResultController', () => {
       bilirubinByCol: {},
       microbiologyEntries: [
         {
-          category: 'pcr_panel_respiratorio',
+          category: 'pcr_8_virus',
           date: '05/04/2026 10:00',
-          examLabel: 'PCR panel respiratorio',
+          examLabel: 'PCR 8 virus',
           findings: [],
           hasAlertFinding: false,
           sourceExam: {
@@ -89,9 +89,9 @@ describe('labAnalysisResultController', () => {
           },
         },
         {
-          category: 'cultivo_corriente',
+          category: 'otros_cultivos',
           date: '06/04/2026 10:00',
-          examLabel: 'Cultivo corriente / Antibiograma',
+          examLabel: 'Otros cultivos',
           findings: [],
           hasAlertFinding: false,
           sourceExam: {
@@ -112,8 +112,8 @@ describe('labAnalysisResultController', () => {
     expect(Object.keys(result.comparison)).toEqual(['Hemoglobina', 'Creatinina']);
     expect(result.examDates).toEqual(['05/04/2026 10:00', '06/04/2026 10:00']);
     expect(result.microbiologyEntries.map(entry => entry.examLabel)).toEqual([
-      'Cultivo corriente / Antibiograma',
-      'PCR panel respiratorio',
+      'Otros cultivos',
+      'PCR 8 virus',
     ]);
     expect(result.trendGroups).toHaveLength(1);
     expect(result.trendGroups[0].variables.Hemoglobina.map(point => point.isoDate)).toEqual([

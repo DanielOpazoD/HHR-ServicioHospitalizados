@@ -65,7 +65,9 @@ La exportación de comparación genera una hoja `Comparación Lab` con:
 
 - normalización de alias frecuentes (`Leucocitos`, `Plaquetas`, `PCR`, etc.) para evitar duplicados
 - panel `Microbiología / Cultivos` como pestaña separada del visor
-- fallback desde el PDF original para completar `Cultivo corriente / Antibiograma` cuando Syslab `details` no trae todas las subsecciones
+- fallback desde el PDF original para completar microbiología cuando Syslab `details` no trae todas las subsecciones
+- taxonomía microbiológica explícita para `PCR 8 virus`, `PCR arbovirus`, `Hemocultivo`, `Urocultivo` y `Otros cultivos`
+- normalización urinaria reutilizable para `SEDIMENTO URINARIO`, `ORINA FISICO-QUIMICO`, `RPC` y `RAC`
 
 ## Flujo de datos
 

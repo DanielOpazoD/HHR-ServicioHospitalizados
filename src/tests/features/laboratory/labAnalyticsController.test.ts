@@ -325,12 +325,8 @@ describe('buildAnalysisData', () => {
     ];
 
     const result = buildAnalysisData(details, [combinedExam]);
-    const cultivo = result.microbiologyEntries.find(
-      entry => entry.examLabel === 'Cultivo corriente / Antibiograma'
-    );
-    const pcr = result.microbiologyEntries.find(
-      entry => entry.examLabel === 'PCR panel respiratorio'
-    );
+    const cultivo = result.microbiologyEntries.find(entry => entry.examLabel === 'Otros cultivos');
+    const pcr = result.microbiologyEntries.find(entry => entry.examLabel === 'PCR 8 virus');
 
     expect(cultivo?.findings).toEqual(
       expect.arrayContaining([
@@ -344,5 +340,138 @@ describe('buildAnalysisData', () => {
     expect(pcr?.findings).toEqual(
       expect.arrayContaining([{ analysis: 'Rhinovirus', result: 'NEGATIVO' }])
     );
+  });
+
+  it('surfaces arbovirus PCR as a separate microbiology card', () => {
+    const arbovirusExam: SyslabExamItem = {
+      id: '43088963',
+      link: 'http://example.com/43088963',
+      date: '16/02/2026',
+      time: '15:19:41',
+      patientName: 'TEST',
+      origin: 'URG',
+      exams: ['PCR ARBOVIROSIS'],
+    };
+
+    const result = buildAnalysisData(
+      [
+        {
+          url: arbovirusExam.link!,
+          findings: [
+            {
+              section: 'MICROBIOLOGIA',
+              analysis: 'PCR virus Zika',
+              result: 'Negativo',
+              unit: '',
+              refValue: '',
+              qualitative: true,
+            },
+            {
+              section: 'MICROBIOLOGIA',
+              analysis: 'PCR DENGUE',
+              result: 'Negativo',
+              unit: '',
+              refValue: '',
+              qualitative: true,
+            },
+          ],
+        },
+      ],
+      [arbovirusExam]
+    );
+
+    expect(result.microbiologyEntries.map(entry => entry.examLabel)).toEqual(['PCR arbovirus']);
+    expect(result.microbiologyEntries[0]?.findings).toEqual([
+      { analysis: 'PCR virus Zika', result: 'Negativo' },
+      { analysis: 'PCR DENGUE', result: 'Negativo' },
+    ]);
+  });
+
+  it('prioritizes RPC and RAC over component urine support values', () => {
+    const urineExam: SyslabExamItem = {
+      id: '43091921',
+      link: 'http://example.com/43091921',
+      date: '19/04/2026',
+      time: '20:30:45',
+      patientName: 'TEST',
+      origin: 'HOSP',
+      exams: ['ORINA FISICO-QUIMICO', 'SEDIMENTO URINARIO', 'QUIMICA/ORINA'],
+    };
+
+    const result = buildAnalysisData(
+      [
+        {
+          url: urineExam.link!,
+          findings: [
+            {
+              section: 'ORINA FISICO-QUIMICO',
+              analysis: 'Leucocitos',
+              result: '+/-',
+              unit: '',
+              refValue: '',
+            },
+            {
+              section: 'SEDIMENTO URINARIO',
+              analysis: 'Bacterias',
+              result: 'Escasa cantidad',
+              unit: '',
+              refValue: '',
+            },
+            {
+              section: 'SEDIMENTO URINARIO',
+              analysis: 'Placas de pus',
+              result: 'No se observa',
+              unit: '',
+              refValue: '',
+            },
+            {
+              section: 'QUIMICA/ORINA',
+              analysis: 'Rel. Proteinuria/Creatininuria',
+              result: '136,2',
+              unit: '',
+              refValue: '< 200,0',
+            },
+            {
+              section: 'QUIMICA/ORINA',
+              analysis: 'Proteinuria',
+              result: '126',
+              unit: 'mg/L',
+              refValue: '10 - 140',
+            },
+            {
+              section: 'QUIMICA/ORINA',
+              analysis: 'Creatininuria',
+              result: '92,5',
+              unit: 'mg/dL',
+              refValue: '70,0 - 140,0',
+            },
+            {
+              section: 'RELAC. ALBUMINA/CREATINURIA',
+              analysis: 'Relacion Albumina/Creatininuri',
+              result: '238,9',
+              unit: '',
+              refValue: '< 30,0',
+            },
+            {
+              section: 'RELAC. ALBUMINA/CREATINURIA',
+              analysis: 'Microalbuminuria',
+              result: '221',
+              unit: 'mg/L',
+              refValue: '< 250',
+            },
+          ],
+        },
+      ],
+      [urineExam]
+    );
+
+    expect(result.comparison.RPC).toBeDefined();
+    expect(result.comparison.RAC).toBeDefined();
+    expect(result.comparison.Leucocitos).toBeDefined();
+    expect(result.comparison.Bacterias).toBeDefined();
+    expect(result.comparison['Placas de pus']).toBeDefined();
+    expect(result.comparison.Proteinuria).toBeUndefined();
+    expect(result.comparison.Creatininuria).toBeUndefined();
+    expect(result.comparison.Microalbuminuria).toBeUndefined();
   });
 });

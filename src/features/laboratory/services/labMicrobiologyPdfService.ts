@@ -2,9 +2,13 @@ import { fetchSyslabPdfArrayBuffer } from '@/services/laboratory/syslabService';
 import type { LabResultRow, SyslabExamDetail, SyslabExamItem } from '@/types/domain/laboratory';
 
 const CULTURE_PATTERN = /(CULTIVO CORRIENTE|ATB BACILOS|ANTIBIOGRAMA)/i;
+const HEMOCULTURE_PATTERN = /HEMOCULTIVO/i;
+const UROCULTURE_PATTERN = /UROCULTIVO/i;
 const PCR_PANEL_PATTERN = /(PCR PANEL|PANEL RESPIRATORIO|PANEL VIRAL)/i;
+const ARBOVIRUS_PATTERN = /PCR ARBOVIROSIS/i;
 const VIRAL_FINDING_PATTERN =
   /(INFLUENZA|PARAINFLUENZA|METAPNEUMOVIRUS|RHINOVIRUS|RINOVIRUS|SINCICIAL|ADENOVIRUS|SARS|COVID|CORONAVIRUS)/i;
+const ARBOVIRUS_FINDING_PATTERN = /(DENGUE|CHIKUNGUNYA|ZIKA|ARBOVIROSIS)/i;
 
 const normalizePdfText = (text: string): string =>
   text
@@ -98,6 +102,9 @@ const parseColonPairs = (lines: string[]): Array<{ analysis: string; result: str
   return pairs;
 };
 
+const shouldIgnoreMicrobiologyPair = (analysis: string): boolean =>
+  /^N(?:[°ºoO])?\s*de ingreso/i.test(analysis) || /^Tipo de muestra/i.test(analysis);
+
 export const parseMicrobiologyFindingsFromPdfText = (text: string): LabResultRow[] => {
   const normalized = normalizePdfText(text);
   const lines = normalized
@@ -106,15 +113,19 @@ export const parseMicrobiologyFindingsFromPdfText = (text: string): LabResultRow
     .filter(Boolean);
   const headings = [
     { key: 'culture', pattern: /^CULTIVO CORRIENTE\b/i },
+    { key: 'culture', pattern: /^HEMOCULTIVO\b/i },
+    { key: 'culture', pattern: /^UROCULTIVO\b/i },
     { key: 'atb', pattern: /^ATB BACILOS GRAM\b/i },
     { key: 'antibiogram', pattern: /^ANTIBIOGRAMA EXTENDIDO\b/i },
     { key: 'pcr', pattern: /^PCR PANEL RESPIRATORIO\b/i },
+    { key: 'arbovirus', pattern: /^PCR ARBOVIROSIS\b/i },
   ] as const;
   const sectionLines: Record<(typeof headings)[number]['key'], string[]> = {
     culture: [],
     atb: [],
     antibiogram: [],
     pcr: [],
+    arbovirus: [],
   };
   let activeSection: (typeof headings)[number]['key'] | null = null;
 
@@ -142,6 +153,7 @@ export const parseMicrobiologyFindingsFromPdfText = (text: string): LabResultRow
   const findings: LabResultRow[] = [];
 
   for (const entry of parseColonPairs(sectionLines.culture)) {
+    if (shouldIgnoreMicrobiologyPair(entry.analysis)) continue;
     if (/^cultivo$/i.test(entry.analysis)) {
       findings.push({
         section: 'MICROBIOLOGIA',
@@ -158,6 +170,7 @@ export const parseMicrobiologyFindingsFromPdfText = (text: string): LabResultRow
     ...parseColonPairs(sectionLines.atb),
     ...parseColonPairs(sectionLines.antibiogram),
   ]) {
+    if (shouldIgnoreMicrobiologyPair(entry.analysis)) continue;
     findings.push({
       section: 'MICROBIOLOGIA',
       analysis: entry.analysis,
@@ -169,6 +182,19 @@ export const parseMicrobiologyFindingsFromPdfText = (text: string): LabResultRow
   }
 
   for (const entry of parseColonPairs(sectionLines.pcr)) {
+    if (shouldIgnoreMicrobiologyPair(entry.analysis)) continue;
+    findings.push({
+      section: 'MICROBIOLOGIA',
+      analysis: entry.analysis,
+      result: entry.result,
+      unit: '',
+      refValue: '',
+      qualitative: true,
+    });
+  }
+
+  for (const entry of parseColonPairs(sectionLines.arbovirus)) {
+    if (shouldIgnoreMicrobiologyPair(entry.analysis)) continue;
     findings.push({
       section: 'MICROBIOLOGIA',
       analysis: entry.analysis,
@@ -190,7 +216,9 @@ const shouldFetchMicrobiologyPdfFallback = (
   if (!exam.link) return false;
 
   const needsCultureFallback =
-    CULTURE_PATTERN.test(examNames) &&
+    (CULTURE_PATTERN.test(examNames) ||
+      HEMOCULTURE_PATTERN.test(examNames) ||
+      UROCULTURE_PATTERN.test(examNames)) &&
     !detail.findings.some(finding =>
       /(CULTIVO|SUSCEPTIBLE|SUCEPTIBLE|RESISTENTE|AMIKACINA|CEFTAZIDIMA|IMIPENEM|ERTAPENEM|PIPERACILINA|CEFEPIME)/i.test(
         `${finding.analysis} ${finding.result}`
@@ -203,7 +231,13 @@ const shouldFetchMicrobiologyPdfFallback = (
       VIRAL_FINDING_PATTERN.test(`${finding.analysis} ${finding.result}`)
     );
 
-  return needsCultureFallback || needsPcrFallback;
+  const needsArbovirusFallback =
+    ARBOVIRUS_PATTERN.test(examNames) &&
+    !detail.findings.some(finding =>
+      ARBOVIRUS_FINDING_PATTERN.test(`${finding.analysis} ${finding.result}`)
+    );
+
+  return needsCultureFallback || needsPcrFallback || needsArbovirusFallback;
 };
 
 const dedupeFindings = (findings: LabResultRow[]): LabResultRow[] => {

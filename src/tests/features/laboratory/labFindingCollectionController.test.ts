@@ -17,6 +17,7 @@ const buildContext = (
   isoDate: '2026-04-06',
   microbiologyCategories: [],
   microbiologyFindingsByCategory: new Map(),
+  suppressedAnalyses: new Set(),
   ...overrides,
 });
 
@@ -44,7 +45,7 @@ describe('labFindingCollectionController', () => {
       Array<{ analysis: string; result: string }>
     >();
     const context = buildContext({
-      microbiologyCategories: ['pcr_panel_respiratorio'],
+      microbiologyCategories: ['pcr_8_virus'],
       microbiologyFindingsByCategory: findingsByCategory,
     });
     const finding: LabResultRow = {
@@ -58,9 +59,29 @@ describe('labFindingCollectionController', () => {
 
     collectExamFinding(finding, context);
 
-    expect(findingsByCategory.get('pcr_panel_respiratorio')).toEqual([
+    expect(findingsByCategory.get('pcr_8_virus')).toEqual([
       { analysis: 'Rhinovirus', result: 'NEGATIVO' },
     ]);
     expect(context.trendMap.Rhinovirus).toBeUndefined();
+  });
+
+  it('suppresses proteinuria support values when RPC is present for the same detail', () => {
+    const context = buildContext({
+      suppressedAnalyses: new Set(['Proteinuria', 'Creatininuria']),
+    });
+
+    collectExamFinding(
+      {
+        section: 'QUIMICA/ORINA',
+        analysis: 'Proteinuria',
+        result: '126',
+        unit: 'mg/L',
+        refValue: '10-140',
+      },
+      context
+    );
+
+    expect(context.comparison.Proteinuria).toBeUndefined();
+    expect(context.trendMap.Proteinuria).toBeUndefined();
   });
 });
