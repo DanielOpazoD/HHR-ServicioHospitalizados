@@ -29,10 +29,8 @@ vi.mock('@/services/storage/firestore', async importOriginal => {
     saveRecordToFirestore: vi.fn(),
   };
 });
-vi.mock('../../services/storage/migration/legacyFirestoreBridge', () => ({
+vi.mock('../../services/storage/migration/legacyRecordReadBridge', () => ({
   getLegacyRecord: vi.fn().mockResolvedValue(null),
-  getLegacyNurseCatalog: vi.fn().mockResolvedValue([]),
-  getLegacyTensCatalog: vi.fn().mockResolvedValue([]),
 }));
 
 describe('CIE-10 Copy Bug Reproduction', () => {

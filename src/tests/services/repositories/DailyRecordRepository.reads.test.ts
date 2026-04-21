@@ -75,7 +75,6 @@ const { legacyFirebaseMock, indexedDbFacadeMock, firestoreMock } = vi.hoisted(()
   },
 }));
 
-vi.mock('@/services/storage/migration/legacyFirestoreBridge', () => legacyFirebaseMock);
 vi.mock('@/services/storage/migration/legacyRecordReadBridge', () => ({
   getLegacyRecord: legacyFirebaseMock.getLegacyRecord,
   getLegacyRecordsRange: legacyFirebaseMock.getLegacyRecordsRange,
