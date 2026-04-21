@@ -17,14 +17,23 @@ const buildSuppressedAnalysesForDetail = (findings: LabResultRow[]): Set<string>
   const normalizedNames = new Set(
     findings.map(finding => normalizeAnalysisName(finding.analysis, finding.section))
   );
+  const signatures = findings.map(finding =>
+    `${finding.section || ''} ${finding.analysis || ''}`.toUpperCase()
+  );
   const suppressed = new Set<string>();
+  const hasRpc =
+    normalizedNames.has('RPC') ||
+    signatures.some(signature => signature.includes('PROTEINURIA/CREATININURIA'));
+  const hasRac =
+    normalizedNames.has('RAC') ||
+    signatures.some(signature => signature.includes('ALBUMINA/CREATINURIA'));
 
-  if (normalizedNames.has('RPC')) {
+  if (hasRpc) {
     suppressed.add('Creatininuria');
     suppressed.add('Proteinuria');
   }
 
-  if (normalizedNames.has('RAC')) {
+  if (hasRac) {
     suppressed.add('Creatininuria');
     suppressed.add('Microalbuminuria');
   }

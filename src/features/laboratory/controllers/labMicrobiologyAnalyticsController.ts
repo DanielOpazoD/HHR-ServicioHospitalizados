@@ -182,10 +182,6 @@ const getMicrobiologyCategoryForFinding = (
     return scoredCategories[0].category;
   }
 
-  if (availableCategories.length === 1) {
-    return availableCategories[0];
-  }
-
   return null;
 };
 

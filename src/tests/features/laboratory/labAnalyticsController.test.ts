@@ -474,4 +474,56 @@ describe('buildAnalysisData', () => {
     expect(result.comparison.Creatininuria).toBeUndefined();
     expect(result.comparison.Microalbuminuria).toBeUndefined();
   });
+
+  it('keeps general chemistry rows out of microbiology cards even inside mixed orders', () => {
+    const mixedExam: SyslabExamItem = {
+      id: '43091999',
+      link: 'http://example.com/43091999',
+      date: '20/04/2026',
+      time: '07:00:00',
+      patientName: 'TEST',
+      origin: 'HOSP',
+      exams: ['UROCULTIVO'],
+    };
+
+    const result = buildAnalysisData(
+      [
+        {
+          url: mixedExam.link!,
+          findings: [
+            {
+              section: 'MICROBIOLOGIA',
+              analysis: 'Cultivo',
+              result: 'No hubo desarrollo',
+              unit: '',
+              refValue: '',
+              qualitative: true,
+            },
+            {
+              section: 'BIOQUIMICA',
+              analysis: 'Proteinas Totales',
+              result: '14,5',
+              unit: 'g/dL',
+              refValue: '6,0-8,0',
+            },
+            {
+              section: 'BIOQUIMICA',
+              analysis: 'Albumina',
+              result: '1,6',
+              unit: 'g/dL',
+              refValue: '3,5-5,0',
+            },
+          ],
+        },
+      ],
+      [mixedExam]
+    );
+
+    expect(result.microbiologyEntries).toHaveLength(1);
+    expect(result.microbiologyEntries[0]?.findings).toEqual([
+      { analysis: 'Cultivo', result: 'No hubo desarrollo' },
+    ]);
+    expect(result.comparison['Proteinas Totales']).toBeDefined();
+    expect(result.comparison.Albumina).toBeDefined();
+  });
 });

@@ -15,6 +15,61 @@ import { LabExportConfigDialog } from './LabExportConfigDialog';
 const loadLabExcelExporter = async () =>
   import('../services/labExcelService').then(module => module.exportComparisonToExcel);
 
+const URINE_PHYSICAL_ANALYSES = new Set([
+  'Aspecto',
+  'Color',
+  'Sangre',
+  'Bilirrubina',
+  'Urobilinógeno',
+  'Cuerpos Cetónicos',
+  'Proteínas',
+  'Nitritos',
+  'pH',
+  'Densidad',
+  'Leucocitos',
+  'Glucosa',
+]);
+
+const URINE_SEDIMENT_ANALYSES = new Set([
+  'Eritrocitos',
+  'Leucocitos',
+  'Bacterias',
+  'Cilindros',
+  'Placas de pus',
+]);
+
+type ComparisonSectionLabel = 'Orina físico-químico' | 'Sedimento urinario' | 'RPC / RAC' | null;
+
+const getComparisonSectionLabel = (name: string, data: LabAnalysisData): ComparisonSectionLabel => {
+  if (name === 'RPC' || name === 'RAC') {
+    return 'RPC / RAC';
+  }
+
+  const firstRow = Object.values(data.comparison[name] || {})[0];
+  const upperSection = String(firstRow?.section || '').toUpperCase();
+
+  if (upperSection.includes('SEDIMENTO') || URINE_SEDIMENT_ANALYSES.has(name)) {
+    return 'Sedimento urinario';
+  }
+
+  if (
+    upperSection.includes('ORINA') ||
+    upperSection.includes('FISICO-QUIMICO') ||
+    upperSection.includes('QUIMICA/ORINA') ||
+    URINE_PHYSICAL_ANALYSES.has(name)
+  ) {
+    return 'Orina físico-químico';
+  }
+
+  return null;
+};
+
+const COMPARISON_SECTION_ORDER: Record<Exclude<ComparisonSectionLabel, null>, number> = {
+  'Orina físico-químico': 0,
+  'Sedimento urinario': 1,
+  'RPC / RAC': 2,
+};
+
 const ComparisonRow: React.FC<{
   name: string;
   examDates: string[];
@@ -86,6 +141,18 @@ export const LabViewerComparisonTable: React.FC<{
   const variableNames = searchQuery
     ? allVariableNames.filter(n => n.toLowerCase().includes(searchQuery.toLowerCase()))
     : allVariableNames;
+  const orderedVariableNames = [...variableNames].sort((a, b) => {
+    const sectionA = getComparisonSectionLabel(a, data);
+    const sectionB = getComparisonSectionLabel(b, data);
+    const orderA = sectionA ? COMPARISON_SECTION_ORDER[sectionA] : Number.MAX_SAFE_INTEGER;
+    const orderB = sectionB ? COMPARISON_SECTION_ORDER[sectionB] : Number.MAX_SAFE_INTEGER;
+
+    if (orderA !== orderB) {
+      return orderA - orderB;
+    }
+
+    return allVariableNames.indexOf(a) - allVariableNames.indexOf(b);
+  });
 
   if (allVariableNames.length === 0) {
     return (
@@ -166,9 +233,31 @@ export const LabViewerComparisonTable: React.FC<{
             </tr>
           </thead>
           <tbody>
-            {variableNames.map((name, i) => (
-              <ComparisonRow key={name} name={name} examDates={examDates} data={data} index={i} />
-            ))}
+            {orderedVariableNames.map((name, i) => {
+              const sectionLabel = getComparisonSectionLabel(name, data);
+              const previousName = orderedVariableNames[i - 1];
+              const previousSectionLabel = previousName
+                ? getComparisonSectionLabel(previousName, data)
+                : null;
+              const shouldRenderSectionHeader =
+                sectionLabel && sectionLabel !== previousSectionLabel;
+
+              return (
+                <React.Fragment key={name}>
+                  {shouldRenderSectionHeader ? (
+                    <tr className="border-t border-emerald-100 bg-emerald-50/60">
+                      <td
+                        colSpan={examDates.length + 1}
+                        className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-700"
+                      >
+                        {sectionLabel}
+                      </td>
+                    </tr>
+                  ) : null}
+                  <ComparisonRow name={name} examDates={examDates} data={data} index={i} />
+                </React.Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>

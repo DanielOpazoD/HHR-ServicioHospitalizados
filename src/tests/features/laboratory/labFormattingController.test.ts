@@ -117,6 +117,7 @@ describe('normalizeAnalysisName', () => {
   it('normalizes urinary ratio labels to RPC and RAC', () => {
     expect(normalizeAnalysisName('Rel. Proteinuria/Creatininuria', 'QUIMICA/ORINA')).toBe('RPC');
     expect(normalizeAnalysisName('Relacion Albumina/Creatininuri', 'QUIMICA/ORINA')).toBe('RAC');
+    expect(normalizeAnalysisName('Relación Albumina / Creatininuria', 'QUIMICA/ORINA')).toBe('RAC');
   });
 });
 

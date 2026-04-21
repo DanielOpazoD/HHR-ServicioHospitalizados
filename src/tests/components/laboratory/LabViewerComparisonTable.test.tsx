@@ -115,4 +115,49 @@ describe('LabViewerComparisonTable', () => {
     render(<LabViewerComparisonTable data={MOCK_ANALYSIS} patient={MOCK_PATIENT} />);
     expect(screen.queryByText('Copiar tabla resumida')).not.toBeInTheDocument();
   });
+
+  it('groups urine comparison rows under clear clinical headers', () => {
+    const urineData: LabAnalysisData = {
+      ...MOCK_ANALYSIS,
+      comparison: {
+        Sangre: {
+          '08/04/2026 14:00': {
+            section: 'ORINA FISICO-QUIMICO',
+            analysis: 'Sangre',
+            result: 'Negativo',
+            unit: '',
+            refValue: '',
+            qualitative: true,
+          },
+        },
+        Bacterias: {
+          '08/04/2026 14:00': {
+            section: 'SEDIMENTO URINARIO',
+            analysis: 'Bacterias',
+            result: 'Escasa cantidad',
+            unit: '',
+            refValue: '',
+          },
+        },
+        RPC: {
+          '08/04/2026 14:00': {
+            section: 'QUIMICA/ORINA',
+            analysis: 'RPC',
+            result: '136,2',
+            unit: '',
+            refValue: '< 200,0',
+          },
+        },
+      },
+    };
+
+    render(<LabViewerComparisonTable data={urineData} patient={MOCK_PATIENT} />);
+
+    expect(screen.getByText('Orina físico-químico')).toBeInTheDocument();
+    expect(screen.getByText('Sedimento urinario')).toBeInTheDocument();
+    expect(screen.getByText('RPC / RAC')).toBeInTheDocument();
+    expect(screen.getByText('Sangre')).toBeInTheDocument();
+    expect(screen.getByText('Bacterias')).toBeInTheDocument();
+    expect(screen.getByText('RPC')).toBeInTheDocument();
+  });
 });
