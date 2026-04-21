@@ -37,7 +37,7 @@ Implementar Repository Pattern para ocultar detalles de almacenamiento/sincroniz
 | `dataMigration.ts` / `patientMasterMigration.ts`                 | Migraciones                                                                                               |
 | `schemaGovernance.ts` / `schemaEvolutionPolicy.ts`               | Política de versionado y compatibilidad                                                                   |
 | `runtimeCompatibilityPolicy.ts` / `runtimeContractGovernance.ts` | Compatibilidad runtime end-to-end                                                                         |
-| `legacyRecordBridgeService.ts`                                   | Importación explícita desde rutas legacy                                                                  |
+| `legacyRecordBridgeService.ts`                                   | Importación explícita desde rutas legacy de `DailyRecord`                                                 |
 | `legacyBridgeGovernance.ts` / `legacyBridgeAudit.ts`             | Gobernanza y auditoría del bridge legacy                                                                  |
 | `monthIntegrity.ts`                                              | Integridad mensual                                                                                        |
 | `contracts/*.ts`                                                 | Contratos estrictos de entrada/salida                                                                     |
@@ -95,8 +95,12 @@ dejar el runtime por defecto solo como composición. El repositorio no debe depe
   - `read` y `sync` resuelven la misma selección `local vs remote`
   - la hidratación de IndexedDB ocurre solo si la policy selecciona remoto
   - un remoto más viejo ya no puede sobrescribir una copia local más reciente
-- `legacyRecordBridgeService.ts` es la única vía soportada para importar datos legacy; la
-  app puede invocarlo explícitamente sin reintroducir fallback histórico en lectura o sync normal.
+- `legacyRecordBridgeService.ts` es la única vía soportada para importar datos legacy de
+  `DailyRecord`; internamente entra por `storage/migration/legacyRecordReadBridge`.
+- `CatalogRepository.ts` mantiene el fallback legacy de catálogos únicamente a través de
+  `storage/migration/legacyCatalogReadBridge`.
+- `storage/migration/legacyFirestoreBridge.ts` queda como shim deprecated de compatibilidad y no
+  debe recibir consumidores productivos nuevos.
 - El bridge legacy ya no sale por el barrel general de `repositories`; cualquier uso nuevo debe
   importar el módulo explícito o pasar por `DailyRecordRepository.bridgeLegacyRecord`.
 - `legacyBridgeAudit.ts` mantiene un ledger liviano de uso del bridge (`single`/`range`,

@@ -13,22 +13,29 @@ service firebase.storage {
           : request.auth.token.role;
     }
 
+    function hasNormalizedRole(roles) {
+      return isAuthenticated() && normalizedRole() in roles;
+    }
+
     function hasClinicalReadRole() {
-      return isAuthenticated() && normalizedRole() in [
+      // Storage covers exports, templates, backups and reminder assets.
+      // `doctor_specialist` keeps access to clinical data via Firestore rules,
+      // but is intentionally excluded from these storage surfaces.
+      return hasNormalizedRole([
         'admin',
         'nurse_hospital',
         'doctor_urgency',
         'viewer',
         'editor'
-      ];
+      ]);
     }
 
     function hasClinicalWriteRole() {
-      return isAuthenticated() && normalizedRole() in [
+      return hasNormalizedRole([
         'admin',
         'nurse_hospital',
         'editor'
-      ];
+      ]);
     }
 
     function canWriteReminderAssets() {
