@@ -37,11 +37,20 @@
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    function hasResourceData() {
+      return resource != null && resource.data != null;
+    }
+
     function isInvitationOwner() {
       return hasEmail() &&
-             resource != null &&
-             resource.data != null &&
+             hasResourceData() &&
              resource.data.email == getUserEmail();
+    }
+
+    function isPendingUnexpiredInvitationResource() {
+      return hasResourceData() &&
+             resource.data.status == 'pending' &&
+             (resource.data.expiresAt == null || request.time.toMillis() <= resource.data.expiresAt);
     }
 
     function isValidInvitationClaim() {
@@ -49,8 +58,7 @@
 
       return isAuthenticated() &&
              isInvitationOwner() &&
-             resource.data.status == 'pending' &&
-             (resource.data.expiresAt == null || request.time.toMillis() <= resource.data.expiresAt) &&
+             isPendingUnexpiredInvitationResource() &&
              affectedKeys.hasOnly(['status', 'usedBy', 'usedAt']) &&
              request.resource.data.status == 'used' &&
              request.resource.data.usedBy == request.auth.uid &&
@@ -70,12 +78,16 @@
       return isAdmin() || isCurrentUser(logOwnerId);
     }
 
+    function hasOnlyCensusAccessLogKeys(payload) {
+      return payload.keys().hasOnly(['userId', 'email', 'action', 'timestamp']);
+    }
+
     function isValidOwnCensusAccessLog() {
       let payload = request.resource.data;
 
       return isAuthenticated() &&
              hasEmail() &&
-             payload.keys().hasOnly(['userId', 'email', 'action', 'timestamp']) &&
+             hasOnlyCensusAccessLogKeys(payload) &&
              payload.userId == request.auth.uid &&
              payload.email == getUserEmail() &&
              payload.action is string &&
@@ -84,8 +96,7 @@
 
     function canReadReminderReceipt() {
       return isAdmin() ||
-             (resource != null &&
-              resource.data != null &&
+             (hasResourceData() &&
               isCurrentUser(resource.data.userId));
     }
 
@@ -128,6 +139,14 @@
       return !(key in payload) ||
              payload[key] == null ||
              allowedValues.hasAny([payload[key]]);
+    }
+
+    function isSystemHealthCounter(payload, key) {
+      return isOptionalBoundedInt(payload, key, 10000);
+    }
+
+    function isSystemHealthAgeMs(payload, key) {
+      return isOptionalBoundedInt(payload, key, 864000000);
     }
 
     function hasOnlySystemHealthKeys(payload) {
@@ -199,13 +218,13 @@
              isOptionalString(payload, 'lastSeen') &&
              isOptionalBool(payload, 'isOnline') &&
              isOptionalBool(payload, 'isOutdated') &&
-             isOptionalBoundedInt(payload, 'pendingMutations', 10000) &&
-             isOptionalBoundedInt(payload, 'pendingSyncTasks', 10000) &&
-             isOptionalBoundedInt(payload, 'failedSyncTasks', 10000) &&
-             isOptionalBoundedInt(payload, 'conflictSyncTasks', 10000) &&
-             isOptionalBoundedInt(payload, 'retryingSyncTasks', 10000) &&
-             isOptionalBoundedInt(payload, 'syncOrphanedTasks', 10000) &&
-             isOptionalBoundedInt(payload, 'oldestPendingAgeMs', 864000000) &&
+             isSystemHealthCounter(payload, 'pendingMutations') &&
+             isSystemHealthCounter(payload, 'pendingSyncTasks') &&
+             isSystemHealthCounter(payload, 'failedSyncTasks') &&
+             isSystemHealthCounter(payload, 'conflictSyncTasks') &&
+             isSystemHealthCounter(payload, 'retryingSyncTasks') &&
+             isSystemHealthCounter(payload, 'syncOrphanedTasks') &&
+             isSystemHealthAgeMs(payload, 'oldestPendingAgeMs') &&
              isOptionalEnum(payload, 'remoteSyncReason', [
                'ready',
                'auth_loading',
@@ -221,10 +240,10 @@
                'runtime_contract_mismatch',
                'schema_ahead_of_client'
              ]) &&
-             isOptionalBoundedInt(payload, 'localErrorCount', 10000) &&
+             isSystemHealthCounter(payload, 'localErrorCount') &&
              isOptionalBool(payload, 'degradedLocalPersistence') &&
-             isOptionalBoundedInt(payload, 'repositoryWarningCount', 10000) &&
-             isOptionalBoundedInt(payload, 'slowestRepositoryOperationMs', 864000000);
+             isSystemHealthCounter(payload, 'repositoryWarningCount') &&
+             isSystemHealthAgeMs(payload, 'slowestRepositoryOperationMs');
     }
     
     //
