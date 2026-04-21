@@ -25,6 +25,10 @@ const IMPORT_REGEX =
   /(?:^|\n)\s*import(?:[\s\S]*?\sfrom\s*)?["']([^"']+)["']|(?:^|\n)\s*export\s+[^;\n]*\sfrom\s*["']([^"']+)["']/g;
 
 const ALLOWED_SKIP_FILES = new Set(['src/tests/security/firestore-rules.test.ts']);
+const GOVERNED_FEATURE_PUBLIC_IMPORTS = new Set([
+  'src/views/LazyViews.ts|@/features/census/public-components',
+  'src/components/layout/app-content/AppContentOverlays.tsx|@/features/census/public-components',
+]);
 const FEATURE_PUBLIC_BOUNDARIES = [
   {
     importPrefix: '@/features/census/',
@@ -132,6 +136,21 @@ const isGovernedCensusControllerShim = ({ importer, imported, importPath, source
 const isGovernedCensusControllerShimSource = ({ relative, source }) => {
   if (!relative.startsWith('src/hooks/controllers/')) return false;
   return /^export \* from '@\/features\/census\/controllers\/[^']+';$/u.test(source.trim());
+};
+
+const getStaticImportPaths = source => {
+  const importPaths = [];
+  IMPORT_REGEX.lastIndex = 0;
+
+  let match;
+  while ((match = IMPORT_REGEX.exec(source)) !== null) {
+    const importPath = match[1] || match[2];
+    if (importPath) {
+      importPaths.push(importPath);
+    }
+  }
+
+  return importPaths;
 };
 
 const getSourceMetrics = () => {
@@ -460,11 +479,24 @@ const getConvergenceSignals = () => {
       rawConsoleOutsideStructuredSink += 1;
     }
 
+    const importPaths = getStaticImportPaths(source);
+
     for (const boundary of FEATURE_PUBLIC_BOUNDARIES) {
-      if (boundary.allowBypass(relative) || !source.includes(boundary.importPrefix)) {
+      if (boundary.allowBypass(relative)) {
         continue;
       }
-      featureBoundaryViolations += 1;
+
+      const hasUngovernedFeatureImport = importPaths.some(importPath => {
+        if (!importPath.startsWith(boundary.importPrefix)) {
+          return false;
+        }
+
+        return !GOVERNED_FEATURE_PUBLIC_IMPORTS.has(`${relative}|${importPath}`);
+      });
+
+      if (hasUngovernedFeatureImport) {
+        featureBoundaryViolations += 1;
+      }
     }
 
     for (const deprecatedImport of DEPRECATED_IMPORTS) {
