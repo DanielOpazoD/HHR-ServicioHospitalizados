@@ -1,6 +1,7 @@
 import { execSync } from 'node:child_process';
 
-const runGitCommand = (root, command) => execSync(command, { cwd: root, encoding: 'utf8' }).trim();
+const runGitCommand = (root, command) =>
+  execSync(command, { cwd: root, encoding: 'utf8' }).trimEnd();
 const GENERATED_REPORT_STATUS_SUFFIXES = new Set([
   'reports/legacy-bridge-governance.json',
   'reports/legacy-bridge-governance.md',
