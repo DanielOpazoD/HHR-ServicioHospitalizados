@@ -99,9 +99,9 @@ describe('AuditService Coverage', () => {
     expect(mockSaveAuditLog.mock.calls[0][0].action).toBe('USER_LOGOUT');
   });
 
-  it('should exclude view logging for specific emails', async () => {
-    // Setup: Mock current user as restricted email via mockAuditUtils
-    mockAuditUtils.getCurrentUserEmail.mockReturnValue('daniel.opazo@hospitalhangaroa.cl');
+  it('should exclude view logging for institutional shared accounts', async () => {
+    // Setup: Mock current user as restricted shared account via mockAuditUtils
+    mockAuditUtils.getCurrentUserEmail.mockReturnValue('hospitalizados@hospitalhangaroa.cl');
 
     // Clear mocks to ensure clean state
     mockSaveAuditLog.mockClear();

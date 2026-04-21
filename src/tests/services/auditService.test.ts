@@ -143,8 +143,8 @@ describe('AuditService', () => {
       expect(mockSaveAuditLog).toHaveBeenCalledTimes(1);
     });
 
-    it('should NOT log view events if user is excluded', async () => {
-      vi.mocked(auditUtils.getCurrentUserEmail).mockReturnValue('daniel.opazo@hospitalhangaroa.cl');
+    it('should NOT log view events for institutional shared accounts', async () => {
+      vi.mocked(auditUtils.getCurrentUserEmail).mockReturnValue('hospitalizados@hospitalhangaroa.cl');
       await logThrottledViewEvent('VIEW_PATIENT', 'R1', { name: 'X' }, mockDate);
       expect(mockSaveAuditLog).not.toHaveBeenCalled();
     });
