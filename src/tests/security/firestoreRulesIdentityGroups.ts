@@ -7,7 +7,7 @@ export function registerFirestoreRulesIdentityGroups({
   unauth,
   authed,
   admin,
-  bootstrapAdminWithoutClaim,
+  adminWithoutClaim,
   firestoreForUser,
   NOW_MS,
   setupDoc,
@@ -15,13 +15,15 @@ export function registerFirestoreRulesIdentityGroups({
   describe('Role Config', () => {
     const roleConfigPath = 'config/roles';
 
-    it('Bootstrap admins can recover role config access without an admin claim', async () => {
+    it('Configured admins can recover role config access without an admin claim', async () => {
       await setupDoc(admin(), roleConfigPath, {
+        'admin.dynamic@example.com': 'admin',
         'user@example.com': 'viewer',
       });
 
       await assertSucceeds(
-        bootstrapAdminWithoutClaim().doc(roleConfigPath).set({
+        adminWithoutClaim().doc(roleConfigPath).set({
+          'admin.dynamic@example.com': 'admin',
           'user@example.com': 'viewer',
           'doctor@example.com': 'doctor_urgency',
         })

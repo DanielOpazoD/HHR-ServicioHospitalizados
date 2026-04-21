@@ -5,22 +5,6 @@ service firebase.storage {
       return request.auth != null;
     }
 
-    function hasEmail() {
-      return isAuthenticated() && request.auth.token.email != null;
-    }
-
-    function userEmail() {
-      return request.auth.token.email;
-    }
-
-    function isBootstrapAdmin() {
-      return hasEmail() && userEmail() in [
-        'daniel.opazo@hospitalhangaroa.cl',
-        'd.opazo.damiani@gmail.com',
-        'd.opazo.damiani@hospitalhangaroa.cl'
-      ];
-    }
-
     function normalizedRole() {
       return !isAuthenticated() || request.auth.token.role == null
         ? null
@@ -48,7 +32,7 @@ service firebase.storage {
     }
 
     function canWriteReminderAssets() {
-      return hasClinicalWriteRole() || isBootstrapAdmin();
+      return hasClinicalWriteRole();
     }
 
     function canReadClinicalStorage() {

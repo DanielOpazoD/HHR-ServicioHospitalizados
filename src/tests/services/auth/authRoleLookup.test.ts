@@ -16,7 +16,6 @@ vi.mock('firebase/functions', () => ({
 import {
   AUTH_ROLE_LOOKUP_UNAVAILABLE_CODE,
   createAuthRoleLookupService,
-  getBootstrapRoleForEmail,
   getDynamicRoleForEmail,
   resolveCallableRole,
 } from '@/services/auth/authRoleLookup';
@@ -25,10 +24,6 @@ describe('authRoleLookup', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     getFunctionsMock.mockResolvedValue({});
-  });
-
-  it('returns bootstrap admin for technical recovery emails', () => {
-    expect(getBootstrapRoleForEmail('daniel.opazo@hospitalhangaroa.cl')).toBe('admin');
   });
 
   it('resolves the current user role through the callable backed by config/roles', async () => {

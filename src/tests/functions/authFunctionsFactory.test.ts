@@ -45,7 +45,6 @@ describe('functions authFunctionsFactory', () => {
       },
       helpers: {
         normalizeEmail: (value: unknown) => String(value || '').toLowerCase(),
-        adminEmails: [],
       },
     });
 
@@ -73,7 +72,6 @@ describe('functions authFunctionsFactory', () => {
       helpers: {
         assignRole,
         normalizeEmail: (value: unknown) => String(value || '').toLowerCase(),
-        adminEmails: [],
         resolveRoleForEmail: vi.fn(),
       },
     });
@@ -99,7 +97,6 @@ describe('functions authFunctionsFactory', () => {
       helpers: {
         assignRole: vi.fn(),
         normalizeEmail: (value: unknown) => String(value || '').toLowerCase(),
-        adminEmails: [],
         resolveRoleForEmail,
       },
     });

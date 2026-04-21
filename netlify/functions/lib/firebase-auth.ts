@@ -2,16 +2,11 @@ import { createVerify } from 'node:crypto';
 import { doc, getDoc } from 'firebase/firestore';
 import type { Firestore } from 'firebase/firestore';
 
-import authConfigModule from '../../../functions/lib/auth/authConfig.js';
 import authEmailUtilsModule from '../../../functions/lib/auth/authEmailUtils.js';
 
 const FIREBASE_CERTS_URL =
   'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com';
 const TOKEN_CLOCK_SKEW_SECONDS = 300;
-
-type AuthConfigModule = {
-  BOOTSTRAP_ADMIN_EMAILS?: string[];
-};
 
 type AuthEmailUtilsModule = {
   normalizeEmail?: (value: string) => string;
@@ -43,7 +38,6 @@ export type AuthorizedRoleRequest = {
 
 type FetchLike = typeof fetch;
 
-const { BOOTSTRAP_ADMIN_EMAILS = [] } = authConfigModule as AuthConfigModule;
 const { normalizeEmail: normalizeImportedEmail } = authEmailUtilsModule as AuthEmailUtilsModule;
 
 const normalizeEmail = (value: string): string => {
@@ -232,10 +226,6 @@ export const resolveRoleForEmail = async (
     }
   } catch (error) {
     console.warn(`[NetlifyAuth] resolveRoleForEmail failed for ${cleanEmail}:`, error);
-  }
-
-  if (BOOTSTRAP_ADMIN_EMAILS.includes(cleanEmail)) {
-    return 'admin';
   }
 
   return 'unauthorized';

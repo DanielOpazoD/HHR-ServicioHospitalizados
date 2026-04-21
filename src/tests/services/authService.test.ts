@@ -4,8 +4,6 @@ import { signInWithGoogleRedirect, handleSignInRedirectResult } from '@/services
 import { signOut } from '@/services/auth/authSession';
 import * as authRedirectRuntime from '@/services/auth/authRedirectRuntime';
 import * as firebaseAuth from 'firebase/auth';
-import { getDocs } from 'firebase/firestore';
-import { QuerySnapshot } from 'firebase/firestore';
 
 vi.unmock('../../services/auth/authFlow');
 vi.unmock('@/services/auth/authFlow');
@@ -94,20 +92,23 @@ describe('auth public entrypoints', () => {
   });
 
   describe('signIn', () => {
-    it('should allow access for bootstrap recovery admins', async () => {
+    it('should allow access for users authorized in config/roles', async () => {
       const mockFirebaseUser = {
         user: {
           uid: '123',
-          email: 'daniel.opazo@hospitalhangaroa.cl',
-          displayName: 'Daniel',
+          email: 'admin@hospital.cl',
+          displayName: 'Admin',
         },
       };
+      mockCheckUserRoleCallable.mockResolvedValue({
+        data: { role: 'admin' },
+      });
 
       vi.mocked(firebaseAuth.signInWithEmailAndPassword).mockResolvedValue(
         mockFirebaseUser as unknown as firebaseAuth.UserCredential
       );
 
-      const result = await signIn('daniel.opazo@hospitalhangaroa.cl', 'password');
+      const result = await signIn('admin@hospital.cl', 'password');
 
       expect(result.uid).toBe('123');
       expect(result.role).toBe('admin');
@@ -126,8 +127,6 @@ describe('auth public entrypoints', () => {
       vi.mocked(firebaseAuth.signInWithEmailAndPassword).mockResolvedValue(
         mockFirebaseUser as unknown as firebaseAuth.UserCredential
       );
-      vi.mocked(getDocs).mockResolvedValue({ empty: true } as unknown as QuerySnapshot);
-
       await expect(signIn('unknown@gmail.com', 'password')).rejects.toThrow('Acceso no autorizado');
       expect(firebaseAuth.signOut).toHaveBeenCalled();
     });
@@ -136,25 +135,28 @@ describe('auth public entrypoints', () => {
       const mockFirebaseUser = {
         user: {
           uid: '123',
-          email: 'DANIEL.OPAZO@HOSPITALHANGAROA.CL ', // With spaces and caps
-          displayName: 'Daniel',
+          email: 'ADMIN@HOSPITAL.CL ', // With spaces and caps
+          displayName: 'Admin',
         },
       };
+      mockCheckUserRoleCallable.mockResolvedValue({
+        data: { role: 'admin' },
+      });
 
       vi.mocked(firebaseAuth.signInWithEmailAndPassword).mockResolvedValue(
         mockFirebaseUser as unknown as firebaseAuth.UserCredential
       );
 
-      const result = await signIn(' DANIEL.opazo@hospitalhangaroa.cl', 'password');
+      const result = await signIn(' ADMIN@hospital.cl', 'password');
 
       expect(result.role).toBe('admin');
     });
 
-    it('should reject partial matches against bootstrap admin emails', async () => {
+    it('should reject emails that only look privileged when no configured role exists', async () => {
       const mockFirebaseUser = {
         user: {
           uid: 'attacker-1',
-          email: 'daniel.opazo@hospitalhangaroa.cl.attacker@evil.com',
+          email: 'admin@hospital.cl.attacker@evil.com',
           displayName: 'Attacker',
         },
       };
@@ -162,11 +164,9 @@ describe('auth public entrypoints', () => {
       vi.mocked(firebaseAuth.signInWithEmailAndPassword).mockResolvedValue(
         mockFirebaseUser as unknown as firebaseAuth.UserCredential
       );
-      vi.mocked(getDocs).mockResolvedValue({ empty: true } as unknown as QuerySnapshot);
-
-      await expect(
-        signIn('daniel.opazo@hospitalhangaroa.cl.attacker@evil.com', 'password')
-      ).rejects.toThrow('Acceso no autorizado');
+      await expect(signIn('admin@hospital.cl.attacker@evil.com', 'password')).rejects.toThrow(
+        'Acceso no autorizado'
+      );
       expect(firebaseAuth.signOut).toHaveBeenCalled();
     });
   });

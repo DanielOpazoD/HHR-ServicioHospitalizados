@@ -244,7 +244,6 @@ const localPersistence = {
   ),
 };
 const authAccess = {
-  bootstrapAdminEmails: extractConstArrayStrings(authConfigContent, 'BOOTSTRAP_ADMIN_EMAILS'),
   generalLoginRoles: extractSetStrings(authConfigContent, 'GENERAL_LOGIN_ROLES'),
   managedAssignableRoles: extractSetStrings(authConfigContent, 'MANAGED_ASSIGNABLE_ROLES'),
   roleNormalizationBridges: extractRoleNormalizationBridges(authHelpersContent),
@@ -472,7 +471,6 @@ ${Object.entries(summary.conflictContexts)
 
 ## Auth Access Snapshot
 
-- Bootstrap admins: ${summary.authAccess.bootstrapAdminEmails.length}
 - Login general roles: ${
   summary.authAccess.generalLoginRoles.length > 0
     ? summary.authAccess.generalLoginRoles.join(', ')

@@ -1,6 +1,6 @@
 import { UserRole } from '@/types/auth';
 import { normalizeEmail } from '@/services/auth/authShared';
-import { getDynamicRoleForEmail, getBootstrapRoleForEmail } from '@/services/auth/authRoleLookup';
+import { getDynamicRoleForEmail } from '@/services/auth/authRoleLookup';
 import {
   recordAuthOperationalError,
   emitAuthOperationalEvent,
@@ -29,7 +29,6 @@ export const resolveGeneralLoginAccessForEmail = async (
   try {
     const cleanEmail = normalizeEmail(email);
     const { role, source } = await resolveAllowedRoleForEmail(cleanEmail, {
-      getBootstrapRoleForEmail,
       getDynamicRoleForEmail,
     });
 

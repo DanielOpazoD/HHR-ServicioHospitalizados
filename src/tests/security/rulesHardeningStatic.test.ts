@@ -24,10 +24,11 @@ describe('Security hardening static guards', () => {
     );
   });
 
-  it('keeps reminders storage writes restricted to admin claims or bootstrap admin', () => {
+  it('keeps reminders storage writes restricted to clinical write roles', () => {
     const rules = readProjectFile('storage.rules');
     expect(rules).toContain('match /reminders/{allPaths=**}');
     expect(rules).toContain('allow write: if canWriteReminderAssets();');
+    expect(rules).toContain('return hasClinicalWriteRole();');
     expect(rules).not.toMatch(
       /match \/reminders\/\{allPaths=\*\*\}\s*\{\s*allow write:\s*if true;/m
     );
@@ -56,26 +57,30 @@ describe('Security hardening static guards', () => {
     expect(dailyRecordsBlock).not.toMatch(/allow delete:\s*if [^;]*isNurse\(/m);
   });
 
-  // Regression guard: the bootstrap admin allowlist is a technical recovery path.
-  // Any change (addition, removal, reorder, rename) must be an explicit PR that updates
-  // this test — it forces human review of who holds recovery access.
-  // If you need to change it, update both firestore.rules and EXPECTED_BOOTSTRAP_ADMINS below.
-  it('freezes the bootstrap admin allowlist', () => {
+  it('does not keep hardcoded bootstrap admin allowlists in auth or rules surfaces', () => {
     const EXPECTED_BOOTSTRAP_ADMINS = [
       'daniel.opazo@hospitalhangaroa.cl',
       'd.opazo.damiani@gmail.com',
     ];
 
     const rules = readProjectFile('firestore.rules');
-    const fnMatch = rules.match(
-      /function isBootstrapAdmin\(\)\s*\{[\s\S]*?getUserEmail\(\) in \[([\s\S]*?)\]/m
-    );
+    const storageRules = readProjectFile('storage.rules');
+    const authConfig = readProjectFile('functions/lib/auth/authConfig.js');
+    const authShared = readProjectFile('src/services/auth/authShared.ts');
+    const netlifyAuth = readProjectFile('netlify/functions/lib/firebase-auth.ts');
 
-    expect(fnMatch, 'isBootstrapAdmin() must exist with an inline allowlist').not.toBeNull();
+    expect(rules).not.toContain('function isBootstrapAdmin(');
+    expect(storageRules).not.toContain('function isBootstrapAdmin(');
+    expect(authConfig).not.toContain('BOOTSTRAP_ADMIN_EMAILS');
+    expect(authShared).not.toContain('BOOTSTRAP_ADMIN_EMAILS');
+    expect(netlifyAuth).not.toContain('BOOTSTRAP_ADMIN_EMAILS');
 
-    const listBody = fnMatch?.[1] ?? '';
-    const foundEmails = Array.from(listBody.matchAll(/'([^']+)'/g)).map(m => m[1]);
-
-    expect(foundEmails).toEqual(EXPECTED_BOOTSTRAP_ADMINS);
+    for (const email of EXPECTED_BOOTSTRAP_ADMINS) {
+      expect(rules).not.toContain(email);
+      expect(storageRules).not.toContain(email);
+      expect(authConfig).not.toContain(email);
+      expect(authShared).not.toContain(email);
+      expect(netlifyAuth).not.toContain(email);
+    }
   });
 });

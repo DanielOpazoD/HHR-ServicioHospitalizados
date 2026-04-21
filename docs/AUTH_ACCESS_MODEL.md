@@ -16,22 +16,6 @@ Para el **login general** la fuente operativa de acceso es:
 
 - `config/roles` en Firestore
 
-Excepción mínima:
-
-- allowlist técnica de bootstrap admin para recuperación
-
-Inventario actual de esa excepción:
-
-- `firestore.rules`
-- `functions/lib/auth/authConfig.js`
-- `src/services/auth/authShared.ts`
-
-Alcance:
-
-- no reemplaza `config/roles` como fuente de verdad
-- no debe crecer con nuevos correos ni nuevos usos funcionales
-- existe solo para recuperación técnica y administración mínima cuando el flujo canónico no está disponible
-
 No forman parte del login general:
 
 - `allowedUsers`
@@ -141,26 +125,22 @@ Efecto esperado:
 - [functions/lib/auth/authHelpersFactory.js](../functions/lib/auth/authHelpersFactory.js)
 - [firestore.rules](../firestore.rules)
 
-## 12. Bootstrap Admin Exception
+## 12. Recovery administrativo
 
-La excepción de bootstrap admin queda aceptada solo bajo estas condiciones:
+La recuperación administrativa ya no usa correos hardcodeados en rules, functions ni frontend.
 
-1. la fuente de verdad del login general sigue siendo `config/roles`
-2. la excepción se usa únicamente para recuperación técnica y mutación administrativa mínima
-3. las superficies que la usan están inventariadas y cubiertas por tests
-4. cualquier cambio en la lista o en su alcance requiere actualización documental y validación explícita
+La vía válida es:
 
-Estado actual:
+1. restaurar el correo en `config/roles` con rol `admin`
+2. volver a iniciar sesión o ejecutar `syncCurrentUserRoleClaim`
+3. verificar que `checkUserRole` y el claim sincronizado converjan al mismo rol
 
-- justificada: sí
-- eliminada: no
-- marcada para retiro: sí, cuando exista una vía de recuperación equivalente sin allowlist hardcodeada
+Reglas operativas:
 
-Criterio de retiro:
-
-- recovery admin viable sin correos hardcodeados en rules/functions/frontend
-- validación operativa del flujo canónico de roles sin dependencia de bootstrap allowlist
-- tests actualizados para el mecanismo sustituto
+- no agregar allowlists técnicas nuevas
+- no otorgar acceso por frontend optimista
+- no dejar funciones sensibles dependiendo de correos embebidos
+- cualquier bypass temporal de permisos debe considerarse incidente y no patrón aceptado
 
 ## 13. Runbook de incidentes
 

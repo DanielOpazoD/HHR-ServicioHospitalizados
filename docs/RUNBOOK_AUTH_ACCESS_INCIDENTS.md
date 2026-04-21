@@ -21,20 +21,15 @@ No usar como referencia primaria:
 - comentarios legacy sobre `whitelist`;
 - claims históricos como evidencia suficiente de acceso.
 
-## Excepción conocida: bootstrap admin
+## Recovery administrativo
 
-Existe una excepción mínima de bootstrap admin para recuperación técnica.
+No existe ya una allowlist hardcoded de bootstrap admin.
 
-Usarla solo cuando:
+Si se perdió acceso administrativo, la recuperación válida es:
 
-- el flujo normal basado en `config/roles` no permita recuperar administración
-- se necesite restaurar acceso operativo o corregir `config/roles`
-
-No asumir:
-
-- que reemplaza el modelo canónico
-- que justifica agregar correos nuevos sin revisión
-- que un incidente de acceso general debe resolverse primero por esa vía
+- restaurar el correo correcto en `config/roles` con rol `admin`
+- forzar re-login o `syncCurrentUserRoleClaim`
+- verificar que `checkUserRole` y el claim resuelto converjan
 
 ## Caso 1: el correo está en Gestión de Roles pero no puede entrar
 

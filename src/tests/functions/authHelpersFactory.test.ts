@@ -32,7 +32,7 @@ const createAdminStub = (options: { dynamicRoles?: Record<string, string> }) => 
 };
 
 describe('functions authHelpersFactory', () => {
-  it('resolves dynamic roles before static allowlists without mutating config/roles', async () => {
+  it('resolves dynamic roles from config/roles without mutating the source document', async () => {
     const { admin } = createAdminStub({
       dynamicRoles: { 'custom@example.com': 'viewer_census' },
     });

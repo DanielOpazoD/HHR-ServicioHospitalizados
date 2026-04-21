@@ -1,6 +1,6 @@
 import { httpsCallable } from 'firebase/functions';
 import { UserRole } from '@/types/auth';
-import { BOOTSTRAP_ADMIN_EMAILS, normalizeEmail } from '@/services/auth/authShared';
+import { normalizeEmail } from '@/services/auth/authShared';
 import { isGeneralLoginRole } from '@/shared/access/roleAccessMatrix';
 import { defaultFunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
 import type { FunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
@@ -21,20 +21,6 @@ export const resolveCallableRole = (
   }
 
   return role;
-};
-
-export const getBootstrapRoleForEmail = (email: string): UserRole | null => {
-  const cleanEmail = normalizeEmail(email);
-
-  if (
-    (BOOTSTRAP_ADMIN_EMAILS as readonly string[]).some(
-      staticEmail => cleanEmail === normalizeEmail(staticEmail)
-    )
-  ) {
-    return 'admin';
-  }
-
-  return null;
 };
 
 export const createAuthRoleLookupService = (

@@ -11,7 +11,7 @@ export function registerFirestoreRulesAccessGroups({
   doctor,
   specialist,
   specialistWithoutClaim,
-  bootstrapAdminWithoutClaim,
+  adminWithoutClaim,
   firestoreForUser,
   unauthorizedAuthed,
   NOW_MS,
@@ -71,9 +71,9 @@ export function registerFirestoreRulesAccessGroups({
       await assertFails(unauthorizedAuthed().doc(recordPath).get());
     });
 
-    it('Bootstrap admins can recover daily record access without depending on config/roles', async () => {
+    it('Configured admins can recover daily record access without an admin claim', async () => {
       await setupDoc(admin(), recordPath, { date: CURRENT_RECORD_DATE });
-      await assertSucceeds(bootstrapAdminWithoutClaim().doc(recordPath).get());
+      await assertSucceeds(adminWithoutClaim().doc(recordPath).get());
     });
 
     it('Unauthenticated users cannot read daily records', async () => {
@@ -186,6 +186,7 @@ export function registerFirestoreRulesAccessGroups({
 
     it('Specialists resolved via config/roles can persist medical handoff changes', async () => {
       await setupDoc(admin(), 'config/roles', {
+        'daniel.opazo@hospitalhangaroa.cl': 'admin',
         'specialist.dynamic@example.com': 'doctor_specialist',
       });
       await setupDoc(admin(), recordPath, {
@@ -329,6 +330,7 @@ export function registerFirestoreRulesAccessGroups({
 
     it('Specialists resolved via config/roles remain authorized when the auth email uses different casing', async () => {
       await setupDoc(admin(), 'config/roles', {
+        'daniel.opazo@hospitalhangaroa.cl': 'admin',
         'specialist.case@example.com': 'doctor_specialist',
       });
       await setupDoc(admin(), recordPath, {

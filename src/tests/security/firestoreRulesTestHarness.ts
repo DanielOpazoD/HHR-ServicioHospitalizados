@@ -16,7 +16,7 @@ export type FirestoreRulesHarness = {
   doctor: () => FirestoreLike;
   specialist: () => FirestoreLike;
   specialistWithoutClaim: () => FirestoreLike;
-  bootstrapAdminWithoutClaim: () => FirestoreLike;
+  adminWithoutClaim: () => FirestoreLike;
   doctorWithoutClaim: () => FirestoreLike;
   editor: () => FirestoreLike;
   unauthorizedAuthed: () => FirestoreLike;
@@ -90,10 +90,10 @@ export function registerFirestoreRulesSuite(
             email: 'specialist.dynamic@example.com',
           })
           .firestore(),
-      bootstrapAdminWithoutClaim: () =>
+      adminWithoutClaim: () =>
         testEnv
-          .authenticatedContext('user_bootstrap_admin', {
-            email: 'daniel.opazo@hospitalhangaroa.cl',
+          .authenticatedContext('user_admin_dynamic', {
+            email: 'admin.dynamic@example.com',
           })
           .firestore(),
       doctorWithoutClaim: () =>
@@ -154,6 +154,8 @@ export function registerFirestoreRulesSuite(
 
       await setupDoc(harness.admin(), 'config/roles', {
         'user@example.com': 'viewer',
+        'daniel.opazo@hospitalhangaroa.cl': 'admin',
+        'admin.dynamic@example.com': 'admin',
         'hospitalizados@hospitalhangaroa.cl': 'nurse_hospital',
         'doctor@example.com': 'doctor_urgency',
         'specialist@example.com': 'doctor_specialist',

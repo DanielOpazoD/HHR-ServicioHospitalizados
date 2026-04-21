@@ -24,8 +24,8 @@ rules_version = '2';
 //   2.7 System configuration (config/roles, invitations, access users, logs)
 //   2.8 Default-deny catch-all
 //
-// Any change to the bootstrap admin allowlist in `isBootstrapAdmin()` must also
-// update `src/tests/security/rulesHardeningStatic.test.ts` (regression guard).
+// Any change to the auth access model must also update
+// `src/tests/security/rulesHardeningStatic.test.ts` (regression guard).
 // ============================================================================
 
 service cloud.firestore {
@@ -57,18 +57,8 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.token.email != null;
     }
 
-    // Technical recovery allowlist. This is not the normal login/access source of truth.
-    // It exists only as a bootstrap admin exception while config/roles remains the canonical model.
-    function isBootstrapAdmin() {
-      return hasEmail() &&
-             getUserEmail() in [
-               'daniel.opazo@hospitalhangaroa.cl',
-               'd.opazo.damiani@gmail.com'
-             ];
-    }
-
     //
-    // 1.2 Role resolution (configured + claim + bootstrap)
+    // 1.2 Role resolution (configured + claim)
     // ---------------------------------------------
 
     function normalizeRole(role) {
@@ -110,20 +100,12 @@ service cloud.firestore {
              roles.hasAny([effectiveRole]);
     }
 
-    function hasBootstrapOrEffectiveRole(role) {
-      return isBootstrapAdmin() || hasEffectiveRole(role);
-    }
-
-    function hasBootstrapOrAnyEffectiveRole(roles) {
-      return isBootstrapAdmin() || hasAnyEffectiveRole(roles);
-    }
-
     //
     // 1.3 Role predicates (convenience wrappers)
     // ---------------------------------------------
 
     function isAdmin() {
-      return hasBootstrapOrEffectiveRole('admin');
+      return hasEffectiveRole('admin');
     }
 
     function hasAdminOrEffectiveRole(role) {
@@ -144,7 +126,7 @@ service cloud.firestore {
 
     // Check if user can edit (admin or nurse)
     function canEdit() {
-      return hasBootstrapOrAnyEffectiveRole(['admin', 'nurse_hospital']);
+      return hasAnyEffectiveRole(['admin', 'nurse_hospital']);
     }
 
     function canReportSystemHealth() {
@@ -377,7 +359,7 @@ service cloud.firestore {
 
     // Consolidated read access for clinical data
     function canReadClinicalData() {
-      return hasBootstrapOrAnyEffectiveRole([
+      return hasAnyEffectiveRole([
                'admin',
                'nurse_hospital',
                'doctor_urgency',
@@ -400,7 +382,7 @@ service cloud.firestore {
     }
 
     function canManageCensusAccess() {
-      return hasBootstrapOrAnyEffectiveRole(['admin', 'editor']);
+      return hasAnyEffectiveRole(['admin', 'editor']);
     }
 
     function isCurrentUser(userId) {
@@ -648,8 +630,7 @@ service cloud.firestore {
     function canUpdatePersistedDailyRecord() {
       let effectiveRole = getEffectiveRole();
 
-      return isBootstrapAdmin() ||
-             canRoleUpdatePersistedDailyRecord(effectiveRole);
+      return canRoleUpdatePersistedDailyRecord(effectiveRole);
     }
 
     function canRoleUpdatePersistedDailyRecord(effectiveRole) {

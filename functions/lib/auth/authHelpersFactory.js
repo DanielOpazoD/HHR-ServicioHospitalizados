@@ -1,4 +1,4 @@
-const { BOOTSTRAP_ADMIN_EMAILS, GENERAL_LOGIN_ROLES } = require('./authConfig');
+const { GENERAL_LOGIN_ROLES } = require('./authConfig');
 const { normalizeEmail } = require('./authEmailUtils');
 const { sanitizeLogValue } = require('../logging/redaction');
 
@@ -26,8 +26,6 @@ const createAuthHelpers = admin => {
         sanitizeLogValue({ email: cleanEmail, error })
       );
     }
-
-    if (BOOTSTRAP_ADMIN_EMAILS.includes(cleanEmail)) return 'admin';
 
     return 'unauthorized';
   };
@@ -59,7 +57,6 @@ const createAuthHelpers = admin => {
     resolveRoleForEmail,
     hasCallableClinicalAccess,
     assignRole,
-    adminEmails: BOOTSTRAP_ADMIN_EMAILS,
   };
 };
 

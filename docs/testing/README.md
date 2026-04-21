@@ -115,7 +115,7 @@ El modelo canónico de acceso general vive en [docs/AUTH_ACCESS_MODEL.md](../AUT
 Regresiones mínimas esperadas cuando una change toca auth, censo, documentos clínicos o handoff:
 
 - login normal con Gmail
-- acceso permitido solo si el correo existe en `config/roles` o bootstrap técnico
+- acceso permitido solo si el correo existe en `config/roles`
 - usuario sin rol no monta shell ni navbar
 - acceso visible solo a `CENSUS` y `MEDICAL_HANDOFF`
 - censo abreviado sin edición de datos censales
