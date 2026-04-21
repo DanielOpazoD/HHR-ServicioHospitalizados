@@ -21,7 +21,7 @@ export const resolveAuditAdminAccess = ({
 }): AuditAdminAccessResolution => {
   const isAdminByRole = isAdminAppRole(role);
   const isAdminByEmail = isAdministratorEmail(email);
-  const effectiveAdmin = isAdminByRole || isAdminByEmail;
+  const effectiveAdmin = isAdminByRole;
 
   let source: AuditAdminAccessSource = 'none';
   if (isAdminByRole && isAdminByEmail) {

@@ -18,7 +18,7 @@ describe('auditAdminAccess', () => {
     });
   });
 
-  it('preserves the temporary email fallback while the migration remains active', () => {
+  it('keeps email-only admin matches observable without granting canonical admin access', () => {
     expect(
       resolveAuditAdminAccess({
         role: 'viewer',
@@ -27,7 +27,7 @@ describe('auditAdminAccess', () => {
     ).toEqual({
       isAdminByRole: false,
       isAdminByEmail: true,
-      effectiveAdmin: true,
+      effectiveAdmin: false,
       hasAdminSourceMismatch: true,
       source: 'email_fallback',
     });
