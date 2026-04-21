@@ -32,8 +32,7 @@
     }
 
     function canNurseUpdatePersistedDailyRecord() {
-      return request.resource.data.keys().hasAll(['dateTimestamp']) &&
-             request.resource.data.dateTimestamp != null &&
+      return hasPersistedRecordTimestampPayload() &&
              isWithinEditingWindow(request.resource.data.dateTimestamp);
     }
 
@@ -51,16 +50,16 @@
       return canRoleUpdatePersistedDailyRecord(effectiveRole);
     }
 
+    function hasPersistedRecordTimestampPayload() {
+      return request.resource.data.keys().hasAll(['dateTimestamp']) &&
+             request.resource.data.dateTimestamp != null;
+    }
+
     function canRoleUpdatePersistedDailyRecord(effectiveRole) {
-      return effectiveRole == 'admin'
-        ? true
-        : effectiveRole == 'nurse_hospital'
-          ? canNurseUpdatePersistedDailyRecord()
-          : effectiveRole == 'doctor_urgency'
-            ? canDoctorUpdatePersistedDailyRecord()
-            : effectiveRole == 'doctor_specialist'
-              ? canSpecialistUpdatePersistedDailyRecord()
-              : false;
+      return effectiveRole == 'admin' ||
+             (effectiveRole == 'nurse_hospital' && canNurseUpdatePersistedDailyRecord()) ||
+             (effectiveRole == 'doctor_urgency' && canDoctorUpdatePersistedDailyRecord()) ||
+             (effectiveRole == 'doctor_specialist' && canSpecialistUpdatePersistedDailyRecord());
     }
 
     function canAdminMaintainHospitalDocument() {
