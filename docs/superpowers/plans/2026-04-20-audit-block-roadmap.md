@@ -5,8 +5,8 @@ Objetivo: ejecutar mejoras de alto valor derivadas de la auditoría técnica sin
 
 ## Estado actual
 
-- Bloque actual en curso: `Bloque 4: Mantenibilidad de Reglas y Runtime Sensible`
-- Siguiente bloque acordado después de este: `Bloque 5: Escalabilidad Técnica y Performance`
+- Bloque actual en curso: `Bloque 5: Escalabilidad Técnica y Performance`
+- Siguiente bloque acordado después de este: `Bloque 6: Documentación y Operación`
 
 ## Bloques
 
@@ -82,12 +82,30 @@ Riesgo residual aceptado:
 
 ### Bloque 4: Mantenibilidad de Reglas y Runtime Sensible
 
-Estado: `pendiente`
+Estado: `completado`
 
 Objetivo:
 
 - modularizar y volver más auditables `firestore.rules` y runtime sensible relacionado
 - reducir costo de cambio sin alterar el modelo de acceso ya endurecido
+
+Resultado:
+
+- `firestore.rules` y `storage.rules` quedaron divididos en fuentes editables bajo `rules/`
+- se añadió generación determinista de outputs raíz mediante `scripts/build-rules-assets.mjs`
+- se añadió detección de drift mediante `scripts/check-rules-generated.mjs`
+- `check:security` y los tests con emulador ahora fuerzan sincronización previa de reglas generadas
+- el costo de revisar cambios en reglas baja sin cambiar el contrato que Firebase y el emulador esperan
+
+Validación ejecutada:
+
+- `npm run typecheck`
+- `npm run check:security`
+- `bash scripts/run-firestore-rules-ci.sh`
+
+Riesgo residual aceptado:
+
+- la modularización actual es por fragmentos concatenados; mejora auditabilidad y gobernanza, pero no reduce aún complejidad semántica interna de cada helper
 
 ### Bloque 5: Escalabilidad Técnica y Performance
 

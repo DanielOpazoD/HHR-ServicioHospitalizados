@@ -1,0 +1,140 @@
+rules_version = '2';
+
+// ============================================================================
+// TABLE OF CONTENTS
+// ----------------------------------------------------------------------------
+// Helpers (section 1 — lines ~15-600):
+//   1.1 Identity & Authentication
+//   1.2 Role resolution (configured + claim + bootstrap)
+//   1.3 Role predicates (isAdmin, isNurse, isDoctor, canEdit, ...)
+//   1.4 Specialist medical handoff validators
+//   1.5 Clinical read access, invitations & receipts
+//   1.6 Payload schema helpers (optional types, bounded ints)
+//   1.7 System health payload guard
+//   1.8 Editing window helpers
+//   1.9 Medical signature update helpers
+//
+// Collections (section 2 — lines ~600 onward):
+//   2.1 Hospitals / hierarchy (dailyRecords, clinicalDocuments, etc.)
+//   2.2 Top-level audit logs
+//   2.3 Legacy allowlist / staff catalogs
+//   2.4 User settings
+//   2.5 WhatsApp integration
+//   2.6 System health stats
+//   2.7 System configuration (config/roles, invitations, access users, logs)
+//   2.8 Default-deny catch-all
+//
+// Any change to the auth access model must also update
+// `src/tests/security/rulesHardeningStatic.test.ts` (regression guard).
+// ============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+    //
+    // 1.1 Identity & Authentication
+    // ---------------------------------------------
+
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Get user email
+    function normalizeEmail(email) {
+      return email.lower();
+    }
+
+    function getUserEmail() {
+      return normalizeEmail(request.auth.token.email);
+    }
+
+    // Check if authenticated user has an email claim
+    function hasEmail() {
+      return isAuthenticated() && request.auth.token.email != null;
+    }
+
+    //
+    // 1.2 Role resolution (configured + claim)
+    // ---------------------------------------------
+
+    function normalizeRole(role) {
+      return role == 'viewer_census'
+        ? 'viewer'
+        : role;
+    }
+
+    function getConfiguredRole() {
+      return hasEmail() &&
+             exists(/databases/$(database)/documents/config/roles)
+        ? normalizeRole(get(/databases/$(database)/documents/config/roles).data[getUserEmail()])
+        : null;
+    }
+
+    function getClaimRole() {
+      return isAuthenticated() &&
+             request.auth.token.keys().hasAny(['role']) &&
+             request.auth.token.role != null
+        ? normalizeRole(request.auth.token.role)
+        : null;
+    }
+
+    function getEffectiveRole() {
+      let configuredRole = getConfiguredRole();
+      return configuredRole != null
+        ? configuredRole
+        : getClaimRole();
+    }
+
+    function hasEffectiveRole(role) {
+      return isAuthenticated() && getEffectiveRole() == role;
+    }
+
+    function hasAnyEffectiveRole(roles) {
+      let effectiveRole = getEffectiveRole();
+      return isAuthenticated() &&
+             effectiveRole != null &&
+             roles.hasAny([effectiveRole]);
+    }
+
+    //
+    // 1.3 Role predicates (convenience wrappers)
+    // ---------------------------------------------
+
+    function isAdmin() {
+      return hasEffectiveRole('admin');
+    }
+
+    function hasAdminOrEffectiveRole(role) {
+      return isAdmin() || hasEffectiveRole(role);
+    }
+
+    function isNurse() {
+      return hasAdminOrEffectiveRole('nurse_hospital');
+    }
+
+    function isDoctor() {
+      return hasAdminOrEffectiveRole('doctor_urgency');
+    }
+
+    function isDoctorSpecialist() {
+      return hasAdminOrEffectiveRole('doctor_specialist');
+    }
+
+    // Check if user can edit (admin or nurse)
+    function canEdit() {
+      return hasAnyEffectiveRole(['admin', 'nurse_hospital']);
+    }
+
+    function canReportSystemHealth() {
+      return canEdit();
+    }
+
+    function isEditorRole() {
+      return hasEffectiveRole('editor');
+    }
+
+    //

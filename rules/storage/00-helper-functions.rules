@@ -1,0 +1,40 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function normalizedRole() {
+      return !isAuthenticated() || request.auth.token.role == null
+        ? null
+        : request.auth.token.role == 'viewer_census'
+          ? 'viewer'
+          : request.auth.token.role;
+    }
+
+    function hasClinicalReadRole() {
+      return isAuthenticated() && normalizedRole() in [
+        'admin',
+        'nurse_hospital',
+        'doctor_urgency',
+        'viewer',
+        'editor'
+      ];
+    }
+
+    function hasClinicalWriteRole() {
+      return isAuthenticated() && normalizedRole() in [
+        'admin',
+        'nurse_hospital',
+        'editor'
+      ];
+    }
+
+    function canWriteReminderAssets() {
+      return hasClinicalWriteRole();
+    }
+
+    function canReadClinicalStorage() {
+      return hasClinicalReadRole();
+    }

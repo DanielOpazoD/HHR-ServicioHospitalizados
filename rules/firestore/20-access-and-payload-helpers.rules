@@ -1,0 +1,230 @@
+    // 1.5 Clinical read access, invitations & receipts
+    // ---------------------------------------------
+
+    function isGeneralViewer() {
+      return hasEffectiveRole('viewer');
+    }
+
+    // Consolidated read access for clinical data
+    function canReadClinicalData() {
+      return hasAnyEffectiveRole([
+               'admin',
+               'nurse_hospital',
+               'doctor_urgency',
+               'doctor_specialist',
+               'editor',
+               'viewer'
+             ]);
+    }
+
+    function canReadAppendOnlyOperationalLog() {
+      return isAdmin();
+    }
+
+    function canCreateAppendOnlyOperationalLogEntry() {
+      return canCreateReadableClinicalDocument();
+    }
+
+    function canWriteReminderReceipt() {
+      return isAdmin() || isValidOwnReminderReceiptWrite();
+    }
+
+    function canManageCensusAccess() {
+      return hasAnyEffectiveRole(['admin', 'editor']);
+    }
+
+    function isCurrentUser(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isInvitationOwner() {
+      return hasEmail() &&
+             resource != null &&
+             resource.data != null &&
+             resource.data.email == getUserEmail();
+    }
+
+    function isValidInvitationClaim() {
+      let affectedKeys = request.resource.data.diff(resource.data).affectedKeys();
+
+      return isAuthenticated() &&
+             isInvitationOwner() &&
+             resource.data.status == 'pending' &&
+             (resource.data.expiresAt == null || request.time.toMillis() <= resource.data.expiresAt) &&
+             affectedKeys.hasOnly(['status', 'usedBy', 'usedAt']) &&
+             request.resource.data.status == 'used' &&
+             request.resource.data.usedBy == request.auth.uid &&
+             request.resource.data.usedAt is int;
+    }
+
+    function isValidCensusAccessUserWrite(userId) {
+      let payload = request.resource.data;
+
+      return payload.id == userId &&
+             payload.email is string &&
+             payload.role in ['viewer', 'editor', 'admin'] &&
+             payload.isActive is bool;
+    }
+
+    function canReadCensusAccessLog(logOwnerId) {
+      return isAdmin() || isCurrentUser(logOwnerId);
+    }
+
+    function isValidOwnCensusAccessLog() {
+      let payload = request.resource.data;
+
+      return isAuthenticated() &&
+             hasEmail() &&
+             payload.keys().hasOnly(['userId', 'email', 'action', 'timestamp']) &&
+             payload.userId == request.auth.uid &&
+             payload.email == getUserEmail() &&
+             payload.action is string &&
+             payload.timestamp is int;
+    }
+
+    function canReadReminderReceipt() {
+      return isAdmin() ||
+             (resource != null &&
+              resource.data != null &&
+              isCurrentUser(resource.data.userId));
+    }
+
+    function hasOnlyReminderReceiptKeys(payload) {
+      return payload.keys().hasOnly(['userId', 'userName', 'readAt', 'shift', 'dateKey']);
+    }
+
+    function isValidOwnReminderReceiptWrite() {
+      let payload = request.resource.data;
+
+      return isAuthenticated() &&
+             hasOnlyReminderReceiptKeys(payload) &&
+             payload.userId is string &&
+             isCurrentUser(payload.userId) &&
+             payload.userName is string &&
+             payload.readAt is string &&
+             payload.shift in ['day', 'night'] &&
+             payload.dateKey is string;
+    }
+
+    //
+    // 1.6 Payload schema helpers (optional types, bounded ints)
+    // ---------------------------------------------
+
+    function isOptionalString(payload, key) {
+      return !(key in payload) || payload[key] == null || payload[key] is string;
+    }
+
+    function isOptionalBool(payload, key) {
+      return !(key in payload) || payload[key] == null || payload[key] is bool;
+    }
+
+    function isOptionalBoundedInt(payload, key, maxValue) {
+      return !(key in payload) ||
+             payload[key] == null ||
+             (payload[key] is int && payload[key] >= 0 && payload[key] <= maxValue);
+    }
+
+    function isOptionalEnum(payload, key, allowedValues) {
+      return !(key in payload) ||
+             payload[key] == null ||
+             allowedValues.hasAny([payload[key]]);
+    }
+
+    function hasOnlySystemHealthKeys(payload) {
+      return payload.keys().hasOnly([
+               'uid',
+               'email',
+               'displayName',
+               'lastSeen',
+               'isOnline',
+               'isOutdated',
+               'pendingMutations',
+               'pendingSyncTasks',
+               'failedSyncTasks',
+               'conflictSyncTasks',
+               'retryingSyncTasks',
+               'syncOrphanedTasks',
+               'oldestPendingAgeMs',
+               'remoteSyncReason',
+               'versionUpdateReason',
+               'localErrorCount',
+               'degradedLocalPersistence',
+               'repositoryWarningCount',
+               'slowestRepositoryOperationMs',
+               'operationalObservedCount',
+               'operationalFailureCount',
+               'operationalRetryableCount',
+               'operationalRecoverableCount',
+               'operationalDegradedCount',
+               'operationalBlockedCount',
+               'operationalUnauthorizedCount',
+               'operationalLastHourObservedCount',
+               'operationalSyncObservedCount',
+               'operationalIndexedDbObservedCount',
+               'operationalClinicalDocumentObservedCount',
+               'operationalCreateDayObservedCount',
+               'operationalHandoffObservedCount',
+               'operationalExportBackupObservedCount',
+               'operationalDailyRecordRecoveredRealtimeNullCount',
+               'operationalDailyRecordConfirmedRealtimeNullCount',
+               'operationalSyncReadUnavailableCount',
+               'operationalIndexedDbFallbackModeCount',
+               'operationalAuthBootstrapTimeoutCount',
+               'operationalTopObservedCategory',
+               'operationalTopObservedOperation',
+               'latestOperationalOperation',
+               'latestOperationalRuntimeState',
+               'latestOperationalIssueAt',
+               'appVersion',
+               'platform',
+               'userAgent'
+             ]);
+    }
+
+    //
+    // 1.7 System health payload guard
+    // ---------------------------------------------
+    // - caller can only write own doc
+    // - schema is constrained
+    // - numeric counters are bounded to non-negative values
+
+    function isValidSystemHealthWrite(userId) {
+      let payload = request.resource.data;
+      return isAuthenticated() &&
+             request.auth.uid == userId &&
+             hasOnlySystemHealthKeys(payload) &&
+             payload.uid == request.auth.uid &&
+             isOptionalString(payload, 'email') &&
+             isOptionalString(payload, 'displayName') &&
+             isOptionalString(payload, 'lastSeen') &&
+             isOptionalBool(payload, 'isOnline') &&
+             isOptionalBool(payload, 'isOutdated') &&
+             isOptionalBoundedInt(payload, 'pendingMutations', 10000) &&
+             isOptionalBoundedInt(payload, 'pendingSyncTasks', 10000) &&
+             isOptionalBoundedInt(payload, 'failedSyncTasks', 10000) &&
+             isOptionalBoundedInt(payload, 'conflictSyncTasks', 10000) &&
+             isOptionalBoundedInt(payload, 'retryingSyncTasks', 10000) &&
+             isOptionalBoundedInt(payload, 'syncOrphanedTasks', 10000) &&
+             isOptionalBoundedInt(payload, 'oldestPendingAgeMs', 864000000) &&
+             isOptionalEnum(payload, 'remoteSyncReason', [
+               'ready',
+               'auth_loading',
+               'auth_connecting',
+               'auth_unavailable',
+               'manual_override',
+               'offline',
+               'runtime_unavailable'
+             ]) &&
+             isOptionalEnum(payload, 'versionUpdateReason', [
+               'current',
+               'new_build_available',
+               'runtime_contract_mismatch',
+               'schema_ahead_of_client'
+             ]) &&
+             isOptionalBoundedInt(payload, 'localErrorCount', 10000) &&
+             isOptionalBool(payload, 'degradedLocalPersistence') &&
+             isOptionalBoundedInt(payload, 'repositoryWarningCount', 10000) &&
+             isOptionalBoundedInt(payload, 'slowestRepositoryOperationMs', 864000000);
+    }
+    
+    //

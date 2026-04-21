@@ -1,0 +1,104 @@
+    // 2.2 TOP-LEVEL AUDIT LOGS (Legacy/Fallback)
+    // ============================================
+    match /auditLogs/{logId} {
+      allow read: if canReadAppendOnlyOperationalLog();
+      allow create: if canCreateAppendOnlyOperationalLogEntry();
+      // Append-only: admin tampering prevention. Consolidation is read-time.
+      allow update, delete: if false;
+    }
+    
+    // ============================================
+    // 2.3 ALLOWED USERS (Legacy retired)
+    // ============================================
+    match /allowedUsers/{userId} {
+      allow read, write: if false;
+    }
+    
+    // ============================================
+    // 2.3b STAFF CATALOGS (Legacy - if still used)
+    // ============================================
+    match /staffCatalogs/{catalogType} {
+      allow read: if canReadClinicalData();
+      allow write: if isAdmin();
+    }
+    
+    // ============================================
+    // 2.4 USER SETTINGS
+    // ============================================
+    match /userSettings/{userId} {
+      allow read: if isAdmin() || isCurrentUser(userId);
+      allow write: if isAdmin() || isCurrentUser(userId);
+    }
+    
+    // ============================================
+    // 2.5 WHATSAPP INTEGRATION
+    // ============================================
+    match /whatsapp/{docId} {
+      allow read: if canReadClinicalData();
+      allow write: if isAdmin();
+    }
+    
+    match /whatsappLogs/{logId} {
+      allow read: if canReadAppendOnlyOperationalLog();
+      allow create: if canCreateAppendOnlyOperationalLogEntry();
+      allow update, delete: if false;
+    }
+    
+    match /whatsappMessages/{messageId} {
+      allow read, write: if isAdmin();
+    }
+    
+    match /shifts/{path=**} {
+      allow read: if canReadClinicalData();
+      allow write: if isAdmin();
+    }
+    
+    // ============================================
+    // 2.6 SYSTEM HEALTH
+    // ============================================
+    match /stats/system_health/users/{userId} {
+      allow read: if canReportSystemHealth();
+      allow create, update: if isValidSystemHealthWrite(userId);
+      allow delete: if false;
+    }
+
+    // ============================================
+    // 2.7 SYSTEM CONFIGURATION
+    // ============================================
+    match /emailRecipientLists/{listId} {
+      allow read: if canReadClinicalData();
+      allow write: if canEdit() || isEditorRole();
+    }
+
+    match /config/roles {
+      allow read, write: if isAdmin();
+    }
+
+    match /census-access-invitations/{invitationId} {
+      allow read: if canManageCensusAccess() || isInvitationOwner();
+      allow create, delete: if canManageCensusAccess();
+      allow update: if canManageCensusAccess() || isValidInvitationClaim();
+    }
+
+    match /census-access-users/{userId} {
+      allow read: if canManageCensusAccess();
+      allow create, update: if canManageCensusAccess() && isValidCensusAccessUserWrite(userId);
+      allow delete: if canManageCensusAccess();
+    }
+
+    match /census-access-logs/{logId} {
+      allow read: if resource != null &&
+                   resource.data != null &&
+                   canReadCensusAccessLog(resource.data.userId);
+      allow create: if isValidOwnCensusAccessLog();
+      allow update, delete: if false;
+    }
+
+    // ============================================
+    // 2.8 DENY ALL OTHER BY DEFAULT
+    // ============================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

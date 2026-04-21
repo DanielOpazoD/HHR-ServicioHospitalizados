@@ -1,0 +1,44 @@
+
+    // Entrega de enfermería backups: editable only by clinical editors.
+    match /entregas-enfermeria/{allPaths=**} {
+      allow read: if canReadClinicalStorage();
+      allow write: if hasClinicalWriteRole();
+    }
+    
+    // Daily census exports: readable by authenticated clinical users.
+    match /censo-diario/{allPaths=**} {
+      allow read: if canReadClinicalStorage();
+      allow write: if hasClinicalWriteRole();
+    }
+    
+    // Templates can be read by authorized clinical/shared users.
+    match /templates/{allPaths=**} {
+      allow read: if canReadClinicalStorage();
+      allow write: if false;  // Only upload via Firebase Console
+    }
+    
+    // CUDYR monthly backups: editable only by clinical editors.
+    match /cudyr-backup/{allPaths=**} {
+      allow read: if canReadClinicalStorage();
+      allow write: if hasClinicalWriteRole();
+    }
+
+    match /reminders/{allPaths=**} {
+      allow read: if canReadClinicalStorage();
+      allow write: if canWriteReminderAssets();
+    }
+
+    // Wound care: clinical photography and informed consent documents.
+    match /wound-care/{allPaths=**} {
+      allow read: if canReadClinicalStorage();
+      allow write: if hasClinicalWriteRole()
+                      && request.resource.size < 15 * 1024 * 1024
+                      && request.resource.contentType.matches('image/.*|application/pdf');
+    }
+
+    // Default: deny all other access
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
