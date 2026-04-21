@@ -5,7 +5,8 @@ import type { PatientFieldValue } from '@/types/valueTypes';
 import { BEDS } from '@/constants/beds';
 import { getBedTypeForRecord } from '@/utils/bedTypeUtils';
 import { BedType } from '@/types/domain/beds';
-import { type BedAction, bedManagementReducer } from '@/hooks/useBedManagementReducer';
+import type { BedAction } from '@/hooks/contracts/bedManagementActionContracts';
+import { bedManagementReducer } from '@/hooks/useBedManagementReducer';
 import { bedManagementDispatchLogger } from '@/hooks/controllers/hookControllerLoggers';
 export interface BedManagementValidationPort {
   processFieldValue: (

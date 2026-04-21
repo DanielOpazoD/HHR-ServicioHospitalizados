@@ -5,7 +5,7 @@ import type { CudyrScore } from '@/types/domain/cudyr';
 import { PatientFieldValue } from '@/types/valueTypes';
 import { usePatientValidation } from './usePatientValidation';
 import { useBedAudit } from './useBedAudit';
-import { BedAction } from './useBedManagementReducer';
+import type { BedAction } from '@/hooks/contracts/bedManagementActionContracts';
 import { executeBedManagementAction } from '@/hooks/controllers/bedManagementDispatchController';
 import { useBedManagementActionCreators } from '@/hooks/useBedManagementActionCreators';
 

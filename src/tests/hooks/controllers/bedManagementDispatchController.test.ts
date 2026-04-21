@@ -4,7 +4,7 @@ import type {
   BedManagementAuditPort,
   BedManagementValidationPort,
 } from '@/hooks/controllers/bedManagementDispatchController';
-import type { BedAction } from '@/hooks/useBedManagementReducer';
+import type { BedAction } from '@/hooks/contracts/bedManagementActionContracts';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
 
