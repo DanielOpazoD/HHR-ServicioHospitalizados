@@ -78,8 +78,8 @@ export const TREND_GROUPS: { label: string; patterns: string[] }[] = [
     patterns: ['Troponina', 'LDH', 'CK Total', 'Magnesio', 'Acido Urico', 'Albumina'],
   },
   {
-    label: 'Orina / Proteinuria',
-    patterns: ['RPC', 'RAC', 'pH', 'Densidad'],
+    label: 'RPC / RAC',
+    patterns: ['RPC', 'RAC'],
   },
 ];
 
@@ -118,6 +118,14 @@ export const COMPARISON_EXCLUDE: string[] = [
   'Amilasa',
   'BEecf',
   'Globulinas',
+  'N° de ingreso',
+  'Nº de ingreso',
+  'N° ingreso',
+  'Nº ingreso',
+  'No de ingreso',
+  'Numero de ingreso',
+  'MIDAS',
+  'Tipo de muestra',
 ];
 
 /** Preferred display order for comparison table variables (clinical priority). */
@@ -208,10 +216,9 @@ export const EXAM_FILTER_CATEGORIES: { label: string; patterns: string[] }[] = [
     label: 'Bioquímica',
     patterns: ['BIOQUIMIC', 'PERFIL BIOQUIM', 'ALBUMINA', 'PROTEINA', 'GLICEMIA'],
   },
-  { label: 'Gases', patterns: ['GASES'] },
   { label: 'Electrolitos', patterns: ['ELECTROLITOS'] },
-  { label: 'Perfil Hepático', patterns: ['PERFIL HEPAT', 'HEPAT'] },
-  { label: 'Perfil Lipídico', patterns: ['LIPID', 'COLESTEROL'] },
+  { label: 'P. hepático', patterns: ['PERFIL HEPAT', 'HEPAT'] },
+  { label: 'P. lipídico', patterns: ['LIPID', 'COLESTEROL'] },
   { label: 'Coagulación', patterns: ['PROTROMBINA', 'TTPK', 'INR', 'COAGUL'] },
   { label: 'Función Renal', patterns: ['CREA', 'UREMIA', 'VFG', 'BUN'] },
   {
@@ -268,10 +275,11 @@ export const ANALYSIS_NAME_REPLACEMENTS: [RegExp, string][] = [
   [/^\s*Creatinina(?:\s+s[eé]rica)?\s*$/i, 'Creatinina'],
   [/^\s*PCR\s*$/i, 'Proteina C Reactiva'],
   [/^\s*Prot\.?\s*C\.?\s*Reactiva\s*$/i, 'Proteina C Reactiva'],
-  [/^\s*Rel\.?\s*Proteinuria\s*\/\s*Creatininuria\s*$/i, 'RPC'],
-  [/^\s*Relaci[oó]n\s+Albumina\s*\/\s*Creatininuri[a]?\s*$/i, 'RAC'],
-  [/^\s*Relac\.?\s*Albumina\s*\/\s*Creatininuri[a]?\s*$/i, 'RAC'],
-  [/^\s*RELAC\.?\s*ALBUMINA\s*\/\s*CREATINURIA\s*$/i, 'RAC'],
+  [/^\s*(?:Rel(?:aci[oó]n|ac\.?|\.?)\s*)?Proteinuria\s*\/\s*Creatininuria\s*[:=]?\s*$/i, 'RPC'],
+  [
+    /^\s*(?:Rel(?:aci[oó]n|ac\.?|\.?)\s*)?Albumina\s*\/\s*Creatin(?:in)?uri[a]?\s*[:=]?\s*$/i,
+    'RAC',
+  ],
   [/^\s*Bilirrubina\s+T\.?\s*$/i, 'Bilirrubina Total'],
   [/^\s*Bilirrubina\s+D\.?\s*$/i, 'Bilirrubina Directa'],
   [/^\s*Bilirrubina\s+I\.?\s*$/i, 'Bilirrubina Indirecta'],

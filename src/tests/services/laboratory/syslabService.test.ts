@@ -32,6 +32,17 @@ import {
   fetchSyslabPdfBlobUrl,
 } from '@/services/laboratory/syslabService';
 
+const setImportMetaEnv = (values: Record<string, unknown>) => {
+  Object.assign(import.meta.env as Record<string, unknown>, values);
+};
+
+const setRuntimeLocation = (port: string) => {
+  vi.stubGlobal('location', {
+    hostname: 'localhost',
+    port,
+  });
+};
+
 /* ------------------------------------------------------------------ */
 /*  cleanRutForSyslab                                                  */
 /* ------------------------------------------------------------------ */
@@ -79,6 +90,14 @@ describe('getSyslabBaseUrl', () => {
 /* ------------------------------------------------------------------ */
 
 describe('buildSyslabPdfUrl', () => {
+  beforeEach(() => {
+    setImportMetaEnv({
+      PROD: false,
+      VITE_SYSLAB_API_URL: 'http://localhost:3000',
+    });
+    setRuntimeLocation('3000');
+  });
+
   it('builds a proxy URL with encoded link parameter', () => {
     const link = 'http://10.4.69.90/syslab/detalleexamenes.php?id=123&user=abc';
     const result = buildSyslabPdfUrl(link);
@@ -94,6 +113,20 @@ describe('buildSyslabPdfUrl', () => {
     expect(result).not.toContain('&b=');
     expect(result).toContain(encodeURIComponent('&b=2'));
   });
+
+  it('builds a Netlify function URL under netlify dev', () => {
+    setImportMetaEnv({
+      PROD: false,
+      VITE_SYSLAB_API_URL: 'http://localhost:3000',
+    });
+    setRuntimeLocation('8888');
+
+    const link = 'http://example.com/pdf?id=1';
+    const result = buildSyslabPdfUrl(link);
+
+    expect(result).toContain('/.netlify/functions/syslab-proxy?action=pdf&link=');
+    expect(result).toContain(encodeURIComponent(link));
+  });
 });
 
 describe('fetchSyslabPdfBlobUrl', () => {
@@ -101,6 +134,11 @@ describe('fetchSyslabPdfBlobUrl', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    setImportMetaEnv({
+      PROD: false,
+      VITE_SYSLAB_API_URL: 'http://localhost:3000',
+    });
+    setRuntimeLocation('3000');
     global.fetch = mockFetch;
     vi.stubGlobal('URL', {
       createObjectURL: vi.fn(() => 'blob:syslab-pdf'),
@@ -141,11 +179,17 @@ describe('searchSyslabExams', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    setImportMetaEnv({
+      PROD: false,
+      VITE_SYSLAB_API_URL: 'http://localhost:3000',
+    });
+    setRuntimeLocation('3000');
     global.fetch = mockFetch;
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it('calls fetch with cleaned RUT in query parameter', async () => {
@@ -161,6 +205,23 @@ describe('searchSyslabExams', () => {
     expect(calledUrl).toContain('rut=5600574');
     expect(calledUrl).not.toContain('.');
     expect(calledUrl).not.toContain('-');
+  });
+
+  it('uses the Netlify function proxy under netlify dev', async () => {
+    setImportMetaEnv({
+      PROD: false,
+      VITE_SYSLAB_API_URL: 'http://localhost:3000',
+    });
+    setRuntimeLocation('8888');
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ success: true, data: [] }),
+    });
+
+    await searchSyslabExams('5.600.574-9');
+
+    const calledUrl = mockFetch.mock.calls[0][0] as string;
+    expect(calledUrl).toContain('/.netlify/functions/syslab-proxy?action=search&rut=5600574');
   });
 
   it('returns parsed JSON on success', async () => {
@@ -226,11 +287,17 @@ describe('fetchSyslabExamDetails', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    setImportMetaEnv({
+      PROD: false,
+      VITE_SYSLAB_API_URL: 'http://localhost:3000',
+    });
+    setRuntimeLocation('3000');
     global.fetch = mockFetch;
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it('sends POST with links array', async () => {
@@ -279,5 +346,22 @@ describe('fetchSyslabExamDetails', () => {
     });
 
     await expect(fetchSyslabExamDetails(['link'])).rejects.toThrow('Internal error');
+  });
+
+  it('uses the Netlify function proxy for details under netlify dev', async () => {
+    setImportMetaEnv({
+      PROD: false,
+      VITE_SYSLAB_API_URL: 'http://localhost:3000',
+    });
+    setRuntimeLocation('8888');
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ success: true, data: [] }),
+    });
+
+    await fetchSyslabExamDetails(['http://example.com/exam1']);
+
+    const [url] = mockFetch.mock.calls[0];
+    expect(url).toContain('/.netlify/functions/syslab-proxy?action=details');
   });
 });

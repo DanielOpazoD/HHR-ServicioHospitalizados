@@ -81,6 +81,54 @@ describe('mmrad-search', () => {
     expect(response.body).toContain('RUT');
   });
 
+  it('returns a clearer 403 when the caller has no authorized MMRAD role', async () => {
+    const handler = await loadHandler();
+    authorizeRoleRequestMock.mockRejectedValue(new Error("Access denied for role 'unauthorized'."));
+
+    const response = await handler({
+      httpMethod: 'GET',
+      headers: {
+        authorization: 'Bearer token-123',
+        origin: 'https://app.example.com',
+        'x-forwarded-for': '10.0.0.21',
+      },
+      body: null,
+      rawQuery: 'rut=12345678-9',
+    });
+
+    expect(response.statusCode).toBe(403);
+    expect(response.body).toContain('Acceso denegado para MMRAD');
+    expect(response.body).toContain('config/roles');
+  });
+
+  it('allows viewer users to query MMRAD', async () => {
+    const handler = await loadHandler();
+    authorizeRoleRequestMock.mockResolvedValue({
+      email: 'viewer@hospital.cl',
+      role: 'viewer',
+    });
+
+    fetchMock.mockResolvedValueOnce({
+      status: 200,
+      headers: new Headers(),
+      text: vi.fn().mockResolvedValue('<html><body>No login form here</body></html>'),
+    });
+
+    const response = await handler({
+      httpMethod: 'GET',
+      headers: {
+        authorization: 'Bearer token-123',
+        origin: 'https://app.example.com',
+        'x-forwarded-for': '10.0.0.23',
+      },
+      body: null,
+      rawQuery: 'rut=12345678-9',
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(fetchMock).toHaveBeenCalled();
+  });
+
   it('handles login failure gracefully (no search form found)', async () => {
     const handler = await loadHandler();
     // Step 1: GET home page — no login form in HTML
@@ -92,7 +140,7 @@ describe('mmrad-search', () => {
 
     const response = await handler({
       httpMethod: 'GET',
-      headers: { authorization: 'Bearer token-123' },
+      headers: { authorization: 'Bearer token-123', 'x-forwarded-for': '10.0.0.22' },
       body: null,
       rawQuery: 'rut=12345678-9',
     });
@@ -387,11 +435,11 @@ describe('mmrad-search', () => {
 
   it('rejects unauthorized roles before reaching MMRAD', async () => {
     const handler = await loadHandler();
-    authorizeRoleRequestMock.mockRejectedValue(new Error("Access denied for role 'viewer'."));
+    authorizeRoleRequestMock.mockRejectedValue(new Error("Access denied for role 'guest'."));
 
     const response = await handler({
       httpMethod: 'GET',
-      headers: { authorization: 'Bearer token-123' },
+      headers: { authorization: 'Bearer token-123', 'x-forwarded-for': '10.0.0.24' },
       body: null,
       rawQuery: 'rut=12345678-9',
     });

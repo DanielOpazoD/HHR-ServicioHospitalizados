@@ -31,8 +31,13 @@ const DEFAULT_TIMEOUT_MS = 30_000;
 /** Maximum number of retry attempts for transient network failures. */
 const MAX_RETRIES = 1;
 
-/** True when running on a deployed Netlify site (not localhost dev). */
-const isProduction = (): boolean => import.meta.env.PROD;
+const isNetlifyDevRuntime = (): boolean =>
+  typeof globalThis.location !== 'undefined' &&
+  /^(localhost|127\.0\.0\.1)$/.test(globalThis.location.hostname) &&
+  globalThis.location.port === '8888';
+
+/** True when requests should go through the Netlify Function proxy. */
+const shouldUseNetlifyProxy = (): boolean => import.meta.env.PROD || isNetlifyDevRuntime();
 
 /** Return the Syslab Express server base URL from env or default. */
 export const getSyslabBaseUrl = (): string =>
@@ -109,7 +114,7 @@ export const searchSyslabExams = async (rut: string): Promise<SyslabSearchRespon
   const cleanRut = cleanRutForSyslab(rut);
   const authHeaders = await resolveCurrentUserAuthHeaders();
 
-  const url = isProduction()
+  const url = shouldUseNetlifyProxy()
     ? buildSyslabProxyUrl(`?action=search&rut=${encodeURIComponent(cleanRut)}`)
     : `${getSyslabBaseUrl()}/api/exams?rut=${encodeURIComponent(cleanRut)}`;
 
@@ -130,7 +135,7 @@ export const searchSyslabExams = async (rut: string): Promise<SyslabSearchRespon
  */
 export const fetchSyslabExamDetails = async (links: string[]): Promise<SyslabDetailsResponse> => {
   const authHeaders = await resolveCurrentUserAuthHeaders();
-  const url = isProduction()
+  const url = shouldUseNetlifyProxy()
     ? buildSyslabProxyUrl('?action=details')
     : `${getSyslabBaseUrl()}/api/exams/details`;
 
@@ -158,7 +163,7 @@ export const fetchSyslabExamDetails = async (links: string[]): Promise<SyslabDet
  * In development, uses the Express proxy directly.
  */
 export const buildSyslabPdfUrl = (examLink: string): string =>
-  isProduction()
+  shouldUseNetlifyProxy()
     ? buildSyslabProxyUrl(`?action=pdf&link=${encodeURIComponent(examLink)}`)
     : `${getSyslabBaseUrl()}/api/exams/pdf?link=${encodeURIComponent(examLink)}`;
 

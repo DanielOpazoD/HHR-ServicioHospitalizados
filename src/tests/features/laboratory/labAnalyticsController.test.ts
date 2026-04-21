@@ -276,6 +276,90 @@ describe('buildAnalysisData', () => {
     expect(result.comparison).toEqual({});
   });
 
+  it('tracks trends for RPC and RAC but not urine density', () => {
+    const urineExamOne: SyslabExamItem = {
+      id: '500',
+      link: 'http://example.com/500',
+      date: '10/04/2026',
+      time: '08:00:00',
+      patientName: 'TEST',
+      origin: 'HOSP',
+      exams: ['QUIMICA/ORINA'],
+    };
+    const urineExamTwo: SyslabExamItem = {
+      id: '501',
+      link: 'http://example.com/501',
+      date: '20/04/2026',
+      time: '08:00:00',
+      patientName: 'TEST',
+      origin: 'HOSP',
+      exams: ['QUIMICA/ORINA'],
+    };
+
+    const result = buildAnalysisData(
+      [
+        {
+          url: urineExamOne.link!,
+          findings: [
+            {
+              section: 'QUIMICA/ORINA',
+              analysis: 'Rel. Proteinuria/Creatininuria',
+              result: '120',
+              unit: '',
+              refValue: '< 200,0',
+            },
+            {
+              section: 'RELAC. ALBUMINA/CREATINURIA',
+              analysis: 'RELAC. ALBUMINA/CREATINURIA',
+              result: '35',
+              unit: '',
+              refValue: '< 30,0',
+            },
+            {
+              section: 'ORINA FISICO-QUIMICO',
+              analysis: 'Densidad',
+              result: '1,015',
+              unit: '',
+              refValue: '',
+            },
+          ],
+        },
+        {
+          url: urineExamTwo.link!,
+          findings: [
+            {
+              section: 'QUIMICA/ORINA',
+              analysis: 'Rel. Proteinuria/Creatininuria',
+              result: '90',
+              unit: '',
+              refValue: '< 200,0',
+            },
+            {
+              section: 'RELAC. ALBUMINA/CREATINURIA',
+              analysis: 'RELAC. ALBUMINA/CREATINURIA',
+              result: '28',
+              unit: '',
+              refValue: '< 30,0',
+            },
+            {
+              section: 'ORINA FISICO-QUIMICO',
+              analysis: 'Densidad',
+              result: '1,010',
+              unit: '',
+              refValue: '',
+            },
+          ],
+        },
+      ],
+      [urineExamOne, urineExamTwo]
+    );
+
+    const urineTrendGroup = result.trendGroups.find(group => group.label === 'RPC / RAC');
+    expect(urineTrendGroup?.variables.RPC).toHaveLength(2);
+    expect(urineTrendGroup?.variables.RAC).toHaveLength(2);
+    expect(urineTrendGroup?.variables.Densidad).toBeUndefined();
+  });
+
   it('separates microbiology categories from one combined exam without mixing culture and PCR rows', () => {
     const combinedExam: SyslabExamItem = {
       id: '43091284',
@@ -467,12 +551,246 @@ describe('buildAnalysisData', () => {
 
     expect(result.comparison.RPC).toBeDefined();
     expect(result.comparison.RAC).toBeDefined();
-    expect(result.comparison.Leucocitos).toBeDefined();
-    expect(result.comparison.Bacterias).toBeDefined();
-    expect(result.comparison['Placas de pus']).toBeDefined();
+    expect(result.comparison.Leucocitos).toBeUndefined();
+    expect(result.comparison.Bacterias).toBeUndefined();
+    expect(result.comparison['Placas de pus']).toBeUndefined();
     expect(result.comparison.Proteinuria).toBeUndefined();
     expect(result.comparison.Creatininuria).toBeUndefined();
     expect(result.comparison.Microalbuminuria).toBeUndefined();
+    expect(result.comparison.Leucocitos).toBeUndefined();
+  });
+
+  it('excludes urine qualitative rows and MIDAS metadata from comparison while keeping RPC/RAC', () => {
+    const urineExam: SyslabExamItem = {
+      id: '43091921',
+      link: 'http://example.com/43091921',
+      date: '19/04/2026',
+      time: '19:55:00',
+      patientName: 'TEST',
+      origin: 'HOSP',
+      exams: ['ORINA FISICO-QUIMICO', 'QUIMICA/ORINA'],
+    };
+
+    const result = buildAnalysisData(
+      [
+        {
+          url: urineExam.link!,
+          findings: [
+            {
+              section: 'GENERAL',
+              analysis: 'N° ingreso a MIDAS',
+              result: '2605786',
+              unit: '',
+              refValue: '',
+            },
+            {
+              section: 'GENERAL',
+              analysis: 'Leucocitos',
+              result: 'Negativo',
+              unit: '',
+              refValue: '',
+              qualitative: true,
+            },
+            {
+              section: 'GENERAL',
+              analysis: 'Cuerpos Cetónicos',
+              result: 'Negativo',
+              unit: '',
+              refValue: '',
+              qualitative: true,
+            },
+            {
+              section: 'GENERAL',
+              analysis: 'Nitritos',
+              result: 'Negativo',
+              unit: '',
+              refValue: '',
+              qualitative: true,
+            },
+            {
+              section: 'GENERAL',
+              analysis: 'Rel. Proteinuria/Creatininuria',
+              result: '136,2',
+              unit: '',
+              refValue: '< 200,0',
+            },
+            {
+              section: 'GENERAL',
+              analysis: 'RELAC. ALBUMINA/CREATINURIA',
+              result: '238,9',
+              unit: '',
+              refValue: '< 30,0',
+            },
+            {
+              section: 'GENERAL',
+              analysis: 'Creatininuria',
+              result: '92,5',
+              unit: 'mg/dL',
+              refValue: '70,0 - 140,0',
+            },
+            {
+              section: 'GENERAL',
+              analysis: 'Proteinuria',
+              result: '126',
+              unit: 'mg/L',
+              refValue: '10 - 140',
+            },
+            {
+              section: 'GENERAL',
+              analysis: 'Microalbuminuria',
+              result: '221',
+              unit: 'mg/L',
+              refValue: '< 250',
+            },
+          ],
+        },
+      ],
+      [urineExam]
+    );
+
+    expect(result.comparison['N° ingreso a MIDAS']).toBeUndefined();
+    expect(result.comparison['Recuento Leucocitos']).toBeUndefined();
+    expect(result.comparison['Cuerpos Cetónicos']).toBeUndefined();
+    expect(result.comparison.Nitritos).toBeUndefined();
+    expect(result.comparison.Creatininuria).toBeUndefined();
+    expect(result.comparison.Proteinuria).toBeUndefined();
+    expect(result.comparison.Microalbuminuria).toBeUndefined();
+    expect(result.comparison.RPC).toBeDefined();
+    expect(result.comparison.RAC).toBeDefined();
+  });
+
+  it('excludes real urine-complete header rows and MIDAS metadata from exam 43091921 style details', () => {
+    const urineExam: SyslabExamItem = {
+      id: '43091921',
+      link: 'http://example.com/43091921',
+      date: '19/04/2026',
+      time: '19:55:00',
+      patientName: 'TEST',
+      origin: 'HOSP',
+      exams: ['ORINA FISICO-QUIMICO', 'SEDIMENTO URINARIO', 'QUIMICA/ORINA'],
+    };
+
+    const result = buildAnalysisData(
+      [
+        {
+          url: urineExam.link!,
+          findings: [
+            {
+              section: 'GENERAL',
+              analysis: 'ORINA FISICO-QUIMICO',
+              result: '',
+              unit: '',
+              refValue: '',
+            },
+            {
+              section: 'GENERAL',
+              analysis: 'N° ingreso a midas.',
+              result: '2605786',
+              unit: '',
+              refValue: '',
+            },
+            {
+              section: 'GENERAL',
+              analysis: 'Leucocitos',
+              result: 'Negativo',
+              unit: ' ',
+              refValue: '',
+              qualitative: true,
+            },
+            {
+              section: 'GENERAL',
+              analysis: 'Cuerpos Cetónicos',
+              result: 'Negativo',
+              unit: '',
+              refValue: '',
+              qualitative: true,
+            },
+            {
+              section: 'GENERAL',
+              analysis: 'Nitritos',
+              result: 'Negativo',
+              unit: '',
+              refValue: '',
+              qualitative: true,
+            },
+            {
+              section: 'GENERAL',
+              analysis: 'Sangre',
+              result: 'Negativo',
+              unit: '',
+              refValue: '',
+              qualitative: true,
+            },
+            {
+              section: 'GENERAL',
+              analysis: 'Urobilinógeno',
+              result: 'Negativo',
+              unit: '',
+              refValue: '',
+              qualitative: true,
+            },
+            {
+              section: 'GENERAL',
+              analysis: 'Glucosa',
+              result: 'Negativo',
+              unit: '',
+              refValue: '',
+              qualitative: true,
+            },
+            {
+              section: 'GENERAL',
+              analysis: 'Rel. Proteinuria/Creatininuria',
+              result: '136,2',
+              unit: '',
+              refValue: '< 200,0',
+            },
+            {
+              section: 'GENERAL',
+              analysis: 'RELAC. ALBUMINA/CREATINURIA',
+              result: '238,9',
+              unit: '',
+              refValue: '< 30,0',
+            },
+            {
+              section: 'GENERAL',
+              analysis: 'Creatininuria',
+              result: '92,5',
+              unit: 'mg/dL',
+              refValue: '70,0 - 140,0',
+            },
+            {
+              section: 'GENERAL',
+              analysis: 'Proteinuria',
+              result: '126',
+              unit: 'mg/L',
+              refValue: '10 - 140',
+            },
+            {
+              section: 'GENERAL',
+              analysis: 'Microalbuminuria',
+              result: '221',
+              unit: 'mg/L',
+              refValue: '< 250',
+            },
+          ],
+        },
+      ],
+      [urineExam]
+    );
+
+    expect(result.comparison['ORINA FISICO-QUIMICO']).toBeUndefined();
+    expect(result.comparison['N° ingreso a midas.']).toBeUndefined();
+    expect(result.comparison['Recuento Leucocitos']).toBeUndefined();
+    expect(result.comparison['Cuerpos Cetónicos']).toBeUndefined();
+    expect(result.comparison.Nitritos).toBeUndefined();
+    expect(result.comparison.Sangre).toBeUndefined();
+    expect(result.comparison['Urobilinógeno']).toBeUndefined();
+    expect(result.comparison.Glucosa).toBeUndefined();
+    expect(result.comparison.Creatininuria).toBeUndefined();
+    expect(result.comparison.Proteinuria).toBeUndefined();
+    expect(result.comparison.Microalbuminuria).toBeUndefined();
+    expect(result.comparison.RPC).toBeDefined();
+    expect(result.comparison.RAC).toBeDefined();
   });
 
   it('keeps general chemistry rows out of microbiology cards even inside mixed orders', () => {

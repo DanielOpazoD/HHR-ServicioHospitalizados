@@ -2,10 +2,72 @@ import type { LabResultRow, LabTrendPoint } from '@/types/domain/laboratory';
 import { parseRefRange } from './labFormattingController';
 import {
   collectMicrobiologyFinding,
-  hasMicrobiologyPattern,
+  resolveMicrobiologyCategoryForFinding,
 } from './labMicrobiologyAnalyticsController';
 import type { DetailProcessingContext } from './labAnalyticsContracts';
 import { isExcludedFromComparison, isTrendVariable } from './labAnalyticsVariableController';
+
+const isUrineComparisonExcluded = (finding: LabResultRow): boolean => {
+  const normalizeToken = (value: string): string =>
+    value
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .replace(/[°º]/g, ' ')
+      .replace(/[^A-Za-z0-9]+/g, ' ')
+      .toUpperCase();
+
+  const upperSection = normalizeToken(String(finding.section || ''));
+  const upperAnalysis = normalizeToken(String(finding.analysis || ''));
+  const upperResult = normalizeToken(String(finding.result || ''));
+  if (finding.analysis === 'RPC' || finding.analysis === 'RAC') {
+    return false;
+  }
+
+  const isUrineAnalysis =
+    upperAnalysis.includes('ORINA FISICO QUIMICO') ||
+    upperAnalysis.includes('SEDIMENTO URINARIO') ||
+    upperAnalysis.includes('CUERPOS CETON') ||
+    upperAnalysis.includes('NITRIT') ||
+    upperAnalysis.includes('SANGRE') ||
+    upperAnalysis.includes('UROBILIN') ||
+    upperAnalysis.includes('GLUCOSA') ||
+    upperAnalysis.includes('BILIRRUBINA') ||
+    upperAnalysis.includes('DENSIDAD') ||
+    upperAnalysis.includes('ASPECTO') ||
+    upperAnalysis.includes('COLOR') ||
+    upperAnalysis === 'PROTEINAS' ||
+    upperAnalysis.includes('PROTEINURIA') ||
+    upperAnalysis.includes('CREATININURIA') ||
+    upperAnalysis.includes('MICROALBUMINURIA') ||
+    upperAnalysis.includes('BACTERIAS') ||
+    upperAnalysis.includes('CILINDROS') ||
+    upperAnalysis.includes('PLACAS DE PUS') ||
+    upperAnalysis.includes('ERITROCITOS');
+
+  const isQualitativeUrineLeukocyte =
+    upperAnalysis.includes('LEUCOCITOS') &&
+    /NEGATIVO|NO SE OBSERVA|ESCASA|MODERADA|ABUNDANTE|\+|X CAMPO/.test(upperResult);
+
+  const isUrineMetadata =
+    upperAnalysis.includes('MIDAS') ||
+    upperResult.includes('MIDAS') ||
+    (upperAnalysis.includes('INGRESO') && upperAnalysis.includes('MIDAS')) ||
+    upperAnalysis.includes('FECHA Y HORA INGRESO SOLICITUD') ||
+    upperAnalysis.includes('FECHA Y HORA VALIDACION') ||
+    upperAnalysis.includes('DIRECTOR TECNICO') ||
+    upperAnalysis.includes('RESULTADO VIA WEB');
+
+  return (
+    upperSection.includes('ORINA') ||
+    upperSection.includes('SEDIMENTO') ||
+    upperSection.includes('ORINA FISICO') ||
+    upperSection.includes('FISICO-QUIMICO') ||
+    upperSection.includes('QUIMICA/ORINA') ||
+    isUrineMetadata ||
+    isUrineAnalysis ||
+    isQualitativeUrineLeukocyte
+  );
+};
 
 const collectBilirubinFinding = (
   bilirubinByCol: Record<string, { total?: string; directa?: string; indirecta?: string }>,
@@ -30,7 +92,11 @@ const collectComparisonFinding = (
   finding: LabResultRow,
   lowerAnalysis: string
 ) => {
-  if (isExcludedFromComparison(finding.analysis) || lowerAnalysis.includes('bilirrubina')) {
+  if (
+    isExcludedFromComparison(finding.analysis) ||
+    lowerAnalysis.includes('bilirrubina') ||
+    isUrineComparisonExcluded(finding)
+  ) {
     return;
   }
 
@@ -84,19 +150,18 @@ export const collectExamFinding = (finding: LabResultRow, input: DetailProcessin
   }
 
   const lowerAnalysis = finding.analysis.toLowerCase();
-  const examIsMicrobiology = input.microbiologyCategories.length > 0;
+  const microbiologyCategory = resolveMicrobiologyCategoryForFinding(
+    finding,
+    input.microbiologyCategories
+  );
 
-  if (
-    finding.qualitative ||
-    examIsMicrobiology ||
-    hasMicrobiologyPattern(finding.analysis) ||
-    hasMicrobiologyPattern(finding.result)
-  ) {
+  if (microbiologyCategory) {
     collectMicrobiologyFinding(
       finding,
       input.microbiologyCategories,
       input.microbiologyFindingsByCategory
     );
+    return;
   }
 
   collectBilirubinFinding(input.bilirubinByCol, input.colKey, lowerAnalysis, finding.result);

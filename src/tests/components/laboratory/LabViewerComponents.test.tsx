@@ -296,6 +296,7 @@ describe('LabViewerExamList', () => {
     onSelectByDays: vi.fn(),
     onSelectByDateRange: vi.fn(),
     onViewPdf: vi.fn(),
+    onCopySummary: vi.fn(async () => true),
   };
 
   beforeEach(() => vi.clearAllMocks());
@@ -316,13 +317,24 @@ describe('LabViewerExamList', () => {
     expect(screen.getByText('Ver PDF')).toBeInTheDocument();
   });
 
+  it('renders Copiar resumen button', () => {
+    render(<LabViewerExamList {...defaultProps} />);
+    expect(screen.getByText('Copiar resumen')).toBeInTheDocument();
+  });
+
   it('renders filter category chips when categories provided', () => {
-    render(<LabViewerExamList {...defaultProps} filterCategories={['HEMOGRAMA', 'BIOQUIMICA']} />);
+    render(
+      <LabViewerExamList
+        {...defaultProps}
+        filterCategories={['Hemograma', 'P. hepático', 'P. lipídico']}
+      />
+    );
     expect(screen.getByText('Todos')).toBeInTheDocument();
-    // HEMOGRAMA appears both as a filter chip and an exam tag; check the chip button exists
-    const hemogramaElements = screen.getAllByText('HEMOGRAMA');
-    expect(hemogramaElements.length).toBeGreaterThanOrEqual(2); // chip + exam tag
-    expect(screen.getByText('BIOQUIMICA')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Hemograma' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'P. hepático' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'P. lipídico' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Gases' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Otros' })).not.toBeInTheDocument();
   });
 
   it('renders date range inputs', () => {
@@ -342,6 +354,12 @@ describe('LabViewerExamList', () => {
     render(<LabViewerExamList {...defaultProps} />);
     await userEvent.click(screen.getByText('Ver PDF'));
     expect(defaultProps.onViewPdf).toHaveBeenCalledWith(MOCK_EXAM);
+  });
+
+  it('calls onCopySummary when Copiar resumen clicked', async () => {
+    render(<LabViewerExamList {...defaultProps} />);
+    await userEvent.click(screen.getByText('Copiar resumen'));
+    expect(defaultProps.onCopySummary).toHaveBeenCalledWith(MOCK_EXAM);
   });
 });
 

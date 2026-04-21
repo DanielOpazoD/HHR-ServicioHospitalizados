@@ -109,6 +109,27 @@ Chequeo operativo adicional:
    - `schema_ahead_of_client`
      Si hay mismatch real, no insistir con la sesión vieja: la acción correcta es actualización/recarga segura.
 
+## Caso 4.1: el usuario entra al shell, pero `LAB` o `MMRAD` devuelven `Access denied for role 'unauthorized'`
+
+Este caso ya no debe tratarse como problema genérico de `config/roles` hasta verificar convergencia.
+
+Orden correcto de revisión:
+
+1. confirmar que el correo esté presente en `config/roles`
+2. confirmar que el shell efectivamente entró con ese mismo correo
+3. confirmar que la Netlify Function esté usando la ruta canónica:
+   - `netlify/functions/lib/firebase-auth.ts`
+   - callable `checkUserRole`
+4. no asumir que un `403 unauthorized` implica ausencia del correo en `config/roles`
+5. si Netlify auth volvió a leer Firestore por una vía paralela, tratarlo como regresión de arquitectura y no como incidente operativo menor
+
+Señal de regresión típica:
+
+- shell entra;
+- `config/roles` está correcto;
+- `LAB/MMRAD` responden `unauthorized`;
+- y `netlify/functions/lib/firebase-auth.ts` ya no usa el callable canónico.
+
 ## Caso 5: tras `F5` no vuelve a la misma vista funcional
 
 1. validar que la URL conserve al menos:
@@ -156,3 +177,5 @@ Antes de eliminar la compatibilidad del alias legacy en functions o rules:
 - [src/services/auth/authRoleLookup.ts](../src/services/auth/authRoleLookup.ts)
 - [functions/lib/auth/authFunctionsFactory.js](../functions/lib/auth/authFunctionsFactory.js)
 - [functions/lib/auth/authHelpersFactory.js](../functions/lib/auth/authHelpersFactory.js)
+- [netlify/functions/lib/firebase-auth.ts](../netlify/functions/lib/firebase-auth.ts)
+- [docs/architecture/NETLIFY_AUTH_ROLE_CONVERGENCE.md](./architecture/NETLIFY_AUTH_ROLE_CONVERGENCE.md)

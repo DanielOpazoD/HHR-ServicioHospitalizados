@@ -304,16 +304,38 @@ describe('syslab-proxy', () => {
 
   it('rejects unauthorized roles before touching the upstream proxy', async () => {
     const handler = await loadHandler();
-    authorizeRoleRequestMock.mockRejectedValue(new Error("Access denied for role 'viewer'."));
+    authorizeRoleRequestMock.mockRejectedValue(new Error("Access denied for role 'guest'."));
 
     const response = await handler({
       httpMethod: 'GET',
-      headers: { authorization: 'Bearer token-123' },
+      headers: { authorization: 'Bearer token-123', 'x-forwarded-for': '10.0.0.31' },
       body: null,
       rawQuery: 'action=search&rut=12345678-9',
     });
 
     expect(response.statusCode).toBe(403);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('allows viewer users to query the upstream lab proxy', async () => {
+    const handler = await loadHandler();
+    authorizeRoleRequestMock.mockResolvedValue({
+      email: 'viewer@hospital.cl',
+      role: 'viewer',
+    });
+    fetchMock.mockResolvedValue({
+      status: 200,
+      json: vi.fn().mockResolvedValue({ exams: [] }),
+    });
+
+    const response = await handler({
+      httpMethod: 'GET',
+      headers: { authorization: 'Bearer token-123', 'x-forwarded-for': '10.0.0.32' },
+      body: null,
+      rawQuery: 'action=search&rut=12345678-9',
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(fetchMock).toHaveBeenCalled();
   });
 });

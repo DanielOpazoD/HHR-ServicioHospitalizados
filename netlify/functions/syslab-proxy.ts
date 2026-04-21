@@ -41,6 +41,7 @@ const SYSLAB_ALLOWED_ROLES = new Set([
   'doctor_urgency',
   'doctor_specialist',
   'editor',
+  'viewer',
 ]);
 
 interface SyslabProxyDependencies {

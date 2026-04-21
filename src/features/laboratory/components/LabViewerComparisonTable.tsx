@@ -15,59 +15,18 @@ import { LabExportConfigDialog } from './LabExportConfigDialog';
 const loadLabExcelExporter = async () =>
   import('../services/labExcelService').then(module => module.exportComparisonToExcel);
 
-const URINE_PHYSICAL_ANALYSES = new Set([
-  'Aspecto',
-  'Color',
-  'Sangre',
-  'Bilirrubina',
-  'Urobilinógeno',
-  'Cuerpos Cetónicos',
-  'Proteínas',
-  'Nitritos',
-  'pH',
-  'Densidad',
-  'Leucocitos',
-  'Glucosa',
-]);
-
-const URINE_SEDIMENT_ANALYSES = new Set([
-  'Eritrocitos',
-  'Leucocitos',
-  'Bacterias',
-  'Cilindros',
-  'Placas de pus',
-]);
-
-type ComparisonSectionLabel = 'Orina físico-químico' | 'Sedimento urinario' | 'RPC / RAC' | null;
+type ComparisonSectionLabel = 'RPC / RAC' | null;
 
 const getComparisonSectionLabel = (name: string, data: LabAnalysisData): ComparisonSectionLabel => {
   if (name === 'RPC' || name === 'RAC') {
     return 'RPC / RAC';
   }
 
-  const firstRow = Object.values(data.comparison[name] || {})[0];
-  const upperSection = String(firstRow?.section || '').toUpperCase();
-
-  if (upperSection.includes('SEDIMENTO') || URINE_SEDIMENT_ANALYSES.has(name)) {
-    return 'Sedimento urinario';
-  }
-
-  if (
-    upperSection.includes('ORINA') ||
-    upperSection.includes('FISICO-QUIMICO') ||
-    upperSection.includes('QUIMICA/ORINA') ||
-    URINE_PHYSICAL_ANALYSES.has(name)
-  ) {
-    return 'Orina físico-químico';
-  }
-
   return null;
 };
 
 const COMPARISON_SECTION_ORDER: Record<Exclude<ComparisonSectionLabel, null>, number> = {
-  'Orina físico-químico': 0,
-  'Sedimento urinario': 1,
-  'RPC / RAC': 2,
+  'RPC / RAC': 0,
 };
 
 const ComparisonRow: React.FC<{

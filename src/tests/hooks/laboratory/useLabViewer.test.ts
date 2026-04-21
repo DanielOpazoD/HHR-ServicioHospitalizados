@@ -16,6 +16,7 @@ vi.unmock('@/features/laboratory/constants/labConstants');
 const mockSearchSyslabExams = vi.fn();
 const mockFetchSyslabExamDetails = vi.fn();
 const mockEnrichMicrobiologyDetailsFromPdf = vi.fn();
+const mockWriteClipboardText = vi.fn();
 
 vi.mock('@/services/laboratory/syslabService', () => ({
   searchSyslabExams: (...args: unknown[]) => mockSearchSyslabExams(...args),
@@ -32,6 +33,19 @@ vi.mock('@/services/utils/loggerScope', () => ({
     debug: vi.fn(),
   }),
 }));
+
+vi.mock('@/shared/runtime/browserWindowRuntime', () => ({
+  writeClipboardText: (...args: unknown[]) => mockWriteClipboardText(...args),
+}));
+
+vi.mock('@/features/laboratory/controllers/labSummaryController', async importOriginal => {
+  const original =
+    await importOriginal<typeof import('@/features/laboratory/controllers/labSummaryController')>();
+  return {
+    ...original,
+    buildLabSummaryText: vi.fn(() => 'Laboratorio (06/04/2026 13:08): Hb 14'),
+  };
+});
 
 vi.mock('@/features/laboratory/services/labFirestoreService', () => ({
   saveLabResults: vi.fn(),
@@ -130,6 +144,7 @@ describe('useLabViewer', () => {
     mockEnrichMicrobiologyDetailsFromPdf.mockImplementation(
       async (details: SyslabExamDetail[]) => details
     );
+    mockWriteClipboardText.mockResolvedValue(undefined);
   });
 
   it('deduplicates patients by RUT', () => {
@@ -273,6 +288,36 @@ describe('useLabViewer', () => {
 
     act(() => result.current.closeAnalysis());
     expect(result.current.analysisData).toBeNull();
+  });
+
+  it('copyExamSummary writes the single-exam summary to clipboard', async () => {
+    mockFetchSyslabExamDetails.mockResolvedValue({
+      success: true,
+      data: [
+        {
+          url: MOCK_EXAM.link,
+          findings: [
+            {
+              section: 'HEMOGRAMA',
+              analysis: 'Hemoglobina',
+              result: '14',
+              unit: 'g/dL',
+              refValue: '12-16',
+            },
+          ],
+        },
+      ],
+    });
+
+    const { result } = renderHook(() => useLabViewer(PATIENTS), { wrapper: createWrapper() });
+
+    await act(async () => {
+      const copied = await result.current.copyExamSummary(MOCK_EXAM);
+      expect(copied).toBe(true);
+    });
+
+    expect(mockFetchSyslabExamDetails).toHaveBeenCalledWith([MOCK_EXAM.link]);
+    expect(mockWriteClipboardText).toHaveBeenCalledWith('Laboratorio (06/04/2026 13:08): Hb 14');
   });
 
   it('setAnalysisView changes active tab', () => {

@@ -63,6 +63,10 @@ function excelJsRuntimeAssetPlugin(): Plugin {
 
 export default defineConfig(({ mode }) => {
   const isProduction = mode === 'production';
+  const isNetlifyLocalDev =
+    process.env.NETLIFY_LOCAL === 'true' ||
+    process.env.NETLIFY === 'true' ||
+    process.env.CONTEXT === 'dev';
   const buildVersionInfo = {
     version: Date.now().toString(),
     buildDate: new Date().toISOString(),
@@ -72,12 +76,17 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 3000,
       host: '0.0.0.0',
+      hmr: isNetlifyLocalDev ? false : undefined,
     },
     plugins: [
       versionPlugin(buildVersionInfo),
       excelJsRuntimeAssetPlugin(),
       minsalSharedInteropPlugin(__dirname),
-      react(),
+      // plugin-react supports fastRefresh at runtime, but current bundled types
+      // do not expose the option in this repo's version matrix.
+      react({
+        fastRefresh: !isNetlifyLocalDev,
+      } as unknown as Parameters<typeof react>[0]),
       tailwindcss(),
       // PWA plugin configuration
       VitePWA({

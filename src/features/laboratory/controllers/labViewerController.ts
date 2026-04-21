@@ -30,7 +30,9 @@ export const resolveLabExamFilterCategories = (examList: SyslabExamItem[]): stri
       const category = EXAM_FILTER_CATEGORIES.find(entry =>
         entry.patterns.some(pattern => upperExamName.includes(pattern))
       );
-      categories.add(category?.label || 'Otros');
+      if (category) {
+        categories.add(category.label);
+      }
     }
   }
 

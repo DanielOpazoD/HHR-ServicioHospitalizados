@@ -37,6 +37,22 @@ export type AuthorizedRoleRequest = {
 };
 
 type FetchLike = typeof fetch;
+type RoleResolutionOptions = {
+  bearerToken?: string;
+  fetchImpl?: FetchLike;
+  throwOnLookupError?: boolean;
+};
+type CallableRoleResponse = {
+  role?: string | null;
+};
+type CallableEnvelope = {
+  result?: CallableRoleResponse | null;
+  data?: CallableRoleResponse | null;
+  error?: {
+    message?: string;
+    status?: string;
+  } | null;
+};
 
 const { normalizeEmail: normalizeImportedEmail } = authEmailUtilsModule as AuthEmailUtilsModule;
 
@@ -87,6 +103,66 @@ let cachedFirebaseSigningKeys: {
   expiresAt: number;
   certificates: Record<string, string>;
 } | null = null;
+
+export const resetFirebaseSigningKeyCacheForTests = (): void => {
+  cachedFirebaseSigningKeys = null;
+};
+
+const normalizeRoleAlias = (role: unknown): string => {
+  if (role === 'viewer_census') {
+    return 'viewer';
+  }
+
+  return typeof role === 'string' && role.trim() ? role : 'unauthorized';
+};
+
+const resolveFunctionsRegion = (): string => {
+  const explicitRegion = String(process.env.FIREBASE_FUNCTIONS_REGION || '').trim();
+  return explicitRegion || 'us-central1';
+};
+
+const buildCheckUserRoleCallableUrl = (): string => {
+  const projectId = resolveFirebaseProjectId();
+  const region = resolveFunctionsRegion();
+  return `https://${region}-${projectId}.cloudfunctions.net/checkUserRole`;
+};
+
+const parseCallableRoleResponse = (payload: CallableEnvelope): string => {
+  if (payload?.error?.message) {
+    throw new Error(payload.error.message);
+  }
+
+  const resultRole = payload?.result?.role ?? payload?.data?.role;
+  return normalizeRoleAlias(resultRole);
+};
+
+const resolveRoleViaCanonicalCallable = async (
+  bearerToken: string,
+  fetchImpl: FetchLike
+): Promise<string> => {
+  const response = await fetchImpl(buildCheckUserRoleCallableUrl(), {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${bearerToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ data: {} }),
+  });
+
+  let payload: CallableEnvelope | null = null;
+  try {
+    payload = (await response.json()) as CallableEnvelope;
+  } catch {
+    payload = null;
+  }
+
+  if (!response.ok) {
+    const message = payload?.error?.message || `Canonical role lookup failed (${response.status}).`;
+    throw new Error(message);
+  }
+
+  return parseCallableRoleResponse(payload || {});
+};
 
 const fetchFirebaseSigningKeys = async (fetchImpl: FetchLike): Promise<Record<string, string>> => {
   if (cachedFirebaseSigningKeys && cachedFirebaseSigningKeys.expiresAt > Date.now()) {
@@ -204,25 +280,35 @@ export const verifyFirebaseIdToken = async (
 
 export const resolveRoleForEmail = async (
   db: Firestore,
-  email: string | undefined
+  email: string | undefined,
+  options?: RoleResolutionOptions
 ): Promise<string> => {
   const cleanEmail = normalizeEmail(email || '');
   if (!cleanEmail) {
     return 'unauthorized';
   }
 
+  if (options?.bearerToken) {
+    try {
+      return await resolveRoleViaCanonicalCallable(options.bearerToken, options.fetchImpl ?? fetch);
+    } catch (error) {
+      console.warn(`[NetlifyAuth] canonical role lookup failed for ${cleanEmail}:`, error);
+      if (options.throwOnLookupError) {
+        throw new Error(
+          error instanceof Error && error.message
+            ? error.message
+            : 'Canonical role lookup unavailable.'
+        );
+      }
+      return 'unauthorized';
+    }
+  }
+
   try {
     const roleDoc = await getDoc(doc(db, 'config', 'roles'));
     if (roleDoc.exists()) {
       const rolesMap = (roleDoc.data() || {}) as Record<string, unknown>;
-      const resolvedRole = rolesMap[cleanEmail];
-      if (resolvedRole === 'viewer_census') {
-        return 'viewer';
-      }
-
-      if (typeof resolvedRole === 'string' && resolvedRole.trim()) {
-        return resolvedRole;
-      }
+      return normalizeRoleAlias(rolesMap[cleanEmail]);
     }
   } catch (error) {
     console.warn(`[NetlifyAuth] resolveRoleForEmail failed for ${cleanEmail}:`, error);
@@ -234,7 +320,8 @@ export const resolveRoleForEmail = async (
 export const authorizeRoleRequest = async (
   db: Firestore,
   authorizationHeader: string | undefined,
-  allowedRoles: ReadonlySet<string>
+  allowedRoles: ReadonlySet<string>,
+  options?: Pick<RoleResolutionOptions, 'fetchImpl'>
 ): Promise<AuthorizedRoleRequest> => {
   const token = extractBearerToken(authorizationHeader);
   const decodedToken = await verifyFirebaseIdToken(token);
@@ -243,7 +330,11 @@ export const authorizeRoleRequest = async (
     throw new Error('Authenticated user has no email claim.');
   }
 
-  const role = await resolveRoleForEmail(db, email);
+  const role = await resolveRoleForEmail(db, email, {
+    bearerToken: token,
+    fetchImpl: options?.fetchImpl,
+    throwOnLookupError: true,
+  });
   if (!allowedRoles.has(role)) {
     throw new Error(`Access denied for role '${role}'.`);
   }

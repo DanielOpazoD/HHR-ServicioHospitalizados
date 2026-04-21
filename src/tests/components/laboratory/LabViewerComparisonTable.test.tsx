@@ -120,25 +120,6 @@ describe('LabViewerComparisonTable', () => {
     const urineData: LabAnalysisData = {
       ...MOCK_ANALYSIS,
       comparison: {
-        Sangre: {
-          '08/04/2026 14:00': {
-            section: 'ORINA FISICO-QUIMICO',
-            analysis: 'Sangre',
-            result: 'Negativo',
-            unit: '',
-            refValue: '',
-            qualitative: true,
-          },
-        },
-        Bacterias: {
-          '08/04/2026 14:00': {
-            section: 'SEDIMENTO URINARIO',
-            analysis: 'Bacterias',
-            result: 'Escasa cantidad',
-            unit: '',
-            refValue: '',
-          },
-        },
         RPC: {
           '08/04/2026 14:00': {
             section: 'QUIMICA/ORINA',
@@ -153,11 +134,9 @@ describe('LabViewerComparisonTable', () => {
 
     render(<LabViewerComparisonTable data={urineData} patient={MOCK_PATIENT} />);
 
-    expect(screen.getByText('Orina físico-químico')).toBeInTheDocument();
-    expect(screen.getByText('Sedimento urinario')).toBeInTheDocument();
     expect(screen.getByText('RPC / RAC')).toBeInTheDocument();
-    expect(screen.getByText('Sangre')).toBeInTheDocument();
-    expect(screen.getByText('Bacterias')).toBeInTheDocument();
     expect(screen.getByText('RPC')).toBeInTheDocument();
+    expect(screen.queryByText('Orina físico-químico')).not.toBeInTheDocument();
+    expect(screen.queryByText('Sedimento urinario')).not.toBeInTheDocument();
   });
 });

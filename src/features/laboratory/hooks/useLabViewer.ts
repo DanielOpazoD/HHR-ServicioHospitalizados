@@ -8,6 +8,7 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { searchSyslabExams, fetchSyslabExamDetails } from '@/services/laboratory/syslabService';
+import { writeClipboardText } from '@/shared/runtime/browserWindowRuntime';
 import { queryKeys } from '@/config/queryClient';
 import type {
   SyslabExamItem,
@@ -18,6 +19,7 @@ import type {
 import type { ProgressState } from '../types/labViewerTypes';
 import { SEARCH_STEPS, ANALYSIS_STEPS, STEP_INTERVAL_MS } from '../constants/labConstants';
 import { buildAnalysisData } from '../controllers/labAnalyticsController';
+import { buildLabSummaryText } from '../controllers/labSummaryController';
 import {
   buildUniqueLabPatients,
   filterLabExamsByCategory,
@@ -67,6 +69,7 @@ export interface UseLabViewerReturn {
   selectByDays: (days: number) => void;
   selectByDateRange: (from: Date, to: Date) => void;
   analyzeSelected: () => Promise<void>;
+  copyExamSummary: (exam: SyslabExamItem) => Promise<boolean>;
   closeAnalysis: () => void;
   setAnalysisView: (tab: AnalysisViewTab) => void;
 }
@@ -336,6 +339,45 @@ export const useLabViewer = (
     }
   }, [examList, selectedExamIds, selectedRut]);
 
+  const copyExamSummary = useCallback(async (exam: SyslabExamItem): Promise<boolean> => {
+    if (!exam.link) {
+      setError('El examen seleccionado no tiene PDF disponible para construir el resumen.');
+      return false;
+    }
+
+    setError(null);
+
+    try {
+      const data = await fetchSyslabExamDetails([exam.link]);
+      if (!mountedRef.current) return false;
+
+      if (!data.success) {
+        setError(data.error || 'No se pudieron obtener los detalles del examen seleccionado.');
+        return false;
+      }
+
+      const detail = data.data[0];
+      const findings = detail?.findings || [];
+      if (findings.length === 0) {
+        setError('El examen seleccionado no tiene resultados estructurados para copiar.');
+        return false;
+      }
+
+      const summary = buildLabSummaryText(findings, exam.date, exam.time);
+      if (!summary) {
+        setError('No se pudo construir el resumen clínico del examen seleccionado.');
+        return false;
+      }
+
+      await writeClipboardText(summary);
+      return true;
+    } catch (err) {
+      if (!mountedRef.current) return false;
+      setError(resolveLabViewerAnalysisErrorMessage(err));
+      return false;
+    }
+  }, []);
+
   const closeAnalysis = useCallback(() => {
     setAnalysisData(null);
     setAnalysisView('trends');
@@ -369,6 +411,7 @@ export const useLabViewer = (
     selectByDays,
     selectByDateRange,
     analyzeSelected,
+    copyExamSummary,
     closeAnalysis,
     setAnalysisView,
   };

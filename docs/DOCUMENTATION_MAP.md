@@ -1,6 +1,6 @@
 # Documentation Map
 
-Última actualización: 2026-04-20
+Última actualización: 2026-04-21
 
 > Índice único del repositorio. Si un documento nuevo no aparece aquí, o queda
 > sin categoría, debe añadirse en el mismo PR que lo crea. `check:docs-drift`
@@ -82,6 +82,7 @@ Documentos que ayudan a ejecutar trabajo, validar cambios o entender un área co
 - [docs/DEVELOPER_COMMANDS.md](DEVELOPER_COMMANDS.md)
 - [rules/README.md](../rules/README.md)
 - [docs/TEST_MEGATEST_BACKLOG.md](TEST_MEGATEST_BACKLOG.md)
+- [docs/architecture/NETLIFY_AUTH_ROLE_CONVERGENCE.md](architecture/NETLIFY_AUTH_ROLE_CONVERGENCE.md)
 
 ### Histórica o de trabajo
 

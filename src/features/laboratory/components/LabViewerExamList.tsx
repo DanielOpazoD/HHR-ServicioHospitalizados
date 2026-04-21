@@ -1,6 +1,6 @@
 import React from 'react';
 import clsx from 'clsx';
-import { Calendar, FileText } from 'lucide-react';
+import { Calendar, Check, Clipboard, FileText } from 'lucide-react';
 import type { SyslabExamItem } from '@/types/domain/laboratory';
 
 interface LabViewerExamListProps {
@@ -14,6 +14,7 @@ interface LabViewerExamListProps {
   onSelectByDays: (days: number) => void;
   onSelectByDateRange: (from: Date, to: Date) => void;
   onViewPdf: (exam: SyslabExamItem) => void;
+  onCopySummary: (exam: SyslabExamItem) => Promise<boolean>;
 }
 
 export const LabViewerExamList: React.FC<LabViewerExamListProps> = ({
@@ -27,9 +28,12 @@ export const LabViewerExamList: React.FC<LabViewerExamListProps> = ({
   onSelectByDays,
   onSelectByDateRange,
   onViewPdf,
+  onCopySummary,
 }) => {
   const [dateFrom, setDateFrom] = React.useState('');
   const [dateTo, setDateTo] = React.useState('');
+  const [copiedExamId, setCopiedExamId] = React.useState<string | null>(null);
+  const [copyingExamId, setCopyingExamId] = React.useState<string | null>(null);
 
   const selectableExams = exams.filter(e => e.link);
   const allSelected =
@@ -44,8 +48,19 @@ export const LabViewerExamList: React.FC<LabViewerExamListProps> = ({
     onSelectByDateRange(from, to);
   };
 
+  const handleCopySummary = async (exam: SyslabExamItem) => {
+    setCopyingExamId(exam.id);
+    const copied = await onCopySummary(exam);
+    setCopyingExamId(null);
+    if (!copied) return;
+    setCopiedExamId(exam.id);
+    window.setTimeout(() => {
+      setCopiedExamId(current => (current === exam.id ? null : current));
+    }, 2000);
+  };
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 pb-24">
       <div className="flex items-center justify-between flex-wrap gap-1">
         <div className="flex items-center gap-2 flex-wrap">
           <div>
@@ -180,14 +195,33 @@ export const LabViewerExamList: React.FC<LabViewerExamListProps> = ({
                 </div>
               </div>
               {exam.link && (
-                <button
-                  type="button"
-                  onClick={() => onViewPdf(exam)}
-                  className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-[11px] font-medium text-emerald-700 transition-colors hover:bg-emerald-50 hover:text-emerald-800"
-                >
-                  <FileText size={12} />
-                  Ver PDF
-                </button>
+                <div className="shrink-0 flex flex-col items-stretch gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onViewPdf(exam)}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-[11px] font-medium text-emerald-700 transition-colors hover:bg-emerald-50 hover:text-emerald-800"
+                  >
+                    <FileText size={12} />
+                    Ver PDF
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleCopySummary(exam)}
+                    disabled={copyingExamId === exam.id}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-800 disabled:opacity-50"
+                  >
+                    {copiedExamId === exam.id ? (
+                      <Check size={12} className="text-emerald-600" />
+                    ) : (
+                      <Clipboard size={12} />
+                    )}
+                    {copiedExamId === exam.id
+                      ? 'Copiado'
+                      : copyingExamId === exam.id
+                        ? 'Copiando...'
+                        : 'Copiar resumen'}
+                  </button>
+                </div>
               )}
             </div>
           );

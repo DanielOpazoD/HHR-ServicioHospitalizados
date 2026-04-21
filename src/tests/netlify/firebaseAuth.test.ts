@@ -11,6 +11,7 @@ vi.mock('firebase/firestore', () => ({
 import {
   authorizeRoleRequest,
   extractBearerToken,
+  resetFirebaseSigningKeyCacheForTests,
   resolveRoleForEmail,
   verifyFirebaseIdToken,
 } from '../../../netlify/functions/lib/firebase-auth';
@@ -30,6 +31,7 @@ describe('firebase-auth netlify helper', () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     vi.setSystemTime(fixedNow);
+    resetFirebaseSigningKeyCacheForTests();
     process.env = {
       ...originalEnv,
       VITE_FIREBASE_PROJECT_ID: 'hhr-pruebas',
@@ -90,6 +92,26 @@ describe('firebase-auth netlify helper', () => {
     return `${signingInput}.${base64UrlEncode(signature)}`;
   };
 
+  const mockCanonicalRoleLookup = (role: string, status = 200) => {
+    vi.mocked(global.fetch)
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          'test-kid': publicKey.export({ type: 'pkcs1', format: 'pem' }).toString(),
+        }),
+        headers: new Headers({
+          'cache-control': 'public, max-age=3600, must-revalidate, no-transform',
+        }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: status >= 200 && status < 300,
+        status,
+        json: async () => ({ result: { role } }),
+        headers: new Headers(),
+      } as Response);
+  };
+
   it('extracts bearer tokens from the authorization header', () => {
     expect(extractBearerToken('Bearer abc.123')).toBe('abc.123');
     expect(() => extractBearerToken(undefined)).toThrow('Missing Authorization bearer token');
@@ -139,18 +161,23 @@ describe('firebase-auth netlify helper', () => {
   });
 
   it('authorizes allowed roles resolved from config/roles', async () => {
+    mockCanonicalRoleLookup('doctor_urgency');
+
     const result = await authorizeRoleRequest(
       { kind: 'firestore' } as never,
       `Bearer ${createToken()}`,
       new Set(['doctor_urgency'])
     );
 
-    expect(docMock).toHaveBeenCalledWith({ kind: 'firestore' }, 'config', 'roles');
     expect(result).toEqual(
       expect.objectContaining({
         email: 'doctor@hospital.cl',
         role: 'doctor_urgency',
       })
+    );
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(global.fetch).mock.calls[1]?.[0]).toBe(
+      'https://us-central1-hhr-pruebas.cloudfunctions.net/checkUserRole'
     );
   });
 
@@ -168,6 +195,8 @@ describe('firebase-auth netlify helper', () => {
   });
 
   it('rejects authenticated users with roles outside the allowed set', async () => {
+    mockCanonicalRoleLookup('doctor_urgency');
+
     await expect(
       authorizeRoleRequest(
         { kind: 'firestore' } as never,
@@ -175,5 +204,52 @@ describe('firebase-auth netlify helper', () => {
         new Set(['admin'])
       )
     ).rejects.toThrow("Access denied for role 'doctor_urgency'");
+  });
+
+  it('does not degrade shell-authorized admins to unauthorized inside netlify auth', async () => {
+    mockCanonicalRoleLookup('admin');
+
+    await expect(
+      authorizeRoleRequest(
+        { kind: 'firestore' } as never,
+        `Bearer ${createToken({ email: 'daniel.opazo@hospitalhangaroa.cl' })}`,
+        new Set(['admin', 'viewer'])
+      )
+    ).resolves.toEqual(
+      expect.objectContaining({
+        email: 'daniel.opazo@hospitalhangaroa.cl',
+        role: 'admin',
+      })
+    );
+  });
+
+  it('throws when the canonical callable role lookup is unavailable', async () => {
+    vi.mocked(global.fetch)
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          'test-kid': publicKey.export({ type: 'pkcs1', format: 'pem' }).toString(),
+        }),
+        headers: new Headers({
+          'cache-control': 'public, max-age=3600, must-revalidate, no-transform',
+        }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: async () => ({
+          error: { message: 'canonical backend down' },
+        }),
+        headers: new Headers(),
+      } as Response);
+
+    await expect(
+      authorizeRoleRequest(
+        { kind: 'firestore' } as never,
+        `Bearer ${createToken()}`,
+        new Set(['doctor_urgency'])
+      )
+    ).rejects.toThrow('canonical backend down');
   });
 });

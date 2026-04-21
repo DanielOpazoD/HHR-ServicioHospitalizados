@@ -36,7 +36,21 @@ const MMRAD_ALLOWED_ROLES = new Set([
   'doctor_urgency',
   'doctor_specialist',
   'editor',
+  'viewer',
 ]);
+
+const resolveMmradAuthorizationErrorMessage = (message: string): string => {
+  if (message.includes("Access denied for role 'unauthorized'")) {
+    return 'Acceso denegado para MMRAD. Tu correo no tiene un rol autorizado en config/roles o la sesión local no corresponde al entorno actual.';
+  }
+
+  const deniedRoleMatch = message.match(/Access denied for role '([^']+)'/);
+  if (deniedRoleMatch) {
+    return `Acceso denegado para MMRAD. El rol '${deniedRoleMatch[1]}' no tiene permiso para consultar radiología.`;
+  }
+
+  return message;
+};
 
 interface MMRADSearchDependencies {
   getFirebaseServer: typeof getFirebaseServer;
@@ -471,10 +485,12 @@ export const createMMRADSearchHandler = (
     try {
       await dependencies.authorizeRoleRequest(db, authorizationHeader, MMRAD_ALLOWED_ROLES);
     } catch (error) {
-      const message =
+      const rawMessage =
         error instanceof Error ? error.message : 'No autorizado para consultar radiología.';
       const statusCode =
-        message.includes('Access denied') || message.includes('no email claim') ? 403 : 401;
+        rawMessage.includes('Access denied') || rawMessage.includes('no email claim') ? 403 : 401;
+      const message =
+        statusCode === 403 ? resolveMmradAuthorizationErrorMessage(rawMessage) : rawMessage;
       return buildJsonResponse(statusCode, { error: message }, { requestOrigin });
     }
 

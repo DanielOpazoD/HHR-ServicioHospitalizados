@@ -70,6 +70,22 @@ describe('mmradService', () => {
     );
   });
 
+  it('surfaces a clearer authorization error for local Netlify dev sessions', async () => {
+    mockFetch.mockResolvedValue({
+      ok: false,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: () =>
+        Promise.resolve({
+          error:
+            'Acceso denegado para MMRAD. Tu correo no tiene un rol autorizado en config/roles o la sesión local no corresponde al entorno actual.',
+        }),
+    });
+
+    await expect(searchMMRADExams({ rut: '12.345.678-9' })).rejects.toThrow(
+      /http:\/\/localhost:8888\/.*vuelve a iniciar sesión/i
+    );
+  });
+
   it('fetches the proxied PDF with auth headers and returns a blob URL', async () => {
     mockFetch.mockResolvedValue({
       ok: true,

@@ -56,6 +56,26 @@ Puntos clave:
 - si aparece un alias legacy de rol en `config/roles`, backend y Gestión de Roles lo recanonizan a `viewer`
 - Gestión de Roles además intenta resincronizar el custom claim del usuario afectado cuando detecta esa recanonización
 
+## 3.1 Convergencia obligatoria con Netlify Functions
+
+`LAB` y `MMRAD` no pueden usar una semántica distinta de rol respecto del shell.
+
+Regla vigente:
+
+- el shell resuelve rol por el callable `checkUserRole`;
+- las Netlify Functions sensibles también deben resolver el rol efectivo por ese mismo callable;
+- `config/roles` sigue siendo la fuente de verdad;
+- claims sincronizados son auxiliares, no la fuente primaria para `LAB/MMRAD`.
+
+Esto evita el incidente clásico:
+
+- usuario entra al shell;
+- pero `syslab-proxy` o `mmrad-search` lo rechazan como `unauthorized`.
+
+Documento específico:
+
+- [Netlify Auth Role Convergence](./architecture/NETLIFY_AUTH_ROLE_CONVERGENCE.md)
+
 ## 4. Política de compatibilidad legacy
 
 La compatibilidad con alias legacy como `viewer_census` se mantiene mientras esta aplicación aún no sea la versión oficial. Esa compatibilidad es una protección de migración, no una superficie para construir features nuevas.
@@ -123,6 +143,7 @@ Efecto esperado:
 - [src/services/auth/authRoleLookup.ts](../src/services/auth/authRoleLookup.ts)
 - [functions/lib/auth/authFunctionsFactory.js](../functions/lib/auth/authFunctionsFactory.js)
 - [functions/lib/auth/authHelpersFactory.js](../functions/lib/auth/authHelpersFactory.js)
+- [netlify/functions/lib/firebase-auth.ts](../netlify/functions/lib/firebase-auth.ts)
 - [firestore.rules](../firestore.rules)
 
 ## 12. Recovery administrativo

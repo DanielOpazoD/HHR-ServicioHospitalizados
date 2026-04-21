@@ -118,6 +118,7 @@ describe('normalizeAnalysisName', () => {
     expect(normalizeAnalysisName('Rel. Proteinuria/Creatininuria', 'QUIMICA/ORINA')).toBe('RPC');
     expect(normalizeAnalysisName('Relacion Albumina/Creatininuri', 'QUIMICA/ORINA')).toBe('RAC');
     expect(normalizeAnalysisName('Relación Albumina / Creatininuria', 'QUIMICA/ORINA')).toBe('RAC');
+    expect(normalizeAnalysisName('RELAC. ALBUMINA/CREATINURIA', 'GENERAL')).toBe('RAC');
   });
 });
 

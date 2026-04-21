@@ -36,6 +36,14 @@ export interface MMRADSearchParams {
 
 const buildMMRADProxyUrl = (query: string): string => `/.netlify/functions/mmrad-search${query}`;
 
+const resolveMmradUserFacingError = (message: string): string => {
+  if (message.includes('Acceso denegado para MMRAD')) {
+    return `${message} En desarrollo local, entra por http://localhost:8888/ y vuelve a iniciar sesión si cambiaste de entorno.`;
+  }
+
+  return message;
+};
+
 export const buildMMRADPdfUrl = (pdfLink: string): string =>
   buildMMRADProxyUrl(`?action=pdf&link=${encodeURIComponent(pdfLink)}`);
 
@@ -87,7 +95,7 @@ export const searchMMRADExams = async ({
         mmradLogger.warn('Failed to parse MMRAD error response body', error);
         return { error: 'Error de conexión' };
       });
-      throw new Error(errorData.error || `Error ${response.status}`);
+      throw new Error(resolveMmradUserFacingError(errorData.error || `Error ${response.status}`));
     }
 
     return await response.json();

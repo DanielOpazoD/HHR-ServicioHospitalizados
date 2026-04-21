@@ -166,7 +166,7 @@ const appendMicrobiologyFinding = (
   findingsByCategory.set(category, [...categoryFindings, summaryEntry]);
 };
 
-const getMicrobiologyCategoryForFinding = (
+export const resolveMicrobiologyCategoryForFinding = (
   finding: LabResultRow,
   availableCategories: LabMicrobiologyCategory[]
 ): LabMicrobiologyCategory | null => {
@@ -190,7 +190,7 @@ export const collectMicrobiologyFinding = (
   availableCategories: LabMicrobiologyCategory[],
   findingsByCategory: Map<LabMicrobiologyCategory, Array<{ analysis: string; result: string }>>
 ) => {
-  const category = getMicrobiologyCategoryForFinding(finding, availableCategories);
+  const category = resolveMicrobiologyCategoryForFinding(finding, availableCategories);
   if (category) {
     appendMicrobiologyFinding(findingsByCategory, category, finding);
   }

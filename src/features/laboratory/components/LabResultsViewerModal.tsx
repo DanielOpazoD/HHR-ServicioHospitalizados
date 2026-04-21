@@ -116,6 +116,7 @@ export const LabResultsViewerModal: React.FC<LabResultsViewerModalProps> = ({
             onSelectByDays={lab.selectByDays}
             onSelectByDateRange={lab.selectByDateRange}
             onViewPdf={lab.openPdf}
+            onCopySummary={lab.copyExamSummary}
           />
           <LabViewerAnalyzeBar
             selectedCount={lab.selectedExamIds.size}

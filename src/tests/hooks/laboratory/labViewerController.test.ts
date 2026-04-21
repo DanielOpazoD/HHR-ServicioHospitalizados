@@ -85,8 +85,10 @@ describe('labViewerController', () => {
 
   it('derives categories and filters exams by the selected category', () => {
     expect(resolveLabExamFilterCategories(examList)).toEqual(
-      expect.arrayContaining(['Hemograma', 'Bioquímica', 'Otros'])
+      expect.arrayContaining(['Hemograma', 'Bioquímica'])
     );
+    expect(resolveLabExamFilterCategories(examList)).not.toContain('Otros');
+    expect(resolveLabExamFilterCategories(examList)).not.toContain('Gases');
     expect(filterLabExamsByCategory(examList, 'Hemograma').map(exam => exam.id)).toEqual([
       '1',
       '3',
