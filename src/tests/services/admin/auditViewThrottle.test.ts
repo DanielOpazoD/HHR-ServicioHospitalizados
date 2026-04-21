@@ -10,9 +10,10 @@ import {
 } from '@/services/admin/auditViewThrottle';
 
 describe('auditViewThrottle', () => {
-  it('marks only configured operational accounts as excluded from view audit', () => {
-    expect(shouldExcludeAuditEmail('daniel.opazo@hospitalhangaroa.cl')).toBe(true);
+  it('marks only institutional shared accounts as excluded from view audit', () => {
     expect(shouldExcludeAuditEmail('hospitalizados@hospitalhangaroa.cl')).toBe(true);
+    expect(shouldExcludeAuditEmail('enfermeria.hospitalizados@hospitalhangaroa.cl')).toBe(true);
+    expect(shouldExcludeAuditEmail('daniel.opazo@hospitalhangaroa.cl')).toBe(false);
     expect(shouldExcludeAuditEmail('doctor@hospital.cl')).toBe(false);
     expect(shouldExcludeAuditEmail(undefined)).toBe(false);
   });

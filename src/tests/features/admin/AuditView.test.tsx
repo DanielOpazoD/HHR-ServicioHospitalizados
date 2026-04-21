@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AuditView } from '@/features/admin/components/AuditView';
 import { useAuth } from '@/context/AuthContext';
-import { logger } from '@/services/utils/loggerService';
 
 vi.mock('@/context/AuthContext', () => ({
   useAuth: vi.fn(),
@@ -85,11 +84,9 @@ vi.mock('@/features/admin/components/internal/audit/AuditTable', () => ({
 
 describe('AuditView', () => {
   const mockedUseAuth = vi.mocked(useAuth);
-  let warnSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
   });
 
   it('keeps the consolidate action visible for canonical admins outside the hardcoded email list', () => {
@@ -129,54 +126,7 @@ describe('AuditView', () => {
     expect(screen.getByRole('button', { name: /consolidar/i })).toBeInTheDocument();
   });
 
-  it('logs a warning when the admin sources disagree', () => {
-    mockedUseAuth.mockReturnValue({
-      role: 'admin',
-      currentUser: {
-        uid: 'user-1',
-        email: 'admin.canonical@hospitalhangaroa.cl',
-        displayName: 'Admin Canonico',
-        role: 'admin',
-      },
-      authorizedUser: null,
-      sessionState: { status: 'authorized', user: { uid: 'user-1' } },
-      authLoading: false,
-      isFirebaseConnected: true,
-      remoteSyncStatus: 'ready',
-      remoteSyncState: { mode: 'enabled', reason: 'ready' },
-      authRuntime: {
-        sessionStatus: 'authorized',
-        authLoading: false,
-        isFirebaseConnected: true,
-        isOnline: true,
-        bootstrapPending: false,
-        pendingAgeMs: 0,
-        budgetProfile: { warnAfterMs: 0, timeoutMs: 0 },
-        timeoutMs: 0,
-        runtimeState: 'ready',
-        issues: [],
-      },
-      isEditor: true,
-      isViewer: false,
-      handleLogout: vi.fn(),
-    } as never);
-
-    render(<AuditView />);
-
-    expect(warnSpy).toHaveBeenCalledWith(
-      'AuditView',
-      'Audit admin access source mismatch detected',
-      expect.objectContaining({
-        source: 'role',
-        role: 'admin',
-        isAdminByRole: true,
-        isAdminByEmail: false,
-        hasEmail: true,
-      })
-    );
-  });
-
-  it('keeps non-admin roles blocked even if the hardcoded email fallback matches', () => {
+  it('keeps non-admin roles blocked even if the email previously matched the old fallback', () => {
     mockedUseAuth.mockReturnValue({
       role: 'viewer',
       currentUser: {

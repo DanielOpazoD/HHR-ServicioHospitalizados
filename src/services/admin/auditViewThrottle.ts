@@ -1,9 +1,5 @@
+import { isInstitutionalAccount } from '@/constants/identities';
 import type { AuditAction } from '@/types/audit';
-
-export const EXCLUDED_VIEW_AUDIT_EMAILS: readonly string[] = [
-  'daniel.opazo@hospitalhangaroa.cl',
-  'hospitalizados@hospitalhangaroa.cl',
-];
 
 export const VIEW_THROTTLE_KEY = 'hhr_audit_view_throttle';
 export const VIEW_THROTTLE_WINDOW_MS = 15 * 60 * 1000;
@@ -13,7 +9,7 @@ export interface ViewThrottleState {
 }
 
 export const shouldExcludeAuditEmail = (email?: string | null): boolean =>
-  email ? EXCLUDED_VIEW_AUDIT_EMAILS.includes(email) : false;
+  isInstitutionalAccount(email);
 
 export const parseViewThrottleState = (rawState: string | null | undefined): ViewThrottleState => {
   if (!rawState) return {};
