@@ -18,7 +18,7 @@ import {
 import {
   getLegacyNurseCatalog,
   getLegacyTensCatalog,
-} from '../storage/migration/legacyFirestoreBridge';
+} from '../storage/migration/legacyCatalogReadBridge';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import type { ProfessionalCatalogItem } from '@/types/domain/professionals';
 import {

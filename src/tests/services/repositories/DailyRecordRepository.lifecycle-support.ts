@@ -83,6 +83,14 @@ vi.mock('@/services/utils/errorService', () => ({
 export { firestoreMock, indexedDbFacadeMock, legacyFirebaseMock, logErrorMock };
 
 vi.mock('@/services/storage/migration/legacyFirestoreBridge', () => legacyFirebaseMock);
+vi.mock('@/services/storage/migration/legacyRecordReadBridge', () => ({
+  getLegacyRecord: legacyFirebaseMock.getLegacyRecord,
+  getLegacyRecordsRange: legacyFirebaseMock.getLegacyRecordsRange,
+}));
+vi.mock('@/services/storage/migration/legacyCatalogReadBridge', () => ({
+  getLegacyNurseCatalog: legacyFirebaseMock.getLegacyNurseCatalog,
+  getLegacyTensCatalog: legacyFirebaseMock.getLegacyTensCatalog,
+}));
 vi.mock('@/services/storage/indexedDBService', () => indexedDbFacadeMock);
 vi.mock('@/services/storage/indexeddb/indexedDbRecordService', () => ({
   getRecordForDate: indexedDbFacadeMock.getRecordForDate,

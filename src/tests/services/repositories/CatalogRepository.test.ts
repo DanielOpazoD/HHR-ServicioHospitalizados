@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CatalogRepository } from '@/services/repositories/CatalogRepository';
 import * as catalogService from '@/services/storage/indexeddb/indexedDbCatalogService';
 import * as firestoreService from '@/services/storage/firestore';
-import * as legacyBridge from '@/services/storage/migration/legacyFirestoreBridge';
+import * as legacyCatalogBridge from '@/services/storage/migration/legacyCatalogReadBridge';
 import type { ProfessionalCatalogItem } from '@/types/domain/professionals';
 
 vi.mock('@/services/storage/indexeddb/indexedDbCatalogService', () => ({
@@ -29,7 +29,7 @@ vi.mock('@/services/storage/firestore', () => ({
 vi.mock('@/services/repositories/repositoryConfig', () => ({
   isFirestoreEnabled: vi.fn(() => true),
 }));
-vi.mock('@/services/storage/migration/legacyFirestoreBridge', () => ({
+vi.mock('@/services/storage/migration/legacyCatalogReadBridge', () => ({
   getLegacyNurseCatalog: vi.fn().mockResolvedValue([]),
   getLegacyTensCatalog: vi.fn().mockResolvedValue([]),
 }));
@@ -82,7 +82,7 @@ describe('CatalogRepository', () => {
       expect(result).toEqual(['TENS 1', 'TENS 2', 'TENS 3']);
       expect(catalogService.getCatalog).toHaveBeenCalledWith('tens');
       expect(firestoreService.getTensCatalogFromFirestore).toHaveBeenCalled();
-      expect(legacyBridge.getLegacyTensCatalog).toHaveBeenCalled();
+      expect(legacyCatalogBridge.getLegacyTensCatalog).toHaveBeenCalled();
     });
 
     it('saveTens should save to both', async () => {

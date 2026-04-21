@@ -1,7 +1,7 @@
 import {
   getLegacyRecord,
   getLegacyRecordsRange,
-} from '@/services/storage/migration/legacyFirestoreBridge';
+} from '@/services/storage/migration/legacyRecordReadBridge';
 import { migrateLegacyDataWithReport } from '@/services/repositories/dataMigration';
 import { isLegacyBridgeEnabled } from '@/services/repositories/legacyCompatibilityPolicy';
 import {

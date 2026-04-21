@@ -26,7 +26,7 @@ import {
 import { syncWithFirestore } from '@/services/repositories/dailyRecordRepositorySyncService';
 import * as idbService from '@/services/storage/indexedDBService';
 import * as firestoreService from '@/services/storage/firestore';
-import * as legacyBridge from '@/services/storage/migration/legacyFirestoreBridge';
+import * as legacyRecordBridge from '@/services/storage/migration/legacyRecordReadBridge';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { PatientData } from '@/types/domain/patient';
 import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
@@ -76,6 +76,14 @@ const { legacyFirebaseMock, indexedDbFacadeMock, firestoreMock } = vi.hoisted(()
 }));
 
 vi.mock('@/services/storage/migration/legacyFirestoreBridge', () => legacyFirebaseMock);
+vi.mock('@/services/storage/migration/legacyRecordReadBridge', () => ({
+  getLegacyRecord: legacyFirebaseMock.getLegacyRecord,
+  getLegacyRecordsRange: legacyFirebaseMock.getLegacyRecordsRange,
+}));
+vi.mock('@/services/storage/migration/legacyCatalogReadBridge', () => ({
+  getLegacyNurseCatalog: legacyFirebaseMock.getLegacyNurseCatalog,
+  getLegacyTensCatalog: legacyFirebaseMock.getLegacyTensCatalog,
+}));
 vi.mock('@/services/storage/indexedDBService', () => indexedDbFacadeMock);
 vi.mock('@/services/storage/indexeddb/indexedDbRecordService', () => ({
   getRecordForDate: indexedDbFacadeMock.getRecordForDate,
@@ -276,12 +284,12 @@ describe('DailyRecordRepository reads', () => {
 
   it('returns null when remote Firestore record is missing and legacy is isolated from sync hot path', async () => {
     vi.mocked(firestoreService.getRecordFromFirestore).mockResolvedValueOnce(null);
-    vi.mocked(legacyBridge.getLegacyRecord).mockResolvedValueOnce(mockRecord);
+    vi.mocked(legacyRecordBridge.getLegacyRecord).mockResolvedValueOnce(mockRecord);
 
     const result = await Repository.syncWithFirestore(mockDate);
 
     expect(result).toBeNull();
-    expect(legacyBridge.getLegacyRecord).not.toHaveBeenCalled();
+    expect(legacyRecordBridge.getLegacyRecord).not.toHaveBeenCalled();
   });
 
   it('keeps the newer local record when remote sync returns older data', async () => {
@@ -303,7 +311,7 @@ describe('DailyRecordRepository reads', () => {
   });
 
   it('bridges legacy data only through the explicit bridge API', async () => {
-    vi.mocked(legacyBridge.getLegacyRecord).mockResolvedValueOnce(mockRecord);
+    vi.mocked(legacyRecordBridge.getLegacyRecord).mockResolvedValueOnce(mockRecord);
 
     const result = await Repository.bridgeLegacyRecord(mockDate);
 
@@ -312,7 +320,7 @@ describe('DailyRecordRepository reads', () => {
       ...mockRecord,
       beds: expect.any(Object),
     });
-    expect(legacyBridge.getLegacyRecord).toHaveBeenCalledWith(mockDate);
+    expect(legacyRecordBridge.getLegacyRecord).toHaveBeenCalledWith(mockDate);
     expect(idbService.saveRecord).toHaveBeenCalled();
   });
 

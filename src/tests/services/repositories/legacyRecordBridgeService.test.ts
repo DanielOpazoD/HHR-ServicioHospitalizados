@@ -7,7 +7,7 @@ import {
   listRecentLegacyBridgeOperations,
 } from '@/services/repositories/legacyRecordBridgeService';
 
-vi.mock('@/services/storage/migration/legacyFirestoreBridge', () => ({
+vi.mock('@/services/storage/migration/legacyRecordReadBridge', () => ({
   getLegacyRecord: vi.fn(),
   getLegacyRecordsRange: vi.fn(),
 }));
@@ -19,7 +19,7 @@ vi.mock('@/services/repositories/dailyRecordLocalCachePersistence', () => ({
 import {
   getLegacyRecord,
   getLegacyRecordsRange,
-} from '@/services/storage/migration/legacyFirestoreBridge';
+} from '@/services/storage/migration/legacyRecordReadBridge';
 import { persistHydratedRecordToLocalCache } from '@/services/repositories/dailyRecordLocalCachePersistence';
 
 describe('legacyRecordBridgeService', () => {
