@@ -4,7 +4,7 @@ Este documento separa los comandos oficiales del repo de los scripts internos o 
 
 - si trabajas día a día en la app, usa primero los comandos oficiales;
 - si necesitas diagnóstico, auditoría o una validación puntual, entra a los scripts especializados;
-- no memorices los `139` scripts del `package.json`: usa este mapa.
+- no memorices los `140` scripts del `package.json`: usa este mapa.
 
 ## Comandos oficiales
 
@@ -42,6 +42,14 @@ Estos son los entrypoints recomendados para trabajo normal.
 
 1. `npm run ci:release-gate`
 
+### Si tocas reglas, runbooks o documentación operativa
+
+1. Si cambias `firestore.rules` o `storage.rules`: `npm run build:rules-assets`
+2. `npm run check:security`
+3. `npm run check:docs-drift`
+4. `npm run check:operational-runbooks`
+5. Si necesitas refrescar snapshots report-only: `npm run report:governance-snapshots`
+
 ## Scripts especializados
 
 Estos scripts siguen soportados, pero no forman parte de la superficie pública mínima.
@@ -69,6 +77,13 @@ Estos scripts siguen soportados, pero no forman parte de la superficie pública 
 - `npm run check:critical-coverage`
 - `npm run check:flow-performance-budget`
 - `npm run check:security`
+- `npm run check:docs-drift`
+- `npm run check:operational-runbooks`
+
+### Reglas y operación
+
+- `npm run build:rules-assets`
+- `npm run report:governance-snapshots`
 
 ### Reportes y auditoría
 

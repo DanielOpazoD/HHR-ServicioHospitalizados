@@ -5,7 +5,7 @@ Objetivo: ejecutar mejoras de alto valor derivadas de la auditoría técnica sin
 
 ## Estado actual
 
-- Bloque actual en curso: `Bloque 6: Documentación y Operación`
+- Bloque actual en curso: `sin bloque activo`
 - Siguiente bloque acordado después de este: `sin bloque adicional acordado todavía`
 
 ## Bloques
@@ -139,8 +139,26 @@ Riesgo residual aceptado:
 
 ### Bloque 6: Documentación y Operación
 
-Estado: `pendiente`
+Estado: `completado`
 
 Objetivo:
 
 - depurar documentación duplicada y consolidar runbooks finales después de cerrar lo estructural, de seguridad y de cobertura
+
+Resultado:
+
+- se creó `docs/RUNBOOK_INDEX.md` como puerta de entrada operativa única por escenario
+- `docs/DOCUMENTATION_MAP.md` quedó alineado con el índice de runbooks, `rules/README.md` y los documentos de trabajo en `docs/superpowers/*`
+- `docs/DEVELOPER_COMMANDS.md` ya incluye la superficie útil para reglas generadas, docs y snapshots de gobernanza
+- `docs/CI_GATES_AND_FAILURE_RUNBOOKS.md` quedó enlazado al nuevo índice operativo para reducir navegación redundante
+- `README.md` ahora expone el índice operativo y el mapa documental desde la entrada principal del repo
+
+Validación ejecutada:
+
+- `npx prettier --check README.md docs/RUNBOOK_INDEX.md docs/DOCUMENTATION_MAP.md docs/DEVELOPER_COMMANDS.md docs/CI_GATES_AND_FAILURE_RUNBOOKS.md`
+- `npm run check:docs-drift`
+- `npm run check:operational-runbooks`
+
+Riesgo residual aceptado:
+
+- la depuración fue de entrypoints e indexación; no se reescribieron runbooks largos ni se eliminó documentación histórica que todavía sirve como registro de trabajo

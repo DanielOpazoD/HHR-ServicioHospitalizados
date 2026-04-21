@@ -4,6 +4,17 @@
 
 Definir una ruta corta para desarrollo diario y una ruta blocking para merge/release sin duplicar checks caros.
 
+## Punto de entrada recomendado
+
+- Para elegir runbook por incidente o tipo de cambio: [docs/RUNBOOK_INDEX.md](./RUNBOOK_INDEX.md)
+- Para comandos curados del repo: [docs/DEVELOPER_COMMANDS.md](./DEVELOPER_COMMANDS.md)
+
+Si la change toca reglas generadas o documentación operativa, correr además:
+
+- `npm run build:rules-assets` si cambias `firestore.rules` o `storage.rules`
+- `npm run check:docs-drift`
+- `npm run check:operational-runbooks`
+
 ## Gates activos
 
 ### `ci:inner-loop`

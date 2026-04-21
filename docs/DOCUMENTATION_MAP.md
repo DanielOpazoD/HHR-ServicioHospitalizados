@@ -1,6 +1,6 @@
 # Documentation Map
 
-Última actualización: 2026-04-16
+Última actualización: 2026-04-20
 
 > Índice único del repositorio. Si un documento nuevo no aparece aquí, o queda
 > sin categoría, debe añadirse en el mismo PR que lo crea. `check:docs-drift`
@@ -9,10 +9,11 @@
 ## Lectura recomendada
 
 1. [README.md](../README.md)
-2. [docs/CODEBASE_CANON.md](CODEBASE_CANON.md)
-3. [docs/FOUNDATION_TRACKER.md](FOUNDATION_TRACKER.md)
-4. [PROJECT_STATUS.md](../PROJECT_STATUS.md)
-5. README del módulo que vas a tocar en `src/features/*/README.md` o `src/*/README.md`
+2. [docs/RUNBOOK_INDEX.md](RUNBOOK_INDEX.md)
+3. [docs/CODEBASE_CANON.md](CODEBASE_CANON.md)
+4. [docs/FOUNDATION_TRACKER.md](FOUNDATION_TRACKER.md)
+5. [PROJECT_STATUS.md](../PROJECT_STATUS.md)
+6. README del módulo que vas a tocar en `src/features/*/README.md` o `src/*/README.md`
 
 ## Módulos canónicos por área
 
@@ -56,6 +57,7 @@ actualizar el `Estado` y apuntar al ADR reemplazante.
 
 #### Runbooks
 
+- [RUNBOOK_INDEX](RUNBOOK_INDEX.md) — puerta de entrada operativa única
 - [RUNBOOK_AUTH_ACCESS_INCIDENTS](RUNBOOK_AUTH_ACCESS_INCIDENTS.md) — incidentes de acceso de usuario
 - [RUNBOOK_SECRET_ROTATION](RUNBOOK_SECRET_ROTATION.md) — inventario único y rotación de credenciales
 - [RUNBOOK_SYNC_RESILIENCE](RUNBOOK_SYNC_RESILIENCE.md) — sync, cola y recuperación offline
@@ -78,6 +80,7 @@ Documentos que ayudan a ejecutar trabajo, validar cambios o entender un área co
 - `docs/compliance/*`
 - README por módulo en `src/`
 - [docs/DEVELOPER_COMMANDS.md](DEVELOPER_COMMANDS.md)
+- [rules/README.md](../rules/README.md)
 - [docs/TEST_MEGATEST_BACKLOG.md](TEST_MEGATEST_BACKLOG.md)
 
 ### Histórica o de trabajo
@@ -88,6 +91,8 @@ Documentos útiles para contexto, pero no fuente primaria de reglas activas.
 - `docs/*EXECUTION*.md`
 - `docs/*TRACKER*.md`
 - `docs/MODULE_EVALUATION_*.md`
+- `docs/superpowers/plans/*.md`
+- `docs/superpowers/specs/*.md`
 - `docs/FOUNDATION_IMPROVEMENT_PLAN.md`
 - `docs/FOUNDATION_CONTINUATION_TRACKER.md`
 - `docs/MAINTENANCE_ITERATION_LOG.md`

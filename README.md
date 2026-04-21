@@ -169,6 +169,8 @@ import { useDailyRecord } from '@/hooks/useDailyRecord';
 
 ### Documentos troncales
 
+- [Índice operativo de runbooks](docs/RUNBOOK_INDEX.md)
+- [Mapa global de documentación](docs/DOCUMENTATION_MAP.md)
 - [Auditoría técnica de la aplicación](docs/TECHNICAL_APPLICATION_AUDIT.md)
 - [Taxonomía canónica del código](docs/CODEBASE_CANON.md)
 - [Modelo de acceso y login](docs/AUTH_ACCESS_MODEL.md)
