@@ -174,13 +174,15 @@ export const buildReleaseReadinessScorecard = root => {
 
   const systemConfidence = sources.systemConfidence;
   if (systemConfidence) {
+    const systemConfidenceWorktreeOnly = systemConfidence.degradedByWorktreeOnly === true;
     const governanceOk =
-      systemConfidence.overallStatus === 'ok' && Number(systemConfidence.knownFailures?.openCount || 0) === 0;
+      (systemConfidence.overallStatus === 'ok' || systemConfidenceWorktreeOnly) &&
+      Number(systemConfidence.knownFailures?.openCount || 0) === 0;
     indicators.push({
       name: 'system_confidence',
       ...statusFrom(
         governanceOk,
-        `overall=${systemConfidence.overallStatus}, openKnownFailures=${systemConfidence.knownFailures?.openCount ?? 'n/a'}`,
+        `overall=${systemConfidence.overallStatus}${systemConfidenceWorktreeOnly ? ' (worktree_state only)' : ''}, openKnownFailures=${systemConfidence.knownFailures?.openCount ?? 'n/a'}`,
         `overall=${systemConfidence.overallStatus}, openKnownFailures=${systemConfidence.knownFailures?.openCount ?? 'n/a'}`
       ),
     });
@@ -332,6 +334,16 @@ export const formatReleaseReadinessScorecardMarkdown = report => {
   lines.push('', '## Sources', '');
   for (const [key, source] of Object.entries(report.sources)) {
     lines.push(`- \`${key}\`: ${source.file} (${source.generatedAt || 'missing'})`);
+  }
+
+  if (report.degradedByWorktreeOnly) {
+    lines.push(
+      '',
+      '## Advisory',
+      '',
+      '- Overall remains `degraded` only because the snapshot was generated with a dirty worktree.',
+      '- Readiness indicators sourced from reports remain technically `ok`.'
+    );
   }
 
   if (report.issues.length > 0) {

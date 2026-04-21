@@ -125,6 +125,32 @@ describe('buildReleaseReadinessScorecard', () => {
     );
   });
 
+  it('treats system confidence as healthy when degradation is only worktree_state', () => {
+    const root = createScorecardRoot();
+    writeJson(root, 'reports/system-confidence.json', {
+      generatedAt: '2026-04-10T00:00:00.000Z',
+      overallStatus: 'degraded',
+      degradedByWorktreeOnly: true,
+      knownFailures: { openCount: 0 },
+    });
+    writeJson(root, 'reports/compatibility-import-governance.json', {
+      generatedAt: '2026-04-10T00:00:00.000Z',
+      checkedEntries: 0,
+      issues: [],
+    });
+
+    const report = buildReleaseReadinessScorecard(root);
+    const systemConfidenceIndicator = report.indicators.find(
+      indicator => indicator.name === 'system_confidence'
+    );
+
+    expect(report.overallStatus).toBe('ok');
+    expect(systemConfidenceIndicator).toMatchObject({
+      status: 'ok',
+    });
+    expect(systemConfidenceIndicator?.summary).toContain('worktree_state only');
+  });
+
   it('surfaces release build hotspots in the scorecard output', () => {
     const root = createScorecardRoot();
     writeJson(root, 'reports/compatibility-import-governance.json', {
@@ -196,5 +222,23 @@ describe('buildReleaseReadinessScorecard', () => {
       status: 'degraded',
     });
     expect(startupIndicator?.summary).toContain('status=degraded');
+  });
+
+  it('renders an explicit advisory when degraded only by dirty worktree', () => {
+    const markdown = formatReleaseReadinessScorecardMarkdown({
+      generatedAt: '2026-04-10T00:00:00.000Z',
+      overallStatus: 'degraded',
+      degradedByWorktreeOnly: true,
+      indicators: [
+        { name: 'worktree_state', status: 'degraded', summary: 'status=dirty' },
+        { name: 'system_confidence', status: 'ok', summary: 'overall=ok, openKnownFailures=0' },
+      ],
+      sources: {},
+      issues: ['worktree_state: status=dirty'],
+    });
+
+    expect(markdown).toContain('## Advisory');
+    expect(markdown).toContain('dirty worktree');
+    expect(markdown).toContain('technically `ok`');
   });
 });

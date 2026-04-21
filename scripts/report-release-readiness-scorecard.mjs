@@ -20,6 +20,7 @@ const worktreeIndicator = {
   status: gitState.gitDirty ? 'degraded' : 'ok',
   summary: `status=${gitState.gitDirty ? 'dirty' : 'clean'}`,
 };
+const degradedByWorktreeOnly = gitState.gitDirty && baseReport.issues.length === 0;
 const issues = [
   ...(gitState.gitDirty ? [`${worktreeIndicator.name}: ${worktreeIndicator.summary}`] : []),
   ...baseReport.issues,
@@ -28,6 +29,12 @@ const report = {
   ...baseReport,
   ...gitState,
   indicators: [worktreeIndicator, ...baseReport.indicators],
+  degradedByWorktreeOnly,
+  overallStatusReason: degradedByWorktreeOnly
+    ? 'worktree_state only'
+    : issues.length === 0
+      ? 'all indicators ok'
+      : 'one or more readiness indicators degraded',
   overallStatus: issues.length === 0 ? 'ok' : 'degraded',
   issues,
 };

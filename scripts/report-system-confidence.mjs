@@ -94,12 +94,23 @@ const indicators = [
   },
 ];
 
+const degradedIndicators = indicators.filter(indicator => indicator.status !== 'ok');
+const degradedByWorktreeOnly =
+  gitState.gitDirty &&
+  degradedIndicators.length === 1 &&
+  degradedIndicators[0]?.name === 'worktree_state';
 const overallStatus = indicators.every(indicator => indicator.status === 'ok') ? 'ok' : 'degraded';
 
 const report = {
   generatedAt: new Date().toISOString(),
   ...gitState,
   overallStatus,
+  degradedByWorktreeOnly,
+  overallStatusReason: degradedByWorktreeOnly
+    ? 'worktree_state only'
+    : overallStatus === 'ok'
+      ? 'all indicators ok'
+      : 'one or more technical indicators degraded',
   indicators,
   knownFailures: {
     openCount: openFailureEntries.length,
@@ -122,6 +133,9 @@ const markdown = [
   `- Commit: ${report.gitSha}`,
   `- Worktree: ${formatWorktreeState(report.gitDirty)}`,
   `- Overall status: ${report.overallStatus}`,
+  ...(report.degradedByWorktreeOnly
+    ? ['- Advisory: degraded only because the snapshot was generated with a dirty worktree; technical indicators are ok.']
+    : []),
   '',
   '## Indicators',
   '',
