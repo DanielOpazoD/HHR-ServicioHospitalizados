@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { useExportManager } from '@/hooks/useExportManager';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
@@ -53,6 +53,8 @@ vi.mock('@/application/backup-export/backupExportUseCases', async () => {
 });
 
 describe('useExportManager', () => {
+  const originalRequestIdleCallback = window.requestIdleCallback;
+  const originalCancelIdleCallback = window.cancelIdleCallback;
   const mockRecord: DailyRecord = {
     date: '2024-12-28',
     beds: {},
@@ -81,6 +83,19 @@ describe('useExportManager', () => {
     notificationApi.warning.mockReset();
     confirmApi.confirm.mockReset();
     confirmApi.confirm.mockResolvedValue(true);
+    window.requestIdleCallback = callback => {
+      callback({
+        didTimeout: false,
+        timeRemaining: () => 50,
+      } as IdleDeadline);
+      return 1;
+    };
+    window.cancelIdleCallback = vi.fn();
+  });
+
+  afterEach(() => {
+    window.requestIdleCallback = originalRequestIdleCallback;
+    window.cancelIdleCallback = originalCancelIdleCallback;
   });
 
   it('should return all export functions', () => {

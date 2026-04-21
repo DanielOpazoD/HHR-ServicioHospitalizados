@@ -14,6 +14,7 @@ import {
   buildCensusMasterWorkbook,
   getCensusMasterFilename,
 } from '@/services/exporters/censusMasterWorkbook';
+import { UPC_DAILY_DETAIL_SHEET_NAME } from '@/services/exporters/excel/censusHiddenSheetsConfig';
 
 let deterministicIdCounter = 0;
 const nextDeterministicId = (prefix: string): string => {
@@ -23,6 +24,12 @@ const nextDeterministicId = (prefix: string): string => {
 
 const getVisibleSheets = (workbook: Awaited<ReturnType<typeof buildCensusMasterWorkbook>>) =>
   workbook.worksheets.filter(sheet => sheet.state !== 'hidden');
+
+const isSupportSheet = (sheetName: string): boolean =>
+  sheetName.startsWith('UPC PAC ') || sheetName === UPC_DAILY_DETAIL_SHEET_NAME;
+
+const getVisibleDaySheets = (workbook: Awaited<ReturnType<typeof buildCensusMasterWorkbook>>) =>
+  getVisibleSheets(workbook).filter(sheet => !isSupportSheet(sheet.name));
 
 // ============================================================================
 // Mock Data Factories
@@ -182,7 +189,7 @@ describe('Census → Excel Export Integration', () => {
       const record = createMockDailyRecord('2024-12-23');
 
       const workbook = await buildCensusMasterWorkbook([record]);
-      const visibleSheets = getVisibleSheets(workbook);
+      const visibleSheets = getVisibleDaySheets(workbook);
 
       expect(workbook).toBeDefined();
       expect(visibleSheets.length).toBe(1);
@@ -197,7 +204,7 @@ describe('Census → Excel Export Integration', () => {
       ];
 
       const workbook = await buildCensusMasterWorkbook(records);
-      const visibleSheets = getVisibleSheets(workbook);
+      const visibleSheets = getVisibleDaySheets(workbook);
 
       expect(visibleSheets.length).toBe(3);
       // Should be sorted ascending by date
@@ -215,7 +222,7 @@ describe('Census → Excel Export Integration', () => {
       });
 
       const workbook = await buildCensusMasterWorkbook([record]);
-      const sheet = getVisibleSheets(workbook)[0];
+      const sheet = getVisibleDaySheets(workbook)[0];
 
       // Sheet should have content
       expect(sheet.rowCount).toBeGreaterThan(10);
@@ -240,7 +247,7 @@ describe('Census → Excel Export Integration', () => {
       const workbook = await buildCensusMasterWorkbook([record]);
 
       expect(workbook).toBeDefined();
-      expect(getVisibleSheets(workbook).length).toBe(1);
+      expect(getVisibleDaySheets(workbook).length).toBe(1);
     });
 
     it('should handle record with empty beds only', async () => {
@@ -255,7 +262,7 @@ describe('Census → Excel Export Integration', () => {
 
       expect(workbook).toBeDefined();
       // Should still create the sheet even with empty beds
-      expect(getVisibleSheets(workbook).length).toBe(1);
+      expect(getVisibleDaySheets(workbook).length).toBe(1);
     });
 
     it('should set workbook metadata', async () => {
@@ -303,7 +310,7 @@ describe('Census → Excel Export Integration', () => {
       }
 
       const workbook = await buildCensusMasterWorkbook(records);
-      const visibleSheets = getVisibleSheets(workbook);
+      const visibleSheets = getVisibleDaySheets(workbook);
 
       expect(visibleSheets.length).toBe(15);
       // First sheet should be day 1
@@ -317,7 +324,7 @@ describe('Census → Excel Export Integration', () => {
 
       const workbook = await buildCensusMasterWorkbook(records);
 
-      expect(getVisibleSheets(workbook).length).toBe(2);
+      expect(getVisibleDaySheets(workbook).length).toBe(2);
     });
   });
 
@@ -337,7 +344,7 @@ describe('Census → Excel Export Integration', () => {
       const workbook = await buildCensusMasterWorkbook([record]);
 
       expect(workbook).toBeDefined();
-      expect(getVisibleSheets(workbook).length).toBe(1);
+      expect(getVisibleDaySheets(workbook).length).toBe(1);
     });
 
     it('should handle blocked beds', async () => {
@@ -373,7 +380,7 @@ describe('Census → Excel Export Integration', () => {
       record.beds['E2'] = createEmptyBed('E2');
 
       const workbook = await buildCensusMasterWorkbook([record]);
-      const sheet = getVisibleSheets(workbook)[0];
+      const sheet = getVisibleDaySheets(workbook)[0];
 
       // Helper to find text in sheet
       let foundE1 = false;

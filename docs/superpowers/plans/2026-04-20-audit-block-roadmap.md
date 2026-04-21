@@ -5,8 +5,8 @@ Objetivo: ejecutar mejoras de alto valor derivadas de la auditoría técnica sin
 
 ## Estado actual
 
-- Bloque actual cerrado: `Bloque 2: Seguridad y Control de Privilegios`
-- Siguiente bloque acordado: `Bloque 3: Cobertura Crítica y Confianza Operativa`
+- Bloque actual en curso: `Bloque 4: Mantenibilidad de Reglas y Runtime Sensible`
+- Siguiente bloque acordado después de este: `Bloque 5: Escalabilidad Técnica y Performance`
 
 ## Bloques
 
@@ -56,18 +56,29 @@ Riesgo residual aceptado:
 
 ### Bloque 3: Cobertura Crítica y Confianza Operativa
 
-Estado: `pendiente`
+Estado: `completado`
 
-Objetivo:
+Resultado:
 
-- cerrar el gap de cobertura crítica, empezando por `src/features/clinical-documents`
-- reforzar ramas de permisos, error, persistencia y exportación
-- dejar de depender de un `system-confidence` degradado por cobertura insuficiente
+- se corrigieron bloqueos de suite que impedían medir cobertura real en `authFlowRuntime`, `census-export` y `useExportManager`
+- se añadieron tests directos para `useClinicalDocumentIndicationsCatalog`, `useClinicalDocumentSheetState` y `useClinicalDocumentDraftRemoteSync`
+- `src/features/clinical-documents` pasó de quedar bajo baseline a superar el gate crítico
+- `reports/critical-coverage.md` quedó en `passing`
+- `reports/operational-health.md` quedó con `Critical Coverage` en `passing`
 
-Entrada mínima para comenzar:
+Validación ejecutada:
 
-- mantener verdes `typecheck`, `check:quality`, `check:security` y `test:rules:ci`
-- usar el baseline actual de `reports/critical-coverage.md` como referencia de cierre
+- `npx vitest run src/tests/services/auth/authFlowRuntime.test.ts`
+- `npx vitest run src/tests/integration/census-export.test.ts`
+- `npx vitest run src/tests/hooks/useExportManager.test.ts src/tests/features/clinical-documents/useClinicalDocumentIndicationsCatalog.test.ts src/tests/features/clinical-documents/useClinicalDocumentSheetState.test.ts src/tests/features/clinical-documents/useClinicalDocumentDraftRemoteSync.test.ts`
+- `npm run check:critical-coverage`
+- `node scripts/report-critical-coverage.mjs`
+- `node scripts/report-operational-health.mjs`
+- `node scripts/report-system-confidence.mjs`
+
+Riesgo residual aceptado:
+
+- `system-confidence` sigue `degraded` por worktree sucio durante la ejecución, no por fallas abiertas ni por cobertura crítica
 
 ### Bloque 4: Mantenibilidad de Reglas y Runtime Sensible
 

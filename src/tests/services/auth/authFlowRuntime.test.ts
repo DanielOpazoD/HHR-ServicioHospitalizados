@@ -52,6 +52,15 @@ vi.mock('@/services/auth/authBootstrapState', () => ({
   markAuthBootstrapPending: vi.fn(),
 }));
 
+vi.mock('@/services/auth/authPolicy', () => ({
+  isCurrentUserAuthorizedForGeneralLogin: vi.fn(async () => true),
+  resolveGeneralLoginAccessForEmail: vi.fn(async () => ({
+    allowed: true,
+    role: 'admin',
+    resolution: 'authorized',
+  })),
+}));
+
 const createAuthRuntime = (): AuthRuntime => {
   const auth = { currentUser: null } as firebaseAuth.Auth;
   return {
@@ -101,17 +110,17 @@ describe('auth runtime injection', () => {
     vi.mocked(firebaseAuth.signInWithEmailAndPassword).mockResolvedValue({
       user: {
         uid: 'user-1',
-        email: 'daniel.opazo@hospitalhangaroa.cl',
+        email: 'admin@hospital.cl',
         displayName: 'Admin',
       },
     } as unknown as firebaseAuth.UserCredential);
 
-    await signIn('daniel.opazo@hospitalhangaroa.cl', 'secret', { authRuntime });
+    await signIn('admin@hospital.cl', 'secret', { authRuntime });
     await createUser('new@hospital.cl', 'secret', { authRuntime });
 
     expect(firebaseAuth.signInWithEmailAndPassword).toHaveBeenCalledWith(
       authRuntime.auth,
-      'daniel.opazo@hospitalhangaroa.cl',
+      'admin@hospital.cl',
       'secret'
     );
     expect(firebaseAuth.createUserWithEmailAndPassword).toHaveBeenCalledWith(
@@ -141,7 +150,7 @@ describe('auth runtime injection', () => {
     const authRuntime = createAuthRuntime();
     const runtimeUser = {
       uid: 'runtime-user',
-      email: 'daniel.opazo@hospitalhangaroa.cl',
+      email: 'admin@hospital.cl',
     } as firebaseAuth.User;
     authRuntime.getCurrentUser = vi.fn(() => runtimeUser);
 
