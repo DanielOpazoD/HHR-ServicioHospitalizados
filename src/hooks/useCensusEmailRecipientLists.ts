@@ -13,15 +13,11 @@ import {
   resolveRecipientSelectionRuntimeState,
   resolveRecipientSyncState,
 } from '@/hooks/controllers/censusEmailRecipientRuntimeController';
-import {
-  buildCreateRecipientListMutationSpec,
-  buildDeleteRecipientListMutationSpec,
-  buildRenameRecipientListMutationSpec,
-  type RecipientRuntimeMutationSpec,
-} from '@/hooks/controllers/censusEmailRecipientMutationActionController';
+import type { RecipientRuntimeMutationSpec } from '@/hooks/controllers/censusEmailRecipientMutationActionController';
 import { executeRecipientRuntimeMutationSpec } from '@/hooks/controllers/censusEmailRecipientMutationRunner';
 import { useCensusEmailRecipientBootstrapEffect } from '@/hooks/useCensusEmailRecipientBootstrapEffect';
 import { useCensusEmailRecipientDeferredSyncEffect } from '@/hooks/useCensusEmailRecipientDeferredSyncEffect';
+import { useCensusEmailRecipientMutationActions } from '@/hooks/useCensusEmailRecipientMutationActions';
 import { useCensusEmailRecipientPersistenceEffect } from '@/hooks/useCensusEmailRecipientPersistenceEffect';
 
 interface UseCensusEmailRecipientListsParams {
@@ -31,7 +27,7 @@ interface UseCensusEmailRecipientListsParams {
   user: { uid?: string; email?: string | null } | null;
 }
 
-interface UseCensusEmailRecipientListsReturn {
+export interface UseCensusEmailRecipientListsReturn {
   recipients: string[];
   setRecipients: (recipients: string[]) => void;
   recipientLists: GlobalEmailRecipientList[];
@@ -163,56 +159,15 @@ export const useCensusEmailRecipientLists = ({
     },
   });
 
-  const createRecipientList = useCallback(
-    async (name: string) => {
-      await runRecipientRuntimeMutation(
-        buildCreateRecipientListMutationSpec({
-          canManageGlobalRecipientLists,
-          name,
-          recipients,
-          recipientLists,
-          actor: user,
-        })
-      );
-    },
-    [canManageGlobalRecipientLists, runRecipientRuntimeMutation, recipientLists, recipients, user]
-  );
-
-  const renameActiveRecipientList = useCallback(
-    async (name: string) => {
-      await runRecipientRuntimeMutation(
-        buildRenameRecipientListMutationSpec({
-          canManageGlobalRecipientLists,
-          activeRecipientListId: runtimeMetadata.activeRecipientListId,
-          name,
-          recipients,
-          recipientLists,
-          actor: user,
-        })
-      );
-    },
-    [
+  const { createRecipientList, renameActiveRecipientList, deleteRecipientList } =
+    useCensusEmailRecipientMutationActions({
       canManageGlobalRecipientLists,
-      runRecipientRuntimeMutation,
-      recipientLists,
       recipients,
-      runtimeMetadata.activeRecipientListId,
+      recipientLists,
+      activeRecipientListId: runtimeMetadata.activeRecipientListId,
       user,
-    ]
-  );
-
-  const deleteRecipientList = useCallback(
-    async (listId: string) => {
-      await runRecipientRuntimeMutation(
-        buildDeleteRecipientListMutationSpec({
-          canManageGlobalRecipientLists,
-          recipientLists,
-          listId,
-        })
-      );
-    },
-    [canManageGlobalRecipientLists, runRecipientRuntimeMutation, recipientLists]
-  );
+      runRecipientRuntimeMutation,
+    });
 
   return {
     recipients,
