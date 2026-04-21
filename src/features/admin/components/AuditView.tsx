@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuditData } from '@/hooks/useAuditData';
 import { AuditHeader } from './internal/audit/AuditHeader';
 import { AuditStatsDashboard } from './internal/audit/AuditStatsDashboard';
@@ -7,17 +7,20 @@ import { AuditTable } from './internal/audit/AuditTable';
 import { AccessRestricted } from './internal/AccessRestricted';
 import { AuditSectionTabs } from './internal/audit/AuditSectionTabs';
 import { AuditDynamicPanels } from './internal/audit/AuditDynamicPanels';
-import { isAdministratorEmail } from '@/constants/identities';
 import { useAuditExport } from './hooks/useAuditExport';
 import { useAuditConsolidation } from './hooks/useAuditConsolidation';
 import { AUDIT_CLINICAL_SECTIONS, AUDIT_SYSTEM_SECTIONS } from '@/services/admin/auditViewConfig';
 import { isAuditTableSection } from '@/services/admin/auditMetrics';
+import { resolveAuditAdminAccess } from '@/services/admin/auditAdminAccess';
 import {
   canAccessAuditSensitivePanels,
   canAccessAuditView,
   canExportAuditData,
 } from '@/services/admin/auditAccessPolicy';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 import { useAuth } from '@/context/AuthContext';
+
+const auditViewLogger = createScopedLogger('AuditView');
 
 export const AuditView: React.FC = () => {
   const { role, currentUser } = useAuth();
@@ -53,11 +56,27 @@ export const AuditView: React.FC = () => {
   // Export and dialog state
   const [, setShowComplianceInfo] = useState(false);
 
-  // Admin check
   const userEmail = currentUser?.email;
-  const isAdmin = isAdministratorEmail(userEmail);
+  const adminAccess = resolveAuditAdminAccess({
+    role,
+    email: userEmail,
+  });
   const canSeeSensitivePanels = canAccessAuditSensitivePanels(role);
   const canExport = canExportAuditData(role);
+
+  useEffect(() => {
+    if (!adminAccess.hasAdminSourceMismatch) {
+      return;
+    }
+
+    auditViewLogger.warn('Audit admin access source mismatch detected', {
+      source: adminAccess.source,
+      role,
+      isAdminByRole: adminAccess.isAdminByRole,
+      isAdminByEmail: adminAccess.isAdminByEmail,
+      hasEmail: Boolean(userEmail),
+    });
+  }, [adminAccess, role, userEmail]);
 
   // Export hook
   const { isExporting, handleExcelExport, handlePdfExport } = useAuditExport({
@@ -87,7 +106,7 @@ export const AuditView: React.FC = () => {
         isLoading={loading}
         isConsolidating={consolidating}
         hasLogs={canExport && filteredLogs.length > 0}
-        isAdmin={isAdmin && canSeeSensitivePanels}
+        isAdmin={adminAccess.effectiveAdmin && canSeeSensitivePanels}
       />
 
       {/* Dashboards */}
