@@ -1,7 +1,7 @@
 /**
  * useGlobalPatientSearch — Re-export from feature module.
  *
- * The canonical implementation lives in the census feature application facade:
+ * The canonical implementation lives in the census application facade:
  * @see {@link @/application/census/public}
  *
  * This file exists for backward compatibility. New consumers should
