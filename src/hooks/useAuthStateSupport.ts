@@ -1,4 +1,4 @@
-import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcome';
+import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
 import { useEffect } from 'react';
 import type { AuthSessionState } from '@/types/authSessionTypes';
 import type { AuthUser } from '@/types/authRoleTypes';

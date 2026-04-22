@@ -7,7 +7,7 @@ import * as fetchAuditLogsUseCase from '@/application/audit/fetchAuditLogsUseCas
 import { AUDIT_ACTION_LABELS } from '@/services/admin/auditConstants';
 import { AuditLogEntry, WorkerFilterParams } from '@/types/auditLogTypes';
 import * as auditWorkerLogic from '@/services/admin/auditWorkerLogic';
-import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcome';
+import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
 
 vi.mock('@/application/audit/fetchAuditLogsUseCase', () => ({
   executeFetchAuditLogs: vi.fn(),

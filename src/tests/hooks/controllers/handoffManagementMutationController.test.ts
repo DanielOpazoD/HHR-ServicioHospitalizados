@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   createApplicationFailed,
   createApplicationSuccess,
-} from '@/shared/contracts/applicationOutcome';
+} from '@/shared/contracts/applicationOutcomeFactories';
 import {
   runHandoffMutation,
   shouldNotifyHandoffMutationFailure,

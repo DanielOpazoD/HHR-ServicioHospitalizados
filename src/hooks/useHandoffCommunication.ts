@@ -11,7 +11,7 @@ import {
 import { isE2ERuntimeEnabled } from '@/shared/runtime/e2eRuntime';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 import { createScopedLogger } from '@/services/utils/loggerScope';
-import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcome';
+import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
 import { resolveApplicationOutcomeMessage } from '@/shared/contracts/applicationOutcomeMessage';
 import { resolveHandoffShareLinkPlan } from '@/hooks/controllers/handoffShareLinkController';
 import { buildManualMedicalHandoffMessageModel } from '@/hooks/controllers/manualMedicalHandoffMessageController';

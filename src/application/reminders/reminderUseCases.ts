@@ -2,9 +2,12 @@ import {
   createApplicationDegraded,
   createApplicationFailed,
   createApplicationSuccess,
-  type ApplicationIssue,
-  type ApplicationOutcome,
-} from '@/shared/contracts/applicationOutcome';
+} from '@/shared/contracts/applicationOutcomeFactories';
+import type {
+  ApplicationIssue,
+  ApplicationOutcome,
+} from '@/shared/contracts/applicationOutcomeTypes';
+
 import { ReminderImageService } from '@/services/reminders/ReminderImageService';
 import {
   ReminderReadService,

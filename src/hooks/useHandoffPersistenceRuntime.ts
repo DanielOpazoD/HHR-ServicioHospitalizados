@@ -3,7 +3,7 @@ import type { RefObject } from 'react';
 import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
 import type { AuditAction } from '@/types/auditActionTypes';
 import type { AuditLogEntry } from '@/types/auditLogTypes';
-import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcome';
+import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
 import { runHandoffMutation } from '@/hooks/controllers/handoffManagementMutationController';
 import { canEditMedicalHandoffForDate } from '@/shared/access/operationalAccessPolicy';
 

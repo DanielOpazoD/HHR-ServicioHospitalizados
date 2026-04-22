@@ -39,8 +39,11 @@ vi.mock('@/services/admin/attributionService', () => ({
   getAttributedAuthors: vi.fn().mockReturnValue([]),
 }));
 
-vi.mock('@/services/observability/operationalTelemetryService', () => ({
+vi.mock('@/services/observability/operationalTelemetryOutcomeRecorder', () => ({
   recordOperationalOutcome: vi.fn(),
+}));
+
+vi.mock('@/services/observability/operationalTelemetryRecorder', () => ({
   recordOperationalTelemetry: vi.fn(),
 }));
 
@@ -51,7 +54,7 @@ vi.mock('@/context', () => ({
 import { useHandoffManagement } from '@/hooks/useHandoffManagement';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { DailyRecordPatch } from '@/types/domain/dailyRecordPatch';
-import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcome';
+import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
 import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 

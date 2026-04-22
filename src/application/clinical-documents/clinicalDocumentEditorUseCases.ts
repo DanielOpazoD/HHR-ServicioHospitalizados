@@ -6,7 +6,7 @@ import {
   type ClinicalDocumentRecord,
 } from '@/features/clinical-documents/internal';
 import { executePersistClinicalDocumentDraft } from '@/application/clinical-documents/clinicalDocumentUseCases';
-import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcome';
+import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
 
 export type ClinicalDocumentDraftLoadResolution =
   | { kind: 'clear' }

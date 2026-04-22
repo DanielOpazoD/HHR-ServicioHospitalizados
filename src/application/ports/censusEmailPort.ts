@@ -4,8 +4,8 @@ import type { CensusWorkbookSheetDescriptor } from '@/services/exporters/censusM
 import {
   createApplicationFailed,
   createApplicationSuccess,
-  type ApplicationOutcome,
-} from '@/shared/contracts/applicationOutcome';
+} from '@/shared/contracts/applicationOutcomeFactories';
+import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
 
 export interface CensusEmailSendPayload {
   date: string;

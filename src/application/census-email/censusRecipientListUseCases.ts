@@ -26,10 +26,9 @@ import {
   resolveBootstrapRecipientRuntimeState,
   resolveStoredRecipientRuntimeState,
 } from '@/hooks/controllers/censusEmailRecipientRuntimeController';
-import {
-  createApplicationSuccess,
-  type ApplicationOutcome,
-} from '@/shared/contracts/applicationOutcome';
+import { createApplicationSuccess } from '@/shared/contracts/applicationOutcomeFactories';
+import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
+
 import {
   buildRecipientListServiceFailure,
   buildRecipientListUnknownFailure,

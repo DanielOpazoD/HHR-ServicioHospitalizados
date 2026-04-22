@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-22T03:39:37.458Z",
+  "generatedAt": "2026-04-22T04:12:20.505Z",
   "hotspots": [
     {
       "file": "src/services/utils/loggerScope.ts",
@@ -16,11 +16,11 @@
       "score": 214
     },
     {
-      "file": "src/shared/contracts/applicationOutcome.ts",
-      "churn": 1,
+      "file": "src/shared/contracts/applicationOutcomeTypes.ts",
+      "churn": 0,
       "inboundImports": 55,
       "criticality": "medium",
-      "score": 182
+      "score": 180
     },
     {
       "file": "src/features/clinical-documents/domain/entities.ts",
@@ -122,10 +122,10 @@
     },
     {
       "file": "src/types/auditLogTypes.ts",
-      "churn": 0,
+      "churn": 1,
       "inboundImports": 36,
       "criticality": "medium",
-      "score": 123
+      "score": 125
     },
     {
       "file": "src/constants/beds.ts",
@@ -133,6 +133,13 @@
       "inboundImports": 33,
       "criticality": "medium",
       "score": 122
+    },
+    {
+      "file": "src/shared/contracts/applicationOutcomeFactories.ts",
+      "churn": 0,
+      "inboundImports": 34,
+      "criticality": "medium",
+      "score": 117
     },
     {
       "file": "src/services/repositories/dailyRecordWriteSupport.ts",
@@ -157,10 +164,10 @@
     },
     {
       "file": "src/services/storage/indexeddb/indexedDbCore.ts",
-      "churn": 24,
+      "churn": 25,
       "inboundImports": 14,
       "criticality": "high",
-      "score": 110
+      "score": 112
     },
     {
       "file": "src/utils/clinicalDayUtils.ts",
@@ -203,13 +210,6 @@
       "inboundImports": 24,
       "criticality": "medium",
       "score": 107
-    },
-    {
-      "file": "src/hooks/contracts/patientHookContracts.ts",
-      "churn": 3,
-      "inboundImports": 28,
-      "criticality": "medium",
-      "score": 105
     }
   ],
   "interpretation": {

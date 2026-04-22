@@ -3,7 +3,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { useExportManager } from '@/hooks/useExportManager';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import * as backupExportUseCases from '@/application/backup-export/backupExportUseCases';
-import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcome';
+import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
 import type { LookupBackupArchiveStatusOutput } from '@/application/backup-export/backupExportStorageUseCases';
 import type { BackupHandoffPdfOutput } from '@/application/backup-export/backupExportArchiveUseCases';
 

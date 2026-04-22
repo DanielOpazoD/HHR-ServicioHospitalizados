@@ -15,10 +15,9 @@ import {
   buildResetMedicalHandoffRecord,
   buildUpdatedHandoffStaffRecord,
 } from '@/domain/handoff/management';
-import {
-  createApplicationSuccess,
-  type ApplicationOutcome,
-} from '@/shared/contracts/applicationOutcome';
+import { createApplicationSuccess } from '@/shared/contracts/applicationOutcomeFactories';
+import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
+
 import type {
   DailyRecord,
   DailyRecordPatch,

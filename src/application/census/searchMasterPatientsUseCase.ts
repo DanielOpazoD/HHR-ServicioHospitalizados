@@ -2,8 +2,9 @@ import type { MasterPatient } from '@/types/domain/patientMaster';
 import {
   createApplicationFailed,
   createApplicationSuccess,
-  type ApplicationOutcome,
-} from '@/shared/contracts/applicationOutcome';
+} from '@/shared/contracts/applicationOutcomeFactories';
+import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
+
 import {
   isSearchMasterPatientsQueryTooLong,
   normalizeSearchMasterPatientsInput,

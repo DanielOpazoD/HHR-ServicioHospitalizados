@@ -1,4 +1,4 @@
-import type { ApplicationIssue } from '@/shared/contracts/applicationOutcome';
+import type { ApplicationIssue } from '@/shared/contracts/applicationOutcomeTypes';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

@@ -1,9 +1,12 @@
 import {
   createApplicationFailed,
   createApplicationSuccess,
-  type ApplicationIssue,
-  type ApplicationOutcome,
-} from '@/shared/contracts/applicationOutcome';
+} from '@/shared/contracts/applicationOutcomeFactories';
+import type {
+  ApplicationIssue,
+  ApplicationOutcome,
+} from '@/shared/contracts/applicationOutcomeTypes';
+
 import type { AuthSessionState } from '@/types/authSessionTypes';
 import { signIn, signInWithGoogle } from '@/services/auth/authFlow';
 import {

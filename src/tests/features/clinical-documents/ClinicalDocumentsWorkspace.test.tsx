@@ -10,7 +10,7 @@ import { createClinicalDocumentDraft } from '@/features/clinical-documents/domai
 import * as clinicalDocumentUseCases from '@/application/clinical-documents/clinicalDocumentUseCases';
 import * as clinicalDocumentPdfExportUseCase from '@/application/clinical-documents/clinicalDocumentPdfExportUseCase';
 import type { ExportClinicalDocumentPdfOutput } from '@/application/clinical-documents/clinicalDocumentPdfExportUseCase';
-import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcome';
+import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
 import { ClinicalDocumentRepository } from '@/services/repositories/ClinicalDocumentRepository';
 import { ClinicalDocumentTemplateRepository } from '@/services/repositories/ClinicalDocumentTemplateRepository';
 import type { PatientData } from '@/types/domain/patient';

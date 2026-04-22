@@ -9,7 +9,7 @@ import type { CMAData } from '@/types/domain/movements';
 import type { PatientFieldValue } from '@/types/valueTypes';
 import type { PatientMovementActions } from '@/types/movements';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
-import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcome';
+import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
 import type { DailyRecordBootstrapPhase } from '@/hooks/controllers/dailyRecordBootstrapController';
 import type { StabilityRules } from '@/hooks/useStabilityRules';
 import type { DailyRecordStaffingDetailsV1 } from '@/types/domain/dailyRecordStaffingDetails';

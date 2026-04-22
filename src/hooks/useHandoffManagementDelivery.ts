@@ -15,8 +15,9 @@ import { canEditMedicalHandoffForDate } from '@/shared/access/operationalAccessP
 import {
   createApplicationFailed,
   createApplicationSuccess,
-  type ApplicationOutcome,
-} from '@/shared/contracts/applicationOutcome';
+} from '@/shared/contracts/applicationOutcomeFactories';
+import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
+
 import { resolveApplicationOutcomeMessage } from '@/shared/contracts/applicationOutcomeMessage';
 
 interface HandoffManagementDeliveryInput {

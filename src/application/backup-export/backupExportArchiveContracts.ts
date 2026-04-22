@@ -1,4 +1,4 @@
-import type { ApplicationIssue } from '@/shared/contracts/applicationOutcome';
+import type { ApplicationIssue } from '@/shared/contracts/applicationOutcomeTypes';
 import type { CensusExportRecord } from '@/services/contracts/censusExportServiceContracts';
 import type { HandoffPdfRecord } from '@/services/pdf/contracts/handoffPdfContracts';
 import type { DailyRecordCriticalValidationState } from '@/application/shared/dailyRecordBedContracts';

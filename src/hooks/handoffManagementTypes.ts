@@ -3,7 +3,7 @@ import type {
   MedicalSpecialty,
 } from '@/application/shared/dailyRecordMedicalContracts';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
-import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcome';
+import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
 
 export interface ConfirmMedicalSpecialtyNoChangesInput {
   specialty: MedicalSpecialty;

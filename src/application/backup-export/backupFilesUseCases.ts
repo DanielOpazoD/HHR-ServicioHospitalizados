@@ -2,8 +2,9 @@ import {
   createApplicationDegraded,
   createApplicationFailed,
   createApplicationSuccess,
-  type ApplicationOutcome,
-} from '@/shared/contracts/applicationOutcome';
+} from '@/shared/contracts/applicationOutcomeFactories';
+import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
+
 import { defaultBackupFilesPort, type BackupFilesPort } from '@/application/ports/backupFilesPort';
 import type { BackupFile, BackupFilePreview, BackupFilters, BackupShiftType } from '@/types/backup';
 

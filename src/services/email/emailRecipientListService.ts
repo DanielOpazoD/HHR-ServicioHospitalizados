@@ -3,8 +3,9 @@ import { recordOperationalErrorTelemetry } from '@/services/observability/operat
 import {
   createApplicationFailed,
   createApplicationSuccess,
-  type ApplicationOutcome,
-} from '@/shared/contracts/applicationOutcome';
+} from '@/shared/contracts/applicationOutcomeFactories';
+import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
+
 import { resolveApplicationOutcomeMessage } from '@/shared/contracts/applicationOutcomeMessage';
 import {
   buildEnsuredGlobalEmailRecipientList,

@@ -5,9 +5,9 @@ import {
   createApplicationFailed,
   createApplicationPartial,
   createApplicationSuccess,
-  type ApplicationOutcome,
-  type UseCase,
-} from '@/shared/contracts/applicationOutcome';
+} from '@/shared/contracts/applicationOutcomeFactories';
+import type { ApplicationOutcome, UseCase } from '@/shared/contracts/applicationOutcomeTypes';
+
 import {
   defaultDailyRecordSyncPort,
   type DailyRecordSyncPort,

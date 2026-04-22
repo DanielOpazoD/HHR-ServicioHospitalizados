@@ -2,8 +2,9 @@ import {
   createApplicationFailed,
   createApplicationPartial,
   createApplicationSuccess,
-  type ApplicationOutcome,
-} from '@/shared/contracts/applicationOutcome';
+} from '@/shared/contracts/applicationOutcomeFactories';
+import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
+
 import { defaultDailyRecordReadPort } from '@/application/ports/dailyRecordPort';
 import { defaultCensusEmailDeliveryPort } from '@/application/ports/censusEmailPort';
 import { mergeMonthlyRecordsForBackup, resolveHandoffBackupStaff } from './backupExportSupport';

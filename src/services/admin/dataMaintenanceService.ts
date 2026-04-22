@@ -14,8 +14,9 @@ import { dataMaintenanceLogger } from '@/services/admin/adminLoggers';
 import {
   createApplicationFailed,
   createApplicationSuccess,
-  type ApplicationOutcome,
-} from '@/shared/contracts/applicationOutcome';
+} from '@/shared/contracts/applicationOutcomeFactories';
+import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
+
 import {
   DATA_MAINTENANCE_MONTH_NAMES,
   downloadJsonBackup,

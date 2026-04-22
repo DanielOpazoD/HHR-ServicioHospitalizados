@@ -2,8 +2,9 @@ import {
   createApplicationDegraded,
   createApplicationFailed,
   createApplicationSuccess,
-  type ApplicationOutcome,
-} from '@/shared/contracts/applicationOutcome';
+} from '@/shared/contracts/applicationOutcomeFactories';
+import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
+
 import {
   defaultCensusAccessManagementPort,
   type CensusAccessManagementPort,

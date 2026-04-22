@@ -11,7 +11,7 @@ import { useAuth } from '@/context/AuthContext';
 import { getActiveHospitalId } from '@/constants/firestorePaths';
 import type { WoundCareAuditActor } from '@/types/domain/woundCare';
 import type { EpisodeContext } from '@/application/wound-care/woundCareUseCases';
-import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcome';
+import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
 import {
   executeUploadWoundCareConsent,
   executeUploadWoundCarePhoto,

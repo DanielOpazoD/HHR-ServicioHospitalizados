@@ -1,8 +1,8 @@
-import {
-  createApplicationFailed,
-  type ApplicationIssue,
-  type ApplicationOutcome,
-} from '@/shared/contracts/applicationOutcome';
+import { createApplicationFailed } from '@/shared/contracts/applicationOutcomeFactories';
+import type {
+  ApplicationIssue,
+  ApplicationOutcome,
+} from '@/shared/contracts/applicationOutcomeTypes';
 
 interface RecipientListServiceResultLike {
   issues?: ApplicationIssue[];

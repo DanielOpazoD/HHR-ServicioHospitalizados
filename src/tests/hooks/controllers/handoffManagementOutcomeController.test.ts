@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createApplicationFailed } from '@/shared/contracts/applicationOutcome';
+import { createApplicationFailed } from '@/shared/contracts/applicationOutcomeFactories';
 import { presentHandoffManagementFailure } from '@/hooks/controllers/handoffManagementOutcomeController';
 
 describe('handoffManagementOutcomeController', () => {

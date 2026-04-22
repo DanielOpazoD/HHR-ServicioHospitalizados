@@ -3,10 +3,9 @@ import {
   resolveScopedMedicalSignatureToken,
 } from '@/domain/handoff/scope';
 import { buildMedicalSentPatch } from '@/domain/handoff/management';
-import {
-  createApplicationSuccess,
-  type ApplicationOutcome,
-} from '@/shared/contracts/applicationOutcome';
+import { createApplicationSuccess } from '@/shared/contracts/applicationOutcomeFactories';
+import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
+
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
 import type { DailyRecord, DailyRecordPatch } from '@/domain/handoff/recordContracts';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';

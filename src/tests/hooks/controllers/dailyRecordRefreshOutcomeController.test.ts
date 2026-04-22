@@ -5,7 +5,7 @@ import {
   createApplicationFailed,
   createApplicationPartial,
   createApplicationSuccess,
-} from '@/shared/contracts/applicationOutcome';
+} from '@/shared/contracts/applicationOutcomeFactories';
 import { presentDailyRecordRefreshOutcome } from '@/hooks/controllers/dailyRecordRefreshOutcomeController';
 import type { SyncOutcome } from '@/application/daily-record/syncDailyRecordUseCase';
 

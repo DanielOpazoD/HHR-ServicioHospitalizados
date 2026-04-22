@@ -1,6 +1,6 @@
 import { act } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcome';
+import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
 import type { AuthSessionState } from '@/types/authSessionTypes';
 import {
   authBootstrapTestMocks,

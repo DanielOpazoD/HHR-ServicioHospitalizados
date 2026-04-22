@@ -50,8 +50,11 @@ vi.mock('@/application/ports/auditPort', () => ({
   },
 }));
 
-vi.mock('@/services/observability/operationalTelemetryService', () => ({
+vi.mock('@/services/observability/operationalTelemetryOutcomeRecorder', () => ({
   recordOperationalOutcome: (...args: unknown[]) => mockRecordOperationalOutcome(...args),
+}));
+
+vi.mock('@/services/observability/operationalTelemetryRecorder', () => ({
   recordOperationalTelemetry: (...args: unknown[]) => mockRecordOperationalTelemetry(...args),
 }));
 

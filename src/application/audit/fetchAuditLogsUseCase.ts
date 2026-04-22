@@ -1,8 +1,9 @@
 import {
   createApplicationFailed,
   createApplicationSuccess,
-  type ApplicationOutcome,
-} from '@/shared/contracts/applicationOutcome';
+} from '@/shared/contracts/applicationOutcomeFactories';
+import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
+
 import { defaultAuditPort, type AuditPort } from '@/application/ports/auditPort';
 import type { AuditLogEntry } from '@/types/auditLogTypes';
 

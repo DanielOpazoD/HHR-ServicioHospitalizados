@@ -8,8 +8,9 @@
 import {
   createApplicationSuccess,
   createApplicationFailed,
-  type ApplicationOutcome,
-} from '@/shared/contracts/applicationOutcome';
+} from '@/shared/contracts/applicationOutcomeFactories';
+import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
+
 import {
   defaultWoundCareConsentPort,
   defaultWoundCareStoragePort,

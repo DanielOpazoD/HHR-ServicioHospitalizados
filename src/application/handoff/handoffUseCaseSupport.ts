@@ -1,8 +1,8 @@
-import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcome';
+import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
 import {
   createApplicationFailed,
   createApplicationSuccess,
-} from '@/shared/contracts/applicationOutcome';
+} from '@/shared/contracts/applicationOutcomeFactories';
 import type { DailyRecord, DailyRecordPatch } from '@/domain/handoff/recordContracts';
 
 export const createMissingRecordOutcome = <T>(
