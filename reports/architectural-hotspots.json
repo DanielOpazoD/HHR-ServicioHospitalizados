@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-22T05:11:10.297Z",
+  "generatedAt": "2026-04-22T05:37:43.472Z",
   "hotspots": [
     {
       "file": "src/services/utils/loggerScope.ts",
@@ -30,18 +30,18 @@
       "score": 179
     },
     {
-      "file": "src/components/shared/BaseModal.tsx",
-      "churn": 8,
-      "inboundImports": 46,
-      "criticality": "medium",
-      "score": 169
-    },
-    {
       "file": "src/types/authRoleTypes.ts",
       "churn": 1,
       "inboundImports": 49,
       "criticality": "medium",
       "score": 164
+    },
+    {
+      "file": "src/components/shared/BaseModal.tsx",
+      "churn": 8,
+      "inboundImports": 43,
+      "criticality": "medium",
+      "score": 160
     },
     {
       "file": "src/types/domain/dailyRecord.ts",
@@ -142,18 +142,18 @@
       "score": 112
     },
     {
+      "file": "src/services/repositories/dailyRecordWriteSupport.ts",
+      "churn": 46,
+      "inboundImports": 0,
+      "criticality": "high",
+      "score": 112
+    },
+    {
       "file": "src/services/storage/indexeddb/indexedDbCore.ts",
       "churn": 25,
       "inboundImports": 14,
       "criticality": "high",
       "score": 112
-    },
-    {
-      "file": "src/services/repositories/dailyRecordWriteSupport.ts",
-      "churn": 45,
-      "inboundImports": 0,
-      "criticality": "high",
-      "score": 110
     },
     {
       "file": "src/utils/clinicalDayUtils.ts",
@@ -175,6 +175,13 @@
       "inboundImports": 29,
       "criticality": "high",
       "score": 109
+    },
+    {
+      "file": "src/hooks/contracts/patientHookContracts.ts",
+      "churn": 3,
+      "inboundImports": 29,
+      "criticality": "medium",
+      "score": 108
     },
     {
       "file": "src/services/repositories/repositoryConfig.ts",
@@ -203,13 +210,6 @@
       "inboundImports": 30,
       "criticality": "medium",
       "score": 107
-    },
-    {
-      "file": "src/features/census/types/censusActionTypes.ts",
-      "churn": 5,
-      "inboundImports": 25,
-      "criticality": "high",
-      "score": 105
     }
   ],
   "interpretation": {

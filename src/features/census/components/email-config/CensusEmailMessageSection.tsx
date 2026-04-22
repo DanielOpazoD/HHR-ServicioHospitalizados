@@ -1,6 +1,6 @@
 import React from 'react';
 import { MessageSquare, RefreshCw } from 'lucide-react';
-import { ModalSection } from '@/components/shared/BaseModal';
+import { ModalSection } from '@/components/shared/baseModalSection';
 
 interface CensusEmailMessageSectionProps {
   message: string;

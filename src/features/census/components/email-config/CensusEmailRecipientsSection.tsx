@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { ChevronDown, Pencil, Plus, Settings2, Trash2, Users, X } from 'lucide-react';
-import { ModalSection } from '@/components/shared/BaseModal';
+import { ModalSection } from '@/components/shared/baseModalSection';
 import type { GlobalEmailRecipientList } from '@/services/email/emailRecipientListService';
 
 interface CensusEmailRecipientsSectionProps {

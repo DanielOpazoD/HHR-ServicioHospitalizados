@@ -9,7 +9,8 @@ import {
 } from '@/types/transferDocuments';
 import clsx from 'clsx';
 import { QuestionInput } from './QuestionInput';
-import { BaseModal, ModalSection } from '@/components/shared/BaseModal';
+import { BaseModal } from '@/components/shared/BaseModal';
+import { ModalSection } from '@/components/shared/baseModalSection';
 import {
   buildTransferQuestionnaireGroups,
   resolveTransferQuestionnaireGroupLabel,

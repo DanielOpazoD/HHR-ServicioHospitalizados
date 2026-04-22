@@ -1,7 +1,8 @@
 import React from 'react';
 import { User, FileText, Search } from 'lucide-react';
 import { BackupFile } from '@/types/backup';
-import { BaseModal, ModalSection } from '@/components/shared/BaseModal';
+import { BaseModal } from '@/components/shared/BaseModal';
+import { ModalSection } from '@/components/shared/baseModalSection';
 import {
   formatBackupTimestamp,
   getBackupShiftPresentation,
