@@ -5,7 +5,8 @@
  */
 
 import React from 'react';
-import type { LabAnalysisData, LabPatient } from '@/types/domain/laboratory';
+import type { LabPatient } from '@/types/domain/labExamTypes';
+import type { LabAnalysisData } from '@/types/domain/labAnalyticsTypes';
 import type { ExportConfig } from '../types/labViewerTypes';
 import type { ComparisonGroupLabel } from '../constants/labComparisonGroupingConstants';
 import {

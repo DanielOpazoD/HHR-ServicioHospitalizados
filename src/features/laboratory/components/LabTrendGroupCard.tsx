@@ -1,5 +1,5 @@
 import React from 'react';
-import type { LabTrendGroup } from '@/types/domain/laboratory';
+import type { LabTrendGroup } from '@/types/domain/labAnalyticsTypes';
 import { groupVariablesByScale } from './LabTrendChartHelpers';
 import { UnitSubChart } from './LabTrendChartRenderers';
 

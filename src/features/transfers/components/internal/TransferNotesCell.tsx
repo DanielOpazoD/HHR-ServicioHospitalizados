@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Pencil, Plus, Save, Trash2, X } from 'lucide-react';
-import type { TransferFormData, TransferNote } from '@/types/transfers';
+import type { TransferFormData, TransferNote } from '@/types/transferRequestTypes';
 import { formatTransferDateTime } from '@/shared/transfers/transferPresentation';
 import { buildTransferNote } from '@/hooks/controllers/transferManagementController';
 import {

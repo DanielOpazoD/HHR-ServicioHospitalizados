@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { TransferRequest, TransferFormData } from '@/types/transfers';
+import type { TransferRequest, TransferFormData } from '@/types/transferRequestTypes';
 import {
   QuestionnaireResponse,
   TransferPatientData,

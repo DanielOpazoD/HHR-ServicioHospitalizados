@@ -9,7 +9,7 @@ import {
   getTransferById,
   subscribeToTransfers,
 } from '@/services/transfers/transferService';
-import { TransferRequest } from '@/types/transfers';
+import type { TransferRequest } from '@/types/transferRequestTypes';
 
 vi.mock('@/services/repositories/PatientMasterRepository', () => ({
   PatientMasterRepository: {

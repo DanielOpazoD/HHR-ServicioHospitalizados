@@ -4,8 +4,8 @@ import type {
   TransferFormData,
   TransferNote,
   TransferRequest,
-  TransferStatus,
-} from '@/types/transfers';
+} from '@/types/transferRequestTypes';
+import type { TransferStatus } from '@/types/transferStatusTypes';
 import { isClosedTransferStatus } from '@/services/transfers/transferStatusController';
 
 export const buildHospitalizedPatients = (

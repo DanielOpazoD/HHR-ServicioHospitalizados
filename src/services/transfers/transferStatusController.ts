@@ -1,4 +1,5 @@
-import type { TransferRequest, TransferStatus } from '@/types/transfers';
+import type { TransferRequest } from '@/types/transferRequestTypes';
+import type { TransferStatus } from '@/types/transferStatusTypes';
 
 export const CLOSED_TRANSFER_STATUSES: readonly TransferStatus[] = [
   'TRANSFERRED',

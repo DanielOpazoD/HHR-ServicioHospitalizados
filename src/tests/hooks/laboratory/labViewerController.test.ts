@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { LabPatient, SyslabExamItem } from '@/types/domain/laboratory';
+import type { LabPatient, SyslabExamItem } from '@/types/domain/labExamTypes';
 import {
   buildLabViewerModalShellModel,
   buildUniqueLabPatients,

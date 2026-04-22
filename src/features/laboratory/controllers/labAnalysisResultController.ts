@@ -1,10 +1,10 @@
+import type { LabResultRow } from '@/types/domain/labExamTypes';
 import type {
   LabAnalysisData,
   LabMicrobiologyEntry,
-  LabResultRow,
   LabTrendGroup,
   LabTrendPoint,
-} from '@/types/domain/laboratory';
+} from '@/types/domain/labAnalyticsTypes';
 import { COMPARISON_ORDER } from '../constants/labComparisonCatalogConstants';
 import { TREND_GROUPS } from '../constants/labTrendConstants';
 import { parseDateDDMMYYYY } from './labFormattingController';

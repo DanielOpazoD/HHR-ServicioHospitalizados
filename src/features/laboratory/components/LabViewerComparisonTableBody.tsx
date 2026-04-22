@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import type { LabAnalysisData } from '@/types/domain/laboratory';
+import type { LabAnalysisData } from '@/types/domain/labAnalyticsTypes';
 import type { ComparisonGroup } from '../controllers/labComparisonTableController';
 import type { ComparisonGroupLabel } from '../constants/labComparisonGroupingConstants';
 import { LabViewerComparisonRow } from './LabViewerComparisonRow';

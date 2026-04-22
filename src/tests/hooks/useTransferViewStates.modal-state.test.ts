@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useTransferViewStates } from '@/hooks/useTransferViewStates';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
-import type { TransferRequest, TransferFormData } from '@/types/transfers';
+import type { TransferRequest, TransferFormData } from '@/types/transferRequestTypes';
 
 vi.mock('@/constants/hospitalConfigs', () => ({
   getHospitalConfigById: vi

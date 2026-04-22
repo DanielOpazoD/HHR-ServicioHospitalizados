@@ -18,7 +18,8 @@ vi.mock('@/features/laboratory/services/labExcelService', () => ({
 }));
 
 import { LabViewerComparisonTable } from '@/features/laboratory/components/LabViewerComparisonTable';
-import type { LabAnalysisData, LabPatient } from '@/types/domain/laboratory';
+import type { LabPatient } from '@/types/domain/labExamTypes';
+import type { LabAnalysisData } from '@/types/domain/labAnalyticsTypes';
 import { exportComparisonToExcel } from '@/features/laboratory/services/labExcelService';
 
 const MOCK_PATIENT: LabPatient = {

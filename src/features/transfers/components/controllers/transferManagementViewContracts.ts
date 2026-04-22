@@ -1,4 +1,5 @@
-import type { TransferFormData, TransferRequest, TransferStatus } from '@/types/transfers';
+import type { TransferFormData, TransferRequest } from '@/types/transferRequestTypes';
+import type { TransferStatus } from '@/types/transferStatusTypes';
 import type {
   GeneratedDocument,
   QuestionnaireResponse,

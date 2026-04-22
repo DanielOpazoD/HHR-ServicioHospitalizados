@@ -4,7 +4,8 @@ import {
   isTransferVisibleInSelectedPeriod,
   parseTransferDate,
 } from '@/features/transfers/components/controllers/transferPeriodSelection';
-import type { TransferRequest, TransferStatus } from '@/types/transfers';
+import type { TransferRequest } from '@/types/transferRequestTypes';
+import type { TransferStatus } from '@/types/transferStatusTypes';
 
 const buildTransfer = (overrides: Partial<TransferRequest> = {}): TransferRequest =>
   ({

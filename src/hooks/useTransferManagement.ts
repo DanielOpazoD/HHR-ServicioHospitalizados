@@ -4,7 +4,8 @@
  */
 
 import { useCallback, useState } from 'react';
-import { TransferRequest, TransferFormData, TransferStatus } from '@/types/transfers';
+import type { TransferRequest, TransferFormData } from '@/types/transferRequestTypes';
+import type { TransferStatus } from '@/types/transferStatusTypes';
 import { useAuth } from '@/context/AuthContext';
 import { useDailyRecordData } from '@/context/DailyRecordContext';
 import {

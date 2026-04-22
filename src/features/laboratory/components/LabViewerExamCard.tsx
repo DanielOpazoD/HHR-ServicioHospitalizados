@@ -1,7 +1,7 @@
 import React from 'react';
 import clsx from 'clsx';
 import { Check, Clipboard, FileText } from 'lucide-react';
-import type { SyslabExamItem } from '@/types/domain/laboratory';
+import type { SyslabExamItem } from '@/types/domain/labExamTypes';
 
 interface LabViewerExamCardProps {
   exam: SyslabExamItem;

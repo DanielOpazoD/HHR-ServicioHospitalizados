@@ -1,4 +1,5 @@
-import type { LabResultRow, LabTrendPoint } from '@/types/domain/laboratory';
+import type { LabResultRow } from '@/types/domain/labExamTypes';
+import type { LabTrendPoint } from '@/types/domain/labAnalyticsTypes';
 import { parseRefRange } from './labFormattingController';
 import {
   collectMicrobiologyFinding,

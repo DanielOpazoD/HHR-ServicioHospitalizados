@@ -1,4 +1,5 @@
-import type { LabAnalysisData, LabPatient } from '@/types/domain/laboratory';
+import type { LabPatient } from '@/types/domain/labExamTypes';
+import type { LabAnalysisData } from '@/types/domain/labAnalyticsTypes';
 import { formatLabResult } from './labFormattingController';
 
 const formatBirthDateForClipboard = (birthDate?: string): string => {

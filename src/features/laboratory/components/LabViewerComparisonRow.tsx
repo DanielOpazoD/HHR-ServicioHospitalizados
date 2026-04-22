@@ -1,7 +1,7 @@
 import React from 'react';
 import clsx from 'clsx';
 import { Pin } from 'lucide-react';
-import type { LabAnalysisData } from '@/types/domain/laboratory';
+import type { LabAnalysisData } from '@/types/domain/labAnalyticsTypes';
 import { COMPARISON_PINNABLE_VARIABLES } from '../constants/labComparisonPreferenceConstants';
 import { formatLabResult, isOutOfRange } from '../controllers/labFormattingController';
 import { resolveQualitativeComparisonAlert } from '../controllers/labComparisonTableController';

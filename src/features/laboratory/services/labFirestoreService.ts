@@ -11,7 +11,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { getLabResultsPath } from '@/constants/firestorePaths';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 import { defaultRepositoryFirestoreRuntime } from '@/services/repositories/repositoryFirestoreRuntime';
-import type { LabResultRow, SyslabExamItem, SyslabExamDetail } from '@/types/domain/laboratory';
+import type { LabResultRow, SyslabExamItem, SyslabExamDetail } from '@/types/domain/labExamTypes';
 
 const logger = createScopedLogger('labFirestoreService');
 

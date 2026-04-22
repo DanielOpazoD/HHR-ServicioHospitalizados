@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import type { SyslabExamItem } from '@/types/domain/laboratory';
+import type { SyslabExamItem } from '@/types/domain/labExamTypes';
 import { fetchSyslabPdfBlobUrl } from '@/services/laboratory/syslabService';
 
 interface LabViewerPdfProps {

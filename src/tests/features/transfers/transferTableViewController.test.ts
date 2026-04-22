@@ -5,7 +5,7 @@ import {
   resolveTransferActionsMenuState,
   shouldCloseTransferActionsMenu,
 } from '@/features/transfers/components/controllers/transferTableViewController';
-import type { TransferRequest } from '@/types/transfers';
+import type { TransferRequest } from '@/types/transferRequestTypes';
 
 const transfer = {
   id: 'TR-1',

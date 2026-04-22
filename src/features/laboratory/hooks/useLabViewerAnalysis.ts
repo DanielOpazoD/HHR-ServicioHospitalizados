@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { writeClipboardText } from '@/shared/runtime/browserClipboardRuntime';
 import { fetchSyslabExamDetails } from '@/services/laboratory/syslabService';
-import type { AnalysisViewTab, LabAnalysisData, SyslabExamItem } from '@/types/domain/laboratory';
+import type { SyslabExamItem } from '@/types/domain/labExamTypes';
+import type { AnalysisViewTab, LabAnalysisData } from '@/types/domain/labAnalyticsTypes';
 import type { ProgressState } from '../types/labViewerTypes';
 import { ANALYSIS_STEPS, SEARCH_STEPS, STEP_INTERVAL_MS } from '../constants/labProgressConstants';
 import { buildAnalysisData } from '../controllers/labAnalyticsController';

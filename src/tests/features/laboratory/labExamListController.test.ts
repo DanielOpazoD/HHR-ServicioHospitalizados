@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { SyslabExamItem } from '@/types/domain/laboratory';
+import type { SyslabExamItem } from '@/types/domain/labExamTypes';
 import {
   resolveAllSelectableExamsSelected,
   resolveLabExamDateRange,

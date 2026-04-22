@@ -1,9 +1,5 @@
-import type {
-  SyslabExamItem,
-  SyslabExamDetail,
-  LabMicrobiologyEntry,
-  LabResultRow,
-} from '@/types/domain/laboratory';
+import type { SyslabExamItem, SyslabExamDetail, LabResultRow } from '@/types/domain/labExamTypes';
+import type { LabMicrobiologyEntry } from '@/types/domain/labAnalyticsTypes';
 import { parseDateDDMMYYYY, normalizeAnalysisName } from './labFormattingController';
 import {
   buildMicrobiologyEntriesForExam,

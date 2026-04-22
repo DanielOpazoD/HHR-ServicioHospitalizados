@@ -15,7 +15,7 @@
  * ```
  */
 
-import type { LabResultRow } from '@/types/domain/laboratory';
+import type { LabResultRow } from '@/types/domain/labExamTypes';
 import { normalizeAnalysisName, parseScientificValue } from './labFormattingController';
 
 /* ------------------------------------------------------------------ */

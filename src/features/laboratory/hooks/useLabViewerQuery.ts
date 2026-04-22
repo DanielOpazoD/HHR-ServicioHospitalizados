@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { searchSyslabExams } from '@/services/laboratory/syslabService';
 import { queryKeys } from '@/config/queryClient';
-import type { LabPatient, SyslabExamItem } from '@/types/domain/laboratory';
+import type { LabPatient, SyslabExamItem } from '@/types/domain/labExamTypes';
 import {
   buildUniqueLabPatients,
   resolveInitialLabViewerRut,

@@ -6,7 +6,8 @@ import {
   isOutOfRange,
 } from '@/features/laboratory/controllers/labFormattingController';
 import { buildAnalysisData } from '@/features/laboratory/controllers/labAnalyticsController';
-import type { LabTrendGroup, SyslabExamDetail, SyslabExamItem } from '@/types/domain/laboratory';
+import type { SyslabExamDetail, SyslabExamItem } from '@/types/domain/labExamTypes';
+import type { LabTrendGroup } from '@/types/domain/labAnalyticsTypes';
 
 const MOCK_EXAM: SyslabExamItem = {
   id: '43091284',

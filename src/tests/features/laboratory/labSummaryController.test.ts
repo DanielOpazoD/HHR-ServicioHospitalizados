@@ -5,7 +5,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { buildLabSummaryText } from '@/features/laboratory/controllers/labSummaryController';
-import type { LabResultRow } from '@/types/domain/laboratory';
+import type { LabResultRow } from '@/types/domain/labExamTypes';
 
 const makeFinding = (analysis: string, result: string, unit = '', refValue = ''): LabResultRow => ({
   section: 'TEST',

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-22T04:22:53.083Z",
+  "generatedAt": "2026-04-22T04:59:23.519Z",
   "hotspots": [
     {
       "file": "src/services/utils/loggerScope.ts",
@@ -31,10 +31,10 @@
     },
     {
       "file": "src/components/shared/BaseModal.tsx",
-      "churn": 7,
+      "churn": 8,
       "inboundImports": 46,
       "criticality": "medium",
-      "score": 167
+      "score": 169
     },
     {
       "file": "src/types/authRoleTypes.ts",
@@ -72,18 +72,11 @@
       "score": 133
     },
     {
-      "file": "src/types/domain/laboratory.ts",
-      "churn": 8,
-      "inboundImports": 34,
+      "file": "src/shared/runtime/browserWindowRuntimeCore.ts",
+      "churn": 1,
+      "inboundImports": 38,
       "criticality": "medium",
-      "score": 133
-    },
-    {
-      "file": "src/types/transfers.ts",
-      "churn": 6,
-      "inboundImports": 35,
-      "criticality": "medium",
-      "score": 132
+      "score": 131
     },
     {
       "file": "src/features/census/types/censusAccessProfile.ts",
@@ -93,11 +86,11 @@
       "score": 129
     },
     {
-      "file": "src/shared/runtime/browserWindowRuntimeCore.ts",
-      "churn": 0,
-      "inboundImports": 38,
+      "file": "src/constants/clinicalMovementConstants.ts",
+      "churn": 1,
+      "inboundImports": 37,
       "criticality": "medium",
-      "score": 129
+      "score": 128
     },
     {
       "file": "src/types/domain/patient.ts",
@@ -105,13 +98,6 @@
       "inboundImports": 33,
       "criticality": "medium",
       "score": 128
-    },
-    {
-      "file": "src/constants/clinicalMovementConstants.ts",
-      "churn": 0,
-      "inboundImports": 37,
-      "criticality": "medium",
-      "score": 126
     },
     {
       "file": "src/features/census/components/patient-row/patientRowDataContracts.ts",
@@ -170,6 +156,13 @@
       "score": 112
     },
     {
+      "file": "src/types/transferRequestTypes.ts",
+      "churn": 0,
+      "inboundImports": 32,
+      "criticality": "medium",
+      "score": 111
+    },
+    {
       "file": "src/utils/clinicalDayUtils.ts",
       "churn": 4,
       "inboundImports": 29,
@@ -210,6 +203,13 @@
       "inboundImports": 24,
       "criticality": "medium",
       "score": 107
+    },
+    {
+      "file": "src/features/census/types/censusActionTypes.ts",
+      "churn": 5,
+      "inboundImports": 25,
+      "criticality": "high",
+      "score": 105
     }
   ],
   "interpretation": {

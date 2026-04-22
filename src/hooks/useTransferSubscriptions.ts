@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { TransferRequest } from '@/types/transfers';
+import type { TransferRequest } from '@/types/transferRequestTypes';
 import { subscribeToTransfers } from '@/services/transfers/transferService';
 import { useAuth } from '@/context/AuthContext';
 

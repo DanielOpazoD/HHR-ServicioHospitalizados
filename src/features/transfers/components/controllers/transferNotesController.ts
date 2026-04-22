@@ -1,5 +1,5 @@
 import type { UserRole } from '@/types/authRoleTypes';
-import type { TransferNote } from '@/types/transfers';
+import type { TransferNote } from '@/types/transferRequestTypes';
 import type { TransferTableMode } from './transferTableController';
 
 export const canManageTransferNotes = (

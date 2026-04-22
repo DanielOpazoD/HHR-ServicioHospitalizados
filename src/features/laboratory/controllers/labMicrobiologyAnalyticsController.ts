@@ -1,9 +1,8 @@
+import type { LabResultRow, SyslabExamItem } from '@/types/domain/labExamTypes';
 import type {
   LabMicrobiologyCategory,
   LabMicrobiologyEntry,
-  LabResultRow,
-  SyslabExamItem,
-} from '@/types/domain/laboratory';
+} from '@/types/domain/labAnalyticsTypes';
 import { MICROBIOLOGY_PATTERNS } from '../constants/labExamConstants';
 
 export const hasMicrobiologyPattern = (value: string): boolean => {

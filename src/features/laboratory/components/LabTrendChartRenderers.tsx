@@ -9,7 +9,7 @@ import {
   CartesianGrid,
   ReferenceArea,
 } from 'recharts';
-import type { LabTrendPoint } from '@/types/domain/laboratory';
+import type { LabTrendPoint } from '@/types/domain/labAnalyticsTypes';
 import { sortByDate } from './LabTrendChartHelpers';
 import { DASH_PATTERNS, LABEL_OFFSETS, LINE_COLORS } from '../constants/labChartConstants';
 

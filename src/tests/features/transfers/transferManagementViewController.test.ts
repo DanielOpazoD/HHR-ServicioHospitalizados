@@ -17,7 +17,8 @@ import {
   buildTransferTableBindings,
   buildTransferYearButtonModels,
 } from '@/features/transfers/components/controllers/transferManagementViewController';
-import type { TransferFormData, TransferRequest, TransferStatus } from '@/types/transfers';
+import type { TransferFormData, TransferRequest } from '@/types/transferRequestTypes';
+import type { TransferStatus } from '@/types/transferStatusTypes';
 
 const buildTransfer = (overrides: Partial<TransferRequest> = {}): TransferRequest =>
   ({

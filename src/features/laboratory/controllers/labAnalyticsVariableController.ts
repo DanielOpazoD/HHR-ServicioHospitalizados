@@ -1,4 +1,4 @@
-import type { SyslabExamItem } from '@/types/domain/laboratory';
+import type { SyslabExamItem } from '@/types/domain/labExamTypes';
 import { COMPARISON_EXCLUDE, COMPARISON_ORDER } from '../constants/labComparisonCatalogConstants';
 import { TREND_GROUPS } from '../constants/labTrendConstants';
 

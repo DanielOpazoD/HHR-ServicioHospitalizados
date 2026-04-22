@@ -1,6 +1,7 @@
 import React from 'react';
 import { FileText, FlaskConical } from 'lucide-react';
-import type { LabMicrobiologyEntry, SyslabExamItem } from '@/types/domain/laboratory';
+import type { SyslabExamItem } from '@/types/domain/labExamTypes';
+import type { LabMicrobiologyEntry } from '@/types/domain/labAnalyticsTypes';
 
 export const LabViewerMicrobiologyPanel: React.FC<{
   entries: LabMicrobiologyEntry[];

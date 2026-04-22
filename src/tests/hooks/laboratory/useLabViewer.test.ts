@@ -34,7 +34,7 @@ vi.mock('@/services/utils/loggerScope', () => ({
   }),
 }));
 
-vi.mock('@/shared/runtime/browserWindowRuntime', () => ({
+vi.mock('@/shared/runtime/browserClipboardRuntime', () => ({
   writeClipboardText: (...args: unknown[]) => mockWriteClipboardText(...args),
 }));
 
@@ -76,12 +76,8 @@ const createWrapper = () => {
 };
 
 import { useLabViewer } from '@/features/laboratory/hooks/useLabViewer';
-import type {
-  LabPatient,
-  SyslabExamDetail,
-  SyslabExamItem,
-  LabTrendGroup,
-} from '@/types/domain/laboratory';
+import type { LabPatient, SyslabExamDetail, SyslabExamItem } from '@/types/domain/labExamTypes';
+import type { LabTrendGroup } from '@/types/domain/labAnalyticsTypes';
 
 /* ------------------------------------------------------------------ */
 /*  Test data                                                          */

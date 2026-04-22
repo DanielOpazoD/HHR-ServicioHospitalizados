@@ -1,6 +1,6 @@
 import React from 'react';
 import { Trash2, XCircle } from 'lucide-react';
-import type { TransferRequest } from '@/types/transfers';
+import type { TransferRequest } from '@/types/transferRequestTypes';
 
 interface TransferTableCloseActionsMenuProps {
   transfer: TransferRequest;

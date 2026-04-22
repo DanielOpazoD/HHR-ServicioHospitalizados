@@ -1,5 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
-import type { StatusChange, TransferRequest } from '@/types/transfers';
+import type { StatusChange, TransferRequest } from '@/types/transferRequestTypes';
 import {
   normalizeHistoryStatusFrom,
   normalizeLegacyTransferStatus,

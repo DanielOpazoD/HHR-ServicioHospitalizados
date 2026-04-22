@@ -6,7 +6,7 @@ import {
   isTransferActiveStatus,
   isTransferFinalizedStatus,
 } from '@/features/transfers/components/controllers/transferTableController';
-import type { TransferRequest } from '@/types/transfers';
+import type { TransferRequest } from '@/types/transferRequestTypes';
 
 const buildTransfer = (status: TransferRequest['status']): TransferRequest =>
   ({

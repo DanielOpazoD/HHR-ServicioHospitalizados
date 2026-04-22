@@ -1,4 +1,5 @@
-import type { LabAnalysisData, LabPatient, SyslabExamItem } from '@/types/domain/laboratory';
+import type { LabPatient, SyslabExamItem } from '@/types/domain/labExamTypes';
+import type { LabAnalysisData } from '@/types/domain/labAnalyticsTypes';
 import { EXAM_FILTER_CATEGORIES } from '../constants/labExamConstants';
 import { bedSortKey } from './labFormattingController';
 

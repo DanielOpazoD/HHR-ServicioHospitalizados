@@ -10,7 +10,7 @@ import {
   resolveTransferDocumentWorkflowPlan,
   withSelectedTransfer,
 } from '@/hooks/controllers/transferViewStatesController';
-import type { TransferRequest } from '@/types/transfers';
+import type { TransferRequest } from '@/types/transferRequestTypes';
 
 describe('transferViewStatesController', () => {
   it('resolves configured destination hospital ids and missing destinations', () => {

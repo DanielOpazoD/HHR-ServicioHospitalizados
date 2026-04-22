@@ -1,4 +1,4 @@
-import type { TransferStatus } from '@/types/transfers';
+import type { TransferStatus } from '@/types/transferStatusTypes';
 import type { DropDirectionPosition, OverlayAnchorRect } from '@/shared/ui/anchoredOverlayTypes';
 
 export type TransferStatusDropdownPosition = DropDirectionPosition;

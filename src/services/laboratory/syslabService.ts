@@ -21,7 +21,7 @@
 
 import { resolveCurrentUserAuthHeaders } from '@/services/auth/authRequestHeaders';
 import { createScopedLogger } from '@/services/utils/loggerScope';
-import type { SyslabSearchResponse, SyslabDetailsResponse } from '@/types/domain/laboratory';
+import type { SyslabSearchResponse, SyslabDetailsResponse } from '@/types/domain/labExamTypes';
 
 const syslabLogger = createScopedLogger('syslabService');
 

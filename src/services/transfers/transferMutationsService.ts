@@ -1,5 +1,6 @@
 import { deleteDoc, setDoc, Timestamp } from 'firebase/firestore';
-import type { TransferRequest, TransferStatus } from '@/types/transfers';
+import type { TransferRequest } from '@/types/transferRequestTypes';
+import type { TransferStatus } from '@/types/transferStatusTypes';
 import {
   buildTransferOperationError,
   resolveTransferOperationErrorKind,

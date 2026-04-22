@@ -7,12 +7,8 @@ import React from 'react';
 import clsx from 'clsx';
 import { ArrowLeft, BarChart3, Check, Clipboard, FlaskConical, TrendingUp } from 'lucide-react';
 import { writeClipboardText } from '@/shared/runtime/browserClipboardRuntime';
-import type {
-  LabAnalysisData,
-  AnalysisViewTab,
-  LabPatient,
-  SyslabExamItem,
-} from '@/types/domain/laboratory';
+import type { LabPatient, SyslabExamItem } from '@/types/domain/labExamTypes';
+import type { LabAnalysisData, AnalysisViewTab } from '@/types/domain/labAnalyticsTypes';
 import { buildLabSummaryText } from '../controllers/labSummaryController';
 import { LabViewerTrendCharts } from './LabViewerTrendCharts';
 import { LabViewerComparisonTable } from './LabViewerComparisonTable';

@@ -5,7 +5,8 @@
  * No React dependency — can be used in any context.
  */
 
-import type { SyslabExamItem, SyslabExamDetail, LabAnalysisData } from '@/types/domain/laboratory';
+import type { SyslabExamItem, SyslabExamDetail } from '@/types/domain/labExamTypes';
+import type { LabAnalysisData } from '@/types/domain/labAnalyticsTypes';
 import { buildAnalysisDataResult, mergeBilirrubinas } from './labAnalysisResultController';
 import { processLabExamDetails } from './labDetailProcessingController';
 export {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { processLabExamDetails } from '@/features/laboratory/controllers/labDetailProcessingController';
-import type { SyslabExamDetail, SyslabExamItem } from '@/types/domain/laboratory';
+import type { SyslabExamDetail, SyslabExamItem } from '@/types/domain/labExamTypes';
 
 describe('labDetailProcessingController', () => {
   it('deduplicates repeated column keys while preserving distinct exams', () => {

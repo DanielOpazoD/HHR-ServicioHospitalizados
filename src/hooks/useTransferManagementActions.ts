@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
-import type { TransferRequest, TransferFormData, TransferStatus } from '@/types/transfers';
+import type { TransferRequest, TransferFormData } from '@/types/transferRequestTypes';
+import type { TransferStatus } from '@/types/transferStatusTypes';
 import {
   changeTransferStatusWithResult,
   completeTransferWithResult,

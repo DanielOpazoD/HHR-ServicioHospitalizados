@@ -1,7 +1,7 @@
 import React from 'react';
 import clsx from 'clsx';
 import { Archive, CheckCircle, Eye, FileDown, Trash2, Undo2, XCircle } from 'lucide-react';
-import type { TransferRequest } from '@/types/transfers';
+import type { TransferRequest } from '@/types/transferRequestTypes';
 import type { TransferRowActionState } from '../controllers/transferTableController';
 
 /**

@@ -1,5 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { TransferRequest, TransferStatus } from '@/types/transfers';
+import type { TransferRequest } from '@/types/transferRequestTypes';
+import type { TransferStatus } from '@/types/transferStatusTypes';
 import { ChevronDown, Clock, MessageSquare, User, Trash2 } from 'lucide-react';
 import clsx from 'clsx';
 import { usePortalPopoverRuntime } from '@/hooks/usePortalPopoverRuntime';

@@ -1,6 +1,7 @@
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 
-import type { StatusChange, TransferRequest, TransferStatus } from '@/types/transfers';
+import type { StatusChange, TransferRequest } from '@/types/transferRequestTypes';
+import type { TransferStatus } from '@/types/transferStatusTypes';
 import {
   getTransferHistoryCollection,
   getTransfersCollection,

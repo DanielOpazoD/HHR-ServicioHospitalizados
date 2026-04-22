@@ -6,7 +6,8 @@
 import React, { useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { BaseModal } from '@/components/shared/BaseModal';
-import { TransferRequest, TRANSFER_STATUS_CONFIG } from '@/types/transfers';
+import type { TransferRequest } from '@/types/transferRequestTypes';
+import { TRANSFER_STATUS_CONFIG } from '@/types/transferStatusTypes';
 import { getNextStatus } from '@/constants/transferConstants';
 import { formatTransferVerboseDateTime } from '@/shared/transfers/transferPresentation';
 import { TRANSFER_FORM_TEXTAREA_CLASSNAME } from '../transferFormStyles';

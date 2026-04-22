@@ -1,5 +1,5 @@
 import { fetchSyslabPdfArrayBuffer } from '@/services/laboratory/syslabService';
-import type { LabResultRow, SyslabExamDetail, SyslabExamItem } from '@/types/domain/laboratory';
+import type { LabResultRow, SyslabExamDetail, SyslabExamItem } from '@/types/domain/labExamTypes';
 
 const CULTURE_PATTERN = /(CULTIVO CORRIENTE|ATB BACILOS|ANTIBIOGRAMA)/i;
 const HEMOCULTURE_PATTERN = /HEMOCULTIVO/i;

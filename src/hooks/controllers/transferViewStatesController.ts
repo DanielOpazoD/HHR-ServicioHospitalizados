@@ -1,5 +1,5 @@
 import { getHospitalConfigByDestinationName } from '@/constants/hospitalConfigs';
-import type { TransferRequest } from '@/types/transfers';
+import type { TransferRequest } from '@/types/transferRequestTypes';
 import type {
   TransferDocumentPackageResult,
   TransferDocumentPackageSuccess,

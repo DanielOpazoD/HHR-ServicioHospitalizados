@@ -3,7 +3,7 @@ import {
   TRANSFER_BED_REQUIREMENTS,
   type DestinationHospitalOption,
 } from '@/constants/transferConstants';
-import type { TransferFormData, TransferRequest } from '@/types/transfers';
+import type { TransferFormData, TransferRequest } from '@/types/transferRequestTypes';
 
 export interface TransferFormPatientOption {
   id: string;

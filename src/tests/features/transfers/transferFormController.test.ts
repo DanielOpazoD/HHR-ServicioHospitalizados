@@ -3,7 +3,7 @@ import {
   buildTransferFormSubmission,
   resolveTransferFormState,
 } from '@/features/transfers/components/controllers/transferFormController';
-import type { TransferRequest } from '@/types/transfers';
+import type { TransferRequest } from '@/types/transferRequestTypes';
 
 describe('transferFormController', () => {
   it('maps unknown catalog values to Otro/Otra fields when editing a transfer', () => {

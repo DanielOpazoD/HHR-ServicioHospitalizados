@@ -1,5 +1,5 @@
 import { doc, getDoc, getDocs, orderBy, query, where } from 'firebase/firestore';
-import type { TransferRequest } from '@/types/transfers';
+import type { TransferRequest } from '@/types/transferRequestTypes';
 import {
   getTransferHistoryCollection,
   getTransfersCollection,

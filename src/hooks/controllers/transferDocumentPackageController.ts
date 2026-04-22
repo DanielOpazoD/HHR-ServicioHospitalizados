@@ -1,5 +1,5 @@
 import type { DailyRecordBedsState } from '@/application/shared/dailyRecordBedContracts';
-import type { TransferRequest } from '@/types/transfers';
+import type { TransferRequest } from '@/types/transferRequestTypes';
 import type {
   GeneratedDocument,
   QuestionnaireResponse,

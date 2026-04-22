@@ -1,4 +1,5 @@
-import type { TransferRequest, TransferStatus } from '@/types/transfers';
+import type { TransferRequest } from '@/types/transferRequestTypes';
+import type { TransferStatus } from '@/types/transferStatusTypes';
 import {
   ACTIVE_TRANSFER_STATUSES as ACTIVE_TRANSFER_LIFECYCLE_STATUSES,
   isActiveTransferStatus,

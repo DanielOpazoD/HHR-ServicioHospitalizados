@@ -6,12 +6,8 @@
  */
 
 import { useCallback } from 'react';
-import type {
-  AnalysisViewTab,
-  LabAnalysisData,
-  LabPatient,
-  SyslabExamItem,
-} from '@/types/domain/laboratory';
+import type { LabPatient, SyslabExamItem } from '@/types/domain/labExamTypes';
+import type { AnalysisViewTab, LabAnalysisData } from '@/types/domain/labAnalyticsTypes';
 import type { ProgressState } from '../types/labViewerTypes';
 import { resolveInitialLabViewerRut } from '../controllers/labViewerController';
 import { useLabViewerAnalysis } from './useLabViewerAnalysis';

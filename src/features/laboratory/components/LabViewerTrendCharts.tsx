@@ -6,7 +6,7 @@
 import React from 'react';
 import { Download, TrendingUp } from 'lucide-react';
 import { LabChartErrorBoundary } from './LabChartErrorBoundary';
-import type { LabAnalysisData } from '@/types/domain/laboratory';
+import type { LabAnalysisData } from '@/types/domain/labAnalyticsTypes';
 import { LabTrendGroupCard } from './LabTrendGroupCard';
 import { exportChartsAsPng } from './labTrendChartExport';
 

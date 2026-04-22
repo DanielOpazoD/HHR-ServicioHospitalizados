@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { collectExamFinding } from '@/features/laboratory/controllers/labFindingCollectionController';
 import type { DetailProcessingContext } from '@/features/laboratory/controllers/labAnalyticsContracts';
-import type { LabMicrobiologyCategory, LabResultRow } from '@/types/domain/laboratory';
+import type { LabResultRow } from '@/types/domain/labExamTypes';
+import type { LabMicrobiologyCategory } from '@/types/domain/labAnalyticsTypes';
 
 const buildContext = (
   overrides: Partial<DetailProcessingContext> = {}

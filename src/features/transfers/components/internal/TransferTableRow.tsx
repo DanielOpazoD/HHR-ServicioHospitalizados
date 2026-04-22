@@ -1,7 +1,8 @@
 import React from 'react';
 import { Pencil } from 'lucide-react';
 import { hasTransferDocumentConfig } from '@/constants/hospitalConfigs';
-import type { TransferFormData, TransferRequest, TransferStatus } from '@/types/transfers';
+import type { TransferFormData, TransferRequest } from '@/types/transferRequestTypes';
+import type { TransferStatus } from '@/types/transferStatusTypes';
 import type { UserRole } from '@/types/authRoleTypes';
 import { TransferStatusInteraction } from './TransferStatusInteraction';
 import { TransferTableRowActions } from './TransferTableRowActions';

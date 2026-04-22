@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import type { SyslabExamItem } from '@/types/domain/laboratory';
+import type { SyslabExamItem } from '@/types/domain/labExamTypes';
 import {
   filterLabExamsByCategory,
   resolveLabExamFilterCategories,

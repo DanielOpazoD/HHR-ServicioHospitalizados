@@ -15,7 +15,7 @@
 
 import React, { useCallback, useState } from 'react';
 import { Loader2, Search, UserSearch } from 'lucide-react';
-import type { LabPatient } from '@/types/domain/laboratory';
+import type { LabPatient } from '@/types/domain/labExamTypes';
 
 interface LabViewerControlsProps {
   uniquePatients: LabPatient[];

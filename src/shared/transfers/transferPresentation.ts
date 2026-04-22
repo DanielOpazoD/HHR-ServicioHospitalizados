@@ -1,4 +1,5 @@
-import { TRANSFER_STATUS_CONFIG, type TransferStatus } from '@/types/transfers';
+import type { TransferStatus } from '@/types/transferStatusTypes';
+import { TRANSFER_STATUS_CONFIG } from '@/types/transferStatusTypes';
 
 const TRANSFER_STATUS_FALLBACK = {
   label: 'Desconocido',

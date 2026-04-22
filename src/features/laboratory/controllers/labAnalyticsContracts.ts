@@ -1,10 +1,9 @@
+import type { LabResultRow, SyslabExamItem } from '@/types/domain/labExamTypes';
 import type {
   LabMicrobiologyCategory,
   LabMicrobiologyEntry,
-  LabResultRow,
   LabTrendPoint,
-  SyslabExamItem,
-} from '@/types/domain/laboratory';
+} from '@/types/domain/labAnalyticsTypes';
 
 export interface ProcessedFindings {
   comparison: Record<string, Record<string, LabResultRow>>;

@@ -3,7 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useTransferViewStates } from '@/hooks/useTransferViewStates';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { generateTransferDocuments } from '@/services/transfers/documentGeneratorService';
-import type { TransferRequest, TransferFormData } from '@/types/transfers';
+import type { TransferRequest, TransferFormData } from '@/types/transferRequestTypes';
 import type { QuestionnaireResponse } from '@/types/transferDocuments';
 
 vi.mock('@/constants/hospitalConfigs', () => ({
@@ -20,7 +20,7 @@ vi.mock('@/services/transfers/documentGeneratorService', () => ({
 }));
 
 const mockRuntimeAlert = vi.fn();
-vi.mock('@/shared/runtime/browserWindowRuntime', () => ({
+vi.mock('@/shared/runtime/browserWindowRuntimeCore', () => ({
   defaultBrowserWindowRuntime: {
     alert: (...args: unknown[]) => mockRuntimeAlert(...args),
   },

@@ -7,7 +7,7 @@ import React, { useEffect, useRef } from 'react';
 import { FlaskConical } from 'lucide-react';
 import { BaseModal } from '@/components/shared/BaseModal';
 import { useLabViewer } from '../hooks/useLabViewer';
-import type { LabPatient } from '@/types/domain/laboratory';
+import type { LabPatient } from '@/types/domain/labExamTypes';
 import { buildLabViewerModalShellModel } from '../controllers/labViewerController';
 import { LabViewerControls } from './LabViewerControls';
 import { LabViewerProgress } from './LabViewerProgress';

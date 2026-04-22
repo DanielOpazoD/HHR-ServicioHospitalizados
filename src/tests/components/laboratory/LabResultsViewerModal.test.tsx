@@ -81,7 +81,8 @@ vi.mock('@/services/laboratory/syslabService', () => ({
 }));
 
 import { LabResultsViewerModal } from '@/features/laboratory';
-import type { LabPatient, SyslabExamItem, LabAnalysisData } from '@/types/domain/laboratory';
+import type { LabPatient, SyslabExamItem } from '@/types/domain/labExamTypes';
+import type { LabAnalysisData } from '@/types/domain/labAnalyticsTypes';
 
 /* ------------------------------------------------------------------ */
 /*  Test data                                                          */

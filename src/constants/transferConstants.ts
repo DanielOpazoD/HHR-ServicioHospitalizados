@@ -3,7 +3,7 @@
  * Configuration for the patient transfer workflow
  */
 
-import { TransferStatus } from '@/types/transfers';
+import type { TransferStatus } from '@/types/transferStatusTypes';
 
 // ============================================================================
 // Status Flow

@@ -1,4 +1,4 @@
-import type { TransferRequest } from '@/types/transfers';
+import type { TransferRequest } from '@/types/transferRequestTypes';
 
 export interface TransferActionsMenuState {
   transfer: TransferRequest;

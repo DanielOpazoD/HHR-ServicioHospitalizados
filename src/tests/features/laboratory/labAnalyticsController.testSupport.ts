@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import type { LabResultRow, SyslabExamDetail, SyslabExamItem } from '@/types/domain/laboratory';
+import type { LabResultRow, SyslabExamDetail, SyslabExamItem } from '@/types/domain/labExamTypes';
 
 vi.mock('@/services/utils/loggerScope', () => ({
   createScopedLogger: () => ({

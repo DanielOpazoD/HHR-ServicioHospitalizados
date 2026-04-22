@@ -69,7 +69,7 @@ import { LabViewerPdf } from '@/features/laboratory/components/LabViewerPdf';
 import { LabViewerExamList } from '@/features/laboratory/components/LabViewerExamList';
 import { LabExportConfigDialog } from '@/features/laboratory/components/LabExportConfigDialog';
 import { LabChartErrorBoundary } from '@/features/laboratory/components/LabChartErrorBoundary';
-import type { LabPatient, SyslabExamItem } from '@/types/domain/laboratory';
+import type { LabPatient, SyslabExamItem } from '@/types/domain/labExamTypes';
 
 /* ------------------------------------------------------------------ */
 /*  Shared test data                                                   */

@@ -4,7 +4,8 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import type { TransferFormData, TransferRequest, TransferStatus } from '@/types/transfers';
+import type { TransferFormData, TransferRequest } from '@/types/transferRequestTypes';
+import type { TransferStatus } from '@/types/transferStatusTypes';
 import { TransferTableCloseActionsMenu } from './TransferTableCloseActionsMenu';
 import { TransferTableRow } from './TransferTableRow';
 import type { TransferTableMode } from '../controllers/transferTableController';

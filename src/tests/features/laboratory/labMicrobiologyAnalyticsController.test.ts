@@ -5,11 +5,8 @@ import {
   hasMicrobiologyPattern,
   resolveMicrobiologyCategoriesForExam,
 } from '@/features/laboratory/controllers/labMicrobiologyAnalyticsController';
-import type {
-  LabMicrobiologyCategory,
-  LabResultRow,
-  SyslabExamItem,
-} from '@/types/domain/laboratory';
+import type { LabResultRow, SyslabExamItem } from '@/types/domain/labExamTypes';
+import type { LabMicrobiologyCategory } from '@/types/domain/labAnalyticsTypes';
 
 describe('labMicrobiologyAnalyticsController', () => {
   const combinedExam: SyslabExamItem = {

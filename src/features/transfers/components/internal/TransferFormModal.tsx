@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { CalendarDays, FilePlus, User } from 'lucide-react';
-import { TransferRequest, TransferFormData } from '@/types/transfers';
+import type { TransferRequest, TransferFormData } from '@/types/transferRequestTypes';
 import {
   DESTINATION_HOSPITALS,
   MEDICAL_SPECIALTIES,

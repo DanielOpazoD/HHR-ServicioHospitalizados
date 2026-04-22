@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import ExcelJS from 'exceljs';
-import type { LabAnalysisData, LabPatient } from '@/types/domain/laboratory';
+import type { LabPatient } from '@/types/domain/labExamTypes';
+import type { LabAnalysisData } from '@/types/domain/labAnalyticsTypes';
 import type { ExportConfig } from '@/features/laboratory/types/labViewerTypes';
 
 const { createWorkbookMock, loggerErrorMock } = vi.hoisted(() => ({

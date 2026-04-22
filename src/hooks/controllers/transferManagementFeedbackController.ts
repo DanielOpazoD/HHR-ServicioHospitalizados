@@ -1,5 +1,5 @@
 import { resolveApplicationOutcomeMessage } from '@/shared/contracts/applicationOutcomeMessage';
-import type { TransferStatus } from '@/types/transfers';
+import type { TransferStatus } from '@/types/transferStatusTypes';
 
 export const getTransferAuthError = (hasUserEmail: boolean): string | null =>
   hasUserEmail ? null : 'Usuario no autenticado';

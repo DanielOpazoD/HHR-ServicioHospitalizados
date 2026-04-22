@@ -1,5 +1,5 @@
 import React from 'react';
-import type { SyslabExamItem } from '@/types/domain/laboratory';
+import type { SyslabExamItem } from '@/types/domain/labExamTypes';
 import {
   resolveAllSelectableExamsSelected,
   resolveLabExamDateRange,
