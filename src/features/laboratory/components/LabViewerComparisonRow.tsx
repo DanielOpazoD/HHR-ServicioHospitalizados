@@ -32,7 +32,7 @@ export const LabViewerComparisonRow: React.FC<LabViewerComparisonRowProps> = ({
         index % 2 === 1 && 'bg-slate-50/20'
       )}
     >
-      <td className="sticky left-0 z-10 border-r border-slate-200 bg-white px-2 py-1.5 text-[10px] text-slate-700">
+      <td className="sticky left-0 z-10 border-r border-slate-200 bg-white px-2 py-1 text-[9px] text-slate-700">
         <div className="flex items-center justify-between gap-2">
           <span className="min-w-0 truncate font-semibold">{name}</span>
           {canPin ? (
@@ -41,7 +41,7 @@ export const LabViewerComparisonRow: React.FC<LabViewerComparisonRowProps> = ({
               onClick={() => onTogglePin(name)}
               title={isPinned ? `Desanclar ${name}` : `Anclar ${name}`}
               className={clsx(
-                'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors',
+                'inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-md border transition-colors',
                 isPinned
                   ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
                   : 'border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:text-slate-600'
@@ -56,7 +56,7 @@ export const LabViewerComparisonRow: React.FC<LabViewerComparisonRowProps> = ({
         const row = data.comparison[name]?.[date];
         if (!row) {
           return (
-            <td key={date} className="px-1 py-1.5 text-center text-[10px] text-slate-300">
+            <td key={date} className="px-1 py-1 text-center text-[9px] text-slate-300">
               --
             </td>
           );
@@ -65,10 +65,10 @@ export const LabViewerComparisonRow: React.FC<LabViewerComparisonRowProps> = ({
         if (row.qualitative) {
           const hasAlert = resolveQualitativeComparisonAlert(row.result);
           return (
-            <td key={date} className="px-1 py-1.5 text-center whitespace-nowrap">
+            <td key={date} className="px-1 py-1 text-center whitespace-nowrap">
               <span
                 className={clsx(
-                  'text-[10px] font-semibold',
+                  'text-[9px] font-semibold',
                   hasAlert ? 'text-red-600' : 'text-slate-700'
                 )}
               >
@@ -81,10 +81,10 @@ export const LabViewerComparisonRow: React.FC<LabViewerComparisonRowProps> = ({
         const outOfRange = isOutOfRange(row.result, row.refValue);
         const { display } = formatLabResult(row.result, row.unit);
         return (
-          <td key={date} className="px-1 py-1.5 text-center whitespace-nowrap">
+          <td key={date} className="px-1 py-1 text-center whitespace-nowrap">
             <span
               className={clsx(
-                'text-[11px] font-semibold',
+                'text-[10px] font-semibold',
                 outOfRange === true ? 'text-red-600' : 'text-slate-700'
               )}
             >

@@ -15,6 +15,22 @@ import type { LabResultRow, SyslabExamItem, SyslabExamDetail } from '@/types/dom
 
 const logger = createScopedLogger('labFirestoreService');
 
+const isPermissionDeniedError = (error: unknown): boolean => {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const typed = error as { code?: string; message?: string };
+  const code = String(typed.code || '').toLowerCase();
+  const message = String(typed.message || '').toLowerCase();
+
+  return (
+    code.includes('permission-denied') ||
+    message.includes('missing or insufficient permissions') ||
+    message.includes('permission denied')
+  );
+};
+
 /** Stored exam record in Firestore. */
 export interface StoredLabExam {
   date: string;
@@ -84,6 +100,17 @@ export const saveLabResults = async (
 
     logger.info(`Saved ${Object.keys(exams).length} lab exams for ${docId}`);
   } catch (error) {
+    if (isPermissionDeniedError(error)) {
+      logger.warn(
+        'Lab results persisted only in memory because Firestore rejected the cache write',
+        {
+          code: (error as { code?: string }).code || 'permission-denied',
+          rut: normalizeRutForDocId(rut),
+        }
+      );
+      return;
+    }
+
     logger.error('Failed to save lab results to Firestore', error);
     // Don't throw — persistence failure shouldn't block the UI
   }

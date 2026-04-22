@@ -172,20 +172,97 @@ export const resolveLabViewerSearchErrorMessage = ({
   queryData?: { success?: boolean; error?: string } | null;
 }): string | null => {
   if (queryError) {
-    return queryError instanceof Error ? queryError.message : 'Error al buscar exámenes.';
+    return resolveLabViewerSyslabErrorMessage(queryError, 'search');
   }
 
   if (queryData && queryData.success === false) {
-    return queryData.error || 'No se pudieron obtener los resultados.';
+    return queryData.error
+      ? resolveLabViewerSyslabErrorMessage(queryData.error, 'search')
+      : 'No se pudieron obtener los resultados.';
   }
 
   return null;
 };
 
 export const resolveLabViewerAnalysisErrorMessage = (error: unknown): string =>
-  error instanceof Error
-    ? error.message
+  resolveLabViewerSyslabErrorMessage(error, 'details');
+
+const flattenLabViewerErrorText = (value: unknown): string => {
+  if (value == null) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (value instanceof Error) {
+    return `${value.name} ${value.message}`.trim();
+  }
+  if (Array.isArray(value)) {
+    return value.map(item => flattenLabViewerErrorText(item)).join(' ');
+  }
+  if (typeof value === 'object') {
+    return Object.values(value as Record<string, unknown>)
+      .map(entry => flattenLabViewerErrorText(entry))
+      .join(' ');
+  }
+  return '';
+};
+
+const isInternalScrapingError = (error: unknown): boolean => {
+  const text = flattenLabViewerErrorText(error).toLowerCase();
+  return (
+    text.includes('error interno al procesar el scraping') ||
+    text.includes('interno al procesar el scraping')
+  );
+};
+
+const isSyslabNetworkError = (error: unknown): boolean => {
+  const text = flattenLabViewerErrorText(error).toLowerCase();
+  return (
+    text.includes('failed to fetch') ||
+    text.includes('network changed') ||
+    text.includes('networkerror') ||
+    text.includes('internet disconnected') ||
+    text.includes('name_not_resolved') ||
+    text.includes('timeout')
+  );
+};
+
+const resolveLabViewerSyslabErrorMessage = (
+  error: unknown,
+  operation: 'search' | 'details'
+): string => {
+  if (isInternalScrapingError(error)) {
+    return operation === 'search'
+      ? 'El proxy local de Syslab falló al scrapear. Verifica API-laboratorioHHR, la red del hospital y el acceso a 10.4.69.90.'
+      : 'El proxy local de Syslab falló al procesar el PDF. Verifica API-laboratorioHHR, la red del hospital y el acceso a 10.4.69.90.';
+  }
+
+  if (isSyslabNetworkError(error)) {
+    return 'No hay conexión estable con Syslab o con Firestore. Revisa red/VPN y vuelve a intentar.';
+  }
+
+  if (typeof error === 'string' && error.trim().length > 0) {
+    return error;
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return operation === 'search'
+    ? 'Error al buscar exámenes.'
     : 'Error al analizar exámenes. Verifica que el servidor Syslab esté activo.';
+};
+
+export const shouldRetryLabViewerSearchError = (error: unknown): boolean => {
+  if (isInternalScrapingError(error)) {
+    return false;
+  }
+
+  if (flattenLabViewerErrorText(error).toLowerCase().includes('permission-denied')) {
+    return false;
+  }
+
+  return true;
+};
 
 export interface LabViewerModalShellModel {
   modalSize: '3xl' | '5xl' | 'full';

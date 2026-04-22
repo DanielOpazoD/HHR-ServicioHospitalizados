@@ -117,7 +117,7 @@ describe('LabViewerComparisonTable', () => {
     expect(screen.queryByText('Copiar tabla resumida')).not.toBeInTheDocument();
   });
 
-  it('groups urine comparison rows under clear clinical headers', () => {
+  it('groups urine comparison rows under renal function headers', () => {
     const urineData: LabAnalysisData = {
       ...MOCK_ANALYSIS,
       comparison: {
@@ -135,10 +135,29 @@ describe('LabViewerComparisonTable', () => {
 
     render(<LabViewerComparisonTable data={urineData} patient={MOCK_PATIENT} />);
 
-    expect(screen.getByText('RPC / RAC')).toBeInTheDocument();
+    expect(screen.getByText('Función renal / electrolitos')).toBeInTheDocument();
     expect(screen.getByText('RPC')).toBeInTheDocument();
     expect(screen.queryByText('Orina físico-químico')).not.toBeInTheDocument();
     expect(screen.queryByText('Sedimento urinario')).not.toBeInTheDocument();
+  });
+
+  it('renders patient rut and copies it on click', async () => {
+    const user = userEvent.setup();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText },
+      configurable: true,
+    });
+
+    render(<LabViewerComparisonTable data={MOCK_ANALYSIS} patient={MOCK_PATIENT} />);
+
+    const rutButton = screen.getByRole('button', { name: /rut 12345678-9/i });
+    expect(rutButton).toBeInTheDocument();
+
+    await user.click(rutButton);
+
+    expect(writeText).toHaveBeenCalledWith('12345678-9');
+    expect(screen.getByRole('button', { name: /rut copiado/i })).toBeInTheDocument();
   });
 
   it('renders clinical groups expanded by default', () => {
@@ -164,13 +183,13 @@ describe('LabViewerComparisonTable', () => {
             refValue: '0-5',
           },
         },
-        LDH: {
+        'V.H.S.': {
           '08/04/2026 14:00': {
             section: 'BQ',
-            analysis: 'LDH',
-            result: '250',
-            unit: 'U/L',
-            refValue: '135-225',
+            analysis: 'V.H.S.',
+            result: '18',
+            unit: 'mm/h',
+            refValue: '0-20',
           },
         },
         Calcio: {
@@ -209,6 +228,15 @@ describe('LabViewerComparisonTable', () => {
             refValue: '0.4-4.0',
           },
         },
+        RAC: {
+          '08/04/2026 14:00': {
+            section: 'QUIMICA/ORINA',
+            analysis: 'RAC',
+            result: '238.9',
+            unit: '',
+            refValue: '< 30.0',
+          },
+        },
       },
     };
 
@@ -221,10 +249,11 @@ describe('LabViewerComparisonTable', () => {
     expect(screen.getByText('Hemoglobina')).toBeInTheDocument();
     expect(screen.getByText('Creatinina')).toBeInTheDocument();
     expect(screen.getByText('Proteina C Reactiva')).toBeInTheDocument();
-    expect(screen.getByText('LDH')).toBeInTheDocument();
+    expect(screen.getByText('V.H.S.')).toBeInTheDocument();
     expect(screen.getByText('Calcio')).toBeInTheDocument();
     expect(screen.getByText('Fosforo')).toBeInTheDocument();
     expect(screen.getByText('HCO3')).toBeInTheDocument();
+    expect(screen.getByText('RAC')).toBeInTheDocument();
     expect(screen.getByText('TSH')).toBeInTheDocument();
   });
 

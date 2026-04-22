@@ -7,6 +7,7 @@ import {
   buildUniqueLabPatients,
   resolveInitialLabViewerRut,
   resolveLabViewerSearchErrorMessage,
+  shouldRetryLabViewerSearchError,
 } from '../controllers/labViewerController';
 
 interface UseLabViewerQueryParams {
@@ -53,7 +54,7 @@ export const useLabViewerQuery = ({
     enabled: searchEnabled && !!selectedRut,
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
-    retry: 1,
+    retry: (failureCount, error) => failureCount < 1 && shouldRetryLabViewerSearchError(error),
   });
 
   const examList = useMemo(

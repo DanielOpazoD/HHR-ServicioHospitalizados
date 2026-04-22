@@ -102,7 +102,7 @@ export const UnitSubChart: React.FC<{
   const extraMargin = varNames.length > 2 ? 30 : 18;
 
   return (
-    <div>
+    <div className="min-w-0">
       <div className="mb-2 flex flex-wrap gap-3">
         {varNames.map((name, index) => {
           const colorIndex = (index + colorOffset) % LINE_COLORS.length;
@@ -127,8 +127,8 @@ export const UnitSubChart: React.FC<{
           );
         })}
       </div>
-      <div className="h-52">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="h-52 min-w-0">
+        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
           <LineChart
             data={chartData}
             margin={{ top: extraMargin, right: 25, left: 0, bottom: extraMargin }}

@@ -13,6 +13,7 @@ import {
 } from '../controllers/labViewerController';
 import { saveLabResults } from '../services/labFirestoreService';
 import { enrichMicrobiologyDetailsFromPdf } from '../services/labMicrobiologyPdfService';
+import { enrichUrineRatioDetailsFromPdf } from '../services/labUrinePdfService';
 
 interface UseLabViewerAnalysisParams {
   examList: SyslabExamItem[];
@@ -117,7 +118,14 @@ export const useLabViewerAnalysis = ({
         return;
       }
 
-      const enrichedDetails = await enrichMicrobiologyDetailsFromPdf(data.data, examList);
+      const microbiologyEnrichedDetails = await enrichMicrobiologyDetailsFromPdf(
+        data.data,
+        examList
+      );
+      const enrichedDetails = await enrichUrineRatioDetailsFromPdf(
+        microbiologyEnrichedDetails,
+        examList
+      );
       if (!mountedRef.current) {
         return;
       }

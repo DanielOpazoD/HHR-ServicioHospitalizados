@@ -12,6 +12,7 @@ import {
   resolveLabExamSelectionByDays,
   resolveLabViewerAnalysisErrorMessage,
   resolveLabViewerSearchErrorMessage,
+  shouldRetryLabViewerSearchError,
   resolveSelectAllLabExamSelection,
   resolveSelectableLabExamIds,
   resolveSelectedLabAnalysisLinks,
@@ -184,6 +185,27 @@ describe('labViewerController', () => {
     expect(resolveLabViewerAnalysisErrorMessage(new Error('Falló análisis'))).toBe(
       'Falló análisis'
     );
+
+    expect(
+      resolveLabViewerSearchErrorMessage({
+        queryError: new Error('¡Error interno al procesar el scraping!'),
+        queryData: null,
+      })
+    ).toBe(
+      'El proxy local de Syslab falló al scrapear. Verifica API-laboratorioHHR, la red del hospital y el acceso a 10.4.69.90.'
+    );
+
+    expect(resolveLabViewerAnalysisErrorMessage(new Error('Failed to fetch'))).toBe(
+      'No hay conexión estable con Syslab o con Firestore. Revisa red/VPN y vuelve a intentar.'
+    );
+  });
+
+  it('marks internal scraping and permission errors as non-retryable', () => {
+    expect(
+      shouldRetryLabViewerSearchError(new Error('¡Error interno al procesar el scraping!'))
+    ).toBe(false);
+    expect(shouldRetryLabViewerSearchError({ code: 'permission-denied' })).toBe(false);
+    expect(shouldRetryLabViewerSearchError(new TypeError('Failed to fetch'))).toBe(true);
   });
 
   it('builds the viewer modal shell state for list, analysis and pdf modes', () => {

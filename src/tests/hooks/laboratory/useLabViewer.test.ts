@@ -16,6 +16,7 @@ vi.unmock('@/features/laboratory/constants/labConstants');
 const mockSearchSyslabExams = vi.fn();
 const mockFetchSyslabExamDetails = vi.fn();
 const mockEnrichMicrobiologyDetailsFromPdf = vi.fn();
+const mockEnrichUrineRatioDetailsFromPdf = vi.fn();
 const mockWriteClipboardText = vi.fn();
 
 vi.mock('@/services/laboratory/syslabService', () => ({
@@ -55,6 +56,11 @@ vi.mock('@/features/laboratory/services/labFirestoreService', () => ({
 vi.mock('@/features/laboratory/services/labMicrobiologyPdfService', () => ({
   enrichMicrobiologyDetailsFromPdf: (...args: unknown[]) =>
     mockEnrichMicrobiologyDetailsFromPdf(...args),
+}));
+
+vi.mock('@/features/laboratory/services/labUrinePdfService', () => ({
+  enrichUrineRatioDetailsFromPdf: (...args: unknown[]) =>
+    mockEnrichUrineRatioDetailsFromPdf(...args),
 }));
 
 vi.mock('@/config/queryClient', () => ({
@@ -138,6 +144,9 @@ describe('useLabViewer', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockEnrichMicrobiologyDetailsFromPdf.mockImplementation(
+      async (details: SyslabExamDetail[]) => details
+    );
+    mockEnrichUrineRatioDetailsFromPdf.mockImplementation(
       async (details: SyslabExamDetail[]) => details
     );
     mockWriteClipboardText.mockResolvedValue(undefined);

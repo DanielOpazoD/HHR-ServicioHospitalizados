@@ -31,7 +31,7 @@ export const LabViewerComparisonTableBody: React.FC<LabViewerComparisonTableBody
       return (
         <React.Fragment key={group.label}>
           <tr className="border-t border-slate-200 bg-slate-50/80">
-            <td colSpan={examDates.length + 1} className="px-2 py-1.5">
+            <td colSpan={examDates.length + 1} className="px-2 py-1">
               <button
                 type="button"
                 onClick={() => onToggleGroup(group.label)}
@@ -43,11 +43,11 @@ export const LabViewerComparisonTableBody: React.FC<LabViewerComparisonTableBody
                   ) : (
                     <ChevronDown size={13} className="text-slate-400" />
                   )}
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-700">
+                  <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-700">
                     {group.label}
                   </span>
                 </span>
-                <span className="text-[10px] text-slate-400">
+                <span className="text-[9px] text-slate-400">
                   {group.rows.length} variable{group.rows.length === 1 ? '' : 's'}
                 </span>
               </button>

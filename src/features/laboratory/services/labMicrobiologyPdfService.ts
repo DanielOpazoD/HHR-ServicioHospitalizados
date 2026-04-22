@@ -1,5 +1,6 @@
 import { fetchSyslabPdfArrayBuffer } from '@/services/laboratory/syslabService';
 import type { LabResultRow, SyslabExamDetail, SyslabExamItem } from '@/types/domain/labExamTypes';
+import { extractPdfText, normalizePdfText } from './labPdfTextSupport';
 
 const CULTURE_PATTERN = /(CULTIVO CORRIENTE|ATB BACILOS|ANTIBIOGRAMA)/i;
 const HEMOCULTURE_PATTERN = /HEMOCULTIVO/i;
@@ -9,85 +10,6 @@ const ARBOVIRUS_PATTERN = /PCR ARBOVIROSIS/i;
 const VIRAL_FINDING_PATTERN =
   /(INFLUENZA|PARAINFLUENZA|METAPNEUMOVIRUS|RHINOVIRUS|RINOVIRUS|SINCICIAL|ADENOVIRUS|SARS|COVID|CORONAVIRUS)/i;
 const ARBOVIRUS_FINDING_PATTERN = /(DENGUE|CHIKUNGUNYA|ZIKA|ARBOVIROSIS)/i;
-
-const normalizePdfText = (text: string): string =>
-  text
-    .replace(/\u00a2/g, 'ó')
-    .replace(/\u00b0/g, 'o')
-    .replace(/[ \t]+/g, ' ')
-    .replace(/\r/g, '\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-
-const groupTextItemsIntoLines = (items: unknown[]): string[] => {
-  const positioned = items
-    .filter(
-      (item): item is { str: string; transform: number[] | Float32Array } =>
-        typeof item === 'object' &&
-        item !== null &&
-        'str' in item &&
-        typeof item.str === 'string' &&
-        item.str.trim().length > 0 &&
-        'transform' in item &&
-        (Array.isArray(item.transform) || item.transform instanceof Float32Array)
-    )
-    .map(item => ({
-      text: item.str.trim(),
-      x: item.transform[4] ?? 0,
-      y: item.transform[5] ?? 0,
-    }))
-    .sort((a, b) => (Math.abs(b.y - a.y) > 1 ? b.y - a.y : a.x - b.x));
-
-  const lines: Array<{ y: number; tokens: Array<{ text: string; x: number }> }> = [];
-
-  for (const item of positioned) {
-    const existing = lines.find(line => Math.abs(line.y - item.y) <= 2);
-    if (existing) {
-      existing.tokens.push({ text: item.text, x: item.x });
-    } else {
-      lines.push({ y: item.y, tokens: [{ text: item.text, x: item.x }] });
-    }
-  }
-
-  return lines
-    .sort((a, b) => b.y - a.y)
-    .map(line =>
-      line.tokens
-        .sort((a, b) => a.x - b.x)
-        .map(token => token.text)
-        .join(' ')
-        .replace(/\s*:\s*/g, ': ')
-        .replace(/[ ]{2,}/g, ' ')
-        .trim()
-    )
-    .filter(Boolean);
-};
-
-const extractPdfText = async (buffer: ArrayBuffer): Promise<string> => {
-  const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
-  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-    'pdfjs-dist/legacy/build/pdf.worker.mjs',
-    import.meta.url
-  ).toString();
-
-  const document = await pdfjs.getDocument({
-    data: new Uint8Array(buffer),
-    useWorkerFetch: false,
-    isEvalSupported: false,
-  }).promise;
-
-  const pages: string[] = [];
-  for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber++) {
-    const page = await document.getPage(pageNumber);
-    const textContent = await page.getTextContent();
-    const lines = groupTextItemsIntoLines(
-      textContent.items.filter(item => typeof item === 'object' && item !== null)
-    );
-    pages.push(lines.join('\n'));
-  }
-
-  return normalizePdfText(pages.join('\n\n'));
-};
 
 const parseColonPairs = (lines: string[]): Array<{ analysis: string; result: string }> => {
   const pairs: Array<{ analysis: string; result: string }> = [];

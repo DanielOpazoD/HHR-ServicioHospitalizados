@@ -16,7 +16,7 @@ export const COMPARISON_DISPLAY_GROUPS = [
   },
   {
     label: 'Inflamación',
-    patterns: ['Proteina C Reactiva', 'VHS', 'LDH'],
+    patterns: ['Proteina C Reactiva', 'VHS', 'V.H.S', 'V.H.S.', 'LDH'],
   },
   {
     label: 'Función renal / electrolitos',
@@ -30,6 +30,8 @@ export const COMPARISON_DISPLAY_GROUPS = [
       'HCO3',
       'Calcio',
       'Fosforo',
+      'RPC',
+      'RAC',
     ],
   },
   {
@@ -47,10 +49,6 @@ export const COMPARISON_DISPLAY_GROUPS = [
       'Albumina',
       'Proteinas Totales',
     ],
-  },
-  {
-    label: 'RPC / RAC',
-    patterns: ['RPC', 'RAC'],
   },
   {
     label: 'Metabólico',
@@ -76,7 +74,6 @@ export const COMPARISON_GROUP_ORDER = [
   'Función renal / electrolitos',
   'Coagulación',
   'Perfil hepático',
-  'RPC / RAC',
   'Metabólico',
   'Otros',
 ] as const;
