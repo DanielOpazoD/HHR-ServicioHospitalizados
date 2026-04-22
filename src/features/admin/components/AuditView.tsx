@@ -19,7 +19,7 @@ import {
 import { useAuth } from '@/context/AuthContext';
 
 export const AuditView: React.FC = () => {
-  const { role, currentUser } = useAuth();
+  const { role } = useAuth();
 
   // Use extracted hook for all audit data management
   const {

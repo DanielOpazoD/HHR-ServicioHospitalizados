@@ -196,10 +196,7 @@ export const collectMicrobiologyFinding = (
   }
 };
 
-const resolveMicrobiologyEntryLabel = (
-  category: LabMicrobiologyCategory,
-  examNames: string[]
-): string => {
+const resolveMicrobiologyEntryLabel = (category: LabMicrobiologyCategory): string => {
   switch (category) {
     case 'clostridium_difficile':
       return 'Clostridium difficile';
@@ -235,7 +232,7 @@ export const buildMicrobiologyEntriesForExam = (input: {
     return {
       category,
       date: input.date,
-      examLabel: resolveMicrobiologyEntryLabel(category, exam.exams),
+      examLabel: resolveMicrobiologyEntryLabel(category),
       findings,
       hasAlertFinding: findings.some(entry => hasAlertMicrobiologyResult(entry.result)),
       sourceExam: exam,

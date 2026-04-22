@@ -42,6 +42,13 @@ Estos son los entrypoints recomendados para trabajo normal.
 
 1. `npm run ci:release-gate`
 
+### Antes de auditoría técnica o revisión ejecutiva
+
+1. `git status --short`
+2. `npm run check:report-freshness`
+3. Si necesitas snapshots actualizados: `npm run report:governance-snapshots`
+4. Recién después usar `reports/*` como evidencia del checkout actual
+
 ### Si tocas reglas, runbooks o documentación operativa
 
 1. Si cambias `firestore.rules` o `storage.rules`: `npm run build:rules-assets`
@@ -83,6 +90,7 @@ Estos scripts siguen soportados, pero no forman parte de la superficie pública 
 ### Reglas y operación
 
 - `npm run build:rules-assets`
+- `npm run check:report-freshness`
 - `npm run report:governance-snapshots`
 
 ### Reportes y auditoría

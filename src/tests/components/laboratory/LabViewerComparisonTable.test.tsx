@@ -139,4 +139,128 @@ describe('LabViewerComparisonTable', () => {
     expect(screen.queryByText('Orina físico-químico')).not.toBeInTheDocument();
     expect(screen.queryByText('Sedimento urinario')).not.toBeInTheDocument();
   });
+
+  it('renders clinical groups expanded by default', () => {
+    const groupedData: LabAnalysisData = {
+      ...MOCK_ANALYSIS,
+      comparison: {
+        Hemoglobina: MOCK_ANALYSIS.comparison.Hemoglobina,
+        Creatinina: {
+          '08/04/2026 14:00': {
+            section: 'BQ',
+            analysis: 'Creatinina',
+            result: '1.1',
+            unit: 'mg/dL',
+            refValue: '0.6-1.2',
+          },
+        },
+        'Proteina C Reactiva': {
+          '08/04/2026 14:00': {
+            section: 'BQ',
+            analysis: 'Proteina C Reactiva',
+            result: '1.2',
+            unit: 'mg/L',
+            refValue: '0-5',
+          },
+        },
+        LDH: {
+          '08/04/2026 14:00': {
+            section: 'BQ',
+            analysis: 'LDH',
+            result: '250',
+            unit: 'U/L',
+            refValue: '135-225',
+          },
+        },
+        Calcio: {
+          '08/04/2026 14:00': {
+            section: 'BQ',
+            analysis: 'Calcio',
+            result: '9.0',
+            unit: 'mg/dL',
+            refValue: '8.4-10.2',
+          },
+        },
+        Fosforo: {
+          '08/04/2026 14:00': {
+            section: 'BQ',
+            analysis: 'Fosforo',
+            result: '3.5',
+            unit: 'mg/dL',
+            refValue: '2.5-4.5',
+          },
+        },
+        HCO3: {
+          '08/04/2026 14:00': {
+            section: 'BQ',
+            analysis: 'HCO3',
+            result: '22',
+            unit: 'mmol/L',
+            refValue: '22-29',
+          },
+        },
+        TSH: {
+          '08/04/2026 14:00': {
+            section: 'BQ',
+            analysis: 'TSH',
+            result: '2.4',
+            unit: 'uUI/mL',
+            refValue: '0.4-4.0',
+          },
+        },
+      },
+    };
+
+    render(<LabViewerComparisonTable data={groupedData} patient={MOCK_PATIENT} />);
+
+    expect(screen.getByText('Hemograma')).toBeInTheDocument();
+    expect(screen.getByText('Función renal / electrolitos')).toBeInTheDocument();
+    expect(screen.getByText('Inflamación')).toBeInTheDocument();
+    expect(screen.getByText('Metabólico')).toBeInTheDocument();
+    expect(screen.getByText('Hemoglobina')).toBeInTheDocument();
+    expect(screen.getByText('Creatinina')).toBeInTheDocument();
+    expect(screen.getByText('Proteina C Reactiva')).toBeInTheDocument();
+    expect(screen.getByText('LDH')).toBeInTheDocument();
+    expect(screen.getByText('Calcio')).toBeInTheDocument();
+    expect(screen.getByText('Fosforo')).toBeInTheDocument();
+    expect(screen.getByText('HCO3')).toBeInTheDocument();
+    expect(screen.getByText('TSH')).toBeInTheDocument();
+  });
+
+  it('collapses and expands a clinical group', async () => {
+    const groupedData: LabAnalysisData = {
+      ...MOCK_ANALYSIS,
+      comparison: {
+        Hemoglobina: MOCK_ANALYSIS.comparison.Hemoglobina,
+        Hematocrito: {
+          '08/04/2026 14:00': {
+            section: 'HG',
+            analysis: 'Hematocrito',
+            result: '40',
+            unit: '%',
+            refValue: '36-46',
+          },
+        },
+      },
+    };
+
+    render(<LabViewerComparisonTable data={groupedData} patient={MOCK_PATIENT} />);
+
+    expect(screen.getByText('Hemoglobina')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /Hemograma/i }));
+    expect(screen.queryByText('Hemoglobina')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /Hemograma/i }));
+    expect(screen.getByText('Hemoglobina')).toBeInTheDocument();
+  });
+
+  it('allows pinning and unpinning important variables', async () => {
+    const user = userEvent.setup();
+    render(<LabViewerComparisonTable data={MOCK_ANALYSIS} patient={MOCK_PATIENT} />);
+
+    const unpinButton = screen.getByTitle('Desanclar Hemoglobina');
+    expect(unpinButton).toBeInTheDocument();
+
+    await user.click(unpinButton);
+    expect(screen.getByTitle('Anclar Hemoglobina')).toBeInTheDocument();
+  });
 });

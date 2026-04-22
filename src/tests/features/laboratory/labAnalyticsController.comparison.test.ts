@@ -1,0 +1,170 @@
+import './labAnalyticsController.testSupport';
+
+import { describe, expect, it } from 'vitest';
+import { buildAnalysisData } from '@/features/laboratory/controllers/labAnalyticsController';
+import { buildDetail, buildExam, buildFinding } from './labAnalyticsController.testSupport';
+
+describe('labAnalyticsController comparison output', () => {
+  const examWithTime = buildExam({
+    id: '100',
+    link: 'http://example.com/100',
+    date: '06/04/2026',
+    time: '10:00:00',
+  });
+
+  const examWithTime2 = buildExam({
+    id: '200',
+    link: 'http://example.com/200',
+    date: '01/03/2026',
+    time: '09:00:00',
+  });
+
+  it('merges bilirrubina total and directa into one combined row', () => {
+    const result = buildAnalysisData(
+      [
+        buildDetail({
+          url: 'http://example.com/100',
+          findings: [
+            buildFinding({
+              section: 'HEPATICO',
+              analysis: 'Bilirrubina Total',
+              result: '1.2',
+              unit: 'mg/dL',
+              refValue: '',
+            }),
+            buildFinding({
+              section: 'HEPATICO',
+              analysis: 'Bilirrubina Directa',
+              result: '0.3',
+              unit: 'mg/dL',
+              refValue: '',
+            }),
+          ],
+        }),
+      ],
+      [examWithTime]
+    );
+
+    expect(result.comparison['Bilirrubinas (T/D/I)']).toBeDefined();
+    const column = Object.values(result.comparison['Bilirrubinas (T/D/I)'])[0];
+    expect(column.result).toContain('1.2');
+    expect(column.result).toContain('0.3');
+  });
+
+  it('excludes Baciliformes from comparison but keeps Hemoglobina', () => {
+    const result = buildAnalysisData(
+      [
+        buildDetail({
+          url: 'http://example.com/100',
+          findings: [
+            buildFinding({
+              section: 'HEMOGRAMA',
+              analysis: 'Hemoglobina',
+              result: '14',
+              unit: 'g/dL',
+              refValue: '12-16',
+            }),
+            buildFinding({
+              section: 'HEMOGRAMA',
+              analysis: 'Baciliformes',
+              result: '0',
+              unit: '%',
+              refValue: '0-2',
+            }),
+          ],
+        }),
+      ],
+      [examWithTime]
+    );
+
+    expect(result.comparison.Hemoglobina).toBeDefined();
+    expect(result.comparison.Baciliformes).toBeUndefined();
+  });
+
+  it('orders Hemoglobina before Creatinina before ASAT/GOT', () => {
+    const result = buildAnalysisData(
+      [
+        buildDetail({
+          url: 'http://example.com/100',
+          findings: [
+            buildFinding({
+              section: 'RENAL',
+              analysis: 'ASAT/GOT',
+              result: '25',
+              unit: 'U/L',
+              refValue: '10-40',
+            }),
+            buildFinding({
+              section: 'RENAL',
+              analysis: 'Creatinina',
+              result: '0.9',
+              unit: 'mg/dL',
+              refValue: '0.6-1.2',
+            }),
+            buildFinding({
+              section: 'HEMOGRAMA',
+              analysis: 'Hemoglobina',
+              result: '14',
+              unit: 'g/dL',
+              refValue: '12-16',
+            }),
+          ],
+        }),
+      ],
+      [examWithTime]
+    );
+
+    const keys = Object.keys(result.comparison);
+    expect(keys.indexOf('Hemoglobina')).toBeLessThan(keys.indexOf('Creatinina'));
+    expect(keys.indexOf('Creatinina')).toBeLessThan(keys.indexOf('ASAT/GOT'));
+  });
+
+  it('deduplicates repeated variable and date pairs', () => {
+    const result = buildAnalysisData(
+      [
+        buildDetail({
+          url: 'http://example.com/100',
+          findings: [
+            buildFinding({
+              section: 'HEMOGRAMA',
+              analysis: 'Hemoglobina',
+              result: '14',
+              unit: 'g/dL',
+              refValue: '12-16',
+            }),
+            buildFinding({
+              section: 'HEMOGRAMA',
+              analysis: 'Hemoglobina',
+              result: '14',
+              unit: 'g/dL',
+              refValue: '12-16',
+            }),
+          ],
+        }),
+        buildDetail({
+          url: 'http://example.com/200',
+          findings: [
+            buildFinding({
+              section: 'HEMOGRAMA',
+              analysis: 'Hemoglobina',
+              result: '13',
+              unit: 'g/dL',
+              refValue: '12-16',
+            }),
+          ],
+        }),
+      ],
+      [examWithTime, examWithTime2]
+    );
+
+    const hemoglobinGroup = result.trendGroups.find(group => group.variables.Hemoglobina);
+    expect(hemoglobinGroup?.variables.Hemoglobina).toHaveLength(2);
+  });
+
+  it('returns an empty structure when details are empty', () => {
+    const result = buildAnalysisData([], []);
+    expect(result.trendGroups).toEqual([]);
+    expect(result.examDates).toEqual([]);
+    expect(result.comparison).toEqual({});
+  });
+});

@@ -84,6 +84,35 @@ const isUrineSection = (section: string | undefined): boolean => {
   );
 };
 
+const collapseClinicalToken = (value: string): string =>
+  value
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toUpperCase();
+
+const normalizeUrineRatioName = (name: string, section?: string): string | null => {
+  const clinicalToken = collapseClinicalToken(`${section || ''} ${name}`);
+  const hasCreatinineRatioToken =
+    clinicalToken.includes('CREATININURIA') ||
+    clinicalToken.includes('CREATININURI') ||
+    clinicalToken.includes('CREATINURIA');
+
+  if (clinicalToken.includes('PROTEINURIA') && hasCreatinineRatioToken) {
+    return 'RPC';
+  }
+
+  if (
+    (clinicalToken.includes('ALBUMINA') || clinicalToken.includes('ALBUMINURIA')) &&
+    hasCreatinineRatioToken
+  ) {
+    return 'RAC';
+  }
+
+  return null;
+};
+
 const normalizeUrineAnalysisName = (name: string): string | null => {
   const collapsed = name.trim().replace(/\s+/g, ' ');
   const replacements: Array<[RegExp, string]> = [
@@ -113,6 +142,11 @@ const normalizeUrineAnalysisName = (name: string): string | null => {
 
 export const normalizeAnalysisName = (name: string, section?: string): string => {
   let result = name.trim().replace(/\s+/g, ' ');
+  const urineRatioName = normalizeUrineRatioName(result, section);
+
+  if (urineRatioName) {
+    return urineRatioName;
+  }
 
   if (isUrineSection(section)) {
     const urineSpecific = normalizeUrineAnalysisName(result);

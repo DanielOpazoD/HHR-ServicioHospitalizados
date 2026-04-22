@@ -293,9 +293,16 @@ Artifacts operativos publicados por CI:
 
 ## Baseline de Calidad
 
-Snapshot vigente en [reports/quality-metrics.md](reports/quality-metrics.md).
+Los archivos en `reports/` son snapshots versionados, no el estado vivo del checkout.
 
-Para evitar desalineación, los conteos exactos de archivos, líneas y tests deben leerse desde ese reporte generado.
+Antes de usarlos como evidencia en una revisión técnica, confirma primero:
+
+```bash
+git status --short
+npm run check:report-freshness
+```
+
+Si `check:report-freshness` falla o el árbol está sucio, los reportes dejan de ser fuente confiable para describir el estado actual. El snapshot de referencia para métricas estructurales sigue siendo [reports/quality-metrics.md](reports/quality-metrics.md), pero solo después de esa validación.
 
 ## Notas Operativas Recientes
 

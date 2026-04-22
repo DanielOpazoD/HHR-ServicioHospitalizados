@@ -120,6 +120,12 @@ describe('normalizeAnalysisName', () => {
     expect(normalizeAnalysisName('Relación Albumina / Creatininuria', 'QUIMICA/ORINA')).toBe('RAC');
     expect(normalizeAnalysisName('RELAC. ALBUMINA/CREATINURIA', 'GENERAL')).toBe('RAC');
   });
+
+  it('infers RPC and RAC from section/name combinations used by Syslab reports', () => {
+    expect(normalizeAnalysisName('Rel. Proteinuria/Creatininuria = RPC', 'GENERAL')).toBe('RPC');
+    expect(normalizeAnalysisName('', 'RELAC. ALBUMINA/CREATINURIA= RAC.')).toBe('RAC');
+    expect(normalizeAnalysisName('Relacion Albumina/Creatininuri : 238,9', 'GENERAL')).toBe('RAC');
+  });
 });
 
 /* ================================================================== */

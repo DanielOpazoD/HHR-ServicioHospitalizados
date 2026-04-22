@@ -59,7 +59,7 @@ export const TREND_GROUPS: { label: string; patterns: string[] }[] = [
   },
   {
     label: 'Actividad Inflamatoria',
-    patterns: ['Recuento Leucocitos', 'Segmentados', 'Proteina C Reactiva', 'VHS'],
+    patterns: ['Recuento Leucocitos', 'Segmentados', 'Proteina C Reactiva', 'VHS', 'LDH'],
   },
   {
     label: 'Hemograma',
@@ -75,7 +75,7 @@ export const TREND_GROUPS: { label: string; patterns: string[] }[] = [
   },
   {
     label: 'Otros',
-    patterns: ['Troponina', 'LDH', 'CK Total', 'Magnesio', 'Acido Urico', 'Albumina'],
+    patterns: ['Troponina', 'CK Total', 'Magnesio', 'Albumina'],
   },
   {
     label: 'RPC / RAC',
@@ -145,6 +145,7 @@ export const COMPARISON_ORDER: string[] = [
   // PCR y VHS al final del bloque hemograma/inflamación
   'Proteina C Reactiva',
   'VHS',
+  'LDH',
   // Función renal + ELP
   'Creatinina',
   'RPC',
@@ -154,6 +155,9 @@ export const COMPARISON_ORDER: string[] = [
   'Sodio',
   'Potasio',
   'Cloro',
+  'HCO3',
+  'Calcio',
+  'Fosforo',
   'Cuerpos Cetónicos',
   'Proteínas',
   'Nitritos',
@@ -167,12 +171,7 @@ export const COMPARISON_ORDER: string[] = [
   'pH',
   'pCO2',
   'pO2',
-  'HCO3',
   'Lactato',
-  // Minerales
-  'Calcio',
-  'Fosforo',
-  'Magnesio',
   // Perfil hepático
   'ASAT/GOT',
   'ALAT/GPT',
@@ -189,16 +188,102 @@ export const COMPARISON_ORDER: string[] = [
   'Troponina',
   'Dimero',
   'CK Total',
-  'LDH',
+  'Magnesio',
   'TSH',
+  'T4L',
+  'T4 Libre',
   'Acido Urico',
   'Glicemia',
+  'Hemoglobina Glicosilada',
   'Colesterol Total',
   'LDL',
   'HDL',
+  'TG',
   'Trigliceridos',
   'Cuerpos Ceton',
   'Cetonemia',
+];
+
+/** Clinical display groups for the comparison table. */
+export const COMPARISON_DISPLAY_GROUPS: { label: string; patterns: string[] }[] = [
+  {
+    label: 'Hemograma',
+    patterns: [
+      'Recuento Leucocitos',
+      'Hemoglobina',
+      'Hematocrito',
+      'VCM',
+      'HCM',
+      'Recuento de Plaquetas',
+      'Segmentados',
+      'Linfocitos',
+      'Monocitos',
+      'Eosinofilos',
+    ],
+  },
+  {
+    label: 'Inflamación',
+    patterns: ['Proteina C Reactiva', 'VHS', 'LDH'],
+  },
+  {
+    label: 'Función renal / electrolitos',
+    patterns: [
+      'Creatinina',
+      'Nitrogeno Ureico',
+      'Uremia',
+      'Sodio',
+      'Potasio',
+      'Cloro',
+      'HCO3',
+      'Calcio',
+      'Fosforo',
+    ],
+  },
+  {
+    label: 'Coagulación',
+    patterns: ['Protrombina', 'TTPK', 'INR', 'Dimero'],
+  },
+  {
+    label: 'Perfil hepático',
+    patterns: [
+      'ASAT/GOT',
+      'ALAT/GPT',
+      'GGT',
+      'Fosfatasa Alcalina',
+      'Bilirrubinas',
+      'Albumina',
+      'Proteinas Totales',
+    ],
+  },
+  {
+    label: 'RPC / RAC',
+    patterns: ['RPC', 'RAC'],
+  },
+  {
+    label: 'Metabólico',
+    patterns: [
+      'Hemoglobina Glicosilada',
+      'Acido Urico',
+      'Glicemia',
+      'TSH',
+      'T4L',
+      'T4 Libre',
+      'Colesterol Total',
+      'LDL',
+      'HDL',
+      'TG',
+      'Trigliceridos',
+    ],
+  },
+];
+
+/** High-value variables that users can pin in the comparison table. */
+export const COMPARISON_PINNABLE_VARIABLES = [
+  'Creatinina',
+  'Proteina C Reactiva',
+  'RPC',
+  'RAC',
+  'Hemoglobina',
 ];
 
 /* ================================================================== */

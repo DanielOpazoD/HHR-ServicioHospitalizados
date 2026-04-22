@@ -31,7 +31,11 @@ features/laboratory/
 │   ├── LabViewerEmptyState.tsx
 │   ├── LabViewerProgress.tsx
 │   └── LabChartErrorBoundary.tsx
-├── hooks/useLabViewer.ts     # Estado React + orquestación + TanStack Query cache
+├── hooks/
+│   ├── useLabViewer.ts          # Fachada pública del visor
+│   ├── useLabViewerQuery.ts     # Búsqueda, cache y selección de paciente
+│   ├── useLabViewerSelection.ts # Filtros y selección de órdenes
+│   └── useLabViewerAnalysis.ts  # Análisis, clipboard y progreso
 ├── services/
 │   ├── labExcelService.ts    # Exportación Excel con resumen + datos de identificación
 │   └── labFirestoreService.ts # Persistencia Firestore

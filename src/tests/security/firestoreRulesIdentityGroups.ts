@@ -7,6 +7,7 @@ export function registerFirestoreRulesIdentityGroups({
   unauth,
   authed,
   admin,
+  nurse,
   adminWithoutClaim,
   firestoreForUser,
   NOW_MS,
@@ -53,6 +54,11 @@ export function registerFirestoreRulesIdentityGroups({
     it('Users can read/write their own settings', async () => {
       await assertSucceeds(authed().doc('userSettings/user_basic').set({ theme: 'light' }));
       await assertSucceeds(authed().doc('userSettings/user_basic').get());
+    });
+
+    it('Users cannot read settings for other users', async () => {
+      await setupDoc(admin(), 'userSettings/user_other', { theme: 'dark' });
+      await assertFails(authed().doc('userSettings/user_other').get());
     });
 
     it('Users cannot write settings for other users', async () => {
@@ -116,6 +122,27 @@ export function registerFirestoreRulesIdentityGroups({
       );
     });
 
+    it('Regular viewers cannot read system health snapshots, even their own', async () => {
+      await assertSucceeds(
+        authed().doc('stats/system_health/users/user_basic').set(validSystemHealthPayload)
+      );
+      await assertFails(authed().doc('stats/system_health/users/user_basic').get());
+    });
+
+    it('Clinical write roles can read system health snapshots', async () => {
+      await assertSucceeds(
+        nurse()
+          .doc('stats/system_health/users/user_nurse')
+          .set({
+            ...validSystemHealthPayload,
+            uid: 'user_nurse',
+            email: 'hospitalizados@hospitalhangaroa.cl',
+            displayName: 'Nurse User',
+          })
+      );
+      await assertSucceeds(nurse().doc('stats/system_health/users/user_nurse').get());
+    });
+
     it('Users cannot write system health for other users', async () => {
       await assertFails(
         authed().doc('stats/system_health/users/user_other').set(validSystemHealthPayload)
@@ -175,6 +202,49 @@ export function registerFirestoreRulesIdentityGroups({
             usedBy: 'user_invited',
             usedAt: NOW_MS + 1000,
           })
+      );
+    });
+
+    it('Authenticated users cannot read invitations for other emails', async () => {
+      await setupDoc(admin(), invitationPath, {
+        email: 'invited@example.com',
+        status: 'pending',
+        createdAt: NOW_MS,
+      });
+
+      await assertFails(authed().doc(invitationPath).get());
+    });
+
+    it('Invitation owners cannot claim expired invitations', async () => {
+      const invitedUser = () => firestoreForUser('user_invited', { email: 'invited@example.com' });
+
+      await setupDoc(admin(), invitationPath, {
+        email: 'invited@example.com',
+        status: 'pending',
+        createdAt: NOW_MS,
+        createdBy: 'admin',
+        expiresAt: NOW_MS - 1,
+      });
+
+      await assertFails(
+        invitedUser()
+          .doc(invitationPath)
+          .update({
+            status: 'used',
+            usedBy: 'user_invited',
+            usedAt: NOW_MS + 1000,
+          })
+      );
+    });
+
+    it('Regular authenticated users cannot create invitations', async () => {
+      await assertFails(
+        authed().doc('census-access-invitations/inv-2').set({
+          email: 'new.user@example.com',
+          status: 'pending',
+          createdAt: NOW_MS,
+          createdBy: 'user_basic',
+        })
       );
     });
   });
