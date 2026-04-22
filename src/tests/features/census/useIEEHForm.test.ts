@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useIEEHForm } from '@/features/census/hooks/useIEEHForm';
 import { printIEEHForm } from '@/services/pdf/ieehPdfService';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
 
 vi.mock('@/services/pdf/ieehPdfService', () => ({

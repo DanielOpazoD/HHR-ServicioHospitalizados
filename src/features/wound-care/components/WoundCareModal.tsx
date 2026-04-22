@@ -9,7 +9,7 @@ import { ConsentUploadModal } from './ConsentUploadModal';
 import { PhotoUploadButton } from './PhotoUploadButton';
 import { PhotoUploadModal } from './PhotoUploadModal';
 import { generateConsentPdf } from '../services/consentPdfGenerator';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import { WoundCareToast } from './WoundCareToast';
 import { PhotoGallery } from './PhotoGallery';
 import { WoundCareErrorBoundary } from './WoundCareErrorBoundary';

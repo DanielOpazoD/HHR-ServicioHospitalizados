@@ -4,8 +4,8 @@ import {
   RECEIVING_CENTERS,
   RECEIVING_CENTER_EXTRASYSTEM,
   RECEIVING_CENTER_OTHER,
-  type ReceivingCenter,
-} from '@/constants/clinical';
+} from '@/constants/clinicalMovementConstants';
+import type { ReceivingCenter } from '@/constants/clinicalMovementConstants';
 
 interface TransferReceivingSectionProps {
   receivingCenter: ReceivingCenter;

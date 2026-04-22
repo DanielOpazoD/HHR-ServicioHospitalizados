@@ -7,7 +7,7 @@ import {
   DEFAULT_TRANSFER_ESCORT,
   EvacuationMethod,
   ReceivingCenter,
-} from '@/constants/clinical';
+} from '@/constants/clinicalMovementConstants';
 
 /**
  * CensusManager

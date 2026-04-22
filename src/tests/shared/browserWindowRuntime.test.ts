@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
+import { createBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import {
-  createBrowserWindowRuntime,
   getNavigatorUserAgent,
   writeClipboardText,
-} from '@/shared/runtime/browserWindowRuntime';
+} from '@/shared/runtime/browserClipboardRuntime';
 
 describe('browserWindowRuntime', () => {
   it('delegates alert, confirm and open to window', () => {

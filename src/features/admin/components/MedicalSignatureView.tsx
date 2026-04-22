@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { PenTool, CheckCircle } from 'lucide-react';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import { HandoffView } from '@/features/handoff';
 import { useAppState } from '@/hooks/useAppState';
 import { DailyRecordProvider } from '@/context/DailyRecordContext';

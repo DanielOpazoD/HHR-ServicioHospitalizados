@@ -1,6 +1,6 @@
 import React from 'react';
 import clsx from 'clsx';
-import { ADMISSION_ORIGIN_OPTIONS } from '@/constants/clinical';
+import { ADMISSION_ORIGIN_OPTIONS } from '@/constants/clinicalSpecialtyConstants';
 import { LocalDemographicsState, AdmissionOrigin, Origin, BiologicalSex } from './types';
 
 interface DemographicsOriginSectionProps {

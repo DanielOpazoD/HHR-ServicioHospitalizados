@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { AuditLogEntry } from '@/types/auditLogTypes';
 import { generateAuditPdfHtml } from '@/features/admin/components/internal/audit/utils/auditPdfUtils';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 
 interface UseAuditExportParams {

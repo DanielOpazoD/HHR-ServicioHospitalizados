@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import type { ChangeEvent, RefObject } from 'react';
 import { importBookmarksFromJson } from '@/services/bookmarks/bookmarkService';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import {
   isFileReaderTextResult,
   resolveBookmarkImportAlertMessage,

@@ -7,7 +7,7 @@ import React, {
   useEffect,
 } from 'react';
 import { CURRENT_SCHEMA_VERSION } from '@/constants/version';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 import {
   assessRemoteRuntimeContract,

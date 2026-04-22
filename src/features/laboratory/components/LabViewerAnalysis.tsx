@@ -6,7 +6,7 @@
 import React from 'react';
 import clsx from 'clsx';
 import { ArrowLeft, BarChart3, Check, Clipboard, FlaskConical, TrendingUp } from 'lucide-react';
-import { writeClipboardText } from '@/shared/runtime/browserWindowRuntime';
+import { writeClipboardText } from '@/shared/runtime/browserClipboardRuntime';
 import type {
   LabAnalysisData,
   AnalysisViewTab,

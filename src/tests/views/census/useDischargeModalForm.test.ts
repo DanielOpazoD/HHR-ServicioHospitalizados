@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { DISCHARGE_TYPE_OTHER } from '@/constants/clinical';
+import { DISCHARGE_TYPE_OTHER } from '@/constants/clinicalMovementConstants';
 import { useDischargeModalForm } from '@/features/census/hooks/useDischargeModalForm';
 import { MOVEMENT_DATE_TIME_OUT_OF_RANGE_ERROR } from '@/features/census/controllers/censusMovementDatePresentationController';
 

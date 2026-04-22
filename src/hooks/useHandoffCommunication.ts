@@ -4,10 +4,8 @@ import {
   getWhatsAppConfig,
   getMessageTemplates,
 } from '@/services/integrations/whatsapp/whatsappService';
-import {
-  defaultBrowserWindowRuntime,
-  writeClipboardText,
-} from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
+import { writeClipboardText } from '@/shared/runtime/browserClipboardRuntime';
 import { isE2ERuntimeEnabled } from '@/shared/runtime/e2eRuntime';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 import { createScopedLogger } from '@/services/utils/loggerScope';

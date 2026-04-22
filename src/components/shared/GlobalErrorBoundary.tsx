@@ -1,11 +1,11 @@
 import React, { Component, ReactNode } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { errorService } from '@/services/utils/errorService';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import {
-  defaultBrowserWindowRuntime,
   getNavigatorUserAgent,
   writeClipboardText,
-} from '@/shared/runtime/browserWindowRuntime';
+} from '@/shared/runtime/browserClipboardRuntime';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 
 const logger = createScopedLogger('GlobalErrorBoundary');

@@ -1,9 +1,8 @@
 import {
   DISCHARGE_TYPE_OTHER,
   DEFAULT_DISCHARGE_TYPE,
-  type DischargeStatus,
-  type DischargeType,
-} from '@/constants/clinical';
+} from '@/constants/clinicalMovementConstants';
+import type { DischargeStatus, DischargeType } from '@/constants/clinicalMovementConstants';
 import { validateDischargeExecutionInput } from '@/features/census/validation/censusActionValidation';
 import type {
   DischargeModalConfirmPayload,

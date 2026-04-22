@@ -5,8 +5,8 @@ import {
   EVACUATION_METHOD_COMMERCIAL,
   EVACUATION_METHOD_OTHER,
   TRANSFER_ESCORT_OPTIONS,
-  type EvacuationMethod,
-} from '@/constants/clinical';
+} from '@/constants/clinicalMovementConstants';
+import type { EvacuationMethod } from '@/constants/clinicalMovementConstants';
 
 interface TransferEvacuationSectionProps {
   evacuationMethod: EvacuationMethod;

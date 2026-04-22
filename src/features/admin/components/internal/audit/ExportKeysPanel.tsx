@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Key, RefreshCw, Calendar, CheckCircle2 } from 'lucide-react';
 import clsx from 'clsx';
-import { writeClipboardText } from '@/shared/runtime/browserWindowRuntime';
+import { writeClipboardText } from '@/shared/runtime/browserClipboardRuntime';
 import { exportPasswordLogger } from '@/services/security/securityLoggers';
 
 export const ExportKeysPanel: React.FC = () => {

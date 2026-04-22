@@ -10,7 +10,7 @@ import {
   shouldShowStorageFallbackUi,
 } from '@/services/storage/storageFallbackUiPolicy';
 import { resetLocalDatabase } from '@/services/storage/indexeddb/indexedDbMaintenanceService';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import { useDatabaseFallbackStatus } from '@/hooks/useDatabaseFallbackStatus';
 
 /**

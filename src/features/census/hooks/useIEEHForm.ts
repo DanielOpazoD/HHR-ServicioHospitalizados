@@ -5,7 +5,7 @@ import type { DischargeFormData } from '@/services/pdf/ieehPdfService';
 import { printIEEHForm } from '@/services/pdf/ieehPdfService';
 import { searchDiagnoses, forceAISearch } from '@/services/terminology/terminologyService';
 import type { TerminologyConcept } from '@/services/terminology/terminologyService';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import {
   buildIeehInitialDraftValues,
   buildIeehPrintDischargeData,

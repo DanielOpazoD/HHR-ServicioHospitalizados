@@ -1,4 +1,7 @@
-import { RECEIVING_CENTER_EXTRASYSTEM, RECEIVING_CENTER_OTHER } from '@/constants/clinical';
+import {
+  RECEIVING_CENTER_EXTRASYSTEM,
+  RECEIVING_CENTER_OTHER,
+} from '@/constants/clinicalMovementConstants';
 import type { TransferExecutionInput } from '@/features/census/domain/movements/contracts';
 import type { PatientData } from '@/features/census/controllers/censusActionPatientContracts';
 import type {

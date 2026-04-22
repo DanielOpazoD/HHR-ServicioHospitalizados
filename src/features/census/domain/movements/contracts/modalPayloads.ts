@@ -1,4 +1,4 @@
-import type { DischargeStatus } from '@/constants/clinical';
+import type { DischargeStatus } from '@/constants/clinicalMovementConstants';
 import type { DischargeTarget } from './primitives';
 
 export interface MovementDateTimeCommandPayload {

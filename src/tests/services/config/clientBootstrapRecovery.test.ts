@@ -4,7 +4,7 @@ const mockGetLocalStorageItem = vi.fn();
 const mockSetLocalStorageItem = vi.fn();
 const mockReload = vi.fn();
 
-vi.mock('@/shared/runtime/browserWindowRuntime', () => ({
+vi.mock('@/shared/runtime/browserWindowRuntimeCore', () => ({
   defaultBrowserWindowRuntime: {
     getLocalStorageItem: (...args: unknown[]) => mockGetLocalStorageItem(...args),
     setLocalStorageItem: (...args: unknown[]) => mockSetLocalStorageItem(...args),

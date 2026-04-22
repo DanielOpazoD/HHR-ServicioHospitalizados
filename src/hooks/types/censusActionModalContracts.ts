@@ -1,4 +1,8 @@
-import type { DischargeStatus, EvacuationMethod, ReceivingCenter } from '@/constants/clinical';
+import type {
+  DischargeStatus,
+  EvacuationMethod,
+  ReceivingCenter,
+} from '@/constants/clinicalMovementConstants';
 import type {
   DischargeModalConfirmPayload,
   DischargeTarget,

@@ -1,4 +1,4 @@
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 
 const VERSION_KEY = 'hhr_app_version';

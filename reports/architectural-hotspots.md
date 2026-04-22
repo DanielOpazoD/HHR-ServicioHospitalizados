@@ -1,6 +1,6 @@
 # Architectural Hotspots
 
-- Generated: 2026-04-22T04:12:20.505Z
+- Generated: 2026-04-22T04:22:53.083Z
 - Ranking formula: `churn*2 + inboundImports*3 + criticalityWeight*5`
 
 ## Interpretation
@@ -15,24 +15,24 @@
 | --- | ---: | ---: | --- | ---: |
 | `src/services/utils/loggerScope.ts` | 1 | 72 | high | 238 |
 | `src/application/shared/dailyRecordCoreContracts.ts` | 1 | 64 | high | 214 |
-| `src/shared/contracts/applicationOutcomeTypes.ts` | 0 | 55 | medium | 180 |
+| `src/shared/contracts/applicationOutcomeTypes.ts` | 1 | 55 | medium | 182 |
 | `src/features/clinical-documents/domain/entities.ts` | 12 | 45 | high | 179 |
 | `src/components/shared/BaseModal.tsx` | 7 | 46 | medium | 167 |
 | `src/types/authRoleTypes.ts` | 1 | 49 | medium | 164 |
 | `src/types/domain/dailyRecord.ts` | 8 | 40 | medium | 151 |
-| `src/shared/runtime/browserWindowRuntime.ts` | 4 | 41 | medium | 146 |
-| `src/constants/clinical.ts` | 6 | 39 | medium | 144 |
 | `src/context/AuthContext.tsx` | 13 | 34 | medium | 143 |
 | `src/utils/dateFormattingUtils.ts` | 2 | 41 | medium | 142 |
 | `src/services/observability/operationalTelemetryOutcomeRecorder.ts` | 1 | 37 | high | 133 |
 | `src/types/domain/laboratory.ts` | 8 | 34 | medium | 133 |
 | `src/types/transfers.ts` | 6 | 35 | medium | 132 |
 | `src/features/census/types/censusAccessProfile.ts` | 2 | 35 | high | 129 |
+| `src/shared/runtime/browserWindowRuntimeCore.ts` | 0 | 38 | medium | 129 |
 | `src/types/domain/patient.ts` | 7 | 33 | medium | 128 |
+| `src/constants/clinicalMovementConstants.ts` | 0 | 37 | medium | 126 |
 | `src/features/census/components/patient-row/patientRowDataContracts.ts` | 2 | 34 | high | 126 |
 | `src/types/auditLogTypes.ts` | 1 | 36 | medium | 125 |
 | `src/constants/beds.ts` | 4 | 33 | medium | 122 |
-| `src/shared/contracts/applicationOutcomeFactories.ts` | 0 | 34 | medium | 117 |
+| `src/shared/contracts/applicationOutcomeFactories.ts` | 1 | 34 | medium | 119 |
 | `src/services/repositories/dailyRecordWriteSupport.ts` | 45 | 2 | high | 116 |
 | `src/features/census/components/patient-row/patientRowViewContracts.ts` | 23 | 16 | high | 114 |
 | `src/context/DailyRecordContext.tsx` | 14 | 23 | medium | 112 |

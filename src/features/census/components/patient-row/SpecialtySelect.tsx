@@ -1,7 +1,7 @@
 import React from 'react';
 import clsx from 'clsx';
 import { X } from 'lucide-react';
-import { SPECIALTY_OPTIONS } from '@/constants/clinical';
+import { SPECIALTY_OPTIONS } from '@/constants/clinicalSpecialtyConstants';
 import { DebouncedInput } from '@/components/ui/DebouncedInput';
 import { BaseCellProps, EventTextHandler } from './inputCellTypes';
 import { dispatchTextChangeValue } from '@/features/census/controllers/textChangeAdapterController';

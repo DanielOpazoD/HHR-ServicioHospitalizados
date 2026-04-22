@@ -1,5 +1,5 @@
 import { BEDS } from '@/constants/beds';
-import { EVACUATION_METHOD_AEROCARDAL } from '@/constants/clinical';
+import { EVACUATION_METHOD_AEROCARDAL } from '@/constants/clinicalMovementConstants';
 import { PatientTraceability, SpecialtyTraceabilityType } from '@/types/minsalTypes';
 import { normalizeSpecialty, isFachEvacuationMethod } from './normalization';
 import { createEpisodeAdmissionTracker } from './episodeTracker';

@@ -6,7 +6,7 @@ import {
   DischargeStatus,
   EvacuationMethod,
   ReceivingCenter,
-} from '@/constants/clinical';
+} from '@/constants/clinicalMovementConstants';
 import type {
   DischargeTarget,
   MoveOrCopyActionState,

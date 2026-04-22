@@ -9,7 +9,7 @@ import {
 } from '@/constants/transferConstants';
 import { PatientSelector } from './PatientSelector';
 import { BaseModal, ModalSection } from '@/components/shared/BaseModal';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import { getDestinationHospitalCatalog } from '@/features/transfers/services/destinationHospitalCatalogService';
 import { getLocalDateInputValue } from '@/utils/localDate';
 import {

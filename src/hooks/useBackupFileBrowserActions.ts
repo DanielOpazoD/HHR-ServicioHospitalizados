@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { MONTH_NAMES, type BaseStoredFile, type StoredPdfFile } from '@/types/backupArtifacts';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import type { BackupType } from '@/hooks/backupFileBrowserContracts';
 import { resolveBackupModuleLabel } from '@/hooks/backupFileBrowserController';
 import type { ConfirmOptions } from '@/context/uiContracts';

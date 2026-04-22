@@ -3,7 +3,7 @@ import { Bookmark } from '@/types/bookmarks';
 import { BaseModal } from '@/components/shared/BaseModal';
 import { ChevronUp, ChevronDown, Trash2, Edit2, GripVertical, Save } from 'lucide-react';
 import { reorderBookmarks, deleteBookmark } from '@/services/bookmarks/bookmarkService';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import { bookmarkLogger } from '@/services/bookmarks/bookmarkLoggers';
 
 interface BookmarkManagerModalProps {

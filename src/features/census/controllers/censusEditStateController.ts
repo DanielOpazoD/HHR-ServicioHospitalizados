@@ -6,7 +6,7 @@ import {
   DEFAULT_TRANSFER_ESCORT,
   normalizeEvacuationMethod,
   normalizeReceivingCenter,
-} from '@/constants/clinical';
+} from '@/constants/clinicalMovementConstants';
 import type { DischargeState, TransferState } from '@/features/census/types/censusActionTypes';
 
 export const buildDischargeEditState = (discharge: DischargeData): DischargeState => ({

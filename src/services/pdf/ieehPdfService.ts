@@ -32,7 +32,7 @@ import type { PDFFont } from 'pdf-lib';
 import { PatientData } from '@/services/contracts/patientServiceContracts';
 import { openPdfPrintDialog, saveAndDownloadPdf } from './pdfBase';
 import { FIELD_COORDS, mapInsurance, mapSex, mapProcedencia } from './ieehPdfCoordinates';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import type { DischargeFormData } from './ieehPdfContracts';
 import {
   buildIEEHFileName,

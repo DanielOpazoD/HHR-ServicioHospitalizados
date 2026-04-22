@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { CheckCircle } from 'lucide-react';
 import { BaseModal } from '@/components/shared/BaseModal';
 import { TransferRequest, TRANSFER_STATUS_CONFIG } from '@/types/transfers';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 
 interface ConfirmTransferModalProps {
   transfer: TransferRequest;

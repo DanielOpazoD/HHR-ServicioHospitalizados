@@ -1,6 +1,6 @@
 import type { PDFDocument, PDFFont, PDFPage } from 'pdf-lib';
 
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 
 import { injectPrintScript } from './pdfBase';
 import type { CustomMark } from './pdfMarkTypes';

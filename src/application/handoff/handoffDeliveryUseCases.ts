@@ -6,7 +6,7 @@ import { buildMedicalSentPatch } from '@/domain/handoff/management';
 import { createApplicationSuccess } from '@/shared/contracts/applicationOutcomeFactories';
 import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
 
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import type { DailyRecord, DailyRecordPatch } from '@/domain/handoff/recordContracts';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 import { buildPatchedRecord, createMissingRecordOutcome } from './handoffUseCaseSupport';

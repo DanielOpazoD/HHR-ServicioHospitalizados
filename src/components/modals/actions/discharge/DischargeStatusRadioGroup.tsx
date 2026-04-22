@@ -1,6 +1,6 @@
 import React from 'react';
 import clsx from 'clsx';
-import type { DischargeStatus } from '@/constants/clinical';
+import type { DischargeStatus } from '@/constants/clinicalMovementConstants';
 
 interface DischargeStatusRadioGroupProps {
   inputName: string;

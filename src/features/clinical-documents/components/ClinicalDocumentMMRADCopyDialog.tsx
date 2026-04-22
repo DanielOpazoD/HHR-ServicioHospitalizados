@@ -3,7 +3,7 @@ import { Check, ClipboardCopy, Loader2, Radio, X } from 'lucide-react';
 
 import { searchMMRADExams, type MMRADExam } from '@/services/radiology/mmradService';
 import { buildMMRADReportClipboardText } from '@/services/radiology/mmradReportSupport';
-import { writeClipboardText } from '@/shared/runtime/browserWindowRuntime';
+import { writeClipboardText } from '@/shared/runtime/browserClipboardRuntime';
 
 interface ClinicalDocumentMMRADCopyDialogProps {
   patientRut: string;

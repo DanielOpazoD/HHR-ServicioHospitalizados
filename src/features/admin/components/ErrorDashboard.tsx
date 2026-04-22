@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { fetchErrorLogs, purgeErrorLogs } from '@/services/errorLogService';
 import { ErrorLog } from '@/services/utils/errorService';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import {
   AlertTriangle,
   Trash2,

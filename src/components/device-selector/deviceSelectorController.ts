@@ -1,4 +1,4 @@
-import { DEVICE_OPTIONS, VVP_DEVICE_KEYS } from '@/constants/clinical';
+import { DEVICE_OPTIONS, VVP_DEVICE_KEYS } from '@/constants/clinicalDeviceConstants';
 
 export const isAnyVvpDevice = (device: string): boolean =>
   device === 'VVP' || device === '2 VVP' || device.startsWith('VVP#');

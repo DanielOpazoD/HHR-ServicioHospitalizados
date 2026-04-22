@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import { DebouncedInput } from '@/components/ui/DebouncedInput';
 import { isValidRut } from '@/utils/rutUtils';
-import { writeClipboardText } from '@/shared/runtime/browserWindowRuntime';
+import { writeClipboardText } from '@/shared/runtime/browserClipboardRuntime';
 import { PatientEmptyCell } from './PatientEmptyCell';
 
 interface RutPassportInputProps {

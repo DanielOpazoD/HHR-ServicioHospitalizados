@@ -4,7 +4,7 @@
  * Common functions for PDF manipulation using pdf-lib.
  */
 import type { PDFDocument } from 'pdf-lib';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 
 const RESERVED_WINDOW_PRINT_DELAY_MS = 450;
 const IFRAME_PRINT_DELAY_MS = 250;

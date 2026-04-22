@@ -14,10 +14,8 @@ import {
   RadiologyViewerProgress,
   RadiologyViewerResults,
 } from '@/components/modals/RadiologyViewerModalContent';
-import {
-  defaultBrowserWindowRuntime,
-  writeClipboardText,
-} from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
+import { writeClipboardText } from '@/shared/runtime/browserClipboardRuntime';
 import {
   buildFilteredMMRADExams,
   buildMMRADExamKey,

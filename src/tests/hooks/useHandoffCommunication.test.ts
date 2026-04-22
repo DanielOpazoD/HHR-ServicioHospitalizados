@@ -12,16 +12,20 @@ const { mockWriteClipboardText, mockOpen, mockIsE2ERuntimeEnabled } = vi.hoisted
   mockIsE2ERuntimeEnabled: vi.fn(() => false),
 }));
 
-vi.mock('@/shared/runtime/browserWindowRuntime', () => ({
+vi.mock('@/shared/runtime/browserWindowRuntimeCore', () => ({
   defaultBrowserWindowRuntime: {
     getLocationOrigin: () => 'https://hhr.test',
     open: (...args: unknown[]) => mockOpen(...args),
   },
+}));
+
+vi.mock('@/shared/runtime/browserClipboardRuntime', () => ({
   writeClipboardText: (...args: unknown[]) => mockWriteClipboardText(...args),
 }));
 
 vi.mock('@/shared/runtime/e2eRuntime', () => ({
   isE2ERuntimeEnabled: () => mockIsE2ERuntimeEnabled(),
+  recordE2EClipboardText: vi.fn(),
 }));
 
 vi.mock('@/services/integrations/whatsapp/whatsappService', () => ({

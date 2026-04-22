@@ -2,9 +2,8 @@ import {
   DEFAULT_TRANSFER_ESCORT,
   EVACUATION_METHOD_COMMERCIAL,
   EVACUATION_METHOD_OTHER,
-  type EvacuationMethod,
-  type ReceivingCenter,
-} from '@/constants/clinical';
+} from '@/constants/clinicalMovementConstants';
+import type { EvacuationMethod, ReceivingCenter } from '@/constants/clinicalMovementConstants';
 import { validateTransferExecutionInput } from '@/features/census/validation/censusActionValidation';
 import {
   resolveMovementDateTimeValidationError,

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Phone, MessageCircle } from 'lucide-react';
 import { ShiftStaffMember } from '@/types/whatsapp';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 
 interface StaffCardProps {
   member: ShiftStaffMember;

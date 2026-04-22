@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { XCircle } from 'lucide-react';
 import { BaseModal } from '@/components/shared/BaseModal';
 import { TransferRequest, TRANSFER_STATUS_CONFIG } from '@/types/transfers';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 
 interface CancelTransferModalProps {
   transfer: TransferRequest;

@@ -1,6 +1,6 @@
 import { Specialty } from '@/types/domain/patientClassification';
 import { HOSPITAL_CAPACITY } from '@/constants/beds';
-import { EVACUATION_METHOD_AEROCARDAL } from '@/constants/clinical';
+import { EVACUATION_METHOD_AEROCARDAL } from '@/constants/clinicalMovementConstants';
 import { MinsalStatistics, SpecialtyStats, PatientTraceability } from '@/types/minsalTypes';
 import { normalizeSpecialty, isFachEvacuationMethod } from './normalization';
 import { countOccupiedBeds, countBlockedBeds, calculateDailySnapshot } from './snapshot';

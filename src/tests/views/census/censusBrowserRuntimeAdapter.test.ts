@@ -3,7 +3,7 @@ import {
   createCensusDialogRuntime,
   createCensusStorageRuntime,
 } from '@/features/census/controllers/censusBrowserRuntimeAdapter';
-import type { BrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import type { BrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 
 const createMockBrowserRuntime = (): BrowserWindowRuntime => ({
   alert: vi.fn(),

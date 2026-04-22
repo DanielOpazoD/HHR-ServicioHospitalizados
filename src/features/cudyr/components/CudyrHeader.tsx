@@ -12,7 +12,7 @@ import clsx from 'clsx';
 import { PdfViewerModal } from '@/components/shared/PdfViewerModal';
 import { formatTimeHHMM } from '@/utils/dateFormattingUtils';
 import { cudyrExportLogger } from '@/services/cudyr/cudyrLoggers';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import type { CategoryCounts, CudyrCategory } from '@/services/cudyr/cudyrSummary';
 
 // ---------------------------------------------------------------------------

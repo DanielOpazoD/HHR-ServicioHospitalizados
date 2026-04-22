@@ -5,7 +5,7 @@
 import React from 'react';
 import clsx from 'clsx';
 import { AlertCircle } from 'lucide-react';
-import { STATUS_OPTIONS } from '@/constants/clinical';
+import { STATUS_OPTIONS } from '@/constants/clinicalSpecialtyConstants';
 import { BaseCellProps, EventTextHandler } from './inputCellTypes';
 import { PatientEmptyCell } from './PatientEmptyCell';
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Bookmark, BookmarkInput } from '@/types/bookmarks';
 import { BaseModal } from '@/components/shared/BaseModal';
 import { Bookmark as BookmarkIcon } from 'lucide-react';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import { bookmarkLogger } from '@/services/bookmarks/bookmarkLoggers';
 import {
   buildBookmarkInput,

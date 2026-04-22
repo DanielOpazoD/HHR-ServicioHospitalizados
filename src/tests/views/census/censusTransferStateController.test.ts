@@ -4,7 +4,7 @@ import {
   DEFAULT_RECEIVING_CENTER,
   DEFAULT_TRANSFER_ESCORT,
   EVACUATION_METHOD_AEROCARDAL,
-} from '@/constants/clinical';
+} from '@/constants/clinicalMovementConstants';
 import { applyTransferStateUpdate } from '@/features/census/controllers/censusTransferStateController';
 import type { TransferState } from '@/features/census/types/censusActionTypes';
 

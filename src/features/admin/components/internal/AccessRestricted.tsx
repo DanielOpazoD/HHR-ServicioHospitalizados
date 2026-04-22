@@ -1,6 +1,6 @@
 import React from 'react';
 import { ShieldAlert } from 'lucide-react';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 
 export const AccessRestricted: React.FC = () => {
   return (

@@ -10,7 +10,7 @@ import {
   resolveDeliveryRoutePopoverToggle,
   resolveHasPersistedDeliveryRoute,
 } from '@/features/census/controllers/deliveryRoutePopoverRuntimeController';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import type {
   CesareanLabor,
   DeliveryRoute,

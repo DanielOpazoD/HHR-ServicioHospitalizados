@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-22T04:12:20.505Z",
+  "generatedAt": "2026-04-22T04:22:53.083Z",
   "hotspots": [
     {
       "file": "src/services/utils/loggerScope.ts",
@@ -17,10 +17,10 @@
     },
     {
       "file": "src/shared/contracts/applicationOutcomeTypes.ts",
-      "churn": 0,
+      "churn": 1,
       "inboundImports": 55,
       "criticality": "medium",
-      "score": 180
+      "score": 182
     },
     {
       "file": "src/features/clinical-documents/domain/entities.ts",
@@ -49,20 +49,6 @@
       "inboundImports": 40,
       "criticality": "medium",
       "score": 151
-    },
-    {
-      "file": "src/shared/runtime/browserWindowRuntime.ts",
-      "churn": 4,
-      "inboundImports": 41,
-      "criticality": "medium",
-      "score": 146
-    },
-    {
-      "file": "src/constants/clinical.ts",
-      "churn": 6,
-      "inboundImports": 39,
-      "criticality": "medium",
-      "score": 144
     },
     {
       "file": "src/context/AuthContext.tsx",
@@ -107,11 +93,25 @@
       "score": 129
     },
     {
+      "file": "src/shared/runtime/browserWindowRuntimeCore.ts",
+      "churn": 0,
+      "inboundImports": 38,
+      "criticality": "medium",
+      "score": 129
+    },
+    {
       "file": "src/types/domain/patient.ts",
       "churn": 7,
       "inboundImports": 33,
       "criticality": "medium",
       "score": 128
+    },
+    {
+      "file": "src/constants/clinicalMovementConstants.ts",
+      "churn": 0,
+      "inboundImports": 37,
+      "criticality": "medium",
+      "score": 126
     },
     {
       "file": "src/features/census/components/patient-row/patientRowDataContracts.ts",
@@ -136,10 +136,10 @@
     },
     {
       "file": "src/shared/contracts/applicationOutcomeFactories.ts",
-      "churn": 0,
+      "churn": 1,
       "inboundImports": 34,
       "criticality": "medium",
-      "score": 117
+      "score": 119
     },
     {
       "file": "src/services/repositories/dailyRecordWriteSupport.ts",

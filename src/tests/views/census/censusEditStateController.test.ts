@@ -3,7 +3,7 @@ import {
   DEFAULT_EVACUATION_METHOD,
   DEFAULT_RECEIVING_CENTER,
   DEFAULT_TRANSFER_ESCORT,
-} from '@/constants/clinical';
+} from '@/constants/clinicalMovementConstants';
 import {
   buildDischargeEditState,
   buildTransferEditState,

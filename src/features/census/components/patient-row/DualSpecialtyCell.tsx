@@ -11,13 +11,13 @@ import React, { useCallback, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import { Plus, Settings2, X } from 'lucide-react';
-import { SPECIALTY_OPTIONS } from '@/constants/clinical';
+import { SPECIALTY_OPTIONS } from '@/constants/clinicalSpecialtyConstants';
 import { DebouncedInput } from '@/components/ui/DebouncedInput';
 import { BaseCellProps, EventTextHandler } from './inputCellTypes';
 import { useDualSpecialtyCellModel } from '@/features/census/components/patient-row/useDualSpecialtyCellModel';
 import { dispatchTextChangeValue } from '@/features/census/controllers/textChangeAdapterController';
 import { usePortalPopoverRuntime } from '@/hooks/usePortalPopoverRuntime';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import { resolveDeliveryRoutePopoverPosition } from '@/features/census/controllers/deliveryRoutePopoverController';
 import {
   buildGinecobstetriciaTypePatch,

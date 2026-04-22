@@ -14,7 +14,7 @@ import type {
 } from '@/features/census/components/global-search/globalSearchContracts';
 import { buildPatientEpisodeTimelineState } from '@/features/census/components/global-search/patientEpisodeTimelineController';
 import { globalPatientSearchLogger } from '@/hooks/hookLoggers';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 
 // ---------------------------------------------------------------------------
 // Lazy loaders

@@ -7,7 +7,10 @@ import {
   syncCensusTransferRequest,
 } from '@/features/census/controllers/censusTransferSyncController';
 import { DataFactory } from '@/tests/factories/DataFactory';
-import { RECEIVING_CENTER_EXTRASYSTEM, RECEIVING_CENTER_OTHER } from '@/constants/clinical';
+import {
+  RECEIVING_CENTER_EXTRASYSTEM,
+  RECEIVING_CENTER_OTHER,
+} from '@/constants/clinicalMovementConstants';
 
 describe('censusTransferSyncController', () => {
   it('resolves destination hospital using custom text for other/extrasystem centers', () => {

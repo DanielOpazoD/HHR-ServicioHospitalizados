@@ -8,7 +8,7 @@ import {
 import { isGoogleDriveEditingConfigured } from '@/services/google/googleDriveAuth';
 import clsx from 'clsx';
 import { BaseModal } from '@/components/shared/BaseModal';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import { useConfirmDialog, useNotification } from '@/context/UIContext';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 

@@ -4,7 +4,7 @@ import {
   getStorageFallbackUiCopy,
   shouldShowStorageFallbackUi,
 } from '@/services/storage/storageFallbackUiPolicy';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import { useDatabaseFallbackStatus } from '@/hooks/useDatabaseFallbackStatus';
 
 export const DatabaseStatusBanner: React.FC = () => {

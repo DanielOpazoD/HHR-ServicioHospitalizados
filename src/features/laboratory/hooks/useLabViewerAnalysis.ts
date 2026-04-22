@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { writeClipboardText } from '@/shared/runtime/browserWindowRuntime';
+import { writeClipboardText } from '@/shared/runtime/browserClipboardRuntime';
 import { fetchSyslabExamDetails } from '@/services/laboratory/syslabService';
 import type { AnalysisViewTab, LabAnalysisData, SyslabExamItem } from '@/types/domain/laboratory';
 import type { ProgressState } from '../types/labViewerTypes';

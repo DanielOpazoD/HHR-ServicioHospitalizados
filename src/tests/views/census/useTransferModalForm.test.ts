@@ -4,7 +4,7 @@ import {
   DEFAULT_RECEIVING_CENTER,
   EVACUATION_METHOD_AEROCARDAL,
   EVACUATION_METHOD_COMMERCIAL,
-} from '@/constants/clinical';
+} from '@/constants/clinicalMovementConstants';
 import { useTransferModalForm } from '@/features/census/hooks/useTransferModalForm';
 import { MOVEMENT_DATE_TIME_OUT_OF_RANGE_ERROR } from '@/features/census/controllers/censusMovementDatePresentationController';
 

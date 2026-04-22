@@ -2,7 +2,7 @@ import {
   EVACUATION_METHOD_AEROCARDAL,
   normalizeEvacuationMethod,
   normalizeReceivingCenter,
-} from '@/constants/clinical';
+} from '@/constants/clinicalMovementConstants';
 import type { TransferState } from '@/features/census/types/censusActionTypes';
 
 export type TransferStateFieldUpdate =

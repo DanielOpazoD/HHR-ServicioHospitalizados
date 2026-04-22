@@ -12,7 +12,7 @@ import { SpecialtyBreakdownTable } from './internal/SpecialtyBreakdownTable';
 import { OccupancyTrendChart } from './internal/OccupancyTrendChart';
 import { resolveAnalyticsPresentationCopy } from '@/features/analytics/controllers/minsalAnalyticsPresentationController';
 import { formatDateDDMMYYYY } from '@/utils/dateFormattingUtils';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 
 interface AnalyticsViewProps {

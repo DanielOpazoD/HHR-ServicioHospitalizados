@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import { useAuth } from '@/context/AuthContext';
 import { useTableConfig } from '@/context/TableConfigContext';
 import { useUISettings } from '@/context/UISettingsContext';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import { AccessRestricted } from './internal/AccessRestricted';
 import RoleManagementView from './RoleManagementView';
 import {

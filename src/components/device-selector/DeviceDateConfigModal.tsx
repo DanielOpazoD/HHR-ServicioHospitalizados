@@ -1,7 +1,7 @@
 import React from 'react';
 import { Calendar, Clock } from 'lucide-react';
 import type { DeviceInfo } from '@/types/domain/devices';
-import { VVP_DEVICE_KEYS } from '@/constants/clinical';
+import { VVP_DEVICE_KEYS } from '@/constants/clinicalDeviceConstants';
 import { BaseModal } from '@/components/shared/BaseModal';
 
 // Legacy tracked devices list (kept for backward compatibility)

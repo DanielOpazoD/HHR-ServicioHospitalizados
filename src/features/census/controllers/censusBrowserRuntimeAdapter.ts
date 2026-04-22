@@ -1,7 +1,5 @@
-import {
-  defaultBrowserWindowRuntime,
-  type BrowserWindowRuntime,
-} from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
+import type { BrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 
 export interface CensusDialogRuntime {
   alert: (message: string) => void;

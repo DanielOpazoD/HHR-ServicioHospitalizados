@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
-import type { EvacuationMethod, ReceivingCenter } from '@/constants/clinical';
-import { isTransferEscortOption } from '@/constants/clinical';
+import type { EvacuationMethod, ReceivingCenter } from '@/constants/clinicalMovementConstants';
+import { isTransferEscortOption } from '@/constants/clinicalMovementConstants';
 import {
   buildTransferValidationErrors,
   resolveTransferInitialMovementDate,

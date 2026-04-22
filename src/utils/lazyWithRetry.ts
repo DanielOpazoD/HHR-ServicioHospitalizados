@@ -7,7 +7,7 @@
  */
 
 import { lazy, type ComponentType } from 'react';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 
 const RELOAD_KEY = 'hhr_chunk_reload_count';
