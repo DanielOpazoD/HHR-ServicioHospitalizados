@@ -4,7 +4,7 @@ import type {
   LabResultRow,
   SyslabExamItem,
 } from '@/types/domain/laboratory';
-import { MICROBIOLOGY_PATTERNS } from '../constants/labConstants';
+import { MICROBIOLOGY_PATTERNS } from '../constants/labExamConstants';
 
 export const hasMicrobiologyPattern = (value: string): boolean => {
   const upper = value.toUpperCase();

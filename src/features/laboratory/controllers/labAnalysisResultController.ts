@@ -5,7 +5,8 @@ import type {
   LabTrendGroup,
   LabTrendPoint,
 } from '@/types/domain/laboratory';
-import { COMPARISON_ORDER, TREND_GROUPS } from '../constants/labConstants';
+import { COMPARISON_ORDER } from '../constants/labComparisonConstants';
+import { TREND_GROUPS } from '../constants/labTrendConstants';
 import { parseDateDDMMYYYY } from './labFormattingController';
 import type { ProcessedFindings } from './labAnalyticsContracts';
 

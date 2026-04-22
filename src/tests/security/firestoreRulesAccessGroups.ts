@@ -32,9 +32,20 @@ export function registerFirestoreRulesAccessGroups({
       await assertSucceeds(auditCollection(admin()).get());
     });
 
+    it('Configured admins can read audit logs without an admin claim', async () => {
+      await setupDoc(admin(), 'hospitals/H1/auditLogs/log-dynamic-admin', { action: 'TEST' });
+      await assertSucceeds(auditCollection(adminWithoutClaim()).get());
+    });
+
     it('Any authenticated user can create an audit log', async () => {
       await assertSucceeds(
         auditCollection(authed()).add({ action: 'TEST_ACTION', timestamp: 123456 })
+      );
+    });
+
+    it('Authenticated users without an effective role cannot create audit logs', async () => {
+      await assertFails(
+        auditCollection(unauthorizedAuthed()).add({ action: 'TEST_ACTION', timestamp: 123456 })
       );
     });
 

@@ -3,7 +3,7 @@ import { writeClipboardText } from '@/shared/runtime/browserWindowRuntime';
 import { fetchSyslabExamDetails } from '@/services/laboratory/syslabService';
 import type { AnalysisViewTab, LabAnalysisData, SyslabExamItem } from '@/types/domain/laboratory';
 import type { ProgressState } from '../types/labViewerTypes';
-import { SEARCH_STEPS, ANALYSIS_STEPS, STEP_INTERVAL_MS } from '../constants/labConstants';
+import { ANALYSIS_STEPS, SEARCH_STEPS, STEP_INTERVAL_MS } from '../constants/labProgressConstants';
 import { buildAnalysisData } from '../controllers/labAnalyticsController';
 import { buildLabSummaryText } from '../controllers/labSummaryController';
 import {

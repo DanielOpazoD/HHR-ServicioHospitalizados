@@ -7,7 +7,7 @@ Visor de exámenes de laboratorio del sistema Syslab (Hospital Hanga Roa).
 ```
 features/laboratory/
 ├── public.ts                 # API pública — importar desde aquí
-├── constants/labConstants.ts # Config clínica (grupos, exclusiones, orden, filtros)
+├── constants/                # Config clínica separada por dominio (progress, trend, comparison, exam, chart)
 ├── controllers/
 │   ├── labFormattingController.ts  # Puro: parsing, formateo, validación, utilidades compartidas
 │   ├── labAnalyticsController.ts   # Puro: buildAnalysisData + helpers

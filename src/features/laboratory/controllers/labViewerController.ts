@@ -1,5 +1,5 @@
 import type { LabAnalysisData, LabPatient, SyslabExamItem } from '@/types/domain/laboratory';
-import { EXAM_FILTER_CATEGORIES } from '../constants/labConstants';
+import { EXAM_FILTER_CATEGORIES } from '../constants/labExamConstants';
 import { bedSortKey } from './labFormattingController';
 
 export const resolveInitialLabViewerRut = (

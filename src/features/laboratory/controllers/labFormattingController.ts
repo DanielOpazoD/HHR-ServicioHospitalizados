@@ -4,7 +4,7 @@
  * No React dependency — can be used in any context (hooks, services, tests).
  */
 
-import { ANALYSIS_NAME_REPLACEMENTS } from '../constants/labConstants';
+import { ANALYSIS_NAME_REPLACEMENTS } from '../constants/labNormalizationConstants';
 
 /**
  * Parse a localized number string (using comma as decimal separator) to a float.

@@ -107,3 +107,9 @@ Estos scripts siguen soportados, pero no forman parte de la superficie pública 
 - `dev`, `typecheck`, `lint`, `test:ci:unit`, `check:quality` y `ci:*` son la superficie pública recomendada.
 - `check:*`, `report:*` y `test:*` más específicos deben tratarse como herramientas de diagnóstico o validación focalizada.
 - Si aparece un script nuevo que debería usar casi todo el equipo, debe entrar a esta lista oficial o no vale la pena publicitarlo.
+
+## Higiene mínima de commits
+
+- No mezclar en un mismo commit cambios de runtime de la app con assets estáticos o snapshots de `reports/`, salvo que formen parte del mismo fix y se validen juntos.
+- Si una auditoría depende de `reports/*`, primero confirma `git status --short` y `npm run check:report-freshness`; no asumas que un snapshot viejo representa el HEAD actual.
+- Si el cambio toca lógica clínica y además documentación operativa, mantenerlo en el mismo commit solo cuando la documentación explica o gobierna exactamente ese cambio.

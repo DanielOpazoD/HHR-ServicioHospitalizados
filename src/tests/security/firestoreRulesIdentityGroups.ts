@@ -9,6 +9,8 @@ export function registerFirestoreRulesIdentityGroups({
   admin,
   nurse,
   adminWithoutClaim,
+  editor,
+  unauthorizedAuthed,
   firestoreForUser,
   NOW_MS,
   setupDoc,
@@ -37,6 +39,15 @@ export function registerFirestoreRulesIdentityGroups({
       });
 
       await assertFails(authed().doc(roleConfigPath).get());
+    });
+
+    it('Editors cannot write role config directly', async () => {
+      await assertFails(
+        editor().doc(roleConfigPath).set({
+          'editor@example.com': 'editor',
+          'doctor@example.com': 'doctor_urgency',
+        })
+      );
     });
   });
 
@@ -273,6 +284,17 @@ export function registerFirestoreRulesIdentityGroups({
         })
       );
     });
+
+    it('Editors can create census access user documents', async () => {
+      await assertSucceeds(
+        editor().doc('census-access-users/user_editor_managed').set({
+          id: 'user_editor_managed',
+          email: 'viewer@example.com',
+          role: 'viewer',
+          isActive: true,
+        })
+      );
+    });
   });
 
   describe('Census Access Logs', () => {
@@ -311,6 +333,17 @@ export function registerFirestoreRulesIdentityGroups({
 
     it('Unauthenticated users cannot write bookmarks', async () => {
       await assertFails(unauth().doc(bookmarkPath).set({ alignment: 'right' }));
+    });
+
+    it('Clinical roles can read and write bookmarks', async () => {
+      await assertSucceeds(nurse().doc(bookmarkPath).set({ alignment: 'right' }));
+      await assertSucceeds(nurse().doc(bookmarkPath).get());
+    });
+
+    it('Authenticated users without a clinical role cannot read or write bookmarks', async () => {
+      await setupDoc(admin(), bookmarkPath, { alignment: 'left' });
+      await assertFails(unauthorizedAuthed().doc(bookmarkPath).get());
+      await assertFails(unauthorizedAuthed().doc(bookmarkPath).set({ alignment: 'center' }));
     });
   });
 }

@@ -11,7 +11,7 @@ import {
 } from 'recharts';
 import type { LabTrendPoint } from '@/types/domain/laboratory';
 import { sortByDate } from './LabTrendChartHelpers';
-import { DASH_PATTERNS, LABEL_OFFSETS, LINE_COLORS } from '../constants/labConstants';
+import { DASH_PATTERNS, LABEL_OFFSETS, LINE_COLORS } from '../constants/labChartConstants';
 
 export const StaggeredLabel: React.FC<{
   x?: number;

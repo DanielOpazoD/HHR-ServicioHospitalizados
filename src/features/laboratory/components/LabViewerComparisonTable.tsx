@@ -5,164 +5,20 @@
  */
 
 import React from 'react';
-import clsx from 'clsx';
-import { ChevronDown, ChevronRight, FileText, Pin, Search } from 'lucide-react';
 import type { LabAnalysisData, LabPatient } from '@/types/domain/laboratory';
 import type { ExportConfig } from '../types/labViewerTypes';
+import type { ComparisonGroupLabel } from '../constants/labComparisonConstants';
 import {
-  COMPARISON_DISPLAY_GROUPS,
-  COMPARISON_PINNABLE_VARIABLES,
-} from '../constants/labConstants';
-import { isOutOfRange, formatLabResult } from '../controllers/labFormattingController';
+  buildComparisonGroups,
+  filterComparisonVariableNames,
+  resolveInitialPinnedVariables,
+} from '../controllers/labComparisonTableController';
 import { LabExportConfigDialog } from './LabExportConfigDialog';
+import { LabViewerComparisonTableBody } from './LabViewerComparisonTableBody';
+import { LabViewerComparisonToolbar } from './LabViewerComparisonToolbar';
 
 const loadLabExcelExporter = async () =>
   import('../services/labExcelService').then(module => module.exportComparisonToExcel);
-
-type ComparisonGroupLabel =
-  | 'Hemograma'
-  | 'Inflamación'
-  | 'Función renal / electrolitos'
-  | 'Coagulación'
-  | 'Perfil hepático'
-  | 'RPC / RAC'
-  | 'Metabólico'
-  | 'Otros';
-
-interface ComparisonGroup {
-  label: ComparisonGroupLabel;
-  rows: string[];
-}
-
-const GROUP_ORDER: ComparisonGroupLabel[] = [
-  'Hemograma',
-  'Inflamación',
-  'Función renal / electrolitos',
-  'Coagulación',
-  'Perfil hepático',
-  'RPC / RAC',
-  'Metabólico',
-  'Otros',
-];
-
-const getComparisonGroupLabel = (name: string): ComparisonGroupLabel => {
-  for (const group of COMPARISON_DISPLAY_GROUPS) {
-    if (group.patterns.some(pattern => name.toLowerCase().includes(pattern.toLowerCase()))) {
-      return group.label as ComparisonGroupLabel;
-    }
-  }
-
-  return 'Otros';
-};
-
-const buildComparisonGroups = (
-  variableNames: string[],
-  allVariableNames: string[],
-  pinnedVariables: Set<string>
-): ComparisonGroup[] => {
-  const groupsMap = new Map<ComparisonGroupLabel, string[]>();
-
-  for (const name of variableNames) {
-    const groupLabel = getComparisonGroupLabel(name);
-    const groupRows = groupsMap.get(groupLabel) || [];
-    groupRows.push(name);
-    groupsMap.set(groupLabel, groupRows);
-  }
-
-  return GROUP_ORDER.map(label => {
-    const rows = groupsMap.get(label) || [];
-    const orderedRows = [...rows].sort((a, b) => {
-      const aPinned = pinnedVariables.has(a);
-      const bPinned = pinnedVariables.has(b);
-      if (aPinned !== bPinned) {
-        return aPinned ? -1 : 1;
-      }
-
-      return allVariableNames.indexOf(a) - allVariableNames.indexOf(b);
-    });
-
-    return { label, rows: orderedRows };
-  }).filter(group => group.rows.length > 0);
-};
-
-const ComparisonRow: React.FC<{
-  name: string;
-  examDates: string[];
-  data: LabAnalysisData;
-  index: number;
-  isPinned: boolean;
-  canPin: boolean;
-  onTogglePin: (name: string) => void;
-}> = ({ name, examDates, data, index, isPinned, canPin, onTogglePin }) => (
-  <tr
-    className={clsx(
-      'border-t border-slate-100 hover:bg-slate-50/60',
-      index % 2 === 1 && 'bg-slate-50/20'
-    )}
-  >
-    <td className="sticky left-0 z-10 border-r border-slate-200 bg-white px-2 py-1.5 text-[10px] text-slate-700">
-      <div className="flex items-center justify-between gap-2">
-        <span className="min-w-0 truncate font-semibold">{name}</span>
-        {canPin ? (
-          <button
-            type="button"
-            onClick={() => onTogglePin(name)}
-            title={isPinned ? `Desanclar ${name}` : `Anclar ${name}`}
-            className={clsx(
-              'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors',
-              isPinned
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                : 'border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:text-slate-600'
-            )}
-          >
-            <Pin size={11} className={clsx(isPinned && 'fill-current')} />
-          </button>
-        ) : null}
-      </div>
-    </td>
-    {examDates.map(date => {
-      const row = data.comparison[name]?.[date];
-      if (!row) {
-        return (
-          <td key={date} className="px-1 py-1.5 text-center text-[10px] text-slate-300">
-            --
-          </td>
-        );
-      }
-
-      if (row.qualitative) {
-        const hasAlert = /positivo|reactivo|detectado|aislado|presente/i.test(row.result);
-        return (
-          <td key={date} className="px-1 py-1.5 text-center whitespace-nowrap">
-            <span
-              className={clsx(
-                'text-[10px] font-semibold',
-                hasAlert ? 'text-red-600' : 'text-slate-700'
-              )}
-            >
-              {row.result.length > 20 ? `${row.result.substring(0, 20)}…` : row.result}
-            </span>
-          </td>
-        );
-      }
-
-      const oor = isOutOfRange(row.result, row.refValue);
-      const { display } = formatLabResult(row.result, row.unit);
-      return (
-        <td key={date} className="px-1 py-1.5 text-center whitespace-nowrap">
-          <span
-            className={clsx(
-              'text-[11px] font-semibold',
-              oor === true ? 'text-red-600' : 'text-slate-700'
-            )}
-          >
-            {display}
-          </span>
-        </td>
-      );
-    })}
-  </tr>
-);
 
 export const LabViewerComparisonTable: React.FC<{
   data: LabAnalysisData;
@@ -175,15 +31,12 @@ export const LabViewerComparisonTable: React.FC<{
   const [collapsedGroups, setCollapsedGroups] = React.useState<Set<ComparisonGroupLabel>>(
     new Set()
   );
-  const [pinnedVariables, setPinnedVariables] = React.useState<Set<string>>(
-    () => new Set(COMPARISON_PINNABLE_VARIABLES.filter(name => allVariableNames.includes(name)))
+  const [pinnedVariables, setPinnedVariables] = React.useState<Set<string>>(() =>
+    resolveInitialPinnedVariables(allVariableNames)
   );
 
   const variableNames = React.useMemo(
-    () =>
-      searchQuery
-        ? allVariableNames.filter(n => n.toLowerCase().includes(searchQuery.toLowerCase()))
-        : allVariableNames,
+    () => filterComparisonVariableNames(allVariableNames, searchQuery),
     [allVariableNames, searchQuery]
   );
 
@@ -236,26 +89,11 @@ export const LabViewerComparisonTable: React.FC<{
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-2">
-        <div className="relative max-w-sm flex-1">
-          <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Buscar variable..."
-            className="w-full rounded-lg border border-slate-200 bg-white py-1.5 pl-7 pr-2 text-[11px] text-slate-700 placeholder:text-slate-300 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/10"
-          />
-        </div>
-        <button
-          type="button"
-          onClick={() => setShowExportConfig(prev => !prev)}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-[11px] font-medium text-emerald-700 transition-colors hover:bg-emerald-50"
-        >
-          <FileText size={12} />
-          Exportar Excel
-        </button>
-      </div>
+      <LabViewerComparisonToolbar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onToggleExportConfig={() => setShowExportConfig(previous => !previous)}
+      />
 
       {showExportConfig ? (
         <LabExportConfigDialog
@@ -293,52 +131,15 @@ export const LabViewerComparisonTable: React.FC<{
               ))}
             </tr>
           </thead>
-          <tbody>
-            {comparisonGroups.map(group => {
-              const isCollapsed = collapsedGroups.has(group.label);
-              return (
-                <React.Fragment key={group.label}>
-                  <tr className="border-t border-slate-200 bg-slate-50/80">
-                    <td colSpan={examDates.length + 1} className="px-2 py-1.5">
-                      <button
-                        type="button"
-                        onClick={() => toggleGroup(group.label)}
-                        className="flex w-full items-center justify-between gap-3 text-left"
-                      >
-                        <span className="inline-flex items-center gap-2">
-                          {isCollapsed ? (
-                            <ChevronRight size={13} className="text-slate-400" />
-                          ) : (
-                            <ChevronDown size={13} className="text-slate-400" />
-                          )}
-                          <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-700">
-                            {group.label}
-                          </span>
-                        </span>
-                        <span className="text-[10px] text-slate-400">
-                          {group.rows.length} variable{group.rows.length === 1 ? '' : 's'}
-                        </span>
-                      </button>
-                    </td>
-                  </tr>
-                  {!isCollapsed
-                    ? group.rows.map((name, index) => (
-                        <ComparisonRow
-                          key={`${group.label}-${name}`}
-                          name={name}
-                          examDates={examDates}
-                          data={data}
-                          index={index}
-                          isPinned={pinnedVariables.has(name)}
-                          canPin={COMPARISON_PINNABLE_VARIABLES.includes(name)}
-                          onTogglePin={togglePin}
-                        />
-                      ))
-                    : null}
-                </React.Fragment>
-              );
-            })}
-          </tbody>
+          <LabViewerComparisonTableBody
+            comparisonGroups={comparisonGroups}
+            examDates={examDates}
+            data={data}
+            collapsedGroups={collapsedGroups}
+            pinnedVariables={pinnedVariables}
+            onToggleGroup={toggleGroup}
+            onTogglePin={togglePin}
+          />
         </table>
       </div>
     </div>

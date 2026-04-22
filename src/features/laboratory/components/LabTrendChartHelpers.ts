@@ -1,5 +1,5 @@
 import type { LabTrendPoint } from '@/types/domain/laboratory';
-import { SCALE_SPLIT_RATIO } from '../constants/labConstants';
+import { SCALE_SPLIT_RATIO } from '../constants/labChartConstants';
 
 export interface UnitVariableGroup {
   unit: string;
