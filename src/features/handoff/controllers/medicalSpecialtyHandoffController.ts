@@ -1,4 +1,4 @@
-import type { AuthUser } from '@/types/auth';
+import type { AuthUser } from '@/types/authRoleTypes';
 import type {
   DailyRecord,
   MedicalHandoffActor,

@@ -7,7 +7,7 @@ import {
   parseClinicalDocumentTemplate,
   safeParseClinicalDocumentTemplate,
 } from '@/domain/clinical-documents/runtimeContracts';
-import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 
 const getClinicalDocumentTemplatesCollectionPath = (
   hospitalId: string = getActiveHospitalId()

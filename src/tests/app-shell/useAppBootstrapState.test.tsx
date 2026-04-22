@@ -2,7 +2,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AuthContextType } from '@/context';
 import type { UseDateNavigationReturn } from '@/hooks/useDateNavigation';
-import type { AuthUser } from '@/types/auth';
+import type { AuthUser } from '@/types/authRoleTypes';
 
 const {
   mockUseAuth,

@@ -1,4 +1,4 @@
-import type { AuthSessionState } from '@/types/auth';
+import type { AuthSessionState } from '@/types/authSessionTypes';
 import type { FirestoreSyncState } from '@/services/repositories/repositoryConfig';
 import { isE2ELocalOnlySyncForced } from '@/shared/runtime/e2eRuntime';
 

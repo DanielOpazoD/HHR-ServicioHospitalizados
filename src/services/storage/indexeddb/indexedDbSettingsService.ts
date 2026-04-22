@@ -1,5 +1,5 @@
 import { localPersistence } from '@/services/storage/localpersistence/localPersistenceService';
-import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 
 import { ensureDbReady, hospitalDB as db, isDatabaseInFallbackMode } from './indexedDbCore';
 

@@ -16,7 +16,7 @@ import {
 } from '@/domain/handoff/view';
 import { canEditMedicalHandoffForDate } from '@/shared/access/operationalAccessPolicy';
 import { MessageSquare, Stethoscope } from 'lucide-react';
-import type { UserRole } from '@/types/auth';
+import type { UserRole } from '@/types/authRoleTypes';
 import type { AuditAction } from '@/types/audit';
 import {
   resolveMedicalHandoffCapabilities,

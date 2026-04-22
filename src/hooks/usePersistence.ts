@@ -18,10 +18,8 @@ import {
   defaultDailyRecordReadPort,
   defaultDailyRecordWritePort,
 } from '@/application/ports/dailyRecordPort';
-import {
-  recordOperationalOutcome,
-  recordOperationalTelemetry,
-} from '@/services/observability/operationalTelemetryService';
+import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryOutcomeRecorder';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 import { getPreviousDay as getPreviousCalendarDay } from '@/utils/clinicalDayUtils';
 import { defaultDailyRecordSyncPort } from '@/application/ports/dailyRecordPort';
 

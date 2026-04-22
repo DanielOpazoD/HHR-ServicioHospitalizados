@@ -1,5 +1,5 @@
 import { GoogleAuthProvider, User } from 'firebase/auth';
-import { AuthUser, UserRole } from '@/types/auth';
+import type { AuthUser, UserRole } from '@/types/authRoleTypes';
 
 export const ROLE_CACHE_PREFIX = 'hhr_role_cache_';
 

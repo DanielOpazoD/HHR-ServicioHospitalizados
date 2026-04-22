@@ -1,4 +1,4 @@
-import type { UserRole } from '@/types/auth';
+import type { UserRole } from '@/types/authRoleTypes';
 
 /**
  * Functions telemetry is strictly admin-only.

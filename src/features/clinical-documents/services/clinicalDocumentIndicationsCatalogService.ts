@@ -12,7 +12,7 @@ import {
   type ClinicalDocumentIndicationsCatalog,
   type RawClinicalDocumentIndicationsCatalog,
 } from '@/features/clinical-documents/controllers/clinicalDocumentIndicationsCatalogController';
-import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 import { defaultFirestoreServiceRuntime } from '@/services/storage/firestore/firestoreServiceRuntime';
 import {
   readFirestoreDocument,

@@ -4,7 +4,7 @@ import {
   type ApplicationIssue,
   type ApplicationOutcome,
 } from '@/shared/contracts/applicationOutcome';
-import type { AuthSessionState } from '@/types/auth';
+import type { AuthSessionState } from '@/types/authSessionTypes';
 import { signIn, signInWithGoogle } from '@/services/auth/authFlow';
 import {
   getCurrentAuthSessionState,

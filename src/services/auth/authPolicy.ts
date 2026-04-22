@@ -1,4 +1,4 @@
-import { UserRole } from '@/types/auth';
+import type { UserRole } from '@/types/authRoleTypes';
 import { normalizeEmail } from '@/services/auth/authShared';
 import { getDynamicRoleForEmail } from '@/services/auth/authRoleLookup';
 import {

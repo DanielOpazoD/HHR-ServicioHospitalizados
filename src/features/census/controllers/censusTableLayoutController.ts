@@ -6,7 +6,7 @@ import type {
   BedTypesById,
 } from '@/features/census/types/censusTableTypes';
 import type { PatientData } from '@/features/census/types/censusTablePatientContracts';
-import type { UserRole } from '@/types/auth';
+import type { UserRole } from '@/types/authRoleTypes';
 import type { PatientRowAction } from '@/features/census/types/patientRowActionTypes';
 import type {
   CensusTableBodyProps,

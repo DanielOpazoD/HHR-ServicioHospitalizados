@@ -1,5 +1,5 @@
 import { firestoreDb } from '@/services/storage/firestore';
-import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 import {
   createApplicationFailed,
   createApplicationSuccess,

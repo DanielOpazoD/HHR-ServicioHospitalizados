@@ -9,7 +9,7 @@ import {
 } from 'firebase/firestore';
 import { COLLECTIONS, getActiveHospitalId, HOSPITAL_COLLECTIONS } from '@/constants/firestorePaths';
 import { createOperationalError } from '@/services/observability/operationalError';
-import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 import { getRecordDocRef } from '@/services/storage/firestore/firestoreShared';
 import { defaultFirestoreServiceRuntime } from '@/services/storage/firestore/firestoreServiceRuntime';
 import type { FirestoreServiceRuntimePort } from '@/services/storage/firestore/ports/firestoreServiceRuntimePort';

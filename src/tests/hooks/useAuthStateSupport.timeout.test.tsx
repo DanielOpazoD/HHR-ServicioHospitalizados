@@ -1,6 +1,6 @@
 import { act } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { AuthSessionState } from '@/types/auth';
+import type { AuthSessionState } from '@/types/authSessionTypes';
 import {
   authBootstrapTestMocks,
   flushBootstrapSetup,

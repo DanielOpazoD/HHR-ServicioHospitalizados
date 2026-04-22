@@ -1,4 +1,4 @@
-import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 
 interface TokenClient {
   requestAccessToken: () => void;

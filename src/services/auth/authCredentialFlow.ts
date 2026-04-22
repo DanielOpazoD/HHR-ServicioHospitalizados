@@ -4,7 +4,7 @@ import {
   signOut as firebaseSignOut,
 } from 'firebase/auth';
 
-import { AuthUser, UserRole } from '@/types/auth';
+import type { AuthUser, UserRole } from '@/types/authRoleTypes';
 import { resolveGeneralLoginAccessForEmail } from '@/services/auth/authPolicy';
 import { toAuthUser } from '@/services/auth/authShared';
 import { type AuthRuntime, defaultAuthRuntime } from '@/services/firebase-runtime/authRuntime';

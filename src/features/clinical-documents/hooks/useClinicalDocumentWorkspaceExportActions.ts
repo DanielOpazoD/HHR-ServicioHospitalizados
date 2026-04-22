@@ -7,10 +7,8 @@ import type { ExportClinicalDocumentPdfOutput } from '@/application/clinical-doc
 import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcome';
 import { resolveFailedApplicationOutcomeMessage } from '@/shared/contracts/applicationOutcomeMessage';
 import type { ClinicalDocumentAnnexPrintMode } from '@/features/clinical-documents/services/clinicalDocumentPrintSupport';
-import {
-  recordOperationalOutcome,
-  recordOperationalTelemetry,
-} from '@/services/observability/operationalTelemetryService';
+import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryOutcomeRecorder';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 import {
   resolveClinicalDocumentExceptionMessage,
   updateClinicalDocumentPdfFailure,

@@ -17,7 +17,7 @@ import {
   parseClinicalDocumentRecord,
   safeParseClinicalDocumentRecord,
 } from '@/domain/clinical-documents/runtimeContracts';
-import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 
 const getClinicalDocumentsCollectionPath = (hospitalId: string = getActiveHospitalId()): string =>
   `hospitals/${hospitalId}/clinicalDocuments`;

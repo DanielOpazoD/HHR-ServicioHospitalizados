@@ -8,10 +8,8 @@ import {
   executeSendMedicalHandoff,
 } from '@/application/handoff';
 import { defaultDailyRecordReadPort } from '@/application/ports/dailyRecordPort';
-import {
-  recordOperationalOutcome,
-  recordOperationalTelemetry,
-} from '@/services/observability/operationalTelemetryService';
+import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryOutcomeRecorder';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 import { presentHandoffManagementFailure } from '@/hooks/controllers/handoffManagementOutcomeController';
 import { canEditMedicalHandoffForDate } from '@/shared/access/operationalAccessPolicy';
 import {

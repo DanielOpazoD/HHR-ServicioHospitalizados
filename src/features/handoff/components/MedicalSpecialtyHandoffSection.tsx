@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { AlertTriangle, CheckCircle2, Clock3, LockKeyhole, Stethoscope } from 'lucide-react';
-import type { AuthUser } from '@/types/auth';
+import type { AuthUser } from '@/types/authRoleTypes';
 import type {
   DailyRecord,
   MedicalHandoffActor,

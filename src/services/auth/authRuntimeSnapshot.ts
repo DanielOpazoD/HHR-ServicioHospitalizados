@@ -1,4 +1,4 @@
-import type { AuthSessionState, AuthSessionStatus } from '@/types/auth';
+import type { AuthSessionState, AuthSessionStatus } from '@/types/authSessionTypes';
 import {
   getAuthBootstrapPendingAgeMs,
   isAuthBootstrapPending,

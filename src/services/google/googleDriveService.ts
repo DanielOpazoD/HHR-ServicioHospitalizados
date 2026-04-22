@@ -5,7 +5,7 @@
 
 export { requestAccessToken } from './googleDriveAuth';
 import { requestAccessToken } from './googleDriveAuth';
-import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 import {
   buildMultipartBody,
   createMultipartHeaders,

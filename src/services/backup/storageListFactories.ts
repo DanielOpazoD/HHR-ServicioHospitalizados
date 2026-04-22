@@ -8,10 +8,8 @@ import {
   toStorageOperationalError,
 } from '@/services/backup/storageErrorPolicy';
 import { measureStorageOperation } from '@/services/backup/storageObservability';
-import {
-  recordOperationalErrorTelemetry,
-  recordOperationalTelemetry,
-} from '@/services/observability/operationalTelemetryService';
+import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryOutcomeRecorder';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 import {
   createStorageListReport,
   DEFAULT_FILE_INFO_CONCURRENCY,

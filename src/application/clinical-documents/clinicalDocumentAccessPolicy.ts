@@ -1,4 +1,4 @@
-import type { UserRole } from '@/types/auth';
+import type { UserRole } from '@/types/authRoleTypes';
 import { resolveSpecialistCapabilities } from '@/shared/access/specialistAccessPolicy';
 
 export const canReadClinicalDocuments = (role: UserRole | undefined): boolean =>

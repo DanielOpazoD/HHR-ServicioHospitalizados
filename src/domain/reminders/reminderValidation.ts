@@ -1,5 +1,5 @@
 import type { Reminder, ReminderShift, ReminderType } from '@/types/reminders';
-import type { UserRole } from '@/types/auth';
+import type { UserRole } from '@/types/authRoleTypes';
 
 export interface ReminderDraftInput {
   title: string;

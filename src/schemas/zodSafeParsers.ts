@@ -3,7 +3,7 @@ import type { CMAData, DischargeData, TransferData } from '@/types/domain/moveme
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { PatientData } from '@/types/domain/patient';
 import { applyDailyRecordStaffingCompatibility } from '@/services/staff/dailyRecordStaffing';
-import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 import type { SafeParseReturnType } from 'zod';
 
 import { normalizeLegacyNullsDeep } from './zod/legacyNormalization';

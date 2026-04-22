@@ -1,6 +1,6 @@
 import { ensureDbReady, hospitalDB as db } from './indexedDbCore';
 import { CatalogRecord } from './indexedDbCatalogContracts';
-import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 
 export const getCatalogValues = async <T = string>(catalogId: string): Promise<T[]> => {
   try {

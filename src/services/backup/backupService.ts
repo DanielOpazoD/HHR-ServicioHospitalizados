@@ -23,7 +23,7 @@ import {
 import { BackupFile, BackupFilePreview, BackupFilters } from '@/types/backup';
 import { COLLECTIONS, getActiveHospitalId } from '@/constants/firestorePaths';
 import { defaultBackupFirestoreRuntime } from '@/services/firebase-runtime/backupRuntime';
-import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 import {
   createBackupCrudFailure,
   createBackupCrudSuccess,

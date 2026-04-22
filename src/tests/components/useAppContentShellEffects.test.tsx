@@ -1,7 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAppContentShellEffects } from '@/components/layout/app-content/useAppContentShellEffects';
-import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 
 vi.mock('@/services/observability/operationalTelemetryService', () => ({
   recordOperationalTelemetry: vi.fn(),

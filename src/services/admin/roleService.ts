@@ -5,7 +5,7 @@ import {
   isManagedUserRole,
   type ManagedUserRole,
 } from '@/shared/access/roleAccessMatrix';
-import type { UserRole } from '@/types/auth';
+import type { UserRole } from '@/types/authRoleTypes';
 import { roleServiceLogger } from '@/services/admin/adminLoggers';
 import {
   defaultFunctionsRuntime,

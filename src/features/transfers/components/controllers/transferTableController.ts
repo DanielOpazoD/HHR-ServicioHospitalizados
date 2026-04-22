@@ -7,7 +7,7 @@ import {
 } from '@/services/transfers/transferStatusController';
 import { isAcceptedSubState } from '@/features/transfers/controllers/transferStatusInteractionController';
 import { formatTransferDate } from '@/shared/transfers/transferPresentation';
-import type { UserRole } from '@/types/auth';
+import type { UserRole } from '@/types/authRoleTypes';
 import { canOpenTransferDocuments } from '@/shared/access/operationalAccessPolicy';
 
 export type TransferTableMode = 'active' | 'finalized';

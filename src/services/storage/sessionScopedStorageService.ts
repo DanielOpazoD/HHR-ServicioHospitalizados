@@ -1,6 +1,6 @@
 import { clearAllRecords } from '@/services/storage/indexeddb/indexedDbRecordService';
 import { clearSyncQueueForOwner, recordSyncQueueOwnershipTelemetry } from '@/services/storage/sync';
-import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 
 const SESSION_OWNER_KEY = 'hhr_session_owner_v1';
 

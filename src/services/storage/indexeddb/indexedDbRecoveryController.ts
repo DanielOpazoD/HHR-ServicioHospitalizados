@@ -1,4 +1,4 @@
-import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 import type { OperationalRuntimeState } from '@/services/observability/operationalRuntimeState';
 
 export const recordIndexedDbRecoveryFailure = (

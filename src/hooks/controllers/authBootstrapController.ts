@@ -1,4 +1,4 @@
-import type { AuthSessionState } from '@/types/auth';
+import type { AuthSessionState } from '@/types/authSessionTypes';
 
 export const shouldIgnoreTransientUnauthenticatedBootstrapEvent = ({
   isBootstrapLoading,

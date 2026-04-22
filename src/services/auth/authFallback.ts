@@ -1,5 +1,5 @@
 import { getRedirectResult, signInWithRedirect } from 'firebase/auth';
-import { AuthSessionState } from '@/types/auth';
+import type { AuthSessionState } from '@/types/authSessionTypes';
 import { googleProvider } from '@/services/auth/authShared';
 import {
   consumeE2ERedirectPendingUser,
@@ -13,7 +13,7 @@ import { authorizeFirebaseUser } from '@/services/auth/authAccessResolution';
 import { getAuthRedirectRuntimeSupport } from '@/services/auth/authRedirectRuntime';
 import { AUTH_UI_COPY } from '@/services/auth/authUiCopy';
 import { createOperationalError } from '@/services/observability/operationalError';
-import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 import {
   createAuthErrorSessionState,
   toResolvedAuthSessionState,

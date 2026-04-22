@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import type { PatientData } from '@/features/clinical-documents/contracts/clinicalDocumentsPatientContract';
-import type { UserRole } from '@/types/auth';
+import type { UserRole } from '@/types/authRoleTypes';
 import type { ConfirmOptions } from '@/context/uiContracts';
 import type {
   ClinicalDocumentEpisodeContext,
@@ -19,10 +19,8 @@ import {
   executeCreateClinicalDocumentDraft,
   executeDeleteClinicalDocument,
 } from '@/application/clinical-documents/clinicalDocumentUseCases';
-import {
-  recordOperationalOutcome,
-  recordOperationalTelemetry,
-} from '@/services/observability/operationalTelemetryService';
+import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryOutcomeRecorder';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 import {
   logClinicalDocumentCreated,
   logClinicalDocumentDeleted,

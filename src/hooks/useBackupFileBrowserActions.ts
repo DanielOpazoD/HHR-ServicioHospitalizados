@@ -9,7 +9,7 @@ import {
   executeRunMonthlyBackfill,
 } from '@/application/backup-export/backupExportUseCases';
 import { presentBackupExportOutcome } from '@/hooks/controllers/backupExportOutcomeController';
-import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 import { canUseAdminMaintenanceActions } from '@/shared/access/operationalAccessPolicy';
 
 interface MagicBackfillProgressState {

@@ -4,7 +4,7 @@ vi.unmock('@/context/AuthContext');
 
 import { buildAuthContextValue } from '@/context/AuthContext';
 import { resolveNormalizedAuthOperationalState } from '@/services/auth/authOperationalState';
-import type { AuthUser } from '@/types/auth';
+import type { AuthUser } from '@/types/authRoleTypes';
 
 describe('AuthContext', () => {
   it('builds safe defaults from sparse auth input', async () => {

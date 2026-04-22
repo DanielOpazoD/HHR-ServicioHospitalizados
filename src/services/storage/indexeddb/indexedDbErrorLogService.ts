@@ -1,5 +1,5 @@
 import { ErrorLog } from '@/services/logging/errorLogTypes';
-import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 
 import { ensureDbReady, hospitalDB as db } from './indexedDbCore';
 

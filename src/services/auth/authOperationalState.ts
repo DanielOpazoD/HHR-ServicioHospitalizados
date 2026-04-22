@@ -1,4 +1,5 @@
-import type { AuthSessionState, AuthUser, UserRole } from '@/types/auth';
+import type { AuthSessionState } from '@/types/authSessionTypes';
+import type { AuthUser, UserRole } from '@/types/authRoleTypes';
 import {
   createAuthenticatingAuthSessionState,
   createUnauthenticatedAuthSessionState,

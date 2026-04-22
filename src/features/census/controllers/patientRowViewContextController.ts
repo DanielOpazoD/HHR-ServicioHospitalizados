@@ -3,7 +3,7 @@ import type { PatientRowViewContext } from '@/features/census/controllers/patien
 import { resolvePatientRowCapabilities } from '@/features/census/controllers/patientRowCapabilitiesController';
 import { resolvePatientRowIndicators } from '@/features/census/controllers/patientRowIndicatorsController';
 import type { PatientData } from '@/features/census/components/patient-row/patientRowDataContracts';
-import type { UserRole } from '@/types/auth';
+import type { UserRole } from '@/types/authRoleTypes';
 import type { PatientRowRuntime } from '@/features/census/components/patient-row/patientRowRuntimeContracts';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 

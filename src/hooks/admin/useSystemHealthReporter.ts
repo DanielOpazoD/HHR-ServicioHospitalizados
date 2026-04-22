@@ -7,7 +7,7 @@ import type { UserHealthStatus } from '@/services/admin/healthService';
 import { getLocalPersistenceRuntimeSnapshot } from '@/services/storage/indexeddb/indexedDbCore';
 import { getSyncQueueTelemetry } from '@/services/storage/sync';
 import { getRepositoryPerformanceSummary } from '@/services/repositories/repositoryPerformance';
-import { getOperationalTelemetrySummary } from '@/services/observability/operationalTelemetryService';
+import { getOperationalTelemetrySummary } from '@/services/observability/operationalTelemetryRecorder';
 import { buildClientOperationalRuntimeSnapshot } from '@/services/observability/clientOperationalRuntimeSnapshot';
 import { buildAuthRuntimeSnapshot } from '@/services/auth/authRuntimeSnapshot';
 import {

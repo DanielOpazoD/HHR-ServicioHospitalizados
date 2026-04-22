@@ -5,10 +5,8 @@
  * Fetches data asynchronously from a static JSON file to prevent bundle bloat.
  */
 
-import {
-  recordOperationalErrorTelemetry,
-  recordOperationalTelemetry,
-} from '@/services/observability/operationalTelemetryService';
+import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryOutcomeRecorder';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 
 export interface CIE10Entry {
   code: string;

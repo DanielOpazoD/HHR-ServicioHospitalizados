@@ -1,7 +1,7 @@
 import { DailyRecord } from '@/services/storage/storageDailyRecordContracts';
 import { AuditLogEntry } from '@/types/audit';
 import { safeJsonParse } from '@/utils/jsonUtils';
-import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 
 import { ensureDbReady, hospitalDB as db, registerDatabaseRecreatedHandler } from './indexedDbCore';
 import { saveCatalog } from './indexedDbCatalogService';

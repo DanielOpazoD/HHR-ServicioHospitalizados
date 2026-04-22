@@ -1,0 +1,219 @@
+{
+  "generatedAt": "2026-04-22T03:16:20.812Z",
+  "hotspots": [
+    {
+      "file": "src/services/utils/loggerScope.ts",
+      "churn": 1,
+      "inboundImports": 72,
+      "criticality": "high",
+      "score": 238
+    },
+    {
+      "file": "src/application/shared/dailyRecordCoreContracts.ts",
+      "churn": 1,
+      "inboundImports": 64,
+      "criticality": "high",
+      "score": 214
+    },
+    {
+      "file": "src/shared/contracts/applicationOutcome.ts",
+      "churn": 1,
+      "inboundImports": 55,
+      "criticality": "medium",
+      "score": 182
+    },
+    {
+      "file": "src/features/clinical-documents/domain/entities.ts",
+      "churn": 12,
+      "inboundImports": 45,
+      "criticality": "high",
+      "score": 179
+    },
+    {
+      "file": "src/components/shared/BaseModal.tsx",
+      "churn": 6,
+      "inboundImports": 46,
+      "criticality": "medium",
+      "score": 165
+    },
+    {
+      "file": "src/types/audit.ts",
+      "churn": 7,
+      "inboundImports": 45,
+      "criticality": "medium",
+      "score": 164
+    },
+    {
+      "file": "src/types/authRoleTypes.ts",
+      "churn": 0,
+      "inboundImports": 49,
+      "criticality": "medium",
+      "score": 162
+    },
+    {
+      "file": "src/types/domain/dailyRecord.ts",
+      "churn": 8,
+      "inboundImports": 40,
+      "criticality": "medium",
+      "score": 151
+    },
+    {
+      "file": "src/shared/runtime/browserWindowRuntime.ts",
+      "churn": 4,
+      "inboundImports": 41,
+      "criticality": "medium",
+      "score": 146
+    },
+    {
+      "file": "src/constants/clinical.ts",
+      "churn": 6,
+      "inboundImports": 39,
+      "criticality": "medium",
+      "score": 144
+    },
+    {
+      "file": "src/utils/dateFormattingUtils.ts",
+      "churn": 2,
+      "inboundImports": 41,
+      "criticality": "medium",
+      "score": 142
+    },
+    {
+      "file": "src/context/AuthContext.tsx",
+      "churn": 12,
+      "inboundImports": 34,
+      "criticality": "medium",
+      "score": 141
+    },
+    {
+      "file": "src/types/domain/laboratory.ts",
+      "churn": 8,
+      "inboundImports": 34,
+      "criticality": "medium",
+      "score": 133
+    },
+    {
+      "file": "src/types/transfers.ts",
+      "churn": 6,
+      "inboundImports": 35,
+      "criticality": "medium",
+      "score": 132
+    },
+    {
+      "file": "src/services/observability/operationalTelemetryOutcomeRecorder.ts",
+      "churn": 0,
+      "inboundImports": 37,
+      "criticality": "high",
+      "score": 131
+    },
+    {
+      "file": "src/features/census/types/censusAccessProfile.ts",
+      "churn": 2,
+      "inboundImports": 35,
+      "criticality": "high",
+      "score": 129
+    },
+    {
+      "file": "src/types/domain/patient.ts",
+      "churn": 7,
+      "inboundImports": 33,
+      "criticality": "medium",
+      "score": 128
+    },
+    {
+      "file": "src/features/census/components/patient-row/patientRowDataContracts.ts",
+      "churn": 2,
+      "inboundImports": 34,
+      "criticality": "high",
+      "score": 126
+    },
+    {
+      "file": "src/constants/beds.ts",
+      "churn": 4,
+      "inboundImports": 33,
+      "criticality": "medium",
+      "score": 122
+    },
+    {
+      "file": "src/services/repositories/dailyRecordWriteSupport.ts",
+      "churn": 45,
+      "inboundImports": 2,
+      "criticality": "high",
+      "score": 116
+    },
+    {
+      "file": "src/context/DailyRecordContext.tsx",
+      "churn": 14,
+      "inboundImports": 23,
+      "criticality": "medium",
+      "score": 112
+    },
+    {
+      "file": "src/features/census/components/patient-row/patientRowViewContracts.ts",
+      "churn": 22,
+      "inboundImports": 16,
+      "criticality": "high",
+      "score": 112
+    },
+    {
+      "file": "src/services/storage/indexeddb/indexedDbCore.ts",
+      "churn": 24,
+      "inboundImports": 14,
+      "criticality": "high",
+      "score": 110
+    },
+    {
+      "file": "src/utils/clinicalDayUtils.ts",
+      "churn": 4,
+      "inboundImports": 29,
+      "criticality": "medium",
+      "score": 110
+    },
+    {
+      "file": "src/features/census/contracts/censusMovementContracts.ts",
+      "churn": 1,
+      "inboundImports": 29,
+      "criticality": "high",
+      "score": 109
+    },
+    {
+      "file": "src/services/observability/operationalTelemetryRecorder.ts",
+      "churn": 0,
+      "inboundImports": 29,
+      "criticality": "high",
+      "score": 107
+    },
+    {
+      "file": "src/services/repositories/repositoryConfig.ts",
+      "churn": 9,
+      "inboundImports": 23,
+      "criticality": "high",
+      "score": 107
+    },
+    {
+      "file": "src/services/staff/dailyRecordStaffing.ts",
+      "churn": 12,
+      "inboundImports": 21,
+      "criticality": "high",
+      "score": 107
+    },
+    {
+      "file": "src/hooks/contracts/patientHookContracts.ts",
+      "churn": 3,
+      "inboundImports": 28,
+      "criticality": "medium",
+      "score": 105
+    },
+    {
+      "file": "src/shared/access/operationalAccessPolicy.ts",
+      "churn": 9,
+      "inboundImports": 24,
+      "criticality": "medium",
+      "score": 105
+    }
+  ],
+  "interpretation": {
+    "scoreFormula": "churn*2 + inboundImports*3 + criticalityWeight*5",
+    "guidance": "Priorizar archivos con score alto para extraer contratos, read models o outcomes tipados antes de seguir agregando comportamiento."
+  }
+}

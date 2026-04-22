@@ -1,4 +1,4 @@
-import type { UserRole } from '@/types/auth';
+import type { UserRole } from '@/types/authRoleTypes';
 import type { TransferNote } from '@/types/transfers';
 import type { TransferTableMode } from './transferTableController';
 

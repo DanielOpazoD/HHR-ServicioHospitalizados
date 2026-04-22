@@ -9,7 +9,8 @@ import * as authFallback from '@/services/auth/authFallback';
 import * as authUseCases from '@/application/auth/authSessionUseCases';
 import * as auditService from '@/services/admin/auditService';
 import { setFirestoreSyncState } from '@/services/repositories/repositoryConfig';
-import type { AuthSessionState, AuthUser, UserRole } from '@/types/auth';
+import type { AuthSessionState } from '@/types/authSessionTypes';
+import type { AuthUser, UserRole } from '@/types/authRoleTypes';
 import * as sessionScopedStorageService from '@/services/storage/sessionScopedStorageService';
 
 vi.mock('@/services/auth/authSession', () => ({

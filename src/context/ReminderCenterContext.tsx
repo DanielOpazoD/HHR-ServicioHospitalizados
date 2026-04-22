@@ -9,7 +9,7 @@ import {
 } from '@/shared/reminders/reminderVisibility';
 import { getCurrentShift } from '@/services/admin/attributionService';
 import type { Reminder, ReminderShift } from '@/types/reminders';
-import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 
 const formatLocalDate = (date: Date): string => {
   const year = date.getFullYear();

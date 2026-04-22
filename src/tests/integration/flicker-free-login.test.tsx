@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, act, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import App from '@/App';
-import type { AuthSessionState, AuthUser } from '@/types/auth';
+import type { AuthSessionState } from '@/types/authSessionTypes';
+import type { AuthUser } from '@/types/authRoleTypes';
 
 // Mock useAuthState
 const mockUseAuthState = vi.fn();

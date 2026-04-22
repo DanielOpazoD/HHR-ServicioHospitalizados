@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, vi } from 'vitest';
 import { useState } from 'react';
-import type { AuthSessionState } from '@/types/auth';
+import type { AuthSessionState } from '@/types/authSessionTypes';
 import { useResolvedAuthBootstrap } from '@/hooks/useAuthStateSupport';
 
 const mockWarn = vi.fn();

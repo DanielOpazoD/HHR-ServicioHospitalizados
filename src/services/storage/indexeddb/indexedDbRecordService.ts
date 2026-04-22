@@ -1,7 +1,7 @@
 import { DailyRecord } from '@/services/storage/storageDailyRecordContracts';
 import { localPersistence } from '@/services/storage/localpersistence/localPersistenceService';
 import { buildMonthRecordPrefix } from '@/services/storage/storageDateSupport';
-import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 import { isE2ERuntimeEnabled } from '@/shared/runtime/e2eRuntime';
 
 import { ensureDbReady, hospitalDB as db, isDatabaseInFallbackMode } from './indexedDbCore';

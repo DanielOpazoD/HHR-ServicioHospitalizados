@@ -25,23 +25,13 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import clsx from 'clsx';
-import { useScrollLock } from '@/hooks/useScrollLock';
-
-/**
- * Size variants for the modal container
- */
-type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '5xl' | 'full';
-
-const sizeClasses: Record<ModalSize, string> = {
-  sm: 'max-w-sm',
-  md: 'max-w-md',
-  lg: 'max-w-lg',
-  xl: 'max-w-xl',
-  '2xl': 'max-w-2xl',
-  '3xl': 'max-w-3xl',
-  '5xl': 'max-w-5xl',
-  full: 'max-w-[95vw]',
-};
+import {
+  modalSectionVariantClasses,
+  sizeClasses,
+  type ModalSectionVariant,
+  type ModalSize,
+} from '@/components/shared/baseModalStyles';
+import { useBaseModalLifecycle } from '@/components/shared/useBaseModalLifecycle';
 
 export interface BaseModalProps {
   /** Whether the modal is open/visible */
@@ -105,76 +95,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
   scrollableBody = true,
   dataModule,
 }) => {
-  // Refs for focus management
-  const modalRef = React.useRef<HTMLDivElement>(null);
-  const onCloseRef = React.useRef(onClose);
-
-  React.useEffect(() => {
-    onCloseRef.current = onClose;
-  }, [onClose]);
-
-  // Unified scroll lock - MUST BE BEFORE EARLY RETURN
-  useScrollLock(isOpen);
-
-  // Handle ESC key & Focus Management
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCloseRef.current();
-
-      // Focus trap logic
-      if (e.key === 'Tab' && modalRef.current) {
-        const focusableElements = modalRef.current.querySelectorAll(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        );
-        const firstElement = focusableElements[0] as HTMLElement;
-        const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
-
-        if (e.shiftKey) {
-          // Shift + Tab
-          if (document.activeElement === firstElement) {
-            lastElement.focus();
-            e.preventDefault();
-          }
-        } else {
-          // Tab
-          if (document.activeElement === lastElement) {
-            firstElement.focus();
-            e.preventDefault();
-          }
-        }
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown);
-
-      // Initial focus - ONLY on first open
-      setTimeout(() => {
-        if (initialFocusRef?.current) {
-          initialFocusRef.current.focus();
-        } else if (modalRef.current) {
-          // Try to find the first input or button in the body first,
-          // then fallback to header close button
-          const bodyFocusable = modalRef.current.querySelector(
-            'input:not([disabled]), select:not([disabled]), textarea:not([disabled])'
-          ) as HTMLElement;
-
-          if (bodyFocusable) {
-            bodyFocusable.focus();
-          } else {
-            const firstFocusable = modalRef.current.querySelector(
-              'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-            ) as HTMLElement;
-            firstFocusable?.focus();
-          }
-        }
-      }, 100);
-    }
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isOpen, initialFocusRef]); // Stable trigger
+  const { modalRef } = useBaseModalLifecycle({ isOpen, onClose, initialFocusRef });
 
   // Don't render if not open
   if (!isOpen) return null;
@@ -276,18 +197,10 @@ export interface ModalSectionProps {
   /** Section content */
   children: React.ReactNode;
   /** Border/header color variant */
-  variant?: 'default' | 'success' | 'warning' | 'info' | 'danger';
+  variant?: ModalSectionVariant;
   /** Optional additional class name */
   className?: string;
 }
-
-const variantClasses: Record<string, { border: string; title: string; desc: string }> = {
-  default: { border: 'border-white/60', title: 'text-slate-800', desc: 'text-slate-600/80' },
-  success: { border: 'border-emerald-200', title: 'text-emerald-800', desc: 'text-emerald-600/80' },
-  warning: { border: 'border-orange-200', title: 'text-orange-800', desc: 'text-orange-600/80' },
-  info: { border: 'border-blue-200', title: 'text-blue-800', desc: 'text-blue-600/80' },
-  danger: { border: 'border-red-200', title: 'text-red-800', desc: 'text-red-600/80' },
-};
 
 export const ModalSection: React.FC<ModalSectionProps> = ({
   title,
@@ -297,7 +210,7 @@ export const ModalSection: React.FC<ModalSectionProps> = ({
   variant = 'default',
   className,
 }) => {
-  const colors = variantClasses[variant];
+  const colors = modalSectionVariantClasses[variant];
 
   return (
     <div className={clsx('bg-white/80 border p-4 rounded-xl shadow-sm', colors.border, className)}>

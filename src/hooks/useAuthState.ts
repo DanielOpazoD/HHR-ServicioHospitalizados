@@ -5,7 +5,8 @@ import {
   executeRedirectAuthResolution,
   executeResolvedCurrentAuthSessionState,
 } from '@/application/auth/authSessionUseCases';
-import { AuthSessionState, AuthUser, UserRole } from '@/types/auth';
+import type { AuthSessionState } from '@/types/authSessionTypes';
+import type { AuthUser, UserRole } from '@/types/authRoleTypes';
 export type { AuthSessionState, UserRole };
 import {
   createHandleLogout,

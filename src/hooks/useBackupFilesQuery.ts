@@ -14,7 +14,7 @@ import type {
   BackupItemType,
   BackupType,
 } from '@/hooks/backupFileBrowserContracts';
-import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 export type { BackupFolder, BackupItem, BackupItemType };
 
 export const EMPTY_STORAGE_LIST_REPORT: StorageListReport = {

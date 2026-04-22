@@ -14,10 +14,8 @@ import {
 } from '@/hooks/controllers/fileOperationsController';
 import { executeImportJsonBackup } from '@/application/backup-export/backupExportUseCases';
 import { presentBackupExportOutcome } from '@/hooks/controllers/backupExportOutcomeController';
-import {
-  recordOperationalOutcome,
-  recordOperationalTelemetry,
-} from '@/services/observability/operationalTelemetryService';
+import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryOutcomeRecorder';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 
 const logger = createScopedLogger('useFileOperations');

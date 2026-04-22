@@ -1,4 +1,5 @@
-import type { AuthSessionError, AuthSessionState, AuthUser } from '@/types/auth';
+import type { AuthSessionError, AuthSessionState } from '@/types/authSessionTypes';
+import type { AuthUser } from '@/types/authRoleTypes';
 
 export const createAuthenticatingAuthSessionState = (): AuthSessionState => ({
   status: 'authenticating',

@@ -2,7 +2,8 @@ import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AuthContextType } from '@/context';
 import type { FirestoreSyncState } from '@/services/repositories/repositoryConfig';
-import type { AuthSessionState, AuthUser } from '@/types/auth';
+import type { AuthSessionState } from '@/types/authSessionTypes';
+import type { AuthUser } from '@/types/authRoleTypes';
 
 const {
   mockUseAppState,

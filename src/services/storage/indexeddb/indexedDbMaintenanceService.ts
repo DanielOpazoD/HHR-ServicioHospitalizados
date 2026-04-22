@@ -1,5 +1,5 @@
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
-import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 
 const canUseWindow = (): boolean => typeof window !== 'undefined';
 const APP_STORAGE_PREFIXES = ['hhr_', 'hanga_roa_', 'indexeddb_'];

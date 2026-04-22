@@ -26,7 +26,7 @@ import { ensureUserRoleClaim } from '@/services/auth/authClaimSyncService';
 import { resolveFirebaseUserRole } from '@/services/auth/authAccessResolution';
 import { defaultAuthRuntime } from '@/services/firebase-runtime/authRuntime';
 import { defaultFunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
-import type { UserRole } from '@/types/auth';
+import type { UserRole } from '@/types/authRoleTypes';
 
 const logFirestoreWriteRetry = (
   operation: 'save' | 'partialUpdate' | 'delete',

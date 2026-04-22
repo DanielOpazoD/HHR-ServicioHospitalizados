@@ -6,7 +6,7 @@ import {
 } from '@/hooks/controllers/exportManagerController';
 import { executeLookupBackupArchiveStatus } from '@/application/backup-export/backupExportUseCases';
 import { presentBackupLookupOutcome } from '@/hooks/controllers/backupStorageOutcomeController';
-import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 
 interface UseBackupArchiveStatusParams {
   currentDateString: string;

@@ -1,8 +1,6 @@
 import type { AppBootstrapRuntimeResult } from '@/app-shell/bootstrap/bootstrapAppRuntime.types';
-import {
-  recordOperationalErrorTelemetry,
-  recordOperationalTelemetry,
-} from '@/services/observability/operationalTelemetryService';
+import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryOutcomeRecorder';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 
 type ErrorLikeEventTarget = {
   addEventListener: (

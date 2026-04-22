@@ -8,7 +8,7 @@
  */
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
-import { AuthUser, UserRole } from '@/types/auth';
+import type { AuthUser, UserRole } from '@/types/authRoleTypes';
 export type { AuthUser, UserRole };
 import { useAuthState } from '@/hooks/useAuthState';
 import { isAuthenticatedAuthSessionState } from '@/services/auth/authSessionState';

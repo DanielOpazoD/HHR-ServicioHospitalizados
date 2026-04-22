@@ -9,7 +9,7 @@
 import { CIE10Entry } from './cie10SpanishDatabase';
 import { aiRequestManager } from '../ai/aiRequestManager';
 import { GoogleGenAI } from '@google/genai';
-import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 import { resolveCurrentUserAuthHeaders } from '@/services/auth/authRequestHeaders';
 import {
   Cie10SearchRequestSchema,

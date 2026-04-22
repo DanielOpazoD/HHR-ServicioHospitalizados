@@ -35,10 +35,8 @@ import {
   createStorageLookupResult,
   type StorageLookupResult,
 } from '@/services/backup/storageLookupContracts';
-import {
-  recordOperationalErrorTelemetry,
-  recordOperationalTelemetry,
-} from '@/services/observability/operationalTelemetryService';
+import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryOutcomeRecorder';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 import {
   resolveBackupStorage,
   runStorageLookupWithTimeout,

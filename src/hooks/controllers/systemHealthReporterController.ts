@@ -3,7 +3,7 @@ import type { SyncQueueTelemetry } from '@/services/storage/sync';
 import type { RepositoryPerformanceSummary } from '@/services/repositories/repositoryPerformance';
 import { CURRENT_SCHEMA_VERSION } from '@/constants/version';
 import { BACKEND_RUNTIME_CONTRACT_VERSION } from '@/constants/runtimeContracts';
-import type { UserRole } from '@/types/auth';
+import type { UserRole } from '@/types/authRoleTypes';
 import type { OperationalTelemetrySummary } from '@/services/observability/operationalTelemetryContracts';
 import type { FirestoreSyncReason } from '@/services/repositories/repositoryConfig';
 import type { VersionUpdateReason } from '@/services/admin/healthService';

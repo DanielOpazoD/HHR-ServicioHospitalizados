@@ -1,4 +1,4 @@
-import type { AuthUser } from '@/types/auth';
+import type { AuthUser } from '@/types/authRoleTypes';
 import type { DailyRecordMedicalHandoffSummaryState } from '@/types/domain/dailyRecordSlices';
 import type {
   MedicalSpecialty,

@@ -1,6 +1,7 @@
 import type { User } from 'firebase/auth';
 
-import type { AuthSessionState, AuthUser } from '@/types/auth';
+import type { AuthSessionState } from '@/types/authSessionTypes';
+import type { AuthUser } from '@/types/authRoleTypes';
 import { toAuthUser } from '@/services/auth/authShared';
 import {
   createUnauthorizedAuthSessionState,

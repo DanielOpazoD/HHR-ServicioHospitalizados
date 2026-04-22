@@ -1,5 +1,5 @@
 import { onAuthStateChanged, signOut as firebaseSignOut, User } from 'firebase/auth';
-import { AuthSessionState } from '@/types/auth';
+import type { AuthSessionState } from '@/types/authSessionTypes';
 import { clearRoleCacheForEmail } from '@/services/auth/authPolicy';
 import { resolveFirebaseUserRole } from '@/services/auth/authAccessResolution';
 import { resolveAuthSessionState } from '@/services/auth/authSessionController';

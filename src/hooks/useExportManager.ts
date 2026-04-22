@@ -8,7 +8,7 @@ import {
   executeExportHandoffPdf,
 } from '@/application/backup-export/backupExportUseCases';
 import { presentBackupExportOutcome } from '@/hooks/controllers/backupExportOutcomeController';
-import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 import { useBackupArchiveStatus } from '@/hooks/useBackupArchiveStatus';
 import { formatBackupShiftLabel } from '@/shared/backup/backupPresentation';
 

@@ -11,7 +11,7 @@ import { firestoreDb } from '@/services/storage/firestore';
 import { getActiveHospitalId, getWoundCareConsentsPath } from '@/constants/firestorePaths';
 import type { WoundCareConsent } from '@/types/domain/woundCare';
 import { safeParseWoundCareConsent } from '@/schemas/zod/woundCare';
-import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 
 // ============================================================================
 // Helpers

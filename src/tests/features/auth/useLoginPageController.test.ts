@@ -6,7 +6,7 @@ import {
   createApplicationFailed,
   createApplicationSuccess,
 } from '@/shared/contracts/applicationOutcome';
-import type { AuthSessionState } from '@/types/auth';
+import type { AuthSessionState } from '@/types/authSessionTypes';
 
 const mockExecuteGoogleSignIn = vi.fn();
 const mockIsPopupRecoverableAuthError = vi.fn();

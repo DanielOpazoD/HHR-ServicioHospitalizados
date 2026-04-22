@@ -52,10 +52,8 @@ import { useHandoffManagement } from '@/hooks/useHandoffManagement';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { DailyRecordPatch } from '@/types/domain/dailyRecordPatch';
 import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcome';
-import {
-  recordOperationalOutcome,
-  recordOperationalTelemetry,
-} from '@/services/observability/operationalTelemetryService';
+import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryOutcomeRecorder';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 
 describe('useHandoffManagement', () => {
   let mockRecord: DailyRecord;

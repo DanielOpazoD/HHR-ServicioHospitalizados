@@ -1,6 +1,7 @@
 import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcome';
 import { useEffect } from 'react';
-import { AuthSessionState, AuthUser } from '@/types/auth';
+import type { AuthSessionState } from '@/types/authSessionTypes';
+import type { AuthUser } from '@/types/authRoleTypes';
 import { defaultAuditPort } from '@/application/ports/auditPort';
 import {
   clearAuthBootstrapPending,
@@ -15,10 +16,8 @@ import {
   toResolvedAuthSessionState,
 } from '@/services/auth/authSessionState';
 import { authStateLogger } from '@/hooks/hookLoggers';
-import {
-  recordOperationalOutcome,
-  recordOperationalTelemetry,
-} from '@/services/observability/operationalTelemetryService';
+import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryOutcomeRecorder';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 import { resolveAuthBootstrapBudget } from '@/services/auth/authBootstrapBudgets';
 import { hasActiveFirebaseSession } from '@/services/auth/authFallback';
 import { hasPersistedFirebaseAuthHint } from '@/services/auth/authStorageHints';

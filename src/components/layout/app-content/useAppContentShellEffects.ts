@@ -2,7 +2,7 @@ import React from 'react';
 import type { AuthContextType } from '@/context/AuthContext';
 import type { UseUIStateReturn } from '@/hooks/useUIState';
 import { sanitizeAppModuleForRole } from '@/shared/access/operationalAccessPolicy';
-import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 import { useAppContentEventBridge } from '@/components/layout/app-content/useAppContentEventBridge';
 
 interface UseAppContentShellEffectsParams {

@@ -11,7 +11,7 @@ import { BaseModal } from '@/components/shared/BaseModal';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock useScrollLock to avoid DOM side effects
-vi.mock('../../hooks/useScrollLock', () => ({
+vi.mock('@/hooks/useScrollLock', () => ({
   useScrollLock: () => {},
   default: () => {},
 }));

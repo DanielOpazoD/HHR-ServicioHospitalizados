@@ -1,6 +1,6 @@
 import type { User } from 'firebase/auth';
 import { httpsCallable } from 'firebase/functions';
-import type { UserRole } from '@/types/auth';
+import type { UserRole } from '@/types/authRoleTypes';
 import { defaultFunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
 import type { FunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
 import { isGeneralLoginRole } from '@/shared/access/roleAccessMatrix';

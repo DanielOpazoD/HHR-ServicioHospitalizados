@@ -8,7 +8,7 @@ import {
   getSortedTransferNotes,
 } from '../controllers/transferNotesController';
 import type { TransferTableMode } from '../controllers/transferTableController';
-import type { UserRole } from '@/types/auth';
+import type { UserRole } from '@/types/authRoleTypes';
 
 interface TransferNotesCellProps {
   transferId: string;

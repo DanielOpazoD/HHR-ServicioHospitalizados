@@ -1,8 +1,8 @@
 import {
   recordOperationalErrorTelemetry,
   recordOperationalOutcome,
-  recordOperationalTelemetry,
-} from '@/services/observability/operationalTelemetryService';
+} from '@/services/observability/operationalTelemetryOutcomeRecorder';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 import type { OperationalOutcomeLike } from '@/services/observability/operationalTelemetryContracts';
 import type {
   OperationalTelemetryCategory,

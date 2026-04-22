@@ -2,7 +2,7 @@ import React from 'react';
 import { Pencil } from 'lucide-react';
 import { hasTransferDocumentConfig } from '@/constants/hospitalConfigs';
 import type { TransferFormData, TransferRequest, TransferStatus } from '@/types/transfers';
-import type { UserRole } from '@/types/auth';
+import type { UserRole } from '@/types/authRoleTypes';
 import { TransferStatusInteraction } from './TransferStatusInteraction';
 import { TransferTableRowActions } from './TransferTableRowActions';
 import { TransferNotesCell } from './TransferNotesCell';

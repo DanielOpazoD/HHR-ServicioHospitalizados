@@ -12,7 +12,7 @@ import {
 } from '@/services/storage/sync/syncQueueEngine';
 import { classifySyncError } from '@/services/storage/syncErrorCatalog';
 import { createDomainObservability } from '@/services/observability/domainObservability';
-import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 import {
   BASE_RETRY_DELAY_MS,
   MAX_RETRIES,

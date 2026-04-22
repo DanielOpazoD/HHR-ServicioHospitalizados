@@ -30,10 +30,8 @@ import { isBackupDateValidationError, parseBackupDateParts } from './storageCont
 import { measureStorageOperation } from './storageObservability';
 import { assertStorageAvailable } from './storageAvailability';
 import { createStorageLookupResult, type StorageLookupResult } from './storageLookupContracts';
-import {
-  recordOperationalErrorTelemetry,
-  recordOperationalTelemetry,
-} from '@/services/observability/operationalTelemetryService';
+import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryOutcomeRecorder';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 import { pdfStorageLogger } from '@/services/backup/backupLoggers';
 import {
   resolveBackupStorage,

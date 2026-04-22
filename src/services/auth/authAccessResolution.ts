@@ -1,5 +1,5 @@
 import { signOut as firebaseSignOut, User } from 'firebase/auth';
-import { AuthUser, UserRole } from '@/types/auth';
+import type { AuthUser, UserRole } from '@/types/authRoleTypes';
 import { resolveGeneralLoginAccessForEmail } from '@/services/auth/authPolicy';
 import { createAuthError, toAuthUser } from '@/services/auth/authShared';
 import { recordAuthOperationalError } from '@/services/auth/authOperationalTelemetry';

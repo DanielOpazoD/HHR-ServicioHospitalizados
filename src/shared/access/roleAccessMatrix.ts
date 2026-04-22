@@ -1,5 +1,5 @@
 import type { ModuleType } from '@/constants/navigationConfig';
-import type { UserRole } from '@/types/auth';
+import type { UserRole } from '@/types/authRoleTypes';
 import type { CensusAccessProfile } from '@/shared/access/censusAccessProfile';
 
 export interface RoleAccessDefinition {

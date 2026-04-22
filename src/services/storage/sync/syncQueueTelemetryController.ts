@@ -1,6 +1,6 @@
 import type { SyncTask } from '@/services/storage/syncQueueTypes';
 import type { SyncQueueTelemetry } from '@/services/storage/sync/syncQueueTelemetryContracts';
-import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 import {
   resolveSyncQueueBudgetState,
   resolveSyncQueueRuntimeState,

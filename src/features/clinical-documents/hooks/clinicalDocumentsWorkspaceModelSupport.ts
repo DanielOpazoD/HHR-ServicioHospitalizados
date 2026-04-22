@@ -10,7 +10,7 @@ import {
   canEditClinicalDocuments,
   canReadClinicalDocuments,
 } from '@/features/clinical-documents/controllers/clinicalDocumentPermissionController';
-import type { UserRole } from '@/types/auth';
+import type { UserRole } from '@/types/authRoleTypes';
 
 export interface ClinicalDocumentsWorkspaceAccessState {
   canRead: boolean;

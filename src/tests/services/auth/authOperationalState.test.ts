@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { resolveNormalizedAuthOperationalState } from '@/services/auth/authOperationalState';
-import type { AuthUser } from '@/types/auth';
+import type { AuthUser } from '@/types/authRoleTypes';
 
 describe('authOperationalState', () => {
   it('provides safe unauthenticated defaults from sparse input', async () => {

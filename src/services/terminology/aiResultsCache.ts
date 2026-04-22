@@ -7,7 +7,7 @@
 
 import { CIE10Entry } from './cie10SpanishDatabase';
 import { safeJsonParse } from '@/utils/jsonUtils';
-import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 
 // Cache configuration
 const CACHE_KEY = 'cie10_ai_cache';

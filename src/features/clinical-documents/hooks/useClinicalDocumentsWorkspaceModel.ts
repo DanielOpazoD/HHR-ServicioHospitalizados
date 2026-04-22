@@ -1,22 +1,21 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import { useAuth } from '@/context/AuthContext';
-import { useNotification } from '@/context/UIContext';
 import { getActiveHospitalId } from '@/constants/firestorePaths';
 import type { PatientData } from '@/features/clinical-documents/contracts/clinicalDocumentsPatientContract';
-import { buildClinicalDocumentWorkspaceNotifyPort } from '@/features/clinical-documents/controllers/clinicalDocumentWorkspaceController';
-import type { ClinicalDocumentSheetProps } from '@/features/clinical-documents/components/clinicalDocumentSheetShared';
 import type { ClinicalDocumentsSidebarProps } from '@/features/clinical-documents/contracts/clinicalDocumentsSidebarContracts';
+import {
+  buildClinicalDocumentsWorkspaceSheetProps,
+  buildClinicalDocumentsWorkspaceSidebarProps,
+  scrollToClinicalDocumentAnnex,
+  type ClinicalDocumentsWorkspaceSheetModelProps,
+} from '@/features/clinical-documents/controllers/clinicalDocumentsWorkspaceViewModel';
 import { useClinicalDocumentIndicationsCatalog } from '@/features/clinical-documents/hooks/useClinicalDocumentIndicationsCatalog';
 import { useClinicalDocumentWorkspaceBootstrap } from '@/features/clinical-documents/hooks/useClinicalDocumentWorkspaceBootstrap';
 import { useClinicalDocumentWorkspaceDraft } from '@/features/clinical-documents/hooks/useClinicalDocumentWorkspaceDraft';
 import { useClinicalDocumentWorkspaceDocumentActions } from '@/features/clinical-documents/hooks/useClinicalDocumentWorkspaceDocumentActions';
 import { useClinicalDocumentWorkspaceExportActions } from '@/features/clinical-documents/hooks/useClinicalDocumentWorkspaceExportActions';
-import {
-  executeClinicalDocumentTemplateRestore,
-  handleClinicalDocumentTemplateSelection,
-  toggleClinicalDocumentAnnex,
-} from '@/features/clinical-documents/controllers/clinicalDocumentsWorkspaceActionController';
+import { useClinicalDocumentsWorkspaceNotifyPort } from '@/features/clinical-documents/hooks/useClinicalDocumentsWorkspaceNotifyPort';
 import {
   mergeDraftIntoClinicalDocumentsSidebar,
   resolveClinicalDocumentsWorkspaceAccessState,
@@ -29,24 +28,7 @@ interface UseClinicalDocumentsWorkspaceModelParams {
   isActive: boolean;
 }
 
-type ClinicalDocumentsWorkspaceSheetProps = Omit<
-  ClinicalDocumentSheetProps,
-  | 'toolbar'
-  | 'activeTitleTarget'
-  | 'activeEditorSectionId'
-  | 'onSetActiveTitleTarget'
-  | 'draggedSectionId'
-  | 'dragOverSectionId'
-  | 'activePlanSubsectionId'
-  | 'activeIndicationsSpecialtyId'
-  | 'isIndicationsPanelOpen'
-  | 'onSetActivePlanSubsectionId'
-  | 'onSetActiveIndicationsSpecialtyId'
-  | 'onToggleIndicationsPanel'
-  | 'onEditorActivate'
-  | 'onEditorDeactivate'
-  | 'dragHandlers'
->;
+type ClinicalDocumentsWorkspaceSheetProps = ClinicalDocumentsWorkspaceSheetModelProps;
 
 interface ClinicalDocumentsWorkspaceModel {
   canRead: boolean;
@@ -61,17 +43,13 @@ export const useClinicalDocumentsWorkspaceModel = ({
   isActive,
 }: UseClinicalDocumentsWorkspaceModelParams): ClinicalDocumentsWorkspaceModel => {
   const { user, role } = useAuth();
-  const { success, warning, error: notifyError, info, confirm } = useNotification();
+  const { notifyPort, info, confirm } = useClinicalDocumentsWorkspaceNotifyPort();
 
   const { canRead, canEdit, canDelete, readOnlyMessage, persistReason } = useMemo(
     () => resolveClinicalDocumentsWorkspaceAccessState(patient, role),
     [patient, role]
   );
   const hospitalId = getActiveHospitalId();
-  const notifyPort = useMemo(
-    () => buildClinicalDocumentWorkspaceNotifyPort(success, warning, notifyError, info, confirm),
-    [confirm, info, notifyError, success, warning]
-  );
 
   const {
     templates,
@@ -178,32 +156,13 @@ export const useClinicalDocumentsWorkspaceModel = ({
       setDraft,
     });
 
-  const scrollToAnnex = () => {
-    window.setTimeout(() => {
-      document
-        .querySelector('.clinical-document-annex-page')
-        ?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
-  };
-
-  const handleSelectTemplate = (templateId: string) =>
-    handleClinicalDocumentTemplateSelection({
-      templateId,
-      setSelectedTemplateId,
-    });
-
-  const handleRestoreTemplate = async () =>
-    executeClinicalDocumentTemplateRestore({
-      draft,
-      canEdit,
-      confirm,
-      restoreTemplateContent,
-      info,
-    });
+  const scrollToAnnex = useCallback(() => {
+    scrollToClinicalDocumentAnnex();
+  }, []);
 
   return {
     canRead,
-    sidebarProps: {
+    sidebarProps: buildClinicalDocumentsWorkspaceSidebarProps({
       canEdit,
       canDelete,
       readOnlyMessage,
@@ -211,35 +170,30 @@ export const useClinicalDocumentsWorkspaceModel = ({
       patientRut: patient.rut,
       templates,
       selectedTemplateId,
-      onSelectTemplate: handleSelectTemplate,
-      onCreateDocument: () => void createDocument(),
-      documents: sidebarDocuments,
       selectedDocumentId,
-      onSelectDocument: setSelectedDocumentId,
-      onDuplicateDocument: document => void handleDuplicateDocument(document),
-      onDeleteDocument: document => void handleDeleteDocument(document),
-      onAddClinicalUpdate: canEdit ? addClinicalUpdate : undefined,
-      onToggleAnnex: canEdit
-        ? () =>
-            toggleClinicalDocumentAnnex({
-              draft,
-              canEdit,
-              patchAnnexContent,
-              scrollToAnnex,
-            })
-        : undefined,
-      hasAnnex: draft?.annexContent != null,
-    },
-    sheetProps: {
+      documents: sidebarDocuments,
+      draft,
+      setSelectedTemplateId,
+      setSelectedDocumentId,
+      createDocument,
+      handleDuplicateDocument,
+      handleDeleteDocument,
+      addClinicalUpdate,
+      patchAnnexContent,
+      scrollToAnnex,
+    }),
+    sheetProps: buildClinicalDocumentsWorkspaceSheetProps({
       selectedDocument,
       canEdit,
       isSaving,
       lastSavedAt,
       isUploadingPdf,
       validationIssues,
-      onPrint: handlePrint,
-      onUploadPdf: () => void handleUploadPdf(),
-      onRestoreTemplate: () => void handleRestoreTemplate(),
+      handlePrint,
+      handleUploadPdf,
+      draft,
+      restoreTemplateContent,
+      notifications: { info, confirm },
       patchDocumentTitle,
       patchPatientInfoTitle,
       patchPatientField,
@@ -260,17 +214,17 @@ export const useClinicalDocumentsWorkspaceModel = ({
       addCustomIndication,
       updateIndication,
       deleteIndication,
-      importIndicationsCatalog: importCatalog,
+      importCatalog,
       addClinicalUpdate,
       patchAnnexContent,
       setAnnexIncludedInPrint,
       clearAnnexContent,
-      onPrintAnnex: handlePrintAnnex,
+      handlePrintAnnex,
       patchIeehDraft,
       clearIeehDraft,
       workspacePatient: patient,
       patchUpdateDate,
       patchUpdateTime,
-    },
+    }),
   };
 };

@@ -1,5 +1,5 @@
 import { httpsCallable } from 'firebase/functions';
-import { UserRole } from '@/types/auth';
+import type { UserRole } from '@/types/authRoleTypes';
 import { normalizeEmail } from '@/services/auth/authShared';
 import { isGeneralLoginRole } from '@/shared/access/roleAccessMatrix';
 import { defaultFunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';

@@ -6,7 +6,7 @@ vi.mock('@/services/observability/operationalTelemetryService', () => ({
 }));
 
 import { lazyWithRetry } from '@/utils/lazyWithRetry';
-import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 
 const RELOAD_KEY = 'hhr_chunk_reload_count';
 

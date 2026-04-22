@@ -1,5 +1,5 @@
 import { AuditLogEntry } from '@/types/audit';
-import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryService';
+import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 
 import { ensureDbReady, hospitalDB as db } from './indexedDbCore';
 
