@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   canEditSpecialistTodayBoundRecord,
@@ -13,6 +13,10 @@ import {
 } from '@/shared/access/specialistAccessPolicy';
 
 describe('specialistAccessPolicy', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('recognizes the specialist role and resolves its census profile', () => {
     expect(isDoctorSpecialistRole('doctor_specialist')).toBe(true);
     expect(isDoctorSpecialistRole('doctor_urgency')).toBe(false);
@@ -85,6 +89,27 @@ describe('specialistAccessPolicy', () => {
         todayISO: '2026-03-14',
       })
     ).toBe(true);
+  });
+
+  it('treats the active overnight clinical day as editable for specialists before the day cutoff', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 3, 22, 6, 59, 0));
+
+    expect(
+      canEditSpecialistTodayBoundRecord({
+        role: 'doctor_specialist',
+        readOnly: false,
+        recordDate: '2026-04-21',
+      })
+    ).toBe(true);
+
+    expect(
+      canEditSpecialistTodayBoundRecord({
+        role: 'doctor_specialist',
+        readOnly: false,
+        recordDate: '2026-04-22',
+      })
+    ).toBe(false);
   });
 
   it('opens clinical documents read/edit draft capabilities for specialists', () => {

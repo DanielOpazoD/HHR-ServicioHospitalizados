@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 import '../../setup';
 import { describe, it, expect, vi } from 'vitest';
-import { fireEvent, screen } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
 import React from 'react';
 
 import { HandoffRow } from '@/features/handoff/components/HandoffRow';
@@ -176,6 +176,69 @@ describe('HandoffRow medical flows', () => {
     );
 
     expect(screen.getByDisplayValue('Plan actualizado por especialista')).toBeInTheDocument();
+  });
+
+  it('keeps the first saved medical note visible while a stale snapshot briefly removes the newly created entry', () => {
+    vi.useFakeTimers();
+
+    const FirstWriteRoundTrip = () => {
+      const [patient, setPatient] = React.useState({
+        ...mockPatient,
+        medicalHandoffEntries: [{ id: 'entry-1', specialty: Specialty.MEDICINA, note: '' }],
+        medicalHandoffNote: '',
+      });
+
+      return (
+        <table>
+          <tbody>
+            <HandoffRow
+              {...defaultProps}
+              noteField="medicalHandoffNote"
+              onNoteChange={vi.fn()}
+              medicalActions={{
+                onEntryNoteChange: (_entryId, value) => {
+                  setPatient({ ...mockPatient, medicalHandoffEntries: [], medicalHandoffNote: '' });
+                  window.setTimeout(() => {
+                    setPatient({
+                      ...mockPatient,
+                      medicalHandoffEntries: [
+                        { id: 'entry-1', specialty: Specialty.MEDICINA, note: value },
+                      ],
+                      medicalHandoffNote: value,
+                    });
+                  }, 50);
+                },
+                onEntrySpecialtyChange: vi.fn(),
+              }}
+              patient={patient}
+              isMedical={true}
+            />
+          </tbody>
+        </table>
+      );
+    };
+
+    render(<FirstWriteRoundTrip />);
+
+    const textarea = screen.getByRole('textbox');
+    fireEvent.focus(textarea);
+    fireEvent.change(textarea, { target: { value: 'Primera evolución especialista' } });
+    fireEvent.blur(textarea);
+
+    expect(screen.getByDisplayValue('Primera evolución especialista')).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(25);
+    });
+
+    expect(screen.getByDisplayValue('Primera evolución especialista')).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(50);
+    });
+
+    expect(screen.getByDisplayValue('Primera evolución especialista')).toBeInTheDocument();
+    vi.useRealTimers();
   });
 
   it('keeps the create-entry action available for medical rows even when generic stability rules lock the note field', () => {

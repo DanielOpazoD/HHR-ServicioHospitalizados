@@ -2,8 +2,7 @@ import type { ModuleType } from '@/constants/navigationConfig';
 import type { UserRole } from '@/types/authRoleTypes';
 import type { CensusAccessProfile } from '@/shared/access/censusAccessProfile';
 import { resolveRoleAccess } from '@/shared/access/roleAccessMatrix';
-import { getTodayISO } from '@/utils/dateCoreUtils';
-import { normalizeDateOnly } from '@/utils/clinicalDayUtils';
+import { normalizeDateOnly, resolveCurrentClinicalDay } from '@/utils/clinicalDayUtils';
 
 type SupportedRole = UserRole | string | undefined;
 export const SPECIALIST_VISIBLE_MODULES: ModuleType[] = ['CENSUS', 'MEDICAL_HANDOFF'];
@@ -47,7 +46,7 @@ export const canEditSpecialistTodayBoundRecord = ({
   role,
   readOnly,
   recordDate,
-  todayISO = getTodayISO(),
+  todayISO = resolveCurrentClinicalDay(),
 }: {
   role: SupportedRole;
   readOnly: boolean;

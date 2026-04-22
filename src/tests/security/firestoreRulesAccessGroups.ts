@@ -577,6 +577,79 @@ export function registerFirestoreRulesAccessGroups({
       );
     });
 
+    it('Specialists cannot mix structured and bed-scoped handoff updates together', async () => {
+      await setupDoc(admin(), recordPath, {
+        date: CURRENT_RECORD_DATE,
+        dateTimestamp: NOW_MS,
+        medicalHandoffNovedades: '',
+        medicalHandoffBySpecialty: {
+          cirugia: {
+            note: 'Nota previa',
+            createdAt: new Date(NOW_MS - 86400000).toISOString(),
+            updatedAt: new Date(NOW_MS - 86400000).toISOString(),
+            author: {
+              uid: 'doctor-previo',
+              email: 'previo@example.com',
+              displayName: 'Especialista previo',
+              role: 'doctor_specialist',
+            },
+            lastEditor: {
+              uid: 'doctor-previo',
+              email: 'previo@example.com',
+              displayName: 'Especialista previo',
+              role: 'doctor_specialist',
+            },
+            version: 1,
+            dailyContinuity: {},
+          },
+        },
+        beds: {
+          R1: {
+            patientName: 'Paciente Mixto',
+            rut: '1-9',
+            pathology: 'Control',
+            specialty: 'Cirugia',
+            medicalHandoffNote: '',
+            medicalHandoffEntries: [],
+            clinicalEvents: [],
+          },
+        },
+      });
+
+      await assertFails(
+        specialist()
+          .doc(recordPath)
+          .update({
+            medicalHandoffNovedades: 'Cirugía\nIntento mixto',
+            'medicalHandoffBySpecialty.cirugia': {
+              note: 'Intento mixto',
+              createdAt: new Date(NOW_MS - 86400000).toISOString(),
+              updatedAt: new Date(NOW_MS).toISOString(),
+              author: {
+                uid: 'doctor-previo',
+                email: 'previo@example.com',
+                displayName: 'Especialista previo',
+                role: 'doctor_specialist',
+              },
+              lastEditor: {
+                uid: 'user_specialist',
+                email: 'specialist@example.com',
+                displayName: 'Especialista',
+                role: 'doctor_specialist',
+              },
+              version: 2,
+              dailyContinuity: {
+                [CURRENT_RECORD_DATE]: {
+                  status: 'updated_by_specialist',
+                },
+              },
+            },
+            'beds.R1.medicalHandoffNote': 'No debería mezclarse',
+            lastUpdated: NOW_MS,
+          })
+      );
+    });
+
     it('Specialists cannot update general census fields outside the allowed handoff scope', async () => {
       await setupDoc(admin(), recordPath, {
         date: CURRENT_RECORD_DATE,

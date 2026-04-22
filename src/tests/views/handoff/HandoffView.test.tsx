@@ -257,6 +257,50 @@ describe('HandoffView Component', () => {
     expect(within(mainTable).getByRole('button', { name: /crear entrega/i })).toBeInTheDocument();
   });
 
+  it('keeps existing medical handoff entries editable for doctor_specialist during the overnight clinical day window', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 3, 22, 6, 59, 0));
+
+    const specialistUser = {
+      uid: 'specialist-1',
+      email: 'specialist@hospitalhangaroa.cl',
+      displayName: 'Dr. Specialist',
+      role: 'doctor_specialist' as const,
+    };
+    mockUseAuthState.user = specialistUser;
+    mockUseAuthState.currentUser = specialistUser;
+    mockUseAuthState.authorizedUser = specialistUser;
+    mockUseAuthState.sessionState = {
+      status: 'authorized',
+      user: specialistUser,
+    };
+    mockUseAuthState.role = 'doctor_specialist';
+    mockUseAuthState.isEditor = true;
+    mockUseAuthState.isViewer = false;
+    mockUseAuthState.canEdit = true;
+
+    const record = createMockRecord('2026-04-21');
+    record.beds['R1'] = createMockPatient({
+      bedId: 'R1',
+      patientName: 'PACIENTE ESPECIALISTA',
+      medicalHandoffNote: 'Plan vigente',
+      medicalHandoffEntries: [
+        {
+          id: 'entry-1',
+          specialty: 'Med Interna',
+          note: 'Plan vigente',
+        },
+      ],
+    });
+
+    render(<HandoffView type="medical" />, {
+      contextValue: createMockDailyRecordContext(record),
+    });
+
+    const mainTable = screen.getAllByRole('table')[0];
+    expect(within(mainTable).getByDisplayValue('Plan vigente')).toBeInTheDocument();
+  });
+
   it('shows clinical events controls in the medical diagnosis column', async () => {
     const record = createMockRecord('2024-12-11');
     record.beds['R1'] = createMockPatient({

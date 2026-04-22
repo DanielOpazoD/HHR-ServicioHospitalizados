@@ -318,3 +318,27 @@ Se atacó de frente el caso denegado sobre `dailyRecords.update` cuando el docum
 - El caso denegado de `partial update` sobre documento faltante dejó de caer en `maximum of 1000 expressions to evaluate` y volvió al nivel anterior de `evaluation error`, manteniendo la denegación correcta (`permission-denied`).
 
 Conclusión: este sí fue un corte de complejidad semántica útil. No reescribe permisos ni simplifica artificialmente `firestore.rules`, pero reduce trabajo inútil del evaluador en el caso denegado más costoso y deja mejor encapsulado el gating de `dailyRecords.update`.
+
+## Iteración 16 ejecutada
+
+Se hizo el siguiente corte útil sobre el path especialista, ya con el caso denegado estabilizado:
+
+- `isSpecialistMedicalHandoffPayload()` dejó de calcular siempre los diffs de `beds` y de recorrer ambos subpaths a la vez
+- el boundary ahora enruta temprano según el allowlist top-level:
+  - payload estructurado por especialidad
+  - payload bed-scoped
+  - cualquier mezcla entre ambos cae a `false` sin seguir profundizando
+- `isSpecialistStructuredMedicalHandoffUpdate(...)` dejó de recomputar el diff top-level y ahora recibe solo el subconjunto que realmente necesita validar
+
+Además se agregó una prueba explícita para congelar ese contrato:
+
+- rechazo de payload mixto `medicalHandoffBySpecialty + beds.*` en la suite de reglas
+
+## Resultado de la validación de la iteración 16
+
+- `bash scripts/run-firestore-rules-ci.sh`: verde (`103` tests).
+- `npm run test:emulator:sync:ci`: verde (`4` tests sync + `3` UI).
+- `npm run check:quality`: verde.
+- El caso denegado sobre documento inexistente sigue en `evaluation error`, sin volver a `maximum of 1000 expressions to evaluate`.
+
+Conclusión: esta fue la última iteración de complejidad estructural con retorno claro en el frente especialista. A partir de aquí, el valor ya no está en seguir partiendo helpers, sino en mantener cobertura dirigida y evitar que el boundary vuelva a mezclar payloads o recomputar diffs innecesarios.

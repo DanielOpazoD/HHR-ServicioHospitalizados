@@ -16,24 +16,31 @@
         : currentRecordTimestamp;
     }
 
-    function isSpecialistMedicalHandoffPayload() {
-      let affectedRecordKeys = request.resource.data.diff(resource.data).affectedKeys();
-      let affectedBedIds = request.resource.data.beds.diff(resource.data.beds).affectedKeys();
-      let effectiveRecordTimestamp = resolveSpecialistMedicalHandoffRecordTimestamp();
+    function resolveAffectedSpecialistBedIds() {
+      return request.resource.data.beds.diff(resource.data.beds).affectedKeys();
+    }
 
-      return isValidSpecialistMedicalHandoffBoundary(
-               effectiveRecordTimestamp,
-               affectedRecordKeys
-             ) &&
-             (
-               isSpecialistStructuredMedicalHandoffUpdate() ||
-               isAnySpecialistAffectedBed(affectedBedIds)
+    function isSpecialistStructuredMedicalHandoffPayload(affectedRecordKeys) {
+      return hasOnlySpecialistStructuredRecordKeys(affectedRecordKeys) &&
+             isSpecialistStructuredMedicalHandoffUpdate(
+               resolveAffectedSpecialistStructuredSpecialties()
              );
     }
 
-    function isValidSpecialistMedicalHandoffBoundary(effectiveRecordTimestamp, affectedRecordKeys) {
+    function isSpecialistBedMedicalHandoffPayload(affectedRecordKeys) {
+      return hasOnlySpecialistBedRecordKeys(affectedRecordKeys) &&
+             isAnySpecialistAffectedBed(resolveAffectedSpecialistBedIds());
+    }
+
+    function isSpecialistMedicalHandoffPayload() {
+      let affectedRecordKeys = request.resource.data.diff(resource.data).affectedKeys();
+      let effectiveRecordTimestamp = resolveSpecialistMedicalHandoffRecordTimestamp();
+
       return isWithinSpecialistMedicalHandoffWindow(effectiveRecordTimestamp) &&
-             hasOnlySpecialistMedicalHandoffRecordKeys(affectedRecordKeys);
+             (
+               isSpecialistStructuredMedicalHandoffPayload(affectedRecordKeys) ||
+               isSpecialistBedMedicalHandoffPayload(affectedRecordKeys)
+             );
     }
 
     //

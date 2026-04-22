@@ -5,6 +5,7 @@ import type { AuditLogEntry } from '@/types/auditLogTypes';
 
 const loggerMocks = vi.hoisted(() => ({
   error: vi.fn(),
+  warn: vi.fn(),
 }));
 
 vi.mock('@/services/admin/adminLoggers', () => ({
@@ -64,6 +65,27 @@ describe('auditCore runtime injection', () => {
         userId: 'doctor@hospital.cl',
         summary: 'Summary for USER_LOGIN',
       })
+    );
+  });
+
+  it('downgrades remote permission-denied audit writes to a local-only warning', async () => {
+    setDoc.mockRejectedValue({ code: 'permission-denied' });
+
+    await service.logAuditEvent('doctor@hospital.cl', 'USER_LOGIN', 'user', 'doctor@hospital.cl', {
+      event: 'login',
+    });
+
+    expect(saveAuditLog).toHaveBeenCalledTimes(1);
+    expect(loggerMocks.warn).toHaveBeenCalledWith(
+      'Audit log persisted locally only because Firestore rejected the remote append',
+      expect.objectContaining({
+        action: 'USER_LOGIN',
+        code: 'permission-denied',
+      })
+    );
+    expect(loggerMocks.error).not.toHaveBeenCalledWith(
+      'Failed to save audit log to Firestore',
+      expect.anything()
     );
   });
 

@@ -23,9 +23,8 @@
       ]);
     }
 
-    function hasOnlySpecialistMedicalHandoffRecordKeys(affectedRecordKeys) {
-      return affectedRecordKeys.hasOnly(['beds', 'lastUpdated', 'dateTimestamp']) ||
-             hasOnlySpecialistStructuredRecordKeys(affectedRecordKeys);
+    function hasOnlySpecialistBedRecordKeys(affectedRecordKeys) {
+      return affectedRecordKeys.hasOnly(['beds', 'lastUpdated', 'dateTimestamp']);
     }
 
     function isAllowedSpecialistStructuredSpecialty(specialty) {
@@ -74,15 +73,14 @@
              );
     }
 
-    function isSpecialistStructuredMedicalHandoffUpdate() {
-      let affectedRecordKeys = request.resource.data.diff(resource.data).affectedKeys();
-      let affectedSpecialties =
-        getSpecialistStructuredAfterBySpecialty()
-          .diff(getSpecialistStructuredBeforeBySpecialty())
-          .affectedKeys();
+    function resolveAffectedSpecialistStructuredSpecialties() {
+      return getSpecialistStructuredAfterBySpecialty()
+        .diff(getSpecialistStructuredBeforeBySpecialty())
+        .affectedKeys();
+    }
 
-      return hasOnlySpecialistStructuredRecordKeys(affectedRecordKeys) &&
-             isAnyAllowedSpecialistStructuredSpecialtyAffected(affectedSpecialties);
+    function isSpecialistStructuredMedicalHandoffUpdate(affectedSpecialties) {
+      return isAnyAllowedSpecialistStructuredSpecialtyAffected(affectedSpecialties);
     }
 
     //

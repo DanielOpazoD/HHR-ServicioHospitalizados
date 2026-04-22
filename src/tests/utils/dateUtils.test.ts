@@ -12,6 +12,7 @@ import {
   getShiftSchedule,
   resolveClinicalDayBounds,
   resolveClinicalDayForDateTime,
+  resolveCurrentClinicalDay,
   isNewAdmissionForClinicalDay,
   isWithinDayShift,
   isAdmittedDuringShift,
@@ -195,6 +196,18 @@ describe('dateUtils', () => {
     it('uses 09:00 as clinical-day start on non-business days', () => {
       expect(resolveClinicalDayForDateTime('2024-12-28', '08:59')).toBe('2024-12-27');
       expect(resolveClinicalDayForDateTime('2024-12-28', '09:00')).toBe('2024-12-28');
+    });
+  });
+
+  describe('resolveCurrentClinicalDay', () => {
+    it('uses the previous clinical day before the weekday 08:00 cutoff', () => {
+      expect(resolveCurrentClinicalDay(new Date(2026, 3, 22, 6, 59))).toBe('2026-04-21');
+      expect(resolveCurrentClinicalDay(new Date(2026, 3, 22, 8, 0))).toBe('2026-04-22');
+    });
+
+    it('uses the previous clinical day before the non-business 09:00 cutoff', () => {
+      expect(resolveCurrentClinicalDay(new Date(2024, 11, 28, 8, 59))).toBe('2024-12-27');
+      expect(resolveCurrentClinicalDay(new Date(2024, 11, 28, 9, 0))).toBe('2024-12-28');
     });
   });
 

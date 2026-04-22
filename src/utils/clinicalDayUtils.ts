@@ -84,6 +84,17 @@ export const getPreviousDay = (dateString: string): string => {
   return date.toISOString().split('T')[0];
 };
 
+export const resolveCurrentClinicalDay = (now: Date = new Date()): string => {
+  const currentCalendarDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(
+    now.getDate()
+  ).padStart(2, '0')}`;
+  const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(
+    now.getMinutes()
+  ).padStart(2, '0')}`;
+
+  return resolveClinicalDayForDateTime(currentCalendarDate, currentTime) ?? currentCalendarDate;
+};
+
 export const getShiftSchedule = (dateString: string): ShiftSchedule => {
   const todayIsBusinessDay = isBusinessDay(dateString);
   const nextDay = getNextDay(dateString);

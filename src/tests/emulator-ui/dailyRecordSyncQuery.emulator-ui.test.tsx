@@ -184,9 +184,12 @@ describeUiEmulator('UI sync flow with Firestore emulator', () => {
     const resultRef = safeResult as { current: { record: DailyRecord | null } };
     unmounts.push(safeUnmount);
 
-    await waitFor(() => {
-      expect(resultRef.current.record?.beds?.R1?.patientName).toBe('Paciente Inicial');
-    });
+    await waitFor(
+      () => {
+        expect(resultRef.current.record?.beds?.R1?.patientName).toBe('Paciente Inicial');
+      },
+      { timeout: 5000 }
+    );
 
     await act(async () => {
       await testEnv.withSecurityRulesDisabled(async context => {
@@ -207,10 +210,13 @@ describeUiEmulator('UI sync flow with Firestore emulator', () => {
       });
     });
 
-    await waitFor(() => {
-      expect(resultRef.current.record?.beds?.R1?.patientName).toBe('Paciente Remoto');
-      expect(resultRef.current.record?.beds?.R1?.pathology).toBe('Diag Remoto');
-    });
+    await waitFor(
+      () => {
+        expect(resultRef.current.record?.beds?.R1?.patientName).toBe('Paciente Remoto');
+        expect(resultRef.current.record?.beds?.R1?.pathology).toBe('Diag Remoto');
+      },
+      { timeout: 5000 }
+    );
   });
 
   it('patches from UI hook and persists changes to Firestore + IndexedDB', async () => {

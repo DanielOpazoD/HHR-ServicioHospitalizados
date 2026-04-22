@@ -1,4 +1,5 @@
 import React from 'react';
+import { flushSync } from 'react-dom';
 import type { PatientData } from '@/domain/handoff/patientContracts';
 import { DebouncedTextarea } from '@/components/ui/DebouncedTextarea';
 import { MedicalHandoffObservationEntry } from './MedicalHandoffObservationEntry';
@@ -174,7 +175,9 @@ export const HandoffMedicalObservationsCell: React.FC<HandoffMedicalObservations
               specialtyOptions={specialtyOptions}
               canEditSpecialty={Boolean(onEntrySpecialtyChange)}
               onEntryNoteChange={(entryId, value) => {
-                registerPendingEntryDraft(entryId, value);
+                flushSync(() => {
+                  registerPendingEntryDraft(entryId, value);
+                });
                 onEntryNoteChange(entryId, value);
               }}
               onEntrySpecialtyChange={onEntrySpecialtyChange}

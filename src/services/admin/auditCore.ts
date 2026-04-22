@@ -130,6 +130,15 @@ const defaultAuditLocalStore: AuditLocalStore = {
   getAuditLogsForDate: getIndexedDBAuditLogsForDate,
 };
 
+const isPermissionDeniedAuditError = (error: unknown): boolean => {
+  const code =
+    typeof error === 'object' && error !== null && 'code' in error
+      ? String((error as { code?: string }).code || '')
+      : '';
+
+  return code.includes('permission-denied');
+};
+
 export const createAuditCoreService = (
   database: Pick<IDatabaseProvider, 'setDoc' | 'getDocs'> = firestoreDb,
   localStore: AuditLocalStore = defaultAuditLocalStore
@@ -146,6 +155,18 @@ export const createAuditCoreService = (
     try {
       await database.setDoc(COLLECTION_NAME(), entry.id, entry);
     } catch (error) {
+      if (isPermissionDeniedAuditError(error)) {
+        auditCoreLogger.warn(
+          'Audit log persisted locally only because Firestore rejected the remote append',
+          {
+            action: entry.action,
+            entryId: entry.id,
+            code: (error as { code?: string }).code || 'permission-denied',
+          }
+        );
+        return;
+      }
+
       auditCoreLogger.error('Failed to save audit log to Firestore', error);
     }
   };
