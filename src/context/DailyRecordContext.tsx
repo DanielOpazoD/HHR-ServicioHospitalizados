@@ -6,63 +6,23 @@
  * 📘 GUÍA DE ESTILO: Para elegir el hook correcto y evitar problemas de performance,
  * consulta src/docs/HOOKS_STYLE_GUIDE.md
  */
-import React, { createContext } from 'react';
-import {
-  DailyRecordContextType,
-  DailyRecordDataContextType,
-  SyncStatus,
-  InventoryStats,
-} from '@/context/dailyRecordContextContracts';
+import React from 'react';
+import { DailyRecordContextType } from '@/context/dailyRecordContextContracts';
+import { DailyRecordProviderTree } from '@/context/dailyRecordProviderTree';
 import { PatientData } from '@/hooks/contracts/patientHookContracts';
-import { DischargeData, TransferData, CMAData } from '@/types/domain/movements';
-import { StabilityRules } from '@/hooks/useStabilityRules';
 import { useDailyRecordFragmentedValues } from '@/context/useDailyRecordFragmentedValues';
-import {
-  DailyRecordActionsContext,
-  useRequiredDailyRecordActionsContext,
-} from './dailyRecordActionsContext';
+import { useRequiredDailyRecordActionsContext } from './dailyRecordActionsContext';
 import { useRequiredContextValue } from './contextHookSupport';
-
-// 1. Specialized Contexts
-const DailyRecordDataContext = createContext<DailyRecordDataContextType | undefined>(undefined);
-
-// Fragmented Data Contexts
-const DailyRecordBedsContext = createContext<Record<string, PatientData> | null | undefined>(
-  undefined
-);
-const DailyRecordMovementsContext = createContext<
-  | {
-      discharges: DischargeData[];
-      transfers: TransferData[];
-      cma: CMAData[];
-    }
-  | null
-  | undefined
->(undefined);
-const DailyRecordSyncContext = createContext<
-  | {
-      syncStatus: SyncStatus;
-      lastSyncTime: Date | null;
-      bootstrapPhase: import('@/hooks/controllers/dailyRecordBootstrapController').DailyRecordBootstrapPhase;
-    }
-  | undefined
->(undefined);
-const DailyRecordStabilityContext = createContext<StabilityRules | null | undefined>(undefined);
-const DailyRecordInventoryContext = createContext<InventoryStats | null | undefined>(undefined);
-const DailyRecordStaffContext = createContext<
-  | {
-      date?: string;
-      nursesDayShift: string[];
-      nursesNightShift: string[];
-      tensDayShift: string[];
-      tensNightShift: string[];
-      staffingDetailsV1?: import('@/types/domain/dailyRecordStaffingDetails').DailyRecordStaffingDetailsV1;
-      activeExtraBeds: string[];
-    }
-  | null
-  | undefined
->(undefined);
-const DailyRecordOverridesContext = createContext<Record<string, string> | undefined>(undefined);
+import {
+  DailyRecordBedsContext,
+  DailyRecordDataContext,
+  DailyRecordInventoryContext,
+  DailyRecordMovementsContext,
+  DailyRecordOverridesContext,
+  DailyRecordStaffContext,
+  DailyRecordStabilityContext,
+  DailyRecordSyncContext,
+} from './dailyRecordProviderTree';
 
 /**
  * Fragmented Provider
@@ -85,25 +45,19 @@ export const DailyRecordProvider: React.FC<{
   } = useDailyRecordFragmentedValues(value);
 
   return (
-    <DailyRecordActionsContext.Provider value={actionsValue}>
-      <DailyRecordSyncContext.Provider value={syncValue}>
-        <DailyRecordStabilityContext.Provider value={stabilityValue}>
-          <DailyRecordInventoryContext.Provider value={inventoryValue}>
-            <DailyRecordStaffContext.Provider value={staffValue}>
-              <DailyRecordMovementsContext.Provider value={movementsValue}>
-                <DailyRecordBedsContext.Provider value={bedsValue}>
-                  <DailyRecordDataContext.Provider value={dataValue}>
-                    <DailyRecordOverridesContext.Provider value={overridesValue}>
-                      {children}
-                    </DailyRecordOverridesContext.Provider>
-                  </DailyRecordDataContext.Provider>
-                </DailyRecordBedsContext.Provider>
-              </DailyRecordMovementsContext.Provider>
-            </DailyRecordStaffContext.Provider>
-          </DailyRecordInventoryContext.Provider>
-        </DailyRecordStabilityContext.Provider>
-      </DailyRecordSyncContext.Provider>
-    </DailyRecordActionsContext.Provider>
+    <DailyRecordProviderTree
+      actionsValue={actionsValue}
+      syncValue={syncValue}
+      stabilityValue={stabilityValue}
+      inventoryValue={inventoryValue}
+      staffValue={staffValue}
+      movementsValue={movementsValue}
+      bedsValue={bedsValue}
+      dataValue={dataValue}
+      overridesValue={overridesValue}
+    >
+      {children}
+    </DailyRecordProviderTree>
   );
 };
 
