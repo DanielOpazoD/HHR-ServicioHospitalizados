@@ -300,3 +300,21 @@ Se hizo un corte editorial del frente especialista para bajar costo de revisión
 - El caso denegado de `partial update` sobre documento faltante sigue mostrando `maximum of 1000 expressions to evaluate` en el emulador, aunque la denegación continúa siendo correcta (`permission-denied`).
 
 Conclusión: esta iteración sí mejora auditabilidad y tamaño de review del hotspot especialista, pero no reduce todavía el costo profundo del evaluador en `dailyRecords.update`. El siguiente retorno real no está en agregar más helpers cosméticos dentro del mismo path, sino en atacar explícitamente el caso denegado sobre documento inexistente desde el gating de `dailyRecords.update`.
+
+## Iteración 15 ejecutada
+
+Se atacó de frente el caso denegado sobre `dailyRecords.update` cuando el documento persistido no existe:
+
+- se agregó `hasPersistedDailyRecordResource()` en `30-daily-record-write-helpers.rules` para cortar antes si `resource` no está cargado
+- `canUpdatePersistedDailyRecord()` dejó de delegar en un helper con OR largos y ahora hace un branching corto por rol solo después de confirmar que existe `resource.data`
+- el `match /dailyRecords/{date}` en `40-hospitals.rules` dejó de duplicar un `exists(...)` externo; el gating quedó concentrado dentro de `canUpdatePersistedDailyRecord()`
+
+## Resultado de la validación de la iteración 15
+
+- `node scripts/check-rules-generated.mjs`: verde.
+- `bash scripts/run-firestore-rules-ci.sh`: verde (`102` tests).
+- `npm run test:emulator:sync:ci`: verde (`4` tests sync + `3` UI).
+- `npm run check:quality`: verde.
+- El caso denegado de `partial update` sobre documento faltante dejó de caer en `maximum of 1000 expressions to evaluate` y volvió al nivel anterior de `evaluation error`, manteniendo la denegación correcta (`permission-denied`).
+
+Conclusión: este sí fue un corte de complejidad semántica útil. No reescribe permisos ni simplifica artificialmente `firestore.rules`, pero reduce trabajo inútil del evaluador en el caso denegado más costoso y deja mejor encapsulado el gating de `dailyRecords.update`.

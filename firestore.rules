@@ -666,22 +666,31 @@ service cloud.firestore {
       return isSpecialistMedicalHandoffPayload();
     }
 
+    function hasPersistedDailyRecordResource() {
+      return resource != null && resource.data != null;
+    }
+
     function canUpdatePersistedDailyRecord() {
       let effectiveRole = getEffectiveRole();
 
-      return canRoleUpdatePersistedDailyRecord(effectiveRole);
+      return hasPersistedDailyRecordResource()
+        ? (
+            effectiveRole == 'admin'
+              ? true
+              : effectiveRole == 'nurse_hospital'
+                ? canNurseUpdatePersistedDailyRecord()
+                : effectiveRole == 'doctor_urgency'
+                  ? canDoctorUpdatePersistedDailyRecord()
+                  : effectiveRole == 'doctor_specialist'
+                    ? canSpecialistUpdatePersistedDailyRecord()
+                    : false
+          )
+        : false;
     }
 
     function hasPersistedRecordTimestampPayload() {
       return request.resource.data.keys().hasAll(['dateTimestamp']) &&
              request.resource.data.dateTimestamp != null;
-    }
-
-    function canRoleUpdatePersistedDailyRecord(effectiveRole) {
-      return effectiveRole == 'admin' ||
-             (effectiveRole == 'nurse_hospital' && canNurseUpdatePersistedDailyRecord()) ||
-             (effectiveRole == 'doctor_urgency' && canDoctorUpdatePersistedDailyRecord()) ||
-             (effectiveRole == 'doctor_specialist' && canSpecialistUpdatePersistedDailyRecord());
     }
 
     function canAdminMaintainHospitalDocument() {
@@ -712,8 +721,7 @@ service cloud.firestore {
         // Create: Admin or Nurse
         allow create: if canEdit();
         // Update: Admin siempre, Enfermero en ventana, o Médico solo campos de firma
-        allow update: if exists(/databases/$(database)/documents/hospitals/$(hospitalId)/dailyRecords/$(date)) &&
-                         canUpdatePersistedDailyRecord();
+        allow update: if canUpdatePersistedDailyRecord();
         // Delete: Admin only (nurses must not hard-delete census records)
         allow delete: if isAdmin();
         
