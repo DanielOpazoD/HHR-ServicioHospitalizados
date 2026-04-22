@@ -20,6 +20,30 @@ if (!rootElement) {
   throw new Error('Could not find root element to mount to');
 }
 
+const bootSurfaceElement = document.getElementById('boot-surface');
+let bootSurfaceHidden = false;
+const BOOT_SURFACE_RELEASE_EVENT = 'hhr-release-boot-surface';
+
+const hideBootSurface = () => {
+  if (!bootSurfaceElement || bootSurfaceHidden) {
+    return;
+  }
+
+  bootSurfaceHidden = true;
+  bootSurfaceElement.classList.add('is-hidden');
+  window.setTimeout(() => bootSurfaceElement.remove(), 220);
+};
+
+if (typeof window !== 'undefined') {
+  window.addEventListener(
+    BOOT_SURFACE_RELEASE_EVENT,
+    () => {
+      window.requestAnimationFrame(() => hideBootSurface());
+    },
+    { once: true }
+  );
+}
+
 const root = ReactDOM.createRoot(rootElement);
 const bootLogger = createScopedLogger('Bootstrap');
 const detachBootstrapRuntimeErrorListeners =
@@ -67,7 +91,7 @@ const renderBootstrapLoadingScreen = () => {
 
 const renderApp = async () => {
   bootLogger.info('Rendering application');
-  const { default: App } = await import('@/App');
+  const { default: App } = await appModulePromise;
   root.render(
     <React.StrictMode>
       <App />
@@ -76,6 +100,10 @@ const renderApp = async () => {
 };
 
 renderBootstrapLoadingScreen();
+
+// Fetch the main app shell while bootstrap recovery/Firebase runtime settles so
+// the login page is not blocked behind a second sequential chunk load.
+const appModulePromise = import('@/App');
 
 bootstrapAppRuntime()
   .then(async result => {
@@ -86,6 +114,7 @@ bootstrapAppRuntime()
     }
 
     if (result.status === 'blocked') {
+      hideBootSurface();
       mountFirebaseConfigWarning(result.message, result.warningCopy);
       return;
     }
@@ -96,6 +125,7 @@ bootstrapAppRuntime()
     recordBootstrapRuntimeError(error);
     bootLogger.error('Firebase initialization failed', error);
     if (isAppShellLoadFailure(error)) {
+      hideBootSurface();
       mountFirebaseConfigWarning(
         'No se pudo cargar una parte crítica de la interfaz.',
         APP_SHELL_LOAD_WARNING_COPY
@@ -103,6 +133,7 @@ bootstrapAppRuntime()
       return;
     }
 
+    hideBootSurface();
     mountFirebaseConfigWarning(getFirebaseStartupFailureMessage());
   })
   .finally(() => {

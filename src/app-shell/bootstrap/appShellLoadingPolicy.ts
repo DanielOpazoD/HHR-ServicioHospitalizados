@@ -37,6 +37,13 @@ export const resolvePreMountLoadingScreenDecision = ({
     };
   }
 
+  if (persistedFirebaseAuthHint || activeFirebaseSession) {
+    return {
+      shouldRender: false,
+      preferLoginShell: false,
+    };
+  }
+
   return {
     shouldRender: true,
     preferLoginShell: !persistedFirebaseAuthHint && !activeFirebaseSession,
@@ -54,11 +61,19 @@ export const resolveRuntimeLoadingScreenMode = ({
     return 'silent';
   }
 
+  if (bootstrapState.phase === 'rehydrating') {
+    return 'silent';
+  }
+
   if (
     bootstrapState.phase === 'bootstrapping' &&
     bootstrapState.auth.sessionState.status === 'unauthenticated'
   ) {
     return 'login-shell';
+  }
+
+  if (bootstrapState.auth.sessionState.status !== 'unauthenticated') {
+    return 'silent';
   }
 
   return 'default';

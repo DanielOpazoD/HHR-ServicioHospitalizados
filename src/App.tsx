@@ -21,6 +21,8 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/config/queryClient';
 import { useAppBootstrapState } from '@/app-shell/bootstrap/useAppBootstrapState';
 
+const BOOT_SURFACE_RELEASE_EVENT = 'hhr-release-boot-surface';
+
 const VersionedAppShell = ({ children }: { children: React.ReactNode }) => (
   <VersionProvider>
     <VersionMismatchOverlay />
@@ -31,6 +33,25 @@ const VersionedAppShell = ({ children }: { children: React.ReactNode }) => (
 function App() {
   const bootstrapState = useAppBootstrapState();
   const pathname = typeof window !== 'undefined' ? window.location.pathname : '/';
+  const loadingScreenMode =
+    bootstrapState.status === 'loading'
+      ? resolveRuntimeLoadingScreenMode({
+          pathname,
+          bootstrapState,
+        })
+      : null;
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    if (bootstrapState.status === 'loading' && loadingScreenMode === 'silent') {
+      return;
+    }
+
+    window.dispatchEvent(new Event(BOOT_SURFACE_RELEASE_EVENT));
+  }, [bootstrapState.status, loadingScreenMode]);
 
   if (bootstrapState.status === 'signature_mode') {
     return (
@@ -43,11 +64,6 @@ function App() {
   }
 
   if (bootstrapState.status === 'loading') {
-    const loadingScreenMode = resolveRuntimeLoadingScreenMode({
-      pathname,
-      bootstrapState,
-    });
-
     if (loadingScreenMode === 'silent') {
       return null;
     }

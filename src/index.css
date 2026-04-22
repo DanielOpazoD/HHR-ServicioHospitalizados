@@ -157,7 +157,6 @@
     -moz-osx-font-smoothing: grayscale;
     color: #0c4a6e;
     overscroll-behavior: none;
-    transition: background-color 0.5s ease;
   }
 
   /* Premium Aesthetics Modifiers */

@@ -17,6 +17,18 @@ const createLoadingBootstrapState = (phase: 'bootstrapping' | 'rehydrating') =>
     },
   }) as unknown as Extract<AppBootstrapState, { status: 'loading' }>;
 
+const createAuthorizedLoadingBootstrapState = (phase: 'bootstrapping' | 'rehydrating') =>
+  ({
+    status: 'loading',
+    phase,
+    auth: {
+      sessionState: {
+        status: 'authorized',
+        user: { uid: 'user-1' },
+      },
+    },
+  }) as unknown as Extract<AppBootstrapState, { status: 'loading' }>;
+
 describe('appShellLoadingPolicy', () => {
   it('skips the pre-mount loading screen on the census route', () => {
     expect(
@@ -68,6 +80,15 @@ describe('appShellLoadingPolicy', () => {
         pathname: '/',
         bootstrapState: createLoadingBootstrapState('rehydrating'),
       })
-    ).toBe('default');
+    ).toBe('silent');
+  });
+
+  it('keeps authenticated root-route bootstrapping silent', () => {
+    expect(
+      resolveRuntimeLoadingScreenMode({
+        pathname: '/',
+        bootstrapState: createAuthorizedLoadingBootstrapState('bootstrapping'),
+      })
+    ).toBe('silent');
   });
 });

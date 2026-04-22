@@ -13,8 +13,8 @@ const resolveInitialBackgroundMode = (): BackgroundMode => {
   const currentHour = new Date().getHours();
   return currentHour >= 8 && currentHour < 20 ? 'day' : 'night';
 };
-const POPUP_RECOVERY_GRACE_MS = 4000;
-const POPUP_RECOVERY_POLL_MS = 200;
+const POPUP_RECOVERY_GRACE_MS = 1800;
+const POPUP_RECOVERY_POLL_MS = 100;
 const loginPageLogger = createScopedLogger('LoginPage');
 
 const waitForRecoverablePopupResolution = async (): Promise<boolean> => {

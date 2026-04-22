@@ -106,7 +106,8 @@ describe('App loading behavior', () => {
 
     render(<App />);
 
-    expect(screen.getByTestId('default-loading-screen')).toBeInTheDocument();
+    expect(screen.queryByTestId('silent-bootstrap-shell')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('default-loading-screen')).not.toBeInTheDocument();
     expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
   });
 
@@ -180,8 +181,23 @@ describe('App loading behavior', () => {
 
     render(<App />);
 
-    expect(screen.getByTestId('default-loading-screen')).toBeInTheDocument();
+    expect(screen.queryByTestId('silent-bootstrap-shell')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('default-loading-screen')).not.toBeInTheDocument();
     expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
+  });
+
+  it('keeps root-route bootstrapping visually silent once auth is already known', () => {
+    mockUseAppBootstrapState.mockReturnValue({
+      status: 'loading',
+      phase: 'bootstrapping',
+      auth: createAuth('authorized'),
+    });
+
+    render(<App />);
+
+    expect(screen.queryByTestId('default-loading-screen')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('authenticated-shell')).not.toBeInTheDocument();
   });
 
   it('skips the initial loading screen while bootstrap is loading on the census route', () => {
@@ -205,6 +221,7 @@ describe('App loading behavior', () => {
 
     expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
     expect(screen.queryByTestId('default-loading-screen')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('silent-bootstrap-shell')).not.toBeInTheDocument();
     expect(screen.queryByTestId('authenticated-shell')).not.toBeInTheDocument();
     expect(screen.queryByTestId('login-page')).not.toBeInTheDocument();
   });
@@ -231,6 +248,7 @@ describe('App loading behavior', () => {
 
     expect(screen.queryByTestId('default-loading-screen')).not.toBeInTheDocument();
     expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('silent-bootstrap-shell')).not.toBeInTheDocument();
     expect(screen.queryByTestId('authenticated-shell')).not.toBeInTheDocument();
     expect(screen.queryByTestId('login-page')).not.toBeInTheDocument();
   });

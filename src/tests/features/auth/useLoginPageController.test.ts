@@ -98,7 +98,7 @@ describe('useLoginPageController', () => {
 
     await act(async () => {
       const promise = result.current.handleGoogleSignIn();
-      await vi.advanceTimersByTimeAsync(4000);
+      await vi.advanceTimersByTimeAsync(1800);
       await promise;
     });
 
@@ -206,7 +206,7 @@ describe('useLoginPageController', () => {
 
     await act(async () => {
       const promise = result.current.handleGoogleSignIn();
-      await vi.advanceTimersByTimeAsync(4000);
+      await vi.advanceTimersByTimeAsync(1800);
       await promise;
     });
 
