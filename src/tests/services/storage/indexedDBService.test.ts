@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as idbService from '@/services/storage/indexedDBService';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
-import { AuditLogEntry } from '@/types/audit';
+import { AuditLogEntry } from '@/types/auditLogTypes';
 import { ErrorLog } from '@/services/utils/errorService';
 
 const FIXED_ISO_TIMESTAMP = '2026-01-15T10:30:00.000Z';

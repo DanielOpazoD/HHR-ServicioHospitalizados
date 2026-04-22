@@ -1,4 +1,4 @@
-import { AuditAction } from '@/types/audit';
+import { AuditAction } from '@/types/auditActionTypes';
 import { getCurrentUserEmail } from './utils/auditUtils';
 import { logAuditEvent, logThrottledViewEvent, shouldExcludeFromViewAudit } from './auditCore';
 

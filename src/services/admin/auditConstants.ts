@@ -1,4 +1,4 @@
-import { AuditAction } from '@/types/audit';
+import { AuditAction } from '@/types/auditActionTypes';
 
 export const CRITICAL_ACTIONS: AuditAction[] = [
   'PATIENT_ADMITTED',

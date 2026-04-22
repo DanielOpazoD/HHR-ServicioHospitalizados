@@ -6,7 +6,8 @@
 
 import React, { useCallback } from 'react';
 import { AUDIT_ACTION_LABELS } from '@/services/admin/auditConstants';
-import { AuditAction, AuditLogEntry } from '@/types/audit';
+import { AuditAction } from '@/types/auditActionTypes';
+import { AuditLogEntry } from '@/types/auditLogTypes';
 import {
   buildDebouncedAuditKey,
   buildMeaningfulAuditDetails,

@@ -9,7 +9,8 @@ import {
   History,
 } from 'lucide-react';
 import clsx from 'clsx';
-import { AuditLogEntry, AuditAction, isGroupedAuditLogEntry } from '@/types/audit';
+import { AuditAction } from '@/types/auditActionTypes';
+import { AuditLogEntry, isGroupedAuditLogEntry } from '@/types/auditLogTypes';
 import { formatTimestamp, actionIcons, actionColors, renderHumanDetails } from './auditUIUtils';
 import { DiffHighlight } from './DiffHighlight';
 import { AUDIT_ACTION_LABELS } from '@/services/admin/auditConstants';

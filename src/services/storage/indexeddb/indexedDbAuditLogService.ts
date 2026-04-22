@@ -1,4 +1,4 @@
-import { AuditLogEntry } from '@/types/audit';
+import { AuditLogEntry } from '@/types/auditLogTypes';
 import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 
 import { ensureDbReady, hospitalDB as db } from './indexedDbCore';

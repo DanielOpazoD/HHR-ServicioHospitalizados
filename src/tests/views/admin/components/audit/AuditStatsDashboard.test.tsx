@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { AuditStatsDashboard } from '@/features/admin/components/internal/audit/AuditStatsDashboard';
-import { AuditLogEntry } from '@/types/audit';
+import { AuditLogEntry } from '@/types/auditLogTypes';
 
 vi.unmock('@/services/admin/auditService');
 vi.unmock('@/hooks/useAuditStats');

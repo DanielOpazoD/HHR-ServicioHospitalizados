@@ -1,6 +1,6 @@
 import React from 'react';
 import { Search, Filter } from 'lucide-react';
-import { AuditAction } from '@/types/audit';
+import { AuditAction } from '@/types/auditActionTypes';
 import { AUDIT_ACTION_LABELS } from '@/services/admin/auditConstants';
 
 interface AuditFiltersProps {

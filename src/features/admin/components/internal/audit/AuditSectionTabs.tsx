@@ -1,6 +1,6 @@
 import React from 'react';
 import clsx from 'clsx';
-import { AuditSection } from '@/types/audit';
+import { AuditSection } from '@/types/auditActionTypes';
 import { AuditSectionConfig } from '@/services/admin/auditViewConfig';
 
 interface AuditSectionTabsProps {

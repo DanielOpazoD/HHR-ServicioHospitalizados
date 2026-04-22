@@ -1,7 +1,7 @@
 import React from 'react';
 import { Clock } from 'lucide-react';
 import clsx from 'clsx';
-import { AuditLogEntry } from '@/types/audit';
+import { AuditLogEntry } from '@/types/auditLogTypes';
 import { AUDIT_ACTION_LABELS } from '@/services/admin/auditConstants';
 import { getActionCriticality } from '@/services/admin/auditMetrics';
 import { actionColors, parseAuditTimestamp } from './auditUIUtils';

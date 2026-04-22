@@ -4,7 +4,7 @@
  */
 
 import { useMemo } from 'react';
-import { AuditLogEntry, AuditStats } from '@/types/audit';
+import { AuditLogEntry, AuditStats } from '@/types/auditLogTypes';
 import { buildAuditStats } from '@/services/admin/auditMetrics';
 
 export const useAuditStats = (logs: AuditLogEntry[]): AuditStats => {

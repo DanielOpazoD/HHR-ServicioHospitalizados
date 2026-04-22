@@ -1,5 +1,6 @@
 import React from 'react';
-import { AuditSection, AuditLogEntry } from '@/types/audit';
+import { AuditSection } from '@/types/auditActionTypes';
+import { AuditLogEntry } from '@/types/auditLogTypes';
 import { ExportKeysPanel } from './ExportKeysPanel';
 import { AuditTimeline } from './AuditTimeline';
 import { ConsolidationManager } from './ConsolidationManager';

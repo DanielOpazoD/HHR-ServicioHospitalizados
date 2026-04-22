@@ -1,4 +1,4 @@
-import type { AuditLogEntry } from '@/types/audit';
+import type { AuditLogEntry } from '@/types/auditLogTypes';
 import { parseAuditTimestamp } from './utils/auditUtils';
 
 export interface AuditLogWithId extends AuditLogEntry {

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as firestore from 'firebase/firestore';
-import type { AuditLogEntry } from '@/types/audit';
+import type { AuditLogEntry } from '@/types/auditLogTypes';
 
 // Force unmock because it's globally mocked in setup.ts
 vi.unmock('../../services/admin/auditService');
@@ -144,7 +144,9 @@ describe('AuditService', () => {
     });
 
     it('should NOT log view events for institutional shared accounts', async () => {
-      vi.mocked(auditUtils.getCurrentUserEmail).mockReturnValue('hospitalizados@hospitalhangaroa.cl');
+      vi.mocked(auditUtils.getCurrentUserEmail).mockReturnValue(
+        'hospitalizados@hospitalhangaroa.cl'
+      );
       await logThrottledViewEvent('VIEW_PATIENT', 'R1', { name: 'X' }, mockDate);
       expect(mockSaveAuditLog).not.toHaveBeenCalled();
     });

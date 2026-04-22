@@ -4,7 +4,7 @@ import {
   type ApplicationOutcome,
 } from '@/shared/contracts/applicationOutcome';
 import { defaultAuditPort, type AuditPort } from '@/application/ports/auditPort';
-import type { AuditLogEntry } from '@/types/audit';
+import type { AuditLogEntry } from '@/types/auditLogTypes';
 
 export interface FetchAuditLogsInput {
   limit?: number;

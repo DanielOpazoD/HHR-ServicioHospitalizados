@@ -20,7 +20,8 @@ import {
   Download,
   Search,
 } from 'lucide-react';
-import { AuditAction, AuditLogEntry } from '@/types/audit';
+import { AuditAction } from '@/types/auditActionTypes';
+import { AuditLogEntry } from '@/types/auditLogTypes';
 import { formatAuditTimestamp, parseAuditTimestamp } from '@/services/admin/utils/auditUtils';
 
 /** Firebase Timestamp-like object */

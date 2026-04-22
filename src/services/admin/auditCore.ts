@@ -1,5 +1,6 @@
 import { firestoreDb, type IDatabaseProvider } from '@/services/storage/firestore';
-import { AuditAction, AuditLogEntry, maskRut } from '@/types/audit';
+import { AuditAction } from '@/types/auditActionTypes';
+import { AuditLogEntry, maskRut } from '@/types/auditLogTypes';
 import {
   getAuditLogs as getIndexedDBAuditLogs,
   getAuditLogsForDate as getIndexedDBAuditLogsForDate,

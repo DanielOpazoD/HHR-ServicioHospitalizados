@@ -5,7 +5,7 @@ import {
   calculateAuditStats,
   parseAuditTimestamp,
 } from '@/services/admin/auditWorkerLogic';
-import { AuditLogEntry, WorkerFilterParams } from '@/types/audit';
+import { AuditLogEntry, WorkerFilterParams } from '@/types/auditLogTypes';
 
 describe('AuditWorkerLogic', () => {
   const mockLogs: AuditLogEntry[] = [

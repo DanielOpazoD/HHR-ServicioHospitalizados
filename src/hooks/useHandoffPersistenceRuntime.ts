@@ -1,7 +1,8 @@
 import { useCallback } from 'react';
 import type { RefObject } from 'react';
 import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
-import type { AuditAction, AuditLogEntry } from '@/types/audit';
+import type { AuditAction } from '@/types/auditActionTypes';
+import type { AuditLogEntry } from '@/types/auditLogTypes';
 import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcome';
 import { runHandoffMutation } from '@/hooks/controllers/handoffManagementMutationController';
 import { canEditMedicalHandoffForDate } from '@/shared/access/operationalAccessPolicy';

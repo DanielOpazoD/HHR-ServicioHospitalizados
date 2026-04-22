@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { executeFetchAuditLogs } from '@/application/audit/fetchAuditLogsUseCase';
 import * as auditService from '@/services/admin/auditService';
-import type { AuditLogEntry } from '@/types/audit';
+import type { AuditLogEntry } from '@/types/auditLogTypes';
 
 vi.mock('@/services/admin/auditService', () => ({
   getAuditLogs: vi.fn(),

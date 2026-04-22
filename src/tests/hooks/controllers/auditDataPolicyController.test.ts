@@ -6,7 +6,7 @@ import {
   toggleAuditRowState,
 } from '@/hooks/controllers/auditDataPolicyController';
 import { AUDIT_SECTIONS } from '@/services/admin/auditViewConfig';
-import type { AuditLogEntry } from '@/types/audit';
+import type { AuditLogEntry } from '@/types/auditLogTypes';
 
 describe('auditDataPolicyController', () => {
   it('builds a section-actions map from audit sections', () => {

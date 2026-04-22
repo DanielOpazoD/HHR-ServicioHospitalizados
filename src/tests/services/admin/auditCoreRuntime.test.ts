@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createAuditCoreService } from '@/services/admin/auditCore';
-import type { AuditLogEntry } from '@/types/audit';
+import type { AuditLogEntry } from '@/types/auditLogTypes';
 
 const loggerMocks = vi.hoisted(() => ({
   error: vi.fn(),

@@ -1,4 +1,4 @@
-import type { AuditLogEntry, WorkerFilterParams } from '@/types/audit';
+import type { AuditLogEntry, WorkerFilterParams } from '@/types/auditLogTypes';
 
 export interface AuditWorkerAdapterMessageHandler {
   onProcessed: (payload: unknown) => void;

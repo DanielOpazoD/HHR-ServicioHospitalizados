@@ -1,7 +1,7 @@
 import Dexie, { Table } from 'dexie';
 
 import { DailyRecord } from '@/services/storage/storageDailyRecordContracts';
-import { AuditLogEntry } from '@/types/audit';
+import { AuditLogEntry } from '@/types/auditLogTypes';
 import { ErrorLog } from '@/services/logging/errorLogTypes';
 
 import { SyncTask } from '../syncQueueTypes';

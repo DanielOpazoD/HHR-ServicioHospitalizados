@@ -3,7 +3,7 @@
  * Provides human-readable descriptions for audit log entries.
  */
 
-import { AuditAction } from '@/types/audit';
+import { AuditAction } from '@/types/auditActionTypes';
 
 /**
  * Generate human-readable summary for audit entry

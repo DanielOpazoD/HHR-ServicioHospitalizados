@@ -5,7 +5,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { generateSummary } from '@/services/admin/utils/auditSummaryGenerator';
-import { AuditAction } from '@/types/audit';
+import { AuditAction } from '@/types/auditActionTypes';
 
 describe('auditSummaryGenerator', () => {
   describe('generateSummary', () => {

@@ -9,7 +9,8 @@ import {
   executeUpdateMedicalEntrySpecialty,
   executeUpdateMedicalPrimaryNote,
 } from '@/application/handoff';
-import type { AuditAction, AuditLogEntry } from '@/types/audit';
+import type { AuditAction } from '@/types/auditActionTypes';
+import type { AuditLogEntry } from '@/types/auditLogTypes';
 import type { MedicalHandoffAuditActor, PatientData } from '@/hooks/contracts/patientHookContracts';
 import { canEditMedicalHandoffForDate } from '@/shared/access/operationalAccessPolicy';
 import {

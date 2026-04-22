@@ -1,4 +1,5 @@
-import { AuditAction, AuditLogEntry, AuditSection, AuditStats } from '@/types/audit';
+import { AuditAction, AuditSection } from '@/types/auditActionTypes';
+import { AuditLogEntry, AuditStats } from '@/types/auditLogTypes';
 import { CRITICAL_ACTIONS, IMPORTANT_ACTIONS } from '@/services/admin/auditConstants';
 import { calculateAuditStats } from '@/services/admin/auditWorkerLogic';
 

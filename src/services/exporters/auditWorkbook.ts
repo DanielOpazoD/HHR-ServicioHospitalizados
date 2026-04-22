@@ -1,5 +1,5 @@
 import type { Workbook } from 'exceljs';
-import { AuditLogEntry } from '@/types/audit';
+import { AuditLogEntry } from '@/types/auditLogTypes';
 import { AUDIT_ACTION_LABELS } from '../admin/auditConstants';
 import { createWorkbook } from './excelUtils';
 import { formatAuditTimestamp } from '@/services/admin/utils/auditUtils';

@@ -1,11 +1,10 @@
+import type { AuditAction, AuditSection } from '@/types/auditActionTypes';
 import type {
-  AuditAction,
   AuditLogEntry,
-  AuditSection,
   GroupedAuditLogEntry,
   WorkerFilterParams,
   AuditStats,
-} from '@/types/audit';
+} from '@/types/auditLogTypes';
 import type { AuditSectionConfig } from '@/services/admin/auditViewConfig';
 
 export const buildDefaultAuditStats = (): AuditStats => ({

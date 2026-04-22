@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAuditWorker } from '@/hooks/useAuditWorker';
-import type { AuditLogEntry, WorkerFilterParams } from '@/types/audit';
+import type { AuditLogEntry, WorkerFilterParams } from '@/types/auditLogTypes';
 
 // We need to mock the Worker, which is already done in setup.ts
 describe('useAuditWorker', () => {

@@ -1,4 +1,4 @@
-import { AuditLogEntry } from '@/types/audit';
+import { AuditLogEntry } from '@/types/auditLogTypes';
 import { AUDIT_ACTION_LABELS } from '@/services/admin/auditConstants';
 import { formatTimestamp } from '../auditUIUtils';
 import { formatAuditTimestamp } from '@/services/admin/utils/auditUtils';

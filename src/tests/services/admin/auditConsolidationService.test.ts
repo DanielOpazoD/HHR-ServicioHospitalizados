@@ -6,7 +6,8 @@ import {
   mergeDetails,
   prepareConsolidationGroups,
 } from '@/services/admin/auditConsolidationService';
-import { AuditLogEntry, AuditAction } from '@/types/audit';
+import { AuditAction } from '@/types/auditActionTypes';
+import { AuditLogEntry } from '@/types/auditLogTypes';
 
 // Type helper for tests
 interface AuditLogWithId extends AuditLogEntry {

@@ -1,28 +1,9 @@
-import { AuditLogEntry, AuditAction, GroupedAuditLogEntry } from '@/types/audit';
-
-export interface AuditStats {
-  todayCount: number;
-  thisWeekCount: number;
-  criticalCount: number;
-  activeUsersToday: string[];
-  activeUserCount: number;
-  avgSessionMinutes: number;
-  totalSessionsToday: number;
-  actionBreakdown: Record<string, number>;
-  hourlyActivity: number[];
-  topUsers: { email: string; count: number }[];
-  criticalActions: AuditLogEntry[];
-}
-
-export interface WorkerFilterParams {
-  searchTerm: string;
-  filterAction: AuditAction | 'ALL';
-  startDate: string;
-  endDate: string;
-  activeSection: string;
-  sectionActions: Record<string, string[] | undefined>;
-  groupedView: boolean;
-}
+import type {
+  AuditLogEntry,
+  AuditStats,
+  GroupedAuditLogEntry,
+  WorkerFilterParams,
+} from '@/types/auditLogTypes';
 
 /**
  * Pure function to parse timestamps in a worker-safe way.

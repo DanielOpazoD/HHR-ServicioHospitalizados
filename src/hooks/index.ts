@@ -84,4 +84,4 @@ export { useVersionCheck } from './useVersionCheck';
 // Audit Data Management
 export { useAuditData, AUDIT_SECTIONS } from './useAuditData';
 export type { AuditFiltersState, UseAuditDataReturn } from './useAuditData';
-export type { AuditSection } from '@/types/audit';
+export type { AuditSection } from '@/types/auditActionTypes';

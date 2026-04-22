@@ -1,5 +1,5 @@
 import { isInstitutionalAccount } from '@/constants/identities';
-import type { AuditAction } from '@/types/audit';
+import type { AuditAction } from '@/types/auditActionTypes';
 
 export const VIEW_THROTTLE_KEY = 'hhr_audit_view_throttle';
 export const VIEW_THROTTLE_WINDOW_MS = 15 * 60 * 1000;

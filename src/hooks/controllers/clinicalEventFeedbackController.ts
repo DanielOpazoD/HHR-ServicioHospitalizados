@@ -1,4 +1,5 @@
-import type { AuditAction, AuditLogEntry } from '@/types/audit';
+import type { AuditAction } from '@/types/auditActionTypes';
+import type { AuditLogEntry } from '@/types/auditLogTypes';
 
 export interface ClinicalEventAuditPayload {
   action: AuditAction;

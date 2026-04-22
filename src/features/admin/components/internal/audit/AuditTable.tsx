@@ -11,7 +11,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import clsx from 'clsx';
-import { AuditLogEntry } from '@/types/audit';
+import { AuditLogEntry } from '@/types/auditLogTypes';
 import { AuditLogRow } from './AuditLogRow';
 import { AuditSkeleton } from '@/components/shared/Skeleton';
 

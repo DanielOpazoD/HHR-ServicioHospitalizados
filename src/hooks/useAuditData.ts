@@ -6,14 +6,13 @@
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { AuditAction, AuditSection } from '@/types/auditActionTypes';
 import {
-  AuditAction,
   AuditLogEntry,
   GroupedAuditLogEntry,
-  AuditSection,
   WorkerFilterParams,
   AuditStats,
-} from '@/types/audit';
+} from '@/types/auditLogTypes';
 import { useAuditWorker } from './useAuditWorker';
 import { AUDIT_ACTION_LABELS, CRITICAL_ACTIONS } from '@/services/admin/auditConstants';
 import { executeFetchAuditLogs } from '@/application/audit/fetchAuditLogsUseCase';

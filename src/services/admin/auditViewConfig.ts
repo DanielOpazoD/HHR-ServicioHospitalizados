@@ -1,4 +1,4 @@
-import { AuditSection } from '@/types/audit';
+import { AuditSection } from '@/types/auditActionTypes';
 
 export interface AuditSectionConfig {
   label: string;

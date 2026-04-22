@@ -4,7 +4,8 @@ import {
   type ApplicationOutcome,
 } from '@/shared/contracts/applicationOutcome';
 import { defaultAuditPort, type AuditPort } from '@/application/ports/auditPort';
-import type { AuditAction, AuditLogEntry } from '@/types/audit';
+import type { AuditAction } from '@/types/auditActionTypes';
+import type { AuditLogEntry } from '@/types/auditLogTypes';
 
 export interface WriteAuditEventInput {
   userId: string;

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { AuditLogEntry, WorkerFilterParams } from '@/types/audit';
+import { AuditLogEntry, WorkerFilterParams } from '@/types/auditLogTypes';
 import {
   buildInitialAuditWorkerResults,
   normalizeAuditWorkerErrorMessage,

@@ -4,7 +4,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { maskRut, AuditAction } from '@/types/audit';
+import { AuditAction } from '@/types/auditActionTypes';
+import { maskRut } from '@/types/auditLogTypes';
 
 describe('audit types', () => {
   describe('maskRut', () => {

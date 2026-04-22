@@ -1,7 +1,8 @@
 import React from 'react';
 import { Activity, Users, Zap, Clock, BarChart3 } from 'lucide-react';
 import clsx from 'clsx';
-import { AuditAction, AuditLogEntry } from '@/types/audit';
+import { AuditAction } from '@/types/auditActionTypes';
+import { AuditLogEntry } from '@/types/auditLogTypes';
 import { AUDIT_ACTION_LABELS } from '@/services/admin/auditConstants';
 import { formatDuration, getActionCriticality } from '@/services/admin/auditMetrics';
 

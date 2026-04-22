@@ -1,5 +1,5 @@
-import { filterLogs, groupLogs, calculateAuditStats, WorkerFilterParams } from './auditWorkerLogic';
-import { AuditLogEntry } from '@/types/audit';
+import { filterLogs, groupLogs, calculateAuditStats } from './auditWorkerLogic';
+import type { AuditLogEntry, WorkerFilterParams } from '@/types/auditLogTypes';
 import { auditWorkerLogger } from '@/services/admin/adminLoggers';
 
 /**

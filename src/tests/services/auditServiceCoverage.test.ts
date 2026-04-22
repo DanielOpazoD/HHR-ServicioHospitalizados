@@ -27,7 +27,7 @@ vi.mock('firebase/firestore', async importOriginal => {
   };
 });
 
-import { AuditLogEntry } from '@/types/audit';
+import { AuditLogEntry } from '@/types/auditLogTypes';
 
 const mockSaveAuditLog = vi.fn();
 const mockGetAuditLogs = vi.fn();

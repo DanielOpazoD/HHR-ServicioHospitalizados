@@ -1,4 +1,4 @@
-import type { AuditLogEntry, GroupedAuditLogEntry, AuditStats } from '@/types/audit';
+import type { AuditLogEntry, GroupedAuditLogEntry, AuditStats } from '@/types/auditLogTypes';
 
 export interface AuditWorkerResults {
   filteredLogs: AuditLogEntry[];
