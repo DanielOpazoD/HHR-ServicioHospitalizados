@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { buildStabilityRules } from '@/hooks/stabilityRulesController';
 
@@ -69,5 +69,22 @@ describe('stabilityRulesController', () => {
     expect(rules.isDateLocked).toBe(true);
     expect(rules.canPerformActions).toBe(false);
     expect(rules.canEditField('handoffNoteNightShift')).toBe(false);
+  });
+
+  it('uses the clinical day instead of the calendar day during the overnight window', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 3, 22, 6, 59, 0));
+
+    const record = createRecord('2026-04-21');
+    const rules = buildStabilityRules(record, {
+      isAdmin: false,
+      isEditor: true,
+      now: new Date(2026, 3, 22, 6, 59, 0),
+    });
+
+    expect(rules.isDateLocked).toBe(false);
+    expect(rules.canPerformActions).toBe(true);
+
+    vi.useRealTimers();
   });
 });

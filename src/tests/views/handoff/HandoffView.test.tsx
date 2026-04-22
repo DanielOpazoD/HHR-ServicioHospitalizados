@@ -1,9 +1,11 @@
 /** @vitest-environment jsdom */
 import '../../setup';
+import { mockAuthContextValue } from '../../setup';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, fireEvent, within, waitFor } from '@testing-library/react';
+import { act, screen, fireEvent, within, waitFor } from '@testing-library/react';
 import React from 'react';
 import { HandoffView } from '@/features/handoff/components/HandoffView';
+import { DailyRecordProvider } from '@/context/DailyRecordContext';
 import {
   render,
   createMockRecord,
@@ -25,6 +27,49 @@ vi.mock('@/context/StaffContext', () => ({
   }),
   StaffProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
+
+const setAuthorizedSpecialistAuth = () => {
+  const specialistUser = {
+    uid: 'specialist-1',
+    email: 'specialist@hospitalhangaroa.cl',
+    displayName: 'Dr. Specialist',
+    role: 'doctor_specialist' as const,
+  };
+
+  mockUseAuthState.user = specialistUser;
+  mockUseAuthState.currentUser = specialistUser;
+  mockUseAuthState.authorizedUser = specialistUser;
+  mockUseAuthState.sessionState = {
+    status: 'authorized',
+    user: specialistUser,
+  };
+  mockUseAuthState.role = 'doctor_specialist';
+  mockUseAuthState.isEditor = true;
+  mockUseAuthState.isViewer = false;
+  mockUseAuthState.canEdit = true;
+  Object.assign(
+    mockAuthContextValue as {
+      user: {
+        uid: string;
+        email: string;
+        displayName: string;
+        getIdToken: ReturnType<typeof vi.fn>;
+      };
+      role: string;
+      isEditor: boolean;
+      isViewer: boolean;
+    },
+    {
+      user: {
+        ...specialistUser,
+        getIdToken: vi.fn().mockResolvedValue('specialist-token'),
+      },
+      role: 'doctor_specialist',
+      isEditor: true,
+      isViewer: false,
+    }
+  );
+};
 
 describe('HandoffView Component', () => {
   // NOTE: Tests now use the mockContext returned by render() for assertions.
@@ -49,6 +94,18 @@ describe('HandoffView Component', () => {
     mockUseAuthState.isEditor = true;
     mockUseAuthState.isViewer = false;
     mockUseAuthState.canEdit = true;
+    Object.assign(
+      mockAuthContextValue as {
+        role: string;
+        isEditor: boolean;
+        isViewer: boolean;
+      },
+      {
+        role: 'admin',
+        isEditor: true,
+        isViewer: false,
+      }
+    );
   });
 
   it('renders empty message when no record is selected', () => {
@@ -222,24 +279,7 @@ describe('HandoffView Component', () => {
   it('keeps patient-level medical handoff creation enabled for doctor_specialist on the current day', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-04-12T12:00:00-06:00'));
-
-    const specialistUser = {
-      uid: 'specialist-1',
-      email: 'specialist@hospitalhangaroa.cl',
-      displayName: 'Dr. Specialist',
-      role: 'doctor_specialist' as const,
-    };
-    mockUseAuthState.user = specialistUser;
-    mockUseAuthState.currentUser = specialistUser;
-    mockUseAuthState.authorizedUser = specialistUser;
-    mockUseAuthState.sessionState = {
-      status: 'authorized',
-      user: specialistUser,
-    };
-    mockUseAuthState.role = 'doctor_specialist';
-    mockUseAuthState.isEditor = true;
-    mockUseAuthState.isViewer = false;
-    mockUseAuthState.canEdit = true;
+    setAuthorizedSpecialistAuth();
 
     const record = createMockRecord('2026-04-12');
     record.beds['R1'] = createMockPatient({
@@ -255,29 +295,14 @@ describe('HandoffView Component', () => {
 
     const mainTable = screen.getAllByRole('table')[0];
     expect(within(mainTable).getByRole('button', { name: /crear entrega/i })).toBeInTheDocument();
+
+    vi.useRealTimers();
   });
 
   it('keeps existing medical handoff entries editable for doctor_specialist during the overnight clinical day window', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 3, 22, 6, 59, 0));
-
-    const specialistUser = {
-      uid: 'specialist-1',
-      email: 'specialist@hospitalhangaroa.cl',
-      displayName: 'Dr. Specialist',
-      role: 'doctor_specialist' as const,
-    };
-    mockUseAuthState.user = specialistUser;
-    mockUseAuthState.currentUser = specialistUser;
-    mockUseAuthState.authorizedUser = specialistUser;
-    mockUseAuthState.sessionState = {
-      status: 'authorized',
-      user: specialistUser,
-    };
-    mockUseAuthState.role = 'doctor_specialist';
-    mockUseAuthState.isEditor = true;
-    mockUseAuthState.isViewer = false;
-    mockUseAuthState.canEdit = true;
+    setAuthorizedSpecialistAuth();
 
     const record = createMockRecord('2026-04-21');
     record.beds['R1'] = createMockPatient({
@@ -299,6 +324,143 @@ describe('HandoffView Component', () => {
 
     const mainTable = screen.getAllByRole('table')[0];
     expect(within(mainTable).getByDisplayValue('Plan vigente')).toBeInTheDocument();
+
+    vi.useRealTimers();
+  });
+
+  it('blocks specialist editing outside the overnight clinical day window', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 3, 22, 9, 1, 0));
+    setAuthorizedSpecialistAuth();
+
+    const record = createMockRecord('2026-04-21');
+    record.beds['R1'] = createMockPatient({
+      bedId: 'R1',
+      patientName: 'PACIENTE ESPECIALISTA',
+      medicalHandoffNote: '',
+      medicalHandoffEntries: [],
+    });
+
+    render(<HandoffView type="medical" />, {
+      contextValue: createMockDailyRecordContext(record),
+    });
+
+    const mainTable = screen.getAllByRole('table')[0];
+    expect(
+      within(mainTable).queryByRole('button', { name: /crear entrega/i })
+    ).not.toBeInTheDocument();
+    expect(within(mainTable).getByText(/sin entrega registrada/i)).toBeInTheDocument();
+
+    vi.useRealTimers();
+  });
+
+  it('keeps the first specialist save visible in HandoffView while a stale snapshot briefly removes the new entry', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-04-22T12:00:00-06:00'));
+    setAuthorizedSpecialistAuth();
+
+    const bedId = 'R1';
+    const buildRecord = () => {
+      const nextRecord = createMockRecord('2026-04-22');
+      nextRecord.beds[bedId] = createMockPatient({
+        bedId,
+        patientName: 'PACIENTE ESPECIALISTA',
+        medicalHandoffNote: '',
+        medicalHandoffEntries: [],
+      });
+      return nextRecord;
+    };
+
+    const FirstSpecialistSaveRoundTrip = () => {
+      const [record, setRecord] = React.useState(buildRecord);
+
+      const applyPatientFields = React.useCallback((fields: Record<string, unknown>) => {
+        setRecord(current => ({
+          ...current,
+          beds: {
+            ...current.beds,
+            [bedId]: {
+              ...current.beds[bedId],
+              ...fields,
+            },
+          },
+        }));
+      }, []);
+
+      const contextValue = React.useMemo(() => {
+        const context = createMockDailyRecordContext(record);
+        context.updatePatientMultiple = vi.fn(async (targetBedId, fields) => {
+          if (targetBedId !== bedId) {
+            return;
+          }
+
+          const patientFields = fields as Record<string, unknown>;
+          const nextNote =
+            typeof patientFields.medicalHandoffNote === 'string'
+              ? patientFields.medicalHandoffNote.trim()
+              : '';
+
+          if (!nextNote) {
+            applyPatientFields(patientFields);
+            return;
+          }
+
+          setRecord(current => ({
+            ...current,
+            beds: {
+              ...current.beds,
+              [bedId]: {
+                ...current.beds[bedId],
+                medicalHandoffEntries: [],
+                medicalHandoffNote: '',
+                medicalHandoffAudit: undefined,
+              },
+            },
+          }));
+
+          window.setTimeout(() => {
+            applyPatientFields(patientFields);
+          }, 50);
+        });
+        return context;
+      }, [applyPatientFields, record]);
+
+      return (
+        <DailyRecordProvider value={contextValue}>
+          <HandoffView type="medical" />
+        </DailyRecordProvider>
+      );
+    };
+
+    render(<FirstSpecialistSaveRoundTrip />);
+
+    fireEvent.click(
+      within(screen.getAllByRole('table')[0]).getByRole('button', { name: /crear entrega/i })
+    );
+
+    const textarea = within(screen.getAllByRole('table')[0]).getByRole('textbox');
+    fireEvent.focus(textarea);
+    fireEvent.change(textarea, { target: { value: 'Primera evolución especialista' } });
+    fireEvent.blur(textarea);
+
+    const getInteractiveSavedNotes = () =>
+      within(screen.getAllByRole('table')[0]).getAllByDisplayValue(
+        'Primera evolución especialista'
+      );
+
+    expect(getInteractiveSavedNotes().length).toBeGreaterThan(0);
+
+    act(() => {
+      vi.advanceTimersByTime(25);
+    });
+    expect(getInteractiveSavedNotes().length).toBeGreaterThan(0);
+
+    await act(async () => {
+      vi.advanceTimersByTime(50);
+    });
+    expect(getInteractiveSavedNotes().length).toBeGreaterThan(0);
+
+    vi.useRealTimers();
   });
 
   it('shows clinical events controls in the medical diagnosis column', async () => {

@@ -1,5 +1,5 @@
 import type { DailyRecordDateRef } from '@/application/shared/dailyRecordCoreContracts';
-import { getTodayISO } from '@/utils/dateCoreUtils';
+import { resolveCurrentClinicalDay } from '@/utils/clinicalDayUtils';
 
 export interface StabilityRules {
   isDateLocked: boolean;
@@ -39,7 +39,12 @@ const startsWithAny = (value: string, prefixes: readonly string[]): boolean =>
 
 export const buildStabilityRules = (
   record: DailyRecordDateRef | null,
-  { isAdmin, isEditor, todayISO = getTodayISO(), now = new Date() }: BuildStabilityRulesOptions
+  {
+    isAdmin,
+    isEditor,
+    todayISO = resolveCurrentClinicalDay(),
+    now = new Date(),
+  }: BuildStabilityRulesOptions
 ): StabilityRules => {
   if (!record || !isEditor) {
     return {
