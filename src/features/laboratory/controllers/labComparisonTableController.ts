@@ -1,9 +1,9 @@
 import {
   COMPARISON_DISPLAY_GROUPS,
   COMPARISON_GROUP_ORDER,
-  COMPARISON_PINNABLE_VARIABLES,
   type ComparisonGroupLabel,
-} from '../constants/labComparisonConstants';
+} from '../constants/labComparisonGroupingConstants';
+import { COMPARISON_PINNABLE_VARIABLES } from '../constants/labComparisonPreferenceConstants';
 
 export interface ComparisonGroup {
   label: ComparisonGroupLabel;

@@ -7,7 +7,7 @@
 import React from 'react';
 import type { LabAnalysisData, LabPatient } from '@/types/domain/laboratory';
 import type { ExportConfig } from '../types/labViewerTypes';
-import type { ComparisonGroupLabel } from '../constants/labComparisonConstants';
+import type { ComparisonGroupLabel } from '../constants/labComparisonGroupingConstants';
 import {
   buildComparisonGroups,
   filterComparisonVariableNames,

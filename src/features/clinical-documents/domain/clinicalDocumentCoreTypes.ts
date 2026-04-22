@@ -1,0 +1,65 @@
+import type {
+  ClinicalDocumentIeehDraft,
+  IeehBinaryFlag,
+  IeehDischargeConditionCode,
+} from '@/application/shared/ieehContracts';
+
+export type ClinicalDocumentType =
+  | 'epicrisis'
+  | 'evolucion'
+  | 'informe_medico'
+  | 'epicrisis_traslado'
+  | 'otro';
+
+export type ClinicalDocumentStatus = 'draft' | 'ready_for_signature' | 'signed' | 'archived';
+
+export interface ClinicalDocumentPatientField {
+  id: string;
+  label: string;
+  value: string;
+  type: 'text' | 'date' | 'number' | 'time';
+  placeholder?: string;
+  readonly?: boolean;
+  visible?: boolean;
+}
+
+export type ClinicalDocumentSectionKind = 'standard' | 'clinical-update';
+export type ClinicalDocumentSectionLayout = 'structured' | 'unified';
+
+export interface ClinicalDocumentSection {
+  id: string;
+  title: string;
+  content: string;
+  kind?: ClinicalDocumentSectionKind;
+  layout?: ClinicalDocumentSectionLayout;
+  updateDate?: string;
+  updateTime?: string;
+  order: number;
+  required?: boolean;
+  visible?: boolean;
+}
+
+export interface ClinicalDocumentAuditActor {
+  uid: string;
+  email: string;
+  displayName: string;
+  role: string;
+}
+
+export interface ClinicalDocumentVersionMeta {
+  version: number;
+  savedAt: string;
+  savedBy: ClinicalDocumentAuditActor;
+  reason: 'autosave' | 'manual' | 'signature' | 'unsign' | 'admin_fix';
+}
+
+export interface ClinicalDocumentPdfMeta {
+  fileId?: string;
+  webViewLink?: string;
+  folderPath?: string;
+  exportedAt?: string;
+  exportStatus?: 'pending' | 'exported' | 'failed';
+  exportError?: string;
+}
+
+export type { ClinicalDocumentIeehDraft, IeehBinaryFlag, IeehDischargeConditionCode };

@@ -10,6 +10,7 @@ export function registerFirestoreRulesDomainGroups({
   nurse,
   doctor,
   specialist,
+  specialistWithoutClaim,
   doctorWithoutClaim,
   editor,
   NOW_MS,
@@ -49,6 +50,21 @@ export function registerFirestoreRulesDomainGroups({
       );
     });
 
+    it('Specialists resolved via config/roles can create and update draft clinical documents', async () => {
+      await assertSucceeds(
+        specialistWithoutClaim().doc(clinicalDocumentPath).set(clinicalDocumentPayload)
+      );
+      await assertSucceeds(
+        specialistWithoutClaim()
+          .doc(clinicalDocumentPath)
+          .update({
+            title: 'Epicrisis especialista dinámica',
+            currentVersion: 2,
+            'audit.updatedAt': new Date(NOW_MS + 1).toISOString(),
+          })
+      );
+    });
+
     it('Specialists cannot sign clinical documents through Firestore writes', async () => {
       await setupDoc(admin(), clinicalDocumentPath, clinicalDocumentPayload);
 
@@ -62,17 +78,80 @@ export function registerFirestoreRulesDomainGroups({
       );
     });
 
+    it('Specialists cannot modify a clinical document once it is signed', async () => {
+      await setupDoc(admin(), clinicalDocumentPath, {
+        ...clinicalDocumentPayload,
+        status: 'signed',
+      });
+
+      await assertFails(
+        specialist()
+          .doc(clinicalDocumentPath)
+          .update({
+            title: 'Intento de cambio posterior a firma',
+            currentVersion: 3,
+            'audit.updatedAt': new Date(NOW_MS + 2).toISOString(),
+          })
+      );
+    });
+
     it('Regular authenticated users cannot create clinical documents', async () => {
       await assertFails(authed().doc(clinicalDocumentPath).set(clinicalDocumentPayload));
     });
 
+    it('Nurses and editors cannot create clinical documents', async () => {
+      await assertFails(nurse().doc(clinicalDocumentPath).set(clinicalDocumentPayload));
+      await assertFails(editor().doc(clinicalDocumentPath).set(clinicalDocumentPayload));
+    });
+
     it('Doctors resolved via config/roles can create clinical documents', async () => {
       await setupDoc(admin(), 'config/roles', {
+        'daniel.opazo@hospitalhangaroa.cl': 'admin',
         'doctor.allowed@example.com': 'doctor_urgency',
       });
 
       await assertSucceeds(
         doctorWithoutClaim().doc(clinicalDocumentPath).set(clinicalDocumentPayload)
+      );
+    });
+
+    it('Doctors resolved via config/roles can update an existing draft clinical document', async () => {
+      await setupDoc(admin(), 'config/roles', {
+        'daniel.opazo@hospitalhangaroa.cl': 'admin',
+        'doctor.allowed@example.com': 'doctor_urgency',
+      });
+      await setupDoc(admin(), clinicalDocumentPath, clinicalDocumentPayload);
+
+      await assertSucceeds(
+        doctorWithoutClaim()
+          .doc(clinicalDocumentPath)
+          .update({
+            title: 'Epicrisis médica actualizada',
+            currentVersion: 2,
+            'audit.updatedAt': new Date(NOW_MS + 1).toISOString(),
+          })
+      );
+    });
+
+    it('Nurses and editors cannot update clinical documents', async () => {
+      await setupDoc(admin(), clinicalDocumentPath, clinicalDocumentPayload);
+      await assertFails(
+        nurse()
+          .doc(clinicalDocumentPath)
+          .update({
+            title: 'Cambio enfermería no permitido',
+            currentVersion: 2,
+            'audit.updatedAt': new Date(NOW_MS + 1).toISOString(),
+          })
+      );
+      await assertFails(
+        editor()
+          .doc(clinicalDocumentPath)
+          .update({
+            title: 'Cambio editor no permitido',
+            currentVersion: 2,
+            'audit.updatedAt': new Date(NOW_MS + 1).toISOString(),
+          })
       );
     });
 

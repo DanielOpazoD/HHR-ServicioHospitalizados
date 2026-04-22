@@ -1,5 +1,5 @@
 import type { SyslabExamItem } from '@/types/domain/laboratory';
-import { COMPARISON_EXCLUDE, COMPARISON_ORDER } from '../constants/labComparisonConstants';
+import { COMPARISON_EXCLUDE, COMPARISON_ORDER } from '../constants/labComparisonCatalogConstants';
 import { TREND_GROUPS } from '../constants/labTrendConstants';
 
 const ALL_TREND_PATTERNS = TREND_GROUPS.flatMap(g => g.patterns);
