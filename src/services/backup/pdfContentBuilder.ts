@@ -11,7 +11,7 @@ import { PatientData } from '@/services/contracts/patientServiceContracts';
 import type { ShiftType } from '@/types/domain/shift';
 import type { DeviceDetails } from '@/types/domain/devices';
 import { BEDS } from '@/constants/beds';
-import { formatDateDDMMYYYY } from '@/utils/dateFormattingUtils';
+import { formatDateDDMMYYYY } from '@/utils/dateDisplayUtils';
 import type { HandoffPdfRecord } from '@/services/pdf/contracts/handoffPdfContracts';
 import { pdfContentBuilderLogger } from '@/services/backup/backupLoggers';
 import { addNovedadesSection } from '@/services/pdf/handoffPdfLayoutSections';

@@ -2,7 +2,7 @@ import type { ModuleType } from '@/constants/navigationConfig';
 import type { UserRole } from '@/types/authRoleTypes';
 import type { CensusAccessProfile } from '@/shared/access/censusAccessProfile';
 import { resolveRoleAccess } from '@/shared/access/roleAccessMatrix';
-import { getTodayISO } from '@/utils/dateFormattingUtils';
+import { getTodayISO } from '@/utils/dateCoreUtils';
 import { normalizeDateOnly } from '@/utils/clinicalDayUtils';
 
 type SupportedRole = UserRole | string | undefined;

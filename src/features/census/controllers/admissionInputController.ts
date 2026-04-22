@@ -1,4 +1,4 @@
-import { getTodayISO } from '@/utils/dateFormattingUtils';
+import { getTodayISO } from '@/utils/dateCoreUtils';
 import { getNextDay, getPreviousDay, normalizeDateOnly } from '@/utils/clinicalDayUtils';
 import {
   resolveAdmissionDateAudit as resolveAdmissionDateAuditPolicy,

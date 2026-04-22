@@ -9,26 +9,10 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { HandoffCalendarView } from '@/features/backup/components/internal/HandoffCalendarView';
 import type { StoredPdfFile } from '@/types/backupArtifacts';
 
-// Mock date utilities to be deterministic
-vi.mock('@/utils/dateUtils', () => ({
-  formatDateDDMMYYYY: (isoDate?: string) => {
-    if (!isoDate) return '-';
-    const parts = isoDate.split('-');
-    if (parts.length !== 3) return isoDate;
-    return `${parts[2]}-${parts[1]}-${parts[0]}`;
-  },
-  getTodayISO: () => '2026-01-02',
-  generateDateRange: (_year: number, _month: number, _limitToToday: boolean) => {
-    return ['2026-01-01', '2026-01-02'];
-  },
-}));
-
-// Also mock dateFormattingUtils since HandoffCalendarView imports from there
-vi.mock('@/utils/dateFormattingUtils', async importOriginal => {
-  const actual = await importOriginal<typeof import('@/utils/dateFormattingUtils')>();
+vi.mock('@/utils/dateRangeUtils', async importOriginal => {
+  const actual = await importOriginal<typeof import('@/utils/dateRangeUtils')>();
   return {
     ...actual,
-    getTodayISO: () => '2026-01-02',
     generateDateRange: (_year: number, _month: number, _limitToToday: boolean) => {
       return ['2026-01-01', '2026-01-02'];
     },

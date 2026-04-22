@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-22T04:59:23.519Z",
+  "generatedAt": "2026-04-22T05:11:10.297Z",
   "hotspots": [
     {
       "file": "src/services/utils/loggerScope.ts",
@@ -46,9 +46,9 @@
     {
       "file": "src/types/domain/dailyRecord.ts",
       "churn": 8,
-      "inboundImports": 40,
+      "inboundImports": 41,
       "criticality": "medium",
-      "score": 151
+      "score": 154
     },
     {
       "file": "src/context/AuthContext.tsx",
@@ -56,13 +56,6 @@
       "inboundImports": 34,
       "criticality": "medium",
       "score": 143
-    },
-    {
-      "file": "src/utils/dateFormattingUtils.ts",
-      "churn": 2,
-      "inboundImports": 41,
-      "criticality": "medium",
-      "score": 142
     },
     {
       "file": "src/services/observability/operationalTelemetryOutcomeRecorder.ts",
@@ -128,18 +121,18 @@
       "score": 119
     },
     {
-      "file": "src/services/repositories/dailyRecordWriteSupport.ts",
-      "churn": 45,
-      "inboundImports": 2,
-      "criticality": "high",
-      "score": 116
-    },
-    {
       "file": "src/features/census/components/patient-row/patientRowViewContracts.ts",
       "churn": 23,
       "inboundImports": 16,
       "criticality": "high",
       "score": 114
+    },
+    {
+      "file": "src/types/transferRequestTypes.ts",
+      "churn": 1,
+      "inboundImports": 32,
+      "criticality": "medium",
+      "score": 113
     },
     {
       "file": "src/context/DailyRecordContext.tsx",
@@ -156,11 +149,11 @@
       "score": 112
     },
     {
-      "file": "src/types/transferRequestTypes.ts",
-      "churn": 0,
-      "inboundImports": 32,
-      "criticality": "medium",
-      "score": 111
+      "file": "src/services/repositories/dailyRecordWriteSupport.ts",
+      "churn": 45,
+      "inboundImports": 0,
+      "criticality": "high",
+      "score": 110
     },
     {
       "file": "src/utils/clinicalDayUtils.ts",
@@ -201,6 +194,13 @@
       "file": "src/shared/access/operationalAccessPolicy.ts",
       "churn": 10,
       "inboundImports": 24,
+      "criticality": "medium",
+      "score": 107
+    },
+    {
+      "file": "src/types/domain/labExamTypes.ts",
+      "churn": 1,
+      "inboundImports": 30,
       "criticality": "medium",
       "score": 107
     },

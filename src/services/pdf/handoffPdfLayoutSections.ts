@@ -6,7 +6,7 @@ import type {
   HandoffPdfRecord,
 } from '@/services/pdf/contracts/handoffPdfContracts';
 import { createScopedLogger } from '@/services/utils/loggerScope';
-import { formatDateDDMMYYYY } from '@/utils/dateFormattingUtils';
+import { formatDateDDMMYYYY } from '@/utils/dateDisplayUtils';
 import { getBase64ImageFromURL, getHandoffStaffInfo, Schedule } from './handoffPdfUtils';
 
 const handoffPdfLayoutLogger = createScopedLogger('HandoffPdfLayout');

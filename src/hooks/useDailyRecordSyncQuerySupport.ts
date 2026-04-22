@@ -6,7 +6,7 @@ import type { DailyRecordBootstrapPhase } from '@/hooks/controllers/dailyRecordB
 import { shouldAttemptTodayEmptyRecovery } from '@/hooks/controllers/dailyRecordBootstrapController';
 import { dailyRecordObservability } from '@/services/repositories/dailyRecordOperationalTelemetry';
 import type { OperationalOutcomeLike } from '@/services/observability/operationalTelemetryContracts';
-import { getTodayISO } from '@/utils/dateFormattingUtils';
+import { getTodayISO } from '@/utils/dateCoreUtils';
 
 const REMOTE_HYDRATION_IDLE_TIMEOUT_MS = 1_200;
 const REMOTE_HYDRATION_FALLBACK_DELAY_MS = 150;

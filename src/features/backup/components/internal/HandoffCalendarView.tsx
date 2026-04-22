@@ -6,7 +6,7 @@
 import React from 'react';
 import { Download, Trash2, Sun, Moon, Calendar, Eye } from 'lucide-react';
 import type { StoredPdfFile } from '@/types/backupArtifacts';
-import { generateDateRange } from '@/utils/dateFormattingUtils';
+import { generateDateRange } from '@/utils/dateRangeUtils';
 import { MONTH_NAMES } from '@/types/backupArtifacts';
 import { formatBackupCompactDate } from '@/shared/backup/backupPresentation';
 

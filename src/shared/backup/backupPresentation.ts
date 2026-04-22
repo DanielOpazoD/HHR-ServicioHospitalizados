@@ -1,7 +1,7 @@
 import type { BackupFileType, BackupShiftType } from '@/types/backup';
 import { BACKUP_TYPE_CONFIG, SHIFT_TYPE_CONFIG } from '@/types/backup';
 import { formatCensusIsoDate } from '@/shared/census/censusPresentation';
-import { formatDateDDMMYYYY } from '@/utils/dateFormattingUtils';
+import { formatDateDDMMYYYY } from '@/utils/dateDisplayUtils';
 
 export const getBackupTypePresentation = (type: BackupFileType) => BACKUP_TYPE_CONFIG[type];
 

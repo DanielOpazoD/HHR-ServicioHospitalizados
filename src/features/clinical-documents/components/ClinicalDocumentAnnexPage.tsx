@@ -13,7 +13,7 @@ import React, { useCallback, useState } from 'react';
 import { Paperclip, Printer, Trash2, X } from 'lucide-react';
 import { ClinicalDocumentRichTextEditor } from '@/features/clinical-documents/components/ClinicalDocumentRichTextEditor';
 import type { ClinicalDocumentRichTextEditorActivationApi } from '@/features/clinical-documents/hooks/useClinicalDocumentRichTextEditorController';
-import { formatDateForDisplay } from '@/utils/dateFormattingUtils';
+import { formatDateForDisplay } from '@/utils/dateDisplayUtils';
 
 interface ClinicalDocumentAnnexPageProps {
   content: string;

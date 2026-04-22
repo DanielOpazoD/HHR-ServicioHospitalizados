@@ -3,7 +3,7 @@ import { PatientData } from '@/services/contracts/patientServiceContracts';
 import type { DailyRecordCsvExportState } from '@/services/contracts/dailyRecordServiceContracts';
 import { BEDS } from '@/constants/beds';
 import { CSV_HEADERS } from '@/constants/export';
-import { formatDateDDMMYYYY } from '@/utils/dateFormattingUtils';
+import { formatDateDDMMYYYY } from '@/utils/dateDisplayUtils';
 import { resolveExportableNursesText } from '@/services/staff/dailyRecordStaffing';
 import { resolveEffectiveUpcState } from '@/shared/census/upcBedPolicy';
 

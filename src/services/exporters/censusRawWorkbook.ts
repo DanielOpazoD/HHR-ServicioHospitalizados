@@ -1,7 +1,7 @@
 import type { Workbook } from 'exceljs';
 import { PatientData } from '@/services/contracts/patientServiceContracts';
 import { BEDS } from '@/constants/beds';
-import { formatDateDDMMYYYY } from '@/utils/dateFormattingUtils';
+import { formatDateDDMMYYYY } from '@/utils/dateDisplayUtils';
 import { createWorkbook } from './excelUtils';
 import { getBedTypeForRecord } from '../../utils/bedTypeUtils';
 import { resolvePresentedDayShiftNurses } from '@/services/staff/dailyRecordStaffing';

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Eye } from 'lucide-react';
-import { formatDateDDMMYYYY, getTodayISO } from '@/utils/dateFormattingUtils';
+import { formatDateDDMMYYYY } from '@/utils/dateDisplayUtils';
+import { getTodayISO } from '@/utils/dateCoreUtils';
 
 import { ClinicalDocumentFooterSection } from '@/features/clinical-documents/components/ClinicalDocumentFooterSection';
 import { ClinicalDocumentPatientInfoSection } from '@/features/clinical-documents/components/ClinicalDocumentPatientInfoSection';

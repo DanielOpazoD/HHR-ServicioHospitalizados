@@ -14,10 +14,8 @@ import {
   createSaveDailyRecordCommand,
 } from '@/services/repositories/contracts/dailyRecordCommands';
 import { createUpdatePartialDailyRecordResult } from '@/services/repositories/contracts/dailyRecordResults';
-import {
-  prepareDailyRecordForPersistence,
-  preparePatchedRecordForPersistence,
-} from '@/services/repositories/dailyRecordWriteSupport';
+import { prepareDailyRecordForPersistence } from '@/services/repositories/dailyRecordPersistencePreparation';
+import { preparePatchedRecordForPersistence } from '@/services/repositories/dailyRecordPatchPreparation';
 import {
   assertRemoteSaveCompatibility,
   resolveRemoteWriteRecovery,

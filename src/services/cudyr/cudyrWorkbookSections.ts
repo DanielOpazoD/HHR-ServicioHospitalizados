@@ -1,5 +1,5 @@
 import type { Workbook, Worksheet } from 'exceljs';
-import { formatDateDDMMYYYY } from '@/utils/dateFormattingUtils';
+import { formatDateDDMMYYYY } from '@/utils/dateDisplayUtils';
 
 import type { CategoryCounts, CudyrCategory, CudyrMonthlySummary } from './cudyrSummary';
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Search, RefreshCw, ChevronRight, Users } from 'lucide-react';
 import type { MasterPatient } from '@/types/domain/patientMaster';
-import { formatDateDDMMYYYY } from '@/utils/dateFormattingUtils';
+import { formatDateDDMMYYYY } from '@/utils/dateDisplayUtils';
 import clsx from 'clsx';
 
 interface PatientExplorerProps {

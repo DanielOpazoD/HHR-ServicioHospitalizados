@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context';
 import { useDailyRecordData } from '@/context/DailyRecordContext';
-import { getTodayISO } from '@/utils/dateFormattingUtils';
+import { getTodayISO } from '@/utils/dateCoreUtils';
 import { useCensusMigrationBootstrap } from './useCensusMigrationBootstrap';
 import { useCensusViewRouteModel } from './useCensusViewRouteModel';
 import type { CensusAccessProfile } from '../types/censusAccessProfile';

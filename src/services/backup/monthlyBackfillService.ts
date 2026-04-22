@@ -1,7 +1,7 @@
 import type jsPDF from 'jspdf';
 import type { ShiftType } from '@/types/domain/shift';
 import { getMonthRecordsFromFirestore } from '@/services/storage/firestore';
-import { generateDateRange } from '@/utils/dateFormattingUtils';
+import { generateDateRange } from '@/utils/dateRangeUtils';
 import { getShiftSchedule } from '@/utils/clinicalDayUtils';
 import type { BaseStoredFile } from '@/services/backup/baseStorageService';
 import type { StoredPdfFile } from '@/services/backup/pdfStorageService';

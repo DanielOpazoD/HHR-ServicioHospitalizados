@@ -2,7 +2,7 @@
  * Data formatters for Excel export
  */
 
-export { formatDateDDMMYYYY } from '@/utils/dateFormattingUtils';
+export { formatDateDDMMYYYY } from '@/utils/dateDisplayUtils';
 
 export function formatAge(age?: string): string {
   if (!age) return '';
@@ -18,4 +18,4 @@ export function mapBedType(type: string): string {
 }
 
 /** @deprecated Use formatDateDDMMYYYY instead — identical conversion YYYY-MM-DD → DD-MM-YYYY */
-export { formatDateDDMMYYYY as formatSheetDate } from '@/utils/dateFormattingUtils';
+export { formatDateDDMMYYYY as formatSheetDate } from '@/utils/dateDisplayUtils';

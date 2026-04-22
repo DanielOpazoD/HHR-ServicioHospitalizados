@@ -1,6 +1,6 @@
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { saveRecord as saveToIndexedDB } from '@/services/storage/indexeddb/indexedDbRecordService';
-import { prepareDailyRecordForPersistence } from '@/services/repositories/dailyRecordWriteSupport';
+import { prepareDailyRecordForPersistence } from '@/services/repositories/dailyRecordPersistencePreparation';
 
 /**
  * Local cache hydration must respect the same record invariants and admission

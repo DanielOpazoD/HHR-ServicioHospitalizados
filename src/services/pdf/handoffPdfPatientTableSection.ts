@@ -3,7 +3,7 @@ import type { jsPDF } from 'jspdf';
 import { BEDS } from '@/constants/beds';
 import type { ShiftType } from '@/types/domain/shift';
 import type { HandoffPdfPatientTableRecord } from '@/services/pdf/contracts/handoffPdfContracts';
-import { formatDateDDMMYYYY } from '@/utils/dateFormattingUtils';
+import { formatDateDDMMYYYY } from '@/utils/dateDisplayUtils';
 
 import { calculateHospitalizedDays } from './handoffPdfUtils';
 import type { CellHookData, AutoTableFunction, JsPDFWithAutoTable } from './handoffPdfTypes';

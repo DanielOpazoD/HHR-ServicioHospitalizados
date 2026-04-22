@@ -9,7 +9,7 @@ import {
   Clock,
 } from 'lucide-react';
 import type { MasterPatient, HospitalizationEvent } from '@/types/domain/patientMaster';
-import { formatDateDDMMYYYY } from '@/utils/dateFormattingUtils';
+import { formatDateDDMMYYYY } from '@/utils/dateDisplayUtils';
 import clsx from 'clsx';
 
 interface PatientDetailModalProps {

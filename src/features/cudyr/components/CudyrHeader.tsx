@@ -10,7 +10,7 @@ import React, { useState } from 'react';
 import { ArrowLeft, FileSpreadsheet, FileText, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
 import { PdfViewerModal } from '@/components/shared/PdfViewerModal';
-import { formatTimeHHMM } from '@/utils/dateFormattingUtils';
+import { formatTimeHHMM } from '@/utils/dateDisplayUtils';
 import { cudyrExportLogger } from '@/services/cudyr/cudyrLoggers';
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import type { CategoryCounts, CudyrCategory } from '@/services/cudyr/cudyrSummary';

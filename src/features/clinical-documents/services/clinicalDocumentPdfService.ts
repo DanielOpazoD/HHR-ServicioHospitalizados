@@ -4,7 +4,8 @@ import { generateClinicalDocumentPrintStyledPdfBlob } from '@/features/clinical-
 import { stripClinicalDocumentHtml } from '@/features/clinical-documents/controllers/clinicalDocumentRichTextController';
 import { clinicalDocumentPdfLogger } from '@/features/clinical-documents/services/clinicalDocumentLoggers';
 import type { ClinicalDocumentAnnexPrintMode } from '@/features/clinical-documents/services/clinicalDocumentPrintSupport';
-import { formatDateDDMMYYYY, getTodayISO } from '@/utils/dateFormattingUtils';
+import { formatDateDDMMYYYY } from '@/utils/dateDisplayUtils';
+import { getTodayISO } from '@/utils/dateCoreUtils';
 
 type JsPdfModule = typeof import('jspdf');
 

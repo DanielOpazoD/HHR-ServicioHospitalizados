@@ -2,7 +2,7 @@ import type { jsPDF } from 'jspdf';
 import { BEDS } from '@/constants/beds';
 import type { HandoffPdfRecord } from '@/services/pdf/contracts/handoffPdfContracts';
 import { resolvePresentedNightShiftNurses } from '@/services/staff/dailyRecordStaffing';
-import { formatDateDDMMYYYY } from '@/utils/dateFormattingUtils';
+import { formatDateDDMMYYYY } from '@/utils/dateDisplayUtils';
 import { AutoTableFunction, CellHookData, JsPDFWithAutoTable } from './handoffPdfTypes';
 import { getCategorization } from '@/services/cudyr/CudyrScoreUtils';
 import { buildDailyCudyrSummary } from '@/services/cudyr/cudyrSummary';

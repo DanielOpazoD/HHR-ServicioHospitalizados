@@ -1,5 +1,5 @@
 import type { UserRole } from '@/types/authRoleTypes';
-import { getTodayISO } from '@/utils/dateFormattingUtils';
+import { getTodayISO } from '@/utils/dateCoreUtils';
 import { canEditCudyrForDate } from '@/shared/access/operationalAccessPolicy';
 
 type SupportedRole = UserRole | string | undefined;

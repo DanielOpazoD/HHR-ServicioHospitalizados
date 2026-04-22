@@ -1,7 +1,7 @@
 import type { DailyRecord } from '@/services/contracts/dailyRecordServiceContracts';
 import { getRecordsRange, saveRecords } from '@/services/storage/indexeddb/indexedDbRecordService';
 import * as firestoreService from '@/services/storage/firestore';
-import { getTodayISO } from '@/utils/dateFormattingUtils';
+import { getTodayISO } from '@/utils/dateCoreUtils';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import { resolvePreferredDailyRecord } from '@/services/repositories/dailyRecordSyncCompatibility';
 

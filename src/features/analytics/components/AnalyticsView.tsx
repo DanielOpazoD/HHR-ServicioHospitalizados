@@ -11,7 +11,7 @@ import { MinsalKPICards } from './internal/MinsalKPICards';
 import { SpecialtyBreakdownTable } from './internal/SpecialtyBreakdownTable';
 import { OccupancyTrendChart } from './internal/OccupancyTrendChart';
 import { resolveAnalyticsPresentationCopy } from '@/features/analytics/controllers/minsalAnalyticsPresentationController';
-import { formatDateDDMMYYYY } from '@/utils/dateFormattingUtils';
+import { formatDateDDMMYYYY } from '@/utils/dateDisplayUtils';
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 

@@ -46,16 +46,8 @@ const { mockDailyRecordRepositoryPort } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('@/utils/dateUtils', async () => {
-  const actual = await vi.importActual('@/utils/dateUtils');
-  return {
-    ...actual,
-    getTodayISO: () => '2025-12-27',
-  };
-});
-
-vi.mock('@/utils/dateFormattingUtils', async () => {
-  const actual = await vi.importActual('@/utils/dateFormattingUtils');
+vi.mock('@/utils/dateCoreUtils', async () => {
+  const actual = await vi.importActual('@/utils/dateCoreUtils');
   return {
     ...actual,
     getTodayISO: () => '2025-12-27',

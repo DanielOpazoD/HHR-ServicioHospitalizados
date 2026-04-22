@@ -6,7 +6,7 @@
 import React from 'react';
 import { Download, Trash2, Calendar, Eye, FileText } from 'lucide-react';
 import type { BaseStoredFile } from '@/types/backupArtifacts';
-import { generateDateRange } from '@/utils/dateFormattingUtils';
+import { generateDateRange } from '@/utils/dateRangeUtils';
 import { MONTH_NAMES } from '@/types/backupArtifacts';
 import { formatBackupDisplayDate } from '@/shared/backup/backupPresentation';
 

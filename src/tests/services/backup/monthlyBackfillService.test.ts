@@ -4,20 +4,8 @@ import type { BaseStoredFile } from '@/services/backup/baseStorageService';
 import type { StoredPdfFile } from '@/services/backup/pdfStorageService';
 import { __testing } from '@/services/backup/monthlyBackfillService';
 
-vi.mock('@/utils/dateUtils', () => ({
-  generateDateRange: () => ['2026-02-01', '2026-02-02', '2026-02-03'],
-  getShiftSchedule: () => ({
-    dayStart: '08:00',
-    dayEnd: '20:00',
-    nightStart: '20:00',
-    nightEnd: '08:00',
-    description: 'test',
-  }),
-}));
-
-// monthlyBackfillService imports from dateFormattingUtils and clinicalDayUtils
-vi.mock('@/utils/dateFormattingUtils', async importOriginal => {
-  const actual = await importOriginal<typeof import('@/utils/dateFormattingUtils')>();
+vi.mock('@/utils/dateRangeUtils', async importOriginal => {
+  const actual = await importOriginal<typeof import('@/utils/dateRangeUtils')>();
   return {
     ...actual,
     generateDateRange: () => ['2026-02-01', '2026-02-02', '2026-02-03'],

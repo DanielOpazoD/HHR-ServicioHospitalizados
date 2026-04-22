@@ -1,6 +1,6 @@
 import React from 'react';
 import { Users, Calendar, RefreshCw, Clock, AlertCircle, Plus, Search } from 'lucide-react';
-import { formatDateDDMMYYYY } from '@/utils/dateFormattingUtils';
+import { formatDateDDMMYYYY } from '@/utils/dateDisplayUtils';
 import { useShiftPanel } from '@/hooks/useShiftPanel';
 import { StaffCard } from './internal/StaffCard';
 import { ImportModal } from './internal/ImportModal';

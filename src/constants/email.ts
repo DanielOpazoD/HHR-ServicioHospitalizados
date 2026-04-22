@@ -28,7 +28,7 @@
  * - Nurse signature comes from `nursesSignature` parameter (typically from Census)
  * - Plain text format ensures compatibility with all email clients
  */
-import { formatDateDDMMYYYY } from '@/utils/dateFormattingUtils';
+import { formatDateDDMMYYYY } from '@/utils/dateDisplayUtils';
 
 // Recipients should be configured via admin panel or passed explicitly
 // Empty by default - no hardcoded emails
