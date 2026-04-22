@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { canEditCudyrRecord } from '@/features/cudyr/controllers/cudyrEditAccessController';
 
 describe('canEditCudyrRecord', () => {
@@ -66,5 +66,35 @@ describe('canEditCudyrRecord', () => {
         todayISO: '2026-04-12',
       })
     ).toBe(false);
+  });
+
+  it('uses the clinical day during the overnight window for X and X - 1 access', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 3, 22, 6, 59, 0));
+
+    expect(
+      canEditCudyrRecord({
+        role: 'nurse_hospital',
+        readOnly: false,
+        recordDate: '2026-04-20',
+      })
+    ).toBe(true);
+
+    vi.useRealTimers();
+  });
+
+  it('closes X - 1 access once the new clinical day starts', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 3, 22, 9, 1, 0));
+
+    expect(
+      canEditCudyrRecord({
+        role: 'nurse_hospital',
+        readOnly: false,
+        recordDate: '2026-04-20',
+      })
+    ).toBe(false);
+
+    vi.useRealTimers();
   });
 });
