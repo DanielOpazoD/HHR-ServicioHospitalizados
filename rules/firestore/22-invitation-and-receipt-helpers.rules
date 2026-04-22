@@ -1,0 +1,84 @@
+    // 1.7 Invitation, census access and receipt helpers
+    // ---------------------------------------------
+
+    function isInvitationOwner() {
+      return hasEmail() &&
+             hasResourceData() &&
+             resource.data.email == getUserEmail();
+    }
+
+    function isPendingUnexpiredInvitationResource() {
+      return hasResourceData() &&
+             resource.data.status == 'pending' &&
+             (resource.data.expiresAt == null || request.time.toMillis() <= resource.data.expiresAt);
+    }
+
+    function isValidInvitationClaim() {
+      let affectedKeys = request.resource.data.diff(resource.data).affectedKeys();
+
+      return isAuthenticated() &&
+             isInvitationOwner() &&
+             isPendingUnexpiredInvitationResource() &&
+             affectedKeys.hasOnly(['status', 'usedBy', 'usedAt']) &&
+             request.resource.data.status == 'used' &&
+             request.resource.data.usedBy == request.auth.uid &&
+             request.resource.data.usedAt is int;
+    }
+
+    function isValidCensusAccessUserWrite(userId) {
+      let payload = request.resource.data;
+
+      return payload.id == userId &&
+             payload.email is string &&
+             payload.role in ['viewer', 'editor', 'admin'] &&
+             payload.isActive is bool;
+    }
+
+    function canReadCensusAccessLog(logOwnerId) {
+      return isAdmin() || isCurrentUser(logOwnerId);
+    }
+
+    function hasOnlyCensusAccessLogKeys(payload) {
+      return payload.keys().hasOnly(['userId', 'email', 'action', 'timestamp']);
+    }
+
+    function isValidOwnCensusAccessLog() {
+      let payload = request.resource.data;
+
+      return isAuthenticated() &&
+             hasEmail() &&
+             hasOnlyCensusAccessLogKeys(payload) &&
+             payload.userId == request.auth.uid &&
+             payload.email == getUserEmail() &&
+             payload.action is string &&
+             payload.timestamp is int;
+    }
+
+    function canReadReminderReceipt() {
+      return isAdmin() ||
+             (hasResourceData() &&
+              isCurrentUser(resource.data.userId));
+    }
+
+    function hasOnlyReminderReceiptKeys(payload) {
+      return payload.keys().hasOnly(['userId', 'userName', 'readAt', 'shift', 'dateKey']);
+    }
+
+    function isValidOwnReminderReceiptWrite() {
+      let payload = request.resource.data;
+
+      return isAuthenticated() &&
+             hasOnlyReminderReceiptKeys(payload) &&
+             payload.userId is string &&
+             isCurrentUser(payload.userId) &&
+             payload.userName is string &&
+             payload.readAt is string &&
+             payload.shift in ['day', 'night'] &&
+             payload.dateKey is string;
+    }
+
+    function canWriteReminderReceipt() {
+      return isAdmin() || isValidOwnReminderReceiptWrite();
+    }
+
+    //

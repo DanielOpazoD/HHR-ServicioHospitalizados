@@ -280,3 +280,23 @@ Se aisló otro guard temporal del mismo boundary:
 - `bash scripts/run-firestore-rules-ci.sh`: verde (`81` tests).
 
 Conclusión: el boundary especialista sigue ganando legibilidad local con helpers de una sola responsabilidad, sin alterar permisos ni abrir una reescritura riesgosa.
+
+## Iteración 14 ejecutada
+
+Se hizo un corte editorial del frente especialista para bajar costo de revisión sin tocar semántica:
+
+- el antiguo bloque `10-specialist-medical-handoff-helpers.rules` se dividió en tres fragmentos editables:
+  - `10-specialist-bed-update-helpers.rules`
+  - `11-specialist-structured-handoff-helpers.rules`
+  - `12-specialist-handoff-boundary-helpers.rules`
+- el orden de concatenación se actualizó en `scripts/rulesSourceSupport.mjs`
+- durante la exploración se probó un micro-refactor sobre helpers locales del path especialista, pero no se conservó como objetivo principal porque no mejoró la señal real del emulador; el valor retenido del lote es la separación editorial del boundary
+
+## Resultado de la validación de la iteración 14
+
+- `bash scripts/run-firestore-rules-ci.sh`: verde (`102` tests).
+- `npm run test:emulator:sync:ci`: verde (`4` tests sync + `3` UI).
+- `npm run check:quality`: verde.
+- El caso denegado de `partial update` sobre documento faltante sigue mostrando `maximum of 1000 expressions to evaluate` en el emulador, aunque la denegación continúa siendo correcta (`permission-denied`).
+
+Conclusión: esta iteración sí mejora auditabilidad y tamaño de review del hotspot especialista, pero no reduce todavía el costo profundo del evaluador en `dailyRecords.update`. El siguiente retorno real no está en agregar más helpers cosméticos dentro del mismo path, sino en atacar explícitamente el caso denegado sobre documento inexistente desde el gating de `dailyRecords.update`.

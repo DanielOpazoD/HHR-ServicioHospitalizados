@@ -1,0 +1,39 @@
+    // 1.4 Specialist medical handoff validators
+    // ---------------------------------------------
+    // Shared boundary and entrypoint for specialist handoff writes.
+
+    function isWithinSpecialistMedicalHandoffWindow(effectiveRecordTimestamp) {
+      let now = request.time.toMillis();
+      return effectiveRecordTimestamp == null ||
+             (now >= effectiveRecordTimestamp && now < (effectiveRecordTimestamp + 86400000));
+    }
+
+    function resolveSpecialistMedicalHandoffRecordTimestamp() {
+      let currentRecordTimestamp = resource.data.dateTimestamp;
+      let nextRecordTimestamp = request.resource.data.dateTimestamp;
+      return nextRecordTimestamp != null
+        ? nextRecordTimestamp
+        : currentRecordTimestamp;
+    }
+
+    function isSpecialistMedicalHandoffPayload() {
+      let affectedRecordKeys = request.resource.data.diff(resource.data).affectedKeys();
+      let affectedBedIds = request.resource.data.beds.diff(resource.data.beds).affectedKeys();
+      let effectiveRecordTimestamp = resolveSpecialistMedicalHandoffRecordTimestamp();
+
+      return isValidSpecialistMedicalHandoffBoundary(
+               effectiveRecordTimestamp,
+               affectedRecordKeys
+             ) &&
+             (
+               isSpecialistStructuredMedicalHandoffUpdate() ||
+               isAnySpecialistAffectedBed(affectedBedIds)
+             );
+    }
+
+    function isValidSpecialistMedicalHandoffBoundary(effectiveRecordTimestamp, affectedRecordKeys) {
+      return isWithinSpecialistMedicalHandoffWindow(effectiveRecordTimestamp) &&
+             hasOnlySpecialistMedicalHandoffRecordKeys(affectedRecordKeys);
+    }
+
+    //

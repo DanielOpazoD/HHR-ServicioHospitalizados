@@ -1,0 +1,40 @@
+    // 1.6 Clinical read access and shared access helpers
+    // ---------------------------------------------
+
+    function isGeneralViewer() {
+      return hasEffectiveRole('viewer');
+    }
+
+    // Consolidated read access for clinical data
+    function canReadClinicalData() {
+      return hasAnyEffectiveRole([
+               'admin',
+               'nurse_hospital',
+               'doctor_urgency',
+               'doctor_specialist',
+               'editor',
+               'viewer'
+             ]);
+    }
+
+    function canReadAppendOnlyOperationalLog() {
+      return isAdmin();
+    }
+
+    function canCreateAppendOnlyOperationalLogEntry() {
+      return canCreateReadableClinicalDocument();
+    }
+
+    function canManageCensusAccess() {
+      return hasAnyEffectiveRole(['admin', 'editor']);
+    }
+
+    function isCurrentUser(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function hasResourceData() {
+      return resource != null && resource.data != null;
+    }
+
+    //

@@ -1,4 +1,4 @@
-    // 1.8 Editing window helpers
+    // 1.10 Editing window helpers
     // ---------------------------------------------
     // Nurse window: can edit yesterday, today and tomorrow.
     // Calculation: (CurrentTime - RecordTime) should be between -24h and +48h.
@@ -14,7 +14,7 @@
     }
 
     //
-    // 1.9 Medical signature update helpers
+    // 1.11 Medical signature update helpers
     // ---------------------------------------------
     // Checks whether an update is limited to medical signature fields.
 

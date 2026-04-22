@@ -8,11 +8,13 @@ rules_version = '2';
 //   1.2 Role resolution (configured + claim + bootstrap)
 //   1.3 Role predicates (isAdmin, isNurse, isDoctor, canEdit, ...)
 //   1.4 Specialist medical handoff validators
-//   1.5 Clinical read access, invitations & receipts
-//   1.6 Payload schema helpers (optional types, bounded ints)
-//   1.7 System health payload guard
-//   1.8 Editing window helpers
-//   1.9 Medical signature update helpers
+//   1.5 Clinical document write/delete permissions
+//   1.6 Clinical read access & shared access helpers
+//   1.7 Invitation, census access & receipt helpers
+//   1.8 Payload schema helpers (optional types, bounded ints)
+//   1.9 System health payload guard
+//   1.10 Editing window helpers
+//   1.11 Medical signature update helpers
 //
 // Collections (section 2 — lines ~600 onward):
 //   2.1 Hospitals / hierarchy (dailyRecords, clinicalDocuments, etc.)
@@ -140,6 +142,7 @@ service cloud.firestore {
     //
     // 1.4 Specialist medical handoff validators
     // ---------------------------------------------
+    // Bed-scoped handoff edits for a single affected bed.
 
     function isValidSpecialistClinicalCribMedicalUpdate(beforeCrib, afterCrib) {
       return beforeCrib != null &&
@@ -187,6 +190,37 @@ service cloud.firestore {
              affectedBedIds.hasOnly([bedId]) &&
              isValidSpecialistMedicalBedUpdate(bedId);
     }
+
+    function isAnySpecialistAffectedBed(affectedBedIds) {
+      return isOnlySpecialistAffectedBed(affectedBedIds, 'R1') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'R2') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'R3') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'R4') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'NEO1') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'NEO2') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'H1C1') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'H1C2') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'H2C1') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'H2C2') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'H3C1') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'H3C2') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'H4C1') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'H4C2') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'H5C1') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'H5C2') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'H6C1') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'H6C2') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'E1') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'E2') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'E3') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'E4') ||
+             isOnlySpecialistAffectedBed(affectedBedIds, 'E5');
+    }
+
+    //
+    // 1.4 Specialist medical handoff validators
+    // ---------------------------------------------
+    // Structured specialty-scoped handoff edits.
 
     function getSpecialistStructuredBeforeBySpecialty() {
       return resource.data.medicalHandoffBySpecialty == null
@@ -241,46 +275,6 @@ service cloud.firestore {
              isOnlyAffectedSpecialistStructuredSpecialty(affectedSpecialties, 'medicinaInterna');
     }
 
-    function isAnySpecialistAffectedBed(affectedBedIds) {
-      return isOnlySpecialistAffectedBed(affectedBedIds, 'R1') ||
-             isOnlySpecialistAffectedBed(affectedBedIds, 'R2') ||
-             isOnlySpecialistAffectedBed(affectedBedIds, 'R3') ||
-             isOnlySpecialistAffectedBed(affectedBedIds, 'R4') ||
-             isOnlySpecialistAffectedBed(affectedBedIds, 'NEO1') ||
-             isOnlySpecialistAffectedBed(affectedBedIds, 'NEO2') ||
-             isOnlySpecialistAffectedBed(affectedBedIds, 'H1C1') ||
-             isOnlySpecialistAffectedBed(affectedBedIds, 'H1C2') ||
-             isOnlySpecialistAffectedBed(affectedBedIds, 'H2C1') ||
-             isOnlySpecialistAffectedBed(affectedBedIds, 'H2C2') ||
-             isOnlySpecialistAffectedBed(affectedBedIds, 'H3C1') ||
-             isOnlySpecialistAffectedBed(affectedBedIds, 'H3C2') ||
-             isOnlySpecialistAffectedBed(affectedBedIds, 'H4C1') ||
-             isOnlySpecialistAffectedBed(affectedBedIds, 'H4C2') ||
-             isOnlySpecialistAffectedBed(affectedBedIds, 'H5C1') ||
-             isOnlySpecialistAffectedBed(affectedBedIds, 'H5C2') ||
-             isOnlySpecialistAffectedBed(affectedBedIds, 'H6C1') ||
-             isOnlySpecialistAffectedBed(affectedBedIds, 'H6C2') ||
-             isOnlySpecialistAffectedBed(affectedBedIds, 'E1') ||
-             isOnlySpecialistAffectedBed(affectedBedIds, 'E2') ||
-             isOnlySpecialistAffectedBed(affectedBedIds, 'E3') ||
-             isOnlySpecialistAffectedBed(affectedBedIds, 'E4') ||
-             isOnlySpecialistAffectedBed(affectedBedIds, 'E5');
-    }
-
-    function isWithinSpecialistMedicalHandoffWindow(effectiveRecordTimestamp) {
-      let now = request.time.toMillis();
-      return effectiveRecordTimestamp == null ||
-             (now >= effectiveRecordTimestamp && now < (effectiveRecordTimestamp + 86400000));
-    }
-
-    function resolveSpecialistMedicalHandoffRecordTimestamp() {
-      let currentRecordTimestamp = resource.data.dateTimestamp;
-      let nextRecordTimestamp = request.resource.data.dateTimestamp;
-      return nextRecordTimestamp != null
-        ? nextRecordTimestamp
-        : currentRecordTimestamp;
-    }
-
     function isValidSpecialistStructuredMedicalSpecialtyEntry(specialty) {
       let beforeEntry = getSpecialistStructuredBeforeBySpecialty()[specialty];
       let afterEntry = getSpecialistStructuredAfterBySpecialty()[specialty];
@@ -311,6 +305,25 @@ service cloud.firestore {
              isAnyAllowedSpecialistStructuredSpecialtyAffected(affectedSpecialties);
     }
 
+    //
+    // 1.4 Specialist medical handoff validators
+    // ---------------------------------------------
+    // Shared boundary and entrypoint for specialist handoff writes.
+
+    function isWithinSpecialistMedicalHandoffWindow(effectiveRecordTimestamp) {
+      let now = request.time.toMillis();
+      return effectiveRecordTimestamp == null ||
+             (now >= effectiveRecordTimestamp && now < (effectiveRecordTimestamp + 86400000));
+    }
+
+    function resolveSpecialistMedicalHandoffRecordTimestamp() {
+      let currentRecordTimestamp = resource.data.dateTimestamp;
+      let nextRecordTimestamp = request.resource.data.dateTimestamp;
+      return nextRecordTimestamp != null
+        ? nextRecordTimestamp
+        : currentRecordTimestamp;
+    }
+
     function isSpecialistMedicalHandoffPayload() {
       let affectedRecordKeys = request.resource.data.diff(resource.data).affectedKeys();
       let affectedBedIds = request.resource.data.beds.diff(resource.data.beds).affectedKeys();
@@ -331,6 +344,10 @@ service cloud.firestore {
              hasOnlySpecialistMedicalHandoffRecordKeys(affectedRecordKeys);
     }
 
+    //
+    // 1.5 Clinical document write/delete permissions
+    // ---------------------------------------------
+
     function isSpecialistClinicalDocumentDraftWrite() {
       return isDoctorSpecialist() &&
              request.resource.data.status == 'draft' &&
@@ -350,7 +367,7 @@ service cloud.firestore {
     }
 
     //
-    // 1.5 Clinical read access, invitations & receipts
+    // 1.6 Clinical read access and shared access helpers
     // ---------------------------------------------
 
     function isGeneralViewer() {
@@ -377,10 +394,6 @@ service cloud.firestore {
       return canCreateReadableClinicalDocument();
     }
 
-    function canWriteReminderReceipt() {
-      return isAdmin() || isValidOwnReminderReceiptWrite();
-    }
-
     function canManageCensusAccess() {
       return hasAnyEffectiveRole(['admin', 'editor']);
     }
@@ -392,6 +405,10 @@ service cloud.firestore {
     function hasResourceData() {
       return resource != null && resource.data != null;
     }
+
+    //
+    // 1.7 Invitation, census access and receipt helpers
+    // ---------------------------------------------
 
     function isInvitationOwner() {
       return hasEmail() &&
@@ -469,8 +486,12 @@ service cloud.firestore {
              payload.dateKey is string;
     }
 
+    function canWriteReminderReceipt() {
+      return isAdmin() || isValidOwnReminderReceiptWrite();
+    }
+
     //
-    // 1.6 Payload schema helpers (optional types, bounded ints)
+    // 1.8 Payload schema helpers (optional types, bounded ints)
     // ---------------------------------------------
 
     function isOptionalString(payload, key) {
@@ -553,7 +574,7 @@ service cloud.firestore {
     }
 
     //
-    // 1.7 System health payload guard
+    // 1.9 System health payload guard
     // ---------------------------------------------
     // - caller can only write own doc
     // - schema is constrained
@@ -597,9 +618,9 @@ service cloud.firestore {
              isSystemHealthCounter(payload, 'repositoryWarningCount') &&
              isSystemHealthAgeMs(payload, 'slowestRepositoryOperationMs');
     }
-    
+
     //
-    // 1.8 Editing window helpers
+    // 1.10 Editing window helpers
     // ---------------------------------------------
     // Nurse window: can edit yesterday, today and tomorrow.
     // Calculation: (CurrentTime - RecordTime) should be between -24h and +48h.
@@ -615,7 +636,7 @@ service cloud.firestore {
     }
 
     //
-    // 1.9 Medical signature update helpers
+    // 1.11 Medical signature update helpers
     // ---------------------------------------------
     // Checks whether an update is limited to medical signature fields.
 
