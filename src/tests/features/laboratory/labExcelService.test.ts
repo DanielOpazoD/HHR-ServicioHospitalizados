@@ -13,14 +13,10 @@ vi.mock('@/services/exporters/excelUtils', () => ({
   createWorkbook: () => createWorkbookMock(),
 }));
 
-vi.mock('@/services/utils/loggerScope', () => ({
-  createScopedLogger: () => ({
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: loggerErrorMock,
-    debug: vi.fn(),
-  }),
-}));
+vi.mock('@/services/utils/loggerScope', async () => {
+  const { createLoggerScopeMock } = await import('@/tests/utils/loggerScopeMock');
+  return createLoggerScopeMock({ error: loggerErrorMock });
+});
 
 import { exportComparisonToExcel } from '@/features/laboratory/services/labExcelService';
 

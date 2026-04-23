@@ -1,14 +1,10 @@
 import { vi } from 'vitest';
 import type { LabResultRow, SyslabExamDetail, SyslabExamItem } from '@/types/domain/labExamTypes';
 
-vi.mock('@/services/utils/loggerScope', () => ({
-  createScopedLogger: () => ({
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    debug: vi.fn(),
-  }),
-}));
+vi.mock('@/services/utils/loggerScope', async () => {
+  const { createLoggerScopeMock } = await import('@/tests/utils/loggerScopeMock');
+  return createLoggerScopeMock();
+});
 
 export const buildExam = (overrides: Partial<SyslabExamItem> = {}): SyslabExamItem => ({
   id: '100',

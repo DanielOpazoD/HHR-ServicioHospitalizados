@@ -25,9 +25,10 @@ vi.mock('@/services/repositories/repositoryFirestoreRuntime', () => ({
   },
 }));
 
-vi.mock('@/services/utils/loggerScope', () => ({
-  createScopedLogger: () => loggerMocks,
-}));
+vi.mock('@/services/utils/loggerScope', async () => {
+  const { createLoggerScopeMock } = await import('@/tests/utils/loggerScopeMock');
+  return createLoggerScopeMock(loggerMocks);
+});
 
 import { saveLabResults } from '@/features/laboratory/services/labFirestoreService';
 import type { SyslabExamDetail, SyslabExamItem } from '@/types/domain/labExamTypes';

@@ -91,12 +91,13 @@ vi.mock('@/services/firebase-runtime/firebaseStartupDiagnostics', () => ({
   mountFirebaseConfigWarning: (...args: unknown[]) => mockMountFirebaseConfigWarning(...args),
 }));
 
-vi.mock('@/services/utils/loggerScope', () => ({
-  createScopedLogger: () => ({
-    info: mockBootLoggerInfo,
+vi.mock('@/services/utils/loggerScope', async () => {
+  const { createLoggerScopeMock } = await import('@/tests/utils/loggerScopeMock');
+  return createLoggerScopeMock({
     error: mockBootLoggerError,
-  }),
-}));
+    info: mockBootLoggerInfo,
+  });
+});
 
 vi.mock('@/App', () => ({
   default: () => <div data-testid="mock-app">Mock App</div>,

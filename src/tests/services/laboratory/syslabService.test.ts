@@ -8,14 +8,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 vi.unmock('@/services/laboratory/syslabService');
 
 // Mock the scoped logger to avoid console noise
-vi.mock('@/services/utils/loggerScope', () => ({
-  createScopedLogger: () => ({
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    debug: vi.fn(),
-  }),
-}));
+vi.mock('@/services/utils/loggerScope', async () => {
+  const { createLoggerScopeMock } = await import('@/tests/utils/loggerScopeMock');
+  return createLoggerScopeMock();
+});
 
 vi.mock('@/services/auth/authRequestHeaders', () => ({
   resolveCurrentUserAuthHeaders: vi.fn().mockResolvedValue({

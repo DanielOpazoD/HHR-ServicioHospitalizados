@@ -26,14 +26,10 @@ vi.mock('@/services/laboratory/syslabService', () => ({
     `http://localhost:3000/api/exams/pdf?link=${encodeURIComponent(link)}`,
 }));
 
-vi.mock('@/services/utils/loggerScope', () => ({
-  createScopedLogger: () => ({
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    debug: vi.fn(),
-  }),
-}));
+vi.mock('@/services/utils/loggerScope', async () => {
+  const { createLoggerScopeMock } = await import('@/tests/utils/loggerScopeMock');
+  return createLoggerScopeMock();
+});
 
 vi.mock('@/shared/runtime/browserClipboardRuntime', () => ({
   writeClipboardText: (...args: unknown[]) => mockWriteClipboardText(...args),

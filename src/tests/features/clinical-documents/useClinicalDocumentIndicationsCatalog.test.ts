@@ -12,14 +12,10 @@ import {
 } from '@/features/clinical-documents/services/clinicalDocumentIndicationsCatalogService';
 import { useClinicalDocumentIndicationsCatalog } from '@/features/clinical-documents/hooks/useClinicalDocumentIndicationsCatalog';
 
-vi.mock('@/services/utils/loggerScope', () => ({
-  createScopedLogger: () => ({
-    error: vi.fn(),
-    warn: vi.fn(),
-    info: vi.fn(),
-    debug: vi.fn(),
-  }),
-}));
+vi.mock('@/services/utils/loggerScope', async () => {
+  const { createLoggerScopeMock } = await import('@/tests/utils/loggerScopeMock');
+  return createLoggerScopeMock();
+});
 
 vi.mock(
   '@/features/clinical-documents/services/clinicalDocumentIndicationsCatalogService',

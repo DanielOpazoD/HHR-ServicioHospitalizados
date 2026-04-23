@@ -14,11 +14,10 @@ vi.mock('@/services/patient/patientHistoryService', () => ({
   getPatientMovementHistory: vi.fn(),
 }));
 
-vi.mock('@/services/utils/loggerScope', () => ({
-  createScopedLogger: () => ({
-    warn: vi.fn(),
-  }),
-}));
+vi.mock('@/services/utils/loggerScope', async () => {
+  const { createLoggerScopeMock } = await import('@/tests/utils/loggerScopeMock');
+  return createLoggerScopeMock();
+});
 
 const resolvedHistory: PatientHistoryResult = {
   patientName: 'Paciente Test',

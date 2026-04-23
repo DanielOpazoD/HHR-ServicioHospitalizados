@@ -7,11 +7,10 @@ const { mockWoundCareHistoryLogger } = vi.hoisted(() => ({
   mockWoundCareHistoryLogger: vi.fn(),
 }));
 
-vi.mock('@/services/utils/loggerScope', () => ({
-  createScopedLogger: () => ({
-    error: mockWoundCareHistoryLogger,
-  }),
-}));
+vi.mock('@/services/utils/loggerScope', async () => {
+  const { createLoggerScopeMock } = await import('@/tests/utils/loggerScopeMock');
+  return createLoggerScopeMock({ error: mockWoundCareHistoryLogger });
+});
 
 describe('useWoundCareHistory', () => {
   beforeEach(() => {

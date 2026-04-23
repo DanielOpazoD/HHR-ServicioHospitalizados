@@ -6,11 +6,10 @@ const { mockWoundCareErrorLogger } = vi.hoisted(() => ({
   mockWoundCareErrorLogger: vi.fn(),
 }));
 
-vi.mock('@/services/utils/loggerScope', () => ({
-  createScopedLogger: () => ({
-    error: mockWoundCareErrorLogger,
-  }),
-}));
+vi.mock('@/services/utils/loggerScope', async () => {
+  const { createLoggerScopeMock } = await import('@/tests/utils/loggerScopeMock');
+  return createLoggerScopeMock({ error: mockWoundCareErrorLogger });
+});
 
 import { WoundCareErrorBoundary } from '@/features/wound-care/components/WoundCareErrorBoundary';
 
