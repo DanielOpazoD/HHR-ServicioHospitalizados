@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { lazyWithRetry } from '@/utils/lazyWithRetry';
 import { SyncWatcher } from '@/components/shared/SyncWatcher';
 import StorageStatusBadge from '@/components/layout/StorageStatusBadge';
@@ -7,6 +7,7 @@ import { CensusEmailConfigModal } from '@/views/LazyViews';
 import type { UseUIStateReturn } from '@/hooks/useUIState';
 import type { AppContentRuntime } from '@/components/layout/app-content/useAppContentRuntime';
 import { buildAppContentOverlayState } from '@/components/layout/app-content/appContentOverlaysController';
+import { usePatientSearchShortcut } from '@/components/layout/app-content/usePatientSearchShortcut';
 
 const TestAgent = lazyWithRetry(() =>
   import('@/components/debug/TestAgent').then(m => ({ default: m.TestAgent }))
@@ -19,19 +20,6 @@ const GlobalPatientSearchModal = lazyWithRetry(() =>
     default: m.GlobalPatientSearchModal,
   }))
 );
-
-const usePatientSearchShortcut = (togglePatientSearch: () => void) => {
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        togglePatientSearch();
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [togglePatientSearch]);
-};
 
 export interface AppContentOverlaysProps {
   ui: UseUIStateReturn;
