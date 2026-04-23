@@ -190,4 +190,19 @@ describe('AppRouter', () => {
     expect(screen.getByTestId('section-Traslados')).toBeInTheDocument();
     expect(screen.getByTestId('transfer-management-view')).toBeInTheDocument();
   });
+
+  it('renders the signature route ahead of module-specific content', () => {
+    render(
+      <AppRouter
+        {...createProps({
+          currentModule: 'CENSUS',
+          isSignatureMode: true,
+        })}
+      />
+    );
+
+    expect(screen.getByTestId('section-Firma Médica')).toBeInTheDocument();
+    expect(screen.getByTestId('medical-signature-view')).toBeInTheDocument();
+    expect(screen.queryByTestId('census-view')).not.toBeInTheDocument();
+  });
 });

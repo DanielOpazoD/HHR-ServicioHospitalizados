@@ -13,20 +13,13 @@ import { UseUIStateReturn } from '@/hooks/useUIState';
 import type { ModuleType } from '@/constants/navigationConfig';
 import {
   canRenderSimpleModuleRoute,
+  resolveAllowAdminCopyOverride,
   resolveAppRouterContext,
+  resolveCoreModuleRoute,
   resolveModuleReadOnly,
-  SIMPLE_MODULE_ROUTE_DEFINITIONS,
+  resolveSimpleModuleRoute,
+  SIGNATURE_ROUTE_DEFINITION,
 } from '@/components/app-router/appRouterController';
-
-// Lazy-loaded views
-import {
-  AnalyticsView,
-  CensusView,
-  CudyrView,
-  HandoffView,
-  MedicalSignatureView,
-} from '@/views/LazyViews';
-import { canForceCreateDayCopyOverride } from '@/shared/access/operationalAccessPolicy';
 
 export type AppModule = ModuleType;
 export type CensusViewMode = 'REGISTER' | 'ANALYTICS';
@@ -75,89 +68,63 @@ export const AppRouter: React.FC<AppRouterProps> = ({
 }) => {
   const { censusAccessProfile, visibleModules, e2eEditableOverride } =
     resolveAppRouterContext(role);
+  const resolveReadOnly = (module: ModuleType) =>
+    resolveModuleReadOnly({
+      role,
+      module,
+      e2eEditableOverride,
+    });
+  const allowAdminCopyOverride = resolveAllowAdminCopyOverride(role);
+  const coreRoute = resolveCoreModuleRoute(currentModule);
+  const simpleRoute = resolveSimpleModuleRoute(currentModule);
 
   return (
     <GlobalErrorBoundary>
       <Suspense fallback={<ViewLoader />}>
         {isSignatureMode ? (
-          <SectionErrorBoundary sectionName="Firma Médica">
-            <MedicalSignatureView />
+          <SectionErrorBoundary sectionName={SIGNATURE_ROUTE_DEFINITION.sectionName}>
+            {SIGNATURE_ROUTE_DEFINITION.render({
+              ui,
+              selectedDay,
+              selectedMonth,
+              currentDateString,
+              showBedManagerModal,
+              onCloseBedManagerModal,
+              onOpenCensusDate,
+              resolveReadOnly,
+              allowAdminCopyOverride,
+              censusAccessProfile,
+            })}
           </SectionErrorBoundary>
         ) : (
           <>
-            {currentModule === 'CENSUS' && (
-              <SectionErrorBoundary sectionName="Censo">
-                <CensusView
-                  selectedDay={selectedDay}
-                  selectedMonth={selectedMonth}
-                  currentDateString={currentDateString}
-                  showBedManagerModal={showBedManagerModal}
-                  onCloseBedManagerModal={onCloseBedManagerModal}
-                  onOpenCensusDate={onOpenCensusDate}
-                  readOnly={resolveModuleReadOnly({
-                    role,
-                    module: 'CENSUS',
-                    e2eEditableOverride,
-                  })}
-                  allowAdminCopyOverride={canForceCreateDayCopyOverride(role)}
-                  accessProfile={censusAccessProfile}
-                />
+            {coreRoute && (
+              <SectionErrorBoundary sectionName={coreRoute.sectionName}>
+                {coreRoute.render({
+                  ui,
+                  selectedDay,
+                  selectedMonth,
+                  currentDateString,
+                  showBedManagerModal,
+                  onCloseBedManagerModal,
+                  onOpenCensusDate,
+                  resolveReadOnly,
+                  allowAdminCopyOverride,
+                  censusAccessProfile,
+                })}
               </SectionErrorBoundary>
             )}
-            {currentModule === 'ANALYTICS' && (
-              <SectionErrorBoundary sectionName="Estadísticas MINSAL/DEIS">
-                <AnalyticsView onOpenCensusDate={onOpenCensusDate} />
-              </SectionErrorBoundary>
-            )}
-            {currentModule === 'CUDYR' && (
-              <SectionErrorBoundary sectionName="CUDYR">
-                <CudyrView
-                  readOnly={resolveModuleReadOnly({
-                    role,
-                    module: 'CUDYR',
-                    e2eEditableOverride,
-                  })}
-                />
-              </SectionErrorBoundary>
-            )}
-            {currentModule === 'NURSING_HANDOFF' && (
-              <SectionErrorBoundary sectionName="Entrega Enfermería">
-                <HandoffView
-                  ui={ui}
-                  type="nursing"
-                  readOnly={resolveModuleReadOnly({
-                    role,
-                    module: 'NURSING_HANDOFF',
-                    e2eEditableOverride,
-                  })}
-                />
-              </SectionErrorBoundary>
-            )}
-            {currentModule === 'MEDICAL_HANDOFF' && (
-              <SectionErrorBoundary sectionName="Entrega Médica">
-                <HandoffView
-                  ui={ui}
-                  type="medical"
-                  readOnly={resolveModuleReadOnly({
-                    role,
-                    module: 'MEDICAL_HANDOFF',
-                    e2eEditableOverride,
-                  })}
-                />
-              </SectionErrorBoundary>
-            )}
-            {SIMPLE_MODULE_ROUTE_DEFINITIONS.filter(route =>
+            {simpleRoute &&
               canRenderSimpleModuleRoute({
                 currentModule,
-                route,
+                route: simpleRoute,
                 role,
                 visibleModules,
-              })
-            ).map(route => (
-              <SectionErrorBoundary key={route.module} sectionName={route.sectionName}>
-                {route.render()}
-              </SectionErrorBoundary>
-            ))}
+              }) && (
+                <SectionErrorBoundary sectionName={simpleRoute.sectionName}>
+                  {simpleRoute.render()}
+                </SectionErrorBoundary>
+              )}
           </>
         )}
       </Suspense>

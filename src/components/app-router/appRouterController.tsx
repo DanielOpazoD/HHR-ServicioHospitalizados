@@ -1,15 +1,21 @@
 import React from 'react';
 import type { ModuleType } from '@/constants/navigationConfig';
 import type { UserRole } from '@/context';
+import type { UseUIStateReturn } from '@/hooks/useUIState';
 import {
+  AnalyticsView,
   AuditView,
   BackupFilesView,
+  CensusView,
   CommunicationsView,
   ConfigurationView,
+  CudyrView,
   DataMaintenanceView,
   DataView,
   ErrorDashboard,
   FunctionsTelemetryView,
+  HandoffView,
+  MedicalSignatureView,
   PatientMasterView,
   ReminderAdminView,
   RoleManagementView,
@@ -19,6 +25,7 @@ import {
 } from '@/views/LazyViews';
 import {
   canAccessAppModuleRoute,
+  canForceCreateDayCopyOverride,
   canEditAppModule,
   getVisibleAppModules,
 } from '@/shared/access/operationalAccessPolicy';
@@ -36,6 +43,25 @@ export interface SimpleModuleRouteDefinition {
   sectionName: string;
   requiresAccessCheck?: boolean;
   render: () => React.ReactNode;
+}
+
+export interface CoreModuleRouteRenderParams {
+  ui: UseUIStateReturn;
+  selectedDay: number;
+  selectedMonth: number;
+  currentDateString: string;
+  showBedManagerModal: boolean;
+  onCloseBedManagerModal: () => void;
+  onOpenCensusDate?: (date: string) => void;
+  resolveReadOnly: (module: ModuleType) => boolean;
+  allowAdminCopyOverride: boolean;
+  censusAccessProfile: AppRouterResolvedContext['censusAccessProfile'];
+}
+
+export interface CoreModuleRouteDefinition {
+  module: ModuleType;
+  sectionName: string;
+  render: (params: CoreModuleRouteRenderParams) => React.ReactNode;
 }
 
 export const SIMPLE_MODULE_ROUTE_DEFINITIONS: readonly SimpleModuleRouteDefinition[] = [
@@ -123,6 +149,66 @@ export const SIMPLE_MODULE_ROUTE_DEFINITIONS: readonly SimpleModuleRouteDefiniti
   },
 ];
 
+export const SIGNATURE_ROUTE_DEFINITION: CoreModuleRouteDefinition = {
+  module: 'MEDICAL_HANDOFF',
+  sectionName: 'Firma Médica',
+  render: () => <MedicalSignatureView />,
+};
+
+export const CORE_MODULE_ROUTE_DEFINITIONS: readonly CoreModuleRouteDefinition[] = [
+  {
+    module: 'CENSUS',
+    sectionName: 'Censo',
+    render: ({
+      selectedDay,
+      selectedMonth,
+      currentDateString,
+      showBedManagerModal,
+      onCloseBedManagerModal,
+      onOpenCensusDate,
+      resolveReadOnly,
+      allowAdminCopyOverride,
+      censusAccessProfile,
+    }) => (
+      <CensusView
+        selectedDay={selectedDay}
+        selectedMonth={selectedMonth}
+        currentDateString={currentDateString}
+        showBedManagerModal={showBedManagerModal}
+        onCloseBedManagerModal={onCloseBedManagerModal}
+        onOpenCensusDate={onOpenCensusDate}
+        readOnly={resolveReadOnly('CENSUS')}
+        allowAdminCopyOverride={allowAdminCopyOverride}
+        accessProfile={censusAccessProfile}
+      />
+    ),
+  },
+  {
+    module: 'ANALYTICS',
+    sectionName: 'Estadísticas MINSAL/DEIS',
+    render: ({ onOpenCensusDate }) => <AnalyticsView onOpenCensusDate={onOpenCensusDate} />,
+  },
+  {
+    module: 'CUDYR',
+    sectionName: 'CUDYR',
+    render: ({ resolveReadOnly }) => <CudyrView readOnly={resolveReadOnly('CUDYR')} />,
+  },
+  {
+    module: 'NURSING_HANDOFF',
+    sectionName: 'Entrega Enfermería',
+    render: ({ ui, resolveReadOnly }) => (
+      <HandoffView ui={ui} type="nursing" readOnly={resolveReadOnly('NURSING_HANDOFF')} />
+    ),
+  },
+  {
+    module: 'MEDICAL_HANDOFF',
+    sectionName: 'Entrega Médica',
+    render: ({ ui, resolveReadOnly }) => (
+      <HandoffView ui={ui} type="medical" readOnly={resolveReadOnly('MEDICAL_HANDOFF')} />
+    ),
+  },
+];
+
 export const resolveAppRouterContext = (role: UserRole): AppRouterResolvedContext => ({
   censusAccessProfile: resolveSpecialistCensusAccessProfile(role),
   visibleModules: getVisibleAppModules(role),
@@ -138,6 +224,9 @@ export const resolveModuleReadOnly = ({
   module: ModuleType;
   e2eEditableOverride: boolean;
 }): boolean => !canEditAppModule(role, module) && !e2eEditableOverride;
+
+export const resolveAllowAdminCopyOverride = (role: UserRole): boolean =>
+  canForceCreateDayCopyOverride(role);
 
 export const canRenderSimpleModuleRoute = ({
   currentModule,
@@ -164,3 +253,13 @@ export const canRenderSimpleModuleRoute = ({
     visibleModules,
   });
 };
+
+export const resolveCoreModuleRoute = (
+  currentModule: ModuleType
+): CoreModuleRouteDefinition | null =>
+  CORE_MODULE_ROUTE_DEFINITIONS.find(route => route.module === currentModule) ?? null;
+
+export const resolveSimpleModuleRoute = (
+  currentModule: ModuleType
+): SimpleModuleRouteDefinition | null =>
+  SIMPLE_MODULE_ROUTE_DEFINITIONS.find(route => route.module === currentModule) ?? null;
