@@ -10,6 +10,7 @@ interface SaveButtonUiState {
   label: string;
   buttonClassName: string;
   iconKind: 'loading' | 'archived' | 'default';
+  widthClassName: string;
 }
 
 export const resolveSaveButtonUiState = ({
@@ -25,6 +26,7 @@ export const resolveSaveButtonUiState = ({
           ? 'bg-slate-100 text-slate-400 border-slate-200'
           : 'bg-amber-100 text-amber-700 border-amber-200',
       iconKind: 'loading',
+      widthClassName: 'min-w-[40px]',
     };
   }
 
@@ -33,6 +35,7 @@ export const resolveSaveButtonUiState = ({
       label: 'Sincronizado',
       buttonClassName: 'bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-sm',
       iconKind: 'archived',
+      widthClassName: 'min-w-[40px]',
     };
   }
 
@@ -40,6 +43,7 @@ export const resolveSaveButtonUiState = ({
     label: 'Guardar',
     buttonClassName: 'btn-primary bg-emerald-500 hover:bg-emerald-600 border-none shadow-sm',
     iconKind: 'default',
+    widthClassName: 'min-w-[40px]',
   };
 };
 
@@ -52,6 +56,7 @@ interface EmailButtonUiState {
   label: string;
   title: string;
   buttonClassName: string;
+  widthClassName: string;
 }
 
 export const resolveEmailButtonUiState = ({
@@ -63,6 +68,7 @@ export const resolveEmailButtonUiState = ({
       label: 'Enviando...',
       title: 'Enviar censo',
       buttonClassName: 'btn-primary bg-teal-600 opacity-70 cursor-not-allowed',
+      widthClassName: 'min-w-[116px]',
     };
   }
 
@@ -71,6 +77,7 @@ export const resolveEmailButtonUiState = ({
       label: 'Enviado',
       title: 'Enviar censo',
       buttonClassName: 'bg-teal-700 text-white shadow-inner',
+      widthClassName: 'min-w-[116px]',
     };
   }
 
@@ -79,6 +86,7 @@ export const resolveEmailButtonUiState = ({
       label: 'Enviar censo',
       title: errorMessage || 'Ocurrió un error al enviar el correo',
       buttonClassName: 'btn-primary bg-teal-600 hover:bg-teal-700',
+      widthClassName: 'min-w-[116px]',
     };
   }
 
@@ -86,5 +94,6 @@ export const resolveEmailButtonUiState = ({
     label: 'Enviar censo',
     title: 'Enviar censo',
     buttonClassName: 'btn-primary bg-teal-600 hover:bg-teal-700',
+    widthClassName: 'min-w-[116px]',
   };
 };
