@@ -11,6 +11,7 @@ import { VersionProvider } from '@/context/VersionContext';
 import { VersionMismatchOverlay } from '@/components/shared/VersionMismatchOverlay';
 import { InitialLoadingScreen } from '@/components/ui/InitialLoadingScreen';
 import { ViewLoader } from '@/components/ui/ViewLoader';
+import { BootstrapRouteChrome } from '@/app-shell/bootstrap/BootstrapCensusChrome';
 import { MedicalSignatureView } from '@/views/LazyViews';
 import { AuthenticatedAppShell } from '@/app-shell/runtime/AuthenticatedAppShell';
 import { resolveRuntimeLoadingScreenMode } from '@/app-shell/bootstrap/appShellLoadingPolicy';
@@ -50,6 +51,10 @@ function App() {
   }
 
   if (bootstrapState.status === 'loading') {
+    if (loadingScreenMode === 'bootstrap-route-chrome') {
+      return <BootstrapRouteChrome />;
+    }
+
     if (loadingScreenMode === 'silent') {
       return null;
     }

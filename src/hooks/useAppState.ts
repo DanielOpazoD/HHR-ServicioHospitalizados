@@ -37,7 +37,7 @@ const MODULES_FROM_URL: readonly ModuleType[] = [
   'ERRORS',
 ] as const;
 
-const MODULE_PATH_SEGMENTS: Record<ModuleType, string> = {
+export const MODULE_PATH_SEGMENTS: Record<ModuleType, string> = {
   CENSUS: 'census',
   ANALYTICS: 'statistics',
   CUDYR: 'cudyr',
@@ -63,16 +63,58 @@ const MODULE_FROM_PATH_SEGMENT = Object.fromEntries(
   Object.entries(MODULE_PATH_SEGMENTS).map(([module, segment]) => [segment, module])
 ) as Record<string, ModuleType>;
 
-const resolveInitialModule = (): ModuleType => {
-  if (typeof window === 'undefined') return 'CENSUS';
-  const pathSegment = window.location.pathname.replace(/^\/+|\/+$/g, '');
+export const resolveModuleFromPathname = (pathname: string | undefined): ModuleType | null => {
+  const pathSegment = (pathname ?? '/').replace(/^\/+|\/+$/g, '');
+  if (!pathSegment) {
+    return 'CENSUS';
+  }
+
   if (pathSegment && MODULE_FROM_PATH_SEGMENT[pathSegment]) {
     return MODULE_FROM_PATH_SEGMENT[pathSegment];
   }
-  const params = new URLSearchParams(window.location.search);
+
+  return null;
+};
+
+export const resolveInitialModuleFromLocation = ({
+  pathname,
+  search,
+}: {
+  pathname: string | undefined;
+  search: string | undefined;
+}): ModuleType => {
+  const normalizedPath = (pathname ?? '/').replace(/^\/+|\/+$/g, '');
+
+  if (normalizedPath) {
+    const moduleFromPath = resolveModuleFromPathname(pathname);
+    if (moduleFromPath) {
+      return moduleFromPath;
+    }
+  }
+
+  const params = new URLSearchParams(search ?? '');
   const rawModule = params.get('module');
-  if (!rawModule) return 'CENSUS';
-  return MODULES_FROM_URL.includes(rawModule as ModuleType) ? (rawModule as ModuleType) : 'CENSUS';
+  if (rawModule && MODULES_FROM_URL.includes(rawModule as ModuleType)) {
+    return rawModule as ModuleType;
+  }
+
+  if (!normalizedPath) {
+    return 'CENSUS';
+  }
+
+  const moduleFromPath = resolveModuleFromPathname(pathname);
+  if (moduleFromPath) {
+    return moduleFromPath;
+  }
+  return 'CENSUS';
+};
+
+const resolveInitialModule = (): ModuleType => {
+  if (typeof window === 'undefined') return 'CENSUS';
+  return resolveInitialModuleFromLocation({
+    pathname: window.location.pathname,
+    search: window.location.search,
+  });
 };
 
 const shouldPreserveDateParamForModule = (module: ModuleType, url: URL): boolean =>

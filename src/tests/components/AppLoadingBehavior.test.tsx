@@ -13,6 +13,12 @@ vi.mock('@/app-shell/runtime/AuthenticatedAppShell', () => ({
   AuthenticatedAppShell: () => <div data-testid="authenticated-shell">Authenticated Shell</div>,
 }));
 
+vi.mock('@/app-shell/bootstrap/BootstrapCensusChrome', () => ({
+  BootstrapRouteChrome: () => (
+    <div data-testid="bootstrap-route-chrome">Bootstrap Route Chrome</div>
+  ),
+}));
+
 vi.mock('@/features/auth', () => ({
   LoginPage: () => <div data-testid="login-page">Login Page</div>,
 }));
@@ -107,6 +113,7 @@ describe('App loading behavior', () => {
 
     render(<App />);
 
+    expect(screen.getByTestId('bootstrap-route-chrome')).toBeInTheDocument();
     expect(screen.queryByTestId('silent-bootstrap-shell')).not.toBeInTheDocument();
     expect(screen.queryByTestId('default-loading-screen')).not.toBeInTheDocument();
     expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
@@ -145,6 +152,7 @@ describe('App loading behavior', () => {
 
     render(<App />);
 
+    expect(screen.getByTestId('bootstrap-route-chrome')).toBeInTheDocument();
     expect(screen.queryByTestId('default-loading-screen')).not.toBeInTheDocument();
     expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
     expect(screen.queryByTestId('login-page')).not.toBeInTheDocument();
@@ -182,7 +190,7 @@ describe('App loading behavior', () => {
 
     render(<App />);
 
-    expect(screen.queryByTestId('silent-bootstrap-shell')).not.toBeInTheDocument();
+    expect(screen.getByTestId('bootstrap-route-chrome')).toBeInTheDocument();
     expect(screen.queryByTestId('default-loading-screen')).not.toBeInTheDocument();
     expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
   });
@@ -220,9 +228,9 @@ describe('App loading behavior', () => {
 
     render(<App />);
 
+    expect(screen.getByTestId('bootstrap-route-chrome')).toBeInTheDocument();
     expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
     expect(screen.queryByTestId('default-loading-screen')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('silent-bootstrap-shell')).not.toBeInTheDocument();
     expect(screen.queryByTestId('authenticated-shell')).not.toBeInTheDocument();
     expect(screen.queryByTestId('login-page')).not.toBeInTheDocument();
   });
@@ -247,11 +255,37 @@ describe('App loading behavior', () => {
 
     render(<App />);
 
+    expect(screen.getByTestId('bootstrap-route-chrome')).toBeInTheDocument();
     expect(screen.queryByTestId('default-loading-screen')).not.toBeInTheDocument();
     expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('silent-bootstrap-shell')).not.toBeInTheDocument();
     expect(screen.queryByTestId('authenticated-shell')).not.toBeInTheDocument();
     expect(screen.queryByTestId('login-page')).not.toBeInTheDocument();
+  });
+
+  it('keeps the origin route chrome on other authenticated module refreshes too', () => {
+    window.sessionStorage.setItem('hhr_logged_this_session', 'true');
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: {
+        ...window.location,
+        pathname: '/nursing-handoff',
+        search: '',
+      },
+      writable: true,
+    });
+
+    mockUseAppBootstrapState.mockReturnValue({
+      status: 'loading',
+      phase: 'rehydrating',
+      auth: createAuth('authorized'),
+    });
+
+    render(<App />);
+
+    expect(screen.getByTestId('bootstrap-route-chrome')).toBeInTheDocument();
+    expect(screen.queryByTestId('default-loading-screen')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('authenticated-shell')).not.toBeInTheDocument();
   });
 
   it('renders the authenticated shell directly once bootstrap is authenticated', () => {

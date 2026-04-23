@@ -30,21 +30,52 @@ const createAuthorizedLoadingBootstrapState = (phase: 'bootstrapping' | 'rehydra
   }) as unknown as Extract<AppBootstrapState, { status: 'loading' }>;
 
 describe('appShellLoadingPolicy', () => {
-  it('skips the pre-mount loading screen on the census route', () => {
+  it('renders the bootstrap route chrome on the census route when auth hints exist', () => {
     expect(
       resolvePreMountLoadingScreenDecision({
         pathname: '/census',
-        hasRecentAuthenticatedSessionHint: false,
+        hasRecentAuthenticatedSessionHint: true,
         hasPersistedFirebaseAuthHint: false,
         hasActiveFirebaseSession: false,
       })
     ).toEqual({
       shouldRender: false,
       preferLoginShell: false,
+      renderBootstrapRouteChrome: true,
     });
   });
 
-  it('prefers the login shell on pre-mount when no auth hints exist', () => {
+  it('renders the bootstrap route chrome on the root route when auth hints exist', () => {
+    expect(
+      resolvePreMountLoadingScreenDecision({
+        pathname: '/',
+        hasRecentAuthenticatedSessionHint: false,
+        hasPersistedFirebaseAuthHint: true,
+        hasActiveFirebaseSession: false,
+      })
+    ).toEqual({
+      shouldRender: false,
+      preferLoginShell: false,
+      renderBootstrapRouteChrome: true,
+    });
+  });
+
+  it('renders the bootstrap route chrome on other authenticated module routes too', () => {
+    expect(
+      resolvePreMountLoadingScreenDecision({
+        pathname: '/nursing-handoff',
+        hasRecentAuthenticatedSessionHint: false,
+        hasPersistedFirebaseAuthHint: true,
+        hasActiveFirebaseSession: false,
+      })
+    ).toEqual({
+      shouldRender: false,
+      preferLoginShell: false,
+      renderBootstrapRouteChrome: true,
+    });
+  });
+
+  it('stays silent on pre-mount when no auth hints exist', () => {
     expect(
       resolvePreMountLoadingScreenDecision({
         pathname: '/',
@@ -55,6 +86,7 @@ describe('appShellLoadingPolicy', () => {
     ).toEqual({
       shouldRender: false,
       preferLoginShell: false,
+      renderBootstrapRouteChrome: false,
     });
   });
 
@@ -64,7 +96,7 @@ describe('appShellLoadingPolicy', () => {
         pathname: '/census',
         bootstrapState: createLoadingBootstrapState('rehydrating'),
       })
-    ).toBe('silent');
+    ).toBe('bootstrap-route-chrome');
   });
 
   it('keeps root-route bootstrapping visually silent', () => {
@@ -80,7 +112,16 @@ describe('appShellLoadingPolicy', () => {
         pathname: '/',
         bootstrapState: createLoadingBootstrapState('rehydrating'),
       })
-    ).toBe('silent');
+    ).toBe('bootstrap-route-chrome');
+  });
+
+  it('keeps other authenticated module routes on the route chrome while rehydrating', () => {
+    expect(
+      resolveRuntimeLoadingScreenMode({
+        pathname: '/transfer-management',
+        bootstrapState: createLoadingBootstrapState('rehydrating'),
+      })
+    ).toBe('bootstrap-route-chrome');
   });
 
   it('keeps authenticated root-route bootstrapping silent', () => {

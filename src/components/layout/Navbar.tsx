@@ -28,6 +28,7 @@ interface NavbarProps {
   userEmail?: string | null;
   onLogout?: () => void;
   isFirebaseConnected?: boolean;
+  hideRuntimeIndicators?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -39,11 +40,25 @@ export const Navbar: React.FC<NavbarProps> = ({
   userEmail,
   onLogout,
   isFirebaseConnected,
+  hideRuntimeIndicators = false,
 }) => {
   const { role } = useAuth();
   const visibleModules = getVisibleAppModules(role);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const runtimeIndicatorSlot = hideRuntimeIndicators ? (
+    <div className="hidden sm:flex items-center gap-3 invisible" aria-hidden="true">
+      <div className="h-8 w-[88px] rounded-full" />
+      <div className="h-8 w-[52px] rounded-full" />
+    </div>
+  ) : (
+    <div className="flex items-center gap-3">
+      <SyncStatusIndicator />
+      <ReminderBadge />
+
+      {!isFirebaseConnected && <WifiOff size={14} className="text-red-200/80" aria-hidden="true" />}
+    </div>
+  );
 
   const handleModuleChange = (mod: ModuleType) => {
     setModule(mod);
@@ -121,14 +136,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Status Indicators & User Menu */}
         <div className="flex items-center gap-4 py-2 ml-auto">
-          <div className="flex items-center gap-3">
-            <SyncStatusIndicator />
-            <ReminderBadge />
-
-            {!isFirebaseConnected && (
-              <WifiOff size={14} className="text-red-200/80" aria-hidden="true" />
-            )}
-          </div>
+          {runtimeIndicatorSlot}
 
           {userEmail && onLogout && (
             <UserMenu

@@ -11,6 +11,7 @@ import {
   type FirebaseStartupWarningCopy,
 } from '@/services/auth/firebaseStartupUiPolicy';
 import { InitialLoadingScreen } from '@/components/ui/InitialLoadingScreen';
+import { BootstrapRouteChrome } from '@/app-shell/bootstrap/BootstrapCensusChrome';
 import { resolvePreMountLoadingScreenDecision } from '@/app-shell/bootstrap/appShellLoadingPolicy';
 import { mountFirebaseConfigWarning } from '@/services/firebase-runtime/firebaseStartupDiagnostics';
 import { createScopedLogger } from '@/services/utils/loggerScope';
@@ -53,6 +54,15 @@ const renderBootstrapLoadingScreen = () => {
   const loadingScreenDecision = resolvePreMountLoadingScreenDecision({
     pathname: window.location.pathname,
   });
+
+  if (loadingScreenDecision.renderBootstrapRouteChrome) {
+    root.render(
+      <React.StrictMode>
+        <BootstrapRouteChrome />
+      </React.StrictMode>
+    );
+    return;
+  }
 
   if (!loadingScreenDecision.shouldRender) {
     return;

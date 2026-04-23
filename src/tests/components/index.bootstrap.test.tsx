@@ -65,6 +65,13 @@ vi.mock('@/components/ui/InitialLoadingScreen', () => ({
   ),
 }));
 
+vi.mock('@/app-shell/bootstrap/BootstrapCensusChrome', () => {
+  const MockBootstrapRouteChrome = () => <div data-testid="bootstrap-route-chrome" />;
+  return {
+    BootstrapRouteChrome: MockBootstrapRouteChrome,
+  };
+});
+
 vi.mock('@/services/auth/authFallback', () => ({
   hasActiveFirebaseSession: (...args: unknown[]) => mockHasActiveFirebaseSession(...args),
 }));
@@ -119,6 +126,7 @@ describe('index bootstrap entrypoint', () => {
     mockResolvePreMountLoadingScreenDecision.mockReturnValue({
       shouldRender: false,
       preferLoginShell: false,
+      renderBootstrapRouteChrome: false,
     });
     mockHasActiveFirebaseSession.mockReturnValue(false);
     mockHasPersistedFirebaseAuthHint.mockReturnValue(false);
@@ -144,6 +152,11 @@ describe('index bootstrap entrypoint', () => {
   });
 
   it('renders the pre-mount loading screen and stops on reload outcomes', async () => {
+    mockResolvePreMountLoadingScreenDecision.mockReturnValue({
+      shouldRender: true,
+      preferLoginShell: false,
+      renderBootstrapRouteChrome: false,
+    });
     mockBootstrapAppRuntime.mockResolvedValue({
       status: 'reload',
       stage: 'client_recovery',
@@ -157,10 +170,36 @@ describe('index bootstrap entrypoint', () => {
     await flushBootstrapWork();
 
     expect(mockCreateRoot).toHaveBeenCalledTimes(1);
-    expect(mockRootRender).not.toHaveBeenCalled();
+    expect(mockRootRender).toHaveBeenCalledTimes(1);
+    const renderElement = mockRootRender.mock.calls[0][0];
+    expect(renderElement.props.children.props.pathname).toBe('/');
     expect(mockRecordBootstrapRuntimeResult).toHaveBeenCalledWith(
       expect.objectContaining({ status: 'reload' })
     );
+    expect(mockDetachBootstrapRuntimeErrorListeners).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders the bootstrap route chrome before React app mount when requested', async () => {
+    mockResolvePreMountLoadingScreenDecision.mockReturnValue({
+      shouldRender: false,
+      preferLoginShell: false,
+      renderBootstrapRouteChrome: true,
+    });
+    mockBootstrapAppRuntime.mockResolvedValue({
+      status: 'reload',
+      stage: 'client_recovery',
+      clientRecovery: {
+        status: 'reload',
+        reason: 'legacy-sw',
+      },
+    });
+
+    await import('@/index');
+    await flushBootstrapWork();
+
+    expect(mockRootRender).toHaveBeenCalledTimes(1);
+    const renderElement = mockRootRender.mock.calls[0][0];
+    expect(renderElement.props.children.type.name).toBe('MockBootstrapRouteChrome');
     expect(mockDetachBootstrapRuntimeErrorListeners).toHaveBeenCalledTimes(1);
   });
 
