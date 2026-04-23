@@ -1,8 +1,12 @@
 import React from 'react';
 import type { AuthContextType } from '@/context/AuthContext';
 import type { UseUIStateReturn } from '@/hooks/useUIState';
-import { sanitizeAppModuleForRole } from '@/shared/access/operationalAccessPolicy';
 import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
+import {
+  buildAppShellReadyTelemetry,
+  resolveSanitizedCurrentModule,
+  shouldRecordAppShellTelemetry,
+} from '@/components/layout/app-content/appContentShellEffectsController';
 import { useAppContentEventBridge } from '@/components/layout/app-content/useAppContentEventBridge';
 
 interface UseAppContentShellEffectsParams {
@@ -12,19 +16,6 @@ interface UseAppContentShellEffectsParams {
   isSignatureMode: boolean;
   setSelectedShift: UseUIStateReturn['setSelectedShift'];
 }
-
-const buildAppShellReadyTelemetry = (
-  role: AuthContextType['role'],
-  currentModule: UseUIStateReturn['currentModule']
-) => ({
-  category: 'daily_record' as const,
-  operation: 'app_shell_ready' as const,
-  status: 'success' as const,
-  context: {
-    module: currentModule,
-    role: role || 'viewer',
-  },
-});
 
 export const useAppContentShellEffects = ({
   role,
@@ -41,18 +32,23 @@ export const useAppContentShellEffects = ({
   });
 
   React.useEffect(() => {
-    const sanitizedModule = sanitizeAppModuleForRole(role, currentModule);
+    const sanitizedModule = resolveSanitizedCurrentModule({ role, currentModule });
     if (sanitizedModule !== currentModule) {
       setCurrentModule(sanitizedModule);
     }
   }, [currentModule, role, setCurrentModule]);
 
   React.useEffect(() => {
-    if (appShellTelemetryRecordedRef.current || isSignatureMode) {
+    if (
+      !shouldRecordAppShellTelemetry({
+        alreadyRecorded: appShellTelemetryRecordedRef.current,
+        isSignatureMode,
+      })
+    ) {
       return;
     }
 
-    recordOperationalTelemetry(buildAppShellReadyTelemetry(role, currentModule), {
+    recordOperationalTelemetry(buildAppShellReadyTelemetry({ role, currentModule }), {
       allowSuccess: true,
     });
     appShellTelemetryRecordedRef.current = true;
