@@ -5,8 +5,8 @@ Objetivo: ejecutar mejoras de alto valor derivadas de la auditoría técnica sin
 
 ## Estado actual
 
-- Bloque actual en curso: `Bloque 7: Startup UX y Release Confidence`
-- Siguiente bloque acordado después de este: `Bloque 8: Shell autenticado y composicion`
+- Bloque actual en curso: `Bloque 8: Shell autenticado y composicion`
+- Siguiente bloque acordado después de este: `Bloque 9: Superficies compartidas de alta importacion`
 
 ## Bloques
 
@@ -165,7 +165,7 @@ Riesgo residual aceptado:
 
 ### Bloque 7: Startup UX y Release Confidence
 
-Estado: `pendiente`
+Estado: `completado`
 
 Objetivo:
 
@@ -195,12 +195,25 @@ Trabajo esperado:
 - añadir verificación de preview/refresh autenticado por módulo si falta cobertura real
 - regenerar snapshots de gobernanza para que `system-confidence` y `release-readiness` dejen de arrastrar estado viejo
 
+Resultado:
+
+- el smoke real de preview `test:e2e:preview:census-bootstrap` quedó verde con `3 passed`
+- `reports/e2e/preview-bootstrap/report.json` volvió a reflejar un bootstrap válido (`expected=3`, `unexpected=0`)
+- `reports/system-confidence.md` quedó en `Overall status: ok`
+- `reports/release-readiness-scorecard.md` quedó en `Overall: ok`
+- `frontend_startup` dejó de estar degradado y pasó a `status=ok, preview=ok, issues=0`
+
 Validación esperada:
 
 - `npm run report:governance-snapshots`
 - `npx vitest run src/tests/app-shell/BootstrapRouteChrome.test.tsx src/tests/app-shell/appShellLoadingPolicy.test.ts src/tests/components/AppLoadingBehavior.test.tsx src/tests/components/index.bootstrap.test.tsx src/tests/security/startupPrebootContractStatic.test.ts`
 - `npm run typecheck`
 - `npm run lint -- --max-warnings 0`
+
+Validación ejecutada:
+
+- `npm run test:e2e:preview:census-bootstrap`
+- `npm run report:governance-snapshots`
 
 Criterio de cierre:
 
