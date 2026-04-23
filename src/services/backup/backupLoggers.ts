@@ -1,4 +1,6 @@
-import { createScopedLogger } from '@/services/utils/loggerScope';
+import { createScopedLoggerMap } from '@/services/utils/loggerScope';
 
-export const pdfStorageLogger = createScopedLogger('PdfStorage');
-export const pdfContentBuilderLogger = createScopedLogger('PdfContentBuilder');
+export const { pdfStorageLogger, pdfContentBuilderLogger } = createScopedLoggerMap({
+  pdfStorageLogger: 'PdfStorage',
+  pdfContentBuilderLogger: 'PdfContentBuilder',
+});

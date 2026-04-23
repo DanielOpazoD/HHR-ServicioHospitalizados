@@ -1,6 +1,13 @@
-import { createScopedLogger } from '@/services/utils/loggerScope';
+import { createScopedLoggerMap } from '@/services/utils/loggerScope';
 
-export const authClaimSyncLogger = createScopedLogger('AuthClaimSync');
-export const authRoleCacheLogger = createScopedLogger('AuthRoleCache');
-export const sharedCensusAuthLogger = createScopedLogger('SharedCensusAuth');
-export const firebaseStartupWarningLogger = createScopedLogger('FirebaseStartupWarningRenderer');
+export const {
+  authClaimSyncLogger,
+  authRoleCacheLogger,
+  sharedCensusAuthLogger,
+  firebaseStartupWarningLogger,
+} = createScopedLoggerMap({
+  authClaimSyncLogger: 'AuthClaimSync',
+  authRoleCacheLogger: 'AuthRoleCache',
+  sharedCensusAuthLogger: 'SharedCensusAuth',
+  firebaseStartupWarningLogger: 'FirebaseStartupWarningRenderer',
+});

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createScopedLogger } from '@/services/utils/loggerScope';
+import { createScopedLogger, createScopedLoggerMap } from '@/services/utils/loggerScope';
 import { logger } from '@/services/utils/loggerService';
 
 describe('LoggerService', () => {
@@ -101,6 +101,22 @@ describe('LoggerService', () => {
     child.error('ErrorMsg');
 
     expect(consoleSpy).toHaveBeenCalledWith('[WARN] [ChildCtx] WarnMsg', '');
+  });
+
+  it('should create logger maps with the requested named scopes', () => {
+    const consoleSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+    logger.configure({ enableTimestamps: false, enableContext: true });
+
+    const loggers = createScopedLoggerMap({
+      authLogger: 'AuthCtx',
+      exportLogger: 'ExportCtx',
+    });
+
+    loggers.authLogger.info('Auth ready');
+    loggers.exportLogger.info('Export ready');
+
+    expect(consoleSpy).toHaveBeenNthCalledWith(1, '[INFO] [AuthCtx] Auth ready', '');
+    expect(consoleSpy).toHaveBeenNthCalledWith(2, '[INFO] [ExportCtx] Export ready', '');
   });
 
   it('should time function execution', async () => {
