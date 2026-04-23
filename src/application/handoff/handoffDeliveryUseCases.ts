@@ -3,6 +3,7 @@ import {
   resolveScopedMedicalSignatureToken,
 } from '@/domain/handoff/scope';
 import { buildMedicalSentPatch } from '@/domain/handoff/management';
+import type { ApplyDailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
 import { createApplicationSuccess } from '@/shared/contracts/applicationOutcomeFactories';
 import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
 
@@ -28,7 +29,7 @@ export interface MarkMedicalHandoffAsSentOutput {
 
 interface PatchRecordInput {
   record: DailyRecord | null;
-  patchRecord: (partial: DailyRecordPatch) => Promise<void>;
+  patchRecord: ApplyDailyRecordPatch;
 }
 
 interface MarkMedicalHandoffAsSentInput extends PatchRecordInput {

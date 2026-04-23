@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useBedManagement } from '@/hooks/useBedManagement';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
-import type { DailyRecordPatch } from '@/types/domain/dailyRecordPatch';
+import type {
+  ApplyDailyRecordPatch,
+  DailyRecord,
+} from '@/application/shared/dailyRecordCoreContracts';
 import { Specialty, PatientStatus } from '@/types/domain/patientClassification';
 import { DataFactory } from '@/tests/factories/DataFactory';
 
@@ -45,7 +47,7 @@ vi.mock('../../hooks/useClinicalCrib', () => ({
 
 describe('Identity-based Diagnosis Clearing', () => {
   let mockRecord: DailyRecord;
-  let patchRecord: (partial: DailyRecordPatch) => Promise<void>;
+  let patchRecord: ApplyDailyRecordPatch;
   let saveAndUpdate: (updatedRecord: DailyRecord) => void;
 
   beforeEach(() => {
@@ -74,9 +76,7 @@ describe('Identity-based Diagnosis Clearing', () => {
       lastUpdated: '2026-01-18T00:00:00.000Z',
     });
 
-    patchRecord = vi.fn().mockResolvedValue(undefined) as (
-      partial: DailyRecordPatch
-    ) => Promise<void>;
+    patchRecord = vi.fn().mockResolvedValue(undefined) as ApplyDailyRecordPatch;
     saveAndUpdate = vi.fn() as (updatedRecord: DailyRecord) => void;
   });
 

@@ -1,6 +1,7 @@
 import type {
   ApplyDailyRecordPatch,
   DailyRecord,
+  PersistDailyRecord,
 } from '@/application/shared/dailyRecordCoreContracts';
 import type {
   MedicalHandoffActor,
@@ -40,7 +41,7 @@ export interface UseDailyRecordSyncResult {
   syncStatus: SyncStatus;
   lastSyncTime: Date | null;
   bootstrapPhase: DailyRecordBootstrapPhase;
-  saveAndUpdate: (updatedRecord: DailyRecord) => Promise<void>;
+  saveAndUpdate: PersistDailyRecord;
   patchRecord: ApplyDailyRecordPatch;
   markLocalChange: () => void;
   refresh: () => void;

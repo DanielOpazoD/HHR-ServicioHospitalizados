@@ -1,5 +1,6 @@
 import { BEDS } from '@/constants/beds';
-import type { DailyRecord, DailyRecordPatch } from '@/domain/handoff/recordContracts';
+import type { ApplyDailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
+import type { DailyRecord } from '@/domain/handoff/recordContracts';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 import {
   formatHandoffMessage,
@@ -20,7 +21,7 @@ export interface SendMedicalHandoffInput {
   record: DailyRecord;
   templateContent: string;
   targetGroupId: string;
-  patchRecord: (partial: DailyRecordPatch) => Promise<void>;
+  patchRecord: ApplyDailyRecordPatch;
   getPreviousDay: (date: string) => Promise<DailyRecord | null>;
   scope?: MedicalHandoffScope;
 }

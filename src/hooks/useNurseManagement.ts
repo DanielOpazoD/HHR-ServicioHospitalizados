@@ -1,6 +1,8 @@
 import { useMemo, useCallback } from 'react';
-import type { DailyRecord } from '@/application/shared/dailyRecordCoreContracts';
-import { DailyRecordPatch } from '@/context/dailyRecordContextContracts';
+import type {
+  ApplyDailyRecordPatch,
+  DailyRecord,
+} from '@/application/shared/dailyRecordCoreContracts';
 import { useLatestRef } from '@/hooks/useLatestRef';
 import type { DailyRecordStaffingDetailsV1 } from '@/application/shared/dailyRecordStaffContracts';
 import {
@@ -11,7 +13,7 @@ import {
 
 export const useNurseManagement = (
   record: DailyRecord | null,
-  patchRecord: (partial: DailyRecordPatch) => Promise<void>
+  patchRecord: ApplyDailyRecordPatch
 ) => {
   const recordRef = useLatestRef(record);
 
@@ -37,7 +39,7 @@ export const useNurseManagement = (
 
 export const useTensManagement = (
   record: DailyRecord | null,
-  patchRecord: (partial: DailyRecordPatch) => Promise<void>
+  patchRecord: ApplyDailyRecordPatch
 ) => {
   const recordRef = useLatestRef(record);
 
@@ -63,7 +65,7 @@ export const useTensManagement = (
 
 export const useDetailedStaffingManagement = (
   record: DailyRecord | null,
-  patchRecord: (partial: DailyRecordPatch) => Promise<void>
+  patchRecord: ApplyDailyRecordPatch
 ) => {
   const recordRef = useLatestRef(record);
 

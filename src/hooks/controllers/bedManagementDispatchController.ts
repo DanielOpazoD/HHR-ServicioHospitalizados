@@ -1,4 +1,7 @@
-import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
+import type {
+  ApplyDailyRecordPatch,
+  DailyRecord,
+} from '@/application/shared/dailyRecordCoreContracts';
 import type { PatientData } from '@/hooks/contracts/patientHookContracts';
 import type { CudyrScore } from '@/types/domain/cudyr';
 import type { PatientFieldValue } from '@/types/valueTypes';
@@ -33,7 +36,7 @@ interface ExecuteBedManagementActionInput {
   action: BedAction;
   validation: BedManagementValidationPort;
   bedAudit: BedManagementAuditPort;
-  patchRecord: (partial: DailyRecordPatch) => Promise<void>;
+  patchRecord: ApplyDailyRecordPatch;
 }
 
 const validateAction = (

@@ -37,6 +37,8 @@ import type {
  */
 export type DailyRecord = RootDailyRecord;
 export type DailyRecordPatch = RootDailyRecordPatch;
+export type ApplyDailyRecordPatch = (patch: DailyRecordPatch) => Promise<void>;
+export type PersistDailyRecord = (record: DailyRecord) => Promise<void>;
 export type MedicalHandoffActor = RootMedicalHandoffActor;
 export type MedicalSpecialty = RootMedicalSpecialty;
 export type DailyRecordDateRef = RootDailyRecordDateRef;
