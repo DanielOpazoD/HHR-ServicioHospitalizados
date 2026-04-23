@@ -5,7 +5,10 @@
  */
 
 import { useCallback } from 'react';
-import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
+import type {
+  ApplyDailyRecordPatch,
+  DailyRecord,
+} from '@/application/shared/dailyRecordCoreContracts';
 import { useAuditContext } from '@/context/AuditContext';
 import { buildClearAllBedsPatch, buildClearPatientPatch } from './useBedOperationsController';
 import {
@@ -61,7 +64,7 @@ export interface BedOperationsActions {
 
 export const useBedOperations = (
   record: DailyRecord | null,
-  patchRecord: (partial: DailyRecordPatch) => Promise<void>
+  patchRecord: ApplyDailyRecordPatch
 ): BedOperationsActions => {
   const { logEvent, logPatientCleared } = useAuditContext();
 

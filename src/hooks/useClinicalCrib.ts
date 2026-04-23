@@ -5,8 +5,11 @@
  */
 
 import { useCallback } from 'react';
-import type { DailyRecord } from '@/application/shared/dailyRecordCoreContracts';
-import type { DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
+import type {
+  ApplyDailyRecordPatch,
+  DailyRecord,
+  DailyRecordPatch,
+} from '@/application/shared/dailyRecordCoreContracts';
 import type { DailyRecordBedsState } from '@/application/shared/dailyRecordBedContracts';
 import { PatientData } from '@/hooks/contracts/patientHookContracts';
 import { PatientFieldValue } from '@/types/valueTypes';
@@ -29,7 +32,7 @@ export interface ClinicalCribActions {
 export const useClinicalCrib = (
   record: DailyRecordBedsState | null,
   _saveAndUpdate: (updatedRecord: DailyRecord) => void,
-  patchRecord: (partial: DailyRecordPatch) => Promise<void>
+  patchRecord: ApplyDailyRecordPatch
 ): ClinicalCribActions => {
   /**
    * Create a new clinical crib for a patient bed

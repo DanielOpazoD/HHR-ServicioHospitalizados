@@ -1,5 +1,8 @@
 import { useCallback, useRef, useEffect } from 'react';
-import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
+import type {
+  ApplyDailyRecordPatch,
+  DailyRecord,
+} from '@/application/shared/dailyRecordCoreContracts';
 import { PatientData } from '@/hooks/contracts/patientHookContracts';
 import type { CudyrScore } from '@/types/domain/cudyr';
 import { PatientFieldValue } from '@/types/valueTypes';
@@ -93,7 +96,7 @@ export interface BedManagementActions {
 export const useBedManagement = (
   record: DailyRecord | null,
   _saveAndUpdate: (updatedRecord: DailyRecord) => void, // Kept for legacy compat
-  patchRecord: (partial: DailyRecordPatch) => Promise<void>
+  patchRecord: ApplyDailyRecordPatch
 ): BedManagementActions => {
   const validation = usePatientValidation();
   const bedAudit = useBedAudit(record);

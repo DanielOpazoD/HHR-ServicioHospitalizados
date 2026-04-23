@@ -1,6 +1,10 @@
 import { useCallback } from 'react';
 import type { RefObject } from 'react';
-import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
+import type {
+  ApplyDailyRecordPatch,
+  DailyRecord,
+  PersistDailyRecord,
+} from '@/application/shared/dailyRecordCoreContracts';
 import type { AuditAction } from '@/types/auditActionTypes';
 import type { AuditLogEntry } from '@/types/auditLogTypes';
 import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
@@ -10,8 +14,8 @@ import { canEditMedicalHandoffForDate } from '@/shared/access/operationalAccessP
 export interface HandoffManagementPersistenceInput {
   recordRef: RefObject<DailyRecord | null>;
   role?: string;
-  saveAndUpdate: (updatedRecord: DailyRecord) => Promise<void>;
-  patchRecord: (patch: DailyRecordPatch) => Promise<void>;
+  saveAndUpdate: PersistDailyRecord;
+  patchRecord: ApplyDailyRecordPatch;
   logEvent: (
     action: AuditAction,
     entityType: AuditLogEntry['entityType'],

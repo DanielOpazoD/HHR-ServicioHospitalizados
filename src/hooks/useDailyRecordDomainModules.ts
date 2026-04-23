@@ -1,4 +1,8 @@
-import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
+import type {
+  ApplyDailyRecordPatch,
+  DailyRecord,
+  PersistDailyRecord,
+} from '@/application/shared/dailyRecordCoreContracts';
 import { useBedManagement } from '@/hooks/useBedManagement';
 import { usePatientDischarges } from '@/hooks/usePatientDischarges';
 import { usePatientTransfers } from '@/hooks/usePatientTransfers';
@@ -15,8 +19,8 @@ import { useValidation } from '@/hooks/useValidation';
 
 export const useDailyRecordDomainModules = (
   record: DailyRecord | null,
-  saveAndUpdate: (updatedRecord: DailyRecord) => Promise<void>,
-  patchRecord: (partial: DailyRecordPatch) => Promise<void>
+  saveAndUpdate: PersistDailyRecord,
+  patchRecord: ApplyDailyRecordPatch
 ) => {
   const inventory = useInventory(record);
   const stabilityRules = useStabilityRules(record);

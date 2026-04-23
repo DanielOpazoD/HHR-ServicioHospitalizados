@@ -1,5 +1,9 @@
 import { useMemo, useRef, useEffect } from 'react';
-import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
+import type {
+  ApplyDailyRecordPatch,
+  DailyRecord,
+  PersistDailyRecord,
+} from '@/application/shared/dailyRecordCoreContracts';
 import { useNotification } from '@/context/UIContext';
 import { useAuditContext } from '@/context/AuditContext';
 import { useAuth } from '@/context';
@@ -9,8 +13,8 @@ import { useHandoffManagementDelivery } from '@/hooks/useHandoffManagementDelive
 
 export const useHandoffManagement = (
   record: DailyRecord | null,
-  saveAndUpdate: (updatedRecord: DailyRecord) => Promise<void>,
-  patchRecord: (partial: DailyRecordPatch) => Promise<void>
+  saveAndUpdate: PersistDailyRecord,
+  patchRecord: ApplyDailyRecordPatch
 ): HandoffManagementActions => {
   const { success, error: notifyError } = useNotification();
   const { logEvent, logDebouncedEvent, userId } = useAuditContext();

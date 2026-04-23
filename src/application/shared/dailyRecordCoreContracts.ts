@@ -11,3 +11,6 @@ import type { DailyRecordDateRef as RootDailyRecordDateRef } from '@/types/domai
 export type DailyRecord = RootDailyRecord;
 export type DailyRecordPatch = RootDailyRecordPatch;
 export type DailyRecordDateRef = RootDailyRecordDateRef;
+
+export type ApplyDailyRecordPatch = (patch: DailyRecordPatch) => Promise<void>;
+export type PersistDailyRecord = (record: DailyRecord) => Promise<void>;

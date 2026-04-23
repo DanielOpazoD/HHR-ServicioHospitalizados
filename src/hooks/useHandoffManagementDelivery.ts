@@ -1,6 +1,9 @@
 import { useCallback } from 'react';
 import type { RefObject } from 'react';
-import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
+import type {
+  ApplyDailyRecordPatch,
+  DailyRecord,
+} from '@/application/shared/dailyRecordCoreContracts';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 import {
   executeEnsureMedicalHandoffSignatureLink,
@@ -23,7 +26,7 @@ import { resolveApplicationOutcomeMessage } from '@/shared/contracts/application
 interface HandoffManagementDeliveryInput {
   recordRef: RefObject<DailyRecord | null>;
   role?: string;
-  patchRecord: (partial: DailyRecordPatch) => Promise<void>;
+  patchRecord: ApplyDailyRecordPatch;
   success: (title: string, message: string) => void;
   notifyError: (title: string, message: string) => void;
 }

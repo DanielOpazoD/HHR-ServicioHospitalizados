@@ -1,4 +1,7 @@
-import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
+import type {
+  ApplyDailyRecordPatch,
+  DailyRecord,
+} from '@/application/shared/dailyRecordCoreContracts';
 import type {
   MedicalHandoffActor,
   MedicalSpecialty,
@@ -38,7 +41,7 @@ export interface UseDailyRecordSyncResult {
   lastSyncTime: Date | null;
   bootstrapPhase: DailyRecordBootstrapPhase;
   saveAndUpdate: (updatedRecord: DailyRecord) => Promise<void>;
-  patchRecord: (partial: DailyRecordPatch) => Promise<void>;
+  patchRecord: ApplyDailyRecordPatch;
   markLocalChange: () => void;
   refresh: () => void;
   createDay: (
