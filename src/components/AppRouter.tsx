@@ -11,6 +11,12 @@ import { ViewLoader } from '@/components/ui/ViewLoader';
 import { UserRole } from '@/context';
 import { UseUIStateReturn } from '@/hooks/useUIState';
 import type { ModuleType } from '@/constants/navigationConfig';
+import {
+  canRenderSimpleModuleRoute,
+  resolveAppRouterContext,
+  resolveModuleReadOnly,
+  SIMPLE_MODULE_ROUTE_DEFINITIONS,
+} from '@/components/app-router/appRouterController';
 
 // Lazy-loaded views
 import {
@@ -18,31 +24,9 @@ import {
   CensusView,
   CudyrView,
   HandoffView,
-  AuditView,
-  CommunicationsView,
-  ConfigurationView,
-  DataView,
-  FunctionsTelemetryView,
   MedicalSignatureView,
-  ErrorDashboard,
-  WhatsAppIntegrationView,
-  SystemDiagnosticsView,
-  TransferManagementView,
-  BackupFilesView,
-  PatientMasterView,
-  DataMaintenanceView,
-  RoleManagementView,
-  ReminderAdminView,
 } from '@/views/LazyViews';
-import type { CensusAccessProfile } from '@/shared/access/censusAccessProfile';
-import { resolveSpecialistCensusAccessProfile } from '@/shared/access/specialistAccessPolicy';
-import {
-  canAccessAppModuleRoute,
-  canEditAppModule,
-  canForceCreateDayCopyOverride,
-  getVisibleAppModules,
-} from '@/shared/access/operationalAccessPolicy';
-import { isE2EEditableRecordOverrideEnabled } from '@/shared/runtime/e2eRuntime';
+import { canForceCreateDayCopyOverride } from '@/shared/access/operationalAccessPolicy';
 
 export type AppModule = ModuleType;
 export type CensusViewMode = 'REGISTER' | 'ANALYTICS';
@@ -89,9 +73,8 @@ export const AppRouter: React.FC<AppRouterProps> = ({
   onCloseBedManagerModal,
   onOpenCensusDate,
 }) => {
-  const censusAccessProfile: CensusAccessProfile = resolveSpecialistCensusAccessProfile(role);
-  const visibleModules = getVisibleAppModules(role);
-  const e2eEditableOverride = isE2EEditableRecordOverrideEnabled();
+  const { censusAccessProfile, visibleModules, e2eEditableOverride } =
+    resolveAppRouterContext(role);
 
   return (
     <GlobalErrorBoundary>
@@ -111,7 +94,11 @@ export const AppRouter: React.FC<AppRouterProps> = ({
                   showBedManagerModal={showBedManagerModal}
                   onCloseBedManagerModal={onCloseBedManagerModal}
                   onOpenCensusDate={onOpenCensusDate}
-                  readOnly={!canEditAppModule(role, 'CENSUS') && !e2eEditableOverride}
+                  readOnly={resolveModuleReadOnly({
+                    role,
+                    module: 'CENSUS',
+                    e2eEditableOverride,
+                  })}
                   allowAdminCopyOverride={canForceCreateDayCopyOverride(role)}
                   accessProfile={censusAccessProfile}
                 />
@@ -124,7 +111,13 @@ export const AppRouter: React.FC<AppRouterProps> = ({
             )}
             {currentModule === 'CUDYR' && (
               <SectionErrorBoundary sectionName="CUDYR">
-                <CudyrView readOnly={!canEditAppModule(role, 'CUDYR') && !e2eEditableOverride} />
+                <CudyrView
+                  readOnly={resolveModuleReadOnly({
+                    role,
+                    module: 'CUDYR',
+                    e2eEditableOverride,
+                  })}
+                />
               </SectionErrorBoundary>
             )}
             {currentModule === 'NURSING_HANDOFF' && (
@@ -132,7 +125,11 @@ export const AppRouter: React.FC<AppRouterProps> = ({
                 <HandoffView
                   ui={ui}
                   type="nursing"
-                  readOnly={!canEditAppModule(role, 'NURSING_HANDOFF') && !e2eEditableOverride}
+                  readOnly={resolveModuleReadOnly({
+                    role,
+                    module: 'NURSING_HANDOFF',
+                    e2eEditableOverride,
+                  })}
                 />
               </SectionErrorBoundary>
             )}
@@ -141,96 +138,26 @@ export const AppRouter: React.FC<AppRouterProps> = ({
                 <HandoffView
                   ui={ui}
                   type="medical"
-                  readOnly={!canEditAppModule(role, 'MEDICAL_HANDOFF') && !e2eEditableOverride}
+                  readOnly={resolveModuleReadOnly({
+                    role,
+                    module: 'MEDICAL_HANDOFF',
+                    e2eEditableOverride,
+                  })}
                 />
               </SectionErrorBoundary>
             )}
-            {currentModule === 'AUDIT' &&
-              canAccessAppModuleRoute({ role, module: 'AUDIT', visibleModules }) && (
-                <SectionErrorBoundary sectionName="Auditoría">
-                  <AuditView />
-                </SectionErrorBoundary>
-              )}
-            {currentModule === 'FUNCTIONS_TELEMETRY' &&
-              canAccessAppModuleRoute({ role, module: 'FUNCTIONS_TELEMETRY', visibleModules }) && (
-                <SectionErrorBoundary sectionName="Telemetría de Servicios">
-                  <FunctionsTelemetryView />
-                </SectionErrorBoundary>
-              )}
-            {currentModule === 'CONFIGURATION' &&
-              canAccessAppModuleRoute({ role, module: 'CONFIGURATION', visibleModules }) && (
-                <SectionErrorBoundary sectionName="Configuración">
-                  <ConfigurationView />
-                </SectionErrorBoundary>
-              )}
-            {currentModule === 'DATA' &&
-              canAccessAppModuleRoute({ role, module: 'DATA', visibleModules }) && (
-                <SectionErrorBoundary sectionName="Datos">
-                  <DataView />
-                </SectionErrorBoundary>
-              )}
-            {currentModule === 'COMMUNICATIONS' &&
-              canAccessAppModuleRoute({ role, module: 'COMMUNICATIONS', visibleModules }) && (
-                <SectionErrorBoundary sectionName="Comunicación">
-                  <CommunicationsView />
-                </SectionErrorBoundary>
-              )}
-            {currentModule === 'WHATSAPP' && (
-              <SectionErrorBoundary sectionName="Integración WhatsApp">
-                <WhatsAppIntegrationView />
-              </SectionErrorBoundary>
-            )}
-            {currentModule === 'DIAGNOSTICS' &&
-              canAccessAppModuleRoute({ role, module: 'DIAGNOSTICS', visibleModules }) && (
-                <SectionErrorBoundary sectionName="Diagnóstico del Sistema">
-                  <SystemDiagnosticsView />
-                </SectionErrorBoundary>
-              )}
-            {currentModule === 'TRANSFER_MANAGEMENT' && (
-              <SectionErrorBoundary sectionName="Traslados">
-                <TransferManagementView />
-              </SectionErrorBoundary>
-            )}
-            {currentModule === 'BACKUP_FILES' &&
-              canAccessAppModuleRoute({ role, module: 'BACKUP_FILES', visibleModules }) && (
-                <SectionErrorBoundary sectionName="Respaldos">
-                  <BackupFilesView backupType="handoff" />
-                </SectionErrorBoundary>
-              )}
-            {currentModule === 'PATIENT_MASTER_INDEX' &&
-              canAccessAppModuleRoute({
+            {SIMPLE_MODULE_ROUTE_DEFINITIONS.filter(route =>
+              canRenderSimpleModuleRoute({
+                currentModule,
+                route,
                 role,
-                module: 'PATIENT_MASTER_INDEX',
                 visibleModules,
-              }) && (
-                <SectionErrorBoundary sectionName="Base de Pacientes">
-                  <PatientMasterView />
-                </SectionErrorBoundary>
-              )}
-            {currentModule === 'DATA_MAINTENANCE' &&
-              canAccessAppModuleRoute({ role, module: 'DATA_MAINTENANCE', visibleModules }) && (
-                <SectionErrorBoundary sectionName="Mantenimiento de Datos">
-                  <DataMaintenanceView />
-                </SectionErrorBoundary>
-              )}
-            {currentModule === 'ROLE_MANAGEMENT' &&
-              canAccessAppModuleRoute({ role, module: 'ROLE_MANAGEMENT', visibleModules }) && (
-                <SectionErrorBoundary sectionName="Gestión de Roles">
-                  <RoleManagementView />
-                </SectionErrorBoundary>
-              )}
-            {currentModule === 'REMINDERS' &&
-              canAccessAppModuleRoute({ role, module: 'REMINDERS', visibleModules }) && (
-                <SectionErrorBoundary sectionName="Avisos al Personal">
-                  <ReminderAdminView />
-                </SectionErrorBoundary>
-              )}
-            {currentModule === 'ERRORS' &&
-              canAccessAppModuleRoute({ role, module: 'ERRORS', visibleModules }) && (
-                <SectionErrorBoundary sectionName="Panel de Errores">
-                  <ErrorDashboard />
-                </SectionErrorBoundary>
-              )}
+              })
+            ).map(route => (
+              <SectionErrorBoundary key={route.module} sectionName={route.sectionName}>
+                {route.render()}
+              </SectionErrorBoundary>
+            ))}
           </>
         )}
       </Suspense>
