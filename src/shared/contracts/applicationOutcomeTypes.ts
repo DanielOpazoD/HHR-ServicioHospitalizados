@@ -44,3 +44,15 @@ export interface ApplicationOutcomeMetadata {
 export interface UseCase<Input, Output> {
   execute(input: Input): Promise<ApplicationOutcome<Output>>;
 }
+
+export const isApplicationOutcomeSuccess = <T>(
+  outcome: ApplicationOutcome<T>
+): outcome is ApplicationOutcome<T> & { status: 'success' } => outcome.status === 'success';
+
+export const isApplicationOutcomeNonFailure = <T>(
+  outcome: ApplicationOutcome<T>
+): outcome is ApplicationOutcome<T> & { status: 'success' | 'partial' | 'degraded' } =>
+  outcome.status !== 'failed';
+
+export const hasApplicationIssues = <T>(outcome: ApplicationOutcome<T>): boolean =>
+  outcome.issues.length > 0;

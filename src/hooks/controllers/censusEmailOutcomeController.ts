@@ -1,4 +1,8 @@
-import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
+import {
+  isApplicationOutcomeNonFailure,
+  isApplicationOutcomeSuccess,
+  type ApplicationOutcome,
+} from '@/shared/contracts/applicationOutcomeTypes';
 import {
   joinApplicationIssueMessages,
   resolvePrimaryApplicationIssueMessage,
@@ -24,7 +28,7 @@ export const resolveCensusEmailSendOutcomePresentation = <T>(
     shouldUseValidationTitle?: boolean;
   }
 ): CensusEmailOutcomePresentation => {
-  if (result.status === 'success') {
+  if (isApplicationOutcomeSuccess(result)) {
     return {
       nextStatus: 'success',
       error: null,
@@ -33,7 +37,7 @@ export const resolveCensusEmailSendOutcomePresentation = <T>(
     };
   }
 
-  if (result.status === 'partial' || result.status === 'degraded') {
+  if (isApplicationOutcomeNonFailure(result)) {
     return {
       nextStatus: 'success',
       error: null,

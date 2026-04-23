@@ -1,4 +1,8 @@
-import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
+import {
+  isApplicationOutcomeNonFailure,
+  isApplicationOutcomeSuccess,
+  type ApplicationOutcome,
+} from '@/shared/contracts/applicationOutcomeTypes';
 import {
   joinApplicationIssueMessages,
   resolvePrimaryApplicationIssueMessage,
@@ -23,7 +27,7 @@ export const presentBackupExportOutcome = <T>(
     fallbackErrorMessage: string;
   }
 ): BackupExportOutcomePresentation => {
-  if (outcome.status === 'success') {
+  if (isApplicationOutcomeSuccess(outcome)) {
     return {
       channel: 'success',
       title: options.successTitle,
@@ -33,7 +37,7 @@ export const presentBackupExportOutcome = <T>(
     };
   }
 
-  if (outcome.status === 'partial' || outcome.status === 'degraded') {
+  if (isApplicationOutcomeNonFailure(outcome)) {
     return {
       channel: 'warning',
       title: options.partialTitle,
