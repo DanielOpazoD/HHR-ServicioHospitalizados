@@ -1,10 +1,11 @@
 import { renderHook, act } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAppContentShellEffects } from '@/components/layout/app-content/useAppContentShellEffects';
-import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 
-vi.mock('@/services/observability/operationalTelemetryService', () => ({
-  recordOperationalTelemetry: vi.fn(),
+const mockRecordOperationalTelemetry = vi.fn();
+
+vi.mock('@/services/observability/operationalTelemetryRecorder', () => ({
+  recordOperationalTelemetry: (...args: unknown[]) => mockRecordOperationalTelemetry(...args),
 }));
 
 describe('useAppContentShellEffects', () => {
@@ -74,8 +75,8 @@ describe('useAppContentShellEffects', () => {
       currentModule: 'CUDYR',
     });
 
-    expect(recordOperationalTelemetry).toHaveBeenCalledTimes(1);
-    expect(recordOperationalTelemetry).toHaveBeenCalledWith(
+    expect(mockRecordOperationalTelemetry).toHaveBeenCalledTimes(1);
+    expect(mockRecordOperationalTelemetry).toHaveBeenCalledWith(
       expect.objectContaining({
         operation: 'app_shell_ready',
         context: expect.objectContaining({
@@ -97,6 +98,6 @@ describe('useAppContentShellEffects', () => {
       })
     );
 
-    expect(recordOperationalTelemetry).not.toHaveBeenCalled();
+    expect(mockRecordOperationalTelemetry).not.toHaveBeenCalled();
   });
 });

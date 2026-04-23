@@ -13,7 +13,7 @@ vi.mock('@/hooks/useDatabaseFallbackStatus', () => ({
   useDatabaseFallbackStatus: (...args: unknown[]) => mockUseDatabaseFallbackStatus(...args),
 }));
 
-vi.mock('@/shared/runtime/browserWindowRuntime', () => ({
+vi.mock('@/shared/runtime/browserWindowRuntimeCore', () => ({
   defaultBrowserWindowRuntime: {
     reload: () => mockReload(),
   },

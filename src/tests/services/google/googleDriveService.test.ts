@@ -23,7 +23,7 @@ vi.mock('@/services/google/googleDriveFolders', () => ({
   uploadToDriveFolder: (...args: unknown[]) => uploadToDriveFolderMock(...args),
 }));
 
-vi.mock('@/services/observability/operationalTelemetryService', () => ({
+vi.mock('@/services/observability/operationalTelemetryOutcomeRecorder', () => ({
   recordOperationalErrorTelemetry: (...args: unknown[]) =>
     recordOperationalErrorTelemetryMock(...args),
 }));

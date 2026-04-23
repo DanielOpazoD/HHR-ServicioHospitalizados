@@ -9,7 +9,7 @@ vi.mock('@/services/bookmarks/bookmarkService', () => ({
   importBookmarksFromJson: (...args: unknown[]) => mockImportBookmarksFromJson(...args),
 }));
 
-vi.mock('@/shared/runtime/browserWindowRuntime', () => ({
+vi.mock('@/shared/runtime/browserWindowRuntimeCore', () => ({
   defaultBrowserWindowRuntime: {
     alert: (...args: unknown[]) => mockAlert(...args),
   },

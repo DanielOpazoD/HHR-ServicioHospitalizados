@@ -3,8 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mockRecordOperationalTelemetry = vi.fn();
 const mockRecordOperationalErrorTelemetry = vi.fn();
 
-vi.mock('@/services/observability/operationalTelemetryService', () => ({
+vi.mock('@/services/observability/operationalTelemetryRecorder', () => ({
   recordOperationalTelemetry: (...args: unknown[]) => mockRecordOperationalTelemetry(...args),
+}));
+
+vi.mock('@/services/observability/operationalTelemetryOutcomeRecorder', () => ({
   recordOperationalErrorTelemetry: (...args: unknown[]) =>
     mockRecordOperationalErrorTelemetry(...args),
 }));

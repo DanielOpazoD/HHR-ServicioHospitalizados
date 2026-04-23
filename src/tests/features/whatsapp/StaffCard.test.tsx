@@ -5,7 +5,7 @@ import { StaffCard } from '@/features/whatsapp/components/internal/StaffCard';
 
 const mockOpen = vi.fn();
 
-vi.mock('@/shared/runtime/browserWindowRuntime', () => ({
+vi.mock('@/shared/runtime/browserWindowRuntimeCore', () => ({
   defaultBrowserWindowRuntime: {
     open: (...args: unknown[]) => mockOpen(...args),
   },

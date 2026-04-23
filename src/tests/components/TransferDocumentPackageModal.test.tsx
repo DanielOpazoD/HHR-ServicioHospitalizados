@@ -10,7 +10,7 @@ const mockSuccess = vi.fn();
 const mockInfo = vi.fn();
 const mockWarning = vi.fn();
 
-vi.mock('@/shared/runtime/browserWindowRuntime', () => ({
+vi.mock('@/shared/runtime/browserWindowRuntimeCore', () => ({
   defaultBrowserWindowRuntime: {
     alert: (...args: unknown[]) => mockAlert(...args),
     open: (...args: unknown[]) => mockOpen(...args),

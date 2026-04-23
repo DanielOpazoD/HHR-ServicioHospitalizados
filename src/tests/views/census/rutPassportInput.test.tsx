@@ -2,7 +2,7 @@ import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { RutPassportInput } from '@/features/census/components/patient-row/RutPassportInput';
-import * as browserWindowRuntime from '@/shared/runtime/browserWindowRuntime';
+import * as browserClipboardRuntime from '@/shared/runtime/browserClipboardRuntime';
 
 const renderComponent = (props?: Partial<React.ComponentProps<typeof RutPassportInput>>) =>
   render(
@@ -26,7 +26,7 @@ describe('RutPassportInput', () => {
 
   it('copies the RUT to clipboard when the visible RUT is clicked', async () => {
     const writeClipboardTextSpy = vi
-      .spyOn(browserWindowRuntime, 'writeClipboardText')
+      .spyOn(browserClipboardRuntime, 'writeClipboardText')
       .mockResolvedValue(undefined);
 
     renderComponent({
@@ -42,7 +42,7 @@ describe('RutPassportInput', () => {
 
   it('returns the indicator to valid state after transient copy feedback', async () => {
     vi.useFakeTimers();
-    vi.spyOn(browserWindowRuntime, 'writeClipboardText').mockResolvedValue(undefined);
+    vi.spyOn(browserClipboardRuntime, 'writeClipboardText').mockResolvedValue(undefined);
 
     renderComponent({
       value: '12.345.678-5',
@@ -66,7 +66,7 @@ describe('RutPassportInput', () => {
 
   it('does not copy when the document type is passport', async () => {
     const writeClipboardTextSpy = vi
-      .spyOn(browserWindowRuntime, 'writeClipboardText')
+      .spyOn(browserClipboardRuntime, 'writeClipboardText')
       .mockResolvedValue(undefined);
 
     renderComponent({

@@ -13,7 +13,7 @@ vi.mock('@/services/storage/indexeddb/indexedDbCore', () => ({
   registerDatabaseRecreatedHandler: vi.fn(),
 }));
 
-vi.mock('@/shared/runtime/browserWindowRuntime', () => ({
+vi.mock('@/shared/runtime/browserWindowRuntimeCore', () => ({
   defaultBrowserWindowRuntime: {
     reload: () => mockReload(),
   },

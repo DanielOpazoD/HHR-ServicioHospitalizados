@@ -40,7 +40,7 @@ vi.mock('@/services/observability/operationalError', () => ({
   createOperationalError: (payload: unknown) => mockCreateOperationalError(payload),
 }));
 
-vi.mock('@/services/observability/operationalTelemetryService', () => ({
+vi.mock('@/services/observability/operationalTelemetryOutcomeRecorder', () => ({
   recordOperationalErrorTelemetry: (
     source: unknown,
     action: unknown,

@@ -1,21 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock operationalTelemetryService before importing lazyWithRetry
-vi.mock('@/services/observability/operationalTelemetryService', () => ({
-  recordOperationalTelemetry: vi.fn(),
+const mockRecordOperationalTelemetry = vi.fn();
+
+vi.mock('@/services/observability/operationalTelemetryRecorder', () => ({
+  recordOperationalTelemetry: (...args: unknown[]) => mockRecordOperationalTelemetry(...args),
 }));
 
 import { lazyWithRetry } from '@/utils/lazyWithRetry';
-import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 
 const RELOAD_KEY = 'hhr_chunk_reload_count';
 
 describe('lazyWithRetry', () => {
-  const mockRecordTelemetry = vi.mocked(recordOperationalTelemetry);
-
   beforeEach(() => {
     sessionStorage.removeItem(RELOAD_KEY);
-    mockRecordTelemetry.mockClear();
+    mockRecordOperationalTelemetry.mockClear();
   });
 
   afterEach(() => {
@@ -59,7 +57,7 @@ describe('lazyWithRetry', () => {
     };
 
     await expect(wrappedFactory()).rejects.toThrow('Network timeout');
-    expect(mockRecordTelemetry).not.toHaveBeenCalled();
+    expect(mockRecordOperationalTelemetry).not.toHaveBeenCalled();
   });
 
   it('detects chunk load errors by message patterns', () => {

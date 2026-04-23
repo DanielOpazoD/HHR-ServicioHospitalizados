@@ -7,7 +7,7 @@ import {
 
 const mockRecordOperationalTelemetry = vi.fn();
 
-vi.mock('@/services/observability/operationalTelemetryService', () => ({
+vi.mock('@/services/observability/operationalTelemetryRecorder', () => ({
   recordOperationalTelemetry: (...args: unknown[]) => mockRecordOperationalTelemetry(...args),
 }));
 

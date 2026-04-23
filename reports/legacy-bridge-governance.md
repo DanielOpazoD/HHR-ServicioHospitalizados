@@ -1,6 +1,6 @@
 # Legacy Bridge Governance Snapshot
 
-- Generated: 2026-04-19T23:10:10.802Z
+- Generated: 2026-04-23T05:12:16.827Z
 - Policy version: 2026-03-v2
 - Allowed modes: explicit_bridge, disabled
 - Hot path policy: disabled
@@ -40,3 +40,4 @@
 - `observe`: Use only while hot path isolation or governance prerequisites are incomplete.
 - `restrict`: Default stage once bridge is explicit-only and auditable.
 - `retire_ready`: Allowed only when runtime mode is disabled and a release window passed without dependency.
+

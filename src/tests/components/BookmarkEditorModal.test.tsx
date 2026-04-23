@@ -4,7 +4,7 @@ import React from 'react';
 
 const mockAlert = vi.fn();
 
-vi.mock('@/shared/runtime/browserWindowRuntime', () => ({
+vi.mock('@/shared/runtime/browserWindowRuntimeCore', () => ({
   defaultBrowserWindowRuntime: {
     alert: (...args: unknown[]) => mockAlert(...args),
   },

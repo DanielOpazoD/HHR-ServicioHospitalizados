@@ -37,7 +37,7 @@ vi.mock('@/services/storage/sync/syncQueueEngine', () => ({
   }),
 }));
 
-vi.mock('@/services/observability/operationalTelemetryService', () => ({
+vi.mock('@/services/observability/operationalTelemetryRecorder', () => ({
   recordOperationalTelemetry,
 }));
 
