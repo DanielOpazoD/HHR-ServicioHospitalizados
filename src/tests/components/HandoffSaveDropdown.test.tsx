@@ -4,7 +4,7 @@ import React from 'react';
 import { HandoffSaveDropdown } from '@/components/layout/date-strip/actions/HandoffSaveDropdown';
 
 describe('HandoffSaveDropdown', () => {
-  it('runs local export first and then triggers firebase backup when clicking "Descarga local"', async () => {
+  it('runs local export first and then triggers firebase backup when clicking "Descargar PDF"', async () => {
     const onExportPDF = vi.fn();
     const onBackupPDF = vi.fn().mockResolvedValue(undefined);
 
@@ -18,7 +18,7 @@ describe('HandoffSaveDropdown', () => {
     );
 
     fireEvent.click(screen.getByTitle('Opciones de guardado (PDF/Nube)'));
-    fireEvent.click(screen.getByText('Descarga local'));
+    fireEvent.click(screen.getByText('Descargar PDF'));
 
     await waitFor(() => {
       expect(onExportPDF).toHaveBeenCalledTimes(1);
@@ -64,7 +64,7 @@ describe('HandoffSaveDropdown', () => {
 
     fireEvent.click(screen.getByTitle('Opciones de guardado (PDF/Nube)'));
 
-    expect(screen.getByText('Descarga local')).toBeInTheDocument();
+    expect(screen.getByText('Descargar PDF')).toBeInTheDocument();
     expect(screen.queryByText('Respaldo en Firebase')).not.toBeInTheDocument();
   });
 });

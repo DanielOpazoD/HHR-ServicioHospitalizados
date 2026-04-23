@@ -62,8 +62,8 @@ export const HandoffSaveDropdown: React.FC<HandoffSaveDropdownProps> = ({
           <DateStripActionItem
             onClick={() => void handleAction('pdf')}
             icon={Printer}
-            title="Descarga local"
-            subtitle="Exportar como PDF"
+            title="Descargar PDF"
+            subtitle="Exportación local inmediata"
             colorClassName="bg-emerald-50 text-emerald-600"
             iconHoverColorClassName="group-hover:bg-emerald-100"
           />

@@ -103,7 +103,7 @@ describe('DateStrip', () => {
 
     fireEvent.click(screen.getByTitle('Opciones de guardado'));
 
-    expect(screen.getByText('Descargar Local')).toBeInTheDocument();
+    expect(screen.getByText('Descargar Excel')).toBeInTheDocument();
     expect(screen.queryByText('Respaldo en Firebase')).not.toBeInTheDocument();
   });
 
@@ -112,7 +112,7 @@ describe('DateStrip', () => {
 
     fireEvent.click(screen.getByTitle('Opciones de guardado (PDF/Nube)'));
 
-    expect(screen.getByText('Descarga local')).toBeInTheDocument();
+    expect(screen.getByText('Descargar PDF')).toBeInTheDocument();
     expect(screen.queryByText('Respaldo en Firebase')).not.toBeInTheDocument();
   });
 

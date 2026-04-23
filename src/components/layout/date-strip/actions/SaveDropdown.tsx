@@ -71,8 +71,8 @@ export const SaveDropdown: React.FC<SaveDropdownProps> = ({
           <DateStripActionItem
             onClick={() => void handleAction('excel')}
             icon={FileSpreadsheet}
-            title="Descargar Local"
-            subtitle="Exportar planilla Excel"
+            title="Descargar Excel"
+            subtitle="Exportación local inmediata"
             colorClassName="bg-green-50 text-green-600"
             iconHoverColorClassName="group-hover:bg-green-100"
           />
