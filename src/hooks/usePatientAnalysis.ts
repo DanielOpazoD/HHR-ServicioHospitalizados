@@ -7,10 +7,8 @@ import {
   type AnalysisResult,
 } from '@/application/patient-flow/patientAnalysisUseCase';
 import {
-  defaultDailyRecordReadPort,
-  defaultDailyRecordWritePort,
-  type DailyRecordReadPort,
-  type DailyRecordWritePort,
+  defaultDailyRecordAnalysisPort,
+  type DailyRecordAnalysisPort,
 } from '@/application/ports/dailyRecordPort';
 import {
   defaultPatientMasterWritePort,
@@ -26,24 +24,15 @@ import {
 
 export type { Conflict, AnalysisResult } from '@/application/patient-flow/patientAnalysisUseCase';
 
-type PatientAnalysisDailyRecordPort = Pick<
-  DailyRecordReadPort & DailyRecordWritePort,
-  'getAvailableDates' | 'getForDate' | 'updatePartial'
->;
-
 export interface PatientAnalysisDependencies {
-  dailyRecordRepository: PatientAnalysisDailyRecordPort;
+  dailyRecordRepository: DailyRecordAnalysisPort;
   patientMasterRepository: PatientMasterWritePort;
   auditPort: Pick<AuditPort, 'writeEvent'>;
   getCurrentUserEmail: () => string;
 }
 
 const defaultPatientAnalysisDependencies: PatientAnalysisDependencies = {
-  dailyRecordRepository: {
-    getAvailableDates: defaultDailyRecordReadPort.getAvailableDates,
-    getForDate: defaultDailyRecordReadPort.getForDate,
-    updatePartial: defaultDailyRecordWritePort.updatePartial,
-  },
+  dailyRecordRepository: defaultDailyRecordAnalysisPort,
   patientMasterRepository: defaultPatientMasterWritePort,
   auditPort: defaultAuditPort,
   getCurrentUserEmail,
@@ -138,7 +127,7 @@ export const usePatientAnalysis = (dependencies?: Partial<PatientAnalysisDepende
             ...resolvedDependencies.dailyRecordRepository,
             updatePartial: async (
               date: string,
-              patch: Parameters<DailyRecordWritePort['updatePartial']>[1]
+              patch: Parameters<DailyRecordAnalysisPort['updatePartial']>[1]
             ) => {
               suppressedHarmonizationSaveDatesRef.current.push(date);
 

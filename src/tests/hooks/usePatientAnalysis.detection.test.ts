@@ -2,6 +2,7 @@ import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { usePatientAnalysis } from '@/hooks/usePatientAnalysis';
 import {
+  defaultDailyRecordAnalysisPort,
   defaultDailyRecordReadPort,
   defaultDailyRecordWritePort,
 } from '@/application/ports/dailyRecordPort';
@@ -14,6 +15,11 @@ vi.mock('@/application/ports/dailyRecordPort', () => ({
     getForDate: vi.fn(),
   },
   defaultDailyRecordWritePort: {
+    updatePartial: vi.fn(),
+  },
+  defaultDailyRecordAnalysisPort: {
+    getAvailableDates: vi.fn(),
+    getForDate: vi.fn(),
     updatePartial: vi.fn(),
   },
 }));
@@ -40,6 +46,7 @@ describe('usePatientAnalysis — detection & event tracking', () => {
   const asRepoRecord = <T>(value: T) =>
     value as unknown as Awaited<ReturnType<typeof defaultDailyRecordReadPort.getForDate>>;
 
+  const dailyRecordAnalysisPort = vi.mocked(defaultDailyRecordAnalysisPort);
   const dailyRecordReadPort = vi.mocked(defaultDailyRecordReadPort);
   // referenced so the mock handle is created even if this file doesn't assert on it
   void vi.mocked(defaultDailyRecordWritePort);
@@ -47,6 +54,10 @@ describe('usePatientAnalysis — detection & event tracking', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    dailyRecordAnalysisPort.getAvailableDates.mockImplementation(
+      dailyRecordReadPort.getAvailableDates
+    );
+    dailyRecordAnalysisPort.getForDate.mockImplementation(dailyRecordReadPort.getForDate);
   });
 
   it('should run analysis and detect patients', async () => {

@@ -2,6 +2,7 @@ import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { usePatientAnalysis } from '@/hooks/usePatientAnalysis';
 import {
+  defaultDailyRecordAnalysisPort,
   defaultDailyRecordReadPort,
   defaultDailyRecordWritePort,
 } from '@/application/ports/dailyRecordPort';
@@ -14,6 +15,11 @@ vi.mock('@/application/ports/dailyRecordPort', () => ({
     getForDate: vi.fn(),
   },
   defaultDailyRecordWritePort: {
+    updatePartial: vi.fn(),
+  },
+  defaultDailyRecordAnalysisPort: {
+    getAvailableDates: vi.fn(),
+    getForDate: vi.fn(),
     updatePartial: vi.fn(),
   },
 }));
@@ -32,12 +38,18 @@ describe('usePatientAnalysis — conflict resolution, migration & errors', () =>
   const asRepoRecord = <T>(value: T) =>
     value as unknown as Awaited<ReturnType<typeof defaultDailyRecordReadPort.getForDate>>;
 
+  const dailyRecordAnalysisPort = vi.mocked(defaultDailyRecordAnalysisPort);
   const dailyRecordReadPort = vi.mocked(defaultDailyRecordReadPort);
   const dailyRecordWritePort = vi.mocked(defaultDailyRecordWritePort);
   const patientMasterWritePort = vi.mocked(defaultPatientMasterWritePort);
 
   beforeEach(() => {
     vi.clearAllMocks();
+    dailyRecordAnalysisPort.getAvailableDates.mockImplementation(
+      dailyRecordReadPort.getAvailableDates
+    );
+    dailyRecordAnalysisPort.getForDate.mockImplementation(dailyRecordReadPort.getForDate);
+    dailyRecordAnalysisPort.updatePartial.mockImplementation(dailyRecordWritePort.updatePartial);
   });
 
   it('should resolve conflicts and harmonize history', async () => {

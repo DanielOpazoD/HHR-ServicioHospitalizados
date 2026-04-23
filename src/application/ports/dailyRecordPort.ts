@@ -122,6 +122,11 @@ export interface DailyRecordSyncPort {
   syncWithFirestoreDetailed: (date: string) => Promise<SyncDailyRecordResult | null>;
 }
 
+export type DailyRecordAnalysisPort = Pick<
+  DailyRecordReadPort & DailyRecordWritePort,
+  'getAvailableDates' | 'getForDate' | 'updatePartial'
+>;
+
 /**
  * Canonical repository-shaped port for UI/runtime consumers that still expect a
  * single `dailyRecord` dependency instead of separate read/write/sync ports.
@@ -174,6 +179,12 @@ export const defaultDailyRecordWritePort: DailyRecordWritePort = {
 
 export const defaultDailyRecordSyncPort: DailyRecordSyncPort = {
   syncWithFirestoreDetailed: syncDailyRecordWithFirestore,
+};
+
+export const defaultDailyRecordAnalysisPort: DailyRecordAnalysisPort = {
+  getAvailableDates: defaultDailyRecordReadPort.getAvailableDates,
+  getForDate: defaultDailyRecordReadPort.getForDate,
+  updatePartial: defaultDailyRecordWritePort.updatePartial,
 };
 
 export const defaultDailyRecordRepositoryPort: DailyRecordRepositoryPort = {
