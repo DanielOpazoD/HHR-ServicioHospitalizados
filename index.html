@@ -9,6 +9,43 @@
         (function () {
             var FIREBASE_AUTH_STORAGE_PREFIX = 'firebase:authUser:';
             var AUTHENTICATED_SESSION_HINT_KEY = 'hhr_logged_this_session';
+            // Startup UX contract:
+            // - login: no spinner nuevo ni flash blanco; conservar solo el fondo/login real
+            // - census refresh autenticado: mostrar solo el chrome minimo de censo
+            //   (barra azul + barra blanca + contenido esencial) antes de React
+            // - no reintroducir loaders/skeletons/spinners full-screen en esta capa
+            var LOGIN_SURFACE_BACKGROUND = {
+                color: '#020617',
+                image: [
+                    'linear-gradient(115deg, rgba(15, 23, 42, 0.82) 0%, rgba(15, 23, 42, 0.62) 36%, rgba(15, 23, 42, 0.28) 64%, rgba(255, 255, 255, 0.08) 100%)',
+                    'radial-gradient(circle at top left, rgba(255, 255, 255, 0.18), transparent 32%)',
+                    "url('/images/login/hhr-login-day.png')"
+                ].join(','),
+                position: 'center, center, center',
+                repeat: 'no-repeat, no-repeat, no-repeat',
+                size: 'cover, cover, contain'
+            };
+            var APP_SURFACE_BACKGROUND = {
+                color: '#eef4f8',
+                image: [
+                    'linear-gradient(90deg, #0c4a6e 0%, #0369a1 50%, #0c4a6e 100%)',
+                    'linear-gradient(180deg, #ffffff 0%, #ffffff 100%)',
+                    'linear-gradient(180deg, #eef4f8 0%, #e8eef5 100%)'
+                ].join(','),
+                position: 'top left, left 56px, left 100px',
+                repeat: 'no-repeat, no-repeat, no-repeat',
+                size: '100% 56px, 100% 44px, 100% calc(100vh - 100px)'
+            };
+            var appendModulePreload = function (href) {
+                if (!document.head || document.head.querySelector('link[rel="modulepreload"][href="' + href + '"]')) {
+                    return;
+                }
+
+                var link = document.createElement('link');
+                link.rel = 'modulepreload';
+                link.href = href;
+                document.head.appendChild(link);
+            };
             var normalizedPath = window.location.pathname.replace(/^\/+|\/+$/g, '');
             var isLoginSurfacePath = normalizedPath === '' || normalizedPath === 'login';
 
@@ -25,6 +62,27 @@
                 }
 
                 return false;
+            };
+            var applyPrebootSurfaceBackground = function (surfaceBackground) {
+                var rootStyle = document.documentElement.style;
+                rootStyle.backgroundColor = surfaceBackground.color;
+                rootStyle.backgroundImage = surfaceBackground.image;
+                rootStyle.backgroundPosition = surfaceBackground.position;
+                rootStyle.backgroundRepeat = surfaceBackground.repeat;
+                rootStyle.backgroundSize = surfaceBackground.size;
+            };
+            var syncPrebootChromeVisibility = function () {
+                var root = document.getElementById('root');
+                if (!root) {
+                    return;
+                }
+
+                var hasMountedVisibleContent =
+                    root.childElementCount > 0 ||
+                    (root.textContent && root.textContent.trim().length > 0);
+
+                document.documentElement.dataset.prebootChromeVisible =
+                    hasMountedVisibleContent ? 'false' : 'true';
             };
 
             var hasPersistedFirebaseAuthHint = false;
@@ -43,11 +101,42 @@
 
             var hasAnySessionHint = hasPersistedFirebaseAuthHint || hasRecentAuthenticatedSessionHint;
             var shouldUseLoginSurface =
-                isLoginSurfacePath ||
+                normalizedPath === 'login' ||
+                (isLoginSurfacePath && !hasAnySessionHint) ||
                 !hasAnySessionHint;
 
+            appendModulePreload('/src/App.tsx');
+            if (!shouldUseLoginSurface) {
+                appendModulePreload('/src/features/census/public-components.ts');
+            }
+
             document.documentElement.dataset.prebootSurface = shouldUseLoginSurface ? 'login' : 'app';
-            document.documentElement.style.backgroundColor = shouldUseLoginSurface ? '#020617' : '#eef4f8';
+            document.documentElement.dataset.prebootChrome =
+                !shouldUseLoginSurface && (normalizedPath === '' || normalizedPath === 'census')
+                    ? 'census'
+                    : 'none';
+            applyPrebootSurfaceBackground(
+                shouldUseLoginSurface ? LOGIN_SURFACE_BACKGROUND : APP_SURFACE_BACKGROUND
+            );
+
+            document.addEventListener('DOMContentLoaded', function () {
+                syncPrebootChromeVisibility();
+
+                var root = document.getElementById('root');
+                if (!root || typeof MutationObserver === 'undefined') {
+                    return;
+                }
+
+                var observer = new MutationObserver(function () {
+                    syncPrebootChromeVisibility();
+
+                    if (document.documentElement.dataset.prebootChromeVisible === 'false') {
+                        observer.disconnect();
+                    }
+                });
+
+                observer.observe(root, { childList: true, subtree: true, characterData: true });
+            });
         })();
     </script>
     <style>
@@ -59,23 +148,182 @@
 
         body {
             margin: 0;
-            background-color: #eef4f8;
+            background: transparent;
             color: #0f172a;
         }
 
-        html[data-preboot-surface="login"] body {
-            background-color: #020617;
-            background-image:
-                linear-gradient(115deg, rgba(15, 23, 42, 0.82) 0%, rgba(15, 23, 42, 0.62) 36%, rgba(15, 23, 42, 0.28) 64%, rgba(255, 255, 255, 0.08) 100%),
-                radial-gradient(circle at top left, rgba(255, 255, 255, 0.18), transparent 32%),
-                url('/images/login/hhr-login-day.png');
-            background-position: center, center, center;
-            background-repeat: no-repeat, no-repeat, no-repeat;
-            background-size: cover, cover, contain;
+        #root {
+            background: transparent;
         }
 
-        html[data-preboot-surface="app"] body {
-            background-color: #eef4f8;
+        html[data-preboot-surface="login"] body,
+        html[data-preboot-surface="login"] #root {
+            background: transparent;
+        }
+
+        html[data-preboot-surface="app"] body,
+        html[data-preboot-surface="app"] #root {
+            background: transparent;
+        }
+
+        #preboot-census-chrome {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 140ms ease-out;
+            color: #f8fafc;
+            font-family: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+        }
+
+        html[data-preboot-chrome="census"][data-preboot-chrome-visible="true"] #preboot-census-chrome {
+            opacity: 1;
+        }
+
+        .preboot-topbar,
+        .preboot-strip {
+            box-sizing: border-box;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+        }
+
+        .preboot-topbar {
+            height: 56px;
+        }
+
+        .preboot-strip {
+            height: 44px;
+            margin-top: 0;
+            color: #475569;
+        }
+
+        .preboot-row,
+        .preboot-actions {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 0;
+        }
+
+        .preboot-brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .preboot-brand-mark {
+            width: 34px;
+            height: 34px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.12);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+        }
+
+        .preboot-tab {
+            display: inline-flex;
+            align-items: center;
+            height: 36px;
+            padding: 0 16px;
+            border-radius: 14px;
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(241, 245, 249, 0.76);
+            white-space: nowrap;
+        }
+
+        .preboot-tab.is-active {
+            background: rgba(255, 255, 255, 0.16);
+            color: #ffffff;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+
+        .preboot-user {
+            width: 40px;
+            height: 40px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .preboot-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 34px;
+            padding: 0 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.24);
+            background: rgba(255, 255, 255, 0.88);
+            color: #475569;
+            font-size: 13px;
+            font-weight: 700;
+            white-space: nowrap;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        }
+
+        .preboot-pill.is-primary {
+            background: #10b981;
+            border-color: rgba(5, 150, 105, 0.6);
+            color: #ffffff;
+        }
+
+        .preboot-pill.is-day-active {
+            background: #1d9bf0;
+            border-color: rgba(29, 155, 240, 0.55);
+            color: #ffffff;
+        }
+
+        .preboot-pill.is-mmrad {
+            color: #7c3aed;
+        }
+
+        .preboot-pill.is-lab {
+            color: #047857;
+        }
+
+        .preboot-day-row {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .preboot-divider {
+            width: 1px;
+            height: 24px;
+            background: rgba(148, 163, 184, 0.25);
+        }
+
+        .preboot-fade {
+            opacity: 0.58;
+        }
+
+        @media (max-width: 1280px) {
+            .preboot-hide-lg {
+                display: none;
+            }
+        }
+
+        @media (max-width: 960px) {
+            .preboot-topbar,
+            .preboot-strip {
+                padding: 0 14px;
+            }
+
+            .preboot-hide-md {
+                display: none;
+            }
         }
 
     </style>
@@ -94,7 +342,45 @@
     <!-- Firebase Auth popups handle their own communication, GSI is redundant and can conflict -->
 </head>
 
-<body class="text-slate-900" style="background-color: #eef4f8;">
+<body class="text-slate-900" style="background: transparent;">
+    <div id="preboot-census-chrome" aria-hidden="true">
+        <div class="preboot-topbar">
+            <div class="preboot-row">
+                <div class="preboot-brand">
+                    <span class="preboot-brand-mark"></span>
+                    <span>Hospital Hanga Roa</span>
+                </div>
+                <div class="preboot-tab is-active">Censo Diario</div>
+                <div class="preboot-tab preboot-hide-md">Entrega Turno Enfermería</div>
+                <div class="preboot-tab preboot-hide-lg">Entrega Turno Médicos</div>
+                <div class="preboot-tab preboot-hide-lg">Gestión Traslados</div>
+            </div>
+            <div class="preboot-actions">
+                <div class="preboot-tab preboot-hide-md">0</div>
+                <div class="preboot-user">D</div>
+            </div>
+        </div>
+        <div class="preboot-strip">
+            <div class="preboot-row">
+                <div class="preboot-pill is-primary">Enviar censo</div>
+                <div class="preboot-divider preboot-hide-md"></div>
+                <div class="preboot-pill preboot-hide-md">2026</div>
+                <div class="preboot-pill preboot-hide-md">ABRIL</div>
+                <div class="preboot-day-row">
+                    <div class="preboot-pill preboot-fade">20</div>
+                    <div class="preboot-pill preboot-fade">21</div>
+                    <div class="preboot-pill is-day-active">22</div>
+                    <div class="preboot-pill preboot-fade">23</div>
+                </div>
+            </div>
+            <div class="preboot-actions">
+                <div class="preboot-pill preboot-hide-md">Buscar</div>
+                <div class="preboot-pill preboot-hide-md">Camas</div>
+                <div class="preboot-pill is-mmrad preboot-hide-lg">MMRAD</div>
+                <div class="preboot-pill is-lab">Lab</div>
+            </div>
+        </div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/index.tsx"></script>
 </body>

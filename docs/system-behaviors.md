@@ -203,18 +203,37 @@ La UI no debe reinterpretar estos casos con heurísticas paralelas repartidas en
    - se confirme de verdad que debe mostrarse login.
 4. El único loader permitido en `"/census"` es el loader interno del shell del módulo.
 
+### Contrato visual preboot actual para `"/"` y `"/census"` autenticados
+
+- Antes de que React monte, `index.html` debe pintar directamente una superficie autenticada mínima.
+- Esa superficie debe conservar la barra azul superior y la barra blanca secundaria del contexto `Censo Diario`.
+- Además debe mostrar contenido mínimo dentro de esas barras para evitar que se vean vacías:
+  - marca/título;
+  - pestaña activa de `Censo Diario`;
+  - acciones mínimas como `Enviar censo`, fecha, `Buscar` y `Lab`.
+- Esa superficie no es un loader nuevo ni un shell alternativo completo: no debe ocupar el resto del viewport con placeholders inventados.
+- Debe desaparecer automáticamente apenas `#root` tenga contenido visible real.
+
+### Contrato visual preboot actual para login
+
+- Login no debe mostrar spinner de arranque.
+- Login no debe mostrar un frame blanco antes de que aparezca la pantalla real.
+- El fondo inicial debe alinearse con la composición visual real del login, sin sustituirla por un loader de pantalla completa.
+
 ### Qué NO se debe hacer en `"/census"`
 
 - No renderizar `InitialLoadingScreen`.
 - No renderizar `DefaultLoadingScreen`.
 - No reutilizar suppressions visuales pensadas para login si introducen un spinner full-screen adicional.
 - No agregar nuevos `Suspense fallback` globales delante del shell autenticado del censo.
+- No dejar la barra azul/blanca preboot vacía si ya existe esta superficie mínima en `index.html`.
 
 ### Intención de diseño
 
 - Evitar dos transiciones full-screen consecutivas al recargar `censo diario`.
 - Mantener continuidad visual del login durante bootstrap previo a autenticación.
 - Dejar el shell autenticado de censo sin `lazy-loading` extra para que no reaparezca un fallback intermedio antes del loader correcto del módulo.
+- Reemplazar el antiguo “flash blanco” por continuidad visual mínima y reconocible del módulo mientras el shell real monta.
 - Tratar cualquier nuevo loader global visible en `"/census"` como regresión.
 
 ### Archivos Relacionados
