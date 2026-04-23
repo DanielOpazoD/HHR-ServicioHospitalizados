@@ -5,7 +5,7 @@ import { AppContent } from '@/components/layout/AppContent';
 
 const mockUseAppContentRuntime = vi.fn();
 const mockUseAppContentShellEffects = vi.fn();
-const mockResolveCensusDateSelection = vi.fn();
+const mockBuildOpenCensusDateHandler = vi.fn();
 const mockResolveModuleTheme = vi.fn();
 const mockAppContentOverlays = vi.fn();
 
@@ -26,7 +26,7 @@ vi.mock('@/components/layout/app-content/useAppContentShellEffects', () => ({
 }));
 
 vi.mock('@/components/layout/app-content/appContentCensusDateController', () => ({
-  resolveCensusDateSelection: (...args: unknown[]) => mockResolveCensusDateSelection(...args),
+  buildOpenCensusDateHandler: (...args: unknown[]) => mockBuildOpenCensusDateHandler(...args),
 }));
 
 vi.mock('@/components/layout/app-content/moduleThemeController', () => ({
@@ -62,6 +62,32 @@ describe('AppContent entrypoint wiring', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockBuildOpenCensusDateHandler.mockImplementation(
+      ({
+        setCurrentModule,
+        setCensusViewMode,
+        setSelectedYear,
+        setSelectedMonth,
+        setSelectedDay,
+      }: {
+        setCurrentModule: (module: string) => void;
+        setCensusViewMode: (mode: string) => void;
+        setSelectedYear: (year: number) => void;
+        setSelectedMonth: (month: number) => void;
+        setSelectedDay: (day: number) => void;
+      }) =>
+        (isoDate: string) => {
+          if (isoDate !== '2026-04-19') {
+            return;
+          }
+
+          setCurrentModule('CENSUS');
+          setCensusViewMode('REGISTER');
+          setSelectedYear(2026);
+          setSelectedMonth(4);
+          setSelectedDay(19);
+        }
+    );
     mockUseAppContentRuntime.mockReturnValue({
       auth: { role: 'admin' },
       dailyRecordHook: {},
@@ -71,8 +97,6 @@ describe('AppContent entrypoint wiring', () => {
   });
 
   it('does not navigate the census date when the selection cannot be resolved', () => {
-    mockResolveCensusDateSelection.mockReturnValue(null);
-
     render(<AppContent ui={ui as never} />);
 
     const overlaysProps = mockAppContentOverlays.mock.calls[0][0] as {
@@ -88,12 +112,6 @@ describe('AppContent entrypoint wiring', () => {
   });
 
   it('navigates the census date through the resolved selection', () => {
-    mockResolveCensusDateSelection.mockReturnValue({
-      year: 2026,
-      month: 4,
-      day: 19,
-    });
-
     render(<AppContent ui={ui as never} />);
 
     const overlaysProps = mockAppContentOverlays.mock.calls[0][0] as {
