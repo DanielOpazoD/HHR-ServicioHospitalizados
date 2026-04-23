@@ -32,6 +32,18 @@ describe('useAppContentEventBridge', () => {
     expect(setCurrentModule).toHaveBeenCalledWith('CUDYR');
   });
 
+  it('ignores invalid navigate-module payloads', () => {
+    const setCurrentModule = vi.fn();
+    const setSelectedShift = vi.fn();
+    render(
+      <EventBridgeHarness setCurrentModule={setCurrentModule} setSelectedShift={setSelectedShift} />
+    );
+
+    window.dispatchEvent(new CustomEvent('navigate-module', { detail: 'NOT_A_MODULE' }));
+
+    expect(setCurrentModule).not.toHaveBeenCalled();
+  });
+
   it('forwards valid set-shift events and ignores invalid values', () => {
     const setCurrentModule = vi.fn();
     const setSelectedShift = vi.fn();

@@ -1,14 +1,15 @@
 import { useEffect } from 'react';
 import type { ModuleType } from '@/constants/navigationConfig';
-
-type ShiftType = 'day' | 'night';
+import {
+  resolveEventBridgeModule,
+  resolveEventBridgeShift,
+  type EventBridgeShiftType,
+} from '@/components/layout/app-content/appContentEventBridgeController';
 
 interface UseAppContentEventBridgeParams {
   setCurrentModule: (module: ModuleType) => void;
-  setSelectedShift: (shift: ShiftType) => void;
+  setSelectedShift: (shift: EventBridgeShiftType) => void;
 }
-
-const isShiftType = (value: unknown): value is ShiftType => value === 'day' || value === 'night';
 
 const useWindowEvent = <T>(
   eventName: string,
@@ -29,21 +30,23 @@ export const useAppContentEventBridge = ({
   setCurrentModule,
   setSelectedShift,
 }: UseAppContentEventBridgeParams): void => {
-  useWindowEvent<ModuleType>(
+  useWindowEvent<unknown>(
     'navigate-module',
     detail => {
-      if (detail) {
-        setCurrentModule(detail);
+      const module = resolveEventBridgeModule(detail);
+      if (module) {
+        setCurrentModule(module);
       }
     },
     setCurrentModule
   );
 
-  useWindowEvent<ShiftType>(
+  useWindowEvent<unknown>(
     'set-shift',
     detail => {
-      if (isShiftType(detail)) {
-        setSelectedShift(detail);
+      const shift = resolveEventBridgeShift(detail);
+      if (shift) {
+        setSelectedShift(shift);
       }
     },
     setSelectedShift
