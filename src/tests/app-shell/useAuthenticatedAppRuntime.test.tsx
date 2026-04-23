@@ -21,11 +21,23 @@ const {
   mockResolveShiftNurseSignature: vi.fn(),
 }));
 
-vi.mock('@/hooks', () => ({
+vi.mock('@/hooks/useAppState', () => ({
   useAppState: () => mockUseAppState(),
+}));
+
+vi.mock('@/hooks/useCensusEmail', () => ({
   useCensusEmail: (...args: unknown[]) => mockUseCensusEmail(...args),
+}));
+
+vi.mock('@/hooks/useDailyRecord', () => ({
   useDailyRecord: (...args: unknown[]) => mockUseDailyRecord(...args),
+}));
+
+vi.mock('@/hooks/useExistingDaysQuery', () => ({
   useExistingDaysQuery: (...args: unknown[]) => mockUseExistingDaysQuery(...args),
+}));
+
+vi.mock('@/hooks/useFileOperations', () => ({
   useFileOperations: (...args: unknown[]) => mockUseFileOperations(...args),
 }));
 

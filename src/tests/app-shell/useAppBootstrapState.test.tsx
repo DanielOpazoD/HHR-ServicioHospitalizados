@@ -26,9 +26,15 @@ vi.mock('@/context', () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-vi.mock('@/hooks', () => ({
+vi.mock('@/hooks/useDateNavigation', () => ({
   useDateNavigation: () => mockUseDateNavigation(),
+}));
+
+vi.mock('@/hooks/useSignatureMode', () => ({
   useSignatureMode: (...args: unknown[]) => mockUseSignatureMode(...args),
+}));
+
+vi.mock('@/hooks/useVersionCheck', () => ({
   useVersionCheck: () => mockUseVersionCheck(),
 }));
 

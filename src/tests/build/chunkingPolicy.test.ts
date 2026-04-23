@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { chunkForModule } from '../../../scripts/config/chunkingPolicy';
+
+const readSource = (relativePath: string): string =>
+  fs.readFileSync(path.resolve(process.cwd(), relativePath), 'utf8');
 
 describe('chunkingPolicy', () => {
   it('does not force manual chunks for application source modules', () => {
@@ -41,6 +46,17 @@ describe('chunkingPolicy', () => {
     expect(chunkForModule('/repo/src/components/layout/app-content/useAppContentRuntime.ts')).toBe(
       'app-authenticated-shell'
     );
+  });
+
+  it('keeps authenticated shell runtime off the hooks barrel to avoid pulling feature hooks into startup', () => {
+    const guardedFiles = [
+      'src/app-shell/runtime/useAuthenticatedAppRuntime.ts',
+      'src/app-shell/bootstrap/useAppBootstrapState.ts',
+    ];
+
+    for (const file of guardedFiles) {
+      expect(readSource(file), file).not.toMatch(/from ['"]@\/hooks['"]/);
+    }
   });
 
   it('splits heavyweight vendor capabilities by runtime concern', () => {
