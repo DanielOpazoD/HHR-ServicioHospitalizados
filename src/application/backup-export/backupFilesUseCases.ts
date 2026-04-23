@@ -1,6 +1,7 @@
 import {
-  createApplicationDegraded,
-  createApplicationFailed,
+  createApplicationDegradedFromIssue,
+  createApplicationFailedFromIssue,
+  createApplicationIssue,
   createApplicationSuccess,
 } from '@/shared/contracts/applicationOutcomeFactories';
 import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
@@ -15,6 +16,12 @@ interface BackupFilesUseCaseDependencies {
 const resolveBackupFilesPort = (dependencies: BackupFilesUseCaseDependencies) =>
   dependencies.backupFilesPort || defaultBackupFilesPort;
 
+const createBackupFilesIssue = (
+  kind: 'permission' | 'unknown' | 'not_found',
+  error: unknown,
+  fallbackMessage: string
+) => createApplicationIssue(kind, error instanceof Error ? error.message : fallbackMessage);
+
 export const executeListBackupCrudFiles = async (
   filters?: BackupFilters,
   dependencies: BackupFilesUseCaseDependencies = {}
@@ -24,30 +31,18 @@ export const executeListBackupCrudFiles = async (
     if (result.status === 'success') {
       return createApplicationSuccess(result.data);
     }
-    return createApplicationDegraded(
+    return createApplicationDegradedFromIssue(
       [],
-      [
-        {
-          kind: result.status === 'permission_denied' ? 'permission' : 'unknown',
-          message:
-            result.error instanceof Error
-              ? result.error.message
-              : 'No se pudieron cargar los archivos de respaldo.',
-        },
-      ]
+      createBackupFilesIssue(
+        result.status === 'permission_denied' ? 'permission' : 'unknown',
+        result.error,
+        'No se pudieron cargar los archivos de respaldo.'
+      )
     );
   } catch (error) {
-    return createApplicationDegraded(
+    return createApplicationDegradedFromIssue(
       [],
-      [
-        {
-          kind: 'unknown',
-          message:
-            error instanceof Error
-              ? error.message
-              : 'No se pudieron cargar los archivos de respaldo.',
-        },
-      ]
+      createBackupFilesIssue('unknown', error, 'No se pudieron cargar los archivos de respaldo.')
     );
   }
 };
@@ -59,27 +54,27 @@ export const executeGetBackupCrudFile = async (
   try {
     const result = await resolveBackupFilesPort(dependencies).getFile(id);
     if (result.status === 'not_found') {
-      return createApplicationFailed(null, [
-        { kind: 'not_found', message: 'Archivo no encontrado.' },
-      ]);
+      return createApplicationFailedFromIssue(
+        null,
+        createBackupFilesIssue('not_found', null, 'Archivo no encontrado.')
+      );
     }
     if (result.status === 'success') {
       return createApplicationSuccess(result.data);
     }
-    return createApplicationFailed(null, [
-      {
-        kind: result.status === 'permission_denied' ? 'permission' : 'unknown',
-        message:
-          result.error instanceof Error ? result.error.message : 'No se pudo cargar el archivo.',
-      },
-    ]);
+    return createApplicationFailedFromIssue(
+      null,
+      createBackupFilesIssue(
+        result.status === 'permission_denied' ? 'permission' : 'unknown',
+        result.error,
+        'No se pudo cargar el archivo.'
+      )
+    );
   } catch (error) {
-    return createApplicationFailed(null, [
-      {
-        kind: 'unknown',
-        message: error instanceof Error ? error.message : 'No se pudo cargar el archivo.',
-      },
-    ]);
+    return createApplicationFailedFromIssue(
+      null,
+      createBackupFilesIssue('unknown', error, 'No se pudo cargar el archivo.')
+    );
   }
 };
 
@@ -92,20 +87,19 @@ export const executeDeleteBackupCrudFile = async (
     if (result.status === 'success') {
       return createApplicationSuccess(result.data);
     }
-    return createApplicationFailed(null, [
-      {
-        kind: result.status === 'permission_denied' ? 'permission' : 'unknown',
-        message:
-          result.error instanceof Error ? result.error.message : 'No se pudo eliminar el archivo.',
-      },
-    ]);
+    return createApplicationFailedFromIssue(
+      null,
+      createBackupFilesIssue(
+        result.status === 'permission_denied' ? 'permission' : 'unknown',
+        result.error,
+        'No se pudo eliminar el archivo.'
+      )
+    );
   } catch (error) {
-    return createApplicationFailed(null, [
-      {
-        kind: 'unknown',
-        message: error instanceof Error ? error.message : 'No se pudo eliminar el archivo.',
-      },
-    ]);
+    return createApplicationFailedFromIssue(
+      null,
+      createBackupFilesIssue('unknown', error, 'No se pudo eliminar el archivo.')
+    );
   }
 };
 
@@ -132,23 +126,21 @@ export const executeSaveNursingHandoffCrudBackup = async (
     if (result.status === 'success') {
       return createApplicationSuccess(result.data);
     }
-    return createApplicationFailed(null, [
-      {
-        kind:
-          result.status === 'unauthenticated' || result.status === 'permission_denied'
-            ? 'permission'
-            : 'unknown',
-        message:
-          result.error instanceof Error ? result.error.message : 'No se pudo crear el respaldo.',
-      },
-    ]);
+    return createApplicationFailedFromIssue(
+      null,
+      createBackupFilesIssue(
+        result.status === 'unauthenticated' || result.status === 'permission_denied'
+          ? 'permission'
+          : 'unknown',
+        result.error,
+        'No se pudo crear el respaldo.'
+      )
+    );
   } catch (error) {
-    return createApplicationFailed(null, [
-      {
-        kind: 'unknown',
-        message: error instanceof Error ? error.message : 'No se pudo crear el respaldo.',
-      },
-    ]);
+    return createApplicationFailedFromIssue(
+      null,
+      createBackupFilesIssue('unknown', error, 'No se pudo crear el respaldo.')
+    );
   }
 };
 
@@ -162,21 +154,18 @@ export const executeCheckBackupCrudExists = async (
     if (result.status === 'success') {
       return createApplicationSuccess(result.data);
     }
-    return createApplicationDegraded(false, [
-      {
-        kind: result.status === 'permission_denied' ? 'permission' : 'unknown',
-        message:
-          result.error instanceof Error
-            ? result.error.message
-            : 'No se pudo verificar el respaldo.',
-      },
-    ]);
+    return createApplicationDegradedFromIssue(
+      false,
+      createBackupFilesIssue(
+        result.status === 'permission_denied' ? 'permission' : 'unknown',
+        result.error,
+        'No se pudo verificar el respaldo.'
+      )
+    );
   } catch (error) {
-    return createApplicationDegraded(false, [
-      {
-        kind: 'unknown',
-        message: error instanceof Error ? error.message : 'No se pudo verificar el respaldo.',
-      },
-    ]);
+    return createApplicationDegradedFromIssue(
+      false,
+      createBackupFilesIssue('unknown', error, 'No se pudo verificar el respaldo.')
+    );
   }
 };

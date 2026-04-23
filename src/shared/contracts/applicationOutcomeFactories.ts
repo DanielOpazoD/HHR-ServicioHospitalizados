@@ -3,6 +3,7 @@ import type {
   ApplicationOutcome,
   ApplicationOutcomeMetadata,
   ApplicationOutcomeStatus,
+  ApplicationErrorKind,
 } from '@/shared/contracts/applicationOutcomeTypes';
 
 const createApplicationOutcome = <T>(
@@ -14,6 +15,16 @@ const createApplicationOutcome = <T>(
   status,
   data,
   issues,
+  ...metadata,
+});
+
+export const createApplicationIssue = (
+  kind: ApplicationErrorKind,
+  message: string,
+  metadata: Omit<ApplicationIssue, 'kind' | 'message'> = {}
+): ApplicationIssue => ({
+  kind,
+  message,
   ...metadata,
 });
 
@@ -40,3 +51,15 @@ export const createApplicationFailed = <T>(
   issues: ApplicationIssue[],
   metadata: ApplicationOutcomeMetadata = {}
 ): ApplicationOutcome<T> => createApplicationOutcome('failed', data, issues, metadata);
+
+export const createApplicationFailedFromIssue = <T>(
+  data: T,
+  issue: ApplicationIssue,
+  metadata: ApplicationOutcomeMetadata = {}
+): ApplicationOutcome<T> => createApplicationFailed(data, [issue], metadata);
+
+export const createApplicationDegradedFromIssue = <T>(
+  data: T,
+  issue: ApplicationIssue,
+  metadata: ApplicationOutcomeMetadata = {}
+): ApplicationOutcome<T> => createApplicationDegraded(data, [issue], metadata);
