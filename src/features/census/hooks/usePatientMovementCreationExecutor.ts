@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import type { DailyRecord } from '@/features/census/contracts/censusRecordContracts';
+import type { PersistDailyRecord } from '@/application/shared/dailyRecordCoreContracts';
 import {
   MovementCreationError,
   MovementCreationErrorCode,
@@ -21,7 +22,7 @@ interface ExecuteMovementCreationParams<TValue extends { updatedRecord: DailyRec
 }
 
 interface UsePatientMovementCreationExecutorParams {
-  saveAndUpdate: (updatedRecord: DailyRecord) => void;
+  saveAndUpdate: PersistDailyRecord;
   notifyCreationError: (kind: MovementKind, code: MovementCreationErrorCode, bedId: string) => void;
 }
 

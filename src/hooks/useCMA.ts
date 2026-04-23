@@ -1,5 +1,8 @@
 import { useMemo, useCallback, useRef, useEffect } from 'react';
-import type { DailyRecord } from '@/application/shared/dailyRecordCoreContracts';
+import type {
+  DailyRecord,
+  PersistDailyRecord,
+} from '@/application/shared/dailyRecordCoreContracts';
 import { CMAData } from '@/types/domain/movements';
 import { capitalizeWords } from '@/utils/stringUtils';
 import { formatRut, isValidRut, isPassportFormat } from '@/utils/rutUtils';
@@ -29,10 +32,7 @@ const normalizePatientData = (data: Partial<CMAData>): Partial<CMAData> => {
   return normalized;
 };
 
-export const useCMA = (
-  record: DailyRecord | null,
-  saveAndUpdate: (updatedRecord: DailyRecord) => void
-) => {
+export const useCMA = (record: DailyRecord | null, saveAndUpdate: PersistDailyRecord) => {
   const recordRef = useRef(record);
   useEffect(() => {
     recordRef.current = record;

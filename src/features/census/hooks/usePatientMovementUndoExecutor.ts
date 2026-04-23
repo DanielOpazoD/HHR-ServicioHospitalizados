@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import type { DailyRecord } from '@/features/census/contracts/censusRecordContracts';
+import type { PersistDailyRecord } from '@/application/shared/dailyRecordCoreContracts';
 import type { PatientData } from '@/features/census/domain/movements/contracts/patient';
 import { resolveUndoPatientMovement } from '@/features/census/controllers/patientMovementUndoController';
 import { UndoMovementKind } from '@/features/census/controllers/patientMovementUndoErrorPresentation';
@@ -15,7 +16,7 @@ interface UndoApplyParams {
 
 interface UsePatientMovementUndoExecutorParams {
   createEmptyPatient: (bedId: string) => PatientData;
-  saveAndUpdate: (updatedRecord: DailyRecord) => void;
+  saveAndUpdate: PersistDailyRecord;
   notifyUndoError: (
     kind: UndoMovementKind,
     code: UndoPatientMovementErrorCode,

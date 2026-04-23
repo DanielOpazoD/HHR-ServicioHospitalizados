@@ -1,5 +1,8 @@
 import { useCallback } from 'react';
-import type { DailyRecord } from '@/application/shared/dailyRecordCoreContracts';
+import type {
+  DailyRecord,
+  PersistDailyRecord,
+} from '@/application/shared/dailyRecordCoreContracts';
 import { PatientData } from '@/hooks/contracts/patientHookContracts';
 import {
   resolveUndoPatientMovement,
@@ -17,7 +20,7 @@ interface UndoApplyParams {
 
 interface UsePatientMovementUndoExecutorParams {
   createEmptyPatient: (bedId: string) => PatientData;
-  saveAndUpdate: (updatedRecord: DailyRecord) => void;
+  saveAndUpdate: PersistDailyRecord;
   notifyUndoError: (
     kind: UndoMovementKind,
     code: UndoPatientMovementErrorCode,

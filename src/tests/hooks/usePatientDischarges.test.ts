@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { usePatientDischarges } from '@/hooks/usePatientDischarges';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
+import type {
+  DailyRecord,
+  PersistDailyRecord,
+} from '@/application/shared/dailyRecordCoreContracts';
 import type { PatientData } from '@/types/domain/patient';
 import * as auditService from '@/services/admin/auditService';
 
@@ -21,11 +24,11 @@ vi.mock('@/services/factories/patientFactory', () => ({
 
 describe('usePatientDischarges', () => {
   let mockRecord: DailyRecord;
-  let mockSaveAndUpdate: (updatedRecord: DailyRecord) => void;
+  let mockSaveAndUpdate: PersistDailyRecord;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockSaveAndUpdate = vi.fn();
+    mockSaveAndUpdate = vi.fn().mockResolvedValue(undefined) as PersistDailyRecord;
     mockRecord = {
       date: '2024-12-28',
       beds: {

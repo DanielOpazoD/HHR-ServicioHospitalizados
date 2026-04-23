@@ -1,5 +1,8 @@
 import { useMemo, useCallback } from 'react';
-import type { DailyRecord } from '@/application/shared/dailyRecordCoreContracts';
+import type {
+  DailyRecord,
+  PersistDailyRecord,
+} from '@/application/shared/dailyRecordCoreContracts';
 import { createEmptyPatient } from '@/services/factories/patientFactory';
 import { BEDS } from '@/constants/beds';
 import { useLatestRef } from '@/hooks/useLatestRef';
@@ -31,7 +34,7 @@ import type {
 
 export const usePatientTransfers = (
   record: DailyRecord | null,
-  saveAndUpdate: (updatedRecord: DailyRecord) => void,
+  saveAndUpdate: PersistDailyRecord,
   runtime: PatientMovementRuntime = patientMovementBrowserRuntime
 ): TransferMovementActions => {
   const recordRef = useLatestRef(record);

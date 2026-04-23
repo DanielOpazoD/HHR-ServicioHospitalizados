@@ -1,5 +1,8 @@
 import { useMemo } from 'react';
-import type { DailyRecord } from '@/application/shared/dailyRecordCoreContracts';
+import type {
+  DailyRecord,
+  PersistDailyRecord,
+} from '@/application/shared/dailyRecordCoreContracts';
 import { usePatientDischarges } from '@/hooks/usePatientDischarges';
 import { usePatientTransfers } from '@/hooks/usePatientTransfers';
 import type { DischargeTarget, PatientMovementActions } from '@/types/movements';
@@ -13,7 +16,7 @@ export type { DischargeTarget };
  */
 export const useMovements = (
   record: DailyRecord | null,
-  saveAndUpdate: (updatedRecord: DailyRecord) => void
+  saveAndUpdate: PersistDailyRecord
 ): PatientMovementActions => {
   const discharges = usePatientDischarges(record, saveAndUpdate);
   const transfers = usePatientTransfers(record, saveAndUpdate);

@@ -1,10 +1,11 @@
 import { useCallback, MutableRefObject } from 'react';
 import type { DailyRecord } from '@/features/census/contracts/censusRecordContracts';
+import type { PersistDailyRecord } from '@/application/shared/dailyRecordCoreContracts';
 import { usePatientMovementCurrentRecord } from '@/features/census/hooks/usePatientMovementCurrentRecord';
 
 interface UsePatientMovementMutationExecutorParams {
   recordRef: MutableRefObject<DailyRecord | null>;
-  saveAndUpdate: (updatedRecord: DailyRecord) => void;
+  saveAndUpdate: PersistDailyRecord;
 }
 
 export const usePatientMovementMutationExecutor = ({

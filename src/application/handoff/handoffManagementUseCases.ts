@@ -15,6 +15,10 @@ import {
   buildResetMedicalHandoffRecord,
   buildUpdatedHandoffStaffRecord,
 } from '@/domain/handoff/management';
+import type {
+  ApplyDailyRecordPatch,
+  PersistDailyRecord,
+} from '@/application/shared/dailyRecordCoreContracts';
 import { createApplicationSuccess } from '@/shared/contracts/applicationOutcomeFactories';
 import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
 
@@ -38,8 +42,8 @@ export interface ConfirmMedicalSpecialtyNoChangesOutput extends PersistedHandoff
 
 interface PersistRecordInput {
   record: DailyRecord | null;
-  saveRecord: (updatedRecord: DailyRecord) => Promise<void>;
-  patchRecord?: (patch: DailyRecordPatch) => Promise<void>;
+  saveRecord: PersistDailyRecord;
+  patchRecord?: ApplyDailyRecordPatch;
 }
 
 interface UpdateHandoffChecklistInput extends PersistRecordInput {
