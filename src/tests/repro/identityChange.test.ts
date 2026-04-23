@@ -4,6 +4,7 @@ import { useBedManagement } from '@/hooks/useBedManagement';
 import type {
   ApplyDailyRecordPatch,
   DailyRecord,
+  PersistDailyRecord,
 } from '@/application/shared/dailyRecordCoreContracts';
 import { Specialty, PatientStatus } from '@/types/domain/patientClassification';
 import { DataFactory } from '@/tests/factories/DataFactory';
@@ -48,7 +49,7 @@ vi.mock('../../hooks/useClinicalCrib', () => ({
 describe('Identity-based Diagnosis Clearing', () => {
   let mockRecord: DailyRecord;
   let patchRecord: ApplyDailyRecordPatch;
-  let saveAndUpdate: (updatedRecord: DailyRecord) => void;
+  let saveAndUpdate: PersistDailyRecord;
 
   beforeEach(() => {
     mockRecord = DataFactory.createMockDailyRecord('2026-01-18', {
@@ -77,7 +78,7 @@ describe('Identity-based Diagnosis Clearing', () => {
     });
 
     patchRecord = vi.fn().mockResolvedValue(undefined) as ApplyDailyRecordPatch;
-    saveAndUpdate = vi.fn() as (updatedRecord: DailyRecord) => void;
+    saveAndUpdate = vi.fn().mockResolvedValue(undefined) as PersistDailyRecord;
   });
 
   it('should clear diagnosis fields when RUT changes', async () => {

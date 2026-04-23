@@ -2,7 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { createEmptyPatient } from '@/services/factories/patientFactory';
 import { useBedManagement } from '@/hooks/useBedManagement';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
+import type {
+  DailyRecord,
+  PersistDailyRecord,
+} from '@/application/shared/dailyRecordCoreContracts';
 import type { PatientData } from '@/types/domain/patient';
 import { Specialty, PatientStatus } from '@/types/domain/patientClassification';
 import { mockAuditContextValue } from '../setup';
@@ -36,7 +39,7 @@ vi.mock('@/services/admin/attributionService', () => ({
 }));
 
 describe('useBedManagement patient updates', () => {
-  const mockSaveAndUpdate = vi.fn();
+  const mockSaveAndUpdate = vi.fn().mockResolvedValue(undefined) as PersistDailyRecord;
   const mockPatchRecord = vi.fn().mockResolvedValue(undefined);
 
   const createMockPatient = (bedId: string, overrides: Partial<PatientData> = {}): PatientData => ({

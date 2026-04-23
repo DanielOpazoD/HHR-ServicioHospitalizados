@@ -7,8 +7,8 @@
 import { useCallback } from 'react';
 import type {
   ApplyDailyRecordPatch,
-  DailyRecord,
   DailyRecordPatch,
+  PersistDailyRecord,
 } from '@/application/shared/dailyRecordCoreContracts';
 import type { DailyRecordBedsState } from '@/application/shared/dailyRecordBedContracts';
 import { PatientData } from '@/hooks/contracts/patientHookContracts';
@@ -31,7 +31,7 @@ export interface ClinicalCribActions {
 
 export const useClinicalCrib = (
   record: DailyRecordBedsState | null,
-  _saveAndUpdate: (updatedRecord: DailyRecord) => void,
+  _saveAndUpdate: PersistDailyRecord,
   patchRecord: ApplyDailyRecordPatch
 ): ClinicalCribActions => {
   /**
