@@ -21,16 +21,9 @@ import {
   SIGNATURE_ROUTE_DEFINITION,
 } from '@/components/app-router/appRouterController';
 
-export type AppModule = ModuleType;
-export type CensusViewMode = 'REGISTER' | 'ANALYTICS';
-
 interface AppRouterProps {
   /** Global UI state */
   ui: UseUIStateReturn;
-  /** Current active module */
-  currentModule: AppModule;
-  /** Census sub-view mode */
-  censusViewMode: CensusViewMode;
   /** Selected day for census */
   selectedDay: number;
   /** Selected month for census */
@@ -55,8 +48,6 @@ interface AppRouterProps {
  */
 export const AppRouter: React.FC<AppRouterProps> = ({
   ui,
-  currentModule,
-  censusViewMode: _censusViewMode,
   selectedDay,
   selectedMonth,
   currentDateString,
@@ -66,6 +57,7 @@ export const AppRouter: React.FC<AppRouterProps> = ({
   onCloseBedManagerModal,
   onOpenCensusDate,
 }) => {
+  const currentModule = ui.currentModule;
   const { censusAccessProfile, visibleModules, e2eEditableOverride } =
     resolveAppRouterContext(role);
   const resolveReadOnly = (module: ModuleType) =>

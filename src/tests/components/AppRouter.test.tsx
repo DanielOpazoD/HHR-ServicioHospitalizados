@@ -83,8 +83,6 @@ const createProps = (overrides: Partial<AppRouterProps> = {}): AppRouterProps =>
   ui: {
     currentModule: 'CENSUS',
   } as AppRouterProps['ui'],
-  currentModule: 'CENSUS',
-  censusViewMode: 'REGISTER',
   selectedDay: 22,
   selectedMonth: 3,
   currentDateString: '2026-04-22',
@@ -140,7 +138,7 @@ describe('AppRouter', () => {
     render(
       <AppRouter
         {...createProps({
-          currentModule: 'NURSING_HANDOFF',
+          ui: { currentModule: 'NURSING_HANDOFF' } as AppRouterProps['ui'],
         })}
       />
     );
@@ -153,7 +151,7 @@ describe('AppRouter', () => {
     render(
       <AppRouter
         {...createProps({
-          currentModule: 'DIAGNOSTICS',
+          ui: { currentModule: 'DIAGNOSTICS' } as AppRouterProps['ui'],
         })}
       />
     );
@@ -168,7 +166,7 @@ describe('AppRouter', () => {
     render(
       <AppRouter
         {...createProps({
-          currentModule: 'DIAGNOSTICS',
+          ui: { currentModule: 'DIAGNOSTICS' } as AppRouterProps['ui'],
         })}
       />
     );
@@ -182,7 +180,7 @@ describe('AppRouter', () => {
     render(
       <AppRouter
         {...createProps({
-          currentModule: 'TRANSFER_MANAGEMENT',
+          ui: { currentModule: 'TRANSFER_MANAGEMENT' } as AppRouterProps['ui'],
         })}
       />
     );
@@ -195,7 +193,6 @@ describe('AppRouter', () => {
     render(
       <AppRouter
         {...createProps({
-          currentModule: 'CENSUS',
           isSignatureMode: true,
         })}
       />
