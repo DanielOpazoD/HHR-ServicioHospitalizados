@@ -5,8 +5,8 @@ Objetivo: ejecutar mejoras de alto valor derivadas de la auditoría técnica sin
 
 ## Estado actual
 
-- Bloque actual en curso: `sin bloque activo`
-- Siguiente bloque acordado después de este: `sin bloque adicional acordado todavía`
+- Bloque actual en curso: `Bloque 7: Startup UX y Release Confidence`
+- Siguiente bloque acordado después de este: `Bloque 8: Shell autenticado y composicion`
 
 ## Bloques
 
@@ -162,3 +162,225 @@ Validación ejecutada:
 Riesgo residual aceptado:
 
 - la depuración fue de entrypoints e indexación; no se reescribieron runbooks largos ni se eliminó documentación histórica que todavía sirve como registro de trabajo
+
+### Bloque 7: Startup UX y Release Confidence
+
+Estado: `pendiente`
+
+Objetivo:
+
+- llevar `frontend_startup` desde `degraded` a `ok`
+- convertir el comportamiento actual de refresh autenticado por módulo en contrato visible y de release
+- evitar regresiones en login, census y chrome por ruta sin reintroducir loaders globales
+
+Por qué sube la nota global:
+
+- mejora directamente `UX de arranque y refresh`
+- mejora `confianza real de release`
+- consolida una de las zonas que más sensibilidad mostró frente a cambios chicos
+
+Scope acotado:
+
+- `index.html`
+- `src/index.tsx`
+- `src/App.tsx`
+- `src/app-shell/bootstrap/*`
+- `src/tests/app-shell/*`
+- `src/tests/components/AppLoadingBehavior.test.tsx`
+- `src/tests/security/startupPrebootContractStatic.test.ts`
+
+Trabajo esperado:
+
+- convertir el fix route-aware actual en contrato de release explícito
+- añadir verificación de preview/refresh autenticado por módulo si falta cobertura real
+- regenerar snapshots de gobernanza para que `system-confidence` y `release-readiness` dejen de arrastrar estado viejo
+
+Validación esperada:
+
+- `npm run report:governance-snapshots`
+- `npx vitest run src/tests/app-shell/BootstrapRouteChrome.test.tsx src/tests/app-shell/appShellLoadingPolicy.test.ts src/tests/components/AppLoadingBehavior.test.tsx src/tests/components/index.bootstrap.test.tsx src/tests/security/startupPrebootContractStatic.test.ts`
+- `npm run typecheck`
+- `npm run lint -- --max-warnings 0`
+
+Criterio de cierre:
+
+- `reports/system-confidence.md` sin `frontend_startup: degraded`
+- refresh autenticado estable en las rutas críticas sin flashes ni shells incorrectos
+
+Riesgo residual aceptado:
+
+- no se buscará un sistema de preload más ambicioso ni una nueva superficie visual; solo consolidar el contrato actual
+
+### Bloque 8: Shell autenticado y composición
+
+Estado: `pendiente`
+
+Objetivo:
+
+- seguir reduciendo fan-out y duplicidad en el shell autenticado
+- dejar `AppContent`, `AppContentChrome`, `AppContentOverlays`, `AppRouter` y `useAppState` más declarativos
+
+Por qué sube la nota global:
+
+- mejora `mantenibilidad`
+- mejora `capacidad de evolucionar sin romper`
+- reduce costo mental en la zona de más uso diario
+
+Scope acotado:
+
+- `src/components/layout/AppContent.tsx`
+- `src/components/layout/app-content/AppContentChrome.tsx`
+- `src/components/layout/app-content/AppContentOverlays.tsx`
+- `src/components/AppRouter.tsx`
+- `src/components/app-router/*`
+- `src/hooks/useAppState.ts`
+- tests focalizados de shell/router
+
+Trabajo esperado:
+
+- extraer builders chicos de props/handlers de `Navbar` y `DateStrip`
+- podar props redundantes entre shell y router
+- seguir concentrando decisiones puras en controllers chicos ya existentes
+
+Validación esperada:
+
+- `npx vitest run src/tests/components/AppContent*.test.tsx src/tests/components/AppRouter.test.tsx`
+- `npm run typecheck`
+- `npm run lint -- --max-warnings 0`
+
+Criterio de cierre:
+
+- `AppContentChrome` deja de mezclar composición con demasiado armado inline
+- el shell autenticado baja fragilidad sin cambiar UX
+
+Riesgo residual aceptado:
+
+- no se va a reescribir el shell entero ni se moverán piezas estables solo por “limpieza”
+
+### Bloque 9: Superficies compartidas de alta importación
+
+Estado: `pendiente`
+
+Objetivo:
+
+- atacar 2-3 hotspots compartidos con mucho inbound import y costo de cambio
+- priorizar contratos y helpers sobre refactors grandes
+
+Por qué sube la nota global:
+
+- mejora `robustez técnica`
+- mejora `mantenibilidad`
+- baja riesgo sistémico en superficies muy reutilizadas
+
+Scope acotado:
+
+- `src/components/shared/BaseModal.tsx`
+- `src/context/AuthContext.tsx`
+- `src/shared/runtime/browserWindowRuntimeCore.ts`
+- `src/services/observability/operationalTelemetryOutcomeRecorder.ts`
+
+Trabajo esperado:
+
+- separar contratos/helpers donde la API pública sea demasiado amplia
+- estabilizar seams de runtime/telemetría y focos de test frágil
+- reducir branching implícito en componentes/shared contexts críticos
+
+Validación esperada:
+
+- vitest dirigido por superficie tocada
+- `npm run typecheck`
+- `npm run lint -- --max-warnings 0`
+- si toca gobernanza, `npm run report:governance-snapshots`
+
+Criterio de cierre:
+
+- menos regresiones de seam en tests
+- menos necesidad de mocks frágiles en superficies compartidas
+
+Riesgo residual aceptado:
+
+- no se tocarán tipos transversales de dominio si el retorno inmediato no es claro
+
+### Bloque 10: Pulido UX de alto tráfico
+
+Estado: `pendiente`
+
+Objetivo:
+
+- subir calidad percibida del producto en superficies de uso diario sin rediseño masivo
+
+Por qué sube la nota global:
+
+- mejora `UX diaria`
+- mejora `calidad percibida de producto`
+- ayuda a que la app se sienta más cerrada y premium
+
+Scope acotado:
+
+- `Navbar`
+- `DateStrip`
+- acciones principales de census/handoffs/traslados
+- continuidad visual entre estados de uso frecuente
+
+Trabajo esperado:
+
+- pulido de spacing, estados, jerarquía y continuidad
+- consistencia de feedback en acciones críticas
+- pequeñas correcciones visibles con alto retorno diario
+
+Validación esperada:
+
+- tests existentes afectados
+- `npm run typecheck`
+- `npm run lint -- --max-warnings 0`
+- validación visual local en los módulos de mayor uso
+
+Criterio de cierre:
+
+- menos asperezas visibles en navegación, fecha y acciones
+- mejor percepción de velocidad y continuidad
+
+Riesgo residual aceptado:
+
+- no se abrirá una nueva línea de diseño ni un rediseño completo del sistema visual
+
+### Bloque 11: Cierre de score y gobernanza viva
+
+Estado: `pendiente`
+
+Objetivo:
+
+- medir el efecto real de los bloques anteriores y dejar la nueva nota sustentada en evidencia del repo
+
+Por qué sube la nota global:
+
+- consolida `testing y gobernanza`
+- convierte mejoras locales en confianza acumulada
+
+Scope acotado:
+
+- `reports/*`
+- scorecards de release/confianza/cobertura
+- documentación corta de contratos nuevos que hayan quedado vigentes
+
+Trabajo esperado:
+
+- regenerar reportes clave al final del batch
+- actualizar este roadmap con estado real por bloque
+- dejar trazabilidad de qué subió la nota y por qué
+
+Validación esperada:
+
+- `npm run report:governance-snapshots`
+- `npm run check:quality`
+- `npm run typecheck`
+- `npm run lint -- --max-warnings 0`
+
+Criterio de cierre:
+
+- scorecards alineados con HEAD
+- roadmap actualizado y ejecutable para el siguiente tramo
+
+Riesgo residual aceptado:
+
+- la reevaluación no reemplaza validación visual real de UX crítica; la complementa
