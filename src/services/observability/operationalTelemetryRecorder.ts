@@ -19,6 +19,17 @@ const operationalTelemetryLogger = createScopedLogger('OperationalTelemetry');
 
 export { buildOperationalTelemetrySummary } from '@/services/observability/operationalTelemetrySummary';
 
+const readOperationalTelemetryEventsSafely = (): OperationalTelemetryEvent[] =>
+  readOperationalTelemetryEvents({
+    onReadError: error => operationalTelemetryLogger.warn('Failed to read persisted events', error),
+  });
+
+const persistOperationalTelemetryEventsSafely = (events: OperationalTelemetryEvent[]): void => {
+  persistOperationalTelemetryEvents(events, {
+    onPersistError: error => operationalTelemetryLogger.warn('Failed to persist events', error),
+  });
+};
+
 export const shouldRecordOperationalTelemetry = (
   status: OperationalTelemetryStatus,
   options: { allowSuccess?: boolean } = {}
@@ -37,29 +48,17 @@ export const recordOperationalTelemetry = (
   }
 
   const event = createRecordedOperationalTelemetryEvent(input);
-  const nextEvents = [
-    ...readOperationalTelemetryEvents({
-      onReadError: error =>
-        operationalTelemetryLogger.warn('Failed to read persisted events', error),
-    }),
-    event,
-  ];
+  const nextEvents = [...readOperationalTelemetryEventsSafely(), event];
 
-  persistOperationalTelemetryEvents(nextEvents, {
-    onPersistError: error => operationalTelemetryLogger.warn('Failed to persist events', error),
-  });
+  persistOperationalTelemetryEventsSafely(nextEvents);
   void dispatchOperationalTelemetryExternally(event);
 };
 
 export const getOperationalTelemetryEvents = (): OperationalTelemetryEvent[] =>
-  readOperationalTelemetryEvents({
-    onReadError: error => operationalTelemetryLogger.warn('Failed to read persisted events', error),
-  });
+  readOperationalTelemetryEventsSafely();
 
 export const clearOperationalTelemetryEvents = (): void => {
-  persistOperationalTelemetryEvents([], {
-    onPersistError: error => operationalTelemetryLogger.warn('Failed to persist events', error),
-  });
+  persistOperationalTelemetryEventsSafely([]);
 };
 
 export const getOperationalTelemetrySummary = (

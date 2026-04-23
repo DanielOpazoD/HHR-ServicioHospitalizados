@@ -8,8 +8,12 @@ import {
   toOperationalTelemetryStatus,
   type OperationalRuntimeState,
 } from '@/services/observability/operationalRuntimeState';
-import { normalizeOperationalTelemetryIssues } from '@/services/observability/operationalTelemetrySupport';
 import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
+
+interface OperationalTelemetryRecordOptions {
+  date?: string;
+  context?: Record<string, unknown>;
+}
 
 const deriveRuntimeStateFromSeverity = (
   severity: OperationalErrorShape['severity']
@@ -38,9 +42,7 @@ export const recordOperationalOutcome = (
       status: outcome.status,
       date: options.date,
       context: options.context,
-      issues: normalizeOperationalTelemetryIssues(
-        (outcome.issues || []).map(issue => issue.message || 'Sin detalle')
-      ),
+      issues: (outcome.issues || []).map(issue => issue.message || 'Sin detalle'),
     },
     { allowSuccess: options.allowSuccess }
   );
@@ -51,10 +53,7 @@ export const recordOperationalErrorTelemetry = (
   operation: string,
   error: unknown,
   fallback: OperationalErrorShape,
-  options: {
-    date?: string;
-    context?: Record<string, unknown>;
-  } = {}
+  options: OperationalTelemetryRecordOptions = {}
 ) => {
   const operationalError = normalizeOperationalError(error, fallback);
   const runtimeState =
@@ -71,9 +70,7 @@ export const recordOperationalErrorTelemetry = (
       ...operationalError.context,
       ...options.context,
     },
-    issues: normalizeOperationalTelemetryIssues([
-      operationalError.userSafeMessage || operationalError.message,
-    ]),
+    issues: [operationalError.userSafeMessage || operationalError.message],
   });
 
   return operationalError;
