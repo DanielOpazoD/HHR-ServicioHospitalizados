@@ -7,81 +7,27 @@ import { AppRouter } from '@/components/AppRouter';
 const BookmarkBar = lazyWithRetry(() =>
   import('@/components/bookmarks/BookmarkBar').then(m => ({ default: m.BookmarkBar }))
 );
-import { BEDS } from '@/constants/beds';
 import {
   shouldRenderBookmarkBar,
   shouldRenderDateStrip,
   shouldShowBookmarkToggle,
 } from '@/components/layout/app-content/appContentVisibilityController';
+import {
+  buildMedicalIndicationsPatientOptions,
+  canUseCensusDateStripActions,
+  resolveBookmarkToggleAction,
+  resolveDateStripCensusActions,
+} from '@/components/layout/app-content/appContentChromeController';
 import { resolveCensusDateSelection } from '@/components/layout/app-content/appContentCensusDateController';
 import type { UseUIStateReturn } from '@/hooks/useUIState';
 import type { AppContentRuntime } from '@/components/layout/app-content/useAppContentRuntime';
 import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medicalIndications';
-import { formatDateToCL } from '@/utils/clinicalUtils';
 
 export interface AppContentChromeProps {
   ui: UseUIStateReturn;
   runtime: AppContentRuntime;
   renderFeatureQuickActions?: (patients: MedicalIndicationsPatientOption[]) => React.ReactNode;
 }
-
-const calculateDaysOfStay = (admissionDate?: string): string => {
-  if (!admissionDate) return '';
-  const parsed = new Date(formatDateToCL(admissionDate).split('-').reverse().join('-'));
-  if (Number.isNaN(parsed.getTime())) return '';
-  const now = new Date();
-  const days = Math.ceil((now.getTime() - parsed.getTime()) / (1000 * 60 * 60 * 24));
-  return String(Math.max(days, 1));
-};
-
-const buildMedicalIndicationsPatientOptions = (
-  record: AppContentRuntime['record']
-): MedicalIndicationsPatientOption[] => {
-  const bedsById = new Map(BEDS.map(bed => [bed.id, bed]));
-
-  return Object.entries(record?.beds || {})
-    .filter(([, patient]) => Boolean(patient.patientName?.trim()))
-    .map(([bedId, patient]) => ({
-      bedId,
-      label: `${bedsById.get(bedId)?.name || bedId} · ${patient.patientName}`,
-      patientName: patient.patientName || '',
-      rut: patient.rut || '',
-      diagnosis: patient.cie10Description || patient.pathology || '',
-      age: patient.age || '',
-      birthDate: formatDateToCL(patient.birthDate || ''),
-      allergies: '',
-      admissionDate: formatDateToCL(patient.admissionDate || ''),
-      daysOfStay: calculateDaysOfStay(patient.admissionDate),
-      treatingDoctor: '',
-    }));
-};
-
-const canUseCensusDateStripActions = (
-  currentModule: UseUIStateReturn['currentModule'],
-  canUseCensusExports: boolean
-) => currentModule === 'CENSUS' && canUseCensusExports;
-
-const resolveDateStripCensusActions = ({
-  canUseCensusActions,
-  censusEmail,
-  exportManager,
-  handleExportExcel,
-}: {
-  canUseCensusActions: boolean;
-  censusEmail: AppContentRuntime['censusEmail'];
-  exportManager: AppContentRuntime['exportManager'];
-  handleExportExcel: AppContentRuntime['handleExportExcel'];
-}) => ({
-  onExportExcel: canUseCensusActions ? handleExportExcel : undefined,
-  onConfigureEmail: canUseCensusActions ? () => censusEmail.setShowEmailConfig(true) : undefined,
-  onSendEmail: canUseCensusActions
-    ? async () => {
-        await exportManager.handleBackupExcel();
-        await censusEmail.sendEmail();
-      }
-    : undefined,
-  onBackupExcel: canUseCensusActions ? exportManager.handleBackupExcel : undefined,
-});
 
 export const AppContentChrome: React.FC<AppContentChromeProps> = ({
   ui,
@@ -167,15 +113,15 @@ export const AppContentChrome: React.FC<AppContentChromeProps> = ({
           emailErrorMessage={censusEmail.error}
           syncStatus={syncStatus}
           lastSyncTime={lastSyncTime}
-          onToggleBookmarks={
-            shouldShowBookmarkToggle({
+          onToggleBookmarks={resolveBookmarkToggleAction({
+            canShowBookmarkToggle: shouldShowBookmarkToggle({
               currentModule: ui.currentModule,
               censusViewMode: ui.censusViewMode,
               role: auth.role,
-            })
-              ? () => ui.setShowBookmarksBar(!ui.showBookmarksBar)
-              : undefined
-          }
+            }),
+            showBookmarksBar: ui.showBookmarksBar,
+            setShowBookmarksBar: ui.setShowBookmarksBar,
+          })}
           showBookmarks={ui.showBookmarksBar}
           role={auth.role}
           onBackupPDF={exportManager.handleBackupHandoff}
