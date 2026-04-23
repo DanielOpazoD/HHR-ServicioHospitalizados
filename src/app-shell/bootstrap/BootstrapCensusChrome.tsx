@@ -3,7 +3,10 @@ import { DateStrip } from '@/components/layout/DateStrip';
 import { Navbar } from '@/components/layout/Navbar';
 import { AuthContext, type AuthContextType, type UserRole } from '@/context/AuthContext';
 import type { ModuleType } from '@/constants/navigationConfig';
-import { resolveModuleFromPathname } from '@/hooks/useAppState';
+import {
+  resolveModuleFromPathname,
+  shouldShowPrintButtonForModule,
+} from '@/hooks/controllers/appStateNavigationController';
 import { shouldRenderDateStrip } from '@/components/layout/app-content/appContentVisibilityController';
 
 const FIREBASE_AUTH_STORAGE_PREFIX = 'firebase:authUser:';
@@ -105,9 +108,6 @@ const resolveBootstrapModule = (): ModuleType => {
   return resolveModuleFromPathname(window.location.pathname) ?? 'CENSUS';
 };
 
-const shouldShowPrintButton = (module: ModuleType) =>
-  module === 'CUDYR' || module === 'NURSING_HANDOFF' || module === 'MEDICAL_HANDOFF';
-
 const buildBootstrapAuthContextValue = (
   persistedUser: ReturnType<typeof readPersistedFirebaseAuthUser>
 ): AuthContextType => {
@@ -190,7 +190,7 @@ export const BootstrapRouteChrome: React.FC = () => {
     isSignatureMode: false,
   });
   const canUseCensusChromeActions = bootstrapModule === 'CENSUS';
-  const canUseHandoffPrintActions = shouldShowPrintButton(bootstrapModule);
+  const canUseHandoffPrintActions = shouldShowPrintButtonForModule(bootstrapModule);
 
   return (
     <AuthContext.Provider value={authValue}>

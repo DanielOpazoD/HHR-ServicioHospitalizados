@@ -5,7 +5,7 @@ import {
   hasPersistedFirebaseAuthHint,
   hasRecentAuthenticatedSessionHint,
 } from '@/services/auth/authStorageHints';
-import { resolveModuleFromPathname } from '@/hooks/useAppState';
+import { resolveModuleFromPathname } from '@/hooks/controllers/appStateNavigationController';
 
 export type AppShellLoadingScreenMode =
   | 'silent'
