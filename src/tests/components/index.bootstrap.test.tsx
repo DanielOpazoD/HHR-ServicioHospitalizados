@@ -144,10 +144,6 @@ describe('index bootstrap entrypoint', () => {
   });
 
   it('renders the pre-mount loading screen and stops on reload outcomes', async () => {
-    mockResolvePreMountLoadingScreenDecision.mockReturnValue({
-      shouldRender: true,
-      preferLoginShell: true,
-    });
     mockBootstrapAppRuntime.mockResolvedValue({
       status: 'reload',
       stage: 'client_recovery',
@@ -161,10 +157,7 @@ describe('index bootstrap entrypoint', () => {
     await flushBootstrapWork();
 
     expect(mockCreateRoot).toHaveBeenCalledTimes(1);
-    expect(mockRootRender).toHaveBeenCalledTimes(1);
-
-    const initialRender = mockRootRender.mock.calls[0][0];
-    expect(initialRender.props.children.props.preferLoginShell).toBe(true);
+    expect(mockRootRender).not.toHaveBeenCalled();
     expect(mockRecordBootstrapRuntimeResult).toHaveBeenCalledWith(
       expect.objectContaining({ status: 'reload' })
     );

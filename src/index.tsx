@@ -20,30 +20,6 @@ if (!rootElement) {
   throw new Error('Could not find root element to mount to');
 }
 
-const bootSurfaceElement = document.getElementById('boot-surface');
-let bootSurfaceHidden = false;
-const BOOT_SURFACE_RELEASE_EVENT = 'hhr-release-boot-surface';
-
-const hideBootSurface = () => {
-  if (!bootSurfaceElement || bootSurfaceHidden) {
-    return;
-  }
-
-  bootSurfaceHidden = true;
-  bootSurfaceElement.classList.add('is-hidden');
-  window.setTimeout(() => bootSurfaceElement.remove(), 220);
-};
-
-if (typeof window !== 'undefined') {
-  window.addEventListener(
-    BOOT_SURFACE_RELEASE_EVENT,
-    () => {
-      window.requestAnimationFrame(() => hideBootSurface());
-    },
-    { once: true }
-  );
-}
-
 const root = ReactDOM.createRoot(rootElement);
 const bootLogger = createScopedLogger('Bootstrap');
 const detachBootstrapRuntimeErrorListeners =
@@ -84,7 +60,10 @@ const renderBootstrapLoadingScreen = () => {
 
   root.render(
     <React.StrictMode>
-      <InitialLoadingScreen preferLoginShell={loadingScreenDecision.preferLoginShell} />
+      <InitialLoadingScreen
+        pathname={window.location.pathname}
+        preferLoginShell={loadingScreenDecision.preferLoginShell}
+      />
     </React.StrictMode>
   );
 };
@@ -114,7 +93,6 @@ bootstrapAppRuntime()
     }
 
     if (result.status === 'blocked') {
-      hideBootSurface();
       mountFirebaseConfigWarning(result.message, result.warningCopy);
       return;
     }
@@ -125,7 +103,6 @@ bootstrapAppRuntime()
     recordBootstrapRuntimeError(error);
     bootLogger.error('Firebase initialization failed', error);
     if (isAppShellLoadFailure(error)) {
-      hideBootSurface();
       mountFirebaseConfigWarning(
         'No se pudo cargar una parte crítica de la interfaz.',
         APP_SHELL_LOAD_WARNING_COPY
@@ -133,7 +110,6 @@ bootstrapAppRuntime()
       return;
     }
 
-    hideBootSurface();
     mountFirebaseConfigWarning(getFirebaseStartupFailureMessage());
   })
   .finally(() => {

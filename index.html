@@ -1,10 +1,55 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" style="background-color: #eef4f8;">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HHR Hospital Tracker</title>
+    <script>
+        (function () {
+            var FIREBASE_AUTH_STORAGE_PREFIX = 'firebase:authUser:';
+            var AUTHENTICATED_SESSION_HINT_KEY = 'hhr_logged_this_session';
+            var normalizedPath = window.location.pathname.replace(/^\/+|\/+$/g, '');
+            var isLoginSurfacePath = normalizedPath === '' || normalizedPath === 'login';
+
+            var storageContainsPrefix = function (storage, prefix) {
+                try {
+                    for (var index = 0; index < storage.length; index += 1) {
+                        var key = storage.key(index);
+                        if (key && key.indexOf(prefix) === 0) {
+                            return true;
+                        }
+                    }
+                } catch (error) {
+                    return false;
+                }
+
+                return false;
+            };
+
+            var hasPersistedFirebaseAuthHint = false;
+            var hasRecentAuthenticatedSessionHint = false;
+
+            try {
+                hasPersistedFirebaseAuthHint =
+                    storageContainsPrefix(window.localStorage, FIREBASE_AUTH_STORAGE_PREFIX) ||
+                    storageContainsPrefix(window.sessionStorage, FIREBASE_AUTH_STORAGE_PREFIX);
+                hasRecentAuthenticatedSessionHint =
+                    window.sessionStorage.getItem(AUTHENTICATED_SESSION_HINT_KEY) === 'true';
+            } catch (error) {
+                hasPersistedFirebaseAuthHint = false;
+                hasRecentAuthenticatedSessionHint = false;
+            }
+
+            var hasAnySessionHint = hasPersistedFirebaseAuthHint || hasRecentAuthenticatedSessionHint;
+            var shouldUseLoginSurface =
+                isLoginSurfacePath ||
+                !hasAnySessionHint;
+
+            document.documentElement.dataset.prebootSurface = shouldUseLoginSurface ? 'login' : 'app';
+            document.documentElement.style.backgroundColor = shouldUseLoginSurface ? '#020617' : '#eef4f8';
+        })();
+    </script>
     <style>
         html,
         body,
@@ -18,50 +63,22 @@
             color: #0f172a;
         }
 
-        #root {
-            position: relative;
-            z-index: 1;
-        }
-
-        #boot-surface {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-            pointer-events: none;
-            opacity: 1;
-            visibility: visible;
-            background-color: #eef4f8;
-            transition: opacity 140ms ease-out, visibility 140ms ease-out;
-        }
-
-        #boot-surface.is-hidden {
-            opacity: 0;
-            visibility: hidden;
-        }
-
         html[data-preboot-surface="login"] body {
             background-color: #020617;
+            background-image:
+                linear-gradient(115deg, rgba(15, 23, 42, 0.82) 0%, rgba(15, 23, 42, 0.62) 36%, rgba(15, 23, 42, 0.28) 64%, rgba(255, 255, 255, 0.08) 100%),
+                radial-gradient(circle at top left, rgba(255, 255, 255, 0.18), transparent 32%),
+                url('/images/login/hhr-login-day.png');
+            background-position: center, center, center;
+            background-repeat: no-repeat, no-repeat, no-repeat;
+            background-size: cover, cover, contain;
         }
 
         html[data-preboot-surface="app"] body {
             background-color: #eef4f8;
         }
 
-        html[data-preboot-surface="login"] #boot-surface {
-            background-color: #020617;
-        }
-
-        html[data-preboot-surface="app"] #boot-surface {
-            background-color: #eef4f8;
-        }
     </style>
-    <script>
-        (function () {
-            var normalizedPath = window.location.pathname.replace(/^\/+|\/+$/g, '');
-            var isLoginSurface = normalizedPath === '' || normalizedPath === 'login';
-            document.documentElement.dataset.prebootSurface = isLoginSurface ? 'login' : 'app';
-        })();
-    </script>
     <!-- PWA -->
     <meta name="theme-color" content="#0284c7">
     <meta name="mobile-web-app-capable" content="yes">
@@ -77,8 +94,7 @@
     <!-- Firebase Auth popups handle their own communication, GSI is redundant and can conflict -->
 </head>
 
-<body class="text-slate-900">
-    <div id="boot-surface" aria-hidden="true"></div>
+<body class="text-slate-900" style="background-color: #eef4f8;">
     <div id="root"></div>
     <script type="module" src="/src/index.tsx"></script>
 </body>

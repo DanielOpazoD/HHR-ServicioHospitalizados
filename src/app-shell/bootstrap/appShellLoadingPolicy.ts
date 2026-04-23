@@ -1,10 +1,5 @@
 import type { AppBootstrapState } from '@/app-shell/bootstrap/useAppBootstrapState';
 import { shouldRenderInitialLoadingScreen } from '@/components/ui/InitialLoadingScreen';
-import { hasActiveFirebaseSession } from '@/services/auth/authFallback';
-import {
-  hasPersistedFirebaseAuthHint,
-  hasRecentAuthenticatedSessionHint,
-} from '@/services/auth/authStorageHints';
 
 export type AppShellLoadingScreenMode = 'silent' | 'default' | 'login-shell';
 
@@ -14,39 +9,19 @@ export interface PreMountLoadingScreenDecision {
 }
 
 export const resolvePreMountLoadingScreenDecision = ({
-  pathname,
-  hasRecentAuthenticatedSessionHint: providedRecentAuthenticatedSessionHint,
-  hasPersistedFirebaseAuthHint: providedPersistedFirebaseAuthHint,
-  hasActiveFirebaseSession: providedActiveFirebaseSession,
+  pathname: _pathname,
+  hasRecentAuthenticatedSessionHint: _providedRecentAuthenticatedSessionHint,
+  hasPersistedFirebaseAuthHint: _providedPersistedFirebaseAuthHint,
+  hasActiveFirebaseSession: _providedActiveFirebaseSession,
 }: {
   pathname: string | undefined;
   hasRecentAuthenticatedSessionHint?: boolean;
   hasPersistedFirebaseAuthHint?: boolean;
   hasActiveFirebaseSession?: boolean;
 }): PreMountLoadingScreenDecision => {
-  const recentAuthenticatedSessionHint =
-    providedRecentAuthenticatedSessionHint ?? hasRecentAuthenticatedSessionHint();
-  const persistedFirebaseAuthHint =
-    providedPersistedFirebaseAuthHint ?? hasPersistedFirebaseAuthHint();
-  const activeFirebaseSession = providedActiveFirebaseSession ?? hasActiveFirebaseSession();
-
-  if (!shouldRenderInitialLoadingScreen(pathname) || recentAuthenticatedSessionHint) {
-    return {
-      shouldRender: false,
-      preferLoginShell: false,
-    };
-  }
-
-  if (persistedFirebaseAuthHint || activeFirebaseSession) {
-    return {
-      shouldRender: false,
-      preferLoginShell: false,
-    };
-  }
-
   return {
-    shouldRender: true,
-    preferLoginShell: !persistedFirebaseAuthHint && !activeFirebaseSession,
+    shouldRender: false,
+    preferLoginShell: false,
   };
 };
 
@@ -65,16 +40,5 @@ export const resolveRuntimeLoadingScreenMode = ({
     return 'silent';
   }
 
-  if (
-    bootstrapState.phase === 'bootstrapping' &&
-    bootstrapState.auth.sessionState.status === 'unauthenticated'
-  ) {
-    return 'login-shell';
-  }
-
-  if (bootstrapState.auth.sessionState.status !== 'unauthenticated') {
-    return 'silent';
-  }
-
-  return 'default';
+  return 'silent';
 };

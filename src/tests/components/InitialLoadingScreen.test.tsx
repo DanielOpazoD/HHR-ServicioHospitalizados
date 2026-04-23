@@ -32,14 +32,12 @@ describe('InitialLoadingScreen', () => {
     render(<InitialLoadingScreen pathname="/" />);
 
     expect(screen.getByTestId('login-loading-shell')).toBeInTheDocument();
-    expect(screen.queryByTestId('census-loading-shell')).not.toBeInTheDocument();
   });
 
   it('renders the default loading screen for non-census routes', () => {
     render(<InitialLoadingScreen pathname="/whatsapp" />);
 
     expect(screen.getByTestId('default-loading-screen')).toBeInTheDocument();
-    expect(screen.queryByTestId('census-loading-shell')).not.toBeInTheDocument();
   });
 
   it('renders the default loading screen on the root route when login shell is suppressed', () => {

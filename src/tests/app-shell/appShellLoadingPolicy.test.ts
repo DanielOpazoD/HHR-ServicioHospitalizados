@@ -53,8 +53,8 @@ describe('appShellLoadingPolicy', () => {
         hasActiveFirebaseSession: false,
       })
     ).toEqual({
-      shouldRender: true,
-      preferLoginShell: true,
+      shouldRender: false,
+      preferLoginShell: false,
     });
   });
 
@@ -67,13 +67,13 @@ describe('appShellLoadingPolicy', () => {
     ).toBe('silent');
   });
 
-  it('uses the login shell only during root-route bootstrapping', () => {
+  it('keeps root-route bootstrapping visually silent', () => {
     expect(
       resolveRuntimeLoadingScreenMode({
         pathname: '/',
         bootstrapState: createLoadingBootstrapState('bootstrapping'),
       })
-    ).toBe('login-shell');
+    ).toBe('silent');
 
     expect(
       resolveRuntimeLoadingScreenMode({
