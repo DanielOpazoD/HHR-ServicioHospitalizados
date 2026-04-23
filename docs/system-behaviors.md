@@ -192,27 +192,30 @@ La fase visible esperada es:
 
 La UI no debe reinterpretar estos casos con heurísticas paralelas repartidas entre `index.tsx` y `App.tsx`; la política de presentación debe salir de helpers del app shell.
 
-### Contrato anti-regresión para `"/census"`
+### Contrato anti-regresión para refresh autenticado por módulo
 
-`Censo diario` tiene una regla deliberadamente más estricta que el resto del sistema:
+El contrato ya no es “solo censo”; aplica al módulo origen desde el que el usuario recarga:
 
-1. Al recargar con `F5`, no debe aparecer ningún loader global full-screen antes del shell propio de censo.
-2. Tampoco debe aparecer un “loader de supresión” intermedio durante refreshes autenticados de la misma pestaña.
-3. Si auth cae brevemente a `unauthenticated` mientras una sesión reciente de la misma pestaña todavía se está rehidratando, en `"/census"` la UI debe quedar silenciosa (`null`) hasta que:
-   - vuelva el shell autenticado; o
+1. Al recargar con `F5`, no debe aparecer ningún loader global full-screen antes del shell real del módulo actual.
+2. Tampoco debe aparecer una transición intermedia fija que fuerce siempre `Censo Diario`.
+3. Si auth cae brevemente a `unauthenticated` mientras una sesión reciente de la misma pestaña todavía se está rehidratando, la UI no debe volver al login ni a un fondo blanco: debe mantener el chrome real del módulo origen hasta que:
+   - vuelva el shell autenticado completo; o
    - se confirme de verdad que debe mostrarse login.
-4. El único loader permitido en `"/census"` es el loader interno del shell del módulo.
+4. El contenido inferior del módulo puede seguir cargando por separado, pero `Navbar` y `DateStrip` deben conservar continuidad visual cuando ese módulo los usa.
+5. Si el módulo origen no usa `DateStrip` real, el bootstrap tampoco debe inventarlo.
 
-### Contrato visual preboot actual para `"/"` y `"/census"` autenticados
+### Contrato visual preboot actual para refresh autenticado
 
-- Antes de que React monte, `index.html` debe pintar directamente una superficie autenticada mínima.
-- Esa superficie debe conservar la barra azul superior y la barra blanca secundaria del contexto `Censo Diario`.
-- Además debe mostrar contenido mínimo dentro de esas barras para evitar que se vean vacías:
-  - marca/título;
-  - pestaña activa de `Censo Diario`;
-  - acciones mínimas como `Enviar censo`, fecha, `Buscar` y `Lab`.
-- Esa superficie no es un loader nuevo ni un shell alternativo completo: no debe ocupar el resto del viewport con placeholders inventados.
-- Debe desaparecer automáticamente apenas `#root` tenga contenido visible real.
+- Antes de que React monte, `index.html` solo debe aportar continuidad de fondo, no reconstruir la barra de la app.
+- El chrome visible del refresh autenticado debe venir desde React bootstrap usando los componentes reales del repo.
+- Ese chrome debe respetar la ruta de origen:
+  - `"/"` y `"/census"`: chrome de `Censo Diario`;
+  - `"/nursing-handoff"`: chrome de entrega de enfermería;
+  - `"/medical-handoff"`: chrome de entrega médica;
+  - `"/transfer-management"`: navbar de traslados, sin `DateStrip` inventado;
+  - y así para cualquier ruta que el shell resuelva como módulo real.
+- El objetivo es separar `chrome` y `contenido`: el chrome puede mantenerse estable mientras el cuerpo del módulo termina de hidratar.
+- Queda prohibido volver a una barra estática hecha a mano en `index.html`.
 
 ### Contrato visual preboot actual para login
 
@@ -220,28 +223,32 @@ La UI no debe reinterpretar estos casos con heurísticas paralelas repartidas en
 - Login no debe mostrar un frame blanco antes de que aparezca la pantalla real.
 - El fondo inicial debe alinearse con la composición visual real del login, sin sustituirla por un loader de pantalla completa.
 
-### Qué NO se debe hacer en `"/census"`
+### Qué NO se debe hacer en refresh autenticado
 
 - No renderizar `InitialLoadingScreen`.
 - No renderizar `DefaultLoadingScreen`.
 - No reutilizar suppressions visuales pensadas para login si introducen un spinner full-screen adicional.
-- No agregar nuevos `Suspense fallback` globales delante del shell autenticado del censo.
-- No dejar la barra azul/blanca preboot vacía si ya existe esta superficie mínima en `index.html`.
+- No agregar nuevos `Suspense fallback` globales delante del shell autenticado del módulo.
+- No forzar siempre el chrome de `Censo Diario` si la ruta de origen es otra.
+- No volver a usar una barra azul/blanca estática como “imagen estable de transición”.
 
 ### Intención de diseño
 
-- Evitar dos transiciones full-screen consecutivas al recargar `censo diario`.
+- Evitar dos transiciones full-screen consecutivas al recargar cualquier módulo autenticado.
 - Mantener continuidad visual del login durante bootstrap previo a autenticación.
-- Dejar el shell autenticado de censo sin `lazy-loading` extra para que no reaparezca un fallback intermedio antes del loader correcto del módulo.
-- Reemplazar el antiguo “flash blanco” por continuidad visual mínima y reconocible del módulo mientras el shell real monta.
-- Tratar cualquier nuevo loader global visible en `"/census"` como regresión.
+- Permitir que `chrome` y `contenido` carguen con ritmos distintos sin cambiar de módulo en la transición.
+- Reemplazar el antiguo “flash blanco” por continuidad visual mínima y reconocible del módulo origen mientras el shell real monta.
+- Tratar cualquier nuevo loader global visible o cualquier chrome de módulo equivocado como regresión.
 
 ### Archivos Relacionados
 
 - `src/index.tsx`
 - `src/App.tsx`
+- `src/app-shell/bootstrap/BootstrapCensusChrome.tsx`
+- `src/hooks/useAppState.ts`
 - `src/components/ui/InitialLoadingScreen.tsx`
 - `src/app-shell/runtime/AuthenticatedAppShell.tsx`
+- `src/tests/app-shell/BootstrapRouteChrome.test.tsx`
 - `src/tests/components/InitialLoadingScreen.test.tsx`
 - `src/tests/components/AppLoadingBehavior.test.tsx`
 

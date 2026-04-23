@@ -12,6 +12,7 @@ describe('Startup preboot contract', () => {
     const html = readIndexHtml();
 
     expect(html).toContain('Startup UX contract:');
+    expect(html).toContain('modulo origen desde React bootstrap');
     expect(html).toContain('document.documentElement.dataset.prebootSurface =');
     expect(html).toContain('APP_SURFACE_BACKGROUND');
     expect(html).toContain("size: '100% 56px, 100% 44px, 100% calc(100vh - 100px)'");
