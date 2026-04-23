@@ -59,7 +59,16 @@ vi.mock('@/components/bookmarks/BookmarkBar', () => ({
 }));
 
 vi.mock('@/components/AppRouter', () => ({
-  AppRouter: () => <div data-testid="app-router">AppRouter</div>,
+  AppRouter: (props: unknown) => (
+    <div
+      data-testid="app-router"
+      data-has-open-date={String(
+        Boolean((props as { onOpenCensusDate?: unknown }).onOpenCensusDate)
+      )}
+    >
+      AppRouter
+    </div>
+  ),
 }));
 
 vi.mock('@/features/census/components/global-search/GlobalPatientSearchModal', () => ({
@@ -129,12 +138,15 @@ describe('AppContentChrome', () => {
   } as const;
 
   it('renders chrome in normal mode', () => {
-    render(<AppContentChrome ui={ui as never} runtime={runtime as never} />);
+    render(
+      <AppContentChrome ui={ui as never} runtime={runtime as never} onOpenCensusDate={vi.fn()} />
+    );
 
     expect(screen.getByTestId('navbar')).toBeInTheDocument();
     expect(screen.getByTestId('datestrip')).toBeInTheDocument();
     expect(screen.getByTestId('bookmark-bar')).toBeInTheDocument();
     expect(screen.getByTestId('app-router')).toBeInTheDocument();
+    expect(screen.getByTestId('app-router')).toHaveAttribute('data-has-open-date', 'true');
   });
 
   it('hides navigation chrome in signature mode', () => {
@@ -147,6 +159,7 @@ describe('AppContentChrome', () => {
             dateNav: { ...runtime.dateNav, isSignatureMode: true },
           } as never
         }
+        onOpenCensusDate={vi.fn()}
       />
     );
 
@@ -156,7 +169,9 @@ describe('AppContentChrome', () => {
   });
 
   it('keeps census export actions only on allowed census views', () => {
-    const { rerender } = render(<AppContentChrome ui={ui as never} runtime={runtime as never} />);
+    const { rerender } = render(
+      <AppContentChrome ui={ui as never} runtime={runtime as never} onOpenCensusDate={vi.fn()} />
+    );
 
     expect(mockDateStrip).toHaveBeenLastCalledWith(
       expect.objectContaining({
@@ -175,6 +190,7 @@ describe('AppContentChrome', () => {
           } as never
         }
         runtime={runtime as never}
+        onOpenCensusDate={vi.fn()}
       />
     );
 

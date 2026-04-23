@@ -18,7 +18,6 @@ import {
   resolveBookmarkToggleAction,
   resolveDateStripCensusActions,
 } from '@/components/layout/app-content/appContentChromeController';
-import { buildOpenCensusDateHandler } from '@/components/layout/app-content/appContentCensusDateController';
 import type { UseUIStateReturn } from '@/hooks/useUIState';
 import type { AppContentRuntime } from '@/components/layout/app-content/useAppContentRuntime';
 import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medicalIndications';
@@ -26,12 +25,14 @@ import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medical
 export interface AppContentChromeProps {
   ui: UseUIStateReturn;
   runtime: AppContentRuntime;
+  onOpenCensusDate?: (date: string) => void;
   renderFeatureQuickActions?: (patients: MedicalIndicationsPatientOption[]) => React.ReactNode;
 }
 
 export const AppContentChrome: React.FC<AppContentChromeProps> = ({
   ui,
   runtime,
+  onOpenCensusDate,
   renderFeatureQuickActions,
 }) => {
   const { auth, dateNav, censusEmail, fileOps, syncStatus, lastSyncTime, exportManager } = runtime;
@@ -51,24 +52,6 @@ export const AppContentChrome: React.FC<AppContentChromeProps> = ({
     exportManager,
     handleExportExcel: runtime.handleExportExcel,
   });
-
-  const openCensusDate = React.useMemo(
-    () =>
-      buildOpenCensusDateHandler({
-        setCurrentModule: ui.setCurrentModule,
-        setCensusViewMode: ui.setCensusViewMode,
-        setSelectedYear: dateNav.setSelectedYear,
-        setSelectedMonth: dateNav.setSelectedMonth,
-        setSelectedDay: dateNav.setSelectedDay,
-      }),
-    [
-      dateNav.setSelectedDay,
-      dateNav.setSelectedMonth,
-      dateNav.setSelectedYear,
-      ui.setCensusViewMode,
-      ui.setCurrentModule,
-    ]
-  );
 
   return (
     <>
@@ -157,7 +140,7 @@ export const AppContentChrome: React.FC<AppContentChromeProps> = ({
           isSignatureMode={isSignatureMode}
           showBedManagerModal={ui.bedManagerModal.isOpen}
           onCloseBedManagerModal={ui.bedManagerModal.close}
-          onOpenCensusDate={openCensusDate}
+          onOpenCensusDate={onOpenCensusDate}
         />
       </main>
     </>

@@ -8,6 +8,7 @@ const mockUseAppContentShellEffects = vi.fn();
 const mockBuildOpenCensusDateHandler = vi.fn();
 const mockResolveModuleTheme = vi.fn();
 const mockAppContentOverlays = vi.fn();
+const mockAppContentChrome = vi.fn();
 
 vi.mock('@/components/AppProviders', () => ({
   AppProviders: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -34,7 +35,10 @@ vi.mock('@/components/layout/app-content/moduleThemeController', () => ({
 }));
 
 vi.mock('@/components/layout/app-content/AppContentChrome', () => ({
-  AppContentChrome: () => <div data-testid="app-content-chrome" />,
+  AppContentChrome: (props: unknown) => {
+    mockAppContentChrome(props);
+    return <div data-testid="app-content-chrome" />;
+  },
 }));
 
 vi.mock('@/components/layout/app-content/AppContentOverlays', () => ({
@@ -124,5 +128,18 @@ describe('AppContent entrypoint wiring', () => {
     expect(dateNav.setSelectedYear).toHaveBeenCalledWith(2026);
     expect(dateNav.setSelectedMonth).toHaveBeenCalledWith(4);
     expect(dateNav.setSelectedDay).toHaveBeenCalledWith(19);
+  });
+
+  it('shares the same census date handler between chrome and overlays', () => {
+    render(<AppContent ui={ui as never} />);
+
+    const chromeProps = mockAppContentChrome.mock.calls[0][0] as {
+      onOpenCensusDate: (isoDate: string) => void;
+    };
+    const overlaysProps = mockAppContentOverlays.mock.calls[0][0] as {
+      onOpenCensusDate: (isoDate: string) => void;
+    };
+
+    expect(chromeProps.onOpenCensusDate).toBe(overlaysProps.onOpenCensusDate);
   });
 });

@@ -55,6 +55,7 @@ export const AppContent: React.FC<AppContentProps> = ({ ui, renderFeatureQuickAc
           <AppContentChrome
             ui={ui}
             runtime={runtime}
+            onOpenCensusDate={openCensusDate}
             renderFeatureQuickActions={renderFeatureQuickActions}
           />
           <AppContentOverlays ui={ui} runtime={runtime} onOpenCensusDate={openCensusDate} />
