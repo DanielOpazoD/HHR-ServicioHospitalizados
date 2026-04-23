@@ -17,7 +17,7 @@ import { getVisibleAppModules } from '@/shared/access/operationalAccessPolicy';
 import { ModuleType } from '@/constants/navigationConfig';
 type ViewMode = 'REGISTER' | 'ANALYTICS';
 
-interface NavbarProps {
+export interface NavbarProps {
   currentModule: ModuleType;
   setModule: (mod: ModuleType) => void;
   censusViewMode: ViewMode;

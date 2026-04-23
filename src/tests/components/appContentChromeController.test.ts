@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  buildDateStripProps,
+  buildNavbarProps,
   buildMedicalIndicationsPatientOptions,
   canUseCensusDateStripActions,
   resolveBookmarkToggleAction,
@@ -107,5 +109,160 @@ describe('appContentChromeController', () => {
         setShowBookmarksBar,
       })
     ).toBeUndefined();
+  });
+
+  it('builds census DateStrip props from ui and runtime state', () => {
+    const ui = {
+      currentModule: 'CENSUS',
+      censusViewMode: 'REGISTER',
+      showPrintButton: true,
+      showBookmarksBar: true,
+      setShowBookmarksBar: vi.fn(),
+      bedManagerModal: { open: vi.fn() },
+      patientSearchModal: { open: vi.fn() },
+    };
+
+    const runtime = {
+      auth: { role: 'admin' },
+      dateNav: {
+        selectedYear: 2026,
+        setSelectedYear: vi.fn(),
+        selectedMonth: 3,
+        setSelectedMonth: vi.fn(),
+        selectedDay: 22,
+        setSelectedDay: vi.fn(),
+        currentDateString: '2026-04-22',
+        daysInMonth: 30,
+        existingDaysInMonth: [18, 19, 22],
+        navigateDays: vi.fn(),
+      },
+      censusEmail: {
+        status: 'idle',
+        error: null,
+        setShowEmailConfig: vi.fn(),
+        sendEmail: vi.fn(),
+      },
+      syncStatus: 'saved',
+      lastSyncTime: new Date('2026-04-22T08:00:00.000Z'),
+      exportManager: {
+        handleExportPDF: vi.fn(),
+        handleBackupExcel: vi.fn(),
+        handleBackupHandoff: vi.fn(),
+        isArchived: false,
+        isBackingUp: false,
+      },
+      canUseCensusExports: true,
+      handleExportExcel: vi.fn(),
+      censusAccessProfile: 'full',
+    };
+
+    const props = buildDateStripProps({
+      ui: ui as never,
+      runtime: runtime as never,
+      medicalIndicationsPatients: [],
+    });
+
+    expect(props).toMatchObject({
+      currentModule: 'CENSUS',
+      currentDateString: '2026-04-22',
+      onOpenBedManager: ui.bedManagerModal.open,
+      onExportExcel: runtime.handleExportExcel,
+      onBackupExcel: runtime.exportManager.handleBackupExcel,
+      onBackupPDF: runtime.exportManager.handleBackupHandoff,
+      accessProfile: 'full',
+      showBookmarks: true,
+      role: 'admin',
+      onOpenPatientSearch: ui.patientSearchModal.open,
+    });
+    expect(props.onToggleBookmarks).toEqual(expect.any(Function));
+  });
+
+  it('builds Navbar props from ui and runtime state', () => {
+    const ui = {
+      currentModule: 'CENSUS',
+      setCurrentModule: vi.fn(),
+      censusViewMode: 'REGISTER',
+      setCensusViewMode: vi.fn(),
+      bedManagerModal: { open: vi.fn() },
+    };
+    const runtime = {
+      auth: {
+        currentUser: { email: 'admin@hospital.cl' },
+        signOut: vi.fn(),
+        isFirebaseConnected: true,
+      },
+      fileOps: {
+        handleExportCSV: vi.fn(),
+        handleImportJSON: vi.fn(),
+      },
+    };
+
+    expect(buildNavbarProps({ ui: ui as never, runtime: runtime as never })).toMatchObject({
+      currentModule: 'CENSUS',
+      setModule: ui.setCurrentModule,
+      censusViewMode: 'REGISTER',
+      setCensusViewMode: ui.setCensusViewMode,
+      onOpenBedManager: ui.bedManagerModal.open,
+      onExportCSV: runtime.fileOps.handleExportCSV,
+      onImportJSON: runtime.fileOps.handleImportJSON,
+      userEmail: 'admin@hospital.cl',
+      onLogout: runtime.auth.signOut,
+      isFirebaseConnected: true,
+    });
+  });
+
+  it('removes census-only DateStrip actions for non-census modules', () => {
+    const props = buildDateStripProps({
+      ui: {
+        currentModule: 'CUDYR',
+        censusViewMode: 'REGISTER',
+        showPrintButton: false,
+        showBookmarksBar: false,
+        setShowBookmarksBar: vi.fn(),
+        bedManagerModal: { open: vi.fn() },
+        patientSearchModal: { open: vi.fn() },
+      } as never,
+      runtime: {
+        auth: { role: 'doctor' },
+        dateNav: {
+          selectedYear: 2026,
+          setSelectedYear: vi.fn(),
+          selectedMonth: 3,
+          setSelectedMonth: vi.fn(),
+          selectedDay: 22,
+          setSelectedDay: vi.fn(),
+          currentDateString: '2026-04-22',
+          daysInMonth: 30,
+          existingDaysInMonth: [],
+          navigateDays: vi.fn(),
+        },
+        censusEmail: {
+          status: 'idle',
+          error: null,
+          setShowEmailConfig: vi.fn(),
+          sendEmail: vi.fn(),
+        },
+        syncStatus: 'idle',
+        lastSyncTime: null,
+        exportManager: {
+          handleExportPDF: vi.fn(),
+          handleBackupExcel: vi.fn(),
+          handleBackupHandoff: vi.fn(),
+          isArchived: false,
+          isBackingUp: false,
+        },
+        canUseCensusExports: true,
+        handleExportExcel: vi.fn(),
+        censusAccessProfile: 'default',
+      } as never,
+      medicalIndicationsPatients: [],
+    });
+
+    expect(props.onOpenBedManager).toBeUndefined();
+    expect(props.onExportExcel).toBeUndefined();
+    expect(props.onConfigureEmail).toBeUndefined();
+    expect(props.onSendEmail).toBeUndefined();
+    expect(props.onBackupExcel).toBeUndefined();
+    expect(props.onToggleBookmarks).toBeUndefined();
   });
 });

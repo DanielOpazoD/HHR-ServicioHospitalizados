@@ -10,13 +10,11 @@ const BookmarkBar = lazyWithRetry(() =>
 import {
   shouldRenderBookmarkBar,
   shouldRenderDateStrip,
-  shouldShowBookmarkToggle,
 } from '@/components/layout/app-content/appContentVisibilityController';
 import {
+  buildDateStripProps,
+  buildNavbarProps,
   buildMedicalIndicationsPatientOptions,
-  canUseCensusDateStripActions,
-  resolveBookmarkToggleAction,
-  resolveDateStripCensusActions,
 } from '@/components/layout/app-content/appContentChromeController';
 import type { UseUIStateReturn } from '@/hooks/useUIState';
 import type { AppContentRuntime } from '@/components/layout/app-content/useAppContentRuntime';
@@ -35,88 +33,29 @@ export const AppContentChrome: React.FC<AppContentChromeProps> = ({
   onOpenCensusDate,
   renderFeatureQuickActions,
 }) => {
-  const { auth, dateNav, censusEmail, fileOps, syncStatus, lastSyncTime, exportManager } = runtime;
+  const { auth, dateNav } = runtime;
   const { isSignatureMode, currentDateString } = dateNav;
 
   const medicalIndicationsPatients = React.useMemo<MedicalIndicationsPatientOption[]>(() => {
     return buildMedicalIndicationsPatientOptions(runtime.record);
   }, [runtime.record]);
-
-  const canUseCensusActions = canUseCensusDateStripActions(
-    ui.currentModule,
-    runtime.canUseCensusExports
-  );
-  const dateStripCensusActions = resolveDateStripCensusActions({
-    canUseCensusActions,
-    censusEmail,
-    exportManager,
-    handleExportExcel: runtime.handleExportExcel,
+  const dateStripProps = buildDateStripProps({
+    ui,
+    runtime,
+    medicalIndicationsPatients,
+    renderFeatureQuickActions,
   });
+  const navbarProps = buildNavbarProps({ ui, runtime });
 
   return (
     <>
-      {!isSignatureMode && (
-        <Navbar
-          currentModule={ui.currentModule}
-          setModule={ui.setCurrentModule}
-          censusViewMode={ui.censusViewMode}
-          setCensusViewMode={ui.setCensusViewMode}
-          onOpenBedManager={ui.bedManagerModal.open}
-          onExportCSV={fileOps.handleExportCSV}
-          onImportJSON={fileOps.handleImportJSON}
-          userEmail={auth.currentUser?.email}
-          onLogout={auth.signOut}
-          isFirebaseConnected={auth.isFirebaseConnected}
-        />
-      )}
+      {!isSignatureMode && <Navbar {...navbarProps} />}
 
       {shouldRenderDateStrip({
         currentModule: ui.currentModule,
         censusViewMode: ui.censusViewMode,
         isSignatureMode,
-      }) && (
-        <DateStrip
-          selectedYear={dateNav.selectedYear}
-          setSelectedYear={dateNav.setSelectedYear}
-          selectedMonth={dateNav.selectedMonth}
-          setSelectedMonth={dateNav.setSelectedMonth}
-          selectedDay={dateNav.selectedDay}
-          setSelectedDay={dateNav.setSelectedDay}
-          currentDateString={currentDateString}
-          daysInMonth={dateNav.daysInMonth}
-          existingDaysInMonth={dateNav.existingDaysInMonth}
-          onExportPDF={ui.showPrintButton ? exportManager.handleExportPDF : undefined}
-          onOpenBedManager={ui.currentModule === 'CENSUS' ? ui.bedManagerModal.open : undefined}
-          onExportExcel={dateStripCensusActions.onExportExcel}
-          onConfigureEmail={dateStripCensusActions.onConfigureEmail}
-          onSendEmail={dateStripCensusActions.onSendEmail}
-          onBackupExcel={dateStripCensusActions.onBackupExcel}
-          isArchived={exportManager.isArchived}
-          isBackingUp={exportManager.isBackingUp}
-          currentModule={ui.currentModule}
-          emailStatus={censusEmail.status}
-          emailErrorMessage={censusEmail.error}
-          syncStatus={syncStatus}
-          lastSyncTime={lastSyncTime}
-          onToggleBookmarks={resolveBookmarkToggleAction({
-            canShowBookmarkToggle: shouldShowBookmarkToggle({
-              currentModule: ui.currentModule,
-              censusViewMode: ui.censusViewMode,
-              role: auth.role,
-            }),
-            showBookmarksBar: ui.showBookmarksBar,
-            setShowBookmarksBar: ui.setShowBookmarksBar,
-          })}
-          showBookmarks={ui.showBookmarksBar}
-          role={auth.role}
-          onBackupPDF={exportManager.handleBackupHandoff}
-          navigateDays={dateNav.navigateDays}
-          accessProfile={runtime.censusAccessProfile}
-          medicalIndicationsPatients={medicalIndicationsPatients}
-          renderFeatureQuickActions={renderFeatureQuickActions}
-          onOpenPatientSearch={ui.patientSearchModal.open}
-        />
-      )}
+      }) && <DateStrip {...dateStripProps} />}
 
       {shouldRenderBookmarkBar({
         currentModule: ui.currentModule,
