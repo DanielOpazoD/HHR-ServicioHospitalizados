@@ -1,26 +1,26 @@
 {
-  "generatedAt": "2026-04-23T04:32:58.109Z",
+  "generatedAt": "2026-04-23T20:13:40.887Z",
   "hotspots": [
     {
       "file": "src/services/utils/loggerScope.ts",
-      "churn": 1,
+      "churn": 2,
       "inboundImports": 72,
       "criticality": "high",
-      "score": 238
+      "score": 240
     },
     {
       "file": "src/application/shared/dailyRecordCoreContracts.ts",
-      "churn": 1,
-      "inboundImports": 64,
+      "churn": 2,
+      "inboundImports": 69,
       "criticality": "high",
-      "score": 214
+      "score": 231
     },
     {
       "file": "src/shared/contracts/applicationOutcomeTypes.ts",
-      "churn": 1,
+      "churn": 2,
       "inboundImports": 55,
       "criticality": "medium",
-      "score": 182
+      "score": 184
     },
     {
       "file": "src/features/clinical-documents/domain/entities.ts",
@@ -30,18 +30,18 @@
       "score": 179
     },
     {
+      "file": "src/components/shared/BaseModal.tsx",
+      "churn": 10,
+      "inboundImports": 43,
+      "criticality": "medium",
+      "score": 164
+    },
+    {
       "file": "src/types/authRoleTypes.ts",
       "churn": 1,
       "inboundImports": 49,
       "criticality": "medium",
       "score": 164
-    },
-    {
-      "file": "src/components/shared/BaseModal.tsx",
-      "churn": 9,
-      "inboundImports": 43,
-      "criticality": "medium",
-      "score": 162
     },
     {
       "file": "src/types/domain/dailyRecord.ts",
@@ -52,10 +52,10 @@
     },
     {
       "file": "src/context/AuthContext.tsx",
-      "churn": 14,
-      "inboundImports": 35,
+      "churn": 15,
+      "inboundImports": 36,
       "criticality": "medium",
-      "score": 148
+      "score": 153
     },
     {
       "file": "src/services/observability/operationalTelemetryOutcomeRecorder.ts",
@@ -115,10 +115,10 @@
     },
     {
       "file": "src/shared/contracts/applicationOutcomeFactories.ts",
-      "churn": 1,
+      "churn": 2,
       "inboundImports": 34,
       "criticality": "medium",
-      "score": 119
+      "score": 121
     },
     {
       "file": "src/utils/clinicalDayUtils.ts",
@@ -163,13 +163,6 @@
       "score": 112
     },
     {
-      "file": "src/shared/access/operationalAccessPolicy.ts",
-      "churn": 10,
-      "inboundImports": 25,
-      "criticality": "medium",
-      "score": 110
-    },
-    {
       "file": "src/types/domain/labExamTypes.ts",
       "churn": 1,
       "inboundImports": 31,
@@ -209,6 +202,13 @@
       "churn": 12,
       "inboundImports": 21,
       "criticality": "high",
+      "score": 107
+    },
+    {
+      "file": "src/shared/access/operationalAccessPolicy.ts",
+      "churn": 10,
+      "inboundImports": 24,
+      "criticality": "medium",
       "score": 107
     }
   ],
