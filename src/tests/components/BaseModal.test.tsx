@@ -6,7 +6,7 @@
  * query document.body instead of the render container.
  */
 
-import { render, cleanup } from '@testing-library/react';
+import { render, cleanup, fireEvent } from '@testing-library/react';
 import { BaseModal } from '@/components/shared/BaseModal';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
@@ -92,5 +92,26 @@ describe('BaseModal z-index behavior', () => {
 
     const body = document.querySelector('[role="dialog"] .overflow-visible');
     expect(body).toBeTruthy();
+  });
+
+  it('closes on backdrop click but not on inner content click', () => {
+    const onClose = vi.fn();
+
+    render(
+      <BaseModal isOpen={true} onClose={onClose} title="Test Modal">
+        <button type="button">Inner action</button>
+      </BaseModal>
+    );
+
+    const backdrop = document.querySelector('.fixed.inset-0');
+    const innerButton = document.querySelector('button[type="button"]');
+    expect(backdrop).toBeTruthy();
+    expect(innerButton).toBeTruthy();
+
+    fireEvent.click(innerButton!);
+    expect(onClose).not.toHaveBeenCalled();
+
+    fireEvent.click(backdrop!);
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

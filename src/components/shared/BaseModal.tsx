@@ -23,13 +23,16 @@
 
 import React from 'react';
 import { createPortal } from 'react-dom';
-import clsx from 'clsx';
-import { sizeClasses, type ModalSize } from '@/components/shared/baseModalStyles';
+import { type ModalSize } from '@/components/shared/baseModalStyles';
 import {
   BaseModalBackdrop,
   BaseModalBody,
   BaseModalHeader,
 } from '@/components/shared/baseModalLayout';
+import {
+  resolveBaseModalContainerClassName,
+  shouldCloseBaseModalFromBackdropClick,
+} from '@/components/shared/baseModalController';
 export { ModalSection, type ModalSectionProps } from '@/components/shared/baseModalSection';
 import { useBaseModalLifecycle } from '@/components/shared/useBaseModalLifecycle';
 
@@ -102,7 +105,13 @@ export const BaseModal: React.FC<BaseModalProps> = ({
 
   // Handle backdrop click
   const handleBackdropClick = (e: React.MouseEvent) => {
-    if (closeOnBackdrop && e.target === e.currentTarget) {
+    if (
+      shouldCloseBaseModalFromBackdropClick({
+        closeOnBackdrop,
+        target: e.target,
+        currentTarget: e.currentTarget,
+      })
+    ) {
       onClose();
     }
   };
@@ -116,13 +125,12 @@ export const BaseModal: React.FC<BaseModalProps> = ({
       <div
         ref={modalRef}
         data-module={dataModule}
-        className={clsx(
-          'rounded-2xl shadow-2xl w-full animate-scale-in overflow-hidden',
-          !scrollableBody && 'mx-auto my-4',
-          variant === 'white' ? 'bg-white border border-slate-200' : 'glass border border-white/40',
-          sizeClasses[size],
-          className
-        )}
+        className={resolveBaseModalContainerClassName({
+          scrollableBody,
+          variant,
+          size,
+          className,
+        })}
       >
         <BaseModalHeader
           title={title}
