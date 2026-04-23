@@ -74,18 +74,28 @@ describe('DateStrip', () => {
     // Correct text for status indicators in EmailDropdown
     const { rerender } = render(<DateStrip {...defaultProps} emailStatus="loading" />);
     expect(screen.getByText('Enviando...')).toBeInTheDocument();
+    expect(screen.getByTitle('Enviar censo')).toHaveAttribute('data-email-status', 'loading');
 
     rerender(<DateStrip {...defaultProps} emailStatus="success" />);
     expect(screen.getByText('Enviado')).toBeInTheDocument();
+    expect(screen.getByTitle('Enviar censo')).toHaveAttribute('data-email-status', 'success');
   });
 
   it('shows sync status indicators in SaveDropdown', () => {
     // Sync status is actually reflected in SaveDropdown 'isArchived' and 'isBackingUp' props
     const { rerender } = render(<DateStrip {...defaultProps} isBackingUp={true} />);
     expect(screen.getByRole('button', { name: 'Guardando...' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Guardando...' })).toHaveAttribute(
+      'data-save-status',
+      'loading'
+    );
 
     rerender(<DateStrip {...defaultProps} isArchived={true} />);
     expect(screen.getByRole('button', { name: 'Sincronizado' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Sincronizado' })).toHaveAttribute(
+      'data-save-status',
+      'archived'
+    );
   });
 
   it('hides firebase backup option in census save menu', () => {

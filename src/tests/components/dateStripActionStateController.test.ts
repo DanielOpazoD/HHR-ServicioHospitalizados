@@ -15,6 +15,7 @@ describe('resolveSaveButtonUiState', () => {
     expect(state.label).toBe('Guardando...');
     expect(state.iconKind).toBe('loading');
     expect(state.buttonClassName).toContain('amber');
+    expect(state.widthClassName).toBe('min-w-[40px]');
   });
 
   it('returns archived state with success style', () => {
@@ -27,6 +28,7 @@ describe('resolveSaveButtonUiState', () => {
     expect(state.label).toBe('Sincronizado');
     expect(state.iconKind).toBe('archived');
     expect(state.buttonClassName).toContain('emerald');
+    expect(state.widthClassName).toBe('min-w-[40px]');
   });
 
   it('returns default save state when idle', () => {
@@ -38,6 +40,7 @@ describe('resolveSaveButtonUiState', () => {
 
     expect(state.label).toBe('Guardar');
     expect(state.iconKind).toBe('default');
+    expect(state.widthClassName).toBe('min-w-[40px]');
   });
 });
 
@@ -49,6 +52,7 @@ describe('resolveEmailButtonUiState', () => {
 
     expect(state.label).toBe('Enviando...');
     expect(state.title).toBe('Enviar censo');
+    expect(state.widthClassName).toBe('min-w-[116px]');
   });
 
   it('returns error title when status is error', () => {
@@ -59,5 +63,6 @@ describe('resolveEmailButtonUiState', () => {
 
     expect(state.label).toBe('Enviar censo');
     expect(state.title).toBe('Error custom');
+    expect(state.widthClassName).toBe('min-w-[116px]');
   });
 });
