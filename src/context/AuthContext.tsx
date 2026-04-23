@@ -16,6 +16,7 @@ import {
   resolveNormalizedAuthOperationalState,
   type NormalizedAuthOperationalState,
 } from '@/services/auth/authOperationalState';
+import { buildNormalizedAuthOperationalStateInput } from '@/context/authContextController';
 
 // ============================================================================
 // Types
@@ -85,31 +86,45 @@ export const buildAuthContextValue = (
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Use the hook as the single source of truth
   const authState = useAuthState();
+  const {
+    sessionState,
+    currentUser,
+    authorizedUser,
+    authLoading,
+    isFirebaseConnected,
+    remoteSyncStatus,
+    remoteSyncState,
+    authRuntime,
+    role,
+    handleLogout,
+  } = authState;
   const normalizedAuthState = useMemo(
     () =>
-      resolveNormalizedAuthOperationalState({
-        sessionState: authState.sessionState,
-        currentUser: authState.currentUser,
-        authorizedUser: authState.authorizedUser,
-        authLoading: authState.authLoading,
-        isFirebaseConnected: authState.isFirebaseConnected,
-        remoteSyncStatus: authState.remoteSyncStatus,
-        remoteSyncState: authState.remoteSyncState,
-        authRuntime: authState.authRuntime,
-        role: authState.role,
-        handleLogout: authState.handleLogout,
-      }),
+      resolveNormalizedAuthOperationalState(
+        buildNormalizedAuthOperationalStateInput({
+          sessionState,
+          currentUser,
+          authorizedUser,
+          authLoading,
+          isFirebaseConnected,
+          remoteSyncStatus,
+          remoteSyncState,
+          authRuntime,
+          role,
+          handleLogout,
+        })
+      ),
     [
-      authState.sessionState,
-      authState.currentUser,
-      authState.authorizedUser,
-      authState.authLoading,
-      authState.isFirebaseConnected,
-      authState.remoteSyncStatus,
-      authState.remoteSyncState,
-      authState.authRuntime,
-      authState.role,
-      authState.handleLogout,
+      sessionState,
+      currentUser,
+      authorizedUser,
+      authLoading,
+      isFirebaseConnected,
+      remoteSyncStatus,
+      remoteSyncState,
+      authRuntime,
+      role,
+      handleLogout,
     ]
   );
 
