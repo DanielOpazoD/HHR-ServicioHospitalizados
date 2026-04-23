@@ -41,6 +41,26 @@ const loadDailyRecordFacadeSupportService = (): Promise<DailyRecordFacadeSupport
   (facadeSupportServicePromise ??=
     import('@/services/repositories/dailyRecordRepositoryFacadeSupport'));
 
+const withReadService = <T>(
+  operation: (service: DailyRecordReadService) => Promise<T> | T
+): Promise<T> => loadDailyRecordReadService().then(operation);
+
+const withInitializationService = <T>(
+  operation: (service: DailyRecordInitializationService) => Promise<T> | T
+): Promise<T> => loadDailyRecordInitializationService().then(operation);
+
+const withWriteService = <T>(
+  operation: (service: DailyRecordWriteService) => Promise<T> | T
+): Promise<T> => loadDailyRecordWriteService().then(operation);
+
+const withSyncService = <T>(
+  operation: (service: DailyRecordSyncService) => Promise<T> | T
+): Promise<T> => loadDailyRecordSyncService().then(operation);
+
+const withFacadeSupportService = <T>(
+  operation: (service: DailyRecordFacadeSupportService) => Promise<T> | T
+): Promise<T> => loadDailyRecordFacadeSupportService().then(operation);
+
 const createLazySubscription = (
   start: (service: DailyRecordSyncService) => () => void
 ): (() => void) => {
@@ -63,6 +83,24 @@ const createLazySubscription = (
     unsubscribe();
   };
 };
+
+const updatePartialDailyRecord = (
+  date: string,
+  patch: DailyRecordPatch
+): Promise<UpdatePartialDailyRecordResult> =>
+  withWriteService(service => service.updatePartialDetailed(date, patch));
+
+const saveDailyRecord = (
+  record: DailyRecord,
+  expectedLastUpdated?: string
+): Promise<SaveDailyRecordResult> =>
+  withWriteService(service => service.saveDetailed(record, expectedLastUpdated));
+
+const deleteDailyRecord = (date: string): Promise<void> =>
+  withFacadeSupportService(service => service.deleteDailyRecordAcrossStores(date));
+
+const syncDailyRecordWithFirestore = (date: string): Promise<SyncDailyRecordResult | null> =>
+  withSyncService(service => service.syncWithFirestoreDetailed(date));
 
 export interface DailyRecordReadPort {
   getPreviousDay: (date: string) => Promise<DailyRecord | null>;
@@ -116,52 +154,41 @@ export interface DailyRecordRepositoryPort
 }
 
 export const defaultDailyRecordReadPort: DailyRecordReadPort = {
-  getPreviousDay: async date => (await loadDailyRecordReadService()).getPreviousDay(date),
-  getAvailableDates: async () => (await loadDailyRecordReadService()).getAvailableDates(),
-  getMonthRecords: async (year, monthZeroBased) =>
-    (await loadDailyRecordReadService()).getMonthRecords(year, monthZeroBased),
-  getForDate: async date => (await loadDailyRecordReadService()).getForDate(date),
-  getForDateWithMeta: async (date, syncFromRemote = true) =>
-    (await loadDailyRecordReadService()).getForDateWithMeta(date, syncFromRemote),
-  initializeDay: async (date, copyFromDate) =>
-    (await loadDailyRecordInitializationService()).initializeDay(date, copyFromDate),
-  getPreviousDayWithMeta: async date =>
-    (await loadDailyRecordReadService()).getPreviousDayWithMeta(date),
+  getPreviousDay: date => withReadService(service => service.getPreviousDay(date)),
+  getAvailableDates: () => withReadService(service => service.getAvailableDates()),
+  getMonthRecords: (year, monthZeroBased) =>
+    withReadService(service => service.getMonthRecords(year, monthZeroBased)),
+  getForDate: date => withReadService(service => service.getForDate(date)),
+  getForDateWithMeta: (date, syncFromRemote = true) =>
+    withReadService(service => service.getForDateWithMeta(date, syncFromRemote)),
+  initializeDay: (date, copyFromDate) =>
+    withInitializationService(service => service.initializeDay(date, copyFromDate)),
+  getPreviousDayWithMeta: date => withReadService(service => service.getPreviousDayWithMeta(date)),
 };
 
 export const defaultDailyRecordWritePort: DailyRecordWritePort = {
-  updatePartial: async (date, patch) =>
-    (await loadDailyRecordWriteService()).updatePartialDetailed(date, patch),
-  save: async (record, expectedLastUpdated) =>
-    (await loadDailyRecordWriteService()).saveDetailed(record, expectedLastUpdated),
-  delete: async date =>
-    (await loadDailyRecordFacadeSupportService()).deleteDailyRecordAcrossStores(date),
+  updatePartial: updatePartialDailyRecord,
+  save: saveDailyRecord,
+  delete: deleteDailyRecord,
 };
 
 export const defaultDailyRecordSyncPort: DailyRecordSyncPort = {
-  syncWithFirestoreDetailed: async date =>
-    (await loadDailyRecordSyncService()).syncWithFirestoreDetailed(date),
+  syncWithFirestoreDetailed: syncDailyRecordWithFirestore,
 };
 
 export const defaultDailyRecordRepositoryPort: DailyRecordRepositoryPort = {
   ...defaultDailyRecordReadPort,
   ...defaultDailyRecordWritePort,
   ...defaultDailyRecordSyncPort,
-  saveDetailed: async (record, expectedLastUpdated) =>
-    (await loadDailyRecordWriteService()).saveDetailed(record, expectedLastUpdated),
-  updatePartialDetailed: async (date, patch) =>
-    (await loadDailyRecordWriteService()).updatePartialDetailed(date, patch),
+  saveDetailed: saveDailyRecord,
+  updatePartialDetailed: updatePartialDailyRecord,
   subscribe: (date, callback) =>
     createLazySubscription(service => service.subscribe(date, callback)),
   subscribeDetailed: (date, callback) =>
     createLazySubscription(service => service.subscribeDetailed(date, callback)),
-  deleteDay: async date =>
-    (await loadDailyRecordFacadeSupportService()).deleteDailyRecordAcrossStores(date),
-  copyPatientToDateDetailed: async (sourceDate, sourceBedId, targetDate, targetBedId) =>
-    (await loadDailyRecordInitializationService()).copyPatientToDateDetailed(
-      sourceDate,
-      sourceBedId,
-      targetDate,
-      targetBedId
+  deleteDay: deleteDailyRecord,
+  copyPatientToDateDetailed: (sourceDate, sourceBedId, targetDate, targetBedId) =>
+    withInitializationService(service =>
+      service.copyPatientToDateDetailed(sourceDate, sourceBedId, targetDate, targetBedId)
     ),
 };

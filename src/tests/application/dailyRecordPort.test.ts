@@ -55,6 +55,7 @@ describe('dailyRecordPort lazy facade', () => {
     readService.getForDate.mockResolvedValue({ id: 'record' });
     readService.getMonthRecords.mockResolvedValue([{ id: 'month-record' }]);
     writeService.updatePartialDetailed.mockResolvedValue({ outcome: 'saved' });
+    writeService.saveDetailed.mockResolvedValue({ outcome: 'saved' });
     facadeSupportService.deleteDailyRecordAcrossStores.mockResolvedValue(undefined);
 
     await defaultDailyRecordReadPort.getForDate('2026-04-10');
@@ -62,12 +63,22 @@ describe('dailyRecordPort lazy facade', () => {
     await defaultDailyRecordWritePort.updatePartial('2026-04-10', {
       patientName: 'Ana',
     });
+    await defaultDailyRecordWritePort.save({ date: '2026-04-10' } as never);
+    await defaultDailyRecordRepositoryPort.saveDetailed({ date: '2026-04-11' } as never);
+    await defaultDailyRecordRepositoryPort.updatePartialDetailed('2026-04-11', {
+      patientName: 'Beto',
+    });
     await defaultDailyRecordRepositoryPort.deleteDay('2026-04-10');
 
     expect(readService.getForDate).toHaveBeenCalledWith('2026-04-10');
     expect(readService.getMonthRecords).toHaveBeenCalledWith(2026, 3);
     expect(writeService.updatePartialDetailed).toHaveBeenCalledWith('2026-04-10', {
       patientName: 'Ana',
+    });
+    expect(writeService.saveDetailed).toHaveBeenCalledWith({ date: '2026-04-10' }, undefined);
+    expect(writeService.saveDetailed).toHaveBeenCalledWith({ date: '2026-04-11' }, undefined);
+    expect(writeService.updatePartialDetailed).toHaveBeenCalledWith('2026-04-11', {
+      patientName: 'Beto',
     });
     expect(facadeSupportService.deleteDailyRecordAcrossStores).toHaveBeenCalledWith('2026-04-10');
   });
