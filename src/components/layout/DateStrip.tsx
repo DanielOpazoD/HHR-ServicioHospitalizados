@@ -142,51 +142,55 @@ export const DateStrip: React.FC<DateStripProps> = ({
       className="bg-white border-b border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.06)] sticky top-[56px] z-40 print:hidden h-[44px] flex items-center"
       style={{ transform: 'translateZ(0)' }}
     >
-      <div className="max-w-screen-2xl mx-auto px-3 py-1">
-        <div className="flex items-center gap-3">
-          {!isGuest && onToggleBookmarks && (
-            <DateStripBookmarkToggle
-              onToggleBookmarks={onToggleBookmarks}
-              showBookmarks={showBookmarks}
-            />
-          )}
-
-          <div className="flex items-center gap-1">
-            {currentModule === 'NURSING_HANDOFF' && !isGuest && (
-              <HandoffSaveDropdown
-                onExportPDF={onExportPDF}
-                onBackupPDF={onBackupPDF}
-                isArchived={isArchived}
-                isBackingUp={isBackingUp}
-                showFirebaseBackupOption={false}
+      <div className="max-w-screen-2xl mx-auto px-3 py-1 w-full">
+        <div className="flex items-center gap-3 w-full">
+          <div className="flex items-center gap-1 min-w-[178px]">
+            {!isGuest && onToggleBookmarks && (
+              <DateStripBookmarkToggle
+                onToggleBookmarks={onToggleBookmarks}
+                showBookmarks={showBookmarks}
               />
             )}
 
-            {currentModule === 'CENSUS' && (
-              <>
-                <PdfButtons onExportPDF={onExportPDF} />
-                {!isGuest && !specialistCensusAccess && (
-                  <SaveDropdown
-                    onExportExcel={onExportExcel}
-                    onBackupExcel={onBackupExcel}
-                    isArchived={isArchived}
-                    isBackingUp={isBackingUp}
-                    showFirebaseBackupOption={false}
-                  />
-                )}
-              </>
-            )}
+            <div className="flex items-center gap-1 min-h-[34px]">
+              {currentModule === 'NURSING_HANDOFF' && !isGuest && (
+                <HandoffSaveDropdown
+                  onExportPDF={onExportPDF}
+                  onBackupPDF={onBackupPDF}
+                  isArchived={isArchived}
+                  isBackingUp={isBackingUp}
+                  showFirebaseBackupOption={false}
+                />
+              )}
+
+              {currentModule === 'CENSUS' && (
+                <>
+                  <PdfButtons onExportPDF={onExportPDF} />
+                  {!isGuest && !specialistCensusAccess && (
+                    <SaveDropdown
+                      onExportExcel={onExportExcel}
+                      onBackupExcel={onBackupExcel}
+                      isArchived={isArchived}
+                      isBackingUp={isBackingUp}
+                      showFirebaseBackupOption={false}
+                    />
+                  )}
+                </>
+              )}
+            </div>
           </div>
 
-          {!isGuest && !specialistCensusAccess && (
-            <EmailDropdown
-              onSendEmail={onSendEmail}
-              onCopyShareLink={onCopyShareLink}
-              onConfigureEmail={onConfigureEmail}
-              emailStatus={emailStatus}
-              emailErrorMessage={emailErrorMessage}
-            />
-          )}
+          <div className="min-w-[96px] flex items-center">
+            {!isGuest && !specialistCensusAccess && (
+              <EmailDropdown
+                onSendEmail={onSendEmail}
+                onCopyShareLink={onCopyShareLink}
+                onConfigureEmail={onConfigureEmail}
+                emailStatus={emailStatus}
+                emailErrorMessage={emailErrorMessage}
+              />
+            )}
+          </div>
 
           <div className="h-4 w-px bg-slate-200/70" />
 
@@ -224,25 +228,27 @@ export const DateStrip: React.FC<DateStripProps> = ({
 
           <div className="h-4 w-px bg-slate-200/70" />
 
-          {!isHandoffModule && onOpenPatientSearch && (
-            <button
-              onClick={onOpenPatientSearch}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-700 rounded-lg border border-slate-200 transition-colors text-[11px] font-semibold"
-              title="Buscar paciente (Ctrl+K)"
-            >
-              <Search size={14} />
-              <span className="hidden sm:inline">Buscar</span>
-            </button>
-          )}
+          <div className="flex items-center justify-end gap-1 min-w-[286px]">
+            {!isHandoffModule && onOpenPatientSearch && (
+              <button
+                onClick={onOpenPatientSearch}
+                className="flex items-center justify-center gap-1 px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-700 rounded-lg border border-slate-200 transition-colors text-[11px] font-semibold min-w-[86px]"
+                title="Buscar paciente (Ctrl+K)"
+              >
+                <Search size={14} />
+                <span className="hidden sm:inline">Buscar</span>
+              </button>
+            )}
 
-          <DateStripQuickActions
-            onOpenBedManager={specialistCensusAccess ? undefined : onOpenBedManager}
-            renderFeatureQuickActions={renderFeatureQuickActions}
-            hideClinicalQuickActions={isHandoffModule}
-            medicalIndicationsPatients={
-              currentModule === 'CENSUS' ? medicalIndicationsPatients : []
-            }
-          />
+            <DateStripQuickActions
+              onOpenBedManager={specialistCensusAccess ? undefined : onOpenBedManager}
+              renderFeatureQuickActions={renderFeatureQuickActions}
+              hideClinicalQuickActions={isHandoffModule}
+              medicalIndicationsPatients={
+                currentModule === 'CENSUS' ? medicalIndicationsPatients : []
+              }
+            />
+          </div>
         </div>
       </div>
     </div>

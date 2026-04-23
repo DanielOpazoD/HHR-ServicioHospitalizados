@@ -22,10 +22,10 @@ const NavTab: React.FC<NavTabProps> = ({ label, icon: Icon, isActive, onClick })
   <button
     onClick={onClick}
     className={clsx(
-      'flex items-center gap-2 px-4 py-1.5 transition-all duration-200 text-[13px] tracking-tight rounded-full',
+      'flex items-center gap-2 px-4 py-1.5 transition-all duration-200 text-[13px] tracking-tight rounded-full ring-1 ring-transparent',
       isActive
-        ? 'text-white font-semibold bg-white/[0.12]'
-        : 'text-white/40 hover:text-white/70 hover:bg-white/[0.05] font-medium'
+        ? 'text-white font-semibold bg-white/[0.16] ring-white/18 shadow-sm shadow-black/10'
+        : 'text-white/65 hover:text-white hover:bg-white/[0.08] hover:ring-white/12 font-medium'
     )}
   >
     <Icon size={15} /> {label}
@@ -125,8 +125,8 @@ export const NavbarTabs: React.FC<NavbarTabsProps> = ({
             className={clsx(
               'flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200',
               isUtilityActive || currentModule === 'CUDYR'
-                ? 'bg-white/[0.15] text-white ring-1 ring-white/20'
-                : 'text-white/30 hover:bg-white/[0.06] hover:text-white/60'
+                ? 'bg-white/[0.16] text-white ring-1 ring-white/20 shadow-sm shadow-black/10'
+                : 'text-white/55 hover:bg-white/[0.08] hover:text-white'
             )}
             title="Más módulos"
           >

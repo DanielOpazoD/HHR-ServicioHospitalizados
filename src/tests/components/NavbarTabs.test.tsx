@@ -95,12 +95,12 @@ describe('NavbarTabs', () => {
   it('applies active style to current module and handles CUDYR alias', () => {
     const { rerender } = render(<NavbarTabs {...defaultProps} currentModule="CENSUS" />);
     const censusButton = screen.getByText('Censo Diario').closest('button');
-    expect(censusButton?.className).toContain('bg-white/[0.12]');
+    expect(censusButton?.className).toContain('bg-white/[0.16]');
 
     // Test CUDYR alias for NURSING_HANDOFF
     rerender(<NavbarTabs {...defaultProps} currentModule="CUDYR" />);
     const nursingButton = screen.getByText('Entrega Turno Enfermería').closest('button');
-    expect(nursingButton?.className).toContain('bg-white/[0.12]');
+    expect(nursingButton?.className).toContain('bg-white/[0.16]');
   });
 
   it('navigates to the standalone analytics module from any current module', () => {
@@ -128,9 +128,9 @@ describe('NavbarTabs', () => {
   it('shows active utility menu state', () => {
     const { rerender } = render(<NavbarTabs {...defaultProps} currentModule="BACKUP_FILES" />);
     const menuBtn = screen.getByTitle('Más módulos');
-    expect(menuBtn.className).toContain('bg-white/[0.15]');
+    expect(menuBtn.className).toContain('bg-white/[0.16]');
 
     rerender(<NavbarTabs {...defaultProps} currentModule="ANALYTICS" />);
-    expect(menuBtn.className).toContain('bg-white/[0.15]');
+    expect(menuBtn.className).toContain('bg-white/[0.16]');
   });
 });
