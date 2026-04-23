@@ -4,6 +4,14 @@ export interface CensusDateSelection {
   day: number;
 }
 
+export interface OpenCensusDateNavigationHandlers {
+  setCurrentModule: (module: 'CENSUS') => void;
+  setCensusViewMode: (mode: 'REGISTER') => void;
+  setSelectedYear: (year: number) => void;
+  setSelectedMonth: (month: number) => void;
+  setSelectedDay: (day: number) => void;
+}
+
 export const resolveCensusDateSelection = (isoDate: string): CensusDateSelection | null => {
   const datePart = isoDate.split('T')[0];
   if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
@@ -23,3 +31,24 @@ export const resolveCensusDateSelection = (isoDate: string): CensusDateSelection
 
   return { year, month: month - 1, day };
 };
+
+export const buildOpenCensusDateHandler =
+  ({
+    setCurrentModule,
+    setCensusViewMode,
+    setSelectedYear,
+    setSelectedMonth,
+    setSelectedDay,
+  }: OpenCensusDateNavigationHandlers) =>
+  (isoDate: string) => {
+    const selection = resolveCensusDateSelection(isoDate);
+    if (!selection) {
+      return;
+    }
+
+    setCurrentModule('CENSUS');
+    setCensusViewMode('REGISTER');
+    setSelectedYear(selection.year);
+    setSelectedMonth(selection.month);
+    setSelectedDay(selection.day);
+  };

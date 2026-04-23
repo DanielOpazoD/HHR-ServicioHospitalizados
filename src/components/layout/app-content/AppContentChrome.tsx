@@ -18,7 +18,7 @@ import {
   resolveBookmarkToggleAction,
   resolveDateStripCensusActions,
 } from '@/components/layout/app-content/appContentChromeController';
-import { resolveCensusDateSelection } from '@/components/layout/app-content/appContentCensusDateController';
+import { buildOpenCensusDateHandler } from '@/components/layout/app-content/appContentCensusDateController';
 import type { UseUIStateReturn } from '@/hooks/useUIState';
 import type { AppContentRuntime } from '@/components/layout/app-content/useAppContentRuntime';
 import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medicalIndications';
@@ -52,20 +52,22 @@ export const AppContentChrome: React.FC<AppContentChromeProps> = ({
     handleExportExcel: runtime.handleExportExcel,
   });
 
-  const openCensusDate = React.useCallback(
-    (isoDate: string) => {
-      const selection = resolveCensusDateSelection(isoDate);
-      if (!selection) {
-        return;
-      }
-
-      ui.setCurrentModule('CENSUS');
-      ui.setCensusViewMode('REGISTER');
-      dateNav.setSelectedYear(selection.year);
-      dateNav.setSelectedMonth(selection.month);
-      dateNav.setSelectedDay(selection.day);
-    },
-    [dateNav, ui]
+  const openCensusDate = React.useMemo(
+    () =>
+      buildOpenCensusDateHandler({
+        setCurrentModule: ui.setCurrentModule,
+        setCensusViewMode: ui.setCensusViewMode,
+        setSelectedYear: dateNav.setSelectedYear,
+        setSelectedMonth: dateNav.setSelectedMonth,
+        setSelectedDay: dateNav.setSelectedDay,
+      }),
+    [
+      dateNav.setSelectedDay,
+      dateNav.setSelectedMonth,
+      dateNav.setSelectedYear,
+      ui.setCensusViewMode,
+      ui.setCurrentModule,
+    ]
   );
 
   return (

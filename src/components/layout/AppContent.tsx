@@ -6,7 +6,7 @@ import { AppContentChrome } from '@/components/layout/app-content/AppContentChro
 import { AppContentOverlays } from '@/components/layout/app-content/AppContentOverlays';
 import { useAppContentRuntime } from '@/components/layout/app-content/useAppContentRuntime';
 import { useAppContentShellEffects } from '@/components/layout/app-content/useAppContentShellEffects';
-import { resolveCensusDateSelection } from '@/components/layout/app-content/appContentCensusDateController';
+import { buildOpenCensusDateHandler } from '@/components/layout/app-content/appContentCensusDateController';
 import { resolveModuleTheme } from '@/components/layout/app-content/moduleThemeController';
 import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medicalIndications';
 
@@ -19,17 +19,22 @@ export const AppContent: React.FC<AppContentProps> = ({ ui, renderFeatureQuickAc
   const runtime = useAppContentRuntime({ ui });
   const { auth, dailyRecordHook, dateNav } = runtime;
 
-  const openCensusDate = React.useCallback(
-    (isoDate: string) => {
-      const selection = resolveCensusDateSelection(isoDate);
-      if (!selection) return;
-      ui.setCurrentModule('CENSUS');
-      ui.setCensusViewMode('REGISTER');
-      dateNav.setSelectedYear(selection.year);
-      dateNav.setSelectedMonth(selection.month);
-      dateNav.setSelectedDay(selection.day);
-    },
-    [dateNav, ui]
+  const openCensusDate = React.useMemo(
+    () =>
+      buildOpenCensusDateHandler({
+        setCurrentModule: ui.setCurrentModule,
+        setCensusViewMode: ui.setCensusViewMode,
+        setSelectedYear: dateNav.setSelectedYear,
+        setSelectedMonth: dateNav.setSelectedMonth,
+        setSelectedDay: dateNav.setSelectedDay,
+      }),
+    [
+      dateNav.setSelectedDay,
+      dateNav.setSelectedMonth,
+      dateNav.setSelectedYear,
+      ui.setCensusViewMode,
+      ui.setCurrentModule,
+    ]
   );
 
   useAppContentShellEffects({
