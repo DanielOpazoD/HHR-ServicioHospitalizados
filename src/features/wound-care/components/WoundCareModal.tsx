@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { Camera, FileText, Printer, ChevronDown, ChevronRight } from 'lucide-react';
 import { BaseModal } from '@/components/shared/BaseModal';
-import type { EpisodeContext } from '@/application/wound-care/woundCareUseCases';
+import {
+  executeUpdatePhotoDescription,
+  type EpisodeContext,
+} from '@/application/wound-care/woundCareUseCases';
 import { useWoundCareHistory, type EpisodePhotoGroup } from '../hooks/useWoundCareHistory';
 import { useWoundCareUpload } from '../hooks/useWoundCareUpload';
 import { ConsentStatus } from './ConsentStatus';
@@ -178,8 +181,6 @@ export const WoundCareModal: React.FC<WoundCareModalProps> = ({
   const showToast = (msg: string) => setToastMessage(msg);
 
   const handleEditDescription = async (photoId: string, description: string) => {
-    const { executeUpdatePhotoDescription } =
-      await import('@/application/wound-care/woundCareUseCases');
     await executeUpdatePhotoDescription(photoId, description);
     reload();
     showToast('Descripción actualizada');

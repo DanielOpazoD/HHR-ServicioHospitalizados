@@ -15,6 +15,7 @@ import type {
 import { buildPatientEpisodeTimelineState } from '@/features/census/components/global-search/patientEpisodeTimelineController';
 import { globalPatientSearchLogger } from '@/hooks/hookLoggers';
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
+import { buildClinicalEpisodeKey } from '@/application/patient-flow/clinicalEpisode';
 
 // ---------------------------------------------------------------------------
 // Lazy loaders
@@ -26,9 +27,6 @@ let patientHistoryPromise: Promise<
 let clinicalDocRepoPromise: Promise<
   typeof import('@/services/repositories/ClinicalDocumentRepository')
 > | null = null;
-let clinicalEpisodePromise: Promise<
-  typeof import('@/application/patient-flow/clinicalEpisode')
-> | null = null;
 let clinicalDocPdfPromise: Promise<typeof import('@/features/clinical-documents')> | null = null;
 
 const loadPatientHistory = () => {
@@ -38,10 +36,6 @@ const loadPatientHistory = () => {
 const loadClinicalDocRepo = () => {
   clinicalDocRepoPromise ??= import('@/services/repositories/ClinicalDocumentRepository');
   return clinicalDocRepoPromise;
-};
-const loadClinicalEpisode = () => {
-  clinicalEpisodePromise ??= import('@/application/patient-flow/clinicalEpisode');
-  return clinicalEpisodePromise;
 };
 const loadClinicalDocPdf = () => {
   clinicalDocPdfPromise ??= import('@/features/clinical-documents');
@@ -137,16 +131,13 @@ export function usePatientSelection(): UsePatientSelectionReturn {
     });
 
     try {
-      const [docMod, episodeMod] = await Promise.all([
-        loadClinicalDocRepo(),
-        loadClinicalEpisode(),
-      ]);
+      const docMod = await loadClinicalDocRepo();
 
       const rutWithoutDots = parsed.rut.replace(/\./g, '');
       const candidateKeys = [
         ...new Set([
-          episodeMod.buildClinicalEpisodeKey(parsed.rut, parsed.admissionDate),
-          episodeMod.buildClinicalEpisodeKey(rutWithoutDots, parsed.admissionDate),
+          buildClinicalEpisodeKey(parsed.rut, parsed.admissionDate),
+          buildClinicalEpisodeKey(rutWithoutDots, parsed.admissionDate),
         ]),
       ];
 
