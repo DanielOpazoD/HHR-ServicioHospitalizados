@@ -31,8 +31,8 @@ export const EmailDropdown: React.FC<EmailDropdownProps> = ({
           onClick={toggle}
           disabled={emailStatus === 'loading'}
           className={clsx(
-            'btn !py-1.5 text-[10px] flex items-center justify-center gap-1',
-            '!px-2 rounded-r-none border-r',
+            'btn h-[30px] !py-0 text-[10px] flex items-center justify-center gap-1',
+            '!px-2 rounded-lg border-r',
             uiState.buttonClassName,
             uiState.widthClassName
           )}
@@ -40,9 +40,9 @@ export const EmailDropdown: React.FC<EmailDropdownProps> = ({
           aria-live="polite"
           data-email-status={emailStatus}
         >
-          <Send size={14} />
+          <Send size={13} />
           {uiState.label}
-          <ChevronDown size={14} className={clsx('transition-transform', isOpen && 'rotate-180')} />
+          <ChevronDown size={13} className={clsx('transition-transform', isOpen && 'rotate-180')} />
         </button>
       </div>
 

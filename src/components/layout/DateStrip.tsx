@@ -134,17 +134,18 @@ export const DateStrip: React.FC<DateStripProps> = ({
     currentModule === 'CENSUS' && isSpecialistCensusAccessProfile(accessProfile);
   const isHandoffModule =
     currentModule === 'NURSING_HANDOFF' || currentModule === 'MEDICAL_HANDOFF';
+  const canShowRoleRestrictedActions = !isGuest && !specialistCensusAccess;
 
   useDateStripWheelNavigation({ containerRef: daysContainerRef, navigateDays });
 
   return (
     <div
-      className="bg-white border-b border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.06)] sticky top-[56px] z-40 print:hidden h-[44px] flex items-center"
+      className="bg-white border-b border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.06)] sticky top-[56px] z-40 print:hidden h-[40px] flex items-center"
       style={{ transform: 'translateZ(0)' }}
     >
-      <div className="max-w-screen-2xl mx-auto px-3 py-1 w-full">
-        <div className="flex items-center gap-3 w-full">
-          <div className="flex items-center gap-1 min-w-[82px]">
+      <div className="max-w-screen-2xl mx-auto px-2 py-0.5 w-full">
+        <div className="flex items-center justify-center gap-2 w-full">
+          <div className="flex items-center gap-1 shrink-0 min-w-0">
             {!isGuest && onToggleBookmarks && (
               <DateStripBookmarkToggle
                 onToggleBookmarks={onToggleBookmarks}
@@ -152,32 +153,17 @@ export const DateStrip: React.FC<DateStripProps> = ({
               />
             )}
 
-            <div className="flex items-center gap-1 min-h-[34px]">
-              {currentModule === 'NURSING_HANDOFF' && !isGuest && (
-                <HandoffSaveDropdown
-                  onExportPDF={onExportPDF}
-                  onBackupPDF={onBackupPDF}
-                  isArchived={isArchived}
-                  isBackingUp={isBackingUp}
-                  showFirebaseBackupOption={false}
-                />
-              )}
-
-              {currentModule === 'CENSUS' && <PdfButtons onExportPDF={onExportPDF} />}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1 min-w-[132px]">
-            {!isGuest && !specialistCensusAccess && (
-              <EmailDropdown
-                onSendEmail={onSendEmail}
-                onCopyShareLink={onCopyShareLink}
-                onConfigureEmail={onConfigureEmail}
-                emailStatus={emailStatus}
-                emailErrorMessage={emailErrorMessage}
+            {currentModule === 'NURSING_HANDOFF' && !isGuest && (
+              <HandoffSaveDropdown
+                onExportPDF={onExportPDF}
+                onBackupPDF={onBackupPDF}
+                isArchived={isArchived}
+                isBackingUp={isBackingUp}
+                showFirebaseBackupOption={false}
               />
             )}
-            {currentModule === 'CENSUS' && !isGuest && !specialistCensusAccess && (
+
+            {currentModule === 'CENSUS' && canShowRoleRestrictedActions && (
               <SaveDropdown
                 onExportExcel={onExportExcel}
                 onBackupExcel={onBackupExcel}
@@ -186,6 +172,18 @@ export const DateStrip: React.FC<DateStripProps> = ({
                 showFirebaseBackupOption={false}
               />
             )}
+
+            {canShowRoleRestrictedActions && (
+              <EmailDropdown
+                onSendEmail={onSendEmail}
+                onCopyShareLink={onCopyShareLink}
+                onConfigureEmail={onConfigureEmail}
+                emailStatus={emailStatus}
+                emailErrorMessage={emailErrorMessage}
+              />
+            )}
+
+            {currentModule === 'CENSUS' && <PdfButtons onExportPDF={onExportPDF} />}
           </div>
 
           <div className="h-4 w-px bg-slate-200/70" />
@@ -207,7 +205,7 @@ export const DateStrip: React.FC<DateStripProps> = ({
 
           <div
             ref={daysContainerRef}
-            className="flex gap-1 py-1 overflow-hidden flex-1 justify-center"
+            className="flex gap-1 py-0.5 overflow-hidden justify-center shrink-0"
           >
             <DateStripDayButtons
               selectedDay={selectedDay}
@@ -224,14 +222,14 @@ export const DateStrip: React.FC<DateStripProps> = ({
 
           <div className="h-4 w-px bg-slate-200/70" />
 
-          <div className="flex items-center justify-end gap-1 min-w-[286px]">
+          <div className="flex items-center justify-end gap-1 min-w-0 shrink-0">
             {!isHandoffModule && onOpenPatientSearch && (
               <button
                 onClick={onOpenPatientSearch}
-                className="flex items-center justify-center gap-1 px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-700 rounded-lg border border-slate-200 transition-colors text-[11px] font-semibold min-w-[86px]"
+                className="flex h-[30px] items-center justify-center gap-1 px-3 py-0 bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-700 rounded-lg border border-slate-200 transition-colors text-[10px] font-semibold min-w-[96px]"
                 title="Buscar paciente (Ctrl+K)"
               >
-                <Search size={14} />
+                <Search size={13} />
                 <span className="hidden sm:inline">Buscar</span>
               </button>
             )}

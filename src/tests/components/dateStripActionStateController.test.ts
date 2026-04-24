@@ -15,7 +15,7 @@ describe('resolveSaveButtonUiState', () => {
     expect(state.label).toBe('Guardando...');
     expect(state.iconKind).toBe('loading');
     expect(state.buttonClassName).toContain('amber');
-    expect(state.widthClassName).toBe('min-w-[40px]');
+    expect(state.widthClassName).toBe('w-[34px]');
   });
 
   it('returns archived state with success style', () => {

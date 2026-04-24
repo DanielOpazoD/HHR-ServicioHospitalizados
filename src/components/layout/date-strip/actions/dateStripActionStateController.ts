@@ -26,7 +26,7 @@ export const resolveSaveButtonUiState = ({
           ? 'bg-slate-100 text-slate-400 border-slate-200'
           : 'bg-amber-100 text-amber-700 border-amber-200',
       iconKind: 'loading',
-      widthClassName: 'min-w-[40px]',
+      widthClassName: variant === 'handoff' ? 'min-w-[40px]' : 'w-[34px]',
     };
   }
 
@@ -35,7 +35,7 @@ export const resolveSaveButtonUiState = ({
       label: 'Sincronizado',
       buttonClassName: 'bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-sm',
       iconKind: 'archived',
-      widthClassName: 'min-w-[40px]',
+      widthClassName: variant === 'handoff' ? 'min-w-[40px]' : 'w-[34px]',
     };
   }
 
@@ -43,7 +43,7 @@ export const resolveSaveButtonUiState = ({
     label: 'Guardar',
     buttonClassName: 'btn-primary bg-emerald-500 hover:bg-emerald-600 border-none shadow-sm',
     iconKind: 'default',
-    widthClassName: 'min-w-[40px]',
+    widthClassName: variant === 'handoff' ? 'min-w-[40px]' : 'w-[34px]',
   };
 };
 

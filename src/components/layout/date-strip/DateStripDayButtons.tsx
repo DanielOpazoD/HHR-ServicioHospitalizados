@@ -67,13 +67,13 @@ export const DateStripDayButtons: React.FC<DateStripDayButtonsProps> = ({
           onClick={() => !isFutureBlocked && setSelectedDay(day)}
           disabled={isFutureBlocked}
           className={clsx(
-            'flex items-center justify-center w-8 h-8 rounded-lg text-xs font-semibold transition-all shrink-0 relative border',
+            'flex items-center justify-center w-8 h-[30px] rounded-lg text-[11px] font-semibold transition-all shrink-0 relative border',
             isFutureBlocked
               ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
               : isSelected
                 ? isTodayReal
-                  ? 'bg-gradient-to-br from-blue-500 to-cyan-500 text-white font-bold border-transparent shadow-lg shadow-blue-500/30 scale-110 ring-2 ring-blue-400/30'
-                  : 'bg-slate-500 text-white font-bold border-slate-500 shadow-sm scale-105'
+                  ? 'bg-gradient-to-br from-blue-500 to-cyan-500 text-white font-bold border-transparent shadow-lg shadow-blue-500/30 scale-105 ring-2 ring-blue-400/30'
+                  : 'bg-slate-500 text-white font-bold border-slate-500 shadow-sm scale-[1.03]'
                 : [
                     isTodayReal
                       ? 'bg-blue-50 border-blue-400 text-blue-600 font-bold ring-1 ring-blue-300/50 hover:bg-blue-100'

@@ -42,7 +42,7 @@ export const SaveDropdown: React.FC<SaveDropdownProps> = ({
         onClick={toggle}
         disabled={isBackingUp}
         className={clsx(
-          'btn !px-2 !py-1.5 text-[10px] flex items-center justify-center transition-all',
+          'btn h-[30px] !px-0 !py-0 text-[10px] flex items-center justify-center transition-all',
           uiState.buttonClassName,
           uiState.widthClassName
         )}
@@ -50,9 +50,9 @@ export const SaveDropdown: React.FC<SaveDropdownProps> = ({
         aria-label={uiState.label}
         data-save-status={isBackingUp ? 'loading' : isArchived ? 'archived' : 'idle'}
       >
-        {uiState.iconKind === 'loading' && <Loader2 size={14} className="animate-spin" />}
-        {uiState.iconKind === 'archived' && <CheckCircle size={14} />}
-        {uiState.iconKind === 'default' && <Save size={14} />}
+        {uiState.iconKind === 'loading' && <Loader2 size={13} className="animate-spin" />}
+        {uiState.iconKind === 'archived' && <CheckCircle size={13} />}
+        {uiState.iconKind === 'default' && <Save size={13} />}
       </button>
 
       {isOpen && (

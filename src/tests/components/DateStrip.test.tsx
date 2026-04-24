@@ -59,7 +59,7 @@ describe('DateStrip', () => {
     expect(screen.getByTitle('Enviar censo')).toBeInTheDocument();
   });
 
-  it('keeps daily census save immediately after send census in the action order', () => {
+  it('keeps daily census save immediately before send census in the action order', () => {
     render(<DateStrip {...defaultProps} />);
 
     const buttons = screen.getAllByRole('button');
@@ -67,7 +67,7 @@ describe('DateStrip', () => {
     const saveIndex = buttons.indexOf(screen.getByTitle('Opciones de guardado'));
 
     expect(sendIndex).toBeGreaterThan(-1);
-    expect(saveIndex).toBe(sendIndex + 1);
+    expect(saveIndex).toBe(sendIndex - 1);
   });
 
   it('hides specific buttons when currentModule is not CENSUS', () => {

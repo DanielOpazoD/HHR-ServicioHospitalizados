@@ -46,23 +46,23 @@ export const DateStripQuickActions: React.FC<DateStripQuickActionsProps> = ({
       disabled
       aria-disabled="true"
       tabIndex={-1}
-      className="flex items-center justify-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-semibold text-slate-400 opacity-70 min-w-[82px]"
+      className="flex h-[30px] items-center justify-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-0 text-[10px] font-semibold text-slate-400 opacity-70 min-w-[76px]"
       title={`${label} (cargando...)`}
     >
-      <Icon size={14} />
+      <Icon size={13} />
       <span className="hidden sm:inline">{label}</span>
     </button>
   );
 
   return (
-    <div className="flex items-center justify-end gap-1 min-h-[34px] min-w-[188px]">
+    <div className="flex items-center justify-end gap-1 min-h-[30px] min-w-0">
       {onOpenBedManager && (
         <button
           onClick={onOpenBedManager}
-          className="flex items-center justify-center gap-1 px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-lg border border-slate-200 transition-colors text-[11px] font-semibold min-w-[84px]"
+          className="flex h-[30px] items-center justify-center gap-1 px-2.5 py-0 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-lg border border-slate-200 transition-colors text-[10px] font-semibold min-w-[76px]"
           title="Bloqueo de camas"
         >
-          <Lock size={14} />
+          <Lock size={13} />
           <span className="hidden sm:inline">Camas</span>
         </button>
       )}
@@ -73,10 +73,10 @@ export const DateStripQuickActions: React.FC<DateStripQuickActionsProps> = ({
             <>
               <button
                 onClick={() => setIsRadiologyOpen(true)}
-                className="flex items-center justify-center gap-1 px-2.5 py-1.5 bg-violet-50 hover:bg-violet-100 text-violet-700 rounded-lg border border-violet-200 transition-colors text-[11px] font-semibold min-w-[82px]"
+                className="flex h-[30px] items-center justify-center gap-1 px-2.5 py-0 bg-violet-50 hover:bg-violet-100 text-violet-700 rounded-lg border border-violet-200 transition-colors text-[10px] font-semibold min-w-[76px]"
                 title="Radiología / Imagenología"
               >
-                <Radio size={14} />
+                <Radio size={13} />
                 <span className="hidden sm:inline">MMRAD</span>
               </button>
               {isRadiologyOpen ? (
