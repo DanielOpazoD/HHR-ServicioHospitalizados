@@ -48,6 +48,7 @@ const applyClinicalDocumentDefinitionDefaults = (
     footerMedicoLabel: record.footerMedicoLabel || 'Médico',
     footerEspecialidadLabel: record.footerEspecialidadLabel || 'Especialidad',
     annexIncludedInPrint: record.annexIncludedInPrint ?? true,
+    includePatientSignature: record.includePatientSignature ?? true,
     audit: {
       ...record.audit,
       signatureRevocations: Array.isArray(record.audit.signatureRevocations)

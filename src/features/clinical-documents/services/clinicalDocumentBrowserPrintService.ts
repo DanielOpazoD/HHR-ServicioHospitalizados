@@ -67,6 +67,7 @@ export const openClinicalDocumentBrowserPrintPreview = async (
   ieehDraft?: ClinicalDocumentIeehDraft,
   options: {
     annexMode?: ClinicalDocumentAnnexPrintMode;
+    includePatientSignature?: boolean;
   } = {}
 ): Promise<boolean> => {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
@@ -97,6 +98,7 @@ export const openClinicalDocumentBrowserPrintPreview = async (
   const hasAnnex = printableRoot.querySelector('.clinical-document-annex-page') != null;
   const includePatientSignature =
     DOCUMENT_TYPES_WITH_PATIENT_SIGNATURE.has(documentType) &&
+    options.includePatientSignature !== false &&
     !hasAnnex &&
     options.annexMode !== 'annex_only';
   const printRoot = document.createElement('div');

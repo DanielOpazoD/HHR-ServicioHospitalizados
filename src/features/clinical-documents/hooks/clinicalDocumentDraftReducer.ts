@@ -52,7 +52,9 @@ export type ClinicalDocumentDraftAction =
   | { type: 'PATCH_FOOTER_LABEL'; kind: 'medico' | 'especialidad'; title: string }
   | {
       type: 'PATCH_DOCUMENT_META';
-      patch: Partial<Pick<ClinicalDocumentRecord, 'medico' | 'especialidad'>>;
+      patch: Partial<
+        Pick<ClinicalDocumentRecord, 'medico' | 'especialidad' | 'includePatientSignature'>
+      >;
     }
   | { type: 'ADD_CLINICAL_UPDATE' }
   | { type: 'PATCH_ANNEX_CONTENT'; content: string }

@@ -178,6 +178,23 @@ describe('clinicalDocumentEditorUseCases', () => {
       record.ieehDraft,
       {
         annexMode: 'annex_only',
+        includePatientSignature: true,
+      }
+    );
+  });
+
+  it('forwards patient signature suppression through the print use case contract', async () => {
+    const record = { ...buildRecord(), includePatientSignature: false };
+
+    await expect(executeOpenClinicalDocumentPrint(record)).resolves.toBe(true);
+
+    expect(openClinicalDocumentBrowserPrintPreview).toHaveBeenCalledWith(
+      record.title,
+      record.documentType,
+      record.ieehDraft,
+      {
+        annexMode: undefined,
+        includePatientSignature: false,
       }
     );
   });

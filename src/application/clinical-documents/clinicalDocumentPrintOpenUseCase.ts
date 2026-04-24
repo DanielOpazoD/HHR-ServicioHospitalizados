@@ -10,4 +10,5 @@ export const executeOpenClinicalDocumentPrint = (
 ): Promise<boolean> =>
   openClinicalDocumentBrowserPrintPreview(record.title, record.documentType, record.ieehDraft, {
     annexMode: options.annexMode,
+    includePatientSignature: record.includePatientSignature ?? true,
   });

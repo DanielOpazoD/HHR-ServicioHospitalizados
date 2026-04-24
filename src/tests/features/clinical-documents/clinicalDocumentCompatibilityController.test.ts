@@ -100,4 +100,13 @@ describe('clinicalDocumentCompatibilityController', () => {
 
     expect(hydrated.annexIncludedInPrint).toBe(true);
   });
+
+  it('defaults legacy patient signature inclusion to true', () => {
+    const document = buildDocument();
+    delete document.includePatientSignature;
+
+    const hydrated = hydrateLegacyClinicalDocument(document);
+
+    expect(hydrated.includePatientSignature).toBe(true);
+  });
 });

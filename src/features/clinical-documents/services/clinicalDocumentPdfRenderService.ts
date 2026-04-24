@@ -49,6 +49,7 @@ export const createClinicalDocumentPdfRenderService = (
         documentType: record?.documentType,
         pageTitle: record?.title,
         annexMode: options.annexMode,
+        includePatientSignature: record?.includePatientSignature ?? true,
       });
       if (!html) {
         return null;

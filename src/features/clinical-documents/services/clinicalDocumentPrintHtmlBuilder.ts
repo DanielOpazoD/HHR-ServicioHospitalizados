@@ -18,6 +18,7 @@ interface PrintHtmlOptions {
   bodyFontFamily?: string;
   documentType?: ClinicalDocumentType;
   annexMode?: ClinicalDocumentAnnexPrintMode;
+  includePatientSignature?: boolean;
 }
 
 const DOCUMENT_TYPES_WITH_PATIENT_SIGNATURE = new Set<ClinicalDocumentType>([
@@ -74,7 +75,9 @@ export const buildClinicalDocumentPrintHtml = async (
       "Inter, 'Segoe UI', Roboto, Arial, sans-serif"
   );
   const patientSignatureMarkup =
-    shouldRenderPatientSignature(options.documentType) && options.annexMode !== 'annex_only'
+    shouldRenderPatientSignature(options.documentType) &&
+    options.includePatientSignature !== false &&
+    options.annexMode !== 'annex_only'
       ? [
           '<div class="clinical-document-print-bottom-bar" aria-hidden="true">',
           '  <div class="clinical-document-print-footer-left">',

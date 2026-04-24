@@ -142,7 +142,7 @@ export const sanitizeClinicalDocumentSheetClone = async (
     .forEach(node => node.removeAttribute('contenteditable'));
   sheetClone
     .querySelectorAll(
-      '.clinical-document-restore-panel, .clinical-document-inline-action, .clinical-document-section-drag-handle, .clinical-document-annex-actions'
+      '.clinical-document-restore-panel, .clinical-document-inline-action, .clinical-document-section-drag-handle, .clinical-document-annex-actions, .clinical-document-print-control'
     )
     .forEach(node => node.remove());
   sheetClone.querySelectorAll('input, textarea').forEach(node => {

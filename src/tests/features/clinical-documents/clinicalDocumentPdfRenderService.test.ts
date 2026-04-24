@@ -97,6 +97,23 @@ describe('clinicalDocumentPdfRenderService', () => {
     expect(html2canvasMock).not.toHaveBeenCalled();
   });
 
+  it('forwards patient signature visibility to printable html generation', async () => {
+    const { generateClinicalDocumentPrintStyledPdfBlob } =
+      await import('@/features/clinical-documents/services/clinicalDocumentPdfRenderService');
+
+    await generateClinicalDocumentPrintStyledPdfBlob({
+      documentType: 'epicrisis',
+      title: 'Epicrisis médica',
+      includePatientSignature: false,
+    } as never);
+
+    expect(buildHtmlMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        includePatientSignature: false,
+      })
+    );
+  });
+
   it('falls back to client snapshot rendering when backend rendering fails', async () => {
     callableMock.mockRejectedValueOnce(new Error('backend unavailable'));
     const originalCreateElement = document.createElement.bind(document);

@@ -82,6 +82,28 @@ describe('clinicalDocumentBrowserPrintService', () => {
     vi.useRealTimers();
   });
 
+  it('does not render patient signature block when print options disable it', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(window, 'print').mockImplementation(() => {});
+    document.body.innerHTML = `<section id="${CLINICAL_DOCUMENT_SHEET_ID}"><div>Contenido</div></section>`;
+
+    const opened = await openClinicalDocumentBrowserPrintPreview(
+      'Epicrisis médica',
+      'epicrisis',
+      undefined,
+      {
+        includePatientSignature: false,
+      }
+    );
+
+    expect(opened).toBe(true);
+    const printRoot = document.getElementById(CLINICAL_DOCUMENT_INLINE_PRINT_ROOT_ID);
+    expect(printRoot?.innerHTML).not.toContain('Firma paciente/familiar responsable');
+
+    window.dispatchEvent(new Event('afterprint'));
+    vi.useRealTimers();
+  });
+
   it('can exclude the annex from the global print clone', async () => {
     vi.useFakeTimers();
     vi.spyOn(window, 'print').mockImplementation(() => {});

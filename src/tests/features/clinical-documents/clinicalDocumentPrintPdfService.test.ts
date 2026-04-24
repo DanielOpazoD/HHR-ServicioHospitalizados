@@ -45,4 +45,14 @@ describe('clinicalDocumentPrintPdfService', () => {
     expect(html).toContain('@page { size: letter; margin: 8mm; }');
     expect(html).not.toContain('Firma paciente/familiar responsable');
   });
+
+  it('omits patient signature footer when the document disables it', async () => {
+    const html = await buildClinicalDocumentPrintHtml({
+      pageTitle: 'Epicrisis médica',
+      documentType: 'epicrisis',
+      includePatientSignature: false,
+    });
+
+    expect(html).not.toContain('Firma paciente/familiar responsable');
+  });
 });

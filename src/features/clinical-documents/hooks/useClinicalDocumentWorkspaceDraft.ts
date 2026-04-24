@@ -59,7 +59,9 @@ export interface ClinicalDocumentWorkspaceDraftState {
   patchPatientInfoTitle: (title: string) => void;
   patchFooterLabel: (kind: 'medico' | 'especialidad', title: string) => void;
   patchDocumentMeta: (
-    patch: Partial<Pick<ClinicalDocumentRecord, 'medico' | 'especialidad'>>
+    patch: Partial<
+      Pick<ClinicalDocumentRecord, 'medico' | 'especialidad' | 'includePatientSignature'>
+    >
   ) => void;
   applyTemplate: (templateId: string) => void;
   restoreTemplateContent: () => void;

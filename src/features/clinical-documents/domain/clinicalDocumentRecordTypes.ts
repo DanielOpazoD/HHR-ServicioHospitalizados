@@ -62,5 +62,6 @@ export interface ClinicalDocumentRecord {
   integrityHash?: string;
   annexContent?: string;
   annexIncludedInPrint?: boolean;
+  includePatientSignature?: boolean;
   ieehDraft?: ClinicalDocumentIeehDraft;
 }

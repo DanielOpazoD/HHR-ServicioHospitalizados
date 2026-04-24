@@ -48,6 +48,7 @@ describe('clinicalDocumentPrintSupport', () => {
       <button class="clinical-document-inline-action">Editar</button>
       <button class="clinical-document-section-drag-handle">Drag</button>
       <div class="clinical-document-annex-actions">Acciones anexo</div>
+      <button class="clinical-document-print-control">Firma paciente/familiar</button>
       <textarea>Nota</textarea>
     `;
     clone.setAttribute('contenteditable', 'true');
@@ -59,6 +60,7 @@ describe('clinicalDocumentPrintSupport', () => {
     expect(clone.querySelector('.clinical-document-inline-action')).toBeNull();
     expect(clone.querySelector('.clinical-document-section-drag-handle')).toBeNull();
     expect(clone.querySelector('.clinical-document-annex-actions')).toBeNull();
+    expect(clone.querySelector('.clinical-document-print-control')).toBeNull();
     expect((clone.querySelector('textarea') as HTMLTextAreaElement).readOnly).toBe(true);
     const images = Array.from(clone.querySelectorAll('img'));
     images.forEach(image => {

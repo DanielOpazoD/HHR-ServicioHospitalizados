@@ -5,9 +5,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { ClinicalDocumentFooterSection } from '@/features/clinical-documents/components/ClinicalDocumentFooterSection';
 import { createClinicalDocumentDraft } from '@/features/clinical-documents/domain/factories';
 
-const buildDocument = () =>
+const buildDocument = (templateId = 'epicrisis') =>
   createClinicalDocumentDraft({
-    templateId: 'epicrisis',
+    templateId,
     hospitalId: 'hhr',
     actor: {
       uid: 'u1',
@@ -72,6 +72,57 @@ describe('ClinicalDocumentFooterSection', () => {
     expect(onPatchDocumentMeta).toHaveBeenCalledWith({ medico: 'Dra. Demo' });
     expect(onPatchDocumentMeta).toHaveBeenCalledWith({ especialidad: 'Medicina Interna' });
     expect(onClearActiveTitleTarget).toHaveBeenCalledTimes(2);
+  });
+
+  it('lets editors subtly hide the patient/family signature from generated documents', () => {
+    const onPatchDocumentMeta = vi.fn();
+
+    render(
+      <ClinicalDocumentFooterSection
+        document={buildDocument()}
+        canEdit={true}
+        onPatchFooterLabel={vi.fn()}
+        onPatchDocumentMeta={onPatchDocumentMeta}
+        onClearActiveTitleTarget={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /ocultar firma paciente\/familiar/i }));
+
+    expect(onPatchDocumentMeta).toHaveBeenCalledWith({ includePatientSignature: false });
+  });
+
+  it('makes the hidden patient/family signature state visible in the toggle itself', () => {
+    render(
+      <ClinicalDocumentFooterSection
+        document={{ ...buildDocument(), includePatientSignature: false }}
+        canEdit={true}
+        onPatchFooterLabel={vi.fn()}
+        onPatchDocumentMeta={vi.fn()}
+        onClearActiveTitleTarget={vi.fn()}
+      />
+    );
+
+    const toggle = screen.getByRole('button', { name: /mostrar firma paciente\/familiar/i });
+
+    expect(toggle).toHaveTextContent('Firma oculta');
+    expect(toggle).toHaveClass('border-amber-200');
+  });
+
+  it('does not expose the patient/family signature toggle for document types without that print block', () => {
+    render(
+      <ClinicalDocumentFooterSection
+        document={buildDocument('evolucion')}
+        canEdit={true}
+        onPatchFooterLabel={vi.fn()}
+        onPatchDocumentMeta={vi.fn()}
+        onClearActiveTitleTarget={vi.fn()}
+      />
+    );
+
+    expect(
+      screen.queryByRole('button', { name: /firma paciente\/familiar/i })
+    ).not.toBeInTheDocument();
   });
 
   it('renders footer labels and inputs as read-only when editing is disabled', () => {

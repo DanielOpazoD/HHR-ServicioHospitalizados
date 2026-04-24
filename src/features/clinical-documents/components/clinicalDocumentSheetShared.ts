@@ -70,7 +70,9 @@ export interface ClinicalDocumentSheetProps {
   addSection: (referenceSectionId: string, position: 'above' | 'below') => void;
   patchFooterLabel: (kind: 'medico' | 'especialidad', title: string) => void;
   patchDocumentMeta: (
-    patch: Partial<Pick<ClinicalDocumentRecord, 'medico' | 'especialidad'>>
+    patch: Partial<
+      Pick<ClinicalDocumentRecord, 'medico' | 'especialidad' | 'includePatientSignature'>
+    >
   ) => void;
   indicationsCatalog: ClinicalDocumentIndicationsCatalog;
   isSavingCustomIndication: boolean;

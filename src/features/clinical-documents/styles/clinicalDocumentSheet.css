@@ -1047,6 +1047,7 @@ body.clinical-documents-print .clinical-document-toolbar,
 body.clinical-documents-print .clinical-document-inline-action,
 body.clinical-documents-print .clinical-document-section-drag-handle,
 body.clinical-documents-print .clinical-document-restore-panel,
+body.clinical-documents-print .clinical-document-print-control,
 body.clinical-documents-print .clinical-document-indications-panel {
   display: none !important;
 }
@@ -1241,6 +1242,7 @@ body.clinical-documents-print .clinical-document-indications-panel {
   body.clinical-document-inline-print-mode .clinical-document-inline-action,
   body.clinical-document-inline-print-mode .clinical-document-section-drag-handle,
   body.clinical-document-inline-print-mode .clinical-document-restore-panel,
+  body.clinical-document-inline-print-mode .clinical-document-print-control,
   body.clinical-document-inline-print-mode .clinical-document-indications-panel {
     display: none !important;
   }
