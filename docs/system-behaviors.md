@@ -164,16 +164,14 @@ Usuarios con "passport" pueden trabajar sin conexión a internet.
 - `"/"` y `"/login"`:
   - muestran una pantalla inicial propia del login;
   - conservan el fondo visual del módulo de inicio;
-  - nunca deben mostrar el chrome azul/blanco de la app autenticada antes de confirmar sesión;
-  - y usan un ícono clínico especial, no un spinner, mientras auth/bootstrap todavía no resuelven sesión.
+  - y usan un ícono clínico especial mientras auth/bootstrap todavía no resuelven sesión.
 - `"/census"`:
-  - si hay evidencia fuerte de sesión Firebase recuperable, no debe mostrar un loader inicial full-screen previo;
-  - en ese caso, el primer estado de carga visible debe ser el loader interno del shell de censo;
-  - si solo existe una pista blanda de pestaña previa (`hhr_logged_this_session`) y la sesión aún no está confirmada, debe mantenerse en shell de login para no pintar barras autenticadas fantasma.
+  - no debe mostrar un loader inicial full-screen previo;
+  - el primer estado de carga visible debe ser el loader interno del shell de censo;
+  - ese loader es el que conserva barra superior, títulos y contexto visual del módulo.
 - rutas distintas de login/censo:
   - no deben usar un loader inicial genérico full-screen;
-  - deben mantener el chrome real del módulo origen solo si la sesión autenticada tiene evidencia fuerte o ya fue autorizada;
-  - si solo queda una pista blanda de sesión reciente y auth no está autorizado, deben caer al shell de login, no a chrome autenticado;
+  - deben mantener el chrome real del módulo origen si la ruta corresponde a un módulo autenticado;
   - el `Suspense` de `AppRouter` puede mostrar solo el loader interno del área de contenido;
   - ese loader no debe ocupar pantalla completa ni reemplazar `Navbar`/`DateStrip`.
 
@@ -184,11 +182,11 @@ La fase visible esperada es:
 
 - `bootstrapping`:
   - arranque pre-auth sin señales suficientes de sesión recuperable;
-  - debe mantenerse en shell de login en `"/"` y `"/login"`;
-  - si la ruta ya corresponde a un módulo autenticado pero no existe evidencia fuerte de sesión, debe mantenerse en shell de login.
+  - puede mantenerse visualmente silencioso en `"/"` y `"/login"`;
+  - si la ruta ya corresponde a un módulo autenticado, debe conservar el chrome de ese módulo.
 - `rehydrating`:
   - existe sesión/reconexión/auth runtime en materialización;
-  - no debe pintar login ni fondo de login en refreshes autenticados ya autorizados o con evidencia fuerte de Firebase.
+  - no debe pintar login ni fondo de login en refreshes autenticados.
 - `authenticated`:
   - shell autenticado listo.
 - `unauthenticated`:
@@ -204,10 +202,10 @@ El contrato ya no es “solo censo”; aplica al módulo origen desde el que el 
 
 1. Al recargar con `F5`, no debe aparecer ningún loader global full-screen antes del shell real del módulo actual.
 2. Tampoco debe aparecer una transición intermedia fija que fuerce siempre `Censo Diario`.
-3. Si auth cae brevemente a `unauthenticated` pero solo existe una pista blanda de pestaña previa, la UI no debe pintar chrome autenticado: debe usar shell de login hasta que:
+3. Si auth cae brevemente a `unauthenticated` mientras una sesión reciente de la misma pestaña todavía se está rehidratando, la UI no debe volver al login ni a un fondo blanco: debe mantener el chrome real del módulo origen hasta que:
    - vuelva el shell autenticado completo; o
    - se confirme de verdad que debe mostrarse login.
-4. El contenido inferior del módulo puede seguir cargando por separado, pero `Navbar` y `DateStrip` deben conservar continuidad visual solo cuando la sesión autenticada ya tiene evidencia suficiente.
+4. El contenido inferior del módulo puede seguir cargando por separado, pero `Navbar` y `DateStrip` deben conservar continuidad visual cuando ese módulo los usa.
 5. Si el módulo origen no usa `DateStrip` real, el bootstrap tampoco debe inventarlo.
 6. Si el chunk lazy del módulo todavía no cargó, el router debe mostrar un loader interno bajo el chrome, no una pantalla blanca ni un spinner full-screen.
 
@@ -216,8 +214,7 @@ El contrato ya no es “solo censo”; aplica al módulo origen desde el que el 
 - Antes de que React monte, `index.html` solo debe aportar continuidad de fondo, no reconstruir la barra de la app.
 - El chrome visible del refresh autenticado debe venir desde React bootstrap usando los componentes reales del repo.
 - Ese chrome debe respetar la ruta de origen:
-  - `"/"` y `"/login"`: shell visual de login, nunca chrome autenticado;
-  - `"/census"`: chrome de `Censo Diario`;
+  - `"/"` y `"/census"`: chrome de `Censo Diario`;
   - `"/nursing-handoff"`: chrome de entrega de enfermería;
   - `"/medical-handoff"`: chrome de entrega médica;
   - `"/transfer-management"`: navbar de traslados, sin `DateStrip` inventado;

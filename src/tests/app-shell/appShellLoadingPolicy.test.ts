@@ -30,27 +30,12 @@ const createAuthorizedLoadingBootstrapState = (phase: 'bootstrapping' | 'rehydra
   }) as unknown as Extract<AppBootstrapState, { status: 'loading' }>;
 
 describe('appShellLoadingPolicy', () => {
-  it('keeps the login shell on the census route when only a soft same-tab auth hint exists', () => {
+  it('renders the bootstrap route chrome on the census route when auth hints exist', () => {
     expect(
       resolvePreMountLoadingScreenDecision({
         pathname: '/census',
         hasRecentAuthenticatedSessionHint: true,
         hasPersistedFirebaseAuthHint: false,
-        hasActiveFirebaseSession: false,
-      })
-    ).toEqual({
-      shouldRender: true,
-      preferLoginShell: true,
-      renderBootstrapRouteChrome: false,
-    });
-  });
-
-  it('renders the bootstrap route chrome on the census route when strong Firebase auth evidence exists', () => {
-    expect(
-      resolvePreMountLoadingScreenDecision({
-        pathname: '/census',
-        hasRecentAuthenticatedSessionHint: false,
-        hasPersistedFirebaseAuthHint: true,
         hasActiveFirebaseSession: false,
       })
     ).toEqual({
@@ -60,7 +45,7 @@ describe('appShellLoadingPolicy', () => {
     });
   });
 
-  it('keeps the login shell on the root route even when auth hints exist', () => {
+  it('renders the bootstrap route chrome on the root route when auth hints exist', () => {
     expect(
       resolvePreMountLoadingScreenDecision({
         pathname: '/',
@@ -69,24 +54,9 @@ describe('appShellLoadingPolicy', () => {
         hasActiveFirebaseSession: false,
       })
     ).toEqual({
-      shouldRender: true,
-      preferLoginShell: true,
-      renderBootstrapRouteChrome: false,
-    });
-  });
-
-  it('keeps the login shell on the explicit login route even when auth hints exist', () => {
-    expect(
-      resolvePreMountLoadingScreenDecision({
-        pathname: '/login',
-        hasRecentAuthenticatedSessionHint: true,
-        hasPersistedFirebaseAuthHint: true,
-        hasActiveFirebaseSession: true,
-      })
-    ).toEqual({
-      shouldRender: true,
-      preferLoginShell: true,
-      renderBootstrapRouteChrome: false,
+      shouldRender: false,
+      preferLoginShell: false,
+      renderBootstrapRouteChrome: true,
     });
   });
 
@@ -105,7 +75,7 @@ describe('appShellLoadingPolicy', () => {
     });
   });
 
-  it('renders the login shell on pre-mount root even when no auth hints exist', () => {
+  it('stays silent on pre-mount when no auth hints exist', () => {
     expect(
       resolvePreMountLoadingScreenDecision({
         pathname: '/',
@@ -114,67 +84,58 @@ describe('appShellLoadingPolicy', () => {
         hasActiveFirebaseSession: false,
       })
     ).toEqual({
-      shouldRender: true,
-      preferLoginShell: true,
+      shouldRender: false,
+      preferLoginShell: false,
       renderBootstrapRouteChrome: false,
     });
   });
 
-  it('keeps census in the login shell while runtime has no authorized evidence', () => {
+  it('keeps runtime loading silent on census even while auth is still loading', () => {
     expect(
       resolveRuntimeLoadingScreenMode({
         pathname: '/census',
         bootstrapState: createLoadingBootstrapState('rehydrating'),
       })
-    ).toBe('login-shell');
-  });
-
-  it('keeps runtime loading on census route chrome once auth is authorized', () => {
-    expect(
-      resolveRuntimeLoadingScreenMode({
-        pathname: '/census',
-        bootstrapState: createAuthorizedLoadingBootstrapState('rehydrating'),
-      })
     ).toBe('bootstrap-route-chrome');
   });
 
-  it('keeps root-route bootstrapping in the login shell', () => {
+  it('keeps root-route bootstrapping visually silent', () => {
     expect(
       resolveRuntimeLoadingScreenMode({
         pathname: '/',
         bootstrapState: createLoadingBootstrapState('bootstrapping'),
       })
-    ).toBe('login-shell');
+    ).toBe('silent');
 
     expect(
       resolveRuntimeLoadingScreenMode({
         pathname: '/',
         bootstrapState: createLoadingBootstrapState('rehydrating'),
       })
-    ).toBe('login-shell');
+    ).toBe('bootstrap-route-chrome');
   });
 
-  it('keeps other module routes in the login shell while rehydrating without authorized evidence', () => {
+  it('keeps other authenticated module routes on the route chrome while rehydrating', () => {
     expect(
       resolveRuntimeLoadingScreenMode({
         pathname: '/transfer-management',
         bootstrapState: createLoadingBootstrapState('rehydrating'),
       })
-    ).toBe('login-shell');
+    ).toBe('bootstrap-route-chrome');
   });
 
-  it('keeps authorized module routes on the route chrome while bootstrapping too', () => {
+  it('keeps authenticated module routes on the route chrome while bootstrapping too', () => {
     expect(
       resolveRuntimeLoadingScreenMode({
         pathname: '/nursing-handoff',
-        bootstrapState: createAuthorizedLoadingBootstrapState('bootstrapping'),
+        bootstrapState: createLoadingBootstrapState('bootstrapping'),
       })
     ).toBe('bootstrap-route-chrome');
 
     expect(
       resolveRuntimeLoadingScreenMode({
         pathname: '/medical-handoff',
-        bootstrapState: createAuthorizedLoadingBootstrapState('bootstrapping'),
+        bootstrapState: createLoadingBootstrapState('bootstrapping'),
       })
     ).toBe('bootstrap-route-chrome');
   });

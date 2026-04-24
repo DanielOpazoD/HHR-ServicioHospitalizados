@@ -17,15 +17,11 @@ export const resolveInitialLoadingScreenVariant = (
   options: InitialLoadingScreenVariantOptions = {}
 ): InitialLoadingScreenVariant => {
   const normalizedPath = normalizePathname(pathname ?? '/');
-  const { preferLoginShell } = options;
-
-  if (preferLoginShell === true) {
-    return 'login-shell';
-  }
+  const { preferLoginShell = true } = options;
 
   // Root/login keep a branded pre-auth shell so refreshes preserve the
   // recognizable login atmosphere before Firebase resolves the session.
-  if (preferLoginShell !== false && (normalizedPath === '' || normalizedPath === 'login')) {
+  if (preferLoginShell && (normalizedPath === '' || normalizedPath === 'login')) {
     return 'login-shell';
   }
 

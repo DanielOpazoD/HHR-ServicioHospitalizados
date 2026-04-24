@@ -64,18 +64,7 @@ describe('useLoginPageController', () => {
   });
 
   it('initializes from the persisted login background mode', () => {
-    vi.setSystemTime(new Date('2026-04-24T23:00:00'));
     window.localStorage.setItem('hhr_login_background_mode', 'night');
-
-    const { result } = renderHook(() => useLoginPageController(vi.fn()));
-
-    expect(result.current.backgroundMode).toBe('night');
-    expect(result.current.isDayGradient).toBe(false);
-  });
-
-  it('ignores a persisted day background after the runtime enters the night period', () => {
-    vi.setSystemTime(new Date('2026-04-24T23:00:00'));
-    window.localStorage.setItem('hhr_login_background_mode', 'day');
 
     const { result } = renderHook(() => useLoginPageController(vi.fn()));
 
@@ -90,7 +79,7 @@ describe('useLoginPageController', () => {
       result.current.toggleBackgroundMode();
     });
 
-    expect(window.localStorage.getItem('hhr_login_background_mode')).toContain(
+    expect(window.localStorage.getItem('hhr_login_background_mode')).toBe(
       result.current.backgroundMode
     );
   });

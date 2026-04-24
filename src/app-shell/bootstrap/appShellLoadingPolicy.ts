@@ -1,7 +1,10 @@
 import type { AppBootstrapState } from '@/app-shell/bootstrap/useAppBootstrapState';
 import { shouldRenderInitialLoadingScreen } from '@/components/ui/InitialLoadingScreen';
 import { hasActiveFirebaseSession } from '@/services/auth/authFallback';
-import { hasPersistedFirebaseAuthHint } from '@/services/auth/authStorageHints';
+import {
+  hasPersistedFirebaseAuthHint,
+  hasRecentAuthenticatedSessionHint,
+} from '@/services/auth/authStorageHints';
 import { resolveModuleFromPathname } from '@/hooks/controllers/appStateNavigationController';
 
 export type AppShellLoadingScreenMode =
@@ -16,16 +19,9 @@ export interface PreMountLoadingScreenDecision {
   renderBootstrapRouteChrome: boolean;
 }
 
-const normalizePathname = (pathname: string | undefined): string =>
-  (pathname ?? '/').replace(/^\/+|\/+$/g, '');
-
-const isLoginShellPath = (pathname: string | undefined): boolean => {
-  const normalizedPath = normalizePathname(pathname);
-  return normalizedPath === '' || normalizedPath === 'login';
-};
-
 export const resolvePreMountLoadingScreenDecision = ({
   pathname,
+  hasRecentAuthenticatedSessionHint: providedRecentAuthenticatedSessionHint,
   hasPersistedFirebaseAuthHint: providedPersistedFirebaseAuthHint,
   hasActiveFirebaseSession: providedActiveFirebaseSession,
 }: {
@@ -34,44 +30,21 @@ export const resolvePreMountLoadingScreenDecision = ({
   hasPersistedFirebaseAuthHint?: boolean;
   hasActiveFirebaseSession?: boolean;
 }): PreMountLoadingScreenDecision => {
+  const recentAuthenticatedSessionHint =
+    providedRecentAuthenticatedSessionHint ?? hasRecentAuthenticatedSessionHint();
   const persistedFirebaseAuthHint =
     providedPersistedFirebaseAuthHint ?? hasPersistedFirebaseAuthHint();
   const activeFirebaseSession = providedActiveFirebaseSession ?? hasActiveFirebaseSession();
-  const hasStrongAuthenticatedSessionHint = persistedFirebaseAuthHint || activeFirebaseSession;
-
-  if (isLoginShellPath(pathname)) {
-    return {
-      shouldRender: true,
-      preferLoginShell: true,
-      renderBootstrapRouteChrome: false,
-    };
-  }
-
-  if (resolveModuleFromPathname(pathname) !== null && !hasStrongAuthenticatedSessionHint) {
-    return {
-      shouldRender: true,
-      preferLoginShell: true,
-      renderBootstrapRouteChrome: false,
-    };
-  }
+  const hasAuthenticatedSessionHint =
+    recentAuthenticatedSessionHint || persistedFirebaseAuthHint || activeFirebaseSession;
 
   return {
     shouldRender: false,
     preferLoginShell: false,
     renderBootstrapRouteChrome:
-      resolveModuleFromPathname(pathname) !== null && hasStrongAuthenticatedSessionHint,
+      resolveModuleFromPathname(pathname) !== null && hasAuthenticatedSessionHint,
   };
 };
-
-const hasAuthorizedRuntimeEvidence = (
-  auth: Extract<AppBootstrapState, { status: 'loading' }>['auth']
-): boolean =>
-  auth.sessionState.status === 'authorized' ||
-  auth.isAuthenticated ||
-  auth.isAuthorizedSession ||
-  auth.isFirebaseConnected ||
-  Boolean(auth.currentUser) ||
-  Boolean(auth.authorizedUser);
 
 export const resolveRuntimeLoadingScreenMode = ({
   pathname,
@@ -80,21 +53,13 @@ export const resolveRuntimeLoadingScreenMode = ({
   pathname: string | undefined;
   bootstrapState: Extract<AppBootstrapState, { status: 'loading' }>;
 }): AppShellLoadingScreenMode => {
-  if (isLoginShellPath(pathname) && bootstrapState.auth.sessionState.status !== 'authorized') {
-    return 'login-shell';
-  }
-
-  if (isLoginShellPath(pathname)) {
-    return 'silent';
-  }
-
+  const normalizedPath = (pathname ?? '/').replace(/^\/+|\/+$/g, '');
   const routeModule = resolveModuleFromPathname(pathname);
-  if (routeModule !== null && hasAuthorizedRuntimeEvidence(bootstrapState.auth)) {
+  if (
+    routeModule !== null &&
+    (bootstrapState.phase === 'rehydrating' || normalizedPath.length > 0)
+  ) {
     return 'bootstrap-route-chrome';
-  }
-
-  if (routeModule !== null) {
-    return 'login-shell';
   }
 
   if (!shouldRenderInitialLoadingScreen(pathname)) {
