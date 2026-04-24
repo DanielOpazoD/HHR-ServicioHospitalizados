@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Copy,
+  Download,
   FilePlus2,
   FlaskConical,
   History,
   Paperclip,
   PenLine,
   Trash2,
+  Upload,
   Zap,
 } from 'lucide-react';
 import clsx from 'clsx';
@@ -64,6 +66,8 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
   onSelectDocument,
   onDuplicateDocument,
   onDeleteDocument,
+  onExportJson,
+  onImportJson,
   onAddClinicalUpdate,
   onToggleAnnex,
   hasAnnex,
@@ -71,6 +75,9 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
   onOpenLabDialog,
   onOpenMMRADDialog,
 }) => {
+  const importInputRef = useRef<HTMLInputElement>(null);
+  const selectedDocument = documents.find(document => document.id === selectedDocumentId) || null;
+
   return (
     <aside className="space-y-2.5 border-r border-slate-200 bg-slate-50/70 p-2.5">
       {/* Patient context + quick shortcuts */}
@@ -177,6 +184,52 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
               )}
             </div>
           )}
+          <div className="flex gap-1.5">
+            {selectedDocument && onExportJson && (
+              <button
+                type="button"
+                onClick={() => onExportJson(selectedDocument)}
+                className="flex-1 rounded-lg border border-sky-200 bg-sky-50 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-sky-700 hover:bg-sky-100 transition-colors"
+                title="Exportar JSON"
+              >
+                <Download size={10} className="inline mr-1" />
+                Exportar JSON
+              </button>
+            )}
+            {onImportJson && (
+              <>
+                <input
+                  ref={importInputRef}
+                  type="file"
+                  accept=".json,application/json"
+                  aria-label="Archivo JSON de documento clínico"
+                  className="hidden"
+                  onChange={event => {
+                    const file = event.target.files?.[0];
+                    if (file) {
+                      onImportJson(file);
+                    }
+                    event.target.value = '';
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => importInputRef.current?.click()}
+                  disabled={!canEdit}
+                  className={clsx(
+                    'flex-1 rounded-lg border px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] transition-colors',
+                    canEdit
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                      : 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
+                  )}
+                  title="Importar JSON"
+                >
+                  <Upload size={10} className="inline mr-1" />
+                  Importar JSON
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 

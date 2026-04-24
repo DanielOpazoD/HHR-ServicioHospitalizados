@@ -5,6 +5,7 @@ import React from 'react';
 import { createClinicalDocumentDraft } from '@/features/clinical-documents/domain/factories';
 import { useClinicalDocumentWorkspaceDocumentActions } from '@/features/clinical-documents/hooks/useClinicalDocumentWorkspaceDocumentActions';
 import * as clinicalDocumentUseCases from '@/application/clinical-documents/clinicalDocumentUseCases';
+import { buildClinicalDocumentJsonExport } from '@/application/clinical-documents/clinicalDocumentJsonUseCases';
 
 vi.mock('@/application/clinical-documents/clinicalDocumentUseCases', async () => {
   const actual = await vi.importActual<
@@ -205,6 +206,61 @@ describe('useClinicalDocumentWorkspaceDocumentActions', () => {
     expect(notify.success).toHaveBeenCalledWith(
       'Documento duplicado',
       `${selectedDocument.title} se copió como ${duplicatedDocument.title}.`
+    );
+  });
+
+  it('imports a clinical document json as a new draft through the create use case', async () => {
+    const selectedDocument = buildRecord();
+    vi.mocked(clinicalDocumentUseCases.executeCreateClinicalDocumentDraft).mockImplementation(
+      async record => ({
+        status: 'success',
+        data: { ...record, id: 'imported-document-id' },
+        issues: [],
+      })
+    );
+
+    const { result } = renderHook(() =>
+      useClinicalDocumentWorkspaceDocumentActions({
+        patient: patient as never,
+        role: 'doctor_urgency',
+        user: { uid: 'u1', email: 'doctor@test.com', displayName: 'Doctor Test' },
+        hospitalId: 'hhr',
+        episode: selectedDocument,
+        selectedTemplateId: 'epicrisis',
+        templates,
+        selectedDocumentId: selectedDocument.id,
+        canEdit: true,
+        canDelete: true,
+        notify,
+        setSelectedDocumentId,
+        setDraft,
+        lastPersistedSnapshotRef,
+      })
+    );
+
+    await act(async () => {
+      await result.current.handleImportJson(
+        new File([JSON.stringify(buildClinicalDocumentJsonExport(selectedDocument))], 'doc.json', {
+          type: 'application/json',
+        })
+      );
+    });
+
+    expect(clinicalDocumentUseCases.executeCreateClinicalDocumentDraft).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: expect.not.stringMatching(selectedDocument.id),
+        title: `${selectedDocument.title} (importado)`,
+        status: 'draft',
+        isLocked: false,
+        currentVersion: 1,
+      }),
+      'hhr'
+    );
+    expect(setSelectedDocumentId).toHaveBeenCalledWith('imported-document-id');
+    expect(setDraft).toHaveBeenCalledWith(expect.objectContaining({ id: 'imported-document-id' }));
+    expect(notify.success).toHaveBeenCalledWith(
+      'Documento importado',
+      `${selectedDocument.title} (importado) quedó guardado como un nuevo borrador.`
     );
   });
 

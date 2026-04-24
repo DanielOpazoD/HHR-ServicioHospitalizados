@@ -20,6 +20,8 @@ export interface ClinicalDocumentsSidebarProps {
   onSelectDocument: (documentId: string) => void;
   onDuplicateDocument: (document: ClinicalDocumentRecord) => void;
   onDeleteDocument: (document: ClinicalDocumentRecord) => void;
+  onExportJson?: (document: ClinicalDocumentRecord) => void;
+  onImportJson?: (file: File) => void;
   onAddClinicalUpdate?: () => void;
   onToggleAnnex?: () => void;
   hasAnnex?: boolean;

@@ -13,6 +13,8 @@ export {
   hydrateLegacyClinicalDocument,
   serializeClinicalDocument,
 } from './controllers/clinicalDocumentWorkspaceController';
+export { duplicateClinicalDocumentDraft } from './domain/factories';
+export { safeParseClinicalDocumentRecord } from './contracts/clinicalDocumentRuntimeContracts';
 export { exportClinicalDocumentPdfViaBackend } from './services/clinicalDocumentBackendExportService';
 export { generateClinicalDocumentPdfBlob } from './services/clinicalDocumentPdfService';
 export { openClinicalDocumentBrowserPrintPreview } from './services/clinicalDocumentPrintPdfService';

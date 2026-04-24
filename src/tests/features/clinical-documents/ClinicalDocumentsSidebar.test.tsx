@@ -159,4 +159,42 @@ describe('ClinicalDocumentsSidebar', () => {
     expect(onOpenLabDialog).toHaveBeenCalledTimes(1);
     expect(onOpenMMRADDialog).toHaveBeenCalledTimes(1);
   });
+
+  it('delegates json import/export actions from compact sidebar controls', () => {
+    const document = buildDocument();
+    const onExportJson = vi.fn();
+    const onImportJson = vi.fn();
+
+    render(
+      <ClinicalDocumentsSidebar
+        canEdit={true}
+        canDelete={false}
+        readOnlyMessage={null}
+        patientName="Paciente Test"
+        templates={[{ id: 'epicrisis', name: 'Epicrisis' }]}
+        selectedTemplateId="epicrisis"
+        onSelectTemplate={() => {}}
+        onCreateDocument={() => {}}
+        documents={[document]}
+        selectedDocumentId={document.id}
+        onSelectDocument={() => {}}
+        onDuplicateDocument={() => {}}
+        onDeleteDocument={() => {}}
+        onExportJson={onExportJson}
+        onImportJson={onImportJson}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /exportar json/i }));
+    fireEvent.change(screen.getByLabelText(/archivo json de documento clínico/i), {
+      target: {
+        files: [
+          new File([JSON.stringify({ ok: true })], 'documento.json', { type: 'application/json' }),
+        ],
+      },
+    });
+
+    expect(onExportJson).toHaveBeenCalledWith(document);
+    expect(onImportJson).toHaveBeenCalledWith(expect.any(File));
+  });
 });

@@ -4,6 +4,10 @@ import type { ConfirmOptions } from '@/context/uiContracts';
 import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
 import { buildClinicalDocumentPdfFileName } from '@/features/clinical-documents/controllers/clinicalDocumentWorkspaceController';
 import type { ExportClinicalDocumentPdfOutput } from '@/application/clinical-documents/clinicalDocumentPdfExportUseCase';
+import {
+  buildClinicalDocumentJsonFileName,
+  stringifyClinicalDocumentJsonExport,
+} from '@/application/clinical-documents/clinicalDocumentJsonUseCases';
 import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
 import { resolveFailedApplicationOutcomeMessage } from '@/shared/contracts/applicationOutcomeMessage';
 import type { ClinicalDocumentAnnexPrintMode } from '@/features/clinical-documents/services/clinicalDocumentPrintSupport';
@@ -48,6 +52,18 @@ const loadClinicalDocumentPrintUseCase = async () =>
     module => module.executeOpenClinicalDocumentPrint
   );
 
+const downloadClinicalDocumentJson = (document: ClinicalDocumentRecord) => {
+  const blob = new Blob([stringifyClinicalDocumentJsonExport(document)], {
+    type: 'application/json;charset=utf-8',
+  });
+  const url = URL.createObjectURL(blob);
+  const anchor = window.document.createElement('a');
+  anchor.href = url;
+  anchor.download = buildClinicalDocumentJsonFileName(document);
+  anchor.click();
+  URL.revokeObjectURL(url);
+};
+
 export const useClinicalDocumentWorkspaceExportActions = ({
   selectedDocument,
   hospitalId,
@@ -55,6 +71,40 @@ export const useClinicalDocumentWorkspaceExportActions = ({
   setDraft,
 }: UseClinicalDocumentWorkspaceExportActionsParams) => {
   const [isUploadingPdf, setIsUploadingPdf] = useState(false);
+
+  const handleExportJson = useCallback(
+    (document: ClinicalDocumentRecord) => {
+      try {
+        downloadClinicalDocumentJson(document);
+        recordOperationalTelemetry(
+          {
+            category: 'export',
+            status: 'success',
+            operation: 'export_clinical_document_json',
+            date: document.sourceDailyRecordDate,
+            context: { documentId: document.id },
+          },
+          { allowSuccess: true }
+        );
+        notify.success('JSON exportado', 'El documento clínico se descargó como respaldo JSON.');
+      } catch (error) {
+        const errorMessage = resolveClinicalDocumentExceptionMessage(
+          error,
+          'No se pudo exportar el JSON clínico.'
+        );
+        recordOperationalTelemetry({
+          category: 'export',
+          status: 'failed',
+          operation: 'export_clinical_document_json',
+          date: document.sourceDailyRecordDate,
+          issues: [errorMessage],
+          context: { documentId: document.id },
+        });
+        notify.error('Falló la exportación JSON', errorMessage);
+      }
+    },
+    [notify]
+  );
 
   const handleUploadPdf = useCallback(
     async (options: UploadPdfOptions = {}) => {
@@ -188,6 +238,7 @@ export const useClinicalDocumentWorkspaceExportActions = ({
   }, [notify, selectedDocument]);
 
   return {
+    handleExportJson,
     handlePrint,
     handlePrintAnnex,
     handleUploadPdf,

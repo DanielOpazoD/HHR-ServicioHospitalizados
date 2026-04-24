@@ -130,7 +130,7 @@ export const useClinicalDocumentsWorkspaceModel = ({
     canEdit,
   });
 
-  const { createDocument, handleDeleteDocument, handleDuplicateDocument } =
+  const { createDocument, handleDeleteDocument, handleDuplicateDocument, handleImportJson } =
     useClinicalDocumentWorkspaceDocumentActions({
       patient,
       role,
@@ -148,7 +148,7 @@ export const useClinicalDocumentsWorkspaceModel = ({
       lastPersistedSnapshotRef,
     });
 
-  const { handlePrint, handlePrintAnnex, handleUploadPdf, isUploadingPdf } =
+  const { handleExportJson, handlePrint, handlePrintAnnex, handleUploadPdf, isUploadingPdf } =
     useClinicalDocumentWorkspaceExportActions({
       selectedDocument,
       hospitalId,
@@ -178,6 +178,8 @@ export const useClinicalDocumentsWorkspaceModel = ({
       createDocument,
       handleDuplicateDocument,
       handleDeleteDocument,
+      handleExportJson,
+      handleImportJson,
       addClinicalUpdate,
       patchAnnexContent,
       scrollToAnnex,

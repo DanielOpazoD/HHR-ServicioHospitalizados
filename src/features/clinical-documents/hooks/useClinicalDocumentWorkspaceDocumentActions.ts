@@ -19,6 +19,7 @@ import {
   executeCreateClinicalDocumentDraft,
   executeDeleteClinicalDocument,
 } from '@/application/clinical-documents/clinicalDocumentUseCases';
+import { prepareClinicalDocumentJsonImportDraft } from '@/application/clinical-documents/clinicalDocumentJsonUseCases';
 import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 import {
@@ -58,6 +59,19 @@ interface UseClinicalDocumentWorkspaceDocumentActionsParams {
   setDraft: React.Dispatch<React.SetStateAction<ClinicalDocumentRecord | null>>;
   lastPersistedSnapshotRef: React.MutableRefObject<string>;
 }
+
+const readClinicalDocumentJsonFileText = (file: File): Promise<string> => {
+  if (typeof file.text === 'function') {
+    return file.text();
+  }
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = event => resolve(String(event.target?.result || ''));
+    reader.onerror = () => reject(new Error('No se pudo leer el archivo JSON.'));
+    reader.readAsText(file);
+  });
+};
 
 export const useClinicalDocumentWorkspaceDocumentActions = ({
   patient,
@@ -328,9 +342,120 @@ export const useClinicalDocumentWorkspaceDocumentActions = ({
     ]
   );
 
+  const handleImportJson = useCallback(
+    async (file: File) => {
+      if (!canEdit || !user) {
+        notify.warning(
+          'Permiso insuficiente',
+          'No tienes permisos para importar documentos clínicos.'
+        );
+        return;
+      }
+
+      try {
+        const actor = buildClinicalDocumentActor(user, role);
+        const importDraftOutcome = prepareClinicalDocumentJsonImportDraft(
+          await readClinicalDocumentJsonFileText(file),
+          actor
+        );
+        const importError = resolveClinicalDocumentOutcomeError(
+          importDraftOutcome,
+          'El archivo JSON no corresponde a un documento clínico válido.'
+        );
+        if (importError || !importDraftOutcome.data) {
+          recordOperationalTelemetry({
+            category: 'clinical_document',
+            status: 'failed',
+            operation: 'import_clinical_document_json',
+            date: episode.sourceDailyRecordDate,
+            issues: [
+              importError || 'El archivo JSON no corresponde a un documento clínico válido.',
+            ],
+            context: { fileName: file.name },
+          });
+          notify.error(
+            'No se pudo importar el documento',
+            importError || 'El archivo JSON no corresponde a un documento clínico válido.'
+          );
+          return;
+        }
+
+        const result = await executeCreateClinicalDocumentDraft(
+          importDraftOutcome.data,
+          hospitalId
+        );
+        recordOperationalOutcome('clinical_document', 'import_clinical_document_json', result, {
+          date: importDraftOutcome.data.sourceDailyRecordDate,
+          context: { importedDocumentId: importDraftOutcome.data.id, fileName: file.name },
+          allowSuccess: true,
+        });
+        const outcomeError = resolveClinicalDocumentOutcomeError(
+          result,
+          'No se pudo guardar el documento importado.'
+        );
+        if (outcomeError || !result.data) {
+          recordOperationalTelemetry({
+            category: 'clinical_document',
+            status: 'failed',
+            operation: 'import_clinical_document_json',
+            date: importDraftOutcome.data.sourceDailyRecordDate,
+            issues: [outcomeError || 'No se pudo guardar el documento importado.'],
+            context: { importedDocumentId: importDraftOutcome.data.id, fileName: file.name },
+          });
+          notify.error(
+            'No se pudo importar el documento',
+            outcomeError || 'Ocurrió un error al guardar el documento importado.'
+          );
+          return;
+        }
+
+        lastPersistedSnapshotRef.current = serializeClinicalDocument(result.data);
+        setSelectedDocumentId(result.data.id);
+        setDraft(result.data);
+        void logClinicalDocumentCreated(
+          result.data.id,
+          result.data.templateId,
+          result.data.title,
+          result.data.patientRut,
+          result.data.sourceDailyRecordDate
+        );
+        notify.success(
+          'Documento importado',
+          `${result.data.title} quedó guardado como un nuevo borrador.`
+        );
+      } catch (error) {
+        const errorMessage = resolveClinicalDocumentExceptionMessage(
+          error,
+          'No se pudo importar el documento clínico.'
+        );
+        recordOperationalTelemetry({
+          category: 'clinical_document',
+          status: 'failed',
+          operation: 'import_clinical_document_json',
+          date: episode.sourceDailyRecordDate,
+          issues: [errorMessage],
+          context: { fileName: file.name },
+        });
+        notify.error('No se pudo importar el documento', errorMessage);
+      }
+    },
+    [
+      canEdit,
+      episode,
+      hospitalId,
+      lastPersistedSnapshotRef,
+      notify,
+      role,
+      setDraft,
+      setSelectedDocumentId,
+      user,
+    ]
+  );
+
   return {
     createDocument,
     handleDuplicateDocument,
     handleDeleteDocument,
+    handleImportJson,
   };
 };

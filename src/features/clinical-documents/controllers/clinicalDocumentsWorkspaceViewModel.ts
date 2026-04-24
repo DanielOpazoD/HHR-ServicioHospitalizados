@@ -51,6 +51,8 @@ interface BuildSidebarPropsParams {
   handleDeleteDocument: (
     document: ClinicalDocumentsSidebarProps['documents'][number]
   ) => Promise<void>;
+  handleExportJson: (document: ClinicalDocumentsSidebarProps['documents'][number]) => void;
+  handleImportJson: (file: File) => Promise<void>;
   addClinicalUpdate: ClinicalDocumentsWorkspaceSheetModelProps['addClinicalUpdate'];
   patchAnnexContent: ClinicalDocumentsWorkspaceSheetModelProps['patchAnnexContent'];
   scrollToAnnex: () => void;
@@ -123,6 +125,8 @@ export const buildClinicalDocumentsWorkspaceSidebarProps = ({
   createDocument,
   handleDuplicateDocument,
   handleDeleteDocument,
+  handleExportJson,
+  handleImportJson,
   addClinicalUpdate,
   patchAnnexContent,
   scrollToAnnex,
@@ -145,6 +149,8 @@ export const buildClinicalDocumentsWorkspaceSidebarProps = ({
   onSelectDocument: setSelectedDocumentId,
   onDuplicateDocument: document => void handleDuplicateDocument(document),
   onDeleteDocument: document => void handleDeleteDocument(document),
+  onExportJson: handleExportJson,
+  onImportJson: file => void handleImportJson(file),
   onAddClinicalUpdate: canEdit ? addClinicalUpdate : undefined,
   onToggleAnnex: canEdit
     ? () =>
