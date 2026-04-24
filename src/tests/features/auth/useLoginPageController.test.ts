@@ -37,6 +37,7 @@ describe('useLoginPageController', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
+    window.localStorage.clear();
     mockIsPopupRecoverableAuthError.mockReturnValue(false);
     mockResolveAuthErrorCode.mockReturnValue(null);
     mockIsAuthBootstrapPending.mockReturnValue(false);
@@ -59,6 +60,28 @@ describe('useLoginPageController', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    window.localStorage.clear();
+  });
+
+  it('initializes from the persisted login background mode', () => {
+    window.localStorage.setItem('hhr_login_background_mode', 'night');
+
+    const { result } = renderHook(() => useLoginPageController(vi.fn()));
+
+    expect(result.current.backgroundMode).toBe('night');
+    expect(result.current.isDayGradient).toBe(false);
+  });
+
+  it('persists manual login background mode changes across refreshes', () => {
+    const { result } = renderHook(() => useLoginPageController(vi.fn()));
+
+    act(() => {
+      result.current.toggleBackgroundMode();
+    });
+
+    expect(window.localStorage.getItem('hhr_login_background_mode')).toBe(
+      result.current.backgroundMode
+    );
   });
 
   it('calls onLoginSuccess when Google login succeeds', async () => {

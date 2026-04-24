@@ -6,14 +6,11 @@ import { isAuthBootstrapPending } from '@/services/auth/authBootstrapState';
 import { getCurrentAuthSessionState } from '@/services/auth/authSession';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 import { preloadDefaultPostLoginRoute } from '@/app-shell/bootstrap/authenticatedRoutePreloadController';
-
-type BackgroundMode = 'day' | 'night';
-
-const resolveInitialBackgroundMode = (): BackgroundMode => {
-  // Auto-pick based on local time of day; user can still toggle afterwards.
-  const currentHour = new Date().getHours();
-  return currentHour >= 8 && currentHour < 20 ? 'day' : 'night';
-};
+import {
+  type LoginBackgroundMode,
+  persistLoginBackgroundMode,
+  resolveInitialLoginBackgroundMode,
+} from '@/features/auth/components/loginBackgroundModeController';
 const POPUP_RECOVERY_GRACE_MS = 1800;
 const POPUP_RECOVERY_POLL_MS = 100;
 const loginPageLogger = createScopedLogger('LoginPage');
@@ -42,7 +39,7 @@ export interface LoginPageControllerState {
   isGoogleLoading: boolean;
   isAnyLoading: boolean;
   isDayGradient: boolean;
-  backgroundMode: BackgroundMode;
+  backgroundMode: LoginBackgroundMode;
   canRetryGoogleSignIn: boolean;
   handleGoogleSignIn: () => Promise<void>;
   toggleBackgroundMode: () => void;
@@ -52,8 +49,8 @@ export const useLoginPageController = (onLoginSuccess: () => void): LoginPageCon
   const [error, setError] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [backgroundMode, setBackgroundMode] = useState<BackgroundMode>(
-    resolveInitialBackgroundMode
+  const [backgroundMode, setBackgroundMode] = useState<LoginBackgroundMode>(
+    resolveInitialLoginBackgroundMode
   );
 
   const handleGoogleSignIn = async () => {
@@ -115,7 +112,11 @@ export const useLoginPageController = (onLoginSuccess: () => void): LoginPageCon
   };
 
   const toggleBackgroundMode = () => {
-    setBackgroundMode(prev => (prev === 'day' ? 'night' : 'day'));
+    setBackgroundMode(prev => {
+      const nextMode = prev === 'day' ? 'night' : 'day';
+      persistLoginBackgroundMode(nextMode);
+      return nextMode;
+    });
   };
 
   const isDayGradient = backgroundMode === 'day';

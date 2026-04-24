@@ -1,6 +1,7 @@
 import React from 'react';
 import { DateStrip } from '@/components/layout/DateStrip';
 import { Navbar } from '@/components/layout/Navbar';
+import { ViewLoader } from '@/components/ui/ViewLoader';
 import { AuthContext, type AuthContextType, type UserRole } from '@/context/AuthContext';
 import type { ModuleType } from '@/constants/navigationConfig';
 import {
@@ -236,6 +237,9 @@ export const BootstrapRouteChrome: React.FC = () => {
             role={DEFAULT_BOOTSTRAP_ROLE}
           />
         )}
+        <main className="max-w-screen-2xl mx-auto px-4 pt-4 pb-20 flex-1 w-full print:p-0 print:pb-0 print:max-w-none">
+          <ViewLoader />
+        </main>
       </div>
     </AuthContext.Provider>
   );

@@ -172,8 +172,8 @@ Usuarios con "passport" pueden trabajar sin conexión a internet.
 - rutas distintas de login/censo:
   - no deben usar un loader inicial genérico full-screen;
   - deben mantener el chrome real del módulo origen si la ruta corresponde a un módulo autenticado;
-  - el `Suspense` global de `AppRouter` debe permanecer silencioso mientras carga el chunk de la vista;
-  - el contenido inferior puede usar loaders internos del módulo o de `Suspense` locales ya dentro de la vista.
+  - el `Suspense` de `AppRouter` puede mostrar solo el loader interno del área de contenido;
+  - ese loader no debe ocupar pantalla completa ni reemplazar `Navbar`/`DateStrip`.
 
 ### Fases visibles del bootstrap de app
 
@@ -207,7 +207,7 @@ El contrato ya no es “solo censo”; aplica al módulo origen desde el que el 
    - se confirme de verdad que debe mostrarse login.
 4. El contenido inferior del módulo puede seguir cargando por separado, pero `Navbar` y `DateStrip` deben conservar continuidad visual cuando ese módulo los usa.
 5. Si el módulo origen no usa `DateStrip` real, el bootstrap tampoco debe inventarlo.
-6. Si el chunk lazy del módulo todavía no cargó, el router no debe reemplazar el cuerpo por un spinner genérico.
+6. Si el chunk lazy del módulo todavía no cargó, el router debe mostrar un loader interno bajo el chrome, no una pantalla blanca ni un spinner full-screen.
 
 ### Contrato visual preboot actual para refresh autenticado
 
@@ -227,13 +227,14 @@ El contrato ya no es “solo censo”; aplica al módulo origen desde el que el 
 - Login no debe mostrar spinner de arranque.
 - Login no debe mostrar un frame blanco antes de que aparezca la pantalla real.
 - El fondo inicial debe alinearse con la composición visual real del login, sin sustituirla por un loader de pantalla completa.
+- Si el usuario está en modo noche o lo dejó seleccionado, el refresh no debe volver transitoriamente al fondo de día.
 
 ### Qué NO se debe hacer en refresh autenticado
 
 - No renderizar `InitialLoadingScreen`.
 - No renderizar `DefaultLoadingScreen`.
 - No reutilizar suppressions visuales pensadas para login si introducen un spinner full-screen adicional.
-- No agregar nuevos `Suspense fallback` globales delante ni dentro del router autenticado del módulo.
+- No agregar nuevos `Suspense fallback` full-screen delante ni dentro del router autenticado del módulo.
 - No forzar siempre el chrome de `Censo Diario` si la ruta de origen es otra.
 - No volver a usar una barra azul/blanca estática como “imagen estable de transición”.
 

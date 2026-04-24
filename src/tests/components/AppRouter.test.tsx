@@ -208,7 +208,7 @@ describe('AppRouter', () => {
     expect(screen.getByTestId('transfer-management-view')).toBeInTheDocument();
   });
 
-  it('keeps lazy nursing and medical handoff chunks from showing the router spinner', () => {
+  it('shows only the internal content loader while handoff chunks are loading', () => {
     lazyRouteState.suspendedViews.add('handoff-nursing');
     lazyRouteState.suspendedViews.add('handoff-medical');
 
@@ -220,7 +220,7 @@ describe('AppRouter', () => {
       />
     );
 
-    expect(screen.queryByTestId('view-loader')).not.toBeInTheDocument();
+    expect(screen.getByTestId('view-loader')).toBeInTheDocument();
     expect(screen.queryByTestId('handoff-nursing')).not.toBeInTheDocument();
 
     rerender(
@@ -231,11 +231,11 @@ describe('AppRouter', () => {
       />
     );
 
-    expect(screen.queryByTestId('view-loader')).not.toBeInTheDocument();
+    expect(screen.getByTestId('view-loader')).toBeInTheDocument();
     expect(screen.queryByTestId('handoff-medical')).not.toBeInTheDocument();
   });
 
-  it('keeps lazy transfer management chunks from showing the router spinner', () => {
+  it('shows only the internal content loader while transfer management chunks are loading', () => {
     lazyRouteState.suspendedViews.add('transfer-management');
 
     render(
@@ -246,7 +246,7 @@ describe('AppRouter', () => {
       />
     );
 
-    expect(screen.queryByTestId('view-loader')).not.toBeInTheDocument();
+    expect(screen.getByTestId('view-loader')).toBeInTheDocument();
     expect(screen.queryByTestId('transfer-management-view')).not.toBeInTheDocument();
   });
 

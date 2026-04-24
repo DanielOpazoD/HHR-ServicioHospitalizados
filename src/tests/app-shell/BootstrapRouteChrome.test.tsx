@@ -27,6 +27,10 @@ vi.mock('@/components/layout/DateStrip', () => ({
   },
 }));
 
+vi.mock('@/components/ui/ViewLoader', () => ({
+  ViewLoader: () => <div data-testid="view-loader">Loading</div>,
+}));
+
 describe('BootstrapRouteChrome', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -57,6 +61,7 @@ describe('BootstrapRouteChrome', () => {
         selectedDay: 22,
       })
     );
+    expect(screen.getByTestId('view-loader')).toBeInTheDocument();
   });
 
   it('renders the nursing handoff chrome for nursing-handoff refreshes', () => {
@@ -77,6 +82,7 @@ describe('BootstrapRouteChrome', () => {
         onExportPDF: expect.any(Function),
       })
     );
+    expect(screen.getByTestId('view-loader')).toBeInTheDocument();
   });
 
   it('keeps transfer-management on its own navbar without forcing a date strip', () => {
@@ -92,5 +98,6 @@ describe('BootstrapRouteChrome', () => {
       })
     );
     expect(mockDateStrip).not.toHaveBeenCalled();
+    expect(screen.getByTestId('view-loader')).toBeInTheDocument();
   });
 });
