@@ -42,6 +42,7 @@ vi.mock('@/services/auth/authClaimSyncService', () => ({
 
 vi.mock('@/services/auth/authAccessResolution', () => ({
   resolveFirebaseUserRole: (user: unknown) => mockResolveFirebaseUserRole(user),
+  resolveFirebaseUserRoleForBootstrap: (user: unknown) => mockResolveFirebaseUserRole(user),
 }));
 
 import {

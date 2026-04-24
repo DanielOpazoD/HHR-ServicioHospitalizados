@@ -12,6 +12,7 @@ import { resolveShiftNurseSignature } from '@/services/staff/dailyRecordStaffing
 import type { AuthContextType } from '@/context';
 import type { CensusContextType } from '@/context/CensusContext';
 import type { AppAuthenticatedDateNavigation } from '@/app-shell/bootstrap/useAppBootstrapState';
+import { markPerf } from '@/shared/runtime/perfAudit';
 export interface AuthenticatedAppRuntime {
   dailyRecordHook: DailyRecordContextType;
   existingDaysInMonth: number[];
@@ -97,6 +98,12 @@ export const useAuthenticatedAppRuntime = ({
   const { data } = useExistingDaysQuery(dateNav.selectedYear, dateNav.selectedMonth, {
     enabled: shouldRunCensusRuntimeExtras,
   });
+  React.useEffect(() => {
+    if (shouldRunCensusRuntimeExtras && data) {
+      markPerf('existing-days:ready', `${dateNav.selectedYear}-${dateNav.selectedMonth + 1}`);
+    }
+  }, [data, dateNav.selectedMonth, dateNav.selectedYear, shouldRunCensusRuntimeExtras]);
+
   const existingDaysInMonth = React.useMemo(() => resolveExistingDaysInMonth(data), [data]);
 
   const nurseSignature = React.useMemo(() => resolveShiftNurseSignature(record, 'night'), [record]);

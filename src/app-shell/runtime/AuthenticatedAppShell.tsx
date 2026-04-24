@@ -8,6 +8,7 @@ import { DeferredSystemHealthReporter } from '@/app-shell/runtime/DeferredSystem
 import { useAuthenticatedAppRuntime } from '@/app-shell/runtime/useAuthenticatedAppRuntime';
 import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medicalIndications';
 import { lazyWithRetry } from '@/utils/lazyWithRetry';
+import { markPerf } from '@/shared/runtime/perfAudit';
 
 const LaboratoryQuickAction = lazyWithRetry(() =>
   import('@/features/laboratory').then(module => ({
@@ -36,6 +37,10 @@ interface AuthenticatedAppShellProps {
 
 export const AuthenticatedAppShell = ({ auth, dateNav }: AuthenticatedAppShellProps) => {
   const { censusContextValue, ui } = useAuthenticatedAppRuntime({ auth, dateNav });
+  React.useEffect(() => {
+    markPerf('auth-shell:mounted');
+  }, []);
+
   const renderFeatureQuickActions = React.useCallback(
     (patients: MedicalIndicationsPatientOption[]) => (
       <React.Suspense fallback={<LaboratoryQuickActionFallback />}>

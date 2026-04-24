@@ -1,10 +1,12 @@
 import type { UserRole } from '@/types/authRoleTypes';
 import { normalizeEmail } from '@/services/auth/authShared';
 import { getDynamicRoleForEmail } from '@/services/auth/authRoleLookup';
+import { getCachedRole, saveRoleToCache } from '@/services/auth/authRoleCache';
 import {
   recordAuthOperationalError,
   emitAuthOperationalEvent,
 } from '@/services/auth/authOperationalTelemetry';
+import { isGeneralLoginRole } from '@/shared/access/roleAccessMatrix';
 import { resolveAllowedRoleForEmail } from '@/services/auth/authRoleResolutionController';
 import { type AuthRuntime, defaultAuthRuntime } from '@/services/firebase-runtime/authRuntime';
 
@@ -23,16 +25,29 @@ export interface GeneralLoginAccessResolution {
   resolution: 'authorized' | 'unauthorized' | 'unavailable';
 }
 
+export interface GeneralLoginAccessOptions {
+  allowCachedRole?: boolean;
+}
+
 export const resolveGeneralLoginAccessForEmail = async (
-  email: string
+  email: string,
+  options: GeneralLoginAccessOptions = {}
 ): Promise<GeneralLoginAccessResolution> => {
   try {
     const cleanEmail = normalizeEmail(email);
+    if (options.allowCachedRole) {
+      const cachedRole = (await getCachedRole(cleanEmail)) ?? undefined;
+      if (isGeneralLoginRole(cachedRole)) {
+        return { allowed: true, role: cachedRole, resolution: 'authorized' };
+      }
+    }
+
     const { role, source } = await resolveAllowedRoleForEmail(cleanEmail, {
       getDynamicRoleForEmail,
     });
 
     if (role) {
+      void saveRoleToCache(cleanEmail, role);
       return { allowed: true, role, resolution: 'authorized' };
     }
 

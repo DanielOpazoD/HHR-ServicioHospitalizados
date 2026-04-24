@@ -23,6 +23,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/config/queryClient';
 import { useAppBootstrapState } from '@/app-shell/bootstrap/useAppBootstrapState';
 import { lazyWithRetry } from '@/utils/lazyWithRetry';
+import { markPerf } from '@/shared/runtime/perfAudit';
 
 const AuthenticatedAppShell = lazyWithRetry(() =>
   import('@/app-shell/runtime/AuthenticatedAppShell').then(module => ({
@@ -39,6 +40,13 @@ const VersionedAppShell = ({ children }: { children: React.ReactNode }) => (
 
 function App() {
   const bootstrapState = useAppBootstrapState();
+  markPerf('app:first-render');
+  React.useEffect(() => {
+    if (bootstrapState.status === 'authenticated') {
+      markPerf('auth:ready');
+    }
+  }, [bootstrapState.status]);
+
   const pathname = typeof window !== 'undefined' ? window.location.pathname : '/';
   const loadingScreenMode =
     bootstrapState.status === 'loading'

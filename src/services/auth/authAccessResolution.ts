@@ -74,8 +74,25 @@ export const authorizeCurrentFirebaseUser = async (
 };
 
 export const resolveFirebaseUserRole = async (firebaseUser: User): Promise<UserRole | null> => {
+  return resolveFirebaseUserRoleFromPolicy(firebaseUser);
+};
+
+export const resolveFirebaseUserRoleForBootstrap = async (
+  firebaseUser: User
+): Promise<UserRole | null> => {
+  return resolveFirebaseUserRoleFromPolicy(firebaseUser, { allowCachedRole: true });
+};
+
+const resolveFirebaseUserRoleFromPolicy = async (
+  firebaseUser: User,
+  options: { allowCachedRole?: boolean } = {}
+): Promise<UserRole | null> => {
   try {
-    const loginAccess = await resolveGeneralLoginAccessForEmail(firebaseUser.email || '');
+    const loginAccess = options.allowCachedRole
+      ? await resolveGeneralLoginAccessForEmail(firebaseUser.email || '', {
+          allowCachedRole: true,
+        })
+      : await resolveGeneralLoginAccessForEmail(firebaseUser.email || '');
     if (loginAccess.allowed && loginAccess.role) {
       return loginAccess.role;
     }

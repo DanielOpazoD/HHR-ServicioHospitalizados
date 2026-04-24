@@ -1,5 +1,11 @@
 # HHR Bootstrap & Refresh Performance — Complete Port Playbook
 
+> **Actualización 2026-04-24**: la versión actual incorporó una medición fina
+> `[HHR-PERF]` y un fast-path de rehidratación autenticada para F5. La idea no
+> es esconder carga con loaders: el objetivo es que el shell autenticado pueda
+> aparecer antes cuando ya existe una sesión local válida, manteniendo una
+> validación fresca de rol en segundo paso.
+
 > **Audiencia**: otra IA que va a portar las optimizaciones de arranque (login
 >
 > - F5 autenticado) desde **este repo** (versión de referencia) a una **versión
@@ -29,6 +35,7 @@
 - [Parte 10: Rollback](#parte-10-rollback)
 - [Parte 11: Apéndices](#parte-11-apendices)
 - [Parte 12: Caso de estudio — por qué esta versión (base) se siente más lenta que "copia 14"](#parte-12-caso-de-estudio--por-que-esta-version-base-se-siente-mas-lenta-que-copia-14)
+- [Parte 13: Medición fina y fast-path de auth cacheado](#parte-13-medición-fina-y-fast-path-de-auth-cacheado)
 
 ---
 
@@ -44,6 +51,94 @@
 | Objetivo de UX     | 0 flash blanco, chrome correcto desde primer paint, spinner interno solo dentro del shell |
 | Modo dev           | `npm run dev` → Vite en puerto configurado (típicamente 3001)                             |
 | Modo prod          | `npm run build && npm run preview`                                                        |
+
+## 0.1 Snapshot actual de la mejora de F5 autenticado
+
+### Problema medido
+
+En F5 sobre `/census`, cambiar de fecha dentro del módulo era rápido porque la
+app ya estaba montada y solo cambiaba data de censo. El reload completo era más
+lento porque repetía bootstrap, import del chunk principal, rehidratación de
+Firebase Auth, resolución de rol y recién después montaba el shell autenticado.
+
+El primer reporte útil mostró que `shell -> daily record ready` era bajo
+(aprox. 112 ms), mientras que `first render -> auth ready` concentraba la mayor
+parte del tiempo percibido. Por eso la optimización se enfocó en auth bootstrap,
+no en reescribir el censo.
+
+### Estructura implementada
+
+| Capa                 | Archivo                                               | Responsabilidad                                                                                                                           |
+| -------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Medición             | `src/shared/runtime/perfAudit.ts`                     | Registra marcas `[HHR-PERF]`, arma deltas y expone `window.__HHR_BOOTSTRAP_PERF_REPORT__`. En dev está activo; en test queda desactivado. |
+| Entrada              | `src/index.tsx`                                       | Marca `bootstrap:start`, import del App y runtime-ready para separar carga Vite/Firebase de React.                                        |
+| App                  | `src/App.tsx`                                         | Marca `app:first-render` y `auth:ready`. Permite ver cuánto tarda React en llegar a sesión lista.                                         |
+| Shell autenticado    | `src/app-shell/runtime/AuthenticatedAppShell.tsx`     | Marca `auth-shell:mounted`, para separar sesión lista de shell montado.                                                                   |
+| Runtime shell        | `src/app-shell/runtime/useAuthenticatedAppRuntime.ts` | Marca puntos de runtime autenticado sin bloquear la navegación.                                                                           |
+| Censo                | `src/hooks/useDailyRecordSyncQuery.ts`                | Marca `daily-record:ready` y dispara el reporte final cuando el registro diario está disponible.                                          |
+| Bootstrap auth       | `src/hooks/useAuthStateSupport.ts`                    | Marca redirect, current session, observer Firebase, aplicación de sesión y salida de loading.                                             |
+| Sesión auth          | `src/services/auth/authSession.ts`                    | Marca espera de runtime, presencia de usuario Firebase, resolución de rol y observer.                                                     |
+| Lookup de rol        | `src/services/auth/authRoleLookup.ts`                 | Marca inicio/fin/error de la callable `checkUserRole`.                                                                                    |
+| Política de rol      | `src/services/auth/authPolicy.ts`                     | Permite usar rol cacheado solo cuando se pide explícitamente para bootstrap y refresca cache tras lookup dinámico exitoso.                |
+| Resolución de acceso | `src/services/auth/authAccessResolution.ts`           | Expone `resolveFirebaseUserRoleForBootstrap`, separado del flujo normal de validación fresca.                                             |
+
+### Contrato de seguridad del fast-path
+
+- El cache de rol se usa solo si `resolveGeneralLoginAccessForEmail(email, { allowCachedRole: true })` lo permite.
+- Ese flag solo lo usa `resolveFirebaseUserRoleForBootstrap`, que a su vez solo se conecta al camino de `resolveCurrentAuthSessionState`.
+- El observer de Firebase (`onAuthSessionStateChange`) mantiene `resolveFirebaseUserRole`, que vuelve a consultar la política fresca.
+- Los caminos de login, observer, escrituras y validaciones de permisos no dependen del cache como fuente definitiva.
+- El cache se limpia en `signOut` y se refresca cuando el lookup dinámico devuelve un rol válido.
+
+### Lectura esperada de `[HHR-PERF]`
+
+Campos clave:
+
+- `App chunk/import`: costo de descargar/parsear el módulo principal en dev.
+- `first render -> auth ready`: tramo total de rehidratación de sesión.
+- `current session resolution`: camino de sesión actual antes del observer.
+- `current role resolution`: costo específico de resolver rol durante bootstrap.
+- `role callable lookup`: costo de la callable `checkUserRole` cuando no entra cache.
+- `observer role resolution`: validación fresca del observer Firebase.
+- `shell -> daily record ready`: costo real de data inicial del censo una vez montado el shell.
+
+Si el fast-path entra, el tramo `current role resolution` debería bajar porque
+lee IndexedDB/local cache en vez de esperar la callable. La callable puede
+aparecer después en `observer role resolution`; eso es deseable porque mantiene
+la validación fresca sin bloquear el primer shell autenticado.
+
+### Tests que cubren esta estructura
+
+Tests nuevos o directamente relacionados:
+
+- `src/tests/services/auth/authPolicy.test.ts`
+  - Verifica que `allowCachedRole: true` usa cache como fast-path.
+  - Verifica que el flujo por defecto no usa cache y refresca cache tras lookup dinámico exitoso.
+- `src/tests/services/auth/authAccessResolution.test.ts`
+  - Verifica que `resolveFirebaseUserRoleForBootstrap` es el único camino que pasa `{ allowCachedRole: true }`.
+- `src/tests/services/auth/authSession.test.ts`
+  - Verifica que la resolución actual de sesión puede usar el seam de bootstrap y que el observer sigue emitiendo sesión autorizada.
+
+Comandos de validación usados para este cambio:
+
+```bash
+npm run typecheck
+npm run lint
+npx vitest run \
+  src/tests/hooks/useAuthStateSupport.sessionResolution.test.tsx \
+  src/tests/hooks/useAuthStateSupport.timeout.test.tsx \
+  src/tests/hooks/useAuthState.test.ts \
+  src/tests/services/auth/authPolicy.test.ts \
+  src/tests/services/auth/authAccessResolution.test.ts \
+  src/tests/services/auth/authSession.test.ts \
+  src/tests/services/auth/authRoleLookup.test.ts \
+  src/tests/components/index.bootstrap.test.tsx \
+  src/tests/components/AppLoadingBehavior.test.tsx \
+  src/tests/app-shell/BootstrapRouteChrome.test.tsx \
+  src/tests/app-shell/appShellLoadingPolicy.test.ts \
+  src/tests/hooks/useDailyRecord.lifecycle.test.tsx \
+  src/tests/hooks/useDailyRecord.validation-guards.test.tsx
+```
 
 ---
 

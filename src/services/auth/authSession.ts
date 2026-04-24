@@ -1,7 +1,10 @@
 import { onAuthStateChanged, signOut as firebaseSignOut, User } from 'firebase/auth';
 import type { AuthSessionState } from '@/types/authSessionTypes';
 import { clearRoleCacheForEmail } from '@/services/auth/authPolicy';
-import { resolveFirebaseUserRole } from '@/services/auth/authAccessResolution';
+import {
+  resolveFirebaseUserRole,
+  resolveFirebaseUserRoleForBootstrap,
+} from '@/services/auth/authAccessResolution';
 import { resolveAuthSessionState } from '@/services/auth/authSessionController';
 import { recordAuthOperationalError } from '@/services/auth/authOperationalTelemetry';
 import {
@@ -15,6 +18,7 @@ import {
   toAnonymousSignatureAuthSessionState,
 } from '@/services/auth/authSessionState';
 import { type AuthRuntime, defaultAuthRuntime } from '@/services/firebase-runtime/authRuntime';
+import { markPerf } from '@/shared/runtime/perfAudit';
 
 interface AuthRuntimeOptions {
   authRuntime?: AuthRuntime;
@@ -55,13 +59,16 @@ export const onAuthSessionStateChange = (
   let active = true;
   let unsubscribeAuth = () => {};
 
+  markPerf('auth-session:runtime-ready-wait-start');
   void authRuntime.ready
     .then(() => {
+      markPerf('auth-session:runtime-ready-done');
       if (!active) {
         return;
       }
 
       unsubscribeAuth = onAuthStateChanged(authRuntime.auth, async (firebaseUser: User | null) => {
+        markPerf('auth-session:firebase-event', firebaseUser ? 'user' : 'null');
         if (!firebaseUser) {
           resetAuthClaimSyncSnapshot();
           await callback(createUnauthenticatedAuthSessionState());
@@ -82,10 +89,12 @@ export const onAuthSessionStateChange = (
         }
 
         try {
+          markPerf('auth-session:role-resolution-start');
           const sessionState = await resolveAuthSessionState(firebaseUser, {
             signOutUnauthorizedUser: () => firebaseSignOut(authRuntime.auth),
             resolveFirebaseUserRole,
           });
+          markPerf('auth-session:role-resolution-done', sessionState.status);
           if (sessionState.status !== 'authorized') {
             resetAuthClaimSyncSnapshot();
           }
@@ -150,8 +159,11 @@ export const resolveCurrentAuthSessionState = async (
   options?: AuthRuntimeOptions
 ): Promise<AuthSessionState> => {
   const authRuntime = resolveAuthRuntime(options);
+  markPerf('auth-current:runtime-ready-wait-start');
   await authRuntime.ready;
+  markPerf('auth-current:runtime-ready-done');
   const firebaseUser = authRuntime.getCurrentUser();
+  markPerf('auth-current:user-state', firebaseUser ? 'user' : 'null');
 
   if (!firebaseUser) {
     resetAuthClaimSyncSnapshot();
@@ -169,10 +181,12 @@ export const resolveCurrentAuthSessionState = async (
   }
 
   try {
+    markPerf('auth-current:role-resolution-start');
     const sessionState = await resolveAuthSessionState(firebaseUser, {
       signOutUnauthorizedUser: () => firebaseSignOut(authRuntime.auth),
-      resolveFirebaseUserRole,
+      resolveFirebaseUserRole: resolveFirebaseUserRoleForBootstrap,
     });
+    markPerf('auth-current:role-resolution-done', sessionState.status);
     if (sessionState.status !== 'authorized') {
       resetAuthClaimSyncSnapshot();
     }

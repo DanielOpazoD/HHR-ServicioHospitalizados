@@ -21,6 +21,7 @@ import { recordOperationalTelemetry } from '@/services/observability/operational
 import { resolveAuthBootstrapBudget } from '@/services/auth/authBootstrapBudgets';
 import { hasActiveFirebaseSession } from '@/services/auth/authFallback';
 import { hasPersistedFirebaseAuthHint } from '@/services/auth/authStorageHints';
+import { markPerf } from '@/shared/runtime/perfAudit';
 import {
   buildBootstrapTimeoutIssue,
   shouldAttemptAuthTimeoutRecovery,
@@ -47,6 +48,7 @@ const applyResolvedBootstrapSessionState = ({
   setSessionState: (sessionState: AuthSessionState) => void;
   setAuthLoading: (value: boolean) => void;
 }): void => {
+  markPerf('auth-bootstrap:apply-session', sessionState.status);
   if (isAuthBootstrapPending()) {
     restoreAuthBootstrapReturnTo();
   }
@@ -92,7 +94,9 @@ export const subscribeToResolvedAuthState = async ({
   let isBootstrapLoading = true;
 
   try {
+    markPerf('auth-bootstrap:redirect-start');
     const redirectOutcome = await resolveRedirectAuthSessionOutcome();
+    markPerf('auth-bootstrap:redirect-done', redirectOutcome.status);
     recordOperationalOutcome('auth', 'redirect_resolution', redirectOutcome, {
       allowSuccess: true,
     });
@@ -105,7 +109,9 @@ export const subscribeToResolvedAuthState = async ({
       });
       isBootstrapLoading = false;
     } else {
+      markPerf('auth-bootstrap:current-session-start');
       const currentSessionOutcome = await resolveCurrentAuthSessionOutcome();
+      markPerf('auth-bootstrap:current-session-done', currentSessionOutcome.status);
       recordOperationalOutcome('auth', 'current_session_resolution', currentSessionOutcome, {
         allowSuccess: true,
       });
@@ -142,7 +148,9 @@ export const subscribeToResolvedAuthState = async ({
     });
   }
 
+  markPerf('auth-bootstrap:observer-subscribe');
   return onAuthSessionStateChange(async sessionState => {
+    markPerf('auth-bootstrap:observer-event', sessionState.status);
     recordOperationalTelemetry(
       {
         category: 'auth',
@@ -225,6 +233,7 @@ export const useResolvedAuthBootstrap = ({
   setAuthLoading: (value: boolean) => void;
 }): void => {
   useEffect(() => {
+    markPerf('auth-bootstrap:effect-start');
     if (e2eBootstrapUser) {
       setSessionState(toResolvedAuthSessionState(e2eBootstrapUser));
       setAuthLoading(false);
@@ -337,6 +346,7 @@ export const useResolvedAuthBootstrap = ({
     };
     const setResolvedAuthLoading = (value: boolean) => {
       if (!value) {
+        markPerf('auth-bootstrap:loading-false');
         markBootstrapResolved();
       }
       setAuthLoading(value);

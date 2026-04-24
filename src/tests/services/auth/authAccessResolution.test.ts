@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   authorizeCurrentFirebaseUser,
   authorizeFirebaseUser,
+  resolveFirebaseUserRoleForBootstrap,
   resolveFirebaseUserRole,
 } from '@/services/auth/authAccessResolution';
 
@@ -36,8 +37,10 @@ vi.mock('@/firebaseConfig', () => ({
 }));
 
 vi.mock('@/services/auth/authPolicy', () => ({
-  resolveGeneralLoginAccessForEmail: (email: string) =>
-    mockResolveGeneralLoginAccessForEmail(email),
+  resolveGeneralLoginAccessForEmail: (email: string, options?: unknown) =>
+    options === undefined
+      ? mockResolveGeneralLoginAccessForEmail(email)
+      : mockResolveGeneralLoginAccessForEmail(email, options),
 }));
 
 vi.mock('@/services/auth/authShared', () => ({
@@ -214,5 +217,24 @@ describe('authAccessResolution', () => {
         email: 'fallback@hospital.cl',
       } as never)
     ).resolves.toBe('doctor_specialist');
+  });
+
+  it('allows cached role resolution only in the bootstrap rehydration path', async () => {
+    mockResolveGeneralLoginAccessForEmail.mockResolvedValue({
+      allowed: true,
+      role: 'admin',
+      resolution: 'authorized',
+    });
+
+    await expect(
+      resolveFirebaseUserRoleForBootstrap({
+        uid: 'bootstrap-1',
+        email: 'bootstrap@hospital.cl',
+      } as never)
+    ).resolves.toBe('admin');
+
+    expect(mockResolveGeneralLoginAccessForEmail).toHaveBeenCalledWith('bootstrap@hospital.cl', {
+      allowCachedRole: true,
+    });
   });
 });

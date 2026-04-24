@@ -20,11 +20,14 @@ import {
 } from '@/app-shell/bootstrap/authenticatedRoutePreloadController';
 import { mountFirebaseConfigWarning } from '@/services/firebase-runtime/firebaseStartupDiagnostics';
 import { createScopedLogger } from '@/services/utils/loggerScope';
+import { markPerf } from '@/shared/runtime/perfAudit';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
   throw new Error('Could not find root element to mount to');
 }
+
+markPerf('bootstrap:start');
 
 const root = ReactDOM.createRoot(rootElement);
 const bootLogger = createScopedLogger('Bootstrap');
@@ -106,10 +109,15 @@ renderBootstrapLoadingScreen();
 
 // Fetch the main app shell while bootstrap recovery/Firebase runtime settles so
 // the login page is not blocked behind a second sequential chunk load.
-const appModulePromise = import('@/App');
+markPerf('app-module:import-start');
+const appModulePromise = import('@/App').then(module => {
+  markPerf('app-module:import-done');
+  return module;
+});
 
 bootstrapAppRuntime()
   .then(async result => {
+    markPerf('bootstrap:runtime-ready', result.status);
     recordBootstrapRuntimeResult(result);
 
     if (result.status === 'reload') {

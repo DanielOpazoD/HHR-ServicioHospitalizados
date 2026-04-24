@@ -5,6 +5,7 @@ import { isGeneralLoginRole } from '@/shared/access/roleAccessMatrix';
 import { defaultFunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
 import type { FunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
 import { createAuthError } from '@/services/auth/authShared';
+import { markPerf } from '@/shared/runtime/perfAudit';
 
 type CheckUserRoleCallableData = {
   role?: string | null;
@@ -31,14 +32,18 @@ export const createAuthRoleLookupService = (
       const cleanEmail = normalizeEmail(email);
       if (!cleanEmail) return null;
 
+      markPerf('auth-role:lookup-start');
       const functions = await functionsRuntime.getFunctions();
       const checkUserRole = httpsCallable<Record<string, never>, CheckUserRoleCallableData>(
         functions,
         'checkUserRole'
       );
       const response = await checkUserRole({});
-      return resolveCallableRole(response.data);
+      const role = resolveCallableRole(response.data);
+      markPerf('auth-role:lookup-done', role ?? 'none');
+      return role;
     } catch (error) {
+      markPerf('auth-role:lookup-error');
       throw createAuthError(
         AUTH_ROLE_LOOKUP_UNAVAILABLE_CODE,
         error instanceof Error && error.message

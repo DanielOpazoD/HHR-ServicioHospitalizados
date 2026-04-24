@@ -43,6 +43,7 @@ import {
   useRemoteDailyRecordSync,
   useTodayEmptyDailyRecordRecovery,
 } from '@/hooks/useDailyRecordSyncQuerySupport';
+import { flushPerfReport, markPerf } from '@/shared/runtime/perfAudit';
 
 type ChannelNotice = {
   channel: 'warning' | 'error' | null;
@@ -108,6 +109,15 @@ export const useDailyRecordSyncQuery = (
       }),
     [effectiveRemoteSyncStatus, record, recordRuntime]
   );
+
+  useEffect(() => {
+    if (bootstrapPhase !== 'record_ready' && bootstrapPhase !== 'confirmed_empty') {
+      return;
+    }
+
+    markPerf('daily-record:ready', `${currentDateString}:${bootstrapPhase}`);
+    flushPerfReport(`daily-record:${bootstrapPhase}`);
+  }, [bootstrapPhase, currentDateString]);
 
   const runRemoteSync = useRemoteDailyRecordSync(dailyRecord);
 
