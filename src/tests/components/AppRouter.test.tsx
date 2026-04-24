@@ -9,6 +9,12 @@ const mockGetVisibleAppModules = vi.fn();
 const mockResolveSpecialistCensusAccessProfile = vi.fn();
 const mockIsE2EEditableRecordOverrideEnabled = vi.fn();
 const mockCanEditAppModule = vi.fn();
+const lazyRouteState = vi.hoisted(() => ({
+  suspendedViews: new Set<string>(),
+  pendingViewChunk: new Promise<void>(() => {
+    // Intentionally unresolved: lets tests assert the Suspense fallback state.
+  }),
+}));
 
 vi.mock('@/components/shared/GlobalErrorBoundary', () => ({
   GlobalErrorBoundary: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -38,9 +44,13 @@ vi.mock('@/views/LazyViews', () => ({
   CudyrView: ({ readOnly }: { readOnly: boolean }) => (
     <div data-testid="cudyr-view" data-read-only={String(readOnly)} />
   ),
-  HandoffView: ({ type, readOnly }: { type: string; readOnly: boolean }) => (
-    <div data-testid={`handoff-${type}`} data-read-only={String(readOnly)} />
-  ),
+  HandoffView: ({ type, readOnly }: { type: string; readOnly: boolean }) => {
+    if (lazyRouteState.suspendedViews.has(`handoff-${type}`)) {
+      throw lazyRouteState.pendingViewChunk;
+    }
+
+    return <div data-testid={`handoff-${type}`} data-read-only={String(readOnly)} />;
+  },
   AuditView: () => <div data-testid="audit-view" />,
   CommunicationsView: () => <div data-testid="communications-view" />,
   ConfigurationView: () => <div data-testid="configuration-view" />,
@@ -50,7 +60,13 @@ vi.mock('@/views/LazyViews', () => ({
   ErrorDashboard: () => <div data-testid="error-dashboard" />,
   WhatsAppIntegrationView: () => <div data-testid="whatsapp-view" />,
   SystemDiagnosticsView: () => <div data-testid="system-diagnostics-view" />,
-  TransferManagementView: () => <div data-testid="transfer-management-view" />,
+  TransferManagementView: () => {
+    if (lazyRouteState.suspendedViews.has('transfer-management')) {
+      throw lazyRouteState.pendingViewChunk;
+    }
+
+    return <div data-testid="transfer-management-view" />;
+  },
   BackupFilesView: ({ backupType }: { backupType: string }) => (
     <div data-testid="backup-files-view" data-backup-type={backupType} />
   ),
@@ -99,6 +115,7 @@ const createProps = (overrides: Partial<AppRouterProps> = {}): AppRouterProps =>
 describe('AppRouter', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    lazyRouteState.suspendedViews.clear();
     mockResolveSpecialistCensusAccessProfile.mockReturnValue('default');
     mockGetVisibleAppModules.mockReturnValue([
       'CENSUS',
@@ -189,6 +206,48 @@ describe('AppRouter', () => {
 
     expect(screen.getByTestId('section-Traslados')).toBeInTheDocument();
     expect(screen.getByTestId('transfer-management-view')).toBeInTheDocument();
+  });
+
+  it('keeps lazy nursing and medical handoff chunks from showing the router spinner', () => {
+    lazyRouteState.suspendedViews.add('handoff-nursing');
+    lazyRouteState.suspendedViews.add('handoff-medical');
+
+    const { rerender } = render(
+      <AppRouter
+        {...createProps({
+          ui: { currentModule: 'NURSING_HANDOFF' } as AppRouterProps['ui'],
+        })}
+      />
+    );
+
+    expect(screen.queryByTestId('view-loader')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('handoff-nursing')).not.toBeInTheDocument();
+
+    rerender(
+      <AppRouter
+        {...createProps({
+          ui: { currentModule: 'MEDICAL_HANDOFF' } as AppRouterProps['ui'],
+        })}
+      />
+    );
+
+    expect(screen.queryByTestId('view-loader')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('handoff-medical')).not.toBeInTheDocument();
+  });
+
+  it('keeps lazy transfer management chunks from showing the router spinner', () => {
+    lazyRouteState.suspendedViews.add('transfer-management');
+
+    render(
+      <AppRouter
+        {...createProps({
+          ui: { currentModule: 'TRANSFER_MANAGEMENT' } as AppRouterProps['ui'],
+        })}
+      />
+    );
+
+    expect(screen.queryByTestId('view-loader')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('transfer-management-view')).not.toBeInTheDocument();
   });
 
   it('renders the signature route ahead of module-specific content', () => {

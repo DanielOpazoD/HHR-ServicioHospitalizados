@@ -172,7 +172,8 @@ Usuarios con "passport" pueden trabajar sin conexión a internet.
 - rutas distintas de login/censo:
   - no deben usar un loader inicial genérico full-screen;
   - deben mantener el chrome real del módulo origen si la ruta corresponde a un módulo autenticado;
-  - el contenido inferior puede usar loaders internos del módulo o del `Suspense` local.
+  - el `Suspense` global de `AppRouter` debe permanecer silencioso mientras carga el chunk de la vista;
+  - el contenido inferior puede usar loaders internos del módulo o de `Suspense` locales ya dentro de la vista.
 
 ### Fases visibles del bootstrap de app
 
@@ -206,6 +207,7 @@ El contrato ya no es “solo censo”; aplica al módulo origen desde el que el 
    - se confirme de verdad que debe mostrarse login.
 4. El contenido inferior del módulo puede seguir cargando por separado, pero `Navbar` y `DateStrip` deben conservar continuidad visual cuando ese módulo los usa.
 5. Si el módulo origen no usa `DateStrip` real, el bootstrap tampoco debe inventarlo.
+6. Si el chunk lazy del módulo todavía no cargó, el router no debe reemplazar el cuerpo por un spinner genérico.
 
 ### Contrato visual preboot actual para refresh autenticado
 
@@ -231,7 +233,7 @@ El contrato ya no es “solo censo”; aplica al módulo origen desde el que el 
 - No renderizar `InitialLoadingScreen`.
 - No renderizar `DefaultLoadingScreen`.
 - No reutilizar suppressions visuales pensadas para login si introducen un spinner full-screen adicional.
-- No agregar nuevos `Suspense fallback` globales delante del shell autenticado del módulo.
+- No agregar nuevos `Suspense fallback` globales delante ni dentro del router autenticado del módulo.
 - No forzar siempre el chrome de `Censo Diario` si la ruta de origen es otra.
 - No volver a usar una barra azul/blanca estática como “imagen estable de transición”.
 

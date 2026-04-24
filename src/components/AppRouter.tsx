@@ -7,7 +7,6 @@
 import React, { Suspense } from 'react';
 import { GlobalErrorBoundary } from '@/components/shared/GlobalErrorBoundary';
 import { SectionErrorBoundary } from '@/components/shared/SectionErrorBoundary';
-import { ViewLoader } from '@/components/ui/ViewLoader';
 import type { UseUIStateReturn } from '@/hooks/useUIState';
 import type { ModuleType } from '@/constants/navigationConfig';
 import {
@@ -58,7 +57,7 @@ export const AppRouter: React.FC<AppRouterProps> = ({ ui, shell }) => {
 
   return (
     <GlobalErrorBoundary>
-      <Suspense fallback={<ViewLoader />}>
+      <Suspense fallback={null}>
         {isSignatureMode ? (
           <SectionErrorBoundary sectionName={SIGNATURE_ROUTE_DEFINITION.sectionName}>
             {SIGNATURE_ROUTE_DEFINITION.render({
