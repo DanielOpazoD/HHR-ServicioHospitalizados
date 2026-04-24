@@ -123,7 +123,7 @@ describe('useAuthenticatedAppRuntime', () => {
     const { result } = renderHook(() => useAuthenticatedAppRuntime({ auth, dateNav }));
 
     expect(mockUseDailyRecord).toHaveBeenCalledWith('2026-03-27', false, 'ready');
-    expect(mockUseExistingDaysQuery).toHaveBeenCalledWith(2026, 2);
+    expect(mockUseExistingDaysQuery).toHaveBeenCalledWith(2026, 2, { enabled: true });
     expect(mockResolveShiftNurseSignature).toHaveBeenCalledWith(
       mockUseDailyRecord.mock.results[0]?.value.record,
       'night'
@@ -137,6 +137,7 @@ describe('useAuthenticatedAppRuntime', () => {
       selectedDay: 27,
       user: auth.currentUser,
       role: auth.role,
+      enabled: true,
     });
     expect(mockUseFileOperations).toHaveBeenCalledWith(
       mockUseDailyRecord.mock.results[0]?.value.record,
@@ -160,6 +161,24 @@ describe('useAuthenticatedAppRuntime', () => {
 
     expect(result.current.existingDaysInMonth).toEqual([]);
     expect(result.current.censusContextValue.dateNav.existingDaysInMonth).toEqual([]);
+  });
+
+  it('disables census-only runtime extras outside the census module', () => {
+    mockUseAppState.mockReturnValue({ currentModule: 'NURSING_HANDOFF' });
+
+    renderHook(() =>
+      useAuthenticatedAppRuntime({
+        auth: createAuthState(),
+        dateNav: createDateNavigation(),
+      })
+    );
+
+    expect(mockUseExistingDaysQuery).toHaveBeenCalledWith(2026, 2, { enabled: false });
+    expect(mockUseCensusEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        enabled: false,
+      })
+    );
   });
 
   it('resolveExistingDaysInMonth returns a stable empty list fallback', () => {

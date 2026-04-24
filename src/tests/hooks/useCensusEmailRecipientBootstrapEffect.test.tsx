@@ -41,6 +41,7 @@ describe('useCensusEmailRecipientBootstrapEffect', () => {
           clearLegacyRecipients: vi.fn(),
           writeClipboard: vi.fn(),
         },
+        bootstrapEnabled: true,
         enabled: true,
         user: { uid: 'admin-1', email: 'admin@test.com' },
         applyRecipientRuntimeState,
@@ -79,6 +80,7 @@ describe('useCensusEmailRecipientBootstrapEffect', () => {
           clearLegacyRecipients: vi.fn(),
           writeClipboard: vi.fn(),
         },
+        bootstrapEnabled: true,
         enabled: true,
         user: { uid: 'admin-1', email: 'admin@test.com' },
         applyRecipientRuntimeState,
@@ -94,6 +96,30 @@ describe('useCensusEmailRecipientBootstrapEffect', () => {
     });
     await Promise.resolve();
 
+    expect(applyRecipientRuntimeState).not.toHaveBeenCalled();
+  });
+
+  it('does not import recipient use cases when census runtime bootstrap is disabled', async () => {
+    const applyRecipientRuntimeState = vi.fn();
+
+    renderHook(() =>
+      useCensusEmailRecipientBootstrapEffect({
+        canManageGlobalRecipientLists: true,
+        browserRuntime: {
+          getLegacyRecipients: () => null,
+          clearLegacyRecipients: vi.fn(),
+          writeClipboard: vi.fn(),
+        },
+        bootstrapEnabled: false,
+        enabled: false,
+        user: { uid: 'admin-1', email: 'admin@test.com' },
+        applyRecipientRuntimeState,
+      })
+    );
+
+    await Promise.resolve();
+
+    expect(withRecipientListUseCases).not.toHaveBeenCalled();
     expect(applyRecipientRuntimeState).not.toHaveBeenCalled();
   });
 });

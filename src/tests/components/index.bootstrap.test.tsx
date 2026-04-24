@@ -13,6 +13,9 @@ const {
   mockHasActiveFirebaseSession,
   mockHasPersistedFirebaseAuthHint,
   mockHasRecentAuthenticatedSessionHint,
+  mockPreloadAuthenticatedRouteChunk,
+  mockPreloadAuthenticatedShellChunk,
+  mockShouldPreloadAuthenticatedShellForPathname,
   mockCreateRoot,
   mockRootRender,
   mockDetachBootstrapRuntimeErrorListeners,
@@ -29,6 +32,9 @@ const {
   mockHasActiveFirebaseSession: vi.fn(),
   mockHasPersistedFirebaseAuthHint: vi.fn(),
   mockHasRecentAuthenticatedSessionHint: vi.fn(),
+  mockPreloadAuthenticatedRouteChunk: vi.fn(),
+  mockPreloadAuthenticatedShellChunk: vi.fn(),
+  mockShouldPreloadAuthenticatedShellForPathname: vi.fn(),
   mockCreateRoot: vi.fn(),
   mockRootRender: vi.fn(),
   mockDetachBootstrapRuntimeErrorListeners: vi.fn(),
@@ -87,6 +93,15 @@ vi.mock('@/app-shell/bootstrap/appShellLoadingPolicy', () => ({
     mockResolvePreMountLoadingScreenDecision(...args),
 }));
 
+vi.mock('@/app-shell/bootstrap/authenticatedRoutePreloadController', () => ({
+  preloadAuthenticatedRouteChunk: (...args: unknown[]) =>
+    mockPreloadAuthenticatedRouteChunk(...args),
+  preloadAuthenticatedShellChunk: (...args: unknown[]) =>
+    mockPreloadAuthenticatedShellChunk(...args),
+  shouldPreloadAuthenticatedShellForPathname: (...args: unknown[]) =>
+    mockShouldPreloadAuthenticatedShellForPathname(...args),
+}));
+
 vi.mock('@/services/firebase-runtime/firebaseStartupDiagnostics', () => ({
   mountFirebaseConfigWarning: (...args: unknown[]) => mockMountFirebaseConfigWarning(...args),
 }));
@@ -132,6 +147,9 @@ describe('index bootstrap entrypoint', () => {
     mockHasActiveFirebaseSession.mockReturnValue(false);
     mockHasPersistedFirebaseAuthHint.mockReturnValue(false);
     mockHasRecentAuthenticatedSessionHint.mockReturnValue(false);
+    mockPreloadAuthenticatedRouteChunk.mockResolvedValue(undefined);
+    mockPreloadAuthenticatedShellChunk.mockResolvedValue(undefined);
+    mockShouldPreloadAuthenticatedShellForPathname.mockReturnValue(false);
     mockGetFirebaseStartupFailureMessage.mockReturnValue('Firebase startup failed');
 
     Object.defineProperty(window, 'location', {
@@ -201,7 +219,38 @@ describe('index bootstrap entrypoint', () => {
     expect(mockRootRender).toHaveBeenCalledTimes(1);
     const renderElement = mockRootRender.mock.calls[0][0];
     expect(renderElement.props.children.type.name).toBe('MockBootstrapRouteChrome');
+    expect(mockPreloadAuthenticatedShellChunk).toHaveBeenCalledTimes(1);
+    expect(mockPreloadAuthenticatedRouteChunk).toHaveBeenCalledWith({ pathname: '/' });
     expect(mockDetachBootstrapRuntimeErrorListeners).toHaveBeenCalledTimes(1);
+  });
+
+  it('preloads authenticated shell chunks for known module paths before auth hints resolve', async () => {
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: {
+        ...window.location,
+        pathname: '/censo',
+        search: '?date=2026-02-20',
+      },
+      writable: true,
+    });
+    mockShouldPreloadAuthenticatedShellForPathname.mockReturnValue(true);
+    mockBootstrapAppRuntime.mockResolvedValue({
+      status: 'reload',
+      stage: 'client_recovery',
+      clientRecovery: {
+        status: 'reload',
+        reason: 'test-stop',
+      },
+    });
+
+    await import('@/index');
+    await flushBootstrapWork();
+
+    expect(mockShouldPreloadAuthenticatedShellForPathname).toHaveBeenCalledWith('/censo');
+    expect(mockPreloadAuthenticatedShellChunk).toHaveBeenCalledTimes(1);
+    expect(mockPreloadAuthenticatedRouteChunk).toHaveBeenCalledWith({ pathname: '/censo' });
+    expect(mockRootRender).not.toHaveBeenCalled();
   });
 
   it('mounts the firebase startup warning when bootstrap is blocked', async () => {

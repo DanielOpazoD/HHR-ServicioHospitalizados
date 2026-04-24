@@ -21,6 +21,7 @@ interface UseCensusEmailParams {
   selectedDay: number;
   user: { uid?: string; email?: string | null; role?: string } | null;
   role: string;
+  enabled?: boolean;
 }
 
 export interface UseCensusEmailReturn {
@@ -108,12 +109,24 @@ export const useCensusEmail = ({
   selectedDay,
   user,
   role,
+  enabled = true,
 }: UseCensusEmailParams): UseCensusEmailReturn => {
   const { confirm, alert } = useConfirmDialog();
   const browserRuntime = defaultCensusEmailBrowserRuntime;
   const [showEmailConfig, setShowEmailConfig] = useState(false);
+  const activeShowEmailConfig = enabled && showEmailConfig;
   const { isAdminUser, canManageGlobalRecipientLists, areGlobalRecipientListsEnabled } =
-    resolveCensusEmailAccess(role, user, showEmailConfig);
+    resolveCensusEmailAccess(role, user, activeShowEmailConfig);
+  const setEnabledShowEmailConfig = useCallback(
+    (show: boolean) => {
+      if (!enabled) {
+        setShowEmailConfig(false);
+        return;
+      }
+      setShowEmailConfig(show);
+    },
+    [enabled]
+  );
 
   // ========== RECIPIENTS STATE ==========
   const {
@@ -131,6 +144,7 @@ export const useCensusEmail = ({
   } = useCensusEmailRecipientLists({
     canManageGlobalRecipientLists,
     browserRuntime,
+    bootstrapEnabled: enabled,
     enabled: areGlobalRecipientListsEnabled,
     user,
   });
@@ -174,8 +188,8 @@ export const useCensusEmail = ({
   });
 
   return {
-    showEmailConfig,
-    setShowEmailConfig,
+    showEmailConfig: activeShowEmailConfig,
+    setShowEmailConfig: setEnabledShowEmailConfig,
     recipients,
     setRecipients,
     recipientLists,

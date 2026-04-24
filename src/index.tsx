@@ -13,7 +13,11 @@ import {
 import { InitialLoadingScreen } from '@/components/ui/InitialLoadingScreen';
 import { BootstrapRouteChrome } from '@/app-shell/bootstrap/BootstrapCensusChrome';
 import { resolvePreMountLoadingScreenDecision } from '@/app-shell/bootstrap/appShellLoadingPolicy';
-import { preloadAuthenticatedRouteChunk } from '@/app-shell/bootstrap/authenticatedRoutePreloadController';
+import {
+  preloadAuthenticatedRouteChunk,
+  preloadAuthenticatedShellChunk,
+  shouldPreloadAuthenticatedShellForPathname,
+} from '@/app-shell/bootstrap/authenticatedRoutePreloadController';
 import { mountFirebaseConfigWarning } from '@/services/firebase-runtime/firebaseStartupDiagnostics';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 
@@ -52,12 +56,17 @@ const isAppShellLoadFailure = (error: unknown): boolean => {
 };
 
 const renderBootstrapLoadingScreen = () => {
+  const pathname = window.location.pathname;
   const loadingScreenDecision = resolvePreMountLoadingScreenDecision({
-    pathname: window.location.pathname,
+    pathname,
   });
+  const shouldPreloadAuthenticatedShell =
+    loadingScreenDecision.renderBootstrapRouteChrome ||
+    shouldPreloadAuthenticatedShellForPathname(pathname);
 
-  if (loadingScreenDecision.renderBootstrapRouteChrome) {
-    void preloadAuthenticatedRouteChunk({ pathname: window.location.pathname });
+  if (shouldPreloadAuthenticatedShell) {
+    void preloadAuthenticatedShellChunk();
+    void preloadAuthenticatedRouteChunk({ pathname });
   }
 
   if (loadingScreenDecision.renderBootstrapRouteChrome) {

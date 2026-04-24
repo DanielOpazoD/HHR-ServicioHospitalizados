@@ -89,10 +89,14 @@ export const useAuthenticatedAppRuntime = ({
   auth,
   dateNav,
 }: UseAuthenticatedAppRuntimeParams): AuthenticatedAppRuntime => {
+  const ui = useAppState();
+  const shouldRunCensusRuntimeExtras = ui.currentModule === 'CENSUS';
   const dailyRecordHook = useDailyRecord(dateNav.currentDateString, false, auth.remoteSyncStatus);
   const { record } = dailyRecordHook;
 
-  const { data } = useExistingDaysQuery(dateNav.selectedYear, dateNav.selectedMonth);
+  const { data } = useExistingDaysQuery(dateNav.selectedYear, dateNav.selectedMonth, {
+    enabled: shouldRunCensusRuntimeExtras,
+  });
   const existingDaysInMonth = React.useMemo(() => resolveExistingDaysInMonth(data), [data]);
 
   const nurseSignature = React.useMemo(() => resolveShiftNurseSignature(record, 'night'), [record]);
@@ -106,10 +110,10 @@ export const useAuthenticatedAppRuntime = ({
     selectedDay: dateNav.selectedDay,
     user: auth.currentUser,
     role: auth.role,
+    enabled: shouldRunCensusRuntimeExtras,
   });
 
   const fileOps = useFileOperations(record, dailyRecordHook.refresh);
-  const ui = useAppState();
 
   return React.useMemo(
     () =>

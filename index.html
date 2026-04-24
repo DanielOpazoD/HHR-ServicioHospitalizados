@@ -36,16 +36,6 @@
                 repeat: 'no-repeat, no-repeat, no-repeat',
                 size: '100% 56px, 100% 44px, 100% calc(100vh - 100px)'
             };
-            var appendModulePreload = function (href) {
-                if (!document.head || document.head.querySelector('link[rel="modulepreload"][href="' + href + '"]')) {
-                    return;
-                }
-
-                var link = document.createElement('link');
-                link.rel = 'modulepreload';
-                link.href = href;
-                document.head.appendChild(link);
-            };
             var normalizedPath = window.location.pathname.replace(/^\/+|\/+$/g, '');
             var isLoginSurfacePath = normalizedPath === '' || normalizedPath === 'login';
 
@@ -91,11 +81,6 @@
                 normalizedPath === 'login' ||
                 (isLoginSurfacePath && !hasAnySessionHint) ||
                 !hasAnySessionHint;
-
-            appendModulePreload('/src/App.tsx');
-            if (!shouldUseLoginSurface) {
-                appendModulePreload('/src/features/census/public-components.ts');
-            }
 
             document.documentElement.dataset.prebootSurface = shouldUseLoginSurface ? 'login' : 'app';
             applyPrebootSurfaceBackground(

@@ -80,6 +80,7 @@ describe('useCensusEmail', () => {
     expect(useCensusEmailRecipientLists).toHaveBeenCalledWith(
       expect.objectContaining({
         canManageGlobalRecipientLists: true,
+        bootstrapEnabled: true,
         enabled: false,
         user: defaultParams.user,
       })
@@ -91,6 +92,7 @@ describe('useCensusEmail', () => {
 
     expect(useCensusEmailRecipientLists).toHaveBeenLastCalledWith(
       expect.objectContaining({
+        bootstrapEnabled: true,
         enabled: false,
       })
     );
@@ -102,10 +104,30 @@ describe('useCensusEmail', () => {
     await waitFor(() => {
       expect(useCensusEmailRecipientLists).toHaveBeenLastCalledWith(
         expect.objectContaining({
+          bootstrapEnabled: true,
           enabled: true,
         })
       );
     });
+  });
+
+  it('keeps email config and recipient bootstrap disabled when the hook is disabled', async () => {
+    const { result } = renderHook(() => useCensusEmail({ ...defaultParams, enabled: false }));
+
+    act(() => {
+      result.current.setShowEmailConfig(true);
+    });
+
+    await waitFor(() => {
+      expect(result.current.showEmailConfig).toBe(false);
+    });
+
+    expect(useCensusEmailRecipientLists).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        bootstrapEnabled: false,
+        enabled: false,
+      })
+    );
   });
 
   it('updates message when nurseSignature changes until manual edit occurs', async () => {
@@ -173,6 +195,7 @@ describe('useCensusEmail', () => {
     expect(useCensusEmailRecipientLists).toHaveBeenLastCalledWith(
       expect.objectContaining({
         canManageGlobalRecipientLists: true,
+        bootstrapEnabled: true,
         enabled: false,
         user: { email: 'nurse@test.com', role: 'nurse_hospital' },
       })
@@ -193,6 +216,7 @@ describe('useCensusEmail', () => {
     expect(useCensusEmailRecipientLists).toHaveBeenLastCalledWith(
       expect.objectContaining({
         canManageGlobalRecipientLists: false,
+        bootstrapEnabled: true,
         enabled: false,
         user: { email: 'specialist@test.com', role: 'doctor_specialist' },
       })

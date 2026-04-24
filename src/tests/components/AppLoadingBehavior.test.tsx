@@ -314,7 +314,8 @@ describe('App loading behavior', () => {
     expect(screen.queryByTestId('authenticated-shell')).not.toBeInTheDocument();
   });
 
-  it('renders the authenticated shell directly once bootstrap is authenticated', () => {
+  it('renders the authenticated shell once bootstrap is authenticated', async () => {
+    vi.useRealTimers();
     Object.defineProperty(window, 'location', {
       configurable: true,
       value: {
@@ -345,7 +346,7 @@ describe('App loading behavior', () => {
 
     render(<App />);
 
-    expect(screen.getByTestId('authenticated-shell')).toBeInTheDocument();
+    expect(await screen.findByTestId('authenticated-shell')).toBeInTheDocument();
     expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
   });
 

@@ -9,7 +9,7 @@ import { setFirestoreSyncState } from '@/services/repositories/repositoryConfig'
 import { defaultFirebaseConfigRuntimeAdapter } from '@/services/firebase-runtime/firebaseConfigRuntimeAdapter';
 import { hasRecentAuthenticatedSessionHint } from '@/services/auth/authStorageHints';
 import { createScopedLogger } from '@/services/utils/loggerScope';
-import { useAuth, type AuthContextType } from '@/context';
+import { useAuth, type AuthContextType } from '@/context/AuthContext';
 
 export interface AppAuthenticatedDateNavigation extends UseDateNavigationReturn {
   isSignatureMode: boolean;

@@ -11,7 +11,7 @@ vi.mock('@/services/storage/indexeddb/indexedDbMaintenanceService', () => ({
   resetLocalAppStorage: vi.fn(),
 }));
 
-vi.mock('@/context', () => ({
+vi.mock('@/context/UIContext', () => ({
   useConfirmDialog: () => ({
     confirm: mockConfirm,
   }),

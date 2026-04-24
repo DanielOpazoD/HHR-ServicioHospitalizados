@@ -1,7 +1,7 @@
 import React from 'react';
 import { AlertCircle, Loader2, RotateCcw } from 'lucide-react';
 
-import { useConfirmDialog } from '@/context';
+import { useConfirmDialog } from '@/context/UIContext';
 import { AUTH_UI_COPY } from '@/services/auth/authUiCopy';
 import { resetLocalAppStorage } from '@/services/storage/indexeddb/indexedDbMaintenanceService';
 

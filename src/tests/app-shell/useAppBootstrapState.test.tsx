@@ -22,7 +22,7 @@ const {
   mockGetOptionalDb: vi.fn(() => null),
 }));
 
-vi.mock('@/context', () => ({
+vi.mock('@/context/AuthContext', () => ({
   useAuth: () => mockUseAuth(),
 }));
 

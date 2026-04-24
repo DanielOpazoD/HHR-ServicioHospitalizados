@@ -9,6 +9,7 @@ const RECIPIENTS_STORAGE_KEY = 'censusEmailRecipients';
 interface UseCensusEmailRecipientBootstrapEffectParams {
   canManageGlobalRecipientLists: boolean;
   browserRuntime: CensusEmailBrowserRuntime;
+  bootstrapEnabled: boolean;
   enabled: boolean;
   user: { uid?: string; email?: string | null } | null;
   applyRecipientRuntimeState: (nextState: RecipientRuntimeState) => void;
@@ -17,11 +18,16 @@ interface UseCensusEmailRecipientBootstrapEffectParams {
 export const useCensusEmailRecipientBootstrapEffect = ({
   canManageGlobalRecipientLists,
   browserRuntime,
+  bootstrapEnabled,
   enabled,
   user,
   applyRecipientRuntimeState,
 }: UseCensusEmailRecipientBootstrapEffectParams): void => {
   useEffect(() => {
+    if (!bootstrapEnabled) {
+      return;
+    }
+
     let isActive = true;
 
     const loadRecipients = async () => {
@@ -49,5 +55,12 @@ export const useCensusEmailRecipientBootstrapEffect = ({
     return () => {
       isActive = false;
     };
-  }, [browserRuntime, canManageGlobalRecipientLists, enabled, applyRecipientRuntimeState, user]);
+  }, [
+    bootstrapEnabled,
+    browserRuntime,
+    canManageGlobalRecipientLists,
+    enabled,
+    applyRecipientRuntimeState,
+    user,
+  ]);
 };

@@ -61,4 +61,20 @@ describe('useExistingDaysQuery', () => {
 
     expect(mockFetchExistingDaysInMonth).toHaveBeenCalledTimes(1);
   });
+
+  it('does not query or subscribe to store changes when disabled', () => {
+    const { wrapper } = createQueryClientTestWrapper();
+    const { result } = renderHook(() => useExistingDaysQuery(2026, 3, { enabled: false }), {
+      wrapper,
+    });
+
+    window.dispatchEvent(
+      new CustomEvent(DAILY_RECORD_STORE_CHANGED_EVENT, {
+        detail: { operation: 'save', dates: ['2026-04-14'] },
+      })
+    );
+
+    expect(result.current.data).toBeUndefined();
+    expect(mockFetchExistingDaysInMonth).not.toHaveBeenCalled();
+  });
 });

@@ -23,6 +23,7 @@ import { useCensusEmailRecipientPersistenceEffect } from '@/hooks/useCensusEmail
 interface UseCensusEmailRecipientListsParams {
   canManageGlobalRecipientLists: boolean;
   browserRuntime: CensusEmailBrowserRuntime;
+  bootstrapEnabled: boolean;
   enabled: boolean;
   user: { uid?: string; email?: string | null } | null;
 }
@@ -46,6 +47,7 @@ export { resolveStoredRecipientSelection } from '@/hooks/controllers/censusEmail
 export const useCensusEmailRecipientLists = ({
   canManageGlobalRecipientLists,
   browserRuntime,
+  bootstrapEnabled,
   enabled,
   user,
 }: UseCensusEmailRecipientListsParams): UseCensusEmailRecipientListsReturn => {
@@ -129,6 +131,7 @@ export const useCensusEmailRecipientLists = ({
   useCensusEmailRecipientBootstrapEffect({
     canManageGlobalRecipientLists,
     browserRuntime,
+    bootstrapEnabled,
     enabled,
     user,
     applyRecipientRuntimeState,

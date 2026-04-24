@@ -14,17 +14,26 @@ import {
   isDailyRecordStoreChangeRelevantToMonth,
 } from '@/services/storage/indexeddb/indexedDbRecordEvents';
 
+interface UseExistingDaysQueryOptions {
+  enabled?: boolean;
+}
+
 /**
  * Hook to calculate which days in the selected month have patient data.
  * @param selectedYear - The year selected in navigation
  * @param selectedMonth - The month selected in navigation (0-indexed)
  */
-export const useExistingDaysQuery = (selectedYear: number, selectedMonth: number) => {
+export const useExistingDaysQuery = (
+  selectedYear: number,
+  selectedMonth: number,
+  options: UseExistingDaysQueryOptions = {}
+) => {
   const queryClient = useQueryClient();
   const queryKey = queryKeys.existingDays.byMonth(selectedYear, selectedMonth);
+  const enabled = options.enabled ?? true;
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
+    if (!enabled || typeof window === 'undefined') {
       return;
     }
 
@@ -39,7 +48,7 @@ export const useExistingDaysQuery = (selectedYear: number, selectedMonth: number
 
     window.addEventListener(DAILY_RECORD_STORE_CHANGED_EVENT, handleStoreChanged);
     return () => window.removeEventListener(DAILY_RECORD_STORE_CHANGED_EVENT, handleStoreChanged);
-  }, [queryClient, queryKey, selectedYear, selectedMonth]);
+  }, [enabled, queryClient, queryKey, selectedYear, selectedMonth]);
 
   return useQuery({
     queryKey,
@@ -47,6 +56,7 @@ export const useExistingDaysQuery = (selectedYear: number, selectedMonth: number
       // selectedMonth is 0-indexed in JS (0=Jan), but our records use 1-indexed strings (01=Jan)
       return await fetchExistingDaysInMonth(selectedYear, selectedMonth + 1);
     },
+    enabled,
     staleTime: 1000 * 60 * 5,
   });
 };

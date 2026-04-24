@@ -16,9 +16,15 @@ describe('Startup preboot contract', () => {
     expect(html).toContain('document.documentElement.dataset.prebootSurface =');
     expect(html).toContain('APP_SURFACE_BACKGROUND');
     expect(html).toContain("size: '100% 56px, 100% 44px, 100% calc(100vh - 100px)'");
-    expect(html).toContain("appendModulePreload('/src/App.tsx');");
-    expect(html).toContain("appendModulePreload('/src/features/census/public-components.ts');");
     expect(html).toContain('html[data-preboot-surface="app"] body');
+  });
+
+  it('does not preload development source modules from production index.html', () => {
+    const html = readIndexHtml();
+
+    expect(html).not.toContain("appendModulePreload('/src/App.tsx');");
+    expect(html).not.toContain("appendModulePreload('/src/features/census/public-components.ts');");
+    expect(html).not.toContain('rel="modulepreload"][href="/src/');
   });
 
   it('does not reintroduce a handcrafted census bar or forbidden startup copy in index.html', () => {
