@@ -9,6 +9,7 @@ interface BuildAppContentOverlayStateOptions {
 
 export interface AppContentOverlayState {
   shouldRenderCensusEmailConfigModal: boolean;
+  shouldRenderPatientSearchModal: boolean;
   censusEmailModalProps: {
     isOpen: true;
     onClose: () => void;
@@ -60,6 +61,7 @@ export const buildAppContentOverlayState = ({
 
   return {
     shouldRenderCensusEmailConfigModal: censusEmail.showEmailConfig,
+    shouldRenderPatientSearchModal: ui.patientSearchModal.isOpen,
     censusEmailModalProps: {
       isOpen: true,
       onClose: () => censusEmail.setShowEmailConfig(false),

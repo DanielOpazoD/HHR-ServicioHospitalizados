@@ -55,9 +55,11 @@ export const AppContentOverlays: React.FC<AppContentOverlaysProps> = ({
         <TestAgent {...overlayState.testAgentProps} />
       </React.Suspense>
 
-      <React.Suspense fallback={null}>
-        <GlobalPatientSearchModal {...overlayState.patientSearchModalProps} />
-      </React.Suspense>
+      {overlayState.shouldRenderPatientSearchModal && (
+        <React.Suspense fallback={null}>
+          <GlobalPatientSearchModal {...overlayState.patientSearchModalProps} />
+        </React.Suspense>
+      )}
 
       <SyncWatcher />
       <PinLockScreen />

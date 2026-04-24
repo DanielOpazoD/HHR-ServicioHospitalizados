@@ -111,11 +111,27 @@ describe('AppContentOverlays', () => {
 
     expect(screen.getByTestId('reminder-modal')).toBeInTheDocument();
     expect(screen.getByTestId('test-agent')).toBeInTheDocument();
-    expect(screen.getByTestId('patient-search-modal')).toBeInTheDocument();
+    expect(screen.queryByTestId('patient-search-modal')).not.toBeInTheDocument();
     expect(screen.getByTestId('sync-watcher')).toBeInTheDocument();
     expect(screen.getByTestId('pin-lock')).toBeInTheDocument();
     expect(screen.getByTestId('storage-badge')).toBeInTheDocument();
     expect(screen.getByTestId('email-modal')).toBeInTheDocument();
+  });
+
+  it('mounts patient search only when the modal is open', () => {
+    render(
+      <AppContentOverlays
+        ui={
+          {
+            ...ui,
+            patientSearchModal: { ...ui.patientSearchModal, isOpen: true },
+          } as never
+        }
+        runtime={runtime as never}
+      />
+    );
+
+    expect(screen.getByTestId('patient-search-modal')).toBeInTheDocument();
   });
 
   it('hides the census email config modal when the flag is disabled', () => {
