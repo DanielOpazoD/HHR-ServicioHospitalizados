@@ -10,7 +10,7 @@ import {
   type LoginBackgroundMode,
   persistLoginBackgroundMode,
   resolveInitialLoginBackgroundMode,
-} from '@/features/auth/components/loginBackgroundModeController';
+} from '@/shared/ui/loginBackgroundModeController';
 const POPUP_RECOVERY_GRACE_MS = 1800;
 const POPUP_RECOVERY_POLL_MS = 100;
 const loginPageLogger = createScopedLogger('LoginPage');
@@ -57,7 +57,9 @@ export const useLoginPageController = (onLoginSuccess: () => void): LoginPageCon
     setError(null);
     setErrorCode(null);
     setIsGoogleLoading(true);
-    void preloadDefaultPostLoginRoute();
+    void preloadDefaultPostLoginRoute().catch(err => {
+      loginPageLogger.warn('Default post-login preload failed', err);
+    });
 
     try {
       const outcome = await executeGoogleSignIn();

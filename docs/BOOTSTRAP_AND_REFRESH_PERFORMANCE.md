@@ -11,7 +11,7 @@
 > - F5 autenticado) desde **este repo** (versión de referencia) a una **versión
 >   previa menos optimizada** del mismo proyecto.
 >
-> **Repo de referencia**: `/Users/daniel/Documents/HHR 2026 tracker versión MacBookAir`
+> **Repo de referencia**: este checkout del proyecto HHR tracker
 > — todos los paths relativos de este documento son relativos a ese root.
 >
 > **Este documento es self-contained**: incluye el código fuente completo de
@@ -43,7 +43,7 @@
 
 | Campo              | Valor                                                                                     |
 | ------------------ | ----------------------------------------------------------------------------------------- |
-| Repo de referencia | `/Users/daniel/Documents/HHR 2026 tracker versión MacBookAir`                             |
+| Repo de referencia | checkout actual del proyecto HHR tracker                                                  |
 | Branch             | `main`                                                                                    |
 | Commits relevantes | `18d1717b`, `e13b947b`, `c2fdd352`, `3f695379`, `cc09869c`                                |
 | Stack              | React 19 + Vite 6 + Firebase 12 + TanStack Query 5 + Tailwind + Dexie (IndexedDB)         |
@@ -1665,7 +1665,7 @@ import { Cross, Loader2 } from 'lucide-react';
 import {
   resolveInitialLoginBackgroundMode,
   resolveLoginBackgroundImage,
-} from '@/features/auth/components/loginBackgroundModeController';
+} from '@/shared/ui/loginBackgroundModeController';
 
 export type InitialLoadingScreenVariant = 'default' | 'login-shell';
 interface InitialLoadingScreenVariantOptions {
@@ -2947,9 +2947,9 @@ se necesita más contexto.
 # Parte 12: Caso de estudio — por qué esta versión (base) se siente más lenta que "copia 14"
 
 > **Contexto**: el desarrollador reporta que la versión **base**
-> (`/Users/daniel/Documents/HHR 2026 tracker versión MacBookAir`, puerto 3001)
+> (`<checkout-hhr-tracker>`, puerto 3001)
 > **se siente más lenta al F5 y al login** que la versión
-> **copia 14** (`/Users/daniel/Documents/HHR 2026 tracker versión MacBookAir copia 14`,
+> **copia 14** (`<checkout-hhr-tracker-copia-14>`,
 > puerto 5173). Paradójicamente, **base tiene más optimizaciones implementadas**
 > (las 5 documentadas en las Partes 4 y 5). Esta sección explica la paradoja y
 > qué hacer al respecto.

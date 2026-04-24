@@ -4,6 +4,16 @@
 // intentionally live in ./public-components so this barrel can be imported
 // statically without pulling the component tree into the authenticated-shell
 // chunk. Load those components via a dynamic import of './public-components'.
+type LoadCensusChunk = () => Promise<unknown>;
+
+export const preloadCensusComponentsChunk = (
+  loadCensusComponents: LoadCensusChunk = () => import('./public-components')
+): Promise<unknown> => loadCensusComponents();
+
+export const preloadCensusRegisterContentChunk = (
+  loadCensusRegisterContent: LoadCensusChunk = () => import('./components/CensusRegisterContent')
+): Promise<unknown> => loadCensusRegisterContent();
+
 export { useGlobalPatientSearch } from './components/global-search/useGlobalPatientSearch';
 export type { CensusAccessProfile } from './types/censusAccessProfile';
 export { isSpecialistCensusAccessProfile } from './types/censusAccessProfile';

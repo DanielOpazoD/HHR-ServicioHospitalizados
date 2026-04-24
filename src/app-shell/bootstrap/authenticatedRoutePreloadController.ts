@@ -1,5 +1,6 @@
 import { resolveModuleFromPathname } from '@/hooks/controllers/appStateNavigationController';
 import type { ModuleType } from '@/constants/navigationConfig';
+import { preloadCensusComponentsChunk, preloadCensusRegisterContentChunk } from '@/features/census';
 
 type LoadRouteComponents = () => Promise<unknown>;
 
@@ -16,11 +17,10 @@ export interface AuthenticatedShellPreloadOptions {
 const defaultLoadAuthenticatedShell: LoadRouteComponents = () =>
   import('@/app-shell/runtime/AuthenticatedAppShell');
 
-const defaultLoadCensusComponents: LoadRouteComponents = () =>
-  import('@/features/census/public-components');
+const defaultLoadCensusComponents: LoadRouteComponents = () => preloadCensusComponentsChunk();
 
 const defaultLoadCensusRegisterContent: LoadRouteComponents = () =>
-  import('@/features/census/components/CensusRegisterContent');
+  preloadCensusRegisterContentChunk();
 
 const normalizePathname = (pathname: string | undefined): string =>
   (pathname ?? '/').replace(/^\/+|\/+$/g, '');

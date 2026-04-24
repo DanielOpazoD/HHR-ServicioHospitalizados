@@ -13,6 +13,7 @@ const mockIsPopupRecoverableAuthError = vi.fn();
 const mockResolveAuthErrorCode = vi.fn();
 const mockIsAuthBootstrapPending = vi.fn();
 const mockGetCurrentAuthSessionState = vi.fn();
+const mockPreloadDefaultPostLoginRoute = vi.fn();
 
 vi.mock('@/application/auth/authSessionUseCases', () => ({
   executeGoogleSignIn: (...args: unknown[]) => mockExecuteGoogleSignIn(...args),
@@ -31,6 +32,10 @@ vi.mock('@/services/auth/authSession', () => ({
   getCurrentAuthSessionState: (...args: unknown[]) => mockGetCurrentAuthSessionState(...args),
 }));
 
+vi.mock('@/app-shell/bootstrap/authenticatedRoutePreloadController', () => ({
+  preloadDefaultPostLoginRoute: (...args: unknown[]) => mockPreloadDefaultPostLoginRoute(...args),
+}));
+
 import { useLoginPageController } from '@/features/auth/components/useLoginPageController';
 
 describe('useLoginPageController', () => {
@@ -45,6 +50,7 @@ describe('useLoginPageController', () => {
       status: 'unauthenticated',
       user: null,
     });
+    mockPreloadDefaultPostLoginRoute.mockResolvedValue(undefined);
     mockExecuteGoogleSignIn.mockResolvedValue(
       createApplicationSuccess<AuthSessionState>({
         status: 'authorized',

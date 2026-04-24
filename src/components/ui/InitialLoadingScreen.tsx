@@ -3,7 +3,7 @@ import { Cross, Loader2 } from 'lucide-react';
 import {
   resolveInitialLoginBackgroundMode,
   resolveLoginBackgroundImage,
-} from '@/features/auth/components/loginBackgroundModeController';
+} from '@/shared/ui/loginBackgroundModeController';
 
 export type InitialLoadingScreenVariant = 'default' | 'login-shell';
 interface InitialLoadingScreenVariantOptions {

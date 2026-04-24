@@ -26,7 +26,7 @@ export const persistLoginBackgroundMode = (mode: LoginBackgroundMode): void => {
   try {
     window.localStorage.setItem(LOGIN_BACKGROUND_MODE_STORAGE_KEY, mode);
   } catch {
-    // Ignore storage failures; the visual toggle should still work in-memory.
+    // The background toggle is decorative; storage failures should not block login.
   }
 };
 
