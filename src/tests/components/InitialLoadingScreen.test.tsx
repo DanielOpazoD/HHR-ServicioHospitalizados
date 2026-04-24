@@ -1,5 +1,5 @@
 import React from 'react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import {
   InitialLoadingScreen,
@@ -9,6 +9,12 @@ import {
 
 describe('InitialLoadingScreen', () => {
   beforeEach(() => {
+    vi.useFakeTimers();
+    window.localStorage.clear();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
     window.localStorage.clear();
   });
 
@@ -36,6 +42,7 @@ describe('InitialLoadingScreen', () => {
   });
 
   it('renders the login shell without a startup spinner for the root route', () => {
+    vi.setSystemTime(new Date('2026-04-24T10:00:00'));
     window.localStorage.setItem('hhr_login_background_mode', 'day');
 
     const { container } = render(<InitialLoadingScreen pathname="/" />);
@@ -50,6 +57,7 @@ describe('InitialLoadingScreen', () => {
   });
 
   it('preserves the night login background during startup refresh', () => {
+    vi.setSystemTime(new Date('2026-04-24T23:00:00'));
     window.localStorage.setItem('hhr_login_background_mode', 'night');
 
     render(<InitialLoadingScreen pathname="/" />);
@@ -68,6 +76,15 @@ describe('InitialLoadingScreen', () => {
     render(<InitialLoadingScreen pathname="/whatsapp" />);
 
     expect(screen.getByTestId('default-loading-screen')).toBeInTheDocument();
+  });
+
+  it('can force the login shell on module routes while auth is unresolved', () => {
+    vi.setSystemTime(new Date('2026-04-24T23:00:00'));
+
+    render(<InitialLoadingScreen pathname="/census" preferLoginShell />);
+
+    expect(screen.getByTestId('login-loading-shell')).toBeInTheDocument();
+    expect(screen.queryByTestId('default-loading-screen')).not.toBeInTheDocument();
   });
 
   it('renders the default loading screen on the root route when login shell is suppressed', () => {

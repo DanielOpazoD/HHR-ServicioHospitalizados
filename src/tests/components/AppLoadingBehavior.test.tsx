@@ -89,7 +89,7 @@ describe('App loading behavior', () => {
     vi.useRealTimers();
   });
 
-  it('keeps the root route visually silent while bootstrap is loading', () => {
+  it('keeps the root route in the login shell while unauthenticated bootstrap is loading', () => {
     mockUseAppBootstrapState.mockReturnValue({
       status: 'loading',
       phase: 'bootstrapping',
@@ -98,11 +98,11 @@ describe('App loading behavior', () => {
 
     render(<App />);
 
-    expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
+    expect(screen.getByTestId('login-loading-shell')).toBeInTheDocument();
     expect(screen.queryByTestId('default-loading-screen')).not.toBeInTheDocument();
   });
 
-  it('avoids the login loading shell while a same-tab authenticated refresh is still bootstrapping', () => {
+  it('does not show authenticated chrome on root while a stale same-tab hint is rehydrating', () => {
     window.sessionStorage.setItem('hhr_logged_this_session', 'true');
 
     mockUseAppBootstrapState.mockReturnValue({
@@ -113,13 +113,13 @@ describe('App loading behavior', () => {
 
     render(<App />);
 
-    expect(screen.getByTestId('bootstrap-route-chrome')).toBeInTheDocument();
+    expect(screen.getByTestId('login-loading-shell')).toBeInTheDocument();
+    expect(screen.queryByTestId('bootstrap-route-chrome')).not.toBeInTheDocument();
     expect(screen.queryByTestId('silent-bootstrap-shell')).not.toBeInTheDocument();
     expect(screen.queryByTestId('default-loading-screen')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
   });
 
-  it('keeps login hidden during a same tab authenticated refresh while bootstrap remains pending', () => {
+  it('does not show authenticated chrome during a stale same-tab census refresh without Firebase evidence', () => {
     window.sessionStorage.setItem('hhr_logged_this_session', 'true');
     Object.defineProperty(window, 'location', {
       configurable: true,
@@ -152,9 +152,9 @@ describe('App loading behavior', () => {
 
     render(<App />);
 
-    expect(screen.getByTestId('bootstrap-route-chrome')).toBeInTheDocument();
+    expect(screen.getByTestId('login-loading-shell')).toBeInTheDocument();
+    expect(screen.queryByTestId('bootstrap-route-chrome')).not.toBeInTheDocument();
     expect(screen.queryByTestId('default-loading-screen')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
     expect(screen.queryByTestId('login-page')).not.toBeInTheDocument();
   });
 
@@ -176,7 +176,7 @@ describe('App loading behavior', () => {
     expect(screen.queryByTestId('default-loading-screen')).not.toBeInTheDocument();
   });
 
-  it('avoids the login loading shell while an authenticated session is still rehydrating on the root route', () => {
+  it('does not show authenticated chrome while root auth state is still authenticating', () => {
     mockUseAppBootstrapState.mockReturnValue({
       status: 'loading',
       phase: 'rehydrating',
@@ -190,9 +190,9 @@ describe('App loading behavior', () => {
 
     render(<App />);
 
-    expect(screen.getByTestId('bootstrap-route-chrome')).toBeInTheDocument();
+    expect(screen.getByTestId('login-loading-shell')).toBeInTheDocument();
+    expect(screen.queryByTestId('bootstrap-route-chrome')).not.toBeInTheDocument();
     expect(screen.queryByTestId('default-loading-screen')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
   });
 
   it('keeps root-route bootstrapping visually silent once auth is already known', () => {
@@ -235,7 +235,7 @@ describe('App loading behavior', () => {
     expect(screen.queryByTestId('login-page')).not.toBeInTheDocument();
   });
 
-  it('stays visually silent on the census route while a same-tab refresh is still loading', () => {
+  it('keeps the census route in the login shell while a same-tab hint is still unauthenticated', () => {
     window.sessionStorage.setItem('hhr_logged_this_session', 'true');
     Object.defineProperty(window, 'location', {
       configurable: true,
@@ -255,9 +255,9 @@ describe('App loading behavior', () => {
 
     render(<App />);
 
-    expect(screen.getByTestId('bootstrap-route-chrome')).toBeInTheDocument();
+    expect(screen.getByTestId('login-loading-shell')).toBeInTheDocument();
+    expect(screen.queryByTestId('bootstrap-route-chrome')).not.toBeInTheDocument();
     expect(screen.queryByTestId('default-loading-screen')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
     expect(screen.queryByTestId('authenticated-shell')).not.toBeInTheDocument();
     expect(screen.queryByTestId('login-page')).not.toBeInTheDocument();
   });
