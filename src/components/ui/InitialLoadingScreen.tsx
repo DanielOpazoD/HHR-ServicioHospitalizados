@@ -1,5 +1,5 @@
 import React from 'react';
-import { Cross, Loader2, Orbit } from 'lucide-react';
+import { Cross, Loader2 } from 'lucide-react';
 
 export type InitialLoadingScreenVariant = 'default' | 'login-shell';
 interface InitialLoadingScreenVariantOptions {
@@ -24,15 +24,11 @@ export const resolveInitialLoadingScreenVariant = (
   return 'default';
 };
 
-export const shouldRenderInitialLoadingScreen = (pathname: string | undefined): boolean => {
-  const normalizedPath = normalizePathname(pathname ?? '/');
-
-  // Census intentionally skips the pre-shell loader. The first visible loading
-  // state must be the in-shell census loader that already preserves the chrome
-  // titles, avoiding a duplicate full-screen transition during F5 refreshes.
-  // Treat any future attempt to re-enable a full-screen startup loader for
-  // `/census` as a regression unless the shell loading model is redesigned.
-  return normalizedPath !== 'census';
+export const shouldRenderInitialLoadingScreen = (_pathname: string | undefined): boolean => {
+  // No route should opt into the legacy full-screen startup loader by default.
+  // Authenticated module refreshes keep route chrome and render only internal
+  // lazy-view loaders; login keeps its background shell without a spinner.
+  return false;
 };
 
 const resolveCurrentPathname = () =>
@@ -68,15 +64,13 @@ const LoginShellLoadingScreen = () => (
       <div className="w-full max-w-sm rounded-[2rem] border border-white/16 bg-slate-950/32 p-8 shadow-[0_30px_80px_rgba(2,6,23,0.42)] backdrop-blur-xl">
         <div className="flex flex-col items-center gap-4 text-center text-white">
           <div className="relative flex h-20 w-20 items-center justify-center rounded-[2rem] border border-white/15 bg-white/10 shadow-lg shadow-slate-950/30">
-            <Orbit className="absolute h-14 w-14 animate-spin text-sky-200/70" strokeWidth={1.6} />
             <Cross className="h-8 w-8 text-white" strokeWidth={2.2} />
           </div>
           <div className="space-y-1.5">
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-100/70">
               Hospital Hanga Roa
             </p>
-            <p className="text-sm font-medium text-white/92">Cargando...</p>
-            <p className="text-xs text-white/58">Preparando acceso seguro</p>
+            <p className="text-sm font-medium text-white/92">Acceso seguro</p>
           </div>
         </div>
       </div>

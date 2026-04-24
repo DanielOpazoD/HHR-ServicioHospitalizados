@@ -170,7 +170,9 @@ Usuarios con "passport" pueden trabajar sin conexión a internet.
   - el primer estado de carga visible debe ser el loader interno del shell de censo;
   - ese loader es el que conserva barra superior, títulos y contexto visual del módulo.
 - rutas distintas de login/censo:
-  - pueden usar un loader inicial genérico mientras el runtime termina de materializarse.
+  - no deben usar un loader inicial genérico full-screen;
+  - deben mantener el chrome real del módulo origen si la ruta corresponde a un módulo autenticado;
+  - el contenido inferior puede usar loaders internos del módulo o del `Suspense` local.
 
 ### Fases visibles del bootstrap de app
 
@@ -179,7 +181,8 @@ La fase visible esperada es:
 
 - `bootstrapping`:
   - arranque pre-auth sin señales suficientes de sesión recuperable;
-  - puede usar shell visual de login en `"/"` y `"/login"`.
+  - puede mantenerse visualmente silencioso en `"/"` y `"/login"`;
+  - si la ruta ya corresponde a un módulo autenticado, debe conservar el chrome de ese módulo.
 - `rehydrating`:
   - existe sesión/reconexión/auth runtime en materialización;
   - no debe pintar login ni fondo de login en refreshes autenticados.

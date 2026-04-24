@@ -288,6 +288,32 @@ describe('App loading behavior', () => {
     expect(screen.queryByTestId('authenticated-shell')).not.toBeInTheDocument();
   });
 
+  it('keeps the origin route chrome on authenticated module refreshes during bootstrapping', () => {
+    window.sessionStorage.setItem('hhr_logged_this_session', 'true');
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: {
+        ...window.location,
+        pathname: '/medical-handoff',
+        search: '',
+      },
+      writable: true,
+    });
+
+    mockUseAppBootstrapState.mockReturnValue({
+      status: 'loading',
+      phase: 'bootstrapping',
+      auth: createAuth('authorized'),
+    });
+
+    render(<App />);
+
+    expect(screen.getByTestId('bootstrap-route-chrome')).toBeInTheDocument();
+    expect(screen.queryByTestId('default-loading-screen')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('login-loading-shell')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('authenticated-shell')).not.toBeInTheDocument();
+  });
+
   it('renders the authenticated shell directly once bootstrap is authenticated', () => {
     Object.defineProperty(window, 'location', {
       configurable: true,

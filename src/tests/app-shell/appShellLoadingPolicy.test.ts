@@ -124,6 +124,22 @@ describe('appShellLoadingPolicy', () => {
     ).toBe('bootstrap-route-chrome');
   });
 
+  it('keeps authenticated module routes on the route chrome while bootstrapping too', () => {
+    expect(
+      resolveRuntimeLoadingScreenMode({
+        pathname: '/nursing-handoff',
+        bootstrapState: createLoadingBootstrapState('bootstrapping'),
+      })
+    ).toBe('bootstrap-route-chrome');
+
+    expect(
+      resolveRuntimeLoadingScreenMode({
+        pathname: '/medical-handoff',
+        bootstrapState: createLoadingBootstrapState('bootstrapping'),
+      })
+    ).toBe('bootstrap-route-chrome');
+  });
+
   it('keeps authenticated root-route bootstrapping silent', () => {
     expect(
       resolveRuntimeLoadingScreenMode({

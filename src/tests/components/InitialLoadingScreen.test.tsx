@@ -24,14 +24,19 @@ describe('InitialLoadingScreen', () => {
     expect(shouldRenderInitialLoadingScreen('/census/')).toBe(false);
   });
 
-  it('still renders the initial loading screen for non-census routes', () => {
-    expect(shouldRenderInitialLoadingScreen('/whatsapp')).toBe(true);
+  it('does not render the initial loading screen for authenticated module routes', () => {
+    expect(shouldRenderInitialLoadingScreen('/nursing-handoff')).toBe(false);
+    expect(shouldRenderInitialLoadingScreen('/medical-handoff')).toBe(false);
+    expect(shouldRenderInitialLoadingScreen('/transfer-management')).toBe(false);
+    expect(shouldRenderInitialLoadingScreen('/whatsapp')).toBe(false);
   });
 
-  it('renders the login shell loading screen for the root route', () => {
-    render(<InitialLoadingScreen pathname="/" />);
+  it('renders the login shell without a startup spinner for the root route', () => {
+    const { container } = render(<InitialLoadingScreen pathname="/" />);
 
     expect(screen.getByTestId('login-loading-shell')).toBeInTheDocument();
+    expect(container.querySelector('.animate-spin')).toBeNull();
+    expect(screen.queryByTestId('initial-loading-spinner')).not.toBeInTheDocument();
   });
 
   it('renders the default loading screen for non-census routes', () => {

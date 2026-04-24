@@ -53,7 +53,12 @@ export const resolveRuntimeLoadingScreenMode = ({
   pathname: string | undefined;
   bootstrapState: Extract<AppBootstrapState, { status: 'loading' }>;
 }): AppShellLoadingScreenMode => {
-  if (resolveModuleFromPathname(pathname) !== null && bootstrapState.phase === 'rehydrating') {
+  const normalizedPath = (pathname ?? '/').replace(/^\/+|\/+$/g, '');
+  const routeModule = resolveModuleFromPathname(pathname);
+  if (
+    routeModule !== null &&
+    (bootstrapState.phase === 'rehydrating' || normalizedPath.length > 0)
+  ) {
     return 'bootstrap-route-chrome';
   }
 
