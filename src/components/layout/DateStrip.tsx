@@ -144,7 +144,7 @@ export const DateStrip: React.FC<DateStripProps> = ({
     >
       <div className="max-w-screen-2xl mx-auto px-3 py-1 w-full">
         <div className="flex items-center gap-3 w-full">
-          <div className="flex items-center gap-1 min-w-[178px]">
+          <div className="flex items-center gap-1 min-w-[82px]">
             {!isGuest && onToggleBookmarks && (
               <DateStripBookmarkToggle
                 onToggleBookmarks={onToggleBookmarks}
@@ -163,24 +163,11 @@ export const DateStrip: React.FC<DateStripProps> = ({
                 />
               )}
 
-              {currentModule === 'CENSUS' && (
-                <>
-                  <PdfButtons onExportPDF={onExportPDF} />
-                  {!isGuest && !specialistCensusAccess && (
-                    <SaveDropdown
-                      onExportExcel={onExportExcel}
-                      onBackupExcel={onBackupExcel}
-                      isArchived={isArchived}
-                      isBackingUp={isBackingUp}
-                      showFirebaseBackupOption={false}
-                    />
-                  )}
-                </>
-              )}
+              {currentModule === 'CENSUS' && <PdfButtons onExportPDF={onExportPDF} />}
             </div>
           </div>
 
-          <div className="min-w-[96px] flex items-center">
+          <div className="flex items-center gap-1 min-w-[132px]">
             {!isGuest && !specialistCensusAccess && (
               <EmailDropdown
                 onSendEmail={onSendEmail}
@@ -188,6 +175,15 @@ export const DateStrip: React.FC<DateStripProps> = ({
                 onConfigureEmail={onConfigureEmail}
                 emailStatus={emailStatus}
                 emailErrorMessage={emailErrorMessage}
+              />
+            )}
+            {currentModule === 'CENSUS' && !isGuest && !specialistCensusAccess && (
+              <SaveDropdown
+                onExportExcel={onExportExcel}
+                onBackupExcel={onBackupExcel}
+                isArchived={isArchived}
+                isBackingUp={isBackingUp}
+                showFirebaseBackupOption={false}
               />
             )}
           </div>

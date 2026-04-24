@@ -5,6 +5,7 @@ import { executeGoogleSignIn } from '@/application/auth/authSessionUseCases';
 import { isAuthBootstrapPending } from '@/services/auth/authBootstrapState';
 import { getCurrentAuthSessionState } from '@/services/auth/authSession';
 import { createScopedLogger } from '@/services/utils/loggerScope';
+import { preloadDefaultPostLoginRoute } from '@/app-shell/bootstrap/authenticatedRoutePreloadController';
 
 type BackgroundMode = 'day' | 'night';
 
@@ -59,6 +60,7 @@ export const useLoginPageController = (onLoginSuccess: () => void): LoginPageCon
     setError(null);
     setErrorCode(null);
     setIsGoogleLoading(true);
+    void preloadDefaultPostLoginRoute();
 
     try {
       const outcome = await executeGoogleSignIn();
