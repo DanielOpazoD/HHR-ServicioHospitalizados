@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { BEDS } from '@/constants/beds';
 import { formatDateToCL } from '@/utils/clinicalUtils';
 import type { NavbarProps } from '@/components/layout/Navbar';
+import type { AppRouterShellState } from '@/components/app-router/appRouterController';
 import { shouldShowBookmarkToggle } from '@/components/layout/app-content/appContentVisibilityController';
 import type { DateStripProps } from '@/components/layout/DateStrip';
 import type { UseUIStateReturn } from '@/hooks/useUIState';
@@ -100,6 +101,25 @@ export const buildNavbarProps = ({
   userEmail: runtime.auth.currentUser?.email,
   onLogout: runtime.auth.signOut,
   isFirebaseConnected: runtime.auth.isFirebaseConnected,
+});
+
+export const buildAppRouterShellState = ({
+  ui,
+  runtime,
+  onOpenCensusDate,
+}: {
+  ui: Pick<UseUIStateReturn, 'bedManagerModal'>;
+  runtime: Pick<AppContentRuntime, 'auth' | 'dateNav'>;
+  onOpenCensusDate?: (date: string) => void;
+}): AppRouterShellState => ({
+  selectedDay: runtime.dateNav.selectedDay,
+  selectedMonth: runtime.dateNav.selectedMonth,
+  currentDateString: runtime.dateNav.currentDateString,
+  role: runtime.auth.role,
+  isSignatureMode: runtime.dateNav.isSignatureMode,
+  showBedManagerModal: ui.bedManagerModal.isOpen,
+  onCloseBedManagerModal: ui.bedManagerModal.close,
+  onOpenCensusDate,
 });
 
 export const buildDateStripProps = ({

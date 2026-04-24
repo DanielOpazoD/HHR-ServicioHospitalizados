@@ -83,14 +83,16 @@ const createProps = (overrides: Partial<AppRouterProps> = {}): AppRouterProps =>
   ui: {
     currentModule: 'CENSUS',
   } as AppRouterProps['ui'],
-  selectedDay: 22,
-  selectedMonth: 3,
-  currentDateString: '2026-04-22',
-  role: 'admin' as AppRouterProps['role'],
-  isSignatureMode: false,
-  showBedManagerModal: false,
-  onCloseBedManagerModal: vi.fn(),
-  onOpenCensusDate: vi.fn(),
+  shell: {
+    selectedDay: 22,
+    selectedMonth: 3,
+    currentDateString: '2026-04-22',
+    role: 'admin',
+    isSignatureMode: false,
+    showBedManagerModal: false,
+    onCloseBedManagerModal: vi.fn(),
+    onOpenCensusDate: vi.fn(),
+  },
   ...overrides,
 });
 
@@ -193,7 +195,10 @@ describe('AppRouter', () => {
     render(
       <AppRouter
         {...createProps({
-          isSignatureMode: true,
+          shell: {
+            ...createProps().shell,
+            isSignatureMode: true,
+          },
         })}
       />
     );

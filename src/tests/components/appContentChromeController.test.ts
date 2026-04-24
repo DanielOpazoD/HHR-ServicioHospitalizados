@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildDateStripProps,
+  buildAppRouterShellState,
   buildNavbarProps,
   buildMedicalIndicationsPatientOptions,
   canUseCensusDateStripActions,
@@ -208,6 +209,43 @@ describe('appContentChromeController', () => {
       userEmail: 'admin@hospital.cl',
       onLogout: runtime.auth.signOut,
       isFirebaseConnected: true,
+    });
+  });
+
+  it('builds AppRouter shell state from the chrome runtime boundary', () => {
+    const closeBedManager = vi.fn();
+    const onOpenCensusDate = vi.fn();
+
+    const shellState = buildAppRouterShellState({
+      ui: {
+        bedManagerModal: {
+          isOpen: true,
+          close: closeBedManager,
+        },
+      } as never,
+      runtime: {
+        auth: {
+          role: 'doctor',
+        },
+        dateNav: {
+          selectedDay: 23,
+          selectedMonth: 3,
+          currentDateString: '2026-04-23',
+          isSignatureMode: false,
+        },
+      } as never,
+      onOpenCensusDate,
+    });
+
+    expect(shellState).toEqual({
+      selectedDay: 23,
+      selectedMonth: 3,
+      currentDateString: '2026-04-23',
+      role: 'doctor',
+      isSignatureMode: false,
+      showBedManagerModal: true,
+      onCloseBedManagerModal: closeBedManager,
+      onOpenCensusDate,
     });
   });
 

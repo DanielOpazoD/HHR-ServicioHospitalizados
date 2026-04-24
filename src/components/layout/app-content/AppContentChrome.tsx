@@ -12,6 +12,7 @@ import {
   shouldRenderDateStrip,
 } from '@/components/layout/app-content/appContentVisibilityController';
 import {
+  buildAppRouterShellState,
   buildDateStripProps,
   buildNavbarProps,
   buildMedicalIndicationsPatientOptions,
@@ -34,7 +35,7 @@ export const AppContentChrome: React.FC<AppContentChromeProps> = ({
   renderFeatureQuickActions,
 }) => {
   const { auth, dateNav } = runtime;
-  const { isSignatureMode, currentDateString } = dateNav;
+  const { isSignatureMode } = dateNav;
 
   const medicalIndicationsPatients = React.useMemo<MedicalIndicationsPatientOption[]>(() => {
     return buildMedicalIndicationsPatientOptions(runtime.record);
@@ -46,6 +47,7 @@ export const AppContentChrome: React.FC<AppContentChromeProps> = ({
     renderFeatureQuickActions,
   });
   const navbarProps = buildNavbarProps({ ui, runtime });
+  const appRouterShellState = buildAppRouterShellState({ ui, runtime, onOpenCensusDate });
 
   return (
     <>
@@ -70,17 +72,7 @@ export const AppContentChrome: React.FC<AppContentChromeProps> = ({
       )}
 
       <main className="max-w-screen-2xl mx-auto px-4 pt-4 pb-20 flex-1 w-full print:p-0 print:pb-0 print:max-w-none">
-        <AppRouter
-          ui={ui}
-          selectedDay={dateNav.selectedDay}
-          selectedMonth={dateNav.selectedMonth}
-          currentDateString={currentDateString}
-          role={auth.role}
-          isSignatureMode={isSignatureMode}
-          showBedManagerModal={ui.bedManagerModal.isOpen}
-          onCloseBedManagerModal={ui.bedManagerModal.close}
-          onOpenCensusDate={onOpenCensusDate}
-        />
+        <AppRouter ui={ui} shell={appRouterShellState} />
       </main>
     </>
   );

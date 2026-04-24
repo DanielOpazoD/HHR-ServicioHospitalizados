@@ -38,6 +38,17 @@ export interface AppRouterResolvedContext {
   e2eEditableOverride: boolean;
 }
 
+export interface AppRouterShellState {
+  selectedDay: number;
+  selectedMonth: number;
+  currentDateString: string;
+  role: UserRole;
+  isSignatureMode: boolean;
+  showBedManagerModal: boolean;
+  onCloseBedManagerModal: () => void;
+  onOpenCensusDate?: (date: string) => void;
+}
+
 export interface SimpleModuleRouteDefinition {
   module: ModuleType;
   sectionName: string;

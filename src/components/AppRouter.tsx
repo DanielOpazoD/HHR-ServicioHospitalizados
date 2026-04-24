@@ -8,10 +8,10 @@ import React, { Suspense } from 'react';
 import { GlobalErrorBoundary } from '@/components/shared/GlobalErrorBoundary';
 import { SectionErrorBoundary } from '@/components/shared/SectionErrorBoundary';
 import { ViewLoader } from '@/components/ui/ViewLoader';
-import { UserRole } from '@/context';
-import { UseUIStateReturn } from '@/hooks/useUIState';
+import type { UseUIStateReturn } from '@/hooks/useUIState';
 import type { ModuleType } from '@/constants/navigationConfig';
 import {
+  type AppRouterShellState,
   canRenderSimpleModuleRoute,
   resolveAllowAdminCopyOverride,
   resolveAppRouterContext,
@@ -24,39 +24,25 @@ import {
 interface AppRouterProps {
   /** Global UI state */
   ui: UseUIStateReturn;
-  /** Selected day for census */
-  selectedDay: number;
-  /** Selected month for census */
-  selectedMonth: number;
-  /** Current date string (YYYY-MM-DD) */
-  currentDateString: string;
-  /** User's role for permissions */
-  role: UserRole;
-  /** Whether in signature collection mode */
-  isSignatureMode: boolean;
-  /** Whether bed manager modal is open */
-  showBedManagerModal: boolean;
-  /** Callback to close bed manager modal */
-  onCloseBedManagerModal: () => void;
-  /** Callback to open the daily census at a specific date */
-  onOpenCensusDate?: (date: string) => void;
+  /** Route state derived by the authenticated shell boundary */
+  shell: AppRouterShellState;
 }
 
 /**
  * Routes to the appropriate view based on currentModule.
  * Wraps all views with ErrorBoundary and Suspense for lazy loading.
  */
-export const AppRouter: React.FC<AppRouterProps> = ({
-  ui,
-  selectedDay,
-  selectedMonth,
-  currentDateString,
-  role,
-  isSignatureMode,
-  showBedManagerModal,
-  onCloseBedManagerModal,
-  onOpenCensusDate,
-}) => {
+export const AppRouter: React.FC<AppRouterProps> = ({ ui, shell }) => {
+  const {
+    selectedDay,
+    selectedMonth,
+    currentDateString,
+    role,
+    isSignatureMode,
+    showBedManagerModal,
+    onCloseBedManagerModal,
+    onOpenCensusDate,
+  } = shell;
   const currentModule = ui.currentModule;
   const { censusAccessProfile, visibleModules, e2eEditableOverride } =
     resolveAppRouterContext(role);

@@ -226,7 +226,7 @@ Riesgo residual aceptado:
 
 ### Bloque 8: Shell autenticado y composición
 
-Estado: `pendiente`
+Estado: `completado`
 
 Objetivo:
 
@@ -255,11 +255,22 @@ Trabajo esperado:
 - podar props redundantes entre shell y router
 - seguir concentrando decisiones puras en controllers chicos ya existentes
 
+Resultado:
+
+- se retiró el armado inline de props del router desde `AppContentChrome`
+- se agrupó el contrato `Chrome -> AppRouter` en `AppRouterShellState`
+- `buildAppRouterShellState` quedó como builder testeado junto a `buildNavbarProps` y `buildDateStripProps`
+- `AppRouter` dejó de exponer 8 props sueltas de shell y consume un contrato único derivado por la composición autenticada
+
 Validación esperada:
 
 - `npx vitest run src/tests/components/AppContent*.test.tsx src/tests/components/AppRouter.test.tsx`
 - `npm run typecheck`
 - `npm run lint -- --max-warnings 0`
+
+Validación ejecutada:
+
+- `npx vitest run src/tests/components/AppContent*.test.tsx src/tests/components/appContentChromeController.test.ts src/tests/components/AppRouter.test.tsx`
 
 Criterio de cierre:
 

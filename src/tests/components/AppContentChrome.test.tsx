@@ -63,7 +63,7 @@ vi.mock('@/components/AppRouter', () => ({
     <div
       data-testid="app-router"
       data-has-open-date={String(
-        Boolean((props as { onOpenCensusDate?: unknown }).onOpenCensusDate)
+        Boolean((props as { shell?: { onOpenCensusDate?: unknown } }).shell?.onOpenCensusDate)
       )}
     >
       AppRouter
