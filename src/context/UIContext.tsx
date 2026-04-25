@@ -4,26 +4,12 @@
  * Consolidates legacy notification/confirm flows for simpler usage.
  */
 
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useMemo,
-  useEffect,
-  useRef,
-  ReactNode,
-} from 'react';
-import type { ConfirmOptions, DialogState, Notification } from '@/context/uiContracts';
+import React, { createContext, useContext, useMemo, useEffect, ReactNode } from 'react';
+import type { ConfirmOptions, Notification } from '@/context/uiContracts';
 import { ToastRenderer } from '@/context/ui/ToastRenderer';
 import { ConfirmDialogRenderer } from '@/context/ui/ConfirmDialogRenderer';
-
-const buildNotificationId = (): string => {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return `notification-${crypto.randomUUID()}`;
-  }
-  return `notification-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
-};
+import { useDialogController } from '@/context/ui/useDialogController';
+import { useNotificationController } from '@/context/ui/useNotificationController';
 
 // ============================================================================
 // Types
@@ -78,165 +64,32 @@ export const useConfirmDialog = useUI;
 // ============================================================================
 
 export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // Notifications state
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const notificationTimersRef = useRef<Map<string, number>>(new Map());
-  const dialogResolveRef = useRef<DialogState['resolve']>(null);
-
-  // Dialog state
-  const [dialog, setDialog] = useState<DialogState>({
-    isOpen: false,
-    title: '',
-    message: '',
-    confirmText: 'Confirmar',
-    cancelText: 'Cancelar',
-    variant: 'warning',
-    isAlert: false,
-    requireInputConfirm: undefined,
-    inputConfirmCaseSensitive: true,
-    resolve: null,
-  });
-
-  // ========================================================================
-  // Notification Actions
-  // ========================================================================
-
-  const clearNotificationTimer = useCallback((id: string) => {
-    const timeoutId = notificationTimersRef.current.get(id);
-    if (timeoutId !== undefined) {
-      window.clearTimeout(timeoutId);
-      notificationTimersRef.current.delete(id);
-    }
-  }, []);
-
-  const clearAllNotificationTimers = useCallback(() => {
-    notificationTimersRef.current.forEach(timeoutId => window.clearTimeout(timeoutId));
-    notificationTimersRef.current.clear();
-  }, []);
-
-  const dismiss = useCallback(
-    (id: string) => {
-      clearNotificationTimer(id);
-      setNotifications(prev => prev.filter(n => n.id !== id));
-    },
-    [clearNotificationTimer]
-  );
-
-  const dismissAll = useCallback(() => {
-    clearAllNotificationTimers();
-    setNotifications([]);
-  }, [clearAllNotificationTimers]);
-
-  const notify = useCallback(
-    (notification: Omit<Notification, 'id'>) => {
-      const id = buildNotificationId();
-      const duration = notification.duration ?? 5000;
-
-      setNotifications(prev => [...prev, { ...notification, id }]);
-
-      if (duration > 0) {
-        const timeoutId = window.setTimeout(() => dismiss(id), duration);
-        notificationTimersRef.current.set(id, timeoutId);
-      }
-    },
-    [dismiss]
-  );
-
-  const success = useCallback(
-    (title: string, message?: string) => {
-      notify({ type: 'success', title, message });
-    },
-    [notify]
-  );
-
-  const error = useCallback(
-    (title: string, message?: string) => {
-      notify({ type: 'error', title, message, duration: 8000 });
-    },
-    [notify]
-  );
-
-  const warning = useCallback(
-    (title: string, message?: string) => {
-      notify({ type: 'warning', title, message });
-    },
-    [notify]
-  );
-
-  const info = useCallback(
-    (title: string, message?: string) => {
-      notify({ type: 'info', title, message });
-    },
-    [notify]
-  );
-
-  // ========================================================================
-  // Dialog Actions
-  // ========================================================================
-
-  const confirm = useCallback((options: ConfirmOptions): Promise<boolean> => {
-    return new Promise(resolve => {
-      setDialog({
-        isOpen: true,
-        title: options.title || 'Confirmar acción',
-        message: options.message,
-        confirmText: options.confirmText || 'Confirmar',
-        cancelText: options.cancelText || 'Cancelar',
-        variant: options.variant || 'warning',
-        isAlert: false,
-        requireInputConfirm: options.requireInputConfirm,
-        inputConfirmCaseSensitive: options.inputConfirmCaseSensitive ?? true,
-        resolve,
-      });
-    });
-  }, []);
-
-  const alert = useCallback((message: string, title?: string): Promise<void> => {
-    return new Promise(resolve => {
-      setDialog({
-        isOpen: true,
-        title: title || 'Aviso',
-        message,
-        confirmText: 'Aceptar',
-        cancelText: '',
-        variant: 'info',
-        isAlert: true,
-        requireInputConfirm: undefined,
-        inputConfirmCaseSensitive: true,
-        resolve: () => resolve(),
-      });
-    });
-  }, []);
-
-  const handleDialogConfirm = () => {
-    if (dialog.resolve) {
-      dialog.resolve(true);
-    }
-    dialogResolveRef.current = null;
-    setDialog(prev => ({ ...prev, isOpen: false, resolve: null }));
-  };
-
-  const handleDialogCancel = () => {
-    if (dialog.resolve) {
-      dialog.resolve(false);
-    }
-    dialogResolveRef.current = null;
-    setDialog(prev => ({ ...prev, isOpen: false, resolve: null }));
-  };
-
-  useEffect(() => {
-    dialogResolveRef.current = dialog.resolve;
-  }, [dialog.resolve]);
+  const {
+    notifications,
+    notify,
+    success,
+    error,
+    warning,
+    info,
+    dismiss,
+    dismissAll,
+    clearAllNotificationTimers,
+  } = useNotificationController();
+  const {
+    dialog,
+    confirm,
+    alert,
+    handleDialogConfirm,
+    handleDialogCancel,
+    resolvePendingDialogAsCancelled,
+  } = useDialogController();
 
   useEffect(() => {
     return () => {
       clearAllNotificationTimers();
-      if (dialogResolveRef.current) {
-        dialogResolveRef.current(false);
-        dialogResolveRef.current = null;
-      }
+      resolvePendingDialogAsCancelled();
     };
-  }, [clearAllNotificationTimers]);
+  }, [clearAllNotificationTimers, resolvePendingDialogAsCancelled]);
 
   // ========================================================================
   // Render

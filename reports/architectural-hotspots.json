@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-25T20:09:29.783Z",
+  "generatedAt": "2026-04-25T20:32:48.362Z",
   "hotspots": [
     {
       "file": "src/services/utils/loggerScope.ts",
@@ -174,12 +174,12 @@
     {
       "file": "src/utils/clinicalDayUtils.ts",
       "lines": 232,
-      "churn": 5,
+      "churn": 6,
       "inboundImports": 31,
       "criticality": "medium",
       "role": "implementation",
       "recommendedAction": "protect-boundary",
-      "score": 118
+      "score": 120
     },
     {
       "file": "src/services/storage/indexeddb/indexedDbCore.ts",
@@ -243,12 +243,12 @@
     },
     {
       "file": "src/context/UIContext.tsx",
-      "lines": 291,
+      "lines": 150,
       "churn": 7,
       "inboundImports": 27,
       "criticality": "medium",
       "role": "orchestrator",
-      "recommendedAction": "reduce-responsibility",
+      "recommendedAction": "watch",
       "score": 110
     },
     {
