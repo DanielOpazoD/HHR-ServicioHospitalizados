@@ -251,7 +251,7 @@ describe('ClinicalDocumentsWorkspace', () => {
     const antecedentesEditor = screen.getByRole('textbox', { name: /contenido antecedentes/i });
     antecedentesEditor.innerHTML = 'Antecedentes actualizados';
     fireEvent.input(antecedentesEditor);
-    fireEvent.click(screen.getByRole('button', { name: /^crear$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^crear documento$/i }));
 
     await waitFor(() => {
       expect(clinicalDocumentUseCases.executeCreateClinicalDocumentDraft).toHaveBeenCalled();

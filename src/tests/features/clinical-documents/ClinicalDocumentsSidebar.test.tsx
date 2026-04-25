@@ -58,7 +58,7 @@ describe('ClinicalDocumentsSidebar', () => {
 
     expect(screen.getByText(/perfil en solo lectura/i)).toBeInTheDocument();
     expect(screen.queryByText(/^nuevo documento$/i)).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^crear$/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^crear documento$/i })).toBeDisabled();
   });
 
   it('renders documents and delegates selection and deletion', () => {
@@ -124,11 +124,11 @@ describe('ClinicalDocumentsSidebar', () => {
     );
 
     expect(screen.getByText(/episodio cerrado por alta/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^crear$/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^crear documento$/i })).toBeDisabled();
     expect(screen.queryByTitle(/eliminar documento/i)).not.toBeInTheDocument();
   });
 
-  it('renders LAB and MMRAD shortcuts when callbacks are provided', () => {
+  it('groups clinical insert shortcuts inside an insert tray', () => {
     const onOpenLabDialog = vi.fn();
     const onOpenMMRADDialog = vi.fn();
 
@@ -153,8 +153,15 @@ describe('ClinicalDocumentsSidebar', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /lab/i }));
-    fireEvent.click(screen.getByRole('button', { name: /abrir mmrad/i }));
+    expect(screen.queryByRole('button', { name: /laboratorio/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /imagenología mmrad/i })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /insertar contenido/i }));
+
+    fireEvent.click(screen.getByRole('button', { name: /laboratorio/i }));
+
+    fireEvent.click(screen.getByRole('button', { name: /insertar contenido/i }));
+    fireEvent.click(screen.getByRole('button', { name: /imagenología mmrad/i }));
 
     expect(onOpenLabDialog).toHaveBeenCalledTimes(1);
     expect(onOpenMMRADDialog).toHaveBeenCalledTimes(1);

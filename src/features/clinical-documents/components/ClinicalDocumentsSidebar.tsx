@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import {
+  ChevronDown,
   Copy,
   Download,
   FilePlus2,
@@ -78,7 +79,9 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
 }) => {
   const importInputRef = useRef<HTMLInputElement>(null);
   const [showAdvancedTools, setShowAdvancedTools] = useState(false);
+  const [showInsertTray, setShowInsertTray] = useState(false);
   const selectedDocument = documents.find(document => document.id === selectedDocumentId) || null;
+  const hasInsertActions = Boolean(onOpenLabDialog || onOpenMMRADDialog);
 
   return (
     <aside className="space-y-2.5 border-r border-slate-200 bg-slate-50/70 p-2.5">
@@ -91,30 +94,6 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
             </p>
             {patientRut && (
               <p className="text-[10px] font-mono text-slate-400 mt-0.5">{patientRut}</p>
-            )}
-          </div>
-          <div className="flex shrink-0 items-center gap-1">
-            {onOpenLabDialog && (
-              <button
-                type="button"
-                onClick={onOpenLabDialog}
-                className="inline-flex h-7 items-center rounded-md border border-emerald-200 px-2 text-[9px] font-bold uppercase tracking-[0.12em] text-emerald-700 hover:bg-emerald-50 transition-colors"
-                title="Insertar resumen de laboratorio"
-              >
-                <FlaskConical size={11} className="mr-1" />
-                Lab
-              </button>
-            )}
-            {onOpenMMRADDialog && (
-              <button
-                type="button"
-                onClick={onOpenMMRADDialog}
-                aria-label="Abrir MMRAD"
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-violet-200 text-violet-700 hover:bg-violet-50 transition-colors"
-                title="Copiar informe radiológico MMRAD"
-              >
-                <Zap size={12} />
-              </button>
             )}
           </div>
         </div>
@@ -148,15 +127,62 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
             onClick={onCreateDocument}
             disabled={!canEdit || !patientName}
             className={clsx(
-              'w-full rounded-lg border px-2 py-1 text-[10px] font-black uppercase tracking-[0.16em] transition-all',
+              'w-full rounded-lg border px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] transition-all',
               canEdit && patientName
                 ? 'border-medical-300 bg-medical-50 text-medical-800 hover:bg-medical-100'
                 : 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
             )}
           >
             <FilePlus2 size={12} className="inline mr-1.5" />
-            Crear
+            Crear documento
           </button>
+          {hasInsertActions && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowInsertTray(current => !current)}
+                aria-expanded={showInsertTray}
+                className="inline-flex h-8 w-full items-center justify-center rounded-lg border border-sky-200 bg-sky-50 px-2 text-[10px] font-black uppercase tracking-[0.12em] text-sky-700 transition-colors hover:bg-sky-100"
+              >
+                <Zap size={11} className="mr-1.5" />
+                Insertar contenido
+                <ChevronDown
+                  size={11}
+                  className={clsx('ml-1.5 transition-transform', showInsertTray && 'rotate-180')}
+                />
+              </button>
+              {showInsertTray && (
+                <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-40 space-y-1 rounded-lg border border-slate-200 bg-white p-1.5 shadow-lg">
+                  {onOpenLabDialog && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowInsertTray(false);
+                        onOpenLabDialog();
+                      }}
+                      className="flex w-full items-center rounded-md px-2 py-1.5 text-left text-[11px] font-semibold text-slate-700 transition-colors hover:bg-emerald-50 hover:text-emerald-700"
+                    >
+                      <FlaskConical size={12} className="mr-2 text-emerald-600" />
+                      Laboratorio
+                    </button>
+                  )}
+                  {onOpenMMRADDialog && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowInsertTray(false);
+                        onOpenMMRADDialog();
+                      }}
+                      className="flex w-full items-center rounded-md px-2 py-1.5 text-left text-[11px] font-semibold text-slate-700 transition-colors hover:bg-violet-50 hover:text-violet-700"
+                    >
+                      <Zap size={12} className="mr-2 text-violet-600" />
+                      Imagenología MMRAD
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
           {selectedDocumentId && canEdit && (
             <div className="flex gap-1.5 mt-1">
               {onAddClinicalUpdate && (

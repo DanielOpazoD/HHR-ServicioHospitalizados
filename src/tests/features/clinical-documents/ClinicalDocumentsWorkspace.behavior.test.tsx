@@ -275,7 +275,7 @@ describe('ClinicalDocumentsWorkspace behavior', () => {
       expect(screen.getByText(/episodio cerrado por alta/i)).toBeInTheDocument();
     });
 
-    expect(screen.getByRole('button', { name: /^crear$/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^crear documento$/i })).toBeDisabled();
     expect(screen.queryByTitle(/eliminar documento/i)).not.toBeInTheDocument();
   });
 
@@ -296,7 +296,7 @@ describe('ClinicalDocumentsWorkspace behavior', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /^crear$/i })).toBeEnabled();
+      expect(screen.getByRole('button', { name: /^crear documento$/i })).toBeEnabled();
     });
 
     expect(screen.queryByText(/episodio cerrado/i)).not.toBeInTheDocument();
