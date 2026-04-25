@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-25T20:00:58.746Z",
+  "generatedAt": "2026-04-25T20:09:29.783Z",
   "hotspots": [
     {
       "file": "src/services/utils/loggerScope.ts",
@@ -173,13 +173,23 @@
     },
     {
       "file": "src/utils/clinicalDayUtils.ts",
-      "lines": 266,
+      "lines": 232,
       "churn": 5,
       "inboundImports": 31,
       "criticality": "medium",
       "role": "implementation",
-      "recommendedAction": "reduce-responsibility",
+      "recommendedAction": "protect-boundary",
       "score": 118
+    },
+    {
+      "file": "src/services/storage/indexeddb/indexedDbCore.ts",
+      "lines": 249,
+      "churn": 27,
+      "inboundImports": 14,
+      "criticality": "high",
+      "role": "implementation",
+      "recommendedAction": "reduce-responsibility",
+      "score": 116
     },
     {
       "file": "src/context/DailyRecordContext.tsx",
@@ -209,16 +219,6 @@
       "criticality": "high",
       "role": "implementation",
       "recommendedAction": "protect-boundary",
-      "score": 114
-    },
-    {
-      "file": "src/services/storage/indexeddb/indexedDbCore.ts",
-      "lines": 246,
-      "churn": 26,
-      "inboundImports": 14,
-      "criticality": "high",
-      "role": "implementation",
-      "recommendedAction": "reduce-responsibility",
       "score": 114
     },
     {
