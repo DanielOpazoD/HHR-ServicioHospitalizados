@@ -1,5 +1,6 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 import '@/features/clinical-documents/styles/clinicalDocumentSheet.css';
 import type { PatientData } from '@/features/clinical-documents/contracts/clinicalDocumentsPatientContract';
@@ -17,6 +18,7 @@ const ZOOM_STEP = 10;
 const ZOOM_MIN = 60;
 const ZOOM_MAX = 150;
 const ZOOM_DEFAULT = 110;
+const ZOOM_WITH_SIDEBAR_COLLAPSED = 130;
 
 interface ClinicalDocumentsWorkspaceProps {
   patient: PatientData;
@@ -41,6 +43,8 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
   });
   const sheetState = useClinicalDocumentSheetState(sheetProps.selectedDocument);
   const [zoom, setZoom] = useState(ZOOM_DEFAULT);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const zoomBeforeSidebarCollapseRef = useRef(ZOOM_DEFAULT);
   const [showLabDialog, setShowLabDialog] = useState(false);
   const [showMMRADDialog, setShowMMRADDialog] = useState(false);
 
@@ -57,6 +61,21 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
     },
     [sheetProps, sheetState.activeEditorSectionId]
   );
+
+  const handleToggleSidebar = useCallback(() => {
+    setIsSidebarCollapsed(collapsed => {
+      if (collapsed) {
+        setZoom(zoomBeforeSidebarCollapseRef.current);
+        return false;
+      }
+
+      zoomBeforeSidebarCollapseRef.current = zoom;
+      setZoom(currentZoom =>
+        Math.min(ZOOM_MAX, Math.max(currentZoom, ZOOM_WITH_SIDEBAR_COLLAPSED))
+      );
+      return true;
+    });
+  }, [zoom]);
 
   if (!canRead) {
     return (
@@ -107,37 +126,56 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
       </>
     ) : null;
 
+  const workspaceGridClass = isSidebarCollapsed
+    ? 'relative grid h-[86vh] min-h-[86vh] grid-cols-[minmax(0,1fr)]'
+    : 'relative grid h-[86vh] min-h-[86vh] grid-cols-[260px_minmax(0,1fr)]';
+
   return (
     <div
-      className="relative grid h-[86vh] min-h-[86vh] grid-cols-[260px_minmax(0,1fr)]"
+      className={workspaceGridClass}
       data-testid="clinical-documents-workspace"
       data-module="clinical-documents"
     >
       {headerContent && headerActionsContainer
         ? createPortal(headerContent, headerActionsContainer)
         : null}
-      <ClinicalDocumentsSidebar
-        {...sidebarProps}
-        onOpenLabDialog={
-          patient.rut && sheetProps.canEdit && sheetProps.selectedDocument
-            ? () => {
-                setShowMMRADDialog(false);
-                setShowLabDialog(true);
-              }
-            : undefined
-        }
-        onOpenMMRADDialog={
-          patient.rut && sheetProps.canEdit && sheetProps.selectedDocument
-            ? () => {
-                setShowLabDialog(false);
-                setShowMMRADDialog(true);
-              }
-            : undefined
-        }
-      />
+      {!isSidebarCollapsed && (
+        <ClinicalDocumentsSidebar
+          {...sidebarProps}
+          onOpenLabDialog={
+            patient.rut && sheetProps.canEdit && sheetProps.selectedDocument
+              ? () => {
+                  setShowMMRADDialog(false);
+                  setShowLabDialog(true);
+                }
+              : undefined
+          }
+          onOpenMMRADDialog={
+            patient.rut && sheetProps.canEdit && sheetProps.selectedDocument
+              ? () => {
+                  setShowLabDialog(false);
+                  setShowMMRADDialog(true);
+                }
+              : undefined
+          }
+        />
+      )}
 
       <section className="relative overflow-y-auto overflow-x-hidden bg-[#f3f4f6] p-3">
-        <div style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top center' }}>
+        <button
+          type="button"
+          onClick={handleToggleSidebar}
+          aria-label={isSidebarCollapsed ? 'Mostrar panel lateral' : 'Ocultar panel lateral'}
+          title={isSidebarCollapsed ? 'Mostrar panel lateral' : 'Ocultar panel lateral'}
+          className="absolute left-3 top-3 z-30 inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 bg-white/95 text-slate-500 shadow-sm transition-colors hover:border-medical-300 hover:text-medical-700"
+        >
+          {isSidebarCollapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
+        </button>
+
+        <div
+          data-testid="clinical-document-sheet-zoom-layer"
+          style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top center' }}
+        >
           <ClinicalDocumentSheet
             {...sheetProps}
             toolbar={headerContent && !headerActionsContainer ? headerContent : null}

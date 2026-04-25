@@ -308,6 +308,38 @@ describe('ClinicalDocumentsWorkspace', () => {
     });
   });
 
+  it('hides the sidebar and increases the sheet zoom for editing', async () => {
+    render(
+      <ClinicalDocumentsWorkspace
+        patient={workspacePatient}
+        currentDateString="2026-03-06"
+        bedId="R1"
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/tipo de documento/i)).toBeInTheDocument();
+    });
+    expect(screen.getByTestId('clinical-document-sheet-zoom-layer')).toHaveStyle({
+      transform: 'scale(1.1)',
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /ocultar panel lateral/i }));
+
+    expect(screen.queryByText(/tipo de documento/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /mostrar panel lateral/i })).toBeInTheDocument();
+    expect(screen.getByTestId('clinical-document-sheet-zoom-layer')).toHaveStyle({
+      transform: 'scale(1.3)',
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /mostrar panel lateral/i }));
+
+    expect(screen.getByText(/tipo de documento/i)).toBeInTheDocument();
+    expect(screen.getByTestId('clinical-document-sheet-zoom-layer')).toHaveStyle({
+      transform: 'scale(1.1)',
+    });
+  });
+
   it('allows hiding and restoring sections on the real shell boundary', async () => {
     render(
       <ClinicalDocumentsWorkspace
