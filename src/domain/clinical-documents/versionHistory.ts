@@ -2,7 +2,7 @@ import type {
   ClinicalDocumentRecord,
   ClinicalDocumentVersionMeta,
   ClinicalDocumentVersionSectionSnapshot,
-} from '@/features/clinical-documents/domain/entities';
+} from '@/domain/clinical-documents/entities';
 
 export const buildClinicalDocumentVersionSectionSnapshots = (
   record: ClinicalDocumentRecord

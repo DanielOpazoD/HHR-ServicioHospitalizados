@@ -20,7 +20,7 @@ import {
   formatClinicalDocumentAuthorName,
   formatClinicalDocumentDateTime,
 } from '@/features/clinical-documents/controllers/clinicalDocumentWorkspaceController';
-import { withCurrentClinicalDocumentVersionSnapshotFallback } from '@/features/clinical-documents/controllers/clinicalDocumentVersionHistoryController';
+import { withCurrentClinicalDocumentVersionSnapshotFallback } from '@/domain/clinical-documents/versionHistory';
 import type { ClinicalDocumentsSidebarProps } from '@/features/clinical-documents/contracts/clinicalDocumentsSidebarContracts';
 import type {
   ClinicalDocumentVersionMeta,

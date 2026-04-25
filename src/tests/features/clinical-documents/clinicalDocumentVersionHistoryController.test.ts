@@ -4,7 +4,7 @@ import {
   buildClinicalDocumentVersionSectionSnapshots,
   resolveClinicalDocumentVersionChangedSectionIds,
   withCurrentClinicalDocumentVersionSnapshotFallback,
-} from '@/features/clinical-documents/controllers/clinicalDocumentVersionHistoryController';
+} from '@/domain/clinical-documents/versionHistory';
 import type {
   ClinicalDocumentRecord,
   ClinicalDocumentVersionMeta,

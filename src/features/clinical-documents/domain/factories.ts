@@ -13,7 +13,7 @@ import {
   DEFAULT_CLINICAL_DOCUMENT_TEMPLATE_ID,
 } from '@/features/clinical-documents/domain/rules';
 import { CURRENT_CLINICAL_DOCUMENT_SCHEMA_VERSION } from '@/features/clinical-documents/domain/schema';
-import { buildClinicalDocumentVersionSectionSnapshots } from '@/features/clinical-documents/controllers/clinicalDocumentVersionHistoryController';
+import { buildClinicalDocumentVersionSectionSnapshots } from '@/domain/clinical-documents/versionHistory';
 
 const clonePatientFields = (
   template: ClinicalDocumentTemplate,

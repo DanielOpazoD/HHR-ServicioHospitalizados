@@ -15,22 +15,16 @@ import {
   buildClinicalDocumentActor,
   serializeClinicalDocument,
 } from '@/features/clinical-documents/controllers/clinicalDocumentWorkspaceController';
-import {
-  executeCreateClinicalDocumentDraft,
-  executeDeleteClinicalDocument,
-} from '@/application/clinical-documents/clinicalDocumentUseCases';
+import { executeCreateClinicalDocumentDraft } from '@/application/clinical-documents/clinicalDocumentUseCases';
 import { prepareClinicalDocumentJsonImportDraft } from '@/application/clinical-documents/clinicalDocumentJsonUseCases';
 import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
-import {
-  logClinicalDocumentCreated,
-  logClinicalDocumentDeleted,
-} from '@/services/admin/auditDomainLoggers';
+import { logClinicalDocumentCreated } from '@/services/admin/auditDomainLoggers';
 import {
   resolveClinicalDocumentExceptionMessage,
   resolveClinicalDocumentOutcomeError,
-  shouldClearSelectedClinicalDocument,
 } from './clinicalDocumentWorkspaceActionSupport';
+import { deleteClinicalDocumentFromWorkspace } from './clinicalDocumentDeleteActionController';
 
 interface NotificationPort {
   success: (title: string, message?: string) => void;
@@ -174,79 +168,18 @@ export const useClinicalDocumentWorkspaceDocumentActions = ({
   ]);
 
   const handleDeleteDocument = useCallback(
-    async (document: ClinicalDocumentRecord) => {
-      if (!canDelete) {
-        notify.warning(
-          'Permiso insuficiente',
-          'No tienes permisos para eliminar documentos clínicos.'
-        );
-        return;
-      }
-
-      const confirmed = await notify.confirm({
-        title: 'Eliminar documento clínico',
-        message: 'Esta acción eliminará el documento de forma permanente.',
-        confirmText: 'Eliminar',
-        cancelText: 'Cancelar',
-        variant: 'danger',
-        requireInputConfirm: 'X',
-        inputConfirmCaseSensitive: false,
-      });
-
-      if (!confirmed) return;
-
-      try {
-        const result = await executeDeleteClinicalDocument(document.id, hospitalId);
-        recordOperationalOutcome('clinical_document', 'delete_clinical_document', result, {
-          date: document.sourceDailyRecordDate,
-          context: { documentId: document.id },
-          allowSuccess: true,
-        });
-        const outcomeError = resolveClinicalDocumentOutcomeError(
-          result,
-          'No se pudo eliminar el documento.'
-        );
-        if (outcomeError) {
-          recordOperationalTelemetry({
-            category: 'clinical_document',
-            status: 'failed',
-            operation: 'delete_clinical_document',
-            date: document.sourceDailyRecordDate,
-            issues: [outcomeError],
-            context: { documentId: document.id },
-          });
-          notify.error('No se pudo eliminar', outcomeError);
-          return;
-        }
-        if (shouldClearSelectedClinicalDocument(selectedDocumentId, document.id)) {
-          setSelectedDocumentId(null);
-          setDraft(null);
-          lastPersistedSnapshotRef.current = '';
-        }
-        void logClinicalDocumentDeleted(
-          document.id,
-          document.templateId,
-          document.title,
-          patient.rut,
-          document.sourceDailyRecordDate
-        );
-        notify.success('Documento eliminado', `${document.title} fue eliminado correctamente.`);
-      } catch (error) {
-        const errorMessage = resolveClinicalDocumentExceptionMessage(
-          error,
-          'No se pudo eliminar el documento.'
-        );
-        recordOperationalTelemetry({
-          category: 'clinical_document',
-          status: 'failed',
-          operation: 'delete_clinical_document',
-          date: document.sourceDailyRecordDate,
-          issues: [errorMessage],
-          context: { documentId: document.id },
-        });
-        notify.error('No se pudo eliminar', errorMessage);
-      }
-    },
+    (document: ClinicalDocumentRecord) =>
+      deleteClinicalDocumentFromWorkspace({
+        document,
+        canDelete,
+        hospitalId,
+        notify,
+        patient,
+        selectedDocumentId,
+        setSelectedDocumentId,
+        setDraft,
+        lastPersistedSnapshotRef,
+      }),
     [
       canDelete,
       hospitalId,

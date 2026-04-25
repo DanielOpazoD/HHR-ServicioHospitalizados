@@ -5,7 +5,7 @@ import type {
 import {
   buildClinicalDocumentVersionSectionSnapshots,
   resolveClinicalDocumentVersionChangedSectionIds,
-} from '@/features/clinical-documents/controllers/clinicalDocumentVersionHistoryController';
+} from '@/domain/clinical-documents/versionHistory';
 import {
   createApplicationFailed,
   createApplicationSuccess,

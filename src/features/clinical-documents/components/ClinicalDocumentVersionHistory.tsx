@@ -9,7 +9,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Save, Clock, PenLine, FileSignature, ShieldCheck, Wrench, Eye } from 'lucide-react';
-import { getClinicalDocumentVersionChangedSectionSnapshots } from '@/features/clinical-documents/controllers/clinicalDocumentVersionHistoryController';
+import { getClinicalDocumentVersionChangedSectionSnapshots } from '@/domain/clinical-documents/versionHistory';
 import { stripClinicalDocumentHtml } from '@/features/clinical-documents/controllers/clinicalDocumentRichTextController';
 import type {
   ClinicalDocumentVersionMeta,
