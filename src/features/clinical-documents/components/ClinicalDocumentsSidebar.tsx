@@ -20,14 +20,22 @@ import {
   formatClinicalDocumentAuthorName,
   formatClinicalDocumentDateTime,
 } from '@/features/clinical-documents/controllers/clinicalDocumentWorkspaceController';
+import { withCurrentClinicalDocumentVersionSnapshotFallback } from '@/features/clinical-documents/controllers/clinicalDocumentVersionHistoryController';
 import type { ClinicalDocumentsSidebarProps } from '@/features/clinical-documents/contracts/clinicalDocumentsSidebarContracts';
-import type { ClinicalDocumentVersionMeta } from '@/features/clinical-documents/domain/entities';
+import type {
+  ClinicalDocumentVersionMeta,
+  ClinicalDocumentVersionSectionSnapshot,
+} from '@/features/clinical-documents/domain/entities';
 import { ClinicalDocumentVersionHistory } from '@/features/clinical-documents/components/ClinicalDocumentVersionHistory';
 
 const VersionBadge: React.FC<{
   currentVersion: number;
   versionHistory: ClinicalDocumentVersionMeta[];
-}> = ({ currentVersion, versionHistory }) => {
+  canRestoreSection?: boolean;
+  onRestoreSection?: (
+    section: Pick<ClinicalDocumentVersionSectionSnapshot, 'sectionId' | 'title' | 'content'>
+  ) => void;
+}> = ({ currentVersion, versionHistory, canRestoreSection = false, onRestoreSection }) => {
   const [showHistory, setShowHistory] = useState(false);
 
   return (
@@ -47,6 +55,8 @@ const VersionBadge: React.FC<{
         <ClinicalDocumentVersionHistory
           versions={versionHistory}
           currentVersion={currentVersion}
+          canRestoreSection={canRestoreSection}
+          onRestoreSection={onRestoreSection}
           onClose={() => setShowHistory(false)}
         />
       )}
@@ -73,6 +83,7 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
   onAddClinicalUpdate,
   onToggleAnnex,
   hasAnnex,
+  onRestoreVersionSection,
   patientRut,
   onOpenLabDialog,
   onOpenMMRADDialog,
@@ -337,7 +348,9 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
                   {document.versionHistory && document.versionHistory.length > 0 && (
                     <VersionBadge
                       currentVersion={document.currentVersion}
-                      versionHistory={document.versionHistory}
+                      versionHistory={withCurrentClinicalDocumentVersionSnapshotFallback(document)}
+                      canRestoreSection={canEdit && selectedDocumentId === document.id}
+                      onRestoreSection={onRestoreVersionSection}
                     />
                   )}
                 </div>

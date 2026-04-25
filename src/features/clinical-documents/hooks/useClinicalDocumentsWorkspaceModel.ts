@@ -182,6 +182,8 @@ export const useClinicalDocumentsWorkspaceModel = ({
       handleImportJson,
       addClinicalUpdate,
       patchAnnexContent,
+      patchSectionTitle,
+      patchSection,
       scrollToAnnex,
     }),
     sheetProps: buildClinicalDocumentsWorkspaceSheetProps({

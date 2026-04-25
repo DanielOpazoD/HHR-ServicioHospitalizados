@@ -190,4 +190,52 @@ describe('ClinicalDocumentRepository.listByEpisodeKeys', () => {
     expect(result.status).toBe('draft');
     expect(result.isLocked).toBe(false);
   });
+
+  it('preserves version section snapshots when creating a draft', async () => {
+    const document = {
+      ...buildDoc('d-snapshots', 'rut-1__2026-03-01', '2026-03-05T10:00:00.000Z'),
+      sections: [
+        {
+          id: 'evolucion',
+          title: 'Evolución clínica',
+          content: 'Contenido inicial.',
+          order: 1,
+        },
+      ],
+      versionHistory: [
+        {
+          version: 1,
+          savedAt: '2026-03-05T10:00:00.000Z',
+          savedBy: {
+            uid: 'u1',
+            email: 'test@hospital.cl',
+            displayName: 'Test',
+            role: 'doctor_urgency',
+          },
+          reason: 'manual' as const,
+          changedSectionIds: ['evolucion'],
+          sectionSnapshots: [
+            {
+              sectionId: 'evolucion',
+              title: 'Evolución clínica',
+              content: 'Contenido inicial.',
+              order: 1,
+            },
+          ],
+        },
+      ],
+    };
+
+    await ClinicalDocumentRepository.createDraft(document, 'hhr');
+
+    const persisted = vi.mocked(firestoreDb.setDoc).mock.calls[0]?.[2] as ClinicalDocumentRecord;
+    expect(persisted.versionHistory[0]?.changedSectionIds).toEqual(['evolucion']);
+    expect(persisted.versionHistory[0]?.sectionSnapshots).toEqual([
+      expect.objectContaining({
+        sectionId: 'evolucion',
+        title: 'Evolución clínica',
+        content: 'Contenido inicial.',
+      }),
+    ]);
+  });
 });

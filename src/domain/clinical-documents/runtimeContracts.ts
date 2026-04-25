@@ -38,11 +38,20 @@ const sectionSchema = z.object({
   required: z.boolean().optional(),
   visible: z.boolean().optional(),
 });
+const versionSectionSnapshotSchema = z.object({
+  sectionId: z.string(),
+  title: z.string(),
+  content: z.string(),
+  order: z.number(),
+  kind: z.enum(['standard', 'clinical-update']).optional(),
+});
 const versionHistorySchema = z.object({
   version: z.number(),
   savedAt: z.string(),
   savedBy: auditActorSchema,
   reason: z.enum(['autosave', 'manual', 'signature', 'unsign', 'admin_fix']),
+  changedSectionIds: z.array(z.string()).optional(),
+  sectionSnapshots: z.array(versionSectionSnapshotSchema).optional(),
 });
 const pdfMetaSchema = z.object({
   fileId: z.string().optional(),

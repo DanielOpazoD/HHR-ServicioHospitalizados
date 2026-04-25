@@ -38,11 +38,21 @@ export interface ClinicalDocumentAuditActor {
   role: string;
 }
 
+export interface ClinicalDocumentVersionSectionSnapshot {
+  sectionId: string;
+  title: string;
+  content: string;
+  order: number;
+  kind?: ClinicalDocumentSectionKind;
+}
+
 export interface ClinicalDocumentVersionMeta {
   version: number;
   savedAt: string;
   savedBy: ClinicalDocumentAuditActor;
   reason: 'autosave' | 'manual' | 'signature' | 'unsign' | 'admin_fix';
+  changedSectionIds?: string[];
+  sectionSnapshots?: ClinicalDocumentVersionSectionSnapshot[];
 }
 
 export interface ClinicalDocumentPdfMeta {

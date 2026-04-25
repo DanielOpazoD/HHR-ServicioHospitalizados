@@ -1,4 +1,7 @@
-import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
+import type {
+  ClinicalDocumentRecord,
+  ClinicalDocumentVersionSectionSnapshot,
+} from '@/features/clinical-documents/domain/entities';
 
 export interface ClinicalDocumentsSidebarTemplateOption {
   id: string;
@@ -25,6 +28,9 @@ export interface ClinicalDocumentsSidebarProps {
   onAddClinicalUpdate?: () => void;
   onToggleAnnex?: () => void;
   hasAnnex?: boolean;
+  onRestoreVersionSection?: (
+    section: Pick<ClinicalDocumentVersionSectionSnapshot, 'sectionId' | 'title' | 'content'>
+  ) => void;
   onOpenLabDialog?: () => void;
   onOpenMMRADDialog?: () => void;
 }

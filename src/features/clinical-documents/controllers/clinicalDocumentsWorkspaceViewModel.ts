@@ -55,6 +55,8 @@ interface BuildSidebarPropsParams {
   handleImportJson: (file: File) => Promise<void>;
   addClinicalUpdate: ClinicalDocumentsWorkspaceSheetModelProps['addClinicalUpdate'];
   patchAnnexContent: ClinicalDocumentsWorkspaceSheetModelProps['patchAnnexContent'];
+  patchSectionTitle: ClinicalDocumentsWorkspaceSheetModelProps['patchSectionTitle'];
+  patchSection: ClinicalDocumentsWorkspaceSheetModelProps['patchSection'];
   scrollToAnnex: () => void;
 }
 
@@ -129,6 +131,8 @@ export const buildClinicalDocumentsWorkspaceSidebarProps = ({
   handleImportJson,
   addClinicalUpdate,
   patchAnnexContent,
+  patchSectionTitle,
+  patchSection,
   scrollToAnnex,
 }: BuildSidebarPropsParams): ClinicalDocumentsSidebarProps => ({
   canEdit,
@@ -162,6 +166,13 @@ export const buildClinicalDocumentsWorkspaceSidebarProps = ({
         })
     : undefined,
   hasAnnex: draft?.annexContent != null,
+  onRestoreVersionSection:
+    canEdit && draft
+      ? section => {
+          patchSectionTitle(section.sectionId, section.title);
+          patchSection(section.sectionId, section.content);
+        }
+      : undefined,
 });
 
 export const buildClinicalDocumentsWorkspaceSheetProps = ({

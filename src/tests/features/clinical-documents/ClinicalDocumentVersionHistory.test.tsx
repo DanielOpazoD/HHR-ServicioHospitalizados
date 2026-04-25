@@ -140,4 +140,137 @@ describe('ClinicalDocumentVersionHistory', () => {
     fireEvent.keyDown(document, { key: 'a' });
     expect(onClose).not.toHaveBeenCalled();
   });
+
+  it('shows changed sections, previews previous content and restores one section', () => {
+    const onRestoreSection = vi.fn();
+    const previousVersion: ClinicalDocumentVersionMeta = {
+      ...makeVersion(1, 'manual'),
+      sectionSnapshots: [
+        {
+          sectionId: 'evolucion',
+          title: 'Evolución clínica',
+          content: 'Paciente en control previo.',
+          order: 1,
+        },
+      ],
+    };
+    const version: ClinicalDocumentVersionMeta = {
+      ...makeVersion(2, 'manual'),
+      changedSectionIds: ['evolucion'],
+      sectionSnapshots: [
+        {
+          sectionId: 'evolucion',
+          title: 'Evolución clínica',
+          content: 'Paciente afebril y en buenas condiciones.',
+          order: 1,
+        },
+      ],
+    };
+
+    render(
+      <ClinicalDocumentVersionHistory
+        versions={[previousVersion, version]}
+        currentVersion={3}
+        onClose={vi.fn()}
+        canRestoreSection={true}
+        onRestoreSection={onRestoreSection}
+      />
+    );
+
+    expect(screen.getByText(/cambios/i)).toBeInTheDocument();
+    expect(screen.getByText(/evolución clínica/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /ver anterior evolución clínica/i }));
+    expect(screen.getByText(/paciente afebril/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /restaurar evolución clínica/i }));
+    expect(onRestoreSection).toHaveBeenCalledWith({
+      sectionId: 'evolucion',
+      title: 'Evolución clínica',
+      content: 'Paciente afebril y en buenas condiciones.',
+    });
+  });
+
+  it('does not show the changes block when the previous version has no comparable snapshot', () => {
+    const versionWithoutBaseline: ClinicalDocumentVersionMeta = {
+      ...makeVersion(2, 'autosave'),
+      changedSectionIds: ['evolucion'],
+      sectionSnapshots: [
+        {
+          sectionId: 'evolucion',
+          title: 'Evolución clínica',
+          content: 'Contenido actual.',
+          order: 1,
+        },
+      ],
+    };
+
+    render(
+      <ClinicalDocumentVersionHistory
+        versions={[makeVersion(1, 'manual'), versionWithoutBaseline]}
+        currentVersion={2}
+        onClose={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByText(/cambios/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/evolución clínica/i)).not.toBeInTheDocument();
+  });
+
+  it('shows section previews as readable plain text instead of stored html', () => {
+    const version: ClinicalDocumentVersionMeta = {
+      ...makeVersion(2, 'manual'),
+      changedSectionIds: ['evolucion'],
+      sectionSnapshots: [
+        {
+          sectionId: 'evolucion',
+          title: 'Historia y evolución clínica',
+          content: 'edfsasfadsfafa<div>dsfsdf}</div><div>sd</div><div>fsd</div><div>f</div>',
+          order: 1,
+        },
+      ],
+    };
+
+    render(
+      <ClinicalDocumentVersionHistory
+        versions={[
+          {
+            ...makeVersion(1, 'manual'),
+            sectionSnapshots: [
+              {
+                sectionId: 'evolucion',
+                title: 'Historia y evolución clínica',
+                content: 'Texto previo.',
+                order: 1,
+              },
+            ],
+          },
+          version,
+        ]}
+        currentVersion={2}
+        onClose={vi.fn()}
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /ver anterior historia y evolución clínica/i })
+    );
+
+    expect(screen.getByText(/edfsasfadsfafa/)).toBeInTheDocument();
+    expect(screen.getByText(/dsfsdf}/)).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent('<div>');
+  });
+
+  it('explains when a version has no section-level snapshot', () => {
+    render(
+      <ClinicalDocumentVersionHistory
+        versions={[makeVersion(1, 'manual')]}
+        currentVersion={1}
+        onClose={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText(/sin detalle por sección/i)).toBeInTheDocument();
+    expect(screen.getByText(/desde los próximos guardados/i)).toBeInTheDocument();
+  });
 });

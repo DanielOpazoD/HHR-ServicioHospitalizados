@@ -6,15 +6,24 @@
  * save reason (autosave, manual, signature, etc.).
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Save, Clock, PenLine, FileSignature, ShieldCheck, Wrench } from 'lucide-react';
-import type { ClinicalDocumentVersionMeta } from '@/features/clinical-documents/domain/entities';
+import { X, Save, Clock, PenLine, FileSignature, ShieldCheck, Wrench, Eye } from 'lucide-react';
+import { getClinicalDocumentVersionChangedSectionSnapshots } from '@/features/clinical-documents/controllers/clinicalDocumentVersionHistoryController';
+import { stripClinicalDocumentHtml } from '@/features/clinical-documents/controllers/clinicalDocumentRichTextController';
+import type {
+  ClinicalDocumentVersionMeta,
+  ClinicalDocumentVersionSectionSnapshot,
+} from '@/features/clinical-documents/domain/entities';
 
 interface ClinicalDocumentVersionHistoryProps {
   versions: ClinicalDocumentVersionMeta[];
   currentVersion: number;
   onClose: () => void;
+  canRestoreSection?: boolean;
+  onRestoreSection?: (
+    section: Pick<ClinicalDocumentVersionSectionSnapshot, 'sectionId' | 'title' | 'content'>
+  ) => void;
 }
 
 const formatDateTime = (iso: string): string => {
@@ -58,8 +67,11 @@ export const ClinicalDocumentVersionHistory: React.FC<ClinicalDocumentVersionHis
   versions,
   currentVersion,
   onClose,
+  canRestoreSection = false,
+  onRestoreSection,
 }) => {
   const ref = useRef<HTMLDivElement>(null);
+  const [expandedSectionKey, setExpandedSectionKey] = useState<string | null>(null);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -70,13 +82,14 @@ export const ClinicalDocumentVersionHistory: React.FC<ClinicalDocumentVersionHis
   }, [onClose]);
 
   const sorted = [...versions].sort((a, b) => b.version - a.version);
+  const versionByNumber = new Map(versions.map(version => [version.version, version]));
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
       <div className="fixed inset-0 bg-black/20 backdrop-blur-[2px]" onClick={onClose} />
       <div
         ref={ref}
-        className="relative bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-sm max-h-[60vh] flex flex-col animate-scale-in"
+        className="relative bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md max-h-[70vh] flex flex-col animate-scale-in"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
@@ -103,6 +116,14 @@ export const ClinicalDocumentVersionHistory: React.FC<ClinicalDocumentVersionHis
               const config = getReasonConfig(v.reason);
               const Icon = config.icon;
               const isCurrent = v.version === currentVersion;
+              const previousVersion = versionByNumber.get(v.version - 1);
+              const hasComparablePreviousVersion = Boolean(
+                previousVersion?.sectionSnapshots?.length
+              );
+              const changedSnapshots = hasComparablePreviousVersion
+                ? getClinicalDocumentVersionChangedSectionSnapshots(v)
+                : [];
+              const hasSectionSnapshots = Boolean(v.sectionSnapshots?.length);
 
               return (
                 <div key={v.version} className="relative pl-5 pb-4 last:pb-0">
@@ -127,6 +148,72 @@ export const ClinicalDocumentVersionHistory: React.FC<ClinicalDocumentVersionHis
                       {config.label}
                     </span>
                   </div>
+                  {changedSnapshots.length > 0 && (
+                    <div className="mt-2 rounded-lg border border-slate-100 bg-slate-50 px-2 py-1.5">
+                      <p className="text-[9px] font-black uppercase tracking-[0.14em] text-slate-400">
+                        Cambios
+                      </p>
+                      <div className="mt-1 space-y-1">
+                        {changedSnapshots.map(section => {
+                          const sectionKey = `${v.version}-${section.sectionId}`;
+                          const isExpanded = expandedSectionKey === sectionKey;
+
+                          return (
+                            <div key={section.sectionId} className="rounded-md bg-white p-1.5">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="min-w-0 truncate text-[11px] font-semibold text-slate-700">
+                                  {section.title}
+                                </span>
+                                <div className="flex shrink-0 items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setExpandedSectionKey(current =>
+                                        current === sectionKey ? null : sectionKey
+                                      )
+                                    }
+                                    className="inline-flex h-6 items-center rounded-md border border-slate-200 px-1.5 text-[9px] font-semibold text-slate-600 transition-colors hover:bg-slate-50"
+                                    aria-label={`Ver anterior ${section.title}`}
+                                  >
+                                    <Eye size={10} className="mr-1" />
+                                    Ver
+                                  </button>
+                                  {canRestoreSection && onRestoreSection && (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        onRestoreSection({
+                                          sectionId: section.sectionId,
+                                          title: section.title,
+                                          content: section.content,
+                                        })
+                                      }
+                                      className="inline-flex h-6 items-center rounded-md border border-medical-200 bg-medical-50 px-1.5 text-[9px] font-semibold text-medical-700 transition-colors hover:bg-medical-100"
+                                      aria-label={`Restaurar ${section.title}`}
+                                    >
+                                      Restaurar
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                              {isExpanded && (
+                                <div className="mt-1 max-h-28 overflow-y-auto whitespace-pre-wrap rounded border border-slate-100 bg-slate-50 p-1.5 text-[10px] leading-relaxed text-slate-600">
+                                  {stripClinicalDocumentHtml(section.content) ||
+                                    'Sección sin contenido en esta versión.'}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  {!hasSectionSnapshots && (
+                    <p className="mt-2 rounded-lg border border-dashed border-slate-200 bg-slate-50 px-2 py-1.5 text-[10px] leading-relaxed text-slate-500">
+                      Versión sin detalle por sección. La comparación estará disponible desde los
+                      próximos guardados.
+                    </p>
+                  )}
                 </div>
               );
             })}

@@ -3,6 +3,10 @@ import type {
   ClinicalDocumentRecord,
 } from '@/features/clinical-documents/internal';
 import {
+  buildClinicalDocumentVersionSectionSnapshots,
+  resolveClinicalDocumentVersionChangedSectionIds,
+} from '@/features/clinical-documents/controllers/clinicalDocumentVersionHistoryController';
+import {
   createApplicationFailed,
   createApplicationSuccess,
 } from '@/shared/contracts/applicationOutcomeFactories';
@@ -24,24 +28,29 @@ const appendVersionAudit = (
   actor: ClinicalDocumentAuditActor,
   reason: ClinicalDocumentRecord['versionHistory'][number]['reason'],
   now: string
-): ClinicalDocumentRecord => ({
-  ...record,
-  currentVersion: record.currentVersion + 1,
-  versionHistory: [
-    ...record.versionHistory,
-    {
-      version: record.currentVersion + 1,
-      savedAt: now,
-      savedBy: actor,
-      reason,
+): ClinicalDocumentRecord => {
+  const previousVersion = record.versionHistory.at(-1);
+  return {
+    ...record,
+    currentVersion: record.currentVersion + 1,
+    versionHistory: [
+      ...record.versionHistory,
+      {
+        version: record.currentVersion + 1,
+        savedAt: now,
+        savedBy: actor,
+        reason,
+        changedSectionIds: resolveClinicalDocumentVersionChangedSectionIds(record, previousVersion),
+        sectionSnapshots: buildClinicalDocumentVersionSectionSnapshots(record),
+      },
+    ],
+    audit: {
+      ...record.audit,
+      updatedAt: now,
+      updatedBy: actor,
     },
-  ],
-  audit: {
-    ...record.audit,
-    updatedAt: now,
-    updatedBy: actor,
-  },
-});
+  };
+};
 
 export const executeCreateClinicalDocumentDraft = async (
   record: ClinicalDocumentRecord,

@@ -13,6 +13,7 @@ import {
   DEFAULT_CLINICAL_DOCUMENT_TEMPLATE_ID,
 } from '@/features/clinical-documents/domain/rules';
 import { CURRENT_CLINICAL_DOCUMENT_SCHEMA_VERSION } from '@/features/clinical-documents/domain/schema';
+import { buildClinicalDocumentVersionSectionSnapshots } from '@/features/clinical-documents/controllers/clinicalDocumentVersionHistoryController';
 
 const clonePatientFields = (
   template: ClinicalDocumentTemplate,
@@ -206,9 +207,19 @@ export const createClinicalDocumentDraft = ({
     integrityHash: '',
   };
 
+  const initialSectionSnapshots = buildClinicalDocumentVersionSectionSnapshots(draft);
   const renderedText = buildClinicalDocumentRenderedText(draft);
   return {
     ...draft,
+    versionHistory: draft.versionHistory.map(version =>
+      version.version === 1
+        ? {
+            ...version,
+            changedSectionIds: initialSectionSnapshots.map(snapshot => snapshot.sectionId),
+            sectionSnapshots: initialSectionSnapshots,
+          }
+        : version
+    ),
     renderedText,
     integrityHash: createHash(renderedText),
   };
@@ -249,9 +260,19 @@ export const duplicateClinicalDocumentDraft = (
     pdf: undefined,
   };
 
+  const initialSectionSnapshots = buildClinicalDocumentVersionSectionSnapshots(duplicatedRecord);
   const renderedText = buildClinicalDocumentRenderedText(duplicatedRecord);
   return {
     ...duplicatedRecord,
+    versionHistory: duplicatedRecord.versionHistory.map(version =>
+      version.version === 1
+        ? {
+            ...version,
+            changedSectionIds: initialSectionSnapshots.map(snapshot => snapshot.sectionId),
+            sectionSnapshots: initialSectionSnapshots,
+          }
+        : version
+    ),
     renderedText,
     integrityHash: createHash(renderedText),
   };
