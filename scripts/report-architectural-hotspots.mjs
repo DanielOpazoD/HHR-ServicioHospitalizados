@@ -92,6 +92,46 @@ const criticalityWeight = criticality => {
   }
 };
 
+const countLines = content => content.split('\n').length;
+
+const resolveHotspotRole = (relativePath, content, lines) => {
+  const meaningfulLines = content
+    .split('\n')
+    .map(line => line.trim())
+    .filter(
+      line => line && !line.startsWith('//') && !line.startsWith('/*') && !line.startsWith('*')
+    );
+
+  const isBarrel =
+    lines <= 25 &&
+    meaningfulLines.length > 0 &&
+    meaningfulLines.every(line => line.startsWith('export '));
+  if (isBarrel) return 'barrel';
+
+  if (
+    relativePath.includes('/contracts/') ||
+    relativePath.includes('/types/') ||
+    /(?:Contracts|Types)\.(?:ts|tsx)$/.test(relativePath) ||
+    relativePath.endsWith('/domain/entities.ts')
+  ) {
+    return 'contract';
+  }
+
+  if (relativePath.includes('/context/') || relativePath.includes('/hooks/')) {
+    return 'orchestrator';
+  }
+
+  return 'implementation';
+};
+
+const resolveRecommendedAction = ({ churn, inboundImports, lines, role }) => {
+  if (role === 'barrel') return 'watch-only';
+  if (role === 'contract' && churn <= 3) return 'protect-api';
+  if (lines >= 250 || churn >= 20) return 'reduce-responsibility';
+  if (inboundImports >= 30) return 'protect-boundary';
+  return 'watch';
+};
+
 const sourceFiles = walkFiles(SRC_ROOT).filter(filePath => {
   const relative = toPosix(path.relative(ROOT, filePath));
   const extension = path.extname(filePath);
@@ -147,15 +187,22 @@ for (const filePath of sourceFiles) {
 const hotspots = sourceFiles
   .map(filePath => {
     const relative = toPosix(path.relative(ROOT, filePath));
+    const content = fs.readFileSync(filePath, 'utf8');
+    const lines = countLines(content);
+    const role = resolveHotspotRole(relative, content, lines);
     const churn = churnMap.get(relative) || 0;
     const inboundImports = inboundImportsMap.get(relative) || 0;
     const criticality = resolveCriticality(relative);
     const score = churn * 2 + inboundImports * 3 + criticalityWeight(criticality) * 5;
+    const recommendedAction = resolveRecommendedAction({ churn, inboundImports, lines, role });
     return {
       file: relative,
+      lines,
       churn,
       inboundImports,
       criticality,
+      role,
+      recommendedAction,
       score,
     };
   })
@@ -168,7 +215,7 @@ const payload = {
   interpretation: {
     scoreFormula: 'churn*2 + inboundImports*3 + criticalityWeight*5',
     guidance:
-      'Priorizar archivos con score alto para extraer contratos, read models o outcomes tipados antes de seguir agregando comportamiento.',
+      'Priorizar archivos con score alto y accion reduce-responsibility/protect-boundary. Contratos estables y barrels pequenos se protegen, no se refactorizan solo por tener muchos imports.',
   },
 };
 
@@ -183,21 +230,24 @@ const markdown = `# Architectural Hotspots
 ## Interpretation
 
 - Score alto = alto costo de cambio probable.
-- Priorizar estos archivos para extraer contratos compartidos, read models o outcomes tipados.
+- Priorizar score alto con acción \`reduce-responsibility\` o \`protect-boundary\`.
+- Contratos estables y barrels pequeños son superficies sanas: proteger API antes que fragmentar.
 - Cruzar este reporte con compatibilidad legacy y cobertura crítica antes de priorizar trabajo.
 
 ## Top Hotspots
 
-| File | Churn | Inbound imports | Criticality | Score |
-| --- | ---: | ---: | --- | ---: |
+| File | Lines | Churn | Inbound imports | Criticality | Role | Action | Score |
+| --- | ---: | ---: | ---: | --- | --- | --- | ---: |
 ${hotspots
   .map(
     hotspot =>
-      `| \`${hotspot.file}\` | ${hotspot.churn} | ${hotspot.inboundImports} | ${hotspot.criticality} | ${hotspot.score} |`
+      `| \`${hotspot.file}\` | ${hotspot.lines} | ${hotspot.churn} | ${hotspot.inboundImports} | ${hotspot.criticality} | ${hotspot.role} | ${hotspot.recommendedAction} | ${hotspot.score} |`
   )
   .join('\n')}
 `;
 
 fs.writeFileSync(MD_OUTPUT, `${markdown}\n`, 'utf8');
 
-console.log('[architectural-hotspots] Report generated at reports/architectural-hotspots.{md,json}');
+console.log(
+  '[architectural-hotspots] Report generated at reports/architectural-hotspots.{md,json}'
+);
