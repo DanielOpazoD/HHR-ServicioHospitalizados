@@ -52,6 +52,30 @@ export const resolveIndexedDbRecoveryDelay = (
   retryDelays: readonly number[]
 ): number => retryDelays[Math.min(Math.max(attempt - 1, 0), retryDelays.length - 1)] ?? 0;
 
+export const openIndexedDbWithRetries = async ({
+  open,
+  retryDelays,
+  wait = sleep,
+}: {
+  open: () => Promise<unknown>;
+  retryDelays: readonly number[];
+  wait?: (ms: number) => Promise<void>;
+}): Promise<void> => {
+  let openError: unknown = undefined;
+
+  for (const retryDelay of retryDelays) {
+    try {
+      await open();
+      return;
+    } catch (attemptError) {
+      openError = attemptError;
+      await wait(retryDelay);
+    }
+  }
+
+  throw openError || new Error('IndexedDB open failed');
+};
+
 export const waitForIndexedDbOpenResolution = async ({
   isOpening,
   isDbOpen,

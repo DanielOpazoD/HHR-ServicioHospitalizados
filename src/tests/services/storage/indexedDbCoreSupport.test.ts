@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   isDatabaseClosedError,
+  openIndexedDbWithRetries,
   resolveIndexedDbErrorDetails,
   resolveIndexedDbRecoveryDelay,
   runIndexedDbOperationWithTimeout,
@@ -55,6 +56,22 @@ describe('indexedDbCoreSupport', () => {
     await vi.advanceTimersByTimeAsync(10);
     await timeoutExpectation;
     vi.useRealTimers();
+  });
+
+  it('opens with retry delays and rethrows the last failure', async () => {
+    const wait = vi.fn().mockResolvedValue(undefined);
+    const open = vi.fn().mockRejectedValueOnce(new Error('first')).mockResolvedValueOnce(undefined);
+
+    await expect(openIndexedDbWithRetries({ open, retryDelays: [10, 20], wait })).resolves.toBe(
+      undefined
+    );
+    expect(open).toHaveBeenCalledTimes(2);
+    expect(wait).toHaveBeenCalledWith(10);
+
+    const failingOpen = vi.fn().mockRejectedValue(new Error('last'));
+    await expect(
+      openIndexedDbWithRetries({ open: failingOpen, retryDelays: [10, 20], wait })
+    ).rejects.toThrow('last');
   });
 
   it('waits for concurrent opens to settle into opened, mock, stalled or settled states', async () => {

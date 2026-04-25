@@ -1,6 +1,6 @@
 # Architectural Hotspots
 
-- Generated: 2026-04-25T19:08:28.245Z
+- Generated: 2026-04-25T20:00:58.746Z
 - Ranking formula: `churn*2 + inboundImports*3 + criticalityWeight*5`
 
 ## Interpretation
@@ -35,9 +35,9 @@
 | `src/context/DailyRecordContext.tsx` | 175 | 15 | 23 | medium | orchestrator | watch | 114 |
 | `src/features/census/components/patient-row/patientRowViewContracts.ts` | 172 | 23 | 16 | high | contract | reduce-responsibility | 114 |
 | `src/services/observability/operationalTelemetryRecorder.ts` | 68 | 2 | 30 | high | implementation | protect-boundary | 114 |
+| `src/services/storage/indexeddb/indexedDbCore.ts` | 246 | 26 | 14 | high | implementation | reduce-responsibility | 114 |
 | `src/types/transferRequestTypes.ts` | 91 | 1 | 32 | medium | contract | protect-api | 113 |
 | `src/services/repositories/dailyRecordWriteSupport.ts` | 3 | 46 | 0 | high | barrel | watch-only | 112 |
-| `src/services/storage/indexeddb/indexedDbCore.ts` | 316 | 25 | 14 | high | implementation | reduce-responsibility | 112 |
 | `src/context/UIContext.tsx` | 291 | 7 | 27 | medium | orchestrator | reduce-responsibility | 110 |
 | `src/types/domain/labExamTypes.ts` | 52 | 1 | 31 | medium | contract | protect-api | 110 |
 | `src/features/census/contracts/censusMovementContracts.ts` | 14 | 1 | 29 | high | contract | protect-api | 109 |

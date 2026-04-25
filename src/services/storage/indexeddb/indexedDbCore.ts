@@ -1,9 +1,9 @@
 import Dexie from 'dexie';
 
+import { createIndexedDbBackgroundRecoveryScheduler } from './indexedDbBackgroundRecoveryScheduler';
 import { HangaRoaDatabase } from './indexedDbDatabase';
 import {
   isIndexedDbBackingStoreError,
-  shouldScheduleBackgroundIndexedDbRecovery,
   shouldUseStickyIndexedDbFallback,
 } from './indexedDbRecoveryPolicy';
 import { createMockDatabase } from './indexedDbMockFactory';
@@ -16,18 +16,16 @@ import {
 } from './indexedDbRecoveryController';
 import {
   isDatabaseClosedError,
+  openIndexedDbWithRetries,
   resolveIndexedDbErrorDetails,
-  resolveIndexedDbRecoveryDelay,
   runIndexedDbOperationWithTimeout,
   shouldAttemptIndexedDbRecreation,
-  sleep,
   waitForIndexedDbOpenResolution,
 } from './indexedDbCoreSupport';
 import {
   INDEXED_DB_DELETE_TIMEOUT_MS,
   INDEXED_DB_OPEN_TIMEOUT_MS,
   INDEXED_DB_RECOVERY_RETRY_DELAYS_MS,
-  MAX_BACKGROUND_RECOVERY_ATTEMPTS,
   getIndexedDbRecoveryBudgetSnapshot,
 } from './indexedDbRecoveryBudgets';
 import type { OperationalRuntimeState } from '@/services/observability/operationalRuntimeState';
@@ -36,11 +34,15 @@ let db: HangaRoaDatabase;
 let isUsingMock = false;
 let isOpening = false;
 let onDatabaseRecreated: (() => void) | null = null;
-let recoveryRetryTimer: ReturnType<typeof setTimeout> | null = null;
-let backgroundRecoveryAttempts = 0;
 let stickyFallbackMode = false;
-let stickyFallbackWarningShown = false;
 const emittedIndexedDbWarnings = new Set<string>();
+
+const backgroundRecoveryScheduler = createIndexedDbBackgroundRecoveryScheduler({
+  getStickyFallbackMode: () => stickyFallbackMode,
+  onRetry: () => {
+    void ensureDbReady({ allowRecoveryWhenMock: true });
+  },
+});
 
 const attachDatabaseEvents = (database: HangaRoaDatabase) =>
   attachIndexedDbEvents(
@@ -76,75 +78,9 @@ const assignMockTables = (mock: IndexedDbDatabaseLike) => {
 
 const resetIndexedDbRecoveryTracking = () => {
   stickyFallbackMode = false;
-  stickyFallbackWarningShown = false;
-  backgroundRecoveryAttempts = 0;
+  backgroundRecoveryScheduler.reset();
   emittedIndexedDbWarnings.clear();
 };
-
-const scheduleBackgroundRecoveryRetry = () => {
-  if (recoveryRetryTimer || typeof window === 'undefined') return;
-
-  if (
-    !shouldScheduleBackgroundIndexedDbRecovery(
-      backgroundRecoveryAttempts,
-      MAX_BACKGROUND_RECOVERY_ATTEMPTS,
-      stickyFallbackMode
-    )
-  ) {
-    if (stickyFallbackMode && !stickyFallbackWarningShown) {
-      stickyFallbackWarningShown = true;
-      recordIndexedDbRecoveryNotice(
-        'indexeddb_recovery_disabled',
-        'La recuperacion de IndexedDB fue deshabilitada por esta sesion tras fallos persistentes.',
-        {
-          stickyFallbackMode: true,
-          attempts: backgroundRecoveryAttempts,
-          ...getIndexedDbRecoveryBudgetSnapshot(),
-        },
-        'blocked'
-      );
-      return;
-    }
-
-    recordIndexedDbRecoveryNotice(
-      'indexeddb_recovery_stopped',
-      'Se detuvo la recuperacion en segundo plano de IndexedDB.',
-      {
-        attempts: MAX_BACKGROUND_RECOVERY_ATTEMPTS,
-        ...getIndexedDbRecoveryBudgetSnapshot(),
-      },
-      'recoverable'
-    );
-    return;
-  }
-
-  backgroundRecoveryAttempts++;
-  const scheduledDelayMs = resolveIndexedDbRecoveryDelay(
-    backgroundRecoveryAttempts,
-    INDEXED_DB_RECOVERY_RETRY_DELAYS_MS
-  );
-  recoveryRetryTimer = setTimeout(() => {
-    recoveryRetryTimer = null;
-    void ensureDbReady({ allowRecoveryWhenMock: true });
-  }, scheduledDelayMs);
-  recordIndexedDbRecoveryNotice(
-    'indexeddb_recovery_retry_scheduled',
-    'Se programo un nuevo intento de recuperacion de IndexedDB.',
-    {
-      attempt: backgroundRecoveryAttempts,
-      scheduledDelayMs,
-      ...getIndexedDbRecoveryBudgetSnapshot(),
-    },
-    'retryable'
-  );
-};
-
-const tryOpenWithTimeout = (): Promise<Dexie> =>
-  runIndexedDbOperationWithTimeout(
-    () => db.open(),
-    INDEXED_DB_OPEN_TIMEOUT_MS,
-    'IndexedDB open timeout'
-  );
 
 initializeDatabase();
 
@@ -232,22 +168,15 @@ export const ensureDbReady = async (options: EnsureDbReadyOptions = {}): Promise
 
   isOpening = true;
   try {
-    let opened = false;
-    let openError: unknown = undefined;
-    for (const retryDelay of INDEXED_DB_RECOVERY_RETRY_DELAYS_MS) {
-      try {
-        await tryOpenWithTimeout();
-        opened = true;
-        break;
-      } catch (attemptError) {
-        openError = attemptError;
-        await sleep(retryDelay);
-      }
-    }
-
-    if (!opened) {
-      throw openError || new Error('IndexedDB open failed');
-    }
+    await openIndexedDbWithRetries({
+      open: () =>
+        runIndexedDbOperationWithTimeout(
+          () => db.open(),
+          INDEXED_DB_OPEN_TIMEOUT_MS,
+          'IndexedDB open timeout'
+        ),
+      retryDelays: INDEXED_DB_RECOVERY_RETRY_DELAYS_MS,
+    });
 
     resetIndexedDbRecoveryTracking();
   } catch (error: unknown) {
@@ -277,7 +206,11 @@ export const ensureDbReady = async (options: EnsureDbReadyOptions = {}): Promise
 
         db = new HangaRoaDatabase();
         attachDatabaseEvents(db);
-        await tryOpenWithTimeout();
+        await runIndexedDbOperationWithTimeout(
+          () => db.open(),
+          INDEXED_DB_OPEN_TIMEOUT_MS,
+          'IndexedDB open timeout'
+        );
 
         isUsingMock = false;
         resetIndexedDbRecoveryTracking();
@@ -293,7 +226,7 @@ export const ensureDbReady = async (options: EnsureDbReadyOptions = {}): Promise
     stickyFallbackMode = stickyFallbackMode || shouldUseStickyIndexedDbFallback(error);
     isUsingMock = true;
     assignMockTables(createMockDatabase());
-    scheduleBackgroundRecoveryRetry();
+    backgroundRecoveryScheduler.schedule();
   } finally {
     isOpening = false;
   }

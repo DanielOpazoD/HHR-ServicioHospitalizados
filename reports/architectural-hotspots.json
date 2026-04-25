@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-25T19:08:28.245Z",
+  "generatedAt": "2026-04-25T20:00:58.746Z",
   "hotspots": [
     {
       "file": "src/services/utils/loggerScope.ts",
@@ -212,6 +212,16 @@
       "score": 114
     },
     {
+      "file": "src/services/storage/indexeddb/indexedDbCore.ts",
+      "lines": 246,
+      "churn": 26,
+      "inboundImports": 14,
+      "criticality": "high",
+      "role": "implementation",
+      "recommendedAction": "reduce-responsibility",
+      "score": 114
+    },
+    {
       "file": "src/types/transferRequestTypes.ts",
       "lines": 91,
       "churn": 1,
@@ -229,16 +239,6 @@
       "criticality": "high",
       "role": "barrel",
       "recommendedAction": "watch-only",
-      "score": 112
-    },
-    {
-      "file": "src/services/storage/indexeddb/indexedDbCore.ts",
-      "lines": 316,
-      "churn": 25,
-      "inboundImports": 14,
-      "criticality": "high",
-      "role": "implementation",
-      "recommendedAction": "reduce-responsibility",
       "score": 112
     },
     {
