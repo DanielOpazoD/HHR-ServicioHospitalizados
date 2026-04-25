@@ -170,6 +170,10 @@ describe('ClinicalDocumentSheet', () => {
     );
 
     expect(screen.getByDisplayValue(document.medico)).toBeInTheDocument();
+    expect(screen.queryByText(/revisión antes de imprimir o exportar/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/documento sin alertas obligatorias visibles/i)
+    ).not.toBeInTheDocument();
     expect(screen.queryByText(/falta completar diagnóstico/i)).not.toBeInTheDocument();
     expect(
       screen.getByText(getClinicalDocumentPlanSubsectionTitle('generales'))
@@ -298,8 +302,6 @@ describe('ClinicalDocumentSheet', () => {
       />
     );
 
-    expect(screen.getByRole('button', { name: /guardado en drive/i })).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /abrir drive/i })).not.toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: /panel de indicaciones predeterminadas/i })
     ).toBeInTheDocument();

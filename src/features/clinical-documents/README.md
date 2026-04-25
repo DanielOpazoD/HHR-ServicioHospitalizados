@@ -50,7 +50,8 @@
 ## Integraciones rápidas del sidebar
 
 - El sidebar del workspace puede exponer atajos clínicos contextuales junto al nombre del paciente.
-- `LAB` mantiene el flujo de inserción resumida hacia el documento activo.
+- `LAB` mantiene el flujo de inserción resumida hacia el documento activo y debe insertar en la
+  sección editora activa; si no hay sección activa válida, cae a la primera sección visible.
 - El atajo con icono de rayo (`MMRAD`) abre un mini-dialog para estudios `CT` de los últimos 30 días.
 - Ese mini-dialog solo aparece cuando existe documento activo editable y usa el mismo backend MMRAD del modal principal.
 - El texto copiado de MMRAD debe seguir este formato:
@@ -72,6 +73,8 @@
 - Los resultados esperados de exportación/impresión deben resolverse con outcomes tipados y
   notices compartidos; errores recuperables de Drive no deben volver a salir como excepciones
   “normales” dentro del workspace.
+- El status de Drive debe diferenciar pendiente, exportado con enlace disponible y fallo recuperable
+  con reintento visible.
 - `useClinicalDocumentWorkspaceDocumentActions` debe tratar outcomes fallidos como estado esperado:
   crear y eliminar no deben depender de `throw` para informar bloqueos o
   degradaciones recuperables al usuario.

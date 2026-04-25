@@ -5,6 +5,7 @@ import {
   FilePlus2,
   FlaskConical,
   History,
+  MoreHorizontal,
   Paperclip,
   PenLine,
   Trash2,
@@ -76,6 +77,7 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
   onOpenMMRADDialog,
 }) => {
   const importInputRef = useRef<HTMLInputElement>(null);
+  const [showAdvancedTools, setShowAdvancedTools] = useState(false);
   const selectedDocument = documents.find(document => document.id === selectedDocumentId) || null;
 
   return (
@@ -184,52 +186,67 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
               )}
             </div>
           )}
-          <div className="flex gap-1.5">
-            {selectedDocument && onExportJson && (
+          {(onExportJson || onImportJson) && (
+            <div className="space-y-1.5 border-t border-slate-100 pt-1.5">
               <button
                 type="button"
-                onClick={() => onExportJson(selectedDocument)}
-                className="flex-1 rounded-lg border border-sky-200 bg-sky-50 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-sky-700 hover:bg-sky-100 transition-colors"
-                title="Exportar JSON"
+                onClick={() => setShowAdvancedTools(current => !current)}
+                aria-expanded={showAdvancedTools}
+                className="inline-flex h-7 w-full items-center justify-center rounded-md border border-slate-200 px-2 text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500 hover:bg-slate-50 transition-colors"
               >
-                <Download size={10} className="inline mr-1" />
-                Exportar JSON
+                <MoreHorizontal size={11} className="mr-1" />
+                Herramientas avanzadas
               </button>
-            )}
-            {onImportJson && (
-              <>
-                <input
-                  ref={importInputRef}
-                  type="file"
-                  accept=".json,application/json"
-                  aria-label="Archivo JSON de documento clínico"
-                  className="hidden"
-                  onChange={event => {
-                    const file = event.target.files?.[0];
-                    if (file) {
-                      onImportJson(file);
-                    }
-                    event.target.value = '';
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => importInputRef.current?.click()}
-                  disabled={!canEdit}
-                  className={clsx(
-                    'flex-1 rounded-lg border px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] transition-colors',
-                    canEdit
-                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                      : 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
+              {showAdvancedTools && (
+                <div className="flex gap-1.5">
+                  {selectedDocument && onExportJson && (
+                    <button
+                      type="button"
+                      onClick={() => onExportJson(selectedDocument)}
+                      className="flex-1 rounded-lg border border-sky-200 bg-sky-50 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-sky-700 hover:bg-sky-100 transition-colors"
+                      title="Exportar JSON"
+                    >
+                      <Download size={10} className="inline mr-1" />
+                      Exportar JSON
+                    </button>
                   )}
-                  title="Importar JSON"
-                >
-                  <Upload size={10} className="inline mr-1" />
-                  Importar JSON
-                </button>
-              </>
-            )}
-          </div>
+                  {onImportJson && (
+                    <>
+                      <input
+                        ref={importInputRef}
+                        type="file"
+                        accept=".json,application/json"
+                        aria-label="Archivo JSON de documento clínico"
+                        className="hidden"
+                        onChange={event => {
+                          const file = event.target.files?.[0];
+                          if (file) {
+                            onImportJson(file);
+                          }
+                          event.target.value = '';
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => importInputRef.current?.click()}
+                        disabled={!canEdit}
+                        className={clsx(
+                          'flex-1 rounded-lg border px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] transition-colors',
+                          canEdit
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                            : 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
+                        )}
+                        title="Importar JSON"
+                      >
+                        <Upload size={10} className="inline mr-1" />
+                        Importar JSON
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

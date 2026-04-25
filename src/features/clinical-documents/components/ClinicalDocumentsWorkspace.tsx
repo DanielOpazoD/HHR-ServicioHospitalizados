@@ -9,6 +9,7 @@ import { ClinicalDocumentsSidebar } from '@/features/clinical-documents/componen
 import { ClinicalDocumentSheet } from '@/features/clinical-documents/components/ClinicalDocumentSheet';
 import { ClinicalDocumentLabInsertDialog } from '@/features/clinical-documents/components/ClinicalDocumentLabInsertDialog';
 import { ClinicalDocumentMMRADCopyDialog } from '@/features/clinical-documents/components/ClinicalDocumentMMRADCopyDialog';
+import { resolveClinicalDocumentInsertTarget } from '@/features/clinical-documents/controllers/clinicalDocumentExternalInsertController';
 import { useClinicalDocumentsWorkspaceModel } from '@/features/clinical-documents/hooks/useClinicalDocumentsWorkspaceModel';
 import { useClinicalDocumentSheetState } from '@/features/clinical-documents/hooks/useClinicalDocumentSheetState';
 
@@ -45,16 +46,16 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
 
   const handleInsertLabText = useCallback(
     (text: string) => {
-      const doc = sheetProps.selectedDocument;
-      if (!doc || !sheetProps.patchSection) return;
-      const firstSection = doc.sections?.find(s => s.visible !== false);
-      if (!firstSection) return;
-      const existing = firstSection.content || '';
-      const separator = existing.trim() ? '<br>' : '';
-      sheetProps.patchSection(firstSection.id, existing + separator + text);
+      const insertTarget = resolveClinicalDocumentInsertTarget({
+        document: sheetProps.selectedDocument,
+        activeEditorSectionId: sheetState.activeEditorSectionId,
+        text,
+      });
+      if (!insertTarget || !sheetProps.patchSection) return;
+      sheetProps.patchSection(insertTarget.sectionId, insertTarget.content);
       setShowLabDialog(false);
     },
-    [sheetProps]
+    [sheetProps, sheetState.activeEditorSectionId]
   );
 
   if (!canRead) {
@@ -87,7 +88,7 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
       isSaving={sheetProps.isSaving}
       lastSavedAt={sheetProps.lastSavedAt}
       isUploadingPdf={sheetProps.isUploadingPdf}
-      driveExported={sheetProps.selectedDocument.pdf?.exportStatus === 'exported'}
+      pdf={sheetProps.selectedDocument.pdf}
       onUploadPdf={sheetProps.onUploadPdf}
     />
   ) : null;

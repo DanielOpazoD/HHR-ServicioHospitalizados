@@ -160,7 +160,7 @@ describe('ClinicalDocumentsSidebar', () => {
     expect(onOpenMMRADDialog).toHaveBeenCalledTimes(1);
   });
 
-  it('delegates json import/export actions from compact sidebar controls', () => {
+  it('keeps json import/export in an advanced tools group', () => {
     const document = buildDocument();
     const onExportJson = vi.fn();
     const onImportJson = vi.fn();
@@ -185,6 +185,9 @@ describe('ClinicalDocumentsSidebar', () => {
       />
     );
 
+    expect(screen.queryByRole('button', { name: /exportar json/i })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /herramientas avanzadas/i }));
     fireEvent.click(screen.getByRole('button', { name: /exportar json/i }));
     fireEvent.change(screen.getByLabelText(/archivo json de documento clínico/i), {
       target: {
