@@ -1,6 +1,6 @@
 # Architectural Hotspots
 
-- Generated: 2026-04-26T03:14:09.021Z
+- Generated: 2026-04-26T03:27:06.128Z
 - Ranking formula: `churn*2 + inboundImports*3 + criticalityWeight*5`
 
 ## Interpretation
@@ -23,18 +23,18 @@
 | `src/context/AuthContext.tsx` | 163 | 15 | 38 | medium | orchestrator | protect-boundary | 159 |
 | `src/types/domain/dailyRecord.ts` | 91 | 8 | 41 | medium | contract | protect-boundary | 154 |
 | `src/services/observability/operationalTelemetryOutcomeRecorder.ts` | 78 | 2 | 38 | high | implementation | protect-boundary | 138 |
+| `src/features/census/types/censusAccessProfile.ts` | 5 | 2 | 37 | high | contract | protect-api | 135 |
+| `src/features/census/components/patient-row/patientRowDataContracts.ts` | 31 | 2 | 36 | high | contract | protect-api | 132 |
 | `src/shared/runtime/browserWindowRuntimeCore.ts` | 66 | 1 | 38 | medium | implementation | protect-boundary | 131 |
-| `src/features/census/types/censusAccessProfile.ts` | 5 | 2 | 35 | high | contract | protect-api | 129 |
 | `src/constants/clinicalMovementConstants.ts` | 49 | 1 | 37 | medium | implementation | protect-boundary | 128 |
 | `src/types/domain/patient.ts` | 131 | 7 | 33 | medium | contract | protect-boundary | 128 |
-| `src/features/census/components/patient-row/patientRowDataContracts.ts` | 31 | 2 | 34 | high | contract | protect-api | 126 |
 | `src/types/auditLogTypes.ts` | 70 | 1 | 36 | medium | contract | protect-api | 125 |
 | `src/shared/contracts/applicationOutcomeFactories.ts` | 66 | 2 | 35 | medium | contract | protect-api | 124 |
 | `src/constants/beds.ts` | 44 | 4 | 33 | medium | implementation | protect-boundary | 122 |
 | `src/utils/clinicalDayUtils.ts` | 232 | 6 | 31 | medium | implementation | protect-boundary | 120 |
-| `src/services/storage/indexeddb/indexedDbCore.ts` | 240 | 27 | 14 | high | implementation | reduce-responsibility | 116 |
+| `src/services/storage/indexeddb/indexedDbCore.ts` | 240 | 28 | 14 | high | implementation | reduce-responsibility | 118 |
 | `src/context/DailyRecordContext.tsx` | 175 | 15 | 23 | medium | orchestrator | watch | 114 |
-| `src/features/census/components/patient-row/patientRowViewContracts.ts` | 172 | 23 | 16 | high | contract | reduce-responsibility | 114 |
+| `src/features/census/components/patient-row/patientRowViewContracts.ts` | 13 | 23 | 16 | high | contract | reduce-responsibility | 114 |
 | `src/services/observability/operationalTelemetryRecorder.ts` | 68 | 2 | 30 | high | implementation | protect-boundary | 114 |
 | `src/types/transferRequestTypes.ts` | 91 | 1 | 32 | medium | contract | protect-api | 113 |
 | `src/context/UIContext.tsx` | 144 | 8 | 27 | medium | orchestrator | watch | 112 |

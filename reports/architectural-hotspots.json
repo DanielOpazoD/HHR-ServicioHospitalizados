@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-26T03:14:09.021Z",
+  "generatedAt": "2026-04-26T03:27:06.128Z",
   "hotspots": [
     {
       "file": "src/services/utils/loggerScope.ts",
@@ -92,6 +92,26 @@
       "score": 138
     },
     {
+      "file": "src/features/census/types/censusAccessProfile.ts",
+      "lines": 5,
+      "churn": 2,
+      "inboundImports": 37,
+      "criticality": "high",
+      "role": "contract",
+      "recommendedAction": "protect-api",
+      "score": 135
+    },
+    {
+      "file": "src/features/census/components/patient-row/patientRowDataContracts.ts",
+      "lines": 31,
+      "churn": 2,
+      "inboundImports": 36,
+      "criticality": "high",
+      "role": "contract",
+      "recommendedAction": "protect-api",
+      "score": 132
+    },
+    {
       "file": "src/shared/runtime/browserWindowRuntimeCore.ts",
       "lines": 66,
       "churn": 1,
@@ -100,16 +120,6 @@
       "role": "implementation",
       "recommendedAction": "protect-boundary",
       "score": 131
-    },
-    {
-      "file": "src/features/census/types/censusAccessProfile.ts",
-      "lines": 5,
-      "churn": 2,
-      "inboundImports": 35,
-      "criticality": "high",
-      "role": "contract",
-      "recommendedAction": "protect-api",
-      "score": 129
     },
     {
       "file": "src/constants/clinicalMovementConstants.ts",
@@ -130,16 +140,6 @@
       "role": "contract",
       "recommendedAction": "protect-boundary",
       "score": 128
-    },
-    {
-      "file": "src/features/census/components/patient-row/patientRowDataContracts.ts",
-      "lines": 31,
-      "churn": 2,
-      "inboundImports": 34,
-      "criticality": "high",
-      "role": "contract",
-      "recommendedAction": "protect-api",
-      "score": 126
     },
     {
       "file": "src/types/auditLogTypes.ts",
@@ -184,12 +184,12 @@
     {
       "file": "src/services/storage/indexeddb/indexedDbCore.ts",
       "lines": 240,
-      "churn": 27,
+      "churn": 28,
       "inboundImports": 14,
       "criticality": "high",
       "role": "implementation",
       "recommendedAction": "reduce-responsibility",
-      "score": 116
+      "score": 118
     },
     {
       "file": "src/context/DailyRecordContext.tsx",
@@ -203,7 +203,7 @@
     },
     {
       "file": "src/features/census/components/patient-row/patientRowViewContracts.ts",
-      "lines": 172,
+      "lines": 13,
       "churn": 23,
       "inboundImports": 16,
       "criticality": "high",
