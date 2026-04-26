@@ -1,6 +1,6 @@
 # Architectural Hotspots
 
-- Generated: 2026-04-26T16:23:49.940Z
+- Generated: 2026-04-26T16:55:58.309Z
 - Ranking formula: `churn*2 + inboundImports*3 + criticalityWeight*5`
 
 ## Interpretation
@@ -18,7 +18,7 @@
 | `src/application/shared/dailyRecordCoreContracts.ts` | 17 | 2 | 69 | high | contract | protect-api | 231 |
 | `src/features/clinical-documents/domain/entities.ts` | 5 | 12 | 48 | high | barrel | watch-only | 188 |
 | `src/shared/contracts/applicationOutcomeTypes.ts` | 59 | 2 | 56 | medium | contract | protect-api | 187 |
-| `src/components/shared/BaseModal.tsx` | 39 | 10 | 43 | medium | implementation | protect-boundary | 164 |
+| `src/components/shared/BaseModal.tsx` | 39 | 11 | 43 | medium | implementation | protect-boundary | 166 |
 | `src/types/authRoleTypes.ts` | 19 | 1 | 49 | medium | contract | protect-api | 164 |
 | `src/context/AuthContext.tsx` | 163 | 15 | 38 | medium | orchestrator | protect-boundary | 159 |
 | `src/types/domain/dailyRecord.ts` | 91 | 8 | 41 | medium | contract | protect-boundary | 154 |
@@ -31,7 +31,7 @@
 | `src/types/auditLogTypes.ts` | 70 | 1 | 36 | medium | contract | protect-api | 125 |
 | `src/shared/contracts/applicationOutcomeFactories.ts` | 66 | 2 | 35 | medium | contract | protect-api | 124 |
 | `src/constants/beds.ts` | 44 | 4 | 33 | medium | implementation | protect-boundary | 122 |
-| `src/utils/clinicalDayUtils.ts` | 232 | 6 | 31 | medium | implementation | protect-boundary | 120 |
+| `src/utils/clinicalDayUtils.ts` | 21 | 6 | 31 | medium | implementation | protect-boundary | 120 |
 | `src/services/storage/indexeddb/indexedDbCore.ts` | 240 | 28 | 14 | high | implementation | reduce-responsibility | 118 |
 | `src/features/census/components/patient-row/patientRowViewContracts.ts` | 13 | 24 | 16 | high | contract | reduce-responsibility | 116 |
 | `src/context/DailyRecordContext.tsx` | 175 | 15 | 23 | medium | orchestrator | watch | 114 |
