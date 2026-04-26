@@ -9,6 +9,7 @@
 import React from 'react';
 import { DailyRecordContextType } from '@/context/dailyRecordContextContracts';
 import { DailyRecordProviderTree } from '@/context/dailyRecordProviderTree';
+import { buildDailyRecordStatusModel } from '@/context/dailyRecordStatusController';
 import { PatientData } from '@/hooks/contracts/patientHookContracts';
 import { useDailyRecordFragmentedValues } from '@/context/useDailyRecordFragmentedValues';
 import { useRequiredDailyRecordActionsContext } from './dailyRecordActionsContext';
@@ -99,16 +100,11 @@ export const useDailyRecordSync = () => {
  */
 export const useDailyRecordStatus = () => {
   const { syncStatus, lastSyncTime, bootstrapPhase } = useDailyRecordSync();
-  return {
+  return buildDailyRecordStatusModel({
     syncStatus,
     lastSyncTime,
     bootstrapPhase,
-    isInitialRemoteHydrationPending: bootstrapPhase === 'remote_record_bootstrapping',
-    isSaving: syncStatus === 'saving',
-    hasError: syncStatus === 'error',
-    isIdle: syncStatus === 'idle',
-    isSaved: syncStatus === 'saved',
-  };
+  });
 };
 
 /**
