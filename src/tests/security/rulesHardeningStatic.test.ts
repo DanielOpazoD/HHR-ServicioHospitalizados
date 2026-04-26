@@ -57,6 +57,12 @@ describe('Security hardening static guards', () => {
     expect(dailyRecordsBlock).not.toMatch(/allow delete:\s*if [^;]*isNurse\(/m);
   });
 
+  it('does not keep unused general viewer helper wrappers in Firestore rules', () => {
+    const rules = readProjectFile('firestore.rules');
+
+    expect(rules).not.toContain('function isGeneralViewer()');
+  });
+
   it('does not keep hardcoded bootstrap admin allowlists in auth or rules surfaces', () => {
     const EXPECTED_BOOTSTRAP_ADMINS = [
       'daniel.opazo@hospitalhangaroa.cl',

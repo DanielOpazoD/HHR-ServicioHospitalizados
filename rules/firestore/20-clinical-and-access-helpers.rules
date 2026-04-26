@@ -1,10 +1,6 @@
     // 1.6 Clinical read access and shared access helpers
     // ---------------------------------------------
 
-    function isGeneralViewer() {
-      return hasEffectiveRole('viewer');
-    }
-
     // Consolidated read access for clinical data
     function canReadClinicalData() {
       return hasAnyEffectiveRole([
