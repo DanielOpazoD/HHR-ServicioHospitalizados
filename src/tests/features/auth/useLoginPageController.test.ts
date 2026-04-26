@@ -78,6 +78,12 @@ describe('useLoginPageController', () => {
     expect(result.current.isDayGradient).toBe(false);
   });
 
+  it('warms the default post-login route on mount', () => {
+    renderHook(() => useLoginPageController(vi.fn()));
+
+    expect(mockPreloadDefaultPostLoginRoute).toHaveBeenCalledTimes(1);
+  });
+
   it('persists manual login background mode changes across refreshes', () => {
     const { result } = renderHook(() => useLoginPageController(vi.fn()));
 

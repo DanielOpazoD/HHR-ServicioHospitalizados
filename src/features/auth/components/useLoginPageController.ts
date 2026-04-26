@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { isPopupRecoverableAuthError, resolveAuthErrorCode } from '@/services/auth/authErrorPolicy';
 import { AUTH_UI_COPY } from '@/services/auth/authUiCopy';
 import { executeGoogleSignIn } from '@/application/auth/authSessionUseCases';
@@ -14,6 +14,12 @@ import {
 const POPUP_RECOVERY_GRACE_MS = 1800;
 const POPUP_RECOVERY_POLL_MS = 100;
 const loginPageLogger = createScopedLogger('LoginPage');
+
+const warmDefaultPostLoginRoute = () => {
+  void preloadDefaultPostLoginRoute().catch(err => {
+    loginPageLogger.warn('Default post-login preload failed', err);
+  });
+};
 
 const waitForRecoverablePopupResolution = async (): Promise<boolean> => {
   const hasResolvedSession = () => getCurrentAuthSessionState().status !== 'unauthenticated';
@@ -53,13 +59,15 @@ export const useLoginPageController = (onLoginSuccess: () => void): LoginPageCon
     resolveInitialLoginBackgroundMode
   );
 
+  useEffect(() => {
+    warmDefaultPostLoginRoute();
+  }, []);
+
   const handleGoogleSignIn = async () => {
     setError(null);
     setErrorCode(null);
     setIsGoogleLoading(true);
-    void preloadDefaultPostLoginRoute().catch(err => {
-      loginPageLogger.warn('Default post-login preload failed', err);
-    });
+    warmDefaultPostLoginRoute();
 
     try {
       const outcome = await executeGoogleSignIn();
