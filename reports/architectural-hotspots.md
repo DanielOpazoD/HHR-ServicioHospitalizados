@@ -1,6 +1,6 @@
 # Architectural Hotspots
 
-- Generated: 2026-04-25T20:32:48.362Z
+- Generated: 2026-04-26T03:14:09.021Z
 - Ranking formula: `churn*2 + inboundImports*3 + criticalityWeight*5`
 
 ## Interpretation
@@ -32,13 +32,13 @@
 | `src/shared/contracts/applicationOutcomeFactories.ts` | 66 | 2 | 35 | medium | contract | protect-api | 124 |
 | `src/constants/beds.ts` | 44 | 4 | 33 | medium | implementation | protect-boundary | 122 |
 | `src/utils/clinicalDayUtils.ts` | 232 | 6 | 31 | medium | implementation | protect-boundary | 120 |
-| `src/services/storage/indexeddb/indexedDbCore.ts` | 249 | 27 | 14 | high | implementation | reduce-responsibility | 116 |
+| `src/services/storage/indexeddb/indexedDbCore.ts` | 240 | 27 | 14 | high | implementation | reduce-responsibility | 116 |
 | `src/context/DailyRecordContext.tsx` | 175 | 15 | 23 | medium | orchestrator | watch | 114 |
 | `src/features/census/components/patient-row/patientRowViewContracts.ts` | 172 | 23 | 16 | high | contract | reduce-responsibility | 114 |
 | `src/services/observability/operationalTelemetryRecorder.ts` | 68 | 2 | 30 | high | implementation | protect-boundary | 114 |
 | `src/types/transferRequestTypes.ts` | 91 | 1 | 32 | medium | contract | protect-api | 113 |
+| `src/context/UIContext.tsx` | 144 | 8 | 27 | medium | orchestrator | watch | 112 |
 | `src/services/repositories/dailyRecordWriteSupport.ts` | 3 | 46 | 0 | high | barrel | watch-only | 112 |
-| `src/context/UIContext.tsx` | 150 | 7 | 27 | medium | orchestrator | watch | 110 |
 | `src/types/domain/labExamTypes.ts` | 52 | 1 | 31 | medium | contract | protect-api | 110 |
 | `src/features/census/contracts/censusMovementContracts.ts` | 14 | 1 | 29 | high | contract | protect-api | 109 |
 | `src/hooks/contracts/patientHookContracts.ts` | 8 | 3 | 29 | medium | contract | protect-api | 108 |

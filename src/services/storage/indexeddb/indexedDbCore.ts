@@ -2,13 +2,10 @@ import Dexie from 'dexie';
 
 import { createIndexedDbBackgroundRecoveryScheduler } from './indexedDbBackgroundRecoveryScheduler';
 import { HangaRoaDatabase } from './indexedDbDatabase';
-import {
-  isIndexedDbBackingStoreError,
-  shouldUseStickyIndexedDbFallback,
-} from './indexedDbRecoveryPolicy';
 import { createMockDatabase } from './indexedDbMockFactory';
 import { attachIndexedDbEvents } from './indexedDbBootstrap';
 import type { IndexedDbDatabaseLike } from './indexedDbContracts';
+import { recoverIndexedDbInitialOpenFailure } from './indexedDbInitialOpenRecoveryController';
 import {
   recordIndexedDbFallbackMode,
   recordIndexedDbRecoveryNotice,
@@ -17,9 +14,7 @@ import {
 import {
   isDatabaseClosedError,
   openIndexedDbWithRetries,
-  resolveIndexedDbErrorDetails,
   runIndexedDbOperationWithTimeout,
-  shouldAttemptIndexedDbRecreation,
   waitForIndexedDbOpenResolution,
 } from './indexedDbCoreSupport';
 import {
@@ -180,53 +175,49 @@ export const ensureDbReady = async (options: EnsureDbReadyOptions = {}): Promise
 
     resetIndexedDbRecoveryTracking();
   } catch (error: unknown) {
-    const { errorName, errorMessage } = resolveIndexedDbErrorDetails(error);
-
-    recordIndexedDbRecoveryNotice(
-      'indexeddb_initial_open_failed',
-      'La apertura inicial de IndexedDB fallo; se intentara recuperacion automatica.',
-      {
-        errorName,
-        errorMessage,
-        ...getIndexedDbRecoveryBudgetSnapshot(),
-      }
-    );
-
-    const isBackingStoreError = isIndexedDbBackingStoreError(error);
-
-    if (shouldAttemptIndexedDbRecreation(errorName, isBackingStoreError)) {
-      try {
-        db.close();
-
-        await runIndexedDbOperationWithTimeout(
+    const recoveryOutcome = await recoverIndexedDbInitialOpenFailure({
+      error,
+      database: db,
+      closeDatabase: database => database.close(),
+      deleteDatabase: () =>
+        runIndexedDbOperationWithTimeout(
           () => Dexie.delete('HangaRoaDB'),
           INDEXED_DB_DELETE_TIMEOUT_MS,
           'Deletion timeout'
-        );
-
-        db = new HangaRoaDatabase();
-        attachDatabaseEvents(db);
-        await runIndexedDbOperationWithTimeout(
-          () => db.open(),
+        ),
+      createDatabase: () => new HangaRoaDatabase(),
+      attachDatabaseEvents,
+      openDatabase: database =>
+        runIndexedDbOperationWithTimeout(
+          () => database.open(),
           INDEXED_DB_OPEN_TIMEOUT_MS,
           'IndexedDB open timeout'
-        );
+        ),
+      activateMockFallback: () => {
+        assignMockTables(createMockDatabase());
+        return db;
+      },
+    });
 
-        isUsingMock = false;
-        resetIndexedDbRecoveryTracking();
-        onDatabaseRecreated?.();
-        return;
-      } catch (recoveryError) {
-        recordIndexedDbRecoveryFailure(recoveryError);
-        stickyFallbackMode = stickyFallbackMode || shouldUseStickyIndexedDbFallback(recoveryError);
-      }
+    db = recoveryOutcome.database;
+    isUsingMock = recoveryOutcome.fallbackMode;
+    stickyFallbackMode = stickyFallbackMode || recoveryOutcome.stickyFallbackMode;
+
+    if (recoveryOutcome.shouldResetRecoveryTracking) {
+      resetIndexedDbRecoveryTracking();
     }
 
-    recordIndexedDbFallbackMode(errorName, errorMessage || 'IndexedDB fallback activated');
-    stickyFallbackMode = stickyFallbackMode || shouldUseStickyIndexedDbFallback(error);
-    isUsingMock = true;
-    assignMockTables(createMockDatabase());
-    backgroundRecoveryScheduler.schedule();
+    if (recoveryOutcome.shouldNotifyDatabaseRecreated) {
+      onDatabaseRecreated?.();
+    }
+
+    if (!recoveryOutcome.fallbackMode) {
+      return;
+    }
+
+    if (recoveryOutcome.shouldScheduleBackgroundRecovery) {
+      backgroundRecoveryScheduler.schedule();
+    }
   } finally {
     isOpening = false;
   }

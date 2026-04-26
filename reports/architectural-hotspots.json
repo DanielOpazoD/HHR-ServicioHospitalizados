@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-25T20:32:48.362Z",
+  "generatedAt": "2026-04-26T03:14:09.021Z",
   "hotspots": [
     {
       "file": "src/services/utils/loggerScope.ts",
@@ -183,7 +183,7 @@
     },
     {
       "file": "src/services/storage/indexeddb/indexedDbCore.ts",
-      "lines": 249,
+      "lines": 240,
       "churn": 27,
       "inboundImports": 14,
       "criticality": "high",
@@ -232,6 +232,16 @@
       "score": 113
     },
     {
+      "file": "src/context/UIContext.tsx",
+      "lines": 144,
+      "churn": 8,
+      "inboundImports": 27,
+      "criticality": "medium",
+      "role": "orchestrator",
+      "recommendedAction": "watch",
+      "score": 112
+    },
+    {
       "file": "src/services/repositories/dailyRecordWriteSupport.ts",
       "lines": 3,
       "churn": 46,
@@ -240,16 +250,6 @@
       "role": "barrel",
       "recommendedAction": "watch-only",
       "score": 112
-    },
-    {
-      "file": "src/context/UIContext.tsx",
-      "lines": 150,
-      "churn": 7,
-      "inboundImports": 27,
-      "criticality": "medium",
-      "role": "orchestrator",
-      "recommendedAction": "watch",
-      "score": 110
     },
     {
       "file": "src/types/domain/labExamTypes.ts",
