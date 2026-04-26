@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-26T03:27:06.128Z",
+  "generatedAt": "2026-04-26T16:23:49.940Z",
   "hotspots": [
     {
       "file": "src/services/utils/loggerScope.ts",
@@ -43,7 +43,7 @@
     },
     {
       "file": "src/components/shared/BaseModal.tsx",
-      "lines": 156,
+      "lines": 39,
       "churn": 10,
       "inboundImports": 43,
       "criticality": "medium",
@@ -192,6 +192,16 @@
       "score": 118
     },
     {
+      "file": "src/features/census/components/patient-row/patientRowViewContracts.ts",
+      "lines": 13,
+      "churn": 24,
+      "inboundImports": 16,
+      "criticality": "high",
+      "role": "contract",
+      "recommendedAction": "reduce-responsibility",
+      "score": 116
+    },
+    {
       "file": "src/context/DailyRecordContext.tsx",
       "lines": 175,
       "churn": 15,
@@ -199,16 +209,6 @@
       "criticality": "medium",
       "role": "orchestrator",
       "recommendedAction": "watch",
-      "score": 114
-    },
-    {
-      "file": "src/features/census/components/patient-row/patientRowViewContracts.ts",
-      "lines": 13,
-      "churn": 23,
-      "inboundImports": 16,
-      "criticality": "high",
-      "role": "contract",
-      "recommendedAction": "reduce-responsibility",
       "score": 114
     },
     {
