@@ -62,11 +62,17 @@ export const preloadAuthenticatedRouteChunk = async ({
 };
 
 export const preloadDefaultPostLoginRoute = async ({
+  loadAuthenticatedShell = defaultLoadAuthenticatedShell,
   loadCensusComponents = defaultLoadCensusComponents,
   loadCensusRegisterContent = defaultLoadCensusRegisterContent,
 }: {
+  loadAuthenticatedShell?: LoadRouteComponents;
   loadCensusComponents?: LoadRouteComponents;
   loadCensusRegisterContent?: LoadRouteComponents;
 } = {}): Promise<void> => {
-  await Promise.all([loadCensusComponents(), loadCensusRegisterContent()]);
+  await Promise.all([
+    loadAuthenticatedShell(),
+    loadCensusComponents(),
+    loadCensusRegisterContent(),
+  ]);
 };

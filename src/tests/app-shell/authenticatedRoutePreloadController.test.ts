@@ -64,11 +64,17 @@ describe('authenticatedRoutePreloadController', () => {
   });
 
   it('preloads the default post-login route from the login screen', async () => {
+    const loadAuthenticatedShell = vi.fn().mockResolvedValue({});
     const loadCensusComponents = vi.fn().mockResolvedValue({});
     const loadCensusRegisterContent = vi.fn().mockResolvedValue({});
 
-    await preloadDefaultPostLoginRoute({ loadCensusComponents, loadCensusRegisterContent });
+    await preloadDefaultPostLoginRoute({
+      loadAuthenticatedShell,
+      loadCensusComponents,
+      loadCensusRegisterContent,
+    });
 
+    expect(loadAuthenticatedShell).toHaveBeenCalledTimes(1);
     expect(loadCensusComponents).toHaveBeenCalledTimes(1);
     expect(loadCensusRegisterContent).toHaveBeenCalledTimes(1);
   });
