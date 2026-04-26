@@ -52,6 +52,7 @@ Evitar que la deuda estructural vuelva a crecer después de las fases de estabil
 - `npm run ci:release-gate`
 - `npm run ci:quality-core`
 - `npm run check:quality`
+- `npm run check:release-evidence`
 - `npm run check:test-failure-catalog`
 - `npm run check:hotspot-growth`
 - `npm run report:quality-metrics`
@@ -76,7 +77,7 @@ Evitar que la deuda estructural vuelva a crecer después de las fases de estabil
 - `ci:pre-merge` es la verificación compacta obligatoria antes de merge.
 - `ci:preview-gate` es el sub-gate productivo del merge gate: budgets, chunk graph y smoke del bundle real en preview local.
 - `ci:merge-gate` es la ruta blocking ampliada previa a merge y debe delegar el chequeo del bundle productivo a `ci:preview-gate`.
-- `ci:release-gate` agrega emuladores, reglas y E2E críticos.
+- `ci:release-gate` agrega evidencia limpia de release, emuladores, reglas y E2E críticos.
 - Los artifacts del smoke de preview deben quedar en `reports/e2e/preview-bootstrap/` y/o `playwright-report/` para diagnóstico cuando falle CI.
 - `test:release-confidence` es el pack blocking compacto; no debe crecer sin justificar el riesgo nuevo en `guardrail-governance.json`.
 - Los budgets por flujo se leen desde `reports/e2e/flow-performance-budget.json` y su resumen en `reports/e2e/flow-performance-budget-summary.json` / `.md`.
@@ -89,7 +90,7 @@ Evitar que la deuda estructural vuelva a crecer después de las fases de estabil
 - La definición de terminado vive en [docs/ENGINEERING_DEFINITION_OF_DONE.md](./ENGINEERING_DEFINITION_OF_DONE.md).
 - La deuda priorizada vive en [docs/TECHNICAL_DEBT_REGISTER.md](./TECHNICAL_DEBT_REGISTER.md).
 - El registro interno recurrente de iteraciones de mantenimiento vive en [docs/MAINTENANCE_ITERATION_LOG.md](./MAINTENANCE_ITERATION_LOG.md).
-- `ci:release-gate` valida `check:report-freshness` para evitar releases con reportes ejecutivos generados contra otro commit.
+- `ci:release-gate` valida `check:release-evidence`: primero exige `check:report-freshness` y luego bloquea si los reportes ejecutivos fueron generados desde un checkout con cambios locales significativos.
 - Los fallos conocidos no resueltos deben vivir en `scripts/config/test-failure-catalog.json` con owner, clasificación y SLA.
 - Los riesgos flaky aceptados temporalmente deben vivir en `scripts/config/flaky-quarantine.json` y reflejarse también en el catálogo de fallos.
 

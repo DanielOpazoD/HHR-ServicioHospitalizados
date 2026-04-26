@@ -90,7 +90,7 @@ Usar antes de release o para validar cambios con impacto en Firestore, emuladore
 Incluye:
 
 - `npm run ci:merge-gate`
-- `npm run check:report-freshness`
+- `npm run check:release-evidence`
 - `npm run test:firestore:release:ci`
 
 ### `test:release-confidence`

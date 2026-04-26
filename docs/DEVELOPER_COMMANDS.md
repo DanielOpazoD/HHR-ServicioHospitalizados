@@ -49,6 +49,8 @@ Estos son los entrypoints recomendados para trabajo normal.
 3. Si necesitas snapshots actualizados: `npm run report:governance-snapshots`
 4. Recién después usar `reports/*` como evidencia del checkout actual
 
+Para release real, usar `npm run check:release-evidence`: además de frescura, bloquea reportes generados desde un checkout con cambios locales significativos.
+
 ### Si tocas reglas, runbooks o documentación operativa
 
 1. Si cambias `firestore.rules` o `storage.rules`: `npm run build:rules-assets`
@@ -91,6 +93,7 @@ Estos scripts siguen soportados, pero no forman parte de la superficie pública 
 
 - `npm run build:rules-assets`
 - `npm run check:report-freshness`
+- `npm run check:release-evidence`
 - `npm run report:governance-snapshots`
 
 ### Reportes y auditoría

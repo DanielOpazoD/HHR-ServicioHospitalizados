@@ -57,6 +57,6 @@ describe('ClinicalDocumentMMRADCopyDialog', () => {
       );
     });
 
-    expect(screen.getByRole('button', { name: /copiado/i })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /copiado/i })).toBeInTheDocument();
   });
 });

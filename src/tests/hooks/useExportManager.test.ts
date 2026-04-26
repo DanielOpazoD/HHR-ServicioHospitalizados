@@ -99,7 +99,9 @@ describe('useExportManager', () => {
   });
 
   it('should return all export functions', () => {
-    const { result } = renderHook(() => useExportManager(defaultProps));
+    const { result } = renderHook(() =>
+      useExportManager({ ...defaultProps, canVerifyArchiveStatus: false })
+    );
 
     expect(typeof result.current.handleExportPDF).toBe('function');
     expect(typeof result.current.handleBackupExcel).toBe('function');
@@ -217,7 +219,9 @@ describe('useExportManager', () => {
       record: null,
     };
 
-    const { result } = renderHook(() => useExportManager(props));
+    const { result } = renderHook(() =>
+      useExportManager({ ...props, canVerifyArchiveStatus: false })
+    );
 
     expect(result.current.handleExportPDF).toBeDefined();
   });
