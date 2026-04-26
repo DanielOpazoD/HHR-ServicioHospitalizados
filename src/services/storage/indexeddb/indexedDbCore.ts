@@ -2,12 +2,14 @@ import Dexie from 'dexie';
 
 import { createIndexedDbBackgroundRecoveryScheduler } from './indexedDbBackgroundRecoveryScheduler';
 import { HangaRoaDatabase } from './indexedDbDatabase';
+import {
+  assignIndexedDbMockTables,
+  createIndexedDbDatabaseOrFallback,
+} from './indexedDbDatabaseLifecycle';
 import { createMockDatabase } from './indexedDbMockFactory';
 import { attachIndexedDbEvents } from './indexedDbBootstrap';
-import type { IndexedDbDatabaseLike } from './indexedDbContracts';
 import { recoverIndexedDbInitialOpenFailure } from './indexedDbInitialOpenRecoveryController';
 import {
-  recordIndexedDbFallbackMode,
   recordIndexedDbRecoveryNotice,
   recordIndexedDbRecoveryFailure,
 } from './indexedDbRecoveryController';
@@ -47,28 +49,14 @@ const attachDatabaseEvents = (database: HangaRoaDatabase) =>
   );
 
 const initializeDatabase = () => {
-  try {
-    db = new HangaRoaDatabase();
-    attachDatabaseEvents(db);
-  } catch (error) {
-    recordIndexedDbRecoveryFailure(error);
-    db = createMockDatabase() as unknown as HangaRoaDatabase;
-    isUsingMock = true;
-    recordIndexedDbFallbackMode(
-      'construct_failed',
-      'IndexedDB no pudo inicializarse y se activo el modo fallback local.',
-      { ...getIndexedDbRecoveryBudgetSnapshot() }
-    );
-  }
-};
+  const outcome = createIndexedDbDatabaseOrFallback({
+    createDatabase: () => new HangaRoaDatabase(),
+    createMockDatabase,
+    attachDatabaseEvents,
+  });
 
-const assignMockTables = (mock: IndexedDbDatabaseLike) => {
-  db.dailyRecords = mock.dailyRecords;
-  db.catalogs = mock.catalogs;
-  db.errorLogs = mock.errorLogs;
-  db.auditLogs = mock.auditLogs;
-  db.settings = mock.settings;
-  db.syncQueue = mock.syncQueue;
+  db = outcome.database;
+  isUsingMock = outcome.fallbackMode;
 };
 
 const resetIndexedDbRecoveryTracking = () => {
@@ -116,7 +104,7 @@ export const ensureDbReady = async (options: EnsureDbReadyOptions = {}): Promise
     } catch (error) {
       recordIndexedDbRecoveryFailure(error);
       isUsingMock = true;
-      assignMockTables(createMockDatabase());
+      assignIndexedDbMockTables(db, createMockDatabase());
       return;
     }
   }
@@ -194,7 +182,7 @@ export const ensureDbReady = async (options: EnsureDbReadyOptions = {}): Promise
           'IndexedDB open timeout'
         ),
       activateMockFallback: () => {
-        assignMockTables(createMockDatabase());
+        assignIndexedDbMockTables(db, createMockDatabase());
         return db;
       },
     });
