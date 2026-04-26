@@ -1,6 +1,6 @@
 import { resolvePatientRowDemographicsBinding } from '@/features/census/controllers/patientRowModalController';
 import { resolvePatientRowModalVisibilityState } from '@/features/census/controllers/patientRowModalVisibilityController';
-import type { PatientRowModalsProps } from '@/features/census/components/patient-row/patientRowViewContracts';
+import type { PatientRowModalsProps } from '@/features/census/components/patient-row/patientRowContracts';
 
 export interface PatientRowModalRenderModel {
   demographicsBinding: ReturnType<typeof resolvePatientRowDemographicsBinding>;

@@ -5,7 +5,7 @@ import type {
 import type {
   PatientRowDeliveryPatch,
   PatientRowPatientDocumentType,
-} from '@/features/census/components/patient-row/patientRowDataContracts';
+} from '@/features/census/components/patient-row/patientRowContracts';
 
 export const resolveNextDocumentType = (
   currentType: PatientRowPatientDocumentType | undefined

@@ -5,7 +5,7 @@ import { resolvePatientRowModalMountState } from '@/features/census/controllers/
 import { PatientSubRowView } from './patient-row/PatientSubRowView';
 import { PatientMainRowView } from './patient-row/PatientMainRowView';
 import { usePatientRowBindingsModel } from './patient-row/usePatientRowBindingsModel';
-import type { PatientRowProps } from './patient-row/patientRowViewContracts';
+import type { PatientRowProps } from './patient-row/patientRowContracts';
 
 const LazyPatientRowModals = lazy(() =>
   import('./patient-row/PatientRowModals').then(module => ({

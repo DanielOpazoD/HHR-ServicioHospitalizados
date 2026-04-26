@@ -4,7 +4,7 @@ import { PatientInputCells } from './PatientInputCells';
 import { PatientMainRowActionCell } from './PatientMainRowActionCell';
 import { PatientMainRowBedTypeCell } from './PatientMainRowBedTypeCell';
 import { PatientMainRowBlockedCell } from './PatientMainRowBlockedCell';
-import type { PatientMainRowViewProps } from './patientRowViewContracts';
+import type { PatientMainRowViewProps } from './patientRowContracts';
 import { usePatientMainRowSectionsModel } from './usePatientMainRowSectionsModel';
 
 export const PatientMainRowView: React.FC<PatientMainRowViewProps> = ({

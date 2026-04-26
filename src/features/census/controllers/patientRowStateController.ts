@@ -1,4 +1,4 @@
-import type { PatientRowStateContract } from '@/features/census/components/patient-row/patientRowDataContracts';
+import type { PatientRowStateContract } from '@/features/census/components/patient-row/patientRowContracts';
 import { hasMeaningfulPatientIdentity } from '@/features/census/controllers/patientIdentityController';
 
 export interface PatientRowDerivedState {

@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { SPECIALTY_OPTIONS } from '@/constants/clinicalSpecialtyConstants';
-import type { PatientData } from '@/features/census/components/patient-row/patientRowDataContracts';
+import type { PatientData } from '@/features/census/components/patient-row/patientRowContracts';
 import { Specialty } from '@/types/domain/patientClassification';
 import type { EventTextHandler } from '@/features/census/components/patient-row/inputCellTypes';
 import {

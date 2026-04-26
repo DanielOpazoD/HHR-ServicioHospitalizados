@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { buildPatientActionSectionBinding } from '../../controllers/patientRowActionSectionBindingsController';
 import { buildPatientMainRowSections } from '../../controllers/patientMainRowSectionsController';
-import type { PatientMainRowViewProps } from './patientRowViewContracts';
+import type { PatientMainRowViewProps } from './patientRowContracts';
 
 export const usePatientMainRowSectionsModel = (props: PatientMainRowViewProps) => {
   const actionSectionBinding = useMemo(

@@ -4,7 +4,7 @@ import type {
   PatientMainRowViewProps,
   PatientMainRowBedTypeCellProps,
   PatientMainRowBlockedCellProps,
-} from '@/features/census/components/patient-row/patientRowViewContracts';
+} from '@/features/census/components/patient-row/patientRowContracts';
 import type { PatientActionSectionBinding } from '@/features/census/controllers/patientRowActionSectionBindingsController';
 
 export interface PatientMainRowSections {

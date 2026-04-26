@@ -3,7 +3,7 @@ import { User } from 'lucide-react';
 import { MedicalBadge } from '@/components/ui/base/MedicalBadge';
 import { PatientInputCells } from './PatientInputCells';
 import { shouldShowSubRowDemographicsButton } from '@/features/census/controllers/patientRowSubViewController';
-import type { PatientSubRowViewProps } from '@/features/census/components/patient-row/patientRowViewContracts';
+import type { PatientSubRowViewProps } from '@/features/census/components/patient-row/patientRowContracts';
 import { isSpecialistCensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 
 export const PatientSubRowView: React.FC<PatientSubRowViewProps> = ({

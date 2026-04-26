@@ -1,4 +1,4 @@
-import type { PatientData } from '@/features/census/components/patient-row/patientRowDataContracts';
+import type { PatientData } from '@/features/census/components/patient-row/patientRowContracts';
 import { PatientInputSchema } from '@/schemas/inputSchemas';
 import { isE2EEditableRecordOverrideEnabled } from '@/shared/runtime/e2eRuntime';
 

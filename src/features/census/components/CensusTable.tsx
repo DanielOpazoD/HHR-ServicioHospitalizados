@@ -10,7 +10,7 @@ import { ViewLoader } from '@/components/ui/ViewLoader';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 import { createEmptyPatient } from '@/services/factories/patientFactory';
 import { hasMeaningfulPatientIdentity } from '@/features/census/controllers/patientIdentityController';
-import type { PatientData } from '@/features/census/components/patient-row/patientRowDataContracts';
+import type { PatientData } from '@/features/census/components/patient-row/patientRowContracts';
 export type { DiagnosisMode } from '@/features/census/types/censusTableTypes';
 
 const LazyDemographicsModal = lazy(() =>

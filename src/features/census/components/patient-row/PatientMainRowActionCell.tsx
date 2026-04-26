@@ -1,6 +1,6 @@
 import React from 'react';
 import { PatientActionMenu } from './PatientActionMenu';
-import type { PatientMainRowActionCellProps } from '@/features/census/components/patient-row/patientRowViewContracts';
+import type { PatientMainRowActionCellProps } from '@/features/census/components/patient-row/patientRowContracts';
 
 export const PatientMainRowActionCell: React.FC<PatientMainRowActionCellProps> = ({
   isBlocked,

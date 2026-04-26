@@ -1,6 +1,6 @@
 import React, { lazy, Suspense } from 'react';
 import { buildPatientRowModalRenderModel } from '@/features/census/controllers/patientRowModalRenderController';
-import type { PatientRowModalsProps } from '@/features/census/components/patient-row/patientRowViewContracts';
+import type { PatientRowModalsProps } from '@/features/census/components/patient-row/patientRowContracts';
 import { hasMeaningfulDemographicSubset } from '@/components/modals/demographics/utils';
 
 const LazyDemographicsModal = lazy(() =>

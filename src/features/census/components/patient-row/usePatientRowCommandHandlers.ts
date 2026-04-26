@@ -3,7 +3,7 @@ import type { DeviceDetails, DeviceInstance } from '@/types/domain/devices';
 import type {
   PatientRowPatientField,
   PatientRowPatientPatch,
-} from '@/features/census/components/patient-row/patientRowDataContracts';
+} from '@/features/census/components/patient-row/patientRowContracts';
 import type { PatientRowInputCommands } from '@/features/census/controllers/patientRowInputHandlersController';
 
 interface UsePatientRowCommandHandlersResult {

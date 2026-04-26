@@ -6,8 +6,23 @@ export type {
 export type { PatientData } from '@/features/census/components/patient-row/patientRowDataContracts';
 export type {
   PatientRowPatientContract,
+  PatientRowDeliveryPatch,
+  PatientRowPatientDocumentType,
+  PatientRowPatientField,
   PatientRowPatientPatch,
+  PatientRowStateContract,
 } from '@/features/census/components/patient-row/patientRowDataContracts';
+export type {
+  PatientBedConfigProps,
+  PatientInputCellsProps,
+  PatientMainRowActionCellProps,
+  PatientMainRowBedTypeCellProps,
+  PatientMainRowBlockedCellProps,
+  PatientMainRowViewProps,
+  PatientRowModalsProps,
+  PatientRowProps,
+  PatientSubRowViewProps,
+} from '@/features/census/components/patient-row/patientRowViewContracts';
 export type {
   MaybePromiseVoid,
   RowMenuAlign,

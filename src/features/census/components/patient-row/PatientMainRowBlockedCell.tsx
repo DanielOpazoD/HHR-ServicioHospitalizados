@@ -1,6 +1,6 @@
 import React from 'react';
 import { AlertCircle } from 'lucide-react';
-import type { PatientMainRowBlockedCellProps } from '@/features/census/components/patient-row/patientRowViewContracts';
+import type { PatientMainRowBlockedCellProps } from '@/features/census/components/patient-row/patientRowContracts';
 import { isSpecialistCensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 
 export const PatientMainRowBlockedCell: React.FC<PatientMainRowBlockedCellProps> = ({

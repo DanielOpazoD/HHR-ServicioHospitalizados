@@ -3,7 +3,7 @@ import { Plane, RefreshCcw } from 'lucide-react';
 import { MedicalBadge } from '@/components/ui/base/MedicalBadge';
 import { BedType } from '@/features/census/contracts/censusBedContracts';
 import { usePatientActiveTransferQuery } from '@/features/census/components/patient-row/useBedActiveTransferQuery';
-import type { PatientMainRowBedTypeCellProps } from '@/features/census/components/patient-row/patientRowViewContracts';
+import type { PatientMainRowBedTypeCellProps } from '@/features/census/components/patient-row/patientRowContracts';
 
 export const PatientMainRowBedTypeCell: React.FC<PatientMainRowBedTypeCellProps> = ({
   bedId: _bedId,

@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import { usePatientBedConfigController } from '@/features/census/components/patient-row/usePatientBedConfigController';
 import { PatientBedConfigMenuPanel } from '@/features/census/components/patient-row/PatientBedConfigMenuPanel';
 import { buildPatientBedConfigSections } from '@/features/census/controllers/patientBedConfigSectionsController';
-import type { PatientBedConfigProps } from '@/features/census/components/patient-row/patientRowViewContracts';
+import type { PatientBedConfigProps } from '@/features/census/components/patient-row/patientRowContracts';
 
 export const PatientBedConfig: React.FC<PatientBedConfigProps> = ({
   bed,

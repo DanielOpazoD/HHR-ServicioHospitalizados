@@ -8,7 +8,7 @@ import type {
   PatientRowPatientDocumentType,
   PatientRowPatientField,
   PatientRowPatientPatch,
-} from '@/features/census/components/patient-row/patientRowDataContracts';
+} from '@/features/census/components/patient-row/patientRowContracts';
 import { PatientFieldValue } from '@/types/valueTypes';
 import {
   buildDeliveryRoutePatch,

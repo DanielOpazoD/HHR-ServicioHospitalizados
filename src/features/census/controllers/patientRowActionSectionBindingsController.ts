@@ -1,5 +1,5 @@
-import type { PatientMainRowViewProps } from '@/features/census/components/patient-row/patientRowViewContracts';
-import type { PatientMainRowActionCellProps } from '@/features/census/components/patient-row/patientRowViewContracts';
+import type { PatientMainRowViewProps } from '@/features/census/components/patient-row/patientRowContracts';
+import type { PatientMainRowActionCellProps } from '@/features/census/components/patient-row/patientRowContracts';
 import { calculateHospitalizedDays } from '@/features/census/controllers/patientBedConfigViewController';
 import { hasMeaningfulPatientIdentity } from '@/features/census/controllers/patientIdentityController';
 import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medicalIndications';
