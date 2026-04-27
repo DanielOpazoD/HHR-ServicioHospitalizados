@@ -781,6 +781,51 @@ export function registerFirestoreRulesAccessGroups({
       );
     });
 
+    it('Specialists cannot alter an existing record timestamp while persisting handoff changes', async () => {
+      await setupDoc(admin(), recordPath, {
+        date: CURRENT_RECORD_DATE,
+        dateTimestamp: NOW_MS,
+        beds: {
+          R1: {
+            patientName: 'Paciente Timestamp',
+            rut: '5-2',
+            pathology: 'Control',
+            specialty: 'Med Interna',
+            medicalHandoffNote: '',
+            medicalHandoffEntries: [],
+            clinicalEvents: [],
+          },
+        },
+      });
+
+      await assertFails(
+        specialist()
+          .doc(recordPath)
+          .update({
+            'beds.R1.medicalHandoffNote': 'Intento con timestamp alterado',
+            'beds.R1.medicalHandoffEntries': [
+              {
+                id: 'primary-entry',
+                specialty: 'Med Interna',
+                note: 'Intento con timestamp alterado',
+              },
+            ],
+            'beds.R1.medicalHandoffAudit': {
+              lastSpecialistUpdateAt: new Date(NOW_MS).toISOString(),
+              lastSpecialistUpdateBy: {
+                uid: 'user_specialist',
+                email: 'specialist@example.com',
+                displayName: 'Especialista',
+                role: 'doctor_specialist',
+              },
+              currentStatus: 'updated_by_specialist',
+            },
+            dateTimestamp: NOW_MS - 1000,
+            lastUpdated: NOW_MS,
+          })
+      );
+    });
+
     it('Admins can delete daily records', async () => {
       await setupDoc(admin(), recordPath, { date: CURRENT_RECORD_DATE });
       await assertSucceeds(admin().doc(recordPath).delete());

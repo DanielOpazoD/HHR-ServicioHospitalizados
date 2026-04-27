@@ -20,6 +20,12 @@
       return request.resource.data.beds.diff(resource.data.beds).affectedKeys();
     }
 
+    function hasValidSpecialistRecordTimestampChange(affectedRecordKeys) {
+      return !affectedRecordKeys.hasAny(['dateTimestamp']) ||
+             !resource.data.keys().hasAny(['dateTimestamp']) ||
+             resource.data.dateTimestamp == null;
+    }
+
     function isSpecialistStructuredMedicalHandoffPayload(affectedRecordKeys) {
       return hasOnlySpecialistStructuredRecordKeys(affectedRecordKeys) &&
              isSpecialistStructuredMedicalHandoffUpdate(
@@ -37,6 +43,7 @@
       let effectiveRecordTimestamp = resolveSpecialistMedicalHandoffRecordTimestamp();
 
       return isWithinSpecialistMedicalHandoffWindow(effectiveRecordTimestamp) &&
+             hasValidSpecialistRecordTimestampChange(affectedRecordKeys) &&
              (
                isSpecialistStructuredMedicalHandoffPayload(affectedRecordKeys) ||
                isSpecialistBedMedicalHandoffPayload(affectedRecordKeys)

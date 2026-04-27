@@ -342,3 +342,19 @@ Además se agregó una prueba explícita para congelar ese contrato:
 - El caso denegado sobre documento inexistente sigue en `evaluation error`, sin volver a `maximum of 1000 expressions to evaluate`.
 
 Conclusión: esta fue la última iteración de complejidad estructural con retorno claro en el frente especialista. A partir de aquí, el valor ya no está en seguir partiendo helpers, sino en mantener cobertura dirigida y evitar que el boundary vuelva a mezclar payloads o recomputar diffs innecesarios.
+
+## Iteración 17 ejecutada
+
+Se hizo una revisión enfocada del boundary especialista sin abrir una reescritura de reglas:
+
+- se congeló por test que un especialista puede reparar `dateTimestamp` faltante durante un handoff válido
+- se agregó una regresión que bloquea alterar un `dateTimestamp` ya existente como efecto colateral de un handoff especialista
+- `hasValidSpecialistRecordTimestampChange(...)` concentra esa política en `12-specialist-handoff-boundary-helpers.rules`
+
+La prueba falló primero contra la regla vigente: el emulador permitía cambiar un timestamp persistido a otro valor todavía dentro de la ventana clínica. La corrección mantiene el flujo legacy de reparación, pero bloquea mutación de timestamp en registros ya hidratados.
+
+## Resultado de la validación de la iteración 17
+
+- `bash scripts/run-firestore-rules-ci.sh`: verde (`105` tests).
+
+Conclusión: el valor aquí no es reducir líneas, sino bajar riesgo clínico-operacional en un campo que define la pertenencia temporal del registro diario.
