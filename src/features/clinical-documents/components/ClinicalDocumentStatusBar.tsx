@@ -13,9 +13,13 @@ import type { ClinicalDocumentPdfMeta } from '@/features/clinical-documents/doma
 interface ClinicalDocumentStatusBarProps {
   isSaving: boolean;
   lastSavedAt?: string;
+  hasLocalDraftChanges: boolean;
+  hasPendingRemoteUpdate: boolean;
   isUploadingPdf: boolean;
   pdf?: ClinicalDocumentPdfMeta;
   onUploadPdf: () => void;
+  onApplyPendingRemoteUpdate: () => void;
+  onDiscardLocalDraftChanges: () => void;
 }
 
 const btnBase =
@@ -24,17 +28,21 @@ const btnBase =
 export const ClinicalDocumentStatusBar: React.FC<ClinicalDocumentStatusBarProps> = ({
   isSaving,
   lastSavedAt,
+  hasLocalDraftChanges,
+  hasPendingRemoteUpdate,
   isUploadingPdf,
   pdf,
   onUploadPdf,
+  onApplyPendingRemoteUpdate,
+  onDiscardLocalDraftChanges,
 }) => {
   const autosaveState = useMemo(
-    () => resolveAutosaveIndicatorState(isSaving, false, lastSavedAt),
-    [isSaving, lastSavedAt]
+    () => resolveAutosaveIndicatorState(isSaving, hasLocalDraftChanges, lastSavedAt),
+    [hasLocalDraftChanges, isSaving, lastSavedAt]
   );
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center justify-end gap-2">
       {autosaveState.phase === 'saving' && (
         <span
           className="flex items-center gap-1 text-[9px] font-semibold tracking-wide"
@@ -45,6 +53,43 @@ export const ClinicalDocumentStatusBar: React.FC<ClinicalDocumentStatusBarProps>
             <span className="text-slate-400">Guardando...</span>
           </>
         </span>
+      )}
+
+      {autosaveState.phase === 'dirty' && (
+        <span
+          className="flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-amber-700"
+          aria-live="polite"
+        >
+          <AlertCircle size={11} />
+          Cambios locales sin guardar
+        </span>
+      )}
+
+      {hasPendingRemoteUpdate && (
+        <div
+          className="flex items-center gap-1 rounded-md border border-orange-200 bg-orange-50 px-2 py-1"
+          role="status"
+          aria-live="polite"
+        >
+          <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.12em] text-orange-700">
+            <AlertCircle size={11} />
+            Actualización remota pendiente
+          </span>
+          <button
+            type="button"
+            onClick={onApplyPendingRemoteUpdate}
+            className="rounded border border-orange-200 bg-white px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-orange-700 hover:bg-orange-100"
+          >
+            Recargar remoto
+          </button>
+          <button
+            type="button"
+            onClick={onDiscardLocalDraftChanges}
+            className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-slate-600 hover:bg-slate-100"
+          >
+            Descartar local
+          </button>
+        </div>
       )}
 
       <div className="flex items-center gap-1.5">

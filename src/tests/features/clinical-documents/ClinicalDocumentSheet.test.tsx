@@ -67,6 +67,10 @@ const buildToolbar = (handlers: { onPrint: () => void; onRestoreTemplate: () => 
 const defaultHandlers = {
   onPrint: vi.fn(),
   onUploadPdf: vi.fn(),
+  hasLocalDraftChanges: false,
+  hasPendingRemoteUpdate: false,
+  onApplyPendingRemoteUpdate: vi.fn(),
+  onDiscardLocalDraftChanges: vi.fn(),
   onRestoreTemplate: vi.fn(),
   activeTitleTarget: null,
   activeEditorSectionId: null,

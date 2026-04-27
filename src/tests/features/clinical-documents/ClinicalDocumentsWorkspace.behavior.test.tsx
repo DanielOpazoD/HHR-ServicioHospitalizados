@@ -370,12 +370,14 @@ describe('ClinicalDocumentsWorkspace behavior', () => {
     });
 
     await waitFor(() => {
-      expect(screen.queryByRole('button', { name: /recargar remoto/i })).not.toBeInTheDocument();
+      expect(screen.getByText(/actualización remota pendiente/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /recargar remoto/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /descartar local/i })).toBeInTheDocument();
       expect(screen.getByText('Cambio local sin guardar')).toBeInTheDocument();
     });
   });
 
-  it('does not show remote resolution buttons after a staged remote update', async () => {
+  it('lets the user explicitly apply a staged remote update without silent overwrite', async () => {
     let subscriptionCallback: ((docs: ClinicalDocumentRecord[]) => void) | null = null;
     vi.mocked(ClinicalDocumentRepository.subscribeByEpisode).mockImplementation(
       (_episodeKey, callback) => {
@@ -419,9 +421,15 @@ describe('ClinicalDocumentsWorkspace behavior', () => {
     });
 
     await waitFor(() => {
-      expect(screen.queryByRole('button', { name: /recargar remoto/i })).not.toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: /descartar local/i })).not.toBeInTheDocument();
+      expect(screen.getByText(/actualización remota pendiente/i)).toBeInTheDocument();
       expect(screen.getByText('Cambio local temporal')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /recargar remoto/i }));
+
+    await waitFor(() => {
+      expect(screen.queryByText(/actualización remota pendiente/i)).not.toBeInTheDocument();
+      expect(screen.getByText('Cambio remoto definitivo')).toBeInTheDocument();
     });
   });
 });

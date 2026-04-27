@@ -3,10 +3,18 @@ import { fireEvent, render, screen } from '@testing-library/react';
 
 import { ClinicalDocumentStatusBar } from '@/features/clinical-documents/components/ClinicalDocumentStatusBar';
 
+const defaultStatusProps = {
+  hasLocalDraftChanges: false,
+  hasPendingRemoteUpdate: false,
+  onApplyPendingRemoteUpdate: vi.fn(),
+  onDiscardLocalDraftChanges: vi.fn(),
+};
+
 describe('ClinicalDocumentStatusBar', () => {
   it('shows an exported Drive state with a direct link', () => {
     render(
       <ClinicalDocumentStatusBar
+        {...defaultStatusProps}
         isSaving={false}
         lastSavedAt="2026-03-06T10:30:00.000Z"
         isUploadingPdf={false}
@@ -33,6 +41,7 @@ describe('ClinicalDocumentStatusBar', () => {
 
     render(
       <ClinicalDocumentStatusBar
+        {...defaultStatusProps}
         isSaving={false}
         isUploadingPdf={false}
         pdf={{

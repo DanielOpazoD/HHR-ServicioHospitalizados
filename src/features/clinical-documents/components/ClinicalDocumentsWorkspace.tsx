@@ -106,9 +106,13 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
     <ClinicalDocumentStatusBar
       isSaving={sheetProps.isSaving}
       lastSavedAt={sheetProps.lastSavedAt}
+      hasLocalDraftChanges={sheetProps.hasLocalDraftChanges}
+      hasPendingRemoteUpdate={sheetProps.hasPendingRemoteUpdate}
       isUploadingPdf={sheetProps.isUploadingPdf}
       pdf={sheetProps.selectedDocument.pdf}
       onUploadPdf={sheetProps.onUploadPdf}
+      onApplyPendingRemoteUpdate={sheetProps.onApplyPendingRemoteUpdate}
+      onDiscardLocalDraftChanges={sheetProps.onDiscardLocalDraftChanges}
     />
   ) : null;
 
