@@ -1,6 +1,6 @@
 # Architectural Hotspots
 
-- Generated: 2026-04-27T03:08:46.872Z
+- Generated: 2026-04-27T13:30:38.530Z
 - Ranking formula: `churn*2 + inboundImports*3 + criticalityWeight*5`
 
 ## Interpretation
@@ -31,8 +31,8 @@
 | `src/types/auditLogTypes.ts` | 70 | 1 | 36 | medium | contract | protect-api | 125 |
 | `src/shared/contracts/applicationOutcomeFactories.ts` | 66 | 2 | 35 | medium | contract | protect-api | 124 |
 | `src/constants/beds.ts` | 44 | 4 | 33 | medium | implementation | protect-boundary | 122 |
+| `src/services/storage/indexeddb/indexedDbCore.ts` | 212 | 30 | 14 | high | implementation | reduce-responsibility | 122 |
 | `src/utils/clinicalDayUtils.ts` | 18 | 7 | 31 | medium | implementation | protect-boundary | 122 |
-| `src/services/storage/indexeddb/indexedDbCore.ts` | 225 | 29 | 14 | high | implementation | reduce-responsibility | 120 |
 | `src/context/DailyRecordContext.tsx` | 171 | 16 | 23 | medium | orchestrator | watch | 116 |
 | `src/services/observability/operationalTelemetryRecorder.ts` | 68 | 2 | 30 | high | implementation | protect-boundary | 114 |
 | `src/types/transferRequestTypes.ts` | 91 | 1 | 32 | medium | contract | protect-api | 113 |

@@ -1,5 +1,3 @@
-import Dexie from 'dexie';
-
 import { createIndexedDbBackgroundRecoveryScheduler } from './indexedDbBackgroundRecoveryScheduler';
 import { HangaRoaDatabase } from './indexedDbDatabase';
 import {
@@ -8,7 +6,10 @@ import {
 } from './indexedDbDatabaseLifecycle';
 import { createMockDatabase } from './indexedDbMockFactory';
 import { attachIndexedDbEvents } from './indexedDbBootstrap';
-import { recoverIndexedDbInitialOpenFailure } from './indexedDbInitialOpenRecoveryController';
+import {
+  recoverIndexedDbInitialOpenRuntimeFailure,
+  restoreIndexedDbFromMockFallback,
+} from './indexedDbCoreRecovery';
 import {
   recordIndexedDbRecoveryNotice,
   recordIndexedDbRecoveryFailure,
@@ -20,7 +21,6 @@ import {
   waitForIndexedDbOpenResolution,
 } from './indexedDbCoreSupport';
 import {
-  INDEXED_DB_DELETE_TIMEOUT_MS,
   INDEXED_DB_OPEN_TIMEOUT_MS,
   INDEXED_DB_RECOVERY_RETRY_DELAYS_MS,
   getIndexedDbRecoveryBudgetSnapshot,
@@ -93,15 +93,20 @@ export const ensureDbReady = async (options: EnsureDbReadyOptions = {}): Promise
 
   if (shouldSkipReadyCheckForMock({ isUsingMock, allowRecoveryWhenMock })) return;
   if (shouldAttemptMockRecovery({ isUsingMock, allowRecoveryWhenMock, stickyFallbackMode })) {
-    try {
-      db = new HangaRoaDatabase();
-      attachDatabaseEvents(db);
-      isUsingMock = false;
-      resetIndexedDbRecoveryTracking();
-    } catch (error) {
-      recordIndexedDbRecoveryFailure(error);
-      isUsingMock = true;
-      assignIndexedDbMockTables(db, createMockDatabase());
+    const recoveryOutcome = restoreIndexedDbFromMockFallback({
+      currentDatabase: db,
+      createDatabase: () => new HangaRoaDatabase(),
+      attachDatabaseEvents,
+      resetRecoveryTracking: resetIndexedDbRecoveryTracking,
+      assignMockTables: assignIndexedDbMockTables,
+      createMockDatabase,
+      recordRecoveryFailure: recordIndexedDbRecoveryFailure,
+    });
+
+    db = recoveryOutcome.database;
+    isUsingMock = recoveryOutcome.fallbackMode;
+
+    if (recoveryOutcome.fallbackMode) {
       return;
     }
   }
@@ -160,28 +165,10 @@ export const ensureDbReady = async (options: EnsureDbReadyOptions = {}): Promise
 
     resetIndexedDbRecoveryTracking();
   } catch (error: unknown) {
-    const recoveryOutcome = await recoverIndexedDbInitialOpenFailure({
+    const recoveryOutcome = await recoverIndexedDbInitialOpenRuntimeFailure({
       error,
       database: db,
-      closeDatabase: database => database.close(),
-      deleteDatabase: () =>
-        runIndexedDbOperationWithTimeout(
-          () => Dexie.delete('HangaRoaDB'),
-          INDEXED_DB_DELETE_TIMEOUT_MS,
-          'Deletion timeout'
-        ),
-      createDatabase: () => new HangaRoaDatabase(),
       attachDatabaseEvents,
-      openDatabase: database =>
-        runIndexedDbOperationWithTimeout(
-          () => database.open(),
-          INDEXED_DB_OPEN_TIMEOUT_MS,
-          'IndexedDB open timeout'
-        ),
-      activateMockFallback: () => {
-        assignIndexedDbMockTables(db, createMockDatabase());
-        return db;
-      },
     });
 
     db = recoveryOutcome.database;
