@@ -1,24 +1,14 @@
-import { useCallback, useState } from 'react';
-import { CENSUS_DEFAULT_RECIPIENTS } from '@/constants/email';
-import {
-  CENSUS_GLOBAL_EMAIL_RECIPIENT_LIST,
-  type GlobalEmailRecipientList,
-} from '@/services/email/emailRecipientListService';
+import { useCallback } from 'react';
+import type { GlobalEmailRecipientList } from '@/services/email/emailRecipientListService';
 import type { CensusEmailBrowserRuntime } from '@/hooks/controllers/censusEmailBrowserRuntimeController';
-import {
-  applyRecipientSyncRuntimeMetadata,
-  type RecipientRuntimeMetadata,
-  type RecipientRuntimeState,
-  resolveRecipientRuntimeMetadata,
-  resolveRecipientSelectionRuntimeState,
-  resolveRecipientSyncState,
-} from '@/hooks/controllers/censusEmailRecipientRuntimeController';
+import { resolveRecipientSelectionRuntimeState } from '@/hooks/controllers/censusEmailRecipientRuntimeController';
 import type { RecipientRuntimeMutationSpec } from '@/hooks/controllers/censusEmailRecipientMutationActionController';
 import { executeRecipientRuntimeMutationSpec } from '@/hooks/controllers/censusEmailRecipientMutationRunner';
 import { useCensusEmailRecipientBootstrapEffect } from '@/hooks/useCensusEmailRecipientBootstrapEffect';
 import { useCensusEmailRecipientDeferredSyncEffect } from '@/hooks/useCensusEmailRecipientDeferredSyncEffect';
 import { useCensusEmailRecipientMutationActions } from '@/hooks/useCensusEmailRecipientMutationActions';
 import { useCensusEmailRecipientPersistenceEffect } from '@/hooks/useCensusEmailRecipientPersistenceEffect';
+import { useCensusEmailRecipientRuntimeState } from '@/hooks/useCensusEmailRecipientRuntimeState';
 
 interface UseCensusEmailRecipientListsParams {
   canManageGlobalRecipientLists: boolean;
@@ -51,48 +41,20 @@ export const useCensusEmailRecipientLists = ({
   enabled,
   user,
 }: UseCensusEmailRecipientListsParams): UseCensusEmailRecipientListsReturn => {
-  const [recipients, setRecipientsState] = useState<string[]>(CENSUS_DEFAULT_RECIPIENTS);
-  const [recipientLists, setRecipientLists] = useState<GlobalEmailRecipientList[]>([]);
-  const [recipientsSource, setRecipientsSource] = useState<'firebase' | 'local' | 'default'>(
-    'default'
-  );
-  const [isRecipientsSyncing, setIsRecipientsSyncing] = useState(false);
-  const [recipientsSyncError, setRecipientsSyncError] = useState<string | null>(null);
-  const [runtimeMetadata, setRuntimeMetadata] = useState<RecipientRuntimeMetadata>({
-    recipientsReady: false,
-    activeRecipientListId: CENSUS_GLOBAL_EMAIL_RECIPIENT_LIST.id,
-    lastRemoteRecipients: null,
-  });
-
-  const setActiveRecipientListId = useCallback((listId: string) => {
-    setRuntimeMetadata(current => ({
-      ...current,
-      activeRecipientListId: listId,
-    }));
-  }, []);
-
-  const setRecipients = useCallback((nextRecipients: string[]) => {
-    setRecipientsState(nextRecipients);
-  }, []);
-
-  const applyRecipientRuntimeState = useCallback((nextState: RecipientRuntimeState) => {
-    setRecipientLists(nextState.recipientLists);
-    setRecipientsState(nextState.recipients);
-    setRecipientsSource(nextState.recipientsSource);
-    setRecipientsSyncError(nextState.recipientsSyncError);
-    setRuntimeMetadata(resolveRecipientRuntimeMetadata(nextState));
-  }, []);
-
-  const applyRecipientSyncState = useCallback(
-    (nextState: ReturnType<typeof resolveRecipientSyncState>) => {
-      if (nextState.recipientsSource) {
-        setRecipientsSource(nextState.recipientsSource);
-      }
-      setRecipientsSyncError(nextState.recipientsSyncError);
-      setRuntimeMetadata(current => applyRecipientSyncRuntimeMetadata(current, nextState));
-    },
-    []
-  );
+  const {
+    recipients,
+    setRecipients,
+    recipientLists,
+    recipientsSource,
+    isRecipientsSyncing,
+    setIsRecipientsSyncing,
+    recipientsSyncError,
+    setRecipientsSyncError,
+    runtimeMetadata,
+    setActiveRecipientListId,
+    applyRecipientRuntimeState,
+    applyRecipientSyncState,
+  } = useCensusEmailRecipientRuntimeState();
 
   const selectActiveRecipientList = useCallback(
     (listId: string) => {
@@ -125,7 +87,7 @@ export const useCensusEmailRecipientLists = ({
         setRecipientsSyncError,
       });
     },
-    [applyRecipientRuntimeState]
+    [applyRecipientRuntimeState, setIsRecipientsSyncing, setRecipientsSyncError]
   );
 
   useCensusEmailRecipientBootstrapEffect({
