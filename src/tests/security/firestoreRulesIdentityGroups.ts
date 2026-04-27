@@ -181,6 +181,26 @@ export function registerFirestoreRulesIdentityGroups({
           })
       );
     });
+
+    it('Users cannot write invalid operational counters in system health payload', async () => {
+      await assertFails(
+        authed()
+          .doc('stats/system_health/users/user_basic')
+          .set({
+            ...validSystemHealthPayload,
+            operationalFailureCount: -1,
+          })
+      );
+
+      await assertFails(
+        authed()
+          .doc('stats/system_health/users/user_basic')
+          .set({
+            ...validSystemHealthPayload,
+            operationalSyncReadUnavailableCount: 'many',
+          })
+      );
+    });
   });
 
   describe('Census Access Invitations', () => {

@@ -80,6 +80,11 @@
              ]);
     }
 
+    function hasValidSystemHealthCriticalOperationalCounters(payload) {
+      return isSystemHealthCounter(payload, 'operationalFailureCount') &&
+             isSystemHealthCounter(payload, 'operationalSyncReadUnavailableCount');
+    }
+
     //
     // 1.9 System health payload guard
     // ---------------------------------------------
@@ -123,7 +128,8 @@
              isSystemHealthCounter(payload, 'localErrorCount') &&
              isOptionalBool(payload, 'degradedLocalPersistence') &&
              isSystemHealthCounter(payload, 'repositoryWarningCount') &&
-             isSystemHealthAgeMs(payload, 'slowestRepositoryOperationMs');
+             isSystemHealthAgeMs(payload, 'slowestRepositoryOperationMs') &&
+             hasValidSystemHealthCriticalOperationalCounters(payload);
     }
 
     //
