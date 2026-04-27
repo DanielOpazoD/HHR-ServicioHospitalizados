@@ -96,15 +96,6 @@ export const getRecordForDate = async (date: string): Promise<DailyRecord | null
   try {
     await ensureDbReady();
 
-    if (
-      isDatabaseInFallbackMode() &&
-      typeof window !== 'undefined' &&
-      window.__HHR_E2E_OVERRIDE__
-    ) {
-      const override = window.__HHR_E2E_OVERRIDE__;
-      if (override[date]) return override[date];
-    }
-
     if (isDatabaseInFallbackMode()) {
       return localPersistence.records.getForDate(date);
     }

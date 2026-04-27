@@ -124,4 +124,131 @@ test.describe('Sync conflict resolution', () => {
     await expect(row.locator('input[placeholder*="Diagnóstico"]').first()).toHaveValue('REMOTE DX');
     await expect(statusSelect).toHaveValue('Grave');
   });
+
+  test('preserves a newer offline local edit when a stale multi-user remote snapshot appears', async ({
+    page,
+  }) => {
+    const baseRecord = buildCanonicalE2ERecord(CONFLICT_DATE);
+    const beds = (baseRecord.beds as Record<string, Record<string, unknown>>) || {};
+
+    beds.R1 = {
+      ...beds.R1,
+      patientName: 'OFFLINE BASELINE',
+      pathology: 'BASE DX',
+      status: 'Estable',
+      admissionDate: CONFLICT_DATE,
+    };
+
+    await bootstrapSeededRecord(page, {
+      role: 'editor',
+      date: CONFLICT_DATE,
+      record: {
+        ...baseRecord,
+        lastUpdated: `${CONFLICT_DATE}T08:00:00.000Z`,
+        beds,
+      },
+      useRuntimeOverride: true,
+    });
+
+    await page.goto(`/censo?date=${CONFLICT_DATE}`);
+    await ensureAuthenticated(page);
+    await page.goto(`/censo?date=${CONFLICT_DATE}`);
+    await expect(page.getByTestId('census-table')).toBeVisible({ timeout: 20_000 });
+
+    const row = getRow(page, 'R1');
+    const demographicsButton = row.getByRole('button', { name: /Datos del Paciente/i });
+    const patientNameInput = row.locator('input[name="patientName"]').first();
+    await expect(patientNameInput).toHaveValue('OFFLINE BASELINE');
+
+    await demographicsButton.click();
+    const demographicsDialog = page.getByRole('dialog', { name: 'Datos Demográficos' });
+    await expect(demographicsDialog).toBeVisible();
+    await demographicsDialog.getByPlaceholder('Nombre').fill('Local Offline');
+    await demographicsDialog.getByPlaceholder('Apellido paterno').fill('Winner');
+    await demographicsDialog.getByRole('button', { name: /Guardar Cambios/i }).click();
+    await expect(demographicsDialog).toBeHidden();
+    await expect(patientNameInput).toHaveValue('Local Offline Winner');
+    await page.context().setOffline(true);
+
+    await seedPersistedBedFields({
+      page,
+      date: CONFLICT_DATE,
+      bedId: 'R1',
+      fields: {
+        patientName: 'Local Offline Winner',
+        pathology: 'LOCAL OFFLINE DX',
+      },
+    });
+
+    await page.evaluate(date => {
+      const storageKey = 'hanga_roa_hospital_data';
+      const records = JSON.parse(localStorage.getItem(storageKey) || '{}') as Record<
+        string,
+        Record<string, unknown>
+      >;
+      const currentRecord = (records[date] || {}) as {
+        beds?: Record<string, Record<string, unknown>>;
+      };
+      const currentBeds = currentRecord.beds || {};
+
+      records[date] = {
+        ...currentRecord,
+        lastUpdated: `${date}T12:00:00.000Z`,
+        beds: {
+          ...currentBeds,
+          R1: {
+            ...(currentBeds.R1 || {}),
+            patientName: 'Local Offline Winner',
+            pathology: 'LOCAL OFFLINE DX',
+          },
+        },
+      };
+      localStorage.setItem(storageKey, JSON.stringify(records));
+
+      localStorage.setItem(
+        'hhr_e2e_remote_shadow',
+        JSON.stringify({
+          date,
+          record: {
+            ...records[date],
+            lastUpdated: `${date}T09:00:00.000Z`,
+            beds: {
+              ...currentBeds,
+              R1: {
+                ...(currentBeds.R1 || {}),
+                patientName: 'REMOTE STALE USER',
+                pathology: 'REMOTE STALE DX',
+                status: 'Grave',
+              },
+            },
+          },
+        })
+      );
+    }, CONFLICT_DATE);
+
+    await page.addInitScript(() => {
+      const remoteShadow = localStorage.getItem('hhr_e2e_remote_shadow');
+      if (!remoteShadow) {
+        return;
+      }
+
+      const parsed = JSON.parse(remoteShadow) as { date: string; record: unknown };
+      const runtimeWindow = window as Window & {
+        __HHR_E2E_OVERRIDE__?: Record<string, unknown>;
+      };
+      runtimeWindow.__HHR_E2E_OVERRIDE__ = {
+        ...(runtimeWindow.__HHR_E2E_OVERRIDE__ || {}),
+        [parsed.date]: parsed.record,
+      };
+    });
+
+    await page.context().setOffline(false);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+
+    await expect(page.getByTestId('census-table')).toBeVisible({ timeout: 20_000 });
+    await expect(patientNameInput).toHaveValue('Local Offline Winner');
+    await expect(row.locator('input[placeholder*="Diagnóstico"]').first()).toHaveValue(
+      'LOCAL OFFLINE DX'
+    );
+  });
 });

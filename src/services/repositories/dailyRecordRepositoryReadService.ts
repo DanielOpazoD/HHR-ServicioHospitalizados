@@ -21,7 +21,10 @@ import {
   createLocalRuntimeReadResult,
   createNotFoundDailyRecordReadResult,
 } from '@/services/repositories/dailyRecordReadResultController';
-import { attemptRemoteGoldenPathRead } from '@/services/repositories/dailyRecordRemoteReadController';
+import {
+  attemptRemoteGoldenPathRead,
+  resolveRemoteGoldenPathReadResult,
+} from '@/services/repositories/dailyRecordRemoteReadController';
 
 type FirestoreRecordQueriesModule =
   typeof import('@/services/storage/firestore/firestoreRecordQueries');
@@ -75,20 +78,27 @@ export const getForDateWithMeta = async (
     'dailyRecord.getForDate',
     async () => {
       const query = createGetDailyRecordQuery(date, syncFromRemote);
-      const e2eOverride = getE2EOverrideRecord(query.date);
-      if (e2eOverride) {
-        dailyRecordReadLogger.warn(`Using E2E override record for ${query.date}`);
-        return createLocalRuntimeReadResult(
-          query.date,
-          createLocalRuntimeReadCandidate(query.date, e2eOverride),
-          'e2e'
-        );
-      }
-
       const localRecord = await getRecordFromIndexedDB(query.date);
       const localCandidate = localRecord
         ? createLocalRuntimeReadCandidate(query.date, localRecord)
         : null;
+      const e2eOverride = getE2EOverrideRecord(query.date);
+      if (e2eOverride) {
+        dailyRecordReadLogger.warn(`Using E2E override record for ${query.date}`);
+        return resolveRemoteGoldenPathReadResult({
+          date: query.date,
+          localCandidate,
+          remoteReadResult: {
+            record: e2eOverride,
+            source: 'firestore',
+            compatibilityTier: 'current_firestore',
+            compatibilityIntensity: 'none',
+            migrationRulesApplied: [],
+            cachedLocally: false,
+          },
+        });
+      }
+
       if (query.syncFromRemote && isFirestoreEnabled()) {
         const { loadRemoteRecordWithFallback } = await loadDailyRecordRemoteLoader();
         return attemptRemoteGoldenPathRead({
