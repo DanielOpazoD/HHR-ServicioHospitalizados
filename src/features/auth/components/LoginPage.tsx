@@ -7,9 +7,13 @@ import { useLoginPageController } from './useLoginPageController';
 
 export interface LoginPageProps {
   onLoginSuccess: () => void;
+  initialAuthError?: {
+    message: string;
+    code?: string | null;
+  } | null;
 }
 
-export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
+export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, initialAuthError }) => {
   const {
     error,
     errorCode,
@@ -19,7 +23,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     canRetryGoogleSignIn,
     handleGoogleSignIn,
     toggleBackgroundMode,
-  } = useLoginPageController(onLoginSuccess);
+  } = useLoginPageController(onLoginSuccess, initialAuthError);
   const BackgroundModeIcon = isDayGradient ? SunMedium : MoonStar;
   const backgroundModeLabel = isDayGradient ? 'Día' : 'Noche';
 

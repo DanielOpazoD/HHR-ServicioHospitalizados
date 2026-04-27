@@ -49,6 +49,7 @@ vi.mock('@/services/auth/authE2ERedirectRuntime', () => ({
 
 vi.mock('@/services/auth/authBootstrapState', () => ({
   clearAuthBootstrapPending: vi.fn(),
+  isAuthBootstrapPending: vi.fn(() => false),
   markAuthBootstrapPending: vi.fn(),
 }));
 

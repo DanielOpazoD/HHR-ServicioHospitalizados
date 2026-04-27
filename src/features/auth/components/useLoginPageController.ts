@@ -4,6 +4,10 @@ import { AUTH_UI_COPY } from '@/services/auth/authUiCopy';
 import { executeGoogleSignIn } from '@/application/auth/authSessionUseCases';
 import { isAuthBootstrapPending } from '@/services/auth/authBootstrapState';
 import { getCurrentAuthSessionState } from '@/services/auth/authSession';
+import {
+  clearGoogleLoginAttemptHint,
+  markGoogleLoginAttemptHint,
+} from '@/services/auth/authStorageHints';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 import { preloadDefaultPostLoginRoute } from '@/app-shell/bootstrap/authenticatedRoutePreloadController';
 import {
@@ -51,9 +55,17 @@ export interface LoginPageControllerState {
   toggleBackgroundMode: () => void;
 }
 
-export const useLoginPageController = (onLoginSuccess: () => void): LoginPageControllerState => {
-  const [error, setError] = useState<string | null>(null);
-  const [errorCode, setErrorCode] = useState<string | null>(null);
+export interface LoginPageInitialAuthError {
+  message: string;
+  code?: string | null;
+}
+
+export const useLoginPageController = (
+  onLoginSuccess: () => void,
+  initialAuthError?: LoginPageInitialAuthError | null
+): LoginPageControllerState => {
+  const [error, setError] = useState<string | null>(initialAuthError?.message ?? null);
+  const [errorCode, setErrorCode] = useState<string | null>(initialAuthError?.code ?? null);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [backgroundMode, setBackgroundMode] = useState<LoginBackgroundMode>(
     resolveInitialLoginBackgroundMode
@@ -63,15 +75,26 @@ export const useLoginPageController = (onLoginSuccess: () => void): LoginPageCon
     warmDefaultPostLoginRoute();
   }, []);
 
+  useEffect(() => {
+    if (!initialAuthError) {
+      return;
+    }
+
+    setError(initialAuthError.message);
+    setErrorCode(initialAuthError.code ?? null);
+  }, [initialAuthError]);
+
   const handleGoogleSignIn = async () => {
     setError(null);
     setErrorCode(null);
     setIsGoogleLoading(true);
+    markGoogleLoginAttemptHint();
     warmDefaultPostLoginRoute();
 
     try {
       const outcome = await executeGoogleSignIn();
       if (outcome.status === 'success') {
+        clearGoogleLoginAttemptHint();
         onLoginSuccess();
         return;
       }
@@ -95,6 +118,7 @@ export const useLoginPageController = (onLoginSuccess: () => void): LoginPageCon
         setErrorCode(resolvedErrorCode || 'auth/popup-recoverable');
         setError(AUTH_UI_COPY.blockedPopupStayOnPage);
       } else {
+        clearGoogleLoginAttemptHint();
         loginPageLogger.warn('Google sign-in failed', outcome);
         setErrorCode(resolvedErrorCode || 'auth/google-signin-failed');
         setError(errorLike.message);
@@ -112,6 +136,7 @@ export const useLoginPageController = (onLoginSuccess: () => void): LoginPageCon
         setErrorCode(resolvedErrorCode || 'auth/popup-recoverable');
         setError(AUTH_UI_COPY.blockedPopupStayOnPage);
       } else {
+        clearGoogleLoginAttemptHint();
         loginPageLogger.warn('Google sign-in failed', err);
         setErrorCode(resolvedErrorCode || 'auth/google-signin-failed');
         setError(errorMessage || 'Error al iniciar sesión con Google');

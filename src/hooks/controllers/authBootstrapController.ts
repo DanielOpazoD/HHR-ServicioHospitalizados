@@ -1,4 +1,4 @@
-import type { AuthSessionState } from '@/types/authSessionTypes';
+import type { AuthSessionError, AuthSessionState } from '@/types/authSessionTypes';
 
 export const shouldIgnoreTransientUnauthenticatedBootstrapEvent = ({
   isBootstrapLoading,
@@ -53,3 +53,13 @@ export const shouldLogSessionLogin = ({
 
 export const buildBootstrapTimeoutIssue = (): string =>
   'La inicializacion de autenticacion excedio el tiempo esperado.';
+
+export const buildBootstrapTimeoutAuthError = (): AuthSessionError => ({
+  code: 'auth/bootstrap-timeout',
+  message: buildBootstrapTimeoutIssue(),
+  userSafeMessage:
+    'No se pudo confirmar la sesion con Google en este navegador. Intenta nuevamente o reinicia los datos locales si el problema persiste.',
+  retryable: true,
+  severity: 'warning',
+  telemetryTags: ['auth', 'bootstrap_timeout'],
+});

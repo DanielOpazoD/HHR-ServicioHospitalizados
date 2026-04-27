@@ -11,6 +11,7 @@ import {
 } from '@/services/auth/authBootstrapState';
 import { clearRecentManualLogout, hasRecentManualLogout } from '@/services/auth/authLogoutState';
 import {
+  createAuthErrorSessionState,
   createUnauthenticatedAuthSessionState,
   isAuthenticatedAuthSessionState,
   toResolvedAuthSessionState,
@@ -20,9 +21,14 @@ import { recordOperationalOutcome } from '@/services/observability/operationalTe
 import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 import { resolveAuthBootstrapBudget } from '@/services/auth/authBootstrapBudgets';
 import { hasActiveFirebaseSession } from '@/services/auth/authFallback';
-import { hasPersistedFirebaseAuthHint } from '@/services/auth/authStorageHints';
+import {
+  clearGoogleLoginAttemptHint,
+  hasPersistedFirebaseAuthHint,
+  hasRecentGoogleLoginAttemptHint,
+} from '@/services/auth/authStorageHints';
 import { markPerf } from '@/shared/runtime/perfAudit';
 import {
+  buildBootstrapTimeoutAuthError,
   buildBootstrapTimeoutIssue,
   shouldAttemptAuthTimeoutRecovery,
   shouldDeferUnauthenticatedSessionState,
@@ -199,6 +205,18 @@ export const subscribeToResolvedAuthState = async ({
         return;
       }
       if (
+        sessionState.status === 'unauthenticated' &&
+        hasRecentGoogleLoginAttemptHint() &&
+        !hasRecentManualLogout()
+      ) {
+        clearGoogleLoginAttemptHint();
+        clearAuthBootstrapPending();
+        setSessionState(createAuthErrorSessionState(buildBootstrapTimeoutAuthError()));
+        setAuthLoading(false);
+        isBootstrapLoading = false;
+        return;
+      }
+      if (
         shouldDeferUnauthenticatedSessionState({
           sessionState,
           isAuthBootstrapPending: isAuthBootstrapPending(),
@@ -315,7 +333,7 @@ export const useResolvedAuthBootstrap = ({
             }
 
             clearAuthBootstrapPending();
-            setSessionState(createUnauthenticatedAuthSessionState());
+            setSessionState(createAuthErrorSessionState(buildBootstrapTimeoutAuthError()));
             setResolvedAuthLoading(false);
           })
           .catch(error => {
@@ -325,14 +343,14 @@ export const useResolvedAuthBootstrap = ({
 
             authStateLogger.warn('Auth timeout recovery resolution failed', error);
             clearAuthBootstrapPending();
-            setSessionState(createUnauthenticatedAuthSessionState());
+            setSessionState(createAuthErrorSessionState(buildBootstrapTimeoutAuthError()));
             setResolvedAuthLoading(false);
           });
         return;
       }
 
       clearAuthBootstrapPending();
-      setSessionState(createUnauthenticatedAuthSessionState());
+      setSessionState(createAuthErrorSessionState(buildBootstrapTimeoutAuthError()));
       setResolvedAuthLoading(false);
     }, timeoutMs);
 

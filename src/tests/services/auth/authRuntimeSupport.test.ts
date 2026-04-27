@@ -35,9 +35,12 @@ import {
   saveRoleToCache,
 } from '@/services/auth/authRoleCache';
 import {
+  clearGoogleLoginAttemptHint,
   clearRecentAuthenticatedSessionHint,
+  hasRecentGoogleLoginAttemptHint,
   hasPersistedFirebaseAuthHint,
   hasRecentAuthenticatedSessionHint,
+  markGoogleLoginAttemptHint,
 } from '@/services/auth/authStorageHints';
 import { ROLE_CACHE_PREFIX, normalizeEmail } from '@/services/auth/authShared';
 
@@ -208,5 +211,22 @@ describe('authRuntimeSupport', () => {
 
     clearRecentAuthenticatedSessionHint();
     expect(hasRecentAuthenticatedSessionHint()).toBe(false);
+  });
+
+  it('tracks a short-lived Google login attempt hint without storing user data', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-22T20:00:00.000Z'));
+
+    expect(hasRecentGoogleLoginAttemptHint()).toBe(false);
+
+    markGoogleLoginAttemptHint();
+    expect(hasRecentGoogleLoginAttemptHint()).toBe(true);
+
+    vi.setSystemTime(new Date('2026-03-22T20:03:00.000Z'));
+    expect(hasRecentGoogleLoginAttemptHint()).toBe(false);
+
+    markGoogleLoginAttemptHint();
+    clearGoogleLoginAttemptHint();
+    expect(hasRecentGoogleLoginAttemptHint()).toBe(false);
   });
 });

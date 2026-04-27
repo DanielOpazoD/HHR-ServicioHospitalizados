@@ -6,7 +6,12 @@ import {
   readE2ERedirectMode,
 } from '@/services/auth/authE2ERedirectRuntime';
 import {
+  clearGoogleLoginAttemptHint,
+  hasRecentGoogleLoginAttemptHint,
+} from '@/services/auth/authStorageHints';
+import {
   clearAuthBootstrapPending,
+  isAuthBootstrapPending,
   markAuthBootstrapPending,
 } from '@/services/auth/authBootstrapState';
 import { authorizeFirebaseUser } from '@/services/auth/authAccessResolution';
@@ -123,8 +128,24 @@ export const handleSignInRedirectResult = async (
       return toResolvedAuthSessionState(e2eRedirectUser);
     }
 
+    const hadPendingRedirect = isAuthBootstrapPending();
+    const hadRecentGoogleLoginAttempt = hasRecentGoogleLoginAttemptHint();
     const result = await getRedirectResult(authRuntime.auth);
-    if (!result) return null;
+    if (!result) {
+      if (hadPendingRedirect || hadRecentGoogleLoginAttempt) {
+        return createAuthErrorSessionState({
+          code: 'auth/redirect-empty-result',
+          message: 'Google no devolvio una sesion valida al finalizar el redirect.',
+          userSafeMessage:
+            'No se pudo confirmar la sesion con Google en este navegador. Intenta nuevamente o reinicia los datos locales si el problema persiste.',
+          retryable: true,
+          severity: 'warning',
+          telemetryTags: ['auth', 'redirect'],
+        });
+      }
+
+      return null;
+    }
     return toResolvedAuthSessionState(await authorizeFirebaseUser(result.user, { authRuntime }));
   } catch (error) {
     const operationalError = recordOperationalErrorTelemetry(
@@ -148,6 +169,7 @@ export const handleSignInRedirectResult = async (
       telemetryTags: ['auth', 'redirect'],
     });
   } finally {
+    clearGoogleLoginAttemptHint();
     clearAuthBootstrapPending();
   }
 };

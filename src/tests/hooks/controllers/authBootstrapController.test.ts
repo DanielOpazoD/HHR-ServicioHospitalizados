@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildBootstrapTimeoutAuthError,
   buildBootstrapTimeoutIssue,
   shouldAttemptAuthTimeoutRecovery,
   shouldDeferUnauthenticatedSessionState,
@@ -115,5 +116,15 @@ describe('authBootstrapController', () => {
     expect(buildBootstrapTimeoutIssue()).toBe(
       'La inicializacion de autenticacion excedio el tiempo esperado.'
     );
+  });
+
+  it('builds a retryable auth error for bootstrap timeouts', () => {
+    expect(buildBootstrapTimeoutAuthError()).toMatchObject({
+      code: 'auth/bootstrap-timeout',
+      message: 'La inicializacion de autenticacion excedio el tiempo esperado.',
+      retryable: true,
+      severity: 'warning',
+      telemetryTags: ['auth', 'bootstrap_timeout'],
+    });
   });
 });

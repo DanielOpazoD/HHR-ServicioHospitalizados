@@ -84,6 +84,20 @@ describe('useLoginPageController', () => {
     expect(mockPreloadDefaultPostLoginRoute).toHaveBeenCalledTimes(1);
   });
 
+  it('surfaces a bootstrap auth error passed from the app shell', () => {
+    const { result } = renderHook(() =>
+      useLoginPageController(vi.fn(), {
+        code: 'auth/bootstrap-timeout',
+        message: 'No se pudo confirmar la sesion con Google en este navegador.',
+      })
+    );
+
+    expect(result.current.errorCode).toBe('auth/bootstrap-timeout');
+    expect(result.current.error).toBe(
+      'No se pudo confirmar la sesion con Google en este navegador.'
+    );
+  });
+
   it('persists manual login background mode changes across refreshes', () => {
     const { result } = renderHook(() => useLoginPageController(vi.fn()));
 

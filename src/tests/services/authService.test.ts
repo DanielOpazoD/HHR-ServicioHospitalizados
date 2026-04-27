@@ -322,7 +322,7 @@ describe('auth public entrypoints', () => {
       );
     });
 
-    it('should clear pending bootstrap marker when redirect finishes without result', async () => {
+    it('should surface an auth error when pending redirect finishes without result', async () => {
       localStorage.setItem(
         AUTH_BOOTSTRAP_PENDING_KEY,
         JSON.stringify({ startedAt: 9999999999999, mode: 'redirect' })
@@ -331,8 +331,34 @@ describe('auth public entrypoints', () => {
 
       const result = await handleSignInRedirectResult();
 
-      expect(result).toBeNull();
+      expect(result).toEqual(
+        expect.objectContaining({
+          status: 'auth_error',
+          error: expect.objectContaining({
+            code: 'auth/redirect-empty-result',
+            retryable: true,
+          }),
+        })
+      );
       expect(localStorage.getItem(AUTH_BOOTSTRAP_PENDING_KEY)).toBeNull();
+    });
+
+    it('should surface an auth error when a recent Google attempt returns without result', async () => {
+      sessionStorage.setItem('hhr_google_login_attempt_pending', String(Date.now()));
+      vi.mocked(firebaseAuth.getRedirectResult).mockResolvedValue(null);
+
+      const result = await handleSignInRedirectResult();
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          status: 'auth_error',
+          error: expect.objectContaining({
+            code: 'auth/redirect-empty-result',
+            retryable: true,
+          }),
+        })
+      );
+      expect(sessionStorage.getItem('hhr_google_login_attempt_pending')).toBeNull();
     });
   });
 

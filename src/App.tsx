@@ -38,6 +38,31 @@ const VersionedAppShell = ({ children }: { children: React.ReactNode }) => (
   </VersionProvider>
 );
 
+const resolveLoginInitialAuthError = (
+  auth: ReturnType<typeof useAppBootstrapState>['auth']
+): { message: string; code?: string | null } | null => {
+  if (auth.sessionState.status === 'auth_error') {
+    return {
+      message:
+        auth.sessionState.error.userSafeMessage ||
+        auth.sessionState.error.message ||
+        'No fue posible completar el ingreso con Google.',
+      code: auth.sessionState.error.code,
+    };
+  }
+
+  if (auth.sessionState.status === 'unauthorized') {
+    return {
+      message:
+        auth.sessionState.reason ||
+        'Tu cuenta no tiene autorizacion para ingresar a esta aplicacion.',
+      code: 'auth/unauthorized',
+    };
+  }
+
+  return null;
+};
+
 function App() {
   const bootstrapState = useAppBootstrapState();
   markPerf('app:first-render');
@@ -84,7 +109,12 @@ function App() {
   }
 
   if (bootstrapState.status === 'unauthenticated') {
-    return <LoginPage onLoginSuccess={() => {}} />;
+    return (
+      <LoginPage
+        onLoginSuccess={() => {}}
+        initialAuthError={resolveLoginInitialAuthError(bootstrapState.auth)}
+      />
+    );
   }
 
   return (
