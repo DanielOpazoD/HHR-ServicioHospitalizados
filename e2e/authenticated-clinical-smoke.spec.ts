@@ -29,6 +29,13 @@ const buildSmokeRecord = (date: string) => {
   });
 };
 
+const expectAuthenticatedAdminShell = async (page: Page) => {
+  await expect(page.getByTestId('authenticated-user-menu-button')).toHaveAttribute(
+    'aria-label',
+    /Usuario daniel\.opazo@hospitalhangaroa\.cl\. Rol Administrador\. Firebase (Online|Offline)/
+  );
+};
+
 const openAuthenticatedCensus = async (page: Page) => {
   await bootstrapSeededRecord(page, {
     role: 'admin',
@@ -42,10 +49,7 @@ const openAuthenticatedCensus = async (page: Page) => {
   await ensureAuthenticated(page);
   await expect(page.getByTestId('census-table')).toBeVisible({ timeout: 20000 });
   await expect(page.locator('[data-testid="patient-row"][data-bed-id="R1"]')).toBeVisible();
-  await expect(page.getByTestId('authenticated-user-menu-button')).toHaveAttribute(
-    'aria-label',
-    /Usuario daniel\.opazo@hospitalhangaroa\.cl\. Rol Administrador\. Firebase (Online|Offline)/
-  );
+  await expectAuthenticatedAdminShell(page);
 };
 
 const openClinicalDocumentsFromR1 = async (page: Page) => {
@@ -85,5 +89,16 @@ test.describe('Authenticated clinical smoke', () => {
     await openAuthenticatedCensus(page);
     await openClinicalDocumentsFromR1(page);
     await assertExportEntrypointIsOperational(page);
+  });
+
+  test('keeps authenticated census shell stable across reload', async ({ page }) => {
+    await openAuthenticatedCensus(page);
+
+    await page.reload({ waitUntil: 'domcontentloaded' });
+
+    await expect(page.getByTestId('login-google-button')).toBeHidden({ timeout: 10000 });
+    await expect(page.getByTestId('census-table')).toBeVisible({ timeout: 20000 });
+    await expect(page.locator('[data-testid="patient-row"][data-bed-id="R1"]')).toBeVisible();
+    await expectAuthenticatedAdminShell(page);
   });
 });
