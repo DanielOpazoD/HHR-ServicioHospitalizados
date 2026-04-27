@@ -88,9 +88,9 @@ export const DualSpecialtyCell: React.FC<DualSpecialtyCellProps> = ({
       }
 
       if (isGinecobstetriciaSpecialty(nextSpecialty)) {
+        setIsSubtypeOpen(true);
         window.requestAnimationFrame(() => {
           updateSubtypePosition();
-          setIsSubtypeOpen(true);
         });
         return;
       }
