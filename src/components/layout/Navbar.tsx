@@ -42,7 +42,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   isFirebaseConnected,
   hideRuntimeIndicators = false,
 }) => {
-  const { role } = useAuth();
+  const { role, remoteSyncStatus } = useAuth();
   const visibleModules = getVisibleAppModules(role);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -143,6 +143,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               userEmail={userEmail}
               role={role}
               isFirebaseConnected={isFirebaseConnected}
+              remoteSyncStatus={remoteSyncStatus}
               onLogout={onLogout}
             />
           )}

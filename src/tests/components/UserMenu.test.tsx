@@ -95,6 +95,19 @@ describe('UserMenu', () => {
     expect(screen.getByText('Offline')).toBeInTheDocument();
   });
 
+  it('surfaces local-only sync state even if Firebase is connected', () => {
+    render(<UserMenu {...defaultProps} remoteSyncStatus="local_only" />);
+
+    expect(
+      screen.getByRole('button', {
+        name: 'Usuario doctor@hospital.cl. Rol Invitado. Firebase Local',
+      })
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button'));
+    expect(screen.getByText('Local')).toBeInTheDocument();
+  });
+
   it('closes dropdown when clicking outside', () => {
     render(<UserMenu {...defaultProps} />);
 

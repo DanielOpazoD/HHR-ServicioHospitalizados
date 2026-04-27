@@ -6,6 +6,7 @@
 import React from 'react';
 import { LogOut } from 'lucide-react';
 import { UserRole } from '@/hooks/useAuthState';
+import type { AuthContextType } from '@/context/AuthContext';
 import { getRoleDisplayLabel } from '@/shared/access/operationalAccessPolicy';
 import { useDropdownMenu } from '@/hooks/useDropdownMenu';
 
@@ -13,6 +14,7 @@ interface UserMenuProps {
   userEmail: string;
   role: UserRole;
   isFirebaseConnected?: boolean;
+  remoteSyncStatus?: AuthContextType['remoteSyncStatus'];
   onLogout: () => void;
 }
 
@@ -20,11 +22,20 @@ export const UserMenu: React.FC<UserMenuProps> = ({
   userEmail,
   role,
   isFirebaseConnected = false,
+  remoteSyncStatus,
   onLogout,
 }) => {
   const { isOpen, menuRef, toggle, close } = useDropdownMenu();
   const roleLabel = getRoleDisplayLabel(role);
-  const connectionLabel = isFirebaseConnected ? 'Online' : 'Offline';
+  const connectionLabel =
+    remoteSyncStatus === 'local_only'
+      ? 'Local'
+      : remoteSyncStatus === 'bootstrapping'
+        ? 'Conectando'
+        : isFirebaseConnected
+          ? 'Online'
+          : 'Offline';
+  const isRemoteReady = remoteSyncStatus ? remoteSyncStatus === 'ready' : isFirebaseConnected;
 
   return (
     <div className="relative" ref={menuRef}>
@@ -37,7 +48,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
       >
         {userEmail.charAt(0)}
         <span
-          className={`absolute right-0.5 top-0.5 h-2.5 w-2.5 rounded-full border border-[#0a1628] ${isFirebaseConnected ? 'bg-emerald-400' : 'bg-rose-400'}`}
+          className={`absolute right-0.5 top-0.5 h-2.5 w-2.5 rounded-full border border-[#0a1628] ${isRemoteReady ? 'bg-emerald-400' : 'bg-rose-400'}`}
           aria-hidden="true"
         />
       </button>
@@ -50,7 +61,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
               <span className="text-[10px] font-semibold text-slate-600">{roleLabel}</span>
               <span className="flex items-center gap-1 text-[9px] font-medium text-slate-400">
                 <span
-                  className={`h-1.5 w-1.5 rounded-full ${isFirebaseConnected ? 'bg-emerald-500' : 'bg-rose-500'}`}
+                  className={`h-1.5 w-1.5 rounded-full ${isRemoteReady ? 'bg-emerald-500' : 'bg-rose-500'}`}
                 />
                 {connectionLabel}
               </span>

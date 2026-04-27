@@ -42,7 +42,7 @@ const ReminderCenterContext = React.createContext<ReminderCenterContextValue | u
 const reminderUseCases = createReminderUseCases();
 
 export const ReminderCenterProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { currentUser, role, isAuthenticated } = useAuth();
+  const { currentUser, role, isAuthenticated, remoteSyncStatus } = useAuth();
   const [reminders, setReminders] = React.useState<Reminder[]>([]);
   const [readReminderIds, setReadReminderIds] = React.useState<string[]>([]);
   const [isOpen, setIsOpen] = React.useState(false);
@@ -96,6 +96,15 @@ export const ReminderCenterProvider: React.FC<{ children: React.ReactNode }> = (
       return;
     }
 
+    if (remoteSyncStatus !== 'ready') {
+      setReadReminderIds([]);
+      setReminders([]);
+      setLoading(false);
+      setIsAvailable(false);
+      setIsOpen(false);
+      return;
+    }
+
     setLoading(true);
     setIsAvailable(true);
     const unsubscribe = reminderUseCases.subscribeToReminderFeed({
@@ -136,7 +145,7 @@ export const ReminderCenterProvider: React.FC<{ children: React.ReactNode }> = (
     });
 
     return unsubscribe;
-  }, [isAuthenticated]);
+  }, [isAuthenticated, remoteSyncStatus]);
 
   React.useEffect(() => {
     if (!isAvailable || !currentUser?.uid || visibleReminders.length === 0) {

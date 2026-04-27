@@ -9,6 +9,7 @@ const subscribeMock = vi.fn();
 const getUserShiftReadStateMock = vi.fn();
 const markAsReadWithResultMock = vi.fn();
 let mockShift: 'day' | 'night' = 'day';
+let mockRemoteSyncStatus: 'ready' | 'bootstrapping' | 'local_only' = 'ready';
 
 const getCurrentDateKey = (): string => {
   const now = new Date();
@@ -32,6 +33,7 @@ vi.mock('@/context/AuthContext', () => ({
     },
     role: 'nurse_hospital',
     isAuthenticated: true,
+    remoteSyncStatus: mockRemoteSyncStatus,
   }),
 }));
 
@@ -105,6 +107,7 @@ describe('ReminderCenterProvider', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockShift = 'day';
+    mockRemoteSyncStatus = 'ready';
     window.localStorage.clear();
     getUserShiftReadStateMock.mockResolvedValue({ status: 'unread' });
     markAsReadWithResultMock.mockResolvedValue({ status: 'success' });
@@ -227,6 +230,24 @@ describe('ReminderCenterProvider', () => {
       expect(screen.getByTestId('unread-count').textContent).toBe('0');
     });
 
+    expect(screen.getByTestId('modal-state').textContent).toBe('closed');
+  });
+
+  it('no abre suscripcion remota cuando el runtime esta local-only', async () => {
+    mockRemoteSyncStatus = 'local_only';
+
+    render(
+      <ReminderCenterProvider>
+        <ReminderProbe />
+      </ReminderCenterProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('unread-count').textContent).toBe('0');
+    });
+
+    expect(subscribeMock).not.toHaveBeenCalled();
+    expect(getUserShiftReadStateMock).not.toHaveBeenCalled();
     expect(screen.getByTestId('modal-state').textContent).toBe('closed');
   });
 });

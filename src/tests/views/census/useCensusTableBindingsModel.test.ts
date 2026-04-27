@@ -21,6 +21,12 @@ vi.mock('@/features/census/controllers/censusTableLayoutController', () => ({
   buildCensusTableLayoutBindings: vi.fn(),
 }));
 
+const mockUseAuth = vi.fn(() => ({ remoteSyncStatus: 'ready' }));
+
+vi.mock('@/context/AuthContext', () => ({
+  useAuth: () => mockUseAuth(),
+}));
+
 const asHookValue = <T>(value: Partial<T>): T => value as T;
 
 const createDailyRecordContextValue = (
@@ -82,6 +88,7 @@ const createDailyRecordWrapper = (contextValue = createDailyRecordContextValue()
 describe('useCensusTableBindingsModel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseAuth.mockReturnValue({ remoteSyncStatus: 'ready' });
   });
 
   it('returns not-ready when the base table model has no beds payload yet', () => {
@@ -169,6 +176,52 @@ describe('useCensusTableBindingsModel', () => {
     expect(result.current.bindings).toBe(layoutBindings);
     expect(result.current.clinicalDocumentInfoByBedId).toEqual({
       R1: { present: true, totalCount: 1, draftCount: 0 },
+    });
+  });
+
+  it('disables remote clinical document presence lookup outside ready sync', () => {
+    mockUseAuth.mockReturnValue({ remoteSyncStatus: 'local_only' });
+    vi.mocked(useCensusTableViewModel).mockReturnValue(
+      asHookValue<ReturnType<typeof useCensusTableViewModel>>({
+        beds: {},
+        columns: {} as never,
+        isEditMode: false,
+        canDeleteRecord: true,
+        resetDayDeniedMessage: '',
+        unifiedRows: [],
+        bedTypes: {},
+        totalWidth: 1200,
+        handleClearAll: vi.fn(),
+        diagnosisMode: 'free',
+        toggleDiagnosisMode: vi.fn(),
+        handleRowAction: vi.fn(),
+        activateEmptyBed: vi.fn(),
+        handleColumnResize: vi.fn(),
+        role: 'doctor_urgency',
+      })
+    );
+    vi.mocked(useClinicalDocumentPresenceByBed).mockReturnValue({
+      byBedId: {},
+      infoByBedId: {},
+    });
+    vi.mocked(buildCensusTableLayoutBindings).mockReturnValue({
+      headerProps: { readOnly: false },
+      bodyProps: { currentDateString: '2026-03-10' },
+      tableStyle: { width: '1200px', minWidth: '100%' },
+    } as never);
+
+    renderHook(
+      () =>
+        useCensusTableBindingsModel({
+          currentDateString: '2026-03-10',
+        }),
+      { wrapper: createDailyRecordWrapper() }
+    );
+
+    expect(useClinicalDocumentPresenceByBed).toHaveBeenCalledWith({
+      unifiedRows: [],
+      currentDateString: '2026-03-10',
+      enabled: false,
     });
   });
 });

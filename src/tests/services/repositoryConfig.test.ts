@@ -26,6 +26,22 @@ describe('repositoryConfig', () => {
     ).toBe('ready');
   });
 
+  it('preserves explicit local-only overrides even when Firebase is connected', () => {
+    expect(
+      resolveRemoteSyncRuntimeState({
+        authLoading: false,
+        isFirebaseConnected: true,
+        firestoreSyncState: {
+          mode: 'local_only',
+          reason: 'manual_override',
+        },
+      })
+    ).toEqual({
+      status: 'local_only',
+      reason: 'manual_override',
+    });
+  });
+
   it('returns local_only when Firebase is not connected and auth already resolved', () => {
     expect(
       resolveRemoteSyncRuntimeStatus({

@@ -32,7 +32,7 @@ const buildSmokeRecord = (date: string) => {
 const expectAuthenticatedAdminShell = async (page: Page) => {
   await expect(page.getByTestId('authenticated-user-menu-button')).toHaveAttribute(
     'aria-label',
-    /Usuario daniel\.opazo@hospitalhangaroa\.cl\. Rol Administrador\. Firebase (Online|Offline)/
+    /Usuario daniel\.opazo@hospitalhangaroa\.cl\. Rol Administrador\. Firebase (Online|Offline|Local)/
   );
 };
 

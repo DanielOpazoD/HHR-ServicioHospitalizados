@@ -128,6 +128,16 @@ export const resolveRemoteSyncRuntimeState = ({
     };
   }
 
+  if (
+    firestoreSyncState?.mode === 'local_only' &&
+    firestoreSyncState.reason !== 'auth_unavailable'
+  ) {
+    return {
+      status: 'local_only',
+      reason: firestoreSyncState.reason,
+    };
+  }
+
   if (isFirebaseConnected) {
     return {
       status: 'ready',
