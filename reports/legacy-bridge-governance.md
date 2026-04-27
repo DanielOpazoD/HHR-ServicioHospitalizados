@@ -1,6 +1,6 @@
 # Legacy Bridge Governance Snapshot
 
-- Generated: 2026-04-27T00:47:44.703Z
+- Generated: 2026-04-27T19:26:52.712Z
 - Policy version: 2026-03-v2
 - Allowed modes: explicit_bridge, disabled
 - Hot path policy: disabled

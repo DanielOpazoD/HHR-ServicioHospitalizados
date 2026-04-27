@@ -34,9 +34,9 @@ const openSeededCensus = async (page: Page) => {
     useRuntimeOverride: true,
   });
 
-  await page.goto(`/censo?date=${MULTIUSER_DATE}`);
+  await page.goto(`/census?date=${MULTIUSER_DATE}`);
   await ensureAuthenticated(page);
-  await page.goto(`/censo?date=${MULTIUSER_DATE}`);
+  await page.goto(`/census?date=${MULTIUSER_DATE}`);
   await expect(page.getByTestId('census-table')).toBeVisible({ timeout: 20_000 });
 };
 
@@ -63,6 +63,17 @@ const buildStaleRemoteSnapshotFromUserB = async (page: Page) =>
         },
       },
     };
+  }, MULTIUSER_DATE);
+
+const buildCurrentRecordSnapshot = async (page: Page) =>
+  page.evaluate(date => {
+    const storageKey = 'hanga_roa_hospital_data';
+    const records = JSON.parse(localStorage.getItem(storageKey) || '{}') as Record<
+      string,
+      { beds?: Record<string, Record<string, unknown>>; lastUpdated?: string }
+    >;
+
+    return records[date] || null;
   }, MULTIUSER_DATE);
 
 const injectRemoteSnapshotForNextLoad = async (page: Page, snapshot: Record<string, unknown>) => {
@@ -155,6 +166,97 @@ test.describe('Multi-user offline conflict smoke', () => {
         'MULTIUSER BASELINE'
       );
       await expect(userADiagnosisInput).toHaveValue('USER A OFFLINE DX');
+    } finally {
+      await closeAll([userAContext, userBContext]);
+    }
+  });
+
+  test('keeps user A offline edit and accepts user B non-conflicting bed update after reconnect', async ({
+    browser,
+  }) => {
+    test.setTimeout(90_000);
+    const userAContext = await browser.newContext();
+    const userBContext = await browser.newContext();
+
+    try {
+      const userAPage = await userAContext.newPage();
+      const userBPage = await userBContext.newPage();
+
+      await openSeededCensus(userAPage);
+      await openSeededCensus(userBPage);
+
+      const userAR1 = getRow(userAPage, 'R1');
+      const userAR1DiagnosisInput = userAR1.locator('input[placeholder*="Diagnóstico"]').first();
+
+      await userAContext.setOffline(true);
+      await expect.poll(() => userAPage.evaluate(() => navigator.onLine)).toBe(false);
+
+      await userAR1DiagnosisInput.fill('USER A LOCAL DX');
+      await userAR1DiagnosisInput.blur();
+      await seedPersistedBedFields({
+        page: userAPage,
+        date: MULTIUSER_DATE,
+        bedId: 'R1',
+        fields: {
+          patientName: 'MULTIUSER BASELINE',
+          pathology: 'USER A LOCAL DX',
+        },
+      });
+      await waitForPersistedBedFields({
+        page: userAPage,
+        date: MULTIUSER_DATE,
+        bedId: 'R1',
+        expected: {
+          patientName: 'MULTIUSER BASELINE',
+          pathology: 'USER A LOCAL DX',
+        },
+      });
+
+      await seedPersistedBedFields({
+        page: userBPage,
+        date: MULTIUSER_DATE,
+        bedId: 'R2',
+        fields: {
+          patientName: 'USER B NEW PATIENT',
+          pathology: 'USER B NON CONFLICT DX',
+          status: 'Estable',
+          admissionDate: MULTIUSER_DATE,
+        },
+      });
+      await waitForPersistedBedFields({
+        page: userBPage,
+        date: MULTIUSER_DATE,
+        bedId: 'R2',
+        expected: {
+          patientName: 'USER B NEW PATIENT',
+          pathology: 'USER B NON CONFLICT DX',
+        },
+      });
+
+      const userBRemoteSnapshot = await buildCurrentRecordSnapshot(userBPage);
+      expect(userBRemoteSnapshot).not.toBeNull();
+      await injectRemoteSnapshotForNextLoad(
+        userAPage,
+        userBRemoteSnapshot as Record<string, unknown>
+      );
+
+      await userAContext.setOffline(false);
+      await expect.poll(() => userAPage.evaluate(() => navigator.onLine)).toBe(true);
+      await userAPage.reload({ waitUntil: 'domcontentloaded' });
+
+      await expect(userAPage.getByTestId('census-table')).toBeVisible({ timeout: 20_000 });
+      await expect(userAR1.locator('input[name="patientName"]').first()).toHaveValue(
+        'MULTIUSER BASELINE'
+      );
+      await expect(userAR1DiagnosisInput).toHaveValue('USER A LOCAL DX');
+
+      const userAR2 = getRow(userAPage, 'R2');
+      await expect(userAR2.locator('input[name="patientName"]').first()).toHaveValue(
+        'USER B NEW PATIENT'
+      );
+      await expect(userAR2.locator('input[placeholder*="Diagnóstico"]').first()).toHaveValue(
+        'USER B NON CONFLICT DX'
+      );
     } finally {
       await closeAll([userAContext, userBContext]);
     }

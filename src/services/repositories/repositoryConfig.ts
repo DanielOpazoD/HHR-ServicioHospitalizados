@@ -4,6 +4,8 @@
  * Extracted to avoid circular dependencies between repository modules.
  */
 
+import { isE2ELocalOnlySyncForced } from '@/shared/runtime/e2eRuntime';
+
 export type FirestoreSyncMode = 'enabled' | 'bootstrapping' | 'local_only';
 
 export type FirestoreSyncReason =
@@ -63,13 +65,32 @@ const createRepositorySyncRuntimeStore = (initialSnapshot: RepositorySyncRuntime
   };
 };
 
-const repositorySyncRuntimeStore = createRepositorySyncRuntimeStore({
-  firestoreEnabled: true,
-  firestoreSyncState: {
-    mode: 'enabled',
-    reason: 'ready',
-  },
-});
+export const resolveInitialRepositorySyncRuntimeSnapshot = ({
+  localOnlyForced,
+}: {
+  localOnlyForced: boolean;
+}): RepositorySyncRuntimeSnapshot =>
+  localOnlyForced
+    ? {
+        firestoreEnabled: false,
+        firestoreSyncState: {
+          mode: 'local_only',
+          reason: 'manual_override',
+        },
+      }
+    : {
+        firestoreEnabled: true,
+        firestoreSyncState: {
+          mode: 'enabled',
+          reason: 'ready',
+        },
+      };
+
+const repositorySyncRuntimeStore = createRepositorySyncRuntimeStore(
+  resolveInitialRepositorySyncRuntimeSnapshot({
+    localOnlyForced: isE2ELocalOnlySyncForced(),
+  })
+);
 
 // ============================================================================
 // API

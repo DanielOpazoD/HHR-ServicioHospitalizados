@@ -5,7 +5,10 @@ import { CURRENT_SCHEMA_VERSION } from '@/constants/version';
 import { BACKEND_RUNTIME_CONTRACT_VERSION } from '@/constants/runtimeContracts';
 import type { UserRole } from '@/types/authRoleTypes';
 import type { OperationalTelemetrySummary } from '@/services/observability/operationalTelemetryContracts';
-import type { FirestoreSyncReason } from '@/services/repositories/repositoryConfig';
+import type {
+  FirestoreSyncReason,
+  RemoteSyncRuntimeStatus,
+} from '@/services/repositories/repositoryConfig';
 import type { VersionUpdateReason } from '@/services/admin/healthService';
 
 export interface BuildUserHealthStatusOptions {
@@ -31,6 +34,11 @@ const HEALTH_REPORTER_ROLES = new Set<UserRole>(['admin', 'nurse_hospital']);
 
 export const canReportSystemHealthForRole = (role: UserRole | undefined): boolean =>
   !!role && HEALTH_REPORTER_ROLES.has(role);
+
+export const canReportSystemHealthForRuntime = (
+  role: UserRole | undefined,
+  remoteSyncStatus: RemoteSyncRuntimeStatus
+): boolean => canReportSystemHealthForRole(role) && remoteSyncStatus === 'ready';
 
 export const buildUserHealthStatus = (options: BuildUserHealthStatusOptions): UserHealthStatus => ({
   uid: options.uid,

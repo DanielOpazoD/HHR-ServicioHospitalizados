@@ -12,7 +12,7 @@ import { buildClientOperationalRuntimeSnapshot } from '@/services/observability/
 import { buildAuthRuntimeSnapshot } from '@/services/auth/authRuntimeSnapshot';
 import {
   buildUserHealthStatus,
-  canReportSystemHealthForRole,
+  canReportSystemHealthForRuntime,
 } from '@/hooks/controllers/systemHealthReporterController';
 import { systemHealthReporterLogger } from '@/hooks/hookLoggers';
 
@@ -37,7 +37,9 @@ export const useSystemHealthReporter = (enabled = true) => {
   const lastReportTime = useRef<number>(0);
 
   useEffect(() => {
-    if (!enabled || !currentUser || !canReportSystemHealthForRole(role)) return;
+    if (!enabled || !currentUser || !canReportSystemHealthForRuntime(role, auth.remoteSyncStatus)) {
+      return;
+    }
 
     const reportHealth = async () => {
       try {

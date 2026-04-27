@@ -1,6 +1,7 @@
 import { AdmissionDatePolicyViolationError } from '@/application/patient-flow/admissionDatePolicy';
 import { persistHydratedRecordToLocalCache } from '@/services/repositories/dailyRecordLocalCachePersistence';
 import { resolveDailyRecordPersistenceGoldenPath } from '@/services/repositories/dailyRecordPersistenceGoldenPath';
+import { resolveDailyRecordConflict } from '@/services/repositories/conflictResolutionMatrix';
 import {
   createGoldenPathReadResult,
   type LocalRuntimeReadCandidate,
@@ -35,19 +36,30 @@ export const resolveRemoteGoldenPathReadResult = async ({
   remoteReadResult,
   persistHydratedRecord = persistHydratedRecordToLocalCache,
 }: ResolveRemoteGoldenPathReadResultInput): Promise<DailyRecordReadResult> => {
+  const effectiveRemoteReadResult =
+    localCandidate?.record && remoteReadResult.record
+      ? {
+          ...remoteReadResult,
+          record: resolveDailyRecordConflict(remoteReadResult.record, localCandidate.record),
+        }
+      : remoteReadResult;
   const goldenPath = resolveDailyRecordPersistenceGoldenPath({
     localRecord: localCandidate?.record || null,
-    remoteRecord: remoteReadResult.record,
-    remoteAvailability: remoteReadResult.record ? 'resolved' : 'missing',
+    remoteRecord: effectiveRemoteReadResult.record,
+    remoteAvailability: effectiveRemoteReadResult.record ? 'resolved' : 'missing',
     localRepairApplied: localCandidate?.repairApplied || false,
     remoteRepairApplied:
-      remoteReadResult.compatibilityIntensity !== 'none' ||
-      remoteReadResult.migrationRulesApplied.length > 0,
+      effectiveRemoteReadResult.compatibilityIntensity !== 'none' ||
+      effectiveRemoteReadResult.migrationRulesApplied.length > 0,
   });
 
-  if (goldenPath.shouldHydrateLocal && remoteReadResult.record) {
+  if (goldenPath.shouldHydrateLocal && effectiveRemoteReadResult.record) {
     try {
-      await persistHydratedRecord(remoteReadResult.record, date, localCandidate?.record || null);
+      await persistHydratedRecord(
+        effectiveRemoteReadResult.record,
+        date,
+        localCandidate?.record || null
+      );
     } catch (error) {
       if (error instanceof AdmissionDatePolicyViolationError) {
         dailyRecordReadLogger.warn(
@@ -60,7 +72,7 @@ export const resolveRemoteGoldenPathReadResult = async ({
     }
   }
 
-  return createGoldenPathReadResult(date, goldenPath, localCandidate, remoteReadResult);
+  return createGoldenPathReadResult(date, goldenPath, localCandidate, effectiveRemoteReadResult);
 };
 
 export const attemptRemoteGoldenPathRead = async ({

@@ -25,6 +25,7 @@ import {
   shouldThrottleAuditViewAction,
   type ViewThrottleState,
 } from '@/services/admin/auditViewThrottle';
+import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 
 const COLLECTION_NAME = () => `hospitals/${getActiveHospitalId()}/auditLogs`;
 
@@ -102,6 +103,10 @@ interface AuditLocalStore {
   getAuditLogsForDate: (date: string) => Promise<AuditLogEntry[]>;
 }
 
+interface AuditRuntimeSyncPolicy {
+  shouldUseRemoteAuditSync: () => boolean;
+}
+
 export interface AuditCoreService {
   logAuditEvent: (
     userId: string,
@@ -130,6 +135,10 @@ const defaultAuditLocalStore: AuditLocalStore = {
   getAuditLogsForDate: getIndexedDBAuditLogsForDate,
 };
 
+const defaultAuditRuntimeSyncPolicy: AuditRuntimeSyncPolicy = {
+  shouldUseRemoteAuditSync: isFirestoreEnabled,
+};
+
 const isPermissionDeniedAuditError = (error: unknown): boolean => {
   const code =
     typeof error === 'object' && error !== null && 'code' in error
@@ -141,7 +150,8 @@ const isPermissionDeniedAuditError = (error: unknown): boolean => {
 
 export const createAuditCoreService = (
   database: Pick<IDatabaseProvider, 'setDoc' | 'getDocs'> = firestoreDb,
-  localStore: AuditLocalStore = defaultAuditLocalStore
+  localStore: AuditLocalStore = defaultAuditLocalStore,
+  syncPolicy: AuditRuntimeSyncPolicy = defaultAuditRuntimeSyncPolicy
 ): AuditCoreService => {
   const storeLocally = async (entry: AuditLogEntry): Promise<void> => {
     try {
@@ -152,6 +162,10 @@ export const createAuditCoreService = (
   };
 
   const logAuditEventToFirestore = async (entry: AuditLogEntry): Promise<void> => {
+    if (!syncPolicy.shouldUseRemoteAuditSync()) {
+      return;
+    }
+
     try {
       await database.setDoc(COLLECTION_NAME(), entry.id, entry);
     } catch (error) {
@@ -214,6 +228,10 @@ export const createAuditCoreService = (
   return {
     logAuditEvent,
     getAuditLogs: async (limitCount = 100): Promise<AuditLogEntry[]> => {
+      if (!syncPolicy.shouldUseRemoteAuditSync()) {
+        return await localStore.getAuditLogs(limitCount);
+      }
+
       try {
         return await database.getDocs<AuditLogEntry>(COLLECTION_NAME(), {
           orderBy: [{ field: 'timestamp', direction: 'desc' }],
@@ -225,6 +243,10 @@ export const createAuditCoreService = (
       }
     },
     getAuditLogsForDate: async (date: string): Promise<AuditLogEntry[]> => {
+      if (!syncPolicy.shouldUseRemoteAuditSync()) {
+        return await localStore.getAuditLogsForDate(date);
+      }
+
       try {
         return await database.getDocs<AuditLogEntry>(COLLECTION_NAME(), {
           where: [{ field: 'recordDate', operator: '==', value: date }],

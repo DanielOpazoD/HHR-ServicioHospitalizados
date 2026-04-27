@@ -11,11 +11,16 @@ import {
   updateClinicalDocumentIndicationCatalogItem,
 } from '@/features/clinical-documents/services/clinicalDocumentIndicationsCatalogService';
 import { useClinicalDocumentIndicationsCatalog } from '@/features/clinical-documents/hooks/useClinicalDocumentIndicationsCatalog';
+import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 
 vi.mock('@/services/utils/loggerScope', async () => {
   const { createLoggerScopeMock } = await import('@/tests/utils/loggerScopeMock');
   return createLoggerScopeMock();
 });
+
+vi.mock('@/services/repositories/repositoryConfig', () => ({
+  isFirestoreEnabled: vi.fn(() => true),
+}));
 
 vi.mock(
   '@/features/clinical-documents/services/clinicalDocumentIndicationsCatalogService',
@@ -49,6 +54,7 @@ describe('useClinicalDocumentIndicationsCatalog', () => {
     vi.mocked(updateClinicalDocumentIndicationCatalogItem).mockResolvedValue(defaultCatalog);
     vi.mocked(deleteClinicalDocumentIndicationCatalogItem).mockResolvedValue(defaultCatalog);
     vi.mocked(replaceClinicalDocumentIndicationsCatalog).mockResolvedValue(defaultCatalog);
+    vi.mocked(isFirestoreEnabled).mockReturnValue(true);
   });
 
   it('stays idle when the catalog is not active', () => {
@@ -82,6 +88,24 @@ describe('useClinicalDocumentIndicationsCatalog', () => {
       );
     });
     expect(ensureClinicalDocumentIndicationsCatalog).toHaveBeenCalledWith('hhr');
+  });
+
+  it('uses the default catalog without remote subscription or seeding when Firestore is disabled', async () => {
+    vi.mocked(isFirestoreEnabled).mockReturnValue(false);
+
+    const { result } = renderHook(() =>
+      useClinicalDocumentIndicationsCatalog({
+        hospitalId: 'hhr',
+        isActive: true,
+        canEdit: true,
+      })
+    );
+
+    await waitFor(() => {
+      expect(result.current.indicationsCatalog.version).toBe(defaultCatalog.version);
+    });
+    expect(subscribeToClinicalDocumentIndicationsCatalog).not.toHaveBeenCalled();
+    expect(ensureClinicalDocumentIndicationsCatalog).not.toHaveBeenCalled();
   });
 
   it('cleans up the subscription and skips seeding for read-only access', async () => {

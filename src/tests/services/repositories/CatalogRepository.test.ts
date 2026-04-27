@@ -7,6 +7,7 @@ import { CatalogRepository } from '@/services/repositories/CatalogRepository';
 import * as catalogService from '@/services/storage/indexeddb/indexedDbCatalogService';
 import * as firestoreService from '@/services/storage/firestore';
 import * as legacyCatalogBridge from '@/services/storage/migration/legacyCatalogReadBridge';
+import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import type { ProfessionalCatalogItem } from '@/types/domain/professionals';
 
 vi.mock('@/services/storage/indexeddb/indexedDbCatalogService', () => ({
@@ -37,6 +38,7 @@ vi.mock('@/services/storage/migration/legacyCatalogReadBridge', () => ({
 describe('CatalogRepository', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(isFirestoreEnabled).mockReturnValue(true);
   });
 
   describe('Nurses', () => {
@@ -68,6 +70,20 @@ describe('CatalogRepository', () => {
       expect(firestoreService.subscribeToNurseCatalog).toHaveBeenCalled();
     });
 
+    it('subscribeNurses should use local catalog without opening Firestore when disabled', async () => {
+      vi.mocked(isFirestoreEnabled).mockReturnValue(false);
+      vi.mocked(catalogService.getCatalog).mockResolvedValueOnce([' Nurse Local ', '']);
+      const cb = vi.fn();
+
+      const unsubscribe = CatalogRepository.subscribeNurses(cb);
+      await Promise.resolve();
+
+      expect(firestoreService.subscribeToNurseCatalog).not.toHaveBeenCalled();
+      expect(catalogService.getCatalog).toHaveBeenCalledWith('nurses');
+      expect(cb).toHaveBeenCalledWith(['Nurse Local']);
+      expect(typeof unsubscribe).toBe('function');
+    });
+
     it('subscribeNurses should reject non-function callbacks', () => {
       expect(() =>
         CatalogRepository.subscribeNurses(null as unknown as (nurses: string[]) => void)
@@ -96,6 +112,19 @@ describe('CatalogRepository', () => {
       CatalogRepository.subscribeTens(cb);
       expect(firestoreService.subscribeToTensCatalog).toHaveBeenCalled();
     });
+
+    it('subscribeTens should use local catalog without opening Firestore when disabled', async () => {
+      vi.mocked(isFirestoreEnabled).mockReturnValue(false);
+      vi.mocked(catalogService.getCatalog).mockResolvedValueOnce([' TENS Local ', '']);
+      const cb = vi.fn();
+
+      CatalogRepository.subscribeTens(cb);
+      await Promise.resolve();
+
+      expect(firestoreService.subscribeToTensCatalog).not.toHaveBeenCalled();
+      expect(catalogService.getCatalog).toHaveBeenCalledWith('tens');
+      expect(cb).toHaveBeenCalledWith(['TENS Local']);
+    });
   });
 
   describe('Professionals', () => {
@@ -119,6 +148,27 @@ describe('CatalogRepository', () => {
       const cb = vi.fn();
       CatalogRepository.subscribeProfessionals(cb);
       expect(firestoreService.subscribeToProfessionalsCatalog).toHaveBeenCalled();
+    });
+
+    it('subscribeProfessionals should use local catalog without opening Firestore when disabled', async () => {
+      vi.mocked(isFirestoreEnabled).mockReturnValue(false);
+      const professionals: ProfessionalCatalogItem[] = [
+        { name: 'Dr. Local', specialty: 'Medicina Interna', phone: '' },
+      ];
+      vi.mocked(catalogService.getCatalogValues).mockResolvedValueOnce(professionals);
+      const cb = vi.fn();
+
+      CatalogRepository.subscribeProfessionals(cb);
+      await Promise.resolve();
+
+      expect(firestoreService.subscribeToProfessionalsCatalog).not.toHaveBeenCalled();
+      expect(catalogService.getCatalogValues).toHaveBeenCalledWith('professionals');
+      expect(cb).toHaveBeenCalledWith([
+        expect.objectContaining({
+          name: 'Dr. Local',
+          specialty: 'Medicina Interna',
+        }),
+      ]);
     });
   });
 });

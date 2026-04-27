@@ -11,6 +11,24 @@ const defaultStatusProps = {
 };
 
 describe('ClinicalDocumentStatusBar', () => {
+  it('keeps local and pending remote edit banners hidden in the editor header', () => {
+    render(
+      <ClinicalDocumentStatusBar
+        {...defaultStatusProps}
+        hasLocalDraftChanges
+        hasPendingRemoteUpdate
+        isSaving={false}
+        isUploadingPdf={false}
+        onUploadPdf={() => {}}
+      />
+    );
+
+    expect(screen.queryByText(/cambios locales sin guardar/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/actualización remota pendiente/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /recargar remoto/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /descartar local/i })).not.toBeInTheDocument();
+  });
+
   it('shows an exported Drive state with a direct link', () => {
     render(
       <ClinicalDocumentStatusBar

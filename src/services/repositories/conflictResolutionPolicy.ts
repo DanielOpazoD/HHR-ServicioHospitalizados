@@ -17,6 +17,7 @@ export interface ScalarPolicyDecision {
     | 'root_local_priority'
     | 'root_remote_priority'
     | 'clinical_local_priority'
+    | 'clinical_remote_non_empty_fallback'
     | 'admin_remote_priority'
     | 'staffing_local_priority'
     | 'handoff_local_priority'
@@ -55,6 +56,12 @@ const CLINICAL_PATIENT_FIELDS = new Set([
   'deliveryDate',
   'deliveryCesareanLabor',
 ]);
+
+const isEmptyClinicalValue = (value: unknown): boolean =>
+  value === '' ||
+  value === null ||
+  value === undefined ||
+  (Array.isArray(value) && value.length === 0);
 
 const ADMIN_PATIENT_FIELDS = new Set([
   'bedId',
@@ -137,6 +144,13 @@ export const decideScalarByPolicy = (
   if (parts[0] === 'beds' && parts.length >= 3) {
     const patientField = parts[2];
     if (CLINICAL_PATIENT_FIELDS.has(patientField)) {
+      if (isEmptyClinicalValue(local) && !isEmptyClinicalValue(remote)) {
+        return {
+          value: remote,
+          winner: 'remote',
+          reason: 'clinical_remote_non_empty_fallback',
+        };
+      }
       return { value: local, winner: 'local', reason: 'clinical_local_priority' };
     }
     if (ADMIN_PATIENT_FIELDS.has(patientField)) {

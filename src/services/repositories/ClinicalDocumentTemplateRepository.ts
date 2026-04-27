@@ -8,6 +8,7 @@ import {
   safeParseClinicalDocumentTemplate,
 } from '@/domain/clinical-documents/runtimeContracts';
 import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
+import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 
 const getClinicalDocumentTemplatesCollectionPath = (
   hospitalId: string = getActiveHospitalId()
@@ -136,6 +137,10 @@ const validateTemplate = (template: ClinicalDocumentTemplate): ClinicalDocumentT
 
 export const ClinicalDocumentTemplateRepository = {
   async listAll(hospitalId: string = getActiveHospitalId()): Promise<ClinicalDocumentTemplate[]> {
+    if (!isFirestoreEnabled()) {
+      return sortTemplates(defaultTemplates);
+    }
+
     try {
       const templates = await firestoreDb.getDocs<Partial<ClinicalDocumentTemplate>>(
         getClinicalDocumentTemplatesCollectionPath(hospitalId),
@@ -166,6 +171,10 @@ export const ClinicalDocumentTemplateRepository = {
   async listActive(
     hospitalId: string = getActiveHospitalId()
   ): Promise<ClinicalDocumentTemplate[]> {
+    if (!isFirestoreEnabled()) {
+      return sortTemplates(defaultTemplates);
+    }
+
     try {
       const templates = await firestoreDb.getDocs<Partial<ClinicalDocumentTemplate>>(
         getClinicalDocumentTemplatesCollectionPath(hospitalId),
@@ -194,6 +203,10 @@ export const ClinicalDocumentTemplateRepository = {
   },
 
   async seedDefaults(hospitalId: string = getActiveHospitalId()): Promise<void> {
+    if (!isFirestoreEnabled()) {
+      return;
+    }
+
     await firestoreDb.runBatch(batch => {
       defaultTemplates.forEach(template => {
         batch.set(
@@ -212,6 +225,10 @@ export const ClinicalDocumentTemplateRepository = {
     template: ClinicalDocumentTemplate,
     hospitalId: string = getActiveHospitalId()
   ): Promise<void> {
+    if (!isFirestoreEnabled()) {
+      return;
+    }
+
     await firestoreDb.setDoc(
       getClinicalDocumentTemplatesCollectionPath(hospitalId),
       template.id,

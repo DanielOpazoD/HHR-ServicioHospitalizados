@@ -18,6 +18,7 @@ import {
   safeParseClinicalDocumentRecord,
 } from '@/domain/clinical-documents/runtimeContracts';
 import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
+import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 
 const getClinicalDocumentsCollectionPath = (hospitalId: string = getActiveHospitalId()): string =>
   `hospitals/${hospitalId}/clinicalDocuments`;
@@ -91,6 +92,10 @@ export const ClinicalDocumentRepository = {
     episodeKey: string,
     hospitalId: string = getActiveHospitalId()
   ): Promise<ClinicalDocumentRecord[]> {
+    if (!isFirestoreEnabled()) {
+      return [];
+    }
+
     const documents = await firestoreDb.getDocs<ClinicalDocumentRecord>(
       getClinicalDocumentsCollectionPath(hospitalId),
       {
@@ -110,6 +115,9 @@ export const ClinicalDocumentRepository = {
   ): Promise<ClinicalDocumentRecord[]> {
     const sanitizedEpisodeKeys = normalizeEpisodeKeys(episodeKeys);
     if (sanitizedEpisodeKeys.length === 0) {
+      return [];
+    }
+    if (!isFirestoreEnabled()) {
       return [];
     }
 
@@ -142,6 +150,10 @@ export const ClinicalDocumentRepository = {
     documentId: string,
     hospitalId: string = getActiveHospitalId()
   ): Promise<ClinicalDocumentRecord | null> {
+    if (!isFirestoreEnabled()) {
+      return null;
+    }
+
     const document = await firestoreDb.getDoc<ClinicalDocumentRecord>(
       getClinicalDocumentsCollectionPath(hospitalId),
       documentId
@@ -154,6 +166,10 @@ export const ClinicalDocumentRepository = {
     hospitalId: string = getActiveHospitalId()
   ): Promise<ClinicalDocumentRecord> {
     const enriched = sanitizeForFirestore(enrichRecord(record));
+    if (!isFirestoreEnabled()) {
+      return enriched;
+    }
+
     await firestoreDb.setDoc(getClinicalDocumentsCollectionPath(hospitalId), record.id, enriched);
     return enriched;
   },
@@ -163,6 +179,10 @@ export const ClinicalDocumentRepository = {
     hospitalId: string = getActiveHospitalId()
   ): Promise<ClinicalDocumentRecord> {
     const enriched = sanitizeForFirestore(enrichRecord(record));
+    if (!isFirestoreEnabled()) {
+      return enriched;
+    }
+
     await firestoreDb.setDoc(getClinicalDocumentsCollectionPath(hospitalId), record.id, enriched, {
       merge: true,
     });
@@ -174,6 +194,10 @@ export const ClinicalDocumentRepository = {
     patch: Pick<ClinicalDocumentRecord, 'status' | 'audit'>,
     hospitalId: string = getActiveHospitalId()
   ): Promise<void> {
+    if (!isFirestoreEnabled()) {
+      return;
+    }
+
     await firestoreDb.updateDoc(getClinicalDocumentsCollectionPath(hospitalId), documentId, {
       status: patch.status,
       audit: patch.audit,
@@ -186,6 +210,10 @@ export const ClinicalDocumentRepository = {
     pdf: ClinicalDocumentPdfMeta,
     hospitalId: string = getActiveHospitalId()
   ): Promise<void> {
+    if (!isFirestoreEnabled()) {
+      return;
+    }
+
     await firestoreDb.updateDoc(getClinicalDocumentsCollectionPath(hospitalId), documentId, {
       pdf: sanitizeForFirestore(pdf),
     });
@@ -196,6 +224,11 @@ export const ClinicalDocumentRepository = {
     callback: (documents: ClinicalDocumentRecord[]) => void,
     hospitalId: string = getActiveHospitalId()
   ): () => void {
+    if (!isFirestoreEnabled()) {
+      callback([]);
+      return () => {};
+    }
+
     return firestoreDb.subscribeQuery<ClinicalDocumentRecord>(
       getClinicalDocumentsCollectionPath(hospitalId),
       { where: [{ field: 'episodeKey', operator: '==', value: episodeKey }] },
@@ -211,6 +244,10 @@ export const ClinicalDocumentRepository = {
   },
 
   async delete(documentId: string, hospitalId: string = getActiveHospitalId()): Promise<void> {
+    if (!isFirestoreEnabled()) {
+      return;
+    }
+
     await firestoreDb.deleteDoc(getClinicalDocumentsCollectionPath(hospitalId), documentId);
   },
 };

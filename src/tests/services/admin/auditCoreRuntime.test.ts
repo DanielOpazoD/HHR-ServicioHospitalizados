@@ -89,6 +89,40 @@ describe('auditCore runtime injection', () => {
     );
   });
 
+  it('keeps audit writes local-only when remote audit sync is disabled', async () => {
+    const localOnlyService = createAuditCoreService(
+      {
+        setDoc,
+        getDocs,
+      },
+      {
+        saveAuditLog,
+        getAuditLogs: getIndexedLogs,
+        getAuditLogsForDate: getIndexedLogsForDate,
+      },
+      {
+        shouldUseRemoteAuditSync: () => false,
+      }
+    );
+
+    await localOnlyService.logAuditEvent(
+      'doctor@hospital.cl',
+      'USER_LOGIN',
+      'user',
+      'doctor@hospital.cl',
+      {
+        event: 'login',
+      }
+    );
+
+    expect(saveAuditLog).toHaveBeenCalledTimes(1);
+    expect(setDoc).not.toHaveBeenCalled();
+    expect(loggerMocks.warn).not.toHaveBeenCalledWith(
+      'Audit log persisted locally only because Firestore rejected the remote append',
+      expect.anything()
+    );
+  });
+
   it('falls back to injected local storage when firestore reads fail', async () => {
     const fallbackLogs = [{ id: 'local-1' } as AuditLogEntry];
     getDocs.mockRejectedValue(new Error('firestore down'));

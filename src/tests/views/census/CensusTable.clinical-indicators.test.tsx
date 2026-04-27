@@ -253,6 +253,7 @@ describe('CensusTable clinical indicators', () => {
         isEditor: true,
         isViewer: false,
         isFirebaseConnected: true,
+        remoteSyncStatus: 'ready',
         signOut: vi.fn(),
       })
     );
@@ -284,6 +285,7 @@ describe('CensusTable clinical indicators', () => {
         isEditor: true,
         isViewer: false,
         isFirebaseConnected: true,
+        remoteSyncStatus: 'ready',
         signOut: vi.fn(),
       })
     );

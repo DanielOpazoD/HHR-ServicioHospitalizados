@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   getRepositorySyncRuntimeSnapshot,
   isFirestoreEnabled,
+  resolveInitialRepositorySyncRuntimeSnapshot,
   resolveRemoteSyncRuntimeState,
   resolveRemoteSyncRuntimeStatus,
   setFirestoreEnabled,
@@ -11,6 +12,16 @@ import {
 } from '@/services/repositories/repositoryConfig';
 
 describe('repositoryConfig', () => {
+  it('starts local-only when the runtime explicitly forces local sync', () => {
+    expect(resolveInitialRepositorySyncRuntimeSnapshot({ localOnlyForced: true })).toEqual({
+      firestoreEnabled: false,
+      firestoreSyncState: {
+        mode: 'local_only',
+        reason: 'manual_override',
+      },
+    });
+  });
+
   it('returns ready when Firebase is connected even if a stale local_only state remains', () => {
     const staleLocalOnlyState: FirestoreSyncState = {
       mode: 'local_only',

@@ -12,7 +12,12 @@ vi.mock('@/services/storage/firestore', () => ({
   },
 }));
 
+vi.mock('@/services/repositories/repositoryConfig', () => ({
+  isFirestoreEnabled: vi.fn(() => true),
+}));
+
 import { firestoreDb } from '@/services/storage/firestore';
+import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import { ClinicalDocumentRepository } from '@/services/repositories/ClinicalDocumentRepository';
 
 const buildDoc = (
@@ -70,12 +75,38 @@ const buildDoc = (
 describe('ClinicalDocumentRepository.listByEpisodeKeys', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(isFirestoreEnabled).mockReturnValue(true);
   });
 
   it('returns empty and avoids querying when no episode keys are provided', async () => {
     const result = await ClinicalDocumentRepository.listByEpisodeKeys([], 'hhr');
     expect(result).toEqual([]);
     expect(firestoreDb.getDocs).not.toHaveBeenCalled();
+  });
+
+  it('returns local-only empty results without querying Firestore when disabled', async () => {
+    vi.mocked(isFirestoreEnabled).mockReturnValue(false);
+
+    await expect(
+      ClinicalDocumentRepository.listByEpisode('rut-1__2026-03-01', 'hhr')
+    ).resolves.toEqual([]);
+    await expect(
+      ClinicalDocumentRepository.listByEpisodeKeys(['rut-1__2026-03-01'], 'hhr')
+    ).resolves.toEqual([]);
+    await expect(ClinicalDocumentRepository.get('doc-1', 'hhr')).resolves.toBeNull();
+
+    const callback = vi.fn();
+    const unsubscribe = ClinicalDocumentRepository.subscribeByEpisode(
+      'rut-1__2026-03-01',
+      callback,
+      'hhr'
+    );
+
+    expect(callback).toHaveBeenCalledWith([]);
+    expect(typeof unsubscribe).toBe('function');
+    expect(firestoreDb.getDocs).not.toHaveBeenCalled();
+    expect(firestoreDb.getDoc).not.toHaveBeenCalled();
+    expect(firestoreDb.subscribeQuery).not.toHaveBeenCalled();
   });
 
   it('trims, deduplicates and ignores blank episode keys before querying', async () => {

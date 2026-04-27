@@ -50,6 +50,12 @@ vi.mock('@/services/transfers/transferLoggers', () => ({
   },
 }));
 
+vi.mock('@/services/repositories/repositoryConfig', () => ({
+  isFirestoreEnabled: vi.fn(() => true),
+}));
+
+import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
+
 describe('transferService queries and subscriptions', () => {
   const flushAsyncSubscription = async () => {
     await Promise.resolve();
@@ -57,6 +63,7 @@ describe('transferService queries and subscriptions', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(isFirestoreEnabled).mockReturnValue(true);
   });
 
   it('returns null when getTransferById does not find an active transfer', async () => {
@@ -341,5 +348,17 @@ describe('transferService queries and subscriptions', () => {
     const result = await getLatestOpenTransferRequestByPatientRut('   ');
     expect(result).toBeNull();
     expect(firestore.getDocs).not.toHaveBeenCalled();
+  });
+
+  it('skips transfer lookup queries when Firestore is disabled', async () => {
+    vi.mocked(isFirestoreEnabled).mockReturnValue(false);
+
+    await expect(getActiveTransfers()).resolves.toEqual([]);
+    await expect(getTransferById('TR-1')).resolves.toBeNull();
+    await expect(getLatestOpenTransferRequestByBedId('BED_1')).resolves.toBeNull();
+    await expect(getLatestOpenTransferRequestByPatientRut('12.345.678-9')).resolves.toBeNull();
+
+    expect(firestore.getDocs).not.toHaveBeenCalled();
+    expect(firestore.getDoc).not.toHaveBeenCalled();
   });
 });

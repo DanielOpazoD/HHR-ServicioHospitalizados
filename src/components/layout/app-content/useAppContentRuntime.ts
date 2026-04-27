@@ -57,6 +57,12 @@ const resolveAppContentAccess = (role: AuthContextType['role'], currentModule: s
   };
 };
 
+const canVerifyArchiveStatusWithRuntime = (
+  role: AuthContextType['role'],
+  currentModule: string,
+  remoteSyncStatus: AuthContextType['remoteSyncStatus']
+): boolean => canVerifyPassiveBackupForRole(role, currentModule) && remoteSyncStatus === 'ready';
+
 const resolveExportManagerParams = (
   dateNav: CensusContextType['dateNav'],
   ui: UseUIStateReturn,
@@ -98,14 +104,13 @@ export const useAppContentRuntime = ({ ui }: UseAppContentRuntimeParams): AppCon
     recordRef.current = record;
   }, [record]);
 
-  const {
-    specialistCapabilities,
-    censusAccessProfile,
-    canUseCensusExports,
-    canVerifyArchiveStatus,
-  } = React.useMemo(
+  const { specialistCapabilities, censusAccessProfile, canUseCensusExports } = React.useMemo(
     () => resolveAppContentAccess(auth.role, ui.currentModule),
     [auth.role, ui.currentModule]
+  );
+  const canVerifyArchiveStatus = React.useMemo(
+    () => canVerifyArchiveStatusWithRuntime(auth.role, ui.currentModule, auth.remoteSyncStatus),
+    [auth.remoteSyncStatus, auth.role, ui.currentModule]
   );
 
   const flushBeforeExport = React.useCallback(async () => {

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildUserHealthStatus,
   canReportSystemHealthForRole,
+  canReportSystemHealthForRuntime,
 } from '@/hooks/controllers/systemHealthReporterController';
 
 describe('systemHealthReporterController', () => {
@@ -11,6 +12,14 @@ describe('systemHealthReporterController', () => {
     expect(canReportSystemHealthForRole('doctor_urgency')).toBe(false);
     expect(canReportSystemHealthForRole('viewer')).toBe(false);
     expect(canReportSystemHealthForRole(undefined)).toBe(false);
+  });
+
+  it('allows runtime health reporting only when the remote sync runtime is ready', () => {
+    expect(canReportSystemHealthForRuntime('admin', 'ready')).toBe(true);
+    expect(canReportSystemHealthForRuntime('nurse_hospital', 'ready')).toBe(true);
+    expect(canReportSystemHealthForRuntime('admin', 'local_only')).toBe(false);
+    expect(canReportSystemHealthForRuntime('admin', 'bootstrapping')).toBe(false);
+    expect(canReportSystemHealthForRuntime('viewer', 'ready')).toBe(false);
   });
 
   it('builds a normalized health payload with sync and repository metrics', () => {

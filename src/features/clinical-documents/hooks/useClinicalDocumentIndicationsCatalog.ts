@@ -11,6 +11,7 @@ import {
   type ClinicalDocumentIndicationsCatalog,
   updateClinicalDocumentIndicationCatalogItem,
 } from '@/features/clinical-documents/services/clinicalDocumentIndicationsCatalogService';
+import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 
 interface UseClinicalDocumentIndicationsCatalogParams {
@@ -75,6 +76,11 @@ export const useClinicalDocumentIndicationsCatalog = ({
 
   useEffect(() => {
     if (!isActive) {
+      return;
+    }
+
+    if (!isFirestoreEnabled()) {
+      setIndicationsCatalog(getDefaultClinicalDocumentIndicationsCatalog());
       return;
     }
 

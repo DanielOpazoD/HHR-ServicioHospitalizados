@@ -12,12 +12,20 @@ import {
 import { runWithFirestoreRuntime } from '@/services/storage/firestore/firestoreRuntimeSupport';
 import { defaultFirestoreServiceRuntime } from '@/services/storage/firestore/firestoreServiceRuntime';
 import type { FirestoreServiceRuntimePort } from '@/services/storage/firestore/ports/firestoreServiceRuntimePort';
+import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 
 export const createTransferQueriesService = (
   runtime: FirestoreServiceRuntimePort = defaultFirestoreServiceRuntime
 ) => {
-  const getActiveTransfers = async (): Promise<TransferRequest[]> =>
-    runWithFirestoreRuntime(runtime, async () => {
+  const shouldQueryRemote = (): boolean =>
+    runtime !== defaultFirestoreServiceRuntime || isFirestoreEnabled();
+
+  const getActiveTransfers = async (): Promise<TransferRequest[]> => {
+    if (!shouldQueryRemote()) {
+      return [];
+    }
+
+    return runWithFirestoreRuntime(runtime, async () => {
       const q = query(
         getTransfersCollection(runtime),
         where('status', '!=', 'TRANSFERRED'),
@@ -28,9 +36,14 @@ export const createTransferQueriesService = (
       const querySnapshot = await getDocs(q);
       return querySnapshotToTransfers(querySnapshot);
     });
+  };
 
-  const getTransferById = async (id: string): Promise<TransferRequest | null> =>
-    runWithFirestoreRuntime(runtime, async () => {
+  const getTransferById = async (id: string): Promise<TransferRequest | null> => {
+    if (!shouldQueryRemote()) {
+      return null;
+    }
+
+    return runWithFirestoreRuntime(runtime, async () => {
       const activeDocRef = doc(getTransfersCollection(runtime), id);
       const activeSnapshot = await getDoc(activeDocRef);
 
@@ -47,21 +60,30 @@ export const createTransferQueriesService = (
 
       return null;
     });
+  };
 
   const getLatestOpenTransferRequestByBedId = async (
     bedId: string
-  ): Promise<TransferRequest | null> =>
-    runWithFirestoreRuntime(runtime, async () => {
+  ): Promise<TransferRequest | null> => {
+    if (!shouldQueryRemote()) {
+      return null;
+    }
+
+    return runWithFirestoreRuntime(runtime, async () => {
       const q = query(getTransfersCollection(runtime), where('bedId', '==', bedId));
       const querySnapshot = await getDocs(q);
       return pickLatestOpenTransferFromSnapshot(querySnapshot);
     });
+  };
 
   const getLatestOpenTransferRequestByPatientRut = async (
     patientRut: string
   ): Promise<TransferRequest | null> => {
     const normalizedRut = patientRut.trim();
     if (!normalizedRut) {
+      return null;
+    }
+    if (!shouldQueryRemote()) {
       return null;
     }
 

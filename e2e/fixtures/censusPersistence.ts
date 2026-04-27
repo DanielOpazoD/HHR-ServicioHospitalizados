@@ -80,6 +80,27 @@ export const seedPersistedBedFields = async ({
       records[targetDate] = nextRecord;
       window.localStorage.setItem(storageKey, JSON.stringify(records));
 
+      const persistIndexedDbMirror = async () => {
+        const request = indexedDB.open('HangaRoaDB');
+        const db = await new Promise<IDBDatabase>((resolve, reject) => {
+          request.onerror = () => reject(request.error);
+          request.onsuccess = () => resolve(request.result);
+        });
+
+        try {
+          const transaction = db.transaction('dailyRecords', 'readwrite');
+          const store = transaction.objectStore('dailyRecords');
+          store.put(nextRecord);
+          await new Promise<void>((resolve, reject) => {
+            transaction.oncomplete = () => resolve();
+            transaction.onerror = () => reject(transaction.error);
+            transaction.onabort = () => reject(transaction.error);
+          });
+        } finally {
+          db.close();
+        }
+      };
+
       const runtimeWindow = window as Window & {
         __HHR_E2E_OVERRIDE__?: Record<string, unknown>;
       };
@@ -87,6 +108,8 @@ export const seedPersistedBedFields = async ({
         ...(runtimeWindow.__HHR_E2E_OVERRIDE__ || {}),
         [targetDate]: nextRecord as unknown,
       };
+
+      return persistIndexedDbMirror();
     },
     {
       targetDate: date,

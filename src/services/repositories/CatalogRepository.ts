@@ -90,11 +90,46 @@ export const saveNurses = async (nurses: string[]): Promise<void> => {
   }
 };
 
+const subscribeToLocalStringCatalog = (
+  key: 'nurses' | 'tens',
+  callback: (items: string[]) => void
+): (() => void) => {
+  let isActive = true;
+  void getCatalog(key).then(items => {
+    if (isActive) {
+      callback(normalizeStringCatalog(items));
+    }
+  });
+
+  return () => {
+    isActive = false;
+  };
+};
+
+const subscribeToLocalProfessionalsCatalog = (
+  callback: (professionals: ProfessionalCatalogItem[]) => void
+): (() => void) => {
+  let isActive = true;
+  void getCatalogValues<ProfessionalCatalogItem>('professionals').then(items => {
+    if (isActive) {
+      callback(normalizeProfessionalCatalog(items));
+    }
+  });
+
+  return () => {
+    isActive = false;
+  };
+};
+
 /**
  * Subscribes to real-time updates for the nurses catalog from Firestore.
  */
 export const subscribeNurses = (callback: (nurses: string[]) => void): (() => void) => {
   assertCatalogSubscriptionCallback(callback, 'nurses');
+  if (!isFirestoreEnabled()) {
+    return subscribeToLocalStringCatalog('nurses', callback);
+  }
+
   return subscribeToNurseCatalog(async nurses => {
     const normalized = normalizeStringCatalog(nurses);
     await saveCatalog('nurses', normalized);
@@ -156,6 +191,10 @@ export const saveTens = async (tens: string[]): Promise<void> => {
  */
 export const subscribeTens = (callback: (tens: string[]) => void): (() => void) => {
   assertCatalogSubscriptionCallback(callback, 'tens');
+  if (!isFirestoreEnabled()) {
+    return subscribeToLocalStringCatalog('tens', callback);
+  }
+
   return subscribeToTensCatalog(async tens => {
     const normalized = normalizeStringCatalog(tens);
     await saveCatalog('tens', normalized);
@@ -212,6 +251,10 @@ export const subscribeProfessionals = (
   callback: (professionals: ProfessionalCatalogItem[]) => void
 ): (() => void) => {
   assertCatalogSubscriptionCallback(callback, 'professionals');
+  if (!isFirestoreEnabled()) {
+    return subscribeToLocalProfessionalsCatalog(callback);
+  }
+
   return subscribeToProfessionalsCatalog(async professionals => {
     const normalized = normalizeProfessionalCatalog(professionals);
     await saveCatalogValues<ProfessionalCatalogItem>('professionals', normalized);

@@ -106,6 +106,7 @@ describe('useAppContentRuntime', () => {
       role: 'admin',
       signOut: vi.fn(),
       isFirebaseConnected: true,
+      remoteSyncStatus: 'ready',
     } as unknown as AuthValue);
 
     vi.mocked(useExportManager).mockReturnValue({
@@ -149,12 +150,32 @@ describe('useAppContentRuntime', () => {
     );
   });
 
+  it('disables passive archive verification while the authenticated runtime is local-only', () => {
+    vi.mocked(useAuth).mockReturnValue({
+      currentUser: { email: 'admin@hospital.cl' },
+      role: 'admin',
+      signOut: vi.fn(),
+      isFirebaseConnected: true,
+      remoteSyncStatus: 'local_only',
+    } as unknown as AuthValue);
+
+    const { result } = renderHook(() => useAppContentRuntime({ ui: ui as never }));
+
+    expect(result.current.canVerifyArchiveStatus).toBe(false);
+    expect(useExportManager).toHaveBeenCalledWith(
+      expect.objectContaining({
+        canVerifyArchiveStatus: false,
+      })
+    );
+  });
+
   it('disables census exports for restricted specialist roles', () => {
     vi.mocked(useAuth).mockReturnValue({
       currentUser: { email: 'doctor@hospital.cl' },
       role: 'doctor_urgency',
       signOut: vi.fn(),
       isFirebaseConnected: true,
+      remoteSyncStatus: 'ready',
     } as unknown as AuthValue);
 
     const { result } = renderHook(() => useAppContentRuntime({ ui: ui as never }));
