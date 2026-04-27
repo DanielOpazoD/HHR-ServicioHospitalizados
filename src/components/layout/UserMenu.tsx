@@ -23,6 +23,8 @@ export const UserMenu: React.FC<UserMenuProps> = ({
   onLogout,
 }) => {
   const { isOpen, menuRef, toggle, close } = useDropdownMenu();
+  const roleLabel = getRoleDisplayLabel(role);
+  const connectionLabel = isFirebaseConnected ? 'Online' : 'Offline';
 
   return (
     <div className="relative" ref={menuRef}>
@@ -30,6 +32,8 @@ export const UserMenu: React.FC<UserMenuProps> = ({
         onClick={toggle}
         className="relative w-9 h-9 rounded-full bg-white/[0.08] backdrop-blur-sm border border-white/[0.12] flex items-center justify-center text-white/90 font-bold text-sm uppercase shadow-glass transition-transform active:scale-90"
         title={userEmail}
+        aria-label={`Usuario ${userEmail}. Rol ${roleLabel}. Firebase ${connectionLabel}`}
+        data-testid="authenticated-user-menu-button"
       >
         {userEmail.charAt(0)}
         <span
@@ -43,14 +47,12 @@ export const UserMenu: React.FC<UserMenuProps> = ({
           <div className="px-3 py-2.5 border-b border-slate-100">
             <p className="text-[10px] font-medium text-slate-400 truncate">{userEmail}</p>
             <div className="mt-1 flex items-center gap-2">
-              <span className="text-[10px] font-semibold text-slate-600">
-                {getRoleDisplayLabel(role)}
-              </span>
+              <span className="text-[10px] font-semibold text-slate-600">{roleLabel}</span>
               <span className="flex items-center gap-1 text-[9px] font-medium text-slate-400">
                 <span
                   className={`h-1.5 w-1.5 rounded-full ${isFirebaseConnected ? 'bg-emerald-500' : 'bg-rose-500'}`}
                 />
-                {isFirebaseConnected ? 'Online' : 'Offline'}
+                {connectionLabel}
               </span>
             </div>
           </div>

@@ -42,6 +42,10 @@ const openAuthenticatedCensus = async (page: Page) => {
   await ensureAuthenticated(page);
   await expect(page.getByTestId('census-table')).toBeVisible({ timeout: 20000 });
   await expect(page.locator('[data-testid="patient-row"][data-bed-id="R1"]')).toBeVisible();
+  await expect(page.getByTestId('authenticated-user-menu-button')).toHaveAttribute(
+    'aria-label',
+    /Usuario daniel\.opazo@hospitalhangaroa\.cl\. Rol Administrador\. Firebase (Online|Offline)/
+  );
 };
 
 const openClinicalDocumentsFromR1 = async (page: Page) => {

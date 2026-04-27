@@ -25,7 +25,13 @@ import {
   INDEXED_DB_RECOVERY_RETRY_DELAYS_MS,
   getIndexedDbRecoveryBudgetSnapshot,
 } from './indexedDbRecoveryBudgets';
-import type { OperationalRuntimeState } from '@/services/observability/operationalRuntimeState';
+import {
+  buildLocalPersistenceRuntimeSnapshot,
+  hasE2ERuntimeOverride,
+  shouldAttemptMockRecovery,
+  shouldSkipReadyCheckForMock,
+  type LocalPersistenceRuntimeSnapshot,
+} from './indexedDbRuntimeModeController';
 
 let db: HangaRoaDatabase;
 let isUsingMock = false;
@@ -75,27 +81,18 @@ interface EnsureDbReadyOptions {
   allowRecoveryWhenMock?: boolean;
 }
 
-export interface LocalPersistenceRuntimeSnapshot {
-  indexedDbAvailable: boolean;
-  fallbackMode: boolean;
-  stickyFallbackMode: boolean;
-  runtimeState: 'ok' | OperationalRuntimeState;
-}
+export type { LocalPersistenceRuntimeSnapshot };
 
 export const ensureDbReady = async (options: EnsureDbReadyOptions = {}): Promise<void> => {
   const { allowRecoveryWhenMock = false } = options;
 
-  if (typeof window !== 'undefined' && window.__HHR_E2E_OVERRIDE__) {
+  if (hasE2ERuntimeOverride()) {
     isUsingMock = true;
     return;
   }
 
-  if (isUsingMock && !allowRecoveryWhenMock) return;
-  if (isUsingMock && allowRecoveryWhenMock) {
-    if (stickyFallbackMode) {
-      return;
-    }
-
+  if (shouldSkipReadyCheckForMock({ isUsingMock, allowRecoveryWhenMock })) return;
+  if (shouldAttemptMockRecovery({ isUsingMock, allowRecoveryWhenMock, stickyFallbackMode })) {
     try {
       db = new HangaRoaDatabase();
       attachDatabaseEvents(db);
@@ -215,12 +212,12 @@ export const isIndexedDBAvailable = (): boolean => typeof indexedDB !== 'undefin
 
 export const isDatabaseInFallbackMode = (): boolean => isUsingMock;
 
-export const getLocalPersistenceRuntimeSnapshot = (): LocalPersistenceRuntimeSnapshot => ({
-  indexedDbAvailable: isIndexedDBAvailable(),
-  fallbackMode: isUsingMock,
-  stickyFallbackMode,
-  runtimeState: stickyFallbackMode ? 'blocked' : isUsingMock ? 'recoverable' : 'ok',
-});
+export const getLocalPersistenceRuntimeSnapshot = (): LocalPersistenceRuntimeSnapshot =>
+  buildLocalPersistenceRuntimeSnapshot({
+    indexedDbAvailable: isIndexedDBAvailable(),
+    isUsingMock,
+    stickyFallbackMode,
+  });
 
 export { db as hospitalDB };
 export { createMockDatabase } from './indexedDbMockFactory';

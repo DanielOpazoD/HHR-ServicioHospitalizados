@@ -70,6 +70,16 @@ describe('UserMenu', () => {
     expect(button).toHaveAttribute('title', 'doctor@hospital.cl');
   });
 
+  it('exposes user, role and sync state through the authenticated menu button name', () => {
+    render(<UserMenu {...defaultProps} role="admin" />);
+
+    expect(
+      screen.getByRole('button', {
+        name: 'Usuario doctor@hospital.cl. Rol Administrador. Firebase Online',
+      })
+    ).toBeInTheDocument();
+  });
+
   it('shows first letter uppercase', () => {
     render(<UserMenu {...defaultProps} userEmail="Admin@hospital.cl" />);
 
