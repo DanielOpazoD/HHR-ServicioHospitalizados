@@ -1,7 +1,11 @@
 import type { OperationalOutcomeLike } from '@/services/observability/operationalTelemetryContracts';
-import type { OperationalTelemetryCategory } from '@/services/observability/operationalTelemetryTypes';
+import type {
+  OperationalTelemetryCategory,
+  OperationalTelemetryEvent,
+} from '@/services/observability/operationalTelemetryTypes';
 import {
   normalizeOperationalError,
+  type OperationalError,
   type OperationalErrorShape,
 } from '@/services/observability/operationalError';
 import {
@@ -15,6 +19,17 @@ interface OperationalTelemetryRecordOptions {
   context?: Record<string, unknown>;
 }
 
+type OperationalTelemetryEventInput = Omit<OperationalTelemetryEvent, 'timestamp'>;
+
+interface OperationalTelemetryOutcomeRecordOptions extends OperationalTelemetryRecordOptions {
+  allowSuccess?: boolean;
+}
+
+interface OperationalErrorTelemetryBuildResult {
+  operationalError: OperationalError;
+  telemetryEvent: OperationalTelemetryEventInput;
+}
+
 const deriveRuntimeStateFromSeverity = (
   severity: OperationalErrorShape['severity']
 ): OperationalRuntimeState => {
@@ -25,25 +40,57 @@ const deriveRuntimeStateFromSeverity = (
   return 'blocked';
 };
 
+const buildOperationalOutcomeTelemetryEvent = (
+  category: OperationalTelemetryCategory,
+  operation: string,
+  outcome: OperationalOutcomeLike,
+  options: OperationalTelemetryRecordOptions = {}
+): OperationalTelemetryEventInput => ({
+  category,
+  operation,
+  status: outcome.status,
+  date: options.date,
+  context: options.context,
+  issues: (outcome.issues || []).map(issue => issue.message || 'Sin detalle'),
+});
+
+const buildOperationalErrorTelemetryEvent = (
+  category: OperationalTelemetryCategory,
+  operation: string,
+  error: unknown,
+  fallback: OperationalErrorShape,
+  options: OperationalTelemetryRecordOptions = {}
+): OperationalErrorTelemetryBuildResult => {
+  const operationalError = normalizeOperationalError(error, fallback);
+  const runtimeState =
+    operationalError.runtimeState || deriveRuntimeStateFromSeverity(operationalError.severity);
+
+  return {
+    operationalError,
+    telemetryEvent: {
+      category,
+      operation,
+      status: toOperationalTelemetryStatus(runtimeState),
+      runtimeState,
+      date: options.date,
+      context: {
+        errorCode: operationalError.code,
+        ...operationalError.context,
+        ...options.context,
+      },
+      issues: [operationalError.userSafeMessage || operationalError.message],
+    },
+  };
+};
+
 export const recordOperationalOutcome = (
   category: OperationalTelemetryCategory,
   operation: string,
   outcome: OperationalOutcomeLike,
-  options: {
-    date?: string;
-    context?: Record<string, unknown>;
-    allowSuccess?: boolean;
-  } = {}
+  options: OperationalTelemetryOutcomeRecordOptions = {}
 ): void => {
   recordOperationalTelemetry(
-    {
-      category,
-      operation,
-      status: outcome.status,
-      date: options.date,
-      context: options.context,
-      issues: (outcome.issues || []).map(issue => issue.message || 'Sin detalle'),
-    },
+    buildOperationalOutcomeTelemetryEvent(category, operation, outcome, options),
     { allowSuccess: options.allowSuccess }
   );
 };
@@ -55,23 +102,21 @@ export const recordOperationalErrorTelemetry = (
   fallback: OperationalErrorShape,
   options: OperationalTelemetryRecordOptions = {}
 ) => {
-  const operationalError = normalizeOperationalError(error, fallback);
-  const runtimeState =
-    operationalError.runtimeState || deriveRuntimeStateFromSeverity(operationalError.severity);
-
-  recordOperationalTelemetry({
+  const { operationalError, telemetryEvent } = buildOperationalErrorTelemetryEvent(
     category,
     operation,
-    status: toOperationalTelemetryStatus(runtimeState),
-    runtimeState,
-    date: options.date,
-    context: {
-      errorCode: operationalError.code,
-      ...operationalError.context,
-      ...options.context,
-    },
-    issues: [operationalError.userSafeMessage || operationalError.message],
-  });
+    error,
+    fallback,
+    options
+  );
+
+  recordOperationalTelemetry(telemetryEvent);
 
   return operationalError;
+};
+
+export const __testing = {
+  buildOperationalOutcomeTelemetryEvent,
+  buildOperationalErrorTelemetryEvent,
+  deriveRuntimeStateFromSeverity,
 };
