@@ -53,6 +53,13 @@ interface MonthlyBackfillPlan {
   skippedNoRecordDates: string[];
 }
 
+interface RunMonthlyBackfillTasksInput {
+  tasks: BackfillTask[];
+  skippedNoRecordDates: string[];
+  onProgress?: (progress: MonthlyBackfillProgress) => void;
+  processTask: (task: BackfillTask) => Promise<void>;
+}
+
 type MonthlyBackfillRecord = HandoffPdfRecord &
   CensusExportRecord &
   DailyRecordCudyrExportState &
@@ -192,25 +199,12 @@ const createTaskProcessor = async (
   };
 };
 
-export const runMonthlyBackfill = async ({
-  backupType,
-  year,
-  monthNumber,
-  existingFiles,
+const runMonthlyBackfillTasks = async ({
+  tasks,
+  skippedNoRecordDates,
   onProgress,
-}: RunMonthlyBackfillInput): Promise<MonthlyBackfillResult> => {
-  const monthRecords = await getMonthRecordsFromFirestore(year, monthNumber - 1);
-  const sortedRecords = [...monthRecords].sort((a, b) => a.date.localeCompare(b.date));
-  const recordMap = new Map(sortedRecords.map(record => [record.date, record]));
-
-  const { tasks, skippedNoRecordDates } = createMonthlyBackfillPlan(
-    backupType,
-    sortedRecords,
-    existingFiles,
-    year,
-    monthNumber
-  );
-
+  processTask,
+}: RunMonthlyBackfillTasksInput): Promise<MonthlyBackfillResult> => {
   if (tasks.length === 0) {
     return {
       totalPlanned: 0,
@@ -225,13 +219,6 @@ export const runMonthlyBackfill = async ({
   let failed = 0;
   const errors: string[] = [];
   const total = tasks.length;
-  const processTask = await createTaskProcessor(
-    backupType,
-    sortedRecords,
-    recordMap,
-    year,
-    monthNumber
-  );
 
   for (let index = 0; index < tasks.length; index += 1) {
     const task = tasks[index];
@@ -266,6 +253,51 @@ export const runMonthlyBackfill = async ({
   };
 };
 
+export const runMonthlyBackfill = async ({
+  backupType,
+  year,
+  monthNumber,
+  existingFiles,
+  onProgress,
+}: RunMonthlyBackfillInput): Promise<MonthlyBackfillResult> => {
+  const monthRecords = await getMonthRecordsFromFirestore(year, monthNumber - 1);
+  const sortedRecords = [...monthRecords].sort((a, b) => a.date.localeCompare(b.date));
+  const recordMap = new Map(sortedRecords.map(record => [record.date, record]));
+
+  const { tasks, skippedNoRecordDates } = createMonthlyBackfillPlan(
+    backupType,
+    sortedRecords,
+    existingFiles,
+    year,
+    monthNumber
+  );
+
+  if (tasks.length === 0) {
+    return runMonthlyBackfillTasks({
+      tasks,
+      skippedNoRecordDates,
+      onProgress,
+      processTask: async () => undefined,
+    });
+  }
+
+  const processTask = await createTaskProcessor(
+    backupType,
+    sortedRecords,
+    recordMap,
+    year,
+    monthNumber
+  );
+
+  return runMonthlyBackfillTasks({
+    tasks,
+    skippedNoRecordDates,
+    onProgress,
+    processTask,
+  });
+};
+
 export const __testing = {
   createMonthlyBackfillPlan,
+  runMonthlyBackfillTasks,
 };
