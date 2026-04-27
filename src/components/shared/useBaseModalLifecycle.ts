@@ -28,7 +28,7 @@ const focusFirstModalElement = (
     'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
   ) as HTMLElement | null;
 
-  firstFocusable?.focus();
+  (firstFocusable ?? modalRef.current).focus();
 };
 
 const trapModalTabNavigation = (

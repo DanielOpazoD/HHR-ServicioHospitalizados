@@ -43,6 +43,25 @@ describe('BaseModal z-index behavior', () => {
     expect(backdrop!.className).toContain('z-[100]');
   });
 
+  it('keeps dialog semantics on the modal container instead of the backdrop', () => {
+    render(
+      <BaseModal isOpen={true} onClose={() => {}} title="Test Modal" dataModule="clinical-test">
+        <div data-testid="modal-content">Content</div>
+      </BaseModal>
+    );
+
+    const dialog = document.querySelector('[role="dialog"]');
+    const backdrop = document.querySelector('.fixed.inset-0');
+
+    expect(dialog).toBeTruthy();
+    expect(backdrop).toBeTruthy();
+    expect(dialog).not.toBe(backdrop);
+    expect(dialog).toHaveAttribute('data-module', 'clinical-test');
+    expect(dialog).toHaveAttribute('aria-modal', 'true');
+    expect(dialog).toHaveAttribute('aria-labelledby', 'modal-title');
+    expect(backdrop).not.toHaveAttribute('role');
+  });
+
   it('should render with fixed positioning and cover the entire viewport', () => {
     render(
       <BaseModal isOpen={true} onClose={() => {}} title="Test Modal">
@@ -113,5 +132,23 @@ describe('BaseModal z-index behavior', () => {
 
     fireEvent.click(backdrop!);
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('focuses the dialog container when there is no focusable body control', () => {
+    vi.useFakeTimers();
+
+    render(
+      <BaseModal isOpen={true} onClose={() => {}} title="Test Modal" showCloseButton={false}>
+        <p>Static clinical content</p>
+      </BaseModal>
+    );
+
+    const dialog = document.querySelector('[role="dialog"]');
+    expect(dialog).toBeTruthy();
+
+    vi.advanceTimersByTime(100);
+
+    expect(document.activeElement).toBe(dialog);
+    vi.useRealTimers();
   });
 });

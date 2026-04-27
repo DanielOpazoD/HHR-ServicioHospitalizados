@@ -23,9 +23,6 @@ export const BaseModalBackdrop: React.FC<BaseModalBackdropProps> = ({
     )}
     style={{ isolation: 'isolate' }}
     onClick={onClick}
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="modal-title"
   >
     {children}
   </div>

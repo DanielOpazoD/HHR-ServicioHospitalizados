@@ -56,6 +56,10 @@ export const BaseModalContent: React.FC<BaseModalProps> = ({
       <div
         ref={modalRef}
         data-module={dataModule}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+        tabIndex={-1}
         className={resolveBaseModalContainerClassName({
           scrollableBody,
           variant,
