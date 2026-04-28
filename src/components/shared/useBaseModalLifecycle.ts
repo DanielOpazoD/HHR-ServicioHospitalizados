@@ -2,16 +2,43 @@ import React from 'react';
 
 import { useScrollLock } from '@/hooks/useScrollLock';
 
+export interface BaseModalLifecycleDependencies {
+  getWindow?: () => Window | null;
+  getDocument?: () => Document | null;
+}
+
+const getDefaultWindow = (): Window | null => (typeof window !== 'undefined' ? window : null);
+
+const getDefaultDocument = (): Document | null => {
+  if (typeof window !== 'undefined' && window.document) {
+    return window.document;
+  }
+
+  if (typeof document !== 'undefined') {
+    return document;
+  }
+
+  return null;
+};
+
+export const resolveBaseModalLifecycleDependencies = (
+  dependencies?: BaseModalLifecycleDependencies
+): BaseModalLifecycleDependencies => ({
+  getWindow: dependencies?.getWindow ?? getDefaultWindow,
+  getDocument: dependencies?.getDocument ?? getDefaultDocument,
+});
+
 const focusFirstModalElement = (
   modalRef: React.RefObject<HTMLDivElement | null>,
-  initialFocusRef?: React.RefObject<HTMLElement | null>
+  initialFocusRef: React.RefObject<HTMLElement | null> | undefined,
+  runtimeDocument: Document | null
 ) => {
   if (initialFocusRef?.current) {
     initialFocusRef.current.focus();
     return;
   }
 
-  if (!modalRef.current) {
+  if (!modalRef.current || !runtimeDocument) {
     return;
   }
 
@@ -33,9 +60,10 @@ const focusFirstModalElement = (
 
 const trapModalTabNavigation = (
   event: KeyboardEvent,
-  modalRef: React.RefObject<HTMLDivElement | null>
+  modalRef: React.RefObject<HTMLDivElement | null>,
+  runtimeDocument: Document | null
 ) => {
-  if (event.key !== 'Tab' || !modalRef.current) {
+  if (event.key !== 'Tab' || !modalRef.current || !runtimeDocument) {
     return;
   }
 
@@ -49,13 +77,13 @@ const trapModalTabNavigation = (
     return;
   }
 
-  if (event.shiftKey && document.activeElement === firstElement) {
+  if (event.shiftKey && runtimeDocument.activeElement === firstElement) {
     lastElement.focus();
     event.preventDefault();
     return;
   }
 
-  if (!event.shiftKey && document.activeElement === lastElement) {
+  if (!event.shiftKey && runtimeDocument.activeElement === lastElement) {
     firstElement.focus();
     event.preventDefault();
   }
@@ -65,13 +93,19 @@ export const useBaseModalLifecycle = ({
   isOpen,
   onClose,
   initialFocusRef,
+  lifecycleDependencies,
 }: {
   isOpen: boolean;
   onClose: () => void;
   initialFocusRef?: React.RefObject<HTMLElement | null>;
+  lifecycleDependencies?: BaseModalLifecycleDependencies;
 }) => {
   const modalRef = React.useRef<HTMLDivElement>(null);
   const onCloseRef = React.useRef(onClose);
+  const dependencies = React.useMemo(
+    () => resolveBaseModalLifecycleDependencies(lifecycleDependencies),
+    [lifecycleDependencies]
+  );
 
   React.useEffect(() => {
     onCloseRef.current = onClose;
@@ -84,25 +118,33 @@ export const useBaseModalLifecycle = ({
       return () => undefined;
     }
 
+    const runtimeWindow = dependencies.getWindow?.() ?? null;
+    const runtimeDocument = dependencies.getDocument?.() ?? null;
+
+    if (!runtimeDocument) {
+      return () => undefined;
+    }
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         onCloseRef.current();
       }
 
-      trapModalTabNavigation(event, modalRef);
+      trapModalTabNavigation(event, modalRef, runtimeDocument);
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    const focusTimeout = window.setTimeout(
-      () => focusFirstModalElement(modalRef, initialFocusRef),
+    runtimeDocument.addEventListener('keydown', handleKeyDown);
+    const focusTimeout = (runtimeWindow?.setTimeout ?? setTimeout)(
+      () => focusFirstModalElement(modalRef, initialFocusRef, runtimeDocument),
       100
     );
 
     return () => {
-      window.clearTimeout(focusTimeout);
-      document.removeEventListener('keydown', handleKeyDown);
+      (runtimeWindow?.clearTimeout ?? clearTimeout)(focusTimeout);
+
+      runtimeDocument.removeEventListener('keydown', handleKeyDown);
     };
-  }, [initialFocusRef, isOpen]);
+  }, [dependencies, initialFocusRef, isOpen]);
 
   return { modalRef };
 };

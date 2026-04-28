@@ -8,40 +8,18 @@
  */
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
-import type { AuthUser, UserRole } from '@/types/authRoleTypes';
-export type { AuthUser, UserRole };
 import { useAuthState } from '@/hooks/useAuthState';
-import { isAuthenticatedAuthSessionState } from '@/services/auth/authSessionState';
+import type { UserRole, AuthUser } from '@/types/authRoleTypes';
+export type { AuthUser, UserRole };
 import {
-  resolveNormalizedAuthOperationalState,
-  type NormalizedAuthOperationalState,
-} from '@/services/auth/authOperationalState';
-import { buildNormalizedAuthOperationalStateInput } from '@/context/authContextController';
+  buildAuthContextValue,
+  buildNormalizedAuthOperationalStateInput,
+  type AuthContextType,
+} from '@/context/authContextController';
+import { resolveNormalizedAuthOperationalState } from '@/services/auth/authOperationalState';
 
-// ============================================================================
-// Types
-// ============================================================================
-
-export interface AuthContextType {
-  sessionState: ReturnType<typeof useAuthState>['sessionState'];
-  authRuntime: ReturnType<typeof useAuthState>['authRuntime'];
-  currentUser: AuthUser | null;
-  authorizedUser: AuthUser | null;
-  /** @deprecated Prefer currentUser or authorizedUser */
-  user: AuthUser | null;
-  role: UserRole;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  isAuthorizedSession: boolean;
-  isAnonymousSignature: boolean;
-  isUnauthorized: boolean;
-  isEditor: boolean;
-  isViewer: boolean;
-  isFirebaseConnected: boolean;
-  remoteSyncStatus: ReturnType<typeof useAuthState>['remoteSyncStatus'];
-  remoteSyncState: ReturnType<typeof useAuthState>['remoteSyncState'];
-  signOut: (reason?: 'manual' | 'automatic') => Promise<void>;
-}
+export { buildAuthContextValue };
+export type { AuthContextType };
 
 // ============================================================================
 // Context
@@ -49,35 +27,9 @@ export interface AuthContextType {
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// ============================================================================
-// Provider
-// ============================================================================
-
 interface AuthProviderProps {
   children: ReactNode;
 }
-
-export const buildAuthContextValue = (
-  normalizedAuthState: NormalizedAuthOperationalState
-): AuthContextType => ({
-  sessionState: normalizedAuthState.sessionState,
-  authRuntime: normalizedAuthState.authRuntime,
-  currentUser: normalizedAuthState.currentUser,
-  authorizedUser: normalizedAuthState.authorizedUser,
-  user: normalizedAuthState.currentUser,
-  role: normalizedAuthState.role,
-  isLoading: normalizedAuthState.authLoading,
-  isAuthenticated: isAuthenticatedAuthSessionState(normalizedAuthState.sessionState),
-  isAuthorizedSession: normalizedAuthState.sessionState.status === 'authorized',
-  isAnonymousSignature: normalizedAuthState.sessionState.status === 'anonymous_signature',
-  isUnauthorized: normalizedAuthState.sessionState.status === 'unauthorized',
-  isEditor: normalizedAuthState.isEditor,
-  isViewer: normalizedAuthState.isViewer,
-  isFirebaseConnected: normalizedAuthState.isFirebaseConnected,
-  remoteSyncStatus: normalizedAuthState.remoteSyncStatus,
-  remoteSyncState: normalizedAuthState.remoteSyncState,
-  signOut: normalizedAuthState.handleLogout,
-});
 
 /**
  * AuthProvider wraps the application and provides authentication state.

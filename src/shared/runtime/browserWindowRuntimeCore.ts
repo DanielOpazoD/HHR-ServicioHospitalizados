@@ -12,51 +12,72 @@ export interface BrowserWindowRuntime {
   removeLocalStorageItem: (key: string) => void;
 }
 
-const hasWindow = (): boolean => typeof window !== 'undefined';
+export interface BrowserWindowRuntimeDependencies {
+  getWindow?: () => Window | null;
+}
 
-const readWindowValue = <T>(fallback: T, resolver: (runtimeWindow: Window) => T): T => {
-  if (!hasWindow()) {
+const getGlobalWindow = (): Window | null =>
+  typeof window !== 'undefined' ? (window as Window) : null;
+
+const readWindowValue = <T>(
+  dependencies: BrowserWindowRuntimeDependencies,
+  fallback: T,
+  resolver: (runtimeWindow: Window) => T
+): T => {
+  const runtimeWindow = dependencies.getWindow ? dependencies.getWindow() : getGlobalWindow();
+  if (!runtimeWindow) {
     return fallback;
   }
 
-  return resolver(window);
+  return resolver(runtimeWindow);
 };
 
-const runWithWindow = (effect: (runtimeWindow: Window) => void): void => {
-  if (!hasWindow()) {
+const runWithWindow = (
+  dependencies: BrowserWindowRuntimeDependencies,
+  effect: (runtimeWindow: Window) => void
+): void => {
+  const runtimeWindow = dependencies.getWindow ? dependencies.getWindow() : getGlobalWindow();
+  if (!runtimeWindow) {
     return;
   }
 
-  effect(window);
+  effect(runtimeWindow);
 };
 
-export const createBrowserWindowRuntime = (): BrowserWindowRuntime => ({
+export const createBrowserWindowRuntime = (
+  dependencies: BrowserWindowRuntimeDependencies = {}
+): BrowserWindowRuntime => ({
   alert: message => {
-    runWithWindow(runtimeWindow => {
+    runWithWindow(dependencies, runtimeWindow => {
       runtimeWindow.alert(message);
     });
   },
-  confirm: message => readWindowValue(false, runtimeWindow => runtimeWindow.confirm(message)),
+  confirm: message =>
+    readWindowValue(dependencies, false, runtimeWindow => runtimeWindow.confirm(message)),
   open: (url, target = '_blank') =>
-    readWindowValue(null, runtimeWindow => runtimeWindow.open(url, target)),
+    readWindowValue(dependencies, null, runtimeWindow => runtimeWindow.open(url, target)),
   reload: () => {
-    runWithWindow(runtimeWindow => {
+    runWithWindow(dependencies, runtimeWindow => {
       runtimeWindow.location.reload();
     });
   },
-  getLocationOrigin: () => readWindowValue('', runtimeWindow => runtimeWindow.location.origin),
-  getLocationPathname: () => readWindowValue('', runtimeWindow => runtimeWindow.location.pathname),
-  getLocationHref: () => readWindowValue('', runtimeWindow => runtimeWindow.location.href),
-  getViewportWidth: () => readWindowValue(0, runtimeWindow => runtimeWindow.innerWidth),
+  getLocationOrigin: () =>
+    readWindowValue(dependencies, '', runtimeWindow => runtimeWindow.location.origin),
+  getLocationPathname: () =>
+    readWindowValue(dependencies, '', runtimeWindow => runtimeWindow.location.pathname),
+  getLocationHref: () =>
+    readWindowValue(dependencies, '', runtimeWindow => runtimeWindow.location.href),
+  getViewportWidth: () =>
+    readWindowValue(dependencies, 0, runtimeWindow => runtimeWindow.innerWidth),
   getLocalStorageItem: key =>
-    readWindowValue(null, runtimeWindow => runtimeWindow.localStorage.getItem(key)),
+    readWindowValue(dependencies, null, runtimeWindow => runtimeWindow.localStorage.getItem(key)),
   setLocalStorageItem: (key, value) => {
-    runWithWindow(runtimeWindow => {
+    runWithWindow(dependencies, runtimeWindow => {
       runtimeWindow.localStorage.setItem(key, value);
     });
   },
   removeLocalStorageItem: key => {
-    runWithWindow(runtimeWindow => {
+    runWithWindow(dependencies, runtimeWindow => {
       runtimeWindow.localStorage.removeItem(key);
     });
   },

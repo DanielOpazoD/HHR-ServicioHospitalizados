@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { buildNormalizedAuthOperationalStateInput } from '@/context/authContextController';
+import {
+  buildAuthContextValue,
+  buildNormalizedAuthOperationalStateInput,
+} from '@/context/authContextController';
+import { resolveNormalizedAuthOperationalState } from '@/services/auth/authOperationalState';
+import type { AuthUser } from '@/types/authRoleTypes';
 
 describe('authContextController', () => {
   it('maps useAuthState output into normalized auth operational input', () => {
@@ -40,5 +45,33 @@ describe('authContextController', () => {
       role: 'admin',
       handleLogout,
     });
+  });
+
+  it('derives auth context flags from normalized operational state', () => {
+    const user: AuthUser = {
+      uid: 'doctor-1',
+      email: 'doctor@hrr.cl',
+      displayName: 'Dra. Clinica',
+      role: 'doctor_urgency',
+    };
+    const signOut = vi.fn();
+
+    const context = buildAuthContextValue(
+      resolveNormalizedAuthOperationalState({
+        sessionState: {
+          status: 'authorized',
+          user,
+        },
+        currentUser: user,
+        role: 'doctor_urgency',
+        handleLogout: signOut,
+      })
+    );
+
+    expect(context.isAuthenticated).toBe(true);
+    expect(context.isAuthorizedSession).toBe(true);
+    expect(context.isEditor).toBe(true);
+    expect(context.isViewer).toBe(false);
+    expect(context.signOut).toBe(signOut);
   });
 });

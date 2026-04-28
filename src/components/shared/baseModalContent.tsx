@@ -83,5 +83,9 @@ export const BaseModalContent: React.FC<BaseModalProps> = ({
     </BaseModalBackdrop>
   );
 
+  if (typeof document === 'undefined' || !document.body) {
+    return null;
+  }
+
   return createPortal(modalContent, document.body);
 };

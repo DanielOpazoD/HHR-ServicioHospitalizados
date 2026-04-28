@@ -16,7 +16,7 @@ describe('operationalTelemetryOutcomeRecorder', () => {
       status: 'partial',
       date: '2026-04-27',
       context: { file: 'census.xlsx' },
-      issues: ['Primero', 'Sin detalle', 'Sin detalle'],
+      issues: ['Primero', '', 'Sin detalle'],
     });
   });
 
@@ -75,6 +75,27 @@ describe('operationalTelemetryOutcomeRecorder', () => {
     expect(result.telemetryEvent.context).toEqual({
       errorCode: 'sync_blocked',
       originalValue: 'permission denied',
+    });
+  });
+
+  it('handles malformed issue payloads without throwing', () => {
+    expect(
+      __testing.buildOperationalOutcomeTelemetryEvent('sync', 'sync_daily_record', {
+        status: 'failed',
+        issues: [
+          null as unknown as { message?: string },
+          0 as unknown as { message?: string },
+          { message: '' } as unknown as { message?: string },
+          {},
+        ],
+      })
+    ).toEqual({
+      category: 'sync',
+      operation: 'sync_daily_record',
+      status: 'failed',
+      issues: ['Sin detalle', 'Sin detalle', '', 'Sin detalle'],
+      date: undefined,
+      context: undefined,
     });
   });
 });

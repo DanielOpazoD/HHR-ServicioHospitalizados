@@ -30,6 +30,15 @@ interface OperationalErrorTelemetryBuildResult {
   telemetryEvent: OperationalTelemetryEventInput;
 }
 
+const resolveIssueMessage = (issue: unknown): string => {
+  if (issue && typeof issue === 'object' && 'message' in issue) {
+    const message = issue as { message?: unknown };
+    return typeof message.message === 'string' ? message.message : 'Sin detalle';
+  }
+
+  return 'Sin detalle';
+};
+
 const deriveRuntimeStateFromSeverity = (
   severity: OperationalErrorShape['severity']
 ): OperationalRuntimeState => {
@@ -51,7 +60,7 @@ const buildOperationalOutcomeTelemetryEvent = (
   status: outcome.status,
   date: options.date,
   context: options.context,
-  issues: (outcome.issues || []).map(issue => issue.message || 'Sin detalle'),
+  issues: (outcome.issues || []).map(resolveIssueMessage),
 });
 
 const buildOperationalErrorTelemetryEvent = (
