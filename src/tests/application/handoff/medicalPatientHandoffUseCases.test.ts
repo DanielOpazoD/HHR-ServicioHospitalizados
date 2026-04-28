@@ -151,6 +151,41 @@ describe('medicalPatientHandoffUseCases', () => {
     expect(outcome.reason).toBe('missing_entry');
   });
 
+  it('does not create a medical entry from stale update identifiers', async () => {
+    const persistMedicalFields = vi.fn().mockResolvedValue(undefined);
+    const patient = createPatient({
+      medicalHandoffEntries: [
+        {
+          id: 'entry-1',
+          specialty: Specialty.MEDICINA,
+          note: 'Nota vigente',
+        },
+      ],
+    });
+
+    const noteOutcome = await executeUpdateMedicalEntryNote({
+      entryId: 'missing-entry',
+      medicalAuditActor: ACTOR,
+      now: NOW,
+      patient,
+      persistMedicalFields,
+      recordDate: REPORT_DATE,
+      value: 'Nota no debe persistir',
+    });
+    const specialtyOutcome = await executeUpdateMedicalEntrySpecialty({
+      entryId: 'missing-entry',
+      patient,
+      persistMedicalFields,
+      specialty: Specialty.CIRUGIA,
+    });
+
+    expect(noteOutcome.status).toBe('failed');
+    expect(noteOutcome.reason).toBe('missing_entry');
+    expect(specialtyOutcome.status).toBe('failed');
+    expect(specialtyOutcome.reason).toBe('missing_entry');
+    expect(persistMedicalFields).not.toHaveBeenCalled();
+  });
+
   it('validates continuity confirmation for actor and note content', async () => {
     const persistMedicalFields = vi.fn().mockResolvedValue(undefined);
     const patient = createPatient({

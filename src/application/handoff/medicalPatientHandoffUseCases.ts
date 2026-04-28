@@ -79,6 +79,17 @@ interface RefreshMedicalEntryAsCurrentInput extends MedicalPatientTimedMutationI
 const createMissingPatientOutcome = <T>(data: T, operation: string) =>
   createValidationOutcome(data, operation, 'missing_patient', 'No hay paciente disponible.');
 
+const createMissingEntryOutcome = <T>(data: T, operation: string) =>
+  createValidationOutcome(
+    data,
+    operation,
+    'missing_entry',
+    'No existe la entrada médica solicitada.'
+  );
+
+const findMedicalEntry = (patient: PatientData, entryId: string): MedicalHandoffEntry | null =>
+  getPatientMedicalHandoffEntries(patient).find(entry => entry.id === entryId) || null;
+
 const resolveNow = (value?: string): string => value || new Date().toISOString();
 
 const persistMedicalMutation = async (
@@ -129,9 +140,11 @@ export const executeUpdateMedicalEntryNote = async (
     return createMissingPatientOutcome(null, 'update_medical_entry_note');
   }
 
-  const previousEntry =
-    getPatientMedicalHandoffEntries(input.patient).find(entry => entry.id === input.entryId) ||
-    null;
+  const previousEntry = findMedicalEntry(input.patient, input.entryId);
+  if (!previousEntry) {
+    return createMissingEntryOutcome(null, 'update_medical_entry_note');
+  }
+
   const { entry, fields } = buildMedicalEntryNoteFields(
     input.patient,
     input.entryId,
@@ -155,9 +168,11 @@ export const executeUpdateMedicalEntrySpecialty = async (
     return createMissingPatientOutcome(null, 'update_medical_entry_specialty');
   }
 
-  const previousEntry =
-    getPatientMedicalHandoffEntries(input.patient).find(entry => entry.id === input.entryId) ||
-    null;
+  const previousEntry = findMedicalEntry(input.patient, input.entryId);
+  if (!previousEntry) {
+    return createMissingEntryOutcome(null, 'update_medical_entry_specialty');
+  }
+
   const { entry, fields } = buildMedicalEntrySpecialtyFields(
     input.patient,
     input.entryId,
@@ -231,12 +246,7 @@ export const executeDeleteMedicalEntry = async (
 
   const mutation = buildMedicalEntryDeleteFields(input.patient, input.entryId);
   if (!mutation) {
-    return createValidationOutcome(
-      null,
-      'delete_medical_entry',
-      'missing_entry',
-      'No existe la entrada médica solicitada.'
-    );
+    return createMissingEntryOutcome(null, 'delete_medical_entry');
   }
 
   return persistMedicalMutation('delete_medical_entry', input.persistMedicalFields, {
@@ -262,16 +272,9 @@ export const executeConfirmMedicalEntryContinuity = async (
     );
   }
 
-  const previousEntry =
-    getPatientMedicalHandoffEntries(input.patient).find(entry => entry.id === input.entryId) ||
-    null;
+  const previousEntry = findMedicalEntry(input.patient, input.entryId);
   if (!previousEntry) {
-    return createValidationOutcome(
-      null,
-      'confirm_medical_entry_continuity',
-      'missing_entry',
-      'No existe la entrada médica solicitada.'
-    );
+    return createMissingEntryOutcome(null, 'confirm_medical_entry_continuity');
   }
 
   if (!previousEntry.note.trim()) {
