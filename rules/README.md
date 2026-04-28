@@ -15,3 +15,8 @@ Commands:
 
 - regenerate outputs: `node scripts/build-rules-assets.mjs`
 - verify sync: `node scripts/check-rules-generated.mjs`
+- verify fragment governance: `node scripts/check-rules-source-governance.mjs`
+
+Firestore source fragments are kept below the governance line limit so security
+reviews stay local and new rules do not silently recreate a monolithic rules
+file inside a single fragment.

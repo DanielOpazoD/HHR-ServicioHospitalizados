@@ -3,6 +3,7 @@ import { initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/
 import { setLogLevel } from 'firebase/firestore';
 import * as fs from 'fs';
 import * as path from 'path';
+import { resolveFirestoreRulesEmulatorConfig } from './firestoreRulesEmulatorConfig';
 
 export type FirestoreLike = ReturnType<
   ReturnType<RulesTestEnvironment['authenticatedContext']>['firestore']
@@ -123,14 +124,17 @@ export function registerFirestoreRulesSuite(
 
       const rulesPath = path.resolve(__dirname, '../../../firestore.rules');
       const rules = fs.readFileSync(rulesPath, 'utf8');
+      const emulatorConfig = resolveFirestoreRulesEmulatorConfig(
+        process.env.FIRESTORE_EMULATOR_HOST
+      );
 
       try {
         testEnv = await initializeTestEnvironment({
           projectId: 'demo-hhr-rules-test',
           firestore: {
             rules,
-            host: '127.0.0.1',
-            port: 8080,
+            host: emulatorConfig.host,
+            port: emulatorConfig.port,
           },
         });
       } catch (error) {

@@ -9,6 +9,7 @@ import { useDailyRecordSyncQuery } from '@/hooks/useDailyRecordSyncQuery';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { clearAllRecords, getRecordForDate, saveRecord } from '@/services/storage/indexedDBService';
 import { setFirestoreEnabled } from '@/services/repositories/repositoryConfig';
+import { resolveFirestoreRulesEmulatorConfig } from '@/tests/security/firestoreRulesEmulatorConfig';
 
 const runEmulatorUiTests =
   process.env.RUN_FIRESTORE_EMULATOR_TESTS === '1' ||
@@ -123,13 +124,14 @@ describeUiEmulator('UI sync flow with Firestore emulator', () => {
   beforeAll(async () => {
     const rulesPath = path.resolve(__dirname, '../../../firestore.rules');
     const rules = fs.readFileSync(rulesPath, 'utf8');
+    const emulatorConfig = resolveFirestoreRulesEmulatorConfig(process.env.FIRESTORE_EMULATOR_HOST);
 
     testEnv = await initializeTestEnvironment({
       projectId: 'demo-hhr-ui-sync-emulator-test',
       firestore: {
         rules,
-        host: '127.0.0.1',
-        port: 8080,
+        host: emulatorConfig.host,
+        port: emulatorConfig.port,
       },
     });
   });

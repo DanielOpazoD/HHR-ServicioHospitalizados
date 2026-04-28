@@ -5,6 +5,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { getDoc } from 'firebase/firestore';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
+import { resolveFirestoreRulesEmulatorConfig } from '@/tests/security/firestoreRulesEmulatorConfig';
 
 const runEmulatorTests =
   process.env.RUN_FIRESTORE_EMULATOR_TESTS === '1' ||
@@ -56,13 +57,14 @@ describeEmulator('Firestore emulator sync concurrency flow', () => {
   beforeAll(async () => {
     const rulesPath = path.resolve(__dirname, '../../../firestore.rules');
     const rules = fs.readFileSync(rulesPath, 'utf8');
+    const emulatorConfig = resolveFirestoreRulesEmulatorConfig(process.env.FIRESTORE_EMULATOR_HOST);
 
     testEnv = await initializeTestEnvironment({
       projectId: 'demo-hhr-sync-emulator-test',
       firestore: {
         rules,
-        host: '127.0.0.1',
-        port: 8080,
+        host: emulatorConfig.host,
+        port: emulatorConfig.port,
       },
     });
 

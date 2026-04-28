@@ -113,7 +113,7 @@
     "check:source-any": "node scripts/check-source-any.mjs",
     "check:repo-hygiene": "node scripts/check-repo-hygiene.mjs",
     "check:secret-leaks": "node scripts/check-secret-leaks.mjs",
-    "check:security": "npm run check:secret-leaks && node scripts/check-rules-generated.mjs && node scripts/check-security-hardening.mjs",
+    "check:security": "npm run check:secret-leaks && node scripts/check-rules-generated.mjs && node scripts/check-rules-source-governance.mjs && node scripts/check-security-hardening.mjs",
     "check:dependency-vulnerabilities": "node scripts/check-dependency-vulnerabilities.mjs",
     "check:clinical-documents": "npm run typecheck && npm run test:clinical-documents",
     "check:bundle-budget": "node scripts/check-bundle-budget.mjs",
