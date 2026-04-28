@@ -174,6 +174,7 @@ export const netlifyFunctionDevServerPlugin = (
   name: 'hhr-netlify-function-dev-server',
   apply: 'serve',
   configureServer(server: ViteDevServer) {
+    process.env.HHR_ALLOW_LOCAL_FUNCTION_ORIGINS = 'true';
     server.middlewares.use((req, res, next) => {
       void handleNetlifyFunctionDevRequest({ entries, next, req, res, server });
     });

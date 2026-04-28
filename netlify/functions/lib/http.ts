@@ -36,6 +36,22 @@ export const resolveAllowedOrigins = (): string[] =>
     .map(normalizeUrlOrigin)
     .filter((origin): origin is string => Boolean(origin));
 
+const isLocalFunctionOriginAllowed = (requestOrigin?: string): boolean => {
+  if (process.env.HHR_ALLOW_LOCAL_FUNCTION_ORIGINS !== 'true' || !requestOrigin) {
+    return false;
+  }
+
+  try {
+    const originUrl = new URL(requestOrigin);
+    return (
+      (originUrl.protocol === 'http:' || originUrl.protocol === 'https:') &&
+      ['127.0.0.1', 'localhost', '[::1]'].includes(originUrl.hostname)
+    );
+  } catch {
+    return false;
+  }
+};
+
 export const getHeader = (
   headers: NetlifyHeaders | undefined,
   headerName: string
@@ -57,7 +73,9 @@ export const getRequestOrigin = (event: Pick<NetlifyEventLike, 'headers'>): stri
   getHeader(event.headers, 'origin');
 
 export const isOriginAllowed = (requestOrigin?: string): boolean =>
-  !requestOrigin || resolveAllowedOrigins().includes(requestOrigin);
+  !requestOrigin ||
+  resolveAllowedOrigins().includes(requestOrigin) ||
+  isLocalFunctionOriginAllowed(requestOrigin);
 
 export const buildCorsHeaders = (
   requestOrigin?: string,
@@ -74,7 +92,7 @@ export const buildCorsHeaders = (
     ...(options?.extraHeaders ?? {}),
   };
 
-  if (requestOrigin && resolveAllowedOrigins().includes(requestOrigin)) {
+  if (requestOrigin && isOriginAllowed(requestOrigin)) {
     headers['Access-Control-Allow-Origin'] = requestOrigin;
   }
 
