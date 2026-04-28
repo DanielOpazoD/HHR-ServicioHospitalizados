@@ -33,6 +33,14 @@ describe('dailyRecordSyncCompatibility', () => {
     expect(resolvePreferredDailyRecord(local, remote)).toBe(local);
   });
 
+  it('prefers local record when timestamps are equal', () => {
+    const local = buildRecord('2026-03-01', '2026-03-01T09:00:00.000Z');
+    const remote = buildRecord('2026-03-01', '2026-03-01T09:00:00.000Z');
+
+    expect(shouldKeepLocalRecordOverRemote(local, remote)).toBe(true);
+    expect(resolvePreferredDailyRecord(local, remote)).toBe(local);
+  });
+
   it('prefers remote record when local timestamp is missing or older', () => {
     const local = buildRecord('2026-03-01', '');
     const remote = buildRecord('2026-03-01', '2026-03-01T08:00:00.000Z');

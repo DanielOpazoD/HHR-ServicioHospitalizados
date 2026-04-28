@@ -29,9 +29,12 @@ export const ClinicalDocumentStatusBar: React.FC<ClinicalDocumentStatusBarProps>
   isSaving,
   lastSavedAt,
   hasLocalDraftChanges,
+  hasPendingRemoteUpdate,
   isUploadingPdf,
   pdf,
   onUploadPdf,
+  onApplyPendingRemoteUpdate,
+  onDiscardLocalDraftChanges,
 }) => {
   const autosaveState = useMemo(
     () => resolveAutosaveIndicatorState(isSaving, hasLocalDraftChanges, lastSavedAt),
@@ -40,6 +43,26 @@ export const ClinicalDocumentStatusBar: React.FC<ClinicalDocumentStatusBarProps>
 
   return (
     <div className="flex flex-wrap items-center justify-end gap-2">
+      {hasPendingRemoteUpdate && (
+        <div className="flex w-full items-center justify-end gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-amber-700">
+          <AlertCircle size={11} />
+          <span>Actualización remota pendiente</span>
+          <button
+            type="button"
+            onClick={onApplyPendingRemoteUpdate}
+            className={`${btnBase} border-amber-300 bg-white text-amber-700 hover:bg-amber-100`}
+          >
+            Recargar remoto
+          </button>
+          <button
+            type="button"
+            onClick={onDiscardLocalDraftChanges}
+            className={`${btnBase} border-amber-300 text-amber-700 hover:bg-amber-100`}
+          >
+            Descartar local
+          </button>
+        </div>
+      )}
       {autosaveState.phase === 'saving' && (
         <span
           className="flex items-center gap-1 text-[9px] font-semibold tracking-wide"
@@ -53,6 +76,11 @@ export const ClinicalDocumentStatusBar: React.FC<ClinicalDocumentStatusBarProps>
       )}
 
       <div className="flex items-center gap-1.5">
+        {hasLocalDraftChanges && (
+          <span className="inline-flex max-w-[220px] items-center truncate rounded-md border border-slate-200 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-slate-700">
+            Cambios locales sin guardar
+          </span>
+        )}
         {pdf?.exportStatus === 'exported' ? (
           <>
             <span className="group relative inline-flex items-center gap-1 rounded-md border border-emerald-200 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-emerald-700">

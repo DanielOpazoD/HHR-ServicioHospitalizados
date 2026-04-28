@@ -11,12 +11,11 @@ const defaultStatusProps = {
 };
 
 describe('ClinicalDocumentStatusBar', () => {
-  it('keeps local and pending remote edit banners hidden in the editor header', () => {
+  it('hides autosync banners when there is no pending remote update', () => {
     render(
       <ClinicalDocumentStatusBar
         {...defaultStatusProps}
-        hasLocalDraftChanges
-        hasPendingRemoteUpdate
+        hasLocalDraftChanges={false}
         isSaving={false}
         isUploadingPdf={false}
         onUploadPdf={() => {}}
@@ -27,6 +26,35 @@ describe('ClinicalDocumentStatusBar', () => {
     expect(screen.queryByText(/actualización remota pendiente/i)).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /recargar remoto/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /descartar local/i })).not.toBeInTheDocument();
+  });
+
+  it('shows pending remote sync controls when remote update arrives', () => {
+    const onApplyPendingRemoteUpdate = vi.fn();
+    const onDiscardLocalDraftChanges = vi.fn();
+
+    render(
+      <ClinicalDocumentStatusBar
+        {...defaultStatusProps}
+        hasPendingRemoteUpdate={true}
+        hasLocalDraftChanges={true}
+        isSaving={false}
+        isUploadingPdf={false}
+        onUploadPdf={() => {}}
+        onApplyPendingRemoteUpdate={onApplyPendingRemoteUpdate}
+        onDiscardLocalDraftChanges={onDiscardLocalDraftChanges}
+      />
+    );
+
+    expect(screen.getByText(/actualización remota pendiente/i)).toBeInTheDocument();
+    expect(screen.getByText(/cambios locales sin guardar/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /recargar remoto/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /descartar local/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /recargar remoto/i }));
+    fireEvent.click(screen.getByRole('button', { name: /descartar local/i }));
+
+    expect(onApplyPendingRemoteUpdate).toHaveBeenCalledTimes(1);
+    expect(onDiscardLocalDraftChanges).toHaveBeenCalledTimes(1);
   });
 
   it('shows an exported Drive state with a direct link', () => {

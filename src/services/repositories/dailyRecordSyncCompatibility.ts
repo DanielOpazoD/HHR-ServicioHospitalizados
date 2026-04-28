@@ -11,7 +11,7 @@ export const shouldKeepLocalRecordOverRemote = <T extends TimestampedRecord>(
   remoteRecord: T | null
 ): boolean => {
   if (!localRecord || !remoteRecord) return false;
-  return toRecordTimestamp(localRecord.lastUpdated) > toRecordTimestamp(remoteRecord.lastUpdated);
+  return toRecordTimestamp(localRecord.lastUpdated) >= toRecordTimestamp(remoteRecord.lastUpdated);
 };
 
 export const resolvePreferredDailyRecord = <T extends TimestampedRecord>(
