@@ -16,6 +16,24 @@ const resolveEndpoint = (): string =>
   import.meta.env.VITE_CLINICAL_DOCUMENT_AI_IMPORT_ENDPOINT ||
   '/.netlify/functions/clinical-document-ai-import';
 
+const LOCAL_ENDPOINT_UNAVAILABLE_MESSAGE =
+  'El endpoint local de IA no está disponible. Reinicia el servidor de desarrollo e intenta nuevamente.';
+
+const isJsonResponse = (response: Response): boolean =>
+  response.headers.get('content-type')?.toLowerCase().includes('application/json') ?? false;
+
+const readServerlessPayload = async (response: Response): Promise<unknown> => {
+  if (isJsonResponse(response)) {
+    return response.json();
+  }
+
+  if (response.status === 404) {
+    return { error: LOCAL_ENDPOINT_UNAVAILABLE_MESSAGE };
+  }
+
+  return { error: 'No se pudo leer la respuesta del servicio de IA.' };
+};
+
 const buildFailedImportOutcome = (
   message: string
 ): ApplicationOutcome<ClinicalDocumentAiImportPayload | null> =>
@@ -44,7 +62,7 @@ export const transformClinicalDocumentAiImportText = async (
       },
       body: JSON.stringify(request),
     });
-    const payload = await response.json();
+    const payload = await readServerlessPayload(response);
 
     if (!response.ok) {
       return buildFailedImportOutcome(

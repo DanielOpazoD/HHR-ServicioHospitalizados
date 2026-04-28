@@ -7,6 +7,7 @@ import viteCompression from 'vite-plugin-compression';
 import { VitePWA } from 'vite-plugin-pwa';
 import { chunkForModule } from './scripts/config/chunkingPolicy';
 import { minsalSharedInteropPlugin } from './scripts/config/minsalSharedInteropPlugin';
+import { netlifyFunctionDevServerPlugin } from './scripts/config/netlifyFunctionDevServer';
 
 /**
  * Generate version.json directly in the build output so the repo does not
@@ -81,6 +82,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       versionPlugin(buildVersionInfo),
       excelJsRuntimeAssetPlugin(),
+      netlifyFunctionDevServerPlugin(),
       minsalSharedInteropPlugin(__dirname),
       // plugin-react supports fastRefresh at runtime, but current bundled types
       // do not expose the option in this repo's version matrix.
