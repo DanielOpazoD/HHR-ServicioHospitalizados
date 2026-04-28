@@ -10,6 +10,7 @@ import type { AuditLogEntry } from '@/types/auditLogTypes';
 import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
 import { runHandoffMutation } from '@/hooks/controllers/handoffManagementMutationController';
 import { canEditMedicalHandoffForDate } from '@/shared/access/operationalAccessPolicy';
+import { resolveSpecialistHistoricalEditNotice } from '@/application/handoff';
 
 export interface HandoffManagementPersistenceInput {
   recordRef: RefObject<DailyRecord | null>;
@@ -73,10 +74,8 @@ export const useHandoffPersistenceRuntime = (
   );
 
   const presentSpecialistHistoricalEditError = useCallback(() => {
-    notifyError(
-      'Edición no permitida',
-      'El médico especialista solo puede editar la entrega médica del día actual.'
-    );
+    const notice = resolveSpecialistHistoricalEditNotice();
+    notifyError(notice.title, notice.message);
   }, [notifyError]);
 
   const runMutation = useCallback(

@@ -20,6 +20,7 @@ import {
   waitForIndexedDbOpenResolution,
 } from './indexedDbCoreSupport';
 import { resolveIndexedDbOpenHealth } from './indexedDbOpenHealthController';
+import { resolveIndexedDbOpenWaitAction } from './indexedDbOpenWaitController';
 import {
   INDEXED_DB_OPEN_TIMEOUT_MS,
   INDEXED_DB_RECOVERY_RETRY_DELAYS_MS,
@@ -131,10 +132,11 @@ export const ensureDbReady = async (options: EnsureDbReadyOptions = {}): Promise
       isDbOpen: () => db.isOpen(),
       isUsingMock: () => isUsingMock,
     });
-    if (waitOutcome === 'opened' || waitOutcome === 'mock') {
+    const waitAction = resolveIndexedDbOpenWaitAction(waitOutcome);
+    if (waitAction === 'return') {
       return;
     }
-    if (waitOutcome === 'stalled') {
+    if (waitAction === 'fallback') {
       recordIndexedDbRecoveryNotice(
         'indexeddb_open_stalled',
         'La apertura de IndexedDB excedio el tiempo esperado; se activo fallback.',

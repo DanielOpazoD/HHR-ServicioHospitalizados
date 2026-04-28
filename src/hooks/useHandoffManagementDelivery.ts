@@ -6,9 +6,11 @@ import type {
 } from '@/application/shared/dailyRecordCoreContracts';
 import type { MedicalHandoffScope } from '@/types/medicalHandoff';
 import {
+  buildSpecialistHistoricalEditFailure,
   executeEnsureMedicalHandoffSignatureLink,
   executeMarkMedicalHandoffAsSent,
   executeSendMedicalHandoff,
+  resolveSpecialistHistoricalEditNotice,
 } from '@/application/handoff';
 import { defaultDailyRecordReadPort } from '@/application/ports/dailyRecordPort';
 import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryOutcomeRecorder';
@@ -38,14 +40,10 @@ export const useHandoffManagementDelivery = ({
   success,
   notifyError,
 }: HandoffManagementDeliveryInput) => {
-  const presentSpecialistHistoricalEditError = useCallback(
-    () =>
-      notifyError(
-        'Edición no permitida',
-        'El médico especialista solo puede editar la entrega médica del día actual.'
-      ),
-    [notifyError]
-  );
+  const presentSpecialistHistoricalEditError = useCallback(() => {
+    const notice = resolveSpecialistHistoricalEditNotice();
+    notifyError(notice.title, notice.message);
+  }, [notifyError]);
 
   const canMutateCurrentMedicalRecord = useCallback(
     () =>
@@ -84,14 +82,7 @@ export const useHandoffManagementDelivery = ({
       scope: MedicalHandoffScope = 'all'
     ): Promise<ApplicationOutcome<{ handoffUrl: string } | null>> => {
       if (!canMutateCurrentMedicalRecord()) {
-        return createApplicationFailed(null, [
-          {
-            kind: 'permission',
-            message: 'El médico especialista solo puede editar la entrega médica del día actual.',
-            userSafeMessage:
-              'El médico especialista solo puede editar la entrega médica del día actual.',
-          },
-        ]);
+        return buildSpecialistHistoricalEditFailure(null);
       }
 
       const outcome = await executeEnsureMedicalHandoffSignatureLink({

@@ -8,6 +8,10 @@ export {
   executeUpdateMedicalSignature,
   executeUpdateMedicalSpecialtyNote,
 } from './handoffManagementUseCases';
+export {
+  buildSpecialistHistoricalEditFailure,
+  resolveSpecialistHistoricalEditNotice,
+} from './handoffSpecialistHistoricalEditNotice';
 export type {
   ConfirmMedicalSpecialtyNoChangesOutput,
   PersistedHandoffRecordOutput,
