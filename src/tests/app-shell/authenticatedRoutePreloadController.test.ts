@@ -15,7 +15,7 @@ describe('authenticatedRoutePreloadController', () => {
     expect(loadAuthenticatedShell).toHaveBeenCalledTimes(1);
   });
 
-  it('preloads the census chunk for root and census refreshes', async () => {
+  it('preloads the census entrypoint once for root and census refreshes', async () => {
     const loadCensusComponents = vi.fn().mockResolvedValue({});
     const loadCensusRegisterContent = vi.fn().mockResolvedValue({});
 
@@ -36,7 +36,7 @@ describe('authenticatedRoutePreloadController', () => {
     });
 
     expect(loadCensusComponents).toHaveBeenCalledTimes(3);
-    expect(loadCensusRegisterContent).toHaveBeenCalledTimes(3);
+    expect(loadCensusRegisterContent).not.toHaveBeenCalled();
   });
 
   it('does not preload census for non-census module refreshes', async () => {
@@ -63,7 +63,7 @@ describe('authenticatedRoutePreloadController', () => {
     expect(shouldPreloadAuthenticatedShellForPathname('/unknown-route')).toBe(false);
   });
 
-  it('preloads the default post-login route from the login screen', async () => {
+  it('preloads the authenticated shell and default census entrypoint from the login screen', async () => {
     const loadAuthenticatedShell = vi.fn().mockResolvedValue({});
     const loadCensusComponents = vi.fn().mockResolvedValue({});
     const loadCensusRegisterContent = vi.fn().mockResolvedValue({});
@@ -76,6 +76,6 @@ describe('authenticatedRoutePreloadController', () => {
 
     expect(loadAuthenticatedShell).toHaveBeenCalledTimes(1);
     expect(loadCensusComponents).toHaveBeenCalledTimes(1);
-    expect(loadCensusRegisterContent).toHaveBeenCalledTimes(1);
+    expect(loadCensusRegisterContent).not.toHaveBeenCalled();
   });
 });

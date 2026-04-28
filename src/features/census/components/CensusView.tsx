@@ -1,13 +1,8 @@
 import React, { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { ViewLoader } from '@/components/ui/ViewLoader';
 import { useCensusViewScreenModel } from '@/features/census/hooks/useCensusViewScreenModel';
+import { CensusRegisterContent } from './CensusRegisterContent';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
-
-const LazyCensusRegisterContent = lazy(() =>
-  import('./CensusRegisterContent').then(module => ({
-    default: module.CensusRegisterContent,
-  }))
-);
 
 const LazyEmptyDayPrompt = lazy(() =>
   import('./EmptyDayPrompt').then(module => ({
@@ -98,9 +93,7 @@ const CensusViewContent: React.FC<CensusViewProps> = ({
 
   return (
     <div className="space-y-4">
-      <Suspense fallback={<ViewLoader />}>
-        {registerContentProps ? <LazyCensusRegisterContent {...registerContentProps} /> : null}
-      </Suspense>
+      {registerContentProps ? <CensusRegisterContent {...registerContentProps} /> : null}
     </div>
   );
 };

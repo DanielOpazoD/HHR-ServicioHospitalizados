@@ -1,6 +1,6 @@
 import { resolveModuleFromPathname } from '@/hooks/controllers/appStateNavigationController';
 import type { ModuleType } from '@/constants/navigationConfig';
-import { preloadCensusComponentsChunk, preloadCensusRegisterContentChunk } from '@/features/census';
+import { preloadCensusComponentsChunk } from '@/features/census';
 
 type LoadRouteComponents = () => Promise<unknown>;
 
@@ -18,9 +18,6 @@ const defaultLoadAuthenticatedShell: LoadRouteComponents = () =>
   import('@/app-shell/runtime/AuthenticatedAppShell');
 
 const defaultLoadCensusComponents: LoadRouteComponents = () => preloadCensusComponentsChunk();
-
-const defaultLoadCensusRegisterContent: LoadRouteComponents = () =>
-  preloadCensusRegisterContentChunk();
 
 const normalizePathname = (pathname: string | undefined): string =>
   (pathname ?? '/').replace(/^\/+|\/+$/g, '');
@@ -52,27 +49,21 @@ export const preloadAuthenticatedShellChunk = async ({
 export const preloadAuthenticatedRouteChunk = async ({
   pathname,
   loadCensusComponents = defaultLoadCensusComponents,
-  loadCensusRegisterContent = defaultLoadCensusRegisterContent,
 }: AuthenticatedRoutePreloadOptions): Promise<void> => {
   if (resolvePreloadModuleFromPathname(pathname) !== 'CENSUS') {
     return;
   }
 
-  await Promise.all([loadCensusComponents(), loadCensusRegisterContent()]);
+  await loadCensusComponents();
 };
 
 export const preloadDefaultPostLoginRoute = async ({
   loadAuthenticatedShell = defaultLoadAuthenticatedShell,
   loadCensusComponents = defaultLoadCensusComponents,
-  loadCensusRegisterContent = defaultLoadCensusRegisterContent,
 }: {
   loadAuthenticatedShell?: LoadRouteComponents;
   loadCensusComponents?: LoadRouteComponents;
   loadCensusRegisterContent?: LoadRouteComponents;
 } = {}): Promise<void> => {
-  await Promise.all([
-    loadAuthenticatedShell(),
-    loadCensusComponents(),
-    loadCensusRegisterContent(),
-  ]);
+  await Promise.all([loadAuthenticatedShell(), loadCensusComponents()]);
 };

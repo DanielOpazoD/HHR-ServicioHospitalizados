@@ -91,6 +91,37 @@ describe('prepareClientBootstrap', () => {
     expect(mockReload).not.toHaveBeenCalled();
   });
 
+  it('does not block local preview startup while cleaning service workers', async () => {
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: {
+        hostname: '127.0.0.1',
+      },
+    });
+    let resolveRegistrations!: (value: ServiceWorkerRegistrationStub[]) => void;
+    const registrationsPromise = new Promise<ServiceWorkerRegistrationStub[]>(resolve => {
+      resolveRegistrations = resolve;
+    });
+    (navigator.serviceWorker.getRegistrations as ReturnType<typeof vi.fn>).mockReturnValue(
+      registrationsPromise
+    );
+
+    const resultPromise = prepareClientBootstrap();
+    let result: Awaited<ReturnType<typeof prepareClientBootstrap>> | null = null;
+    resultPromise.then(value => {
+      result = value;
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(result).toEqual({ status: 'continue', reason: 'local-dev' });
+    expect(navigator.serviceWorker.getRegistrations).toHaveBeenCalledTimes(1);
+    expect(mockReload).not.toHaveBeenCalled();
+
+    resolveRegistrations([]);
+    await registrationsPromise;
+  });
+
   it('reloads once when a legacy /sw.js registration is detected', async () => {
     const legacyRegistration = createRegistration('https://app.example.com/sw.js');
     (navigator.serviceWorker.getRegistrations as ReturnType<typeof vi.fn>).mockResolvedValue([

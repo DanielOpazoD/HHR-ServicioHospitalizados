@@ -1,6 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { bootstrapAppRuntime } from '@/app-shell/bootstrap/bootstrapAppRuntime';
+import {
+  reconcileBootstrapRuntime,
+  resolveFirebaseBootstrapRuntime,
+} from '@/app-shell/bootstrap/bootstrapAppRuntime';
 import {
   installBootstrapRuntimeErrorListeners,
   recordBootstrapRuntimeError,
@@ -115,8 +118,22 @@ const appModulePromise = import('@/App').then(module => {
   return module;
 });
 
-bootstrapAppRuntime()
-  .then(async result => {
+reconcileBootstrapRuntime()
+  .then(async clientRecovery => {
+    if (clientRecovery.status === 'reload') {
+      const result = {
+        status: 'reload' as const,
+        stage: 'client_recovery' as const,
+        clientRecovery,
+      };
+      markPerf('bootstrap:runtime-ready', result.status);
+      recordBootstrapRuntimeResult(result);
+      return;
+    }
+
+    await renderApp();
+
+    const result = await resolveFirebaseBootstrapRuntime(clientRecovery);
     markPerf('bootstrap:runtime-ready', result.status);
     recordBootstrapRuntimeResult(result);
 
@@ -128,8 +145,6 @@ bootstrapAppRuntime()
       mountFirebaseConfigWarning(result.message, result.warningCopy);
       return;
     }
-
-    await renderApp();
   })
   .catch(error => {
     recordBootstrapRuntimeError(error);

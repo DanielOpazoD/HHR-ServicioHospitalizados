@@ -3,7 +3,8 @@ import { waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
-  mockBootstrapAppRuntime,
+  mockReconcileBootstrapRuntime,
+  mockResolveFirebaseBootstrapRuntime,
   mockInstallBootstrapRuntimeErrorListeners,
   mockRecordBootstrapRuntimeError,
   mockRecordBootstrapRuntimeResult,
@@ -22,7 +23,8 @@ const {
   mockBootLoggerInfo,
   mockBootLoggerError,
 } = vi.hoisted(() => ({
-  mockBootstrapAppRuntime: vi.fn(),
+  mockReconcileBootstrapRuntime: vi.fn(),
+  mockResolveFirebaseBootstrapRuntime: vi.fn(),
   mockInstallBootstrapRuntimeErrorListeners: vi.fn(),
   mockRecordBootstrapRuntimeError: vi.fn(),
   mockRecordBootstrapRuntimeResult: vi.fn(),
@@ -50,7 +52,9 @@ vi.mock('react-dom/client', () => ({
 }));
 
 vi.mock('@/app-shell/bootstrap/bootstrapAppRuntime', () => ({
-  bootstrapAppRuntime: (...args: unknown[]) => mockBootstrapAppRuntime(...args),
+  reconcileBootstrapRuntime: (...args: unknown[]) => mockReconcileBootstrapRuntime(...args),
+  resolveFirebaseBootstrapRuntime: (...args: unknown[]) =>
+    mockResolveFirebaseBootstrapRuntime(...args),
 }));
 
 vi.mock('@/app-shell/bootstrap/bootstrapRuntimeTelemetry', () => ({
@@ -151,6 +155,23 @@ describe('index bootstrap entrypoint', () => {
     mockPreloadAuthenticatedShellChunk.mockResolvedValue(undefined);
     mockShouldPreloadAuthenticatedShellForPathname.mockReturnValue(false);
     mockGetFirebaseStartupFailureMessage.mockReturnValue('Firebase startup failed');
+    mockReconcileBootstrapRuntime.mockResolvedValue({
+      status: 'continue',
+      reason: null,
+    });
+    mockResolveFirebaseBootstrapRuntime.mockResolvedValue({
+      status: 'continue',
+      stage: 'firebase_ready',
+      clientRecovery: {
+        status: 'continue',
+        reason: null,
+      },
+      services: {
+        app: { name: 'app' },
+        auth: { name: 'auth' },
+        db: { name: 'db' },
+      },
+    });
 
     Object.defineProperty(window, 'location', {
       configurable: true,
@@ -176,13 +197,9 @@ describe('index bootstrap entrypoint', () => {
       preferLoginShell: false,
       renderBootstrapRouteChrome: false,
     });
-    mockBootstrapAppRuntime.mockResolvedValue({
+    mockReconcileBootstrapRuntime.mockResolvedValue({
       status: 'reload',
-      stage: 'client_recovery',
-      clientRecovery: {
-        status: 'reload',
-        reason: 'legacy-sw',
-      },
+      reason: 'legacy-sw',
     });
 
     await import('@/index');
@@ -195,6 +212,7 @@ describe('index bootstrap entrypoint', () => {
     expect(mockRecordBootstrapRuntimeResult).toHaveBeenCalledWith(
       expect.objectContaining({ status: 'reload' })
     );
+    expect(mockResolveFirebaseBootstrapRuntime).not.toHaveBeenCalled();
     expect(mockDetachBootstrapRuntimeErrorListeners).toHaveBeenCalledTimes(1);
   });
 
@@ -204,13 +222,9 @@ describe('index bootstrap entrypoint', () => {
       preferLoginShell: false,
       renderBootstrapRouteChrome: true,
     });
-    mockBootstrapAppRuntime.mockResolvedValue({
+    mockReconcileBootstrapRuntime.mockResolvedValue({
       status: 'reload',
-      stage: 'client_recovery',
-      clientRecovery: {
-        status: 'reload',
-        reason: 'legacy-sw',
-      },
+      reason: 'legacy-sw',
     });
 
     await import('@/index');
@@ -235,13 +249,9 @@ describe('index bootstrap entrypoint', () => {
       writable: true,
     });
     mockShouldPreloadAuthenticatedShellForPathname.mockReturnValue(true);
-    mockBootstrapAppRuntime.mockResolvedValue({
+    mockReconcileBootstrapRuntime.mockResolvedValue({
       status: 'reload',
-      stage: 'client_recovery',
-      clientRecovery: {
-        status: 'reload',
-        reason: 'test-stop',
-      },
+      reason: 'test-stop',
     });
 
     await import('@/index');
@@ -254,7 +264,7 @@ describe('index bootstrap entrypoint', () => {
   });
 
   it('mounts the firebase startup warning when bootstrap is blocked', async () => {
-    mockBootstrapAppRuntime.mockResolvedValue({
+    mockResolveFirebaseBootstrapRuntime.mockResolvedValue({
       status: 'blocked',
       stage: 'firebase_ready',
       message: 'No se pudo iniciar la app',
@@ -272,17 +282,40 @@ describe('index bootstrap entrypoint', () => {
     await import('@/index');
     await flushBootstrapWork();
 
+    await waitFor(() => {
+      expect(mockRootRender).toHaveBeenCalled();
+    });
     expect(mockMountFirebaseConfigWarning).toHaveBeenCalledWith('No se pudo iniciar la app', {
       title: 'Configuracion faltante',
       summary: 'Falta algo',
       steps: ['Paso 1'],
     });
-    expect(mockRootRender).not.toHaveBeenCalled();
     expect(mockDetachBootstrapRuntimeErrorListeners).toHaveBeenCalledTimes(1);
   });
 
-  it('renders the application when bootstrap continues', async () => {
-    mockBootstrapAppRuntime.mockResolvedValue({
+  it('renders the application after client recovery before firebase runtime settles', async () => {
+    let resolveFirebaseRuntime!: (value: unknown) => void;
+    mockResolveFirebaseBootstrapRuntime.mockReturnValue(
+      new Promise(resolve => {
+        resolveFirebaseRuntime = resolve;
+      })
+    );
+
+    await import('@/index');
+    await flushBootstrapWork();
+
+    expect(mockBootLoggerInfo).toHaveBeenCalledWith('Rendering application');
+    await waitFor(() => {
+      expect(
+        mockRootRender.mock.calls.some(
+          ([renderElement]) => typeof renderElement.props.children.type === 'function'
+        )
+      ).toBe(true);
+    });
+    expect(mockMountFirebaseConfigWarning).not.toHaveBeenCalled();
+    expect(mockDetachBootstrapRuntimeErrorListeners).not.toHaveBeenCalled();
+
+    resolveFirebaseRuntime({
       status: 'continue',
       stage: 'firebase_ready',
       clientRecovery: {
@@ -295,23 +328,14 @@ describe('index bootstrap entrypoint', () => {
         db: { name: 'db' },
       },
     });
-
-    await import('@/index');
     await flushBootstrapWork();
 
-    expect(mockBootLoggerInfo).toHaveBeenCalledWith('Rendering application');
-    await waitFor(() => {
-      expect(mockRootRender).toHaveBeenCalledTimes(1);
-    });
-    const renderElement = mockRootRender.mock.calls[0][0];
-    expect(renderElement.props.children.type).toBeTypeOf('function');
-    expect(mockMountFirebaseConfigWarning).not.toHaveBeenCalled();
     expect(mockDetachBootstrapRuntimeErrorListeners).toHaveBeenCalledTimes(1);
   });
 
   it('mounts the app-shell load warning for chunk-load bootstrap failures', async () => {
     const failure = new Error('Failed to fetch dynamically imported module: /assets/app.js');
-    mockBootstrapAppRuntime.mockRejectedValue(failure);
+    mockReconcileBootstrapRuntime.mockRejectedValue(failure);
 
     await import('@/index');
     await flushBootstrapWork();
@@ -328,7 +352,7 @@ describe('index bootstrap entrypoint', () => {
 
   it('mounts the generic firebase startup warning for non-chunk bootstrap failures', async () => {
     const failure = new Error('firebase runtime exploded');
-    mockBootstrapAppRuntime.mockRejectedValue(failure);
+    mockReconcileBootstrapRuntime.mockRejectedValue(failure);
 
     await import('@/index');
     await flushBootstrapWork();

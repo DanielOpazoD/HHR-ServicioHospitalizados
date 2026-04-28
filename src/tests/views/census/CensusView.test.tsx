@@ -190,6 +190,20 @@ describe('CensusView', () => {
     expect(await screen.findByTestId('cma-section')).toBeInTheDocument();
   });
 
+  it('renders the census table immediately when record data is already present', () => {
+    vi.mocked(useCensusViewModel).mockReturnValue(
+      buildViewModel({
+        beds: {},
+        visibleBeds: [buildVisibleBed('H1C1')],
+      })
+    );
+
+    render(<CensusView {...defaultProps} />);
+
+    expect(screen.queryByTestId('view-loader')).not.toBeInTheDocument();
+    expect(screen.getByTestId('census-table')).toBeInTheDocument();
+  });
+
   it('renders CensusModals when not in readOnly mode', async () => {
     vi.mocked(useCensusViewModel).mockReturnValue(
       buildViewModel({

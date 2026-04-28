@@ -131,9 +131,9 @@ const resolveBlockedBootstrapResult = (
 export const reconcileBootstrapRuntime = async (): Promise<ClientBootstrapRecoveryResult> =>
   prepareClientBootstrap();
 
-export const bootstrapAppRuntime = async (): Promise<AppBootstrapRuntimeResult> => {
-  const clientRecovery = await reconcileBootstrapRuntime();
-
+export const resolveFirebaseBootstrapRuntime = async (
+  clientRecovery: ClientBootstrapRecoveryResult
+): Promise<AppBootstrapRuntimeResult> => {
   if (clientRecovery.status === 'reload') {
     bootstrapRuntimeLogger.warn('Bootstrap paused for recovery reload', {
       reason: clientRecovery.reason,
@@ -186,4 +186,9 @@ export const bootstrapAppRuntime = async (): Promise<AppBootstrapRuntimeResult> 
       resolution.messageOverride
     );
   }
+};
+
+export const bootstrapAppRuntime = async (): Promise<AppBootstrapRuntimeResult> => {
+  const clientRecovery = await reconcileBootstrapRuntime();
+  return resolveFirebaseBootstrapRuntime(clientRecovery);
 };

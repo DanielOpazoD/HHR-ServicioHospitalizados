@@ -192,7 +192,9 @@ export const prepareClientBootstrap = async (): Promise<ClientBootstrapRecoveryR
   }
 
   if (isLocalHost()) {
-    await unregisterServiceWorkers(() => true);
+    void unregisterServiceWorkers(() => true).catch(error => {
+      bootstrapRecoveryLogger.warn('Local service worker cleanup failed during bootstrap', error);
+    });
     clearRecoveryAttempt();
     return {
       status: 'continue',
