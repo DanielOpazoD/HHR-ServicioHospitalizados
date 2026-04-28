@@ -3,11 +3,15 @@ import { Radio } from 'lucide-react';
 import { BaseModal } from '@/components/shared/BaseModal';
 import {
   fetchMMRADPdfBlobUrl,
+  fetchMMRADPortalReceiptHtml,
   searchMMRADExams,
   type MMRADExam,
   type MMRADSearchResult,
 } from '@/services/radiology/mmradService';
-import { buildMMRADReportClipboardText } from '@/services/radiology/mmradReportSupport';
+import {
+  buildMMRADPortalReceiptPrintHtml,
+  buildMMRADReportClipboardText,
+} from '@/services/radiology/mmradReportSupport';
 import {
   RadiologyViewerControls,
   RadiologyViewerEmptyState,
@@ -189,6 +193,28 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
     }
   }, []);
 
+  const handleOpenPortalReceipt = useCallback(async (exam: MMRADExam) => {
+    if (!exam.portal_web_receipt_url) {
+      return;
+    }
+
+    const popupWindow = defaultBrowserWindowRuntime.open('', '_blank');
+    if (!popupWindow) {
+      return;
+    }
+
+    try {
+      const receiptHtml = await fetchMMRADPortalReceiptHtml(exam.portal_web_receipt_url);
+      popupWindow.document.open();
+      popupWindow.document.write(buildMMRADPortalReceiptPrintHtml(receiptHtml));
+      popupWindow.document.close();
+      popupWindow.focus();
+    } catch (error) {
+      popupWindow.close();
+      setError(error instanceof Error ? error.message : 'Error al abrir el comprobante portal.');
+    }
+  }, []);
+
   const setDatePreset = (preset: 'last-month' | 'last-year' | 'last-5-years') => {
     const range = resolveMMRADDatePresetRange(preset);
     setDateFrom(range.from);
@@ -271,6 +297,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
           filteredExams={filteredExams}
           onTabChange={setActiveModTab}
           onOpenPdf={handleOpenPdf}
+          onOpenPortalReceipt={handleOpenPortalReceipt}
           onCopyReport={handleCopyReport}
           copiedReportExamKey={copiedReportExamKey}
         />

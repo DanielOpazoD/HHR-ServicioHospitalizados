@@ -209,6 +209,7 @@ describe('mmrad-search', () => {
             <td>Acciones</td>
             <td><a href="/informePDF/123">PDF</a></td>
             <td><a href="javascript:window.open('/ingrad-ris-informehtml/UtilServlet?a=1&id=123');void(0);">HTML</a></td>
+            <td><a href="javascript:window.open('/web/portalpaciente/comprobante?idexamen=123&idprestacion=456');void(0);">Comprobante Portal Web paciente</a></td>
           </tr>
         </table></body></html>`
       ),
@@ -240,6 +241,9 @@ describe('mmrad-search', () => {
     expect(body.rut).toBe('12345678-9');
     expect(body.examenes).toBeInstanceOf(Array);
     expect(body.examenes[0].informe_html_url).toContain('/ingrad-ris-informehtml/UtilServlet?a=1');
+    expect(body.examenes[0].portal_web_receipt_url).toBe(
+      'https://ris.mmrad.cl/web/portalpaciente/comprobante?idexamen=123&idprestacion=456'
+    );
     expect(body.examenes[0].report.findings).toContain('Parénquima pulmonar');
     expect(body.examenes[0].report.impression).toContain('Cardiomegalia');
     expect(body._debug).toBeUndefined();

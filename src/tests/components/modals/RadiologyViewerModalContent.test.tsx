@@ -16,6 +16,7 @@ const buildResult = (): MMRADSearchResult => ({
       pdf_url: 'https://example.com/report.pdf',
       dicom_url: null,
       informe_html_url: 'https://example.com/report.html',
+      portal_web_receipt_url: 'https://example.com/portal-receipt.html',
       report: {
         title: 'TOMOGRAFÍA SIMPLE DE TÓRAX',
         technique: null,
@@ -40,6 +41,7 @@ describe('RadiologyViewerModalContent', () => {
         filteredExams={result.examenes}
         onTabChange={vi.fn()}
         onOpenPdf={vi.fn()}
+        onOpenPortalReceipt={vi.fn()}
         onCopyReport={vi.fn()}
         copiedReportExamKey="https://example.com/report.html"
       />
@@ -51,6 +53,7 @@ describe('RadiologyViewerModalContent', () => {
   it('delegates PDF open and copy actions for CT exams with structured reports', () => {
     const result = buildResult();
     const onOpenPdf = vi.fn();
+    const onOpenPortalReceipt = vi.fn();
     const onCopyReport = vi.fn();
 
     render(
@@ -62,15 +65,18 @@ describe('RadiologyViewerModalContent', () => {
         filteredExams={result.examenes}
         onTabChange={vi.fn()}
         onOpenPdf={onOpenPdf}
+        onOpenPortalReceipt={onOpenPortalReceipt}
         onCopyReport={onCopyReport}
         copiedReportExamKey={null}
       />
     );
 
     fireEvent.click(screen.getByRole('button', { name: /ver pdf/i }));
+    fireEvent.click(screen.getByRole('button', { name: /comprobante portal/i }));
     fireEvent.click(screen.getByRole('button', { name: /copiar informe/i }));
 
     expect(onOpenPdf).toHaveBeenCalledWith(result.examenes[0]);
+    expect(onOpenPortalReceipt).toHaveBeenCalledWith(result.examenes[0]);
     expect(onCopyReport).toHaveBeenCalledWith(result.examenes[0]);
   });
 });
