@@ -8,13 +8,14 @@ Scope: `src/features/clinical-documents`, `netlify/functions`
 
 Crear un submódulo inicial de importación asistida por IA para convertir informes clínicos de traslado en una `epicrisis_traslado` editable dentro de Documentos Clínicos.
 
-El MVP debe permitir adjuntar un archivo `.pdf` o `.docx`, extraer texto localmente, transformar ese texto con IA a un JSON clínico simplificado y dejar que el usuario revise/corrija antes de crear el documento visible en el workspace.
+El MVP debe permitir adjuntar un archivo `.pdf` o `.docx`, extraer texto localmente, transformar ese texto con IA a un JSON clínico simplificado interno y crear automáticamente una `epicrisis_traslado` como borrador editable en el editor conocido del workspace.
 
 ## Decisiones aprobadas
 
 - La integración será un flujo guiado dentro del workspace de Documentos Clínicos.
 - El destino inicial será específicamente `epicrisis_traslado`.
-- La revisión previa usará JSON clínico simplificado, no el `ClinicalDocumentRecord` técnico completo.
+- La IA devolverá JSON clínico simplificado como contrato interno, no como pantalla obligatoria de revisión.
+- Tras validar la respuesta IA, la app creará automáticamente un borrador `epicrisis_traslado` y lo abrirá en el editor conocido para revisión/corrección clínica.
 - La IA solo debe ordenar y transformar contenido explícito; no debe inferir datos clínicos ausentes.
 - El campo final se llamará `planEgreso` y debe orientar la continuidad del manejo en el centro receptor cuando el texto fuente lo exprese o corresponda al informe de traslado.
 - El archivo completo no se enviará al backend en el MVP; se enviará solo texto plano extraído localmente.
@@ -22,7 +23,7 @@ El MVP debe permitir adjuntar un archivo `.pdf` o `.docx`, extraer texto localme
 ## No objetivos
 
 - No implementar OCR para PDFs escaneados.
-- No guardar documentos sin revisión humana.
+- No guardar documentos como definitivos, firmados o bloqueados sin revisión humana.
 - No crear un editor paralelo de documentos clínicos.
 - No permitir que la IA firme, bloquee o publique documentos.
 - No transformar documentos a otros formatos en esta primera fase.
@@ -39,10 +40,10 @@ El MVP debe permitir adjuntar un archivo `.pdf` o `.docx`, extraer texto localme
    - DOCX: extracción lazy-loaded con una librería enfocada en texto, por ejemplo `mammoth`, para no cargarla en el bundle principal.
 5. Si la extracción produce texto suficiente, la app envía solo ese texto a una Netlify Function autenticada.
 6. La Function usa el provider IA ya existente (`netlify/functions/lib/ai-provider.ts`) y responde con JSON clínico simplificado.
-7. La UI muestra el JSON editable en una pantalla de revisión.
-8. El usuario corrige campos si es necesario.
-9. La app valida el JSON simplificado.
-10. Al confirmar, la app crea una nueva `epicrisis_traslado` usando las definiciones y contratos actuales del módulo.
+7. La app valida el JSON simplificado como contrato interno.
+8. Si el JSON es válido, la app crea automáticamente una nueva `epicrisis_traslado` usando las definiciones y contratos actuales del módulo.
+9. La nueva epicrisis queda seleccionada y abierta en el editor estándar del workspace.
+10. El usuario corrige o completa el documento en el editor conocido si lo estima conveniente.
 
 ## Contrato JSON simplificado
 
@@ -62,6 +63,7 @@ Reglas:
 - Los campos sin información explícita deben quedar vacíos o con texto breve de revisión, nunca inventados.
 - `planEgreso` debe incluir indicaciones terapéuticas, continuidad de manejo y destino/recomendaciones para el centro receptor cuando estén en el texto fuente.
 - El JSON simplificado se convierte internamente a secciones del documento, respetando el contrato vigente de `ClinicalDocumentRecord`.
+- El JSON no se expone como paso obligatorio al usuario en el MVP; se puede conservar como detalle técnico o diagnóstico solo si la UI necesita depurar un error.
 
 ## Prompt IA
 
@@ -85,10 +87,13 @@ Agregar un flujo contenido dentro de `clinical-documents`, idealmente como compo
 - selector de archivo
 - estado de extracción
 - preview de texto extraído resumido o truncado
-- revisión JSON editable
-- acciones: `Transformar`, `Reintentar`, `Crear epicrisis traslado`, `Cancelar`
+- estado de transformación IA
+- confirmación visible cuando se crea y abre el borrador
+- acciones: `Transformar y crear epicrisis`, `Reintentar`, `Cancelar`
 
 La UI debe ser visible y explícita en sus estados. Si la transformación se ejecuta, el botón y el panel deben cambiar de estado claramente.
+
+El flujo no debe pedir edición manual del JSON por defecto. La revisión humana ocurrirá en la `epicrisis_traslado` creada como borrador editable, usando el editor estándar del módulo.
 
 ### Controladores
 
@@ -149,6 +154,8 @@ El documento resultante debe:
 
 - tener `documentType: 'epicrisis_traslado'`
 - nacer como borrador editable
+- abrirse automáticamente como documento seleccionado tras la importación
+- mostrar una señal visible de origen asistido por IA mientras sea útil para revisión, sin contaminar la impresión/PDF
 - pasar por hidratación/serialización/validación runtime vigente
 - no marcarse firmado ni bloqueado
 - preservar actor/auditoría de creación según el workspace actual
@@ -166,6 +173,7 @@ Estados esperados:
 - timeout o error del provider IA
 - respuesta IA no parseable como JSON válido
 - JSON válido pero incompleto
+- fallo al crear el borrador desde JSON validado
 
 Cada error debe mostrarse como estado recuperable con acción clara. Ningún fallo de IA debe romper el workspace ni modificar el documento activo.
 
@@ -176,7 +184,7 @@ Cada error debe mostrarse como estado recuperable con acción clara. Ningún fal
 - No se guarda texto fuente completo por defecto.
 - No se registran prompts completos ni contenido clínico en logs.
 - La Function debe usar telemetría con metadatos no sensibles: provider, modelo, tamaño aproximado y outcome.
-- El usuario debe revisar antes de guardar.
+- El usuario debe revisar/corregir en el editor estándar antes de firmar, imprimir o usar el documento como definitivo.
 
 ## Tests y validación
 
@@ -186,15 +194,16 @@ Tests unitarios:
 - validación de JSON simplificado
 - mapeo JSON -> secciones de `epicrisis_traslado`
 - prompt builder con regla anti-inferencia
+- creación automática de borrador desde JSON validado
 - Function con auth, roles, rate limit, IA no configurada, respuesta válida e inválida
 
 Tests UI:
 
 - subir archivo válido
 - mostrar estado de extracción
-- mostrar JSON editable
-- bloquear creación si JSON inválido
-- crear borrador `epicrisis_traslado` tras confirmación
+- mostrar estado de transformación IA
+- crear y abrir borrador `epicrisis_traslado` automáticamente si la respuesta es válida
+- bloquear creación si JSON interno es inválido
 - mostrar error recuperable si IA falla
 
 Checks recomendados:
@@ -211,9 +220,9 @@ Checks recomendados:
 1. La IA puede devolver JSON aparentemente correcto pero clínicamente incompleto.
 2. PDFs escaneados pueden parecer válidos pero no entregar texto.
 3. DOCX con tablas complejas puede perder estructura durante extracción.
-4. El JSON editable puede ser intimidante si se muestra como bloque técnico.
+4. La creación automática puede dar falsa sensación de documento listo; la UI debe dejar claro que es un borrador editable generado con asistencia IA.
 5. Enviar texto extraído sigue siendo sensible; el endpoint debe evitar logs con contenido clínico.
 
 ## Criterio de aceptación
 
-El MVP queda aceptado cuando un usuario puede tomar un informe textual de traslado en PDF/DOCX, transformarlo a JSON clínico simplificado, editarlo, y crear una nueva `epicrisis_traslado` visible y editable en Documentos Clínicos sin inferencias clínicas automáticas ni guardado silencioso.
+El MVP queda aceptado cuando un usuario puede tomar un informe textual de traslado en PDF/DOCX, transformarlo con IA y obtener automáticamente una nueva `epicrisis_traslado` visible y editable en Documentos Clínicos, sin inferencias clínicas automáticas, sin firma/bloqueo silencioso y con revisión posterior en el editor conocido.
