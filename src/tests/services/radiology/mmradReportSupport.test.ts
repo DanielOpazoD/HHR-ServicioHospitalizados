@@ -114,4 +114,17 @@ describe('mmradReportSupport', () => {
     expect(html).not.toMatch(/onclick=/i);
     expect(html).not.toContain('mmrad-print-toolbar');
   });
+
+  it('removes the native MMRAD print button from the portal receipt preview', () => {
+    const html = buildMMRADPortalReceiptPrintHtml(`
+      <div style="background:#333;text-align:center">
+        <button type="button">Imprimir</button>
+      </div>
+      <table><tr><td>Clave Portal Imagenologia</td><td>9DJRTL51</td></tr></table>
+    `);
+
+    expect(html).toContain('Clave Portal Imagenologia');
+    expect(html).toContain('9DJRTL51');
+    expect(html).not.toMatch(/<button\b/i);
+  });
 });

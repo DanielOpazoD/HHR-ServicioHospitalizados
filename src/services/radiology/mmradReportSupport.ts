@@ -211,7 +211,16 @@ export const buildMMRADReportPrintHtml = (
 export const buildMMRADPortalReceiptPrintHtml = (receiptHtml: string): string => {
   const sanitizedReceiptHtml = receiptHtml
     .replace(/<script[\s\S]*?<\/script>/gi, '')
-    .replace(/\son\w+=["'][^"']*["']/gi, '');
+    .replace(/\son\w+=["'][^"']*["']/gi, '')
+    .replace(
+      /<div\b[^>]*>\s*<button\b[^>]*>\s*Imprimir(?:\s*\/\s*guardar\s*PDF)?\s*<\/button>\s*<\/div>/gi,
+      ''
+    )
+    .replace(/<button\b[^>]*>\s*Imprimir(?:\s*\/\s*guardar\s*PDF)?\s*<\/button>/gi, '')
+    .replace(
+      /<input\b(?=[^>]*\btype=["']?(?:button|submit)["']?)(?=[^>]*\bvalue=["']?Imprimir["']?)[^>]*>/gi,
+      ''
+    );
 
   return `<!doctype html>
 <html lang="es">
