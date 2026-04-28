@@ -27,6 +27,7 @@ interface NetlifyFunctionDevServerLike {
 }
 
 type NetlifyFunctionDevModuleLoader = (modulePath: string) => Promise<NetlifyFunctionModule>;
+type LocalFunctionEnvSource = Record<string, string | boolean | undefined>;
 
 export const DEFAULT_NETLIFY_FUNCTION_DEV_ENTRIES: NetlifyFunctionDevEntry[] = [
   {
@@ -34,6 +35,43 @@ export const DEFAULT_NETLIFY_FUNCTION_DEV_ENTRIES: NetlifyFunctionDevEntry[] = [
     modulePath: '/netlify/functions/clinical-document-ai-import.ts',
   },
 ];
+
+const FIREBASE_FUNCTION_ENV_KEYS = [
+  'VITE_FIREBASE_API_KEY',
+  'VITE_FIREBASE_API_KEY_B64',
+  'VITE_FIREBASE_AUTH_DOMAIN',
+  'VITE_FIREBASE_PROJECT_ID',
+  'VITE_FIREBASE_STORAGE_BUCKET',
+  'VITE_FIREBASE_MESSAGING_SENDER_ID',
+  'VITE_FIREBASE_APP_ID',
+];
+
+const setIfMissing = (
+  target: NodeJS.ProcessEnv,
+  key: string,
+  value: string | boolean | undefined
+): void => {
+  if (typeof target[key] === 'string' && target[key]?.trim()) {
+    return;
+  }
+  if (typeof value === 'string' && value.trim()) {
+    target[key] = value.trim();
+  }
+};
+
+export const hydrateLocalFunctionEnv = (
+  env: LocalFunctionEnvSource,
+  target: NodeJS.ProcessEnv = process.env
+): void => {
+  setIfMissing(target, 'AI_PROVIDER', env.VITE_LOCAL_AI_PROVIDER);
+  setIfMissing(target, 'GEMINI_API_KEY', env.VITE_LOCAL_GEMINI_API_KEY);
+  setIfMissing(target, 'OPENAI_API_KEY', env.VITE_LOCAL_OPENAI_API_KEY);
+  setIfMissing(target, 'ANTHROPIC_API_KEY', env.VITE_LOCAL_ANTHROPIC_API_KEY);
+
+  for (const key of FIREBASE_FUNCTION_ENV_KEYS) {
+    setIfMissing(target, key, env[key]);
+  }
+};
 
 const readRequestBody = async (req: IncomingMessage): Promise<string | null> => {
   const chunks: Buffer[] = [];
@@ -175,6 +213,7 @@ export const netlifyFunctionDevServerPlugin = (
   apply: 'serve',
   configureServer(server: ViteDevServer) {
     process.env.HHR_ALLOW_LOCAL_FUNCTION_ORIGINS = 'true';
+    hydrateLocalFunctionEnv(server.config.env);
     server.middlewares.use((req, res, next) => {
       void handleNetlifyFunctionDevRequest({ entries, next, req, res, server });
     });

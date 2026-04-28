@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   DEFAULT_NETLIFY_FUNCTION_DEV_ENTRIES,
   handleNetlifyFunctionDevRequest,
+  hydrateLocalFunctionEnv,
 } from '../../../scripts/config/netlifyFunctionDevServer';
 
 const createReadableRequest = ({
@@ -44,6 +45,48 @@ const createResponse = () => {
 };
 
 describe('netlifyFunctionDevServer', () => {
+  it('hydrates local Vite AI and Firebase env names for function runtime', () => {
+    const target: NodeJS.ProcessEnv = {};
+
+    hydrateLocalFunctionEnv(
+      {
+        VITE_FIREBASE_API_KEY: 'firebase-key',
+        VITE_FIREBASE_APP_ID: 'firebase-app',
+        VITE_FIREBASE_PROJECT_ID: 'firebase-project',
+        VITE_LOCAL_AI_PROVIDER: 'gemini',
+        VITE_LOCAL_GEMINI_API_KEY: 'gemini-local-key',
+      },
+      target
+    );
+
+    expect(target.AI_PROVIDER).toBe('gemini');
+    expect(target.GEMINI_API_KEY).toBe('gemini-local-key');
+    expect(target.VITE_FIREBASE_API_KEY).toBe('firebase-key');
+    expect(target.VITE_FIREBASE_APP_ID).toBe('firebase-app');
+    expect(target.VITE_FIREBASE_PROJECT_ID).toBe('firebase-project');
+  });
+
+  it('does not override server-side AI env vars with local Vite fallbacks', () => {
+    const target: NodeJS.ProcessEnv = {
+      AI_PROVIDER: 'openai',
+      GEMINI_API_KEY: 'server-gemini-key',
+      OPENAI_API_KEY: 'server-openai-key',
+    };
+
+    hydrateLocalFunctionEnv(
+      {
+        VITE_LOCAL_AI_PROVIDER: 'gemini',
+        VITE_LOCAL_GEMINI_API_KEY: 'gemini-local-key',
+        VITE_LOCAL_OPENAI_API_KEY: 'openai-local-key',
+      },
+      target
+    );
+
+    expect(target.AI_PROVIDER).toBe('openai');
+    expect(target.GEMINI_API_KEY).toBe('server-gemini-key');
+    expect(target.OPENAI_API_KEY).toBe('server-openai-key');
+  });
+
   it('serves the clinical document import function from Vite dev server', async () => {
     const requestBody = JSON.stringify({ sourceText: 'Informe de traslado con indicaciones.' });
     const request = createReadableRequest({
