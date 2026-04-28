@@ -15,11 +15,11 @@ import {
   recordIndexedDbRecoveryFailure,
 } from './indexedDbRecoveryController';
 import {
-  isDatabaseClosedError,
   openIndexedDbWithRetries,
   runIndexedDbOperationWithTimeout,
   waitForIndexedDbOpenResolution,
 } from './indexedDbCoreSupport';
+import { resolveIndexedDbOpenHealth } from './indexedDbOpenHealthController';
 import {
   INDEXED_DB_OPEN_TIMEOUT_MS,
   INDEXED_DB_RECOVERY_RETRY_DELAYS_MS,
@@ -111,22 +111,18 @@ export const ensureDbReady = async (options: EnsureDbReadyOptions = {}): Promise
     }
   }
 
-  if (db.isOpen()) {
-    try {
-      await db.settings.get('__health_check__');
-      return;
-    } catch (error: unknown) {
-      if (isDatabaseClosedError(error)) {
-        recordIndexedDbRecoveryNotice(
-          'indexeddb_database_closed',
-          'Se detecto cierre inesperado de IndexedDB; se intentara reabrir.',
-          { errorName: 'DatabaseClosedError', ...getIndexedDbRecoveryBudgetSnapshot() },
-          'retryable'
-        );
-      } else {
-        return;
-      }
-    }
+  const openHealth = await resolveIndexedDbOpenHealth(db);
+  if (openHealth === 'ready') {
+    return;
+  }
+
+  if (openHealth === 'closed') {
+    recordIndexedDbRecoveryNotice(
+      'indexeddb_database_closed',
+      'Se detecto cierre inesperado de IndexedDB; se intentara reabrir.',
+      { errorName: 'DatabaseClosedError', ...getIndexedDbRecoveryBudgetSnapshot() },
+      'retryable'
+    );
   }
 
   if (isOpening) {

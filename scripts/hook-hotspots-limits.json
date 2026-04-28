@@ -5,7 +5,7 @@
     "src/hooks/useBedManagement.ts": 360,
     "src/hooks/useExportManager.ts": 280,
     "src/hooks/useBackupFileBrowser.ts": 320,
-    "src/hooks/useCensusEmailRecipientLists.ts": 460
+    "src/hooks/useCensusEmailRecipientLists.ts": 180
   },
   "backlog": {
     "src/hooks/useCensusEmail.ts": {
@@ -39,8 +39,8 @@
       "status": "active"
     },
     "src/hooks/useCensusEmailRecipientLists.ts": {
-      "limit": 460,
-      "reason": "Hook ya bajó bajo el guardrail global de módulos; se mantiene solo en watchlist por convergencia cualitativa del runtime de destinatarios.",
+      "limit": 180,
+      "reason": "Hook de destinatarios ya convergio a orquestacion delgada; el limite bajo evita que vuelva a absorber bootstrap, mutaciones o sync diferido.",
       "owner": "census-email",
       "status": "watch"
     }

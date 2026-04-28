@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
 import { formatWorktreeState, getGitReportState } from './gitReportState.mjs';
+import { buildMaintenanceDebtWatchlistRows } from './maintenanceDebtScorecardSupport.mjs';
 
 const ROOT = process.cwd();
 const REPORTS_DIR = path.join(ROOT, 'reports');
@@ -38,12 +39,6 @@ const countLines = filePath => {
   }
   return fs.readFileSync(absolutePath, 'utf8').split(/\r?\n/).length;
 };
-
-const buildWatchlistRows = () =>
-  WATCHLIST_FILES.map(file => ({
-    file,
-    lines: countLines(file),
-  })).sort((a, b) => b.lines - a.lines);
 
 const buildPendingHotspotRows = () => {
   const moduleConfig = readJson(MODULE_ALLOWLIST_PATH) ?? {};
@@ -93,8 +88,18 @@ const buildRecentChurnRows = () => {
 };
 
 const qualityMetrics = readJson(QUALITY_METRICS_JSON);
+const moduleConfig = readJson(MODULE_ALLOWLIST_PATH) ?? {};
+const hookConfig = readJson(HOOK_LIMITS_PATH) ?? {};
 const pendingHotspots = buildPendingHotspotRows();
-const watchlist = buildWatchlistRows();
+const watchlist = buildMaintenanceDebtWatchlistRows({
+  watchlistFiles: WATCHLIST_FILES,
+  countLines,
+  hookLimits: hookConfig.files && typeof hookConfig.files === 'object' ? hookConfig.files : {},
+  moduleLimits:
+    moduleConfig.allowlist && typeof moduleConfig.allowlist === 'object'
+      ? moduleConfig.allowlist
+      : {},
+});
 const churn = buildRecentChurnRows();
 const gitState = getGitReportState(ROOT);
 
@@ -135,7 +140,15 @@ ${
 
 ## Watchlist By Size
 
-${watchlist.map(entry => `- ${entry.file}: ${entry.lines} líneas`).join('\n')}
+${watchlist
+  .map(entry => {
+    const limitSuffix =
+      entry.limit == null
+        ? ''
+        : ` (limit ${entry.limit}, ${entry.remainingLines} líneas libres, source ${entry.limitSource})`;
+    return `- ${entry.file}: ${entry.lines} líneas${limitSuffix}`;
+  })
+  .join('\n')}
 
 ## Test Stability Signals
 
