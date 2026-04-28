@@ -6,6 +6,8 @@ import { createClinicalDocumentDraft } from '@/features/clinical-documents/domai
 import { useClinicalDocumentWorkspaceDocumentActions } from '@/features/clinical-documents/hooks/useClinicalDocumentWorkspaceDocumentActions';
 import * as clinicalDocumentUseCases from '@/application/clinical-documents/clinicalDocumentUseCases';
 import { buildClinicalDocumentJsonExport } from '@/application/clinical-documents/clinicalDocumentJsonUseCases';
+import * as clinicalDocumentAiFileTextService from '@/features/clinical-documents/services/clinicalDocumentAiFileTextService';
+import * as clinicalDocumentAiImportService from '@/features/clinical-documents/services/clinicalDocumentAiImportService';
 
 vi.mock('@/application/clinical-documents/clinicalDocumentUseCases', async () => {
   const actual = await vi.importActual<
@@ -18,6 +20,14 @@ vi.mock('@/application/clinical-documents/clinicalDocumentUseCases', async () =>
     executeDeleteClinicalDocument: vi.fn(),
   };
 });
+
+vi.mock('@/features/clinical-documents/services/clinicalDocumentAiFileTextService', () => ({
+  extractClinicalDocumentAiImportFileText: vi.fn(),
+}));
+
+vi.mock('@/features/clinical-documents/services/clinicalDocumentAiImportService', () => ({
+  transformClinicalDocumentAiImportText: vi.fn(),
+}));
 
 vi.mock('@/services/observability/operationalTelemetryService', () => ({
   recordOperationalOutcome: vi.fn(),
@@ -261,6 +271,146 @@ describe('useClinicalDocumentWorkspaceDocumentActions', () => {
     expect(notify.success).toHaveBeenCalledWith(
       'Documento importado',
       `${selectedDocument.title} (importado) quedó guardado como un nuevo borrador.`
+    );
+  });
+
+  it('imports a transfer report with AI and opens the generated epicrisis traslado draft', async () => {
+    const selectedDocument = buildRecord();
+    vi.mocked(
+      clinicalDocumentAiFileTextService.extractClinicalDocumentAiImportFileText
+    ).mockResolvedValue({
+      status: 'success',
+      data: 'Informe de traslado. '.repeat(10),
+      issues: [],
+    });
+    vi.mocked(
+      clinicalDocumentAiImportService.transformClinicalDocumentAiImportText
+    ).mockResolvedValue({
+      status: 'success',
+      data: {
+        antecedentes: 'HTA.',
+        historiaEvolucionClinica: 'Traslado por neumonia.',
+        examenesComplementarios: '',
+        diagnosticosEgreso: 'Neumonia.',
+        planEgreso: 'Continuar manejo en centro receptor.',
+      },
+      issues: [],
+    });
+    vi.mocked(clinicalDocumentUseCases.executeCreateClinicalDocumentDraft).mockImplementation(
+      async record => ({
+        status: 'success',
+        data: { ...record, id: 'ai-imported-document-id' },
+        issues: [],
+      })
+    );
+
+    const { result } = renderHook(() =>
+      useClinicalDocumentWorkspaceDocumentActions({
+        patient: patient as never,
+        role: 'doctor_urgency',
+        user: {
+          uid: 'u1',
+          email: 'doctor@test.com',
+          displayName: 'Doctor Test',
+        },
+        hospitalId: 'hhr',
+        episode: selectedDocument,
+        selectedTemplateId: 'epicrisis',
+        templates,
+        selectedDocumentId: selectedDocument.id,
+        canEdit: true,
+        canDelete: true,
+        notify,
+        setSelectedDocumentId,
+        setDraft,
+        lastPersistedSnapshotRef,
+      })
+    );
+
+    await act(async () => {
+      await result.current.handleImportWithAi(
+        new File(['contenido'], 'informe-traslado.pdf', { type: 'application/pdf' })
+      );
+    });
+
+    expect(clinicalDocumentUseCases.executeCreateClinicalDocumentDraft).toHaveBeenCalledWith(
+      expect.objectContaining({
+        documentType: 'epicrisis_traslado',
+        templateId: 'epicrisis_traslado',
+        title: 'Epicrisis traslado',
+        status: 'draft',
+        isLocked: false,
+        sections: expect.arrayContaining([
+          expect.objectContaining({
+            id: 'plan',
+            title: 'Plan de egreso',
+            content: '<p>Continuar manejo en centro receptor.</p>',
+          }),
+        ]),
+      }),
+      'hhr'
+    );
+    expect(setSelectedDocumentId).toHaveBeenCalledWith('ai-imported-document-id');
+    expect(setDraft).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'ai-imported-document-id' })
+    );
+    expect(notify.success).toHaveBeenCalledWith(
+      'Epicrisis traslado creada',
+      'Se generó un borrador editable desde el informe importado con IA.'
+    );
+  });
+
+  it('shows a recoverable error when AI import cannot transform the extracted text', async () => {
+    const selectedDocument = buildRecord();
+    vi.mocked(
+      clinicalDocumentAiFileTextService.extractClinicalDocumentAiImportFileText
+    ).mockResolvedValue({
+      status: 'success',
+      data: 'Informe de traslado. '.repeat(10),
+      issues: [],
+    });
+    vi.mocked(
+      clinicalDocumentAiImportService.transformClinicalDocumentAiImportText
+    ).mockResolvedValue({
+      status: 'failed',
+      data: null,
+      issues: [{ kind: 'remote_blocked', message: 'AI not configured' }],
+      userSafeMessage: 'La IA no está configurada para importar documentos.',
+    });
+
+    const { result } = renderHook(() =>
+      useClinicalDocumentWorkspaceDocumentActions({
+        patient: patient as never,
+        role: 'doctor_urgency',
+        user: {
+          uid: 'u1',
+          email: 'doctor@test.com',
+          displayName: 'Doctor Test',
+        },
+        hospitalId: 'hhr',
+        episode: selectedDocument,
+        selectedTemplateId: 'epicrisis',
+        templates,
+        selectedDocumentId: selectedDocument.id,
+        canEdit: true,
+        canDelete: true,
+        notify,
+        setSelectedDocumentId,
+        setDraft,
+        lastPersistedSnapshotRef,
+      })
+    );
+
+    await act(async () => {
+      await result.current.handleImportWithAi(
+        new File(['contenido'], 'informe-traslado.pdf', { type: 'application/pdf' })
+      );
+    });
+
+    expect(clinicalDocumentUseCases.executeCreateClinicalDocumentDraft).not.toHaveBeenCalled();
+    expect(notify.error).toHaveBeenCalledWith(
+      'No se pudo importar con IA',
+      'La IA no está configurada para importar documentos.'
     );
   });
 

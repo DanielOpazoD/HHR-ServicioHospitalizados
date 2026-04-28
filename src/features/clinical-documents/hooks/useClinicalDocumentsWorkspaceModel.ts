@@ -134,23 +134,28 @@ export const useClinicalDocumentsWorkspaceModel = ({
     canEdit,
   });
 
-  const { createDocument, handleDeleteDocument, handleDuplicateDocument, handleImportJson } =
-    useClinicalDocumentWorkspaceDocumentActions({
-      patient,
-      role,
-      user,
-      hospitalId,
-      episode,
-      selectedTemplateId,
-      templates,
-      selectedDocumentId,
-      canEdit,
-      canDelete,
-      notify: notifyPort,
-      setSelectedDocumentId,
-      setDraft,
-      lastPersistedSnapshotRef,
-    });
+  const {
+    createDocument,
+    handleDeleteDocument,
+    handleDuplicateDocument,
+    handleImportJson,
+    handleImportWithAi,
+  } = useClinicalDocumentWorkspaceDocumentActions({
+    patient,
+    role,
+    user,
+    hospitalId,
+    episode,
+    selectedTemplateId,
+    templates,
+    selectedDocumentId,
+    canEdit,
+    canDelete,
+    notify: notifyPort,
+    setSelectedDocumentId,
+    setDraft,
+    lastPersistedSnapshotRef,
+  });
 
   const { handleExportJson, handlePrint, handlePrintAnnex, handleUploadPdf, isUploadingPdf } =
     useClinicalDocumentWorkspaceExportActions({
@@ -184,6 +189,7 @@ export const useClinicalDocumentsWorkspaceModel = ({
       handleDeleteDocument,
       handleExportJson,
       handleImportJson,
+      handleImportWithAi,
       addClinicalUpdate,
       patchAnnexContent,
       patchSectionTitle,

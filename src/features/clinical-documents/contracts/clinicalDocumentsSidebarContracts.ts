@@ -25,6 +25,7 @@ export interface ClinicalDocumentsSidebarProps {
   onDeleteDocument: (document: ClinicalDocumentRecord) => void;
   onExportJson?: (document: ClinicalDocumentRecord) => void;
   onImportJson?: (file: File) => void;
+  onImportWithAi?: (file: File) => void;
   onAddClinicalUpdate?: () => void;
   onToggleAnnex?: () => void;
   hasAnnex?: boolean;

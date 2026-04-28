@@ -208,6 +208,44 @@ describe('ClinicalDocumentsSidebar', () => {
     expect(onImportJson).toHaveBeenCalledWith(expect.any(File));
   });
 
+  it('offers AI import for PDF and DOCX files from advanced tools', () => {
+    const onImportWithAi = vi.fn();
+
+    render(
+      <ClinicalDocumentsSidebar
+        canEdit={true}
+        canDelete={false}
+        readOnlyMessage={null}
+        patientName="Paciente Test"
+        templates={[{ id: 'epicrisis', name: 'Epicrisis' }]}
+        selectedTemplateId="epicrisis"
+        onSelectTemplate={() => {}}
+        onCreateDocument={() => {}}
+        documents={[]}
+        selectedDocumentId={null}
+        onSelectDocument={() => {}}
+        onDuplicateDocument={() => {}}
+        onDeleteDocument={() => {}}
+        onImportWithAi={onImportWithAi}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /herramientas avanzadas/i }));
+    expect(screen.getByRole('button', { name: /importar con ia/i })).toBeEnabled();
+    expect(screen.getByLabelText(/archivo pdf o docx para importar con ia/i)).toHaveAttribute(
+      'accept',
+      '.pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    );
+
+    fireEvent.change(screen.getByLabelText(/archivo pdf o docx para importar con ia/i), {
+      target: {
+        files: [new File(['contenido'], 'traslado.pdf', { type: 'application/pdf' })],
+      },
+    });
+
+    expect(onImportWithAi).toHaveBeenCalledWith(expect.any(File));
+  });
+
   it('restores one section from a version history snapshot', () => {
     const document = {
       ...buildDocument(),

@@ -53,6 +53,7 @@ interface BuildSidebarPropsParams {
   ) => Promise<void>;
   handleExportJson: (document: ClinicalDocumentsSidebarProps['documents'][number]) => void;
   handleImportJson: (file: File) => Promise<void>;
+  handleImportWithAi: (file: File) => Promise<void>;
   addClinicalUpdate: ClinicalDocumentsWorkspaceSheetModelProps['addClinicalUpdate'];
   patchAnnexContent: ClinicalDocumentsWorkspaceSheetModelProps['patchAnnexContent'];
   patchSectionTitle: ClinicalDocumentsWorkspaceSheetModelProps['patchSectionTitle'];
@@ -133,6 +134,7 @@ export const buildClinicalDocumentsWorkspaceSidebarProps = ({
   handleDeleteDocument,
   handleExportJson,
   handleImportJson,
+  handleImportWithAi,
   addClinicalUpdate,
   patchAnnexContent,
   patchSectionTitle,
@@ -159,6 +161,7 @@ export const buildClinicalDocumentsWorkspaceSidebarProps = ({
   onDeleteDocument: document => void handleDeleteDocument(document),
   onExportJson: handleExportJson,
   onImportJson: file => void handleImportJson(file),
+  onImportWithAi: file => void handleImportWithAi(file),
   onAddClinicalUpdate: canEdit ? addClinicalUpdate : undefined,
   onToggleAnnex: canEdit
     ? () =>

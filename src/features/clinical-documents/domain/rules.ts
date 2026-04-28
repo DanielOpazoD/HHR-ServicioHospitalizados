@@ -100,6 +100,31 @@ export const CLINICAL_DOCUMENT_TEMPLATES: Record<string, ClinicalDocumentTemplat
     allowClinicalUpdateSections: false,
     status: 'active',
   },
+  epicrisis_traslado: {
+    id: 'epicrisis_traslado',
+    documentType: 'epicrisis_traslado',
+    name: 'Epicrisis traslado',
+    title: 'Epicrisis traslado',
+    defaultPatientInfoTitle: 'Información del Paciente',
+    defaultFooterMedicoLabel: 'Médico',
+    defaultFooterEspecialidadLabel: 'Especialidad',
+    version: 1,
+    patientFields: [...CLINICAL_DOCUMENT_PATIENT_FIELDS],
+    sections: [
+      ...CLINICAL_DOCUMENT_EPICRISIS_SECTIONS.map(section =>
+        section.id === 'plan'
+          ? { ...section, title: 'Plan de egreso', visible: true }
+          : {
+              ...section,
+              visible: section.id === 'examenes-complementarios' ? true : section.visible,
+            }
+      ),
+    ],
+    allowCustomTitle: false,
+    allowAddSection: false,
+    allowClinicalUpdateSections: false,
+    status: 'archived',
+  },
   evolucion: {
     id: 'evolucion',
     documentType: 'evolucion',
