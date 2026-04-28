@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 
 import { RadiologyViewerResults } from '@/components/modals/RadiologyViewerModalContent';
+import { RadiologyPortalReceiptPreview } from '@/components/modals/RadiologyPortalReceiptPreview';
 import type { MMRADSearchResult } from '@/services/radiology/mmradService';
 
 const buildResult = (): MMRADSearchResult => ({
@@ -78,5 +79,30 @@ describe('RadiologyViewerModalContent', () => {
     expect(onOpenPdf).toHaveBeenCalledWith(result.examenes[0]);
     expect(onOpenPortalReceipt).toHaveBeenCalledWith(result.examenes[0]);
     expect(onCopyReport).toHaveBeenCalledWith(result.examenes[0]);
+  });
+
+  it('renders portal receipt in a floating preview and prints the iframe from a React button', () => {
+    const focus = vi.fn();
+    const print = vi.fn();
+
+    render(
+      <RadiologyPortalReceiptPreview
+        title="Comprobante portal"
+        html="<html><body><table><tr><td>Datos del paciente</td></tr></table></body></html>"
+        onClose={vi.fn()}
+      />
+    );
+
+    const iframe = screen.getByTitle(/comprobante portal web paciente/i) as HTMLIFrameElement;
+    Object.defineProperty(iframe, 'contentWindow', {
+      value: { focus, print },
+      configurable: true,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /imprimir/i }));
+
+    expect(iframe).toHaveAttribute('srcdoc', expect.stringContaining('Datos del paciente'));
+    expect(focus).toHaveBeenCalledTimes(1);
+    expect(print).toHaveBeenCalledTimes(1);
   });
 });

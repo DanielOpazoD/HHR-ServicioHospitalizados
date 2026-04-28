@@ -18,6 +18,7 @@ import {
   RadiologyViewerProgress,
   RadiologyViewerResults,
 } from '@/components/modals/RadiologyViewerModalContent';
+import { RadiologyPortalReceiptPreview } from '@/components/modals/RadiologyPortalReceiptPreview';
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import { writeClipboardText } from '@/shared/runtime/browserClipboardRuntime';
 import {
@@ -59,6 +60,10 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
   const [dateTo, setDateTo] = useState('');
   const [activeModTab, setActiveModTab] = useState<string | null>(null);
   const [copiedReportExamKey, setCopiedReportExamKey] = useState<string | null>(null);
+  const [portalReceiptPreview, setPortalReceiptPreview] = useState<{
+    title: string;
+    html: string;
+  } | null>(null);
   const copiedReportResetTimeoutRef = useRef<number | null>(null);
 
   const uniquePatients = useMemo(() => buildUniqueRadiologyPatients(patients), [patients]);
@@ -198,19 +203,13 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
       return;
     }
 
-    const popupWindow = defaultBrowserWindowRuntime.open('', '_blank');
-    if (!popupWindow) {
-      return;
-    }
-
     try {
       const receiptHtml = await fetchMMRADPortalReceiptHtml(exam.portal_web_receipt_url);
-      popupWindow.document.open();
-      popupWindow.document.write(buildMMRADPortalReceiptPrintHtml(receiptHtml));
-      popupWindow.document.close();
-      popupWindow.focus();
+      setPortalReceiptPreview({
+        title: 'Comprobante Portal Web paciente',
+        html: buildMMRADPortalReceiptPrintHtml(receiptHtml),
+      });
     } catch (error) {
-      popupWindow.close();
       setError(error instanceof Error ? error.message : 'Error al abrir el comprobante portal.');
     }
   }, []);
@@ -228,6 +227,12 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
       setError(null);
     }
   }, [isOpen, initialPatientRut]);
+
+  React.useEffect(() => {
+    if (!isOpen) {
+      setPortalReceiptPreview(null);
+    }
+  }, [isOpen]);
 
   React.useEffect(() => {
     return () => {
@@ -304,6 +309,13 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 
         {!result && !isLoading && !error && <RadiologyViewerEmptyState />}
       </BaseModal>
+      {portalReceiptPreview && (
+        <RadiologyPortalReceiptPreview
+          title={portalReceiptPreview.title}
+          html={portalReceiptPreview.html}
+          onClose={() => setPortalReceiptPreview(null)}
+        />
+      )}
     </>
   );
 };

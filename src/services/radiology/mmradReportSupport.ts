@@ -221,30 +221,9 @@ export const buildMMRADPortalReceiptPrintHtml = (receiptHtml: string): string =>
     <style>
       @page { margin: 10mm; }
       body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: #111827; background: #fff; }
-      .mmrad-print-toolbar {
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        display: flex;
-        justify-content: center;
-        padding: 8px;
-        background: #1f2937;
-        border-bottom: 1px solid #111827;
-      }
-      .mmrad-print-toolbar button {
-        border: 1px solid #cbd5e1;
-        border-radius: 6px;
-        background: #fff;
-        color: #111827;
-        font-size: 13px;
-        font-weight: 700;
-        padding: 5px 12px;
-        cursor: pointer;
-      }
       .mmrad-receipt-surface { padding: 0; }
       .mmrad-receipt-surface table { width: 100%; border-collapse: collapse; }
       @media print {
-        .mmrad-print-toolbar,
         button,
         input[type='button'],
         input[type='submit'] {
@@ -255,19 +234,9 @@ export const buildMMRADPortalReceiptPrintHtml = (receiptHtml: string): string =>
     </style>
   </head>
   <body>
-    <div class="mmrad-print-toolbar">
-      <button type="button" onclick="window.print()">Imprimir / guardar PDF</button>
-    </div>
     <main class="mmrad-receipt-surface">
       ${sanitizedReceiptHtml}
     </main>
-    <script>
-      window.addEventListener('load', function () {
-        window.setTimeout(function () {
-          window.print();
-        }, 350);
-      });
-    </script>
   </body>
 </html>`;
 };

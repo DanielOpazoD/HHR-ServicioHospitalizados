@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildMMRADPortalReceiptPrintHtml,
   buildMMRADReportClipboardText,
   buildMMRADReportPrintHtml,
   parseMMRADReportSections,
@@ -99,5 +100,18 @@ describe('mmradReportSupport', () => {
 
     expect(parsed?.findings).toBe('Parénquima pulmonar sin consolidaciones.');
     expect(parsed?.impression).toBe('Cardiomegalia.');
+  });
+
+  it('builds portal receipt print html without inline script or inline click handlers', () => {
+    const html = buildMMRADPortalReceiptPrintHtml(`
+      <button onclick="window.print()">Imprimir</button>
+      <script>window.print()</script>
+      <table><tr><td>Datos del paciente</td></tr></table>
+    `);
+
+    expect(html).toContain('Datos del paciente');
+    expect(html).not.toMatch(/<script/i);
+    expect(html).not.toMatch(/onclick=/i);
+    expect(html).not.toContain('mmrad-print-toolbar');
   });
 });
