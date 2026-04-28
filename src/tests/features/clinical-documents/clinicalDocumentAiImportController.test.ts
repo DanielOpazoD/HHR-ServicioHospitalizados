@@ -30,6 +30,24 @@ describe('clinicalDocumentAiImportController', () => {
     }
   });
 
+  it('removes administrative patient identifiers from parsed import sections', () => {
+    const parsed = parseClinicalDocumentAiImportJson(
+      JSON.stringify({
+        antecedentes:
+          'Nombre completo: Juan Perez Hanga.\nRUT: 12.345.678-9\nHTA. Diabetes mellitus tipo 2.',
+        historiaEvolucionClinica: 'Paciente: Maria Rapa Nui.\nEvoluciona estable durante traslado.',
+        examenesComplementarios: 'RUN: 9.876.543-K\nRadiografia de torax compatible.',
+        diagnosticosEgreso: 'Neumonia.',
+        planEgreso: 'Continuar manejo antibiotico en centro receptor.',
+      })
+    );
+
+    expect(parsed.status).toBe('success');
+    expect(parsed.data?.antecedentes).toBe('HTA. Diabetes mellitus tipo 2.');
+    expect(parsed.data?.historiaEvolucionClinica).toBe('Evoluciona estable durante traslado.');
+    expect(parsed.data?.examenesComplementarios).toBe('Radiografia de torax compatible.');
+  });
+
   it('maps simplified import JSON to epicrisis traslado sections with safe HTML', () => {
     const sections = buildClinicalDocumentAiImportSections({
       antecedentes: 'HTA <controlada>',

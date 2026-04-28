@@ -59,6 +59,7 @@ export const buildClinicalDocumentAiImportPrompt = (sourceText: string) => ({
     'Reglas:',
     '- Usa solo informacion explicita del texto fuente.',
     '- Conserva negaciones, fechas, dosis, farmacos, procedimientos y nombres propios cuando aparezcan.',
+    '- No copies identificadores administrativos del paciente dentro de las secciones: omite nombre, nombre completo, paciente, RUT, RUN, ficha o identificacion. Esos datos ya existen en el encabezado de la epicrisis.',
     '- Si una seccion no tiene informacion explicita, deja el string vacio.',
     '- planEgreso debe contener indicaciones y continuidad de manejo en el centro receptor cuando el informe de traslado lo indique.',
     '- No agregues conclusiones, diagnosticos, examenes ni tratamientos no mencionados.',

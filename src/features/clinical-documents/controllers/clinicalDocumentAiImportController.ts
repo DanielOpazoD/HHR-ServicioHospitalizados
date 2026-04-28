@@ -61,6 +61,31 @@ export const normalizeClinicalDocumentAiImportText = (value: string): string =>
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 
+const ADMINISTRATIVE_PATIENT_IDENTIFIER_PATTERNS = [
+  /\b(?:nombre(?:\s+completo)?|paciente)\s*:\s*[^.;\n]+[.;]?/gi,
+  /\b(?:rut|run|r\.?\s*u\.?\s*t\.?)\s*:?\s*[0-9.\-kK]+[.;]?/gi,
+];
+
+const removeAdministrativePatientIdentifiers = (value: string): string => {
+  const normalized = normalizeClinicalDocumentAiImportText(value);
+  if (!normalized) return '';
+
+  return normalizeClinicalDocumentAiImportText(
+    normalized
+      .split('\n')
+      .map(line =>
+        ADMINISTRATIVE_PATIENT_IDENTIFIER_PATTERNS.reduce(
+          (current, pattern) => current.replace(pattern, ''),
+          line
+        )
+          .replace(/^[\s,;.:/-]+|[\s,;:/-]+$/g, '')
+          .trim()
+      )
+      .filter(Boolean)
+      .join('\n')
+  );
+};
+
 export const buildClinicalDocumentAiImportSectionHtml = (value: string): string => {
   const normalized = normalizeClinicalDocumentAiImportText(value);
   if (!normalized) return '';
@@ -87,15 +112,15 @@ export const parseClinicalDocumentAiImportJson = (
     return {
       status: 'success',
       data: {
-        antecedentes: normalizeClinicalDocumentAiImportText(parsed.data.antecedentes),
-        historiaEvolucionClinica: normalizeClinicalDocumentAiImportText(
+        antecedentes: removeAdministrativePatientIdentifiers(parsed.data.antecedentes),
+        historiaEvolucionClinica: removeAdministrativePatientIdentifiers(
           parsed.data.historiaEvolucionClinica
         ),
-        examenesComplementarios: normalizeClinicalDocumentAiImportText(
+        examenesComplementarios: removeAdministrativePatientIdentifiers(
           parsed.data.examenesComplementarios
         ),
-        diagnosticosEgreso: normalizeClinicalDocumentAiImportText(parsed.data.diagnosticosEgreso),
-        planEgreso: normalizeClinicalDocumentAiImportText(parsed.data.planEgreso),
+        diagnosticosEgreso: removeAdministrativePatientIdentifiers(parsed.data.diagnosticosEgreso),
+        planEgreso: removeAdministrativePatientIdentifiers(parsed.data.planEgreso),
       },
     };
   } catch {
