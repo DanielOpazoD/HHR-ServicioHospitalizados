@@ -246,6 +246,42 @@ describe('ClinicalDocumentsSidebar', () => {
     expect(onImportWithAi).toHaveBeenCalledWith(expect.any(File));
   });
 
+  it('disables AI import while a file is being transformed', () => {
+    const onImportWithAi = vi.fn();
+
+    render(
+      <ClinicalDocumentsSidebar
+        canEdit={true}
+        canDelete={false}
+        readOnlyMessage={null}
+        patientName="Paciente Test"
+        templates={[{ id: 'epicrisis', name: 'Epicrisis' }]}
+        selectedTemplateId="epicrisis"
+        onSelectTemplate={() => {}}
+        onCreateDocument={() => {}}
+        documents={[]}
+        selectedDocumentId={null}
+        onSelectDocument={() => {}}
+        onDuplicateDocument={() => {}}
+        onDeleteDocument={() => {}}
+        onImportWithAi={onImportWithAi}
+        isImportingWithAi={true}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /herramientas avanzadas/i }));
+
+    expect(screen.getByRole('button', { name: /importando con ia/i })).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText(/archivo pdf o docx para importar con ia/i), {
+      target: {
+        files: [new File(['contenido'], 'traslado.pdf', { type: 'application/pdf' })],
+      },
+    });
+
+    expect(onImportWithAi).not.toHaveBeenCalled();
+  });
+
   it('restores one section from a version history snapshot', () => {
     const document = {
       ...buildDocument(),

@@ -41,6 +41,7 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
   onExportJson,
   onImportJson,
   onImportWithAi,
+  isImportingWithAi = false,
   onAddClinicalUpdate,
   onToggleAnnex,
   hasAnnex,
@@ -256,7 +257,7 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
                         className="hidden"
                         onChange={event => {
                           const file = event.target.files?.[0];
-                          if (file) {
+                          if (file && !isImportingWithAi) {
                             onImportWithAi(file);
                           }
                           event.target.value = '';
@@ -265,17 +266,17 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
                       <button
                         type="button"
                         onClick={() => aiImportInputRef.current?.click()}
-                        disabled={!canEdit}
+                        disabled={!canEdit || isImportingWithAi}
                         className={clsx(
                           'w-full rounded-lg border px-2 py-1.5 text-[9px] font-bold uppercase tracking-[0.12em] transition-colors',
-                          canEdit
+                          canEdit && !isImportingWithAi
                             ? 'border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700 hover:bg-fuchsia-100'
                             : 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
                         )}
                         title="Importar informe de traslado con IA"
                       >
                         <Sparkles size={10} className="inline mr-1" />
-                        Importar con IA
+                        {isImportingWithAi ? 'Importando con IA' : 'Importar con IA'}
                       </button>
                     </>
                   )}

@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { useAuth } from '@/context/AuthContext';
 import { getActiveHospitalId } from '@/constants/firestorePaths';
@@ -44,6 +44,7 @@ export const useClinicalDocumentsWorkspaceModel = ({
 }: UseClinicalDocumentsWorkspaceModelParams): ClinicalDocumentsWorkspaceModel => {
   const { user, role } = useAuth();
   const { notifyPort, info, confirm } = useClinicalDocumentsWorkspaceNotifyPort();
+  const [isImportingWithAi, setIsImportingWithAi] = useState(false);
 
   const { canRead, canEdit, canDelete, readOnlyMessage, persistReason } = useMemo(
     () => resolveClinicalDocumentsWorkspaceAccessState(patient, role),
@@ -154,6 +155,22 @@ export const useClinicalDocumentsWorkspaceModel = ({
     lastPersistedSnapshotRef,
   });
 
+  const handleImportWithAiProgress = useCallback(
+    async (file: File) => {
+      if (isImportingWithAi) {
+        return;
+      }
+
+      setIsImportingWithAi(true);
+      try {
+        await handleImportWithAi(file);
+      } finally {
+        setIsImportingWithAi(false);
+      }
+    },
+    [handleImportWithAi, isImportingWithAi]
+  );
+
   const { handleExportJson, handlePrint, handlePrintAnnex, handleUploadPdf, isUploadingPdf } =
     useClinicalDocumentWorkspaceExportActions({
       selectedDocument,
@@ -186,7 +203,8 @@ export const useClinicalDocumentsWorkspaceModel = ({
       handleDeleteDocument,
       handleExportJson,
       handleImportJson,
-      handleImportWithAi,
+      handleImportWithAi: handleImportWithAiProgress,
+      isImportingWithAi,
       addClinicalUpdate,
       patchAnnexContent,
       patchSectionTitle,
