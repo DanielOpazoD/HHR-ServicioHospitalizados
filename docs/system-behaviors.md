@@ -312,7 +312,7 @@ El contrato ya no es “solo censo”; aplica al módulo origen desde el que el 
 - `src/hooks/useAuthStateSupport.ts`
 - `src/hooks/controllers/authBootstrapController.ts`
 - `src/services/utils/featureFlags.ts`
-- `src/tests/hooks/useAuthStateSupport.test.tsx`
+- `src/tests/hooks/useAuthStateSupport.sessionResolution.test.tsx`
 - `src/tests/services/featureFlags.test.ts`
 
 ## 4.2. Bloqueo rápido local (PIN)
