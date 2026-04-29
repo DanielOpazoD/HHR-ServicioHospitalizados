@@ -15,13 +15,17 @@ vi.unmock('@/features/laboratory/constants/labConstants');
 
 const mockSearchSyslabExams = vi.fn();
 const mockFetchSyslabExamDetails = vi.fn();
+const mockFetchSyslabPdfArrayBuffer = vi.fn();
 const mockEnrichMicrobiologyDetailsFromPdf = vi.fn();
 const mockEnrichUrineRatioDetailsFromPdf = vi.fn();
 const mockWriteClipboardText = vi.fn();
+const mockGetPatientByRut = vi.fn();
+const mockExtractPdfText = vi.fn();
 
 vi.mock('@/services/laboratory/syslabService', () => ({
   searchSyslabExams: (...args: unknown[]) => mockSearchSyslabExams(...args),
   fetchSyslabExamDetails: (...args: unknown[]) => mockFetchSyslabExamDetails(...args),
+  fetchSyslabPdfArrayBuffer: (...args: unknown[]) => mockFetchSyslabPdfArrayBuffer(...args),
   buildSyslabPdfUrl: (link: string) =>
     `http://localhost:3000/api/exams/pdf?link=${encodeURIComponent(link)}`,
 }));
@@ -33,6 +37,22 @@ vi.mock('@/services/utils/loggerScope', async () => {
 
 vi.mock('@/shared/runtime/browserClipboardRuntime', () => ({
   writeClipboardText: (...args: unknown[]) => mockWriteClipboardText(...args),
+}));
+
+vi.mock('@/services/repositories/PatientMasterRepository', () => ({
+  getPatientByRut: (...args: unknown[]) => mockGetPatientByRut(...args),
+}));
+
+vi.mock('@/features/laboratory/services/labPdfTextSupport', () => ({
+  extractPdfText: (...args: unknown[]) => mockExtractPdfText(...args),
+  normalizePdfText: (text: string) =>
+    text
+      .replace(/\u00a2/g, 'ó')
+      .replace(/\u00b0/g, 'o')
+      .replace(/[ \t]+/g, ' ')
+      .replace(/\r/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim(),
 }));
 
 vi.mock('@/features/laboratory/controllers/labSummaryController', async importOriginal => {
@@ -146,6 +166,9 @@ describe('useLabViewer', () => {
       async (details: SyslabExamDetail[]) => details
     );
     mockWriteClipboardText.mockResolvedValue(undefined);
+    mockGetPatientByRut.mockResolvedValue(null);
+    mockFetchSyslabPdfArrayBuffer.mockResolvedValue(new ArrayBuffer(0));
+    mockExtractPdfText.mockResolvedValue('');
   });
 
   it('deduplicates patients by RUT', () => {
@@ -175,6 +198,46 @@ describe('useLabViewer', () => {
       await result.current.search();
     });
     await waitFor(() => expect(result.current.examList).toHaveLength(1));
+  });
+
+  it('hydrates external RUT birth date from the first Syslab PDF when the patient is not in hospital census', async () => {
+    mockSearchSyslabExams.mockResolvedValue({
+      success: true,
+      data: [
+        {
+          ...MOCK_EXAM,
+          patientName: 'PACIENTE EXTERNO',
+          origin: 'URGENCIA',
+        },
+      ],
+    });
+    mockGetPatientByRut.mockResolvedValue(null);
+    mockExtractPdfText.mockResolvedValue(`
+      HOSPITAL DE HANGA ROA
+      Nombre : PACIENTE EXTERNO
+      Rut/Fic: 11.111.111-1
+      Fecha de Nacimiento: 12/04/1980
+      E X A M E N E S
+    `);
+
+    const { result } = renderHook(() => useLabViewer([], '11111111-1'), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      await result.current.search();
+    });
+
+    await waitFor(() =>
+      expect(result.current.selectedPatient).toEqual(
+        expect.objectContaining({
+          rut: '11111111-1',
+          patientName: 'PACIENTE EXTERNO',
+          birthDate: '1980-04-12',
+        })
+      )
+    );
+    expect(mockFetchSyslabPdfArrayBuffer).toHaveBeenCalledWith(MOCK_EXAM.link);
   });
 
   it('search sets error on failure', async () => {

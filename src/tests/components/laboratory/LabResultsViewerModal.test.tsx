@@ -323,6 +323,23 @@ describe('LabResultsViewerModal', () => {
     expect(screen.getByText('13.2')).toBeInTheDocument();
   });
 
+  it('keeps comparison analysis header compact with patient and RUT in one place', () => {
+    mockUseLabViewer.mockReturnValue({
+      ...DEFAULT_HOOK_STATE,
+      analysisData: MOCK_ANALYSIS,
+      analysisView: 'comparison',
+    });
+    render(<LabResultsViewerModal isOpen={true} onClose={vi.fn()} patients={PATIENTS} />);
+
+    expect(screen.getByText('Juan')).toBeInTheDocument();
+    expect(screen.getByText('RUT 12345678-9')).toBeInTheDocument();
+    expect(screen.queryByText('Análisis clínico')).not.toBeInTheDocument();
+    expect(screen.queryByText('2 examenes analizados')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Compara variables por fecha en una vista más compacta.')
+    ).not.toBeInTheDocument();
+  });
+
   it('microbiology tab shows separated microbiology content', () => {
     mockUseLabViewer.mockReturnValue({
       ...DEFAULT_HOOK_STATE,

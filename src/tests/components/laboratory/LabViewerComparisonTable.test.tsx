@@ -77,6 +77,81 @@ describe('LabViewerComparisonTable', () => {
     expect(screen.getByText('08/04/2026 14:00')).toBeInTheDocument();
   });
 
+  it('keeps the comparison header compact without repeated patient or explanatory copy', () => {
+    render(<LabViewerComparisonTable data={MOCK_ANALYSIS} patient={MOCK_PATIENT} />);
+
+    expect(screen.queryByText('Tabla resumida por fechas')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Compara variables por fecha en una vista más compacta.')
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /rut 12345678-9/i })).not.toBeInTheDocument();
+    expect(screen.queryByText('Test')).not.toBeInTheDocument();
+  });
+
+  it('toggles comparison columns between exact date-time and date-only labels', async () => {
+    const user = userEvent.setup();
+    render(<LabViewerComparisonTable data={MOCK_ANALYSIS} patient={MOCK_PATIENT} />);
+
+    expect(screen.getByText('08/04/2026 14:00')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /solo fecha/i }));
+
+    expect(screen.getByText('08/04/2026')).toBeInTheDocument();
+    expect(screen.queryByText('08/04/2026 14:00')).not.toBeInTheDocument();
+  });
+
+  it('passes the active column time mode to the Excel exporter', async () => {
+    const user = userEvent.setup();
+    render(<LabViewerComparisonTable data={MOCK_ANALYSIS} patient={MOCK_PATIENT} />);
+
+    await user.click(screen.getByRole('button', { name: /solo fecha/i }));
+    await user.click(screen.getByText('Exportar Excel'));
+    await user.click(screen.getAllByText('Exportar Excel')[1]);
+
+    expect(exportComparisonToExcel).toHaveBeenCalledWith(
+      MOCK_ANALYSIS,
+      expect.objectContaining({
+        includeTimeInColumns: false,
+      }),
+      MOCK_PATIENT
+    );
+  });
+
+  it('removes a complete comparison column from the web view and Excel export config', async () => {
+    const user = userEvent.setup();
+    const multiDateData: LabAnalysisData = {
+      ...MOCK_ANALYSIS,
+      examDates: ['08/04/2026 14:00', '09/04/2026 09:30'],
+      comparison: {
+        Hemoglobina: {
+          ...MOCK_ANALYSIS.comparison.Hemoglobina,
+          '09/04/2026 09:30': {
+            section: 'HG',
+            analysis: 'Hemoglobina',
+            result: '15',
+            unit: 'g/dL',
+            refValue: '12-16',
+          },
+        },
+      },
+    };
+
+    render(<LabViewerComparisonTable data={multiDateData} patient={MOCK_PATIENT} />);
+
+    await user.click(screen.getByTitle('Ocultar columna 08/04/2026 14:00'));
+
+    expect(screen.queryByText('08/04/2026 14:00')).not.toBeInTheDocument();
+    expect(screen.queryByText('13')).not.toBeInTheDocument();
+    expect(screen.getByText('09/04/2026 09:30')).toBeInTheDocument();
+
+    await user.click(screen.getByText('Exportar Excel'));
+    await user.click(screen.getAllByText('Exportar Excel')[1]);
+
+    const [, config] = vi.mocked(exportComparisonToExcel).mock.calls[0];
+    expect(config.selectedDates.has('08/04/2026 14:00')).toBe(false);
+    expect(config.selectedDates.has('09/04/2026 09:30')).toBe(true);
+  });
+
   it('renders search input', () => {
     render(<LabViewerComparisonTable data={MOCK_ANALYSIS} patient={MOCK_PATIENT} />);
     expect(screen.getByPlaceholderText('Buscar variable...')).toBeInTheDocument();
@@ -139,25 +214,6 @@ describe('LabViewerComparisonTable', () => {
     expect(screen.getByText('RPC')).toBeInTheDocument();
     expect(screen.queryByText('Orina físico-químico')).not.toBeInTheDocument();
     expect(screen.queryByText('Sedimento urinario')).not.toBeInTheDocument();
-  });
-
-  it('renders patient rut and copies it on click', async () => {
-    const user = userEvent.setup();
-    const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.defineProperty(navigator, 'clipboard', {
-      value: { writeText },
-      configurable: true,
-    });
-
-    render(<LabViewerComparisonTable data={MOCK_ANALYSIS} patient={MOCK_PATIENT} />);
-
-    const rutButton = screen.getByRole('button', { name: /rut 12345678-9/i });
-    expect(rutButton).toBeInTheDocument();
-
-    await user.click(rutButton);
-
-    expect(writeText).toHaveBeenCalledWith('12345678-9');
-    expect(screen.getByRole('button', { name: /rut copiado/i })).toBeInTheDocument();
   });
 
   it('renders clinical groups expanded by default', () => {

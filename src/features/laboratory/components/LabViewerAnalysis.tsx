@@ -60,43 +60,38 @@ export const LabViewerAnalysis: React.FC<LabViewerAnalysisProps> = ({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           <button
             type="button"
             onClick={onBack}
-            className="inline-flex items-center gap-1.5 text-[12px] font-medium text-emerald-600 hover:text-emerald-700"
+            className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 hover:text-emerald-700"
           >
             <ArrowLeft size={14} />
             Volver a lista de examenes
           </button>
-          <div className="mt-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-600">
-              Análisis clínico
-            </p>
-            <h2 className="mt-1 text-[18px] font-bold text-slate-800">
-              {patient?.patientName || 'Paciente seleccionado'}
-            </h2>
-            <p className="mt-1 text-[12px] text-slate-500">
-              {data.examDates.length} examenes comparables · {Object.keys(data.comparison).length}{' '}
-              variables únicas
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleCopyToClipboard}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-2.5 py-1 text-[10px] font-medium text-emerald-700 transition-colors hover:bg-emerald-50"
-          >
-            {copied ? <Check size={11} className="text-emerald-500" /> : <Clipboard size={11} />}
-            {copied ? 'Copiado' : 'Copiar resumen'}
-          </button>
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-            {data.examDates.length} examenes analizados
+          <span className="hidden h-4 w-px bg-slate-200 sm:inline-block" />
+          <h2 className="min-w-0 truncate text-[15px] font-bold text-slate-800">
+            {patient?.patientName || 'Paciente seleccionado'}
+          </h2>
+          {patient?.rut ? (
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+              RUT {patient.rut}
+            </span>
+          ) : null}
+          <span className="text-[11px] font-medium text-slate-500">
+            {data.examDates.length} examenes · {Object.keys(data.comparison).length} variables
           </span>
         </div>
+        <button
+          type="button"
+          onClick={handleCopyToClipboard}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-2.5 py-1 text-[10px] font-medium text-emerald-700 transition-colors hover:bg-emerald-50"
+        >
+          {copied ? <Check size={11} className="text-emerald-500" /> : <Clipboard size={11} />}
+          {copied ? 'Copiado' : 'Copiar resumen'}
+        </button>
       </div>
 
       <div className="flex items-center gap-1 border-b border-slate-200 pb-0">
@@ -108,7 +103,7 @@ export const LabViewerAnalysis: React.FC<LabViewerAnalysisProps> = ({
             type="button"
             onClick={() => onTabChange(tab.key)}
             className={clsx(
-              'inline-flex items-center gap-1.5 px-3 py-2 text-[12px] font-semibold transition-all border-b-2 -mb-px',
+              'inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold transition-all border-b-2 -mb-px',
               activeTab === tab.key
                 ? 'border-emerald-500 text-emerald-700'
                 : 'border-transparent text-slate-400 hover:text-slate-600'

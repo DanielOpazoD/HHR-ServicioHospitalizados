@@ -54,19 +54,17 @@ export const LabViewerControls: React.FC<LabViewerControlsProps> = ({
   );
 
   return (
-    <div className="mb-3 space-y-2">
-      <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+    <div className="mb-2 space-y-1.5">
+      <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
         <div className="min-w-0">
-          <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-            Paciente
-          </label>
           <select
+            aria-label="Paciente"
             value={selectedRut}
             onChange={e => {
               setIsManualMode(false);
               onPatientChange(e.target.value);
             }}
-            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px] text-slate-700 shadow-sm focus:border-emerald-400 focus:outline-none focus:ring-4 focus:ring-emerald-500/10"
+            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] text-slate-700 shadow-sm focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/10"
           >
             {uniquePatients.map(patient => (
               <option key={patient.bedId} value={patient.rut}>
@@ -78,14 +76,14 @@ export const LabViewerControls: React.FC<LabViewerControlsProps> = ({
         <button
           onClick={onSearch}
           disabled={!selectedRut || isLoading}
-          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-b from-emerald-500 to-emerald-600 px-4 py-2 text-[13px] font-semibold text-white shadow-md shadow-emerald-600/20 transition-all hover:from-emerald-600 hover:to-emerald-700 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
+          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-[12px] font-semibold text-white shadow-sm shadow-emerald-600/20 transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
         >
           {isLoading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
           Buscar
         </button>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={() => setIsManualMode(prev => !prev)}
@@ -94,9 +92,6 @@ export const LabViewerControls: React.FC<LabViewerControlsProps> = ({
           <UserSearch size={12} />
           {isManualMode ? 'Ocultar búsqueda manual' : 'Buscar por RUT externo'}
         </button>
-        <span className="text-[10px] text-slate-400">
-          Búsqueda clínica rápida por paciente o RUT
-        </span>
       </div>
 
       {isManualMode ? (
@@ -107,18 +102,19 @@ export const LabViewerControls: React.FC<LabViewerControlsProps> = ({
               className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
             />
             <input
+              aria-label="RUT externo"
               type="text"
               value={manualRut}
               onChange={e => setManualRut(e.target.value)}
               onKeyDown={handleManualKeyDown}
               placeholder="Ej: 12.345.678-9"
-              className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-8 pr-3 text-[13px] text-slate-700 placeholder:text-slate-400 shadow-sm focus:border-emerald-400 focus:outline-none focus:ring-4 focus:ring-emerald-500/10"
+              className="w-full rounded-lg border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-[12px] text-slate-700 placeholder:text-slate-400 shadow-sm focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/10"
             />
           </div>
           <button
             onClick={handleManualSearch}
             disabled={!manualRut.trim() || isLoading}
-            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[13px] font-semibold text-emerald-700 transition-all hover:bg-emerald-100 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[12px] font-semibold text-emerald-700 transition-all hover:bg-emerald-100 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
           >
             {isLoading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
             Buscar RUT

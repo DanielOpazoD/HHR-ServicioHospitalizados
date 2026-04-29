@@ -7,6 +7,7 @@
 import type { LabPatient } from '@/types/domain/labExamTypes';
 import type { LabAnalysisData } from '@/types/domain/labAnalyticsTypes';
 import type { ExportConfig } from '../types/labViewerTypes';
+import { formatLabExamColumnLabel } from '../controllers/labDateDisplayController';
 import { parseLocalizedNumber, parseScientificValue } from '../controllers/labFormattingController';
 import { createWorkbook } from '@/services/exporters/excelUtils';
 import { createScopedLogger } from '@/services/utils/loggerScope';
@@ -64,7 +65,10 @@ export const exportComparisonToExcel = async (
     ws.getRow(6).height = 8;
 
     // Header row
-    ws.addRow(['Variable', ...dates]);
+    ws.addRow([
+      'Variable',
+      ...dates.map(date => formatLabExamColumnLabel(date, config.includeTimeInColumns ?? true)),
+    ]);
     const headerRow = ws.getRow(7);
     headerRow.font = { bold: true, size: 10 };
     headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F5E9' } };

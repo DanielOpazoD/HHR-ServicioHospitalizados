@@ -15,6 +15,7 @@ import { exportChartsAsPng } from './labTrendChartExport';
 export const LabViewerTrendCharts: React.FC<{ data: LabAnalysisData }> = ({ data }) => {
   const chartsRef = React.useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = React.useState(false);
+  const [exportError, setExportError] = React.useState<string | null>(null);
 
   if (data.trendGroups.length === 0) {
     return (
@@ -36,8 +37,11 @@ export const LabViewerTrendCharts: React.FC<{ data: LabAnalysisData }> = ({ data
           onClick={async () => {
             if (!chartsRef.current) return;
             setIsExporting(true);
+            setExportError(null);
             try {
               await exportChartsAsPng(chartsRef.current);
+            } catch {
+              setExportError('No se pudo descargar PNG.');
             } finally {
               setIsExporting(false);
             }
@@ -48,6 +52,11 @@ export const LabViewerTrendCharts: React.FC<{ data: LabAnalysisData }> = ({ data
           {isExporting ? 'Exportando...' : 'Descargar PNG'}
         </button>
       </div>
+      {exportError ? (
+        <p className="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-medium text-red-700">
+          {exportError}
+        </p>
+      ) : null}
       <div ref={chartsRef} className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {data.trendGroups.map(group => (
           <LabChartErrorBoundary key={group.label} chartLabel={group.label}>

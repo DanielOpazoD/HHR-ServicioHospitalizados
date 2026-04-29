@@ -11,6 +11,8 @@ import userEvent from '@testing-library/user-event';
 /*  Top-level mocks                                                    */
 /* ------------------------------------------------------------------ */
 
+const mockExportChartsAsPng = vi.hoisted(() => vi.fn());
+
 vi.mock('@/services/laboratory/syslabService', () => ({
   buildSyslabPdfUrl: (link: string) =>
     `http://localhost:3000/api/exams/pdf?link=${encodeURIComponent(link)}`,
@@ -34,6 +36,10 @@ vi.mock('@/features/laboratory/controllers/labSummaryController', () => ({
 
 vi.mock('@/features/laboratory/services/labExcelService', () => ({
   exportComparisonToExcel: vi.fn(),
+}));
+
+vi.mock('@/features/laboratory/components/labTrendChartExport', () => ({
+  exportChartsAsPng: (...args: unknown[]) => mockExportChartsAsPng(...args),
 }));
 
 vi.mock('@/features/laboratory/services/labFirestoreService', () => ({
@@ -69,6 +75,7 @@ import { LabViewerPdf } from '@/features/laboratory/components/LabViewerPdf';
 import { LabViewerExamList } from '@/features/laboratory/components/LabViewerExamList';
 import { LabExportConfigDialog } from '@/features/laboratory/components/LabExportConfigDialog';
 import { LabChartErrorBoundary } from '@/features/laboratory/components/LabChartErrorBoundary';
+import { LabViewerTrendCharts } from '@/features/laboratory/components/LabViewerTrendCharts';
 import type { LabPatient, SyslabExamItem } from '@/types/domain/labExamTypes';
 
 /* ------------------------------------------------------------------ */
@@ -117,6 +124,14 @@ describe('LabViewerControls', () => {
   it('renders Buscar button', () => {
     render(<LabViewerControls {...defaultProps} />);
     expect(screen.getByText('Buscar')).toBeInTheDocument();
+  });
+
+  it('keeps the initial search controls compact without redundant helper copy', () => {
+    render(<LabViewerControls {...defaultProps} />);
+    expect(screen.queryByText('Paciente')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Búsqueda clínica rápida por paciente o RUT')
+    ).not.toBeInTheDocument();
   });
 
   it('calls onSearch when button clicked', async () => {
@@ -193,6 +208,16 @@ describe('LabViewerAnalyzeBar', () => {
   it('renders selected count text', () => {
     render(<LabViewerAnalyzeBar {...defaultProps} />);
     expect(screen.getByText(/2 examenes seleccionados/)).toBeInTheDocument();
+  });
+
+  it('renders the selected exam actions as a bottom tray instead of a floating card', () => {
+    const { container } = render(<LabViewerAnalyzeBar {...defaultProps} />);
+    const tray = container.firstElementChild;
+
+    expect(tray).toHaveClass('sticky');
+    expect(tray).toHaveClass('bottom-0');
+    expect(tray).toHaveClass('-mx-5');
+    expect(tray).not.toHaveClass('rounded-xl');
   });
 
   it('renders Analizar button', () => {
@@ -301,9 +326,65 @@ describe('LabViewerExamList', () => {
 
   beforeEach(() => vi.clearAllMocks());
 
-  it('renders exam count', () => {
+  it('renders exam count inline beside the available orders label', () => {
     render(<LabViewerExamList {...defaultProps} />);
-    expect(screen.getByText('1 examenes')).toBeInTheDocument();
+    const heading = screen.getByText('Ordenes disponibles').closest('div');
+    expect(heading).toHaveTextContent('Ordenes disponibles');
+    expect(heading).toHaveTextContent('1');
+    expect(screen.queryByText('1 examenes')).not.toBeInTheDocument();
+  });
+
+  it('renders extended monthly quick range buttons', async () => {
+    const { container } = render(<LabViewerExamList {...defaultProps} />);
+    const rangeGroup = container.querySelector('[data-testid="lab-quick-range-group"]');
+
+    expect(rangeGroup).toHaveClass('inline-flex');
+    expect(rangeGroup).toHaveClass('overflow-hidden');
+    expect(rangeGroup).toHaveClass('rounded-lg');
+    expect(screen.getByRole('button', { name: '1 mes' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '3 meses' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '6 meses' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '12 meses' })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: '3 meses' }));
+    expect(defaultProps.onSelectByDays).toHaveBeenCalledWith(90);
+  });
+
+  it('renders exam name tags in a smaller visual treatment', () => {
+    const { container } = render(<LabViewerExamList {...defaultProps} />);
+    const tag = Array.from(container.querySelectorAll('span')).find(
+      element => element.textContent === 'HEMOGRAMA'
+    );
+
+    expect(tag).toHaveClass('text-[9px]');
+    expect(tag).toHaveClass('bg-slate-50');
+    expect(tag).toHaveClass('text-slate-600');
+  });
+
+  it('keeps order cards row-like and copy action visually secondary', () => {
+    const { container } = render(<LabViewerExamList {...defaultProps} />);
+    const card = container.querySelector('[data-testid="lab-exam-card-123"]');
+    const copyButton = screen.getByRole('button', { name: 'Copiar resumen del examen 123' });
+
+    expect(card).toHaveClass('rounded-md');
+    expect(card).toHaveClass('bg-white');
+    expect(copyButton).toHaveClass('border-transparent');
+    expect(copyButton).toHaveClass('bg-transparent');
+    expect(copyButton).toHaveClass('text-slate-500');
+  });
+
+  it('uses a sober selected state with an emerald checkbox instead of blue native selection', () => {
+    const { container } = render(
+      <LabViewerExamList {...defaultProps} selectedIds={new Set(['123'])} />
+    );
+    const card = container.querySelector('[data-testid="lab-exam-card-123"]');
+    const checkbox = screen.getByRole('checkbox');
+
+    expect(card).toHaveClass('bg-white');
+    expect(card).not.toHaveClass('bg-emerald-50/30');
+    expect(checkbox.tagName).toBe('BUTTON');
+    expect(checkbox).toHaveClass('bg-emerald-600');
+    expect(checkbox).toHaveAttribute('aria-checked', 'true');
   });
 
   it('renders exam date and ID', () => {
@@ -322,19 +403,17 @@ describe('LabViewerExamList', () => {
     expect(screen.getByText('Copiar resumen')).toBeInTheDocument();
   });
 
-  it('renders filter category chips when categories provided', () => {
+  it('does not render exam category filter chips in the initial order list', () => {
     render(
       <LabViewerExamList
         {...defaultProps}
         filterCategories={['Hemograma', 'P. hepático', 'P. lipídico']}
       />
     );
-    expect(screen.getByText('Todos')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Hemograma' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'P. hepático' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'P. lipídico' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Gases' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Otros' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Todos' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Hemograma' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'P. hepático' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'P. lipídico' })).not.toBeInTheDocument();
   });
 
   it('renders date range inputs', () => {
@@ -364,6 +443,44 @@ describe('LabViewerExamList', () => {
 });
 
 /* ================================================================== */
+/*  7. LabViewerTrendCharts                                            */
+/* ================================================================== */
+
+describe('LabViewerTrendCharts', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('shows a local error instead of leaking an unhandled rejection when PNG export fails', async () => {
+    mockExportChartsAsPng.mockRejectedValue(new Error('tainted canvas'));
+
+    render(
+      <LabViewerTrendCharts
+        data={{
+          trendGroups: [
+            {
+              label: 'Hemograma',
+              variables: {
+                Hemoglobina: [
+                  { date: '01/04/2026', isoDate: '2026-04-01', value: 13, unit: 'g/dL' },
+                  { date: '02/04/2026', isoDate: '2026-04-02', value: 14, unit: 'g/dL' },
+                ],
+              },
+            },
+          ],
+          examDates: ['01/04/2026', '02/04/2026'],
+          comparison: {},
+          microbiologyEntries: [],
+        }}
+      />
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Descargar PNG' }));
+
+    expect(await screen.findByText('No se pudo descargar PNG.')).toBeInTheDocument();
+    expect(mockExportChartsAsPng).toHaveBeenCalledTimes(1);
+  });
+});
+
+/* ================================================================== */
 /*  8. LabExportConfigDialog                                           */
 /* ================================================================== */
 
@@ -371,6 +488,7 @@ describe('LabExportConfigDialog', () => {
   const defaultProps = {
     dates: ['08/04/2026 14:00'],
     variables: ['Hemoglobina'],
+    includeTimeInColumns: true,
     onExport: vi.fn(),
     onCancel: vi.fn(),
   };

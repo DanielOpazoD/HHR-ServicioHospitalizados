@@ -5,9 +5,9 @@
  */
 
 import React from 'react';
+import { X } from 'lucide-react';
 import type { LabPatient } from '@/types/domain/labExamTypes';
 import type { LabAnalysisData } from '@/types/domain/labAnalyticsTypes';
-import { writeClipboardText } from '@/shared/runtime/browserClipboardRuntime';
 import type { ExportConfig } from '../types/labViewerTypes';
 import type { ComparisonGroupLabel } from '../constants/labComparisonGroupingConstants';
 import {
@@ -15,6 +15,7 @@ import {
   filterComparisonVariableNames,
   resolveInitialPinnedVariables,
 } from '../controllers/labComparisonTableController';
+import { formatLabExamColumnLabel } from '../controllers/labDateDisplayController';
 import { LabExportConfigDialog } from './LabExportConfigDialog';
 import { LabViewerComparisonTableBody } from './LabViewerComparisonTableBody';
 import { LabViewerComparisonToolbar } from './LabViewerComparisonToolbar';
@@ -30,7 +31,8 @@ export const LabViewerComparisonTable: React.FC<{
   const { examDates } = data;
   const [showExportConfig, setShowExportConfig] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
-  const [copyFeedback, setCopyFeedback] = React.useState<'idle' | 'copied' | 'error'>('idle');
+  const [includeTimeInColumns, setIncludeTimeInColumns] = React.useState(true);
+  const [hiddenExamDates, setHiddenExamDates] = React.useState<Set<string>>(new Set());
   const [collapsedGroups, setCollapsedGroups] = React.useState<Set<ComparisonGroupLabel>>(
     new Set()
   );
@@ -48,14 +50,10 @@ export const LabViewerComparisonTable: React.FC<{
     [variableNames, allVariableNames, pinnedVariables]
   );
 
-  React.useEffect(() => {
-    if (copyFeedback === 'idle') {
-      return undefined;
-    }
-
-    const timeout = window.setTimeout(() => setCopyFeedback('idle'), 1600);
-    return () => window.clearTimeout(timeout);
-  }, [copyFeedback]);
+  const visibleExamDates = React.useMemo(
+    () => examDates.filter(date => !hiddenExamDates.has(date)),
+    [examDates, hiddenExamDates]
+  );
 
   const toggleGroup = (label: ComparisonGroupLabel) => {
     setCollapsedGroups(current => {
@@ -81,17 +79,8 @@ export const LabViewerComparisonTable: React.FC<{
     });
   };
 
-  const handleRutCopy = async () => {
-    if (!patient?.rut) {
-      return;
-    }
-
-    try {
-      await writeClipboardText(patient.rut);
-      setCopyFeedback('copied');
-    } catch {
-      setCopyFeedback('error');
-    }
+  const hideColumn = (date: string) => {
+    setHiddenExamDates(current => new Set(current).add(date));
   };
 
   if (allVariableNames.length === 0) {
@@ -101,50 +90,22 @@ export const LabViewerComparisonTable: React.FC<{
   }
 
   return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-600">
-              Comparación
-            </p>
-            {patient?.rut ? (
-              <button
-                type="button"
-                onClick={handleRutCopy}
-                title={`Copiar RUT ${patient.rut}`}
-                className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 transition-colors hover:bg-emerald-100"
-              >
-                {copyFeedback === 'copied'
-                  ? 'RUT copiado'
-                  : copyFeedback === 'error'
-                    ? 'No se pudo copiar'
-                    : `RUT ${patient.rut}`}
-              </button>
-            ) : null}
-          </div>
-          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
-            <h3 className="text-[14px] font-bold text-slate-800">Tabla resumida por fechas</h3>
-            {patient?.patientName ? (
-              <span className="truncate text-[11px] text-slate-500">{patient.patientName}</span>
-            ) : null}
-          </div>
-          <p className="mt-0.5 text-[11px] leading-5 text-slate-500">
-            Compara variables por fecha en una vista más compacta.
-          </p>
-        </div>
-      </div>
-
+    <div className="space-y-1.5">
       <LabViewerComparisonToolbar
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        includeTimeInColumns={includeTimeInColumns}
+        onIncludeTimeInColumnsChange={setIncludeTimeInColumns}
+        hiddenColumnCount={hiddenExamDates.size}
+        onRestoreColumns={() => setHiddenExamDates(new Set())}
         onToggleExportConfig={() => setShowExportConfig(previous => !previous)}
       />
 
       {showExportConfig ? (
         <LabExportConfigDialog
-          dates={examDates}
+          dates={visibleExamDates}
           variables={variableNames}
+          includeTimeInColumns={includeTimeInColumns}
           onExport={async (config: ExportConfig) => {
             const exportComparisonToExcel = await loadLabExcelExporter();
             await exportComparisonToExcel(data, config, patient);
@@ -158,8 +119,8 @@ export const LabViewerComparisonTable: React.FC<{
         <table className="w-full border-collapse table-fixed">
           <colgroup>
             <col style={{ width: '156px', minWidth: '156px' }} />
-            {examDates.map(date => (
-              <col key={date} style={{ minWidth: '70px' }} />
+            {visibleExamDates.map(date => (
+              <col key={date} style={{ minWidth: includeTimeInColumns ? '88px' : '70px' }} />
             ))}
           </colgroup>
           <thead className="sticky top-0 z-20">
@@ -167,19 +128,30 @@ export const LabViewerComparisonTable: React.FC<{
               <th className="sticky left-0 z-30 border-r border-slate-200 bg-slate-50 px-2 py-1 text-left text-[8px] font-bold uppercase text-slate-500 whitespace-nowrap">
                 Variable
               </th>
-              {examDates.map(date => (
+              {visibleExamDates.map(date => (
                 <th
                   key={date}
                   className="px-1 py-1 text-center text-[8px] font-bold text-slate-500 whitespace-nowrap"
+                  title={date}
                 >
-                  {date}
+                  <span className="inline-flex items-center justify-center gap-1">
+                    {formatLabExamColumnLabel(date, includeTimeInColumns)}
+                    <button
+                      type="button"
+                      onClick={() => hideColumn(date)}
+                      title={`Ocultar columna ${date}`}
+                      className="inline-flex h-4 w-4 items-center justify-center rounded text-slate-300 transition-colors hover:bg-slate-200 hover:text-slate-600"
+                    >
+                      <X size={10} />
+                    </button>
+                  </span>
                 </th>
               ))}
             </tr>
           </thead>
           <LabViewerComparisonTableBody
             comparisonGroups={comparisonGroups}
-            examDates={examDates}
+            examDates={visibleExamDates}
             data={data}
             collapsedGroups={collapsedGroups}
             pinnedVariables={pinnedVariables}

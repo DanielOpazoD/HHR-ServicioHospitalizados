@@ -6,10 +6,12 @@
 import React from 'react';
 import clsx from 'clsx';
 import type { ExportConfig } from '../types/labViewerTypes';
+import { formatLabExamColumnLabel } from '../controllers/labDateDisplayController';
 
 interface LabExportConfigDialogProps {
   dates: string[];
   variables: string[];
+  includeTimeInColumns: boolean;
   onExport: (config: ExportConfig) => void;
   onCancel: () => void;
 }
@@ -17,6 +19,7 @@ interface LabExportConfigDialogProps {
 export const LabExportConfigDialog: React.FC<LabExportConfigDialogProps> = ({
   dates,
   variables,
+  includeTimeInColumns,
   onExport,
   onCancel,
 }) => {
@@ -64,8 +67,9 @@ export const LabExportConfigDialog: React.FC<LabExportConfigDialogProps> = ({
                   ? 'bg-emerald-100 text-emerald-700 border-emerald-300'
                   : 'bg-white text-slate-400 border-slate-200'
               )}
+              title={d}
             >
-              {d}
+              {formatLabExamColumnLabel(d, includeTimeInColumns)}
             </button>
           ))}
         </div>
@@ -102,7 +106,7 @@ export const LabExportConfigDialog: React.FC<LabExportConfigDialogProps> = ({
           Cancelar
         </button>
         <button
-          onClick={() => onExport({ selectedDates, selectedVars })}
+          onClick={() => onExport({ selectedDates, selectedVars, includeTimeInColumns })}
           disabled={selectedDates.size === 0 || selectedVars.size === 0}
           className="rounded-lg bg-emerald-600 px-4 py-1.5 text-[11px] font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
         >
