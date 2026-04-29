@@ -32,7 +32,7 @@ describe('DailyRecordRepository initialization and bootstrap flows', () => {
       date: '2024-12-31',
       nursesNightShift: ['Nurse A', 'Nurse B'],
       handoffNightReceives: ['Receiver A', 'Receiver B'],
-      beds: { R1: buildPatient({ patientName: 'Patient X' }) },
+      beds: { R1: buildPatient({ patientName: 'Patient X', admissionDate: '2024-12-30' }) },
     };
 
     indexedDbFacadeMock.getRecordForDate.mockImplementation(async date =>
@@ -181,6 +181,7 @@ describe('DailyRecordRepository initialization and bootstrap flows', () => {
       beds: {
         R1: buildPatient({
           patientName: 'Patient X',
+          admissionDate: '2024-12-30',
           cudyr: buildCudyr({ changeClothes: 2 }),
         }),
       },

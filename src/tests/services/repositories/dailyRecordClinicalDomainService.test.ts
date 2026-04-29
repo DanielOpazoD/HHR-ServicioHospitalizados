@@ -4,6 +4,8 @@ import type { PatientData } from '@/types/domain/patient';
 import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
 import {
   addClinicalFhirPatchesForTouchedBeds,
+  buildClinicalBedsFromPreviousRecord,
+  buildEmptyClinicalBeds,
   preparePatientForCarryover,
   preserveCIE10FromPreviousDay,
 } from '@/services/repositories/dailyRecordClinicalDomainService';
@@ -156,6 +158,27 @@ describe('dailyRecordClinicalDomainService', () => {
 
     expect(carried.bedId).toBe('H1C1');
     expect(carried.isUPC).toBe(false);
+  });
+
+  it('does not carry residual patient identity without admission date into a new day', () => {
+    const previousRecord = {
+      date: '2026-04-28',
+      beds: {
+        R1: buildPatient('R1', {
+          patientName: 'Paciente fantasma',
+          rut: '12.345.678-5',
+          pathology: 'Diagnostico residual',
+          admissionDate: '',
+        }),
+      },
+    } as never;
+
+    const beds = buildClinicalBedsFromPreviousRecord(buildEmptyClinicalBeds(), previousRecord);
+
+    expect(beds.R1.patientName).toBe('');
+    expect(beds.R1.rut).toBe('');
+    expect(beds.R1.pathology).toBe('');
+    expect(beds.R1.admissionDate).toBe('');
   });
 
   it('preserves cie10 only when patient names match', () => {
