@@ -31,10 +31,13 @@
 - El reducer del draft separa:
   - edición local
   - base persistida
-  - actualización remota pendiente
+  - actualización remota pendiente como estado interno no visible
   - estado de autosave
 - `lastPersistedSnapshotRef` sigue siendo el punto de comparación para detectar cambios locales.
 - La resolución de carga remota y la persistencia del editor pasan por use cases de aplicación.
+- UX no deseada: el módulo no debe volver a mostrar avisos o acciones manuales de conflicto remoto
+  como "Actualización remota pendiente", "Recargar remoto" o "Descartar local". La hoja debe mantener
+  el borrador local visible y resolver la sincronización por el flujo interno/autosave.
 
 ## Tipos documentales y secciones especiales
 

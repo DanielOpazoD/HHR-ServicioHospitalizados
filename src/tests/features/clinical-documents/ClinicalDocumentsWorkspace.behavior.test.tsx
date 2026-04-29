@@ -370,14 +370,14 @@ describe('ClinicalDocumentsWorkspace behavior', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText(/actualización remota pendiente/i)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /recargar remoto/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /descartar local/i })).toBeInTheDocument();
       expect(screen.getByText('Cambio local sin guardar')).toBeInTheDocument();
+      expect(screen.queryByText(/actualización remota pendiente/i)).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /recargar remoto/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /descartar local/i })).not.toBeInTheDocument();
     });
   });
 
-  it('lets the user explicitly apply a staged remote update without silent overwrite', async () => {
+  it('keeps staged remote updates out of manual overwrite controls', async () => {
     let subscriptionCallback: ((docs: ClinicalDocumentRecord[]) => void) | null = null;
     vi.mocked(ClinicalDocumentRepository.subscribeByEpisode).mockImplementation(
       (_episodeKey, callback) => {
@@ -421,15 +421,11 @@ describe('ClinicalDocumentsWorkspace behavior', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText(/actualización remota pendiente/i)).toBeInTheDocument();
       expect(screen.getByText('Cambio local temporal')).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: /recargar remoto/i }));
-
-    await waitFor(() => {
       expect(screen.queryByText(/actualización remota pendiente/i)).not.toBeInTheDocument();
-      expect(screen.getByText('Cambio remoto definitivo')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /recargar remoto/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /descartar local/i })).not.toBeInTheDocument();
+      expect(screen.queryByText('Cambio remoto definitivo')).not.toBeInTheDocument();
     });
   });
 });

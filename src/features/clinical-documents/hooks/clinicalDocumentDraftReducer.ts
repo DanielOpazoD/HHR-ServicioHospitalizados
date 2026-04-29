@@ -32,7 +32,6 @@ export type ClinicalDocumentDraftAction =
     }
   | { type: 'REMOTE_UPDATE_RECEIVED'; document: ClinicalDocumentRecord; snapshot: string }
   | { type: 'APPLY_REMOTE_UPDATE' }
-  | { type: 'DISCARD_LOCAL_CHANGES' }
   | { type: 'PATCH_FIELD'; fieldId: string; value: string }
   | { type: 'PATCH_FIELD_LABEL'; fieldId: string; label: string }
   | { type: 'SET_FIELD_VISIBILITY'; fieldId: string; visible: boolean }
@@ -166,17 +165,6 @@ export const clinicalDocumentDraftReducer = (
         state.pendingRemoteState.document,
         state.pendingRemoteState.snapshot
       );
-    case 'DISCARD_LOCAL_CHANGES': {
-      const fallbackState = state.pendingRemoteState.document
-        ? state.pendingRemoteState
-        : state.baseState.document
-          ? state.baseState
-          : null;
-      if (!fallbackState?.document) {
-        return state;
-      }
-      return commitDocumentAsBase(state, fallbackState.document, fallbackState.snapshot);
-    }
     case 'PATCH_FIELD':
       return patchDraft(state, draft => ({
         ...draft,

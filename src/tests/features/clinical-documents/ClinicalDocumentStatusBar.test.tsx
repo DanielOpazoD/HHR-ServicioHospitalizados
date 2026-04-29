@@ -5,9 +5,6 @@ import { ClinicalDocumentStatusBar } from '@/features/clinical-documents/compone
 
 const defaultStatusProps = {
   hasLocalDraftChanges: false,
-  hasPendingRemoteUpdate: false,
-  onApplyPendingRemoteUpdate: vi.fn(),
-  onDiscardLocalDraftChanges: vi.fn(),
 };
 
 describe('ClinicalDocumentStatusBar', () => {
@@ -28,33 +25,21 @@ describe('ClinicalDocumentStatusBar', () => {
     expect(screen.queryByRole('button', { name: /descartar local/i })).not.toBeInTheDocument();
   });
 
-  it('shows pending remote sync controls when remote update arrives', () => {
-    const onApplyPendingRemoteUpdate = vi.fn();
-    const onDiscardLocalDraftChanges = vi.fn();
-
+  it('does not expose remote conflict notices or manual remote overwrite actions', () => {
     render(
       <ClinicalDocumentStatusBar
         {...defaultStatusProps}
-        hasPendingRemoteUpdate={true}
         hasLocalDraftChanges={true}
         isSaving={false}
         isUploadingPdf={false}
         onUploadPdf={() => {}}
-        onApplyPendingRemoteUpdate={onApplyPendingRemoteUpdate}
-        onDiscardLocalDraftChanges={onDiscardLocalDraftChanges}
       />
     );
 
-    expect(screen.getByText(/actualización remota pendiente/i)).toBeInTheDocument();
     expect(screen.getByText(/cambios locales sin guardar/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /recargar remoto/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /descartar local/i })).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: /recargar remoto/i }));
-    fireEvent.click(screen.getByRole('button', { name: /descartar local/i }));
-
-    expect(onApplyPendingRemoteUpdate).toHaveBeenCalledTimes(1);
-    expect(onDiscardLocalDraftChanges).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText(/actualización remota pendiente/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /recargar remoto/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /descartar local/i })).not.toBeInTheDocument();
   });
 
   it('shows an exported Drive state with a direct link', () => {
