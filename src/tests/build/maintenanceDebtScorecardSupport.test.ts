@@ -11,14 +11,17 @@ describe('maintenanceDebtScorecardSupport', () => {
           'src/hooks/useCensusEmailRecipientLists.ts': 180,
         },
         moduleLimits: {},
+        rulesLimits: {
+          'firestore.rules': 1050,
+        },
       })
     ).toEqual([
       {
         file: 'firestore.rules',
         lines: 989,
-        limit: null,
-        limitSource: null,
-        remainingLines: null,
+        limit: 1050,
+        limitSource: 'rules-governance',
+        remainingLines: 61,
       },
       {
         file: 'src/hooks/useCensusEmailRecipientLists.ts',

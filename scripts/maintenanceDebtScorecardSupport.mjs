@@ -1,4 +1,8 @@
-const resolveWatchlistLimit = ({ file, hookLimits, moduleLimits }) => {
+const resolveWatchlistLimit = ({ file, hookLimits, moduleLimits, rulesLimits }) => {
+  if (typeof rulesLimits[file] === 'number') {
+    return { limit: rulesLimits[file], limitSource: 'rules-governance' };
+  }
+
   if (typeof hookLimits[file] === 'number') {
     return { limit: hookLimits[file], limitSource: 'hook-hotspot' };
   }
@@ -15,11 +19,17 @@ export const buildMaintenanceDebtWatchlistRows = ({
   countLines,
   hookLimits,
   moduleLimits,
+  rulesLimits = {},
 }) =>
   watchlistFiles
     .map(file => {
       const lines = countLines(file);
-      const { limit, limitSource } = resolveWatchlistLimit({ file, hookLimits, moduleLimits });
+      const { limit, limitSource } = resolveWatchlistLimit({
+        file,
+        hookLimits,
+        moduleLimits,
+        rulesLimits,
+      });
 
       return {
         file,
