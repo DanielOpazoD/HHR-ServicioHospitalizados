@@ -1,0 +1,135 @@
+import { expect, test, type Page } from '@playwright/test';
+import PizZip from 'pizzip';
+
+import {
+  bootstrapSeededRecord,
+  buildCanonicalE2ERecord,
+  ensureAuthenticated,
+} from './fixtures/auth';
+
+const E2E_DATE = process.env.E2E_FIXED_DATE ?? '2026-02-20';
+
+const buildAiImportRecord = (date: string) => {
+  const canonical = buildCanonicalE2ERecord(date);
+  const beds = canonical.beds as Record<string, Record<string, unknown>>;
+
+  return buildCanonicalE2ERecord(date, {
+    beds: {
+      ...beds,
+      R1: {
+        ...beds.R1,
+        patientName: 'PACIENTE IMPORT IA',
+        rut: '12.345.678-5',
+        pathology: 'Neumonia adquirida en la comunidad',
+        specialty: 'Medicina',
+        status: 'Estable',
+        age: '45',
+        admissionDate: date,
+      },
+    },
+  });
+};
+
+const buildMinimalDocx = (paragraphs: string[]): Buffer => {
+  const zip = new PizZip();
+  const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+      <w:body>
+        ${paragraphs
+          .map(paragraph => `<w:p><w:r><w:t xml:space="preserve">${paragraph}</w:t></w:r></w:p>`)
+          .join('')}
+      </w:body>
+    </w:document>`;
+
+  zip.file(
+    '[Content_Types].xml',
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+      <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+        <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+        <Default Extension="xml" ContentType="application/xml"/>
+        <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+      </Types>`
+  );
+  zip.folder('_rels')?.file(
+    '.rels',
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+      <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+        <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+      </Relationships>`
+  );
+  zip.folder('word')?.file('document.xml', documentXml);
+
+  return zip.generate({ type: 'nodebuffer' });
+};
+
+const openClinicalDocumentsFromR1 = async (page: Page) => {
+  const patientRow = page.locator('[data-testid="patient-row"][data-bed-id="R1"]').first();
+  await expect(patientRow).toBeVisible({ timeout: 10_000 });
+
+  await patientRow.getByRole('button', { name: /Datos del Paciente/i }).focus();
+  await expect(page.getByLabel('Acciones clínicas rápidas')).toBeVisible({ timeout: 10_000 });
+  await page.getByLabel('Acciones clínicas rápidas').click();
+
+  await page.getByTitle('Documentos clínicos').click();
+  await expect(page.getByTestId('clinical-documents-workspace')).toBeVisible({ timeout: 15_000 });
+};
+
+test.describe('Clinical document AI import E2E smoke', () => {
+  test('imports a DOCX through the AI UI flow and opens the saved draft', async ({ page }) => {
+    await page.route('**/.netlify/functions/clinical-document-ai-import', async route => {
+      const payload = route.request().postDataJSON() as { sourceText?: string };
+      expect(payload.sourceText?.toLowerCase()).toContain('traslado por neumonia');
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          available: true,
+          provider: 'e2e',
+          model: 'stub',
+          document: {
+            antecedentes: 'HTA en tratamiento.',
+            historiaEvolucionClinica: 'Traslado por neumonia con oxigenoterapia.',
+            examenesComplementarios: 'Radiografia con infiltrado basal derecho.',
+            diagnosticosEgreso: 'Neumonia adquirida en la comunidad.',
+            planEgreso: 'Continuar ceftriaxona y control de saturacion.',
+          },
+        }),
+      });
+    });
+
+    await bootstrapSeededRecord(page, {
+      role: 'admin',
+      date: E2E_DATE,
+      record: buildAiImportRecord(E2E_DATE),
+      useRuntimeOverride: true,
+      forceEditableRecord: true,
+    });
+    await page.goto(`/censo?date=${E2E_DATE}`);
+    await ensureAuthenticated(page);
+    await expect(page.getByTestId('census-table')).toBeVisible({ timeout: 20_000 });
+
+    await openClinicalDocumentsFromR1(page);
+    await page.getByRole('button', { name: /herramientas avanzadas/i }).click();
+
+    const fileInput = page.getByLabel(/archivo pdf o docx para importar con ia/i);
+    await fileInput.setInputFiles({
+      name: 'traslado-ia.docx',
+      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      buffer: buildMinimalDocx([
+        'Informe de traslado por neumonia con requerimiento de oxigeno.',
+        'Paciente evoluciona estable y requiere continuidad de manejo.',
+        'Plan: continuar antibiotico y control clinico en centro receptor.',
+      ]),
+    });
+
+    await expect(
+      page.getByText(/Se generó y guardó un borrador editable desde traslado-ia\.docx/i)
+    ).toBeVisible({
+      timeout: 20_000,
+    });
+    await expect(page.getByText('Epicrisis traslado').first()).toBeVisible();
+    await expect(page.getByText('Traslado por neumonia con oxigenoterapia.')).toBeVisible();
+    await expect(page.getByText('Continuar ceftriaxona y control de saturacion.')).toBeVisible();
+  });
+});
