@@ -74,8 +74,38 @@ const openClinicalDocumentsFromR1 = async (page: Page) => {
   await expect(page.getByTestId('clinical-documents-workspace')).toBeVisible({ timeout: 15_000 });
 };
 
+const openSeededAiImportCensus = async (page: Page) => {
+  await bootstrapSeededRecord(page, {
+    role: 'admin',
+    date: E2E_DATE,
+    record: buildAiImportRecord(E2E_DATE),
+    useRuntimeOverride: true,
+    forceEditableRecord: true,
+  });
+  await page.goto(`/censo?date=${E2E_DATE}`);
+  await ensureAuthenticated(page);
+  await expect(page.getByTestId('census-table')).toBeVisible({ timeout: 20_000 });
+};
+
+const uploadAiImportDocx = async (page: Page, fileName = 'traslado-ia.docx') => {
+  await page.getByRole('button', { name: /herramientas avanzadas/i }).click();
+
+  const fileInput = page.getByLabel(/archivo pdf o docx para importar con ia/i);
+  await fileInput.setInputFiles({
+    name: fileName,
+    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    buffer: buildMinimalDocx([
+      'Informe de traslado por neumonia con requerimiento de oxigeno.',
+      'Paciente evoluciona estable y requiere continuidad de manejo.',
+      'Plan: continuar antibiotico y control clinico en centro receptor.',
+    ]),
+  });
+};
+
 test.describe('Clinical document AI import E2E smoke', () => {
-  test('imports a DOCX through the AI UI flow and opens the saved draft', async ({ page }) => {
+  test('imports a DOCX through the AI UI flow and keeps the saved draft after reopening', async ({
+    page,
+  }) => {
     await page.route('**/.netlify/functions/clinical-document-ai-import', async route => {
       const payload = route.request().postDataJSON() as { sourceText?: string };
       expect(payload.sourceText?.toLowerCase()).toContain('traslado por neumonia');
@@ -98,30 +128,9 @@ test.describe('Clinical document AI import E2E smoke', () => {
       });
     });
 
-    await bootstrapSeededRecord(page, {
-      role: 'admin',
-      date: E2E_DATE,
-      record: buildAiImportRecord(E2E_DATE),
-      useRuntimeOverride: true,
-      forceEditableRecord: true,
-    });
-    await page.goto(`/censo?date=${E2E_DATE}`);
-    await ensureAuthenticated(page);
-    await expect(page.getByTestId('census-table')).toBeVisible({ timeout: 20_000 });
-
+    await openSeededAiImportCensus(page);
     await openClinicalDocumentsFromR1(page);
-    await page.getByRole('button', { name: /herramientas avanzadas/i }).click();
-
-    const fileInput = page.getByLabel(/archivo pdf o docx para importar con ia/i);
-    await fileInput.setInputFiles({
-      name: 'traslado-ia.docx',
-      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      buffer: buildMinimalDocx([
-        'Informe de traslado por neumonia con requerimiento de oxigeno.',
-        'Paciente evoluciona estable y requiere continuidad de manejo.',
-        'Plan: continuar antibiotico y control clinico en centro receptor.',
-      ]),
-    });
+    await uploadAiImportDocx(page);
 
     await expect(
       page.getByText(/Se generó y guardó un borrador editable desde traslado-ia\.docx/i)
@@ -131,5 +140,38 @@ test.describe('Clinical document AI import E2E smoke', () => {
     await expect(page.getByText('Epicrisis traslado').first()).toBeVisible();
     await expect(page.getByText('Traslado por neumonia con oxigenoterapia.')).toBeVisible();
     await expect(page.getByText('Continuar ceftriaxona y control de saturacion.')).toBeVisible();
+
+    await page.goto(`/censo?date=${E2E_DATE}`);
+    await expect(page.getByTestId('census-table')).toBeVisible({ timeout: 20_000 });
+    await openClinicalDocumentsFromR1(page);
+
+    await expect(page.getByText('Epicrisis traslado').first()).toBeVisible();
+    await expect(page.getByText('Traslado por neumonia con oxigenoterapia.')).toBeVisible();
+    await expect(page.getByText('Continuar ceftriaxona y control de saturacion.')).toBeVisible();
+  });
+
+  test('shows a controlled AI failure and does not create a draft', async ({ page }) => {
+    await page.route('**/.netlify/functions/clinical-document-ai-import', async route => {
+      const payload = route.request().postDataJSON() as { sourceText?: string };
+      expect(payload.sourceText?.toLowerCase()).toContain('traslado por neumonia');
+
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Servicio IA no disponible.' }),
+      });
+    });
+
+    await openSeededAiImportCensus(page);
+    await openClinicalDocumentsFromR1(page);
+    await expect(page.getByText('No hay documentos clínicos para este episodio.')).toBeVisible();
+
+    await uploadAiImportDocx(page, 'traslado-ia-falla.docx');
+
+    await expect(
+      page.getByText(/La importación se detuvo antes de guardar: Servicio IA no disponible\./i)
+    ).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText('No hay documentos clínicos para este episodio.')).toBeVisible();
+    await expect(page.getByText('Traslado por neumonia con oxigenoterapia.')).toBeHidden();
   });
 });
