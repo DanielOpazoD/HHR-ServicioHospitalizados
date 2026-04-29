@@ -6,6 +6,7 @@ import {
   DEFAULT_NETLIFY_FUNCTION_DEV_ENTRIES,
   handleNetlifyFunctionDevRequest,
   hydrateLocalFunctionEnv,
+  resolveTsconfigAliasPath,
 } from '../../../scripts/config/netlifyFunctionDevServer';
 
 const createReadableRequest = ({
@@ -145,6 +146,15 @@ describe('netlifyFunctionDevServer', () => {
       path: '/.netlify/functions/clinical-document-ai-import',
       query: 'trace=1',
     });
+  });
+
+  it('resolves extensionless tsconfig aliases to source files for esbuild', () => {
+    const resolvedPath = resolveTsconfigAliasPath(
+      '@/features/clinical-documents/controllers/clinicalDocumentAiImportController',
+      process.cwd()
+    );
+
+    expect(resolvedPath).toMatch(/clinicalDocumentAiImportController\.ts$/);
   });
 
   it('delegates non-function routes back to Vite', async () => {

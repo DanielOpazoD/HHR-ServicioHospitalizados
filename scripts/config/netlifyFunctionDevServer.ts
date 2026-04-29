@@ -122,6 +122,34 @@ const writeFunctionResponse = (res: ServerResponse, response: NetlifyFunctionRes
 let buildSequence = 0;
 const requireFromConfig = createRequire(import.meta.url);
 
+const TS_ALIAS_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'];
+
+export const resolveTsconfigAliasPath = (
+  importPath: string,
+  projectRoot: string = process.cwd()
+): string => {
+  const basePath = path.resolve(projectRoot, importPath.replace(/^@\//, 'src/'));
+  if (fs.existsSync(basePath)) {
+    return basePath;
+  }
+
+  for (const extension of TS_ALIAS_EXTENSIONS) {
+    const candidate = `${basePath}${extension}`;
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  for (const extension of TS_ALIAS_EXTENSIONS) {
+    const candidate = path.join(basePath, `index${extension}`);
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  return basePath;
+};
+
 export const loadNetlifyFunctionDevModule = async (
   modulePath: string
 ): Promise<NetlifyFunctionModule> => {
@@ -151,7 +179,7 @@ export const loadNetlifyFunctionDevModule = async (
         name: 'hhr-tsconfig-paths',
         setup(build) {
           build.onResolve({ filter: /^@\// }, args => ({
-            path: path.resolve(projectRoot, args.path.replace(/^@\//, 'src/')),
+            path: resolveTsconfigAliasPath(args.path, projectRoot),
           }));
         },
       },

@@ -114,6 +114,35 @@ describe('clinical-document-ai-import netlify function', () => {
     });
   });
 
+  it('sends sanitized source text to AI without administrative patient identifiers', async () => {
+    const response = await handler({
+      httpMethod: 'POST',
+      headers: {
+        authorization: 'Bearer token-123',
+      },
+      body: JSON.stringify({
+        sourceText: [
+          'Nombre completo: Juan Perez Hanga',
+          'Paciente: Maria Rapa Nui',
+          'RUT: 12.345.678-9',
+          'Ficha: 445566',
+          'Traslado por neumonia adquirida en la comunidad.',
+          'Tratamiento con ceftriaxona 1 g cada 24 horas.',
+          'Continuar manejo en centro receptor.',
+        ].join('\n'),
+      }),
+    });
+
+    expect(response.statusCode).toBe(200);
+    const aiCall = generateClinicalAITextMock.mock.calls.at(-1)?.[0];
+    expect(aiCall?.userPrompt).not.toContain('Juan Perez Hanga');
+    expect(aiCall?.userPrompt).not.toContain('Maria Rapa Nui');
+    expect(aiCall?.userPrompt).not.toContain('12.345.678-9');
+    expect(aiCall?.userPrompt).not.toContain('445566');
+    expect(aiCall?.userPrompt).toContain('Traslado por neumonia adquirida en la comunidad.');
+    expect(aiCall?.userPrompt).toContain('Tratamiento con ceftriaxona 1 g cada 24 horas.');
+  });
+
   it('returns 502 when the AI response is not valid import JSON', async () => {
     generateClinicalAITextMock.mockResolvedValue('no-json');
 

@@ -4,6 +4,7 @@ import {
   buildClinicalDocumentAiImportedRecord,
   buildClinicalDocumentAiImportSections,
   parseClinicalDocumentAiImportJson,
+  sanitizeClinicalDocumentAiImportSourceText,
   validateClinicalDocumentAiImportFile,
   validateClinicalDocumentAiImportSourceText,
 } from '@/features/clinical-documents/controllers/clinicalDocumentAiImportController';
@@ -47,6 +48,28 @@ describe('clinicalDocumentAiImportController', () => {
     expect(parsed.data?.antecedentes).toBe('HTA. Diabetes mellitus tipo 2.');
     expect(parsed.data?.historiaEvolucionClinica).toBe('Evoluciona estable durante traslado.');
     expect(parsed.data?.examenesComplementarios).toBe('Radiografia de torax compatible.');
+  });
+
+  it('sanitizes administrative patient identifiers before sending source text to AI', () => {
+    const sanitized = sanitizeClinicalDocumentAiImportSourceText(`
+      Nombre completo: Juan Perez Hanga
+      Paciente: Maria Rapa Nui
+      RUT: 12.345.678-9
+      RUN 9.876.543-K
+      Ficha: 445566
+      Identificacion: ABC-123
+      Traslado por neumonia adquirida en la comunidad.
+      Tratamiento con ceftriaxona 1 g cada 24 horas.
+    `);
+
+    expect(sanitized).not.toContain('Juan Perez');
+    expect(sanitized).not.toContain('Maria Rapa Nui');
+    expect(sanitized).not.toContain('12.345.678-9');
+    expect(sanitized).not.toContain('9.876.543-K');
+    expect(sanitized).not.toContain('445566');
+    expect(sanitized).not.toContain('ABC-123');
+    expect(sanitized).toContain('Traslado por neumonia adquirida en la comunidad.');
+    expect(sanitized).toContain('Tratamiento con ceftriaxona 1 g cada 24 horas.');
   });
 
   it('maps simplified import JSON to epicrisis traslado sections with safe HTML', () => {

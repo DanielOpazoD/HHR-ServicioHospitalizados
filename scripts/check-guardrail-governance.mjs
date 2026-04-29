@@ -66,6 +66,32 @@ const ensureArtifactExists = (artifactPath, ownerLabel) => {
 const extractReferencedScripts = command =>
   Array.from(String(command).matchAll(/npm run ([A-Za-z0-9:_-]+)/g)).map(match => match[1]);
 
+const collectReferencedScripts = (scriptNames, visited = new Set()) => {
+  const referencedScripts = new Set();
+
+  for (const scriptName of scriptNames) {
+    if (visited.has(scriptName)) {
+      continue;
+    }
+    visited.add(scriptName);
+    referencedScripts.add(scriptName);
+
+    const scriptCommand = scripts[scriptName];
+    if (typeof scriptCommand !== 'string') {
+      continue;
+    }
+
+    for (const nestedScriptName of extractReferencedScripts(scriptCommand)) {
+      referencedScripts.add(nestedScriptName);
+      for (const transitiveScriptName of collectReferencedScripts([nestedScriptName], visited)) {
+        referencedScripts.add(transitiveScriptName);
+      }
+    }
+  }
+
+  return referencedScripts;
+};
+
 for (const tier of blockingTiers) {
   const label = `blockingTiers.${tier?.id || 'unknown'}`;
   const gateScript = String(tier?.script || '');
@@ -110,11 +136,10 @@ if (!releaseConfidence) {
   if (!releaseConfidenceConfig || !Array.isArray(releaseConfidenceConfig.steps)) {
     issues.push('releaseConfidence: missing scripts/config/release-confidence-pack.json');
   } else {
-    const configuredScripts = [
-      ...new Set(
-        releaseConfidenceConfig.steps.flatMap(step => extractReferencedScripts(step?.command || ''))
-      ),
-    ];
+    const directConfiguredScripts = releaseConfidenceConfig.steps.flatMap(step =>
+      extractReferencedScripts(step?.command || '')
+    );
+    const configuredScripts = [...collectReferencedScripts(directConfiguredScripts)];
 
     for (const requiredScript of requiredScripts) {
       if (!configuredScripts.includes(requiredScript)) {

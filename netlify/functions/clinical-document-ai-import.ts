@@ -8,8 +8,9 @@ import {
 } from '../../src/contracts/serverless';
 import {
   parseClinicalDocumentAiImportJson,
+  sanitizeClinicalDocumentAiImportSourceText,
   validateClinicalDocumentAiImportSourceText,
-} from '../../src/features/clinical-documents/controllers/clinicalDocumentAiImportController';
+} from '../../src/features/clinical-documents/contracts/clinicalDocumentAiImportContract';
 import {
   buildJsonResponse,
   buildTooManyRequestsResponse,
@@ -149,7 +150,8 @@ export const createClinicalDocumentAiImportHandler = (
 
       const request = ClinicalDocumentAiImportRequestSchema.safeParse(body.value);
       const sourceText = request.success ? request.data.sourceText : '';
-      const sourceTextValidation = validateClinicalDocumentAiImportSourceText(sourceText);
+      const sanitizedSourceText = sanitizeClinicalDocumentAiImportSourceText(sourceText);
+      const sourceTextValidation = validateClinicalDocumentAiImportSourceText(sanitizedSourceText);
 
       if (!request.success || !sourceTextValidation.ok) {
         return buildJsonResponse(
@@ -161,7 +163,7 @@ export const createClinicalDocumentAiImportHandler = (
         );
       }
 
-      const prompt = buildClinicalDocumentAiImportPrompt(sourceText.trim());
+      const prompt = buildClinicalDocumentAiImportPrompt(sanitizedSourceText);
       const aiText = await invokeWithTelemetry({
         service: 'clinical_ai',
         operation: 'clinical_document_import',
@@ -172,7 +174,7 @@ export const createClinicalDocumentAiImportHandler = (
         context: {
           provider: providerConfig.provider,
           model: providerConfig.model,
-          sourceTextLength: sourceText.length,
+          sourceTextLength: sanitizedSourceText.length,
         },
         fn: () =>
           dependencies.generateClinicalAIText({
