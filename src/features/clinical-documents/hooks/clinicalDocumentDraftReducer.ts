@@ -136,6 +136,27 @@ const commitAutosaveBaseState = (
       : state.pendingRemoteState,
 });
 
+const markAutosaveClean = (
+  state: ClinicalDocumentDraftReducerState,
+  document: ClinicalDocumentRecord,
+  snapshot: string
+): ClinicalDocumentDraftReducerState => ({
+  ...state,
+  isSaving: false,
+  hasPendingRemoteUpdate:
+    state.pendingRemoteState.snapshot !== actionSnapshotKey(snapshot) &&
+    state.hasPendingRemoteUpdate,
+  baseState: {
+    document: structuredClone(document),
+    snapshot: state.draft ? JSON.stringify(state.draft) : snapshot,
+    updatedAt: document.audit.updatedAt || '',
+  },
+  pendingRemoteState:
+    state.pendingRemoteState.snapshot === actionSnapshotKey(snapshot)
+      ? emptyBaseState()
+      : state.pendingRemoteState,
+});
+
 const actionSnapshotKey = (snapshot: string): string => snapshot;
 
 export const clinicalDocumentDraftReducer = (
@@ -328,7 +349,7 @@ export const clinicalDocumentDraftReducer = (
         isSaving: true,
       };
     case 'AUTOSAVE_MARK_CLEAN':
-      return commitAutosaveBaseState(state, action.document, action.snapshot);
+      return markAutosaveClean(state, action.document, action.snapshot);
     case 'AUTOSAVE_COMMIT_BASE':
       return commitAutosaveBaseState(state, action.document, action.snapshot);
     case 'AUTOSAVE_SUCCEEDED':

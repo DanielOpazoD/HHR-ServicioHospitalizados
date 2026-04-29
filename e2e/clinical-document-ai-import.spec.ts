@@ -102,6 +102,12 @@ const uploadAiImportDocx = async (page: Page, fileName = 'traslado-ia.docx') => 
   });
 };
 
+const expectImportedAiDocumentContent = async (page: Page) => {
+  await expect(page.getByText('Epicrisis traslado').first()).toBeVisible();
+  await expect(page.getByText('Traslado por neumonia con oxigenoterapia.')).toBeVisible();
+  await expect(page.getByText('Continuar ceftriaxona y control de saturacion.')).toBeVisible();
+};
+
 test.describe('Clinical document AI import E2E smoke', () => {
   test('imports a DOCX through the AI UI flow and keeps the saved draft after reopening', async ({
     page,
@@ -137,17 +143,57 @@ test.describe('Clinical document AI import E2E smoke', () => {
     ).toBeVisible({
       timeout: 20_000,
     });
-    await expect(page.getByText('Epicrisis traslado').first()).toBeVisible();
-    await expect(page.getByText('Traslado por neumonia con oxigenoterapia.')).toBeVisible();
-    await expect(page.getByText('Continuar ceftriaxona y control de saturacion.')).toBeVisible();
+    await expectImportedAiDocumentContent(page);
+
+    await page.goto(`/censo?date=${E2E_DATE}`);
+    await expect(page.getByTestId('census-table')).toBeVisible({ timeout: 20_000 });
+    await openClinicalDocumentsFromR1(page);
+
+    await expectImportedAiDocumentContent(page);
+  });
+
+  test('keeps clinician edits to an AI-imported draft after reopening', async ({ page }) => {
+    await page.route('**/.netlify/functions/clinical-document-ai-import', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          available: true,
+          provider: 'e2e',
+          model: 'stub',
+          document: {
+            antecedentes: 'HTA en tratamiento.',
+            historiaEvolucionClinica: 'Traslado por neumonia con oxigenoterapia.',
+            examenesComplementarios: 'Radiografia con infiltrado basal derecho.',
+            diagnosticosEgreso: 'Neumonia adquirida en la comunidad.',
+            planEgreso: 'Continuar ceftriaxona y control de saturacion.',
+          },
+        }),
+      });
+    });
+
+    await openSeededAiImportCensus(page);
+    await openClinicalDocumentsFromR1(page);
+    await uploadAiImportDocx(page, 'traslado-ia-editable.docx');
+    await expect(
+      page.getByText(/Se generó y guardó un borrador editable desde traslado-ia-editable\.docx/i)
+    ).toBeVisible({ timeout: 20_000 });
+
+    const editedPlan = 'Plan editado por medico: retirar oxigeno si satura mayor a 94%.';
+    const planEditor = page.getByLabel('Contenido Plan de egreso');
+    await planEditor.fill(editedPlan);
+    await planEditor.blur();
+    await expect(planEditor).toContainText(editedPlan);
+    await expect(page.getByText('Cambios locales sin guardar')).toBeHidden({ timeout: 10_000 });
+    await expect(page.getByText('Guardando...')).toBeHidden({ timeout: 10_000 });
 
     await page.goto(`/censo?date=${E2E_DATE}`);
     await expect(page.getByTestId('census-table')).toBeVisible({ timeout: 20_000 });
     await openClinicalDocumentsFromR1(page);
 
     await expect(page.getByText('Epicrisis traslado').first()).toBeVisible();
-    await expect(page.getByText('Traslado por neumonia con oxigenoterapia.')).toBeVisible();
-    await expect(page.getByText('Continuar ceftriaxona y control de saturacion.')).toBeVisible();
+    await expect(page.getByText(editedPlan)).toBeVisible();
+    await expect(page.getByText('Continuar ceftriaxona y control de saturacion.')).toBeHidden();
   });
 
   test('shows a controlled AI failure and does not create a draft', async ({ page }) => {
