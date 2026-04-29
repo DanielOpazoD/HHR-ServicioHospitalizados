@@ -9,6 +9,10 @@ import {
 
 const E2E_DATE = process.env.E2E_FIXED_DATE ?? '2026-02-20';
 
+type ClinicalDocumentPrintWindow = Window & {
+  __clinicalDocumentPrintCalled?: boolean;
+};
+
 const buildAiImportRecord = (date: string) => {
   const canonical = buildCanonicalE2ERecord(date);
   const beds = canonical.beds as Record<string, Record<string, unknown>>;
@@ -108,31 +112,40 @@ const expectImportedAiDocumentContent = async (page: Page) => {
   await expect(page.getByText('Continuar ceftriaxona y control de saturacion.')).toBeVisible();
 };
 
+const routeSuccessfulAiImport = async (
+  page: Page,
+  options: { assertSourceText?: boolean } = {}
+) => {
+  await page.route('**/.netlify/functions/clinical-document-ai-import', async route => {
+    if (options.assertSourceText) {
+      const payload = route.request().postDataJSON() as { sourceText?: string };
+      expect(payload.sourceText?.toLowerCase()).toContain('traslado por neumonia');
+    }
+
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        available: true,
+        provider: 'e2e',
+        model: 'stub',
+        document: {
+          antecedentes: 'HTA en tratamiento.',
+          historiaEvolucionClinica: 'Traslado por neumonia con oxigenoterapia.',
+          examenesComplementarios: 'Radiografia con infiltrado basal derecho.',
+          diagnosticosEgreso: 'Neumonia adquirida en la comunidad.',
+          planEgreso: 'Continuar ceftriaxona y control de saturacion.',
+        },
+      }),
+    });
+  });
+};
+
 test.describe('Clinical document AI import E2E smoke', () => {
   test('imports a DOCX through the AI UI flow and keeps the saved draft after reopening', async ({
     page,
   }) => {
-    await page.route('**/.netlify/functions/clinical-document-ai-import', async route => {
-      const payload = route.request().postDataJSON() as { sourceText?: string };
-      expect(payload.sourceText?.toLowerCase()).toContain('traslado por neumonia');
-
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          available: true,
-          provider: 'e2e',
-          model: 'stub',
-          document: {
-            antecedentes: 'HTA en tratamiento.',
-            historiaEvolucionClinica: 'Traslado por neumonia con oxigenoterapia.',
-            examenesComplementarios: 'Radiografia con infiltrado basal derecho.',
-            diagnosticosEgreso: 'Neumonia adquirida en la comunidad.',
-            planEgreso: 'Continuar ceftriaxona y control de saturacion.',
-          },
-        }),
-      });
-    });
+    await routeSuccessfulAiImport(page, { assertSourceText: true });
 
     await openSeededAiImportCensus(page);
     await openClinicalDocumentsFromR1(page);
@@ -153,24 +166,7 @@ test.describe('Clinical document AI import E2E smoke', () => {
   });
 
   test('keeps clinician edits to an AI-imported draft after reopening', async ({ page }) => {
-    await page.route('**/.netlify/functions/clinical-document-ai-import', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          available: true,
-          provider: 'e2e',
-          model: 'stub',
-          document: {
-            antecedentes: 'HTA en tratamiento.',
-            historiaEvolucionClinica: 'Traslado por neumonia con oxigenoterapia.',
-            examenesComplementarios: 'Radiografia con infiltrado basal derecho.',
-            diagnosticosEgreso: 'Neumonia adquirida en la comunidad.',
-            planEgreso: 'Continuar ceftriaxona y control de saturacion.',
-          },
-        }),
-      });
-    });
+    await routeSuccessfulAiImport(page);
 
     await openSeededAiImportCensus(page);
     await openClinicalDocumentsFromR1(page);
@@ -194,6 +190,39 @@ test.describe('Clinical document AI import E2E smoke', () => {
     await expect(page.getByText('Epicrisis traslado').first()).toBeVisible();
     await expect(page.getByText(editedPlan)).toBeVisible();
     await expect(page.getByText('Continuar ceftriaxona y control de saturacion.')).toBeHidden();
+  });
+
+  test('prints an AI-imported draft with the generated clinical content', async ({ page }) => {
+    await page.addInitScript(() => {
+      const browserWindow = window as ClinicalDocumentPrintWindow;
+      browserWindow.__clinicalDocumentPrintCalled = false;
+      window.print = () => {
+        browserWindow.__clinicalDocumentPrintCalled = true;
+      };
+    });
+    await routeSuccessfulAiImport(page);
+
+    await openSeededAiImportCensus(page);
+    await openClinicalDocumentsFromR1(page);
+    await uploadAiImportDocx(page, 'traslado-ia-print.docx');
+    await expect(
+      page.getByText(/Se generó y guardó un borrador editable desde traslado-ia-print\.docx/i)
+    ).toBeVisible({ timeout: 20_000 });
+
+    await page.getByRole('button', { name: 'Imprimir PDF' }).click();
+    await expect(page.locator('#clinical-document-inline-print-root')).toContainText(
+      'Traslado por neumonia con oxigenoterapia.'
+    );
+    await expect(page.locator('#clinical-document-inline-print-root')).toContainText(
+      'Continuar ceftriaxona y control de saturacion.'
+    );
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          Boolean((window as ClinicalDocumentPrintWindow).__clinicalDocumentPrintCalled)
+        )
+      )
+      .toBe(true);
   });
 
   test('shows a controlled AI failure and does not create a draft', async ({ page }) => {
