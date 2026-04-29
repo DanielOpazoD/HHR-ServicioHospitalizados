@@ -61,6 +61,34 @@ const readClinicalDocumentJsonFileText = (file: File): Promise<string> => {
   });
 };
 
+interface ClinicalDocumentAiImportFailureReportParams {
+  episode: ClinicalDocumentEpisodeContext;
+  fileName: string;
+  notify: NotificationPort;
+  message: string;
+  userMessage?: string;
+  context?: Record<string, string>;
+}
+
+const reportClinicalDocumentAiImportFailure = ({
+  episode,
+  fileName,
+  notify,
+  message,
+  userMessage = message,
+  context = {},
+}: ClinicalDocumentAiImportFailureReportParams) => {
+  recordOperationalTelemetry({
+    category: 'clinical_document',
+    status: 'failed',
+    operation: 'import_clinical_document_ai',
+    date: episode.sourceDailyRecordDate,
+    issues: [message],
+    context: { ...context, fileName },
+  });
+  notify.error('No se pudo importar con IA', userMessage);
+};
+
 export const useClinicalDocumentWorkspaceImportActions = ({
   patient,
   role,
@@ -193,8 +221,6 @@ export const useClinicalDocumentWorkspaceImportActions = ({
         return;
       }
 
-      const failureTitle = 'No se pudo importar con IA';
-
       try {
         const textOutcome = await extractClinicalDocumentAiImportFileText(file);
         const textError = resolveClinicalDocumentOutcomeError(
@@ -202,15 +228,12 @@ export const useClinicalDocumentWorkspaceImportActions = ({
           'No se pudo extraer texto del archivo.'
         );
         if (textError || !textOutcome.data) {
-          recordOperationalTelemetry({
-            category: 'clinical_document',
-            status: 'failed',
-            operation: 'import_clinical_document_ai',
-            date: episode.sourceDailyRecordDate,
-            issues: [textError || 'No se pudo extraer texto del archivo.'],
-            context: { fileName: file.name },
+          reportClinicalDocumentAiImportFailure({
+            episode,
+            fileName: file.name,
+            notify,
+            message: textError || 'No se pudo extraer texto del archivo.',
           });
-          notify.error(failureTitle, textError || 'No se pudo extraer texto del archivo.');
           return;
         }
 
@@ -220,15 +243,12 @@ export const useClinicalDocumentWorkspaceImportActions = ({
           'No se pudo transformar el texto con IA.'
         );
         if (transformError || !transformOutcome.data) {
-          recordOperationalTelemetry({
-            category: 'clinical_document',
-            status: 'failed',
-            operation: 'import_clinical_document_ai',
-            date: episode.sourceDailyRecordDate,
-            issues: [transformError || 'No se pudo transformar el texto con IA.'],
-            context: { fileName: file.name },
+          reportClinicalDocumentAiImportFailure({
+            episode,
+            fileName: file.name,
+            notify,
+            message: transformError || 'No se pudo transformar el texto con IA.',
           });
-          notify.error(failureTitle, transformError || 'No se pudo transformar el texto con IA.');
           return;
         }
 
@@ -254,18 +274,15 @@ export const useClinicalDocumentWorkspaceImportActions = ({
           'No se pudo guardar la epicrisis generada con IA.'
         );
         if (outcomeError || !result.data) {
-          recordOperationalTelemetry({
-            category: 'clinical_document',
-            status: 'failed',
-            operation: 'import_clinical_document_ai',
-            date: episode.sourceDailyRecordDate,
-            issues: [outcomeError || 'No se pudo guardar la epicrisis generada con IA.'],
-            context: { importedDocumentId: aiImportedRecord.id, fileName: file.name },
+          reportClinicalDocumentAiImportFailure({
+            episode,
+            fileName: file.name,
+            notify,
+            message: outcomeError || 'No se pudo guardar la epicrisis generada con IA.',
+            userMessage:
+              outcomeError || 'Ocurrió un error al guardar la epicrisis generada con IA.',
+            context: { importedDocumentId: aiImportedRecord.id },
           });
-          notify.error(
-            failureTitle,
-            outcomeError || 'Ocurrió un error al guardar la epicrisis generada con IA.'
-          );
           return;
         }
 
@@ -288,15 +305,12 @@ export const useClinicalDocumentWorkspaceImportActions = ({
           error,
           'No se pudo importar el documento con IA.'
         );
-        recordOperationalTelemetry({
-          category: 'clinical_document',
-          status: 'failed',
-          operation: 'import_clinical_document_ai',
-          date: episode.sourceDailyRecordDate,
-          issues: [errorMessage],
-          context: { fileName: file.name },
+        reportClinicalDocumentAiImportFailure({
+          episode,
+          fileName: file.name,
+          notify,
+          message: errorMessage,
         });
-        notify.error(failureTitle, errorMessage);
       }
     },
     [
