@@ -5,7 +5,6 @@ import {
   Download,
   FilePlus2,
   FlaskConical,
-  History,
   MoreHorizontal,
   Paperclip,
   PenLine,
@@ -23,47 +22,7 @@ import {
 } from '@/features/clinical-documents/controllers/clinicalDocumentWorkspaceController';
 import { withCurrentClinicalDocumentVersionSnapshotFallback } from '@/domain/clinical-documents/versionHistory';
 import type { ClinicalDocumentsSidebarProps } from '@/features/clinical-documents/contracts/clinicalDocumentsSidebarContracts';
-import type {
-  ClinicalDocumentVersionMeta,
-  ClinicalDocumentVersionSectionSnapshot,
-} from '@/features/clinical-documents/domain/entities';
-import { ClinicalDocumentVersionHistory } from '@/features/clinical-documents/components/ClinicalDocumentVersionHistory';
-
-const VersionBadge: React.FC<{
-  currentVersion: number;
-  versionHistory: ClinicalDocumentVersionMeta[];
-  canRestoreSection?: boolean;
-  onRestoreSection?: (
-    section: Pick<ClinicalDocumentVersionSectionSnapshot, 'sectionId' | 'title' | 'content'>
-  ) => void;
-}> = ({ currentVersion, versionHistory, canRestoreSection = false, onRestoreSection }) => {
-  const [showHistory, setShowHistory] = useState(false);
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={e => {
-          e.stopPropagation();
-          setShowHistory(true);
-        }}
-        className="flex items-center gap-0.5 text-[9px] font-mono text-slate-400 hover:text-medical-600 transition-colors"
-        title="Ver historial de versiones"
-      >
-        <History size={9} />v{currentVersion}
-      </button>
-      {showHistory && (
-        <ClinicalDocumentVersionHistory
-          versions={versionHistory}
-          currentVersion={currentVersion}
-          canRestoreSection={canRestoreSection}
-          onRestoreSection={onRestoreSection}
-          onClose={() => setShowHistory(false)}
-        />
-      )}
-    </>
-  );
-};
+import { ClinicalDocumentVersionBadge } from '@/features/clinical-documents/components/ClinicalDocumentVersionBadge';
 
 export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> = ({
   canEdit,
@@ -386,7 +345,7 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
                     {formatClinicalDocumentDateTime(document.audit.updatedAt)}
                   </p>
                   {document.versionHistory && document.versionHistory.length > 0 && (
-                    <VersionBadge
+                    <ClinicalDocumentVersionBadge
                       currentVersion={document.currentVersion}
                       versionHistory={withCurrentClinicalDocumentVersionSnapshotFallback(document)}
                       canRestoreSection={canEdit && selectedDocumentId === document.id}
