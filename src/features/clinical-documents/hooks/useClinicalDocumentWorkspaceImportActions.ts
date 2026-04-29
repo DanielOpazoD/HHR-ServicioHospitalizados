@@ -67,7 +67,8 @@ interface ClinicalDocumentAiImportFailureReportParams {
   notify: NotificationPort;
   message: string;
   userMessage?: string;
-  context?: Record<string, string>;
+  stage: 'extract_text' | 'ai_transform' | 'save_draft' | 'unexpected';
+  context?: Record<string, unknown>;
 }
 
 const reportClinicalDocumentAiImportFailure = ({
@@ -76,6 +77,7 @@ const reportClinicalDocumentAiImportFailure = ({
   notify,
   message,
   userMessage = message,
+  stage,
   context = {},
 }: ClinicalDocumentAiImportFailureReportParams) => {
   recordOperationalTelemetry({
@@ -84,10 +86,13 @@ const reportClinicalDocumentAiImportFailure = ({
     operation: 'import_clinical_document_ai',
     date: episode.sourceDailyRecordDate,
     issues: [message],
-    context: { ...context, fileName },
+    context: { ...context, fileName, stage },
   });
   notify.error('No se pudo importar con IA', userMessage);
 };
+
+const buildClinicalDocumentAiImportStoppedMessage = (message: string): string =>
+  `La importación se detuvo antes de guardar: ${message}`;
 
 export const useClinicalDocumentWorkspaceImportActions = ({
   patient,
@@ -233,6 +238,10 @@ export const useClinicalDocumentWorkspaceImportActions = ({
             fileName: file.name,
             notify,
             message: textError || 'No se pudo extraer texto del archivo.',
+            userMessage: buildClinicalDocumentAiImportStoppedMessage(
+              textError || 'No se pudo extraer texto del archivo.'
+            ),
+            stage: 'extract_text',
           });
           return;
         }
@@ -248,6 +257,11 @@ export const useClinicalDocumentWorkspaceImportActions = ({
             fileName: file.name,
             notify,
             message: transformError || 'No se pudo transformar el texto con IA.',
+            userMessage: buildClinicalDocumentAiImportStoppedMessage(
+              transformError || 'No se pudo transformar el texto con IA.'
+            ),
+            stage: 'ai_transform',
+            context: { sourceTextLength: textOutcome.data.length },
           });
           return;
         }
@@ -266,7 +280,11 @@ export const useClinicalDocumentWorkspaceImportActions = ({
         const result = await executeCreateClinicalDocumentDraft(aiImportedRecord, hospitalId);
         recordOperationalOutcome('clinical_document', 'import_clinical_document_ai', result, {
           date: episode.sourceDailyRecordDate,
-          context: { importedDocumentId: aiImportedRecord.id, fileName: file.name },
+          context: {
+            importedDocumentId: aiImportedRecord.id,
+            fileName: file.name,
+            sourceTextLength: textOutcome.data.length,
+          },
           allowSuccess: true,
         });
         const outcomeError = resolveClinicalDocumentOutcomeError(
@@ -281,6 +299,7 @@ export const useClinicalDocumentWorkspaceImportActions = ({
             message: outcomeError || 'No se pudo guardar la epicrisis generada con IA.',
             userMessage:
               outcomeError || 'Ocurrió un error al guardar la epicrisis generada con IA.',
+            stage: 'save_draft',
             context: { importedDocumentId: aiImportedRecord.id },
           });
           return;
@@ -298,7 +317,7 @@ export const useClinicalDocumentWorkspaceImportActions = ({
         );
         notify.success(
           'Epicrisis traslado creada',
-          'Se generó un borrador editable desde el informe importado con IA.'
+          `Se generó y guardó un borrador editable desde ${file.name}. Revísalo antes de firmar o exportar.`
         );
       } catch (error) {
         const errorMessage = resolveClinicalDocumentExceptionMessage(
@@ -310,6 +329,8 @@ export const useClinicalDocumentWorkspaceImportActions = ({
           fileName: file.name,
           notify,
           message: errorMessage,
+          userMessage: buildClinicalDocumentAiImportStoppedMessage(errorMessage),
+          stage: 'unexpected',
         });
       }
     },

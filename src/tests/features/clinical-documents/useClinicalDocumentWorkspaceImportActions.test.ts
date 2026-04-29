@@ -8,6 +8,8 @@ import { createClinicalDocumentDraft } from '@/features/clinical-documents/domai
 import { useClinicalDocumentWorkspaceImportActions } from '@/features/clinical-documents/hooks/useClinicalDocumentWorkspaceImportActions';
 import * as clinicalDocumentAiFileTextService from '@/features/clinical-documents/services/clinicalDocumentAiFileTextService';
 import * as clinicalDocumentAiImportService from '@/features/clinical-documents/services/clinicalDocumentAiImportService';
+import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryOutcomeRecorder';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 
 vi.mock('@/application/clinical-documents/clinicalDocumentUseCases', async () => {
   const actual = await vi.importActual<
@@ -28,8 +30,11 @@ vi.mock('@/features/clinical-documents/services/clinicalDocumentAiImportService'
   transformClinicalDocumentAiImportText: vi.fn(),
 }));
 
-vi.mock('@/services/observability/operationalTelemetryService', () => ({
+vi.mock('@/services/observability/operationalTelemetryOutcomeRecorder', () => ({
   recordOperationalOutcome: vi.fn(),
+}));
+
+vi.mock('@/services/observability/operationalTelemetryRecorder', () => ({
   recordOperationalTelemetry: vi.fn(),
 }));
 
@@ -211,7 +216,19 @@ describe('useClinicalDocumentWorkspaceImportActions', () => {
     );
     expect(notify.success).toHaveBeenCalledWith(
       'Epicrisis traslado creada',
-      'Se generó un borrador editable desde el informe importado con IA.'
+      'Se generó y guardó un borrador editable desde informe-traslado.pdf. Revísalo antes de firmar o exportar.'
+    );
+    expect(recordOperationalOutcome).toHaveBeenCalledWith(
+      'clinical_document',
+      'import_clinical_document_ai',
+      expect.objectContaining({ status: 'success' }),
+      expect.objectContaining({
+        context: expect.objectContaining({
+          importedDocumentId: expect.any(String),
+          fileName: 'informe-traslado.pdf',
+          sourceTextLength: 210,
+        }),
+      })
     );
   });
 
@@ -243,7 +260,19 @@ describe('useClinicalDocumentWorkspaceImportActions', () => {
     expect(clinicalDocumentUseCases.executeCreateClinicalDocumentDraft).not.toHaveBeenCalled();
     expect(notify.error).toHaveBeenCalledWith(
       'No se pudo importar con IA',
-      'La IA no está configurada para importar documentos.'
+      'La importación se detuvo antes de guardar: La IA no está configurada para importar documentos.'
+    );
+    expect(recordOperationalTelemetry).toHaveBeenCalledWith(
+      expect.objectContaining({
+        category: 'clinical_document',
+        status: 'failed',
+        operation: 'import_clinical_document_ai',
+        context: expect.objectContaining({
+          fileName: 'informe-traslado.pdf',
+          stage: 'ai_transform',
+          sourceTextLength: 210,
+        }),
+      })
     );
   });
 });
