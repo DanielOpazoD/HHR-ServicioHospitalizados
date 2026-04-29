@@ -6,17 +6,12 @@ import type {
   ClinicalDocumentEpisodeContext,
   ClinicalDocumentRecord,
 } from '@/features/clinical-documents/domain/entities';
-import {
-  buildClinicalDocumentRenderedText,
-  createClinicalDocumentDraft,
-} from '@/features/clinical-documents/domain/factories';
 import { buildClinicalDocumentPatientFieldValues } from '@/features/clinical-documents/controllers/clinicalDocumentEpisodeController';
-import { buildClinicalDocumentAiImportSections } from '@/features/clinical-documents/controllers/clinicalDocumentAiImportController';
+import { buildClinicalDocumentAiImportedRecord } from '@/features/clinical-documents/controllers/clinicalDocumentAiImportController';
 import {
   buildClinicalDocumentActor,
   serializeClinicalDocument,
 } from '@/features/clinical-documents/controllers/clinicalDocumentWorkspaceController';
-import { buildClinicalDocumentVersionSectionSnapshots } from '@/domain/clinical-documents/versionHistory';
 import { executeCreateClinicalDocumentDraft } from '@/application/clinical-documents/clinicalDocumentUseCases';
 import { prepareClinicalDocumentJsonImportDraft } from '@/application/clinical-documents/clinicalDocumentJsonUseCases';
 import { extractClinicalDocumentAiImportFileText } from '@/features/clinical-documents/services/clinicalDocumentAiFileTextService';
@@ -24,7 +19,6 @@ import { transformClinicalDocumentAiImportText } from '@/features/clinical-docum
 import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 import { logClinicalDocumentCreated } from '@/services/admin/auditDomainLoggers';
-import { createHash } from '@/features/clinical-documents/utils/hash';
 import {
   resolveClinicalDocumentExceptionMessage,
   resolveClinicalDocumentOutcomeError,
@@ -239,8 +233,8 @@ export const useClinicalDocumentWorkspaceImportActions = ({
         }
 
         const actor = buildClinicalDocumentActor(user, role);
-        const importedRecord = createClinicalDocumentDraft({
-          templateId: 'epicrisis_traslado',
+        const aiImportedRecord = buildClinicalDocumentAiImportedRecord({
+          payload: transformOutcome.data,
           hospitalId,
           actor,
           episode,
@@ -248,29 +242,6 @@ export const useClinicalDocumentWorkspaceImportActions = ({
           medico: actor.displayName,
           especialidad: episode.specialty || '',
         });
-        const sections = buildClinicalDocumentAiImportSections(transformOutcome.data);
-        const recordWithSections: ClinicalDocumentRecord = {
-          ...importedRecord,
-          sections,
-          title: 'Epicrisis traslado',
-        };
-        const renderedText = buildClinicalDocumentRenderedText(recordWithSections);
-        const sectionSnapshots = buildClinicalDocumentVersionSectionSnapshots(recordWithSections);
-        const aiImportedRecord: ClinicalDocumentRecord = {
-          ...recordWithSections,
-          renderedText,
-          integrityHash: createHash(renderedText),
-          versionHistory: recordWithSections.versionHistory.map(version =>
-            version.version === 1
-              ? {
-                  ...version,
-                  reason: 'ai_import',
-                  changedSectionIds: sectionSnapshots.map(snapshot => snapshot.sectionId),
-                  sectionSnapshots,
-                }
-              : version
-          ),
-        };
 
         const result = await executeCreateClinicalDocumentDraft(aiImportedRecord, hospitalId);
         recordOperationalOutcome('clinical_document', 'import_clinical_document_ai', result, {

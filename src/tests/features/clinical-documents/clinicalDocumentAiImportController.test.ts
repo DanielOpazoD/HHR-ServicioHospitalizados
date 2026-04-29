@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  buildClinicalDocumentAiImportedRecord,
   buildClinicalDocumentAiImportSections,
   parseClinicalDocumentAiImportJson,
   validateClinicalDocumentAiImportFile,
@@ -99,6 +100,84 @@ describe('clinicalDocumentAiImportController', () => {
         visible: true,
       },
     ]);
+  });
+
+  it('keeps non-explicit clinical fields empty instead of inferring content', () => {
+    const sections = buildClinicalDocumentAiImportSections({
+      antecedentes: '',
+      historiaEvolucionClinica: 'Traslado por insuficiencia cardiaca.',
+      examenesComplementarios: '',
+      diagnosticosEgreso: '',
+      planEgreso: '',
+    });
+
+    expect(sections.find(section => section.id === 'antecedentes')?.content).toBe('');
+    expect(sections.find(section => section.id === 'examenes-complementarios')?.content).toBe('');
+    expect(sections.find(section => section.id === 'diagnosticos')?.content).toBe('');
+    expect(sections.find(section => section.id === 'plan')?.content).toBe('');
+  });
+
+  it('builds an editable AI-imported epicrisis traslado record with traceable version metadata', () => {
+    const record = buildClinicalDocumentAiImportedRecord({
+      payload: {
+        antecedentes: 'HTA.',
+        historiaEvolucionClinica: 'Traslado por neumonia.',
+        examenesComplementarios: '',
+        diagnosticosEgreso: 'Neumonia.',
+        planEgreso: '',
+      },
+      hospitalId: 'hhr',
+      actor: {
+        uid: 'u1',
+        email: 'doctor@test.cl',
+        displayName: 'Doctor Test',
+        role: 'doctor_urgency',
+      },
+      episode: {
+        patientRut: '11.111.111-1',
+        patientName: 'Paciente Test',
+        episodeKey: '11.111.111-1__2026-03-06',
+        admissionDate: '2026-03-06',
+        sourceDailyRecordDate: '2026-03-06',
+        sourceBedId: 'R1',
+        specialty: 'Medicina',
+      },
+      patientFieldValues: {
+        nombre: 'Paciente Test',
+        rut: '11.111.111-1',
+        edad: '40a',
+        fecnac: '1986-01-01',
+        fing: '2026-03-06',
+        finf: '2026-03-06',
+        hinf: '10:30',
+      },
+      medico: 'Doctor Test',
+      especialidad: 'Medicina',
+    });
+
+    expect(record).toMatchObject({
+      documentType: 'epicrisis_traslado',
+      templateId: 'epicrisis_traslado',
+      title: 'Epicrisis traslado',
+      status: 'draft',
+      isLocked: false,
+      versionHistory: [
+        expect.objectContaining({
+          version: 1,
+          reason: 'ai_import',
+          changedSectionIds: [
+            'antecedentes',
+            'historia-evolucion',
+            'examenes-complementarios',
+            'diagnosticos',
+            'plan',
+          ],
+        }),
+      ],
+    });
+    expect(record.sections.find(section => section.id === 'plan')?.content).toBe('');
+    expect(record.renderedText).toContain('Historia y evolución clínica');
+    expect(record.integrityHash).toMatch(/^h/);
   });
 
   it('validates supported source files before extraction', () => {

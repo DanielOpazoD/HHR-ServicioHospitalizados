@@ -1,5 +1,16 @@
 import { z } from 'zod';
-import type { ClinicalDocumentSection } from '@/features/clinical-documents/domain/entities';
+import { buildClinicalDocumentVersionSectionSnapshots } from '@/domain/clinical-documents/versionHistory';
+import {
+  buildClinicalDocumentRenderedText,
+  createClinicalDocumentDraft,
+} from '@/features/clinical-documents/domain/factories';
+import type {
+  ClinicalDocumentAuditActor,
+  ClinicalDocumentEpisodeContext,
+  ClinicalDocumentRecord,
+  ClinicalDocumentSection,
+} from '@/features/clinical-documents/domain/entities';
+import { createHash } from '@/features/clinical-documents/utils/hash';
 
 export const CLINICAL_DOCUMENT_AI_IMPORT_MAX_FILE_BYTES = 8 * 1024 * 1024;
 const CLINICAL_DOCUMENT_AI_IMPORT_MIN_TEXT_LENGTH = 80;
@@ -176,6 +187,59 @@ export const buildClinicalDocumentAiImportSections = (
     visible: true,
   },
 ];
+
+interface BuildClinicalDocumentAiImportedRecordParams {
+  payload: ClinicalDocumentAiImportPayload;
+  hospitalId: string;
+  actor: ClinicalDocumentAuditActor;
+  episode: ClinicalDocumentEpisodeContext;
+  patientFieldValues: Record<string, string>;
+  medico: string;
+  especialidad: string;
+}
+
+export const buildClinicalDocumentAiImportedRecord = ({
+  payload,
+  hospitalId,
+  actor,
+  episode,
+  patientFieldValues,
+  medico,
+  especialidad,
+}: BuildClinicalDocumentAiImportedRecordParams): ClinicalDocumentRecord => {
+  const importedRecord = createClinicalDocumentDraft({
+    templateId: 'epicrisis_traslado',
+    hospitalId,
+    actor,
+    episode,
+    patientFieldValues,
+    medico,
+    especialidad,
+  });
+  const recordWithSections: ClinicalDocumentRecord = {
+    ...importedRecord,
+    sections: buildClinicalDocumentAiImportSections(payload),
+    title: 'Epicrisis traslado',
+  };
+  const renderedText = buildClinicalDocumentRenderedText(recordWithSections);
+  const sectionSnapshots = buildClinicalDocumentVersionSectionSnapshots(recordWithSections);
+
+  return {
+    ...recordWithSections,
+    renderedText,
+    integrityHash: createHash(renderedText),
+    versionHistory: recordWithSections.versionHistory.map(version =>
+      version.version === 1
+        ? {
+            ...version,
+            reason: 'ai_import',
+            changedSectionIds: sectionSnapshots.map(snapshot => snapshot.sectionId),
+            sectionSnapshots,
+          }
+        : version
+    ),
+  };
+};
 
 export const validateClinicalDocumentAiImportFile = (
   file: ClinicalDocumentAiImportFileLike
