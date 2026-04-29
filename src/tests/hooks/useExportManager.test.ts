@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { useExportManager } from '@/hooks/useExportManager';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
-import * as backupExportUseCases from '@/application/backup-export/backupExportUseCases';
+import * as backupExportArchiveUseCases from '@/application/backup-export/backupExportArchiveUseCases';
+import * as backupExportStorageUseCases from '@/application/backup-export/backupExportStorageUseCases';
 import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
 import type { LookupBackupArchiveStatusOutput } from '@/application/backup-export/backupExportStorageUseCases';
 import type { BackupHandoffPdfOutput } from '@/application/backup-export/backupExportArchiveUseCases';
@@ -23,17 +24,12 @@ vi.mock('@/context/UIContext', () => ({
   useConfirmDialog: () => confirmApi,
 }));
 
-vi.mock('@/application/backup-export/backupExportUseCases', async () => {
+vi.mock('@/application/backup-export/backupExportArchiveUseCases', async () => {
   const actual = await vi.importActual<
-    typeof import('@/application/backup-export/backupExportUseCases')
-  >('@/application/backup-export/backupExportUseCases');
+    typeof import('@/application/backup-export/backupExportArchiveUseCases')
+  >('@/application/backup-export/backupExportArchiveUseCases');
   return {
     ...actual,
-    executeLookupBackupArchiveStatus: vi.fn().mockResolvedValue({
-      status: 'success',
-      data: { exists: false, lookup: { exists: false, status: 'missing' } },
-      issues: [],
-    }),
     executeExportHandoffPdf: vi.fn().mockResolvedValue({
       status: 'success',
       data: null,
@@ -47,6 +43,20 @@ vi.mock('@/application/backup-export/backupExportUseCases', async () => {
     executeBackupHandoffPdf: vi.fn().mockResolvedValue({
       status: 'success',
       data: { shift: 'day', createdCudyrBackup: false },
+      issues: [],
+    }),
+  };
+});
+
+vi.mock('@/application/backup-export/backupExportStorageUseCases', async () => {
+  const actual = await vi.importActual<
+    typeof import('@/application/backup-export/backupExportStorageUseCases')
+  >('@/application/backup-export/backupExportStorageUseCases');
+  return {
+    ...actual,
+    executeLookupBackupArchiveStatus: vi.fn().mockResolvedValue({
+      status: 'success',
+      data: { exists: false, lookup: { exists: false, status: 'missing' } },
       issues: [],
     }),
   };
@@ -127,7 +137,7 @@ describe('useExportManager', () => {
       await result.current.handleExportPDF();
     });
 
-    expect(backupExportUseCases.executeExportHandoffPdf).toHaveBeenCalledWith({
+    expect(backupExportArchiveUseCases.executeExportHandoffPdf).toHaveBeenCalledWith({
       record: exportedRecord,
       selectedShift: 'day',
       isMedical: false,
@@ -148,7 +158,7 @@ describe('useExportManager', () => {
       await result.current.handleExportPDF();
     });
 
-    expect(backupExportUseCases.executeExportHandoffPdf).toHaveBeenCalledWith({
+    expect(backupExportArchiveUseCases.executeExportHandoffPdf).toHaveBeenCalledWith({
       record: mockRecord,
       selectedShift: 'day',
       isMedical: true,
@@ -159,7 +169,7 @@ describe('useExportManager', () => {
     renderHook(() => useExportManager(defaultProps));
 
     await waitFor(() => {
-      expect(backupExportUseCases.executeLookupBackupArchiveStatus).toHaveBeenCalledWith({
+      expect(backupExportStorageUseCases.executeLookupBackupArchiveStatus).toHaveBeenCalledWith({
         backupType: 'census',
         date: '2024-12-28',
         shift: 'day',
@@ -176,7 +186,7 @@ describe('useExportManager', () => {
     renderHook(() => useExportManager(props));
 
     await waitFor(() => {
-      expect(backupExportUseCases.executeLookupBackupArchiveStatus).toHaveBeenCalledWith({
+      expect(backupExportStorageUseCases.executeLookupBackupArchiveStatus).toHaveBeenCalledWith({
         backupType: 'handoff',
         date: '2024-12-28',
         shift: 'day',
@@ -185,7 +195,7 @@ describe('useExportManager', () => {
   });
 
   it('resets the archived state when switching modules before the next lookup resolves', async () => {
-    vi.mocked(backupExportUseCases.executeLookupBackupArchiveStatus).mockResolvedValueOnce({
+    vi.mocked(backupExportStorageUseCases.executeLookupBackupArchiveStatus).mockResolvedValueOnce({
       status: 'success',
       data: { exists: true, lookup: { exists: true, status: 'available' } },
       issues: [],
@@ -199,7 +209,7 @@ describe('useExportManager', () => {
       expect(result.current.isArchived).toBe(true);
     });
 
-    vi.mocked(backupExportUseCases.executeLookupBackupArchiveStatus).mockImplementationOnce(
+    vi.mocked(backupExportStorageUseCases.executeLookupBackupArchiveStatus).mockImplementationOnce(
       () => new Promise(() => {})
     );
 
@@ -244,7 +254,7 @@ describe('useExportManager', () => {
 
     expect(flushBeforeExport).toHaveBeenCalledTimes(1);
     expect(getStableRecordForExport).toHaveBeenCalledTimes(1);
-    expect(backupExportUseCases.executeBackupCensusExcel).toHaveBeenCalledWith({
+    expect(backupExportArchiveUseCases.executeBackupCensusExcel).toHaveBeenCalledWith({
       selectedYear: 2024,
       selectedMonth: 11,
       selectedDay: 28,
@@ -259,14 +269,14 @@ describe('useExportManager', () => {
       data: { exists: false, lookup: { exists: false, status: 'timeout' } },
       issues: [{ kind: 'unknown', message: 'Storage tardó demasiado' }],
     };
-    vi.mocked(backupExportUseCases.executeLookupBackupArchiveStatus).mockResolvedValue(
+    vi.mocked(backupExportStorageUseCases.executeLookupBackupArchiveStatus).mockResolvedValue(
       degradedLookup
     );
 
     renderHook(() => useExportManager(defaultProps));
 
     await waitFor(() => {
-      expect(backupExportUseCases.executeLookupBackupArchiveStatus).toHaveBeenCalled();
+      expect(backupExportStorageUseCases.executeLookupBackupArchiveStatus).toHaveBeenCalled();
     });
 
     expect(notificationApi.warning).not.toHaveBeenCalled();
@@ -280,7 +290,7 @@ describe('useExportManager', () => {
       userSafeMessage: 'La verificación remota no está disponible por ahora.',
       issues: [{ kind: 'unknown', message: 'lookup failed' }],
     };
-    vi.mocked(backupExportUseCases.executeLookupBackupArchiveStatus).mockResolvedValueOnce(
+    vi.mocked(backupExportStorageUseCases.executeLookupBackupArchiveStatus).mockResolvedValueOnce(
       failedLookup
     );
 
@@ -300,7 +310,7 @@ describe('useExportManager', () => {
       data: { exists: false, lookup: { exists: false, status: 'missing' } },
       issues: [],
     };
-    vi.mocked(backupExportUseCases.executeLookupBackupArchiveStatus).mockResolvedValueOnce(
+    vi.mocked(backupExportStorageUseCases.executeLookupBackupArchiveStatus).mockResolvedValueOnce(
       missingLookup
     );
 
@@ -320,7 +330,7 @@ describe('useExportManager', () => {
       data: { shift: 'day', createdCudyrBackup: false },
       issues: [{ kind: 'unknown', message: 'CUDYR mensual no pudo guardarse.' }],
     };
-    vi.mocked(backupExportUseCases.executeBackupHandoffPdf).mockResolvedValueOnce(
+    vi.mocked(backupExportArchiveUseCases.executeBackupHandoffPdf).mockResolvedValueOnce(
       partialHandoffBackup
     );
 
@@ -349,7 +359,7 @@ describe('useExportManager', () => {
   });
 
   it('shows a warning notice when export PDF completes with a partial outcome', async () => {
-    vi.mocked(backupExportUseCases.executeExportHandoffPdf).mockResolvedValueOnce({
+    vi.mocked(backupExportArchiveUseCases.executeExportHandoffPdf).mockResolvedValueOnce({
       status: 'partial',
       data: null,
       userSafeMessage: 'Se abrió la vista previa con advertencias.',
@@ -369,7 +379,7 @@ describe('useExportManager', () => {
   });
 
   it('marks census backup as archived after a partial backup outcome', async () => {
-    vi.mocked(backupExportUseCases.executeBackupCensusExcel).mockResolvedValueOnce({
+    vi.mocked(backupExportArchiveUseCases.executeBackupCensusExcel).mockResolvedValueOnce({
       status: 'partial',
       data: { archivedDate: '2024-12-28', recordCount: 1 },
       userSafeMessage: 'Guardado local con observaciones.',
@@ -399,7 +409,7 @@ describe('useExportManager', () => {
       await result.current.handleBackupHandoff(true);
     });
 
-    expect(backupExportUseCases.executeBackupHandoffPdf).not.toHaveBeenCalled();
+    expect(backupExportArchiveUseCases.executeBackupHandoffPdf).not.toHaveBeenCalled();
   });
 
   it('cancels handoff backup when the confirmation dialog is rejected', async () => {
@@ -411,7 +421,7 @@ describe('useExportManager', () => {
     });
 
     expect(confirmApi.confirm).toHaveBeenCalledTimes(1);
-    expect(backupExportUseCases.executeBackupHandoffPdf).not.toHaveBeenCalled();
+    expect(backupExportArchiveUseCases.executeBackupHandoffPdf).not.toHaveBeenCalled();
   });
 
   it('uses the night-shift success copy when handoff backup succeeds', async () => {
@@ -420,7 +430,9 @@ describe('useExportManager', () => {
       data: { shift: 'night', createdCudyrBackup: true },
       issues: [],
     };
-    vi.mocked(backupExportUseCases.executeBackupHandoffPdf).mockResolvedValueOnce(nightOutcome);
+    vi.mocked(backupExportArchiveUseCases.executeBackupHandoffPdf).mockResolvedValueOnce(
+      nightOutcome
+    );
 
     const { result } = renderHook(() =>
       useExportManager({

@@ -3,7 +3,7 @@ import { resolveApplicationOutcomeMessage } from '@/shared/contracts/application
 import type {
   ListBackupFilesOutput,
   LookupBackupArchiveStatusOutput,
-} from '@/application/backup-export/backupExportUseCases';
+} from '@/application/backup-export/backupExportStorageUseCases';
 import { getStorageListNotice, getStorageLookupNotice } from '@/services/backup/storageUiPolicy';
 import {
   createErrorNotice,

@@ -4,10 +4,8 @@ import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRunti
 import type { BackupType } from '@/hooks/backupFileBrowserContracts';
 import { resolveBackupModuleLabel } from '@/hooks/backupFileBrowserController';
 import type { ConfirmOptions } from '@/context/uiContracts';
-import {
-  executeDeleteBackupFile,
-  executeRunMonthlyBackfill,
-} from '@/application/backup-export/backupExportUseCases';
+import { executeDeleteBackupFile } from '@/application/backup-export/backupExportStorageUseCases';
+import { executeRunMonthlyBackfill } from '@/application/backup-export/backupExportMaintenanceUseCases';
 import { presentBackupExportOutcome } from '@/hooks/controllers/backupExportOutcomeController';
 import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 import { canUseAdminMaintenanceActions } from '@/shared/access/operationalAccessPolicy';

@@ -7,7 +7,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import type { StorageListReport } from '@/types/backupArtifacts';
-import { executeListBackupFiles } from '@/application/backup-export/backupExportUseCases';
+import { executeListBackupFiles } from '@/application/backup-export/backupExportStorageUseCases';
 import type {
   BackupFolder,
   BackupItem,
