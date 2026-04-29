@@ -264,6 +264,7 @@ export const useClinicalDocumentWorkspaceImportActions = ({
             version.version === 1
               ? {
                   ...version,
+                  reason: 'ai_import',
                   changedSectionIds: sectionSnapshots.map(snapshot => snapshot.sectionId),
                   sectionSnapshots,
                 }

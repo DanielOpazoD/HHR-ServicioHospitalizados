@@ -308,11 +308,7 @@ describe('useClinicalDocumentWorkspaceDocumentActions', () => {
       useClinicalDocumentWorkspaceDocumentActions({
         patient: patient as never,
         role: 'doctor_urgency',
-        user: {
-          uid: 'u1',
-          email: 'doctor@test.com',
-          displayName: 'Doctor Test',
-        },
+        user: { uid: 'u1', email: 'doctor@test.com', displayName: 'Doctor Test' },
         hospitalId: 'hhr',
         episode: selectedDocument,
         selectedTemplateId: 'epicrisis',
@@ -340,6 +336,9 @@ describe('useClinicalDocumentWorkspaceDocumentActions', () => {
         title: 'Epicrisis traslado',
         status: 'draft',
         isLocked: false,
+        versionHistory: expect.arrayContaining([
+          expect.objectContaining({ version: 1, reason: 'ai_import' }),
+        ]),
         sections: expect.arrayContaining([
           expect.objectContaining({
             id: 'plan',
