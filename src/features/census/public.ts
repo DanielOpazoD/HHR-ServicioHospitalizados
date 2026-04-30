@@ -1,13 +1,12 @@
 // Public API for code outside the census feature. Internal consumers should import local modules directly.
 //
-// Heavy components (CensusView, CensusEmailConfigModal, GlobalPatientSearchModal)
-// intentionally live in ./public-components so this barrel can be imported
-// statically without pulling the component tree into the authenticated-shell
-// chunk. Load those components via a dynamic import of './public-components'.
+// Heavy components intentionally live behind lazy entrypoints so this barrel can
+// be imported statically without pulling the component tree into the
+// authenticated-shell chunk.
 type LoadCensusChunk = () => Promise<unknown>;
 
 export const preloadCensusComponentsChunk = (
-  loadCensusComponents: LoadCensusChunk = () => import('./public-components')
+  loadCensusComponents: LoadCensusChunk = () => import('./census-view')
 ): Promise<unknown> => loadCensusComponents();
 
 export const preloadCensusRegisterContentChunk = (

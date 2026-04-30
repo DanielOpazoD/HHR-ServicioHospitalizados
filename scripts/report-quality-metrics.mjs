@@ -26,7 +26,7 @@ const IMPORT_REGEX =
 
 const ALLOWED_SKIP_FILES = new Set(['src/tests/security/firestore-rules.test.ts']);
 const GOVERNED_FEATURE_PUBLIC_IMPORTS = new Set([
-  'src/views/LazyViews.ts|@/features/census/public-components',
+  'src/views/LazyViews.ts|@/features/census/census-view',
   'src/components/layout/app-content/AppContentOverlays.tsx|@/features/census/public-components',
 ]);
 const FEATURE_PUBLIC_BOUNDARIES = [

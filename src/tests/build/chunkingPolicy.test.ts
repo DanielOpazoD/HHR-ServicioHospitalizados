@@ -122,6 +122,20 @@ describe('chunkingPolicy', () => {
     }
   });
 
+  it('loads the initial census route from a dedicated view entrypoint instead of the modal-heavy public-components barrel', () => {
+    const lazyViewsSource = readSource('src/views/LazyViews.ts');
+    const censusPublicSource = readSource('src/features/census/public.ts');
+    const censusViewBlock = lazyViewsSource.slice(
+      lazyViewsSource.indexOf('export const CensusView'),
+      lazyViewsSource.indexOf('export const CensusEmailConfigModal')
+    );
+
+    expect(lazyViewsSource).toContain('@/features/census/census-view');
+    expect(censusViewBlock).not.toContain('@/features/census/public-components');
+    expect(censusPublicSource).toContain("import('./census-view')");
+    expect(censusPublicSource).not.toContain("import('./public-components')");
+  });
+
   it('splits heavyweight vendor capabilities by runtime concern', () => {
     expect(chunkForModule('/repo/node_modules/firebase/auth/dist/index.esm.js')).toBe(
       'vendor-firebase-core'

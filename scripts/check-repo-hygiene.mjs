@@ -24,6 +24,10 @@ const FEATURE_PUBLIC_BOUNDARIES = [
     // light public surface. Listed callers must load it via dynamic import.
     allowedSubpathImports: [
       {
+        importPath: '@/features/census/census-view',
+        callers: new Set(['src/views/LazyViews.ts']),
+      },
+      {
         importPath: '@/features/census/public-components',
         callers: new Set([
           'src/views/LazyViews.ts',

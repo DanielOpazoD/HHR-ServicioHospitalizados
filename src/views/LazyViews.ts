@@ -4,11 +4,10 @@
  */
 import { lazyWithRetry } from '@/utils/lazyWithRetry';
 
-// Census module heavy components (prefetch for faster navigation).
-// Load from public-components so the app-authenticated-shell chunk does
-// not pull in the CensusView tree through the light controller barrel.
+// Census route entrypoint. Keep it narrower than the modal-heavy
+// public-components barrel so /censo can show the table sooner.
 export const CensusView = lazyWithRetry(() =>
-  import('@/features/census/public-components').then(module => ({
+  import('@/features/census/census-view').then(module => ({
     default: module.CensusView,
   }))
 );
