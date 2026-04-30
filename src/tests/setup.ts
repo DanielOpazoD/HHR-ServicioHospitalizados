@@ -22,7 +22,7 @@ const allowedNoisyConsolePatterns = [
   'DEBUG: copyPatientToDate called',
   'DEBUG: sourcePatient',
   'Validation Errors:',
-  'CSV Import not fully implemented.',
+  '[ExportService] CSV import is not fully implemented.',
   'Failed to fetch audit logs for date:',
   'Error loading table config:',
   'Error fetching nurse catalog from Firestore:',
@@ -61,6 +61,16 @@ const allowedNoisyConsolePatterns = [
   '[FirestoreCatalogService] Error preparing TENS catalog subscription',
   '[NetworkUtils] Retrying failed network operation',
   '[TransferViewStates] Error generating transfer documents',
+  '[useAuthState] Logout due to inactivity',
+  '[LoginPage] Google sign-in failed',
+  '[PrintTemplateRepository] Error fetching template',
+  '[PrintTemplateRepository] Error subscribing to template',
+  '[FirestoreWrites] Firestore write failed:',
+  '[CensusAccessService] Error getting authorized emails',
+  '[CensusAccessService] Error checking email authorization',
+  '[JsonImport] JSON import failed',
+  '[ClinicalDocumentPdfService] Print-style generation failed',
+  '[PatientRowAsyncAction] Async patient row action failed silently',
 ];
 
 const shouldFilterConsoleMessage = (args: unknown[]) => {
