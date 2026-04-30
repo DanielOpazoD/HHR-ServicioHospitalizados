@@ -1,38 +1,22 @@
 import { useCallback } from 'react';
-import type { GlobalEmailRecipientList } from '@/services/email/emailRecipientListService';
-import type { CensusEmailBrowserRuntime } from '@/hooks/controllers/censusEmailBrowserRuntimeController';
-import { resolveRecipientSelectionRuntimeState } from '@/hooks/controllers/censusEmailRecipientRuntimeController';
 import type { RecipientRuntimeMutationSpec } from '@/hooks/controllers/censusEmailRecipientMutationActionController';
-import { executeRecipientRuntimeMutationSpec } from '@/hooks/controllers/censusEmailRecipientMutationRunner';
+import {
+  applyRecipientListSelection,
+  runRecipientRuntimeMutation as runRecipientRuntimeMutationController,
+  type UseCensusEmailRecipientListsParams,
+  type UseCensusEmailRecipientListsReturn,
+} from '@/hooks/controllers/censusEmailRecipientListsController';
 import { useCensusEmailRecipientBootstrapEffect } from '@/hooks/useCensusEmailRecipientBootstrapEffect';
 import { useCensusEmailRecipientDeferredSyncEffect } from '@/hooks/useCensusEmailRecipientDeferredSyncEffect';
 import { useCensusEmailRecipientMutationActions } from '@/hooks/useCensusEmailRecipientMutationActions';
 import { useCensusEmailRecipientPersistenceEffect } from '@/hooks/useCensusEmailRecipientPersistenceEffect';
 import { useCensusEmailRecipientRuntimeState } from '@/hooks/useCensusEmailRecipientRuntimeState';
 
-interface UseCensusEmailRecipientListsParams {
-  canManageGlobalRecipientLists: boolean;
-  browserRuntime: CensusEmailBrowserRuntime;
-  bootstrapEnabled: boolean;
-  enabled: boolean;
-  user: { uid?: string; email?: string | null } | null;
-}
-
-export interface UseCensusEmailRecipientListsReturn {
-  recipients: string[];
-  setRecipients: (recipients: string[]) => void;
-  recipientLists: GlobalEmailRecipientList[];
-  activeRecipientListId: string;
-  setActiveRecipientListId: (listId: string) => void;
-  createRecipientList: (name: string) => Promise<void>;
-  renameActiveRecipientList: (name: string) => Promise<void>;
-  deleteRecipientList: (listId: string) => Promise<void>;
-  recipientsSource: 'firebase' | 'local' | 'default';
-  isRecipientsSyncing: boolean;
-  recipientsSyncError: string | null;
-}
-
 export { resolveStoredRecipientSelection } from '@/hooks/controllers/censusEmailRecipientSelectionController';
+export type {
+  UseCensusEmailRecipientListsParams,
+  UseCensusEmailRecipientListsReturn,
+} from '@/hooks/controllers/censusEmailRecipientListsController';
 
 export const useCensusEmailRecipientLists = ({
   canManageGlobalRecipientLists,
@@ -58,17 +42,13 @@ export const useCensusEmailRecipientLists = ({
 
   const selectActiveRecipientList = useCallback(
     (listId: string) => {
-      const nextState = resolveRecipientSelectionRuntimeState({
+      applyRecipientListSelection({
         canManageGlobalRecipientLists,
         recipientLists,
         listId,
+        applyRecipientRuntimeState,
+        setActiveRecipientListId,
       });
-      if (!nextState.shouldApplyActiveList) {
-        setActiveRecipientListId(nextState.activeRecipientListId);
-        return;
-      }
-
-      applyRecipientRuntimeState(nextState.runtimeState);
     },
     [
       applyRecipientRuntimeState,
@@ -80,10 +60,9 @@ export const useCensusEmailRecipientLists = ({
 
   const runRecipientRuntimeMutation = useCallback(
     async <T>(spec: RecipientRuntimeMutationSpec<T>) => {
-      await executeRecipientRuntimeMutationSpec(spec, {
-        applyRuntimeState: applyRecipientRuntimeState,
-        resolveRuntimeState: spec.resolveRuntimeState,
-        setRecipientsSyncing: setIsRecipientsSyncing,
+      await runRecipientRuntimeMutationController(spec, {
+        applyRecipientRuntimeState,
+        setIsRecipientsSyncing,
         setRecipientsSyncError,
       });
     },
