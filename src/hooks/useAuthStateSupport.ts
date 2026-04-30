@@ -2,12 +2,10 @@ import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTy
 import { useEffect } from 'react';
 import type { AuthSessionState } from '@/types/authSessionTypes';
 import type { AuthUser } from '@/types/authRoleTypes';
-import { defaultAuditPort } from '@/application/ports/auditPort';
 import {
   clearAuthBootstrapPending,
   getAuthBootstrapPendingAgeMs,
   isAuthBootstrapPending,
-  restoreAuthBootstrapReturnTo,
 } from '@/services/auth/authBootstrapState';
 import { clearRecentManualLogout, hasRecentManualLogout } from '@/services/auth/authLogoutState';
 import {
@@ -34,8 +32,8 @@ import {
   shouldDeferUnauthenticatedSessionState,
   shouldIgnoreTransientUnauthenticatedBootstrapEvent,
   shouldResolveAuthBootstrapImmediatelyAsUnauthenticated,
-  shouldLogSessionLogin,
 } from '@/hooks/controllers/authBootstrapController';
+import { applyResolvedBootstrapSessionState } from '@/hooks/controllers/authResolvedBootstrapSessionController';
 export {
   createHandleLogout,
   getAuthBootstrapTimeoutMs,
@@ -44,39 +42,6 @@ export {
   useInactivityLogout,
   useOnlineStatus,
 } from '@/hooks/useAuthStateSessionSupport';
-
-const applyResolvedBootstrapSessionState = ({
-  sessionState,
-  setSessionState,
-  setAuthLoading,
-}: {
-  sessionState: AuthSessionState;
-  setSessionState: (sessionState: AuthSessionState) => void;
-  setAuthLoading: (value: boolean) => void;
-}): void => {
-  markPerf('auth-bootstrap:apply-session', sessionState.status);
-  if (isAuthBootstrapPending()) {
-    restoreAuthBootstrapReturnTo();
-  }
-  if (
-    isAuthenticatedAuthSessionState(sessionState) &&
-    shouldLogSessionLogin({
-      sessionState,
-      hasLoggedThisSession:
-        typeof sessionStorage !== 'undefined' &&
-        Boolean(sessionStorage.getItem('hhr_logged_this_session')),
-    })
-  ) {
-    clearRecentManualLogout();
-    void defaultAuditPort.logUserLogin(sessionState.user.email as string);
-    sessionStorage.setItem('hhr_logged_this_session', 'true');
-  } else if (isAuthenticatedAuthSessionState(sessionState)) {
-    clearRecentManualLogout();
-  }
-  setSessionState(sessionState);
-  setAuthLoading(false);
-  clearAuthBootstrapPending();
-};
 
 export const subscribeToResolvedAuthState = async ({
   resolveRedirectAuthSessionOutcome,
