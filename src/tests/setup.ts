@@ -13,6 +13,7 @@ const noisyConsolePatterns = [
   '[Repository DEBUG]',
   '[Repository]',
   '[ErrorService]',
+  '[ErrorServiceSinks] Captured error service log',
   '[networkUtils]',
   '[BaseStorage]',
   '[OptimisticUpdate]',
@@ -42,6 +43,16 @@ const noisyConsolePatterns = [
   'Failed to fetch audit logs from Firestore:',
   'Error generating documents:',
   'Error in forceAISearch:',
+  'Invariant repair applied on save',
+  'Invariant repair applied on updatePartial',
+  '[FirestoreQueries] Firestore query failed: getRecord',
+  '[DailyRecordWriteRepository] Firestore sync failed',
+  '[DailyRecordWriteRepository] Firestore partial update failed',
+  '[BootstrapRuntime] Firebase bootstrap failed',
+  '[BootstrapRuntime] Bootstrap paused for recovery reload',
+  '[BootstrapRuntime] Detected local browser storage corruption during bootstrap',
+  '[DailyRecordReadRepository] Remote fetch failed',
+  '[SingleFlightAsyncCommand] Single-flight async command failed',
 ];
 
 const shouldFilterConsoleMessage = (args: unknown[]) => {
