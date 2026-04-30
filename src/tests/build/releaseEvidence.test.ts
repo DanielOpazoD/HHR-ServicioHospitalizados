@@ -14,6 +14,7 @@ const trackedReports = [
   'reports/quality-metrics.json',
   'reports/system-confidence.json',
   'reports/operational-health.json',
+  'reports/release-confidence-matrix.json',
   'reports/release-readiness-scorecard.json',
   'reports/maintenance-debt-scorecard.json',
 ];
@@ -48,6 +49,15 @@ describe('release evidence guardrail', () => {
 
     expect(collectReleaseEvidenceIssues(root)).toContain(
       'reports/quality-metrics.json was generated with worktree=dirty.'
+    );
+  });
+
+  it('requires the release confidence matrix to be present in the evidence pack', () => {
+    const root = makeRoot({ gitSha: 'abc123', gitDirty: false });
+    fs.rmSync(path.join(root, 'reports/release-confidence-matrix.json'));
+
+    expect(collectReleaseEvidenceIssues(root)).toContain(
+      'reports/release-confidence-matrix.json is missing.'
     );
   });
 });
