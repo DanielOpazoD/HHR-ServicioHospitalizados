@@ -21,6 +21,16 @@ describe('test setup console noise filter', () => {
       '[BootstrapRuntime] Detected local browser storage corruption during bootstrap'
     );
     expect(setup).toContain('[DailyRecordReadRepository] Remote fetch failed');
+    expect(setup).toContain('[usePatientAutocomplete] Error fetching patient suggestion');
+    expect(setup).toContain('[RoleManagement] Legacy role claim sync warning');
+    expect(setup).toContain('[RoleManagement] Role claim sync warning');
+    expect(setup).toContain('[DailyRecordRepositorySyncService] Sync failed');
+    expect(setup).toContain(
+      '[FirestoreCatalogService] Error fetching nurse catalog from Firestore'
+    );
+    expect(setup).toContain('[FirestoreCatalogService] Error preparing TENS catalog subscription');
+    expect(setup).toContain('[NetworkUtils] Retrying failed network operation');
+    expect(setup).toContain('[TransferViewStates] Error generating transfer documents');
 
     expect(setup).not.toContain("'Firestore query failed'");
     expect(setup).not.toContain("'Firebase bootstrap failed'");

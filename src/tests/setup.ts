@@ -53,6 +53,14 @@ const noisyConsolePatterns = [
   '[BootstrapRuntime] Detected local browser storage corruption during bootstrap',
   '[DailyRecordReadRepository] Remote fetch failed',
   '[SingleFlightAsyncCommand] Single-flight async command failed',
+  '[usePatientAutocomplete] Error fetching patient suggestion',
+  '[RoleManagement] Legacy role claim sync warning',
+  '[RoleManagement] Role claim sync warning',
+  '[DailyRecordRepositorySyncService] Sync failed',
+  '[FirestoreCatalogService] Error fetching nurse catalog from Firestore',
+  '[FirestoreCatalogService] Error preparing TENS catalog subscription',
+  '[NetworkUtils] Retrying failed network operation',
+  '[TransferViewStates] Error generating transfer documents',
 ];
 
 const shouldFilterConsoleMessage = (args: unknown[]) => {
