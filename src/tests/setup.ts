@@ -7,7 +7,7 @@ import * as matchers from '@testing-library/jest-dom/matchers';
 // Extend Vitest's expect with jest-dom matchers
 expect.extend(matchers);
 
-const noisyConsolePatterns = [
+const allowedNoisyConsolePatterns = [
   '[IndexedDB]',
   '[Migration]',
   '[Repository DEBUG]',
@@ -65,7 +65,7 @@ const noisyConsolePatterns = [
 
 const shouldFilterConsoleMessage = (args: unknown[]) => {
   const message = args.map(arg => String(arg)).join(' ');
-  return noisyConsolePatterns.some(pattern => message.includes(pattern));
+  return allowedNoisyConsolePatterns.some(pattern => message.includes(pattern));
 };
 
 const wrapConsole = (method: 'log' | 'warn' | 'error' | 'info' | 'debug') => {
