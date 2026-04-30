@@ -18,6 +18,7 @@ vi.mock('../../services/admin/attributionService', () => ({
 
 describe('useBedAudit', () => {
   const mockLogDebouncedEvent = vi.fn();
+  const mockLogEvent = vi.fn();
   const mockLogPatientAdmission = vi.fn();
   const buildCudyr = (overrides: Partial<CudyrScore> = {}): CudyrScore => ({
     changeClothes: 0,
@@ -84,6 +85,7 @@ describe('useBedAudit', () => {
     vi.clearAllMocks();
     vi.mocked(useAuditContext).mockReturnValue({
       logDebouncedEvent: mockLogDebouncedEvent,
+      logEvent: mockLogEvent,
       logPatientAdmission: mockLogPatientAdmission,
       userId: 'user123',
     } as unknown as ReturnType<typeof useAuditContext>);
@@ -154,6 +156,33 @@ describe('useBedAudit', () => {
         changes: { status: { old: PatientStatus.ESTABLE, new: PatientStatus.DE_CUIDADO } },
       }),
       '',
+      '2026-01-19'
+    );
+  });
+
+  it('should log specialty changes through audit context without legacy audit service imports', () => {
+    const { result } = renderHook(() => useBedAudit(mockRecord));
+    const oldPatient = buildPatient({
+      patientName: 'John',
+      rut: '123-4',
+      specialty: Specialty.MEDICINA,
+    });
+
+    result.current.auditPatientChange('B1', 'specialty', oldPatient, Specialty.CIRUGIA);
+
+    expect(mockLogEvent).toHaveBeenCalledWith(
+      'PATIENT_SPECIALTY_CHANGED',
+      'patient',
+      'B1',
+      expect.objectContaining({
+        patientName: 'John',
+        bedId: 'B1',
+        field: 'specialty',
+        changes: {
+          specialty: { old: Specialty.MEDICINA, new: Specialty.CIRUGIA },
+        },
+      }),
+      '123-4',
       '2026-01-19'
     );
   });

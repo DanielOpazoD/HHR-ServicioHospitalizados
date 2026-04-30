@@ -6,11 +6,11 @@ import type {
   PersistDailyRecord,
 } from '@/application/shared/dailyRecordCoreContracts';
 import type { PatientData } from '@/types/domain/patient';
-import * as auditService from '@/services/admin/auditService';
+import { useAuditContext } from '@/context/AuditContext';
 
 // Mock dependencies
-vi.mock('@/services/admin/auditService', () => ({
-  logPatientDischarge: vi.fn(),
+vi.mock('@/context/AuditContext', () => ({
+  useAuditContext: vi.fn(),
 }));
 
 vi.mock('@/services/factories/patientFactory', () => ({
@@ -25,9 +25,13 @@ vi.mock('@/services/factories/patientFactory', () => ({
 describe('usePatientDischarges', () => {
   let mockRecord: DailyRecord;
   let mockSaveAndUpdate: PersistDailyRecord;
+  const mockLogPatientDischarge = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useAuditContext).mockReturnValue({
+      logPatientDischarge: mockLogPatientDischarge,
+    } as unknown as ReturnType<typeof useAuditContext>);
     mockSaveAndUpdate = vi.fn().mockResolvedValue(undefined) as PersistDailyRecord;
     mockRecord = {
       date: '2024-12-28',
@@ -93,7 +97,7 @@ describe('usePatientDischarges', () => {
     });
 
     expect(mockSaveAndUpdate).toHaveBeenCalled();
-    expect(auditService.logPatientDischarge).toHaveBeenCalled();
+    expect(mockLogPatientDischarge).toHaveBeenCalled();
   });
 
   it('should update discharge', () => {

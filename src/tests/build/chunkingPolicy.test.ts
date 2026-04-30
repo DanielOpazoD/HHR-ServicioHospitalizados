@@ -104,6 +104,24 @@ describe('chunkingPolicy', () => {
     expect(offenders).toEqual([]);
   });
 
+  it('keeps audit write/fetch use cases out of the authenticated shell startup path', () => {
+    const useAuditSource = readSource('src/hooks/useAudit.ts');
+
+    expect(useAuditSource).not.toMatch(
+      /import\s+\{[\s\S]*execute(?:WriteAuditEvent|FetchAuditLogs)[\s\S]*\}\s+from ['"]@\/application\/audit\//
+    );
+  });
+
+  it('keeps census runtime hooks off legacy audit services during startup', () => {
+    const guardedFiles = ['src/hooks/useBedAudit.ts', 'src/hooks/usePatientMovementAudit.ts'];
+
+    for (const file of guardedFiles) {
+      expect(readSource(file), file).not.toMatch(
+        /from ['"]@\/services\/admin\/audit(?:Service|DomainLoggers)['"]/
+      );
+    }
+  });
+
   it('splits heavyweight vendor capabilities by runtime concern', () => {
     expect(chunkForModule('/repo/node_modules/firebase/auth/dist/index.esm.js')).toBe(
       'vendor-firebase-core'
