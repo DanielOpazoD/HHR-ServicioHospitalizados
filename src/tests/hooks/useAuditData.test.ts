@@ -193,6 +193,7 @@ describe('useAuditData', () => {
       const { result } = renderHook(() => useAuditData());
 
       await waitFor(() => expect(result.current.loading).toBe(false));
+      await waitFor(() => expect(result.current.displayLogs).toHaveLength(3));
 
       expect(result.current.currentPage).toBe(1);
       expect(result.current.totalPages).toBe(1); // 3 logs, 50 per page

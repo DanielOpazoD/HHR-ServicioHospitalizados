@@ -26,7 +26,7 @@ class MockImage {
   onerror: (() => void) | null = null;
 
   set src(_value: string) {
-    window.setTimeout(() => this.onload?.(), 0);
+    queueMicrotask(() => this.onload?.());
   }
 }
 
