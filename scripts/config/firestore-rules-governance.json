@@ -4,6 +4,7 @@
     "file": "firestore.rules",
     "ownerAreaId": "sync",
     "maxLines": 1050,
+    "minRemainingLines": 90,
     "runbook": "docs/CI_GATES_AND_FAILURE_RUNBOOKS.md"
   },
   "fragments": [

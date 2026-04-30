@@ -56,6 +56,10 @@ export const buildFirestoreRulesGovernanceReport = (root, options = {}) => {
   const generatedLines = countLines(generatedFile);
   const maxGeneratedLines =
     typeof generatedConfig.maxLines === 'number' ? generatedConfig.maxLines : null;
+  const minRemainingGeneratedLines =
+    typeof generatedConfig.minRemainingLines === 'number'
+      ? generatedConfig.minRemainingLines
+      : null;
   const generatedOwnerAreaId =
     typeof generatedConfig.ownerAreaId === 'string' ? generatedConfig.ownerAreaId.trim() : '';
 
@@ -69,6 +73,15 @@ export const buildFirestoreRulesGovernanceReport = (root, options = {}) => {
     issues.push(
       `${generatedFile} has ${generatedLines} lines; keep generated rules within the governed ${maxGeneratedLines} line budget.`
     );
+  }
+
+  if (typeof maxGeneratedLines === 'number' && typeof minRemainingGeneratedLines === 'number') {
+    const remainingLines = maxGeneratedLines - generatedLines;
+    if (remainingLines < minRemainingGeneratedLines) {
+      issues.push(
+        `${generatedFile} has ${remainingLines} remaining lines; keep at least ${minRemainingGeneratedLines} lines of governed headroom.`
+      );
+    }
   }
 
   if (!generatedOwnerAreaId) {
@@ -142,6 +155,7 @@ export const buildFirestoreRulesGovernanceReport = (root, options = {}) => {
       file: generatedFile,
       lines: generatedLines,
       maxLines: maxGeneratedLines,
+      minRemainingLines: minRemainingGeneratedLines,
       remainingLines:
         typeof maxGeneratedLines === 'number' ? maxGeneratedLines - generatedLines : null,
       ownerAreaId: generatedOwnerAreaId || null,
@@ -154,4 +168,3 @@ export const buildFirestoreRulesGovernanceReport = (root, options = {}) => {
     issues,
   };
 };
-

@@ -8,6 +8,7 @@ describe('firestoreRulesGovernanceSupport', () => {
       file: 'firestore.rules',
       ownerAreaId: 'sync',
       maxLines: 4,
+      minRemainingLines: 1,
       runbook: 'docs/CI_GATES_AND_FAILURE_RUNBOOKS.md',
     },
     fragments: [
@@ -43,6 +44,7 @@ describe('firestoreRulesGovernanceSupport', () => {
       file: 'firestore.rules',
       lines: 3,
       maxLines: 4,
+      minRemainingLines: 1,
       remainingLines: 1,
       ownerAreaId: 'sync',
     });
@@ -56,6 +58,7 @@ describe('firestoreRulesGovernanceSupport', () => {
           ...baseConfig.generatedRules,
           ownerAreaId: 'unknown-owner',
           maxLines: 2,
+          minRemainingLines: 2,
         },
         fragments: [
           {
@@ -77,6 +80,7 @@ describe('firestoreRulesGovernanceSupport', () => {
 
     expect(report.issues).toEqual([
       'firestore.rules has 3 lines; keep generated rules within the governed 2 line budget.',
+      'firestore.rules has -1 remaining lines; keep at least 2 lines of governed headroom.',
       'firestore.rules references unknown ownerAreaId unknown-owner.',
       'rules/firestore/00-auth-and-role-helpers.rules references unknown ownerAreaId missing-owner.',
       'rules/firestore/40-hospitals.rules is missing ownership in scripts/config/firestore-rules-governance.json.',

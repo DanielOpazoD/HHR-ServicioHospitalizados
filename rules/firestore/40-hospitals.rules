@@ -1,23 +1,14 @@
-    // 2.1 HOSPITALS COLLECTION (Main hierarchy)
-    // ============================================
     match /hospitals/{hospitalId} {
-      // Hospital document itself
       allow read: if canReadClinicalData();
       allow write: if isAdmin();
       
-      // ----------------------------------------
-      // DAILY RECORDS (Census Data)
-      // ----------------------------------------
       match /dailyRecords/{date} {
         allow read: if canReadClinicalData();
-        // Create: Admin or Nurse
         allow create: if canEdit();
-        // Update: Admin siempre, Enfermero en ventana, o Médico solo campos de firma
         allow update: if canUpdatePersistedDailyRecord();
         // Delete: Admin only (nurses must not hard-delete census records)
         allow delete: if isAdmin();
         
-        // History subcollection
         match /history/{historyId} {
           allow read: if canReadClinicalData();
           allow create: if canCreateEditableHospitalDocument();
@@ -30,35 +21,22 @@
         allow read, write: if isAdmin();
       }
       
-      // ----------------------------------------
-      // CLINICAL DOCUMENTS
-      // ----------------------------------------
       match /clinicalDocuments/{documentId} {
         allow read: if canReadClinicalData();
         allow create, update: if canWriteClinicalDocument();
         allow delete: if canDeleteClinicalDocument();
       }
 
-      // ----------------------------------------
-      // CLINICAL DOCUMENT TEMPLATES
-      // ----------------------------------------
       match /clinicalDocumentTemplates/{templateId} {
         allow read: if canReadClinicalData();
         allow write: if isAdmin();
       }
 
-      // ----------------------------------------
-      // SETTINGS (Nurses, TENS, TableConfig)
-      // ----------------------------------------
       match /settings/{settingId} {
         allow read: if canReadClinicalData();
-        // Allow both Admins and Nurses to update catalogs and settings
         allow write: if canEdit();
       }
 
-      // ----------------------------------------
-      // REMINDERS / STAFF NOTICES
-      // ----------------------------------------
       match /reminders/{reminderId} {
         allow read: if canReadClinicalData();
         allow create, update, delete: if isAdmin();
@@ -70,17 +48,11 @@
         }
       }
       
-      // ----------------------------------------
-      // EXPORT PASSWORDS
-      // ----------------------------------------
       match /exportPasswords/{passwordId} {
         allow read: if canReadClinicalData();
         allow write: if isAdmin();
       }
       
-      // ----------------------------------------
-      // AUDIT LOGS (Hospital-level)
-      // ----------------------------------------
       match /auditLogs/{logId} {
         allow read: if canReadAppendOnlyOperationalLog();
         allow create: if canCreateAppendOnlyOperationalLogEntry();
@@ -88,75 +60,51 @@
         allow update, delete: if false;
       }
       
-      // ----------------------------------------
-      // TRANSFER REQUESTS (Patient transfers)
-      // ----------------------------------------
       match /transferRequests/{transferId} {
         allow read: if canReadClinicalData();
         allow create, update: if canEdit();
         allow delete: if isAdmin();
       }
       
-      // ----------------------------------------
-      // TRANSFER HISTORY (Completed transfers)
-      // ----------------------------------------
       match /transferHistory/{transferId} {
         allow read: if canReadClinicalData();
         allow create: if canCreateEditableHospitalDocument();
         allow update, delete: if canAdminMaintainHospitalDocument();
       }
       
-      // ----------------------------------------
       match /bookmarks/{bookmarkId} {
         allow read: if canReadClinicalData();
         allow write: if canReadClinicalData();
       }
 
-      // ----------------------------------------
-      // BACKUP FILES (Cloud backup archives)
-      // ----------------------------------------
       match /backupFiles/{fileId} {
         allow read: if canReadClinicalData();
         allow create: if canCreateEditableHospitalDocument();
         allow update, delete: if canAdminMaintainHospitalDocument();
       }
 
-      // ----------------------------------------
-      // PATIENT MASTER INDEX
-      // ----------------------------------------
       match /patients/{rut} {
         allow read: if canReadClinicalData();
         allow write: if canEdit();
       }
 
-      // ----------------------------------------
-      // WOUND CARE: INFORMED CONSENTS
-      // ----------------------------------------
       match /woundCareConsents/{consentId} {
         allow read: if canReadClinicalData();
         allow create, update: if canEdit();
         allow delete: if isAdmin();
       }
 
-      // ----------------------------------------
-      // WOUND CARE: PHOTO METADATA
-      // ----------------------------------------
       match /woundCarePhotos/{photoId} {
         allow read: if canReadClinicalData();
         allow create, update: if canEdit();
         allow delete: if isAdmin();
       }
 
-      // ----------------------------------------
-      // FUNCTIONS TELEMETRY (Observability sink)
       // Append-only. Writes mostly come from server-side Admin SDK (bypasses rules).
       // Client rule mirrors auditLogs: admin read-only.
-      // ----------------------------------------
       match /functionsTelemetry/{entryId} {
         allow read: if canReadAppendOnlyOperationalLog();
         allow create: if canCreateAppendOnlyOperationalLogEntry();
         allow update, delete: if false;
       }
     }
-    
-    // ============================================
