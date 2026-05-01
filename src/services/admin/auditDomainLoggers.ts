@@ -54,38 +54,6 @@ export const logNurseHandoffModified = (
   );
 };
 
-export const logMedicalHandoffModified = (
-  bedId: string,
-  patientName: string,
-  rut: string,
-  note: string,
-  oldNote: string,
-  recordDate: string
-): Promise<void> => {
-  if (!shouldLogThrottledAction('MEDICAL_HANDOFF_MODIFIED', bedId)) {
-    return Promise.resolve();
-  }
-  markActionAsLogged('MEDICAL_HANDOFF_MODIFIED', bedId);
-
-  return logAuditEvent(
-    getCurrentUserEmail(),
-    'MEDICAL_HANDOFF_MODIFIED',
-    'patient',
-    bedId,
-    {
-      patientName,
-      bedId,
-      rut,
-      note,
-      changes: {
-        note: { old: oldNote, new: note },
-      },
-    },
-    rut,
-    recordDate
-  );
-};
-
 // Critical action: reassigning a patient to a different specialty. Never throttled.
 export const logPatientSpecialtyChanged = (
   bedId: string,

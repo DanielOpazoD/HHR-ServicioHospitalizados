@@ -25,6 +25,7 @@ import {
 } from '@/services/admin/auditViewThrottle';
 import { useClinicalDocumentAuditLoggers } from '@/hooks/controllers/useClinicalDocumentAuditLoggers';
 import { useCudyrAuditLoggers } from '@/hooks/controllers/useCudyrAuditLoggers';
+import { useHandoffAuditLoggers } from '@/hooks/controllers/useHandoffAuditLoggers';
 
 const loadWriteAuditEventUseCase = () => import('@/application/audit/writeAuditEventUseCase');
 const loadFetchAuditLogsUseCase = () => import('@/application/audit/fetchAuditLogsUseCase');
@@ -85,6 +86,14 @@ interface UseAuditReturn {
     oldContent: string,
     recordDate: string,
     authors?: string
+  ) => void;
+  logMedicalHandoffModified: (
+    bedId: string,
+    patientName: string,
+    rut: string,
+    note: string,
+    oldNote: string,
+    recordDate: string
   ) => void;
   logPatientView: (
     bedId: string,
@@ -298,26 +307,8 @@ export const useAudit = (userId: string): UseAuditReturn => {
     [logEvent]
   );
 
-  const logHandoffNovedadesModified = useCallback(
-    (shift: string, content: string, oldContent: string, recordDate: string, authors?: string) => {
-      logEvent(
-        'HANDOFF_NOVEDADES_MODIFIED',
-        'dailyRecord',
-        recordDate,
-        {
-          shift,
-          content,
-          changes: {
-            novedades: { old: oldContent, new: content },
-          },
-        },
-        undefined,
-        recordDate,
-        authors
-      );
-    },
-    [logEvent]
-  );
+  const { logHandoffNovedadesModified, logMedicalHandoffModified } =
+    useHandoffAuditLoggers(logEvent);
 
   const logPatientView = useCallback(
     (bedId: string, patientName: string, rut: string, recordDate: string, authors?: string) => {
@@ -381,6 +372,7 @@ export const useAudit = (userId: string): UseAuditReturn => {
     logDailyRecordCreated,
     logCudyrModified,
     logHandoffNovedadesModified,
+    logMedicalHandoffModified,
     logPatientView,
     logClinicalDocumentCreated,
     logClinicalDocumentEdited,

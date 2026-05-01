@@ -49,6 +49,14 @@ interface AuditContextType {
     recordDate: string,
     authors?: string
   ) => void;
+  logMedicalHandoffModified: (
+    bedId: string,
+    patientName: string,
+    rut: string,
+    note: string,
+    oldNote: string,
+    recordDate: string
+  ) => void;
   logPatientView: (
     bedId: string,
     patientName: string,

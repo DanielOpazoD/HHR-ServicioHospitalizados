@@ -20,8 +20,8 @@
       "owner": "audit",
       "kind": "legacy_audit_facade",
       "reason": "Mantener compatibilidad temporal mientras se migra auditoría legacy al pipeline useAudit / AuditContext / writeAuditEventUseCase.",
-      "remainingConsumers": "auditLegacyDomainService como fachada legacy para medical/nurse handoff. Sin imports productivos directos desde features.",
-      "retirementCriteria": "Sin imports directos productivos desde features y medical/nurse handoff disponibles en AuditContext.",
+      "remainingConsumers": "auditLegacyDomainService como fachada legacy para nurse handoff. Sin imports productivos directos desde features.",
+      "retirementCriteria": "Sin imports directos productivos desde features y nurse handoff disponible en AuditContext.",
       "target": "2026-Q2",
       "importPolicy": "restricted",
       "allowedImporters": ["src/services/admin/auditLegacyDomainService.ts"]
