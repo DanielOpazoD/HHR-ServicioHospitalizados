@@ -20,6 +20,7 @@ const SPANISH_MONTH_NAMES = [
   'Noviembre',
   'Diciembre',
 ];
+const DEFAULT_PROJECT_ID = 'hhr-serviciohospitalizados';
 
 const resolveConfiguredProjectId = () => {
   const explicitProjectId = String(process.env.GCLOUD_PROJECT || '').trim();
@@ -29,15 +30,15 @@ const resolveConfiguredProjectId = () => {
 
   const firebaseConfig = process.env.FIREBASE_CONFIG;
   if (!firebaseConfig) {
-    return 'hhr-pruebas';
+    return DEFAULT_PROJECT_ID;
   }
 
   try {
     const parsedConfig = JSON.parse(firebaseConfig);
     const projectId = String(parsedConfig?.projectId || '').trim();
-    return projectId || 'hhr-pruebas';
+    return projectId || DEFAULT_PROJECT_ID;
   } catch (_error) {
-    return 'hhr-pruebas';
+    return DEFAULT_PROJECT_ID;
   }
 };
 
