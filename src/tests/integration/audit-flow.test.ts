@@ -4,11 +4,9 @@ import type { AuditLogEntry } from '@/types/auditLogTypes';
 
 // Unmock audit services to test the REAL logic
 vi.unmock('../../services/admin/auditService');
-vi.unmock('../../services/admin/auditLegacyDomainService');
 
 import { logThrottledViewEvent } from '@/services/admin/auditService';
 import { defaultAuditPort } from '@/application/ports/auditPort';
-import { logPatientDischarge } from '@/services/admin/auditLegacyDomainService';
 import { auth } from '@/firebaseConfig';
 
 // Mock Firestore
@@ -88,7 +86,13 @@ describe('Audit Flow Integration', () => {
   });
 
   it('should log patient discharge with correct details', async () => {
-    await logPatientDischarge('BED_02', 'Maria Jara', '98765432-1', 'Vivo', '2024-12-25');
+    await defaultAuditPort.logPatientDischarge(
+      'BED_02',
+      'Maria Jara',
+      '98765432-1',
+      'Vivo',
+      '2024-12-25'
+    );
 
     expect(mockSaveAuditLog).toHaveBeenCalled();
     const call = mockSaveAuditLog.mock.calls[0][0];

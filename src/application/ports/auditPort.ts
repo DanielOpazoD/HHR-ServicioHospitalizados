@@ -5,7 +5,6 @@ import {
   logUserLogin,
   logUserLogout,
 } from '@/services/admin/auditService';
-import { logPatientDischarge, logPatientTransfer } from '@/services/admin/auditLegacyDomainService';
 import { getCurrentUserEmail } from '@/services/admin/utils/auditUtils';
 import type { AuditAction } from '@/types/auditActionTypes';
 import type { AuditLogEntry } from '@/types/auditLogTypes';
@@ -77,9 +76,25 @@ export const defaultAuditPort: AuditPort = {
       recordDate
     ),
   logPatientDischarge: async (bedId, patientName, rut, status, recordDate) =>
-    logPatientDischarge(bedId, patientName, rut, status, recordDate),
+    logAuditEvent(
+      getCurrentUserEmail(),
+      'PATIENT_DISCHARGED',
+      'discharge',
+      bedId,
+      { patientName, status, bedId, rut },
+      rut,
+      recordDate
+    ),
   logPatientTransfer: async (bedId, patientName, rut, destination, recordDate) =>
-    logPatientTransfer(bedId, patientName, rut, destination, recordDate),
+    logAuditEvent(
+      getCurrentUserEmail(),
+      'PATIENT_TRANSFERRED',
+      'transfer',
+      bedId,
+      { patientName, destination, bedId, rut },
+      rut,
+      recordDate
+    ),
   logPatientView: async (bedId, patientName, rut, recordDate) =>
     logThrottledViewEvent('VIEW_PATIENT', bedId, { patientName, bedId, rut }, recordDate),
   logUserLogin: async email => logUserLogin(email),

@@ -78,9 +78,6 @@ import {
 } from '@/services/admin/auditService';
 import { defaultAuditPort } from '@/application/ports/auditPort';
 import {
-  logPatientDischarge,
-  logPatientTransfer,
-  logPatientCleared,
   logDailyRecordDeleted,
   logDailyRecordCreated,
 } from '@/services/admin/auditLegacyDomainService';
@@ -113,19 +110,26 @@ describe('AuditService', () => {
     });
 
     it('should log patient discharge', async () => {
-      await logPatientDischarge('R1', 'Patient A', mockPatientRut, 'ALTA_DOMICILIO', mockDate);
+      await defaultAuditPort.logPatientDischarge(
+        'R1',
+        'Patient A',
+        mockPatientRut,
+        'ALTA_DOMICILIO',
+        mockDate
+      );
       expect(mockSaveAuditLog).toHaveBeenCalled();
       expect(mockSaveAuditLog.mock.calls[0][0].action).toBe('PATIENT_DISCHARGED');
     });
 
     it('should log patient transfer', async () => {
-      await logPatientTransfer('R1', 'Patient A', mockPatientRut, 'OTRO_HOSPITAL', mockDate);
+      await defaultAuditPort.logPatientTransfer(
+        'R1',
+        'Patient A',
+        mockPatientRut,
+        'OTRO_HOSPITAL',
+        mockDate
+      );
       expect(mockSaveAuditLog.mock.calls[0][0].action).toBe('PATIENT_TRANSFERRED');
-    });
-
-    it('should log patient cleared', async () => {
-      await logPatientCleared('R1', 'Patient A', mockPatientRut, mockDate);
-      expect(mockSaveAuditLog.mock.calls[0][0].action).toBe('PATIENT_CLEARED');
     });
 
     it('should log daily record lifecycle', async () => {

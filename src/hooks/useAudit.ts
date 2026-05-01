@@ -237,7 +237,7 @@ export const useAudit = (userId: string): UseAuditReturn => {
         'PATIENT_DISCHARGED',
         'discharge',
         bedId,
-        { patientName, status, bedId },
+        { patientName, status, bedId, rut },
         rut,
         recordDate
       );
@@ -251,7 +251,7 @@ export const useAudit = (userId: string): UseAuditReturn => {
         'PATIENT_TRANSFERRED',
         'transfer',
         bedId,
-        { patientName, destination, bedId },
+        { patientName, destination, bedId, rut },
         rut,
         recordDate
       );

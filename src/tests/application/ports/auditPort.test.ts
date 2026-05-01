@@ -60,6 +60,58 @@ describe('defaultAuditPort', () => {
     expect(legacyAuditMocks.logPatientAdmission).not.toHaveBeenCalled();
   });
 
+  it('routes patient discharge audit through the core event logger with the legacy payload', async () => {
+    await defaultAuditPort.logPatientDischarge(
+      'R1',
+      'Paciente Test',
+      '11.111.111-1',
+      'ALTA_DOMICILIO',
+      '2026-05-01'
+    );
+
+    expect(auditServiceMocks.logAuditEvent).toHaveBeenCalledWith(
+      'doctor@hospital.cl',
+      'PATIENT_DISCHARGED',
+      'discharge',
+      'R1',
+      {
+        patientName: 'Paciente Test',
+        status: 'ALTA_DOMICILIO',
+        bedId: 'R1',
+        rut: '11.111.111-1',
+      },
+      '11.111.111-1',
+      '2026-05-01'
+    );
+    expect(legacyAuditMocks.logPatientDischarge).not.toHaveBeenCalled();
+  });
+
+  it('routes patient transfer audit through the core event logger with the legacy payload', async () => {
+    await defaultAuditPort.logPatientTransfer(
+      'R1',
+      'Paciente Test',
+      '11.111.111-1',
+      'OTRO_HOSPITAL',
+      '2026-05-01'
+    );
+
+    expect(auditServiceMocks.logAuditEvent).toHaveBeenCalledWith(
+      'doctor@hospital.cl',
+      'PATIENT_TRANSFERRED',
+      'transfer',
+      'R1',
+      {
+        patientName: 'Paciente Test',
+        destination: 'OTRO_HOSPITAL',
+        bedId: 'R1',
+        rut: '11.111.111-1',
+      },
+      '11.111.111-1',
+      '2026-05-01'
+    );
+    expect(legacyAuditMocks.logPatientTransfer).not.toHaveBeenCalled();
+  });
+
   it('routes patient view audit through the throttled core view logger', async () => {
     await defaultAuditPort.logPatientView('R1', 'Paciente Test', '11.111.111-1', '2026-05-01');
 

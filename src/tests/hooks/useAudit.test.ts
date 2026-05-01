@@ -70,6 +70,94 @@ describe('useAudit', () => {
     });
   });
 
+  it('logs patient cleared through the write use case with the legacy payload', async () => {
+    const { result } = renderHook(() => useAudit(testUserId));
+
+    act(() => {
+      result.current.logPatientCleared('R1', 'John Doe', '12345678-9', '2024-12-28');
+    });
+
+    await waitFor(() => {
+      expect(writeAuditUseCase.executeWriteAuditEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: testUserId,
+          action: 'PATIENT_CLEARED',
+          entityType: 'patient',
+          entityId: 'R1',
+          details: { patientName: 'John Doe', bedId: 'R1' },
+          patientRut: '12345678-9',
+          recordDate: '2024-12-28',
+        })
+      );
+    });
+  });
+
+  it('logs patient discharge through the write use case with the legacy payload', async () => {
+    const { result } = renderHook(() => useAudit(testUserId));
+
+    act(() => {
+      result.current.logPatientDischarge(
+        'R1',
+        'John Doe',
+        '12345678-9',
+        'ALTA_DOMICILIO',
+        '2024-12-28'
+      );
+    });
+
+    await waitFor(() => {
+      expect(writeAuditUseCase.executeWriteAuditEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: testUserId,
+          action: 'PATIENT_DISCHARGED',
+          entityType: 'discharge',
+          entityId: 'R1',
+          details: {
+            patientName: 'John Doe',
+            status: 'ALTA_DOMICILIO',
+            bedId: 'R1',
+            rut: '12345678-9',
+          },
+          patientRut: '12345678-9',
+          recordDate: '2024-12-28',
+        })
+      );
+    });
+  });
+
+  it('logs patient transfer through the write use case with the legacy payload', async () => {
+    const { result } = renderHook(() => useAudit(testUserId));
+
+    act(() => {
+      result.current.logPatientTransfer(
+        'R1',
+        'John Doe',
+        '12345678-9',
+        'OTRO_HOSPITAL',
+        '2024-12-28'
+      );
+    });
+
+    await waitFor(() => {
+      expect(writeAuditUseCase.executeWriteAuditEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: testUserId,
+          action: 'PATIENT_TRANSFERRED',
+          entityType: 'transfer',
+          entityId: 'R1',
+          details: {
+            patientName: 'John Doe',
+            destination: 'OTRO_HOSPITAL',
+            bedId: 'R1',
+            rut: '12345678-9',
+          },
+          patientRut: '12345678-9',
+          recordDate: '2024-12-28',
+        })
+      );
+    });
+  });
+
   it('should log daily record created via use case', async () => {
     const { result } = renderHook(() => useAudit(testUserId));
 

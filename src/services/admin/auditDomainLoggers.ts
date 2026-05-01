@@ -29,59 +29,6 @@ const shouldLogCudyrAction = (bedId: string): boolean => {
   return elapsed >= 15 * 60 * 1000;
 };
 
-export const logPatientDischarge = (
-  bedId: string,
-  patientName: string,
-  rut: string,
-  status: string,
-  recordDate: string
-): Promise<void> => {
-  return logAuditEvent(
-    getCurrentUserEmail(),
-    'PATIENT_DISCHARGED',
-    'discharge',
-    bedId,
-    { patientName, status, bedId, rut },
-    rut,
-    recordDate
-  );
-};
-
-export const logPatientTransfer = (
-  bedId: string,
-  patientName: string,
-  rut: string,
-  destination: string,
-  recordDate: string
-): Promise<void> => {
-  return logAuditEvent(
-    getCurrentUserEmail(),
-    'PATIENT_TRANSFERRED',
-    'transfer',
-    bedId,
-    { patientName, destination, bedId, rut },
-    rut,
-    recordDate
-  );
-};
-
-export const logPatientCleared = (
-  bedId: string,
-  patientName: string,
-  rut: string,
-  recordDate: string
-): Promise<void> => {
-  return logAuditEvent(
-    getCurrentUserEmail(),
-    'PATIENT_CLEARED',
-    'patient',
-    bedId,
-    { patientName, bedId },
-    rut,
-    recordDate
-  );
-};
-
 export const logDailyRecordDeleted = (date: string): Promise<void> => {
   return logAuditEvent(
     getCurrentUserEmail(),

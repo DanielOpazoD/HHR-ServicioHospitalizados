@@ -5,7 +5,4 @@ export {
   logHandoffNovedadesModified,
   logMedicalHandoffModified,
   logNurseHandoffModified,
-  logPatientCleared,
-  logPatientDischarge,
-  logPatientTransfer,
 } from './auditDomainLoggers';
