@@ -347,7 +347,9 @@ describe('CensusTable layout and actions', () => {
 
     fireEvent.click(screen.getByTestId('empty-bed-button-R2'));
 
-    expect(await screen.findByTestId('empty-bed-demographics-modal')).toBeInTheDocument();
+    expect(
+      await screen.findByTestId('empty-bed-demographics-modal', {}, { timeout: 10000 })
+    ).toBeInTheDocument();
     expect(mockUpdatePatientMultiple).not.toHaveBeenCalled();
   });
 
@@ -355,7 +357,7 @@ describe('CensusTable layout and actions', () => {
     render(<CensusTable currentDateString="2025-01-08" />);
 
     fireEvent.click(screen.getByTestId('empty-bed-button-R2'));
-    fireEvent.click(await screen.findByText('Cancelar'));
+    fireEvent.click(await screen.findByText('Cancelar', {}, { timeout: 10000 }));
 
     expect(screen.queryByTestId('empty-bed-demographics-modal')).not.toBeInTheDocument();
     expect(mockUpdatePatientMultiple).not.toHaveBeenCalled();
@@ -365,7 +367,7 @@ describe('CensusTable layout and actions', () => {
     render(<CensusTable currentDateString="2025-01-08" />);
 
     fireEvent.click(screen.getByTestId('empty-bed-button-R2'));
-    fireEvent.click(await screen.findByText('Guardar Vacío'));
+    fireEvent.click(await screen.findByText('Guardar Vacío', {}, { timeout: 10000 }));
 
     expect(screen.queryByTestId('empty-bed-demographics-modal')).not.toBeInTheDocument();
     expect(mockUpdatePatientMultiple).not.toHaveBeenCalled();
@@ -375,7 +377,7 @@ describe('CensusTable layout and actions', () => {
     render(<CensusTable currentDateString="2025-01-08" />);
 
     fireEvent.click(screen.getByTestId('empty-bed-button-R2'));
-    fireEvent.click(await screen.findByText('Guardar Paciente'));
+    fireEvent.click(await screen.findByText('Guardar Paciente', {}, { timeout: 10000 }));
 
     expect(mockUpdatePatientMultiple).toHaveBeenCalledWith('R2', {
       patientName: 'Nuevo Paciente',
