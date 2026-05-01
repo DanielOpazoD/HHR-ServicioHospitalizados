@@ -46,4 +46,25 @@ describe('netlify security headers', () => {
     expect(content).toContain('for = "/registerSW.js"');
     expect(content).toContain('Cache-Control = "no-cache, no-store, must-revalidate"');
   });
+
+  it('keeps PWA registration external so the strict SPA CSP can block inline scripts', () => {
+    const content = readFileSync('vite.config.ts', 'utf-8');
+
+    expect(content).toContain("injectRegister: 'script'");
+    expect(content).not.toContain("injectRegister: 'auto'");
+  });
+
+  it('loads the startup surface script as an external asset under the strict SPA CSP', () => {
+    const content = readFileSync('index.html', 'utf-8');
+
+    expect(content).toContain('<script src="/startup-surface.js"></script>');
+    expect(content).not.toContain('<script>\n');
+  });
+
+  it('does not route third-party tracking pixels through the service worker image cache', () => {
+    const content = readFileSync('src/service-worker.ts', 'utf-8');
+
+    expect(content).toContain('url.origin === self.location.origin');
+    expect(content).toContain("request.destination === 'image'");
+  });
 });

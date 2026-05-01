@@ -104,6 +104,33 @@ export function registerFirestoreRulesAccessGroups({
       );
     });
 
+    it('Nurses can repair missing dateTimestamp while updating current records', async () => {
+      await setupDoc(admin(), recordPath, {
+        date: CURRENT_RECORD_DATE,
+      });
+
+      await assertSucceeds(
+        nurse()
+          .doc(recordPath)
+          .update({ nursesDayShift: ['Nurse1'], dateTimestamp: NOW_MS, lastUpdated: NOW_MS })
+      );
+    });
+
+    it('Nurses resolved via config/roles can update records without a token role claim', async () => {
+      await setupDoc(admin(), recordPath, {
+        date: CURRENT_RECORD_DATE,
+        dateTimestamp: NOW_MS,
+      });
+
+      await assertSucceeds(
+        firestoreForUser('user_nurse_config_only', {
+          email: 'hospitalizados@hospitalhangaroa.cl',
+        })
+          .doc(recordPath)
+          .update({ nursesDayShift: ['Nurse Config'], lastUpdated: NOW_MS })
+      );
+    });
+
     it('Nurses cannot update records outside the editing window', async () => {
       await setupDoc(admin(), recordPath, {
         date: CURRENT_RECORD_DATE,

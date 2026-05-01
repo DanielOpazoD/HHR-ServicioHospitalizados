@@ -100,7 +100,7 @@ registerRoute(
 
 // Images - Cache First
 registerRoute(
-  ({ request }) => request.destination === 'image',
+  ({ url, request }) => url.origin === self.location.origin && request.destination === 'image',
   new CacheFirst({
     cacheName: `images-${CACHE_VERSION}`,
     plugins: [new CacheableResponsePlugin({ statuses: [0, 200] })],
