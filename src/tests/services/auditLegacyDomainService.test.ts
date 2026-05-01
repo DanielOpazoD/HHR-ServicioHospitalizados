@@ -9,5 +9,6 @@ describe('auditLegacyDomainService migration surface', () => {
     expect(legacyDomainService).not.toHaveProperty('logDailyRecordCreated');
     expect(legacyDomainService).not.toHaveProperty('logDailyRecordDeleted');
     expect(legacyDomainService).not.toHaveProperty('logCudyrModified');
+    expect(legacyDomainService).not.toHaveProperty('logHandoffNovedadesModified');
   });
 });

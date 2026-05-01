@@ -1,5 +1,1 @@
-export {
-  logHandoffNovedadesModified,
-  logMedicalHandoffModified,
-  logNurseHandoffModified,
-} from './auditDomainLoggers';
+export { logMedicalHandoffModified, logNurseHandoffModified } from './auditDomainLoggers';

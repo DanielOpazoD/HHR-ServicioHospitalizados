@@ -79,6 +79,13 @@ interface UseAuditReturn {
     recordDate: string,
     authors?: string
   ) => void;
+  logHandoffNovedadesModified: (
+    shift: string,
+    content: string,
+    oldContent: string,
+    recordDate: string,
+    authors?: string
+  ) => void;
   logPatientView: (
     bedId: string,
     patientName: string,
@@ -291,6 +298,27 @@ export const useAudit = (userId: string): UseAuditReturn => {
     [logEvent]
   );
 
+  const logHandoffNovedadesModified = useCallback(
+    (shift: string, content: string, oldContent: string, recordDate: string, authors?: string) => {
+      logEvent(
+        'HANDOFF_NOVEDADES_MODIFIED',
+        'dailyRecord',
+        recordDate,
+        {
+          shift,
+          content,
+          changes: {
+            novedades: { old: oldContent, new: content },
+          },
+        },
+        undefined,
+        recordDate,
+        authors
+      );
+    },
+    [logEvent]
+  );
+
   const logPatientView = useCallback(
     (bedId: string, patientName: string, rut: string, recordDate: string, authors?: string) => {
       logEvent(
@@ -352,6 +380,7 @@ export const useAudit = (userId: string): UseAuditReturn => {
     logDailyRecordDeleted,
     logDailyRecordCreated,
     logCudyrModified,
+    logHandoffNovedadesModified,
     logPatientView,
     logClinicalDocumentCreated,
     logClinicalDocumentEdited,

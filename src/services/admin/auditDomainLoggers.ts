@@ -86,29 +86,6 @@ export const logMedicalHandoffModified = (
   );
 };
 
-export const logHandoffNovedadesModified = (
-  shift: string,
-  content: string,
-  oldContent: string,
-  recordDate: string
-): Promise<void> => {
-  return logAuditEvent(
-    getCurrentUserEmail(),
-    'HANDOFF_NOVEDADES_MODIFIED',
-    'dailyRecord',
-    recordDate,
-    {
-      shift,
-      content,
-      changes: {
-        novedades: { old: oldContent, new: content },
-      },
-    },
-    undefined,
-    recordDate
-  );
-};
-
 // Critical action: reassigning a patient to a different specialty. Never throttled.
 export const logPatientSpecialtyChanged = (
   bedId: string,
