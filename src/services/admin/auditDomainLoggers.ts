@@ -20,15 +20,6 @@ const markActionAsLogged = (action: AuditAction, entityId: string): void => {
   }
 };
 
-const shouldLogCudyrAction = (bedId: string): boolean => {
-  const stateKey = `hhr_audit_throttle_CUDYR_MODIFIED_${bedId}`;
-  if (typeof sessionStorage === 'undefined') return true;
-  const lastLogged = sessionStorage.getItem(stateKey);
-  if (!lastLogged) return true;
-  const elapsed = Date.now() - new Date(lastLogged).getTime();
-  return elapsed >= 15 * 60 * 1000;
-};
-
 export const logNurseHandoffModified = (
   bedId: string,
   patientName: string,
@@ -114,39 +105,6 @@ export const logHandoffNovedadesModified = (
       },
     },
     undefined,
-    recordDate
-  );
-};
-
-export const logCudyrModified = (
-  bedId: string,
-  patientName: string,
-  rut: string,
-  field: string,
-  value: number,
-  oldValue: number,
-  recordDate: string
-): Promise<void> => {
-  if (!shouldLogCudyrAction(bedId)) {
-    return Promise.resolve();
-  }
-  markActionAsLogged('CUDYR_MODIFIED', bedId);
-
-  return logAuditEvent(
-    getCurrentUserEmail(),
-    'CUDYR_MODIFIED',
-    'patient',
-    bedId,
-    {
-      patientName,
-      bedId,
-      lastField: field,
-      lastValue: value,
-      changes: {
-        [field]: { old: oldValue, new: value },
-      },
-    },
-    rut,
     recordDate
   );
 };

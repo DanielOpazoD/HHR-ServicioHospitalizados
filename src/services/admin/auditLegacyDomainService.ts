@@ -1,5 +1,4 @@
 export {
-  logCudyrModified,
   logHandoffNovedadesModified,
   logMedicalHandoffModified,
   logNurseHandoffModified,

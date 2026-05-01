@@ -24,6 +24,7 @@ import {
   type ViewThrottleState,
 } from '@/services/admin/auditViewThrottle';
 import { useClinicalDocumentAuditLoggers } from '@/hooks/controllers/useClinicalDocumentAuditLoggers';
+import { useCudyrAuditLoggers } from '@/hooks/controllers/useCudyrAuditLoggers';
 
 const loadWriteAuditEventUseCase = () => import('@/application/audit/writeAuditEventUseCase');
 const loadFetchAuditLogsUseCase = () => import('@/application/audit/fetchAuditLogsUseCase');
@@ -68,6 +69,16 @@ interface UseAuditReturn {
   logPatientCleared: (bedId: string, patientName: string, rut: string, recordDate: string) => void;
   logDailyRecordDeleted: (date: string) => void;
   logDailyRecordCreated: (date: string, copiedFrom?: string) => void;
+  logCudyrModified: (
+    bedId: string,
+    patientName: string,
+    rut: string,
+    field: string,
+    value: number,
+    oldValue: number,
+    recordDate: string,
+    authors?: string
+  ) => void;
   logPatientView: (
     bedId: string,
     patientName: string,
@@ -297,6 +308,7 @@ export const useAudit = (userId: string): UseAuditReturn => {
 
   const { logClinicalDocumentCreated, logClinicalDocumentEdited, logClinicalDocumentDeleted } =
     useClinicalDocumentAuditLoggers(logEvent);
+  const { logCudyrModified } = useCudyrAuditLoggers(logEvent);
 
   const logViewEvent = useCallback(
     (
@@ -339,6 +351,7 @@ export const useAudit = (userId: string): UseAuditReturn => {
     logPatientCleared,
     logDailyRecordDeleted,
     logDailyRecordCreated,
+    logCudyrModified,
     logPatientView,
     logClinicalDocumentCreated,
     logClinicalDocumentEdited,

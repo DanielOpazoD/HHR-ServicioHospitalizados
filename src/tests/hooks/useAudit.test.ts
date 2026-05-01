@@ -38,6 +38,7 @@ describe('useAudit', () => {
     expect(typeof result.current.logPatientCleared).toBe('function');
     expect(typeof result.current.logDailyRecordDeleted).toBe('function');
     expect(typeof result.current.logDailyRecordCreated).toBe('function');
+    expect(typeof result.current.logCudyrModified).toBe('function');
     expect(typeof result.current.logPatientView).toBe('function');
     expect(typeof result.current.logClinicalDocumentCreated).toBe('function');
     expect(typeof result.current.logClinicalDocumentEdited).toBe('function');
@@ -200,6 +201,99 @@ describe('useAudit', () => {
         })
       );
     });
+  });
+
+  it('logs CUDYR changes through the write use case with the legacy payload', async () => {
+    const { result } = renderHook(() => useAudit(testUserId));
+
+    act(() => {
+      result.current.logCudyrModified(
+        'R1',
+        'John Doe',
+        '12345678-9',
+        'mobilization',
+        3,
+        1,
+        '2024-12-28',
+        'Author 1'
+      );
+    });
+
+    await waitFor(() => {
+      expect(writeAuditUseCase.executeWriteAuditEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: testUserId,
+          action: 'CUDYR_MODIFIED',
+          entityType: 'patient',
+          entityId: 'R1',
+          details: {
+            patientName: 'John Doe',
+            bedId: 'R1',
+            lastField: 'mobilization',
+            lastValue: 3,
+            changes: {
+              mobilization: { old: 1, new: 3 },
+            },
+          },
+          patientRut: '12345678-9',
+          recordDate: '2024-12-28',
+          authors: 'Author 1',
+        })
+      );
+    });
+  });
+
+  it('throttles repeated CUDYR changes for 15 minutes per bed', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2024-12-28T10:00:00.000Z'));
+    const { result } = renderHook(() => useAudit(testUserId));
+
+    act(() => {
+      result.current.logCudyrModified(
+        'R1',
+        'John Doe',
+        '12345678-9',
+        'mobilization',
+        3,
+        1,
+        '2024-12-28'
+      );
+    });
+    await vi.dynamicImportSettled();
+
+    expect(writeAuditUseCase.executeWriteAuditEvent).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      vi.setSystemTime(new Date('2024-12-28T10:14:59.000Z'));
+      result.current.logCudyrModified(
+        'R1',
+        'John Doe',
+        '12345678-9',
+        'feeding',
+        4,
+        2,
+        '2024-12-28'
+      );
+    });
+    await vi.dynamicImportSettled();
+
+    expect(writeAuditUseCase.executeWriteAuditEvent).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      vi.setSystemTime(new Date('2024-12-28T10:15:00.000Z'));
+      result.current.logCudyrModified(
+        'R1',
+        'John Doe',
+        '12345678-9',
+        'feeding',
+        4,
+        2,
+        '2024-12-28'
+      );
+    });
+    await vi.dynamicImportSettled();
+
+    expect(writeAuditUseCase.executeWriteAuditEvent).toHaveBeenCalledTimes(2);
   });
 
   it('should fetch logs via use case', async () => {

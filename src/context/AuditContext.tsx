@@ -32,6 +32,16 @@ interface AuditContextType {
   logPatientCleared: (bedId: string, patientName: string, rut: string, recordDate: string) => void;
   logDailyRecordDeleted: (date: string) => void;
   logDailyRecordCreated: (date: string, copiedFrom?: string) => void;
+  logCudyrModified: (
+    bedId: string,
+    patientName: string,
+    rut: string,
+    field: string,
+    value: number,
+    oldValue: number,
+    recordDate: string,
+    authors?: string
+  ) => void;
   logPatientView: (
     bedId: string,
     patientName: string,
