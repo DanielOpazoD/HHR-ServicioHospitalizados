@@ -77,10 +77,6 @@ import {
   getAuditLogsForDate,
 } from '@/services/admin/auditService';
 import { defaultAuditPort } from '@/application/ports/auditPort';
-import {
-  logDailyRecordDeleted,
-  logDailyRecordCreated,
-} from '@/services/admin/auditLegacyDomainService';
 import * as auditUtils from '@/services/admin/utils/auditUtils';
 
 describe('AuditService', () => {
@@ -130,12 +126,6 @@ describe('AuditService', () => {
         mockDate
       );
       expect(mockSaveAuditLog.mock.calls[0][0].action).toBe('PATIENT_TRANSFERRED');
-    });
-
-    it('should log daily record lifecycle', async () => {
-      await logDailyRecordCreated(mockDate);
-      await logDailyRecordDeleted(mockDate);
-      expect(mockSaveAuditLog).toHaveBeenCalledTimes(2);
     });
 
     it('should log system errors', async () => {

@@ -168,9 +168,34 @@ describe('useAudit', () => {
     await waitFor(() => {
       expect(writeAuditUseCase.executeWriteAuditEvent).toHaveBeenCalledWith(
         expect.objectContaining({
+          userId: testUserId,
           action: 'DAILY_RECORD_CREATED',
           entityType: 'dailyRecord',
           entityId: '2024-12-28',
+          details: { date: '2024-12-28', copiedFrom: '2024-12-27' },
+          patientRut: undefined,
+          recordDate: '2024-12-28',
+        })
+      );
+    });
+  });
+
+  it('logs daily record deleted through the write use case with the legacy payload', async () => {
+    const { result } = renderHook(() => useAudit(testUserId));
+
+    act(() => {
+      result.current.logDailyRecordDeleted('2024-12-28');
+    });
+
+    await waitFor(() => {
+      expect(writeAuditUseCase.executeWriteAuditEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: testUserId,
+          action: 'DAILY_RECORD_DELETED',
+          entityType: 'dailyRecord',
+          entityId: '2024-12-28',
+          details: { date: '2024-12-28' },
+          patientRut: undefined,
           recordDate: '2024-12-28',
         })
       );

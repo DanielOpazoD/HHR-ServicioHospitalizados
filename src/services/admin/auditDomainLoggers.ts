@@ -29,30 +29,6 @@ const shouldLogCudyrAction = (bedId: string): boolean => {
   return elapsed >= 15 * 60 * 1000;
 };
 
-export const logDailyRecordDeleted = (date: string): Promise<void> => {
-  return logAuditEvent(
-    getCurrentUserEmail(),
-    'DAILY_RECORD_DELETED',
-    'dailyRecord',
-    date,
-    { date },
-    undefined,
-    date
-  );
-};
-
-export const logDailyRecordCreated = (date: string, copiedFrom?: string): Promise<void> => {
-  return logAuditEvent(
-    getCurrentUserEmail(),
-    'DAILY_RECORD_CREATED',
-    'dailyRecord',
-    date,
-    { date, copiedFrom },
-    undefined,
-    date
-  );
-};
-
 export const logNurseHandoffModified = (
   bedId: string,
   patientName: string,
