@@ -1,10 +1,8 @@
 // Must unmock to test real implementation, as setup.ts mocks it globally
 vi.unmock('../../services/admin/auditService');
-vi.unmock('../../services/admin/auditLegacyDomainService');
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as auditService from '@/services/admin/auditService';
-import * as auditLegacyDomainService from '@/services/admin/auditLegacyDomainService';
 import { setDoc } from 'firebase/firestore';
 
 // Mock dependencies
@@ -109,7 +107,12 @@ describe('AuditService Coverage', () => {
     mockSaveAuditLog.mockClear();
 
     // Act
-    await auditLegacyDomainService.logPatientView('B01', 'Patient', '11.111.111-1', '2024-01-01');
+    await auditService.logThrottledViewEvent(
+      'VIEW_PATIENT',
+      'B01',
+      { patientName: 'Patient', bedId: 'B01', rut: '11.111.111-1' },
+      '2024-01-01'
+    );
 
     // Assert - for excluded users, saveAuditLog should NOT be called
     expect(mockSaveAuditLog).not.toHaveBeenCalled();
@@ -119,16 +122,16 @@ describe('AuditService Coverage', () => {
     // Setup: Normal user via mockAuditUtils
     mockAuditUtils.getCurrentUserEmail.mockReturnValue('random.doctor@hospital.cl');
 
-    // This test verifies that logPatientView is implemented correctly
+    // This test verifies that patient views use the throttled core logger
     // by checking it returns a Promise (doesn't throw)
-    const result = auditLegacyDomainService.logPatientView(
+    const result = auditService.logThrottledViewEvent(
+      'VIEW_PATIENT',
       'B01',
-      'Patient',
-      '11.111.111-1',
+      { patientName: 'Patient', bedId: 'B01', rut: '11.111.111-1' },
       '2024-01-01'
     );
 
-    // Assert - logPatientView returns a Promise
+    // Assert - logThrottledViewEvent returns a Promise
     expect(result).toBeInstanceOf(Promise);
     await expect(result).resolves.toBeUndefined();
   });

@@ -9,5 +9,4 @@ export {
   logPatientCleared,
   logPatientDischarge,
   logPatientTransfer,
-  logPatientView,
 } from './auditDomainLoggers';

@@ -1,6 +1,6 @@
 import { AuditAction } from '@/types/auditActionTypes';
 import { getCurrentUserEmail } from './utils/auditUtils';
-import { logAuditEvent, logThrottledViewEvent, shouldExcludeFromViewAudit } from './auditCore';
+import { logAuditEvent } from './auditCore';
 
 const shouldLogThrottledAction = (action: AuditAction, entityId: string): boolean => {
   const stateKey = `hhr_audit_throttle_${action}_${entityId}`;
@@ -122,19 +122,6 @@ export const logDailyRecordCreated = (date: string, copiedFrom?: string): Promis
     undefined,
     date
   );
-};
-
-export const logPatientView = (
-  bedId: string,
-  patientName: string,
-  rut: string,
-  recordDate: string
-): Promise<void> => {
-  if (shouldExcludeFromViewAudit()) {
-    return Promise.resolve();
-  }
-
-  return logThrottledViewEvent('VIEW_PATIENT', bedId, { patientName, bedId, rut }, recordDate);
 };
 
 export const logNurseHandoffModified = (
