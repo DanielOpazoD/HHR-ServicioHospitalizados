@@ -26,4 +26,12 @@ describe('functions mirrorFunctions', () => {
     expect(typeof handlers.mirrorDailyRecords).toBe('function');
     expect(registryKeys.every((key: string) => typeof handlers[key] === 'function')).toBe(true);
   });
+
+  it('registers clinical documents in the official-to-testing mirror', () => {
+    expect(MIRROR_WRITE_COLLECTIONS).toContainEqual({
+      exportName: 'mirrorClinicalDocuments',
+      collection: 'clinicalDocuments',
+      logLabel: 'clinical document',
+    });
+  });
 });

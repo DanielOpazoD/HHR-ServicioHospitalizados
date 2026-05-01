@@ -14,6 +14,11 @@ const MIRROR_WRITE_COLLECTIONS = [
     collection: 'transferRequests',
     logLabel: 'transfer request',
   },
+  {
+    exportName: 'mirrorClinicalDocuments',
+    collection: 'clinicalDocuments',
+    logLabel: 'clinical document',
+  },
 ];
 
 module.exports = {
