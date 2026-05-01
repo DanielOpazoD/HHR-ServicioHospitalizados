@@ -22,10 +22,7 @@ export const preparePatchedRecordPersistence = (
   const mergedPatches: DailyRecordPatch = { ...patch };
   ensureDailyRecordDateTimestamp(updatedForInvariants);
 
-  if (
-    updatedForInvariants.dateTimestamp != null &&
-    current.dateTimestamp !== updatedForInvariants.dateTimestamp
-  ) {
+  if (updatedForInvariants.dateTimestamp != null) {
     mergedPatches.dateTimestamp = updatedForInvariants.dateTimestamp;
   }
 
