@@ -13,19 +13,19 @@ type AuditLogger = (
   authors?: string
 ) => void;
 
-const MEDICAL_HANDOFF_MODIFIED_THROTTLE_MS = 5 * 60 * 1000;
+const HANDOFF_MODIFIED_THROTTLE_MS = 5 * 60 * 1000;
 
-const getMedicalHandoffThrottleKey = (bedId: string): string =>
-  `hhr_audit_throttle_MEDICAL_HANDOFF_MODIFIED_${bedId}`;
+const getHandoffThrottleKey = (action: AuditAction, bedId: string): string =>
+  `hhr_audit_throttle_${action}_${bedId}`;
 
-const shouldLogMedicalHandoffAction = (bedId: string): boolean => {
+const shouldLogHandoffAction = (action: AuditAction, bedId: string): boolean => {
   if (typeof sessionStorage === 'undefined') return true;
 
-  const stateKey = getMedicalHandoffThrottleKey(bedId);
+  const stateKey = getHandoffThrottleKey(action, bedId);
   const lastLogged = sessionStorage.getItem(stateKey);
   if (lastLogged) {
     const elapsed = Date.now() - new Date(lastLogged).getTime();
-    if (elapsed < MEDICAL_HANDOFF_MODIFIED_THROTTLE_MS) {
+    if (elapsed < HANDOFF_MODIFIED_THROTTLE_MS) {
       return false;
     }
   }
@@ -65,7 +65,7 @@ export const useHandoffAuditLoggers = (logEvent: AuditLogger) => {
       oldNote: string,
       recordDate: string
     ) => {
-      if (!shouldLogMedicalHandoffAction(bedId)) {
+      if (!shouldLogHandoffAction('MEDICAL_HANDOFF_MODIFIED', bedId)) {
         return;
       }
 
@@ -89,5 +89,40 @@ export const useHandoffAuditLoggers = (logEvent: AuditLogger) => {
     [logEvent]
   );
 
-  return { logHandoffNovedadesModified, logMedicalHandoffModified };
+  const logNurseHandoffModified = useCallback(
+    (
+      bedId: string,
+      patientName: string,
+      rut: string,
+      shift: string,
+      note: string,
+      oldNote: string,
+      recordDate: string
+    ) => {
+      if (!shouldLogHandoffAction('NURSE_HANDOFF_MODIFIED', bedId)) {
+        return;
+      }
+
+      logEvent(
+        'NURSE_HANDOFF_MODIFIED',
+        'patient',
+        bedId,
+        {
+          patientName,
+          bedId,
+          rut,
+          shift,
+          note,
+          changes: {
+            note: { old: oldNote, new: note },
+          },
+        },
+        rut,
+        recordDate
+      );
+    },
+    [logEvent]
+  );
+
+  return { logHandoffNovedadesModified, logMedicalHandoffModified, logNurseHandoffModified };
 };

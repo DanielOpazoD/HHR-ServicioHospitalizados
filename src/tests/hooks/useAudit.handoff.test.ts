@@ -119,4 +119,79 @@ describe('useAudit handoff loggers', () => {
       expect(writeAuditUseCase.executeWriteAuditEvent).toHaveBeenCalledTimes(1);
     });
   });
+
+  it('logs nurse handoff through the write use case with the legacy payload and throttle key', async () => {
+    const { result } = renderHook(() => useAudit('test-user-123'));
+
+    act(() => {
+      result.current.logNurseHandoffModified(
+        'R2',
+        'Paciente Enfermeria',
+        '22.222.222-2',
+        'night',
+        'Nota de enfermeria nueva',
+        'Nota de enfermeria anterior',
+        '2026-03-08'
+      );
+    });
+
+    await waitFor(() => {
+      expect(writeAuditUseCase.executeWriteAuditEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'test-user-123',
+          action: 'NURSE_HANDOFF_MODIFIED',
+          entityType: 'patient',
+          entityId: 'R2',
+          details: {
+            patientName: 'Paciente Enfermeria',
+            bedId: 'R2',
+            rut: '22.222.222-2',
+            shift: 'night',
+            note: 'Nota de enfermeria nueva',
+            changes: {
+              note: {
+                old: 'Nota de enfermeria anterior',
+                new: 'Nota de enfermeria nueva',
+              },
+            },
+          },
+          patientRut: '22.222.222-2',
+          recordDate: '2026-03-08',
+        })
+      );
+    });
+
+    expect(sessionStorage.getItem('hhr_audit_throttle_NURSE_HANDOFF_MODIFIED_R2')).toEqual(
+      expect.any(String)
+    );
+  });
+
+  it('throttles repeated nurse handoff legacy helper calls for the same bed', async () => {
+    const { result } = renderHook(() => useAudit('test-user-123'));
+
+    act(() => {
+      result.current.logNurseHandoffModified(
+        'R2',
+        'Paciente Enfermeria',
+        '22.222.222-2',
+        'day',
+        'Nota nueva',
+        'Nota anterior',
+        '2026-03-08'
+      );
+      result.current.logNurseHandoffModified(
+        'R2',
+        'Paciente Enfermeria',
+        '22.222.222-2',
+        'day',
+        'Nota mas nueva',
+        'Nota nueva',
+        '2026-03-08'
+      );
+    });
+
+    await waitFor(() => {
+      expect(writeAuditUseCase.executeWriteAuditEvent).toHaveBeenCalledTimes(1);
+    });
+  });
 });

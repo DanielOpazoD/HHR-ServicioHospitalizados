@@ -1,58 +1,5 @@
-import { AuditAction } from '@/types/auditActionTypes';
 import { getCurrentUserEmail } from './utils/auditUtils';
 import { logAuditEvent } from './auditCore';
-
-const shouldLogThrottledAction = (action: AuditAction, entityId: string): boolean => {
-  const stateKey = `hhr_audit_throttle_${action}_${entityId}`;
-  if (typeof sessionStorage === 'undefined') return true;
-
-  const lastLogged = sessionStorage.getItem(stateKey);
-  if (!lastLogged) return true;
-
-  const elapsed = Date.now() - new Date(lastLogged).getTime();
-  return elapsed >= 5 * 60 * 1000;
-};
-
-const markActionAsLogged = (action: AuditAction, entityId: string): void => {
-  const stateKey = `hhr_audit_throttle_${action}_${entityId}`;
-  if (typeof sessionStorage !== 'undefined') {
-    sessionStorage.setItem(stateKey, new Date().toISOString());
-  }
-};
-
-export const logNurseHandoffModified = (
-  bedId: string,
-  patientName: string,
-  rut: string,
-  shift: string,
-  note: string,
-  oldNote: string,
-  recordDate: string
-): Promise<void> => {
-  if (!shouldLogThrottledAction('NURSE_HANDOFF_MODIFIED', bedId)) {
-    return Promise.resolve();
-  }
-  markActionAsLogged('NURSE_HANDOFF_MODIFIED', bedId);
-
-  return logAuditEvent(
-    getCurrentUserEmail(),
-    'NURSE_HANDOFF_MODIFIED',
-    'patient',
-    bedId,
-    {
-      patientName,
-      bedId,
-      rut,
-      shift,
-      note,
-      changes: {
-        note: { old: oldNote, new: note },
-      },
-    },
-    rut,
-    recordDate
-  );
-};
 
 // Critical action: reassigning a patient to a different specialty. Never throttled.
 export const logPatientSpecialtyChanged = (

@@ -11,5 +11,6 @@ describe('auditLegacyDomainService migration surface', () => {
     expect(legacyDomainService).not.toHaveProperty('logCudyrModified');
     expect(legacyDomainService).not.toHaveProperty('logHandoffNovedadesModified');
     expect(legacyDomainService).not.toHaveProperty('logMedicalHandoffModified');
+    expect(legacyDomainService).not.toHaveProperty('logNurseHandoffModified');
   });
 });

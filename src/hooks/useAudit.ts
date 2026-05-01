@@ -95,6 +95,15 @@ interface UseAuditReturn {
     oldNote: string,
     recordDate: string
   ) => void;
+  logNurseHandoffModified: (
+    bedId: string,
+    patientName: string,
+    rut: string,
+    shift: string,
+    note: string,
+    oldNote: string,
+    recordDate: string
+  ) => void;
   logPatientView: (
     bedId: string,
     patientName: string,
@@ -307,7 +316,7 @@ export const useAudit = (userId: string): UseAuditReturn => {
     [logEvent]
   );
 
-  const { logHandoffNovedadesModified, logMedicalHandoffModified } =
+  const { logHandoffNovedadesModified, logMedicalHandoffModified, logNurseHandoffModified } =
     useHandoffAuditLoggers(logEvent);
 
   const logPatientView = useCallback(
@@ -373,6 +382,7 @@ export const useAudit = (userId: string): UseAuditReturn => {
     logCudyrModified,
     logHandoffNovedadesModified,
     logMedicalHandoffModified,
+    logNurseHandoffModified,
     logPatientView,
     logClinicalDocumentCreated,
     logClinicalDocumentEdited,
