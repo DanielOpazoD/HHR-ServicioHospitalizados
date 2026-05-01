@@ -14,9 +14,33 @@ import {
   mergeDebouncedAuditDetails,
   type PendingAuditEntry,
 } from '@/hooks/controllers/auditLogPolicyController';
+import {
+  VIEW_THROTTLE_KEY,
+  buildNextViewThrottleState,
+  parseViewThrottleState,
+  serializeViewThrottleState,
+  shouldExcludeAuditEmail,
+  shouldThrottleAuditViewAction,
+  type ViewThrottleState,
+} from '@/services/admin/auditViewThrottle';
 
 const loadWriteAuditEventUseCase = () => import('@/application/audit/writeAuditEventUseCase');
 const loadFetchAuditLogsUseCase = () => import('@/application/audit/fetchAuditLogsUseCase');
+
+const getViewThrottleState = (): ViewThrottleState => {
+  if (typeof sessionStorage === 'undefined') return {};
+  return parseViewThrottleState(sessionStorage.getItem(VIEW_THROTTLE_KEY));
+};
+
+const updateViewThrottleState = (action: AuditAction): void => {
+  if (typeof sessionStorage === 'undefined') return;
+  const nextState = buildNextViewThrottleState(
+    action,
+    getViewThrottleState(),
+    new Date().toISOString()
+  );
+  sessionStorage.setItem(VIEW_THROTTLE_KEY, serializeViewThrottleState(nextState));
+};
 
 interface UseAuditReturn {
   // Logging functions
@@ -48,6 +72,15 @@ interface UseAuditReturn {
     patientName: string,
     rut: string,
     recordDate: string,
+    authors?: string
+  ) => void;
+  logViewEvent: (
+    action: AuditAction,
+    entityType: AuditLogEntry['entityType'],
+    entityId: string,
+    details: Record<string, unknown>,
+    patientRut?: string,
+    recordDate?: string,
     authors?: string
   ) => void;
   // Generic logger
@@ -240,6 +273,30 @@ export const useAudit = (userId: string): UseAuditReturn => {
     [logEvent]
   );
 
+  const logViewEvent = useCallback(
+    (
+      action: AuditAction,
+      entityType: AuditLogEntry['entityType'],
+      entityId: string,
+      details: Record<string, unknown>,
+      patientRut?: string,
+      recordDate?: string,
+      authors?: string
+    ) => {
+      if (shouldExcludeAuditEmail(userId)) {
+        return;
+      }
+
+      if (shouldThrottleAuditViewAction(action, getViewThrottleState(), Date.now())) {
+        return;
+      }
+
+      updateViewThrottleState(action);
+      logEvent(action, entityType, entityId, details, patientRut, recordDate, authors);
+    },
+    [logEvent, userId]
+  );
+
   const fetchLogs = useCallback(async (limit: number = 100): Promise<AuditLogEntry[]> => {
     const { executeFetchAuditLogs } = await loadFetchAuditLogsUseCase();
     const result = await executeFetchAuditLogs({ limit });
@@ -258,6 +315,7 @@ export const useAudit = (userId: string): UseAuditReturn => {
     logDailyRecordDeleted,
     logDailyRecordCreated,
     logPatientView,
+    logViewEvent,
     logEvent,
     logDebouncedEvent,
     fetchLogs,

@@ -39,6 +39,15 @@ interface AuditContextType {
     recordDate: string,
     authors?: string
   ) => void;
+  logViewEvent: (
+    action: AuditAction,
+    entityType: AuditLogEntry['entityType'],
+    entityId: string,
+    details: Record<string, unknown>,
+    patientRut?: string,
+    recordDate?: string,
+    authors?: string
+  ) => void;
   logEvent: (
     action: AuditAction,
     entityType: AuditLogEntry['entityType'],

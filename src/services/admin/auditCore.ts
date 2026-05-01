@@ -61,6 +61,7 @@ export const logThrottledViewEvent = async (
 ): Promise<void> => {
   if (shouldExcludeFromViewAudit()) return;
   if (!shouldLogViewAction(action)) return;
+  updateViewThrottleState(action);
 
   await logAuditEvent(
     getCurrentUserEmail(),
@@ -195,9 +196,6 @@ export const createAuditCoreService = (
     recordDate,
     authors
   ): Promise<void> => {
-    if (action.startsWith('VIEW_') && !shouldLogViewAction(action)) return;
-    if (action.startsWith('VIEW_')) updateViewThrottleState(action);
-
     const entry: AuditLogEntry = {
       id: generateAuditId(),
       timestamp: new Date().toISOString(),

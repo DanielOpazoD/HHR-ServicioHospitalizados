@@ -25,6 +25,7 @@ describe('useAudit', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    sessionStorage.clear();
   });
 
   it('should return all audit functions', () => {
@@ -37,6 +38,7 @@ describe('useAudit', () => {
     expect(typeof result.current.logDailyRecordDeleted).toBe('function');
     expect(typeof result.current.logDailyRecordCreated).toBe('function');
     expect(typeof result.current.logPatientView).toBe('function');
+    expect(typeof result.current.logViewEvent).toBe('function');
     expect(typeof result.current.logEvent).toBe('function');
     expect(typeof result.current.logDebouncedEvent).toBe('function');
     expect(typeof result.current.fetchLogs).toBe('function');
@@ -91,5 +93,39 @@ describe('useAudit', () => {
     });
 
     expect(fetchAuditLogsUseCase.executeFetchAuditLogs).toHaveBeenCalledWith({ limit: 50 });
+  });
+
+  it('throttles repeated view events before reaching the write use case', async () => {
+    const { result } = renderHook(() => useAudit('doctor@hospital.cl'));
+
+    act(() => {
+      result.current.logViewEvent(
+        'VIEW_CUDYR',
+        'dailyRecord',
+        '2026-05-01',
+        { view: 'cudyr' },
+        undefined,
+        '2026-05-01'
+      );
+      result.current.logViewEvent(
+        'VIEW_CUDYR',
+        'dailyRecord',
+        '2026-05-01',
+        { view: 'cudyr' },
+        undefined,
+        '2026-05-01'
+      );
+    });
+
+    await waitFor(() => {
+      expect(writeAuditUseCase.executeWriteAuditEvent).toHaveBeenCalledTimes(1);
+    });
+    expect(writeAuditUseCase.executeWriteAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'VIEW_CUDYR',
+        entityType: 'dailyRecord',
+        entityId: '2026-05-01',
+      })
+    );
   });
 });
