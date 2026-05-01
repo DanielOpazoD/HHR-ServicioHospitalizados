@@ -5,11 +5,8 @@ import {
   logUserLogin,
   logUserLogout,
 } from '@/services/admin/auditService';
-import {
-  logPatientAdmission,
-  logPatientDischarge,
-  logPatientTransfer,
-} from '@/services/admin/auditLegacyDomainService';
+import { logPatientDischarge, logPatientTransfer } from '@/services/admin/auditLegacyDomainService';
+import { getCurrentUserEmail } from '@/services/admin/utils/auditUtils';
 import type { AuditAction } from '@/types/auditActionTypes';
 import type { AuditLogEntry } from '@/types/auditLogTypes';
 
@@ -70,7 +67,15 @@ export const defaultAuditPort: AuditPort = {
     logAuditEvent(userId, action, entityType, entityId, details, patientRut, recordDate, authors),
   fetchLogs: async (limit?: number) => getAuditLogs(limit),
   logPatientAdmission: async (bedId, patientName, rut, pathology, recordDate) =>
-    logPatientAdmission(bedId, patientName, rut, pathology || '', recordDate),
+    logAuditEvent(
+      getCurrentUserEmail(),
+      'PATIENT_ADMITTED',
+      'patient',
+      bedId,
+      { patientName, bedId, pathology: pathology || '', rut },
+      rut,
+      recordDate
+    ),
   logPatientDischarge: async (bedId, patientName, rut, status, recordDate) =>
     logPatientDischarge(bedId, patientName, rut, status, recordDate),
   logPatientTransfer: async (bedId, patientName, rut, destination, recordDate) =>

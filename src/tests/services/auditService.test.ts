@@ -76,8 +76,8 @@ import {
   getAuditLogs,
   getAuditLogsForDate,
 } from '@/services/admin/auditService';
+import { defaultAuditPort } from '@/application/ports/auditPort';
 import {
-  logPatientAdmission,
   logPatientDischarge,
   logPatientTransfer,
   logPatientCleared,
@@ -99,7 +99,13 @@ describe('AuditService', () => {
 
   describe('Logging Helpers', () => {
     it('should log patient admission with masked RUT', async () => {
-      await logPatientAdmission('R1', 'Patient A', mockPatientRut, 'Diag', mockDate);
+      await defaultAuditPort.logPatientAdmission(
+        'R1',
+        'Patient A',
+        mockPatientRut,
+        'Diag',
+        mockDate
+      );
       expect(mockSaveAuditLog).toHaveBeenCalled();
       const entry = mockSaveAuditLog.mock.calls[0][0];
       // Assuming maskRut result is 12345678-9 -> 12345***-*

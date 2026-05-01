@@ -7,10 +7,8 @@ vi.unmock('../../services/admin/auditService');
 vi.unmock('../../services/admin/auditLegacyDomainService');
 
 import { logThrottledViewEvent } from '@/services/admin/auditService';
-import {
-  logPatientAdmission,
-  logPatientDischarge,
-} from '@/services/admin/auditLegacyDomainService';
+import { defaultAuditPort } from '@/application/ports/auditPort';
+import { logPatientDischarge } from '@/services/admin/auditLegacyDomainService';
 import { auth } from '@/firebaseConfig';
 
 // Mock Firestore
@@ -73,7 +71,13 @@ describe('Audit Flow Integration', () => {
   });
 
   it('should log patient admission locally and to Firestore', async () => {
-    await logPatientAdmission('BED_01', 'Juan Pérez', '12345678-9', 'Test Pathology', '2024-12-25');
+    await defaultAuditPort.logPatientAdmission(
+      'BED_01',
+      'Juan Pérez',
+      '12345678-9',
+      'Test Pathology',
+      '2024-12-25'
+    );
 
     expect(mockSaveAuditLog).toHaveBeenCalled();
     const call = mockSaveAuditLog.mock.calls[0][0];

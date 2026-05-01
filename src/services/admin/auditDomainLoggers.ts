@@ -29,24 +29,6 @@ const shouldLogCudyrAction = (bedId: string): boolean => {
   return elapsed >= 15 * 60 * 1000;
 };
 
-export const logPatientAdmission = (
-  bedId: string,
-  patientName: string,
-  rut: string,
-  pathology: string,
-  recordDate: string
-): Promise<void> => {
-  return logAuditEvent(
-    getCurrentUserEmail(),
-    'PATIENT_ADMITTED',
-    'patient',
-    bedId,
-    { patientName, bedId, pathology, rut },
-    rut,
-    recordDate
-  );
-};
-
 export const logPatientDischarge = (
   bedId: string,
   patientName: string,

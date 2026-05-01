@@ -5,7 +5,6 @@ export {
   logHandoffNovedadesModified,
   logMedicalHandoffModified,
   logNurseHandoffModified,
-  logPatientAdmission,
   logPatientCleared,
   logPatientDischarge,
   logPatientTransfer,

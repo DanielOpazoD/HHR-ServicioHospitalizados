@@ -15,16 +15,49 @@ const legacyAuditMocks = vi.hoisted(() => ({
   logPatientView: vi.fn(),
 }));
 
+const auditUtilsMocks = vi.hoisted(() => ({
+  getCurrentUserEmail: vi.fn(() => 'doctor@hospital.cl'),
+}));
+
 vi.mock('@/services/admin/auditService', () => auditServiceMocks);
 
 vi.mock('@/services/admin/auditLegacyDomainService', () => legacyAuditMocks);
+
+vi.mock('@/services/admin/utils/auditUtils', () => auditUtilsMocks);
 
 import { defaultAuditPort } from '@/application/ports/auditPort';
 
 describe('defaultAuditPort', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    auditServiceMocks.logAuditEvent.mockResolvedValue(undefined);
     auditServiceMocks.logThrottledViewEvent.mockResolvedValue(undefined);
+  });
+
+  it('routes patient admission audit through the core event logger with the legacy payload', async () => {
+    await defaultAuditPort.logPatientAdmission(
+      'R1',
+      'Paciente Test',
+      '11.111.111-1',
+      'Neumonia',
+      '2026-05-01'
+    );
+
+    expect(auditServiceMocks.logAuditEvent).toHaveBeenCalledWith(
+      'doctor@hospital.cl',
+      'PATIENT_ADMITTED',
+      'patient',
+      'R1',
+      {
+        patientName: 'Paciente Test',
+        bedId: 'R1',
+        pathology: 'Neumonia',
+        rut: '11.111.111-1',
+      },
+      '11.111.111-1',
+      '2026-05-01'
+    );
+    expect(legacyAuditMocks.logPatientAdmission).not.toHaveBeenCalled();
   });
 
   it('routes patient view audit through the throttled core view logger', async () => {
