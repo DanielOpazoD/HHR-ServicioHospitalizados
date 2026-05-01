@@ -2,15 +2,6 @@ import { AuditAction } from '@/types/auditActionTypes';
 import { getCurrentUserEmail } from './utils/auditUtils';
 import { logAuditEvent, logThrottledViewEvent, shouldExcludeFromViewAudit } from './auditCore';
 
-interface ConflictAutoMergeAuditDetails {
-  changedPaths: string[];
-  policyVersion: string;
-  entryCount: number;
-  strategyBreakdown: Record<string, number>;
-  winnerBreakdown: Record<string, number>;
-  samplePaths: string[];
-}
-
 const shouldLogThrottledAction = (action: AuditAction, entityId: string): boolean => {
   const stateKey = `hhr_audit_throttle_${action}_${entityId}`;
   if (typeof sessionStorage === 'undefined') return true;
@@ -130,21 +121,6 @@ export const logDailyRecordCreated = (date: string, copiedFrom?: string): Promis
     { date, copiedFrom },
     undefined,
     date
-  );
-};
-
-export const logConflictAutoMerged = (
-  recordDate: string,
-  details: ConflictAutoMergeAuditDetails
-): Promise<void> => {
-  return logAuditEvent(
-    getCurrentUserEmail(),
-    'CONFLICT_AUTO_MERGED',
-    'dailyRecord',
-    recordDate,
-    details as unknown as Record<string, unknown>,
-    undefined,
-    recordDate
   );
 };
 

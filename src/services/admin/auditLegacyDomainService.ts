@@ -1,5 +1,4 @@
 export {
-  logConflictAutoMerged,
   logCudyrModified,
   logDailyRecordCreated,
   logDailyRecordDeleted,
