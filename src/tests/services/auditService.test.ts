@@ -4,7 +4,6 @@ import type { AuditLogEntry } from '@/types/auditLogTypes';
 
 // Force unmock because it's globally mocked in setup.ts
 vi.unmock('../../services/admin/auditService');
-vi.unmock('../../services/admin/auditLegacyDomainService');
 
 // Mock Firebase Config BEFORE importing the service
 vi.mock('../../firebaseConfig', () => ({

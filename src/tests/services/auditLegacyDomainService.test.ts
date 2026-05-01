@@ -1,16 +1,14 @@
-import { describe, expect, it, vi } from 'vitest';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { describe, expect, it } from 'vitest';
 
-vi.unmock('@/services/admin/auditLegacyDomainService');
+const repoRoot = process.cwd();
 
 describe('auditLegacyDomainService migration surface', () => {
-  it('does not expose daily record lifecycle helpers after migration to AuditContext', async () => {
-    const legacyDomainService = await import('@/services/admin/auditLegacyDomainService');
-
-    expect(legacyDomainService).not.toHaveProperty('logDailyRecordCreated');
-    expect(legacyDomainService).not.toHaveProperty('logDailyRecordDeleted');
-    expect(legacyDomainService).not.toHaveProperty('logCudyrModified');
-    expect(legacyDomainService).not.toHaveProperty('logHandoffNovedadesModified');
-    expect(legacyDomainService).not.toHaveProperty('logMedicalHandoffModified');
-    expect(legacyDomainService).not.toHaveProperty('logNurseHandoffModified');
+  it('removes the legacy audit facade files after migration to AuditContext', () => {
+    expect(existsSync(resolve(repoRoot, 'src/services/admin/auditLegacyDomainService.ts'))).toBe(
+      false
+    );
+    expect(existsSync(resolve(repoRoot, 'src/services/admin/auditDomainLoggers.ts'))).toBe(false);
   });
 });

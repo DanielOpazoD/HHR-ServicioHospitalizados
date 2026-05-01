@@ -16,17 +16,6 @@
       "allowedImporters": []
     },
     {
-      "path": "src/services/admin/auditDomainLoggers.ts",
-      "owner": "audit",
-      "kind": "legacy_audit_facade",
-      "reason": "Mantener compatibilidad temporal mientras se migra auditoría legacy al pipeline useAudit / AuditContext / writeAuditEventUseCase.",
-      "remainingConsumers": "Sin consumidores legacy productivos; pendiente eliminar fachada y archivo legacy en el bloque final.",
-      "retirementCriteria": "Sin imports directos productivos desde features y sin necesidad de auditLegacyDomainService ni auditDomainLoggers.",
-      "target": "2026-Q2",
-      "importPolicy": "restricted",
-      "allowedImporters": ["src/services/admin/auditLegacyDomainService.ts"]
-    },
-    {
       "path": "functions/lib/auth/authHelpersFactory.js",
       "owner": "auth",
       "kind": "migration_shim",

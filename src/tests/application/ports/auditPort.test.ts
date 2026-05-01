@@ -8,20 +8,11 @@ const auditServiceMocks = vi.hoisted(() => ({
   logUserLogout: vi.fn(),
 }));
 
-const legacyAuditMocks = vi.hoisted(() => ({
-  logPatientAdmission: vi.fn(),
-  logPatientDischarge: vi.fn(),
-  logPatientTransfer: vi.fn(),
-  logPatientView: vi.fn(),
-}));
-
 const auditUtilsMocks = vi.hoisted(() => ({
   getCurrentUserEmail: vi.fn(() => 'doctor@hospital.cl'),
 }));
 
 vi.mock('@/services/admin/auditService', () => auditServiceMocks);
-
-vi.mock('@/services/admin/auditLegacyDomainService', () => legacyAuditMocks);
 
 vi.mock('@/services/admin/utils/auditUtils', () => auditUtilsMocks);
 
@@ -57,7 +48,6 @@ describe('defaultAuditPort', () => {
       '11.111.111-1',
       '2026-05-01'
     );
-    expect(legacyAuditMocks.logPatientAdmission).not.toHaveBeenCalled();
   });
 
   it('routes patient discharge audit through the core event logger with the legacy payload', async () => {
@@ -83,7 +73,6 @@ describe('defaultAuditPort', () => {
       '11.111.111-1',
       '2026-05-01'
     );
-    expect(legacyAuditMocks.logPatientDischarge).not.toHaveBeenCalled();
   });
 
   it('routes patient transfer audit through the core event logger with the legacy payload', async () => {
@@ -109,7 +98,6 @@ describe('defaultAuditPort', () => {
       '11.111.111-1',
       '2026-05-01'
     );
-    expect(legacyAuditMocks.logPatientTransfer).not.toHaveBeenCalled();
   });
 
   it('routes patient view audit through the throttled core view logger', async () => {
@@ -125,6 +113,5 @@ describe('defaultAuditPort', () => {
       },
       '2026-05-01'
     );
-    expect(legacyAuditMocks.logPatientView).not.toHaveBeenCalled();
   });
 });
