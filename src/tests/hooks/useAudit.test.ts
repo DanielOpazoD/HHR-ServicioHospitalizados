@@ -39,6 +39,7 @@ describe('useAudit', () => {
     expect(typeof result.current.logDailyRecordCreated).toBe('function');
     expect(typeof result.current.logPatientView).toBe('function');
     expect(typeof result.current.logClinicalDocumentCreated).toBe('function');
+    expect(typeof result.current.logClinicalDocumentDeleted).toBe('function');
     expect(typeof result.current.logViewEvent).toBe('function');
     expect(typeof result.current.logEvent).toBe('function');
     expect(typeof result.current.logDebouncedEvent).toBe('function');
@@ -114,6 +115,38 @@ describe('useAudit', () => {
         expect.objectContaining({
           userId: testUserId,
           action: 'CLINICAL_DOCUMENT_CREATED',
+          entityType: 'clinicalDocument',
+          entityId: 'doc-1',
+          details: {
+            documentId: 'doc-1',
+            templateId: 'epicrisis',
+            documentTitle: 'Epicrisis',
+          },
+          patientRut: '11.111.111-1',
+          recordDate: '2026-05-01',
+        })
+      );
+    });
+  });
+
+  it('logs clinical document deletion through the write use case', async () => {
+    const { result } = renderHook(() => useAudit(testUserId));
+
+    act(() => {
+      result.current.logClinicalDocumentDeleted(
+        'doc-1',
+        'epicrisis',
+        'Epicrisis',
+        '11.111.111-1',
+        '2026-05-01'
+      );
+    });
+
+    await waitFor(() => {
+      expect(writeAuditUseCase.executeWriteAuditEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: testUserId,
+          action: 'CLINICAL_DOCUMENT_DELETED',
           entityType: 'clinicalDocument',
           entityId: 'doc-1',
           details: {

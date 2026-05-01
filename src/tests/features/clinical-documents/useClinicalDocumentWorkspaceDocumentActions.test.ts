@@ -8,11 +8,13 @@ import * as clinicalDocumentUseCases from '@/application/clinical-documents/clin
 
 const auditContextMocks = vi.hoisted(() => ({
   logClinicalDocumentCreated: vi.fn(),
+  logClinicalDocumentDeleted: vi.fn(),
 }));
 
 vi.mock('@/context/AuditContext', () => ({
   useAuditContext: () => ({
     logClinicalDocumentCreated: auditContextMocks.logClinicalDocumentCreated,
+    logClinicalDocumentDeleted: auditContextMocks.logClinicalDocumentDeleted,
   }),
 }));
 
@@ -268,6 +270,13 @@ describe('useClinicalDocumentWorkspaceDocumentActions', () => {
     expect(notify.success).toHaveBeenCalledWith(
       'Documento eliminado',
       `${selectedDocument.title} fue eliminado correctamente.`
+    );
+    expect(auditContextMocks.logClinicalDocumentDeleted).toHaveBeenCalledWith(
+      selectedDocument.id,
+      selectedDocument.templateId,
+      selectedDocument.title,
+      patient.rut,
+      selectedDocument.sourceDailyRecordDate
     );
   });
 
