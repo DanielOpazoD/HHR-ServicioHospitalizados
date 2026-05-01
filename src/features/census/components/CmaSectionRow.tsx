@@ -1,10 +1,12 @@
-import React, { Suspense, lazy, useState } from 'react';
+import React, { Suspense, lazy, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { FileText, Trash2, Undo2 } from 'lucide-react';
 
 import type { CMAData } from '@/features/census/contracts/censusMovementContracts';
+import type { PatientData } from '@/features/census/contracts/censusPatientContracts';
 import { CMA_INTERVENTION_TYPES } from '@/features/census/controllers/censusCmaController';
 import { resolveCmaUndoButtonTitle } from '@/features/census/controllers/censusCmaTableController';
+import { createEmptyPatient } from '@/services/factories/patientFactory';
 
 const LazyIEEHFormDialog = lazy(() =>
   import('@/features/census/components/IEEHFormDialog').then(module => ({
@@ -20,9 +22,39 @@ interface CmaSectionRowProps {
   onDelete: (id: string) => void;
 }
 
+const buildCmaIeehPatientSnapshot = (item: CMAData, recordDate: string): PatientData => {
+  if (item.originalData) {
+    return item.originalData;
+  }
+
+  return {
+    ...createEmptyPatient(item.originalBedId || item.id),
+    bedName: item.bedName,
+    patientName: item.patientName,
+    rut: item.rut,
+    age: item.age,
+    birthDate: item.birthDate,
+    biologicalSex: item.biologicalSex,
+    insurance: item.insurance,
+    admissionOrigin: item.admissionOrigin,
+    admissionOriginDetails: item.admissionOriginDetails,
+    origin: item.origin,
+    isRapanui: item.isRapanui,
+    pathology: item.diagnosis,
+    cie10Code: item.cie10Code,
+    cie10Description: item.cie10Description,
+    specialty: item.specialty as PatientData['specialty'],
+    admissionDate: recordDate,
+  };
+};
+
 export const CmaSectionRow: React.FC<CmaSectionRowProps> = React.memo(
   ({ item, recordDate, onUpdate, onUndo, onDelete }) => {
     const [showIeehDialog, setShowIeehDialog] = useState(false);
+    const ieehPatient = useMemo(
+      () => buildCmaIeehPatientSnapshot(item, recordDate),
+      [item, recordDate]
+    );
 
     return (
       <>
@@ -71,16 +103,15 @@ export const CmaSectionRow: React.FC<CmaSectionRowProps> = React.memo(
           </td>
           <td className="p-2 text-right print:hidden">
             <div className="flex items-center justify-end gap-1">
-              {item.originalData ? (
-                <button
-                  type="button"
-                  onClick={() => setShowIeehDialog(true)}
-                  className="p-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded transition-colors"
-                  title="Generar Informe Estadístico de Egreso (IEEH)"
-                >
-                  <FileText size={14} />
-                </button>
-              ) : null}
+              <button
+                type="button"
+                onClick={() => setShowIeehDialog(true)}
+                className="inline-flex h-7 items-center gap-1 rounded border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-medium text-emerald-700 transition-colors hover:border-emerald-300 hover:bg-emerald-100"
+                title="Generar Informe Estadístico de Egreso (IEEH)"
+              >
+                <FileText size={12} />
+                IEEH
+              </button>
               <button
                 onClick={() => void onUndo(item)}
                 className="p-1 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
@@ -100,13 +131,12 @@ export const CmaSectionRow: React.FC<CmaSectionRowProps> = React.memo(
         </tr>
 
         {showIeehDialog &&
-          item.originalData &&
           createPortal(
             <Suspense fallback={null}>
               <LazyIEEHFormDialog
                 isOpen={showIeehDialog}
                 onClose={() => setShowIeehDialog(false)}
-                patient={item.originalData}
+                patient={ieehPatient}
                 baseDischargeData={{
                   dischargeDate: recordDate,
                   dischargeTime: item.dischargeTime,

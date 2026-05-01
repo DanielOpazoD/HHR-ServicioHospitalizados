@@ -6,12 +6,15 @@ import { DataFactory } from '@/tests/factories/DataFactory';
 
 vi.mock('@/features/census/components/IEEHFormDialog', () => ({
   IEEHFormDialog: ({
+    patient,
     baseDischargeData,
   }: {
+    patient: { patientName?: string };
     baseDischargeData: { dischargeDate?: string; dischargeTime?: string };
   }) => (
     <div>
-      IEEH CMA {baseDischargeData.dischargeDate} {baseDischargeData.dischargeTime}
+      IEEH CMA {patient.patientName} {baseDischargeData.dischargeDate}{' '}
+      {baseDischargeData.dischargeTime}
     </div>
   ),
 }));
@@ -94,6 +97,40 @@ describe('CmaSectionRow', () => {
 
     fireEvent.click(screen.getByTitle('Generar Informe Estadístico de Egreso (IEEH)'));
 
-    expect(await screen.findByText('IEEH CMA 2026-04-30 19:45')).toBeInTheDocument();
+    expect(await screen.findByText('IEEH CMA Paciente CMA 2026-04-30 19:45')).toBeInTheDocument();
+  });
+
+  it('shows a labeled IEEH button and builds a patient snapshot when CMA has no original data', async () => {
+    const item = DataFactory.createMockCMA({
+      id: 'cma-ieeh-fallback',
+      patientName: 'Paciente Sin Snapshot',
+      rut: '11.111.111-1',
+      age: '64',
+      diagnosis: 'Procedimiento ambulatorio',
+      specialty: 'Cirugía',
+      dischargeTime: '13:20',
+      originalData: undefined,
+    });
+
+    render(
+      <table>
+        <tbody>
+          <CmaSectionRow
+            item={item}
+            recordDate="2026-04-30"
+            onUpdate={vi.fn()}
+            onUndo={vi.fn().mockResolvedValue(undefined)}
+            onDelete={vi.fn()}
+          />
+        </tbody>
+      </table>
+    );
+
+    const ieehButton = screen.getByRole('button', { name: /IEEH/i });
+    fireEvent.click(ieehButton);
+
+    expect(
+      await screen.findByText('IEEH CMA Paciente Sin Snapshot 2026-04-30 13:20')
+    ).toBeInTheDocument();
   });
 });
