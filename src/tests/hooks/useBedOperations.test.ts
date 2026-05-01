@@ -4,7 +4,7 @@ import { useBedOperations } from '@/hooks/useBedOperations';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { PatientData } from '@/types/domain/patient';
 // patientFactory is mocked inline
-import { logPatientCleared } from '@/services/admin/auditService';
+import { logPatientCleared } from '@/services/admin/auditLegacyDomainService';
 
 // Mock patientFactory
 vi.mock('@/services/factories/patientFactory', () => ({
@@ -22,9 +22,8 @@ const { mockLogPatientCleared } = vi.hoisted(() => ({
   mockLogPatientCleared: vi.fn(),
 }));
 
-vi.mock('@/services/admin/auditService', () => ({
+vi.mock('@/services/admin/auditLegacyDomainService', () => ({
   logPatientCleared: mockLogPatientCleared,
-  logAuditEvent: vi.fn(),
 }));
 
 // Mock AuditContext to provide the same mock function

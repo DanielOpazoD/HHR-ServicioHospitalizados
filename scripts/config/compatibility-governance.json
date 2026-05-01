@@ -24,7 +24,7 @@
       "retirementCriteria": "Sin imports directos productivos desde features y funciones clínicas modernas disponibles en AuditContext.",
       "target": "2026-Q2",
       "importPolicy": "restricted",
-      "allowedImporters": ["src/services/admin/auditService.ts"]
+      "allowedImporters": ["src/services/admin/auditLegacyDomainService.ts"]
     },
     {
       "path": "functions/lib/auth/authHelpersFactory.js",

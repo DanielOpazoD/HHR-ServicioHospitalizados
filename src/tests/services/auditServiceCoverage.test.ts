@@ -1,8 +1,10 @@
 // Must unmock to test real implementation, as setup.ts mocks it globally
 vi.unmock('../../services/admin/auditService');
+vi.unmock('../../services/admin/auditLegacyDomainService');
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as auditService from '@/services/admin/auditService';
+import * as auditLegacyDomainService from '@/services/admin/auditLegacyDomainService';
 import { setDoc } from 'firebase/firestore';
 
 // Mock dependencies
@@ -107,7 +109,7 @@ describe('AuditService Coverage', () => {
     mockSaveAuditLog.mockClear();
 
     // Act
-    await auditService.logPatientView('B01', 'Patient', '11.111.111-1', '2024-01-01');
+    await auditLegacyDomainService.logPatientView('B01', 'Patient', '11.111.111-1', '2024-01-01');
 
     // Assert - for excluded users, saveAuditLog should NOT be called
     expect(mockSaveAuditLog).not.toHaveBeenCalled();
@@ -119,7 +121,12 @@ describe('AuditService Coverage', () => {
 
     // This test verifies that logPatientView is implemented correctly
     // by checking it returns a Promise (doesn't throw)
-    const result = auditService.logPatientView('B01', 'Patient', '11.111.111-1', '2024-01-01');
+    const result = auditLegacyDomainService.logPatientView(
+      'B01',
+      'Patient',
+      '11.111.111-1',
+      '2024-01-01'
+    );
 
     // Assert - logPatientView returns a Promise
     expect(result).toBeInstanceOf(Promise);

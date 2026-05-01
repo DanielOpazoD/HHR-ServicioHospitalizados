@@ -1,13 +1,15 @@
 import {
   getAuditLogs,
   logAuditEvent,
+  logUserLogin,
+  logUserLogout,
+} from '@/services/admin/auditService';
+import {
   logPatientAdmission,
   logPatientDischarge,
   logPatientTransfer,
   logPatientView,
-  logUserLogin,
-  logUserLogout,
-} from '@/services/admin/auditService';
+} from '@/services/admin/auditLegacyDomainService';
 import type { AuditAction } from '@/types/auditActionTypes';
 import type { AuditLogEntry } from '@/types/auditLogTypes';
 

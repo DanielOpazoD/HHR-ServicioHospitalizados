@@ -4,6 +4,7 @@ import type { AuditLogEntry } from '@/types/auditLogTypes';
 
 // Force unmock because it's globally mocked in setup.ts
 vi.unmock('../../services/admin/auditService');
+vi.unmock('../../services/admin/auditLegacyDomainService');
 
 // Mock Firebase Config BEFORE importing the service
 vi.mock('../../firebaseConfig', () => ({
@@ -70,17 +71,19 @@ vi.mock('../../services/admin/utils/auditSummaryGenerator', () => ({
 
 // Now import the service
 import {
+  logSystemError,
+  logThrottledViewEvent,
+  getAuditLogs,
+  getAuditLogsForDate,
+} from '@/services/admin/auditService';
+import {
   logPatientAdmission,
   logPatientDischarge,
   logPatientTransfer,
   logPatientCleared,
   logDailyRecordDeleted,
   logDailyRecordCreated,
-  logSystemError,
-  logThrottledViewEvent,
-  getAuditLogs,
-  getAuditLogsForDate,
-} from '@/services/admin/auditService';
+} from '@/services/admin/auditLegacyDomainService';
 import * as auditUtils from '@/services/admin/utils/auditUtils';
 
 describe('AuditService', () => {

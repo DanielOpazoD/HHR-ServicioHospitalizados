@@ -343,6 +343,8 @@ const mockAuditFactory = () => mockAuditService;
 
 vi.mock('@/services/admin/auditService', () => mockAuditFactory());
 vi.mock('../services/admin/auditService', () => mockAuditFactory());
+vi.mock('@/services/admin/auditLegacyDomainService', () => mockAuditFactory());
+vi.mock('../services/admin/auditLegacyDomainService', () => mockAuditFactory());
 
 const globalCatalogRepositoryMock = {
   getNurses: vi.fn().mockResolvedValue(['Enfermero/a 1', 'Enfermero/a 2', 'Test Nurse']),

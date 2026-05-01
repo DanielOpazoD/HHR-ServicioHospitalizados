@@ -1,4 +1,4 @@
-import { logConflictAutoMerged } from '@/services/admin/auditService';
+import { logConflictAutoMerged } from '@/services/admin/auditLegacyDomainService';
 
 export interface ConflictAuditDetails {
   changedPaths: string[];

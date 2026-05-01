@@ -3,13 +3,13 @@ import type { User } from 'firebase/auth';
 import type { AuditLogEntry } from '@/types/auditLogTypes';
 
 // Unmock auditService to test the REAL logic
-vi.unmock('../../services/admin/auditService');
+vi.unmock('../../services/admin/auditLegacyDomainService');
 
 import {
   logPatientAdmission,
   logPatientDischarge,
   logPatientView,
-} from '@/services/admin/auditService';
+} from '@/services/admin/auditLegacyDomainService';
 import { auth } from '@/firebaseConfig';
 
 // Mock Firestore
