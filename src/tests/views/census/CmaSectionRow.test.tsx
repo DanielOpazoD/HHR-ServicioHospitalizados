@@ -133,4 +133,26 @@ describe('CmaSectionRow', () => {
       await screen.findByText('IEEH CMA Paciente Sin Snapshot 2026-04-30 13:20')
     ).toBeInTheDocument();
   });
+
+  it('renders the IEEH action after the delete action', () => {
+    const item = DataFactory.createMockCMA({ id: 'cma-action-order' });
+
+    render(
+      <table>
+        <tbody>
+          <CmaSectionRow
+            item={item}
+            recordDate="2026-04-30"
+            onUpdate={vi.fn()}
+            onUndo={vi.fn().mockResolvedValue(undefined)}
+            onDelete={vi.fn()}
+          />
+        </tbody>
+      </table>
+    );
+
+    const buttons = screen.getAllByRole('button');
+    expect(buttons.at(-2)).toHaveAttribute('title', 'Eliminar registro');
+    expect(buttons.at(-1)).toHaveTextContent('IEEH');
+  });
 });

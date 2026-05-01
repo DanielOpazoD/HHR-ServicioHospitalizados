@@ -104,15 +104,6 @@ export const CmaSectionRow: React.FC<CmaSectionRowProps> = React.memo(
           <td className="p-2 text-right print:hidden">
             <div className="flex items-center justify-end gap-1">
               <button
-                type="button"
-                onClick={() => setShowIeehDialog(true)}
-                className="inline-flex h-7 items-center gap-1 rounded border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-medium text-emerald-700 transition-colors hover:border-emerald-300 hover:bg-emerald-100"
-                title="Generar Informe Estadístico de Egreso (IEEH)"
-              >
-                <FileText size={12} />
-                IEEH
-              </button>
-              <button
                 onClick={() => void onUndo(item)}
                 className="p-1 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                 title={resolveCmaUndoButtonTitle(item)}
@@ -125,6 +116,15 @@ export const CmaSectionRow: React.FC<CmaSectionRowProps> = React.memo(
                 title="Eliminar registro"
               >
                 <Trash2 size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowIeehDialog(true)}
+                className="inline-flex h-7 items-center gap-1 rounded border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-medium text-emerald-700 transition-colors hover:border-emerald-300 hover:bg-emerald-100"
+                title="Generar Informe Estadístico de Egreso (IEEH)"
+              >
+                <FileText size={12} />
+                IEEH
               </button>
             </div>
           </td>
