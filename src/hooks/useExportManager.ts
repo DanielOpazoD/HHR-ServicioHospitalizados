@@ -7,7 +7,7 @@ import { recordOperationalOutcome } from '@/services/observability/operationalTe
 import { useBackupArchiveStatus } from '@/hooks/useBackupArchiveStatus';
 import { formatBackupShiftLabel } from '@/shared/backup/backupPresentation';
 import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
-import type { BackupHandoffPdfOutput } from '@/application/backup-export/backupExportArchiveUseCases';
+import type { BackupHandoffPdfOutput } from '@/application/backup-export/backupExportArchiveContracts';
 
 const loadBackupArchiveUseCases = () =>
   import('@/application/backup-export/backupExportArchiveUseCases');

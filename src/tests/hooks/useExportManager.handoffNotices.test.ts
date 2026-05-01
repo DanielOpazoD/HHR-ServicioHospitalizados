@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as backupExportArchiveUseCases from '@/application/backup-export/backupExportArchiveUseCases';
 import { useExportManager } from '@/hooks/useExportManager';
-import type { BackupHandoffPdfOutput } from '@/application/backup-export/backupExportArchiveUseCases';
+import type { BackupHandoffPdfOutput } from '@/application/backup-export/backupExportArchiveContracts';
 import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 

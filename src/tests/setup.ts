@@ -593,6 +593,7 @@ const mockAuditContextValue = {
   logUserLogin: vi.fn(),
   logUserLogout: vi.fn(),
   logEvent: vi.fn(),
+  logViewEvent: vi.fn(),
   logDebouncedEvent: vi.fn(),
   fetchLogs: vi.fn().mockResolvedValue([]),
   getActionLabel: vi.fn().mockReturnValue(''),

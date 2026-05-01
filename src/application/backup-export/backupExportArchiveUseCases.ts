@@ -17,6 +17,7 @@ import { validateCriticalFields } from '@/services/validation/criticalFieldsVali
 import {
   type BackupCensusExcelInput,
   type BackupHandoffPdfInput,
+  type BackupHandoffPdfOutput,
   type ExportHandoffPdfInput,
   normalizeBackupHandoffPdfInput,
   normalizeBackupCensusExcelInput,
@@ -143,11 +144,6 @@ export const executeExportHandoffPdf = async (
     ]);
   }
 };
-
-export interface BackupHandoffPdfOutput {
-  shift: 'day' | 'night';
-  createdCudyrBackup: boolean;
-}
 
 const BACKUP_STORAGE_MESSAGES: Record<
   BackupStorageMutationStatus,
