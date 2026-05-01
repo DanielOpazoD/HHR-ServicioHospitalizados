@@ -74,6 +74,13 @@ interface UseAuditReturn {
     recordDate: string,
     authors?: string
   ) => void;
+  logClinicalDocumentCreated: (
+    documentId: string,
+    templateId: string,
+    documentTitle: string,
+    patientRut?: string,
+    recordDate?: string
+  ) => void;
   logViewEvent: (
     action: AuditAction,
     entityType: AuditLogEntry['entityType'],
@@ -273,6 +280,26 @@ export const useAudit = (userId: string): UseAuditReturn => {
     [logEvent]
   );
 
+  const logClinicalDocumentCreated = useCallback(
+    (
+      documentId: string,
+      templateId: string,
+      documentTitle: string,
+      patientRut?: string,
+      recordDate?: string
+    ) => {
+      logEvent(
+        'CLINICAL_DOCUMENT_CREATED',
+        'clinicalDocument',
+        documentId,
+        { documentId, templateId, documentTitle },
+        patientRut,
+        recordDate
+      );
+    },
+    [logEvent]
+  );
+
   const logViewEvent = useCallback(
     (
       action: AuditAction,
@@ -315,6 +342,7 @@ export const useAudit = (userId: string): UseAuditReturn => {
     logDailyRecordDeleted,
     logDailyRecordCreated,
     logPatientView,
+    logClinicalDocumentCreated,
     logViewEvent,
     logEvent,
     logDebouncedEvent,

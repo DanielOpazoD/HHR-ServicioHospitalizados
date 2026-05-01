@@ -39,6 +39,13 @@ interface AuditContextType {
     recordDate: string,
     authors?: string
   ) => void;
+  logClinicalDocumentCreated: (
+    documentId: string,
+    templateId: string,
+    documentTitle: string,
+    patientRut?: string,
+    recordDate?: string
+  ) => void;
   logViewEvent: (
     action: AuditAction,
     entityType: AuditLogEntry['entityType'],

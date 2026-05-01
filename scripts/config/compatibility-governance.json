@@ -27,9 +27,7 @@
       "allowedImporters": [
         "src/services/admin/auditService.ts",
         "src/features/clinical-documents/hooks/useClinicalDocumentDraftAutosave.ts",
-        "src/features/clinical-documents/hooks/clinicalDocumentDeleteActionController.ts",
-        "src/features/clinical-documents/hooks/useClinicalDocumentWorkspaceImportActions.ts",
-        "src/features/clinical-documents/hooks/useClinicalDocumentWorkspaceDocumentActions.ts"
+        "src/features/clinical-documents/hooks/clinicalDocumentDeleteActionController.ts"
       ]
     },
     {

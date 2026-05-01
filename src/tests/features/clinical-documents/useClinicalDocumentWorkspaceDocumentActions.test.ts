@@ -6,6 +6,16 @@ import { createClinicalDocumentDraft } from '@/features/clinical-documents/domai
 import { useClinicalDocumentWorkspaceDocumentActions } from '@/features/clinical-documents/hooks/useClinicalDocumentWorkspaceDocumentActions';
 import * as clinicalDocumentUseCases from '@/application/clinical-documents/clinicalDocumentUseCases';
 
+const auditContextMocks = vi.hoisted(() => ({
+  logClinicalDocumentCreated: vi.fn(),
+}));
+
+vi.mock('@/context/AuditContext', () => ({
+  useAuditContext: () => ({
+    logClinicalDocumentCreated: auditContextMocks.logClinicalDocumentCreated,
+  }),
+}));
+
 vi.mock('@/application/clinical-documents/clinicalDocumentUseCases', async () => {
   const actual = await vi.importActual<
     typeof import('@/application/clinical-documents/clinicalDocumentUseCases')
@@ -156,6 +166,13 @@ describe('useClinicalDocumentWorkspaceDocumentActions', () => {
       'Se generó el borrador inicial del documento.'
     );
     expect(lastPersistedSnapshotRef.current).not.toBe('');
+    expect(auditContextMocks.logClinicalDocumentCreated).toHaveBeenCalledWith(
+      'new-document-id',
+      'epicrisis',
+      createdDocument.title,
+      patient.rut,
+      selectedDocument.sourceDailyRecordDate
+    );
   });
 
   it('duplicates a document and selects the copied draft on success', async () => {
@@ -205,6 +222,13 @@ describe('useClinicalDocumentWorkspaceDocumentActions', () => {
     expect(notify.success).toHaveBeenCalledWith(
       'Documento duplicado',
       `${selectedDocument.title} se copió como ${duplicatedDocument.title}.`
+    );
+    expect(auditContextMocks.logClinicalDocumentCreated).toHaveBeenCalledWith(
+      'duplicated-document-id',
+      duplicatedDocument.templateId,
+      duplicatedDocument.title,
+      patient.rut,
+      duplicatedDocument.sourceDailyRecordDate
     );
   });
 
