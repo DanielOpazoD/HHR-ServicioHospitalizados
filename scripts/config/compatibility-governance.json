@@ -16,6 +16,23 @@
       "allowedImporters": []
     },
     {
+      "path": "src/services/admin/auditDomainLoggers.ts",
+      "owner": "audit",
+      "kind": "legacy_audit_facade",
+      "reason": "Mantener compatibilidad temporal mientras se migra auditoría legacy al pipeline useAudit / AuditContext / writeAuditEventUseCase.",
+      "remainingConsumers": "auditService como fachada y clinical-documents para created/edited/deleted.",
+      "retirementCriteria": "Sin imports directos productivos desde features y funciones clínicas modernas disponibles en AuditContext.",
+      "target": "2026-Q2",
+      "importPolicy": "restricted",
+      "allowedImporters": [
+        "src/services/admin/auditService.ts",
+        "src/features/clinical-documents/hooks/useClinicalDocumentDraftAutosave.ts",
+        "src/features/clinical-documents/hooks/clinicalDocumentDeleteActionController.ts",
+        "src/features/clinical-documents/hooks/useClinicalDocumentWorkspaceImportActions.ts",
+        "src/features/clinical-documents/hooks/useClinicalDocumentWorkspaceDocumentActions.ts"
+      ]
+    },
+    {
       "path": "functions/lib/auth/authHelpersFactory.js",
       "owner": "auth",
       "kind": "migration_shim",
