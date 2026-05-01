@@ -6,9 +6,9 @@ import {
   resolveClinicalDocumentAutosaveCommit,
 } from '@/application/clinical-documents/clinicalDocumentEditorUseCases';
 import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
+import { useAuditContext } from '@/context/AuditContext';
 import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
-import { logClinicalDocumentEdited } from '@/services/admin/auditDomainLoggers';
 import { serializeClinicalDocument } from '@/features/clinical-documents/controllers/clinicalDocumentWorkspaceController';
 import type { ClinicalDocumentDraftAction } from '@/features/clinical-documents/hooks/clinicalDocumentDraftReducer';
 
@@ -43,6 +43,7 @@ export const useClinicalDocumentDraftAutosave = ({
   draftRef,
   lastPersistedSnapshotRef,
 }: UseClinicalDocumentDraftAutosaveParams) => {
+  const { logClinicalDocumentEdited } = useAuditContext();
   const autosaveTimerRef = useRef<number | null>(null);
   const latestAutosaveRequestIdRef = useRef(0);
   const scheduledDraftIdRef = useRef<string | null>(null);
@@ -144,7 +145,16 @@ export const useClinicalDocumentDraftAutosave = ({
         dispatch({ type: 'AUTOSAVE_FAILED' });
       }
     },
-    [dispatch, draftRef, hospitalId, lastPersistedSnapshotRef, persistReason, role, user]
+    [
+      dispatch,
+      draftRef,
+      hospitalId,
+      lastPersistedSnapshotRef,
+      logClinicalDocumentEdited,
+      persistReason,
+      role,
+      user,
+    ]
   );
 
   useEffect(() => {

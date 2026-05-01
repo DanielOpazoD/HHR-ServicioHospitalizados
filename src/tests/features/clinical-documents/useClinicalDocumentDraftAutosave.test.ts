@@ -11,6 +11,9 @@ const executePersistClinicalDocumentEditorDraft = vi.fn();
 const resolveClinicalDocumentAutosaveCommit = vi.fn();
 const recordOperationalOutcome = vi.fn();
 const recordOperationalTelemetry = vi.fn();
+const auditContextMocks = vi.hoisted(() => ({
+  logClinicalDocumentEdited: vi.fn(),
+}));
 
 vi.mock('@/application/clinical-documents/clinicalDocumentEditorUseCases', () => ({
   executePersistClinicalDocumentEditorDraft: (...args: unknown[]) =>
@@ -22,6 +25,12 @@ vi.mock('@/application/clinical-documents/clinicalDocumentEditorUseCases', () =>
 vi.mock('@/services/observability/operationalTelemetryService', () => ({
   recordOperationalOutcome: (...args: unknown[]) => recordOperationalOutcome(...args),
   recordOperationalTelemetry: (...args: unknown[]) => recordOperationalTelemetry(...args),
+}));
+
+vi.mock('@/context/AuditContext', () => ({
+  useAuditContext: () => ({
+    logClinicalDocumentEdited: auditContextMocks.logClinicalDocumentEdited,
+  }),
 }));
 
 const buildDraft = (content: string): ClinicalDocumentRecord => {
@@ -216,6 +225,51 @@ describe('useClinicalDocumentDraftAutosave', () => {
         record: draft,
         reason: 'autosave',
       })
+    );
+  });
+
+  it('logs successful autosaves through the audit context when the save is not an admin fix', async () => {
+    const draft = buildDraft('<p>Texto clínico actualizado</p>');
+    const dispatch = vi.fn();
+    const draftRef = { current: draft };
+    const lastPersistedSnapshotRef = { current: '' };
+
+    executePersistClinicalDocumentEditorDraft.mockResolvedValue({
+      status: 'success',
+      data: draft,
+      issues: [],
+    });
+
+    renderHook(() =>
+      useClinicalDocumentDraftAutosave({
+        draft,
+        canEdit: true,
+        isActive: true,
+        hospitalId: 'hhr',
+        role: 'doctor_urgency',
+        persistReason: 'autosave',
+        user: {
+          uid: 'u1',
+          email: 'doctor@test.com',
+          displayName: 'Doctor Test',
+        },
+        dispatch,
+        draftRef,
+        lastPersistedSnapshotRef,
+      })
+    );
+
+    await act(async () => {
+      vi.advanceTimersByTime(900);
+      await Promise.resolve();
+    });
+
+    expect(auditContextMocks.logClinicalDocumentEdited).toHaveBeenCalledWith(
+      draft.id,
+      draft.templateId,
+      draft.title,
+      undefined,
+      draft.sourceDailyRecordDate
     );
   });
 

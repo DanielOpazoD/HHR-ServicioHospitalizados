@@ -23,6 +23,7 @@ import {
   shouldThrottleAuditViewAction,
   type ViewThrottleState,
 } from '@/services/admin/auditViewThrottle';
+import { useClinicalDocumentAuditLoggers } from '@/hooks/controllers/useClinicalDocumentAuditLoggers';
 
 const loadWriteAuditEventUseCase = () => import('@/application/audit/writeAuditEventUseCase');
 const loadFetchAuditLogsUseCase = () => import('@/application/audit/fetchAuditLogsUseCase');
@@ -75,6 +76,13 @@ interface UseAuditReturn {
     authors?: string
   ) => void;
   logClinicalDocumentCreated: (
+    documentId: string,
+    templateId: string,
+    documentTitle: string,
+    patientRut?: string,
+    recordDate?: string
+  ) => void;
+  logClinicalDocumentEdited: (
     documentId: string,
     templateId: string,
     documentTitle: string,
@@ -287,45 +295,8 @@ export const useAudit = (userId: string): UseAuditReturn => {
     [logEvent]
   );
 
-  const logClinicalDocumentCreated = useCallback(
-    (
-      documentId: string,
-      templateId: string,
-      documentTitle: string,
-      patientRut?: string,
-      recordDate?: string
-    ) => {
-      logEvent(
-        'CLINICAL_DOCUMENT_CREATED',
-        'clinicalDocument',
-        documentId,
-        { documentId, templateId, documentTitle },
-        patientRut,
-        recordDate
-      );
-    },
-    [logEvent]
-  );
-
-  const logClinicalDocumentDeleted = useCallback(
-    (
-      documentId: string,
-      templateId: string,
-      documentTitle: string,
-      patientRut?: string,
-      recordDate?: string
-    ) => {
-      logEvent(
-        'CLINICAL_DOCUMENT_DELETED',
-        'clinicalDocument',
-        documentId,
-        { documentId, templateId, documentTitle },
-        patientRut,
-        recordDate
-      );
-    },
-    [logEvent]
-  );
+  const { logClinicalDocumentCreated, logClinicalDocumentEdited, logClinicalDocumentDeleted } =
+    useClinicalDocumentAuditLoggers(logEvent);
 
   const logViewEvent = useCallback(
     (
@@ -370,6 +341,7 @@ export const useAudit = (userId: string): UseAuditReturn => {
     logDailyRecordCreated,
     logPatientView,
     logClinicalDocumentCreated,
+    logClinicalDocumentEdited,
     logClinicalDocumentDeleted,
     logViewEvent,
     logEvent,

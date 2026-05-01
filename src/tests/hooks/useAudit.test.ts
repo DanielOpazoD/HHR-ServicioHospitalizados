@@ -24,6 +24,7 @@ describe('useAudit', () => {
   const testUserId = 'test-user-123';
 
   beforeEach(() => {
+    vi.useRealTimers();
     vi.clearAllMocks();
     sessionStorage.clear();
   });
@@ -39,6 +40,7 @@ describe('useAudit', () => {
     expect(typeof result.current.logDailyRecordCreated).toBe('function');
     expect(typeof result.current.logPatientView).toBe('function');
     expect(typeof result.current.logClinicalDocumentCreated).toBe('function');
+    expect(typeof result.current.logClinicalDocumentEdited).toBe('function');
     expect(typeof result.current.logClinicalDocumentDeleted).toBe('function');
     expect(typeof result.current.logViewEvent).toBe('function');
     expect(typeof result.current.logEvent).toBe('function');
@@ -159,6 +161,68 @@ describe('useAudit', () => {
         })
       );
     });
+  });
+
+  it('logs clinical document edits immediately but throttles repeats for 15 minutes', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-01T10:00:00.000Z'));
+    const { result } = renderHook(() => useAudit(testUserId));
+
+    act(() => {
+      result.current.logClinicalDocumentEdited(
+        'doc-1',
+        'epicrisis',
+        'Epicrisis',
+        '11.111.111-1',
+        '2026-05-01'
+      );
+    });
+    await vi.dynamicImportSettled();
+
+    expect(writeAuditUseCase.executeWriteAuditEvent).toHaveBeenCalledTimes(1);
+    expect(writeAuditUseCase.executeWriteAuditEvent).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        userId: testUserId,
+        action: 'CLINICAL_DOCUMENT_EDITED',
+        entityType: 'clinicalDocument',
+        entityId: 'doc-1',
+        details: {
+          documentId: 'doc-1',
+          templateId: 'epicrisis',
+          documentTitle: 'Epicrisis',
+        },
+        patientRut: '11.111.111-1',
+        recordDate: '2026-05-01',
+      })
+    );
+
+    act(() => {
+      vi.setSystemTime(new Date('2026-05-01T10:14:59.000Z'));
+      result.current.logClinicalDocumentEdited(
+        'doc-1',
+        'epicrisis',
+        'Epicrisis actualizada',
+        '11.111.111-1',
+        '2026-05-01'
+      );
+    });
+    await vi.dynamicImportSettled();
+
+    expect(writeAuditUseCase.executeWriteAuditEvent).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      vi.setSystemTime(new Date('2026-05-01T10:15:00.000Z'));
+      result.current.logClinicalDocumentEdited(
+        'doc-1',
+        'epicrisis',
+        'Epicrisis actualizada',
+        '11.111.111-1',
+        '2026-05-01'
+      );
+    });
+    await vi.dynamicImportSettled();
+
+    expect(writeAuditUseCase.executeWriteAuditEvent).toHaveBeenCalledTimes(2);
   });
 
   it('throttles repeated view events before reaching the write use case', async () => {
