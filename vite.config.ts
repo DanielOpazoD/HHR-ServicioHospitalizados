@@ -100,7 +100,7 @@ export default defineConfig(({ mode }) => {
           injectionPoint: 'self.__WB_MANIFEST',
         },
         registerType: 'autoUpdate',
-        injectRegister: 'auto',
+        injectRegister: 'script',
         manifest: {
           name: 'Hanga Roa Hospital Tracker',
           short_name: 'HHR',

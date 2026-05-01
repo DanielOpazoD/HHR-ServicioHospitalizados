@@ -34,7 +34,7 @@ export const resolveDailyRecordBootstrapPhase = ({
     return 'record_ready';
   }
 
-  if (runtime?.availabilityState === 'confirmed_missing') {
+  if (remoteSyncStatus === 'ready' && runtime?.availabilityState === 'confirmed_missing') {
     return 'confirmed_empty';
   }
 
@@ -81,6 +81,8 @@ export const resolveCensusEmptyStatePolicy = ({
   const isToday = currentDateString === todayDateString;
   const shouldDeferRemoteBootstrap =
     isAuthenticated && isDailyRecordBootstrapPending(bootstrapPhase);
+  const shouldExtendTodayRemoteRecovery =
+    isAuthenticated && isToday && bootstrapPhase === 'remote_record_timeout';
   const isConfirmedEmpty = bootstrapPhase === 'confirmed_empty';
 
   // Always defer briefly so Firestore has time to resolve the record
@@ -88,7 +90,12 @@ export const resolveCensusEmptyStatePolicy = ({
   // has explicitly confirmed the date has no data.
   return {
     shouldDeferEmptyState: !isConfirmedEmpty,
-    deferMs: shouldDeferRemoteBootstrap ? 15_000 : isToday ? 1_200 : 800,
+    deferMs:
+      shouldDeferRemoteBootstrap || shouldExtendTodayRemoteRecovery
+        ? 15_000
+        : isToday
+          ? 1_200
+          : 800,
   };
 };
 

@@ -56,6 +56,27 @@ describe('dailyRecordBootstrapController', () => {
     ).toBe('confirmed_empty');
   });
 
+  it('does not confirm an empty day before the remote runtime can verify it', () => {
+    expect(
+      resolveDailyRecordBootstrapPhase({
+        remoteSyncStatus: 'local_only',
+        record: null,
+        runtime: {
+          date: '2025-01-08',
+          availabilityState: 'confirmed_missing',
+          consistencyState: 'missing',
+          sourceOfTruth: 'none',
+          retryability: 'not_applicable',
+          recoveryAction: 'none',
+          conflictSummary: null,
+          observabilityTags: ['daily_record'],
+          repairApplied: false,
+        },
+        gracePeriodExpired: false,
+      })
+    ).toBe('local_only');
+  });
+
   it('deferes the empty state only while bootstrap remains pending', () => {
     expect(
       resolveCensusEmptyStatePolicy({
@@ -81,6 +102,19 @@ describe('dailyRecordBootstrapController', () => {
     ).toEqual({
       shouldDeferEmptyState: true,
       deferMs: 800,
+    });
+
+    expect(
+      resolveCensusEmptyStatePolicy({
+        branch: 'empty',
+        currentDateString: '2025-01-01',
+        todayDateString: '2025-01-01',
+        isAuthenticated: true,
+        bootstrapPhase: 'remote_record_timeout',
+      })
+    ).toEqual({
+      shouldDeferEmptyState: true,
+      deferMs: 15_000,
     });
   });
 
