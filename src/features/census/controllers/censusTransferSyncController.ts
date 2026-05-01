@@ -10,6 +10,8 @@ import type {
   getLatestOpenTransferRequestByBedId,
 } from '@/services/transfers/transferService';
 
+type CompleteTransferResult = Awaited<ReturnType<typeof completeTransferWithResult>>;
+
 export const resolveTransferDestinationHospital = (
   receivingCenter: string,
   receivingCenterOther: string
@@ -59,6 +61,14 @@ export const buildTransferPatientSnapshot = (patient: PatientData, recordDate: s
   admissionDate: patient.admissionDate || recordDate,
 });
 
+const assertTransferCompletionSucceeded = (result: CompleteTransferResult): void => {
+  if (result.status === 'success') {
+    return;
+  }
+
+  throw new Error(result.userSafeMessage || 'No se pudo completar el traslado.');
+};
+
 interface SyncCensusTransferRequestParams {
   bedId: string;
   patient: PatientData;
@@ -84,7 +94,8 @@ export const syncCensusTransferRequest = async ({
 }: SyncCensusTransferRequestParams): Promise<void> => {
   const linkedRequest = await getLatestOpenTransferRequestByBedId(bedId);
   if (linkedRequest) {
-    await completeTransferWithResult(linkedRequest.id, createdByEmail);
+    const completionResult = await completeTransferWithResult(linkedRequest.id, createdByEmail);
+    assertTransferCompletionSucceeded(completionResult);
     return;
   }
 
@@ -109,5 +120,6 @@ export const syncCensusTransferRequest = async ({
   });
 
   // Complete immediately — patient was already transferred
-  await completeTransferWithResult(createdRequest.id, createdByEmail);
+  const completionResult = await completeTransferWithResult(createdRequest.id, createdByEmail);
+  assertTransferCompletionSucceeded(completionResult);
 };

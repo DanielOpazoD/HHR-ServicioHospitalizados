@@ -117,6 +117,7 @@ describe('useCensusTransferCommand', () => {
   it('executes transfer and syncs a finalized transfer request when there is no linked open request', async () => {
     mockGetLatestOpenTransferRequestByBedId.mockResolvedValue(null);
     mockCreateTransferRequest.mockResolvedValue({ id: 'TR-1' });
+    mockCompleteTransferWithResult.mockResolvedValue({ status: 'success', data: null });
     const { result, addTransfer, updateTransfer, setTransferState } = createHook();
 
     await act(async () => {
@@ -166,6 +167,31 @@ describe('useCensusTransferCommand', () => {
   it('notifies warning when transfer sync fails after registering the transfer', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     mockGetLatestOpenTransferRequestByBedId.mockRejectedValue(new Error('sync failed'));
+    const { result, addTransfer, notifyError } = createHook();
+
+    await act(async () => {
+      result.current({ time: '11:00' });
+    });
+
+    expect(addTransfer).toHaveBeenCalledTimes(1);
+    expect(notifyError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Traslado registrado con advertencia',
+      })
+    );
+
+    errorSpy.mockRestore();
+  });
+
+  it('notifies warning when linked transfer finalization is rejected by Firestore', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    mockGetLatestOpenTransferRequestByBedId.mockResolvedValue({ id: 'TR-9' });
+    mockCompleteTransferWithResult.mockResolvedValue({
+      status: 'permission_denied',
+      data: null,
+      userSafeMessage: 'No se pudo completar el traslado.',
+      error: new Error('Missing or insufficient permissions.'),
+    });
     const { result, addTransfer, notifyError } = createHook();
 
     await act(async () => {

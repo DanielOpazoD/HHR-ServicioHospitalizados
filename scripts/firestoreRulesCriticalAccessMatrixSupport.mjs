@@ -29,7 +29,7 @@ export const CRITICAL_FIRESTORE_ACCESS_MATRIX = [
     read: 'canReadClinicalData()',
     create: 'canEdit()',
     update: 'canEdit()',
-    delete: 'isAdmin()',
+    delete: 'canEdit()',
   },
   {
     path: 'backupFiles',

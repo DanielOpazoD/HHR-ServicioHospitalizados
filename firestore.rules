@@ -743,7 +743,7 @@ service cloud.firestore {
       match /transferRequests/{transferId} {
         allow read: if canReadClinicalData();
         allow create, update: if canEdit();
-        allow delete: if isAdmin();
+        allow delete: if canEdit();
       }
       
       match /transferHistory/{transferId} {

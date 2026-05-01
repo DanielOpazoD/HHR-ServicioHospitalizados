@@ -65,7 +65,7 @@ describe('censusTransferSyncController', () => {
   it('skips request creation when there is already an open linked transfer', async () => {
     const getLatest = vi.fn().mockResolvedValue({ id: 'TR-1' });
     const createTransfer = vi.fn();
-    const completeTransfer = vi.fn();
+    const completeTransfer = vi.fn().mockResolvedValue({ status: 'success', data: null });
 
     await syncCensusTransferRequest({
       bedId: 'R1',
@@ -82,10 +82,36 @@ describe('censusTransferSyncController', () => {
     expect(completeTransfer).toHaveBeenCalledWith('TR-1', 'test@example.com');
   });
 
+  it('fails loudly when a linked transfer cannot be finalized', async () => {
+    const getLatest = vi.fn().mockResolvedValue({ id: 'TR-1' });
+    const createTransfer = vi.fn();
+    const completeTransfer = vi.fn().mockResolvedValue({
+      status: 'permission_denied',
+      data: null,
+      userSafeMessage: 'No se pudo completar el traslado.',
+      error: new Error('Missing or insufficient permissions.'),
+    });
+
+    await expect(
+      syncCensusTransferRequest({
+        bedId: 'R1',
+        patient: DataFactory.createMockPatient('R1'),
+        recordDate: '2026-03-11',
+        destinationHospital: 'Hospital Base',
+        createdByEmail: 'test@example.com',
+        getLatestOpenTransferRequestByBedId: getLatest,
+        createTransferRequest: createTransfer,
+        completeTransferWithResult: completeTransfer,
+      })
+    ).rejects.toThrow('No se pudo completar el traslado.');
+
+    expect(createTransfer).not.toHaveBeenCalled();
+  });
+
   it('creates and finalizes a transfer request when there is no linked open transfer', async () => {
     const getLatest = vi.fn().mockResolvedValue(null);
     const createTransfer = vi.fn().mockResolvedValue({ id: 'TR-2' });
-    const completeTransfer = vi.fn();
+    const completeTransfer = vi.fn().mockResolvedValue({ status: 'success', data: null });
 
     await syncCensusTransferRequest({
       bedId: 'R1',

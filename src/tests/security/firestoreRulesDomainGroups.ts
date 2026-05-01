@@ -256,6 +256,12 @@ export function registerFirestoreRulesDomainGroups({
       await assertSucceeds(nurse().doc(transferPath).set({ status: 'pending' }));
     });
 
+    it('Nurses can remove active transfer requests when finalizing or correcting the workflow', async () => {
+      await setupDoc(admin(), transferPath, { status: 'REQUESTED' });
+
+      await assertSucceeds(nurse().doc(transferPath).delete());
+    });
+
     it('Non-nurse users cannot create transfer requests', async () => {
       await assertFails(authed().doc(transferPath).set({ status: 'pending' }));
     });
