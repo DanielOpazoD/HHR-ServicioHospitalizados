@@ -113,6 +113,7 @@ export const PatientRowModals: React.FC<PatientRowModalsProps> = ({
             isOpen={showExamRequest}
             onClose={onCloseExamRequest}
             patient={data}
+            recordDate={currentDateString}
           />
         </Suspense>
       )}

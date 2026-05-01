@@ -105,6 +105,44 @@ describe('syslab-proxy', () => {
     expect(response.body).toContain('no válida');
   });
 
+  it('returns connected health when the upstream Syslab proxy responds', async () => {
+    const handler = await loadHandler();
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue({ status: 'ok' }),
+    });
+
+    const response = await handler({
+      httpMethod: 'GET',
+      headers: { authorization: 'Bearer token-123' },
+      body: null,
+      rawQuery: 'action=health',
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://lab.example.com/health',
+      expect.objectContaining({ method: 'GET' })
+    );
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toContain('"connected":true');
+  });
+
+  it('returns disconnected health without throwing when upstream Syslab is unavailable', async () => {
+    const handler = await loadHandler();
+    fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
+
+    const response = await handler({
+      httpMethod: 'GET',
+      headers: { authorization: 'Bearer token-123' },
+      body: null,
+      rawQuery: 'action=health',
+    });
+
+    expect(response.statusCode).toBe(503);
+    expect(response.body).toContain('"connected":false');
+  });
+
   /* ── action=search ───────────────────────────────────────────────────── */
 
   describe('action=search', () => {

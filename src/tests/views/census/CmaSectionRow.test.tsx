@@ -4,6 +4,18 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { CmaSectionRow } from '@/features/census/components/CmaSectionRow';
 import { DataFactory } from '@/tests/factories/DataFactory';
 
+vi.mock('@/features/census/components/IEEHFormDialog', () => ({
+  IEEHFormDialog: ({
+    baseDischargeData,
+  }: {
+    baseDischargeData: { dischargeDate?: string; dischargeTime?: string };
+  }) => (
+    <div>
+      IEEH CMA {baseDischargeData.dischargeDate} {baseDischargeData.dischargeTime}
+    </div>
+  ),
+}));
+
 describe('CmaSectionRow', () => {
   it('renders item values and emits update callbacks', () => {
     const item = DataFactory.createMockCMA({
@@ -18,6 +30,7 @@ describe('CmaSectionRow', () => {
         <tbody>
           <CmaSectionRow
             item={item}
+            recordDate="2026-04-30"
             onUpdate={onUpdate}
             onUndo={vi.fn().mockResolvedValue(undefined)}
             onDelete={vi.fn()}
@@ -45,6 +58,7 @@ describe('CmaSectionRow', () => {
         <tbody>
           <CmaSectionRow
             item={item}
+            recordDate="2026-04-30"
             onUpdate={vi.fn()}
             onUndo={vi.fn().mockResolvedValue(undefined)}
             onDelete={vi.fn()}
@@ -54,5 +68,32 @@ describe('CmaSectionRow', () => {
     );
 
     expect(screen.getByTitle('Deshacer (sin datos originales)')).toBeInTheDocument();
+  });
+
+  it('opens the IEEH dialog for CMA records with original patient data', async () => {
+    const item = DataFactory.createMockCMA({
+      id: 'cma-ieeh',
+      dischargeTime: '19:45',
+      originalBedId: 'R1',
+      originalData: DataFactory.createMockPatient('R1', { patientName: 'Paciente CMA' }),
+    });
+
+    render(
+      <table>
+        <tbody>
+          <CmaSectionRow
+            item={item}
+            recordDate="2026-04-30"
+            onUpdate={vi.fn()}
+            onUndo={vi.fn().mockResolvedValue(undefined)}
+            onDelete={vi.fn()}
+          />
+        </tbody>
+      </table>
+    );
+
+    fireEvent.click(screen.getByTitle('Generar Informe Estadístico de Egreso (IEEH)'));
+
+    expect(await screen.findByText('IEEH CMA 2026-04-30 19:45')).toBeInTheDocument();
   });
 });

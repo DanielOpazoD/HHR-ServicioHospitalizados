@@ -25,7 +25,9 @@ vi.mock('@/components/modals/DemographicsModal', () => ({
 }));
 
 vi.mock('@/components/modals/ExamRequestModal', () => ({
-  ExamRequestModal: () => <div>Exam Request</div>,
+  ExamRequestModal: ({ recordDate }: { recordDate?: string }) => (
+    <div>Exam Request {recordDate}</div>
+  ),
 }));
 
 vi.mock('@/components/modals/ImagingRequestDialog', () => ({
@@ -83,7 +85,7 @@ describe('PatientRowModals', () => {
     const demographics = await screen.findByText('Demographics R1');
     expect(demographics).toBeInTheDocument();
     expect(demographics.closest('div')).toHaveAttribute('data-rn-context', 'false');
-    expect(await screen.findByText('Exam Request')).toBeInTheDocument();
+    expect(await screen.findByText('Exam Request 2026-03-05')).toBeInTheDocument();
     expect(await screen.findByText('Imaging Request')).toBeInTheDocument();
     expect(await screen.findByText('Patient History')).toBeInTheDocument();
     expect(screen.queryByText('Clinical Documents')).not.toBeInTheDocument();

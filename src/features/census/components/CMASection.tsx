@@ -13,7 +13,7 @@ import { useCmaSectionModel } from '@/features/census/hooks/useCmaSectionModel';
 import { useCensusMovementData } from '@/features/census/hooks/useCensusMovementData';
 
 export const CMASection: React.FC = () => {
-  const { cma } = useCensusMovementData();
+  const { cma, recordDate } = useCensusMovementData();
   const { deleteCMA, updateCMA } = useDailyRecordMovementActions();
   const { updatePatientMultiple } = useDailyRecordBedActions();
   const { confirm } = useConfirmDialog();
@@ -43,6 +43,7 @@ export const CMASection: React.FC = () => {
       renderRow={item => (
         <CmaSectionRow
           item={item}
+          recordDate={recordDate}
           onUpdate={sectionModel.handleUpdate}
           onUndo={sectionModel.handleUndo}
           onDelete={sectionModel.handleDelete}

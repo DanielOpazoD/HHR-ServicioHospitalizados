@@ -42,6 +42,19 @@ describe('ExamRequestModal integration', () => {
     expect(screen.getAllByText('LACTATO')).toHaveLength(1);
   });
 
+  it('prints the census date in the exam request form', () => {
+    render(
+      <ExamRequestModal
+        isOpen={true}
+        onClose={vi.fn()}
+        patient={mockPatient}
+        recordDate="2026-04-30"
+      />
+    );
+
+    expect(screen.getByText('30-04-2026')).toBeInTheDocument();
+  });
+
   it('updates the selected exam count when a visible exam is toggled', async () => {
     render(<ExamRequestModal isOpen={true} onClose={vi.fn()} patient={mockPatient} />);
 

@@ -59,14 +59,11 @@ describe('ExamPatientInfo', () => {
       expect(screen.getByText('15-06-1980')).toBeInTheDocument();
     });
 
-    it('should render current date', () => {
-      const { container } = render(<ExamPatientInfo patient={mockPatient} />);
+    it('should render the census record date instead of the computer date', () => {
+      render(<ExamPatientInfo patient={mockPatient} recordDate="2026-04-30" />);
 
-      // Should contain a date in DD-MM-YYYY format somewhere in the component
-      // We just check that the FECHA label exists and has content after it
       expect(screen.getByText('FECHA:')).toBeInTheDocument();
-      // The component is rendering correctly if we reach this point
-      expect(container).toBeInTheDocument();
+      expect(screen.getByText('30-04-2026')).toBeInTheDocument();
     });
   });
 

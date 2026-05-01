@@ -9,9 +9,17 @@ import { formatDateDDMMYYYY } from '@/utils/dateDisplayUtils';
 
 interface ExamPatientInfoProps {
   patient: PatientData;
+  recordDate?: string;
 }
 
-export const ExamPatientInfo: React.FC<ExamPatientInfoProps> = ({ patient }) => {
+const getLocalDateString = (): string => {
+  const today = new Date();
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+};
+
+export const ExamPatientInfo: React.FC<ExamPatientInfoProps> = ({ patient, recordDate }) => {
+  const requestDate = recordDate || getLocalDateString();
+
   return (
     <div className="border border-slate-400 p-1 mb-1">
       <div className="grid grid-cols-12 gap-x-2 border-b border-slate-200 pb-1 mb-1">
@@ -46,7 +54,7 @@ export const ExamPatientInfo: React.FC<ExamPatientInfoProps> = ({ patient }) => 
         <div className="col-span-3 flex gap-2">
           <span className="text-[9px] font-black text-slate-900 uppercase">FECHA:</span>
           <div className="text-[17px] font-black text-slate-900 border-b border-slate-900 flex-1 h-6 px-1 uppercase leading-none">
-            {formatDateDDMMYYYY(new Date().toISOString().split('T')[0])}
+            {formatDateDDMMYYYY(requestDate)}
           </div>
         </div>
       </div>

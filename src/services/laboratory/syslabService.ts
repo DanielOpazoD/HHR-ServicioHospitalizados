@@ -55,6 +55,11 @@ const buildSyslabProxyUrl = (query: string): string => `/.netlify/functions/sysl
 export const cleanRutForSyslab = (rut: string): string =>
   rut.replace(/\./g, '').replace(/-.*$/, '').trim();
 
+export interface SyslabConnectionStatus {
+  available: boolean;
+  message: string;
+}
+
 /**
  * Fetch with timeout and single retry for transient network failures.
  */
@@ -102,6 +107,30 @@ const fetchWithRetry = async (
   }
 
   throw lastError || new Error('Request failed');
+};
+
+export const checkSyslabConnection = async (): Promise<SyslabConnectionStatus> => {
+  const authHeaders = await resolveCurrentUserAuthHeaders();
+  const url = shouldUseNetlifyProxy()
+    ? buildSyslabProxyUrl('?action=health')
+    : `${getSyslabBaseUrl()}/health`;
+
+  try {
+    const response = await fetchWithRetry(url, { headers: authHeaders }, 5_000);
+    const data = await response.json().catch(() => ({ connected: response.ok }));
+    const connected = Boolean(data.connected ?? data.success ?? response.ok);
+
+    return {
+      available: connected,
+      message: connected ? 'Conectado' : data.error || 'Syslab no disponible',
+    };
+  } catch (error) {
+    syslabLogger.warn('Syslab health check failed', error);
+    return {
+      available: false,
+      message: error instanceof Error ? error.message : 'Syslab no disponible',
+    };
+  }
 };
 
 /**

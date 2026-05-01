@@ -22,6 +22,7 @@ vi.mock('@/services/auth/authRequestHeaders', () => ({
 import {
   cleanRutForSyslab,
   getSyslabBaseUrl,
+  checkSyslabConnection,
   searchSyslabExams,
   fetchSyslabExamDetails,
   buildSyslabPdfUrl,
@@ -271,6 +272,51 @@ describe('searchSyslabExams', () => {
     });
 
     await expect(searchSyslabExams('12345678')).rejects.toThrow('Error de conexión');
+  });
+});
+
+describe('checkSyslabConnection', () => {
+  const mockFetch = vi.fn();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setImportMetaEnv({
+      PROD: false,
+      VITE_SYSLAB_API_URL: 'http://localhost:3000',
+    });
+    setRuntimeLocation('8888');
+    global.fetch = mockFetch;
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('returns available when the Syslab health endpoint reports connected', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ success: true, connected: true }),
+    });
+
+    await expect(checkSyslabConnection()).resolves.toEqual({
+      available: true,
+      message: 'Conectado',
+    });
+    expect(mockFetch).toHaveBeenCalledWith(
+      '/.netlify/functions/syslab-proxy?action=health',
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: 'Bearer token-123' }),
+      })
+    );
+  });
+
+  it('returns unavailable on network failure so the UI can disable Syslab', async () => {
+    mockFetch.mockRejectedValue(new TypeError('Failed to fetch'));
+
+    await expect(checkSyslabConnection()).resolves.toMatchObject({
+      available: false,
+    });
   });
 });
 

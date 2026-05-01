@@ -29,13 +29,19 @@ interface ExamRequestModalProps {
   isOpen: boolean;
   onClose: () => void;
   patient: PatientData;
+  recordDate?: string;
 }
 
 const examRequestColumns = buildExamRequestFormColumns();
 const examRequestFooterSection = buildExamRequestFooterSection();
 const examRequestFooterFields = buildExamRequestFooterFields();
 
-export const ExamRequestModal: React.FC<ExamRequestModalProps> = ({ isOpen, onClose, patient }) => {
+export const ExamRequestModal: React.FC<ExamRequestModalProps> = ({
+  isOpen,
+  onClose,
+  patient,
+  recordDate,
+}) => {
   const {
     selectedExams,
     procedencia,
@@ -180,7 +186,7 @@ export const ExamRequestModal: React.FC<ExamRequestModalProps> = ({ isOpen, onCl
             onProcedenciaChange={setProcedencia}
             onPrevisionChange={setPrevision}
           />
-          <ExamPatientInfo patient={patient} />
+          <ExamPatientInfo patient={patient} recordDate={recordDate} />
 
           {/* Exams Grid */}
           <div className="grid grid-cols-12 border-2 border-slate-900 rounded-lg overflow-hidden min-h-[480px]">

@@ -14,6 +14,7 @@
  *                         and no public proxy URL is configured.
  *
  * Supported actions (via `action` query parameter):
+ *   - health:  GET  /health  (checks upstream availability)
  *   - search:  GET  /api/exams?rut=<rut>
  *   - details: POST /api/exams/details  (body: { links: string[] })
  *   - pdf:     GET  /api/exams/pdf?link=<url>  (returns raw PDF bytes)
@@ -69,6 +70,37 @@ const proxyFetch = async (url: string, options: RequestInit = {}): Promise<Respo
     return response;
   } finally {
     clearTimeout(timeout);
+  }
+};
+
+/* ── Health check ──────────────────────────────────────────────────── */
+
+const handleHealth = async (proxyUrl: string, requestOrigin?: string) => {
+  try {
+    const response = await proxyFetch(`${proxyUrl}/health`, { method: 'GET' });
+    if (!response.ok) {
+      return buildJsonResponse(
+        503,
+        { success: false, connected: false, status: response.status },
+        { requestOrigin }
+      );
+    }
+
+    return buildJsonResponse(
+      200,
+      { success: true, connected: true, status: response.status },
+      { requestOrigin }
+    );
+  } catch (error) {
+    return buildJsonResponse(
+      503,
+      {
+        success: false,
+        connected: false,
+        error: error instanceof Error ? error.message : 'Syslab unavailable',
+      },
+      { requestOrigin }
+    );
   }
 };
 
@@ -218,12 +250,16 @@ export const createSyslabProxyHandler = (
     const action = params.get('action');
 
     try {
-      if (action !== 'search' && action !== 'details' && action !== 'pdf') {
+      if (action !== 'health' && action !== 'search' && action !== 'details' && action !== 'pdf') {
         return buildJsonResponse(
           400,
-          { error: 'Acción no válida. Use: search, details, pdf' },
+          { error: 'Acción no válida. Use: health, search, details, pdf' },
           { requestOrigin }
         );
+      }
+
+      if (action === 'health') {
+        return handleHealth(proxyUrl, requestOrigin);
       }
 
       return await invokeWithTelemetry({

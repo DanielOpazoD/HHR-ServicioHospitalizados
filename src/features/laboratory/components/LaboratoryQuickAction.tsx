@@ -1,6 +1,7 @@
 import React from 'react';
 import { FlaskConical } from 'lucide-react';
 import { LabResultsViewerModal } from './LabResultsViewerModal';
+import { checkSyslabConnection } from '@/services/laboratory/syslabService';
 import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medicalIndications';
 
 interface LaboratoryQuickActionProps {
@@ -9,6 +10,10 @@ interface LaboratoryQuickActionProps {
 
 export const LaboratoryQuickAction: React.FC<LaboratoryQuickActionProps> = ({ patients }) => {
   const [isLabOpen, setIsLabOpen] = React.useState(false);
+  const [connectionStatus, setConnectionStatus] = React.useState<
+    'checking' | 'available' | 'unavailable'
+  >('checking');
+  const [connectionMessage, setConnectionMessage] = React.useState('Verificando conexión Syslab');
 
   const labPatients = React.useMemo(
     () =>
@@ -25,7 +30,37 @@ export const LaboratoryQuickAction: React.FC<LaboratoryQuickActionProps> = ({ pa
     [patients]
   );
 
-  const isDisabled = labPatients.length === 0;
+  React.useEffect(() => {
+    let active = true;
+
+    if (labPatients.length === 0) {
+      setConnectionStatus('unavailable');
+      setConnectionMessage('No hay pacientes con RUT para consultar Syslab');
+      return () => {
+        active = false;
+      };
+    }
+
+    setConnectionStatus('checking');
+    setConnectionMessage('Verificando conexión Syslab');
+    void checkSyslabConnection().then(result => {
+      if (!active) {
+        return;
+      }
+      setConnectionStatus(result.available ? 'available' : 'unavailable');
+      setConnectionMessage(
+        result.available
+          ? 'Laboratorio / Exámenes Syslab'
+          : `Syslab no disponible: ${result.message}`
+      );
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [labPatients.length]);
+
+  const isDisabled = labPatients.length === 0 || connectionStatus !== 'available';
 
   return (
     <>
@@ -37,7 +72,7 @@ export const LaboratoryQuickAction: React.FC<LaboratoryQuickActionProps> = ({ pa
         }}
         disabled={isDisabled}
         className="flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[11px] font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 disabled:cursor-default disabled:opacity-50"
-        title="Laboratorio / Exámenes Syslab"
+        title={connectionMessage}
         aria-disabled={isDisabled}
       >
         <FlaskConical size={14} />

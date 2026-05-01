@@ -1,0 +1,63 @@
+import { render, screen, waitFor } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+
+import { LaboratoryQuickAction } from '@/features/laboratory/components/LaboratoryQuickAction';
+import { checkSyslabConnection } from '@/services/laboratory/syslabService';
+import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medicalIndications';
+
+vi.mock('@/services/laboratory/syslabService', () => ({
+  checkSyslabConnection: vi.fn(),
+}));
+
+vi.mock('@/features/laboratory/components/LabResultsViewerModal', () => ({
+  LabResultsViewerModal: () => <div>Lab modal</div>,
+}));
+
+const patients: MedicalIndicationsPatientOption[] = [
+  {
+    bedId: 'R1',
+    label: 'R1 - Paciente',
+    patientName: 'Paciente Syslab',
+    rut: '12.345.678-9',
+    diagnosis: 'Dx',
+    age: '50',
+    birthDate: '1976-01-01',
+    allergies: '',
+    admissionDate: '2026-04-30',
+    daysOfStay: '1',
+    treatingDoctor: '',
+  },
+];
+
+describe('LaboratoryQuickAction', () => {
+  it('keeps the Syslab button disabled when the health check is unavailable', async () => {
+    vi.mocked(checkSyslabConnection).mockResolvedValue({
+      available: false,
+      message: 'Failed to fetch',
+    });
+
+    render(<LaboratoryQuickAction patients={patients} />);
+
+    const button = screen.getByRole('button', { name: /lab/i });
+    expect(button).toBeDisabled();
+
+    await waitFor(() => {
+      expect(button).toBeDisabled();
+      expect(button).toHaveAttribute('title', 'Syslab no disponible: Failed to fetch');
+    });
+  });
+
+  it('enables the Syslab button when the health check is available', async () => {
+    vi.mocked(checkSyslabConnection).mockResolvedValue({
+      available: true,
+      message: 'Conectado',
+    });
+
+    render(<LaboratoryQuickAction patients={patients} />);
+
+    const button = screen.getByRole('button', { name: /lab/i });
+    await waitFor(() => {
+      expect(button).toBeEnabled();
+    });
+  });
+});
