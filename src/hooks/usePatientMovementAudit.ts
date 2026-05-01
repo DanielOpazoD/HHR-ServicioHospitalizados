@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import * as auditServiceLegacy from '@/services/admin/auditService';
+import { useAuditContext } from '@/context/AuditContext';
 
 interface DischargeAuditEntry {
   bedId: string;
@@ -15,34 +15,29 @@ interface TransferAuditEntry {
   receivingCenter: string;
 }
 
-const logLegacyMovementEntries = <T>(entries: readonly T[], logEntry: (entry: T) => void) => {
-  for (const entry of entries) {
-    logEntry(entry);
-  }
-};
-
 export const usePatientMovementAudit = () => {
-  const logDischargeEntries = useCallback((entries: DischargeAuditEntry[], recordDate: string) => {
-    logLegacyMovementEntries(entries, entry => {
-      void auditServiceLegacy.logPatientDischarge?.(
+  const { logPatientDischarge, logPatientTransfer } = useAuditContext();
+  const logDischargeEntries = useCallback(
+    (entries: DischargeAuditEntry[], recordDate: string) => {
+      for (const entry of entries) {
+        logPatientDischarge(entry.bedId, entry.patientName, entry.rut, entry.status, recordDate);
+      }
+    },
+    [logPatientDischarge]
+  );
+
+  const logTransferEntry = useCallback(
+    (entry: TransferAuditEntry, recordDate: string) => {
+      logPatientTransfer(
         entry.bedId,
         entry.patientName,
         entry.rut,
-        entry.status,
+        entry.receivingCenter,
         recordDate
       );
-    });
-  }, []);
-
-  const logTransferEntry = useCallback((entry: TransferAuditEntry, recordDate: string) => {
-    void auditServiceLegacy.logPatientTransfer?.(
-      entry.bedId,
-      entry.patientName,
-      entry.rut,
-      entry.receivingCenter,
-      recordDate
-    );
-  }, []);
+    },
+    [logPatientTransfer]
+  );
 
   return useMemo(
     () => ({

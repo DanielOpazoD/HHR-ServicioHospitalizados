@@ -49,7 +49,7 @@ const versionHistorySchema = z.object({
   version: z.number(),
   savedAt: z.string(),
   savedBy: auditActorSchema,
-  reason: z.enum(['autosave', 'manual', 'signature', 'unsign', 'admin_fix']),
+  reason: z.enum(['autosave', 'manual', 'signature', 'unsign', 'admin_fix', 'ai_import']),
   changedSectionIds: z.array(z.string()).optional(),
   sectionSnapshots: z.array(versionSectionSnapshotSchema).optional(),
 });

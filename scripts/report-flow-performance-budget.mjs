@@ -32,5 +32,5 @@ fs.writeFileSync(jsonOutputPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8')
 fs.writeFileSync(mdOutputPath, `${formatFlowPerformanceMarkdown(report)}\n`, 'utf8');
 
 console.log(
-  '[flow-performance-budget] Report generated at reports/e2e/flow-performance-budget-summary.json and .md'
+  `[flow-performance-budget] Report generated at ${FLOW_SUMMARY_JSON_PATH} and ${FLOW_MD_REPORT_PATH}`
 );

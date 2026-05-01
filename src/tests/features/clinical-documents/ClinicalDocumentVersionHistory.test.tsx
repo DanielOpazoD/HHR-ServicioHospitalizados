@@ -30,6 +30,7 @@ describe('ClinicalDocumentVersionHistory', () => {
     const versions = [
       makeVersion(1, 'manual'),
       makeVersion(3, 'signature'),
+      makeVersion(4, 'ai_import'),
       makeVersion(2, 'autosave'),
     ];
 
@@ -40,8 +41,9 @@ describe('ClinicalDocumentVersionHistory', () => {
     const versionMarks = Array.from(document.body.querySelectorAll('span.font-mono')).map(
       n => n.textContent
     );
-    expect(versionMarks).toEqual(['v3', 'v2', 'v1']);
+    expect(versionMarks).toEqual(['v4', 'v3', 'v2', 'v1']);
 
+    expect(screen.getByText('Importación IA')).toBeInTheDocument();
     expect(screen.getByText('Firmado')).toBeInTheDocument();
     expect(screen.getByText('Autoguardado')).toBeInTheDocument();
     expect(screen.getByText('Manual')).toBeInTheDocument();

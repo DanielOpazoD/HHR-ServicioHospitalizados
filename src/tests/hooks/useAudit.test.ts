@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { useAudit } from '@/hooks/useAudit';
 import * as writeAuditUseCase from '@/application/audit/writeAuditEventUseCase';
 import * as fetchAuditLogsUseCase from '@/application/audit/fetchAuditLogsUseCase';
@@ -43,40 +43,44 @@ describe('useAudit', () => {
     expect(typeof result.current.getActionLabel).toBe('function');
   });
 
-  it('should log patient admission via use case', () => {
+  it('should log patient admission via use case', async () => {
     const { result } = renderHook(() => useAudit(testUserId));
 
     act(() => {
       result.current.logPatientAdmission('R1', 'John Doe', '12345678-9', '2024-12-28');
     });
 
-    expect(writeAuditUseCase.executeWriteAuditEvent).toHaveBeenCalledWith(
-      expect.objectContaining({
-        userId: testUserId,
-        action: 'PATIENT_ADMITTED',
-        entityType: 'patient',
-        entityId: 'R1',
-        patientRut: '12345678-9',
-        recordDate: '2024-12-28',
-      })
-    );
+    await waitFor(() => {
+      expect(writeAuditUseCase.executeWriteAuditEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: testUserId,
+          action: 'PATIENT_ADMITTED',
+          entityType: 'patient',
+          entityId: 'R1',
+          patientRut: '12345678-9',
+          recordDate: '2024-12-28',
+        })
+      );
+    });
   });
 
-  it('should log daily record created via use case', () => {
+  it('should log daily record created via use case', async () => {
     const { result } = renderHook(() => useAudit(testUserId));
 
     act(() => {
       result.current.logDailyRecordCreated('2024-12-28', '2024-12-27');
     });
 
-    expect(writeAuditUseCase.executeWriteAuditEvent).toHaveBeenCalledWith(
-      expect.objectContaining({
-        action: 'DAILY_RECORD_CREATED',
-        entityType: 'dailyRecord',
-        entityId: '2024-12-28',
-        recordDate: '2024-12-28',
-      })
-    );
+    await waitFor(() => {
+      expect(writeAuditUseCase.executeWriteAuditEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'DAILY_RECORD_CREATED',
+          entityType: 'dailyRecord',
+          entityId: '2024-12-28',
+          recordDate: '2024-12-28',
+        })
+      );
+    });
   });
 
   it('should fetch logs via use case', async () => {

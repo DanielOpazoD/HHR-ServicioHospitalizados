@@ -37,6 +37,85 @@ resolve_local_firebasetools() {
   printf '%s\n' "$firebase_bin"
 }
 
+is_tcp_port_available() {
+  local port="$1"
+
+  if command -v lsof >/dev/null 2>&1; then
+    ! lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1
+    return $?
+  fi
+
+  if command -v nc >/dev/null 2>&1; then
+    ! nc -z 127.0.0.1 "$port" >/dev/null 2>&1
+    return $?
+  fi
+
+  return 0
+}
+
+resolve_firestore_emulator_host() {
+  local configured_host="${FIRESTORE_EMULATOR_HOST:-}"
+  if [[ -n "$configured_host" ]]; then
+    printf '%s\n' "$configured_host"
+    return 0
+  fi
+
+  local candidate
+  for candidate in 18080 18081 18082 18083 18084 8080; do
+    if is_tcp_port_available "$candidate"; then
+      printf '127.0.0.1:%s\n' "$candidate"
+      return 0
+    fi
+  done
+
+  echo "No available Firestore emulator port found." >&2
+  return 1
+}
+
+write_firestore_emulator_config() {
+  local target_path="$1"
+  local emulator_host="$2"
+
+  node - "$target_path" "$emulator_host" <<'NODE'
+const fs = require('node:fs');
+const path = require('node:path');
+const [targetPath, emulatorHost] = process.argv.slice(2);
+const [host, portValue] = emulatorHost.split(':');
+const port = Number.parseInt(portValue, 10);
+
+if (!host || !Number.isFinite(port)) {
+  throw new Error(`Invalid FIRESTORE_EMULATOR_HOST: ${emulatorHost}`);
+}
+
+const source = JSON.parse(fs.readFileSync('firebase.json', 'utf8'));
+const absolutize = value =>
+  typeof value === 'string' && !path.isAbsolute(value) ? path.resolve(value) : value;
+
+if (source.firestore) {
+  source.firestore = {
+    ...source.firestore,
+    rules: absolutize(source.firestore.rules),
+    indexes: absolutize(source.firestore.indexes),
+  };
+}
+if (source.storage) {
+  source.storage = {
+    ...source.storage,
+    rules: absolutize(source.storage.rules),
+  };
+}
+source.emulators = {
+  ...(source.emulators || {}),
+  firestore: {
+    ...((source.emulators && source.emulators.firestore) || {}),
+    host,
+    port,
+  },
+};
+fs.writeFileSync(targetPath, `${JSON.stringify(source, null, 2)}\n`);
+NODE
+}
+
 run_firestore_emulator_exec() {
   local command="$1"
   local firebase_bin
@@ -44,6 +123,14 @@ run_firestore_emulator_exec() {
 
   export NO_UPDATE_NOTIFIER="${NO_UPDATE_NOTIFIER:-1}"
   export CI="${CI:-1}"
+  export FIRESTORE_EMULATOR_HOST
+  FIRESTORE_EMULATOR_HOST="$(resolve_firestore_emulator_host)" || return 1
 
-  "$firebase_bin" emulators:exec --only firestore "$command"
+  local firebase_config
+  firebase_config="$(mktemp "${TMPDIR:-/tmp}/hhr-firebase-emulator.XXXXXX.json")"
+  write_firestore_emulator_config "$firebase_config" "$FIRESTORE_EMULATOR_HOST"
+
+  trap 'rm -f "$firebase_config"' RETURN
+
+  "$firebase_bin" emulators:exec --config "$firebase_config" --only firestore "$command"
 }

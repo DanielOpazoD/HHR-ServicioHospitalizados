@@ -2,6 +2,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { formatWorktreeState, getGitReportState } from './gitReportState.mjs';
 
 const MATRIX_PATH = path.join('scripts', 'config', 'release-confidence-matrix.json');
 const RELEASE_PACK_PATH = path.join('scripts', 'config', 'release-confidence-pack.json');
@@ -79,6 +80,7 @@ const loadDependencies = root => {
 export const buildReleaseConfidenceMatrixReport = root => {
   const matrix = loadReleaseConfidenceMatrixConfig(root);
   const dependencies = loadDependencies(root);
+  const gitState = getGitReportState(root);
   const issues = [];
 
   if (matrix.version !== 1) {
@@ -214,6 +216,7 @@ export const buildReleaseConfidenceMatrixReport = root => {
 
   return {
     generatedAt: new Date().toISOString(),
+    ...gitState,
     overall: issues.length === 0 ? 'ok' : 'degraded',
     counts: {
       areaCount: areas.length,
@@ -255,6 +258,8 @@ export const formatReleaseConfidenceMatrixMarkdown = report => {
     '# Release Confidence Matrix',
     '',
     `Generated at: ${report.generatedAt}`,
+    `Commit: ${report.gitSha}`,
+    `Worktree: ${formatWorktreeState(report.gitDirty)}`,
     `Overall: ${report.overall}`,
     '',
     '## Summary',

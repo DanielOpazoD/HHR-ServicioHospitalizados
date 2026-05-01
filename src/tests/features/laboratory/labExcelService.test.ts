@@ -92,4 +92,18 @@ describe('labExcelService', () => {
     expect(sheet?.getCell('B7').value).toBe('12/04/2026 08:00');
     expect(anchorClickMock).toHaveBeenCalledTimes(1);
   });
+
+  it('can export comparison column headers without exact time', async () => {
+    await exportComparisonToExcel(
+      analysis,
+      {
+        ...config,
+        includeTimeInColumns: false,
+      },
+      patient
+    );
+
+    const sheet = workbook.getWorksheet('Comparación Lab');
+    expect(sheet?.getCell('B7').value).toBe('12/04/2026');
+  });
 });

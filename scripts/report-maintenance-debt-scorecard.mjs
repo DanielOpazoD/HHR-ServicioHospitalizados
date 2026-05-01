@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
 import { formatWorktreeState, getGitReportState } from './gitReportState.mjs';
+import { buildFirestoreRulesGovernanceReport } from './firestoreRulesGovernanceSupport.mjs';
 import { buildMaintenanceDebtWatchlistRows } from './maintenanceDebtScorecardSupport.mjs';
 
 const ROOT = process.cwd();
@@ -37,7 +38,9 @@ const countLines = filePath => {
   if (!fs.existsSync(absolutePath)) {
     return 0;
   }
-  return fs.readFileSync(absolutePath, 'utf8').split(/\r?\n/).length;
+  const normalized = fs.readFileSync(absolutePath, 'utf8').replace(/\r\n/g, '\n');
+  const withoutFinalNewline = normalized.endsWith('\n') ? normalized.slice(0, -1) : normalized;
+  return withoutFinalNewline.length === 0 ? 0 : withoutFinalNewline.split('\n').length;
 };
 
 const buildPendingHotspotRows = () => {
@@ -90,6 +93,13 @@ const buildRecentChurnRows = () => {
 const qualityMetrics = readJson(QUALITY_METRICS_JSON);
 const moduleConfig = readJson(MODULE_ALLOWLIST_PATH) ?? {};
 const hookConfig = readJson(HOOK_LIMITS_PATH) ?? {};
+const firestoreRulesGovernance = buildFirestoreRulesGovernanceReport(ROOT);
+const rulesLimits =
+  firestoreRulesGovernance.generatedRules.maxLines == null
+    ? {}
+    : {
+        [firestoreRulesGovernance.generatedRules.file]: firestoreRulesGovernance.generatedRules.maxLines,
+      };
 const pendingHotspots = buildPendingHotspotRows();
 const watchlist = buildMaintenanceDebtWatchlistRows({
   watchlistFiles: WATCHLIST_FILES,
@@ -99,6 +109,7 @@ const watchlist = buildMaintenanceDebtWatchlistRows({
     moduleConfig.allowlist && typeof moduleConfig.allowlist === 'object'
       ? moduleConfig.allowlist
       : {},
+  rulesLimits,
 });
 const churn = buildRecentChurnRows();
 const gitState = getGitReportState(ROOT);
@@ -115,6 +126,11 @@ const payload = {
   },
   firestoreRules: {
     lines: watchlist.find(entry => entry.file === 'firestore.rules')?.lines ?? 0,
+    maxLines: firestoreRulesGovernance.generatedRules.maxLines,
+    remainingLines: firestoreRulesGovernance.generatedRules.remainingLines,
+    ownerAreaId: firestoreRulesGovernance.generatedRules.ownerAreaId,
+    ownedFragments: firestoreRulesGovernance.fragments.length,
+    governanceIssues: firestoreRulesGovernance.issues,
   },
   recentChurn: churn,
 };
@@ -158,7 +174,15 @@ ${watchlist
 
 ## Firestore Rules Growth
 
-- firestore.rules: ${payload.firestoreRules.lines} líneas
+- firestore.rules: ${payload.firestoreRules.lines} / ${payload.firestoreRules.maxLines ?? 'n/a'} líneas
+- Remaining budget: ${payload.firestoreRules.remainingLines ?? 'n/a'} líneas
+- Owner area: ${payload.firestoreRules.ownerAreaId ?? 'n/a'}
+- Owned fragments: ${payload.firestoreRules.ownedFragments}
+- Governance issues: ${
+  payload.firestoreRules.governanceIssues.length === 0
+    ? 'none'
+    : payload.firestoreRules.governanceIssues.join('; ')
+}
 
 ## Recent Churn (30 Days)
 

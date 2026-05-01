@@ -1,51 +1,14 @@
 rules_version = '2';
 
-// ============================================================================
-// TABLE OF CONTENTS
-// ----------------------------------------------------------------------------
-// Helpers (section 1 — lines ~15-600):
-//   1.1 Identity & Authentication
-//   1.2 Role resolution (configured + claim + bootstrap)
-//   1.3 Role predicates (isAdmin, isNurse, isDoctor, canEdit, ...)
-//   1.4 Specialist medical handoff validators
-//   1.5 Clinical document write/delete permissions
-//   1.6 Clinical read access & shared access helpers
-//   1.7 Invitation, census access & receipt helpers
-//   1.8 Payload schema helpers (optional types, bounded ints)
-//   1.9 System health payload guard
-//   1.10 Editing window helpers
-//   1.11 Medical signature update helpers
-//
-// Collections (section 2 — lines ~600 onward):
-//   2.1 Hospitals / hierarchy (dailyRecords, clinicalDocuments, etc.)
-//   2.2 Top-level audit logs
-//   2.3 Legacy allowlist / staff catalogs
-//   2.4 User settings
-//   2.5 WhatsApp integration
-//   2.6 System health stats
-//   2.7 System configuration (config/roles, invitations, access users, logs)
-//   2.8 Default-deny catch-all
-//
-// Any change to the auth access model must also update
-// `src/tests/security/rulesHardeningStatic.test.ts` (regression guard).
-// ============================================================================
+// Auth access changes must update src/tests/security/rulesHardeningStatic.test.ts.
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ============================================
-    // HELPER FUNCTIONS
-    // ============================================
-    //
-    // 1.1 Identity & Authentication
-    // ---------------------------------------------
-
-    // Check if user is authenticated
     function isAuthenticated() {
       return request.auth != null;
     }
     
-    // Get user email
     function normalizeEmail(email) {
       return email.lower();
     }
@@ -54,14 +17,9 @@ service cloud.firestore {
       return normalizeEmail(request.auth.token.email);
     }
 
-    // Check if authenticated user has an email claim
     function hasEmail() {
       return isAuthenticated() && request.auth.token.email != null;
     }
-
-    //
-    // 1.2 Role resolution (configured + claim)
-    // ---------------------------------------------
 
     function normalizeRole(role) {
       return role == 'viewer_census'
@@ -720,26 +678,17 @@ service cloud.firestore {
     }
     
     // ============================================
-    // 2.1 HOSPITALS COLLECTION (Main hierarchy)
-    // ============================================
     match /hospitals/{hospitalId} {
-      // Hospital document itself
       allow read: if canReadClinicalData();
       allow write: if isAdmin();
       
-      // ----------------------------------------
-      // DAILY RECORDS (Census Data)
-      // ----------------------------------------
       match /dailyRecords/{date} {
         allow read: if canReadClinicalData();
-        // Create: Admin or Nurse
         allow create: if canEdit();
-        // Update: Admin siempre, Enfermero en ventana, o Médico solo campos de firma
         allow update: if canUpdatePersistedDailyRecord();
         // Delete: Admin only (nurses must not hard-delete census records)
         allow delete: if isAdmin();
         
-        // History subcollection
         match /history/{historyId} {
           allow read: if canReadClinicalData();
           allow create: if canCreateEditableHospitalDocument();
@@ -752,35 +701,22 @@ service cloud.firestore {
         allow read, write: if isAdmin();
       }
       
-      // ----------------------------------------
-      // CLINICAL DOCUMENTS
-      // ----------------------------------------
       match /clinicalDocuments/{documentId} {
         allow read: if canReadClinicalData();
         allow create, update: if canWriteClinicalDocument();
         allow delete: if canDeleteClinicalDocument();
       }
 
-      // ----------------------------------------
-      // CLINICAL DOCUMENT TEMPLATES
-      // ----------------------------------------
       match /clinicalDocumentTemplates/{templateId} {
         allow read: if canReadClinicalData();
         allow write: if isAdmin();
       }
 
-      // ----------------------------------------
-      // SETTINGS (Nurses, TENS, TableConfig)
-      // ----------------------------------------
       match /settings/{settingId} {
         allow read: if canReadClinicalData();
-        // Allow both Admins and Nurses to update catalogs and settings
         allow write: if canEdit();
       }
 
-      // ----------------------------------------
-      // REMINDERS / STAFF NOTICES
-      // ----------------------------------------
       match /reminders/{reminderId} {
         allow read: if canReadClinicalData();
         allow create, update, delete: if isAdmin();
@@ -792,17 +728,11 @@ service cloud.firestore {
         }
       }
       
-      // ----------------------------------------
-      // EXPORT PASSWORDS
-      // ----------------------------------------
       match /exportPasswords/{passwordId} {
         allow read: if canReadClinicalData();
         allow write: if isAdmin();
       }
       
-      // ----------------------------------------
-      // AUDIT LOGS (Hospital-level)
-      // ----------------------------------------
       match /auditLogs/{logId} {
         allow read: if canReadAppendOnlyOperationalLog();
         allow create: if canCreateAppendOnlyOperationalLogEntry();
@@ -810,80 +740,54 @@ service cloud.firestore {
         allow update, delete: if false;
       }
       
-      // ----------------------------------------
-      // TRANSFER REQUESTS (Patient transfers)
-      // ----------------------------------------
       match /transferRequests/{transferId} {
         allow read: if canReadClinicalData();
         allow create, update: if canEdit();
         allow delete: if isAdmin();
       }
       
-      // ----------------------------------------
-      // TRANSFER HISTORY (Completed transfers)
-      // ----------------------------------------
       match /transferHistory/{transferId} {
         allow read: if canReadClinicalData();
         allow create: if canCreateEditableHospitalDocument();
         allow update, delete: if canAdminMaintainHospitalDocument();
       }
       
-      // ----------------------------------------
       match /bookmarks/{bookmarkId} {
         allow read: if canReadClinicalData();
         allow write: if canReadClinicalData();
       }
 
-      // ----------------------------------------
-      // BACKUP FILES (Cloud backup archives)
-      // ----------------------------------------
       match /backupFiles/{fileId} {
         allow read: if canReadClinicalData();
         allow create: if canCreateEditableHospitalDocument();
         allow update, delete: if canAdminMaintainHospitalDocument();
       }
 
-      // ----------------------------------------
-      // PATIENT MASTER INDEX
-      // ----------------------------------------
       match /patients/{rut} {
         allow read: if canReadClinicalData();
         allow write: if canEdit();
       }
 
-      // ----------------------------------------
-      // WOUND CARE: INFORMED CONSENTS
-      // ----------------------------------------
       match /woundCareConsents/{consentId} {
         allow read: if canReadClinicalData();
         allow create, update: if canEdit();
         allow delete: if isAdmin();
       }
 
-      // ----------------------------------------
-      // WOUND CARE: PHOTO METADATA
-      // ----------------------------------------
       match /woundCarePhotos/{photoId} {
         allow read: if canReadClinicalData();
         allow create, update: if canEdit();
         allow delete: if isAdmin();
       }
 
-      // ----------------------------------------
-      // FUNCTIONS TELEMETRY (Observability sink)
       // Append-only. Writes mostly come from server-side Admin SDK (bypasses rules).
       // Client rule mirrors auditLogs: admin read-only.
-      // ----------------------------------------
       match /functionsTelemetry/{entryId} {
         allow read: if canReadAppendOnlyOperationalLog();
         allow create: if canCreateAppendOnlyOperationalLogEntry();
         allow update, delete: if false;
       }
     }
-    
-    // ============================================
-    // 2.2 TOP-LEVEL AUDIT LOGS (Legacy/Fallback)
-    // ============================================
     match /auditLogs/{logId} {
       allow read: if canReadAppendOnlyOperationalLog();
       allow create: if canCreateAppendOnlyOperationalLogEntry();
@@ -891,32 +795,20 @@ service cloud.firestore {
       allow update, delete: if false;
     }
     
-    // ============================================
-    // 2.3 ALLOWED USERS (Legacy retired)
-    // ============================================
     match /allowedUsers/{userId} {
       allow read, write: if false;
     }
     
-    // ============================================
-    // 2.3b STAFF CATALOGS (Legacy - if still used)
-    // ============================================
     match /staffCatalogs/{catalogType} {
       allow read: if canReadClinicalData();
       allow write: if isAdmin();
     }
     
-    // ============================================
-    // 2.4 USER SETTINGS
-    // ============================================
     match /userSettings/{userId} {
       allow read: if isAdmin() || isCurrentUser(userId);
       allow write: if isAdmin() || isCurrentUser(userId);
     }
     
-    // ============================================
-    // 2.5 WHATSAPP INTEGRATION
-    // ============================================
     match /whatsapp/{docId} {
       allow read: if canReadClinicalData();
       allow write: if isAdmin();
@@ -937,18 +829,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     
-    // ============================================
-    // 2.6 SYSTEM HEALTH
-    // ============================================
     match /stats/system_health/users/{userId} {
       allow read: if canReportSystemHealth();
       allow create, update: if isValidSystemHealthWrite(userId);
       allow delete: if false;
     }
 
-    // ============================================
-    // 2.7 SYSTEM CONFIGURATION
-    // ============================================
     match /emailRecipientLists/{listId} {
       allow read: if canReadClinicalData();
       allow write: if canEdit() || isEditorRole();
@@ -978,9 +864,6 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // ============================================
-    // 2.8 DENY ALL OTHER BY DEFAULT
-    // ============================================
     match /{document=**} {
       allow read, write: if false;
     }

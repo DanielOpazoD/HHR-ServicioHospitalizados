@@ -11,6 +11,8 @@ import userEvent from '@testing-library/user-event';
 /*  Top-level mocks                                                    */
 /* ------------------------------------------------------------------ */
 
+const mockExportChartsAsPng = vi.hoisted(() => vi.fn());
+
 vi.mock('@/services/laboratory/syslabService', () => ({
   buildSyslabPdfUrl: (link: string) =>
     `http://localhost:3000/api/exams/pdf?link=${encodeURIComponent(link)}`,
@@ -34,6 +36,10 @@ vi.mock('@/features/laboratory/controllers/labSummaryController', () => ({
 
 vi.mock('@/features/laboratory/services/labExcelService', () => ({
   exportComparisonToExcel: vi.fn(),
+}));
+
+vi.mock('@/features/laboratory/components/labTrendChartExport', () => ({
+  exportChartsAsPng: (...args: unknown[]) => mockExportChartsAsPng(...args),
 }));
 
 vi.mock('@/features/laboratory/services/labFirestoreService', () => ({
@@ -66,9 +72,9 @@ import { LabViewerProgress } from '@/features/laboratory/components/LabViewerPro
 import { LabViewerEmptyState } from '@/features/laboratory/components/LabViewerEmptyState';
 import { LabViewerAnalyzeBar } from '@/features/laboratory/components/LabViewerAnalyzeBar';
 import { LabViewerPdf } from '@/features/laboratory/components/LabViewerPdf';
-import { LabViewerExamList } from '@/features/laboratory/components/LabViewerExamList';
 import { LabExportConfigDialog } from '@/features/laboratory/components/LabExportConfigDialog';
 import { LabChartErrorBoundary } from '@/features/laboratory/components/LabChartErrorBoundary';
+import { LabViewerTrendCharts } from '@/features/laboratory/components/LabViewerTrendCharts';
 import type { LabPatient, SyslabExamItem } from '@/types/domain/labExamTypes';
 
 /* ------------------------------------------------------------------ */
@@ -117,6 +123,14 @@ describe('LabViewerControls', () => {
   it('renders Buscar button', () => {
     render(<LabViewerControls {...defaultProps} />);
     expect(screen.getByText('Buscar')).toBeInTheDocument();
+  });
+
+  it('keeps the initial search controls compact without redundant helper copy', () => {
+    render(<LabViewerControls {...defaultProps} />);
+    expect(screen.queryByText('Paciente')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Búsqueda clínica rápida por paciente o RUT')
+    ).not.toBeInTheDocument();
   });
 
   it('calls onSearch when button clicked', async () => {
@@ -193,6 +207,16 @@ describe('LabViewerAnalyzeBar', () => {
   it('renders selected count text', () => {
     render(<LabViewerAnalyzeBar {...defaultProps} />);
     expect(screen.getByText(/2 examenes seleccionados/)).toBeInTheDocument();
+  });
+
+  it('renders the selected exam actions as a bottom tray instead of a floating card', () => {
+    const { container } = render(<LabViewerAnalyzeBar {...defaultProps} />);
+    const tray = container.firstElementChild;
+
+    expect(tray).toHaveClass('sticky');
+    expect(tray).toHaveClass('bottom-0');
+    expect(tray).toHaveClass('-mx-5');
+    expect(tray).not.toHaveClass('rounded-xl');
   });
 
   it('renders Analizar button', () => {
@@ -281,96 +305,52 @@ describe('LabViewerPdf', () => {
 });
 
 /* ================================================================== */
-/*  6. LabViewerExamList                                               */
+/*  6. LabViewerTrendCharts                                            */
 /* ================================================================== */
 
-describe('LabViewerExamList', () => {
-  const defaultProps = {
-    exams: [MOCK_EXAM],
-    selectedIds: new Set<string>(),
-    filterCategories: [] as string[],
-    activeFilter: null as string | null,
-    onFilterChange: vi.fn(),
-    onToggleSelect: vi.fn(),
-    onSelectAll: vi.fn(),
-    onSelectByDays: vi.fn(),
-    onSelectByDateRange: vi.fn(),
-    onViewPdf: vi.fn(),
-    onCopySummary: vi.fn(async () => true),
-  };
-
+describe('LabViewerTrendCharts', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('renders exam count', () => {
-    render(<LabViewerExamList {...defaultProps} />);
-    expect(screen.getByText('1 examenes')).toBeInTheDocument();
-  });
+  it('shows a local error instead of leaking an unhandled rejection when PNG export fails', async () => {
+    mockExportChartsAsPng.mockRejectedValue(new Error('tainted canvas'));
 
-  it('renders exam date and ID', () => {
-    render(<LabViewerExamList {...defaultProps} />);
-    expect(screen.getByText('08/04/2026')).toBeInTheDocument();
-    expect(screen.getByText('#123')).toBeInTheDocument();
-  });
-
-  it('renders Ver PDF button', () => {
-    render(<LabViewerExamList {...defaultProps} />);
-    expect(screen.getByText('Ver PDF')).toBeInTheDocument();
-  });
-
-  it('renders Copiar resumen button', () => {
-    render(<LabViewerExamList {...defaultProps} />);
-    expect(screen.getByText('Copiar resumen')).toBeInTheDocument();
-  });
-
-  it('renders filter category chips when categories provided', () => {
     render(
-      <LabViewerExamList
-        {...defaultProps}
-        filterCategories={['Hemograma', 'P. hepático', 'P. lipídico']}
+      <LabViewerTrendCharts
+        data={{
+          trendGroups: [
+            {
+              label: 'Hemograma',
+              variables: {
+                Hemoglobina: [
+                  { date: '01/04/2026', isoDate: '2026-04-01', value: 13, unit: 'g/dL' },
+                  { date: '02/04/2026', isoDate: '2026-04-02', value: 14, unit: 'g/dL' },
+                ],
+              },
+            },
+          ],
+          examDates: ['01/04/2026', '02/04/2026'],
+          comparison: {},
+          microbiologyEntries: [],
+        }}
       />
     );
-    expect(screen.getByText('Todos')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Hemograma' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'P. hepático' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'P. lipídico' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Gases' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Otros' })).not.toBeInTheDocument();
-  });
 
-  it('renders date range inputs', () => {
-    const { container } = render(<LabViewerExamList {...defaultProps} />);
-    const dateInputs = container.querySelectorAll('input[type="date"]');
-    expect(dateInputs.length).toBe(2);
-  });
+    await userEvent.click(screen.getByRole('button', { name: 'Descargar PNG' }));
 
-  it('calls onToggleSelect when checkbox clicked', async () => {
-    render(<LabViewerExamList {...defaultProps} />);
-    const checkbox = screen.getByRole('checkbox');
-    await userEvent.click(checkbox);
-    expect(defaultProps.onToggleSelect).toHaveBeenCalledWith('123');
-  });
-
-  it('calls onViewPdf when Ver PDF clicked', async () => {
-    render(<LabViewerExamList {...defaultProps} />);
-    await userEvent.click(screen.getByText('Ver PDF'));
-    expect(defaultProps.onViewPdf).toHaveBeenCalledWith(MOCK_EXAM);
-  });
-
-  it('calls onCopySummary when Copiar resumen clicked', async () => {
-    render(<LabViewerExamList {...defaultProps} />);
-    await userEvent.click(screen.getByText('Copiar resumen'));
-    expect(defaultProps.onCopySummary).toHaveBeenCalledWith(MOCK_EXAM);
+    expect(await screen.findByText('No se pudo descargar PNG.')).toBeInTheDocument();
+    expect(mockExportChartsAsPng).toHaveBeenCalledTimes(1);
   });
 });
 
 /* ================================================================== */
-/*  8. LabExportConfigDialog                                           */
+/*  7. LabExportConfigDialog                                           */
 /* ================================================================== */
 
 describe('LabExportConfigDialog', () => {
   const defaultProps = {
     dates: ['08/04/2026 14:00'],
     variables: ['Hemoglobina'],
+    includeTimeInColumns: true,
     onExport: vi.fn(),
     onCancel: vi.fn(),
   };
@@ -405,7 +385,7 @@ describe('LabExportConfigDialog', () => {
 });
 
 /* ================================================================== */
-/*  9. LabChartErrorBoundary                                           */
+/*  8. LabChartErrorBoundary                                           */
 /* ================================================================== */
 
 describe('LabChartErrorBoundary', () => {

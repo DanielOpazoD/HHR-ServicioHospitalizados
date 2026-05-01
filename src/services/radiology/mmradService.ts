@@ -18,6 +18,7 @@ export interface MMRADExam {
   pdf_url: string | null;
   dicom_url: string | null;
   informe_html_url: string | null;
+  portal_web_receipt_url?: string | null;
   report: MMRADReportSections | null;
 }
 
@@ -47,6 +48,9 @@ const resolveMmradUserFacingError = (message: string): string => {
 export const buildMMRADPdfUrl = (pdfLink: string): string =>
   buildMMRADProxyUrl(`?action=pdf&link=${encodeURIComponent(pdfLink)}`);
 
+export const buildMMRADPortalReceiptUrl = (receiptLink: string): string =>
+  buildMMRADProxyUrl(`?action=portalReceipt&link=${encodeURIComponent(receiptLink)}`);
+
 export const fetchMMRADPdfBlobUrl = async (pdfLink: string): Promise<string> => {
   const authHeaders = await resolveCurrentUserAuthHeaders();
   const response = await fetch(buildMMRADPdfUrl(pdfLink), {
@@ -63,6 +67,23 @@ export const fetchMMRADPdfBlobUrl = async (pdfLink: string): Promise<string> => 
 
   const pdfBlob = await response.blob();
   return URL.createObjectURL(pdfBlob);
+};
+
+export const fetchMMRADPortalReceiptHtml = async (receiptLink: string): Promise<string> => {
+  const authHeaders = await resolveCurrentUserAuthHeaders();
+  const response = await fetch(buildMMRADPortalReceiptUrl(receiptLink), {
+    headers: authHeaders,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(error => {
+      mmradLogger.warn('Failed to parse MMRAD portal receipt error response body', error);
+      return { error: 'Error de conexión' };
+    });
+    throw new Error(errorData.error || `Error ${response.status}`);
+  }
+
+  return response.text();
 };
 
 export const searchMMRADExams = async ({

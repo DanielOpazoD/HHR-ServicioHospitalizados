@@ -12,7 +12,7 @@ import {
   isJsonImportFile,
   shouldRefreshAfterJsonImport,
 } from '@/hooks/controllers/fileOperationsController';
-import { executeImportJsonBackup } from '@/application/backup-export/backupExportUseCases';
+import { executeImportJsonBackup } from '@/application/backup-export/backupExportMaintenanceUseCases';
 import { presentBackupExportOutcome } from '@/hooks/controllers/backupExportOutcomeController';
 import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';

@@ -7,12 +7,13 @@ import * as matchers from '@testing-library/jest-dom/matchers';
 // Extend Vitest's expect with jest-dom matchers
 expect.extend(matchers);
 
-const noisyConsolePatterns = [
+const allowedNoisyConsolePatterns = [
   '[IndexedDB]',
   '[Migration]',
   '[Repository DEBUG]',
   '[Repository]',
   '[ErrorService]',
+  '[ErrorServiceSinks] Captured error service log',
   '[networkUtils]',
   '[BaseStorage]',
   '[OptimisticUpdate]',
@@ -21,7 +22,7 @@ const noisyConsolePatterns = [
   'DEBUG: copyPatientToDate called',
   'DEBUG: sourcePatient',
   'Validation Errors:',
-  'CSV Import not fully implemented.',
+  '[ExportService] CSV import is not fully implemented.',
   'Failed to fetch audit logs for date:',
   'Error loading table config:',
   'Error fetching nurse catalog from Firestore:',
@@ -42,11 +43,39 @@ const noisyConsolePatterns = [
   'Failed to fetch audit logs from Firestore:',
   'Error generating documents:',
   'Error in forceAISearch:',
+  'Invariant repair applied on save',
+  'Invariant repair applied on updatePartial',
+  '[FirestoreQueries] Firestore query failed: getRecord',
+  '[DailyRecordWriteRepository] Firestore sync failed',
+  '[DailyRecordWriteRepository] Firestore partial update failed',
+  '[BootstrapRuntime] Firebase bootstrap failed',
+  '[BootstrapRuntime] Bootstrap paused for recovery reload',
+  '[BootstrapRuntime] Detected local browser storage corruption during bootstrap',
+  '[DailyRecordReadRepository] Remote fetch failed',
+  '[SingleFlightAsyncCommand] Single-flight async command failed',
+  '[usePatientAutocomplete] Error fetching patient suggestion',
+  '[RoleManagement] Legacy role claim sync warning',
+  '[RoleManagement] Role claim sync warning',
+  '[DailyRecordRepositorySyncService] Sync failed',
+  '[FirestoreCatalogService] Error fetching nurse catalog from Firestore',
+  '[FirestoreCatalogService] Error preparing TENS catalog subscription',
+  '[NetworkUtils] Retrying failed network operation',
+  '[TransferViewStates] Error generating transfer documents',
+  '[useAuthState] Logout due to inactivity',
+  '[LoginPage] Google sign-in failed',
+  '[PrintTemplateRepository] Error fetching template',
+  '[PrintTemplateRepository] Error subscribing to template',
+  '[FirestoreWrites] Firestore write failed:',
+  '[CensusAccessService] Error getting authorized emails',
+  '[CensusAccessService] Error checking email authorization',
+  '[JsonImport] JSON import failed',
+  '[ClinicalDocumentPdfService] Print-style generation failed',
+  '[PatientRowAsyncAction] Async patient row action failed silently',
 ];
 
 const shouldFilterConsoleMessage = (args: unknown[]) => {
   const message = args.map(arg => String(arg)).join(' ');
-  return noisyConsolePatterns.some(pattern => message.includes(pattern));
+  return allowedNoisyConsolePatterns.some(pattern => message.includes(pattern));
 };
 
 const wrapConsole = (method: 'log' | 'warn' | 'error' | 'info' | 'debug') => {

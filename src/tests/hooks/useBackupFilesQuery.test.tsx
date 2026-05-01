@@ -3,12 +3,12 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { useBackupFilesQuery } from '@/hooks/useBackupFilesQuery';
 import { createQueryClientTestWrapper } from '@/tests/utils/queryClientTestUtils';
 import type { BackupFolder } from '@/hooks/backupFileBrowserContracts';
-import * as backupExportUseCases from '@/application/backup-export/backupExportUseCases';
+import * as backupExportStorageUseCases from '@/application/backup-export/backupExportStorageUseCases';
 
-vi.mock('@/application/backup-export/backupExportUseCases', async () => {
+vi.mock('@/application/backup-export/backupExportStorageUseCases', async () => {
   const actual = await vi.importActual<
-    typeof import('@/application/backup-export/backupExportUseCases')
-  >('@/application/backup-export/backupExportUseCases');
+    typeof import('@/application/backup-export/backupExportStorageUseCases')
+  >('@/application/backup-export/backupExportStorageUseCases');
   return {
     ...actual,
     executeListBackupFiles: vi.fn(),
@@ -19,7 +19,7 @@ describe('useBackupFilesQuery', () => {
   const createWrapper = () => createQueryClientTestWrapper().wrapper;
 
   it('should fetch years when path is empty', async () => {
-    vi.mocked(backupExportUseCases.executeListBackupFiles).mockResolvedValueOnce({
+    vi.mocked(backupExportStorageUseCases.executeListBackupFiles).mockResolvedValueOnce({
       status: 'success',
       data: {
         items: [
@@ -49,7 +49,7 @@ describe('useBackupFilesQuery', () => {
   });
 
   it('should fetch months when path has year', async () => {
-    vi.mocked(backupExportUseCases.executeListBackupFiles).mockResolvedValueOnce({
+    vi.mocked(backupExportStorageUseCases.executeListBackupFiles).mockResolvedValueOnce({
       status: 'success',
       data: {
         items: [{ type: 'folder', data: { name: 'Enero', number: '01', type: 'month' } }],
@@ -76,7 +76,7 @@ describe('useBackupFilesQuery', () => {
   });
 
   it('should fetch files when path has year and month', async () => {
-    vi.mocked(backupExportUseCases.executeListBackupFiles).mockResolvedValueOnce({
+    vi.mocked(backupExportStorageUseCases.executeListBackupFiles).mockResolvedValueOnce({
       status: 'success',
       data: {
         items: [],
@@ -102,7 +102,7 @@ describe('useBackupFilesQuery', () => {
   });
 
   it('should use census service for census type', async () => {
-    vi.mocked(backupExportUseCases.executeListBackupFiles).mockResolvedValueOnce({
+    vi.mocked(backupExportStorageUseCases.executeListBackupFiles).mockResolvedValueOnce({
       status: 'success',
       data: {
         items: [{ type: 'folder', data: { name: '2024', type: 'year' } }],
@@ -125,7 +125,7 @@ describe('useBackupFilesQuery', () => {
     });
 
     expect(result.current.data?.length).toBe(1);
-    expect(backupExportUseCases.executeListBackupFiles).toHaveBeenCalledWith({
+    expect(backupExportStorageUseCases.executeListBackupFiles).toHaveBeenCalledWith({
       backupType: 'census',
       path: [],
     });

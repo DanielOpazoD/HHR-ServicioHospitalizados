@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 
 import { RadiologyViewerResults } from '@/components/modals/RadiologyViewerModalContent';
+import { RadiologyPortalReceiptPreview } from '@/components/modals/RadiologyPortalReceiptPreview';
 import type { MMRADSearchResult } from '@/services/radiology/mmradService';
 
 const buildResult = (): MMRADSearchResult => ({
@@ -16,6 +17,7 @@ const buildResult = (): MMRADSearchResult => ({
       pdf_url: 'https://example.com/report.pdf',
       dicom_url: null,
       informe_html_url: 'https://example.com/report.html',
+      portal_web_receipt_url: 'https://example.com/portal-receipt.html',
       report: {
         title: 'TOMOGRAFÍA SIMPLE DE TÓRAX',
         technique: null,
@@ -40,6 +42,7 @@ describe('RadiologyViewerModalContent', () => {
         filteredExams={result.examenes}
         onTabChange={vi.fn()}
         onOpenPdf={vi.fn()}
+        onOpenPortalReceipt={vi.fn()}
         onCopyReport={vi.fn()}
         copiedReportExamKey="https://example.com/report.html"
       />
@@ -51,6 +54,7 @@ describe('RadiologyViewerModalContent', () => {
   it('delegates PDF open and copy actions for CT exams with structured reports', () => {
     const result = buildResult();
     const onOpenPdf = vi.fn();
+    const onOpenPortalReceipt = vi.fn();
     const onCopyReport = vi.fn();
 
     render(
@@ -62,15 +66,43 @@ describe('RadiologyViewerModalContent', () => {
         filteredExams={result.examenes}
         onTabChange={vi.fn()}
         onOpenPdf={onOpenPdf}
+        onOpenPortalReceipt={onOpenPortalReceipt}
         onCopyReport={onCopyReport}
         copiedReportExamKey={null}
       />
     );
 
     fireEvent.click(screen.getByRole('button', { name: /ver pdf/i }));
+    fireEvent.click(screen.getByRole('button', { name: /comprobante portal/i }));
     fireEvent.click(screen.getByRole('button', { name: /copiar informe/i }));
 
     expect(onOpenPdf).toHaveBeenCalledWith(result.examenes[0]);
+    expect(onOpenPortalReceipt).toHaveBeenCalledWith(result.examenes[0]);
     expect(onCopyReport).toHaveBeenCalledWith(result.examenes[0]);
+  });
+
+  it('renders portal receipt in a floating preview and prints the iframe from a React button', () => {
+    const focus = vi.fn();
+    const print = vi.fn();
+
+    render(
+      <RadiologyPortalReceiptPreview
+        title="Comprobante portal"
+        html="<html><body><table><tr><td>Datos del paciente</td></tr></table></body></html>"
+        onClose={vi.fn()}
+      />
+    );
+
+    const iframe = screen.getByTitle(/comprobante portal web paciente/i) as HTMLIFrameElement;
+    Object.defineProperty(iframe, 'contentWindow', {
+      value: { focus, print },
+      configurable: true,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /imprimir/i }));
+
+    expect(iframe).toHaveAttribute('srcdoc', expect.stringContaining('Datos del paciente'));
+    expect(focus).toHaveBeenCalledTimes(1);
+    expect(print).toHaveBeenCalledTimes(1);
   });
 });

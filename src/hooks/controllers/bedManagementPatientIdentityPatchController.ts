@@ -1,0 +1,51 @@
+import type { PatientData } from '@/hooks/contracts/patientHookContracts';
+
+const hasMeaningfulIdentityValue = (value?: string): boolean => Boolean(value?.trim());
+
+export const hasDisplayablePatientName = (
+  patient: Pick<PatientData, 'patientName'> | null | undefined
+): boolean => hasMeaningfulIdentityValue(patient?.patientName);
+
+export const shouldAnchorFirstSeenDate = ({
+  currentPatientName,
+  currentRut,
+  nextPatientName,
+  nextRut,
+  currentFirstSeenDate,
+}: {
+  currentPatientName?: string;
+  currentRut?: string;
+  nextPatientName?: string;
+  nextRut?: string;
+  currentFirstSeenDate?: string;
+}): boolean => {
+  if (hasMeaningfulIdentityValue(currentFirstSeenDate)) {
+    return false;
+  }
+
+  const hadIdentity =
+    hasMeaningfulIdentityValue(currentPatientName) || hasMeaningfulIdentityValue(currentRut);
+  const hasIdentityNow =
+    hasMeaningfulIdentityValue(nextPatientName) || hasMeaningfulIdentityValue(nextRut);
+
+  return !hadIdentity && hasIdentityNow;
+};
+
+export const getClearClinicalDataPatches = (bedId: string): Record<string, unknown> => ({
+  [`beds.${bedId}.cie10Code`]: undefined,
+  [`beds.${bedId}.cie10Description`]: undefined,
+  [`beds.${bedId}.pathology`]: '',
+  [`beds.${bedId}.clinicalEvents`]: [],
+  [`beds.${bedId}.cudyr`]: undefined,
+  [`beds.${bedId}.deviceDetails`]: {},
+  [`beds.${bedId}.devices`]: [],
+  [`beds.${bedId}.handoffNoteDayShift`]: '',
+  [`beds.${bedId}.handoffNoteNightShift`]: '',
+  [`beds.${bedId}.medicalHandoffNote`]: '',
+  [`beds.${bedId}.medicalHandoffAudit`]: undefined,
+  [`beds.${bedId}.medicalHandoffEntries`]: [],
+  [`beds.${bedId}.ginecobstetriciaType`]: undefined,
+  [`beds.${bedId}.deliveryRoute`]: undefined,
+  [`beds.${bedId}.deliveryDate`]: undefined,
+  [`beds.${bedId}.deliveryCesareanLabor`]: undefined,
+});

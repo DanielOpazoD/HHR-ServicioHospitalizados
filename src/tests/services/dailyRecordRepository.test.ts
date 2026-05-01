@@ -142,6 +142,7 @@ const createValidPatient = (id: string, overrides: Partial<PatientData> = {}): P
     bedId: id,
     patientName: 'Valid Name',
     rut: '11.111.111-1',
+    admissionDate: '2024-12-20',
     bedMode: 'Cama',
     biologicalSex: 'Indeterminado',
     hasWristband: false,

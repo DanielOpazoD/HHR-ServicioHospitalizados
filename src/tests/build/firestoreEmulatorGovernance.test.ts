@@ -71,6 +71,19 @@ const createGovernanceRoot = () => {
   );
   writeText(
     root,
+    'scripts/lib/firebase-emulator-ci.sh',
+    [
+      '#!/usr/bin/env bash',
+      'ensure_java_available() { :; }',
+      'run_firestore_emulator_exec() {',
+      '  export FIRESTORE_EMULATOR_HOST="${FIRESTORE_EMULATOR_HOST:-127.0.0.1:18080}"',
+      '  local firebase_config="$(mktemp)"',
+      '  ./node_modules/.bin/firebase emulators:exec --config "$firebase_config" --only firestore "$1"',
+      '}',
+    ].join('\n')
+  );
+  writeText(
+    root,
     '.github/workflows/ci-cd.yml',
     [
       'rules-emulator:',
@@ -101,6 +114,25 @@ describe('firestore emulator governance', () => {
     const root = createGovernanceRoot();
 
     expect(collectFirestoreEmulatorGovernanceIssues(root)).toEqual([]);
+  });
+
+  it('fails when the shared emulator helper cannot override the Firestore port', () => {
+    const root = createGovernanceRoot();
+    writeText(
+      root,
+      'scripts/lib/firebase-emulator-ci.sh',
+      [
+        '#!/usr/bin/env bash',
+        'ensure_java_available() { :; }',
+        'run_firestore_emulator_exec() {',
+        '  ./node_modules/.bin/firebase emulators:exec --only firestore "$1"',
+        '}',
+      ].join('\n')
+    );
+
+    expect(collectFirestoreEmulatorGovernanceIssues(root)).toContain(
+      'scripts/lib/firebase-emulator-ci.sh must export FIRESTORE_EMULATOR_HOST for isolated local CI ports.'
+    );
   });
 
   it('fails when the CI rules job stops running the sync emulator suite', () => {

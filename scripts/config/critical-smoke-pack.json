@@ -4,7 +4,7 @@
     {
       "id": "cold_boot",
       "label": "Cold boot auth bootstrap",
-      "file": "src/tests/hooks/useAuthStateSupport.test.tsx"
+      "file": "src/tests/hooks/useAuthStateSupport.sessionResolution.test.tsx"
     },
     {
       "id": "login",

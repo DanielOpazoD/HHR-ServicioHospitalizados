@@ -196,6 +196,8 @@ describe('clinicalDocumentDraftReducer', () => {
 
     expect(committed.draft).toEqual(document);
     expect(committed.baseState.updatedAt).toBe('2026-03-06T12:45:00.000Z');
+    expect(committed.baseState.document).toEqual(autosaved);
+    expect(committed.baseState.snapshot).toBe(JSON.stringify(document));
     expect(committed.isSaving).toBe(false);
   });
 

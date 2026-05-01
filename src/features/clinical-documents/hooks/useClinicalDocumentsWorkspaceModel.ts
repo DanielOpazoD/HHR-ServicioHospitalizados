@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { useAuth } from '@/context/AuthContext';
 import { getActiveHospitalId } from '@/constants/firestorePaths';
@@ -44,6 +44,7 @@ export const useClinicalDocumentsWorkspaceModel = ({
 }: UseClinicalDocumentsWorkspaceModelParams): ClinicalDocumentsWorkspaceModel => {
   const { user, role } = useAuth();
   const { notifyPort, info, confirm } = useClinicalDocumentsWorkspaceNotifyPort();
+  const [isImportingWithAi, setIsImportingWithAi] = useState(false);
 
   const { canRead, canEdit, canDelete, readOnlyMessage, persistReason } = useMemo(
     () => resolveClinicalDocumentsWorkspaceAccessState(patient, role),
@@ -72,9 +73,6 @@ export const useClinicalDocumentsWorkspaceModel = ({
   const {
     draft,
     hasLocalDraftChanges,
-    hasPendingRemoteUpdate,
-    applyPendingRemoteUpdate,
-    discardLocalDraftChanges,
     setDraft,
     isSaving,
     lastSavedAt,
@@ -134,23 +132,44 @@ export const useClinicalDocumentsWorkspaceModel = ({
     canEdit,
   });
 
-  const { createDocument, handleDeleteDocument, handleDuplicateDocument, handleImportJson } =
-    useClinicalDocumentWorkspaceDocumentActions({
-      patient,
-      role,
-      user,
-      hospitalId,
-      episode,
-      selectedTemplateId,
-      templates,
-      selectedDocumentId,
-      canEdit,
-      canDelete,
-      notify: notifyPort,
-      setSelectedDocumentId,
-      setDraft,
-      lastPersistedSnapshotRef,
-    });
+  const {
+    createDocument,
+    handleDeleteDocument,
+    handleDuplicateDocument,
+    handleImportJson,
+    handleImportWithAi,
+  } = useClinicalDocumentWorkspaceDocumentActions({
+    patient,
+    role,
+    user,
+    hospitalId,
+    episode,
+    selectedTemplateId,
+    templates,
+    selectedDocumentId,
+    canEdit,
+    canDelete,
+    notify: notifyPort,
+    setSelectedDocumentId,
+    setDraft,
+    lastPersistedSnapshotRef,
+  });
+
+  const handleImportWithAiProgress = useCallback(
+    async (file: File) => {
+      if (isImportingWithAi) {
+        return;
+      }
+
+      setIsImportingWithAi(true);
+      try {
+        await handleImportWithAi(file);
+      } finally {
+        setIsImportingWithAi(false);
+      }
+    },
+    [handleImportWithAi, isImportingWithAi]
+  );
 
   const { handleExportJson, handlePrint, handlePrintAnnex, handleUploadPdf, isUploadingPdf } =
     useClinicalDocumentWorkspaceExportActions({
@@ -184,6 +203,8 @@ export const useClinicalDocumentsWorkspaceModel = ({
       handleDeleteDocument,
       handleExportJson,
       handleImportJson,
+      handleImportWithAi: handleImportWithAiProgress,
+      isImportingWithAi,
       addClinicalUpdate,
       patchAnnexContent,
       patchSectionTitle,
@@ -196,13 +217,10 @@ export const useClinicalDocumentsWorkspaceModel = ({
       isSaving,
       lastSavedAt,
       hasLocalDraftChanges,
-      hasPendingRemoteUpdate,
       isUploadingPdf,
       validationIssues,
       handlePrint,
       handleUploadPdf,
-      applyPendingRemoteUpdate,
-      discardLocalDraftChanges,
       draft,
       restoreTemplateContent,
       notifications: { info, confirm },

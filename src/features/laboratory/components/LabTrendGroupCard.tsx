@@ -8,7 +8,7 @@ export const LabTrendGroupCard: React.FC<{ group: LabTrendGroup }> = ({ group })
   const unitGroups = groupVariablesByScale(group.variables);
 
   return (
-    <div className="min-w-0 rounded-xl border border-slate-200/80 bg-white p-4">
+    <div data-lab-trend-card className="min-w-0 rounded-xl border border-slate-200/80 bg-white p-4">
       <h4 className="mb-3 text-[13px] font-bold text-slate-700">{group.label}</h4>
       <div className="space-y-4">
         {unitGroups.map((unitGroup, index) => {

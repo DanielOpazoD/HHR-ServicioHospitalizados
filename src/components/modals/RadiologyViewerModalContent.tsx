@@ -7,6 +7,7 @@ import {
   FileText,
   Loader2,
   Monitor,
+  Printer,
   Radio,
   Search,
 } from 'lucide-react';
@@ -211,12 +212,14 @@ const RadiologyExamCard = ({
   exam,
   index,
   onOpenPdf,
+  onOpenPortalReceipt,
   onCopyReport,
   isCopyConfirmed,
 }: {
   exam: MMRADExam;
   index: number;
   onOpenPdf: (exam: MMRADExam) => void;
+  onOpenPortalReceipt: (exam: MMRADExam) => void;
   onCopyReport: (exam: MMRADExam) => void;
   isCopyConfirmed: boolean;
 }) => {
@@ -265,6 +268,16 @@ const RadiologyExamCard = ({
             Ver PDF
           </button>
         )}
+        {exam.portal_web_receipt_url && (
+          <button
+            type="button"
+            onClick={() => onOpenPortalReceipt(exam)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-800"
+          >
+            <Printer size={12} />
+            Comprobante portal
+          </button>
+        )}
         {exam.dicom_url && (
           <a
             href={exam.dicom_url}
@@ -293,7 +306,7 @@ const RadiologyExamCard = ({
             </button>
           </>
         )}
-        {!exam.pdf_url && !exam.dicom_url && (
+        {!exam.pdf_url && !exam.portal_web_receipt_url && !exam.dicom_url && (
           <span className="text-[11px] italic text-slate-400">Sin acciones disponibles</span>
         )}
       </div>
@@ -309,6 +322,7 @@ export const RadiologyViewerResults = ({
   filteredExams,
   onTabChange,
   onOpenPdf,
+  onOpenPortalReceipt,
   onCopyReport,
   copiedReportExamKey,
 }: {
@@ -319,6 +333,7 @@ export const RadiologyViewerResults = ({
   filteredExams: MMRADExam[];
   onTabChange: (modality: string | null) => void;
   onOpenPdf: (exam: MMRADExam) => void;
+  onOpenPortalReceipt: (exam: MMRADExam) => void;
   onCopyReport: (exam: MMRADExam) => void;
   copiedReportExamKey: string | null;
 }) => {
@@ -348,6 +363,7 @@ export const RadiologyViewerResults = ({
             exam={exam}
             index={index}
             onOpenPdf={onOpenPdf}
+            onOpenPortalReceipt={onOpenPortalReceipt}
             onCopyReport={onCopyReport}
             isCopyConfirmed={copiedReportExamKey === buildMMRADExamKey(exam)}
           />

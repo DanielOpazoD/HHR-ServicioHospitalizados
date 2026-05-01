@@ -11,7 +11,10 @@ const source = fs.readFileSync(LAZY_VIEWS_PATH, 'utf8');
 // each entry must be a light barrel that is intentionally split out of the
 // feature's default public surface (e.g. to keep the authenticated-shell
 // chunk under its budget).
-const ALLOWED_LAZY_SUBPATHS = new Set(['@/features/census/public-components']);
+const ALLOWED_LAZY_SUBPATHS = new Set([
+  '@/features/census/census-view',
+  '@/features/census/public-components',
+]);
 
 const violations = [
   ...source.matchAll(/@\/features\/([^/'"]+)\/([^'"]+)/g),

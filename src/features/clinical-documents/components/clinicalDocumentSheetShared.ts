@@ -30,7 +30,6 @@ export interface ClinicalDocumentSheetProps {
   isSaving: boolean;
   lastSavedAt?: string;
   hasLocalDraftChanges: boolean;
-  hasPendingRemoteUpdate: boolean;
   isUploadingPdf: boolean;
   toolbar?: ReactNode;
   activeTitleTarget: string | null;
@@ -55,8 +54,6 @@ export interface ClinicalDocumentSheetProps {
   validationIssues: Array<{ message: string }>;
   onPrint: () => void;
   onUploadPdf: () => void;
-  onApplyPendingRemoteUpdate: () => void;
-  onDiscardLocalDraftChanges: () => void;
   patchDocumentTitle: (title: string) => void;
   patchPatientInfoTitle: (title: string) => void;
   patchPatientField: (fieldId: string, value: string) => void;

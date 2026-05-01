@@ -32,10 +32,7 @@ interface UseClinicalDocumentWorkspaceDraftParams {
 
 export interface ClinicalDocumentWorkspaceDraftState {
   draft: ClinicalDocumentRecord | null;
-  hasPendingRemoteUpdate: boolean;
   hasLocalDraftChanges: boolean;
-  applyPendingRemoteUpdate: () => void;
-  discardLocalDraftChanges: () => void;
   setDraft: Dispatch<SetStateAction<ClinicalDocumentRecord | null>>;
   isSaving: boolean;
   lastSavedAt: string | undefined;
@@ -183,11 +180,8 @@ export const useClinicalDocumentWorkspaceDraft = ({
 
   return {
     draft: state.draft,
-    hasPendingRemoteUpdate: state.hasPendingRemoteUpdate,
     hasLocalDraftChanges,
     lastSavedAt: state.baseState.updatedAt || undefined,
-    applyPendingRemoteUpdate: () => dispatch({ type: 'APPLY_REMOTE_UPDATE' }),
-    discardLocalDraftChanges: () => dispatch({ type: 'DISCARD_LOCAL_CHANGES' }),
     setDraft,
     isSaving: state.isSaving,
     setIsSaving,

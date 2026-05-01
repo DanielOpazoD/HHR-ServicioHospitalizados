@@ -24,6 +24,15 @@ const getClinicalDocumentsCollectionPath = (hospitalId: string = getActiveHospit
   `hospitals/${hospitalId}/clinicalDocuments`;
 
 const EPISODE_KEY_QUERY_CHUNK_SIZE = 10;
+const LOCAL_CLINICAL_DOCUMENTS_STORAGE_KEY = 'hhr_clinical_documents_local_v1';
+
+type LocalClinicalDocumentsStore = Record<string, Record<string, ClinicalDocumentRecord>>;
+
+const localClinicalDocumentsMemoryStore: LocalClinicalDocumentsStore = {};
+const localClinicalDocumentSubscribers = new Map<
+  string,
+  Set<(documents: ClinicalDocumentRecord[]) => void>
+>();
 
 const sortDocuments = (documents: ClinicalDocumentRecord[]): ClinicalDocumentRecord[] =>
   [...documents].sort((left, right) => right.audit.updatedAt.localeCompare(left.audit.updatedAt));
@@ -61,6 +70,104 @@ const sanitizeForFirestore = <T>(value: T): T => {
   return value;
 };
 
+const getBrowserStorage = (): Storage | null => {
+  try {
+    return typeof globalThis.localStorage === 'undefined' ? null : globalThis.localStorage;
+  } catch {
+    return null;
+  }
+};
+
+const readLocalClinicalDocumentsStore = (): LocalClinicalDocumentsStore => {
+  const storage = getBrowserStorage();
+  if (!storage) {
+    return localClinicalDocumentsMemoryStore;
+  }
+
+  try {
+    const raw = storage.getItem(LOCAL_CLINICAL_DOCUMENTS_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as LocalClinicalDocumentsStore) : {};
+  } catch {
+    return {};
+  }
+};
+
+const writeLocalClinicalDocumentsStore = (store: LocalClinicalDocumentsStore): void => {
+  Object.keys(localClinicalDocumentsMemoryStore).forEach(key => {
+    delete localClinicalDocumentsMemoryStore[key];
+  });
+  Object.assign(localClinicalDocumentsMemoryStore, store);
+
+  const storage = getBrowserStorage();
+  if (!storage) {
+    return;
+  }
+
+  try {
+    storage.setItem(LOCAL_CLINICAL_DOCUMENTS_STORAGE_KEY, JSON.stringify(store));
+  } catch {
+    // Local-only persistence is best-effort; callers still receive the in-memory document.
+  }
+};
+
+const listLocalClinicalDocumentsByEpisode = (
+  episodeKey: string,
+  hospitalId: string
+): ClinicalDocumentRecord[] => {
+  const documents = Object.values(readLocalClinicalDocumentsStore()[hospitalId] || {});
+  return sortDocuments(
+    documents
+      .filter(document => document.episodeKey === episodeKey)
+      .map(document => validateReadRecord(document))
+      .filter((document): document is ClinicalDocumentRecord => Boolean(document))
+  );
+};
+
+const notifyLocalClinicalDocumentSubscribers = (episodeKey: string, hospitalId: string): void => {
+  const subscribers = localClinicalDocumentSubscribers.get(`${hospitalId}::${episodeKey}`);
+  if (!subscribers || subscribers.size === 0) {
+    return;
+  }
+
+  const documents = listLocalClinicalDocumentsByEpisode(episodeKey, hospitalId);
+  subscribers.forEach(callback => callback(documents));
+};
+
+const persistLocalClinicalDocument = (
+  record: ClinicalDocumentRecord,
+  hospitalId: string
+): ClinicalDocumentRecord => {
+  const store = readLocalClinicalDocumentsStore();
+  const hospitalDocuments = store[hospitalId] || {};
+  const nextStore = {
+    ...store,
+    [hospitalId]: {
+      ...hospitalDocuments,
+      [record.id]: record,
+    },
+  };
+  writeLocalClinicalDocumentsStore(nextStore);
+  notifyLocalClinicalDocumentSubscribers(record.episodeKey, hospitalId);
+  return record;
+};
+
+const deleteLocalClinicalDocument = (documentId: string, hospitalId: string): void => {
+  const store = readLocalClinicalDocumentsStore();
+  const hospitalDocuments = store[hospitalId] || {};
+  const document = hospitalDocuments[documentId];
+  if (!document) {
+    return;
+  }
+
+  const nextHospitalDocuments = { ...hospitalDocuments };
+  delete nextHospitalDocuments[documentId];
+  writeLocalClinicalDocumentsStore({
+    ...store,
+    [hospitalId]: nextHospitalDocuments,
+  });
+  notifyLocalClinicalDocumentSubscribers(document.episodeKey, hospitalId);
+};
+
 const enrichRecord = (record: ClinicalDocumentRecord): ClinicalDocumentRecord => {
   const hydrated = parseClinicalDocumentRecord(normalizeClinicalDocumentForPersistence(record));
   const renderedText = buildClinicalDocumentRenderedText(hydrated);
@@ -93,7 +200,7 @@ export const ClinicalDocumentRepository = {
     hospitalId: string = getActiveHospitalId()
   ): Promise<ClinicalDocumentRecord[]> {
     if (!isFirestoreEnabled()) {
-      return [];
+      return listLocalClinicalDocumentsByEpisode(episodeKey, hospitalId);
     }
 
     const documents = await firestoreDb.getDocs<ClinicalDocumentRecord>(
@@ -118,7 +225,11 @@ export const ClinicalDocumentRepository = {
       return [];
     }
     if (!isFirestoreEnabled()) {
-      return [];
+      return sortDocuments(
+        sanitizedEpisodeKeys.flatMap(episodeKey =>
+          listLocalClinicalDocumentsByEpisode(episodeKey, hospitalId)
+        )
+      );
     }
 
     const chunks = chunkArray(sanitizedEpisodeKeys, EPISODE_KEY_QUERY_CHUNK_SIZE);
@@ -151,7 +262,8 @@ export const ClinicalDocumentRepository = {
     hospitalId: string = getActiveHospitalId()
   ): Promise<ClinicalDocumentRecord | null> {
     if (!isFirestoreEnabled()) {
-      return null;
+      const document = readLocalClinicalDocumentsStore()[hospitalId]?.[documentId];
+      return document ? validateReadRecord(document) : null;
     }
 
     const document = await firestoreDb.getDoc<ClinicalDocumentRecord>(
@@ -167,7 +279,7 @@ export const ClinicalDocumentRepository = {
   ): Promise<ClinicalDocumentRecord> {
     const enriched = sanitizeForFirestore(enrichRecord(record));
     if (!isFirestoreEnabled()) {
-      return enriched;
+      return persistLocalClinicalDocument(enriched, hospitalId);
     }
 
     await firestoreDb.setDoc(getClinicalDocumentsCollectionPath(hospitalId), record.id, enriched);
@@ -180,7 +292,7 @@ export const ClinicalDocumentRepository = {
   ): Promise<ClinicalDocumentRecord> {
     const enriched = sanitizeForFirestore(enrichRecord(record));
     if (!isFirestoreEnabled()) {
-      return enriched;
+      return persistLocalClinicalDocument(enriched, hospitalId);
     }
 
     await firestoreDb.setDoc(getClinicalDocumentsCollectionPath(hospitalId), record.id, enriched, {
@@ -225,8 +337,17 @@ export const ClinicalDocumentRepository = {
     hospitalId: string = getActiveHospitalId()
   ): () => void {
     if (!isFirestoreEnabled()) {
-      callback([]);
-      return () => {};
+      const key = `${hospitalId}::${episodeKey}`;
+      const subscribers = localClinicalDocumentSubscribers.get(key) || new Set();
+      subscribers.add(callback);
+      localClinicalDocumentSubscribers.set(key, subscribers);
+      callback(listLocalClinicalDocumentsByEpisode(episodeKey, hospitalId));
+      return () => {
+        subscribers.delete(callback);
+        if (subscribers.size === 0) {
+          localClinicalDocumentSubscribers.delete(key);
+        }
+      };
     }
 
     return firestoreDb.subscribeQuery<ClinicalDocumentRecord>(
@@ -245,6 +366,7 @@ export const ClinicalDocumentRepository = {
 
   async delete(documentId: string, hospitalId: string = getActiveHospitalId()): Promise<void> {
     if (!isFirestoreEnabled()) {
+      deleteLocalClinicalDocument(documentId, hospitalId);
       return;
     }
 

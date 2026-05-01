@@ -101,6 +101,20 @@ describe('http utilities', () => {
       expect(isOriginAllowed('https://app.example.com')).toBe(true);
     });
 
+    it('returns true for loopback origins while local function development is enabled', () => {
+      process.env.HHR_ALLOW_LOCAL_FUNCTION_ORIGINS = 'true';
+
+      expect(isOriginAllowed('http://127.0.0.1:3000')).toBe(true);
+      expect(isOriginAllowed('http://localhost:5173')).toBe(true);
+      expect(isOriginAllowed('http://[::1]:3000')).toBe(true);
+    });
+
+    it('does not allow loopback origins unless local function development is enabled', () => {
+      process.env.HHR_ALLOW_LOCAL_FUNCTION_ORIGINS = '';
+
+      expect(isOriginAllowed('http://127.0.0.1:3000')).toBe(false);
+    });
+
     it('returns true when origin is undefined (same-origin request)', () => {
       expect(isOriginAllowed(undefined)).toBe(true);
     });
@@ -121,6 +135,14 @@ describe('http utilities', () => {
     it('reflects the allowed origin in Access-Control-Allow-Origin', () => {
       const headers = buildCorsHeaders('https://app.example.com');
       expect(headers['Access-Control-Allow-Origin']).toBe('https://app.example.com');
+    });
+
+    it('reflects loopback origins while local function development is enabled', () => {
+      process.env.HHR_ALLOW_LOCAL_FUNCTION_ORIGINS = 'true';
+
+      const headers = buildCorsHeaders('http://127.0.0.1:3000');
+
+      expect(headers['Access-Control-Allow-Origin']).toBe('http://127.0.0.1:3000');
     });
 
     it('omits Access-Control-Allow-Origin for unknown origins', () => {

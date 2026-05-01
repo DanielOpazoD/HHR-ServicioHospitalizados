@@ -20,7 +20,7 @@ export const LabViewerAnalyzeBar: React.FC<LabViewerAnalyzeBarProps> = ({
   onClear,
 }) =>
   selectedCount > 0 ? (
-    <div className="sticky bottom-0 z-20 mt-4 rounded-xl border border-emerald-200 bg-emerald-50/95 px-4 py-3 shadow-[0_-8px_24px_rgba(16,185,129,0.08)] backdrop-blur-sm">
+    <div className="sticky bottom-0 z-20 -mx-5 mt-2 border-t border-emerald-200 bg-emerald-50/95 px-5 py-2 shadow-[0_-8px_24px_rgba(16,185,129,0.08)] backdrop-blur-sm">
       <div className="flex items-center justify-between">
         <span className="text-[12px] font-medium text-emerald-700">
           {selectedCount} examen{selectedCount > 1 ? 'es' : ''} seleccionado

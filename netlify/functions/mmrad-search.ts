@@ -67,6 +67,7 @@ interface MMRADExam {
   pdf_url: string | null;
   dicom_url: string | null;
   informe_html_url: string | null;
+  portal_web_receipt_url: string | null;
   report: ReturnType<typeof parseMMRADReportSections>;
 }
 
@@ -107,6 +108,47 @@ const buildPdfProxyResponse = async (pdfUrl: string, cookies: string, requestOri
     },
     body: base64,
     isBase64Encoded: true,
+  };
+};
+
+const buildPortalReceiptProxyResponse = async (
+  receiptUrl: string,
+  cookies: string,
+  requestOrigin?: string
+) => {
+  const response = await fetchWithHeaders(receiptUrl, {
+    headers: {
+      Cookie: cookies,
+      Referer: `${MMRAD_BASE_URL}/group/hhangaroa`,
+    },
+  });
+
+  const isSuccessful =
+    typeof response.ok === 'boolean'
+      ? response.ok
+      : response.status >= 200 && response.status < 400;
+
+  if (!isSuccessful) {
+    return buildJsonResponse(
+      502,
+      { error: 'Error al obtener el comprobante portal desde MMRAD' },
+      { requestOrigin }
+    );
+  }
+
+  const html = await decodeResponseHtml(response, 'latin1');
+
+  return {
+    statusCode: 200,
+    headers: {
+      ...buildCorsHeaders(requestOrigin, {
+        allowedHeaders: 'Content-Type, Authorization, Accept',
+        allowedMethods: 'GET,OPTIONS',
+      }),
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'private, max-age=300',
+    },
+    body: html,
   };
 };
 
@@ -212,12 +254,46 @@ const normalizeMmradUrl = (rawUrl: string | null | undefined): string | null => 
   if (!rawUrl) return null;
 
   let normalized = rawUrl.trim();
-  const javascriptWindowOpenMatch = normalized.match(/window\.open\('([^']+)'/i);
+  const javascriptWindowOpenMatch = normalized.match(/window\.open\(['"]([^'"]+)['"]/i);
   if (javascriptWindowOpenMatch?.[1]) {
     normalized = javascriptWindowOpenMatch[1];
   }
 
   return normalized.startsWith('/') ? `${MMRAD_BASE_URL}${normalized}` : normalized;
+};
+
+const extractActionUrlFromFragment = (fragment: string): string | null => {
+  const windowOpenMatch = fragment.match(/window\.open\(['"]([^'"]+)['"]/i);
+  if (windowOpenMatch?.[1]) {
+    return normalizeMmradUrl(windowOpenMatch[1]);
+  }
+
+  const hrefMatch = fragment.match(/href=["']([^"']+)["']/i);
+  if (hrefMatch?.[1]) {
+    return normalizeMmradUrl(hrefMatch[1]);
+  }
+
+  return null;
+};
+
+const extractActionUrlByLabel = (rowHtml: string, label: string): string | null => {
+  const decoded = decodeHtmlEntities(rowHtml);
+  const labelIndex = decoded.toLocaleLowerCase('es-CL').indexOf(label.toLocaleLowerCase('es-CL'));
+  if (labelIndex < 0) {
+    return null;
+  }
+
+  const anchorStart = decoded.lastIndexOf('<a', labelIndex);
+  const anchorEnd = decoded.indexOf('</a>', labelIndex);
+  if (anchorStart >= 0 && anchorEnd > labelIndex) {
+    const anchorUrl = extractActionUrlFromFragment(decoded.slice(anchorStart, anchorEnd + 4));
+    if (anchorUrl) {
+      return anchorUrl;
+    }
+  }
+
+  const nearbyFragment = decoded.slice(Math.max(0, labelIndex - 700), labelIndex + 700);
+  return extractActionUrlFromFragment(nearbyFragment);
 };
 
 interface LoginResult {
@@ -420,6 +496,8 @@ const parseExamsFromHTML = (html: string): MMRADExam[] => {
       }
     }
 
+    const portalWebReceiptUrl = extractActionUrlByLabel(rowHtml, 'Comprobante Portal Web paciente');
+
     exams.push({
       nombre_examen: tds[10] || '',
       fecha_examen: tds[7] || '',
@@ -429,6 +507,7 @@ const parseExamsFromHTML = (html: string): MMRADExam[] => {
       pdf_url: pdfUrl,
       dicom_url: dicomUrl,
       informe_html_url: informeHtmlUrl,
+      portal_web_receipt_url: portalWebReceiptUrl,
       report: null,
     });
   }
@@ -515,6 +594,32 @@ export const createMMRADSearchHandler = (
           fn: async () => {
             const { cookies } = await loginToMMRAD();
             return buildPdfProxyResponse(pdfUrl, cookies, requestOrigin);
+          },
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Error desconocido';
+        return buildJsonResponse(500, { error: message }, { requestOrigin });
+      }
+    }
+
+    if (action === 'portalReceipt') {
+      const receiptUrl = normalizeMmradUrl(queryParams.get('link'));
+      if (!receiptUrl) {
+        return buildJsonResponse(400, { error: 'link es requerido' }, { requestOrigin });
+      }
+
+      try {
+        return await invokeWithTelemetry({
+          service: 'mmrad',
+          operation: 'portal_receipt_proxy',
+          timeoutMs: 20_000,
+          maxAttempts: 2,
+          db,
+          hospitalId: process.env.ACTIVE_HOSPITAL_ID || 'hanga_roa',
+          context: { action: 'portalReceipt' },
+          fn: async () => {
+            const { cookies } = await loginToMMRAD();
+            return buildPortalReceiptProxyResponse(receiptUrl, cookies, requestOrigin);
           },
         });
       } catch (error) {

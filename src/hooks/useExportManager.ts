@@ -2,15 +2,13 @@ import { useState, useCallback } from 'react';
 import type { DailyRecord } from '@/application/shared/dailyRecordCoreContracts';
 import { useConfirmDialog, useNotification } from '@/context/UIContext';
 import { dispatchExportManagerNotice } from '@/hooks/controllers/exportManagerNoticeController';
-import {
-  executeBackupCensusExcel,
-  executeBackupHandoffPdf,
-  executeExportHandoffPdf,
-} from '@/application/backup-export/backupExportUseCases';
 import { presentBackupExportOutcome } from '@/hooks/controllers/backupExportOutcomeController';
 import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 import { useBackupArchiveStatus } from '@/hooks/useBackupArchiveStatus';
 import { formatBackupShiftLabel } from '@/shared/backup/backupPresentation';
+
+const loadBackupArchiveUseCases = () =>
+  import('@/application/backup-export/backupExportArchiveUseCases');
 
 interface UseExportManagerProps {
   currentDateString: string;
@@ -61,6 +59,7 @@ export const useExportManager = ({
   const handleExportPDF = useCallback(async () => {
     await flushBeforeExport?.();
     const exportRecord = getStableRecordForExport?.() ?? record;
+    const { executeExportHandoffPdf } = await loadBackupArchiveUseCases();
 
     const outcome = await executeExportHandoffPdf({
       record: exportRecord,
@@ -99,6 +98,7 @@ export const useExportManager = ({
     try {
       await flushBeforeExport?.();
       const exportRecord = getStableRecordForExport?.() ?? record;
+      const { executeBackupCensusExcel } = await loadBackupArchiveUseCases();
       const outcome = await executeBackupCensusExcel({
         selectedYear,
         selectedMonth,
@@ -166,6 +166,7 @@ export const useExportManager = ({
       try {
         await flushBeforeExport?.();
         const stableRecord = getStableRecordForExport?.() ?? exportRecord;
+        const { executeBackupHandoffPdf } = await loadBackupArchiveUseCases();
         const outcome = await executeBackupHandoffPdf({
           record: stableRecord,
           selectedShift,

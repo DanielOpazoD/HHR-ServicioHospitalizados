@@ -107,3 +107,16 @@ npm run report:maintenance-debt-scorecard
 
 - `pendingHotspots` debe reflejar solo excedentes reales contra guardrails activos.
 - `watchlist` sigue mostrando archivos densos o de alto churn que conviene seguir iterando aunque ya no estén incumpliendo un límite.
+
+## Firestore rules governance
+
+- `firestore.rules` es un artefacto generado; la edición humana debe ocurrir en `rules/firestore/*.rules`.
+- Cada fragmento Firestore debe tener owner, riesgo y razón en `scripts/config/firestore-rules-governance.json`.
+- El presupuesto actual del archivo generado es un guardrail explícito, no una invitación a crecer hasta el límite.
+
+Comandos:
+
+```bash
+npm run check:firestore-rules-governance
+npm run check:security
+```

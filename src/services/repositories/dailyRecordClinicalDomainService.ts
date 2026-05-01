@@ -30,6 +30,9 @@ const areSameNamedPatients = (
       normalizeComparablePatientName(previousPatient.patientName)
   );
 
+const hasCarryoverIdentity = (patient: PatientData): boolean =>
+  Boolean((patient.patientName?.trim() || patient.rut?.trim()) && patient.admissionDate?.trim());
+
 const resetCarryoverCudyr = (patient: PatientData): void => {
   patient.cudyr = undefined;
   if (patient.clinicalCrib) {
@@ -38,14 +41,7 @@ const resetCarryoverCudyr = (patient: PatientData): void => {
 };
 
 const shouldClonePreviousPatient = (prevPatient: PatientData): boolean =>
-  Boolean(
-    prevPatient.patientName ||
-    prevPatient.isBlocked ||
-    prevPatient.cie10Code ||
-    prevPatient.cie10Description ||
-    prevPatient.pathology ||
-    prevPatient.diagnosisComments
-  );
+  Boolean(prevPatient.isBlocked || hasCarryoverIdentity(prevPatient));
 
 export const preparePatientForCarryover = (
   sourcePatient: PatientData,

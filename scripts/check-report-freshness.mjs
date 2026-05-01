@@ -28,6 +28,11 @@ const trackedReports = [
     dependsOn: ['reports/e2e/preview-bootstrap/report.json'],
   },
   {
+    file: 'reports/release-confidence-matrix.json',
+    field: 'gitSha',
+    refreshScript: 'report:release-confidence-matrix',
+  },
+  {
     file: 'reports/release-readiness-scorecard.json',
     field: 'gitSha',
     refreshScript: 'report:release-readiness-scorecard',

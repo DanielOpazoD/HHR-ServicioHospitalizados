@@ -28,4 +28,4 @@ export * from '@/features/census/controllers/patientMovementUndoMutationControll
 export * from '@/features/census/controllers/transferModalController';
 
 export const loadCensusPublicComponents = () =>
-  import(/* webpackPrefetch: true */ '@/features/census/public-components');
+  import(/* webpackPrefetch: true */ '@/features/census/census-view');

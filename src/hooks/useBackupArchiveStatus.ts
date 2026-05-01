@@ -4,9 +4,11 @@ import {
   buildArchiveStatusState,
   shouldCheckArchiveStatus,
 } from '@/hooks/controllers/exportManagerController';
-import { executeLookupBackupArchiveStatus } from '@/application/backup-export/backupExportUseCases';
 import { presentBackupLookupOutcome } from '@/hooks/controllers/backupStorageOutcomeController';
 import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryOutcomeRecorder';
+
+const loadBackupStorageUseCases = () =>
+  import('@/application/backup-export/backupExportStorageUseCases');
 
 interface UseBackupArchiveStatusParams {
   currentDateString: string;
@@ -52,11 +54,13 @@ export const useBackupArchiveStatus = ({
     let idleCallbackId: number | undefined;
 
     const runLookup = () => {
-      void executeLookupBackupArchiveStatus({
-        backupType,
-        date: currentDateString,
-        shift: selectedShift,
-      }).then(outcome => {
+      void (async () => {
+        const { executeLookupBackupArchiveStatus } = await loadBackupStorageUseCases();
+        const outcome = await executeLookupBackupArchiveStatus({
+          backupType,
+          date: currentDateString,
+          shift: selectedShift,
+        });
         if (isDisposed) {
           return;
         }
@@ -77,6 +81,15 @@ export const useBackupArchiveStatus = ({
         } else if (notice?.channel === 'error') {
           error(notice.title || 'Respaldo', notice.message);
         }
+      })().catch(caughtError => {
+        if (isDisposed) {
+          return;
+        }
+        const message =
+          caughtError instanceof Error
+            ? caughtError.message
+            : 'No se pudo cargar la verificación remota de respaldo.';
+        error('Verificación de respaldo fallida', message);
       });
     };
 

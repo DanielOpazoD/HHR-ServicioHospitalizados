@@ -14,8 +14,9 @@ import {
   mergeDebouncedAuditDetails,
   type PendingAuditEntry,
 } from '@/hooks/controllers/auditLogPolicyController';
-import { executeWriteAuditEvent } from '@/application/audit/writeAuditEventUseCase';
-import { executeFetchAuditLogs } from '@/application/audit/fetchAuditLogsUseCase';
+
+const loadWriteAuditEventUseCase = () => import('@/application/audit/writeAuditEventUseCase');
+const loadFetchAuditLogsUseCase = () => import('@/application/audit/fetchAuditLogsUseCase');
 
 interface UseAuditReturn {
   // Logging functions
@@ -94,16 +95,19 @@ export const useAudit = (userId: string): UseAuditReturn => {
         return;
       }
 
-      void executeWriteAuditEvent({
-        userId,
-        action,
-        entityType,
-        entityId,
-        details: normalizedDetails,
-        patientRut,
-        recordDate,
-        authors,
-      });
+      void (async () => {
+        const { executeWriteAuditEvent } = await loadWriteAuditEventUseCase();
+        await executeWriteAuditEvent({
+          userId,
+          action,
+          entityType,
+          entityId,
+          details: normalizedDetails,
+          patientRut,
+          recordDate,
+          authors,
+        });
+      })().catch(() => undefined);
     },
     [userId]
   );
@@ -237,6 +241,7 @@ export const useAudit = (userId: string): UseAuditReturn => {
   );
 
   const fetchLogs = useCallback(async (limit: number = 100): Promise<AuditLogEntry[]> => {
+    const { executeFetchAuditLogs } = await loadFetchAuditLogsUseCase();
     const result = await executeFetchAuditLogs({ limit });
     return result.data;
   }, []);

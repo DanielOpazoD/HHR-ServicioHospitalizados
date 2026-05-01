@@ -53,6 +53,8 @@ interface BuildSidebarPropsParams {
   ) => Promise<void>;
   handleExportJson: (document: ClinicalDocumentsSidebarProps['documents'][number]) => void;
   handleImportJson: (file: File) => Promise<void>;
+  handleImportWithAi: (file: File) => Promise<void>;
+  isImportingWithAi: boolean;
   addClinicalUpdate: ClinicalDocumentsWorkspaceSheetModelProps['addClinicalUpdate'];
   patchAnnexContent: ClinicalDocumentsWorkspaceSheetModelProps['patchAnnexContent'];
   patchSectionTitle: ClinicalDocumentsWorkspaceSheetModelProps['patchSectionTitle'];
@@ -66,13 +68,10 @@ interface BuildSheetPropsParams {
   isSaving: boolean;
   lastSavedAt?: string;
   hasLocalDraftChanges: boolean;
-  hasPendingRemoteUpdate: boolean;
   isUploadingPdf: boolean;
   validationIssues: ClinicalDocumentsWorkspaceSheetModelProps['validationIssues'];
   handlePrint: () => Promise<void>;
   handleUploadPdf: () => Promise<void>;
-  applyPendingRemoteUpdate: ClinicalDocumentsWorkspaceSheetModelProps['onApplyPendingRemoteUpdate'];
-  discardLocalDraftChanges: ClinicalDocumentsWorkspaceSheetModelProps['onDiscardLocalDraftChanges'];
   draft: ClinicalDocumentsWorkspaceSheetModelProps['selectedDocument'];
   restoreTemplateContent: ClinicalDocumentsWorkspaceSheetModelProps['onRestoreTemplate'];
   notifications: NotificationHelpers;
@@ -133,6 +132,8 @@ export const buildClinicalDocumentsWorkspaceSidebarProps = ({
   handleDeleteDocument,
   handleExportJson,
   handleImportJson,
+  handleImportWithAi,
+  isImportingWithAi,
   addClinicalUpdate,
   patchAnnexContent,
   patchSectionTitle,
@@ -159,6 +160,8 @@ export const buildClinicalDocumentsWorkspaceSidebarProps = ({
   onDeleteDocument: document => void handleDeleteDocument(document),
   onExportJson: handleExportJson,
   onImportJson: file => void handleImportJson(file),
+  onImportWithAi: file => void handleImportWithAi(file),
+  isImportingWithAi,
   onAddClinicalUpdate: canEdit ? addClinicalUpdate : undefined,
   onToggleAnnex: canEdit
     ? () =>
@@ -185,13 +188,10 @@ export const buildClinicalDocumentsWorkspaceSheetProps = ({
   isSaving,
   lastSavedAt,
   hasLocalDraftChanges,
-  hasPendingRemoteUpdate,
   isUploadingPdf,
   validationIssues,
   handlePrint,
   handleUploadPdf,
-  applyPendingRemoteUpdate,
-  discardLocalDraftChanges,
   draft,
   restoreTemplateContent,
   notifications,
@@ -232,13 +232,10 @@ export const buildClinicalDocumentsWorkspaceSheetProps = ({
   isSaving,
   lastSavedAt,
   hasLocalDraftChanges,
-  hasPendingRemoteUpdate,
   isUploadingPdf,
   validationIssues,
   onPrint: handlePrint,
   onUploadPdf: () => void handleUploadPdf(),
-  onApplyPendingRemoteUpdate: applyPendingRemoteUpdate,
-  onDiscardLocalDraftChanges: discardLocalDraftChanges,
   onRestoreTemplate: () =>
     void executeClinicalDocumentTemplateRestore({
       draft,

@@ -9,6 +9,7 @@ import {
   resolveLabViewerSearchErrorMessage,
   shouldRetryLabViewerSearchError,
 } from '../controllers/labViewerController';
+import { resolveLabPatientBirthDateFromPdf } from '../services/labPatientPdfMetadataService';
 
 interface UseLabViewerQueryParams {
   patients: LabPatient[];
@@ -86,21 +87,41 @@ export const useLabViewerQuery = ({
 
     let cancelled = false;
 
-    import('@/services/repositories/PatientMasterRepository').then(({ getPatientByRut }) => {
-      getPatientByRut(selectedRut).then(master => {
-        if (!cancelled && master) {
-          setManualPatientExtra({
-            fullName: master.fullName,
-            birthDate: master.birthDate,
-          });
+    const hydrateManualPatient = async () => {
+      let fullName: string | undefined;
+      let birthDate: string | undefined;
+
+      try {
+        const { getPatientByRut } = await import('@/services/repositories/PatientMasterRepository');
+        const master = await getPatientByRut(selectedRut);
+        if (cancelled) {
+          return;
         }
-      });
-    });
+
+        fullName = master?.fullName;
+        birthDate = master?.birthDate;
+      } catch {
+        // External RUTs can still be enriched from the Syslab PDF below.
+      }
+
+      if (!birthDate) {
+        birthDate = await resolveLabPatientBirthDateFromPdf(examList);
+      }
+
+      if (!cancelled && (fullName || birthDate)) {
+        setManualPatientExtra({
+          fullName,
+          birthDate,
+        });
+      }
+    };
+
+    hydrateManualPatient();
 
     return () => {
       cancelled = true;
     };
-  }, [selectedRut, examList.length, uniquePatients]);
+  }, [selectedRut, examList, uniquePatients]);
 
   const selectedPatient = useMemo(() => {
     const patientFromBed = uniquePatients.find(patient => patient.rut === selectedRut);

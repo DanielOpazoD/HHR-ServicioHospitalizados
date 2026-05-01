@@ -3,7 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useFileOperations } from '@/hooks/useFileOperations';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import * as ExportService from '@/services/exporters/exportService';
-import * as backupExportUseCases from '@/application/backup-export/backupExportUseCases';
+import * as backupExportMaintenanceUseCases from '@/application/backup-export/backupExportMaintenanceUseCases';
 
 // Mock context
 vi.mock('@/context/UIContext', () => ({
@@ -31,7 +31,7 @@ vi.mock('@/services/exporters/exportService', () => ({
   importDataJSON: vi.fn().mockResolvedValue(true),
 }));
 
-vi.mock('@/application/backup-export/backupExportUseCases', () => ({
+vi.mock('@/application/backup-export/backupExportMaintenanceUseCases', () => ({
   executeImportJsonBackup: vi.fn().mockResolvedValue({
     status: 'success',
     data: {
@@ -91,7 +91,7 @@ describe('useFileOperations', () => {
       await result.current.handleImportFile(file);
     });
 
-    expect(backupExportUseCases.executeImportJsonBackup).toHaveBeenCalledWith(file);
+    expect(backupExportMaintenanceUseCases.executeImportJsonBackup).toHaveBeenCalledWith(file);
     expect(mockOnRefresh).toHaveBeenCalled();
   });
 
@@ -104,6 +104,6 @@ describe('useFileOperations', () => {
       await result.current.handleImportFile(file);
     });
 
-    expect(backupExportUseCases.executeImportJsonBackup).not.toHaveBeenCalled();
+    expect(backupExportMaintenanceUseCases.executeImportJsonBackup).not.toHaveBeenCalled();
   });
 });

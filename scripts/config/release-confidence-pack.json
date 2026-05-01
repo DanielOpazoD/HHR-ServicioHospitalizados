@@ -63,7 +63,7 @@
     {
       "id": "flow_performance",
       "label": "Flow performance budgets",
-      "command": "npm run test:e2e:flow-performance && npm run check:flow-performance-budget",
+      "command": "npm run test:e2e:flow-performance:gate",
       "tier": "blocking"
     },
     {

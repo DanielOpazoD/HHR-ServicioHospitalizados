@@ -61,15 +61,15 @@ export const LabViewerExamList: React.FC<LabViewerExamListProps> = ({
   };
 
   return (
-    <div className="space-y-3 pb-24">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="flex items-center gap-2 flex-wrap">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-600">
-              Ordenes disponibles
-            </p>
-            <p className="text-[13px] font-bold text-slate-700">{exams.length} examenes</p>
-          </div>
+    <div className="space-y-2 pb-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-600">
+            Ordenes disponibles
+          </p>
+          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+            {exams.length}
+          </span>
         </div>
       </div>
 

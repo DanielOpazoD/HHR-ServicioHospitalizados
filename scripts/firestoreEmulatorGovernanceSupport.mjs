@@ -132,6 +132,22 @@ export const collectFirestoreEmulatorGovernanceIssues = (root = process.cwd()) =
     issues
   );
 
+  const emulatorHelper = readText(root, 'scripts/lib/firebase-emulator-ci.sh');
+  requireText(
+    emulatorHelper,
+    'scripts/lib/firebase-emulator-ci.sh',
+    'FIRESTORE_EMULATOR_HOST',
+    'scripts/lib/firebase-emulator-ci.sh must export FIRESTORE_EMULATOR_HOST for isolated local CI ports.',
+    issues
+  );
+  requireText(
+    emulatorHelper,
+    'scripts/lib/firebase-emulator-ci.sh',
+    '--config',
+    'scripts/lib/firebase-emulator-ci.sh must run firebase emulators with a temporary port-specific config.',
+    issues
+  );
+
   const workflow = readText(root, '.github/workflows/ci-cd.yml');
   requireText(
     workflow,

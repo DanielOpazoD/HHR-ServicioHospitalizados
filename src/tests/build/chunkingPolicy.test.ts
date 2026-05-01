@@ -6,6 +6,23 @@ import { chunkForModule } from '../../../scripts/config/chunkingPolicy';
 const readSource = (relativePath: string): string =>
   fs.readFileSync(path.resolve(process.cwd(), relativePath), 'utf8');
 
+const collectProductionSourceFiles = (directory: string): string[] => {
+  const entries = fs.readdirSync(directory, { withFileTypes: true });
+  return entries.flatMap(entry => {
+    const absolutePath = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name === 'tests') {
+        return [];
+      }
+      return collectProductionSourceFiles(absolutePath);
+    }
+    if (!/\.(ts|tsx)$/.test(entry.name)) {
+      return [];
+    }
+    return [absolutePath];
+  });
+};
+
 describe('chunkingPolicy', () => {
   it('does not force manual chunks for application source modules', () => {
     expect(chunkForModule('/repo/src/services/backup/censusStorageService.ts')).toBeUndefined();
@@ -57,6 +74,66 @@ describe('chunkingPolicy', () => {
     for (const file of guardedFiles) {
       expect(readSource(file), file).not.toMatch(/from ['"]@\/hooks['"]/);
     }
+  });
+
+  it('keeps backup export use cases out of the initial authenticated shell import graph', () => {
+    const guardedFiles = ['src/hooks/useExportManager.ts', 'src/hooks/useBackupArchiveStatus.ts'];
+
+    for (const file of guardedFiles) {
+      expect(readSource(file), file).not.toMatch(
+        /import\s+(?:\{[\s\S]*?\}|\*\s+as\s+\w+|\w+)\s+from ['"]@\/application\/backup-export\/backupExport(?:UseCases|ArchiveUseCases|StorageUseCases)['"]/
+      );
+    }
+  });
+
+  it('keeps production source off the backup export barrel', () => {
+    const sourceFiles = collectProductionSourceFiles(path.resolve(process.cwd(), 'src'));
+    const offenders = sourceFiles
+      .filter(
+        file =>
+          file !==
+          path.resolve(process.cwd(), 'src/application/backup-export/backupExportUseCases.ts')
+      )
+      .filter(file =>
+        readSource(path.relative(process.cwd(), file)).includes(
+          '@/application/backup-export/backupExportUseCases'
+        )
+      )
+      .map(file => path.relative(process.cwd(), file));
+
+    expect(offenders).toEqual([]);
+  });
+
+  it('keeps audit write/fetch use cases out of the authenticated shell startup path', () => {
+    const useAuditSource = readSource('src/hooks/useAudit.ts');
+
+    expect(useAuditSource).not.toMatch(
+      /import\s+\{[\s\S]*execute(?:WriteAuditEvent|FetchAuditLogs)[\s\S]*\}\s+from ['"]@\/application\/audit\//
+    );
+  });
+
+  it('keeps census runtime hooks off legacy audit services during startup', () => {
+    const guardedFiles = ['src/hooks/useBedAudit.ts', 'src/hooks/usePatientMovementAudit.ts'];
+
+    for (const file of guardedFiles) {
+      expect(readSource(file), file).not.toMatch(
+        /from ['"]@\/services\/admin\/audit(?:Service|DomainLoggers)['"]/
+      );
+    }
+  });
+
+  it('loads the initial census route from a dedicated view entrypoint instead of the modal-heavy public-components barrel', () => {
+    const lazyViewsSource = readSource('src/views/LazyViews.ts');
+    const censusPublicSource = readSource('src/features/census/public.ts');
+    const censusViewBlock = lazyViewsSource.slice(
+      lazyViewsSource.indexOf('export const CensusView'),
+      lazyViewsSource.indexOf('export const CensusEmailConfigModal')
+    );
+
+    expect(lazyViewsSource).toContain('@/features/census/census-view');
+    expect(censusViewBlock).not.toContain('@/features/census/public-components');
+    expect(censusPublicSource).toContain("import('./census-view')");
+    expect(censusPublicSource).not.toContain("import('./public-components')");
   });
 
   it('splits heavyweight vendor capabilities by runtime concern', () => {

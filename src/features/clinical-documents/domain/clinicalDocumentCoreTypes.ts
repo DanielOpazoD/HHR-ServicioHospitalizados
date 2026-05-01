@@ -58,7 +58,7 @@ export interface ClinicalDocumentVersionMeta {
   version: number;
   savedAt: string;
   savedBy: ClinicalDocumentAuditActor;
-  reason: 'autosave' | 'manual' | 'signature' | 'unsign' | 'admin_fix';
+  reason: 'autosave' | 'manual' | 'signature' | 'unsign' | 'admin_fix' | 'ai_import';
   changedSectionIds?: string[];
   sectionSnapshots?: ClinicalDocumentVersionSectionSnapshot[];
 }

@@ -15,7 +15,9 @@ vi.mock('@/services/auth/authRequestHeaders', () => ({
 
 import {
   buildMMRADPdfUrl,
+  buildMMRADPortalReceiptUrl,
   fetchMMRADPdfBlobUrl,
+  fetchMMRADPortalReceiptHtml,
   searchMMRADExams,
 } from '@/services/radiology/mmradService';
 
@@ -40,6 +42,15 @@ describe('mmradService', () => {
 
     expect(pdfUrl).toContain('/.netlify/functions/mmrad-search?action=pdf&link=');
     expect(pdfUrl).toContain(encodeURIComponent('&prestacion=2'));
+  });
+
+  it('builds the proxied portal receipt URL with the encoded MMRAD link', () => {
+    const receiptUrl = buildMMRADPortalReceiptUrl(
+      'https://ris.mmrad.cl/web/portalpaciente/comprobante?id=1&prestacion=2'
+    );
+
+    expect(receiptUrl).toContain('/.netlify/functions/mmrad-search?action=portalReceipt&link=');
+    expect(receiptUrl).toContain(encodeURIComponent('&prestacion=2'));
   });
 
   it('sends auth headers when searching MMRAD exams', async () => {
@@ -93,6 +104,27 @@ describe('mmradService', () => {
     expect(result).toBe('blob:mmrad-pdf');
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining('/.netlify/functions/mmrad-search?action=pdf&link='),
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: 'Bearer token-123',
+        }),
+      })
+    );
+  });
+
+  it('fetches the portal receipt HTML with auth headers', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      text: () => Promise.resolve('<html><body>Datos del paciente</body></html>'),
+    });
+
+    const result = await fetchMMRADPortalReceiptHtml(
+      'https://ris.mmrad.cl/web/portalpaciente/comprobante?id=1459869'
+    );
+
+    expect(result).toContain('Datos del paciente');
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/.netlify/functions/mmrad-search?action=portalReceipt&link='),
       expect.objectContaining({
         headers: expect.objectContaining({
           Authorization: 'Bearer token-123',

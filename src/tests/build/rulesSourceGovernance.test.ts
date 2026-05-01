@@ -71,5 +71,8 @@ describe('rules source governance', () => {
     expect(packageJson.scripts['check:security']).toContain(
       'node scripts/check-rules-source-governance.mjs'
     );
+    expect(packageJson.scripts['check:security']).toContain(
+      'npm run check:firestore-rules-governance'
+    );
   });
 });

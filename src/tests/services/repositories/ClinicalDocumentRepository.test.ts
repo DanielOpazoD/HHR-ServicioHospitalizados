@@ -75,6 +75,7 @@ const buildDoc = (
 describe('ClinicalDocumentRepository.listByEpisodeKeys', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
     vi.mocked(isFirestoreEnabled).mockReturnValue(true);
   });
 
@@ -84,16 +85,13 @@ describe('ClinicalDocumentRepository.listByEpisodeKeys', () => {
     expect(firestoreDb.getDocs).not.toHaveBeenCalled();
   });
 
-  it('returns local-only empty results without querying Firestore when disabled', async () => {
+  it('persists and serves local-only draft documents without querying Firestore when disabled', async () => {
     vi.mocked(isFirestoreEnabled).mockReturnValue(false);
+    const document = buildDoc('doc-local', 'rut-1__2026-03-01', '2026-03-05T10:00:00.000Z');
 
     await expect(
       ClinicalDocumentRepository.listByEpisode('rut-1__2026-03-01', 'hhr')
     ).resolves.toEqual([]);
-    await expect(
-      ClinicalDocumentRepository.listByEpisodeKeys(['rut-1__2026-03-01'], 'hhr')
-    ).resolves.toEqual([]);
-    await expect(ClinicalDocumentRepository.get('doc-1', 'hhr')).resolves.toBeNull();
 
     const callback = vi.fn();
     const unsubscribe = ClinicalDocumentRepository.subscribeByEpisode(
@@ -103,6 +101,19 @@ describe('ClinicalDocumentRepository.listByEpisodeKeys', () => {
     );
 
     expect(callback).toHaveBeenCalledWith([]);
+    await expect(ClinicalDocumentRepository.createDraft(document, 'hhr')).resolves.toMatchObject({
+      id: 'doc-local',
+    });
+    await expect(
+      ClinicalDocumentRepository.listByEpisode('rut-1__2026-03-01', 'hhr')
+    ).resolves.toEqual([expect.objectContaining({ id: 'doc-local' })]);
+    await expect(
+      ClinicalDocumentRepository.listByEpisodeKeys(['rut-1__2026-03-01'], 'hhr')
+    ).resolves.toEqual([expect.objectContaining({ id: 'doc-local' })]);
+    await expect(ClinicalDocumentRepository.get('doc-local', 'hhr')).resolves.toMatchObject({
+      id: 'doc-local',
+    });
+    expect(callback).toHaveBeenLastCalledWith([expect.objectContaining({ id: 'doc-local' })]);
     expect(typeof unsubscribe).toBe('function');
     expect(firestoreDb.getDocs).not.toHaveBeenCalled();
     expect(firestoreDb.getDoc).not.toHaveBeenCalled();

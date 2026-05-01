@@ -3,17 +3,22 @@ import { Radio } from 'lucide-react';
 import { BaseModal } from '@/components/shared/BaseModal';
 import {
   fetchMMRADPdfBlobUrl,
+  fetchMMRADPortalReceiptHtml,
   searchMMRADExams,
   type MMRADExam,
   type MMRADSearchResult,
 } from '@/services/radiology/mmradService';
-import { buildMMRADReportClipboardText } from '@/services/radiology/mmradReportSupport';
+import {
+  buildMMRADPortalReceiptPrintHtml,
+  buildMMRADReportClipboardText,
+} from '@/services/radiology/mmradReportSupport';
 import {
   RadiologyViewerControls,
   RadiologyViewerEmptyState,
   RadiologyViewerProgress,
   RadiologyViewerResults,
 } from '@/components/modals/RadiologyViewerModalContent';
+import { RadiologyPortalReceiptPreview } from '@/components/modals/RadiologyPortalReceiptPreview';
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
 import { writeClipboardText } from '@/shared/runtime/browserClipboardRuntime';
 import {
@@ -55,6 +60,10 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
   const [dateTo, setDateTo] = useState('');
   const [activeModTab, setActiveModTab] = useState<string | null>(null);
   const [copiedReportExamKey, setCopiedReportExamKey] = useState<string | null>(null);
+  const [portalReceiptPreview, setPortalReceiptPreview] = useState<{
+    title: string;
+    html: string;
+  } | null>(null);
   const copiedReportResetTimeoutRef = useRef<number | null>(null);
 
   const uniquePatients = useMemo(() => buildUniqueRadiologyPatients(patients), [patients]);
@@ -189,6 +198,22 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
     }
   }, []);
 
+  const handleOpenPortalReceipt = useCallback(async (exam: MMRADExam) => {
+    if (!exam.portal_web_receipt_url) {
+      return;
+    }
+
+    try {
+      const receiptHtml = await fetchMMRADPortalReceiptHtml(exam.portal_web_receipt_url);
+      setPortalReceiptPreview({
+        title: 'Comprobante Portal Web paciente',
+        html: buildMMRADPortalReceiptPrintHtml(receiptHtml),
+      });
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Error al abrir el comprobante portal.');
+    }
+  }, []);
+
   const setDatePreset = (preset: 'last-month' | 'last-year' | 'last-5-years') => {
     const range = resolveMMRADDatePresetRange(preset);
     setDateFrom(range.from);
@@ -202,6 +227,12 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
       setError(null);
     }
   }, [isOpen, initialPatientRut]);
+
+  React.useEffect(() => {
+    if (!isOpen) {
+      setPortalReceiptPreview(null);
+    }
+  }, [isOpen]);
 
   React.useEffect(() => {
     return () => {
@@ -271,12 +302,20 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
           filteredExams={filteredExams}
           onTabChange={setActiveModTab}
           onOpenPdf={handleOpenPdf}
+          onOpenPortalReceipt={handleOpenPortalReceipt}
           onCopyReport={handleCopyReport}
           copiedReportExamKey={copiedReportExamKey}
         />
 
         {!result && !isLoading && !error && <RadiologyViewerEmptyState />}
       </BaseModal>
+      {portalReceiptPreview && (
+        <RadiologyPortalReceiptPreview
+          title={portalReceiptPreview.title}
+          html={portalReceiptPreview.html}
+          onClose={() => setPortalReceiptPreview(null)}
+        />
+      )}
     </>
   );
 };

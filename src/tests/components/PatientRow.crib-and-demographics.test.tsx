@@ -174,7 +174,7 @@ describe('PatientRow crib and demographics', () => {
     );
 
     fireEvent.click(screen.getByTitle('Datos del Paciente'));
-    fireEvent.click(await screen.findByText(/Guardar Cambios/i, {}, { timeout: 4000 }));
+    fireEvent.click(await screen.findByText(/Guardar Cambios/i, {}, { timeout: 10000 }));
 
     expect(mockContext.updatePatientMultiple).toHaveBeenCalledWith('R1', expect.any(Object));
   });

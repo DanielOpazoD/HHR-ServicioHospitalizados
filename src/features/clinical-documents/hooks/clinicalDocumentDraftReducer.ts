@@ -32,7 +32,6 @@ export type ClinicalDocumentDraftAction =
     }
   | { type: 'REMOTE_UPDATE_RECEIVED'; document: ClinicalDocumentRecord; snapshot: string }
   | { type: 'APPLY_REMOTE_UPDATE' }
-  | { type: 'DISCARD_LOCAL_CHANGES' }
   | { type: 'PATCH_FIELD'; fieldId: string; value: string }
   | { type: 'PATCH_FIELD_LABEL'; fieldId: string; label: string }
   | { type: 'SET_FIELD_VISIBILITY'; fieldId: string; visible: boolean }
@@ -137,6 +136,27 @@ const commitAutosaveBaseState = (
       : state.pendingRemoteState,
 });
 
+const markAutosaveClean = (
+  state: ClinicalDocumentDraftReducerState,
+  document: ClinicalDocumentRecord,
+  snapshot: string
+): ClinicalDocumentDraftReducerState => ({
+  ...state,
+  isSaving: false,
+  hasPendingRemoteUpdate:
+    state.pendingRemoteState.snapshot !== actionSnapshotKey(snapshot) &&
+    state.hasPendingRemoteUpdate,
+  baseState: {
+    document: structuredClone(document),
+    snapshot: state.draft ? JSON.stringify(state.draft) : snapshot,
+    updatedAt: document.audit.updatedAt || '',
+  },
+  pendingRemoteState:
+    state.pendingRemoteState.snapshot === actionSnapshotKey(snapshot)
+      ? emptyBaseState()
+      : state.pendingRemoteState,
+});
+
 const actionSnapshotKey = (snapshot: string): string => snapshot;
 
 export const clinicalDocumentDraftReducer = (
@@ -166,17 +186,6 @@ export const clinicalDocumentDraftReducer = (
         state.pendingRemoteState.document,
         state.pendingRemoteState.snapshot
       );
-    case 'DISCARD_LOCAL_CHANGES': {
-      const fallbackState = state.pendingRemoteState.document
-        ? state.pendingRemoteState
-        : state.baseState.document
-          ? state.baseState
-          : null;
-      if (!fallbackState?.document) {
-        return state;
-      }
-      return commitDocumentAsBase(state, fallbackState.document, fallbackState.snapshot);
-    }
     case 'PATCH_FIELD':
       return patchDraft(state, draft => ({
         ...draft,
@@ -340,7 +349,7 @@ export const clinicalDocumentDraftReducer = (
         isSaving: true,
       };
     case 'AUTOSAVE_MARK_CLEAN':
-      return commitAutosaveBaseState(state, action.document, action.snapshot);
+      return markAutosaveClean(state, action.document, action.snapshot);
     case 'AUTOSAVE_COMMIT_BASE':
       return commitAutosaveBaseState(state, action.document, action.snapshot);
     case 'AUTOSAVE_SUCCEEDED':

@@ -10,7 +10,6 @@ import {
   buildCudyrAuditDetails,
   resolvePatientChangeAudit,
 } from '@/hooks/controllers/bedAuditController';
-import { logPatientSpecialtyChanged } from '@/services/admin/auditDomainLoggers';
 
 /**
  * useBedAudit Hook
@@ -18,7 +17,7 @@ import { logPatientSpecialtyChanged } from '@/services/admin/auditDomainLoggers'
  * Handles all auditing and logging for bed and patient modifications.
  */
 export const useBedAudit = (record: DailyRecord | null) => {
-  const { logDebouncedEvent, logPatientAdmission, userId } = useAuditContext();
+  const { logDebouncedEvent, logEvent, logPatientAdmission, userId } = useAuditContext();
   const recordRef = useRef(record);
 
   useEffect(() => {
@@ -48,13 +47,22 @@ export const useBedAudit = (record: DailyRecord | null) => {
       }
 
       if (decision.kind === 'specialty_changed') {
-        logPatientSpecialtyChanged(
+        logEvent(
+          'PATIENT_SPECIALTY_CHANGED',
+          'patient',
           bedId,
-          decision.patientName,
+          {
+            patientName: decision.patientName,
+            bedId,
+            field: decision.field,
+            changes: {
+              [decision.field]: {
+                old: decision.oldSpecialty,
+                new: decision.newSpecialty,
+              },
+            },
+          },
           decision.patientRut || '',
-          decision.field,
-          decision.oldSpecialty,
-          decision.newSpecialty,
           currentRecord.date
         );
         return;
@@ -69,7 +77,7 @@ export const useBedAudit = (record: DailyRecord | null) => {
         currentRecord.date
       );
     },
-    [logDebouncedEvent, logPatientAdmission]
+    [logDebouncedEvent, logEvent, logPatientAdmission]
   );
 
   const auditCudyrChange = useCallback(

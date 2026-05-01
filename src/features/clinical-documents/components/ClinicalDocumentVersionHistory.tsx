@@ -8,7 +8,17 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Save, Clock, PenLine, FileSignature, ShieldCheck, Wrench, Eye } from 'lucide-react';
+import {
+  X,
+  Save,
+  Clock,
+  PenLine,
+  FileSignature,
+  ShieldCheck,
+  Wrench,
+  Eye,
+  Sparkles,
+} from 'lucide-react';
 import { getClinicalDocumentVersionChangedSectionSnapshots } from '@/domain/clinical-documents/versionHistory';
 import { stripClinicalDocumentHtml } from '@/features/clinical-documents/controllers/clinicalDocumentRichTextController';
 import type {
@@ -54,6 +64,11 @@ const reasonConfig: Record<
   },
   unsign: { label: 'Firma revocada', icon: ShieldCheck, badgeClass: 'bg-amber-50 text-amber-600' },
   admin_fix: { label: 'Admin', icon: Wrench, badgeClass: 'bg-red-50 text-red-600' },
+  ai_import: {
+    label: 'Importación IA',
+    icon: Sparkles,
+    badgeClass: 'bg-fuchsia-50 text-fuchsia-600',
+  },
 };
 
 const getReasonConfig = (reason: string) =>

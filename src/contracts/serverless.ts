@@ -51,6 +51,34 @@ export const ClinicalSummaryResponseSchema = z.object({
 
 export type ClinicalSummaryResponse = z.infer<typeof ClinicalSummaryResponseSchema>;
 
+export const ClinicalDocumentAiImportPayloadSchema = z.object({
+  antecedentes: z.string(),
+  historiaEvolucionClinica: z.string(),
+  examenesComplementarios: z.string(),
+  diagnosticosEgreso: z.string(),
+  planEgreso: z.string(),
+});
+
+export type ClinicalDocumentAiImportPayload = z.infer<typeof ClinicalDocumentAiImportPayloadSchema>;
+
+export const ClinicalDocumentAiImportRequestSchema = z.object({
+  sourceText: z.string(),
+});
+
+export type ClinicalDocumentAiImportRequest = z.infer<typeof ClinicalDocumentAiImportRequestSchema>;
+
+export const ClinicalDocumentAiImportResponseSchema = z.object({
+  available: z.boolean(),
+  provider: z.string().optional(),
+  model: z.string().optional(),
+  document: ClinicalDocumentAiImportPayloadSchema.optional(),
+  message: z.string().optional(),
+});
+
+export type ClinicalDocumentAiImportResponse = z.infer<
+  typeof ClinicalDocumentAiImportResponseSchema
+>;
+
 export const FhirIssueSchema = z.object({
   severity: z.string(),
   code: z.string(),

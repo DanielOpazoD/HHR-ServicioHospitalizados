@@ -14,4 +14,5 @@ export interface ProgressState {
 export interface ExportConfig {
   selectedDates: Set<string>;
   selectedVars: Set<string>;
+  includeTimeInColumns?: boolean;
 }

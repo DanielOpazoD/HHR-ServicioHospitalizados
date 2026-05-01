@@ -5,10 +5,10 @@ import {
   Download,
   FilePlus2,
   FlaskConical,
-  History,
   MoreHorizontal,
   Paperclip,
   PenLine,
+  Sparkles,
   Trash2,
   Upload,
   Zap,
@@ -22,47 +22,7 @@ import {
 } from '@/features/clinical-documents/controllers/clinicalDocumentWorkspaceController';
 import { withCurrentClinicalDocumentVersionSnapshotFallback } from '@/domain/clinical-documents/versionHistory';
 import type { ClinicalDocumentsSidebarProps } from '@/features/clinical-documents/contracts/clinicalDocumentsSidebarContracts';
-import type {
-  ClinicalDocumentVersionMeta,
-  ClinicalDocumentVersionSectionSnapshot,
-} from '@/features/clinical-documents/domain/entities';
-import { ClinicalDocumentVersionHistory } from '@/features/clinical-documents/components/ClinicalDocumentVersionHistory';
-
-const VersionBadge: React.FC<{
-  currentVersion: number;
-  versionHistory: ClinicalDocumentVersionMeta[];
-  canRestoreSection?: boolean;
-  onRestoreSection?: (
-    section: Pick<ClinicalDocumentVersionSectionSnapshot, 'sectionId' | 'title' | 'content'>
-  ) => void;
-}> = ({ currentVersion, versionHistory, canRestoreSection = false, onRestoreSection }) => {
-  const [showHistory, setShowHistory] = useState(false);
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={e => {
-          e.stopPropagation();
-          setShowHistory(true);
-        }}
-        className="flex items-center gap-0.5 text-[9px] font-mono text-slate-400 hover:text-medical-600 transition-colors"
-        title="Ver historial de versiones"
-      >
-        <History size={9} />v{currentVersion}
-      </button>
-      {showHistory && (
-        <ClinicalDocumentVersionHistory
-          versions={versionHistory}
-          currentVersion={currentVersion}
-          canRestoreSection={canRestoreSection}
-          onRestoreSection={onRestoreSection}
-          onClose={() => setShowHistory(false)}
-        />
-      )}
-    </>
-  );
-};
+import { ClinicalDocumentVersionBadge } from '@/features/clinical-documents/components/ClinicalDocumentVersionBadge';
 
 export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> = ({
   canEdit,
@@ -80,6 +40,8 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
   onDeleteDocument,
   onExportJson,
   onImportJson,
+  onImportWithAi,
+  isImportingWithAi = false,
   onAddClinicalUpdate,
   onToggleAnnex,
   hasAnnex,
@@ -89,6 +51,7 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
   onOpenMMRADDialog,
 }) => {
   const importInputRef = useRef<HTMLInputElement>(null);
+  const aiImportInputRef = useRef<HTMLInputElement>(null);
   const [showAdvancedTools, setShowAdvancedTools] = useState(false);
   const [showInsertTray, setShowInsertTray] = useState(false);
   const selectedDocument = documents.find(document => document.id === selectedDocumentId) || null;
@@ -223,7 +186,7 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
               )}
             </div>
           )}
-          {(onExportJson || onImportJson) && (
+          {(onExportJson || onImportJson || onImportWithAi) && (
             <div className="space-y-1.5 border-t border-slate-100 pt-1.5">
               <button
                 type="button"
@@ -235,48 +198,85 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
                 Herramientas avanzadas
               </button>
               {showAdvancedTools && (
-                <div className="flex gap-1.5">
-                  {selectedDocument && onExportJson && (
-                    <button
-                      type="button"
-                      onClick={() => onExportJson(selectedDocument)}
-                      className="flex-1 rounded-lg border border-sky-200 bg-sky-50 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-sky-700 hover:bg-sky-100 transition-colors"
-                      title="Exportar JSON"
-                    >
-                      <Download size={10} className="inline mr-1" />
-                      Exportar JSON
-                    </button>
+                <div className="space-y-1.5">
+                  {(selectedDocument || onImportJson) && (
+                    <div className="flex gap-1.5">
+                      {selectedDocument && onExportJson && (
+                        <button
+                          type="button"
+                          onClick={() => onExportJson(selectedDocument)}
+                          className="flex-1 rounded-lg border border-sky-200 bg-sky-50 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-sky-700 hover:bg-sky-100 transition-colors"
+                          title="Exportar JSON"
+                        >
+                          <Download size={10} className="inline mr-1" />
+                          Exportar JSON
+                        </button>
+                      )}
+                      {onImportJson && (
+                        <>
+                          <input
+                            ref={importInputRef}
+                            type="file"
+                            accept=".json,application/json"
+                            aria-label="Archivo JSON de documento clínico"
+                            className="hidden"
+                            onChange={event => {
+                              const file = event.target.files?.[0];
+                              if (file) {
+                                onImportJson(file);
+                              }
+                              event.target.value = '';
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => importInputRef.current?.click()}
+                            disabled={!canEdit}
+                            className={clsx(
+                              'flex-1 rounded-lg border px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] transition-colors',
+                              canEdit
+                                ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                                : 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
+                            )}
+                            title="Importar JSON"
+                          >
+                            <Upload size={10} className="inline mr-1" />
+                            Importar JSON
+                          </button>
+                        </>
+                      )}
+                    </div>
                   )}
-                  {onImportJson && (
+                  {onImportWithAi && (
                     <>
                       <input
-                        ref={importInputRef}
+                        ref={aiImportInputRef}
                         type="file"
-                        accept=".json,application/json"
-                        aria-label="Archivo JSON de documento clínico"
+                        accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        aria-label="Archivo PDF o DOCX para importar con IA"
                         className="hidden"
                         onChange={event => {
                           const file = event.target.files?.[0];
-                          if (file) {
-                            onImportJson(file);
+                          if (file && !isImportingWithAi) {
+                            onImportWithAi(file);
                           }
                           event.target.value = '';
                         }}
                       />
                       <button
                         type="button"
-                        onClick={() => importInputRef.current?.click()}
-                        disabled={!canEdit}
+                        onClick={() => aiImportInputRef.current?.click()}
+                        disabled={!canEdit || isImportingWithAi}
                         className={clsx(
-                          'flex-1 rounded-lg border px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] transition-colors',
-                          canEdit
-                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                          'w-full rounded-lg border px-2 py-1.5 text-[9px] font-bold uppercase tracking-[0.12em] transition-colors',
+                          canEdit && !isImportingWithAi
+                            ? 'border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700 hover:bg-fuchsia-100'
                             : 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
                         )}
-                        title="Importar JSON"
+                        title="Importar informe de traslado con IA"
                       >
-                        <Upload size={10} className="inline mr-1" />
-                        Importar JSON
+                        <Sparkles size={10} className="inline mr-1" />
+                        {isImportingWithAi ? 'Importando con IA' : 'Importar con IA'}
                       </button>
                     </>
                   )}
@@ -346,7 +346,7 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
                     {formatClinicalDocumentDateTime(document.audit.updatedAt)}
                   </p>
                   {document.versionHistory && document.versionHistory.length > 0 && (
-                    <VersionBadge
+                    <ClinicalDocumentVersionBadge
                       currentVersion={document.currentVersion}
                       versionHistory={withCurrentClinicalDocumentVersionSnapshotFallback(document)}
                       canRestoreSection={canEdit && selectedDocumentId === document.id}

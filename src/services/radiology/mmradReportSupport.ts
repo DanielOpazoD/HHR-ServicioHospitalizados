@@ -207,3 +207,45 @@ export const buildMMRADReportPrintHtml = (
   </body>
 </html>`;
 };
+
+export const buildMMRADPortalReceiptPrintHtml = (receiptHtml: string): string => {
+  const sanitizedReceiptHtml = receiptHtml
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/\son\w+=["'][^"']*["']/gi, '')
+    .replace(
+      /<div\b[^>]*>\s*<button\b[^>]*>\s*Imprimir(?:\s*\/\s*guardar\s*PDF)?\s*<\/button>\s*<\/div>/gi,
+      ''
+    )
+    .replace(/<button\b[^>]*>\s*Imprimir(?:\s*\/\s*guardar\s*PDF)?\s*<\/button>/gi, '')
+    .replace(
+      /<input\b(?=[^>]*\btype=["']?(?:button|submit)["']?)(?=[^>]*\bvalue=["']?Imprimir["']?)[^>]*>/gi,
+      ''
+    );
+
+  return `<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Comprobante Portal Web paciente</title>
+    <style>
+      @page { margin: 10mm; }
+      body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: #111827; background: #fff; }
+      .mmrad-receipt-surface { padding: 0; }
+      .mmrad-receipt-surface table { width: 100%; border-collapse: collapse; }
+      @media print {
+        button,
+        input[type='button'],
+        input[type='submit'] {
+          display: none !important;
+        }
+        body { margin: 0 !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="mmrad-receipt-surface">
+      ${sanitizedReceiptHtml}
+    </main>
+  </body>
+</html>`;
+};
