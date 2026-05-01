@@ -65,13 +65,10 @@ const createMirrorDailyRecords = ({ dbBeta, admin }) =>
           }
         }
 
-        return await dbBeta.doc(path).set(
-          {
-            ...sourceData,
-            _syncedAt: admin.firestore.FieldValue.serverTimestamp(),
-          },
-          { merge: true }
-        );
+        return await dbBeta.doc(path).set({
+          ...sourceData,
+          _syncedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
       } catch (error) {
         console.error('Error syncing mirrored daily record', sanitizeLogValue({ docId, error }));
         return null;
