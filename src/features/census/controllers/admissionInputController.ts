@@ -1,9 +1,14 @@
 import { getTodayISO } from '@/utils/dateCoreUtils';
-import { getNextDay, getPreviousDay, normalizeDateOnly } from '@/utils/clinicalDayUtils';
+import { normalizeDateOnly } from '@/utils/clinicalDayUtils';
 import {
   resolveAdmissionDateAudit as resolveAdmissionDateAuditPolicy,
   type AdmissionDateAuditResolution,
 } from '@/application/patient-flow/admissionDatePolicy';
+export {
+  resolveAllowedAdmissionDates,
+  resolveAdmissionDateOptions,
+  type AdmissionDateOption,
+} from '@/shared/date/admissionDateOptions';
 
 export interface AdmissionDateChangeResolution {
   admissionDate: string;
@@ -18,12 +23,6 @@ export interface AdmissionDateUpdatePlan {
     firstSeenDate?: string;
   };
   shouldUseMultipleUpdate: boolean;
-}
-
-export interface AdmissionDateOption {
-  value: string;
-  label: string;
-  isFallbackValue?: boolean;
 }
 
 export interface AdmissionTimePickerModel {
@@ -87,46 +86,6 @@ export const resolveAdmissionTimeValue = ({
 }): string => `${hour}:${minute}`;
 
 export const resolveAdmissionDateMax = (todayIso: string = getTodayISO()): string => todayIso;
-
-const formatAdmissionDateOptionLabel = (value: string) => {
-  const [year, month, day] = value.split('-');
-  return `${day}/${month}/${year}`;
-};
-
-export const resolveAllowedAdmissionDates = (recordDate: string): string[] => {
-  const normalizedRecordDate = normalizeDateOnly(recordDate);
-  if (!normalizedRecordDate) {
-    return [];
-  }
-
-  return [
-    getPreviousDay(normalizedRecordDate),
-    normalizedRecordDate,
-    getNextDay(normalizedRecordDate),
-  ];
-};
-
-export const resolveAdmissionDateOptions = (
-  recordDate: string,
-  admissionDate?: string
-): AdmissionDateOption[] => {
-  const allowedDates = resolveAllowedAdmissionDates(recordDate);
-  const options: AdmissionDateOption[] = allowedDates.map(value => ({
-    value,
-    label: formatAdmissionDateOptionLabel(value),
-  }));
-
-  const normalizedAdmissionDate = normalizeDateOnly(admissionDate);
-  if (normalizedAdmissionDate && !allowedDates.includes(normalizedAdmissionDate)) {
-    options.unshift({
-      value: normalizedAdmissionDate,
-      label: formatAdmissionDateOptionLabel(normalizedAdmissionDate),
-      isFallbackValue: true,
-    });
-  }
-
-  return options;
-};
 
 /**
  * Resolves the tooltip text for the admission date cell.

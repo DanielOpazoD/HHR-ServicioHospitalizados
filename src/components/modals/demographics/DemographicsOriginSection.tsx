@@ -1,17 +1,25 @@
 import React from 'react';
 import clsx from 'clsx';
 import { ADMISSION_ORIGIN_OPTIONS } from '@/constants/clinicalSpecialtyConstants';
+import { resolveAdmissionDateOptions } from '@/shared/date/admissionDateOptions';
 import { LocalDemographicsState, AdmissionOrigin, Origin, BiologicalSex } from './types';
 
 interface DemographicsOriginSectionProps {
   localData: LocalDemographicsState;
   setLocalData: React.Dispatch<React.SetStateAction<LocalDemographicsState>>;
+  recordDate: string;
 }
 
 export const DemographicsOriginSection: React.FC<DemographicsOriginSectionProps> = ({
   localData,
   setLocalData,
+  recordDate,
 }) => {
+  const admissionDateOptions = React.useMemo(
+    () => resolveAdmissionDateOptions(recordDate, localData.admissionDate),
+    [localData.admissionDate, recordDate]
+  );
+
   return (
     <div className="space-y-3">
       <h4 className="flex items-center gap-2 text-[11px] font-bold text-slate-800 uppercase tracking-wider pb-1.5 border-b border-slate-100">
@@ -103,13 +111,19 @@ export const DemographicsOriginSection: React.FC<DemographicsOriginSectionProps>
             >
               Fecha de ingreso
             </label>
-            <input
+            <select
               id="demographics-admission-date"
-              type="date"
               className="w-full px-2.5 py-1.5 bg-slate-50 border border-transparent rounded-lg text-[13px] text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none shadow-sm transition-all"
               value={localData.admissionDate}
               onChange={e => setLocalData({ ...localData, admissionDate: e.target.value })}
-            />
+            >
+              <option value="">-- Seleccionar --</option>
+              {admissionDateOptions.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="space-y-1">

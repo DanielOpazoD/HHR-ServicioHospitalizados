@@ -78,7 +78,11 @@ export const DemographicsModal: React.FC<DemographicsModalProps> = ({
             error={error}
             setError={setError}
           />
-          <DemographicsOriginSection localData={localData} setLocalData={setLocalData} />
+          <DemographicsOriginSection
+            localData={localData}
+            setLocalData={setLocalData}
+            recordDate={recordDate}
+          />
         </div>
 
         <div className="sticky bottom-0 bg-white/95 backdrop-blur pt-2 mt-1 border-t border-slate-100">

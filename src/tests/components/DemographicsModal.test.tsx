@@ -50,6 +50,15 @@ describe('DemographicsModal', () => {
     expect(screen.getByText('Campos obligatorios pendientes')).toBeInTheDocument();
     expect(screen.getByText('Faltan 9')).toBeInTheDocument();
     expect(screen.queryByText(/falta completar: nombre/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Fecha de ingreso' })).toHaveTextContent(
+      '30/04/2026'
+    );
+    expect(screen.getByRole('combobox', { name: 'Fecha de ingreso' })).toHaveTextContent(
+      '01/05/2026'
+    );
+    expect(screen.getByRole('combobox', { name: 'Fecha de ingreso' })).toHaveTextContent(
+      '02/05/2026'
+    );
 
     fireEvent.change(screen.getByPlaceholderText('Nombre'), { target: { value: 'Ana' } });
     fireEvent.change(screen.getByPlaceholderText('Apellido paterno'), {
@@ -69,7 +78,7 @@ describe('DemographicsModal', () => {
     const [, , admissionOriginSelect] = screen.getAllByRole('combobox');
     fireEvent.change(admissionOriginSelect, { target: { value: 'Urgencias' } });
 
-    fireEvent.change(screen.getByLabelText('Fecha de ingreso'), {
+    fireEvent.change(screen.getByRole('combobox', { name: 'Fecha de ingreso' }), {
       target: { value: '2026-05-01' },
     });
     fireEvent.change(screen.getByLabelText('Hora de ingreso'), {
