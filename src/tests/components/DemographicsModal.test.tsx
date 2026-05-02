@@ -120,4 +120,69 @@ describe('DemographicsModal', () => {
       })
     );
   });
+
+  it('allows typing admission time in HH:MM format from demographics', () => {
+    const onSave = vi.fn();
+
+    render(
+      <DemographicsModal
+        isOpen
+        onClose={vi.fn()}
+        data={createEmptyDemographics()}
+        onSave={onSave}
+        bedId="R1"
+        recordDate="2026-05-01"
+        requiresCompleteDemographics
+      />
+    );
+
+    const saveButton = screen.getByRole('button', { name: /guardar cambios/i });
+
+    fireEvent.change(screen.getByPlaceholderText('Nombre'), { target: { value: 'Ana' } });
+    fireEvent.change(screen.getByPlaceholderText('Apellido paterno'), {
+      target: { value: 'Perez' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Apellido materno'), {
+      target: { value: 'Soto' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('12.345.678-9'), {
+      target: { value: '11.111.111-1' },
+    });
+
+    const birthDateInput = document.querySelector('input[type="date"]');
+    expect(birthDateInput).toBeInstanceOf(HTMLInputElement);
+    fireEvent.change(birthDateInput as HTMLInputElement, { target: { value: '1980-04-12' } });
+
+    const [, , admissionOriginSelect] = screen.getAllByRole('combobox');
+    fireEvent.change(admissionOriginSelect, { target: { value: 'Urgencias' } });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Fecha de ingreso' }), {
+      target: { value: '2026-05-01' },
+    });
+    const [, femaleSexOption] = screen.getAllByRole('radio');
+    fireEvent.click(femaleSexOption);
+
+    expect(saveButton).toBeDisabled();
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Hora de ingreso' }), {
+      target: { value: '14:' },
+    });
+    expect(saveButton).toBeDisabled();
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Hora de ingreso' }), {
+      target: { value: '14:00' },
+    });
+
+    expect(screen.getByRole('combobox', { name: 'Hora de ingreso - horas' })).toHaveValue('14');
+    expect(screen.getByRole('combobox', { name: 'Hora de ingreso - minutos' })).toHaveValue('00');
+    expect(saveButton).toBeEnabled();
+
+    fireEvent.click(saveButton);
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        admissionDate: '2026-05-01',
+        admissionTime: '14:00',
+      })
+    );
+  });
 });

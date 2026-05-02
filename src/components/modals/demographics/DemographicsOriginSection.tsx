@@ -22,6 +22,8 @@ const resolveDraftAdmissionTime = (
   };
 };
 
+const ADMISSION_TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
 interface DemographicsOriginSectionProps {
   localData: LocalDemographicsState;
   setLocalData: React.Dispatch<React.SetStateAction<LocalDemographicsState>>;
@@ -44,9 +46,13 @@ export const DemographicsOriginSection: React.FC<DemographicsOriginSectionProps>
   const [draftAdmissionTime, setDraftAdmissionTime] = React.useState(() =>
     resolveDraftAdmissionTime(localData.admissionTime)
   );
+  const [draftAdmissionTimeText, setDraftAdmissionTimeText] = React.useState(
+    localData.admissionTime || ''
+  );
 
   React.useEffect(() => {
     setDraftAdmissionTime(resolveDraftAdmissionTime(localData.admissionTime));
+    setDraftAdmissionTimeText(localData.admissionTime || '');
   }, [localData.admissionTime]);
 
   const updateAdmissionTimePart =
@@ -64,11 +70,37 @@ export const DemographicsOriginSection: React.FC<DemographicsOriginSectionProps>
           : '';
 
       setDraftAdmissionTime(nextDraftAdmissionTime);
+      setDraftAdmissionTimeText(nextAdmissionTime);
       setLocalData(current => ({
         ...current,
         admissionTime: nextAdmissionTime,
       }));
     };
+
+  const updateAdmissionTimeText = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const nextAdmissionTimeText = event.target.value.trim();
+    const match = nextAdmissionTimeText.match(ADMISSION_TIME_PATTERN);
+
+    setDraftAdmissionTimeText(nextAdmissionTimeText);
+
+    if (!match) {
+      setDraftAdmissionTime(resolveDraftAdmissionTime());
+      setLocalData(current => ({
+        ...current,
+        admissionTime: '',
+      }));
+      return;
+    }
+
+    const [, hour, minute] = match;
+    const nextAdmissionTime = resolveAdmissionTimeValue({ hour, minute });
+
+    setDraftAdmissionTime({ hour, minute });
+    setLocalData(current => ({
+      ...current,
+      admissionTime: nextAdmissionTime,
+    }));
+  };
 
   const updateAdmissionDate = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const nextAdmissionDate = event.target.value;
@@ -188,7 +220,16 @@ export const DemographicsOriginSection: React.FC<DemographicsOriginSectionProps>
             <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wide ml-1">
               Hora de ingreso
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-[1.2fr_0.9fr_0.9fr] gap-2">
+              <input
+                type="text"
+                inputMode="numeric"
+                aria-label="Hora de ingreso"
+                placeholder="14:00"
+                className="w-full px-2.5 py-1.5 bg-slate-50 border border-transparent rounded-lg text-[13px] text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none shadow-sm transition-all"
+                value={draftAdmissionTimeText}
+                onChange={updateAdmissionTimeText}
+              />
               <select
                 aria-label="Hora de ingreso - horas"
                 className="w-full px-2.5 py-1.5 bg-slate-50 border border-transparent rounded-lg text-[13px] text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none shadow-sm transition-all"
