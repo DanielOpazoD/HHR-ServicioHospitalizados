@@ -2,14 +2,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { HospitalizationEvent } from '@/types/domain/patientMaster';
 
-const { getAllRecords, getRecordsRangeFromFirestore, saveRecords, isFirestoreEnabled } = vi.hoisted(
-  () => ({
-    getAllRecords: vi.fn(),
-    getRecordsRangeFromFirestore: vi.fn(),
-    saveRecords: vi.fn(),
-    isFirestoreEnabled: vi.fn(),
-  })
-);
+const {
+  getAllRecords,
+  getAllRecordsFromFirestore,
+  getRecordsRangeFromFirestore,
+  saveRecords,
+  isFirestoreEnabled,
+} = vi.hoisted(() => ({
+  getAllRecords: vi.fn(),
+  getAllRecordsFromFirestore: vi.fn(),
+  getRecordsRangeFromFirestore: vi.fn(),
+  saveRecords: vi.fn(),
+  isFirestoreEnabled: vi.fn(),
+}));
 
 vi.mock('@/services/storage/indexeddb/indexedDbRecordService', () => ({
   getAllRecords,
@@ -17,6 +22,7 @@ vi.mock('@/services/storage/indexeddb/indexedDbRecordService', () => ({
 }));
 
 vi.mock('@/services/storage/firestore', () => ({
+  getAllRecordsFromFirestore,
   getRecordsRangeFromFirestore,
 }));
 
@@ -147,6 +153,58 @@ describe('patientHistoryService', () => {
     });
 
     expect(getRecordsRangeFromFirestore).toHaveBeenCalledWith('2026-04-07', '2026-04-15');
+  });
+
+  it('hydrates remote records without hospitalization hints when local history has no patient matches', async () => {
+    getAllRecords.mockResolvedValue({});
+    getAllRecordsFromFirestore.mockResolvedValue({
+      '2026-02-02': buildRecord('2026-02-02', {
+        beds: {
+          R3: {
+            rut: '18.781.542-8',
+            patientName: 'Tipanie Carossi Pakomio',
+            admissionDate: '2026-02-02',
+            admissionTime: '14:00',
+            admissionOrigin: 'Urgencias',
+          } as never,
+        },
+      }),
+      '2026-02-05': buildRecord('2026-02-05', {
+        discharges: [
+          {
+            id: 'd-tipanie',
+            rut: '18.781.542-8',
+            patientName: 'Tipanie Carossi Pakomio',
+            bedId: 'R3',
+            bedName: 'R3',
+            bedType: 'MEDIA',
+            diagnosis: 'ACV',
+            dischargeType: 'Domicilio (Habitual)',
+            time: '10:00',
+            status: 'Vivo',
+          },
+        ],
+      }),
+    });
+
+    const history = await getPatientMovementHistory('18.781.542-8');
+
+    expect(getRecordsRangeFromFirestore).not.toHaveBeenCalled();
+    expect(getAllRecordsFromFirestore).toHaveBeenCalledTimes(1);
+    expect(saveRecords).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({ date: '2026-02-02' }),
+        expect.objectContaining({ date: '2026-02-05' }),
+      ])
+    );
+    expect(history?.movements.map(movement => movement.type)).toEqual(['admission', 'discharge']);
+    expect(history).toEqual(
+      expect.objectContaining({
+        patientName: 'Tipanie Carossi Pakomio',
+        firstSeen: '2026-02-02',
+        lastSeen: '2026-02-05',
+      })
+    );
   });
 
   it('returns null for invalid identifiers and skips all storage lookups', async () => {

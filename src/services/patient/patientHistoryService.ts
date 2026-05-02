@@ -10,7 +10,10 @@ import type {
   DailyRecordPatientHistoryState,
 } from '@/services/contracts/dailyRecordServiceContracts';
 import { getAllRecords, saveRecords } from '@/services/storage/indexeddb/indexedDbRecordService';
-import { getRecordsRangeFromFirestore } from '@/services/storage/firestore';
+import {
+  getAllRecordsFromFirestore,
+  getRecordsRangeFromFirestore,
+} from '@/services/storage/firestore';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import type { HospitalizationEvent } from '@/types/domain/patientMaster';
 import { BEDS } from '@/constants/beds';
@@ -143,15 +146,14 @@ const loadPatientHistoryRecords = async (
   }
 
   const remoteRange = resolveRemoteHistoryRange(options);
-  if (!remoteRange) {
-    return localRecords;
-  }
 
   try {
-    const remoteRecords = (await getRecordsRangeFromFirestore(
-      remoteRange.startDate,
-      remoteRange.endDate
-    )) as DailyRecordPatientHistoryState[];
+    const remoteRecords = remoteRange
+      ? ((await getRecordsRangeFromFirestore(
+          remoteRange.startDate,
+          remoteRange.endDate
+        )) as DailyRecordPatientHistoryState[])
+      : (Object.values(await getAllRecordsFromFirestore()) as DailyRecordPatientHistoryState[]);
 
     if (remoteRecords.length > 0) {
       await saveRecords(remoteRecords as unknown as DailyRecord[]);

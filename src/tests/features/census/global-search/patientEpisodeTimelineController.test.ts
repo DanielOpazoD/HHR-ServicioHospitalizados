@@ -63,4 +63,59 @@ describe('buildPatientEpisodeTimelineState', () => {
     expect(state.groupedEpisodes[0].discharge?.type).toBe('Egreso');
     expect(state.groupedEpisodes[0].discharge?.date).toBe('2026-04-15');
   });
+
+  it('reconstructs episodes from movement history when the master index lacks hospitalizations', () => {
+    const patientWithoutIndexedEpisodes: MasterPatient = {
+      ...basePatient,
+      hospitalizations: [],
+      lastAdmission: undefined,
+      lastDischarge: undefined,
+    };
+    const history: PatientHistoryResult = {
+      patientName: 'Tipanie Carossi Pakomio',
+      rut: '18.781.542-8',
+      totalDays: 3,
+      firstSeen: '2026-02-02',
+      lastSeen: '2026-02-05',
+      movements: [
+        {
+          date: '2026-02-02',
+          bedId: 'R3',
+          bedName: 'R3',
+          bedType: 'MEDIA',
+          type: 'admission',
+          details: 'Urgencias',
+          time: '14:00',
+        },
+        {
+          date: '2026-02-05',
+          bedId: 'R3',
+          bedName: 'R3',
+          bedType: 'MEDIA',
+          type: 'discharge',
+          details: 'Domicilio (Habitual)',
+          time: '10:00',
+        },
+      ],
+    };
+
+    const state = buildPatientEpisodeTimelineState(patientWithoutIndexedEpisodes, history);
+
+    expect(state.hasEpisodes).toBe(true);
+    expect(state.episodeCount).toBe(1);
+    expect(state.groupedEpisodes[0].admission).toEqual(
+      expect.objectContaining({
+        type: 'Ingreso',
+        date: '2026-02-02',
+        bedName: 'R3',
+      })
+    );
+    expect(state.groupedEpisodes[0].discharge).toEqual(
+      expect.objectContaining({
+        type: 'Egreso',
+        date: '2026-02-05',
+        bedName: 'R3',
+      })
+    );
+  });
 });
