@@ -131,6 +131,8 @@ describe('global patient search timeline integration', () => {
 
     await screen.findByText('Episodios de hospitalizacion (2)');
 
+    expect(screen.getByTestId('patient-search-detail')).toHaveClass('gap-2');
+    expect(screen.getByTestId('episode-list')).not.toHaveClass('overflow-y-auto');
     expect(screen.getAllByText('26-03-2026').length).toBeGreaterThan(0);
     expect(screen.getAllByText('06-04-2026').length).toBeGreaterThan(0);
     expect(screen.getAllByText('12-04-2026').length).toBeGreaterThan(0);

@@ -50,11 +50,11 @@ export const MovementTimeline: React.FC<MovementTimelineProps> = ({ movements })
   if (movements.length === 0) return null;
 
   return (
-    <div className="mb-4">
-      <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+    <div>
+      <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
         Movimientos recientes
       </h4>
-      <div className="space-y-1">
+      <div className="space-y-0.5">
         {movements.slice(-MAX_VISIBLE_MOVEMENTS).map((m, i) => {
           const isInternalMove = m.type === 'internal_move';
 

@@ -16,10 +16,13 @@ const patient: MasterPatient = {
 
 describe('DemographicsCard', () => {
   it('keeps the search detail header focused on identity and hides secondary demographics', () => {
-    render(<DemographicsCard patient={patient} />);
+    const { container } = render(<DemographicsCard patient={patient} />);
 
     expect(screen.getByText('Tipanie Carossi Pakomio')).toBeInTheDocument();
     expect(screen.getByText('18.781.542-8')).toBeInTheDocument();
+    expect(container.firstElementChild).toHaveClass('py-2');
+    expect(container.firstElementChild).not.toHaveClass('p-4');
+    expect(container.firstElementChild).not.toHaveClass('mb-4');
     expect(screen.queryByText('Nacimiento')).not.toBeInTheDocument();
     expect(screen.queryByText('Sexo')).not.toBeInTheDocument();
     expect(screen.queryByText('Prevision')).not.toBeInTheDocument();

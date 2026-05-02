@@ -108,7 +108,7 @@ export const EpisodeBlockCard: React.FC<EpisodeBlockCardProps> = ({
   }, [episodeKey, docsState, onLoadDocuments]);
 
   return (
-    <div className="relative pl-5 pb-3">
+    <div className="relative pl-5 pb-2">
       {/* Timeline dot */}
       <div
         className={`absolute left-0 top-3 w-3 h-3 rounded-full border-2 border-white shadow-sm ${
@@ -118,7 +118,7 @@ export const EpisodeBlockCard: React.FC<EpisodeBlockCardProps> = ({
 
       <div className="bg-white rounded-md border border-slate-200 overflow-hidden">
         {/* Header: date range + status */}
-        <div className="flex items-center justify-between px-3 py-2 bg-slate-50/80 border-b border-slate-100">
+        <div className="flex items-center justify-between px-3 py-1.5 bg-slate-50/80 border-b border-slate-100">
           <div className="flex items-center gap-2">
             <LogIn size={13} className="text-emerald-600" />
             <span className="text-xs font-semibold text-slate-700">
@@ -161,7 +161,7 @@ export const EpisodeBlockCard: React.FC<EpisodeBlockCardProps> = ({
         </div>
 
         {/* Body: diagnosis, bed, discharge info */}
-        <div className="px-3 py-1.5">
+        <div className="px-3 py-1">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2 text-[11px] text-slate-500">
               {episode.bedName && (
