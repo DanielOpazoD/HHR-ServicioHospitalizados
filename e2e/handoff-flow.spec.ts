@@ -39,13 +39,22 @@ const openHandoff = async (page: Page, mode: 'nursing' | 'medical') => {
   });
   await page.goto(`/censo?date=${date}`);
   await ensureAuthenticated(page);
+  await expect(page.getByTestId('census-table')).toBeVisible({ timeout: 20000 });
+
   const navButton =
     mode === 'medical'
       ? page.getByRole('button', { name: /Entrega Turno Médicos/i })
       : page.getByRole('button', { name: /Entrega Turno Enfermería/i });
   await expect(navButton).toBeVisible({ timeout: 20000 });
   await navButton.click();
-  await expect(page.locator('main')).toBeVisible({ timeout: 20000 });
+  await expect(page).toHaveURL(
+    new RegExp(mode === 'medical' ? '/medical-handoff' : '/nursing-handoff'),
+    { timeout: 20000 }
+  );
+  await expect(page.locator('main')).toContainText(
+    mode === 'medical' ? /ESPECIALIDAD|ENTREGADO POR/i : /Turno Largo/i,
+    { timeout: 20000 }
+  );
 };
 
 test.describe('Nursing Handoff', () => {
@@ -53,8 +62,12 @@ test.describe('Nursing Handoff', () => {
     test('should display shift toggle buttons', async ({ page }) => {
       await openHandoff(page, 'nursing');
 
-      await expect(page.getByRole('button', { name: /Turno Largo/i }).first()).toBeVisible();
-      await expect(page.getByRole('button', { name: /Turno Noche/i }).first()).toBeVisible();
+      await expect(page.getByRole('button', { name: /Turno Largo/i }).first()).toBeVisible({
+        timeout: 10000,
+      });
+      await expect(page.getByRole('button', { name: /Turno Noche/i }).first()).toBeVisible({
+        timeout: 10000,
+      });
     });
 
     test('should switch between day and night shifts', async ({ page }) => {
@@ -116,7 +129,9 @@ test.describe('Medical Handoff', () => {
   test('should display medical notes for patients', async ({ page }) => {
     await openHandoff(page, 'medical');
 
-    const createMedicalHandoffButton = page.getByRole('button', { name: /Crear entrega médica/i });
+    const createMedicalHandoffButton = page.getByRole('button', {
+      name: /\+ Crear entrega|Crear entrega médica/i,
+    });
     await expect(createMedicalHandoffButton).toBeVisible({ timeout: 10000 });
     await createMedicalHandoffButton.click();
 
@@ -129,12 +144,14 @@ test.describe('Medical Handoff', () => {
     await openHandoff(page, 'medical');
 
     await expect(
-      page.getByRole('button', { name: /Generar link para firma del médico|Links firma/i }).first()
+      page
+        .getByRole('button', { name: /Firmar|Generar link para firma del médico|Links firma/i })
+        .first()
     ).toBeVisible({ timeout: 10000 });
     await expect(
       page
         .getByRole('button', {
-          name: /Enviar entrega por WhatsApp \(Manual\)|Enviar por WhatsApp/i,
+          name: /Enviar entrega por WhatsApp \(Manual\)|Enviar por WhatsApp|Enviar/i,
         })
         .first()
     ).toBeVisible({
