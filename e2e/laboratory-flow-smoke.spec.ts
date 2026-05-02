@@ -207,11 +207,11 @@ test.describe('Laboratory UI smoke', () => {
 
     await openAuthenticatedCensus(page);
 
-    const labAction = page.getByTitle('Laboratorio / Exámenes Syslab').first();
+    const labAction = page.getByTestId('lab-quick-action').first();
     await expect(labAction).toBeVisible({ timeout: 15000 });
     await labAction.click();
 
-    const labDialog = page.getByRole('dialog').filter({ hasText: 'Laboratorio / Exámenes Syslab' });
+    const labDialog = page.getByTestId('lab-results-viewer-modal');
     await expect(labDialog).toBeVisible({ timeout: 15000 });
     await expect(labDialog).toContainText(LAB_PATIENT_NAME);
     await expect(labDialog).toContainText(LAB_PATIENT_RUT);

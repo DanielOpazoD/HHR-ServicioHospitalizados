@@ -137,13 +137,13 @@ test.describe('Release role smoke', () => {
       date
     );
 
-    await page.getByRole('button', { name: /Gestión Traslados/i }).click();
+    await page.getByTestId('nav-tab-transfer-management').click();
     await expect(page).toHaveURL(/\/transfer-management/, { timeout: 20000 });
-    await expect(page.getByText(/Gestión de Traslados/i)).toBeVisible({ timeout: 20000 });
+    await expect(page.getByTestId('transfer-management-view')).toBeVisible({ timeout: 20000 });
 
-    await page.getByRole('button', { name: /Entrega Turno Médicos/i }).click();
+    await page.getByTestId('nav-tab-medical-handoff').click();
     await expect(page).toHaveURL(/\/medical-handoff/, { timeout: 20000 });
-    await expect(page.getByRole('button', { name: /\+ Crear entrega/i }).first()).toBeVisible({
+    await expect(page.getByTestId('medical-handoff-create-entry-button').first()).toBeVisible({
       timeout: 20000,
     });
   });
@@ -163,15 +163,15 @@ test.describe('Release role smoke', () => {
       date
     );
 
-    await page.getByRole('button', { name: /Entrega Turno Enfermería/i }).click();
+    await page.getByTestId('nav-tab-nursing-handoff').click();
     await expect(page).toHaveURL(/\/nursing-handoff/, { timeout: 20000 });
-    await expect(page.getByRole('button', { name: /Turno Largo/i }).first()).toBeVisible({
+    await expect(page.getByTestId('handoff-shift-day-button')).toBeVisible({
       timeout: 20000,
     });
 
-    await page.getByRole('button', { name: /Gestión Traslados/i }).click();
+    await page.getByTestId('nav-tab-transfer-management').click();
     await expect(page).toHaveURL(/\/transfer-management/, { timeout: 20000 });
-    await expect(page.getByText(/Gestión de Traslados/i)).toBeVisible({ timeout: 20000 });
+    await expect(page.getByTestId('transfer-management-view')).toBeVisible({ timeout: 20000 });
   });
 
   test('specialist has restricted census and can reach editable medical handoff today', async ({
@@ -189,10 +189,10 @@ test.describe('Release role smoke', () => {
       date
     );
 
-    await expect(page.getByRole('button', { name: /Gestión Traslados/i })).toHaveCount(0);
-    await page.getByRole('button', { name: /Entrega Turno Médicos/i }).click();
+    await expect(page.getByTestId('nav-tab-transfer-management')).toHaveCount(0);
+    await page.getByTestId('nav-tab-medical-handoff').click();
     await expect(page).toHaveURL(/\/medical-handoff/, { timeout: 20000 });
-    await expect(page.getByRole('button', { name: /\+ Crear entrega/i }).first()).toBeVisible({
+    await expect(page.getByTestId('medical-handoff-create-entry-button').first()).toBeVisible({
       timeout: 20000,
     });
   });
