@@ -59,6 +59,8 @@ describe('DemographicsModal', () => {
     expect(screen.getByRole('combobox', { name: 'Fecha de ingreso' })).toHaveTextContent(
       '02/05/2026'
     );
+    expect(screen.getByRole('combobox', { name: 'Hora de ingreso - horas' })).toHaveValue('');
+    expect(screen.getByRole('combobox', { name: 'Hora de ingreso - minutos' })).toHaveValue('');
 
     fireEvent.change(screen.getByPlaceholderText('Nombre'), { target: { value: 'Ana' } });
     fireEvent.change(screen.getByPlaceholderText('Apellido paterno'), {
@@ -81,15 +83,22 @@ describe('DemographicsModal', () => {
     fireEvent.change(screen.getByRole('combobox', { name: 'Fecha de ingreso' }), {
       target: { value: '2026-05-01' },
     });
-    fireEvent.change(screen.getByRole('combobox', { name: 'Hora de ingreso - horas' }), {
-      target: { value: '09' },
-    });
-    fireEvent.change(screen.getByRole('combobox', { name: 'Hora de ingreso - minutos' }), {
-      target: { value: '30' },
-    });
+    expect(screen.getByRole('combobox', { name: 'Hora de ingreso - horas' })).toHaveValue('');
+    expect(screen.getByRole('combobox', { name: 'Hora de ingreso - minutos' })).toHaveValue('');
 
     const [, femaleSexOption] = screen.getAllByRole('radio');
     fireEvent.click(femaleSexOption);
+
+    expect(saveButton).toBeDisabled();
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Hora de ingreso - horas' }), {
+      target: { value: '09' },
+    });
+    expect(saveButton).toBeDisabled();
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Hora de ingreso - minutos' }), {
+      target: { value: '30' },
+    });
 
     expect(saveButton).toBeEnabled();
 
