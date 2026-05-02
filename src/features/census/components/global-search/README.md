@@ -44,6 +44,18 @@ la UI debe cerrar ese episodio antes de renderizarlo.
 - En UI, `internal_move` se presenta como movimiento dependiente con sangría,
   para distinguirlo de `Ingreso`, `Egreso` y `Traslado`.
 
+## Guardrail de regresión
+
+El flujo integrado queda cubierto por
+`src/tests/features/census/global-search/patientSearchTimelineIntegration.test.tsx`.
+Ese test debe seguir pasando cuando se modifique búsqueda, selección de paciente,
+historia de movimientos o timeline. En particular bloquea estas regresiones:
+
+- seleccionar un paciente sin `forceFullRemoteHydration`
+- renderizar solo el último episodio cuando `patientMaster` viene incompleto
+- convertir una readmisión posterior a egreso en falso `Cambio de cama`
+- presentar `internal_move` como evento plano en vez de submovimiento con sangría
+
 ## Objetivo
 
 - mantener búsqueda rápida
