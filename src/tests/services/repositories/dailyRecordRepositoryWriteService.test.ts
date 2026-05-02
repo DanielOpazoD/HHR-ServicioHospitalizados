@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { PatientData } from '@/types/domain/patient';
 import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
+import { restoreConsole, suppressConsole } from '@/tests/utils/consoleTestUtils';
 
 vi.mock('@/services/storage/indexeddb/indexedDbRecordService', () => ({
   getRecordForDate: vi.fn(),
@@ -202,14 +203,19 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
   });
 
   it('returns blocked outcome when partial update has no local record', async () => {
+    const consoleSpies = suppressConsole(['warn']);
     vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(null);
 
-    const result = await updatePartialDetailed('2026-02-18', {
-      'beds.R1.patientName': 'Paciente Nuevo',
-    });
+    try {
+      const result = await updatePartialDetailed('2026-02-18', {
+        'beds.R1.patientName': 'Paciente Nuevo',
+      });
 
-    expect(result.outcome).toBe('blocked');
-    expect(result.savedLocally).toBe(false);
+      expect(result.outcome).toBe('blocked');
+      expect(result.savedLocally).toBe(false);
+    } finally {
+      restoreConsole(consoleSpies);
+    }
   });
 
   it('blocks partial admissionDate edits after the first observed day', async () => {

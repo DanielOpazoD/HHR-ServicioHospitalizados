@@ -77,6 +77,7 @@ import {
 } from '@/services/admin/auditService';
 import { defaultAuditPort } from '@/application/ports/auditPort';
 import * as auditUtils from '@/services/admin/utils/auditUtils';
+import { restoreConsole, suppressConsole } from '@/tests/utils/consoleTestUtils';
 
 describe('AuditService', () => {
   const mockPatientRut = '12345678-9';
@@ -175,12 +176,17 @@ describe('AuditService', () => {
     });
 
     it('should fetch logs for specific date and fallback to IDB on error', async () => {
+      const consoleSpies = suppressConsole(['error']);
       vi.mocked(firestore.getDocs).mockRejectedValue(new Error('Firestore down'));
       mockGetAuditLogsForDate.mockResolvedValue([{ id: 'idb-1' }]);
 
-      const logs = await getAuditLogsForDate(mockDate);
-      expect(logs[0].id).toBe('idb-1');
-      expect(mockGetAuditLogsForDate).toHaveBeenCalledWith(mockDate);
+      try {
+        const logs = await getAuditLogsForDate(mockDate);
+        expect(logs[0].id).toBe('idb-1');
+        expect(mockGetAuditLogsForDate).toHaveBeenCalledWith(mockDate);
+      } finally {
+        restoreConsole(consoleSpies);
+      }
     });
   });
 });
