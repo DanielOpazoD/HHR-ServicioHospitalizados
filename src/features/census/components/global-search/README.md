@@ -34,6 +34,10 @@ la UI debe cerrar ese episodio antes de renderizarlo.
 - Al seleccionar un paciente, `usePatientSelection` debe pedir hidratación remota
   completa del historial (`forceFullRemoteHydration`) para no depender de datos
   locales incompletos ni del índice maestro parcial.
+- Si el mismo paciente se selecciona nuevamente mientras la hidratación está en
+  curso, o mientras siga vigente la misma versión de `patientMaster.updatedAt`,
+  `usePatientSelection` debe reutilizar la promesa/datos ya descargados en vez
+  de disparar otra lectura remota completa.
 - `patientHistoryService` debe reconstruir movimientos desde daily records y
   conservar todas las hospitalizaciones observadas. Una readmisión posterior a
   egreso/traslado es un nuevo `admission`, no un `internal_move` desde la cama
@@ -52,6 +56,7 @@ Ese test debe seguir pasando cuando se modifique búsqueda, selección de pacien
 historia de movimientos o timeline. En particular bloquea estas regresiones:
 
 - seleccionar un paciente sin `forceFullRemoteHydration`
+- repetir la descarga remota completa para el mismo paciente ya seleccionado
 - renderizar solo el último episodio cuando `patientMaster` viene incompleto
 - convertir una readmisión posterior a egreso en falso `Cambio de cama`
 - presentar `internal_move` como evento plano en vez de submovimiento con sangría
