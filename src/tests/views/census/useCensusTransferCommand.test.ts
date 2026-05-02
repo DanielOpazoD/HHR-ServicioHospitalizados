@@ -131,8 +131,12 @@ describe('useCensusTransferCommand', () => {
       expect.objectContaining({
         bedId: 'R1',
         createdBy: 'doctor@example.com',
+        requestDate: '2026-03-03',
       })
     );
+    expect(mockGetLatestOpenTransferRequestByBedId).toHaveBeenCalledWith('R1', {
+      referenceDate: '2026-03-03',
+    });
     expect(mockCompleteTransferWithResult).toHaveBeenCalledWith('TR-1', 'doctor@example.com');
   });
 
@@ -148,6 +152,9 @@ describe('useCensusTransferCommand', () => {
     expect(addTransfer).toHaveBeenCalledTimes(1);
     expect(setTransferState).toHaveBeenCalledTimes(1);
     expect(mockCreateTransferRequest).not.toHaveBeenCalled();
+    expect(mockGetLatestOpenTransferRequestByBedId).toHaveBeenCalledWith('R1', {
+      referenceDate: '2026-03-03',
+    });
     expect(mockCompleteTransferWithResult).toHaveBeenCalledWith('TR-9', 'doctor@example.com');
   });
 

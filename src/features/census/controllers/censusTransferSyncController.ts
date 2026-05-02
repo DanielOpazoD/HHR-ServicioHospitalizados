@@ -92,7 +92,10 @@ export const syncCensusTransferRequest = async ({
   createTransferRequest,
   completeTransferWithResult,
 }: SyncCensusTransferRequestParams): Promise<void> => {
-  const linkedRequest = await getLatestOpenTransferRequestByBedId(bedId);
+  const requestDate = (data?.movementDate || recordDate || new Date().toISOString()).split('T')[0];
+  const linkedRequest = await getLatestOpenTransferRequestByBedId(bedId, {
+    referenceDate: requestDate,
+  });
   if (linkedRequest) {
     const completionResult = await completeTransferWithResult(linkedRequest.id, createdByEmail);
     assertTransferCompletionSucceeded(completionResult);
@@ -101,8 +104,6 @@ export const syncCensusTransferRequest = async ({
 
   // No prior request exists — create one and immediately complete it
   // so it appears as TRANSFERRED (finalized) in Gestión de Traslados.
-  const requestDate = (data?.movementDate || recordDate || new Date().toISOString()).split('T')[0];
-
   const createdRequest = await createTransferRequest({
     patientId: bedId,
     bedId,
