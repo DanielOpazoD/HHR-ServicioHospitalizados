@@ -14,7 +14,7 @@ import type { TransferState } from '@/features/census/types/censusActionTypes';
 import { useAuth } from '@/context/AuthContext';
 import {
   completeTransferWithResult,
-  createTransferRequest,
+  createFinalizedTransferRequestWithResult,
   getLatestOpenTransferRequestByBedId,
 } from '@/services/transfers/transferService';
 import {
@@ -82,7 +82,7 @@ export const useCensusTransferCommand = ({
           destinationHospital,
           createdByEmail,
           getLatestOpenTransferRequestByBedId,
-          createTransferRequest,
+          createFinalizedTransferRequestWithResult,
           completeTransferWithResult,
         });
       } catch (syncError) {
