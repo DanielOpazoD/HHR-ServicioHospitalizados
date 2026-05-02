@@ -1,12 +1,13 @@
 import React from 'react';
 import clsx from 'clsx';
-import { ADMISSION_ORIGIN_OPTIONS } from '@/constants/clinicalSpecialtyConstants';
 import { resolveAdmissionDateOptions } from '@/shared/date/admissionDateOptions';
 import {
   resolveAdmissionTimePickerModel,
   resolveAdmissionTimeValue,
 } from '@/shared/date/admissionTimeOptions';
-import { LocalDemographicsState, AdmissionOrigin, Origin, BiologicalSex } from './types';
+import { LocalDemographicsState, Origin } from './types';
+import { DemographicsAdmissionOriginField } from './DemographicsAdmissionOriginField';
+import { DemographicsSexField } from './DemographicsSexField';
 
 const resolveDraftAdmissionTime = (
   admissionTime?: string
@@ -28,13 +29,19 @@ interface DemographicsOriginSectionProps {
   localData: LocalDemographicsState;
   setLocalData: React.Dispatch<React.SetStateAction<LocalDemographicsState>>;
   recordDate: string;
+  missingRequiredFields?: string[];
 }
+
+const missingRequiredClass =
+  'border-amber-300 bg-amber-50/60 focus:border-amber-500 focus:ring-amber-500/20';
 
 export const DemographicsOriginSection: React.FC<DemographicsOriginSectionProps> = ({
   localData,
   setLocalData,
   recordDate,
+  missingRequiredFields = [],
 }) => {
+  const isMissingRequired = (field: string): boolean => missingRequiredFields.includes(field);
   const admissionDateOptions = React.useMemo(
     () => resolveAdmissionDateOptions(recordDate, localData.admissionDate),
     [localData.admissionDate, recordDate]
@@ -137,61 +144,13 @@ export const DemographicsOriginSection: React.FC<DemographicsOriginSectionProps>
       </h4>
 
       <div className="space-y-3">
-        <div className="space-y-1">
-          <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wide ml-1">
-            Origen del Ingreso
-          </label>
-          <div className="space-y-1.5">
-            <div className="relative">
-              <select
-                className="w-full px-2.5 py-1.5 bg-slate-50 border border-transparent rounded-lg text-[13px] text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none appearance-none cursor-pointer shadow-sm transition-all"
-                value={localData.admissionOrigin}
-                onChange={e =>
-                  setLocalData({
-                    ...localData,
-                    admissionOrigin: e.target.value as AdmissionOrigin,
-                  })
-                }
-              >
-                <option value="">-- Seleccionar --</option>
-                {ADMISSION_ORIGIN_OPTIONS.map(opt => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
-              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </div>
-            </div>
-
-            {localData.admissionOrigin === 'Otro' && (
-              <input
-                type="text"
-                className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-[13px] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all shadow-inner"
-                placeholder="Especifique origen..."
-                value={localData.admissionOriginDetails}
-                onChange={e =>
-                  setLocalData({ ...localData, admissionOriginDetails: e.target.value })
-                }
-                autoFocus
-              />
-            )}
-          </div>
-        </div>
+        <DemographicsAdmissionOriginField
+          localData={localData}
+          setLocalData={setLocalData}
+          isOriginMissing={isMissingRequired('procedencia')}
+          isOriginDetailsMissing={isMissingRequired('detalle de procedencia')}
+          missingRequiredClass={missingRequiredClass}
+        />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div className="space-y-1">
@@ -203,7 +162,13 @@ export const DemographicsOriginSection: React.FC<DemographicsOriginSectionProps>
             </label>
             <select
               id="demographics-admission-date"
-              className="w-full px-2.5 py-1.5 bg-slate-50 border border-transparent rounded-lg text-[13px] text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none shadow-sm transition-all"
+              aria-invalid={isMissingRequired('fecha de ingreso') || undefined}
+              className={clsx(
+                'w-full px-2.5 py-1.5 border rounded-lg text-[13px] text-slate-700 focus:bg-white focus:ring-2 outline-none shadow-sm transition-all',
+                isMissingRequired('fecha de ingreso')
+                  ? missingRequiredClass
+                  : 'bg-slate-50 border-transparent focus:ring-blue-500/20 focus:border-blue-500'
+              )}
               value={localData.admissionDate}
               onChange={updateAdmissionDate}
             >
@@ -225,14 +190,26 @@ export const DemographicsOriginSection: React.FC<DemographicsOriginSectionProps>
                 type="text"
                 inputMode="numeric"
                 aria-label="Hora de ingreso"
+                aria-invalid={isMissingRequired('hora de ingreso') || undefined}
                 placeholder="14:00"
-                className="w-full px-2.5 py-1.5 bg-slate-50 border border-transparent rounded-lg text-[13px] text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none shadow-sm transition-all"
+                className={clsx(
+                  'w-full px-2.5 py-1.5 border rounded-lg text-[13px] text-slate-700 focus:bg-white focus:ring-2 outline-none shadow-sm transition-all',
+                  isMissingRequired('hora de ingreso')
+                    ? missingRequiredClass
+                    : 'bg-slate-50 border-transparent focus:ring-blue-500/20 focus:border-blue-500'
+                )}
                 value={draftAdmissionTimeText}
                 onChange={updateAdmissionTimeText}
               />
               <select
                 aria-label="Hora de ingreso - horas"
-                className="w-full px-2.5 py-1.5 bg-slate-50 border border-transparent rounded-lg text-[13px] text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none shadow-sm transition-all"
+                aria-invalid={isMissingRequired('hora de ingreso') || undefined}
+                className={clsx(
+                  'w-full px-2.5 py-1.5 border rounded-lg text-[13px] text-slate-700 focus:bg-white focus:ring-2 outline-none shadow-sm transition-all',
+                  isMissingRequired('hora de ingreso')
+                    ? missingRequiredClass
+                    : 'bg-slate-50 border-transparent focus:ring-blue-500/20 focus:border-blue-500'
+                )}
                 value={draftAdmissionTime.hour}
                 onChange={updateAdmissionTimePart('hour')}
               >
@@ -245,7 +222,13 @@ export const DemographicsOriginSection: React.FC<DemographicsOriginSectionProps>
               </select>
               <select
                 aria-label="Hora de ingreso - minutos"
-                className="w-full px-2.5 py-1.5 bg-slate-50 border border-transparent rounded-lg text-[13px] text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none shadow-sm transition-all"
+                aria-invalid={isMissingRequired('hora de ingreso') || undefined}
+                className={clsx(
+                  'w-full px-2.5 py-1.5 border rounded-lg text-[13px] text-slate-700 focus:bg-white focus:ring-2 outline-none shadow-sm transition-all',
+                  isMissingRequired('hora de ingreso')
+                    ? missingRequiredClass
+                    : 'bg-slate-50 border-transparent focus:ring-blue-500/20 focus:border-blue-500'
+                )}
                 value={draftAdmissionTime.minute}
                 onChange={updateAdmissionTimePart('minute')}
               >
@@ -342,38 +325,11 @@ export const DemographicsOriginSection: React.FC<DemographicsOriginSectionProps>
           </label>
         </div>
 
-        <div className="space-y-1">
-          <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wide ml-1">
-            Sexo Biológico
-          </label>
-          <div className="flex gap-2">
-            {(['Masculino', 'Femenino', 'Indeterminado'] as const).map(sex => (
-              <label
-                key={sex}
-                className={clsx(
-                  'cursor-pointer px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all border select-none flex-1 text-center',
-                  localData.biologicalSex === sex
-                    ? 'bg-blue-50 border-blue-200 text-blue-700 shadow-sm'
-                    : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50'
-                )}
-              >
-                <input
-                  type="radio"
-                  name="biologicalSex"
-                  className="sr-only"
-                  checked={localData.biologicalSex === sex}
-                  onChange={() =>
-                    setLocalData({ ...localData, biologicalSex: sex as BiologicalSex })
-                  }
-                />
-                {sex === 'Masculino' ? 'M' : sex === 'Femenino' ? 'F' : '?'}
-                <span className="hidden sm:inline sm:ml-1 text-[9px] font-normal opacity-80">
-                  {sex === 'Indeterminado' ? '' : sex.slice(1)}
-                </span>
-              </label>
-            ))}
-          </div>
-        </div>
+        <DemographicsSexField
+          localData={localData}
+          setLocalData={setLocalData}
+          isMissingRequired={isMissingRequired('sexo')}
+        />
       </div>
     </div>
   );

@@ -61,6 +61,26 @@ describe('DemographicsModal', () => {
     );
     expect(screen.getByRole('combobox', { name: 'Hora de ingreso - horas' })).toHaveValue('');
     expect(screen.getByRole('combobox', { name: 'Hora de ingreso - minutos' })).toHaveValue('');
+    expect(screen.getByPlaceholderText('Nombre')).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByPlaceholderText('Apellido paterno')).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByPlaceholderText('Apellido materno')).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByPlaceholderText('12.345.678-9')).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByRole('combobox', { name: 'Fecha de ingreso' })).toHaveAttribute(
+      'aria-invalid',
+      'true'
+    );
+    expect(screen.getByRole('textbox', { name: 'Hora de ingreso' })).toHaveAttribute(
+      'aria-invalid',
+      'true'
+    );
+    expect(screen.getByRole('combobox', { name: 'Origen del ingreso' })).toHaveAttribute(
+      'aria-invalid',
+      'true'
+    );
+    expect(screen.getByRole('group', { name: 'Sexo biológico' })).toHaveAttribute(
+      'aria-invalid',
+      'true'
+    );
 
     fireEvent.change(screen.getByPlaceholderText('Nombre'), { target: { value: 'Ana' } });
     fireEvent.change(screen.getByPlaceholderText('Apellido paterno'), {
@@ -100,6 +120,32 @@ describe('DemographicsModal', () => {
       target: { value: '30' },
     });
 
+    expect(screen.getByPlaceholderText('Nombre')).not.toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByPlaceholderText('Apellido paterno')).not.toHaveAttribute(
+      'aria-invalid',
+      'true'
+    );
+    expect(screen.getByPlaceholderText('Apellido materno')).not.toHaveAttribute(
+      'aria-invalid',
+      'true'
+    );
+    expect(screen.getByPlaceholderText('12.345.678-9')).not.toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByRole('combobox', { name: 'Fecha de ingreso' })).not.toHaveAttribute(
+      'aria-invalid',
+      'true'
+    );
+    expect(screen.getByRole('textbox', { name: 'Hora de ingreso' })).not.toHaveAttribute(
+      'aria-invalid',
+      'true'
+    );
+    expect(screen.getByRole('combobox', { name: 'Origen del ingreso' })).not.toHaveAttribute(
+      'aria-invalid',
+      'true'
+    );
+    expect(screen.getByRole('group', { name: 'Sexo biológico' })).not.toHaveAttribute(
+      'aria-invalid',
+      'true'
+    );
     expect(saveButton).toBeEnabled();
 
     fireEvent.click(saveButton);

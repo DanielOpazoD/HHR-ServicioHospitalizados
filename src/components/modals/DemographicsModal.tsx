@@ -77,11 +77,17 @@ export const DemographicsModal: React.FC<DemographicsModalProps> = ({
             isProvisionalRnMode={isProvisionalRnMode}
             error={error}
             setError={setError}
+            missingRequiredFields={
+              requiresCompleteDemographics ? requiredCompletion.missingFields : []
+            }
           />
           <DemographicsOriginSection
             localData={localData}
             setLocalData={setLocalData}
             recordDate={recordDate}
+            missingRequiredFields={
+              requiresCompleteDemographics ? requiredCompletion.missingFields : []
+            }
           />
         </div>
 
