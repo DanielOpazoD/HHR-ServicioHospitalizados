@@ -62,10 +62,10 @@ export const buildPatientEpisodeTimelineState = (
   history: PatientHistoryResult | null
 ): PatientEpisodeTimelineState => {
   const indexedEpisodes = groupEpisodesAsBlocks(patient.hospitalizations ?? []);
-  const sourceEpisodes =
-    indexedEpisodes.length > 0
-      ? indexedEpisodes
-      : groupEpisodesAsBlocks(mapHistoryMovementsToHospitalizationEvents(history));
+  const historyEpisodes = groupEpisodesAsBlocks(
+    mapHistoryMovementsToHospitalizationEvents(history)
+  );
+  const sourceEpisodes = historyEpisodes.length > 0 ? historyEpisodes : indexedEpisodes;
 
   const groupedEpisodes = reconcileGroupedEpisodesWithHistory(sourceEpisodes, history);
 

@@ -77,5 +77,9 @@ describe('usePatientSelection', () => {
 
     expect(result.current.selectedPatient?.timelineState.episodeCount).toBe(1);
     expect(result.current.selectedPatient?.isLoadingHistory).toBe(false);
+    expect(mockGetPatientMovementHistory).toHaveBeenCalledWith(
+      basePatient.rut,
+      expect.objectContaining({ forceFullRemoteHydration: true })
+    );
   });
 });

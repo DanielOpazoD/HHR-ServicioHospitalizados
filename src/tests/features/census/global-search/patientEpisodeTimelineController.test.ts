@@ -118,4 +118,74 @@ describe('buildPatientEpisodeTimelineState', () => {
       })
     );
   });
+
+  it('uses movement history as truth when the master index only has the latest hospitalization', () => {
+    const patientWithPartialIndex: MasterPatient = {
+      ...basePatient,
+      rut: '18.781.542-8',
+      fullName: 'Tipanie Carossi Pakomio',
+      hospitalizations: [
+        {
+          id: 'latest',
+          type: 'Ingreso',
+          date: '2026-04-12',
+          diagnosis: 'ACV',
+          bedName: 'H2C2',
+        },
+      ],
+      lastAdmission: '2026-04-12',
+      lastDischarge: '2026-04-24',
+    };
+    const history: PatientHistoryResult = {
+      patientName: patientWithPartialIndex.fullName,
+      rut: patientWithPartialIndex.rut,
+      totalDays: 29,
+      firstSeen: '2026-03-26',
+      lastSeen: '2026-04-24',
+      movements: [
+        {
+          date: '2026-03-26',
+          bedId: 'H3C1',
+          bedName: 'H3C1',
+          bedType: 'MEDIA',
+          type: 'admission',
+        },
+        {
+          date: '2026-04-06',
+          bedId: 'H4C1',
+          bedName: 'H4C1',
+          bedType: 'MEDIA',
+          type: 'discharge',
+          details: 'Domicilio (Habitual)',
+        },
+        {
+          date: '2026-04-12',
+          bedId: 'H2C2',
+          bedName: 'H2C2',
+          bedType: 'MEDIA',
+          type: 'admission',
+        },
+        {
+          date: '2026-04-24',
+          bedId: 'H2C2',
+          bedName: 'H2C2',
+          bedType: 'MEDIA',
+          type: 'discharge',
+          details: 'Domicilio (Habitual)',
+        },
+      ],
+    };
+
+    const state = buildPatientEpisodeTimelineState(patientWithPartialIndex, history);
+
+    expect(state.episodeCount).toBe(2);
+    expect(state.groupedEpisodes.map(episode => episode.admission.date)).toEqual([
+      '2026-04-12',
+      '2026-03-26',
+    ]);
+    expect(state.groupedEpisodes.map(episode => episode.discharge?.date)).toEqual([
+      '2026-04-24',
+      '2026-04-06',
+    ]);
+  });
 });

@@ -84,6 +84,7 @@ export function usePatientSelection(): UsePatientSelectionReturn {
     try {
       const historyModule = await loadPatientHistory();
       const history = await historyModule.getPatientMovementHistory(patient.rut, {
+        forceFullRemoteHydration: true,
         hospitalizationHints: patient.hospitalizations ?? [],
         lastAdmission: patient.lastAdmission,
         lastDischarge: patient.lastDischarge,
