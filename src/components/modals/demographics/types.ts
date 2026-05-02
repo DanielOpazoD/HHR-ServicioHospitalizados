@@ -24,6 +24,8 @@ export type DemographicSubset = Pick<
   | 'origin'
   | 'isRapanui'
   | 'biologicalSex'
+  | 'admissionDate'
+  | 'admissionTime'
 >;
 
 export interface DemographicsModalProps {
@@ -54,4 +56,6 @@ export interface LocalDemographicsState {
   origin: Origin;
   isRapanui: boolean;
   biologicalSex: BiologicalSex;
+  admissionDate: string;
+  admissionTime: string;
 }

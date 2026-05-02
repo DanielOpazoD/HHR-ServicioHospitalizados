@@ -99,6 +99,8 @@ export const buildLocalData = (
     origin: (data.origin || 'Residente') as Origin,
     isRapanui: data.isRapanui || false,
     biologicalSex: (data.biologicalSex || 'Indeterminado') as BiologicalSex,
+    admissionDate: data.admissionDate || '',
+    admissionTime: data.admissionTime || '',
   };
 };
 
@@ -116,7 +118,9 @@ export const hasMeaningfulDemographicSubset = (data: DemographicSubset): boolean
     (data.biologicalSex && data.biologicalSex !== 'Indeterminado') ||
     (data.insurance && data.insurance !== 'Fonasa') ||
     (data.origin && data.origin !== 'Residente') ||
-    (data.documentType && data.documentType !== 'RUT')
+    (data.documentType && data.documentType !== 'RUT') ||
+    (data.admissionDate || '').trim() ||
+    (data.admissionTime || '').trim()
   );
 
 export const hasMeaningfulLocalDemographics = (localData: LocalDemographicsState): boolean =>
@@ -133,7 +137,9 @@ export const hasMeaningfulLocalDemographics = (localData: LocalDemographicsState
     localData.biologicalSex !== 'Indeterminado' ||
     localData.insurance !== 'Fonasa' ||
     localData.origin !== 'Residente' ||
-    localData.documentType !== 'RUT'
+    localData.documentType !== 'RUT' ||
+    localData.admissionDate.trim() ||
+    localData.admissionTime.trim()
   );
 
 export interface DemographicsCompletionStatus {
@@ -168,6 +174,12 @@ export const resolveRequiredDemographicsCompletion = (
 
   if (!localData.birthDate.trim()) {
     missingFields.push('fecha de nacimiento');
+  }
+  if (!localData.admissionDate.trim()) {
+    missingFields.push('fecha de ingreso');
+  }
+  if (!localData.admissionTime.trim()) {
+    missingFields.push('hora de ingreso');
   }
   if (!localData.admissionOrigin) {
     missingFields.push('procedencia');

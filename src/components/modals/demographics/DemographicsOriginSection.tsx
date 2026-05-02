@@ -95,6 +95,40 @@ export const DemographicsOriginSection: React.FC<DemographicsOriginSectionProps>
           </div>
         </div>
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="space-y-1">
+            <label
+              htmlFor="demographics-admission-date"
+              className="block text-[9px] font-bold text-slate-500 uppercase tracking-wide ml-1"
+            >
+              Fecha de ingreso
+            </label>
+            <input
+              id="demographics-admission-date"
+              type="date"
+              className="w-full px-2.5 py-1.5 bg-slate-50 border border-transparent rounded-lg text-[13px] text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none shadow-sm transition-all"
+              value={localData.admissionDate}
+              onChange={e => setLocalData({ ...localData, admissionDate: e.target.value })}
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label
+              htmlFor="demographics-admission-time"
+              className="block text-[9px] font-bold text-slate-500 uppercase tracking-wide ml-1"
+            >
+              Hora de ingreso
+            </label>
+            <input
+              id="demographics-admission-time"
+              type="time"
+              className="w-full px-2.5 py-1.5 bg-slate-50 border border-transparent rounded-lg text-[13px] text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none shadow-sm transition-all"
+              value={localData.admissionTime}
+              onChange={e => setLocalData({ ...localData, admissionTime: e.target.value })}
+            />
+          </div>
+        </div>
+
         <div className="space-y-1">
           <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wide ml-1">
             Condición

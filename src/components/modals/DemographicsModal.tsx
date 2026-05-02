@@ -86,9 +86,12 @@ export const DemographicsModal: React.FC<DemographicsModalProps> = ({
             <div
               role="status"
               aria-live="polite"
-              className="mb-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] font-semibold text-amber-800"
+              className="mb-1.5 flex items-center justify-end gap-2 text-[10px] font-semibold text-slate-500"
             >
-              Complete los datos demográficos obligatorios para guardar. {requiredCompletionMessage}
+              <span>Campos obligatorios pendientes</span>
+              <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-slate-600">
+                {requiredCompletionMessage}
+              </span>
             </div>
           ) : null}
 

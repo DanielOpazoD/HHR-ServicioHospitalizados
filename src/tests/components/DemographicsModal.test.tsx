@@ -23,6 +23,8 @@ const createEmptyDemographics = (): DemographicSubset =>
     origin: undefined,
     admissionOrigin: undefined,
     admissionOriginDetails: '',
+    admissionDate: '',
+    admissionTime: '',
     biologicalSex: 'Indeterminado',
   });
 
@@ -45,9 +47,9 @@ describe('DemographicsModal', () => {
     const saveButton = screen.getByRole('button', { name: /guardar cambios/i });
 
     expect(saveButton).toBeDisabled();
-    expect(
-      screen.getByText(/complete los datos demográficos obligatorios para guardar/i)
-    ).toBeInTheDocument();
+    expect(screen.getByText('Campos obligatorios pendientes')).toBeInTheDocument();
+    expect(screen.getByText('Faltan 9')).toBeInTheDocument();
+    expect(screen.queryByText(/falta completar: nombre/i)).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByPlaceholderText('Nombre'), { target: { value: 'Ana' } });
     fireEvent.change(screen.getByPlaceholderText('Apellido paterno'), {
@@ -67,6 +69,13 @@ describe('DemographicsModal', () => {
     const [, , admissionOriginSelect] = screen.getAllByRole('combobox');
     fireEvent.change(admissionOriginSelect, { target: { value: 'Urgencias' } });
 
+    fireEvent.change(screen.getByLabelText('Fecha de ingreso'), {
+      target: { value: '2026-05-01' },
+    });
+    fireEvent.change(screen.getByLabelText('Hora de ingreso'), {
+      target: { value: '09:30' },
+    });
+
     const [, femaleSexOption] = screen.getAllByRole('radio');
     fireEvent.click(femaleSexOption);
 
@@ -83,6 +92,8 @@ describe('DemographicsModal', () => {
         patientName: 'Ana Perez Soto',
         rut: '11.111.111-1',
         birthDate: '1980-04-12',
+        admissionDate: '2026-05-01',
+        admissionTime: '09:30',
         admissionOrigin: 'Urgencias',
         biologicalSex: 'Femenino',
       })

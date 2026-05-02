@@ -87,7 +87,7 @@ export const useDemographicsLogic = ({
   );
 
   const requiredCompletionMessage = requiredCompletion.missingFields.length
-    ? `Falta completar: ${requiredCompletion.missingFields.join(', ')}.`
+    ? `Faltan ${requiredCompletion.missingFields.length}`
     : null;
 
   const handleSave = () => {
@@ -133,6 +133,8 @@ export const useDemographicsLogic = ({
         rut: '',
         documentType: 'RUT',
         birthDate: localData.birthDate,
+        admissionDate: localData.admissionDate,
+        admissionTime: localData.admissionTime,
         insurance: localData.insurance as Insurance,
         admissionOrigin: localData.admissionOrigin as AdmissionOrigin,
         admissionOriginDetails: localData.admissionOriginDetails,
@@ -169,6 +171,8 @@ export const useDemographicsLogic = ({
       rut: localData.rut.trim(),
       documentType: localData.documentType,
       birthDate: localData.birthDate,
+      admissionDate: localData.admissionDate,
+      admissionTime: localData.admissionTime,
       insurance: localData.insurance as Insurance,
       admissionOrigin: localData.admissionOrigin as AdmissionOrigin,
       admissionOriginDetails: localData.admissionOriginDetails,

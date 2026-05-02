@@ -165,6 +165,8 @@ describe('PatientRowModals', () => {
           insurance: undefined,
           origin: undefined,
           admissionOrigin: undefined,
+          admissionDate: '',
+          admissionTime: '',
           biologicalSex: 'Indeterminado',
         })}
       />
@@ -190,6 +192,8 @@ describe('PatientRowModals', () => {
           insurance: undefined,
           origin: undefined,
           admissionOrigin: undefined,
+          admissionDate: '',
+          admissionTime: '',
           biologicalSex: 'Indeterminado',
         })}
       />
@@ -219,6 +223,8 @@ describe('PatientRowModals', () => {
           insurance: undefined,
           origin: undefined,
           admissionOrigin: undefined,
+          admissionDate: '',
+          admissionTime: '',
           biologicalSex: 'Indeterminado',
         })}
       />
