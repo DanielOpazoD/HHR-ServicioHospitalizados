@@ -55,19 +55,38 @@ export const MovementTimeline: React.FC<MovementTimelineProps> = ({ movements })
         Movimientos recientes
       </h4>
       <div className="space-y-1">
-        {movements.slice(-MAX_VISIBLE_MOVEMENTS).map((m, i) => (
-          <div key={`${m.date}-${m.bedId}-${i}`} className="flex items-center gap-2 text-xs">
-            {movementIcon(m.type)}
-            <span className="text-slate-500 font-mono text-[10px] w-20 shrink-0">
-              {formatDateToCL(m.date)}
-            </span>
-            <span className="font-medium text-slate-700">{movementLabel(m.type)}</span>
-            <span className="text-slate-400 truncate">
-              {m.bedName}
-              {m.details ? ` — ${m.details}` : ''}
-            </span>
-          </div>
-        ))}
+        {movements.slice(-MAX_VISIBLE_MOVEMENTS).map((m, i) => {
+          const isInternalMove = m.type === 'internal_move';
+
+          return (
+            <div
+              key={`${m.date}-${m.bedId}-${i}`}
+              data-testid={`movement-row-${m.type}-${i}`}
+              className={[
+                'flex items-center gap-2 text-xs',
+                isInternalMove ? 'ml-7 border-l border-slate-200 pl-3 py-0.5' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+            >
+              {movementIcon(m.type)}
+              <span className="text-slate-500 font-mono text-[10px] w-20 shrink-0">
+                {formatDateToCL(m.date)}
+              </span>
+              <span
+                className={
+                  isInternalMove ? 'font-medium text-slate-600' : 'font-medium text-slate-700'
+                }
+              >
+                {movementLabel(m.type)}
+              </span>
+              <span className="text-slate-400 truncate">
+                {m.bedName}
+                {m.details ? ` — ${m.details}` : ''}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

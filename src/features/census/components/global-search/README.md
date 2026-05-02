@@ -28,6 +28,22 @@ pero el historial real ya contiene:
 
 la UI debe cerrar ese episodio antes de renderizarlo.
 
+## Contrato de búsqueda correcto
+
+- `patientMaster` sirve para descubrir candidatos por nombre/RUT.
+- Al seleccionar un paciente, `usePatientSelection` debe pedir hidratación remota
+  completa del historial (`forceFullRemoteHydration`) para no depender de datos
+  locales incompletos ni del índice maestro parcial.
+- `patientHistoryService` debe reconstruir movimientos desde daily records y
+  conservar todas las hospitalizaciones observadas. Una readmisión posterior a
+  egreso/traslado es un nuevo `admission`, no un `internal_move` desde la cama
+  previa.
+- `patientEpisodeTimelineController` debe preferir la historia operativa real
+  cuando está disponible; `patientMaster.hospitalizations` queda como fallback
+  inicial/rápido.
+- En UI, `internal_move` se presenta como movimiento dependiente con sangría,
+  para distinguirlo de `Ingreso`, `Egreso` y `Traslado`.
+
 ## Objetivo
 
 - mantener búsqueda rápida
