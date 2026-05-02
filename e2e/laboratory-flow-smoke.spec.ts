@@ -54,6 +54,18 @@ const fulfillOptionsPreflight = async (route: Route) => {
 };
 
 const routeSyslabMocks = async (page: Page) => {
+  await page.route('**/health', async route => {
+    if (await fulfillOptionsPreflight(route)) {
+      return;
+    }
+
+    await route.fulfill({
+      status: 200,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+      json: { connected: true },
+    });
+  });
+
   await page.route('**/api/exams?**', async route => {
     if (await fulfillOptionsPreflight(route)) {
       return;
