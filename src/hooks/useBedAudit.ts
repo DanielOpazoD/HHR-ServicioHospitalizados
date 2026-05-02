@@ -161,11 +161,32 @@ export const useBedAudit = (record: DailyRecord | null) => {
     [logDebouncedEvent]
   );
 
+  const auditPatientMovement = useCallback(
+    (bedId: string, details: Record<string, unknown>, rut?: string) => {
+      const currentRecord = recordRef.current;
+      if (!currentRecord) return;
+      const patient = currentRecord.beds[bedId];
+      logEvent(
+        'PATIENT_MODIFIED',
+        'patient',
+        bedId,
+        {
+          patientName: patient?.patientName,
+          ...details,
+        },
+        rut,
+        currentRecord.date
+      );
+    },
+    [logEvent]
+  );
+
   return {
     auditPatientChange,
     auditCudyrChange,
     auditCribCudyrChange,
     auditPatientCleared,
     auditPatientModified,
+    auditPatientMovement,
   };
 };

@@ -207,13 +207,7 @@ export const createAuditCoreService = (
       entityType,
       entityId,
       summary: generateSummary(action, details, entityId),
-      details: sanitizeDetails({
-        ...details,
-        _metadata: {
-          userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Server',
-          platform: typeof navigator !== 'undefined' ? navigator.platform : 'Unknown',
-        },
-      }),
+      details: sanitizeDetails(details),
       patientIdentifier: patientRut ? maskRut(patientRut) : undefined,
       recordDate,
       authors,

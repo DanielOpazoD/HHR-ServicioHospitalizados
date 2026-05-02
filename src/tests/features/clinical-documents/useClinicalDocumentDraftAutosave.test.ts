@@ -13,6 +13,7 @@ const recordOperationalOutcome = vi.fn();
 const recordOperationalTelemetry = vi.fn();
 const auditContextMocks = vi.hoisted(() => ({
   logClinicalDocumentEdited: vi.fn(),
+  recordCriticalClinicalAction: vi.fn(),
 }));
 
 vi.mock('@/application/clinical-documents/clinicalDocumentEditorUseCases', () => ({
@@ -31,6 +32,10 @@ vi.mock('@/context/AuditContext', () => ({
   useAuditContext: () => ({
     logClinicalDocumentEdited: auditContextMocks.logClinicalDocumentEdited,
   }),
+}));
+
+vi.mock('@/services/observability/criticalClinicalActionRecorder', () => ({
+  recordCriticalClinicalAction: auditContextMocks.recordCriticalClinicalAction,
 }));
 
 const buildDraft = (content: string): ClinicalDocumentRecord => {
@@ -270,6 +275,19 @@ describe('useClinicalDocumentDraftAutosave', () => {
       draft.title,
       undefined,
       draft.sourceDailyRecordDate
+    );
+    expect(auditContextMocks.recordCriticalClinicalAction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        category: 'clinical_document',
+        action: 'clinical_document_saved',
+        outcome: 'success',
+        clinicalDate: draft.sourceDailyRecordDate,
+        documentId: draft.id,
+        documentType: draft.templateId,
+        patientRut: '11.111.111-1',
+        userId: 'u1',
+        userRole: 'doctor_urgency',
+      })
     );
   });
 
