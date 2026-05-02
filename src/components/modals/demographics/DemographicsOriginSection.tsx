@@ -2,6 +2,10 @@ import React from 'react';
 import clsx from 'clsx';
 import { ADMISSION_ORIGIN_OPTIONS } from '@/constants/clinicalSpecialtyConstants';
 import { resolveAdmissionDateOptions } from '@/shared/date/admissionDateOptions';
+import {
+  resolveAdmissionTimePickerModel,
+  resolveAdmissionTimeValue,
+} from '@/shared/date/admissionTimeOptions';
 import { LocalDemographicsState, AdmissionOrigin, Origin, BiologicalSex } from './types';
 
 interface DemographicsOriginSectionProps {
@@ -19,6 +23,34 @@ export const DemographicsOriginSection: React.FC<DemographicsOriginSectionProps>
     () => resolveAdmissionDateOptions(recordDate, localData.admissionDate),
     [localData.admissionDate, recordDate]
   );
+  const admissionTimeModel = React.useMemo(
+    () => resolveAdmissionTimePickerModel({ admissionTime: localData.admissionTime }),
+    [localData.admissionTime]
+  );
+
+  const updateAdmissionTimePart =
+    (part: 'hour' | 'minute') => (event: React.ChangeEvent<HTMLSelectElement>) => {
+      const nextHour = part === 'hour' ? event.target.value : admissionTimeModel.selectedHour;
+      const nextMinute = part === 'minute' ? event.target.value : admissionTimeModel.selectedMinute;
+      setLocalData({
+        ...localData,
+        admissionTime: resolveAdmissionTimeValue({ hour: nextHour, minute: nextMinute }),
+      });
+    };
+
+  const updateAdmissionDate = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const nextAdmissionDate = event.target.value;
+    setLocalData({
+      ...localData,
+      admissionDate: nextAdmissionDate,
+      admissionTime:
+        localData.admissionTime ||
+        resolveAdmissionTimeValue({
+          hour: admissionTimeModel.selectedHour,
+          minute: admissionTimeModel.selectedMinute,
+        }),
+    });
+  };
 
   return (
     <div className="space-y-3">
@@ -115,7 +147,7 @@ export const DemographicsOriginSection: React.FC<DemographicsOriginSectionProps>
               id="demographics-admission-date"
               className="w-full px-2.5 py-1.5 bg-slate-50 border border-transparent rounded-lg text-[13px] text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none shadow-sm transition-all"
               value={localData.admissionDate}
-              onChange={e => setLocalData({ ...localData, admissionDate: e.target.value })}
+              onChange={updateAdmissionDate}
             >
               <option value="">-- Seleccionar --</option>
               {admissionDateOptions.map(option => (
@@ -127,19 +159,35 @@ export const DemographicsOriginSection: React.FC<DemographicsOriginSectionProps>
           </div>
 
           <div className="space-y-1">
-            <label
-              htmlFor="demographics-admission-time"
-              className="block text-[9px] font-bold text-slate-500 uppercase tracking-wide ml-1"
-            >
+            <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wide ml-1">
               Hora de ingreso
             </label>
-            <input
-              id="demographics-admission-time"
-              type="time"
-              className="w-full px-2.5 py-1.5 bg-slate-50 border border-transparent rounded-lg text-[13px] text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none shadow-sm transition-all"
-              value={localData.admissionTime}
-              onChange={e => setLocalData({ ...localData, admissionTime: e.target.value })}
-            />
+            <div className="grid grid-cols-2 gap-2">
+              <select
+                aria-label="Hora de ingreso - horas"
+                className="w-full px-2.5 py-1.5 bg-slate-50 border border-transparent rounded-lg text-[13px] text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none shadow-sm transition-all"
+                value={admissionTimeModel.selectedHour}
+                onChange={updateAdmissionTimePart('hour')}
+              >
+                {admissionTimeModel.hourOptions.map(hour => (
+                  <option key={hour} value={hour}>
+                    {hour}
+                  </option>
+                ))}
+              </select>
+              <select
+                aria-label="Hora de ingreso - minutos"
+                className="w-full px-2.5 py-1.5 bg-slate-50 border border-transparent rounded-lg text-[13px] text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none shadow-sm transition-all"
+                value={admissionTimeModel.selectedMinute}
+                onChange={updateAdmissionTimePart('minute')}
+              >
+                {admissionTimeModel.minuteOptions.map(minute => (
+                  <option key={minute} value={minute}>
+                    {minute}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 

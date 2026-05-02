@@ -81,8 +81,11 @@ describe('DemographicsModal', () => {
     fireEvent.change(screen.getByRole('combobox', { name: 'Fecha de ingreso' }), {
       target: { value: '2026-05-01' },
     });
-    fireEvent.change(screen.getByLabelText('Hora de ingreso'), {
-      target: { value: '09:30' },
+    fireEvent.change(screen.getByRole('combobox', { name: 'Hora de ingreso - horas' }), {
+      target: { value: '09' },
+    });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Hora de ingreso - minutos' }), {
+      target: { value: '30' },
     });
 
     const [, femaleSexOption] = screen.getAllByRole('radio');
