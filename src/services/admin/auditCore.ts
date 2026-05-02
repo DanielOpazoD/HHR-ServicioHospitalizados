@@ -1,4 +1,5 @@
 import { firestoreDb, type IDatabaseProvider } from '@/services/storage/firestore';
+import type { QueryOptions } from '@/services/infrastructure/db/types';
 import { AuditAction } from '@/types/auditActionTypes';
 import { AuditLogEntry, maskRut } from '@/types/auditLogTypes';
 import {
@@ -100,7 +101,7 @@ const sanitizeDetails = (details: Record<string, unknown>): Record<string, unkno
 
 interface AuditLocalStore {
   saveAuditLog: (entry: AuditLogEntry) => Promise<void>;
-  getAuditLogs: (limitCount: number) => Promise<AuditLogEntry[]>;
+  getAuditLogs: (limitCount?: number | null) => Promise<AuditLogEntry[]>;
   getAuditLogsForDate: (date: string) => Promise<AuditLogEntry[]>;
 }
 
@@ -119,7 +120,7 @@ export interface AuditCoreService {
     recordDate?: string,
     authors?: string
   ) => Promise<void>;
-  getAuditLogs: (limitCount?: number) => Promise<AuditLogEntry[]>;
+  getAuditLogs: (limitCount?: number | null) => Promise<AuditLogEntry[]>;
   getAuditLogsForDate: (date: string) => Promise<AuditLogEntry[]>;
   logUserLogin: (email: string) => Promise<void>;
   logUserLogout: (email: string, reason?: 'manual' | 'automatic') => Promise<void>;
@@ -219,16 +220,20 @@ export const createAuditCoreService = (
 
   return {
     logAuditEvent,
-    getAuditLogs: async (limitCount = 100): Promise<AuditLogEntry[]> => {
+    getAuditLogs: async (limitCount?: number | null): Promise<AuditLogEntry[]> => {
       if (!syncPolicy.shouldUseRemoteAuditSync()) {
         return await localStore.getAuditLogs(limitCount);
       }
 
       try {
-        return await database.getDocs<AuditLogEntry>(COLLECTION_NAME(), {
+        const queryOptions: QueryOptions = {
           orderBy: [{ field: 'timestamp', direction: 'desc' }],
-          limit: limitCount,
-        });
+        };
+        if (typeof limitCount === 'number') {
+          queryOptions.limit = limitCount;
+        }
+
+        return await database.getDocs<AuditLogEntry>(COLLECTION_NAME(), queryOptions);
       } catch (error) {
         auditCoreLogger.error('Failed to fetch audit logs from Firestore', error);
         return await localStore.getAuditLogs(limitCount);

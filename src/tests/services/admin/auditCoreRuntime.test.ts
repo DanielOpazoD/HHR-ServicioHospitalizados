@@ -147,4 +147,15 @@ describe('auditCore runtime injection', () => {
       expect.any(Error)
     );
   });
+
+  it('does not apply a read limit when full historical audit logs are requested', async () => {
+    getDocs.mockResolvedValue([]);
+
+    await service.getAuditLogs();
+
+    expect(getDocs).toHaveBeenCalledWith(
+      expect.stringContaining('/auditLogs'),
+      expect.not.objectContaining({ limit: expect.any(Number) })
+    );
+  });
 });

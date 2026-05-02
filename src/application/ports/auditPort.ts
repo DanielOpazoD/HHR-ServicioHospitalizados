@@ -20,7 +20,7 @@ export interface AuditPort {
     recordDate?: string,
     authors?: string
   ) => Promise<void>;
-  fetchLogs: (limit?: number) => Promise<AuditLogEntry[]>;
+  fetchLogs: (limit?: number | null) => Promise<AuditLogEntry[]>;
   logPatientAdmission: (
     bedId: string,
     patientName: string,
@@ -64,7 +64,7 @@ export const defaultAuditPort: AuditPort = {
     authors
   ) =>
     logAuditEvent(userId, action, entityType, entityId, details, patientRut, recordDate, authors),
-  fetchLogs: async (limit?: number) => getAuditLogs(limit),
+  fetchLogs: async (limit?: number | null) => getAuditLogs(limit),
   logPatientAdmission: async (bedId, patientName, rut, pathology, recordDate) =>
     logAuditEvent(
       getCurrentUserEmail(),
