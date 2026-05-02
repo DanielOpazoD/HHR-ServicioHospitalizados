@@ -136,6 +136,58 @@ export const hasMeaningfulLocalDemographics = (localData: LocalDemographicsState
     localData.documentType !== 'RUT'
   );
 
+export interface DemographicsCompletionStatus {
+  isComplete: boolean;
+  missingFields: string[];
+}
+
+export const resolveRequiredDemographicsCompletion = (
+  localData: LocalDemographicsState,
+  isProvisionalRnMode: boolean
+): DemographicsCompletionStatus => {
+  const missingFields: string[] = [];
+
+  if (isProvisionalRnMode) {
+    if (!normalizeNamePart(localData.provisionalName)) {
+      missingFields.push('nombre provisional');
+    }
+  } else {
+    if (!normalizeNamePart(localData.firstName)) {
+      missingFields.push('nombre');
+    }
+    if (!normalizeNamePart(localData.lastName)) {
+      missingFields.push('apellido paterno');
+    }
+    if (!normalizeNamePart(localData.secondLastName)) {
+      missingFields.push('apellido materno');
+    }
+    if (!localData.rut.trim()) {
+      missingFields.push('documento');
+    }
+  }
+
+  if (!localData.birthDate.trim()) {
+    missingFields.push('fecha de nacimiento');
+  }
+  if (!localData.admissionOrigin) {
+    missingFields.push('procedencia');
+  }
+  if (
+    localData.admissionOrigin === 'Otro' &&
+    !normalizeNamePart(localData.admissionOriginDetails)
+  ) {
+    missingFields.push('detalle de procedencia');
+  }
+  if (localData.biologicalSex === 'Indeterminado') {
+    missingFields.push('sexo');
+  }
+
+  return {
+    isComplete: missingFields.length === 0,
+    missingFields,
+  };
+};
+
 export const calculateFormattedAge = (dob: string) => {
   if (!dob) return '';
   const birth = new Date(dob);

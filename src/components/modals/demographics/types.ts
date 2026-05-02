@@ -36,6 +36,7 @@ export interface DemographicsModalProps {
   bedId: string;
   recordDate: string;
   isClinicalCribPatient?: boolean;
+  requiresCompleteDemographics?: boolean;
 }
 
 export interface LocalDemographicsState {

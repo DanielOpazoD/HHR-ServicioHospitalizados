@@ -15,6 +15,7 @@ import {
   composeFullName,
   calculateFormattedAge,
   hasMeaningfulLocalDemographics,
+  resolveRequiredDemographicsCompletion,
 } from './utils';
 import type { PatientData } from '@/types/domain/patient';
 
@@ -27,6 +28,7 @@ interface UseDemographicsLogicProps {
   onSave: (updatedFields: Partial<PatientData>) => void;
   onClose: () => void;
   onEmptySave?: () => void;
+  requiresCompleteDemographics?: boolean;
 }
 
 export const useDemographicsLogic = ({
@@ -38,6 +40,7 @@ export const useDemographicsLogic = ({
   onSave,
   onClose,
   onEmptySave,
+  requiresCompleteDemographics = false,
 }: UseDemographicsLogicProps) => {
   const { logPatientView } = useAuditContext();
   const [localData, setLocalData] = useState<LocalDemographicsState>(() =>
@@ -75,7 +78,24 @@ export const useDemographicsLogic = ({
     ? 'Sin RUT (RN provisional)'
     : localData.rut || 'RUT No especificado';
 
+  const requiredCompletion = useMemo(
+    () =>
+      requiresCompleteDemographics
+        ? resolveRequiredDemographicsCompletion(localData, isProvisionalRnMode)
+        : { isComplete: true, missingFields: [] },
+    [isProvisionalRnMode, localData, requiresCompleteDemographics]
+  );
+
+  const requiredCompletionMessage = requiredCompletion.missingFields.length
+    ? `Falta completar: ${requiredCompletion.missingFields.join(', ')}.`
+    : null;
+
   const handleSave = () => {
+    if (!requiredCompletion.isComplete) {
+      setError(requiredCompletionMessage);
+      return;
+    }
+
     if (!hasMeaningfulLocalDemographics(localData)) {
       onEmptySave?.();
       onClose();
@@ -169,5 +189,7 @@ export const useDemographicsLogic = ({
     displayName,
     displayRut,
     handleSave,
+    requiredCompletion,
+    requiredCompletionMessage,
   };
 };

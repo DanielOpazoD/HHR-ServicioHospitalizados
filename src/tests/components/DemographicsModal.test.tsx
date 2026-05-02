@@ -1,0 +1,91 @@
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+
+import { DemographicsModal } from '@/components/modals/DemographicsModal';
+import type { DemographicSubset } from '@/components/modals/DemographicsModal';
+import { DataFactory } from '@/tests/factories/DataFactory';
+
+vi.mock('@/context/AuditContext', () => ({
+  useAuditContext: () => ({
+    logPatientView: vi.fn(),
+  }),
+}));
+
+const createEmptyDemographics = (): DemographicSubset =>
+  DataFactory.createMockPatient('R1', {
+    patientName: ' ',
+    firstName: '',
+    lastName: '',
+    secondLastName: '',
+    rut: '',
+    birthDate: '',
+    insurance: undefined,
+    origin: undefined,
+    admissionOrigin: undefined,
+    admissionOriginDetails: '',
+    biologicalSex: 'Indeterminado',
+  });
+
+describe('DemographicsModal', () => {
+  it('blocks saving a new census patient until required demographics are complete', () => {
+    const onSave = vi.fn();
+
+    render(
+      <DemographicsModal
+        isOpen
+        onClose={vi.fn()}
+        data={createEmptyDemographics()}
+        onSave={onSave}
+        bedId="R1"
+        recordDate="2026-05-01"
+        requiresCompleteDemographics
+      />
+    );
+
+    const saveButton = screen.getByRole('button', { name: /guardar cambios/i });
+
+    expect(saveButton).toBeDisabled();
+    expect(
+      screen.getByText(/complete los datos demográficos obligatorios para guardar/i)
+    ).toBeInTheDocument();
+
+    fireEvent.change(screen.getByPlaceholderText('Nombre'), { target: { value: 'Ana' } });
+    fireEvent.change(screen.getByPlaceholderText('Apellido paterno'), {
+      target: { value: 'Perez' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Apellido materno'), {
+      target: { value: 'Soto' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('12.345.678-9'), {
+      target: { value: '11.111.111-1' },
+    });
+
+    const birthDateInput = document.querySelector('input[type="date"]');
+    expect(birthDateInput).toBeInstanceOf(HTMLInputElement);
+    fireEvent.change(birthDateInput as HTMLInputElement, { target: { value: '1980-04-12' } });
+
+    const [, , admissionOriginSelect] = screen.getAllByRole('combobox');
+    fireEvent.change(admissionOriginSelect, { target: { value: 'Urgencias' } });
+
+    const [, femaleSexOption] = screen.getAllByRole('radio');
+    fireEvent.click(femaleSexOption);
+
+    expect(saveButton).toBeEnabled();
+
+    fireEvent.click(saveButton);
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        identityStatus: 'official',
+        firstName: 'Ana',
+        lastName: 'Perez',
+        secondLastName: 'Soto',
+        patientName: 'Ana Perez Soto',
+        rut: '11.111.111-1',
+        birthDate: '1980-04-12',
+        admissionOrigin: 'Urgencias',
+        biologicalSex: 'Femenino',
+      })
+    );
+  });
+});
