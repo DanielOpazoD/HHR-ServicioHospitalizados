@@ -61,6 +61,9 @@ describe('DemographicsModal', () => {
     );
     expect(screen.getByRole('combobox', { name: 'Hora de ingreso - horas' })).toHaveValue('');
     expect(screen.getByRole('combobox', { name: 'Hora de ingreso - minutos' })).toHaveValue('');
+    expect(
+      screen.getByRole('group', { name: 'Configuración de hora de ingreso' })
+    ).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Nombre')).toHaveAttribute('aria-invalid', 'true');
     expect(screen.getByPlaceholderText('Apellido paterno')).toHaveAttribute('aria-invalid', 'true');
     expect(screen.getByPlaceholderText('Apellido materno')).toHaveAttribute('aria-invalid', 'true');

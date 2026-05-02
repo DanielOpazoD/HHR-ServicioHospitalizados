@@ -185,7 +185,16 @@ export const DemographicsOriginSection: React.FC<DemographicsOriginSectionProps>
             <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wide ml-1">
               Hora de ingreso
             </label>
-            <div className="grid grid-cols-[1.2fr_0.9fr_0.9fr] gap-2">
+            <div
+              role="group"
+              aria-label="Configuración de hora de ingreso"
+              className={clsx(
+                'grid grid-cols-[1.15fr_0.72fr_0.72fr] overflow-hidden rounded-xl border bg-white shadow-sm transition-colors',
+                isMissingRequired('hora de ingreso')
+                  ? 'border-amber-300 bg-amber-50/60'
+                  : 'border-slate-200 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20'
+              )}
+            >
               <input
                 type="text"
                 inputMode="numeric"
@@ -193,10 +202,8 @@ export const DemographicsOriginSection: React.FC<DemographicsOriginSectionProps>
                 aria-invalid={isMissingRequired('hora de ingreso') || undefined}
                 placeholder="14:00"
                 className={clsx(
-                  'w-full px-2.5 py-1.5 border rounded-lg text-[13px] text-slate-700 focus:bg-white focus:ring-2 outline-none shadow-sm transition-all',
-                  isMissingRequired('hora de ingreso')
-                    ? missingRequiredClass
-                    : 'bg-slate-50 border-transparent focus:ring-blue-500/20 focus:border-blue-500'
+                  'w-full border-0 bg-transparent px-2.5 py-1.5 text-[13px] text-slate-700 outline-none transition-colors',
+                  isMissingRequired('hora de ingreso') ? 'focus:bg-amber-50' : 'focus:bg-white'
                 )}
                 value={draftAdmissionTimeText}
                 onChange={updateAdmissionTimeText}
@@ -205,10 +212,8 @@ export const DemographicsOriginSection: React.FC<DemographicsOriginSectionProps>
                 aria-label="Hora de ingreso - horas"
                 aria-invalid={isMissingRequired('hora de ingreso') || undefined}
                 className={clsx(
-                  'w-full px-2.5 py-1.5 border rounded-lg text-[13px] text-slate-700 focus:bg-white focus:ring-2 outline-none shadow-sm transition-all',
-                  isMissingRequired('hora de ingreso')
-                    ? missingRequiredClass
-                    : 'bg-slate-50 border-transparent focus:ring-blue-500/20 focus:border-blue-500'
+                  'w-full border-0 border-l border-slate-200 bg-transparent px-2 py-1.5 text-center text-[13px] text-slate-700 outline-none transition-colors',
+                  isMissingRequired('hora de ingreso') ? 'focus:bg-amber-50' : 'focus:bg-white'
                 )}
                 value={draftAdmissionTime.hour}
                 onChange={updateAdmissionTimePart('hour')}
@@ -224,10 +229,8 @@ export const DemographicsOriginSection: React.FC<DemographicsOriginSectionProps>
                 aria-label="Hora de ingreso - minutos"
                 aria-invalid={isMissingRequired('hora de ingreso') || undefined}
                 className={clsx(
-                  'w-full px-2.5 py-1.5 border rounded-lg text-[13px] text-slate-700 focus:bg-white focus:ring-2 outline-none shadow-sm transition-all',
-                  isMissingRequired('hora de ingreso')
-                    ? missingRequiredClass
-                    : 'bg-slate-50 border-transparent focus:ring-blue-500/20 focus:border-blue-500'
+                  'w-full border-0 border-l border-slate-200 bg-transparent px-2 py-1.5 text-center text-[13px] text-slate-700 outline-none transition-colors',
+                  isMissingRequired('hora de ingreso') ? 'focus:bg-amber-50' : 'focus:bg-white'
                 )}
                 value={draftAdmissionTime.minute}
                 onChange={updateAdmissionTimePart('minute')}
