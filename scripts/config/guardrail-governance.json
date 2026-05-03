@@ -186,6 +186,12 @@
       { "id": "check:test-failure-catalog", "group": "tests" },
       { "id": "check:flaky-quarantine", "group": "tests" },
       { "id": "check:guardrail-governance", "group": "governance" },
+      {
+        "id": "check:report-freshness",
+        "group": "governance",
+        "reportOnly": true,
+        "rationale": "Surfaces stale report artifacts as advisory in the inner loop; ci:release-gate already regenerates and enforces them blocking. Avoids forcing a 30s+ regeneration on every check:quality run."
+      },
       { "id": "check:critical-any", "group": "type-safety" },
       { "id": "check:source-any", "group": "type-safety" },
       { "id": "check:repo-hygiene", "group": "hygiene" },
