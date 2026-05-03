@@ -26,16 +26,14 @@ const ROOT = process.cwd();
 const FEATURES_ROOT = path.join(ROOT, 'src', 'features');
 const ALLOWLIST_PATH = path.join(ROOT, 'scripts', 'feature-public-api-allowlist.json');
 
-// Features that already have their own dedicated check script — leave them
-// untouched here so we do not duplicate work or shadow more specific rules.
-const FEATURES_WITH_DEDICATED_CHECK = new Set([
-  'auth',
-  'census',
-  'clinical-documents',
-  'handoff',
-  'transfers',
-  'wound-care',
-]);
+// Features that keep a dedicated check script because they need
+// configuration (extraPublicModules, allowException) the generic runner
+// does not expose. Keep them out of this check so they do not run twice.
+//
+// Features previously listed here but with trivial 4-line dedicated scripts
+// (auth, handoff, transfers, wound-care) were migrated to this generic
+// check and their dedicated scripts were removed to reduce duplication.
+const FEATURES_WITH_DEDICATED_CHECK = new Set(['census', 'clinical-documents']);
 
 const allowlist = fs.existsSync(ALLOWLIST_PATH)
   ? JSON.parse(fs.readFileSync(ALLOWLIST_PATH, 'utf8'))
