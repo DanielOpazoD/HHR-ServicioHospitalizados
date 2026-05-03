@@ -33,6 +33,16 @@ jobs:
       - name: Generate governance and report snapshots
         run: npm run report:governance-snapshots
 
+      - name: Enforce canonical reports are fresh after regeneration
+        # If this fails after `report:governance-snapshots` succeeded, a
+        # report generator silently dropped a snapshot or recorded a
+        # stale gitSha. We want CI to surface that as a hard failure
+        # rather than the local advisory in check:quality, so
+        # `system-confidence` and friends only ever show "degraded" for
+        # substantive reasons (real indicator failures), never because
+        # the artifact itself was stale.
+        run: npm run check:report-freshness
+
       - name: Run architecture and security quality checks
         run: npm run check:quality
 
@@ -66,6 +76,18 @@ jobs:
         with:
           name: runtime-contracts
           path: reports/runtime-contracts.*
+          retention-days: 30
+
+      - name: Upload system confidence + release readiness artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: confidence-and-readiness
+          path: |
+            reports/system-confidence.*
+            reports/release-readiness-scorecard.*
+            reports/release-confidence-matrix.*
+            reports/maintenance-debt-scorecard.*
           retention-days: 30
 
   unit-risk:
