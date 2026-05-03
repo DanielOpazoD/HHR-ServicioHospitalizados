@@ -9,8 +9,7 @@ import { useDailyRecordBedActions } from '@/context/useDailyRecordScopedActions'
 import { ViewLoader } from '@/components/ui/ViewLoader';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 import { createEmptyPatient } from '@/services/factories/patientFactory';
-import { hasMeaningfulPatientIdentity } from '@/features/census/controllers/patientIdentityController';
-import { resolvePureAdmissionInput } from '@/features/census/controllers/admitPatientGate';
+import { resolveEmptyBedSaveAction } from '@/features/census/controllers/admitPatientGate';
 import { useAdmitPatient } from '@/hooks/useAdmitPatient';
 import { useNotification } from '@/context/UIContext';
 import { isFeatureEnabled } from '@/services/utils/featureFlags';
@@ -77,24 +76,22 @@ export const CensusTable: React.FC<CensusTableProps> = ({
         return;
       }
 
-      if (!hasMeaningfulPatientIdentity(updatedFields)) {
-        closeEmptyBedDemographics();
-        return;
-      }
+      const action = resolveEmptyBedSaveAction({
+        updatedFields,
+        isAdmitCommandEnabled: isFeatureEnabled('USE_ADMIT_PATIENT_COMMAND'),
+      });
 
-      // Canonical command path (gated): only when the save is exactly an
-      // admission (patientName + rut + admissionDate, optional pathology)
-      // and the rollout flag is enabled. Mixed edits and the default OFF
-      // state fall through to the legacy dispatch untouched.
-      if (isFeatureEnabled('USE_ADMIT_PATIENT_COMMAND')) {
-        const pureAdmission = resolvePureAdmissionInput(updatedFields);
-        if (pureAdmission) {
+      switch (action.kind) {
+        case 'noop':
+          closeEmptyBedDemographics();
+          return;
+        case 'admit-command': {
           const outcome = await admitPatient({
             bedId: activeEmptyBedId,
-            patientName: pureAdmission.patientName,
-            rut: pureAdmission.rut,
-            admissionDate: pureAdmission.admissionDate,
-            pathology: pureAdmission.pathology,
+            patientName: action.input.patientName,
+            rut: action.input.rut,
+            admissionDate: action.input.admissionDate,
+            pathology: action.input.pathology,
             recordDate: currentDateString,
           });
           if (outcome.status.status === 'ready' || outcome.status.status === 'degraded') {
@@ -119,10 +116,11 @@ export const CensusTable: React.FC<CensusTableProps> = ({
           );
           return;
         }
+        case 'legacy-dispatch':
+          updatePatientMultiple(activeEmptyBedId, action.input);
+          closeEmptyBedDemographics();
+          return;
       }
-
-      updatePatientMultiple(activeEmptyBedId, updatedFields);
-      closeEmptyBedDemographics();
     },
     [
       activeEmptyBedId,

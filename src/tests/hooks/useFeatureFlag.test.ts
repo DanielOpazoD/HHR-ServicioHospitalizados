@@ -87,7 +87,7 @@ describe('useAllFeatureFlags', () => {
       SHOW_CUDYR_PRINT: true,
       ENABLE_OPTIMISTIC_UPDATES: true,
       ENABLE_OFFLINE_MODE: false,
-      USE_ADMIT_PATIENT_COMMAND: false,
+      USE_ADMIT_PATIENT_COMMAND: true,
       ENABLE_WHATSAPP_INTEGRATION: false,
       ENABLE_EMAIL_NOTIFICATIONS: true,
       VERBOSE_LOGGING: false,

@@ -23,6 +23,7 @@
  * feature flag (off by default).
  */
 import type { PatientData } from '@/features/census/components/patient-row/patientRowContracts';
+import { hasMeaningfulPatientIdentity } from '@/features/census/controllers/patientIdentityController';
 
 export interface PureAdmissionInput {
   patientName: string;
@@ -77,4 +78,45 @@ export const resolvePureAdmissionInput = (
     admissionDate: (updatedFields.admissionDate ?? '').trim(),
     pathology: typeof pathology === 'string' ? pathology : undefined,
   };
+};
+
+/**
+ * Single source of truth for the empty-bed save routing decision used by
+ * `CensusTable.saveEmptyBedDemographics`. Returning a tagged action keeps
+ * the dispatch logic pure (no React, no feature-flag singleton, no
+ * notifications) so it can be exhaustively unit-tested without rendering
+ * the table tree.
+ *
+ *  - `noop`           → the modal collected nothing meaningful; just close
+ *                       it without writing.
+ *  - `admit-command`  → flag enabled AND the input is exactly an admission;
+ *                       caller awaits `useAdmitPatient` and surfaces the
+ *                       typed outcome.
+ *  - `legacy-dispatch` → flag disabled OR the input mixes non-admission
+ *                       fields; caller delegates to `updatePatientMultiple`.
+ */
+export type EmptyBedSaveAction =
+  | { kind: 'noop' }
+  | { kind: 'admit-command'; input: PureAdmissionInput }
+  | { kind: 'legacy-dispatch'; input: Partial<PatientData> };
+
+export const resolveEmptyBedSaveAction = ({
+  updatedFields,
+  isAdmitCommandEnabled,
+}: {
+  updatedFields: Partial<PatientData>;
+  isAdmitCommandEnabled: boolean;
+}): EmptyBedSaveAction => {
+  if (!hasMeaningfulPatientIdentity(updatedFields)) {
+    return { kind: 'noop' };
+  }
+
+  if (isAdmitCommandEnabled) {
+    const pureAdmission = resolvePureAdmissionInput(updatedFields);
+    if (pureAdmission) {
+      return { kind: 'admit-command', input: pureAdmission };
+    }
+  }
+
+  return { kind: 'legacy-dispatch', input: updatedFields };
 };
