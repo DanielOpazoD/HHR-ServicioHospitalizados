@@ -14,6 +14,10 @@ import type { AuditLogEntry } from '@/types/auditLogTypes';
 import type { MedicalHandoffAuditActor, PatientData } from '@/hooks/contracts/patientHookContracts';
 import { canEditMedicalHandoffForDate } from '@/shared/access/operationalAccessPolicy';
 import {
+  buildEntryDeleteAuditPayload,
+  buildEntryNoteChangeAuditPayload,
+  buildEntryRefreshAuditPayload,
+  buildPrimaryNoteChangeAuditPayload,
   createMedicalFieldsPersister,
   isSuccessfulMedicalHandoffOutcome,
   resolveMedicalHandoffMutationContext,
@@ -117,16 +121,12 @@ export const useMedicalHandoffHandlers = ({
         'MEDICAL_HANDOFF_MODIFIED',
         'patient',
         bedId,
-        {
-          patientName: patient?.patientName || (isNested ? 'Cuna' : 'ANONYMOUS'),
-          note: value,
-          changes: {
-            medicalHandoffNote: {
-              old: outcome.data.previousEntry?.note || '',
-              new: value,
-            },
-          },
-        },
+        buildPrimaryNoteChangeAuditPayload({
+          patient,
+          isNested,
+          value,
+          previousNote: outcome.data.previousEntry?.note || '',
+        }),
         patient?.rut,
         recordDate,
         undefined,
@@ -166,17 +166,12 @@ export const useMedicalHandoffHandlers = ({
         'MEDICAL_HANDOFF_MODIFIED',
         'patient',
         bedId,
-        {
-          patientName: patient?.patientName || '',
+        buildEntryNoteChangeAuditPayload({
+          patient,
           specialty: outcome.data.entry?.specialty,
-          note: value,
-          changes: {
-            medicalHandoffNote: {
-              old: outcome.data.previousEntry?.note || '',
-              new: value,
-            },
-          },
-        },
+          value,
+          previousNote: outcome.data.previousEntry?.note || '',
+        }),
         patient?.rut,
         recordDate,
         undefined,
@@ -266,17 +261,11 @@ export const useMedicalHandoffHandlers = ({
         'MEDICAL_HANDOFF_MODIFIED',
         'patient',
         bedId,
-        {
-          patientName: patient?.patientName || '',
+        buildEntryDeleteAuditPayload({
+          patient,
           specialty: outcome.data.entry?.specialty,
-          operation: 'delete_medical_handoff_entry',
-          changes: {
-            medicalHandoffNote: {
-              old: outcome.data.previousEntry?.note || '',
-              new: '',
-            },
-          },
-        },
+          previousNote: outcome.data.previousEntry?.note || '',
+        }),
         patient?.rut,
         recordDate,
         undefined,
@@ -312,17 +301,12 @@ export const useMedicalHandoffHandlers = ({
           'MEDICAL_HANDOFF_MODIFIED',
           'patient',
           bedId,
-          {
-            patientName: patient?.patientName || '',
+          buildEntryRefreshAuditPayload({
+            patient,
             specialty: outcome.data.entry?.specialty,
-            operation: 'refresh_medical_entry_as_current',
-            changes: {
-              medicalHandoffNoteTimestamp: {
-                old: outcome.data.previousEntry?.updatedAt || '',
-                new: outcome.data.entry?.updatedAt || '',
-              },
-            },
-          },
+            previousUpdatedAt: outcome.data.previousEntry?.updatedAt || '',
+            newUpdatedAt: outcome.data.entry?.updatedAt || '',
+          }),
           patient?.rut,
           recordDate,
           undefined,
