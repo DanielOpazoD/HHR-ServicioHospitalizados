@@ -90,6 +90,35 @@ describe('woundCareMobileUploadSessionUseCases', () => {
     ).resolves.toMatchObject({ status: 'failed' });
   });
 
+  it('default session id generator uses crypto.getRandomValues with 128-bit entropy', async () => {
+    vi.useRealTimers();
+    sessionPort.create.mockImplementation(async created => created);
+
+    const baseInput = {
+      hospitalId: 'hanga_roa',
+      episodeContext: {
+        episodeKey: '12345678-9__2026-05-02',
+        patientRut: '12345678-9',
+        patientName: 'Paciente Test',
+      },
+      actor,
+    };
+
+    const ids = new Set<string>();
+    for (let i = 0; i < 200; i += 1) {
+      // No generateSessionId injected → exercises the default CSPRNG path.
+      const result = await executeCreateWoundCareMobileUploadSession(baseInput, { sessionPort });
+      expect(result.status).toBe('success');
+      ids.add(result.data?.sessionId ?? '');
+    }
+
+    expect(ids.size).toBe(200);
+    for (const id of ids) {
+      // Format contract: prefix + 32 hex chars (16 bytes).
+      expect(id).toMatch(/^wcu_[0-9a-f]{32}$/);
+    }
+  });
+
   it('revokes the session with the requesting actor', async () => {
     sessionPort.revoke.mockResolvedValueOnce(undefined);
 
