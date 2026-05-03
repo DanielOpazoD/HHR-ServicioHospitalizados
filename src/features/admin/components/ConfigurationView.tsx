@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import { useAuth } from '@/context/AuthContext';
 import { useTableConfig } from '@/context/TableConfigContext';
 import { useUISettings } from '@/context/UISettingsContext';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
+import { useConfirmDialog, useNotification } from '@/context/UIContext';
 import { AccessRestricted } from './internal/AccessRestricted';
 import RoleManagementView from './RoleManagementView';
 import {
@@ -26,6 +26,8 @@ type ConfigurationTab = 'VISUAL' | 'TABLE' | 'SECURITY' | 'ROLES' | 'CLINICAL_TE
 // (roles, clinical templates) as tabs on a single page.
 export const ConfigurationView: React.FC = () => {
   const { role } = useAuth();
+  const { confirm } = useConfirmDialog();
+  const { notify } = useNotification();
   const [activeTab, setActiveTab] = useState<ConfigurationTab>('VISUAL');
   const {
     config,
@@ -52,20 +54,31 @@ export const ConfigurationView: React.FC = () => {
     if (file) {
       try {
         await importConfig(file);
-        defaultBrowserWindowRuntime.alert('Configuración importada correctamente');
+        notify({
+          type: 'success',
+          title: 'Configuración importada',
+          message: 'La configuración se aplicó correctamente.',
+        });
       } catch {
-        defaultBrowserWindowRuntime.alert('Error al importar: archivo inválido');
+        notify({
+          type: 'error',
+          title: 'Importación inválida',
+          message: 'El archivo no se pudo procesar.',
+        });
       }
       event.target.value = '';
     }
   };
 
-  const handleReset = () => {
-    if (
-      defaultBrowserWindowRuntime.confirm(
-        '¿Está seguro de resetear la configuración de columnas a valores por defecto?'
-      )
-    ) {
+  const handleReset = async () => {
+    const confirmed = await confirm({
+      title: 'Resetear configuración de columnas',
+      message: '¿Está seguro de resetear la configuración de columnas a valores por defecto?',
+      confirmText: 'Resetear',
+      cancelText: 'Cancelar',
+      variant: 'warning',
+    });
+    if (confirmed) {
       resetToDefaults();
     }
   };
