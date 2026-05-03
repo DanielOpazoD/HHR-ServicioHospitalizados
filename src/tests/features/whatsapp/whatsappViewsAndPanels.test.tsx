@@ -8,6 +8,21 @@ const mockGetMessageTemplates = vi.fn();
 const mockFormatHandoffMessage = vi.fn();
 const mockSaveMessageTemplates = vi.fn();
 
+vi.mock('@/context/UIContext', () => ({
+  useConfirmDialog: () => ({
+    confirm: vi.fn().mockResolvedValue(true),
+  }),
+  useNotification: () => ({
+    notify: vi.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
+    warning: vi.fn(),
+    info: vi.fn(),
+    dismiss: vi.fn(),
+    dismissAll: vi.fn(),
+  }),
+}));
+
 vi.mock('@/services/integrations/whatsapp/whatsappService', () => ({
   sendWhatsAppMessage: (...args: unknown[]) => mockSendWhatsAppMessage(...args),
   getWhatsAppConfig: (...args: unknown[]) => mockGetWhatsAppConfig(...args),
