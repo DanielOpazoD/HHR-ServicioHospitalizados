@@ -164,14 +164,17 @@ describe('exportService', () => {
       expect(result.data.imported).toBe(true);
     });
 
-    it('rejects invalid JSON', async () => {
+    it('rejects invalid JSON via outcome (no native alert)', async () => {
       const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
 
       const file = new File(['[{"invalid": true}]'], 'backup.json');
       const result = await importDataJSON(file);
 
+      // Service no longer renders UI; it returns false through the outcome
+      // contract and the caller (executeImportJsonBackup → UI consumer)
+      // presents the failure via useNotification.
       expect(result).toBe(false);
-      expect(alertSpy).toHaveBeenCalled();
+      expect(alertSpy).not.toHaveBeenCalled();
     });
 
     it('reports repaired imports without failing', async () => {

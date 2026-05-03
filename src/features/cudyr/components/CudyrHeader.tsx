@@ -12,7 +12,7 @@ import clsx from 'clsx';
 import { PdfViewerModal } from '@/components/shared/PdfViewerModal';
 import { formatTimeHHMM } from '@/utils/dateDisplayUtils';
 import { cudyrExportLogger } from '@/services/cudyr/cudyrLoggers';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
+import { useNotification } from '@/context/UIContext';
 import type { CategoryCounts, CudyrCategory } from '@/services/cudyr/cudyrSummary';
 
 // ---------------------------------------------------------------------------
@@ -78,6 +78,7 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
   updatedAt,
   categoryCounts,
 }) => {
+  const { error: notifyError } = useNotification();
   const [isExporting, setIsExporting] = useState(false);
   const [isInstrumentOpen, setIsInstrumentOpen] = useState(false);
 
@@ -90,11 +91,16 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
     try {
       const [year, month] = currentDate.split('-').map(Number);
       const { generateCudyrMonthlyExcel } = await import('@/services/cudyr/cudyrExportService');
-      await generateCudyrMonthlyExcel(year, month, currentDate);
+      const result = await generateCudyrMonthlyExcel(year, month, currentDate);
+      if (result.outcome === 'failed') {
+        cudyrExportLogger.error(`Monthly CUDYR Excel rejected by validation: ${result.reason}`);
+        notifyError('No se pudo generar el Excel CUDYR', result.userSafeMessage);
+      }
     } catch (error) {
       cudyrExportLogger.error('Error exporting monthly CUDYR Excel', error);
-      defaultBrowserWindowRuntime.alert(
-        'Error al exportar el resumen mensual CUDYR. Por favor intente nuevamente.'
+      notifyError(
+        'Error al exportar CUDYR',
+        'No fue posible exportar el resumen mensual. Por favor intenta nuevamente.'
       );
     } finally {
       setIsExporting(false);

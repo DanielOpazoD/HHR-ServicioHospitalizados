@@ -12,7 +12,7 @@ import { SpecialtyBreakdownTable } from './internal/SpecialtyBreakdownTable';
 import { OccupancyTrendChart } from './internal/OccupancyTrendChart';
 import { resolveAnalyticsPresentationCopy } from '@/features/analytics/controllers/minsalAnalyticsPresentationController';
 import { formatDateDDMMYYYY } from '@/utils/dateDisplayUtils';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
+import { useNotification } from '@/context/UIContext';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 
 interface AnalyticsViewProps {
@@ -23,6 +23,7 @@ const analyticsViewLogger = createScopedLogger('AnalyticsView');
 
 export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onOpenCensusDate }) => {
   const copy = resolveAnalyticsPresentationCopy();
+  const { error: notifyError } = useNotification();
   const {
     stats,
     trendData,
@@ -40,10 +41,17 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onOpenCensusDate }
     if (!stats) return;
     try {
       const { exportMinsalToExcel } = await import('@/services/exporters/minsalExcelExporter');
-      await exportMinsalToExcel(stats, trendData);
+      const result = await exportMinsalToExcel(stats, trendData);
+      if (result.outcome === 'failed') {
+        analyticsViewLogger.error(`MINSAL Excel rejected by validation: ${result.reason}`);
+        notifyError('No se pudo generar el Excel MINSAL', result.userSafeMessage);
+      }
     } catch (err) {
       analyticsViewLogger.error('Error exporting analytics to Excel', err);
-      defaultBrowserWindowRuntime.alert('Error al exportar el archivo Excel');
+      notifyError(
+        'Error al exportar Excel',
+        'No fue posible generar el archivo. Por favor intenta nuevamente.'
+      );
     }
   };
 
