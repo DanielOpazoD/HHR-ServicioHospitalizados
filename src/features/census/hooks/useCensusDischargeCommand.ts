@@ -8,6 +8,10 @@ import {
   type CensusActionNotification,
 } from '@/features/census/controllers/censusActionNotificationController';
 import { runDischargeWithTransferGuard } from '@/features/census/controllers/censusDischargeTransferGuardController';
+import {
+  dispatchCanonicalDischarge,
+  type DischargeCanonicalAuditEntry,
+} from '@/features/census/controllers/dischargeCanonicalAdoptionController';
 import type { CensusActionRuntimeRefs } from '@/features/census/hooks/useCensusActionRuntimeRefs';
 import { useCensusModalCommand } from '@/features/census/hooks/useCensusModalCommand';
 import { useConfirmedMovementAction } from '@/features/census/hooks/useConfirmedMovementAction';
@@ -16,6 +20,9 @@ import type { DischargeState } from '@/features/census/types/censusActionTypes';
 import { getLatestOpenTransferRequestByBedId } from '@/services/transfers/transferService';
 import { recordCriticalClinicalAction } from '@/services/observability/criticalClinicalActionRecorder';
 import { createScopedLogger } from '@/services/utils/loggerScope';
+import { isFeatureEnabled } from '@/services/utils/featureFlags';
+import { useAuth } from '@/context/AuthContext';
+import { resolveAuditActor } from '@/context/AuditContext';
 
 const censusDischargeCommandLogger = createScopedLogger('CensusDischargeCommand');
 
@@ -44,6 +51,7 @@ export const useCensusDischargeCommand = ({
   getCurrentTime,
   notifyError,
 }: UseCensusDischargeCommandParams) => {
+  const { currentUser } = useAuth();
   const runConfirmedMovementAction = useConfirmedMovementAction({
     confirm: options =>
       confirmRef.current({
@@ -77,7 +85,24 @@ export const useCensusDischargeCommand = ({
       });
     };
 
-    const executeDischarge = async () => {
+    const buildCanonicalAuditEntries = (): DischargeCanonicalAuditEntry[] => {
+      const bedId = dischargeStateRef.current.bedId;
+      if (!bedId) return [];
+      const bed = recordRef.current?.beds?.[bedId];
+      if (!bed) return [];
+      const status = dischargeStateRef.current.status;
+      if (status !== 'Vivo' && status !== 'Fallecido') return [];
+      return [
+        {
+          bedId,
+          patientName: bed.patientName ?? '',
+          rut: bed.rut ?? '',
+          status,
+        },
+      ];
+    };
+
+    const runLegacyDischarge = (): boolean => {
       const result = executeDischargeController({
         dischargeState: dischargeStateRef.current,
         data,
@@ -91,11 +116,67 @@ export const useCensusDischargeCommand = ({
           errorCode: result.error.code,
         });
         notifyError(buildDischargeErrorNotification(result.error.code, result.error.message));
-        return;
+        return false;
       }
 
       recordDischargeCriticalAction('success');
       setDischargeState(prev => applyDischargePatch(prev, result.value.closeModalPatch));
+      return true;
+    };
+
+    const executeDischarge = async () => {
+      // When the canonical adoption flag is on, the legacy
+      // logDischargeEntries inside addDischarge becomes a no-op (see
+      // usePatientMovementAudit) and the facade owns the
+      // PATIENT_DISCHARGED audit emission with anon rejection +
+      // typed outcome. Persistence still goes through the legacy
+      // pipeline.
+      if (!isFeatureEnabled('USE_DISCHARGE_PATIENT_COMMAND')) {
+        runLegacyDischarge();
+        return;
+      }
+
+      const recordDate = recordRef.current?.date;
+      if (!recordDate) {
+        runLegacyDischarge();
+        return;
+      }
+
+      const auditEntries = buildCanonicalAuditEntries();
+      if (auditEntries.length === 0) {
+        runLegacyDischarge();
+        return;
+      }
+
+      const actor = resolveAuditActor(currentUser);
+      let persistOk = false;
+      const outcome = await dispatchCanonicalDischarge({
+        actor,
+        recordDate,
+        entries: auditEntries,
+        performLegacyPersist: () => {
+          persistOk = runLegacyDischarge();
+          if (!persistOk) {
+            // Surface to the facade so it returns a `failed` outcome
+            // and skips the canonical audit emission.
+            throw new Error('Discharge persistence rejected by legacy pipeline.');
+          }
+        },
+      });
+
+      if (outcome.status.status !== 'ready' && outcome.status.status !== 'degraded' && persistOk) {
+        // Persistence happened but anon/validation rejected → caller
+        // already saw the modal close via runLegacyDischarge. Surface
+        // the userSafeMessage as a notification so the clinician sees
+        // why the canonical audit was blocked.
+        notifyError({
+          title: 'Alta auditoría',
+          message:
+            outcome.applicationOutcome.userSafeMessage ||
+            outcome.applicationOutcome.issues[0]?.message ||
+            'No se pudo registrar el evento canónico de auditoría.',
+        });
+      }
     };
 
     await runDischargeWithTransferGuard({
