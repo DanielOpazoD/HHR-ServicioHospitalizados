@@ -139,7 +139,7 @@ const createIntegrationWrapper = () => {
     wrapChildren: children => (
       <UIProvider>
         <AuthProvider>
-          <AuditProvider userId="test-user">
+          <AuditProvider>
             {/* We don't provide DailyRecordContext here because we verify the hook directly */}
             {children}
           </AuditProvider>

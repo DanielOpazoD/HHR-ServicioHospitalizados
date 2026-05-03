@@ -345,7 +345,7 @@ function customRender(
         <UIProvider>
           <AuthProvider>
             <VersionProvider>
-              <AuditProvider userId="test-user">
+              <AuditProvider>
                 <StaffProvider>
                   <DailyRecordProvider value={mockContext}>{children}</DailyRecordProvider>
                 </StaffProvider>
