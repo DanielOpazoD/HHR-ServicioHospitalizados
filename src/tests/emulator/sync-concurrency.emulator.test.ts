@@ -1,10 +1,13 @@
 /* @flake-safe: Date usage aligns emulator write-window assertions with current execution time. */
+import 'fake-indexeddb/auto';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RulesTestEnvironment, initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { getDoc } from 'firebase/firestore';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
+import type { PatientData } from '@/types/domain/patient';
+import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
 import { resolveFirestoreRulesEmulatorConfig } from '@/tests/security/firestoreRulesEmulatorConfig';
 
 const runEmulatorTests =
@@ -29,6 +32,13 @@ import {
 } from '@/services/storage/firestore/firestoreRecordWrites';
 import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
 import { getRecordDocRef } from '@/services/storage/firestore/firestoreShared';
+import { updatePartial } from '@/services/repositories/dailyRecordRepositoryWriteService';
+import {
+  clearAllRecords,
+  getRecordForDate,
+  saveRecord,
+} from '@/services/storage/indexeddb/indexedDbRecordService';
+import { clearAllSyncQueue, processSyncQueue } from '@/services/storage/sync';
 
 const buildRecord = (date: string, lastUpdated: string): DailyRecord => ({
   date,
@@ -45,6 +55,36 @@ const buildRecord = (date: string, lastUpdated: string): DailyRecord => ({
   activeExtraBeds: [],
   dateTimestamp: Date.parse(`${date}T00:00:00.000Z`),
 });
+
+const buildPatient = (bedId: string, overrides: Partial<PatientData> = {}): PatientData => ({
+  bedId,
+  isBlocked: false,
+  bedMode: 'Cama',
+  hasCompanionCrib: false,
+  patientName: 'Paciente Movido',
+  rut: '22.222.222-2',
+  age: '40a',
+  pathology: 'Diagnostico base',
+  specialty: Specialty.MEDICINA,
+  status: PatientStatus.ESTABLE,
+  admissionDate: '2026-02-10',
+  hasWristband: false,
+  devices: [],
+  surgicalComplication: false,
+  isUPC: false,
+  ...overrides,
+});
+
+const buildEmptyBed = (bedId: string): PatientData =>
+  buildPatient(bedId, {
+    patientName: '',
+    rut: '',
+    age: '',
+    pathology: '',
+    status: PatientStatus.EMPTY,
+    admissionDate: '',
+    hasWristband: true,
+  });
 
 const CURRENT_RECORD_DATE = new Date().toISOString().slice(0, 10);
 
@@ -78,6 +118,8 @@ describeEmulator('Firestore emulator sync concurrency flow', () => {
 
   beforeEach(async () => {
     await testEnv.clearFirestore();
+    await clearAllRecords();
+    await clearAllSyncQueue();
     activeDb = nurseDb;
   });
 
@@ -169,5 +211,76 @@ describeEmulator('Firestore emulator sync concurrency flow', () => {
     const snap = await getDoc(getRecordDocRef(date));
     expect(snap.exists()).toBe(true);
     expect(snap.data()?.beds?.R1?.patientName).toBe('Paciente Parcial');
+  });
+
+  it('auto-merges a conflicted bed move and persists no duplicate patient after retry', async () => {
+    const date = CURRENT_RECORD_DATE;
+    const staleBaseline = isoAt(date, '09:00:00');
+    const remoteUpdated = isoAt(date, '10:00:00');
+    const movedRut = '22.222.222-2';
+
+    const localBaseline = buildRecord(date, staleBaseline);
+    localBaseline.beds = {
+      R1: buildPatient('R1', {
+        patientName: 'Paciente Movido',
+        rut: movedRut,
+        admissionDate: '2026-02-10',
+        pathology: 'Diagnostico base',
+      }),
+      R2: buildEmptyBed('R2'),
+    };
+
+    const remoteStillStale = buildRecord(date, remoteUpdated);
+    remoteStillStale.beds = {
+      R1: buildPatient('R1', {
+        patientName: 'Paciente Movido',
+        rut: movedRut,
+        admissionDate: '2026-02-10',
+        pathology: 'Diagnostico remoto antiguo',
+      }),
+      R2: buildEmptyBed('R2'),
+    };
+
+    await saveRecord(localBaseline);
+    await testEnv.withSecurityRulesDisabled(async context => {
+      await context
+        .firestore()
+        .doc(`hospitals/hanga_roa/dailyRecords/${date}`)
+        .set(remoteStillStale);
+    });
+
+    const movedPatient = {
+      ...localBaseline.beds.R1,
+      bedId: 'R2',
+      location: localBaseline.beds.R2.location,
+    };
+    const clearedSource = {
+      ...localBaseline.beds.R2,
+      bedId: 'R1',
+      location: localBaseline.beds.R1.location,
+    };
+
+    await updatePartial(date, {
+      'beds.R2': movedPatient,
+      'beds.R1': clearedSource,
+    });
+
+    const localAfterConflict = await getRecordForDate(date);
+    expect(localAfterConflict?.beds.R1.patientName).toBe('');
+    expect(localAfterConflict?.beds.R2.patientName).toBe('Paciente Movido');
+
+    await processSyncQueue();
+
+    const persisted = await getRecordFromFirestore(date);
+    expect(persisted?.beds.R1.patientName).toBe('');
+    expect(persisted?.beds.R1.rut).toBe('');
+    expect(persisted?.beds.R2.patientName).toBe('Paciente Movido');
+    expect(persisted?.beds.R2.rut).toBe(movedRut);
+    expect(persisted?.beds.R2.admissionDate).toBe('2026-02-10');
+
+    const matchingBeds = Object.values(persisted?.beds || {}).filter(
+      patient => patient.rut === movedRut
+    );
+    expect(matchingBeds).toHaveLength(1);
   });
 });
