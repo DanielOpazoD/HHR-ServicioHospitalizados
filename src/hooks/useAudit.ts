@@ -8,6 +8,7 @@ import React, { useCallback } from 'react';
 import { AUDIT_ACTION_LABELS } from '@/services/admin/auditConstants';
 import { AuditAction } from '@/types/auditActionTypes';
 import { AuditLogEntry } from '@/types/auditLogTypes';
+import { reportAuditOutcome } from '@/hooks/controllers/auditEventRejectionLogger';
 import {
   buildDebouncedAuditKey,
   buildMeaningfulAuditDetails,
@@ -188,7 +189,7 @@ export const useAudit = (userId: string): UseAuditReturn => {
 
       void (async () => {
         const { executeWriteAuditEvent } = await loadWriteAuditEventUseCase();
-        await executeWriteAuditEvent({
+        const outcome = await executeWriteAuditEvent({
           userId,
           action,
           entityType,
@@ -198,6 +199,7 @@ export const useAudit = (userId: string): UseAuditReturn => {
           recordDate,
           authors,
         });
+        reportAuditOutcome(outcome, { userId, action, entityType, entityId });
       })().catch(() => undefined);
     },
     [userId]

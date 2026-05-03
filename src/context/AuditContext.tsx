@@ -6,16 +6,11 @@
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useAudit } from '@/hooks/useAudit';
 import { useAuth, type AuthUser } from '@/context/AuthContext';
+import { ANONYMOUS_AUDIT_ACTOR } from '@/application/audit/auditActorPolicy';
 import { AuditAction } from '@/types/auditActionTypes';
 import { AuditLogEntry } from '@/types/auditLogTypes';
 
-/**
- * Audit actor used when no authenticated user is in scope (e.g. login page,
- * public routes). Clinical write paths must never persist this value; the
- * upcoming guard in writeAuditEventUseCase rejects clinical actions whose
- * actor is anonymous.
- */
-export const ANONYMOUS_AUDIT_ACTOR = 'anon';
+export { ANONYMOUS_AUDIT_ACTOR };
 
 export const resolveAuditActor = (currentUser: AuthUser | null): string => {
   if (!currentUser) return ANONYMOUS_AUDIT_ACTOR;
