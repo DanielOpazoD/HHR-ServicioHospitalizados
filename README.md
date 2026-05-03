@@ -293,16 +293,27 @@ Artifacts operativos publicados por CI:
 
 ## Baseline de Calidad
 
-Los archivos en `reports/` son snapshots versionados, no el estado vivo del checkout.
+`reports/` está en `.gitignore`. La regla del repo es regenerar los reportes desde el código en cada validación:
 
-Antes de usarlos como evidencia en una revisión técnica, confirma primero:
+- En CI lo hace el job `quality-static` corriendo `npm run report:governance-snapshots` antes de `npm run check:quality`, y publica los archivos como artifacts.
+- En local hay que regenerarlos antes de tratarlos como evidencia.
+
+Snapshots versionados explícitamente (excepción documentada al `.gitignore`, mantenidos a mano):
+
+- [reports/architectural-hotspots.md](reports/architectural-hotspots.md)
+- [reports/legacy-bridge-governance.md](reports/legacy-bridge-governance.md)
+- [reports/runtime-contracts.md](reports/runtime-contracts.md)
+
+Flujo local recomendado antes de citar cualquier otro `reports/*.md` como evidencia:
 
 ```bash
 git status --short
+npm run report:governance-snapshots
+npm run report:maintenance-debt-scorecard
 npm run check:report-freshness
 ```
 
-Si `check:report-freshness` falla o el árbol está sucio, los reportes dejan de ser fuente confiable para describir el estado actual. El snapshot de referencia para métricas estructurales sigue siendo [reports/quality-metrics.md](reports/quality-metrics.md), pero solo después de esa validación.
+Si `check:report-freshness` falla o el árbol está sucio, los reportes dejan de ser fuente confiable para describir el estado actual.
 
 ## Notas Operativas Recientes
 
