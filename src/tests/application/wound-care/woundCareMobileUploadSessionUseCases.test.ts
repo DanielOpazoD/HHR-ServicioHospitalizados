@@ -60,8 +60,12 @@ describe('woundCareMobileUploadSessionUseCases', () => {
       expect.objectContaining({
         sessionId: 'session-1',
         episodeKey: '12345678-9__2026-05-02',
-        expiresAt: '2026-05-02T11:00:00.000Z',
+        // 30-minute TTL (reduced from 60min). Closes the
+        // wound-care-mobile-qr product activo.
+        expiresAt: '2026-05-02T10:30:00.000Z',
         scope: 'wound_care_upload_only',
+        maxUploads: 50,
+        uploadCount: 0,
       }),
       'hanga_roa'
     );
