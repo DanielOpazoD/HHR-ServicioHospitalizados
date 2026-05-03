@@ -13,7 +13,7 @@ import type {
   AdmittedPatientSnapshot,
 } from '@/application/daily-record/commands/admitPatientCommand';
 import { updatePartial } from '@/services/repositories/dailyRecordRepositoryWriteService';
-import type { DailyRecordPatch } from '@/types/domain/dailyRecordPatch';
+import type { DailyRecordPatch } from '@/services/contracts/dailyRecordServiceContracts';
 
 export type AdmitPatientPersistenceFn = (date: string, patch: DailyRecordPatch) => Promise<void>;
 
