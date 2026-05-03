@@ -161,6 +161,30 @@ export const mergeObject = (
   return result;
 };
 
+const hasPatientIdentityOrClinicalContent = (patient: PatientData | undefined): boolean => {
+  if (!patient) return false;
+  const normalizedStatus = String(patient.status || '').trim();
+
+  return Boolean(
+    String(patient.patientName || '').trim() ||
+    String(patient.rut || '').trim() ||
+    String(patient.pathology || '').trim() ||
+    String(patient.admissionDate || '').trim() ||
+    (normalizedStatus && normalizedStatus !== 'EMPTY')
+  );
+};
+
+const isLocallyClearedPatient = (patient: PatientData | undefined): boolean => {
+  if (!patient) return false;
+
+  return (
+    !String(patient.patientName || '').trim() &&
+    !String(patient.rut || '').trim() &&
+    !String(patient.pathology || '').trim() &&
+    !String(patient.admissionDate || '').trim()
+  );
+};
+
 export const mergePatientData = (
   remotePatient: PatientData | undefined,
   localPatient: PatientData | undefined,
@@ -188,6 +212,34 @@ export const mergePatientData = (
   }
   if (!remotePatient && !localPatient) {
     return {} as PatientData;
+  }
+
+  if (
+    preferLocal &&
+    isLocallyClearedPatient(localPatient) &&
+    hasPatientIdentityOrClinicalContent(remotePatient)
+  ) {
+    traceContext?.add({
+      path: pathPrefix,
+      strategy: 'copy_local_value',
+      winner: 'local',
+      reason: 'intentional_local_bed_clear',
+    });
+    return localPatient as PatientData;
+  }
+
+  if (
+    preferLocal &&
+    hasPatientIdentityOrClinicalContent(localPatient) &&
+    !hasPatientIdentityOrClinicalContent(remotePatient)
+  ) {
+    traceContext?.add({
+      path: pathPrefix,
+      strategy: 'copy_local_value',
+      winner: 'local',
+      reason: 'local_patient_replacement',
+    });
+    return localPatient as PatientData;
   }
 
   const remoteRecord = remotePatient as unknown as Record<string, unknown>;

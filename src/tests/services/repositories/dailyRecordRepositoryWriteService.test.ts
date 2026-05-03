@@ -349,6 +349,79 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
     );
   });
 
+  it('auto-merges a bed move without resurrecting the cleared source bed', async () => {
+    const current = buildRecord('2026-02-15');
+    current.beds = {
+      R1: buildPatient('R1', 'Paciente movido'),
+      R2: {
+        ...buildPatient('R2', ''),
+        rut: '',
+        pathology: '',
+        admissionDate: '',
+        status: PatientStatus.EMPTY,
+      },
+    };
+
+    const movedPatient = {
+      ...current.beds.R1,
+      bedId: 'R2',
+    };
+    const clearedSource = {
+      ...current.beds.R2,
+      bedId: 'R1',
+    };
+
+    const remote = buildRecord('2026-02-15');
+    remote.beds = {
+      R1: buildPatient('R1', 'Paciente movido'),
+      R2: {
+        ...buildPatient('R2', ''),
+        rut: '',
+        pathology: '',
+        admissionDate: '',
+        status: PatientStatus.EMPTY,
+      },
+    };
+
+    const concurrencyError = new Error('Concurrency conflict');
+    concurrencyError.name = 'ConcurrencyError';
+
+    vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(current);
+    vi.mocked(updateRecordPartialToFirestore).mockRejectedValueOnce(concurrencyError);
+    vi.mocked(getRecordFromFirestore).mockResolvedValue(remote);
+
+    await expect(
+      updatePartial('2026-02-15', {
+        'beds.R2': movedPatient,
+        'beds.R1': clearedSource,
+      })
+    ).resolves.toBeUndefined();
+
+    expect(queueSyncTask).toHaveBeenCalledWith(
+      'UPDATE_DAILY_RECORD',
+      expect.objectContaining({
+        date: '2026-02-15',
+        beds: expect.objectContaining({
+          R1: expect.objectContaining({
+            patientName: '',
+            rut: '',
+            admissionDate: '',
+            status: PatientStatus.EMPTY,
+          }),
+          R2: expect.objectContaining({
+            patientName: 'Paciente movido',
+            rut: '11.111.111-1',
+            admissionDate: '2026-02-18',
+          }),
+        }),
+      }),
+      expect.objectContaining({
+        contexts: expect.arrayContaining(['clinical']),
+        origin: 'conflict_auto_merge',
+      })
+    );
+  });
+
   it('keeps partial update locally when auto-merge recovery is not possible', async () => {
     const current = buildRecord('2026-02-14');
     current.beds = { R1: buildPatient('R1', 'Paciente local') };
