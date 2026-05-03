@@ -201,6 +201,97 @@ describe('conflictResolutionMatrix', () => {
     expect(resolved.beds.R1.location).toBe('Habitacion A');
   });
 
+  it('preserves an intentional bed clear during automatic merge', () => {
+    const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
+    remote.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: 'Paciente remoto',
+        rut: '11.111.111-1',
+        pathology: 'Diagnostico remoto',
+        admissionDate: '',
+        status: 'Vivo',
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const local = makeRecord('2026-02-18', '2026-02-18T10:05:00.000Z');
+    local.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: '',
+        rut: '',
+        pathology: '',
+        admissionDate: '',
+        status: 'EMPTY',
+        bedMode: 'Cama',
+        hasCompanionCrib: false,
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const resolved = resolveDailyRecordConflict(remote, local, {
+      changedPaths: ['beds.R1'],
+    });
+
+    expect(resolved.beds.R1.patientName).toBe('');
+    expect(resolved.beds.R1.rut).toBe('');
+    expect(resolved.beds.R1.pathology).toBe('');
+    expect(resolved.beds.R1.admissionDate).toBe('');
+  });
+
+  it('does not resurrect the source bed when a move is auto-merged after a remote conflict', () => {
+    const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
+    remote.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: 'Paciente movido',
+        rut: '22.222.222-2',
+        pathology: 'Diagnostico remoto',
+        admissionDate: '2026-02-10',
+        status: 'Vivo',
+      } as unknown as DailyRecord['beds'][string],
+      R2: {
+        bedId: 'R2',
+        patientName: '',
+        rut: '',
+        pathology: '',
+        admissionDate: '',
+        status: 'EMPTY',
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const local = makeRecord('2026-02-18', '2026-02-18T10:05:00.000Z');
+    local.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: '',
+        rut: '',
+        pathology: '',
+        admissionDate: '',
+        status: 'EMPTY',
+        bedMode: 'Cama',
+        hasCompanionCrib: false,
+      } as unknown as DailyRecord['beds'][string],
+      R2: {
+        bedId: 'R2',
+        patientName: 'Paciente movido',
+        rut: '22.222.222-2',
+        pathology: 'Diagnostico remoto',
+        admissionDate: '2026-02-10',
+        status: 'Vivo',
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const resolved = resolveDailyRecordConflict(remote, local, {
+      changedPaths: ['beds.R2', 'beds.R1'],
+    });
+
+    expect(resolved.beds.R1.patientName).toBe('');
+    expect(resolved.beds.R1.rut).toBe('');
+    expect(resolved.beds.R1.status).toBe('EMPTY');
+    expect(resolved.beds.R2.patientName).toBe('Paciente movido');
+    expect(resolved.beds.R2.admissionDate).toBe('2026-02-10');
+  });
+
   it('returns trace with policy version and per-field decisions', () => {
     const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
     remote.beds = {
