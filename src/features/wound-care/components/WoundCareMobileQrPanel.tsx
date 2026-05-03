@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import { Check, Copy, QrCode, RefreshCw, XCircle } from 'lucide-react';
 import type { EpisodeContext } from '@/application/wound-care/woundCareUseCases';
+import { writeClipboardText } from '@/shared/runtime/browserClipboardRuntime';
 import { useWoundCareMobileUploadSession } from '../hooks/useWoundCareMobileUploadSession';
 
 interface WoundCareMobileQrPanelProps {
@@ -14,23 +15,6 @@ const formatExpiry = (expiresAt?: string): string => {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(expiresAt));
-};
-
-const copyTextToClipboard = async (text: string): Promise<void> => {
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(text);
-    return;
-  }
-
-  const textarea = document.createElement('textarea');
-  textarea.value = text;
-  textarea.setAttribute('readonly', 'true');
-  textarea.style.position = 'fixed';
-  textarea.style.opacity = '0';
-  document.body.appendChild(textarea);
-  textarea.select();
-  document.execCommand('copy');
-  document.body.removeChild(textarea);
 };
 
 export const WoundCareMobileQrPanel: React.FC<WoundCareMobileQrPanelProps> = ({
@@ -71,7 +55,7 @@ export const WoundCareMobileQrPanel: React.FC<WoundCareMobileQrPanelProps> = ({
     if (!uploadUrl) return;
 
     try {
-      await copyTextToClipboard(uploadUrl);
+      await writeClipboardText(uploadUrl);
       setCopyStatus('copied');
       window.setTimeout(() => setCopyStatus('idle'), 1800);
     } catch {
