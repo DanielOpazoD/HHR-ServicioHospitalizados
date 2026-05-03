@@ -148,6 +148,7 @@
       { "id": "check:handoff-feature-boundary", "group": "boundaries" },
       { "id": "check:handoff-pdf-contract-boundary", "group": "boundaries" },
       { "id": "check:transfers-feature-boundary", "group": "boundaries" },
+      { "id": "check:feature-public-api-boundary", "group": "boundaries" },
       { "id": "check:lazy-views-feature-entrypoints", "group": "boundaries" },
       { "id": "check:feature-dependencies", "group": "boundaries" },
       { "id": "check:shared-layer-boundary", "group": "boundaries" },
