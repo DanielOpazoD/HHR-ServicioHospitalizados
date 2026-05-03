@@ -1,6 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, render, fireEvent, within } from '@testing-library/react';
 import React from 'react';
+
+vi.mock('@/context/UIContext', () => ({
+  useNotification: () => ({
+    notify: vi.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
+    warning: vi.fn(),
+    info: vi.fn(),
+    dismiss: vi.fn(),
+    dismissAll: vi.fn(),
+  }),
+}));
+
 import { CudyrView } from '@/features/cudyr/components/CudyrView';
 import { DataFactory } from '../../factories/DataFactory';
 import type { DailyRecord } from '@/types/domain/dailyRecord';

@@ -3,6 +3,18 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { restoreConsole, suppressConsole } from '@/tests/utils/consoleTestUtils';
 
+vi.mock('@/context/UIContext', () => ({
+  useNotification: () => ({
+    notify: vi.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
+    warning: vi.fn(),
+    info: vi.fn(),
+    dismiss: vi.fn(),
+    dismissAll: vi.fn(),
+  }),
+}));
+
 vi.mock('@/hooks/useMinsalStats', () => ({
   useMinsalStats: () => ({
     stats: {

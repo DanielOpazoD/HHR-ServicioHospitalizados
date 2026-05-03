@@ -1,5 +1,18 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
+
+vi.mock('@/context/UIContext', () => ({
+  useNotification: () => ({
+    notify: vi.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
+    warning: vi.fn(),
+    info: vi.fn(),
+    dismiss: vi.fn(),
+    dismissAll: vi.fn(),
+  }),
+}));
+
 import { CudyrHeader } from '@/features/cudyr/components/CudyrHeader';
 
 vi.mock('lucide-react', () => ({
