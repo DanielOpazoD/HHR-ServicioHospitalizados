@@ -743,7 +743,42 @@
 .clinical-document-rich-text-editor ul,
 .clinical-document-rich-text-editor ol {
   margin: 0;
-  padding-left: 20px;
+  padding-left: 28px;
+  list-style-position: outside;
+}
+
+.clinical-document-rich-text-editor ul {
+  list-style-type: disc;
+}
+
+.clinical-document-rich-text-editor ol {
+  list-style-type: decimal;
+}
+
+.clinical-document-rich-text-editor ul ul {
+  list-style-type: circle;
+}
+
+.clinical-document-rich-text-editor ul ul ul {
+  list-style-type: square;
+}
+
+.clinical-document-rich-text-editor li {
+  display: list-item;
+}
+
+/* Indicaciones al alta (modo simplificado y subsecciones): viñeta = guión, sin sangría */
+.clinical-document-rich-text-editor[data-section-editor='plan'] ul,
+.clinical-document-rich-text-editor[data-section-editor^='plan:'] ul {
+  list-style-type: '- ';
+  list-style-position: inside;
+  padding-left: 0;
+}
+
+.clinical-document-rich-text-editor[data-section-editor='plan'] ul ul,
+.clinical-document-rich-text-editor[data-section-editor^='plan:'] ul ul {
+  list-style-type: '- ';
+  padding-left: 14px;
 }
 
 .clinical-document-rich-text-editor blockquote {

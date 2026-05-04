@@ -6,8 +6,8 @@ import { createClinicalDocumentDraft } from '@/features/clinical-documents/domai
 import { getDefaultClinicalDocumentIndicationsCatalog } from '@/features/clinical-documents/services/clinicalDocumentIndicationsCatalogService';
 import { getClinicalDocumentPlanSubsectionTitle } from '@/features/clinical-documents/controllers/clinicalDocumentPlanSectionController';
 
-const buildDocument = () =>
-  createClinicalDocumentDraft({
+const buildDocument = () => {
+  const draft = createClinicalDocumentDraft({
     templateId: 'epicrisis',
     hospitalId: 'hhr',
     actor: {
@@ -37,6 +37,15 @@ const buildDocument = () =>
     medico: 'Doctor Test',
     especialidad: 'Cirugía',
   });
+  // The default plan layout is 'unified' (single editor); these tests assert
+  // the 3-subsection split layout, so opt in explicitly here.
+  return {
+    ...draft,
+    sections: draft.sections.map(section =>
+      section.id === 'plan' ? { ...section, layout: 'structured' as const } : section
+    ),
+  };
+};
 
 const buildToolbar = (handlers: { onPrint: () => void; onRestoreTemplate: () => void }) => (
   <>

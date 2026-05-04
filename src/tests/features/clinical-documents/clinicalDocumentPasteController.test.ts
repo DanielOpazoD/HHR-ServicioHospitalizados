@@ -71,6 +71,23 @@ describe('classifyPasteContent', () => {
     }
   });
 
+  it('strips background-color highlights coming from external sources but keeps text color', () => {
+    const dt = buildMockDataTransfer({
+      htmlData: '<span style="color: red; background-color: yellow">Texto resaltado</span>',
+      textData: 'Texto resaltado',
+    });
+
+    const result = classifyPasteContent(dt);
+
+    expect(result.kind).toBe('html');
+    if (result.kind === 'html') {
+      expect(result.sanitizedHtml).toContain('Texto resaltado');
+      expect(result.sanitizedHtml).toContain('color: red');
+      expect(result.sanitizedHtml).not.toContain('background-color');
+      expect(result.sanitizedHtml).not.toContain('yellow');
+    }
+  });
+
   it('strips Word and Outlook clipboard wrappers before sanitising HTML', () => {
     const dt = buildMockDataTransfer({
       htmlData: '<!--StartFragment--><p class="MsoNormal">Informe<o:p></o:p></p><!--EndFragment-->',

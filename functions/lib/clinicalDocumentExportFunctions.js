@@ -5,7 +5,7 @@ const { HOSPITAL_ID } = require('./runtime/runtimeConfig');
 
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive';
 const FOLDER_MIME_TYPE = 'application/vnd.google-apps.folder';
-const EXPORT_ALLOWED_ROLES = new Set(['admin', 'doctor_urgency']);
+const EXPORT_ALLOWED_ROLES = new Set(['admin', 'doctor_urgency', 'doctor_specialist']);
 const SPANISH_MONTH_NAMES = [
   'Enero',
   'Febrero',
