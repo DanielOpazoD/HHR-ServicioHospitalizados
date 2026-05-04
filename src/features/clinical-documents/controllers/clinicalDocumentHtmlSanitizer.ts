@@ -86,15 +86,22 @@ export const LINK_ALLOWED_STYLE_KEYS = new Set([...ALLOWED_STYLE_KEYS, 'text-dec
  *
  * @param element - The HTML element to read styles from
  * @param tagName - Uppercase tag name (used to select the style whitelist)
+ * @param options - Optional flags. `forPaste` strips highlight-style background
+ *   colors so external sources (e.g. Word, web pages) cannot inject coloured
+ *   highlights into the document.
  * @returns Sanitized style string, or empty string if none allowed
  */
-export const sanitizeElementStyle = (element: HTMLElement, tagName?: string): string => {
+export const sanitizeElementStyle = (
+  element: HTMLElement,
+  tagName?: string,
+  options: { forPaste?: boolean } = {}
+): string => {
   const rawStyle = element.getAttribute('style');
   if (!rawStyle) {
     return '';
   }
 
-  const allowedKeys =
+  const baseAllowedKeys =
     tagName === 'IMG'
       ? IMAGE_ALLOWED_STYLE_KEYS
       : tagName === 'A'
@@ -102,6 +109,10 @@ export const sanitizeElementStyle = (element: HTMLElement, tagName?: string): st
         : tagName === 'DIV' || tagName === 'P' || tagName === 'BLOCKQUOTE'
           ? BLOCK_ALLOWED_STYLE_KEYS
           : ALLOWED_STYLE_KEYS;
+
+  const allowedKeys = options.forPaste
+    ? new Set([...baseAllowedKeys].filter(key => key !== 'background-color'))
+    : baseAllowedKeys;
 
   return rawStyle
     .split(';')

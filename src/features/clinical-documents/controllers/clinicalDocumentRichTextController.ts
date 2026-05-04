@@ -298,7 +298,7 @@ export const sanitizePastedHtml = (html: string): string => {
     }
 
     const clone = document.createElement(tagName.toLowerCase());
-    const safeStyle = sanitizeElementStyle(element, tagName);
+    const safeStyle = sanitizeElementStyle(element, tagName, { forPaste: true });
     if (safeStyle) {
       clone.setAttribute('style', safeStyle);
     }

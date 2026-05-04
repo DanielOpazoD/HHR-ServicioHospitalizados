@@ -4,6 +4,10 @@ import type { ClinicalDocumentSpecialSectionRendererProps } from '@/features/cli
 import { ClinicalDocumentRichTextEditor } from '@/features/clinical-documents/components/ClinicalDocumentRichTextEditor';
 import { ClinicalDocumentPlanSection } from '@/features/clinical-documents/components/ClinicalDocumentPlanSection';
 import {
+  resolveClinicalDocumentEmptySectionTemplate,
+  resolveClinicalDocumentMandatoryListType,
+} from '@/features/clinical-documents/controllers/clinicalDocumentEmptySectionTemplateController';
+import {
   getClinicalDocumentDefinition,
   type ClinicalDocumentSectionRendererId,
 } from '@/features/clinical-documents/domain/definitions';
@@ -28,6 +32,8 @@ export const renderClinicalDocumentSectionContent = (
         sectionId={props.section.id}
         sectionTitle={props.section.title}
         value={props.section.content}
+        emptyTemplate={resolveClinicalDocumentEmptySectionTemplate(props.section.id)}
+        mandatoryListType={resolveClinicalDocumentMandatoryListType(props.section.id)}
         onChange={content => props.onPatchSection(props.section.id, content)}
         onActivate={props.onEditorActivate}
         onDeactivate={props.onEditorDeactivate}

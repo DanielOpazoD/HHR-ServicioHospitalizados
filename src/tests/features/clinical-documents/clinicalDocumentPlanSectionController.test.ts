@@ -79,4 +79,27 @@ describe('clinicalDocumentPlanSectionController', () => {
     expect(parsed.farmacologicas).toBe('');
     expect(parsed.control_clinico).toBe('');
   });
+
+  it('defaults an empty plan section to the simplified (unified) layout', () => {
+    expect(resolveClinicalDocumentPlanSectionLayout({ content: '', layout: undefined })).toBe(
+      'unified'
+    );
+  });
+
+  it('preserves the structured layout when content already has recognized headings', () => {
+    const structured = buildClinicalDocumentPlanSectionContent({
+      generales: '<div>Reposo</div>',
+      farmacologicas: '',
+      control_clinico: '',
+    });
+    expect(
+      resolveClinicalDocumentPlanSectionLayout({ content: structured, layout: undefined })
+    ).toBe('structured');
+  });
+
+  it('honors an explicit layout override even when content is empty', () => {
+    expect(resolveClinicalDocumentPlanSectionLayout({ content: '', layout: 'structured' })).toBe(
+      'structured'
+    );
+  });
 });

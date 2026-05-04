@@ -194,6 +194,7 @@ export const ClinicalDocumentFormattingToolbar: React.FC<
       <ToolbarCluster label="Formato">
         <button
           type="button"
+          onMouseDown={event => event.preventDefault()}
           onClick={onToggleFormatting}
           disabled={!editEnabled}
           aria-pressed={isFormattingOpen}

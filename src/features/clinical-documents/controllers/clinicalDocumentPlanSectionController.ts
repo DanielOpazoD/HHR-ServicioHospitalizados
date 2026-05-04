@@ -185,14 +185,19 @@ export const parseClinicalDocumentPlanSectionContent = (
 
 /**
  * Determines whether a plan section should render as "unified" or "structured" layout.
+ *
+ * Default is `'unified'` (simplified, single editor). Legacy documents that
+ * already contain the recognized subsection headings stay as `'structured'` so
+ * pre-existing content keeps its 3-section shape. An explicit `section.layout`
+ * always wins over both inferences.
+ *
  * @param section - Section with content and optional layout override.
  * @returns The resolved layout mode.
  */
 export const resolveClinicalDocumentPlanSectionLayout = (
   section: Pick<ClinicalDocumentSection, 'content' | 'layout'>
 ): ClinicalDocumentSectionLayout =>
-  section.layout ||
-  (section.content.trim() && !hasRecognizedPlanHeading(section.content) ? 'unified' : 'structured');
+  section.layout || (hasRecognizedPlanHeading(section.content) ? 'structured' : 'unified');
 
 const nodeToHtml = (node: ChildNode): string => {
   if (typeof document === 'undefined') {
