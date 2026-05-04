@@ -28,7 +28,7 @@
 
 import { executeWriteAuditEvent } from '@/application/audit/writeAuditEventUseCase';
 import { isAnonymousActor } from '@/application/audit/auditActorPolicy';
-import { ClinicalDocumentRepository } from '@/services/repositories/ClinicalDocumentRepository';
+import { executeLockClinicalDocumentsByEpisode } from '@/application/clinical-documents/lockClinicalDocumentsByEpisodeUseCase';
 import {
   createApplicationDegraded,
   createApplicationFailed,
@@ -119,10 +119,25 @@ export interface DischargeCanonicalDispatchDeps {
   writeAuditEvent?: typeof executeWriteAuditEvent;
   /**
    * Allows tests (or future alternate implementations) to inject a
-   * different lock implementation. Defaults to the production repository.
+   * different lock implementation. Defaults to the production use case.
    */
-  lockDocumentsByEpisodeKey?: typeof ClinicalDocumentRepository.lockDocumentsByEpisodeKey;
+  lockDocumentsByEpisodeKey?: (
+    episodeKey: string,
+    hospitalId: string | undefined,
+    options: { lockedAt?: string }
+  ) => Promise<string[]>;
 }
+
+const defaultLockDocumentsByEpisodeKey = (
+  episodeKey: string,
+  hospitalId: string | undefined,
+  options: { lockedAt?: string }
+): Promise<string[]> =>
+  executeLockClinicalDocumentsByEpisode({
+    episodeKey,
+    hospitalId,
+    lockedAt: options.lockedAt,
+  });
 
 export const dispatchCanonicalDischarge = async (
   input: DischargeCanonicalDispatchInput,
@@ -168,8 +183,7 @@ export const dispatchCanonicalDischarge = async (
   }
 
   const writeAudit = deps.writeAuditEvent ?? executeWriteAuditEvent;
-  const lockDocuments =
-    deps.lockDocumentsByEpisodeKey ?? ClinicalDocumentRepository.lockDocumentsByEpisodeKey;
+  const lockDocuments = deps.lockDocumentsByEpisodeKey ?? defaultLockDocumentsByEpisodeKey;
   const auditFailures: string[] = [];
   const lockFailures: string[] = [];
 
