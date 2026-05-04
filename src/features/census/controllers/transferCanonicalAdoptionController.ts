@@ -9,8 +9,9 @@
  *   3. PATIENT_TRANSFERRED audit emission via the canonical
  *      writeAuditEventUseCase.
  *
- * Closes `command-layer-transfer` activo without re-implementing the
- * rich transfers persistence machinery inside the canonical pilot.
+ * Keeps the rich transfers persistence machinery untouched while
+ * exposing the canonical surface to the caller. See
+ * ADR_CANONICAL_WRITE_ADOPTION_FACADES.
  */
 
 import { executeWriteAuditEvent } from '@/application/audit/writeAuditEventUseCase';

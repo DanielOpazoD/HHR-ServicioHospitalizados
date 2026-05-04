@@ -70,13 +70,13 @@ sin cambiar la API del hook.
 - Integración: `src/features/census/hooks/useCensusDischargeCommand.ts`,
   `src/features/census/hooks/useCensusTransferCommand.ts`
 
-## Cuándo usar facade vs pilot completo
+## Cuándo usar facade vs comando canónico
 
-| Caso                                         | Patrón                  |
-| -------------------------------------------- | ----------------------- |
-| Mutación nueva sin pipeline legacy rica      | Comando + puerto pilot  |
-| Mutación con pipeline legacy estable y rica  | Adoption facade         |
-| Pipeline legacy frágil que toca refactorizar | Caso por caso (diseñar) |
+| Caso                                         | Patrón                                                      |
+| -------------------------------------------- | ----------------------------------------------------------- |
+| Mutación nueva sin pipeline legacy rica      | Comando canónico + puerto (template: `admitPatientCommand`) |
+| Mutación con pipeline legacy estable y rica  | Adoption facade                                             |
+| Pipeline legacy frágil que toca refactorizar | Caso por caso (diseñar)                                     |
 
 ## Motivo
 
@@ -88,12 +88,17 @@ sea trivial.
 
 ## Consecuencia
 
-- El comando canónico (`dischargePatientCommand`, `transferPatientCommand`)
-  permanece como **prior art / template**: prueba que el contrato canónico
-  generaliza, sirve como referencia para futuras escrituras nuevas.
-- El facade es la **superficie de producción**: thin, enfocada solo en lo
-  que el legacy no cubre.
+- El facade es la **superficie de producción** para discharge/transfer:
+  thin, enfocada solo en lo que el legacy no cubre.
+- Los pilots iniciales `dischargePatientCommand` y `transferPatientCommand`
+  fueron eliminados (audit 2026-05-03) por duplicar 65-70% del código del
+  facade sin tener callers reales. La única referencia viva del patrón
+  canónico es `admitPatientCommand`. Si en el futuro se necesita reanimar
+  un pilot canónico para discharge/transfer (porque el legacy se retira),
+  copiar de `admit`: el costo es ~1h, el ADR canónico contiene la
+  plantilla completa.
 - El flag default OFF significa que el facade está mergeado pero **no
   activo**. Activación requiere E2E manual + flip explícito.
 - Si en el futuro la pipeline legacy se decide retirar, hay que migrar la
-  persistencia al puerto del comando y eliminar el facade — no al revés.
+  persistencia a un puerto canónico nuevo y eliminar el facade — no al
+  revés.

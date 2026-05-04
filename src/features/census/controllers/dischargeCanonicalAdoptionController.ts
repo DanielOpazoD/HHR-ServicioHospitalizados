@@ -2,17 +2,20 @@
  * Adoption facade that bridges the existing rich discharge pipeline
  * (`usePatientDischarges.addDischarge` →  movement entries in
  * `discharges[]` + bed clear) to the canonical command contract
- * (`executeDischargePatientCommand`'s shape: anonymous rejection,
- * validation, typed RuntimeOperationStatus + ApplicationOutcome).
+ * (anonymous rejection, validation, typed RuntimeOperationStatus +
+ * ApplicationOutcome). See ADR_CANONICAL_WRITE_COMMANDS for the
+ * canonical contract; the only living reference implementation of a
+ * canonical command + port is `admitPatientCommand`.
  *
  * Why this exists:
  *
  * The discharge modal handles a richer payload (movement metadata,
- * crib status, target, audit context) than the canonical pilot. Re-
- * implementing all of that inside the pilot's port would duplicate the
- * existing pipeline. Instead, this facade keeps the persistence side
- * unchanged (the legacy `addDischarge` is invoked exactly as today)
- * and adds the canonical contract only where it provides real value:
+ * crib status, target, audit context) than would fit cleanly behind a
+ * thin canonical port. Re-implementing the persistence inside such a
+ * port would duplicate the existing pipeline for no gain. This facade
+ * keeps the persistence side unchanged (the legacy `addDischarge` is
+ * invoked exactly as today) and adds the canonical contract only
+ * where it provides real value:
  *
  *   1. Anonymous-actor rejection (consistent with the audit policy,
  *      previously skipped by the modal flow).
@@ -21,10 +24,6 @@
  *   3. PATIENT_DISCHARGED audit emission goes through the canonical
  *      writeAuditEventUseCase (the legacy `logDischargeEntries` path
  *      is suppressed in the caller when the flag is on).
- *
- * The facade is the smallest surface that closes the
- * `command-layer-discharge` activo without duplicating the rich
- * persistence machinery.
  */
 
 import { executeWriteAuditEvent } from '@/application/audit/writeAuditEventUseCase';

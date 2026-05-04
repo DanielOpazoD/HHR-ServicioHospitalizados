@@ -50,15 +50,20 @@ export const execute<Op>PatientCommand = async (
 };
 ```
 
-## Implementaciones de referencia
+## Implementación de referencia
 
-- `src/application/daily-record/commands/admitPatientCommand.ts`
-- `src/application/daily-record/commands/dischargePatientCommand.ts`
-- `src/application/daily-record/commands/transferPatientCommand.ts`
+- `src/application/daily-record/commands/admitPatientCommand.ts` (única
+  vigente; tiene su puerto en `src/services/daily-record/dailyRecordAdmitPatientPort.ts`
+  y su hook adaptador `useAdmitPatient` que resuelve el actor desde
+  `useAuth() + resolveAuditActor()`).
 
-Cada una tiene su puerto en `src/services/daily-record/<op>Port.ts` y su hook
-adaptador en `src/hooks/use<Op>Patient.ts` (que resuelve el actor desde
-`useAuth() + resolveAuditActor()`).
+Pilots iniciales para `discharge` y `transfer` existieron y demostraron que el
+contrato escala más allá de `admit`, pero fueron eliminados (audit
+2026-05-03) por no tener callers en producción y duplicar 65-70% del código
+con sus adoption facades. La auditoría completa con justificación está en
+[AUDIT_2026-05_PILOT_FACADE_OVERLAP.md](AUDIT_2026-05_PILOT_FACADE_OVERLAP.md).
+La pipeline de producción de discharge/transfer corre vía adoption facade
+(ver [ADR_CANONICAL_WRITE_ADOPTION_FACADES](ADR_CANONICAL_WRITE_ADOPTION_FACADES.md)).
 
 ## Cobertura mínima de tests
 
