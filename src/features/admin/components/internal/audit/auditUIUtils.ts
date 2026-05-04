@@ -20,6 +20,7 @@ import {
   Download,
   Search,
   Camera,
+  Lock,
 } from 'lucide-react';
 import { AuditAction } from '@/types/auditActionTypes';
 import { AuditLogEntry } from '@/types/auditLogTypes';
@@ -79,6 +80,7 @@ export const actionIcons: Record<AuditAction, React.ReactNode> = {
   CLINICAL_DOCUMENT_CREATED: React.createElement(FileText, { size: 14 }),
   CLINICAL_DOCUMENT_DELETED: React.createElement(Trash2, { size: 14 }),
   CLINICAL_DOCUMENT_EDITED: React.createElement(Activity, { size: 14 }),
+  CLINICAL_DOCUMENT_LOCKED: React.createElement(Lock, { size: 14 }),
   WOUND_CARE_PHOTO_UPLOADED: React.createElement(Camera, { size: 14 }),
   SYSTEM_ERROR: React.createElement(AlertCircle, { size: 14 }),
 };
@@ -121,6 +123,7 @@ export const actionColors: Record<AuditAction, string> = {
   CLINICAL_DOCUMENT_CREATED: 'bg-emerald-50 text-emerald-700 border-emerald-100',
   CLINICAL_DOCUMENT_DELETED: 'bg-rose-50 text-rose-700 border-rose-100',
   CLINICAL_DOCUMENT_EDITED: 'bg-amber-50 text-amber-700 border-amber-100',
+  CLINICAL_DOCUMENT_LOCKED: 'bg-slate-50 text-slate-700 border-slate-100',
   WOUND_CARE_PHOTO_UPLOADED: 'bg-sky-50 text-sky-700 border-sky-100',
   SYSTEM_ERROR: 'bg-red-50 text-red-700 border-red-100',
 };
@@ -191,6 +194,8 @@ export const renderHumanDetails = (log: AuditLogEntry) => {
       return `Se eliminó el documento clínico "${details.documentTitle || log.entityId}".`;
     case 'CLINICAL_DOCUMENT_EDITED':
       return `Se editó el documento clínico "${details.documentTitle || log.entityId}".`;
+    case 'CLINICAL_DOCUMENT_LOCKED':
+      return `Se bloqueó el documento clínico "${details.documentTitle || log.entityId}" al cerrarse el episodio.`;
     case 'WOUND_CARE_PHOTO_UPLOADED':
       return `Se subió foto clínica por QR para ${details.patientName || 'paciente'}${details.bodyLocation ? ` (${details.bodyLocation})` : ''}.`;
     default:

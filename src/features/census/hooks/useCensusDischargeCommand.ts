@@ -12,6 +12,7 @@ import {
   dispatchCanonicalDischarge,
   type DischargeCanonicalAuditEntry,
 } from '@/features/census/controllers/dischargeCanonicalAdoptionController';
+import { buildClinicalDocumentEpisodeKey } from '@/features/clinical-documents/public';
 import type { CensusActionRuntimeRefs } from '@/features/census/hooks/useCensusActionRuntimeRefs';
 import { useCensusModalCommand } from '@/features/census/hooks/useCensusModalCommand';
 import { useConfirmedMovementAction } from '@/features/census/hooks/useConfirmedMovementAction';
@@ -92,12 +93,14 @@ export const useCensusDischargeCommand = ({
       if (!bed) return [];
       const status = dischargeStateRef.current.status;
       if (status !== 'Vivo' && status !== 'Fallecido') return [];
+      const episodeKey = buildClinicalDocumentEpisodeKey(bed.rut, bed.admissionDate) ?? undefined;
       return [
         {
           bedId,
           patientName: bed.patientName ?? '',
           rut: bed.rut ?? '',
           status,
+          episodeKey,
         },
       ];
     };

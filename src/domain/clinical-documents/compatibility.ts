@@ -35,7 +35,12 @@ const applyClinicalDocumentDefinitionDefaults = (
       record.status === 'signed' || record.status === 'ready_for_signature'
         ? 'draft'
         : record.status,
-    isLocked: false,
+    // Preserve the lock only when a recognized lock reason is recorded.
+    // Bare `isLocked: true` without metadata is the legacy signature-era
+    // lock (since retired) and must reset to false. The new
+    // episode-close lock always carries `lockedReason='episode_closed'`
+    // and survives both reads and persistence.
+    isLocked: Boolean(record.lockedReason),
     patientFields,
     sections: normalizedSections,
     patientInfoTitle: record.patientInfoTitle || 'Información del Paciente',

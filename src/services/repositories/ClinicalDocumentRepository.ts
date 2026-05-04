@@ -331,6 +331,49 @@ export const ClinicalDocumentRepository = {
     });
   },
 
+  /**
+   * Marks every clinical document linked to the given episode as locked
+   * (read-only) with `lockedReason='episode_closed'`. Idempotent: documents
+   * already locked are skipped, so re-running the operation is safe.
+   *
+   * Returns the IDs of documents that transitioned from unlocked to locked
+   * — callers use this to emit one audit event per document affected.
+   */
+  async lockDocumentsByEpisodeKey(
+    episodeKey: string,
+    hospitalId: string = getActiveHospitalId(),
+    options: { lockedAt?: string } = {}
+  ): Promise<string[]> {
+    const lockedAt = options.lockedAt ?? new Date().toISOString();
+    const documents = await this.listByEpisode(episodeKey, hospitalId);
+    const newlyLocked: string[] = [];
+
+    for (const document of documents) {
+      if (document.isLocked) continue;
+
+      const lockPatch = {
+        isLocked: true,
+        lockedReason: 'episode_closed' as const,
+        lockedAt,
+      };
+
+      if (!isFirestoreEnabled()) {
+        const merged: ClinicalDocumentRecord = { ...document, ...lockPatch };
+        persistLocalClinicalDocument(merged, hospitalId);
+      } else {
+        await firestoreDb.updateDoc(
+          getClinicalDocumentsCollectionPath(hospitalId),
+          document.id,
+          lockPatch
+        );
+      }
+
+      newlyLocked.push(document.id);
+    }
+
+    return newlyLocked;
+  },
+
   subscribeByEpisode(
     episodeKey: string,
     callback: (documents: ClinicalDocumentRecord[]) => void,

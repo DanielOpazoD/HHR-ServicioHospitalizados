@@ -29,3 +29,4 @@ export { exportClinicalDocumentPdfViaBackend } from './services/clinicalDocument
 export { generateClinicalDocumentPdfBlob } from './services/clinicalDocumentPdfService';
 export { openClinicalDocumentBrowserPrintPreview } from './services/clinicalDocumentPrintPdfService';
 export type { ClinicalDocumentAnnexPrintMode } from './services/clinicalDocumentPrintSupport';
+export { buildClinicalDocumentEpisodeKey } from './domain/clinicalDocumentEpisodeTypes';

@@ -4,6 +4,7 @@ import { formatDateDDMMYYYY } from '@/utils/dateDisplayUtils';
 import { getTodayISO } from '@/utils/dateCoreUtils';
 
 import { ClinicalDocumentFooterSection } from '@/features/clinical-documents/components/ClinicalDocumentFooterSection';
+import { ClinicalDocumentLockBanner } from '@/features/clinical-documents/components/ClinicalDocumentLockBanner';
 import { ClinicalDocumentPatientInfoSection } from '@/features/clinical-documents/components/ClinicalDocumentPatientInfoSection';
 import { ClinicalDocumentSectionList } from '@/features/clinical-documents/components/ClinicalDocumentSectionList';
 import { ClinicalDocumentSheetHeader } from '@/features/clinical-documents/components/ClinicalDocumentSheetHeader';
@@ -83,6 +84,12 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
   return (
     <div className="mx-auto max-w-6xl space-y-3">
       {toolbar}
+
+      <ClinicalDocumentLockBanner
+        isLocked={selectedDocument.isLocked}
+        lockedReason={selectedDocument.lockedReason}
+        lockedAt={selectedDocument.lockedAt}
+      />
 
       <div id="clinical-document-sheet" className="clinical-document-sheet">
         <ClinicalDocumentSheetHeader
