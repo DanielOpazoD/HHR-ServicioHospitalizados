@@ -2,9 +2,17 @@ import { execSync } from 'node:child_process';
 
 const runGitCommand = (root, command) =>
   execSync(command, { cwd: root, encoding: 'utf8' }).trimEnd();
+// Tracked report files that `report:governance-snapshots` regenerates after
+// the scorecard captures its `gitDirty` field. Excluding them from the dirty
+// check prevents the scorecard from being flagged as stale just because a
+// later step in the same pipeline rewrote these tracked files. Keep this
+// list aligned with the tracked report artifacts that any CI flow rewrites
+// before `check:report-freshness` runs.
 const GENERATED_REPORT_STATUS_SUFFIXES = new Set([
   'reports/legacy-bridge-governance.json',
   'reports/legacy-bridge-governance.md',
+  'reports/runtime-contracts.json',
+  'reports/runtime-contracts.md',
 ]);
 
 const normalizeGitStatusPath = statusLine => {
