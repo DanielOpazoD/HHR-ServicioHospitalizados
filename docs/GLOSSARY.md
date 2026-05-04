@@ -18,6 +18,13 @@
 - Términos en columna "Prohibido" son herencia de iteraciones tempranas.
   No se eliminan donde ya existen para no romper compatibilidad, pero
   **no aparecen en código nuevo**.
+- **Enforcement automático**: solo los términos con cero uso actual en
+  el repo están prohibidos por ESLint (`no-restricted-syntax`): `intake`,
+  `swap`. El resto de la columna "Prohibido" es aspiracional — `diagnosis`,
+  `egreso` y `release` siguen presentes en código legítimo (campos de
+  formularios IEEH, workflows de CI, tipos legacy) y banearlos por lint
+  generaría más ruido que señal. Si vas a introducir un término nuevo en
+  esa columna y no tiene uso actual, agrégalo también al lint.
 
 ## Pacientes y movimientos
 

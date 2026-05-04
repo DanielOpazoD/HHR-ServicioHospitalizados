@@ -103,6 +103,21 @@ export default tseslint.config(
           ],
         },
       ],
+
+      // Glossary enforcement — only terms with zero current usage are banned
+      // (see docs/GLOSSARY.md). Adding new ones requires first migrating all
+      // legitimate uses; otherwise the rule produces noise instead of signal.
+      'no-restricted-syntax': [
+        'warn',
+        {
+          selector: 'Identifier[name="intake"]',
+          message: 'Use "admission" / "admisión" instead of "intake" — see docs/GLOSSARY.md',
+        },
+        {
+          selector: 'Identifier[name="swap"]',
+          message: 'Use "moveOrCopy" / "bedMovement" instead of "swap" — see docs/GLOSSARY.md',
+        },
+      ],
     },
   },
   {
