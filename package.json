@@ -140,6 +140,7 @@
     "report:release-evidence": "npm run report:quality-metrics && npm run report:system-confidence && npm run report:operational-health && npm run report:release-readiness-scorecard && npm run report:maintenance-debt-scorecard",
     "report:release-readiness-scorecard": "npm run report:quality-metrics && npm run report:legacy-bridge && npm run report:compatibility-governance && npm run report:compatibility-import-governance && npm run report:critical-coverage && npm run report:operational-health && npm run report:system-confidence && npm run report:release-confidence-matrix && npm run report:technical-ownership-map && npm run report:guardrail-governance && node scripts/report-release-readiness-scorecard.mjs",
     "report:guardrail-governance": "node scripts/report-guardrail-governance.mjs",
+    "report:todos": "node scripts/scan-todos.mjs",
     "report:sustainable-change-policy": "node scripts/report-sustainable-change-policy.mjs",
     "report:technical-ownership-map": "node scripts/report-technical-ownership-map.mjs",
     "report:flow-performance-budget": "node scripts/report-flow-performance-budget.mjs",
