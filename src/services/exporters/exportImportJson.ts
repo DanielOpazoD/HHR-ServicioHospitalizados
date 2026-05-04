@@ -54,7 +54,9 @@ export const importDataJSONDetailed = async (file: File): Promise<JsonImportResu
     });
 
     if (importedRecords.length === 0) {
-      alert('El archivo JSON no contiene registros importables.');
+      // No raw alert here: the caller (executeImportJsonBackup +
+      // UI consumer) already presents the failure via useNotification
+      // based on the outcome contract below.
       return {
         success: false,
         outcome: 'blocked',
@@ -76,7 +78,8 @@ export const importDataJSONDetailed = async (file: File): Promise<JsonImportResu
     };
   } catch (error) {
     jsonImportLogger.error('JSON import failed', error);
-    alert('Error al procesar el archivo JSON.');
+    // No raw alert: the caller maps this to ApplicationOutcome 'failed'
+    // and presents the message through useNotification.
     return {
       success: false,
       outcome: 'blocked',

@@ -78,6 +78,17 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       host: '0.0.0.0',
       hmr: isNetlifyLocalDev ? false : undefined,
+      fs: {
+        // Allow Vite to serve files (notably @fontsource .woff2 assets) when
+        // node_modules is symlinked from a `.claude/worktrees/<name>/`
+        // git-worktree to the parent project's install. The worktree sits
+        // three levels deeper than the original project root; without this,
+        // Vite returns 403 for any URL that resolves outside the worktree
+        // via the symlink, which silently breaks font loading and falls
+        // back to system serif. The added paths are dev-only and do not
+        // affect production builds.
+        allow: ['..', '../..', '../../..'],
+      },
     },
     plugins: [
       versionPlugin(buildVersionInfo),

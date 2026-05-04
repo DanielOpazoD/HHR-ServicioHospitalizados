@@ -7,11 +7,9 @@ import {
   getAuthBootstrapPendingAgeMs,
   isAuthBootstrapPending,
 } from '@/services/auth/authBootstrapState';
-import { clearRecentManualLogout, hasRecentManualLogout } from '@/services/auth/authLogoutState';
+import { hasRecentManualLogout } from '@/services/auth/authLogoutState';
 import {
   createAuthErrorSessionState,
-  createUnauthenticatedAuthSessionState,
-  isAuthenticatedAuthSessionState,
   toResolvedAuthSessionState,
 } from '@/services/auth/authSessionState';
 import { authStateLogger } from '@/hooks/hookLoggers';
@@ -19,21 +17,18 @@ import { recordOperationalOutcome } from '@/services/observability/operationalTe
 import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 import { resolveAuthBootstrapBudget } from '@/services/auth/authBootstrapBudgets';
 import { hasActiveFirebaseSession } from '@/services/auth/authFallback';
-import {
-  clearGoogleLoginAttemptHint,
-  hasPersistedFirebaseAuthHint,
-  hasRecentGoogleLoginAttemptHint,
-} from '@/services/auth/authStorageHints';
+import { hasPersistedFirebaseAuthHint } from '@/services/auth/authStorageHints';
 import { markPerf } from '@/shared/runtime/perfAudit';
 import {
   buildBootstrapTimeoutAuthError,
   buildBootstrapTimeoutIssue,
   shouldAttemptAuthTimeoutRecovery,
-  shouldDeferUnauthenticatedSessionState,
-  shouldIgnoreTransientUnauthenticatedBootstrapEvent,
   shouldResolveAuthBootstrapImmediatelyAsUnauthenticated,
 } from '@/hooks/controllers/authBootstrapController';
 import { applyResolvedBootstrapSessionState } from '@/hooks/controllers/authResolvedBootstrapSessionController';
+import { subscribeToResolvedAuthState } from '@/hooks/controllers/authResolvedStateSubscription';
+
+export { subscribeToResolvedAuthState };
 export {
   createHandleLogout,
   getAuthBootstrapTimeoutMs,
@@ -42,161 +37,6 @@ export {
   useInactivityLogout,
   useOnlineStatus,
 } from '@/hooks/useAuthStateSessionSupport';
-
-export const subscribeToResolvedAuthState = async ({
-  resolveRedirectAuthSessionOutcome,
-  resolveCurrentAuthSessionOutcome,
-  onAuthSessionStateChange,
-  resolveImmediatelyAsUnauthenticatedWhenDirectChecksAreEmpty,
-  hasAuthRehydrationHint,
-  setSessionState,
-  setAuthLoading,
-}: {
-  resolveRedirectAuthSessionOutcome: () => Promise<ApplicationOutcome<AuthSessionState | null>>;
-  resolveCurrentAuthSessionOutcome: () => Promise<ApplicationOutcome<AuthSessionState | null>>;
-  onAuthSessionStateChange: (
-    callback: (sessionState: AuthSessionState) => void | Promise<void>
-  ) => () => void;
-  resolveImmediatelyAsUnauthenticatedWhenDirectChecksAreEmpty: boolean;
-  hasAuthRehydrationHint: boolean;
-  setSessionState: (sessionState: AuthSessionState) => void;
-  setAuthLoading: (value: boolean) => void;
-}): Promise<() => void> => {
-  let isBootstrapLoading = true;
-
-  try {
-    markPerf('auth-bootstrap:redirect-start');
-    const redirectOutcome = await resolveRedirectAuthSessionOutcome();
-    markPerf('auth-bootstrap:redirect-done', redirectOutcome.status);
-    recordOperationalOutcome('auth', 'redirect_resolution', redirectOutcome, {
-      allowSuccess: true,
-    });
-    const redirectSessionState = redirectOutcome.data;
-    if (redirectSessionState) {
-      applyResolvedBootstrapSessionState({
-        sessionState: redirectSessionState,
-        setSessionState,
-        setAuthLoading,
-      });
-      isBootstrapLoading = false;
-    } else {
-      markPerf('auth-bootstrap:current-session-start');
-      const currentSessionOutcome = await resolveCurrentAuthSessionOutcome();
-      markPerf('auth-bootstrap:current-session-done', currentSessionOutcome.status);
-      recordOperationalOutcome('auth', 'current_session_resolution', currentSessionOutcome, {
-        allowSuccess: true,
-      });
-      if (currentSessionOutcome.data) {
-        applyResolvedBootstrapSessionState({
-          sessionState: currentSessionOutcome.data,
-          setSessionState,
-          setAuthLoading,
-        });
-        isBootstrapLoading = false;
-      } else if (
-        resolveImmediatelyAsUnauthenticatedWhenDirectChecksAreEmpty ||
-        (!isAuthBootstrapPending() && !hasActiveFirebaseSession())
-      ) {
-        clearAuthBootstrapPending();
-        setSessionState(createUnauthenticatedAuthSessionState());
-        setAuthLoading(false);
-        isBootstrapLoading = false;
-      }
-    }
-  } catch (error) {
-    authStateLogger.info('Redirect result check error', error);
-    recordOperationalTelemetry({
-      category: 'auth',
-      operation: 'redirect_resolution_failure',
-      status: 'degraded',
-      runtimeState: 'recoverable',
-      context: {
-        isOnline: window.navigator.onLine,
-        authBootstrapPending: isAuthBootstrapPending(),
-        pendingAgeMs: getAuthBootstrapPendingAgeMs(),
-      },
-      issues: [error instanceof Error ? error.message : 'No se pudo revisar el redirect de auth.'],
-    });
-  }
-
-  markPerf('auth-bootstrap:observer-subscribe');
-  return onAuthSessionStateChange(async sessionState => {
-    markPerf('auth-bootstrap:observer-event', sessionState.status);
-    recordOperationalTelemetry(
-      {
-        category: 'auth',
-        operation: 'session_state_change',
-        status: sessionState.status === 'auth_error' ? 'failed' : 'success',
-        context: {
-          sessionStatus: sessionState.status,
-        },
-        issues:
-          sessionState.status === 'auth_error' && sessionState.error.userSafeMessage
-            ? [sessionState.error.userSafeMessage]
-            : undefined,
-      },
-      { allowSuccess: true }
-    );
-
-    if (isAuthenticatedAuthSessionState(sessionState)) {
-      applyResolvedBootstrapSessionState({
-        sessionState,
-        setSessionState,
-        setAuthLoading,
-      });
-      isBootstrapLoading = false;
-      return;
-    } else {
-      if (
-        shouldIgnoreTransientUnauthenticatedBootstrapEvent({
-          isBootstrapLoading,
-          sessionState,
-          hasRecentManualLogout: hasRecentManualLogout(),
-          hasAuthRehydrationHint,
-        })
-      ) {
-        authStateLogger.info(
-          'Ignoring transient unauthenticated auth event while persistence rehydrates'
-        );
-        return;
-      }
-
-      if (hasRecentManualLogout()) {
-        clearRecentManualLogout();
-        clearAuthBootstrapPending();
-        setSessionState(createUnauthenticatedAuthSessionState());
-        setAuthLoading(false);
-        isBootstrapLoading = false;
-        return;
-      }
-      if (
-        sessionState.status === 'unauthenticated' &&
-        hasRecentGoogleLoginAttemptHint() &&
-        !hasRecentManualLogout()
-      ) {
-        clearGoogleLoginAttemptHint();
-        clearAuthBootstrapPending();
-        setSessionState(createAuthErrorSessionState(buildBootstrapTimeoutAuthError()));
-        setAuthLoading(false);
-        isBootstrapLoading = false;
-        return;
-      }
-      if (
-        shouldDeferUnauthenticatedSessionState({
-          sessionState,
-          isAuthBootstrapPending: isAuthBootstrapPending(),
-        })
-      ) {
-        return;
-      }
-      setSessionState(sessionState);
-    }
-
-    clearAuthBootstrapPending();
-    setAuthLoading(false);
-    isBootstrapLoading = false;
-  });
-};
 
 export const useResolvedAuthBootstrap = ({
   e2eBootstrapUser,

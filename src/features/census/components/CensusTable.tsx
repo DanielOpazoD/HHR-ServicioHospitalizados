@@ -9,8 +9,14 @@ import { useDailyRecordBedActions } from '@/context/useDailyRecordScopedActions'
 import { ViewLoader } from '@/components/ui/ViewLoader';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 import { createEmptyPatient } from '@/services/factories/patientFactory';
-import { hasMeaningfulPatientIdentity } from '@/features/census/controllers/patientIdentityController';
+import { resolveEmptyBedSaveAction } from '@/features/census/controllers/admitPatientGate';
+import { useAdmitPatient } from '@/hooks/useAdmitPatient';
+import { useNotification } from '@/context/UIContext';
+import { isFeatureEnabled } from '@/services/utils/featureFlags';
+import { createScopedLogger } from '@/services/utils/loggerScope';
 import type { PatientData } from '@/features/census/components/patient-row/patientRowContracts';
+
+const censusTableAdmitLogger = createScopedLogger('CensusTableAdmit');
 export type { DiagnosisMode } from '@/features/census/types/censusTableTypes';
 
 const LazyDemographicsModal = lazy(() =>
@@ -39,6 +45,8 @@ export const CensusTable: React.FC<CensusTableProps> = ({
 
   const { moveOrCopyPatient, updatePatientMultiple } = useDailyRecordBedActions();
   const beds = useDailyRecordBeds();
+  const admitPatient = useAdmitPatient();
+  const { error: notifyError } = useNotification();
 
   const handleMoveToBed = useCallback(
     (sourceBedId: string, targetBedId: string) => {
@@ -63,20 +71,65 @@ export const CensusTable: React.FC<CensusTableProps> = ({
   }, []);
 
   const saveEmptyBedDemographics = useCallback(
-    (updatedFields: Partial<PatientData>) => {
+    async (updatedFields: Partial<PatientData>) => {
       if (!activeEmptyBedId) {
         return;
       }
 
-      if (!hasMeaningfulPatientIdentity(updatedFields)) {
-        closeEmptyBedDemographics();
-        return;
-      }
+      const action = resolveEmptyBedSaveAction({
+        updatedFields,
+        isAdmitCommandEnabled: isFeatureEnabled('USE_ADMIT_PATIENT_COMMAND'),
+      });
 
-      updatePatientMultiple(activeEmptyBedId, updatedFields);
-      closeEmptyBedDemographics();
+      switch (action.kind) {
+        case 'noop':
+          closeEmptyBedDemographics();
+          return;
+        case 'admit-command': {
+          const outcome = await admitPatient({
+            bedId: activeEmptyBedId,
+            patientName: action.input.patientName,
+            rut: action.input.rut,
+            admissionDate: action.input.admissionDate,
+            pathology: action.input.pathology,
+            recordDate: currentDateString,
+          });
+          if (outcome.status.status === 'ready' || outcome.status.status === 'degraded') {
+            closeEmptyBedDemographics();
+            return;
+          }
+          // Command rejected the input (blocked / failed). Surface the
+          // typed userSafeMessage to the clinician; do NOT fall back to
+          // the legacy dispatch, otherwise we would silently bypass the
+          // command's guard (e.g., anonymous actor) the user is trying
+          // to enforce.
+          censusTableAdmitLogger.warn('admitPatientCommand rejected', {
+            bedId: activeEmptyBedId,
+            outcomeStatus: outcome.status.status,
+            issues: outcome.applicationOutcome.issues,
+          });
+          notifyError(
+            'No se pudo registrar la admisión',
+            outcome.applicationOutcome.userSafeMessage ||
+              outcome.applicationOutcome.issues[0]?.message ||
+              'Revisa los datos e intenta nuevamente.'
+          );
+          return;
+        }
+        case 'legacy-dispatch':
+          updatePatientMultiple(activeEmptyBedId, action.input);
+          closeEmptyBedDemographics();
+          return;
+      }
     },
-    [activeEmptyBedId, closeEmptyBedDemographics, updatePatientMultiple]
+    [
+      activeEmptyBedId,
+      admitPatient,
+      closeEmptyBedDemographics,
+      currentDateString,
+      notifyError,
+      updatePatientMultiple,
+    ]
   );
 
   if (!isReady || !bindings) return <ViewLoader />;

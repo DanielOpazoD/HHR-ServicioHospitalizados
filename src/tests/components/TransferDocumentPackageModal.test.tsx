@@ -109,7 +109,7 @@ describe('TransferDocumentPackageModal', () => {
     });
   });
 
-  it('shows runtime alert with configured-message fallback when upload fails by missing setup', async () => {
+  it('notifies with configured-message fallback when upload fails by missing setup', async () => {
     uploadToTransferFolder.mockRejectedValue(new Error('Drive client is not configured'));
 
     render(<TransferDocumentPackageModal {...baseProps} />);
@@ -117,10 +117,12 @@ describe('TransferDocumentPackageModal', () => {
     fireEvent.click(screen.getByRole('button', { name: /editar cloud/i }));
 
     await waitFor(() => {
-      expect(mockAlert).toHaveBeenCalledWith(
-        'La edición online no está configurada aún (falta Client ID). Por favor, descarga el archivo para editarlo localmente.'
+      expect(mockWarning).toHaveBeenCalledWith(
+        'Edición online no configurada',
+        'Falta el Client ID de Google. Descarga el archivo para editarlo localmente.'
       );
     });
+    expect(mockAlert).not.toHaveBeenCalled();
   });
 
   it('disables cloud editing when Google Drive is not configured', () => {

@@ -5,7 +5,7 @@ import { dispatchExportManagerNotice } from '@/hooks/controllers/exportManagerNo
 import { presentBackupExportOutcome } from '@/hooks/controllers/backupExportOutcomeController';
 import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 import { useBackupArchiveStatus } from '@/hooks/useBackupArchiveStatus';
-import { formatBackupShiftLabel } from '@/shared/backup/backupPresentation';
+import { buildBackupHandoffConfirmDescriptor } from '@/hooks/controllers/exportManagerConfirmController';
 import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
 import type { BackupHandoffPdfOutput } from '@/application/backup-export/backupExportArchiveContracts';
 
@@ -162,21 +162,14 @@ export const useExportManager = ({
       const exportRecord = getStableRecordForExport?.() ?? record;
       if (!exportRecord) return;
 
-      const [year, month, day] = exportRecord.date.split('-');
-      const formattedDate = `${day}-${month}-${year}`;
-      const shiftLabel = formatBackupShiftLabel(selectedShift);
-      const actionLabel = isArchived ? 'Actualizar' : 'Guardar';
-
       if (!skipConfirmation) {
-        const confirmed = await confirm({
-          title: `💾 ${actionLabel} Respaldo PDF`,
-          message: isArchived
-            ? `Ya existe un respaldo para ${shiftLabel} del ${formattedDate}.\n\n¿Desea sobrescribirlo con los datos actuales?`
-            : `¿Desea guardar esta entrega de turno como archivo PDF?\n\nFecha: ${formattedDate}\nTurno: ${shiftLabel}`,
-          confirmText: actionLabel,
-          cancelText: 'Cancelar',
-          variant: isArchived ? 'warning' : 'info',
-        });
+        const confirmed = await confirm(
+          buildBackupHandoffConfirmDescriptor({
+            recordDate: exportRecord.date,
+            selectedShift,
+            isArchived,
+          })
+        );
 
         if (!confirmed) return;
       }

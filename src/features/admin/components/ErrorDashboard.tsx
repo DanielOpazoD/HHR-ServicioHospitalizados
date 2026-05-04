@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { fetchErrorLogs, purgeErrorLogs } from '@/services/errorLogService';
 import { ErrorLog } from '@/services/utils/errorService';
-import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
+import { useConfirmDialog } from '@/context/UIContext';
 import {
   AlertTriangle,
   Trash2,
@@ -19,6 +19,7 @@ import { createScopedLogger } from '@/services/utils/loggerScope';
 const errorDashboardLogger = createScopedLogger('ErrorDashboard');
 
 export const ErrorDashboard: React.FC = () => {
+  const { confirm } = useConfirmDialog();
   const [logs, setLogs] = useState<ErrorLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -40,12 +41,15 @@ export const ErrorDashboard: React.FC = () => {
   }, []);
 
   const handleClear = async () => {
-    if (
-      !defaultBrowserWindowRuntime.confirm(
-        '¿Seguro que desea limpiar todos los registros de errores?'
-      )
-    )
-      return;
+    const confirmed = await confirm({
+      title: 'Limpiar registro de errores',
+      message:
+        '¿Seguro que desea limpiar todos los registros de errores? Esta acción no se puede deshacer.',
+      confirmText: 'Limpiar',
+      cancelText: 'Cancelar',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
     await purgeErrorLogs();
     await loadLogs();
   };

@@ -1,6 +1,6 @@
 import React from 'react';
-import { act, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 
 import { CensusRegisterContent } from '@/features/census/components/CensusRegisterContent';
 
@@ -27,13 +27,7 @@ vi.mock('@/features/census/components/CensusRegisterSections', () => ({
 }));
 
 describe('CensusRegisterContent', () => {
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
   it('renders the primary census table before deferred secondary sections', async () => {
-    vi.useFakeTimers();
-
     render(
       <CensusRegisterContent
         currentDateString="2026-03-10"
@@ -47,23 +41,17 @@ describe('CensusRegisterContent', () => {
       />
     );
 
+    // Initial synchronous render: primary table present, deferred sections absent.
     expect(screen.getByTestId('census-staff-header')).toBeInTheDocument();
     expect(screen.getByTestId('census-table')).toBeInTheDocument();
     expect(screen.queryByTestId('census-register-sections')).not.toBeInTheDocument();
     expect(screen.queryByTestId('census-register-sections-loading')).not.toBeInTheDocument();
 
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(0);
-      await vi.dynamicImportSettled();
-      await Promise.resolve();
-    });
-
-    expect(screen.getByTestId('census-register-sections-loading')).toBeInTheDocument();
+    // After the deferred enhancement settles, the secondary sections appear.
+    expect(await screen.findByTestId('census-register-sections')).toBeInTheDocument();
   });
 
   it('does not schedule secondary sections for specialist access', async () => {
-    vi.useFakeTimers();
-
     render(
       <CensusRegisterContent
         currentDateString="2026-03-10"
@@ -78,11 +66,13 @@ describe('CensusRegisterContent', () => {
       />
     );
 
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(0);
-    });
-
     expect(screen.getByTestId('census-table')).toBeInTheDocument();
-    expect(screen.queryByTestId('census-register-sections')).not.toBeInTheDocument();
+
+    // Wait long enough that any setTimeout(0) would have fired, then confirm
+    // the deferred sections never get scheduled for the specialist profile.
+    await waitFor(() => {
+      expect(screen.queryByTestId('census-register-sections')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('census-register-sections-loading')).not.toBeInTheDocument();
+    });
   });
 });

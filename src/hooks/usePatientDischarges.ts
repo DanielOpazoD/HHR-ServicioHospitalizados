@@ -17,6 +17,7 @@ import {
   PatientMovementRuntime,
   patientMovementBrowserRuntime,
   selectDischargeUndoMovement,
+  selectMovementUndoAuditMetadata,
 } from '@/application/census/public';
 import { usePatientMovementFeedback } from '@/hooks/usePatientMovementFeedback';
 import { usePatientMovementAudit } from '@/hooks/usePatientMovementAudit';
@@ -146,12 +147,13 @@ export const usePatientDischarges = (
           movement: discharge,
           record: currentRecord,
           onSuccess: ({ movement, updatedBed }) => {
+            const audit = selectMovementUndoAuditMetadata(movement, updatedBed);
             logDischargeUndoEntry(
               {
                 dischargeId: movement.id,
                 bedId: movement.bedId,
-                patientName: updatedBed.patientName || movement.patientName,
-                rut: updatedBed.rut || movement.originalData?.rut,
+                patientName: audit.patientName,
+                rut: audit.rut,
               },
               currentRecord.date
             );

@@ -14,7 +14,7 @@ if (!fs.existsSync(GOVERNANCE_CONFIG_PATH)) {
 
 const governanceConfig = JSON.parse(fs.readFileSync(GOVERNANCE_CONFIG_PATH, 'utf8'));
 const QUALITY_STEPS = Array.isArray(governanceConfig.qualityAggregate?.checks)
-  ? governanceConfig.qualityAggregate.checks.map(entry => entry?.id).filter(Boolean)
+  ? governanceConfig.qualityAggregate.checks.filter(entry => entry?.id)
   : [];
 
 if (QUALITY_STEPS.length === 0) {
@@ -23,9 +23,13 @@ if (QUALITY_STEPS.length === 0) {
 }
 
 const failures = [];
+const advisoryFailures = [];
 
-for (const step of QUALITY_STEPS) {
-  console.log(`\n[quality] Running ${step}`);
+for (const entry of QUALITY_STEPS) {
+  const step = entry.id;
+  const isReportOnly = entry.reportOnly === true;
+  const label = isReportOnly ? `${step} (advisory)` : step;
+  console.log(`\n[quality] Running ${label}`);
   const result = spawnSync('npm', ['run', step], {
     cwd: ROOT,
     stdio: 'inherit',
@@ -33,7 +37,18 @@ for (const step of QUALITY_STEPS) {
   });
 
   if (result.status !== 0) {
-    failures.push(step);
+    if (isReportOnly) {
+      advisoryFailures.push(step);
+    } else {
+      failures.push(step);
+    }
+  }
+}
+
+if (advisoryFailures.length > 0) {
+  console.warn('\n[quality] Advisory (non-blocking) steps reporting issues:');
+  for (const step of advisoryFailures) {
+    console.warn(`- ${step}`);
   }
 }
 
@@ -45,4 +60,8 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('\n[quality] All checks passed.');
+console.log(
+  advisoryFailures.length > 0
+    ? '\n[quality] All blocking checks passed (with advisories above).'
+    : '\n[quality] All checks passed.'
+);

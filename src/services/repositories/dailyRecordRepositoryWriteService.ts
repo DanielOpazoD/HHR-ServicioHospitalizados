@@ -34,6 +34,43 @@ import { dailyRecordWriteLogger } from '@/services/repositories/repositoryLogger
 import { DataRegressionError, VersionMismatchError } from '@/utils/integrityGuard';
 import { AdmissionDatePolicyViolationError } from '@/application/patient-flow/admissionDatePolicy';
 
+// Field shrinkage telemetry — observability only, no behavior change.
+// Catches the family of bugs where a stale snapshot or a debounced commit
+// overwrites a longer text field with a much shorter one. The 20-char
+// floor avoids noise on short fields ("OK" -> "O" is not interesting);
+// the 50% threshold catches paste-over and stale-snapshot replacements
+// while letting normal edits through.
+const FIELD_SHRINKAGE_MIN_PREV_LENGTH = 20;
+const FIELD_SHRINKAGE_RATIO_THRESHOLD = 0.5;
+
+const resolvePathOnRecord = (record: DailyRecord, path: string): unknown => {
+  const segments = path.split('.');
+  let current: unknown = record;
+  for (const segment of segments) {
+    if (current === null || typeof current !== 'object') return undefined;
+    current = (current as Record<string, unknown>)[segment];
+  }
+  return current;
+};
+
+const reportFieldShrinkage = (
+  date: string,
+  current: DailyRecord,
+  patches: DailyRecordPatch
+): void => {
+  for (const [path, nextValue] of Object.entries(patches)) {
+    if (typeof nextValue !== 'string' || nextValue.length === 0) continue;
+    const prevValue = resolvePathOnRecord(current, path);
+    if (typeof prevValue !== 'string') continue;
+    if (prevValue.length < FIELD_SHRINKAGE_MIN_PREV_LENGTH) continue;
+    if (nextValue.length / prevValue.length >= FIELD_SHRINKAGE_RATIO_THRESHOLD) continue;
+    dailyRecordWriteLogger.warn(
+      `Field shrinkage detected at ${path} for ${date}: ${prevValue.length} -> ${nextValue.length} chars`,
+      { path, date, prevLength: prevValue.length, nextLength: nextValue.length }
+    );
+  }
+};
+
 const runRemoteSaveIntegrityCheck = async (date: string, record: DailyRecord): Promise<void> => {
   if (!isFirestoreEnabled()) return;
 
@@ -271,6 +308,8 @@ export const updatePartialDetailed = async (date: string, partialData: DailyReco
     throw err;
   }
   const patchedFields = Object.keys(mergedPatches).length;
+
+  reportFieldShrinkage(command.date, current, mergedPatches);
 
   const nextAction = await persistLocalAndAttemptRemoteSync({
     date: command.date,

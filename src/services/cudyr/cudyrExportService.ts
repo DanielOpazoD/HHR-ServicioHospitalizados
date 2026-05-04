@@ -61,22 +61,32 @@ const buildMonthlyWorkbook = async (
   });
 };
 
+/**
+ * Outcome of a clinical export. Services no longer render UI; the caller
+ * decides how to present a 'failed' outcome (typically via useNotification).
+ */
+export type CudyrExcelExportOutcome =
+  | { outcome: 'success'; fileName: string; byteLength: number }
+  | { outcome: 'failed'; userSafeMessage: string; reason: string };
+
 export const generateCudyrMonthlyExcel = async (
   year: number,
   month: number,
   endDate?: string,
   currentRecord?: DailyRecordCudyrExportState | null
-): Promise<void> => {
+): Promise<CudyrExcelExportOutcome> => {
   const { workbook, fileName } = await buildMonthlyWorkbook(year, month, endDate, currentRecord);
   const buffer = await workbook.xlsx.writeBuffer();
 
   const validation = validateExcelExport(buffer, fileName);
   if (!validation.valid) {
     cudyrExportLogger.error(`Excel validation failed: ${validation.error}`);
-    alert(
-      `Error al generar el archivo Excel:\n${validation.error}\n\nPor favor, recarga la pagina e intenta de nuevo.`
-    );
-    return;
+    return {
+      outcome: 'failed',
+      userSafeMessage:
+        'Error al generar el archivo Excel. Por favor, recarga la página e intenta de nuevo.',
+      reason: validation.error ?? 'unknown_validation_error',
+    };
   }
 
   const blob = new Blob([buffer], { type: XLSX_MIME_TYPE });
@@ -85,6 +95,7 @@ export const generateCudyrMonthlyExcel = async (
   cudyrExportLogger.warn(
     `Monthly CUDYR summary downloaded: ${fileName} (${buffer.byteLength} bytes)`
   );
+  return { outcome: 'success', fileName, byteLength: buffer.byteLength };
 };
 
 export const generateCudyrMonthlyExcelBlob = async (

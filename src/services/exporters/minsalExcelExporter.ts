@@ -5,7 +5,7 @@
 
 import { MinsalStatistics, DailyStatsSnapshot } from '@/types/minsalTypes';
 import { createWorkbook } from './excelUtils';
-import { downloadWorkbookFile } from './excelFileDownload';
+import { downloadWorkbookFile, type DownloadWorkbookOutcome } from './excelFileDownload';
 
 /**
  * Export MINSAL statistics to Excel workbook
@@ -13,7 +13,7 @@ import { downloadWorkbookFile } from './excelFileDownload';
 export async function exportMinsalToExcel(
   stats: MinsalStatistics,
   trendData: DailyStatsSnapshot[]
-): Promise<void> {
+): Promise<DownloadWorkbookOutcome> {
   const workbook = await createWorkbook();
   workbook.creator = 'Hospital Hanga Roa';
   workbook.created = new Date();
@@ -196,10 +196,9 @@ export async function exportMinsalToExcel(
   ];
 
   const fileName = `Estadisticas_MINSAL_${stats.periodStart}_${stats.periodEnd}.xlsx`;
-  await downloadWorkbookFile({
+  return downloadWorkbookFile({
     workbook,
     filename: fileName,
-    invalidAlertMessage: 'Error al generar el archivo Excel:',
     successLogMessage: byteLength =>
       `📥 MINSAL Excel descargado: ${fileName} (${byteLength} bytes)`,
   });

@@ -152,7 +152,7 @@ export default function ProvidedApp() {
         <DefaultRepositoryProvider>
           <HospitalProvider>
             <UIProvider>
-              <AuditProvider userId="anon">
+              <AuditProvider>
                 <AppWithErrorBoundary />
               </AuditProvider>
             </UIProvider>
