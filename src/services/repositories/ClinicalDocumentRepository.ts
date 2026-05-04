@@ -19,6 +19,7 @@ import {
 } from '@/domain/clinical-documents/runtimeContracts';
 import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
+import { executeLockDocumentsByEpisodeKey } from '@/services/repositories/clinicalDocumentRepositoryLockSupport';
 
 const getClinicalDocumentsCollectionPath = (hospitalId: string = getActiveHospitalId()): string =>
   `hospitals/${hospitalId}/clinicalDocuments`;
@@ -328,6 +329,23 @@ export const ClinicalDocumentRepository = {
 
     await firestoreDb.updateDoc(getClinicalDocumentsCollectionPath(hospitalId), documentId, {
       pdf: sanitizeForFirestore(pdf),
+    });
+  },
+
+  /** Locks every unlocked document of the episode (impl in lock-support module). */
+  async lockDocumentsByEpisodeKey(
+    episodeKey: string,
+    hospitalId: string = getActiveHospitalId(),
+    options: { lockedAt?: string } = {}
+  ): Promise<string[]> {
+    return executeLockDocumentsByEpisodeKey(episodeKey, hospitalId, options, {
+      isFirestoreEnabled,
+      listByEpisode: (key, hospital) => this.listByEpisode(key, hospital),
+      applyLockPatchToFirestore: (documentId, patch, hospital) =>
+        firestoreDb.updateDoc(getClinicalDocumentsCollectionPath(hospital), documentId, patch),
+      applyLockPatchToLocalStore: (record, patch, hospital) => {
+        persistLocalClinicalDocument({ ...record, ...patch }, hospital);
+      },
     });
   },
 

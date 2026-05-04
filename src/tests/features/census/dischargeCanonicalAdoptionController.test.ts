@@ -107,4 +107,118 @@ describe('dispatchCanonicalDischarge', () => {
     expect(outcome.status.status).toBe('degraded');
     expect(outcome.applicationOutcome.userSafeMessage).toMatch(/auditoría/i);
   });
+
+  it('locks clinical documents of every closed episode and audits each newly-locked doc', async () => {
+    const writeAuditEvent = vi
+      .fn()
+      .mockResolvedValue({ status: 'success', data: null, issues: [] });
+    const lockDocumentsByEpisodeKey = vi
+      .fn()
+      .mockResolvedValueOnce(['doc-a-1', 'doc-a-2'])
+      .mockResolvedValueOnce(['doc-b-1']);
+
+    const outcome = await dispatchCanonicalDischarge(
+      validInput({
+        entries: [
+          {
+            bedId: 'R1',
+            patientName: 'A',
+            rut: '11.111.111-1',
+            status: 'Vivo',
+            episodeKey: '11.111.111-1__2026-04-01',
+          },
+          {
+            bedId: 'R2',
+            patientName: 'B',
+            rut: '22.222.222-2',
+            status: 'Fallecido',
+            episodeKey: '22.222.222-2__2026-04-15',
+            hospitalId: 'hhr',
+          },
+        ],
+      }),
+      { writeAuditEvent, lockDocumentsByEpisodeKey }
+    );
+
+    expect(outcome.status.status).toBe('ready');
+    expect(lockDocumentsByEpisodeKey).toHaveBeenCalledTimes(2);
+    expect(lockDocumentsByEpisodeKey).toHaveBeenNthCalledWith(
+      1,
+      '11.111.111-1__2026-04-01',
+      undefined,
+      expect.objectContaining({ lockedAt: expect.any(String) })
+    );
+    expect(lockDocumentsByEpisodeKey).toHaveBeenNthCalledWith(
+      2,
+      '22.222.222-2__2026-04-15',
+      'hhr',
+      expect.objectContaining({ lockedAt: expect.any(String) })
+    );
+
+    // 3 lock audit events (2 + 1 locked docs) + 2 discharge audit events = 5
+    expect(writeAuditEvent).toHaveBeenCalledTimes(5);
+    expect(writeAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'CLINICAL_DOCUMENT_LOCKED',
+        entityType: 'clinicalDocument',
+        entityId: 'doc-a-1',
+        details: expect.objectContaining({
+          reason: 'episode_closed',
+          dischargeStatus: 'Vivo',
+          episodeKey: '11.111.111-1__2026-04-01',
+        }),
+      })
+    );
+  });
+
+  it('skips lock for entries without an episodeKey', async () => {
+    const lockDocumentsByEpisodeKey = vi.fn();
+    const writeAuditEvent = vi
+      .fn()
+      .mockResolvedValue({ status: 'success', data: null, issues: [] });
+
+    await dispatchCanonicalDischarge(validInput(), {
+      writeAuditEvent,
+      lockDocumentsByEpisodeKey,
+    });
+
+    expect(lockDocumentsByEpisodeKey).not.toHaveBeenCalled();
+    // Only the discharge audit event remains
+    expect(writeAuditEvent).toHaveBeenCalledTimes(1);
+    expect(writeAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'PATIENT_DISCHARGED' })
+    );
+  });
+
+  it('reports degraded when document locking fails but the discharge persisted', async () => {
+    const lockDocumentsByEpisodeKey = vi
+      .fn()
+      .mockRejectedValue(new Error('Firestore lock batch rejected'));
+    const writeAuditEvent = vi
+      .fn()
+      .mockResolvedValue({ status: 'success', data: null, issues: [] });
+
+    const outcome = await dispatchCanonicalDischarge(
+      validInput({
+        entries: [
+          {
+            bedId: 'R1',
+            patientName: 'A',
+            rut: '11.111.111-1',
+            status: 'Vivo',
+            episodeKey: '11.111.111-1__2026-04-01',
+          },
+        ],
+      }),
+      { writeAuditEvent, lockDocumentsByEpisodeKey }
+    );
+
+    expect(outcome.status.status).toBe('degraded');
+    expect(outcome.applicationOutcome.userSafeMessage).toMatch(/bloquearse/i);
+    expect(outcome.applicationOutcome.issues[0]?.message).toMatch(/lock batch rejected/i);
+    // Discharge audit still fires even though lock failed
+    expect(writeAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'PATIENT_DISCHARGED' })
+    );
+  });
 });

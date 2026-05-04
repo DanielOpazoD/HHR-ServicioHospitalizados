@@ -28,6 +28,7 @@
 
 import { executeWriteAuditEvent } from '@/application/audit/writeAuditEventUseCase';
 import { isAnonymousActor } from '@/application/audit/auditActorPolicy';
+import { executeLockClinicalDocumentsByEpisode } from '@/application/clinical-documents/lockClinicalDocumentsByEpisodeUseCase';
 import {
   createApplicationDegraded,
   createApplicationFailed,
@@ -44,6 +45,16 @@ export interface DischargeCanonicalAuditEntry {
   patientName: string;
   rut: string;
   status: 'Vivo' | 'Fallecido';
+  /**
+   * Hospitalization-episode identifier (`patientRut__admissionDate`).
+   * When present, every clinical document under that episode is locked
+   * automatically as part of the discharge — no manual admin action
+   * required. Caller may omit it for callers that do not have access to
+   * the patient's admission date; the lock step is then a no-op.
+   */
+  episodeKey?: string;
+  /** Optional hospital scope override; defaults to the active hospital. */
+  hospitalId?: string;
 }
 
 export interface DischargeCanonicalDispatchInput {
@@ -83,9 +94,50 @@ const buildDischargeAuditEvent = (
   recordDate,
 });
 
+const buildClinicalDocumentLockedAuditEvent = (
+  actor: string,
+  recordDate: string,
+  entry: DischargeCanonicalAuditEntry,
+  documentId: string
+) => ({
+  userId: actor,
+  action: 'CLINICAL_DOCUMENT_LOCKED' as const,
+  entityType: 'clinicalDocument' as const,
+  entityId: documentId,
+  details: {
+    episodeKey: entry.episodeKey,
+    reason: 'episode_closed' as const,
+    dischargeStatus: entry.status,
+    bedId: entry.bedId,
+    rut: entry.rut,
+  },
+  patientRut: entry.rut,
+  recordDate,
+});
+
 export interface DischargeCanonicalDispatchDeps {
   writeAuditEvent?: typeof executeWriteAuditEvent;
+  /**
+   * Allows tests (or future alternate implementations) to inject a
+   * different lock implementation. Defaults to the production use case.
+   */
+  lockDocumentsByEpisodeKey?: (
+    episodeKey: string,
+    hospitalId: string | undefined,
+    options: { lockedAt?: string }
+  ) => Promise<string[]>;
 }
+
+const defaultLockDocumentsByEpisodeKey = (
+  episodeKey: string,
+  hospitalId: string | undefined,
+  options: { lockedAt?: string }
+): Promise<string[]> =>
+  executeLockClinicalDocumentsByEpisode({
+    episodeKey,
+    hospitalId,
+    lockedAt: options.lockedAt,
+  });
 
 export const dispatchCanonicalDischarge = async (
   input: DischargeCanonicalDispatchInput,
@@ -131,7 +183,36 @@ export const dispatchCanonicalDischarge = async (
   }
 
   const writeAudit = deps.writeAuditEvent ?? executeWriteAuditEvent;
+  const lockDocuments = deps.lockDocumentsByEpisodeKey ?? defaultLockDocumentsByEpisodeKey;
   const auditFailures: string[] = [];
+  const lockFailures: string[] = [];
+
+  // Phase 1: lock clinical documents under each closed episode. Failure to
+  // lock degrades the outcome but does not roll back the discharge — the
+  // physical egreso already happened and the canonical audit must still
+  // record it. The lock can be retried by an admin later; the alternative
+  // (rolling back the discharge) would leave the bed in a worse state.
+  const lockedAt = new Date().toISOString();
+  for (const entry of input.entries) {
+    if (!entry.episodeKey) continue;
+    try {
+      const newlyLocked = await lockDocuments(entry.episodeKey, entry.hospitalId, { lockedAt });
+      for (const documentId of newlyLocked) {
+        const auditOutcome = await writeAudit(
+          buildClinicalDocumentLockedAuditEvent(input.actor, input.recordDate, entry, documentId)
+        );
+        if (auditOutcome.status === 'failed') {
+          auditFailures.push(...auditOutcome.issues.map(issue => issue.message));
+        }
+      }
+    } catch (error) {
+      lockFailures.push(
+        error instanceof Error
+          ? error.message
+          : 'Error desconocido al bloquear los documentos clínicos del episodio.'
+      );
+    }
+  }
 
   for (const entry of input.entries) {
     const auditOutcome = await writeAudit(
@@ -142,16 +223,23 @@ export const dispatchCanonicalDischarge = async (
     }
   }
 
-  if (auditFailures.length > 0) {
+  if (auditFailures.length > 0 || lockFailures.length > 0) {
+    const userSafeMessage =
+      lockFailures.length > 0 && auditFailures.length === 0
+        ? 'Alta registrada, pero los documentos clínicos del episodio no pudieron bloquearse automáticamente.'
+        : lockFailures.length > 0
+          ? 'Alta registrada, pero hubo fallos bloqueando los documentos clínicos y/o registrando auditoría.'
+          : 'Alta registrada, pero uno o más eventos de auditoría no pudieron registrarse.';
+
     return {
       status: buildRuntimeOperationStatusSnapshot('degraded'),
       applicationOutcome: createApplicationDegraded(
         input.entries,
-        [...auditFailures.map(message => ({ kind: 'unknown' as const, message }))],
-        {
-          userSafeMessage:
-            'Alta registrada, pero uno o más eventos de auditoría no pudieron registrarse.',
-        }
+        [
+          ...lockFailures.map(message => ({ kind: 'unknown' as const, message })),
+          ...auditFailures.map(message => ({ kind: 'unknown' as const, message })),
+        ],
+        { userSafeMessage }
       ),
     };
   }
