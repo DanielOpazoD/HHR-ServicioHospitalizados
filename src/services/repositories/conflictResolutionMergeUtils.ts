@@ -190,7 +190,15 @@ export const mergePatientData = (
   localPatient: PatientData | undefined,
   preferLocal: boolean,
   traceContext?: ConflictResolutionTraceContext,
-  pathPrefix = 'beds'
+  pathPrefix = 'beds',
+  // True when the caller knows this specific bed was explicitly modified
+  // locally (e.g. came from `resolveByChangedPaths` with a `beds.<id>` path
+  // in `changedPaths`). False when merging a whole record where we cannot
+  // distinguish "intentionally cleared by user" from "never touched, just
+  // the bootstrap default". Without this flag the "preserve local clear"
+  // branch would silently drop legitimate concurrent updates from another
+  // user/tab on beds that the local actor never edited (issue #16).
+  isExplicitlyChangedPath = false
 ): PatientData => {
   if (!remotePatient && localPatient) {
     traceContext?.add({
@@ -216,6 +224,7 @@ export const mergePatientData = (
 
   if (
     preferLocal &&
+    isExplicitlyChangedPath &&
     isLocallyClearedPatient(localPatient) &&
     hasPatientIdentityOrClinicalContent(remotePatient)
   ) {
@@ -284,7 +293,8 @@ export const mergePatientData = (
         localValue as PatientData | undefined,
         preferLocal,
         traceContext,
-        `${pathPrefix}.${key}`
+        `${pathPrefix}.${key}`,
+        isExplicitlyChangedPath
       );
       return;
     }
@@ -306,7 +316,13 @@ export const mergeBeds = (
   localBeds: Record<string, PatientData>,
   preferLocal: boolean,
   traceContext?: ConflictResolutionTraceContext,
-  pathPrefix = 'beds'
+  pathPrefix = 'beds',
+  // Forwarded to `mergePatientData` for every bed in this merge. Pass `true`
+  // only when the caller knows every bed under `pathPrefix` was explicitly
+  // edited locally (e.g. `resolveByChangedPaths` with a `'beds'` root path).
+  // Default `false` keeps the safe whole-record semantics where we cannot
+  // tell intentional clears apart from untouched bootstrap defaults.
+  isExplicitlyChangedPath = false
 ): Record<string, PatientData> => {
   const merged: Record<string, PatientData> = {};
   const bedIds = new Set([...Object.keys(remoteBeds || {}), ...Object.keys(localBeds || {})]);
@@ -323,7 +339,8 @@ export const mergeBeds = (
       localBeds?.[bedId],
       preferLocal,
       traceContext,
-      `beds.${bedId}`
+      `beds.${bedId}`,
+      isExplicitlyChangedPath
     );
   });
 

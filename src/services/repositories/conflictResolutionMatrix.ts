@@ -233,7 +233,13 @@ const resolveByChangedPaths = (
           local.beds,
           true,
           traceContext,
-          'beds'
+          'beds',
+          // The caller explicitly listed `beds` as a changed path, so every
+          // bed under it is treated as locally edited. This preserves the
+          // "intentional clear" semantics for bulk bed clears while still
+          // letting `resolveWholeRecord` (without paths) drop the heuristic
+          // for beds that were never touched. See issue #16.
+          true
         );
         continue;
       }
@@ -246,7 +252,10 @@ const resolveByChangedPaths = (
           localBed,
           true,
           traceContext,
-          `beds.${second}`
+          `beds.${second}`,
+          // Single-bed path: caller asserts this bed was explicitly edited
+          // locally, so an empty local payload counts as intentional clear.
+          true
         );
         continue;
       }

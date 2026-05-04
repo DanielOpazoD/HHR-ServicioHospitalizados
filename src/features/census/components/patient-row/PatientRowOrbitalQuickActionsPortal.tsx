@@ -208,8 +208,13 @@ export const PatientRowOrbitalQuickActionsPortal: React.FC<
             }}
           >
             <span
+              // Visual-only chrome: the parent <button> handles all pointer
+              // interaction. Without `pointer-events-none` here, firefox lets
+              // this span capture clicks that should reach the patient row
+              // beneath (chromium delegates to the button parent silently).
+              // See issue #15.
               className={clsx(
-                'flex items-center justify-center overflow-visible rounded-full transition-[background-color,box-shadow,opacity,transform] duration-150',
+                'pointer-events-none flex items-center justify-center overflow-visible rounded-full transition-[background-color,box-shadow,opacity,transform] duration-150',
                 resolveTriggerButtonStateClassName(phase)
               )}
               style={{

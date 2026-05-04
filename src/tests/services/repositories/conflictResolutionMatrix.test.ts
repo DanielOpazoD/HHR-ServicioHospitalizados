@@ -238,6 +238,106 @@ describe('conflictResolutionMatrix', () => {
     expect(resolved.beds.R1.admissionDate).toBe('');
   });
 
+  it('accepts a remote bed update on a bed the local user never touched (issue #16)', () => {
+    // Multi-user scenario: User A edits R1 offline, User B adds a new
+    // patient to R2. After User A reconnects and the records are merged
+    // as a whole record (no specific changedPaths), R2's remote content
+    // must NOT be discarded just because the local R2 still looks like
+    // the bootstrap default. The "intentional clear" heuristic should
+    // only apply when the caller explicitly says this bed was edited.
+    const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
+    remote.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: 'BASELINE',
+        rut: '11.111.111-1',
+        pathology: 'Old diagnosis',
+        admissionDate: '2026-02-10',
+        status: 'Vivo',
+      } as unknown as DailyRecord['beds'][string],
+      R2: {
+        bedId: 'R2',
+        patientName: 'USER B NEW PATIENT',
+        rut: '22.222.222-2',
+        pathology: 'USER B NON CONFLICT DX',
+        admissionDate: '2026-02-18',
+        status: 'Estable',
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    // Local snapshot: User A edited R1 (newer timestamp wins) but never
+    // touched R2 — its bed entry is just the bootstrap default.
+    const local = makeRecord('2026-02-18', '2026-02-18T10:05:00.000Z');
+    local.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: 'BASELINE',
+        rut: '11.111.111-1',
+        pathology: 'USER A LOCAL DX',
+        admissionDate: '2026-02-10',
+        status: 'Vivo',
+      } as unknown as DailyRecord['beds'][string],
+      R2: {
+        bedId: 'R2',
+        patientName: '',
+        rut: '',
+        pathology: '',
+        admissionDate: '',
+        status: '',
+        bedMode: 'Cama',
+        hasCompanionCrib: false,
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const resolved = resolveDailyRecordConflict(remote, local);
+
+    // R1 keeps User A's local edit (newer timestamp).
+    expect(resolved.beds.R1.pathology).toBe('USER A LOCAL DX');
+    // R2 takes the remote payload — User A never touched it, so the empty
+    // local default must not be interpreted as an intentional clear.
+    expect(resolved.beds.R2.patientName).toBe('USER B NEW PATIENT');
+    expect(resolved.beds.R2.pathology).toBe('USER B NON CONFLICT DX');
+  });
+
+  it('still preserves an intentional bed clear when the caller marks the bed path as changed', () => {
+    // Companion to the test above: when the caller passes the bed path in
+    // `changedPaths` we know the local actor explicitly emptied the bed,
+    // so the remote payload must NOT resurrect the cleared patient even
+    // though the local timestamp is newer.
+    const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
+    remote.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: 'Should not resurrect',
+        rut: '99.999.999-9',
+        pathology: 'Pre-clear diagnosis',
+        admissionDate: '2026-02-10',
+        status: 'Vivo',
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const local = makeRecord('2026-02-18', '2026-02-18T10:05:00.000Z');
+    local.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: '',
+        rut: '',
+        pathology: '',
+        admissionDate: '',
+        status: 'EMPTY',
+        bedMode: 'Cama',
+        hasCompanionCrib: false,
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const resolved = resolveDailyRecordConflict(remote, local, {
+      changedPaths: ['beds.R1'],
+    });
+
+    expect(resolved.beds.R1.patientName).toBe('');
+    expect(resolved.beds.R1.pathology).toBe('');
+  });
+
   it('does not resurrect the source bed when a move is auto-merged after a remote conflict', () => {
     const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
     remote.beds = {
