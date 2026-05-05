@@ -20,7 +20,7 @@ interface CmaSectionRowProps {
   recordDate: string;
   onUpdate: (id: string, field: keyof CMAData, value: CMAData[keyof CMAData]) => void;
   onUndo: (item: CMAData) => Promise<void>;
-  onDelete: (id: string) => void;
+  onDelete: (item: CMAData) => void | Promise<void>;
 }
 
 export const CmaSectionRow: React.FC<CmaSectionRowProps> = React.memo(
@@ -86,7 +86,7 @@ export const CmaSectionRow: React.FC<CmaSectionRowProps> = React.memo(
                 <Undo2 size={14} />
               </button>
               <button
-                onClick={() => onDelete(item.id)}
+                onClick={() => void onDelete(item)}
                 className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                 title="Eliminar registro"
               >
