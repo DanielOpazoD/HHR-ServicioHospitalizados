@@ -15,7 +15,11 @@ export const UNIQUE_ARRAY_FIELDS = new Set([
   'tensNightShift',
   'activeExtraBeds',
 ]);
-export const PATIENT_ID_ARRAY_FIELDS = new Set(['clinicalEvents', 'deviceInstanceHistory']);
+export const PATIENT_ID_ARRAY_FIELDS = new Set([
+  'clinicalEvents',
+  'deviceInstanceHistory',
+  'medicalHandoffEntries',
+]);
 export const PATIENT_UNIQUE_ARRAY_FIELDS = new Set(['devices']);
 
 const resolveItemId = (item: unknown): string => {

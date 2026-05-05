@@ -31,10 +31,10 @@ const saveDailyRecordWithCompatibility = async (
   record: DailyRecord
 ): Promise<SaveDailyRecordResult | null> => {
   if (typeof dailyRecord.saveDetailed === 'function') {
-    return dailyRecord.saveDetailed(record);
+    return dailyRecord.saveDetailed(record, record.lastUpdated);
   }
 
-  await dailyRecord.save(record);
+  await dailyRecord.save(record, record.lastUpdated);
   return null;
 };
 

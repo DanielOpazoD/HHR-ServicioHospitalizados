@@ -82,6 +82,23 @@ describe('firestoreWriteSupport', () => {
     ).rejects.toBeInstanceOf(ConcurrencyError);
   });
 
+  it('can enforce strict concurrency without the same-session tolerance window', async () => {
+    vi.mocked(getDoc).mockResolvedValueOnce({
+      exists: () => true,
+      data: () => ({ lastUpdated: '2026-02-20T10:00:01.000Z' }),
+    } as never);
+
+    await expect(
+      assertFirestoreConcurrency(
+        {} as never,
+        '2026-02-20T10:00:00.000Z',
+        'conflict message',
+        'save',
+        { toleranceMs: 0 }
+      )
+    ).rejects.toBeInstanceOf(ConcurrencyError);
+  });
+
   it('allows operation when the remote document is missing or older', async () => {
     vi.mocked(getDoc)
       .mockResolvedValueOnce({

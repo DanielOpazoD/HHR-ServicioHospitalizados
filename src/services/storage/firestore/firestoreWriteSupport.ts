@@ -42,7 +42,8 @@ export const assertFirestoreConcurrency = async (
   docRef: DocumentReference,
   expectedLastUpdated: string | undefined,
   conflictMessage: string,
-  contextLabel: string
+  contextLabel: string,
+  options: { toleranceMs?: number } = {}
 ): Promise<void> => {
   if (!expectedLastUpdated) {
     return;
@@ -61,7 +62,9 @@ export const assertFirestoreConcurrency = async (
 
     const drift = new Date(remoteLastUpdated).getTime() - new Date(expectedLastUpdated).getTime();
 
-    if (drift > SAME_SESSION_TOLERANCE_MS) {
+    const toleranceMs = options.toleranceMs ?? SAME_SESSION_TOLERANCE_MS;
+
+    if (drift > toleranceMs) {
       recordOperationalErrorTelemetry(
         'firestore',
         'verify_record_concurrency',

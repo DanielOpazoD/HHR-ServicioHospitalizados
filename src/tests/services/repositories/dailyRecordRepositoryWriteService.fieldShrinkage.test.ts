@@ -13,13 +13,17 @@ vi.mock('@/services/storage/firestore/firestoreRecordWrites', () => ({
   saveRecordToFirestore: vi.fn(),
 }));
 
+vi.mock('@/services/storage/firestore/firestoreRecordQueries', () => ({
+  getRecordFromFirestore: vi.fn(),
+}));
+
 vi.mock('@/services/storage/sync', () => ({
   isRetryableSyncError: vi.fn(),
   queueSyncTask: vi.fn(),
 }));
 
 vi.mock('@/services/repositories/repositoryConfig', () => ({
-  isFirestoreEnabled: vi.fn(() => false),
+  isFirestoreEnabled: vi.fn(() => true),
 }));
 
 vi.mock('@/utils/recordInvariants', () => ({
@@ -44,12 +48,20 @@ vi.mock('@/services/repositories/repositoryLoggers', () => ({
   },
 }));
 
-import { updatePartial } from '@/services/repositories/dailyRecordRepositoryWriteService';
+import { updatePartialDetailed } from '@/services/repositories/dailyRecordRepositoryWriteService';
 import { getRecordForDate as getRecordFromIndexedDB } from '@/services/storage/indexeddb/indexedDbRecordService';
+import { saveRecord as saveToIndexedDB } from '@/services/storage/indexeddb/indexedDbRecordService';
+import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
+import { updateRecordPartial as updateRecordPartialToFirestore } from '@/services/storage/firestore/firestoreRecordWrites';
+import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 
 const longText = (chars: number) => 'a'.repeat(chars);
 
-const buildPatient = (bedId: string, pathology: string): PatientData => ({
+const buildPatient = (
+  bedId: string,
+  pathology: string,
+  overrides: Partial<PatientData> = {}
+): PatientData => ({
   bedId,
   isBlocked: false,
   bedMode: 'Cama',
@@ -65,6 +77,7 @@ const buildPatient = (bedId: string, pathology: string): PatientData => ({
   devices: [],
   surgicalComplication: false,
   isUPC: false,
+  ...overrides,
 });
 
 const buildRecord = (date: string, pathology: string): DailyRecord => ({
@@ -82,15 +95,43 @@ describe('dailyRecordRepositoryWriteService field shrinkage telemetry', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     warnSpy.mockClear();
+    vi.mocked(isFirestoreEnabled).mockReturnValue(true);
+    vi.mocked(updateRecordPartialToFirestore).mockResolvedValue(undefined);
   });
 
-  it('logs a warning when a long string field is replaced by one less than half its length', async () => {
+  it('accepts a suspicious diagnosis shrink when the remote version still matches the local token', async () => {
     const current = buildRecord('2026-02-11', longText(80));
     vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(current);
+    vi.mocked(getRecordFromFirestore).mockResolvedValueOnce(current);
 
-    await updatePartial('2026-02-11', {
+    const result = await updatePartialDetailed('2026-02-11', {
       'beds.R1.pathology': longText(20),
     });
+
+    expect(result.outcome).toBe('clean');
+    expect(saveToIndexedDB).toHaveBeenCalled();
+    expect(updateRecordPartialToFirestore).toHaveBeenCalled();
+  });
+
+  it('blocks a suspicious diagnosis shrink when the remote token moved ahead', async () => {
+    const current = buildRecord('2026-02-11', longText(80));
+    const remote = {
+      ...current,
+      lastUpdated: '2026-02-19T00:01:00.000Z',
+      beds: { R1: buildPatient('R1', longText(90)) },
+    };
+    vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(current);
+    vi.mocked(getRecordFromFirestore).mockResolvedValueOnce(remote);
+
+    const result = await updatePartialDetailed('2026-02-11', {
+      'beds.R1.pathology': longText(20),
+    });
+
+    expect(result.outcome).toBe('blocked');
+    expect(result.consistencyState).toBe('blocked_regression');
+    expect(result.blockingError?.name).toBe('DataRegressionError');
+    expect(saveToIndexedDB).not.toHaveBeenCalled();
+    expect(updateRecordPartialToFirestore).not.toHaveBeenCalled();
 
     const shrinkageCall = warnSpy.mock.calls.find(
       ([msg]) => typeof msg === 'string' && msg.includes('Field shrinkage')
@@ -104,11 +145,144 @@ describe('dailyRecordRepositoryWriteService field shrinkage telemetry', () => {
     });
   });
 
+  it('blocks a suspicious nursing handoff note shrink before it overwrites local or remote data', async () => {
+    const current = buildRecord('2026-02-11', 'Diagnostico base');
+    current.beds.R1.handoffNoteDayShift = longText(90);
+    const remote = {
+      ...current,
+      lastUpdated: '2026-02-19T00:01:00.000Z',
+      beds: {
+        R1: {
+          ...current.beds.R1,
+          handoffNoteDayShift: longText(95),
+        },
+      },
+    };
+    vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(current);
+    vi.mocked(getRecordFromFirestore).mockResolvedValueOnce(remote);
+
+    const result = await updatePartialDetailed('2026-02-11', {
+      'beds.R1.handoffNoteDayShift': longText(25),
+    });
+
+    expect(result.outcome).toBe('blocked');
+    expect(result.consistencyState).toBe('blocked_regression');
+    expect(result.blockingError?.name).toBe('DataRegressionError');
+    expect(saveToIndexedDB).not.toHaveBeenCalled();
+    expect(updateRecordPartialToFirestore).not.toHaveBeenCalled();
+
+    const shrinkageCall = warnSpy.mock.calls.find(
+      ([msg]) => typeof msg === 'string' && msg.includes('Field shrinkage')
+    );
+    expect(shrinkageCall).toBeDefined();
+    expect(shrinkageCall?.[1]).toMatchObject({
+      path: 'beds.R1.handoffNoteDayShift',
+      prevLength: 90,
+      nextLength: 25,
+    });
+  });
+
+  it('blocks a suspicious medical handoff note shrink before it overwrites local or remote data', async () => {
+    const current = buildRecord('2026-02-11', 'Diagnostico base');
+    current.beds.R1.medicalHandoffNote = longText(110);
+    const remote = {
+      ...current,
+      lastUpdated: '2026-02-19T00:01:00.000Z',
+      beds: {
+        R1: {
+          ...current.beds.R1,
+          medicalHandoffNote: longText(115),
+        },
+      },
+    };
+    vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(current);
+    vi.mocked(getRecordFromFirestore).mockResolvedValueOnce(remote);
+
+    const result = await updatePartialDetailed('2026-02-11', {
+      'beds.R1.medicalHandoffNote': longText(30),
+    });
+
+    expect(result.outcome).toBe('blocked');
+    expect(result.consistencyState).toBe('blocked_regression');
+    expect(result.blockingError?.name).toBe('DataRegressionError');
+    expect(saveToIndexedDB).not.toHaveBeenCalled();
+    expect(updateRecordPartialToFirestore).not.toHaveBeenCalled();
+
+    const shrinkageCall = warnSpy.mock.calls.find(
+      ([msg]) => typeof msg === 'string' && msg.includes('Field shrinkage')
+    );
+    expect(shrinkageCall).toBeDefined();
+    expect(shrinkageCall?.[1]).toMatchObject({
+      path: 'beds.R1.medicalHandoffNote',
+      prevLength: 110,
+      nextLength: 30,
+    });
+  });
+
+  it('blocks a suspicious medical handoff entry note shrink inside entry arrays', async () => {
+    const current = buildRecord('2026-02-11', 'Diagnostico base');
+    current.beds.R1.medicalHandoffEntries = [
+      {
+        id: 'entry-1',
+        specialty: 'medicina',
+        note: longText(120),
+        updatedAt: '2026-02-11T08:00:00.000Z',
+      },
+    ] as never;
+    const remote = {
+      ...current,
+      lastUpdated: '2026-02-19T00:01:00.000Z',
+      beds: {
+        R1: {
+          ...current.beds.R1,
+          medicalHandoffEntries: [
+            {
+              id: 'entry-1',
+              specialty: 'medicina',
+              note: longText(130),
+              updatedAt: '2026-02-11T08:01:00.000Z',
+            },
+          ] as never,
+        },
+      },
+    };
+    vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(current);
+    vi.mocked(getRecordFromFirestore).mockResolvedValueOnce(remote);
+
+    const result = await updatePartialDetailed('2026-02-11', {
+      'beds.R1.medicalHandoffEntries': [
+        {
+          id: 'entry-1',
+          specialty: 'medicina',
+          note: longText(35),
+          updatedAt: '2026-02-11T08:05:00.000Z',
+        },
+      ] as never,
+    });
+
+    expect(result.outcome).toBe('blocked');
+    expect(result.consistencyState).toBe('blocked_regression');
+    expect(result.blockingError?.name).toBe('DataRegressionError');
+    expect(saveToIndexedDB).not.toHaveBeenCalled();
+    expect(updateRecordPartialToFirestore).not.toHaveBeenCalled();
+
+    const shrinkageCall = warnSpy.mock.calls.find(
+      ([msg]) => typeof msg === 'string' && msg.includes('Field shrinkage')
+    );
+    expect(shrinkageCall).toBeDefined();
+    expect(shrinkageCall?.[1]).toMatchObject({
+      path: 'beds.R1.medicalHandoffEntries.entry-1.note',
+      prevLength: 120,
+      nextLength: 35,
+    });
+  });
+
   it('does NOT log when shrinkage stays at or above the 50% ratio', async () => {
     const current = buildRecord('2026-02-11', longText(80));
     vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(current);
+    vi.mocked(getRecordFromFirestore).mockResolvedValueOnce(current);
 
-    await updatePartial('2026-02-11', {
+    await updatePartialDetailed('2026-02-11', {
       'beds.R1.pathology': longText(60),
     });
 
@@ -121,8 +295,9 @@ describe('dailyRecordRepositoryWriteService field shrinkage telemetry', () => {
   it('does NOT log when the previous value is shorter than the 20-char floor', async () => {
     const current = buildRecord('2026-02-11', 'short');
     vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(current);
+    vi.mocked(getRecordFromFirestore).mockResolvedValueOnce(current);
 
-    await updatePartial('2026-02-11', {
+    await updatePartialDetailed('2026-02-11', {
       'beds.R1.pathology': 'a',
     });
 
@@ -135,8 +310,9 @@ describe('dailyRecordRepositoryWriteService field shrinkage telemetry', () => {
   it('does NOT log when the new value is empty (clearing a field is not shrinkage)', async () => {
     const current = buildRecord('2026-02-11', longText(80));
     vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(current);
+    vi.mocked(getRecordFromFirestore).mockResolvedValueOnce(current);
 
-    await updatePartial('2026-02-11', {
+    await updatePartialDetailed('2026-02-11', {
       'beds.R1.pathology': '',
     });
 

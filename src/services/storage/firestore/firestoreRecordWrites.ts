@@ -141,7 +141,8 @@ export const saveRecordToFirestore = async (
       docRef,
       expectedLastUpdated,
       'El registro ha sido modificado por otro usuario. Por favor recarga la página.',
-      'save'
+      'save',
+      { toleranceMs: 0 }
     );
 
     await saveHistorySnapshot(record.date);

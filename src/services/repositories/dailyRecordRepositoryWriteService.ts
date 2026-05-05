@@ -8,6 +8,7 @@ import {
   saveRecordToFirestore,
   updateRecordPartial as updateRecordPartialToFirestore,
 } from '@/services/storage/firestore/firestoreRecordWrites';
+import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import {
   createPartialUpdateDailyRecordCommand,
@@ -20,6 +21,7 @@ import {
   assertRemoteSaveCompatibility,
   resolveRemoteWriteRecovery,
 } from '@/services/repositories/dailyRecordRemoteWriteController';
+import { attemptConflictAutoMergeRecovery } from '@/services/repositories/dailyRecordConflictAutoMergeController';
 import { syncPatientsToMasterInBackground } from '@/services/repositories/dailyRecordBackgroundMasterSyncController';
 import {
   applyRecoveryDecisionToState,
@@ -34,7 +36,7 @@ import { dailyRecordWriteLogger } from '@/services/repositories/repositoryLogger
 import { DataRegressionError, VersionMismatchError } from '@/utils/integrityGuard';
 import { AdmissionDatePolicyViolationError } from '@/application/patient-flow/admissionDatePolicy';
 
-// Field shrinkage telemetry — observability only, no behavior change.
+// Field shrinkage guard.
 // Catches the family of bugs where a stale snapshot or a debounced commit
 // overwrites a longer text field with a much shorter one. The 20-char
 // floor avoids noise on short fields ("OK" -> "O" is not interesting);
@@ -42,6 +44,7 @@ import { AdmissionDatePolicyViolationError } from '@/application/patient-flow/ad
 // while letting normal edits through.
 const FIELD_SHRINKAGE_MIN_PREV_LENGTH = 20;
 const FIELD_SHRINKAGE_RATIO_THRESHOLD = 0.5;
+type FieldShrinkage = { path: string; prevLength: number; nextLength: number };
 
 const resolvePathOnRecord = (record: DailyRecord, path: string): unknown => {
   const segments = path.split('.');
@@ -53,22 +56,116 @@ const resolvePathOnRecord = (record: DailyRecord, path: string): unknown => {
   return current;
 };
 
+const isProtectedClinicalTextPath = (path: string): boolean =>
+  /^beds\.[^.]+(\.clinicalCrib)?\.(pathology|handoffNote|handoffNoteDayShift|handoffNoteNightShift|medicalHandoffNote)$/.test(
+    path
+  );
+
+const isMedicalHandoffEntriesPath = (path: string): boolean =>
+  /^beds\.[^.]+(\.clinicalCrib)?\.medicalHandoffEntries$/.test(path);
+
+const isSuspiciousTextShrinkage = (prevValue: string, nextValue: string): boolean => {
+  if (nextValue.length === 0) return false;
+  if (prevValue.length < FIELD_SHRINKAGE_MIN_PREV_LENGTH) return false;
+  return nextValue.length / prevValue.length < FIELD_SHRINKAGE_RATIO_THRESHOLD;
+};
+
+const resolveEntryId = (entry: unknown, fallback: number): string =>
+  String((entry as { id?: string | number } | null)?.id ?? fallback);
+
+const reportMedicalEntryNoteShrinkage = (
+  path: string,
+  prevValue: unknown,
+  nextValue: unknown
+): FieldShrinkage[] => {
+  if (!Array.isArray(prevValue) || !Array.isArray(nextValue)) return [];
+
+  const previousEntries = new Map<string, unknown>();
+  prevValue.forEach((entry, index) => previousEntries.set(resolveEntryId(entry, index), entry));
+
+  return nextValue.flatMap((entry, index) => {
+    const entryId = resolveEntryId(entry, index);
+    const previousEntry = previousEntries.get(entryId);
+    const previousNote = (previousEntry as { note?: unknown } | undefined)?.note;
+    const nextNote = (entry as { note?: unknown } | undefined)?.note;
+    if (typeof previousNote !== 'string' || typeof nextNote !== 'string') return [];
+    if (!isSuspiciousTextShrinkage(previousNote, nextNote)) return [];
+    return [
+      {
+        path: `${path}.${entryId}.note`,
+        prevLength: previousNote.length,
+        nextLength: nextNote.length,
+      },
+    ];
+  });
+};
+
 const reportFieldShrinkage = (
   date: string,
   current: DailyRecord,
   patches: DailyRecordPatch
-): void => {
+): FieldShrinkage[] => {
+  const suspiciousShrinkages: FieldShrinkage[] = [];
+
   for (const [path, nextValue] of Object.entries(patches)) {
-    if (typeof nextValue !== 'string' || nextValue.length === 0) continue;
     const prevValue = resolvePathOnRecord(current, path);
-    if (typeof prevValue !== 'string') continue;
-    if (prevValue.length < FIELD_SHRINKAGE_MIN_PREV_LENGTH) continue;
-    if (nextValue.length / prevValue.length >= FIELD_SHRINKAGE_RATIO_THRESHOLD) continue;
+
+    if (isMedicalHandoffEntriesPath(path)) {
+      const entryShrinkages = reportMedicalEntryNoteShrinkage(path, prevValue, nextValue);
+      entryShrinkages.forEach(shrinkage =>
+        dailyRecordWriteLogger.warn(
+          `Field shrinkage detected at ${shrinkage.path} for ${date}: ${shrinkage.prevLength} -> ${shrinkage.nextLength} chars`,
+          { ...shrinkage, date }
+        )
+      );
+      suspiciousShrinkages.push(...entryShrinkages);
+      continue;
+    }
+
+    if (typeof nextValue !== 'string' || typeof prevValue !== 'string') continue;
+    if (!isSuspiciousTextShrinkage(prevValue, nextValue)) continue;
     dailyRecordWriteLogger.warn(
       `Field shrinkage detected at ${path} for ${date}: ${prevValue.length} -> ${nextValue.length} chars`,
       { path, date, prevLength: prevValue.length, nextLength: nextValue.length }
     );
+    if (isProtectedClinicalTextPath(path)) {
+      suspiciousShrinkages.push({
+        path,
+        prevLength: prevValue.length,
+        nextLength: nextValue.length,
+      });
+    }
   }
+
+  return suspiciousShrinkages;
+};
+
+const hasRemoteVersionAdvanced = (remote: DailyRecord, current: DailyRecord): boolean => {
+  const remoteUpdatedAt = new Date(remote.lastUpdated || '').getTime();
+  const currentUpdatedAt = new Date(current.lastUpdated || '').getTime();
+  if (!Number.isFinite(remoteUpdatedAt) || !Number.isFinite(currentUpdatedAt)) {
+    return remote.lastUpdated !== current.lastUpdated;
+  }
+  return remoteUpdatedAt > currentUpdatedAt;
+};
+
+const resolveBlockingFieldShrinkages = async (
+  date: string,
+  current: DailyRecord,
+  patches: DailyRecordPatch
+): Promise<FieldShrinkage[]> => {
+  const localShrinkages = reportFieldShrinkage(date, current, patches);
+  if (localShrinkages.length === 0 || !isFirestoreEnabled()) {
+    return [];
+  }
+
+  const remoteRecord = await getRecordFromFirestore(date);
+  if (!remoteRecord || !hasRemoteVersionAdvanced(remoteRecord, current)) {
+    return [];
+  }
+
+  const remoteShrinkages = reportFieldShrinkage(date, remoteRecord, patches);
+  return remoteShrinkages.length > 0 ? remoteShrinkages : localShrinkages;
 };
 
 const runRemoteSaveIntegrityCheck = async (date: string, record: DailyRecord): Promise<void> => {
@@ -118,6 +215,37 @@ const markRemoteWriteSucceeded = (state: RemoteWriteState): void => {
   state.observabilityTags = ['daily_record', 'write', 'persisted_and_synced'];
 };
 
+const tryAutoMergeBlockedFullSaveRegression = async (
+  date: string,
+  record: DailyRecord,
+  error: DataRegressionError,
+  state: RemoteWriteState
+): Promise<boolean> => {
+  const mergeResult = await attemptConflictAutoMergeRecovery(date, record, ['*']);
+  if (mergeResult?.status !== 'auto_merged') {
+    return false;
+  }
+
+  state.queuedForRetry = true;
+  state.autoMerged = true;
+  applyRecoveryDecisionToState(state, {
+    consistencyState: 'auto_merged',
+    retryability: 'automatic_retry',
+    recoveryAction: 'auto_merge_and_queue',
+    conflictSummary: {
+      kind: 'regression_blocked',
+      sourceOfTruth: 'local',
+      localTimestamp: record.lastUpdated,
+      changedPaths: ['*'],
+      message: error.message,
+    },
+    observabilityTags: ['daily_record', 'write', 'regression_auto_merged'],
+    userSafeMessage:
+      'Se detectó una posible pérdida de datos y se fusionó automáticamente con la copia remota.',
+  });
+  return true;
+};
+
 const persistLocalAndAttemptRemoteSync = async ({
   date,
   record,
@@ -150,9 +278,9 @@ const persistLocalAndAttemptRemoteSync = async ({
 };
 
 export const saveDetailed = async (record: DailyRecord, expectedLastUpdated?: string) => {
-  const command = createSaveDailyRecordCommand(record, expectedLastUpdated);
+  const command = createSaveDailyRecordCommand(record, expectedLastUpdated ?? record.lastUpdated);
   const remoteState = createRemoteWriteState();
-  let validatedRecord: DailyRecord;
+  let validatedRecord: DailyRecord = command.record;
   try {
     const currentLocalRecord = await getRecordFromIndexedDB(command.date);
     validatedRecord = prepareDailyRecordForPersistence(
@@ -162,6 +290,14 @@ export const saveDetailed = async (record: DailyRecord, expectedLastUpdated?: st
     );
     await runRemoteSaveIntegrityCheck(command.date, validatedRecord);
   } catch (err) {
+    if (
+      err instanceof DataRegressionError &&
+      validatedRecord &&
+      (await tryAutoMergeBlockedFullSaveRegression(command.date, validatedRecord, err, remoteState))
+    ) {
+      return buildSaveResult(command.date, remoteState);
+    }
+
     if (
       err instanceof DataRegressionError ||
       err instanceof VersionMismatchError ||
@@ -309,7 +445,38 @@ export const updatePartialDetailed = async (date: string, partialData: DailyReco
   }
   const patchedFields = Object.keys(mergedPatches).length;
 
-  reportFieldShrinkage(command.date, current, mergedPatches);
+  const suspiciousShrinkages = await resolveBlockingFieldShrinkages(
+    command.date,
+    current,
+    mergedPatches
+  );
+  if (suspiciousShrinkages.length > 0) {
+    const firstShrinkage = suspiciousShrinkages[0];
+    const error = new DataRegressionError(
+      `Se bloqueó una reducción sospechosa de texto clínico (${firstShrinkage.prevLength} -> ${firstShrinkage.nextLength} caracteres). Recarga antes de reintentar para evitar pérdida de información.`,
+      firstShrinkage.nextLength,
+      firstShrinkage.prevLength
+    );
+    applyRecoveryDecisionToState(
+      remoteState,
+      {
+        consistencyState: 'blocked_regression',
+        retryability: 'blocked',
+        recoveryAction: 'block_and_surface',
+        blockingReason: 'regression',
+        conflictSummary: {
+          kind: 'regression_blocked',
+          sourceOfTruth: 'none',
+          changedPaths: suspiciousShrinkages.map(item => item.path),
+          message: error.message,
+        },
+        observabilityTags: ['daily_record', 'write', 'field_shrinkage_blocked'],
+        userSafeMessage: error.message,
+      },
+      error
+    );
+    return buildBlockedPartialUpdateResult(command.date, remoteState, patchedFields);
+  }
 
   const nextAction = await persistLocalAndAttemptRemoteSync({
     date: command.date,

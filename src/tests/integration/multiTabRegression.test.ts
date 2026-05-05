@@ -10,8 +10,8 @@
  *     (DataRegressionError / VersionMismatchError), OR
  *   - auto-merges into the queue (the legitimate concurrency path),
  *     OR
- *   - emits the field-shrinkage telemetry warning so the regression
- *     is at least visible in operational logs.
+ *   - blocks field-shrinkage writes so a stale diagnosis snapshot cannot
+ *     replace a longer current value.
  *
  * Existing coverage validates each piece in isolation
  * (integrityGuard math, recovery controllers, error→feedback mapping).
@@ -217,14 +217,11 @@ describe('Multi-tab regression — stale snapshot writes are detected', () => {
     });
   });
 
-  it('emits field-shrinkage telemetry when a stale snapshot patch overwrites a long string with a much shorter one', async () => {
-    // Classic DebouncedInput-style multi-tab regression: Tab A
-    // accumulated a long pathology note, but Tab B (or a stale
-    // captured value in Tab A itself) commits a much shorter value
-    // for the same field. The shrinkage telemetry surfaces it as
-    // operational signal even when the integrity guard does not
-    // block the write (the field is small relative to whole-record
-    // density).
+  it('blocks field-shrinkage when a stale snapshot patch would overwrite a long diagnosis', async () => {
+    // Classic DebouncedInput-style multi-tab regression: Tab A holds
+    // a stale token while the remote record has already advanced with
+    // a long pathology note. The shorter stale commit should be
+    // blocked before it overwrites the remote text.
     const date = '2026-02-19';
     const longPathology =
       'Insuficiencia respiratoria aguda con requerimiento de soporte ventilatorio invasivo y monitoreo hemodinámico continuo';
@@ -232,11 +229,20 @@ describe('Multi-tab regression — stale snapshot writes are detected', () => {
       ...buildSparseRecord(date),
       beds: { R1: buildPatient('R1', { pathology: longPathology }) },
     };
+    const remote = {
+      ...current,
+      lastUpdated: '2026-02-19T10:01:00.000Z',
+    };
 
     vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(current);
+    vi.mocked(getRecordFromFirestore).mockResolvedValueOnce(remote);
     vi.mocked(updateRecordPartialToFirestore).mockResolvedValueOnce(undefined);
 
-    await updatePartial(date, { 'beds.R1.pathology': 'NAC' });
+    const result = await updatePartialDetailed(date, { 'beds.R1.pathology': 'NAC' });
+
+    expect(result.outcome).toBe('blocked');
+    expect(result.consistencyState).toBe('blocked_regression');
+    expect(result.blockingError?.name).toBe('DataRegressionError');
 
     const shrinkageCall = warnSpy.mock.calls.find(
       ([msg]) => typeof msg === 'string' && msg.includes('Field shrinkage')
@@ -261,6 +267,7 @@ describe('Multi-tab regression — stale snapshot writes are detected', () => {
     vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(baseline);
     const concurrencyError = new Error('Concurrency conflict');
     concurrencyError.name = 'ConcurrencyError';
+    vi.mocked(updateRecordPartialToFirestore).mockReset();
     vi.mocked(updateRecordPartialToFirestore).mockRejectedValueOnce(concurrencyError);
     vi.mocked(attemptConflictAutoMergeRecovery).mockResolvedValueOnce({ status: 'auto_merged' });
 
@@ -268,6 +275,11 @@ describe('Multi-tab regression — stale snapshot writes are detected', () => {
       'beds.R1.pathology': 'Diagnostico actualizado por Tab A',
     });
 
+    expect(attemptConflictAutoMergeRecovery).toHaveBeenCalledWith(
+      date,
+      expect.objectContaining({ date }),
+      expect.arrayContaining(['beds.R1.pathology'])
+    );
     expect(result.outcome).not.toBe('failed');
     expect(result.autoMerged).toBe(true);
     expect(result.conflictSummary?.kind).toBe('concurrency');

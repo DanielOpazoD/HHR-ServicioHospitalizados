@@ -121,7 +121,8 @@ describe('firestoreRecordWrites', () => {
       { date: '2026-03-14' },
       undefined,
       'El registro ha sido modificado por otro usuario. Por favor recarga la página.',
-      'save'
+      'save',
+      { toleranceMs: 0 }
     );
     expect(saveHistorySnapshot).toHaveBeenCalledWith('2026-03-14');
     expect(setDoc).toHaveBeenCalledTimes(1);
@@ -247,7 +248,8 @@ describe('firestoreRecordWrites', () => {
       { date: '2026-03-17' },
       '2026-03-16T10:00:00.000Z',
       'El registro ha sido modificado por otro usuario. Por favor recarga la página.',
-      'save'
+      'save',
+      { toleranceMs: 0 }
     );
     expect(firestoreWriteLoggerError).toHaveBeenCalledWith(
       'Firestore write failed: save',

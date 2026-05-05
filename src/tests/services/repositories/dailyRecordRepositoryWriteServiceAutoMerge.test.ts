@@ -145,6 +145,79 @@ describe('dailyRecordRepositoryWriteService concurrency auto-merge', () => {
     );
   });
 
+  it('preserves remote movement entries when a stale full save is auto-merged', async () => {
+    const local = buildRecord('2026-02-16');
+    local.beds = { R1: buildPatient('R1', 'Nombre local') };
+    local.beds.R1.pathology = 'Diagnostico editado localmente';
+
+    const remote = buildRecord('2026-02-16');
+    remote.beds = { R1: buildPatient('R1', 'Nombre remoto') };
+    remote.cma = [
+      {
+        id: 'cma-remote',
+        bedName: 'CMA',
+        patientName: 'Paciente CMA remoto',
+        rut: '22.222.222-2',
+        age: '55a',
+        diagnosis: 'Colelitiasis',
+        specialty: 'Cirugia',
+        interventionType: 'Cirugía Mayor Ambulatoria',
+        timestamp: '2026-02-16T09:00:00.000Z',
+      },
+    ];
+    remote.discharges = [
+      {
+        id: 'discharge-remote',
+        patientName: 'Paciente Alta remoto',
+        rut: '33.333.333-3',
+        diagnosis: 'Neumonia',
+        bedId: 'R2',
+        bedName: 'R2',
+        bedType: 'Cama',
+        status: 'Vivo',
+        time: '10:00',
+      },
+    ] as DailyRecord['discharges'];
+    remote.transfers = [
+      {
+        id: 'transfer-remote',
+        patientName: 'Paciente Traslado remoto',
+        rut: '44.444.444-4',
+        diagnosis: 'ACV',
+        bedId: 'R3',
+        bedName: 'R3',
+        bedType: 'Cama',
+        evacuationMethod: 'SAMU',
+        receivingCenter: 'Hospital Regional',
+        time: '11:00',
+      },
+    ] as DailyRecord['transfers'];
+
+    const concurrencyError = new Error('Concurrency conflict');
+    concurrencyError.name = 'ConcurrencyError';
+
+    vi.mocked(saveRecordToFirestore).mockRejectedValueOnce(concurrencyError);
+    vi.mocked(getRecordFromFirestore).mockResolvedValue(remote);
+
+    await expect(save(local, '2026-02-16T00:00:00.000Z')).resolves.toBeUndefined();
+
+    expect(queueSyncTask).toHaveBeenCalledWith(
+      'UPDATE_DAILY_RECORD',
+      expect.objectContaining({
+        cma: expect.arrayContaining([expect.objectContaining({ id: 'cma-remote' })]),
+        discharges: expect.arrayContaining([expect.objectContaining({ id: 'discharge-remote' })]),
+        transfers: expect.arrayContaining([expect.objectContaining({ id: 'transfer-remote' })]),
+        beds: expect.objectContaining({
+          R1: expect.objectContaining({ pathology: 'Diagnostico editado localmente' }),
+        }),
+      }),
+      expect.objectContaining({
+        contexts: ['clinical', 'staffing', 'movements', 'handoff', 'metadata'],
+        origin: 'conflict_auto_merge',
+      })
+    );
+  });
+
   it('auto-merges on concurrency conflict during partial update and queues merged result', async () => {
     const current = buildRecord('2026-02-15');
     current.beds = { R1: buildPatient('R1', 'Paciente local') };
@@ -194,6 +267,68 @@ describe('dailyRecordRepositoryWriteService concurrency auto-merge', () => {
           riskLevel: 'low',
           reviewRecommended: false,
         }),
+      })
+    );
+  });
+
+  it('preserves concurrent medical handoff entries by id during partial-update auto-merge', async () => {
+    const current = buildRecord('2026-02-15');
+    current.beds = {
+      R1: {
+        ...buildPatient('R1', 'Paciente local'),
+        medicalHandoffEntries: [
+          {
+            id: 'entry-local',
+            specialty: 'medicina',
+            note: 'Entrada agregada por Tab A',
+          },
+        ] as never,
+      },
+    };
+
+    const remote = buildRecord('2026-02-15');
+    remote.beds = {
+      R1: {
+        ...buildPatient('R1', 'Paciente remoto'),
+        medicalHandoffEntries: [
+          {
+            id: 'entry-remote',
+            specialty: 'cirugia',
+            note: 'Entrada agregada por Tab B',
+          },
+        ] as never,
+      },
+    };
+
+    const concurrencyError = new Error('Concurrency conflict');
+    concurrencyError.name = 'ConcurrencyError';
+
+    vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(current);
+    vi.mocked(updateRecordPartialToFirestore).mockRejectedValueOnce(concurrencyError);
+    vi.mocked(getRecordFromFirestore).mockResolvedValue(remote);
+
+    await expect(
+      updatePartial('2026-02-15', {
+        'beds.R1.medicalHandoffEntries': current.beds.R1.medicalHandoffEntries as never,
+      })
+    ).resolves.toBeUndefined();
+
+    expect(queueSyncTask).toHaveBeenCalledWith(
+      'UPDATE_DAILY_RECORD',
+      expect.objectContaining({
+        date: '2026-02-15',
+        beds: expect.objectContaining({
+          R1: expect.objectContaining({
+            medicalHandoffEntries: expect.arrayContaining([
+              expect.objectContaining({ id: 'entry-local' }),
+              expect.objectContaining({ id: 'entry-remote' }),
+            ]),
+          }),
+        }),
+      }),
+      expect.objectContaining({
+        contexts: expect.arrayContaining(['clinical', 'metadata']),
+        origin: 'conflict_auto_merge',
       })
     );
   });
