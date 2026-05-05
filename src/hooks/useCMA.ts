@@ -1,11 +1,13 @@
 import { useMemo, useCallback, useRef, useEffect } from 'react';
 import type {
+  ApplyDailyRecordPatch,
   DailyRecord,
   PersistDailyRecord,
 } from '@/application/shared/dailyRecordCoreContracts';
 import { CMAData } from '@/types/domain/movements';
 import { capitalizeWords } from '@/utils/stringUtils';
 import { formatRut, isValidRut, isPassportFormat } from '@/utils/rutUtils';
+import { buildClearPatientPatches } from '@/hooks/controllers/bedManagementPatchController';
 
 /**
  * Normalize CMA patient data fields
@@ -32,7 +34,11 @@ const normalizePatientData = (data: Partial<CMAData>): Partial<CMAData> => {
   return normalized;
 };
 
-export const useCMA = (record: DailyRecord | null, saveAndUpdate: PersistDailyRecord) => {
+export const useCMA = (
+  record: DailyRecord | null,
+  _saveAndUpdate: PersistDailyRecord,
+  patchRecord: ApplyDailyRecordPatch
+) => {
   const recordRef = useRef(record);
   useEffect(() => {
     recordRef.current = record;
@@ -54,13 +60,17 @@ export const useCMA = (record: DailyRecord | null, saveAndUpdate: PersistDailyRe
       };
 
       const currentList = currentRecord.cma || [];
-
-      saveAndUpdate({
-        ...currentRecord,
+      const patch = {
         cma: [...currentList, newEntry],
-      });
+      };
+
+      if (newEntry.originalBedId && currentRecord.beds?.[newEntry.originalBedId]) {
+        Object.assign(patch, buildClearPatientPatches(currentRecord, newEntry.originalBedId));
+      }
+
+      patchRecord(patch);
     },
-    [saveAndUpdate]
+    [patchRecord]
   );
 
   const deleteCMA = useCallback(
@@ -68,12 +78,11 @@ export const useCMA = (record: DailyRecord | null, saveAndUpdate: PersistDailyRe
       const currentRecord = recordRef.current;
       if (!currentRecord) return;
       const currentList = currentRecord.cma || [];
-      saveAndUpdate({
-        ...currentRecord,
+      patchRecord({
         cma: currentList.filter(item => item.id !== id),
       });
     },
-    [saveAndUpdate]
+    [patchRecord]
   );
 
   const updateCMA = useCallback(
@@ -85,12 +94,11 @@ export const useCMA = (record: DailyRecord | null, saveAndUpdate: PersistDailyRe
       const normalizedUpdates = normalizePatientData(updates);
 
       const currentList = currentRecord.cma || [];
-      saveAndUpdate({
-        ...currentRecord,
+      patchRecord({
         cma: currentList.map(item => (item.id === id ? { ...item, ...normalizedUpdates } : item)),
       });
     },
-    [saveAndUpdate]
+    [patchRecord]
   );
 
   return useMemo(

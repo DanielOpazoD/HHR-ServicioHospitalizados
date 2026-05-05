@@ -31,7 +31,7 @@ export const useDailyRecordDomainModules = (
   const nurseManagement = useNurseManagement(record, patchRecord);
   const tensManagement = useTensManagement(record, patchRecord);
   const staffingManagement = useDetailedStaffingManagement(record, patchRecord);
-  const cmaManagement = useCMA(record, saveAndUpdate);
+  const cmaManagement = useCMA(record, saveAndUpdate, patchRecord);
   const handoffManagement = useHandoffManagement(record, saveAndUpdate, patchRecord);
 
   return {

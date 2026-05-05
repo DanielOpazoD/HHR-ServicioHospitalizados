@@ -8,6 +8,7 @@ import type { CMAData } from '@/types/domain/movements';
 describe('useCMA', () => {
   let mockRecord: DailyRecord;
   const saveAndUpdate = vi.fn();
+  const patchRecord = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -15,7 +16,7 @@ describe('useCMA', () => {
   });
 
   it('should add a CMA entry with normalized data', () => {
-    const { result } = renderHook(() => useCMA(mockRecord, saveAndUpdate));
+    const { result } = renderHook(() => useCMA(mockRecord, saveAndUpdate, patchRecord));
 
     const cmaData: Omit<CMAData, 'id'> = {
       bedName: 'CMA 1',
@@ -31,7 +32,7 @@ describe('useCMA', () => {
       result.current.addCMA(cmaData);
     });
 
-    expect(saveAndUpdate).toHaveBeenCalledWith(
+    expect(patchRecord).toHaveBeenCalledWith(
       expect.objectContaining({
         cma: expect.arrayContaining([
           expect.objectContaining({
@@ -42,17 +43,61 @@ describe('useCMA', () => {
         ]),
       })
     );
+    expect(saveAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('adds CMA and clears the original bed in one patch when the movement comes from a bed', () => {
+    mockRecord.beds.R1 = DataFactory.createMockPatient('R1', {
+      patientName: 'Paciente CMA',
+      rut: '11.111.111-1',
+      pathology: 'Colelitiasis',
+      location: 'Sector A',
+    });
+    const { result } = renderHook(() => useCMA(mockRecord, saveAndUpdate, patchRecord));
+
+    act(() => {
+      result.current.addCMA({
+        bedName: 'R1',
+        patientName: 'paciente cma',
+        rut: '111111111',
+        age: '45',
+        diagnosis: 'Colelitiasis',
+        specialty: 'Cirugía',
+        interventionType: 'Cirugía Mayor Ambulatoria',
+        originalBedId: 'R1',
+      });
+    });
+
+    expect(patchRecord).toHaveBeenCalledTimes(1);
+    expect(patchRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cma: expect.arrayContaining([
+          expect.objectContaining({
+            patientName: 'Paciente Cma',
+            originalBedId: 'R1',
+          }),
+        ]),
+        'beds.R1': expect.objectContaining({
+          bedId: 'R1',
+          patientName: '',
+          rut: '',
+          pathology: '',
+          location: 'Sector A',
+        }),
+      })
+    );
+    expect(saveAndUpdate).not.toHaveBeenCalled();
   });
 
   it('should delete a CMA entry', () => {
     mockRecord.cma = [DataFactory.createMockCMA({ id: 'cma-1' })];
-    const { result } = renderHook(() => useCMA(mockRecord, saveAndUpdate));
+    const { result } = renderHook(() => useCMA(mockRecord, saveAndUpdate, patchRecord));
 
     act(() => {
       result.current.deleteCMA('cma-1');
     });
 
-    expect(saveAndUpdate).toHaveBeenCalledWith(
+    expect(patchRecord).toHaveBeenCalledWith(
       expect.objectContaining({
         cma: [],
       })
@@ -61,13 +106,13 @@ describe('useCMA', () => {
 
   it('should update a CMA entry with normalized data', () => {
     mockRecord.cma = [DataFactory.createMockCMA({ id: 'cma-1', patientName: 'Original' })];
-    const { result } = renderHook(() => useCMA(mockRecord, saveAndUpdate));
+    const { result } = renderHook(() => useCMA(mockRecord, saveAndUpdate, patchRecord));
 
     act(() => {
       result.current.updateCMA('cma-1', { patientName: 'updated name' });
     });
 
-    expect(saveAndUpdate).toHaveBeenCalledWith(
+    expect(patchRecord).toHaveBeenCalledWith(
       expect.objectContaining({
         cma: [
           expect.objectContaining({
@@ -80,7 +125,7 @@ describe('useCMA', () => {
   });
 
   it('should handle record being null', () => {
-    const { result } = renderHook(() => useCMA(null, saveAndUpdate));
+    const { result } = renderHook(() => useCMA(null, saveAndUpdate, patchRecord));
 
     act(() => {
       result.current.addCMA({
@@ -95,5 +140,6 @@ describe('useCMA', () => {
     });
 
     expect(saveAndUpdate).not.toHaveBeenCalled();
+    expect(patchRecord).not.toHaveBeenCalled();
   });
 });
