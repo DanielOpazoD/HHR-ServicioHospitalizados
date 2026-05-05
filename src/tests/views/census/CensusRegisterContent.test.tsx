@@ -68,7 +68,7 @@ describe('CensusRegisterContent', () => {
 
     expect(screen.getByTestId('census-table')).toBeInTheDocument();
 
-    // Wait long enough that any setTimeout(0) would have fired, then confirm
+    // Wait long enough that any zero-delay deferred task would have fired, then confirm
     // the deferred sections never get scheduled for the specialist profile.
     await waitFor(() => {
       expect(screen.queryByTestId('census-register-sections')).not.toBeInTheDocument();

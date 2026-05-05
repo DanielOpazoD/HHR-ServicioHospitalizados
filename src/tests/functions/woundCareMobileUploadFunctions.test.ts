@@ -95,11 +95,14 @@ describe('functions woundCareMobileUploadFunctions', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-05T12:00:00.000Z'));
     delete process.env.ENFORCE_WOUND_CARE_APP_CHECK;
     vi.resetModules();
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     if (ORIGINAL_APP_CHECK_FLAG === undefined) {
       delete process.env.ENFORCE_WOUND_CARE_APP_CHECK;
     } else {
