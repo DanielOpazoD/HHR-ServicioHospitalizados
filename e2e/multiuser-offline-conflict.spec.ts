@@ -76,10 +76,32 @@ const buildCurrentRecordSnapshot = async (page: Page) =>
     return records[date] || null;
   }, MULTIUSER_DATE);
 
+const buildRemoteSnapshotWithBedFields = async (
+  page: Page,
+  bedId: string,
+  fields: Record<string, string>
+) => {
+  const current = (await buildCurrentRecordSnapshot(page)) as Record<string, unknown> | null;
+  const currentBeds = (current?.beds || {}) as Record<string, Record<string, unknown>>;
+
+  return {
+    ...(current || {}),
+    date: MULTIUSER_DATE,
+    lastUpdated: `${MULTIUSER_DATE}T09:00:00.000Z`,
+    beds: {
+      ...currentBeds,
+      [bedId]: {
+        ...(currentBeds[bedId] || {}),
+        ...fields,
+      },
+    },
+  };
+};
+
 const injectRemoteSnapshotForNextLoad = async (page: Page, snapshot: Record<string, unknown>) => {
   await page.evaluate(
     ({ date, record }) => {
-      localStorage.setItem('hhr_e2e_multiuser_remote_shadow', JSON.stringify({ date, record }));
+      localStorage.setItem('hhr_e2e_remote_override_shadow', JSON.stringify({ date, record }));
     },
     {
       date: MULTIUSER_DATE,
@@ -88,18 +110,27 @@ const injectRemoteSnapshotForNextLoad = async (page: Page, snapshot: Record<stri
   );
 
   await page.addInitScript(() => {
-    const remoteShadow = localStorage.getItem('hhr_e2e_multiuser_remote_shadow');
+    const remoteShadow = localStorage.getItem('hhr_e2e_remote_override_shadow');
     if (!remoteShadow) return;
 
     const parsed = JSON.parse(remoteShadow) as { date: string; record: unknown };
     const runtimeWindow = window as Window & {
       __HHR_E2E_OVERRIDE__?: Record<string, unknown>;
     };
+    const lockedRemoteRecord = parsed.record;
 
-    runtimeWindow.__HHR_E2E_OVERRIDE__ = {
-      ...(runtimeWindow.__HHR_E2E_OVERRIDE__ || {}),
-      [parsed.date]: parsed.record,
-    };
+    runtimeWindow.__HHR_E2E_OVERRIDE__ = new Proxy(
+      {
+        ...(runtimeWindow.__HHR_E2E_OVERRIDE__ || {}),
+        [parsed.date]: lockedRemoteRecord,
+      },
+      {
+        set(target, property, value) {
+          target[property as string] = property === parsed.date ? lockedRemoteRecord : value;
+          return true;
+        },
+      }
+    );
   });
 };
 
@@ -233,12 +264,13 @@ test.describe('Multi-user offline conflict smoke', () => {
         },
       });
 
-      const userBRemoteSnapshot = await buildCurrentRecordSnapshot(userBPage);
-      expect(userBRemoteSnapshot).not.toBeNull();
-      await injectRemoteSnapshotForNextLoad(
-        userAPage,
-        userBRemoteSnapshot as Record<string, unknown>
-      );
+      const userBRemoteSnapshot = await buildRemoteSnapshotWithBedFields(userBPage, 'R2', {
+        patientName: 'USER B NEW PATIENT',
+        pathology: 'USER B NON CONFLICT DX',
+        status: 'Estable',
+        admissionDate: MULTIUSER_DATE,
+      });
+      await injectRemoteSnapshotForNextLoad(userAPage, userBRemoteSnapshot);
 
       await userAContext.setOffline(false);
       await expect.poll(() => userAPage.evaluate(() => navigator.onLine)).toBe(true);

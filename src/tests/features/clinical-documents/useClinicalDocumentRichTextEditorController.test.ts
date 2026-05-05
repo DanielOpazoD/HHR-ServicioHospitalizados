@@ -151,6 +151,46 @@ describe('useClinicalDocumentRichTextEditorController', () => {
     activeElementSpy.mockRestore();
   });
 
+  it('does not overwrite a local edit with a stale external value on blur', () => {
+    const editorRef = createRef<HTMLDivElement>() as MutableRefObject<HTMLDivElement | null>;
+    const editor = document.createElement('div');
+    editor.innerHTML = 'Plan generado por IA';
+    editorRef.current = editor;
+    const onChange = vi.fn();
+
+    const activeElementSpy = vi.spyOn(document, 'activeElement', 'get');
+
+    const { result, rerender } = renderHook(
+      ({ value }) =>
+        useClinicalDocumentRichTextEditorController({
+          sectionId: 'section-1',
+          value,
+          disabled: false,
+          editorRef,
+          onChange,
+        }),
+      { initialProps: { value: 'Plan generado por IA' } }
+    );
+
+    activeElementSpy.mockReturnValue(editor);
+    editor.innerHTML = 'Plan editado por medico';
+    act(() => {
+      result.current.handleInput();
+    });
+
+    rerender({ value: 'Plan generado por IA actualizado externamente' });
+
+    activeElementSpy.mockReturnValue(document.body);
+    act(() => {
+      result.current.handleBlur();
+    });
+
+    expect(editor.innerHTML).toBe('Plan editado por medico');
+    expect(onChange).toHaveBeenLastCalledWith('Plan editado por medico');
+
+    activeElementSpy.mockRestore();
+  });
+
   it('routes insertHtml through the editor activation api and commits a normalized change', () => {
     const editorRef = createRef<HTMLDivElement>() as MutableRefObject<HTMLDivElement | null>;
     const editor = document.createElement('div');

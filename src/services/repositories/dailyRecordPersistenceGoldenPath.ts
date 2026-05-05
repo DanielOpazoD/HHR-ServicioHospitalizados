@@ -1,6 +1,10 @@
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { resolveDailyRecordReadConsistency } from '@/services/repositories/dailyRecordConsistencyPolicy';
-import { resolvePreferredDailyRecord } from '@/services/repositories/dailyRecordSyncCompatibility';
+import {
+  shouldKeepLocalRecordOverRemote,
+  resolvePreferredDailyRecord,
+} from '@/services/repositories/dailyRecordSyncCompatibility';
+import { resolveDailyRecordConflict } from '@/services/repositories/conflictResolutionMatrix';
 
 export type DailyRecordRemoteAvailability =
   | 'resolved'
@@ -40,10 +44,12 @@ export const resolveDailyRecordPersistenceGoldenPath = ({
   const selectedRecord =
     remoteAvailability === 'not_requested'
       ? localRecord
-      : resolvePreferredDailyRecord(localRecord, remoteRecord);
+      : localRecord && remoteRecord && shouldKeepLocalRecordOverRemote(localRecord, remoteRecord)
+        ? resolveDailyRecordConflict(remoteRecord, localRecord)
+        : resolvePreferredDailyRecord(localRecord, remoteRecord);
   const selectedStore = !selectedRecord
     ? 'none'
-    : selectedRecord === remoteRecord
+    : remoteRecord && (!localRecord || !shouldKeepLocalRecordOverRemote(localRecord, remoteRecord))
       ? 'remote'
       : 'local';
   const repairApplied =

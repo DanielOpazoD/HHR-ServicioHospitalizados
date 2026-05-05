@@ -68,6 +68,7 @@ interface BuildSheetPropsParams {
   isSaving: boolean;
   lastSavedAt?: string;
   hasLocalDraftChanges: boolean;
+  flushPendingAutosave: ClinicalDocumentsWorkspaceSheetModelProps['flushPendingAutosave'];
   isUploadingPdf: boolean;
   validationIssues: ClinicalDocumentsWorkspaceSheetModelProps['validationIssues'];
   handlePrint: () => Promise<void>;
@@ -188,6 +189,7 @@ export const buildClinicalDocumentsWorkspaceSheetProps = ({
   isSaving,
   lastSavedAt,
   hasLocalDraftChanges,
+  flushPendingAutosave,
   isUploadingPdf,
   validationIssues,
   handlePrint,
@@ -232,6 +234,7 @@ export const buildClinicalDocumentsWorkspaceSheetProps = ({
   isSaving,
   lastSavedAt,
   hasLocalDraftChanges,
+  flushPendingAutosave,
   isUploadingPdf,
   validationIssues,
   onPrint: handlePrint,

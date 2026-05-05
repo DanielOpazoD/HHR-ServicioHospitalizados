@@ -91,16 +91,24 @@ export const createGoldenPathReadResult = (
   }
 
   if (goldenPath.selectedStore === 'local' && localCandidate) {
-    return createLocalRuntimeReadResult(date, localCandidate, 'indexeddb', {
-      consistencyState: goldenPath.consistencyState,
-      sourceOfTruth: goldenPath.sourceOfTruth,
-      retryability: goldenPath.retryability,
-      recoveryAction: goldenPath.recoveryAction,
-      conflictSummary: goldenPath.conflictSummary,
-      observabilityTags: goldenPath.observabilityTags,
-      userSafeMessage: goldenPath.userSafeMessage,
-      repairApplied: goldenPath.repairApplied,
-    });
+    return createDailyRecordReadResult(
+      date,
+      goldenPath.selectedRecord || localCandidate.record,
+      'indexeddb',
+      {
+        compatibilityTier: 'local_runtime',
+        compatibilityIntensity: localCandidate.compatibilityIntensity,
+        migrationRulesApplied: localCandidate.migrationRulesApplied,
+        consistencyState: goldenPath.consistencyState,
+        sourceOfTruth: goldenPath.sourceOfTruth,
+        retryability: goldenPath.retryability,
+        recoveryAction: goldenPath.recoveryAction,
+        conflictSummary: goldenPath.conflictSummary,
+        observabilityTags: goldenPath.observabilityTags,
+        userSafeMessage: goldenPath.userSafeMessage,
+        repairApplied: goldenPath.repairApplied,
+      }
+    );
   }
 
   return createDailyRecordReadResult(date, null, 'not_found', {

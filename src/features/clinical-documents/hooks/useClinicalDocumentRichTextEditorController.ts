@@ -330,13 +330,15 @@ export const useClinicalDocumentRichTextEditorController = ({
     if (editor && pendingExternalNormalizedValueRef.current != null) {
       const nextNormalizedValue = pendingExternalNormalizedValueRef.current;
       const currentNormalizedValue = normalizeClinicalDocumentContentForStorage(editor.innerHTML);
-      if (currentNormalizedValue !== nextNormalizedValue) {
+      const hasLocalEditAfterExternalValue =
+        currentNormalizedValue === lastLocalNormalizedValueRef.current;
+      if (!hasLocalEditAfterExternalValue && currentNormalizedValue !== nextNormalizedValue) {
         editor.innerHTML = nextNormalizedValue;
+        lastLocalNormalizedValueRef.current = nextNormalizedValue;
+        historyRef.current = [nextNormalizedValue];
+        historyIndexRef.current = 0;
+        updateHistoryState(0, historyRef.current);
       }
-      lastLocalNormalizedValueRef.current = nextNormalizedValue;
-      historyRef.current = [nextNormalizedValue];
-      historyIndexRef.current = 0;
-      updateHistoryState(0, historyRef.current);
       pendingExternalNormalizedValueRef.current = null;
     }
     isActiveRef.current = false;
