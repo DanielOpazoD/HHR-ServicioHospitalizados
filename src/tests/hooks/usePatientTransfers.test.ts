@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { usePatientTransfers } from '@/hooks/usePatientTransfers';
 import type {
+  ApplyDailyRecordPatch,
   DailyRecord,
   PersistDailyRecord,
 } from '@/application/shared/dailyRecordCoreContracts';
@@ -25,6 +26,7 @@ vi.mock('@/services/factories/patientFactory', () => ({
 describe('usePatientTransfers', () => {
   let mockRecord: DailyRecord;
   let mockSaveAndUpdate: PersistDailyRecord;
+  let mockPatchRecord: ApplyDailyRecordPatch;
   const mockLogPatientTransfer = vi.fn();
 
   beforeEach(() => {
@@ -33,6 +35,7 @@ describe('usePatientTransfers', () => {
       logPatientTransfer: mockLogPatientTransfer,
     } as unknown as ReturnType<typeof useAuditContext>);
     mockSaveAndUpdate = vi.fn().mockResolvedValue(undefined) as PersistDailyRecord;
+    mockPatchRecord = vi.fn().mockResolvedValue(undefined) as ApplyDailyRecordPatch;
     mockRecord = {
       date: '2024-12-28',
       beds: {
@@ -97,6 +100,36 @@ describe('usePatientTransfers', () => {
     });
 
     expect(mockSaveAndUpdate).toHaveBeenCalled();
+    expect(mockLogPatientTransfer).toHaveBeenCalled();
+  });
+
+  it('adds transfer and clears the source bed through one atomic patch when available', () => {
+    const { result } = renderHook(() =>
+      usePatientTransfers(mockRecord, mockSaveAndUpdate, undefined, mockPatchRecord)
+    );
+
+    act(() => {
+      result.current.addTransfer('R1', 'Ambulance', 'Hospital X', '');
+    });
+
+    expect(mockPatchRecord).toHaveBeenCalledTimes(1);
+    expect(mockPatchRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        transfers: expect.arrayContaining([
+          expect.objectContaining({
+            bedId: 'R1',
+            patientName: 'Test Patient',
+          }),
+        ]),
+        'beds.R1': expect.objectContaining({
+          bedId: 'R1',
+          patientName: '',
+          rut: '',
+          location: 'Room 1',
+        }),
+      })
+    );
+    expect(mockSaveAndUpdate).not.toHaveBeenCalled();
     expect(mockLogPatientTransfer).toHaveBeenCalled();
   });
 

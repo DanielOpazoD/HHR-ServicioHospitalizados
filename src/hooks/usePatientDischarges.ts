@@ -1,5 +1,6 @@
 import { useMemo, useCallback } from 'react';
 import type {
+  ApplyDailyRecordPatch,
   DailyRecord,
   PersistDailyRecord,
 } from '@/application/shared/dailyRecordCoreContracts';
@@ -37,13 +38,15 @@ import type {
 export const usePatientDischarges = (
   record: DailyRecord | null,
   saveAndUpdate: PersistDailyRecord,
-  runtime: PatientMovementRuntime = patientMovementBrowserRuntime
+  runtime: PatientMovementRuntime = patientMovementBrowserRuntime,
+  patchRecord?: ApplyDailyRecordPatch
 ): DischargeMovementActions => {
   const recordRef = useLatestRef(record);
   const { notifyCreationError, notifyUndoError } = usePatientMovementFeedback(runtime);
   const { logDischargeEntries, logDischargeUndoEntry } = usePatientMovementAudit();
   const executeMovementCreation = usePatientMovementCreationExecutor({
     saveAndUpdate,
+    patchRecord,
     notifyCreationError,
   });
   const executeMovementMutation = usePatientMovementMutationExecutor({

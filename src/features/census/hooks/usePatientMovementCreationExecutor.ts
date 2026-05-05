@@ -1,12 +1,19 @@
 import { useCallback } from 'react';
 import type { DailyRecord } from '@/features/census/contracts/censusRecordContracts';
-import type { PersistDailyRecord } from '@/application/shared/dailyRecordCoreContracts';
+import type {
+  ApplyDailyRecordPatch,
+  PersistDailyRecord,
+} from '@/application/shared/dailyRecordCoreContracts';
 import {
   MovementCreationError,
   MovementCreationErrorCode,
 } from '@/features/census/controllers/patientMovementCreationController';
 import { MovementKind } from '@/features/census/controllers/patientMovementCreationErrorPresentation';
 import { ControllerResult } from '@/features/census/controllers/controllerResult';
+import {
+  buildAtomicPatientMovementPatch,
+  resolveAtomicPatientMovementListKey,
+} from '@/features/census/controllers/atomicPatientMovementPatchController';
 
 type MovementCreationResolution<TValue extends { updatedRecord: DailyRecord }> = ControllerResult<
   TValue,
@@ -23,11 +30,13 @@ interface ExecuteMovementCreationParams<TValue extends { updatedRecord: DailyRec
 
 interface UsePatientMovementCreationExecutorParams {
   saveAndUpdate: PersistDailyRecord;
+  patchRecord?: ApplyDailyRecordPatch;
   notifyCreationError: (kind: MovementKind, code: MovementCreationErrorCode, bedId: string) => void;
 }
 
 export const usePatientMovementCreationExecutor = ({
   saveAndUpdate,
+  patchRecord,
   notifyCreationError,
 }: UsePatientMovementCreationExecutorParams) => {
   return useCallback(
@@ -42,9 +51,19 @@ export const usePatientMovementCreationExecutor = ({
         return;
       }
 
-      saveAndUpdate(resolution.value.updatedRecord);
+      if (patchRecord) {
+        patchRecord(
+          buildAtomicPatientMovementPatch({
+            updatedRecord: resolution.value.updatedRecord,
+            movementKey: resolveAtomicPatientMovementListKey(kind),
+            sourceBedIds: [bedId],
+          })
+        );
+      } else {
+        saveAndUpdate(resolution.value.updatedRecord);
+      }
       onSuccess?.(resolution.value);
     },
-    [notifyCreationError, saveAndUpdate]
+    [notifyCreationError, patchRecord, saveAndUpdate]
   );
 };

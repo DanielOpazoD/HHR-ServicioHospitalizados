@@ -8,6 +8,7 @@ import { CMAData } from '@/types/domain/movements';
 import { capitalizeWords } from '@/utils/stringUtils';
 import { formatRut, isValidRut, isPassportFormat } from '@/utils/rutUtils';
 import { buildClearPatientPatches } from '@/hooks/controllers/bedManagementPatchController';
+import { buildAtomicPatientMovementPatch } from '@/features/census/controllers/atomicPatientMovementPatchController';
 
 /**
  * Normalize CMA patient data fields
@@ -59,16 +60,31 @@ export const useCMA = (
         timestamp: new Date().toISOString(),
       };
 
-      const currentList = currentRecord.cma || [];
-      const patch = {
-        cma: [...currentList, newEntry],
+      const updatedCma = [...(currentRecord.cma || []), newEntry];
+      const sourceBedId =
+        newEntry.originalBedId && currentRecord.beds?.[newEntry.originalBedId]
+          ? newEntry.originalBedId
+          : null;
+      const updatedRecord = {
+        ...currentRecord,
+        cma: updatedCma,
       };
 
-      if (newEntry.originalBedId && currentRecord.beds?.[newEntry.originalBedId]) {
-        Object.assign(patch, buildClearPatientPatches(currentRecord, newEntry.originalBedId));
+      if (sourceBedId) {
+        const clearPatch = buildClearPatientPatches(currentRecord, sourceBedId);
+        updatedRecord.beds = {
+          ...currentRecord.beds,
+          [sourceBedId]: clearPatch[`beds.${sourceBedId}`] as DailyRecord['beds'][string],
+        };
       }
 
-      patchRecord(patch);
+      patchRecord(
+        buildAtomicPatientMovementPatch({
+          updatedRecord,
+          movementKey: 'cma',
+          sourceBedIds: sourceBedId ? [sourceBedId] : [],
+        })
+      );
     },
     [patchRecord]
   );
