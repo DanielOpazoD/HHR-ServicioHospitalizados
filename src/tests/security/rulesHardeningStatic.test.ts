@@ -89,4 +89,44 @@ describe('Security hardening static guards', () => {
       expect(netlifyAuth).not.toContain(email);
     }
   });
+
+  describe('prescriptions module (transient backup, 30-day retention)', () => {
+    it('forbids client direct creates in Firestore — uploads must go through the Cloud Function', () => {
+      const rules = readProjectFile('firestore.rules');
+      expect(rules).toMatch(
+        /match \/prescriptions\/\{prescriptionId\}[\s\S]*?allow create:\s*if false;/m
+      );
+    });
+
+    it('lets clinical staff read prescriptions but limits delete to admin', () => {
+      const rules = readProjectFile('firestore.rules');
+      expect(rules).toMatch(
+        /match \/prescriptions\/\{prescriptionId\}[\s\S]*?allow read:\s*if canReadClinicalData\(\);/m
+      );
+      expect(rules).toMatch(
+        /match \/prescriptions\/\{prescriptionId\}[\s\S]*?allow update:\s*if canEdit\(\);/m
+      );
+      expect(rules).toMatch(
+        /match \/prescriptions\/\{prescriptionId\}[\s\S]*?allow delete:\s*if isAdmin\(\);/m
+      );
+    });
+
+    it('keeps the PIN config readable only by admin and never client-writable', () => {
+      const rules = readProjectFile('firestore.rules');
+      expect(rules).toMatch(
+        /match \/config\/prescriptionsAccess[\s\S]*?allow read:\s*if isAdmin\(\);/m
+      );
+      expect(rules).toMatch(/match \/config\/prescriptionsAccess[\s\S]*?allow write:\s*if false;/m);
+    });
+
+    it('keeps prescription Storage blobs readable by clinical staff and never client-writable', () => {
+      const storageRules = readProjectFile('storage.rules');
+      expect(storageRules).toMatch(
+        /match \/prescriptions\/\{allPaths=\*\*\}[\s\S]*?allow read:\s*if canReadClinicalStorage\(\);/m
+      );
+      expect(storageRules).toMatch(
+        /match \/prescriptions\/\{allPaths=\*\*\}[\s\S]*?allow write:\s*if false;/m
+      );
+    });
+  });
 });
