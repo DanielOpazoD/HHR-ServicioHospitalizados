@@ -2,7 +2,9 @@ import './labAnalyticsController.testSupport';
 
 import { describe, expect, it } from 'vitest';
 import { buildAnalysisData } from '@/features/laboratory/controllers/labAnalyticsController';
+import { MICROBIOLOGY_CATEGORY_RULES } from '@/features/laboratory/constants/labMicrobiologyRuleConstants';
 import { buildDetail, buildExam, buildFinding } from './labAnalyticsController.testSupport';
+import { syslabGoldenMixedMicrobiologyScenario } from './fixtures/syslabGoldenLabFixtures';
 
 describe('labAnalyticsController microbiology output', () => {
   it('separates culture and PCR rows from one combined order', () => {
@@ -232,6 +234,42 @@ describe('labAnalyticsController microbiology output', () => {
     expect(result.comparison['Recuento de Colonias']).toBeUndefined();
     expect(result.comparison.Gentamicina).toBeUndefined();
     expect(result.comparison.Resultado).toBeUndefined();
+
+    expect(result.microbiologyEntries).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          examLabel: 'PCR 8 virus',
+          findings: [{ analysis: 'PCR SARS-CoV-19', result: 'NEGATIVO' }],
+        }),
+        expect.objectContaining({
+          examLabel: 'Urocultivo',
+          findings: expect.arrayContaining([
+            { analysis: 'Recuento de Colonias', result: '> 100.000' },
+            { analysis: 'Gentamicina', result: 'Intermedio' },
+          ]),
+        }),
+      ])
+    );
+  });
+
+  it('keeps a golden Syslab mixed microbiology fixture clinically routed by explicit rules', () => {
+    expect(MICROBIOLOGY_CATEGORY_RULES.urocultivo.findingStrong).toEqual(
+      expect.arrayContaining(['UROCULTIVO', 'ANTIBIOGRAMA', 'RECUENTO DE COLONIA'])
+    );
+    expect(MICROBIOLOGY_CATEGORY_RULES.pcr_8_virus.exam).toEqual(
+      expect.arrayContaining(['SARS', 'COVID', 'COV-2'])
+    );
+
+    const result = buildAnalysisData(
+      syslabGoldenMixedMicrobiologyScenario.details,
+      syslabGoldenMixedMicrobiologyScenario.exams
+    );
+
+    expect(result.comparison).toHaveProperty('Hb glicosilada');
+    expect(result.comparison).toHaveProperty('Trigliceridos');
+    expect(result.comparison).not.toHaveProperty('PCR SARS-CoV-19');
+    expect(result.comparison).not.toHaveProperty('Recuento de Colonias');
+    expect(result.comparison).not.toHaveProperty('Gentamicina');
 
     expect(result.microbiologyEntries).toEqual(
       expect.arrayContaining([

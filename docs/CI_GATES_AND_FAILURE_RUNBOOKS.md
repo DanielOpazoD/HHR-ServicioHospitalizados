@@ -228,9 +228,9 @@ Salida esperada:
 5. si el fallo es de red o registry:
    - reintentar el workflow
    - no marcar la app como segura por ausencia de reporte
-6. si `functions` queda con `low` únicamente y todos dependen del árbol `firebase-admin` / `firebase-functions`:
+6. si root app o `functions` quedan con hallazgos `low`/`moderate` pero sin `high` ni `critical`:
    - revisar [docs/FUNCTIONS_DEPENDENCY_ACCEPTANCE.md](./FUNCTIONS_DEPENDENCY_ACCEPTANCE.md)
-   - confirmar que no aparecieron `high`, `critical` ni nuevos `low` directos fuera de ese árbol
+   - confirmar que no aparecieron `high`, `critical` ni nuevos hallazgos directos fuera del árbol aceptado
    - tratar el estado como deuda aceptada temporalmente, no como bloqueo inmediato ni como limpieza automática vía overrides inseguros
 
 ## Qué hacer cuando falla
