@@ -113,8 +113,11 @@ describe('audit types', () => {
     });
 
     it('should include prescription actions', () => {
-      const prescriptionActions: AuditAction[] = ['PRESCRIPTION_DELETED'];
-      expect(prescriptionActions).toHaveLength(1);
+      const prescriptionActions: AuditAction[] = [
+        'PRESCRIPTION_MANUAL_DELETED',
+        'PRESCRIPTION_RETENTION_DELETED',
+      ];
+      expect(prescriptionActions).toHaveLength(2);
     });
   });
 });

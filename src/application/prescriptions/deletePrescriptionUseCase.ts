@@ -1,11 +1,11 @@
 /**
  * Use case: hard-delete a single prescription before its 30-day TTL.
  *
- * Reserved for `admin` callers — ordinary roles wait for the scheduled
- * cleanup function to remove records on expiry. The role check itself is
- * enforced by Firestore rules; this use case records an attributable
- * clinical audit event before deleting so manual deletion never happens
- * without traceability.
+ * Reserved for authenticated admin or nursing callers. External uploaders
+ * that only hold the QR PIN cannot reach this client-side use case. The
+ * role check itself is enforced by Firestore rules; this use case records
+ * an attributable clinical audit event before deleting so manual deletion
+ * never happens without traceability.
  */
 
 import { executeWriteAuditEvent } from '@/application/audit/writeAuditEventUseCase';
@@ -45,7 +45,7 @@ export const executeDeletePrescription = async (
   const deletedAt = input.deletedAt || new Date().toISOString();
   const auditOutcome = await writeAuditEvent({
     userId: input.deletedBy,
-    action: 'PRESCRIPTION_DELETED',
+    action: 'PRESCRIPTION_MANUAL_DELETED',
     entityType: 'prescription',
     entityId: input.prescriptionId,
     patientRut: record?.patientRut,
@@ -59,7 +59,8 @@ export const executeDeletePrescription = async (
       createdAt: record?.createdAt,
       expiresAt: record?.expiresAt,
       deletedAt,
-      deletionMode: 'manual_admin',
+      deletedBy: input.deletedBy,
+      deletionMode: 'manual',
     },
   });
 

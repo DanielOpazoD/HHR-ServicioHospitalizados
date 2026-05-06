@@ -19,6 +19,50 @@ const BATCH_SIZE = 200;
 const getPrescriptionsRef = admin =>
   admin.firestore().collection('hospitals').doc(HOSPITAL_ID).collection('prescriptions');
 
+const getAuditLogsRef = admin =>
+  admin.firestore().collection('hospitals').doc(HOSPITAL_ID).collection('auditLogs');
+
+const resolveRecordDate = iso => {
+  if (!iso) return undefined;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return undefined;
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
+    date.getDate()
+  ).padStart(2, '0')}`;
+};
+
+const sanitizeAuditIdPart = value =>
+  String(value || 'unknown')
+    .replace(/[^a-zA-Z0-9_-]/g, '-')
+    .slice(0, 80);
+
+const createRetentionAuditEntry = ({ docId, data, nowIso }) => ({
+  id: `prescription-retention-${sanitizeAuditIdPart(docId)}-${Date.now()}`,
+  timestamp: nowIso,
+  userId: 'system:prescription-retention',
+  action: 'PRESCRIPTION_RETENTION_DELETED',
+  entityType: 'prescription',
+  entityId: docId,
+  patientRut: data.patientRut,
+  patientIdentifier: data.patientRut,
+  recordDate: resolveRecordDate(data.createdAt),
+  details: {
+    prescriptionId: docId,
+    prescriptionType: data.prescriptionType,
+    bedId: data.bedId,
+    patientName: data.patientName,
+    patientRut: data.patientRut,
+    createdAt: data.createdAt,
+    expiresAt: data.expiresAt,
+    deletedAt: nowIso,
+    deletionMode: 'retention',
+  },
+});
+
+const writeRetentionAuditEntry = async (admin, entry) => {
+  await getAuditLogsRef(admin).doc(entry.id).set(entry);
+};
+
 const deleteStorageBlobIfPresent = async (bucket, path) => {
   if (!path) return;
   try {
@@ -60,6 +104,10 @@ const deleteExpiredPrescriptions = async (admin, nowIso) => {
       // pointing at it so the next run retries instead of orphaning.
       await deleteStorageBlobIfPresent(bucket, fullPath);
       await deleteStorageBlobIfPresent(bucket, thumbPath);
+      await writeRetentionAuditEntry(
+        admin,
+        createRetentionAuditEntry({ docId: doc.id, data, nowIso })
+      );
       await doc.ref.delete();
       deleted += 1;
     } catch (_error) {

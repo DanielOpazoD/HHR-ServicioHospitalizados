@@ -31,6 +31,7 @@ interface FakeDocSnapshot {
 const buildAdmin = (docs: Array<{ id: string; data: Record<string, unknown> }>) => {
   const deletedDocIds: string[] = [];
   const deletedBlobs: string[] = [];
+  const auditEntries: Record<string, unknown>[] = [];
 
   const snapshots: FakeDocSnapshot[] = docs.map(({ id, data }) => ({
     id,
@@ -42,7 +43,7 @@ const buildAdmin = (docs: Array<{ id: string; data: Record<string, unknown> }>) 
     },
   }));
 
-  const collection = {
+  const prescriptionsCollection = {
     where: () => collection,
     limit: () => collection,
     get: async () => ({
@@ -51,12 +52,22 @@ const buildAdmin = (docs: Array<{ id: string; data: Record<string, unknown> }>) 
       docs: snapshots,
     }),
   };
+  const collection = prescriptionsCollection;
 
   const admin = {
     firestore: () => ({
-      collection: () => ({
+      collection: (_collectionName: string) => ({
         doc: () => ({
-          collection: () => collection,
+          collection: (subcollectionName: string) =>
+            subcollectionName === 'auditLogs'
+              ? {
+                  doc: (auditId: string) => ({
+                    set: async (entry: Record<string, unknown>) => {
+                      auditEntries.push({ id: auditId, ...entry });
+                    },
+                  }),
+                }
+              : collection,
         }),
       }),
     }),
@@ -71,7 +82,7 @@ const buildAdmin = (docs: Array<{ id: string; data: Record<string, unknown> }>) 
     }),
   };
 
-  return { admin, deletedDocIds, deletedBlobs };
+  return { admin, deletedDocIds, deletedBlobs, auditEntries };
 };
 
 describe('deleteExpiredPrescriptions', () => {
@@ -113,6 +124,56 @@ describe('deleteExpiredPrescriptions', () => {
       'hospitals/hhr/prescriptions/rx-2/full.jpg',
       'hospitals/hhr/prescriptions/rx-2/thumb.jpg',
     ]);
+  });
+
+  it('writes a retention audit event before each scheduled deletion', async () => {
+    const { admin, deletedDocIds, auditEntries } = buildAdmin([
+      {
+        id: 'rx-retention',
+        data: {
+          prescriptionType: 'comun',
+          bedId: 'H5C1',
+          patientName: 'Paciente',
+          patientRut: '11.111.111-1',
+          createdAt: '2026-05-05T10:00:00.000Z',
+          expiresAt: '2026-06-04T10:00:00.000Z',
+          image: {
+            storagePath: 'hospitals/hhr/prescriptions/rx-retention/full.jpg',
+            thumbnailStoragePath: 'hospitals/hhr/prescriptions/rx-retention/thumb.jpg',
+          },
+        },
+      },
+    ]);
+
+    await deleteExpiredPrescriptions(admin, '2026-06-05T00:00:00.000Z');
+
+    expect(auditEntries).toHaveLength(1);
+    expect(auditEntries[0]).toEqual(
+      expect.objectContaining({
+        action: 'PRESCRIPTION_RETENTION_DELETED',
+        entityType: 'prescription',
+        entityId: 'rx-retention',
+        patientRut: '11.111.111-1',
+        recordDate: '2026-05-05',
+        userId: 'system:prescription-retention',
+        details: expect.objectContaining({
+          prescriptionId: 'rx-retention',
+          deletionMode: 'retention',
+          deletedAt: '2026-06-05T00:00:00.000Z',
+          expiresAt: '2026-06-04T10:00:00.000Z',
+        }),
+      })
+    );
+    expect(auditEntries[0]?.details).toEqual(
+      expect.objectContaining({
+        prescriptionType: 'comun',
+        bedId: 'H5C1',
+        patientName: 'Paciente',
+        patientRut: '11.111.111-1',
+      })
+    );
+    expect(auditEntries[0]?.id).toMatch(/^prescription-retention-rx-retention-/);
+    expect(deletedDocIds).toEqual(['rx-retention']);
   });
 
   it('skips Firestore deletion when a Storage delete fails (no orphaned blobs)', async () => {
