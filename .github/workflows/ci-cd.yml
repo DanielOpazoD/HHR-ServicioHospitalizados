@@ -251,7 +251,6 @@ jobs:
     name: e2e-firefox-compat
     runs-on: ubuntu-latest
     needs: [quality-static]
-    continue-on-error: true
 
     steps:
       - name: Checkout code
@@ -277,6 +276,7 @@ jobs:
 
       - name: Run Firefox E2E compatibility suite with Firestore emulator
         run: npm run test:e2e:critical:ci
+        continue-on-error: true
         env:
           CI: true
           E2E_CRITICAL_BROWSERS: firefox
@@ -284,6 +284,11 @@ jobs:
           E2E_BUDGET_LOGIN_VISIBLE_MS: 4500
           E2E_BUDGET_AUTH_FEEDBACK_MS: 3000
           E2E_BUDGET_CENSO_VISIBLE_MS: 8000
+
+      - name: Record Firefox compatibility signal
+        if: always()
+        run: |
+          echo "Firefox E2E is a compatibility signal only; Chromium remains the release-blocking E2E gate." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload Firefox E2E compatibility artifacts
         if: always()
