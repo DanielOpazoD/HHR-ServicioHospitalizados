@@ -53,13 +53,22 @@ export const resolveRemoteGoldenPathReadResult = async ({
       effectiveRemoteReadResult.migrationRulesApplied.length > 0,
   });
 
-  if (goldenPath.shouldHydrateLocal && effectiveRemoteReadResult.record) {
+  const selectedLocalMerge =
+    goldenPath.selectedStore === 'local' &&
+    goldenPath.selectedRecord &&
+    localCandidate?.record &&
+    goldenPath.selectedRecord !== localCandidate.record
+      ? goldenPath.selectedRecord
+      : null;
+  const recordToHydrate =
+    selectedLocalMerge ||
+    (goldenPath.shouldHydrateLocal && effectiveRemoteReadResult.record
+      ? effectiveRemoteReadResult.record
+      : null);
+
+  if (recordToHydrate) {
     try {
-      await persistHydratedRecord(
-        effectiveRemoteReadResult.record,
-        date,
-        localCandidate?.record || null
-      );
+      await persistHydratedRecord(recordToHydrate, date, localCandidate?.record || null);
     } catch (error) {
       if (error instanceof AdmissionDatePolicyViolationError) {
         dailyRecordReadLogger.warn(

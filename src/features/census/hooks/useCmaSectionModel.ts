@@ -17,7 +17,7 @@ interface UseCmaSectionModelParams {
 interface UseCmaSectionModelResult extends CensusMovementSectionModel<CMAData> {
   handleUpdate: (id: string, field: keyof CMAData, value: CMAData[keyof CMAData]) => void;
   handleUndo: (item: CMAData) => Promise<void>;
-  handleDelete: (id: string) => void;
+  handleDelete: (item: CMAData) => Promise<void>;
 }
 
 export const useCmaSectionModel = ({

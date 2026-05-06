@@ -8,16 +8,25 @@ import {
   syncDailyRecordClinicalResources,
 } from '@/services/repositories/dailyRecordDomainServices';
 import { assertAdmissionDatePersistencePolicy } from '@/services/repositories/dailyRecordAdmissionDateWritePolicy';
+import { buildInvariantRepairReviewContext } from '@/services/repositories/invariantRepairReviewContext';
 
 const normalizePreparedRecord = (record: DailyRecord): DailyRecord => {
   const normalized = normalizeDailyRecordInvariants(record);
   const validatedRecord = normalized.record;
 
-  if (Object.keys(normalized.patches).length > 0) {
-    logError('Invariant repair applied on save', undefined, {
-      date: validatedRecord.date,
-      patches: Object.keys(normalized.patches),
-    });
+  const repairPaths = Object.keys(normalized.patches);
+
+  if (repairPaths.length > 0) {
+    logError(
+      'Invariant repair applied on save',
+      undefined,
+      buildInvariantRepairReviewContext({
+        date: validatedRecord.date,
+        operation: 'save',
+        repairPaths,
+        touchedPaths: ['*'],
+      })
+    );
   }
 
   syncDailyRecordClinicalResources(validatedRecord);

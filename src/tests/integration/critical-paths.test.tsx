@@ -232,6 +232,7 @@ describe('Critical Integration Paths', () => {
     await waitFor(() =>
       expect(result.current.record?.beds['bed-1'].patientName).toBe('Maria Silva')
     );
+    vi.mocked(mockDailyRecordRepositoryPort.updatePartialDetailed).mockClear();
 
     // 1. Execute Discharge
     await act(async () => {
@@ -254,8 +255,24 @@ describe('Critical Integration Paths', () => {
     // 3. Verify Discharge Record Created
     expect(result.current.record?.discharges[0].patientName).toBe('Maria Silva');
 
-    // 4. Verify Persistence
-    expect(mockDailyRecordRepositoryPort.saveDetailed).toHaveBeenCalled();
+    // 4. Verify Persistence through one atomic patch
+    expect(mockDailyRecordRepositoryPort.saveDetailed).not.toHaveBeenCalled();
+    expect(mockDailyRecordRepositoryPort.updatePartialDetailed).toHaveBeenCalledWith(
+      mockDate,
+      expect.objectContaining({
+        discharges: expect.arrayContaining([
+          expect.objectContaining({
+            bedId: 'bed-1',
+            patientName: 'Maria Silva',
+          }),
+        ]),
+        'beds.bed-1': expect.objectContaining({
+          bedId: 'bed-1',
+          patientName: '',
+          rut: '',
+        }),
+      })
+    );
   });
 
   it('FLOW 3: Census Modify & Save', async () => {

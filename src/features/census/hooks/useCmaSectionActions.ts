@@ -2,7 +2,10 @@ import React from 'react';
 
 import type { CMAData } from '@/features/census/contracts/censusMovementContracts';
 import type { PatientData } from '@/features/census/controllers/censusActionPatientContracts';
-import { executeUndoCmaController } from '@/features/census/controllers/censusCmaController';
+import {
+  executeDeleteCmaController,
+  executeUndoCmaController,
+} from '@/features/census/controllers/censusCmaController';
 import type { ControllerConfirmDescriptor } from '@/shared/contracts/controllers/confirmDescriptor';
 
 interface UseCmaSectionActionsParams {
@@ -16,7 +19,7 @@ interface UseCmaSectionActionsParams {
 interface UseCmaSectionActionsResult {
   handleUpdate: (id: string, field: keyof CMAData, value: CMAData[keyof CMAData]) => void;
   handleUndo: (item: CMAData) => Promise<void>;
-  handleDelete: (id: string) => void;
+  handleDelete: (item: CMAData) => Promise<void>;
 }
 
 export const useCmaSectionActions = ({
@@ -49,10 +52,17 @@ export const useCmaSectionActions = ({
   );
 
   const handleDelete = React.useCallback(
-    (id: string) => {
-      deleteCMA(id);
+    async (item: CMAData) => {
+      const result = await executeDeleteCmaController(item, {
+        confirm,
+        deleteCMA,
+      });
+
+      if (!result.ok) {
+        notifyError('No se pudo eliminar', result.error.message);
+      }
     },
-    [deleteCMA]
+    [confirm, deleteCMA, notifyError]
   );
 
   return {

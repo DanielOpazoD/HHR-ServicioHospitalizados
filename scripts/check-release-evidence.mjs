@@ -14,6 +14,15 @@ const trackedReports = [
   'reports/release-readiness-scorecard.json',
   'reports/maintenance-debt-scorecard.json',
 ];
+const clinicalVisualReleaseReport = 'reports/e2e/clinical-visual-release-report.json';
+const clinicalVisualReleaseSpec = 'clinical-release-visual-smoke.spec.ts';
+const clinicalVisualReleaseTest =
+  'creates release-critical clinical surfaces without layout overflow';
+const clinicalVisualReleaseAttachments = [
+  'clinical-release-census.png',
+  'clinical-release-documents.png',
+  'clinical-release-medical-handoff.png',
+];
 
 const fail = issues => {
   console.error('[release-evidence] Release evidence is not clean:');
@@ -56,6 +65,91 @@ export const collectReleaseEvidenceIssues = (root = ROOT) => {
     if (parsedReport?.gitDirty === true) {
       issues.push(`${reportFile} was generated with worktree=dirty.`);
     }
+  }
+
+  issues.push(...collectClinicalVisualReleaseEvidenceIssues(root));
+
+  return issues;
+};
+
+const collectSpecs = suites => {
+  const specs = [];
+  for (const suite of Array.isArray(suites) ? suites : []) {
+    if (Array.isArray(suite?.specs)) {
+      for (const spec of suite.specs) {
+        specs.push({
+          suiteFile: String(suite?.file || ''),
+          suiteTitle: String(suite?.title || ''),
+          spec,
+        });
+      }
+    }
+    specs.push(...collectSpecs(suite?.suites));
+  }
+  return specs;
+};
+
+const collectAttachmentNames = spec =>
+  (Array.isArray(spec?.tests) ? spec.tests : []).flatMap(test =>
+    (Array.isArray(test?.results) ? test.results : []).flatMap(result =>
+      (Array.isArray(result?.attachments) ? result.attachments : [])
+        .map(attachment => attachment?.name)
+        .filter(Boolean)
+    )
+  );
+
+const collectClinicalVisualReleaseEvidenceIssues = root => {
+  const issues = [];
+  const reportPath = path.join(root, clinicalVisualReleaseReport);
+  if (!fs.existsSync(reportPath)) {
+    return [`${clinicalVisualReleaseReport} is missing.`];
+  }
+
+  let parsedReport;
+  try {
+    parsedReport = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+  } catch (error) {
+    return [
+      `${clinicalVisualReleaseReport} is not valid JSON: ${error instanceof Error ? error.message : String(error)}`,
+    ];
+  }
+
+  if ((parsedReport?.stats?.unexpected ?? 0) > 0 || (parsedReport?.stats?.flaky ?? 0) > 0) {
+    issues.push(`${clinicalVisualReleaseReport} has unexpected or flaky failures.`);
+  }
+
+  const matchingSpecs = collectSpecs(parsedReport?.suites).filter(
+    ({ suiteFile, suiteTitle, spec }) =>
+      (spec?.file === clinicalVisualReleaseSpec ||
+        suiteFile === clinicalVisualReleaseSpec ||
+        suiteTitle === clinicalVisualReleaseSpec) &&
+      spec?.title === clinicalVisualReleaseTest
+  );
+
+  if (matchingSpecs.length === 0) {
+    issues.push(`${clinicalVisualReleaseReport} does not include ${clinicalVisualReleaseSpec}.`);
+    return issues;
+  }
+
+  const passed = matchingSpecs.some(({ spec }) =>
+    (Array.isArray(spec?.tests) ? spec.tests : []).some(test =>
+      (Array.isArray(test?.results) ? test.results : []).some(result => result?.status === 'passed')
+    )
+  );
+  if (!passed) {
+    issues.push(`${clinicalVisualReleaseReport} did not pass the clinical visual release test.`);
+  }
+
+  const attachmentNames = new Set(
+    matchingSpecs.flatMap(({ spec }) => collectAttachmentNames(spec))
+  );
+  const missingAttachments = clinicalVisualReleaseAttachments.filter(
+    attachmentName => !attachmentNames.has(attachmentName)
+  );
+  if (missingAttachments.length > 0) {
+    issues.push(
+      `${clinicalVisualReleaseReport} is missing visual attachments: ${missingAttachments.join(', ')}.`
+    );
   }
 
   return issues;

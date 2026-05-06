@@ -61,11 +61,8 @@ export const useClinicalDocumentRichTextEditorController = ({
   const isApplyingHistoryRef = useRef(false);
   const isActiveRef = useRef(false);
   const lastLocalNormalizedValueRef = useRef('');
-  /** Timer for debouncing history snapshots while typing. */
   const historyDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  /** Pending HTML to push into history when the debounce fires. */
   const pendingHistoryHtmlRef = useRef<string | null>(null);
-  /** External normalized value received while the editor is focused. */
   const pendingExternalNormalizedValueRef = useRef<string | null>(null);
   const onActivateRef = useRef(onActivate);
   const onDeactivateRef = useRef(onDeactivate);
@@ -136,10 +133,8 @@ export const useClinicalDocumentRichTextEditorController = ({
     [updateHistoryState]
   );
 
-  /** Delay (ms) before a typing pause commits a history snapshot. */
   const HISTORY_DEBOUNCE_MS = 500;
 
-  /** Flush any pending debounced snapshot immediately (e.g. before blur). */
   const flushPendingHistorySnapshot = useCallback(() => {
     if (historyDebounceTimerRef.current) {
       clearTimeout(historyDebounceTimerRef.current);
@@ -177,7 +172,6 @@ export const useClinicalDocumentRichTextEditorController = ({
       const editor = editorRef.current;
       if (!editor || disabled) return;
 
-      // Commit any pending typing before undo/redo or formatting
       flushPendingHistorySnapshot();
 
       if (command === 'undo') {
@@ -297,15 +291,12 @@ export const useClinicalDocumentRichTextEditorController = ({
     const editor = editorRef.current;
     if (!editor) return;
 
-    // Detect /lab slash command before normalizing
     const textContent = editor.textContent || '';
     const command = detectSlashCommand(textContent);
 
     if (command === 'lab' && onSlashLab) {
-      // Remove the command text immediately
       editor.innerHTML = removeSlashCommandFromHtml(editor.innerHTML);
 
-      // Async: fetch and insert lab summary
       void onSlashLab().then(labText => {
         if (!labText) return;
         insertPlainText(labText);
@@ -330,13 +321,15 @@ export const useClinicalDocumentRichTextEditorController = ({
     if (editor && pendingExternalNormalizedValueRef.current != null) {
       const nextNormalizedValue = pendingExternalNormalizedValueRef.current;
       const currentNormalizedValue = normalizeClinicalDocumentContentForStorage(editor.innerHTML);
-      if (currentNormalizedValue !== nextNormalizedValue) {
+      const hasLocalEditAfterExternalValue =
+        currentNormalizedValue === lastLocalNormalizedValueRef.current;
+      if (!hasLocalEditAfterExternalValue && currentNormalizedValue !== nextNormalizedValue) {
         editor.innerHTML = nextNormalizedValue;
+        lastLocalNormalizedValueRef.current = nextNormalizedValue;
+        historyRef.current = [nextNormalizedValue];
+        historyIndexRef.current = 0;
+        updateHistoryState(0, historyRef.current);
       }
-      lastLocalNormalizedValueRef.current = nextNormalizedValue;
-      historyRef.current = [nextNormalizedValue];
-      historyIndexRef.current = 0;
-      updateHistoryState(0, historyRef.current);
       pendingExternalNormalizedValueRef.current = null;
     }
     isActiveRef.current = false;

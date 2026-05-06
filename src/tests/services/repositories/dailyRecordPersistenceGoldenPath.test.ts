@@ -26,11 +26,60 @@ describe('dailyRecordPersistenceGoldenPath', () => {
       remoteAvailability: 'resolved',
     });
 
-    expect(result.selectedRecord).toBe(local);
+    expect(result.selectedRecord).toEqual(
+      expect.objectContaining({
+        date: local.date,
+        lastUpdated: local.lastUpdated,
+        beds: local.beds,
+      })
+    );
     expect(result.selectedStore).toBe('local');
     expect(result.shouldHydrateLocal).toBe(false);
     expect(result.consistencyState).toBe('local_authoritative');
     expect(result.recoveryAction).toBe('defer_remote_sync');
+  });
+
+  it('keeps newer local edits while accepting non-conflicting remote bed updates', () => {
+    const local = buildRecord('2026-03-18', '2026-03-18T12:00:00.000Z');
+    local.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: 'LOCAL BASELINE',
+        pathology: 'USER A LOCAL DX',
+      },
+      R2: {
+        bedId: 'R2',
+        patientName: '',
+        pathology: '',
+        admissionDate: '',
+      },
+    } as unknown as DailyRecord['beds'];
+    const remote = buildRecord('2026-03-18', '2026-03-18T08:00:00.000Z');
+    remote.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: 'REMOTE BASELINE',
+        pathology: 'REMOTE STALE DX',
+      },
+      R2: {
+        bedId: 'R2',
+        patientName: 'USER B NEW PATIENT',
+        pathology: 'USER B NON CONFLICT DX',
+        admissionDate: '2026-03-18',
+      },
+    } as unknown as DailyRecord['beds'];
+
+    const result = resolveDailyRecordPersistenceGoldenPath({
+      localRecord: local,
+      remoteRecord: remote,
+      remoteAvailability: 'resolved',
+    });
+
+    expect(result.selectedRecord?.beds.R1.pathology).toBe('USER A LOCAL DX');
+    expect(result.selectedRecord?.beds.R2.patientName).toBe('USER B NEW PATIENT');
+    expect(result.selectedRecord?.beds.R2.pathology).toBe('USER B NON CONFLICT DX');
+    expect(result.selectedStore).toBe('local');
+    expect(result.consistencyState).toBe('local_authoritative');
   });
 
   it('promotes the remote record and hydrates local cache when remote is newer', () => {

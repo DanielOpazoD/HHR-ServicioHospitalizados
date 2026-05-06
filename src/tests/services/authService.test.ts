@@ -240,6 +240,19 @@ describe('auth public entrypoints', () => {
       expect(firebaseAuth.signInWithRedirect).toHaveBeenCalled();
     });
 
+    it('should not start redirect fallback when the popup request is cancelled', async () => {
+      vi.mocked(firebaseAuth.signInWithPopup).mockRejectedValue({
+        code: 'auth/cancelled-popup-request',
+        message: 'cancelled-popup-request',
+      });
+
+      await expect(signInWithGoogle()).rejects.toMatchObject({
+        code: 'auth/cancelled-popup-request',
+      });
+
+      expect(firebaseAuth.signInWithRedirect).not.toHaveBeenCalled();
+    });
+
     it('should keep the popup flow pending when Google selection takes a long time', async () => {
       vi.useFakeTimers();
       vi.mocked(firebaseAuth.signInWithPopup).mockImplementation(

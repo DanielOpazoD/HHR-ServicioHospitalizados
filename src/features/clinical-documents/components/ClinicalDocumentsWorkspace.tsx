@@ -42,6 +42,8 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
     isActive,
   });
   const sheetState = useClinicalDocumentSheetState(sheetProps.selectedDocument);
+  const { flushPendingAutosave } = sheetProps;
+  const { handleEditorDeactivate: deactivateEditor } = sheetState;
   const [zoom, setZoom] = useState(ZOOM_DEFAULT);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const zoomBeforeSidebarCollapseRef = useRef(ZOOM_DEFAULT);
@@ -76,6 +78,14 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
       return true;
     });
   }, [zoom]);
+
+  const handleEditorDeactivate = useCallback(
+    (sectionId: string) => {
+      deactivateEditor(sectionId);
+      flushPendingAutosave();
+    },
+    [deactivateEditor, flushPendingAutosave]
+  );
 
   if (!canRead) {
     return (
@@ -192,7 +202,7 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
             onSetActiveIndicationsSpecialtyId={sheetState.setActiveIndicationsSpecialtyId}
             onToggleIndicationsPanel={() => sheetState.setIsIndicationsPanelOpen(prev => !prev)}
             onEditorActivate={sheetState.handleEditorActivate}
-            onEditorDeactivate={sheetState.handleEditorDeactivate}
+            onEditorDeactivate={handleEditorDeactivate}
             dragHandlers={sheetState.sectionDragHandlers}
           />
         </div>

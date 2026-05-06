@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { usePatientDischarges } from '@/hooks/usePatientDischarges';
 import type {
+  ApplyDailyRecordPatch,
   DailyRecord,
   PersistDailyRecord,
 } from '@/application/shared/dailyRecordCoreContracts';
@@ -25,6 +26,7 @@ vi.mock('@/services/factories/patientFactory', () => ({
 describe('usePatientDischarges', () => {
   let mockRecord: DailyRecord;
   let mockSaveAndUpdate: PersistDailyRecord;
+  let mockPatchRecord: ApplyDailyRecordPatch;
   const mockLogEvent = vi.fn();
   const mockLogPatientDischarge = vi.fn();
 
@@ -35,6 +37,7 @@ describe('usePatientDischarges', () => {
       logPatientDischarge: mockLogPatientDischarge,
     } as unknown as ReturnType<typeof useAuditContext>);
     mockSaveAndUpdate = vi.fn().mockResolvedValue(undefined) as PersistDailyRecord;
+    mockPatchRecord = vi.fn().mockResolvedValue(undefined) as ApplyDailyRecordPatch;
     mockRecord = {
       date: '2024-12-28',
       beds: {
@@ -99,6 +102,36 @@ describe('usePatientDischarges', () => {
     });
 
     expect(mockSaveAndUpdate).toHaveBeenCalled();
+    expect(mockLogPatientDischarge).toHaveBeenCalled();
+  });
+
+  it('adds discharge and clears the source bed through one atomic patch when available', () => {
+    const { result } = renderHook(() =>
+      usePatientDischarges(mockRecord, mockSaveAndUpdate, undefined, mockPatchRecord)
+    );
+
+    act(() => {
+      result.current.addDischarge('R1', 'Vivo', undefined, 'Alta Médica');
+    });
+
+    expect(mockPatchRecord).toHaveBeenCalledTimes(1);
+    expect(mockPatchRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        discharges: expect.arrayContaining([
+          expect.objectContaining({
+            bedId: 'R1',
+            patientName: 'Test Patient',
+          }),
+        ]),
+        'beds.R1': expect.objectContaining({
+          bedId: 'R1',
+          patientName: '',
+          rut: '',
+          location: 'Room 1',
+        }),
+      })
+    );
+    expect(mockSaveAndUpdate).not.toHaveBeenCalled();
     expect(mockLogPatientDischarge).toHaveBeenCalled();
   });
 

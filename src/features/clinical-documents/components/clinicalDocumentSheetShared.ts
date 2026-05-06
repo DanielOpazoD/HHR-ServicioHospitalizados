@@ -30,6 +30,7 @@ export interface ClinicalDocumentSheetProps {
   isSaving: boolean;
   lastSavedAt?: string;
   hasLocalDraftChanges: boolean;
+  flushPendingAutosave: () => void;
   isUploadingPdf: boolean;
   toolbar?: ReactNode;
   activeTitleTarget: string | null;

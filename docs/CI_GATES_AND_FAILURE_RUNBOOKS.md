@@ -80,6 +80,7 @@ Salida esperada:
 Artefactos esperados cuando falla en CI:
 
 - `reports/e2e/preview-bootstrap/`
+- `reports/e2e/clinical-visual-release-report.json`
 - `playwright-report/`
 - `test-results/`
 
@@ -90,6 +91,7 @@ Usar antes de release o para validar cambios con impacto en Firestore, emuladore
 Incluye:
 
 - `npm run ci:merge-gate`
+- `npm run report:release-evidence`
 - `npm run check:release-evidence`
 - `npm run test:firestore:release:ci`
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  isPopupCancellationAuthError,
   isPopupRecoverableAuthError,
   resolveAuthErrorCode,
   shouldDowngradeGoogleAuthLogLevel,
@@ -38,6 +39,17 @@ describe('authErrorPolicy', () => {
     expect(err.code).toBe('auth/popup-timeout');
     expect(err.message).toContain('otra forma de ingreso');
     expect(isPopupRecoverableAuthError(err)).toBe(true);
+  });
+
+  it('does not classify a cancelled popup request as browser popup blocking', () => {
+    const err = toGoogleAuthError({
+      code: 'auth/cancelled-popup-request',
+    }) as Error & { code: string };
+
+    expect(err.code).toBe('auth/cancelled-popup-request');
+    expect(err.message).toContain('cancelado');
+    expect(isPopupCancellationAuthError(err)).toBe(true);
+    expect(isPopupRecoverableAuthError(err)).toBe(false);
   });
 
   it('downgrades recoverable popup errors to warning log level', () => {

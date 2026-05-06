@@ -227,7 +227,10 @@ describe('useDailyRecordSyncQuery', () => {
     const updatedRecord = { ...mockRecord, lastUpdated: 'new-date' };
     await result.current.saveAndUpdate(updatedRecord);
 
-    expect(defaultDailyRecordRepositoryPort.saveDetailed).toHaveBeenCalledWith(updatedRecord);
+    expect(defaultDailyRecordRepositoryPort.saveDetailed).toHaveBeenCalledWith(
+      updatedRecord,
+      updatedRecord.lastUpdated
+    );
   });
 
   it('refreshes through detailed sync before refetching', async () => {

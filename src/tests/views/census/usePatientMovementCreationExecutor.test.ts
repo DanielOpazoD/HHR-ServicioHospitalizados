@@ -61,4 +61,47 @@ describe('usePatientMovementCreationExecutor', () => {
     expect(saveAndUpdate).toHaveBeenCalledWith(updatedRecord);
     expect(onSuccess).toHaveBeenCalledTimes(1);
   });
+
+  it('persists successful creation as one atomic patch when patchRecord is available', () => {
+    const saveAndUpdate = vi.fn();
+    const patchRecord = vi.fn();
+    const notifyCreationError = vi.fn();
+    const onSuccess = vi.fn();
+    const updatedRecord = DataFactory.createMockDailyRecord('2025-01-01');
+    updatedRecord.transfers = [DataFactory.createMockTransfer({ id: 'transfer-1' })];
+    updatedRecord.beds.R2 = DataFactory.createMockPatient('R2', { patientName: '' });
+    const { result } = renderHook(() =>
+      usePatientMovementCreationExecutor({
+        saveAndUpdate,
+        patchRecord,
+        notifyCreationError,
+      })
+    );
+
+    result.current({
+      kind: 'transfer',
+      bedId: 'R2',
+      resolution: {
+        ok: true,
+        value: {
+          updatedRecord,
+          auditEntry: {
+            bedId: 'R2',
+            patientName: 'Paciente',
+            rut: '11-1',
+            receivingCenter: 'Hospital',
+          },
+        },
+      },
+      onSuccess,
+    });
+
+    expect(notifyCreationError).not.toHaveBeenCalled();
+    expect(saveAndUpdate).not.toHaveBeenCalled();
+    expect(patchRecord).toHaveBeenCalledWith({
+      transfers: updatedRecord.transfers,
+      'beds.R2': updatedRecord.beds.R2,
+    });
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+  });
 });

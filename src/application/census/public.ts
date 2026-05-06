@@ -12,6 +12,7 @@ export type {
   SelectedPatientDetail,
   UseGlobalPatientSearchReturn,
 } from '@/features/census/components/global-search/globalSearchContracts';
+export * from './atomicPatientMovementPatchController';
 export * from '@/features/census/controllers/bedManagerGridItemsController';
 export * from '@/features/census/controllers/bedManagerModalController';
 export * from '@/features/census/controllers/censusEmailRecipientsController';
