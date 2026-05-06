@@ -102,10 +102,34 @@ const openClinicalDocumentsFromR1 = async (page: Page) => {
   await expect(page.getByTestId('clinical-documents-workspace')).toBeVisible({ timeout: 15_000 });
 };
 
+const createClinicalDocumentEvidence = async (page: Page) => {
+  await page.getByRole('button', { name: /Crear documento/i }).click();
+
+  const editableSection = page.locator('[contenteditable="true"][data-section-editor]').first();
+  await expect(editableSection).toBeVisible({ timeout: 15_000 });
+  await editableSection.fill('Documento clínico creado desde smoke visual de release.');
+  await expect(editableSection).toContainText('smoke visual de release');
+};
+
+const createMedicalHandoffEvidence = async (page: Page) => {
+  const createMedicalHandoffButton = page
+    .getByTestId('medical-handoff-create-entry-button')
+    .first();
+  await expect(createMedicalHandoffButton).toBeVisible({
+    timeout: 20_000,
+  });
+  await createMedicalHandoffButton.click();
+
+  const handoffTextarea = page.locator('textarea').first();
+  await expect(handoffTextarea).toBeVisible({ timeout: 10_000 });
+  await handoffTextarea.fill('Entrega médica creada desde smoke visual de release.');
+  await expect(handoffTextarea).toHaveValue(/smoke visual de release/i);
+};
+
 test.describe('Clinical release visual smoke', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test('captures release-critical clinical surfaces without layout overflow', async ({
+  test('creates release-critical clinical surfaces without layout overflow', async ({
     page,
   }, testInfo) => {
     await openVisualCensus(page);
@@ -113,14 +137,13 @@ test.describe('Clinical release visual smoke', () => {
     await attachViewportEvidence(page, testInfo, 'clinical-release-census');
 
     await openClinicalDocumentsFromR1(page);
+    await createClinicalDocumentEvidence(page);
     await expectNoHorizontalOverflow(page);
     await attachViewportEvidence(page, testInfo, 'clinical-release-documents');
 
     await page.goto(`/medical-handoff?date=${E2E_DATE}`, { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/medical-handoff/, { timeout: 20_000 });
-    await expect(page.getByTestId('medical-handoff-create-entry-button').first()).toBeVisible({
-      timeout: 20_000,
-    });
+    await createMedicalHandoffEvidence(page);
     await expectNoHorizontalOverflow(page);
     await attachViewportEvidence(page, testInfo, 'clinical-release-medical-handoff');
   });
