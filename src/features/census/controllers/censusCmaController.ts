@@ -19,9 +19,19 @@ export interface CmaUndoRuntimeActions {
   deleteCMA: (id: string) => void;
 }
 
+export interface CmaDeleteRuntimeActions {
+  confirm: (options: ControllerConfirmDescriptor) => Promise<boolean>;
+  deleteCMA: (id: string) => void;
+}
+
 export type CmaUndoOutcome = 'not_restorable' | 'cancelled' | 'restored';
 export type CmaUndoRuntimeResult = ControllerResult<
   { outcome: CmaUndoOutcome },
+  'CONFIRMATION_FAILED'
+>;
+export type CmaDeleteOutcome = 'cancelled' | 'deleted';
+export type CmaDeleteRuntimeResult = ControllerResult<
+  { outcome: CmaDeleteOutcome },
   'CONFIRMATION_FAILED'
 >;
 
@@ -40,6 +50,14 @@ export const buildRestoreCmaDialog = (item: CMAData): ControllerConfirmDescripto
   confirmText: 'Sí, restaurar',
   cancelText: 'Cancelar',
   variant: 'warning',
+});
+
+export const buildDeleteCmaDialog = (item: CMAData): ControllerConfirmDescriptor => ({
+  title: 'Eliminar registro CMA',
+  message: `Esta acción eliminará el registro CMA de ${item.patientName || 'este paciente'}. ¿Deseas continuar?`,
+  confirmText: 'Eliminar',
+  cancelText: 'Cancelar',
+  variant: 'danger',
 });
 
 export const buildCmaIeehPatientSnapshot = (item: CMAData, recordDate: string): PatientData => {
@@ -100,4 +118,24 @@ export const executeUndoCmaController = async (
   actions.deleteCMA(item.id);
 
   return ok({ outcome: 'restored' });
+};
+
+export const executeDeleteCmaController = async (
+  item: CMAData,
+  actions: CmaDeleteRuntimeActions
+): Promise<CmaDeleteRuntimeResult> => {
+  let confirmed = false;
+  try {
+    confirmed = await actions.confirm(buildDeleteCmaDialog(item));
+  } catch {
+    return failWithCode('CONFIRMATION_FAILED', 'No se pudo confirmar la eliminación CMA.');
+  }
+
+  if (!confirmed) {
+    return ok({ outcome: 'cancelled' });
+  }
+
+  actions.deleteCMA(item.id);
+
+  return ok({ outcome: 'deleted' });
 };

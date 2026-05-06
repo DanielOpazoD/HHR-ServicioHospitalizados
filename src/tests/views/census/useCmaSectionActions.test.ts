@@ -69,13 +69,46 @@ describe('useCmaSectionActions', () => {
     );
   });
 
-  it('deletes cma directly', () => {
+  it('deletes cma only when confirmation is accepted', async () => {
+    confirm.mockResolvedValueOnce(true);
     const { result } = renderActions();
 
-    act(() => {
-      result.current.handleDelete('cma-1');
+    await act(async () => {
+      await result.current.handleDelete(cmaItem);
     });
 
+    expect(confirm).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Eliminar registro CMA',
+        confirmText: 'Eliminar',
+        variant: 'danger',
+      })
+    );
     expect(deleteCMA).toHaveBeenCalledWith('cma-1');
+  });
+
+  it('keeps cma when delete confirmation is rejected', async () => {
+    confirm.mockResolvedValueOnce(false);
+    const { result } = renderActions();
+
+    await act(async () => {
+      await result.current.handleDelete(cmaItem);
+    });
+
+    expect(deleteCMA).not.toHaveBeenCalled();
+  });
+
+  it('notifies error when delete confirmation flow fails', async () => {
+    confirm.mockRejectedValueOnce(new Error('dialog fail'));
+    const { result } = renderActions();
+
+    await act(async () => {
+      await result.current.handleDelete(cmaItem);
+    });
+
+    expect(notifyError).toHaveBeenCalledWith(
+      'No se pudo eliminar',
+      expect.stringContaining('No se pudo confirmar la eliminación CMA')
+    );
   });
 });

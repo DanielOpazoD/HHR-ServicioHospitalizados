@@ -157,6 +157,43 @@ describe('useLoginPageController', () => {
     expect(result.current.isAnyLoading).toBe(false);
   });
 
+  it('does not show the blocked-popup warning when the Google popup request was cancelled', async () => {
+    mockExecuteGoogleSignIn.mockResolvedValueOnce(
+      createApplicationFailed<AuthSessionState>(
+        {
+          status: 'auth_error',
+          user: null,
+          error: {
+            code: 'auth/cancelled-popup-request',
+            message: 'Inicio de sesión cancelado. Intenta nuevamente desde el botón principal.',
+          },
+        },
+        [
+          {
+            kind: 'unknown',
+            code: 'auth/cancelled-popup-request',
+            message: 'Inicio de sesión cancelado. Intenta nuevamente desde el botón principal.',
+          },
+        ]
+      )
+    );
+    mockIsPopupRecoverableAuthError.mockReturnValueOnce(false);
+    mockResolveAuthErrorCode.mockReturnValueOnce('auth/cancelled-popup-request');
+
+    const { result } = renderHook(() => useLoginPageController(vi.fn()));
+
+    await act(async () => {
+      const promise = result.current.handleGoogleSignIn();
+      await vi.runAllTimersAsync();
+      await promise;
+    });
+
+    expect(result.current.errorCode).toBe('auth/cancelled-popup-request');
+    expect(result.current.error).toContain('cancelado');
+    expect(result.current.error).not.toBe(AUTH_UI_COPY.blockedPopupStayOnPage);
+    expect(result.current.isGoogleLoading).toBe(false);
+  });
+
   it('surfaces non-recoverable popup errors without switching flows', async () => {
     mockExecuteGoogleSignIn.mockResolvedValueOnce(
       createApplicationFailed<AuthSessionState>(

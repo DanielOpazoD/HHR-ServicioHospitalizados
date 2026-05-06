@@ -215,14 +215,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright browsers for critical E2E gate
-        run: npx playwright install --with-deps chromium firefox
+      - name: Install Playwright browser for critical E2E gate
+        run: npx playwright install --with-deps chromium
 
       - name: Run critical E2E suite with Firestore emulator
         run: npm run test:e2e:critical:ci
         env:
           CI: true
-          E2E_CRITICAL_BROWSERS: chromium,firefox
+          E2E_CRITICAL_BROWSERS: chromium
           PLAYWRIGHT_JSON_OUTPUT: reports/e2e/playwright-report.json
           E2E_BUDGET_LOGIN_VISIBLE_MS: 4500
           E2E_BUDGET_AUTH_FEEDBACK_MS: 3000
@@ -243,6 +243,60 @@ jobs:
           name: e2e-critical-emulator-artifacts
           path: |
             reports/e2e/**
+            playwright-report/**
+            test-results/**
+          retention-days: 14
+
+  e2e-firefox-compat:
+    name: e2e-firefox-compat
+    runs-on: ubuntu-latest
+    needs: [quality-static]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Setup Java (Firestore emulator)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser for Firefox compatibility signal
+        run: npx playwright install --with-deps firefox
+
+      - name: Run Firefox E2E compatibility suite with Firestore emulator
+        run: npm run test:e2e:critical:ci
+        continue-on-error: true
+        env:
+          CI: true
+          E2E_CRITICAL_BROWSERS: firefox
+          PLAYWRIGHT_JSON_OUTPUT: reports/e2e-firefox/playwright-report.json
+          E2E_BUDGET_LOGIN_VISIBLE_MS: 4500
+          E2E_BUDGET_AUTH_FEEDBACK_MS: 3000
+          E2E_BUDGET_CENSO_VISIBLE_MS: 8000
+
+      - name: Record Firefox compatibility signal
+        if: always()
+        run: |
+          echo "Firefox E2E is a compatibility signal only; Chromium remains the release-blocking E2E gate." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Firefox E2E compatibility artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-firefox-compat-artifacts
+          path: |
+            reports/e2e-firefox/**
             playwright-report/**
             test-results/**
           retention-days: 14

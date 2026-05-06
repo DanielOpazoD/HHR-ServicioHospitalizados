@@ -39,6 +39,7 @@ export interface ClinicalDocumentWorkspaceDraftState {
   setIsSaving: Dispatch<SetStateAction<boolean>>;
   validationIssues: Array<{ message: string }>;
   lastPersistedSnapshotRef: MutableRefObject<string>;
+  flushPendingAutosave: () => void;
   patchPatientField: (fieldId: string, value: string) => void;
   patchPatientFieldLabel: (fieldId: string, label: string) => void;
   setPatientFieldVisibility: (fieldId: string, visible: boolean) => void;
@@ -122,7 +123,7 @@ export const useClinicalDocumentWorkspaceDraft = ({
     baseStateRef,
   });
 
-  useClinicalDocumentDraftAutosave({
+  const flushPendingAutosave = useClinicalDocumentDraftAutosave({
     draft: state.draft,
     canEdit,
     isActive,
@@ -187,6 +188,7 @@ export const useClinicalDocumentWorkspaceDraft = ({
     setIsSaving,
     validationIssues,
     lastPersistedSnapshotRef,
+    flushPendingAutosave,
     patchPatientField: (fieldId, value) => dispatch({ type: 'PATCH_FIELD', fieldId, value }),
     patchPatientFieldLabel: (fieldId, label) =>
       dispatch({ type: 'PATCH_FIELD_LABEL', fieldId, label }),

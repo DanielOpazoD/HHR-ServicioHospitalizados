@@ -61,9 +61,15 @@ describe('dailyRecordRepositoryReadService', () => {
     vi.clearAllMocks();
   });
 
-  it('keeps IndexedDB as source of truth when local record is newer than remote', async () => {
+  it('keeps local authority and persists the selected merge when local is newer than remote', async () => {
     const local = buildRecord('2026-03-19', '2026-03-19T12:00:00.000Z');
+    local.beds = {
+      R1: { bedId: 'R1', patientName: 'LOCAL PATIENT', pathology: 'LOCAL DX' },
+    } as unknown as DailyRecord['beds'];
     const remote = buildRecord('2026-03-19', '2026-03-19T08:00:00.000Z');
+    remote.beds = {
+      R2: { bedId: 'R2', patientName: 'REMOTE NEW PATIENT', pathology: 'REMOTE NEW DX' },
+    } as unknown as DailyRecord['beds'];
 
     vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(local);
     vi.mocked(loadRemoteRecordWithFallback).mockResolvedValueOnce({
@@ -81,7 +87,16 @@ describe('dailyRecordRepositoryReadService', () => {
     expect(result.record?.lastUpdated).toBe(local.lastUpdated);
     expect(result.sourceOfTruth).toBe('local');
     expect(result.consistencyState).not.toBe('remote_authoritative');
-    expect(saveToIndexedDB).not.toHaveBeenCalled();
+    expect(result.record?.beds.R1.pathology).toBe('LOCAL DX');
+    expect(result.record?.beds.R2.patientName).toBe('REMOTE NEW PATIENT');
+    expect(saveToIndexedDB).toHaveBeenCalledWith(
+      expect.objectContaining({
+        beds: expect.objectContaining({
+          R1: expect.objectContaining({ pathology: 'LOCAL DX' }),
+          R2: expect.objectContaining({ patientName: 'REMOTE NEW PATIENT' }),
+        }),
+      })
+    );
   });
 
   it('hydrates local cache when remote record is newer than local', async () => {

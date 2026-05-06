@@ -155,4 +155,27 @@ describe('CmaSectionRow', () => {
     expect(buttons.at(-2)).toHaveAttribute('title', 'Eliminar registro');
     expect(buttons.at(-1)).toHaveTextContent('IEEH');
   });
+
+  it('sends the complete CMA item when delete is requested', () => {
+    const item = DataFactory.createMockCMA({ id: 'cma-delete-row' });
+    const onDelete = vi.fn();
+
+    render(
+      <table>
+        <tbody>
+          <CmaSectionRow
+            item={item}
+            recordDate="2026-04-30"
+            onUpdate={vi.fn()}
+            onUndo={vi.fn().mockResolvedValue(undefined)}
+            onDelete={onDelete}
+          />
+        </tbody>
+      </table>
+    );
+
+    fireEvent.click(screen.getByTitle('Eliminar registro'));
+
+    expect(onDelete).toHaveBeenCalledWith(item);
+  });
 });

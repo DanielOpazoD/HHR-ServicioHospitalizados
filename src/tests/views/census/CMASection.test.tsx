@@ -163,8 +163,8 @@ describe('CMASection', () => {
     expect(deleteCMA).not.toHaveBeenCalled();
   });
 
-  it('notifies error when undo confirmation fails and supports direct deletion', async () => {
-    confirm.mockRejectedValue(new Error('dialog failed'));
+  it('notifies error when undo confirmation fails and deletes only after confirmation', async () => {
+    confirm.mockRejectedValueOnce(new Error('dialog failed')).mockResolvedValueOnce(true);
     vi.mocked(useDailyRecordMovements).mockReturnValue({
       discharges: [],
       transfers: [],
@@ -182,7 +182,16 @@ describe('CMASection', () => {
     });
 
     fireEvent.click(screen.getByTitle('Eliminar registro'));
-    expect(deleteCMA).toHaveBeenCalledWith('cma-1');
+    await waitFor(() => {
+      expect(confirm).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Eliminar registro CMA',
+          confirmText: 'Eliminar',
+          variant: 'danger',
+        })
+      );
+      expect(deleteCMA).toHaveBeenCalledWith('cma-1');
+    });
   });
 
   it('returns null when cma list is null', () => {
