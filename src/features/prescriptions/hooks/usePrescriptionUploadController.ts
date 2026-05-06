@@ -12,8 +12,10 @@ import {
   type CompressedPrescriptionImageBundle,
 } from '@/features/prescriptions/services/prescriptionImageCompressionService';
 import {
+  listPrescriptionUploadPatientOptions,
   submitPrescriptionPhoto,
   validatePrescriptionAccessPin,
+  type PrescriptionUploadPatientOption,
   type SubmitPrescriptionResult,
 } from '@/features/prescriptions/services/prescriptionAccessService';
 
@@ -27,17 +29,19 @@ export type PrescriptionUploadPhase =
 
 export interface PrescriptionUploadFormValues {
   prescriptionType: PrescriptionType;
-  bedId: string;
-  patientName: string;
+  selectedPatientKey: string;
   patientUnassigned: boolean;
 }
 
 const initialFormValues: PrescriptionUploadFormValues = {
   prescriptionType: 'comun',
-  bedId: '',
-  patientName: '',
+  selectedPatientKey: '',
   patientUnassigned: false,
 };
+
+export type PrescriptionPatientOption = PrescriptionUploadPatientOption;
+
+export type PrescriptionPatientOptionsPhase = 'loading' | 'ready' | 'error';
 
 export interface UsePrescriptionUploadControllerOptions {
   /**
@@ -51,6 +55,9 @@ export interface UsePrescriptionUploadControllerOptions {
 export interface PrescriptionUploadControllerHandle {
   phase: PrescriptionUploadPhase;
   values: PrescriptionUploadFormValues;
+  patientOptions: PrescriptionPatientOption[];
+  patientOptionsPhase: PrescriptionPatientOptionsPhase;
+  patientOptionsError: string | null;
   setField: <K extends keyof PrescriptionUploadFormValues>(
     field: K,
     value: PrescriptionUploadFormValues[K]
@@ -75,6 +82,12 @@ export interface PrescriptionUploadControllerHandle {
 
 const FORM_VALIDATION_ERROR = 'Completa los campos requeridos antes de subir.';
 const NO_IMAGE_ERROR = 'Toma o selecciona una foto de la receta antes de subir.';
+const NO_PATIENT_SELECTION_ERROR = 'Selecciona una cama/paciente o marca sin paciente asignado.';
+
+const todayIso = (): string => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 export const usePrescriptionUploadController = ({
   bypassPinGate = false,
@@ -83,12 +96,46 @@ export const usePrescriptionUploadController = ({
     bypassPinGate ? 'ready' : 'awaiting-pin'
   );
   const [values, setValues] = useState<PrescriptionUploadFormValues>(initialFormValues);
+  const [patientOptions, setPatientOptions] = useState<PrescriptionPatientOption[]>([]);
+  const [patientOptionsPhase, setPatientOptionsPhase] =
+    useState<PrescriptionPatientOptionsPhase>('loading');
+  const [patientOptionsError, setPatientOptionsError] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<SubmitPrescriptionResult | null>(null);
   const compressedRef = useRef<CompressedPrescriptionImageBundle | null>(null);
   const [previewObjectUrl, setPreviewObjectUrl] = useState<string | null>(null);
   const [hasCompressedImage, setHasCompressedImage] = useState(false);
   const pinRef = useRef<string | null>(null);
+
+  const loadPatientOptions = useCallback(async () => {
+    setPatientOptionsPhase('loading');
+    setPatientOptionsError(null);
+    try {
+      const result = await listPrescriptionUploadPatientOptions({
+        pin: pinRef.current ?? undefined,
+        date: todayIso(),
+      });
+      setPatientOptions(result.patientOptions);
+      setPatientOptionsPhase('ready');
+    } catch (error) {
+      setPatientOptions([]);
+      setPatientOptionsError(
+        error instanceof Error ? error.message : 'No se pudo cargar el censo diario.'
+      );
+      setPatientOptionsPhase('error');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (phase !== 'ready') return;
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) void loadPatientOptions();
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [loadPatientOptions, phase]);
 
   useEffect(() => {
     return () => {
@@ -164,17 +211,24 @@ export const usePrescriptionUploadController = ({
       return;
     }
 
-    const trimmedBedId = values.bedId.trim();
-    const trimmedName = values.patientName.trim();
     const includePatient = !values.patientUnassigned;
+    const selectedPatient = includePatient
+      ? patientOptions.find(option => option.key === values.selectedPatientKey)
+      : null;
+
+    if (includePatient && !selectedPatient) {
+      setErrorMessage(NO_PATIENT_SELECTION_ERROR);
+      return;
+    }
 
     setPhase('uploading');
     try {
       const result = await submitPrescriptionPhoto({
         pin: pinRef.current ?? undefined,
         prescriptionType: values.prescriptionType,
-        bedId: includePatient && trimmedBedId ? trimmedBedId : undefined,
-        patientName: includePatient && trimmedName ? trimmedName : undefined,
+        bedId: includePatient ? selectedPatient?.bedId : undefined,
+        patientName: includePatient ? selectedPatient?.patientName || undefined : undefined,
+        patientRut: includePatient ? selectedPatient?.patientRut || undefined : undefined,
         fullImageBase64: compressed.full.base64,
         thumbnailBase64: compressed.thumbnail.base64,
         fullImageWidth: compressed.full.width,
@@ -188,7 +242,7 @@ export const usePrescriptionUploadController = ({
       );
       setPhase('error');
     }
-  }, [values]);
+  }, [patientOptions, values]);
 
   const resetAfterSuccess = useCallback(() => {
     clearCompressedImage();
@@ -200,6 +254,9 @@ export const usePrescriptionUploadController = ({
   return {
     phase,
     values,
+    patientOptions,
+    patientOptionsPhase,
+    patientOptionsError,
     setField,
     errorMessage,
     lastResult,

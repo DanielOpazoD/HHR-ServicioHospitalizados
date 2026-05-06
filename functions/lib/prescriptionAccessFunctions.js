@@ -16,6 +16,12 @@
  *       document carries a precomputed `expiresAt` based on per-type
  *       retention so the cleanup scheduler stays simple.
  *
+ *   - `listPrescriptionUploadPatientOptions({ pin?, date? })`
+ *       Returns a minimal census-derived bed picker for the upload form.
+ *       Uses the same access rules as upload: authenticated clinicians or
+ *       QR + valid PIN. It deliberately returns only bedId, patientName,
+ *       and patientRut.
+ *
  *   - `setPrescriptionAccessPin({ newPin })`
  *       Admin-only PIN rotation. Hashes with scrypt + per-record salt.
  */
@@ -92,6 +98,8 @@ const getHospitalRef = admin => admin.firestore().collection('hospitals').doc(HO
 const getPrescriptionsRef = admin => getHospitalRef(admin).collection('prescriptions');
 const getAccessConfigRef = admin =>
   getHospitalRef(admin).collection('config').doc('prescriptionsAccess');
+const getDailyRecordRef = (admin, date) =>
+  getHospitalRef(admin).collection('dailyRecords').doc(date);
 
 const requireAuthentication = context => {
   if (!context?.auth) {
@@ -109,6 +117,19 @@ const resolveCallerRole = async (context, resolveRoleForEmail) => {
 
 const optionalString = (value, maxLength = 512) =>
   typeof value === 'string' && value.trim() ? value.trim().slice(0, maxLength) : undefined;
+
+const todayIso = () => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+};
+
+const resolveIsoDate = value => {
+  if (value === undefined || value === null || value === '') return todayIso();
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    throw new functions.https.HttpsError('invalid-argument', 'Fecha de censo inválida.');
+  }
+  return value;
+};
 
 const positiveInteger = (value, fieldName) => {
   const parsed = Number(value);
@@ -249,6 +270,53 @@ const createValidatePinHandler =
   async (data, _context) => {
     await validatePinAgainstConfig(admin, data?.pin);
     return { valid: true };
+  };
+
+const resolveUploadPickerAccess = async ({ admin, context, payload, resolveRoleForEmail }) => {
+  if (context?.auth) {
+    const role = await resolveCallerRole(context, resolveRoleForEmail);
+    if (AUTHENTICATED_UPLOAD_ALLOWED_ROLES.has(role)) return;
+    if (payload.pin) {
+      await validatePinAgainstConfig(admin, payload.pin);
+      return;
+    }
+    throw new functions.https.HttpsError(
+      'permission-denied',
+      'No tienes permiso para ver el selector de pacientes. Usa el QR + PIN.'
+    );
+  }
+  await validatePinAgainstConfig(admin, payload.pin);
+};
+
+const buildPatientOptionsFromDailyRecord = dailyRecord => {
+  const beds = dailyRecord?.beds || {};
+  return Object.entries(beds)
+    .filter(
+      ([, patient]) =>
+        patient && !patient.isBlocked && (patient.patientName?.trim() || patient.rut?.trim())
+    )
+    .map(([bedId, patient]) => ({
+      key: bedId,
+      bedId,
+      patientName: optionalString(patient.patientName, 256) || '',
+      patientRut: optionalString(patient.rut, 32) || '',
+    }))
+    .sort((a, b) => a.bedId.localeCompare(b.bedId, 'es', { numeric: true }));
+};
+
+const createListUploadPatientOptionsHandler =
+  ({ admin, resolveRoleForEmail }) =>
+  async (data, context) => {
+    const payload = data || {};
+    await resolveUploadPickerAccess({ admin, context, payload, resolveRoleForEmail });
+
+    const date = resolveIsoDate(payload.date);
+    const snap = await getDailyRecordRef(admin, date).get();
+    const dailyRecord = snap.exists ? snap.data() || null : null;
+    return {
+      date,
+      patientOptions: buildPatientOptionsFromDailyRecord(dailyRecord),
+    };
   };
 
 /**
@@ -426,6 +494,9 @@ const createSetPinHandler =
 
 const createPrescriptionAccessFunctions = ({ admin, resolveRoleForEmail }) => ({
   validatePrescriptionAccessPin: functions.https.onCall(createValidatePinHandler({ admin })),
+  listPrescriptionUploadPatientOptions: functions.https.onCall(
+    createListUploadPatientOptionsHandler({ admin, resolveRoleForEmail })
+  ),
   submitPrescriptionPhoto: functions.https.onCall(
     createSubmitHandler({ admin, resolveRoleForEmail })
   ),
@@ -438,6 +509,7 @@ module.exports = {
   createPrescriptionAccessFunctions,
   // Direct handler factories for tests (avoid functions.https.onCall wrapping).
   createValidatePinHandler,
+  createListUploadPatientOptionsHandler,
   createSubmitHandler,
   createSetPinHandler,
   // Pure helpers exposed for unit testing.

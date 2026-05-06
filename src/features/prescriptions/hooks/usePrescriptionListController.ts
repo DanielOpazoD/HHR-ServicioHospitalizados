@@ -28,12 +28,17 @@ export interface PrescriptionListFilters {
   selectedDate: string | null;
 }
 
-const DEFAULT_FILTERS: PrescriptionListFilters = {
+const todayIso = (): string => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+const buildDefaultFilters = (): PrescriptionListFilters => ({
   type: 'all',
   patient: 'all',
   search: '',
-  selectedDate: null,
-};
+  selectedDate: todayIso(),
+});
 
 const matchesPatientFilter = (
   record: PrescriptionRecord,
@@ -97,7 +102,7 @@ export const usePrescriptionListController = ({
 }: UsePrescriptionListControllerOptions = {}): PrescriptionListControllerHandle => {
   const [records, setRecords] = useState<PrescriptionRecord[]>([]);
   const [phase, setPhase] = useState<PrescriptionListPhase>('loading');
-  const [filters, setFilters] = useState<PrescriptionListFilters>(DEFAULT_FILTERS);
+  const [filters, setFilters] = useState<PrescriptionListFilters>(() => buildDefaultFilters());
 
   useEffect(() => {
     let active = true;
@@ -119,7 +124,7 @@ export const usePrescriptionListController = ({
     []
   );
 
-  const resetFilters = useCallback(() => setFilters(DEFAULT_FILTERS), []);
+  const resetFilters = useCallback(() => setFilters(buildDefaultFilters()), []);
 
   const filteredRecords = useMemo(
     () =>

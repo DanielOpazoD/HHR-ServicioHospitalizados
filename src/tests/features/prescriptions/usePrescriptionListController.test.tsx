@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, render } from '@testing-library/react';
 
 vi.mock('@/services/repositories/PrescriptionRepository', () => ({
@@ -41,7 +41,7 @@ const buildRecord = (
     contentType: 'image/jpeg',
   },
   uploader: { source: 'authenticated', uid: 'u1', email: 'enf@h.cl' },
-  createdAt: '2026-05-04T10:00:00.000Z',
+  createdAt: '2026-05-05T10:00:00.000Z',
   expiresAt: '2026-06-03T10:00:00.000Z',
   ...overrides,
 });
@@ -79,6 +79,15 @@ const setupController = () => {
 };
 
 describe('usePrescriptionListController', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-05T12:00:00.000Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('starts in loading phase before the first snapshot arrives', () => {
     const { handle } = setupController();
     expect(handle().phase).toBe('loading');
@@ -92,6 +101,19 @@ describe('usePrescriptionListController', () => {
     });
     expect(handle().phase).toBe('ready');
     expect(handle().records).toHaveLength(1);
+  });
+
+  it('defaults to the current day so previous-day prescriptions are hidden on first load', async () => {
+    const { pushSnapshot, handle } = setupController();
+    await act(async () => {
+      pushSnapshot([
+        buildRecord('rx-today', { createdAt: '2026-05-05T09:00:00.000Z' }),
+        buildRecord('rx-yesterday', { createdAt: '2026-05-04T22:00:00.000Z' }),
+      ]);
+    });
+
+    expect(handle().filters.selectedDate).toBe('2026-05-05');
+    expect(handle().filteredRecords.map(r => r.id)).toEqual(['rx-today']);
   });
 
   it('filters by prescription type', async () => {
@@ -171,7 +193,7 @@ describe('usePrescriptionListController', () => {
       type: 'all',
       patient: 'all',
       search: '',
-      selectedDate: null,
+      selectedDate: '2026-05-05',
     });
     expect(handle().filteredRecords).toHaveLength(1);
   });
