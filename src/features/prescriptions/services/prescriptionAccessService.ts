@@ -21,6 +21,25 @@ interface ValidatePinResult {
   valid: true;
 }
 
+export interface PrescriptionUploadPatientOption {
+  key: string;
+  bedId: string;
+  patientName: string;
+  patientRut: string;
+}
+
+interface ListPatientOptionsPayload {
+  /** Required when no authenticated clinician role is available (QR flow). */
+  pin?: string;
+  /** ISO yyyy-mm-dd. Defaults server-side to today when omitted. */
+  date?: string;
+}
+
+interface ListPatientOptionsResult {
+  date: string;
+  patientOptions: PrescriptionUploadPatientOption[];
+}
+
 interface SubmitPrescriptionPayload {
   /** Required when no authenticated clinician role is available (QR flow). */
   pin?: string;
@@ -62,6 +81,16 @@ const buildService = (
       return response.data;
     },
 
+    async listPrescriptionUploadPatientOptions(
+      payload: ListPatientOptionsPayload
+    ): Promise<ListPatientOptionsResult> {
+      const callable = await getCallable<ListPatientOptionsPayload, ListPatientOptionsResult>(
+        'listPrescriptionUploadPatientOptions'
+      );
+      const response = await callable(payload);
+      return response.data;
+    },
+
     async submitPrescriptionPhoto(
       payload: SubmitPrescriptionPayload
     ): Promise<SubmitPrescriptionResult> {
@@ -85,5 +114,7 @@ export const createPrescriptionAccessService = (deps: PrescriptionAccessServiceD
 
 const defaultService = buildService();
 export const validatePrescriptionAccessPin = defaultService.validatePrescriptionAccessPin;
+export const listPrescriptionUploadPatientOptions =
+  defaultService.listPrescriptionUploadPatientOptions;
 export const submitPrescriptionPhoto = defaultService.submitPrescriptionPhoto;
 export const setPrescriptionAccessPin = defaultService.setPrescriptionAccessPin;

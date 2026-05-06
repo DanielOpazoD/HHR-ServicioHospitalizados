@@ -202,7 +202,7 @@ describe('executeDeletePrescription', () => {
 
     expect(writeAuditEvent).toHaveBeenCalledWith({
       userId: 'admin@h.cl',
-      action: 'PRESCRIPTION_DELETED',
+      action: 'PRESCRIPTION_MANUAL_DELETED',
       entityType: 'prescription',
       entityId: 'rx-1',
       patientRut: '11.111.111-1',
@@ -216,7 +216,8 @@ describe('executeDeletePrescription', () => {
         createdAt: '2026-05-05T10:00:00.000Z',
         expiresAt: '2026-06-04T10:00:00.000Z',
         deletedAt: '2026-05-05T12:00:00.000Z',
-        deletionMode: 'manual_admin',
+        deletionMode: 'manual',
+        deletedBy: 'admin@h.cl',
       }),
     });
     expect(port.delete).toHaveBeenCalledWith('rx-1', 'hhr');

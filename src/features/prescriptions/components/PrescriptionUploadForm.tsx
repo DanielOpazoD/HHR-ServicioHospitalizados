@@ -31,6 +31,9 @@ export const PrescriptionUploadForm: React.FC<PrescriptionUploadFormProps> = ({ 
     resetAfterSuccess,
     lastResult,
     hasCompressedImage,
+    patientOptions,
+    patientOptionsPhase,
+    patientOptionsError,
   } = controller;
 
   const isBusy = phase === 'compressing' || phase === 'uploading';
@@ -130,29 +133,38 @@ export const PrescriptionUploadForm: React.FC<PrescriptionUploadFormProps> = ({ 
         {!values.patientUnassigned && (
           <div className="space-y-2">
             <label className="block">
-              <span className="text-xs text-slate-500">Cama</span>
-              <input
-                type="text"
-                value={values.bedId}
-                onChange={event => setField('bedId', event.target.value)}
-                disabled={isBusy}
-                placeholder="Ej: H5C1"
-                maxLength={32}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:bg-slate-100"
-              />
+              <span className="text-xs text-slate-500">Cama / paciente / RUT</span>
+              <select
+                value={values.selectedPatientKey}
+                onChange={event => setField('selectedPatientKey', event.target.value)}
+                disabled={isBusy || patientOptionsPhase === 'loading'}
+                className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:bg-slate-100"
+              >
+                <option value="">
+                  {patientOptionsPhase === 'loading'
+                    ? 'Cargando camas del censo...'
+                    : 'Selecciona cama - paciente - RUT'}
+                </option>
+                {patientOptions.map(option => (
+                  <option key={option.key} value={option.key}>
+                    {option.bedId} - {option.patientName || 'Sin nombre'}
+                    {option.patientRut ? ` - ${option.patientRut}` : ''}
+                  </option>
+                ))}
+              </select>
             </label>
-            <label className="block">
-              <span className="text-xs text-slate-500">Nombre paciente</span>
-              <input
-                type="text"
-                value={values.patientName}
-                onChange={event => setField('patientName', event.target.value)}
-                disabled={isBusy}
-                placeholder="Nombre y apellido"
-                maxLength={256}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:bg-slate-100"
-              />
-            </label>
+            {patientOptionsPhase === 'error' && (
+              <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                {patientOptionsError ?? 'No se pudo cargar el censo diario.'} Puedes marcar sin
+                paciente asignado y asignar después en el visor.
+              </p>
+            )}
+            {patientOptionsPhase === 'ready' && patientOptions.length === 0 && (
+              <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                No hay camas activas con paciente en el censo de hoy. Marca sin paciente asignado
+                para subir la receta y asignarla después.
+              </p>
+            )}
           </div>
         )}
       </fieldset>

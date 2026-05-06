@@ -17,7 +17,7 @@ interface PrescriptionUnassignedTrayProps {
   onDragStart: (event: React.DragEvent<HTMLDivElement>, record: PrescriptionRecord) => void;
   onDragEnd: () => void;
   onTogglePicker: (record: PrescriptionRecord) => void;
-  onPreviewImage: (url: string) => void;
+  onPreviewImage: (record: PrescriptionRecord, url: string) => void;
   onUpdateType?: (record: PrescriptionRecord, nextType: PrescriptionType) => Promise<void>;
 }
 
@@ -81,7 +81,7 @@ export const PrescriptionUnassignedTray: React.FC<PrescriptionUnassignedTrayProp
                 thumbnailStoragePath={record.image.thumbnailStoragePath}
                 fullStoragePath={record.image.storagePath}
                 alt="Pendiente"
-                onPreview={onPreviewImage}
+                onPreview={url => onPreviewImage(record, url)}
                 className="h-14 w-14"
               />
               {onUpdateType ? (

@@ -98,7 +98,7 @@ describe('Security hardening static guards', () => {
       );
     });
 
-    it('lets clinical staff read prescriptions but limits delete to admin', () => {
+    it('lets clinical staff read prescriptions and limits delete to admin or nursing', () => {
       const rules = readProjectFile('firestore.rules');
       expect(rules).toMatch(
         /match \/prescriptions\/\{prescriptionId\}[\s\S]*?allow read:\s*if canReadClinicalData\(\);/m
@@ -107,7 +107,7 @@ describe('Security hardening static guards', () => {
         /match \/prescriptions\/\{prescriptionId\}[\s\S]*?allow update:\s*if canEdit\(\);/m
       );
       expect(rules).toMatch(
-        /match \/prescriptions\/\{prescriptionId\}[\s\S]*?allow delete:\s*if isAdmin\(\);/m
+        /match \/prescriptions\/\{prescriptionId\}[\s\S]*?allow delete:\s*if canEdit\(\);/m
       );
     });
 

@@ -47,7 +47,7 @@ describe('isClinicalAuditAction', () => {
     'CUDYR_MODIFIED',
     'BED_BLOCKED',
     'CLINICAL_DOCUMENT_EDITED',
-    'PRESCRIPTION_DELETED',
+    'PRESCRIPTION_MANUAL_DELETED',
     'WOUND_CARE_PHOTO_UPLOADED',
     'CONFLICT_AUTO_MERGED',
   ];
@@ -60,6 +60,7 @@ describe('isClinicalAuditAction', () => {
     'VIEW_MEDICAL_HANDOFF',
     'USER_LOGIN',
     'USER_LOGOUT',
+    'PRESCRIPTION_RETENTION_DELETED',
     'SYSTEM_ERROR',
   ];
 

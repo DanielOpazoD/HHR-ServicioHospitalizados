@@ -65,6 +65,7 @@ export const NavbarMenu: React.FC<NavbarMenuProps> = ({
   const isAdmin = auth.role === 'admin';
   const canSeePrescriptionsVisor =
     isAdmin || auth.role === 'nurse_hospital' || auth.role === 'doctor_urgency' || auth.isEditor;
+  const canSeePrescriptionsConfig = isAdmin || auth.role === 'nurse_hospital';
 
   const { systemItems } = useNavbarNavigation(currentModule, visibleModules, censusViewMode);
 
@@ -118,7 +119,7 @@ export const NavbarMenu: React.FC<NavbarMenuProps> = ({
                   onClick={() => handleItemClick(item)}
                 />
               ))}
-              {(canSeePrescriptionsVisor || isAdmin) && (
+              {(canSeePrescriptionsVisor || canSeePrescriptionsConfig) && (
                 <>
                   <div className="h-px bg-slate-200 my-1" />
                   {canSeePrescriptionsVisor && (
@@ -129,7 +130,7 @@ export const NavbarMenu: React.FC<NavbarMenuProps> = ({
                       onNavigate={close}
                     />
                   )}
-                  {isAdmin && (
+                  {canSeePrescriptionsConfig && (
                     <MenuLink
                       icon={QrCode}
                       label="Recetas — Configuración (QR/PIN)"

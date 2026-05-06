@@ -8,6 +8,7 @@
 import React from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { UIProvider } from '@/context/UIContext';
 
 vi.mock('@/services/storage/firestore/firestoreRecordQueries', () => ({
   getRecordFromFirestore: vi.fn(),
@@ -65,6 +66,8 @@ const buildDailyRecord = (): DailyRecord =>
     activeExtraBeds: [],
   }) as unknown as DailyRecord;
 
+const renderGrid = (ui: React.ReactElement) => render(<UIProvider>{ui}</UIProvider>);
+
 describe('PrescriptionBedGridView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -73,7 +76,7 @@ describe('PrescriptionBedGridView', () => {
 
   it('lists pending unassigned prescriptions in the tray', async () => {
     const unassigned = buildRecord('rx-pending', { bedId: undefined, patientName: undefined });
-    render(<PrescriptionBedGridView records={[unassigned]} dayIso="2026-05-04" />);
+    renderGrid(<PrescriptionBedGridView records={[unassigned]} dayIso="2026-05-04" />);
 
     await waitFor(() => expect(screen.getByTestId('prescription-unassigned-tray')).toBeTruthy());
     expect(screen.getByTestId('prescription-unassigned-card-rx-pending')).toBeTruthy();
@@ -87,7 +90,7 @@ describe('PrescriptionBedGridView', () => {
     });
     const onAssign = vi.fn(async () => undefined);
 
-    render(
+    renderGrid(
       <PrescriptionBedGridView records={[unassigned]} dayIso="2026-05-04" onAssign={onAssign} />
     );
 
@@ -125,7 +128,7 @@ describe('PrescriptionBedGridView', () => {
     });
     const onAssign = vi.fn(async () => undefined);
 
-    render(
+    renderGrid(
       <PrescriptionBedGridView records={[unassigned]} dayIso="2026-05-04" onAssign={onAssign} />
     );
 
@@ -147,5 +150,61 @@ describe('PrescriptionBedGridView', () => {
     // Drop event was processed but onAssign should not fire because of type mismatch.
     await new Promise(resolve => setTimeout(resolve, 0));
     expect(onAssign).not.toHaveBeenCalled();
+  });
+
+  it('navigates between prescriptions for the same patient in the image viewer', async () => {
+    const first = buildRecord('rx-first', {
+      bedId: 'H1C2',
+      patientName: 'Carina Pate Lillo',
+      patientRut: '14.470.055-4',
+      prescriptionType: 'comun',
+    });
+    const second = buildRecord('rx-second', {
+      bedId: 'H1C2',
+      patientName: 'Carina Pate Lillo',
+      patientRut: '14.470.055-4',
+      prescriptionType: 'psicotropicos',
+    });
+
+    renderGrid(<PrescriptionBedGridView records={[first, second]} dayIso="2026-05-04" />);
+
+    const thumbnail = await screen.findByRole('img', { name: /comun · h1c2/i });
+    fireEvent.click(thumbnail.closest('button')!);
+
+    const dialogImage = await screen.findByRole('img', { name: /receta 1 de 2/i });
+    expect(dialogImage).toHaveAttribute('src', 'https://stub/prescriptions/hhr/rx-first/full.jpg');
+
+    fireEvent.click(screen.getByRole('button', { name: /receta siguiente/i }));
+
+    await waitFor(() =>
+      expect(screen.getByRole('img', { name: /receta 2 de 2/i })).toHaveAttribute(
+        'src',
+        'https://stub/prescriptions/hhr/rx-second/full.jpg'
+      )
+    );
+  });
+
+  it('confirms and deletes the selected prescription from the image viewer', async () => {
+    const record = buildRecord('rx-delete', {
+      bedId: 'H1C2',
+      patientName: 'Carina Pate Lillo',
+      patientRut: '14.470.055-4',
+    });
+    const onDelete = vi.fn(async () => undefined);
+
+    renderGrid(
+      <PrescriptionBedGridView records={[record]} dayIso="2026-05-04" onDelete={onDelete} />
+    );
+
+    const thumbnail = await screen.findByRole('img', { name: /comun · h1c2/i });
+    fireEvent.click(thumbnail.closest('button')!);
+    await screen.findByRole('dialog', { name: /vista ampliada/i });
+
+    fireEvent.click(screen.getByRole('button', { name: /eliminar receta/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /^eliminar$/i }));
+
+    await waitFor(() =>
+      expect(onDelete).toHaveBeenCalledWith(expect.objectContaining({ id: record.id }))
+    );
   });
 });

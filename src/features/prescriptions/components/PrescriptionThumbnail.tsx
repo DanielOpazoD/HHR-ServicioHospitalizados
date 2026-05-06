@@ -8,9 +8,9 @@ interface PrescriptionThumbnailProps {
   alt?: string;
   className?: string;
   /**
-   * Fired on double-click. The parent typically opens the lightbox with the
+   * Fired on click. The parent typically opens the lightbox with the
    * resolved full-image URL. The component memoizes the URL after first
-   * resolve so the second click is instant.
+   * resolve so the next click is instant.
    */
   onPreview: (fullImageUrl: string) => void;
 }
@@ -42,7 +42,7 @@ export const PrescriptionThumbnail: React.FC<PrescriptionThumbnailProps> = ({
     };
   }, [thumbnailStoragePath]);
 
-  const handleDoubleClick = async () => {
+  const handlePreview = async () => {
     if (fullUrl) {
       onPreview(fullUrl);
       return;
@@ -80,9 +80,10 @@ export const PrescriptionThumbnail: React.FC<PrescriptionThumbnailProps> = ({
   return (
     <button
       type="button"
-      onDoubleClick={handleDoubleClick}
+      onClick={handlePreview}
+      onDoubleClick={event => event.preventDefault()}
       onContextMenu={event => event.preventDefault()}
-      title="Doble click para ver en grande"
+      title="Click para ver en grande"
       className={`group relative inline-block h-12 w-12 overflow-hidden rounded-md border border-slate-200 bg-slate-50 hover:border-sky-400 ${className ?? ''}`}
     >
       <img

@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Filter, Grid3x3, Inbox, List, Search, X } from 'lucide-react';
+import { ArrowLeft, Filter, Grid3x3, Inbox, List, Search, X } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { executeReassignPrescriptionPatient } from '@/application/prescriptions/reassignPrescriptionPatientUseCase';
 import { executeDeletePrescription } from '@/application/prescriptions/deletePrescriptionUseCase';
@@ -21,7 +21,7 @@ export const PrescriptionVisorView: React.FC = () => {
   const auth = useAuth();
   const controller = usePrescriptionListController();
   const [selected, setSelected] = useState<PrescriptionRecord | null>(null);
-  const [mode, setMode] = useState<VisorMode>('list');
+  const [mode, setMode] = useState<VisorMode>('bed-grid');
 
   const canEdit = auth.role === 'admin' || auth.role === 'nurse_hospital' || auth.isEditor;
   const canDelete = auth.role === 'admin';
@@ -90,6 +90,14 @@ export const PrescriptionVisorView: React.FC = () => {
     [auth.currentUser]
   );
 
+  const handleGridDelete = useCallback(
+    async (record: PrescriptionRecord) => {
+      const deletedBy = auth.currentUser?.email ?? auth.currentUser?.uid ?? 'anon';
+      await executeDeletePrescription({ prescriptionId: record.id, deletedBy });
+    },
+    [auth.currentUser]
+  );
+
   const handleDelete = useCallback(async () => {
     if (!selected) return;
     const deletedBy = auth.currentUser?.email ?? auth.currentUser?.uid ?? 'anon';
@@ -104,6 +112,12 @@ export const PrescriptionVisorView: React.FC = () => {
       <div className="mx-auto max-w-3xl space-y-3 sm:space-y-4">
         <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
+            <a
+              href="/"
+              className="mb-3 inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm hover:bg-slate-50"
+            >
+              <ArrowLeft size={14} /> Volver al censo diario
+            </a>
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
               Hospitalizados · Recetas
             </p>
@@ -242,6 +256,7 @@ export const PrescriptionVisorView: React.FC = () => {
             dayIso={controller.filters.selectedDate}
             onAssign={canEdit ? handleGridAssign : undefined}
             onUpdateType={canEdit ? handleGridUpdateType : undefined}
+            onDelete={canDelete ? handleGridDelete : undefined}
           />
         )}
       </div>

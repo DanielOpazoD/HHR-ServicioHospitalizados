@@ -33,7 +33,7 @@ interface PrescriptionBedRowProps {
     type: PrescriptionType
   ) => Promise<void> | void;
   onPickerAssign: (record: PrescriptionRecord, row: PrescriptionBedRowData) => Promise<void> | void;
-  onPreviewImage: (url: string) => void;
+  onPreviewImage: (record: PrescriptionRecord, url: string) => void;
   onUpdateType?: (record: PrescriptionRecord, nextType: PrescriptionType) => Promise<void>;
   enableDrop: boolean;
 }
@@ -102,7 +102,7 @@ export const PrescriptionBedRow: React.FC<PrescriptionBedRowProps> = ({
                         thumbnailStoragePath={record.image.thumbnailStoragePath}
                         fullStoragePath={record.image.storagePath}
                         alt={`${type} · ${row.bedId}`}
-                        onPreview={onPreviewImage}
+                        onPreview={url => onPreviewImage(record, url)}
                       />
                       {onUpdateType && (
                         <PrescriptionQuickTypeButton

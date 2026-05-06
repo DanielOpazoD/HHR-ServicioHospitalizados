@@ -25,6 +25,7 @@ vi.mock('firebase-functions/v1', () => ({
 const require = createRequire(import.meta.url);
 const {
   createValidatePinHandler,
+  createListUploadPatientOptionsHandler,
   createSubmitHandler,
   createSetPinHandler,
   hashPin,
@@ -37,16 +38,27 @@ interface FakeFirestoreDoc {
   data: Record<string, unknown> | null;
 }
 
-const buildAdminHarness = (harnessOptions: { failPrescriptionWrite?: boolean } = {}) => {
+const buildAdminHarness = (
+  harnessOptions: {
+    failPrescriptionWrite?: boolean;
+    dailyRecords?: Record<string, Record<string, unknown>>;
+  } = {}
+) => {
   const accessConfig: FakeFirestoreDoc = { data: null };
   const writtenPrescriptions: Record<string, Record<string, unknown>> = {};
   const storedBlobs: Record<string, Buffer> = {};
+  const dailyRecords = harnessOptions.dailyRecords || {};
 
   const docHandle = (path: string) => ({
     get: async () =>
       path.endsWith('config/prescriptionsAccess')
         ? { exists: accessConfig.data !== null, data: () => accessConfig.data }
-        : { exists: false, data: () => null },
+        : path.startsWith('dailyRecords/')
+          ? {
+              exists: dailyRecords[path.replace('dailyRecords/', '')] !== undefined,
+              data: () => dailyRecords[path.replace('dailyRecords/', '')] || null,
+            }
+          : { exists: false, data: () => null },
     set: async (data: Record<string, unknown>, options?: { merge?: boolean }) => {
       if (path.endsWith('config/prescriptionsAccess')) {
         accessConfig.data = options?.merge ? { ...(accessConfig.data || {}), ...data } : data;
@@ -67,6 +79,9 @@ const buildAdminHarness = (harnessOptions: { failPrescriptionWrite?: boolean } =
       }
       if (collectionName === 'prescriptions') {
         return docHandle(`prescriptions/${docId}`);
+      }
+      if (collectionName === 'dailyRecords') {
+        return docHandle(`dailyRecords/${docId}`);
       }
       return docHandle(`${collectionName}/${docId}`);
     },
@@ -225,6 +240,92 @@ describe('validatePrescriptionAccessPin', () => {
 
     const handler = createValidatePinHandler({ admin });
     await expect(handler({ pin: '7351' }, undefined)).resolves.toEqual({ valid: true });
+  });
+});
+
+describe('listPrescriptionUploadPatientOptions', () => {
+  const dailyRecord = {
+    date: '2026-05-05',
+    beds: {
+      H5C1: {
+        patientName: 'Paciente Uno',
+        rut: '11.111.111-1',
+        isBlocked: false,
+      },
+      H5C2: {
+        patientName: 'Paciente Dos',
+        rut: '22.222.222-2',
+        isBlocked: false,
+      },
+      H5C3: {
+        patientName: 'Bloqueado',
+        rut: '33.333.333-3',
+        isBlocked: true,
+      },
+      H5C4: {
+        patientName: '',
+        rut: '',
+        isBlocked: false,
+      },
+    },
+  };
+
+  it('returns active bed-patient options for a valid QR PIN', async () => {
+    const { admin, accessConfig } = buildAdminHarness({
+      dailyRecords: { '2026-05-05': dailyRecord },
+    });
+    await seedPin(accessConfig, '7351');
+
+    const handler = createListUploadPatientOptionsHandler({
+      admin,
+      resolveRoleForEmail: vi.fn(),
+    });
+
+    await expect(handler({ pin: '7351', date: '2026-05-05' }, undefined)).resolves.toEqual({
+      date: '2026-05-05',
+      patientOptions: [
+        {
+          key: 'H5C1',
+          bedId: 'H5C1',
+          patientName: 'Paciente Uno',
+          patientRut: '11.111.111-1',
+        },
+        {
+          key: 'H5C2',
+          bedId: 'H5C2',
+          patientName: 'Paciente Dos',
+          patientRut: '22.222.222-2',
+        },
+      ],
+    });
+  });
+
+  it('allows authenticated nursing callers without a PIN', async () => {
+    const { admin } = buildAdminHarness({
+      dailyRecords: { '2026-05-05': dailyRecord },
+    });
+    const resolveRoleForEmail = vi.fn().mockResolvedValue('nurse_hospital');
+    const handler = createListUploadPatientOptionsHandler({ admin, resolveRoleForEmail });
+
+    const result = await handler(
+      { date: '2026-05-05' },
+      { auth: { uid: 'n-1', token: { email: 'enf@h.cl' } } }
+    );
+
+    expect(result.patientOptions).toHaveLength(2);
+    expect(resolveRoleForEmail).toHaveBeenCalledWith('enf@h.cl');
+  });
+
+  it('rejects unauthenticated calls without a PIN', async () => {
+    const { admin } = buildAdminHarness();
+    const handler = createListUploadPatientOptionsHandler({
+      admin,
+      resolveRoleForEmail: vi.fn(),
+    });
+
+    await expect(handler({ date: '2026-05-05' }, undefined)).rejects.toMatchObject({
+      code: 'invalid-argument',
+    });
   });
 });
 

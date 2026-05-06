@@ -10,6 +10,7 @@ import { act, render } from '@testing-library/react';
 
 vi.mock('@/features/prescriptions/services/prescriptionAccessService', () => ({
   validatePrescriptionAccessPin: vi.fn(),
+  listPrescriptionUploadPatientOptions: vi.fn(),
   submitPrescriptionPhoto: vi.fn(),
   setPrescriptionAccessPin: vi.fn(),
 }));
@@ -24,6 +25,7 @@ vi.mock('@/features/prescriptions/services/prescriptionImageCompressionService',
 }));
 
 import {
+  listPrescriptionUploadPatientOptions,
   submitPrescriptionPhoto,
   validatePrescriptionAccessPin,
 } from '@/features/prescriptions/services/prescriptionAccessService';
@@ -58,9 +60,29 @@ describe('usePrescriptionUploadController', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-05T12:00:00.000Z'));
+    vi.mocked(listPrescriptionUploadPatientOptions).mockResolvedValue({
+      date: '2026-05-05',
+      patientOptions: [
+        {
+          key: 'H5C1',
+          bedId: 'H5C1',
+          patientName: 'Paciente Uno',
+          patientRut: '11.111.111-1',
+        },
+        {
+          key: 'H5C2',
+          bedId: 'H5C2',
+          patientName: 'Paciente Dos',
+          patientRut: '22.222.222-2',
+        },
+      ],
+    });
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -75,14 +97,25 @@ describe('usePrescriptionUploadController', () => {
     );
   };
 
-  it('starts in awaiting-pin phase by default', () => {
+  it('starts in awaiting-pin phase by default', async () => {
     mountController();
     expect(captured.phase).toBe('awaiting-pin');
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(listPrescriptionUploadPatientOptions).not.toHaveBeenCalled();
   });
 
-  it('starts in ready phase when bypassPinGate is true (admin/nurse path)', () => {
+  it('starts in ready phase when bypassPinGate is true (admin/nurse path)', async () => {
     mountController({ bypassPinGate: true });
     expect(captured.phase).toBe('ready');
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(listPrescriptionUploadPatientOptions).toHaveBeenCalledWith({
+      date: '2026-05-05',
+      pin: undefined,
+    });
   });
 
   it('transitions awaiting-pin → ready after submitPin succeeds', async () => {
@@ -94,6 +127,10 @@ describe('usePrescriptionUploadController', () => {
     });
     expect(captured.phase).toBe('ready');
     expect(validatePrescriptionAccessPin).toHaveBeenCalledWith({ pin: '4521' });
+    expect(listPrescriptionUploadPatientOptions).toHaveBeenCalledWith({
+      date: '2026-05-05',
+      pin: '4521',
+    });
   });
 
   it('exposes the validation error when the PIN is wrong (stays in awaiting-pin)', async () => {
@@ -129,8 +166,7 @@ describe('usePrescriptionUploadController', () => {
 
     await act(async () => {
       captured.setField('prescriptionType', 'psicotropicos');
-      captured.setField('bedId', 'H5C1');
-      captured.setField('patientName', 'Paciente Test');
+      captured.setField('selectedPatientKey', 'H5C1');
     });
 
     await act(async () => {
@@ -141,7 +177,8 @@ describe('usePrescriptionUploadController', () => {
       expect.objectContaining({
         prescriptionType: 'psicotropicos',
         bedId: 'H5C1',
-        patientName: 'Paciente Test',
+        patientName: 'Paciente Uno',
+        patientRut: '11.111.111-1',
         fullImageBase64: 'full-bytes',
         thumbnailBase64: 'thumb-bytes',
         fullImageWidth: 1200,
@@ -150,6 +187,29 @@ describe('usePrescriptionUploadController', () => {
     );
     expect(captured.phase).toBe('success');
     expect(captured.lastResult).toMatchObject({ id: 'rx-123' });
+  });
+
+  it('loads active census beds and exposes them as selectable patient options', async () => {
+    mountController({ bypassPinGate: true });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(captured.patientOptions).toEqual([
+      {
+        key: 'H5C1',
+        bedId: 'H5C1',
+        patientName: 'Paciente Uno',
+        patientRut: '11.111.111-1',
+      },
+      {
+        key: 'H5C2',
+        bedId: 'H5C2',
+        patientName: 'Paciente Dos',
+        patientRut: '22.222.222-2',
+      },
+    ]);
   });
 
   it('omits bedId/patientName when patientUnassigned is checked', async () => {
@@ -164,8 +224,7 @@ describe('usePrescriptionUploadController', () => {
     await act(async () => {
       await captured.handleImageFile(new File(['x'], 'rx.jpg', { type: 'image/jpeg' }));
       captured.setField('patientUnassigned', true);
-      captured.setField('bedId', 'H5C1'); // should be ignored when checkbox is on
-      captured.setField('patientName', 'Anyone');
+      captured.setField('selectedPatientKey', 'H5C1'); // should be ignored when checkbox is on
     });
     await act(async () => {
       await captured.submitForm();
@@ -175,6 +234,7 @@ describe('usePrescriptionUploadController', () => {
     expect(payload).toBeDefined();
     expect(payload!.bedId).toBeUndefined();
     expect(payload!.patientName).toBeUndefined();
+    expect(payload!.patientRut).toBeUndefined();
   });
 
   it('reports an error and does not submit when no image was captured', async () => {

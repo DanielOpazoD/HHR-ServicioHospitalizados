@@ -61,7 +61,7 @@ export const CRITICAL_FIRESTORE_ACCESS_MATRIX = [
     read: 'canReadClinicalData()',
     create: 'false',
     update: 'canEdit()',
-    delete: 'isAdmin()',
+    delete: 'canEdit()',
   },
   {
     path: 'systemHealthUsers',
