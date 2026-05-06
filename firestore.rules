@@ -727,6 +727,15 @@ service cloud.firestore {
           allow delete: if isAdmin();
         }
       }
+
+      // Transient prescription-photo backup. Uploads are server-mediated by
+      // submitPrescriptionPhoto; clients can only read/edit metadata.
+      match /prescriptions/{prescriptionId} {
+        allow read: if canReadClinicalData();
+        allow create: if false;
+        allow update: if canEdit();
+        allow delete: if isAdmin();
+      }
       
       match /exportPasswords/{passwordId} {
         allow read: if canReadClinicalData();
@@ -848,6 +857,11 @@ service cloud.firestore {
 
     match /config/roles {
       allow read, write: if isAdmin();
+    }
+
+    match /config/prescriptionsAccess {
+      allow read: if isAdmin();
+      allow write: if false;
     }
 
     match /census-access-invitations/{invitationId} {

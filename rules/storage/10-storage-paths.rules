@@ -28,6 +28,13 @@
       allow write: if canWriteReminderAssets();
     }
 
+    // Prescription-photo backup blobs are written and cleaned up only by
+    // server-side Cloud Functions. Clinical clients only resolve thumbnails/full images.
+    match /prescriptions/{allPaths=**} {
+      allow read: if canReadClinicalStorage();
+      allow write: if false;
+    }
+
     // Wound care: clinical photography and informed consent documents.
     match /wound-care/{allPaths=**} {
       allow read: if canReadClinicalStorage();

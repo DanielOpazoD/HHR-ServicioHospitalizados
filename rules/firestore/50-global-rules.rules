@@ -54,6 +54,11 @@
       allow read, write: if isAdmin();
     }
 
+    match /config/prescriptionsAccess {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     match /census-access-invitations/{invitationId} {
       allow read: if canManageCensusAccess() || isInvitationOwner();
       allow create, delete: if canManageCensusAccess();

@@ -47,6 +47,7 @@ describe('isClinicalAuditAction', () => {
     'CUDYR_MODIFIED',
     'BED_BLOCKED',
     'CLINICAL_DOCUMENT_EDITED',
+    'PRESCRIPTION_DELETED',
     'WOUND_CARE_PHOTO_UPLOADED',
     'CONFLICT_AUTO_MERGED',
   ];

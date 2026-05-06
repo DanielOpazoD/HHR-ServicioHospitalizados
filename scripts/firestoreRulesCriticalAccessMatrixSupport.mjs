@@ -56,6 +56,14 @@ export const CRITICAL_FIRESTORE_ACCESS_MATRIX = [
     delete: 'isAdmin()',
   },
   {
+    path: 'prescriptions',
+    matchPath: '/prescriptions/{prescriptionId}',
+    read: 'canReadClinicalData()',
+    create: 'false',
+    update: 'canEdit()',
+    delete: 'isAdmin()',
+  },
+  {
     path: 'systemHealthUsers',
     matchPath: '/stats/system_health/users/{userId}',
     read: 'canReportSystemHealth()',
@@ -70,6 +78,14 @@ export const CRITICAL_FIRESTORE_ACCESS_MATRIX = [
     create: 'isAdmin()',
     update: 'isAdmin()',
     delete: 'isAdmin()',
+  },
+  {
+    path: 'configPrescriptionsAccess',
+    matchPath: '/config/prescriptionsAccess',
+    read: 'isAdmin()',
+    create: 'false',
+    update: 'false',
+    delete: 'false',
   },
 ];
 

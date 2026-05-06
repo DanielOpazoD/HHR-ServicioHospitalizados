@@ -24,6 +24,7 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   PATIENT_CLEARED: 'Limpieza de Cama',
   DAILY_RECORD_DELETED: 'Eliminación de Registro',
   DAILY_RECORD_CREATED: 'Creación de Registro',
+  PRESCRIPTION_DELETED: 'Receta Eliminada',
   VIEW_PATIENT: 'Visualización de Ficha',
   PATIENT_VIEWED: 'Visualización de Ficha (Legacy)',
   NURSE_HANDOFF_MODIFIED: 'Nota Enfermería (Entrega)',
