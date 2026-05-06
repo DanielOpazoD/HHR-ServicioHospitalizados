@@ -89,6 +89,37 @@ describe('dailyRecordPatchPersistenceController', () => {
     expect(logErrorMock).toHaveBeenCalled();
   });
 
+  it('logs clinically reviewable context when invariant repairs are merged', () => {
+    const patch: DailyRecordPatch = { 'beds.R1.patientName': 'Paciente Demo' };
+
+    preparePatchedRecordPersistence(current, '2026-04-19', patch);
+
+    expect(logErrorMock).toHaveBeenCalledWith(
+      'Invariant repair applied on updatePartial',
+      undefined,
+      expect.objectContaining({
+        date: '2026-04-19',
+        operation: 'updatePartial',
+        patches: ['beds.R2'],
+        repairPaths: ['beds.R2'],
+        touchedPaths: ['beds.R1.patientName'],
+        impactedContexts: ['clinical'],
+        samplePaths: ['beds.R2'],
+        assessment: expect.objectContaining({
+          riskLevel: 'medium',
+          reviewRecommended: true,
+          reviewReasons: expect.arrayContaining([
+            'clinical_invariant_repair',
+            'clinical_patch_with_structural_repair',
+          ]),
+          runbookActions: expect.arrayContaining([
+            'Validar que el merge preserve camas y pacientes antes de reintentar.',
+          ]),
+        }),
+      })
+    );
+  });
+
   it('skips structural invariant repairs for specialist-scoped patches', () => {
     isSpecialistScopedDailyRecordPatchMock.mockReturnValue(true);
     const patch: DailyRecordPatch = { 'beds.R1.medicalHandoffNote': 'Nota especialista' };
