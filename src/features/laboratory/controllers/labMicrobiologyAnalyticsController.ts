@@ -17,7 +17,7 @@ const getMicrobiologyCategoryMatchScore = (
   category: LabMicrobiologyCategory,
   finding: LabResultRow
 ): number => {
-  const signature = `${finding.analysis} ${finding.result}`.toUpperCase();
+  const signature = `${finding.section} ${finding.analysis} ${finding.result}`.toUpperCase();
 
   switch (category) {
     case 'clostridium_difficile':
@@ -67,12 +67,19 @@ const getMicrobiologyCategoryMatchScore = (
       }
       return 0;
     case 'urocultivo':
-      if (signature.includes('UROCULTIVO')) return 3;
+      if (
+        signature.includes('UROCULTIVO') ||
+        signature.includes('ANTIBIOGRAMA') ||
+        signature.includes('RECUENTO DE COLONIA') ||
+        signature.includes('GENTAMICINA')
+      )
+        return 3;
       if (
         signature.includes('DESARROLLO') ||
         signature.includes('SUSCEPTIBLE') ||
         signature.includes('SUCEPTIBLE') ||
         signature.includes('SENSIBLE') ||
+        signature.includes('INTERMEDIO') ||
         signature.includes('RESISTENTE') ||
         signature.includes('AISLADO')
       ) {
@@ -86,6 +93,7 @@ const getMicrobiologyCategoryMatchScore = (
         signature.includes('SUSCEPTIBLE') ||
         signature.includes('SUCEPTIBLE') ||
         signature.includes('SENSIBLE') ||
+        signature.includes('INTERMEDIO') ||
         signature.includes('RESISTENTE') ||
         signature.includes('AISLADO')
       ) {
@@ -97,7 +105,9 @@ const getMicrobiologyCategoryMatchScore = (
         signature.includes('CULTIVO') ||
         signature.includes('ANTIBIOGRAMA') ||
         signature.includes('ATB') ||
-        signature.includes('BACILO')
+        signature.includes('BACILO') ||
+        signature.includes('RECUENTO DE COLONIA') ||
+        signature.includes('GENTAMICINA')
       ) {
         return 3;
       }
@@ -106,6 +116,7 @@ const getMicrobiologyCategoryMatchScore = (
         signature.includes('SUSCEPTIBLE') ||
         signature.includes('SUCEPTIBLE') ||
         signature.includes('SENSIBLE') ||
+        signature.includes('INTERMEDIO') ||
         signature.includes('RESISTENTE') ||
         signature.includes('AISLADO')
       ) {
@@ -123,7 +134,10 @@ const getMicrobiologyCategoryForExamName = (examName: string): LabMicrobiologyCa
   if (
     upper.includes('PCR PANEL') ||
     upper.includes('PANEL RESPIRATORIO') ||
-    upper.includes('PANEL VIRAL')
+    upper.includes('PANEL VIRAL') ||
+    upper.includes('SARS') ||
+    upper.includes('COVID') ||
+    upper.includes('COV-2')
   )
     return 'pcr_8_virus';
   if (upper.includes('HEMOCULTIVO')) return 'hemocultivo';
