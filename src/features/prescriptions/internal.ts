@@ -3,7 +3,7 @@ export {
   parsePrescriptionRecord,
   prescriptionRecordSchema,
   safeParsePrescriptionRecord,
-} from './contracts/prescriptionRuntimeContracts';
+} from '@/schemas/prescriptionSchemas';
 export {
   PRESCRIPTION_TYPES,
   PRESCRIPTION_TYPE_LABELS,

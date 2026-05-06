@@ -75,27 +75,19 @@ service firebase.storage {
       allow write: if canWriteReminderAssets();
     }
 
+    // Prescription-photo backup blobs are written and cleaned up only by
+    // server-side Cloud Functions. Clinical clients only resolve thumbnails/full images.
+    match /prescriptions/{allPaths=**} {
+      allow read: if canReadClinicalStorage();
+      allow write: if false;
+    }
+
     // Wound care: clinical photography and informed consent documents.
     match /wound-care/{allPaths=**} {
       allow read: if canReadClinicalStorage();
       allow write: if hasClinicalWriteRole()
                       && request.resource.size < 15 * 1024 * 1024
                       && request.resource.contentType.matches('image/.*|application/pdf');
-    }
-
-    // Prescriptions photo backup (transient, 30-day retention).
-    //
-    // Reads come from the visor (logged-in clinical staff loading the
-    // image preview via `getDownloadURL`).
-    //
-    // Writes are denied at the rule layer: the only sanctioned writer is
-    // the `submitPrescriptionPhoto` Cloud Function via Admin SDK, which
-    // bypasses these rules. The cleanup scheduler also uses Admin SDK to
-    // honor per-record `expiresAt`. This eliminates the QR + PIN flow's
-    // need for direct client uploads to Storage.
-    match /prescriptions/{allPaths=**} {
-      allow read: if canReadClinicalStorage();
-      allow write: if false;
     }
 
     // Default: deny all other access

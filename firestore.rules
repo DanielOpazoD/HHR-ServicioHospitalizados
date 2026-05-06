@@ -727,6 +727,15 @@ service cloud.firestore {
           allow delete: if isAdmin();
         }
       }
+
+      // Transient prescription-photo backup. Uploads are server-mediated by
+      // submitPrescriptionPhoto; clients can only read/edit metadata.
+      match /prescriptions/{prescriptionId} {
+        allow read: if canReadClinicalData();
+        allow create: if false;
+        allow update: if canEdit();
+        allow delete: if isAdmin();
+      }
       
       match /exportPasswords/{passwordId} {
         allow read: if canReadClinicalData();
@@ -784,35 +793,6 @@ service cloud.firestore {
         allow read: if canReadClinicalData();
         allow create, update: if canEdit();
         allow delete: if isAdmin();
-      }
-
-      // Prescription photos backup module (transient, 30-day retention).
-      //
-      // Writes (create) MUST go through the `submitPrescriptionPhoto` Cloud
-      // Function so the QR + PIN flow can deposit records without a
-      // Firebase auth context. Function uses Admin SDK and bypasses these
-      // rules. Client direct create is denied.
-      //
-      // Update is permitted for clinical editors so they can reassign the
-      // patient association from the visor (the QR flow allows uploads
-      // "sin paciente asignado" when the case is not yet open).
-      //
-      // Delete is admin-only; the cleanup function uses Admin SDK to honor
-      // the per-record `expiresAt`.
-      match /prescriptions/{prescriptionId} {
-        allow read: if canReadClinicalData();
-        allow create: if false;
-        allow update: if canEdit();
-        allow delete: if isAdmin();
-      }
-
-      // PIN configuration for the QR-flow access. The hash + salt live
-      // here. Read kept admin-only because exposing the hash to other
-      // roles offers no UX value. All writes go through the
-      // `setPrescriptionAccessPin` Cloud Function (Admin SDK).
-      match /config/prescriptionsAccess {
-        allow read: if isAdmin();
-        allow write: if false;
       }
 
       // Append-only. Writes mostly come from server-side Admin SDK (bypasses rules).
@@ -877,6 +857,11 @@ service cloud.firestore {
 
     match /config/roles {
       allow read, write: if isAdmin();
+    }
+
+    match /config/prescriptionsAccess {
+      allow read: if isAdmin();
+      allow write: if false;
     }
 
     match /census-access-invitations/{invitationId} {

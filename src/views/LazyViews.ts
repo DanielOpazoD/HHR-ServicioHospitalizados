@@ -84,7 +84,7 @@ export const WoundCareMobileUploadView = lazyWithRetry(() =>
 );
 
 export const PrescriptionUploadView = lazyWithRetry(() =>
-  import(/* webpackChunkName: "prescriptions-upload" */ '@/features/prescriptions/public').then(
+  import(/* webpackChunkName: "prescriptions-upload" */ '@/features/prescriptions').then(
     module => ({
       default: module.PrescriptionUploadView,
     })
@@ -92,19 +92,15 @@ export const PrescriptionUploadView = lazyWithRetry(() =>
 );
 
 export const PrescriptionVisorView = lazyWithRetry(() =>
-  import(/* webpackChunkName: "prescriptions-visor" */ '@/features/prescriptions/public').then(
-    module => ({
-      default: module.PrescriptionVisorView,
-    })
-  )
+  import(/* webpackChunkName: "prescriptions-visor" */ '@/features/prescriptions').then(module => ({
+    default: module.PrescriptionVisorView,
+  }))
 );
 
 export const PrescriptionAdminView = lazyWithRetry(() =>
-  import(/* webpackChunkName: "prescriptions-admin" */ '@/features/prescriptions/public').then(
-    module => ({
-      default: module.PrescriptionAdminView,
-    })
-  )
+  import(/* webpackChunkName: "prescriptions-admin" */ '@/features/prescriptions').then(module => ({
+    default: module.PrescriptionAdminView,
+  }))
 );
 
 export const ErrorDashboard = lazyWithRetry(() =>

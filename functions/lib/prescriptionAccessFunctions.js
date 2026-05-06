@@ -17,10 +17,11 @@
  *       retention so the cleanup scheduler stays simple.
  *
  *   - `setPrescriptionAccessPin({ newPin })`
- *       Admin-only PIN rotation. Hashes with SHA-256 + per-record salt.
+ *       Admin-only PIN rotation. Hashes with scrypt + per-record salt.
  */
 
 const crypto = require('crypto');
+const { promisify } = require('util');
 const functions = require('firebase-functions/v1');
 const { HOSPITAL_ID } = require('./runtime/runtimeConfig');
 
@@ -41,6 +42,14 @@ const MAX_DIMENSION = 4096;
 const MAX_PIN_FAILED_ATTEMPTS = 5;
 const PIN_LOCKOUT_MINUTES = 15;
 const PIN_LOCKOUT_MS = PIN_LOCKOUT_MINUTES * 60 * 1000;
+const PIN_HASH_ALGORITHM = 'scrypt';
+const PIN_SCRYPT_PARAMS = Object.freeze({
+  N: 16_384,
+  r: 8,
+  p: 1,
+  keyLength: 32,
+});
+const scryptAsync = promisify(crypto.scrypt);
 
 const ADMIN_ALLOWED_ROLES = new Set(['admin']);
 const AUTHENTICATED_UPLOAD_ALLOWED_ROLES = new Set([
@@ -50,7 +59,25 @@ const AUTHENTICATED_UPLOAD_ALLOWED_ROLES = new Set([
   'doctor_specialist',
 ]);
 
-const hashPin = (pin, salt) => crypto.createHash('sha256').update(`${pin}:${salt}`).digest('hex');
+const normalizeScryptParams = params => ({
+  N: Number(params?.N || PIN_SCRYPT_PARAMS.N),
+  r: Number(params?.r || PIN_SCRYPT_PARAMS.r),
+  p: Number(params?.p || PIN_SCRYPT_PARAMS.p),
+  keyLength: Number(params?.keyLength || PIN_SCRYPT_PARAMS.keyLength),
+});
+
+const hashPin = async (pin, salt, params = PIN_SCRYPT_PARAMS) => {
+  const normalized = normalizeScryptParams(params);
+  const derivedKey = await scryptAsync(String(pin), String(salt), normalized.keyLength, {
+    N: normalized.N,
+    r: normalized.r,
+    p: normalized.p,
+  });
+  return derivedKey.toString('hex');
+};
+
+const hashPinLegacySha256 = (pin, salt) =>
+  crypto.createHash('sha256').update(`${pin}:${salt}`).digest('hex');
 
 const generatePinSalt = () => crypto.randomBytes(16).toString('hex');
 
@@ -160,7 +187,10 @@ const validatePinAgainstConfig = async (admin, providedPin) => {
     );
   }
 
-  const candidate = hashPin(trimmed, data.pinSalt);
+  const candidate =
+    data.pinHashAlgorithm === PIN_HASH_ALGORITHM
+      ? await hashPin(trimmed, data.pinSalt, data.pinHashParams)
+      : hashPinLegacySha256(trimmed, data.pinSalt);
   if (candidate !== data.pinHash) {
     const failedAttempts = Number(data.failedAttempts || 0) + 1;
     const update = { failedAttempts };
@@ -196,6 +226,22 @@ const saveImageBufferToStorage = async ({ admin, path, buffer, contentType }) =>
     },
   });
   return token;
+};
+
+const deleteImageBlobIfPresent = async ({ admin, path }) => {
+  if (!path) return;
+  try {
+    await admin.storage().bucket().file(path).delete({ ignoreNotFound: true });
+  } catch (error) {
+    console.error(`[prescriptions/upload] failed to clean blob ${path}:`, error.message);
+  }
+};
+
+const cleanupUploadedPrescriptionBlobs = async ({ admin, fullPath, thumbPath }) => {
+  await Promise.all([
+    deleteImageBlobIfPresent({ admin, path: fullPath }),
+    deleteImageBlobIfPresent({ admin, path: thumbPath }),
+  ]);
 };
 
 const createValidatePinHandler =
@@ -314,33 +360,38 @@ const createSubmitHandler =
     const fullPath = `${storagePrefix}/full.jpg`;
     const thumbPath = `${storagePrefix}/thumb.jpg`;
 
-    await saveImageBufferToStorage({
-      admin,
-      path: fullPath,
-      buffer: fullBuffer,
-      contentType: 'image/jpeg',
-    });
-    await saveImageBufferToStorage({
-      admin,
-      path: thumbPath,
-      buffer: thumbBuffer,
-      contentType: 'image/jpeg',
-    });
+    try {
+      await saveImageBufferToStorage({
+        admin,
+        path: fullPath,
+        buffer: fullBuffer,
+        contentType: 'image/jpeg',
+      });
+      await saveImageBufferToStorage({
+        admin,
+        path: thumbPath,
+        buffer: thumbBuffer,
+        contentType: 'image/jpeg',
+      });
 
-    const record = buildPrescriptionRecord({
-      prescriptionId,
-      payload,
-      uploaderIdentity,
-      fullPath,
-      thumbPath,
-      fullByteSize: fullBuffer.length,
-      width,
-      height,
-      createdAt: new Date().toISOString(),
-    });
+      const record = buildPrescriptionRecord({
+        prescriptionId,
+        payload,
+        uploaderIdentity,
+        fullPath,
+        thumbPath,
+        fullByteSize: fullBuffer.length,
+        width,
+        height,
+        createdAt: new Date().toISOString(),
+      });
 
-    await getPrescriptionsRef(admin).doc(prescriptionId).set(record);
-    return { id: prescriptionId, expiresAt: record.expiresAt };
+      await getPrescriptionsRef(admin).doc(prescriptionId).set(record);
+      return { id: prescriptionId, expiresAt: record.expiresAt };
+    } catch (error) {
+      await cleanupUploadedPrescriptionBlobs({ admin, fullPath, thumbPath });
+      throw error;
+    }
   };
 
 const createSetPinHandler =
@@ -356,11 +407,15 @@ const createSetPinHandler =
     }
     const newPin = requirePinString(data?.newPin);
     const salt = generatePinSalt();
-    const hash = hashPin(newPin, salt);
+    const hash = await hashPin(newPin, salt);
     await getAccessConfigRef(admin).set(
       {
         pinHash: hash,
         pinSalt: salt,
+        pinHashAlgorithm: PIN_HASH_ALGORITHM,
+        pinHashParams: PIN_SCRYPT_PARAMS,
+        failedAttempts: 0,
+        lockedUntil: null,
         pinUpdatedAt: new Date().toISOString(),
         pinUpdatedBy: String(context?.auth?.token?.email || '') || null,
       },
@@ -387,6 +442,7 @@ module.exports = {
   createSetPinHandler,
   // Pure helpers exposed for unit testing.
   hashPin,
+  hashPinLegacySha256,
   generatePinSalt,
   computeExpiresAt,
 };

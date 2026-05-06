@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Check, ImageOff, Loader2, Maximize2, Pencil, Trash2, X } from 'lucide-react';
 import { BaseModal } from '@/components/shared/BaseModal';
+import { useConfirmDialog } from '@/context/UIContext';
 import {
   PRESCRIPTION_TYPES,
   PRESCRIPTION_TYPE_LABELS,
@@ -79,6 +80,7 @@ export const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = (
   const [pendingType, setPendingType] = useState<PrescriptionType>(record.prescriptionType);
   const [savingType, setSavingType] = useState(false);
   const [typeError, setTypeError] = useState<string | null>(null);
+  const { confirm } = useConfirmDialog();
 
   useEffect(() => {
     setPendingType(record.prescriptionType);
@@ -125,7 +127,14 @@ export const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = (
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('¿Eliminar esta receta del respaldo? Esta acción no se puede deshacer.')) {
+    const accepted = await confirm({
+      title: 'Eliminar receta',
+      message: '¿Eliminar esta receta del respaldo? Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      variant: 'danger',
+    });
+    if (!accepted) {
       return;
     }
     setDeleting(true);

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   parsePrescriptionRecord,
   safeParsePrescriptionRecord,
-} from '@/features/prescriptions/contracts/prescriptionRuntimeContracts';
+} from '@/schemas/prescriptionSchemas';
 import type { PrescriptionRecord } from '@/types/prescriptionTypes';
 
 const validRecord = (overrides: Partial<PrescriptionRecord> = {}): PrescriptionRecord => ({

@@ -24,8 +24,8 @@ const deleteStorageBlobIfPresent = async (bucket, path) => {
   try {
     await bucket.file(path).delete({ ignoreNotFound: true });
   } catch (error) {
-    // Surface but don't break the batch — Firestore deletion is gated
-    // below to ensure we never orphan blobs.
+    // Surface the failure and keep the Firestore document so the next
+    // scheduled run can retry deleting the still-referenced blob.
     console.error(`[prescriptions/cleanup] failed to delete blob ${path}:`, error.message);
     throw error;
   }

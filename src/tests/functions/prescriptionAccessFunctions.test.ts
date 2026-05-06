@@ -28,6 +28,7 @@ const {
   createSubmitHandler,
   createSetPinHandler,
   hashPin,
+  hashPinLegacySha256,
   generatePinSalt,
   computeExpiresAt,
 } = require('../../../functions/lib/prescriptionAccessFunctions.js');
@@ -36,7 +37,7 @@ interface FakeFirestoreDoc {
   data: Record<string, unknown> | null;
 }
 
-const buildAdminHarness = () => {
+const buildAdminHarness = (harnessOptions: { failPrescriptionWrite?: boolean } = {}) => {
   const accessConfig: FakeFirestoreDoc = { data: null };
   const writtenPrescriptions: Record<string, Record<string, unknown>> = {};
   const storedBlobs: Record<string, Buffer> = {};
@@ -50,6 +51,9 @@ const buildAdminHarness = () => {
       if (path.endsWith('config/prescriptionsAccess')) {
         accessConfig.data = options?.merge ? { ...(accessConfig.data || {}), ...data } : data;
       } else if (path.startsWith('prescriptions/')) {
+        if (harnessOptions.failPrescriptionWrite) {
+          throw new Error('forced Firestore write failure');
+        }
         const id = path.replace('prescriptions/', '');
         writtenPrescriptions[id] = data;
       }
@@ -89,6 +93,9 @@ const buildAdminHarness = () => {
           save: async (buffer: Buffer) => {
             storedBlobs[path] = buffer;
           },
+          delete: async () => {
+            delete storedBlobs[path];
+          },
         }),
       }),
     }),
@@ -97,21 +104,23 @@ const buildAdminHarness = () => {
   return { admin, accessConfig, writtenPrescriptions, storedBlobs };
 };
 
-const seedPin = (accessConfig: FakeFirestoreDoc, pin: string) => {
+const seedPin = async (accessConfig: FakeFirestoreDoc, pin: string) => {
   const salt = generatePinSalt();
   accessConfig.data = {
-    pinHash: hashPin(pin, salt),
+    pinHash: await hashPin(pin, salt),
     pinSalt: salt,
+    pinHashAlgorithm: 'scrypt',
     pinUpdatedAt: '2026-05-01T00:00:00.000Z',
     pinUpdatedBy: 'admin@h.cl',
   };
 };
 
 describe('hashPin / computeExpiresAt', () => {
-  it('produces stable hashes for the same pin + salt and different ones for different pins', () => {
+  it('produces stable hashes for the same pin + salt and different ones for different pins', async () => {
     const salt = 'abc123';
-    expect(hashPin('1234', salt)).toBe(hashPin('1234', salt));
-    expect(hashPin('1234', salt)).not.toBe(hashPin('5678', salt));
+    expect(await hashPin('1234', salt)).toBe(await hashPin('1234', salt));
+    expect(await hashPin('1234', salt)).not.toBe(await hashPin('5678', salt));
+    expect(await hashPin('1234', salt)).not.toBe(hashPinLegacySha256('1234', salt));
   });
 
   it('computes expiresAt 30 days after createdAt for known types', () => {
@@ -123,7 +132,7 @@ describe('hashPin / computeExpiresAt', () => {
 describe('validatePrescriptionAccessPin', () => {
   it('returns valid:true when the candidate PIN matches the configured hash', async () => {
     const { admin, accessConfig } = buildAdminHarness();
-    seedPin(accessConfig, '7351');
+    await seedPin(accessConfig, '7351');
 
     const handler = createValidatePinHandler({ admin });
     const result = await handler({ pin: '7351' }, undefined);
@@ -133,7 +142,7 @@ describe('validatePrescriptionAccessPin', () => {
 
   it('rejects when the PIN is wrong', async () => {
     const { admin, accessConfig } = buildAdminHarness();
-    seedPin(accessConfig, '7351');
+    await seedPin(accessConfig, '7351');
 
     const handler = createValidatePinHandler({ admin });
     await expect(handler({ pin: '0000' }, undefined)).rejects.toMatchObject({
@@ -151,7 +160,7 @@ describe('validatePrescriptionAccessPin', () => {
 
   it('rejects malformed PIN input (empty, too short, too long)', async () => {
     const { admin, accessConfig } = buildAdminHarness();
-    seedPin(accessConfig, '7351');
+    await seedPin(accessConfig, '7351');
     const handler = createValidatePinHandler({ admin });
 
     await expect(handler({ pin: '' }, undefined)).rejects.toMatchObject({
@@ -167,7 +176,7 @@ describe('validatePrescriptionAccessPin', () => {
 
   it('locks the PIN endpoint for 15 min after 5 consecutive wrong attempts', async () => {
     const { admin, accessConfig } = buildAdminHarness();
-    seedPin(accessConfig, '7351');
+    await seedPin(accessConfig, '7351');
     const handler = createValidatePinHandler({ admin });
 
     // 5 wrong attempts → triggers lockout
@@ -186,7 +195,7 @@ describe('validatePrescriptionAccessPin', () => {
 
   it('clears the failure counter when the PIN finally matches', async () => {
     const { admin, accessConfig } = buildAdminHarness();
-    seedPin(accessConfig, '7351');
+    await seedPin(accessConfig, '7351');
     const handler = createValidatePinHandler({ admin });
 
     // 2 fails (under threshold) — counter at 2
@@ -206,7 +215,7 @@ describe('validatePrescriptionAccessPin', () => {
 
   it('allows retries again once the lockout window has elapsed', async () => {
     const { admin, accessConfig } = buildAdminHarness();
-    seedPin(accessConfig, '7351');
+    await seedPin(accessConfig, '7351');
     // Simulate a stale lockout that has already passed.
     accessConfig.data = {
       ...accessConfig.data,
@@ -236,7 +245,7 @@ describe('submitPrescriptionPhoto', () => {
 
   it('writes Storage blobs + Firestore record on the QR-PIN path', async () => {
     const { admin, accessConfig, writtenPrescriptions, storedBlobs } = buildAdminHarness();
-    seedPin(accessConfig, '7351');
+    await seedPin(accessConfig, '7351');
 
     const handler = createSubmitHandler({
       admin,
@@ -269,6 +278,21 @@ describe('submitPrescriptionPhoto', () => {
       height: 900,
     });
     expect(persisted.expiresAt).toBeTruthy();
+  });
+
+  it('removes uploaded blobs if the Firestore prescription write fails', async () => {
+    const { admin, accessConfig, storedBlobs } = buildAdminHarness({ failPrescriptionWrite: true });
+    await seedPin(accessConfig, '7351');
+
+    const handler = createSubmitHandler({
+      admin,
+      resolveRoleForEmail: vi.fn(),
+    });
+
+    await expect(handler(validPayload(), undefined)).rejects.toThrow(
+      'forced Firestore write failure'
+    );
+    expect(Object.keys(storedBlobs)).toHaveLength(0);
   });
 
   it('accepts an authenticated nurse_hospital caller without PIN', async () => {
@@ -306,7 +330,7 @@ describe('submitPrescriptionPhoto', () => {
 
   it('rejects an unsupported prescription type', async () => {
     const { admin, accessConfig } = buildAdminHarness();
-    seedPin(accessConfig, '7351');
+    await seedPin(accessConfig, '7351');
     const handler = createSubmitHandler({ admin, resolveRoleForEmail: vi.fn() });
 
     await expect(
@@ -316,7 +340,7 @@ describe('submitPrescriptionPhoto', () => {
 
   it('rejects oversized image payloads', async () => {
     const { admin, accessConfig } = buildAdminHarness();
-    seedPin(accessConfig, '7351');
+    await seedPin(accessConfig, '7351');
     const handler = createSubmitHandler({ admin, resolveRoleForEmail: vi.fn() });
 
     const tooBig = Buffer.alloc(5 * 1024 * 1024).toString('base64');
@@ -343,6 +367,9 @@ describe('setPrescriptionAccessPin', () => {
       pinUpdatedBy: 'admin@h.cl',
       pinHash: expect.any(String),
       pinSalt: expect.any(String),
+      pinHashAlgorithm: 'scrypt',
+      failedAttempts: 0,
+      lockedUntil: null,
     });
   });
 

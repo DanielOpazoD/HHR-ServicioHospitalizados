@@ -14,6 +14,7 @@ vi.mock('@/features/prescriptions/services/prescriptionStorageImageService', () 
 }));
 
 import { PrescriptionDetailModal } from '@/features/prescriptions/components/PrescriptionDetailModal';
+import { UIProvider } from '@/context/UIContext';
 import type { PrescriptionRecord } from '@/types/prescriptionTypes';
 
 const baseRecord: PrescriptionRecord = {
@@ -36,13 +37,15 @@ const baseRecord: PrescriptionRecord = {
   expiresAt: '2026-06-03T10:00:00.000Z',
 };
 
+const renderDetailModal = (ui: React.ReactElement) => render(<UIProvider>{ui}</UIProvider>);
+
 describe('PrescriptionDetailModal type editor', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('shows the image weight in the metadata section', async () => {
-    render(
+    renderDetailModal(
       <PrescriptionDetailModal
         record={baseRecord}
         canEdit
@@ -60,7 +63,7 @@ describe('PrescriptionDetailModal type editor', () => {
 
   it('switches to a select on "Cambiar" and persists the new type via onUpdateType', async () => {
     const onUpdateType = vi.fn(async () => undefined);
-    render(
+    renderDetailModal(
       <PrescriptionDetailModal
         record={baseRecord}
         canEdit
@@ -83,8 +86,8 @@ describe('PrescriptionDetailModal type editor', () => {
     expect(onUpdateType).toHaveBeenCalledWith('psicotropicos');
   });
 
-  it('hides the editor when "Cambiar" is not pressed and disables it without onUpdateType', () => {
-    render(
+  it('hides the editor when "Cambiar" is not pressed and disables it without onUpdateType', async () => {
+    renderDetailModal(
       <PrescriptionDetailModal
         record={baseRecord}
         canEdit
@@ -95,6 +98,7 @@ describe('PrescriptionDetailModal type editor', () => {
       />
     );
 
+    await screen.findByRole('img', { name: /receta/i });
     expect(screen.queryByRole('combobox')).toBeNull();
     expect(screen.queryByRole('button', { name: /cambiar/i })).toBeNull();
   });

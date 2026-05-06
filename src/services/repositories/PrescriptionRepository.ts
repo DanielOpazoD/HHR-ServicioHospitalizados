@@ -13,7 +13,7 @@ import { getActiveHospitalId } from '@/constants/firestorePaths';
 import { getPrescriptionsCollectionPath } from '@/constants/prescriptionPaths';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
-import { safeParsePrescriptionRecord } from '@/features/prescriptions/contracts/prescriptionRuntimeContracts';
+import { safeParsePrescriptionRecord } from '@/schemas/prescriptionSchemas';
 import type { PrescriptionRecord, PrescriptionType } from '@/types/prescriptionTypes';
 
 const sortByCreatedAtDesc = (records: PrescriptionRecord[]): PrescriptionRecord[] =>
