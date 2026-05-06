@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Loader2 } from 'lucide-react';
 import {
   PRESCRIPTION_TYPES,
@@ -30,12 +31,25 @@ export const PrescriptionQuickTypeButton: React.FC<PrescriptionQuickTypeButtonPr
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [menuStyle, setMenuStyle] = useState<React.CSSProperties | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!open) return;
+    const updateMenuStyle = () => {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setMenuStyle({
+        left: rect.left + rect.width / 2,
+        top: rect.bottom + 6,
+        transform: 'translateX(-50%)',
+      });
+    };
+    updateMenuStyle();
     const onClickOutside = (event: MouseEvent) => {
-      if (!containerRef.current?.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (!containerRef.current?.contains(target) && !menuRef.current?.contains(target)) {
         setOpen(false);
       }
     };
@@ -44,9 +58,13 @@ export const PrescriptionQuickTypeButton: React.FC<PrescriptionQuickTypeButtonPr
     };
     window.addEventListener('mousedown', onClickOutside);
     window.addEventListener('keydown', onKey);
+    window.addEventListener('scroll', updateMenuStyle, true);
+    window.addEventListener('resize', updateMenuStyle);
     return () => {
       window.removeEventListener('mousedown', onClickOutside);
       window.removeEventListener('keydown', onKey);
+      window.removeEventListener('scroll', updateMenuStyle, true);
+      window.removeEventListener('resize', updateMenuStyle);
     };
   }, [open]);
 
@@ -85,40 +103,46 @@ export const PrescriptionQuickTypeButton: React.FC<PrescriptionQuickTypeButtonPr
         {TYPE_SHORT_LABEL[currentType]}
       </button>
 
-      {open && !pending && (
-        <div
-          role="menu"
-          className="absolute left-1/2 top-full z-30 mt-1 w-[180px] -translate-x-1/2 rounded-lg border border-slate-200 bg-white p-1 shadow-lg"
-        >
-          <p className="px-2 pt-1 pb-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-400">
-            Tipo de receta
-          </p>
-          {PRESCRIPTION_TYPES.map(type => {
-            const isCurrent = type === currentType;
-            return (
-              <button
-                key={type}
-                type="button"
-                role="menuitemradio"
-                aria-checked={isCurrent}
-                onClick={() => pickType(type)}
-                disabled={pending}
-                className={`flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-xs font-medium transition-colors ${
-                  isCurrent ? 'bg-sky-50 text-sky-900' : 'text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                <span>{PRESCRIPTION_TYPE_LABELS[type]}</span>
-                {isCurrent && <span className="text-[9px] text-sky-700">actual</span>}
-              </button>
-            );
-          })}
-          {error && (
-            <p role="alert" className="mt-1 px-2 py-1 text-[10px] text-red-700">
-              {error}
+      {open &&
+        !pending &&
+        menuStyle &&
+        createPortal(
+          <div
+            ref={menuRef}
+            role="menu"
+            style={menuStyle}
+            className="fixed z-[230] w-[180px] rounded-lg border border-slate-200 bg-white p-1 shadow-xl"
+          >
+            <p className="px-2 pt-1 pb-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-400">
+              Tipo de receta
             </p>
-          )}
-        </div>
-      )}
+            {PRESCRIPTION_TYPES.map(type => {
+              const isCurrent = type === currentType;
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={isCurrent}
+                  onClick={() => pickType(type)}
+                  disabled={pending}
+                  className={`flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-xs font-medium transition-colors ${
+                    isCurrent ? 'bg-sky-50 text-sky-900' : 'text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <span>{PRESCRIPTION_TYPE_LABELS[type]}</span>
+                  {isCurrent && <span className="text-[9px] text-sky-700">actual</span>}
+                </button>
+              );
+            })}
+            {error && (
+              <p role="alert" className="mt-1 px-2 py-1 text-[10px] text-red-700">
+                {error}
+              </p>
+            )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 };

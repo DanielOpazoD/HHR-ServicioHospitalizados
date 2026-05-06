@@ -21,7 +21,7 @@ export const PrescriptionVisorView: React.FC = () => {
   const auth = useAuth();
   const controller = usePrescriptionListController();
   const [selected, setSelected] = useState<PrescriptionRecord | null>(null);
-  const [mode, setMode] = useState<VisorMode>('list');
+  const [mode, setMode] = useState<VisorMode>('bed-grid');
 
   const canEdit = auth.role === 'admin' || auth.role === 'nurse_hospital' || auth.isEditor;
   const canDelete = auth.role === 'admin';
@@ -86,6 +86,14 @@ export const PrescriptionVisorView: React.FC = () => {
         prescriptionType: nextType,
         updatedBy,
       });
+    },
+    [auth.currentUser]
+  );
+
+  const handleGridDelete = useCallback(
+    async (record: PrescriptionRecord) => {
+      const deletedBy = auth.currentUser?.email ?? auth.currentUser?.uid ?? 'anon';
+      await executeDeletePrescription({ prescriptionId: record.id, deletedBy });
     },
     [auth.currentUser]
   );
@@ -248,6 +256,7 @@ export const PrescriptionVisorView: React.FC = () => {
             dayIso={controller.filters.selectedDate}
             onAssign={canEdit ? handleGridAssign : undefined}
             onUpdateType={canEdit ? handleGridUpdateType : undefined}
+            onDelete={canDelete ? handleGridDelete : undefined}
           />
         )}
       </div>

@@ -1,10 +1,28 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Maximize2, Minimize2, RotateCw, X, ZoomIn, ZoomOut } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Maximize2,
+  Minimize2,
+  RotateCw,
+  Trash2,
+  X,
+  ZoomIn,
+  ZoomOut,
+} from 'lucide-react';
 
 interface PrescriptionImageLightboxProps {
   imageUrl: string;
   altText?: string;
+  counterLabel?: string;
   onClose: () => void;
+  onPrevious?: () => void;
+  onNext?: () => void;
+  canGoPrevious?: boolean;
+  canGoNext?: boolean;
+  onDelete?: () => Promise<void> | void;
+  deletePending?: boolean;
 }
 
 const MIN_SCALE = 1;
@@ -14,7 +32,14 @@ const SCALE_STEP = 0.5;
 export const PrescriptionImageLightbox: React.FC<PrescriptionImageLightboxProps> = ({
   imageUrl,
   altText = 'Receta',
+  counterLabel,
   onClose,
+  onPrevious,
+  onNext,
+  canGoPrevious = false,
+  canGoNext = false,
+  onDelete,
+  deletePending = false,
 }) => {
   const [scale, setScale] = useState(1);
   const [rotation, setRotation] = useState(0);
@@ -25,6 +50,8 @@ export const PrescriptionImageLightbox: React.FC<PrescriptionImageLightboxProps>
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
+      if (event.key === 'ArrowLeft' && canGoPrevious) onPrevious?.();
+      if (event.key === 'ArrowRight' && canGoNext) onNext?.();
       if (event.key === '+' || event.key === '=')
         setScale(s => Math.min(MAX_SCALE, s + SCALE_STEP));
       if (event.key === '-') setScale(s => Math.max(MIN_SCALE, s - SCALE_STEP));
@@ -36,7 +63,7 @@ export const PrescriptionImageLightbox: React.FC<PrescriptionImageLightboxProps>
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [canGoNext, canGoPrevious, onClose, onNext, onPrevious]);
 
   const reset = useCallback(() => {
     setScale(1);
@@ -111,6 +138,7 @@ export const PrescriptionImageLightbox: React.FC<PrescriptionImageLightboxProps>
           {Math.round(scale * 100)}%
         </p>
         <div className="flex items-center gap-1">
+          {counterLabel && <span className="px-2 text-xs text-white/70">{counterLabel}</span>}
           <button
             type="button"
             onClick={zoomOut}
@@ -145,6 +173,21 @@ export const PrescriptionImageLightbox: React.FC<PrescriptionImageLightboxProps>
           >
             {scale === 1 ? <Maximize2 size={14} /> : <Minimize2 size={14} />}
           </button>
+          {onDelete && (
+            <button
+              type="button"
+              onClick={() => void onDelete()}
+              disabled={deletePending}
+              className="inline-flex items-center gap-1 rounded-md border border-red-300/40 bg-red-500/20 px-2 py-1 text-xs text-red-100 hover:bg-red-500/30 disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label="Eliminar receta"
+            >
+              {deletePending ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Trash2 size={14} />
+              )}
+            </button>
+          )}
           <button
             type="button"
             onClick={onClose}
@@ -157,11 +200,25 @@ export const PrescriptionImageLightbox: React.FC<PrescriptionImageLightboxProps>
       </header>
 
       <div
-        className="flex flex-1 select-none items-center justify-center overflow-hidden"
+        className="relative flex flex-1 select-none items-center justify-center overflow-hidden"
         onClick={event => {
           if (event.target === event.currentTarget && scale === 1) onClose();
         }}
       >
+        {onPrevious && (
+          <button
+            type="button"
+            onClick={event => {
+              event.stopPropagation();
+              onPrevious();
+            }}
+            disabled={!canGoPrevious}
+            aria-label="Receta anterior"
+            className="absolute left-3 top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white shadow-lg hover:bg-black/60 disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            <ChevronLeft size={22} />
+          </button>
+        )}
         <img
           src={imageUrl}
           alt={altText}
@@ -186,6 +243,20 @@ export const PrescriptionImageLightbox: React.FC<PrescriptionImageLightboxProps>
           }}
           className="block object-contain"
         />
+        {onNext && (
+          <button
+            type="button"
+            onClick={event => {
+              event.stopPropagation();
+              onNext();
+            }}
+            disabled={!canGoNext}
+            aria-label="Receta siguiente"
+            className="absolute right-3 top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white shadow-lg hover:bg-black/60 disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            <ChevronRight size={22} />
+          </button>
+        )}
       </div>
 
       <footer className="border-t border-white/10 bg-black/40 px-3 py-1.5 text-center text-[11px] text-white/70">

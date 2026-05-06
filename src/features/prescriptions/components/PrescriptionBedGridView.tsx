@@ -8,7 +8,7 @@ import {
   type PrescriptionRecord,
   type PrescriptionType,
 } from '@/types/prescriptionTypes';
-import { PrescriptionImageLightbox } from '@/features/prescriptions/components/PrescriptionImageLightbox';
+import { PrescriptionPatientLightbox } from '@/features/prescriptions/components/PrescriptionPatientLightbox';
 import {
   PrescriptionBedRow,
   type PrescriptionBedRowData,
@@ -40,6 +40,7 @@ interface PrescriptionBedGridViewProps {
    * unassigned). Omitted when the user lacks edit permission.
    */
   onUpdateType?: (record: PrescriptionRecord, nextType: PrescriptionType) => Promise<void>;
+  onDelete?: (record: PrescriptionRecord) => Promise<void>;
 }
 
 const todayIso = (): string => {
@@ -100,6 +101,7 @@ export const PrescriptionBedGridView: React.FC<PrescriptionBedGridViewProps> = (
   dayIso,
   onAssign,
   onUpdateType,
+  onDelete,
 }) => {
   const effectiveDay = dayIso ?? todayIso();
   const [dailyState, setDailyState] = useState<{ day: string; record: DailyRecord | null } | null>(
@@ -107,7 +109,10 @@ export const PrescriptionBedGridView: React.FC<PrescriptionBedGridViewProps> = (
   );
   const [error, setError] = useState<string | null>(null);
   const [errorDay, setErrorDay] = useState<string | null>(null);
-  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [lightboxState, setLightboxState] = useState<{
+    record: PrescriptionRecord;
+    initialUrl: string;
+  } | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [hoverCell, setHoverCell] = useState<{ bedId: string; type: PrescriptionType } | null>(
     null
@@ -225,6 +230,14 @@ export const PrescriptionBedGridView: React.FC<PrescriptionBedGridViewProps> = (
     setPickerSource(prev => (prev?.id === record.id ? null : record));
   };
 
+  const openLightbox = (record: PrescriptionRecord, url: string) => {
+    setLightboxState({ record, initialUrl: url });
+  };
+
+  const closeLightbox = () => {
+    setLightboxState(null);
+  };
+
   return (
     <section className="space-y-3">
       <header className="flex flex-wrap items-end justify-between gap-2 px-1">
@@ -233,7 +246,7 @@ export const PrescriptionBedGridView: React.FC<PrescriptionBedGridViewProps> = (
           <span className="font-semibold capitalize text-slate-700">
             {formatDayLabel(effectiveDay)}
           </span>
-          . Doble click en una miniatura para ver la receta en grande.
+          . Haz click en una miniatura para ver la receta en grande.
         </p>
         {!loading && !activeError && (
           <p className="text-[11px] text-slate-400">
@@ -291,7 +304,7 @@ export const PrescriptionBedGridView: React.FC<PrescriptionBedGridViewProps> = (
                   onDragLeave={handleCellDragLeave}
                   onDrop={handleCellDrop}
                   onPickerAssign={performAssign}
-                  onPreviewImage={url => setLightboxUrl(url)}
+                  onPreviewImage={openLightbox}
                   onUpdateType={onUpdateType}
                 />
               ))}
@@ -309,12 +322,18 @@ export const PrescriptionBedGridView: React.FC<PrescriptionBedGridViewProps> = (
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         onTogglePicker={togglePicker}
-        onPreviewImage={url => setLightboxUrl(url)}
+        onPreviewImage={openLightbox}
         onUpdateType={onUpdateType}
       />
 
-      {lightboxUrl && (
-        <PrescriptionImageLightbox imageUrl={lightboxUrl} onClose={() => setLightboxUrl(null)} />
+      {lightboxState && (
+        <PrescriptionPatientLightbox
+          record={lightboxState.record}
+          records={records}
+          initialUrl={lightboxState.initialUrl}
+          onClose={closeLightbox}
+          onDelete={onDelete}
+        />
       )}
     </section>
   );
