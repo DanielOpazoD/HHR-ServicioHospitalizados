@@ -3,10 +3,12 @@
  *
  * Reserved for `admin` callers — ordinary roles wait for the scheduled
  * cleanup function to remove records on expiry. The role check itself is
- * enforced by Firestore rules; this use case is a thin wrapper that
- * leaves a hook for future audit-emission additions.
+ * enforced by Firestore rules; this use case records an attributable
+ * clinical audit event before deleting so manual deletion never happens
+ * without traceability.
  */
 
+import { executeWriteAuditEvent } from '@/application/audit/writeAuditEventUseCase';
 import {
   defaultPrescriptionPort,
   type PrescriptionPort,
@@ -15,16 +17,55 @@ import {
 export interface DeletePrescriptionInput {
   prescriptionId: string;
   hospitalId?: string;
+  deletedBy: string;
+  deletedAt?: string;
 }
 
 interface DeletePrescriptionDeps {
   prescriptionPort?: PrescriptionPort;
+  writeAuditEvent?: typeof executeWriteAuditEvent;
 }
+
+const resolveRecordDate = (iso: string | undefined): string | undefined => {
+  if (!iso) return undefined;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return undefined;
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
+    date.getDate()
+  ).padStart(2, '0')}`;
+};
 
 export const executeDeletePrescription = async (
   input: DeletePrescriptionInput,
   dependencies: DeletePrescriptionDeps = {}
 ): Promise<void> => {
   const port = dependencies.prescriptionPort || defaultPrescriptionPort;
+  const writeAuditEvent = dependencies.writeAuditEvent || executeWriteAuditEvent;
+  const record = await port.get(input.prescriptionId, input.hospitalId);
+  const deletedAt = input.deletedAt || new Date().toISOString();
+  const auditOutcome = await writeAuditEvent({
+    userId: input.deletedBy,
+    action: 'PRESCRIPTION_DELETED',
+    entityType: 'prescription',
+    entityId: input.prescriptionId,
+    patientRut: record?.patientRut,
+    recordDate: resolveRecordDate(record?.createdAt),
+    details: {
+      prescriptionId: input.prescriptionId,
+      prescriptionType: record?.prescriptionType,
+      bedId: record?.bedId,
+      patientName: record?.patientName,
+      patientRut: record?.patientRut,
+      createdAt: record?.createdAt,
+      expiresAt: record?.expiresAt,
+      deletedAt,
+      deletionMode: 'manual_admin',
+    },
+  });
+
+  if (auditOutcome.status === 'failed') {
+    throw new Error('No se eliminó la receta porque no se pudo registrar la auditoría.');
+  }
+
   await port.delete(input.prescriptionId, input.hospitalId);
 };

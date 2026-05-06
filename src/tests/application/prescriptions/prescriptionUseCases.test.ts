@@ -146,9 +146,100 @@ describe('executeDeletePrescription', () => {
   it('delegates straight through to the port', async () => {
     const port = buildPort();
     await executeDeletePrescription(
-      { prescriptionId: 'rx-1', hospitalId: 'hhr' },
-      { prescriptionPort: port }
+      { prescriptionId: 'rx-1', hospitalId: 'hhr', deletedBy: 'admin@h.cl' },
+      {
+        prescriptionPort: port,
+        writeAuditEvent: vi.fn(async () => ({
+          status: 'success' as const,
+          data: null,
+          issues: [],
+        })),
+      }
     );
     expect(port.delete).toHaveBeenCalledWith('rx-1', 'hhr');
+  });
+
+  it('writes an attributable audit event before manual deletion', async () => {
+    const port = buildPort({
+      get: vi.fn(
+        async () =>
+          ({
+            id: 'rx-1',
+            hospitalId: 'hhr',
+            prescriptionType: 'psicotropicos',
+            bedId: 'H5C1',
+            patientName: 'Paciente',
+            patientRut: '11.111.111-1',
+            image: {
+              storagePath: 'prescriptions/hhr/rx-1/full.jpg',
+              thumbnailStoragePath: 'prescriptions/hhr/rx-1/thumb.jpg',
+              byteSize: 200_000,
+              width: 1200,
+              height: 900,
+              contentType: 'image/jpeg',
+            },
+            uploader: { source: 'qr_pin' },
+            createdAt: '2026-05-05T10:00:00.000Z',
+            expiresAt: '2026-06-04T10:00:00.000Z',
+          }) as PrescriptionRecord
+      ),
+    });
+    const writeAuditEvent = vi.fn(async () => ({
+      status: 'success' as const,
+      data: null,
+      issues: [],
+    }));
+
+    await executeDeletePrescription(
+      {
+        prescriptionId: 'rx-1',
+        hospitalId: 'hhr',
+        deletedBy: 'admin@h.cl',
+        deletedAt: '2026-05-05T12:00:00.000Z',
+      },
+      { prescriptionPort: port, writeAuditEvent }
+    );
+
+    expect(writeAuditEvent).toHaveBeenCalledWith({
+      userId: 'admin@h.cl',
+      action: 'PRESCRIPTION_DELETED',
+      entityType: 'prescription',
+      entityId: 'rx-1',
+      patientRut: '11.111.111-1',
+      recordDate: '2026-05-05',
+      details: expect.objectContaining({
+        prescriptionId: 'rx-1',
+        prescriptionType: 'psicotropicos',
+        bedId: 'H5C1',
+        patientName: 'Paciente',
+        patientRut: '11.111.111-1',
+        createdAt: '2026-05-05T10:00:00.000Z',
+        expiresAt: '2026-06-04T10:00:00.000Z',
+        deletedAt: '2026-05-05T12:00:00.000Z',
+        deletionMode: 'manual_admin',
+      }),
+    });
+    expect(port.delete).toHaveBeenCalledWith('rx-1', 'hhr');
+    expect(writeAuditEvent.mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(port.delete).mock.invocationCallOrder[0]
+    );
+  });
+
+  it('does not delete when the manual delete audit cannot be persisted', async () => {
+    const port = buildPort();
+    const writeAuditEvent = vi.fn(async () => ({
+      status: 'failed' as const,
+      data: null,
+      issues: [{ kind: 'permission' as const, message: 'actor missing' }],
+    }));
+
+    await expect(
+      executeDeletePrescription(
+        { prescriptionId: 'rx-1', deletedBy: 'anon' },
+        { prescriptionPort: port, writeAuditEvent }
+      )
+    ).rejects.toThrow(/auditoría/i);
+
+    expect(port.delete).not.toHaveBeenCalled();
   });
 });

@@ -92,8 +92,9 @@ export const PrescriptionVisorView: React.FC = () => {
 
   const handleDelete = useCallback(async () => {
     if (!selected) return;
-    await executeDeletePrescription({ prescriptionId: selected.id });
-  }, [selected]);
+    const deletedBy = auth.currentUser?.email ?? auth.currentUser?.uid ?? 'anon';
+    await executeDeletePrescription({ prescriptionId: selected.id, deletedBy });
+  }, [auth.currentUser, selected]);
 
   return (
     <main
