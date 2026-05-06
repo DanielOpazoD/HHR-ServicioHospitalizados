@@ -11,6 +11,7 @@ import {
   touchDailyRecordLastUpdated,
 } from '@/services/repositories/dailyRecordDomainServices';
 import { assertAdmissionDatePersistencePolicy } from '@/services/repositories/dailyRecordAdmissionDateWritePolicy';
+import { buildInvariantRepairReviewContext } from '@/services/repositories/invariantRepairReviewContext';
 
 export const preparePatchedRecordPersistence = (
   current: DailyRecord,
@@ -33,11 +34,19 @@ export const preparePatchedRecordPersistence = (
     Object.assign(mergedPatches, normalized.patches);
   }
 
-  if (!shouldSkipStructuralNormalization && Object.keys(normalized.patches).length > 0) {
-    logError('Invariant repair applied on updatePartial', undefined, {
-      date,
-      patches: Object.keys(normalized.patches),
-    });
+  const repairPaths = Object.keys(normalized.patches);
+
+  if (!shouldSkipStructuralNormalization && repairPaths.length > 0) {
+    logError(
+      'Invariant repair applied on updatePartial',
+      undefined,
+      buildInvariantRepairReviewContext({
+        date,
+        operation: 'updatePartial',
+        repairPaths,
+        touchedPaths: Object.keys(patch),
+      })
+    );
   }
 
   const updated = applyPatches(current, mergedPatches);
