@@ -20,6 +20,14 @@ const ZOOM_MAX = 150;
 const ZOOM_DEFAULT = 110;
 const ZOOM_WITH_SIDEBAR_COLLAPSED = 130;
 
+const escapeClinicalDocumentInlineHtml = (value: string): string =>
+  value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+
 interface ClinicalDocumentsWorkspaceProps {
   patient: PatientData;
   currentDateString: string;
@@ -52,6 +60,11 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
 
   const handleInsertLabText = useCallback(
     (text: string) => {
+      const insertedAtCursor = sheetState.insertHtml(
+        `${escapeClinicalDocumentInlineHtml(text).replace(/\n/g, '<br>')}<br>`
+      );
+      if (insertedAtCursor) return;
+
       const insertTarget = resolveClinicalDocumentInsertTarget({
         document: sheetProps.selectedDocument,
         activeEditorSectionId: sheetState.activeEditorSectionId,
@@ -59,9 +72,8 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
       });
       if (!insertTarget || !sheetProps.patchSection) return;
       sheetProps.patchSection(insertTarget.sectionId, insertTarget.content);
-      setShowLabDialog(false);
     },
-    [sheetProps, sheetState.activeEditorSectionId]
+    [sheetProps, sheetState.activeEditorSectionId, sheetState]
   );
 
   const handleToggleSidebar = useCallback(() => {
