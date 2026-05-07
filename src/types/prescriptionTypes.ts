@@ -22,8 +22,8 @@ export const PRESCRIPTION_TYPES: readonly PrescriptionType[] = [
 
 export const PRESCRIPTION_TYPE_LABELS: Record<PrescriptionType, string> = {
   comun: 'Receta común',
-  psicotropicos: 'Receta de psicotrópicos',
-  benzodiazepinas: 'Receta de benzodiazepinas',
+  psicotropicos: 'Receta blanca de benzodiazepinas',
+  benzodiazepinas: 'Receta verde de estupefacientes',
 };
 
 /**
@@ -36,7 +36,7 @@ export const PRESCRIPTION_RETENTION_DAYS = 30;
 /**
  * Per-type retention overrides. Phase 1: every type uses the global
  * default. The map exists so future iterations (admin-configurable
- * retention, longer hold for psicotrópicos, etc.) can adjust values
+ * retention, longer hold per controlled-prescription type, etc.) can adjust values
  * without re-modeling the data layer or the cleanup function.
  */
 export const PRESCRIPTION_RETENTION_DAYS_BY_TYPE: Record<PrescriptionType, number> = {

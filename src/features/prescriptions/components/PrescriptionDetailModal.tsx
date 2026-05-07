@@ -25,8 +25,7 @@ interface PrescriptionDetailModalProps {
   }) => Promise<void>;
   onDelete: () => Promise<void>;
   /**
-   * Persists a new prescription type (común / psicotrópicos / benzodiazepinas)
-   * for the current record. Only invoked when `canEdit` is true.
+   * Persists a new prescription type for the current record. Only invoked when `canEdit` is true.
    */
   onUpdateType?: (nextType: PrescriptionType) => Promise<void>;
   /**
@@ -371,7 +370,12 @@ export const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = (
         )}
       </div>
       {showLightbox && fullUrl && (
-        <PrescriptionImageLightbox imageUrl={fullUrl} onClose={() => setShowLightbox(false)} />
+        <PrescriptionImageLightbox
+          imageUrl={fullUrl}
+          onClose={() => setShowLightbox(false)}
+          onDelete={canDelete ? handleDelete : undefined}
+          deletePending={deleting}
+        />
       )}
     </BaseModal>
   );

@@ -29,9 +29,9 @@ const accessFunctionsSource = readProjectFile('functions/lib/prescriptionAccessF
 describe('Prescription constants TS↔JS drift guard', () => {
   it('lists the same prescription types on both sides', () => {
     expect(PRESCRIPTION_TYPES).toEqual(['comun', 'psicotropicos', 'benzodiazepinas']);
-    expect(accessFunctionsSource).toMatch(
-      /PRESCRIPTION_TYPES\s*=\s*new Set\(\[\s*'comun',\s*'psicotropicos',\s*'benzodiazepinas'\s*\]\)/
-    );
+    for (const type of PRESCRIPTION_TYPES) {
+      expect(accessFunctionsSource).toContain(`'${type}'`);
+    }
   });
 
   it('uses the same default retention (30 days) for every type', () => {

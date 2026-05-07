@@ -2,6 +2,8 @@ import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
+const bedGridViewSpy = vi.fn();
+
 vi.mock('@/context/AuthContext', () => ({
   useAuth: () => ({
     role: 'nurse_hospital',
@@ -28,7 +30,10 @@ vi.mock('@/features/prescriptions/components/PrescriptionDateStrip', () => ({
 }));
 
 vi.mock('@/features/prescriptions/components/PrescriptionBedGridView', () => ({
-  PrescriptionBedGridView: () => <div data-testid="prescription-bed-grid-view" />,
+  PrescriptionBedGridView: (props: Record<string, unknown>) => {
+    bedGridViewSpy(props);
+    return <div data-testid="prescription-bed-grid-view" />;
+  },
 }));
 
 vi.mock('@/features/prescriptions/components/PrescriptionListItem', () => ({
@@ -43,5 +48,15 @@ describe('PrescriptionVisorView', () => {
 
     expect(screen.getByRole('tab', { name: /por cama/i })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByTestId('prescription-bed-grid-view')).toBeInTheDocument();
+  });
+
+  it('allows nursing to delete prescription photos from the bed-grid visor', () => {
+    render(<PrescriptionVisorView />);
+
+    expect(bedGridViewSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        onDelete: expect.any(Function),
+      })
+    );
   });
 });

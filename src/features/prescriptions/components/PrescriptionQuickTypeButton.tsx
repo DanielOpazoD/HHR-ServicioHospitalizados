@@ -19,8 +19,8 @@ interface PrescriptionQuickTypeButtonProps {
 
 const TYPE_SHORT_LABEL: Record<PrescriptionType, string> = {
   comun: 'Común',
-  psicotropicos: 'Psicotr.',
-  benzodiazepinas: 'Benzo.',
+  psicotropicos: 'Blanca',
+  benzodiazepinas: 'Verde',
 };
 
 export const PrescriptionQuickTypeButton: React.FC<PrescriptionQuickTypeButtonProps> = ({

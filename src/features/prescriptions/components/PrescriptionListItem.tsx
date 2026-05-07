@@ -26,14 +26,14 @@ const formatDateTime = (iso: string): string => {
 
 const TYPE_BADGE_CLASS: Record<string, string> = {
   comun: 'border-slate-200 bg-slate-100 text-slate-700',
-  psicotropicos: 'border-amber-200 bg-amber-50 text-amber-800',
-  benzodiazepinas: 'border-rose-200 bg-rose-50 text-rose-800',
+  psicotropicos: 'border-slate-200 bg-white text-slate-700',
+  benzodiazepinas: 'border-emerald-200 bg-emerald-50 text-emerald-800',
 };
 
 const TYPE_BADGE_LABEL: Record<string, string> = {
   comun: 'Común',
-  psicotropicos: 'Psicotrópicos',
-  benzodiazepinas: 'Benzodiazepinas',
+  psicotropicos: 'Blanca',
+  benzodiazepinas: 'Verde',
 };
 
 export const PrescriptionListItem: React.FC<PrescriptionListItemProps> = ({ record, onSelect }) => {

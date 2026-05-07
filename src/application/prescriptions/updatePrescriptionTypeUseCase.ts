@@ -1,6 +1,5 @@
 /**
- * Use case: change the prescription type (común / psicotrópicos /
- * benzodiazepinas) of an already-uploaded prescription. Useful when the
+ * Use case: change the prescription type of an already-uploaded prescription. Useful when the
  * uploader picked the wrong category at scan time and a clinician corrects
  * it later from the visor.
  */
