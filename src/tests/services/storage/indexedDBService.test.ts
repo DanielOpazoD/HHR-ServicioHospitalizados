@@ -370,6 +370,40 @@ describe('indexedDBService', () => {
         delete navigator.serviceWorker;
       }
     });
+
+    it('waits for IndexedDB deletion before reloading during full local reset', async () => {
+      const originalLocation = setMockLocationWithReload();
+
+      const originalDatabases = window.indexedDB.databases;
+      window.indexedDB.databases = vi.fn().mockResolvedValue([{ name: 'firebaseLocalStorageDb' }]);
+      const originalDelete = window.indexedDB.deleteDatabase;
+      let succeedDelete!: () => void;
+      const deleteRequest = {
+        onsuccess: null as null | (() => void),
+        onerror: null as null | (() => void),
+        onblocked: null as null | (() => void),
+      };
+      window.indexedDB.deleteDatabase = vi.fn(() => {
+        succeedDelete = () => deleteRequest.onsuccess?.();
+        return deleteRequest as unknown as IDBOpenDBRequest;
+      });
+
+      const resetPromise = idbService.resetLocalAppStorage();
+      await vi.waitFor(() => {
+        expect(window.indexedDB.deleteDatabase).toHaveBeenCalledWith('firebaseLocalStorageDb');
+      });
+
+      expect(window.location.reload).not.toHaveBeenCalled();
+
+      succeedDelete();
+      await resetPromise;
+
+      expect(window.location.reload).toHaveBeenCalled();
+
+      Object.defineProperty(window, 'location', { configurable: true, value: originalLocation });
+      window.indexedDB.databases = originalDatabases;
+      window.indexedDB.deleteDatabase = originalDelete;
+    });
   });
 
   describe('Additional Clear Operations', () => {

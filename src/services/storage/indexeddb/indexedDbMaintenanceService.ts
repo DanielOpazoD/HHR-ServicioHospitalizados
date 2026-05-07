@@ -10,16 +10,49 @@ interface ClearBrowserStorageOptions {
   clearAll?: boolean;
 }
 
+const deleteIndexedDatabase = (databaseName: string): Promise<void> =>
+  new Promise(resolve => {
+    const request = window.indexedDB.deleteDatabase(databaseName);
+
+    request.onsuccess = () => resolve();
+    request.onerror = () => {
+      recordOperationalErrorTelemetry(
+        'indexeddb',
+        'indexeddb_delete_database',
+        request.error ?? new Error(`Failed to delete IndexedDB database ${databaseName}`),
+        {
+          code: 'indexeddb_delete_database_failed',
+          message: `No fue posible limpiar la base local ${databaseName}.`,
+          severity: 'warning',
+          userSafeMessage: 'No fue posible limpiar una base local del navegador.',
+        }
+      );
+      resolve();
+    };
+    request.onblocked = () => {
+      recordOperationalErrorTelemetry(
+        'indexeddb',
+        'indexeddb_delete_database_blocked',
+        new Error(`IndexedDB delete blocked for ${databaseName}`),
+        {
+          code: 'indexeddb_delete_database_blocked',
+          message: `La limpieza de la base local ${databaseName} fue bloqueada por una conexión abierta.`,
+          severity: 'warning',
+          userSafeMessage: 'La limpieza de una base local fue bloqueada por el navegador.',
+        }
+      );
+      resolve();
+    };
+  });
+
 const clearIndexedDatabases = async (): Promise<void> => {
   if (!canUseWindow()) return;
 
   try {
     const dbs = await window.indexedDB.databases();
-    for (const dbInfo of dbs) {
-      if (dbInfo.name) {
-        window.indexedDB.deleteDatabase(dbInfo.name);
-      }
-    }
+    await Promise.all(
+      dbs.map(dbInfo => (dbInfo.name ? deleteIndexedDatabase(dbInfo.name) : Promise.resolve()))
+    );
   } catch (error) {
     recordOperationalErrorTelemetry('indexeddb', 'indexeddb_clear_databases', error, {
       code: 'indexeddb_clear_databases_failed',
