@@ -239,4 +239,51 @@ describe('functions clinicalDocumentExportFunctions', () => {
     expect(result.usedBackend).toBe(true);
     expect(setAudit).toHaveBeenCalled();
   });
+
+  it('maps inaccessible configured Drive root folders to an actionable precondition error', async () => {
+    driveMocks.list.mockResolvedValue({ data: { files: [] } });
+    driveMocks.create.mockRejectedValueOnce({
+      code: 404,
+      response: {
+        status: 404,
+        data: {
+          error: {
+            message: 'File not found: root-folder-id.',
+          },
+        },
+      },
+      message: 'File not found: root-folder-id.',
+    });
+
+    const functionsApi = createClinicalDocumentExportFunctions({
+      admin: { firestore: vi.fn() },
+      resolveRoleForEmail: vi.fn().mockResolvedValue('doctor_urgency'),
+      buildDriveClientOverride: () => ({
+        files: {
+          list: driveMocks.list,
+          create: driveMocks.create,
+          update: driveMocks.update,
+        },
+      }),
+    });
+
+    await expect(
+      functionsApi.exportClinicalDocumentPdfToDrive.run(
+        {
+          documentId: 'doc-1',
+          fileName: 'Epicrisis.pdf',
+          documentType: 'epicrisis',
+          patientName: 'Paciente Prueba',
+          patientRut: '12.345.678-9',
+          episodeKey: '12345678-9__2026-03-04',
+          contentBase64: Buffer.from('pdf-content').toString('base64'),
+          mimeType: 'application/pdf',
+        },
+        { auth: { uid: 'u1', token: { email: 'medico.urgencia@hospitalhangaroa.cl' } } }
+      )
+    ).rejects.toMatchObject({
+      code: 'failed-precondition',
+      message: expect.stringContaining('carpeta raiz de Drive'),
+    });
+  });
 });
