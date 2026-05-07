@@ -12,7 +12,6 @@ import { useCensusEmailRecipientMutationActions } from '@/hooks/useCensusEmailRe
 import { useCensusEmailRecipientPersistenceEffect } from '@/hooks/useCensusEmailRecipientPersistenceEffect';
 import { useCensusEmailRecipientRuntimeState } from '@/hooks/useCensusEmailRecipientRuntimeState';
 
-export { resolveStoredRecipientSelection } from '@/hooks/controllers/censusEmailRecipientSelectionController';
 export type {
   UseCensusEmailRecipientListsParams,
   UseCensusEmailRecipientListsReturn,
