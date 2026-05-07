@@ -47,7 +47,7 @@ describe('Security hardening static guards', () => {
   it('restricts dailyRecords delete operation to admins only', () => {
     const rules = readProjectFile('firestore.rules');
     const dailyRecordsMatch = rules.match(
-      /match \/dailyRecords\/\{date\}\s*\{([\s\S]*?)\n\s*\}\n\n\s*\/\/ Deleted Records/m
+      /match \/dailyRecords\/\{date\}\s*\{([\s\S]*?)\n\s*match \/clinicalDocuments\/\{documentId\}/m
     );
 
     expect(dailyRecordsMatch).not.toBeNull();

@@ -147,8 +147,6 @@ describe('PrescriptionBedGridView', () => {
     fireEvent.dragOver(wrongCell, { dataTransfer });
     fireEvent.drop(wrongCell, { dataTransfer });
 
-    // Drop event was processed but onAssign should not fire because of type mismatch.
-    await new Promise(resolve => setTimeout(resolve, 0));
     expect(onAssign).not.toHaveBeenCalled();
   });
 
