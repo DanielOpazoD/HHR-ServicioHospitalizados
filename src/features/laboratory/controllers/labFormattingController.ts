@@ -95,7 +95,6 @@ const collapseClinicalToken = (value: string): string =>
 const normalizeUrineRatioName = (name: string, section?: string): string | null => {
   const nameToken = collapseClinicalToken(name);
   const sectionToken = collapseClinicalToken(section || '');
-  const clinicalToken = collapseClinicalToken(`${section || ''} ${name}`);
   const hasCreatinineRatioToken =
     nameToken.includes('CREATININURIA') ||
     nameToken.includes('CREATININURI') ||

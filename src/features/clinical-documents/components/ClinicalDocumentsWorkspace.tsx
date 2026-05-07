@@ -73,7 +73,7 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
       if (!insertTarget || !sheetProps.patchSection) return;
       sheetProps.patchSection(insertTarget.sectionId, insertTarget.content);
     },
-    [sheetProps, sheetState.activeEditorSectionId, sheetState]
+    [sheetProps, sheetState]
   );
 
   const handleToggleSidebar = useCallback(() => {
