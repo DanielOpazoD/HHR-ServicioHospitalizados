@@ -1,12 +1,5 @@
-/**
- * Tests for the prescription access Cloud Functions. Mirrors the pattern
- * used by `clinicalDocumentExportFunctions.test.ts`: stub
- * `firebase-functions/v1` and `firebase-admin` so the handler factories
- * run as plain async functions in vitest.
- */
-
 import { createRequire } from 'node:module';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('firebase-functions/v1', () => ({
   https: {
@@ -130,6 +123,15 @@ const seedPin = async (accessConfig: FakeFirestoreDoc, pin: string) => {
   };
 };
 
+beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2026-05-04T12:00:00.000Z'));
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
+
 describe('hashPin / computeExpiresAt', () => {
   it('produces stable hashes for the same pin + salt and different ones for different pins', async () => {
     const salt = 'abc123';
@@ -194,14 +196,12 @@ describe('validatePrescriptionAccessPin', () => {
     await seedPin(accessConfig, '7351');
     const handler = createValidatePinHandler({ admin });
 
-    // 5 wrong attempts → triggers lockout
     for (let attempt = 0; attempt < 5; attempt += 1) {
       await expect(handler({ pin: '0000' }, undefined)).rejects.toMatchObject({
         code: 'permission-denied',
       });
     }
 
-    // Even the correct PIN is rejected during lockout window
     await expect(handler({ pin: '7351' }, undefined)).rejects.toMatchObject({
       code: 'permission-denied',
     });
@@ -213,7 +213,6 @@ describe('validatePrescriptionAccessPin', () => {
     await seedPin(accessConfig, '7351');
     const handler = createValidatePinHandler({ admin });
 
-    // 2 fails (under threshold) — counter at 2
     await expect(handler({ pin: '0000' }, undefined)).rejects.toMatchObject({
       code: 'permission-denied',
     });
@@ -222,7 +221,6 @@ describe('validatePrescriptionAccessPin', () => {
     });
     expect(accessConfig.data?.failedAttempts).toBe(2);
 
-    // Correct PIN → counter resets, no lockout marker
     await handler({ pin: '7351' }, undefined);
     expect(accessConfig.data?.failedAttempts).toBe(0);
     expect(accessConfig.data?.lockedUntil).toBeNull();
@@ -231,7 +229,6 @@ describe('validatePrescriptionAccessPin', () => {
   it('allows retries again once the lockout window has elapsed', async () => {
     const { admin, accessConfig } = buildAdminHarness();
     await seedPin(accessConfig, '7351');
-    // Simulate a stale lockout that has already passed.
     accessConfig.data = {
       ...accessConfig.data,
       failedAttempts: 0,
@@ -358,13 +355,11 @@ describe('submitPrescriptionPhoto', () => {
     expect(result).toMatchObject({ id: expect.stringMatching(/^rx_/) });
     const id = (result as { id: string }).id;
 
-    // Storage blobs landed
     const storageEntries = Object.keys(storedBlobs);
     expect(storageEntries).toHaveLength(2);
     expect(storageEntries.some(key => key.endsWith('/full.jpg'))).toBe(true);
     expect(storageEntries.some(key => key.endsWith('/thumb.jpg'))).toBe(true);
 
-    // Firestore doc carries the right shape
     const persisted = writtenPrescriptions[id];
     expect(persisted).toMatchObject({
       id,
@@ -372,13 +367,14 @@ describe('submitPrescriptionPhoto', () => {
       bedId: 'H5C1',
       patientName: 'Paciente Test',
       uploader: { source: 'qr_pin', displayName: 'Estación QR sala' },
+      createdAt: '2026-05-04T12:00:00.000Z',
+      expiresAt: '2026-06-03T12:00:00.000Z',
     });
     expect(persisted.image).toMatchObject({
       contentType: 'image/jpeg',
       width: 1200,
       height: 900,
     });
-    expect(persisted.expiresAt).toBeTruthy();
   });
 
   it('removes uploaded blobs if the Firestore prescription write fails', async () => {
