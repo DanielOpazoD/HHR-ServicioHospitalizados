@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { UIProvider } from '@/context/UIContext';
 
 vi.mock('@/services/storage/firestore/firestoreRecordQueries', () => ({
@@ -219,12 +219,19 @@ describe('PrescriptionBedGridView', () => {
       'https://stub/prescriptions/hhr/rx-first/full.jpg'
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /receta siguiente/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /receta siguiente/i }));
+    });
 
     expect(screen.getByRole('dialog', { name: /vista ampliada/i })).toBeInTheDocument();
-    expect(screen.getByRole('status', { name: /cargando receta/i })).toBeInTheDocument();
+    await waitFor(() =>
+      expect(resolvePrescriptionImageDownloadUrl).toHaveBeenCalledWith(second.image.storagePath)
+    );
+    expect(await screen.findByRole('status', { name: /cargando receta/i })).toBeInTheDocument();
 
-    secondImage.resolve('https://stub/prescriptions/hhr/rx-second/full.jpg');
+    await act(async () => {
+      secondImage.resolve('https://stub/prescriptions/hhr/rx-second/full.jpg');
+    });
 
     await waitFor(() =>
       expect(screen.getByRole('img', { name: /receta 2 de 2/i })).toHaveAttribute(
