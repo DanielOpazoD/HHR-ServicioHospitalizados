@@ -24,6 +24,7 @@ import {
   buildCanonicalE2ERecord,
   ensureAuthenticated,
 } from './fixtures/auth';
+import { waitForPersistedBedFields } from './fixtures/censusPersistence';
 
 const getTodayDate = () => new Date().toISOString().slice(0, 10);
 
@@ -85,6 +86,14 @@ test.describe('Admit → edit → discharge smoke', () => {
     await diagnosisInput.click();
     await diagnosisInput.fill(UPDATED_DIAGNOSIS);
     await diagnosisInput.blur();
+    await waitForPersistedBedFields({
+      page,
+      date,
+      bedId: SMOKE_BED,
+      expected: {
+        pathology: UPDATED_DIAGNOSIS,
+      },
+    });
 
     // 2. Round-trip: reload the page and assert the value survives.
     //    This proves the patch was actually persisted (not just held
