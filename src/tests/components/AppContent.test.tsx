@@ -220,7 +220,7 @@ describe('AppContent', () => {
     expect(screen.getByTestId('bookmark-bar')).toBeInTheDocument();
     expect(screen.getByTestId('app-router')).toBeInTheDocument();
     expect(screen.getByTestId('storage-badge')).toBeInTheDocument();
-    expect(screen.getByTestId('reminder-modal')).toBeInTheDocument();
+    expect(screen.queryByTestId('reminder-modal')).not.toBeInTheDocument();
   });
 
   it('hides Navbar and DateStrip in signature mode', () => {
@@ -387,7 +387,7 @@ describe('AppContent', () => {
 
     render(<AppContent ui={uiWithModals as unknown as AppContentUi} />);
 
-    expect(screen.getByTestId('reminder-modal')).toBeInTheDocument();
+    expect(screen.queryByTestId('reminder-modal')).not.toBeInTheDocument();
     expect(screen.getByTestId('test-agent')).toBeInTheDocument();
     expect(screen.getByTestId('storage-badge')).toBeInTheDocument();
     expect(screen.getByTestId('pin-lock')).toBeInTheDocument();
