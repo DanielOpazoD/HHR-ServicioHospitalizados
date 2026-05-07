@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Camera, CheckCircle2, Loader2, RotateCcw, Upload, XCircle } from 'lucide-react';
+import { Camera, CheckCircle2, Loader2, Pill, RotateCcw, Upload, XCircle } from 'lucide-react';
 import {
   PRESCRIPTION_TYPE_LABELS,
   PRESCRIPTION_TYPES,
@@ -15,6 +15,30 @@ const formatBytes = (bytes: number): string => {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+};
+
+const renderPrescriptionTypeIcon = (type: PrescriptionType) => {
+  if (type === 'comun') {
+    return <Pill size={18} className="shrink-0 text-sky-600" aria-hidden data-testid="icon-pill" />;
+  }
+
+  if (type === 'psicotropicos') {
+    return (
+      <span
+        aria-hidden
+        data-testid="icon-white-circle"
+        className="h-4 w-4 shrink-0 rounded-full border border-slate-400 bg-white shadow-inner"
+      />
+    );
+  }
+
+  return (
+    <span
+      aria-hidden
+      data-testid="icon-green-circle"
+      className="h-4 w-4 shrink-0 rounded-full border border-emerald-700 bg-emerald-500 shadow-inner"
+    />
+  );
 };
 
 export const PrescriptionUploadForm: React.FC<PrescriptionUploadFormProps> = ({ controller }) => {
@@ -95,6 +119,7 @@ export const PrescriptionUploadForm: React.FC<PrescriptionUploadFormProps> = ({ 
           {PRESCRIPTION_TYPES.map(type => (
             <label
               key={type}
+              data-testid={`prescription-type-option-${type}`}
               className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
                 values.prescriptionType === type
                   ? 'border-sky-500 bg-sky-50 text-sky-900'
@@ -110,6 +135,7 @@ export const PrescriptionUploadForm: React.FC<PrescriptionUploadFormProps> = ({ 
                 disabled={isBusy}
                 className="accent-sky-600"
               />
+              {renderPrescriptionTypeIcon(type)}
               {PRESCRIPTION_TYPE_LABELS[type]}
             </label>
           ))}

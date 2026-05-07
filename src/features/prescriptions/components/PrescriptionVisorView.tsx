@@ -24,7 +24,7 @@ export const PrescriptionVisorView: React.FC = () => {
   const [mode, setMode] = useState<VisorMode>('bed-grid');
 
   const canEdit = auth.role === 'admin' || auth.role === 'nurse_hospital' || auth.isEditor;
-  const canDelete = auth.role === 'admin';
+  const canDelete = auth.role === 'admin' || auth.role === 'nurse_hospital';
 
   const handleReassign = useCallback(
     async (patch: {
