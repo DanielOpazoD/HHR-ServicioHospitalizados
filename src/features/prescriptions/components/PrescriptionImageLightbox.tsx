@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 interface PrescriptionImageLightboxProps {
-  imageUrl: string;
+  imageUrl: string | null;
   altText?: string;
   counterLabel?: string;
   onClose: () => void;
@@ -219,30 +219,41 @@ export const PrescriptionImageLightbox: React.FC<PrescriptionImageLightboxProps>
             <ChevronLeft size={22} />
           </button>
         )}
-        <img
-          src={imageUrl}
-          alt={altText}
-          draggable={false}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
-          onDoubleClick={() => {
-            if (scale > 1) {
-              reset();
-            } else {
-              setScale(2);
-            }
-          }}
-          style={{
-            transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale}) rotate(${rotation}deg)`,
-            transition: isPanning ? 'none' : 'transform 120ms ease-out',
-            cursor: scale > 1 ? (isPanning ? 'grabbing' : 'grab') : 'zoom-in',
-            maxWidth: '100%',
-            maxHeight: '100%',
-          }}
-          className="block object-contain"
-        />
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={altText}
+            draggable={false}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            onDoubleClick={() => {
+              if (scale > 1) {
+                reset();
+              } else {
+                setScale(2);
+              }
+            }}
+            style={{
+              transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale}) rotate(${rotation}deg)`,
+              transition: isPanning ? 'none' : 'transform 120ms ease-out',
+              cursor: scale > 1 ? (isPanning ? 'grabbing' : 'grab') : 'zoom-in',
+              maxWidth: '100%',
+              maxHeight: '100%',
+            }}
+            className="block object-contain"
+          />
+        ) : (
+          <div
+            role="status"
+            aria-label="Cargando receta"
+            className="inline-flex items-center gap-2 rounded-md border border-white/15 bg-black/40 px-3 py-2 text-sm text-white/80"
+          >
+            <Loader2 size={16} className="animate-spin" />
+            Cargando receta
+          </div>
+        )}
         {onNext && (
           <button
             type="button"

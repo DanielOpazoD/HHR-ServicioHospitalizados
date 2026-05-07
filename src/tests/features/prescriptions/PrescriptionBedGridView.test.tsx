@@ -20,6 +20,7 @@ vi.mock('@/features/prescriptions/services/prescriptionStorageImageService', () 
 
 import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
 import { PrescriptionBedGridView } from '@/features/prescriptions/components/PrescriptionBedGridView';
+import { resolvePrescriptionImageDownloadUrl } from '@/features/prescriptions/services/prescriptionStorageImageService';
 import type { PrescriptionRecord } from '@/types/prescriptionTypes';
 import type { DailyRecord } from '@/services/storage/storageDailyRecordContracts';
 
@@ -67,6 +68,14 @@ const buildDailyRecord = (): DailyRecord =>
   }) as unknown as DailyRecord;
 
 const renderGrid = (ui: React.ReactElement) => render(<UIProvider>{ui}</UIProvider>);
+
+const createDeferred = <T,>() => {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>(next => {
+    resolve = next;
+  });
+  return { promise, resolve };
+};
 
 describe('PrescriptionBedGridView', () => {
   beforeEach(() => {
@@ -173,6 +182,49 @@ describe('PrescriptionBedGridView', () => {
     expect(dialogImage).toHaveAttribute('src', 'https://stub/prescriptions/hhr/rx-first/full.jpg');
 
     fireEvent.click(screen.getByRole('button', { name: /receta siguiente/i }));
+
+    await waitFor(() =>
+      expect(screen.getByRole('img', { name: /receta 2 de 2/i })).toHaveAttribute(
+        'src',
+        'https://stub/prescriptions/hhr/rx-second/full.jpg'
+      )
+    );
+  });
+
+  it('keeps the image viewer mounted while the next prescription image loads', async () => {
+    const first = buildRecord('rx-first', {
+      bedId: 'H1C2',
+      patientName: 'Carina Pate Lillo',
+      patientRut: '14.470.055-4',
+      prescriptionType: 'comun',
+    });
+    const second = buildRecord('rx-second', {
+      bedId: 'H1C2',
+      patientName: 'Carina Pate Lillo',
+      patientRut: '14.470.055-4',
+      prescriptionType: 'psicotropicos',
+    });
+    const secondImage = createDeferred<string>();
+    vi.mocked(resolvePrescriptionImageDownloadUrl).mockImplementation((path: string) => {
+      if (path === second.image.storagePath) return secondImage.promise;
+      return Promise.resolve(`https://stub/${path}`);
+    });
+
+    renderGrid(<PrescriptionBedGridView records={[first, second]} dayIso="2026-05-04" />);
+
+    const thumbnail = await screen.findByRole('img', { name: /comun · h1c2/i });
+    fireEvent.click(thumbnail.closest('button')!);
+    expect(await screen.findByRole('img', { name: /receta 1 de 2/i })).toHaveAttribute(
+      'src',
+      'https://stub/prescriptions/hhr/rx-first/full.jpg'
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /receta siguiente/i }));
+
+    expect(screen.getByRole('dialog', { name: /vista ampliada/i })).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: /cargando receta/i })).toBeInTheDocument();
+
+    secondImage.resolve('https://stub/prescriptions/hhr/rx-second/full.jpg');
 
     await waitFor(() =>
       expect(screen.getByRole('img', { name: /receta 2 de 2/i })).toHaveAttribute(

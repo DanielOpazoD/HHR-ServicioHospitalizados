@@ -111,8 +111,6 @@ export const PrescriptionPatientLightbox: React.FC<PrescriptionPatientLightboxPr
     );
   }
 
-  if (!imageUrl) return null;
-
   return (
     <PrescriptionImageLightbox
       imageUrl={imageUrl}
