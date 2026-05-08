@@ -61,7 +61,7 @@ export const PrescriptionBedRow: React.FC<PrescriptionBedRowProps> = ({
         {row.patientRut && <p className="text-[10px] text-slate-400">{row.patientRut}</p>}
         {row.isDischargeSnapshot && (
           <p className="mt-1 inline-flex rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-amber-800">
-            Egresos (Alta + Traslados)
+            Egresos
           </p>
         )}
       </td>
