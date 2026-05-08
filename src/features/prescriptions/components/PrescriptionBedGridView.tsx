@@ -105,6 +105,7 @@ const buildBedRows = (
         bedId: record.bedId,
         patientName: record.patientName?.trim() ?? '',
         patientRut: record.patientRut?.trim() ?? '',
+        isDischargeSnapshot: true,
         byType: createEmptyPrescriptionBuckets(),
       };
       byBed.set(record.bedId, row);

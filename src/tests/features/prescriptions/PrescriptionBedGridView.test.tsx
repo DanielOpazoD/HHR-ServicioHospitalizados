@@ -145,6 +145,7 @@ describe('PrescriptionBedGridView', () => {
     renderGrid(<PrescriptionBedGridView records={[dischargedPrescription]} dayIso="2026-05-04" />);
 
     expect(await screen.findByText('Paciente Alta Hoy')).toBeInTheDocument();
+    expect(screen.getByText('Egresos (Alta + Traslados)')).toBeInTheDocument();
     expect(screen.getByText('12.345.678-9')).toBeInTheDocument();
     expect(screen.getByTestId('prescription-bed-cell-H2C3-comun')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: /comun · h2c3/i })).toBeInTheDocument();
