@@ -71,24 +71,102 @@ const normalizeSubsectionContent = (value: string): string => {
   return normalized === '<br>' ? '' : normalized;
 };
 
+const normalizePlaceholderText = (value: string | null | undefined): string =>
+  (value || '').replace(/\u00a0/g, ' ').trim();
+
+const removeLeadingEmptyListItems = (listElement: Element): boolean => {
+  while (listElement.firstElementChild?.tagName.toUpperCase() === 'LI') {
+    const firstItem = listElement.firstElementChild;
+    if (normalizePlaceholderText(firstItem.textContent)) {
+      break;
+    }
+
+    listElement.removeChild(firstItem);
+  }
+
+  return listElement.children.length === 0;
+};
+
+const removeLeadingPlanPlaceholderLine = (value: string): string => {
+  const normalized = normalizeSubsectionContent(value);
+  if (!normalized) {
+    return '';
+  }
+
+  if (typeof document === 'undefined') {
+    return normalizeSubsectionContent(
+      normalized.replace(
+        /^(?:(?:<div>\s*-\s*(?:<br>)?\s*<\/div>|<p>\s*-\s*(?:<br>)?\s*<\/p>|<[uo]l>\s*<li>(?:\s|&nbsp;|<br>)*<\/li>\s*<\/[uo]l>)\s*)+/i,
+        ''
+      )
+    );
+  }
+
+  const container = document.createElement('div');
+  container.innerHTML = normalized;
+
+  while (container.firstChild) {
+    const firstNode = container.firstChild;
+    if (firstNode.nodeType === Node.ELEMENT_NODE) {
+      const firstElement = firstNode as Element;
+      const tagName = firstElement.tagName.toUpperCase();
+      if (tagName === 'UL' || tagName === 'OL') {
+        if (removeLeadingEmptyListItems(firstElement)) {
+          container.removeChild(firstNode);
+          continue;
+        }
+
+        break;
+      }
+    }
+
+    const text = normalizePlaceholderText(firstNode.textContent);
+    if (text !== '-') {
+      break;
+    }
+
+    container.removeChild(firstNode);
+  }
+
+  return normalizeSubsectionContent(container.innerHTML);
+};
+
+const normalizePlanIndicationLineText = (value: string): string | null => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const withoutBullet = trimmed.replace(/^[-–—]\s*/, '').trim();
+  return withoutBullet ? `- ${withoutBullet}` : '-';
+};
+
+const buildClinicalDocumentPlanIndicationLinesHtml = (value: string): string => {
+  const lines = value
+    .split(/\r?\n/)
+    .map(normalizePlanIndicationLineText)
+    .filter((line): line is string => Boolean(line));
+
+  return lines.map(line => `<div>${convertPlainTextToClinicalDocumentHtml(line)}</div>`).join('');
+};
+
 const appendClinicalDocumentPlanIndicationLine = (
   currentContent: string,
   indicationText: string
 ): string => {
-  const trimmedText = indicationText.trim();
-  if (!trimmedText) {
+  const nextLinesHtml = buildClinicalDocumentPlanIndicationLinesHtml(indicationText);
+  if (!nextLinesHtml) {
     return normalizeSubsectionContent(currentContent);
   }
 
-  const normalizedCurrent = normalizeSubsectionContent(currentContent);
-  const nextLineHtml = `<div>${convertPlainTextToClinicalDocumentHtml(trimmedText)}</div>`;
+  const normalizedCurrent = removeLeadingPlanPlaceholderLine(currentContent);
 
   if (!normalizedCurrent) {
-    return normalizeSubsectionContent(sanitizeClinicalDocumentHtml(nextLineHtml));
+    return normalizeSubsectionContent(sanitizeClinicalDocumentHtml(nextLinesHtml));
   }
 
   if (typeof document === 'undefined') {
-    return sanitizeClinicalDocumentHtml(`${normalizedCurrent}${nextLineHtml}`);
+    return sanitizeClinicalDocumentHtml(`${normalizedCurrent}${nextLinesHtml}`);
   }
 
   const container = document.createElement('div');
@@ -118,7 +196,7 @@ const appendClinicalDocumentPlanIndicationLine = (
   removeTrailingEmptyNodes();
 
   const template = document.createElement('template');
-  template.innerHTML = nextLineHtml;
+  template.innerHTML = nextLinesHtml;
   container.appendChild(template.content.cloneNode(true));
 
   return normalizeSubsectionContent(sanitizeClinicalDocumentHtml(container.innerHTML));
@@ -316,6 +394,16 @@ export const appendClinicalDocumentPlanSubsectionText = (
     [subsectionId]: appendClinicalDocumentPlanIndicationLine(parsed[subsectionId], text),
   });
 };
+
+/**
+ * Appends a plain-text indication to the simplified one-box plan layout without
+ * rebuilding the three structured subsection headings.
+ */
+export const appendClinicalDocumentUnifiedPlanText = (value: string, text: string): string =>
+  appendClinicalDocumentPlanIndicationLine(
+    buildUnifiedClinicalDocumentPlanSectionContent(value),
+    text
+  );
 
 /** Returns the display title for a plan subsection (e.g. "Indicaciones generales"). */
 export const getClinicalDocumentPlanSubsectionTitle = (

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   appendClinicalDocumentPlanSubsectionText,
+  appendClinicalDocumentUnifiedPlanText,
   buildStructuredClinicalDocumentPlanSectionContent,
   buildClinicalDocumentPlanSectionContent,
   buildUnifiedClinicalDocumentPlanSectionContent,
@@ -39,12 +40,47 @@ describe('clinicalDocumentPlanSectionController', () => {
     expect(parsed.control_clinico).toBe('');
   });
 
-  it('appends consecutive indication phrases without blank spacer lines', () => {
+  it('appends consecutive indication phrases as dash-prefixed lines without blank spacers', () => {
     const once = appendClinicalDocumentPlanSubsectionText('', 'generales', 'Reposo Absoluto');
     const twice = appendClinicalDocumentPlanSubsectionText(once, 'generales', 'Reposo Relativo');
     const parsed = parseClinicalDocumentPlanSectionContent(twice);
 
-    expect(parsed.generales).toBe('<div>Reposo Absoluto</div><div>Reposo Relativo</div>');
+    expect(parsed.generales).toBe('<div>- Reposo Absoluto</div><div>- Reposo Relativo</div>');
+  });
+
+  it('appends multiline indications to unified plan content as dash-prefixed lines', () => {
+    const appended = appendClinicalDocumentUnifiedPlanText(
+      '<div>-</div>',
+      'Reposo relativo\nControl en policlínico'
+    );
+
+    expect(appended).toBe('<div>- Reposo relativo</div><div>- Control en policlínico</div>');
+    expect(appended).not.toContain('Indicaciones farmacológicas');
+    expect(resolveClinicalDocumentPlanSectionLayout({ content: appended, layout: 'unified' })).toBe(
+      'unified'
+    );
+  });
+
+  it.each([
+    '-',
+    '<div>-<br></div>',
+    '<div>-</div><div><br></div>',
+    '<p>-</p>',
+    '<ul><li><br></li></ul>',
+    '<ul><li></li></ul>',
+  ])(
+    'replaces an empty dash placeholder before inserting into an empty unified plan: %s',
+    placeholderContent => {
+      const appended = appendClinicalDocumentUnifiedPlanText(placeholderContent, 'Reposo relativo');
+
+      expect(appended).toBe('<div>- Reposo relativo</div>');
+    }
+  );
+
+  it('does not duplicate dash prefixes when inserted indications already include them', () => {
+    const appended = appendClinicalDocumentUnifiedPlanText('', '- Reposo relativo\n- Control SOS');
+
+    expect(appended).toBe('<div>- Reposo relativo</div><div>- Control SOS</div>');
   });
 
   it('can simplify the structured plan into a unified free-text section', () => {

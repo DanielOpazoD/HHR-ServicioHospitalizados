@@ -1,250 +1,431 @@
-import {
-  CLINICAL_DOCUMENT_INDICATION_SPECIALTY_LABELS,
-  type ClinicalDocumentIndicationSpecialtyId,
-  normalizeClinicalDocumentIndicationTextKey,
-} from '@/features/clinical-documents/controllers/clinicalDocumentIndicationsController';
+import { normalizeClinicalDocumentIndicationTextKey } from '@/features/clinical-documents/controllers/clinicalDocumentIndicationsController';
 
 export interface ClinicalDocumentIndicationCatalogItem {
   id: string;
   text: string;
-  source: 'default' | 'custom';
+  source: 'custom';
   createdAt?: string;
 }
 
-export interface ClinicalDocumentIndicationCatalogSpecialty {
-  id: ClinicalDocumentIndicationSpecialtyId;
+export interface ClinicalDocumentIndicationCatalogTab {
+  id: string;
   label: string;
   items: ClinicalDocumentIndicationCatalogItem[];
 }
 
 export interface ClinicalDocumentIndicationsCatalog {
   version: number;
+  uid: string;
+  email: string;
   updatedAt: string;
-  specialties: Record<
-    ClinicalDocumentIndicationSpecialtyId,
-    ClinicalDocumentIndicationCatalogSpecialty
-  >;
+  activeTabId: string;
+  tabs: ClinicalDocumentIndicationCatalogTab[];
+  /** Compatibility view for callers that only need the active tab's indications. */
+  items: ClinicalDocumentIndicationCatalogItem[];
 }
 
 export type RawClinicalDocumentIndicationsCatalog =
   | {
       version?: number;
-      updatedAt?: string;
-      specialties?: Partial<
-        Record<
-          ClinicalDocumentIndicationSpecialtyId | 'cirugia_tmt',
-          Partial<ClinicalDocumentIndicationCatalogSpecialty> & { items?: unknown[] }
-        >
-      >;
+      uid?: unknown;
+      email?: unknown;
+      updatedAt?: unknown;
+      activeTabId?: unknown;
+      tabs?: unknown[];
+      items?: unknown[];
     }
   | null
   | undefined;
 
-const DEFAULT_SPECIALTY_ITEMS: Record<ClinicalDocumentIndicationSpecialtyId, string[]> = {
-  cirugia: [],
-  tmt: [
-    'Reposo Absoluto',
-    'Reposo Relativo',
-    'Reposo Relativo, sin carga en extremidad operada',
-    'Uso de bota ortopédica',
-    'Uso de Cabestrillo',
-    'Movilizacion de codo y dedos de forma regular',
-    'Mano en alto, movilización de dedos',
-    'Control SOS Servicio de Urgencias',
-    'No fumar',
-    'No mojar ni retirar apósitos',
-    'No aplicar cremas, aceites, u otras sustancias en herida',
-  ],
-  medicina_interna: [],
-  psiquiatria: [],
-  ginecobstetricia: [],
-  pediatria: [],
+interface ClinicalDocumentIndicationsCatalogOwner {
+  uid?: string | null;
+  email?: string | null;
+}
+
+const DEFAULT_TAB_ID = 'general';
+const DEFAULT_TAB_LABEL = 'General';
+
+const normalizeText = (value: string): string => value.trim().replace(/\s+/g, ' ');
+
+const normalizeTabLabel = (value: string): string => normalizeText(value).slice(0, 48);
+
+export const buildClinicalDocumentIndicationCatalogItemId = (text: string): string =>
+  `custom-${normalizeClinicalDocumentIndicationTextKey(text).replace(/[^a-z0-9]+/g, '-')}`;
+
+export const buildClinicalDocumentIndicationCatalogTabId = (label: string): string => {
+  const normalized = normalizeClinicalDocumentIndicationTextKey(label)
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return normalized || DEFAULT_TAB_ID;
 };
 
-const LEGACY_SHARED_DEFAULT_TEXT_KEYS = new Set(
-  [
-    'Reposo Absoluto',
-    'Reposo Relativo',
-    'Reposo Relativo, sin carga en extremidad operada',
-    'Uso de bota ortopédica',
-    'Uso de Cabestrillo',
-    'Movilizacion de codo y dedos de forma regular',
-    'Mano en alto, movilización de dedos',
-    'Control SOS Servicio de Urgencias',
-    'No fumar',
-    'No mojar ni retirar apósitos',
-    'No aplicar cremas, aceites, u otras sustancias en herida',
-  ].map(normalizeClinicalDocumentIndicationTextKey)
-);
+const resolveActiveTab = (
+  tabs: ClinicalDocumentIndicationCatalogTab[],
+  activeTabId: unknown
+): ClinicalDocumentIndicationCatalogTab =>
+  tabs.find(tab => tab.id === activeTabId) ||
+  tabs[0] ||
+  buildDefaultClinicalDocumentIndicationsTab();
 
-/**
- * Builds a deterministic ID for a catalog item from its specialty and text.
- * @param specialtyId - The specialty the item belongs to.
- * @param text - The indication text.
- */
-export const buildClinicalDocumentIndicationCatalogItemId = (
-  specialtyId: ClinicalDocumentIndicationSpecialtyId,
-  text: string
-): string =>
-  `${specialtyId}-${normalizeClinicalDocumentIndicationTextKey(text).replace(/[^a-z0-9]+/g, '-')}`;
+const withActiveItems = (
+  catalog: Omit<ClinicalDocumentIndicationsCatalog, 'items'> & {
+    items?: ClinicalDocumentIndicationCatalogItem[];
+  }
+): ClinicalDocumentIndicationsCatalog => {
+  const activeTab = catalog.tabs.find(tab => tab.id === catalog.activeTabId) || catalog.tabs[0];
+  return {
+    ...catalog,
+    activeTabId: activeTab?.id || DEFAULT_TAB_ID,
+    items: activeTab?.items || [],
+  };
+};
 
-/**
- * Returns the built-in default indication items for a specialty.
- * @param specialtyId - The specialty whose defaults to build.
- */
-export const buildDefaultClinicalDocumentIndicationItems = (
-  specialtyId: ClinicalDocumentIndicationSpecialtyId
-): ClinicalDocumentIndicationCatalogItem[] =>
-  DEFAULT_SPECIALTY_ITEMS[specialtyId].map(text => ({
-    id: buildClinicalDocumentIndicationCatalogItemId(specialtyId, text),
+const getActiveTabId = (
+  catalog: ClinicalDocumentIndicationsCatalog,
+  tabId?: string | null
+): string => String(tabId || catalog.activeTabId || catalog.tabs[0]?.id || DEFAULT_TAB_ID).trim();
+
+const mapTabItems = (
+  catalog: ClinicalDocumentIndicationsCatalog,
+  tabId: string,
+  mapItems: (
+    items: ClinicalDocumentIndicationCatalogItem[]
+  ) => ClinicalDocumentIndicationCatalogItem[]
+): ClinicalDocumentIndicationsCatalog =>
+  withActiveItems({
+    ...catalog,
+    activeTabId: tabId,
+    tabs: catalog.tabs.map(tab =>
+      tab.id === tabId
+        ? {
+            ...tab,
+            items: mapItems(tab.items),
+          }
+        : tab
+    ),
+  });
+
+const buildUniqueTabId = (tabs: ClinicalDocumentIndicationCatalogTab[], label: string): string => {
+  const baseId = buildClinicalDocumentIndicationCatalogTabId(label);
+  if (!tabs.some(tab => tab.id === baseId)) {
+    return baseId;
+  }
+
+  let suffix = 2;
+  while (tabs.some(tab => tab.id === `${baseId}-${suffix}`)) {
+    suffix += 1;
+  }
+  return `${baseId}-${suffix}`;
+};
+
+export const buildDefaultClinicalDocumentIndicationsTab = (
+  items: ClinicalDocumentIndicationCatalogItem[] = []
+): ClinicalDocumentIndicationCatalogTab => ({
+  id: DEFAULT_TAB_ID,
+  label: DEFAULT_TAB_LABEL,
+  items,
+});
+
+export const getDefaultClinicalDocumentIndicationsCatalog = (
+  now: string = new Date().toISOString(),
+  owner: ClinicalDocumentIndicationsCatalogOwner = {}
+): ClinicalDocumentIndicationsCatalog => {
+  const tabs = [buildDefaultClinicalDocumentIndicationsTab()];
+  return {
+    version: 1,
+    uid: String(owner.uid || '').trim(),
+    email: String(owner.email || '').trim(),
+    updatedAt: now,
+    activeTabId: DEFAULT_TAB_ID,
+    tabs,
+    items: tabs[0].items,
+  };
+};
+
+const normalizeItem = (
+  rawItem: unknown,
+  fallbackIndex: number
+): ClinicalDocumentIndicationCatalogItem | null => {
+  const text =
+    typeof rawItem === 'string'
+      ? normalizeText(rawItem)
+      : typeof rawItem === 'object' &&
+          rawItem &&
+          'text' in rawItem &&
+          typeof rawItem.text === 'string'
+        ? normalizeText(rawItem.text)
+        : '';
+
+  if (!text) {
+    return null;
+  }
+
+  const objectItem =
+    typeof rawItem === 'object' && rawItem
+      ? (rawItem as Partial<ClinicalDocumentIndicationCatalogItem>)
+      : null;
+  const explicitId = typeof objectItem?.id === 'string' ? objectItem.id.trim() : '';
+
+  return {
+    id: explicitId || `${buildClinicalDocumentIndicationCatalogItemId(text)}-${fallbackIndex}`,
     text,
-    source: 'default',
-  }));
-
-const resolveLegacySpecialtyValue = (
-  rawSpecialties: Record<string, unknown>,
-  specialtyId: ClinicalDocumentIndicationSpecialtyId
-): unknown => {
-  if (specialtyId in rawSpecialties) {
-    return rawSpecialties[specialtyId];
-  }
-
-  if (specialtyId === 'cirugia' || specialtyId === 'tmt') {
-    return rawSpecialties.cirugia_tmt;
-  }
-
-  return undefined;
+    source: 'custom',
+    createdAt: typeof objectItem?.createdAt === 'string' ? objectItem.createdAt : undefined,
+  };
 };
 
 const normalizeItems = (
-  specialtyId: ClinicalDocumentIndicationSpecialtyId,
-  value: unknown
+  rawItems: unknown[] | undefined
 ): ClinicalDocumentIndicationCatalogItem[] => {
-  const hasExplicitItems = Boolean(
-    value &&
-    typeof value === 'object' &&
-    'items' in (value as Record<string, unknown>) &&
-    Array.isArray((value as { items?: unknown }).items)
-  );
-  const incomingItems = Array.isArray((value as { items?: unknown } | undefined)?.items)
-    ? ((value as { items: unknown[] }).items ?? [])
+  const seen = new Set<string>();
+  return Array.isArray(rawItems)
+    ? rawItems.reduce<ClinicalDocumentIndicationCatalogItem[]>((accumulator, rawItem) => {
+        const item = normalizeItem(rawItem, accumulator.length + 1);
+        if (!item) {
+          return accumulator;
+        }
+
+        const textKey = normalizeClinicalDocumentIndicationTextKey(item.text);
+        if (seen.has(textKey)) {
+          return accumulator;
+        }
+
+        seen.add(textKey);
+        accumulator.push(item);
+        return accumulator;
+      }, [])
     : [];
-  const mergedItems = hasExplicitItems
-    ? []
-    : [...buildDefaultClinicalDocumentIndicationItems(specialtyId)];
-  const seen = new Set(
-    mergedItems.map(item => normalizeClinicalDocumentIndicationTextKey(item.text))
-  );
-
-  incomingItems.forEach(rawItem => {
-    const text =
-      typeof rawItem === 'string'
-        ? rawItem.trim()
-        : typeof rawItem === 'object' &&
-            rawItem &&
-            'text' in rawItem &&
-            typeof rawItem.text === 'string'
-          ? rawItem.text.trim()
-          : '';
-    if (!text) {
-      return;
-    }
-
-    const textKey = normalizeClinicalDocumentIndicationTextKey(text);
-    if (specialtyId === 'cirugia' && LEGACY_SHARED_DEFAULT_TEXT_KEYS.has(textKey)) {
-      return;
-    }
-
-    if (seen.has(textKey)) {
-      return;
-    }
-
-    seen.add(textKey);
-    const objectItem =
-      typeof rawItem === 'object' && rawItem
-        ? (rawItem as Partial<ClinicalDocumentIndicationCatalogItem>)
-        : null;
-
-    mergedItems.push({
-      id:
-        objectItem?.id?.trim() ||
-        `custom-${specialtyId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      text,
-      source: objectItem?.source === 'default' ? 'default' : 'custom',
-      createdAt: objectItem?.createdAt,
-    });
-  });
-
-  return mergedItems;
 };
 
-/**
- * Creates a fresh catalog populated with built-in defaults for every specialty.
- * @param now - Optional ISO timestamp; defaults to the current time.
- */
-export const getDefaultClinicalDocumentIndicationsCatalog = (
-  now: string = new Date().toISOString()
-): ClinicalDocumentIndicationsCatalog => ({
-  version: 1,
-  updatedAt: now,
-  specialties: (
-    Object.keys(
-      CLINICAL_DOCUMENT_INDICATION_SPECIALTY_LABELS
-    ) as ClinicalDocumentIndicationSpecialtyId[]
-  ).reduce<ClinicalDocumentIndicationsCatalog['specialties']>(
-    (accumulator, specialtyId) => {
-      accumulator[specialtyId] = {
-        id: specialtyId,
-        label: CLINICAL_DOCUMENT_INDICATION_SPECIALTY_LABELS[specialtyId],
-        items: buildDefaultClinicalDocumentIndicationItems(specialtyId),
-      };
-      return accumulator;
-    },
-    {} as ClinicalDocumentIndicationsCatalog['specialties']
-  ),
-});
+const normalizeTab = (
+  rawTab: unknown,
+  fallbackIndex: number
+): ClinicalDocumentIndicationCatalogTab | null => {
+  if (!rawTab || typeof rawTab !== 'object') {
+    return null;
+  }
 
-/**
- * Normalizes a raw/untrusted catalog from Firestore into a fully typed catalog, merging defaults and handling legacy `cirugia_tmt` keys.
- * @param rawCatalog - The raw catalog value (may be null/undefined/partial).
- * @returns A complete, normalized catalog.
- */
-export const normalizeClinicalDocumentIndicationsCatalog = (
+  const tabRecord = rawTab as {
+    id?: unknown;
+    label?: unknown;
+    items?: unknown[];
+  };
+  const label = normalizeTabLabel(String(tabRecord.label || ''));
+  if (!label) {
+    return null;
+  }
+
+  const rawId = typeof tabRecord.id === 'string' ? tabRecord.id.trim() : '';
+  return {
+    id: rawId || `${buildClinicalDocumentIndicationCatalogTabId(label)}-${fallbackIndex}`,
+    label,
+    items: normalizeItems(tabRecord.items),
+  };
+};
+
+const normalizeTabs = (
   rawCatalog: RawClinicalDocumentIndicationsCatalog
+): ClinicalDocumentIndicationCatalogTab[] => {
+  if (rawCatalog?.tabs && Array.isArray(rawCatalog.tabs)) {
+    const tabs = rawCatalog.tabs
+      .map((tab, index) => normalizeTab(tab, index + 1))
+      .filter((tab): tab is ClinicalDocumentIndicationCatalogTab => Boolean(tab));
+    return tabs.length ? tabs : [buildDefaultClinicalDocumentIndicationsTab()];
+  }
+
+  return [buildDefaultClinicalDocumentIndicationsTab(normalizeItems(rawCatalog?.items))];
+};
+
+export const normalizeClinicalDocumentIndicationsCatalog = (
+  rawCatalog: RawClinicalDocumentIndicationsCatalog,
+  owner: ClinicalDocumentIndicationsCatalogOwner = {}
 ): ClinicalDocumentIndicationsCatalog => {
-  const fallback = getDefaultClinicalDocumentIndicationsCatalog();
-  if (!rawCatalog) {
+  const fallback = getDefaultClinicalDocumentIndicationsCatalog(undefined, owner);
+  if (!rawCatalog || typeof rawCatalog !== 'object') {
     return fallback;
   }
 
-  const rawSpecialties =
-    rawCatalog.specialties && typeof rawCatalog.specialties === 'object'
-      ? rawCatalog.specialties
-      : {};
+  const tabs = normalizeTabs(rawCatalog);
+  const activeTab = resolveActiveTab(tabs, rawCatalog.activeTabId);
 
   return {
     version: typeof rawCatalog.version === 'number' ? rawCatalog.version : fallback.version,
+    uid: String(rawCatalog.uid || owner.uid || '').trim(),
+    email: String(rawCatalog.email || owner.email || '').trim(),
     updatedAt:
       typeof rawCatalog.updatedAt === 'string' && rawCatalog.updatedAt.trim()
         ? rawCatalog.updatedAt
         : fallback.updatedAt,
-    specialties: (
-      Object.keys(
-        CLINICAL_DOCUMENT_INDICATION_SPECIALTY_LABELS
-      ) as ClinicalDocumentIndicationSpecialtyId[]
-    ).reduce<ClinicalDocumentIndicationsCatalog['specialties']>(
-      (accumulator, specialtyId) => {
-        accumulator[specialtyId] = {
-          id: specialtyId,
-          label: CLINICAL_DOCUMENT_INDICATION_SPECIALTY_LABELS[specialtyId],
-          items: normalizeItems(
-            specialtyId,
-            resolveLegacySpecialtyValue(rawSpecialties as Record<string, unknown>, specialtyId)
-          ),
-        };
-        return accumulator;
-      },
-      {} as ClinicalDocumentIndicationsCatalog['specialties']
-    ),
+    activeTabId: activeTab.id,
+    tabs,
+    items: activeTab.items,
   };
 };
+
+export const applyClinicalDocumentIndicationsCreateTab = (
+  catalog: ClinicalDocumentIndicationsCatalog,
+  label: string
+): ClinicalDocumentIndicationsCatalog => {
+  const trimmedLabel = normalizeTabLabel(label);
+  if (!trimmedLabel) {
+    return catalog;
+  }
+
+  const tabId = buildUniqueTabId(catalog.tabs, trimmedLabel);
+  return withActiveItems({
+    ...catalog,
+    activeTabId: tabId,
+    tabs: [...catalog.tabs, { id: tabId, label: trimmedLabel, items: [] }],
+  });
+};
+
+export const applyClinicalDocumentIndicationsRenameTab = (
+  catalog: ClinicalDocumentIndicationsCatalog,
+  tabId: string,
+  label: string
+): ClinicalDocumentIndicationsCatalog => {
+  const trimmedLabel = normalizeTabLabel(label);
+  if (!trimmedLabel) {
+    return catalog;
+  }
+
+  return withActiveItems({
+    ...catalog,
+    tabs: catalog.tabs.map(tab => (tab.id === tabId ? { ...tab, label: trimmedLabel } : tab)),
+  });
+};
+
+export const applyClinicalDocumentIndicationsDeleteTab = (
+  catalog: ClinicalDocumentIndicationsCatalog,
+  tabId: string
+): ClinicalDocumentIndicationsCatalog => {
+  if (catalog.tabs.length <= 1) {
+    return catalog;
+  }
+
+  const nextTabs = catalog.tabs.filter(tab => tab.id !== tabId);
+  const nextActiveTabId =
+    catalog.activeTabId === tabId ? nextTabs[0]?.id || DEFAULT_TAB_ID : catalog.activeTabId;
+  return withActiveItems({
+    ...catalog,
+    activeTabId: nextActiveTabId,
+    tabs: nextTabs,
+  });
+};
+
+export const applyClinicalDocumentIndicationsReorderTab = (
+  catalog: ClinicalDocumentIndicationsCatalog,
+  tabId: string,
+  direction: 'left' | 'right'
+): ClinicalDocumentIndicationsCatalog => {
+  const currentIndex = catalog.tabs.findIndex(tab => tab.id === tabId);
+  const targetIndex = direction === 'left' ? currentIndex - 1 : currentIndex + 1;
+  if (currentIndex < 0 || targetIndex < 0 || targetIndex >= catalog.tabs.length) {
+    return catalog;
+  }
+
+  const nextTabs = [...catalog.tabs];
+  const [tab] = nextTabs.splice(currentIndex, 1);
+  nextTabs.splice(targetIndex, 0, tab);
+  return withActiveItems({
+    ...catalog,
+    tabs: nextTabs,
+  });
+};
+
+export const applyClinicalDocumentIndicationsAddItem = (
+  catalog: ClinicalDocumentIndicationsCatalog,
+  {
+    tabId,
+    text,
+    now = new Date().toISOString(),
+    idSuffix = Math.random().toString(36).slice(2, 8),
+  }: {
+    tabId?: string | null;
+    text: string;
+    now?: string;
+    idSuffix?: string;
+  }
+): ClinicalDocumentIndicationsCatalog => {
+  const trimmedText = normalizeText(text);
+  if (!trimmedText) {
+    return catalog;
+  }
+
+  const targetTabId = getActiveTabId(catalog, tabId);
+  const targetTab = catalog.tabs.find(tab => tab.id === targetTabId);
+  if (!targetTab) {
+    return catalog;
+  }
+
+  const textKey = normalizeClinicalDocumentIndicationTextKey(trimmedText);
+  if (
+    targetTab.items.some(item => normalizeClinicalDocumentIndicationTextKey(item.text) === textKey)
+  ) {
+    return catalog;
+  }
+
+  return mapTabItems(catalog, targetTabId, items => [
+    ...items,
+    {
+      id: `${buildClinicalDocumentIndicationCatalogItemId(trimmedText)}-${idSuffix}`,
+      text: trimmedText,
+      source: 'custom',
+      createdAt: now,
+    },
+  ]);
+};
+
+export const applyClinicalDocumentIndicationsUpdateItem = (
+  catalog: ClinicalDocumentIndicationsCatalog,
+  {
+    tabId,
+    itemId,
+    text,
+  }: {
+    tabId?: string | null;
+    itemId: string;
+    text: string;
+  }
+): ClinicalDocumentIndicationsCatalog => {
+  const trimmedText = normalizeText(text);
+  if (!trimmedText) {
+    return catalog;
+  }
+
+  const targetTabId = getActiveTabId(catalog, tabId);
+  const targetTab = catalog.tabs.find(tab => tab.id === targetTabId);
+  if (!targetTab) {
+    return catalog;
+  }
+
+  const textKey = normalizeClinicalDocumentIndicationTextKey(trimmedText);
+  if (
+    targetTab.items.some(
+      item =>
+        item.id !== itemId && normalizeClinicalDocumentIndicationTextKey(item.text) === textKey
+    )
+  ) {
+    return catalog;
+  }
+
+  return mapTabItems(catalog, targetTabId, items =>
+    items.map(item =>
+      item.id === itemId ? { ...item, text: trimmedText, source: 'custom' } : item
+    )
+  );
+};
+
+export const applyClinicalDocumentIndicationsDeleteItem = (
+  catalog: ClinicalDocumentIndicationsCatalog,
+  {
+    tabId,
+    itemId,
+  }: {
+    tabId?: string | null;
+    itemId: string;
+  }
+): ClinicalDocumentIndicationsCatalog =>
+  mapTabItems(catalog, getActiveTabId(catalog, tabId), items =>
+    items.filter(item => item.id !== itemId)
+  );

@@ -83,6 +83,28 @@ export function registerFirestoreRulesIdentityGroups({
       );
     });
 
+    it('Users can persist their private clinical indications only in their own settings', async () => {
+      await assertSucceeds(
+        authed()
+          .doc('userSettings/user_basic')
+          .set({
+            clinicalDocumentIndicationsProfile: {
+              uid: 'user_basic',
+              email: 'user@example.com',
+              updatedAt: '2026-05-07T12:30:00.000Z',
+              items: [
+                {
+                  id: 'custom-control',
+                  text: 'Control con equipo tratante',
+                  source: 'custom',
+                  createdAt: '2026-05-07T12:30:00.000Z',
+                },
+              ],
+            },
+          })
+      );
+    });
+
     it('Users cannot read settings for other users', async () => {
       await setupDoc(admin(), 'userSettings/user_other', { theme: 'dark' });
       await assertFails(authed().doc('userSettings/user_other').get());

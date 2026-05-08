@@ -83,19 +83,13 @@ export interface ClinicalDocumentSheetProps {
   indicationsCatalog: ClinicalDocumentIndicationsCatalog;
   isSavingCustomIndication: boolean;
   customIndicationError: string | null;
-  addCustomIndication: (
-    specialtyId: ClinicalDocumentIndicationSpecialtyId,
-    text: string
-  ) => Promise<boolean>;
-  updateIndication: (
-    specialtyId: ClinicalDocumentIndicationSpecialtyId,
-    itemId: string,
-    text: string
-  ) => Promise<boolean>;
-  deleteIndication: (
-    specialtyId: ClinicalDocumentIndicationSpecialtyId,
-    itemId: string
-  ) => Promise<boolean>;
+  createIndicationsTab: (label: string) => Promise<boolean>;
+  renameIndicationsTab: (tabId: string, label: string) => Promise<boolean>;
+  deleteIndicationsTab: (tabId: string) => Promise<boolean>;
+  reorderIndicationsTab: (tabId: string, direction: 'left' | 'right') => Promise<boolean>;
+  addCustomIndication: (tabId: string, text: string) => Promise<boolean>;
+  updateIndication: (tabId: string, itemId: string, text: string) => Promise<boolean>;
+  deleteIndication: (tabId: string, itemId: string) => Promise<boolean>;
   importIndicationsCatalog: (catalog: unknown) => Promise<boolean>;
   onRestoreTemplate: () => void;
   addClinicalUpdate: () => void;
@@ -129,18 +123,12 @@ export interface ClinicalDocumentSpecialSectionRendererProps {
   setActiveIndicationsSpecialtyId: (specialtyId: ClinicalDocumentIndicationSpecialtyId) => void;
   isIndicationsPanelOpen: boolean;
   onToggleIndicationsPanel: () => void;
-  addCustomIndication: (
-    specialtyId: ClinicalDocumentIndicationSpecialtyId,
-    text: string
-  ) => Promise<boolean>;
-  updateIndication: (
-    specialtyId: ClinicalDocumentIndicationSpecialtyId,
-    itemId: string,
-    text: string
-  ) => Promise<boolean>;
-  deleteIndication: (
-    specialtyId: ClinicalDocumentIndicationSpecialtyId,
-    itemId: string
-  ) => Promise<boolean>;
+  createIndicationsTab: (label: string) => Promise<boolean>;
+  renameIndicationsTab: (tabId: string, label: string) => Promise<boolean>;
+  deleteIndicationsTab: (tabId: string) => Promise<boolean>;
+  reorderIndicationsTab: (tabId: string, direction: 'left' | 'right') => Promise<boolean>;
+  addCustomIndication: (tabId: string, text: string) => Promise<boolean>;
+  updateIndication: (tabId: string, itemId: string, text: string) => Promise<boolean>;
+  deleteIndication: (tabId: string, itemId: string) => Promise<boolean>;
   importIndicationsCatalog: (catalog: unknown) => Promise<boolean>;
 }

@@ -49,6 +49,10 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
   indicationsCatalog,
   isSavingCustomIndication,
   customIndicationError,
+  createIndicationsTab,
+  renameIndicationsTab,
+  deleteIndicationsTab,
+  reorderIndicationsTab,
   addCustomIndication,
   updateIndication,
   deleteIndication,
@@ -157,6 +161,10 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
           indicationsCatalog={indicationsCatalog}
           isSavingCustomIndication={isSavingCustomIndication}
           customIndicationError={customIndicationError}
+          onCreateIndicationsTab={createIndicationsTab}
+          onRenameIndicationsTab={renameIndicationsTab}
+          onDeleteIndicationsTab={deleteIndicationsTab}
+          onReorderIndicationsTab={reorderIndicationsTab}
           onSetActiveTitleTarget={onSetActiveTitleTarget}
           onPatchSectionTitle={patchSectionTitle}
           onPatchSection={patchSection}

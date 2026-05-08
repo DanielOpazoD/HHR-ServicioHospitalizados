@@ -96,6 +96,10 @@ interface BuildSheetPropsParams {
   indicationsCatalog: ClinicalDocumentsWorkspaceSheetModelProps['indicationsCatalog'];
   isSavingCustomIndication: boolean;
   customIndicationError: string | null;
+  createIndicationsTab: ClinicalDocumentsWorkspaceSheetModelProps['createIndicationsTab'];
+  renameIndicationsTab: ClinicalDocumentsWorkspaceSheetModelProps['renameIndicationsTab'];
+  deleteIndicationsTab: ClinicalDocumentsWorkspaceSheetModelProps['deleteIndicationsTab'];
+  reorderIndicationsTab: ClinicalDocumentsWorkspaceSheetModelProps['reorderIndicationsTab'];
   addCustomIndication: ClinicalDocumentsWorkspaceSheetModelProps['addCustomIndication'];
   updateIndication: ClinicalDocumentsWorkspaceSheetModelProps['updateIndication'];
   deleteIndication: ClinicalDocumentsWorkspaceSheetModelProps['deleteIndication'];
@@ -220,6 +224,10 @@ export const buildClinicalDocumentsWorkspaceSheetProps = ({
   indicationsCatalog,
   isSavingCustomIndication,
   customIndicationError,
+  createIndicationsTab,
+  renameIndicationsTab,
+  deleteIndicationsTab,
+  reorderIndicationsTab,
   addCustomIndication,
   updateIndication,
   deleteIndication,
@@ -273,6 +281,10 @@ export const buildClinicalDocumentsWorkspaceSheetProps = ({
   indicationsCatalog,
   isSavingCustomIndication,
   customIndicationError,
+  createIndicationsTab,
+  renameIndicationsTab,
+  deleteIndicationsTab,
+  reorderIndicationsTab,
   addCustomIndication,
   updateIndication,
   deleteIndication,
