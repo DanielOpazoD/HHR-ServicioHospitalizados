@@ -31,6 +31,7 @@ export const createEmptyPatient = (bedId: string): PatientData => {
     admissionOriginDetails: '',
     documentType: 'RUT',
     clinicalEvents: [],
+    firstSeenDate: undefined,
     ginecobstetriciaType: undefined,
     secondarySpecialty: undefined,
     deliveryRoute: undefined,

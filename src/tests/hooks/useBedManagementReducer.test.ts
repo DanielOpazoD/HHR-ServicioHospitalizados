@@ -179,7 +179,7 @@ describe('bedManagementReducer firstSeenDate anchoring', () => {
       'beds.R1': expect.objectContaining({
         bedId: 'R1',
         location: record.beds.R1.location,
-        firstSeenDate: '',
+        firstSeenDate: undefined,
       }),
     });
   });
@@ -203,7 +203,7 @@ describe('bedManagementReducer firstSeenDate anchoring', () => {
         bedId: 'R1',
         patientName: '',
         rut: '',
-        firstSeenDate: '',
+        firstSeenDate: undefined,
         admissionDate: '',
         location: 'Box 1',
       }),
@@ -254,13 +254,13 @@ describe('bedManagementReducer firstSeenDate anchoring', () => {
         bedId: 'R1',
         patientName: '',
         location: 'Box 1',
-        firstSeenDate: '',
+        firstSeenDate: undefined,
       }),
       'beds.H1C1': expect.objectContaining({
         bedId: 'H1C1',
         patientName: '',
         location: 'Habitacion 1',
-        firstSeenDate: '',
+        firstSeenDate: undefined,
       }),
     });
   });
