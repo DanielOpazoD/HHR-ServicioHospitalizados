@@ -274,6 +274,47 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
     expect(updateRecordPartialToFirestore).not.toHaveBeenCalled();
   });
 
+  it('persists explicit firstSeenDate clearing when a stale episode bed is emptied', async () => {
+    const current = buildRecord('2026-05-08');
+    current.beds = {
+      R2: {
+        ...buildPatient('R2', 'Daniel S Damiani'),
+        rut: '17.752.753-K',
+        firstSeenDate: '2026-05-03',
+        admissionDate: '2026-05-01',
+        location: 'R2',
+      },
+    };
+
+    vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(current);
+
+    const result = await updatePartialDetailed('2026-05-08', {
+      'beds.R2': {
+        bedId: 'R2',
+        patientName: '',
+        rut: '',
+        firstSeenDate: '',
+        admissionDate: '',
+        admissionTime: '',
+        location: 'R2',
+      },
+    });
+
+    expect(result.outcome).toBe('clean');
+    expect(updateRecordPartialToFirestore).toHaveBeenCalledWith(
+      '2026-05-08',
+      expect.objectContaining({
+        'beds.R2': expect.objectContaining({
+          patientName: '',
+          rut: '',
+          firstSeenDate: '',
+          admissionDate: '',
+        }),
+      }),
+      current.lastUpdated
+    );
+  });
+
   it('does not queue task when Firestore error is non-retryable', async () => {
     vi.mocked(saveRecordToFirestore).mockRejectedValueOnce({
       code: 'permission-denied',

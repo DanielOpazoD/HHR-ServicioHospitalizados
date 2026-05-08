@@ -13,6 +13,7 @@ export const EMPTY_PATIENT: Omit<PatientData, 'bedId'> = {
   hasCompanionCrib: false,
   clinicalCrib: undefined,
   patientName: '',
+  firstSeenDate: '',
   firstName: '',
   lastName: '',
   secondLastName: '',

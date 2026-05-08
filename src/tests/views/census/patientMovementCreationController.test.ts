@@ -77,7 +77,7 @@ describe('patientMovementCreationController', () => {
       expect(result.value.updatedRecord.beds.R1.patientName).toBe('');
       expect(result.value.updatedRecord.beds.R1.admissionDate).toBe('');
       expect(result.value.updatedRecord.beds.R1.admissionTime).toBe('');
-      expect(result.value.updatedRecord.beds.R1.firstSeenDate).toBeUndefined();
+      expect(result.value.updatedRecord.beds.R1.firstSeenDate).toBe('');
       expect(result.value.updatedRecord.beds.R1.devices).toEqual([]);
       expect(result.value.updatedRecord.beds.R1.handoffNoteDayShift).toBeUndefined();
       expect(result.value.updatedRecord.beds.R1.handoffNoteNightShift).toBeUndefined();
@@ -166,7 +166,7 @@ describe('patientMovementCreationController', () => {
       expect(result.value.updatedRecord.beds.R1.patientName).toBe('');
       expect(result.value.updatedRecord.beds.R1.admissionDate).toBe('');
       expect(result.value.updatedRecord.beds.R1.admissionTime).toBe('');
-      expect(result.value.updatedRecord.beds.R1.firstSeenDate).toBeUndefined();
+      expect(result.value.updatedRecord.beds.R1.firstSeenDate).toBe('');
       expect(result.value.updatedRecord.beds.R1.devices).toEqual([]);
       expect(result.value.updatedRecord.beds.R1.handoffNoteDayShift).toBeUndefined();
       expect(result.value.updatedRecord.beds.R1.handoffNoteNightShift).toBeUndefined();

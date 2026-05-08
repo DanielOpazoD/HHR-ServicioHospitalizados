@@ -165,7 +165,7 @@ describe('Census Operations Integration', () => {
       expect(record.beds['R1'].handoffNoteDayShift).toBeUndefined();
       expect(record.beds['R1'].handoffNoteNightShift).toBeUndefined();
       expect(record.beds['R1'].medicalHandoffNote).toBeUndefined();
-      expect(record.beds['R1'].firstSeenDate).toBeUndefined();
+      expect(record.beds['R1'].firstSeenDate).toBe('');
       expect(record.beds['R1'].location).toBe(sourcePatient.location);
     });
 

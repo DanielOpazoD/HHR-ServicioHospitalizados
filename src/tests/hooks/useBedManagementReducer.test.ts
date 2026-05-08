@@ -78,6 +78,32 @@ describe('bedManagementReducer firstSeenDate anchoring', () => {
     expect(patch).not.toHaveProperty('beds.R1.firstSeenDate');
   });
 
+  it('re-anchors firstSeenDate when a stale cleared bed receives a new patient identity', () => {
+    const record = DataFactory.createMockDailyRecord('2026-05-08');
+    record.beds.R2 = DataFactory.createMockPatient('R2', {
+      patientName: '',
+      rut: '',
+      admissionDate: '',
+      firstSeenDate: '2026-05-03',
+    });
+
+    const patch = bedManagementReducer(record, {
+      type: 'UPDATE_PATIENT_MULTIPLE',
+      bedId: 'R2',
+      fields: {
+        patientName: 'Paciente Nuevo',
+        rut: '22.222.222-2',
+        admissionDate: '2026-05-08',
+      },
+    });
+
+    expect(patch).toMatchObject({
+      'beds.R2.patientName': 'Paciente Nuevo',
+      'beds.R2.rut': '22.222.222-2',
+      'beds.R2.firstSeenDate': '2026-05-08',
+    });
+  });
+
   it('clears clinical handoff data when identity changes through a single-field update', () => {
     const record = DataFactory.createMockDailyRecord('2026-04-12');
     record.beds.R1 = DataFactory.createMockPatient('R1', {
@@ -133,6 +159,7 @@ describe('bedManagementReducer firstSeenDate anchoring', () => {
     record.beds.R1 = DataFactory.createMockPatient('R1', {
       patientName: 'Paciente UPC',
       rut: '11.111.111-1',
+      firstSeenDate: '2026-04-10',
       isUPC: true,
     });
 
@@ -152,6 +179,33 @@ describe('bedManagementReducer firstSeenDate anchoring', () => {
       'beds.R1': expect.objectContaining({
         bedId: 'R1',
         location: record.beds.R1.location,
+        firstSeenDate: '',
+      }),
+    });
+  });
+
+  it('clears the episode anchor when manually clearing one bed', () => {
+    const record = DataFactory.createMockDailyRecord('2026-04-12');
+    record.beds.R1 = DataFactory.createMockPatient('R1', {
+      patientName: 'Paciente Inicial',
+      rut: '11.111.111-1',
+      firstSeenDate: '2026-04-10',
+      location: 'Box 1',
+    });
+
+    const patch = bedManagementReducer(record, {
+      type: 'CLEAR_PATIENT',
+      bedId: 'R1',
+    });
+
+    expect(patch).toMatchObject({
+      'beds.R1': expect.objectContaining({
+        bedId: 'R1',
+        patientName: '',
+        rut: '',
+        firstSeenDate: '',
+        admissionDate: '',
+        location: 'Box 1',
       }),
     });
   });
@@ -200,11 +254,13 @@ describe('bedManagementReducer firstSeenDate anchoring', () => {
         bedId: 'R1',
         patientName: '',
         location: 'Box 1',
+        firstSeenDate: '',
       }),
       'beds.H1C1': expect.objectContaining({
         bedId: 'H1C1',
         patientName: '',
         location: 'Habitacion 1',
+        firstSeenDate: '',
       }),
     });
   });

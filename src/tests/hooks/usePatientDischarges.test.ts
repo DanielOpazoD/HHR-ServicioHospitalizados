@@ -18,6 +18,7 @@ vi.mock('@/services/factories/patientFactory', () => ({
   createEmptyPatient: (bedId: string) => ({
     bedId,
     patientName: '',
+    firstSeenDate: '',
     rut: '',
     location: '',
   }),
@@ -127,6 +128,7 @@ describe('usePatientDischarges', () => {
           bedId: 'R1',
           patientName: '',
           rut: '',
+          firstSeenDate: '',
           location: 'Room 1',
         }),
       })

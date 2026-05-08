@@ -11,7 +11,6 @@ export const shouldAnchorFirstSeenDate = ({
   currentRut,
   nextPatientName,
   nextRut,
-  currentFirstSeenDate,
 }: {
   currentPatientName?: string;
   currentRut?: string;
@@ -19,15 +18,12 @@ export const shouldAnchorFirstSeenDate = ({
   nextRut?: string;
   currentFirstSeenDate?: string;
 }): boolean => {
-  if (hasMeaningfulIdentityValue(currentFirstSeenDate)) {
-    return false;
-  }
-
   const hadIdentity =
     hasMeaningfulIdentityValue(currentPatientName) || hasMeaningfulIdentityValue(currentRut);
   const hasIdentityNow =
     hasMeaningfulIdentityValue(nextPatientName) || hasMeaningfulIdentityValue(nextRut);
 
+  // Empty identity means a new episode, even if a remote partial clear left a stale anchor behind.
   return !hadIdentity && hasIdentityNow;
 };
 
