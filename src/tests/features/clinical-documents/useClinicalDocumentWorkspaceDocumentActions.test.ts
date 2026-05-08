@@ -177,6 +177,54 @@ describe('useClinicalDocumentWorkspaceDocumentActions', () => {
     );
   });
 
+  it('uses the specialist signature profile when creating a new clinical document', async () => {
+    const selectedDocument = buildRecord();
+    const createdDocument = { ...selectedDocument, id: 'new-document-id' };
+    vi.mocked(clinicalDocumentUseCases.executeCreateClinicalDocumentDraft).mockResolvedValue({
+      status: 'success',
+      data: createdDocument,
+      issues: [],
+    });
+
+    const { result } = renderHook(() =>
+      useClinicalDocumentWorkspaceDocumentActions({
+        patient: patient as never,
+        role: 'doctor_specialist',
+        user: { uid: 'u1', email: 'doctor@test.com', displayName: 'Doctor Test' },
+        hospitalId: 'hhr',
+        episode: selectedDocument,
+        selectedTemplateId: 'epicrisis',
+        templates,
+        selectedDocumentId: selectedDocument.id,
+        canEdit: true,
+        canDelete: true,
+        notify,
+        setSelectedDocumentId,
+        setDraft,
+        lastPersistedSnapshotRef,
+        signatureProfile: {
+          uid: 'u1',
+          email: 'doctor@test.com',
+          displayName: 'Dra. Firma Preferida',
+          specialty: 'Cardiologia',
+          updatedAt: '2026-05-07T12:00:00.000Z',
+        },
+      })
+    );
+
+    await act(async () => {
+      await result.current.createDocument();
+    });
+
+    expect(clinicalDocumentUseCases.executeCreateClinicalDocumentDraft).toHaveBeenCalledWith(
+      expect.objectContaining({
+        medico: 'Dra. Firma Preferida',
+        especialidad: 'Cardiologia',
+      }),
+      'hhr'
+    );
+  });
+
   it('duplicates a document and selects the copied draft on success', async () => {
     const selectedDocument = buildRecord();
     const duplicatedDocument = { ...selectedDocument, id: 'duplicated-document-id' };

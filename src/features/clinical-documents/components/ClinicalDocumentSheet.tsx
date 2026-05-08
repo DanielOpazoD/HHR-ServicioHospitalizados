@@ -43,6 +43,9 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
   addSection,
   patchFooterLabel,
   patchDocumentMeta,
+  signatureProfile,
+  onSaveSignatureProfile,
+  onApplySignatureProfile,
   indicationsCatalog,
   isSavingCustomIndication,
   customIndicationError,
@@ -184,6 +187,9 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
           canEdit={canEdit}
           onPatchFooterLabel={patchFooterLabel}
           onPatchDocumentMeta={patchDocumentMeta}
+          signatureProfile={signatureProfile}
+          onSaveSignatureProfile={onSaveSignatureProfile}
+          onApplySignatureProfile={onApplySignatureProfile}
           onClearActiveTitleTarget={() => onSetActiveTitleTarget(null)}
         />
 

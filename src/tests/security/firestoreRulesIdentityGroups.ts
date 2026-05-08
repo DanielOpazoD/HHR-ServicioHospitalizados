@@ -67,6 +67,22 @@ export function registerFirestoreRulesIdentityGroups({
       await assertSucceeds(authed().doc('userSettings/user_basic').get());
     });
 
+    it('Users can persist their private clinical signature profile only in their own settings', async () => {
+      await assertSucceeds(
+        authed()
+          .doc('userSettings/user_basic')
+          .set({
+            clinicalSignatureProfile: {
+              uid: 'user_basic',
+              email: 'user@example.com',
+              displayName: 'Dra. Firma Personal',
+              specialty: 'Medicina Interna',
+              updatedAt: '2026-05-07T12:00:00.000Z',
+            },
+          })
+      );
+    });
+
     it('Users cannot read settings for other users', async () => {
       await setupDoc(admin(), 'userSettings/user_other', { theme: 'dark' });
       await assertFails(authed().doc('userSettings/user_other').get());

@@ -90,6 +90,9 @@ interface BuildSheetPropsParams {
   addSection: ClinicalDocumentsWorkspaceSheetModelProps['addSection'];
   patchFooterLabel: ClinicalDocumentsWorkspaceSheetModelProps['patchFooterLabel'];
   patchDocumentMeta: ClinicalDocumentsWorkspaceSheetModelProps['patchDocumentMeta'];
+  signatureProfile: ClinicalDocumentsWorkspaceSheetModelProps['signatureProfile'];
+  onSaveSignatureProfile: ClinicalDocumentsWorkspaceSheetModelProps['onSaveSignatureProfile'];
+  onApplySignatureProfile: ClinicalDocumentsWorkspaceSheetModelProps['onApplySignatureProfile'];
   indicationsCatalog: ClinicalDocumentsWorkspaceSheetModelProps['indicationsCatalog'];
   isSavingCustomIndication: boolean;
   customIndicationError: string | null;
@@ -211,6 +214,9 @@ export const buildClinicalDocumentsWorkspaceSheetProps = ({
   addSection,
   patchFooterLabel,
   patchDocumentMeta,
+  signatureProfile,
+  onSaveSignatureProfile,
+  onApplySignatureProfile,
   indicationsCatalog,
   isSavingCustomIndication,
   customIndicationError,
@@ -261,6 +267,9 @@ export const buildClinicalDocumentsWorkspaceSheetProps = ({
   addSection,
   patchFooterLabel,
   patchDocumentMeta,
+  signatureProfile,
+  onSaveSignatureProfile,
+  onApplySignatureProfile,
   indicationsCatalog,
   isSavingCustomIndication,
   customIndicationError,

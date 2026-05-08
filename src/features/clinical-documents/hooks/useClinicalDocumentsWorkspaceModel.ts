@@ -15,7 +15,9 @@ import { useClinicalDocumentWorkspaceBootstrap } from '@/features/clinical-docum
 import { useClinicalDocumentWorkspaceDraft } from '@/features/clinical-documents/hooks/useClinicalDocumentWorkspaceDraft';
 import { useClinicalDocumentWorkspaceDocumentActions } from '@/features/clinical-documents/hooks/useClinicalDocumentWorkspaceDocumentActions';
 import { useClinicalDocumentWorkspaceExportActions } from '@/features/clinical-documents/hooks/useClinicalDocumentWorkspaceExportActions';
+import { useClinicalDocumentSignatureProfile } from '@/features/clinical-documents/hooks/useClinicalDocumentSignatureProfile';
 import { useClinicalDocumentsWorkspaceNotifyPort } from '@/features/clinical-documents/hooks/useClinicalDocumentsWorkspaceNotifyPort';
+import { buildClinicalDocumentSignatureProfileFromDraft } from '@/features/clinical-documents/services/clinicalDocumentSignatureProfileService';
 import {
   mergeDraftIntoClinicalDocumentsSidebar,
   resolveClinicalDocumentsWorkspaceAccessState,
@@ -112,6 +114,10 @@ export const useClinicalDocumentsWorkspaceModel = ({
     persistReason,
     user,
   });
+  const { signatureProfile, saveSignatureProfile } = useClinicalDocumentSignatureProfile({
+    user,
+    isActive: isActive && canRead,
+  });
 
   const selectedDocument = draft;
   const sidebarDocuments = useMemo(
@@ -154,7 +160,40 @@ export const useClinicalDocumentsWorkspaceModel = ({
     setSelectedDocumentId,
     setDraft,
     lastPersistedSnapshotRef,
+    signatureProfile,
   });
+
+  const handleSaveSignatureProfile = useCallback(async () => {
+    if (!draft || !user) {
+      return;
+    }
+
+    try {
+      await saveSignatureProfile(buildClinicalDocumentSignatureProfileFromDraft(user, draft));
+      notifyPort.success(
+        'Firma guardada',
+        'Tu nombre y especialidad quedarán disponibles solo para tu cuenta.'
+      );
+    } catch (error) {
+      notifyPort.error(
+        'No se pudo guardar la firma',
+        error instanceof Error
+          ? error.message
+          : 'Revisa nombre y especialidad e inténtalo de nuevo.'
+      );
+    }
+  }, [draft, notifyPort, saveSignatureProfile, user]);
+
+  const handleApplySignatureProfile = useCallback(() => {
+    if (!signatureProfile) {
+      return;
+    }
+
+    patchDocumentMeta({
+      medico: signatureProfile.displayName,
+      especialidad: signatureProfile.specialty,
+    });
+  }, [patchDocumentMeta, signatureProfile]);
 
   const handleImportWithAiProgress = useCallback(
     async (file: File) => {
@@ -240,6 +279,9 @@ export const useClinicalDocumentsWorkspaceModel = ({
       addSection,
       patchFooterLabel,
       patchDocumentMeta,
+      signatureProfile,
+      onSaveSignatureProfile: handleSaveSignatureProfile,
+      onApplySignatureProfile: handleApplySignatureProfile,
       indicationsCatalog,
       isSavingCustomIndication,
       customIndicationError,

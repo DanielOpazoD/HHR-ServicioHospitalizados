@@ -25,6 +25,7 @@ import {
 } from './clinicalDocumentWorkspaceActionSupport';
 import { deleteClinicalDocumentFromWorkspace } from './clinicalDocumentDeleteActionController';
 import { useClinicalDocumentWorkspaceImportActions } from './useClinicalDocumentWorkspaceImportActions';
+import type { ClinicalDocumentSignatureProfile } from '@/features/clinical-documents/services/clinicalDocumentSignatureProfileService';
 
 interface NotificationPort {
   success: (title: string, message?: string) => void;
@@ -52,6 +53,7 @@ interface UseClinicalDocumentWorkspaceDocumentActionsParams {
   setSelectedDocumentId: (documentId: string | null) => void;
   setDraft: React.Dispatch<React.SetStateAction<ClinicalDocumentRecord | null>>;
   lastPersistedSnapshotRef: React.MutableRefObject<string>;
+  signatureProfile?: ClinicalDocumentSignatureProfile | null;
 }
 
 export const useClinicalDocumentWorkspaceDocumentActions = ({
@@ -69,6 +71,7 @@ export const useClinicalDocumentWorkspaceDocumentActions = ({
   setSelectedDocumentId,
   setDraft,
   lastPersistedSnapshotRef,
+  signatureProfile,
 }: UseClinicalDocumentWorkspaceDocumentActionsParams) => {
   const { logClinicalDocumentCreated, logClinicalDocumentDeleted } = useAuditContext();
 
@@ -87,8 +90,8 @@ export const useClinicalDocumentWorkspaceDocumentActions = ({
         actor,
         episode,
         patientFieldValues: buildClinicalDocumentPatientFieldValues(patient),
-        medico: actor.displayName,
-        especialidad: episode.specialty || '',
+        medico: signatureProfile?.displayName || actor.displayName,
+        especialidad: signatureProfile?.specialty || episode.specialty || '',
       });
 
       const result = await executeCreateClinicalDocumentDraft(record, hospitalId);
@@ -152,6 +155,7 @@ export const useClinicalDocumentWorkspaceDocumentActions = ({
     selectedTemplateId,
     setDraft,
     setSelectedDocumentId,
+    signatureProfile,
     templates,
     user,
     logClinicalDocumentCreated,

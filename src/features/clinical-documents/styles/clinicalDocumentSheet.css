@@ -967,7 +967,7 @@
 }
 
 .clinical-document-footer {
-  margin-top: 20px;
+  margin-top: 10px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px 16px;
@@ -1097,6 +1097,11 @@ body.clinical-documents-print .clinical-document-indications-panel {
   cursor: pointer;
   width: 100%;
   text-align: inherit;
+}
+
+.clinical-document-inline-title.clinical-document-footer-title {
+  width: auto;
+  flex: 0 0 auto;
 }
 
 .clinical-document-inline-title:hover:not(:disabled) {

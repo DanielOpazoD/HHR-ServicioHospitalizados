@@ -1,4 +1,5 @@
 import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
+import type { ClinicalDocumentSignatureProfile } from '@/features/clinical-documents/services/clinicalDocumentSignatureProfileService';
 import type { ClinicalDocumentIndicationSpecialtyId } from '@/features/clinical-documents/controllers/clinicalDocumentIndicationsController';
 import type { ClinicalDocumentPlanSubsectionId } from '@/features/clinical-documents/controllers/clinicalDocumentPlanSectionController';
 import type { ClinicalDocumentIndicationsCatalog } from '@/features/clinical-documents/services/clinicalDocumentIndicationsCatalogService';
@@ -76,6 +77,9 @@ export interface ClinicalDocumentSheetProps {
       Pick<ClinicalDocumentRecord, 'medico' | 'especialidad' | 'includePatientSignature'>
     >
   ) => void;
+  signatureProfile?: ClinicalDocumentSignatureProfile | null;
+  onSaveSignatureProfile?: () => void;
+  onApplySignatureProfile?: () => void;
   indicationsCatalog: ClinicalDocumentIndicationsCatalog;
   isSavingCustomIndication: boolean;
   customIndicationError: string | null;
