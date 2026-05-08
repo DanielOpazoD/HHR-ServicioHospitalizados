@@ -64,6 +64,8 @@ describe('usePrescriptionUploadController', () => {
     vi.setSystemTime(new Date('2026-05-05T12:00:00.000Z'));
     vi.mocked(listPrescriptionUploadPatientOptions).mockResolvedValue({
       date: '2026-05-05',
+      sourceDate: '2026-05-05',
+      isFallbackFromPreviousDay: false,
       patientOptions: [
         {
           key: 'H5C1',
@@ -210,6 +212,45 @@ describe('usePrescriptionUploadController', () => {
         patientRut: '22.222.222-2',
       },
     ]);
+    expect(captured.patientOptionsSourceDate).toBe('2026-05-05');
+    expect(captured.isPatientOptionsFallbackFromPreviousDay).toBe(false);
+  });
+
+  it('marks patient options as previous-day fallback without changing the upload day', async () => {
+    vi.mocked(listPrescriptionUploadPatientOptions).mockResolvedValueOnce({
+      date: '2026-05-05',
+      sourceDate: '2026-05-04',
+      isFallbackFromPreviousDay: true,
+      patientOptions: [
+        {
+          key: 'H5C1',
+          bedId: 'H5C1',
+          patientName: 'Paciente Ayer',
+          patientRut: '10.000.000-0',
+        },
+      ],
+    });
+
+    mountController({ bypassPinGate: true });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(captured.patientOptions).toEqual([
+      {
+        key: 'H5C1',
+        bedId: 'H5C1',
+        patientName: 'Paciente Ayer',
+        patientRut: '10.000.000-0',
+      },
+    ]);
+    expect(captured.patientOptionsSourceDate).toBe('2026-05-04');
+    expect(captured.isPatientOptionsFallbackFromPreviousDay).toBe(true);
+    expect(listPrescriptionUploadPatientOptions).toHaveBeenCalledWith({
+      date: '2026-05-05',
+      pin: undefined,
+    });
   });
 
   it('omits bedId/patientName when patientUnassigned is checked', async () => {
@@ -235,6 +276,34 @@ describe('usePrescriptionUploadController', () => {
     expect(payload!.bedId).toBeUndefined();
     expect(payload!.patientName).toBeUndefined();
     expect(payload!.patientRut).toBeUndefined();
+  });
+
+  it('submits Stock de Hospitalizados without patient fields', async () => {
+    const bundle = buildCompressedBundle();
+    vi.mocked(compressPrescriptionImage).mockResolvedValueOnce(bundle);
+    vi.mocked(submitPrescriptionPhoto).mockResolvedValueOnce({
+      id: 'rx-stock',
+      expiresAt: '2026-06-04T00:00:00.000Z',
+    });
+
+    mountController({ bypassPinGate: true });
+    await act(async () => {
+      await captured.handleImageFile(new File(['x'], 'rx.jpg', { type: 'image/jpeg' }));
+      captured.setField('assignmentScope', 'hospitalized_stock');
+      captured.setField('selectedPatientKey', 'H5C1');
+    });
+    await act(async () => {
+      await captured.submitForm();
+    });
+
+    expect(submitPrescriptionPhoto).toHaveBeenCalledWith(
+      expect.objectContaining({
+        assignmentScope: 'hospitalized_stock',
+        bedId: undefined,
+        patientName: undefined,
+        patientRut: undefined,
+      })
+    );
   });
 
   it('reports an error and does not submit when no image was captured', async () => {

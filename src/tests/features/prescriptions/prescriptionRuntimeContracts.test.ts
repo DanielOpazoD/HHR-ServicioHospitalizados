@@ -51,9 +51,28 @@ describe('parsePrescriptionRecord', () => {
     ).not.toThrow();
   });
 
+  it('accepts Stock de Hospitalizados as a non-patient assignment category', () => {
+    expect(() =>
+      parsePrescriptionRecord(
+        validRecord({
+          assignmentScope: 'hospitalized_stock',
+          bedId: undefined,
+          patientName: undefined,
+          patientRut: undefined,
+        })
+      )
+    ).not.toThrow();
+  });
+
   it('rejects an unsupported prescription type', () => {
     expect(() =>
       parsePrescriptionRecord(validRecord({ prescriptionType: 'antibioticos' as never }))
+    ).toThrow();
+  });
+
+  it('rejects an unsupported assignment category', () => {
+    expect(() =>
+      parsePrescriptionRecord(validRecord({ assignmentScope: 'ward_stock' as never }))
     ).toThrow();
   });
 

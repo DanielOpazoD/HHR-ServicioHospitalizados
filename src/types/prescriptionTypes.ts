@@ -26,6 +26,20 @@ export const PRESCRIPTION_TYPE_LABELS: Record<PrescriptionType, string> = {
   benzodiazepinas: 'Receta verde de estupefacientes',
 };
 
+export type PrescriptionAssignmentScope = 'patient' | 'unassigned' | 'hospitalized_stock';
+
+export const PRESCRIPTION_ASSIGNMENT_SCOPES: readonly PrescriptionAssignmentScope[] = [
+  'patient',
+  'unassigned',
+  'hospitalized_stock',
+] as const;
+
+export const PRESCRIPTION_ASSIGNMENT_SCOPE_LABELS: Record<PrescriptionAssignmentScope, string> = {
+  patient: 'Cama / paciente',
+  unassigned: 'Sin paciente asignado',
+  hospitalized_stock: 'Stock de Hospitalizados',
+};
+
 /**
  * Default number of days a prescription record (image + Firestore
  * metadata) is retained before scheduled hard-delete. Used as the
@@ -105,6 +119,11 @@ export interface PrescriptionRecord {
   hospitalId: string;
   prescriptionType: PrescriptionType;
   /**
+   * Patient-assignment category. Older records may not have this field; readers
+   * infer `patient` when a bed/patient exists and `unassigned` otherwise.
+   */
+  assignmentScope?: PrescriptionAssignmentScope;
+  /**
    * Bed identifier (e.g., 'H5C1') the prescription was tied to at upload
    * time. Optional because the QR flow allows "sin paciente asignado".
    */
@@ -130,3 +149,13 @@ export interface PrescriptionRecord {
   /** Last actor that changed the prescription type. */
   typeUpdatedBy?: string;
 }
+
+export const resolvePrescriptionAssignmentScope = (
+  record: Pick<PrescriptionRecord, 'assignmentScope' | 'bedId' | 'patientName' | 'patientRut'>
+): PrescriptionAssignmentScope => {
+  if (record.assignmentScope) return record.assignmentScope;
+  const hasPatientAssignment = Boolean(
+    record.bedId?.trim() || record.patientName?.trim() || record.patientRut?.trim()
+  );
+  return hasPatientAssignment ? 'patient' : 'unassigned';
+};

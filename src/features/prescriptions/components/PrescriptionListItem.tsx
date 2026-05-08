@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { ImageOff, Loader2, UserMinus } from 'lucide-react';
-import { PRESCRIPTION_TYPE_LABELS, type PrescriptionRecord } from '@/types/prescriptionTypes';
+import { ImageOff, Loader2, Package, UserMinus } from 'lucide-react';
+import {
+  PRESCRIPTION_ASSIGNMENT_SCOPE_LABELS,
+  PRESCRIPTION_TYPE_LABELS,
+  resolvePrescriptionAssignmentScope,
+  type PrescriptionRecord,
+} from '@/types/prescriptionTypes';
 import { resolvePrescriptionImageDownloadUrl } from '@/features/prescriptions/services/prescriptionStorageImageService';
 
 interface PrescriptionListItemProps {
@@ -54,7 +59,9 @@ export const PrescriptionListItem: React.FC<PrescriptionListItemProps> = ({ reco
     };
   }, [record.image.thumbnailStoragePath]);
 
-  const isUnassigned = !record.bedId && !record.patientName;
+  const assignmentScope = resolvePrescriptionAssignmentScope(record);
+  const isUnassigned = assignmentScope === 'unassigned';
+  const isStock = assignmentScope === 'hospitalized_stock';
   const badgeClass =
     TYPE_BADGE_CLASS[record.prescriptionType] || 'border-slate-200 bg-slate-100 text-slate-700';
 
@@ -97,12 +104,19 @@ export const PrescriptionListItem: React.FC<PrescriptionListItemProps> = ({ reco
               <UserMinus size={10} /> Sin paciente
             </span>
           )}
+          {isStock && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-800">
+              <Package size={10} /> Stock
+            </span>
+          )}
         </div>
 
         <div className="text-sm font-semibold text-slate-800 truncate">
-          {isUnassigned
-            ? 'Sin paciente asignado'
-            : `${record.bedId ?? 'Cama —'} · ${record.patientName ?? 'Paciente sin nombre'}`}
+          {isStock
+            ? PRESCRIPTION_ASSIGNMENT_SCOPE_LABELS.hospitalized_stock
+            : isUnassigned
+              ? 'Sin paciente asignado'
+              : `${record.bedId ?? 'Cama —'} · ${record.patientName ?? 'Paciente sin nombre'}`}
         </div>
 
         <div className="flex items-center gap-2 text-[11px] text-slate-500">

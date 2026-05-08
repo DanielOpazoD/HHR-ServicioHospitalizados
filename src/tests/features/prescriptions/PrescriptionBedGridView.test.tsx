@@ -67,6 +67,17 @@ const buildDailyRecord = (): DailyRecord =>
     activeExtraBeds: [],
   }) as unknown as DailyRecord;
 
+const buildEmptyDailyRecord = (date: string): DailyRecord =>
+  ({
+    date,
+    beds: {},
+    discharges: [],
+    transfers: [],
+    cma: [],
+    lastUpdated: `${date}T10:00:00.000Z`,
+    activeExtraBeds: [],
+  }) as unknown as DailyRecord;
+
 const renderGrid = (ui: React.ReactElement) => render(<UIProvider>{ui}</UIProvider>);
 
 const createDeferred = <T,>() => {
@@ -89,6 +100,37 @@ describe('PrescriptionBedGridView', () => {
 
     await waitFor(() => expect(screen.getByTestId('prescription-unassigned-tray')).toBeTruthy());
     expect(screen.getByTestId('prescription-unassigned-card-rx-pending')).toBeTruthy();
+  });
+
+  it('uses previous-day census rows when the selected day has no patients', async () => {
+    vi.mocked(getRecordFromFirestore).mockImplementation(async (date: string) => {
+      if (date === '2026-05-05') return buildEmptyDailyRecord('2026-05-05');
+      if (date === '2026-05-04') return buildDailyRecord();
+      return null;
+    });
+
+    renderGrid(<PrescriptionBedGridView records={[]} dayIso="2026-05-05" />);
+
+    expect(await screen.findByText('Carina Pate Lillo')).toBeInTheDocument();
+    expect(screen.getByText(/censo del día previo/i)).toBeInTheDocument();
+    expect(getRecordFromFirestore).toHaveBeenCalledWith('2026-05-05');
+    expect(getRecordFromFirestore).toHaveBeenCalledWith('2026-05-04');
+  });
+
+  it('shows Stock de Hospitalizados separately from unassigned prescriptions', async () => {
+    const stock = buildRecord('rx-stock', {
+      assignmentScope: 'hospitalized_stock',
+      bedId: undefined,
+      patientName: undefined,
+    });
+    const unassigned = buildRecord('rx-pending', { bedId: undefined, patientName: undefined });
+
+    renderGrid(<PrescriptionBedGridView records={[stock, unassigned]} dayIso="2026-05-04" />);
+
+    await screen.findByTestId('prescription-stock-tray');
+    expect(screen.getByTestId('prescription-stock-card-rx-stock')).toBeInTheDocument();
+    expect(screen.getByTestId('prescription-unassigned-card-rx-pending')).toBeInTheDocument();
+    expect(screen.queryByTestId('prescription-unassigned-card-rx-stock')).not.toBeInTheDocument();
   });
 
   it('drops a matching-type unassigned prescription onto a bed cell and calls onAssign', async () => {
