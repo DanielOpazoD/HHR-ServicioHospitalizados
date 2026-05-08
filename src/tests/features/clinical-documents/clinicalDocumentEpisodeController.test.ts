@@ -46,4 +46,31 @@ describe('clinicalDocumentEpisodeController', () => {
     expect(values.hinf).toBe(getCurrentTimeValue());
     vi.useRealTimers();
   });
+
+  it('prefers the configured discharge date as Fecha de alta when the episode is closed', () => {
+    const patient = {
+      ...DataFactory.createMockPatient('R1', {
+        admissionDate: '2026-04-01',
+      }),
+      dischargeDate: '2026-04-11',
+    };
+
+    const values = buildClinicalDocumentPatientFieldValues(patient);
+
+    expect(values.finf).toBe('2026-04-11');
+  });
+
+  it('uses episodeClosureDate as Fecha de alta before falling back to today', () => {
+    const patient = {
+      ...DataFactory.createMockPatient('R1', {
+        admissionDate: '2026-04-01',
+      }),
+      episodeClosureDate: '2026-04-12',
+      dischargeDate: '2026-04-11',
+    };
+
+    const values = buildClinicalDocumentPatientFieldValues(patient);
+
+    expect(values.finf).toBe('2026-04-12');
+  });
 });

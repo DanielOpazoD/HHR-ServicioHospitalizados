@@ -4,13 +4,15 @@
  * Builds the data needed to print the IEEH (Informe Estadístico de
  * Egreso Hospitalario) from an epicrisis document.
  *
- * Discharge date is the epicrisis creation date (sourceDailyRecordDate).
+ * Discharge date follows the epicrisis "Fecha de alta" field (finf),
+ * falling back to the epicrisis source date (sourceDailyRecordDate).
  * Discharge time is intentionally left blank — the nurse fills it
  * when physically discharging the patient from the census.
  */
 
 import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
 import type { DischargeFormData } from '@/services/pdf/ieehPdfContracts';
+import { normalizeCalendarDate } from '@/utils/clinicalDateUtils';
 
 // ---------------------------------------------------------------------------
 // Doctor name parsing
@@ -111,6 +113,13 @@ export const buildIeehPatientFromEpicrisis = (
   };
 };
 
+const resolveIeehDischargeDateFromEpicrisis = (doc: ClinicalDocumentRecord): string | undefined => {
+  const fieldValue = (id: string): string => doc.patientFields.find(f => f.id === id)?.value ?? '';
+  return (
+    normalizeCalendarDate(fieldValue('finf')) || normalizeCalendarDate(doc.sourceDailyRecordDate)
+  );
+};
+
 // ---------------------------------------------------------------------------
 // Builder — discharge
 // ---------------------------------------------------------------------------
@@ -118,8 +127,8 @@ export const buildIeehPatientFromEpicrisis = (
 /**
  * Builds the discharge form data from the epicrisis IEEH draft.
  *
- * - Discharge **date** = the epicrisis source date (the day the doctor
- *   writes the document, typically the last day of hospitalisation).
+ * - Discharge **date** = the visible "Fecha de alta" field, falling back
+ *   to the epicrisis source date.
  * - Discharge **time** = blank (to be filled by hand).
  * - Days of stay are calculated automatically by the PDF service from
  *   admissionDate and dischargeDate.
@@ -147,8 +156,8 @@ export const buildIeehDischargeFromEpicrisis = (doc: ClinicalDocumentRecord): Di
     tratanteApellido2: doctorName.apellido2,
     tratanteNombre: doctorName.nombre,
     tratanteRut: draft.tratanteRut,
-    // Discharge date = epicrisis source date (day the doctor writes it)
-    dischargeDate: doc.sourceDailyRecordDate,
+    // Discharge date follows the visible "Fecha de alta" field when it was configured.
+    dischargeDate: resolveIeehDischargeDateFromEpicrisis(doc),
     // Discharge time left blank — nurse fills it at physical discharge
     // dischargeTime: undefined,
   };

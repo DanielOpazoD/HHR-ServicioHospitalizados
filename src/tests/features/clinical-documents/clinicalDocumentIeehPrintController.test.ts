@@ -121,10 +121,33 @@ describe('buildIeehDischargeFromEpicrisis', () => {
     expect(discharge.condicionEgreso).toBe('1');
   });
 
-  it('uses sourceDailyRecordDate as discharge date', () => {
+  it('uses the visible Fecha de alta field as discharge date before sourceDailyRecordDate', () => {
     const doc = {
       ...baseDoc,
       sourceDailyRecordDate: '2026-04-10',
+      patientFields: baseDoc.patientFields.map(field =>
+        field.id === 'finf' ? { ...field, value: '2026-04-11' } : field
+      ),
+      ieehDraft: buildDraft({
+        cie10Code: 'J18.9',
+        cie10Description: 'Neumonía',
+        diagnosticoPrincipal: 'Neumonía',
+      }),
+    };
+
+    const discharge = buildIeehDischargeFromEpicrisis(doc);
+
+    expect(discharge.dischargeDate).toBe('2026-04-11');
+    expect(discharge.dischargeTime).toBeUndefined(); // blank for hand-fill
+  });
+
+  it('falls back to sourceDailyRecordDate when Fecha de alta is empty', () => {
+    const doc = {
+      ...baseDoc,
+      sourceDailyRecordDate: '2026-04-10',
+      patientFields: baseDoc.patientFields.map(field =>
+        field.id === 'finf' ? { ...field, value: '' } : field
+      ),
       ieehDraft: buildDraft({
         cie10Code: 'J18.9',
         cie10Description: 'Neumonía',

@@ -6,6 +6,7 @@ import {
   resolveClinicalEpisodeAdmissionDate,
 } from '@/application/patient-flow/clinicalEpisode';
 import { calculateAge } from '@/utils/clinicalUtils';
+import { normalizeCalendarDate } from '@/utils/clinicalDateUtils';
 
 /**
  * Builds a composite key that uniquely identifies a clinical episode.
@@ -26,6 +27,12 @@ export const getCurrentTimeValue = (): string => {
   const date = new Date();
   return `${padTime(date.getHours())}:${padTime(date.getMinutes())}`;
 };
+
+const resolveClinicalDocumentDischargeDateValue = (patient: PatientData): string =>
+  normalizeCalendarDate(patient.episodeClosureDate) ||
+  normalizeCalendarDate(patient.dischargeDate) ||
+  normalizeCalendarDate(patient.transferDate) ||
+  getCurrentDateValue();
 
 /**
  * Resolves the full episode context for a clinical document.
@@ -57,6 +64,6 @@ export const buildClinicalDocumentPatientFieldValues = (
   edad: patient.age || calculateAge(patient.birthDate),
   fecnac: patient.birthDate || '',
   fing: resolveClinicalEpisodeAdmissionDate(patient) || '',
-  finf: getCurrentDateValue(),
+  finf: resolveClinicalDocumentDischargeDateValue(patient),
   hinf: getCurrentTimeValue(),
 });
