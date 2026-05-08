@@ -2,6 +2,7 @@ import React from 'react';
 import { Check, Pencil, Plus, Trash2, X } from 'lucide-react';
 
 import type { ClinicalDocumentIndicationCatalogTab } from '@/features/clinical-documents/services/clinicalDocumentIndicationsCatalogService';
+import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntime';
 
 interface ClinicalDocumentIndicationsTabSettingsProps {
   tabs: ClinicalDocumentIndicationCatalogTab[];
@@ -37,7 +38,7 @@ export const ClinicalDocumentIndicationsTabSettings: React.FC<
   onDeleteTab,
 }) => {
   const handleDeleteTab = (tab: ClinicalDocumentIndicationCatalogTab) => {
-    const confirmed = window.confirm(
+    const confirmed = defaultBrowserWindowRuntime.confirm(
       `¿Eliminar la pestaña "${tab.label}" y sus indicaciones guardadas? Esta acción no se puede deshacer.`
     );
     if (!confirmed) {

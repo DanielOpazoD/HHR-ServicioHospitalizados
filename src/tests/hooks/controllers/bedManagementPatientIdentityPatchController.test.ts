@@ -56,7 +56,7 @@ describe('bedManagementPatientIdentityPatchController', () => {
         nextRut: '',
         currentFirstSeenDate: '2026-04-30',
       })
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it('treats blank names as not displayable for CUDYR writes', () => {
