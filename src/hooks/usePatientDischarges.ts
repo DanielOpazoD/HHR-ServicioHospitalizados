@@ -94,14 +94,14 @@ export const usePatientDischarges = (
             createEmptyPatient,
           })
         );
-        executeMovementCreation({
+        void executeMovementCreation({
           kind: 'discharge',
           bedId,
           resolution,
           onSuccess: value => {
             logDischargeEntries(value.auditEntries, currentRecord.date);
           },
-        });
+        }).catch(() => undefined);
       });
     },
     [executeMovementCreation, logDischargeEntries, withCurrentRecord]

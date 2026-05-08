@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { usePatientTransfers } from '@/hooks/usePatientTransfers';
 import type {
   ApplyDailyRecordPatch,
@@ -92,7 +92,7 @@ describe('usePatientTransfers', () => {
     consoleSpy.mockRestore();
   });
 
-  it('should add transfer for occupied bed', () => {
+  it('should add transfer for occupied bed', async () => {
     const { result } = renderHook(() => usePatientTransfers(mockRecord, mockSaveAndUpdate));
 
     act(() => {
@@ -100,10 +100,10 @@ describe('usePatientTransfers', () => {
     });
 
     expect(mockSaveAndUpdate).toHaveBeenCalled();
-    expect(mockLogPatientTransfer).toHaveBeenCalled();
+    await waitFor(() => expect(mockLogPatientTransfer).toHaveBeenCalled());
   });
 
-  it('adds transfer and clears the source bed through one atomic patch when available', () => {
+  it('adds transfer and clears the source bed through one atomic patch when available', async () => {
     const { result } = renderHook(() =>
       usePatientTransfers(mockRecord, mockSaveAndUpdate, undefined, mockPatchRecord)
     );
@@ -130,7 +130,7 @@ describe('usePatientTransfers', () => {
       })
     );
     expect(mockSaveAndUpdate).not.toHaveBeenCalled();
-    expect(mockLogPatientTransfer).toHaveBeenCalled();
+    await waitFor(() => expect(mockLogPatientTransfer).toHaveBeenCalled());
   });
 
   it('should update transfer', () => {

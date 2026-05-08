@@ -66,10 +66,13 @@ export const resolveRuntimeLoadingScreenMode = ({
   const persistedFirebaseAuthHint =
     providedPersistedFirebaseAuthHint ?? hasPersistedFirebaseAuthHint();
   const activeFirebaseSession = providedActiveFirebaseSession ?? hasActiveFirebaseSession();
+  const rehydratingAuthenticatedSession =
+    bootstrapState.auth.sessionState.status === 'authenticating';
   const hasAuthenticatedSessionHint =
     recentAuthenticatedSessionHint ||
     persistedFirebaseAuthHint ||
     activeFirebaseSession ||
+    rehydratingAuthenticatedSession ||
     bootstrapState.auth.isAuthenticated ||
     Boolean(bootstrapState.auth.currentUser);
 

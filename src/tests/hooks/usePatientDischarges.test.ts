@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { usePatientDischarges } from '@/hooks/usePatientDischarges';
 import type {
   ApplyDailyRecordPatch,
@@ -94,7 +94,7 @@ describe('usePatientDischarges', () => {
     consoleSpy.mockRestore();
   });
 
-  it('should add discharge for occupied bed', () => {
+  it('should add discharge for occupied bed', async () => {
     const { result } = renderHook(() => usePatientDischarges(mockRecord, mockSaveAndUpdate));
 
     act(() => {
@@ -102,10 +102,10 @@ describe('usePatientDischarges', () => {
     });
 
     expect(mockSaveAndUpdate).toHaveBeenCalled();
-    expect(mockLogPatientDischarge).toHaveBeenCalled();
+    await waitFor(() => expect(mockLogPatientDischarge).toHaveBeenCalled());
   });
 
-  it('adds discharge and clears the source bed through one atomic patch when available', () => {
+  it('adds discharge and clears the source bed through one atomic patch when available', async () => {
     const { result } = renderHook(() =>
       usePatientDischarges(mockRecord, mockSaveAndUpdate, undefined, mockPatchRecord)
     );
@@ -132,7 +132,7 @@ describe('usePatientDischarges', () => {
       })
     );
     expect(mockSaveAndUpdate).not.toHaveBeenCalled();
-    expect(mockLogPatientDischarge).toHaveBeenCalled();
+    await waitFor(() => expect(mockLogPatientDischarge).toHaveBeenCalled());
   });
 
   it('should update discharge', () => {
