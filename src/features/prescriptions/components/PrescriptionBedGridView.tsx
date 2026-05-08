@@ -72,14 +72,19 @@ const isUnassignedRecord = (record: PrescriptionRecord): boolean =>
 const isStockRecord = (record: PrescriptionRecord): boolean =>
   resolvePrescriptionAssignmentScope(record) === 'hospitalized_stock';
 
+const createEmptyPrescriptionBuckets = (): Record<PrescriptionType, PrescriptionRecord[]> => ({
+  comun: [],
+  psicotropicos: [],
+  benzodiazepinas: [],
+});
+
 const buildBedRows = (
   daily: DailyRecord | null,
   records: PrescriptionRecord[]
 ): PrescriptionBedRowData[] => {
-  if (!daily) return [];
   const byBed = new Map<string, PrescriptionBedRowData>();
 
-  for (const [bedId, patient] of Object.entries(daily.beds || {})) {
+  for (const [bedId, patient] of Object.entries(daily?.beds || {})) {
     if (!patient || patient.isBlocked) continue;
     const hasIdentity = Boolean(patient.patientName?.trim()) || Boolean(patient.rut?.trim());
     if (!hasIdentity) continue;
@@ -87,19 +92,23 @@ const buildBedRows = (
       bedId,
       patientName: patient.patientName?.trim() ?? '',
       patientRut: patient.rut?.trim() ?? '',
-      byType: {
-        comun: [],
-        psicotropicos: [],
-        benzodiazepinas: [],
-      },
+      byType: createEmptyPrescriptionBuckets(),
     });
   }
 
   for (const record of records) {
     if (resolvePrescriptionAssignmentScope(record) !== 'patient') continue;
     if (!record.bedId) continue;
-    const row = byBed.get(record.bedId);
-    if (!row) continue;
+    let row = byBed.get(record.bedId);
+    if (!row) {
+      row = {
+        bedId: record.bedId,
+        patientName: record.patientName?.trim() ?? '',
+        patientRut: record.patientRut?.trim() ?? '',
+        byType: createEmptyPrescriptionBuckets(),
+      };
+      byBed.set(record.bedId, row);
+    }
     row.byType[record.prescriptionType].push(record);
   }
 

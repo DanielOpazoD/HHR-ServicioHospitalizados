@@ -133,6 +133,23 @@ describe('PrescriptionBedGridView', () => {
     expect(screen.queryByTestId('prescription-unassigned-card-rx-stock')).not.toBeInTheDocument();
   });
 
+  it('keeps today prescriptions visible when the patient is no longer active in the census', async () => {
+    const dischargedPrescription = buildRecord('rx-discharged', {
+      assignmentScope: 'patient',
+      bedId: 'H2C3',
+      patientName: 'Paciente Alta Hoy',
+      patientRut: '12.345.678-9',
+      prescriptionType: 'comun',
+    });
+
+    renderGrid(<PrescriptionBedGridView records={[dischargedPrescription]} dayIso="2026-05-04" />);
+
+    expect(await screen.findByText('Paciente Alta Hoy')).toBeInTheDocument();
+    expect(screen.getByText('12.345.678-9')).toBeInTheDocument();
+    expect(screen.getByTestId('prescription-bed-cell-H2C3-comun')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: /comun · h2c3/i })).toBeInTheDocument();
+  });
+
   it('drops a matching-type unassigned prescription onto a bed cell and calls onAssign', async () => {
     const unassigned = buildRecord('rx-drag', {
       bedId: undefined,
