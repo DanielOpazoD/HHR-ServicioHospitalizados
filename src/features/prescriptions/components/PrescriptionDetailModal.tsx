@@ -3,8 +3,10 @@ import { Check, ImageOff, Loader2, Maximize2, Pencil, Trash2, X } from 'lucide-r
 import { BaseModal } from '@/components/shared/BaseModal';
 import { useConfirmDialog } from '@/context/UIContext';
 import {
+  PRESCRIPTION_ASSIGNMENT_SCOPE_LABELS,
   PRESCRIPTION_TYPES,
   PRESCRIPTION_TYPE_LABELS,
+  resolvePrescriptionAssignmentScope,
   type PrescriptionRecord,
   type PrescriptionType,
 } from '@/types/prescriptionTypes';
@@ -148,7 +150,9 @@ export const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = (
     }
   };
 
-  const isUnassigned = !record.bedId && !record.patientName;
+  const assignmentScope = resolvePrescriptionAssignmentScope(record);
+  const isUnassigned = assignmentScope === 'unassigned';
+  const isStock = assignmentScope === 'hospitalized_stock';
 
   return (
     <BaseModal
@@ -270,9 +274,11 @@ export const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = (
                 Paciente
               </dt>
               <dd className="text-slate-800">
-                {isUnassigned
-                  ? 'Sin paciente asignado'
-                  : `${record.bedId ?? '—'} · ${record.patientName ?? '—'}`}
+                {isStock
+                  ? PRESCRIPTION_ASSIGNMENT_SCOPE_LABELS.hospitalized_stock
+                  : isUnassigned
+                    ? 'Sin paciente asignado'
+                    : `${record.bedId ?? '—'} · ${record.patientName ?? '—'}`}
                 {record.patientRut ? (
                   <span className="ml-1 text-xs text-slate-500">({record.patientRut})</span>
                 ) : null}

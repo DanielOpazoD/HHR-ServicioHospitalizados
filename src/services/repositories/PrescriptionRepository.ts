@@ -107,6 +107,8 @@ export const PrescriptionRepository = {
       bedId: patch.bedId ?? null,
       patientName: patch.patientName ?? null,
       patientRut: patch.patientRut ?? null,
+      assignmentScope:
+        patch.bedId || patch.patientName || patch.patientRut ? 'patient' : 'unassigned',
       patientReassignedAt: patch.reassignedAt,
       patientReassignedBy: patch.reassignedBy,
     });

@@ -32,6 +32,7 @@ const functions = require('firebase-functions/v1');
 const { HOSPITAL_ID } = require('./runtime/runtimeConfig');
 
 const PRESCRIPTION_TYPES = new Set(['comun', 'psicotropicos', 'benzodiazepinas']);
+const PRESCRIPTION_ASSIGNMENT_SCOPES = new Set(['patient', 'unassigned', 'hospitalized_stock']);
 const RETENTION_DAYS_BY_TYPE = {
   comun: 30,
   psicotropicos: 30,
@@ -129,6 +130,15 @@ const resolveIsoDate = value => {
     throw new functions.https.HttpsError('invalid-argument', 'Fecha de censo inválida.');
   }
   return value;
+};
+
+const previousIsoDay = isoDate => {
+  const [year, month, day] = String(isoDate).split('-').map(Number);
+  const date = new Date(year, (month || 1) - 1, day || 1);
+  date.setDate(date.getDate() - 1);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
+    date.getDate()
+  ).padStart(2, '0')}`;
 };
 
 const positiveInteger = (value, fieldName) => {
@@ -304,6 +314,29 @@ const buildPatientOptionsFromDailyRecord = dailyRecord => {
     .sort((a, b) => a.bedId.localeCompare(b.bedId, 'es', { numeric: true }));
 };
 
+const resolveUploadPatientOptionsForDate = async (admin, date) => {
+  const snap = await getDailyRecordRef(admin, date).get();
+  const dailyRecord = snap.exists ? snap.data() || null : null;
+  const patientOptions = buildPatientOptionsFromDailyRecord(dailyRecord);
+  if (patientOptions.length > 0) {
+    return { sourceDate: date, isFallbackFromPreviousDay: false, patientOptions };
+  }
+
+  const fallbackDate = previousIsoDay(date);
+  const fallbackSnap = await getDailyRecordRef(admin, fallbackDate).get();
+  const fallbackDailyRecord = fallbackSnap.exists ? fallbackSnap.data() || null : null;
+  const fallbackPatientOptions = buildPatientOptionsFromDailyRecord(fallbackDailyRecord);
+  if (fallbackPatientOptions.length > 0) {
+    return {
+      sourceDate: fallbackDate,
+      isFallbackFromPreviousDay: true,
+      patientOptions: fallbackPatientOptions,
+    };
+  }
+
+  return { sourceDate: date, isFallbackFromPreviousDay: false, patientOptions };
+};
+
 const createListUploadPatientOptionsHandler =
   ({ admin, resolveRoleForEmail }) =>
   async (data, context) => {
@@ -311,11 +344,10 @@ const createListUploadPatientOptionsHandler =
     await resolveUploadPickerAccess({ admin, context, payload, resolveRoleForEmail });
 
     const date = resolveIsoDate(payload.date);
-    const snap = await getDailyRecordRef(admin, date).get();
-    const dailyRecord = snap.exists ? snap.data() || null : null;
+    const optionsResult = await resolveUploadPatientOptionsForDate(admin, date);
     return {
       date,
-      patientOptions: buildPatientOptionsFromDailyRecord(dailyRecord),
+      ...optionsResult,
     };
   };
 
@@ -380,14 +412,17 @@ const buildPrescriptionRecord = ({
   width,
   height,
   createdAt,
-}) =>
-  omitUndefined({
+}) => {
+  const assignmentScope = resolveAssignmentScope(payload);
+  const includePatient = assignmentScope === 'patient';
+  return omitUndefined({
     id: prescriptionId,
     hospitalId: HOSPITAL_ID,
     prescriptionType: payload.prescriptionType,
-    bedId: optionalString(payload.bedId, 32),
-    patientName: optionalString(payload.patientName, 256),
-    patientRut: optionalString(payload.patientRut, 32),
+    assignmentScope,
+    bedId: includePatient ? optionalString(payload.bedId, 32) : undefined,
+    patientName: includePatient ? optionalString(payload.patientName, 256) : undefined,
+    patientRut: includePatient ? optionalString(payload.patientRut, 32) : undefined,
     notes: optionalString(payload.notes, 1024),
     image: {
       storagePath: fullPath,
@@ -406,6 +441,22 @@ const buildPrescriptionRecord = ({
     createdAt,
     expiresAt: computeExpiresAt(payload.prescriptionType, createdAt),
   });
+};
+
+const resolveAssignmentScope = payload => {
+  const explicitScope = optionalString(payload.assignmentScope, 64);
+  if (explicitScope) {
+    if (!PRESCRIPTION_ASSIGNMENT_SCOPES.has(explicitScope)) {
+      throw new functions.https.HttpsError('invalid-argument', 'Categoría de receta inválida.');
+    }
+    return explicitScope;
+  }
+  return optionalString(payload.bedId, 32) ||
+    optionalString(payload.patientName, 256) ||
+    optionalString(payload.patientRut, 32)
+    ? 'patient'
+    : 'unassigned';
+};
 
 const createSubmitHandler =
   ({ admin, resolveRoleForEmail }) =>
@@ -414,6 +465,7 @@ const createSubmitHandler =
     if (!PRESCRIPTION_TYPES.has(payload.prescriptionType)) {
       throw new functions.https.HttpsError('invalid-argument', 'Tipo de receta inválido.');
     }
+    resolveAssignmentScope(payload);
 
     const uploaderIdentity = await resolveUploaderIdentity({
       admin,

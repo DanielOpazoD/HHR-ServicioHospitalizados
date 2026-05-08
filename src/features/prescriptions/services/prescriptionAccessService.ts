@@ -7,7 +7,7 @@
 import { httpsCallable } from 'firebase/functions';
 import { defaultFunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
 import type { FunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
-import type { PrescriptionType } from '@/types/prescriptionTypes';
+import type { PrescriptionAssignmentScope, PrescriptionType } from '@/types/prescriptionTypes';
 
 interface PrescriptionAccessServiceDeps {
   functionsRuntime?: Pick<FunctionsRuntime, 'getFunctions'>;
@@ -37,6 +37,8 @@ interface ListPatientOptionsPayload {
 
 interface ListPatientOptionsResult {
   date: string;
+  sourceDate?: string;
+  isFallbackFromPreviousDay?: boolean;
   patientOptions: PrescriptionUploadPatientOption[];
 }
 
@@ -44,6 +46,7 @@ interface SubmitPrescriptionPayload {
   /** Required when no authenticated clinician role is available (QR flow). */
   pin?: string;
   prescriptionType: PrescriptionType;
+  assignmentScope?: PrescriptionAssignmentScope;
   bedId?: string;
   patientName?: string;
   patientRut?: string;

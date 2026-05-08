@@ -12,6 +12,7 @@ export interface PrescriptionBedRowData {
   bedId: string;
   patientName: string;
   patientRut: string;
+  isDischargeSnapshot?: boolean;
   byType: Record<PrescriptionType, PrescriptionRecord[]>;
 }
 
@@ -58,6 +59,11 @@ export const PrescriptionBedRow: React.FC<PrescriptionBedRowProps> = ({
       <td className="px-2 py-2 text-xs text-slate-700">
         <p className="truncate font-medium">{row.patientName || 'Sin nombre'}</p>
         {row.patientRut && <p className="text-[10px] text-slate-400">{row.patientRut}</p>}
+        {row.isDischargeSnapshot && (
+          <p className="mt-1 inline-flex rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-amber-800">
+            Egresos
+          </p>
+        )}
       </td>
       {PRESCRIPTION_TYPES.map(type => {
         const cell = row.byType[type];

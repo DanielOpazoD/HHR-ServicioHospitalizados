@@ -280,6 +280,43 @@ describe('listPrescriptionUploadPatientOptions', () => {
 
     await expect(handler({ pin: '7351', date: '2026-05-05' }, undefined)).resolves.toEqual({
       date: '2026-05-05',
+      sourceDate: '2026-05-05',
+      isFallbackFromPreviousDay: false,
+      patientOptions: [
+        {
+          key: 'H5C1',
+          bedId: 'H5C1',
+          patientName: 'Paciente Uno',
+          patientRut: '11.111.111-1',
+        },
+        {
+          key: 'H5C2',
+          bedId: 'H5C2',
+          patientName: 'Paciente Dos',
+          patientRut: '22.222.222-2',
+        },
+      ],
+    });
+  });
+
+  it('falls back to previous-day patients when the requested census has no active patients', async () => {
+    const { admin, accessConfig } = buildAdminHarness({
+      dailyRecords: {
+        '2026-05-04': dailyRecord,
+        '2026-05-05': { date: '2026-05-05', beds: {} },
+      },
+    });
+    await seedPin(accessConfig, '7351');
+
+    const handler = createListUploadPatientOptionsHandler({
+      admin,
+      resolveRoleForEmail: vi.fn(),
+    });
+
+    await expect(handler({ pin: '7351', date: '2026-05-05' }, undefined)).resolves.toEqual({
+      date: '2026-05-05',
+      sourceDate: '2026-05-04',
+      isFallbackFromPreviousDay: true,
       patientOptions: [
         {
           key: 'H5C1',
@@ -433,6 +470,30 @@ describe('submitPrescriptionPhoto', () => {
     await expect(
       handler(validPayload({ prescriptionType: 'antibioticos' }), undefined)
     ).rejects.toMatchObject({ code: 'invalid-argument' });
+  });
+
+  it('persists Stock de Hospitalizados as a non-patient assignment category', async () => {
+    const { admin, accessConfig, writtenPrescriptions } = buildAdminHarness();
+    await seedPin(accessConfig, '7351');
+    const handler = createSubmitHandler({ admin, resolveRoleForEmail: vi.fn() });
+
+    const result = await handler(
+      validPayload({
+        assignmentScope: 'hospitalized_stock',
+        bedId: undefined,
+        patientName: undefined,
+        patientRut: undefined,
+      }),
+      undefined
+    );
+
+    const id = (result as { id: string }).id;
+    expect(writtenPrescriptions[id]).toMatchObject({
+      assignmentScope: 'hospitalized_stock',
+    });
+    expect(writtenPrescriptions[id]).not.toHaveProperty('bedId');
+    expect(writtenPrescriptions[id]).not.toHaveProperty('patientName');
+    expect(writtenPrescriptions[id]).not.toHaveProperty('patientRut');
   });
 
   it('rejects oversized image payloads', async () => {

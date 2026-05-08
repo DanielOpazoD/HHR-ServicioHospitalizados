@@ -213,6 +213,7 @@ export const PrescriptionVisorView: React.FC = () => {
                 <option value="all">Todos los pacientes</option>
                 <option value="assigned">Con paciente asignado</option>
                 <option value="unassigned">Sin paciente asignado</option>
+                <option value="hospitalized_stock">Stock de Hospitalizados</option>
               </select>
             </label>
           </div>

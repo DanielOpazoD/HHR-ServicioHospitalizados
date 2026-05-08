@@ -8,13 +8,25 @@
 
 import { z } from 'zod';
 
-import { PRESCRIPTION_TYPES, type PrescriptionRecord } from '@/types/prescriptionTypes';
+import {
+  PRESCRIPTION_ASSIGNMENT_SCOPES,
+  PRESCRIPTION_TYPES,
+  type PrescriptionRecord,
+} from '@/types/prescriptionTypes';
 
 const prescriptionTypeSchema = z.enum(
   PRESCRIPTION_TYPES as readonly [string, ...string[]] as readonly [
     'comun',
     'psicotropicos',
     'benzodiazepinas',
+  ]
+);
+
+const prescriptionAssignmentScopeSchema = z.enum(
+  PRESCRIPTION_ASSIGNMENT_SCOPES as readonly [string, ...string[]] as readonly [
+    'patient',
+    'unassigned',
+    'hospitalized_stock',
   ]
 );
 
@@ -38,6 +50,7 @@ export const prescriptionRecordSchema = z.object({
   id: z.string().min(1),
   hospitalId: z.string().min(1),
   prescriptionType: prescriptionTypeSchema,
+  assignmentScope: prescriptionAssignmentScopeSchema.optional(),
   bedId: z.string().optional(),
   patientName: z.string().optional(),
   patientRut: z.string().optional(),

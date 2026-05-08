@@ -5,7 +5,11 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { PRESCRIPTION_TYPES, type PrescriptionType } from '@/types/prescriptionTypes';
+import {
+  PRESCRIPTION_TYPES,
+  type PrescriptionAssignmentScope,
+  type PrescriptionType,
+} from '@/types/prescriptionTypes';
 import {
   compressPrescriptionImage,
   releaseCompressedPrescriptionImagePreview,
@@ -29,12 +33,14 @@ export type PrescriptionUploadPhase =
 
 export interface PrescriptionUploadFormValues {
   prescriptionType: PrescriptionType;
+  assignmentScope: PrescriptionAssignmentScope;
   selectedPatientKey: string;
   patientUnassigned: boolean;
 }
 
 const initialFormValues: PrescriptionUploadFormValues = {
   prescriptionType: 'comun',
+  assignmentScope: 'patient',
   selectedPatientKey: '',
   patientUnassigned: false,
 };
@@ -58,6 +64,8 @@ export interface PrescriptionUploadControllerHandle {
   patientOptions: PrescriptionPatientOption[];
   patientOptionsPhase: PrescriptionPatientOptionsPhase;
   patientOptionsError: string | null;
+  patientOptionsSourceDate: string | null;
+  isPatientOptionsFallbackFromPreviousDay: boolean;
   setField: <K extends keyof PrescriptionUploadFormValues>(
     field: K,
     value: PrescriptionUploadFormValues[K]
@@ -97,6 +105,9 @@ export const usePrescriptionUploadController = ({
   );
   const [values, setValues] = useState<PrescriptionUploadFormValues>(initialFormValues);
   const [patientOptions, setPatientOptions] = useState<PrescriptionPatientOption[]>([]);
+  const [patientOptionsSourceDate, setPatientOptionsSourceDate] = useState<string | null>(null);
+  const [isPatientOptionsFallbackFromPreviousDay, setIsPatientOptionsFallbackFromPreviousDay] =
+    useState(false);
   const [patientOptionsPhase, setPatientOptionsPhase] =
     useState<PrescriptionPatientOptionsPhase>('loading');
   const [patientOptionsError, setPatientOptionsError] = useState<string | null>(null);
@@ -116,9 +127,13 @@ export const usePrescriptionUploadController = ({
         date: todayIso(),
       });
       setPatientOptions(result.patientOptions);
+      setPatientOptionsSourceDate(result.sourceDate ?? result.date);
+      setIsPatientOptionsFallbackFromPreviousDay(Boolean(result.isFallbackFromPreviousDay));
       setPatientOptionsPhase('ready');
     } catch (error) {
       setPatientOptions([]);
+      setPatientOptionsSourceDate(null);
+      setIsPatientOptionsFallbackFromPreviousDay(false);
       setPatientOptionsError(
         error instanceof Error ? error.message : 'No se pudo cargar el censo diario.'
       );
@@ -151,7 +166,18 @@ export const usePrescriptionUploadController = ({
       field: K,
       value: PrescriptionUploadFormValues[K]
     ) => {
-      setValues(prev => ({ ...prev, [field]: value }));
+      setValues(prev => {
+        const next = { ...prev, [field]: value };
+        if (field === 'assignmentScope') {
+          next.patientUnassigned = value !== 'patient';
+          if (value !== 'patient') next.selectedPatientKey = '';
+        }
+        if (field === 'patientUnassigned') {
+          next.assignmentScope = value ? 'unassigned' : 'patient';
+          if (value) next.selectedPatientKey = '';
+        }
+        return next;
+      });
     },
     []
   );
@@ -211,7 +237,7 @@ export const usePrescriptionUploadController = ({
       return;
     }
 
-    const includePatient = !values.patientUnassigned;
+    const includePatient = values.assignmentScope === 'patient' && !values.patientUnassigned;
     const selectedPatient = includePatient
       ? patientOptions.find(option => option.key === values.selectedPatientKey)
       : null;
@@ -226,6 +252,7 @@ export const usePrescriptionUploadController = ({
       const result = await submitPrescriptionPhoto({
         pin: pinRef.current ?? undefined,
         prescriptionType: values.prescriptionType,
+        assignmentScope: values.assignmentScope,
         bedId: includePatient ? selectedPatient?.bedId : undefined,
         patientName: includePatient ? selectedPatient?.patientName || undefined : undefined,
         patientRut: includePatient ? selectedPatient?.patientRut || undefined : undefined,
@@ -257,6 +284,8 @@ export const usePrescriptionUploadController = ({
     patientOptions,
     patientOptionsPhase,
     patientOptionsError,
+    patientOptionsSourceDate,
+    isPatientOptionsFallbackFromPreviousDay,
     setField,
     errorMessage,
     lastResult,

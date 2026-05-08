@@ -1,8 +1,21 @@
 import React, { useRef } from 'react';
-import { Camera, CheckCircle2, Loader2, Pill, RotateCcw, Upload, XCircle } from 'lucide-react';
 import {
+  Camera,
+  CheckCircle2,
+  Loader2,
+  Package,
+  Pill,
+  RotateCcw,
+  Upload,
+  UserMinus,
+  Users,
+  XCircle,
+} from 'lucide-react';
+import {
+  PRESCRIPTION_ASSIGNMENT_SCOPE_LABELS,
   PRESCRIPTION_TYPE_LABELS,
   PRESCRIPTION_TYPES,
+  type PrescriptionAssignmentScope,
   type PrescriptionType,
 } from '@/types/prescriptionTypes';
 import type { PrescriptionUploadControllerHandle } from '@/features/prescriptions/hooks/usePrescriptionUploadController';
@@ -41,6 +54,26 @@ const renderPrescriptionTypeIcon = (type: PrescriptionType) => {
   );
 };
 
+const ASSIGNMENT_SCOPE_OPTIONS: readonly PrescriptionAssignmentScope[] = [
+  'patient',
+  'unassigned',
+  'hospitalized_stock',
+] as const;
+
+const formatIsoDate = (iso: string): string => {
+  const [year, month, day] = iso.split('-').map(Number);
+  if (!year || !month || !day) return iso;
+  return new Date(year, month - 1, day).toLocaleDateString('es-CL');
+};
+
+const renderAssignmentScopeIcon = (scope: PrescriptionAssignmentScope) => {
+  if (scope === 'patient') return <Users size={16} className="shrink-0 text-sky-600" />;
+  if (scope === 'hospitalized_stock') {
+    return <Package size={16} className="shrink-0 text-violet-700" />;
+  }
+  return <UserMinus size={16} className="shrink-0 text-amber-700" />;
+};
+
 export const PrescriptionUploadForm: React.FC<PrescriptionUploadFormProps> = ({ controller }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const {
@@ -58,6 +91,8 @@ export const PrescriptionUploadForm: React.FC<PrescriptionUploadFormProps> = ({ 
     patientOptions,
     patientOptionsPhase,
     patientOptionsError,
+    patientOptionsSourceDate,
+    isPatientOptionsFallbackFromPreviousDay,
   } = controller;
 
   const isBusy = phase === 'compressing' || phase === 'uploading';
@@ -146,17 +181,31 @@ export const PrescriptionUploadForm: React.FC<PrescriptionUploadFormProps> = ({ 
         <legend className="text-xs font-semibold uppercase tracking-wide text-slate-500">
           Paciente
         </legend>
-        <label className="flex items-center gap-2 text-sm text-slate-600">
-          <input
-            type="checkbox"
-            checked={values.patientUnassigned}
-            onChange={event => setField('patientUnassigned', event.target.checked)}
-            disabled={isBusy}
-            className="accent-slate-600"
-          />
-          Sin paciente asignado (asignar después en el visor)
-        </label>
-        {!values.patientUnassigned && (
+        <div className="grid gap-2">
+          {ASSIGNMENT_SCOPE_OPTIONS.map(scope => (
+            <label
+              key={scope}
+              className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                values.assignmentScope === scope
+                  ? 'border-sky-500 bg-sky-50 text-sky-900'
+                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              <input
+                type="radio"
+                name="assignmentScope"
+                value={scope}
+                checked={values.assignmentScope === scope}
+                onChange={() => setField('assignmentScope', scope)}
+                disabled={isBusy}
+                className="accent-sky-600"
+              />
+              {renderAssignmentScopeIcon(scope)}
+              {PRESCRIPTION_ASSIGNMENT_SCOPE_LABELS[scope]}
+            </label>
+          ))}
+        </div>
+        {values.assignmentScope === 'patient' && (
           <div className="space-y-2">
             <label className="block">
               <span className="text-xs text-slate-500">Cama / paciente / RUT</span>
@@ -179,15 +228,23 @@ export const PrescriptionUploadForm: React.FC<PrescriptionUploadFormProps> = ({ 
                 ))}
               </select>
             </label>
+            {patientOptionsPhase === 'ready' &&
+              isPatientOptionsFallbackFromPreviousDay &&
+              patientOptionsSourceDate && (
+                <p className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-800">
+                  Pacientes mostrados desde el censo del día previo (
+                  {formatIsoDate(patientOptionsSourceDate)}). La receta se sube con la fecha actual.
+                </p>
+              )}
             {patientOptionsPhase === 'error' && (
               <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                {patientOptionsError ?? 'No se pudo cargar el censo diario.'} Puedes marcar sin
+                {patientOptionsError ?? 'No se pudo cargar el censo diario.'} Puedes elegir sin
                 paciente asignado y asignar después en el visor.
               </p>
             )}
             {patientOptionsPhase === 'ready' && patientOptions.length === 0 && (
               <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                No hay camas activas con paciente en el censo de hoy. Marca sin paciente asignado
+                No hay camas activas con paciente en el censo de hoy. Elige sin paciente asignado
                 para subir la receta y asignarla después.
               </p>
             )}

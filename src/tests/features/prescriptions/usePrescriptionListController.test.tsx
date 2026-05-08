@@ -148,6 +148,35 @@ describe('usePrescriptionListController', () => {
     expect(handle().filteredRecords.map(r => r.id)).toEqual(['rx-blank']);
   });
 
+  it('filters Stock de Hospitalizados separately from unassigned prescriptions', async () => {
+    const { pushSnapshot, handle } = setupController();
+    await act(async () => {
+      pushSnapshot([
+        buildRecord('rx-stock', {
+          assignmentScope: 'hospitalized_stock',
+          bedId: undefined,
+          patientName: undefined,
+          patientRut: undefined,
+        }),
+        buildRecord('rx-blank', {
+          bedId: undefined,
+          patientName: undefined,
+          patientRut: undefined,
+        }),
+      ]);
+    });
+
+    await act(async () => {
+      handle().setFilter('patient', 'hospitalized_stock');
+    });
+    expect(handle().filteredRecords.map(r => r.id)).toEqual(['rx-stock']);
+
+    await act(async () => {
+      handle().setFilter('patient', 'unassigned');
+    });
+    expect(handle().filteredRecords.map(r => r.id)).toEqual(['rx-blank']);
+  });
+
   it('filters by free-text search across bed, patient, notes, uploader', async () => {
     const { pushSnapshot, handle } = setupController();
     await act(async () => {

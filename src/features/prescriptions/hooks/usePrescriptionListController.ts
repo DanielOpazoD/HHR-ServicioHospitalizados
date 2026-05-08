@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { PrescriptionRepository } from '@/services/repositories/PrescriptionRepository';
 import {
   PRESCRIPTION_TYPES,
+  resolvePrescriptionAssignmentScope,
   type PrescriptionRecord,
   type PrescriptionType,
 } from '@/types/prescriptionTypes';
@@ -14,7 +15,7 @@ import {
 export type PrescriptionListPhase = 'loading' | 'ready';
 
 export type PrescriptionTypeFilter = PrescriptionType | 'all';
-export type PrescriptionPatientFilter = 'all' | 'unassigned' | 'assigned';
+export type PrescriptionPatientFilter = 'all' | 'unassigned' | 'assigned' | 'hospitalized_stock';
 
 export interface PrescriptionListFilters {
   type: PrescriptionTypeFilter;
@@ -45,12 +46,10 @@ const matchesPatientFilter = (
   filter: PrescriptionPatientFilter
 ): boolean => {
   if (filter === 'all') return true;
-  const hasPatient = Boolean(
-    (record.bedId && record.bedId.trim()) ||
-    (record.patientName && record.patientName.trim()) ||
-    (record.patientRut && record.patientRut.trim())
-  );
-  return filter === 'assigned' ? hasPatient : !hasPatient;
+  const scope = resolvePrescriptionAssignmentScope(record);
+  if (filter === 'assigned') return scope === 'patient';
+  if (filter === 'hospitalized_stock') return scope === 'hospitalized_stock';
+  return scope === 'unassigned';
 };
 
 const matchesSearch = (record: PrescriptionRecord, query: string): boolean => {

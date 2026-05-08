@@ -5,6 +5,7 @@ import type { DailyRecord } from '@/services/storage/storageDailyRecordContracts
 import {
   PRESCRIPTION_TYPES,
   PRESCRIPTION_TYPE_LABELS,
+  resolvePrescriptionAssignmentScope,
   type PrescriptionRecord,
   type PrescriptionType,
 } from '@/types/prescriptionTypes';
@@ -48,6 +49,13 @@ const todayIso = (): string => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
+const previousIsoDay = (iso: string): string => {
+  const [year, month, day] = iso.split('-').map(Number);
+  const date = new Date(year, (month ?? 1) - 1, day ?? 1);
+  date.setDate(date.getDate() - 1);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+};
+
 const formatDayLabel = (iso: string): string => {
   try {
     const [year, month, day] = iso.split('-').map(Number);
@@ -59,16 +67,24 @@ const formatDayLabel = (iso: string): string => {
 };
 
 const isUnassignedRecord = (record: PrescriptionRecord): boolean =>
-  !record.bedId?.trim() && !record.patientName?.trim();
+  resolvePrescriptionAssignmentScope(record) === 'unassigned';
+
+const isStockRecord = (record: PrescriptionRecord): boolean =>
+  resolvePrescriptionAssignmentScope(record) === 'hospitalized_stock';
+
+const createEmptyPrescriptionBuckets = (): Record<PrescriptionType, PrescriptionRecord[]> => ({
+  comun: [],
+  psicotropicos: [],
+  benzodiazepinas: [],
+});
 
 const buildBedRows = (
   daily: DailyRecord | null,
   records: PrescriptionRecord[]
 ): PrescriptionBedRowData[] => {
-  if (!daily) return [];
   const byBed = new Map<string, PrescriptionBedRowData>();
 
-  for (const [bedId, patient] of Object.entries(daily.beds || {})) {
+  for (const [bedId, patient] of Object.entries(daily?.beds || {})) {
     if (!patient || patient.isBlocked) continue;
     const hasIdentity = Boolean(patient.patientName?.trim()) || Boolean(patient.rut?.trim());
     if (!hasIdentity) continue;
@@ -76,18 +92,24 @@ const buildBedRows = (
       bedId,
       patientName: patient.patientName?.trim() ?? '',
       patientRut: patient.rut?.trim() ?? '',
-      byType: {
-        comun: [],
-        psicotropicos: [],
-        benzodiazepinas: [],
-      },
+      byType: createEmptyPrescriptionBuckets(),
     });
   }
 
   for (const record of records) {
+    if (resolvePrescriptionAssignmentScope(record) !== 'patient') continue;
     if (!record.bedId) continue;
-    const row = byBed.get(record.bedId);
-    if (!row) continue;
+    let row = byBed.get(record.bedId);
+    if (!row) {
+      row = {
+        bedId: record.bedId,
+        patientName: record.patientName?.trim() ?? '',
+        patientRut: record.patientRut?.trim() ?? '',
+        isDischargeSnapshot: true,
+        byType: createEmptyPrescriptionBuckets(),
+      };
+      byBed.set(record.bedId, row);
+    }
     row.byType[record.prescriptionType].push(record);
   }
 
@@ -104,9 +126,12 @@ export const PrescriptionBedGridView: React.FC<PrescriptionBedGridViewProps> = (
   onDelete,
 }) => {
   const effectiveDay = dayIso ?? todayIso();
-  const [dailyState, setDailyState] = useState<{ day: string; record: DailyRecord | null } | null>(
-    null
-  );
+  const [dailyState, setDailyState] = useState<{
+    requestedDay: string;
+    sourceDay: string;
+    record: DailyRecord | null;
+    isFallbackFromPreviousDay: boolean;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [errorDay, setErrorDay] = useState<string | null>(null);
   const [lightboxState, setLightboxState] = useState<{
@@ -121,16 +146,49 @@ export const PrescriptionBedGridView: React.FC<PrescriptionBedGridViewProps> = (
   const [assignError, setAssignError] = useState<string | null>(null);
   const [pickerSource, setPickerSource] = useState<PrescriptionRecord | null>(null);
 
-  const loading = dailyState?.day !== effectiveDay && errorDay !== effectiveDay;
-  const daily = dailyState?.day === effectiveDay ? dailyState.record : null;
+  const loading = dailyState?.requestedDay !== effectiveDay && errorDay !== effectiveDay;
+  const daily = dailyState?.requestedDay === effectiveDay ? dailyState.record : null;
+  const dailySourceDay =
+    dailyState?.requestedDay === effectiveDay ? dailyState.sourceDay : effectiveDay;
+  const isDailyFallback =
+    dailyState?.requestedDay === effectiveDay && dailyState.isFallbackFromPreviousDay;
   const activeError = errorDay === effectiveDay ? error : null;
 
   useEffect(() => {
     let cancelled = false;
     getRecordFromFirestore(effectiveDay)
-      .then(record => {
+      .then(async record => {
         if (cancelled) return;
-        setDailyState({ day: effectiveDay, record });
+        if (buildBedRows(record, []).length > 0) {
+          setDailyState({
+            requestedDay: effectiveDay,
+            sourceDay: effectiveDay,
+            record,
+            isFallbackFromPreviousDay: false,
+          });
+          setError(null);
+          setErrorDay(null);
+          return;
+        }
+
+        const fallbackDay = previousIsoDay(effectiveDay);
+        const fallbackRecord = await getRecordFromFirestore(fallbackDay);
+        if (cancelled) return;
+        if (buildBedRows(fallbackRecord, []).length > 0) {
+          setDailyState({
+            requestedDay: effectiveDay,
+            sourceDay: fallbackDay,
+            record: fallbackRecord,
+            isFallbackFromPreviousDay: true,
+          });
+        } else {
+          setDailyState({
+            requestedDay: effectiveDay,
+            sourceDay: effectiveDay,
+            record,
+            isFallbackFromPreviousDay: false,
+          });
+        }
         setError(null);
         setErrorDay(null);
       })
@@ -152,6 +210,14 @@ export const PrescriptionBedGridView: React.FC<PrescriptionBedGridViewProps> = (
     () =>
       records
         .filter(isUnassignedRecord)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+    [records]
+  );
+
+  const stockRecords = useMemo(
+    () =>
+      records
+        .filter(isStockRecord)
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
     [records]
   );
@@ -247,6 +313,11 @@ export const PrescriptionBedGridView: React.FC<PrescriptionBedGridViewProps> = (
             {formatDayLabel(effectiveDay)}
           </span>
           . Haz click en una miniatura para ver la receta en grande.
+          {isDailyFallback && (
+            <span className="ml-1 text-sky-700">
+              Pacientes tomados del censo del día previo ({formatDayLabel(dailySourceDay)}).
+            </span>
+          )}
         </p>
         {!loading && !activeError && (
           <p className="text-[11px] text-slate-400">
@@ -325,6 +396,25 @@ export const PrescriptionBedGridView: React.FC<PrescriptionBedGridViewProps> = (
         onPreviewImage={openLightbox}
         onUpdateType={onUpdateType}
       />
+
+      {stockRecords.length > 0 && (
+        <PrescriptionUnassignedTray
+          records={stockRecords}
+          draggingId={null}
+          pickerSource={null}
+          assignError={null}
+          enableAssign={false}
+          testId="prescription-stock-tray"
+          cardTestIdPrefix="prescription-stock-card"
+          title="Stock de Hospitalizados"
+          emptyLabel="Sin recetas en Stock de Hospitalizados."
+          onDragStart={() => undefined}
+          onDragEnd={() => undefined}
+          onTogglePicker={() => undefined}
+          onPreviewImage={openLightbox}
+          onUpdateType={onUpdateType}
+        />
+      )}
 
       {lightboxState && (
         <PrescriptionPatientLightbox

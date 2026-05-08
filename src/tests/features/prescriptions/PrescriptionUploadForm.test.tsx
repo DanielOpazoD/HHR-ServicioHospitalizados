@@ -10,6 +10,7 @@ const buildController = (): PrescriptionUploadControllerHandle => ({
     prescriptionType: 'comun',
     patientUnassigned: false,
     selectedPatientKey: '',
+    assignmentScope: 'patient',
   },
   setField: vi.fn(),
   errorMessage: null,
@@ -23,6 +24,8 @@ const buildController = (): PrescriptionUploadControllerHandle => ({
   patientOptions: [],
   patientOptionsPhase: 'ready',
   patientOptionsError: null,
+  patientOptionsSourceDate: '2026-05-05',
+  isPatientOptionsFallbackFromPreviousDay: false,
   submitPin: vi.fn(),
   prescriptionTypes: ['comun', 'psicotropicos', 'benzodiazepinas'],
 });
@@ -38,6 +41,7 @@ describe('PrescriptionUploadForm', () => {
     expect(
       screen.getByRole('radio', { name: /receta verde de estupefacientes/i })
     ).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /stock de hospitalizados/i })).toBeInTheDocument();
 
     expect(
       within(screen.getByTestId('prescription-type-option-comun')).getByTestId('icon-pill')
@@ -52,5 +56,20 @@ describe('PrescriptionUploadForm', () => {
         'icon-green-circle'
       )
     ).toBeInTheDocument();
+  });
+
+  it('shows when patient options come from the previous-day census', () => {
+    render(
+      <PrescriptionUploadForm
+        controller={{
+          ...buildController(),
+          patientOptionsSourceDate: '2026-05-04',
+          isPatientOptionsFallbackFromPreviousDay: true,
+        }}
+      />
+    );
+
+    expect(screen.getByText(/censo del día previo/i)).toBeInTheDocument();
+    expect(screen.getByText(/04-05-2026|2026-05-04/i)).toBeInTheDocument();
   });
 });

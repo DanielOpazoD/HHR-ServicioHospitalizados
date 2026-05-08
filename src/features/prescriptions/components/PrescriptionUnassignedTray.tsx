@@ -14,6 +14,11 @@ interface PrescriptionUnassignedTrayProps {
   pickerSource: PrescriptionRecord | null;
   assignError: string | null;
   enableAssign: boolean;
+  testId?: string;
+  cardTestIdPrefix?: string;
+  title?: string;
+  emptyLabel?: string;
+  guidance?: string;
   onDragStart: (event: React.DragEvent<HTMLDivElement>, record: PrescriptionRecord) => void;
   onDragEnd: () => void;
   onTogglePicker: (record: PrescriptionRecord) => void;
@@ -27,6 +32,11 @@ export const PrescriptionUnassignedTray: React.FC<PrescriptionUnassignedTrayProp
   pickerSource,
   assignError,
   enableAssign,
+  testId = 'prescription-unassigned-tray',
+  cardTestIdPrefix = 'prescription-unassigned-card',
+  title = 'Pendientes de asignación',
+  emptyLabel = 'Sin recetas pendientes de asignación.',
+  guidance = 'Arrastra a la fila y columna correctas, o usa "Elegir"',
   onDragStart,
   onDragEnd,
   onTogglePicker,
@@ -39,25 +49,22 @@ export const PrescriptionUnassignedTray: React.FC<PrescriptionUnassignedTrayProp
         data-testid="prescription-unassigned-empty"
         className="rounded-xl border border-dashed border-slate-200 bg-white p-3 text-center text-[11px] text-slate-400"
       >
-        Sin recetas pendientes de asignación.
+        {emptyLabel}
       </p>
     );
   }
 
   return (
-    <div
-      data-testid="prescription-unassigned-tray"
-      className="rounded-xl border border-amber-200 bg-amber-50/60 p-3"
-    >
+    <div data-testid={testId} className="rounded-xl border border-amber-200 bg-amber-50/60 p-3">
       <header className="mb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-xs font-semibold text-amber-900">
           <Inbox size={14} />
-          Pendientes de asignación ({records.length})
+          {title} ({records.length})
         </div>
         {enableAssign && (
           <p className="hidden items-center gap-1 text-[10px] text-amber-700 sm:flex">
             <MousePointerClick size={11} />
-            Arrastra a la fila y columna correctas, o usa &quot;Elegir&quot;
+            {guidance}
           </p>
         )}
       </header>
@@ -68,7 +75,7 @@ export const PrescriptionUnassignedTray: React.FC<PrescriptionUnassignedTrayProp
           return (
             <div
               key={record.id}
-              data-testid={`prescription-unassigned-card-${record.id}`}
+              data-testid={`${cardTestIdPrefix}-${record.id}`}
               draggable={enableAssign}
               onDragStart={event => onDragStart(event, record)}
               onDragEnd={onDragEnd}
