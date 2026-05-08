@@ -18,4 +18,34 @@ describe('PrescriptionQuickTypeButton', () => {
     expect(menu.parentElement).toBe(document.body);
     expect(menu).toHaveClass('fixed');
   });
+
+  it('opens the type menu above the trigger when the lower viewport is clipped', () => {
+    const onChange = vi.fn(async () => undefined);
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      value: 300,
+    });
+
+    render(
+      <PrescriptionQuickTypeButton currentType="comun" onChange={onChange} variant="inline" />
+    );
+
+    const trigger = screen.getByRole('button', { name: /común/i });
+    vi.spyOn(trigger.parentElement as HTMLDivElement, 'getBoundingClientRect').mockReturnValue({
+      bottom: 284,
+      height: 24,
+      left: 100,
+      right: 180,
+      top: 260,
+      width: 80,
+      x: 100,
+      y: 260,
+      toJSON: () => ({}),
+    });
+
+    fireEvent.click(trigger);
+
+    const menu = screen.getByRole('menu');
+    expect(Number.parseFloat(menu.style.top)).toBeLessThan(260);
+  });
 });

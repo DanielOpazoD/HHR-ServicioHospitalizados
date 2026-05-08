@@ -23,6 +23,10 @@ const TYPE_SHORT_LABEL: Record<PrescriptionType, string> = {
   benzodiazepinas: 'Verde',
 };
 
+const MENU_ESTIMATED_HEIGHT_PX = 180;
+const MENU_GAP_PX = 6;
+const VIEWPORT_MARGIN_PX = 8;
+
 export const PrescriptionQuickTypeButton: React.FC<PrescriptionQuickTypeButtonProps> = ({
   currentType,
   onChange,
@@ -40,9 +44,23 @@ export const PrescriptionQuickTypeButton: React.FC<PrescriptionQuickTypeButtonPr
     const updateMenuStyle = () => {
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+      const spaceBelow = viewportHeight - rect.bottom;
+      const opensAbove =
+        spaceBelow < MENU_ESTIMATED_HEIGHT_PX + MENU_GAP_PX &&
+        rect.top > MENU_ESTIMATED_HEIGHT_PX + MENU_GAP_PX;
+      const top = opensAbove
+        ? Math.max(VIEWPORT_MARGIN_PX, rect.top - MENU_ESTIMATED_HEIGHT_PX - MENU_GAP_PX)
+        : Math.min(
+            rect.bottom + MENU_GAP_PX,
+            Math.max(
+              VIEWPORT_MARGIN_PX,
+              viewportHeight - MENU_ESTIMATED_HEIGHT_PX - VIEWPORT_MARGIN_PX
+            )
+          );
       setMenuStyle({
         left: rect.left + rect.width / 2,
-        top: rect.bottom + 6,
+        top,
         transform: 'translateX(-50%)',
       });
     };
@@ -111,7 +129,14 @@ export const PrescriptionQuickTypeButton: React.FC<PrescriptionQuickTypeButtonPr
             ref={menuRef}
             role="menu"
             style={menuStyle}
-            className="fixed z-[230] w-[180px] rounded-lg border border-slate-200 bg-white p-1 shadow-xl"
+            className="fixed z-[230] max-h-[min(180px,calc(100vh-16px))] overflow-y-auto rounded-lg border border-slate-200 bg-white p-1 shadow-xl"
+            data-placement={
+              Number(menuStyle.top) < (containerRef.current?.getBoundingClientRect().top ?? 0)
+                ? 'top'
+                : 'bottom'
+            }
+            aria-label="Tipo de receta"
+            data-testid="prescription-type-menu"
           >
             <p className="px-2 pt-1 pb-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-400">
               Tipo de receta

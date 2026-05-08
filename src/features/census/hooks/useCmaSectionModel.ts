@@ -12,6 +12,7 @@ interface UseCmaSectionModelParams {
   updateCMA: (id: string, fields: Partial<CMAData>) => void;
   updatePatientMultiple: (bedId: string, fields: Partial<PatientData>) => void;
   deleteCMA: (id: string) => void;
+  undoCMA?: (item: CMAData) => void;
 }
 
 interface UseCmaSectionModelResult extends CensusMovementSectionModel<CMAData> {
@@ -27,6 +28,7 @@ export const useCmaSectionModel = ({
   updateCMA,
   updatePatientMultiple,
   deleteCMA,
+  undoCMA,
 }: UseCmaSectionModelParams): UseCmaSectionModelResult => {
   const sectionState = resolveCmaSectionState(cma);
   const { handleUpdate, handleUndo, handleDelete } = useCmaSectionActions({
@@ -35,6 +37,7 @@ export const useCmaSectionModel = ({
     updateCMA,
     updatePatientMultiple,
     deleteCMA,
+    undoCMA,
   });
 
   return {

@@ -121,6 +121,7 @@ export interface DailyRecordMovementActions extends PatientMovementActions {
   addCMA: (data: Omit<CMAData, 'id' | 'timestamp'>) => void;
   deleteCMA: (id: string) => void;
   updateCMA: (id: string, updates: Partial<CMAData>) => void;
+  undoCMA: (item: CMAData) => void;
 }
 
 export interface DailyRecordHandoffActions {

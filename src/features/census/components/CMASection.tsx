@@ -14,7 +14,7 @@ import { useCensusMovementData } from '@/features/census/hooks/useCensusMovement
 
 export const CMASection: React.FC = () => {
   const { cma, recordDate } = useCensusMovementData();
-  const { deleteCMA, updateCMA } = useDailyRecordMovementActions();
+  const { deleteCMA, undoCMA, updateCMA } = useDailyRecordMovementActions();
   const { updatePatientMultiple } = useDailyRecordBedActions();
   const { confirm } = useConfirmDialog();
   const { error: notifyError } = useNotification();
@@ -25,6 +25,7 @@ export const CMASection: React.FC = () => {
     updateCMA,
     updatePatientMultiple,
     deleteCMA,
+    undoCMA,
   });
 
   return (

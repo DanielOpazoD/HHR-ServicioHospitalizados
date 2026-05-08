@@ -14,6 +14,7 @@ interface UseCmaSectionActionsParams {
   updateCMA: (id: string, fields: Partial<CMAData>) => void;
   updatePatientMultiple: (bedId: string, fields: Partial<PatientData>) => void;
   deleteCMA: (id: string) => void;
+  undoCMA?: (item: CMAData) => void;
 }
 
 interface UseCmaSectionActionsResult {
@@ -28,6 +29,7 @@ export const useCmaSectionActions = ({
   updateCMA,
   updatePatientMultiple,
   deleteCMA,
+  undoCMA,
 }: UseCmaSectionActionsParams): UseCmaSectionActionsResult => {
   const handleUpdate = React.useCallback(
     (id: string, field: keyof CMAData, value: CMAData[keyof CMAData]) => {
@@ -42,13 +44,14 @@ export const useCmaSectionActions = ({
         confirm,
         updatePatientMultiple,
         deleteCMA,
+        undoCMA,
       });
 
       if (!result.ok) {
         notifyError('No se pudo deshacer', result.error.message);
       }
     },
-    [confirm, deleteCMA, notifyError, updatePatientMultiple]
+    [confirm, deleteCMA, notifyError, undoCMA, updatePatientMultiple]
   );
 
   const handleDelete = React.useCallback(

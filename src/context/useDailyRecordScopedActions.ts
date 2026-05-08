@@ -89,6 +89,7 @@ export const useDailyRecordMovementActions = (): DailyRecordMovementActions => {
       addCMA: actions.addCMA,
       deleteCMA: actions.deleteCMA,
       updateCMA: actions.updateCMA,
+      undoCMA: actions.undoCMA,
     }),
     [
       actions.addCMA,
@@ -97,6 +98,7 @@ export const useDailyRecordMovementActions = (): DailyRecordMovementActions => {
       actions.deleteCMA,
       actions.deleteDischarge,
       actions.deleteTransfer,
+      actions.undoCMA,
       actions.undoDischarge,
       actions.undoTransfer,
       actions.updateCMA,

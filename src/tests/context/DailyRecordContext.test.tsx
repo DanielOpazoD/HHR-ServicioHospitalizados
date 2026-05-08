@@ -79,6 +79,7 @@ describe('DailyRecordContext', () => {
     addCMA: vi.fn(),
     deleteCMA: vi.fn(),
     updateCMA: vi.fn(),
+    undoCMA: vi.fn(),
     updateNurse: vi.fn(),
     updateTens: vi.fn(),
     updateDetailedStaffing: vi.fn(),

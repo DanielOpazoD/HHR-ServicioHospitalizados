@@ -25,6 +25,50 @@ describe('patientMovementUndoMutationController', () => {
     expect(updated.discharges.map(d => d.id)).toEqual(['d-2']);
   });
 
+  it('removes stale destination entries for the restored patient when undoing discharge', () => {
+    const restoredPatient = DataFactory.createMockPatient('R1', {
+      patientName: 'Paciente Restaurado',
+      rut: '11.111.111-1',
+    });
+    const record = DataFactory.createMockDailyRecord('2025-01-01', {
+      discharges: [
+        DataFactory.createMockDischarge({
+          id: 'd-1',
+          bedId: 'R1',
+          patientName: restoredPatient.patientName,
+          rut: restoredPatient.rut,
+        }),
+      ],
+      transfers: [
+        DataFactory.createMockTransfer({
+          id: 't-stale',
+          bedId: 'R1',
+          patientName: restoredPatient.patientName,
+          rut: restoredPatient.rut,
+        }),
+      ],
+      cma: [
+        DataFactory.createMockCMA({
+          id: 'cma-stale',
+          originalBedId: 'R1',
+          patientName: restoredPatient.patientName,
+          rut: restoredPatient.rut,
+        }),
+      ],
+    });
+
+    const updated = resolveApplyUndoDischargeRecord({
+      record,
+      dischargeId: 'd-1',
+      bedId: 'R1',
+      updatedBed: restoredPatient,
+    });
+
+    expect(updated.discharges).toEqual([]);
+    expect(updated.transfers).toEqual([]);
+    expect(updated.cma).toEqual([]);
+  });
+
   it('applies undo for transfer by restoring bed and removing transfer entry', () => {
     const record = DataFactory.createMockDailyRecord('2025-01-01', {
       transfers: [
@@ -42,5 +86,49 @@ describe('patientMovementUndoMutationController', () => {
 
     expect(updated.beds.R2.patientName).toBe('Transfer Restaurado');
     expect(updated.transfers.map(t => t.id)).toEqual(['t-1']);
+  });
+
+  it('removes stale destination entries for the restored patient when undoing transfer', () => {
+    const restoredPatient = DataFactory.createMockPatient('R2', {
+      patientName: 'Transfer Restaurado',
+      rut: '22.222.222-2',
+    });
+    const record = DataFactory.createMockDailyRecord('2025-01-01', {
+      discharges: [
+        DataFactory.createMockDischarge({
+          id: 'd-stale',
+          bedId: 'R2',
+          patientName: restoredPatient.patientName,
+          rut: restoredPatient.rut,
+        }),
+      ],
+      transfers: [
+        DataFactory.createMockTransfer({
+          id: 't-1',
+          bedId: 'R2',
+          patientName: restoredPatient.patientName,
+          rut: restoredPatient.rut,
+        }),
+      ],
+      cma: [
+        DataFactory.createMockCMA({
+          id: 'cma-stale',
+          originalBedId: 'R2',
+          patientName: restoredPatient.patientName,
+          rut: restoredPatient.rut,
+        }),
+      ],
+    });
+
+    const updated = resolveApplyUndoTransferRecord({
+      record,
+      transferId: 't-1',
+      bedId: 'R2',
+      updatedBed: restoredPatient,
+    });
+
+    expect(updated.discharges).toEqual([]);
+    expect(updated.transfers).toEqual([]);
+    expect(updated.cma).toEqual([]);
   });
 });

@@ -75,6 +75,7 @@ export const createPublicMedicalSignatureContextValue = ({
   addCMA: noop,
   deleteCMA: noop,
   updateCMA: noop,
+  undoCMA: noop,
   updateHandoffChecklist: noop,
   updateHandoffNovedades: noop,
   updateMedicalSpecialtyNote: asyncNoop,

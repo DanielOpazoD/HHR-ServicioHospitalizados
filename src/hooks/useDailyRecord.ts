@@ -122,6 +122,7 @@ export const useDailyRecord = (
         addCMA: cmaManagement.addCMA,
         deleteCMA: cmaManagement.deleteCMA,
         updateCMA: cmaManagement.updateCMA,
+        undoCMA: cmaManagement.undoCMA,
         copyPatientToDate,
         updateHandoffChecklist: handoffManagement.updateHandoffChecklist,
         updateHandoffNovedades: handoffManagement.updateHandoffNovedades,

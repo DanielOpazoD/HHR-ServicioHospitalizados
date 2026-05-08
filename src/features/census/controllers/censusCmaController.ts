@@ -17,6 +17,7 @@ export interface CmaUndoRuntimeActions {
   confirm: (options: ControllerConfirmDescriptor) => Promise<boolean>;
   updatePatientMultiple: (bedId: string, fields: Partial<PatientData>) => void;
   deleteCMA: (id: string) => void;
+  undoCMA?: (item: CMAData) => void;
 }
 
 export interface CmaDeleteRuntimeActions {
@@ -114,8 +115,12 @@ export const executeUndoCmaController = async (
     return ok({ outcome: 'cancelled' });
   }
 
-  actions.updatePatientMultiple(item.originalBedId, item.originalData);
-  actions.deleteCMA(item.id);
+  if (actions.undoCMA) {
+    actions.undoCMA(item);
+  } else {
+    actions.updatePatientMultiple(item.originalBedId, item.originalData);
+    actions.deleteCMA(item.id);
+  }
 
   return ok({ outcome: 'restored' });
 };

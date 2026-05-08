@@ -110,6 +110,32 @@ describe('censusCmaController', () => {
     expect(deleteCMA).toHaveBeenCalledWith('cma-1');
   });
 
+  it('uses the atomic CMA undo action when available', async () => {
+    const item = DataFactory.createMockCMA({
+      id: 'cma-atomic',
+      originalBedId: 'R3',
+      originalData: DataFactory.createMockPatient('R3', { patientName: 'Restaurado' }),
+    });
+    const undoCMA = vi.fn();
+    const updatePatientMultiple = vi.fn();
+    const deleteCMA = vi.fn();
+
+    const result = await executeUndoCmaController(item, {
+      confirm: vi.fn().mockResolvedValue(true),
+      updatePatientMultiple,
+      deleteCMA,
+      undoCMA,
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      value: { outcome: 'restored' },
+    });
+    expect(undoCMA).toHaveBeenCalledWith(item);
+    expect(updatePatientMultiple).not.toHaveBeenCalled();
+    expect(deleteCMA).not.toHaveBeenCalled();
+  });
+
   it('returns explicit error when confirm dialog rejects', async () => {
     const item = DataFactory.createMockCMA({
       originalBedId: 'R1',

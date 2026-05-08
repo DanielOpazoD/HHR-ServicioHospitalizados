@@ -2,13 +2,17 @@ import { useMemo, useCallback, useRef, useEffect } from 'react';
 import type {
   ApplyDailyRecordPatch,
   DailyRecord,
+  DailyRecordPatch,
   PersistDailyRecord,
 } from '@/application/shared/dailyRecordCoreContracts';
 import { CMAData } from '@/types/domain/movements';
 import { capitalizeWords } from '@/utils/stringUtils';
 import { formatRut, isValidRut, isPassportFormat } from '@/utils/rutUtils';
 import { buildClearPatientPatches } from '@/hooks/controllers/bedManagementPatchController';
-import { buildAtomicPatientMovementPatch } from '@/application/census/public';
+import {
+  buildAtomicPatientMovementPatch,
+  resolveApplyUndoCmaRecord,
+} from '@/application/census/public';
 
 /**
  * Normalize CMA patient data fields
@@ -117,12 +121,35 @@ export const useCMA = (
     [patchRecord]
   );
 
+  const undoCMA = useCallback(
+    (item: CMAData) => {
+      const currentRecord = recordRef.current;
+      if (!currentRecord || !item.originalBedId || !item.originalData) return;
+
+      const updatedRecord = resolveApplyUndoCmaRecord({
+        record: currentRecord,
+        cmaId: item.id,
+        bedId: item.originalBedId,
+        updatedBed: item.originalData,
+      });
+
+      patchRecord({
+        [`beds.${item.originalBedId}`]: updatedRecord.beds[item.originalBedId],
+        discharges: updatedRecord.discharges,
+        transfers: updatedRecord.transfers,
+        cma: updatedRecord.cma,
+      } as DailyRecordPatch);
+    },
+    [patchRecord]
+  );
+
   return useMemo(
     () => ({
       addCMA,
       deleteCMA,
       updateCMA,
+      undoCMA,
     }),
-    [addCMA, deleteCMA, updateCMA]
+    [addCMA, deleteCMA, updateCMA, undoCMA]
   );
 };

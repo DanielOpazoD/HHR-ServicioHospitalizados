@@ -239,6 +239,7 @@ export const createMockDailyRecordContext = (
   addCMA: vi.fn(),
   deleteCMA: vi.fn(),
   updateCMA: vi.fn(),
+  undoCMA: vi.fn(),
 
   // Handoff Management
   updateHandoffChecklist: vi.fn(),
