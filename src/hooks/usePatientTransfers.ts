@@ -82,14 +82,14 @@ export const usePatientTransfers = (
             createEmptyPatient,
           })
         );
-        executeMovementCreation({
+        void executeMovementCreation({
           kind: 'transfer',
           bedId,
           resolution,
           onSuccess: value => {
             logTransferEntry(value.auditEntry, currentRecord.date);
           },
-        });
+        }).catch(() => undefined);
       });
     },
     [executeMovementCreation, logTransferEntry, withCurrentRecord]

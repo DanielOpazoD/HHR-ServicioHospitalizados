@@ -40,19 +40,19 @@ export const usePatientMovementCreationExecutor = ({
   notifyCreationError,
 }: UsePatientMovementCreationExecutorParams) => {
   return useCallback(
-    <TValue extends { updatedRecord: DailyRecord }>({
+    async <TValue extends { updatedRecord: DailyRecord }>({
       kind,
       bedId,
       resolution,
       onSuccess,
-    }: ExecuteMovementCreationParams<TValue>) => {
+    }: ExecuteMovementCreationParams<TValue>): Promise<void> => {
       if (!resolution.ok) {
         notifyCreationError(kind, resolution.error.code, bedId);
         return;
       }
 
       if (patchRecord) {
-        patchRecord(
+        await patchRecord(
           buildAtomicPatientMovementPatch({
             updatedRecord: resolution.value.updatedRecord,
             movementKey: resolveAtomicPatientMovementListKey(kind),
@@ -60,7 +60,7 @@ export const usePatientMovementCreationExecutor = ({
           })
         );
       } else {
-        saveAndUpdate(resolution.value.updatedRecord);
+        await saveAndUpdate(resolution.value.updatedRecord);
       }
       onSuccess?.(resolution.value);
     },

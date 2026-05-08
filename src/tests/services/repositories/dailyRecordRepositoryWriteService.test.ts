@@ -59,6 +59,7 @@ import {
   getRecordForDate as getRecordFromIndexedDB,
   saveRecord as saveToIndexedDB,
 } from '@/services/storage/indexeddb/indexedDbRecordService';
+import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
 import {
   saveRecordToFirestore,
   updateRecordPartial as updateRecordPartialToFirestore,
@@ -214,6 +215,40 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
     } finally {
       restoreConsole(consoleSpies);
     }
+  });
+
+  it('hydrates a remote base record before partial update when local cache is missing', async () => {
+    const remote = buildRecord('2026-02-18');
+    remote.lastUpdated = '2026-02-18T09:00:00.000Z';
+    remote.beds = {
+      R2: buildPatient('R2', 'Paciente Remoto'),
+    };
+
+    vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(null);
+    vi.mocked(getRecordFromFirestore).mockResolvedValueOnce(remote);
+
+    const result = await updatePartialDetailed('2026-02-18', {
+      'beds.R2.patientName': 'Paciente Nuevo',
+    });
+
+    expect(result.outcome).toBe('clean');
+    expect(result.savedLocally).toBe(true);
+    expect(result.updatedRemotely).toBe(true);
+    expect(saveToIndexedDB).toHaveBeenCalledWith(remote);
+    expect(saveToIndexedDB).toHaveBeenCalledWith(
+      expect.objectContaining({
+        beds: expect.objectContaining({
+          R2: expect.objectContaining({ patientName: 'Paciente Nuevo' }),
+        }),
+      })
+    );
+    expect(updateRecordPartialToFirestore).toHaveBeenCalledWith(
+      '2026-02-18',
+      expect.objectContaining({
+        'beds.R2.patientName': 'Paciente Nuevo',
+      }),
+      '2026-02-18T09:00:00.000Z'
+    );
   });
 
   it('blocks partial admissionDate edits after the first observed day', async () => {

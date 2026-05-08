@@ -24,6 +24,7 @@ import {
   resolveSaveErrorFeedback,
   resolveSaveOutcomeFeedback,
 } from '@/hooks/controllers/dailyRecordSyncNotificationController';
+import { assertDailyRecordWriteAccepted } from '@/hooks/controllers/dailyRecordWriteOutcomeGuard';
 import {
   buildCreateDaySuccessMessage,
   resolveCreateDaySourceDate,
@@ -205,6 +206,7 @@ export const useDailyRecordSyncQuery = (
       try {
         const payload = await saveMutation.mutateAsync(updatedRecord);
         presentChannelNotice(resolveSaveOutcomeFeedback(payload.result), 'Guardado');
+        assertDailyRecordWriteAccepted(payload.result);
       } catch (err) {
         const feedback = resolveSaveErrorFeedback(err);
         if (feedback) {
@@ -232,6 +234,7 @@ export const useDailyRecordSyncQuery = (
     async (partial: DailyRecordPatch) => {
       const payload = await patchMutation.mutateAsync(partial);
       presentChannelNotice(resolvePatchOutcomeFeedback(payload.result), 'Actualización');
+      assertDailyRecordWriteAccepted(payload.result);
     },
     [patchMutation, presentChannelNotice]
   );

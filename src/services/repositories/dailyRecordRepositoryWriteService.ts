@@ -8,6 +8,7 @@ import {
   saveRecordToFirestore,
   updateRecordPartial as updateRecordPartialToFirestore,
 } from '@/services/storage/firestore/firestoreRecordWrites';
+import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import {
   createPartialUpdateDailyRecordCommand,
@@ -145,6 +146,33 @@ const persistLocalAndAttemptRemoteSync = async ({
   }
 };
 
+const resolvePartialUpdateBaseRecord = async (date: string): Promise<DailyRecord | null> => {
+  const localRecord = await getRecordFromIndexedDB(date);
+  if (localRecord) {
+    return localRecord;
+  }
+
+  if (!isFirestoreEnabled()) {
+    return null;
+  }
+
+  try {
+    const remoteRecord = await getRecordFromFirestore(date);
+    if (!remoteRecord) {
+      return null;
+    }
+
+    await saveToIndexedDB(remoteRecord);
+    return remoteRecord;
+  } catch (error) {
+    dailyRecordWriteLogger.warn(
+      `Remote base fetch failed for ${date}; partial update aborted`,
+      error
+    );
+    return null;
+  }
+};
+
 export const saveDetailed = async (record: DailyRecord, expectedLastUpdated?: string) => {
   const command = createSaveDailyRecordCommand(record, expectedLastUpdated ?? record.lastUpdated);
   const remoteState = createRemoteWriteState();
@@ -248,7 +276,7 @@ export const save = async (record: DailyRecord, expectedLastUpdated?: string): P
 export const updatePartialDetailed = async (date: string, partialData: DailyRecordPatch) => {
   const command = createPartialUpdateDailyRecordCommand(date, partialData);
   const remoteState = createRemoteWriteState();
-  const current = await getRecordFromIndexedDB(command.date);
+  const current = await resolvePartialUpdateBaseRecord(command.date);
 
   if (!current) {
     dailyRecordWriteLogger.warn(`No record found for ${command.date}; partial update aborted`);
