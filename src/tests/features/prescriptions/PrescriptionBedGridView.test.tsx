@@ -148,7 +148,7 @@ describe('PrescriptionBedGridView', () => {
     expect(screen.getByText('Egresos')).toBeInTheDocument();
     expect(screen.getByText('12.345.678-9')).toBeInTheDocument();
     expect(screen.getByTestId('prescription-bed-cell-H2C3-comun')).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: /comun · h2c3/i })).toBeInTheDocument();
+    expect(await screen.findByRole('img', { name: /comun · h2c3/i })).toBeInTheDocument();
   });
 
   it('drops a matching-type unassigned prescription onto a bed cell and calls onAssign', async () => {
