@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { DataFactory } from '@/tests/factories/DataFactory';
+import { buildUndoCmaPatch } from '@/application/census/cmaUndoPatchUseCase';
 import {
   buildDeleteCmaDialog,
   buildRestoreCmaDialog,
@@ -134,6 +135,44 @@ describe('censusCmaController', () => {
     expect(undoCMA).toHaveBeenCalledWith(item);
     expect(updatePatientMultiple).not.toHaveBeenCalled();
     expect(deleteCMA).not.toHaveBeenCalled();
+  });
+
+  it('builds an atomic patch to restore a CMA patient and remove restored movement echoes', () => {
+    const originalData = DataFactory.createMockPatient('R3', {
+      patientName: 'Restaurado',
+      rut: '11.111.111-1',
+    });
+    const item = DataFactory.createMockCMA({
+      id: 'cma-atomic',
+      originalBedId: 'R3',
+      patientName: 'Restaurado',
+      rut: '11.111.111-1',
+      originalData,
+    });
+    const record = DataFactory.createMockDailyRecord('2026-03-20', {
+      beds: {
+        R3: DataFactory.createMockPatient('R3', { patientName: '' }),
+      },
+      cma: [item],
+      discharges: [
+        {
+          ...DataFactory.createMockDischarge({
+            id: 'discharge-echo',
+            bedId: 'R3',
+            patientName: 'Restaurado',
+            rut: '11.111.111-1',
+          }),
+        },
+      ],
+      transfers: [],
+    });
+
+    expect(buildUndoCmaPatch(record, item)).toEqual({
+      'beds.R3': originalData,
+      discharges: [],
+      transfers: [],
+      cma: [],
+    });
   });
 
   it('returns explicit error when confirm dialog rejects', async () => {

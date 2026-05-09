@@ -9,10 +9,7 @@ import { CMAData } from '@/types/domain/movements';
 import { capitalizeWords } from '@/utils/stringUtils';
 import { formatRut, isValidRut, isPassportFormat } from '@/utils/rutUtils';
 import { buildClearPatientPatches } from '@/hooks/controllers/bedManagementPatchController';
-import {
-  buildAtomicPatientMovementPatch,
-  resolveApplyUndoCmaRecord,
-} from '@/application/census/public';
+import { buildAtomicPatientMovementPatch, buildUndoCmaPatch } from '@/application/census/public';
 
 /**
  * Normalize CMA patient data fields
@@ -124,21 +121,12 @@ export const useCMA = (
   const undoCMA = useCallback(
     (item: CMAData) => {
       const currentRecord = recordRef.current;
-      if (!currentRecord || !item.originalBedId || !item.originalData) return;
+      if (!currentRecord) return;
 
-      const updatedRecord = resolveApplyUndoCmaRecord({
-        record: currentRecord,
-        cmaId: item.id,
-        bedId: item.originalBedId,
-        updatedBed: item.originalData,
-      });
+      const patch = buildUndoCmaPatch(currentRecord, item);
+      if (!patch) return;
 
-      patchRecord({
-        [`beds.${item.originalBedId}`]: updatedRecord.beds[item.originalBedId],
-        discharges: updatedRecord.discharges,
-        transfers: updatedRecord.transfers,
-        cma: updatedRecord.cma,
-      } as DailyRecordPatch);
+      patchRecord(patch as DailyRecordPatch);
     },
     [patchRecord]
   );
