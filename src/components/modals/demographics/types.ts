@@ -18,6 +18,7 @@ export type DemographicSubset = Pick<
   | 'documentType'
   | 'age'
   | 'birthDate'
+  | 'pathology'
   | 'insurance'
   | 'admissionOrigin'
   | 'admissionOriginDetails'
@@ -58,4 +59,5 @@ export interface LocalDemographicsState {
   biologicalSex: BiologicalSex;
   admissionDate: string;
   admissionTime: string;
+  pathology: string;
 }

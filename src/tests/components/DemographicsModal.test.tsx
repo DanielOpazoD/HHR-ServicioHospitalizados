@@ -170,6 +170,63 @@ describe('DemographicsModal', () => {
     );
   });
 
+  it('shows the target bed and fills a fictitious patient from the icon action', () => {
+    const onSave = vi.fn();
+
+    render(
+      <DemographicsModal
+        isOpen
+        onClose={vi.fn()}
+        data={createEmptyDemographics()}
+        onSave={onSave}
+        bedId="R4"
+        recordDate="2026-05-09"
+        requiresCompleteDemographics
+      />
+    );
+
+    expect(screen.getByText('Cama R4')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Rellenar paciente ficticio' }));
+
+    expect(screen.getByPlaceholderText('Nombre')).toHaveValue('Daniel');
+    expect(screen.getByPlaceholderText('Apellido paterno')).toHaveValue('Opazo');
+    expect(screen.getByPlaceholderText('Apellido materno')).toHaveValue('Damiani');
+    expect(screen.getByPlaceholderText('12.345.678-9')).toHaveValue('17.752.753-K');
+
+    const birthDateInput = document.querySelector('input[type="date"]');
+    expect(birthDateInput).toBeInstanceOf(HTMLInputElement);
+    expect(birthDateInput).toHaveValue('1990-11-15');
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Fecha de ingreso' }), {
+      target: { value: '2026-05-09' },
+    });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Hora de ingreso - horas' }), {
+      target: { value: '09' },
+    });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Hora de ingreso - minutos' }), {
+      target: { value: '30' },
+    });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Origen del ingreso' }), {
+      target: { value: 'Urgencias' },
+    });
+    fireEvent.click(screen.getAllByRole('radio')[0]);
+
+    fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        firstName: 'Daniel',
+        lastName: 'Opazo',
+        secondLastName: 'Damiani',
+        patientName: 'Daniel Opazo Damiani',
+        rut: '17.752.753-K',
+        birthDate: '1990-11-15',
+        pathology: 'Neumonía (Probando)',
+      })
+    );
+  });
+
   it('allows typing admission time in HH:MM format from demographics', () => {
     const onSave = vi.fn();
 
