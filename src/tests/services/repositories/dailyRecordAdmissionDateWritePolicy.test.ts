@@ -68,4 +68,37 @@ describe('dailyRecordAdmissionDateWritePolicy carryover episodes', () => {
 
     expect(() => assertAdmissionDatePersistencePolicy('2026-05-09', next, previous)).not.toThrow();
   });
+
+  it('does not let a pre-existing invalid episode block unrelated bed edits on its first seen day', () => {
+    const contaminatedPatient = buildPatient('NEO1');
+    const previous = buildRecord('2026-05-08', {
+      NEO1: contaminatedPatient,
+    });
+    const next = buildRecord('2026-05-08', {
+      NEO1: contaminatedPatient,
+      R4: buildPatient('R4', {
+        patientName: 'Paciente Nuevo',
+        rut: '22.222.222-2',
+        firstSeenDate: '2026-05-08',
+        admissionDate: '2026-05-08',
+      }),
+    });
+
+    expect(() => assertAdmissionDatePersistencePolicy('2026-05-08', next, previous)).not.toThrow();
+  });
+
+  it('still blocks changing admissionDate for the contaminated existing episode itself', () => {
+    const previous = buildRecord('2026-05-08', {
+      NEO1: buildPatient('NEO1'),
+    });
+    const next = buildRecord('2026-05-08', {
+      NEO1: buildPatient('NEO1', {
+        admissionDate: '2026-05-02',
+      }),
+    });
+
+    expect(() => assertAdmissionDatePersistencePolicy('2026-05-08', next, previous)).toThrow(
+      'La fecha no coincide con la primera aparición observada.'
+    );
+  });
 });

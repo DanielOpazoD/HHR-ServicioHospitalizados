@@ -274,6 +274,43 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
     expect(updateRecordPartialToFirestore).not.toHaveBeenCalled();
   });
 
+  it('allows unrelated bed edits when an existing episode already has a suspicious admissionDate', async () => {
+    const current = buildRecord('2026-05-08');
+    current.beds = {
+      NEO1: {
+        ...buildPatient('NEO1', 'Nayeli Hereveri Martinez'),
+        rut: '24.029.332-3',
+        firstSeenDate: '2026-05-08',
+        admissionDate: '2026-05-01',
+      },
+      R4: {
+        ...buildPatient('R4', ''),
+        rut: '',
+        firstSeenDate: undefined,
+        admissionDate: '',
+      },
+    };
+
+    vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(current);
+
+    const result = await updatePartialDetailed('2026-05-08', {
+      'beds.R4.patientName': 'Paciente Nuevo',
+      'beds.R4.rut': '22.222.222-2',
+      'beds.R4.firstSeenDate': '2026-05-08',
+      'beds.R4.admissionDate': '2026-05-08',
+    });
+
+    expect(result.outcome).toBe('clean');
+    expect(updateRecordPartialToFirestore).toHaveBeenCalledWith(
+      '2026-05-08',
+      expect.objectContaining({
+        'beds.R4.patientName': 'Paciente Nuevo',
+        'beds.R4.rut': '22.222.222-2',
+      }),
+      current.lastUpdated
+    );
+  });
+
   it('persists explicit firstSeenDate clearing when a stale episode bed is emptied', async () => {
     const current = buildRecord('2026-05-08');
     current.beds = {
