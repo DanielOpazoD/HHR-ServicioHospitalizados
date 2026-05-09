@@ -36,6 +36,7 @@ describe('indexedDBService', () => {
     await idbService.clearErrorLogs();
     await idbService.clearAuditLogs();
     localStorage.clear();
+    sessionStorage.clear();
     vi.clearAllMocks();
   });
 
@@ -351,6 +352,13 @@ describe('indexedDBService', () => {
         value: { getRegistrations },
       });
       localStorage.setItem('firebase:authUser:test:[DEFAULT]', '{"uid":"abc"}');
+      localStorage.setItem('firebase:redirectUser:test:[DEFAULT]', '{"uid":"redirect"}');
+      localStorage.setItem('hhr_auth_bootstrap_pending_v1', '{"startedAt":1,"mode":"redirect"}');
+      localStorage.setItem('unrelated_local_key', 'remove-me');
+      sessionStorage.setItem('firebase:authUser:test:[DEFAULT]', '{"uid":"session"}');
+      sessionStorage.setItem('hhr_google_login_attempt_pending', String(Date.now()));
+      sessionStorage.setItem('hhr_logged_this_session', 'true');
+      sessionStorage.setItem('unrelated_session_key', 'remove-me');
 
       await idbService.resetLocalAppStorage();
 
@@ -358,6 +366,13 @@ describe('indexedDBService', () => {
       expect(unregister).toHaveBeenCalled();
       expect(window.indexedDB.deleteDatabase).toHaveBeenCalledWith('HangaRoaDB');
       expect(localStorage.getItem('firebase:authUser:test:[DEFAULT]')).toBeNull();
+      expect(localStorage.getItem('firebase:redirectUser:test:[DEFAULT]')).toBeNull();
+      expect(localStorage.getItem('hhr_auth_bootstrap_pending_v1')).toBeNull();
+      expect(localStorage.getItem('unrelated_local_key')).toBeNull();
+      expect(sessionStorage.getItem('firebase:authUser:test:[DEFAULT]')).toBeNull();
+      expect(sessionStorage.getItem('hhr_google_login_attempt_pending')).toBeNull();
+      expect(sessionStorage.getItem('hhr_logged_this_session')).toBeNull();
+      expect(sessionStorage.getItem('unrelated_session_key')).toBeNull();
       expect(window.location.reload).toHaveBeenCalled();
 
       Object.defineProperty(window, 'location', { configurable: true, value: originalLocation });

@@ -22,6 +22,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, initialAut
     isDayGradient,
     canRetryGoogleSignIn,
     handleGoogleSignIn,
+    handleLocalResetStart,
     toggleBackgroundMode,
   } = useLoginPageController(onLoginSuccess, initialAuthError);
   const BackgroundModeIcon = isDayGradient ? SunMedium : MoonStar;
@@ -83,6 +84,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, initialAut
             errorCode={errorCode}
             canRetryGoogleSignIn={canRetryGoogleSignIn}
             onGoogleSignIn={handleGoogleSignIn}
+            onLocalResetStart={handleLocalResetStart}
           />
           <LoginPageFooter isDayGradient={isDayGradient} />
         </div>

@@ -2,9 +2,13 @@ import { useEffect, useState } from 'react';
 import { isPopupRecoverableAuthError, resolveAuthErrorCode } from '@/services/auth/authErrorPolicy';
 import { AUTH_UI_COPY } from '@/services/auth/authUiCopy';
 import { executeGoogleSignIn } from '@/application/auth/authSessionUseCases';
-import { isAuthBootstrapPending } from '@/services/auth/authBootstrapState';
+import {
+  clearAuthBootstrapPending,
+  isAuthBootstrapPending,
+} from '@/services/auth/authBootstrapState';
 import { getCurrentAuthSessionState } from '@/services/auth/authSession';
 import {
+  clearRecentAuthenticatedSessionHint,
   clearGoogleLoginAttemptHint,
   markGoogleLoginAttemptHint,
 } from '@/services/auth/authStorageHints';
@@ -52,6 +56,7 @@ export interface LoginPageControllerState {
   backgroundMode: LoginBackgroundMode;
   canRetryGoogleSignIn: boolean;
   handleGoogleSignIn: () => Promise<void>;
+  handleLocalResetStart: () => void;
   toggleBackgroundMode: () => void;
 }
 
@@ -76,13 +81,22 @@ export const useLoginPageController = (
   }, []);
 
   useEffect(() => {
-    if (!initialAuthError) {
+    if (!initialAuthError?.message) {
       return;
     }
 
     setError(initialAuthError.message);
     setErrorCode(initialAuthError.code ?? null);
-  }, [initialAuthError]);
+  }, [initialAuthError?.code, initialAuthError?.message]);
+
+  const handleLocalResetStart = () => {
+    clearGoogleLoginAttemptHint();
+    clearRecentAuthenticatedSessionHint();
+    clearAuthBootstrapPending();
+    setIsGoogleLoading(false);
+    setError(null);
+    setErrorCode(null);
+  };
 
   const handleGoogleSignIn = async () => {
     setError(null);
@@ -115,6 +129,7 @@ export const useLoginPageController = (
         if (await waitForRecoverablePopupResolution()) {
           return;
         }
+        clearGoogleLoginAttemptHint();
         setErrorCode(resolvedErrorCode || 'auth/popup-recoverable');
         setError(AUTH_UI_COPY.blockedPopupStayOnPage);
       } else {
@@ -133,6 +148,7 @@ export const useLoginPageController = (
         if (await waitForRecoverablePopupResolution()) {
           return;
         }
+        clearGoogleLoginAttemptHint();
         setErrorCode(resolvedErrorCode || 'auth/popup-recoverable');
         setError(AUTH_UI_COPY.blockedPopupStayOnPage);
       } else {
@@ -165,6 +181,7 @@ export const useLoginPageController = (
     backgroundMode,
     canRetryGoogleSignIn: errorCode === 'auth/role-validation-unavailable' && !isGoogleLoading,
     handleGoogleSignIn,
+    handleLocalResetStart,
     toggleBackgroundMode,
   };
 };

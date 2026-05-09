@@ -17,6 +17,8 @@ import {
   useResolvedAuthBootstrap,
 } from '@/hooks/useAuthStateSupport';
 import { hasRecentManualLogout } from '@/services/auth/authLogoutState';
+import { isAuthBootstrapPending } from '@/services/auth/authBootstrapState';
+import { hasPersistedFirebaseAuthHint } from '@/services/auth/authStorageHints';
 import {
   createAuthenticatingAuthSessionState,
   createUnauthenticatedAuthSessionState,
@@ -38,6 +40,16 @@ import {
 import type { AuthRuntimeSnapshot } from '@/services/auth/authRuntimeSnapshot';
 import { onAuthChannelMessage } from '@/services/auth/authBroadcastChannel';
 import { clearQueryCache } from '@/config/queryClient';
+
+const shouldInitializeAsUnauthenticated = (): boolean => {
+  const hasActiveSession = hasActiveFirebaseSession();
+
+  if (hasRecentManualLogout() && !hasActiveSession) {
+    return true;
+  }
+
+  return !hasActiveSession && !isAuthBootstrapPending() && !hasPersistedFirebaseAuthHint();
+};
 
 /**
  * Return type for the useAuthState hook.
@@ -87,19 +99,20 @@ export interface UseAuthStateReturn {
  */
 export const useAuthState = (): UseAuthStateReturn => {
   const [e2eBootstrapUser] = useState<AuthUser | null>(() => getE2EBootstrapUser());
+  const [initializesUnauthenticated] = useState(
+    () => !e2eBootstrapUser && shouldInitializeAsUnauthenticated()
+  );
   const [sessionState, setSessionState] = useState<AuthSessionState>(() => {
     if (e2eBootstrapUser) {
       return toResolvedAuthSessionState(e2eBootstrapUser);
     }
 
-    return hasRecentManualLogout() && !hasActiveFirebaseSession()
+    return initializesUnauthenticated
       ? createUnauthenticatedAuthSessionState()
       : createAuthenticatingAuthSessionState();
   });
   const currentUser = getAuthSessionStateUser(sessionState);
-  const [authLoading, setAuthLoading] = useState(
-    !e2eBootstrapUser && !(hasRecentManualLogout() && !hasActiveFirebaseSession())
-  );
+  const [authLoading, setAuthLoading] = useState(!e2eBootstrapUser && !initializesUnauthenticated);
   const isOnline = useOnlineStatus();
   const handleLogout = useMemo(
     () => createHandleLogout(currentUser, signOut, setSessionState),

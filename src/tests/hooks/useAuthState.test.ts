@@ -183,6 +183,25 @@ describe('useAuthState baseline', () => {
     await waitFor(() => expect(result.current.authLoading).toBe(false));
   });
 
+  it('starts directly on the unauthenticated login state when local reset removed every auth signal', () => {
+    vi.mocked(authFallback.hasActiveFirebaseSession).mockReturnValue(false);
+    vi.mocked(authSession.onAuthSessionStateChange).mockImplementation(() => () => {});
+    vi.mocked(authUseCases.executeRedirectAuthResolution).mockImplementationOnce(
+      () => new Promise(() => {})
+    );
+    vi.mocked(authUseCases.executeResolvedCurrentAuthSessionState).mockImplementationOnce(
+      () => new Promise(() => {})
+    );
+
+    const { result } = renderHook(() => useAuthState());
+
+    expect(result.current.authLoading).toBe(false);
+    expect(result.current.sessionState).toEqual({
+      status: 'unauthenticated',
+      user: null,
+    });
+  });
+
   it('should handle inactivity timeout', async () => {
     vi.useFakeTimers();
     const { result } = renderHook(() => useAuthState());
@@ -300,6 +319,10 @@ describe('useAuthState baseline', () => {
   });
 
   it('hydrates user from redirect result before auth subscription resolves', async () => {
+    localStorage.setItem(
+      AUTH_BOOTSTRAP_PENDING_KEY,
+      JSON.stringify({ startedAt: Date.now(), mode: 'redirect' })
+    );
     const redirectUser: AuthUser = {
       uid: 'redirect-1',
       email: 'redirect@hhr.cl',
@@ -326,6 +349,7 @@ describe('useAuthState baseline', () => {
   });
 
   it('hydrates user from the current firebase session before auth observer resolves', async () => {
+    vi.mocked(authFallback.hasActiveFirebaseSession).mockReturnValue(true);
     const existingUser: AuthUser = {
       uid: 'existing-1',
       email: 'existing@hhr.cl',
@@ -352,6 +376,7 @@ describe('useAuthState baseline', () => {
   });
 
   it('keeps auth loading active until direct current-session hydration resolves', async () => {
+    vi.mocked(authFallback.hasActiveFirebaseSession).mockReturnValue(true);
     let resolveCurrentSession:
       | ((
           value: Awaited<ReturnType<typeof authUseCases.executeResolvedCurrentAuthSessionState>>

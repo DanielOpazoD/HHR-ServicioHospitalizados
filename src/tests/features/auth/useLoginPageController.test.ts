@@ -12,6 +12,7 @@ const mockExecuteGoogleSignIn = vi.fn();
 const mockIsPopupRecoverableAuthError = vi.fn();
 const mockResolveAuthErrorCode = vi.fn();
 const mockIsAuthBootstrapPending = vi.fn();
+const mockClearAuthBootstrapPending = vi.fn();
 const mockGetCurrentAuthSessionState = vi.fn();
 const mockPreloadDefaultPostLoginRoute = vi.fn();
 
@@ -26,6 +27,7 @@ vi.mock('@/services/auth/authErrorPolicy', () => ({
 
 vi.mock('@/services/auth/authBootstrapState', () => ({
   isAuthBootstrapPending: (...args: unknown[]) => mockIsAuthBootstrapPending(...args),
+  clearAuthBootstrapPending: (...args: unknown[]) => mockClearAuthBootstrapPending(...args),
 }));
 
 vi.mock('@/services/auth/authSession', () => ({
@@ -43,6 +45,7 @@ describe('useLoginPageController', () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     window.localStorage.clear();
+    window.sessionStorage.clear();
     mockIsPopupRecoverableAuthError.mockReturnValue(false);
     mockResolveAuthErrorCode.mockReturnValue(null);
     mockIsAuthBootstrapPending.mockReturnValue(false);
@@ -67,6 +70,7 @@ describe('useLoginPageController', () => {
   afterEach(() => {
     vi.useRealTimers();
     window.localStorage.clear();
+    window.sessionStorage.clear();
   });
 
   it('initializes from the persisted login background mode', () => {
@@ -155,6 +159,36 @@ describe('useLoginPageController', () => {
     expect(result.current.error).toBe(AUTH_UI_COPY.blockedPopupStayOnPage);
     expect(result.current.isGoogleLoading).toBe(false);
     expect(result.current.isAnyLoading).toBe(false);
+    expect(window.sessionStorage.getItem('hhr_google_login_attempt_pending')).toBeNull();
+  });
+
+  it('clears a stale bootstrap auth error locally before running the reset action', () => {
+    const { result, rerender } = renderHook(
+      ({ initialAuthError }) => useLoginPageController(vi.fn(), initialAuthError),
+      {
+        initialProps: {
+          initialAuthError: {
+            code: 'auth/bootstrap-timeout',
+            message: 'No se pudo confirmar la sesion con Google en este navegador.',
+          },
+        },
+      }
+    );
+
+    expect(result.current.errorCode).toBe('auth/bootstrap-timeout');
+
+    act(() => {
+      result.current.handleLocalResetStart();
+    });
+    rerender({
+      initialAuthError: {
+        code: 'auth/bootstrap-timeout',
+        message: 'No se pudo confirmar la sesion con Google en este navegador.',
+      },
+    });
+
+    expect(result.current.error).toBeNull();
+    expect(result.current.errorCode).toBeNull();
   });
 
   it('does not show the blocked-popup warning when the Google popup request was cancelled', async () => {
