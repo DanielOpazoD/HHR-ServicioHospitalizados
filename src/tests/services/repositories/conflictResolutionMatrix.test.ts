@@ -431,6 +431,66 @@ describe('conflictResolutionMatrix', () => {
     expect(resolved.beds.R1.deviceDetails?.CVC?.removalDate).toBe('2026-02-18');
   });
 
+  it('does not resurrect a device retired through device history when active details were cleaned', () => {
+    const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
+    remote.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: 'Paciente con dispositivo',
+        devices: ['CVC', 'VVP#1'],
+        deviceDetails: {
+          CVC: { installationDate: '2026-02-16' },
+          'VVP#1': { installationDate: '2026-02-17' },
+        },
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const local = makeRecord('2026-02-18', '2026-02-18T10:05:00.000Z');
+    local.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: 'Paciente con dispositivo',
+        devices: ['VVP#1'],
+        deviceDetails: {
+          'VVP#1': { installationDate: '2026-02-17' },
+        },
+        deviceInstanceHistory: [
+          {
+            id: 'cvc-1',
+            type: 'CVC',
+            status: 'Removed',
+            installationDate: '2026-02-16',
+            removalDate: '2026-02-18',
+            createdAt: 1,
+            updatedAt: 2,
+          },
+          {
+            id: 'vvp-1',
+            type: 'VVP#1',
+            status: 'Active',
+            installationDate: '2026-02-17',
+            createdAt: 3,
+            updatedAt: 3,
+          },
+        ],
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const resolved = resolveDailyRecordConflict(remote, local, {
+      changedPaths: ['*'],
+    });
+
+    expect(resolved.beds.R1.devices).toEqual(['VVP#1']);
+    expect(resolved.beds.R1.deviceDetails).toEqual({
+      'VVP#1': { installationDate: '2026-02-17' },
+    });
+    expect(resolved.beds.R1.deviceInstanceHistory).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: 'CVC', status: 'Removed', removalDate: '2026-02-18' }),
+      ])
+    );
+  });
+
   it('returns trace with policy version and per-field decisions', () => {
     const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
     remote.beds = {

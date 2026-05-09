@@ -5,6 +5,7 @@ import { isPlainObject, isPrimitive } from '@/services/repositories/conflictReso
 import {
   mergePatientDevices,
   type DeviceDetailsLike,
+  type DeviceHistoryLike,
 } from '@/services/repositories/conflictResolutionDeviceMergeUtils';
 import {
   ConflictResolutionTraceContext,
@@ -55,6 +56,27 @@ const resolveObjectMergeReason = (path: string): string => {
     return 'handoff_merge_object_fields';
   }
   return 'merge_object_fields';
+};
+
+const filterDeviceDetailsToActiveOrRetired = (patient: Record<string, unknown>): void => {
+  const devices = Array.isArray(patient.devices) ? patient.devices.map(String) : [];
+  const deviceDetails = isPlainObject(patient.deviceDetails)
+    ? (patient.deviceDetails as Record<string, unknown>)
+    : null;
+
+  if (!deviceDetails) {
+    return;
+  }
+
+  const activeDevices = new Set(devices);
+  patient.deviceDetails = Object.fromEntries(
+    Object.entries(deviceDetails).filter(([device, details]) => {
+      const removalDate = isPlainObject(details)
+        ? String((details as Record<string, unknown>).removalDate || '').trim()
+        : '';
+      return activeDevices.has(device) || Boolean(removalDate);
+    })
+  );
 };
 
 export const mergeArrayById = <T>(
@@ -289,6 +311,7 @@ export const mergePatientData = (
         (remoteValue as string[]) || [],
         (localValue as string[]) || [],
         localRecord.deviceDetails as DeviceDetailsLike | undefined,
+        localRecord.deviceInstanceHistory as DeviceHistoryLike | undefined,
         preferLocal,
         traceContext,
         `${pathPrefix}.${key}`,
@@ -317,6 +340,8 @@ export const mergePatientData = (
       traceContext
     );
   });
+
+  filterDeviceDetailsToActiveOrRetired(merged);
 
   return merged as unknown as PatientData;
 };

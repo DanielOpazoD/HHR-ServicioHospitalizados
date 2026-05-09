@@ -30,6 +30,7 @@ export const DevicesCell: React.FC<DevicesCellProps> = ({
     closeHistory,
     handleDevicesChange,
     handleDeviceDetailsChange,
+    handleDeviceConfigChange,
     handleDeviceRetireChange,
     handleHistoryModalSave,
   } = useDevicesCellController({
@@ -51,6 +52,7 @@ export const DevicesCell: React.FC<DevicesCellProps> = ({
         deviceDetails={deviceDetails}
         onChange={handleDevicesChange}
         onDetailsChange={handleDeviceDetailsChange}
+        onConfigChange={handleDeviceConfigChange}
         onRetireChange={handleDeviceRetireChange}
         currentDate={currentDateString}
         disabled={readOnly || false}

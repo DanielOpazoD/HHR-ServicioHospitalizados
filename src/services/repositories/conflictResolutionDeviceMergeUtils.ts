@@ -1,18 +1,36 @@
 import { ConflictResolutionTraceContext } from '@/services/repositories/conflictResolutionTrace';
 
 export type DeviceDetailsLike = Record<string, { removalDate?: unknown } | undefined>;
+export type DeviceHistoryLike = Array<
+  | {
+      type?: unknown;
+      status?: unknown;
+      removalDate?: unknown;
+    }
+  | undefined
+>;
 
 const normalizeDeviceList = (devices: string[] = []): string[] =>
   Array.from(new Set(devices.filter(Boolean).map(String)));
 
 const resolveLocallyRetiredDevices = (
   devices: string[],
-  localDeviceDetails: DeviceDetailsLike | undefined
+  localDeviceDetails: DeviceDetailsLike | undefined,
+  localDeviceHistory: DeviceHistoryLike | undefined
 ): Set<string> => {
   const retired = new Set<string>();
   devices.forEach(device => {
     const removalDate = localDeviceDetails?.[device]?.removalDate;
     if (String(removalDate || '').trim()) {
+      retired.add(device);
+    }
+
+    const historyForDevice = (localDeviceHistory || []).filter(item => item?.type === device);
+    const hasActiveHistory = historyForDevice.some(item => item?.status === 'Active');
+    const hasRemovedHistory = historyForDevice.some(
+      item => item?.status === 'Removed' && String(item?.removalDate || '').trim()
+    );
+    if (hasRemovedHistory && !hasActiveHistory) {
       retired.add(device);
     }
   });
@@ -23,6 +41,7 @@ export const mergePatientDevices = (
   remote: string[] = [],
   local: string[] = [],
   localDeviceDetails: DeviceDetailsLike | undefined,
+  localDeviceHistory: DeviceHistoryLike | undefined,
   preferLocal: boolean,
   traceContext?: ConflictResolutionTraceContext,
   path = '',
@@ -43,7 +62,8 @@ export const mergePatientDevices = (
   const remoteDevices = normalizeDeviceList(remote);
   const retiredDevices = resolveLocallyRetiredDevices(
     [...remoteDevices, ...localDevices],
-    localDeviceDetails
+    localDeviceDetails,
+    localDeviceHistory
   );
   const activeRemoteDevices = remoteDevices.filter(device => !retiredDevices.has(device));
   const activeLocalDevices = localDevices.filter(device => !retiredDevices.has(device));

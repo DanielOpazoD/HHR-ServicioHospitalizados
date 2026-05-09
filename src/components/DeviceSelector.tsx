@@ -33,6 +33,7 @@ interface DeviceSelectorProps {
   deviceDetails?: DeviceDetails;
   onChange: (newDevices: string[]) => void;
   onDetailsChange?: (details: DeviceDetails) => void;
+  onConfigChange?: (newDevices: string[] | null, details: DeviceDetails) => void;
   onRetireChange?: (newDevices: string[], details: DeviceDetails) => void;
   disabled?: boolean;
   currentDate?: string;
@@ -43,6 +44,7 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
   deviceDetails = {},
   onChange,
   onDetailsChange,
+  onConfigChange,
   onRetireChange,
   disabled,
   currentDate,
@@ -55,6 +57,7 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
   const menuRef = useRef<HTMLDivElement>(null);
   const onChangeRef = useLatestRef(onChange);
   const onDetailsChangeRef = useLatestRef(onDetailsChange);
+  const onConfigChangeRef = useLatestRef(onConfigChange);
   const onRetireChangeRef = useLatestRef(onRetireChange);
 
   // ========================================================================
@@ -149,12 +152,16 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
         return;
       }
 
-      if (mutation.nextDevices && onChangeRef.current) {
-        onChangeRef.current(mutation.nextDevices);
-      }
+      if (mutation.nextDetails && onConfigChangeRef.current) {
+        onConfigChangeRef.current(mutation.nextDevices, mutation.nextDetails);
+      } else {
+        if (mutation.nextDevices && onChangeRef.current) {
+          onChangeRef.current(mutation.nextDevices);
+        }
 
-      if (mutation.nextDetails && onDetailsChangeRef.current) {
-        onDetailsChangeRef.current(mutation.nextDetails);
+        if (mutation.nextDetails && onDetailsChangeRef.current) {
+          onDetailsChangeRef.current(mutation.nextDetails);
+        }
       }
 
       setPendingAddition(null);
@@ -166,6 +173,7 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
       deviceDetails,
       normalizedDevices,
       onChangeRef,
+      onConfigChangeRef,
       onDetailsChangeRef,
     ]
   );

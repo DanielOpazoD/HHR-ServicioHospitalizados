@@ -352,6 +352,9 @@ const resolvePathValueWithMatrix = (
       getValueAtPath(local, `beds.${bedId}.deviceDetails`) as
         | Record<string, { removalDate?: unknown }>
         | undefined,
+      getValueAtPath(local, `beds.${bedId}.deviceInstanceHistory`) as
+        | Array<{ type?: unknown; status?: unknown; removalDate?: unknown }>
+        | undefined,
       true,
       traceContext,
       path,
