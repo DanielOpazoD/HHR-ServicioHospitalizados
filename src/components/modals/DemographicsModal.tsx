@@ -62,6 +62,7 @@ export const DemographicsModal: React.FC<DemographicsModalProps> = ({
     >
       <div className="space-y-3">
         <DemographicsHeader
+          bedId={bedId}
           displayName={displayName}
           displayRut={displayRut}
           age={data.age}
