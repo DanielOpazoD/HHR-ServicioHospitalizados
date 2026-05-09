@@ -157,7 +157,7 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
     record.beds = {
       R1: {
         ...buildPatient('R1', 'Paciente Invalido'),
-        firstSeenDate: '2026-03-01',
+        firstSeenDate: '2026-03-05',
         admissionDate: '2026-02-15',
       },
     };
