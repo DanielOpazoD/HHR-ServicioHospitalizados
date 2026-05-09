@@ -1,14 +1,10 @@
 import React, { useCallback, useState } from 'react';
-import { ArrowLeft, Filter, Grid3x3, Inbox, List, Search, X } from 'lucide-react';
+import { ArrowLeft, Grid3x3, Inbox, List } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { executeReassignPrescriptionPatient } from '@/application/prescriptions/reassignPrescriptionPatientUseCase';
 import { executeDeletePrescription } from '@/application/prescriptions/deletePrescriptionUseCase';
 import { executeUpdatePrescriptionType } from '@/application/prescriptions/updatePrescriptionTypeUseCase';
-import {
-  PRESCRIPTION_TYPE_LABELS,
-  type PrescriptionRecord,
-  type PrescriptionType,
-} from '@/types/prescriptionTypes';
+import { type PrescriptionRecord, type PrescriptionType } from '@/types/prescriptionTypes';
 import { usePrescriptionListController } from '@/features/prescriptions/hooks/usePrescriptionListController';
 import { PrescriptionListItem } from '@/features/prescriptions/components/PrescriptionListItem';
 import { PrescriptionDetailModal } from '@/features/prescriptions/components/PrescriptionDetailModal';
@@ -179,71 +175,6 @@ export const PrescriptionVisorView: React.FC = () => {
           records={controller.records}
         />
 
-        <section className="rounded-xl border border-slate-200 bg-white p-2 shadow-sm sm:p-3">
-          <div className="grid gap-2 sm:grid-cols-3">
-            <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-              <Search size={14} className="text-slate-400" />
-              <input
-                type="search"
-                value={controller.filters.search}
-                onChange={event => controller.setFilter('search', event.target.value)}
-                placeholder="Buscar por cama, paciente, nombre…"
-                className="flex-1 bg-transparent text-sm focus:outline-none"
-              />
-            </label>
-
-            <label className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2">
-              <Filter size={14} className="text-slate-400" />
-              <select
-                value={controller.filters.type}
-                onChange={event =>
-                  controller.setFilter('type', event.target.value as typeof controller.filters.type)
-                }
-                className="flex-1 bg-transparent text-sm focus:outline-none"
-              >
-                <option value="all">Todos los tipos</option>
-                {controller.prescriptionTypes.map(type => (
-                  <option key={type} value={type}>
-                    {PRESCRIPTION_TYPE_LABELS[type]}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2">
-              <Filter size={14} className="text-slate-400" />
-              <select
-                value={controller.filters.patient}
-                onChange={event =>
-                  controller.setFilter(
-                    'patient',
-                    event.target.value as typeof controller.filters.patient
-                  )
-                }
-                className="flex-1 bg-transparent text-sm focus:outline-none"
-              >
-                <option value="all">Todos los pacientes</option>
-                <option value="assigned">Con paciente asignado</option>
-                <option value="unassigned">Sin paciente asignado</option>
-                <option value="hospitalized_stock">Stock de Hospitalizados</option>
-              </select>
-            </label>
-          </div>
-
-          {(controller.filters.search ||
-            controller.filters.type !== 'all' ||
-            controller.filters.patient !== 'all' ||
-            controller.filters.selectedDate !== null) && (
-            <button
-              type="button"
-              onClick={controller.resetFilters}
-              className="mt-2 inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700"
-            >
-              <X size={12} /> Limpiar filtros
-            </button>
-          )}
-        </section>
-
         {mode === 'list' ? (
           <section className="space-y-2">
             {controller.phase === 'loading' ? (
@@ -255,7 +186,7 @@ export const PrescriptionVisorView: React.FC = () => {
                 <Inbox size={28} className="text-slate-300" />
                 {controller.totalCount === 0
                   ? 'Todavía no hay recetas en el respaldo.'
-                  : 'Ninguna receta coincide con los filtros.'}
+                  : 'No hay recetas para el día seleccionado.'}
               </div>
             ) : (
               controller.filteredRecords.map(record => (

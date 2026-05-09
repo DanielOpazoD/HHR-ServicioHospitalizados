@@ -50,6 +50,16 @@ describe('PrescriptionVisorView', () => {
     expect(screen.getByTestId('prescription-bed-grid-view')).toBeInTheDocument();
   });
 
+  it('does not render same-day search/type/patient filters', () => {
+    render(<PrescriptionVisorView />);
+
+    expect(screen.queryByPlaceholderText(/buscar por cama/i)).not.toBeInTheDocument();
+    expect(screen.queryByText('Todos los tipos')).not.toBeInTheDocument();
+    expect(screen.queryByText('Todos los pacientes')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /limpiar filtros/i })).not.toBeInTheDocument();
+    expect(screen.getByTestId('prescription-date-strip')).toBeInTheDocument();
+  });
+
   it('allows nursing to delete prescription photos from the bed-grid visor', () => {
     render(<PrescriptionVisorView />);
 

@@ -426,21 +426,6 @@ export const PrescriptionBedGridView: React.FC<PrescriptionBedGridViewProps> = (
         </div>
       )}
 
-      <PrescriptionUnassignedTray
-        records={unassigned}
-        draggingId={draggingId}
-        pickerSource={pickerSource}
-        assignError={assignError}
-        enableAssign={!!onAssign}
-        pendingStockAssignId={pendingStockAssignId}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-        onTogglePicker={togglePicker}
-        onPreviewImage={openLightbox}
-        onUpdateType={onUpdateType}
-        onAssignStock={onAssignStock ? performAssignStock : undefined}
-      />
-
       {stockRecords.length > 0 && (
         <PrescriptionUnassignedTray
           records={stockRecords}
@@ -459,6 +444,21 @@ export const PrescriptionBedGridView: React.FC<PrescriptionBedGridViewProps> = (
           onUpdateType={onUpdateType}
         />
       )}
+
+      <PrescriptionUnassignedTray
+        records={unassigned}
+        draggingId={draggingId}
+        pickerSource={pickerSource}
+        assignError={assignError}
+        enableAssign={!!onAssign}
+        pendingStockAssignId={pendingStockAssignId}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onTogglePicker={togglePicker}
+        onPreviewImage={openLightbox}
+        onUpdateType={onUpdateType}
+        onAssignStock={onAssignStock ? performAssignStock : undefined}
+      />
 
       {lightboxState && (
         <PrescriptionPatientLightbox

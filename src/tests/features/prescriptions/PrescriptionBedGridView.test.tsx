@@ -131,6 +131,18 @@ describe('PrescriptionBedGridView', () => {
     expect(screen.getByTestId('prescription-stock-card-rx-stock')).toBeInTheDocument();
     expect(screen.getByTestId('prescription-unassigned-card-rx-pending')).toBeInTheDocument();
     expect(screen.queryByTestId('prescription-unassigned-card-rx-stock')).not.toBeInTheDocument();
+    expect(
+      screen
+        .getByRole('table')
+        .compareDocumentPosition(screen.getByTestId('prescription-stock-tray')) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+    expect(
+      screen
+        .getByTestId('prescription-stock-tray')
+        .compareDocumentPosition(screen.getByTestId('prescription-unassigned-tray')) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
   });
 
   it('sends an unassigned prescription to hospitalized stock from the tray', async () => {
