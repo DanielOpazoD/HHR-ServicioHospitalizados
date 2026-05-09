@@ -431,6 +431,58 @@ describe('conflictResolutionMatrix', () => {
     expect(resolved.beds.R1.deviceDetails?.CVC?.removalDate).toBe('2026-02-18');
   });
 
+  it('does not union stale local active VVPs over a newer remote active-device list', () => {
+    const remote = makeRecord('2026-02-18', '2026-02-18T10:05:00.000Z');
+    remote.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: 'Paciente antiguo',
+        devices: ['VVP#1'],
+        deviceDetails: {
+          'VVP#1': { installationDate: '2026-02-17' },
+        },
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const local = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
+    local.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: 'Paciente antiguo',
+        devices: ['VVP#1', 'VVP#2'],
+        deviceDetails: {
+          'VVP#1': { installationDate: '2026-02-17' },
+          'VVP#2': { installationDate: '2026-02-16' },
+        },
+        deviceInstanceHistory: [
+          {
+            id: 'vvp-1',
+            type: 'VVP#1',
+            status: 'Active',
+            installationDate: '2026-02-17',
+            createdAt: 1,
+            updatedAt: 1,
+          },
+          {
+            id: 'stale-vvp-2',
+            type: 'VVP#2',
+            status: 'Active',
+            installationDate: '2026-02-16',
+            createdAt: 2,
+            updatedAt: 2,
+          },
+        ],
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const resolved = resolveDailyRecordConflict(remote, local);
+
+    expect(resolved.beds.R1.devices).toEqual(['VVP#1']);
+    expect(resolved.beds.R1.deviceDetails).toEqual({
+      'VVP#1': { installationDate: '2026-02-17' },
+    });
+  });
+
   it('does not resurrect a device retired through device history when active details were cleaned', () => {
     const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
     remote.beds = {

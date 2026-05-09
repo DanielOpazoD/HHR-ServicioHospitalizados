@@ -67,19 +67,17 @@ export const mergePatientDevices = (
   );
   const activeRemoteDevices = remoteDevices.filter(device => !retiredDevices.has(device));
   const activeLocalDevices = localDevices.filter(device => !retiredDevices.has(device));
-  const preferred = preferLocal ? activeLocalDevices : activeRemoteDevices;
-  const secondary = preferLocal ? activeRemoteDevices : activeLocalDevices;
 
   traceContext?.add({
     path,
-    strategy: 'merge_unique_primitive_array',
-    winner: 'merged',
+    strategy: 'copy_preferred_active_devices',
+    winner: preferLocal ? 'local' : 'remote',
     reason: retiredDevices.size
-      ? 'device_union_preserve_local_retire'
+      ? 'device_active_snapshot_preserve_local_retire'
       : preferLocal
-        ? 'union_prefer_local_order'
-        : 'union_prefer_remote_order',
+        ? 'active_devices_prefer_local_snapshot'
+        : 'active_devices_prefer_remote_snapshot',
   });
 
-  return Array.from(new Set([...preferred, ...secondary]));
+  return preferLocal ? activeLocalDevices : activeRemoteDevices;
 };
