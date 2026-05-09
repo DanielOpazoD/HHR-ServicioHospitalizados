@@ -392,6 +392,45 @@ describe('conflictResolutionMatrix', () => {
     expect(resolved.beds.R2.admissionDate).toBe('2026-02-10');
   });
 
+  it('does not resurrect a locally retired device during automatic merge', () => {
+    const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
+    remote.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: 'Paciente con dispositivo',
+        devices: ['CVC', 'VVP#1'],
+        deviceDetails: {
+          CVC: { installationDate: '2026-02-16' },
+          'VVP#1': { installationDate: '2026-02-17' },
+        },
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const local = makeRecord('2026-02-18', '2026-02-18T10:05:00.000Z');
+    local.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: 'Paciente con dispositivo',
+        devices: ['VVP#1'],
+        deviceDetails: {
+          CVC: {
+            installationDate: '2026-02-16',
+            removalDate: '2026-02-18',
+            note: 'Retirado en turno',
+          },
+          'VVP#1': { installationDate: '2026-02-17' },
+        },
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const resolved = resolveDailyRecordConflict(remote, local, {
+      changedPaths: ['beds.R1.devices', 'beds.R1.deviceDetails'],
+    });
+
+    expect(resolved.beds.R1.devices).toEqual(['VVP#1']);
+    expect(resolved.beds.R1.deviceDetails?.CVC?.removalDate).toBe('2026-02-18');
+  });
+
   it('returns trace with policy version and per-field decisions', () => {
     const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
     remote.beds = {

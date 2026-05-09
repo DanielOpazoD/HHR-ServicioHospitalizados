@@ -283,4 +283,66 @@ describeEmulator('Firestore emulator sync concurrency flow', () => {
     );
     expect(matchingBeds).toHaveLength(1);
   });
+
+  it('auto-merges a conflicted device retirement without reactivating the removed device', async () => {
+    const date = CURRENT_RECORD_DATE;
+    const staleBaseline = isoAt(date, '09:00:00');
+    const remoteUpdated = isoAt(date, '10:00:00');
+
+    const localBaseline = buildRecord(date, staleBaseline);
+    localBaseline.beds = {
+      R1: buildPatient('R1', {
+        patientName: 'Paciente con CVC',
+        devices: ['CVC', 'VVP#1'],
+        deviceDetails: {
+          CVC: { installationDate: date },
+          'VVP#1': { installationDate: date },
+        },
+      }),
+    };
+
+    const remoteStillStale = buildRecord(date, remoteUpdated);
+    remoteStillStale.beds = {
+      R1: buildPatient('R1', {
+        patientName: 'Paciente con CVC',
+        devices: ['CVC', 'VVP#1'],
+        deviceDetails: {
+          CVC: { installationDate: date },
+          'VVP#1': { installationDate: date },
+        },
+      }),
+    };
+
+    await saveRecord(localBaseline);
+    await testEnv.withSecurityRulesDisabled(async context => {
+      await context
+        .firestore()
+        .doc(`hospitals/hanga_roa/dailyRecords/${date}`)
+        .set(remoteStillStale);
+    });
+
+    const retiredDetails = {
+      ...localBaseline.beds.R1.deviceDetails,
+      CVC: {
+        ...localBaseline.beds.R1.deviceDetails?.CVC,
+        removalDate: date,
+        note: 'Retirado en turno',
+      },
+    };
+
+    await updatePartial(date, {
+      'beds.R1.deviceDetails': retiredDetails,
+      'beds.R1.devices': ['VVP#1'],
+    });
+
+    const localAfterConflict = await getRecordForDate(date);
+    expect(localAfterConflict?.beds.R1.devices).toEqual(['VVP#1']);
+    expect(localAfterConflict?.beds.R1.deviceDetails?.CVC?.removalDate).toBe(date);
+
+    await processSyncQueue();
+
+    const persisted = await getRecordFromFirestore(date);
+    expect(persisted?.beds.R1.devices).toEqual(['VVP#1']);
+    expect(persisted?.beds.R1.deviceDetails?.CVC?.removalDate).toBe(date);
+  });
 });

@@ -29,6 +29,7 @@ import {
   mergeObject,
   mergePatientData,
 } from '@/services/repositories/conflictResolutionMergeUtils';
+import { mergePatientDevices } from '@/services/repositories/conflictResolutionDeviceMergeUtils';
 import {
   buildCompatibleDayShiftStaffingMirror,
   resolveDayShiftNurses,
@@ -345,12 +346,16 @@ const resolvePathValueWithMatrix = (
   }
 
   if (PATIENT_UNIQUE_ARRAY_FIELDS.has(patientField)) {
-    return mergeUniquePrimitiveArray(
+    return mergePatientDevices(
       (getValueAtPath(remote, path) as string[]) || [],
       (getValueAtPath(local, path) as string[]) || [],
+      getValueAtPath(local, `beds.${bedId}.deviceDetails`) as
+        | Record<string, { removalDate?: unknown }>
+        | undefined,
       true,
       traceContext,
-      path
+      path,
+      true
     );
   }
 

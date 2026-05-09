@@ -3,6 +3,10 @@ import { resolveConflictDomainContextForPath } from '@/services/repositories/con
 import { decideScalarByPolicy } from '@/services/repositories/conflictResolutionPolicy';
 import { isPlainObject, isPrimitive } from '@/services/repositories/conflictResolutionUtils';
 import {
+  mergePatientDevices,
+  type DeviceDetailsLike,
+} from '@/services/repositories/conflictResolutionDeviceMergeUtils';
+import {
   ConflictResolutionTraceContext,
   traceFromScalarDecision,
 } from '@/services/repositories/conflictResolutionTrace';
@@ -281,12 +285,14 @@ export const mergePatientData = (
     }
 
     if (PATIENT_UNIQUE_ARRAY_FIELDS.has(key)) {
-      merged[key] = mergeUniquePrimitiveArray(
+      merged[key] = mergePatientDevices(
         (remoteValue as string[]) || [],
         (localValue as string[]) || [],
+        localRecord.deviceDetails as DeviceDetailsLike | undefined,
         preferLocal,
         traceContext,
-        `${pathPrefix}.${key}`
+        `${pathPrefix}.${key}`,
+        isExplicitlyChangedPath
       );
       return;
     }
