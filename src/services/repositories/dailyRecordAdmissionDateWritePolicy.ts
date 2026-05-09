@@ -5,6 +5,7 @@ import {
   resolveAdmissionDateMutationViolation,
   resolveAdmissionDateWindowViolation,
 } from '@/application/patient-flow/admissionDatePolicy';
+import { normalizeDateOnly } from '@/utils/clinicalDayUtils';
 
 interface RecordPatientEntry {
   path: string;
@@ -19,6 +20,15 @@ const normalizeRutKey = (rut?: string): string =>
 
 const hasPatientIdentity = (patient?: PatientData): patient is PatientData =>
   Boolean(patient?.patientName?.trim() && patient?.rut?.trim());
+
+const hasStableAdmissionAnchor = (
+  currentPatient?: PatientData,
+  nextPatient?: PatientData
+): boolean =>
+  normalizeDateOnly(currentPatient?.admissionDate) ===
+    normalizeDateOnly(nextPatient?.admissionDate) &&
+  normalizeDateOnly(currentPatient?.firstSeenDate) ===
+    normalizeDateOnly(nextPatient?.firstSeenDate);
 
 const collectRecordPatients = (record: DailyRecord): RecordPatientEntry[] => {
   const entries: RecordPatientEntry[] = [];
@@ -42,25 +52,34 @@ export const assertAdmissionDatePersistencePolicy = (
   previousRecord?: DailyRecord | null
 ): void => {
   const nextEntries = collectRecordPatients(nextRecord);
-  const violations = nextEntries
-    .map(entry =>
-      resolveAdmissionDateWindowViolation({
-        recordDate: date,
-        path: entry.path,
-        patient: entry.patient,
-      })
-    )
-    .filter((violation): violation is NonNullable<typeof violation> => Boolean(violation));
+  const previousByRut = new Map<string, RecordPatientEntry>();
 
   if (previousRecord) {
-    const previousByRut = new Map<string, RecordPatientEntry>();
     collectRecordPatients(previousRecord).forEach(entry => {
       const rutKey = normalizeRutKey(entry.patient.rut);
       if (rutKey && !previousByRut.has(rutKey)) {
         previousByRut.set(rutKey, entry);
       }
     });
+  }
 
+  const violations = nextEntries
+    .map(entry => {
+      const rutKey = normalizeRutKey(entry.patient.rut);
+      const currentEntry = rutKey ? previousByRut.get(rutKey) : undefined;
+      if (currentEntry && hasStableAdmissionAnchor(currentEntry.patient, entry.patient)) {
+        return null;
+      }
+
+      return resolveAdmissionDateWindowViolation({
+        recordDate: date,
+        path: entry.path,
+        patient: entry.patient,
+      });
+    })
+    .filter((violation): violation is NonNullable<typeof violation> => Boolean(violation));
+
+  if (previousRecord) {
     nextEntries.forEach(entry => {
       const rutKey = normalizeRutKey(entry.patient.rut);
       const currentEntry = rutKey ? previousByRut.get(rutKey) : undefined;
