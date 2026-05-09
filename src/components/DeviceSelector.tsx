@@ -75,7 +75,16 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
   // ========================================================================
   // Logic
   // ========================================================================
-  if (draftState.externalSnapshot !== externalSnapshot) {
+  const isEditingDevices = showMenu || Boolean(editingDevice || pendingAddition || retiringDevice);
+  const draftSnapshot = JSON.stringify({
+    devices: draftState.devices,
+    deviceDetails: draftState.details,
+  });
+
+  if (
+    draftState.externalSnapshot !== externalSnapshot ||
+    (!isEditingDevices && draftSnapshot !== externalSnapshot)
+  ) {
     setDraftState({
       devices,
       details: deviceDetails,

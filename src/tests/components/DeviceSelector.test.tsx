@@ -261,5 +261,54 @@ describe('DeviceSelector', () => {
         LA: { installationDate: '2026-02-16' },
       });
     });
+
+    it('drops an unconfirmed local device draft after closing the editor without parent rehydration', () => {
+      const { rerender } = render(
+        <DeviceSelector
+          devices={['VVP#1']}
+          deviceDetails={{ 'VVP#1': { installationDate: '2026-02-15' } }}
+          onChange={mockOnChange}
+          onDetailsChange={mockOnDetailsChange}
+          onConfigChange={mockOnConfigChange}
+          disabled={false}
+          currentDate="2026-02-16"
+        />
+      );
+
+      const clickableContainer = document.querySelector('.cursor-pointer');
+      expect(clickableContainer).toBeTruthy();
+      if (!clickableContainer) {
+        throw new Error('Clickable container not found');
+      }
+      fireEvent.click(clickableContainer);
+
+      fireEvent.click(screen.getByText('Añadir'));
+      fireEvent.click(screen.getByText('Confirmar e Instalar'));
+      expect(mockOnConfigChange).toHaveBeenCalledWith(
+        ['VVP#1', 'VVP#2'],
+        expect.objectContaining({
+          'VVP#1': { installationDate: '2026-02-15' },
+          'VVP#2': { installationDate: '2026-02-16' },
+        })
+      );
+
+      expect(screen.getByText('VVP#2')).toBeInTheDocument();
+      fireEvent.keyDown(document, { key: 'Escape' });
+
+      rerender(
+        <DeviceSelector
+          devices={['VVP#1']}
+          deviceDetails={{ 'VVP#1': { installationDate: '2026-02-15' } }}
+          onChange={mockOnChange}
+          onDetailsChange={mockOnDetailsChange}
+          onConfigChange={mockOnConfigChange}
+          disabled={false}
+          currentDate="2026-02-16"
+        />
+      );
+
+      expect(screen.queryByText('VVP#2')).not.toBeInTheDocument();
+      expect(screen.getByText('VVP')).toBeInTheDocument();
+    });
   });
 });
