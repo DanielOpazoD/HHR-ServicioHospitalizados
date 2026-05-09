@@ -182,18 +182,20 @@ describe('PrescriptionRepository.reassignPatient', () => {
   });
 
   it('persists explicit hospitalized stock assignment without patient fields', async () => {
-    const stock = buildRecord('rx-stock', '2026-05-04T10:00:00.000Z', {
-      assignmentScope: 'hospitalized_stock',
-      bedId: undefined,
-      patientName: undefined,
-      patientRut: undefined,
-      patientReassignedAt: '2026-05-05T08:00:00.000Z',
-      patientReassignedBy: 'admin@h.cl',
-    });
+    const stock = {
+      ...buildRecord('rx-stock', '2026-05-04T10:00:00.000Z', {
+        assignmentScope: 'hospitalized_stock',
+        patientReassignedAt: '2026-05-05T08:00:00.000Z',
+        patientReassignedBy: 'admin@h.cl',
+      }),
+      bedId: null,
+      patientName: null,
+      patientRut: null,
+    } as unknown as PrescriptionRecord;
     vi.mocked(firestoreDb.updateDoc).mockResolvedValueOnce(undefined);
     vi.mocked(firestoreDb.getDoc).mockResolvedValueOnce(stock);
 
-    await PrescriptionRepository.reassignPatient(
+    const result = await PrescriptionRepository.reassignPatient(
       'rx-stock',
       {
         assignmentScope: 'hospitalized_stock',
@@ -203,6 +205,8 @@ describe('PrescriptionRepository.reassignPatient', () => {
       'hhr'
     );
 
+    expect(result.assignmentScope).toBe('hospitalized_stock');
+    expect(result.bedId).toBeUndefined();
     expect(firestoreDb.updateDoc).toHaveBeenCalledWith(
       'hospitals/hhr/prescriptions',
       'rx-stock',
@@ -213,6 +217,27 @@ describe('PrescriptionRepository.reassignPatient', () => {
         patientRut: null,
       })
     );
+  });
+
+  it('keeps stock records with Firestore null patient fields in list results', async () => {
+    const stock = {
+      ...buildRecord('rx-stock-list', '2026-05-04T10:00:00.000Z', {
+        assignmentScope: 'hospitalized_stock',
+      }),
+      bedId: null,
+      patientName: null,
+      patientRut: null,
+    } as unknown as PrescriptionRecord;
+    vi.mocked(firestoreDb.getDocs).mockResolvedValueOnce([stock]);
+
+    const result = await PrescriptionRepository.list('hhr');
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      id: 'rx-stock-list',
+      assignmentScope: 'hospitalized_stock',
+    });
+    expect(result[0].bedId).toBeUndefined();
   });
 });
 

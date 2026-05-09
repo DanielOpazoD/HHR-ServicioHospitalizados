@@ -64,6 +64,25 @@ describe('parsePrescriptionRecord', () => {
     ).not.toThrow();
   });
 
+  it('accepts Firestore null patient fields for Stock de Hospitalizados reads', () => {
+    const parsed = parsePrescriptionRecord(
+      validRecord({
+        assignmentScope: 'hospitalized_stock',
+        bedId: null as never,
+        patientName: null as never,
+        patientRut: null as never,
+      })
+    );
+
+    expect(parsed).toMatchObject({
+      id: 'rx-1',
+      assignmentScope: 'hospitalized_stock',
+    });
+    expect(parsed.bedId).toBeUndefined();
+    expect(parsed.patientName).toBeUndefined();
+    expect(parsed.patientRut).toBeUndefined();
+  });
+
   it('rejects an unsupported prescription type', () => {
     expect(() =>
       parsePrescriptionRecord(validRecord({ prescriptionType: 'antibioticos' as never }))

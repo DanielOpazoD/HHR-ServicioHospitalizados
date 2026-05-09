@@ -46,15 +46,20 @@ const prescriptionUploaderRefSchema = z.object({
   displayName: z.string().optional(),
 });
 
+const optionalFirestoreStringSchema = z.preprocess(
+  value => (value === null ? undefined : value),
+  z.string().optional()
+);
+
 export const prescriptionRecordSchema = z.object({
   id: z.string().min(1),
   hospitalId: z.string().min(1),
   prescriptionType: prescriptionTypeSchema,
   assignmentScope: prescriptionAssignmentScopeSchema.optional(),
-  bedId: z.string().optional(),
-  patientName: z.string().optional(),
-  patientRut: z.string().optional(),
-  notes: z.string().optional(),
+  bedId: optionalFirestoreStringSchema,
+  patientName: optionalFirestoreStringSchema,
+  patientRut: optionalFirestoreStringSchema,
+  notes: optionalFirestoreStringSchema,
   image: prescriptionImageMetaSchema,
   uploader: prescriptionUploaderRefSchema,
   createdAt: z.string().min(1),
