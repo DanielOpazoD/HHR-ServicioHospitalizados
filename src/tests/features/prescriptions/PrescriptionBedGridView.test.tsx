@@ -145,10 +145,45 @@ describe('PrescriptionBedGridView', () => {
     renderGrid(<PrescriptionBedGridView records={[dischargedPrescription]} dayIso="2026-05-04" />);
 
     expect(await screen.findByText('Paciente Alta Hoy')).toBeInTheDocument();
-    expect(screen.getByText('Egresos')).toBeInTheDocument();
+    expect(screen.getByText('Egreso')).toBeInTheDocument();
     expect(screen.getByText('12.345.678-9')).toBeInTheDocument();
     expect(screen.getByTestId('prescription-bed-cell-H2C3-comun')).toBeInTheDocument();
     expect(await screen.findByRole('img', { name: /comun · h2c3/i })).toBeInTheDocument();
+  });
+
+  it('moves prescriptions from a previous bed to the current active bed for the same patient', async () => {
+    vi.mocked(getRecordFromFirestore).mockResolvedValue({
+      ...buildDailyRecord(),
+      beds: {
+        H6C1: {
+          bedId: 'H6C1',
+          isBlocked: false,
+          bedMode: 'Cama',
+          hasCompanionCrib: false,
+          patientName: 'Luis Pate Tuki',
+          rut: '6.451.632-9',
+          age: '55',
+          pathology: '—',
+        },
+      },
+    } as unknown as DailyRecord);
+    const movedPatientPrescription = buildRecord('rx-moved-bed', {
+      assignmentScope: 'patient',
+      bedId: 'R1',
+      patientName: 'Luis Pate Tuki',
+      patientRut: '6.451.632-9',
+      prescriptionType: 'comun',
+    });
+
+    renderGrid(
+      <PrescriptionBedGridView records={[movedPatientPrescription]} dayIso="2026-05-04" />
+    );
+
+    expect(await screen.findByText('Luis Pate Tuki')).toBeInTheDocument();
+    expect(screen.queryByText('Egreso')).not.toBeInTheDocument();
+    expect(screen.getByTestId('prescription-bed-cell-H6C1-comun')).toBeInTheDocument();
+    expect(screen.queryByTestId('prescription-bed-cell-R1-comun')).not.toBeInTheDocument();
+    expect(await screen.findByRole('img', { name: /comun · h6c1/i })).toBeInTheDocument();
   });
 
   it('drops a matching-type unassigned prescription onto a bed cell and calls onAssign', async () => {

@@ -78,28 +78,49 @@ const createEmptyPrescriptionBuckets = (): Record<PrescriptionType, Prescription
   benzodiazepinas: [],
 });
 
+const normalizeIdentityToken = (value: string | undefined): string =>
+  value?.trim().toLowerCase().replace(/\s+/g, ' ') ?? '';
+
+const normalizeRutToken = (value: string | undefined): string =>
+  normalizeIdentityToken(value).replace(/[^0-9k]/g, '');
+
 const buildBedRows = (
   daily: DailyRecord | null,
   records: PrescriptionRecord[]
 ): PrescriptionBedRowData[] => {
   const byBed = new Map<string, PrescriptionBedRowData>();
+  const activeRowsByRut = new Map<string, PrescriptionBedRowData>();
+  const activeRowsByName = new Map<string, PrescriptionBedRowData>();
 
   for (const [bedId, patient] of Object.entries(daily?.beds || {})) {
     if (!patient || patient.isBlocked) continue;
     const hasIdentity = Boolean(patient.patientName?.trim()) || Boolean(patient.rut?.trim());
     if (!hasIdentity) continue;
-    byBed.set(bedId, {
+    const row = {
       bedId,
       patientName: patient.patientName?.trim() ?? '',
       patientRut: patient.rut?.trim() ?? '',
       byType: createEmptyPrescriptionBuckets(),
-    });
+    };
+    byBed.set(bedId, row);
+    const rutKey = normalizeRutToken(row.patientRut);
+    if (rutKey) activeRowsByRut.set(rutKey, row);
+    const nameKey = normalizeIdentityToken(row.patientName);
+    if (nameKey) activeRowsByName.set(nameKey, row);
   }
 
   for (const record of records) {
     if (resolvePrescriptionAssignmentScope(record) !== 'patient') continue;
     if (!record.bedId) continue;
     let row = byBed.get(record.bedId);
+    if (!row) {
+      const rutKey = normalizeRutToken(record.patientRut);
+      row = rutKey ? activeRowsByRut.get(rutKey) : undefined;
+    }
+    if (!row) {
+      const nameKey = normalizeIdentityToken(record.patientName);
+      row = nameKey ? activeRowsByName.get(nameKey) : undefined;
+    }
     if (!row) {
       row = {
         bedId: record.bedId,
