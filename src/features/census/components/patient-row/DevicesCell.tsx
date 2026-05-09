@@ -19,6 +19,7 @@ export const DevicesCell: React.FC<DevicesCellProps> = ({
   onDevicesChange,
   onDeviceDetailsChange,
   onDeviceHistoryChange,
+  onDeviceBundleChange,
 }) => {
   const {
     devices,
@@ -29,12 +30,14 @@ export const DevicesCell: React.FC<DevicesCellProps> = ({
     closeHistory,
     handleDevicesChange,
     handleDeviceDetailsChange,
+    handleDeviceRetireChange,
     handleHistoryModalSave,
   } = useDevicesCellController({
     data,
     onDevicesChange,
     onDeviceDetailsChange,
     onDeviceHistoryChange,
+    onDeviceBundleChange,
   });
 
   if (isEmpty && !isSubRow) {
@@ -48,6 +51,7 @@ export const DevicesCell: React.FC<DevicesCellProps> = ({
         deviceDetails={deviceDetails}
         onChange={handleDevicesChange}
         onDetailsChange={handleDeviceDetailsChange}
+        onRetireChange={handleDeviceRetireChange}
         currentDate={currentDateString}
         disabled={readOnly || false}
       />

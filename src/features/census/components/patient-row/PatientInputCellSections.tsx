@@ -122,6 +122,7 @@ export const PatientInputFlowSection: React.FC<
         onDevicesChange={onChange.devices}
         onDeviceDetailsChange={onChange.deviceDetails}
         onDeviceHistoryChange={onChange.deviceHistory}
+        onDeviceBundleChange={onChange.multiple}
       />
     )}
   </>

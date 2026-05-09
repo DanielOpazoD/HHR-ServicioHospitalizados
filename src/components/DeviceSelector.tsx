@@ -33,6 +33,7 @@ interface DeviceSelectorProps {
   deviceDetails?: DeviceDetails;
   onChange: (newDevices: string[]) => void;
   onDetailsChange?: (details: DeviceDetails) => void;
+  onRetireChange?: (newDevices: string[], details: DeviceDetails) => void;
   disabled?: boolean;
   currentDate?: string;
 }
@@ -42,6 +43,7 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
   deviceDetails = {},
   onChange,
   onDetailsChange,
+  onRetireChange,
   disabled,
   currentDate,
 }) => {
@@ -53,6 +55,7 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
   const menuRef = useRef<HTMLDivElement>(null);
   const onChangeRef = useLatestRef(onChange);
   const onDetailsChangeRef = useLatestRef(onDetailsChange);
+  const onRetireChangeRef = useLatestRef(onRetireChange);
 
   // ========================================================================
   // Logic
@@ -79,16 +82,27 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
         note: data.note,
       });
 
-      if (onDetailsChangeRef.current) {
-        onDetailsChangeRef.current(mutation.nextDetails);
-      }
-      if (onChangeRef.current) {
-        onChangeRef.current(mutation.nextDevices);
+      if (onRetireChangeRef.current) {
+        onRetireChangeRef.current(mutation.nextDevices, mutation.nextDetails);
+      } else {
+        if (onDetailsChangeRef.current) {
+          onDetailsChangeRef.current(mutation.nextDetails);
+        }
+        if (onChangeRef.current) {
+          onChangeRef.current(mutation.nextDevices);
+        }
       }
 
       setRetiringDevice(null);
     },
-    [retiringDevice, deviceDetails, normalizedDevices, onChangeRef, onDetailsChangeRef]
+    [
+      retiringDevice,
+      deviceDetails,
+      normalizedDevices,
+      onChangeRef,
+      onDetailsChangeRef,
+      onRetireChangeRef,
+    ]
   );
 
   const toggleDevice = useCallback(

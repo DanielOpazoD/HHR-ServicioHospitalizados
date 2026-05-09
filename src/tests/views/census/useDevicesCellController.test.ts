@@ -55,6 +55,168 @@ describe('useDevicesCellController', () => {
     expect(onDeviceDetailsChange).not.toHaveBeenCalled();
   });
 
+  it('bundles generic invasive-device retirement into one atomic patient patch', () => {
+    const onDevicesChange = vi.fn();
+    const onDeviceDetailsChange = vi.fn();
+    const onDeviceHistoryChange = vi.fn();
+    const onDeviceBundleChange = vi.fn();
+
+    const { result } = renderHook(() =>
+      useDevicesCellController({
+        data: buildData({
+          devices: ['TET', 'CVC', 'SNG'],
+          deviceDetails: {
+            TET: { installationDate: '2026-02-13' },
+            CVC: { installationDate: '2026-02-14' },
+            SNG: { installationDate: '2026-02-15' },
+          },
+        }),
+        onDevicesChange,
+        onDeviceDetailsChange,
+        onDeviceHistoryChange,
+        onDeviceBundleChange,
+        dateProvider: () => new Date('2026-02-16T06:00:00'),
+      })
+    );
+
+    act(() =>
+      result.current.handleDeviceRetireChange(['CVC', 'SNG'], {
+        TET: {
+          installationDate: '2026-02-13',
+          removalDate: '2026-02-16',
+          note: '[Retiro] extubado',
+        },
+        CVC: { installationDate: '2026-02-14' },
+        SNG: { installationDate: '2026-02-15' },
+      })
+    );
+
+    expect(onDeviceBundleChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        devices: ['CVC', 'SNG'],
+        deviceDetails: expect.objectContaining({
+          TET: expect.objectContaining({
+            removalDate: '2026-02-16',
+          }),
+          CVC: expect.objectContaining({
+            installationDate: '2026-02-14',
+          }),
+          SNG: expect.objectContaining({
+            installationDate: '2026-02-15',
+          }),
+        }),
+        deviceInstanceHistory: expect.arrayContaining([
+          expect.objectContaining({
+            type: 'TET',
+            status: 'Removed',
+            removalDate: '2026-02-16',
+          }),
+        ]),
+      })
+    );
+    expect(onDevicesChange).not.toHaveBeenCalled();
+    expect(onDeviceDetailsChange).not.toHaveBeenCalled();
+    expect(onDeviceHistoryChange).not.toHaveBeenCalled();
+  });
+
+  it('retires one VVP while preserving the other active VVP and non-VVP devices', () => {
+    const onDevicesChange = vi.fn();
+    const onDeviceDetailsChange = vi.fn();
+    const onDeviceHistoryChange = vi.fn();
+    const onDeviceBundleChange = vi.fn();
+
+    const { result } = renderHook(() =>
+      useDevicesCellController({
+        data: buildData({
+          devices: ['VVP#1', 'VVP#2', 'CVC'],
+          deviceDetails: {
+            'VVP#1': { installationDate: '2026-02-13' },
+            'VVP#2': { installationDate: '2026-02-14' },
+            CVC: { installationDate: '2026-02-12' },
+          },
+          deviceInstanceHistory: [
+            {
+              id: 'vvp-1',
+              type: 'VVP#1',
+              status: 'Active',
+              installationDate: '2026-02-13',
+              createdAt: 1,
+              updatedAt: 1,
+            },
+            {
+              id: 'vvp-2',
+              type: 'VVP#2',
+              status: 'Active',
+              installationDate: '2026-02-14',
+              createdAt: 2,
+              updatedAt: 2,
+            },
+            {
+              id: 'cvc-1',
+              type: 'CVC',
+              status: 'Active',
+              installationDate: '2026-02-12',
+              createdAt: 3,
+              updatedAt: 3,
+            },
+          ],
+        }),
+        onDevicesChange,
+        onDeviceDetailsChange,
+        onDeviceHistoryChange,
+        onDeviceBundleChange,
+        dateProvider: () => new Date('2026-02-16T06:00:00'),
+      })
+    );
+
+    act(() =>
+      result.current.handleDeviceRetireChange(['VVP#2', 'CVC'], {
+        'VVP#1': {
+          installationDate: '2026-02-13',
+          removalDate: '2026-02-16',
+          note: '[Retiro] infiltrada',
+        },
+        'VVP#2': { installationDate: '2026-02-14' },
+        CVC: { installationDate: '2026-02-12' },
+      })
+    );
+
+    expect(onDeviceBundleChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        devices: ['VVP#2', 'CVC'],
+        deviceDetails: expect.objectContaining({
+          'VVP#1': expect.objectContaining({
+            removalDate: '2026-02-16',
+          }),
+          'VVP#2': expect.objectContaining({
+            installationDate: '2026-02-14',
+          }),
+          CVC: expect.objectContaining({
+            installationDate: '2026-02-12',
+          }),
+        }),
+        deviceInstanceHistory: expect.arrayContaining([
+          expect.objectContaining({
+            type: 'VVP#1',
+            status: 'Removed',
+            removalDate: '2026-02-16',
+          }),
+          expect.objectContaining({
+            type: 'VVP#2',
+            status: 'Active',
+          }),
+          expect.objectContaining({
+            type: 'CVC',
+            status: 'Active',
+          }),
+        ]),
+      })
+    );
+    expect(onDevicesChange).not.toHaveBeenCalled();
+    expect(onDeviceDetailsChange).not.toHaveBeenCalled();
+    expect(onDeviceHistoryChange).not.toHaveBeenCalled();
+  });
+
   it('maps modal save into history + active devices updates', () => {
     const onDevicesChange = vi.fn();
     const onDeviceDetailsChange = vi.fn();

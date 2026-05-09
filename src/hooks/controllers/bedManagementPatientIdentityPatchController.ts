@@ -33,6 +33,8 @@ export const getClearClinicalDataPatches = (bedId: string): Record<string, unkno
   [`beds.${bedId}.pathology`]: '',
   [`beds.${bedId}.clinicalEvents`]: [],
   [`beds.${bedId}.cudyr`]: undefined,
+  [`beds.${bedId}.isUPC`]: false,
+  [`beds.${bedId}.upcChecklist`]: undefined,
   [`beds.${bedId}.deviceDetails`]: {},
   [`beds.${bedId}.devices`]: [],
   [`beds.${bedId}.handoffNoteDayShift`]: '',
@@ -44,4 +46,5 @@ export const getClearClinicalDataPatches = (bedId: string): Record<string, unkno
   [`beds.${bedId}.deliveryRoute`]: undefined,
   [`beds.${bedId}.deliveryDate`]: undefined,
   [`beds.${bedId}.deliveryCesareanLabor`]: undefined,
+  [`bedTypeOverrides.${bedId}`]: undefined,
 });

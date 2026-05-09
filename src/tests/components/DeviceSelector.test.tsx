@@ -9,6 +9,7 @@ import { DeviceSelector } from '@/components/DeviceSelector';
 describe('DeviceSelector', () => {
   const mockOnChange = vi.fn();
   const mockOnDetailsChange = vi.fn();
+  const mockOnRetireChange = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -175,6 +176,49 @@ describe('DeviceSelector', () => {
 
       fireEvent.mouseDown(document.body);
       expect(screen.queryByText('Dispositivos')).not.toBeInTheDocument();
+    });
+
+    it('routes invasive device retirement through the atomic retire callback', () => {
+      render(
+        <DeviceSelector
+          devices={['CVC', 'TET']}
+          deviceDetails={{
+            CVC: { installationDate: '2026-02-14' },
+            TET: { installationDate: '2026-02-13' },
+          }}
+          onChange={mockOnChange}
+          onDetailsChange={mockOnDetailsChange}
+          onRetireChange={mockOnRetireChange}
+          disabled={false}
+          currentDate="2026-02-16"
+        />
+      );
+
+      const clickableContainer = document.querySelector('.cursor-pointer');
+      expect(clickableContainer).toBeTruthy();
+      if (!clickableContainer) {
+        throw new Error('Clickable container not found');
+      }
+      fireEvent.click(clickableContainer);
+
+      const retireButtons = screen.getAllByTitle('Retirar');
+      fireEvent.click(retireButtons[1]);
+      fireEvent.click(screen.getByText('Confirmar Retiro'));
+
+      expect(mockOnRetireChange).toHaveBeenCalledWith(
+        ['CVC'],
+        expect.objectContaining({
+          TET: expect.objectContaining({
+            installationDate: '2026-02-13',
+            removalDate: '2026-02-16',
+          }),
+          CVC: expect.objectContaining({
+            installationDate: '2026-02-14',
+          }),
+        })
+      );
+      expect(mockOnChange).not.toHaveBeenCalled();
+      expect(mockOnDetailsChange).not.toHaveBeenCalled();
     });
   });
 });

@@ -1,6 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
 import type { DeviceDetails, DeviceInstance } from '@/types/domain/devices';
-import type { PatientData } from '@/features/census/components/patient-row/patientRowContracts';
+import type {
+  PatientData,
+  PatientRowPatientPatch,
+} from '@/features/census/components/patient-row/patientRowContracts';
 import {
   buildDetailsChangeResult,
   buildModalSaveResult,
@@ -13,6 +16,7 @@ interface UseDevicesCellControllerParams {
   onDevicesChange: (devices: string[]) => void;
   onDeviceDetailsChange: (details: DeviceDetails) => void;
   onDeviceHistoryChange: (history: DeviceInstance[]) => void;
+  onDeviceBundleChange?: (fields: PatientRowPatientPatch) => void;
   dateProvider?: DateProvider;
 }
 
@@ -21,6 +25,7 @@ export const useDevicesCellController = ({
   onDevicesChange,
   onDeviceDetailsChange,
   onDeviceHistoryChange,
+  onDeviceBundleChange,
   dateProvider = systemDateProvider,
 }: UseDevicesCellControllerParams) => {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -70,6 +75,45 @@ export const useDevicesCellController = ({
     [dateProvider, devices, history, onDeviceDetailsChange, onDeviceHistoryChange]
   );
 
+  const handleDeviceRetireChange = useCallback(
+    (nextDevices: string[], nextDetails: DeviceDetails) => {
+      const selectionResult = buildSelectionChangeResult({
+        previousDevices: devices,
+        nextDevices,
+        previousHistory: history,
+        deviceDetails: nextDetails,
+        dateProvider,
+      });
+
+      if (onDeviceBundleChange) {
+        const fields: PatientRowPatientPatch = {
+          devices: selectionResult.nextDevices ?? nextDevices,
+          deviceDetails: nextDetails,
+        };
+        if (selectionResult.nextHistory) {
+          fields.deviceInstanceHistory = selectionResult.nextHistory;
+        }
+        onDeviceBundleChange(fields);
+        return;
+      }
+
+      onDeviceDetailsChange(nextDetails);
+      onDevicesChange(selectionResult.nextDevices ?? nextDevices);
+      if (selectionResult.nextHistory) {
+        onDeviceHistoryChange(selectionResult.nextHistory);
+      }
+    },
+    [
+      dateProvider,
+      devices,
+      history,
+      onDeviceBundleChange,
+      onDeviceDetailsChange,
+      onDeviceHistoryChange,
+      onDevicesChange,
+    ]
+  );
+
   const handleHistoryModalSave = useCallback(
     (nextHistory: DeviceInstance[]) => {
       const result = buildModalSaveResult(nextHistory);
@@ -88,6 +132,7 @@ export const useDevicesCellController = ({
     closeHistory,
     handleDevicesChange,
     handleDeviceDetailsChange,
+    handleDeviceRetireChange,
     handleHistoryModalSave,
   };
 };

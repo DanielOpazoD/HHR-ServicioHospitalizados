@@ -391,6 +391,39 @@ describe('bedManagementReducer firstSeenDate anchoring', () => {
     });
   });
 
+  it('resets inherited UPC state and bed type override when a bed receives a new patient identity', () => {
+    const record = DataFactory.createMockDailyRecord('2026-05-09');
+    record.bedTypeOverrides = { R1: BedType.UCI };
+    record.beds.R1 = DataFactory.createMockPatient('R1', {
+      patientName: 'Paciente previo',
+      rut: '11.111.111-1',
+      isUPC: true,
+      upcChecklist: {
+        uciCriteria: ['uci_vmi'],
+        utiCriteria: [],
+        classification: 'UPC_UCI',
+        evaluatedAt: '2026-05-08T00:00:00Z',
+      },
+    });
+
+    const patch = bedManagementReducer(record, {
+      type: 'UPDATE_PATIENT_MULTIPLE',
+      bedId: 'R1',
+      fields: {
+        patientName: 'Paciente nuevo',
+        rut: '22.222.222-2',
+      },
+    });
+
+    expect(patch).toMatchObject({
+      'beds.R1.patientName': 'Paciente nuevo',
+      'beds.R1.rut': '22.222.222-2',
+      'beds.R1.isUPC': false,
+      'beds.R1.upcChecklist': undefined,
+      'bedTypeOverrides.R1': undefined,
+    });
+  });
+
   it('updates multiple clinical crib fields in a single patch', () => {
     const record = DataFactory.createMockDailyRecord('2026-04-12');
 
