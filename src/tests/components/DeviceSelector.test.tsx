@@ -10,6 +10,7 @@ describe('DeviceSelector', () => {
   const mockOnChange = vi.fn();
   const mockOnDetailsChange = vi.fn();
   const mockOnRetireChange = vi.fn();
+  const mockOnConfigChange = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -219,6 +220,46 @@ describe('DeviceSelector', () => {
       );
       expect(mockOnChange).not.toHaveBeenCalled();
       expect(mockOnDetailsChange).not.toHaveBeenCalled();
+    });
+
+    it('keeps successive device additions in the same pending bundle before parent rehydrates', () => {
+      render(
+        <DeviceSelector
+          devices={[]}
+          deviceDetails={{}}
+          onChange={mockOnChange}
+          onDetailsChange={mockOnDetailsChange}
+          onConfigChange={mockOnConfigChange}
+          disabled={false}
+          currentDate="2026-02-16"
+        />
+      );
+
+      const clickableContainer = document.querySelector('.cursor-pointer');
+      expect(clickableContainer).toBeTruthy();
+      if (!clickableContainer) {
+        throw new Error('Clickable container not found');
+      }
+      fireEvent.click(clickableContainer);
+
+      fireEvent.click(screen.getByText('CVC'));
+      fireEvent.click(screen.getByText('Confirmar e Instalar'));
+
+      fireEvent.click(screen.getByText('TET'));
+      fireEvent.click(screen.getByText('Confirmar e Instalar'));
+
+      fireEvent.click(screen.getByText('LA'));
+      fireEvent.click(screen.getByText('Confirmar e Instalar'));
+
+      expect(mockOnConfigChange).toHaveBeenCalledTimes(3);
+      expect(mockOnConfigChange.mock.calls[0][0]).toEqual(['CVC']);
+      expect(mockOnConfigChange.mock.calls[1][0]).toEqual(['CVC', 'TET']);
+      expect(mockOnConfigChange.mock.calls[2][0]).toEqual(['CVC', 'TET', 'LA']);
+      expect(mockOnConfigChange.mock.calls[2][1]).toEqual({
+        CVC: { installationDate: '2026-02-16' },
+        TET: { installationDate: '2026-02-16' },
+        LA: { installationDate: '2026-02-16' },
+      });
     });
   });
 });
