@@ -1,9 +1,7 @@
 import type { CMAData } from '@/features/census/contracts/censusMovementContracts';
-import type { DailyRecord } from '@/features/census/contracts/censusRecordContracts';
 import type { PatientData } from '@/features/census/controllers/censusActionPatientContracts';
 import type { ControllerConfirmDescriptor } from '@/shared/contracts/controllers/confirmDescriptor';
 import { createEmptyPatient } from '@/services/factories/patientFactory';
-import { resolveApplyUndoCmaRecord } from '@/features/census/controllers/patientMovementUndoMutationController';
 import {
   type ControllerResult,
   failWithCode,
@@ -86,29 +84,6 @@ export const buildCmaIeehPatientSnapshot = (item: CMAData, recordDate: string): 
     cie10Description: item.cie10Description,
     specialty: item.specialty as PatientData['specialty'],
     admissionDate: recordDate,
-  };
-};
-
-export const buildUndoCmaPatch = (
-  record: DailyRecord,
-  item: CMAData
-): Record<string, unknown> | null => {
-  if (!item.originalBedId || !item.originalData) {
-    return null;
-  }
-
-  const updatedRecord = resolveApplyUndoCmaRecord({
-    record,
-    cmaId: item.id,
-    bedId: item.originalBedId,
-    updatedBed: item.originalData,
-  });
-
-  return {
-    [`beds.${item.originalBedId}`]: updatedRecord.beds[item.originalBedId],
-    discharges: updatedRecord.discharges,
-    transfers: updatedRecord.transfers,
-    cma: updatedRecord.cma,
   };
 };
 

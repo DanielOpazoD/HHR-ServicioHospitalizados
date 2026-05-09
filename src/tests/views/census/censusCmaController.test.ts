@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { DataFactory } from '@/tests/factories/DataFactory';
+import { buildUndoCmaPatch } from '@/application/census/cmaUndoPatchUseCase';
 import {
   buildDeleteCmaDialog,
-  buildUndoCmaPatch,
   buildRestoreCmaDialog,
   CMA_INTERVENTION_TYPES,
   executeDeleteCmaController,

@@ -9,8 +9,7 @@ import { CMAData } from '@/types/domain/movements';
 import { capitalizeWords } from '@/utils/stringUtils';
 import { formatRut, isValidRut, isPassportFormat } from '@/utils/rutUtils';
 import { buildClearPatientPatches } from '@/hooks/controllers/bedManagementPatchController';
-import { buildAtomicPatientMovementPatch } from '@/application/census/public';
-import { buildUndoCmaPatch } from '@/features/census/controllers/censusCmaController';
+import { buildAtomicPatientMovementPatch, buildUndoCmaPatch } from '@/application/census/public';
 
 /**
  * Normalize CMA patient data fields
