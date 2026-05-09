@@ -3,7 +3,6 @@
   "allowlist": {
     "src/features/clinical-documents/services/clinicalDocumentIndicationsCatalogService.ts": 450,
     "src/features/clinical-documents/controllers/clinicalDocumentIndicationsCatalogController.ts": 450,
-    "src/features/prescriptions/components/PrescriptionBedGridView.tsx": 450,
     "src/features/clinical-documents/controllers/clinicalDocumentPlanSectionController.ts": 425,
     "src/services/repositories/dailyRecordRepositoryWriteService.ts": 425
   },
@@ -17,11 +16,6 @@
       "limit": 450,
       "owner": "clinical-documents",
       "reason": "Personal indications catalog controller is over the global module-size guard and needs a focused extraction outside this CI hotfix."
-    },
-    "src/features/prescriptions/components/PrescriptionBedGridView.tsx": {
-      "limit": 450,
-      "owner": "prescriptions",
-      "reason": "Prescription bed grid view is over the global module-size guard and needs a focused component split outside this CI hotfix."
     },
     "src/features/clinical-documents/controllers/clinicalDocumentPlanSectionController.ts": {
       "limit": 425,

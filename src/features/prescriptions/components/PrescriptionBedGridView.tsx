@@ -3,9 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
 import type { DailyRecord } from '@/services/storage/storageDailyRecordContracts';
 import {
-  PRESCRIPTION_TYPES,
   PRESCRIPTION_TYPE_LABELS,
-  resolvePrescriptionAssignmentScope,
   type PrescriptionRecord,
   type PrescriptionType,
 } from '@/types/prescriptionTypes';
@@ -15,6 +13,15 @@ import {
   type PrescriptionBedRowData,
 } from '@/features/prescriptions/components/PrescriptionBedRow';
 import { PrescriptionUnassignedTray } from '@/features/prescriptions/components/PrescriptionUnassignedTray';
+import {
+  buildBedRows,
+  formatDayLabel,
+  isStockRecord,
+  isUnassignedRecord,
+  PRESCRIPTION_TYPES,
+  previousIsoDay,
+  todayIso,
+} from '@/features/prescriptions/components/prescriptionBedGridSupport';
 
 export interface PrescriptionBedGridAssignTarget {
   bedId: string;
@@ -44,101 +51,6 @@ interface PrescriptionBedGridViewProps {
   onUpdateType?: (record: PrescriptionRecord, nextType: PrescriptionType) => Promise<void>;
   onDelete?: (record: PrescriptionRecord) => Promise<void>;
 }
-
-const todayIso = (): string => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
-
-const previousIsoDay = (iso: string): string => {
-  const [year, month, day] = iso.split('-').map(Number);
-  const date = new Date(year, (month ?? 1) - 1, day ?? 1);
-  date.setDate(date.getDate() - 1);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-};
-
-const formatDayLabel = (iso: string): string => {
-  try {
-    const [year, month, day] = iso.split('-').map(Number);
-    const d = new Date(year, (month ?? 1) - 1, day ?? 1);
-    return d.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' });
-  } catch {
-    return iso;
-  }
-};
-
-const isUnassignedRecord = (record: PrescriptionRecord): boolean =>
-  resolvePrescriptionAssignmentScope(record) === 'unassigned';
-
-const isStockRecord = (record: PrescriptionRecord): boolean =>
-  resolvePrescriptionAssignmentScope(record) === 'hospitalized_stock';
-
-const createEmptyPrescriptionBuckets = (): Record<PrescriptionType, PrescriptionRecord[]> => ({
-  comun: [],
-  psicotropicos: [],
-  benzodiazepinas: [],
-});
-
-const normalizeIdentityToken = (value: string | undefined): string =>
-  value?.trim().toLowerCase().replace(/\s+/g, ' ') ?? '';
-
-const normalizeRutToken = (value: string | undefined): string =>
-  normalizeIdentityToken(value).replace(/[^0-9k]/g, '');
-
-const buildBedRows = (
-  daily: DailyRecord | null,
-  records: PrescriptionRecord[]
-): PrescriptionBedRowData[] => {
-  const byBed = new Map<string, PrescriptionBedRowData>();
-  const activeRowsByRut = new Map<string, PrescriptionBedRowData>();
-  const activeRowsByName = new Map<string, PrescriptionBedRowData>();
-
-  for (const [bedId, patient] of Object.entries(daily?.beds || {})) {
-    if (!patient || patient.isBlocked) continue;
-    const hasIdentity = Boolean(patient.patientName?.trim()) || Boolean(patient.rut?.trim());
-    if (!hasIdentity) continue;
-    const row = {
-      bedId,
-      patientName: patient.patientName?.trim() ?? '',
-      patientRut: patient.rut?.trim() ?? '',
-      byType: createEmptyPrescriptionBuckets(),
-    };
-    byBed.set(bedId, row);
-    const rutKey = normalizeRutToken(row.patientRut);
-    if (rutKey) activeRowsByRut.set(rutKey, row);
-    const nameKey = normalizeIdentityToken(row.patientName);
-    if (nameKey) activeRowsByName.set(nameKey, row);
-  }
-
-  for (const record of records) {
-    if (resolvePrescriptionAssignmentScope(record) !== 'patient') continue;
-    if (!record.bedId) continue;
-    let row = byBed.get(record.bedId);
-    if (!row) {
-      const rutKey = normalizeRutToken(record.patientRut);
-      row = rutKey ? activeRowsByRut.get(rutKey) : undefined;
-    }
-    if (!row) {
-      const nameKey = normalizeIdentityToken(record.patientName);
-      row = nameKey ? activeRowsByName.get(nameKey) : undefined;
-    }
-    if (!row) {
-      row = {
-        bedId: record.bedId,
-        patientName: record.patientName?.trim() ?? '',
-        patientRut: record.patientRut?.trim() ?? '',
-        isDischargeSnapshot: true,
-        byType: createEmptyPrescriptionBuckets(),
-      };
-      byBed.set(record.bedId, row);
-    }
-    row.byType[record.prescriptionType].push(record);
-  }
-
-  return Array.from(byBed.values()).sort((a, b) =>
-    a.bedId.localeCompare(b.bedId, 'es', { numeric: true })
-  );
-};
 
 export const PrescriptionBedGridView: React.FC<PrescriptionBedGridViewProps> = ({
   records,
