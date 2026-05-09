@@ -85,6 +85,33 @@ describe('executeReassignPrescriptionPatient', () => {
     );
   });
 
+  it('forwards an explicit hospitalized stock assignment scope', async () => {
+    const port = buildPort({
+      reassignPatient: vi.fn(async () => ({ id: 'rx-1' }) as PrescriptionRecord),
+    });
+
+    await executeReassignPrescriptionPatient(
+      {
+        prescriptionId: 'rx-1',
+        assignmentScope: 'hospitalized_stock',
+        reassignedBy: 'admin@h.cl',
+        reassignedAt: '2026-05-05T08:00:00.000Z',
+      },
+      { prescriptionPort: port }
+    );
+
+    expect(port.reassignPatient).toHaveBeenCalledWith(
+      'rx-1',
+      expect.objectContaining({
+        assignmentScope: 'hospitalized_stock',
+        bedId: undefined,
+        patientName: undefined,
+        patientRut: undefined,
+      }),
+      undefined
+    );
+  });
+
   it('defaults reassignedAt to now when omitted', async () => {
     const port = buildPort({
       reassignPatient: vi.fn(async () => ({ id: 'rx-1' }) as PrescriptionRecord),

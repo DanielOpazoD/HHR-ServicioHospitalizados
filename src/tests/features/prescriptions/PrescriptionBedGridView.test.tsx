@@ -133,6 +133,29 @@ describe('PrescriptionBedGridView', () => {
     expect(screen.queryByTestId('prescription-unassigned-card-rx-stock')).not.toBeInTheDocument();
   });
 
+  it('sends an unassigned prescription to hospitalized stock from the tray', async () => {
+    const unassigned = buildRecord('rx-stock-target', {
+      bedId: undefined,
+      patientName: undefined,
+      patientRut: undefined,
+    });
+    const onAssignStock = vi.fn(async () => undefined);
+
+    renderGrid(
+      <PrescriptionBedGridView
+        records={[unassigned]}
+        dayIso="2026-05-04"
+        onAssignStock={onAssignStock}
+      />
+    );
+
+    await screen.findByTestId('prescription-unassigned-card-rx-stock-target');
+    fireEvent.click(screen.getByRole('button', { name: /enviar a stock de hospitalizados/i }));
+
+    await waitFor(() => expect(onAssignStock).toHaveBeenCalledTimes(1));
+    expect(onAssignStock).toHaveBeenCalledWith(expect.objectContaining({ id: 'rx-stock-target' }));
+  });
+
   it('keeps today prescriptions visible when the patient is no longer active in the census', async () => {
     const dischargedPrescription = buildRecord('rx-discharged', {
       assignmentScope: 'patient',

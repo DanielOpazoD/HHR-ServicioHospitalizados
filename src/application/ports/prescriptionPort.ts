@@ -1,5 +1,9 @@
 import { PrescriptionRepository } from '@/services/repositories/PrescriptionRepository';
-import type { PrescriptionRecord, PrescriptionType } from '@/types/prescriptionTypes';
+import type {
+  PrescriptionAssignmentScope,
+  PrescriptionRecord,
+  PrescriptionType,
+} from '@/types/prescriptionTypes';
 
 /**
  * Port that decouples application use cases from the concrete Firestore
@@ -20,6 +24,7 @@ export interface PrescriptionPort {
       bedId?: string;
       patientName?: string;
       patientRut?: string;
+      assignmentScope?: PrescriptionAssignmentScope;
       reassignedBy: string;
       reassignedAt: string;
     },

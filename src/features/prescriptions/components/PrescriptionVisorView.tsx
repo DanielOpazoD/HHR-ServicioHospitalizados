@@ -78,6 +78,18 @@ export const PrescriptionVisorView: React.FC = () => {
     [auth.currentUser]
   );
 
+  const handleGridAssignStock = useCallback(
+    async (record: PrescriptionRecord) => {
+      const reassignedBy = auth.currentUser?.email ?? auth.currentUser?.uid ?? 'desconocido';
+      await executeReassignPrescriptionPatient({
+        prescriptionId: record.id,
+        assignmentScope: 'hospitalized_stock',
+        reassignedBy,
+      });
+    },
+    [auth.currentUser]
+  );
+
   const handleGridUpdateType = useCallback(
     async (record: PrescriptionRecord, nextType: PrescriptionType) => {
       const updatedBy = auth.currentUser?.email ?? auth.currentUser?.uid ?? 'desconocido';
@@ -256,6 +268,7 @@ export const PrescriptionVisorView: React.FC = () => {
             records={controller.filteredRecords}
             dayIso={controller.filters.selectedDate}
             onAssign={canEdit ? handleGridAssign : undefined}
+            onAssignStock={canEdit ? handleGridAssignStock : undefined}
             onUpdateType={canEdit ? handleGridUpdateType : undefined}
             onDelete={canDelete ? handleGridDelete : undefined}
           />

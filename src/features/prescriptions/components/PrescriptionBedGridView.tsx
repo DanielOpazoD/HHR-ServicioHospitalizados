@@ -35,6 +35,7 @@ interface PrescriptionBedGridViewProps {
    * and refreshes the record list.
    */
   onAssign?: (record: PrescriptionRecord, target: PrescriptionBedGridAssignTarget) => Promise<void>;
+  onAssignStock?: (record: PrescriptionRecord) => Promise<void>;
   /**
    * Persists a new prescription type for the given record. Wired to the
    * quick-type button rendered next to every thumbnail (assigned and
@@ -143,6 +144,7 @@ export const PrescriptionBedGridView: React.FC<PrescriptionBedGridViewProps> = (
   records,
   dayIso,
   onAssign,
+  onAssignStock,
   onUpdateType,
   onDelete,
 }) => {
@@ -164,6 +166,7 @@ export const PrescriptionBedGridView: React.FC<PrescriptionBedGridViewProps> = (
     null
   );
   const [pendingAssignId, setPendingAssignId] = useState<string | null>(null);
+  const [pendingStockAssignId, setPendingStockAssignId] = useState<string | null>(null);
   const [assignError, setAssignError] = useState<string | null>(null);
   const [pickerSource, setPickerSource] = useState<PrescriptionRecord | null>(null);
 
@@ -268,6 +271,24 @@ export const PrescriptionBedGridView: React.FC<PrescriptionBedGridViewProps> = (
       setHoverCell(null);
       setDraggingId(null);
       setPickerSource(null);
+    }
+  };
+
+  const performAssignStock = async (record: PrescriptionRecord): Promise<void> => {
+    if (!onAssignStock) return;
+    setAssignError(null);
+    setPendingStockAssignId(record.id);
+    try {
+      await onAssignStock(record);
+    } catch (caught) {
+      setAssignError(
+        caught instanceof Error
+          ? caught.message
+          : 'No se pudo enviar la receta a Stock de Hospitalizados.'
+      );
+    } finally {
+      setPendingStockAssignId(null);
+      setPickerSource(prev => (prev?.id === record.id ? null : prev));
     }
   };
 
@@ -411,11 +432,13 @@ export const PrescriptionBedGridView: React.FC<PrescriptionBedGridViewProps> = (
         pickerSource={pickerSource}
         assignError={assignError}
         enableAssign={!!onAssign}
+        pendingStockAssignId={pendingStockAssignId}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         onTogglePicker={togglePicker}
         onPreviewImage={openLightbox}
         onUpdateType={onUpdateType}
+        onAssignStock={onAssignStock ? performAssignStock : undefined}
       />
 
       {stockRecords.length > 0 && (

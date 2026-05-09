@@ -1,5 +1,5 @@
 import React from 'react';
-import { Inbox, MousePointerClick } from 'lucide-react';
+import { Inbox, Loader2, MousePointerClick, PackagePlus } from 'lucide-react';
 import {
   PRESCRIPTION_TYPE_LABELS,
   type PrescriptionRecord,
@@ -19,11 +19,13 @@ interface PrescriptionUnassignedTrayProps {
   title?: string;
   emptyLabel?: string;
   guidance?: string;
+  pendingStockAssignId?: string | null;
   onDragStart: (event: React.DragEvent<HTMLDivElement>, record: PrescriptionRecord) => void;
   onDragEnd: () => void;
   onTogglePicker: (record: PrescriptionRecord) => void;
   onPreviewImage: (record: PrescriptionRecord, url: string) => void;
   onUpdateType?: (record: PrescriptionRecord, nextType: PrescriptionType) => Promise<void>;
+  onAssignStock?: (record: PrescriptionRecord) => Promise<void> | void;
 }
 
 export const PrescriptionUnassignedTray: React.FC<PrescriptionUnassignedTrayProps> = ({
@@ -37,11 +39,13 @@ export const PrescriptionUnassignedTray: React.FC<PrescriptionUnassignedTrayProp
   title = 'Pendientes de asignación',
   emptyLabel = 'Sin recetas pendientes de asignación.',
   guidance = 'Arrastra a la fila y columna correctas, o usa "Elegir"',
+  pendingStockAssignId = null,
   onDragStart,
   onDragEnd,
   onTogglePicker,
   onPreviewImage,
   onUpdateType,
+  onAssignStock,
 }) => {
   if (records.length === 0) {
     return (
@@ -72,6 +76,7 @@ export const PrescriptionUnassignedTray: React.FC<PrescriptionUnassignedTrayProp
         {records.map(record => {
           const isDragging = draggingId === record.id;
           const isPicker = pickerSource?.id === record.id;
+          const isAssigningStock = pendingStockAssignId === record.id;
           return (
             <div
               key={record.id}
@@ -114,6 +119,21 @@ export const PrescriptionUnassignedTray: React.FC<PrescriptionUnassignedTrayProp
                   }`}
                 >
                   {isPicker ? 'Elegir cama…' : 'Asignar'}
+                </button>
+              )}
+              {onAssignStock && (
+                <button
+                  type="button"
+                  onClick={() => onAssignStock(record)}
+                  disabled={isAssigningStock}
+                  className="inline-flex items-center justify-center gap-1 rounded-md border border-emerald-300 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:cursor-wait disabled:opacity-70"
+                >
+                  {isAssigningStock ? (
+                    <Loader2 size={11} className="animate-spin" />
+                  ) : (
+                    <PackagePlus size={11} />
+                  )}
+                  {isAssigningStock ? 'Enviando…' : 'Enviar a Stock de Hospitalizados'}
                 </button>
               )}
             </div>

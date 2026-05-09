@@ -180,6 +180,40 @@ describe('PrescriptionRepository.reassignPatient', () => {
       })
     );
   });
+
+  it('persists explicit hospitalized stock assignment without patient fields', async () => {
+    const stock = buildRecord('rx-stock', '2026-05-04T10:00:00.000Z', {
+      assignmentScope: 'hospitalized_stock',
+      bedId: undefined,
+      patientName: undefined,
+      patientRut: undefined,
+      patientReassignedAt: '2026-05-05T08:00:00.000Z',
+      patientReassignedBy: 'admin@h.cl',
+    });
+    vi.mocked(firestoreDb.updateDoc).mockResolvedValueOnce(undefined);
+    vi.mocked(firestoreDb.getDoc).mockResolvedValueOnce(stock);
+
+    await PrescriptionRepository.reassignPatient(
+      'rx-stock',
+      {
+        assignmentScope: 'hospitalized_stock',
+        reassignedBy: 'admin@h.cl',
+        reassignedAt: '2026-05-05T08:00:00.000Z',
+      },
+      'hhr'
+    );
+
+    expect(firestoreDb.updateDoc).toHaveBeenCalledWith(
+      'hospitals/hhr/prescriptions',
+      'rx-stock',
+      expect.objectContaining({
+        assignmentScope: 'hospitalized_stock',
+        bedId: null,
+        patientName: null,
+        patientRut: null,
+      })
+    );
+  });
 });
 
 describe('PrescriptionRepository.delete', () => {

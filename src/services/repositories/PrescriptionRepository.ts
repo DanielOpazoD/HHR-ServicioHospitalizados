@@ -14,7 +14,11 @@ import { getPrescriptionsCollectionPath } from '@/constants/prescriptionPaths';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 import { safeParsePrescriptionRecord } from '@/schemas/prescriptionSchemas';
-import type { PrescriptionRecord, PrescriptionType } from '@/types/prescriptionTypes';
+import type {
+  PrescriptionAssignmentScope,
+  PrescriptionRecord,
+  PrescriptionType,
+} from '@/types/prescriptionTypes';
 
 const sortByCreatedAtDesc = (records: PrescriptionRecord[]): PrescriptionRecord[] =>
   [...records].sort((left, right) => right.createdAt.localeCompare(left.createdAt));
@@ -94,6 +98,7 @@ export const PrescriptionRepository = {
       bedId?: string;
       patientName?: string;
       patientRut?: string;
+      assignmentScope?: PrescriptionAssignmentScope;
       reassignedBy: string;
       reassignedAt: string;
     },
@@ -108,7 +113,8 @@ export const PrescriptionRepository = {
       patientName: patch.patientName ?? null,
       patientRut: patch.patientRut ?? null,
       assignmentScope:
-        patch.bedId || patch.patientName || patch.patientRut ? 'patient' : 'unassigned',
+        patch.assignmentScope ??
+        (patch.bedId || patch.patientName || patch.patientRut ? 'patient' : 'unassigned'),
       patientReassignedAt: patch.reassignedAt,
       patientReassignedBy: patch.reassignedBy,
     });

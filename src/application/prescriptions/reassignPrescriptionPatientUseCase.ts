@@ -12,7 +12,7 @@ import {
   defaultPrescriptionPort,
   type PrescriptionPort,
 } from '@/application/ports/prescriptionPort';
-import type { PrescriptionRecord } from '@/types/prescriptionTypes';
+import type { PrescriptionAssignmentScope, PrescriptionRecord } from '@/types/prescriptionTypes';
 
 export interface ReassignPrescriptionPatientInput {
   prescriptionId: string;
@@ -24,6 +24,7 @@ export interface ReassignPrescriptionPatientInput {
   bedId?: string;
   patientName?: string;
   patientRut?: string;
+  assignmentScope?: PrescriptionAssignmentScope;
   /** Email or display string of the actor making the change. */
   reassignedBy: string;
   /** Defaults to `new Date().toISOString()` when omitted. */
@@ -45,6 +46,7 @@ export const executeReassignPrescriptionPatient = async (
       bedId: input.bedId,
       patientName: input.patientName,
       patientRut: input.patientRut,
+      assignmentScope: input.assignmentScope,
       reassignedBy: input.reassignedBy,
       reassignedAt: input.reassignedAt ?? new Date().toISOString(),
     },
