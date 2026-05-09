@@ -406,6 +406,68 @@ describe('dailyRecordRepositoryWriteService concurrency auto-merge', () => {
     );
   });
 
+  it('auto-merges a partial device retirement without reactivating the removed device', async () => {
+    const current = buildRecord('2026-02-15');
+    current.beds = {
+      R1: {
+        ...buildPatient('R1', 'Paciente con dispositivo'),
+        devices: ['VVP#1'],
+        deviceDetails: {
+          CVC: {
+            installationDate: '2026-02-13',
+            removalDate: '2026-02-15',
+            note: 'Retirado',
+          },
+          'VVP#1': { installationDate: '2026-02-14' },
+        },
+      },
+    };
+
+    const remote = buildRecord('2026-02-15');
+    remote.beds = {
+      R1: {
+        ...buildPatient('R1', 'Paciente con dispositivo'),
+        devices: ['CVC', 'VVP#1'],
+        deviceDetails: {
+          CVC: { installationDate: '2026-02-13' },
+          'VVP#1': { installationDate: '2026-02-14' },
+        },
+      },
+    };
+
+    const concurrencyError = new Error('Concurrency conflict');
+    concurrencyError.name = 'ConcurrencyError';
+
+    vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(current);
+    vi.mocked(updateRecordPartialToFirestore).mockRejectedValueOnce(concurrencyError);
+    vi.mocked(getRecordFromFirestore).mockResolvedValue(remote);
+
+    await expect(
+      updatePartial('2026-02-15', {
+        'beds.R1.deviceDetails': current.beds.R1.deviceDetails,
+        'beds.R1.devices': current.beds.R1.devices,
+      })
+    ).resolves.toBeUndefined();
+
+    expect(queueSyncTask).toHaveBeenCalledWith(
+      'UPDATE_DAILY_RECORD',
+      expect.objectContaining({
+        beds: expect.objectContaining({
+          R1: expect.objectContaining({
+            devices: ['VVP#1'],
+            deviceDetails: expect.objectContaining({
+              CVC: expect.objectContaining({ removalDate: '2026-02-15' }),
+            }),
+          }),
+        }),
+      }),
+      expect.objectContaining({
+        contexts: expect.arrayContaining(['clinical']),
+        origin: 'conflict_auto_merge',
+      })
+    );
+  });
+
   it('keeps partial update locally when auto-merge recovery is not possible', async () => {
     const current = buildRecord('2026-02-14');
     current.beds = { R1: buildPatient('R1', 'Paciente local') };
