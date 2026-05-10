@@ -243,11 +243,16 @@ describeEmulator('Firestore emulator sync concurrency flow', () => {
       ['day', 'tens', 0, 'TENS Admin 1'],
       ['day', 'tens', 1, 'TENS Admin 2'],
       ['day', 'tens', 2, 'TENS Admin 3'],
+      ['night', 'nurse', 0, 'Enf Noche Admin 1'],
+      ['night', 'nurse', 1, 'Enf Noche Admin 2'],
+      ['night', 'tens', 0, 'TENS Noche Admin 1'],
+      ['night', 'tens', 1, 'TENS Noche Admin 2'],
+      ['night', 'tens', 2, 'TENS Noche Admin 3'],
     ].reduce(
       (detail, [shift, role, index, name]) =>
         updateDetailedStaffingStandardSlot(
           detail,
-          shift as 'day',
+          shift as 'day' | 'night',
           role as 'nurse' | 'tens',
           index as number,
           name as string
@@ -271,10 +276,22 @@ describeEmulator('Firestore emulator sync concurrency flow', () => {
     expect(result.record?.nursesDayShift).toEqual(['Enf Admin 1', 'Enf Admin 2']);
     expect(result.record?.nurses).toEqual(['Enf Admin 1', 'Enf Admin 2']);
     expect(result.record?.tensDayShift).toEqual(['TENS Admin 1', 'TENS Admin 2', 'TENS Admin 3']);
+    expect(result.record?.nursesNightShift).toEqual(['Enf Noche Admin 1', 'Enf Noche Admin 2']);
+    expect(result.record?.tensNightShift).toEqual([
+      'TENS Noche Admin 1',
+      'TENS Noche Admin 2',
+      'TENS Noche Admin 3',
+    ]);
 
     const hydratedLocal = await getRecordForDate(date);
     expect(hydratedLocal?.nursesDayShift).toEqual(['Enf Admin 1', 'Enf Admin 2']);
     expect(hydratedLocal?.tensDayShift).toEqual(['TENS Admin 1', 'TENS Admin 2', 'TENS Admin 3']);
+    expect(hydratedLocal?.nursesNightShift).toEqual(['Enf Noche Admin 1', 'Enf Noche Admin 2']);
+    expect(hydratedLocal?.tensNightShift).toEqual([
+      'TENS Noche Admin 1',
+      'TENS Noche Admin 2',
+      'TENS Noche Admin 3',
+    ]);
   });
 
   it('auto-merges a conflicted bed move and persists no duplicate patient after retry', async () => {
