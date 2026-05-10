@@ -1,6 +1,9 @@
 import { DailyRecord } from '@/types/domain/dailyRecord';
 import { getRecordForDate as getRecordFromIndexedDB } from '@/services/storage/indexeddb/indexedDbRecordService';
-import { subscribeToRecord } from '@/services/storage/firestore/firestoreRecordQueries';
+import {
+  subscribeToRecord,
+  type FirestoreRecordSnapshotMetadata,
+} from '@/services/storage/firestore/firestoreRecordQueries';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import { migrateLegacyData } from '@/services/repositories/dataMigration';
 import { loadRemoteRecordWithFallback } from '@/services/repositories/dailyRecordRemoteLoader';
@@ -16,7 +19,7 @@ import type { SyncDailyRecordResult } from '@/services/repositories/contracts/da
 const resolveSubscriptionResult = async (
   date: string,
   remoteRecord: DailyRecord | null,
-  remoteAvailability: 'resolved' | 'missing'
+  remoteAvailability: 'resolved' | 'missing' | 'unavailable'
 ): Promise<SyncDailyRecordResult> => {
   const localRecord = await getRecordFromIndexedDB(date);
   const goldenPath = resolveDailyRecordPersistenceGoldenPath({
@@ -72,11 +75,12 @@ export const subscribeDetailed = (
 ): (() => void) => {
   let active = true;
 
-  const unsubscribe = subscribeToRecord(date, (record, hasPendingWrites) => {
+  const unsubscribe = subscribeToRecord(date, (record, hasPendingWrites, metadata) => {
     void (async () => {
       if (!active) return;
 
       const migrated = record ? migrateLegacyData(record, date) : null;
+      const remoteAvailability = resolveRealtimeRemoteAvailability(migrated, metadata);
       const result = hasPendingWrites
         ? createSyncDailyRecordResult({
             date,
@@ -90,7 +94,7 @@ export const subscribeDetailed = (
             observabilityTags: ['daily_record', 'sync', 'subscription_pending_write'],
             repairApplied: false,
           })
-        : await resolveSubscriptionResult(date, migrated, migrated ? 'resolved' : 'missing');
+        : await resolveSubscriptionResult(date, migrated, remoteAvailability);
 
       if (!active) return;
       callback(result, hasPendingWrites);
@@ -101,6 +105,21 @@ export const subscribeDetailed = (
     active = false;
     unsubscribe();
   };
+};
+
+const resolveRealtimeRemoteAvailability = (
+  record: DailyRecord | null,
+  metadata?: FirestoreRecordSnapshotMetadata
+): 'resolved' | 'missing' | 'unavailable' => {
+  if (record) {
+    return 'resolved';
+  }
+
+  if (metadata?.fromCache) {
+    return 'unavailable';
+  }
+
+  return 'missing';
 };
 
 export const subscribe = (

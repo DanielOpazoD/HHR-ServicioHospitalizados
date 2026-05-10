@@ -224,6 +224,33 @@ describe('dailyRecordRepositorySyncService', () => {
     );
   });
 
+  it('does not confirm an empty day from a cache-only missing realtime snapshot', async () => {
+    vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(null);
+
+    vi.mocked(subscribeToRecord).mockImplementationOnce((_date, callback) => {
+      void callback(null, false, { hasPendingWrites: false, fromCache: true });
+      return vi.fn();
+    });
+
+    const callback = vi.fn();
+    subscribeDetailed('2026-03-03', callback);
+
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(callback).toHaveBeenCalledWith(
+      expect.objectContaining({
+        record: null,
+        outcome: 'blocked',
+        consistencyState: 'blocked',
+        sourceOfTruth: 'none',
+        retryability: 'automatic_retry',
+        recoveryAction: 'defer_remote_sync',
+      }),
+      false
+    );
+  });
+
   it('ignores async subscription results that complete after unsubscribe', async () => {
     let emitRecord: ((record: DailyRecord | null, hasPendingWrites: boolean) => void) | null = null;
     const unsubscribe = vi.fn();
