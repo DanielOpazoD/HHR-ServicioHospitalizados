@@ -66,6 +66,7 @@ export const MoveCopyModal: React.FC<MoveCopyModalProps> = ({
             allBeds: BEDS,
             currentRecord,
             targetRecord: resolvedTargetRecord,
+            selectedDate,
             sourceBedId,
             targetBedId,
           })
