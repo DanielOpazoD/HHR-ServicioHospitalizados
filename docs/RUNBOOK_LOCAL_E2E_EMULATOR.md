@@ -99,7 +99,7 @@ npm run check:quality
 `system_confidence.operational_budgets.flow` pasa de `unknown` a:
 
 - `ok` si todas las métricas cumplen **target** (1500 ms para censo, etc.).
-- `target-violations` si el **enforced max** (2500 ms censo) pasa pero el target no.
+- `target-violations` si el **enforced max** (2000 ms censo) pasa pero el target no.
 - `enforced-violations` si un flow supera el enforced max — **esto sí bloquea release**.
 
 ## Targets vs. enforced — política corta
