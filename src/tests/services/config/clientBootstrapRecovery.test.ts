@@ -145,7 +145,8 @@ describe('prepareClientBootstrap', () => {
   it('reloads once when the deployed version changes', async () => {
     mockGetLocalStorageItem.mockReturnValue('deploy-001');
 
-    const { firebaseConfigCacheKey, bootstrapRecoveryKey } = getClientBootstrapRecoveryConstants();
+    const { firebaseConfigCacheKey, bootstrapRecoveryKey, postDeployRecentRecordRefreshKey } =
+      getClientBootstrapRecoveryConstants();
     localStorage.setItem(firebaseConfigCacheKey, JSON.stringify({ apiKey: 'stale' }));
 
     const result = await prepareClientBootstrap();
@@ -155,6 +156,13 @@ describe('prepareClientBootstrap', () => {
     expect(mockCachesDelete).toHaveBeenCalledWith('static-v1');
     expect(localStorage.getItem(firebaseConfigCacheKey)).toBeNull();
     expect(sessionStorage.getItem(bootstrapRecoveryKey)).toBe('version-change');
+    expect(
+      JSON.parse(localStorage.getItem(postDeployRecentRecordRefreshKey) || '{}')
+    ).toMatchObject({
+      reason: 'version-change',
+      fromVersion: 'deploy-001',
+      toVersion: 'deploy-002',
+    });
     expect(mockReload).toHaveBeenCalledTimes(1);
   });
 });
