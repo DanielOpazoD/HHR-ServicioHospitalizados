@@ -95,18 +95,14 @@ describe('DateStrip', () => {
   it('shows sync status indicators in SaveDropdown', () => {
     // Sync status is actually reflected in SaveDropdown 'isArchived' and 'isBackingUp' props
     const { rerender } = render(<DateStrip {...defaultProps} isBackingUp={true} />);
-    expect(screen.getByRole('button', { name: 'Guardando...' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Guardando...' })).toHaveAttribute(
-      'data-save-status',
-      'loading'
-    );
+    const savingButton = screen.getByTitle('Opciones de guardado');
+    expect(savingButton).toHaveAttribute('aria-label', 'Guardando...');
+    expect(savingButton).toHaveAttribute('data-save-status', 'loading');
 
     rerender(<DateStrip {...defaultProps} isArchived={true} />);
-    expect(screen.getByRole('button', { name: 'Sincronizado' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Sincronizado' })).toHaveAttribute(
-      'data-save-status',
-      'archived'
-    );
+    const archivedButton = screen.getByTitle('Opciones de guardado');
+    expect(archivedButton).toHaveAttribute('aria-label', 'Sincronizado');
+    expect(archivedButton).toHaveAttribute('data-save-status', 'archived');
   });
 
   it('hides firebase backup option in census save menu', () => {
