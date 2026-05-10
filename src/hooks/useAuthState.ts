@@ -18,7 +18,10 @@ import {
 } from '@/hooks/useAuthStateSupport';
 import { hasRecentManualLogout } from '@/services/auth/authLogoutState';
 import { isAuthBootstrapPending } from '@/services/auth/authBootstrapState';
-import { hasPersistedFirebaseAuthHint } from '@/services/auth/authStorageHints';
+import {
+  hasPersistedFirebaseAuthHint,
+  hasRecentAuthenticatedSessionHint,
+} from '@/services/auth/authStorageHints';
 import {
   createAuthenticatingAuthSessionState,
   createUnauthenticatedAuthSessionState,
@@ -46,6 +49,10 @@ const shouldInitializeAsUnauthenticated = (): boolean => {
 
   if (hasRecentManualLogout() && !hasActiveSession) {
     return true;
+  }
+
+  if (hasRecentAuthenticatedSessionHint()) {
+    return false;
   }
 
   return !hasActiveSession && !isAuthBootstrapPending() && !hasPersistedFirebaseAuthHint();

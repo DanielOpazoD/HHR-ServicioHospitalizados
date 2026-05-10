@@ -17,7 +17,10 @@ import { recordOperationalOutcome } from '@/services/observability/operationalTe
 import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 import { resolveAuthBootstrapBudget } from '@/services/auth/authBootstrapBudgets';
 import { hasActiveFirebaseSession } from '@/services/auth/authFallback';
-import { hasPersistedFirebaseAuthHint } from '@/services/auth/authStorageHints';
+import {
+  hasPersistedFirebaseAuthHint,
+  hasRecentAuthenticatedSessionHint,
+} from '@/services/auth/authStorageHints';
 import { markPerf } from '@/shared/runtime/perfAudit';
 import {
   buildBootstrapTimeoutAuthError,
@@ -65,11 +68,12 @@ export const useResolvedAuthBootstrap = ({
 
     let unsubscribe: (() => void) | undefined;
     const hasPendingRedirect = isAuthBootstrapPending();
-    const hasPersistedAuthRehydrationHint = hasPersistedFirebaseAuthHint();
+    const hasAuthRehydrationHint =
+      hasPersistedFirebaseAuthHint() || hasRecentAuthenticatedSessionHint();
     const canResolveImmediatelyAsUnauthenticatedAfterDirectChecks =
       shouldResolveAuthBootstrapImmediatelyAsUnauthenticated({
         hasPendingRedirect,
-        hasAuthRehydrationHint: hasPersistedAuthRehydrationHint,
+        hasAuthRehydrationHint,
         hasActiveFirebaseSession: hasActiveFirebaseSession(),
       });
 
@@ -110,7 +114,7 @@ export const useResolvedAuthBootstrap = ({
       if (
         shouldAttemptAuthTimeoutRecovery({
           hasRecentManualLogout: hasRecentManualLogout(),
-          hasAuthRehydrationHint: hasPersistedAuthRehydrationHint,
+          hasAuthRehydrationHint,
         })
       ) {
         void resolveCurrentAuthSessionOutcome()
@@ -181,7 +185,7 @@ export const useResolvedAuthBootstrap = ({
       onAuthSessionStateChange,
       resolveImmediatelyAsUnauthenticatedWhenDirectChecksAreEmpty:
         canResolveImmediatelyAsUnauthenticatedAfterDirectChecks,
-      hasAuthRehydrationHint: hasPersistedAuthRehydrationHint,
+      hasAuthRehydrationHint,
       setSessionState,
       setAuthLoading: setResolvedAuthLoading,
     }).then(unsub => {

@@ -60,6 +60,7 @@ const resolveBootstrapDirectChecks = async ({
   resolveRedirectAuthSessionOutcome,
   resolveCurrentAuthSessionOutcome,
   resolveImmediatelyAsUnauthenticatedWhenDirectChecksAreEmpty,
+  hasAuthRehydrationHint,
   setSessionState,
   setAuthLoading,
 }: Pick<
@@ -67,6 +68,7 @@ const resolveBootstrapDirectChecks = async ({
   | 'resolveRedirectAuthSessionOutcome'
   | 'resolveCurrentAuthSessionOutcome'
   | 'resolveImmediatelyAsUnauthenticatedWhenDirectChecksAreEmpty'
+  | 'hasAuthRehydrationHint'
   | 'setSessionState'
   | 'setAuthLoading'
 >): Promise<{ resolved: boolean }> => {
@@ -103,8 +105,9 @@ const resolveBootstrapDirectChecks = async ({
     }
 
     if (
-      resolveImmediatelyAsUnauthenticatedWhenDirectChecksAreEmpty ||
-      (!isAuthBootstrapPending() && !hasActiveFirebaseSession())
+      !hasAuthRehydrationHint &&
+      (resolveImmediatelyAsUnauthenticatedWhenDirectChecksAreEmpty ||
+        (!isAuthBootstrapPending() && !hasActiveFirebaseSession()))
     ) {
       clearAuthBootstrapPending();
       setSessionState(createUnauthenticatedAuthSessionState());
