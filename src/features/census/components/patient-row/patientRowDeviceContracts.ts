@@ -1,5 +1,5 @@
 import type { DeviceDetails, DeviceInstance } from '@/types/domain/devices';
-import type { PatientRowPatientPatch } from '@/features/census/components/patient-row/patientRowContracts';
+import type { PatientRowPatientPatch } from '@/features/census/components/patient-row/patientRowDataContracts';
 
 export interface PatientDeviceCallbacks {
   onDevicesChange: (devices: string[]) => void;
