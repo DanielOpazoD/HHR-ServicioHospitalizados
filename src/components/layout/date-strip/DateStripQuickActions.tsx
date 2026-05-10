@@ -2,6 +2,8 @@ import React, { Suspense, lazy } from 'react';
 import { FlaskConical, Lock, Radio } from 'lucide-react';
 import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medicalIndications';
 
+const FEATURE_QUICK_ACTIONS_STARTUP_DELAY_MS = 1200;
+
 const LazyRadiologyViewerModal = lazy(() =>
   import('@/components/modals/RadiologyViewerModal').then(module => ({
     default: module.RadiologyViewerModal,
@@ -22,6 +24,22 @@ export const DateStripQuickActions: React.FC<DateStripQuickActionsProps> = ({
   hideClinicalQuickActions = false,
 }) => {
   const [isRadiologyOpen, setIsRadiologyOpen] = React.useState(false);
+  const [canRenderFeatureQuickActions, setCanRenderFeatureQuickActions] = React.useState(false);
+
+  React.useEffect(() => {
+    if (hideClinicalQuickActions || !renderFeatureQuickActions) {
+      setCanRenderFeatureQuickActions(false);
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setCanRenderFeatureQuickActions(true);
+    }, FEATURE_QUICK_ACTIONS_STARTUP_DELAY_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [hideClinicalQuickActions, renderFeatureQuickActions]);
 
   const quickActionPatients = React.useMemo(
     () => medicalIndicationsPatients.filter(p => p.rut && p.patientName),
@@ -94,7 +112,9 @@ export const DateStripQuickActions: React.FC<DateStripQuickActionsProps> = ({
           ))}
 
         {!hideClinicalQuickActions &&
-          (renderFeatureQuickActions?.(quickActionPatients) ??
+          ((canRenderFeatureQuickActions && renderFeatureQuickActions
+            ? renderFeatureQuickActions(quickActionPatients)
+            : null) ??
             renderPlaceholderAction('Lab', FlaskConical))}
       </div>
     </div>
