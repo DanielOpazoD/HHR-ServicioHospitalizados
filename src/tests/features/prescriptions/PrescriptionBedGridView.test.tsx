@@ -92,6 +92,9 @@ describe('PrescriptionBedGridView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(getRecordFromFirestore).mockResolvedValue(buildDailyRecord());
+    vi.mocked(resolvePrescriptionImageDownloadUrl).mockImplementation(
+      async (path: string) => `https://stub/${path}`
+    );
   });
 
   it('lists pending unassigned prescriptions in the tray', async () => {
@@ -354,8 +357,13 @@ describe('PrescriptionBedGridView', () => {
     });
 
     expect(screen.getByRole('dialog', { name: /vista ampliada/i })).toBeInTheDocument();
-    await waitFor(() =>
-      expect(resolvePrescriptionImageDownloadUrl).toHaveBeenCalledWith(second.image.storagePath)
+    await waitFor(() => expect(screen.getByText('2 / 2')).toBeInTheDocument(), {
+      timeout: 4000,
+    });
+    await waitFor(
+      () =>
+        expect(resolvePrescriptionImageDownloadUrl).toHaveBeenCalledWith(second.image.storagePath),
+      { timeout: 4000 }
     );
     expect(await screen.findByRole('status', { name: /cargando receta/i })).toBeInTheDocument();
 
