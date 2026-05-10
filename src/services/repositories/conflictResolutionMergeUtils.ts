@@ -13,13 +13,7 @@ import {
 } from '@/services/repositories/conflictResolutionTrace';
 
 export const ID_BASED_ARRAY_FIELDS = new Set(['discharges', 'transfers', 'cma']);
-export const UNIQUE_ARRAY_FIELDS = new Set([
-  'nursesDayShift',
-  'nursesNightShift',
-  'tensDayShift',
-  'tensNightShift',
-  'activeExtraBeds',
-]);
+export const UNIQUE_ARRAY_FIELDS = new Set(['activeExtraBeds']);
 export const PATIENT_ID_ARRAY_FIELDS = new Set([
   'clinicalEvents',
   'deviceInstanceHistory',

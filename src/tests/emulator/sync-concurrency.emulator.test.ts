@@ -17,6 +17,9 @@ const runEmulatorTests =
 const describeEmulator = runEmulatorTests ? describe : describe.skip;
 
 let activeDb: unknown;
+type TestFirestore = ReturnType<
+  ReturnType<RulesTestEnvironment['authenticatedContext']>['firestore']
+>;
 
 vi.mock('@/firebaseConfig', () => ({
   get db() {
@@ -32,13 +35,20 @@ import {
 } from '@/services/storage/firestore/firestoreRecordWrites';
 import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
 import { getRecordDocRef } from '@/services/storage/firestore/firestoreShared';
+import { getForDateWithMeta } from '@/services/repositories/dailyRecordRepositoryReadService';
 import { updatePartial } from '@/services/repositories/dailyRecordRepositoryWriteService';
+import { setFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import {
   clearAllRecords,
   getRecordForDate,
   saveRecord,
 } from '@/services/storage/indexeddb/indexedDbRecordService';
 import { clearAllSyncQueue, processSyncQueue } from '@/services/storage/sync';
+import {
+  buildDetailedStaffingPatch,
+  resolveDetailedStaffingState,
+  updateDetailedStaffingStandardSlot,
+} from '@/services/staff/dailyRecordDetailedStaffing';
 
 const buildRecord = (date: string, lastUpdated: string): DailyRecord => ({
   date,
@@ -92,7 +102,8 @@ const isoAt = (date: string, time: string): string => `${date}T${time}.000Z`;
 
 describeEmulator('Firestore emulator sync concurrency flow', () => {
   let testEnv: RulesTestEnvironment;
-  let nurseDb: unknown;
+  let nurseDb: TestFirestore;
+  let adminDb: TestFirestore;
 
   beforeAll(async () => {
     const rulesPath = path.resolve(__dirname, '../../../firestore.rules');
@@ -114,12 +125,19 @@ describeEmulator('Firestore emulator sync concurrency flow', () => {
         role: 'nurse_hospital',
       })
       .firestore();
+    adminDb = testEnv
+      .authenticatedContext('user_admin', {
+        email: 'daniel.opazo@hospitalhangaroa.cl',
+        role: 'admin',
+      })
+      .firestore();
   });
 
   beforeEach(async () => {
     await testEnv.clearFirestore();
     await clearAllRecords();
     await clearAllSyncQueue();
+    setFirestoreEnabled(true);
     activeDb = nurseDb;
   });
 
@@ -211,6 +229,69 @@ describeEmulator('Firestore emulator sync concurrency flow', () => {
     const snap = await getDoc(getRecordDocRef(date));
     expect(snap.exists()).toBe(true);
     expect(snap.data()?.beds?.R1?.patientName).toBe('Paciente Parcial');
+  });
+
+  it('hydrates nurse view with admin-assigned staffing when local cache has stale vacancies', async () => {
+    const date = CURRENT_RECORD_DATE;
+    const localStaleTimestamp = isoAt(date, '11:00:00');
+    const remoteAdminTimestamp = isoAt(date, '10:00:00');
+
+    const remoteAssignedByAdmin = buildRecord(date, remoteAdminTimestamp);
+    const staffingDetail = [
+      ['day', 'nurse', 0, 'Enf Admin 1'],
+      ['day', 'nurse', 1, 'Enf Admin 2'],
+      ['day', 'tens', 0, 'TENS Admin 1'],
+      ['day', 'tens', 1, 'TENS Admin 2'],
+      ['day', 'tens', 2, 'TENS Admin 3'],
+      ['night', 'nurse', 0, 'Enf Noche Admin 1'],
+      ['night', 'nurse', 1, 'Enf Noche Admin 2'],
+      ['night', 'tens', 0, 'TENS Noche Admin 1'],
+      ['night', 'tens', 1, 'TENS Noche Admin 2'],
+      ['night', 'tens', 2, 'TENS Noche Admin 3'],
+    ].reduce(
+      (detail, [shift, role, index, name]) =>
+        updateDetailedStaffingStandardSlot(
+          detail,
+          shift as 'day' | 'night',
+          role as 'nurse' | 'tens',
+          index as number,
+          name as string
+        ),
+      resolveDetailedStaffingState(remoteAssignedByAdmin, date)
+    );
+    Object.assign(remoteAssignedByAdmin, buildDetailedStaffingPatch(staffingDetail));
+
+    await adminDb.doc(`hospitals/hanga_roa/dailyRecords/${date}`).set(remoteAssignedByAdmin);
+
+    const staleNurseCache = buildRecord(date, localStaleTimestamp);
+    staleNurseCache.nurses = ['', ''];
+    staleNurseCache.nursesDayShift = ['', ''];
+    staleNurseCache.nursesNightShift = ['', ''];
+    staleNurseCache.tensDayShift = ['', '', ''];
+    staleNurseCache.tensNightShift = ['', '', ''];
+    await saveRecord(staleNurseCache);
+
+    const result = await getForDateWithMeta(date, true);
+
+    expect(result.record?.nursesDayShift).toEqual(['Enf Admin 1', 'Enf Admin 2']);
+    expect(result.record?.nurses).toEqual(['Enf Admin 1', 'Enf Admin 2']);
+    expect(result.record?.tensDayShift).toEqual(['TENS Admin 1', 'TENS Admin 2', 'TENS Admin 3']);
+    expect(result.record?.nursesNightShift).toEqual(['Enf Noche Admin 1', 'Enf Noche Admin 2']);
+    expect(result.record?.tensNightShift).toEqual([
+      'TENS Noche Admin 1',
+      'TENS Noche Admin 2',
+      'TENS Noche Admin 3',
+    ]);
+
+    const hydratedLocal = await getRecordForDate(date);
+    expect(hydratedLocal?.nursesDayShift).toEqual(['Enf Admin 1', 'Enf Admin 2']);
+    expect(hydratedLocal?.tensDayShift).toEqual(['TENS Admin 1', 'TENS Admin 2', 'TENS Admin 3']);
+    expect(hydratedLocal?.nursesNightShift).toEqual(['Enf Noche Admin 1', 'Enf Noche Admin 2']);
+    expect(hydratedLocal?.tensNightShift).toEqual([
+      'TENS Noche Admin 1',
+      'TENS Noche Admin 2',
+      'TENS Noche Admin 3',
+    ]);
   });
 
   it('auto-merges a conflicted bed move and persists no duplicate patient after retry', async () => {
