@@ -41,6 +41,7 @@ import {
 } from '@/hooks/controllers/dailyRecordBootstrapController';
 import {
   useDeferredRemoteHydration,
+  usePostDeployRecentRecordRefresh,
   useRemoteDailyRecordSync,
   useTodayEmptyDailyRecordRecovery,
 } from '@/hooks/useDailyRecordSyncQuerySupport';
@@ -126,6 +127,18 @@ export const useDailyRecordSyncQuery = (
     bootstrapPhase,
     currentDateString,
     record,
+    refetch,
+    runRemoteSync: async date => {
+      const outcome = await runRemoteSync(date);
+      if (!isMountedRef.current) {
+        return outcome;
+      }
+      return outcome;
+    },
+  });
+
+  usePostDeployRecentRecordRefresh({
+    remoteSyncStatus: effectiveRemoteSyncStatus,
     refetch,
     runRemoteSync: async date => {
       const outcome = await runRemoteSync(date);
