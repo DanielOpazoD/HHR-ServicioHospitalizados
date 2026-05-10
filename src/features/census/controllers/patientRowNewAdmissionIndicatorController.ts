@@ -46,5 +46,8 @@ export const resolveIsNewAdmissionForRecord = ({
     admissionTime
   );
 
-  return clinicalAdmissionDate === normalizedRecordDate;
+  return (
+    clinicalAdmissionDate === normalizedRecordDate &&
+    normalizedAdmissionDate === normalizedRecordDate
+  );
 };
