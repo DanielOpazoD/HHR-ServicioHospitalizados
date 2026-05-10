@@ -78,8 +78,8 @@ describe('conflictResolutionMatrix', () => {
     const resolved = resolveDailyRecordConflict(remote, local, { changedPaths: ['*'] });
 
     expect(resolved.lastUpdated).toBe('2026-02-18T10:05:00.000Z');
-    expect(resolved.nurses).toEqual(['Berta', 'Ana']);
-    expect(resolved.nursesDayShift).toEqual(['Berta', 'Ana']);
+    expect(resolved.nurses).toEqual(['Berta']);
+    expect(resolved.nursesDayShift).toEqual(['Berta']);
     expect(resolved.activeExtraBeds).toEqual(['Extra-2', 'Extra-1']);
   });
 
@@ -92,7 +92,7 @@ describe('conflictResolutionMatrix', () => {
 
     const resolved = resolveDailyRecordConflict(remote, local, { changedPaths: ['*'] });
 
-    expect(resolved.nursesDayShift).toEqual(['Berta', 'Ana']);
+    expect(resolved.nursesDayShift).toEqual(['Berta']);
     expect(resolved.nurses).toEqual(resolved.nursesDayShift);
   });
 
@@ -107,8 +107,8 @@ describe('conflictResolutionMatrix', () => {
 
     const resolved = resolveDailyRecordConflict(remote, local, { changedPaths: ['*'] });
 
-    expect(resolved.nursesDayShift).toEqual(['Berta', 'Ana']);
-    expect(resolved.nurses).toEqual(['Berta', 'Ana']);
+    expect(resolved.nursesDayShift).toEqual(['Berta']);
+    expect(resolved.nurses).toEqual(['Berta']);
   });
 
   it('preserves explicit empty-string clears from local', () => {
@@ -136,7 +136,56 @@ describe('conflictResolutionMatrix', () => {
       changedPaths: ['nursesDayShift'],
     });
 
-    expect(resolved.nursesDayShift).toEqual(['Berta', 'Ana']);
+    expect(resolved.nursesDayShift).toEqual(['Berta']);
+  });
+
+  it('does not let stale local vacant staffing slots hide assigned remote staff during full merge', () => {
+    const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
+    remote.nursesDayShift = ['Enf Remota 1', 'Enf Remota 2'];
+    remote.tensDayShift = ['TENS Remota 1', 'TENS Remota 2', 'TENS Remota 3'];
+
+    const local = makeRecord('2026-02-18', '2026-02-18T10:05:00.000Z');
+    local.nursesDayShift = ['', ''];
+    local.tensDayShift = ['', '', ''];
+
+    const resolved = resolveDailyRecordConflict(remote, local);
+
+    expect(resolved.nursesDayShift).toEqual(['Enf Remota 1', 'Enf Remota 2']);
+    expect(resolved.nurses).toEqual(['Enf Remota 1', 'Enf Remota 2']);
+    expect(resolved.tensDayShift).toEqual(['TENS Remota 1', 'TENS Remota 2', 'TENS Remota 3']);
+  });
+
+  it('merges staffing slots by position instead of pushing remote assignments past visible slots', () => {
+    const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
+    remote.nursesDayShift = ['Enf Remota 1', 'Enf Remota 2'];
+    remote.tensNightShift = ['TENS Remota N1', 'TENS Remota N2', 'TENS Remota N3'];
+
+    const local = makeRecord('2026-02-18', '2026-02-18T10:05:00.000Z');
+    local.nursesDayShift = ['Enf Local 1', ''];
+    local.tensNightShift = ['', 'TENS Local N2', ''];
+
+    const resolved = resolveDailyRecordConflict(remote, local);
+
+    expect(resolved.nursesDayShift).toEqual(['Enf Local 1', 'Enf Remota 2']);
+    expect(resolved.tensNightShift).toEqual(['TENS Remota N1', 'TENS Local N2', 'TENS Remota N3']);
+  });
+
+  it('preserves explicit staffing clears when the changed path identifies the local edit', () => {
+    const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
+    remote.nursesDayShift = ['Enf Remota 1', 'Enf Remota 2'];
+    remote.tensDayShift = ['TENS Remota 1', 'TENS Remota 2', 'TENS Remota 3'];
+
+    const local = makeRecord('2026-02-18', '2026-02-18T10:05:00.000Z');
+    local.nursesDayShift = ['', ''];
+    local.tensDayShift = ['', '', ''];
+
+    const resolved = resolveDailyRecordConflict(remote, local, {
+      changedPaths: ['nursesDayShift', 'tensDayShift'],
+    });
+
+    expect(resolved.nursesDayShift).toEqual(['', '']);
+    expect(resolved.nurses).toEqual(['', '']);
+    expect(resolved.tensDayShift).toEqual(['', '', '']);
   });
 
   it('protects metadata fields from local overwrite during automatic merge', () => {

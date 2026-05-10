@@ -4,6 +4,7 @@ export type ConflictResolutionStrategy =
   | 'scalar_policy'
   | 'merge_array_by_id'
   | 'merge_unique_primitive_array'
+  | 'merge_fixed_staffing_slots'
   | 'merge_object'
   | 'merge_patient'
   | 'merge_beds'

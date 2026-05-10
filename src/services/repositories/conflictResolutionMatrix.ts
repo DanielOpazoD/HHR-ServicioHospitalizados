@@ -31,9 +31,11 @@ import {
 } from '@/services/repositories/conflictResolutionMergeUtils';
 import { mergePatientDevices } from '@/services/repositories/conflictResolutionDeviceMergeUtils';
 import {
-  buildCompatibleDayShiftStaffingMirror,
-  resolveDayShiftNurses,
-} from '@/services/staff/dailyRecordStaffing';
+  STAFFING_SLOT_ARRAY_FIELDS,
+  buildMergedDayShiftStaffingMirror,
+  resolveCanonicalDayShiftNurses,
+  resolveStaffingSlotArray,
+} from '@/services/repositories/conflictResolutionStaffingMergeUtils';
 
 interface ConflictResolutionOptions {
   changedPaths?: string[];
@@ -43,20 +45,6 @@ export interface ConflictResolutionResult {
   record: DailyRecord;
   trace: ConflictResolutionTrace;
 }
-
-const resolveCanonicalDayShiftNurses = (
-  remote: DailyRecord,
-  local: DailyRecord,
-  preferLocal: boolean,
-  traceContext?: ConflictResolutionTraceContext
-): string[] =>
-  mergeUniquePrimitiveArray(
-    resolveDayShiftNurses(remote),
-    resolveDayShiftNurses(local),
-    preferLocal,
-    traceContext,
-    'nursesDayShift'
-  );
 
 export const resolveDailyRecordConflict = (
   remote: DailyRecord,
@@ -119,26 +107,26 @@ const resolveWholeRecord = (
     // Keep legacy `nurses` only as a compatibility mirror of the canonical day shift array.
     nurses: [...resolvedNursesDayShift],
     nursesDayShift: resolvedNursesDayShift,
-    nursesNightShift: mergeUniquePrimitiveArray(
-      remote.nursesNightShift || [],
-      local.nursesNightShift || [],
+    nursesNightShift: resolveStaffingSlotArray(
+      remote,
+      local,
+      'nursesNightShift',
       preferLocal,
-      traceContext,
-      'nursesNightShift'
+      traceContext
     ),
-    tensDayShift: mergeUniquePrimitiveArray(
-      remote.tensDayShift || [],
-      local.tensDayShift || [],
+    tensDayShift: resolveStaffingSlotArray(
+      remote,
+      local,
+      'tensDayShift',
       preferLocal,
-      traceContext,
-      'tensDayShift'
+      traceContext
     ),
-    tensNightShift: mergeUniquePrimitiveArray(
-      remote.tensNightShift || [],
-      local.tensNightShift || [],
+    tensNightShift: resolveStaffingSlotArray(
+      remote,
+      local,
+      'tensNightShift',
       preferLocal,
-      traceContext,
-      'tensNightShift'
+      traceContext
     ),
     activeExtraBeds: mergeUniquePrimitiveArray(
       remote.activeExtraBeds || [],
@@ -279,10 +267,21 @@ const resolveByChangedPaths = (
     }
 
     if (root === 'nurses' || root === 'nursesDayShift') {
-      const mergedDayShift = resolveCanonicalDayShiftNurses(remote, local, true, traceContext);
       Object.assign(
         patches as Record<string, unknown>,
-        buildCompatibleDayShiftStaffingMirror(mergedDayShift)
+        buildMergedDayShiftStaffingMirror(remote, local, traceContext)
+      );
+      continue;
+    }
+
+    if (STAFFING_SLOT_ARRAY_FIELDS.has(root)) {
+      (patches as Record<string, unknown>)[root] = resolveStaffingSlotArray(
+        remote,
+        local,
+        root,
+        true,
+        traceContext,
+        true
       );
       continue;
     }
