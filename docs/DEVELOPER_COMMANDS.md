@@ -51,6 +51,7 @@ Estos son los entrypoints recomendados para trabajo normal.
 
 Para release real, usar `npm run check:release-evidence`: además de frescura, bloquea reportes generados desde un checkout con cambios locales significativos.
 La evidencia de release también exige el artefacto dedicado del smoke visual clínico en `reports/e2e/clinical-visual-release-report.json`; `npm run report:release-evidence` lo genera antes de refrescar los reportes ejecutivos.
+`check:report-freshness` considera frescos los reportes generados para `HEAD` o para un padre directo de un merge commit; no acepta ancestros antiguos ni el padre de un commit lineal normal.
 
 ### Si tocas reglas, runbooks o documentación operativa
 
