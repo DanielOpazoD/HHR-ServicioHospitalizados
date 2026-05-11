@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { PrescriptionUploadForm } from '@/features/prescriptions/components/PrescriptionUploadForm';
 import type { PrescriptionUploadControllerHandle } from '@/features/prescriptions/hooks/usePrescriptionUploadController';
 
@@ -71,5 +71,27 @@ describe('PrescriptionUploadForm', () => {
 
     expect(screen.getByText(/censo del día previo/i)).toBeInTheDocument();
     expect(screen.getByText(/04-05-2026|2026-05-04/i)).toBeInTheDocument();
+  });
+
+  it('offers separate camera and existing-image upload actions on mobile', () => {
+    const controller = buildController();
+    const { container } = render(<PrescriptionUploadForm controller={controller} />);
+
+    expect(screen.getByRole('button', { name: /tomar foto/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /subir imagen existente/i })).toBeInTheDocument();
+
+    const cameraInput = container.querySelector<HTMLInputElement>(
+      '[data-testid="prescription-camera-input"]'
+    );
+    const galleryInput = container.querySelector<HTMLInputElement>(
+      '[data-testid="prescription-gallery-input"]'
+    );
+    expect(cameraInput).toHaveAttribute('capture', 'environment');
+    expect(galleryInput).not.toHaveAttribute('capture');
+
+    const file = new File(['rx'], 'receta.jpg', { type: 'image/jpeg' });
+    fireEvent.change(galleryInput!, { target: { files: [file] } });
+
+    expect(controller.handleImageFile).toHaveBeenCalledWith(file);
   });
 });

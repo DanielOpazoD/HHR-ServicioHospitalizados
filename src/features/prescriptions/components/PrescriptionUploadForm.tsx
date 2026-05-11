@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import {
   Camera,
   CheckCircle2,
+  ImagePlus,
   Loader2,
   Package,
   Pill,
@@ -75,7 +76,8 @@ const renderAssignmentScopeIcon = (scope: PrescriptionAssignmentScope) => {
 };
 
 export const PrescriptionUploadForm: React.FC<PrescriptionUploadFormProps> = ({ controller }) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const {
     phase,
     values,
@@ -257,30 +259,57 @@ export const PrescriptionUploadForm: React.FC<PrescriptionUploadFormProps> = ({ 
           Foto
         </legend>
         <input
-          ref={fileInputRef}
+          ref={cameraInputRef}
           type="file"
           accept="image/*"
           capture="environment"
+          data-testid="prescription-camera-input"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+        <input
+          ref={galleryInputRef}
+          type="file"
+          accept="image/*"
+          data-testid="prescription-gallery-input"
           onChange={handleFileChange}
           className="hidden"
         />
         {!hasCompressedImage ? (
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isBusy}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-slate-300 px-4 py-6 text-sm font-semibold text-slate-600 transition-colors hover:border-sky-400 hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {phase === 'compressing' ? (
-              <>
-                <Loader2 size={18} className="animate-spin" /> Comprimiendo…
-              </>
-            ) : (
-              <>
-                <Camera size={18} /> Tomar foto / elegir archivo
-              </>
-            )}
-          </button>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => cameraInputRef.current?.click()}
+              disabled={isBusy}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-slate-300 px-4 py-5 text-sm font-semibold text-slate-600 transition-colors hover:border-sky-400 hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {phase === 'compressing' ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" /> Comprimiendo…
+                </>
+              ) : (
+                <>
+                  <Camera size={18} /> Tomar foto
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => galleryInputRef.current?.click()}
+              disabled={isBusy}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-slate-50 px-4 py-5 text-sm font-semibold text-slate-700 transition-colors hover:border-sky-300 hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {phase === 'compressing' ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" /> Comprimiendo…
+                </>
+              ) : (
+                <>
+                  <ImagePlus size={18} /> Subir imagen existente
+                </>
+              )}
+            </button>
+          </div>
         ) : (
           <div className="space-y-2">
             <div className="overflow-hidden rounded-lg border border-slate-200">

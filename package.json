@@ -45,6 +45,7 @@
     "test:e2e:preview:census-bootstrap": "playwright test -c playwright.preview.config.ts e2e/census-preview-bootstrap.spec.ts --project=chromium",
     "test:e2e:preview:census-bootstrap:built": "PLAYWRIGHT_SKIP_PREVIEW_BUILD=1 playwright test -c playwright.preview.config.ts e2e/census-preview-bootstrap.spec.ts --project=chromium",
     "test:netlify-function-dev-smoke": "node scripts/smoke-netlify-function-dev-module.mjs",
+    "smoke:prescription-image-proxy": "node scripts/smoke-prescription-image-proxy.mjs",
     "test:vrt": "playwright test e2e/visual-regression.spec.ts",
     "test:vrt:update": "playwright test e2e/visual-regression.spec.ts --update-snapshots",
     "test:send-email": "node --loader ts-node/esm scripts/testSendCensusEmail.ts",
@@ -200,6 +201,7 @@
     "react-is": "^19.2.3",
     "react-use": "^17.6.0",
     "recharts": "^3.5.1",
+    "sharp": "^0.34.5",
     "xlsx-populate": "^1.21.0",
     "zod": "^3.25.76"
   },
