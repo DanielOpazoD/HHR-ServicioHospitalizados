@@ -1,13 +1,19 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CensusRegisterContent } from '@/features/census/components/CensusRegisterContent';
+
+const mockUseDailyRecordStatus = vi.fn();
 
 vi.mock('@/features/census/components/CensusActionsContext', () => ({
   CensusActionsProvider: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="census-actions-provider">{children}</div>
   ),
+}));
+
+vi.mock('@/context/DailyRecordContext', () => ({
+  useDailyRecordStatus: () => mockUseDailyRecordStatus(),
 }));
 
 vi.mock('@/features/census/components/CensusPrintHeader', () => ({
@@ -27,6 +33,20 @@ vi.mock('@/features/census/components/CensusRegisterSections', () => ({
 }));
 
 describe('CensusRegisterContent', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockUseDailyRecordStatus.mockReturnValue({
+      syncStatus: 'idle',
+      lastSyncTime: null,
+      bootstrapPhase: 'record_ready',
+      isInitialRemoteHydrationPending: false,
+      isSaving: false,
+      hasError: false,
+      isIdle: true,
+      isSaved: false,
+    });
+  });
+
   it('renders the primary census table before deferred secondary sections', async () => {
     render(
       <CensusRegisterContent
@@ -49,6 +69,56 @@ describe('CensusRegisterContent', () => {
 
     // After the deferred enhancement settles, the secondary sections appear.
     expect(await screen.findByTestId('census-register-sections')).toBeInTheDocument();
+  });
+
+  it('shows an operational banner when the visible census is still reconciling Firebase', () => {
+    mockUseDailyRecordStatus.mockReturnValue({
+      syncStatus: 'idle',
+      lastSyncTime: null,
+      bootstrapPhase: 'remote_record_bootstrapping',
+      isInitialRemoteHydrationPending: true,
+      isSaving: false,
+      hasError: false,
+      isIdle: true,
+      isSaved: false,
+    });
+
+    render(
+      <CensusRegisterContent
+        currentDateString="2026-03-10"
+        readOnly={false}
+        beds={{}}
+        visibleBeds={[]}
+        marginStyle={{}}
+        stats={null}
+        showBedManagerModal={false}
+        onCloseBedManagerModal={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('census-operational-state-banner')).toHaveAttribute(
+      'data-phase',
+      'reconciling_remote'
+    );
+    expect(screen.getByText('Reconciliando Firebase')).toBeInTheDocument();
+    expect(screen.getByText(/comparando la copia local con Firebase/i)).toBeInTheDocument();
+  });
+
+  it('does not show the operational banner once the census is remote-confirmed', () => {
+    render(
+      <CensusRegisterContent
+        currentDateString="2026-03-10"
+        readOnly={false}
+        beds={{}}
+        visibleBeds={[]}
+        marginStyle={{}}
+        stats={null}
+        showBedManagerModal={false}
+        onCloseBedManagerModal={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByTestId('census-operational-state-banner')).not.toBeInTheDocument();
   });
 
   it('does not schedule secondary sections for specialist access', async () => {
