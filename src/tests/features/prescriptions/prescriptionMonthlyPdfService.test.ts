@@ -358,7 +358,9 @@ describe('prescriptionMonthlyPdfService', () => {
     await vi.advanceTimersByTimeAsync(150);
 
     expect(result.optimizationFallbackCount).toBe(1);
-    expect(URL.createObjectURL).toHaveBeenCalledWith(expect.any(Blob));
+    const objectUrlInput = vi.mocked(URL.createObjectURL).mock.calls[0]?.[0] as Blob | undefined;
+    expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
+    expect(objectUrlInput?.size).toBeGreaterThan(0);
     window.dispatchEvent(new Event('afterprint'));
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:optimized-prescription');
     vi.useRealTimers();
