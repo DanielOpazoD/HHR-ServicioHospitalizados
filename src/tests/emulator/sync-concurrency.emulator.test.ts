@@ -294,6 +294,48 @@ describeEmulator('Firestore emulator sync concurrency flow', () => {
     ]);
   });
 
+  it('preserves a multi-word local diagnosis when a newer remote snapshot is truncated', async () => {
+    const date = CURRENT_RECORD_DATE;
+    const localTimestamp = isoAt(date, '12:00:00');
+    const remoteUpdatedTimestamp = isoAt(date, '12:00:02');
+
+    const localRecord = buildRecord(date, localTimestamp);
+    localRecord.beds = {
+      R1: buildPatient('R1', {
+        patientName: 'Paciente Puérpera',
+        rut: '11.111.111-1',
+        admissionDate: date,
+        pathology: 'Puérpera de cesárea.',
+      }),
+    };
+
+    const truncatedRemoteRecord = buildRecord(date, remoteUpdatedTimestamp);
+    truncatedRemoteRecord.beds = {
+      R1: buildPatient('R1', {
+        patientName: 'Paciente Puérpera',
+        rut: '11.111.111-1',
+        admissionDate: date,
+        pathology: 'Puérpera',
+      }),
+    };
+
+    await saveRecord(localRecord);
+    await testEnv.withSecurityRulesDisabled(async context => {
+      await context
+        .firestore()
+        .doc(`hospitals/hanga_roa/dailyRecords/${date}`)
+        .set(truncatedRemoteRecord);
+    });
+
+    const result = await getForDateWithMeta(date, true);
+
+    expect(result.sourceOfTruth).toBe('local');
+    expect(result.record?.beds.R1.pathology).toBe('Puérpera de cesárea.');
+
+    const hydratedLocal = await getRecordForDate(date);
+    expect(hydratedLocal?.beds.R1.pathology).toBe('Puérpera de cesárea.');
+  });
+
   it('auto-merges a conflicted bed move and persists no duplicate patient after retry', async () => {
     const date = CURRENT_RECORD_DATE;
     const staleBaseline = isoAt(date, '09:00:00');

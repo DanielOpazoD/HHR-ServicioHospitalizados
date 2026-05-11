@@ -68,7 +68,7 @@ const hasPatientClinicalTextShrinkage = (
   return hasPatientClinicalTextShrinkage(localPatient.clinicalCrib, remotePatient.clinicalCrib);
 };
 
-const hasRemoteClinicalTextShrinkage = (
+export const hasRemoteClinicalTextShrinkage = (
   localRecord: DailyRecord | null,
   remoteRecord: DailyRecord | null
 ): boolean => {

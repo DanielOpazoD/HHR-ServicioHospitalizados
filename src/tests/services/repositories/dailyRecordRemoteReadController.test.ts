@@ -163,6 +163,52 @@ describe('dailyRecordRemoteReadController', () => {
     );
   });
 
+  it('does not pre-merge away a truncated remote diagnosis before choosing the golden path', async () => {
+    const local = buildRecord('2026-03-19', '2026-03-19T12:00:00.000Z');
+    local.beds = {
+      R1: buildPatient('R1', {
+        patientName: 'LOCAL PATIENT',
+        pathology: 'Puérpera de cesárea.',
+      }),
+    };
+
+    const remote = buildRecord('2026-03-19', '2026-03-19T12:00:02.000Z');
+    remote.beds = {
+      R1: buildPatient('R1', {
+        patientName: 'LOCAL PATIENT',
+        pathology: 'Puérpera',
+      }),
+    };
+    const persistHydratedRecord = vi.fn(async (record: DailyRecord) => record);
+
+    const result = await resolveRemoteGoldenPathReadResult({
+      date: '2026-03-19',
+      localCandidate: createLocalRuntimeReadCandidate('2026-03-19', local),
+      remoteReadResult: {
+        record: remote,
+        source: 'firestore',
+        compatibilityTier: 'current_firestore',
+        compatibilityIntensity: 'none',
+        migrationRulesApplied: [],
+        cachedLocally: false,
+      },
+      persistHydratedRecord,
+    });
+
+    expect(result.source).toBe('indexeddb');
+    expect(result.sourceOfTruth).toBe('local');
+    expect(result.record?.beds.R1.pathology).toBe('Puérpera de cesárea.');
+    expect(persistHydratedRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        beds: expect.objectContaining({
+          R1: expect.objectContaining({ pathology: 'Puérpera de cesárea.' }),
+        }),
+      }),
+      '2026-03-19',
+      expect.any(Object)
+    );
+  });
+
   it('returns and persists the selected merge when local remains authoritative', async () => {
     const local = buildRecord('2026-03-19', '2026-03-19T12:00:00.000Z');
     local.beds = {
