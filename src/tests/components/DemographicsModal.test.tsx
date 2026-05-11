@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { DemographicsModal } from '@/components/modals/DemographicsModal';
@@ -223,6 +223,42 @@ describe('DemographicsModal', () => {
         rut: '17.752.753-K',
         birthDate: '1990-11-15',
         pathology: 'Neumonía (Probando)',
+      })
+    );
+  });
+
+  it('keeps rapid name-part edits when saving official demographics', () => {
+    const onSave = vi.fn();
+
+    render(
+      <DemographicsModal
+        isOpen
+        onClose={vi.fn()}
+        data={createEmptyDemographics()}
+        onSave={onSave}
+        bedId="R1"
+        recordDate="2026-05-01"
+      />
+    );
+
+    act(() => {
+      fireEvent.change(screen.getByPlaceholderText('Nombre'), { target: { value: 'Legacy' } });
+      fireEvent.change(screen.getByPlaceholderText('Apellido paterno'), {
+        target: { value: 'Patient' },
+      });
+      fireEvent.change(screen.getByPlaceholderText('Apellido materno'), {
+        target: { value: 'Normalized' },
+      });
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        firstName: 'Legacy',
+        lastName: 'Patient',
+        secondLastName: 'Normalized',
+        patientName: 'Legacy Patient Normalized',
       })
     );
   });

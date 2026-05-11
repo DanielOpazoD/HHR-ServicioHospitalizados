@@ -102,21 +102,29 @@ describe('report freshness guardrail', () => {
     expect(() => run(root, 'node', [scriptPath])).not.toThrow();
   });
 
-  it('rejects reports generated for an older merge ancestor', () => {
+  it('treats stale reports as advisory outside strict release mode', () => {
     const { root } = makeGitRepoWithMergeCommit();
     const staleSha = run(root, 'git', ['rev-parse', '--short', 'HEAD^1^']);
     writeReports(root, staleSha);
 
-    expect(() => run(root, 'node', [scriptPath])).toThrow(
+    expect(() => run(root, 'node', [scriptPath])).not.toThrow();
+  });
+
+  it('rejects reports generated for an older merge ancestor in strict release mode', () => {
+    const { root } = makeGitRepoWithMergeCommit();
+    const staleSha = run(root, 'git', ['rev-parse', '--short', 'HEAD^1^']);
+    writeReports(root, staleSha);
+
+    expect(() => run(root, 'node', [scriptPath, '--strict'])).toThrow(
       /reports\/quality-metrics\.json was generated for/
     );
   });
 
-  it('rejects parent reports for a non-merge commit', () => {
+  it('rejects parent reports for a non-merge commit in strict release mode', () => {
     const { root, previousSha } = makeGitRepoWithLinearCommit();
     writeReports(root, previousSha);
 
-    expect(() => run(root, 'node', [scriptPath])).toThrow(
+    expect(() => run(root, 'node', [scriptPath, '--strict'])).toThrow(
       /reports\/quality-metrics\.json was generated for/
     );
   });

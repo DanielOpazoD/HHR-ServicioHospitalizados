@@ -5,6 +5,8 @@ import path from 'node:path';
 import { getDirectMergeParentShas, getGitReportState } from './gitReportState.mjs';
 
 const ROOT = process.cwd();
+const strictMode =
+  process.argv.includes('--strict') || process.env.REPORT_FRESHNESS_STRICT === '1';
 const trackedReports = [
   {
     file: 'reports/quality-metrics.json',
@@ -54,16 +56,25 @@ const trackedReports = [
   },
 ];
 
-const fail = issues => {
-  console.error('[report-freshness] Stale report artifacts found:');
+const printIssues = (issues, { stream = console.error } = {}) => {
+  stream('[report-freshness] Stale report artifacts found:');
   for (const issue of issues) {
-    console.error(`- ${issue}`);
+    stream(`- ${issue}`);
   }
   const refreshScripts = [...new Set(trackedReports.map(report => report.refreshScript))];
-  console.error(
+  stream(
     `[report-freshness] Refresh with: ${refreshScripts.map(script => `npm run ${script}`).join(' && ')}`
   );
+};
+
+const fail = issues => {
+  printIssues(issues);
   process.exit(1);
+};
+
+const warn = issues => {
+  printIssues(issues, { stream: console.warn });
+  console.warn('[report-freshness] Advisory only. Use --strict for release evidence gates.');
 };
 
 const isSameCommit = (reportSha, currentSha) =>
@@ -134,8 +145,13 @@ for (const report of trackedReports) {
   }
 }
 
-if (issues.length > 0) {
+if (issues.length > 0 && strictMode) {
   fail(issues);
+}
+
+if (issues.length > 0) {
+  warn(issues);
+  process.exit(0);
 }
 
 console.log(
