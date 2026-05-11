@@ -4,6 +4,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { ViewLoader } from '@/components/ui/ViewLoader';
 import { AuthContext, type AuthContextType, type UserRole } from '@/context/AuthContext';
 import type { ModuleType } from '@/constants/navigationConfig';
+import { CensusOperationalStateBanner, resolveCensusOperationalState } from '@/features/census';
 import {
   resolveModuleFromPathname,
   shouldShowPrintButtonForModule,
@@ -18,6 +19,13 @@ const noopAsync = async () => {};
 const noopSetNumber: React.Dispatch<React.SetStateAction<number>> = () => {};
 const noopImportJson: React.ChangeEventHandler<HTMLInputElement> = () => {};
 const BOOTSTRAP_CENSUS_VIEW_MODE = 'REGISTER' as const;
+const BOOTSTRAP_CENSUS_OPERATIONAL_STATE = resolveCensusOperationalState({
+  branch: 'register',
+  bootstrapPhase: 'remote_record_bootstrapping',
+  syncStatus: 'idle',
+  hasRecord: false,
+  isAuthenticated: true,
+});
 
 const normalizeStorageUser = (value: unknown) => {
   if (!value || typeof value !== 'object') {
@@ -238,7 +246,11 @@ export const BootstrapRouteChrome: React.FC = () => {
           />
         )}
         <main className="max-w-screen-2xl mx-auto px-4 pt-4 pb-20 flex-1 w-full print:p-0 print:pb-0 print:max-w-none">
-          <ViewLoader />
+          {bootstrapModule === 'CENSUS' ? (
+            <CensusOperationalStateBanner state={BOOTSTRAP_CENSUS_OPERATIONAL_STATE} />
+          ) : (
+            <ViewLoader />
+          )}
         </main>
       </div>
     </AuthContext.Provider>
