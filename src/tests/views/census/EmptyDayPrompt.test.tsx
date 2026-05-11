@@ -119,6 +119,11 @@ describe('EmptyDayPrompt', () => {
     expect(
       screen.getByText(/Firebase y la copia local no tienen registro para esta fecha/i)
     ).toBeInTheDocument();
+    expect(screen.getByTestId('empty-day-diagnostic-message')).toHaveAttribute('role', 'status');
+    expect(screen.getByTestId('empty-day-diagnostic-message')).toHaveAttribute(
+      'aria-live',
+      'polite'
+    );
     expect(screen.getByTestId('empty-day-diagnostic-source')).toHaveTextContent(
       'Firebase/local confirmado'
     );

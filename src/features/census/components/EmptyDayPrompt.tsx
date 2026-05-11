@@ -122,7 +122,12 @@ export const EmptyDayPrompt: React.FC<EmptyDayPromptProps> = ({
         {selectedDay} de {MONTH_NAMES[selectedMonth]}
       </h2>
       <div className="mb-8 max-w-md text-center">
-        <p className="text-slate-500">
+        <p
+          aria-live="polite"
+          className="text-slate-500"
+          data-testid="empty-day-diagnostic-message"
+          role="status"
+        >
           {emptyStateDiagnostic?.message || 'No existe registro para esta fecha.'}
         </p>
         {emptyStateDiagnostic && (
