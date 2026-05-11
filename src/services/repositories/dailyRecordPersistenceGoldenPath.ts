@@ -5,6 +5,7 @@ import {
   resolvePreferredDailyRecord,
 } from '@/services/repositories/dailyRecordSyncCompatibility';
 import { resolveDailyRecordConflict } from '@/services/repositories/conflictResolutionMatrix';
+import type { PatientData } from '@/types/domain/patient';
 
 export type DailyRecordRemoteAvailability =
   | 'resolved'
@@ -34,6 +35,50 @@ export interface DailyRecordPersistenceGoldenPathResult {
   repairApplied: boolean;
 }
 
+const PROTECTED_CLINICAL_TEXT_FIELDS = [
+  'pathology',
+  'handoffNote',
+  'handoffNoteDayShift',
+  'handoffNoteNightShift',
+  'medicalHandoffNote',
+] as const satisfies ReadonlyArray<keyof PatientData>;
+
+const CLINICAL_TEXT_SHRINKAGE_MIN_LENGTH = 12;
+const CLINICAL_TEXT_SHRINKAGE_RATIO_THRESHOLD = 0.75;
+
+const isSuspiciousClinicalTextShrinkage = (localValue: unknown, remoteValue: unknown): boolean => {
+  if (typeof localValue !== 'string' || typeof remoteValue !== 'string') return false;
+  if (remoteValue.length === 0 || remoteValue.length >= localValue.length) return false;
+  if (localValue.length < CLINICAL_TEXT_SHRINKAGE_MIN_LENGTH) return false;
+  return remoteValue.length / localValue.length < CLINICAL_TEXT_SHRINKAGE_RATIO_THRESHOLD;
+};
+
+const hasPatientClinicalTextShrinkage = (
+  localPatient: PatientData | undefined,
+  remotePatient: PatientData | undefined
+): boolean => {
+  if (!localPatient || !remotePatient) return false;
+
+  const hasShrunkenField = PROTECTED_CLINICAL_TEXT_FIELDS.some(field =>
+    isSuspiciousClinicalTextShrinkage(localPatient[field], remotePatient[field])
+  );
+
+  if (hasShrunkenField) return true;
+
+  return hasPatientClinicalTextShrinkage(localPatient.clinicalCrib, remotePatient.clinicalCrib);
+};
+
+const hasRemoteClinicalTextShrinkage = (
+  localRecord: DailyRecord | null,
+  remoteRecord: DailyRecord | null
+): boolean => {
+  if (!localRecord || !remoteRecord) return false;
+
+  return Object.keys(localRecord.beds || {}).some(bedId =>
+    hasPatientClinicalTextShrinkage(localRecord.beds[bedId], remoteRecord.beds?.[bedId])
+  );
+};
+
 export const resolveDailyRecordPersistenceGoldenPath = ({
   localRecord,
   remoteRecord,
@@ -41,17 +86,23 @@ export const resolveDailyRecordPersistenceGoldenPath = ({
   localRepairApplied = false,
   remoteRepairApplied = false,
 }: ResolveDailyRecordPersistenceGoldenPathInput): DailyRecordPersistenceGoldenPathResult => {
+  const shouldProtectLocalClinicalText = hasRemoteClinicalTextShrinkage(localRecord, remoteRecord);
   const selectedRecord =
     remoteAvailability === 'not_requested'
       ? localRecord
-      : localRecord && remoteRecord && shouldKeepLocalRecordOverRemote(localRecord, remoteRecord)
+      : localRecord && remoteRecord && shouldProtectLocalClinicalText
         ? resolveDailyRecordConflict(remoteRecord, localRecord)
-        : resolvePreferredDailyRecord(localRecord, remoteRecord);
+        : localRecord && remoteRecord && shouldKeepLocalRecordOverRemote(localRecord, remoteRecord)
+          ? resolveDailyRecordConflict(remoteRecord, localRecord)
+          : resolvePreferredDailyRecord(localRecord, remoteRecord);
   const selectedStore = !selectedRecord
     ? 'none'
-    : remoteRecord && (!localRecord || !shouldKeepLocalRecordOverRemote(localRecord, remoteRecord))
-      ? 'remote'
-      : 'local';
+    : shouldProtectLocalClinicalText
+      ? 'local'
+      : remoteRecord &&
+          (!localRecord || !shouldKeepLocalRecordOverRemote(localRecord, remoteRecord))
+        ? 'remote'
+        : 'local';
   const repairApplied =
     selectedStore === 'remote'
       ? remoteRepairApplied

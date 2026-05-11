@@ -98,6 +98,37 @@ describe('dailyRecordPersistenceGoldenPath', () => {
     expect(result.consistencyState).toBe('remote_authoritative');
   });
 
+  it('preserves a longer local diagnosis when a newer remote snapshot carries a truncated clinical text', () => {
+    const local = buildRecord('2026-03-18', '2026-03-18T12:00:00.000Z');
+    local.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: 'Paciente Local',
+        pathology: 'Puérpera de cesárea.',
+        admissionDate: '2026-03-18',
+      },
+    } as unknown as DailyRecord['beds'];
+    const remote = buildRecord('2026-03-18', '2026-03-18T12:00:02.000Z');
+    remote.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: 'Paciente Local',
+        pathology: 'Puérpera',
+        admissionDate: '2026-03-18',
+      },
+    } as unknown as DailyRecord['beds'];
+
+    const result = resolveDailyRecordPersistenceGoldenPath({
+      localRecord: local,
+      remoteRecord: remote,
+      remoteAvailability: 'resolved',
+    });
+
+    expect(result.selectedRecord?.beds.R1.pathology).toBe('Puérpera de cesárea.');
+    expect(result.selectedStore).toBe('local');
+    expect(result.shouldHydrateLocal).toBe(false);
+  });
+
   it('keeps the local record as recoverable fallback when remote is unavailable', () => {
     const local = buildRecord('2026-03-18', '2026-03-18T08:00:00.000Z');
 
