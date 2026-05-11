@@ -65,7 +65,7 @@ const BUDGETS = {
     targetMs: 2500,
   }),
   censoVisibleMs: resolveBudget('censoVisibleMs', 'E2E_BUDGET_CENSO_VISIBLE_MS', {
-    enforcedMaxMs: 2300,
+    enforcedMaxMs: 2000,
     targetMs: 1500,
   }),
   censoRecordReadyMs: resolveBudget('censoRecordReadyMs', 'E2E_BUDGET_CENSO_RECORD_READY_MS', {
