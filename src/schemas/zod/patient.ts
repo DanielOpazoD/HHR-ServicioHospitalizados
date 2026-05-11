@@ -12,13 +12,17 @@ export const BedTypeSchema = z.nativeEnum(BedType) as z.ZodType<BedType>;
 export const PatientStatusSchema = z.nativeEnum(PatientStatus);
 
 const SpecialtyEnumSchema = z.nativeEnum(Specialty);
+const SpecialtyValueSchema = z.union([
+  SpecialtyEnumSchema,
+  z.string().transform(value => value.trim()),
+]);
 export const SpecialtySchema = z.preprocess(val => {
   // Migrate legacy values to the new combined specialty
   if (val === 'Ginecología' || val === 'Obstetricia') {
     return Specialty.GINECOBSTETRICIA;
   }
   return val;
-}, SpecialtyEnumSchema);
+}, SpecialtyValueSchema);
 
 export const CudyrScoreSchema = z.object({
   changeClothes: z.number().min(0).max(4).catch(0),

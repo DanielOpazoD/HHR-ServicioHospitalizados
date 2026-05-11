@@ -127,7 +127,9 @@ run_firestore_emulator_exec() {
   FIRESTORE_EMULATOR_HOST="$(resolve_firestore_emulator_host)" || return 1
 
   local firebase_config
-  firebase_config="$(mktemp "${TMPDIR:-/tmp}/hhr-firebase-emulator.XXXXXX.json")"
+  local temp_root="${TMPDIR:-/tmp}"
+  temp_root="${temp_root%/}"
+  firebase_config="$(mktemp "$temp_root/hhr-firebase-emulator.XXXXXX")"
   write_firestore_emulator_config "$firebase_config" "$FIRESTORE_EMULATOR_HOST"
 
   trap 'rm -f "$firebase_config"' RETURN

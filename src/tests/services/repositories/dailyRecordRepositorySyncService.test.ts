@@ -124,6 +124,57 @@ describe('dailyRecordRepositorySyncService', () => {
     );
   });
 
+  it('keeps a longer local diagnosis when realtime emits a newer truncated diagnosis', async () => {
+    const localRecord = {
+      date: '2026-03-03',
+      beds: {
+        R1: {
+          bedId: 'R1',
+          patientName: 'Paciente Local',
+          pathology: 'Puérpera de cesárea.',
+          admissionDate: '2026-03-03',
+        },
+      },
+      lastUpdated: '2026-03-03T12:00:00.000Z',
+    } as unknown as DailyRecord;
+    const remoteRecord = {
+      ...localRecord,
+      beds: {
+        R1: {
+          ...localRecord.beds.R1,
+          pathology: 'Puérpera',
+        },
+      },
+      lastUpdated: '2026-03-03T12:00:02.000Z',
+    } as unknown as DailyRecord;
+    vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(localRecord);
+
+    vi.mocked(subscribeToRecord).mockImplementationOnce((_date, callback) => {
+      void callback(remoteRecord, false);
+      return vi.fn();
+    });
+
+    const callback = vi.fn();
+    subscribeDetailed('2026-03-03', callback);
+
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(callback).toHaveBeenCalledWith(
+      expect.objectContaining({
+        record: expect.objectContaining({
+          beds: expect.objectContaining({
+            R1: expect.objectContaining({
+              pathology: 'Puérpera de cesárea.',
+            }),
+          }),
+        }),
+      }),
+      false
+    );
+    expect(saveToIndexedDB).not.toHaveBeenCalled();
+  });
+
   it('returns missing_remote when the local record exists but no remote record was found', async () => {
     const localRecord = {
       date: '2026-03-03',

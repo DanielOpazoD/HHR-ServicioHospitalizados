@@ -3,7 +3,7 @@ import { NameInput } from './NameInput';
 import { RutPassportInput } from './RutPassportInput';
 import { AgeInput } from './AgeInput';
 import { DiagnosisInput } from './DiagnosisInput';
-import { DualSpecialtyCell } from './DualSpecialtyCell';
+import { SpecialtyCell } from './SpecialtyCell';
 import { StatusSelect } from './StatusSelect';
 import { AdmissionInput } from './AdmissionInput';
 import { DevicesCell } from './DevicesCell';
@@ -78,7 +78,7 @@ export const PatientInputClinicalSection: React.FC<
       onMultipleUpdate={onChange.multiple}
       onDeliveryRouteChange={onChange.deliveryRoute}
     />
-    <DualSpecialtyCell
+    <SpecialtyCell
       data={shared.data}
       isSubRow={shared.isSubRow}
       isEmpty={shared.isEmpty}

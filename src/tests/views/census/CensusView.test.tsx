@@ -134,10 +134,7 @@ describe('CensusView', () => {
 
     render(<CensusView {...defaultProps} />);
 
-    expect(screen.getByTestId('census-operational-state-banner')).toHaveAttribute(
-      'data-phase',
-      'sync_pending'
-    );
+    expect(screen.queryByTestId('census-operational-state-banner')).not.toBeInTheDocument();
     expect(screen.queryByTestId('empty-day-prompt')).not.toBeInTheDocument();
     await act(async () => {
       await Promise.resolve();
@@ -164,7 +161,7 @@ describe('CensusView', () => {
     expect(screen.queryByTestId('view-loader')).not.toBeInTheDocument();
   });
 
-  it('keeps showing an operational loading state while remote sync is still bootstrapping for an authenticated session', async () => {
+  it('keeps waiting silently while remote sync is still bootstrapping for an authenticated session', async () => {
     vi.useFakeTimers();
     mockUseAuth.mockReturnValue({
       sessionState: { status: 'authorized', user: { uid: 'user-1' } },
@@ -185,10 +182,7 @@ describe('CensusView', () => {
 
     render(<CensusView {...defaultProps} currentDateString="2025-01-02" />);
 
-    expect(screen.getByTestId('census-operational-state-banner')).toHaveAttribute(
-      'data-phase',
-      'sync_pending'
-    );
+    expect(screen.queryByTestId('census-operational-state-banner')).not.toBeInTheDocument();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2_000);
     });

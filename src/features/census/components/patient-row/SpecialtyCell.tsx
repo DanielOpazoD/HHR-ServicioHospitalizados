@@ -1,20 +1,18 @@
 /**
- * DualSpecialtyCell - Wrapper component for primary and secondary specialty
+ * SpecialtyCell - Wrapper component for the patient's specialty
  *
- * Allows users to:
- * 1. Select a primary specialty (always visible, used for statistics)
- * 2. Optionally add a secondary specialty via "+" button
- * 3. Remove the secondary specialty via "X" button
+ * Allows users to select one specialty for statistics, including a free-text
+ * specialty through "Otro".
  */
 
 import React, { useCallback, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
-import { Plus, Settings2, X } from 'lucide-react';
+import { Settings2, X } from 'lucide-react';
 import { SPECIALTY_OPTIONS } from '@/constants/clinicalSpecialtyConstants';
 import { DebouncedInput } from '@/components/ui/DebouncedInput';
 import { BaseCellProps, EventTextHandler } from './inputCellTypes';
-import { useDualSpecialtyCellModel } from '@/features/census/components/patient-row/useDualSpecialtyCellModel';
+import { useSpecialtyCellModel } from '@/features/census/components/patient-row/useSpecialtyCellModel';
 import { dispatchTextChangeValue } from '@/features/census/controllers/textChangeAdapterController';
 import { usePortalPopoverRuntime } from '@/hooks/usePortalPopoverRuntime';
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
@@ -29,12 +27,12 @@ import {
 import type { GinecobstetriciaType } from '@/features/census/contracts/censusObstetricContracts';
 import type { PatientData } from '@/features/census/components/patient-row/patientRowContracts';
 
-interface DualSpecialtyCellProps extends BaseCellProps {
+interface SpecialtyCellProps extends BaseCellProps {
   onChange: EventTextHandler;
   onMultipleUpdate?: (fields: Partial<PatientData>) => void;
 }
 
-export const DualSpecialtyCell: React.FC<DualSpecialtyCellProps> = ({
+export const SpecialtyCell: React.FC<SpecialtyCellProps> = ({
   data,
   isSubRow = false,
   isEmpty = false,
@@ -43,9 +41,8 @@ export const DualSpecialtyCell: React.FC<DualSpecialtyCellProps> = ({
   onMultipleUpdate,
 }) => {
   const GINECOB_WIDTH = 240;
-  const { state, primaryLabel, secondaryLabel, handleAddSecondary, handleRemoveSecondary } =
-    useDualSpecialtyCellModel({ data, onChange });
-  const { hasSecondary, isPrimaryOther, isSecondaryOther } = state;
+  const { state, primaryLabel } = useSpecialtyCellModel({ data });
+  const { isPrimaryOther } = state;
   const isGinecobstetricia = isGinecobstetriciaSpecialty(data.specialty);
   const [isSubtypeOpen, setIsSubtypeOpen] = useState(false);
   const subtypeButtonRef = useRef<HTMLButtonElement>(null);
@@ -81,13 +78,18 @@ export const DualSpecialtyCell: React.FC<DualSpecialtyCellProps> = ({
 
   const applyPrimarySpecialtyChange = useCallback(
     (nextSpecialty: string) => {
+      const normalizedSpecialty = nextSpecialty.trim();
+
       if (onMultipleUpdate) {
-        onMultipleUpdate(buildPrimarySpecialtyPatch(nextSpecialty));
+        onMultipleUpdate({
+          ...buildPrimarySpecialtyPatch(normalizedSpecialty),
+          secondarySpecialty: undefined,
+        });
       } else {
-        dispatchTextChangeValue(onChange, 'specialty', nextSpecialty);
+        dispatchTextChangeValue(onChange, 'specialty', normalizedSpecialty);
       }
 
-      if (isGinecobstetriciaSpecialty(nextSpecialty)) {
+      if (isGinecobstetriciaSpecialty(normalizedSpecialty)) {
         setIsSubtypeOpen(true);
         window.requestAnimationFrame(() => {
           updateSubtypePosition();
@@ -149,7 +151,7 @@ export const DualSpecialtyCell: React.FC<DualSpecialtyCellProps> = ({
         className={clsx(
           'flex items-center w-full px-1 h-7 border rounded transition-all duration-200 bg-white',
           'border-slate-200 group-hover/spec:border-medical-300',
-          hasSecondary ? 'gap-0' : 'gap-0.5'
+          'gap-0.5'
         )}
       >
         {/* Primary Specialty Container */}
@@ -194,7 +196,7 @@ export const DualSpecialtyCell: React.FC<DualSpecialtyCellProps> = ({
                     className={clsx(
                       'text-[11px] font-medium truncate',
                       isGinecobstetricia && 'pr-12',
-                      hasSecondary ? 'text-slate-600' : 'text-slate-700'
+                      'text-slate-700'
                     )}
                   >
                     {primaryLabel || data.specialty}
@@ -219,82 +221,7 @@ export const DualSpecialtyCell: React.FC<DualSpecialtyCellProps> = ({
               <Settings2 size={11} />
             </button>
           )}
-
-          {/* Subtle Overlay Add Button */}
-          {!hasSecondary && !readOnly && data.specialty && (
-            <button
-              onClick={handleAddSecondary}
-              type="button"
-              className="absolute -top-1.5 -right-1.5 p-0.5 opacity-0 group-hover/spec:opacity-100 transition-all hover:bg-medical-100 text-medical-600 rounded-full bg-white shadow-sm z-10 border border-medical-200"
-              title="Añadir co-manejo"
-            >
-              <Plus size={8} />
-            </button>
-          )}
         </div>
-
-        {/* Separator / and Secondary Specialty Section */}
-        {hasSecondary && (
-          <div className="flex items-center flex-1 min-w-0 h-full">
-            <span className="text-slate-300 text-[10px] font-bold select-none">/</span>
-            <div className="relative flex-1 min-w-0 h-full flex items-center pl-0.5">
-              {isSecondaryOther || data.secondarySpecialty === 'Otro' ? (
-                <div className="relative flex-1 h-full flex items-center">
-                  <DebouncedInput
-                    type="text"
-                    className="w-full p-0 h-5 border-none bg-transparent focus:ring-0 text-[11px] font-medium text-teal-700"
-                    value={data.secondarySpecialty === 'Otro' ? '' : data.secondarySpecialty || ''}
-                    onChange={val => dispatchTextChangeValue(onChange, 'secondarySpecialty', val)}
-                    placeholder="..."
-                    disabled={readOnly}
-                  />
-                </div>
-              ) : (
-                <div className="relative flex-1 min-w-0 h-full flex items-center">
-                  <select
-                    className={clsx(
-                      'w-full p-0 h-5 border-none bg-transparent focus:ring-0 text-[11px] font-medium cursor-pointer appearance-none',
-                      data.secondarySpecialty ? 'text-transparent' : 'text-teal-400 italic'
-                    )}
-                    value={data.secondarySpecialty || ''}
-                    onChange={onChange('secondarySpecialty')}
-                    disabled={readOnly}
-                  >
-                    <option value="" className="text-teal-700">
-                      -- 2ª --
-                    </option>
-                    {SPECIALTY_OPTIONS.map(opt => (
-                      <option key={opt} value={opt} className="text-teal-700 font-normal">
-                        {opt}
-                      </option>
-                    ))}
-                  </select>
-
-                  {/* Visual Label (Secondary) */}
-                  {data.secondarySpecialty && (
-                    <div className="absolute inset-0 flex items-center pointer-events-none bg-transparent overflow-hidden">
-                      <span className="text-[11px] font-medium text-teal-600 truncate">
-                        {secondaryLabel || data.secondarySpecialty}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Remove Secondary Button */}
-                  {!readOnly && (
-                    <button
-                      onClick={handleRemoveSecondary}
-                      type="button"
-                      className="absolute -right-1.5 -top-1.5 p-0.5 opacity-0 group-hover/spec:opacity-100 text-slate-400 hover:text-red-500 transition-all bg-white shadow-sm rounded-full z-10 border border-slate-200"
-                      title="Quitar co-manejo"
-                    >
-                      <X size={8} />
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
       {isSubtypePopoverVisible &&
