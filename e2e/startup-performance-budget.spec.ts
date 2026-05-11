@@ -206,6 +206,28 @@ const readCensoOperationalPhase = async (
   return (await operationalBanner.getAttribute('data-phase')) || 'unknown_visible_banner';
 };
 
+const expectCensoOperationalTransition = async (
+  page: Parameters<typeof ensureRecordExists>[0],
+  initialPhase: string
+) => {
+  if (initialPhase !== 'remote_confirmed_or_no_banner') {
+    expect(
+      initialPhase,
+      `initial census operational phase should be pending, received ${initialPhase}`
+    ).toMatch(/^(loading_remote|sync_pending|reconciling_remote|using_local_cache)$/);
+  }
+
+  const seededPatientRow = page.locator('[data-testid="patient-row"][data-bed-id="R1"]').first();
+  const seededPatientName = seededPatientRow.locator('input[name="patientName"]').first();
+
+  await expect(page.getByTestId('census-table')).toBeVisible();
+  await expect(seededPatientRow).toBeVisible();
+  await expect(seededPatientName).toHaveValue('PERF TEST');
+  await expect(page.getByTestId('census-operational-state-banner')).toBeHidden({
+    timeout: 5_000,
+  });
+};
+
 const dismissBlockingOperationalBanner = async (page: Parameters<typeof ensureRecordExists>[0]) => {
   const closeButton = page.getByRole('button', { name: /^Cerrar$/i }).last();
   if (await closeButton.isVisible().catch(() => false)) {
@@ -300,9 +322,11 @@ test.describe('Startup performance budget', () => {
     const censoVisibleMs = performance.now() - startCenso;
     censoBreakdown.readyStateMs = Number((performance.now() - startCensoReady).toFixed(2));
     flowMetrics.censoVisibleMs = Number(censoVisibleMs.toFixed(2));
-    censoBreakdown.operationalPhase = await readCensoOperationalPhase(page);
+    const initialCensoOperationalPhase = await readCensoOperationalPhase(page);
+    censoBreakdown.operationalPhase = initialCensoOperationalPhase;
     const startEnsureRecord = performance.now();
     await ensureRecordExists(page);
+    await expectCensoOperationalTransition(page, initialCensoOperationalPhase);
     const censoRecordReadyMs = performance.now() - startEnsureRecord;
     censoBreakdown.ensureRecordMs = Number((performance.now() - startEnsureRecord).toFixed(2));
     flowMetrics.censoRecordReadyMs = Number(censoRecordReadyMs.toFixed(2));
