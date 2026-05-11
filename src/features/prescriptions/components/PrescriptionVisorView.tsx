@@ -20,9 +20,66 @@ import { PrescriptionBedGridView } from '@/features/prescriptions/components/Pre
 
 type VisorMode = 'list' | 'bed-grid';
 
+const MONTHLY_PDF_OPTIONS_STORAGE_KEY = 'hhr.prescriptions.monthlyPdfOptions';
+const PRESCRIPTIONS_PER_PAGE_OPTIONS: readonly PrescriptionsPerPageOption[] = [1, 2, 4, 6];
+const PDF_COLOR_MODE_OPTIONS: readonly PrescriptionMonthlyPdfColorMode[] = ['color', 'grayscale'];
+const PDF_IMAGE_QUALITY_OPTIONS: readonly PrescriptionMonthlyPdfImageQuality[] = [
+  'medium',
+  'reduced',
+  'compact',
+  'low',
+];
+
+const isPrescriptionsPerPageOption = (value: unknown): value is PrescriptionsPerPageOption =>
+  typeof value === 'number' &&
+  PRESCRIPTIONS_PER_PAGE_OPTIONS.includes(value as PrescriptionsPerPageOption);
+
+const isPdfColorMode = (value: unknown): value is PrescriptionMonthlyPdfColorMode =>
+  typeof value === 'string' &&
+  PDF_COLOR_MODE_OPTIONS.includes(value as PrescriptionMonthlyPdfColorMode);
+
+const isPdfImageQuality = (value: unknown): value is PrescriptionMonthlyPdfImageQuality =>
+  typeof value === 'string' &&
+  PDF_IMAGE_QUALITY_OPTIONS.includes(value as PrescriptionMonthlyPdfImageQuality);
+
+const loadStoredMonthlyPdfOptions = (): Partial<{
+  colorMode: PrescriptionMonthlyPdfColorMode;
+  imageQuality: PrescriptionMonthlyPdfImageQuality;
+  prescriptionsPerPage: PrescriptionsPerPageOption;
+}> => {
+  if (typeof window === 'undefined') return {};
+  try {
+    const rawValue = window.localStorage.getItem(MONTHLY_PDF_OPTIONS_STORAGE_KEY);
+    if (!rawValue) return {};
+    const parsed = JSON.parse(rawValue) as Record<string, unknown>;
+    return {
+      colorMode: isPdfColorMode(parsed.colorMode) ? parsed.colorMode : undefined,
+      imageQuality: isPdfImageQuality(parsed.imageQuality) ? parsed.imageQuality : undefined,
+      prescriptionsPerPage: isPrescriptionsPerPageOption(parsed.prescriptionsPerPage)
+        ? parsed.prescriptionsPerPage
+        : undefined,
+    };
+  } catch {
+    return {};
+  }
+};
+
+const persistMonthlyPdfOptions = (options: {
+  colorMode: PrescriptionMonthlyPdfColorMode;
+  imageQuality: PrescriptionMonthlyPdfImageQuality;
+  prescriptionsPerPage: PrescriptionsPerPageOption;
+}): void => {
+  try {
+    window.localStorage.setItem(MONTHLY_PDF_OPTIONS_STORAGE_KEY, JSON.stringify(options));
+  } catch {
+    // Preference persistence must never block clinical printing.
+  }
+};
+
 export const PrescriptionVisorView: React.FC = () => {
   const auth = useAuth();
   const controller = usePrescriptionListController();
+  const [storedPdfOptions] = useState(loadStoredMonthlyPdfOptions);
   const [selected, setSelected] = useState<PrescriptionRecord | null>(null);
   const [mode, setMode] = useState<VisorMode>('bed-grid');
   const [isExportingMonthlyPdf, setIsExportingMonthlyPdf] = useState(false);
@@ -30,13 +87,14 @@ export const PrescriptionVisorView: React.FC = () => {
   const [monthlyPdfError, setMonthlyPdfError] = useState<string | null>(null);
   const [monthlyPdfWarning, setMonthlyPdfWarning] = useState<string | null>(null);
   const [prescriptionsPerPage, setPrescriptionsPerPage] = useState<PrescriptionsPerPageOption>(
-    DEFAULT_PRESCRIPTION_MONTHLY_PDF_OPTIONS.prescriptionsPerPage
+    storedPdfOptions.prescriptionsPerPage ??
+      DEFAULT_PRESCRIPTION_MONTHLY_PDF_OPTIONS.prescriptionsPerPage
   );
   const [pdfColorMode, setPdfColorMode] = useState<PrescriptionMonthlyPdfColorMode>(
-    DEFAULT_PRESCRIPTION_MONTHLY_PDF_OPTIONS.colorMode
+    storedPdfOptions.colorMode ?? DEFAULT_PRESCRIPTION_MONTHLY_PDF_OPTIONS.colorMode
   );
   const [pdfImageQuality, setPdfImageQuality] = useState<PrescriptionMonthlyPdfImageQuality>(
-    DEFAULT_PRESCRIPTION_MONTHLY_PDF_OPTIONS.imageQuality
+    storedPdfOptions.imageQuality ?? DEFAULT_PRESCRIPTION_MONTHLY_PDF_OPTIONS.imageQuality
   );
 
   const canEdit = auth.role === 'admin' || auth.role === 'nurse_hospital' || auth.isEditor;
@@ -136,15 +194,17 @@ export const PrescriptionVisorView: React.FC = () => {
     setIsExportingMonthlyPdf(true);
     setMonthlyPdfError(null);
     setMonthlyPdfWarning(null);
+    const selectedPdfOptions = {
+      prescriptionsPerPage,
+      colorMode: pdfColorMode,
+      imageQuality: pdfImageQuality,
+    };
+    persistMonthlyPdfOptions(selectedPdfOptions);
     try {
       const result = await exportMonthlyPrescriptionsPdf({
         records: controller.records,
         selectedDateIso: controller.filters.selectedDate,
-        options: {
-          prescriptionsPerPage,
-          colorMode: pdfColorMode,
-          imageQuality: pdfImageQuality,
-        },
+        options: selectedPdfOptions,
       });
       if (result.optimizationFallbackCount > 0) {
         const imageLabel = result.optimizationFallbackCount === 1 ? 'imagen' : 'imágenes';
@@ -290,6 +350,11 @@ export const PrescriptionVisorView: React.FC = () => {
                   <option value="compact">Compacta</option>
                   <option value="low">Baja</option>
                 </select>
+                {pdfImageQuality === 'low' && (
+                  <span className="max-w-48 text-[10px] font-medium leading-tight text-amber-700">
+                    Máximo ahorro: revisar legibilidad antes de archivar.
+                  </span>
+                )}
               </label>
               <button
                 type="button"

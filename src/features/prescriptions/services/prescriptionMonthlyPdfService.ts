@@ -11,6 +11,8 @@ const PRINT_STYLE_ID = 'prescription-monthly-print-style';
 const PRINT_TRIGGER_DELAY_MS = 150;
 const PRINT_CLEANUP_TIMEOUT_MS = 60_000;
 const IMAGE_LOAD_TIMEOUT_MS = 8_000;
+const IMAGE_PROXY_REQUEST_TIMEOUT_MS = 10_000;
+const IMAGE_PROXY_MAX_CONCURRENT_REQUESTS = 4;
 
 export type PrescriptionsPerPageOption = 1 | 2 | 4 | 6;
 export type PrescriptionMonthlyPdfColorMode = 'color' | 'grayscale';
@@ -165,6 +167,26 @@ const normalizeOptions = (
 
 const resolveImageStoragePath = (record: PrescriptionRecord): string => record.image.storagePath;
 
+const mapWithConcurrency = async <TItem, TResult>(
+  items: TItem[],
+  limit: number,
+  mapper: (item: TItem, index: number) => Promise<TResult>
+): Promise<TResult[]> => {
+  const results = new Array<TResult>(items.length);
+  let nextIndex = 0;
+
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (nextIndex < items.length) {
+      const currentIndex = nextIndex;
+      nextIndex += 1;
+      results[currentIndex] = await mapper(items[currentIndex], currentIndex);
+    }
+  });
+
+  await Promise.all(workers);
+  return results;
+};
+
 const buildOptimizedPrescriptionImageUrl = (
   downloadUrl: string,
   imageQuality: PrescriptionMonthlyPdfImageQuality
@@ -190,9 +212,19 @@ const resolvePrintableImageAsset = async (
   }
 
   try {
-    const proxyResponse = await fetch(
-      buildOptimizedPrescriptionImageUrl(downloadUrl, imageQuality)
+    const abortController = new AbortController();
+    const timeoutId = window.setTimeout(
+      () => abortController.abort(),
+      IMAGE_PROXY_REQUEST_TIMEOUT_MS
     );
+    const proxyUrl = buildOptimizedPrescriptionImageUrl(downloadUrl, imageQuality);
+    const proxyResponse = await Promise.resolve()
+      .then(() =>
+        fetch(proxyUrl, {
+          signal: abortController.signal,
+        })
+      )
+      .finally(() => window.clearTimeout(timeoutId));
     if (!proxyResponse.ok) {
       return { optimizationFallback: true, url: downloadUrl };
     }
@@ -447,13 +479,15 @@ export const exportMonthlyPrescriptionsPdf = async ({
   root.dataset.colorMode = resolvedOptions.colorMode;
   root.dataset.imageQuality = resolvedOptions.imageQuality;
   const style = createPrintStyle();
-  const imageAssets = await Promise.all(
-    scope.records.map(async record => {
+  const imageAssets = await mapWithConcurrency(
+    scope.records,
+    IMAGE_PROXY_MAX_CONCURRENT_REQUESTS,
+    async record => {
       const downloadUrl = await resolvePrescriptionImageDownloadUrl(
         resolveImageStoragePath(record)
       );
       return resolvePrintableImageAsset(downloadUrl, resolvedOptions.imageQuality);
-    })
+    }
   );
   const imageUrls = imageAssets.map(asset => asset.url);
   const optimizationFallbackCount = imageAssets.filter(asset => asset.optimizationFallback).length;

@@ -13,6 +13,10 @@ Los niveles reducida, compacta y baja pasan por `/.netlify/functions/prescriptio
 
 Cuando ocurre ese fallback, el visor muestra una advertencia no bloqueante, por ejemplo: `1 imagen se imprimira en calidad original por error de optimizacion.` El PDF se sigue generando.
 
+El navegador prepara las imagenes optimizadas con un limite de concurrencia y timeout por imagen. Si el proxy demora demasiado, esa receta cae a imagen original y suma a la misma advertencia no bloqueante.
+
+La ultima configuracion usada se guarda localmente en el navegador: recetas por pagina, color/B/N y calidad. Esto solo afecta la proxima impresion en ese equipo.
+
 ## Smoke local del proxy
 
 Con la app levantada en `http://localhost:3021`, ejecutar:

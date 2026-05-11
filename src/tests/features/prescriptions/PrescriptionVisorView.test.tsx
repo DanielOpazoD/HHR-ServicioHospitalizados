@@ -87,6 +87,7 @@ import { PrescriptionVisorView } from '@/features/prescriptions/components/Presc
 describe('PrescriptionVisorView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.localStorage.clear();
   });
 
   it('opens in bed-grid mode by default', () => {
@@ -162,6 +163,57 @@ describe('PrescriptionVisorView', () => {
         },
       })
     );
+  });
+
+  it('restores the last monthly PDF configuration from local storage', async () => {
+    window.localStorage.setItem(
+      'hhr.prescriptions.monthlyPdfOptions',
+      JSON.stringify({
+        prescriptionsPerPage: 4,
+        colorMode: 'grayscale',
+        imageQuality: 'compact',
+      })
+    );
+    render(<PrescriptionVisorView />);
+
+    fireEvent.click(screen.getByRole('button', { name: /grabar pdf mensual/i }));
+
+    expect(screen.getByLabelText(/recetas por página/i)).toHaveValue('4');
+    expect(screen.getByLabelText(/color del pdf/i)).toHaveValue('grayscale');
+    expect(screen.getByLabelText(/calidad de imagen/i)).toHaveValue('compact');
+
+    fireEvent.click(screen.getByRole('button', { name: /generar pdf/i }));
+    await waitFor(() => expect(exportMonthlyPrescriptionsPdfSpy).toHaveBeenCalledTimes(1));
+    expect(exportMonthlyPrescriptionsPdfSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        options: {
+          prescriptionsPerPage: 4,
+          colorMode: 'grayscale',
+          imageQuality: 'compact',
+        },
+      })
+    );
+  });
+
+  it('persists PDF configuration changes and warns about low image quality', async () => {
+    render(<PrescriptionVisorView />);
+
+    fireEvent.click(screen.getByRole('button', { name: /grabar pdf mensual/i }));
+    fireEvent.change(screen.getByLabelText(/recetas por página/i), { target: { value: '6' } });
+    fireEvent.change(screen.getByLabelText(/color del pdf/i), { target: { value: 'grayscale' } });
+    fireEvent.change(screen.getByLabelText(/calidad de imagen/i), { target: { value: 'low' } });
+
+    expect(screen.getByText(/máximo ahorro/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /generar pdf/i }));
+
+    await waitFor(() => expect(exportMonthlyPrescriptionsPdfSpy).toHaveBeenCalledTimes(1));
+    expect(
+      JSON.parse(window.localStorage.getItem('hhr.prescriptions.monthlyPdfOptions') ?? '{}')
+    ).toEqual({
+      prescriptionsPerPage: 6,
+      colorMode: 'grayscale',
+      imageQuality: 'low',
+    });
   });
 
   it('shows a non-blocking warning when PDF image optimization falls back to original quality', async () => {

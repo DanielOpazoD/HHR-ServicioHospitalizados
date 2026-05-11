@@ -188,8 +188,14 @@ describe('prescriptionMonthlyPdfService', () => {
       .querySelector('#prescription-monthly-print-root img')
       ?.getAttribute('src');
     expect(firstImageSrc).toBe('blob:optimized-prescription');
-    expect(fetchSpy).toHaveBeenCalledWith(expect.stringContaining('w=760'));
-    expect(fetchSpy).toHaveBeenCalledWith(expect.stringContaining('q=58'));
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining('w=760'),
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
+    );
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining('q=58'),
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
+    );
     const styleText = document.getElementById('prescription-monthly-print-style')?.textContent;
     expect(styleText).toContain('left: -10000px');
     expect(styleText).toContain('opacity: 0');
@@ -198,6 +204,91 @@ describe('prescriptionMonthlyPdfService', () => {
     expect(styleText).toContain('data-image-quality="compact"');
     expect(result.exportedCount).toBe(5);
     expect(result.optimizationFallbackCount).toBe(0);
+    vi.useRealTimers();
+  });
+
+  it('limits optimized image proxy requests so large months do not fan out all at once', async () => {
+    vi.spyOn(window, 'print').mockImplementation(() => {});
+    const pendingResponses: Array<() => void> = [];
+    vi.spyOn(globalThis, 'fetch').mockImplementation(
+      () =>
+        new Promise<Response>(resolve => {
+          pendingResponses.push(() =>
+            resolve(
+              new Response(new Blob(['optimized'], { type: 'image/jpeg' }), {
+                headers: { 'X-Prescription-Image-Optimization': 'optimized' },
+              })
+            )
+          );
+        })
+    );
+    const records = Array.from({ length: 9 }, (_, index) =>
+      buildRecord(`rx-batch-${index + 1}`, '2026-05-01T08:00:00.000Z')
+    );
+
+    const resultPromise = exportMonthlyPrescriptionsPdf({
+      records,
+      selectedDateIso: '2026-05-06',
+      options: { imageQuality: 'compact' },
+    });
+
+    await vi.waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(4));
+    pendingResponses.splice(0).forEach(resolve => resolve());
+    await vi.waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(8));
+    pendingResponses.splice(0).forEach(resolve => resolve());
+    await vi.waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(9));
+    pendingResponses.splice(0).forEach(resolve => resolve());
+
+    await vi.waitFor(() => {
+      expect(document.querySelectorAll('#prescription-monthly-print-root img')).toHaveLength(9);
+    });
+    document
+      .querySelectorAll('#prescription-monthly-print-root img')
+      .forEach(image => image.dispatchEvent(new Event('load')));
+    const result = await resultPromise;
+
+    expect(result.optimizationFallbackCount).toBe(0);
+  });
+
+  it('passes an abort signal to optimized image requests and falls back when the proxy times out', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(window, 'print').mockImplementation(() => {});
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      (_url, init) =>
+        new Promise<Response>((_resolve, reject) => {
+          const signal = init && 'signal' in init ? init.signal : undefined;
+          signal?.addEventListener('abort', () =>
+            reject(new DOMException('Aborted', 'AbortError'))
+          );
+        })
+    );
+
+    const resultPromise = exportMonthlyPrescriptionsPdf({
+      records: [buildRecord('rx-timeout', '2026-05-01T08:00:00.000Z')],
+      selectedDateIso: '2026-05-06',
+      options: { imageQuality: 'compact' },
+    });
+
+    await vi.waitFor(() =>
+      expect(fetchSpy).toHaveBeenCalledWith(
+        expect.stringContaining('/.netlify/functions/prescription-image-proxy'),
+        expect.objectContaining({ signal: expect.any(AbortSignal) })
+      )
+    );
+    await vi.advanceTimersByTimeAsync(10_000);
+    await vi.waitFor(() => {
+      expect(document.querySelectorAll('#prescription-monthly-print-root img')).toHaveLength(1);
+    });
+
+    const image = document.querySelector('#prescription-monthly-print-root img');
+    image?.dispatchEvent(new Event('load'));
+    const result = await resultPromise;
+
+    expect(result.optimizationFallbackCount).toBe(1);
+    expect(image).toHaveAttribute(
+      'src',
+      'https://firebasestorage.googleapis.com/v0/b/hhr-serviciohospitalizados.firebasestorage.app/o/prescriptions%2Fhhr%2Frx-timeout%2Ffull.jpg?alt=media&token=stub'
+    );
     vi.useRealTimers();
   });
 
