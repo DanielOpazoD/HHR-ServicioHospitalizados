@@ -254,7 +254,9 @@ export const DemographicsOriginSection: React.FC<DemographicsOriginSectionProps>
             <select
               className="w-full px-2.5 py-1.5 bg-slate-50 border border-transparent rounded-lg text-[13px] text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none appearance-none cursor-pointer shadow-sm transition-all"
               value={localData.origin}
-              onChange={e => setLocalData({ ...localData, origin: e.target.value as Origin })}
+              onChange={e =>
+                setLocalData(current => ({ ...current, origin: e.target.value as Origin }))
+              }
             >
               <option value="Residente">Residente</option>
               <option value="Turista Nacional">Turista Nacional</option>
@@ -312,7 +314,9 @@ export const DemographicsOriginSection: React.FC<DemographicsOriginSectionProps>
                 type="checkbox"
                 className="sr-only"
                 checked={localData.isRapanui}
-                onChange={e => setLocalData({ ...localData, isRapanui: e.target.checked })}
+                onChange={e =>
+                  setLocalData(current => ({ ...current, isRapanui: e.target.checked }))
+                }
               />
             </div>
             <div>
