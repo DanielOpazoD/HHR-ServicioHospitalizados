@@ -78,7 +78,9 @@ export const CMADataSchema: z.ZodType<CMAData, z.ZodTypeDef, unknown> = z
     rut: z.string().default(''),
     age: z.string().default(''),
     diagnosis: z.string().default(''),
-    specialty: z.nativeEnum(Specialty).default(Specialty.EMPTY),
+    specialty: z
+      .union([z.nativeEnum(Specialty), z.string().transform(value => value.trim())])
+      .default(Specialty.EMPTY),
     interventionType: z
       .enum(['Cirugía Mayor Ambulatoria', 'Procedimiento Médico Ambulatorio'])
       .default('Cirugía Mayor Ambulatoria'),

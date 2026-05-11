@@ -350,5 +350,15 @@ describe('zod entity schemas', () => {
       expect(cma.patientName).toBe('');
       expect(cma.diagnosis).toBe('');
     });
+
+    it('should preserve custom free-text specialties', () => {
+      const cma = CMADataSchema.parse({
+        id: 'cma-1',
+        patientName: 'Paciente CMA',
+        specialty: 'Urología',
+      });
+
+      expect(cma.specialty).toBe('Urología');
+    });
   });
 });
