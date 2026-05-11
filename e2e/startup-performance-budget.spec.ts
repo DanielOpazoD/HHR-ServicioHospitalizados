@@ -109,7 +109,7 @@ const getEnforcedBudget = (browserName: string, key: keyof typeof BUDGETS): numb
 const CURRENT_DATE = '2026-02-20';
 const usePreviewMode = process.env.PLAYWRIGHT_USE_PREVIEW === '1';
 const flowMetrics: Record<string, number> = {};
-const censoBreakdown: Record<string, number> = {};
+const censoBreakdown: Record<string, number | string> = {};
 const clinicalDocumentsBreakdown: Record<string, number> = {};
 
 const bootstrapRecordAndUser = async (
@@ -176,6 +176,7 @@ const bootstrapRecordAndUser = async (
 const waitForCensoReady = async (page: Parameters<typeof ensureRecordExists>[0]) => {
   const candidates = [
     page.getByTestId('census-table').first(),
+    page.getByTestId('census-operational-state-banner').first(),
     page.getByTestId('blank-record-btn').first(),
     page.getByText(/No existe registro para esta fecha/i, { exact: false }).first(),
   ];
@@ -193,6 +194,16 @@ const waitForCensoReady = async (page: Parameters<typeof ensureRecordExists>[0])
       { timeout: 5000 }
     )
     .toBe(true);
+};
+
+const readCensoOperationalPhase = async (
+  page: Parameters<typeof ensureRecordExists>[0]
+): Promise<string> => {
+  const operationalBanner = page.getByTestId('census-operational-state-banner').first();
+  if (!(await operationalBanner.isVisible({ timeout: 250 }).catch(() => false))) {
+    return 'remote_confirmed_or_no_banner';
+  }
+  return (await operationalBanner.getAttribute('data-phase')) || 'unknown_visible_banner';
 };
 
 const dismissBlockingOperationalBanner = async (page: Parameters<typeof ensureRecordExists>[0]) => {
@@ -282,13 +293,14 @@ test.describe('Startup performance budget', () => {
     await bootstrapRecordAndUser(page, CURRENT_DATE);
 
     const startCenso = performance.now();
-    await page.goto(`/censo?date=${CURRENT_DATE}`);
+    await page.goto(`/censo?date=${CURRENT_DATE}`, { waitUntil: 'domcontentloaded' });
     censoBreakdown.navigationMs = Number((performance.now() - startCenso).toFixed(2));
     const startCensoReady = performance.now();
     await waitForCensoReady(page);
     const censoVisibleMs = performance.now() - startCenso;
     censoBreakdown.readyStateMs = Number((performance.now() - startCensoReady).toFixed(2));
     flowMetrics.censoVisibleMs = Number(censoVisibleMs.toFixed(2));
+    censoBreakdown.operationalPhase = await readCensoOperationalPhase(page);
     const startEnsureRecord = performance.now();
     await ensureRecordExists(page);
     const censoRecordReadyMs = performance.now() - startEnsureRecord;
