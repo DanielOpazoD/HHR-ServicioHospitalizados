@@ -49,9 +49,9 @@ Estos son los entrypoints recomendados para trabajo normal.
 3. Si necesitas snapshots actualizados: `npm run report:governance-snapshots`
 4. Recién después usar `reports/*` como evidencia del checkout actual
 
-Para release real, usar `npm run check:release-evidence`: además de frescura, bloquea reportes generados desde un checkout con cambios locales significativos.
+`check:report-freshness` es advisory para uso diario: muestra drift de reportes sin bloquear ramas operativas. Para release real, usar `npm run check:release-evidence`: ejecuta `check:report-freshness:strict` y además bloquea reportes generados desde un checkout con cambios locales significativos.
 La evidencia de release también exige el artefacto dedicado del smoke visual clínico en `reports/e2e/clinical-visual-release-report.json`; `npm run report:release-evidence` lo genera antes de refrescar los reportes ejecutivos.
-`check:report-freshness` considera frescos los reportes generados para `HEAD` o para un padre directo de un merge commit; no acepta ancestros antiguos ni el padre de un commit lineal normal.
+`check:report-freshness:strict` considera frescos los reportes generados para `HEAD` o para un padre directo de un merge commit; no acepta ancestros antiguos ni el padre de un commit lineal normal.
 
 ### Si tocas reglas, runbooks o documentación operativa
 
