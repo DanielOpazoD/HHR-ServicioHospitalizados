@@ -1,11 +1,18 @@
 import React, { useCallback, useState } from 'react';
-import { ArrowLeft, Grid3x3, Inbox, List } from 'lucide-react';
+import { ArrowLeft, FileDown, Grid3x3, Inbox, List, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { executeReassignPrescriptionPatient } from '@/application/prescriptions/reassignPrescriptionPatientUseCase';
 import { executeDeletePrescription } from '@/application/prescriptions/deletePrescriptionUseCase';
 import { executeUpdatePrescriptionType } from '@/application/prescriptions/updatePrescriptionTypeUseCase';
 import { type PrescriptionRecord, type PrescriptionType } from '@/types/prescriptionTypes';
 import { usePrescriptionListController } from '@/features/prescriptions/hooks/usePrescriptionListController';
+import {
+  DEFAULT_PRESCRIPTION_MONTHLY_PDF_OPTIONS,
+  exportMonthlyPrescriptionsPdf,
+  type PrescriptionMonthlyPdfColorMode,
+  type PrescriptionMonthlyPdfImageQuality,
+  type PrescriptionsPerPageOption,
+} from '@/features/prescriptions/services/prescriptionMonthlyPdfService';
 import { PrescriptionListItem } from '@/features/prescriptions/components/PrescriptionListItem';
 import { PrescriptionDetailModal } from '@/features/prescriptions/components/PrescriptionDetailModal';
 import { PrescriptionDateStrip } from '@/features/prescriptions/components/PrescriptionDateStrip';
@@ -18,6 +25,19 @@ export const PrescriptionVisorView: React.FC = () => {
   const controller = usePrescriptionListController();
   const [selected, setSelected] = useState<PrescriptionRecord | null>(null);
   const [mode, setMode] = useState<VisorMode>('bed-grid');
+  const [isExportingMonthlyPdf, setIsExportingMonthlyPdf] = useState(false);
+  const [showPdfOptions, setShowPdfOptions] = useState(false);
+  const [monthlyPdfError, setMonthlyPdfError] = useState<string | null>(null);
+  const [monthlyPdfWarning, setMonthlyPdfWarning] = useState<string | null>(null);
+  const [prescriptionsPerPage, setPrescriptionsPerPage] = useState<PrescriptionsPerPageOption>(
+    DEFAULT_PRESCRIPTION_MONTHLY_PDF_OPTIONS.prescriptionsPerPage
+  );
+  const [pdfColorMode, setPdfColorMode] = useState<PrescriptionMonthlyPdfColorMode>(
+    DEFAULT_PRESCRIPTION_MONTHLY_PDF_OPTIONS.colorMode
+  );
+  const [pdfImageQuality, setPdfImageQuality] = useState<PrescriptionMonthlyPdfImageQuality>(
+    DEFAULT_PRESCRIPTION_MONTHLY_PDF_OPTIONS.imageQuality
+  );
 
   const canEdit = auth.role === 'admin' || auth.role === 'nurse_hospital' || auth.isEditor;
   const canDelete = auth.role === 'admin' || auth.role === 'nurse_hospital';
@@ -112,6 +132,43 @@ export const PrescriptionVisorView: React.FC = () => {
     await executeDeletePrescription({ prescriptionId: selected.id, deletedBy });
   }, [auth.currentUser, selected]);
 
+  const handleExportMonthlyPdf = useCallback(async () => {
+    setIsExportingMonthlyPdf(true);
+    setMonthlyPdfError(null);
+    setMonthlyPdfWarning(null);
+    try {
+      const result = await exportMonthlyPrescriptionsPdf({
+        records: controller.records,
+        selectedDateIso: controller.filters.selectedDate,
+        options: {
+          prescriptionsPerPage,
+          colorMode: pdfColorMode,
+          imageQuality: pdfImageQuality,
+        },
+      });
+      if (result.optimizationFallbackCount > 0) {
+        const imageLabel = result.optimizationFallbackCount === 1 ? 'imagen' : 'imágenes';
+        const verb = result.optimizationFallbackCount === 1 ? 'se imprimirá' : 'se imprimirán';
+        setMonthlyPdfWarning(
+          `${result.optimizationFallbackCount} ${imageLabel} ${verb} en calidad original por error de optimización.`
+        );
+      }
+    } catch (caught) {
+      setMonthlyPdfError(
+        caught instanceof Error ? caught.message : 'No se pudo generar el PDF mensual.'
+      );
+    } finally {
+      setIsExportingMonthlyPdf(false);
+      setShowPdfOptions(false);
+    }
+  }, [
+    controller.filters.selectedDate,
+    controller.records,
+    pdfColorMode,
+    pdfImageQuality,
+    prescriptionsPerPage,
+  ]);
+
   return (
     <main
       data-module="prescriptions-visor"
@@ -137,37 +194,145 @@ export const PrescriptionVisorView: React.FC = () => {
             </p>
           </div>
 
-          <div
-            role="tablist"
-            aria-label="Modo de vista"
-            className="inline-flex self-start rounded-lg border border-slate-200 bg-white p-0.5 shadow-sm sm:self-auto"
-          >
+          <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto sm:justify-end">
             <button
-              role="tab"
               type="button"
-              aria-selected={mode === 'list'}
-              onClick={() => setMode('list')}
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
-                mode === 'list' ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-100'
-              }`}
+              onClick={() => setShowPdfOptions(prev => !prev)}
+              disabled={isExportingMonthlyPdf || controller.phase === 'loading'}
+              className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-800 shadow-sm transition-colors hover:bg-sky-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+              aria-label="Grabar PDF mensual"
+              title="Grabar PDF mensual"
             >
-              <List size={14} /> Lista
+              {isExportingMonthlyPdf ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <FileDown size={14} />
+              )}
+              PDF mensual
             </button>
-            <button
-              role="tab"
-              type="button"
-              aria-selected={mode === 'bed-grid'}
-              onClick={() => setMode('bed-grid')}
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
-                mode === 'bed-grid'
-                  ? 'bg-slate-800 text-white'
-                  : 'text-slate-500 hover:bg-slate-100'
-              }`}
+            <div
+              role="tablist"
+              aria-label="Modo de vista"
+              className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 shadow-sm"
             >
-              <Grid3x3 size={14} /> Por cama
-            </button>
+              <button
+                role="tab"
+                type="button"
+                aria-selected={mode === 'list'}
+                onClick={() => setMode('list')}
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  mode === 'list' ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-100'
+                }`}
+              >
+                <List size={14} /> Lista
+              </button>
+              <button
+                role="tab"
+                type="button"
+                aria-selected={mode === 'bed-grid'}
+                onClick={() => setMode('bed-grid')}
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  mode === 'bed-grid'
+                    ? 'bg-slate-800 text-white'
+                    : 'text-slate-500 hover:bg-slate-100'
+                }`}
+              >
+                <Grid3x3 size={14} /> Por cama
+              </button>
+            </div>
           </div>
         </header>
+
+        {showPdfOptions && (
+          <section className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+            <div className="flex flex-wrap items-end gap-3">
+              <label className="grid gap-1 text-[11px] font-semibold text-slate-600">
+                <span>Recetas por página</span>
+                <select
+                  value={prescriptionsPerPage}
+                  onChange={event =>
+                    setPrescriptionsPerPage(
+                      Number(event.target.value) as PrescriptionsPerPageOption
+                    )
+                  }
+                  className="h-8 rounded-md border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-800 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
+                >
+                  <option value={1}>1</option>
+                  <option value={2}>2</option>
+                  <option value={4}>4</option>
+                  <option value={6}>6</option>
+                </select>
+              </label>
+              <label className="grid gap-1 text-[11px] font-semibold text-slate-600">
+                <span>Color del PDF</span>
+                <select
+                  value={pdfColorMode}
+                  onChange={event =>
+                    setPdfColorMode(event.target.value as PrescriptionMonthlyPdfColorMode)
+                  }
+                  className="h-8 rounded-md border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-800 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
+                >
+                  <option value="color">Color</option>
+                  <option value="grayscale">B/N</option>
+                </select>
+              </label>
+              <label className="grid gap-1 text-[11px] font-semibold text-slate-600">
+                <span>Calidad de imagen</span>
+                <select
+                  value={pdfImageQuality}
+                  onChange={event =>
+                    setPdfImageQuality(event.target.value as PrescriptionMonthlyPdfImageQuality)
+                  }
+                  className="h-8 rounded-md border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-800 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
+                >
+                  <option value="medium">Media</option>
+                  <option value="reduced">Reducida</option>
+                  <option value="compact">Compacta</option>
+                  <option value="low">Baja</option>
+                </select>
+              </label>
+              <button
+                type="button"
+                onClick={handleExportMonthlyPdf}
+                disabled={isExportingMonthlyPdf}
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-sky-700 px-3 text-xs font-semibold text-white shadow-sm hover:bg-sky-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+              >
+                {isExportingMonthlyPdf ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <FileDown size={14} />
+                )}
+                Generar PDF
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowPdfOptions(false)}
+                disabled={isExportingMonthlyPdf}
+                className="h-8 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+            </div>
+          </section>
+        )}
+
+        {monthlyPdfError && (
+          <p
+            role="alert"
+            className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700"
+          >
+            {monthlyPdfError}
+          </p>
+        )}
+
+        {monthlyPdfWarning && (
+          <p
+            role="status"
+            className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800"
+          >
+            {monthlyPdfWarning}
+          </p>
+        )}
 
         <PrescriptionDateStrip
           selectedDate={controller.filters.selectedDate}
