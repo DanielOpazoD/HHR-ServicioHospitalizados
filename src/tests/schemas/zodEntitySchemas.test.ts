@@ -107,6 +107,17 @@ describe('zod entity schemas', () => {
       expect(patient.specialty).toBe('Med Interna');
     });
 
+    it('should preserve a custom free-text specialty', () => {
+      const patient = PatientDataSchema.parse({
+        bedId: 'R1',
+        patientName: 'Paciente ORL',
+        pathology: 'Otitis media',
+        specialty: 'ORL',
+      });
+
+      expect(patient.specialty).toBe('ORL');
+    });
+
     it('should derive split name fields from legacy patientName', () => {
       const patient = PatientDataSchema.parse({
         patientName: 'Juan Carlos Pérez Soto',
