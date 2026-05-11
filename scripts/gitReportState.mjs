@@ -49,6 +49,21 @@ export const getGitSha = root => {
   }
 };
 
+export const getDirectMergeParentShas = root => {
+  try {
+    const [head, ...parents] = runGitCommand(
+      root,
+      'git rev-list --parents --abbrev-commit -n 1 HEAD'
+    ).split(/\s+/);
+    if (!head || parents.length < 2) {
+      return [];
+    }
+    return parents;
+  } catch {
+    return [];
+  }
+};
+
 export const isGitWorktreeDirty = root => {
   try {
     return hasMeaningfulWorktreeChanges(runGitCommand(root, 'git status --short'));

@@ -2,7 +2,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { getGitReportState } from './gitReportState.mjs';
+import { getDirectMergeParentShas, getGitReportState } from './gitReportState.mjs';
 
 const ROOT = process.cwd();
 const trackedReports = [
@@ -69,11 +69,15 @@ const fail = issues => {
 const isSameCommit = (reportSha, currentSha) =>
   reportSha === currentSha || reportSha.startsWith(currentSha) || currentSha.startsWith(reportSha);
 
+const matchesAnyAllowedCommit = (reportSha, allowedShas) =>
+  allowedShas.some(allowedSha => isSameCommit(reportSha, allowedSha));
+
 const currentGitState = getGitReportState(ROOT);
 const currentGitSha = currentGitState.gitSha;
 if (!currentGitSha) {
   fail(['Could not resolve current git commit.']);
 }
+const allowedReportShas = [currentGitSha, ...getDirectMergeParentShas(ROOT)];
 
 const issues = [];
 
@@ -101,8 +105,10 @@ for (const report of trackedReports) {
     continue;
   }
 
-  if (!isSameCommit(reportSha, currentGitSha)) {
-    issues.push(`${report.file} was generated for ${reportSha}, current HEAD is ${currentGitSha}.`);
+  if (!matchesAnyAllowedCommit(reportSha, allowedReportShas)) {
+    issues.push(
+      `${report.file} was generated for ${reportSha}, current HEAD is ${currentGitSha}.`
+    );
   }
 
   if (
@@ -133,5 +139,5 @@ if (issues.length > 0) {
 }
 
 console.log(
-  `[report-freshness] OK (${trackedReports.length} reports match ${currentGitSha}, worktree=${currentGitState.gitDirty ? 'dirty' : 'clean'})`
+  `[report-freshness] OK (${trackedReports.length} reports match ${currentGitSha} or a direct merge parent, worktree=${currentGitState.gitDirty ? 'dirty' : 'clean'})`
 );
