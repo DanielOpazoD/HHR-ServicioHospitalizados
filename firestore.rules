@@ -553,7 +553,7 @@ service cloud.firestore {
       }
       match /settings/{settingId} {
         allow read: if canReadClinicalData();
-        allow write: if canEdit();
+        allow write: if settingId == 'aiProviderRouting' ? isAdmin() : canEdit();
       }
       match /reminders/{reminderId} {
         allow read: if canReadClinicalData();
