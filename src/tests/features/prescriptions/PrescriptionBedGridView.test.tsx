@@ -224,6 +224,61 @@ describe('PrescriptionBedGridView', () => {
     expect(await screen.findByRole('img', { name: /comun · h6c1/i })).toBeInTheDocument();
   });
 
+  it('opens a bed reassignment action for an already assigned prescription in the bed grid', async () => {
+    const assigned = buildRecord('rx-change-bed', {
+      assignmentScope: 'patient',
+      bedId: 'H2C3',
+      patientName: 'Paciente Alta Hoy',
+      patientRut: '12.345.678-9',
+      prescriptionType: 'comun',
+    });
+    const onReassign = vi.fn(async () => undefined);
+
+    renderGrid(
+      <PrescriptionBedGridView records={[assigned]} dayIso="2026-05-04" onReassign={onReassign} />
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: /cambiar cama de receta/i }));
+    const select = (await screen.findByRole('combobox')) as HTMLSelectElement;
+    fireEvent.change(select, { target: { value: 'H1C2' } });
+    fireEvent.click(screen.getByRole('button', { name: /guardar/i }));
+
+    await waitFor(() => expect(onReassign).toHaveBeenCalledTimes(1));
+    expect(onReassign).toHaveBeenCalledWith(expect.objectContaining({ id: 'rx-change-bed' }), {
+      bedId: 'H1C2',
+      patientName: 'Carina Pate Lillo',
+      patientRut: '14.470.055-4',
+      clear: false,
+    });
+  });
+
+  it('shows an inline error when bed reassignment fails from the bed grid', async () => {
+    const assigned = buildRecord('rx-change-bed-error', {
+      assignmentScope: 'patient',
+      bedId: 'H2C3',
+      patientName: 'Paciente Alta Hoy',
+      patientRut: '12.345.678-9',
+      prescriptionType: 'comun',
+    });
+    const onReassign = vi.fn(async () => {
+      throw new Error('No se pudo cambiar la cama de la receta.');
+    });
+
+    renderGrid(
+      <PrescriptionBedGridView records={[assigned]} dayIso="2026-05-04" onReassign={onReassign} />
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: /cambiar cama de receta/i }));
+    const select = (await screen.findByRole('combobox')) as HTMLSelectElement;
+    fireEvent.change(select, { target: { value: 'H1C2' } });
+    fireEvent.click(screen.getByRole('button', { name: /guardar/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      /no se pudo cambiar la cama de la receta/i
+    );
+    expect(screen.getByRole('combobox')).toBeInTheDocument();
+  });
+
   it('drops a matching-type unassigned prescription onto a bed cell and calls onAssign', async () => {
     const unassigned = buildRecord('rx-drag', {
       bedId: undefined,

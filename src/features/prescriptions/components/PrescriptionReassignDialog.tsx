@@ -1,8 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Loader2, Pencil, Save } from 'lucide-react';
 import type { PrescriptionRecord } from '@/types/prescriptionTypes';
-import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
-import type { DailyRecord } from '@/services/storage/storageDailyRecordContracts';
+import {
+  FALLBACK_DAYS_BACK,
+  formatDayLabel,
+  formatPatientStatus,
+  resolveDayWithBeds,
+  todayIso,
+  type DailyBedOption,
+} from '@/features/prescriptions/components/prescriptionReassignDialogSupport';
 
 interface PrescriptionReassignDialogProps {
   record: PrescriptionRecord;
@@ -19,69 +25,6 @@ interface PrescriptionReassignDialogProps {
    */
   selectedDate: string | null;
 }
-
-interface DailyBedOption {
-  bedId: string;
-  patientName: string;
-  patientRut: string;
-}
-
-const FALLBACK_DAYS_BACK = 7;
-
-const todayIso = (): string => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
-
-const shiftIsoDay = (iso: string, deltaDays: number): string => {
-  const [year, month, day] = iso.split('-').map(Number);
-  const d = new Date(year, (month ?? 1) - 1, day ?? 1);
-  d.setDate(d.getDate() + deltaDays);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
-
-const formatDayLabel = (iso: string): string => {
-  try {
-    const [year, month, day] = iso.split('-').map(Number);
-    const d = new Date(year, (month ?? 1) - 1, day ?? 1);
-    return d.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' });
-  } catch {
-    return iso;
-  }
-};
-
-const buildBedOptions = (record: DailyRecord | null): DailyBedOption[] => {
-  if (!record) return [];
-  const beds = record.beds || {};
-  return Object.entries(beds)
-    .filter(
-      ([, patient]) =>
-        patient && !patient.isBlocked && (patient.patientName?.trim() || patient.rut?.trim())
-    )
-    .map(([bedId, patient]) => ({
-      bedId,
-      patientName: patient.patientName?.trim() ?? '',
-      patientRut: patient.rut?.trim() ?? '',
-    }))
-    .sort((a, b) => a.bedId.localeCompare(b.bedId, 'es', { numeric: true }));
-};
-
-interface ResolvedDayPayload {
-  bedOptions: DailyBedOption[];
-  resolvedDay: string | null;
-}
-
-const resolveDayWithBeds = async (startIso: string): Promise<ResolvedDayPayload> => {
-  for (let offset = 0; offset <= FALLBACK_DAYS_BACK; offset += 1) {
-    const candidate = offset === 0 ? startIso : shiftIsoDay(startIso, -offset);
-    const record = await getRecordFromFirestore(candidate);
-    const options = buildBedOptions(record);
-    if (options.length > 0) {
-      return { bedOptions: options, resolvedDay: candidate };
-    }
-  }
-  return { bedOptions: [], resolvedDay: null };
-};
 
 export const PrescriptionReassignDialog: React.FC<PrescriptionReassignDialogProps> = ({
   record,
@@ -235,7 +178,8 @@ export const PrescriptionReassignDialog: React.FC<PrescriptionReassignDialogProp
           {bedOptions.map(option => (
             <option key={option.bedId} value={option.bedId}>
               {option.bedId} · {option.patientName || 'Sin nombre'}
-              {option.patientRut ? ` (${option.patientRut})` : ''}
+              {option.patientRut ? ` (${option.patientRut})` : ''} ·{' '}
+              {formatPatientStatus(option.patientStatus)}
             </option>
           ))}
         </select>

@@ -69,6 +69,29 @@ const buildPopulatedDay = (): DailyRecord =>
     activeExtraBeds: [],
   }) as unknown as DailyRecord;
 
+const buildMovementDay = (): DailyRecord =>
+  ({
+    ...buildPopulatedDay(),
+    discharges: [
+      {
+        id: 'discharge-1',
+        bedId: 'H2C3',
+        bedName: 'H2C3',
+        patientName: 'Paciente Alta',
+        rut: '22.222.222-2',
+      },
+    ],
+    transfers: [
+      {
+        id: 'transfer-1',
+        bedId: 'H3C4',
+        bedName: 'H3C4',
+        patientName: 'Paciente Traslado',
+        rut: '33.333.333-3',
+      },
+    ],
+  }) as unknown as DailyRecord;
+
 describe('PrescriptionReassignDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -128,5 +151,25 @@ describe('PrescriptionReassignDialog', () => {
       clear: false,
     });
     await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+  });
+
+  it('labels current-day bed options as active, discharged or transferred', async () => {
+    vi.mocked(getRecordFromFirestore).mockResolvedValue(buildMovementDay());
+
+    render(
+      <PrescriptionReassignDialog
+        record={baseRecord}
+        onClose={vi.fn()}
+        onSubmit={vi.fn(async () => undefined)}
+        selectedDate="2026-05-04"
+      />
+    );
+
+    await screen.findByRole('combobox');
+    expect(screen.getByRole('option', { name: /H1C2.*Carina Pate Lillo.*Activo/i })).toBeTruthy();
+    expect(
+      screen.getByRole('option', { name: /H2C3.*Paciente Alta.*Alta \(egreso\)/i })
+    ).toBeTruthy();
+    expect(screen.getByRole('option', { name: /H3C4.*Paciente Traslado.*Traslado/i })).toBeTruthy();
   });
 });

@@ -288,12 +288,14 @@ describe('listPrescriptionUploadPatientOptions', () => {
           bedId: 'H5C1',
           patientName: 'Paciente Uno',
           patientRut: '11.111.111-1',
+          patientStatus: 'active',
         },
         {
           key: 'H5C2',
           bedId: 'H5C2',
           patientName: 'Paciente Dos',
           patientRut: '22.222.222-2',
+          patientStatus: 'active',
         },
       ],
     });
@@ -323,14 +325,74 @@ describe('listPrescriptionUploadPatientOptions', () => {
           bedId: 'H5C1',
           patientName: 'Paciente Uno',
           patientRut: '11.111.111-1',
+          patientStatus: 'active',
         },
         {
           key: 'H5C2',
           bedId: 'H5C2',
           patientName: 'Paciente Dos',
           patientRut: '22.222.222-2',
+          patientStatus: 'active',
         },
       ],
+    });
+  });
+
+  it('keeps same-day discharged and transferred patients in the upload selector', async () => {
+    const { admin, accessConfig } = buildAdminHarness({
+      dailyRecords: {
+        '2026-05-05': {
+          ...dailyRecord,
+          discharges: [
+            {
+              id: 'discharge-1',
+              bedId: 'H5C5',
+              bedName: 'H5C5',
+              patientName: 'Paciente Alta',
+              rut: '44.444.444-4',
+              isBlocked: false,
+            },
+          ],
+          transfers: [
+            {
+              id: 'transfer-1',
+              bedId: 'H5C6',
+              bedName: 'H5C6',
+              patientName: 'Paciente Traslado',
+              rut: '55.555.555-5',
+              isBlocked: false,
+            },
+          ],
+        },
+      },
+    });
+    await seedPin(accessConfig, '7351');
+
+    const handler = createListUploadPatientOptionsHandler({
+      admin,
+      resolveRoleForEmail: vi.fn(),
+    });
+
+    await expect(handler({ pin: '7351', date: '2026-05-05' }, undefined)).resolves.toMatchObject({
+      date: '2026-05-05',
+      sourceDate: '2026-05-05',
+      isFallbackFromPreviousDay: false,
+      patientOptions: expect.arrayContaining([
+        {
+          key: 'discharge:discharge-1',
+          bedId: 'H5C5',
+          patientName: 'Paciente Alta',
+          patientRut: '44.444.444-4',
+          patientStatus: 'discharge',
+        },
+        {
+          key: 'transfer:transfer-1',
+          bedId: 'H5C6',
+          patientName: 'Paciente Traslado',
+          patientRut: '55.555.555-5',
+          patientStatus: 'transfer',
+        },
+      ]),
     });
   });
 

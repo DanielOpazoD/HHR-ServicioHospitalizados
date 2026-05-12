@@ -73,6 +73,45 @@ describe('PrescriptionUploadForm', () => {
     expect(screen.getByText(/04-05-2026|2026-05-04/i)).toBeInTheDocument();
   });
 
+  it('labels patient selector options as active, discharged or transferred', () => {
+    render(
+      <PrescriptionUploadForm
+        controller={{
+          ...buildController(),
+          patientOptions: [
+            {
+              key: 'H1C2',
+              bedId: 'H1C2',
+              patientName: 'Paciente Activo',
+              patientRut: '11.111.111-1',
+              patientStatus: 'active',
+            },
+            {
+              key: 'discharge:d1',
+              bedId: 'H2C3',
+              patientName: 'Paciente Alta',
+              patientRut: '22.222.222-2',
+              patientStatus: 'discharge',
+            },
+            {
+              key: 'transfer:t1',
+              bedId: 'H3C4',
+              patientName: 'Paciente Traslado',
+              patientRut: '33.333.333-3',
+              patientStatus: 'transfer',
+            },
+          ],
+        }}
+      />
+    );
+
+    expect(screen.getByRole('option', { name: /H1C2.*Paciente Activo.*Activo/i })).toBeTruthy();
+    expect(
+      screen.getByRole('option', { name: /H2C3.*Paciente Alta.*Alta \(egreso\)/i })
+    ).toBeTruthy();
+    expect(screen.getByRole('option', { name: /H3C4.*Paciente Traslado.*Traslado/i })).toBeTruthy();
+  });
+
   it('offers separate camera and existing-image upload actions on mobile', () => {
     const controller = buildController();
     const { container } = render(<PrescriptionUploadForm controller={controller} />);
