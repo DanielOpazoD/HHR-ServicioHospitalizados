@@ -2,23 +2,17 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
 import type { DailyRecord } from '@/services/storage/storageDailyRecordContracts';
-import {
-  PRESCRIPTION_TYPE_LABELS,
-  type PrescriptionRecord,
-  type PrescriptionType,
-} from '@/types/prescriptionTypes';
+import { type PrescriptionRecord, type PrescriptionType } from '@/types/prescriptionTypes';
 import { PrescriptionPatientLightbox } from '@/features/prescriptions/components/PrescriptionPatientLightbox';
-import {
-  PrescriptionBedRow,
-  type PrescriptionBedRowData,
-} from '@/features/prescriptions/components/PrescriptionBedRow';
+import { PrescriptionReassignDialog } from '@/features/prescriptions/components/PrescriptionReassignDialog';
+import type { PrescriptionBedRowData } from '@/features/prescriptions/components/PrescriptionBedRow';
+import { PrescriptionBedGridTable } from '@/features/prescriptions/components/PrescriptionBedGridTable';
 import { PrescriptionUnassignedTray } from '@/features/prescriptions/components/PrescriptionUnassignedTray';
 import {
   buildBedRows,
   formatDayLabel,
   isStockRecord,
   isUnassignedRecord,
-  PRESCRIPTION_TYPES,
   previousIsoDay,
   todayIso,
 } from '@/features/prescriptions/components/prescriptionBedGridSupport';
@@ -27,6 +21,13 @@ export interface PrescriptionBedGridAssignTarget {
   bedId: string;
   patientName: string;
   patientRut: string;
+}
+
+export interface PrescriptionBedGridReassignPatch {
+  bedId?: string;
+  patientName?: string;
+  patientRut?: string;
+  clear: boolean;
 }
 
 interface PrescriptionBedGridViewProps {
@@ -42,6 +43,10 @@ interface PrescriptionBedGridViewProps {
    * and refreshes the record list.
    */
   onAssign?: (record: PrescriptionRecord, target: PrescriptionBedGridAssignTarget) => Promise<void>;
+  onReassign?: (
+    record: PrescriptionRecord,
+    patch: PrescriptionBedGridReassignPatch
+  ) => Promise<void>;
   onAssignStock?: (record: PrescriptionRecord) => Promise<void>;
   /**
    * Persists a new prescription type for the given record. Wired to the
@@ -56,6 +61,7 @@ export const PrescriptionBedGridView: React.FC<PrescriptionBedGridViewProps> = (
   records,
   dayIso,
   onAssign,
+  onReassign,
   onAssignStock,
   onUpdateType,
   onDelete,
@@ -81,6 +87,7 @@ export const PrescriptionBedGridView: React.FC<PrescriptionBedGridViewProps> = (
   const [pendingStockAssignId, setPendingStockAssignId] = useState<string | null>(null);
   const [assignError, setAssignError] = useState<string | null>(null);
   const [pickerSource, setPickerSource] = useState<PrescriptionRecord | null>(null);
+  const [reassignSource, setReassignSource] = useState<PrescriptionRecord | null>(null);
 
   const loading = dailyState?.requestedDay !== effectiveDay && errorDay !== effectiveDay;
   const daily = dailyState?.requestedDay === effectiveDay ? dailyState.record : null;
@@ -204,6 +211,12 @@ export const PrescriptionBedGridView: React.FC<PrescriptionBedGridViewProps> = (
     }
   };
 
+  const performReassign = async (patch: PrescriptionBedGridReassignPatch): Promise<void> => {
+    if (!onReassign || !reassignSource) return;
+    await onReassign(reassignSource, patch);
+    setReassignSource(null);
+  };
+
   const handleDragStart = (event: React.DragEvent<HTMLDivElement>, record: PrescriptionRecord) => {
     if (!onAssign) return;
     setDraggingId(record.id);
@@ -293,49 +306,21 @@ export const PrescriptionBedGridView: React.FC<PrescriptionBedGridViewProps> = (
           No hay pacientes activos en la base censal de este día.
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-          <table className="w-full min-w-[640px] table-fixed text-sm">
-            <colgroup>
-              <col className="w-[64px]" />
-              <col />
-              {PRESCRIPTION_TYPES.map(type => (
-                <col key={type} className="w-[160px]" />
-              ))}
-            </colgroup>
-            <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-              <tr>
-                <th className="px-2 py-2 text-left">Cama</th>
-                <th className="px-2 py-2 text-left">Paciente</th>
-                {PRESCRIPTION_TYPES.map(type => (
-                  <th key={type} className="px-2 py-2 text-center">
-                    {PRESCRIPTION_TYPE_LABELS[type]
-                      .replace('Receta de ', '')
-                      .replace('Receta ', '')}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map(row => (
-                <PrescriptionBedRow
-                  key={row.bedId}
-                  row={row}
-                  draggingRecord={draggingRecord}
-                  hoverCell={hoverCell}
-                  pickerSource={pickerSource}
-                  pendingAssignId={pendingAssignId}
-                  enableDrop={!!onAssign}
-                  onDragOver={handleCellDragOver}
-                  onDragLeave={handleCellDragLeave}
-                  onDrop={handleCellDrop}
-                  onPickerAssign={performAssign}
-                  onPreviewImage={openLightbox}
-                  onUpdateType={onUpdateType}
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <PrescriptionBedGridTable
+          rows={rows}
+          draggingRecord={draggingRecord}
+          hoverCell={hoverCell}
+          pickerSource={pickerSource}
+          pendingAssignId={pendingAssignId}
+          enableDrop={!!onAssign}
+          onDragOver={handleCellDragOver}
+          onDragLeave={handleCellDragLeave}
+          onDrop={handleCellDrop}
+          onPickerAssign={performAssign}
+          onPreviewImage={openLightbox}
+          onUpdateType={onUpdateType}
+          onReassignRecord={onReassign ? setReassignSource : undefined}
+        />
       )}
 
       {stockRecords.length > 0 && (
@@ -380,6 +365,17 @@ export const PrescriptionBedGridView: React.FC<PrescriptionBedGridViewProps> = (
           onClose={closeLightbox}
           onDelete={onDelete}
         />
+      )}
+
+      {reassignSource && onReassign && (
+        <div className="rounded-xl border border-sky-200 bg-white p-3 shadow-sm">
+          <PrescriptionReassignDialog
+            record={reassignSource}
+            onClose={() => setReassignSource(null)}
+            onSubmit={performReassign}
+            selectedDate={effectiveDay}
+          />
+        </div>
       )}
     </section>
   );

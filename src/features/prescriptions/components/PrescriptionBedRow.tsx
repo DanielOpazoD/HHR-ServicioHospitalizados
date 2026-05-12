@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, Loader2, Minus } from 'lucide-react';
+import { Bed, Check, Loader2, Minus } from 'lucide-react';
 import {
   PRESCRIPTION_TYPES,
   type PrescriptionRecord,
@@ -36,6 +36,7 @@ interface PrescriptionBedRowProps {
   onPickerAssign: (record: PrescriptionRecord, row: PrescriptionBedRowData) => Promise<void> | void;
   onPreviewImage: (record: PrescriptionRecord, url: string) => void;
   onUpdateType?: (record: PrescriptionRecord, nextType: PrescriptionType) => Promise<void>;
+  onReassignRecord?: (record: PrescriptionRecord) => void;
   enableDrop: boolean;
 }
 
@@ -51,6 +52,7 @@ export const PrescriptionBedRow: React.FC<PrescriptionBedRowProps> = ({
   onPickerAssign,
   onPreviewImage,
   onUpdateType,
+  onReassignRecord,
   enableDrop,
 }) => {
   return (
@@ -116,6 +118,17 @@ export const PrescriptionBedRow: React.FC<PrescriptionBedRowProps> = ({
                           onChange={nextType => onUpdateType(record, nextType)}
                           variant="inline"
                         />
+                      )}
+                      {onReassignRecord && (
+                        <button
+                          type="button"
+                          onClick={() => onReassignRecord(record)}
+                          aria-label={`Cambiar cama de receta ${row.bedId}`}
+                          title="Cambiar cama"
+                          className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 shadow-sm hover:border-sky-300 hover:text-sky-700"
+                        >
+                          <Bed size={12} />
+                        </button>
                       )}
                     </div>
                   ))}

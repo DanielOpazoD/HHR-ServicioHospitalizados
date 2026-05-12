@@ -26,6 +26,7 @@ export interface PrescriptionUploadPatientOption {
   bedId: string;
   patientName: string;
   patientRut: string;
+  patientStatus?: 'active' | 'discharge' | 'transfer';
 }
 
 interface ListPatientOptionsPayload {
