@@ -66,6 +66,19 @@ describe('buildIeehPatientFromEpicrisis', () => {
     expect(patient.specialty).toBe('Medicina');
   });
 
+  it('uses IEEH doctor specialty override without changing the epicrisis specialty', () => {
+    const doc = {
+      ...baseDoc,
+      especialidad: 'Medicina',
+      ieehDraft: buildDraft({ tratanteEspecialidad: 'Cirugía Adulto' }),
+    };
+
+    const patient = buildIeehPatientFromEpicrisis(doc);
+
+    expect(patient.specialty).toBe('Cirugía Adulto');
+    expect(doc.especialidad).toBe('Medicina');
+  });
+
   it('uses workspace patient birthDate when available', () => {
     const patient = buildIeehPatientFromEpicrisis(baseDoc, { birthDate: '1990-05-15' });
 
@@ -173,6 +186,35 @@ describe('buildIeehDischargeFromEpicrisis', () => {
     expect(discharge.tratanteApellido1).toBe('Opazo');
     expect(discharge.tratanteApellido2).toBe('Damiani');
     expect(discharge.tratanteNombre).toBe('Daniel');
+  });
+
+  it('uses IEEH doctor name override in Nombre Apellido1 Apellido2 order', () => {
+    const doc = {
+      ...baseDoc,
+      medico: 'Opazo Damiani Daniel',
+      ieehDraft: buildDraft({ tratanteNombreCompleto: 'Ana María Pérez Soto' }),
+    };
+
+    const discharge = buildIeehDischargeFromEpicrisis(doc);
+
+    expect(discharge.tratanteApellido1).toBe('Pérez');
+    expect(discharge.tratanteApellido2).toBe('Soto');
+    expect(discharge.tratanteNombre).toBe('Ana María');
+    expect(doc.medico).toBe('Opazo Damiani Daniel');
+  });
+
+  it('keeps IEEH doctor name blank when the override is explicitly blank', () => {
+    const doc = {
+      ...baseDoc,
+      medico: 'Opazo Damiani Daniel',
+      ieehDraft: buildDraft({ tratanteNombreCompleto: '' }),
+    };
+
+    const discharge = buildIeehDischargeFromEpicrisis(doc);
+
+    expect(discharge.tratanteApellido1).toBe('');
+    expect(discharge.tratanteApellido2).toBe('');
+    expect(discharge.tratanteNombre).toBe('');
   });
 
   it('maps tratanteRut from draft', () => {
