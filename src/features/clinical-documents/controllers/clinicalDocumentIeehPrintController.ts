@@ -52,6 +52,33 @@ export const parseDoctorName = (fullName: string): ParsedDoctorName => {
   };
 };
 
+const parseNameFirstDoctorName = (fullName: string): ParsedDoctorName => {
+  const parts = (fullName || '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) {
+    return { apellido1: '', apellido2: '', nombre: '' };
+  }
+  if (parts.length === 1) {
+    return { apellido1: '', apellido2: '', nombre: parts[0] };
+  }
+  if (parts.length === 2) {
+    return { apellido1: parts[1], apellido2: '', nombre: parts[0] };
+  }
+
+  return {
+    apellido1: parts.at(-2) ?? '',
+    apellido2: parts.at(-1) ?? '',
+    nombre: parts.slice(0, -2).join(' '),
+  };
+};
+
+const resolveIeehDoctorName = (doc: ClinicalDocumentRecord): ParsedDoctorName => {
+  if (typeof doc.ieehDraft?.tratanteNombreCompleto === 'string') {
+    return parseNameFirstDoctorName(doc.ieehDraft.tratanteNombreCompleto);
+  }
+
+  return parseDoctorName(doc.medico);
+};
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -109,7 +136,10 @@ export const buildIeehPatientFromEpicrisis = (
     insurance: fieldValue('insurance'),
     isRapanui: isRapanuiRaw === 'true' || isRapanuiRaw === 'Sí',
     admissionOrigin: fieldValue('admissionOrigin'),
-    specialty: doc.especialidad,
+    specialty:
+      typeof doc.ieehDraft?.tratanteEspecialidad === 'string'
+        ? doc.ieehDraft.tratanteEspecialidad.trim()
+        : doc.especialidad,
   };
 };
 
@@ -140,7 +170,7 @@ export const buildIeehDischargeFromEpicrisis = (doc: ClinicalDocumentRecord): Di
   const draft = doc.ieehDraft;
   if (!draft) return {};
 
-  const doctorName = parseDoctorName(doc.medico);
+  const doctorName = resolveIeehDoctorName(doc);
 
   return {
     diagnosticoPrincipal: draft.diagnosticoPrincipal,

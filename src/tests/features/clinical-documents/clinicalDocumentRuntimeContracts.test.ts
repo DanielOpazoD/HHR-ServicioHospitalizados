@@ -63,6 +63,28 @@ describe('clinicalDocumentRuntimeContracts', () => {
     );
   });
 
+  it('preserves IEEH-only doctor override fields', () => {
+    const record = parseClinicalDocumentRecord({
+      ...buildRecord(),
+      ieehDraft: {
+        cie10Code: 'A00',
+        cie10Description: 'Cólera',
+        diagnosticoPrincipal: 'Cólera',
+        condicionEgreso: '1',
+        intervencionQuirurgica: '2',
+        procedimiento: '2',
+        tratanteNombreCompleto: 'Pérez Soto Ana María',
+        tratanteEspecialidad: 'Cirugía Adulto',
+        tratanteRut: '12.345.678-9',
+      },
+    });
+
+    expect(record.ieehDraft?.tratanteNombreCompleto).toBe('Pérez Soto Ana María');
+    expect(record.ieehDraft?.tratanteEspecialidad).toBe('Cirugía Adulto');
+    expect(record.medico).toBe('Doctor Test');
+    expect(record.especialidad).toBe('Cirugía');
+  });
+
   it('safe parses invalid runtime records and templates', () => {
     const invalidRecord = safeParseClinicalDocumentRecord({
       ...buildRecord(),

@@ -139,6 +139,8 @@ export const clinicalDocumentRecordSchema = z.object({
       procedimiento: z.enum(['1', '2']),
       procedimientoDescrip: z.string().optional(),
       procedimientoCodigo: z.string().optional(),
+      tratanteNombreCompleto: z.string().optional(),
+      tratanteEspecialidad: z.string().optional(),
       tratanteRut: z.string().optional(),
     })
     .optional(),
