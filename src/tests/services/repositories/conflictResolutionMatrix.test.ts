@@ -225,7 +225,7 @@ describe('conflictResolutionMatrix', () => {
 
     const resolved = resolveDailyRecordConflict(remote, local, { changedPaths: ['*'] });
     expect(resolved.beds.R1.handoffNote).toBe('Nota local');
-    expect(resolved.beds.R1.patientName).toBe('Local');
+    expect(resolved.beds.R1.patientName).toBe('Remoto');
   });
 
   it('prioritizes administrative fields from remote during automatic merge', () => {

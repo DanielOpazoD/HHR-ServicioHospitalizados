@@ -175,8 +175,8 @@ describeEmulator('Firestore discharge-bed consistency flow', () => {
     const localStaleRecord = buildRecord(date, isoAt(date, '09:00:00'));
     localStaleRecord.beds = {
       R1: buildPatient('R1', {
-        patientName: 'Paciente Censo',
-        rut: '44.444.444-4',
+        patientName: 'Paciente Censo Cache',
+        rut: '55.555.555-5',
         pathology: 'Diagnostico cache antiguo',
         diagnosisComments: 'Comentario cache antiguo',
         specialty: Specialty.PEDIATRIA,
@@ -206,6 +206,8 @@ describeEmulator('Firestore discharge-bed consistency flow', () => {
     const result = await getForDateWithMeta(date, true);
 
     expect(result.record?.beds.R1.pathology).toBe('Neumonia adquirida en la comunidad');
+    expect(result.record?.beds.R1.patientName).toBe('Paciente Censo');
+    expect(result.record?.beds.R1.rut).toBe('44.444.444-4');
     expect(result.record?.beds.R1.diagnosisComments).toBe('CURB-65 elevado');
     expect(result.record?.beds.R1.specialty).toBe(Specialty.MEDICINA);
     expect(result.record?.beds.R1.secondarySpecialty).toBe(Specialty.CIRUGIA);
@@ -213,6 +215,8 @@ describeEmulator('Firestore discharge-bed consistency flow', () => {
 
     const hydratedLocal = await getRecordForDate(date);
     expect(hydratedLocal?.beds.R1.pathology).toBe('Neumonia adquirida en la comunidad');
+    expect(hydratedLocal?.beds.R1.patientName).toBe('Paciente Censo');
+    expect(hydratedLocal?.beds.R1.rut).toBe('44.444.444-4');
     expect(hydratedLocal?.beds.R1.specialty).toBe(Specialty.MEDICINA);
     expect(hydratedLocal?.beds.R1.status).toBe(PatientStatus.ESTABLE);
   });
