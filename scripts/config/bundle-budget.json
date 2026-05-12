@@ -42,6 +42,16 @@
       "maxBytes": 950000
     },
     {
+      "pattern": "^exceljs\\.min-.*\\.js$",
+      "_comment": "Browser ExcelJS is emitted as a standalone runtime asset and should remain async-only. This explicit ceiling catches accidental growth of the heavy generated asset rather than relying only on the global chunk limit.",
+      "maxBytes": 950000
+    },
+    {
+      "pattern": "^pdf-.*\\.js$",
+      "_comment": "PDF.js worker/runtime remains async, but this protects the large PDF viewer chunk from silently drifting toward the global chunk limit.",
+      "maxBytes": 560000
+    },
+    {
       "pattern": "^TransferManagementView-.*\\.js$",
       "maxBytes": 750000
     }
