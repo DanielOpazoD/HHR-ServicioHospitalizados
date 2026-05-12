@@ -67,6 +67,16 @@ const formatIsoDate = (iso: string): string => {
   return new Date(year, month - 1, day).toLocaleDateString('es-CL');
 };
 
+type PatientOptionStatus = NonNullable<
+  PrescriptionUploadControllerHandle['patientOptions'][number]['patientStatus']
+>;
+
+const formatPatientStatus = (status: PatientOptionStatus | undefined): string => {
+  if (status === 'discharge') return 'Alta (egreso)';
+  if (status === 'transfer') return 'Traslado';
+  return 'Activo';
+};
+
 const renderAssignmentScopeIcon = (scope: PrescriptionAssignmentScope) => {
   if (scope === 'patient') return <Users size={16} className="shrink-0 text-sky-600" />;
   if (scope === 'hospitalized_stock') {
@@ -225,7 +235,8 @@ export const PrescriptionUploadForm: React.FC<PrescriptionUploadFormProps> = ({ 
                 {patientOptions.map(option => (
                   <option key={option.key} value={option.key}>
                     {option.bedId} - {option.patientName || 'Sin nombre'}
-                    {option.patientRut ? ` - ${option.patientRut}` : ''}
+                    {option.patientRut ? ` - ${option.patientRut}` : ''} -{' '}
+                    {formatPatientStatus(option.patientStatus)}
                   </option>
                 ))}
               </select>

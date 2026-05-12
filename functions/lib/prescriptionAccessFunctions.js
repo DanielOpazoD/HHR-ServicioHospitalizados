@@ -300,7 +300,16 @@ const resolveUploadPickerAccess = async ({ admin, context, payload, resolveRoleF
 
 const buildPatientOptionsFromDailyRecord = dailyRecord => {
   const beds = dailyRecord?.beds || {};
-  return Object.entries(beds)
+  const seen = new Set();
+  const remember = option => {
+    const rutKey = option.patientRut?.replace(/[^0-9kK]/g, '').toLowerCase();
+    const identityKey = rutKey || `bed:${option.bedId}`;
+    if (seen.has(identityKey)) return false;
+    seen.add(identityKey);
+    return true;
+  };
+
+  const activeBedOptions = Object.entries(beds)
     .filter(
       ([, patient]) =>
         patient && !patient.isBlocked && (patient.patientName?.trim() || patient.rut?.trim())
@@ -310,8 +319,39 @@ const buildPatientOptionsFromDailyRecord = dailyRecord => {
       bedId,
       patientName: optionalString(patient.patientName, 256) || '',
       patientRut: optionalString(patient.rut, 32) || '',
-    }))
+      patientStatus: 'active',
+    }));
+
+  const movementOptions = [
+    ...buildMovementPatientOptions(dailyRecord?.discharges, 'discharge'),
+    ...buildMovementPatientOptions(dailyRecord?.transfers, 'transfer'),
+  ];
+
+  return [...activeBedOptions, ...movementOptions]
+    .filter(remember)
     .sort((a, b) => a.bedId.localeCompare(b.bedId, 'es', { numeric: true }));
+};
+
+const buildMovementPatientOptions = (movements, scope) => {
+  if (!Array.isArray(movements)) return [];
+  return movements
+    .map((movement, index) => {
+      if (!movement || typeof movement !== 'object') return null;
+      const bedId =
+        optionalString(movement.bedId, 32) || optionalString(movement.bedName, 32) || '';
+      const patientName = optionalString(movement.patientName, 256) || '';
+      const patientRut = optionalString(movement.rut, 32) || '';
+      if (!bedId || (!patientName && !patientRut)) return null;
+      const movementId = optionalString(movement.id, 64) || `${bedId}-${patientRut || index}`;
+      return {
+        key: `${scope}:${movementId}`,
+        bedId,
+        patientName,
+        patientRut,
+        patientStatus: scope,
+      };
+    })
+    .filter(Boolean);
 };
 
 const resolveUploadPatientOptionsForDate = async (admin, date) => {

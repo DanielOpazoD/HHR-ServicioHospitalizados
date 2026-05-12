@@ -24,6 +24,7 @@ interface DailyBedOption {
   bedId: string;
   patientName: string;
   patientRut: string;
+  patientStatus: 'active' | 'discharge' | 'transfer';
 }
 
 const FALLBACK_DAYS_BACK = 7;
@@ -53,7 +54,19 @@ const formatDayLabel = (iso: string): string => {
 const buildBedOptions = (record: DailyRecord | null): DailyBedOption[] => {
   if (!record) return [];
   const beds = record.beds || {};
-  return Object.entries(beds)
+  const seen = new Set<string>();
+  const remember = (option: DailyBedOption): boolean => {
+    const rutKey = option.patientRut
+      .trim()
+      .toLowerCase()
+      .replace(/[^0-9k]/g, '');
+    const identityKey = rutKey || `bed:${option.bedId}`;
+    if (seen.has(identityKey)) return false;
+    seen.add(identityKey);
+    return true;
+  };
+
+  const activeOptions = Object.entries(beds)
     .filter(
       ([, patient]) =>
         patient && !patient.isBlocked && (patient.patientName?.trim() || patient.rut?.trim())
@@ -62,8 +75,46 @@ const buildBedOptions = (record: DailyRecord | null): DailyBedOption[] => {
       bedId,
       patientName: patient.patientName?.trim() ?? '',
       patientRut: patient.rut?.trim() ?? '',
-    }))
+      patientStatus: 'active' as const,
+    }));
+
+  const movementOptions = [
+    ...buildMovementBedOptions(record.discharges, 'discharge'),
+    ...buildMovementBedOptions(record.transfers, 'transfer'),
+  ];
+
+  return [...activeOptions, ...movementOptions]
+    .filter(remember)
     .sort((a, b) => a.bedId.localeCompare(b.bedId, 'es', { numeric: true }));
+};
+
+const buildMovementBedOptions = (
+  movements: unknown,
+  patientStatus: 'discharge' | 'transfer'
+): DailyBedOption[] => {
+  if (!Array.isArray(movements)) return [];
+  return movements
+    .map((movement): DailyBedOption | null => {
+      if (!movement || typeof movement !== 'object') return null;
+      const item = movement as {
+        bedId?: string;
+        bedName?: string;
+        patientName?: string;
+        rut?: string;
+      };
+      const bedId = item.bedId?.trim() || item.bedName?.trim() || '';
+      const patientName = item.patientName?.trim() ?? '';
+      const patientRut = item.rut?.trim() ?? '';
+      if (!bedId || (!patientName && !patientRut)) return null;
+      return { bedId, patientName, patientRut, patientStatus };
+    })
+    .filter((option): option is DailyBedOption => Boolean(option));
+};
+
+const formatPatientStatus = (status: DailyBedOption['patientStatus']): string => {
+  if (status === 'discharge') return 'Alta (egreso)';
+  if (status === 'transfer') return 'Traslado';
+  return 'Activo';
 };
 
 interface ResolvedDayPayload {
@@ -235,7 +286,8 @@ export const PrescriptionReassignDialog: React.FC<PrescriptionReassignDialogProp
           {bedOptions.map(option => (
             <option key={option.bedId} value={option.bedId}>
               {option.bedId} · {option.patientName || 'Sin nombre'}
-              {option.patientRut ? ` (${option.patientRut})` : ''}
+              {option.patientRut ? ` (${option.patientRut})` : ''} ·{' '}
+              {formatPatientStatus(option.patientStatus)}
             </option>
           ))}
         </select>

@@ -8,6 +8,7 @@ import {
   type PrescriptionType,
 } from '@/types/prescriptionTypes';
 import { PrescriptionPatientLightbox } from '@/features/prescriptions/components/PrescriptionPatientLightbox';
+import { PrescriptionReassignDialog } from '@/features/prescriptions/components/PrescriptionReassignDialog';
 import {
   PrescriptionBedRow,
   type PrescriptionBedRowData,
@@ -29,6 +30,13 @@ export interface PrescriptionBedGridAssignTarget {
   patientRut: string;
 }
 
+export interface PrescriptionBedGridReassignPatch {
+  bedId?: string;
+  patientName?: string;
+  patientRut?: string;
+  clear: boolean;
+}
+
 interface PrescriptionBedGridViewProps {
   /** All loaded prescription records (already filtered by date if applicable). */
   records: PrescriptionRecord[];
@@ -42,6 +50,10 @@ interface PrescriptionBedGridViewProps {
    * and refreshes the record list.
    */
   onAssign?: (record: PrescriptionRecord, target: PrescriptionBedGridAssignTarget) => Promise<void>;
+  onReassign?: (
+    record: PrescriptionRecord,
+    patch: PrescriptionBedGridReassignPatch
+  ) => Promise<void>;
   onAssignStock?: (record: PrescriptionRecord) => Promise<void>;
   /**
    * Persists a new prescription type for the given record. Wired to the
@@ -56,6 +68,7 @@ export const PrescriptionBedGridView: React.FC<PrescriptionBedGridViewProps> = (
   records,
   dayIso,
   onAssign,
+  onReassign,
   onAssignStock,
   onUpdateType,
   onDelete,
@@ -81,6 +94,7 @@ export const PrescriptionBedGridView: React.FC<PrescriptionBedGridViewProps> = (
   const [pendingStockAssignId, setPendingStockAssignId] = useState<string | null>(null);
   const [assignError, setAssignError] = useState<string | null>(null);
   const [pickerSource, setPickerSource] = useState<PrescriptionRecord | null>(null);
+  const [reassignSource, setReassignSource] = useState<PrescriptionRecord | null>(null);
 
   const loading = dailyState?.requestedDay !== effectiveDay && errorDay !== effectiveDay;
   const daily = dailyState?.requestedDay === effectiveDay ? dailyState.record : null;
@@ -202,6 +216,12 @@ export const PrescriptionBedGridView: React.FC<PrescriptionBedGridViewProps> = (
       setPendingStockAssignId(null);
       setPickerSource(prev => (prev?.id === record.id ? null : prev));
     }
+  };
+
+  const performReassign = async (patch: PrescriptionBedGridReassignPatch): Promise<void> => {
+    if (!onReassign || !reassignSource) return;
+    await onReassign(reassignSource, patch);
+    setReassignSource(null);
   };
 
   const handleDragStart = (event: React.DragEvent<HTMLDivElement>, record: PrescriptionRecord) => {
@@ -331,6 +351,7 @@ export const PrescriptionBedGridView: React.FC<PrescriptionBedGridViewProps> = (
                   onPickerAssign={performAssign}
                   onPreviewImage={openLightbox}
                   onUpdateType={onUpdateType}
+                  onReassignRecord={onReassign ? setReassignSource : undefined}
                 />
               ))}
             </tbody>
@@ -380,6 +401,17 @@ export const PrescriptionBedGridView: React.FC<PrescriptionBedGridViewProps> = (
           onClose={closeLightbox}
           onDelete={onDelete}
         />
+      )}
+
+      {reassignSource && onReassign && (
+        <div className="rounded-xl border border-sky-200 bg-white p-3 shadow-sm">
+          <PrescriptionReassignDialog
+            record={reassignSource}
+            onClose={() => setReassignSource(null)}
+            onSubmit={performReassign}
+            selectedDate={effectiveDay}
+          />
+        </div>
       )}
     </section>
   );
