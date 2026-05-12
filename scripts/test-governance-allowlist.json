@@ -1,16 +1,4 @@
 {
-  "megatests": [
-    "src/tests/features/clinical-documents/ClinicalDocumentSheet.test.tsx",
-    "src/tests/functions/prescriptionAccessFunctions.test.ts"
-  ],
-  "backlog": {
-    "src/tests/features/clinical-documents/ClinicalDocumentSheet.test.tsx": {
-      "owner": "clinical-documents",
-      "reason": "Existing clinical document sheet integration coverage exceeds the megatest guard and should be split in a dedicated test-governance cleanup."
-    },
-    "src/tests/functions/prescriptionAccessFunctions.test.ts": {
-      "owner": "prescriptions",
-      "reason": "Existing prescription callable-function coverage exceeds the megatest guard and should be split in a dedicated test-governance cleanup."
-    }
-  }
+  "megatests": [],
+  "backlog": {}
 }
